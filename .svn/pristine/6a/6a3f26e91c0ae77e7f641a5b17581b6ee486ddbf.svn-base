@@ -1,0 +1,241 @@
+// Img Map Assets Generated on : Tue Jul 22 21:05:26 PDT 2014
+
+Global.imgMapAssets = {
+	'circusOfSlime': {
+		url: 'img/map/circusOfSlime.png',
+		urlLarge: 'img/map/circusOfSlimeLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'circusOfSlime'
+	},
+	'circusOfSlimeLarge': {
+		url: 'img/map/circusOfSlimeLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'circusOfSlimeLarge'
+	},
+	'curomo': {
+		url: 'img/map/curomo.png',
+		urlLarge: 'img/map/curomoLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'curomo'
+	},
+	'curomoLarge': {
+		url: 'img/map/curomoLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'curomoLarge'
+	},
+	'cyclonius': {
+		url: 'img/map/cyclonius.png',
+		urlLarge: 'img/map/cycloniusLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'cyclonius'
+	},
+	'cycloniusLarge': {
+		url: 'img/map/cycloniusLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'cycloniusLarge'
+	},
+	'dummyTarget': {
+		url: 'img/map/dummyTarget.png',
+		urlLarge: 'img/map/dummyTargetLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'dummyTarget'
+	},
+	'dummyTargetLarge': {
+		url: 'img/map/dummyTargetLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'dummyTargetLarge'
+	},
+	'echo': {
+		url: 'img/map/echo.png',
+		urlLarge: 'img/map/echoLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'echo'
+	},
+	'echoFade': {
+		url: 'img/map/echoFade.png',
+		urlLarge: 'img/map/echoFadeLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'echoFade'
+	},
+	'echoFadeLarge': {
+		url: 'img/map/echoFadeLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'echoFadeLarge'
+	},
+	'echoLarge': {
+		url: 'img/map/echoLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'echoLarge'
+	},
+	'eternalVoid': {
+		url: 'img/map/eternalVoid.png',
+		urlLarge: 'img/map/eternalVoidLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'eternalVoid'
+	},
+	'eternalVoidLarge': {
+		url: 'img/map/eternalVoidLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'eternalVoidLarge'
+	},
+	'fiara': {
+		url: 'img/map/fiara.png',
+		urlLarge: 'img/map/fiaraLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'fiara'
+	},
+	'fiaraLarge': {
+		url: 'img/map/fiaraLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'fiaraLarge'
+	},
+	'fireCone': {
+		url: 'img/map/fireCone.png',
+		urlLarge: 'img/map/fireConeLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'fireCone'
+	},
+	'fireConeLarge': {
+		url: 'img/map/fireConeLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'fireConeLarge'
+	},
+	'ishimi': {
+		url: 'img/map/ishimi.png',
+		urlLarge: 'img/map/ishimiLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'ishimi'
+	},
+	'ishimiLarge': {
+		url: 'img/map/ishimiLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'ishimiLarge'
+	},
+	'lavax': {
+		url: 'img/map/lavax.png',
+		urlLarge: 'img/map/lavaxLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'lavax'
+	},
+	'lavaxLarge': {
+		url: 'img/map/lavaxLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'lavaxLarge'
+	},
+	'morblass': {
+		url: 'img/map/morblass.png',
+		urlLarge: 'img/map/morblassLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'morblass'
+	},
+	'morblassLarge': {
+		url: 'img/map/morblassLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'morblassLarge'
+	},
+	'pax': {
+		url: 'img/map/pax.png',
+		urlLarge: 'img/map/paxLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'pax'
+	},
+	'paxAdrenaline': {
+		url: 'img/map/paxAdrenaline.png',
+		urlLarge: 'img/map/paxAdrenalineLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'paxAdrenaline'
+	},
+	'paxAdrenalineLarge': {
+		url: 'img/map/paxAdrenalineLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'paxAdrenalineLarge'
+	},
+	'paxLarge': {
+		url: 'img/map/paxLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'paxLarge'
+	},
+	'priaUnbalanced': {
+		url: 'img/map/priaUnbalanced.png',
+		urlLarge: 'img/map/priaUnbalancedLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'priaUnbalanced'
+	},
+	'rokcore': {
+		url: 'img/map/rokcore.png',
+		urlLarge: 'img/map/rokcoreLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'rokcore'
+	},
+	'rokcoreLarge': {
+		url: 'img/map/rokcoreLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'rokcoreLarge'
+	},
+	'rokcoreRockArmour': {
+		url: 'img/map/rokcoreRockArmour.png',
+		urlLarge: 'img/map/rokcoreRockArmourLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'rokcoreRockArmour'
+	},
+	'rokcoreRockArmourLarge': {
+		url: 'img/map/rokcoreRockArmourLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'rokcoreRockArmourLarge'
+	},
+	'sindarosa': {
+		url: 'img/map/sindarosa.png',
+		urlLarge: 'img/map/sindarosaLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'sindarosa'
+	},
+	'sindarosaLarge': {
+		url: 'img/map/sindarosaLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'sindarosaLarge'
+	},
+	'tornado': {
+		url: 'img/map/tornado.png',
+		urlLarge: 'img/map/tornadoLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'tornado'
+	},
+	'tornadoLarge': {
+		url: 'img/map/tornadoLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'tornadoLarge'
+	},
+	'translucentFlame': {
+		url: 'img/map/translucentFlame.png',
+		urlLarge: 'img/map/translucentFlameLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'translucentFlame'
+	},
+	'translucentFlameLarge': {
+		url: 'img/map/translucentFlameLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'translucentFlameLarge'
+	},
+	'treenoc': {
+		url: 'img/map/treenoc.png',
+		urlLarge: 'img/map/treenocLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'treenoc'
+	},
+	'treenocLarge': {
+		url: 'img/map/treenocLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'treenocLarge'
+	},
+	'wispera': {
+		url: 'img/map/wispera.png',
+		urlLarge: 'img/map/wisperaLarge.png',
+		coords : [0, 0, 80, 80],
+		name : 'wispera'
+	},
+	'wisperaLarge': {
+		url: 'img/map/wisperaLarge.png',
+		coords : [0, 0, 400, 400],
+		name : 'wisperaLarge'
+	},
+}

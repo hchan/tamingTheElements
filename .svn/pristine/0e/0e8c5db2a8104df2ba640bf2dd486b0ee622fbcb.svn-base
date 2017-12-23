@@ -1,0 +1,52 @@
+GamePersist = {
+		
+		saveStart : function() {
+			var date = new Date();
+			var guid = GameHelper.createGUID();
+			var character = GameHelper.getRandomCharacter(GameHelper.charactersArray);
+			var garrisonCharacter = {
+				id : guid,
+				experience : 0,
+				characterName : character.name,
+				createdTime : date.getTime(),
+				lastModifiedTime : date.getTime()
+			};
+			var gameState = {
+					chapter : 1,
+					garrison : [garrisonCharacter],
+					createdTime : date.getTime(),
+					lastModifiedTime : date.getTime()
+			};
+			this.saveGameState(gameState);
+			
+		},
+		
+		saveGameState : function(gameState) {
+			var gameStateStr = JSON.stringify(gameState);
+			localStorage.setItem(Game.gameName, gameStateStr);
+		},
+		
+		getGameState : function() {
+			var gameStateStr = localStorage.getItem(Game.gameName);
+			return JSON.parse(gameStateStr);
+		},
+		
+		clearGame : function() {
+			localStorage.removeItem(Game.gameName);
+		},
+		
+		updateCharacter : function (garrisonCharacter) {
+			var date = new Date();
+			var gameState = GamePersist.getGameState();
+			for (var i = 0; i < gameState.garrison.length; i++) {
+				var garrisonCharacterLoop = gameState.garrison[i];
+				if (garrisonCharacter.id == garrisonCharacterLoop.id) {
+					gameState.garrison[i] = garrisonCharacter;
+					gameState.garrison[i].lastModifiedTime = date.getTime();
+					break;
+				}
+			}
+			gameState.lastModifiedTime = date.getTime();
+			GamePersist.saveGameState(gameState);
+		}
+};

@@ -1,0 +1,76 @@
+/**
+ * @ #SpriteColor
+ */
+;
+(function() {
+
+	// draw callback
+	sc_drawFunc = function(character) {
+		
+		var ctx = Crafty.canvas.context;
+		var changeColor = function(fromColor, imgData, index) {
+			if (fromColor != null) {
+				if (fromColor == "halfOfOriginal") {
+					imgData.data[index] = imgData.data[index]/2;
+				} else {
+					imgData.data[index] = fromColor;
+				}
+			}
+		};
+		
+		var imgData = null;
+		var currentFrame = null;
+		if (this.getReel() == null) {
+			currentFrame = "0";
+		} else {
+			currentFrame = this.getReel().currentFrame;
+		}
+		if (this.cacheImgData["frame" + currentFrame] != null) {
+			imgData = this.cacheImgData["frame" + currentFrame];
+		} else {
+			imgData = ctx.getImageData(this.x, this.y, this.w, this.h);
+			for (var i = 0; i < imgData.data.length; i += 4) {
+				// red
+				changeColor(this.spriteColorRed, imgData, i);
+				
+				// green
+				changeColor(this.spriteColorGreen, imgData, i+1);
+				
+				// blue
+				changeColor(this.spriteColorBlue, imgData, i+2);
+				
+				// alpha
+				changeColor(this.spriteColorAlpha, imgData, i+3);
+			}
+			this.cacheImgData["frame" + currentFrame] = imgData;
+		}
+		ctx.putImageData(imgData, this.x, this.y);
+
+	};
+
+	// the component
+	Crafty.c("SpriteColor", {
+		lastRedrawTime : null,
+		cacheImgData : {},
+		
+		init : function() {
+			this.cacheImgData = {};
+			this.bind("Draw", sc_drawFunc).bind("RemoveComponent", function(c) {
+				if (c === "SpriteColor")
+					this.unbind("Draw", sc_drawFunc);
+			});
+		},
+
+		// red, green, blue, alpha (0-255)
+
+		spriteColor : function(red, green, blue, alpha) {
+			this.spriteColorRed = red;
+			this.spriteColorGreen = green;
+			this.spriteColorBlue = blue;
+			this.spriteColorAlpha = alpha;
+			this.trigger("Change");
+			
+			return this;
+		}
+	});
+})();

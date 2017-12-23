@@ -1,0 +1,593 @@
+Crafty.c('MeleeCharacter', {
+	
+});
+Crafty.c('ShooterCharacter', {
+	
+});
+
+
+Crafty.c('Character', {
+	isDead : false,
+	characterSpeed : Global.defaultSpeed,
+	characterSpeedReset : Global.defaultSpeed,
+	maxActiveBullets :2,
+	maxMeleeAttacks : 1,
+	curBulletCount : 0,
+	curMeleeCount : 0,
+	curHealth : Global.defaultMaxHealth,
+	maxHealth : Global.defaultMaxHealth,
+	HUD : null,
+	lastFiredTime : null,
+	lastMeleeTime : null,
+	delayBetweenAttack : Global.delayBetweenAttack,
+	targetPlayer : null,
+	
+	init : function() {
+		this.requires('FlipOnTargetPlayer, Actor, Collision');
+				
+		this.bind("EnterFrame", function() {
+			//hud.refresh();
+		});
+	},
+	
+	removeBullet : function(bullet) {
+		bullet.destroy();
+		this.curBulletCount--;
+	},
+	
+	removeMelee : function(melee) {
+		melee.destroy();
+		this.curMeleeCount--;
+	},
+
+	applyDamage : function(damage) {
+		this.curHealth -= damage;
+		Global.playSound('damage');
+	},
+	
+	setHUD : function(HUD) {
+		this.HUD = HUD;
+		//HUD.setCharacter(this);
+	},
+	
+	
+	
+	// Registers a stop-movement function to be called when
+	// this entity hits an entity with the "Solid" component
+	stopOnSolids : function() {
+		var curEntity = this;
+		this.onHit('Solid', function () {
+			curEntity.stopMovement();
+		});
+		
+		return this;
+	},
+
+	// Stops the movement
+	stopMovement : function() {		
+		//this.characterSpeed = 0;		
+		if (this._movement) {
+			this.x -= (this._movement.x*2);
+			this.y -= (this._movement.y*2);
+		}
+	},
+	
+	
+	resetCharacterSpeed : function() {		
+		this.characterSpeed = this.characterSpeedReset;
+	},
+	
+	resetIfOutOfBounds : function() {
+//		var largestXVal = Game.width() - Game.map_grid.tile.width - this.w+2;
+//		var largestYVal = Game.height() - Game.map_grid.tile.height - this.h;
+//		var smallestYVal = Game.hud_height;
+//		var smallestXVal = this.w/2;
+//		if (this.x > largestXVal) {
+//			this.x = largestXVal;
+//		}
+//		if (this.x < smallestXVal) {
+//			this.x = smallestXVal;
+//		}
+//		if (this.y > largestYVal) {
+//			this.y = largestYVal;
+//		}
+//		if (this.y < smallestYVal) {
+//			this.y = smallestYVal;
+//		}
+		if (this.hit("Solid")) {
+			var questionableX = this.x;
+			var questionableY = this.Y;
+			this.x = this.previousX;
+			if (this.hit("Solid")) {
+				this.x = questionableX;
+				this.y = this.previousY;
+				if (this.hit("Solid")) {
+					this.x = this.previousX;
+					this.y = this.previousY;
+				}
+			}
+			
+		}
+		
+		//this.resetCharacterSpeed();
+	},
+	
+	addX : function(amount) {
+		this.x = this.x + amount;
+	},
+	addY : function(amount) {
+		this.y = this.y + amount;
+	},
+	
+	canFire : function() {		
+		if (this.maxActiveBullets > this.curBulletCount) {
+			var date = new Date();
+			var curTime = date.getTime();
+			return ((curTime - this.lastFiredTime) > this.delayBetweenAttack);
+		} else {
+			return false;
+		}
+	},
+	
+	canMelee : function() {
+		if (this.maxMeleeAttacks > this.curMeleeCount) {
+			var date = new Date();
+			var curTime = date.getTime();
+			return ((curTime - this.lastMeleeTime) > this.delayBetweenAttack);
+		} else {
+			return false;
+		}	
+	},
+	
+	doAnimation : function () {
+		if (!this.isPlaying(this.spriteName + "Reel")) {			
+			this.animate(this.spriteName + "Reel", -1);
+		}
+	},
+	
+	characterInit : function() {
+		if (this.has("Fourway")) {
+			this.fourway(this.characterSpeed);
+			this.stopOnSolids();
+		}
+		this.characterSpeedReset = this.characterSpeed;
+		this.requires('Actor, Character, SpriteAnimation');
+		this.addComponent(this.spriteName);
+		this.attr({
+			w: Global.playerCharacter.width,
+			h: Global.playerCharacter.height 
+		});
+		var frames =  this.getFrames();		
+		this.reel(this.spriteName + "Reel", 600, frames);
+		
+	},
+	
+
+	
+	createBullet : function(direction) {
+		var bullet = this.createBulletEntity();
+		bullet.origin("center");
+		if (direction == "w") {
+			bullet.rotation = 180;
+		} else if (direction == "s") {
+			bullet.rotation = 90;
+		} else if (direction == "n") {
+			bullet.rotation = 270;
+		}
+		var character = this;
+		bullet.alpha = character.alpha;
+		bullet.attr({
+			x : this._x + (character._w - bullet._w)/2,
+			y : character._y + (character._h - bullet._h)/2
+		});
+		bullet.myTween();
+		return bullet;
+	},
+	
+	createMelee : function () {
+		this.createMeleeEntity();
+	},
+	
+	// Respond to this player visiting a village
+	visitVillage : function(data) {
+		villlage = data[0].obj;
+		villlage.visit();
+	}
+});
+
+Crafty.c('PlayerCharacter', {
+	targetPlayerType : 'EnemyCharacter',
+	init : function() {
+		this.requires('Character, Fourway');
+		var character = this;
+		this.attr({
+			w: Global.playerCharacter.width,
+			h: Global.playerCharacter.height
+		});
+		// Watch for a change of direction and switch animations accordingly
+		this.direction = "e";// n, e, s, w		
+		//	this.fourway(this.characterSpeed);
+		this.bind('NewDirection', function(data) {
+			this.doAnimation();
+			if (data.x > 0) {
+				//this.animate('PlayerMovingRight', -1);
+				this.direction = "e";
+				
+			} else if (data.x < 0) {
+				//this.animate(this.spriteName + "Reel");
+				//this.animate('PlayerMovingLeft', -1);
+				this.direction = "w";
+				//this.doAnimation();
+			} else if (data.y > 0) {
+				//this.animate(this.spriteName + "Reel");
+				//this.animate('PlayerMovingDown', -1);
+				this.direction = "s";
+				//this.doAnimation();
+			} else if (data.y < 0) {
+				//this.animate(this.spriteName + "Reel");
+				//this.animate('PlayerMovingUp', -1);
+				this.direction = "n";
+				
+			} else {
+				this.pauseAnimation();
+			}					
+		});
+		this.bind('Moved',  function(data) {
+			//this.doAnimation();
+			
+		});
+		this.bind(
+				"EnterFrame",
+				function() {					
+					this.flipIfNecessary(this, this.targetPlayer);
+				}
+		);		
+		//this.stopOnSolids();
+		var character = this;
+		this.bind('KeyDown', function(e) {
+			
+			if (e.keyCode === Crafty.keys.SPACE) {
+				// create a bullet entity via space
+				if (!this.canFire()) {
+					return;
+				} else {
+					this.curBulletCount++;
+					var date = new Date();
+					var curTime = date.getTime();
+					this.lastFiredTime = curTime;
+				}
+				var curPlayerDirection = character.direction;
+				var bullet = this.createBullet(curPlayerDirection);
+				
+				bullet.bind(
+						"EnterFrame",
+						function() {
+							if (curPlayerDirection == "n") {
+								this.y = this.y - (1*bullet.speed);
+							} else if (curPlayerDirection == "s") {
+								this.y = this.y + (1*bullet.speed);
+							} else if (curPlayerDirection == "e") {
+								this.x = this.x + (1*bullet.speed);							
+							} else if (curPlayerDirection == "w") {
+								this.x = this.x - (1*bullet.speed);		
+							}
+							// destroy if it goes out of bounds
+							if (this._x > Crafty.viewport.width || this._x < 0
+									|| this._y > Crafty.viewport.height
+									|| this._y < 0) {
+								character.removeBullet(this);
+							}
+						});
+				bullet.onHit('HUDContainer', function() {
+					character.removeBullet(bullet);
+				});
+				bullet.onHit('EnemyCharacter', function(data) {
+					character.removeBullet(bullet);
+					data[0].obj.applyDamage(bullet.damage);
+				});
+			}
+		});
+	},
+	
+	die : function() {
+		
+		this.destroy();
+		//this.HUD.destroy();
+		
+		if (this.isDead == false) {
+			this.isDead = true;
+			Global.playSound("death");
+			Crafty.e("Delay").delay(function() {		
+				Crafty.scene('YouJustDied');
+			}, 3000, 0);		
+		}						
+	},				
+});
+
+Crafty.c('EnemyCharacter', {
+	targetPlayerType : 'PlayerCharacter',
+	init : function() {	
+		this.requires('2D, Canvas, Character');
+		this.stopOnSolids();
+		this.alpha = 0.75;
+		var character = this;
+		this.bind(
+				"EnterFrame",
+				function() {
+					this.doPrimaryAttackIfNecessary();
+					this.doMovement();
+					
+					
+					this.doAnimation();
+					this.flipIfNecessary(this, this.targetPlayer);
+				});
+	},
+	
+	doPrimaryAttackIfNecessary : function() {
+		this.fireBulletAsPrimaryAttackIfNecessary();
+	},
+	doMovement : function() {
+		this.doShooterMovement();
+	},
+	doShooterMovement : function() {
+		var character = this;
+		if (!this.canFire()) {						
+			this.moveAwayFromTargetPlayer();
+		} else {
+			if (character.has("MeleeCharacter")) {
+				if (this.targetPlayer.has("MeleeCharacter") && !character.canMelee()) {
+					this.moveAwayFromTargetPlayer();
+				} else {
+					this.moveTowardsTargetPlayer();
+				}
+			} else {
+				if (this.targetPlayer.has("MeleeCharacter")) {
+					this.moveAwayFromTargetPlayer();
+				} else {
+					this.moveTowardsTargetPlayer();
+				}
+			}
+			//this.moveTowardsTargetPlayer();
+			//this.moveAwayFromTargetPlayer();
+		}
+	},
+	doMeleeMovement : function() {
+		if (this.targetPlayer.has("MeleeCharacter") && !this.canMelee()) {
+			this.moveAwayFromTargetPlayer();
+		} else {
+			this.moveTowardsTargetPlayer();
+		}		
+	},
+		
+	
+	fireBulletAsPrimaryAttackIfNecessary : function() {
+		this.previousX = this.x;
+		this.previousY = this.y;
+		//this.x -= this.characterSpeed;
+		//this.y += this.yspeed;
+		var direction = null;
+		var deltaX = Math.abs(this.targetPlayer.x - this.x);
+		var deltaY = Math.abs(this.targetPlayer.y - this.y);
+		var hasSameXaxis = (deltaX <= this.targetPlayer.h/2);
+		var hasSameYaxis = (deltaY <= this.targetPlayer.w/2);
+//		if (hasSameXaxis && hasSameYaxis) {						
+//			if (deltaX < deltaY) {
+//				hasSameYaxis = false;
+//			} else {
+//				hasSameXaxis = false;
+//			}
+//		}
+		if (hasSameXaxis) {						
+			if (this.y > this.targetPlayer.y) {
+				direction = "n";
+			} else {
+				direction = "s";
+			}
+			this.fireBullet(direction);
+		}
+		if (hasSameYaxis) {
+			if (this.x > this.targetPlayer.x) {
+				direction = "w";
+			} else {
+				direction = "e";
+			}
+			this.fireBullet(direction);
+		}
+	},
+	
+	
+	fireBullet : function(direction) {
+		if (!this.canFire()) {
+			return;
+		} else {
+			this.curBulletCount++;
+			var date = new Date();
+			var curTime = date.getTime();
+			this.lastFiredTime = curTime;
+		}
+		var bullet = this.createBullet(direction);
+		var character = this;
+		bullet.attr({
+			x : this._x + (character._w - bullet._w)/2,
+			y : character._y + (character._h - bullet._h)/2
+		});;
+	
+		bullet.bind(
+				"EnterFrame",
+				function() {
+					if (direction == "n") {
+						this.y = this.y - (1*bullet.speed);
+					} else if (direction == "s") {
+						this.y = this.y + (1*bullet.speed);
+					} else if (direction == "e") {
+						this.x = this.x + (1*bullet.speed);							
+					} else if (direction == "w") {
+						this.x = this.x - (1*bullet.speed);		
+					}
+					// destroy if it goes out of bounds
+					if (this._x > Crafty.viewport.width || this._x < 0
+							|| this._y > Crafty.viewport.height
+							|| this._y < 0) {
+						character.removeBullet(this);
+					}
+				});
+		bullet.onHit('HUDContainer', function() {
+			character.removeBullet(bullet);
+		});
+		bullet.onHit('PlayerCharacter', function(data) {
+			character.removeBullet(bullet);
+			data[0].obj.applyDamage(bullet.damage);
+		});
+	},
+	
+	doMeleeIfNecessary : function() {
+		var deltaX = Math.abs(this.targetPlayer.x - this.x);
+		var deltaY = Math.abs(this.targetPlayer.y - this.y);
+		var rangeWidth = GameHelper.abilities[this.primaryAbility].component.rangeWidth;
+		var rangeHeight = GameHelper.abilities[this.primaryAbility].component.rangeHeight;
+		if (deltaX < rangeWidth/2 && deltaY < rangeHeight/2) {
+			this.doMelee();
+		}
+	},
+	
+	doMelee : function() {
+		if (!this.canMelee()) {
+			return;
+		} else {
+			this.curMeleeCount++;
+			var date = new Date();
+			var curTime = date.getTime();
+			this.lastMeleeTime = curTime;
+		}
+		this.createMelee();
+	},
+	
+	moveAwayFromTargetPlayer : function() {
+		this.previousX = this.x;
+		this.previousY = this.y;
+		
+		var character = this;
+		if (character.samePositionCheckActive == null) {
+			character.samePositionCheckActive = true;
+			Crafty.e("Delay").delay(function() {	
+				character.samePositionCheckActive = null;
+				if ((character.previousX == character.x) && (character.previousY == character.y)) {
+					if (character.samePositionCount == null) {
+						character.samePositionCount = 1;
+					} else {
+						character.samePositionCount++;
+					}
+					if (character.samePositionCount >= 5) {
+						character.samePositionCount = 0;
+						if ((character.targetPlayer.y - character.y) > 0) {
+							character.moveAwayYDirection = "s";
+							
+						} else {
+							character.moveAwayYDirection = "n";
+								
+						}
+						Crafty.e("Delay").delay(function() {	
+							character.moveAwayYDirection = null;
+						}, 3000, 0);
+					}
+				}
+			}, 2000, 0);
+		}
+		
+		if (this.moveAwayXDirection == null) {
+			if ((this.targetPlayer.x - this.x) > 0) {
+				this.addX(- (this.characterSpeed * 1));			
+			} else {
+				this.addX(this.characterSpeed * 1);
+			}
+		}
+		
+		
+		if (this.moveAwayYDirection == null) {
+			if ((this.targetPlayer.y - this.y) > 0) {
+				this.addY(- (this.characterSpeed * 1));			
+			} else {
+				this.addY(this.characterSpeed * 1);
+			}
+		}
+		this.resetIfOutOfBounds();
+		
+		// x-edge ?	
+		if (this.previousX == this.x && Math.abs(this.targetPlayer.x - this.x) < this.targetPlayer.w*3 && this.moveAwayXDirection == null){
+			if ((this.targetPlayer.x - this.x) > 0) {
+				this.moveAwayXDirection = "e";
+				
+			} else {
+				this.moveAwayXDirection = "w";
+					
+			}
+			var character = this;
+			Crafty.e("Delay").delay(function() {	
+				character.moveAwayXDirection = null;
+			}, 3000, 0);
+		}
+		
+	
+		// y-edge ?	
+		if (this.previousY == this.y && Math.abs(this.targetPlayer.y - this.y) < this.targetPlayer.h*3 && this.moveAwayYDirection == null){
+			if ((this.targetPlayer.y - this.y) > 0) {
+				this.moveAwayYDirection = "s";
+				
+			} else {
+				this.moveAwayYDirection = "n";
+					
+			}
+			
+			Crafty.e("Delay").delay(function() {	
+				character.moveAwayYDirection = null;
+			}, 3000, 0);
+		}
+		
+		if (this.moveAwayXDirection != null) {
+			if (this.moveAwayXDirection == "e") {
+				this.addX(this.characterSpeed * 1);
+			} else {
+				this.addX(- (this.characterSpeed * 1));		
+			}
+		}
+		if (this.moveAwayYDirection != null) {
+			if (this.moveAwayYDirection == "s") {
+				this.addY(this.characterSpeed * 1);
+			} else {
+				this.addY(- (this.characterSpeed * 1));		
+			}
+		}
+		this.resetIfOutOfBounds();
+	},
+	moveTowardsTargetPlayer : function() {
+		this.previousX = this.x;
+		this.previousY = this.y;
+		if ((this.targetPlayer.x - this.x) > 0) {
+			this.x = this.x + (this.characterSpeed * 1);
+		} else {
+			this.x = this.x - (this.characterSpeed * 1);
+		}
+		
+		if ((this.targetPlayer.y - this.y) > 0) {
+			this.y = this.y + (this.characterSpeed * 1);
+		} else {
+			this.y = this.y - (this.characterSpeed * 1);
+		}
+		this.resetIfOutOfBounds();
+	},
+	die : function() {
+		
+		this.destroy();
+		//this.HUD.destroy();
+		Crafty("Bullet").each(function() {
+			this.destroy();
+		});
+		if (this.isDead == false) {
+			this.isDead = true;
+			Global.playSound("victory");			
+			Crafty.e("Delay").delay(function() {		
+				Crafty.scene('Victory');
+			}, 3000, 0);			
+		}		
+	},
+});

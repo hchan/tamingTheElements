@@ -1,0 +1,414 @@
+TopHUD = {
+	topHUDCanvasJqueryObj : null		
+},
+
+Crafty.c("topHUD",
+{
+	character : null,
+	levelTextEntity : null,
+	benchSpriteEntities : [],
+	topHUDCanvasJqueryObj : null,
+	maxHealthColor : '#000000',
+	restColor : '#aaaaaa',
+	benchNameTextEntities : [],
+	curNameTextEntity : null,
+	
+	init : function() {
+		this.requires('2D, Tween, Canvas, DOM');
+		this.buffs = {};
+		this.buffsSpriteEntities = {};		
+		this.createTopHUDCanvasIfNecessary();		
+	},
+	
+	createTopHUDCanvasIfNecessary : function () {
+		if (!$("#topHUDCanvas").length) {
+			TopHUD.topHUDCanvasJqueryObj = $("<canvas/>");
+			TopHUD.topHUDCanvasJqueryObj.css("z-index", 100);
+			TopHUD.topHUDCanvasJqueryObj.css("position", "relative");
+			TopHUD.topHUDCanvasJqueryObj.attr("id", "topHUDCanvas");
+			TopHUD.topHUDCanvasJqueryObj.height(Game.hud_height);
+			TopHUD.topHUDCanvasJqueryObj.width(Game.width());
+			TopHUD.topHUDCanvasJqueryObj.attr("height", Game.hud_height);
+			TopHUD.topHUDCanvasJqueryObj.attr("width", Game.width());			
+			$(this._element).append(TopHUD.topHUDCanvasJqueryObj);
+		}
+	},
+	
+	
+	topHUD : function(x_offset, y_offset, character) {
+		this.createTopHUDCanvasIfNecessary();		
+		this.x_offset = x_offset;
+		this.y_offset = y_offset;
+		
+	
+		
+		this.minHealthPixelX = Game.hud_height * 1.2 + this.x_offset;
+		this.maxHealthPixelX = Game.hud_height * 1.2 + this.x_offset + (Game.width() - 4*Game.hud_height)  / 2;
+		this.healthBarLineWidth = 10;
+		this.maxHealthBarLineWidth = this.healthBarLineWidth + 1;
+		this.healthBarLineTopPadding = 10;
+		this.benchSpriteEntityHeight = (Game.hud_height-this.healthBarLineWidth-this.healthBarLineTopPadding)/2;
+		this.benchSpriteMaxHealthBarLineWidth = this.maxHealthBarLineWidth - 4;
+		this.benchSpriteHealthBarLineWidth = this.benchSpriteMaxHealthBarLineWidth - 1;
+		
+		this.character = character;
+		
+		var characterComponent = GameHelper.characters[character.characterName].component;
+		if (this.spriteEntity != null) {
+			this.spriteEntity.destroy();			
+		}
+		this.spriteEntity = GameHelper.createCharacterAvatarEntity(characterComponent, Game.hud_height, Game.hud_height);
+		this.spriteEntity.x = this.x_offset;
+		this.spriteEntity.y = this.y_offset;
+		
+		
+		// bench
+		for (var i = 0; i < this.benchSpriteEntities.length; i++) {
+			this.benchSpriteEntities[i].destroy();
+			
+		}
+		this.benchSpriteEntities = [];
+		var benchCharacters = Swap.getTeammates(character);
+		for (var i = 0; i < benchCharacters.length; i++) {		
+			var characterComponent = GameHelper.characters[benchCharacters[i].character.characterName].component;
+			var benchSpriteEntity = GameHelper.createCharacterAvatarEntity(characterComponent, this.benchSpriteEntityHeight, this.benchSpriteEntityHeight);
+			benchSpriteEntity.x = this.x_offset + Game.hud_height * 2; 
+			benchSpriteEntity.y = this.y_offset + this.healthBarLineWidth + this.healthBarLineTopPadding + i*this.benchSpriteEntityHeight;
+			
+			if (benchCharacters[i].character.isDead) {				
+				// draw X				
+				var redXEntity = Crafty.e("2D, Canvas, redX");				
+				redXEntity.w = benchSpriteEntity.w;
+				redXEntity.h = benchSpriteEntity.h;
+				redXEntity.x = benchSpriteEntity.x;
+				redXEntity.y = benchSpriteEntity.y;
+				benchSpriteEntity.bind("Move", function() {
+					redXEntity.x = benchSpriteEntity.x;
+					redXEntity.y = benchSpriteEntity.y;
+				});
+				benchSpriteEntity.bind("Remove", function() {
+					redXEntity.destroy();
+				});
+				benchSpriteEntity.bind("Change", function() {
+					redXEntity.alpha = benchSpriteEntity.alpha;
+				});
+			
+			}
+			
+			this.benchSpriteEntities.push(benchSpriteEntity);			
+		}
+		// update name
+		if (this.curNameTextEntity == null) {
+			this.curNameTextEntity = Crafty.e("2D, DOM, Text").attr(
+					{ 
+						x: Game.hud_height * 1.2 + this.x_offset, 
+						y: Game.hud_height/4 + this.y_offset,
+						
+					});
+		}
+		this.curNameTextEntity.text(character.characterName + " Level:&nbsp;" + character.level).textColor('#000000', 1).css("textAlign", "left");
+		// names of bench
+		for (var i = 0; i < benchCharacters.length; i++) {		
+			if (this.benchNameTextEntities[i] == null) {
+				this.benchNameTextEntities[i] = Crafty.e("2D, DOM, Text").attr(
+						{ 
+							x: this.benchSpriteEntities[i].x + this.benchSpriteEntities[i].h + this.benchSpriteHealthBarLineWidth/2,
+							y: this.benchSpriteEntities[i].y + (this.benchSpriteHealthBarLineWidth * 2)							
+						});
+			}
+			this.benchNameTextEntities[i].text(benchCharacters[i].character.characterName + "&nbsp;Level:&nbsp;" + benchCharacters[i].character.level).textColor('#000000', 1).css("textAlign", "left");
+		}
+		
+		
+		/*
+		
+		this.spriteEntity = Crafty.e(character.spriteName
+				+ ", Canvas");
+		this.spriteEntity.attr({
+			x : this.x_offset + Game.hud_height / 4,
+			y : this.y_offset + Game.hud_height / 4,
+			w : Game.hud_height / 2,
+			h : Game.hud_height / 2
+		});
+		*/
+		
+		this.unbind("EnterFrame");
+		
+		this.bind("EnterFrame", function() {
+			if (this.character != null) {
+				this.refresh();
+			}
+		});
+	},
+
+	refresh : function() {
+		var topHUDCanvas = TopHUD.topHUDCanvasJqueryObj[0].getContext('2d');
+		//actionBarCanvas.fillRect(0,0,Game.width(),Global.actionBarHeight); 
+		
+		var ctx = topHUDCanvas;
+		//var ctx = Crafty.canvas.context;
+		
+		// clears the health bar
+//		ctx.clearRect(this.x_offset + Game.hud_height, 
+//				this.y_offset,
+//				Game.width()/2-2 - Game.hud_height,
+//				Game.hud_height/2);
+		ctx.clearRect(this.x_offset + Game.hud_height, 
+				this.y_offset,
+				Game.width()/2,
+				Game.hud_height);
+		// clears the buffs
+		var clearToBenchEntityX = 0;
+		if (this.benchSpriteEntities[0] != null) {
+			clearToBenchEntityX = this.benchSpriteEntities[0].x;
+		} else {
+			clearToBenchEntityX = this.maxHealthPixelX;
+		}
+		ctx.clearRect(this.x_offset + Game.hud_height, 
+				this.y_offset + Game.hud_height/2,
+				clearToBenchEntityX - (this.x_offset + Game.hud_height),
+				Game.hud_height/2);
+		
+		
+	
+		// max health
+		ctx.beginPath();
+		ctx.lineCap = 'round';
+		ctx.strokeStyle = this.maxHealthColor;
+		ctx.lineWidth = this.maxHealthBarLineWidth;	
+		ctx.moveTo(this.minHealthPixelX, this.healthBarLineTopPadding + this.y_offset);
+		ctx.lineTo(this.maxHealthPixelX, this.healthBarLineTopPadding + this.y_offset);
+		ctx.stroke();
+		
+		// maxHealthWithRest
+		ctx.beginPath();
+		ctx.lineWidth = this.healthBarLineWidth;		
+		ctx.strokeStyle = this.restColor;
+		ctx.moveTo(this.minHealthPixelX, this.healthBarLineTopPadding + this.y_offset);
+		var percentageHealth = 1
+			- (this.character.maxHealth - this.character.maxHealthWithRest)
+			/ this.character.maxHealth;	
+		ctx.lineTo(
+				Math.ceil((this.maxHealthPixelX - this.minHealthPixelX)* percentageHealth + this.minHealthPixelX),
+				this.healthBarLineTopPadding + this.y_offset);	
+		ctx.stroke();
+	
+
+		// cur health
+		ctx.beginPath();
+		ctx.lineWidth = this.healthBarLineWidth;		
+		ctx.moveTo(this.minHealthPixelX, this.healthBarLineTopPadding + this.y_offset);
+		var percentageHealth = 1
+				- (this.character.maxHealth - this.character.curHealth)
+				/ this.character.maxHealth;	
+		
+	
+		
+		ctx.strokeStyle = this.getHealthColor(percentageHealth);
+		if (percentageHealth <= 0) {
+			this.character.die();
+		} else {
+			ctx.lineTo(
+					Math.ceil((this.maxHealthPixelX - this.minHealthPixelX)* percentageHealth + this.minHealthPixelX),
+					this.healthBarLineTopPadding + this.y_offset);		
+
+
+			ctx.stroke();
+		}
+
+		this.updateHealthOfBenchEntities();
+		this.drawBuffBar(ctx, this.minHealthPixelX, this.maxHealthPixelX);
+	},
+	
+	updateHealthOfBenchEntities : function() {
+		var topHUDCanvas = TopHUD.topHUDCanvasJqueryObj[0].getContext('2d');
+		var ctx = topHUDCanvas;
+		
+		for (var i = 0; i < this.benchSpriteEntities.length; i++) {
+			var teammates = Swap.getTeammates(this.character);
+			var teammate = teammates[i].character;
+			var benchSpriteEntity = this.benchSpriteEntities[i];
+			// max health
+			ctx.beginPath();
+			ctx.lineCap = 'round';
+			ctx.strokeStyle = this.maxHealthColor;
+			ctx.lineWidth = this.benchSpriteMaxHealthBarLineWidth;
+		
+			var minHealthPixelX = benchSpriteEntity.x + benchSpriteEntity.w + this.benchSpriteHealthBarLineWidth;
+			ctx.moveTo(minHealthPixelX, benchSpriteEntity.y + this.benchSpriteHealthBarLineWidth);
+			ctx.lineTo(this.maxHealthPixelX, 
+					benchSpriteEntity.y + this.benchSpriteHealthBarLineWidth);
+			ctx.stroke();
+			
+			// maxHealthWithRest
+			if (!teammate.isDead) {
+				ctx.beginPath();
+				ctx.strokeStyle = this.restColor;
+				ctx.lineWidth = this.benchSpriteHealthBarLineWidth;
+				ctx.moveTo(minHealthPixelX, benchSpriteEntity.y + this.benchSpriteHealthBarLineWidth);
+				var percentageHealth = 1 - (teammate.maxHealth - teammate.maxHealthWithRest)
+					/ teammate.maxHealth;		
+				ctx.lineTo(
+						Math.ceil((this.maxHealthPixelX - minHealthPixelX) * percentageHealth + minHealthPixelX),
+						benchSpriteEntity.y + this.benchSpriteHealthBarLineWidth);		
+				ctx.stroke();
+			}
+			
+			// cur health
+			ctx.beginPath();
+			ctx.lineWidth = this.benchSpriteHealthBarLineWidth;
+			ctx.moveTo(minHealthPixelX, benchSpriteEntity.y + this.benchSpriteHealthBarLineWidth);
+			var percentageHealth = 1
+					- (teammate.maxHealth - teammate.curHealth)
+					/ teammate.maxHealth;
+			ctx.strokeStyle = this.getHealthColor(percentageHealth);
+			if (percentageHealth <= 0) {
+				teammate.die();
+			} else {
+				ctx.lineTo(
+						Math.ceil((this.maxHealthPixelX - minHealthPixelX) * percentageHealth + minHealthPixelX),
+						benchSpriteEntity.y + this.benchSpriteHealthBarLineWidth);
+							
+				ctx.stroke();
+			}
+			
+//			var radius = benchSpriteEntity.w/2;
+//			ctx.beginPath();
+//			ctx.arc(benchSpriteEntity.x + benchSpriteEntity.w/2, benchSpriteEntity.y + benchSpriteEntity.h/2, radius, 0, 2 * Math.PI, false);
+//			ctx.fillStyle = this.healthColor;
+//			ctx.fill();
+//			ctx.lineWidth = 5;
+//			ctx.strokeStyle = '#003300';
+//			ctx.stroke();
+			
+		}
+	},
+
+	drawBuffBar : function(ctx, minHealthPixelX,
+			maxHealthPixelX) {
+		var padding = 5;
+		var buffSlotLength = 20;
+		// ctx.beginPath();
+		// ctx.strokeStyle = '#111';
+		// ctx.lineWidth = 1;
+		// ctx.moveTo(minHealthPixelX, Game.hud_height - padding
+		// -buffSlotLength);
+		// ctx.lineTo(maxHealthPixelX, Game.hud_height - padding
+		// - buffSlotLength);
+		// ctx.lineTo(maxHealthPixelX, Game.hud_height -
+		// padding);
+		// ctx.lineTo(minHealthPixelX, Game.hud_height -
+		// padding);
+		// ctx.closePath();
+		// ctx.fill();
+
+		this.updateBuffHash();
+//		ctx.clearRect(minHealthPixelX - 1, Game.hud_height
+//				- padding - buffSlotLength - 1, maxHealthPixelX
+//				- minHealthPixelX + 1, buffSlotLength + 2);
+		var index = 0;		
+		var buffsSpriteEntities = this.buffsSpriteEntities;
+		$.each(
+				this.buffs,
+				function(abilityName, abilityInfo) {
+					var date = new Date();
+					var curTime = date.getTime();
+					var spriteName = GameHelper.abilities[abilityName].component.defaults.spriteName;
+					var spriteEntity = null;
+					if (buffsSpriteEntities[abilityName] == null) {
+						spriteEntity = Crafty.e(spriteName + ", Canvas");
+						buffsSpriteEntities[abilityName] = spriteEntity;
+						buffsSpriteEntities[abilityName].origW = spriteEntity.w;
+						buffsSpriteEntities[abilityName].origH = spriteEntity.h;
+					} else {
+						spriteEntity = buffsSpriteEntities[abilityName];						
+					}
+					spriteEntity.visible = true;
+					spriteEntity.w = buffsSpriteEntities[abilityName].origW;
+					spriteEntity.h = buffsSpriteEntities[abilityName].origH;
+					var slot = new Slot(abilityName,
+							spriteEntity, abilityInfo);
+					var point0 = [
+							minHealthPixelX
+									+ (index * buffSlotLength),
+							Game.hud_height - padding
+									- buffSlotLength ];
+					HUDHelper.resizeEntityForSlot(slot,
+							index, buffSlotLength-2,
+							minHealthPixelX, point0[1]);
+		
+					ctx.beginPath();
+					ctx.strokeStyle = '#111';
+					ctx.lineWidth = 1;
+		
+					ctx.rect(point0[0], point0[1],
+							buffSlotLength,
+							buffSlotLength);
+					var percentFinishedCD = (curTime - abilityInfo.lastUsed)/GameHelper.abilities[abilityName].component.defaults.duration;
+					var fillStyleParam = null;
+					if (abilityInfo.type == "hostile") {
+						fillStyleParam = "#F11";
+					} else if (abilityInfo.type == "friendly") {
+						fillStyleParam = "#1F1";
+					}
+					HUDHelper.drawCooldown(ctx, percentFinishedCD, point0, buffSlotLength, fillStyleParam);
+					ctx.stroke();
+					index++;
+				});
+	},
+
+	updateBuffHash : function() {
+		var buffsClone = $.extend({}, this.buffs);
+		var buffsNew = {};
+		var date = new Date();
+		var curTime = date.getTime();
+		$.each(buffsClone, function(abilityName, abilityInfo) {
+			var lastUsed = abilityInfo.lastUsed;
+			var duration = abilityInfo.duration;
+			if ((curTime - lastUsed) < duration) {
+				buffsNew[abilityName] = abilityInfo;
+			}
+		});
+		
+		$.each(this.buffsSpriteEntities, function (abilityName, spriteEntity) {
+			if (buffsNew[abilityName] == null) {
+				spriteEntity.visible = false;
+			}
+		});
+		
+		this.buffs = buffsNew;
+	},
+	
+	getHealthColor : function (percentageHealth) {
+		var retval = "";
+		if (isNaN(percentageHealth)) {
+			percentageHealth = 1;	
+		}
+		if (percentageHealth >= 0.5) {
+			var hexVal = Math.ceil((1-percentageHealth) * 255 * 2);
+			hexVal = hexVal.toString(16);
+			hexVal = "" + hexVal;
+			if (hexVal.length == 1) {
+				hexVal = "0" + hexVal;
+			}
+			retval = "#" + hexVal + "FF00";
+		} else {
+			var hexVal = Math.ceil(percentageHealth * 255 * 2);
+			hexVal = hexVal.toString(16);
+			hexVal = "" + hexVal;
+			if (hexVal.length == 1) {
+				hexVal = "0" + hexVal;
+			}
+			retval = "#FF" + hexVal + "00";
+		}
+		
+		return retval;
+		
+	}
+});
+
+Crafty.c("HUDContainer", {
+	init : function() {
+		this.requires('Solid');
+	}
+});

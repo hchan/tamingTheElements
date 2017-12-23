@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/main.css">
+<script src="bower_components/jquery/dist/jquery.js"></script>
+<script src="lib/crafty.js"></script>
+<script src="lib/SpriteColor.js"></script>
+<script src="src/input.js"></script>
+<script src="src/helper.js"></script>
+<script src="src/HUDHelper.js"></script>
+<script src="src/global.js"></script>
+<script src="src/assets.js"></script>
+<script src="src/game.js"></script>
+<script src="src/components.js"></script>
+<script src="src/topHUD.js"></script>
+<script src="src/actionbar.js"></script>
+<script src="src/baseCharacter.js"></script>
+<script src="src/characters.js"></script>
+<script src="src/abilities.js"></script>
+<script src="src/scenes.js"></script>
+<script src="src/main.js"></script>
+<title class="gameName"></title>
+<body
+	style="color: white; font-family: cursive; text-align: center; display: block;">
+	<span id="mainMenu" class="menuPage" style="display: none;">
+		<div class="heading gameName"></div>
+
+		<ol>
+			<li class="clickable" name="storyModeMenu">Story Mode</li>
+			<li class="clickable" name="selectBattleMenu">Practice Battle
+				(Duel)</li>
+			<li class="clickable notImplementedYet" name="selectTeamBattleMenu">Practice
+				Battle (3v3)</li>
+			<li class="clickable" name="keyBindingsMenu">Key Bindings</li>
+			<li class="clickable notImplementedYet" name="pvpMenu">PvP</li>
+			<li class="clickable" name="contactMenu">Contact</li>
+		</ol>
+
+	</span>
+	<span id="selectBattle" class="menuPage" style="display: none;">
+		<div class="heading">Select Your Battle</div>
+		<div
+			style="color: white; width: 100%; text-align: center; font-size: 12px; font-family: cursive; font-style: italic; font-weight: 200">
+			Select your Hero, an Opponent and then click Start<br />
+			Double-click a Hero to show his/her details
+		</div>
+
+		<div style="height: 50px"></div>
+		<table width="100%" border="0">
+			<tbody>
+				<tr>
+					<td width="25%">&nbsp;</td>
+					<td width="50%">
+						<table id="characters" border="1" style="color: white;"
+							width="100%">
+							<tbody>
+								<tr>
+									<th width="50%">Hero</th>
+									<th width="50%">Opponent</th>
+								</tr>
+							</tbody>
+						</table>
+					<td width="25%">&nbsp;</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<div id="startContainer"
+			style="margin-left: auto; margin-right: auto; font-size: 40px; color: grey; align: center; text-align: center; border: 2px solid; border-radius: 25px; width: 200px; cursor: pointer;">
+			Start
+			<!-- 	<input type="button" style="margin-left:auto;margin-right:auto;display:block; font-size: 24px" value="Start" id="Start" disabled="true"/> -->
+		</div>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span id="characterDetails" class="menuPage" style="display: none;">
+	</span>
+	<span id="keyBindings" class="menuPage" style="display: none;">
+		<div class="heading">Key Bindings</div>
+		<table id="keyBindingTable" class="centerMe" border="1px">
+		</table>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span id="contact" class="menuPage" style="display: none;">
+		<div class="heading">Written by:</div> Henry Chan <a href=""
+		class="contactLink" style="color: white" target="_blank">hchan@apache.org</a><br />
+		<p>Feel free to send me any suggestions or comments via my email
+			address above. I hope you enjoyed playing this game!</p>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span id="storyMode" class="menuPage" style="display: none;">
+		<div class="heading">The Story (in Beta)</div>
+		<div align="left">
+			Unbalance has erupted in the world <span class="gameWorldName"></span>.<br />
+			You must tame and assemble of team of elementals to open a Portal to
+			the center of <span class="gameWorldName"></span> and restore the
+			balance.
+
+			<div>You begin with a random elemental at Level 1 that is added to your Summoner's List. Enter the
+				Battleground (after choosing a battleground difficulty (Easy,
+				Average, Hard, Very Hard)) to fight other elementals.</div>
+			<div>
+				<h2>Battleground Difficulties</h2>
+				<ul>
+					<li>Easy (levels 1 to 5)is unlocked by default.</li>
+					<li>Average (levels 6 to 10)is unlocked by leveling an elemental to Level 5</li>
+					<li>Hard (levels 11 to 15)is unlocked by leveling an elemental to Level 10</li>
+					<li>Very Hard (levels 16 to 20) is unlocked by leveling an elemental to Level 15</li>
+					<li>??? (Portal to the Center of Pria) is unlocked by leveling
+						an elemental to Level 20</li>
+				</ul>
+			</div>
+			<div>
+			<h2>Leveling up</h2>
+			
+				To level up an elemental, you must win a battle.
+				The last elemental to deliver the final death blow against the opponent is rewarded with a level point.				
+			
+				Note, you cannot level up to a higher above your difficulty setting in
+				the Battleground. (i.e. if you are at level 5 and enter the
+				Batteground at the Easy difficulty setting, you will not gain experience and level up to level 6).
+				To continue to level 6, you must enter the Battleground at the Average difficulty.
+				</div>
+			<div>
+				<h2>Abilities gained as you level</h2>
+				When your elemental reaches:
+				<ul>
+					<li>Level 5, you gain the ability to tame elementals. You are
+						restricted to tame based to a weaker elemental type of your own (See Elemental
+						Balance)</li>
+					<li>Level 10, you gain the ability to create a team and allow
+						swapping within that team</li>
+					<li>Level 15, new ability (specific to the Race)</li>
+					<li>Level 20 - passive ability - bonus armour/damage against a weaker elemental
+						type (See Elemental Balance)
+				</ul>
+			</div>
+			
+			<div class="balanceEquation">
+				<h2>Elemental Balance</h2>
+				<ul>
+					<li>Water can douse Fire, thus Fire is weaker than Water.</li>
+					<li>Fire can consume Air, thus Air is weaker than Fire</li>
+					<li>Air can blow away Earth, thus Earth is weaker than Air</li>
+					<li>Earth can contain Water, thus Water is weaker than Earth</li>
+				</ul>
+				<div>Note 1: Elementals at level 5 and up can tame elementals of a weaker type</div>
+				<div>Note 2: Elementals at level 20 have a passive ability that will add bonus to armour and damage to a weaker elemental type</div>
+			</div>
+			<div>
+				<h2>Taming Elements</h2>
+				This ability can only be used against an elemental of a weaker type
+				(See Elemental Balance) AND if that elemental is at the same level
+				or lower than the elemental trying to tame it. 
+				Your chance of taming a weaker elemental type at the same level as you is 50%
+				and increases as the number of levels you are above the opponent by 10% per level.
+				Furthermore, a
+				restriction is that you can only tame an elemental if it is < 25%
+				health. Once an elemental is tamed, the battle will continue until
+				all other members have been in the opposing team have been defeated.
+				You can only tame one elemental per battle. Should you win the
+				battle, that elemental you have tamed will become accessible for you
+				to summon in the next battleground. However, if you lose, that
+				elemental you have tamed will be released. Taming more than 3
+				elementals of the same Race will evict the one with the lowest
+				level. You can only have a maximum of 3 elementals of the Race at
+				any given time.
+			</div>
+			<div>
+				<h2>Damage, Armour and bonus</h2>
+				Damage is the amount that will be subtracted to the health of an
+				opponent. Armour is the amount of damage that is reduced. For
+				example, if the opponent's health is 100, his armour is 15 an your
+				damage is 40, then a a net damage of 25 is done to the opponent
+				resulting in his health of 75. Note that bonuses may be applied
+				depending on your Elemental type (See Elemental Balance) and your
+				level. The bonus than an element gets over an another based on level
+				is as follows: <br /> amour bonus: 2 * (difference in level)^1.5<br />
+				damage bonus: 5 * (difference in level)^1.5<br />
+
+			</div>
+		</div>
+
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+
+
+
+
+</body>
+<script>
+	Main.main();
+</script>
+</head>
+</html>

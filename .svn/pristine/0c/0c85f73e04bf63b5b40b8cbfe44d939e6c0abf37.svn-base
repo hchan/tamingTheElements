@@ -1,0 +1,69 @@
+Game = {
+	backgroundColor : "#FFFFCC",
+	borderColor : "#666666",
+	borderWidth : 2,
+	borderHeight : 2,
+	
+	hud_height : 40,
+	params : null,
+	
+	// The total width of the game screen. Since our grid takes up the entire screen
+	//  this is just the width of a tile times the width of the grid
+	width: function() {
+		//return this.map_grid.width * this.map_grid.tile.width;
+		return window.innerWidth - 20;
+	},
+
+	// The total height of the game screen. Since our grid takes up the entire screen
+	//  this is just the height of a tile times the height of the grid
+	height: function() {
+		//return this.map_grid.height * this.map_grid.tile.height;
+		return window.innerHeight - 20;
+	},
+
+	// Initialize and start our game
+	start: function(params) {
+		this.params = params;
+		// Start crafty and set a background color so that we can see it's working
+		
+		Crafty.init(Game.width(), Game.height());
+		Crafty.background(Game.backgroundColor);
+		
+		document.onkeydown = function keydown(e) {
+		    if (!e) e = event;
+		    if (e.ctrlKey && e.keyCode==Crafty.keys.P) {
+			   e.stopPropagation();
+			   var state = "Pause";
+				 if (Crafty.isPaused() == true) {
+					 state = "Unpause";
+				 } else {
+					 state = "Pause";
+				 }
+				
+				Global.Alert.message(state);
+				Crafty.pause();
+			   return false;
+		    } else if (e.ctrlKey && e.keyCode==Crafty.keys.M) {
+		    	 Global.sound = !Global.sound;
+				 var state = "";
+				 if (Global.sound == true) {
+					 Crafty.audio.unmute();
+					 state = "off";
+				 } else {
+					 Crafty.audio.mute();
+					 state = "on";
+				 }
+				
+				Global.Alert.message("Mute " + state);
+		    }
+		};
+	
+		
+		
+
+		// Simply start the "Loading" scene to get things going
+		Crafty.scene('Loading');
+	}
+};
+
+$text_css = { 'size': '24px', 'family': 'Arial', 'color': 'red', 'text-align': 'center' };

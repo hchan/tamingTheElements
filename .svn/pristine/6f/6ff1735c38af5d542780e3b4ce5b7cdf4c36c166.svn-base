@@ -1,0 +1,28 @@
+* update description for abilities
+* update description for characters
+* xcf to png ... resize, frame info ... create separate dir called sprite (with 4 frames) vs single dir
+* circus of slime/ ice shards  ... its an autokill at point blank
+* echo hurricane
+* capture will put a debuff.  Must kill opponent within that debuff time to capture
+* on chapter2 objectives, show the Capture icon as new ability gained
+* applyDamageOverride in abilities.js is questionable - use Components.Range.createHitCallback
+* create wiki page
+* limit garrison to X characters
+* if you try to capture the Eternal Void, he will laugh (Easter Egg)
+* take out grunt and use perl (also minify javascript)
+* add levels (EASY, NORMAL, HARD, WTF (Way Too Fun))
+* chaos Orb to rotate
+* Enter Battleground or Practice (Dummy Target)
+* protect with Basic Auth: user: beta password: ray bill
+* add sound to cinematic
+* enter portal fiery chaos animation button
+* garrison sort order: level, race, elementalType
+* enter order to battleground 1,2,3 not working
+* modify description of abilities and characters (health) to take level as an argument
+* add image to abilities in garrison
+* add scrollbar to abilities
+* abilities width and height are currently hard-coded - bad!
+* add Melee direction description / Range grow/intensity description
+* created beta logo
+* treenoc entangling vines has bug on death of opponent
+* elemental imbalance equation: you lose 1% of health every 5s

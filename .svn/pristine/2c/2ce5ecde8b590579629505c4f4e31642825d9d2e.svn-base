@@ -1,0 +1,37 @@
+<html>
+<title>Taming the Elements</title>
+<body style="background-color: #eeeeee; padding: 10px; border: 1px solid; ">
+<h1 style="font-family: script">Taming the Elements</h1>
+<div style="margin-left: 10px">by <a href="mailto:hchan@apache.org?Subject=Taming the Elements" target="_top">Henry Chan</a></div>
+
+
+<h2>About the Game</h2>
+Taming the Elements is an action/combat/strategy game about leveling and collecting
+a Garrion of elementals.<br/>
+In a world called Pria, a disturbance has unfolded and it
+is up to you as the tamer to restore the balance.
+You begin the game with just one elemental in your Garrison 
+(your collection of elementals).  Missions include leveling that elemental (by gaining XP)
+and growing your Garrison.  Capture other elementals and add them to your
+Garrison.  After you have grown your Garrison, you can form a team of 3 elementals and
+do battle with your team.  Certain elementals are stronger against others (like water can
+douse fire) and certain characters may be more effective than others.
+as each elemental has different abilities, speed and health.  
+This game is inspired by Archon II, World of Warcraft Pet Battles and Mavel vs Capcom.
+When you are ready ... champion your strongest team of elementals and do battle 
+with the disturbance that awaits at the center of Pria.
+
+<h2>Features</h2>
+<div style="margin-left: 10px">
+<li>Melee and/or Range Combat</li>
+<li>Capturing other Elementals</li>
+<li>Creating a team of Elementals in the Battleground</li>
+<li>Learning the special abilities of each Elemental</li>
+<li>Effectively swapping to another character in battle and resting others</li>
+</div>
+<hr/>
+<div style="width: 100%; text-align: center; font-size: 24px">
+-----&gt;&nbsp;<a href="/private/">Enter Game</a>&nbsp;&lt;-----
+</div> 
+</body>
+</html>

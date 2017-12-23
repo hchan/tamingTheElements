@@ -1,0 +1,71 @@
+var gulp = require('gulp');
+var rimraf = require('gulp-rimraf'); // rimraf directly
+var runSequence = require('run-sequence');
+var uglify = require('gulp-uglify');
+var rename = require("gulp-rename");
+var shell = require('gulp-shell')
+var NwBuilder = require('node-webkit-builder');
+
+var dest = "c:/temp/tamingtheelements";
+var src = "war";
+var appCfgBin = 'c:\\appengine-java-sdk-1.9.4\\bin\\appcfg';
+
+gulp.task('default', function(cb) {
+    runSequence('clean', 'copy', 'uglify', 'removeOldSrc', 'useNewSrc', 'removeSrc2', 'deployToGAE');
+
+});
+
+gulp.task('clean', function() {
+    //rimraf(dest, cb);
+    return gulp.src(dest).pipe(rimraf({force:true}));
+});
+
+gulp.task('copy', function() {
+    return gulp.src(src + '/**').
+	pipe(gulp.dest(dest));
+   
+});
+
+gulp.task('uglify', function() {
+    return gulp.src(dest + '/WEB-INF/private/src/*.js').
+	pipe(uglify()).
+	pipe(gulp.dest(dest + '/WEB-INF/private/src2'));
+});
+
+gulp.task('removeOldSrc', function() {
+    return gulp.src(dest + '/WEB-INF/private/src').pipe(rimraf({force:true}));
+});
+
+gulp.task('useNewSrc', function() {
+    return gulp.src(dest + '/WEB-INF/private/src2/*').pipe(gulp.dest(dest + '/WEB-INF/private/src'));
+});
+
+
+gulp.task('removeSrc2', function() {
+    return gulp.src(dest + '/WEB-INF/private/src2').pipe(rimraf({force:true}));
+});
+
+gulp.task('deployToGAE', function() {
+    return gulp.src(dest + '/..').pipe(shell([appCfgBin + ' --oauth2 update ' + dest]));
+});
+
+
+gulp.task("node-webkit", function() {
+    var nw = new NwBuilder({
+	files: 'war/WEB-INF/private/src/**/**', // use the glob format
+	platforms: ['win','osx'],
+	buildDir : "node-webkit-build",
+	appVersion : "1.0"
+    });
+    nw.on('log',  console.log);
+    nw.build().then(function () {
+	console.log('all done!');
+    }).catch(function (error) {
+	console.error(error);
+    });
+    // And supports callbacks
+    nw.build(function(err) {
+	if(err) console.log(err);
+    })
+
+});

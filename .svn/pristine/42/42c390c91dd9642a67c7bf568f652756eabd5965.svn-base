@@ -1,0 +1,261 @@
+GameHelper.createCharacterComponent('Dummy', '', {
+	defaults : {
+		elementalType: 'air',
+		alignment: 'evil',
+		characterSpeed : Global.defaultSpeed-4,
+		primaryAbility : "Dummy Cone",
+		armour : 0,
+		isTranslucent : false,
+		abilitiesInfo : { 
+			"Dummy Cone" : { curCount: 0, lastUsed: 0}		
+		},		
+		spriteName : "wispera"
+	},
+	
+	init : function() {
+		this.characterInit();
+	},	
+	getFrames : function() {
+		return [[0, 0], [400, 0], [800, 0], [1200, 0]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Dummy Cone");
+	},
+	
+});
+
+Crafty.c('DummyWithAI', {
+	init : function() {
+		this.requires('Dummy');
+	}
+});
+
+Crafty.c('DummyNoAI', {
+	init : function() {		
+		this.requires('Dummy');		
+	},	
+});
+
+GameHelper.createCharacterComponent('Cyclonius', '', {
+	defaults : {
+		elementalType: 'air',
+		alignment: 'evil',
+		characterSpeed : Global.defaultSpeed,
+		primaryAbility : "Wind Cone",
+		armour : 0,
+		isTranslucent : false,
+		abilitiesInfo : { 
+			"Wind Cone" : { curCount: 0, lastUsed: 0},
+			"Tornado" : { curCount: 0, lastUsed: 0}
+		},		
+		spriteName : "spr_StormBlue"
+	},
+	init : function() {
+		this.characterInit();
+	},	
+	getFrames : function() {
+		return [[17, 17], [17, 176], [17, 343], [17, 501]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Wind Cone");
+	},
+	
+});
+
+Crafty.c('CycloniusWithAI', {
+	init : function() {
+		this.requires('Cyclonius');
+	},
+	
+	doSecondaryAttackIfNecessary : function() {
+		var secondaryAbilityName = null;
+		var secondaryAbilityInfo = null;
+		var abilityNameAndInfo = this.getSecondaryAbilityNameAndInfo();
+		if (abilityNameAndInfo != null) {
+			secondaryAbilityName = abilityNameAndInfo[0];
+			secondaryAbilityInfo = abilityNameAndInfo[1];
+			
+			if (this.isInRangeAxis() && this.canDoAbility(secondaryAbilityName, secondaryAbilityInfo)) {					
+				this.doAbility(secondaryAbilityName, secondaryAbilityInfo);
+			}
+		}
+	},
+});
+
+Crafty.c('CycloniusNoAI', {
+	init : function() {		
+		this.requires('Cyclonius');		
+	},	
+});
+
+
+GameHelper.createCharacterComponent('Sindarosa', '', {
+	defaults : {
+		elementalType: 'fire',
+		alignment: 'evil',
+		characterSpeed : Global.defaultSpeed,
+		primaryAbility : "Fire Blast",
+		armour : 5,
+		isTranslucent : false,
+		abilitiesInfo : { 
+			"Fire Blast" : { curCount: 0, lastUsed: 0},
+			"Translucent Flame" : { curCount: 0, lastUsed: 0}		
+		},
+	
+		spriteName : "redDragon"
+	},
+	init : function() {
+		this.characterInit();
+	},	
+	getFrames : function() {
+		return [[0, 0], [280, 0], [590, 0], [890, 0]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Fire Blast");;
+	},
+	
+});
+
+Crafty.c('SindarosaWithAI', {
+	init : function() {
+		this.requires('Sindarosa');
+	}
+});
+
+Crafty.c('SindarosaNoAI', {
+	init : function() {		
+		this.requires('Sindarosa');		
+	},	
+});
+
+
+GameHelper.createCharacterComponent('Morblass', '', {
+	defaults : {
+		elementalType: 'water',
+		alignment: 'good',
+		characterSpeed : Global.defaultSpeed,
+		primaryAbility : "Icicles",
+		armour : 0,
+		isTranslucent : false,
+		abilitiesInfo : { 
+			"Icicles" : { curCount: 0, lastUsed: 0},
+			"Ice Blast" : { curCount: 0, lastUsed: 0}		
+		},
+		spriteName : "waterSprite"
+	},
+	init : function() {
+		this.characterInit();
+		
+	},	
+	getFrames : function() {
+		return [[0, 0], [292, 0], [590, 0], [910, 0]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Icicles");;
+	},
+	
+});
+
+Crafty.c('MorblassWithAI', {
+	init : function() {
+		this.requires('Morblass');
+	}
+});
+
+Crafty.c('MorblassNoAI', {
+	init : function() {		
+		this.requires('Morblass');		
+	},	
+});
+
+GameHelper.createCharacterComponent('Pax', '', {
+	defaults : {
+		elementalType: 'earth',
+		alignment: 'good',
+		characterSpeed : Global.defaultSpeed-2,
+		primaryAbility : 'Ground Shock',
+		armour : 10,
+		isTranslucent : false,
+		abilitiesInfo : { 
+			"Ground Shock" : { curCount: 0, lastUsed: 0},
+			"Adrenaline" : {lastUsed : 0}
+		},
+		spriteName : "rockElemental"
+	},
+	
+	init : function() {
+		this.requires("MeleeCharacter");
+		this.requires("Activate");
+		this.characterInit();
+		
+		
+	},	
+	getFrames : function() {
+		return [[0, 0], [405, 0], [820, 0], [1205, 0]];
+	},
+		
+	createMeleeEntity : function() {
+		var retval = Crafty.e("Ground Shock");
+		retval.initAgainstCharacterType(this.targetPlayerType, this);	
+		return retval;
+	},			
+});
+
+Crafty.c('PaxWithAI', {
+	init : function() {
+		this.requires('Pax');
+	}
+});
+
+Crafty.c('PaxNoAI', {
+	init : function() {		
+		this.requires('Pax');
+	},		
+});
+
+
+
+GameHelper.createCharacterComponent('Wispera', '', {
+	defaults : {
+		elementalType: 'air',
+		alignment: 'good',
+		characterSpeed : Global.defaultSpeed,
+		primaryAbility : "Sonar Blast",
+		armour : 0,
+		isTranslucent : false,
+		abilitiesInfo : { 
+			"Sonar Blast" : { curCount: 0, lastUsed: 0},
+			"Steal Health" : { curCount: 0, lastUsed: 0}
+		},	
+		spriteName : "wispera"
+	},
+	init : function() {
+		this.characterInit();
+	},	
+	getFrames : function() {
+		return [[0, 0], [400, 0], [800, 0], [1200, 0]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Sonar Blast");
+	},
+	
+});
+
+Crafty.c('WisperaWithAI', {
+	init : function() {
+		this.requires('Wispera');
+	},
+	
+	
+});
+
+Crafty.c('WisperaNoAI', {
+	init : function() {		
+		this.requires('Wispera');		
+	},	
+});

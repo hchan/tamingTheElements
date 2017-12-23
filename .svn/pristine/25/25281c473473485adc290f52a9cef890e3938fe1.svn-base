@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+              http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         version="2.5"
+         xmlns="http://java.sun.com/xml/ns/javaee">
+
+ <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>com.suitecompiletech.userauth.LoginServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+  
+  	<filter>
+        <filter-name>PrivateFilter</filter-name>
+        <filter-class>com.suitecompiletech.userauth.PrivateFilter</filter-class>        
+    </filter>
+  
+  
+    <filter-mapping>
+        <filter-name>PrivateFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    
+    <welcome-file-list>
+    	<welcome-file>home.html</welcome-file>
+  	 	<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+  
+ 
+</web-app>

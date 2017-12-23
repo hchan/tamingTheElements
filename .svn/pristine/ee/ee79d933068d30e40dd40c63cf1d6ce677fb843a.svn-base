@@ -1,0 +1,257 @@
+// The Grid component allows an element to be located
+// on a grid of tiles
+//Crafty.c('Grid', {
+//	init : function() {
+//		this.attr({
+//			w : Game.map_grid.tile.width,
+//			h : Game.map_grid.tile.height
+//		});
+//	},
+//
+//	// Locate this entity at the given position on the grid
+//	at : function(x, y) {
+//		if (x === undefined && y === undefined) {
+//			return {
+//				x : this.x / Game.map_grid.tile.width,
+//				y : this.y / Game.map_grid.tile.height
+//			};
+//		} else {
+//			this.attr({
+//				x : x * Game.map_grid.tile.width,
+//				y : y * Game.map_grid.tile.height
+//			});
+//			return this;
+//		}
+//	}
+//});
+
+// An "Actor" is an entity that is drawn in 2D on canvas
+// via our logical coordinate grid
+Crafty.c('Actor', {
+	init : function() {
+		this.requires('2D, Canvas');
+	},
+});
+
+// A Tree is just an Actor with a certain sprite
+Crafty.c('Tree', {
+	init : function() {
+		this.requires('Actor, Solid, spr_tree');
+	},
+});
+
+// A Bush is just an Actor with a certain sprite
+Crafty.c('Bush', {
+	init : function() {
+		this.requires('Actor, Solid, spr_bush');
+	},
+});
+
+// A Rock is just an Actor with a certain sprite
+Crafty.c('Rock', {
+	init : function() {
+		this.requires('Actor, Solid, spr_rock');
+	},
+});
+
+Crafty.c('Solid', {
+	init : function() {
+		this.requires('Grid, 2D, Canvas');
+	},
+});
+
+
+
+
+Crafty.c('FlipOnTargetPlayer', {
+	init : function() {
+		this.requires('2D');	
+	},
+	flipIfNecessary : function(player, targetPlayer) {		
+		if (targetPlayer != null) {
+			if (targetPlayer.x > player.x) {
+				this.unflip();
+			} else {				
+				this.flip();
+			}
+		} 
+	}
+});
+
+Crafty.c('Range', {
+	//speed : Global.defaultBulletSpeed,
+	//damage: 25,
+	init : function() {		
+		this.requires('Grid, 2D, Canvas, Collision, FlipOnTargetPlayer');		
+		
+		
+	},
+	myTween : function () {
+		this.origin("center");
+		var bullet = this;
+		var curRotation = bullet.rotation;
+		var curWidth = bullet.w;
+		
+		Crafty.e("Delay").delay(function() {
+			var rotateAmount = 0;
+			var addWidth = 0;
+			if (Math.random() > 0.5) {
+				rotateAmount = 1;
+				addWidth = 1;
+			} else {
+				rotateAmount = -1;
+				addWidth = -1;
+			}
+			bullet.rotation += rotateAmount;
+			bullet.w += addWidth;
+			if (Math.abs(curRotation - bullet.rotation) > 5) {
+				bullet.rotation = curRotation;
+			}
+			if (Math.abs(curWidth - bullet.w) > (curWidth * 0.1)) {
+				bullet.w = curWidth;
+			}
+		}, 10, -1);
+	}
+});
+
+
+//Melee
+Crafty.c('Melee', {
+	hasHit : null,
+	init : function() {
+		this.requires('2D, Canvas, Collision');
+		
+	},
+	
+	applyDamage : function(character) {
+		if (this.hasHit == null) {
+			character.applyDamage(this.damage);
+			this.hasHit = true;
+		} 
+	}
+});
+
+
+
+
+
+// A village is a tile on the grid that the PC must visit in order to win the
+// game
+Crafty.c('Village', {
+	init : function() {
+		this.requires('Actor, spr_village');
+	},
+
+	// Process a visitation with this village
+	visit : function() {
+		this.destroy();
+		Global.playSound('knock');
+		Crafty.trigger('VillageVisited', this);
+	}
+});
+
+Crafty.c("HUD", {
+	character : null,
+	
+	init : function() {
+	   this.requires('2D, Tween, Canvas');
+	},
+	
+	HUD : function(x_offset, y_offset, character) {
+		this.x_offset = x_offset;
+		this.y_offset = y_offset;
+		this.character = character;
+		this.spriteEntity = Crafty.e(character.spriteName + ", Canvas");
+		this.spriteEntity.attr({ 
+			x: this.x_offset + Game.hud_height/4,
+			y: this.y_offset + Game.hud_height/4,
+			w: Game.hud_height/2,
+			h: Game.hud_height/2
+		});
+		this.bind("EnterFrame", function() {
+			if (this.character != null) {
+				this.refresh();
+			}
+		});
+	},
+
+	
+	refresh: function() {
+		var ctx = Crafty.canvas.context;
+			// icon circle
+	       ctx.beginPath();
+	       ctx.strokeStyle = '#000000';
+	       /*x 	The x-coordinate of the center of the circle 
+y 	The y-coordinate of the center of the circle
+r 	The radius of the circle 	Play it »	
+sAngle 	The starting angle, in radians (0 is at the 3 o'clock position of the arc's circle) 	
+eAngle 	The ending angle, in radians 	Play it »	
+counterclockwise 	Optional. Specifies whether the drawing should be counterclockwise or clockwise. False is default, and indicates clockwise, while true indicates counter-clockwise.
+*/
+	       ctx.arc(Game.hud_height/2+this.x_offset,Game.hud_height/2+this.y_offset,Game.hud_height/2-2,0,2*Math.PI);
+	       //ctx.lineWidth = 0.01;
+	       ctx.lineWidth = 1;
+	       ctx.stroke();
+	       //console.log("drawing");
+	       
+	       // health bar
+//	       ctx.beginPath();
+//	       ctx.strokeStyle = '#00ff00';
+//	       ctx.arc(Game.hud_height*1.5+this.x_offset,
+//	    		   10+this.y_offset,
+//	    		   Game.hud_height/5-2,
+//	    		   Math.PI*3/2,
+//	    		   Math.PI/2,
+//	    		   true);
+//	       ctx.stroke();
+	       // max health
+	       ctx.beginPath();
+	       ctx.strokeStyle = '#aaaaaa';
+	       ctx.lineWidth = 10;
+	       var minHealthPixelX = Game.hud_height*1.1+this.x_offset;
+	       var maxHealthPixelX = Game.hud_height*1.1+this.x_offset + Game.width()/3;
+	       ctx.moveTo(minHealthPixelX, 10+this.y_offset);
+	       ctx.lineTo(maxHealthPixelX, 10+this.y_offset);
+	       ctx.stroke();
+	       
+	       // cur health 
+	       ctx.beginPath();
+	       ctx.strokeStyle = '#00ff00';
+	       ctx.lineWidth = 10;	       
+	       ctx.moveTo(minHealthPixelX, 10+this.y_offset);
+	       var percentageHealth = 1 - (this.character.maxHealth - this.character.curHealth)/this.character.maxHealth;
+	       if (percentageHealth <=0 ) {	    	  
+	    	   this.character.die();
+	       } else {
+		       ctx.lineTo((maxHealthPixelX - minHealthPixelX)*percentageHealth + minHealthPixelX, 10+this.y_offset);
+		       ctx.stroke();
+	       }
+   }
+      
+});
+
+    
+Crafty.c("HUDContainer", {
+	init : function() {
+		   this.requires('Solid, Color');
+	}
+});
+
+
+Crafty.c("Alert", {
+	init : function() {
+		this.requires('2D, DOM, Text');
+	},
+	message : function(str) {	
+		var alertThis = this;
+		this.alpha = 1;
+		this.text(str).attr({ x: 0, y: Game.height()/2 - 12, w: Game.width() })
+		.textFont({ size: '12px', weight: 'bold'})
+		.textColor("#FF0000", 1)
+		.css("textAlign", "center");
+		Crafty.e("Delay").delay(function() {
+			  alertThis.alpha -= 0.1;
+			}, 100, 10);
+	}
+}); 
+

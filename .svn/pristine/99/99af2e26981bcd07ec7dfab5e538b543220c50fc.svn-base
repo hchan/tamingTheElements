@@ -1,0 +1,56 @@
+/**
+ * @ #SpriteColor
+ */
+;
+(function() {
+
+	// draw callback
+	sc_drawFunc = function() {
+
+		var ctx = Crafty.canvas.context;
+		
+		var imgData = ctx.getImageData(this.x, this.y, this.w, this.h);
+		for (var i = 0; i < imgData.data.length; i += 4) {
+			// red
+			if (this.spriteColorRed != null) {
+				imgData.data[i] = this.spriteColorRed;
+			}
+			// green
+			if (this.spriteColorGreen != null) {
+				imgData.data[i+1] = this.spriteColorGreen;
+			}
+			// blue
+			if (this.spriteColorBlue != null) {
+				imgData.data[i+2] = this.spriteColorBlue;
+			}
+			// alpha
+			if (this.spriteColorAlpha != null) {
+				imgData.data[i+3] = this.spriteColorAlpha;
+			}
+		}
+		ctx.putImageData(imgData, this.x, this.y);
+
+	};
+
+	// the component
+	Crafty.c("SpriteColor", {
+
+		init : function() {
+			this.bind("Draw", sc_drawFunc).bind("RemoveComponent", function(c) {
+				if (c === "SpriteColor")
+					this.unbind("Draw", sc_drawFunc);
+			});
+		},
+
+		// red, green, blue, alpha (0-255)
+
+		spriteColor : function(red, green, blue, alpha) {
+			this.spriteColorRed = red;
+			this.spriteColorGreen = green;
+			this.spriteColorBlue = blue;
+			this.spriteColorAlpha = alpha;
+			this.trigger("Change");
+			return this;
+		}
+	});
+})();

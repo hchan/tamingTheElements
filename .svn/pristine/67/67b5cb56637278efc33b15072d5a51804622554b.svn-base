@@ -1,0 +1,367 @@
+ImageAsset = {
+	'12px-blue-arrow': {
+		url: 'assets/12px-blue-arrow.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-blue-comet': {
+		url: 'assets/12px-blue-comet.png',
+		coords : [0, 0, 27, 14],
+	},
+	'12px-blue-glow': {
+		url: 'assets/12px-blue-glow.png',
+		coords : [0, 0, 26, 26],
+	},
+	'12px-blue-round': {
+		url: 'assets/12px-blue-round.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-blue-seed': {
+		url: 'assets/12px-blue-seed.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-green-glow': {
+		url: 'assets/12px-green-glow.png',
+		coords : [0, 0, 26, 26],
+	},
+	'12px-green-round': {
+		url: 'assets/12px-green-round.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-green-seed': {
+		url: 'assets/12px-green-seed.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-long-black': {
+		url: 'assets/12px-long-black.png',
+		coords : [0, 0, 64, 16],
+	},
+	'12px-long-blue': {
+		url: 'assets/12px-long-blue.png',
+		coords : [0, 0, 64, 16],
+	},
+	'12px-long-green': {
+		url: 'assets/12px-long-green.png',
+		coords : [0, 0, 64, 16],
+	},
+	'12px-purple-arrow': {
+		url: 'assets/12px-purple-arrow.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-purple-comet': {
+		url: 'assets/12px-purple-comet.png',
+		coords : [0, 0, 50, 24],
+	},
+	'12px-purple-glow': {
+		url: 'assets/12px-purple-glow.png',
+		coords : [0, 0, 26, 26],
+	},
+	'12px-purple-round': {
+		url: 'assets/12px-purple-round.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-purple-seed': {
+		url: 'assets/12px-purple-seed.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-red-arrow': {
+		url: 'assets/12px-red-arrow.png',
+		coords : [0, 0, 24, 24],
+	},
+	'12px-red-comet': {
+		url: 'assets/12px-red-comet.png',
+		coords : [0, 0, 50, 24],
+	},
+	'12px-red-glow': {
+		url: 'assets/12px-red-glow.png',
+		coords : [0, 0, 26, 26],
+	},
+	'12px-yellow-glow': {
+		url: 'assets/12px-yellow-glow.png',
+		coords : [0, 0, 26, 26],
+	},
+	'16px-snowflake': {
+		url: 'assets/16px-snowflake.png',
+		coords : [0, 0, 32, 32],
+	},
+	'40px-electric-2': {
+		url: 'assets/40px-electric-2.png',
+		coords : [0, 0, 100, 100],
+	},
+	'40px-electric-3': {
+		url: 'assets/40px-electric-3.png',
+		coords : [0, 0, 100, 100],
+	},
+	'40px-electric': {
+		url: 'assets/40px-electric.png',
+		coords : [0, 0, 100, 100],
+	},
+	'8px-snowflake': {
+		url: 'assets/8px-snowflake.png',
+		coords : [0, 0, 16, 16],
+	},
+	'adrenaline': {
+		url: 'assets/adrenaline.png',
+		coords : [0, 0, 52, 53],
+	},
+	'circusOfSlime': {
+		url: 'assets/circusOfSlime.png',
+		coords : [0, 0, 800, 100],
+	},
+	'circusOfSlimeIcon': {
+		url: 'assets/circusOfSlimeIcon.png',
+		coords : [0, 0, 191, 187],
+	},
+	'crimsonFire': {
+		url: 'assets/crimsonFire.png',
+		coords : [0, 0, 250, 200],
+	},
+	'curomo': {
+		url: 'assets/curomo.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'death': {
+		url: 'assets/death.png',
+		coords : [0, 0, 714, 696],
+	},
+	'echo': {
+		url: 'assets/echo.png',
+		coords : [0, 0, 1200, 300],
+	},
+	'echoFade': {
+		url: 'assets/echoFade.png',
+		coords : [0, 0, 1200, 300],
+	},
+	'entanglingVines': {
+		url: 'assets/entanglingVines.png',
+		coords : [0, 0, 341, 260],
+	},
+	'entanglingVinesLong': {
+		url: 'assets/entanglingVinesLong.png',
+		coords : [0, 0, 800, 176],
+	},
+	'explosion-1': {
+		url: 'assets/explosion-1.png',
+		coords : [0, 0, 330, 330],
+	},
+	'explosion-2': {
+		url: 'assets/explosion-2.png',
+		coords : [0, 0, 330, 330],
+	},
+	'explosion-3': {
+		url: 'assets/explosion-3.png',
+		coords : [0, 0, 330, 330],
+	},
+	'explosion-blue-1': {
+		url: 'assets/explosion-blue-1.png',
+		coords : [0, 0, 330, 330],
+	},
+	'explosion-blue-2': {
+		url: 'assets/explosion-blue-2.png',
+		coords : [0, 0, 330, 330],
+	},
+	'explosion-blue-3': {
+		url: 'assets/explosion-blue-3.png',
+		coords : [0, 0, 330, 330],
+	},
+	'fade': {
+		url: 'assets/fade.png',
+		coords : [0, 0, 92, 94],
+	},
+	'favicon': {
+		url: 'assets/favicon.png',
+		coords : [0, 0, 358, 358],
+	},
+	'fiara': {
+		url: 'assets/fiara.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'fireball': {
+		url: 'assets/fireball.png',
+		coords : [0, 0, 400, 250],
+	},
+	'fireDance': {
+		url: 'assets/fireDance.png',
+		coords : [0, 0, 400, 400],
+	},
+	'fireHeal': {
+		url: 'assets/fireHeal.png',
+		coords : [0, 0, 405, 400],
+	},
+	'flame': {
+		url: 'assets/flame.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'handGrabbing': {
+		url: 'assets/handGrabbing.png',
+		coords : [0, 0, 982, 729],
+	},
+	'hunter': {
+		url: 'assets/hunter.png',
+		coords : [0, 0, 49, 72],
+	},
+	'hurricane': {
+		url: 'assets/hurricane.png',
+		coords : [0, 0, 400, 400],
+	},
+	'iceBlast': {
+		url: 'assets/iceBlast.png',
+		coords : [0, 0, 188, 114],
+	},
+	'iceBreath': {
+		url: 'assets/iceBreath.png',
+		coords : [0, 0, 300, 200],
+	},
+	'iceShard': {
+		url: 'assets/iceShard.png',
+		coords : [0, 0, 645, 90],
+	},
+	'iceSheet': {
+		url: 'assets/iceSheet.png',
+		coords : [0, 0, 165, 100],
+	},
+	'iceShock': {
+		url: 'assets/iceShock.png',
+		coords : [0, 0, 623, 246],
+	},
+	'icicleBullet': {
+		url: 'assets/icicleBullet.png',
+		coords : [0, 0, 345, 181],
+	},
+	'ishimi': {
+		url: 'assets/ishimi.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'lavax': {
+		url: 'assets/lavax.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'pria': {
+		url: 'assets/pria_frames4.png',
+		frames: [[0, 0],[400, 0],[800, 0],[1200, 0]],
+		coords : [0, 0, 400, 400],
+	},
+	'redDragon': {
+		url: 'assets/redDragon.png',
+		coords : [0, 0, 1200, 257],
+	},
+	'redFireBullet': {
+		url: 'assets/redFireBullet.png',
+		coords : [0, 0, 74, 26],
+	},
+	'rockArmour': {
+		url: 'assets/rockArmour.png',
+		coords : [0, 0, 476, 590],
+	},
+	'rockBullet': {
+		url: 'assets/rockBullet.png',
+		coords : [0, 0, 204, 163],
+	},
+	'rockElemental': {
+		url: 'assets/rockElemental.png',
+		coords : [0, 0, 1600, 408],
+	},
+	'rockElementalRed': {
+		url: 'assets/rockElementalRed.png',
+		coords : [0, 0, 1600, 408],
+	},
+	'rockExplosion': {
+		url: 'assets/rockExplosion.png',
+		coords : [0, 0, 639, 663],
+	},
+	'rockPellet': {
+		url: 'assets/rockPellet.png',
+		coords : [0, 0, 233, 54],
+	},
+	'rokcore': {
+		url: 'assets/rokcore.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'rokcoreEmboss': {
+		url: 'assets/rokcoreEmboss.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'rokcoreRockArmour': {
+		url: 'assets/rokcoreRockArmour.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'seed1': {
+		url: 'assets/seed1.png',
+		coords : [0, 0, 42, 20],
+	},
+	'shot1': {
+		url: 'assets/shot1.png',
+		coords : [0, 0, 20, 20],
+	},
+	'slimeBlast': {
+		url: 'assets/slimeBlast.png',
+		coords : [0, 0, 155, 88],
+	},
+	'sonarBlast': {
+		url: 'assets/sonarBlast.png',
+		coords : [0, 0, 664, 313],
+	},
+	'spark-blue': {
+		url: 'assets/spark-blue.png',
+		coords : [0, 0, 12, 12],
+	},
+	'spark-green': {
+		url: 'assets/spark-green.png',
+		coords : [0, 0, 12, 12],
+	},
+	'spark-red': {
+		url: 'assets/spark-red.png',
+		coords : [0, 0, 12, 12],
+	},
+	'spiralCone': {
+		url: 'assets/spiralCone.png',
+		coords : [0, 0, 587, 600],
+	},
+	'spriteBullet': {
+		url: 'assets/spriteBullet.png',
+		coords : [0, 0, 799, 391],
+	},
+	'spriteStorm': {
+		url: 'assets/spriteStorm.png',
+		coords : [0, 0, 1380, 960],
+	},
+	'spriteStorm2': {
+		url: 'assets/spriteStorm2.png',
+		coords : [0, 0, 350, 243],
+	},
+	'spriteStormBlue': {
+		url: 'assets/spriteStormBlue.png',
+		coords : [0, 0, 1380, 960],
+	},
+	'spriteStormRed': {
+		url: 'assets/spriteStormRed.png',
+		coords : [0, 0, 1380, 960],
+	},
+	'stranglingBranches': {
+		url: 'assets/stranglingBranches.png',
+		coords : [0, 0, 507, 280],
+	},
+	'tornado': {
+		url: 'assets/tornado.png',
+		coords : [0, 0, 1200, 300],
+	},
+	'treenoc': {
+		url: 'assets/treenoc.png',
+		coords : [0, 0, 1600, 400],
+	},
+	'victory': {
+		url: 'assets/victory.png',
+		coords : [0, 0, 1920, 1080],
+	},
+	'vineTrap': {
+		url: 'assets/vineTrap.png',
+		coords : [0, 0, 436, 500],
+	},
+	'waterSprite': {
+		url: 'assets/waterSprite.png',
+		coords : [0, 0, 1200, 294],
+	},
+	'wispera': {
+		url: 'assets/wispera.png',
+		coords : [0, 0, 1600, 400],
+	},
+}

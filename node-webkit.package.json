@@ -1,0 +1,14 @@
+{
+    "name": "TamingTheElements",
+    "main": "WEB-INF/private/index.html",
+    
+    "window": {
+  	"frame": false,
+	"toolbar" : false,
+	"kiosk": true,
+	"fullscreen" : true,
+	"width" : 9999,
+	"height" : 9999,
+	"icon" : "favicon.png"
+    } 
+}

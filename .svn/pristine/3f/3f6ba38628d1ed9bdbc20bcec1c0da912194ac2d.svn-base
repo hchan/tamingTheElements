@@ -1,0 +1,519 @@
+Garrison = {
+	MaxXP : {
+		chapter1 : 5,
+		chapter2 : 20,
+		chapter3 : 50,
+		chapter4 : 100
+	},
+
+	MAX_SIZE : 10,
+
+	getGarrison : function() {
+		var gameState = GamePersist.getGameState();
+		if (gameState == null) {
+			return null;
+		} else {
+			return gameState.garrison;
+		}
+	},
+
+	getGarrisonCharacter : function(id) {
+		var retval = null;
+		var garrison = this.getGarrison();
+		for (var i = 0; i < garrison.length; i++) {
+			var loopGarrisonCharacter = garrison[i];
+			if (loopGarrisonCharacter.id == id) {
+				retval = loopGarrisonCharacter;
+				break;
+			}
+		}
+		return retval;
+	},
+
+	updateGameParams : function() {
+		var params = {};
+		params.heroes = [];
+		params.opponents = [];
+	
+		
+		$(".selectedGarrisonRow").each(
+				function() {
+					
+					var id = $(this).attr("id");
+					var garrisonCharacter = Garrison.getGarrisonCharacter(id);
+					var battlegroundOrder = $(this).find(".battlegroundOrderContainer").html();
+					if (battlegroundOrder == null || battlegroundOrder == "") {
+						battlegroundOrder = 1;
+					}
+					
+					params.heroes[battlegroundOrder-1] = garrisonCharacter;
+					//params.heroes.push(garrisonCharacter);
+
+					var experience = garrisonCharacter.experience;
+					var randomCharacter = GameHelper
+							.getRandomCharacter(GameHelper.charactersArray);
+					var opponent = {
+						id : id + "opponent",
+						experience : experience,
+						characterName : randomCharacter.name
+					};
+					params.opponents.push(opponent);
+				});
+		
+		params.heroes = $.grep(params.heroes,function(n){ return(n); });
+		params.opponents = $.grep(params.opponents,function(n){ return(n); });
+		Game.params = params;
+	},
+
+	redirectToEnterBattle : function() {
+		$("#enterBattlegroundContainer").addClass("readyToEnterBattleground");
+		$("#enterBattlegroundContainer").click(function() {
+			Garrison.updateGameParams();
+			window.location.href = '#enterBattle';
+		});
+	},
+	
+	redirectToEnterPractice : function() {
+		$("#enterPracticeContainer").addClass("readyToEnterBattleground");
+		$("#enterPracticeContainer").click(function() {
+			Garrison.updateGameParams();
+			Game.params.opponents = [];
+			Game.params.practice = true;
+			var opponent = {
+				id : Game.dummyTarget,
+				experience : Game.params.heroes[0].experience,
+				characterName : Game.dummyTarget
+			};
+			Game.params.opponents.push(opponent);
+			window.location.href = '#enterBattle';
+		});
+	},
+
+	redirectToEnterPortal : function() {
+		$("#enterPortalContainer").addClass("readyToEnterPortal");
+		
+		$("#enterPortalContainer").mouseenter(function() {
+			ChaoticFire.main_init();
+		});
+		$("#enterPortalContainer").mouseleave(function() {
+			ChaoticFire.reset();
+		});
+		
+		$("#enterPortalContainer").click(function() {
+			Garrison.updateGameParams();
+			Garrison.updateGameParams();
+			Game.params.opponents = [];
+			var opponent = {
+				id : Game.lastBoss,
+				experience : Garrison.MaxXP.chapter4,
+				characterName : Game.lastBoss
+			};
+			Game.params.opponents.push(opponent);
+			window.location.href = '#enterBattle';
+		});
+	},
+
+	updateEnterBattlegroundButton : function() {
+		$("#enterBattlegroundContainer").unbind("click");
+		if (GamePersist.getGameState().chapter <= 2) {
+			if ($(".selectedGarrisonRow").size() == 0) {
+				$("#enterBattlegroundContainer").removeClass(
+						"readyToEnterBattleground");
+				$("#enterBattlegroundContainer").click(function() {
+					alert("No hero has been selected yet!");
+				});
+			} else {
+				this.redirectToEnterBattle();
+			}
+		} else if (GamePersist.getGameState().chapter > 2) {
+			if ($(".selectedGarrisonRow").size() < 3) {
+				$("#enterBattlegroundContainer").removeClass(
+						"readyToEnterBattleground");
+				$("#enterBattlegroundContainer").click(
+						function() {
+							alert("You must select 3 heroes.  Only "
+									+ $(".selectedGarrisonRow").size()
+									+ " has been selected so far");
+						});
+			} else {
+				this.redirectToEnterBattle();
+			}
+		}
+	},
+	
+	updateEnterPracticeButton : function() {
+		$("#enterPracticeContainer").unbind("click");
+	
+		if ($(".selectedGarrisonRow").size() == 0) {
+			$("#enterPracticeContainer").removeClass(
+					"readyToEnterBattleground");
+			$("#enterPracticeContainer").click(function() {
+				alert("No hero has been selected yet!");
+			});
+		} else {
+			this.redirectToEnterPractice();
+		}
+	
+	},
+
+	updateEnterPortalButton : function() {
+		$("#enterPortalContainer").unbind("click");
+		$("#enterPortalContainer").unbind("mouseenter");
+		$("#enterPortalContainer").unbind("mouseleave");
+		
+		
+		if (GamePersist.getGameState().chapter >= 4) {
+			$("#enterPortalContainer").show();
+		}
+		if ($(".selectedGarrisonRow").size() < 3) {
+			$("#enterPortalContainer").removeClass("readyToEnterPortal");
+			$("#enterPortalContainer").click(
+					function() {
+						alert("You must select 3 heroes.  Only "
+								+ $(".selectedGarrisonRow").size()
+								+ " has been selected so far");
+					});
+		} else {
+			this.redirectToEnterPortal();
+		}
+	},
+
+	getLevel : function(experience) {
+		// max XP == 100
+		var retval = null;
+		if (experience < Garrison.MaxXP.chapter1) {
+			retval = experience;
+		} else if (experience < Garrison.MaxXP.chapter2) {
+			retval = 5 + Math.floor((experience - 5) / 3);
+		} else if (experience < Garrison.MaxXP.chapter3) {
+			retval = 10 + Math.floor((experience - 20) / 6);
+		} else {
+			retval = 15 + Math.floor((experience - 50) / 10);
+		}
+		return retval;
+	},
+
+	addLevelBonus : function(garrisonCharacter, characterEntity) {
+		var gameState = GamePersist.getGameState();
+
+		if (garrisonCharacter.experience != null) {
+			var level = this.getLevel(garrisonCharacter.experience);
+			characterEntity.maxHealth = GameHelper.getHealth(characterEntity.maxHealth, level);	
+			// adjust for difficulty 
+			if (characterEntity.has("PlayerCharacter")) {
+				characterEntity.maxHealth *= 1/gameState.difficulty;
+			}
+			characterEntity.curHealth =  characterEntity.maxHealth;			
+			characterEntity.maxHealthWithRest = characterEntity.curHealth;
+			
+			characterEntity.damageMultiplier = GameHelper.getDamageMultiplier(level);
+			// adjust for difficulty 
+			if (characterEntity.has("PlayerCharacter")) {
+				characterEntity.damageMultiplier *= 1/gameState.difficulty;
+			}
+			characterEntity.healMultiplier = GameHelper.getHealMultiplier(level);
+			// adjust for difficulty 
+			if (characterEntity.has("PlayerCharacter")) {
+				characterEntity.healMultiplier *= 1/gameState.difficulty;
+			}
+			characterEntity.level = level;
+
+			if (gameState.chapter > 1) {
+				if (characterEntity.has("PlayerCharacter")) {
+					characterEntity.abilitiesInfo["Capture"] = {
+						curCount : 0,
+						lastUsed : 0
+					};
+				}
+			}
+
+		}
+	},
+
+	addGarrisonInfo : function(garrisonCharacter, characterEntity) {
+		this.addLevelBonus(garrisonCharacter, characterEntity);
+		characterEntity.id = garrisonCharacter.id;
+	},
+
+	addGarrisonCharacter : function(garrisonCharacter) {
+		var date = new Date();
+		var gameState = GamePersist.getGameState();
+		garrisonCharacter.id = GameHelper.createGUID();
+		garrisonCharacter.createdTime = date.getTime(),
+				garrisonCharacter.lastModifiedTime = date.getTime();
+		gameState.garrison.push(garrisonCharacter);
+		GamePersist.saveGameState(gameState);
+	},
+
+	addXP : function(garrisonCharacter) {
+		var retval = 0;
+		var gameState = GamePersist.getGameState();
+
+		//var level = this.getLevel(garrisonCharacter.experience);
+		if (gameState.chapter == 1) {
+			retval = 1;
+		} else if (gameState.chapter == 2) {
+			var randXP = Math.floor((Math.random() * 2));
+			retval = 1 + randXP;
+		} else if (gameState.chapter == 3) {
+			var randXP = Math.floor((Math.random() * 3));
+			retval = 1 + randXP;
+		} else if (gameState.chapter == 4) {
+			var randXP = Math.floor((Math.random() * 4));
+			retval = 1 + randXP;
+		}
+		if (garrisonCharacter.experience + retval > Garrison.MaxXP["chapter"
+				+ gameState.chapter]) {
+			retval = Garrison.MaxXP["chapter" + gameState.chapter]
+					- garrisonCharacter.experience;
+			garrisonCharacter.experience = Garrison.MaxXP["chapter"
+					+ gameState.chapter];
+		} else {
+			garrisonCharacter.experience += retval;
+		}
+		GamePersist.updateCharacter(garrisonCharacter);
+
+		return retval;
+	},
+
+	addChapter : function() {
+		var gameState = GamePersist.getGameState();
+		if (!GamePersist.isCompleteGame()) {
+			gameState.chapter++;
+		} else {
+			gameState.chapter = 5;
+		}
+		GamePersist.saveGameState(gameState);
+	},
+
+	getNumOfCharactersAtLevel : function(level) {
+		var retval = 0;
+		var garrison = Garrison.getGarrison();
+		var garrisonSize = garrison.length;
+		for (var i = 0; i < garrisonSize; i++) {
+			var garrisonCharacter = garrison[i];
+			var levelLoop = Garrison.getLevel(garrisonCharacter.experience);
+			if (level == levelLoop) {
+				retval++;
+			}
+		}
+		return retval;
+	},
+
+	getProgress : function() {
+		var retval = "";
+		var gameState = GamePersist.getGameState();
+		if (gameState.chapter == 1) {
+			var garrisonCharacter = Garrison.getGarrison()[0];
+			var level = Garrison.getLevel(garrisonCharacter.experience);
+			var levelsRequiredToMeetObjectives = 5 - level;
+			retval = "Current level of your elemental in your Garrison : "
+					+ level + "<br/>" + "You need to level this elemental "
+					+ levelsRequiredToMeetObjectives + " level(s) "
+					+ "to meet the objectives of this chapter";
+		} else if (gameState.chapter == 2) {
+			var garrison = Garrison.getGarrison();
+			var garrisonSize = garrison.length;
+			retval = "Garrison size: " + garrisonSize;
+			if (garrisonSize < 3) {
+				var needThisManyMoreCharacters = 3 - garrisonSize;
+				retval += " - you need to capture "
+						+ needThisManyMoreCharacters + " more characters<br/>";
+			} else {
+				retval += " - objective complete<br/>";
+			}
+			var levelRequirement = 10;
+			var levelCount = Garrison
+					.getNumOfCharactersAtLevel(levelRequirement);
+			retval += "Number of Level " + levelRequirement + " Characters: "
+					+ levelCount;
+			if (levelCount < 3) {
+				var needThisManyMoreCharacters = 3 - levelCount;
+				retval += " - you need to level " + needThisManyMoreCharacters
+						+ " more characters to Level " + levelRequirement
+						+ "<br/>";
+			} else {
+				retval += " - objective complete<br/>";
+			}
+		} else if (gameState.chapter == 3) {
+			var levelRequirement = 15;
+			var levelCount = Garrison
+					.getNumOfCharactersAtLevel(levelRequirement);
+			retval += "Number of Level " + levelRequirement + " Characters: "
+					+ levelCount;
+			if (levelCount < 3) {
+				var needThisManyMoreCharacters = 3 - levelCount;
+				retval += " - you need to level " + needThisManyMoreCharacters
+						+ " more characters to Level " + levelRequirement
+						+ "<br/>";
+			} else {
+				retval += " - objective complete<br/>";
+			}
+		} else if (gameState.chapter == 4 && !GamePersist.isCompleteGame()) {
+			retval = "The dark menace still awaits you on the other side of the portal ...";
+		}
+		return retval;
+	},
+
+	objectivesMet : function() {
+		var retval = false;
+		var gameState = GamePersist.getGameState();
+		if (gameState != null) {
+			var chapter = gameState.chapter;
+			if (chapter == 1) {
+				var garrisonCharacter = Garrison.getGarrison()[0];
+				var level = Garrison.getLevel(garrisonCharacter.experience);
+				if (level == 5) {
+					retval = true;
+				}
+			} else if (chapter == 2) {
+				var levelRequirement = 10;
+				var levelCount = Garrison
+						.getNumOfCharactersAtLevel(levelRequirement);
+				if (levelCount >= 3) {
+					retval = true;
+				}
+			} else if (chapter == 3) {
+				var levelRequirement = 15;
+				var levelCount = Garrison
+						.getNumOfCharactersAtLevel(levelRequirement);
+				if (levelCount >= 3) {
+					retval = true;
+				}
+			} else if (chapter == 4) {
+				retval = GamePersist.isCompleteGame();
+			}
+		}
+		return retval;
+	},
+
+	getNumberOfCapturedOpponents : function(opponents) {
+		var retval = 0;
+		for (var i = 0; i < opponents.length; i++) {
+			var opponent = opponents[i];
+			if (opponent.character.isCaptured) {
+				retval++;
+			}
+		}
+		return retval;
+	},
+
+	updateGarrisonCharacterDetails : function(garrisonRow) {
+		var characterName = $(garrisonRow).find(".characterImage").attr("alt");
+		var garrisonCharacter = Garrison.getGarrisonCharacter($(garrisonRow).attr("id"));
+		var level = Garrison.getLevel(garrisonCharacter.experience);	
+		
+		var scrollHeight = $("#garrisonTableScroll").css("height");
+		scrollHeight = scrollHeight.replace("px","");
+	
+		//scrollHeight *= 0.75;
+		
+		
+		$("#garrisonCharacterDetails").html("");
+		var jqueryDiv = $("<div/>");
+		var jqueryDescription = $("<div/>");
+		var jqueryDescriptionVWrap = $("<table/>");
+		var jqueryDivTopContainer = $("<table><tr></tr></table>");
+		var jqueryGarrisonCharacterMoreDetailsCell = $("<td id='garrisonCharacterMoreDetailsCell'></td>");
+		var jqueryGarrisonCharacterMoreDetailsDiv = $("<div id='garrisonCharacterMoreDetailsDiv'/>");
+		var jqueryGarrisonCharacterImgCell = $("<td id='garrisonCharacterImgCell'></td>" );
+		var jqueryGarrisonAbilitiesInfoCell = $("<td id='garrisonAbilitiesInfoCell'></td>");
+		var jqueryGarrisonAbilitiesInfoDiv = $("<div id='garrisonAbilitiesInfoDiv'/>");
+		jqueryGarrisonAbilitiesInfoDiv.css("height", scrollHeight * 0.5);
+		
+		jqueryDivTopContainer.find("tr").append(jqueryGarrisonCharacterMoreDetailsCell);
+		jqueryDivTopContainer.find("tr").append(jqueryGarrisonCharacterImgCell);
+		jqueryDivTopContainer.find("tr").append(jqueryGarrisonAbilitiesInfoCell);
+		
+		jqueryGarrisonCharacterMoreDetailsCell.append(jqueryGarrisonCharacterMoreDetailsDiv);
+		jqueryGarrisonAbilitiesInfoCell.append(jqueryGarrisonAbilitiesInfoDiv);
+		
+		jqueryDivTopContainer.css("height", scrollHeight * 3/4);
+		jqueryGarrisonAbilitiesInfoDiv.css("height", (scrollHeight * 3/4)- 6);
+		jqueryDivTopContainer.css("width", "100%");
+		jqueryGarrisonCharacterMoreDetailsDiv.append("<div class='garrisonCharacterMoreDetailsName'>" + characterName + "</div>");
+		jqueryGarrisonCharacterMoreDetailsDiv.height((scrollHeight * 3/4)- 6);
+		
+		
+		jqueryGarrisonCharacterMoreDetailsDiv.append("<div>Health: " + 
+				GameHelper.getHealth(GameHelper.characters[characterName].component.defaults.maxHealth, level) + 
+				"</div>");
+		jqueryGarrisonCharacterMoreDetailsDiv.append("<div>Speed: " + GameHelper.characters[characterName].component.defaults.characterSpeed + "</div>");
+		jqueryGarrisonCharacterMoreDetailsDiv.append("<div>Experience: " + garrisonCharacter.experience + "</div>");
+	//	jqueryGarrisonCharacterMoreDetailsDiv.append("<div>" + GameHelper.getElementalTypeDescription(GameHelper.characters[characterName].component.defaults.elementalType) + "</div>");
+		
+		jqueryGarrisonAbilitiesInfoDiv.append("<div id='garrisonCharacterAbilitiesHeading'>Abilities</div>");
+		
+		
+		for (var key in GameHelper.characters[characterName].component.defaults.abilitiesInfo) {
+			var abilityDiv = $("<div/>");
+			var abilityNameDiv = $("<div class='abilityName'>" + key + "</div>");			
+			var abilityImg = $("<img class='abilityImage'/>");
+			var imgUrl = "";
+			var imgW = 0;
+			var imgH = 0;
+			if (Global.imgAssets[GameHelper.abilities[key].component.defaults.spriteName] != null) {
+				imgUrl = Global.imgAssets[GameHelper.abilities[key].component.defaults.spriteName].url;
+				imgW = GameHelper.abilities[key].component.defaults.w;
+				imgH = GameHelper.abilities[key].component.defaults.h;
+			} else {
+				imgUrl = Global.imgMapAssets[GameHelper.abilities[key].component.defaults.spriteName].urlLarge;
+				imgW = Global.playerCharacter.width;				
+				imgH = Global.playerCharacter.height;
+			}			
+			
+			if (imgW > Global.playerCharacter.width * 2) {
+				var oldImgW = imgW;
+				imgW = Global.playerCharacter.width * 2;
+				imgH = imgH/oldImgW * Global.playerCharacter.width * 2;
+			}
+			
+		
+			abilityImg.attr("src", imgUrl);
+			abilityImg.attr("width", imgW);
+			abilityImg.attr("height", imgH);
+			
+			var abilityDescriptionDiv = $("<div class='abilityDescription'>" + GameHelper.abilities[key].component.getDescription(level) + "</div>");
+			
+			abilityDiv.append(abilityNameDiv);
+			abilityDiv.append(abilityImg);
+			abilityDiv.append(abilityDescriptionDiv);
+			jqueryGarrisonAbilitiesInfoDiv.append(abilityDiv);
+		}
+		
+		
+		jqueryGarrisonCharacterMoreDetailsCell.attr("width", "25%");
+		jqueryGarrisonCharacterImgCell.attr("width", "37.5%");
+		jqueryGarrisonAbilitiesInfoCell.attr("width", "37.5%");
+		
+		jqueryDescriptionVWrap.attr("width", "100%");
+		jqueryDescriptionVWrap.append("<tr><td></td></tr>");
+		jqueryDescriptionVWrap.find("td").css("vertical-align", "middle");
+		jqueryDescriptionVWrap.find("td").append(jqueryDescription);
+		jqueryDescriptionVWrap.css("height", scrollHeight/4);
+		jqueryDescription.addClass("garrisonCharacterDescription");
+		jqueryDescription.css("height", Global.playerCharacter.height);
+		
+		
+		
+		jqueryDescription.html(GameHelper.characters[characterName].component.defaults.description + 
+				"<br/>" +  
+				GameHelper.getElementalTypeDescription(GameHelper.characters[characterName].component.defaults.elementalType) );
+		
+		var jquerySmallImage = $(garrisonRow).find("img");
+		var jqueryImg = $("<img/>");
+		jqueryImg.addClass("characterImage");
+		jqueryImg.attr("width", scrollHeight * 3/4 -10);
+		jqueryImg.attr("height", scrollHeight * 3/4 - 10);
+		jqueryImg.attr("src", jquerySmallImage.attr("src"));
+		
+		jqueryGarrisonCharacterImgCell.append(jqueryImg);
+		
+		jqueryDiv.append(jqueryDivTopContainer);
+		
+		jqueryDiv.append(jqueryDescriptionVWrap);
+		$("#garrisonCharacterDetails").append(jqueryDiv);
+		
+	}
+
+};

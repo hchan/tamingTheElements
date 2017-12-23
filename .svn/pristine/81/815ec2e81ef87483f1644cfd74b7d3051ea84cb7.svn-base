@@ -1,0 +1,209 @@
+Crafty.c("topHUD",
+{
+	character : null,
+	levelTextEntity : null,
+
+	init : function() {
+		this.requires('2D, Tween, Canvas');
+		this.buffs = {};
+	},
+
+	topHUD : function(x_offset, y_offset, character) {
+		this.x_offset = x_offset;
+		this.y_offset = y_offset;
+		this.character = character;
+		
+		
+		var characterComponent = GameHelper.characters[character.characterName].component;
+		this.spriteEntity = GameHelper.createCharacterAvatarEntity(characterComponent, Game.hud_height, Game.hud_height);
+		this.spriteEntity.x = this.x_offset;
+		this.spriteEntity.y = this.y_offset;
+		
+		this.levelTextEntity = Crafty.e("2D, DOM, Text").attr(
+		{ 
+			x: Game.hud_height * 1.2 + this.x_offset, 
+			y: Game.hud_height/4 + this.y_offset,
+			w: Game.width() / 3
+		}).text(character.characterName + " Level: " + character.level).textColor('#000000', 1).css("textAlign", "left");
+		/*
+		
+		this.spriteEntity = Crafty.e(character.spriteName
+				+ ", Canvas");
+		this.spriteEntity.attr({
+			x : this.x_offset + Game.hud_height / 4,
+			y : this.y_offset + Game.hud_height / 4,
+			w : Game.hud_height / 2,
+			h : Game.hud_height / 2
+		});
+		*/
+		
+		this.bind("EnterFrame", function() {
+			if (this.character != null) {
+				this.refresh();
+			}
+		});
+	},
+
+	refresh : function() {
+		var ctx = Crafty.canvas.context;
+		
+		ctx.clearRect(this.x_offset + Game.hud_height, 
+				this.y_offset,
+				Game.width()/2-2 - Game.hud_height,
+				Game.hud_height);
+		//this.spriteEntity.draw();
+		
+		
+		// draw level
+		this.levelTextEntity.draw();
+		
+		
+		// icon circle
+		ctx.beginPath();
+		//ctx.strokeStyle = '#000000';
+		/*
+		 * x The x-coordinate of the center of the circle y The
+		 * y-coordinate of the center of the circle r The radius
+		 * of the circle Play it » sAngle The starting angle, in
+		 * radians (0 is at the 3 o'clock position of the arc's
+		 * circle) eAngle The ending angle, in radians Play it »
+		 * counterclockwise Optional. Specifies whether the
+		 * drawing should be counterclockwise or clockwise.
+		 * False is default, and indicates clockwise, while true
+		 * indicates counter-clockwise.
+		 */
+		//ctx.arc(Game.hud_height / 2 + this.x_offset,
+		//		Game.hud_height / 2 + this.y_offset,
+		//		Game.hud_height / 2 - 2, 0, 2 * Math.PI);
+		
+		
+		// ctx.lineWidth = 0.01;
+		ctx.lineWidth = 1;
+		ctx.stroke();
+		// console.log("drawing");
+
+		// health bar
+		// ctx.beginPath();
+		// ctx.strokeStyle = '#00ff00';
+		// ctx.arc(Game.hud_height*1.5+this.x_offset,
+		// 10+this.y_offset,
+		// Game.hud_height/5-2,
+		// Math.PI*3/2,
+		// Math.PI/2,
+		// true);
+		// ctx.stroke();
+		// max health
+		ctx.beginPath();
+		ctx.strokeStyle = '#aaaaaa';
+		ctx.lineWidth = 10;
+		var minHealthPixelX = Game.hud_height * 1.2
+				+ this.x_offset;
+		var maxHealthPixelX = Game.hud_height * 1.2
+				+ this.x_offset + Game.width() / 3;
+		ctx.moveTo(minHealthPixelX, 10 + this.y_offset);
+		ctx.lineTo(maxHealthPixelX, 10 + this.y_offset);
+		ctx.stroke();
+
+		// cur health
+		ctx.beginPath();
+		ctx.strokeStyle = '#00ff00';
+		ctx.lineWidth = 10;
+		ctx.moveTo(minHealthPixelX, 10 + this.y_offset);
+		var percentageHealth = 1
+				- (this.character.maxHealth - this.character.curHealth)
+				/ this.character.maxHealth;
+		if (percentageHealth <= 0) {
+			this.character.die();
+		} else {
+			ctx.lineTo((maxHealthPixelX - minHealthPixelX)
+					* percentageHealth + minHealthPixelX,
+					10 + this.y_offset);
+			ctx.stroke();
+		}
+
+		this.drawBuffBar(ctx, minHealthPixelX, maxHealthPixelX);
+	},
+
+	drawBuffBar : function(ctx, minHealthPixelX,
+			maxHealthPixelX) {
+		var padding = 5;
+		var buffSlotLength = 20;
+		// ctx.beginPath();
+		// ctx.strokeStyle = '#111';
+		// ctx.lineWidth = 1;
+		// ctx.moveTo(minHealthPixelX, Game.hud_height - padding
+		// -buffSlotLength);
+		// ctx.lineTo(maxHealthPixelX, Game.hud_height - padding
+		// - buffSlotLength);
+		// ctx.lineTo(maxHealthPixelX, Game.hud_height -
+		// padding);
+		// ctx.lineTo(minHealthPixelX, Game.hud_height -
+		// padding);
+		// ctx.closePath();
+		// ctx.fill();
+
+		this.updateBuffHash();
+//		ctx.clearRect(minHealthPixelX - 1, Game.hud_height
+//				- padding - buffSlotLength - 1, maxHealthPixelX
+//				- minHealthPixelX + 1, buffSlotLength + 2);
+		var index = 0;		
+		$.each(
+				this.buffs,
+				function(abilityName, abilityInfo) {
+					var date = new Date();
+					var curTime = date.getTime();
+					var spriteName = GameHelper.abilities[abilityName].component.defaults.spriteName;
+					var spriteEntity = Crafty
+							.e(spriteName + ", Canvas");
+					var slot = new Slot(abilityName,
+							spriteEntity);
+					var point0 = [
+							minHealthPixelX
+									+ (index * buffSlotLength),
+							Game.hud_height - padding
+									- buffSlotLength ];
+					HUDHelper.resizeEntityForSlot(slot,
+							index, buffSlotLength-2,
+							minHealthPixelX, point0[1]);
+		
+					ctx.beginPath();
+					ctx.strokeStyle = '#111';
+					ctx.lineWidth = 1;
+		
+					ctx.rect(point0[0], point0[1],
+							buffSlotLength,
+							buffSlotLength);
+					var percentFinishedCD = (curTime - abilityInfo.lastUsed)/GameHelper.abilities[abilityName].component.defaults.duration;
+					var fillStyleParam = null;
+					if (abilityInfo.type == "hostile") {
+						fillStyleParam = "#F11";
+					} else if (abilityInfo.type == "friendly") {
+						fillStyleParam = "#1F1";
+					}
+					HUDHelper.drawCooldown(ctx, percentFinishedCD, point0, buffSlotLength, fillStyleParam);
+					ctx.stroke();
+					index++;
+				});
+	},
+
+	updateBuffHash : function() {
+		var buffsClone = $.extend({}, this.buffs);
+		var buffsNew = {};
+		var date = new Date();
+		var curTime = date.getTime();
+		$.each(buffsClone, function(abilityName, abilityInfo) {
+			var lastUsed = abilityInfo.lastUsed;
+			var duration = abilityInfo.duration;
+			if ((curTime - lastUsed) < duration) {
+				buffsNew[abilityName] = abilityInfo;
+			}
+		});
+		this.buffs = buffsNew;
+	}
+});
+
+Crafty.c("HUDContainer", {
+	init : function() {
+		this.requires('Solid, Color');
+	}
+});

@@ -1,0 +1,14 @@
+* update description for abilities
+* update description for characters
+* xcf to png ... resize, frame info ... create separate dir called sprite (with 4 frames) vs single dir
+* circus of slime/ ice shards  ... its an autokill at point blank
+* capture will put a debuff.  Must kill opponent within that debuff time to capture
+* on chapter2 objectives, show the Capture icon as new ability gained
+* applyDamageOverride in abilities.js is questionable - use Components.Range.createHitCallback
+* create wiki page
+* limit garrison to X characters
+* if you try to capture the Eternal Void, he will laugh (Easter Egg)
+* take out grunt and use perl (also minify javascript)
+* add levels (EASY, NORMAL, HARD, WTF (Way Too Fun))
+* chaos Orb to rotate
+* Enter Battleground or Practice

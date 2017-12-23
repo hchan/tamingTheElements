@@ -1,0 +1,57 @@
+
+$assetDir = "../WebContent/assets";
+$assetDirHref = $assetDir;
+$assetDirHref =~ s#../WebContent/##g;
+$srcDir = "../WebContent/src";
+$imageAssetsFile = $srcDir . "/imageAssets.js";
+
+opendir DIR,$assetDir;
+my @dir = readdir(DIR);
+close DIR;
+
+
+open WH, ">$imageAssetsFile";
+print WH "ImageAsset = {\n";
+
+foreach(@dir){
+    $file = $_;
+    if ($file =~ /\.png$/) {
+	$spriteName = $file;
+	$spriteName =~ s#\.png$##;
+	$frameCount = 0;
+	if ($spriteName =~ /_frames(\d+)/) {
+	    $frameCount = $1;
+	    $spriteName =~ s#_frames(\d+)##;
+	}
+	$geometry = `identify -verbose $assetDir/$file 2>&1| grep Geometry`;
+	$geometry =~ /:\s(\d+)x(\d+)/;
+	$width = $1;
+	$height = $2;
+	print WH "\t'$spriteName': {\n";
+	print WH "\t\turl: '" . $assetDirHref . "/" . $file . "',\n";
+#[0, 0, 436, 500]
+	$coords = "";
+	if ($frameCount > 0) {
+	    $coords = "[0, 0, " . $width/$frameCount . ", $height]";
+#[[0, 0], [300, 0], [600, 0], [900, 0]];
+	    $frames = "[[0, 0],";
+	    $frameWidth = $width/$frameCount;
+	    for ($i = 1; $i < $frameCount; $i++) {
+		$frames .= "[" . ($i*$frameWidth) . ", 0]";
+		if ($i < $frameCount -1) {
+		    $frames .= ",";
+		}
+	    }
+	    $frames .= "]";
+	    print WH "\t\tframes: " . $frames. ",\n";
+	} else {
+	    $coords = "[0, 0, " . $width . ", $height]";
+	}
+	print WH "\t\tcoords : $coords,\n";
+	print WH "\t},\n";
+    }
+}
+
+print WH "}\n";
+close WH;
+

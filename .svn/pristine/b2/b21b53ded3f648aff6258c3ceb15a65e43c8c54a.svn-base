@@ -1,0 +1,703 @@
+var Main = {
+		hasInitOnce : false,
+		
+		initOnce : function() {
+			if (!this.hasInitOnce) {						
+				var main = Main;
+				$("#loading").hide();
+				Settings.updateBodyZoom();
+				Main.updateGarrionsLink();
+				Main.updateObjectivesLink();
+				$(".clickable").each(function () {
+					main.enableClickable(this);
+				});
+				
+				try {
+					Game.nodeWebKitGui = require('nw.gui'); 
+				} catch (e) {
+					$("li[name='exitMenu']").hide();
+				}
+				
+				$(".gameName").html("");
+				if (Game.inBeta) {
+					$(".gameName").append("<img src='img/beta.png'>");
+					$(".clickable[name='gameMasterMenu']").show();
+				}
+				$(".gameName").append(Game.gameName);
+				$("#gameVersion").append(Game.gameVersion);
+				$(".gameWorldName").html(Game.gameWorldName);
+				$(".garrisonMaxSize").html(Garrison.MAX_SIZE);
+				$(".numPlayableCharacters").html(GameHelper.getNumPlayableCharacters());
+				$(".capturableHealthPercentage").html(Game.capturableHealthPercentage * 100 + "%");
+				$(".contactLink").attr("href", "mailto:hchan@apache.org?Subject=" + Game.gameName);
+				
+				window.onhashchange = function() {
+					Main.begin();
+				};
+				
+				Main.hasInitOnce = true;			
+			}
+		},
+		
+		begin : function() {
+			$("body").css("background-color", "black");
+			GameHelper.loadAssets(function() {	
+				Main.beginAfterLoad();
+			});
+		},
+		
+		beginAfterLoad : function() {
+			this.initOnce();			
+			var main = this;
+			$(".menuPage").hide();
+			GameHelper.hideCrafty();
+			GameHelper.cleanup();
+			this.updateGarrionsLink();
+			this.updateSettingsLink();
+			this.updateObjectivesLink();
+			var hash = window.location.hash;
+			if (hash == '' || hash == null) {
+				this.main();
+			} 
+			/*
+			else if (window.location.hash == "#selectBattle") {
+				this.selectBattle();
+			} else if (window.location.hash == "#newGame") {
+				this.newGame();
+			} else if (window.location.hash == "#test") {
+				this.test();
+			} else if (window.location.hash == "#debug") {
+				this.debug();
+			}
+			*/
+			else if (hash.startsWith("#race_")) {
+				
+				var raceName = hash + "";
+				raceName = raceName.replace("#race_", "");
+				this.showRace(raceName);
+			} else {				
+				var funcName = hash.substring(1);
+				main[funcName]();
+			}
+		},
+		
+		
+		enableClickable : function(dom) {		
+			$(dom).removeClass("notClickableYet");
+			$(dom).addClass("clickable");
+			
+			var name = $(dom).attr("name");
+			$(dom).click(function() {
+				var funcName = name;
+				funcName = funcName.replace("Menu", "");
+				if ($(dom).hasClass("notImplementedYet")) {
+					alert("Not Implemented Yet");
+				} else {
+					$(".menuPage").hide();
+					//main[funcName]();
+					window.location.href="#" + funcName;
+				}
+			});
+		},
+		
+		disableClickable : function (dom) {
+			$(dom).removeClass("clickable");
+			$(dom).addClass("notClickableYet");
+		},
+		
+		gameMaster : function() {
+			$("#gameMaster").show();
+			$(".gameMasterButton").unbind();
+			
+			$("#gameMasterTextArea").height(window.innerHeight * 0.85);
+			GameMaster.updateTextArea();			
+			$(".gameMasterButton").click(function(event) {
+				var funcName = $(this).attr("id");
+				funcName = funcName.replace("Button", "");
+				GameMaster[funcName]();
+			});					
+		},
+		
+		updateGarrionsLink : function() {
+			var garrisonMenu = $("[name='garrisonMenu']");
+			$(garrisonMenu).unbind();
+			if (Garrison.getGarrison() != null) {
+				this.enableClickable(garrisonMenu);			
+			} else {				
+				this.disableClickable(garrisonMenu);
+			}
+		},
+		
+		updateSettingsLink : function() {
+			var settingsMenu = $("[name='settingsMenu']");
+			$(settingsMenu).unbind();
+			if (GamePersist.getGameState() != null) {
+				this.enableClickable(settingsMenu);			
+			} else {				
+				this.disableClickable(settingsMenu);
+			}
+		},
+		
+		updateObjectivesLink : function() {
+			var objectivesLink = $("[name='currentObjectivesMenu']");
+			$(objectivesLink).unbind();
+			if (GamePersist.getGameState() != null && GamePersist.getGameState().chapter != 0) {
+				this.enableClickable(objectivesLink);
+				if (Garrison.objectivesMet()) {
+					$("#newObjectives").show();
+				} else {
+					$("#newObjectives").hide();
+				}
+			} else {
+				this.disableClickable(objectivesLink);
+				$("#newObjectives").hide();
+			}
+		},
+		
+		
+		enterBattle : function() {
+			if (Game.params == null) {
+				window.location.href = '#';
+			} else {
+				window.location.href = '#loading';
+			}
+		},
+		
+		loading : function () {
+			$("#loading").show();
+			if (Game.params != null) {
+				GamePersist.updateParams(Game.params);
+				window.location.reload(true);
+			} else {
+			
+				//GameHelper.loadAssets(function() {					
+					window.location.href = '#battleground';
+				//});
+			}			
+		},
+		
+		battleground : function () {
+			var gameState = GamePersist.getGameState();
+			Game.params = gameState.params;
+			Game.start();
+		},
+	
+		
+		showRace : function(raceName) {
+			$("body").css("background-color", "black");
+			//GameHelper.loadAssets(function() {					
+				GameHelper.showCharacterDetails(raceName);
+			//});
+		},
+		
+		garrison : function() {
+			
+			GameHelper.hideCrafty();
+			$("body").css("background-color", "black");
+			$("#garrison").show();
+			$("#garrisonCharacterDetails").html("Click on a character on the left to view its profile");
+			var garrisonCharacterDetailsHeight = Game.height() -230;
+			$("#garrisonTableScroll").parent().css("height", garrisonCharacterDetailsHeight);//.css("width", Global.playerCharacter.height*3 +20 );
+			
+			$("#garrisonTableAndCharacterDetails").css("height", garrisonCharacterDetailsHeight);
+		
+			
+			//$("#garrisonCharacterDetails").css("width", $("#garrisonCharacterDetails").css("width"));
+			
+			$("#garrisonTableScroll").parent().css("width", Global.playerCharacter.height*3 +20 );
+			//$("#garrisonTable").css("width", Global.playerCharacter.height*3 + "px");
+			//$("#garrisonCharacterDetails").css("height", $("#garrisonTableScroll").css("height"));
+			//$("#garrisonCharacterDetails").css("width", Global.garrisonCharacterDetails.width);
+			$("garrisonCharacterDetails img").attr("width", $("#garrisonTableScroll").css("height"));
+			
+			var garrison = Garrison.getGarrison();
+			if (GamePersist.getGameState().chapter > 2) {
+				$("#selectHeroWording").html("Select three heroes from the table below to enter the Battleground.");
+			}
+			if (GamePersist.getGameState().chapter >= 4) {
+				$("#selectHeroWording").html("Select three heroes from the table below to enter the Battleground<br/>" +
+						"or three heroes to enter the Portal");
+				var scrollHeight = $("#garrisonTableScroll").css("height");
+				scrollHeight = scrollHeight.replace("px","");
+				$("#garrisonTableScroll").parent().css("height", scrollHeight - 12 );
+				//$("#garrisonTableScroll").parent().css("height", garrisonCharacterDetailsHeight-35);
+				
+			}
+			GameHelper.loadAssets(function() {	
+				$("#garrisonTable tbody").html("");
+				Garrison.updateEnterBattlegroundButton();
+				Garrison.updateEnterPracticeButton();
+				Garrison.updateEnterPortalButton();
+				for (var i = 0; i < garrison.length; i++) {
+					var garrisonCharacter = garrison[i];
+					var trObj = $("<tr/>");
+					trObj.attr("id", garrisonCharacter.id);
+					trObj.addClass("garrisonRow");
+					var tdInfoObj = $("<td class='garrisonInfoContainer'/>");
+					var divInfoObj = $("<div class='garrisonInfoDiv' style='height: " +  Game.characterDisplayHeight + "px'/>");
+					//divInfoObj.append("Race : <a href='#race_" + garrisonCharacter.characterName + " '>" + garrisonCharacter.characterName + "</a><br/>");
+					divInfoObj.append("Race : " + garrisonCharacter.characterName + "<br/>");
+					divInfoObj.append("Element : " + GameHelper.characters[garrisonCharacter.characterName].component.defaults.elementalType + "<br/>");
+					divInfoObj.append("Level : " + Garrison.getLevel(garrisonCharacter.experience) + "<br/>");
+					divInfoObj.append("<div class='battlegroundOrderContainer'></div>");
+
+					
+					tdInfoObj.append(divInfoObj);
+					trObj.append(tdInfoObj);
+					// avatar
+					trObj.append(GameHelper.getCharacterDisplay(garrisonCharacter.characterName));
+					
+				
+	
+					$("#garrisonTable tbody").append(trObj);
+				}
+				$("#garrisonTable tbody canvas.characterImage")
+				.each(
+						function(index) {
+							var canvas = this;
+							var context = canvas.getContext('2d');
+							var sprite = GameHelper.getSpriteByCharacterName($(canvas).text());							
+							var imageObj = new Image();
+							imageObj.src = sprite.url;//"http://www.eatthedamncake.com/wordpress/wp-content/uploads/2010/05/ice-cream.jpg";
+
+							imageObj.onload = function() {
+								context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+								//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+							};
+						});
+				$(".garrisonRow").click(function() {
+					var garrisonRow = this;
+					if (GamePersist.getGameState().chapter <= 2) {
+						$(this).find(".battlegroundOrderContainer").html("");
+						$(".garrisonRow").removeClass("selectedGarrisonRow");
+						if ($(this).hasClass("selectedGarrisonRow")) {							
+							$(this).removeClass("selectedGarrisonRow");
+							
+							//$(this).find(".battlegroundOrderContainer").hide();
+						} else {
+						
+							$(this).addClass("selectedGarrisonRow");
+							
+							//$(this).find(".battlegroundOrderContainer").show();
+						}					
+					} else if (GamePersist.getGameState().chapter > 2) {
+						var teamCount = $(".selectedGarrisonRow").size();
+						var unselectRowFunc = function(garrisonRow) {
+							$(garrisonRow).removeClass("selectedGarrisonRow");
+							$(garrisonRow).find(".battlegroundOrderContainer").html("");
+							$(garrisonRow).find(".battlegroundOrderContainer").hide();
+						};
+						if ($(this).hasClass("selectedGarrisonRow")) {							
+							unselectRowFunc(garrisonRow);
+						} else {
+							if (teamCount == 3) {
+								$(".selectedGarrisonRow").each(function () {
+									if ($(this).find(".battlegroundOrderContainer").html() == 3) {
+										unselectRowFunc($(this));
+									}
+								});
+							}
+							$(this).addClass("selectedGarrisonRow");							
+							$(this).find(".battlegroundOrderContainer").show();
+							var orderHash = {
+									1 : false,
+									2 : false,
+									3 : false
+							};
+							$(".battlegroundOrderContainer").each(function () {
+								if ($(this).html() != "") {
+									orderHash[$(this).html()] = true;
+								}
+							});
+							
+							for (var key in orderHash) {
+								if (orderHash[key] == false) {										
+									$(this).find(".battlegroundOrderContainer").html(key);
+									break;
+								}
+							}
+							
+						}					
+					}
+					Garrison.updateEnterBattlegroundButton();
+					Garrison.updateEnterPracticeButton();
+					Garrison.updateEnterPortalButton();
+					Garrison.updateGarrisonCharacterDetails(garrisonRow);
+				});
+			});
+		},
+		
+		settings : function() {
+			$("body").css("background-color", "black");
+			$("#settings").show();			
+			Settings.createRadioButtons("difficultyRadioContainer", Settings.difficultyEnum());
+			Settings.createRadioButtons("garrisonSortOrderRadioContainer", Settings.garrisonSortOrderEnum());
+			Settings.createRadioButtons("displaySettingsRadioContainer", Settings.displaySettingsEnum());			
+			
+			$("#saveSettings").unbind();
+			$("#saveSettings").click(function(event) {
+				Settings.save();
+				alert("Saved");
+				window.location.reload(false);
+			});					
+		},
+			
+		debug : function () {
+			console.log(Garrison.getGarrison());
+		},
+		
+		main : function() {
+			this.mainMenu();
+		},
+		
+		
+		testOld : function() {
+			
+			var params = {};
+			params.heroes = [];
+			params.opponents = [];
+			//heroName = "Wispera";
+			//heroName = "Pax";
+			//heroName = "Cyclonius";
+			//heroName = "Sindarosa";
+			//heroName = "Morblass";
+			//heroName = "Fiara";
+			//heroName = "Curomo";
+			heroName = "Rokcore";
+			//heroName = "Echo";
+			//heroName = "Lavax";
+			//heroName = "Ishimi";
+			//heroName = "Treenoc";
+			
+			
+			opponentName = "Dummy";
+			//opponentName = "Pax";
+			//opponentName = "Cyclonius";
+			//opponentName = "Sindarosa";
+			//opponentName = "Morblass";
+			//opponentName = "Wispera";
+			//opponentName = "Fiara";
+			//opponentName = "Curomo";
+			//opponentName = "Rokcore";
+			//opponentName = "Echo";
+			//opponentName = "Lavax";
+			//opponentName = "Ishimi";
+			//opponentName = "Treenoc";
+			//Crafty.audio.mute();
+			
+			params.heroes[0] = { 
+				characterName : heroName
+			};
+			params.opponents[0] = {
+				characterName : opponentName
+			};
+			params.opponents[1] = {
+					characterName : opponentName
+				};
+			Game.start(params);
+		},
+		
+		test : function() {
+			var gameState = GamePersist.getGameState();			
+			var params = {};
+			params.heroes = [];
+			for (var i = 0; i < 3; i++) {
+				params.heroes.push(gameState.garrison[i]);
+			}
+			params.opponents = [];
+			var opponent = {
+					//id : Game.lastBoss,
+					id : Game.dummyTarget,
+					experience : Garrison.MaxXP.chapter4,
+					//characterName : Game.lastBoss
+					characterName : Game.dummyTarget
+			};
+			params.opponents.push(opponent);
+//			for (var i = 0; i < params.heroes.length; i++) {
+//				var hero = params.heroes[i];
+//				var id  = hero.id;
+//				var experience = hero.experience;
+//				var randomCharacter = GameHelper.getRandomCharacter(GameHelper.charactersArray);
+//				var opponent = {
+//						id : id + "opponent",
+//						experience : experience,
+//						characterName :randomCharacter.name
+//				};
+//				params.opponents.push(opponent);
+//			}
+			
+			GameHelper.loadAssets(function() {				
+				Game.start(params);
+			});
+		},
+		
+		mainMenu : function() {
+			window.location.hash = '';
+			$("#mainMenu").show();
+			$("#mainMenuTable").css("height", Game.height());
+//			$("body").css("background", "url('img/pria.png')");
+			$("body").css("background-color", "black");
+//			$("body").css("background-repeat", "no-repeat");
+//			$("body").css("background-position", "top");
+//			$("body").css("background-size", "400px 400px");
+//			$("body").css("background-opacity", "0.5");
+//			$("body").css("background-filter", "alpha(opacity=50)");
+			this.resizeElementalCorners();
+			
+			$("#menu").show();
+		},
+		
+		resizeElementalCorners : function() {			
+			$("#waterCorner").width(Global.playerCharacter.height);
+			$("#waterCorner").height(Global.playerCharacter.height);
+			$("#fireCorner").width(Global.playerCharacter.height);
+			$("#fireCorner").height(Global.playerCharacter.height);
+			$("#earthCorner").width(Global.playerCharacter.height);
+			$("#earthCorner").height(Global.playerCharacter.height);
+			$("#airCorner").width(Global.playerCharacter.height);
+			$("#airCorner").height(Global.playerCharacter.height);
+			$("#resizeCornerBottomMiddledTd").height(Global.playerCharacter.height);
+			
+		
+			var resizeAirCornerFunc = function() {
+				$("#airCorner").width($("#airCorner").width()+1);
+				$("#airCorner").height(Global.playerCharacter.height);
+				if ($("#airCorner").width() < $("#mainMenu").width() - Global.playerCharacter.height) {
+					window.setTimeout(function () {resizeAirCornerFunc();}, 10);
+				}
+			};
+			resizeAirCornerFunc();
+			
+			var resizeFireCornerFunc = function() {
+				$("#fireCorner").height($("#fireCorner").height()+1);
+				$("#fireCorner").width(Global.playerCharacter.height);
+				if ($("#fireCorner").height() < $("#mainMenu").height() - Global.playerCharacter.height) {
+					window.setTimeout(function () {resizeFireCornerFunc();}, 10);
+				}
+			};
+			resizeFireCornerFunc();
+			
+			var resizeEarthCornerFunc = function() {
+				$("#earthCorner").height($("#earthCorner").height()+1);
+				$("#earthCorner").width(Global.playerCharacter.height);
+				if ($("#earthCorner").height() < $("#mainMenu").height() - Global.playerCharacter.height) {
+					window.setTimeout(function () {resizeEarthCornerFunc();}, 10);
+				}
+			};
+			resizeEarthCornerFunc();
+			
+			var resizeWaterCornerFunc = function() {
+				$("#waterCorner").width($("#waterCorner").width()+1);
+				$("#waterCorner").height(Global.playerCharacter.height);
+				if ($("#waterCorner").width() < $("#mainMenu").width() - Global.playerCharacter.height) {
+					window.setTimeout(function () {resizeWaterCornerFunc();}, 10);
+				}
+			};
+			resizeWaterCornerFunc();
+		},
+		
+		newGame : function() {
+			$("body").css("background-color", "black");
+			GameHelper.loadAssets(function() {
+			
+				assetsLoaded = true;
+				Crafty.init(Game.width(), Game.height());
+				Crafty.background("#000000");
+				Crafty.scene("Homeworld: Pria");	
+				//Crafty.scene("The Disturbance");
+				//Crafty.scene("Call of the Tamer");
+				//Crafty.scene("Restoring Balance");
+				//Main.showObjectives();
+			});
+			
+		},
+		
+		currentObjectives : function() {			
+			var chapter = null;		
+			if (Garrison.objectivesMet()) {
+				Garrison.addChapter();
+			}
+			var gameState = GamePersist.getGameState();
+			var chapterDomId = "";
+			chapter = gameState.chapter;			
+			chapterDomId = "chapter" + chapter;			
+			GameHelper.cleanup();
+			GameHelper.hideCrafty();
+			$("body").css("background-color", "black");
+			$("#"+chapterDomId).show();		
+			$("#"+chapterDomId + " .chapterHeading").html("");
+			var chapterHeadingText = $("#"+chapterDomId + " .hiddenChapterHeading").html();
+			this.animateText(chapterHeadingText, "#"+chapterDomId + " .chapterHeading");
+		
+			
+			var str = Garrison.getProgress();				
+			$(".progressBody").html(str);			
+		},
+		
+		animateText : function (text, selector) {
+			var appendTextFunc = function (appendText, selector) {
+				var curText = $(selector).html();
+				$(selector).html(curText + appendText);
+			};
+			
+			var limit = text.length;
+			var timeoutFunc = function(index) {
+				if (index < limit) {
+					appendTextFunc(text[index], selector);
+					window.setTimeout(function () {timeoutFunc(index+1);}, 100);
+				}
+			};
+			timeoutFunc(0);
+		},
+		
+//		
+//		selectBattle : function() {
+//			GameHelper.hideCrafty();
+//			$("body").css("background-color", "black");
+//			$("#selectBattle").show();
+//			//$("#Start").attr("disabled", "true");
+//			//$("#startContainer").mouseenter(function() {console.log("HI")});
+//			$("#startContainer").unbind();
+//			$("#startContainer").click(function(event) {
+//					if ($("input[type='radio'].hero:checked").val() != null &&
+//						$("input[type='radio'].opponent:checked").val() != null) {
+//						$("#selectBattle").hide();
+//						GameHelper.showCrafty();
+//						var params = {};
+//						params.heroes = [];
+//						params.opponents = [];
+//						var heroName = $("input[type='radio'].hero:checked").val();
+//						var opponentName = $("input[type='radio'].opponent:checked").val();
+//						params.heroes[0] = { 
+//							characterName : heroName
+//						};
+//						params.opponents[0] = {
+//							characterName : opponentName
+//						};
+//						Game.start(params);
+//					} else {
+//						GameHelper.info("Either the Hero or Opponent (or both) have not been selected");
+//					}						
+//			});
+//			GameHelper.loadAssets(function() {	
+//			
+//				$(".characterRow").remove();
+//				for ( var characterName in GameHelper.characters) {
+//					if (GameHelper.characters[characterName].defaults.npc == null ) {
+//						continue;
+//					}
+//					var characterDisplay = GameHelper
+//							.getCharacterDisplay(characterName);
+//					var heroDisplay = characterDisplay.clone();
+//					heroDisplay.addClass("hero");
+//					heroDisplay.prepend(characterName);
+//					heroDisplay.prepend($('<input/>').attr('type', 'radio').attr(
+//							'name', 'hero').attr('value', characterName).addClass("hero"));
+//					var opponentDisplay = characterDisplay.clone();
+//					opponentDisplay.addClass("opponent");
+//					opponentDisplay.prepend(characterName);
+//					opponentDisplay.prepend($('<input/>').attr('type', 'radio').attr(
+//							'name', 'opponent').attr('value', characterName).addClass("opponent"));
+//					var trObj = $("<tr/>");
+//					trObj.addClass("characterRow");
+//					$("#characters").find('tbody').append(trObj);
+//					trObj.append(heroDisplay);
+//					trObj.append(opponentDisplay);
+//				}
+//				$("#characters")
+//						.find('canvas.characterImage')
+//						.each(
+//								function(index) {
+//									var canvas = this;
+//									var context = canvas.getContext('2d');
+//									var sprite = GameHelper.getSpriteByCharacterName($(canvas).text());							
+//									var imageObj = new Image();
+//									imageObj.src = sprite.url;//"http://www.eatthedamncake.com/wordpress/wp-content/uploads/2010/05/ice-cream.jpg";
+//	
+//									imageObj.onload = function() {
+//										context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+//										//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+//									};
+//								});
+//				var enableStartButton = function() {
+//					if ($("input[type='radio'].hero:checked").val() != null &&
+//							$("input[type='radio'].opponent:checked").val() != null) {
+//								$("#startContainer").css("background", "green");
+//								$("#startContainer").css("color", "white");
+//					}
+//				};
+//				$("#characters td.hero").click(function(event) {
+//					$("#characters td.hero").css("background", "black");
+//					$("#characters td.hero input[type='radio']").prop("checked", false);
+//					$(this).css("background", "#611");
+//					$(this).find("input[type='radio']").prop("checked", true);
+//					enableStartButton();
+//				});
+//				$("#characters td.opponent").click(function(event) {
+//					$("#characters td.opponent").css("background", "black");
+//					$("#characters td.opponent input[type='radio']").prop("checked", false);
+//					$(this).css("background", "#116");
+//					$(this).find("input[type='radio']").prop("checked", true);
+//					enableStartButton();
+//				});
+//				$("#characters td").dblclick(function(event) {
+//					var characterName = $(this).find("input").val();
+//					GameHelper.showCharacterDetails(characterName, "#selectBattle");
+//				});
+//			});		
+//			assetsLoaded = true;
+//		},
+//		
+		about : function() {
+			$("#about").show();
+		},
+		
+		storyMode : function() {
+			$("#storyMode").show();
+		},
+			
+		wiki : function() {
+			$("#wiki").show();
+		},
+		
+		keyBindings : function() {
+			$("#keyBindings").show();
+			
+			$("#keyBindingTable").html("");
+			
+			jQuery.each(Input.types, function (name, value) {
+				if (name == "I Win") {
+					return;
+				}
+				if (name == "Freeze") {
+					return;
+				}
+				if (name == "CaptureWin") {
+					return;
+				}
+				var tr = $("<tr/>");
+				var keys = "";
+				for (var i = 0; i < value.length; i++) {
+					keys += value[i];
+					if (i < value.length-1) {
+						keys += " or ";
+					}
+				}
+				tr.append("<td>" + name + "</td><td>" + keys + "</td>");
+			    $('#keyBindingTable').append(tr);
+			});
+					
+		},
+		
+		exit : function() {
+			var gui = Game.nodeWebKitGui;
+			var win = gui.Window.get();
+			win.close();
+		},
+	
+		victory : function() {	
+			Crafty.init(Game.width(), Game.height());
+			Crafty.scene("Victory");	
+		}
+		
+};

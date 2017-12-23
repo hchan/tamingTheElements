@@ -1,0 +1,26 @@
+.info {
+	font-weight: bold;	
+	font-size: 14px;
+}
+
+.water {
+	background: blue;
+}
+
+.fire {
+	background: red;
+}
+
+.earth {
+	background: green;
+}
+
+.air {
+	background: #aaE3F6;
+}
+
+.centerMe {
+	margin-left : auto;
+	margin-right : auto;
+	width: 200px;
+}

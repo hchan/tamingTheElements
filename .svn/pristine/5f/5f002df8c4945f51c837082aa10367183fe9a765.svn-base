@@ -1,0 +1,26 @@
+$assetDir = "../WebContent/snd";
+$srcDir = "../WebContent/src";
+$assetsFile = $srcDir . "/sndAssets.js";
+$date = `date`;
+
+opendir DIR,$assetDir;
+my @dir = readdir(DIR);
+close DIR;
+
+
+open WH, ">$assetsFile";
+print WH "// Sound Assests Generated on : $date\n";
+print WH "Global.sndAssets = [\n";
+
+
+foreach(@dir){
+    $file = $_;
+    if ($file =~ /\.ogg$/) {
+	print WH "\t'snd/$file',\n";
+    }
+}
+
+
+print WH "];\n";
+close WH;
+

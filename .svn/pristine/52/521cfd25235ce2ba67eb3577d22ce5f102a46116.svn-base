@@ -1,0 +1,15 @@
+var Global = {};
+Global.sound = true;
+Global.defaultSpeed = 5;
+Global.defaultBulletSpeed = 6;
+Global.defaultMaxHealth = 100;
+Global.delayBetweenAttack = 500; // milliseconds
+Global.playerCharacter = {};
+Global.playerCharacter.height = 80;
+Global.playerCharacter.width = 80;
+
+Global.playSound = function(soundId) {
+	Crafty.audio.play(soundId);
+};
+
+Global.Alert = null;//Crafty.e("Alert"); - lazy init

@@ -1,0 +1,160 @@
+GameHelper.createCharacterComponent('Cyclonius', '', {
+	elementalType: 'air',
+	alignment: 'evil',
+	characterSpeed : Global.defaultSpeed,
+	primaryAbility : "Wind Cone",
+	spriteName : "spr_StormBlue",
+	init : function() {
+		this.characterInit();
+	},	
+	getFrames : function() {
+		return [[17, 17], [17, 176], [17, 343], [17, 501]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Wind Cone");
+	},
+	
+});
+
+Crafty.c('CycloniusWithAI', {
+	init : function() {
+		this.requires('Cyclonius');
+	}
+});
+
+Crafty.c('CycloniusNoAI', {
+	init : function() {		
+		this.requires('Cyclonius');		
+	},	
+});
+
+
+GameHelper.createCharacterComponent('Sindarosa', '', {
+	elementalType: 'fire',
+	alignment: 'evil',
+	characterSpeed : Global.defaultSpeed,
+	primaryAbility : "Fire Blast",
+	spriteName : "redDragon",
+	init : function() {
+		this.characterInit();
+	},	
+	getFrames : function() {
+		return [[0, 0], [280, 0], [590, 0], [890, 0]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Fire Blast");;
+	},
+	
+});
+
+Crafty.c('SindarosaWithAI', {
+	init : function() {
+		this.requires('Sindarosa');
+	}
+});
+
+Crafty.c('SindarosaNoAI', {
+	init : function() {		
+		this.requires('Sindarosa');		
+	},	
+});
+
+
+GameHelper.createCharacterComponent('Morblass', '', {
+	elementalType: 'water',
+	alignment: 'good',
+	characterSpeed : Global.defaultSpeed,
+	primaryAbility : "Icicles",
+	spriteName : "waterSprite",
+	init : function() {
+		this.characterInit();
+		this.maxActiveBullets = 5;
+		this.delayBetweenAttack = 200;
+	},	
+	getFrames : function() {
+		return [[0, 0], [292, 0], [590, 0], [910, 0]];
+	},
+		
+	createBulletEntity : function() {
+		return Crafty.e("Icicles");;
+	},
+	
+});
+
+Crafty.c('MorblassWithAI', {
+	init : function() {
+		this.requires('Morblass');
+	}
+});
+
+Crafty.c('MorblassNoAI', {
+	init : function() {		
+		this.requires('Morblass');		
+	},	
+});
+
+GameHelper.createCharacterComponent('Pax', '', {
+	elementalType: 'earth',
+	alignment: 'good',
+	characterSpeed : Global.defaultSpeed-2,
+	primaryAbility : 'Ground Shock',
+	spriteName : "rockElemental",
+	delayBetweenAttack : 3000,
+	
+	init : function() {
+		this.requires("MeleeCharacter");
+		this.characterInit();
+		
+		
+	},	
+	getFrames : function() {
+		return [[0, 0], [405, 0], [820, 0], [1205, 0]];
+	},
+		
+	createMeleeEntity : function() {
+		var retval = Crafty.e("Ground Shock");
+		retval.initAgainstCharacterType(this.targetPlayerType, this);	
+		return retval;
+	},
+	
+	canFire : function() {
+		return false;
+	}
+	
+});
+
+Crafty.c('PaxWithAI', {
+	init : function() {
+		this.requires('Pax');
+	},
+	doPrimaryAttackIfNecessary : function() {
+		this.doMeleeIfNecessary();
+	},
+	doMovement : function() {
+		this.doMeleeMovement();
+	}
+});
+
+Crafty.c('PaxNoAI', {
+	init : function() {		
+		this.requires('Pax');	
+		var character = this;
+		this.bind('KeyDown', function(e) {
+			if (e.keyCode === Crafty.keys.SPACE) {
+				// create a bullet entity via space
+				if (!character.canMelee()) {
+					return;
+				} else {
+					character.curMeleeCount++;
+					var date = new Date();
+					var curTime = date.getTime();
+					character.lastMeleeTime = curTime;
+				}				
+				this.createMelee();							
+			}
+		});
+	},		
+});
+

@@ -1,0 +1,7 @@
+* update description for abilities
+* update description for characters
+* xcf to png ... resize, frame info
+* circus of slime/ ice shards  ... its an autokill at point blank
+* capture will put a debuff.  Must kill opponent within that debuff time to capture
+* on chapter2 objectives, show the Capture icon as new ability gained
+* applyDamageOverride in abilities.js is questionable - use Components.Range.createHitCallback

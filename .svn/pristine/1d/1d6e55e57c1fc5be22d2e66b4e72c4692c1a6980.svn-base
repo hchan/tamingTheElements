@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Taming the Elements</title>
+<link rel="stylesheet" type="text/css" href="css/main.css">
+<script src="bower_components/jquery/dist/jquery.js"></script>
+<script src="lib/crafty.js"></script>
+<script src="src/helper.js"></script>
+<script src="src/global.js"></script>
+<script src="src/assets.js"></script>
+<script src="src/game.js"></script>
+<script src="src/components.js"></script>
+<script src="src/baseCharacter.js"></script>
+<script src="src/characters.js"></script>
+<script src="src/abilities.js"></script>
+<script src="src/scenes.js"></script>
+
+
+<body><div id="selectBattle" style="display: none;">
+	<div
+		style="color: white; width: 100%; text-align: center; font-size: 24px; font-family: cursive; font-style: italic; font-weight: 900">Select
+		Your Battle</div>
+	<div
+		style="color: white; width: 100%; text-align: center; font-size: 12px; font-family: cursive; font-style: italic; font-weight: 200">
+		Select your Hero, an Opponent and then click Start<br/>
+		Double-click a Hero to show his/her details
+		</div>
+
+	<div style="height: 50px"></div>
+	<table width="100%" border="0">
+		<tbody>
+			<tr>
+				<td width="12%">&nbsp;</td>
+				<td width="75%">
+					<table id="characters" border="1" style="color: white;"
+						width="100%">
+						<tbody>
+							<tr>
+								<th width="50%">Hero</th>
+								<th width="50%">Opponent</th>
+							</tr>
+						</tbody>
+					</table>
+				<td width="13%">&nbsp;</td>
+			</tr>
+		</tbody>
+	</table>
+	
+	<div id="startContainer"  style="margin-left:auto;margin-right:auto;font-size: 40px; color: grey; 
+	align: center; text-align: center; border: 2px solid; border-radius:25px; width: 100px; cursor: pointer;" >
+	Start
+<!-- 	<input type="button" style="margin-left:auto;margin-right:auto;display:block; font-size: 24px" value="Start" id="Start" disabled="true"/> -->
+	</div>
+	
+</div>
+<span id="characterDetails" style="display: none;"/>
+
+
+
+
+
+</body>
+<script>
+	if (window.location.hash == "#selectBattle") {
+		$("body").css("background-color", "black");
+		$("#selectBattle").show();
+		//$("#Start").attr("disabled", "true");
+		//$("#startContainer").mouseenter(function() {console.log("HI")});
+		$("#startContainer").click(function(event) {
+				if ($("input[type='radio'].hero:checked").val() != null &&
+					$("input[type='radio'].opponent:checked").val() != null) {
+					$("#selectBattle").hide();
+					GameHelper.showCrafty();
+					var params = {}
+					params['hero'] = $("input[type='radio'].hero:checked").val();
+					params['opponent'] = $("input[type='radio'].opponent:checked").val();
+					Game.start(params);
+				} else {
+					GameHelper.info("Either the Hero or Opponent (or both) have not been selected");
+				}						
+		});
+		GameHelper.loadAssets();
+		for ( var characterName in GameHelper.characters) {
+			var characterDisplay = GameHelper
+					.getCharacterDisplay(characterName);
+			var heroDisplay = characterDisplay.clone();
+			heroDisplay.addClass("hero");
+			heroDisplay.prepend(characterName);
+			heroDisplay.prepend($('<input/>').attr('type', 'radio').attr(
+					'name', 'hero').attr('value', characterName).addClass("hero"));
+			var opponentDisplay = characterDisplay.clone();
+			opponentDisplay.addClass("opponent");
+			opponentDisplay.prepend(characterName)
+			opponentDisplay.prepend($('<input/>').attr('type', 'radio').attr(
+					'name', 'opponent').attr('value', characterName).addClass("opponent"));
+			var trObj = $("<tr/>");
+			$("#characters").find('tbody').append(trObj);
+			trObj.append(heroDisplay);
+			trObj.append(opponentDisplay);
+		}
+		$("#characters")
+				.find('canvas.characterImage')
+				.each(
+						function(index) {
+							var canvas = this;
+							var context = canvas.getContext('2d');
+							var sprite = GameHelper.getSpriteByCharacterName($(canvas).text());							
+							var imageObj = new Image();
+							imageObj.src = sprite.url;//"http://www.eatthedamncake.com/wordpress/wp-content/uploads/2010/05/ice-cream.jpg";
+
+							imageObj.onload = function() {
+								context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+								//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+							}
+
+						});
+		var enableStartButton = function() {
+			if ($("input[type='radio'].hero:checked").val() != null &&
+					$("input[type='radio'].opponent:checked").val() != null) {
+						$("#startContainer").css("background", "green");
+						$("#startContainer").css("color", "white");
+			}
+		}
+		$("#characters td.hero").click(function(event) {
+			$("#characters td.hero").css("background", "black");
+			$("#characters td.hero input[type='radio']").prop("checked", false);
+			$(this).css("background", "#611");
+			$(this).find("input[type='radio']").prop("checked", true);
+			enableStartButton();
+		});
+		$("#characters td.opponent").click(function(event) {
+			$("#characters td.opponent").css("background", "black");
+			$("#characters td.opponent input[type='radio']").prop("checked", false);
+			$(this).css("background", "#116");
+			$(this).find("input[type='radio']").prop("checked", true);
+			enableStartButton();
+		});
+		$("#characters td").dblclick(function(event) {
+			var characterName = $(this).find("input").val();
+			GameHelper.showCharacterDetails(characterName, "#selectBattle");
+		});
+		//$("#characters input[type='radio']").click(function(event) {			
+		//});
+	} else {
+		window.addEventListener('load', Game.start(null));
+	}
+</script>
+</head>
+</html>

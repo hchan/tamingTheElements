@@ -1,0 +1,81 @@
+require "imgHelper.pl";
+
+$assetDir = "../imgWorkarea/map";
+$assetDirHref = "img/map";
+$srcDir = "../WebContent/src";
+$imgAssetsFile = $srcDir . "/imgMapAssets.js";
+
+`rm $srcDir/../$assetDirHref/*`;
+opendir DIR,$assetDir;
+my @dir = readdir(DIR);
+close DIR;
+
+
+open WH, ">$imgAssetsFile";
+print WH "// Img Map Assets Generated on : $date\n";
+print WH "Global.imgMapAssets = {\n";
+
+foreach(@dir){
+    $file = $_;
+    if ($file =~ /\.png$/) {
+	$spriteName = $file;
+	$spriteName =~ s#\.png$##;
+	&copyAndTransform($file);
+
+    }
+}
+
+
+opendir DIR, "$srcDir/../$assetDirHref";
+@dir = readdir(DIR);
+for (@dir) {
+    $file = $_;
+    if ($file =~ /\.png$/) {
+	$spriteName = $file;
+	$spriteName =~ s#\.png$##;
+ 	#$geometry = `identify -verbose $srcDir/../$assetDirHref/$file 2>&1| grep Geometry`;
+ 	#$geometry =~ /:\s(\d+)x(\d+)/;
+ 	#$width = $1;
+ 	#$height = $2;
+	$baseFileName = $file;
+	$baseFileName =~ s#\.png##;
+ 	print WH "\t'$spriteName': {\n";
+ 	print WH "\t\turl: '" . $assetDirHref . "/" . $file . "',\n";
+
+	if ($file !~ /priaUnbalanced/) {
+	    $coords = "[0, 0, " . $defaultWidth . ", $defaultHeight]";	
+	} else {
+	    $coords = "[0, 0, 400, 400]";	
+	}
+
+	if ($baseFileName !~ /Large$/) {
+	    print WH "\t\turlLarge: '" . $assetDirHref . "/" . $baseFileName . "Large.png" . "',\n";	   
+	} else {
+	    $coords = "[0, 0, $cropWidth, $cropHeight]";
+	}
+	print WH "\t\tcoords : $coords,\n";
+
+ 	print WH "\t\tname : '" . $spriteName . "'\n";
+ 	print WH "\t},\n";
+    }
+}
+print WH "}\n";
+close WH;
+
+sub copyAndTransform {
+    local ($file) = @_;
+    if ($file !~ /priaUnbalanced/) {
+	`convert $assetDir/$file -resize $resizeGeom $srcDir/../$assetDirHref/$file 2>&1`;
+	$baseFileName = $file;
+	$baseFileName =~ s#\.png##;
+	$newFileName = $file;
+	$newFileName =~ s#\.png##;
+	$newFileName .= "Large.png";
+	`convert $assetDir/$file -crop $cropGeom $srcDir/../$assetDirHref/${newFileName} 2>&1`;
+	`cp $srcDir/../$assetDirHref/${baseFileName}Large-0.png $srcDir/../$assetDirHref/$newFileName`;
+	`rm $srcDir/../$assetDirHref/*Large-*`;
+    } else {
+	`cp $assetDir/$file $srcDir/../$assetDirHref`;
+    }
+};
+

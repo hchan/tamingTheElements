@@ -1,0 +1,204 @@
+if (typeof String.prototype.endsWith !== 'function') {
+    String.prototype.endsWith = function(suffix) {
+        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+}
+
+var GameHelper = {
+	characters : {},
+	abilities : {},
+	sprites : {},
+	assetsDir : "assets",
+	templatesDir : "templates",
+	createCharacterComponent : function (name, description, component) {
+		Crafty.c(name, component);
+		this.characters[name] = {};
+		this.characters[name].name = name;
+		this.characters[name].description = description;
+		this.characters[name].component = component;
+	},
+	
+	createAbilityComponent : function (name, description, component) {
+		Crafty.c(name, component);
+		this.abilities[name] = {};
+		this.abilities[name].name = name;
+		this.abilities[name].description = description;
+		this.abilities[name].component = component;
+	},
+	
+	createSpriteComponent : function(name, url, coordsMap) {
+		var spriteMap = {};
+		spriteMap[name] = coordsMap;
+		if (url == null) {
+			url = this.assetsDir + '/' + name + '.png';
+		}
+		Crafty.sprite(url, spriteMap);
+		this.sprites[name] = {};
+		this.sprites[name].name = name;
+		this.sprites[name].url = url;
+		this.sprites[name].coordsMap = coordsMap;
+	},
+	
+	
+	
+	getCharacterDisplay : function (name) {
+		
+		var characterName = this.characters[name].name;
+		var spriteName = this.characters[name].component.spriteName;
+		var url = this.sprites[spriteName].url;
+		var coordsMap = this.sprites[spriteName].coordsMap;
+		var tdObj = $("<td/>");
+		tdObj.css("cursor", "pointer");
+		var jqueryCanvas = $("<canvas/>");
+		jqueryCanvas.addClass("characterImage");
+		jqueryCanvas.attr("width", 200);
+		jqueryCanvas.attr("height", 200);
+		jqueryCanvas.append(characterName);
+		
+	
+//		var canvas = jqueryCanvas.get(0);		
+//		var context = canvas.getContext('2d');
+//		var sprite = GameHelper.getSpriteByCharacterName(characterName);		
+//		var imageObj = new Image();
+//		imageObj.src = sprite.url;
+//
+//		imageObj.onload = function() {
+//			context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+//			//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+//		};
+		
+		tdObj.append(jqueryCanvas);
+//		  var context = jqueryCanvas[0].getContext('2d');
+//	     
+//	 
+//	      var imageObj = new Image();
+//	      imageObj.src = "http://www.eatthedamncake.com/wordpress/wp-content/uploads/2010/05/ice-cream.jpg";
+//
+//	      imageObj.onload = function() {
+//	        context.drawImage(imageObj, 0, 0);
+//	      };	     
+		return tdObj;
+	},
+	
+	getSpriteByCharacterName : function (name) {
+		var spriteName = this.characters[name].component.spriteName;
+		return this.sprites[spriteName];
+	},
+	
+	loadAssets : function () {
+		LoadAssets(Global.assets, function(){});
+	},
+	
+	info : function(str) {
+		alert(str);
+	},
+	
+	hideCrafty: function() {
+		$("#cr-stage").hide();
+	},
+	
+	showCrafty : function() {
+		$("#cr-stage").show();
+	},
+	
+	removeAllEntities : function() {
+		Crafty('obj').each(function() { this.destroy(); });
+	}, 
+	
+	showCharacterDetails : function(characterName, previousDomId) {
+		$("#characterDetails").show();
+		$(previousDomId).hide();
+		var characterComponent = this.characters[characterName].component;
+		var containerName = $("<div/>");
+		containerName.css("color", "white");
+		containerName.css("text-align", "center");
+		containerName.css("font-size", "24px");
+		containerName.css("font-family", "cursive");
+		containerName.css("font-style", "italic");
+		containerName.css("font-weight", "900");
+		
+		var canvasObj = $("<canvas/>");
+		canvasObj.prop("width", 300);
+		canvasObj.prop("height", 300);
+		canvasObj.css("margin-left", "auto");
+		canvasObj.css("margin-right", "auto");
+		canvasObj.css("display", "block");
+		var canvas = canvasObj.get(0);		
+		var context = canvas.getContext('2d');
+		var sprite = GameHelper.getSpriteByCharacterName(characterName);		
+		var imageObj = new Image();
+		imageObj.src = sprite.url;
+
+		imageObj.onload = function() {
+			context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+			//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		};
+		
+		var info =  $("<div/>");		
+		info.css("color", "white");
+		info.css("font-size", "14px");
+		$.get(this.templatesDir + "/" + characterName + ".tmpl", function(response,status,xhr) {
+			info.prepend(response);
+			var tableInfo = $("<table>");
+			tableInfo.addClass("centerMe");
+			tableInfo.prop("border", 1);
+			tableInfo.addClass(characterComponent.elementalType);
+			var tr = $("<tr/>");
+			tableInfo.append(tr);
+			tr.append($("<td class='info'>Elemental Type</td><td>" + characterComponent.elementalType + "</td>")); 
+			tr = $("<tr/>");
+			tableInfo.append(tr);
+			tr.append($("<td class='info'>Alignment</td><td>" + characterComponent.alignment + "</td>"));
+			tr = $("<tr/>");
+			tableInfo.append(tr);
+			tr.append($("<td class='info'>Speed</td><td>" + characterComponent.characterSpeed + "</td>"));
+			tr = $("<tr/>");
+			tableInfo.append(tr);
+			var primaryAbility = $("<td>" + characterComponent.primaryAbility + "</td>");
+			var primaryAbilityTable = $("<table>");
+			primaryAbilityTable.prop("border", 1);
+			var trPrimaryAbility = $("<tr/>");
+			var primaryAbilityComponent = GameHelper.abilities[characterComponent.primaryAbility].component;		
+			trPrimaryAbility.append($("<td class='info'>Type</td><td>" + primaryAbilityComponent.type + "</td>")); 
+			primaryAbilityTable.append(trPrimaryAbility);
+			trPrimaryAbility = $("<tr/>");
+			trPrimaryAbility.append($("<td class='info'>Damage</td><td>" + primaryAbilityComponent.damage + "</td>"));
+			primaryAbilityTable.append(trPrimaryAbility);
+			trPrimaryAbility = $("<tr/>");
+			trPrimaryAbility.append($("<td class='info'>Speed</td><td>" + primaryAbilityComponent.speed + "</td>")); 
+			primaryAbilityTable.append(trPrimaryAbility);
+			primaryAbility.append(primaryAbilityTable);
+			
+			
+			tr.append($("<td class='info'>Primary ability</td>"));
+			tr.append(primaryAbility);
+			info.prepend(tableInfo);
+		});
+		
+	
+		
+		var backLink = $("<a/>");
+		backLink.css("color", "white");
+		backLink.css("text-align", "center");
+		backLink.css("font-size", "24px");
+		backLink.css("font-family", "cursive");
+		backLink.css("font-style", "italic");
+		backLink.css("font-weight", "900");
+		backLink.css("cursor", "pointer");
+		backLink.css("text-decoration", "underline");
+		backLink.text("Back");
+		backLink.click(function () {
+			$("#characterDetails").hide();
+			$(previousDomId).show();
+		});
+		containerName.append(characterName);
+		
+		$("#characterDetails").html("");
+		$("#characterDetails").append(containerName);
+		$("#characterDetails").append(canvasObj);
+		$("#characterDetails").append(info);
+		$("#characterDetails").append(backLink);
+		
+		
+	}
+};

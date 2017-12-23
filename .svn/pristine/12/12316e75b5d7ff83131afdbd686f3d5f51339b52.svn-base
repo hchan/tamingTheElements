@@ -1,0 +1,36 @@
+* circus of slime/ ice shards  ... its an autokill at point blank
+* capture will put a debuff.  Must kill opponent within that debuff time to capture
+* on chapter2 objectives, show the Capture icon as new ability gained - reread objectives
+* applyDamageOverride in abilities.js is questionable - use Components.Range.createHitCallback
+* create wiki page
+* limit garrison to X characters
+* add levels (EASY, NORMAL, HARD, WTF (Way Too Fun))
+* add sound to cinematic
+* enter portal fiery chaos animation button
+* garrison sort order: level, race, elementalType
+* treenoc entangling vines has bug on death of opponent
+* elemental imbalance equation: you lose 1% of health every 5s
+* rotate stick
+* change background
+* read user.properties from WEB-INF/user.properties for authentication
+* escape will pause game and give you modal to go to main menu
+* when swapping, characters get REST points
+* animated wallpaper?
+* void background image
+* preferences in main menu
+* draw diagram for elementalDamgeMultiplier / Reduction
+* pause has problems with delay / curTime
+* improve AI for swap / heal
+* actionbar addEventListener for click (mouse)
+* change color of health (as you get weaker, change the rgb to more red)
+* standardize buttons
+* change background for the last boss
+* change color of wispera and his bullet
+* multiplayer
+* too slow - save state and then refresh?
+* display size in preferences
+* controller
+* wiki - capture
+* ESC will pause game
+* unlock secret sprites
+* pax adrenaline sprites

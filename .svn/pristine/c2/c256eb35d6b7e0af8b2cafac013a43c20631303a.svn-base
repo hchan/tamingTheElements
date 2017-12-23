@@ -1,0 +1,64 @@
+var buildDir = '../q8e192sandbox/war/craftyjs';
+var warDir = "WebContent";
+var assetFile = warDir + "/src/assets.js";
+module.exports = function(grunt) {
+    
+  // Project configuration.
+    grunt.initConfig({
+	pkg: grunt.file.readJSON('package.json'),
+	
+	copy: {
+	    build: {
+		cwd: warDir,
+		src: [ '**' ],
+		dest: buildDir,
+		expand: true
+	    },
+	},
+	
+	uglify: {
+	    options: {
+		banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+	    },
+	    build: {
+		files: [{
+		    expand: true,
+		    src: 'src/*',
+		    dest: buildDir,
+		    cwd: warDir,
+		}]
+	    }
+	},
+
+	"file-creator" : {
+	    options: {
+		openFlags: 'w'
+	    },
+	    "folder": {
+		'WebContent/src/assets.js': function(fs, fd, done) {
+		    var glob = grunt.file.glob;
+		    var _ = grunt.util._;
+		    glob(warDir + '/assets/*', function (err, files) {
+			var date = new Date();
+			fs.writeSync(fd, '// Generated on ' + date + '\n');
+			fs.writeSync(fd, 'Global.assets = [\n');
+			_.each(files, function(file) {
+			    file = file.replace(warDir + '/', '');
+			    fs.writeSync(fd, '"' + file + '",\n');
+			});			
+			fs.writeSync(fd, '];\n');
+			done();
+		    });
+		}
+	    }
+	}
+    });
+    
+    grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-file-creator');
+    
+    // Default task(s).
+    grunt.registerTask('default', ['copy', 'uglify']);
+    grunt.registerTask('generateAssets', ['file-creator']);
+};

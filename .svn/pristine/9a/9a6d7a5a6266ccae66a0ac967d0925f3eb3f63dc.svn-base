@@ -1,0 +1,26 @@
+$assetDir = "../WebContent/assets";
+$srcDir = "../WebContent/src";
+$assetsFile = $srcDir . "/assets.js";
+$date = `date`;
+
+opendir DIR,$assetDir;
+my @dir = readdir(DIR);
+close DIR;
+
+
+open WH, ">$assetsFile";
+print WH "// Generated on : $date\n";
+print WH "Global.assets = [\n";
+
+
+foreach(@dir){
+    $file = $_;
+    if ($file =~ /\.ogg$/) {
+	print WH "\t'assets/$file',\n";
+    }
+}
+
+
+print WH "];\n";
+close WH;
+

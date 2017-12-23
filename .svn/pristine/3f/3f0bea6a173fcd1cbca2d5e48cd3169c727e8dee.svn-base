@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<link rel="stylesheet" type="text/css" href="css/main.css">
+<script src="bower_components/jquery/dist/jquery.js"></script>
+<script src="lib/crafty.js"></script>
+<script src="lib/SpriteColor.js"></script>
+<script src="src/input.js"></script>
+<script src="src/helper.js"></script>
+<script src="src/HUDHelper.js"></script>
+<script src="src/global.js"></script>
+<script src="src/imageAssets.js"></script>
+<script src="src/assets.js"></script>
+<script src="src/gamePersist.js"></script>
+<script src="src/garrison.js"></script>
+<script src="src/gameMaster.js"></script>
+<script src="src/game.js"></script>
+<script src="src/components.js"></script>
+<script src="src/swap.js"></script>
+<script src="src/topHUD.js"></script>
+<script src="src/actionbar.js"></script>
+<script src="src/baseCharacter.js"></script>
+<script src="src/characters.js"></script>
+<script src="src/abilities.js"></script>
+<script src="src/scenes.js"></script>
+<script src="src/main.js"></script>
+<title class="gameName"></title>
+<body
+	style="color: white; font-family: cursive; text-align: center; display: block;">
+	<span id="mainMenu" class="menuPage" style="display: none;">
+		<div class="heading gameName"></div>
+
+	
+			<li class="clickable" name="newGameMenu">New Game</li><br/>
+			<li class="notClickableYet" name="currentObjectivesMenu" id="currentObjectivesMenu">Current Objectives</li><span id="newObjectives" style="display: none">- NEW -</span><br/>
+			<li class="notClickableYet" name="garrisonMenu">Garrison</li><br/>
+			<!-- 
+			<li class="clickable" name="storyModeMenu">Story Mode (beta - my notes/features)</li><br/>
+			<li class="clickable" name="selectBattleMenu">Practice Battle
+				(Duel)</li><br/>
+			<li class="clickable notImplementedYet" name="selectTeamBattleMenu">Practice
+				Battle (3v3)</li><br/>
+			<li class="clickable notImplementedYet" name="pvpMenu">PvP</li><br/>
+			 -->
+			<li class="clickable" name="keyBindingsMenu">Key Bindings</li><br/>
+			<li class="clickable" name="contactMenu">Contact</li><br/>
+			<li class="clickable" name="gameMasterMenu">Game Master</li><br/>
+
+	</span>
+	
+	<span id="gameMaster" class="menuPage" style="display: none;">	
+		<textarea id="gameMasterTextArea" rows="20" style="width: 95%"></textarea><br/>
+		<input type="button" class="gameMasterButton" id="updateGameStateButton" value="Update"/>
+		<input type="button" class="gameMasterButton" id="clearGameStateButton" value="Clear"/>
+		<input type="button" class="gameMasterButton" id="newGameStateButton" value="New"/>
+		<input type="button" class="gameMasterButton" id="chapter2Button" value="Chapter2"/>
+		<input type="button" class="gameMasterButton" id="chapter3Button" value="Chapter3"/>
+		<input type="button" class="gameMasterButton" id="chapter4Button" value="Chapter4"/>
+		<br/>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	
+	<span id="garrison" class="menuPage" style="display: none;">
+		<div class="heading">Garrison</div>
+		<div class="brief">
+			Your garrison is your army of elementals that have been assigned, captured or rewarded to you.<br />
+			<div id="selectHeroWording">Select your hero from the table below to enter the Battleground.</div>
+		</div>
+		
+		<table id="garrisonTable" border="1">
+			<thead>
+				<tr> 
+					<th>Info</th> 
+					<th>Avatar</th> 
+				</tr>
+			</thead>
+			<tbody>
+			
+			</tbody>
+		</table>
+		
+		<div id="enterBattlegroundContainer">			
+			Enter Battleground			
+		</div>
+		<div id="enterPortalContainer" style="display: none">			
+			Enter Portal			
+		</div>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	
+	
+	<span id="selectBattle" class="menuPage" style="display: none;">
+		<div class="heading">Select Your Battle</div>
+		<div class="brief">
+			Select your Hero, an Opponent and then click Start<br />
+			Double-click a Hero to show his/her details
+		</div>
+
+		<div style="height: 50px"></div>
+		<table width="100%" border="0">
+			<tbody>
+				<tr>
+					<td width="25%">&nbsp;</td>
+					<td width="50%">
+						<table id="characters" border="1" style="color: white;"
+							width="100%">
+							<tbody>
+								<tr>
+									<th width="50%">Hero</th>
+									<th width="50%">Opponent</th>
+								</tr>
+							</tbody>
+						</table>
+					<td width="25%">&nbsp;</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<div id="startContainer"
+			style="margin-left: auto; margin-right: auto; font-size: 40px; color: grey; align: center; text-align: center; border: 2px solid; border-radius: 25px; width: 200px; cursor: pointer;">
+			Start
+			<!-- 	<input type="button" style="margin-left:auto;margin-right:auto;display:block; font-size: 24px" value="Start" id="Start" disabled="true"/> -->
+		</div>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span id="characterDetails" class="menuPage" style="display: none;">
+	</span>
+	<span id="keyBindings" class="menuPage" style="display: none;">
+		<div class="heading">Key Bindings</div>
+		<table id="keyBindingTable" class="centerMe" border="1px">
+		</table>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span id="contact" class="menuPage" style="display: none;">
+		<div class="heading">Written by:</div> Henry Chan <a href=""
+		class="contactLink" style="color: white" target="_blank">hchan@apache.org</a><br />
+		<p>Feel free to send me any suggestions or comments via my email
+			address above. I hope you enjoyed playing this game!</p>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span id="storyMode" class="menuPage" style="display: none;">
+		<div class="heading">The Story (in Beta)</div>
+		<div align="left">
+			Unbalance has erupted in the world <span class="gameWorldName"></span>.<br />
+			You must tame and assemble of team of elementals to open a Portal to
+			the center of <span class="gameWorldName"></span> and restore the
+			balance.
+
+			<div>You begin with a random elemental at Level 1 that is added to your Summoner's List. Enter the
+				Battleground (after choosing a battleground difficulty (Easy,
+				Average, Hard, Very Hard)) to fight other elementals.</div>
+			<div>
+				<h2>Battleground Difficulties</h2>
+				<ul>
+					<li>Easy (levels 1 to 5)is unlocked by default.</li>
+					<li>Average (levels 6 to 10)is unlocked by leveling an elemental to Level 5</li>
+					<li>Hard (levels 11 to 15)is unlocked by leveling 3 elementals to Level 10</li>
+					<li>Very Hard (levels 16 to 20) is unlocked by leveling 3 elementals to Level 15</li>
+					<li>??? (Portal to the Center of Pria) is unlocked by leveling
+						3 elementals to Level 20</li>
+				</ul>
+			</div>
+			<div>
+			<h2>Leveling up</h2>
+			
+				To level up an elemental, you must win a battle.
+				The last elemental to deliver the final death blow against the opponent is rewarded with a level point.				
+			
+				Note, you cannot level up to a higher above your difficulty setting in
+				the Battleground. (i.e. if you are at level 5 and enter the
+				Batteground at the Easy difficulty setting, you will not gain experience and level up to level 6).
+				To continue to level 6, you must enter the Battleground at the Average difficulty.
+				</div>
+			<div>
+				<h2>Abilities gained as you level</h2>
+				When your elemental reaches:
+				<ul>
+					<li>Level 5, you gain the ability to tame elementals. You are
+						restricted to tame based to a weaker elemental type of your own (See Elemental
+						Balance)</li>
+					<li>Level 10, you gain the ability to create a team and allow
+						swapping within that team</li>
+					<li>Level 15, new ability (specific to the Race)</li>
+					<li>Level 20 - passive ability - bonus armour/damage against a weaker elemental
+						type (See Elemental Balance)</li>
+					<li>Level 20 - in PvP instead of tame, you have an elemental imbalance skill.  i.e, Douse Fire (water)</li>
+				</ul>
+			</div>
+			
+			<div class="balanceEquation">
+				<h2>Elemental Balance</h2>
+				<ul>
+					<li>Water can douse Fire, thus Fire is weaker than Water.</li>
+					<li>Fire can consume Air, thus Air is weaker than Fire</li>
+					<li>Air can blow away Earth, thus Earth is weaker than Air</li>
+					<li>Earth can contain Water, thus Water is weaker than Earth</li>
+				</ul>
+				<div>Note 1: Elementals at level 5 and up can tame elementals of a weaker type</div>
+				<div>Note 2: Elementals at level 20 have a passive ability that will add bonus to armour and damage to a weaker elemental type</div>
+			</div>
+			<div>
+				<h2>Taming Elements</h2>
+				This ability can only be used against an elemental of a weaker type
+				(See Elemental Balance) AND if that elemental is at the same level
+				or lower than the elemental trying to tame it. 
+				Your chance of taming a weaker elemental type at the same level as you is 50%
+				and increases as the number of levels you are above the opponent by 10% per level.
+				Furthermore, a
+				restriction is that you can only tame an elemental if it is < 25%
+				health. Once an elemental is tamed, the battle will continue until
+				all other members have been in the opposing team have been defeated.
+				You can only tame one elemental per battle. Should you win the
+				battle, that elemental you have tamed will become accessible for you
+				to summon in the next battleground. However, if you lose, that
+				elemental you have tamed will be released. Taming more than 3
+				elementals of the same Race will evict the one with the lowest
+				level. You can only have a maximum of 3 elementals of the Race at
+				any given time.
+			</div>
+			<div>
+				<h2>Damage, Armour and bonus</h2>
+				Damage is the amount that will be subtracted to the health of an
+				opponent. Armour is the amount of damage that is reduced. For
+				example, if the opponent's health is 100, his armour is 15 an your
+				damage is 40, then a a net damage of 25 is done to the opponent
+				resulting in his health of 75. Note that bonuses may be applied
+				depending on your Elemental type (See Elemental Balance) and your
+				level. The bonus than an element gets over an another based on level
+				is as follows: <br /> amour bonus: 2 * (difference in level)^1.5<br />
+				damage bonus: 5 * (difference in level)^1.5<br />
+
+			</div>
+		</div>
+
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span class="chapter menuPage" id="chapter1" style="display: none">
+		<div class="chapterHeading">Chapter 1 : The Basics </div><br/>
+		<div class="chapterBody"> As a Tamer, you must train your elementals
+			in the Battleground. A random elemental has been added to your
+			Garrison. Use it to enter battles. </div>
+		<br/>
+		<div class="objectivesHeading">Objectives</div>
+		<div class="objectivesBody">
+			<ul>
+				<li>Level up the elemental in your Garrison to Level 5.
+					Experience points (XP) for an elemental can be gained by winning battles</li>
+				<li>(Optional) Read the stats and lore of your elementals</li>
+			</ul>
+		</div>
+		<hr/>
+		<div class="progressHeading">Progress so far...</div><br/>
+		<div class="progressBody">
+		</div>
+		<hr/>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span class="chapter menuPage" id="chapter2" style="display: none">
+		<div class="chapterHeading">Chapter 2 : Capturing Elementals </div><br/>
+		<div class="chapterBody"> It is time to grow your Garrison.  You have gained a new ability called
+		"Capture Elemental".  You can only use this ability in the Battleground when your opponent has <= <span class="capturableHealthPercentage"></span> health.  After an elemental
+		has been captured and you have won the battle, it will be added to your Garrison. If your Garrison grows larger than <span class="garrisonMaxSize"></span>, you will be prompted to
+		delete a character the next time you visit your Garrison before you enter the Battleground.
+		</div>
+		<br/>
+		<div class="objectivesHeading">Objectives</div>
+		<div class="objectivesBody">
+			<ul>
+				<li>Grow your garrison to at least a size of 3 by capturing elementals in the Battleground</li>			
+				<li>Level up 3 elementals in your Garrison to Level 10</li>			
+			</ul>
+		</div>
+		<hr/>
+		<div class="progressHeading">Progress so far...</div><br/>
+		<div class="progressBody">
+		</div>
+		<hr/>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span class="chapter menuPage" id="chapter3" style="display: none">
+		<div class="chapterHeading">Chapter 3 : Forming a Team </div><br/>
+		<div class="chapterBody"> The Battleground has changed.  Your future opponent or rather opponents have formed a team.
+		In order for you to succeed in the Battleground, you must form a team comprised of 3 elementals.  The next time you
+		visit your Garrison, select 3 elementals to enter the Battleground.  
+		Should you win the battle, only the
+		last elemental in your team which delivered the winning strike will gain XP.  During the battle, you can swap to any team member 
+		(if they are still alive via the ability hotkey).  Should a team member die, the next member in the lowest sort order will take its
+		place until either your whole team has been defeated or you have defeated the opponent's team.  The same will apply for the opponent.
+		If an opponent character dies, s/he will be replaced with another teammate.
+		</div>
+		<br/>
+		<div class="objectivesHeading">Objectives</div>
+		<div class="objectivesBody">
+			<ul>				
+				<li>Level up 3 elementals in your Garrison to Level 15</li>			
+			</ul>
+		</div>
+		<hr/>
+		<div class="progressHeading">Progress so far...</div><br/>
+		<div class="progressBody">
+		</div>
+		<hr/>
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span class="chapter menuPage" id="chapter4" style="display: none">
+		<div class="chapterHeading">Chapter 4 : Portal to the Center of Pria </div><br/>
+		<div class="chapterBody"> You have gained the power to open a portal to the Center of Pria.
+		From your Garrison, you have the option of continuing to level your characters in the Battleground ... or
+		you can select 3 characters to open a portal and defeat the menace on the other
+		side of it.  If you find you are having difficulties with this final chapter, you can continue
+		to level your characters to Level20 for a better chance to defeat the menace on the other side.
+		</div>
+		<br/>
+		<div class="objectivesHeading">Objectives</div>
+		<div class="objectivesBody">
+			<ul>				
+				<li>Enter the portal and defeat the menace that has caused much disturbance to Pria</li>			
+			</ul>
+		</div>
+		<hr/>
+	
+		</div>
+		
+		<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+	<span class="chapter menuPage" id="chapter5" style="display: none">
+	<div class="chapterHeading">Congratulations on finishing the game!</div><br/>
+	<div class="chapterBody"> 
+	Thank you very much for playing this game.  If you have any feedback whatsoever, please do not hesitate to contact
+	me via the Contact link in the Main Menu.
+	<div>TODO - add levels - EASY, NORMAL, HARD, WTF (Way Too Fun)</div>
+	</div>
+	<br/>
+	<div class="clickable back" name="mainMenu">Main Menu</div>
+	</span>
+
+</body>
+<script>
+	Main.begin();
+</script>
+</head>
+</html>

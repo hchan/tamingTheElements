@@ -1,0 +1,633 @@
+GameHelper.createAbilityComponent('Wind Cone', '',  {
+	defaults : {
+		speed : 8,
+		damage : 13,
+		type: 'Range',
+		spriteName : '12px-blue-comet',
+		maxActive : 4,
+		cooldown : 400
+	},
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({
+			w: 25,
+			h: 10
+		});
+		
+		//this.addComponent('spr_blueBullet');
+		//this.addComponent('spriteBullet');
+		character.doRange(character.direction, this.abilityName, this, null);		
+		Global.playSound('laser1');
+	},
+});
+
+GameHelper.createAbilityComponent('Dummy Cone', '',  {
+	defaults : {
+		speed : 8,
+		damage : 0,
+		type: 'Range',
+		spriteName : '12px-blue-comet',
+		maxActive : 5,
+		cooldown : 400
+	},
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({
+			w: 25,
+			h: 10
+		});
+		
+		//this.addComponent('spr_blueBullet');
+		//this.addComponent('spriteBullet');
+		//Global.playSound('laser1');
+	}
+});
+
+
+
+GameHelper.createAbilityComponent('Fire Blast', '', {
+	defaults : {
+		speed : 6,
+		damage : 40,
+		type : 'Range',
+		spriteName : 'redFireBullet',
+		maxActive : 2,
+		cooldown : 600
+	},
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({
+			w: 75,
+			h: 15
+		});		
+		character.doRange(character.direction, this.abilityName, this, null);		
+		Global.playSound('fireBreath');
+	}
+});
+
+GameHelper.createAbilityComponent('Icicles', '', {
+	defaults : {
+		speed : 8,
+		damage : 20,
+		type : 'Range',
+		spriteName : 'icicleBullet',
+		maxActive : 3,
+		cooldown : 100
+	},
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({
+			w: 10,
+			h: 25
+		});
+		character.doRange(character.direction, this.abilityName, this, null);		
+		Global.playSound('freezing');
+	}
+});
+
+GameHelper.createAbilityComponent('Hurl Rock', '', {
+	defaults : {
+		speed : 7,
+		damage : 40,
+		type : 'Range',
+		spriteName : 'rockBullet',
+		maxActive : 2,
+		cooldown : 500
+	},
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({
+			w: 35,
+			h: 35
+		});
+		character.doRange(character.direction, this.abilityName, this, null);		
+		Global.playSound('rockBullet');
+	}
+});
+
+
+
+GameHelper.createAbilityComponent('Ground Shock', '', {
+	defaults : {
+		rangeWidth:  Global.playerCharacter.width * 3,
+		rangeHeight: Global.playerCharacter.height * 3,
+		damage : 40,
+		speed: 'n/a',
+		type : 'Melee',
+		spriteName : 'rockExplosion',
+		maxActive : 1,
+		cooldown : 3000,
+		delayAfterAttack : 250
+	},
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({
+			w: this.rangeWidth,
+			h: this.rangeHeight
+		});
+		
+		this.x = character.x - (this.w - character.w)/2;
+		this.y = character.y - (this.h - character.h)/2;
+		
+		character.doMelee(character.direction, this.abilityName, this, null);
+		Global.playSound('rockBullet');
+	
+	
+		this.onHit('HUDContainer', function(data) {
+			
+		});
+		this.onHit(character.targetPlayerType, function(data) {
+			this.applyDamage(data[0].obj);
+		});
+		
+	},
+	isInRange : function(character, rangeWidth, rangeHeight) {
+		var targetPlayer = character.targetPlayer;
+		var deltaX = Math.abs(targetPlayer.x - character.x);
+		var deltaY = Math.abs(targetPlayer.y - character.y);
+		var hasSameXaxis = (deltaX <= targetPlayer.h/2);
+		var hasSameYaxis = (deltaY <= targetPlayer.w/2);
+		
+		if (hasSameXaxis) {
+			if (deltaX < rangeWidth/2) {
+				return true;
+			}
+		}
+		if (hasSameYaxis) {
+			if (deltaX < rangeHeight/2) {
+				return true;
+			}
+		}
+		return false;
+	
+	}
+});
+
+
+GameHelper.createAbilityComponent('Adrenaline', '', {
+	defaults : {
+		duration : 3000,
+		cooldown : 15000,
+		speedIncrease : 5,
+		armourIncrease : 20,
+		maxActive : 100,
+		character : null,
+		spriteName : "adrenaline"
+	},
+	initAbility : function (character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		var abilityEntity = this;
+		var date = new Date();
+		var curTime = date.getTime();
+		//var origCharacterSpeed = character.characterSpeed;
+		//var origArmour = character.armour;
+		character.characterSpeed += abilityEntity.speedIncrease;
+		character.armour += abilityEntity.armourIncrease;
+		character.abilitiesInfo['Adrenaline'].lastUsed = curTime;
+
+		character.topHUD.buffs['Adrenaline'] = { lastUsed : curTime, duration : this.duration, type: "friendly"};
+		Global.playSound('adrenaline');
+		character.switchSprite(character.spriteName + "Red", character.getFrames());
+		//character.addComponent("SpriteColor");
+		//character.spriteColor(255, null, null, null);
+	
+		if (character.has("Fourway")) {
+			character.fourway(character.characterSpeed);
+			character.stopOnSolids(); // should be called when fourway is changed
+		}
+		Crafty.e("Delay").delay(function() {
+			character.characterSpeed -= abilityEntity.speedIncrease;
+			character.armour -= abilityEntity.armourIncrease;
+			//character.removeComponent("SpriteColor");
+			character.restoreDefaultSprite();
+			if (!character.isDead) {
+				if (character.has("Fourway")) {				
+					character.fourway(character.characterSpeed);
+					character.stopOnSolids(); // should be called when fourway is changed
+				}
+			}
+		}, this.duration, 0);
+	},
+	
+	getDescription : function() {
+		return "Increases character speed by " + this.speedIncrease + ", armour by " + this.armourIncrease + 
+		" for " + this.duration + " ms.  Cooldown: " + this.cooldown + " ms";
+	}
+});
+
+
+GameHelper.createAbilityComponent('Tornado', '', {
+	defaults : {
+		speed : 6,
+		cooldown : 6000,
+		damage : 0,
+		//dot : [5, 250],
+		duration: 3000,
+		maxActive : 100,
+		character : null,
+		spriteName : "tornado",
+		type: "Range"
+	},
+	getFrames : function() {
+		return [[0, 0], [300, 0], [600, 0], [900, 0]];
+	},
+		
+	initAbility : function (character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.addComponent("SpriteAnimation");
+		this.requires(this.type);
+		this.attr({			
+			w: 20,
+			h: 60
+		});
+		
+		Global.playSound('whoosh');
+		this.reel(this.spriteName + "Reel", 600, this.getFrames());		
+		this.animate(this.spriteName + "Reel", -1);		
+		character.doRange(character.direction, 'Tornado', this, true);			
+		
+		this.onHit(character.targetPlayerType, function(data) {
+			for (var i = 0; i < data.length; i++) {
+				if (data[i].obj.has(character.targetPlayerType)) {
+					var opponent = data[i].obj;
+					if (!opponent.isTranslucent) {
+						opponent.freeze();
+						var date = new Date();
+						var curTime = date.getTime();
+						var duration = this.duration;
+						opponent.topHUD.buffs['Tornado'] = { lastUsed : curTime, duration : duration, type: "hostile"};
+						Crafty.e("Delay").delay(function() {
+							if (!character.isDead) {
+								opponent.unfreeze();
+							}
+						}, duration, 0);
+					}
+				}
+			}
+		});
+	},
+			
+	getDescription : function() {
+		return "Damage " + this.damage + " Will stun the opponent for " + this.duration + " ms";
+	}
+});
+
+GameHelper.createAbilityComponent('Translucent Flame', '', {
+	defaults : {
+		duration : 1500,
+		cooldown : 6000,	
+		maxActive : 100,
+		character : null,
+		spriteName : "flame"
+	},
+	
+	initAbility : function (character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		var abilityEntity = this;
+		var date = new Date();
+		var curTime = date.getTime();
+		//var origCharacterSpeed = character.characterSpeed;
+		//var origArmour = character.armour;		
+		character.abilitiesInfo['Translucent Flame'].lastUsed = curTime;
+
+		character.topHUD.buffs['Translucent Flame'] = { lastUsed : curTime, duration : this.duration, type: "friendly"};
+		Global.playSound('flame');
+		
+//		character.spriteColor(255, null, null, null);
+		character.becomeTranslucent();
+		/*
+		character.removeComponent(character.spriteName);
+		character.addComponent(this.spriteName);
+		character.spriteName = this.spriteName;
+		
+		character.reel(this.spriteName + "Reel", 600, this.getFrames());
+		character.animate(this.spriteName + "Reel", this.duration/600);							
+		character.w = Global.playerCharacter.width;
+		character.h = Global.playerCharacter.height;
+		*/
+		character.switchSprite(this.spriteName, this.getFrames());
+		
+		if (character.has("Fourway")) {
+			character.fourway(character.characterSpeed);
+			character.stopOnSolids(); // should be called when fourway is changed
+		}
+		Crafty.e("Delay").delay(function() {
+			
+			if (!character.isDead) {
+				Global.playSound('flame');
+				character.becomeUntranslucent();
+				/*
+				character.removeComponent(abilityEntity.spriteName);
+				character.addComponent(character.defaults.spriteName);
+				character.spriteName = character.defaults.spriteName;
+				character.w = Global.playerCharacter.width;
+				character.h = Global.playerCharacter.height;
+				*/
+				character.restoreDefaultSprite();
+				if (character.has("Fourway")) {	
+					character.fourway(character.characterSpeed);
+					character.stopOnSolids(); // should be called when fourway is changed
+				}
+			}
+		}, this.duration, 0);
+	},
+	
+	getFrames : function() {
+		return [[0, 0], [400, 0], [800, 0], [1200, 0]];
+	},
+	
+	getDescription : function() {
+		return "Become translucent " + 
+		" for " + this.duration + " ms.  Cooldown: " + this.cooldown + " ms";
+	}
+});
+
+
+GameHelper.createAbilityComponent('Ice Blast', '', {
+	defaults : {
+		speed : 6,
+		cooldown : 6000,
+		damage : 15,
+		//dot : [5, 250],
+		duration: 3000,
+		maxActive : 100,
+		speedIncrease : -2,
+		character : null,
+		spriteName : "iceBlast",
+		type: "Range"
+	},
+	
+	getFrames : function() {
+		return [[0, 0], [300, 0], [600, 0], [900, 0]];
+	},
+		
+	initAbility : function (character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({			
+			w: 60,
+			h: 60
+		});
+		var abilityEntity = this;
+		Global.playSound('iceBlast');
+
+		character.doRange(character.direction, 'Ice Blast', this, null);			
+		
+		this.onHit(character.targetPlayerType, function(data) {
+			for (var i = 0; i < data.length; i++) {
+				if (data[i].obj.has(character.targetPlayerType)) {
+					var opponent = data[i].obj;
+					if (!opponent.isTranslucent) {
+						opponent.characterSpeed += abilityEntity.speedIncrease;
+						opponent.removeComponent("SpriteColor");
+						opponent.addComponent("SpriteColor");
+						opponent.spriteColor("halfOfOriginal", "halfOfOriginal", 230, null);
+						if (opponent.has("Fourway")) {
+							opponent.fourway(opponent.characterSpeed);
+							opponent.stopOnSolids(); // should be called when fourway is changed
+						}
+						var date = new Date();
+						var curTime = date.getTime();
+						var duration = this.duration;
+						opponent.topHUD.buffs['Ice Blast'] = { lastUsed : curTime, duration : duration, type: "hostile"};
+						Crafty.e("Delay").delay(function() {
+							if (!character.isDead) {
+								opponent.characterSpeed -= abilityEntity.speedIncrease;
+								opponent.removeComponent("SpriteColor");
+								if (opponent.has("Fourway")) {
+									opponent.fourway(opponent.characterSpeed);
+									opponent.stopOnSolids(); // should be called when fourway is changed
+								}
+							}
+						}, duration, 0);
+					}
+				}
+			}
+		});
+	},
+			
+	getDescription : function() {
+		return "Damage " + this.damage + " Will slow the opponent for " + this.duration + " ms";
+	}
+});
+
+
+GameHelper.createAbilityComponent('Sonar Blast', '',  {
+	defaults : {
+		speed : 7,
+		damage : 40,
+		type: 'Range',
+		spriteName : 'sonarBlast',
+		maxActive : 2,
+		cooldown : 600
+	},	
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.myTween = this.myTweenOverride;
+		this.attr({
+			w: 25,
+			h: 25
+		});
+		character.doRange(character.direction, this.abilityName, this, null);			
+		Global.playSound('sonarBlast');
+	},	
+	myTweenOverride : function () {
+		this.origin("center");
+		var bullet = this;
+		var curRotation = bullet.rotation;
+		var abilityEntity = this;
+		Crafty.e("Delay").delay(function() {			
+			if (bullet.isDead) {
+				this.destroy();
+			}		
+			var curAlpha = bullet.alpha;
+			var newAlpha = curAlpha * 0.99;
+			bullet.alpha = newAlpha;
+			var newH = bullet.h * 1.015;
+			if (newH < (Global.playerCharacter.height * 0.5)) {
+				bullet.h = newH;				
+			} else{
+				bullet.w *= 1.015;
+			}
+			abilityEntity.damage *= 0.98;			
+			var rotateAmount = 0;			
+			bullet.rotation += rotateAmount;			
+			if (Math.abs(curRotation - bullet.rotation) > 5) {
+				bullet.rotation = curRotation;
+			}
+		}, 10, -1);
+	}
+});
+
+
+GameHelper.createAbilityComponent('Steal Health', '',  {
+	defaults : {
+		speed : 'n/a',
+		damage : 10,
+		rangeWidth:  Global.playerCharacter.width * 3,
+		rangeHeight:  Global.playerCharacter.width * 3,
+		type: 'Melee',
+		spriteName : 'handGrabbing',
+		maxActive : 2,
+		cooldown : 1000,
+		delayAfterAttack : 250
+	},
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.attr({
+			w: this.rangeWidth,
+			h: character.h/2
+		});
+		Global.playSound('stealHealth');
+		var direction = character.direction;
+		this.reposition(direction, character);
+		this.applyDamage = this.applyDamageOverride;
+		this.onHit(character.targetPlayerType, function(data) {
+			this.applyDamage(data[0].obj);
+		});
+		character.doMelee(character.direction, "Steal Health", this, true);
+	},
+	applyDamageOverride : function(character) {
+		if (this.hasHit == null) {
+			var damageDone = character.applyDamage(this.damage);
+			this.character.heal(damageDone);
+			this.hasHit = true;
+		} 
+	},
+	isInRange : function(character, rangeWidth, rangeHeight) {
+		var targetPlayer = character.targetPlayer;
+		var deltaX = Math.abs(targetPlayer.x - character.x);
+		var deltaY = Math.abs(targetPlayer.y - character.y);
+		var hasSameXaxis = (deltaX <= targetPlayer.h/2);
+		var hasSameYaxis = (deltaY <= targetPlayer.w/2);
+		
+		if (hasSameXaxis) {
+			if (deltaX < rangeWidth) {
+				return true;
+			}
+		}
+		if (hasSameYaxis) {
+			if (deltaX < rangeHeight) {
+				return true;
+			}
+		}
+		return false;
+	}
+});
+
+
+GameHelper.createAbilityComponent('Fireball', '',  {
+	defaults : {
+		speed : 7,
+		damage : 30,
+		type: 'Range',
+		spriteName : 'fireball',
+		maxActive : 2,
+		cooldown : 600
+	},	
+	initAbility : function(character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		this.addComponent(this.spriteName);
+		this.requires(this.type);
+		this.myTween = this.myTweenOverride;
+		this.attr({
+			w: 25,
+			h: 12
+		});
+		character.doRange(character.direction, this.abilityName, this, null);			
+		Global.playSound('fireBreath');
+	},	
+	myTweenOverride : function () {
+		this.origin("center");
+		var bullet = this;
+		var curRotation = bullet.rotation;
+		var abilityEntity = this;
+		bullet.alpha = 0.25;
+		abilityEntity.damage *= 0.25;
+		Crafty.e("Delay").delay(function() {			
+			if (bullet.isDead) {
+				this.destroy();
+			}		
+			var curAlpha = bullet.alpha;
+			var newAlpha = curAlpha * 1.01;
+			if (newAlpha > 1) {
+				newAlpha = 1;
+			}
+			bullet.alpha = newAlpha;
+			var newH = bullet.h * 1.015;
+			if (newH < (Global.playerCharacter.height * 0.5)) {
+				bullet.h = newH;				
+			} else{
+				bullet.w *= 1.015;
+			}
+			abilityEntity.damage *= 1.02;
+			if (abilityEntity.damage > abilityEntity.defaults.damge) {
+				abilityEntity.damage = abilityEntity.defaults.damge;
+			}
+			var rotateAmount = 0;			
+			bullet.rotation += rotateAmount;			
+			if (Math.abs(curRotation - bullet.rotation) > 5) {
+				bullet.rotation = curRotation;
+			}
+		}, 10, -1);
+	}
+});
+
+
+
+GameHelper.createAbilityComponent('Fire Heal', '', {
+	defaults : {
+		heal : 20,
+		type : "Heal",
+		cooldown : 4000,
+		maxActive : 100,
+		spriteName : "fireHeal"
+	},
+	initAbility : function (character) {
+		GameHelper.copyDefaultsToThis(this.defaults, this);
+		this.character = character;
+		var date = new Date();
+		var curTime = date.getTime();
+	
+		character.abilitiesInfo[this.abilityName].lastUsed = curTime;
+
+		character.heal(this.heal);
+		Global.playSound('fireHeal');
+		
+	},
+	
+	getDescription : function() {
+		return "Heal for " + this.heal + ".  Cooldown: " + this.cooldown + " ms";
+	}
+});

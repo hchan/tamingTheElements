@@ -1,0 +1,286 @@
+if (typeof String.prototype.endsWith !== 'function') {
+    String.prototype.endsWith = function(suffix) {
+        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+}
+
+if (typeof String.prototype.startsWith !== 'function') {
+	String.prototype.startsWith = function (str){
+	    return this.indexOf(str) == 0;
+	};
+}
+
+var GameHelper = {
+	characters : {},
+	abilities : {},
+	sprites : {},
+	assetsDir : "assets",
+	templatesDir : "templates",
+	
+	copyDefaultsToThis : function (defaults, entity) {
+		if (defaults != null) {
+			$.extend(true, entity, defaults);
+		}		
+	},
+	
+	createCharacterComponent : function (name, description, component) {
+		Crafty.c(name, component);
+		this.characters[name] = {};
+		this.characters[name].name = name;
+		this.characters[name].description = description;
+		component.defaults.characterName = name;
+		this.characters[name].component = component;
+	},
+	
+	createAbilityComponent : function (name, description, component) {
+		Crafty.c(name, component);
+		this.abilities[name] = {};
+		this.abilities[name].name = name;
+		this.abilities[name].description = description;
+		component.defaults.abilityName = name;
+		this.abilities[name].component = component;
+	},
+	
+	createSpriteComponent : function(name, url, coordsMap) {
+		var spriteMap = {};
+		spriteMap[name] = coordsMap;
+		if (url == null) {
+			url = this.assetsDir + '/' + name + '.png';
+		}
+		Crafty.sprite(url, spriteMap);
+		this.sprites[name] = {};
+		this.sprites[name].name = name;
+		this.sprites[name].url = url;
+		this.sprites[name].coordsMap = coordsMap;
+	},
+	
+	
+	
+	getCharacterDisplay : function (name) {
+		
+		var characterName = this.characters[name].name;
+		var spriteName = this.characters[name].component.defaults.spriteName;
+		var url = this.sprites[spriteName].url;
+		var coordsMap = this.sprites[spriteName].coordsMap;
+		var tdObj = $("<td/>");
+		tdObj.css("cursor", "pointer");
+		var jqueryCanvas = $("<canvas/>");
+		jqueryCanvas.addClass("characterImage");
+		jqueryCanvas.attr("width", 200);
+		jqueryCanvas.attr("height", 200);
+		jqueryCanvas.append(characterName);
+		
+	
+//		var canvas = jqueryCanvas.get(0);		
+//		var context = canvas.getContext('2d');
+//		var sprite = GameHelper.getSpriteByCharacterName(characterName);		
+//		var imageObj = new Image();
+//		imageObj.src = sprite.url;
+//
+//		imageObj.onload = function() {
+//			context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+//			//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+//		};
+		
+		tdObj.append(jqueryCanvas);
+//		  var context = jqueryCanvas[0].getContext('2d');
+//	     
+//	 
+//	      var imageObj = new Image();
+//	      imageObj.src = "http://www.eatthedamncake.com/wordpress/wp-content/uploads/2010/05/ice-cream.jpg";
+//
+//	      imageObj.onload = function() {
+//	        context.drawImage(imageObj, 0, 0);
+//	      };	     
+		return tdObj;
+	},
+	
+	getSpriteByCharacterName : function (name) {
+		var spriteName = this.characters[name].component.defaults.spriteName;
+		return this.sprites[spriteName];
+	},
+	
+	loadAssets : function () {
+		LoadAssets(Global.assets, function(){});
+	},
+	
+	info : function(str) {
+		alert(str);
+	},
+	
+	hideCrafty: function() {
+		$("#cr-stage").hide();
+	},
+	
+	showCrafty : function() {
+		$("#cr-stage").show();
+	},
+	
+	removeAllEntities : function() {
+		Crafty('obj').each(function() { this.destroy(); });
+	}, 
+	
+	// melee helper
+	isInRangeDirectional : function(character, rangeWidth, rangeHeight) {
+		var targetPlayer = character.targetPlayer;
+		var deltaX = Math.abs(targetPlayer.x - character.x);
+		var deltaY = Math.abs(targetPlayer.y - character.y);
+		var hasSameXaxis = (deltaX <= targetPlayer.h/2);
+		var hasSameYaxis = (deltaY <= targetPlayer.w/2);
+		
+		if (hasSameXaxis) {
+			if (deltaX < rangeWidth) {
+				return true;
+			}
+		}
+		if (hasSameYaxis) {
+			if (deltaX < rangeHeight) {
+				return true;
+			}
+		}
+		return false;
+	},
+	
+	//melee helper
+	isInRangeExplosion : function(character, rangeWidth, rangeHeight) {
+		var targetPlayer = character.targetPlayer;
+		var deltaX = Math.abs(targetPlayer.x - character.x);
+		var deltaY = Math.abs(targetPlayer.y - character.y);
+		var hasSameXaxis = (deltaX <= targetPlayer.h/2);
+		var hasSameYaxis = (deltaY <= targetPlayer.w/2);
+		
+		if (hasSameXaxis) {
+			if (deltaX < rangeWidth/2) {
+				return true;
+			}
+		}
+		if (hasSameYaxis) {
+			if (deltaX < rangeHeight/2) {
+				return true;
+			}
+		}
+		return false;
+	},
+	
+	showCharacterDetails : function(characterName, previousDomId) {
+		$("#characterDetails").show();
+		$(previousDomId).hide();
+		var characterComponent = this.characters[characterName].component;
+		var containerName = $("<div/>");
+//		containerName.css("color", "white");
+//		containerName.css("text-align", "center");
+//		containerName.css("font-size", "24px");
+//		containerName.css("font-family", "cursive");
+//		containerName.css("font-style", "italic");
+//		containerName.css("font-weight", "900");
+		containerName.addClass("heading");
+		
+		var canvasObj = $("<canvas/>");
+		canvasObj.prop("width", 300);
+		canvasObj.prop("height", 300);
+		canvasObj.css("margin-left", "auto");
+		canvasObj.css("margin-right", "auto");
+		canvasObj.css("display", "block");
+		var canvas = canvasObj.get(0);		
+		var context = canvas.getContext('2d');
+		var sprite = GameHelper.getSpriteByCharacterName(characterName);		
+		var imageObj = new Image();
+		imageObj.src = sprite.url;
+
+		imageObj.onload = function() {
+			context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+			//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		};
+		
+		var info =  $("<div/>");		
+		info.css("color", "white");
+		info.css("font-size", "14px");
+	
+		
+		var tableInfo = $("<table>");
+		tableInfo.addClass("centerMe");
+		tableInfo.prop("border", 1);
+		tableInfo.addClass(characterComponent.defaults.elementalType);
+		var tr = $("<tr/>");
+		tableInfo.append(tr);
+		tr.append($("<td class='info'>Description</td><td>" + characterComponent.defaults.description + "</td>"));
+		var tr = $("<tr/>");
+		tableInfo.append(tr);
+		tr.append($("<td class='info'>Elemental Type</td><td>" + characterComponent.defaults.elementalType + "</td>")); 
+		tr = $("<tr/>");
+		tableInfo.append(tr);
+		tr.append($("<td class='info'>Alignment</td><td>" + characterComponent.defaults.alignment + "</td>"));
+		tr = $("<tr/>");
+		tableInfo.append(tr);
+		tr.append($("<td class='info'>Speed</td><td>" + characterComponent.defaults.characterSpeed + "</td>"));
+		tr = $("<tr/>");
+		tableInfo.append(tr);
+		tr.append($("<td class='info'>Armour</td><td>" + characterComponent.defaults.armour + "</td>"));
+		tr = $("<tr/>");
+		tableInfo.append(tr);
+			/*
+			var primaryAbility = $("<td>" + characterComponent.defaults.primaryAbility + "</td>");
+			var primaryAbilityTable = $("<table>");
+			primaryAbilityTable.css("width", "100%");
+			primaryAbilityTable.prop("border", 1);
+			var trPrimaryAbility = $("<tr/>");
+			var primaryAbilityComponent = GameHelper.abilities[characterComponent.defaults.primaryAbility].component;		
+			trPrimaryAbility.append($("<td class='info'>Type</td><td>" + primaryAbilityComponent.defaults.type + "</td>")); 
+			primaryAbilityTable.append(trPrimaryAbility);
+			trPrimaryAbility = $("<tr/>");
+			trPrimaryAbility.append($("<td class='info'>Damage</td><td>" + primaryAbilityComponent.defaults.damage + "</td>"));
+			primaryAbilityTable.append(trPrimaryAbility);
+			
+			if (primaryAbilityComponent.defaults.type == 'Range') {
+				trPrimaryAbility = $("<tr/>");
+				trPrimaryAbility.append($("<td class='info'>Speed</td><td>" + primaryAbilityComponent.defaults.speed + "</td>")); 
+				primaryAbilityTable.append(trPrimaryAbility);				
+				trPrimaryAbility = $("<tr/>");
+				trPrimaryAbility.append($("<td class='info'>Max Missles</td><td>" + primaryAbilityComponent.defaults.maxActive + "</td>")); 
+				primaryAbilityTable.append(trPrimaryAbility);		
+			
+			}
+			if (primaryAbilityComponent.defaults.type == 'Melee') {
+				trPrimaryAbility = $("<tr/>");
+				trPrimaryAbility.append($("<td class='info'>Delay After Attack</td><td>" + primaryAbilityComponent.defaults.delayAfterAttack + "</td>")); 
+				primaryAbilityTable.append(trPrimaryAbility);		
+			}
+			trPrimaryAbility = $("<tr/>");
+			trPrimaryAbility.append($("<td class='info'>Cooldown</td><td>" + primaryAbilityComponent.defaults.cooldown + "ms </td>")); 
+			primaryAbilityTable.append(trPrimaryAbility);
+			primaryAbility.append(primaryAbilityTable);
+			
+			
+			tr.append($("<td class='info'>Primary ability</td>"));
+			tr.append(primaryAbility);
+			 */
+		info.prepend(tableInfo);
+		
+	
+		
+		var backLink = $("<div/>");
+		backLink.addClass("back");
+//		backLink.css("color", "white");
+//		backLink.css("text-align", "center");
+//		backLink.css("font-size", "24px");
+//		backLink.css("font-family", "cursive");
+//		backLink.css("font-style", "italic");
+//		backLink.css("font-weight", "900");
+//		backLink.css("cursor", "pointer");
+//		backLink.css("text-decoration", "underline");
+		backLink.text("Back");
+		backLink.click(function () {
+			$("#characterDetails").hide();
+			$(previousDomId).show();
+		});
+		containerName.append(characterName);
+		
+		$("#characterDetails").html("");
+		$("#characterDetails").append(containerName);
+		$("#characterDetails").append(canvasObj);
+		$("#characterDetails").append(info);
+		$("#characterDetails").append(backLink);
+		
+		
+	}
+};

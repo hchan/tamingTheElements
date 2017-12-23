@@ -1,0 +1,192 @@
+var Main = {
+		hasInitOnce : false,
+		
+		initOnce : function() {
+			if (!this.hasInitOnce) {
+				var main = this;
+				$(".clickable").each(function () {
+					var name = $(this).attr("name");
+					$(this).click(function() {
+						var funcName = name;
+						funcName = funcName.replace("Menu", "");
+						if ($(this).hasClass("notImplementedYet")) {
+							alert("Not Implemented Yet");
+						} else {
+							$(".menuPage").hide();
+							main[funcName]();
+						}
+					});
+				});
+				
+				$(".gameName").html(Game.gameName);
+				$(".gameWorldName").html(Game.gameWorldName);
+				$(".contactLink").attr("href", "mailto:hchan@apache.org?Subject=" + Game.gameName);
+				this.hasInitOnce = true;
+			}
+		},
+		
+		main : function() {
+			this.initOnce();
+			if (window.location.hash == '' || window.location.hash == null) {
+				this.mainMenu();
+			} else if (window.location.hash == "#selectBattle") {
+				this.selectBattle();
+			} else if (window.location.hash == "#test") {
+				this.test();
+			}
+		},
+		
+		test : function() {
+			var params = {};
+			//params.hero = "Wispera";
+			//params.hero = "Pax";
+			//params.hero = "Cyclonius";
+			//params.hero = "Sindarosa";
+			//params.hero = "Morblass";
+			//params.hero = "Fiara";
+			//params.hero = "Curomo";
+			//params.hero = "Rokcore";
+			//params.hero = "Echo";
+			params.hero = "Lavax";
+			
+			
+			
+			
+			params.opponent = "Dummy";
+			//params.opponent = "Pax";
+			//params.opponent = "Cyclonius";
+			//params.opponent = "Sindarosa";
+			//params.opponent = "Morblass";
+			//params.opponent = "Wispera";
+			//params.opponent = "Fiara";
+			//params.opponent = "Curomo";
+			//params.opponent = "Rokcore";
+			//params.opponent = "Echo";
+			//params.opponent = "Lavax";
+			
+			//Crafty.audio.mute();
+			Game.start(params);
+		},
+		
+		mainMenu : function() {
+			$("#mainMenu").show();
+			$("body").css("background-color", "black");
+		
+			$("#menu").show();
+		},
+		
+		selectBattle : function() {
+			$("body").css("background-color", "black");
+			$("#selectBattle").show();
+			//$("#Start").attr("disabled", "true");
+			//$("#startContainer").mouseenter(function() {console.log("HI")});
+			$("#startContainer").unbind();
+			$("#startContainer").click(function(event) {
+					if ($("input[type='radio'].hero:checked").val() != null &&
+						$("input[type='radio'].opponent:checked").val() != null) {
+						$("#selectBattle").hide();
+						GameHelper.showCrafty();
+						var params = {};
+						params['hero'] = $("input[type='radio'].hero:checked").val();
+						params['opponent'] = $("input[type='radio'].opponent:checked").val();
+						Game.start(params);
+					} else {
+						GameHelper.info("Either the Hero or Opponent (or both) have not been selected");
+					}						
+			});
+			GameHelper.loadAssets();
+			$(".characterRow").remove();
+			for ( var characterName in GameHelper.characters) {
+				if (characterName == "Dummy") {
+					continue;
+				}
+				var characterDisplay = GameHelper
+						.getCharacterDisplay(characterName);
+				var heroDisplay = characterDisplay.clone();
+				heroDisplay.addClass("hero");
+				heroDisplay.prepend(characterName);
+				heroDisplay.prepend($('<input/>').attr('type', 'radio').attr(
+						'name', 'hero').attr('value', characterName).addClass("hero"));
+				var opponentDisplay = characterDisplay.clone();
+				opponentDisplay.addClass("opponent");
+				opponentDisplay.prepend(characterName);
+				opponentDisplay.prepend($('<input/>').attr('type', 'radio').attr(
+						'name', 'opponent').attr('value', characterName).addClass("opponent"));
+				var trObj = $("<tr/>");
+				trObj.addClass("characterRow");
+				$("#characters").find('tbody').append(trObj);
+				trObj.append(heroDisplay);
+				trObj.append(opponentDisplay);
+			}
+			$("#characters")
+					.find('canvas.characterImage')
+					.each(
+							function(index) {
+								var canvas = this;
+								var context = canvas.getContext('2d');
+								var sprite = GameHelper.getSpriteByCharacterName($(canvas).text());							
+								var imageObj = new Image();
+								imageObj.src = sprite.url;//"http://www.eatthedamncake.com/wordpress/wp-content/uploads/2010/05/ice-cream.jpg";
+
+								imageObj.onload = function() {
+									context.drawImage(imageObj, sprite.coordsMap[0],sprite.coordsMap[1], sprite.coordsMap[2],sprite.coordsMap[3], 0,0, canvas.width, canvas.height);
+									//context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+								};
+
+							});
+			var enableStartButton = function() {
+				if ($("input[type='radio'].hero:checked").val() != null &&
+						$("input[type='radio'].opponent:checked").val() != null) {
+							$("#startContainer").css("background", "green");
+							$("#startContainer").css("color", "white");
+				}
+			};
+			$("#characters td.hero").click(function(event) {
+				$("#characters td.hero").css("background", "black");
+				$("#characters td.hero input[type='radio']").prop("checked", false);
+				$(this).css("background", "#611");
+				$(this).find("input[type='radio']").prop("checked", true);
+				enableStartButton();
+			});
+			$("#characters td.opponent").click(function(event) {
+				$("#characters td.opponent").css("background", "black");
+				$("#characters td.opponent input[type='radio']").prop("checked", false);
+				$(this).css("background", "#116");
+				$(this).find("input[type='radio']").prop("checked", true);
+				enableStartButton();
+			});
+			$("#characters td").dblclick(function(event) {
+				var characterName = $(this).find("input").val();
+				GameHelper.showCharacterDetails(characterName, "#selectBattle");
+			});
+		},
+		
+		contact : function() {
+			$("#contact").show();
+		},
+		
+		storyMode : function() {
+			$("#storyMode").show();
+		},
+			
+		keyBindings : function() {
+			$("#keyBindings").show();
+			
+			$("#keyBindingTable").html("");
+			
+			jQuery.each(Input.types, function (name, value) {
+				var tr = $("<tr/>");
+				var keys = "";
+				for (var i = 0; i < value.length; i++) {
+					keys += value[i];
+					if (i < value.length-1) {
+						keys += " or ";
+					}
+				}
+				tr.append("<td>" + name + "</td><td>" + keys + "</td>");
+			    $('#keyBindingTable').append(tr);
+			});
+					
+		}
+		
+};

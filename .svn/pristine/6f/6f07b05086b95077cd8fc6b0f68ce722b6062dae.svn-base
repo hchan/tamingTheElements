@@ -1,0 +1,110 @@
+GameHelper.createAbilityComponent('Wind Cone', '',  {
+	speed : 8,
+	damage : 40,
+	type: 'Range',
+	init : function() {
+		this.addComponent('12px-blue-comet');
+		this.requires(this.type);
+		this.attr({
+			w: 25,
+			h: 10
+		});
+		
+		//this.addComponent('spr_blueBullet');
+		//this.addComponent('spriteBullet');
+		Global.playSound('laser1');
+	}
+});
+
+GameHelper.createAbilityComponent('Fire Blast', '', {
+	speed : 6,
+	damage : 40,
+	type : 'Range',
+	init : function() {
+		this.addComponent('redFireBullet');
+		this.requires(this.type);
+		this.attr({
+			w: 75,
+			h: 15
+		});		
+		Global.playSound('fireBreath');
+	}
+});
+
+GameHelper.createAbilityComponent('Icicles', '', {
+	speed : 8,
+	damage : 20,
+	type : 'Range',
+	init : function() {
+		this.addComponent('icicleBullet');
+		this.requires(this.type);
+		this.attr({
+			w: 10,
+			h: 25
+		});
+		Global.playSound('freezing');
+	}
+});
+
+GameHelper.createAbilityComponent('Hurl Rock', '', {
+	speed : 7,
+	damage : 40,
+	type : 'Range',
+	init : function() {
+		this.addComponent('rockBullet');
+		this.requires(this.type);
+		this.attr({
+			w: 35,
+			h: 35
+		});
+		Global.playSound('rockBullet');
+	}
+});
+
+
+
+GameHelper.createAbilityComponent('Ground Shock', '', {
+	rangeWidth:  Global.playerCharacter.width * 3,
+	rangeHeight: Global.playerCharacter.height * 3,
+	damage : 50,
+	speed: 'n/a',
+	type : 'Melee',
+	init : function() {
+		this.addComponent('rockExplosion');
+		this.requires(this.type);
+		this.attr({
+			w: this.rangeWidth,
+			h: this.rangeHeight
+		});
+		Global.playSound('rockBullet');
+	},
+	initAgainstCharacterType : function(characterType, character) {
+		this.x = character.x - (this.w - character.w)/2;
+		this.y = character.y - (this.h - character.h)/2;
+		
+		character.disableControls = true;		
+		character.characterSpeed = 0;
+		character.pauseAnimation();
+		this.onHit('HUDContainer', function() {
+			// TODO crop
+		});
+		this.onHit(characterType, function(data) {
+			this.applyDamage(data[0].obj);
+		});
+		var rockExplosion = this;
+		Crafty.e("Delay").delay(function() {	
+			try {
+				if (!character.isDead) {
+					character.removeMelee(this);
+					rockExplosion.destroy();
+					character.disableControls = false;
+					character.resetCharacterSpeed();
+					character.resumeAnimation();
+				}
+			} catch (e) {
+				console.log(e)
+				// character may be destroyed
+			}
+		}, 1500, 0);
+	}
+});

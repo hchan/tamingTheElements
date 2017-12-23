@@ -1,0 +1,254 @@
+// Img Assets Generated on : Sat Jul 12 12:51:51 PDT 2014
+
+Global.imgAssets = {
+	'adrenaline': {
+		url: 'img/adrenaline.png',
+		coords : [0, 0, 52, 53],
+		name : 'adrenaline'
+	},
+	'airCircle': {
+		url: 'img/airCircle.png',
+		coords : [0, 0, 80, 80],
+		name : 'airCircle'
+	},
+	'airCorner': {
+		url: 'img/airCorner.png',
+		coords : [0, 0, 1192, 591],
+		name : 'airCorner'
+	},
+	'beta': {
+		url: 'img/beta.png',
+		coords : [0, 0, 80, 80],
+		name : 'beta'
+	},
+	'capture': {
+		url: 'img/capture.png',
+		coords : [0, 0, 80, 80],
+		name : 'capture'
+	},
+	'chaosBolt': {
+		url: 'img/chaosBolt.png',
+		coords : [0, 0, 80, 41],
+		name : 'chaosBolt'
+	},
+	'chaosOrb': {
+		url: 'img/chaosOrb.png',
+		coords : [0, 0, 80, 80],
+		name : 'chaosOrb'
+	},
+	'chaoticFire': {
+		url: 'img/chaoticFire.png',
+		coords : [0, 0, 80, 80],
+		name : 'chaoticFire'
+	},
+	'circusOfSlimeIcon': {
+		url: 'img/circusOfSlimeIcon.png',
+		coords : [0, 0, 80, 78],
+		name : 'circusOfSlimeIcon'
+	},
+	'crimsonFire': {
+		url: 'img/crimsonFire.png',
+		coords : [0, 0, 80, 64],
+		name : 'crimsonFire'
+	},
+	'death': {
+		url: 'img/death.png',
+		coords : [0, 0, 714, 696],
+		name : 'death'
+	},
+	'earthCircle': {
+		url: 'img/earthCircle.png',
+		coords : [0, 0, 80, 80],
+		name : 'earthCircle'
+	},
+	'earthCorner': {
+		url: 'img/earthCorner.png',
+		coords : [0, 0, 400, 400],
+		name : 'earthCorner'
+	},
+	'elementalSigns': {
+		url: 'img/elementalSigns.png',
+		coords : [0, 0, 80, 80],
+		name : 'elementalSigns'
+	},
+	'entanglingVines': {
+		url: 'img/entanglingVines.png',
+		coords : [0, 0, 80, 61],
+		name : 'entanglingVines'
+	},
+	'entanglingVinesLong': {
+		url: 'img/entanglingVinesLong.png',
+		coords : [0, 0, 80, 18],
+		name : 'entanglingVinesLong'
+	},
+	'evilEyes': {
+		url: 'img/evilEyes.png',
+		coords : [0, 0, 300, 300],
+		name : 'evilEyes'
+	},
+	'fade': {
+		url: 'img/fade.png',
+		coords : [0, 0, 78, 80],
+		name : 'fade'
+	},
+	'favicon': {
+		url: 'img/favicon.png',
+		coords : [0, 0, 358, 358],
+		name : 'favicon'
+	},
+	'fireball': {
+		url: 'img/fireball.png',
+		coords : [0, 0, 80, 50],
+		name : 'fireball'
+	},
+	'fireBlast': {
+		url: 'img/fireBlast.png',
+		coords : [0, 0, 74, 26],
+		name : 'fireBlast'
+	},
+	'fireCircle': {
+		url: 'img/fireCircle.png',
+		coords : [0, 0, 80, 80],
+		name : 'fireCircle'
+	},
+	'fireCorner': {
+		url: 'img/fireCorner.png',
+		coords : [0, 0, 274, 480],
+		name : 'fireCorner'
+	},
+	'fireDance': {
+		url: 'img/fireDance.png',
+		coords : [0, 0, 80, 80],
+		name : 'fireDance'
+	},
+	'fireHeal': {
+		url: 'img/fireHeal.png',
+		coords : [0, 0, 80, 79],
+		name : 'fireHeal'
+	},
+	'groundShock': {
+		url: 'img/groundShock.png',
+		coords : [0, 0, 77, 80],
+		name : 'groundShock'
+	},
+	'hurlRock': {
+		url: 'img/hurlRock.png',
+		coords : [0, 0, 80, 64],
+		name : 'hurlRock'
+	},
+	'hurricane': {
+		url: 'img/hurricane.png',
+		coords : [0, 0, 80, 80],
+		name : 'hurricane'
+	},
+	'iceBlast': {
+		url: 'img/iceBlast.png',
+		coords : [0, 0, 80, 49],
+		name : 'iceBlast'
+	},
+	'iceBreath': {
+		url: 'img/iceBreath.png',
+		coords : [0, 0, 80, 53],
+		name : 'iceBreath'
+	},
+	'iceSheet': {
+		url: 'img/iceSheet.png',
+		coords : [0, 0, 80, 48],
+		name : 'iceSheet'
+	},
+	'iceShock': {
+		url: 'img/iceShock.png',
+		coords : [0, 0, 80, 32],
+		name : 'iceShock'
+	},
+	'icicles': {
+		url: 'img/icicles.png',
+		coords : [0, 0, 80, 42],
+		name : 'icicles'
+	},
+	'pria': {
+		url: 'img/pria.png',
+		coords : [0, 0, 837, 797],
+		name : 'pria'
+	},
+	'redX': {
+		url: 'img/redX.png',
+		coords : [0, 0, 20, 20],
+		name : 'redX'
+	},
+	'rockArmour': {
+		url: 'img/rockArmour.png',
+		coords : [0, 0, 65, 80],
+		name : 'rockArmour'
+	},
+	'rockElementalRed': {
+		url: 'img/rockElementalRed.png',
+		coords : [0, 0, 80, 20],
+		name : 'rockElementalRed'
+	},
+	'rockPellet': {
+		url: 'img/rockPellet.png',
+		coords : [0, 0, 80, 19],
+		name : 'rockPellet'
+	},
+	'shardsOfIce': {
+		url: 'img/shardsOfIce.png',
+		coords : [0, 0, 80, 11],
+		name : 'shardsOfIce'
+	},
+	'slimeBlast': {
+		url: 'img/slimeBlast.png',
+		coords : [0, 0, 80, 45],
+		name : 'slimeBlast'
+	},
+	'sonarBlast': {
+		url: 'img/sonarBlast.png',
+		coords : [0, 0, 80, 38],
+		name : 'sonarBlast'
+	},
+	'stealHealth': {
+		url: 'img/stealHealth.png',
+		coords : [0, 0, 80, 59],
+		name : 'stealHealth'
+	},
+	'stick': {
+		url: 'img/stick.png',
+		coords : [0, 0, 40, 19],
+		name : 'stick'
+	},
+	'stranglingBranches': {
+		url: 'img/stranglingBranches.png',
+		coords : [0, 0, 80, 44],
+		name : 'stranglingBranches'
+	},
+	'victory': {
+		url: 'img/victory.png',
+		coords : [0, 0, 1920, 1080],
+		name : 'victory'
+	},
+	'vineTrap': {
+		url: 'img/vineTrap.png',
+		coords : [0, 0, 70, 80],
+		name : 'vineTrap'
+	},
+	'voidCircle': {
+		url: 'img/voidCircle.png',
+		coords : [0, 0, 80, 80],
+		name : 'voidCircle'
+	},
+	'waterCircle': {
+		url: 'img/waterCircle.png',
+		coords : [0, 0, 80, 80],
+		name : 'waterCircle'
+	},
+	'waterCorner': {
+		url: 'img/waterCorner.png',
+		coords : [0, 0, 1024, 79],
+		name : 'waterCorner'
+	},
+	'windCone': {
+		url: 'img/windCone.png',
+		coords : [0, 0, 27, 14],
+		name : 'windCone'
+	},
+}

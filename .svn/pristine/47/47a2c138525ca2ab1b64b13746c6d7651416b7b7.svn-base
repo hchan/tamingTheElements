@@ -1,0 +1,180 @@
+a {
+	color : #FFFFFF
+}
+.info {
+	font-weight: bold;	
+	font-size: 14px;
+}
+
+.water {
+	background: blue;
+}
+
+.fire {
+	background: red;
+}
+
+.earth {
+	background: green;
+}
+
+.air {
+	background: #aaE3F6;
+}
+
+.centerMe {
+	margin-left : auto;
+	margin-right : auto;
+	width: 400px;
+}
+
+.clickable {
+	text-decoration: underline;	
+}
+
+.notClickableYet {
+	text-decoration: underline;	
+	color : grey;
+}
+
+.clickable:hover {
+	cursor: pointer;
+}
+
+.back {
+	text-align: left;
+	font-size: 16px;
+	text-decoration: underline;	
+	cursor: pointer;
+}
+
+.heading {
+	color: white; 
+	width: 100%; 
+	text-align: center; 
+	font-size: 48px; 
+	font-family: cursive; 
+	font-style: italic; 
+	font-weight: 900;
+	color: yellow;
+}
+
+.brief {
+	color: white; 
+	width: 100%; 
+	text-align: center; 
+	font-size: 14px; 
+	font-family: cursive; 
+	font-style: italic; 
+	font-weight: 200
+}
+
+.chapterHeading {
+	color: gold; 
+	width: 100%; 
+	text-align: left !important; 
+	font-size: 18px; 
+	font-family: 
+	cursive; 
+	font-style: bold; 
+	font-weight: 900;
+}
+
+.chapterBody {
+	color: white; 
+	width: 100%; 
+	text-align: left !important; 
+	font-size: 14px; 
+	font-family: 
+	cursive; 
+	font-style: italic; 
+	font-weight: 900;
+}
+
+.objectivesHeading {
+	color: gold; 
+	width: 100%; 
+	text-align: left !important; 
+	font-size: 18px; 
+	font-family: cursive; 
+	font-style: bold; 
+	font-weight: 900;
+}
+
+.progressHeading {
+	color: green; 
+	width: 100%; 
+	text-align: left !important; 
+	font-size: 18px; 
+	font-family: cursive; 
+	font-style: bold; 
+	font-weight: 900;
+}
+
+.objectivesBody {
+	color: white; 
+	width: 100%; 
+	text-align: left !important; 
+	font-size: 14px; 
+	font-family: cursive; 
+	font-style: italic; 
+	font-weight: 900;
+}
+
+.progressBody {
+	color: white; 
+	width: 100%; 
+	text-align: left !important; 
+	font-size: 14px; 
+	font-family: cursive; 
+	font-style: italic; 
+	font-weight: 900;
+}
+
+#enterBattlegroundContainer {
+	margin-left: auto; 
+	margin-right: auto; 
+	font-size: 22px; 
+	color: grey; 
+	align: center; 
+	text-align: center; 
+	border: 2px solid; 
+	border-radius: 25px; 
+	width: 300px; 
+	cursor: pointer;
+}
+
+#garrisonTable	{
+	margin-left: auto; 
+	margin-right: auto;
+} 
+
+.garrisonRow {
+	cursor: pointer;
+}
+
+.garrisonInfoContainer {
+	position: relative;
+}
+
+.garrisonInfoDiv{
+	height: 100%;
+	position: relative;
+}
+
+.battlegroundOrderContainer {
+	border-radius: 25px; 
+	border: 2px solid; 
+	position: absolute; 
+	bottom: 0;
+	display: none;
+}
+
+.selectedGarrisonRow {
+	background-color: #000080;
+}
+
+.readyToEnterBattleground {
+	background: green;
+	color: white !important;
+}

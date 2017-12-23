@@ -1,0 +1,8 @@
+{
+    "name": "Taming the Elements",
+    "main":        "index.html",
+    "version" : "1.0",
+    "window": {    
+	"toolbar": false
+    }   
+}

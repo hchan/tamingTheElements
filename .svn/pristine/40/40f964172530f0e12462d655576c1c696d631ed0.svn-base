@@ -1,0 +1,14 @@
+var gulp = require('gulp');
+var rimraf = require('gulp-rimraf'); // rimraf directly
+
+var dest = "c:/temp/tote";
+var src = "WebContent";
+gulp.task('default', function(cb) {
+    clean(cb);
+    gulp.src(src + "/*").pipe(gulp.dest(dest));
+});
+
+function clean(cb) {
+    //rimraf(dest, cb);
+    gulp.src(dest).pipe(rimraf());
+}
