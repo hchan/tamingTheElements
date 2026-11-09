@@ -1,0 +1,33 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Test output
+playwright-report/
+test-results/
+blob-report/
+
+# Legacy build leftovers
+.sass-cache/
+
+# Secrets and local config (never commit)
+.env
+.env.*
+!.env.example
+*.tfvars
+*.tfstate*
+user.properties
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/worktrees/
+.claude/*.lock
