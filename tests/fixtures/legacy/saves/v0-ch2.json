@@ -1,0 +1,45 @@
+{
+  "garrisonSortOrder": 1,
+  "difficulty": 0.66,
+  "displaySettings": 1.25,
+  "chapter": 2,
+  "garrison": [
+    {
+      "id": "6f698de2-66a2-44b3-a221-52a394ea3c5a",
+      "experience": 19,
+      "characterName": "Fiara",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "81c85171-746b-462a-9041-9412406be7e1",
+      "experience": 19,
+      "characterName": "Treenoc",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "fd9b5c08-6d45-469e-a803-5d072befcb0f",
+      "experience": 19,
+      "characterName": "Ishimi",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "1da18f48-bcf3-4281-9351-249e738b166e",
+      "experience": 19,
+      "characterName": "Pax",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "7724250d-4488-44e2-af09-e96194582250",
+      "experience": 19,
+      "characterName": "Fiara",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    }
+  ],
+  "createdTime": 1577836800000,
+  "lastModifiedTime": 1577836800000
+}

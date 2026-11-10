@@ -1,0 +1,95 @@
+{
+  "garrisonSortOrder": 1,
+  "difficulty": 0.66,
+  "displaySettings": 1.25,
+  "chapter": 4,
+  "garrison": [
+    {
+      "id": "6f698de2-66a2-44b3-a221-52a394ea3c5a",
+      "experience": 100,
+      "characterName": "Cyclonius",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "781c8517-1746-4b62-a104-19412406be7e",
+      "experience": 100,
+      "characterName": "Sindarosa",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "1efd9b5c-086d-4456-9e68-035d072befcb",
+      "experience": 100,
+      "characterName": "Morblass",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "0fe1da18-f48b-4cf3-a81d-351249e738b1",
+      "experience": 100,
+      "characterName": "Pax",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "66e47724-250d-4448-84e2-6f09e9619458",
+      "experience": 100,
+      "characterName": "Wispera",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "22507a6c-ab5b-45c5-a530-1c8bc9c468ac",
+      "experience": 100,
+      "characterName": "Fiara",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "b938e63a-1afb-46ec-b394-7684b47aa361",
+      "experience": 100,
+      "characterName": "Curomo",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "1e403b94-ce9f-49f3-acd6-8bc92cff264f",
+      "experience": 100,
+      "characterName": "Rokcore",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "d099b307-94ee-4e1d-93bd-3d8b4071e27a",
+      "experience": 100,
+      "characterName": "Echo",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "87da4fce-6887-4527-9f10-41a01c1dda87",
+      "experience": 100,
+      "characterName": "Lavax",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "f51b6678-634b-43f6-a14e-a92b366fd103",
+      "experience": 100,
+      "characterName": "Ishimi",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    },
+    {
+      "id": "2e3beb36-8c95-44a3-b5ee-8befe932abf2",
+      "experience": 100,
+      "characterName": "Treenoc",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    }
+  ],
+  "createdTime": 1577836800000,
+  "lastModifiedTime": 1577836800000,
+  "completeTime": 1577836860000
+}
