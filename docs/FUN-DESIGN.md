@@ -529,6 +529,11 @@ matchup becomes something to play around instead of a fixed loss.
 
 - **State:** one `weather` slot in `SimState.arcade` (kind, ticks left, owner team); `none` by default. A new weather
   replaces the old one, a recast of the same weather only refreshes it (no stacking).
+- **Weather power (owner, 2026-11-10):** weather is not available from the start. Each team has a weather charge (its own
+  bar, separate from the super meter) that starts empty and must fill before the cast is unlocked. Ranged heroes charge it
+  by pressing attack buttons (each cast adds), melee heroes charge it just by walking and running (distance moved).
+  Casting spends the full charge; the 30 s cooldown is replaced by the charge. Numbers are data rows (threshold, gain per
+  cast, gain per walked pixel); start so that a normal fight unlocks weather around the middle of a round. See WP 35.
 - **Cast:** a new `Cmd.weather` (Arcade only; its own button, never in Classic's input mask). Each race calls the
   weather of its element: fire **Sun**, water **Rain**, earth **Sandstorm**, air **Gale**, void **Eclipse**. Cooldown
   1500 ticks (30 s), duration 500 ticks (10 s). Casting is a medium recovery and builds a little meter.
@@ -576,7 +581,11 @@ Owner idea (2026-11-10): the arena background is one of the four elements (fire,
 has `background/{fire,water,earth,air}.png`), and random patches of that element lie on the floor. A hero of the SAME
 element gets a bonus while standing on a patch. Stages are Archon-style terrain with the fighting-game stage idea.
 
-- **Stage:** chosen by the match seed (later: loser picks, or a menu choice). Void and the plain backdrops have no patches.
+- **Stage:** the first stage is chosen by the match seed (void and the plain backdrops have no patches). After that the
+  stage follows the weather (owner, 2026-11-10: each elemental can change the weather): casting Sun turns the stage to
+  fire (new fire patches, same symmetric rules), Rain to water, Sandstorm to earth, Gale to air, and the backdrop changes
+  with it. To confirm with the owner: does a weather change also swap the patches, as written here (default), or only the
+  damage modifiers of section 2.14?
 - **Patches:** 3 to 5 rectangles per round, placed from the seeded RNG at the round start, point-symmetric about the arena
   centre so neither side gets a better layout, never overlapping the spawn points, never closer than a hero width to each
   other or the walls, so nothing can trap a hero. State in `SimState.arcade` (kind, rects), integer geometry only.
@@ -585,7 +594,9 @@ element gets a bonus while standing on a patch. Stages are Archon-style terrain 
 - **Water patch:** a water hero in it heals 1 HP per second (every 50 ticks). Scale it per mille of max HP, and let the
   data row decide (the owner's 1 HP per second is the default for a 100 HP hero).
 - **Earth patch:** a solid rock: heroes of other elements cannot enter it (movement is clamped like a wall), an earth hero
-  walks over it. Open question: do projectiles stop at it? Default: no, only bodies are blocked.
+  walks over it, and projectiles stop at it (owner decision 2026-11-10: rock stops projectiles; a shot that hits a rock
+  ends there, with a small spark; an earth hero's own shots pass over its rocks). Rocks give cover, so the symmetric layout
+  and the no-trap spacing matter.
 - **Air patch:** an air hero in it moves at double speed (x2, data row 2000 per mille); it does not stack with a dash (the
   larger applies).
 - **Stacking:** all modifiers multiply with the weather and element chart, then are capped (data row, default x2.5 total)
@@ -906,6 +917,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 32 | `WP-arcade-terrain-view` | view | Patch art with pattern and label, buff badge, particles | 31 |
 | 33 | `WP-arcade-pose-layer` | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
 | 34 | `WP-sprite-sheet-pipeline` | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
+| 35 | `WP-arcade-weather-charge` | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid
