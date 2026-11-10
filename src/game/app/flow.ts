@@ -11,6 +11,7 @@ import {
   type MatchOutcome,
   type MatchReport,
   type MatchSetup as CoreSetup,
+  type ReplayFile,
   type SaveV1,
 } from '@core/index';
 import { el } from '@ui/dom';
@@ -24,11 +25,16 @@ import type { Screen } from '@ui/screens/screen';
 import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import type { UiFlags } from '../platform/flags';
+import { getRecordSetting } from '../platform/record-setting';
+import type { ReplayStore } from '../platform/storage/replay-store';
+import { PlaytestRecorder } from '../replay/playtest-recorder';
 import { requestPersistence } from '../platform/storage/idb-save-store';
-import { teardown } from '../platform/test-hook';
 import { NEW_GAME_SCRIPT } from '../cinematics/chain';
 import type { SaveStore } from '../platform/storage/save-store';
 import type { ArenaLaunch, MatchEnd } from '../scenes/launch';
+import { downloadReplay } from './download';
+import { destroyGame, type GameHandle } from './game-handle';
+import { replayViewerScreen } from './replay-viewer';
 
 /** Legacy character names map to slugs the same way the garrison rows do. */
 export function slugOf(name: string): string {
@@ -71,6 +77,8 @@ export interface FlowDeps {
   readonly flags: UiFlags;
   readonly now: () => number;
   readonly navigate: (route: string) => void;
+  /** Local replay store; only written to when recording is on. */
+  readonly replays: ReplayStore;
 }
 
 interface Pending {
@@ -82,12 +90,18 @@ interface Pending {
 export class AppFlow {
   private pending: Pending | undefined;
   private report: MatchReport | undefined;
+  private lastReplay: ReplayFile | undefined;
 
   constructor(private readonly deps: FlowDeps) {}
 
   /** Battle/opponent seed: `?seed=` in dev and test builds, else the clock. */
   private seed(): number {
     return this.deps.flags.seed ?? this.deps.now() >>> 0;
+  }
+
+  /** `?ff=record` (dev/test) or the "Record playtests" setting; off by default. */
+  private recording(): boolean {
+    return this.deps.flags.record || getRecordSetting();
   }
 
   screens(): ScreenTable {
@@ -116,6 +130,8 @@ export class AppFlow {
       }),
       loading: () => this.battleScreen(),
       victory: () => this.resultsScreen(),
+      replay: () =>
+        replayViewerScreen({ replays: this.recording() ? this.deps.replays : undefined, forceNoWebgl: this.deps.flags.forceNoWebgl }),
     };
   }
 
@@ -198,10 +214,18 @@ export class AppFlow {
         void this.deps.store.load().then(async (r) => {
           if (life.disposed || !r.ok) return;
           const setup = toCoreSetup(pending.ui, r.value, pending.seed);
+          const recorder = this.recording() ? new PlaytestRecorder(setup) : undefined;
+          this.lastReplay = undefined;
           const launch: ArenaLaunch = {
             setup,
             enemy: enemyAgent(this.deps.flags),
+            ...(recorder ? { recorder } : {}),
             onEnd: (end) => {
+              const replay = recorder?.finish();
+              if (replay) {
+                this.lastReplay = replay;
+                void this.deps.replays.add(replay).catch(() => undefined);
+              }
               void this.finish(pending, setup, end);
             },
           };
@@ -269,6 +293,16 @@ export class AppFlow {
         }
         for (const c of r.captured) page.append(el('p', undefined, `Captured ${c.characterName}!`));
         if (r.gameCompleted) page.append(el('p', undefined, 'You completed the game!'));
+        const replay = this.lastReplay;
+        if (replay) {
+          const dl = el('button', 'menuButton', 'Download replay');
+          dl.type = 'button';
+          dl.id = 'downloadReplay';
+          dl.addEventListener('click', () => {
+            downloadReplay(replay);
+          });
+          page.append(dl);
+        }
         for (const [label, href] of [
           ['Current Objectives', '#currentObjectives'],
           ['Garrison', '#garrison'],
@@ -286,27 +320,6 @@ export class AppFlow {
       },
     };
   }
-}
-
-type GameHandle = {
-  destroy(removeCanvas: boolean): void;
-  events: { once(event: string, fn: () => void): unknown };
-};
-
-/** Phaser destroys on its next frame; keep the DOM until then so the canvas is removed by Phaser itself. */
-function destroyGame(doomed: GameHandle | undefined, doomedNode: HTMLElement | undefined): void {
-  if (!doomed) {
-    doomedNode?.remove();
-    return;
-  }
-  const done = new Promise<void>((resolve) => {
-    doomed.events.once('destroy', () => {
-      doomedNode?.remove();
-      resolve();
-    });
-  });
-  teardown.settled = Promise.all([teardown.settled, done]).then(() => undefined);
-  doomed.destroy(true);
 }
 
 function redirect(navigate: (route: string) => void, route: string): Screen {

@@ -38,7 +38,7 @@ body {
 }
 
 /* The game screens (battle, cinematic) own the whole viewport; no menu padding around the canvas. */
-#menu:has(#battle, #cinematic) {
+#menu:has(#battle, #cinematic, #replayViewer) {
   padding: 0;
 }
 
@@ -451,4 +451,19 @@ a {
   font-weight: 900;
   color: yellow;
   white-space: nowrap;
+}
+
+/* Replay viewer: the controls float over the bottom of the (full-viewport) game area. */
+#replayViewer .replayBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.75);
 }

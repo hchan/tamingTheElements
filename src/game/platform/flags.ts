@@ -12,6 +12,8 @@ export interface UiFlags {
   readonly aiScripted: boolean;
   /** Play path starts the intro cinematic after Preload. */
   readonly cinematicDemo: boolean;
+  /** Record playtests (`?ff=record`, dev and test builds); production uses the Settings checkbox instead. */
+  readonly record: boolean;
   /** Fixed seed for the battle and opponent draw (`?seed=N`, dev and test builds only), or null for the clock. */
   readonly seed: number | null;
 }
@@ -24,6 +26,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   arenaDemo: false,
   aiScripted: false,
   cinematicDemo: false,
+  record: false,
   seed: null,
 };
 
@@ -46,6 +49,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     arenaDemo: on.has('arenaDemo'),
     aiScripted: on.has('aiScripted'),
     cinematicDemo: on.has('cinematicDemo'),
+    record: on.has('record'),
     seed,
   };
 }

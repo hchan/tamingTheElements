@@ -32,6 +32,7 @@ import { ActionBarView } from '../hud/action-bar';
 import { CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
+import { ReplayCursor } from '../replay/cursor';
 import { HUD_SCENE, type HudData } from './Hud';
 import type { ArenaLaunch } from './launch';
 
@@ -74,6 +75,8 @@ export class Arena extends Phaser.Scene {
   private actionBar: ActionBarView | undefined;
   private clicks: number[] = [];
   private pauseText: Phaser.GameObjects.Text | undefined;
+  private cursor: ReplayCursor | undefined;
+  private speed: 1 | 2 = 1;
   private cleanups: (() => void)[] = [];
   private ended = false;
 
@@ -88,7 +91,9 @@ export class Arena extends Phaser.Scene {
 
   create(): void {
     fitScene(this);
-    const world = createMatch(this.launch?.setup ?? DEMO_SETUP);
+    const playback = this.launch?.playback;
+    this.cursor = playback ? new ReplayCursor(playback.replay) : undefined;
+    const world = this.cursor?.world ?? createMatch(this.launch?.setup ?? DEMO_SETUP);
     this.world = world;
     this.view = createRenderView(world);
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
@@ -108,14 +113,14 @@ export class Arena extends Phaser.Scene {
       { reducedMotion: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches },
     );
 
-    if (this.launch) {
+    if (this.launch && !playback) {
       const keyboard = new KeyboardAgent({
         capturable: () => true,
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
         },
       });
-      this.agents = [keyboard, this.launch.enemy];
+      this.agents = [keyboard, this.launch.enemy ?? new RandomBot('p2')];
       this.actionBar = new ActionBarView(this, this.view, (cmd) => {
         this.clicks.push(cmd);
         keyboard.press(cmd);
@@ -144,6 +149,7 @@ export class Arena extends Phaser.Scene {
     this.cleanups.push(() => { this.game.events.off(BLOCKED_EVENT, onBlocked); });
     if (this.game.registry.get(BLOCKED_EVENT) === true) driver.pause();
 
+    if (playback) this.attachPlayback(playback, driver);
     this.installProbe(world, driver);
     const hudData: HudData = { view: this.view };
     this.scene.launch(HUD_SCENE, hudData);
@@ -181,9 +187,11 @@ export class Arena extends Phaser.Scene {
         return out;
       },
       setHp: (id, hp) => {
+        this.launch?.recorder?.invalidate();
         world.state.hp[id] = hp;
       },
       place: (id, x, y, dir) => {
+        this.launch?.recorder?.invalidate();
         const st = world.state;
         st.x[id] = x;
         st.px[id] = x;
@@ -198,6 +206,10 @@ export class Arena extends Phaser.Scene {
         driver.pause();
         for (let k = 0; k < n; k++) this.advance(cmds);
       },
+      stepLive: (n) => {
+        driver.pause();
+        for (let k = 0; k < n; k++) this.advance([undefined, undefined]);
+      },
     };
   }
 
@@ -205,10 +217,16 @@ export class Arena extends Phaser.Scene {
   private advance(cmds: readonly [number | undefined, number | undefined]): void {
     const world = this.world;
     if (!world || this.ended) return;
+    if (this.cursor) {
+      this.advancePlayback(this.cursor);
+      return;
+    }
     // Agents are consulted only when a side has no forced command (their RNG streams live in the sim state).
     const [f0, f1] = cmds;
     const c = f0 === undefined || f1 === undefined ? collectCommands(world, this.agents) : [0, 0];
-    const events = step(world, [f0 ?? c[0] ?? 0, f1 ?? c[1] ?? 0]);
+    const final: [number, number] = [f0 ?? c[0] ?? 0, f1 ?? c[1] ?? 0];
+    this.launch?.recorder?.record(final);
+    const events = step(world, final);
     this.fx?.consume(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
@@ -220,7 +238,51 @@ export class Arena extends Phaser.Scene {
       activeSlot: s.teams[TeamField.activeSlot] ?? 0,
       capturedIndices: capturedRosterIndices(s, 1),
     };
-    this.time.delayedCall(END_DELAY_MS, () => { this.launch?.onEnd(end); });
+    this.time.delayedCall(END_DELAY_MS, () => { this.launch?.onEnd?.(end); });
+  }
+
+  /** Replay mode: one verified tick per call (two at 2x); a finished or diverged replay holds the driver. */
+  private advancePlayback(cursor: ReplayCursor): void {
+    for (let k = 0; k < this.speed; k++) {
+      const events = cursor.next();
+      if (!events) break;
+      this.fx?.consume(events);
+    }
+    if (cursor.state !== 'playing') this.driver?.pause();
+  }
+
+  private attachPlayback(playback: NonNullable<ArenaLaunch['playback']>, driver: FixedStepDriver): void {
+    const cursor = this.cursor;
+    if (!cursor) return;
+    playback.attach({
+      setSpeed: (s) => {
+        this.speed = s;
+      },
+      setPaused: (p) => {
+        if (cursor.state !== 'playing') return;
+        if (p) driver.pause();
+        else driver.resume();
+      },
+      step: () => {
+        driver.pause();
+        this.advancePlayback(cursor);
+      },
+    });
+  }
+
+  private reportPlayback(): void {
+    const cursor = this.cursor;
+    const driver = this.driver;
+    if (!cursor || !driver) return;
+    const d = cursor.divergence;
+    this.launch?.playback?.onStatus({
+      tick: cursor.tick,
+      total: cursor.total,
+      state: cursor.state,
+      paused: driver.isPaused,
+      speed: this.speed,
+      ...(d ? { divergentTick: d.tick } : {}),
+    });
   }
 
   private togglePause(): void {
@@ -237,6 +299,7 @@ export class Arena extends Phaser.Scene {
     const alpha = driver.frame();
     const tick = view.tick;
     this.actionBar?.update();
+    this.reportPlayback();
     pool.begin();
     view.forEachCharacter((c: RenderCharacter) => {
       pool.acquire(c.id).apply(c, tick, alpha);
@@ -269,6 +332,7 @@ export class Arena extends Phaser.Scene {
     this.pool = undefined;
     this.projPool = undefined;
     this.fx = undefined;
+    this.cursor = undefined;
     this.driver = undefined;
     this.view = undefined;
     this.world = undefined;

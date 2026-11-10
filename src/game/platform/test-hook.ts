@@ -16,6 +16,8 @@ export interface ArenaProbe {
   characters(): ProbeCharacter[];
   /** Pauses the real-time driver and runs n sim ticks with the given commands (default: no input). */
   step(n: number, cmds?: readonly [number, number]): void;
+  /** Pauses the real-time driver and runs n ticks with the agents (the real keyboard) deciding the commands. */
+  stepLive(n: number): void;
   /** Sets a character's current health (e.g. 0 to win, or <=25% to make it capturable). */
   setHp(id: number, hp: number): void;
   /** Moves a character and sets its facing (0..7 clockwise from east), keeping the previous position in sync. */

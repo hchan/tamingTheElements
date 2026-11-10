@@ -9,6 +9,7 @@ import {
   newEmptyState,
   type SaveV1,
 } from '@core/index';
+import { getRecordSetting, setRecordSetting } from '../../game/platform/record-setting';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import { prepareExport, runImport } from '../../game/platform/storage/export-import';
 import { canvasFraction } from '../display-scale';
@@ -158,6 +159,24 @@ function transferControls(): HTMLElement {
   return box;
 }
 
+/** Immediate (not part of Save) checkbox: local-only playtest recording, default off. */
+function recordControls(): HTMLElement {
+  const box = el('div', 'settingsGroup');
+  const row = el('label', 'settingsOption');
+  const input = el('input');
+  input.type = 'checkbox';
+  input.id = 'recordPlaytests';
+  input.checked = getRecordSetting();
+  input.addEventListener('change', () => {
+    setRecordSetting(input.checked);
+  });
+  row.append(input, ' Record playtests (kept on this device only)');
+  const viewer = el('a', 'menuButton', 'Replay viewer');
+  viewer.href = '#replay';
+  box.append(row, viewer);
+  return box;
+}
+
 /** `store` is the app's shared save store, so the battle (which loads from it) sees the same save. */
 export function settingsScreen(store?: SaveStore): Screen {
   let node: HTMLElement | null = null;
@@ -202,7 +221,7 @@ export function settingsScreen(store?: SaveStore): Screen {
         }
         done();
       });
-      node.append(form, transferControls());
+      node.append(form, recordControls(), transferControls());
       container.append(node);
     },
     unmount() {

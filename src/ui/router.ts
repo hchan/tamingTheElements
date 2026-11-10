@@ -29,6 +29,7 @@ export const ROUTE_NAMES = [
   'race',
   'gameMaster',
   'character',
+  'replay',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -109,6 +110,7 @@ export function defaultScreens(): ScreenTable {
     gameMaster:
       import.meta.env.DEV || import.meta.env.MODE === 'test' ? gameMasterScreen : placeholderScreen('Not available'),
     character: characterDetailsScreen(),
+    replay: placeholderScreen('Replay viewer'),
   };
 }
 
