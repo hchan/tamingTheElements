@@ -101,7 +101,8 @@ Real files: input in `src/game/input/keyboard-agent.ts`; agents in `src/core/age
   [FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). **Length 0 in Classic**, so it adds no bytes to the hash or snapshot.
 - `EntityFlag` bits: alive, translucent, frozen, captured, benched, dead. Free slots are derived from the alive flag, so the
   allocator (`src/core/sim/alloc.ts`, lowest free id first) needs no extra state. `src/core/sim/world.ts` wraps the state with
-  the walkable arena.
+  the walkable arena: Classic the legacy `DEFAULT_ARENA` (y 100..720), Arcade `arcadePlayfield()` (y 200..640, between the
+  HUD and the action bar; FUN-DESIGN 2.1).
 
 `createMatch` (`src/core/sim/match.ts`) builds the tick-0 world from a `MatchSetup`: p1 entities first, then p2, ids in roster
 order, RNG streams seeded from `seed`.

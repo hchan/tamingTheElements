@@ -88,13 +88,13 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
   it('a diagonal shot leaves at whichever wall it reaches first and releases its active count', () => {
     const world = duel();
     const s = world.state;
-    s.y[0] = 110;
+    s.y[0] = 210;
     step(world, [right | up | primary, 0]);
     const [b] = bullets(world);
     const id = b ?? 0;
-    expect(s.y[0]).toBe(103);
+    expect(s.y[0]).toBe(203);
     expect(s.abil[countIdx(0, 0)]).toBe(1);
-    // Top-left y starts at 103 + (80 - 15) / 2 = 135.5 and drops 8 a tick: out (< arena y 100) on the 5th move.
+    // Top-left y starts at 203 + (80 - 15) / 2 = 235.5 and drops 8 a tick: out (< playfield y 200) on the 5th move.
     for (let t = 0; t < 4; t++) step(world, [0, 0]);
     expect(bullets(world)).toEqual([id]);
     expect(s.x[id] ?? 0).toBeLessThan(world.arena.x + world.arena.w);

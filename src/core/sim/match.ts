@@ -1,6 +1,7 @@
 import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH, GARRISON_MAX_SIZE } from '../data/chapters';
 import type { ChapterNumber } from '../data/chapters';
 import { CHARACTERS, getCharacter } from '../data/characters';
+import { ARCADE_START_Y, arcadePlayfield } from '../data/arcade';
 import type { CharacterId } from '../data/ids';
 import type { SimFlags } from '../flags';
 import { flagBits } from '../flags';
@@ -61,8 +62,9 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
     s.flags[id] = EntityFlag.alive | (i === 0 ? 0 : EntityFlag.benched);
     s.x[id] = x;
     s.px[id] = x;
-    s.y[id] = START_Y;
-    s.py[id] = START_Y;
+    const y = setup.flags.rulesetArcade ? ARCADE_START_Y : START_Y;
+    s.y[id] = y;
+    s.py[id] = y;
     s.w[id] = CHARACTER_WIDTH;
     s.h[id] = CHARACTER_HEIGHT;
     // Arcade life (FUN-DESIGN 2.13): the race's hpPm of the Classic value, floored. Classic keeps it as it is.
@@ -82,7 +84,8 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
 
 /** Builds the tick-0 world for a match: p1 entities first, then p2, ids in roster order. */
 export function createMatch(setup: MatchSetup): SimWorld {
-  const world = createWorld(setup.seed, DEFAULT_ARENA, setup.flags.rulesetArcade);
+  const arcade = setup.flags.rulesetArcade;
+  const world = createWorld(setup.seed, arcade ? arcadePlayfield() : DEFAULT_ARENA, arcade);
   const s = world.state;
   s.world[W.flags] = flagBits(setup.flags) | (setup.chapter > 1 || setup.flags.testerCapture ? CAPTURE_GRANTED_BIT : 0);
   s.rng.set(saveStreams(createStreams(setup.seed)));

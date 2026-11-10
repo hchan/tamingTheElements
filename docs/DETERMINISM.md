@@ -80,7 +80,7 @@ hand and never compute `pow` or `exp` at runtime in core. Directions are the int
 `src/core/math/dir8.ts`; diagonals are `(+-1, +-1)` and deliberately not normalised, because legacy moves at full speed on both
 axes. The Arcade 8-way aim (`src/core/sim/systems/arcade/aim.ts`) uses the same tables: a diagonal shot moves exactly
 `+-speed` on both axes (no `sqrt`), a diagonal melee box is the integer-friendly `(w + h) / 2` square, and the aim is an
-Int32 in the Arcade entity block (hashed and snapshotted with it; Classic has no block, and `castDir` is its plain `dir`). Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.ts`).
+Int32 in the Arcade entity block (hashed and snapshotted with it; Classic has no block, and `castDir` is its plain `dir`). Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.ts`). The Arcade playfield insets (`arcadePlayfield()` in `src/core/data/arcade.ts`, y 200..640) are integer px and the arena rectangle of every Arcade world (Classic keeps `DEFAULT_ARENA`), so every clamp is the same integer comparison.
 
 ## State, snapshot and hash
 

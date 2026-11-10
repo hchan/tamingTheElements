@@ -48,9 +48,9 @@ function duel(p1: string, p2: string, arcade = true): SimWorld {
 
 /**
  * A still 40 x 20 projectile of ability `slug` for `owner` at (x, y) with damage `hp` (default: the ability's), its
- * active count booked like a cast. Placed above the fighters (y 100) by default, so it hits nobody.
+ * active count booked like a cast. Placed above the fighters (y 200) by default, so it hits nobody.
  */
-function bullet(world: SimWorld, owner: number, slug: string, x: number, y = 100, hp?: number): number {
+function bullet(world: SimWorld, owner: number, slug: string, x: number, y = 200, hp?: number): number {
   const s = world.state;
   const id = allocEntity(s);
   const d = defIdx(slug);
@@ -109,8 +109,8 @@ describe('clash outcome by element (rule: the advantaged projectile survives, an
     const [rb, sb] = RACE[eb];
     const world = duel(ra, rb);
     const s = world.state;
-    const a = bullet(world, 0, sa, 600, 100, 40);
-    const b = bullet(world, 1, sb, 610, 105, 30);
+    const a = bullet(world, 0, sa, 600, 200, 40);
+    const b = bullet(world, 1, sb, 610, 205, 30);
     const ev = step(world, [0, 0]);
     const clash = of(ev, K.clash);
     expect(clash).toHaveLength(1);
@@ -141,16 +141,16 @@ describe('clash outcome by element (rule: the advantaged projectile survives, an
 
   it('the overlap centre is in the event, in whole pixels', () => {
     const world = duel('sindarosa', 'cyclonius');
-    bullet(world, 0, 'fire-blast', 600, 100);
-    bullet(world, 1, 'wind-cone', 615, 107);
-    // x overlap 615..640, y overlap 107..120.
-    expect(of(step(world, [0, 0]), K.clash)[0]).toMatchObject({ x: 628, y: 114 });
+    bullet(world, 0, 'fire-blast', 600, 200);
+    bullet(world, 1, 'wind-cone', 615, 207);
+    // x overlap 615..640, y overlap 207..220.
+    expect(of(step(world, [0, 0]), K.clash)[0]).toMatchObject({ x: 628, y: 214 });
   });
 
   it('a strong loser cuts the winner to a quarter of its own damage, never lower', () => {
     const world = duel('morblass', 'sindarosa');
-    const a = bullet(world, 0, 'icicles', 600, 100, 10);
-    bullet(world, 1, 'fire-blast', 610, 100, 80);
+    const a = bullet(world, 0, 'icicles', 600, 200, 10);
+    bullet(world, 1, 'fire-blast', 610, 200, 80);
     step(world, [0, 0]);
     expect(world.state.hp[a]).toBe(2.5);
   });
@@ -175,9 +175,9 @@ describe('clash pairing (rule: opposing teams only, pairs i < j in id order, one
   it('a survivor clashes at most once per tick: the next overlapping enemy waits for the next tick', () => {
     const world = duel('sindarosa', 'cyclonius');
     const s = world.state;
-    const a = bullet(world, 0, 'fire-blast', 600, 100, 40);
-    const b = bullet(world, 1, 'wind-cone', 610, 100, 10);
-    const c = bullet(world, 1, 'wind-cone', 620, 100, 10);
+    const a = bullet(world, 0, 'fire-blast', 600, 200, 40);
+    const b = bullet(world, 1, 'wind-cone', 610, 200, 10);
+    const c = bullet(world, 1, 'wind-cone', 620, 200, 10);
     const first = of(step(world, [0, 0]), K.clash);
     expect(first.map((e) => [e.a, e.b, e.winner])).toEqual([[a, b, a]]);
     expect([isAlive(s, b), isAlive(s, c), s.hp[a]]).toEqual([false, true, 35]);

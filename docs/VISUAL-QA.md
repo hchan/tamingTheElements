@@ -37,7 +37,7 @@ the hyper meters) `arena-arcade-weather-rain` and `arena-arcade-weather-sandstor
 `arcade-weather-gale` (Arcade Versus, Sindarosa against Cyclonius, with the touch Weather button), and Arcade
 Versus from the Settings opt-in: `menu-arcade` (the extra main-menu entry), `arcade-pick` (the picker), `arcade-battle`
 (round 1 intro at tick 40: the ROUND 1 banner, timer and empty round pips, with the touch Super, Guard, Dash and Weather buttons), `arcade-fight`
-(the FIGHT! banner), `arcade-aim`, `arcade-ko` (K.O. with PERFECT during the KO slow motion), `arcade-round-end`
+(the FIGHT! banner), `arcade-aim`, `arcade-playfield-bottom` (the player held down against the bottom edge, above the action bar), `arcade-ko` (K.O. with PERFECT during the KO slow motion), `arcade-round-end`
 (PERFECT, YOU WIN ROUND 1, one pip filled) and `arcade-results` (after a second KO: 2-0), and the 2v2 tag team
 (WP-arcade-tag-view, Sindarosa and Pax against Fiara and a seeded partner): `arcade-tag-pick` (Team 2v2, the partner
 enabled), `arcade-tag-fight` (the lead at 46%: red life dashes, the gold active frame, IN and BENCH lines, TAG READY bars,
