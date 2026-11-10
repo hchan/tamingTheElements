@@ -52,6 +52,7 @@ Example: `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500 pnpm test`. Single file: `pnpm e
 | Cross-engine determinism | `tests/browser/determinism.browser.test.ts` |
 | End to end (real browser, real build) | `tests/e2e/*.spec.ts` |
 | Accessibility (axe audit, keyboard-only, reduce motion, rebinding, gamepad, announcements) | `tests/e2e/a11y.spec.ts`, `keyboard.spec.ts`, `a11y-features.spec.ts`; see [ACCESSIBILITY.md](ACCESSIBILITY.md) |
+| Tester mode (cheat core, session and save slot, UI pieces, e2e) | `src/core/tester/tester.test.ts`, `src/game/platform/tester/session.test.ts`, `src/ui/tester/tester-ui.test.ts`, `tests/e2e/tester-mode.spec.ts`; see [TESTER-MODE.md](TESTER-MODE.md) |
 | Legacy loader stubs (Crafty, jQuery, DOM, clock, seeded random) | `src/testing/legacy/` |
 | Golden replay | `tests/fixtures/replays/random-vs-random.replay.json` |
 
@@ -134,3 +135,13 @@ in `src/core/data/abilities-a.test.ts` and `characters.test.ts`:
 
 `src/core` tests obey the same bans as the code: no `Date`, `Math.random` or transcendental `Math`; randomness comes from the
 seeded streams in `src/core/rng/`.
+
+## Testing tester mode
+
+Tester mode ([TESTER-MODE.md](TESTER-MODE.md)) is exercised at three levels:
+
+- Pure parts (unit): the cheat state edits, `testerCapture` flag, cheat-replay refusal and save edits in `src/core/tester/tester.test.ts`; the session, throwaway save slot and `keepProgress` routing in `src/game/platform/tester/session.test.ts`; the key sequence, bench row view and badge text in `src/ui/tester/tester-ui.test.ts`; the Capture notices in `src/ui/screens/objectives.test.ts` and `src/game/hud/action-bar.test.ts`.
+- End to end (`tests/e2e/tester-mode.spec.ts`): the normal path (four stepped wins, objectives, chapter 2, Capture unlocked, usable at <=25% HP, captured monster joins the garrison) and the tester path (code, 3 heroes in a chapter-1 save, Capture, swap, benched health rising monotonically to the rest cap through `arena.bench()`, instant swap, real save untouched, replay flagged `cheats`).
+- Guards: `tests/repo/replay-fixtures.test.ts` asserts no golden replay is a cheat replay; `tools/sim/run-match.ts` (balance gates) and `tools/gen/record-golden.ts` call `assertNoTesterFlags`.
+
+The test hook (`window.__TTE__.arena`) gained `bench()`, `swapReadyTick()`, `cheat(c)` and richer `actionSlots()` (kind, label, disabled).

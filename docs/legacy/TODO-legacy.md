@@ -8,7 +8,7 @@ no longer relevant.
 |---|---|
 | circus of slime / ice shards are an autokill at point blank | Backlog (balance pass) |
 | capture puts a debuff; must kill within the debuff time | Backlog (design decision) |
-| show the Capture icon as a new ability on chapter 2 objectives | Planned (UI port) |
+| show the Capture icon as a new ability on chapter 2 objectives | Done ("Capture unlocked!" notice on the chapter 2 objectives screen and the action bar, parity row V25) |
 | applyDamageOverride in abilities.js is questionable | Planned (fixed by the sim rewrite) |
 | create wiki page / wiki - capture | Planned (docs/ game design doc) |
 | limit garrison to X characters | Planned (`garrison-max-size-unenforced`) |

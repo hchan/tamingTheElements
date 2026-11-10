@@ -8,6 +8,7 @@
 | [TESTING.md](TESTING.md) | Test commands, layout, fixtures and guard tests |
 | [PARITY.md](PARITY.md) | Legacy parity checklist with test evidence |
 | [BALANCE.md](BALANCE.md) | Balance tooling and audit results |
+| [TESTER-MODE.md](TESTER-MODE.md) | Opt-in tester mode for playtesting the live site: cheat code, options and a 5-minute checklist |
 | [ACCESSIBILITY.md](ACCESSIBILITY.md) | Keyboard, reduce motion, colour-blind HUD, live regions, rebinding, gamepad and the axe audit |
 | [SAVE-FORMAT.md](SAVE-FORMAT.md) | Save schema and migration from v0 |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | GitHub Pages deploy and `VITE_BASE` |

@@ -50,6 +50,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/replay/` | Replay file format (header, RLE inputs, hash checkpoints every 50 ticks), recorder, verifying player and the bot-match helper behind the golden fixture in `tests/fixtures/replays/` |
 | `src/core/agents/` | `Agent` interface with a read-only `ObservationView` facade, seeded random bot (own `ai.pN` stream) and replay agent |
 | `src/core/replay/` | Replay file format (header, RLE inputs, hash checkpoints every 50 ticks), recorder, verifying player, `validate.ts` (pre-flight check of untrusted replay files) and the bot-match helper behind the golden fixture in `tests/fixtures/replays/` |
+| `src/core/tester/` | Tester-mode state edits (`cheats.ts`: HP, win, freeze, capture-win, god mode, instant swap, bench rows) and save edits (`save-edits.ts`: levels, chapter, every race); applied outside `step`, never part of Classic play |
 | `src/core/agents/scripted-ai/` | Ports of the legacy EnemyCharacter AI as agents; `attack.ts` has attack direction, axis and range checks and the primary/secondary preconditions |
 | `src/core/net/` | Pure lockstep netcode groundwork: `Transport` interface, packet codec and `LockstepSession` (input delay, redundant acked inputs, stall, hash desync check, timeout and hidden-tab policy); no DOM, no Date. See [NETCODE.md](NETCODE.md) |
 | `src/testing/net/` | Test tooling: seeded in-memory `FakeNetwork` (latency, jitter, loss, duplication, reordering), the two-session `runNetMatch` harness and the lockstep tests |
@@ -74,11 +75,13 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/a11y/` | In-battle accessibility: `announcer.ts` (event to screen-reader line mapping, throttle, low-health watch, hidden live regions) and `pause-dialog.ts` (focus-trapped modal pause dialog); see [ACCESSIBILITY.md](ACCESSIBILITY.md) |
 | `src/game/platform/a11y/` | Pure accessibility preferences: reduce motion and high contrast resolved from the save and the OS (`prefs.ts`) |
 | `src/game/platform/input/` | Pure key-binding model: defaults, conflict detection, reset and save (de)serialisation (`bindings.ts`) |
+| `src/game/platform/tester/` | Tester mode session (`session.ts`): opt-in per tab, throwaway save slot, `TesterAwareStore`; see [TESTER-MODE.md](TESTER-MODE.md) |
 | `src/game/loop/` | Fixed 50 Hz step driver (injected clock, 250 ms clamp, step cap, pause, render alpha) |
 | `src/game/cinematics/` | Data-driven cinematics: pure `CinematicRunner` step sequencer (header, caption, sprite, tween, wait, waitKey, skip) and the ported intro script; drawn by the `Cinematic` scene (`?ff=cinematicDemo`), which removes all listeners on shutdown or game destroy |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle, settings), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; info screens wiki, key-bindings, about, race), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; `main-menu.ts` is the main menu), `keyboard.ts` (Escape back, Space on links, focus on navigation), `styles/main.css` |
+| `src/ui/tester/` | Tester mode DOM: badge, tester panel, bench health panel, cheat-code matcher and installer |
 | `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
 | `tests/` | Cross-cutting tests (`tests/repo/`, `tests/lint/`), legacy characterization (`tests/legacy/`), browser determinism (`tests/browser/`), Playwright e2e (`tests/e2e/`), fixtures (`tests/fixtures/`); unit tests are colocated in `src/`. See [TESTING.md](TESTING.md) |
 | `tests/` | Cross-cutting tests (`tests/repo/`), Playwright e2e (`tests/e2e/`), Pages-subpath smoke (`tests/e2e-pages/`, `pnpm e2e:pages`); unit tests are colocated in `src/` |

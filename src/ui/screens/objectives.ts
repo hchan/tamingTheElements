@@ -100,7 +100,8 @@ export function objectivesScreen(deps?: ObjectivesDeps): Screen {
       container.append(page);
       const show = (save: SaveV1 | null, justAdvanced: boolean): void => {
         const view = objectivesView(save);
-        page.replaceChildren(heading);
+        // Keep the heading node itself: the router may already have focused it, and re-attaching it would drop focus.
+        for (const child of [...page.children]) if (child !== heading) child.remove();
         heading.textContent = view.title;
         for (const line of view.lines) page.append(el('p', 'objectiveLine', line));
         const notice = captureNotice(save?.chapter ?? 0, (d.captureKey ?? liveCaptureKey)());

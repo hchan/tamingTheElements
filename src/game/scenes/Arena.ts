@@ -268,7 +268,10 @@ export class Arena extends Phaser.Scene {
         st.py[id] = y;
         st.dir[id] = dir;
       },
-      actionSlots: () => this.actionBar?.currentSlots.map((s) => ({ x: s.x, y: s.y, size: s.size, cmd: s.cmd })) ?? [],
+      actionSlots: () =>
+        this.actionBar?.currentSlots.map((s) => ({
+          x: s.x, y: s.y, size: s.size, cmd: s.cmd, kind: s.kind, label: s.label, disabled: s.disabled, highlight: s.highlight,
+        })) ?? [],
       clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
       bench: () => benchRows(world, 0),

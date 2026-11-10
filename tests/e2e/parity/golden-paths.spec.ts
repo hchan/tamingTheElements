@@ -148,6 +148,9 @@ test.describe('parity golden paths', () => {
 
     await page.getByText('Current Objectives', { exact: true }).click();
     await page.getByRole('button', { name: 'Begin next chapter' }).click();
+    // Chapter 2 gains Capture: the objectives screen announces it before continuing to the garrison.
+    await expect(page.locator('#captureNotice')).toContainText('Capture unlocked!');
+    await page.locator('#continueToGarrison').click();
     await waitForRoute(page, '#garrison');
     await expect.poll(async () => (await storedSave(page)).chapter).toBe(2);
 

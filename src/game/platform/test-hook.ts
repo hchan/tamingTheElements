@@ -25,7 +25,7 @@ export interface ArenaProbe {
   /** Moves a character and sets its facing (0..7 clockwise from east), keeping the previous position in sync. */
   place(id: number, x: number, y: number, dir: number): void;
   /** Action bar slots in logical 1280x720 coordinates. */
-  actionSlots(): { x: number; y: number; size: number; cmd: number }[];
+  actionSlots(): { x: number; y: number; size: number; cmd: number; kind: string; label: string; disabled: boolean; highlight: boolean }[];
   /** Commands emitted by pointer presses on action slots, oldest first. */
   clicks(): number[];
   /** True when the player's action bar offers Capture (chapter 2 onward, or tester mode "all abilities"). */
