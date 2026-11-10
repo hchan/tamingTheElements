@@ -639,3 +639,13 @@ a.menuLink {
   padding: 4px 8px;
   background: rgba(0, 0, 0, 0.75);
 }
+
+#storeNotice {
+  padding: 0.5em 1em;
+  background: #fff3c4;
+  color: #000;
+  border-bottom: 2px solid #b36b00;
+}
+#storeNotice[hidden] {
+  display: none;
+}

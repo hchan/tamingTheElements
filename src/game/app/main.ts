@@ -12,6 +12,7 @@ import { setBindings } from '../platform/input/bindings';
 import { createSaveStore } from '../platform/storage/create-save-store';
 import { installTestHook } from '../platform/test-hook';
 import { AppFlow } from './flow';
+import { mountNoticeBanner } from './notice-banner';
 
 const root = document.getElementById('app');
 const flags = getUiFlags(window.location.search);
@@ -45,6 +46,7 @@ function initAccessibility(): void {
 }
 
 if (root) {
+  mountNoticeBanner();
   initAccessibility();
   if (flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl) {
     void enterPlay(root);

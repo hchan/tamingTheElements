@@ -18,6 +18,7 @@ import { el } from '@ui/dom';
 import { defaultScreens, type ScreenTable } from '@ui/router';
 import { objectivesScreen } from '@ui/screens/objectives';
 import { keyBindingsScreen } from '@ui/screens/key-bindings';
+import { gameMasterScreen } from '@ui/screens/game-master';
 import { settingsScreen } from '@ui/screens/settings';
 import { garrisonScreen } from '@ui/screens/garrison';
 import type { MatchSetup as UiSetup } from '@ui/screens/garrison-model';
@@ -122,6 +123,9 @@ export class AppFlow {
       battleground: () => redirect(navigate, 'garrison'),
       currentObjectives: () => objectivesScreen({ store: this.deps.store, navigate }),
       settings: () => settingsScreen(this.deps.store),
+      ...(import.meta.env.DEV || import.meta.env.MODE === 'test'
+        ? { gameMaster: () => gameMasterScreen(this.deps.store) }
+        : {}),
       keyBindings: () => keyBindingsScreen(this.deps.store),
       garrison: garrisonScreen({
         load: () => loadSave(window.localStorage),

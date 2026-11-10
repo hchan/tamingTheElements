@@ -137,7 +137,7 @@ export function defaultScreens(): ScreenTable {
     race: raceScreen,
     // Statically removed from production builds; the route is also unreachable there (see PLAIN_ROUTES).
     gameMaster:
-      import.meta.env.DEV || import.meta.env.MODE === 'test' ? gameMasterScreen : placeholderScreen('Not available'),
+      import.meta.env.DEV || import.meta.env.MODE === 'test' ? () => gameMasterScreen() : placeholderScreen('Not available'),
     character: characterDetailsScreen(),
     replay: placeholderScreen('Replay viewer'),
   };

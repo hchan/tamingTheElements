@@ -16,10 +16,10 @@ import {
   type Sfc32,
   type SaveV1,
 } from '@core/index';
+import { createSaveStore } from '../../game/platform/storage/create-save-store';
+import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
 import type { Screen } from './screen';
-
-const STORAGE_KEY = 'Taming the Elements';
 
 export type Preset = 2 | 3 | 4 | 'complete';
 export const PRESETS: readonly Preset[] = [2, 3, 4, 'complete'];
@@ -79,18 +79,13 @@ export function parseEditorText(text: string): { ok: true; save: SaveV1 | null }
   return r.ok ? { ok: true, save: r.value } : { ok: false, message: `Invalid save: ${JSON.stringify(r.error)}` };
 }
 
-function readStored(): string {
-  try {
-    const text = window.localStorage.getItem(STORAGE_KEY);
-    if (text === null) return '';
-    const r = migrate(JSON.parse(text));
-    return JSON.stringify(r.ok ? r.value : JSON.parse(text), undefined, 2);
-  } catch {
-    return '';
-  }
+async function readStored(store: SaveStore): Promise<string> {
+  const r = await store.exportJson();
+  return r.ok ? r.value : '';
 }
 
-export function gameMasterScreen(): Screen {
+/** Writes go through the SaveStore, so IndexedDB (the source of truth) and the localStorage mirror both change. */
+export function gameMasterScreen(store: SaveStore = createSaveStore(() => Date.now())): Screen {
   let node: HTMLElement | null = null;
   return {
     mount(container) {
@@ -101,13 +96,21 @@ export function gameMasterScreen(): Screen {
       area.setAttribute('aria-label', 'Save JSON');
       area.rows = 24;
       area.cols = 80;
-      area.value = readStored();
+      void readStored(store).then((t) => {
+        area.value = t;
+      });
       const status = el('div', 'settingsStatus');
       status.setAttribute('role', 'status');
 
-      const write = (save: SaveV1 | null): void => {
-        if (save === null) window.localStorage.removeItem(STORAGE_KEY);
-        else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+      /** Resolves once stored; the status line is set only after the write, so tests can wait on it. */
+      const write = async (save: SaveV1 | null, done: string): Promise<void> => {
+        if (save === null) {
+          await store.clear();
+          status.textContent = done;
+          return;
+        }
+        const r = await store.save(save);
+        status.textContent = r.ok ? done : `Could not write the save: ${JSON.stringify(r.error)}`;
       };
       const button = (label: string, onClick: () => void): HTMLButtonElement => {
         const b = el('button', 'menuButton', label);
@@ -123,17 +126,17 @@ export function gameMasterScreen(): Screen {
             status.textContent = r.message;
             return;
           }
-          write(r.save);
-          status.textContent = r.save === null ? 'Save cleared.' : 'Save written.';
+          void write(r.save, r.save === null ? 'Save cleared.' : 'Save written.');
         }),
         button('Reload', () => {
-          area.value = readStored();
-          status.textContent = 'Reloaded.';
+          void readStored(store).then((t) => {
+            area.value = t;
+            status.textContent = 'Reloaded.';
+          });
         }),
         button('Clear', () => {
           area.value = '';
-          write(null);
-          status.textContent = 'Save cleared.';
+          void write(null, 'Save cleared.');
         }),
       ];
       for (const p of PRESETS) {
@@ -142,9 +145,8 @@ export function gameMasterScreen(): Screen {
           button(label, () => {
             const now = Date.now();
             const save = buildPreset(p, seedSfc32(now >>> 0, 'meta'), now);
-            write(save);
             area.value = JSON.stringify(save, undefined, 2);
-            status.textContent = `${label} preset written.`;
+            void write(save, `${label} preset written.`);
           }),
         );
       }
