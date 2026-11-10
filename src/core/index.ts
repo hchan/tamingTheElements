@@ -30,3 +30,4 @@ export * from './sim/systems/movement';
 export * from './agents/agent';
 export * from './agents/random-bot';
 export * from './agents/replay-agent';
+export * from './sim/match';
