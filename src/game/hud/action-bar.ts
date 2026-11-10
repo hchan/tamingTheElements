@@ -2,6 +2,8 @@ import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderView } from '@core/index';
 import { Cmd } from '@core/index';
 import { crisp } from '../boot/viewport';
+import { ACTION_COMMAND } from '../input/key-map';
+import { codeLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
 
 /**
@@ -21,17 +23,20 @@ export const COOLDOWN_ALPHA = 0.33;
 export const COOLDOWN_COLOR = 0x090909;
 export const CAPTURE_READY_COLOR = 0xffd700;
 
-/** Key label per command bit; default mirrors the Key Bindings screen's number keys. */
+/** Key label per command bit, shown in the slot corner. */
 export type KeyLabels = Readonly<Record<number, string>>;
-export const DEFAULT_KEY_LABELS: KeyLabels = {
-  [Cmd.primary]: '1',
-  [Cmd.secondary]: '2',
-  [Cmd.capture]: '3',
-  [Cmd.swap1]: '4',
-  [Cmd.swap2]: '5',
-  [Cmd.swap3]: '6',
-  [Cmd.swap4]: '7',
-};
+
+/** Labels from the live key bindings: the first bound key of each slot's action (`Digit1` -> `1`, `KeyC` -> `C`). */
+export function labelsFromBindings(bindings: Bindings): KeyLabels {
+  const out: Record<number, string> = {};
+  for (const action of GAME_ACTIONS) {
+    const code = bindings[action][0];
+    if (code !== undefined) out[ACTION_COMMAND[action]] = codeLabel(code);
+  }
+  return out;
+}
+
+export const DEFAULT_KEY_LABELS: KeyLabels = labelsFromBindings(DEFAULT_BINDINGS);
 
 const SWAP_CMDS = [Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4] as const;
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
@@ -142,7 +147,7 @@ export class ActionBarView {
     private readonly view: RenderView,
     private readonly emit: (cmd: Command) => void,
     private readonly team = 0,
-    private readonly labels: KeyLabels = DEFAULT_KEY_LABELS,
+    private readonly labels: () => KeyLabels = () => DEFAULT_KEY_LABELS,
   ) {
     this.gfx = scene.add.graphics().setDepth(100);
     scene.input.on('pointerdown', this.onPointer);
@@ -150,7 +155,7 @@ export class ActionBarView {
 
   update(): void {
     const bar = this.view.actionBar(this.team);
-    this.slots = bar ? buildSlots(bar, this.labels) : [];
+    this.slots = bar ? buildSlots(bar, this.labels()) : [];
     const g = this.gfx;
     g.clear();
     if (this.slots.length > 0) {

@@ -33,9 +33,9 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion } from '../a11y/announcer';
 import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
 import { firstPad } from '../input/gamepad';
-import { getBindings } from '../platform/input/bindings';
+import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
-import { ActionBarView } from '../hud/action-bar';
+import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
 import { CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
@@ -144,10 +144,22 @@ export class Arena extends Phaser.Scene {
       this.cleanups.push(() => { this.pauseDialog?.destroy(); live.destroy(); });
       this.announcer.say(MATCH_START);
       this.agents = [keyboard, this.launch.enemy ?? new RandomBot('p2')];
-      this.actionBar = new ActionBarView(this, this.view, (cmd) => {
-        this.clicks.push(cmd);
-        keyboard.press(cmd);
-      });
+      let labelled: { bindings: Bindings; labels: KeyLabels } | undefined;
+      const labels = (): KeyLabels => {
+        const b = keyboard.currentBindings();
+        if (labelled?.bindings !== b) labelled = { bindings: b, labels: labelsFromBindings(b) };
+        return labelled.labels;
+      };
+      this.actionBar = new ActionBarView(
+        this,
+        this.view,
+        (cmd) => {
+          this.clicks.push(cmd);
+          keyboard.press(cmd);
+        },
+        0,
+        labels,
+      );
       this.cleanups.push(keyboard.attach(counted(window)));
     }
     this.cleanups.push(pauseOnHidden(counted(document), driver));

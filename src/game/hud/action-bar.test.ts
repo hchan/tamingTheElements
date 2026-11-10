@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, SLOT_SIDE, buildSlots, commandAt, cooldownProgress, cooldownSweep } from './action-bar';
+import { BAR_Y, SLOT_SIDE, buildSlots, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
   tick: 100,
@@ -40,9 +41,9 @@ describe('buildSlots', () => {
     expect(slots.map((s) => [s.kind, s.cmd, s.label])).toEqual([
       ['ability', Cmd.primary, '1'],
       ['ability', Cmd.secondary, '2'],
-      ['capture', Cmd.capture, '3'],
-      ['swap', Cmd.swap1, '4'],
-      ['swap', Cmd.swap2, '5'],
+      ['capture', Cmd.capture, 'C'],
+      ['swap', Cmd.swap1, '3'],
+      ['swap', Cmd.swap2, '4'],
     ]);
     expect(slots[1]?.progress).toBe(0.5);
     expect(slots[2]?.disabled).toBe(true);
@@ -55,6 +56,20 @@ describe('buildSlots', () => {
   });
   it('accepts custom labels', () => {
     expect(buildSlots(bar(), { [Cmd.primary]: 'SPACE' })[0]?.label).toBe('SPACE');
+  });
+});
+
+describe('labelsFromBindings', () => {
+  it('follows the default bindings: capture is C, swaps are 3 to 5', () => {
+    const l = labelsFromBindings(DEFAULT_BINDINGS);
+    expect([l[Cmd.primary], l[Cmd.secondary], l[Cmd.capture], l[Cmd.swap1], l[Cmd.swap2], l[Cmd.swap3]]).toEqual([
+      '1', '2', 'C', '3', '4', '5',
+    ]);
+  });
+  it('follows a rebinding', () => {
+    const b = bindSteal(DEFAULT_BINDINGS, 'capture', 0, 'KeyV');
+    expect(labelsFromBindings(b)[Cmd.capture]).toBe('V');
+    expect(buildSlots(bar({ capture: { sprite: 'c', readyTick: 0, cooldownTicks: 10, capturable: true } }), labelsFromBindings(b))[2]?.label).toBe('V');
   });
 });
 
