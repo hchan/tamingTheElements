@@ -1,6 +1,26 @@
+export interface ProbeCharacter {
+  readonly id: number;
+  readonly team: number;
+  readonly x: number;
+  readonly y: number;
+}
+
+/** Deterministic control of the running Arena for e2e: pauses the real-time driver, then steps by hand. */
+export interface ArenaProbe {
+  readonly tick: number;
+  hash(): number;
+  /** Active (alive, not benched) characters. */
+  characters(): ProbeCharacter[];
+  /** Pauses the real-time driver and runs n sim ticks with the given commands (default: no input). */
+  step(n: number, cmds?: readonly [number, number]): void;
+}
+
 export interface TestHook {
   readonly ready: boolean;
   readonly version: number;
+  /** Name of the active game scene, set by scenes in test builds. */
+  scene?: string;
+  arena?: ArenaProbe;
 }
 
 declare global {

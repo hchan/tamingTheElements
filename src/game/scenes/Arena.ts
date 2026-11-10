@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import {
   DEFAULT_SIM_FLAGS,
+  EntityFlag,
+  EntityKind,
+  MAX_ENTITIES,
+  hash,
   RandomBot,
   SIM_VERSION,
   characterId,
@@ -12,6 +16,7 @@ import {
   type RenderCharacter,
   type RenderView,
 } from '@core/index';
+import type { ProbeCharacter } from '../platform/test-hook';
 import { FixedStepDriver } from '../loop/fixed-step-driver';
 import { CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
@@ -67,6 +72,38 @@ export class Arena extends Phaser.Scene {
     const element = this.view.heroElement();
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1);
+
+    // Test-build-only hook (statically removed from production builds).
+    if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+      const hook = window.__TTE__;
+      const driver = this.driver;
+      const view = this.view;
+      if (hook) {
+        // `&manual=1` starts paused so e2e controls every tick (no real-time ticks before the first step).
+        if (new URLSearchParams(window.location.search).has('manual')) driver.pause();
+        hook.scene = ARENA_SCENE;
+        hook.arena = {
+          get tick() {
+            return view.tick;
+          },
+          hash: () => hash(world.state),
+          characters: () => {
+            const s = world.state;
+            const out: ProbeCharacter[] = [];
+            for (let i = 0; i < MAX_ENTITIES; i++) {
+              const f = s.flags[i] ?? 0;
+              if (s.kind[i] !== EntityKind.character || (f & EntityFlag.alive) === 0 || (f & EntityFlag.benched) !== 0) continue;
+              out.push({ id: i, team: s.team[i] ?? 0, x: s.x[i] ?? 0, y: s.y[i] ?? 0 });
+            }
+            return out;
+          },
+          step: (n, cmds = [0, 0]) => {
+            driver.pause();
+            for (let k = 0; k < n; k++) step(world, cmds);
+          },
+        };
+      }
+    }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.onShutdown();
