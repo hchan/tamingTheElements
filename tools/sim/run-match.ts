@@ -4,8 +4,10 @@
 // Every seed is played with the sides swapped on odd seeds (team 0 carries the difficulty handicap), so side bias cancels.
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { type Agent, type AgentState, collectCommands } from '../../src/core/agents/agent';
+import { type Agent, type AgentState, collectCommands, stateRecord } from '../../src/core/agents/agent';
+import { AgentRng } from '../../src/core/agents/agent-rng';
 import { RandomBot } from '../../src/core/agents/random-bot';
+import { ArcadeTactics } from '../../src/core/agents/scripted-ai/arcade';
 import { type AttackAbility, AttackAgent } from '../../src/core/agents/scripted-ai/attack';
 import { CHARACTERS, getCharacter } from '../../src/core/data/characters';
 import { ELEMENTS, type Element } from '../../src/core/data/elements';
@@ -19,6 +21,7 @@ import { type SimEvent, SimEventKind } from '../../src/core/sim/events';
 import { createMatch, type MatchSetup } from '../../src/core/sim/match';
 import { EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
+import { SUPER_DEF } from '../../src/core/sim/systems/arcade/hit';
 import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
 import { type FunMetrics, reduceFunMetrics } from './fun-metrics';
 
@@ -33,6 +36,8 @@ export type Ruleset = 'classic' | 'arcade';
 
 /** Damage the projectile events cannot attribute (melee hits, damage over time): approximate, from per-tick HP drops. */
 export const UNATTRIBUTED = 'melee-or-status';
+/** Damage source name of Arcade super hits (`hitConfirmed.ability === SUPER_DEF`, outside ABILITY_DEFS). */
+export const SUPER_SOURCE = 'super';
 
 export const DEFAULT_MAX_TICKS = 9000; // 3 minutes
 export const DEFAULT_STALEMATE_TICKS = 1500; // 30 s without any HP change
@@ -122,13 +127,16 @@ function wantsSelfCast(def: AbilityDef, self: { x: number; y: number; hp: number
 /**
  * Scripted opponent: the legacy attack decisions (AttackAgent) plus what the legacy movement port will later own:
  * melee races close the distance, shots carry a direction, and every slot is used: range, debuff and melee through the
- * AttackAgent, buffs, heals and omni fans through `wantsSelfCast`.
+ * AttackAgent, buffs, heals and omni fans through `wantsSelfCast`. In Arcade the core `ArcadeTactics` layer (combo cap,
+ * supers on confirm) edits the result; in Classic it returns the command unchanged and draws nothing.
  */
 export class ScriptedAI implements Agent {
   readonly id: string;
   private readonly attack: AttackAgent;
   private readonly defs: readonly (AbilityDef | undefined)[];
   private readonly melee: boolean;
+  private readonly arcade = new ArcadeTactics();
+  private readonly rng = new AgentRng();
 
   constructor(race: string, id = 'scripted') {
     this.id = id;
@@ -160,13 +168,16 @@ export class ScriptedAI implements Agent {
     return cmd;
   }
 
-  /** Only the attack facing is remembered; the movement here is a pure function of the view. */
+  /** The attack facing, the Arcade layer and its stream are remembered; the movement here is a pure function of the view. */
   save(): AgentState {
-    return this.attack.save();
+    return { attack: this.attack.save(), arcade: this.arcade.save(), rng: this.rng.save() };
   }
 
   load(state: AgentState): void {
-    this.attack.load(state);
+    const rec = stateRecord(state, this.id);
+    this.attack.load(rec['attack'] ?? null);
+    this.arcade.load(rec['arcade'] ?? null);
+    this.rng.load(rec['rng'] ?? null);
   }
 
   observe(view: Parameters<Agent['observe']>[0]): Command {
@@ -187,7 +198,7 @@ export class ScriptedAI implements Agent {
     });
     if (this.melee) cmd |= this.chase(self, opp);
     if (shooting && (cmd & DIR_MASK) === 0) cmd |= FACING[['n', 'e', 's', 'w'].indexOf(this.attack.direction)] ?? 0;
-    return cmd;
+    return this.arcade.apply(view, cmd, (n) => this.rng.int(view, n));
   }
 }
 
@@ -215,7 +226,10 @@ export interface MatchOptions {
   readonly ruleset?: Ruleset;
   /** Heroes per side: 1, or 2 (the lead plus the next race in RACES). The scripted agent only plays the lead's kit. */
   readonly teamSize?: 1 | 2;
-  /** AI level 1..5. Reserved for the Arcade AI knobs (FUN-DESIGN 2.11, WP-arcade-ai-basic): no effect on the scripted AI yet. */
+  /**
+   * AI level 1..5. Reserved for the per-level Arcade AI knobs (FUN-DESIGN 2.11, WP-arcade-ai-personalities): no effect
+   * yet; the Arcade layer (`ArcadeTactics`) always plays Normal.
+   */
   readonly aiLevel?: number;
 }
 
@@ -294,7 +308,7 @@ export function runMatch(o: MatchOptions): MatchResult {
       if (arcade) log.push(e);
       if (arcade && e.kind === SimEventKind.hitConfirmed) {
         // Arcade names the ability on every hit (melee included), so nothing is approximated for hits.
-        const name = ABILITY_DEFS[e['ability'] ?? -1]?.id ?? 'unknown';
+        const name = e['ability'] === SUPER_DEF ? SUPER_SOURCE : (ABILITY_DEFS[e['ability'] ?? -1]?.id ?? 'unknown');
         const amount = e['amount'] ?? 0;
         byAbility[name] = (byAbility[name] ?? 0) + amount;
         const victim = s.team[e['target'] ?? 0] ?? 0;

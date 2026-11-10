@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
 import { percentile, reduceFunMetrics, summarizeFun } from '../../tools/sim/fun-metrics';
-import { parseRuleOptions, runMatch } from '../../tools/sim/run-match';
+import { collectCommands, type AgentState } from '../../src/core/agents/agent';
+import { characterId } from '../../src/core/data/ids';
+import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
+import { Cmd } from '../../src/core/sim/commands';
+import { createMatch, type MatchSetup } from '../../src/core/sim/match';
+import { snapshotState, restoreState } from '../../src/core/sim/state';
+import { step } from '../../src/core/sim/step';
+import { makeAgent, parseRuleOptions, runMatch, SUPER_SOURCE } from '../../tools/sim/run-match';
 
 let seq = 0;
 const ev = (tick: number, kind: number, payload: Record<string, number> = {}): SimEvent =>
@@ -82,6 +89,36 @@ describe('run-match rule options', () => {
     expect(runMatch({ ...base, ruleset: 'arcade' })).toEqual(a);
     expect(a.fun?.hits).toBeGreaterThan(0);
     expect(a.damageByAbility['unknown']).toBeUndefined();
+  });
+
+  it('names super damage', () => {
+    const r = runMatch({ ...base, raceA: 'fiara', raceB: 'morblass', ruleset: 'arcade' });
+    expect(r.fun?.supers).toBeGreaterThan(0);
+    expect(r.damageByAbility[SUPER_SOURCE]).toBeGreaterThan(0);
+  });
+
+  it('the scripted agent (Arcade layer included) rewinds with save/load through JSON', () => {
+    const setup: MatchSetup = {
+      simVersion: 1, seed: 0x5eed, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
+      p1: [{ character: characterId('fiara'), xp: 1 }], p2: [{ character: characterId('morblass'), xp: 1 }],
+    };
+    const world = createMatch(setup);
+    const agents = [makeAgent('scripted', 'fiara'), makeAgent('scripted', 'morblass')] as const;
+    for (let t = 0; t < 150; t++) step(world, collectCommands(world, agents));
+    const snap = snapshotState(world.state);
+    const saved = JSON.stringify(agents.map((a) => a.save()));
+    const play = (pair: typeof agents): number[] =>
+      Array.from({ length: 400 }, () => {
+        const c = collectCommands(world, pair);
+        step(world, c);
+        return c[0] | (c[1] << 16);
+      });
+    const first = play(agents);
+    expect(first.some((c) => (c & (Cmd.super | (Cmd.super << 16))) !== 0)).toBe(true);
+    restoreState(world.state, snap);
+    const fresh = [makeAgent('scripted', 'fiara'), makeAgent('scripted', 'morblass')] as const;
+    (JSON.parse(saved) as AgentState[]).forEach((st, i) => fresh[i]?.load(st));
+    expect(play(fresh)).toEqual(first);
   });
 
   it('Arcade 2v2 runs', () => {

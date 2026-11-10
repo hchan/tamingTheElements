@@ -8,8 +8,10 @@ import { EntityFlag } from '../../sim/state';
 import { stateRecord, type Agent, type AgentState, type ObservationView } from '../agent';
 import { AgentRng } from '../agent-rng';
 import { AttackAgent, type AttackAbility, type AttackAgentOptions, type AttackProfile, type Facing } from './attack';
+import { ArcadeTactics } from './arcade';
 import { chooseMovement, MovementState } from './movement';
 
+export * from './arcade';
 export * from './attack';
 export * from './movement';
 
@@ -92,6 +94,7 @@ export class ScriptedAI implements Agent {
   private readonly movement = new MovementState();
   private readonly arena: Aabb;
   private readonly rng = new AgentRng();
+  private readonly arcade = new ArcadeTactics();
 
   constructor(profile: ScriptedProfile, options: ScriptedAIOptions = {}) {
     this.profile = profile;
@@ -106,7 +109,7 @@ export class ScriptedAI implements Agent {
   }
 
   save(): AgentState {
-    return { movement: this.movement.save(), attack: this.attack.save(), rng: this.rng.save() };
+    return { movement: this.movement.save(), attack: this.attack.save(), rng: this.rng.save(), arcade: this.arcade.save() };
   }
 
   load(state: AgentState): void {
@@ -114,6 +117,7 @@ export class ScriptedAI implements Agent {
     this.movement.load(rec['movement'] ?? null);
     this.attack.load(rec['attack'] ?? null);
     this.rng.load(rec['rng'] ?? null);
+    this.arcade.load(rec['arcade'] ?? null);
   }
 
   observe(view: ObservationView): Command {
@@ -148,7 +152,8 @@ export class ScriptedAI implements Agent {
     if (wallX) move &= ~(Cmd.left | Cmd.right);
     if (wallY) move &= ~(Cmd.up | Cmd.down);
     if ((atk & Cmd.primary) !== 0) move = applyFacing(move, this.attack.direction);
-    const cmd = (move & MOVE_MASK) | (atk & (Cmd.primary | Cmd.secondary));
+    // Arcade only (a no-op without `view.arcade`): combo cap and supers on confirm.
+    const cmd = this.arcade.apply(view, (move & MOVE_MASK) | (atk & (Cmd.primary | Cmd.secondary)), (n) => this.rng.int(view, n));
     this.movement.noteSent(cmd, wallX, wallY);
     return cmd;
   }
