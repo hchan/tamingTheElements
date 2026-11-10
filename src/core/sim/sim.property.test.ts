@@ -8,11 +8,13 @@ import { Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { restore, snapshot, createSnapshotBuf } from './snapshot';
-import { EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_ACTIVE_COUNTS, TEAM_STRIDE, TeamField, World } from './state';
+import { ARCADE_WORLD_BASE, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_ACTIVE_COUNTS, TEAM_STRIDE, TeamField, World } from './state';
 import { ABILITY_DEFS } from './systems/projectile';
 import { hasEnded } from './systems/end';
 import { step } from './step';
-import type { SimEvent } from './events';
+import { isArcade, isFrozen, now } from './clock';
+import { KO_HIT_STOP_TICKS } from '../data/arcade';
+import { SimEventKind, type SimEvent } from './events';
 import type { SimWorld } from './world';
 
 // Core has no Node types; the tests only read the environment.
@@ -76,7 +78,7 @@ function cooldowns(w: SimWorld): number[] {
 }
 
 /** Checks every per-step invariant; throws with a description on the first violation. */
-function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEvent[]): void {
+function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEvent[], wasFrozen: boolean): void {
   const s = w.state;
   const fail = (msg: string): never => {
     throw new Error(`tick ${String(prevTick + 1)}: ${msg}`);
@@ -107,7 +109,8 @@ function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEven
     }
     for (let k = 0; k < STATUS_SLOTS; k++) {
       const b = (i * STATUS_SLOTS + k) * STATUS_STRIDE;
-      if ((s.status[b] ?? 0) !== 0 && (s.status[b + 3] ?? 0) <= (s.world[World.tick] ?? 0) - 1)
+      // Status deadlines are in game time (`now`, which stops during Arcade hit-stop).
+      if ((s.status[b] ?? 0) !== 0 && (s.status[b + 3] ?? 0) <= now(s) - 1)
         fail(`expired status left on ${String(i)}`);
     }
   }
@@ -147,6 +150,22 @@ function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEven
     last = e.seq;
   }
   if (events.length > EVENT_BOUND) fail(`${String(events.length)} events in one tick`);
+  checkArcade(w, events, wasFrozen, fail);
+}
+
+/** Hit-stop invariants: a frozen step is silent; every hit stops the clock for at most KO_HIT_STOP_TICKS. */
+function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolean, fail: (m: string) => never): void {
+  const s = w.state;
+  if (!isArcade(s)) {
+    if (events.some((e) => e.kind >= 40)) fail('Arcade event in Classic');
+    return;
+  }
+  if (wasFrozen && events.length > 0) fail('events while frozen');
+  const left = (s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] ?? 0) - (s.world[World.tick] ?? 0);
+  if (left > KO_HIT_STOP_TICKS) fail(`freeze of ${String(left)} ticks`);
+  const hits = events.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
+  if (hits !== events.filter((e) => e.kind === SimEventKind.hitStop).length) fail('hit without hit-stop');
+  if (hits > 0 && !isFrozen(s)) fail('hit did not freeze');
 }
 
 function runInputs(setup: MatchSetup, inputs: Cmds, check = true): { world: SimWorld; hashes: number[]; events: SimEvent[][] } {
@@ -156,9 +175,10 @@ function runInputs(setup: MatchSetup, inputs: Cmds, check = true): { world: SimW
   let prevCd = cooldowns(world);
   for (const [a, b] of inputs) {
     const tick = world.state.world[World.tick] ?? 0;
+    const wasFrozen = isFrozen(world.state);
     const ev = step(world, [a, b]);
     if (check) {
-      checkInvariants(world, tick, ev);
+      checkInvariants(world, tick, ev, wasFrozen);
       const cd = cooldowns(world);
       cd.forEach((v, i) => {
         // Cooldown deadlines only ever move forward (a new cast sets tick + cooldown).
@@ -190,8 +210,9 @@ describe('sim properties: invariants', () => {
         let ended = 0;
         for (let t = 0; t < MAX_TICKS; t++) {
           const tick = world.state.world[World.tick] ?? 0;
+          const wasFrozen = isFrozen(world.state);
           const ev = step(world, collectCommands(world, bots));
-          checkInvariants(world, tick, ev);
+          checkInvariants(world, tick, ev, wasFrozen);
           ended += ev.filter((e) => e.kind === 30).length;
         }
         expect(ended).toBe(hasEnded(world.state) ? 1 : 0);
@@ -207,8 +228,9 @@ describe('sim properties: invariants', () => {
         if (!hasEnded(world.state)) return;
         for (let i = 0; i < 10; i++) {
           const tick = world.state.world[World.tick] ?? 0;
+          const wasFrozen = isFrozen(world.state);
           const ev = step(world, [0, 0]);
-          checkInvariants(world, tick, ev);
+          checkInvariants(world, tick, ev, wasFrozen);
           expect(ev.some((e) => e.kind === 30)).toBe(false);
         }
       }),

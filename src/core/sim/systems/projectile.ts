@@ -16,7 +16,8 @@ import type { SimWorld } from '../world';
 import { onProjectileHit } from './debuffs';
 import { damageDecreasePct } from './status';
 import { controlledId } from './movement';
-import { now } from '../clock';
+import { isArcade, now } from '../clock';
+import { applyArcadeHit } from './arcade/hit';
 
 /** Ability index used for SimState.defId and the per-team activeCount table (set A then set B). */
 export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -137,15 +138,19 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     const tbox = { x: s.x[target] ?? 0, y: s.y[target] ?? 0, w: s.w[target] ?? 0, h: s.h[target] ?? 0 };
     if (!aabbOverlap(box, tbox)) continue;
     const attacker = s.owner[id] ?? 0;
-    const amount = computeDamage({
-      base: s.hp[id] ?? 0,
-      attackerMult: s.dmgMult[attacker] ?? 1,
-      attEl: CHARACTERS[s.defId[attacker] ?? 0]?.element ?? 'void',
-      defEl: CHARACTERS[s.defId[target] ?? 0]?.element ?? 'void',
-      defReductionPct: damageDecreasePct(s, target),
-    });
-    s.hp[target] = (s.hp[target] ?? 0) - amount;
-    sink.emit(id, SimEventKind.damage, { target, attacker, amount });
+    if (isArcade(s)) {
+      applyArcadeHit(world, sink, id, attacker, target, s.hp[id] ?? 0, s.defId[id] ?? 0, s.dir[id] ?? 0);
+    } else {
+      const amount = computeDamage({
+        base: s.hp[id] ?? 0,
+        attackerMult: s.dmgMult[attacker] ?? 1,
+        attEl: CHARACTERS[s.defId[attacker] ?? 0]?.element ?? 'void',
+        defEl: CHARACTERS[s.defId[target] ?? 0]?.element ?? 'void',
+        defReductionPct: damageDecreasePct(s, target),
+      });
+      s.hp[target] = (s.hp[target] ?? 0) - amount;
+      sink.emit(id, SimEventKind.damage, { target, attacker, amount });
+    }
     onProjectileHit(world, ABILITY_DEFS[s.defId[id] ?? 0]?.id ?? '', target, attacker);
     despawn(world, id);
   }

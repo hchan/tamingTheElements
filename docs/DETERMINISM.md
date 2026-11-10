@@ -100,7 +100,9 @@ Gameplay hit-stop or slow motion must freeze or skip ticks inside the sim. Phase
 plumbing exists for the Arcade ruleset only ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1, `src/core/sim/clock.ts`): systems
 read `now(s)`, which is `W.tick` in Classic and the Arcade `gameTick` in Arcade. `W.tick` stays the replay and event index
 and always advances; `gameTick` does not advance while `isFrozen` (`W.tick < freezeUntil`, so `freezeUntil` is in `W.tick`
-units), and `step` then runs only the `input` slot. Nothing sets a freeze yet (hit-stop is WP-arcade-hitstop). In Classic
+units), and `step` then runs only the `input` slot. Hit-stop (`src/core/sim/systems/arcade/hit.ts`) sets
+`freezeUntil = max(freezeUntil, tick + 1 + n)` on a hit, `n` by hit strength (4, 6, 8, 10; KO 30), so the hit's own tick
+finishes and the next `n` ticks are frozen; a frozen step emits no events, so event ids stay unique. In Classic
 `isFrozen` is never true and `SimState.arcade` is empty, so Classic hashes are unchanged (pinned by
 `tests/repo/classic-hash-pins.test.ts`).
 

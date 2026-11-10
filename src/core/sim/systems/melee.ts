@@ -18,7 +18,9 @@ import {
 import type { SimWorld } from '../world';
 import { controlledId } from './movement';
 import { damageDecreasePct } from './status';
-import { now } from '../clock';
+import type { EventSink } from '../events';
+import { isArcade, now } from '../clock';
+import { applyArcadeHit } from './arcade/hit';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -101,12 +103,14 @@ function damageOf(def: AbilityDef | AbilityDefB): number {
  * KNOWN-BUG:damage-uses-target-mult  the multiplier and element come from the victim's current
  * target (the attacker team's ACTIVE character), not from the casting entity.
  * The victim's damageDecreasePercentage comes from its active Adrenaline / Rock Armour statuses.
- * Returns the health actually removed.
+ * Returns the health actually removed. In Arcade the hit goes through `applyArcadeHit` (same attacker, same arithmetic)
+ * for hit-stop and the hit events; `id` is the melee entity.
  */
-function applyHit(world: SimWorld, caster: number, victim: number, base: number): number {
+function applyHit(world: SimWorld, sink: EventSink, id: number, caster: number, victim: number, base: number): number {
   const s = world.state;
   const attacker = controlledId(world, s.team[caster] ?? 0);
   const a = attacker >= 0 ? attacker : caster;
+  if (isArcade(s)) return applyArcadeHit(world, sink, id, a, victim, base, s.defId[id] ?? 0, s.dir[id] ?? 0);
   const dmg = computeDamage({
     base,
     attackerMult: s.dmgMult[a] ?? 1,
@@ -119,7 +123,7 @@ function applyHit(world: SimWorld, caster: number, victim: number, base: number)
   return damageDealt(before, dmg);
 }
 
-function meleeHit(world: SimWorld, id: number, victim: number): void {
+function meleeHit(world: SimWorld, sink: EventSink, id: number, victim: number): void {
   const s = world.state;
   const defId = s.defId[id] ?? 0;
   const def = ABILITY_DEFS[defId];
@@ -135,7 +139,7 @@ function meleeHit(world: SimWorld, id: number, victim: number): void {
     const interval = (def as AbilityDefB).damageIntervalTicks ?? 0;
     const last = s.hitMask[id] ?? 0;
     if (last === 0 || tick - (last - 1) > interval) {
-      applyHit(world, caster, victim, s.hp[id] ?? 0);
+      applyHit(world, sink, id, caster, victim, s.hp[id] ?? 0);
       s.hitMask[id] = tick + 1;
       s.hp[id] = (s.hp[id] ?? 0) / 2;
     }
@@ -167,19 +171,19 @@ function meleeHit(world: SimWorld, id: number, victim: number): void {
     // KNOWN-BUG:steal-health-translucent  legacy tests the CASTER's translucency (victim.targetPlayer),
     // so a translucent victim is still hit and a translucent caster cannot hit.
     if (((s.flags[caster] ?? 0) & EntityFlag.translucent) !== 0) return;
-    const dealt = applyHit(world, caster, victim, s.hp[id] ?? 0);
+    const dealt = applyHit(world, sink, id, caster, victim, s.hp[id] ?? 0);
     s.hp[caster] = computeHeal(s.hp[caster] ?? 0, dealt, s.healMult[caster] ?? 1, s.maxHp[caster] ?? 0);
   } else if (defId === ICE_SHOCK) {
     // KNOWN-BUG:ice-shock-ignores-translucent  legacy Ice Shock has no translucency check.
-    applyHit(world, caster, victim, s.hp[id] ?? 0);
+    applyHit(world, sink, id, caster, victim, s.hp[id] ?? 0);
   } else {
     if (victimTranslucent) return;
-    applyHit(world, caster, victim, s.hp[id] ?? 0);
+    applyHit(world, sink, id, caster, victim, s.hp[id] ?? 0);
   }
   s.hitMask[id] = HIT;
 }
 
-function updateMelee(world: SimWorld, id: number, tick: number): void {
+function updateMelee(world: SimWorld, sink: EventSink, id: number, tick: number): void {
   const s = world.state;
   const defId = s.defId[id] ?? 0;
   const caster = s.owner[id] ?? 0;
@@ -210,7 +214,7 @@ function updateMelee(world: SimWorld, id: number, tick: number): void {
   if (victim < 0) return;
   const box: Aabb = { x: s.x[victim] ?? 0, y: s.y[victim] ?? 0, w: s.w[victim] ?? 0, h: s.h[victim] ?? 0 };
   const mine: Aabb = { x: s.x[id] ?? 0, y: s.y[id] ?? 0, w: s.w[id] ?? 0, h: s.h[id] ?? 0 };
-  if (aabbOverlap(mine, box)) meleeHit(world, id, victim);
+  if (aabbOverlap(mine, box)) meleeHit(world, sink, id, victim);
 }
 
 function updateEffect(world: SimWorld, id: number, tick: number): void {
@@ -270,15 +274,15 @@ function cast(world: SimWorld, team: number, slot: number, tick: number): void {
  * Melee abilities: Ground Shock, Steal Health, Ice Shock, Strangling Branches, Entangling Vines and
  * Hurricane. Existing melee/effect entities update first (so a new one first hits one tick after
  * its cast, as in legacy), then new casts spawn from the primary (slot 0) / secondary (slot 1) bits.
- * No events are emitted yet: SimEventKind is shared and owned by the projectile/death WPs.
+ * Classic emits no events (as before); Arcade hits emit `damage`, `hitConfirmed` and `hitStop` (arcade/hit.ts).
  */
-export function meleeSystem(world: SimWorld, cmds: readonly [Command, Command]): void {
+export function meleeSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
   const tick = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     if (isDead(world, id)) continue;
     const kind = s.kind[id];
-    if (kind === EntityKind.melee) updateMelee(world, id, tick);
+    if (kind === EntityKind.melee) updateMelee(world, sink, id, tick);
     else if (kind === EntityKind.effect) updateEffect(world, id, tick);
   }
   for (let team = 0; team < TEAM_COUNT; team++) {

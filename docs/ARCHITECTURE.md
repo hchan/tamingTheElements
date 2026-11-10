@@ -98,7 +98,9 @@ order, RNG streams seeded from `seed`.
 `step(world, cmds)` in `src/core/sim/step.ts` runs the `SYSTEMS` list in this fixed order, then increments `tick` and returns
 the events. `noop` entries are reserved slots that keep the order stable as systems land. Systems read time through
 `now(s)` (`src/core/sim/clock.ts`): `tick` in Classic, the Arcade `gameTick` in Arcade. The freeze gate runs only slot 1
-while an Arcade freeze holds `gameTick` (`isFrozen`, never true in Classic); `tick` always advances.
+while an Arcade freeze holds `gameTick` (`isFrozen`, never true in Classic); `tick` always advances. In Arcade, melee
+and projectile hits go through `applyArcadeHit` (`systems/arcade/hit.ts`), which keeps the Classic damage arithmetic and
+sets the hit-stop freeze; the Classic lines run unchanged behind `!isArcade`.
 
 | # | System | Status |
 |---|---|---|
@@ -134,7 +136,8 @@ thing that mutates `SimState`. A replay stores the commands, so replays never re
 `src/core/sim/events.ts`. Each step creates an `EventSink` for the current tick; `emit(sourceId, kind, payload)` numbers events
 with a per-tick `seq`. The id of an event is `(tick, sourceId, kind, seq)`; it is stable across re-simulation because events are
 a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-events-carry-stable-ids.md)). Kinds today:
-`moved, blocked, damage, died, swapped, captured, captureFailed, matchEnded`. Consumers (`src/game/fx/event-fx.ts`,
+`moved, blocked, damage, died, swapped, captured, captureFailed, matchEnded` (Classic, kinds 1..30), plus the Arcade-only
+`hitStop` (40) and `hitConfirmed` (41) ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
 `src/game/audio/audio-manager.ts`) dedupe by this id, so rewinding or re-stepping never doubles an effect.
 
 ## RNG streams

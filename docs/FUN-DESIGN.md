@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing) is built; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing) and WP 2 (`WP-arcade-hitstop`) are built; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -122,6 +122,12 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - While frozen, only `arcadeInput` runs: inputs are buffered, nothing moves, no timer advances.
 - View only: the victim sprite jitters plus or minus 2 px during the freeze (cosmetic RNG); there is no Phaser
   `timeScale` change.
+- Built in WP 2 (`systems/arcade/hit.ts`, table in `data/arcade.ts`): `applyArcadeHit` is the hit path of projectiles
+  and melee (Hurricane and Steal Health included; Entangling Vines deals no damage and stays outside it; Tornado's
+  0-damage projectile hit is light). It keeps the Classic damage arithmetic and attacker choice, emits `damage`, `hitConfirmed` (`scalePm`
+  1000, `combo` 1, `counter` 0 until WP 4) and `hitStop`, and a hit that empties the victim's HP takes the KO stop (30,
+  cause 3). Override column: Hurricane is light (multi-hit). `freezeKind` holds the cause of the freeze that set
+  the deadline. The `input` slot stays a no-op: the game clock already advances in `step` (WP 1).
 
 ### 2.3 Hit-stun, knockback and juggle limits (sim)
 
@@ -369,7 +375,7 @@ that uses them, and measurable by `fun:report`.
 | # | WP | Kind | Scope and files | Tests | Risks |
 |---|---|---|---|---|---|
 | 1 | `WP-arcade-flag` (done) | sim | `rulesetArcade` in `flags.ts`; `SimState.arcade` (length 0 when off) in `state.ts` and `createMatch`; `isArcade`, `now(s)` clock helper replacing `W.tick` reads in every system; freeze gate in `step.ts`; `inputMaskFor(flags)` in `commands.ts`, `net/session.ts`, `replay/validate.ts`; `src/core/data/arcade.ts` skeleton | Classic goldens: hashes identical; new `classic-hash-pins` test; flag-bit order test (old names keep their bits); arcade state length 0 when off; snapshot round trip with the flag on | The `now()` refactor touches every system: it must be mechanical, proven by the goldens and the balance baseline (0 delta) |
-| 2 | `WP-arcade-hitstop` | sim | `systems/arcade/hit.ts` (strength, hit-stop, `hitConfirmed`, Arcade `damage`); Arcade branches in `projectile.ts` and `melee.ts`; `arcadeInput` clock | Freeze length per strength; events keep unique ids while frozen; cooldowns do not elapse while frozen; Classic untouched | Melee hits and DoT also need the hit path; Hurricane multi-hit |
+| 2 | `WP-arcade-hitstop` (done) | sim | `systems/arcade/hit.ts` (strength, hit-stop, `hitConfirmed`, Arcade `damage`); Arcade branches in `projectile.ts` and `melee.ts`; `arcadeInput` clock | Freeze length per strength; events keep unique ids while frozen; cooldowns do not elapse while frozen; Classic untouched | Melee hits and DoT also need the hit path; Hurricane multi-hit |
 | 3 | `WP-arcade-stun-knockback` | sim | stun, Q4 knockback, wall clamp and bounce (bounds-y fixed in Arcade), juggle and stun caps, `canAct` in the 4 cast sites and movement, Tornado and Vines caps | Distances per strength; wall bounce once; property test: no stun chain over 150 ticks under random commands (`sim.property.test.ts` style) | Freeze abilities feel weak or still abusive; tune in data |
 | 4 | `WP-arcade-combo` | sim | combo counter, scaling, counter hits, `comboEnded`, `recovered` | Scaling table, reset rules, combo end tick | None big |
 | 5 | `WP-arcade-tooling` | tools | `run-match --ruleset/--team-size/--ai-level`, `tools/sim/fun-metrics.ts`, `fun:report`, `fun-gate.test.ts` (report-only at first), `record-golden --ruleset arcade`, first Arcade golden `tests/fixtures/replays/arcade-1v1.replay.json` | Reducer unit tests on synthetic events; golden verifies | Gate runtime on CI |

@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { HitStrength } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS, flagBit } from '../flags';
@@ -16,7 +17,8 @@ import {
   ARCADE_E, ARCADE_LENGTH, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_W, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW,
   EntityKind, MAX_ENTITIES, TEAM_COUNT, TEAM_COOLDOWNS, World, stateArrays, type SimState,
 } from './state';
-import type { SimEvent } from './events';
+import { SimEventKind, type SimEvent } from './events';
+import { ABILITY_DEFS } from './systems/projectile';
 import { step } from './step';
 
 const CLASSIC: MatchSetup = {
@@ -123,32 +125,56 @@ describe('game clock', () => {
 });
 
 /**
- * Classic and Arcade side by side. No Arcade rule exists yet, so an Arcade match is Classic shifted in W.tick by the
- * freezes it took: with a freeze of `n` ticks at tick `at`, Arcade after `t + n` steps equals Classic after `t` steps
- * in every entity, team, status and rng value, and emits the same events (ids aside). That proves every timer read
- * goes through the game clock `now(s)`; with `n = 0` it proves Arcade adds nothing but its own block.
+ * Classic and Arcade side by side. The only Arcade rule so far is hit-stop (arcade/hit.ts: the same damage arithmetic,
+ * plus events and a freeze), so an Arcade match is Classic shifted in W.tick by the freezes it took: after every step
+ * the Arcade world is stepped through its freeze (each frozen step must be silent), and then equals Classic in every
+ * entity, team, status and rng value and emits the same Classic events (ids aside; Arcade adds melee `damage` and the
+ * kinds 40+). An extra freeze of `n` ticks is injected at tick `at`. That proves every timer read goes through the
+ * game clock `now(s)`, and that hit-stop only freezes.
  */
-describe('an Arcade match with no Arcade rules is Classic shifted by its freezes', () => {
+describe('an Arcade match is Classic shifted by its freezes', () => {
   type Inputs = readonly (readonly [number, number])[];
-  /** Events without their W.tick (the shifted part of the id). */
-  const strip = (evs: readonly SimEvent[]): unknown[] => evs.map((e) => ({ ...e, tick: 0 }));
-  /** `prep` edits both tick-0 worlds the same way (hurt everyone, place the fighters). */
-  const runBoth = (setup: MatchSetup, inputs: Inputs, at: number, n: number, prep?: (s: SimState) => void): void => {
+  /** Events without their W.tick (the shifted part of the id) and seq (Arcade events interleave). */
+  const strip = (evs: readonly SimEvent[]): unknown[] => evs.map((e) => ({ ...e, tick: 0, seq: 0 }));
+  /** The Classic part of Arcade events: no Arcade kinds, no melee `damage` (each is followed by its hitConfirmed). */
+  const classicPart = (evs: readonly SimEvent[]): readonly SimEvent[] =>
+    evs.filter((e, i) => {
+      const next = evs[i + 1];
+      const melee = next?.kind === SimEventKind.hitConfirmed && ABILITY_DEFS[next['ability'] ?? -1]?.kind === 'melee';
+      return e.kind < 40 && !(e.kind === SimEventKind.damage && melee);
+    });
+  /** `prep` edits both tick-0 worlds the same way (hurt everyone, place the fighters). Returns the Arcade events. */
+  const runBoth = (
+    setup: MatchSetup, inputs: Inputs, at: number, n: number, prep?: (s: SimState) => void,
+  ): SimEvent[] => {
     const c = createMatch(setup);
     const a = createMatch({ ...setup, flags: { ...setup.flags, rulesetArcade: true } });
     prep?.(c.state);
     prep?.(a.state);
     const ca = stateArrays(c.state);
     const aa = stateArrays(a.state);
+    const all: SimEvent[] = [];
+    let shift = 0;
     inputs.forEach(([p, q], t) => {
       if (t === at && n > 0) {
         a.state.arcade[FREEZE_UNTIL] = (a.state.world[World.tick] ?? 0) + n;
         for (let k = 0; k < n; k++) expect(step(a, [p, q])).toEqual([]);
+        shift += n;
       }
-      expect(strip(step(a, [p, q]))).toEqual(strip(step(c, [p, q])));
+      const evs = step(a, [p, q]);
+      all.push(...evs);
+      expect(strip(classicPart(evs))).toEqual(strip(step(c, [p, q])));
+      const stops = evs.filter((e) => e.kind === SimEventKind.hitStop).map((e) => e['ticks'] ?? 0);
+      expect(stops.length).toBe(evs.filter((e) => e.kind === SimEventKind.hitConfirmed).length);
+      let frozen = 0;
+      while (isFrozen(a.state)) {
+        expect(step(a, [p, q])).toEqual([]);
+        frozen++;
+      }
+      expect(frozen).toBe(Math.max(0, ...stops));
+      shift += frozen;
       // stateArrays ends with world, rng, arcade: every entity, team, status and rng array must match exactly.
-      for (let k = 0; k < ca.length - 2; k++) if (k !== ca.length - 3) expect(aa[k]).toEqual(ca[k]);
-      const shift = t >= at ? n : 0;
+      for (let k = 0; k < ca.length - 1; k++) if (k !== ca.length - 3) expect(aa[k]).toEqual(ca[k]);
       expect(Array.from(a.state.world)).toEqual(
         Array.from(c.state.world, (v, i) =>
           i === World.flags ? v | flagBit('rulesetArcade') : i === World.tick ? v + shift : v,
@@ -156,9 +182,11 @@ describe('an Arcade match with no Arcade rules is Classic shifted by its freezes
       );
       expect(now(a.state)).toBe(now(c.state));
     });
+    return all;
   };
 
   it('property: random setups, all 16 command bits, one freeze anywhere', () => {
+    let hits = 0;
     const cmd = fc.integer({ min: 0, max: 0xffff });
     const race = fc.constantFrom(...CHARACTERS.map((c) => c.id));
     /** Held-key runs, like a player, so buffs, freezes and swaps play out over several hundred ticks. */
@@ -184,11 +212,13 @@ describe('an Arcade match with no Arcade rules is Classic shifted by its freezes
               if (s.kind[id] === EntityKind.character) s.hp[id] = ((s.maxHp[id] ?? 0) * hpPm) / 1000;
             }
           };
-          runBoth({ ...CLASSIC, seed, chapter, p1, p2 }, inputs, at, n, hurt);
+          const evs = runBoth({ ...CLASSIC, seed, chapter, p1, p2 }, inputs, at, n, hurt);
+          hits += evs.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
         },
       ),
       { numRuns: 40, seed: 0xa4c },
     );
+    expect(hits).toBeGreaterThan(0);
   });
 
   it('Hurricane hit intervals (hitMask) run on the game clock across a freeze', () => {
@@ -197,7 +227,11 @@ describe('an Arcade match with no Arcade rules is Classic shifted by its freezes
       s.x[0] = 500; s.y[0] = 300; s.x[1] = 580; s.y[1] = 300; s.dir[0] = 0;
     };
     const hold = Array.from({ length: 120 }, (): [number, number] => [Cmd.secondary, 0]);
-    for (const at of [3, 5, 9]) runBoth(duel, hold, at, 7, adjacent);
+    for (const at of [3, 5, 9]) {
+      const hits = runBoth(duel, hold, at, 7, adjacent).filter((e) => e.kind === SimEventKind.hitConfirmed);
+      expect(hits.length).toBeGreaterThan(1);
+      expect(hits.every((e) => e['strength'] === HitStrength.light)).toBe(true);
+    }
   });
 });
 
