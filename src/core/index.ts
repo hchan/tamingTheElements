@@ -7,3 +7,5 @@ export * from './data/chapters';
 export * from './data/settings';
 export * from './rules/objectives';
 export * from './rules/damage';
+export * from './save/migrate';
+export * from './save/v1';

@@ -33,6 +33,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | Path | What it is |
 |---|---|
 | `src/core/` | Pure deterministic simulation code: no DOM, Phaser, Date or Math.random |
+| `src/core/save/` | Save schema v1 (valibot), v0 to v1 migration and `migrate()`; format in [SAVE-FORMAT.md](SAVE-FORMAT.md) |
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags); imports only core via its index |
 | `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`) and typed keys (`keys.ts`) |
