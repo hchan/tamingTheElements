@@ -1,5 +1,6 @@
 import { el } from './dom';
 import { settingsScreen } from './screens/settings';
+import { mainMenuScreen } from './screens/main-menu';
 import type { Screen, ScreenFactory } from './screens/screen';
 import { aboutScreen } from './screens/about';
 import { keyBindingsScreen } from './screens/key-bindings';
@@ -71,7 +72,7 @@ export type ScreenTable = Readonly<Record<RouteName, ScreenFactory>>;
 
 export function defaultScreens(): ScreenTable {
   return {
-    main: placeholderScreen('Taming the Elements'),
+    main: mainMenuScreen(),
     newGame: placeholderScreen('New Game'),
     garrison: placeholderScreen('Garrison'),
     settings: () => settingsScreen(),
