@@ -1,5 +1,6 @@
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B } from '../../data/abilities-b';
+import { cooldownTicksFor } from '../arcade-numbers';
 import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../data/chapters';
 import { CHARACTERS } from '../../data/characters';
 import type { AbilityDef } from '../../data/types';
@@ -87,7 +88,7 @@ function fire(world: SimWorld, sink: EventSink, team: number, charId: number, sl
     // doAbility (`lastUsed = now`) for every ability cast from a slot, so it does apply (abilities-range.json
     // canFireAtCooldown 10000 false / 10001 true).
     for (const d of OMNI_DIRS) spawnBullet(world, charId, defIdx, def, d);
-    s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
+    s.abil[cooldownIdx(charId, slot)] = tick + cooldownTicksFor(def, isArcade(s)) + 1;
     onArcadeCast(s, sink, charId, team, slot);
     return;
   }
@@ -97,7 +98,7 @@ function fire(world: SimWorld, sink: EventSink, team: number, charId: number, sl
   const ci = countIdx(charId, slot);
   s.abil[ci] = (s.abil[ci] ?? 0) + 1;
   // Legacy cooldown is strict (>) in ms, so the next fire is one tick after the cooldown elapses.
-  s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
+  s.abil[cooldownIdx(charId, slot)] = tick + cooldownTicksFor(def, isArcade(s)) + 1;
   onArcadeCast(s, sink, charId, team, slot);
 }
 

@@ -17,6 +17,7 @@ import { SWAP_COOLDOWN_TICKS, teamMembers } from './systems/swap';
 /** Capture sits after the character's own two ability slots (see systems/capture.ts). */
 const CAPTURE_SLOT = 2;
 import type { SimWorld } from './world';
+import { cooldownTicksFor } from './arcade-numbers';
 import { isArcade, isFrozen, now } from './clock';
 
 /** One character as the renderer sees it. The object is reused between callbacks: copy what you keep. */
@@ -161,7 +162,7 @@ export function createRenderView(world: SimWorld): RenderView {
       const slotOf = (def: AbilityDef | undefined, slot: number): RenderActionSlot => ({
         sprite: def?.sprite ?? '',
         readyTick: s.abil[cooldownIdx(cur, slot)] ?? 0,
-        cooldownTicks: def?.cooldownTicks ?? 0,
+        cooldownTicks: def === undefined ? 0 : cooldownTicksFor(def, isArcade(s)),
       });
       const ids = CHARACTERS[s.defId[cur] ?? 0]?.abilities ?? [];
       const abilities = ids.map((a, i) => slotOf(ABILITY_DEFS.find((d) => d.id === a), i));

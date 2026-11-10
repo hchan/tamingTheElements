@@ -44,8 +44,57 @@ export function funReport(o: FunReportOptions): FunReport {
   return { options: o, overall: summarizeFun(all), pairs: rows };
 }
 
+/** Per-race win rate over the report's pairings (draws count half), in RACES order (races with no game are left out). */
+export function raceWinRates(r: FunReport): Record<string, number> {
+  const score = new Map<string, [number, number]>();
+  for (const p of r.pairs) {
+    const draws = r.options.seeds - p.winsA - p.winsB;
+    for (const [race, won] of [[p.a, p.winsA], [p.b, p.winsB]] as const) {
+      const row = score.get(race) ?? [0, 0];
+      score.set(race, [row[0] + won + draws / 2, row[1] + r.options.seeds]);
+    }
+  }
+  return Object.fromEntries(
+    RACES.flatMap((race) => {
+      const row = score.get(race);
+      return row === undefined || row[1] === 0 ? [] : [[race, Math.round((row[0] / row[1]) * 1000) / 1000]];
+    }),
+  );
+}
+
+export interface FunBand {
+  readonly metric: string;
+  readonly value: number;
+  readonly min: number;
+  readonly max: number;
+  readonly ok: boolean;
+}
+
+/**
+ * The WP-arcade-numbers targets (FUN-DESIGN 2.13 and section 4), REPORT ONLY: printed, never asserted, so a bot or
+ * seed change cannot make CI flaky (the tight nightly gates are WP-arcade-gates-tight). Race win rates are only judged
+ * with `--all` (the default sample plays each race twice).
+ */
+export function funBands(r: FunReport): FunBand[] {
+  const o = r.overall;
+  const band = (metric: string, value: number, min: number, max: number): FunBand => ({ metric, value, min, max, ok: value >= min && value <= max });
+  const rates = Object.values(raceWinRates(r));
+  return [
+    band('round median s', o.medianRoundSeconds, 25, 60),
+    band('time-over rate', o.timeOverRate, 0, 0.15),
+    band('stalemate rate', o.stalemateRate, 0, 0),
+    band('first hit median s', o.medianFirstHitSeconds, 0, 4),
+    band('combo median hits', o.medianComboHits, 2, 4),
+    band('combo p90 hits', o.p90ComboHits, 0, 8),
+    ...(r.options.all && rates.length > 0
+      ? [band('worst race win rate', Math.min(...rates), 0.35, 0.65), band('best race win rate', Math.max(...rates), 0.35, 0.65)]
+      : []),
+  ];
+}
+
 export function formatFunReport(r: FunReport): string {
   const o = r.overall;
+  const rates = Object.entries(raceWinRates(r));
   return [
     `Fun report: ${r.options.ruleset}, team size ${String(r.options.teamSize)}, ${String(o.matches)} matches (${String(r.pairs.length)} pairings x ${String(r.options.seeds)} seeds)`,
     `  match length       median ${o.medianSeconds.toFixed(1)} s, p10 ${o.p10Seconds.toFixed(1)} s, p90 ${o.p90Seconds.toFixed(1)} s`,
@@ -58,6 +107,9 @@ export function formatFunReport(r: FunReport): string {
     `  counter-hit rate   ${(o.counterHitRate * 100).toFixed(1)}%; cap recoveries juggle ${String(o.jugglecapRecoveries)}, stun ${String(o.stuncapRecoveries)}`,
     `  dash/tag/super/clash/defence  ${[o.dashes, o.tags, o.supers, o.clashes, o.defence].join('/')} (zero until their work packages land)`,
     `  guard/parry/perfect dodge/weather  ${[o.guards, o.parries, o.dodges, o.weathers].join('/')}`,
+    `  race win rates     ${rates.map(([race, w]) => `${race} ${(w * 100).toFixed(1)}%`).join(', ')}`,
+    '  bands (report only):',
+    ...funBands(r).map((b) => `    ${b.ok ? 'ok ' : 'OUT'} ${b.metric.padEnd(20)} ${String(Math.round(b.value * 1000) / 1000).padStart(7)} in [${String(b.min)}, ${String(b.max)}]`),
   ].join('\n');
 }
 

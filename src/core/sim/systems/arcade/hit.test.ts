@@ -5,6 +5,7 @@ import {
   PARRY_HIT_STOP_TICKS, hitStrengthFor,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
+import { arcadeRaceNumbers } from '../../arcade-numbers';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { isFrozen, now } from '../../clock';
@@ -171,6 +172,20 @@ describe('hit-stop', () => {
     }
     expect(hits).toBeGreaterThan(4);
     expect(now(world.state)).toBeLessThan(world.state.world[W.tick] ?? 0);
+  });
+
+  it('scales an ability hit by the attacker race damagePm (FUN-DESIGN 2.13); Classic keeps the legacy amount', () => {
+    for (const [race, cmd] of [['sindarosa', Cmd.primary], ['pax', Cmd.secondary], ['ishimi', Cmd.secondary]] as const) {
+      // The first HP drop (Classic melee emits no event, so read the HP).
+      const amount = (arcade: boolean): number => {
+        const world = duel(race, 'rokcore', arcade);
+        for (let t = 0; t < 60 && world.state.hp[1] === 10_000; t++) step(world, [cmd, 0]);
+        return 10_000 - (world.state.hp[1] ?? 0);
+      };
+      const classic = amount(false);
+      expect(classic, race).toBeGreaterThan(0);
+      expect(amount(true), race).toBeCloseTo((classic * arcadeRaceNumbers(race)[1]) / 1000, 9);
+    }
   });
 
   it('Classic is untouched: melee emits nothing, projectiles only `damage`, and the clock never freezes', () => {

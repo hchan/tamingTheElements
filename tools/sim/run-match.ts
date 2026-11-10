@@ -41,6 +41,11 @@ export const UNATTRIBUTED = 'melee-or-status';
 export const SUPER_SOURCE = 'super';
 
 export const DEFAULT_MAX_TICKS = 9000; // 3 minutes
+/**
+ * Arcade's tooling cap: a best of 3 always ends by itself (each round has a 4500-game-tick timer), but three long rounds
+ * plus their intros, KO phases and hit-stop freezes outlast 9000 ticks, so Arcade matches get 6 minutes.
+ */
+export const ARCADE_MAX_TICKS = 18000;
 export const DEFAULT_STALEMATE_TICKS = 1500; // 30 s without any HP change
 
 /** Smallest XP that gives `level` (inverse of levelFromXp). */
@@ -269,10 +274,10 @@ function teamHp(world: ReturnType<typeof createMatch>, team: number): number {
 const r3 = (n: number): number => Math.round(n * 1000) / 1000;
 
 export function runMatch(o: MatchOptions): MatchResult {
-  const maxTicks = o.maxTicks ?? DEFAULT_MAX_TICKS;
+  const arcade = o.ruleset === 'arcade';
+  const maxTicks = o.maxTicks ?? (arcade ? ARCADE_MAX_TICKS : DEFAULT_MAX_TICKS);
   const stalemateTicks = o.stalemateTicks ?? DEFAULT_STALEMATE_TICKS;
   const xp = xpForLevel(o.level);
-  const arcade = o.ruleset === 'arcade';
   const roster = (race: string): { character: ReturnType<typeof characterId>; xp: number }[] =>
     [race, ...(o.teamSize === 2 ? [RACES[(RACES.indexOf(race) + 1) % RACES.length] ?? race] : [])].map((r) => ({
       character: characterId(r),
@@ -668,7 +673,7 @@ export function main(argv: readonly string[]): number {
       seed: num(values.seed, 1, 'seed'),
       level: num(values.level, 1, 'level'),
       difficulty: num(values.difficulty, 1, 'difficulty'),
-      maxTicks: num(values['max-ticks'], DEFAULT_MAX_TICKS, 'max-ticks'),
+      ...(values['max-ticks'] === undefined ? {} : { maxTicks: num(values['max-ticks'], DEFAULT_MAX_TICKS, 'max-ticks') }),
       stalemateTicks: num(values['stalemate-ticks'], DEFAULT_STALEMATE_TICKS, 'stalemate-ticks'),
       ...parseRuleOptions(values.ruleset, values['team-size'], values['ai-level']),
     };

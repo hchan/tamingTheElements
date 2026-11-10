@@ -51,6 +51,27 @@ function home(p1: Track, p2: Track, at: number, walk: number, rows = 31): number
   return Math.max(p1.tick, p2.tick);
 }
 
+/**
+ * WP-arcade-numbers timings: cones in each beat-down, when round 2 and round 3 start their segments (each after the
+ * round before ended), and the round 2 guard (held while GUARD_BLASTS come; about 11 blocked blasts break it).
+ */
+const BEAT_ROUND_1 = 9;
+const BEAT_ROUND_3 = 11;
+const ROUND_2 = 3800;
+const ROUND_3 = 8600;
+const GUARD_HOLD = 800;
+const GUARD_BLASTS = 14;
+/** Cone spacing in a beat-down: past the light hit-stun (32) plus its hit-stop, so each cone is a fresh 1-hit combo. */
+const BEAT_EVERY = 40;
+
+/** Both players home at `at`, then p1 fires `n` single cones at p2 on the right wall. Returns the tick after the last. */
+function beatDown(p1: Track, p2: Track, at: number, n: number): number {
+  const h = home(p1, p2, at, 100);
+  p1.until(h);
+  for (let i = 0; i < n; i++) p1.tap('beat-down cone', secondary, 1, BEAT_EVERY - 1);
+  return p1.tick;
+}
+
 function movesScript(): ArcadeScript {
   const setup: MatchSetup = {
     simVersion: SIM_VERSION, seed: 0xa4c0de, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
@@ -77,22 +98,27 @@ function movesScript(): ArcadeScript {
   // Segment F: 8-way aim (p1 stands up on the top wall and shoots down-right at p2: a diagonal hit).
   h = home(p1, p2, 1640, 138, 0);
   p1.until(h).step('aim down-right', right | down, 1).tap('diagonal cone', secondary);
+  // Beat-down (WP-arcade-numbers: Arcade lives are about 4x the hits now): single cones a stun apart, so p2 is low
+  // enough for the parry's reflection to KO it.
+  h = beatDown(p1, p2, 2250, BEAT_ROUND_1);
   // Segment E: parry (p1 taps guard as the blast arrives: it is reflected, and the reflection KOs p2, who is low by now).
-  h = home(p1, p2, 2250, 100);
+  h = home(p1, p2, h + 60, 100);
   p2.until(h + 10).tap('fire blast', primary);
   p1.until(h + 55).tap('parry', guard);
   // Round 2: p1 holds guard while p2 shoots: chip damage, then the guard breaks. p2 then wins on time over.
-  h = home(p1, p2, 3000, 100);
-  p1.until(h).step('hold guard', guard, 420);
+  h = home(p1, p2, ROUND_2, 100);
+  p1.until(h).step('hold guard', guard, GUARD_HOLD);
   p2.until(h + 10);
-  for (let i = 0; i < 8; i++) p2.tap('fire blast', primary, 1, 35);
-  // Round 3: p1 carries its meter over, scores a combo and a cone, then spends a bar on the super that finishes p2.
-  h = home(p1, p2, 7700, 100);
+  for (let i = 0; i < GUARD_BLASTS; i++) p2.tap('fire blast', primary, 1, 35);
+  // Round 3: p1 carries its meter over, wears p2 down, scores a combo and a cone, then spends a bar on the super that
+  // finishes p2.
+  h = beatDown(p1, p2, ROUND_3, BEAT_ROUND_3);
+  h = home(p1, p2, h + 60, 100);
   p1.until(h).tap('tornado', primary, 1, 6);
   for (let i = 0; i < 3; i++) p1.tap('cone', secondary, 1, 19);
   p1.until(h + 110).tap('cone', secondary);
   p1.until(h + 175).tap('super', sup);
-  p1.until(8530);
+  p1.until(h + 520);
   return { file: 'arcade-moves', setup, inputs: buildScript(p1, p2) };
 }
 

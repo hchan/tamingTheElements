@@ -1,10 +1,11 @@
 // Balance regression gate (`pnpm balance:compare`, `pnpm balance:record`). Node only; see docs/BALANCE.md.
 // Runs the full scripted-vs-scripted tournament, reduces it to a small report and diffs it against the committed baseline.
+// `--ruleset arcade` plays the Arcade tournament (ARCADE_PARAMS) against its own baseline (ARCADE_BASELINE_PATH).
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { DEFAULT_MAX_TICKS, runTournament, type TournamentSummary } from './run-match';
+import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, runTournament, type TournamentSummary } from './run-match';
 
 /** Parameters of the full tournament recorded in the baseline. Changing them means re-recording the baseline. */
 export const FULL_PARAMS = {
@@ -16,13 +17,22 @@ export const FULL_PARAMS = {
   maxTicks: DEFAULT_MAX_TICKS,
 } as const;
 
+/**
+ * The Arcade tournament (FUN-DESIGN 2.13, WP-arcade-numbers): the same round robin under `rulesetArcade`, the Arcade AI
+ * at Normal (`aiLevel` 3) with its personality drawn per match, so every race meets every personality.
+ */
+export const ARCADE_PARAMS = { ...FULL_PARAMS, maxTicks: ARCADE_MAX_TICKS, ruleset: 'arcade', aiLevel: 3 } as const;
+
+export type BalanceParams = typeof FULL_PARAMS | typeof ARCADE_PARAMS;
+
 /** A race may move by at most this much (absolute, 0.05 = 5 percentage points) before the compare fails. */
 export const DEFAULT_TOLERANCE = 0.05;
 
 export const BASELINE_PATH = 'tests/fixtures/balance/baseline.json';
+export const ARCADE_BASELINE_PATH = 'tests/fixtures/balance/arcade-baseline.json';
 
 export interface BalanceReport {
-  readonly params: typeof FULL_PARAMS;
+  readonly params: BalanceParams;
   readonly matches: number;
   readonly stalemates: number;
   readonly timeouts: number;
@@ -30,7 +40,7 @@ export interface BalanceReport {
   readonly winRates: Readonly<Record<string, number>>;
 }
 
-export function toReport(t: TournamentSummary, params: typeof FULL_PARAMS = FULL_PARAMS): BalanceReport {
+export function toReport(t: TournamentSummary, params: BalanceParams = FULL_PARAMS): BalanceReport {
   const winRates = Object.fromEntries(
     [...t.ranking].sort((x, y) => x.race.localeCompare(y.race)).map((r) => [r.race, r.winRate]),
   );
@@ -83,12 +93,20 @@ export function main(argv: readonly string[]): number {
   try {
     const { values } = parseArgs({
       args: [...argv],
-      options: { record: { type: 'boolean' }, out: { type: 'string' }, baseline: { type: 'string' }, tolerance: { type: 'string' } },
+      options: {
+        record: { type: 'boolean' }, out: { type: 'string' }, baseline: { type: 'string' }, tolerance: { type: 'string' },
+        ruleset: { type: 'string' },
+      },
     });
-    const baselinePath = values.baseline ?? BASELINE_PATH;
+    if (values.ruleset !== undefined && values.ruleset !== 'classic' && values.ruleset !== 'arcade') {
+      throw new Error(`--ruleset must be classic|arcade, got "${values.ruleset}"`);
+    }
+    const arcade = values.ruleset === 'arcade';
+    const params = arcade ? ARCADE_PARAMS : FULL_PARAMS;
+    const baselinePath = values.baseline ?? (arcade ? ARCADE_BASELINE_PATH : BASELINE_PATH);
     const tolerance = values.tolerance === undefined ? DEFAULT_TOLERANCE : Number(values.tolerance);
     if (!Number.isFinite(tolerance) || tolerance < 0) throw new Error('--tolerance must be a non-negative number');
-    const current = toReport(runTournament(FULL_PARAMS));
+    const current = toReport(runTournament(params), params);
     if (values.record === true) {
       mkdirSync(dirname(baselinePath), { recursive: true });
       writeFileSync(baselinePath, `${JSON.stringify(current, null, 2)}\n`);
@@ -106,11 +124,14 @@ export function main(argv: readonly string[]): number {
       mkdirSync(dirname(values.out), { recursive: true });
       writeFileSync(values.out, `${JSON.stringify({ tolerance, failed, baseline: base, current, deltas: rows }, null, 2)}\n`);
     }
-    if (failed) console.error('Balance moved beyond tolerance. If intended, run `pnpm balance:record` and say why in the commit.');
+    if (failed) {
+      const record = `pnpm balance:record${arcade ? ' --ruleset arcade' : ''}`;
+      console.error(`Balance moved beyond tolerance. If intended, run \`${record}\` and say why in the commit.`);
+    }
     return failed ? 1 : 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm balance:compare [--out report.json] [--tolerance 0.05] | pnpm balance:record');
+    console.error('usage: pnpm balance:compare [--ruleset classic|arcade] [--out report.json] [--tolerance 0.05] | pnpm balance:record [--ruleset classic|arcade]');
     return 2;
   }
 }

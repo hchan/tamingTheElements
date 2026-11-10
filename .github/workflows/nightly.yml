@@ -1,6 +1,7 @@
 name: Nightly
 
-# Full balance tournament diffed against the committed baseline, plus a heavier property-test profile.
+# Full balance tournament diffed against the committed baseline, plus a heavier property-test profile. The Arcade
+# balance compare and fun report run too, report only.
 # See docs/BALANCE.md and docs/TESTING.md. Not part of PR CI.
 on:
   schedule:
@@ -27,6 +28,14 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Balance compare (fails when a race moves beyond the tolerance)
         run: corepack pnpm balance:compare --out out/balance-report.json
+      # Report only (FUN-DESIGN 2.13, WP-arcade-numbers): the Arcade tournament against its own baseline and the Arcade
+      # fun bands. Neither fails the job until WP-arcade-gates-tight agrees the bands; the reports are uploaded.
+      - name: Arcade balance compare (report only)
+        continue-on-error: true
+        run: corepack pnpm balance:compare --ruleset arcade --out out/arcade-balance-report.json
+      - name: Arcade fun report (report only)
+        continue-on-error: true
+        run: corepack pnpm fun:report --ruleset arcade --all --seeds 8
       - name: Property tests, heavy profile
         run: corepack pnpm test
         env:
@@ -36,5 +45,8 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: balance-report
-          path: out/balance-report.json
+          path: |
+            out/balance-report.json
+            out/arcade-balance-report.json
+            out/fun-report.json
           if-no-files-found: ignore

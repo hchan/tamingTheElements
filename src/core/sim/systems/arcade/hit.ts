@@ -5,6 +5,7 @@ import {
   PARRY_HIT_STOP_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
+import { arcadeRaceNumbers } from '../../arcade-numbers';
 import { computeDamage, damageDealt } from '../../../rules/damage';
 import { now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
@@ -51,7 +52,7 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * The single Arcade hit path (FUN-DESIGN 2.1): `source` (a projectile or melee entity) of ability `defIdx` hits
  * `victim` for `base` damage on behalf of `attacker`, whose multiplier and element apply. The damage is the Classic
  * `computeDamage` arithmetic, then the weather (FUN-DESIGN 2.14, `weatherDamage` of the attacker's element), then the
- * combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
+ * attacker race's `damagePm` (FUN-DESIGN 2.13, `arcadeRaceNumbers`; not on a super), then the combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
  * combo and starts a new one). Emits `damage` (as Classic projectiles do) and
  * `hitConfirmed`, then hit-stop by strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by
  * strength and hit-stun with the juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap
@@ -79,14 +80,18 @@ export function applyArcadeHit(
   const counter = isCounterHit(s, victim);
   const combo = guard ? 1 : comboHit(world, sink, source, team, victim);
   const scalePm = guard ? GUARD_CHIP_PM : comboScalePm(combo, strength);
-  const attEl = CHARACTERS[s.defId[attacker] ?? 0]?.element ?? 'void';
-  const raw = weatherDamage(s, computeDamage({
+  const attDef = CHARACTERS[s.defId[attacker] ?? 0];
+  const attEl = attDef?.element ?? 'void';
+  const charted = weatherDamage(s, computeDamage({
     base,
     attackerMult: s.dmgMult[attacker] ?? 1,
     attEl,
     defEl: CHARACTERS[s.defId[victim] ?? 0]?.element ?? 'void',
     defReductionPct: damageDecreasePct(s, victim),
   }), attEl);
+  // The attacker race's Arcade damage pm (FUN-DESIGN 2.13), never on the shared super; 1000 keeps the value exact.
+  const racePm = sup ? 1000 : arcadeRaceNumbers(attDef?.id ?? '')[1];
+  const raw = racePm === 1000 ? charted : (charted * racePm) / 1000;
   // Unscaled hits keep the Classic value exactly (x * 1000 / 1000 can round).
   const amount = scalePm === 1000 ? raw : (raw * scalePm) / 1000;
   const before = s.hp[victim] ?? 0;
