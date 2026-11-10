@@ -137,6 +137,9 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
 type Memory = [number, number, number, number, number, number, number, number, number];
 const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0];
 
+/** Within every 256 ticks, the tick from which a tag team's AI fires along a rock-cut line (WP-arcade-2v2-tune). */
+const SHOOT_FROM = 64;
+
 export class ArcadeTactics {
   /**
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
@@ -166,7 +169,7 @@ export class ArcadeTactics {
     const a = view.arcade;
     if (a === undefined) return base;
     const cmd = this.decide(view, a, base, shot);
-    return avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd));
+    return avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
   }
 
   /**
@@ -177,7 +180,7 @@ export class ArcadeTactics {
    * straight back), ending early when the step is not free. A fighter already inside a rock walks out as it is. Guard,
    * dash and super commands are left alone.
    */
-  private slide(tick: number, self: FighterView, opp: FighterView, rocks: readonly RockView[], cmd: Command): Command {
+  private slide(tick: number, self: FighterView, opp: FighterView, rocks: readonly RockView[], cmd: Command, tagTeam: boolean): Command {
     if ((cmd & (Cmd.guard | Cmd.dash | Cmd.super)) !== 0 || rocks.some((r) => hitsRock(r, self.x, self.y, self.w, self.h))) return cmd;
     const m = this.mem;
     const pf = arcadePlayfield();
@@ -187,7 +190,10 @@ export class ArcadeTactics {
       const y = self.y + dy;
       return x >= pf.x && y >= pf.y && x + self.w <= pf.x + pf.w && y + self.h <= pf.y + pf.h && !rocks.some((r) => hitsRock(r, x, y, self.w, self.h));
     };
-    const wasted = (cmd & ATTACK) !== 0 ? rockOnLine(self, opp, rocks) : undefined;
+    // A tag team (a living partner) shoots on from SHOOT_FROM of every 256 ticks even along a line a rock cuts: two sides
+    // that both refuse a wasted shot and slide about can otherwise never trade a hit (2v2 stalemates).
+    const shoots = tagTeam && (tick & 255) >= SHOOT_FROM;
+    const wasted = (cmd & ATTACK) !== 0 && !shoots ? rockOnLine(self, opp, rocks) : undefined;
     if ((m[7]) !== 0 && tick < (m[8]) && free(m[7])) return (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | (m[7]);
     m[7] = 0;
     const [sx, sy] = stepOf(cmd & MOVE);

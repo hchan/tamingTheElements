@@ -266,7 +266,7 @@ export const TAG_COOLDOWN_TICKS = 150;
 export const TAG_INVULN_TICKS = 20;
 export const KO_ENTRANCE_INVULN_TICKS = 60;
 export const REST_HEAL_EVERY = 10;
-export const REST_HEAL_PM = 10;
+export const REST_HEAL_PM = 3;
 
 /**
  * Playfield (FUN-DESIGN 2.1, WP-arcade-playfield-bounds), in integer logical px of the fixed 1280x720 canvas. The Arcade

@@ -48,6 +48,31 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   wispera: [3490, 800],
 };
 
+/**
+ * Tag team life (FUN-DESIGN 2.13, WP-arcade-2v2-tune): in a 2v2 roster a hero's life is its 1v1 `hpPm` times
+ * ARCADE_2V2_LIFE_PM[race] per mille (ARCADE_2V2_LIFE_DEFAULT_PM for a race not in the table), since a team has two life
+ * bars and a bench heal to get through. A 1v1 roster is untouched (exact).
+ */
+export const ARCADE_2V2_LIFE_DEFAULT_PM = 600;
+export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
+  curomo: 691,
+  cyclonius: 612,
+  echo: 675,
+  fiara: 635,
+  ishimi: 807,
+  lavax: 552,
+  morblass: 807,
+  pax: 536,
+  rokcore: 634,
+  sindarosa: 867,
+  treenoc: 357,
+  wispera: 898,
+};
+/** Race life `hpPm` of `slug` for a roster of `size` heroes. */
+export function arcadeLifePm(hpPm: number, size: number, slug: string): number {
+  return size < 2 ? hpPm : Math.floor((hpPm * (ARCADE_2V2_LIFE_PM[slug] ?? ARCADE_2V2_LIFE_DEFAULT_PM)) / 1000);
+}
+
 /** The Arcade numbers of race `slug`: its ARCADE_RACE_NUMBERS row, else ARCADE_RACE_DEFAULT. */
 export function arcadeRaceNumbers(slug: string): ArcadeRaceNumbers {
   return ARCADE_RACE_NUMBERS[slug] ?? ARCADE_RACE_DEFAULT;
