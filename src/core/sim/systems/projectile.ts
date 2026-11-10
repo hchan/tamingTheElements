@@ -11,12 +11,12 @@ import { Cmd, hasCmd, type Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
 import {
   EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_COOLDOWNS, TEAM_COUNT, TEAM_STRIDE,
-  World as W,
 } from '../state';
 import type { SimWorld } from '../world';
 import { onProjectileHit } from './debuffs';
 import { damageDecreasePct } from './status';
 import { controlledId } from './movement';
+import { now } from '../clock';
 
 /** Ability index used for SimState.defId and the per-team activeCount table (set A then set B). */
 export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -34,7 +34,7 @@ function canFire(world: SimWorld, team: number, charId: number, slot: number, de
   if (((s.flags[charId] ?? 0) & EntityFlag.frozen) !== 0) return false;
   const base = team * TEAM_STRIDE;
   if (def.maxActive <= (s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] ?? 0)) return false;
-  return (s.world[W.tick] ?? 0) >= (s.teams[base + TEAM_COOLDOWNS + slot] ?? 0);
+  return now(s) >= (s.teams[base + TEAM_COOLDOWNS + slot] ?? 0);
 }
 
 /** Spawns one bullet; false when the entity table is full. */
@@ -116,7 +116,7 @@ function shrinkStep(world: SimWorld, id: number): void {
 export function projectileSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
   const a = world.arena;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     if (s.kind[id] !== EntityKind.projectile || ((s.flags[id] ?? 0) & EntityFlag.alive) === 0) continue;
     shrinkStep(world, id);

@@ -10,6 +10,7 @@ export interface SimWorld {
   readonly arena: Aabb;
 }
 
-export function createWorld(matchSeed = 0, arena: Aabb = DEFAULT_ARENA): SimWorld {
-  return { state: createSimState(matchSeed), arena };
+/** `arcade` allocates the Arcade state block (rulesetArcade on); Classic leaves it empty. */
+export function createWorld(matchSeed = 0, arena: Aabb = DEFAULT_ARENA, arcade = false): SimWorld {
+  return { state: createSimState(matchSeed, arcade), arena };
 }

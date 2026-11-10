@@ -13,11 +13,15 @@ import { captureSystem } from './systems/capture';
 import { projectileSystem } from './systems/projectile';
 import { endSystem } from './systems/end';
 import { World as W } from './state';
+import { advanceGameClock, isFrozen } from './clock';
 import type { SimWorld } from './world';
 
 type System = (world: SimWorld, cmds: readonly [Command, Command], sink: EventSink) => void;
 
 const noop: System = () => undefined;
+
+/** Leading SYSTEMS entries that run even while an Arcade freeze holds the game clock: just `input`. */
+export const UNFROZEN_SYSTEMS = 1;
 
 /** Fixed system order; systems not yet implemented are no-ops. */
 export const SYSTEMS: readonly (readonly [string, System])[] = [
@@ -38,11 +42,22 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['end', endSystem],
 ];
 
-/** Advances the world one 50 Hz tick and returns the events it produced. */
+/**
+ * Advances the world one 50 Hz tick and returns the events it produced. The first UNFROZEN_SYSTEMS slots (`input`) run
+ * every tick; while an Arcade freeze holds the game clock (`isFrozen`, never true in Classic) every other system is
+ * skipped and the game clock stays put. `W.tick` always advances.
+ */
 export function step(world: SimWorld, cmds: readonly [Command, Command]): readonly SimEvent[] {
-  const w = world.state.world;
+  const s = world.state;
+  const w = s.world;
   const sink = new Sink(w[W.tick] ?? 0);
-  for (const [, system] of SYSTEMS) system(world, cmds, sink);
+  let frozen = false;
+  for (const [i, [, system]] of SYSTEMS.entries()) {
+    if (i === UNFROZEN_SYSTEMS) frozen = isFrozen(s);
+    if (frozen) break;
+    system(world, cmds, sink);
+  }
   w[W.tick] = (w[W.tick] ?? 0) + 1;
+  if (!frozen) advanceGameClock(s);
   return sink.events;
 }

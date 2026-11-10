@@ -7,10 +7,10 @@ import {
   TEAM_COUNT,
   TEAM_STRIDE,
   TeamField,
-  World as W,
 } from '../state';
 import type { SimWorld } from '../world';
 import { P1_START_X, P2_START_X, START_Y } from '../match';
+import { now } from '../clock';
 
 /** Legacy `Game.swapCooldown` 5000 ms at 50 Hz. */
 export const SWAP_COOLDOWN_TICKS = 250;
@@ -51,7 +51,7 @@ export function performSwap(
   to: number,
 ): void {
   const s = world.state;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   const cur = s.hp[from] ?? 0;
   s.restCap[from] = cur + ((s.restCap[from] ?? 0) - cur) / 2;
   s.flags[from] = (s.flags[from] ?? 0) | EntityFlag.benched;
@@ -83,7 +83,7 @@ export function swapSystem(
   sink: EventSink,
 ): void {
   const s = world.state;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   for (let team = 0; team < TEAM_COUNT; team++) {
     const cmd = cmds[team] ?? 0;
     const slot = SWAP_BITS.findIndex((bit) => hasCmd(cmd, bit));

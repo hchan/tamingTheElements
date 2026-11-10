@@ -1,8 +1,9 @@
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B, type AbilityDefB } from '../../data/abilities-b';
-import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World as W } from '../state';
+import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE } from '../state';
 import type { SimState } from '../state';
 import type { SimWorld } from '../world';
+import { now } from '../clock';
 
 /**
  * Status framework. Each entity owns STATUS_SLOTS slots of [id, sourceId, startTick, expireTick, magnitude].
@@ -67,7 +68,7 @@ export function applyBuff(world: SimWorld, id: number, abilitySlug: string, sour
   while (slot < STATUS_SLOTS && (s.status[base(id, slot) + F_ID] ?? 0) !== StatusId.none) slot++;
   if (slot === STATUS_SLOTS) return false;
   const def = defFor(abilitySlug);
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   const speedDelta = def.speedDelta ?? 0;
   const b = base(id, slot);
   s.status[b + F_ID] = statusId;
@@ -143,7 +144,7 @@ export function clearStatuses(s: SimState, id: number): void {
  */
 export function statusSystem(world: SimWorld): void {
   const s = world.state;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     for (let slot = 0; slot < STATUS_SLOTS; slot++) {
       const b = base(id, slot);

@@ -1,5 +1,6 @@
-import { EntityFlag, EntityKind, MAX_ENTITIES, World as W } from '../state';
+import { EntityFlag, EntityKind, MAX_ENTITIES } from '../state';
 import type { SimWorld } from '../world';
+import { now } from '../clock';
 
 export const REST_HEAL_INTERVAL = 50;
 export const REST_HEAL_FRACTION = 0.005;
@@ -11,7 +12,7 @@ export const REST_HEAL_FRACTION = 0.005;
  */
 export function restSystem(world: SimWorld): void {
   const s = world.state;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   if (tick % REST_HEAL_INTERVAL !== 0) return;
   for (let id = 0; id < MAX_ENTITIES; id++) {
     const f = s.flags[id] ?? 0;

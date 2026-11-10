@@ -1,6 +1,7 @@
 import { type Command, NO_COMMAND } from '../sim/commands';
 import { EntityFlag, EntityKind, TEAM_STRIDE, TeamField, World } from '../sim/state';
 import type { SimWorld } from '../sim/world';
+import { now } from '../sim/clock';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
 export interface FighterView {
@@ -97,6 +98,7 @@ function fighterOf(world: SimWorld, team: number): FighterView | undefined {
 export function createObservationView(world: SimWorld, side: 0 | 1): ObservationView {
   const s = world.state;
   const tick = s.world[World.tick] ?? 0;
+  const gameTick = now(s);
   const base = side * TEAM_STRIDE;
   return {
     side,
@@ -105,7 +107,7 @@ export function createObservationView(world: SimWorld, side: 0 | 1): Observation
     self: fighterOf(world, side),
     opponent: fighterOf(world, 1 - side),
     cooldowns: Array.from({ length: 4 }, (_, k) =>
-      Math.max(0, (s.teams[base + TeamField.swapCooldownUntil + 1 + k] ?? 0) - tick),
+      Math.max(0, (s.teams[base + TeamField.swapCooldownUntil + 1 + k] ?? 0) - gameTick),
     ),
   };
 }

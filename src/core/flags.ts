@@ -6,6 +6,11 @@ export interface SimFlags {
   readonly experimentalPathing: boolean;
   /** Elemental Advantage abilities: data-only (no character owns them) until this is on. */
   readonly elementalAdvantage: boolean;
+  /**
+   * The Arcade ruleset (docs/FUN-DESIGN.md): hit-stop, stun, combos, supers. Off means Classic, which must stay
+   * bit-identical. The name sorts after every older flag, so no existing flag bit moves.
+   */
+  readonly rulesetArcade: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -14,6 +19,7 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   experimentalSpawnCurve: false,
   experimentalPathing: false,
   elementalAdvantage: false,
+  rulesetArcade: false,
 };
 
 /** Every sim flag name in sorted order: the replay header encoding and the world flag bits both follow it. */
@@ -36,6 +42,15 @@ export function flagBits(flags: SimFlags): number {
   return bits;
 }
 
+/** Inverse of flagBits: the sim flags set in world flag bits (internal bits 16+ are ignored). */
+export function flagsFromBits(bits: number): SimFlags {
+  const out: Record<SimFlagName, boolean> = { ...DEFAULT_SIM_FLAGS };
+  FLAG_NAMES.forEach((name, i) => {
+    out[name] = (bits & (1 << i)) !== 0;
+  });
+  return out;
+}
+
 /** Stable encoding: sorted names of enabled flags joined by ','; '' when none are on. */
 export function encodeFlags(flags: SimFlags): string {
   return FLAG_NAMES.filter((n) => flags[n]).join(',');
@@ -53,5 +68,6 @@ export function decodeFlags(encoded: string): SimFlags {
     experimentalSpawnCurve: on.has('experimentalSpawnCurve'),
     experimentalPathing: on.has('experimentalPathing'),
     elementalAdvantage: on.has('elementalAdvantage'),
+    rulesetArcade: on.has('rulesetArcade'),
   };
 }

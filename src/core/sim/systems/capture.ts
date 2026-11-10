@@ -14,6 +14,7 @@ import {
 import type { SimWorld } from '../world';
 import { controlledId } from './movement';
 import { ABILITY_DEFS } from './projectile';
+import { now } from '../clock';
 
 /** Bit in world[World.flags]: Capture is granted (set by createMatch from chapter 2 on). Bits 0..15 are sim flags. */
 export const CAPTURE_GRANTED_BIT = 1 << 16;
@@ -84,7 +85,7 @@ function despawn(world: SimWorld, id: number): void {
 export function captureSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
   const a = world.arena;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     if (s.kind[id] !== EntityKind.effect || s.defId[id] !== CAPTURE_IDX || ((s.flags[id] ?? 0) & EntityFlag.alive) === 0) continue;
     s.px[id] = s.x[id] ?? 0;

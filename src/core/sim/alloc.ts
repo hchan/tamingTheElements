@@ -1,10 +1,12 @@
-import { EntityFlag, F64_FIELDS, I32_FIELDS, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World, type SimState } from './state';
+import { now } from './clock';
+import { ARCADE_E, EntityFlag, F64_FIELDS, I32_FIELDS, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World, type SimState } from './state';
 
 function clearSlot(s: SimState, id: number): void {
   for (const f of F64_FIELDS) s[f][id] = 0;
   for (const f of I32_FIELDS) s[f][id] = 0;
   const per = STATUS_SLOTS * STATUS_STRIDE;
   s.status.fill(0, id * per, (id + 1) * per);
+  if (s.arcade.length > 0) s.arcade.fill(0, id * ARCADE_E, (id + 1) * ARCADE_E);
 }
 
 /**
@@ -17,7 +19,7 @@ export function allocEntity(s: SimState): number {
     if (!isAlive(s, id)) {
       clearSlot(s, id);
       s.flags[id] = EntityFlag.alive;
-      s.spawnTick[id] = s.world[World.tick] ?? 0;
+      s.spawnTick[id] = now(s);
       s.world[World.nextId] = (s.world[World.nextId] ?? 0) + 1;
       return id;
     }

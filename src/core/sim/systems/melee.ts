@@ -13,12 +13,12 @@ import {
   TEAM_COOLDOWNS,
   TEAM_COUNT,
   TEAM_STRIDE,
-  World as W,
   MAX_ENTITIES,
 } from '../state';
 import type { SimWorld } from '../world';
 import { controlledId } from './movement';
 import { damageDecreasePct } from './status';
+import { now } from '../clock';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -125,7 +125,7 @@ function meleeHit(world: SimWorld, id: number, victim: number): void {
   const def = ABILITY_DEFS[defId];
   if (!def) return;
   const caster = s.owner[id] ?? 0;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   const victimTranslucent = ((s.flags[victim] ?? 0) & EntityFlag.translucent) !== 0;
 
   if (defId === HURRICANE) {
@@ -274,7 +274,7 @@ function cast(world: SimWorld, team: number, slot: number, tick: number): void {
  */
 export function meleeSystem(world: SimWorld, cmds: readonly [Command, Command]): void {
   const s = world.state;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     if (isDead(world, id)) continue;
     const kind = s.kind[id];

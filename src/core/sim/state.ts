@@ -36,6 +36,32 @@ export const TEAM_COOLDOWNS = 2;
 export const TEAM_ACTIVE_COUNTS = TEAM_COOLDOWNS + ABILITY_SLOTS;
 export const TEAM_STRIDE = TEAM_ACTIVE_COUNTS + MAX_ABILITY_DEFS;
 
+/**
+ * Arcade block in SimState.arcade (Int32Array), docs/FUN-DESIGN.md section 2.1. Empty (length 0) in Classic, so it adds
+ * no bytes to the hash or snapshot. Layout: ARCADE_E ints per entity (id * ARCADE_E + field), then ARCADE_T per team
+ * (ARCADE_TEAM_BASE + team * ARCADE_T + field), then ARCADE_W world ints (ARCADE_WORLD_BASE + field).
+ * Knockback speeds are Q4 (1/16 px per tick).
+ */
+export const ArcadeE = {
+  stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, guardState: 7,
+  parryUntil: 8, parryLockUntil: 9, guardMeter: 10, comboStunTotal: 11,
+} as const;
+export const ARCADE_E = 12;
+/** Per team; `pressTick` is 5 ints (primary, secondary, dash, guard, super). */
+export const ArcadeT = {
+  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 10, lastDir: 11,
+  roundsWon: 12, superState: 13,
+} as const;
+export const ARCADE_T = 16;
+/** World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil` is in W.tick units. */
+export const ArcadeW = {
+  gameTick: 0, freezeUntil: 1, freezeKind: 2, round: 3, phase: 4, phaseUntil: 5, roundTimer: 6, slowMoUntil: 7,
+} as const;
+export const ARCADE_W = 8;
+export const ARCADE_TEAM_BASE = MAX_ENTITIES * ARCADE_E;
+export const ARCADE_WORLD_BASE = ARCADE_TEAM_BASE + TEAM_COUNT * ARCADE_T;
+export const ARCADE_LENGTH = ARCADE_WORLD_BASE + ARCADE_W;
+
 export const F64_FIELDS = [
   'x', 'y', 'px', 'py', 'vx', 'vy', 'w', 'h', 'hp', 'maxHp', 'dmgMult', 'healMult', 'speed', 'baseSpeed', 'restCap',
 ] as const;
@@ -56,9 +82,12 @@ export type SimState = { readonly [K in F64Name]: Float64Array } & {
   readonly world: Int32Array;
   /** 5 sim streams x 4 words, STREAM_NAMES order (see saveStreams/loadStreams); agent streams are not here. */
   readonly rng: Uint32Array;
+  /** Arcade block (ArcadeE/ArcadeT/ArcadeW); length 0 in Classic. */
+  readonly arcade: Int32Array;
 };
 
-export function createSimState(matchSeed = 0): SimState {
+/** `arcade` sizes the Arcade block: ARCADE_LENGTH when the Arcade ruleset is on, else 0 (Classic). */
+export function createSimState(matchSeed = 0, arcade = false): SimState {
   const s: Record<string, Float64Array | Int32Array | Uint32Array> = {};
   for (const f of F64_FIELDS) s[f] = new Float64Array(MAX_ENTITIES);
   for (const f of I32_FIELDS) s[f] = new Int32Array(MAX_ENTITIES);
@@ -66,6 +95,7 @@ export function createSimState(matchSeed = 0): SimState {
   s['teams'] = new Int32Array(TEAM_COUNT * TEAM_STRIDE);
   s['world'] = new Int32Array(WORLD_SLOTS);
   s['rng'] = new Uint32Array(RNG_WORDS);
+  s['arcade'] = new Int32Array(arcade ? ARCADE_LENGTH : 0);
   const state = s as unknown as SimState;
   state.world[World.matchSeed] = matchSeed | 0;
   return state;
@@ -73,9 +103,9 @@ export function createSimState(matchSeed = 0): SimState {
 
 type AnyArray = Float64Array | Int32Array | Uint32Array;
 
-/** Every backing array in a fixed order; snapshot, restore and hashing all follow it. */
+/** Every backing array in a fixed order; snapshot, restore and hashing all follow it. `arcade` is empty in Classic. */
 export function stateArrays(s: SimState): AnyArray[] {
-  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.teams, s.status, s.world, s.rng];
+  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.teams, s.status, s.world, s.rng, s.arcade];
 }
 
 export type SimSnapshot = AnyArray[];
