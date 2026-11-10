@@ -1,3 +1,5 @@
+import { installFpsOverlay, wantsFpsOverlay } from './fps-overlay';
+
 export interface ProbeCharacter {
   readonly id: number;
   readonly team: number;
@@ -129,5 +131,6 @@ export function installTestHook(version: number, loadSave: (json: string) => Pro
       settled: () => teardown.settled,
     };
     window.__TTE__ = hook;
+    if (wantsFpsOverlay(window.location.search)) installFpsOverlay();
   }
 }
