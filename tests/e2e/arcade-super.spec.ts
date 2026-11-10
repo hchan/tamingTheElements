@@ -56,7 +56,7 @@ test('Arcade: a super dims the arena, slides in the element cut-in and punches t
   const errors = collectErrors(page);
   await castSuper(page, 'arenaDemo,arcade', 5);
   // The cinematic code loads on the first super, then follows the view tick.
-  await expect.poll(async () => (await superFx(page))?.name).toBe('ELEMENTAL BURST');
+  await expect.poll(async () => (await superFx(page))?.name).toBe('GLACIER CRASH');
   await frames(page);
   const f = await superFx(page);
   expect(f?.sub).toBe('WATER');
@@ -77,7 +77,7 @@ test('Arcade with reduced motion: no slide or punch-in, but the dim, band and na
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const errors = collectErrors(page);
   await castSuper(page, 'arenaDemo,arcade', 10);
-  await expect.poll(async () => (await superFx(page))?.name).toBe('ELEMENTAL BURST');
+  await expect.poll(async () => (await superFx(page))?.name).toBe('GLACIER CRASH');
   await frames(page);
   const f = await superFx(page);
   expect(f?.slide).toBe(0);
@@ -105,7 +105,7 @@ test('Arcade: the super adds no window or document listeners (the arena teardown
   await page.waitForFunction(ARENA_READY);
   const before = await page.evaluate<number>(`window.__TTE__.listeners()`);
   await cast(page, 5);
-  await expect.poll(async () => (await superFx(page))?.name).toBe('ELEMENTAL BURST');
+  await expect.poll(async () => (await superFx(page))?.name).toBe('GLACIER CRASH');
   await page.evaluate(`window.__TTE__.arena.step(45)`);
   await frames(page);
   expect(await superFx(page)).toBeUndefined();

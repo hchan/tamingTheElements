@@ -29,9 +29,9 @@ export function buffColor(hostile: boolean, highContrast: boolean): number {
   return hostile ? HOSTILE_COLOR : FRIENDLY_COLOR;
 }
 
-/** Tornado and Ice Blast debuffs are hostile (red), the self buffs friendly (green). */
+/** Tornado, Ice Blast and the tidal slow debuffs are hostile (red), the self buffs friendly (green). */
 export function isHostile(statusId: number): boolean {
-  return statusId === StatusId.tornado || statusId === StatusId.iceBlast;
+  return statusId === StatusId.tornado || statusId === StatusId.iceBlast || statusId === StatusId.superSlow;
 }
 
 /** Remaining-time fraction state for one status; tick-based so pause freezes it. */

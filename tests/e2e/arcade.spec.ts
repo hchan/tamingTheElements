@@ -59,7 +59,7 @@ async function primeSuper(page: Page, foe: number): Promise<void> {
  * KOs the foe again, and after that round end the results (2-0) replace the arena.
  */
 async function finishOnResults(page: Page): Promise<void> {
-  await expect.poll(() => superName(page)).toBe('ELEMENTAL BURST');
+  await expect.poll(() => superName(page)).toMatch(/^(HELLFIRE LANCE|PHOENIX RISE)$/);
   const [full] = await characters(page, 1);
   await page.evaluate(`window.__TTE__.arena.step(${String(90 + KO_TO_ROUND_END + INTRO)})`);
   await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toHaveCount(0);

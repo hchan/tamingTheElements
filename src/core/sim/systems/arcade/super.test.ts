@@ -3,7 +3,6 @@ import {
   HitStopCause, HitStrength, KO_HIT_STOP_TICKS, METER_BAR, SUPER_ACTIVE_TICKS, SUPER_BAND_PX, SUPER_COST,
   SUPER_FREEZE_TICKS, SUPER_HIT_DAMAGE, SUPER_HIT_EVERY, SUPER_ELEMENTAL_BURST, SUPER_INVULN_AFTER_TICKS, comboScalePm,
 } from '../../../data/arcade';
-import { CHARACTERS } from '../../../data/characters';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { computeDamage } from '../../../rules/damage';
@@ -25,7 +24,6 @@ const METER = (team: number): number => ARCADE_TEAM_BASE + team * ARCADE_T + Arc
 const SUPER_STATE = (team: number): number => ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.superState;
 const SUPER: readonly [Command, Command] = [Cmd.super, 0];
 const IDLE: readonly [Command, Command] = [0, 0];
-const RACES = CHARACTERS.filter((c) => c.id !== 'dummy' && c.id !== 'eternal-void').map((c) => c.id);
 
 /** Caster (id 0, facing east) at x 400 and victim (id 1) at x 800, same row; team 0 has `meter`. */
 function duel(caster = 'sindarosa', victim = 'pax', meter = METER_BAR, arcade = true, bench: string[] = []): SimWorld {
@@ -73,7 +71,7 @@ describe('super start', () => {
     const ev = step(world, SUPER);
     expect(ev.map((e) => e.kind)).toEqual([SimEventKind.meterLevel, SimEventKind.superStarted, SimEventKind.hitStop]);
     expect(of(ev, SimEventKind.meterLevel)[0]).toMatchObject({ team: 0, bars: 1 });
-    expect(of(ev, SimEventKind.superStarted)[0]).toMatchObject({ caster: 0, superId: SUPER_ELEMENTAL_BURST, sourceId: 0 });
+    expect(of(ev, SimEventKind.superStarted)[0]).toMatchObject({ caster: 0, superId: 1, sourceId: 0 });
     expect(of(ev, SimEventKind.hitStop)[0]).toMatchObject({ ticks: 40, cause: HitStopCause.super });
     expect(meterOf(s, 0)).toBe(1500);
     const g = now(s);
@@ -154,7 +152,7 @@ describe('Elemental Burst (the Inferno Beam shape)', () => {
   it('is a 160 px band from the caster centre to the wall on its facing side', () => {
     const cases = [[0, 440, 340, 840, 160], [4, 0, 340, 440, 160], [2, 360, 200, 160, 220], [6, 360, 420, 160, 220]] as const;
     for (const [dir, x, y, w, h] of cases) {
-      const world = duel();
+      const world = duel('dummy');
       const s = world.state;
       s.dir[0] = dir;
       step(world, SUPER);
@@ -210,8 +208,8 @@ describe('Elemental Burst (the Inferno Beam shape)', () => {
     }
   });
 
-  it.each(RACES)('%s has the Elemental Burst', (race) => {
-    const world = duel(race, race === 'pax' ? 'rokcore' : 'pax');
+  it('the dummy keeps the generic Elemental Burst: 5 hits, superId 0', () => {
+    const world = duel('dummy', 'pax');
     world.state.hp[1] = 10_000;
     expect(of(run(world, 10), SimEventKind.superStarted)).toEqual([]); // nothing without the button
     const sup = [...run(world, 1, SUPER), ...run(world, 200)];

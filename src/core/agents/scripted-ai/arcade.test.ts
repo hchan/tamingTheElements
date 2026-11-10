@@ -38,7 +38,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 }
 
 const FREE: ArcadeView = {
-  meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, prevCmd: 0,
+  meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
   primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, weatherCharge: 1000, tagIn: 0, partnerPm: -1, rocks: [],
 };
 
@@ -93,12 +93,12 @@ describe('ObservationView.arcade', () => {
     shot(0, 300, 8);
     const before = hash(s);
     expect(createObservationView(world, 0).arcade).toEqual({
-      meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true,
+      meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, superId: 1,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
       shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
     });
     expect(createObservationView(world, 1).arcade).toEqual({
-      meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false,
+      meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, superId: 2,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
       shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
     });
@@ -347,6 +347,19 @@ describe('Arcade geometry helpers', () => {
     expect(superFacing(self, fighter(420, 650))).toBe(Cmd.down);
     expect(superFacing(self, fighter(380, 100))).toBe(Cmd.up);
     expect(superFacing(self, fighter(900, 650))).toBe(0);
+  });
+
+  it('superFacing uses the race super: Hellfire band 200, vortex box 480, quake last ring (Titan 600), tide wall', () => {
+    const self = fighter(400, 300);
+    expect(superFacing(self, fighter(900, 430), 0)).toBe(0);
+    expect(superFacing(self, fighter(900, 430), 1)).toBe(Cmd.right);
+    expect(superFacing(self, fighter(600, 450), 4)).toBe(Cmd.right);
+    expect(superFacing(self, fighter(700, 450), 4)).toBe(0);
+    expect(superFacing(self, fighter(660, 300), 7)).toBe(Cmd.right);
+    expect(superFacing(self, fighter(720, 300), 7)).toBe(0);
+    expect(superFacing(self, fighter(720, 300), 8)).toBe(Cmd.right);
+    expect(superFacing(self, fighter(900, 650), 10)).toBe(Cmd.right);
+    expect(superFacing(self, fighter(380, 650), 10)).toBe(Cmd.down);
   });
 
   it('pressStep closes in along the shared axis only, and never turns a shot', () => {

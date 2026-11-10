@@ -1012,8 +1012,8 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 18 | `WP-arcade-clash` (done: section 2.9 and section 3) | sim+view | Projectile clash by element, clash burst | 2 |
 | 19 | `WP-arcade-tag` (done: sim only, section 2.6; scripted golden `arcade-tag`; the AI tags when low) | sim | 2v2 setup, swap 150, entrance at the outgoing position, entrance attack, tag combo, rest rate, KO entrance | 3, 4 |
 | 20 | `WP-arcade-tag-view` (done: section 3; also the team HUD lines, tag cooldown, touch Tag button and 2v2 results) | view+ui | Entrance flash, red-life styling, 2-pick Arcade menu | 19, 11 |
-| 21 | `WP-arcade-supers-fire-air` | sim+data | Inferno Beam and Vortex archetypes and their 6 race variants | 8 |
-| 22 | `WP-arcade-supers-earth-water` | sim+data | Quake Rings and Tidal Wave archetypes and their 6 race variants | 8 |
+| 21 | `WP-arcade-supers-fire-air` (done with 22 in `WP-arcade-supers`: `data/arcade-supers.ts`, `systems/arcade/super.ts`, SIM_VERSION 22; the Arcade AI aims by shape) | sim+data | Inferno Beam and Vortex archetypes and their 6 race variants | 8 |
+| 22 | `WP-arcade-supers-earth-water` (done with 21: Quake Rings and Tidal Wave, Hailstorm icicles are bullets that hold no active count) | sim+data | Quake Rings and Tidal Wave archetypes and their 6 race variants | 8 |
 | 23 | `WP-arcade-ai-personalities` (done: section 2.11; Rushdown, Zoner and Turtle, Easy/Normal/Hard, Tagger waits for 19) | agents | Personalities, difficulty knobs, dodge and parry from projectile observation | 10, 15, 16, 19 |
 | 24 | `WP-arcade-numbers` (done: section 2.13; per-race life and damage, stun 32-48, guard drain 8000, two cooldown overrides, `balance:compare --ruleset arcade` with `arcade-baseline.json`, report-only nightly) | data | HP pm, damage pm overrides, Arcade balance baseline | 5, 23 |
 | 25 | `WP-arcade-gates-tight` | tools+CI | Nightly fun:compare bands, Arcade balance compare, visual states, latency marks | 24 |

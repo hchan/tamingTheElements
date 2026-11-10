@@ -6,7 +6,7 @@ import { now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_E, ArcadeE, countIdx, EntityKind } from '../../state';
 import type { SimWorld } from '../../world';
-import { abilitySlot, releaseCount } from '../ability-info';
+import { abilitySlot, releaseCount, SUPER_BULLET } from '../ability-info';
 import { controlledId } from '../movement';
 import { pending, Press, usePress } from './buffer';
 import { gainMeter, meterForDamage } from './meter';
@@ -52,9 +52,10 @@ export function parry(world: SimWorld, sink: EventSink, source: number, attacker
   const reflected = s.kind[source] === EntityKind.projectile ? 1 : 0;
   if (reflected) {
     const def = s.defId[source] ?? 0;
-    releaseCount(s, s.owner[source] ?? 0, def);
+    const counted = (s.hitMask[source] ?? 0) !== SUPER_BULLET;
+    if (counted) releaseCount(s, s.owner[source] ?? 0, def);
     const slot = abilitySlot(s, victim, def);
-    if (slot >= 0) s.abil[countIdx(victim, slot)] = (s.abil[countIdx(victim, slot)] ?? 0) + 1;
+    if (counted && slot >= 0) s.abil[countIdx(victim, slot)] = (s.abil[countIdx(victim, slot)] ?? 0) + 1;
     s.vx[source] = -(s.vx[source] ?? 0);
     s.vy[source] = -(s.vy[source] ?? 0);
     s.dir[source] = ((s.dir[source] ?? 0) + 4) & 7;

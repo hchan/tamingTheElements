@@ -4,6 +4,7 @@ import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE } from '../state'
 import type { SimState } from '../state';
 import type { SimWorld } from '../world';
 import { now } from '../clock';
+import { SUPER_ARMOUR_PCT } from '../../data/arcade-supers';
 
 /**
  * Status framework. Each entity owns STATUS_SLOTS slots of [id, sourceId, startTick, expireTick, magnitude].
@@ -11,7 +12,11 @@ import { now } from '../clock';
  * then slot index. Timers are tick-based (intentional divergence: legacy used Date/Delay, which kept
  * running while paused).
  */
-export const StatusId = { none: 0, adrenaline: 1, fireDance: 2, rockArmour: 3, translucent: 4, tornado: 5, iceBlast: 6 } as const;
+export const StatusId = {
+  none: 0, adrenaline: 1, fireDance: 2, rockArmour: 3, translucent: 4, tornado: 5, iceBlast: 6,
+  /** Arcade supers only (WP-arcade-supers): a speed bonus, 50% armour and the tidal slow. */
+  superSpeed: 7, superArmour: 8, superSlow: 9,
+} as const;
 export type StatusIdValue = (typeof StatusId)[keyof typeof StatusId];
 
 const F_ID = 0;
@@ -47,6 +52,7 @@ function base(id: number, slot: number): number {
 }
 
 function damageDecreaseOf(statusId: number): number {
+  if (statusId === StatusId.superArmour) return SUPER_ARMOUR_PCT;
   const slug = STATUS_ABILITY[statusId];
   return slug === undefined ? 0 : (defFor(slug).damageDecreasePercentage ?? 0);
 }
@@ -76,6 +82,32 @@ export function applyBuff(world: SimWorld, id: number, abilitySlug: string, sour
   s.status[b + F_START] = tick;
   s.status[b + F_EXPIRE] = tick + (def.durationTicks ?? 0);
   s.status[b + F_MAG] = speedDelta;
+  s.speed[id] = (s.speed[id] ?? 0) + speedDelta;
+  if (statusId === StatusId.translucent) s.flags[id] = (s.flags[id] ?? 0) | EntityFlag.translucent;
+  return true;
+}
+
+/** Super-status speed deltas are stored in thousandths: the status block is integer, half an odd speed is not. */
+const SUPER_MAG_SCALE = 1000;
+
+/**
+ * Arcade super effects: a timed status of `ticks` game ticks with a speed change `speedDelta` (restored at expiry by the
+ * status system); the translucent status also sets the flag. False when every slot is taken.
+ */
+export function applyTimedStatus(
+  world: SimWorld, id: number, statusId: StatusIdValue, sourceId: number, ticks: number, speedDelta: number,
+): boolean {
+  const s = world.state;
+  let slot = 0;
+  while (slot < STATUS_SLOTS && (s.status[base(id, slot) + F_ID] ?? 0) !== StatusId.none) slot++;
+  if (slot === STATUS_SLOTS) return false;
+  const tick = now(s);
+  const b = base(id, slot);
+  s.status[b + F_ID] = statusId;
+  s.status[b + F_SOURCE] = sourceId;
+  s.status[b + F_START] = tick;
+  s.status[b + F_EXPIRE] = tick + ticks;
+  s.status[b + F_MAG] = Math.round(speedDelta * SUPER_MAG_SCALE);
   s.speed[id] = (s.speed[id] ?? 0) + speedDelta;
   if (statusId === StatusId.translucent) s.flags[id] = (s.flags[id] ?? 0) | EntityFlag.translucent;
   return true;
@@ -150,7 +182,7 @@ export function statusSystem(world: SimWorld): void {
       const b = base(id, slot);
       const sid = s.status[b + F_ID] ?? 0;
       if (sid === StatusId.none || (s.status[b + F_EXPIRE] ?? 0) > tick) continue;
-      s.speed[id] = (s.speed[id] ?? 0) - (s.status[b + F_MAG] ?? 0);
+      s.speed[id] = (s.speed[id] ?? 0) - (s.status[b + F_MAG] ?? 0) / (sid >= StatusId.superSpeed ? SUPER_MAG_SCALE : 1);
       if (sid === StatusId.translucent && ((s.flags[id] ?? 0) & EntityFlag.alive) !== 0) {
         s.flags[id] = (s.flags[id] ?? 0) & ~EntityFlag.translucent;
       }
