@@ -18,6 +18,7 @@ import {
 } from '../state';
 import type { SimWorld } from '../world';
 import { controlledId } from './movement';
+import { damageDecreasePct } from './status';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -99,7 +100,7 @@ function damageOf(def: AbilityDef | AbilityDefB): number {
  * Applies one melee hit's damage to the victim, using legacy `applyDamage` arithmetic.
  * KNOWN-BUG:damage-uses-target-mult  the multiplier and element come from the victim's current
  * target (the attacker team's ACTIVE character), not from the casting entity.
- * damageDecreasePercentage is 0 until the buff WP stores it in state.
+ * The victim's damageDecreasePercentage comes from its active Adrenaline / Rock Armour statuses.
  * Returns the health actually removed.
  */
 function applyHit(world: SimWorld, caster: number, victim: number, base: number): number {
@@ -111,7 +112,7 @@ function applyHit(world: SimWorld, caster: number, victim: number, base: number)
     attackerMult: s.dmgMult[a] ?? 1,
     attEl: CHARACTERS[s.defId[a] ?? 0]?.element ?? 'void',
     defEl: CHARACTERS[s.defId[victim] ?? 0]?.element ?? 'void',
-    defReductionPct: 0,
+    defReductionPct: damageDecreasePct(s, victim),
   });
   const before = s.hp[victim] ?? 0;
   s.hp[victim] = before - dmg;

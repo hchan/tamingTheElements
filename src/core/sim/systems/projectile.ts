@@ -15,6 +15,7 @@ import {
 } from '../state';
 import type { SimWorld } from '../world';
 import { onProjectileHit } from './debuffs';
+import { damageDecreasePct } from './status';
 import { controlledId } from './movement';
 
 /** Ability index used for SimState.defId and the per-team activeCount table (set A then set B). */
@@ -137,7 +138,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
       attackerMult: s.dmgMult[attacker] ?? 1,
       attEl: CHARACTERS[s.defId[attacker] ?? 0]?.element ?? 'void',
       defEl: CHARACTERS[s.defId[target] ?? 0]?.element ?? 'void',
-      defReductionPct: 0,
+      defReductionPct: damageDecreasePct(s, target),
     });
     s.hp[target] = (s.hp[target] ?? 0) - amount;
     sink.emit(id, SimEventKind.damage, { target, attacker, amount });
