@@ -1,4 +1,5 @@
 import { el } from './dom';
+import { settingsScreen } from './screens/settings';
 import type { Screen, ScreenFactory } from './screens/screen';
 
 export const ROUTE_NAMES = [
@@ -69,7 +70,7 @@ export function defaultScreens(): ScreenTable {
     main: placeholderScreen('Taming the Elements'),
     newGame: placeholderScreen('New Game'),
     garrison: placeholderScreen('Garrison'),
-    settings: placeholderScreen('Settings'),
+    settings: () => settingsScreen(),
     currentObjectives: placeholderScreen('Current Objectives'),
     about: placeholderScreen('About'),
     storyMode: placeholderScreen('Story Mode'),
