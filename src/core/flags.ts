@@ -6,6 +6,11 @@ export interface SimFlags {
   readonly experimentalPathing: boolean;
   /** Elemental Advantage abilities: data-only (no character owns them) until this is on. */
   readonly elementalAdvantage: boolean;
+  /**
+   * TESTER MODE only (see docs/TESTER-MODE.md): grants Capture from chapter 1. Never on in normal play; a match with it
+   * on is a cheat match (replays refuse it, balance and golden tooling assert it is off).
+   */
+  readonly testerCapture: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -14,7 +19,21 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   experimentalSpawnCurve: false,
   experimentalPathing: false,
   elementalAdvantage: false,
+  testerCapture: false,
 };
+
+/** Flags that only tester mode may turn on. */
+export const TESTER_FLAG_NAMES: readonly SimFlagName[] = ['testerCapture'];
+
+/** True when any tester-only flag is on. */
+export function hasTesterFlags(flags: SimFlags): boolean {
+  return TESTER_FLAG_NAMES.some((n) => flags[n]);
+}
+
+/** Throws when a tester-only flag is on: balance, golden and regression tooling must never run cheat matches. */
+export function assertNoTesterFlags(flags: SimFlags): void {
+  if (hasTesterFlags(flags)) throw new Error('refusing a tester-mode (cheats) match');
+}
 
 /** Every sim flag name in sorted order: the replay header encoding and the world flag bits both follow it. */
 export const FLAG_NAMES: readonly SimFlagName[] = Object.keys(DEFAULT_SIM_FLAGS).sort(compareStrings) as SimFlagName[];
@@ -53,5 +72,6 @@ export function decodeFlags(encoded: string): SimFlags {
     experimentalSpawnCurve: on.has('experimentalSpawnCurve'),
     experimentalPathing: on.has('experimentalPathing'),
     elementalAdvantage: on.has('elementalAdvantage'),
+    testerCapture: on.has('testerCapture'),
   };
 }

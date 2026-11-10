@@ -1,7 +1,7 @@
 import { GARRISON_MAX_SIZE } from '../data/chapters';
 import { CHARACTERS } from '../data/characters';
 import { decodeFlags } from '../flags';
-import { HASH_INTERVAL, type ReplayFile } from './format';
+import { HASH_INTERVAL, isCheatHeader, type ReplayFile } from './format';
 
 /** Two hours of play at 50 Hz: anything longer is not a real match and would cost real memory to decode. */
 export const MAX_REPLAY_TICKS = 50 * 60 * 120;
@@ -57,6 +57,10 @@ export function validateReplay(raw: unknown): ReplayCheck {
       decodeFlags(flags);
     } catch (e) {
       return { ok: false, message: e instanceof Error ? e.message : 'The replay has invalid flags.' };
+    }
+    if (h['cheats'] !== undefined && typeof h['cheats'] !== 'boolean') return { ok: false, message: 'The replay has an invalid cheats field.' };
+    if (isCheatHeader({ flags, cheats: h['cheats'] })) {
+      return { ok: false, message: 'This replay was recorded in tester mode (cheats), so it cannot be verified or played back.' };
     }
     const tickCount = h['tickCount'];
     if (!isInt(tickCount, 0, MAX_REPLAY_TICKS)) return { ok: false, message: 'The replay length is out of range.' };

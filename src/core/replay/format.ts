@@ -1,6 +1,6 @@
 import type { ChapterNumber } from '../data/chapters';
 import type { CharacterId } from '../data/ids';
-import { decodeFlags, encodeFlags } from '../flags';
+import { decodeFlags, encodeFlags, hasTesterFlags } from '../flags';
 import type { MatchSetup, Roster } from '../sim/match';
 import type { Rle } from './rle';
 
@@ -19,6 +19,8 @@ export interface ReplayHeader {
     readonly p2: readonly { readonly character: string; readonly xp: number }[];
   };
   readonly tickCount: number;
+  /** Present (true) only for a match played in tester mode: not reproducible, refused by every verifier. */
+  readonly cheats?: boolean;
 }
 
 export interface ReplayFile {
@@ -31,7 +33,12 @@ export interface ReplayFile {
   readonly finalHash: number;
 }
 
-export function headerFromSetup(setup: MatchSetup, tickCount: number): ReplayHeader {
+/** True for a header recorded in tester mode (explicit `cheats` or a tester-only sim flag). */
+export function isCheatHeader(h: Pick<ReplayHeader, 'flags'> & { readonly cheats?: boolean }): boolean {
+  return h.cheats === true || hasTesterFlags(decodeFlags(h.flags));
+}
+
+export function headerFromSetup(setup: MatchSetup, tickCount: number, cheats = false): ReplayHeader {
   const roster = (r: Roster) => r.map((m) => ({ character: m.character, xp: m.xp }));
   return {
     simVersion: setup.simVersion,
@@ -39,6 +46,7 @@ export function headerFromSetup(setup: MatchSetup, tickCount: number): ReplayHea
     flags: encodeFlags(setup.flags),
     setup: { chapter: setup.chapter, difficulty: setup.difficulty, p1: roster(setup.p1), p2: roster(setup.p2) },
     tickCount,
+    ...(cheats ? { cheats: true } : {}),
   };
 }
 

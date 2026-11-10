@@ -2,7 +2,7 @@
 // review the diff of tests/fixtures/replays/, and say why in the commit message.
 import { writeFileSync } from 'node:fs';
 import { characterId } from '../../src/core/data/ids';
-import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
+import { DEFAULT_SIM_FLAGS, assertNoTesterFlags } from '../../src/core/flags';
 import { serializeReplay } from '../../src/core/replay/format';
 import { GOLDEN_SETUP, recordBotMatch } from '../../src/core/replay/record-bots';
 import type { MatchSetup } from '../../src/core/sim/match';
@@ -23,6 +23,8 @@ const SETUP_2V2: MatchSetup = {
 };
 const OUT_2V2 = new URL('../../tests/fixtures/replays/random-2v2-ch3.replay.json', import.meta.url);
 
+assertNoTesterFlags(SETUP_2V2.flags);
+assertNoTesterFlags(GOLDEN_SETUP.flags);
 writeFileSync(OUT, serializeReplay(recordBotMatch(GOLDEN_SETUP, TICKS)));
 console.log(`wrote ${OUT.pathname} (${TICKS} ticks)`);
 writeFileSync(OUT_2V2, serializeReplay(recordBotMatch(SETUP_2V2, TICKS)));

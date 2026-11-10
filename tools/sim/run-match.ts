@@ -11,7 +11,7 @@ import { CHARACTERS, getCharacter } from '../../src/core/data/characters';
 import { ELEMENTS, type Element } from '../../src/core/data/elements';
 import { characterId } from '../../src/core/data/ids';
 import type { AbilityDef } from '../../src/core/data/types';
-import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
+import { DEFAULT_SIM_FLAGS, assertNoTesterFlags } from '../../src/core/flags';
 import { SIM_VERSION } from '../../src/core/index';
 import { fnv1a, splitmix32 } from '../../src/core/rng/seed';
 import { Cmd, type Command, NO_COMMAND } from '../../src/core/sim/commands';
@@ -248,6 +248,7 @@ export function runMatch(o: MatchOptions): MatchResult {
     p1: o.aIsTeam0 ? rosterA : rosterB,
     p2: o.aIsTeam0 ? rosterB : rosterA,
   };
+  assertNoTesterFlags(setup.flags); // balance gates never run tester (cheat) matches
   const world = createMatch(setup);
   const s = world.state;
   const teamA = o.aIsTeam0 ? 0 : 1;

@@ -49,3 +49,5 @@ export * from './data/abilities-b';
 export * from './net/transport';
 export * from './net/packet';
 export * from './net/session';
+export * from './tester/cheats';
+export * from './tester/save-edits';

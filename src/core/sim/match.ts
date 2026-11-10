@@ -78,7 +78,7 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
 export function createMatch(setup: MatchSetup): SimWorld {
   const world = createWorld(setup.seed);
   const s = world.state;
-  s.world[W.flags] = flagBits(setup.flags) | (setup.chapter > 1 ? CAPTURE_GRANTED_BIT : 0);
+  s.world[W.flags] = flagBits(setup.flags) | (setup.chapter > 1 || setup.flags.testerCapture ? CAPTURE_GRANTED_BIT : 0);
   s.rng.set(saveStreams(createStreams(setup.seed)));
   spawnTeam(world, 0, setup.p1, setup);
   spawnTeam(world, 1, setup.p2, setup);

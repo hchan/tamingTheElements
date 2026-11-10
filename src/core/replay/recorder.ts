@@ -23,10 +23,10 @@ export class ReplayRecorder {
     this.in1.push(cmds[1]);
   }
 
-  /** Call after the last `step`. */
-  finish(world: SimWorld): ReplayFile {
+  /** Call after the last `step`. `cheats` flags the header (tester mode: the replay is not reproducible). */
+  finish(world: SimWorld, cheats = false): ReplayFile {
     return {
-      header: headerFromSetup(this.setup, this.in0.length),
+      header: headerFromSetup(this.setup, this.in0.length, cheats),
       inputs: [rleEncode(this.in0), rleEncode(this.in1)],
       hashes: this.hashes.slice(),
       finalHash: hash(world.state),

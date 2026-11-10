@@ -49,7 +49,7 @@ describe('world flag bits', () => {
         const setup = { ...base, flags, chapter };
         const w = createMatch(setup).state.world[World.flags] ?? 0;
         expect(w & ((1 << SIM_FLAG_BIT_LIMIT) - 1)).toBe(flagBits(flags));
-        expect((w & CAPTURE_GRANTED_BIT) !== 0).toBe(chapter > 1);
+        expect((w & CAPTURE_GRANTED_BIT) !== 0).toBe(chapter > 1 || flags.testerCapture);
         expect(decodeFlags(encodeFlags(flags))).toEqual(flags);
         expect(setupFromHeader(headerFromSetup(setup, 0)).flags).toEqual(flags);
       }

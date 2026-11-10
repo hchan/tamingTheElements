@@ -1,7 +1,7 @@
 import { hash } from '../sim/hash';
 import { createMatch } from '../sim/match';
 import { step } from '../sim/step';
-import { HASH_INTERVAL, setupFromHeader, type ReplayFile } from './format';
+import { HASH_INTERVAL, isCheatHeader, setupFromHeader, type ReplayFile } from './format';
 import { rleDecode } from './rle';
 
 export interface ReplayVerdict {
@@ -16,6 +16,7 @@ export interface ReplayVerdict {
 /** Re-simulates a replay, checking every recorded hash on the fly; stops at the first mismatch. */
 export function playReplay(replay: ReplayFile, simVersion?: number): ReplayVerdict {
   const { header } = replay;
+  if (isCheatHeader(header)) throw new Error('replay was recorded in tester mode (cheats) and cannot be verified');
   if (simVersion !== undefined && header.simVersion !== simVersion) {
     throw new Error(`replay simVersion ${String(header.simVersion)} != ${String(simVersion)}`);
   }

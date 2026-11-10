@@ -19,6 +19,19 @@ describe('replay fixtures', () => {
     expect(validateReplay(JSON.parse(readFileSync(new URL(name, DIR), 'utf8'))).ok).toBe(true);
   });
 
+  it.each(files)('%s was not recorded in tester mode', (name) => {
+    const header = (JSON.parse(readFileSync(new URL(name, DIR), 'utf8')) as { header: { cheats?: boolean; flags: string } }).header;
+    expect(header.cheats).toBeUndefined();
+    expect(header.flags).not.toContain('testerCapture');
+  });
+
+  it('refuses a replay flagged as recorded with cheats', () => {
+    const f = JSON.parse(readFileSync(new URL(files[0] as string, DIR), 'utf8')) as { header: object };
+    const cheat = JSON.stringify({ ...f, header: { ...f.header, cheats: true } });
+    expect(verifyReplayText(cheat)).toMatchObject({ ok: false, message: expect.stringContaining('tester mode') as string });
+    expect(validateReplay(JSON.parse(cheat)).ok).toBe(false);
+  });
+
   it('reports a corrupted replay as a failure', () => {
     const text = readFileSync(new URL(files[0] as string, DIR), 'utf8').replace(/"finalHash":\d+/, '"finalHash":1');
     expect(verifyReplayText(text).ok).toBe(false);
