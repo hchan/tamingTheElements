@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadLegacy, type LegacyEnv } from '@testing/legacy/load-legacy';
+import { ORACLE_PRIVATE } from '@testing/legacy/oracle';
 
 /**
  * Characterization of the known legacy bugs (docs/legacy/KNOWN-BUGS.md). Every test asserts the
@@ -9,7 +10,7 @@ import { loadLegacy, type LegacyEnv } from '@testing/legacy/load-legacy';
  * the legacy vm context and observed as JSON.
  */
 
-const SRC_DIR = resolve(import.meta.dirname, '../../war/WEB-INF/private/src');
+const SRC_DIR = resolve(ORACLE_PRIVATE, 'src');
 
 /** Runs `body` (function body source) in the legacy context and returns its JSON-serialisable result. */
 function observe(env: LegacyEnv, body: string): Record<string, unknown> {

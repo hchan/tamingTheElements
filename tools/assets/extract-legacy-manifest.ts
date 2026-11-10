@@ -1,8 +1,9 @@
 // Generates src/game/assets/manifest.generated.json from the frozen legacy asset manifests.
-// Run: pnpm exec tsx tools/assets/extract-legacy-manifest.ts
+// Needs the legacy tree: run `pnpm oracle:restore` first. Run: pnpm exec tsx tools/assets/extract-legacy-manifest.ts
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import vm from 'node:vm';
+import { ORACLE_PRIVATE } from '../../src/testing/legacy/oracle';
 
 type Frames = [number, number][];
 export interface SpriteEntry {
@@ -26,7 +27,7 @@ export interface LegacyManifest {
 }
 
 const root = resolve(import.meta.dirname, '../..');
-const srcDir = resolve(root, 'war/WEB-INF/private/src');
+const srcDir = resolve(ORACLE_PRIVATE, 'src');
 
 function load(file: string, name: string): unknown {
   const Global: Record<string, unknown> = {};

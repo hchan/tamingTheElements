@@ -48,7 +48,7 @@ describe('describeAbility vs legacy getAbilityDescription', () => {
   });
 });
 
-// Strings captured from the real legacy loader (tests/legacy/ability-descriptions.characterization.test.ts).
+// Strings captured from the real legacy loader (tests/oracle/ability-descriptions.characterization.test.ts).
 const slug = (n: string): string => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const LEGACY = captured as Record<string, Record<string, string>>;
 

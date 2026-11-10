@@ -146,6 +146,7 @@ export default tseslint.config(
       'coverage/**',
       'node_modules/**',
       'war/**',
+      '.oracle/**',
       'imgWorkArea/**',
       'visio/**',
       'tools/**',
