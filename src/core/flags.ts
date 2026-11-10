@@ -2,6 +2,8 @@
 export interface SimFlags {
   readonly experimentalSpawnCurve: boolean;
   readonly experimentalPathing: boolean;
+  /** Elemental Advantage abilities: data-only (no character owns them) until this is on. */
+  readonly elementalAdvantage: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -9,6 +11,7 @@ export type SimFlagName = keyof SimFlags;
 export const DEFAULT_SIM_FLAGS: SimFlags = {
   experimentalSpawnCurve: false,
   experimentalPathing: false,
+  elementalAdvantage: false,
 };
 
 const FLAG_NAMES = Object.keys(DEFAULT_SIM_FLAGS).sort() as SimFlagName[];
@@ -29,5 +32,6 @@ export function decodeFlags(encoded: string): SimFlags {
   return {
     experimentalSpawnCurve: on.has('experimentalSpawnCurve'),
     experimentalPathing: on.has('experimentalPathing'),
+    elementalAdvantage: on.has('elementalAdvantage'),
   };
 }
