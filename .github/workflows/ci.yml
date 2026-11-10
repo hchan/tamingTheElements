@@ -50,3 +50,22 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm exec playwright install --with-deps chromium
       - run: corepack pnpm e2e
+
+  # Cross-engine determinism gate. Runs on every PR (not nightly): the replay is ~1500 ticks and the whole job
+  # is dominated by the browser download (~1-2 min), cheap enough to catch a divergence before merge.
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enable corepack (pnpm from packageManager field)
+        run: corepack enable
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: corepack pnpm test:browser
