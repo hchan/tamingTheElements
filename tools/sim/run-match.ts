@@ -223,6 +223,36 @@ export function makeAgent(kind: AgentKind, race: string, opponent = race, aiLeve
   return kind === 'random' ? new RandomBot(`random:${race}`) : new ScriptedAI(race, `scripted:${race}`, opponent, aiLevel);
 }
 
+/**
+ * A team's agent for a multi-hero roster (`--team-size 2`, FUN-DESIGN 2.6): one agent per hero, built for that hero's
+ * race, and the one whose hero is in play answers (entity ids follow roster order from `first`), so a tagged-in partner
+ * is not played with the first hero's abilities. A tag drops the partner on the outgoing hero's spot, often off every
+ * firing line, where the ranged bots (which only shoot along a shared axis and never walk to one) would stand idle for
+ * good; so when its hero's agent sends nothing, the team bot steps onto the opponent's row. With one hero it is that
+ * hero's agent itself (1v1 runs and baselines are unchanged).
+ */
+export function makeTeamAgent(kind: AgentKind, races: readonly string[], opponent: string, first: number, aiLevel = 3): Agent {
+  const heroes = races.map((r) => makeAgent(kind, r, opponent, aiLevel));
+  const lead = heroes[0];
+  if (lead === undefined) throw new RangeError('empty roster');
+  if (heroes.length === 1) return lead;
+  return {
+    id: lead.id,
+    observe: (view, tick) => {
+      const cmd = (heroes[(view.self?.id ?? first) - first] ?? lead).observe(view, tick);
+      const dy = (view.opponent?.y ?? 0) - (view.self?.y ?? 0);
+      if (cmd !== NO_COMMAND || Math.abs(dy) <= (view.opponent?.h ?? 0) / 2) return cmd;
+      return dy > 0 ? Cmd.down : Cmd.up;
+    },
+    save: () => heroes.map((h) => h.save()),
+    load: (state) => {
+      heroes.forEach((h, i) => {
+        h.load(Array.isArray(state) ? ((state as readonly AgentState[])[i] ?? null) : null);
+      });
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------------------------
 // One match
 // ---------------------------------------------------------------------------------------------
@@ -275,11 +305,14 @@ const r3 = (n: number): number => Math.round(n * 1000) / 1000;
 
 export function runMatch(o: MatchOptions): MatchResult {
   const arcade = o.ruleset === 'arcade';
-  const maxTicks = o.maxTicks ?? (arcade ? ARCADE_MAX_TICKS : DEFAULT_MAX_TICKS);
+  // A 2v2 round runs to its timer more often (two life bars, bench recovery), so the cap grows with the team.
+  const maxTicks = o.maxTicks ?? (arcade ? ARCADE_MAX_TICKS * (o.teamSize ?? 1) : DEFAULT_MAX_TICKS);
   const stalemateTicks = o.stalemateTicks ?? DEFAULT_STALEMATE_TICKS;
   const xp = xpForLevel(o.level);
+  // A 2v2 partner is the race half the list on: the pairings play neighbours (a against a + 1), so the partners never
+  // repeat a race of the other side (a mirror of identical bots stands on one spot and its shots cancel forever).
   const roster = (race: string): { character: ReturnType<typeof characterId>; xp: number }[] =>
-    [race, ...(o.teamSize === 2 ? [RACES[(RACES.indexOf(race) + 1) % RACES.length] ?? race] : [])].map((r) => ({
+    [race, ...(o.teamSize === 2 ? [RACES[(RACES.indexOf(race) + RACES.length / 2) % RACES.length] ?? race] : [])].map((r) => ({
       character: characterId(r),
       xp,
     }));
@@ -298,8 +331,9 @@ export function runMatch(o: MatchOptions): MatchResult {
   const world = createMatch(setup);
   const s = world.state;
   const teamA = o.aIsTeam0 ? 0 : 1;
-  const agentA = makeAgent(o.agentA, o.raceA, o.raceB, o.aiLevel);
-  const agentB = makeAgent(o.agentB, o.raceB, o.raceA, o.aiLevel);
+  const races = (r: { character: string }[]): string[] => r.map((m) => m.character);
+  const agentA = makeTeamAgent(o.agentA, races(rosterA), o.raceB, o.aIsTeam0 ? 0 : rosterB.length, o.aiLevel);
+  const agentB = makeTeamAgent(o.agentB, races(rosterB), o.raceA, o.aIsTeam0 ? rosterA.length : 0, o.aiLevel);
   const agents: [Agent, Agent] = o.aIsTeam0 ? [agentA, agentB] : [agentB, agentA];
 
   const projectileAbility = new Int32Array(MAX_ENTITIES);

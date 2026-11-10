@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { Cmd } from '../../src/core/sim/commands';
 import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
 import { createMatch } from '../../src/core/sim/match';
-import { cooldownIdx } from '../../src/core/sim/state';
+import { cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { controlledId } from '../../src/core/sim/systems/movement';
 import { rleDecode } from '../../src/core/replay/rle';
@@ -16,13 +16,15 @@ import { arcadeScripts, recordArcadeScript } from '../../tools/gen/arcade-moves'
 // of leaving a golden that quietly stopped covering it.
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
-const FILES = ['arcade-moves', 'arcade-weather'] as const;
+const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag'] as const;
 const K = SimEventKind;
 
 interface Run {
   readonly events: SimEvent[];
   /** Casts that ran on a tick whose raw command did not hold the button: the press was buffered. */
   readonly bufferedCasts: number;
+  /** Ticks on which a benched character's HP rose (the bench recovery of FUN-DESIGN 2.6). */
+  readonly benchHeals: number;
   readonly ticks: number;
 }
 
@@ -38,9 +40,17 @@ function run(name: string): Run {
   const events: SimEvent[] = [];
   const stamp = new Map<number, number>();
   let bufferedCasts = 0;
+  let benchHeals = 0;
+  const s = world.state;
   for (let t = 0; t < replay.header.tickCount; t++) {
     const cmds = [in0[t] ?? 0, in1[t] ?? 0] as const;
+    const hp = Array.from(s.hp);
     events.push(...step(world, cmds));
+    for (let id = 0; id < MAX_ENTITIES; id++) {
+      const f = s.flags[id] ?? 0;
+      const benched = (f & (EntityFlag.alive | EntityFlag.benched | EntityFlag.dead)) === (EntityFlag.alive | EntityFlag.benched);
+      if (benched && s.kind[id] === EntityKind.character && (s.hp[id] ?? 0) > (hp[id] ?? 0)) benchHeals++;
+    }
     for (const team of [0, 1]) {
       const id = controlledId(world, team);
       if (id < 0) continue;
@@ -53,7 +63,7 @@ function run(name: string): Run {
       }
     }
   }
-  return { events, bufferedCasts, ticks: replay.header.tickCount };
+  return { events, bufferedCasts, benchHeals, ticks: replay.header.tickCount };
 }
 
 const runs = FILES.map(run);
@@ -61,6 +71,9 @@ const all = runs.flatMap((r) => r.events);
 const of = (kind: number, from: readonly SimEvent[] = all): SimEvent[] => from.filter((e) => e.kind === kind);
 const moves = runs[0]?.events ?? [];
 const weatherRun = runs[1]?.events ?? [];
+const tagRun = runs[2]?.events ?? [];
+/** `tagIn` events whose outgoing character died on the same tick (the KO entrance) or not (a manual tag). */
+const koEntrance = (e: SimEvent): boolean => of(K.died).some((d) => d.tick === e.tick && d.sourceId === e.from);
 const hits = of(K.hitConfirmed);
 
 describe('scripted Arcade goldens: every mechanic fires', () => {
@@ -83,6 +96,10 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['round KO', () => of(K.ko).length],
     ['time over', () => of(K.timeOver).length],
     ['match ended', () => of(K.matchEnded).length],
+    ['tag swap', () => of(K.tagIn).filter((e) => !koEntrance(e)).length],
+    ['entrance attack', () => of(K.tagIn).filter((e) => e.entrance === 1).length],
+    ['KO entrance', () => of(K.tagIn).filter(koEntrance).length],
+    ['bench recovery', () => runs.reduce((n, r) => n + r.benchHeals, 0)],
   ];
 
   it.each(mechanics)('%s', (_name, count) => {
@@ -135,6 +152,20 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     expect(koTicks).toHaveLength(2);
     expect(koTicks[0]).toBeLessThan(timeOver);
     expect(koTicks[1]).toBeGreaterThan(timeOver);
+  });
+
+  it('the tag team: a tag combo, a KO entrance, and a 2v2 round that ends only when both heroes are down', () => {
+    const tag = of(K.tagIn, tagRun).find((e) => !koEntrance(e));
+    // The Tornado fired before the tag lands first, then the entrance Fire Blast lands inside its stun: hit 2 of a combo.
+    const [first, second] = of(K.hitConfirmed, tagRun).filter((e) => e.tick > (tag?.tick ?? Infinity));
+    expect(first).toMatchObject({ attacker: tag?.from, combo: 1 });
+    expect(second).toMatchObject({ attacker: tag?.to, combo: 2 });
+    const deaths = of(K.died, tagRun).filter((e) => e.team === 1);
+    const ko = of(K.ko, tagRun)[0];
+    expect(of(K.tagIn, tagRun).filter(koEntrance)).toMatchObject([{ team: 1, from: deaths[0]?.sourceId, entrance: 1 }]);
+    expect(ko).toMatchObject({ team: 1 });
+    expect(deaths.map((e) => e.tick)).toEqual([expect.any(Number), ko?.tick]);
+    expect(of(K.roundStarted, tagRun).map((e) => e.round)).toEqual([1, 2]);
   });
 
   it('the committed goldens are what the scripts record today', () => {

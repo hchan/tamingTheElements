@@ -10,6 +10,8 @@ import {
   cooldownIdx,
   EntityFlag,
   EntityKind,
+  TEAM_STRIDE,
+  TeamField,
   World,
   type SimState,
 } from '../sim/state';
@@ -78,6 +80,12 @@ export interface ArcadeView {
   /** Game ticks until this side's dash and weather are ready (0: ready now). */
   readonly dashIn: number;
   readonly weatherIn: number;
+  /**
+   * Tag team (FUN-DESIGN 2.6): game ticks until this side may tag (0: now), and the HP per mille of the partner a
+   * `Cmd.swap1` tag brings in (the first other roster member; -1 when there is none or it is down).
+   */
+  readonly tagIn: number;
+  readonly partnerPm: number;
 }
 
 /** One enemy projectile or melee box as `ArcadeView.shots` lists it; plain numbers. */
@@ -172,8 +180,13 @@ function arcadeViewOf(
   const left = (f: FighterView | undefined, field: number): number =>
     f === undefined ? 0 : Math.max(0, (a[f.id * ARCADE_E + field] ?? 0) - g);
   const shots: ShotView[] = [];
+  let partnerPm = -2;
   for (let i = 0; i < s.kind.length; i++) {
     const k = s.kind[i];
+    const f = s.flags[i] ?? 0;
+    if (partnerPm < -1 && k === EntityKind.character && s.team[i] === side && i !== self?.id && (f & EntityFlag.alive) !== 0) {
+      partnerPm = (f & EntityFlag.dead) !== 0 ? -1 : Math.floor(((s.hp[i] ?? 0) * 1000) / (s.maxHp[i] ?? 1));
+    }
     // A freed slot is cleared (kind 0, a character), so a projectile kind is a live projectile.
     if (k === EntityKind.projectile && s.team[i] !== side) {
       shots.push({ x: s.x[i] ?? 0, y: s.y[i] ?? 0, w: s.w[i] ?? 0, h: s.h[i] ?? 0, vx: s.vx[i] ?? 0, vy: s.vy[i] ?? 0 });
@@ -198,6 +211,8 @@ function arcadeViewOf(
     shots,
     dashIn: left(self, ArcadeE.dashReadyAt),
     weatherIn: left(self, ArcadeE.weatherReadyAt),
+    tagIn: Math.max(0, (s.teams[side * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0) - g),
+    partnerPm: Math.max(partnerPm, -1),
   };
 }
 

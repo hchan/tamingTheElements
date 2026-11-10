@@ -159,6 +159,43 @@ function weatherScript(): ArcadeScript {
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
 
+/**
+ * Tag script timings: Fire Blast spacing in the beat-down (past its cooldown and the heavy hit-stun, so each is a fresh
+ * hit), the tag after the Tornado (its entrance Fire Blast lands inside the Tornado's 60-tick stun), the blasts that KO
+ * both p2 heroes, and when round 2's segment starts (after round 1's KO and round end).
+ */
+const BLAST_EVERY = 50;
+const TAG_AFTER_TORNADO = 30;
+const TAG_BLASTS = 10;
+const TAG_ROUND_2 = 1400;
+
+/**
+ * Tag team (WP-arcade-tag), 2v2; p1 deals 4x (difficulty 0.25) so the KOs come quickly. Round 1: Cyclonius' Tornado
+ * stuns Rokcore, and the tag brings Sindarosa in at Cyclonius' spot with an entrance Fire Blast that lands inside the
+ * stun (the tag combo); then blasts KO Rokcore, so Fiara enters (the KO entrance, with her entrance Fire Heal), and more
+ * KO her: the round ends only then. Round 2 resets both heroes of each side; Rokcore's pellets hurt Cyclonius, who tags
+ * out and recovers red life on the bench.
+ */
+function tagScript(): ArcadeScript {
+  const setup: MatchSetup = {
+    simVersion: SIM_VERSION, seed: 0x7a6, flags: ARCADE_FLAGS, chapter: 1, difficulty: 0.25,
+    p1: [{ character: characterId('cyclonius'), xp: 1 }, { character: characterId('sindarosa'), xp: 1 }],
+    p2: [{ character: characterId('rokcore'), xp: 1 }, { character: characterId('fiara'), xp: 1 }],
+  };
+  const p1 = new Track();
+  const p2 = new Track();
+  let h = home(p1, p2, 100, 100);
+  p1.until(h).tap('tornado', primary, 1, TAG_AFTER_TORNADO).tap('tag in sindarosa', swap1);
+  p1.until(h + 120);
+  for (let i = 0; i < TAG_BLASTS; i++) p1.tap('fire blast', primary, 1, BLAST_EVERY - 1);
+  h = home(p1, p2, TAG_ROUND_2, 100);
+  p2.until(h);
+  for (let i = 0; i < 4; i++) p2.tap('rock pellet', secondary, 1, BLAST_EVERY - 1);
+  p1.until(p2.tick + 100).tap('tag out', swap1);
+  p1.until(p2.tick + 300);
+  return { file: 'arcade-tag', setup, inputs: buildScript(p1, p2) };
+}
+
 export function arcadeScripts(): ArcadeScript[] {
-  return [movesScript(), weatherScript()];
+  return [movesScript(), weatherScript(), tagScript()];
 }

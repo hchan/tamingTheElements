@@ -111,7 +111,7 @@ describe('Classic sound map', () => {
       captureFailed: { id: 'evilLaugh', bus: 'sfx', duck: true }, matchEnded: { id: 'victory', bus: 'sfx', duck: true },
       hitStop: null, hitConfirmed: null, comboEnded: null, guarded: null, parried: null, guardBroken: null, dashed: null,
       perfectDodge: null, clash: null, meterLevel: null, superStarted: { id: 'whoosh', bus: 'sfx', duck: true },
-      superEnded: null, roundStarted: null, fight: null, ko: null, timeOver: null, roundEnded: null, recovered: null,
+      superEnded: null, tagIn: null, roundStarted: null, fight: null, ko: null, timeOver: null, roundEnded: null, recovered: null,
       weatherChanged: null, weatherEnded: null,
     });
     expect(cueFor({ ...ev(SimEventKind.matchEnded), winner: 1 })?.id).toBe('death');

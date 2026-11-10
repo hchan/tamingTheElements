@@ -40,6 +40,7 @@ import {
   DASH_TICKS,
   HitStopCause,
   JUGGLE_LIMIT,
+  KO_ENTRANCE_INVULN_TICKS,
   KO_HIT_STOP_TICKS,
   METER_BAR,
   METER_MAX,
@@ -47,6 +48,8 @@ import {
   ROUND_TIMER_TICKS,
   RoundPhase,
   SUPER_FREEZE_TICKS,
+  TAG_COOLDOWN_TICKS,
+  TAG_INVULN_TICKS,
   WEATHER_COOLDOWN_TICKS,
   WEATHER_TICKS,
 } from '../data/arcade';
@@ -200,6 +203,9 @@ function checkInvariants(
       kind === EntityKind.melee ||
       (kind === EntityKind.effect && s.defId[i] === CAPTURE_DEF_INDEX);
     if (!counted || ((s.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
+    // An Arcade parry hands a reflected bullet's count to the parrier (arcade/guard.ts); one without that ability has
+    // no count to take, so the bullet flies on uncounted.
+    if (abilitySlot(s, s.owner[i] ?? 0, s.defId[i] ?? 0) < 0) continue;
     const key = (s.team[i] ?? 0) * 100 + (s.defId[i] ?? 0);
     live.set(key, (live.get(key) ?? 0) + 1);
   }
@@ -223,8 +229,9 @@ function checkInvariants(
         n += c;
       }
       if (ABILITY_DEFS[d]?.kind === 'omni') {
-        // KNOWN-BUG:omni-no-cooldown: omni bullets despawn without ever being counted, so the counter only drifts down.
-        if (n > 0)
+        // KNOWN-BUG:omni-no-cooldown: omni bullets despawn without ever being counted, so the counter only drifts down;
+        // an Arcade parry counts a reflected omni bullet on its parrier until it is released.
+        if (n > (isArcade(s) ? (live.get(t * 100 + d) ?? 0) : 0))
           fail(`omni active count ${String(n)} > 0 for team ${String(t)} def ${String(d)}`);
       } else if (n < (live.get(t * 100 + d) ?? 0)) {
         fail(`active count ${String(n)} < live entities for team ${String(t)} def ${String(d)}`);
@@ -609,6 +616,44 @@ describe('sim properties: invariants', () => {
       FC,
     );
     expect(casts).toBeGreaterThan(0);
+  });
+
+  it('hold in Arcade tag teams: each tag enters at the outgoing spot, invulnerable, and manual tags are 150 apart', () => {
+    let tags = 0;
+    const duo = (r: MatchSetup['p1']): MatchSetup['p1'] => (r.length > 1 ? r : [...r, ...r]);
+    fc.assert(
+      fc.property(setupArb, inputsArb, (setup, inputs) => {
+        const arcade = { ...setup, flags: { ...setup.flags, rulesetArcade: true }, p1: duo(setup.p1), p2: duo(setup.p2) };
+        const w = skipIntro(createMatch(arcade));
+        const s = w.state;
+        const last = [-TAG_COOLDOWN_TICKS, -TAG_COOLDOWN_TICKS];
+        for (const [a, b] of inputs) {
+          const tick = s.world[World.tick] ?? 0;
+          const wasFrozen = isFrozen(s);
+          const g = now(s);
+          const ev = step(w, [a, b]);
+          checkInvariants(w, tick, ev, wasFrozen);
+          const fail = (m: string): never => {
+            throw new Error(`tick ${String(tick)}: ${m}`);
+          };
+          if (ev.some((e) => e.kind === SimEventKind.roundStarted)) last.fill(-TAG_COOLDOWN_TICKS);
+          for (const e of ev) {
+            if (e.kind !== SimEventKind.tagIn) continue;
+            tags++;
+            const [from, to, team] = [e['from'] ?? -1, e['to'] ?? -1, e['team'] ?? -1];
+            const ko = ((s.flags[from] ?? 0) & EntityFlag.dead) !== 0;
+            if (s.px[to] !== s.x[from] || s.py[to] !== s.y[from]) fail(`tag ${String(to)} not at ${String(from)}'s spot`);
+            if ((s.arcade[to * ARCADE_E + ArcadeE.invulnUntil] ?? 0) < g + (ko ? KO_ENTRANCE_INVULN_TICKS : TAG_INVULN_TICKS))
+              fail(`tag ${String(to)} not invulnerable`);
+            if (!ko && g - (last[team] ?? 0) < TAG_COOLDOWN_TICKS) fail(`tag ${String(g - (last[team] ?? 0))} after the last`);
+            if (!ev.some((x) => x.kind === SimEventKind.swapped && x['to'] === to)) fail('tagIn without swapped');
+            last[team] = g;
+          }
+        }
+      }),
+      FC,
+    );
+    expect(tags).toBeGreaterThan(0);
   });
 
   it('hold in Arcade with diagonal input: shots and melee go along the 8-way aim', () => {

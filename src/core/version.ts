@@ -66,5 +66,10 @@
  *    scaled), from ARCADE_RACE_NUMBERS (default 4000 / 1000); hit-stun by strength is 32/38/44/48 (was 12/16/22/26);
  *    the guard drain is 8000 pm (was 2000); Fireball and Crimson Fire cool down in 26 and 18 game ticks (Classic 30
  *    and 20; `cooldownTicksFor`) (WP-arcade-numbers).
+ * 18: Arcade only; Classic hashes unchanged. Tag team: a tag (the swap keys) needs the active character free and books
+ *    150 game ticks (Classic 250); the partner enters at the outgoing spot with its facing and aim, 20 ticks of
+ *    invulnerability (60 after a KO) and a free primary cast (the entrance attack; `tagIn`); a bullet hit releases the
+ *    count on its shooter (bullet-count-on-active fixed in Arcade); benched characters heal 10 pm of max HP every 10
+ *    game ticks up to the rest cap, and only while benched (rest-heal-enemy-in-play fixed in Arcade) (WP-arcade-tag).
  */
-export const SIM_VERSION = 17;
+export const SIM_VERSION = 18;

@@ -60,6 +60,12 @@ export const ARCADE_AI_REACTION_SPREAD = 9;
 export const ARCADE_AI_LOOKAHEAD = 40;
 export const ARCADE_AI_DODGE_AT = 7;
 export const ARCADE_AI_GUARD_AT = 20;
+/**
+ * Tag (FUN-DESIGN 2.6, WP-arcade-tag): free, with no threat and the tag ready, the AI tags its partner in when its own
+ * HP is below ARCADE_AI_TAG_BELOW_PM per mille and the partner's is more than ARCADE_AI_TAG_MARGIN_PM above it.
+ */
+export const ARCADE_AI_TAG_BELOW_PM = 350;
+export const ARCADE_AI_TAG_MARGIN_PM = 250;
 /** Rushdown dashes in when the opponent is farther than this (top-left to top-left, |dx| + |dy|, px). */
 export const ARCADE_AI_FAR_PX = 360;
 

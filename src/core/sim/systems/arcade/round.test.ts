@@ -250,6 +250,7 @@ describe('time over', () => {
     const w = duel(['sindarosa', 'lavax'], ['pax', 'curomo']);
     const s = w.state;
     toFight(w);
+    s.y[2] = 0; // off Lavax's line, so its entrance attack (FUN-DESIGN 2.6) misses
     koByHp(w, 0); // Sindarosa down, Lavax in: team 0 is 0 + 1000
     s.hp[2] = (s.maxHp[2] ?? 0) / 2;
     s.hp[3] = (s.maxHp[3] ?? 0) / 2; // team 1 is 500 + 500

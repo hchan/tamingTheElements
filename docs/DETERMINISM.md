@@ -164,6 +164,12 @@ stored). The winner comes from `elementRelation` of the owners' elements (no RNG
 rounded IEEE operation, identical in every engine; there is no integer rounding. The event's overlap centre is
 `Math.round` of a half-sum (view data only, never read back). The slot sits behind the freeze gate like every system but
 `input`, and returns at once in Classic.
+The tag (`arcade/tag.ts`, called from `performSwap` in the `swap` and `death` slots) only writes hashed state: Int32
+game-tick deadlines (the team's swap cooldown, the incoming character's `invulnUntil`), copies of the outgoing
+character's position, facing and aim, and the entrance cast through the ordinary cast functions, whose cooldown
+deadline is saved in a local and written back (no allocation, no RNG). The Arcade rest heal adds `maxHp * 10 / 1000`
+(Arcade max HP is an integer, so this is one correctly rounded IEEE division) every 10 game ticks and clamps at the
+rest cap, as Classic does with its 0.5%.
 
 ## Cross-browser golden replays
 
@@ -174,11 +180,12 @@ Firefox and WebKit (`pnpm test:browser`) and requires the Node-recorded hashes t
 divergent tick is reported, which localises a drift. Bots keep their randomness in their own `AgentRng`, so
 `recordBotMatch` consults them on the recorded world itself.
 
-The Arcade goldens `arcade-moves.replay.json` and `arcade-weather.replay.json` are in the same cross-browser list. Their
+The Arcade goldens `arcade-moves.replay.json`, `arcade-weather.replay.json` and `arcade-tag.replay.json` are in the same cross-browser list. Their
 inputs are hand-authored (`tools/gen/arcade-moves.ts`, built with `tools/gen/arcade-script.ts`), not recorded from an AI, so
 they cover the mechanics the random bots of `arcade-1v1` never press: buffered casts, combos, counter hits, dash and perfect
 dodge, guard, guard break, parry reflection, the super freeze and a KO during a super, all five weathers, two clashes (a cancel and a
-win by element whose projectile flies on) and the round flow (KO, time over, best of three). `tests/repo/arcade-moves-coverage.test.ts` asserts from the events that each still fires.
+win by element whose projectile flies on), the round flow (KO, time over, best of three) and the 2v2 tag team (a tag
+combo through the entrance attack, a KO entrance, a round that ends only when both heroes are down, bench recovery). `tests/repo/arcade-moves-coverage.test.ts` asserts from the events that each still fires.
 `pnpm golden:record --ruleset arcade` rewrites them; like every golden they move only with an intended sim change.
 
 ## Feature flags in replay headers
