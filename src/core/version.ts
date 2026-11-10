@@ -11,5 +11,8 @@
  * 5: Arcade only; Classic hashes unchanged. Hit-stun, Q4 knockback with wall clamp and one bounce, juggle and stun caps
  *    with `recovered`, `canAct` in the cast sites and movement, Tornado and Vines as 60-tick stuns; the Arcade entity
  *    block gains `wallBounced` (WP-arcade-stun-knockback).
+ * 6: Arcade only; Classic hashes unchanged. Combo counter and damage scaling by hit index, counter hits (+1 stun tier),
+ *    `comboEnded`, and `recovered` reason 0 when a stun runs out; the `input` slot runs the Arcade expiry
+ *    (WP-arcade-combo).
  */
-export const SIM_VERSION = 5;
+export const SIM_VERSION = 6;

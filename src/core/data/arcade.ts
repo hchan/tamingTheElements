@@ -78,3 +78,17 @@ export const RecoveredReason = { stunEnded: 0, juggleCap: 1, stunCap: 2 } as con
 export const KNOCKBACK_Q4: PerStrength = [96, 144, 224, 256];
 export const KNOCKBACK_DECAY_Q4 = 16;
 export const Q4_ONE = 16;
+
+/**
+ * Combo damage scaling in pm by hit index (FUN-DESIGN 2.4): hits 1..6 of a combo take COMBO_SCALE_PM[hit - 1], later
+ * hits COMBO_SCALE_FLOOR_PM. A super keeps at least SUPER_COMBO_FLOOR_PM (a super that starts a combo is hit 1: 1000).
+ */
+export const COMBO_SCALE_PM = [1000, 1000, 900, 800, 700, 600] as const;
+export const COMBO_SCALE_FLOOR_PM = 500;
+export const SUPER_COMBO_FLOOR_PM = 600;
+
+/** Damage scale (pm) of combo hit `hit` (1-based) at `strength`. */
+export function comboScalePm(hit: number, strength: HitStrengthValue): number {
+  const pm = COMBO_SCALE_PM[hit - 1] ?? COMBO_SCALE_FLOOR_PM;
+  return strength === HitStrength.super ? Math.max(pm, SUPER_COMBO_FLOOR_PM) : pm;
+}

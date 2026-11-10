@@ -3,7 +3,7 @@ import {
 } from '../../../data/arcade';
 import { isArcade, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
-import { ARCADE_E, ArcadeE, EntityFlag, type SimState } from '../../state';
+import { ARCADE_E, ArcadeE, EntityFlag, MAX_ENTITIES, type SimState } from '../../state';
 import type { SimWorld } from '../../world';
 
 /** True while an Arcade hit-stun holds `id` (`stunUntil` is in game ticks). Never true in Classic. */
@@ -35,6 +35,22 @@ function recover(s: SimState, sink: EventSink, source: number, victim: number, r
   s.arcade[e + ArcadeE.wallBounced] = 0;
   s.arcade[e + ArcadeE.invulnUntil] = g + RECOVERY_INVULN_TICKS;
   sink.emit(source, SimEventKind.recovered, { id: victim, reason });
+}
+
+/**
+ * Emits `recovered` (reason 0) for each live character whose stun ran out, once: a stun is live while
+ * `comboStunTotal > 0`, which the caps already zero when they end a stun (with their own `recovered`).
+ */
+export function expireStuns(world: SimWorld, sink: EventSink): void {
+  const s = world.state;
+  const g = now(s);
+  for (let id = 0; id < MAX_ENTITIES; id++) {
+    const e = id * ARCADE_E;
+    if ((s.arcade[e + ArcadeE.comboStunTotal] ?? 0) === 0 || (s.arcade[e + ArcadeE.stunUntil] ?? 0) > g) continue;
+    s.arcade[e + ArcadeE.comboStunTotal] = 0;
+    if (((s.flags[id] ?? 0) & (EntityFlag.alive | EntityFlag.dead)) !== EntityFlag.alive) continue;
+    sink.emit(id, SimEventKind.recovered, { id, reason: RecoveredReason.stunEnded });
+  }
 }
 
 /**
