@@ -25,7 +25,7 @@ export const DODGE = 1;
 export const GUARD = 2;
 export const NO_PLAN = 3;
 
-type Knobs = readonly [number, number, number, number, number, number, number, number, number, number];
+type Knobs = readonly [number, number, number, number, number, number, number, number, number];
 
 /**
  * Per level: [0] reaction min and [1] spread (`W.tick` ticks: min plus a draw below the spread, means 24, 14 and 8),
@@ -33,14 +33,14 @@ type Knobs = readonly [number, number, number, number, number, number, number, n
  * spread (the press comes 2 plus a draw below it game ticks before the hit; PARRY_TICKS is the window, so Normal whiffs
  * 2 in 9 and Hard never) and [6] the spacing dash rate (pm per tick). The combo cap is `1 + 2 * level` (1, 3, 5) and
  * Easy never supers. The scales above 1000 (Hard) leave a plan almost every threat (Normal acts on about 80%, Easy
- * on 30%). [7] sidestep (1: a dodge with no dash ready walks out of the line instead of guarding), [8] the rate (pm per
+ * on 30%). [7] the rate (pm per
  * tick, doubled below ARCADE_AI_DESPERATE_PM of its HP) at which it spends a full bar on a super that reaches the
- * opponent even without a confirm, and [9] the rate at which a Zoner or Turtle melee hero also charges from afar (all pm per tick; Easy: none).
+ * opponent even without a confirm, and [8] the rate at which a Zoner or Turtle melee hero also charges from afar (all pm per tick; Easy: none).
  */
 export const ARCADE_AI_KNOBS: readonly [Knobs, Knobs, Knobs] = [
-  [20, 9, 0, 300, 300, 10, 10, 0, 0, 0],
-  [10, 9, 800, 900, 900, 9, 25, 1, 12, 0],
-  [6, 5, 1100, 1100, 1100, 6, 50, 1, 90, 25],
+  [20, 9, 0, 300, 300, 10, 10, 0, 0],
+  [10, 9, 800, 900, 900, 9, 25, 12, 0],
+  [6, 5, 1100, 1100, 1100, 6, 50, 90, 25],
 ];
 
 type Rates = readonly [parry: number, dodge: number, guard: number];
@@ -71,8 +71,6 @@ export const ARCADE_AI_TAG_BELOW_PM = 350;
 export const ARCADE_AI_TAG_MARGIN_PM = 250;
 /** Rushdown dashes in when the opponent is farther than this (top-left to top-left, |dx| + |dy|, px). */
 export const ARCADE_AI_FAR_PX = 360;
-/** A sidestep starts when the hit is this many game ticks away or fewer (a walk out of the line needs a head start). */
-export const ARCADE_AI_SIDESTEP_AT = 32;
 /** Below this HP per mille the free-super rate doubles. */
 export const ARCADE_AI_DESPERATE_PM = 400;
 

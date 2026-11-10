@@ -15,10 +15,10 @@ import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
-import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, sidestep, superFacing } from './arcade';
+import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing } from './arcade';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
-  ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_SIDESTEP_AT, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
+  ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
   ZONER, impactIn, toward,
 } from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
@@ -204,7 +204,7 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     expect(guard.apply(view(threat(ARCADE_AI_GUARD_AT + 1), 10), cmd)).toBe(cmd);
     expect(guard.apply(view(threat(ARCADE_AI_GUARD_AT), 11), cmd)).toBe(Cmd.guard);
     expect(planned(DODGE, ARCADE_AI_DODGE_AT).apply(view(threat(ARCADE_AI_DODGE_AT), 10), cmd)).toBe(Cmd.dash | Cmd.right);
-    // The dash on cooldown: a guard press instead on Easy, a sidestep out of the line from Normal up (see below).
+    // The dash on cooldown: a guard press instead on Easy, the same on Normal and Hard.
     const easyDodge = new ArcadeTactics(AI_EASY, ZONER);
     easyDodge.load({ mem: [-1, 0, 0, 0, DODGE, ARCADE_AI_DODGE_AT, ZONER, 0, 0], rng: null });
     expect(easyDodge.apply(view({ ...threat(ARCADE_AI_DODGE_AT), dashIn: 5 }, 10), cmd)).toBe(Cmd.guard);
@@ -269,31 +269,6 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     expect(count(new ArcadeTactics(AI_HARD, RUSHDOWN), {}, fighter(400, 300))).toBe(0);
     expect(count(new ArcadeTactics(AI_HARD, ZONER), {})).toBe(0);
     expect(count(new ArcadeTactics(AI_HARD, TURTLE), {})).toBe(0);
-  });
-
-  it('sidestep leaves the line of a flying shot, towards the side with room, and never into a wall', () => {
-    const self = fighter(200, 300);
-    // Shot along a row below self's centre: self steps up, away from it; above it: down.
-    expect(sidestep(self, { ...shotIn(10), y: 340 })).toBe(Cmd.up);
-    expect(sidestep(self, { ...shotIn(10), y: 300 })).toBe(Cmd.down);
-    // No room above (top wall): it goes down although the shot is below.
-    expect(sidestep(fighter(200, 10), { ...shotIn(10), y: 80 })).toBe(Cmd.down);
-    // A vertical shot is left sideways.
-    expect(sidestep(self, { x: 250, y: 100, w: 20, h: 20, vx: 0, vy: 8 })).toBe(Cmd.left);
-    expect(sidestep(self, { x: 200, y: 100, w: 20, h: 20, vx: 0, vy: 8 })).toBe(Cmd.right);
-  });
-
-  it('a dodge with the dash cooling down walks out of the line and no longer takes the hit (Normal and Hard), starting from further out than a dash', () => {
-    for (const level of [AI_NORMAL, AI_HARD] as const) {
-      const t = new ArcadeTactics(level, ZONER);
-      t.load({ mem: [-1, 0, 0, 0, DODGE, ARCADE_AI_DODGE_AT, ZONER, 0, 0], rng: null });
-      expect(t.apply(view({ ...threat(ARCADE_AI_LOOKAHEAD), dashIn: 5 }, 10), cmd)).toBe(cmd); // not yet
-      const dir = t.apply(view({ ...threat(ARCADE_AI_SIDESTEP_AT), dashIn: 5 }, 11), cmd);
-      expect(dir === Cmd.up || dir === Cmd.down).toBe(true);
-      // Out of the line the shot misses: no threat.
-      const me = fighter(200, dir === Cmd.up ? 200 : 400);
-      expect(impactIn(me, shotIn(20), ARCADE_AI_LOOKAHEAD + 1)).toBe(ARCADE_AI_LOOKAHEAD + 1);
-    }
   });
 
   it('a Normal or Hard AI spends a full bar on a super that reaches the opponent, without a confirm, and more eagerly when low', () => {
