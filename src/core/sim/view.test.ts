@@ -21,11 +21,11 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(createRenderView(createMatch(match(false))).arcade()).toBeUndefined();
   });
 
-  it('reports the freeze, the live combo and the victim stun after a hit, reusing one object', () => {
+  it('reports the freeze, the live combo, the meters and the victim stun after a hit, reusing one object', () => {
     const world = createMatch(match(true));
     const view = createRenderView(world);
     const before = view.arcade();
-    expect(before).toMatchObject({ frozen: false, comboHits: [0, 0], comboDamage: [0, 0] });
+    expect(before).toMatchObject({ frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0] });
     expect(before?.stunned(1)).toBe(false);
     world.state.hp[1] = 10_000;
     applyArcadeHit(world, new EventSink(0), 0, 0, 1, 16, ABILITY_DEFS.findIndex((d) => d.id === 'fire-blast'), 0);
@@ -34,6 +34,9 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(after?.frozen).toBe(true);
     expect(after?.comboHits).toEqual([1, 0]);
     expect(after?.comboDamage[0]).toBeGreaterThan(0);
+    // Both meters rise: the attacker by 800 and the victim by 600 per mille of the life share removed.
+    expect(after?.meter[0]).toBeGreaterThan(after?.meter[1] ?? 0);
+    expect(after?.meter[1]).toBeGreaterThan(0);
     expect(after?.stunned(1)).toBe(true);
     expect(after?.invulnerable(1)).toBe(false);
   });

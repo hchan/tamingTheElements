@@ -36,6 +36,7 @@ export * from './agents/scripted-ai/index';
 export * from './sim/match';
 export * from './sim/view';
 export { StatusId } from './sim/systems/status';
+export { METER_BAR, METER_BARS, METER_MAX } from './data/arcade';
 export * from './rules/progression';
 export * from './sim/systems/end';
 export * from './rules/results';

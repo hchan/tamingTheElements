@@ -18,6 +18,7 @@ import { damageDecreasePct } from './status';
 import { controlledId } from './movement';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
+import { meterOnCast } from './arcade/meter';
 import { canAct, isInvulnerable } from './arcade/stun';
 
 /** Ability index used for SimState.defId and the per-team activeCount table (set A then set B). */
@@ -73,7 +74,7 @@ function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: Abili
   return true;
 }
 
-function fire(world: SimWorld, team: number, charId: number, slot: number, tick: number): void {
+function fire(world: SimWorld, sink: EventSink, team: number, charId: number, slot: number, tick: number): void {
   const s = world.state;
   const abilityId = CHARACTERS[s.defId[charId] ?? 0]?.abilities[slot];
   const defIdx = ABILITY_DEFS.findIndex((d) => d.id === abilityId);
@@ -87,6 +88,7 @@ function fire(world: SimWorld, team: number, charId: number, slot: number, tick:
     // canFireAtCooldown 10000 false / 10001 true).
     for (const d of OMNI_DIRS) spawnBullet(world, charId, defIdx, def, d);
     s.teams[team * TEAM_STRIDE + TEAM_COOLDOWNS + slot] = tick + def.cooldownTicks + 1;
+    meterOnCast(s, sink, charId, team);
     return;
   }
   // A full entity table means no bullet: the cast must not book a cooldown or leak an active count.
@@ -95,6 +97,7 @@ function fire(world: SimWorld, team: number, charId: number, slot: number, tick:
   s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] = (s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] ?? 0) + 1;
   // Legacy cooldown is strict (>) in ms, so the next fire is one tick after the cooldown elapses.
   s.teams[base + TEAM_COOLDOWNS + slot] = tick + def.cooldownTicks + 1;
+  meterOnCast(s, sink, charId, team);
 }
 
 /** Frees a bullet and decrements its team's active count (omni counts go negative, as in legacy). */
@@ -163,7 +166,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     const charId = controlledId(world, team);
     if (charId < 0) continue;
     const cmd = cmds[team] ?? 0;
-    if (hasCmd(cmd, Cmd.primary)) fire(world, team, charId, 0, tick);
-    if (hasCmd(cmd, Cmd.secondary)) fire(world, team, charId, 1, tick);
+    if (hasCmd(cmd, Cmd.primary)) fire(world, sink, team, charId, 0, tick);
+    if (hasCmd(cmd, Cmd.secondary)) fire(world, sink, team, charId, 1, tick);
   }
 }

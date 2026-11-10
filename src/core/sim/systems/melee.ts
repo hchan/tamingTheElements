@@ -21,6 +21,7 @@ import { damageDecreasePct } from './status';
 import type { EventSink } from '../events';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit, HIT_STUN } from './arcade/hit';
+import { meterOnCast } from './arcade/meter';
 import { applyStun, canAct, isInvulnerable } from './arcade/stun';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
@@ -234,7 +235,7 @@ function updateEffect(world: SimWorld, id: number, tick: number): void {
   freeEntity(s, id);
 }
 
-function cast(world: SimWorld, team: number, slot: number, tick: number): void {
+function cast(world: SimWorld, sink: EventSink, team: number, slot: number, tick: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
   if (caster < 0 || !canAct(world, caster)) return;
@@ -252,6 +253,7 @@ function cast(world: SimWorld, team: number, slot: number, tick: number): void {
   // Legacy: usable when elapsed > cooldown, hence the +1 tick.
   s.teams[cdIndex] = tick + def.cooldownTicks + 1;
   s.teams[countIdx] = (s.teams[countIdx] ?? 0) + 1;
+  meterOnCast(s, sink, caster, team);
 
   const w = def.w ?? 0;
   const h = def.h ?? 0;
@@ -295,7 +297,7 @@ export function meleeSystem(world: SimWorld, cmds: readonly [Command, Command], 
   }
   for (let team = 0; team < TEAM_COUNT; team++) {
     const cmd = cmds[team] ?? 0;
-    if (hasCmd(cmd, Cmd.primary)) cast(world, team, 0, tick);
-    if (hasCmd(cmd, Cmd.secondary)) cast(world, team, 1, tick);
+    if (hasCmd(cmd, Cmd.primary)) cast(world, sink, team, 0, tick);
+    if (hasCmd(cmd, Cmd.secondary)) cast(world, sink, team, 1, tick);
   }
 }
