@@ -1,0 +1,162 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
+import { ARENA_READY, SAVE_KEY, START, characters, collectErrors, fixture, goToHash, seedViaGameMaster, waitForRoute } from './parity/helpers';
+
+// Arcade Versus (FUN-DESIGN WP 11): the Settings opt-in (the live site's way in; `?ff=` only works in dev and test
+// builds), the picker, a real Arcade match against the Arcade AI (a hit, a super from the X key or the touch button, the
+// KO), the results and back to the menu, with the save byte-for-byte untouched. Page-side code is passed as strings
+// because tsconfig.node has no DOM lib; `manual=1` starts the arena paused so every tick is stepped.
+const PRIMARY = 1 << 4;
+const CLASSIC_MENU = ['New Game', 'Continue', 'Garrison', 'Settings', 'Current Objectives', 'Story Mode', 'Wiki', 'Key Bindings', 'About'];
+
+async function audit(page: Page, name: string): Promise<void> {
+  const result = await new AxeBuilder({ page }).analyze();
+  const bad = result.violations
+    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    .map((v) => `${v.id} (${String(v.impact)}): ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
+  expect(bad, `${name}: ${bad.join('\n')}`).toEqual([]);
+}
+
+const menuLabels = (page: Page): Promise<string[]> => page.locator('#menu .mainMenuList li button').allInnerTexts();
+const savedText = (page: Page): Promise<string | null> => page.evaluate<string | null>(`window.localStorage.getItem(${JSON.stringify(SAVE_KEY)})`);
+const superName = (page: Page): Promise<string | undefined> =>
+  page.evaluate<string | undefined>(`window.__TTE__.arena.superFx().then((f) => f && f.name)`);
+
+/** Picks the races and level on the picker and starts the fight; resolves with the paused Arcade arena. */
+async function fight(page: Page, player: string, enemy: string, level = 'normal'): Promise<void> {
+  await page.getByLabel('Your race').selectOption(player);
+  await page.getByLabel('AI race').selectOption(enemy);
+  await page.getByLabel('AI level').selectOption(level);
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+}
+
+/** Player at the left facing east, the AI on the same row; returns their ids. */
+async function lineUp(page: Page, foeX: number): Promise<{ me: number; foe: number }> {
+  const [me] = await characters(page, 0);
+  const [foe] = await characters(page, 1);
+  if (!me || !foe) throw new Error('both fighters must be in the arena');
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.place(${String(me.id)}, 300, 360, 0); a.place(${String(foe.id)}, ${String(foeX)}, 360, 4); })()`);
+  return { me: me.id, foe: foe.id };
+}
+
+/** Full meter for the player and a one-hit foe, so the super ends the match. */
+async function primeSuper(page: Page, foe: number): Promise<void> {
+  await lineUp(page, 900);
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setMeter(0, 1000); a.setHp(${String(foe)}, 1); })()`);
+}
+
+/** The super plays out, the foe is KO'd, and (after the arena's end beat) the results replace the arena. */
+async function finishOnResults(page: Page): Promise<void> {
+  await expect.poll(() => superName(page)).toBe('ELEMENTAL BURST');
+  await page.evaluate(`window.__TTE__.arena.step(90)`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toBeVisible();
+  await page.evaluate(`window.__TTE__.settled()`);
+  await expect(page.locator('#game canvas')).toHaveCount(0);
+}
+
+test('off by default: the Classic menu is unchanged, #arcade goes to the main menu, the Settings toggle is unticked', async ({ page }) => {
+  const errors = collectErrors(page);
+  await seedViaGameMaster(page, fixture('v0-ch3'));
+  await goToHash(page, '#main');
+  expect(await menuLabels(page)).toEqual(CLASSIC_MENU);
+  await page.evaluate(`window.location.hash = '#arcade'`);
+  await waitForRoute(page, '#main');
+  await expect(page.locator('#arcadePick')).toHaveCount(0);
+  await goToHash(page, '#settings');
+  await expect(page.getByLabel('Arcade Versus (preview)')).not.toBeChecked();
+  expect(errors).toEqual([]);
+});
+
+test('Settings opt-in -> Arcade Versus: a hit, a super with X, KO, results, rematch, back to the menu; the save is untouched', async ({ page }) => {
+  const errors = collectErrors(page);
+  await seedViaGameMaster(page, fixture('v0-ch3'));
+  await goToHash(page, '#settings');
+  await page.getByLabel('Arcade Versus (preview)').check();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await waitForRoute(page, '#main');
+  expect(await menuLabels(page)).toEqual([...CLASSIC_MENU.slice(0, 2), 'Arcade Versus', ...CLASSIC_MENU.slice(2)]);
+  const before = await savedText(page);
+  expect(JSON.parse(before ?? '{}')).toMatchObject({ arcadePreview: true, chapter: 3 });
+
+  await page.getByRole('button', { name: 'Arcade Versus' }).click();
+  await waitForRoute(page, '#arcade');
+  await expect(page.getByRole('heading', { level: 1, name: 'Arcade Versus' })).toBeFocused();
+  await audit(page, 'Arcade Versus picker');
+  await fight(page, 'sindarosa', 'pax');
+
+  // A hit: Fire Blast along the row (forced commands, so the AI stands still for it).
+  const { foe } = await lineUp(page, 600);
+  const [full] = await characters(page, 1);
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(1, [${String(PRIMARY)}, 0]); a.step(60); })()`);
+  const [hurt] = await characters(page, 1);
+  expect(hurt?.hp ?? 0).toBeLessThan(full?.hp ?? 0);
+
+  // The super from the keyboard: X held for two live ticks (the keyboard agent reads it, the AI plays on).
+  await primeSuper(page, foe);
+  await page.keyboard.down('KeyX');
+  await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
+  await page.keyboard.up('KeyX');
+  await finishOnResults(page);
+  await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toBeFocused();
+  await expect(page.locator('#arcadeResults')).toContainText('saves nothing');
+  await audit(page, 'Arcade Versus results');
+
+  // Rematch starts a fresh arena with the same fighters; the pause dialog leads back to the menu.
+  await page.getByRole('button', { name: 'Rematch' }).click();
+  await page.waitForFunction(ARENA_READY);
+  expect((await characters(page, 1))[0]?.hp).toBe(full?.hp);
+  // `manual=1` holds the arena with the user pause reason, so the first Shift+P resumes it and the second opens the dialog.
+  await page.keyboard.press('Shift+P');
+  await page.waitForFunction(`window.__TTE__.arena.paused === false`);
+  await page.keyboard.press('Shift+P');
+  await page.getByRole('link', { name: 'Exit to menu' }).click();
+  await waitForRoute(page, '#main');
+  await page.evaluate(`window.__TTE__.settled()`);
+  await expect(page.locator('#game canvas')).toHaveCount(0);
+  expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
+  expect(await savedText(page)).toBe(before);
+  expect(errors).toEqual([]);
+});
+
+test('?ff=arcade (dev and test builds) without a save: Escape leaves the picker, the touch Super button, results Main Menu', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade`);
+  await page.getByRole('button', { name: 'Arcade Versus' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Arcade Versus' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await waitForRoute(page, '#main');
+
+  await page.getByRole('button', { name: 'Arcade Versus' }).click();
+  await fight(page, 'fiara', 'curomo', 'easy');
+  const [foe] = await characters(page, 1);
+  await primeSuper(page, foe?.id ?? -1);
+  // A press on the Super button holds the bound super key while the finger (here the mouse) is down.
+  const button = page.locator('#arcadeSuper');
+  await expect(button).toBeVisible();
+  await button.hover();
+  await page.mouse.down();
+  await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
+  await page.mouse.up();
+  await finishOnResults(page);
+  await page.getByRole('link', { name: 'Main Menu' }).click();
+  await waitForRoute(page, '#main');
+  expect(await savedText(page)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test.describe('390x844 portrait phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('the picker fits without horizontal scrolling and its controls are 44 px touch targets', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByRole('button', { name: 'Fight!' }).waitFor();
+    expect(await page.evaluate<boolean>(`document.documentElement.scrollWidth <= window.innerWidth`)).toBe(true);
+    for (const label of ['Your race', 'AI race', 'AI level']) {
+      const box = await page.getByLabel(label).boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
+    const fightBox = await page.getByRole('button', { name: 'Fight!' }).boundingBox();
+    expect(fightBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+  });
+});
