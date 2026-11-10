@@ -9,6 +9,7 @@ import { RandomBot } from '../../src/core/agents/random-bot';
 import { ArcadeTactics } from '../../src/core/agents/scripted-ai/arcade';
 import { AI_EASY, AI_HARD, AI_NORMAL, type ArcadeAiLevel, type Style } from '../../src/core/agents/scripted-ai/arcade-ai';
 import { type AttackAbility, AttackAgent } from '../../src/core/agents/scripted-ai/attack';
+import { arcadePlayfield } from '../../src/core/data/arcade';
 import { CHARACTERS, getCharacter } from '../../src/core/data/characters';
 import { ELEMENTS, type Element, elementRelation } from '../../src/core/data/elements';
 import { characterId } from '../../src/core/data/ids';
@@ -172,7 +173,8 @@ export class ScriptedAI implements Agent {
     const dy = opp.y - self.y;
     let cmd: Command = dx <= MELEE_DX ? NO_COMMAND : opp.x > self.x ? Cmd.right : Cmd.left;
     if (dx > DASH_DX) {
-      const room = dy > 0 ? self.y - OFFSET_DY > DEFAULT_ARENA.y : self.y + self.h + OFFSET_DY < DEFAULT_ARENA.y + DEFAULT_ARENA.h;
+      const a = arcade ? arcadePlayfield() : DEFAULT_ARENA;
+      const room = dy > 0 ? self.y - OFFSET_DY > a.y : self.y + self.h + OFFSET_DY < a.y + a.h;
       if (Math.abs(dy) < OFFSET_DY) cmd |= dy > 0 === (room || !arcade) ? Cmd.up : Cmd.down;
       else if (Math.abs(dy) > OFFSET_DY + OFFSET_SLACK) cmd |= dy > 0 ? Cmd.down : Cmd.up;
     } else if (Math.abs(dy) > OFFSET_SLACK) {

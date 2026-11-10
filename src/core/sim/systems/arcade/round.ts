@@ -1,13 +1,13 @@
 import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
 import {
   HP_PM, HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUNDS_TO_WIN, ROUND_END_TICKS,
-  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase,
+  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y,
 } from '../../../data/arcade';
 import { freeEntity } from '../../alloc';
 import { isArcade, now } from '../../clock';
 import type { Command } from '../../commands';
 import { SimEventKind, type EventSink } from '../../events';
-import { P1_START_X, P2_START_X, START_Y } from '../../match';
+import { P1_START_X, P2_START_X } from '../../match';
 import {
   ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT,
   World as W, type SimState,
@@ -79,8 +79,8 @@ function resetRound(world: SimWorld, sink: EventSink): void {
       s.flags[id] = EntityFlag.alive | (k === 0 ? 0 : EntityFlag.benched);
       s.x[id] = x;
       s.px[id] = x;
-      s.y[id] = START_Y;
-      s.py[id] = START_Y;
+      s.y[id] = ARCADE_START_Y;
+      s.py[id] = ARCADE_START_Y;
       s.vx[id] = 0;
       s.vy[id] = 0;
       s.w[id] = CHARACTER_WIDTH;

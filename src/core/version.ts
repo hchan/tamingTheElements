@@ -75,5 +75,8 @@
  *    team field, 0..1000 pm, reset each round) reaches WEATHER_CHARGE_FULL; ranged heroes (primary range/omni) gain
  *    WEATHER_CHARGE_CAST per primary or secondary cast, the others WEATHER_CHARGE_STEP per walked tick; a cast spends
  *    the whole charge and the 1500-tick cooldown becomes a 50-tick lockout (WP-arcade-weather-charge).
+ * 20: Arcade only; Classic hashes unchanged. Arcade playfield insets (top 200, bottom 80 px): the Arcade arena is the
+ *    rectangle between the top HUD rows and the action bar, for movement, knockback, entrances, spawns and projectile
+ *    expiry; the start row is its centre (WP-arcade-playfield-bounds).
  */
-export const SIM_VERSION = 19;
+export const SIM_VERSION = 20;

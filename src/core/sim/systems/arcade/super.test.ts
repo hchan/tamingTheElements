@@ -152,7 +152,7 @@ describe('super invulnerability and lock', () => {
 
 describe('Elemental Burst (the Inferno Beam shape)', () => {
   it('is a 160 px band from the caster centre to the wall on its facing side', () => {
-    const cases = [[0, 440, 280, 840, 160], [4, 0, 280, 440, 160], [2, 360, 100, 160, 260], [6, 360, 360, 160, 360]] as const;
+    const cases = [[0, 440, 340, 840, 160], [4, 0, 340, 440, 160], [2, 360, 200, 160, 220], [6, 360, 420, 160, 220]] as const;
     for (const [dir, x, y, w, h] of cases) {
       const world = duel();
       const s = world.state;

@@ -52,6 +52,7 @@ import {
   TAG_INVULN_TICKS,
   WEATHER_COOLDOWN_TICKS,
   WEATHER_TICKS,
+  arcadePlayfield,
 } from '../data/arcade';
 import { CHORD_FLAG, PRESS_BITS, pressAge } from './systems/arcade/buffer';
 import { SUPER_DEF } from './systems/arcade/hit';
@@ -289,6 +290,14 @@ function checkArcade(
     return;
   }
   if (wasFrozen && events.length > 0) fail('events while frozen');
+  // Playfield insets: no character, in play or benched, is ever outside the Arcade playfield.
+  const pf = arcadePlayfield();
+  for (let id = 0; id < MAX_ENTITIES; id++) {
+    if (s.kind[id] !== EntityKind.character || ((s.flags[id] ?? 0) & EntityFlag.alive) === 0) continue;
+    const [x, y] = [s.x[id] ?? 0, s.y[id] ?? 0];
+    if (x < pf.x || y < pf.y || x + (s.w[id] ?? 0) > pf.x + pf.w || y + (s.h[id] ?? 0) > pf.y + pf.h)
+      fail(`character ${String(id)} outside the playfield at (${String(x)}, ${String(y)})`);
+  }
   const left =
     (s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] ?? 0) - (s.world[World.tick] ?? 0);
   if (left > Math.max(KO_HIT_STOP_TICKS, SUPER_FREEZE_TICKS))

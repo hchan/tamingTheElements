@@ -4,6 +4,7 @@ import { elementRelation } from '../../data/elements';
 import type { CharacterDef, AbilityDef } from '../../data/types';
 import type { Aabb } from '../../math/aabb';
 import { Cmd, type Command, NO_COMMAND } from '../../sim/commands';
+import { arcadePlayfield } from '../../data/arcade';
 import { DEFAULT_ARENA } from '../../sim/world';
 import { EntityFlag } from '../../sim/state';
 import { stateRecord, type Agent, type AgentState, type ObservationView } from '../agent';
@@ -152,7 +153,7 @@ export class ScriptedAI implements Agent {
     if (kind === 'away') move = this.movement.moveAway(view.tick, self, target);
     else if (kind === 'towards') move = this.movement.moveTowards(view.tick, self, target, this.profile.speed, (n) => this.rng.int(view, n));
     // Refuse steps further out of the arena; the next moveAway call reads them as blocked axes.
-    const walls = this.arena;
+    const walls = view.arcade === undefined ? this.arena : arcadePlayfield();
     const speed = this.profile.speed;
     // Only retreating is bounded: chasing stays within reach of the target, which the sim lets leave the arena.
     const retreat = kind === 'away';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, METER_BAR, ROUNDS_TO_WIN, ROUND_END_TICKS,
-  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase,
+  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -9,7 +9,7 @@ import { clockHeld, inFight, isFrozen, isSlowMoHold, now, roundPhase } from '../
 import { Cmd, type Command } from '../../commands';
 import { SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
-import { createMatch, P1_START_X, P2_START_X, START_Y, type MatchSetup } from '../../match';
+import { createMatch, P1_START_X, P2_START_X, type MatchSetup } from '../../match';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import {
   ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, EntityFlag, EntityKind,
@@ -297,7 +297,7 @@ describe('between rounds', () => {
       expect(s.restCap[id]).toBe(s.maxHp[id]);
       expect(s.speed[id]).toBe(s.baseSpeed[id]);
       expect([s.x[id], s.px[id], s.y[id], s.w[id], s.h[id]]).toEqual([
-        id === 2 ? P2_START_X : P1_START_X, id === 2 ? P2_START_X : P1_START_X, START_Y, 80, 80,
+        id === 2 ? P2_START_X : P1_START_X, id === 2 ? P2_START_X : P1_START_X, ARCADE_START_Y, 80, 80,
       ]);
       expect(s.dir[id]).toBe(id === 2 ? 4 : 0);
       for (let k = 0; k < 4; k++) expect([s.abil[cooldownIdx(id, k)], s.abil[countIdx(id, k)]]).toEqual([0, 0]);

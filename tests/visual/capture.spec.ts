@@ -348,6 +348,12 @@ for (const vp of VIEWPORTS) {
       // Up + right held, then Fire Blast: the 8-way aim arrow points north-east and the bullet flies that way.
       await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(3, [9, 0]); a.step(1, [16, 0]); a.step(6); })()`);
       await shoot(page, vp, 'arena', 'arcade-aim', 'Arcade 8-way aim: the white arrow north-east of Sindarosa (held up + right) and a Fire Blast flying north-east');
+      // Down held for 3 s: the fighter stops against the bottom of the playfield, above the action bar (playfield insets).
+      await page.evaluate(`window.__TTE__.arena.step(150, [2, 0])`);
+      const bottom = await page.evaluate<number>(`(() => { const a = window.__TTE__.arena; const c = a.characters().find((x) => x.team === 0); return c.y + 80; })()`);
+      expect(bottom).toBeLessThanOrEqual(640);
+      expect(bottom).toBeGreaterThan(620);
+      await shoot(page, vp, 'arena', 'arcade-playfield-bottom', 'Arcade playfield insets: the player held down against the bottom edge stands above the action bar, not under it');
       // A perfect KO (the foe drops, the player untouched), its result, then round 2 KO'd the same way ends the match 2-0.
       const [foe] = await characters(page, 1);
       await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(foe?.id)}, 0); a.step(31); })()`);
