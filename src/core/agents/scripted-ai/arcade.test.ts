@@ -15,10 +15,10 @@ import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
-import { ARCADE_AI_SLIDE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing } from './arcade';
+import { ARCADE_AI_SLIDE_TICKS, ArcadeTactics, avoidChord, awayFrom, diagonalLine, pressStep, sidestep, superFacing } from './arcade';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
-  ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
+  ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_SIDESTEP_AT, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
   ZONER, impactIn, toward,
 } from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
@@ -117,8 +117,12 @@ describe('ArcadeTactics: confirms, supers and combo caps', () => {
 
   it('leaves the command alone while the opponent is free and nothing threatens (a given Zoner draws nothing)', () => {
     const t = new ArcadeTactics(AI_NORMAL, ZONER);
-    expect(t.apply(view({ meter: SUPER_COST }), cmd)).toBe(cmd);
+    expect(t.apply(view({}), cmd)).toBe(cmd);
     expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0], rng: null });
+    // Easy keeps its bar for a confirm: no free super, no draw.
+    const easy = new ArcadeTactics(AI_EASY, ZONER);
+    expect(easy.apply(view({ meter: SUPER_COST }), cmd)).toBe(cmd);
+    expect(easy.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0], rng: null });
   });
 
   it('supers on a confirm with a full bar after its drawn reaction delay, facing the opponent', () => {
@@ -200,8 +204,10 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     expect(guard.apply(view(threat(ARCADE_AI_GUARD_AT + 1), 10), cmd)).toBe(cmd);
     expect(guard.apply(view(threat(ARCADE_AI_GUARD_AT), 11), cmd)).toBe(Cmd.guard);
     expect(planned(DODGE, ARCADE_AI_DODGE_AT).apply(view(threat(ARCADE_AI_DODGE_AT), 10), cmd)).toBe(Cmd.dash | Cmd.right);
-    // The dash on cooldown: a guard press instead.
-    expect(planned(DODGE, ARCADE_AI_DODGE_AT).apply(view({ ...threat(ARCADE_AI_DODGE_AT), dashIn: 5 }, 10), cmd)).toBe(Cmd.guard);
+    // The dash on cooldown: a guard press instead on Easy, a sidestep out of the line from Normal up (see below).
+    const easyDodge = new ArcadeTactics(AI_EASY, ZONER);
+    easyDodge.load({ mem: [-1, 0, 0, 0, DODGE, ARCADE_AI_DODGE_AT, ZONER, 0, 0], rng: null });
+    expect(easyDodge.apply(view({ ...threat(ARCADE_AI_DODGE_AT), dashIn: 5 }, 10), cmd)).toBe(Cmd.guard);
     // Not before the reaction delay, not while stunned, nothing without a plan.
     expect(planned(PARRY, 6, 20).apply(view(threat(3), 10), cmd)).toBe(cmd);
     expect(planned(PARRY, 6).apply(view({ ...threat(3), selfStun: 4 }, 10), cmd)).toBe(cmd);
@@ -263,6 +269,115 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     expect(count(new ArcadeTactics(AI_HARD, RUSHDOWN), {}, fighter(400, 300))).toBe(0);
     expect(count(new ArcadeTactics(AI_HARD, ZONER), {})).toBe(0);
     expect(count(new ArcadeTactics(AI_HARD, TURTLE), {})).toBe(0);
+  });
+
+  it('sidestep leaves the line of a flying shot, towards the side with room, and never into a wall', () => {
+    const self = fighter(200, 300);
+    // Shot along a row below self's centre: self steps up, away from it; above it: down.
+    expect(sidestep(self, { ...shotIn(10), y: 340 })).toBe(Cmd.up);
+    expect(sidestep(self, { ...shotIn(10), y: 300 })).toBe(Cmd.down);
+    // No room above (top wall): it goes down although the shot is below.
+    expect(sidestep(fighter(200, 10), { ...shotIn(10), y: 80 })).toBe(Cmd.down);
+    // A vertical shot is left sideways.
+    expect(sidestep(self, { x: 250, y: 100, w: 20, h: 20, vx: 0, vy: 8 })).toBe(Cmd.left);
+    expect(sidestep(self, { x: 200, y: 100, w: 20, h: 20, vx: 0, vy: 8 })).toBe(Cmd.right);
+  });
+
+  it('a dodge with the dash cooling down walks out of the line and no longer takes the hit (Normal and Hard), starting from further out than a dash', () => {
+    for (const level of [AI_NORMAL, AI_HARD] as const) {
+      const t = new ArcadeTactics(level, ZONER);
+      t.load({ mem: [-1, 0, 0, 0, DODGE, ARCADE_AI_DODGE_AT, ZONER, 0, 0], rng: null });
+      expect(t.apply(view({ ...threat(ARCADE_AI_LOOKAHEAD), dashIn: 5 }, 10), cmd)).toBe(cmd); // not yet
+      const dir = t.apply(view({ ...threat(ARCADE_AI_SIDESTEP_AT), dashIn: 5 }, 11), cmd);
+      expect(dir === Cmd.up || dir === Cmd.down).toBe(true);
+      // Out of the line the shot misses: no threat.
+      const me = fighter(200, dir === Cmd.up ? 200 : 400);
+      expect(impactIn(me, shotIn(20), ARCADE_AI_LOOKAHEAD + 1)).toBe(ARCADE_AI_LOOKAHEAD + 1);
+    }
+  });
+
+  it('a Normal or Hard AI spends a full bar on a super that reaches the opponent, without a confirm, and more eagerly when low', () => {
+    const count = (level: 0 | 1 | 2, self: FighterView, opp: FighterView, a: Partial<ArcadeView> = {}): number => {
+      const t = new ArcadeTactics(level, ZONER);
+      let n = 0;
+      for (let i = 0; i < 400; i++) {
+        const c = t.apply(view({ meter: SUPER_COST, ...a }, i, self, opp), cmd);
+        if ((c & Cmd.super) !== 0) {
+          expect(c).toBe(Cmd.super | Cmd.right);
+          n++;
+        }
+      }
+      return n;
+    };
+    const self = fighter(200, 300);
+    const near = fighter(500, 300);
+    expect(count(AI_EASY, self, near)).toBe(0);
+    const normal = count(AI_NORMAL, self, near);
+    const hard = count(AI_HARD, self, near);
+    expect(normal).toBeGreaterThan(0);
+    expect(hard).toBeGreaterThan(normal);
+    expect(count(AI_HARD, { ...self, hp: 20 }, near)).toBeGreaterThan(hard); // below DESPERATE_PM
+    expect(count(AI_HARD, self, fighter(500, 700))).toBe(0); // off the band
+    expect(count(AI_HARD, self, near, { meter: SUPER_COST - 1 })).toBe(0);
+    expect(count(AI_HARD, self, near, { selfStun: 3 })).toBe(0);
+    expect(count(AI_HARD, self, near, { superActive: true })).toBe(0);
+    expect(count(AI_HARD, self, near, { shots: [shotIn(10)] })).toBe(0); // defends first
+  });
+
+  it('on Hard a Zoner melee hero charges from afar too, a Turtle as well; Normal leaves it to Rushdown', () => {
+    const count = (level: 0 | 1 | 2, style: 0 | 1 | 2): number => {
+      const t = new ArcadeTactics(level, style);
+      let n = 0;
+      for (let i = 0; i < 400; i++) if ((t.apply(view({ dashIn: 9, chargeIn: 0 }, i), cmd) & Cmd.charge) !== 0) n++;
+      return n;
+    };
+    expect(count(AI_HARD, ZONER)).toBeGreaterThan(0);
+    expect(count(AI_HARD, TURTLE)).toBeGreaterThan(0);
+    expect(count(AI_NORMAL, ZONER)).toBe(0);
+    expect(count(AI_HARD, RUSHDOWN)).toBe(400); // Rushdown always did
+  });
+
+  it('a crowded Zoner or Turtle dashes away (not into a wall, never a Rushdown, never on cooldown); Easy never', () => {
+    const count = (level: 0 | 1 | 2, style: 0 | 1 | 2, self: FighterView, opp: FighterView, a: Partial<ArcadeView> = {}): number => {
+      const t = new ArcadeTactics(level, style);
+      let n = 0;
+      for (let i = 0; i < 400; i++) {
+        const c = t.apply(view(a, i, self, opp), cmd);
+        if ((c & Cmd.dash) !== 0) {
+          expect(c).toBe(Cmd.primary | Cmd.dash | Cmd.left);
+          n++;
+        }
+      }
+      return n;
+    };
+    const self = fighter(400, 300);
+    const close = fighter(480, 300); // 80 px right of self
+    expect(count(AI_HARD, ZONER, self, close)).toBeGreaterThan(0);
+    expect(count(AI_HARD, TURTLE, self, close)).toBeGreaterThan(0);
+    expect(count(AI_HARD, RUSHDOWN, self, close)).toBe(0);
+    expect(count(AI_EASY, ZONER, self, close)).toBe(0);
+    expect(count(AI_HARD, ZONER, self, close, { dashIn: 4 })).toBe(0);
+    expect(count(AI_HARD, ZONER, self, fighter(700, 300))).toBe(0); // not crowded
+    expect(awayFrom(fighter(0, 300), fighter(80, 300))).toBe(0); // back to the wall
+    expect(awayFrom(self, close)).toBe(Cmd.left);
+  });
+
+  it('Normal and Hard act on almost every threat, Easy on few: the plan draw leaves NO_PLAN rarely', () => {
+    const idle = (level: 0 | 1 | 2, style: 0 | 1 | 2): number => {
+      let n = 0;
+      const t = new ArcadeTactics(level, style);
+      for (let i = 0; i < 600; i++) {
+        t.apply(view({ shots: [shotIn(30)] }, 2 * i), cmd);
+        if (mem(t)[4] === NO_PLAN) n++;
+        t.apply(view({}, 2 * i + 1), cmd);
+      }
+      return n;
+    };
+    for (const style of [RUSHDOWN, ZONER, TURTLE] as const) {
+      expect(idle(AI_HARD, style)).toBeLessThan(60); // under 10%
+      expect(idle(AI_NORMAL, style)).toBeLessThan(250);
+      expect(idle(AI_EASY, style)).toBeGreaterThan(300);
+    }
   });
 
   it('a Rushdown melee hero charges from far away; ranged, close, cooling down and other styles do not', () => {

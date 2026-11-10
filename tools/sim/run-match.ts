@@ -7,6 +7,7 @@ import { parseArgs } from 'node:util';
 import { type Agent, type AgentState, type FighterView, collectCommands, stateRecord } from '../../src/core/agents/agent';
 import { RandomBot } from '../../src/core/agents/random-bot';
 import { ArcadeTactics } from '../../src/core/agents/scripted-ai/arcade';
+import { ArcadeTactics as ArcadeTacticsV1 } from './arcade-ai-v1/arcade';
 import { AI_EASY, AI_HARD, AI_NORMAL, type ArcadeAiLevel, type Style } from '../../src/core/agents/scripted-ai/arcade-ai';
 import { type AttackAbility, AttackAgent } from '../../src/core/agents/scripted-ai/attack';
 import { arcadePlayfield } from '../../src/core/data/arcade';
@@ -146,10 +147,10 @@ export class ScriptedAI implements Agent {
   private readonly attack: AttackAgent;
   private readonly defs: readonly (AbilityDef | undefined)[];
   private readonly melee: boolean;
-  private readonly arcade: ArcadeTactics;
+  private readonly arcade: ArcadeTactics | ArcadeTacticsV1;
 
   /** `opponent` (its race) decides the weather rule; `aiLevel` 1..5 and `personality` are the Arcade knobs. */
-  constructor(race: string, id = 'scripted', opponent = race, aiLevel = 3, personality?: Style) {
+  constructor(race: string, id = 'scripted', opponent = race, aiLevel = 3, personality?: Style, frozenV1 = false) {
     this.id = id;
     const me = getCharacter(characterId(race));
     this.defs = me.abilities.slice(0, 2).map((a) => defOf(a));
@@ -160,7 +161,7 @@ export class ScriptedAI implements Agent {
     );
     this.melee = this.defs.some((d) => d?.kind === 'melee');
     const unfavourable = elementRelation(me.element, getCharacter(characterId(opponent)).element) === 'dis';
-    this.arcade = new ArcadeTactics(arcadeLevel(aiLevel), personality, unfavourable);
+    this.arcade = frozenV1 ? new ArcadeTacticsV1(arcadeLevel(aiLevel), personality, unfavourable) : new ArcadeTactics(arcadeLevel(aiLevel), personality, unfavourable);
   }
 
   /**
@@ -224,8 +225,8 @@ export function arcadeLevel(aiLevel: number): ArcadeAiLevel {
   return aiLevel <= 2 ? AI_EASY : aiLevel === 3 ? AI_NORMAL : AI_HARD;
 }
 
-export function makeAgent(kind: AgentKind, race: string, opponent = race, aiLevel = 3): Agent {
-  return kind === 'random' ? new RandomBot(`random:${race}`) : new ScriptedAI(race, `scripted:${race}`, opponent, aiLevel);
+export function makeAgent(kind: AgentKind, race: string, opponent = race, aiLevel = 3, frozenV1 = false): Agent {
+  return kind === 'random' ? new RandomBot(`random:${race}`) : new ScriptedAI(race, `scripted:${race}`, opponent, aiLevel, undefined, frozenV1);
 }
 
 /**
@@ -236,8 +237,8 @@ export function makeAgent(kind: AgentKind, race: string, opponent = race, aiLeve
  * good; so when its hero's agent sends nothing, the team bot steps onto the opponent's row. With one hero it is that
  * hero's agent itself (1v1 runs and baselines are unchanged).
  */
-export function makeTeamAgent(kind: AgentKind, races: readonly string[], opponent: string, first: number, aiLevel = 3): Agent {
-  const heroes = races.map((r) => makeAgent(kind, r, opponent, aiLevel));
+export function makeTeamAgent(kind: AgentKind, races: readonly string[], opponent: string, first: number, aiLevel = 3, frozenV1 = false): Agent {
+  const heroes = races.map((r) => makeAgent(kind, r, opponent, aiLevel, frozenV1));
   const lead = heroes[0];
   if (lead === undefined) throw new RangeError('empty roster');
   if (heroes.length === 1) return lead;
@@ -282,6 +283,8 @@ export interface MatchOptions {
    * AI level 1..5 (default 3, Normal): the Arcade AI knobs (FUN-DESIGN 2.11, `arcadeLevel`). Classic ignores it.
    */
   readonly aiLevel?: number;
+  /** Which side plays the frozen pre-smarter Arcade AI (tools/sim/arcade-ai-v1), for `ai:duel`; default neither. */
+  readonly frozenV1?: 'a' | 'b';
 }
 
 export interface MatchResult {
@@ -337,8 +340,8 @@ export function runMatch(o: MatchOptions): MatchResult {
   const s = world.state;
   const teamA = o.aIsTeam0 ? 0 : 1;
   const races = (r: { character: string }[]): string[] => r.map((m) => m.character);
-  const agentA = makeTeamAgent(o.agentA, races(rosterA), o.raceB, o.aIsTeam0 ? 0 : rosterB.length, o.aiLevel);
-  const agentB = makeTeamAgent(o.agentB, races(rosterB), o.raceA, o.aIsTeam0 ? rosterA.length : 0, o.aiLevel);
+  const agentA = makeTeamAgent(o.agentA, races(rosterA), o.raceB, o.aIsTeam0 ? 0 : rosterB.length, o.aiLevel, o.frozenV1 === 'a');
+  const agentB = makeTeamAgent(o.agentB, races(rosterB), o.raceA, o.aIsTeam0 ? rosterA.length : 0, o.aiLevel, o.frozenV1 === 'b');
   const agents: [Agent, Agent] = o.aIsTeam0 ? [agentA, agentB] : [agentB, agentA];
 
   const projectileAbility = new Int32Array(MAX_ENTITIES);

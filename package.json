@@ -27,6 +27,7 @@
     "visual:update": "tsx tools/visual/run.ts update",
     "e2e:pages": "playwright test --config playwright.pages.config.ts",
     "build:itch": "node tools/itch/build-itch.mjs",
+    "ai:duel": "tsx tools/sim/ai-duel.ts",
     "size:check": "tsx tools/ci/size-check.ts",
     "ci:local": "tsx tools/ci/local-ci.ts",
     "deploy:pages": "tsx tools/ci/deploy-pages.ts",

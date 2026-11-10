@@ -4,11 +4,11 @@ import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
 import { Cmd, type Command } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
 import {
-  stateRecord, type AgentState, type ArcadeView, type FighterView, type ObservationView, type RockView,
+  stateRecord, type AgentState, type ArcadeView, type FighterView, type ObservationView, type RockView, type ShotView,
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
-  AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
+  AI_NORMAL, ARCADE_AI_CROWDED_PX, ARCADE_AI_DESPERATE_PM, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_SIDESTEP_AT, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
   NO_PLAN, PARRY, RUSHDOWN, TURTLE, impactIn, toward, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -85,6 +85,34 @@ export function diagonalLine(self: FighterView, opp: FighterView): Command {
   const ay = Math.abs(dy);
   if (ax <= opp.w / 2 || ay <= opp.h / 2 || Math.abs(ax - ay) > opp.h / 2) return 0;
   return (dx > 0 ? Cmd.right : Cmd.left) | (dy > 0 ? Cmd.down : Cmd.up);
+}
+
+/**
+ * One step out of the line of `shot` (a walk across its flight: vertical for a mostly horizontal shot, else horizontal),
+ * away from the shot's side of `self`, or to the other side when the playfield leaves no room there (`room` px).
+ */
+export function sidestep(self: FighterView, shot: ShotView, room = 90): Command {
+  const pf = arcadePlayfield();
+  if (Math.abs(shot.vx) >= Math.abs(shot.vy)) {
+    const up = self.y + self.h / 2 < shot.y + shot.h / 2;
+    const fits = up ? self.y - room >= pf.y : self.y + self.h + room <= pf.y + pf.h;
+    return up === fits ? Cmd.up : Cmd.down;
+  }
+  const left = self.x + self.w / 2 < shot.x + shot.w / 2;
+  const fits = left ? self.x - room >= pf.x : self.x + self.w + room <= pf.x + pf.w;
+  return left === fits ? Cmd.left : Cmd.right;
+}
+
+/** The bits of `toward(self, opp)` reversed, without a direction that would run into a playfield wall within `room` px. */
+export function awayFrom(self: FighterView, opp: FighterView, room = 120): Command {
+  const pf = arcadePlayfield();
+  const t = toward(self, opp);
+  let bits = 0;
+  if ((t & Cmd.right) !== 0 && self.x - room >= pf.x) bits |= Cmd.left;
+  if ((t & Cmd.left) !== 0 && self.x + self.w + room <= pf.x + pf.w) bits |= Cmd.right;
+  if ((t & Cmd.down) !== 0 && self.y - room >= pf.y) bits |= Cmd.up;
+  if ((t & Cmd.up) !== 0 && self.y + self.h + room <= pf.y + pf.h) bits |= Cmd.down;
+  return bits;
 }
 
 /** `pressStep` stops closing in this many px (centre to centre) from the opponent. */
@@ -253,7 +281,14 @@ export class ArcadeTactics {
 
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
     let t = ARCADE_AI_LOOKAHEAD + 1;
-    for (const p of a.shots) t = impactIn(self, p, t);
+    let soon: ShotView | undefined;
+    for (const p of a.shots) {
+      const n = impactIn(self, p, t);
+      if (n < t) {
+        t = n;
+        soon = p;
+      }
+    }
     const threat = t <= ARCADE_AI_LOOKAHEAD;
     if (!threat) m[2] = -1;
     else {
@@ -267,8 +302,11 @@ export class ArcadeTactics {
         m[4] = plan;
         m[5] = plan === PARRY ? 2 + draw(k[5]) : plan === DODGE ? ARCADE_AI_DODGE_AT : ARCADE_AI_GUARD_AT;
       }
-      if (free && m[4] < NO_PLAN && view.tick - m[2] >= m[3] && t <= m[5]) {
-        return m[4] === DODGE && a.dashIn === 0 ? Cmd.dash | toward(self, opp) : Cmd.guard;
+      if (free && m[4] < NO_PLAN && view.tick - m[2] >= m[3]) {
+        // A dodge with no dash ready walks out of the line (Normal and Hard) from further out, else it guards.
+        const walk = m[4] === DODGE && a.dashIn !== 0 && k[7] === 1 && soon !== undefined && t <= ARCADE_AI_SIDESTEP_AT ? sidestep(self, soon) : 0;
+        if (walk !== 0) return walk;
+        if (t <= m[5]) return m[4] === DODGE && a.dashIn === 0 ? Cmd.dash | toward(self, opp) : Cmd.guard;
       }
     }
 
@@ -291,9 +329,19 @@ export class ArcadeTactics {
     }
     if (!free || threat) return cmd;
     const pm = Math.floor((self.hp * 1000) / self.maxHp);
+    // A full bar is spent on a super that reaches the opponent even without a confirm, more eagerly when low on HP.
+    if (a.oppStun === 0 && a.meter >= SUPER_COST && k[8] !== 0) {
+      const facing = superFacing(self, opp, a.superId);
+      if (facing !== 0 && draw(1000) < k[8] * (pm < ARCADE_AI_DESPERATE_PM ? 2 : 1)) return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
+    }
     if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && a.partnerPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | Cmd.swap1;
     const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
-    if (a.chargeIn === 0 && style === RUSHDOWN && far >= CHARGE_AI_MIN_DIST) return Cmd.charge;
+    if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && (style === RUSHDOWN || (k[9] !== 0 && draw(1000) < k[9]))) return Cmd.charge;
+    // A Zoner or Turtle that is crowded dashes back out (not into a wall), keeping the range it wants.
+    if (a.dashIn === 0 && style !== RUSHDOWN && k[10] !== 0 && far < ARCADE_AI_CROWDED_PX) {
+      const away = awayFrom(self, opp);
+      if (away !== 0 && draw(1000) < k[10]) return (cmd & ~MOVE) | Cmd.dash | away;
+    }
     if (a.dashIn === 0 && style === RUSHDOWN && far > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }
