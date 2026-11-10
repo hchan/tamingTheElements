@@ -13,6 +13,9 @@ Workflow details are in [docs/BRANCHING.md](docs/BRANCHING.md): trunk-based, one
    pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm test:legacy && pnpm build && pnpm e2e
    ```
 
+   Also run `pnpm test:coverage` when you touch `src/core` (floors are enforced in CI). Never commit credentials; the
+   secret scan, CodeQL and dependency audit are described in [docs/SECURITY-GATES.md](docs/SECURITY-GATES.md).
+
 4. Open a PR using the template; merge with `git merge --no-ff` and subject `Merge <what it does> (<WP id>)`.
 
 ## Definition of Done
