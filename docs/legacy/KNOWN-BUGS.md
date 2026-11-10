@@ -1,6 +1,6 @@
 # Known legacy bugs
 
-Policy: see [ADR-0015](../adr/0015-known-legacy-bugs-policy.md). Paths are relative to `war/WEB-INF/private/src/`. Line numbers are at the time of writing and approximate. The characterization-test column is filled in by WP-h-known-bugs (all ten are asserted as current behaviour with plain `it`); the new-test and fix-WP columns are filled in by the porting WPs, and "TBD" means not written yet.
+Policy: see [ADR-0015](../adr/0015-known-legacy-bugs-policy.md). Paths are relative to `war/WEB-INF/private/src/`. Line numbers are at the time of writing and approximate. The characterization-test column is filled in by WP-h-known-bugs (the first ten rows are asserted as current behaviour with plain `it`; the six port-found rows below them are tagged `KNOWN-BUG:<slug>` in `src/core` and have no legacy characterization yet, except `melee-range-axes`); the new-test and fix-WP columns are filled in by the porting WPs, and "TBD" means not written yet.
 
 | Slug | Description | Legacy file:line | Characterization test | New test | Fix WP |
 |---|---|---|---|---|---|
@@ -15,6 +15,17 @@ Policy: see [ADR-0015](../adr/0015-known-legacy-bugs-policy.md). Paths are relat
 | `bounds-y-typo` | `resetIfOutOfBounds` reads `this.Y` (typo), so x is restored but y is never restored | `baseCharacter.js:131`, `baseCharacter.js:150` | `tests/legacy/known-bugs.characterization.test.ts` (`bounds-y-typo: ...`) | `it.fails` | TBD |
 | `damage-uses-target-mult` | `applyDamage` multiplies by `this.targetPlayer.damageMultiplier` (the defender's current target) instead of the actual hitter, which is wrong after swaps | `baseCharacter.js:50` | `tests/legacy/known-bugs.characterization.test.ts` (`damage-uses-target-mult: ...`) | `it.fails` | TBD |
 | `prod-cheats` | Shift-Q (I win), Shift-X (freeze) and Shift-C (capture win) are live in production | `input.js:10` to `input.js:12` | `tests/legacy/known-bugs.characterization.test.ts` (`prod-cheats: ...`) | plain `it` (cheats DEV-only) | by construction |
-| `prod-cheats` | Shift-Q (I win), Shift-X (freeze) and Shift-C (capture win) are live in production | `input.js:10` to `input.js:12` | TBD | plain `it` (cheats DEV-only) | by construction |
+| `omni-no-cooldown` | Omni abilities (Shards of Ice, Circus of Slime, Chaos Orb) bypass `doRange`, so they never set a cooldown and never count against `maxActive`; the active count drifts negative as bullets leave | `abilities.js:735`, `abilities.js:1136` | TBD (port-found) | `src/core/sim/systems/omni-special.test.ts` (`ignores maxActive and leaves the active count negative once bullets leave`), `src/core/sim/systems/projectile.test.ts` (`omni abilities have no cooldown and fire the 8-way fan`) | TBD |
+| `fireball-damage-cap-typo` | Fireball clamps its growing damage against `defaults.damge` (typo, undefined), so the cap comparison never holds and the damage is never capped | `abilities.js:648` to `abilities.js:651` | TBD (port-found) | `src/core/sim/systems/projectile.test.ts` (`decays per tick like the fixture`) | TBD |
+| `melee-range-axes` | `isInRangeDirectional` / `isInRangeExplosion` compare deltaX with `target.h / 2` and deltaY with `target.w / 2`, and then compare deltaX (never deltaY) with the range | `helper.js:265`, `helper.js:286` | `tests/legacy/abilities-effects.characterization.test.ts` (`legacy abilities: melee range geometry`) | `src/core/sim/systems/melee.test.ts` (`melee range helpers match the legacy tables`) | TBD |
+| `steal-health-translucent` | Steal Health tests the caster's translucency (`character.targetPlayer`) instead of the victim's, so a translucent victim is still hit and a translucent caster cannot hit | `abilities.js:585` | TBD (port-found) | `src/core/sim/systems/melee.test.ts` (`Steal Health ignores a translucent victim (legacy checks the caster)`; `it.fails` for the correct behaviour) | TBD |
+| `ice-shock-ignores-translucent` | Ice Shock has no translucency check, so it hits a translucent victim (the other melee abilities skip one) | `abilities.js:694` onward | TBD (port-found) | `src/core/sim/systems/melee.test.ts` (`Ice Shock hits a translucent victim (legacy has no translucency check)`) | TBD |
+| `melee-dead-caster-lingers` | A melee entity is only removed (and the caster unfrozen) when its caster is alive, so a dead caster's melee stays on screen and can still land its single hit | `baseCharacter.js:448` to `baseCharacter.js:467` | TBD (port-found) | `src/core/sim/systems/melee.test.ts` (`a melee whose caster died lingers past its expiry and still lands its hit`) | TBD |
+
+## Port-found fix (not a legacy bug)
+
+| Slug | Description | New test |
+|---|---|---|
+| `projectile-table-leak` | In legacy, entities are unbounded. In the port a cast with a full entity table is now refused, so it books no cooldown and leaks no active count (intentional divergence, parity row C18) | `src/core/sim/systems/projectile.test.ts` (`a cast with a full entity table books no cooldown and leaks no active count`) |
 
 Related, not yet tracked as bugs: `Math.random` is used for opponent picks and GUIDs (`components.js:124`, `baseCharacter.js:992`, `baseCharacter.js:1008`); the port replaces it with seeded RNG streams (ADR-0003).
