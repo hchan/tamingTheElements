@@ -47,6 +47,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore, snapshot ring, state hash, the lowest-id-first entity allocator and the game clock (`clock.ts`: `now`, `isArcade`, freeze gate) |
 | `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore and the lowest-id-first entity allocator |
 | `src/core/sim/systems/` | Per-tick sim systems run by `step` in fixed order (movement, status so far) |
+| `src/core/sim/systems/arcade/` | Arcade-only rules (`rulesetArcade`): `hit.ts`, the single Arcade hit path (hit strength, hit-stop, `hitConfirmed`) |
 | `src/core/agents/` | `Agent` interface with a read-only `ObservationView` facade, seeded random bot (own `AgentRng` stream, outside `SimState`) and replay agent |
 | `src/core/replay/` | Replay file format (header, RLE inputs, hash checkpoints every 50 ticks), recorder, verifying player and the bot-match helper behind the golden fixture in `tests/fixtures/replays/` |
 | `src/core/agents/` | `Agent` interface with a read-only `ObservationView` facade, seeded random bot (own `ai.pN` stream) and replay agent |

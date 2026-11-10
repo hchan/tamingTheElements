@@ -6,5 +6,7 @@
  *    internal bits at 16+.
  * 3: Arcade only; Classic hashes unchanged. `rulesetArcade` flag (sorted last, no flag bit moves), `SimState.arcade`
  *    (length 0 in Classic), the `now()` game clock and the freeze gate (WP-arcade-flag).
+ * 4: Arcade only; Classic hashes unchanged. Hit-stop: the Arcade hit path (`systems/arcade/hit.ts`) freezes the game
+ *    clock by hit strength and emits `hitConfirmed`/`hitStop`; Arcade melee hits emit `damage` (WP-arcade-hitstop).
  */
-export const SIM_VERSION = 3;
+export const SIM_VERSION = 4;
