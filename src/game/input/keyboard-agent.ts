@@ -26,6 +26,7 @@ export class KeyboardAgent implements Agent {
   readonly id = 'keyboard';
   private state: KeyState = INITIAL_KEY_STATE;
   private bindings: Bindings;
+  private pressed: Command = 0;
   private readonly cheatsEnabled: boolean;
 
   constructor(private readonly opts: KeyboardAgentOptions) {
@@ -43,8 +44,15 @@ export class KeyboardAgent implements Agent {
     if (r.effect !== undefined) this.opts.onEffect?.(r.effect);
   }
 
+  /** A pointer press on an action slot: its command bits are sent on the next observation only (one tick). */
+  press(cmd: Command): void {
+    this.pressed |= cmd;
+  }
+
   observe(view: ObservationView): Command {
-    return commandFromHeld(this.bindings, this.state.held, this.opts.capturable(view));
+    const cmd = commandFromHeld(this.bindings, this.state.held, this.opts.capturable(view)) | this.pressed;
+    this.pressed = 0;
+    return cmd;
   }
 
   /** Listens on a window-like source; returns a detach function. */

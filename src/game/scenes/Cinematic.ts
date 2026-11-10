@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CinematicRunner, type CinematicScript, type CinematicSink, type Rect, type TweenTarget } from '../cinematics/runner';
 import { INTRO_SCRIPT } from '../cinematics/scripts';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, crisp, fitScene } from '../boot/viewport';
 import { counted, teardown } from '../platform/test-hook';
 
 export const CINEMATIC_SCENE = 'Cinematic';
@@ -36,11 +37,13 @@ export class Cinematic extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
-    this.header = this.add.text(width / 2, 80, '', { ...TEXT_STYLE, fontSize: '56px' }).setOrigin(0.5).setDepth(10);
-    this.caption = this.add.text(width / 2, height - 140, '', TEXT_STYLE).setOrigin(0.5).setDepth(10);
+    fitScene(this);
+    const width = LOGICAL_WIDTH;
+    const height = LOGICAL_HEIGHT;
+    this.header = this.add.text(width / 2, 80, '', crisp(this, { ...TEXT_STYLE, fontSize: '56px' })).setOrigin(0.5).setDepth(10);
+    this.caption = this.add.text(width / 2, height - 140, '', crisp(this, TEXT_STYLE)).setOrigin(0.5).setDepth(10);
     const skip = this.add
-      .text(width - 24, 24, 'Skip', { fontSize: '28px', color: '#ffff88' })
+      .text(width - 24, 24, 'Skip', crisp(this, { fontSize: '28px', color: '#ffff88' }))
       .setOrigin(1, 0)
       .setDepth(20)
       .setInteractive({ useHandCursor: true });
@@ -74,7 +77,8 @@ export class Cinematic extends Phaser.Scene {
         this.caption?.setText('');
       },
       background: (key) => {
-        const { width, height } = this.scale;
+        const width = LOGICAL_WIDTH;
+        const height = LOGICAL_HEIGHT;
         if (!this.textures.exists(key)) return;
         this.backgrounds.push(this.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1));
       },

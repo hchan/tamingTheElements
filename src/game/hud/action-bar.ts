@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderView } from '@core/index';
 import { Cmd } from '@core/index';
+import { crisp } from '../boot/viewport';
 import { HUD_WIDTH } from './bars';
 
 /**
@@ -185,6 +186,11 @@ export class ActionBarView {
     this.texts.forEach((o) => { o.destroy(); });
   }
 
+  /** Current slots (logical coordinates), for tests and the click probe. */
+  get currentSlots(): readonly ActionSlot[] {
+    return this.slots;
+  }
+
   private readonly onPointer = (p: Phaser.Input.Pointer): void => {
     const cmd = commandAt(this.slots, p.worldX, p.worldY);
     if (cmd !== 0) this.emit(cmd);
@@ -205,7 +211,7 @@ export class ActionBarView {
   private text(i: number, s: ActionSlot): void {
     let t = this.texts[i];
     if (!t) {
-      t = this.scene.add.text(0, 0, '', { fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#000' });
+      t = this.scene.add.text(0, 0, '', crisp(this.scene, { fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#000' }));
       t.setDepth(101);
       this.texts[i] = t;
     }

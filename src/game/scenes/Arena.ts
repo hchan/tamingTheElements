@@ -26,6 +26,9 @@ import { EventFx, createPhaserFxSink } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
 import { counted, type ProbeCharacter } from '../platform/test-hook';
+import { BLOCKED_EVENT } from '../boot/presentation';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, crisp, fitScene } from '../boot/viewport';
+import { ActionBarView } from '../hud/action-bar';
 import { CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
@@ -68,6 +71,8 @@ export class Arena extends Phaser.Scene {
   private projPool: EntityViewPool<ProjectileView> | undefined;
   private fx: EventFx | undefined;
   private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
+  private actionBar: ActionBarView | undefined;
+  private clicks: number[] = [];
   private pauseText: Phaser.GameObjects.Text | undefined;
   private cleanups: (() => void)[] = [];
   private ended = false;
@@ -82,6 +87,7 @@ export class Arena extends Phaser.Scene {
   }
 
   create(): void {
+    fitScene(this);
     const world = createMatch(this.launch?.setup ?? DEMO_SETUP);
     this.world = world;
     this.view = createRenderView(world);
@@ -110,19 +116,33 @@ export class Arena extends Phaser.Scene {
         },
       });
       this.agents = [keyboard, this.launch.enemy];
+      this.actionBar = new ActionBarView(this, this.view, (cmd) => {
+        this.clicks.push(cmd);
+        keyboard.press(cmd);
+      });
       this.cleanups.push(keyboard.attach(counted(window)));
     }
     this.cleanups.push(pauseOnHidden(counted(document), driver));
 
-    const { width, height } = this.scale;
+    const width = LOGICAL_WIDTH;
+    const height = LOGICAL_HEIGHT;
     const element = this.view.heroElement();
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1);
     this.pauseText = this.add
-      .text(width / 2, height / 2, 'Paused\nShift-P to resume', { fontSize: '40px', align: 'center', color: '#ffffff' })
+      .text(width / 2, height / 2, 'Paused\nShift-P to resume', crisp(this, { fontSize: '40px', align: 'center', color: '#ffffff' }))
       .setOrigin(0.5)
       .setDepth(200)
       .setVisible(false);
+
+    // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
+    const onBlocked = (blocked: boolean): void => {
+      if (blocked) driver.pause();
+      else if (!this.pauseText?.visible) driver.resume();
+    };
+    this.game.events.on(BLOCKED_EVENT, onBlocked);
+    this.cleanups.push(() => { this.game.events.off(BLOCKED_EVENT, onBlocked); });
+    if (this.game.registry.get(BLOCKED_EVENT) === true) driver.pause();
 
     this.installProbe(world, driver);
     const hudData: HudData = { view: this.view };
@@ -171,6 +191,8 @@ export class Arena extends Phaser.Scene {
         st.py[id] = y;
         st.dir[id] = dir;
       },
+      actionSlots: () => this.actionBar?.currentSlots.map((s) => ({ x: s.x, y: s.y, size: s.size, cmd: s.cmd })) ?? [],
+      clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
       step: (n, cmds = [0, 0]) => {
         driver.pause();
@@ -214,6 +236,7 @@ export class Arena extends Phaser.Scene {
     if (!driver || !view || !pool || !projPool) return;
     const alpha = driver.frame();
     const tick = view.tick;
+    this.actionBar?.update();
     pool.begin();
     view.forEachCharacter((c: RenderCharacter) => {
       pool.acquire(c.id).apply(c, tick, alpha);
@@ -237,6 +260,8 @@ export class Arena extends Phaser.Scene {
     }
     this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
     this.events.removeAllListeners(Phaser.Scenes.Events.DESTROY);
+    this.actionBar?.destroy();
+    this.actionBar = undefined;
     this.pool?.forEachView((v) => { v.destroy(); });
     this.pool?.clear();
     this.projPool?.forEachView((v) => { v.destroy(); });

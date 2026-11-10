@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { manifestToLoadList } from '../assets/load-list';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
 export const PRELOAD_READY = 'preload-ready';
 
@@ -13,7 +14,9 @@ export class Preload extends Phaser.Scene {
   }
 
   preload(): void {
-    const { width, height } = this.scale;
+    fitScene(this);
+    const width = LOGICAL_WIDTH;
+    const height = LOGICAL_HEIGHT;
     const barW = width / 2;
     const x = (width - barW) / 2;
     const y = height / 2;
