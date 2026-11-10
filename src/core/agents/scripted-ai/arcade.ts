@@ -1,4 +1,4 @@
-import { arcadePlayfield, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
+import { arcadePlayfield, CHARGE_AI_MIN_DIST, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
 import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
 import { Cmd, type Command } from '../../sim/commands';
@@ -292,7 +292,9 @@ export class ArcadeTactics {
     if (!free || threat) return cmd;
     const pm = Math.floor((self.hp * 1000) / self.maxHp);
     if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && a.partnerPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | Cmd.swap1;
-    if (a.dashIn === 0 && style === RUSHDOWN && Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y) > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
+    const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
+    if (a.chargeIn === 0 && style === RUSHDOWN && far >= CHARGE_AI_MIN_DIST) return Cmd.charge;
+    if (a.dashIn === 0 && style === RUSHDOWN && far > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }
     return a.weatherIn === 0 && a.weatherCharge >= WEATHER_CHARGE_FULL && this.unfavourable ? cmd | Cmd.weather : cmd;

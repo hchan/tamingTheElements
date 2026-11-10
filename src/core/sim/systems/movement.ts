@@ -86,10 +86,7 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
     s.x[id] = Math.min(Math.max(tx, a.x), a.x + a.w - (s.w[id] ?? 0));
     s.y[id] = Math.min(Math.max(ty, a.y), a.y + a.h - (s.h[id] ?? 0));
     const blocked = rockStop(s, id, x0, y0) || s.x[id] !== tx || s.y[id] !== ty;
-    if (charging) {
-      s.dir[id] = facingFor(Math.sign(s.vx[id] ?? 0), Math.sign(s.vy[id] ?? 0), s.dir[id] ?? EAST);
-      if (blocked) endCharge(s, sink, id, ChargeEnd.blocked);
-    }
+    if (charging && blocked) endCharge(s, sink, id, ChargeEnd.blocked);
     return;
   }
   if (!canAct(world, id)) return;

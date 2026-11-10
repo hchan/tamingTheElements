@@ -18,6 +18,7 @@ import {
 import type { SimWorld } from '../sim/world';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
+import { RANGED } from '../sim/systems/arcade/meter';
 import { superSpecOf } from '../sim/systems/arcade/super';
 import { kindOf, patchRects, stageOf } from '../sim/systems/arcade/terrain';
 
@@ -84,6 +85,8 @@ export interface ArcadeView {
   /** Game ticks until this side's dash and weather are ready (0: ready now). */
   readonly dashIn: number;
   readonly weatherIn: number;
+  /** Game ticks until this side's melee Charge is ready (0: now), or -1 for a ranged hero, which has none (FUN-DESIGN 2.17). */
+  readonly chargeIn: number;
   /** This side's weather charge, 0..WEATHER_CHARGE_FULL; weather needs it full (FUN-DESIGN 2.14). */
   readonly weatherCharge: number;
   /**
@@ -231,6 +234,7 @@ function arcadeViewOf(
     shots,
     dashIn: left(self, ArcadeE.dashReadyAt),
     weatherIn: left(self, ArcadeE.weatherReadyAt),
+    chargeIn: RANGED[s.defId[self?.id ?? 0] ?? 0] ? -1 : left(self, ArcadeE.chargeReadyAt),
     weatherCharge: team(side, ArcadeT.weatherCharge),
     tagIn: Math.max(0, (s.teams[side * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0) - g),
     partnerPm: Math.max(partnerPm, -1),
