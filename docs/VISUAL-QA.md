@@ -25,7 +25,8 @@ production) shows a live fps / frame-time / worst-frame readout at the top right
 `defeat`, `rotate-overlay` (390x844 only), `error-no-webgl`, `error-unknown-character`, `arena-demo-t150` (bot vs bot),
 `arena-arcade-hitstop` and `arena-arcade-combo` (`?ff=arenaDemo,arcade`: the first Arcade volley during its hit-stop, then a
 later one, with the white flash, element sparks, damage numbers and the combo counter), `arena-arcade-meter` (the
-hyper meters under the HUD after Curomo's casts fill one bar). Each
+hyper meters under the HUD after Curomo's casts fill one bar), `arena-arcade-super-freeze` (10 ticks into Curomo's super
+freeze: arena dimmed, caster lit, element band with portrait, super name and element, camera punched in). Each
 has a `-1280x720` and a `-390x844` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
 notes), size and sha256.
 

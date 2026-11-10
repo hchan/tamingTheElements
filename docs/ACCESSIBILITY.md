@@ -35,7 +35,7 @@ Settings has an **Accessibility** group.
 
 | Option | Default | Effect |
 |---|---|---|
-| Reduce motion | `prefers-reduced-motion` | Drops screen shake, hit particles and the Arcade hit-stop jitter (`EventFx`; Arcade shows one static 100 ms spark instead of particles), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). Information stays: the hit flash (white for 2 frames, then a tint for 4; no motion), Arcade damage numbers (they fade in place instead of floating up), the combo counter (no pop; it stays 1 s after the combo) and the hyper meter (a full meter stays steady instead of pulsing once a second). |
+| Reduce motion | `prefers-reduced-motion` | Drops screen shake, hit particles and the Arcade hit-stop jitter (`EventFx`; Arcade shows one static 100 ms spark instead of particles), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). Information stays: the hit flash (white for 2 frames, then a tint for 4; no motion), Arcade damage numbers (they fade in place instead of floating up), the combo counter (no pop; it stays 1 s after the combo) and the hyper meter (a full meter stays steady instead of pulsing once a second). The Arcade super cinematic drops its motion and keeps its information: no band slide (the band fades in over 150 ms) and no camera punch-in, while the 40% dim, the element band with the caster's portrait, the super name and the element word stay for the whole freeze. |
 | High contrast | `prefers-contrast: more` | Stronger borders and focus rings, solid text colours, and the colour-blind-safe HUD palette below. |
 
 Both are saved as optional booleans in the v1 save (`reduceMotion`, `highContrast`). A missing field means "follow the OS",
@@ -84,6 +84,12 @@ Gamepad (Gamepad API, standard mapping) maps to the same `Command` bits as the k
 primary and B the secondary ability, Y captures (only when capturable), LB, RB, LT and RT swap, Start pauses. Pad button
 remapping is not offered; browsers expose a pad only after its first button press.
 
+Arcade super (FUN-DESIGN 2.5): the **Super (Arcade)** action, plain X by default (Shift-X stays the tester cheat), and pad
+RT send `Cmd.super` only in an Arcade match (`KeyboardAgent` option `arcade`, `ARCADE_PAD`); in Classic the key sends
+nothing and RT stays the fourth swap. The super key is rebindable with the same conflict check as every action. A save
+written before the action existed keeps the player's keys: if one of them is already X, the super is left unbound
+(shown as None) instead of resetting the map.
+
 ## Tests
 
 | What | Where |
@@ -92,6 +98,7 @@ remapping is not offered; browsers expose a pad only after its first button pres
 | keyboard-only navigation, focus, Escape, Space, no traps, pause dialog | `tests/e2e/keyboard.spec.ts` |
 | reduce motion (OS default, opt out, opt in, no shake), high contrast, rebinding, gamepad pause, announcements | `tests/e2e/a11y-features.spec.ts` |
 | hit feedback with reduced motion: flash, damage numbers, combo and meter stay, no shake (Arcade); fake-sink rules (static spark, no jitter); meter number, pattern and pulse rate | `tests/e2e/arcade-juice.spec.ts`, `src/game/fx/event-fx.test.ts`, `src/game/hud/arcade-hud.test.ts` |
+| super cinematic: reduced motion drops the slide and punch-in and keeps dim, band and name (plan, fake sink and browser); Arcade-only super key and pad RT, binding and pad conflicts | `src/game/fx/super-cinematic.test.ts`, `tests/e2e/arcade-super.spec.ts`, `src/game/input/arcade-bindings.test.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done
@@ -99,4 +106,5 @@ remapping is not offered; browsers expose a pad only after its first button pres
 Moderate and minor axe findings are not gated. There is no text-scaling control beyond Display Size, no separate
 volume controls, no gamepad button remapping, and the Phaser canvas itself is not exposed to assistive technology (the
 live regions and the HUD text cue stand in for it). The setting that hides Arcade damage numbers (FUN-DESIGN section 3) is
-not built yet; hits and combos are not announced in the live region.
+not built yet; hits, combos and supers are not announced in the live region (the super's name and element are on screen,
+and its start has a sound).
