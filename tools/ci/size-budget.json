@@ -9,8 +9,8 @@
     "phaser-config": 17000,
     "rolldown-runtime": 200,
     "round-view": 2100,
-    "sim": 18250,
+    "sim": 18850,
     "super-view": 1230
   },
-  "totalGzip": 446490
+  "totalGzip": 447090
 }
