@@ -69,6 +69,22 @@ resimulate several ticks in one 16.6 ms frame.
   the team-size and partner selects. Load it with `.then(({ name }) => ...)` destructuring: a `Promise.all` of two
   dynamic imports made Rolldown keep `phaser-config`'s whole namespace (about 80 B). Total 449586 to 453370 B (budget
   453800, unchanged).
+- **Pose layer (WP-arcade-pose-layer).** Smooth walking, leans, Arcade poses, projectile easing and the shake decay
+  (`src/game/views/pose-layer.ts`, `pose-math.ts`) are their own `pose-layer` chunk (3662 B gzip, budget 3772 = measured
+  + 3%), loaded by the Arena with `import()` once the match scene is up, in Classic and Arcade, so the menu never
+  downloads it. `phaser-config` stays within its 17000 budget (16993 before, 16998 after) by being net-zero: the base views
+  lost the fixed 6-tick frame timer (`frameIndex`), the per-frame facing frame and flip (the layer sets them; the base shows
+  the standing frame until it loads), the `NO_ROTATE` set and two test-only pool getters, which paid for the mount, the event
+  hand-off and the exports the layer imports. `totalGzip` rose by exactly the new chunk's budget (453800 to 457572). Per
+  frame the layer allocates nothing (typed arrays by entity slot, one reused `Pose`), draws no extra objects except a
+  pool of at most 8 ghost Images made on first use (projectile fade-out, KO fall), and adds one `postupdate` listener that
+  goes with the Arena. Measured with `pnpm visual:pacing` (SwiftShader, so only a sanity check; the machine was shared and
+  the runs are noisy): before p50 16.7 / p95 16.8 / p99 50 ms (4 long frames); after, two runs: p99 16.8 ms (0 long frames)
+  and p99 66.7 ms (19 long frames). No difference outside the noise; a real device is unmeasured. Smoothness is pinned by numbers
+  in `src/game/views/pose-layer.test.ts` instead: with the real `FixedStepDriver` on a fake clock at 50, 60, 75, 90, 120, 144 and
+  165 Hz, a constant-speed walker's on-screen step per render frame deviates from the ideal by under 1e-12 px (variance
+  under 1e-26, no backward step; the existing interpolation was already exact, the tests now pin it), and jittery frame times
+  (8 to 25 ms) never step backwards.
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per

@@ -295,6 +295,17 @@ WP-arcade-weather-view) the same way (its own `weather-view` chunk and `codeSpli
 tick's events on to the defence view's, so the round view holds one. It draws the sky tint and particles in the Arena and
 the weather badge and called line in the `Hud` scene, follows `RenderView.arcade().weather` and `weatherLeft` for what is
 up, and takes the called line and live lines from `weatherChanged` and `weatherEnded` (pure rules in `weather-fx.ts`).
+The pose layer (`src/game/views/pose-layer.ts` with pure `pose-math.ts`, WP-arcade-pose-layer, FUN-DESIGN 2.16 step 1) is
+mounted by the Arena in every match (Classic and Arcade) as its own lazy `pose-layer` chunk, fed the same events. It runs on
+`postupdate`, after the Arena drew the interpolated characters and projectiles (the base views stay the owners of position,
+size, tint and alpha and reset them each frame), and only adjusts the pooled Images: the walk frame is driven by the distance
+walked on screen (30 px per frame, the old 8 fps at base speed), so feet match dash, slow and speed effects at any display
+rate; a lean towards the heading and the 8-way aim (diagonals use the nearest side reel, mirrored), a start squash and a stop
+rebound, idle breathing, and in Arcade only the event poses (cast from a projectile first seen at its caster, hurt, guard
+crouch, dash stretch, KO fall as a pooled ghost, victory hop, tag-in slide) as scale, rotation, offset about the feet and alpha.
+Its animation clock advances only while the sim runs (not paused, not in a hit-stop), so frozen characters hold still; reduced
+motion drops lean, bob, breathing and every pose (the tag-in keeps a fade). Projectiles get shortest-arc rotation easing, a
+60 ms spawn ease-in and a fading ghost when they end; the camera shake decays quadratically. Nothing reads or writes sim state.
 The defence view mounts the clash burst (`src/game/fx/clash-view.ts`, WP-arcade-clash; its own `clash-view` chunk and
 `codeSplitting` group) in the Arena and hands it the same events: one Graphics made on the first `clash`, a typed-array
 pool of bursts drawn at the overlap centre the event carries, one `postupdate` listener (pure rules in `clash-fx.ts`).

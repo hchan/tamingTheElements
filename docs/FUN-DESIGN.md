@@ -616,9 +616,20 @@ Today every character sheet has right/left/up/down frame sets (left mirrors righ
 `tools/assets/build-assets.ts` from `imgWorkArea` (layered GIMP sources) into `public/assets/img` and a manifest.
 Plan, cheapest first:
 
-1. **Procedural pose layer (no new art):** diagonals reuse the nearest side frame flipped, with a lean (small rotation)
+1. **Procedural pose layer (no new art; built in WP 33, `WP-arcade-pose-layer`):** diagonals reuse the nearest side frame flipped, with a lean (small rotation)
    and the dir8 aim arrow; anticipation/impact poses via squash-and-stretch, bob, tint, afterimages and hit-reel tweens
    (view only, pooled, reduced-motion safe).
+   Built in WP 33 (view only, lazy `pose-layer` chunk, `src/game/views/pose-layer.ts` and `pose-math.ts`): the walk frame is
+   chosen by distance walked on screen (30 px per frame, the old 8 fps at base speed) so feet match speed at any refresh rate;
+   leans (4 degrees sideways, 7 on diagonals) towards the heading and aim, start squash, stop rebound, idle breathing (Classic
+   and Arcade); in Arcade also cast squash-and-stretch, hurt tilt, guard crouch, dash stretch (with the existing afterimages), KO
+   fall (a pooled ghost), victory hop and tag-in slide, all driven by events and state the view already receives (a cast is a
+   projectile first seen at its caster); reduced motion keeps frames and the tag-in fade only. Projectiles: shortest-arc rotation
+   easing, a 60 ms spawn ease-in, a 130 ms fade-out ghost; camera shake decays quadratically. Measured: on-screen step of a
+   constant-speed walker deviates under 1e-12 px per render frame at 50 to 165 Hz through the real `FixedStepDriver` (unit
+   tests); `phaser-config` 16993 to 16998 B (budget 17000), `pose-layer` 3662 B (budget 3772); `visual:pacing` p99 50 ms before
+   and 16.8 or 66.7 ms after (SwiftShader noise). Not done: a trail-length rework (the dots are already sampled per tick) and
+   easing of rings and pops (they already ease out). Real-device feel is unverified.
 2. **Sheet spec and pipeline:** a documented sheet layout (80x80 frames, rows = action x 8 directions: idle, walk, cast,
    hurt, guard, dash, KO, victory, tag-in), a packer in `tools/assets` that builds the sheet and manifest from per-frame
    PNGs, validation tests (frame counts, sizes, no missing action) and legacy art as the fallback for any missing row.
@@ -918,7 +929,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 30 | `WP-arcade-weather-view` (done; section 3) | view | Weather icon, timer, sky tint, particles, announcer line | 29 |
 | 31 | `WP-arcade-terrain` | sim+data | Section 2.15: stage element, seeded symmetric patches, per-element effects, caps, events | 3, 29 |
 | 32 | `WP-arcade-terrain-view` | view | Patch art with pattern and label, buff badge, particles | 31 |
-| 33 | `WP-arcade-pose-layer` | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
+| 33 | `WP-arcade-pose-layer` (done: section 2.16 step 1) | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
 | 34 | `WP-sprite-sheet-pipeline` | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 35 | `WP-arcade-weather-charge` | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
