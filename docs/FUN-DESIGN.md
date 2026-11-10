@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 27 (`WP-arcade-8way-aim`) and WP 29 (`WP-arcade-weather`, sim only) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 27 (`WP-arcade-8way-aim`) and WP 29 (`WP-arcade-weather`, sim only) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -250,7 +250,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - **Cancels:** on a confirmed hit, a dash can cancel the attacker's remaining melee recovery within 10 ticks of the
   confirm (the dash-cancel combo route).
 - Built in WP 15 (`systems/arcade/dash.ts`, table in `data/arcade.ts`): `Cmd.dash` is bit 11 (Classic masks it); its
-  key and pad binding come with the defence view (WP 17), and the AI does not dash on purpose yet (WP 23; its
+  key (E), pad button (RB) and touch button came with the defence view (WP 17, section 3), and the AI does not dash on purpose yet (WP 23; its
   movement can double-tap by accident: 87 dashes and 21 perfect dodges in the 24 `fun:report` matches). The buffer
   records the dash press like the attacks (8 game ticks, used once); a rising direction edge (the lowest bit when
   several rise) that repeats `lastDir` 0..12 game ticks after the last one is a dash press too, and clears the pair, so
@@ -277,7 +277,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   stuns its attacker for 20 ticks. A whiffed parry (no hit within 8 ticks) locks new parries for 20 ticks (no mashing).
   Owner: `arcade/hit.ts` checks `parryUntil` before applying damage.
 - Built in WP 16 (`systems/arcade/guard.ts`, table in `data/arcade.ts`): `Cmd.guard` is bit 12 (Classic masks it); its
-  key and pad binding come with the defence view (WP 17), the AI guards with WP 23. A character guards while its team
+  key (Q), pad button (LT) and touch button came with the defence view (WP 17, section 3), the AI guards with WP 23. A character guards while its team
   holds the bit and it could otherwise act (not stunned, block-stunned, dashing or in dash recovery, in a super or in
   melee cast recovery; `fight` phase), and through its block-stun even with the bit released. `canAct` is false while the
   bit is held, but a dash press still starts a dash out of guard (the dash cancels guard; its invulnerable ticks are not
@@ -486,7 +486,7 @@ are unchanged by construction. Phaser `timeScale` is never used for gameplay tim
 | Super cinematic | `superStarted` | 40-tick dim to 40%, element band cut-in with portrait and name | 120 | Cut-in fades instead of sliding; dim kept |
 | Camera punch-in | `superStarted`, `ko` | Zoom 1.0 to 1.15 on the caster over 150 ms, back over 300 ms | 30 | Off |
 | KO slow-motion | phase `ko` | The sim slows (game time half speed); view adds a white flash and desaturation | 30 | Sim timing kept (same for everyone); no flash or zoom |
-| Trails (fixes V10) | projectiles, `dashed` | 3 afterimages at alpha 0.5/0.3/0.15 and an additive glow on projectiles | 60 | No afterimages; glow kept for readability |
+| Trails (fixes V10; built in WP 17) | projectiles, `dashed` | 3 afterimages at alpha 0.5/0.3/0.15 and an additive glow on projectiles | 60 | No afterimages; glow kept for readability |
 | Clash burst | `clash` | Two-colour ring, winner element on top | 30 | Static ring |
 | Announcer text | round events | Large centred text, 600 ms scale-in | 50 | No scale-in; live-region lines always |
 | Audio punch layers | strength events | Existing `damage` cue plus a synthesized low thump (WebAudio oscillator, 60 ms, gain by strength), plus or minus 5% pitch from the cosmetic RNG; parry "ping"; music duck on super and KO (`DUCK_MS`) | 90 | Every audio cue has a visual counterpart; mute (Ctrl-M) covers all layers |
@@ -507,7 +507,7 @@ Classic keeps its six particles, 80 ms shake and `0xff7777` hit tint. Damage num
 `src/game/hud/arcade-hud.ts` (pooled model, 16 numbers; fed and aged by the Arena, drawn by `Hud.ts` with pooled texts);
 numbers fan out so a multi-hit volley stays readable; the combo shows from 2 hits under the attacker's bars. Every effect
 holds while the sim is paused, so e2e steps and visual captures see it. Not built yet: the setting that hides damage
-numbers, the 3-per-second cap (no full-screen flash exists yet), and the trails and clash rows (WP 17, 18). For testing,
+numbers, the 3-per-second cap (no full-screen flash exists yet), and the clash row (WP 18; the trails came with WP 17). For testing,
 `?ff=arenaDemo,arcade` (dev and test builds) runs the bot demo with the Arcade ruleset.
 
 Built in WP 7 (`WP-arcade-meter`): `RenderView.arcade().meter` and the hyper meter in `Hud.ts` (model and geometry in
@@ -546,6 +546,26 @@ of the timer column. Live-region lines go through the Arena's throttled `Announc
 [ACCESSIBILITY.md](ACCESSIBILITY.md)); the shared match-end line carries the round score. Objects are made once per match
 (two banner texts, the timer text, one pip Graphics) with one Hud `update` listener, all removed with the Arena or the Hud.
 Not built: the KO white flash and desaturation, the KO camera punch-in and music cut (WP 26), voice.
+
+Built in WP 17 (`WP-arcade-defence-view`, view and input only): `RenderView.arcade()` adds `guard(id)` (the guard meter,
+0..1000) and `guarding(id)` (read-outs only; the sim and its hashes are unchanged). Input: the **Dash (Arcade)** (E) and
+**Guard (Arcade)** (Q; Shift-Q stays the tester cheat) bindings, rebindable with the conflict check, and pad RB and LT
+in `ARCADE_PAD` (Classic keeps them as the second and third swap), sent only when the `KeyboardAgent` runs an Arcade match;
+Arcade Versus adds touch Guard and Dash buttons above the Super button. View: `src/game/fx/defence-view.ts`, its own lazy
+chunk `defence-view` that `round-view` mounts in every Arcade match (replays included) and feeds each tick's events; the
+rules are pure (`defence-fx.ts`, `DefenceFx`, events deduped by tick and seq). `dashed`: three afterimages of the
+dasher's sprite, 2 ticks apart, at alpha 0.5 / 0.3 / 0.15 in its element colour, fading 6 ticks after the dash.
+Projectile trails (V10): three dots 2, 4 and 6 ticks behind every projectile, alpha 0.5 / 0.3 / 0.15, in the element
+colour of the shooter's team (a reflected projectile switches) with a white core; the existing halo is the glow.
+Guarding (`guarding`): a pale blue bubble with a white rim around the fighter; the guard bar (64 x 7 px, quarter notches,
+orange at 30% or less) under it while guarding or refilling. `guarded`: 6 chip sparks. `parried`: a 120 ms white disc,
+a gold ping ring (0.5x to 1.4x the fighter over 260 ms), "PARRY" over the parrier, 8 sparks on a reflected projectile,
+and a live line. `guardBroken`: 14 shards, an orange ring, "GUARD BREAK" and a live line. `perfectDodge`: a white ring
+and "DODGE". Reduced motion keeps the shield, bar, words (not rising), rings (static), the flash and one static spark,
+and drops the afterimages, trails, flying sparks and shards. Effects run on the view tick, so they hold while paused.
+Per match: two Graphics, six afterimage Images and four Texts, made on first use; sparks, rings and trails live in
+typed arrays (no per-frame allocation); one Arena `postupdate` listener, all removed with the Arena. Not built: the parry
+ping and guard sounds (WP 26 audio layers), clash bursts (WP 18).
 
 ## 4. Fun metrics (automatable)
 
@@ -635,7 +655,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 14 | `WP-arcade-announcer-view` (done: section 3; also the timer and round pips, and the canvas centred vertically, VISUAL-QA V1) | view | Round intro, timer HUD, KO, TIME, PERFECT text, live-region lines | 13 |
 | 15 | `WP-arcade-dash` (done: section 2.7; binding in 17, AI in 23) | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |
 | 16 | `WP-arcade-guard-parry` (done: section 2.8; binding in 17, AI in 23) | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
-| 17 | `WP-arcade-defence-view` | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |
+| 17 | `WP-arcade-defence-view` (done: section 3; also the dash and guard keys, pad buttons and touch buttons, the guard bar and the live lines) | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |
 | 18 | `WP-arcade-clash` | sim+view | Projectile clash by element, clash burst | 2 |
 | 19 | `WP-arcade-tag` | sim | 2v2 setup, swap 150, entrance at the outgoing position, entrance attack, tag combo, rest rate, KO entrance | 3, 4 |
 | 20 | `WP-arcade-tag-view` | view+ui | Entrance flash, red-life styling, 2-pick Arcade menu | 19, 11 |
