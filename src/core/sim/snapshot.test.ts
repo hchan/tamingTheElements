@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { allocEntity } from './alloc';
 import { assertNoNaN, hash } from './hash';
 import { SnapshotRing, createSnapshotBuf, restore, snapshot } from './snapshot';
-import { createSimState, World } from './state';
+import { createSimState, stateArrays, World, type SimState } from './state';
 
 function populated() {
   const s = createSimState(5);
@@ -13,7 +13,49 @@ function populated() {
   return { s, a };
 }
 
+/** Independent reference: FNV-1a over explicit little-endian bytes (DataView), canonical NaN 0x7ff8000000000000. */
+function referenceHash(s: SimState): number {
+  const arrays = stateArrays(s);
+  const bytes = new DataView(new ArrayBuffer(arrays.reduce((n, a) => n + a.length * a.BYTES_PER_ELEMENT, 0)));
+  let o = 0;
+  for (const a of arrays) {
+    for (const v of a) {
+      if (a instanceof Float64Array) {
+        if (Number.isNaN(v)) {
+          bytes.setUint32(o, 0, true);
+          bytes.setUint32(o + 4, 0x7ff80000, true);
+        } else {
+          bytes.setFloat64(o, v === 0 ? 0 : v, true);
+        }
+        o += 8;
+      } else {
+        bytes.setUint32(o, v >>> 0, true);
+        o += 4;
+      }
+    }
+  }
+  let h = 0x811c9dc5;
+  for (let i = 0; i < bytes.byteLength; i++) h = Math.imul(h ^ bytes.getUint8(i), 0x01000193);
+  return h >>> 0;
+}
+
 describe('snapshot and hash', () => {
+  it('hash is FNV-1a over little-endian bytes with canonical -0 and NaN, independent of platform order', () => {
+    const { s, a } = populated();
+    s.vx[a] = -0;
+    s.vy[a] = NaN;
+    s.px[a] = -1.25e-300;
+    s.py[a] = Number.POSITIVE_INFINITY;
+    s.team[a] = -7;
+    s.rng[5] = 0xffffffff;
+    const u = new Uint32Array(s.dmgMult.buffer);
+    u[a * 2] = 1;
+    u[a * 2 + 1] = 0xfff00000; // a NaN with a payload and the sign bit set
+    expect(hash(s)).toBe(referenceHash(s));
+    expect(hash(createSimState(0))).toBe(referenceHash(createSimState(0)));
+  });
+
+
   it('restore then hash is equal', () => {
     const { s, a } = populated();
     const h = hash(s);
