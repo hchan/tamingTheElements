@@ -10,3 +10,5 @@ export * from './rules/damage';
 export * from './rules/describe';
 export * from './sim/state';
 export * from './sim/alloc';
+export * from './rules/garrison';
+export * from './rules/opponents';
