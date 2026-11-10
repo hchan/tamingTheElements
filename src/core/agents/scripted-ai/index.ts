@@ -5,7 +5,7 @@ import type { Aabb } from '../../math/aabb';
 import { Cmd, type Command, NO_COMMAND } from '../../sim/commands';
 import { DEFAULT_ARENA } from '../../sim/world';
 import { EntityFlag } from '../../sim/state';
-import type { Agent, ObservationView } from '../agent';
+import { stateRecord, type Agent, type AgentState, type ObservationView } from '../agent';
 import { AgentRng } from '../agent-rng';
 import { AttackAgent, type AttackAbility, type AttackAgentOptions, type AttackProfile, type Facing } from './attack';
 import { chooseMovement, MovementState } from './movement';
@@ -103,6 +103,17 @@ export class ScriptedAI implements Agent {
 
   get state(): MovementState {
     return this.movement;
+  }
+
+  save(): AgentState {
+    return { movement: this.movement.save(), attack: this.attack.save(), rng: this.rng.save() };
+  }
+
+  load(state: AgentState): void {
+    const rec = stateRecord(state, this.id);
+    this.movement.load(rec['movement'] ?? null);
+    this.attack.load(rec['attack'] ?? null);
+    this.rng.load(rec['rng'] ?? null);
   }
 
   observe(view: ObservationView): Command {

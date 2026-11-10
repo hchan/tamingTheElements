@@ -76,9 +76,16 @@ axes. Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.
 - Anything that can affect a later tick must be in those arrays. Do not keep sim state in closures, module variables or
   objects outside `SimState`.
 - `snapshot()` and `restore()` (`src/core/sim/snapshot.ts`) copy every array with `TypedArray.set`; `restore` must be the exact
-  inverse. `SnapshotRing` holds a bounded history for rewind.
-- `hash()` is FNV-1a 32 over the bytes of every array in `stateArrays` order, with `-0` canonicalised to `0` and every NaN to
-  one pattern. `assertNoNaN` is the debug check. Freed slots are zeroed (`freeEntity`) so stale data never reaches the hash.
+  inverse. `SnapshotRing` holds a bounded history for rewind; `restoreTick` takes the newest entry of a tick and drops
+  the later ones.
+- Agent memory and agent random streams are outside `SimState`, so they are snapshotted separately: `Agent.save()` returns
+  plain JSON data and `load()` is its exact inverse. Store `saveAgents(agents)` (an `AgentSnapshot`) as the payload of the
+  same `SnapshotRing` entry and load it in `restoreTick`'s callback; otherwise a restored bot issues different commands.
+- `hash()` is FNV-1a 32 over every value in `stateArrays` order as little-endian bytes (a `Float64` as its low then high
+  32-bit word, an `Int32`/`Uint32` as one word), split with shifts so the platform byte order never matters. `-0` hashes as
+  `0`, and NaN is detected with `v !== v` and hashed as the canonical words `(0, 0x7ff80000)`, never via its stored bits.
+  `assertNoNaN` is the debug check. Freed slots are zeroed, status slots included (`freeEntity`), so stale data never
+  reaches the hash.
 
 ## Events
 

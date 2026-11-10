@@ -22,7 +22,9 @@ Groundwork for player-vs-player. No real network code exists yet: the pure proto
 
 Lockstep hides latency only through input delay. Rollback predicts the missing remote input (repeat last), steps ahead, and on a late real input restores the snapshot at that tick and re-simulates. The hooks exist:
 
-- `SnapshotRing` already stores world snapshots by tick (no allocation).
+- `SnapshotRing` already stores world snapshots by tick (no allocation), each with an optional payload: store the agents'
+  `AgentSnapshot` (`saveAgents`) there so a peer's bots rewind with the world. `restoreTick` takes the newest entry of a
+  tick and drops the later ones.
 - `LockstepSession.captureSnapshot()` returns a plain-data copy of the bookkeeping (inputs, acks, hashes).
 - `sim/step` is a pure function of state and commands, and events are derived data, so re-simulation is safe.
 

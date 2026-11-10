@@ -1,5 +1,5 @@
 import { Cmd, type Command } from '../sim/commands';
-import type { Agent, ObservationView } from './agent';
+import { stateNumber, stateRecord, type Agent, type AgentState, type ObservationView } from './agent';
 import { AgentRng } from './agent-rng';
 
 const MOVES = [
@@ -33,5 +33,15 @@ export class RandomBot implements Agent {
       this.held = c;
     }
     return this.held;
+  }
+
+  save(): AgentState {
+    return { held: this.held, rng: this.rng.save() };
+  }
+
+  load(state: AgentState): void {
+    const rec = stateRecord(state, this.id);
+    this.held = stateNumber(rec, 'held');
+    this.rng.load(rec['rng'] ?? null);
   }
 }

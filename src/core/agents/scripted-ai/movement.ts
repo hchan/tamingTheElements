@@ -1,5 +1,6 @@
 import { msToTicks, TICK_MS } from '../../data/types';
 import { Cmd, type Command } from '../../sim/commands';
+import { stateNumber, stateRecord, type AgentState } from '../agent';
 import type { AttackType } from './attack';
 
 /**
@@ -19,7 +20,8 @@ import type { AttackType } from './attack';
  *   keeps retreating would leave the arena for good and the y edge check could never fire. ScriptedAI
  *   therefore refuses steps that would leave the arena and reports them as walls (`noteSent`), which the
  *   next moveAway call treats exactly like a blocked move.
- * - The unstick state is agent-local and is not part of the world snapshot; replays record commands.
+ * - The unstick state is agent-local, not part of the world snapshot: `save`/`load` carry it next to a world snapshot
+ *   (`AgentSnapshot`); replays record commands.
  */
 
 export const SAME_POSITION_CHECK_TICKS = msToTicks(2000);
@@ -95,6 +97,56 @@ export class MovementState {
   private sentY = 0;
   private wallX = false;
   private wallY = false;
+
+  /** Every field as fresh plain data (timers as [at, ms, kind] triples). */
+  save(): AgentState {
+    return {
+      moveAwayX: this.moveAwayX,
+      moveAwayY: this.moveAwayY,
+      samePositionCount: this.samePositionCount,
+      checkActive: this.checkActive,
+      timers: this.timers.map((t) => [t.at, t.ms, t.kind]),
+      prevX: this.prevX,
+      prevY: this.prevY,
+      lastTick: this.lastTick,
+      sentX: this.sentX,
+      sentY: this.sentY,
+      wallX: this.wallX,
+      wallY: this.wallY,
+    };
+  }
+
+  /** Exact inverse of save(). */
+  load(state: AgentState): void {
+    const rec = stateRecord(state, 'MovementState');
+    const pick = <T extends AgentState>(key: string, ok: readonly T[]): T => {
+      const v = rec[key] as T;
+      if (!ok.includes(v)) throw new TypeError(`MovementState: bad ${key}`);
+      return v;
+    };
+    const maybeNumber = (key: string): number | null => (rec[key] === null ? null : stateNumber(rec, key));
+    const flag = (key: string): boolean => pick(key, [true, false]);
+    this.moveAwayX = pick('moveAwayX', ['e', 'w', null]);
+    this.moveAwayY = pick('moveAwayY', ['s', 'n', null]);
+    this.samePositionCount = stateNumber(rec, 'samePositionCount');
+    this.checkActive = flag('checkActive');
+    const timers = rec['timers'];
+    if (!Array.isArray(timers)) throw new TypeError('MovementState: bad timers');
+    this.timers = (timers as readonly AgentState[]).map((t) => {
+      const [at, ms, kind] = Array.isArray(t) ? (t as readonly AgentState[]) : [];
+      if (typeof at !== 'number' || typeof ms !== 'number' || (kind !== 'check' && kind !== 'clearX' && kind !== 'clearY')) {
+        throw new TypeError('MovementState: bad timer');
+      }
+      return { at, ms, kind };
+    });
+    this.prevX = maybeNumber('prevX');
+    this.prevY = maybeNumber('prevY');
+    this.lastTick = stateNumber(rec, 'lastTick');
+    this.sentX = stateNumber(rec, 'sentX');
+    this.sentY = stateNumber(rec, 'sentY');
+    this.wallX = flag('wallX');
+    this.wallY = flag('wallY');
+  }
 
   /** Original Delay lengths (ms) of the pending timers, in creation order (fixture `delays`). */
   pendingDelaysMs(): number[] {

@@ -1,4 +1,4 @@
-import type { Agent, Command, ObservationView } from '@core/index';
+import type { Agent, AgentState, Command, ObservationView } from '@core/index';
 import { commandFromPad, pauseEdge, type PadSnapshot } from './gamepad';
 import {
   type Bindings,
@@ -75,6 +75,18 @@ export class KeyboardAgent implements Agent {
     const cmd = commandFromHeld(this.bindings, this.state.held, capturable) | pad | this.pressed;
     this.pressed = 0;
     return cmd;
+  }
+
+  /**
+   * A human input device has no replayable memory: what is held is the player's live input, which a rollback
+   * must not rewind (the recorded commands already carry what was sent). So there is nothing to save.
+   */
+  save(): AgentState {
+    return null;
+  }
+
+  load(): void {
+    // Live input is never restored.
   }
 
   /** Listens on a window-like source; returns a detach function. */

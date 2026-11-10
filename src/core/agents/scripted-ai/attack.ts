@@ -1,6 +1,6 @@
 import { Cmd, type Command, NO_COMMAND } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
-import type { Agent, ObservationView } from '../agent';
+import { stateRecord, type Agent, type AgentState, type ObservationView } from '../agent';
 
 /**
  * Port of the legacy EnemyCharacter attack decisions (baseCharacter.js): updateAttackDirection,
@@ -152,6 +152,16 @@ export class AttackAgent implements Agent {
     this.facing = r.facing;
     if (r.inRange && this.ready(view, 0, pri)) cmd |= Cmd.primary | FACING_CMD[this.facing];
     return cmd;
+  }
+
+  save(): AgentState {
+    return { facing: this.facing };
+  }
+
+  load(state: AgentState): void {
+    const facing = stateRecord(state, this.id)['facing'];
+    if (facing !== 'n' && facing !== 'e' && facing !== 's' && facing !== 'w') throw new TypeError(`${this.id}: bad facing`);
+    this.facing = facing;
   }
 
   private ready(view: ObservationView, slot: 0 | 1, ability: AttackAbility): boolean {

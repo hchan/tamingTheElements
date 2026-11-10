@@ -143,10 +143,17 @@ stores them in `SimState.rng`. The `ai.p1`/`ai.p2` words are not drawn by anythi
 ## Snapshot, restore, hash
 
 - `src/core/sim/snapshot.ts`: `createSnapshotBuf`, `snapshot` and `restore` copy every array with `TypedArray.set` (no
-  allocation), and `SnapshotRing` keeps a fixed-depth ring keyed by tick for rewind. `state.ts` also has the allocating
+  allocation), and `SnapshotRing` keeps a fixed-depth ring keyed by tick for rewind. `restoreTick` restores the newest
+  entry of a tick and drops the entries pushed after it. Each entry can carry a payload (`SnapshotRing<AgentSnapshot>`)
+  for state outside `SimState` that must rewind with it. `state.ts` also has the allocating
   `snapshotState`/`restoreState` pair.
-- `src/core/sim/hash.ts`: FNV-1a 32 over the bytes of every array in `stateArrays` order; `-0` becomes `0` and every NaN
-  becomes the canonical NaN first. `assertNoNaN` is a debug check.
+- Agent memory (`RandomBot`'s held command, `ScriptedAI`'s movement timers, facing and previous position, every agent's
+  `AgentRng`) is not in `SimState`. `Agent.save()`/`load()` copy it as plain JSON data, and `saveAgents`/`loadAgents`
+  (`src/core/agents/agent.ts`) make the `AgentSnapshot` to store next to the world snapshot, so a bot issues the same
+  commands after a restore (`src/core/agents/agent-snapshot.test.ts`).
+- `src/core/sim/hash.ts`: FNV-1a 32 over every value as little-endian bytes in `stateArrays` order, read as 32-bit words
+  and split with shifts so the platform byte order does not matter; `-0` hashes as `0` and every NaN as the canonical
+  words. `assertNoNaN` is a debug check.
 
 ## Fixed-step driver
 
