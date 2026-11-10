@@ -175,7 +175,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   stun ran out (a stun is live while `comboStunTotal > 0`; the caps zero it and emit their own `recovered`), then
   `comboEnded` for each team whose victim is free. Counter: the victim has the `frozen` flag, which in Arcade only
   melee `delayAfterAttack` sets (Ground Shock included); the stun is the next tier's (an override such as Tornado's 60
-  wins if longer). Super startup joins with WP 8. A combo is at most `JUGGLE_LIMIT + 2` = 7 hits (property test).
+  wins if longer). Since WP 8 a caster whose super is running is countered too. A combo is at most `JUGGLE_LIMIT + 2` = 7 hits (property test).
 
 ### 2.5 Hyper meter and one super per race (sim, view)
 
@@ -205,6 +205,18 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   not capture) add +20 once the cooldown is booked, through `meterOnCast`, which returns at once in Classic. `meterLevel`
   carries the new bar count (0..3) when a gain changes it. The parry, perfect-dodge and clash gains are in the table for
   WPs 15, 16 and 18. Nothing spends the meter yet (WP 8).
+- Built in WP 8 (`systems/arcade/super.ts` in the `health` slot, table in `data/arcade.ts`): `Cmd.super` (bit 13; Classic
+  masks it, and the system returns at once) starts a super while held, like the ability buttons, when the controlled
+  character can act, its team has no super running and has 1000 meter. It spends the bar (`meterLevel`), emits
+  `superStarted {caster, superId 0}` and then `hitStop {40, cause 2}` (the freeze), and sets `invulnUntil` to 8 game ticks
+  past the freeze. Every race gets the generic Elemental Burst (the view tints it by the caster's element): an
+  `effect` entity with def `SUPER_DEF` (the index after the abilities), a 160 px band from the caster's centre to the
+  wall on its facing side (vertical when facing north or south), active for the 30 game ticks after the freeze, with a
+  strength-3 hit of base 12 on every sixth (5 hits, through `applyArcadeHit`; translucent and invulnerable victims are
+  missed). The team's `superState` holds the entity id + 1. The caster cannot act until `superEnded {caster}`, and a hit
+  on it meanwhile is a counter hit. The super ends after its 30 ticks, when the caster leaves play (KO or bench, on the
+  next tick), or at once when its hit KOs the victim (after that hit's KO stop, before `died`). Meter gains from its
+  hits apply as for any hit. The super chord (primary and secondary) waits for the buffer WP.
 
 ### 2.6 Tag swap, entrance attack and benched recovery (sim)
 
@@ -457,7 +469,7 @@ that uses them, and measurable by `fun:report`.
 | 5 | `WP-arcade-tooling` (done: report-only gate; `--ai-level` is reserved until WP 10, `fun:compare` and `--replay` are later) | tools | `run-match --ruleset/--team-size/--ai-level`, `tools/sim/fun-metrics.ts`, `fun:report`, `fun-gate.test.ts` (report-only at first), `record-golden --ruleset arcade`, first Arcade golden `tests/fixtures/replays/arcade-1v1.replay.json` | Reducer unit tests on synthetic events; golden verifies | Gate runtime on CI |
 | 6 | `WP-arcade-juice-hits` (done) | view | `RenderView.arcade()`; `event-fx.ts` strength-scaled sparks, working flash (V6), jitter, shake; damage numbers and combo UI in `src/game/hud/` + `Hud.ts` | Fake-sink tests: feedback coverage 100%, reduced motion drops motion only | V6 cause is not known yet (budget a spike) |
 | 7 | `WP-arcade-meter` (done) | sim+view | `arcade/meter.ts` gains, `meterLevel`; meter bar in the HUD | Gain per rule at level 1 and 10 (level-independent); bar pattern cues | Meter too fast or too slow: watch super usage |
-| 8 | `WP-arcade-super-core` | sim | `Cmd.super`; `arcade/super.ts`: freeze 40, invulnerability, generic "Elemental Burst" (the Fire Inferno Beam shape, tinted by element) for all 12 races; `superStarted`/`superEnded` | Freeze and invulnerability ticks, cost, hits and scaling floor, KO during super | One shape for all races is an MVP shortcut |
+| 8 | `WP-arcade-super-core` (done) | sim | `Cmd.super`; `arcade/super.ts`: freeze 40, invulnerability, generic "Elemental Burst" (the Fire Inferno Beam shape, tinted by element) for all 12 races; `superStarted`/`superEnded` | Freeze and invulnerability ticks, cost, hits and scaling floor, KO during super | One shape for all races is an MVP shortcut |
 | 9 | `WP-arcade-super-view` | view | dim, cut-in, camera punch-in, duck, Arcade bindings (X / pad RT) in `bindings.ts`, `gamepad.ts` | Reduced-motion plan tests; binding conflict tests | Readability of the cut-in at 390x844 |
 | 10 | `WP-arcade-ai-basic` | agents | `ObservationView.arcade`; core `ScriptedAI` presses during the opponent's stun and supers on confirm when the meter is full | Agent snapshot round trip; the tournament uses supers (coverage) | AI too strong once it combos: cap at Normal |
 | 11 | `WP-arcade-entry` | app+ui | "Arcade Versus" on the main menu behind `?ff=arcade` (UI flag): pick 1 race each, AI level; `MatchSetup` with `rulesetArcade`, `difficulty: 1`; no XP, capture or save writes; the replay recorder records the flag; Arcade AI as the enemy | e2e `arcade.spec.ts` smoke: start, hit, super, match end | Keep flow.ts story paths untouched |
