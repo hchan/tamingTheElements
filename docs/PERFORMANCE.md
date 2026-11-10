@@ -59,7 +59,16 @@ resimulate several ticks in one 16.6 ms frame.
   (3170 to 3221 B, budget 3250) from its `arcadeView` hook, so `phaser-config` pays nothing (16980 B). The chunk imports
   core and the audio manager as types only, with the event kinds as numbers checked by type or by a test: a value import
   would wrap its `import()` in Vite's preload helper with a dependency list, and loading it from `weather-view` that way
-  had pulled the helper (and two more preload entries for `round-view`) into the Arcade chunks.
+  had pulled the helper (and two more preload entries for `round-view`) into the Arcade chunks. The Arcade tag-team view
+  (WP-arcade-tag-view, 2720 B gzip, budget 2802 = measured + 3%) is a `tag-view` chunk mounted by `weather-view` (2973 to
+  2999 B, budget 3060), set up like the others; it copies the HUD bar geometry and the swap-slot position (pinned to
+  `bars.ts` and `action-bar.ts` by a test), since importing those modules grew `phaser-config`'s export list by about
+  40 B and importing `action-bar.ts` split the shared viewport code into a chunk of its own. To fit the 2v2 picker in
+  `arcade-versus` without raising its budget, the match builder, the Arcade AI wiring and the aim arrow moved to their own
+  `arcade-setup` chunk (1369 B gzip, budget 1410), loaded with the battle: `arcade-versus` went from 3225 to 2974 B with
+  the team-size and partner selects. Load it with `.then(({ name }) => ...)` destructuring: a `Promise.all` of two
+  dynamic imports made Rolldown keep `phaser-config`'s whole namespace (about 80 B). Total 449586 to 453370 B (budget
+  453800, unchanged).
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per

@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) and WP 19 (`WP-arcade-tag`, sim only: the 2v2 tag team, its entrance attack, KO entrance and bench recovery, section 2.6; the 2-pick menu and the entrance view are WP 20) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) WP 19 (`WP-arcade-tag`, sim only: the 2v2 tag team, its entrance attack, KO entrance and bench recovery, section 2.6) and WP 20 (`WP-arcade-tag-view`: the 1v1 or 2v2 pick in Arcade Versus, the team HUD with red life and the tag cooldown, the TAG! call and entrance flash, the touch Tag button and the 2v2 results; section 3) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -241,7 +241,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - If the active character is KO'd, the auto-swap (`deathSystem`) brings the partner in with the entrance attack and
   60 ticks of invulnerability, so nobody loses to the arrival.
 - Built in WP 19 (`systems/swap.ts` and `systems/rest.ts` Arcade branches, `systems/arcade/tag.ts`, table in
-  `data/arcade.ts`): Arcade 2v2 is a `MatchSetup` with two-hero rosters (the 2-pick menu is WP 20). A tag (the swap keys,
+  `data/arcade.ts`): Arcade 2v2 is a `MatchSetup` with two-hero rosters (the 2-pick menu came with WP 20, section 3). A tag (the swap keys,
   held like Classic) needs the active character free as well as out of cast recovery (`isFree`: not stunned,
   block-stunned, dashing, in a super or in weather recovery), so a stunned character cannot tag out of a combo, and books
   `TAG_COOLDOWN_TICKS` = 150 game ticks (also after a KO auto-swap). The partner takes the outgoing character's spot,
@@ -732,6 +732,33 @@ unlock, mute and hidden rules, the voice cap, the KO cut and teardown; an e2e pl
 with sound unlocked (no page errors, 0 synth nodes and 0 listeners after leaving) and checks that a Classic battle never
 loads the chunk. The mix and the feel still need a human listen. The sim and its hashes are untouched.
 
+Built in WP 20 (`WP-arcade-tag-view`, view and UI only; the sim and its hashes are untouched, `src/core/index.ts` only
+exports `TAG_COOLDOWN_TICKS`). Pick: the Arcade Versus picker has a **Team** select (1v1 or 2v2 tag team) first and a
+**Your partner (2v2)** select after your race, disabled (out of the Tab order) in 1v1; a partner equal to your race is
+replaced (Pax, or the first other race). The AI keeps its picked race as the lead and gets a second race drawn from the
+match seed among the races nobody picked (the sim allows mirrors, but two identical bots trade cancelling shots), so a
+seed replays the same teams. The match builder moved to its own lazy chunk `arcade-setup` (`src/game/app/arcade-setup.ts`,
+loaded with the battle; picks in `arcade-pick.ts`): two heroes a side, and in 2v2 one scripted Arcade AI per AI hero, the
+one in play answering (its tag rule is WP 19's), stepping onto the player's row when idle, as the tools' team bot. Team
+HUD (`src/game/hud/tag-view.ts`, its own lazy chunk `tag-view` that the weather view mounts in every Arcade match,
+replays included; it builds nothing with one hero a side; pure rules in `tag-fx.ts`): the red life (rest cap above the
+health) as red dashes on every hero bar (Okabe-Ito reddish purple in high contrast), a gold frame on the active bar,
+under each side's bars "IN Sindarosa", "BENCH Pax 40% +20% red" (or "K.O."), and a 72 px tag-cooldown bar that fills
+with dashes and turns solid gold when ready, beside "TAG 2.4s", "TAG READY" or "NO TAG" (partner down), up to 1.3x on a
+phone; a "TAG" caption over the player's swap slot. `tagIn`: "TAG!" (60 px) on the tagging side, or the incoming name
+after a KO entrance ("PAX IN!", gold; a KO entrance is a `tagIn` whose outgoing hero is dead), scaling in from 1.6x
+over 8 view ticks, shown 60 and fading over the last 12; at the entrance spot a 24-tick flash: a white core for 6
+ticks, a ring growing from 0.5x to 1.3x the fighter's height (a double gold ring after a KO) and three speed lines
+sliding in from the team's side over 10 ticks; live lines "Tag! Pax is in, Sindarosa rests.", "The enemy tagged in
+Lavax.", "Sindarosa is down. Pax steps in.". Reduced motion keeps the words, the call at full size, the core and a static
+ring, and drops the slide, the ring's growth and the scale-in. Input: the tag is the Classic **Swap 1** action (key 3,
+pad LB, unchanged; the key-binding screen keeps its Classic name), labelled Tag in the match, and a touch **Tag** button
+above Weather in 2v2. Results: in 2v2 every hero's HP left or "knocked out" in the last round, read off the render view at
+the match end. Per match in 2v2: one Hud Graphics and up to seven Hud Texts, one Arena Graphics and one Arena Text; one
+Arena `postupdate` listener; all removed with the Arena or the Hud. Not built: an assist call, a portrait per hero on the
+HUD, a tag cooldown in the action bar's sweep (the render view still reports the Classic 250-tick swap cooldown length
+there, so the slot's sweep starts part-filled; the tag view's own bar uses the 150-tick tag cooldown).
+
 ## 4. Fun metrics (automatable)
 
 All metrics come from event streams, so the same code measures bot tournaments, golden replays and human playtest
@@ -823,7 +850,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 17 | `WP-arcade-defence-view` (done: section 3; also the dash and guard keys, pad buttons and touch buttons, the guard bar and the live lines) | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |
 | 18 | `WP-arcade-clash` (done: section 2.9 and section 3) | sim+view | Projectile clash by element, clash burst | 2 |
 | 19 | `WP-arcade-tag` (done: sim only, section 2.6; scripted golden `arcade-tag`; the AI tags when low) | sim | 2v2 setup, swap 150, entrance at the outgoing position, entrance attack, tag combo, rest rate, KO entrance | 3, 4 |
-| 20 | `WP-arcade-tag-view` | view+ui | Entrance flash, red-life styling, 2-pick Arcade menu | 19, 11 |
+| 20 | `WP-arcade-tag-view` (done: section 3; also the team HUD lines, tag cooldown, touch Tag button and 2v2 results) | view+ui | Entrance flash, red-life styling, 2-pick Arcade menu | 19, 11 |
 | 21 | `WP-arcade-supers-fire-air` | sim+data | Inferno Beam and Vortex archetypes and their 6 race variants | 8 |
 | 22 | `WP-arcade-supers-earth-water` | sim+data | Quake Rings and Tidal Wave archetypes and their 6 race variants | 8 |
 | 23 | `WP-arcade-ai-personalities` (done: section 2.11; Rushdown, Zoner and Turtle, Easy/Normal/Hard, Tagger waits for 19) | agents | Personalities, difficulty knobs, dodge and parry from projectile observation | 10, 15, 16, 19 |
@@ -929,7 +956,11 @@ Setup on the live site (https://hchan.github.io/tamingTheElements/): open **Sett
 under Continue: pick your race, the AI's race and the AI level (Easy, Normal or Hard; Easy never supers), then
 **Fight!**. Move with WASD or the arrows, abilities on their keys or the action bar, the super on **X** (gamepad RT, or the
 **Super** button bottom right on touch). A match is best of 3 rounds (a KO or the 90 s timer ends a round; the round announcer and timer view come with WP 14); the results show the round score and offer **Rematch**,
-**Change fighters**, **Download replay** (when recording) and **Main Menu**. Arcade Versus never writes the save (no XP,
+**Change fighters**, **Download replay** (when recording) and **Main Menu**. For a **2v2 tag team**, set **Team** to
+"2v2 tag team" and pick **Your partner (2v2)**; the AI gets a second race too. Tag with **3** (gamepad LB, or the **Tag**
+button on touch): your partner enters at your spot with a free attack, and the benched hero heals back its red life (the
+red dashes on its bar, "+N% red" in the BENCH line under your bars); the tag cooldown is the bar and word beside "TAG".
+A KO'd hero's partner enters at once; a round ends only when both heroes of a side are down. Arcade Versus never writes the save (no XP,
 capture, objectives or garrison change); untick the setting to get the Classic menus back. In a dev build,
 `pnpm dev` and `/?ff=arcade,record,fps` give the same entry without the setting. The recorder keeps the last 5 replays in
 IndexedDB; download them from the results or from Settings > Replay viewer (`#replay`).
@@ -939,7 +970,7 @@ IndexedDB; download them from the results or from Settings > Replay viewer (`#re
 | 0:00-1:30 | One **Classic** battle (Sindarosa vs anyone) | Baseline feeling |
 | 1:30-3:30 | **Arcade Versus** 1v1, same races, AI Normal | Does a hit feel like a hit (stop, spark, push)? |
 | 3:30-5:00 | Arcade, try to: land 3 hits in a combo, build a bar, fire the super | Is the combo counter readable, is the super a moment? |
-| 5:00-7:00 | Arcade 2v2 (once WP 19 is in), tag out at low HP and tag in mid-combo | Does red life make tagging tempting? |
+| 5:00-7:00 | Arcade 2v2 (Team: 2v2 tag team), tag out at low HP and tag in mid-combo | Does red life make tagging tempting? |
 | 7:00-9:00 | Best of 3 vs AI Hard | Do you want a rematch after a loss? |
 | 9:00-10:00 | Fill in the scorecard | |
 

@@ -28,8 +28,9 @@ and a per-screen `document.title` (`routeTitle` in `src/ui/router.ts`).
 - After each navigation the new screen's `h1` takes focus, so the screen is announced and Tab starts at the top.
 - `:focus-visible` draws a 3 px outline on every control (4 px white and amber in high contrast).
 - No keyboard traps: Tab leaves key capture, and the only modal (pause) cycles Tab inside it and closes on Escape.
-- Arcade Versus (`#arcade`, opt-in in Settings > Preview): the picker is three labelled native selects (your race, AI
-  race, AI level; each race named with its element word, never by colour or art alone), a Fight! button and a Back link,
+- Arcade Versus (`#arcade`, opt-in in Settings > Preview): the picker is five labelled native selects in Tab order (Team:
+  1v1 or 2v2 tag team; your race; your partner, disabled and out of the Tab order and the form data in 1v1; AI race;
+  AI level; each race named with its element word, never by colour or art alone), a Fight! button and a Back link,
   and Escape goes back from it. Picker, battle and results share one route, so the route's `backHash` is null (Escape
   in the battle never leaves it) and the screen moves focus to each view's `h1` itself. The battle has a pointer-only
   Super button (bottom right, 72x48 px, out of the Tab order: keyboards press X) that holds the bound super key while
@@ -87,6 +88,16 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   an opaque plate and a white bar outline). The label grows up to 1.4x on a phone. A cast also shows its name as a line
   ("Sunshine!", "Rain!", "Sandstorm!", "Gale!", "Eclipse!") for 1.5 s. Reduced motion keeps the badge, the line (at full
   size, no scale-in) and a steady sky tint, and drops the particles and the tint fade (FUN-DESIGN 2.14 and section 3).
+- Arcade 2v2 tag team (`src/game/hud/tag-view.ts`, WP-arcade-tag-view): under each side's bars, words say who is in
+  ("IN Sindarosa") and the bench's state ("BENCH Pax 40% +20% red", "BENCH Pax K.O."); the active bar has a gold frame
+  (white and thicker in high contrast) and the red life (the rest cap above the health, which a benched hero wins back)
+  is drawn as dashes over the grey rest stroke, so it reads by pattern and word, not colour (high contrast: Okabe-Ito
+  reddish purple). The tag cooldown is a bar that fills with dashes and turns solid when ready, beside its word ("TAG
+  2.4s", "TAG READY", "NO TAG" once the partner is down); the lines grow up to 1.3x on a phone. A "TAG" caption sits over
+  the player's swap slot on the action bar. A tag shows "TAG!" (a KO entrance the incoming name, "PAX IN!", in gold) on
+  the tagging side for 1.2 s and an entrance flash at the spot (white core, ring, speed lines from the team's side; a
+  double gold ring after a KO). Reduced motion keeps the words, the call at full size (no scale-in), the flash and a
+  static ring, and drops the slide and the ring's growth.
 - Arcade clash (`src/game/fx/clash-view.ts`, WP-arcade-clash): two projectiles that meet show a ring at the meeting
   point with a dark rim, so it reads on light and dark arenas; the winner's element colour is the inner, thicker ring and
   the loser's the outer one, and a cancel (both destroyed) adds a white core, so the outcome reads by shape as well as
@@ -128,6 +139,10 @@ Sunshine." on a recast, and "The Gale is over." when it ends (`changedLine` and 
 `src/game/fx/weather-fx.ts`). Their keys include the weather and the side, so a quick counter-weather is not swallowed
 by the 6 s repeat filter.
 
+The Arcade tag view (WP-arcade-tag-view) adds polite lines: "Tag! Pax is in, Sindarosa rests." or "The enemy tagged in
+Lavax." on a tag, "Sindarosa is down. Pax steps in." or "Enemy Fiara is down. Lavax steps in." on a KO entrance (after
+the base "Your elemental was defeated." line; `tagLine` in `src/game/hud/tag-fx.ts`). Keys differ per side and kind.
+
 Pause (Shift+P, gamepad Start, or the Resume button) opens a `role="dialog"` with `aria-modal`, moves focus to Resume,
 cycles Tab inside (`nextFocusIndex`), closes on Escape, restores the previous focus and drops held keys so a key held
 across the dialog is not replayed (`src/game/a11y/pause-dialog.ts`).
@@ -155,8 +170,8 @@ written before the action existed keeps the player's keys: if one of them is alr
 Arcade dash and guard (FUN-DESIGN 2.7, 2.8; WP-arcade-defence-view): the **Dash (Arcade)** action is plain E and the
 **Guard (Arcade)** action plain Q (hold to guard, press to parry; Shift-Q stays the tester cheat), pad RB dashes and LT
 guards. Like the super, they send `Cmd.dash` and `Cmd.guard` only in an Arcade match; in Classic the keys send nothing and
-RB and LT stay the second and third swap (Arcade Versus is 1v1). Both are rebindable with the conflict check, and a save
-that already uses E or Q leaves the new action unbound rather than resetting the map. A double tap of a direction
+RB and LT stay the second and third swap (an Arcade team has one partner, tagged on LB). Both are rebindable with the
+conflict check, and a save that already uses E or Q leaves the new action unbound rather than resetting the map. A double tap of a direction
 dashes too (the sim reads it from the direction presses). On touch screens, Guard and Dash buttons sit above the Super
 button on the right edge (each 72 x 48 px or more, 8 px apart); each holds the action's first bound key while the finger
 is down (a pointer-only control: keyboards press the key, so they are not in the Tab order); an unbound action's button
@@ -166,6 +181,12 @@ Arcade weather (FUN-DESIGN 2.14; WP-arcade-weather-view): the **Weather (Arcade)
 (X has no Classic mapping, so no Classic button changes). It sends `Cmd.weather` only in an Arcade match; it is
 rebindable with the conflict check, and a save that already uses R leaves it unbound. A touch Weather button sits above
 the Dash button, like the others.
+
+Arcade tag (FUN-DESIGN 2.6; WP-arcade-tag-view): in a 2v2 Arcade Versus match the tag is the first swap, unchanged from
+Classic: the **Swap 1** action (key 3, rebindable) and pad LB (`ARCADE_PAD` keeps it; RB, LT and RT are Arcade's dash,
+guard and super). In the match it is labelled Tag: the "TAG" caption over the swap slot, the HUD's tag word, the picker's
+text and a touch **Tag** button above Weather (2v2 only) that holds the Swap 1 key. The key-binding screen keeps the
+Classic name, so Classic menus are unchanged.
 
 ## Tests
 
@@ -180,6 +201,7 @@ the Dash button, like the others.
 | Arcade round announcer: every round event gives a banner and a live line (fake sink), reduced motion keeps the text without the scale-in, live-region lines in the browser, pips by shape, 0 listeners after leaving | `src/game/hud/round-announcer.test.ts`, `src/game/hud/round-view.test.ts`, `tests/e2e/arcade-rounds.spec.ts` |
 | Arcade defence view: every defence event of real duels gives an effect (fake sink, both motion settings), reduced motion drops only motion, parry and guard-break lines, shield and bar by shape; E, Q, pad RB and LT Arcade only, binding conflicts and old saves; touch Guard and Dash buttons; 0 listeners after leaving | `src/game/fx/defence-fx.test.ts`, `src/game/fx/defence-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-defence.spec.ts` |
 | Arcade weather view: every weather event (each kind, new, replaced, renewed, ended) gives its feedback (fake sink), reduced motion drops only the particles and motion, badge by glyph, word, seconds and notched bar, live lines; R and pad X Arcade only, binding conflicts and old saves; touch Weather button; 0 listeners after leaving | `src/game/fx/weather-fx.test.ts`, `src/game/fx/weather-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-weather.spec.ts` |
+| Arcade tag view: team lines, red life by dashes and words, tag cooldown bar and word, TAG! and KO-entrance calls, live lines, reduced motion keeps the call at full size and drops the slide; the picker's Team and partner (Tab order, disabled in 1v1); key 3 and the touch Tag button; 0 listeners after leaving | `src/game/hud/tag-fx.test.ts`, `src/game/hud/tag-view.test.ts`, `tests/e2e/arcade-tag.spec.ts` |
 | Arcade clash burst: every `clash` gives one burst (fake sink), winner colour on top, cancel core, reduced motion keeps a static ring; one pooled Graphics, 0 listeners after leaving | `src/game/fx/clash-fx.test.ts`, `src/game/fx/clash-view.test.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 

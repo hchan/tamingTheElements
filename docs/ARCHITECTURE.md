@@ -298,15 +298,28 @@ up, and takes the called line and live lines from `weatherChanged` and `weatherE
 The defence view mounts the clash burst (`src/game/fx/clash-view.ts`, WP-arcade-clash; its own `clash-view` chunk and
 `codeSplitting` group) in the Arena and hands it the same events: one Graphics made on the first `clash`, a typed-array
 pool of bursts drawn at the overlap centre the event carries, one `postupdate` listener (pure rules in `clash-fx.ts`).
+The weather view mounts the tag-team view (`src/game/hud/tag-view.ts`, WP-arcade-tag-view; its own `tag-view` chunk and
+`codeSplitting` group) first and passes its events through it; with one hero a side it builds nothing. In 2v2 it reads
+every hero off `RenderView.forEachCharacter` (benched and dead included) and the tag cooldown off
+`RenderView.actionBar(team)` (`swapReadyTick` against the game clock, `TAG_COOLDOWN_TICKS` from core) once per view tick,
+and draws in the `Hud` scene the red life (rest cap above the health) as dashes on each bar, a gold frame on the active
+bar, "IN" and "BENCH" lines, and a tag bar and word under each side's bars, and the "TAG!" call; in the Arena the
+entrance flash at the incoming hero's spot from `tagIn` (a KO entrance when the outgoing hero is dead) and a "TAG"
+caption over the swap slot; lines go to the live region (pure rules and the bar geometry, pinned to `bars.ts` by a
+test, in `tag-fx.ts`). One Hud Graphics and seven Texts at most, one Arena Graphics and Text, one `postupdate` listener.
 
 Arcade Versus (`#arcade`, FUN-DESIGN WP 11) is a separate flow, not part of `AppFlow` (`flow.ts`, the story: garrison,
 battle, results, save). `main.ts` adds the route with a dynamic import, so its code is its own `arcade-versus` chunk and
 the menu entry stays small and Phaser-free. The screen (`src/game/app/arcade-versus.ts`, DOM in
-`src/ui/screens/arcade-versus.ts`) runs picker, battle and results inside the one route: `arcadeLaunch`
-(`src/game/app/arcade-setup.ts`) builds a 1v1 `MatchSetup` with `rulesetArcade`, `difficulty: 1`, chapter 1 (no Capture)
-and 0 XP, and the core `ScriptedAI` with its Arcade layer as the enemy (Easy drops its super). The Arena needs nothing new:
-the Arcade HUD, juice, super key and cinematic follow the world flag. The one Arcade-only view in this chunk is the 8-way
-aim arrow (`src/game/fx/aim-view.ts`), handed to the Arena as the launch's `arcadeView` hook: one Graphics drawn once,
+`src/ui/screens/arcade-versus.ts`, picks in `src/game/app/arcade-pick.ts`) runs picker, battle and results inside the
+one route. With the battle it loads the match builder, its own `arcade-setup` chunk: `arcadeLaunch`
+(`src/game/app/arcade-setup.ts`) builds a 1v1 or 2v2 `MatchSetup` with `rulesetArcade`, `difficulty: 1`, chapter 1 (no
+Capture) and 0 XP (in 2v2 the player's two races, and the AI's race plus a second one drawn from the match seed among
+the races nobody picked), and the core `ScriptedAI` with its Arcade layer as the enemy (Easy drops its super; in 2v2 one
+per hero, the one in play answering, as the tools' team bot). The Arena needs nothing new: the Arcade HUD, juice, super
+key and cinematic follow the world flag. The Arcade-only view the builder brings is the 8-way aim arrow
+(`src/game/fx/aim-view.ts`), handed to the Arena as the launch's `arcadeView` hook (which also keeps the render view, so
+the 2v2 results can name every hero's HP or knock-out): one Graphics drawn once,
 moved and turned after each scene update from `RenderView.arcade().aim`, static (no tween, so reduced motion needs no
 variant), removed with the scene. The same hook loads the Arcade audio layers (`src/game/audio/arcade-audio.ts`,
 WP-arcade-audio-layers; its own `arcade-audio` chunk, so Classic never downloads it): they wrap the battle
@@ -316,8 +329,9 @@ in the pure `arcade-cues.ts`), cut the music for 300 ms on a KO, and come off wi
 disconnected, the class `consume` back). The flow has no save store, so it writes no progress,
 XP, capture, objectives or garrison (a repo test and a unit test guard it); the only write is the playtest replay, when
 recording is on. The route is offered when Settings > Arcade Versus (preview) is ticked (the save's `arcadePreview`) or
-with `?ff=arcade` in dev and test builds; otherwise `#arcade` returns to the main menu. Pointer-only Super, Guard and
-Dash buttons over the arena hold the bound key of their action for touch players.
+with `?ff=arcade` in dev and test builds; otherwise `#arcade` returns to the main menu. Pointer-only Super, Guard,
+Dash and Weather buttons over the arena (and Tag in 2v2, the Swap 1 key) hold the bound key of their action for touch
+players.
 
 ## Legacy concept map
 
