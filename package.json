@@ -19,7 +19,7 @@
     "e2e": "playwright test",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
-    "golden:record": "echo \"not yet\" && exit 1",
+    "golden:record": "tsx tools/gen/record-golden.ts",
     "sim:match": "echo \"not yet\" && exit 1",
     "assets:build": "tsx tools/assets/build-assets.ts",
     "format": "echo \"not yet\" && exit 1"
