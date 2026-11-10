@@ -5,7 +5,7 @@ import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { computeDamage } from '../../rules/damage';
 import { Cmd } from '../commands';
 import { createMatch } from '../match';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_STRIDE } from '../state';
+import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_COOLDOWNS, TEAM_STRIDE } from '../state';
 import { step } from '../step';
 import type { SimWorld } from '../world';
 import { directionalBox, isInRangeDirectional, isInRangeExplosion } from './melee';
@@ -74,7 +74,21 @@ describe('melee system', () => {
     expect(s.hp[e]).toBe(want);
     expect(meleeIds(world)).toHaveLength(0);
     expect(frozen(world, p)).toBe(false);
-    expect(Array.from(s.team.slice(TEAM_ACTIVE_COUNTS, TEAM_STRIDE)).every((c) => c === 0)).toBe(true);
+    expect(Array.from(s.teams.slice(TEAM_ACTIVE_COUNTS, TEAM_STRIDE)).every((c) => c === 0)).toBe(true);
+  });
+
+  // Regression: cooldown and active count were written to the per-entity `team` array instead of `teams`.
+  it('a melee cast books its cooldown and count in the per-team block, for both teams', () => {
+    for (const casterTeam of [0, 1] as const) {
+      const { world } = duel('pax', 'pax');
+      const s = world.state;
+      step(world, casterTeam === 0 ? [Cmd.secondary, 0] : [0, Cmd.secondary]);
+      const base = casterTeam * TEAM_STRIDE;
+      expect(s.teams[base + TEAM_COOLDOWNS + 1]).toBeGreaterThan(0);
+      expect(Array.from(s.teams.slice(base + TEAM_ACTIVE_COUNTS, base + TEAM_STRIDE)).reduce((a, b) => a + b, 0)).toBe(1);
+      expect(Array.from(s.team.slice(0, 3))).toEqual([0, 1, casterTeam]);
+      expect(Array.from(s.team.slice(3)).every((t) => t === 0)).toBe(true);
+    }
   });
 
   it('cooldown uses strict >: recast allowed 3000/20 + 1 ticks after the cast', () => {
