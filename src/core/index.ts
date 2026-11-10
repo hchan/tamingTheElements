@@ -27,3 +27,6 @@ export * from './sim/events';
 export * from './sim/step';
 export * from './sim/world';
 export * from './sim/systems/movement';
+export * from './agents/agent';
+export * from './agents/random-bot';
+export * from './agents/replay-agent';
