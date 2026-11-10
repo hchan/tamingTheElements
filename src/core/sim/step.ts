@@ -6,6 +6,7 @@ import { debuffSystem } from './systems/debuffs';
 import { movementSystem } from './systems/movement';
 import { statusSystem } from './systems/status';
 import { restSystem } from './systems/rest';
+import { abilitiesSystem } from './systems/abilities';
 import { swapSystem } from './systems/swap';
 import { meleeSystem } from './systems/melee';
 import { captureSystem } from './systems/capture';
@@ -23,7 +24,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['input', noop],
   ['swap', swapSystem],
   ['movement', movementSystem],
-  ['abilities', noop],
+  ['abilities', abilitiesSystem],
   ['melee', meleeSystem],
   ['projectiles', projectileSystem],
   ['capture', captureSystem],
