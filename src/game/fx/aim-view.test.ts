@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EntityFlag, type RenderArcade, type RenderCharacter, type RenderView } from '@core/index';
 import type Phaser from 'phaser';
-import { AIM_DEPTH, AIM_NAME, AIM_RADIUS_PX, aimPose, mountAimIndicator } from './aim-view';
+import { AIM_DEPTH, AIM_NAME, AIM_RADIUS_PX, aimPose, insidePlayfield, mountAimIndicator } from './aim-view';
 
 const box = { x: 500, y: 300, px: 490, py: 300, w: 80, h: 80 };
 const D = AIM_RADIUS_PX * Math.SQRT1_2;
@@ -91,5 +91,27 @@ describe('mountAimIndicator', () => {
     mountAimIndicator(scene, fakeView([{ team: 0, flags: EntityFlag.alive | EntityFlag.dead | EntityFlag.benched }], 0), () => 1);
     emit('postupdate');
     expect(g['visible']).toBe(false);
+  });
+});
+
+describe('the arrow stays in the playfield', () => {
+  it('insidePlayfield: inside yes, past the action bar (y 640) or the top HUD (y 200) no', () => {
+    expect(insidePlayfield(400)).toBe(true);
+    expect(insidePlayfield(640 - 14)).toBe(true);
+    expect(insidePlayfield(640 - 13)).toBe(false);
+    expect(insidePlayfield(200 + 14)).toBe(true);
+    expect(insidePlayfield(200 + 13)).toBe(false);
+  });
+
+  it('a fighter on the bottom edge aiming south (dir 6) hides the arrow; aiming north shows it', () => {
+    const { scene, g, emit } = fakeScene();
+    // Hero box 80 px at y 560: centre y 600, and the south arrow's centre is 664 (over the action bar).
+    mountAimIndicator(scene, fakeView([{ x: 500, y: 560, px: 500, py: 560 }], 6), () => 1);
+    emit('postupdate');
+    expect(g['visible']).toBe(false);
+    const up = fakeScene();
+    mountAimIndicator(up.scene, fakeView([{ x: 500, y: 560, px: 500, py: 560 }], 2), () => 1);
+    up.emit('postupdate');
+    expect(up.g['visible']).toBe(true);
   });
 });
