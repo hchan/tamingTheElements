@@ -23,6 +23,15 @@ async function tabTo(page: Page, text: string, max = 40): Promise<void> {
   throw new Error(`Tab never reached "${text}" in ${String(max)} presses (last: "${await activeText(page)}")`);
 }
 
+/**
+ * Waits until the screen's async content has rendered: Settings (and other save-backed screens) show "Loading..." until
+ * the IndexedDB load resolves, and Tab pressed before that only cycles the controls already there (a real race).
+ */
+async function loaded(page: Page): Promise<void> {
+  await page.locator('#menu h1').waitFor();
+  await expect(page.locator('#menu').getByText('Loading...', { exact: true })).toHaveCount(0);
+}
+
 async function seededMenu(page: Page): Promise<void> {
   await seedViaGameMaster(page, fixture('v0-ch3'));
   await page.goto('/?seed=7');
@@ -86,7 +95,7 @@ test.describe('keyboard-only menu navigation', () => {
       await seededMenu(page);
       await page.evaluate(`window.location.hash = '#${route}'`);
       await waitForRoute(page, `#${route}`);
-      await page.locator('#menu h1').waitFor();
+      await loaded(page);
       await tabTo(page, 'Back', 60);
       await page.keyboard.press('Enter');
       await waitForRoute(page, '#main');
@@ -98,6 +107,7 @@ test.describe('keyboard-only menu navigation', () => {
     await tabTo(page, 'Settings');
     await page.keyboard.press('Enter');
     await waitForRoute(page, '#settings');
+    await loaded(page);
     await tabTo(page, 'Reduce motion');
     await page.keyboard.press('Space');
     await expect(page.getByLabel('Reduce motion')).toBeChecked();

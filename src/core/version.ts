@@ -35,5 +35,10 @@
  *    too) in the Arcade team block (`prevCmd`, `pressTick`, the new `pressUsed`); a primary, secondary or super press
  *    that cannot run at once runs on the first tick it can within 8 game ticks, once; primary and secondary within 3
  *    ticks are a super press when a bar is there (WP-arcade-buffer).
+ * 12: Arcade only; Classic hashes unchanged. Rounds: the `cleanup` slot runs `arcadeRound` (intro 90 ticks, fight with
+ *    a 4500 game-tick timer, KO with 60 ticks of half-speed slow motion after the KO hit-stop, round end 60), best of 3
+ *    (`matchEnded` after 2 round wins, a draw round scores for both), time over by roster HP per mille, a full reset
+ *    between rounds (meters carry over), `roundStarted`/`fight`/`ko`/`timeOver`/`roundEnded`; nobody acts or is hit
+ *    outside `fight`; a KO keeps the damage multiplier; the Arcade world block gains `roundWinner` (WP-arcade-rounds).
  */
-export const SIM_VERSION = 11;
+export const SIM_VERSION = 12;

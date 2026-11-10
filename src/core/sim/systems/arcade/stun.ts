@@ -1,7 +1,7 @@
 import {
   COMBO_STUN_CAP_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP, MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason,
 } from '../../../data/arcade';
-import { isArcade, now } from '../../clock';
+import { inFight, isArcade, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
 import {
   ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, MAX_ENTITIES, type SimState,
@@ -13,9 +13,12 @@ export function isStunned(s: SimState, id: number): boolean {
   return isArcade(s) && (s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) > now(s);
 }
 
-/** True while `id` is invulnerable in Arcade: projectiles pass through it and melee does not touch it. */
+/**
+ * True while `id` is invulnerable in Arcade: projectiles pass through it and melee does not touch it. Outside the
+ * `fight` phase (intro, KO, round end) everyone is.
+ */
 export function isInvulnerable(s: SimState, id: number): boolean {
-  return isArcade(s) && (s.arcade[id * ARCADE_E + ArcadeE.invulnUntil] ?? 0) > now(s);
+  return isArcade(s) && ((s.arcade[id * ARCADE_E + ArcadeE.invulnUntil] ?? 0) > now(s) || !inFight(s));
 }
 
 /**
@@ -30,11 +33,11 @@ export function inSuper(s: SimState, id: number): boolean {
 
 /**
  * Whether `id` may move or cast (FUN-DESIGN 2.1). Classic: not frozen, exactly the old check. Arcade: also not
- * stunned and not casting a super (guard, dash recovery and the round phase join with their work packages).
+ * stunned, not casting a super and in the `fight` phase (guard and dash recovery join with their work packages).
  */
 export function canAct(world: SimWorld, id: number): boolean {
   const s = world.state;
-  return ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && !isStunned(s, id) && !inSuper(s, id);
+  return ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && !isStunned(s, id) && !inSuper(s, id) && inFight(s);
 }
 
 /** Ends the victim's combo early: no stun, a fresh juggle and stun budget, RECOVERY_INVULN_TICKS of invulnerability. */

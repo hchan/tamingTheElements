@@ -13,6 +13,7 @@ import { advanceGameClock, isArcade, isFrozen, now } from './clock';
 import { Cmd, inputMaskFor } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
+import { skipIntro } from './systems/arcade/round-testkit';
 import { createSnapshotBuf, restore, snapshot, SnapshotRing } from './snapshot';
 import {
   ARCADE_E, ARCADE_LENGTH, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_W, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW,
@@ -35,7 +36,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(14 * MAX_ENTITIES + 16 * TEAM_COUNT + 8);
+    expect(ARCADE_LENGTH).toBe(14 * MAX_ENTITIES + 16 * TEAM_COUNT + 9);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -86,7 +87,7 @@ describe('game clock', () => {
   });
 
   it('freeze gate: only W.tick advances; no other state changes and cooldowns resume in game time', () => {
-    const w = createMatch(ARCADE);
+    const w = skipIntro(createMatch(ARCADE));
     const s = w.state;
     step(w, [Cmd.primary, 0]);
     const ready = s.abil[cooldownIdx(0, 0)] ?? 0;
@@ -177,7 +178,7 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
     setup: MatchSetup, inputs: Inputs, at: number, n: number, prep?: (s: SimState) => void,
   ): SimEvent[] => {
     const c = createMatch(setup);
-    const a = createMatch({ ...setup, flags: { ...setup.flags, rulesetArcade: true } });
+    const a = skipIntro(createMatch({ ...setup, flags: { ...setup.flags, rulesetArcade: true } }));
     prep?.(c.state);
     prep?.(a.state);
     const ca = stateArrays(c.state);
@@ -194,14 +195,18 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       const evs = step(a, [p, q]);
       all.push(...evs);
       const cevs = step(c, [p, q]);
+      // A death diverges too: Arcade keeps the multiplier and its round system takes over (KO, rounds; FUN-DESIGN 2.10).
       diverged ||=
-        evs.some((e) => e.kind === SimEventKind.hitConfirmed) ||
+        evs.some((e) => e.kind === SimEventKind.hitConfirmed || e.kind === SimEventKind.died) ||
         cevs.some((e) => e.kind === SimEventKind.blocked) ||
         stunned(a.state) ||
         aimedDiagonally(a.state);
       if (!diverged) expect(strip(classicPart(evs))).toEqual(strip(cevs));
       const stops = evs.filter((e) => e.kind === SimEventKind.hitStop).map((e) => e['ticks'] ?? 0);
-      expect(stops.length).toBe(evs.filter((e) => e.kind === SimEventKind.hitConfirmed).length);
+      // Every hit stops the clock; a KO that no hit caused (the round's `ko`) adds the round's KO stop.
+      const hits = evs.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
+      expect(stops.length).toBeGreaterThanOrEqual(hits);
+      expect(stops.length).toBeLessThanOrEqual(hits + evs.filter((e) => e.kind === SimEventKind.ko).length);
       let frozen = 0;
       while (isFrozen(a.state)) {
         expect(step(a, [p, q])).toEqual([]);
@@ -262,7 +267,7 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
     const duel = { ...ARCADE, p1: [{ character: characterId('echo'), xp: 1 }], p2: [{ character: characterId('pax'), xp: 1 }] };
     const interval = (ABILITIES_B.find((d) => d.id === 'hurricane')?.damageIntervalTicks ?? 0) + 1;
     for (const at of [3, 5, 9]) {
-      const w = createMatch(duel);
+      const w = skipIntro(createMatch(duel));
       const s = w.state;
       s.x[0] = 500; s.y[0] = 300; s.dir[0] = 0;
       const hits: [number, number][] = [];

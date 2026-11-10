@@ -7,6 +7,7 @@ import { Cmd, type Command } from '../../commands';
 import { SimEventKind } from '../../events';
 import { hash } from '../../hash';
 import { createMatch, type MatchSetup } from '../../match';
+import { skipIntro } from './round-testkit';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../state';
 import { step } from '../../step';
@@ -28,7 +29,7 @@ function duel(caster = 'sindarosa', arcade = true, victim = 'pax'): SimWorld {
     p1: [{ character: characterId(caster), xp: 1 }],
     p2: [{ character: characterId(victim), xp: 1 }],
   };
-  const world = createMatch(setup);
+  const world = skipIntro(createMatch(setup));
   const s = world.state;
   s.x[0] = 500; s.y[0] = 400; s.x[1] = 1100; s.y[1] = 130;
   s.hp[1] = 10_000;

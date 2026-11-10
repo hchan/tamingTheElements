@@ -167,7 +167,8 @@ describe('feedback coverage (FUN-DESIGN section 4): every hitConfirmed gets a fl
   it('the matches land light, medium and heavy hits', () => {
     const hits = matches.flat().filter((e) => e.kind === SimEventKind.hitConfirmed);
     expect(hits.length).toBeGreaterThan(10);
-    expect(new Set(hits.map((h) => h.strength))).toEqual(new Set([0, 1, 2]));
+    // Light, medium and heavy at least (best-of-3 matches run long enough for a chord super, strength 3, too).
+    expect([...new Set(hits.map((h) => h.strength))]).toEqual(expect.arrayContaining([0, 1, 2]));
   });
 
   for (const [m, events] of matches.entries()) for (const reduced of [false, true]) {

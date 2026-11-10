@@ -12,6 +12,7 @@ import { Cmd, type Command } from '../../commands';
 import { EventSink, SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
 import { createMatch, type MatchSetup } from '../../match';
+import { skipIntro } from './round-testkit';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, EntityKind } from '../../state';
 import { step } from '../../step';
@@ -33,7 +34,7 @@ function duel(caster = 'sindarosa', victim = 'pax', meter = METER_BAR, arcade = 
     p1: [caster, ...bench].map((c) => ({ character: characterId(c), xp: 1 })),
     p2: [{ character: characterId(victim), xp: 1 }],
   };
-  const world = createMatch(setup);
+  const world = skipIntro(createMatch(setup));
   const s = world.state;
   s.x[0] = 400;
   s.x[1 + bench.length] = 800;
@@ -221,7 +222,7 @@ describe('Elemental Burst (the Inferno Beam shape)', () => {
 });
 
 describe('KO during a super', () => {
-  it('a hit that KOs the victim takes the KO stop and ends the super at once, before the death and the match end', () => {
+  it('a hit that KOs the victim takes the KO stop and ends the super at once, before the death and the round KO', () => {
     const world = duel();
     const s = world.state;
     s.hp[1] = 1;
@@ -229,7 +230,7 @@ describe('KO during a super', () => {
     const tail = ev.slice(ev.findIndex((e) => e.kind === SimEventKind.hitConfirmed));
     const kinds = tail.filter((e) => e.kind !== SimEventKind.meterLevel && e.kind !== SimEventKind.damage).map((e) => e.kind);
     expect(kinds).toEqual([
-      SimEventKind.hitConfirmed, SimEventKind.hitStop, SimEventKind.superEnded, SimEventKind.died, SimEventKind.matchEnded,
+      SimEventKind.hitConfirmed, SimEventKind.hitStop, SimEventKind.superEnded, SimEventKind.died, SimEventKind.ko,
     ]);
     expect(of(tail, SimEventKind.hitStop)[0]).toMatchObject({ ticks: KO_HIT_STOP_TICKS, cause: HitStopCause.ko });
     expect(s.arcade[SUPER_STATE(0)]).toBe(0);

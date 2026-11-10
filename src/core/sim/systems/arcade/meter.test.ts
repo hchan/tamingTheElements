@@ -10,6 +10,7 @@ import { Cmd } from '../../commands';
 import { EventSink, SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
 import { createMatch, type MatchSetup } from '../../match';
+import { skipIntro } from './round-testkit';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import { step } from '../../step';
 import type { SimWorld } from '../../world';
@@ -28,7 +29,7 @@ function duel(attacker: string, victim: string, level: 1 | 10, arcade = true): S
     p1: [{ character: characterId(attacker), xp }],
     p2: [{ character: characterId(victim), xp }],
   };
-  const world = createMatch(setup);
+  const world = skipIntro(createMatch(setup));
   // Far apart, so a cast cannot hit on the tick it is checked.
   world.state.x[0] = 100;
   world.state.x[1] = 1100;

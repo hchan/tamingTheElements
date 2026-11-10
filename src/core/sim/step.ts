@@ -14,15 +14,16 @@ import { projectileSystem } from './systems/projectile';
 import { endSystem } from './systems/end';
 import { arcadeInputSystem } from './systems/arcade/input';
 import { arcadeSuperSystem } from './systems/arcade/super';
+import { arcadeRoundSystem } from './systems/arcade/round';
 import { World as W } from './state';
-import { advanceGameClock, isFrozen } from './clock';
+import { advanceGameClock, clockHeld } from './clock';
 import type { SimWorld } from './world';
 
 type System = (world: SimWorld, cmds: readonly [Command, Command], sink: EventSink) => void;
 
 const noop: System = () => undefined;
 
-/** Leading SYSTEMS entries that run even while an Arcade freeze holds the game clock: just `input`. */
+/** Leading SYSTEMS entries that run even while an Arcade freeze or KO slow motion holds the game clock: just `input`. */
 export const UNFROZEN_SYSTEMS = 1;
 
 /** Fixed system order; systems not yet implemented are no-ops. */
@@ -40,14 +41,14 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['debuffs', debuffSystem],
   ['status', statusSystem],
   ['rest', restSystem],
-  ['cleanup', noop],
+  ['cleanup', arcadeRoundSystem],
   ['end', endSystem],
 ];
 
 /**
  * Advances the world one 50 Hz tick and returns the events it produced. The first UNFROZEN_SYSTEMS slots (`input`) run
- * every tick; while an Arcade freeze holds the game clock (`isFrozen`, never true in Classic) every other system is
- * skipped and the game clock stays put. `W.tick` always advances.
+ * every tick; while an Arcade freeze or a KO slow-motion hold stops the game clock (`clockHeld`, never true in Classic)
+ * every other system is skipped and the game clock stays put. `W.tick` always advances.
  */
 export function step(world: SimWorld, cmds: readonly [Command, Command]): readonly SimEvent[] {
   const s = world.state;
@@ -55,7 +56,7 @@ export function step(world: SimWorld, cmds: readonly [Command, Command]): readon
   const sink = new Sink(w[W.tick] ?? 0);
   let frozen = false;
   for (const [i, [, system]] of SYSTEMS.entries()) {
-    if (i === UNFROZEN_SYSTEMS) frozen = isFrozen(s);
+    if (i === UNFROZEN_SYSTEMS) frozen = clockHeld(s);
     if (frozen) break;
     system(world, cmds, sink);
   }

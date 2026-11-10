@@ -2,6 +2,7 @@ import type { Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
 import { EntityFlag, EntityKind, MAX_ENTITIES } from '../state';
 import type { SimWorld } from '../world';
+import { isArcade } from '../clock';
 import { nextAliveTeammate, performSwap } from './swap';
 
 /**
@@ -26,7 +27,8 @@ export function deathSystem(
       continue;
     const wasActive = (f & EntityFlag.benched) === 0;
     s.hp[id] = 0;
-    s.dmgMult[id] = 0;
+    // Arcade keeps the damage multiplier: the next round (arcade/round.ts) brings the character back with it.
+    if (!isArcade(s)) s.dmgMult[id] = 0;
     // Stays `alive` (slot occupied); `dead|benched` take it out of play and out of every hit test.
     s.flags[id] = f | EntityFlag.dead | EntityFlag.benched;
     s.w[id] = 0;

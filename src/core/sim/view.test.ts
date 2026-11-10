@@ -5,6 +5,7 @@ import { EventSink } from './events';
 import { createMatch, type MatchSetup } from './match';
 import { ABILITY_DEFS } from './systems/projectile';
 import { applyArcadeHit } from './systems/arcade/hit';
+import { skipIntro } from './systems/arcade/round-testkit';
 import { createRenderView, type RenderCharacter } from './view';
 import { SIM_VERSION } from '../version';
 
@@ -22,7 +23,7 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
   });
 
   it('reports the freeze, the live combo, the meters and the victim stun after a hit, reusing one object', () => {
-    const world = createMatch(match(true));
+    const world = skipIntro(createMatch(match(true)));
     const view = createRenderView(world);
     const before = view.arcade();
     expect(before).toMatchObject({ frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0] });

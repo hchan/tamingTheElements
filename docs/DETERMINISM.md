@@ -125,6 +125,12 @@ the rest of the state. The input buffer (`arcade/buffer.ts`) is state too: the t
 presses (`pressUsed`), all Int32. `bufferedCmd` only reads them, so every cast system sees the same command for the
 tick; a snapshot taken while a press is pending restores it, and a replay of the same commands fires it on the same
 tick.
+KO slow motion (`arcade/round.ts`) is the same gate: for the 60 ticks before `slowMoUntil` (a `W.tick` deadline)
+`isSlowMoHold` is true on every second tick, so `step` runs only the `input` slot there and the game clock advances at
+half speed (`clockHeld` = frozen or held). Round phases, the timer and round wins are Int32 in the Arcade world and team
+blocks; phase deadlines are `W.tick` values, the timer counts game ticks, the time-over score is
+`Math.floor(hp * 1000 / maxHp)` summed per roster (an IEEE-exact multiply and divide), and the reset between rounds writes
+fixed start values (and clears the buffered presses), so a snapshot anywhere in a round, the KO or a reset restores to the same future.
 
 ## Cross-browser golden replays
 

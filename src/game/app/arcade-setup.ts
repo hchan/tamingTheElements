@@ -94,6 +94,8 @@ export type ArcadeOutcome = 'win' | 'lose' | 'draw';
 export interface ArcadeResult {
   readonly outcome: ArcadeOutcome;
   readonly pick: ArcadePick;
+  /** Round wins of the player and the AI (best of 3); absent if the sim did not report them. */
+  readonly rounds?: readonly [number, number];
   /** The recorded replay (recording on and nothing invalidated it). */
   readonly replay?: ReplayFile;
 }
@@ -117,7 +119,7 @@ export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOpti
       const replay = recorder?.finish();
       if (replay) void o.replays.add(replay).catch(() => undefined);
       const outcome: ArcadeOutcome = end.winner === 0 ? 'win' : end.winner === 1 ? 'lose' : 'draw';
-      o.onResult({ outcome, pick, ...(replay ? { replay } : {}) });
+      o.onResult({ outcome, pick, ...(end.rounds ? { rounds: end.rounds } : {}), ...(replay ? { replay } : {}) });
     },
   };
 }

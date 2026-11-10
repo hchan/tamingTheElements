@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim) and WP 27 (`WP-arcade-8way-aim`) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -280,6 +280,21 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - The announcer is view-only: big text "ROUND 1", "FIGHT!", "K.O.", "TIME", "PERFECT", plus lines in the existing
   live region (`src/game/a11y/announcer.ts`). There are no voice assets (out of scope); the punch comes from audio
   layers (section 3).
+- Built in WP 13 (`systems/arcade/round.ts` in the `cleanup` slot, table in `data/arcade.ts`): `ArcadeW.phase` is a
+  `RoundPhase` (intro 0, fight 1, ko 2, roundEnd 3, over 4). A fresh Arcade world is round 0 in `intro`; the first tick
+  starts round 1 (`roundStarted`), and `fight` comes on the 90th tick after it, so actions start on tick 91. Phase
+  deadlines (`phaseUntil`, `slowMoUntil`) are `W.tick` values and the round timer counts fight game ticks. Outside
+  `fight` nobody can act (`canAct`), swap or be hit (`isInvulnerable`). A wipe (`survivorsOf` 0; both: a draw round)
+  emits `ko {team (the KO'd team, -1 for both), perfect}` after `died`; the hit path's KO stop holds the game (a KO that
+  no hit caused gets the stop from the round instead), then 60 ticks of slow motion (`isSlowMoHold`: the freeze gate holds
+  every second tick, so the game clock and every system run at half speed), and `roundEnded {winner, won0, won1}` 120
+  ticks after the stop. Time over emits `timeOver` and `roundEnded` on the same tick. `roundEnd` lasts 60 ticks, then the
+  next round resets every character (full HP and rest cap, start position and facing, roster first active, base speed,
+  no statuses, cooldowns, active counts, stun or invulnerability, every other entity freed after live combos and
+  supers end with their events; meter and round wins carry over) and runs its intro, or the phase becomes `over` and
+  `endSystem` emits `matchEnded` with `won0`/`won1` in the same tick. `matchWinner` reads the round wins in Arcade. A KO
+  keeps the character's damage multiplier (Classic zeroes it), since the next round brings it back.
+  `ObservationView.arcade.phase` gives the AI the phase. The view (announcer, timer) is WP 14.
 
 ### 2.11 AI personalities and difficulty (agents, outside SimState)
 
@@ -327,8 +342,9 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   (an edge feeds one chord), and held primary and secondary are masked while it is pending, so the chord is only the
   super (without a bar it stays two attacks). Dash and guard edges are recorded for WPs 15 and 16, which consume them.
   The Arcade AI drops a press that would complete a chord by accident (`avoidChord`, from the new `ArcadeView.prevCmd`,
-  `primaryAge` and `secondaryAge`), so Easy still never supers. Intro-phase buffering arrives with `canAct`'s phase
-  check (WP 13).
+  `primaryAge` and `secondaryAge`), so Easy still never supers. Intro-phase buffering came with `canAct`'s phase check
+  (WP 13): a press in the last 8 game ticks of an intro runs on the first fight tick; the reset between rounds clears
+  `pressTick`, `pressUsed` and the direction presses (`prevCmd` stays, so a held button is no new press).
 - **8-way aim:** in Arcade, the facing used for casting is `dir8FromSigns` of the held input (Classic keeps 4-way
   `facingFor`). The projectile view rotates each bullet to its dir8; character reels stay 4-way.
 - Built in WP 27 (`systems/arcade/aim.ts`): Arcade movement stores the dir8 of the held input, plus one, in the new
@@ -532,7 +548,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | # | WP | Kind | Scope | Depends on |
 |---|---|---|---|---|
 | 12 | `WP-arcade-buffer` (done: section 2.12; windows count game ticks) | sim | Input buffer 8 ticks, super chord 3, edge tests | 1 |
-| 13 | `WP-arcade-rounds` | sim | Phases, timer, best of 3, KO slow-motion, time-over rule, `matchEnded` after 2 wins, round events | 2 |
+| 13 | `WP-arcade-rounds` (done: section 2.10) | sim | Phases, timer, best of 3, KO slow-motion, time-over rule, `matchEnded` after 2 wins, round events | 2 |
 | 14 | `WP-arcade-announcer-view` | view | Round intro, timer HUD, KO, TIME, PERFECT text, live-region lines | 13 |
 | 15 | `WP-arcade-dash` | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |
 | 16 | `WP-arcade-guard-parry` | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
@@ -644,7 +660,7 @@ Setup on the live site (https://hchan.github.io/tamingTheElements/): open **Sett
 (preview)** and **Record playtests (kept on this device only)**, press **Save**. The main menu now has **Arcade Versus**
 under Continue: pick your race, the AI's race and the AI level (Easy never supers; Normal is the cap for now), then
 **Fight!**. Move with WASD or the arrows, abilities on their keys or the action bar, the super on **X** (gamepad RT, or the
-**Super** button bottom right on touch). One KO ends the fight (rounds come with WP 13); the results offer **Rematch**,
+**Super** button bottom right on touch). A match is best of 3 rounds (a KO or the 90 s timer ends a round; the round announcer and timer view come with WP 14); the results show the round score and offer **Rematch**,
 **Change fighters**, **Download replay** (when recording) and **Main Menu**. Arcade Versus never writes the save (no XP,
 capture, objectives or garrison change); untick the setting to get the Classic menus back. In a dev build,
 `pnpm dev` and `/?ff=arcade,record,fps` give the same entry without the setting. The recorder keeps the last 5 replays in

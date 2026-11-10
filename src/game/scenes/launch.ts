@@ -11,6 +11,8 @@ export interface MatchEnd {
   readonly activeSlot: number;
   /** Roster indices (within team 1) of captured opponents. */
   readonly capturedIndices: readonly number[];
+  /** Arcade only: round wins of team 0 and team 1 (best of 3, FUN-DESIGN 2.10), from `matchEnded`. */
+  readonly rounds?: readonly [number, number];
 }
 
 /** Live state of a replay playing in the Arena, for the viewer's status line. */

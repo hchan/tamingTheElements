@@ -111,6 +111,14 @@ function startSuper(world: SimWorld, sink: EventSink, team: number): void {
   hitStop(world, sink, caster, SUPER_FREEZE_TICKS, HitStopCause.super);
 }
 
+/** Ends both teams' live supers (the round reset, arcade/round.ts) with `superEnded`. */
+export function endLiveSupers(world: SimWorld, sink: EventSink): void {
+  for (let team = 0; team < TEAM_COUNT; team++) {
+    const fx = (world.state.arcade[stateIndex(team)] ?? 0) - 1;
+    if (fx >= 0) endSuper(world, sink, team, fx);
+  }
+}
+
 /**
  * The `health` slot (FUN-DESIGN 2.1), `arcadeSuper`: live supers run first, then `Cmd.super` (held, buffered or a
  * primary and secondary chord, see arcade/buffer.ts) starts new ones (team 0, then team 1); a start uses the super

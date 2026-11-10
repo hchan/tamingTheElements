@@ -117,6 +117,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         heading: OUTCOME_HEADINGS[r.outcome],
         summary:
           `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. ` +
+          (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : '') +
           'Arcade Versus saves nothing: no XP, no capture, no progress.',
         onRematch: startBattle,
         onChange: showPick,

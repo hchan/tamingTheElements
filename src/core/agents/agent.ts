@@ -14,7 +14,7 @@ import {
   type SimState,
 } from '../sim/state';
 import type { SimWorld } from '../sim/world';
-import { isArcade, now } from '../sim/clock';
+import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
@@ -61,6 +61,8 @@ export interface ArcadeView {
   readonly oppCombo: number;
   /** This side's super is running (its caster cannot act until it ends). */
   readonly superActive: boolean;
+  /** Round phase (a `RoundPhase`, FUN-DESIGN 2.10): only `fight` (1) lets anyone act. */
+  readonly phase: number;
   /**
    * This side's last command as the sim recorded it, and the game ticks since its last primary and secondary press (-1:
    * none, or used by a super chord), so an agent can see whether a press would complete a chord (FUN-DESIGN 2.12).
@@ -163,6 +165,7 @@ function arcadeViewOf(
     combo: team(side, ArcadeT.comboHits),
     oppCombo: team(1 - side, ArcadeT.comboHits),
     superActive: team(side, ArcadeT.superState) !== 0,
+    phase: roundPhase(s),
     prevCmd: team(side, ArcadeT.prevCmd),
     primaryAge: pressAge(s, side, Press.primary),
     secondaryAge: pressAge(s, side, Press.secondary),
