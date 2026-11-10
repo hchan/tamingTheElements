@@ -7,6 +7,7 @@ function recorder(): { log: string[]; sink: CinematicSink } {
   return {
     log,
     sink: {
+      clear: () => log.push('clear'),
       background: (k) => log.push(`bg:${k}`),
       header: (t) => log.push(`header:${t}`),
       headerDone: () => log.push('headerDone'),

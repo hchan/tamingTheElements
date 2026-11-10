@@ -21,6 +21,7 @@ export class Cinematic extends Phaser.Scene {
   private runner: CinematicRunner | undefined;
   private cleanups: (() => void)[] = [];
   private sprites = new Map<string, Phaser.GameObjects.Image>();
+  private backgrounds: Phaser.GameObjects.Image[] = [];
   private header: Phaser.GameObjects.Text | undefined;
   private caption: Phaser.GameObjects.Text | undefined;
   private finished = false;
@@ -64,9 +65,18 @@ export class Cinematic extends Phaser.Scene {
 
   private sink(): CinematicSink {
     return {
+      clear: () => {
+        this.tweens.killAll();
+        for (const img of [...this.sprites.values(), ...this.backgrounds]) img.destroy();
+        this.sprites.clear();
+        this.backgrounds = [];
+        this.header?.setText('');
+        this.caption?.setText('');
+      },
       background: (key) => {
         const { width, height } = this.scale;
-        if (this.textures.exists(key)) this.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1);
+        if (!this.textures.exists(key)) return;
+        this.backgrounds.push(this.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1));
       },
       header: (text) => { this.header?.setText(text); },
       headerDone: () => { this.header?.setText(''); },
@@ -136,6 +146,7 @@ export class Cinematic extends Phaser.Scene {
     this.events.removeAllListeners(Phaser.Scenes.Events.DESTROY);
     this.tweens.killAll();
     this.sprites.clear();
+    this.backgrounds = [];
     this.runner = undefined;
     this.header = undefined;
     this.caption = undefined;
