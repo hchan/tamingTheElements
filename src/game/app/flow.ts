@@ -84,6 +84,11 @@ export class AppFlow {
 
   constructor(private readonly deps: FlowDeps) {}
 
+  /** Battle/opponent seed: `?seed=` in dev and test builds, else the clock. */
+  private seed(): number {
+    return this.deps.flags.seed ?? this.deps.now() >>> 0;
+  }
+
   screens(): ScreenTable {
     const base = defaultScreens();
     const { navigate } = this.deps;
@@ -99,9 +104,9 @@ export class AppFlow {
         alert: (m) => {
           window.alert(m);
         },
-        seed: () => this.deps.now() >>> 0,
+        seed: () => this.seed(),
         onMatch: (ui) => {
-          this.pending = { ui, seed: this.deps.now() >>> 0 };
+          this.pending = { ui, seed: this.seed() };
         },
         avatarUrl: (sprite) => `url("img/map/${encodeURIComponent(sprite)}.png")`,
       }),
