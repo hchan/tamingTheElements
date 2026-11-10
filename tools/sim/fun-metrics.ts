@@ -4,7 +4,7 @@ import { SimEventKind } from '../../src/core/sim/events';
 import type { SimEvent } from '../../src/core/sim/events';
 
 /** Arcade event kinds the reducer reads beyond `SimEventKind` (docs/FUN-DESIGN.md 2.1 table). */
-const K = { guarded: 43, parried: 44, dashed: 46, perfectDodge: 47, clash: 48, tagIn: 52 } as const;
+const K = { guarded: 43, parried: 44, dashed: 46, perfectDodge: 47, clash: 48, tagIn: 52, weatherChanged: 59 } as const;
 
 export const TICKS_PER_SECOND = 50;
 
@@ -49,6 +49,11 @@ export interface FunMetrics {
   readonly supers: number;
   readonly clashes: number;
   readonly defence: number;
+  /** The `defence` split: `guarded`, `parried` and `perfectDodge`; and `weatherChanged` (weather casts). */
+  readonly guards: number;
+  readonly parries: number;
+  readonly dodges: number;
+  readonly weathers: number;
 }
 
 export function percentile(values: readonly number[], p: number): number {
@@ -73,7 +78,7 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
   const combos: number[] = [];
   const dmg: Record<string, number> = {};
   const recovered: [number, number, number] = [0, 0, 0];
-  const count = { dashes: 0, tags: 0, supers: 0, clashes: 0, defence: 0 };
+  const count = { dashes: 0, tags: 0, supers: 0, clashes: 0, defence: 0, guards: 0, parries: 0, dodges: 0, weathers: 0 };
   let diff = 0; // damage dealt by team 0 minus team 1
   let lead = 0;
   let leadChanges = 0;
@@ -132,9 +137,19 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
         count.clashes++;
         break;
       case K.guarded:
+        count.defence++;
+        count.guards++;
+        break;
       case K.parried:
+        count.defence++;
+        count.parries++;
+        break;
       case K.perfectDodge:
         count.defence++;
+        count.dodges++;
+        break;
+      case K.weatherChanged:
+        count.weathers++;
         break;
       default:
     }
@@ -193,6 +208,10 @@ export interface FunSummary {
   readonly supers: number;
   readonly clashes: number;
   readonly defence: number;
+  readonly guards: number;
+  readonly parries: number;
+  readonly dodges: number;
+  readonly weathers: number;
 }
 
 /** Pools per-match metrics into the section 4 table values (medians and percentiles over matches or combos). */
@@ -231,5 +250,9 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
     supers: sum((m) => m.supers),
     clashes: sum((m) => m.clashes),
     defence: sum((m) => m.defence),
+    guards: sum((m) => m.guards),
+    parries: sum((m) => m.parries),
+    dodges: sum((m) => m.dodges),
+    weathers: sum((m) => m.weathers),
   };
 }

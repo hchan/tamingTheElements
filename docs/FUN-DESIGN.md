@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line) and WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -250,8 +250,8 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - **Cancels:** on a confirmed hit, a dash can cancel the attacker's remaining melee recovery within 10 ticks of the
   confirm (the dash-cancel combo route).
 - Built in WP 15 (`systems/arcade/dash.ts`, table in `data/arcade.ts`): `Cmd.dash` is bit 11 (Classic masks it); its
-  key (E), pad button (RB) and touch button came with the defence view (WP 17, section 3), and the AI does not dash on purpose yet (WP 23; its
-  movement can double-tap by accident: 87 dashes and 21 perfect dodges in the 24 `fun:report` matches). The buffer
+  key (E), pad button (RB) and touch button came with the defence view (WP 17, section 3), and the AI dashes on purpose since WP 23
+  (section 2.11; before it only double-tapped by accident: 87 dashes and 21 perfect dodges in the 24 `fun:report` matches). The buffer
   records the dash press like the attacks (8 game ticks, used once); a rising direction edge (the lowest bit when
   several rise) that repeats `lastDir` 0..12 game ticks after the last one is a dash press too, and clears the pair, so
   a third tap starts a new one (held directions are one press). The `input` slot starts the dash on an unfrozen tick
@@ -277,7 +277,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   stuns its attacker for 20 ticks. A whiffed parry (no hit within 8 ticks) locks new parries for 20 ticks (no mashing).
   Owner: `arcade/hit.ts` checks `parryUntil` before applying damage.
 - Built in WP 16 (`systems/arcade/guard.ts`, table in `data/arcade.ts`): `Cmd.guard` is bit 12 (Classic masks it); its
-  key (Q), pad button (LT) and touch button came with the defence view (WP 17, section 3), the AI guards with WP 23. A character guards while its team
+  key (Q), pad button (LT) and touch button came with the defence view (WP 17, section 3), the AI guards and parries since WP 23 (section 2.11). A character guards while its team
   holds the bit and it could otherwise act (not stunned, block-stunned, dashing or in dash recovery, in a super or in
   melee cast recovery; `fight` phase), and through its block-stun even with the bit released. `canAct` is false while the
   bit is held, but a dash press still starts a dash out of guard (the dash cancels guard; its invulnerable ticks are not
@@ -365,7 +365,8 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   `ArcadeTactics` (`src/core/agents/scripted-ai/arcade.ts`, shared by the core `ScriptedAI` and the tournament's scripted
   agent in `tools/sim/run-match.ts`): combo cap 3, a step in along the shared axis during the opponent's stun, and a super
   on confirm (opponent stunned, one bar, the band covers the opponent) after a 10-18 tick reaction from `AgentRng`.
-- Personalities, as data in `src/core/agents/arcade-ai/personalities.ts` (planned) with shared behaviours:
+- Personalities, as data with shared behaviours (built in WP 23 in `src/core/agents/scripted-ai/arcade-ai.ts`, see the
+  last bullet; Tagger waits for tag, WP 19):
 
 | Personality | Plan |
 |---|---|
@@ -381,6 +382,31 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - Arcade ignores difficulty for stats (it passes `difficulty: 1` to `combatantStats`); difficulty picks the AI knobs
   only, so the fight is fair and readable.
 - In the app, Arcade uses the Arcade AI, never `RandomBot`.
+- Built in WP 23 (`WP-arcade-ai-personalities`; `ArcadeTactics` in `scripted-ai/arcade.ts`, tables and threat geometry
+  in `scripted-ai/arcade-ai.ts`, which the barrel does not re-export so the bundle inlines them). `ArcadeView` gained
+  `shots` (every live enemy projectile in entity id order with its per-game-tick velocity, rather than the 8 nearest
+  with an element: the AI needs no more), `dashIn` and `weatherIn` (game ticks until its own dash and weather are
+  ready); no guard meter yet. The layer draws from its own `ai.arcade.pN` stream. Three levels (`ARCADE_AI_KNOBS`; the
+  tools' `--ai-level` 1..2 is Easy, 3 Normal, 4..5 Hard): reaction delay 20 + 0..8 (mean 24), 10 + 0..8 (14) and
+  6 + 0..4 (8) ticks; parry scale 0, 500 and 1000 pm and dodge and guard scale 300, 600 and 1000 pm of the
+  personality's rates; combo cap 1, 3 and 5; supers never, on confirm, on confirm; parry timing 2 + 0..9, 2 + 0..8
+  and 2 + 0..5 game ticks before the hit (the window is 8, so Normal whiffs 2 in 9 and Hard never: success is bounded
+  by the reaction, the plan rate and that timing); Rushdown dash-in rate 10, 25 and 50 pm per tick. Personalities
+  (`ARCADE_AI_STYLES`, parry/dodge/guard pm): Rushdown 300/500/100, dashes in when the opponent is more than 360 px away
+  (|dx| + |dy|), inside its combos too; Zoner 500/300/100, spacing left to the base AI's kiting; Turtle 400/100/400. A
+  race at an elemental disadvantage plays Turtle; otherwise the personality is drawn once from the match seed. Defence:
+  the soonest hit among the shots within 40 game ticks (`impactIn`) is a threat; once per threat the layer draws its
+  reaction and a plan, then (free, reaction passed) parries by pressing and holding guard at the drawn distance,
+  dodges by dashing towards the opponent 7 ticks before the hit (through the shot on the dash's invulnerable ticks; a
+  guard press while the dash is not ready) or guards from 20 ticks away. Melee is not predicted (a melee box hits the
+  tick after the cast, faster than any reaction). Weather: free, unthreatened, weather ready and its element at a
+  disadvantage. The menu offers Easy, Normal and Hard (Easy is the Easy row now, not the Normal AI without supers).
+  The tournament's chasing melee AI flips its off-line side when the wall leaves no room there, in Arcade only (a dash
+  could pin it against the bottom wall and stall the round). Measured with `pnpm fun:report --all --seeds 4` (264
+  matches, Normal, before and after): stalemates 0% and 0%; median round 10.7 s and 11.4 s; median match 29.4 s and
+  32.7 s; hits per combo median 1 and 1, p90 4 and 5; dashes 1144 and 1609; guarded 0 and 677; parried 0 and 455;
+  perfect dodges 241 and 345; weather casts 0 and 276; supers 677 and 730. Easy (`--ai-level 1`) and Hard (4): no
+  stalemate, median rounds 9.9 s and 12.6 s, defence events 349 and 3765, no supers on Easy.
 
 ### 2.12 Input buffering and generous windows (sim)
 
@@ -456,7 +482,7 @@ matchup becomes something to play around instead of a fixed loss.
   mirror match.
 - **View:** a weather icon and timer in the HUD (pattern and text, not colour alone), a light sky tint and a few
   pooled particles, an announcer line ("Sunshine!"); reduced motion drops particles only.
-- **AI:** later; the scripted AI casts its own weather when it is off cooldown and the matchup is unfavourable.
+- **AI:** built in WP 23 (section 2.11): the scripted AI casts its own weather when it is off cooldown and the matchup is unfavourable.
 - **Metrics:** share of matches with at least one cast, win-rate change per race with and without weather (the point
   is to narrow the spread between elements without making one weather mandatory).
 - Built in WP 29 (`systems/arcade/weather.ts`, table in `data/arcade.ts`; sim only, the view is WP 30 and the AI later):
@@ -479,7 +505,7 @@ matchup becomes something to play around instead of a fixed loss.
   Sindarosa 90.9%); with both sides casting it is 85.2 pp (4.4 casts per match, median match 29.4 s vs 29.7 s). With
   only one race casting, its own win rate moves: Treenoc +22.7 pp, Ishimi +18.2, Fiara +11.4, Lavax +11.4, Pax +11.3,
   Sindarosa +9.1, Rokcore +6.9, Echo +1.2, Morblass +1.2, Wispera -1.1, Curomo -4.6, Cyclonius -8.0 (the blind
-  always-cast policy pays the recovery at bad moments). The AI that casts on an unfavourable matchup is later work.
+  always-cast policy pays the recovery at bad moments). The AI that casts on an unfavourable matchup came with WP 23.
 
 **New abilities:** the owner also allows new abilities in general. New abilities are Arcade-only data behind the
 Arcade flag (Classic keeps the legacy kit); each needs a design row here before it is built (use the add-ability skill).
@@ -688,7 +714,7 @@ that uses them, and measurable by `fun:report`.
 | 2 | `WP-arcade-hitstop` (done) | sim | `systems/arcade/hit.ts` (strength, hit-stop, `hitConfirmed`, Arcade `damage`); Arcade branches in `projectile.ts` and `melee.ts`; `arcadeInput` clock | Freeze length per strength; events keep unique ids while frozen; cooldowns do not elapse while frozen; Classic untouched | Melee hits and DoT also need the hit path; Hurricane multi-hit |
 | 3 | `WP-arcade-stun-knockback` (done) | sim | stun, Q4 knockback, wall clamp and bounce (bounds-y fixed in Arcade), juggle and stun caps, `canAct` in the 4 cast sites and movement, Tornado and Vines caps | Distances per strength; wall bounce once; property test: no stun chain over 150 ticks under random commands (`sim.property.test.ts` style) | Freeze abilities feel weak or still abusive; tune in data |
 | 4 | `WP-arcade-combo` (done) | sim | combo counter, scaling, counter hits, `comboEnded`, `recovered` | Scaling table, reset rules, combo end tick | None big |
-| 5 | `WP-arcade-tooling` (done: report-only gate plus super and combo coverage from WP 10; `--ai-level` is reserved until WP 23, `fun:compare` and `--replay` are later) | tools | `run-match --ruleset/--team-size/--ai-level`, `tools/sim/fun-metrics.ts`, `fun:report`, `fun-gate.test.ts` (report-only at first), `record-golden --ruleset arcade`, first Arcade golden `tests/fixtures/replays/arcade-1v1.replay.json` | Reducer unit tests on synthetic events; golden verifies | Gate runtime on CI |
+| 5 | `WP-arcade-tooling` (done: report-only gate plus super and combo coverage from WP 10; `--ai-level` picks the AI level since WP 23, `fun:compare` and `--replay` are later) | tools | `run-match --ruleset/--team-size/--ai-level`, `tools/sim/fun-metrics.ts`, `fun:report`, `fun-gate.test.ts` (report-only at first), `record-golden --ruleset arcade`, first Arcade golden `tests/fixtures/replays/arcade-1v1.replay.json` | Reducer unit tests on synthetic events; golden verifies | Gate runtime on CI |
 | 6 | `WP-arcade-juice-hits` (done) | view | `RenderView.arcade()`; `event-fx.ts` strength-scaled sparks, working flash (V6), jitter, shake; damage numbers and combo UI in `src/game/hud/` + `Hud.ts` | Fake-sink tests: feedback coverage 100%, reduced motion drops motion only | V6 cause is not known yet (budget a spike) |
 | 7 | `WP-arcade-meter` (done) | sim+view | `arcade/meter.ts` gains, `meterLevel`; meter bar in the HUD | Gain per rule at level 1 and 10 (level-independent); bar pattern cues | Meter too fast or too slow: watch super usage |
 | 8 | `WP-arcade-super-core` (done) | sim | `Cmd.super`; `arcade/super.ts`: freeze 40, invulnerability, generic "Elemental Burst" (the Fire Inferno Beam shape, tinted by element) for all 12 races; `superStarted`/`superEnded` | Freeze and invulnerability ticks, cost, hits and scaling floor, KO during super | One shape for all races is an MVP shortcut |
@@ -714,7 +740,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 20 | `WP-arcade-tag-view` | view+ui | Entrance flash, red-life styling, 2-pick Arcade menu | 19, 11 |
 | 21 | `WP-arcade-supers-fire-air` | sim+data | Inferno Beam and Vortex archetypes and their 6 race variants | 8 |
 | 22 | `WP-arcade-supers-earth-water` | sim+data | Quake Rings and Tidal Wave archetypes and their 6 race variants | 8 |
-| 23 | `WP-arcade-ai-personalities` | agents | Personalities, difficulty knobs, dodge and parry from projectile observation | 10, 15, 16, 19 |
+| 23 | `WP-arcade-ai-personalities` (done: section 2.11; Rushdown, Zoner and Turtle, Easy/Normal/Hard, Tagger waits for 19) | agents | Personalities, difficulty knobs, dodge and parry from projectile observation | 10, 15, 16, 19 |
 | 24 | `WP-arcade-numbers` | data | HP pm, damage pm overrides, Arcade balance baseline | 5, 23 |
 | 25 | `WP-arcade-gates-tight` | tools+CI | Nightly fun:compare bands, Arcade balance compare, visual states, latency marks | 24 |
 | 26 | `WP-arcade-audio-layers` | view | Synth thump, pitch variation, KO music cut | 6 |
@@ -814,7 +840,7 @@ Packages 26 and 27 hang off 6 and 3 and can go anywhere after them. 28 packages 
 
 Setup on the live site (https://hchan.github.io/tamingTheElements/): open **Settings**, tick **Preview > Arcade Versus
 (preview)** and **Record playtests (kept on this device only)**, press **Save**. The main menu now has **Arcade Versus**
-under Continue: pick your race, the AI's race and the AI level (Easy never supers; Normal is the cap for now), then
+under Continue: pick your race, the AI's race and the AI level (Easy, Normal or Hard; Easy never supers), then
 **Fight!**. Move with WASD or the arrows, abilities on their keys or the action bar, the super on **X** (gamepad RT, or the
 **Super** button bottom right on touch). A match is best of 3 rounds (a KO or the 90 s timer ends a round; the round announcer and timer view come with WP 14); the results show the round score and offer **Rematch**,
 **Change fighters**, **Download replay** (when recording) and **Main Menu**. Arcade Versus never writes the save (no XP,

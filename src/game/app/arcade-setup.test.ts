@@ -48,7 +48,8 @@ describe('Arcade Versus setup', () => {
 
   it('parses form values, falling back to the default for anything unknown (never a void or made-up race)', () => {
     expect(parsePick({ player: 'echo', enemy: 'lavax', level: 'easy' })).toEqual({ player: 'echo', enemy: 'lavax', level: 'easy' });
-    expect(parsePick({ player: 'eternal-void', enemy: '__proto__', level: 'hard' })).toEqual(DEFAULT_PICK);
+    expect(parsePick({ player: 'echo', enemy: 'lavax', level: 'hard' })).toEqual({ player: 'echo', enemy: 'lavax', level: 'hard' });
+    expect(parsePick({ player: 'eternal-void', enemy: '__proto__', level: 'wtf' })).toEqual(DEFAULT_PICK);
   });
 });
 
@@ -67,16 +68,16 @@ function enemyCommands(p: ArcadePick, meterFull: boolean, maxTicks: number): num
 }
 
 describe('Arcade AI', () => {
-  it('Normal supers on a confirm with a full bar; Easy is the same AI that never presses super', () => {
-    // Sindarosa vs a Fiara AI, seed 7: the Normal AI's first super comes about two seconds in.
+  it('Normal and Hard super on a confirm with a full bar; Easy never presses super; the levels play differently', () => {
+    // Sindarosa vs a Fiara AI, seed 7, the bar kept full.
     const fiara: ArcadePick = { ...pick, enemy: characterId('fiara') };
     const normal = enemyCommands(fiara, true, 3000);
-    const first = normal.findIndex((c) => (c & Cmd.super) !== 0);
-    expect(first).toBeGreaterThan(0);
+    const hard = enemyCommands({ ...fiara, level: 'hard' }, true, 3000);
     const easy = enemyCommands({ ...fiara, level: 'easy' }, true, 3000);
+    expect(normal.some((c) => (c & Cmd.super) !== 0)).toBe(true);
+    expect(hard.some((c) => (c & Cmd.super) !== 0)).toBe(true);
     expect(easy.some((c) => (c & Cmd.super) !== 0)).toBe(false);
-    // Up to the tick Normal pressed super, Easy chose exactly the same commands.
-    expect(easy.slice(0, first)).toEqual(normal.slice(0, first));
+    expect(hard).not.toEqual(normal);
   });
 });
 

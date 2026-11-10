@@ -7,12 +7,15 @@ import { stateNumber, stateRecord, type AgentState, type ObservationView } from 
 export type AgentRngState = { readonly seed: number; readonly side: 0 | 1; readonly words: readonly number[] } | null;
 
 /**
- * An agent's private random stream: `seedSfc32(matchSeed, AGENT_STREAM_NAMES[side])`, bound on the first draw to
+ * An agent's private random stream: `seedSfc32(matchSeed, names[side])` (AGENT_STREAM_NAMES by default), bound on the first draw to
  * the match seed and side of the view it is given (and re-bound if either changes). It lives in the agent, never
  * in SimState, so asking an agent for a command cannot change the sim state or its hash; the agent's `save()`
  * includes it so a restore rewinds it too.
  */
 export class AgentRng {
+  /** `names` gives the stream name per side: AGENT_STREAM_NAMES, or ARCADE_AI_STREAM_NAMES for the Arcade layer. */
+  constructor(private readonly names: readonly [string, string] = AGENT_STREAM_NAMES) {}
+
   private rng: Sfc32 | undefined;
   private seed = 0;
   private side: 0 | 1 = 0;
@@ -22,7 +25,7 @@ export class AgentRng {
     if (this.rng === undefined || view.matchSeed !== this.seed || view.side !== this.side) {
       this.seed = view.matchSeed;
       this.side = view.side;
-      this.rng = seedSfc32(view.matchSeed, AGENT_STREAM_NAMES[view.side]);
+      this.rng = seedSfc32(view.matchSeed, this.names[view.side]);
     }
     return this.rng.int(n);
   }

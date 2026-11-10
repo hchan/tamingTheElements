@@ -57,6 +57,7 @@ export function formatFunReport(r: FunReport): string {
     `  lead changes       median ${String(o.medianLeadChanges)}`,
     `  counter-hit rate   ${(o.counterHitRate * 100).toFixed(1)}%; cap recoveries juggle ${String(o.jugglecapRecoveries)}, stun ${String(o.stuncapRecoveries)}`,
     `  dash/tag/super/clash/defence  ${[o.dashes, o.tags, o.supers, o.clashes, o.defence].join('/')} (zero until their work packages land)`,
+    `  guard/parry/perfect dodge/weather  ${[o.guards, o.parries, o.dodges, o.weathers].join('/')}`,
   ].join('\n');
 }
 

@@ -7,6 +7,8 @@ export type StreamName = (typeof STREAM_NAMES)[number];
 
 /** Per-side agent streams, indexed by side. Agents own them (`AgentRng`); they are never part of SimState. */
 export const AGENT_STREAM_NAMES = ['ai.p1', 'ai.p2'] as const;
+/** Per-side streams of the Arcade AI layer (`ArcadeTactics`), apart from the scripted AI's own, so Classic draws never shift. */
+export const ARCADE_AI_STREAM_NAMES = ['ai.arcade.p1', 'ai.arcade.p2'] as const;
 export type Streams = Readonly<Record<StreamName, Sfc32>>;
 
 /** Creates every named stream from one match seed. Cosmetic code must only touch `cosmetic`. */

@@ -7,16 +7,20 @@ import { hash } from '../../sim/hash';
 import { createMatch, type MatchSetup } from '../../sim/match';
 import { skipIntro } from '../../sim/systems/arcade/round-testkit';
 import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, World } from '../../sim/state';
+import { allocEntity } from '../../sim/alloc';
 import { step } from '../../sim/step';
-import { createObservationView, type ArcadeView, type FighterView, type ObservationView } from '../agent';
+import { createObservationView, type AgentState, type ArcadeView, type FighterView, type ObservationView, type ShotView } from '../agent';
 import { getCharacter } from '../../data/characters';
 import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
+import { ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing } from './arcade';
 import {
-  ARCADE_AI_COMBO_CAP, ARCADE_AI_REACTION_MIN, ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing,
-} from './arcade';
+  AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
+  ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
+  ZONER, impactIn, toward,
+} from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
 
 const SETUP: MatchSetup = {
@@ -35,7 +39,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, prevCmd: 0,
-  primaryAge: -1, secondaryAge: -1, phase: 1,
+  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0,
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -45,11 +49,13 @@ function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(
   };
 }
 
-/** A draw that counts its calls and always returns 0 (the shortest reaction). */
-function counter(): { draw: (n: number) => number; calls: number } {
-  const c = { calls: 0, draw: (): number => (c.calls++, 0) };
-  return c;
+/** A shot `ticks` game ticks from hitting the default `self` (fighter(200, 300)), flying left along its row at 8 px per tick. */
+function shotIn(ticks: number): ShotView {
+  return { x: 279 + 8 * ticks, y: 330, w: 20, h: 20, vx: -8, vy: 0 };
 }
+
+/** The memory part of `ArcadeTactics.save()`. */
+const mem = (t: ArcadeTactics): number[] => (t.save() as { mem: number[] }).mem;
 
 describe('ObservationView.arcade', () => {
   it('is absent in Classic', () => {
@@ -73,83 +79,228 @@ describe('ObservationView.arcade', () => {
     s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] = (s.world[World.tick] ?? 0) + 6;
     s.arcade[t(0, ArcadeT.prevCmd)] = Cmd.primary;
     s.arcade[t(0, ArcadeT.pressTick)] = g + 1 - 2;
+    s.arcade[self * ARCADE_E + ArcadeE.dashReadyAt] = g + 9;
+    s.arcade[opp * ARCADE_E + ArcadeE.weatherReadyAt] = g + 700;
+    // An enemy (team 1) projectile and an own one: side 0 sees only the first, side 1 only the second.
+    const shot = (team: number, x: number, vx: number): number => {
+      const id = allocEntity(s);
+      s.kind[id] = EntityKind.projectile;
+      s.team[id] = team;
+      s.x[id] = x; s.y[id] = 330; s.w[id] = 20; s.h[id] = 20; s.vx[id] = vx;
+      return id;
+    };
+    shot(1, 600, -8);
+    shot(0, 300, 8);
     const before = hash(s);
     expect(createObservationView(world, 0).arcade).toEqual({
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
+      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
+      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700,
     });
     expect(hash(s)).toBe(before);
   });
 });
 
-describe('ArcadeTactics (Normal)', () => {
+describe('ArcadeTactics: confirms, supers and combo caps', () => {
   const cmd = Cmd.primary | Cmd.left;
 
-  it('returns the Classic command untouched and draws nothing without view.arcade', () => {
+  it('returns the Classic command untouched and never seeds its stream without view.arcade', () => {
     const t = new ArcadeTactics();
-    const c = counter();
-    for (const tick of [0, 1, 2]) expect(t.apply(view(undefined, tick), cmd, c.draw)).toBe(cmd);
-    expect(c.calls).toBe(0);
-    expect(t.save()).toEqual(new ArcadeTactics().save());
+    for (const tick of [0, 1, 2]) expect(t.apply(view(undefined, tick), cmd)).toBe(cmd);
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1], rng: null });
   });
 
-  it('leaves the command alone while the opponent is free', () => {
-    const c = counter();
-    expect(new ArcadeTactics().apply(view({ meter: SUPER_COST }), cmd, c.draw)).toBe(cmd);
-    expect(c.calls).toBe(0);
+  it('leaves the command alone while the opponent is free and nothing threatens (a given Zoner draws nothing)', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    expect(t.apply(view({ meter: SUPER_COST }), cmd)).toBe(cmd);
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER], rng: null });
   });
 
-  it('supers on a confirm with a full bar after its reaction delay, facing the opponent', () => {
-    const t = new ArcadeTactics();
-    const c = counter();
+  it('supers on a confirm with a full bar after its drawn reaction delay, facing the opponent', () => {
+    expect(ARCADE_AI_KNOBS[AI_NORMAL].slice(0, 2)).toEqual([ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD]);
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
     const stunned = { meter: SUPER_COST, oppStun: 20 };
-    expect(t.apply(view(stunned, 100), cmd, c.draw) & Cmd.super).toBe(0);
-    expect(t.apply(view(stunned, 100 + ARCADE_AI_REACTION_MIN - 1), cmd, c.draw) & Cmd.super).toBe(0);
-    expect(t.apply(view(stunned, 100 + ARCADE_AI_REACTION_MIN), cmd, c.draw)).toBe(Cmd.super | Cmd.right);
-    expect(c.calls).toBe(1); // one reaction draw per confirm
+    expect(t.apply(view(stunned, 100), cmd) & Cmd.super).toBe(0);
+    const delay = mem(t)[1] ?? 0;
+    expect(delay).toBeGreaterThanOrEqual(ARCADE_AI_REACTION_MIN);
+    expect(delay).toBeLessThan(ARCADE_AI_REACTION_MIN + ARCADE_AI_REACTION_SPREAD);
+    expect(t.apply(view(stunned, 100 + delay - 1), cmd) & Cmd.super).toBe(0);
+    expect(t.apply(view(stunned, 100 + delay), cmd)).toBe(Cmd.super | Cmd.right);
   });
 
-  it('does not super without the meter, while stunned, casting, recovering, or off the band', () => {
+  it('does not super without the meter, while stunned, casting, recovering, off the band, or on Easy', () => {
     const late = 100;
-    const no = (a: Partial<ArcadeView>, self?: FighterView, opp?: FighterView): void => {
-      const t = new ArcadeTactics();
-      t.apply(view(a, 0, self, opp), cmd, () => 0);
-      expect(t.apply(view(a, late, self, opp), cmd, () => 0) & Cmd.super).toBe(0);
+    const no = (a: Partial<ArcadeView>, self?: FighterView, opp?: FighterView, level: 0 | 1 | 2 = AI_NORMAL): void => {
+      const t = new ArcadeTactics(level, ZONER);
+      t.apply(view(a, 0, self, opp), cmd);
+      expect(t.apply(view(a, late, self, opp), cmd) & Cmd.super).toBe(0);
     };
     no({ meter: SUPER_COST - 1, oppStun: 20 });
     no({ meter: SUPER_COST, oppStun: 20, selfStun: 3 });
     no({ meter: SUPER_COST, oppStun: 20, superActive: true });
     no({ meter: SUPER_COST, oppStun: 20 }, fighter(200, 300, 1 | 4));
     no({ meter: SUPER_COST, oppStun: 20 }, fighter(200, 300), fighter(700, 600));
+    no({ meter: SUPER_COST, oppStun: 20 }, undefined, undefined, AI_EASY);
   });
 
   it('a new stun is a new confirm with a fresh reaction', () => {
-    const t = new ArcadeTactics();
-    const c = counter();
-    t.apply(view({ oppStun: 5 }, 0), cmd, c.draw);
-    t.apply(view({ oppStun: 0 }, 1), cmd, c.draw);
-    t.apply(view({ oppStun: 9 }, 2), cmd, c.draw);
-    expect(c.calls).toBe(2);
-    expect(t.save()).toEqual({ seenAt: 2, delay: ARCADE_AI_REACTION_MIN });
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    t.apply(view({ oppStun: 5 }, 0), cmd);
+    t.apply(view({ oppStun: 0 }, 1), cmd);
+    expect(mem(t)[0]).toBe(-1);
+    t.apply(view({ oppStun: 9 }, 2), cmd);
+    expect(mem(t)[0]).toBe(2);
   });
 
-  it('holds attacks once its combo reaches the Normal cap, and presses in during the stun below it', () => {
-    expect(new ArcadeTactics().apply(view({ oppStun: 10, combo: ARCADE_AI_COMBO_CAP }), cmd, () => 0)).toBe(Cmd.left);
-    expect(new ArcadeTactics().apply(view({ oppStun: 10, combo: 1 }), Cmd.secondary, () => 0)).toBe(Cmd.secondary | Cmd.right);
+  it('holds attacks once its combo reaches the level cap (Easy 1, Normal 3, Hard 5), and presses in below it', () => {
+    const held = (level: 0 | 1 | 2, combo: number): boolean =>
+      new ArcadeTactics(level, ZONER).apply(view({ oppStun: 10, combo }), cmd) === Cmd.left;
+    expect([held(AI_EASY, 0), held(AI_EASY, 1)]).toEqual([false, true]);
+    expect([held(AI_NORMAL, ARCADE_AI_COMBO_CAP - 1), held(AI_NORMAL, ARCADE_AI_COMBO_CAP)]).toEqual([false, true]);
+    expect([held(AI_HARD, 4), held(AI_HARD, 5)]).toEqual([false, true]);
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ oppStun: 10, combo: 1 }), Cmd.secondary)).toBe(Cmd.secondary | Cmd.right);
+  });
+});
+
+describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai-personalities)', () => {
+  const cmd = Cmd.primary | Cmd.left;
+  const threat = (ticks: number): Partial<ArcadeView> => ({ shots: [shotIn(ticks)] });
+
+  /** Tactics whose current threat was first seen at tick 0, with reaction `react` and `plan` acting `at` game ticks before the hit. */
+  function planned(plan: number, at: number, react = 0): ArcadeTactics {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    t.load({ mem: [-1, 0, 0, react, plan, at, ZONER], rng: null });
+    return t;
+  }
+
+  it('impactIn gives the game ticks to the first overlap below the bound; toward gives the bits to the opponent', () => {
+    const self = fighter(200, 300);
+    expect(impactIn(self, shotIn(12), ARCADE_AI_LOOKAHEAD + 1)).toBe(12);
+    expect(impactIn(self, shotIn(0), ARCADE_AI_LOOKAHEAD + 1)).toBe(0);
+    expect(impactIn(self, shotIn(12), 10)).toBe(10); // not below the bound
+    expect(impactIn(self, { ...shotIn(5), vx: 8 }, ARCADE_AI_LOOKAHEAD + 1)).toBe(ARCADE_AI_LOOKAHEAD + 1); // flying away
+    expect(impactIn(self, { ...shotIn(5), y: 100 }, ARCADE_AI_LOOKAHEAD + 1)).toBe(ARCADE_AI_LOOKAHEAD + 1); // off the row
+    expect(impactIn(self, { x: 500, y: 600, w: 20, h: 20, vx: -8, vy: -8 }, ARCADE_AI_LOOKAHEAD + 1)).toBe(28); // diagonal
+    expect(toward(self, fighter(700, 300))).toBe(Cmd.right);
+    expect(toward(self, fighter(0, 600))).toBe(Cmd.left | Cmd.down);
+    expect(toward(self, fighter(220, 310))).toBe(0);
   });
 
-  it('save/load round-trips through JSON', () => {
-    const t = new ArcadeTactics();
-    t.apply(view({ oppStun: 5 }, 42), cmd, () => 3);
-    const copy = new ArcadeTactics();
-    copy.load(JSON.parse(JSON.stringify(t.save())) as ReturnType<ArcadeTactics['save']>);
-    expect(copy.save()).toEqual({ seenAt: 42, delay: ARCADE_AI_REACTION_MIN + 3 });
+  it('acts on a planned threat after its reaction, at its distance: parry and guard hold guard, dodge dashes at the opponent', () => {
+    const parry = planned(PARRY, 6);
+    expect(parry.apply(view(threat(7), 10), cmd)).toBe(cmd);
+    expect(parry.apply(view(threat(6), 11), cmd)).toBe(Cmd.guard);
+    expect(parry.apply(view(threat(5), 12), cmd)).toBe(Cmd.guard); // held while the threat lasts
+    const guard = planned(GUARD, ARCADE_AI_GUARD_AT);
+    expect(guard.apply(view(threat(ARCADE_AI_GUARD_AT + 1), 10), cmd)).toBe(cmd);
+    expect(guard.apply(view(threat(ARCADE_AI_GUARD_AT), 11), cmd)).toBe(Cmd.guard);
+    expect(planned(DODGE, ARCADE_AI_DODGE_AT).apply(view(threat(ARCADE_AI_DODGE_AT), 10), cmd)).toBe(Cmd.dash | Cmd.right);
+    // The dash on cooldown: a guard press instead.
+    expect(planned(DODGE, ARCADE_AI_DODGE_AT).apply(view({ ...threat(ARCADE_AI_DODGE_AT), dashIn: 5 }, 10), cmd)).toBe(Cmd.guard);
+    // Not before the reaction delay, not while stunned, nothing without a plan.
+    expect(planned(PARRY, 6, 20).apply(view(threat(3), 10), cmd)).toBe(cmd);
+    expect(planned(PARRY, 6).apply(view({ ...threat(3), selfStun: 4 }, 10), cmd)).toBe(cmd);
+    expect(planned(NO_PLAN, ARCADE_AI_LOOKAHEAD).apply(view(threat(3), 10), cmd)).toBe(cmd);
+  });
+
+  it('draws one reaction and one plan per threat, and forgets the threat once no shot will hit', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    t.apply(view(threat(30), 5), cmd);
+    const seen = mem(t);
+    expect(seen[2]).toBe(5);
+    expect(seen[3]).toBeGreaterThanOrEqual(ARCADE_AI_REACTION_MIN);
+    expect(seen[3]).toBeLessThan(ARCADE_AI_REACTION_MIN + ARCADE_AI_REACTION_SPREAD);
+    t.apply(view(threat(29), 6), cmd);
+    expect(mem(t)).toEqual(seen);
+    t.apply(view({ shots: [{ ...shotIn(5), vx: 8 }] }, 7), cmd); // flying away: no threat
+    expect(mem(t)[2]).toBe(-1);
+  });
+
+  it('plans by personality and level: Easy never plans a parry, Hard reacts more, Turtle guards most, Rushdown dodges', () => {
+    const plans = (level: 0 | 1 | 2, style: 0 | 1 | 2): number[] => {
+      const counts = [0, 0, 0, 0];
+      const t = new ArcadeTactics(level, style);
+      for (let i = 0; i < 400; i++) {
+        t.apply(view(threat(30), 2 * i), cmd);
+        const plan = mem(t)[4] ?? NO_PLAN;
+        counts[plan] = (counts[plan] ?? 0) + 1;
+        t.apply(view({}, 2 * i + 1), cmd);
+      }
+      return counts;
+    };
+    const easy = plans(AI_EASY, ZONER);
+    const hard = plans(AI_HARD, ZONER);
+    expect(easy[PARRY]).toBe(0);
+    expect(hard[NO_PLAN] ?? 0).toBeLessThan(easy[NO_PLAN] ?? 0);
+    expect(hard[PARRY] ?? 0).toBeGreaterThan(hard[DODGE] ?? 0); // Zoner: parry 500, dodge 300, guard 100 pm
+    expect(plans(AI_HARD, TURTLE)[GUARD] ?? 0).toBeGreaterThan(hard[GUARD] ?? 0);
+    const rush = plans(AI_HARD, RUSHDOWN);
+    expect(rush[DODGE] ?? 0).toBeGreaterThan(rush[PARRY] ?? 0);
+  });
+
+  it('a Rushdown dashes in from afar at its level rate, never on cooldown or up close; the others leave spacing to the base AI', () => {
+    const count = (t: ArcadeTactics, a: Partial<ArcadeView>, opp?: FighterView): number => {
+      let n = 0;
+      for (let i = 0; i < 300; i++) {
+        const c = t.apply(view(a, i, fighter(200, 300), opp), cmd);
+        if ((c & Cmd.dash) !== 0) {
+          expect(c).toBe(Cmd.primary | Cmd.dash | Cmd.right);
+          n++;
+        }
+      }
+      return n;
+    };
+    const hard = count(new ArcadeTactics(AI_HARD, RUSHDOWN), {});
+    const easy = count(new ArcadeTactics(AI_EASY, RUSHDOWN), {});
+    expect(hard).toBeGreaterThan(easy);
+    expect(hard).toBeLessThan(60);
+    expect(count(new ArcadeTactics(AI_HARD, RUSHDOWN), { dashIn: 3 })).toBe(0);
+    expect(count(new ArcadeTactics(AI_HARD, RUSHDOWN), {}, fighter(400, 300))).toBe(0);
+    expect(count(new ArcadeTactics(AI_HARD, ZONER), {})).toBe(0);
+    expect(count(new ArcadeTactics(AI_HARD, TURTLE), {})).toBe(0);
+  });
+
+  it('calls its weather when its element is at a disadvantage, free, ready and unthreatened', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER, true);
+    expect(t.apply(view({}), cmd)).toBe(cmd | Cmd.weather);
+    expect(t.apply(view({ weatherIn: 30 }), cmd)).toBe(cmd);
+    expect(t.apply(view({ selfStun: 3 }), cmd)).toBe(cmd);
+    expect(t.apply(view(threat(30), 1), cmd)).toBe(cmd);
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({}), cmd)).toBe(cmd);
+  });
+
+  it('draws its personality from the match seed once (Turtle when at an elemental disadvantage) and keeps it', () => {
+    const seen = new Set<number>();
+    for (let seed = 0; seed < 30; seed++) {
+      const t = new ArcadeTactics();
+      t.apply({ ...view({}), matchSeed: seed }, cmd);
+      const style = mem(t)[6] ?? -1;
+      t.apply({ ...view({}, 1), matchSeed: seed }, cmd);
+      expect(mem(t)[6]).toBe(style);
+      seen.add(style);
+    }
+    expect([...seen].sort((x, y) => x - y)).toEqual([RUSHDOWN, ZONER, TURTLE]);
+    const turtle = new ArcadeTactics(AI_NORMAL, undefined, true);
+    turtle.apply(view({}), cmd);
+    expect(mem(turtle)[6]).toBe(TURTLE);
+  });
+
+  it('save/load round-trips through JSON mid-threat: the copy issues the same commands on the same views', () => {
+    const views = Array.from({ length: 80 }, (_, i) =>
+      view({ shots: i < 40 ? [shotIn(40 - i)] : [], oppStun: i > 50 ? 10 : 0, meter: SUPER_COST, combo: 1 }, i));
+    const t = new ArcadeTactics(AI_HARD, undefined, true);
+    for (const v of views.slice(0, 20)) t.apply(v, cmd);
+    const copy = new ArcadeTactics(AI_HARD, undefined, true);
+    copy.load(JSON.parse(JSON.stringify(t.save())) as AgentState);
+    for (const v of views.slice(20)) expect(copy.apply(v, cmd)).toBe(t.apply(v, cmd));
+    expect(copy.save()).toEqual(t.save());
     copy.load(null);
-    expect(copy.save()).toEqual(new ArcadeTactics().save());
+    expect(copy.save()).toEqual(new ArcadeTactics(AI_HARD).save());
     expect(() => {
       copy.load(7);
     }).toThrow(TypeError);
@@ -178,10 +329,10 @@ describe('avoidChord (WP-arcade-buffer)', () => {
   });
 
   it('ArcadeTactics applies it, but never to its own super', () => {
-    expect(new ArcadeTactics().apply(view({ meter: SUPER_COST }), both, () => 0)).toBe(Cmd.primary | Cmd.left);
-    const t = new ArcadeTactics();
-    t.apply(view({ meter: SUPER_COST, oppStun: 20, primaryAge: 0 }, 0), both, () => 0);
-    expect(t.apply(view({ meter: SUPER_COST, oppStun: 20, primaryAge: 0 }, 50), both, () => 0)).toBe(Cmd.super | Cmd.right);
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ meter: SUPER_COST }), both)).toBe(Cmd.primary | Cmd.left);
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    t.apply(view({ meter: SUPER_COST, oppStun: 20, primaryAge: 0 }, 0), both);
+    expect(t.apply(view({ meter: SUPER_COST, oppStun: 20, primaryAge: 0 }, 50), both)).toBe(Cmd.super | Cmd.right);
   });
 });
 
@@ -218,20 +369,19 @@ describe('8-way aim (WP-arcade-8way-aim)', () => {
   });
 
   it('fires a ready projectile slot along the diagonal when no axis shot lines up', () => {
-    const t = new ArcadeTactics();
+    const t = new ArcadeTactics(AI_NORMAL, TURTLE);
     const diag = view({}, 0, self, fighter(500, 600));
-    expect(t.apply(diag, Cmd.left, () => 0, Cmd.primary)).toBe(Cmd.primary | Cmd.right | Cmd.down);
-    expect(t.apply(diag, Cmd.left, () => 0, 0)).toBe(Cmd.left); // nothing ready
-    expect(t.apply(view({}, 0, self, fighter(540, 40)), Cmd.left, () => 0, Cmd.primary)).toBe(Cmd.left); // off the line
-    expect(t.apply(view(undefined, 0, self, fighter(500, 600)), Cmd.left, () => 0, Cmd.primary)).toBe(Cmd.left); // Classic
-    expect(t.save()).toEqual(new ArcadeTactics().save()); // no new agent state
+    expect(t.apply(diag, Cmd.left, Cmd.primary)).toBe(Cmd.primary | Cmd.right | Cmd.down);
+    expect(t.apply(diag, Cmd.left, 0)).toBe(Cmd.left); // nothing ready
+    expect(t.apply(view({}, 0, self, fighter(540, 40)), Cmd.left, Cmd.primary)).toBe(Cmd.left); // off the line
+    expect(t.apply(view(undefined, 0, self, fighter(500, 600)), Cmd.left, Cmd.primary)).toBe(Cmd.left); // Classic
   });
 
   it("keeps the base AI's 4-way shot: a second movement axis is dropped (Classic's x wins)", () => {
-    const t = new ArcadeTactics();
-    expect(t.apply(view({}), Cmd.primary | Cmd.left | Cmd.up, () => 0, Cmd.primary)).toBe(Cmd.primary | Cmd.left);
-    expect(t.apply(view({}), Cmd.primary | Cmd.up, () => 0, Cmd.primary)).toBe(Cmd.primary | Cmd.up);
-    expect(t.apply(view(undefined), Cmd.primary | Cmd.left | Cmd.up, () => 0)).toBe(Cmd.primary | Cmd.left | Cmd.up);
+    const t = new ArcadeTactics(AI_NORMAL, TURTLE);
+    expect(t.apply(view({}), Cmd.primary | Cmd.left | Cmd.up, Cmd.primary)).toBe(Cmd.primary | Cmd.left);
+    expect(t.apply(view({}), Cmd.primary | Cmd.up, Cmd.primary)).toBe(Cmd.primary | Cmd.up);
+    expect(t.apply(view(undefined), Cmd.primary | Cmd.left | Cmd.up)).toBe(Cmd.primary | Cmd.left | Cmd.up);
   });
 
   it('in an Arcade match the scripted AI lands a diagonal shot, and its snapshot round trip replays the same commands', () => {
@@ -288,16 +438,51 @@ describe('8-way aim (WP-arcade-8way-aim)', () => {
 describe('Classic decisions are untouched', () => {
   it('a Classic match never gives the layer an arcade view, so it is the identity', () => {
     const world = createMatch(SETUP);
-    const t = new ArcadeTactics();
-    const c = counter();
+    const t = new ArcadeTactics(AI_HARD, undefined, true);
     for (let i = 0; i < 300; i++) {
       for (const side of [0, 1] as const) {
         const v = createObservationView(world, side);
         expect(v.arcade).toBeUndefined();
-        expect(t.apply(v, i & 0x3f, c.draw)).toBe(i & 0x3f);
+        expect(t.apply(v, i & 0x3f)).toBe(i & 0x3f);
       }
       step(world, [Cmd.primary | Cmd.right, Cmd.primary | Cmd.left]);
     }
-    expect(c.calls).toBe(0);
+    expect(t.save()).toEqual(new ArcadeTactics().save()); // no memory, no draw: its stream is never seeded
+  });
+});
+
+describe('the Arcade AI in a match (WP-arcade-ai-personalities)', () => {
+  /** Defence events of a Hard scripted Pax with `style`, facing Sindarosa firing along its row for 1500 ticks. */
+  function defence(style: 0 | 1 | 2): Record<string, number> {
+    const world = skipIntro(createMatch({
+      ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+      p1: [{ character: characterId('sindarosa'), xp: 1 }], p2: [{ character: characterId('pax'), xp: 1 }],
+    }));
+    const s = world.state;
+    const ai = controlledId(world, 1);
+    s.hp[ai] = 100_000;
+    s.maxHp[ai] = 100_000;
+    const profile = scriptedProfileFor(getCharacter(characterId('pax')), getCharacter(characterId('sindarosa')));
+    const agent = new ScriptedAI(profile, { id: 'ai', level: AI_HARD, personality: style });
+    const shooter = { id: 'shooter', observe: () => Cmd.primary | Cmd.right, save: () => null, load: () => undefined };
+    const out = { guarded: 0, parried: 0, perfectDodge: 0 };
+    for (let i = 0; i < 1500; i++) {
+      // Both pinned on one row, 700 px apart (the AI's dashes still make it invulnerable, they just do not move it).
+      const me = controlledId(world, 0);
+      [s.x[me], s.y[me], s.x[ai], s.y[ai]] = [200, 360, 900, 360];
+      for (const e of step(world, collectCommands(world, [shooter, agent]))) {
+        if (e.kind === SimEventKind.guarded) out.guarded++;
+        if (e.kind === SimEventKind.parried) out.parried++;
+        if (e.kind === SimEventKind.perfectDodge) out.perfectDodge++;
+      }
+    }
+    return out;
+  }
+
+  it('a Hard Turtle guards and parries the shots it observes; a Hard Rushdown dodges through them', () => {
+    const turtle = defence(TURTLE);
+    expect(turtle.guarded).toBeGreaterThan(0);
+    expect(turtle.parried).toBeGreaterThan(0);
+    expect(defence(RUSHDOWN).perfectDodge).toBeGreaterThan(0);
   });
 });

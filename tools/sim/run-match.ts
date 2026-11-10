@@ -4,13 +4,13 @@
 // Every seed is played with the sides swapped on odd seeds (team 0 carries the difficulty handicap), so side bias cancels.
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { type Agent, type AgentState, collectCommands, stateRecord } from '../../src/core/agents/agent';
-import { AgentRng } from '../../src/core/agents/agent-rng';
+import { type Agent, type AgentState, type FighterView, collectCommands, stateRecord } from '../../src/core/agents/agent';
 import { RandomBot } from '../../src/core/agents/random-bot';
 import { ArcadeTactics } from '../../src/core/agents/scripted-ai/arcade';
+import { AI_EASY, AI_HARD, AI_NORMAL, type ArcadeAiLevel, type Style } from '../../src/core/agents/scripted-ai/arcade-ai';
 import { type AttackAbility, AttackAgent } from '../../src/core/agents/scripted-ai/attack';
 import { CHARACTERS, getCharacter } from '../../src/core/data/characters';
-import { ELEMENTS, type Element } from '../../src/core/data/elements';
+import { ELEMENTS, type Element, elementRelation } from '../../src/core/data/elements';
 import { characterId } from '../../src/core/data/ids';
 import type { AbilityDef } from '../../src/core/data/types';
 import { DEFAULT_SIM_FLAGS, assertNoTesterFlags } from '../../src/core/flags';
@@ -21,6 +21,7 @@ import { type SimEvent, SimEventKind } from '../../src/core/sim/events';
 import { createMatch, type MatchSetup } from '../../src/core/sim/match';
 import { EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
+import { DEFAULT_ARENA } from '../../src/core/sim/world';
 import { SUPER_DEF } from '../../src/core/sim/systems/arcade/hit';
 import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
 import { type FunMetrics, reduceFunMetrics } from './fun-metrics';
@@ -127,40 +128,46 @@ function wantsSelfCast(def: AbilityDef, self: { x: number; y: number; hp: number
 /**
  * Scripted opponent: the legacy attack decisions (AttackAgent) plus what the legacy movement port will later own:
  * melee races close the distance, shots carry a direction, and every slot is used: range, debuff and melee through the
- * AttackAgent, buffs, heals and omni fans through `wantsSelfCast`. In Arcade the core `ArcadeTactics` layer (combo cap,
- * supers on confirm) edits the result; in Classic it returns the command unchanged and draws nothing.
+ * AttackAgent, buffs, heals and omni fans through `wantsSelfCast`. In Arcade the core `ArcadeTactics` layer (defence,
+ * spacing, combos, supers, weather; its level from `--ai-level`, its personality drawn per match unless given) edits the
+ * result; in Classic it returns the command unchanged and draws nothing.
  */
 export class ScriptedAI implements Agent {
   readonly id: string;
   private readonly attack: AttackAgent;
   private readonly defs: readonly (AbilityDef | undefined)[];
   private readonly melee: boolean;
-  private readonly arcade = new ArcadeTactics();
-  private readonly rng = new AgentRng();
+  private readonly arcade: ArcadeTactics;
 
-  constructor(race: string, id = 'scripted') {
+  /** `opponent` (its race) decides the weather rule; `aiLevel` 1..5 and `personality` are the Arcade knobs. */
+  constructor(race: string, id = 'scripted', opponent = race, aiLevel = 3, personality?: Style) {
     this.id = id;
-    this.defs = getCharacter(characterId(race)).abilities.slice(0, 2).map((a) => defOf(a));
+    const me = getCharacter(characterId(race));
+    this.defs = me.abilities.slice(0, 2).map((a) => defOf(a));
     const [primary, secondary] = this.defs.map(toAttack);
     this.attack = new AttackAgent(
       { primary: primary ?? { type: 'other', maxActive: 1 }, ...(secondary === undefined ? {} : { secondary }) },
       { id },
     );
     this.melee = this.defs.some((d) => d?.kind === 'melee');
+    const unfavourable = elementRelation(me.element, getCharacter(characterId(opponent)).element) === 'dis';
+    this.arcade = new ArcadeTactics(arcadeLevel(aiLevel), personality, unfavourable);
   }
 
   /**
    * Melee approach. KNOWN-BUG:melee-range-axes makes the legacy attack decision accept a melee only within MELEE_DX
    * horizontally, so a melee race has to close right in. Far away it stays just off the opponent's firing line (bullets
    * fly along the shooter's axis and the legacy decision only fires when the target is within half a body of it), then
-   * steps in line for the last DASH_DX.
+   * steps in line for the last DASH_DX. In Arcade only (`arcade`), the off-line side flips when the wall leaves no room for
+   * the offset there (a dash can end against a wall, where pressing into it would pin the chaser; Classic is unchanged).
    */
-  private chase(self: { x: number; y: number }, opp: { x: number; y: number }): Command {
+  private chase(self: FighterView, opp: FighterView, arcade: boolean): Command {
     const dx = Math.abs(opp.x - self.x);
     const dy = opp.y - self.y;
     let cmd: Command = dx <= MELEE_DX ? NO_COMMAND : opp.x > self.x ? Cmd.right : Cmd.left;
     if (dx > DASH_DX) {
-      if (Math.abs(dy) < OFFSET_DY) cmd |= dy > 0 ? Cmd.up : Cmd.down;
+      const room = dy > 0 ? self.y - OFFSET_DY > DEFAULT_ARENA.y : self.y + self.h + OFFSET_DY < DEFAULT_ARENA.y + DEFAULT_ARENA.h;
+      if (Math.abs(dy) < OFFSET_DY) cmd |= dy > 0 === (room || !arcade) ? Cmd.up : Cmd.down;
       else if (Math.abs(dy) > OFFSET_DY + OFFSET_SLACK) cmd |= dy > 0 ? Cmd.down : Cmd.up;
     } else if (Math.abs(dy) > OFFSET_SLACK) {
       cmd |= dy > 0 ? Cmd.down : Cmd.up;
@@ -168,16 +175,15 @@ export class ScriptedAI implements Agent {
     return cmd;
   }
 
-  /** The attack facing, the Arcade layer and its stream are remembered; the movement here is a pure function of the view. */
+  /** The attack facing and the Arcade layer (with its stream) are remembered; the movement here is a pure function of the view. */
   save(): AgentState {
-    return { attack: this.attack.save(), arcade: this.arcade.save(), rng: this.rng.save() };
+    return { attack: this.attack.save(), arcade: this.arcade.save() };
   }
 
   load(state: AgentState): void {
     const rec = stateRecord(state, this.id);
     this.attack.load(rec['attack'] ?? null);
     this.arcade.load(rec['arcade'] ?? null);
-    this.rng.load(rec['rng'] ?? null);
   }
 
   observe(view: Parameters<Agent['observe']>[0]): Command {
@@ -196,15 +202,20 @@ export class ScriptedAI implements Agent {
         shooting = true;
       }
     });
-    if (this.melee) cmd |= this.chase(self, opp);
+    if (this.melee) cmd |= this.chase(self, opp, view.arcade !== undefined);
     if (shooting && (cmd & DIR_MASK) === 0) cmd |= FACING[['n', 'e', 's', 'w'].indexOf(this.attack.direction)] ?? 0;
     const slot = this.defs.findIndex((d, i) => (d?.kind === 'range' || d?.kind === 'debuff') && (view.cooldowns[i] ?? 0) === 0);
-    return this.arcade.apply(view, cmd, (n) => this.rng.int(view, n), slotBits[slot] ?? 0);
+    return this.arcade.apply(view, cmd, slotBits[slot] ?? 0);
   }
 }
 
-export function makeAgent(kind: AgentKind, race: string): Agent {
-  return kind === 'random' ? new RandomBot(`random:${race}`) : new ScriptedAI(race, `scripted:${race}`);
+/** `--ai-level` 1..5 (Easy, Casual, Normal, Hard, WTF) to an ArcadeAiLevel: Casual plays Easy and WTF plays Hard. */
+export function arcadeLevel(aiLevel: number): ArcadeAiLevel {
+  return aiLevel <= 2 ? AI_EASY : aiLevel === 3 ? AI_NORMAL : AI_HARD;
+}
+
+export function makeAgent(kind: AgentKind, race: string, opponent = race, aiLevel = 3): Agent {
+  return kind === 'random' ? new RandomBot(`random:${race}`) : new ScriptedAI(race, `scripted:${race}`, opponent, aiLevel);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -228,8 +239,7 @@ export interface MatchOptions {
   /** Heroes per side: 1, or 2 (the lead plus the next race in RACES). The scripted agent only plays the lead's kit. */
   readonly teamSize?: 1 | 2;
   /**
-   * AI level 1..5. Reserved for the per-level Arcade AI knobs (FUN-DESIGN 2.11, WP-arcade-ai-personalities): no effect
-   * yet; the Arcade layer (`ArcadeTactics`) always plays Normal.
+   * AI level 1..5 (default 3, Normal): the Arcade AI knobs (FUN-DESIGN 2.11, `arcadeLevel`). Classic ignores it.
    */
   readonly aiLevel?: number;
 }
@@ -283,8 +293,8 @@ export function runMatch(o: MatchOptions): MatchResult {
   const world = createMatch(setup);
   const s = world.state;
   const teamA = o.aIsTeam0 ? 0 : 1;
-  const agentA = makeAgent(o.agentA, o.raceA);
-  const agentB = makeAgent(o.agentB, o.raceB);
+  const agentA = makeAgent(o.agentA, o.raceA, o.raceB, o.aiLevel);
+  const agentB = makeAgent(o.agentB, o.raceB, o.raceA, o.aiLevel);
   const agents: [Agent, Agent] = o.aIsTeam0 ? [agentA, agentB] : [agentB, agentA];
 
   const projectileAbility = new Int32Array(MAX_ENTITIES);

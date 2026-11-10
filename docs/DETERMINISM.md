@@ -48,7 +48,8 @@ legacy milliseconds and the tick count (`cooldownTicks`, `durationTicks` in `src
 ## Randomness
 
 All randomness is the integer-only sfc32 generator (`src/core/rng/sfc32.ts`). `STREAM_NAMES` in `src/core/rng/streams.ts` (the sim
-streams) is `combat, capture, spawn, meta, cosmetic`; `AGENT_STREAM_NAMES` is `ai.p1, ai.p2`. Each stream is seeded by `seedSfc32` (`src/core/rng/seed.ts`):
+streams) is `combat, capture, spawn, meta, cosmetic`; `AGENT_STREAM_NAMES` is `ai.p1, ai.p2` and `ARCADE_AI_STREAM_NAMES`
+is `ai.arcade.p1, ai.arcade.p2`. Each stream is seeded by `seedSfc32` (`src/core/rng/seed.ts`):
 `splitmix32(fnv1a("<seed>:<name>"))` fills the four state words, then the first 15 outputs are discarded
 ([ADR 0003](adr/0003-sfc32-rng-streams.md)). `Sfc32.int(n)` is exact because `u32 * n < 2^53` for `n <= 2^21`.
 
@@ -61,11 +62,15 @@ streams) is `combat, capture, spawn, meta, cosmetic`; `AGENT_STREAM_NAMES` is `a
   `seedSfc32(matchSeed, 'ai.p1' | 'ai.p2')` by side, seeded from `ObservationView.matchSeed` on the first draw. So the same
   setup and commands give the same hash whether or not an agent was asked for a command (`src/core/agents/agents.test.ts`).
 - The Arcade AI layer (`src/core/agents/scripted-ai/arcade.ts`, `ArcadeTactics`) reads `ObservationView.arcade`, a copy of
-  visible Arcade state, and draws its reaction delay from the agent's own `AgentRng` once per confirm. Without
-  `view.arcade` (Classic) it returns the command unchanged and draws nothing, so Classic agent streams and decisions are
-  identical. Its memory (confirm tick, reaction) is in the agent's `save()`. AI is not sim state, so it needs no
-  `SIM_VERSION` bump; the Arcade golden is re-recorded because its commands come from the AI. Its diagonal shots
-  (`diagonalLine`, 8-way aim) are a pure function of the view and the ready slot: no draw, no new memory.
+  visible Arcade state (the enemy projectiles included), and draws from its own `AgentRng` on the `ai.arcade.pN` stream
+  (WP-arcade-ai-personalities; before, it shared the agent's `ai.pN` stream): its personality once, a reaction delay per
+  confirm, a reaction, a plan and a parry timing per threat, and the Rushdown's dash-in rate per tick. Without
+  `view.arcade` (Classic) it returns the command unchanged and draws nothing (its stream is never seeded), so Classic
+  agent streams and decisions are identical. Its memory (a fixed array of integers) and stream are in the agent's
+  `save()`. Threat prediction (`impactIn`) steps the shot's per-tick velocity with plain adds and compares boxes: no
+  transcendentals, no division. AI is not sim state, so it needs no `SIM_VERSION` bump; the Arcade goldens replay
+  recorded commands, so a change of the AI never changes them. Its diagonal shots (`diagonalLine`, 8-way aim) are a pure
+  function of the view and the ready slot: no draw, no new memory.
 
 ## LUTs and directions
 

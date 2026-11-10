@@ -1,5 +1,6 @@
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B } from '../../data/abilities-b';
+import { elementRelation } from '../../data/elements';
 import type { CharacterDef, AbilityDef } from '../../data/types';
 import type { Aabb } from '../../math/aabb';
 import { Cmd, type Command, NO_COMMAND } from '../../sim/commands';
@@ -9,6 +10,7 @@ import { stateRecord, type Agent, type AgentState, type ObservationView } from '
 import { AgentRng } from '../agent-rng';
 import { AttackAgent, type AttackAbility, type AttackAgentOptions, type AttackProfile, type Facing } from './attack';
 import { ArcadeTactics } from './arcade';
+import type { ArcadeAiLevel, Style } from './arcade-ai';
 import { chooseMovement, MovementState } from './movement';
 
 export * from './arcade';
@@ -21,11 +23,16 @@ export interface ScriptedProfile extends AttackProfile {
   readonly targetMelee: boolean;
   /** Per-tick step of the character (legacy characterSpeed). */
   readonly speed: number;
+  /** Own element at a disadvantage against the opponent's (the Arcade AI's weather rule); absent: false. */
+  readonly unfavourable?: boolean;
 }
 
 export interface ScriptedAIOptions extends AttackAgentOptions {
   /** Walkable area the movement keeps inside; defaults to the sim's DEFAULT_ARENA. */
   readonly arena?: Aabb;
+  /** Arcade AI level (default Normal) and personality (RUSHDOWN, ZONER or TURTLE; default drawn per match), see arcade-ai.ts. */
+  readonly level?: ArcadeAiLevel;
+  readonly personality?: Style;
 }
 
 const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -62,6 +69,7 @@ export function scriptedProfileFor(self: CharacterDef, opponent: CharacterDef): 
     selfMelee: self.id === MELEE_CHARACTER,
     targetMelee: opponent.id === MELEE_CHARACTER,
     speed: self.speed,
+    unfavourable: elementRelation(self.element, opponent.element) === 'dis',
   };
 }
 
@@ -94,7 +102,7 @@ export class ScriptedAI implements Agent {
   private readonly movement = new MovementState();
   private readonly arena: Aabb;
   private readonly rng = new AgentRng();
-  private readonly arcade = new ArcadeTactics();
+  private readonly arcade: ArcadeTactics;
 
   constructor(profile: ScriptedProfile, options: ScriptedAIOptions = {}) {
     this.profile = profile;
@@ -102,6 +110,7 @@ export class ScriptedAI implements Agent {
     this.id = options.id ?? 'scripted-ai';
     this.activeCount = options.activeCount ?? (() => 0);
     this.attack = new AttackAgent(profile, { ...options, id: this.id });
+    this.arcade = new ArcadeTactics(options.level, options.personality, profile.unfavourable);
   }
 
   get state(): MovementState {
@@ -152,9 +161,9 @@ export class ScriptedAI implements Agent {
     if (wallX) move &= ~(Cmd.left | Cmd.right);
     if (wallY) move &= ~(Cmd.up | Cmd.down);
     if ((atk & Cmd.primary) !== 0) move = applyFacing(move, this.attack.direction);
-    // Arcade only (a no-op without `view.arcade`): combo cap, supers on confirm and diagonal shots.
+    // Arcade only (a no-op without `view.arcade`, drawing from its own stream): defence, spacing, combos, supers, weather.
     const shot = ready && primary.type === 'range' ? Cmd.primary : 0;
-    const cmd = this.arcade.apply(view, (move & MOVE_MASK) | (atk & (Cmd.primary | Cmd.secondary)), (n) => this.rng.int(view, n), shot);
+    const cmd = this.arcade.apply(view, (move & MOVE_MASK) | (atk & (Cmd.primary | Cmd.secondary)), shot);
     this.movement.noteSent(cmd, wallX, wallY);
     return cmd;
   }

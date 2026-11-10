@@ -34,6 +34,9 @@ describe('fun-metrics reducer', () => {
         ev(123, 50),
         ev(124, 48),
         ev(125, 44),
+        ev(126, 43),
+        ev(127, 47),
+        ev(128, SimEventKind.weatherChanged, { weather: 1, prev: 0, team: 0 }),
       ],
       meta,
     );
@@ -48,7 +51,8 @@ describe('fun-metrics reducer', () => {
     expect(m.topSourceShare).toBeCloseTo(50 / 70, 2);
     expect(m.leadChanges).toBe(2);
     expect(m.recovered).toEqual([0, 1, 0]);
-    expect([m.dashes, m.tags, m.supers, m.clashes, m.defence]).toEqual([1, 1, 1, 1, 1]);
+    expect([m.dashes, m.tags, m.supers, m.clashes, m.defence]).toEqual([1, 1, 1, 1, 3]);
+    expect([m.guards, m.parries, m.dodges, m.weathers]).toEqual([1, 1, 1, 1]);
   });
 
   it('measures rounds: length from `fight` to `roundEnded`, first hit per round, time over and perfects (FUN-DESIGN 2.10)', () => {

@@ -44,7 +44,7 @@ const OUT_ARCADE = new URL('../../tests/fixtures/replays/arcade-1v1.replay.json'
 function recordScripted(setup: MatchSetup, ticks: number, raceA: string, raceB: string) {
   const world = createMatch(setup);
   const rec = new ReplayRecorder(setup);
-  const agents = [makeAgent('scripted', raceA), makeAgent('scripted', raceB)] as const;
+  const agents = [makeAgent('scripted', raceA, raceB), makeAgent('scripted', raceB, raceA)] as const;
   for (let t = 0; t < ticks; t++) {
     const cmds = collectCommands(world, agents);
     rec.record(world, cmds);
