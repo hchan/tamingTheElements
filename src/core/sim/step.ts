@@ -2,6 +2,7 @@ import type { Command } from './commands';
 import type { EventSink, SimEvent } from './events';
 import { EventSink as Sink } from './events';
 import { movementSystem } from './systems/movement';
+import { statusSystem } from './systems/status';
 import { World as W } from './state';
 import type { SimWorld } from './world';
 
@@ -17,7 +18,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['projectiles', noop],
   ['collision', noop],
   ['health', noop],
-  ['status', noop],
+  ['status', statusSystem],
   ['cleanup', noop],
 ];
 
