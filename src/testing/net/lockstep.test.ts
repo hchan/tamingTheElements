@@ -203,3 +203,27 @@ describe('timeout, forfeit and hidden-tab policy', () => {
     expect(r.sessions[0].winner).toBe(0);
   });
 });
+
+describe('input mask per ruleset', () => {
+  /** Both peers press every bit 0..15 each tick; returns what the shared sim was fed. */
+  const applied = (rulesetArcade: boolean): number => {
+    const setup = { ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade } };
+    const worlds = [createMatch(setup), createMatch(setup)] as const;
+    const net = new FakeNetwork(5, PERFECT_NET);
+    const ss = [
+      new LockstepSession({ world: worlds[0], side: 0, transport: net.a, adaptive: false }),
+      new LockstepSession({ world: worlds[1], side: 1, transport: net.b, adaptive: false }),
+    ];
+    let seen = 0;
+    for (let i = 0; i < 10; i++) {
+      net.advance();
+      for (const s of ss) if (s.update(0xffff).stepped) seen |= s.lastCommands[0] | s.lastCommands[1];
+    }
+    return seen;
+  };
+
+  it('Classic drops bits 11..15; Arcade keeps dash, guard and super (11..13) and drops 14 and 15', () => {
+    expect(applied(false)).toBe(0x7ff);
+    expect(applied(true)).toBe(0x3fff);
+  });
+});

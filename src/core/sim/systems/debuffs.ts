@@ -1,8 +1,9 @@
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B } from '../../data/abilities-b';
-import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World as W } from '../state';
+import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE } from '../state';
 import type { SimWorld } from '../world';
 import { StatusId } from './status';
+import { now } from '../clock';
 
 /**
  * Hostile debuffs applied by projectile hits: Tornado (freeze) and Ice Blast (slow). Timers are
@@ -32,7 +33,7 @@ function addSlot(world: SimWorld, victim: number, statusId: number, caster: numb
   let slot = 0;
   while (slot < STATUS_SLOTS && (s.status[base(victim, slot)] ?? 0) !== StatusId.none) slot++;
   if (slot === STATUS_SLOTS) return;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   const b = base(victim, slot);
   s.status[b] = statusId;
   s.status[b + 1] = caster;
@@ -71,7 +72,7 @@ export function onProjectileHit(world: SimWorld, abilitySlug: string, victim: nu
  */
 export function debuffSystem(world: SimWorld): void {
   const s = world.state;
-  const tick = s.world[W.tick] ?? 0;
+  const tick = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     for (let slot = 0; slot < STATUS_SLOTS; slot++) {
       const b = base(id, slot);

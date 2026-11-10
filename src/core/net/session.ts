@@ -1,4 +1,5 @@
-import { CMD_RESERVED_MASK, type Command, NO_COMMAND } from '../sim/commands';
+import { flagsFromBits } from '../flags';
+import { type Command, inputMaskFor, NO_COMMAND } from '../sim/commands';
 import type { SimEvent } from '../sim/events';
 import { hash } from '../sim/hash';
 import { matchWinner, hasEnded } from '../sim/systems/end';
@@ -78,7 +79,6 @@ export interface SessionSnapshot {
 const MAX_AHEAD = 2 * MAX_INPUTS_PER_PACKET;
 const ADAPT_WINDOW = 50;
 const ADAPT_STALLS = 5;
-const INPUT_MASK = 0xffff & ~CMD_RESERVED_MASK;
 
 /**
  * Two-player deterministic lockstep over an unreliable, unordered `Transport`.
@@ -112,6 +112,8 @@ export class LockstepSession {
   forfeitReason: 'timeout' | 'conceded' | 'remote-conceded' | undefined;
 
   private readonly world: SimWorld;
+  /** Command bits this match accepts (inputMaskFor its world flags); the rest are dropped on both sides. */
+  private readonly inputMask: number;
   private readonly transport: Transport;
   private readonly maxDelay: number;
   private readonly adaptive: boolean;
@@ -143,6 +145,7 @@ export class LockstepSession {
 
   constructor(opts: LockstepOptions) {
     this.world = opts.world;
+    this.inputMask = inputMaskFor(flagsFromBits(opts.world.state.world[World.flags] ?? 0));
     this.side = opts.side;
     this.transport = opts.transport;
     this.delay = opts.inputDelay ?? 2;
@@ -225,7 +228,7 @@ export class LockstepSession {
 
     if (live) {
       if (this.local.length <= this.simTick + this.delay) {
-        this.local.push(localCommand & INPUT_MASK);
+        this.local.push(localCommand & this.inputMask);
         inputAccepted = true;
       }
       const t = this.simTick;
@@ -320,7 +323,7 @@ export class LockstepSession {
       p.inputs.forEach((cmd, i) => {
         const tick = p.firstTick + i;
         if (tick < now || tick >= now + MAX_AHEAD || this.remote[tick] !== undefined) return;
-        this.remote[tick] = cmd & INPUT_MASK;
+        this.remote[tick] = cmd & this.inputMask;
       });
       while (this.remote[this.remoteNeeded] !== undefined) this.remoteNeeded++;
       for (const h of p.hashes) {

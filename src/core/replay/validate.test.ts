@@ -51,6 +51,16 @@ describe('validateReplay', () => {
     expect(validateReplay(bad).ok).toBe(false);
   });
 
+  it('checks command bits against the ruleset input mask (inputMaskFor)', () => {
+    const withInput = (flags: string, cmd: number): unknown =>
+      mutate(base, (h, r) => { h['flags'] = flags; r['inputs'] = [[0, 50, cmd, 50], [0, 100]]; });
+    expect(validateReplay(withInput('', 0x7ff)).ok).toBe(true);
+    expect(validateReplay(withInput('', 1 << 11))).toEqual({ ok: false, message: 'The replay uses command bits its ruleset does not allow.' });
+    expect(validateReplay(withInput('rulesetArcade', 0x3fff)).ok).toBe(true);
+    expect(validateReplay(withInput('rulesetArcade', 1 << 14)).ok).toBe(false);
+    expect(validateReplay(withInput('rulesetArcade', 1 << 15)).ok).toBe(false);
+  });
+
   it('rejects mismatched checkpoint counts', () => {
     expect(validateReplay(mutate(base, (_h, r) => { r['hashes'] = []; })).ok).toBe(false);
   });

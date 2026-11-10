@@ -84,6 +84,8 @@ Real files: input in `src/game/input/keyboard-agent.ts`; agents in `src/core/age
   magnitude), see `src/core/sim/systems/status.ts`.
 - `SimState.world`: scalars `tick`, `nextId`, `flags` (sim-flag bits plus the capture-granted bit), `matchSeed`.
 - `SimState.rng`: the 7 RNG streams, 4 words each.
+- `SimState.arcade`: the Arcade ruleset block (`ArcadeE`, `ArcadeT`, `ArcadeW` in `state.ts`, layout in
+  [FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). **Length 0 in Classic**, so it adds no bytes to the hash or snapshot.
 - `EntityFlag` bits: alive, translucent, frozen, captured, benched, dead. Free slots are derived from the alive flag, so the
   allocator (`src/core/sim/alloc.ts`, lowest free id first) needs no extra state. `src/core/sim/world.ts` wraps the state with
   the walkable arena.
@@ -94,7 +96,9 @@ order, RNG streams seeded from `seed`.
 ## Tick pipeline
 
 `step(world, cmds)` in `src/core/sim/step.ts` runs the `SYSTEMS` list in this fixed order, then increments `tick` and returns
-the events. `noop` entries are reserved slots that keep the order stable as systems land.
+the events. `noop` entries are reserved slots that keep the order stable as systems land. Systems read time through
+`now(s)` (`src/core/sim/clock.ts`): `tick` in Classic, the Arcade `gameTick` in Arcade. The freeze gate runs only slot 1
+while an Arcade freeze holds `gameTick` (`isFrozen`, never true in Classic); `tick` always advances.
 
 | # | System | Status |
 |---|---|---|
@@ -119,7 +123,8 @@ Adding or reordering a system changes every hash: bump `SIM_VERSION` and re-reco
 ## Commands and agents
 
 A `Command` is a `u16` bitset per player per tick (`src/core/sim/commands.ts`: up, down, left, right, primary, secondary,
-capture, swap1..4; bits 11..15 reserved). An `Agent` (`src/core/agents/agent.ts`) turns a read-only `ObservationView` into a
+capture, swap1..4; bits 11..15 reserved in Classic, while Arcade opens 11..13 for dash, guard and super; `inputMaskFor(flags)`
+gives the accepted bits for the net session and replay validation). An `Agent` (`src/core/agents/agent.ts`) turns a read-only `ObservationView` into a
 `Command`; it must be a pure function of the view plus its own memory and random stream (`AgentRng`, seeded from
 `view.matchSeed` and the side). Neither lives in `SimState`, and `collectCommands` only reads the world: `step` is the only
 thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents.

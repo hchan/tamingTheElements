@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **design only, nothing here is built.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing) is built; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -54,8 +54,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 ### 2.1 Ruleset plumbing (shared by every feature)
 
 - **Flag.** `SimFlags.rulesetArcade` in `src/core/flags.ts`. The name sorts after `elementalAdvantage`,
-  `experimentalPathing` and `experimentalSpawnCurve`, so no existing flag bit moves. `isArcade(world)` reads the world
-  flag bit (hashed state), never a module variable.
+  `experimentalPathing` and `experimentalSpawnCurve`, so no existing flag bit moves. `isArcade(s)`
+  (`src/core/sim/clock.ts`) reads the world flag bit (hashed state), never a module variable.
 - **State.** One new `SimState.arcade: Int32Array`, **length 0 when the flag is off**. `hash()` and `snapshot()` iterate
   `stateArrays`, so a zero-length array adds no bytes and Classic hashes stay identical. Layout (all Int32):
   - per entity (`ARCADE_E = 12` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
@@ -64,11 +64,13 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
     (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState`;
   - world (`ARCADE_W = 8`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil`.
 - **Game clock.** `W.tick` stays the replay and event index and always advances. Arcade adds `gameTick`, which does
-  not advance during hit-stop or super freeze and advances every second tick during KO slow-motion. Systems read
+  not advance during hit-stop or super freeze and advances every second tick during KO slow-motion (WP 13). Built in WP 1:
+  `advanceGameClock` advances it at the end of every unfrozen `step`, so with no freeze set `gameTick == W.tick`. Systems read
   `now(s)` (`W.tick` in Classic, `gameTick` in Arcade) for cooldowns, status timers and the rest-heal modulo. Event ids
   keep `W.tick`, so they stay unique while frozen.
 - **Freeze gate.** `step()` runs the `input` slot (now `arcadeInput`) every tick. While `gameTick` is frozen it skips
-  every other system. In Classic the gate is never true.
+  every other system. In Classic the gate is never true. Frozen means `W.tick < freezeUntil`: `freezeUntil` is in `W.tick`
+  units, because a deadline in `gameTick` would never arrive while `gameTick` stands still.
 - **Commands.** Arcade names reserved bits: 11 `dash`, 12 `guard`, 13 `super`; 14 and 15 stay reserved. Classic keeps
   masking 11..15. `inputMaskFor(flags)` replaces the fixed `INPUT_MASK` in `src/core/net/session.ts` and is used by
   replay validation.
@@ -112,7 +114,8 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 
 ### 2.2 Hit-stop (sim)
 
-- Owner: `arcade/hit.ts` sets `freezeUntil = max(freezeUntil, gameTick + n)` (max, never sum).
+- Owner: `arcade/hit.ts` sets `freezeUntil = max(freezeUntil, W.tick + 1 + n)` (max, never sum; `W.tick` of the hit, so
+  the next `n` ticks are frozen; see the freeze gate in 2.1).
 - `n` by strength: light 4, medium 6, heavy 8, super hit 10, parry 10, KO 30. Strength comes from the base damage at
   level 0: light under 15, medium 15-29, heavy 30 or more; melee abilities get one tier more; super hits are strength 3.
   A per-ability override column covers exceptions.
@@ -365,7 +368,7 @@ that uses them, and measurable by `fun:report`.
 
 | # | WP | Kind | Scope and files | Tests | Risks |
 |---|---|---|---|---|---|
-| 1 | `WP-arcade-flag` | sim | `rulesetArcade` in `flags.ts`; `SimState.arcade` (length 0 when off) in `state.ts` and `createMatch`; `isArcade`, `now(s)` clock helper replacing `W.tick` reads in every system; freeze gate in `step.ts`; `inputMaskFor(flags)` in `commands.ts`, `net/session.ts`, `replay/validate.ts`; `src/core/data/arcade.ts` skeleton | Classic goldens: hashes identical; new `classic-hash-pins` test; flag-bit order test (old names keep their bits); arcade state length 0 when off; snapshot round trip with the flag on | The `now()` refactor touches every system: it must be mechanical, proven by the goldens and the balance baseline (0 delta) |
+| 1 | `WP-arcade-flag` (done) | sim | `rulesetArcade` in `flags.ts`; `SimState.arcade` (length 0 when off) in `state.ts` and `createMatch`; `isArcade`, `now(s)` clock helper replacing `W.tick` reads in every system; freeze gate in `step.ts`; `inputMaskFor(flags)` in `commands.ts`, `net/session.ts`, `replay/validate.ts`; `src/core/data/arcade.ts` skeleton | Classic goldens: hashes identical; new `classic-hash-pins` test; flag-bit order test (old names keep their bits); arcade state length 0 when off; snapshot round trip with the flag on | The `now()` refactor touches every system: it must be mechanical, proven by the goldens and the balance baseline (0 delta) |
 | 2 | `WP-arcade-hitstop` | sim | `systems/arcade/hit.ts` (strength, hit-stop, `hitConfirmed`, Arcade `damage`); Arcade branches in `projectile.ts` and `melee.ts`; `arcadeInput` clock | Freeze length per strength; events keep unique ids while frozen; cooldowns do not elapse while frozen; Classic untouched | Melee hits and DoT also need the hit path; Hurricane multi-hit |
 | 3 | `WP-arcade-stun-knockback` | sim | stun, Q4 knockback, wall clamp and bounce (bounds-y fixed in Arcade), juggle and stun caps, `canAct` in the 4 cast sites and movement, Tornado and Vines caps | Distances per strength; wall bounce once; property test: no stun chain over 150 ticks under random commands (`sim.property.test.ts` style) | Freeze abilities feel weak or still abusive; tune in data |
 | 4 | `WP-arcade-combo` | sim | combo counter, scaling, counter hits, `comboEnded`, `recovered` | Scaling table, reset rules, combo end tick | None big |

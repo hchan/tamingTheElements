@@ -4,7 +4,7 @@ import { collectCommands, type Agent } from '../agents/agent';
 import { RandomBot } from '../agents/random-bot';
 import type { ChapterNumber } from '../data/chapters';
 import { CHARACTERS } from '../data/characters';
-import { Cmd, CMD_RESERVED_MASK, type Command } from './commands';
+import { Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { restore, snapshot, createSnapshotBuf } from './snapshot';
@@ -42,6 +42,7 @@ const setupArb: fc.Arbitrary<MatchSetup> = fc.record({
     experimentalPathing: fc.boolean(),
     elementalAdvantage: fc.boolean(),
     testerCapture: fc.constant(false),
+    rulesetArcade: fc.boolean(),
   }),
   chapter: fc.constantFrom<ChapterNumber>(1, 2, 3, 4, 5),
   difficulty: fc.constantFrom(0.25, 0.66, 0.85, 1, 1.12, 1.5),
@@ -215,10 +216,11 @@ describe('sim properties: invariants', () => {
     );
   });
 
-  it('ignores reserved command bits', () => {
+  it('ignores command bits outside the ruleset input mask', () => {
     fc.assert(
       fc.property(setupArb, cmdsArb, (setup, inputs) => {
-        const masked = inputs.map(([a, b]): [number, number] => [a & ~CMD_RESERVED_MASK, b & ~CMD_RESERVED_MASK]);
+        const m = inputMaskFor(setup.flags);
+        const masked = inputs.map(([a, b]): [number, number] => [a & m, b & m]);
         expect(runInputs(setup, inputs, false).hashes).toEqual(runInputs(setup, masked, false).hashes);
       }),
       FC,

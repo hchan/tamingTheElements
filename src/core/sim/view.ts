@@ -14,6 +14,7 @@ import { SWAP_COOLDOWN_TICKS, teamMembers } from './systems/swap';
 /** Capture sits after the character's own two ability slots (see systems/capture.ts). */
 const CAPTURE_SLOT = 2;
 import type { SimWorld } from './world';
+import { now } from './clock';
 
 /** One character as the renderer sees it. The object is reused between callbacks: copy what you keep. */
 export interface RenderCharacter {
@@ -76,6 +77,7 @@ export interface RenderSwapSlot {
 
 /** Action bar data for one team's active character; a snapshot, safe to keep. */
 export interface RenderActionBar {
+  /** Game clock (`now`) the ready ticks are measured against: `tick` in Classic, `gameTick` in Arcade. */
   tick: number;
   /** The character's own ability slots (primary, secondary). */
   abilities: RenderActionSlot[];
@@ -115,7 +117,7 @@ export function createRenderView(world: SimWorld): RenderView {
     actionBar(team): RenderActionBar | undefined {
       const cur = controlledId(world, team);
       if (cur < 0) return undefined;
-      const tick = s.world[World.tick] ?? 0;
+      const tick = now(s);
       const base = team * TEAM_STRIDE;
       const slotOf = (def: AbilityDef | undefined, slot: number): RenderActionSlot => ({
         sprite: def?.sprite ?? '',

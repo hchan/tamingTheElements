@@ -4,5 +4,7 @@
  *
  * 2: agent RNG streams left SimState (rng holds the five sim streams); world flag bits follow FLAG_NAMES with the
  *    internal bits at 16+.
+ * 3: Arcade only; Classic hashes unchanged. `rulesetArcade` flag (sorted last, no flag bit moves), `SimState.arcade`
+ *    (length 0 in Classic), the `now()` game clock and the freeze gate (WP-arcade-flag).
  */
-export const SIM_VERSION = 2;
+export const SIM_VERSION = 3;

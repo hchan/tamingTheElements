@@ -11,6 +11,12 @@ export interface SimFlags {
    * on is a cheat match (replays refuse it, balance and golden tooling assert it is off).
    */
   readonly testerCapture: boolean;
+  /**
+   * The Arcade ruleset (docs/FUN-DESIGN.md): hit-stop, stun, combos, supers. Off means Classic, which must stay
+   * bit-identical. The name sorts after every older Classic flag, so no existing Classic flag bit moves
+   * (testerCapture sorts after it, but it is never on in a real match).
+   */
+  readonly rulesetArcade: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -20,6 +26,7 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   experimentalPathing: false,
   elementalAdvantage: false,
   testerCapture: false,
+  rulesetArcade: false,
 };
 
 /** Flags that only tester mode may turn on. */
@@ -55,6 +62,15 @@ export function flagBits(flags: SimFlags): number {
   return bits;
 }
 
+/** Inverse of flagBits: the sim flags set in world flag bits (internal bits 16+ are ignored). */
+export function flagsFromBits(bits: number): SimFlags {
+  const out: Record<SimFlagName, boolean> = { ...DEFAULT_SIM_FLAGS };
+  FLAG_NAMES.forEach((name, i) => {
+    out[name] = (bits & (1 << i)) !== 0;
+  });
+  return out;
+}
+
 /** Stable encoding: sorted names of enabled flags joined by ','; '' when none are on. */
 export function encodeFlags(flags: SimFlags): string {
   return FLAG_NAMES.filter((n) => flags[n]).join(',');
@@ -73,5 +89,6 @@ export function decodeFlags(encoded: string): SimFlags {
     experimentalPathing: on.has('experimentalPathing'),
     elementalAdvantage: on.has('elementalAdvantage'),
     testerCapture: on.has('testerCapture'),
+    rulesetArcade: on.has('rulesetArcade'),
   };
 }

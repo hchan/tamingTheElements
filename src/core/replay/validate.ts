@@ -1,6 +1,7 @@
 import { GARRISON_MAX_SIZE } from '../data/chapters';
 import { CHARACTERS } from '../data/characters';
-import { decodeFlags } from '../flags';
+import { decodeFlags, type SimFlags } from '../flags';
+import { inputMaskFor } from '../sim/commands';
 import { HASH_INTERVAL, isCheatHeader, type ReplayFile } from './format';
 
 /** Two hours of play at 50 Hz: anything longer is not a real match and would cost real memory to decode. */
@@ -53,8 +54,9 @@ export function validateReplay(raw: unknown): ReplayCheck {
     if (!isInt(h['seed'], 0, 0xffffffff)) return { ok: false, message: 'The replay has an invalid seed.' };
     const flags = h['flags'];
     if (typeof flags !== 'string' || flags.length > 200) return { ok: false, message: 'The replay has invalid flags.' };
+    let decoded: SimFlags;
     try {
-      decodeFlags(flags);
+      decoded = decodeFlags(flags);
     } catch (e) {
       return { ok: false, message: e instanceof Error ? e.message : 'The replay has invalid flags.' };
     }
@@ -75,8 +77,12 @@ export function validateReplay(raw: unknown): ReplayCheck {
     if (bad) return { ok: false, message: `The replay is invalid: ${bad}.` };
     const inputs = raw['inputs'];
     if (!Array.isArray(inputs) || inputs.length !== 2) return { ok: false, message: 'The replay inputs are malformed.' };
+    const mask = inputMaskFor(decoded);
     for (const side of inputs as unknown[]) {
       if (rleLength(side) !== tickCount) return { ok: false, message: 'The replay inputs do not match its length.' };
+      if ((side as number[]).some((v, i) => i % 2 === 0 && (v & ~mask) !== 0)) {
+        return { ok: false, message: 'The replay uses command bits its ruleset does not allow.' };
+      }
     }
     const hashes = raw['hashes'];
     if (!Array.isArray(hashes) || hashes.length !== Math.ceil(tickCount / HASH_INTERVAL)) {
