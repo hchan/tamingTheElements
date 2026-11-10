@@ -4,7 +4,7 @@ import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
 import { capturable } from '../rules/progression';
 import {
-  ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_STRIDE, TeamField, World,
+  ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_STRIDE, TeamField, World,
 } from './state';
 import { castDir } from './systems/arcade/aim';
 import { isInvulnerable, isStunned } from './systems/arcade/stun';
@@ -41,10 +41,7 @@ export interface RenderCharacter {
   element: Element;
 }
 
-/**
- * Arcade read-outs for the view (docs/FUN-DESIGN.md section 3). The object is reused between calls. Round, timer and
- * phase join with their work packages.
- */
+/** Arcade read-outs for the view (docs/FUN-DESIGN.md section 3). The object is reused between calls. */
 export interface RenderArcade {
   /** True while a hit-stop (or another game-clock freeze) holds the game. */
   frozen: boolean;
@@ -53,6 +50,12 @@ export interface RenderArcade {
   readonly comboDamage: [number, number];
   /** Hyper meter per team, 0..METER_MAX (1000 per bar). */
   readonly meter: [number, number];
+  /** Round number (1-based; 0 before the first tick), its `RoundPhase` and the round timer in game ticks left. */
+  round: number;
+  phase: number;
+  timer: number;
+  /** Rounds won per team (a draw round counts for both). */
+  readonly roundsWon: [number, number];
   stunned(id: number): boolean;
   invulnerable(id: number): boolean;
   /** The 8-way cast facing (dir8, 0 = east, then counter-clockwise on screen) of character `id`. */
@@ -131,7 +134,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const s = world.state;
   const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
   const ar: RenderArcade = {
-    frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0],
+    frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, roundsWon: [0, 0],
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
@@ -229,7 +232,11 @@ export function createRenderView(world: SimWorld): RenderView {
         ar.comboHits[t] = s.arcade[b + ArcadeT.comboHits] ?? 0;
         ar.comboDamage[t] = (s.arcade[b + ArcadeT.comboDamageQ4] ?? 0) / Q4_ONE;
         ar.meter[t] = s.arcade[b + ArcadeT.meter] ?? 0;
+        ar.roundsWon[t] = s.arcade[b + ArcadeT.roundsWon] ?? 0;
       }
+      ar.round = s.arcade[ARCADE_WORLD_BASE + ArcadeW.round] ?? 0;
+      ar.phase = s.arcade[ARCADE_WORLD_BASE + ArcadeW.phase] ?? 0;
+      ar.timer = s.arcade[ARCADE_WORLD_BASE + ArcadeW.roundTimer] ?? 0;
       return ar;
     },
     forEachStatus(id, visit): void {

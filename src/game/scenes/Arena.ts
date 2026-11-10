@@ -96,6 +96,8 @@ export class Arena extends Phaser.Scene {
   private projPool: EntityViewPool<ProjectileView> | undefined;
   private fx: EventFx | undefined;
   private arcadeHud: ArcadeHudModel | undefined;
+  /** Arcade only: the round announcer and timer HUD (a lazy chunk), fed the events of every tick once it has loaded. */
+  private rounds: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
   private clicks: number[] = [];
@@ -229,6 +231,12 @@ export class Arena extends Phaser.Scene {
     this.installProbe(world, driver);
     const hudData: HudData = { view: this.view, ...(hud ? { arcade: hud } : {}) };
     this.scene.launch(HUD_SCENE, hudData);
+    if (hud) {
+      const hudScene = this.scene.get(HUD_SCENE);
+      void import('../hud/round-view').then((m) => {
+        if (this.arcadeHud === hud) this.rounds = m.mountRoundView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs);
+      });
+    }
     this.launch?.arcadeView?.(this, view, () => this.frameAlpha);
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
@@ -316,6 +324,7 @@ export class Arena extends Phaser.Scene {
         };
       },
       superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
+      rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),
       aim: () => {
         const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
         return g ? { visible: g.visible, x: g.x, y: g.y, angle: Math.round(g.angle) } : undefined;
@@ -357,6 +366,7 @@ export class Arena extends Phaser.Scene {
     this.fx?.consume(events);
     this.audio?.audio.consume(events);
     this.announce(events);
+    this.rounds?.(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
     this.ended = true;
@@ -384,6 +394,7 @@ export class Arena extends Phaser.Scene {
       const events = cursor.next();
       if (!events) break;
       this.fx?.consume(events);
+      this.rounds?.(events);
     }
     if (cursor.state !== 'playing') this.driver?.pause('ended');
   }
@@ -510,6 +521,7 @@ export class Arena extends Phaser.Scene {
     this.projPool = undefined;
     this.fx = undefined;
     this.arcadeHud = undefined;
+    this.rounds = undefined;
     this.cursor = undefined;
     this.driver = undefined;
     this.keyboard = undefined;

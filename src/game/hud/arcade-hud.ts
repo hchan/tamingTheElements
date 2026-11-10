@@ -35,7 +35,12 @@ export const SEGMENT_W = 56;
 export const SEGMENT_H = 10;
 export const SEGMENT_GAP = 6;
 export const METER_W = METER_BARS * SEGMENT_W + (METER_BARS - 1) * SEGMENT_GAP;
-export const METER_Y = 106;
+/**
+ * The meter row sits clear of the HUD block (100 px) and of the health text under the bars (y 24, 16 px), and each meter
+ * stops METER_INSET short of its bar's inner end, so the centre column (round timer and pips) has room on both sides.
+ */
+export const METER_Y = 124;
+export const METER_INSET = 32;
 /** A full meter pulses its fill once per METER_PULSE_MS (one flash a second: under the WCAG 2.3.1 limit of 3). */
 export const METER_PULSE_MS = 1000;
 /** Dash pattern (on, off px) of the segment that is still filling, so full and charging differ without colour. */
@@ -144,9 +149,9 @@ export interface MeterSegment {
   readonly full: boolean;
 }
 
-/** Left edge of a side's meter: team 0 ends at `innerX` (toward the centre), team 1 starts there. */
+/** Left edge of a side's meter: team 0 ends METER_INSET before `innerX` (its bar's end toward the centre), team 1 starts as far after it. */
 export function meterX(team: number, innerX: number): number {
-  return team === 0 ? innerX - METER_W : innerX;
+  return team === 0 ? innerX - METER_INSET - METER_W : innerX + METER_INSET;
 }
 
 /** The METER_BARS segments, filling left to right on both sides (one reading direction). */

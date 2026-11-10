@@ -116,21 +116,29 @@ html[data-high-contrast='true'] :focus-visible {
 /*
  * Phaser FIT scales the 1280x720 canvas (any backing-store resolution) into this box and centres it, so
  * the letterboxed canvas IS the game area and the HUD, which draws inside it, never leaves it. The box
- * excludes the device safe-area insets (notches) and its fraction comes from the display-size setting.
+ * excludes the device safe-area insets (notches) and its fraction comes from the display-size setting. A box smaller
+ * than the viewport (any display size under Largest) is centred vertically as well as horizontally, so the letterbox
+ * bands split evenly above and below instead of all falling under a canvas pinned to the top (VISUAL-QA V1).
  */
 #game {
   --safe-x: calc(env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px));
   --safe-y: calc(env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
+  --view-h: calc(100vh - var(--safe-y));
   position: relative;
   width: calc((100vw - var(--safe-x)) * var(--canvas-fraction, 1));
-  height: calc((100vh - var(--safe-y)) * var(--canvas-fraction, 1));
+  height: calc(var(--view-h) * var(--canvas-fraction, 1));
   margin: env(safe-area-inset-top, 0px) auto 0;
   overflow: hidden;
 }
 
+/* Only a running game (the page's spare empty #game under the menus keeps its place). */
+#game:not(:empty) {
+  margin-top: calc(env(safe-area-inset-top, 0px) + var(--view-h) * (1 - var(--canvas-fraction, 1)) / 2);
+}
+
 @supports (height: 100dvh) {
   #game {
-    height: calc((100dvh - var(--safe-y)) * var(--canvas-fraction, 1));
+    --view-h: calc(100dvh - var(--safe-y));
   }
 }
 

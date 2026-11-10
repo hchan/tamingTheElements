@@ -21,6 +21,8 @@ import {
   type Vp,
 } from './support';
 
+/** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91. */
+const ARCADE_INTRO = 91;
 const CINEMATIC_READY = `window.__TTE__ && window.__TTE__.scene === 'Cinematic' && !!window.__TTE__.cinematic`;
 
 /** v0-complete trimmed to six garrison members (the legacy maximum a human would plausibly collect). */
@@ -179,8 +181,9 @@ for (const vp of VIEWPORTS) {
       await page.locator('#game canvas').waitFor();
       await page.waitForFunction(ARENA_READY);
       if (vp.mobile) await page.locator('#rotateDismiss').click();
-      // Curomo 80 px from Pax, facing: Shards of Ice land within a few ticks. Paused effects hold their frame.
-      await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 580, 360, 4); })()`);
+      // Round 1's intro first (nobody acts until tick 91). Curomo 80 px from Pax, facing: Shards of Ice land within a few
+      // ticks. Paused effects hold their frame.
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(ARCADE_INTRO)}); const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 580, 360, 4); })()`);
       await page.evaluate(`(() => { const a = window.__TTE__.arena; for (let i = 0; i < 20 && a.fx().numbers.length === 0; i++) a.step(1, [${String(CMD.secondary)}, 0]); })()`);
       expect(await page.evaluate<number>(`window.__TTE__.arena.fx().numbers.length`)).toBeGreaterThan(0);
       await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
@@ -213,13 +216,21 @@ for (const vp of VIEWPORTS) {
       await page.getByRole('button', { name: 'Fight!' }).click();
       await page.waitForFunction(ARENA_READY);
       if (vp.mobile) await page.locator('#rotateDismiss').click();
-      await page.evaluate(`window.__TTE__.arena.step(5)`);
-      await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus battle at tick 5: Sindarosa vs the Fiara AI, hyper meters, the touch Super button bottom right');
+      await expect.poll(() => page.evaluate<string | undefined>(`window.__TTE__.arena.rounds().then((r) => r && r.main)`)).toBe('ROUND 1');
+      await page.evaluate(`window.__TTE__.arena.step(40)`);
+      await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus round 1 intro (tick 40): ROUND 1 banner, timer 90 and empty round pips top centre, hyper meters, the touch Super button bottom right');
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO - 40 + 30)})`);
+      await shoot(page, vp, 'arena', 'arcade-fight', 'Arcade Versus FIGHT! banner 30 ticks into the fight (scale-in done)');
       // Up + right held, then Fire Blast: the 8-way aim arrow points north-east and the bullet flies that way.
       await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(3, [9, 0]); a.step(1, [16, 0]); a.step(6); })()`);
       await shoot(page, vp, 'arena', 'arcade-aim', 'Arcade 8-way aim: the white arrow north-east of Sindarosa (held up + right) and a Fire Blast flying north-east');
+      // A perfect KO (the foe drops, the player untouched), its result, then round 2 KO'd the same way ends the match 2-0.
       const [foe] = await characters(page, 1);
-      await page.evaluate(`window.__TTE__.arena.setHp(${String(foe?.id)}, 0); window.__TTE__.arena.step(1)`);
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(foe?.id)}, 0); a.step(31); })()`);
+      await shoot(page, vp, 'arena', 'arcade-ko', 'Arcade K.O. with PERFECT (the player at full health) during the KO slow motion');
+      await page.evaluate(`window.__TTE__.arena.step(120)`);
+      await shoot(page, vp, 'arena', 'arcade-round-end', 'Arcade round end: PERFECT, YOU WIN ROUND 1, the first round pip filled on the left');
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(60 + ${String(ARCADE_INTRO)} + 5); const [f] = a.characters().filter((c) => c.team === 1); a.setHp(f.id, 0); a.step(30 + 120 + 60 + 5); })()`);
       await page.getByRole('heading', { level: 1, name: 'Victory!' }).waitFor();
       await page.evaluate(`window.__TTE__.settled()`);
       await freeze(page);

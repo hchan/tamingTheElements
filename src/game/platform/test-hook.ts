@@ -48,6 +48,11 @@ export interface ArenaProbe {
    * texts shown and the camera zoom over the fit zoom; undefined otherwise (always in Classic).
    */
   superFx(): Promise<{ dim: number; bandAlpha: number; slide: number; zoom: number; name: string; sub: string; camZoom: number } | undefined>;
+  /**
+   * Arcade only (async: its code is a lazy chunk): the round HUD as drawn, i.e. the banner texts, whether the banner is
+   * up and its scale, the timer text and the round wins shown per team; undefined before it is built and in Classic.
+   */
+  rounds(): Promise<{ main: string; sub: string; visible: boolean; scale: number; timer: string; won: readonly [number, number] } | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */
   aim(): { visible: boolean; x: number; y: number; angle: number } | undefined;
   /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */

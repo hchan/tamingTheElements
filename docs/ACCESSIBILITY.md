@@ -42,7 +42,7 @@ Settings has an **Accessibility** group.
 
 | Option | Default | Effect |
 |---|---|---|
-| Reduce motion | `prefers-reduced-motion` | Drops screen shake, hit particles and the Arcade hit-stop jitter (`EventFx`; Arcade shows one static 100 ms spark instead of particles), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). Information stays: the hit flash (white for 2 frames, then a tint for 4; no motion), Arcade damage numbers (they fade in place instead of floating up), the combo counter (no pop; it stays 1 s after the combo) and the hyper meter (a full meter stays steady instead of pulsing once a second). The Arcade super cinematic drops its motion and keeps its information: no band slide (the band fades in over 150 ms) and no camera punch-in, while the 40% dim, the element band with the caster's portrait, the super name and the element word stay for the whole freeze. |
+| Reduce motion | `prefers-reduced-motion` | Drops screen shake, hit particles and the Arcade hit-stop jitter (`EventFx`; Arcade shows one static 100 ms spark instead of particles), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). Information stays: the Arcade round banners (they appear at full size instead of scaling in over 600 ms; the text, the timer and the pips are unchanged), the hit flash (white for 2 frames, then a tint for 4; no motion), Arcade damage numbers (they fade in place instead of floating up), the combo counter (no pop; it stays 1 s after the combo) and the hyper meter (a full meter stays steady instead of pulsing once a second). The Arcade super cinematic drops its motion and keeps its information: no band slide (the band fades in over 150 ms) and no camera punch-in, while the 40% dim, the element band with the caster's portrait, the super name and the element word stay for the whole freeze. |
 | High contrast | `prefers-contrast: more` | Stronger borders and focus rings, solid text colours, and the colour-blind-safe HUD palette below. |
 
 Both are saved as optional booleans in the v1 save (`reduceMotion`, `highContrast`). A missing field means "follow the OS",
@@ -67,6 +67,10 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
 - Arcade 8-way aim (`src/game/fx/aim-view.ts`): the cast direction is a white arrow with a dark outline beside the
   player's character, so it reads by shape and position on bright and dark arenas, not by colour. It has no animation
   (it snaps to the new aim), so reduced motion keeps it as it is.
+- Arcade rounds (`src/game/hud/round-view.ts`): the round timer is a number (white with a black outline; from 10 s left
+  it turns light red, an extra cue only), and the round-win pips beside it are filled when won and hollow when still to
+  win, so they read by shape (high contrast: white fill). The announcer banners are words ("ROUND 1", "FIGHT!", "K.O.",
+  "PERFECT", "TIME", "YOU WIN ROUND 1", "VICTORY"), never a colour or a sound alone.
 
 ## In-battle announcements and pause
 
@@ -75,6 +79,13 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
 and enemy deaths, capture and failed capture, and low health (once at 25% or less, re-armed after recovering above 40%).
 Hits and movement are silent. Throttle: at least 1.5 s between lines, the same line not repeated within 6 s, at most 3
 waiting lines, and match start or end go out at once with any waiting line folded in.
+
+Arcade rounds (WP-arcade-announcer-view) add their lines through the same throttle (`RoundAnnouncer` in
+`src/game/hud/round-announcer.ts`): "Round 1." (or "Final round." at 1-1) when a round starts; "Fight!", the KO ("K.O.
+You knocked out the enemy.", "K.O. You were knocked out.", "Double K.O.", plus "Perfect." when it was one) and "Time
+over." go out at once (assertive) with any waiting line folded in; the round result ("You win round 1. Rounds 1 to 0.")
+is polite; the match end line carries the round score ("Victory. You won the match. Rounds 2 to 1."). Each line's key
+includes the round number, so the 6 s repeat filter never swallows the next round's "Fight!".
 
 Pause (Shift+P, gamepad Start, or the Resume button) opens a `role="dialog"` with `aria-modal`, moves focus to Resume,
 cycles Tab inside (`nextFocusIndex`), closes on Escape, restores the previous focus and drops held keys so a key held
@@ -110,6 +121,7 @@ written before the action existed keeps the player's keys: if one of them is alr
 | hit feedback with reduced motion: flash, damage numbers, combo and meter stay, no shake (Arcade); fake-sink rules (static spark, no jitter); meter number, pattern and pulse rate | `tests/e2e/arcade-juice.spec.ts`, `src/game/fx/event-fx.test.ts`, `src/game/hud/arcade-hud.test.ts` |
 | super cinematic: reduced motion drops the slide and punch-in and keeps dim, band and name (plan, fake sink and browser); Arcade-only super key and pad RT, binding and pad conflicts | `src/game/fx/super-cinematic.test.ts`, `tests/e2e/arcade-super.spec.ts`, `src/game/input/arcade-bindings.test.ts` |
 | Arcade Versus picker and results: axe, heading focus, Escape back, touch Super button, 390x844 layout; the 8-way aim arrow | `tests/e2e/arcade.spec.ts`, `src/game/fx/aim-view.test.ts` |
+| Arcade round announcer: every round event gives a banner and a live line (fake sink), reduced motion keeps the text without the scale-in, live-region lines in the browser, pips by shape, 0 listeners after leaving | `src/game/hud/round-announcer.test.ts`, `src/game/hud/round-view.test.ts`, `tests/e2e/arcade-rounds.spec.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done
@@ -117,5 +129,5 @@ written before the action existed keeps the player's keys: if one of them is alr
 Moderate and minor axe findings are not gated. There is no text-scaling control beyond Display Size, no separate
 volume controls, no gamepad button remapping, and the Phaser canvas itself is not exposed to assistive technology (the
 live regions and the HUD text cue stand in for it). The setting that hides Arcade damage numbers (FUN-DESIGN section 3) is
-not built yet; hits, combos and supers are not announced in the live region (the super's name and element are on screen,
+not built yet; hits, combos and supers are not announced in the live region (round events are) (the super's name and element are on screen,
 and its start has a sound).

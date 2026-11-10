@@ -36,7 +36,9 @@ resimulate several ticks in one 16.6 ms frame.
   2840), imported when `#arcade` opens; the scripted AI it needs is exported from `src/core/lazy-index.ts` (it lives in `sim`). Every function a lazy chunk imports from `index` is one more export there, and the
   renamed exports can move `phaser-config` by a few bytes, so keep those imports few. Dev and test-only code is behind a
   static `import.meta.env.DEV || import.meta.env.MODE === 'test'` test (`getUiFlags`, `arcadeEnabled`, the Arena's
-  `?ff=arcade` demo) so production bundles drop it.
+  `?ff=arcade` demo) so production bundles drop it. The Arcade round HUD (WP-arcade-announcer-view) is its own `round-view`
+  chunk (2.0 KB gzip), imported by the Arena only in Arcade matches, so Classic never downloads it and `phaser-config`
+  pays the import call and the event hand-off (about 250 B with the round score in the match-end line).
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per
