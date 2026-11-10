@@ -5,7 +5,11 @@ import { pathToFileURL } from 'node:url';
 
 export interface Options {
   readonly fast: boolean;
+  /** `--visual`: also run the visual QA pipeline (capture, pacing, regression); see docs/VISUAL-QA.md. */
+  readonly visual?: boolean;
 }
+
+export const VISUAL_STEPS: readonly Step[] = ['visual:capture', 'visual:pacing', 'visual:regress'].map((s) => ({ name: s, args: [s] }));
 
 export interface Step {
   readonly name: string;
@@ -22,11 +26,13 @@ export interface Result {
 
 export function parseCliArgs(argv: readonly string[]): Options {
   let fast = false;
+  let visual = false;
   for (const a of argv) {
     if (a === '--fast') fast = true;
-    else throw new Error(`Unknown argument: ${a} (usage: ci:local [--fast])`);
+    else if (a === '--visual') visual = true;
+    else throw new Error(`Unknown argument: ${a} (usage: ci:local [--fast] [--visual])`);
   }
-  return { fast };
+  return visual ? { fast, visual } : { fast };
 }
 
 /** The same order and commands as the `check` and `e2e` jobs in ci.yml. */
@@ -48,9 +54,11 @@ export function planSteps(opts: Options, launchable: ReadonlySet<string> = new S
     for (const n of ['e2e', 'e2e:pages', 'test:browser']) {
       skipped.push({ name: n, status: 'skip', seconds: 0, note: '--fast (no browsers)' });
     }
+    if (opts.visual === true) skipped.push({ name: 'visual', status: 'skip', seconds: 0, note: '--fast (no browsers)' });
     return { run, skipped };
   }
   run.push(...E2E_STEPS);
+  if (opts.visual === true) run.push(...VISUAL_STEPS);
   for (const engine of ENGINES) {
     if (launchable.has(engine)) run.push(browserStep(engine));
     else skipped.push({ name: `test:browser (${engine})`, status: 'skip', seconds: 0, note: `${engine} cannot launch here; CI covers it` });

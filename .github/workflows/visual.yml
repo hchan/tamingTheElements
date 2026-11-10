@@ -1,0 +1,117 @@
+name: Visual QA
+
+# Screenshots, videos, frame-pacing numbers and (when linux baselines exist) visual regression. See docs/VISUAL-QA.md.
+# Never commits anything: baselines are regenerated as an artifact for human review.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      update_baselines:
+        description: 'Regenerate linux visual baselines and upload them as an artifact (never committed)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual:
+    if: ${{ !inputs.update_baselines }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enable corepack (pnpm from packageManager field)
+        run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack pnpm install --frozen-lockfile
+      # Browser downloads and apt installs occasionally stall for minutes; cap each attempt and retry so a stall
+      # costs ~5 minutes of Actions time, not the whole job timeout.
+      - name: Install Playwright browsers (retry)
+        run: |
+          # Wait for the dpkg lock (unattended upgrades / a previous attempt) instead of failing on it.
+          echo 'DPkg::Lock::Timeout "600";' | sudo tee /etc/apt/apt.conf.d/99-lock-timeout >/dev/null
+          for attempt in 1 2; do
+            timeout --kill-after=30 600 corepack pnpm exec playwright install --with-deps chromium && exit 0
+            echo "playwright install attempt $attempt failed or timed out"; sleep 10
+          done
+          exit 1
+      - name: Capture screenshots, manifest and videos
+        run: corepack pnpm visual:capture
+      - name: Frame pacing (SwiftShader numbers; gate is generous, real-GPU smoothness needs a real machine)
+        run: corepack pnpm visual:pacing
+      - name: Detect linux baselines
+        id: baselines
+        run: |
+          if [ -n "$(ls -A tests/visual/__baselines__/linux/regression 2>/dev/null)" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No linux visual baselines committed; skipping the regression comparison (see docs/VISUAL-QA.md)."
+          fi
+      - name: Visual regression (only when linux baselines exist)
+        if: steps.baselines.outputs.present == 'true'
+        run: corepack pnpm visual:regress
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: visual-screenshots
+          path: |
+            test-results/visual/*.png
+            test-results/visual/manifest.json
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: visual-videos-and-pacing
+          path: |
+            test-results/visual/*.webm
+            test-results/visual/pacing.json
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure()
+        with:
+          name: visual-regression-diffs
+          path: test-results/visual-run/
+          if-no-files-found: ignore
+
+  update-baselines:
+    if: ${{ inputs.update_baselines }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enable corepack (pnpm from packageManager field)
+        run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Install Playwright browsers (retry)
+        run: |
+          echo 'DPkg::Lock::Timeout "600";' | sudo tee /etc/apt/apt.conf.d/99-lock-timeout >/dev/null
+          for attempt in 1 2; do
+            timeout --kill-after=30 600 corepack pnpm exec playwright install --with-deps chromium && exit 0
+            echo "playwright install attempt $attempt failed or timed out"; sleep 10
+          done
+          exit 1
+      - name: Regenerate baselines (playwright test --update-snapshots)
+        run: corepack pnpm visual:update
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visual-baselines-linux
+          path: tests/visual/__baselines__/linux/
+          if-no-files-found: error
