@@ -1,4 +1,4 @@
-import { SIM_VERSION, parseReplay, setupFromHeader, type ReplayFile } from '@core/index';
+import { SIM_VERSION, parseReplayChecked, setupFromHeader, validateReplay, type ReplayFile } from '@core/index';
 import { el } from '@ui/dom';
 import type { Screen } from '@ui/screens/screen';
 import { showWebglError } from '../boot/error-screen';
@@ -68,7 +68,13 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
       root.append(bar);
       container.append(root);
 
-      const open = async (replay: ReplayFile): Promise<void> => {
+      const open = async (candidate: ReplayFile): Promise<void> => {
+        const checked = validateReplay(candidate);
+        if (!checked.ok) {
+          status.textContent = checked.message;
+          return;
+        }
+        const replay = checked.value;
         const mine = ++life.generation;
         const stale = (): boolean => life.disposed || mine !== life.generation;
         controls.current = undefined;
@@ -112,7 +118,14 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         if (!file) return;
         void file
           .text()
-          .then((text) => open(parseReplay(text)))
+          .then((text) => {
+            const r = parseReplayChecked(text);
+            if (!r.ok) {
+              status.textContent = r.message;
+              return undefined;
+            }
+            return open(r.value);
+          })
           .catch((e: unknown) => {
             status.textContent = `Invalid replay: ${e instanceof Error ? e.message : String(e)}`;
           });

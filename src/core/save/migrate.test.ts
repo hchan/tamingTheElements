@@ -118,8 +118,9 @@ describe('save migration', () => {
         o.garrison = [{ id: junk(), experience: junk(), characterName: junk(), createdTime: junk() }];
       }
       const r = migrate(o);
-      expect(r.ok).toBe(true);
-      expect(migrate(r.ok ? r.value : null)).toEqual(r);
+      // Junk that normalises to unknown characters or out-of-range values is rejected, not thrown on.
+      if (r.ok) expect(migrate(r.value)).toEqual(r);
+      else expect(r.error.kind).toBe('invalid');
     }
   });
 });

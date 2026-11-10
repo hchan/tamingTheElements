@@ -49,3 +49,18 @@ test('importing a save and then saving settings keeps the imported data', async 
   expect(after.chapter).toBe(4);
   expect(after).toMatchObject({ highContrast: true });
 });
+
+test('importing a save with an unknown character shows a friendly error and keeps the current save', async ({ page }) => {
+  await seedViaGameMaster(page, fixture('v0-ch2'));
+  await goToHash(page, '#settings');
+  await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
+  const cur = await storedSave(page);
+  const bad = { ...cur, garrison: [{ id: 'x', characterName: 'Bogus Mage', experience: 1 }], displaySettings: 9999 };
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'bad.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(bad)),
+  });
+  await expect(page.locator('.settingsTransfer .settingsStatus')).toContainText('The save file is invalid');
+  expect((await storedSave(page)).chapter).toBe(2);
+});
