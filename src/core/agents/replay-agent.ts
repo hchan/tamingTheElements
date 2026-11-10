@@ -1,5 +1,5 @@
 import { type Command, NO_COMMAND } from '../sim/commands';
-import type { Agent, ObservationView } from './agent';
+import type { Agent, AgentState, ObservationView } from './agent';
 
 /** Plays back a recorded command array indexed by tick; past the end it returns NO_COMMAND. */
 export class ReplayAgent implements Agent {
@@ -13,5 +13,14 @@ export class ReplayAgent implements Agent {
 
   observe(_view: ObservationView, tick: number): Command {
     return this.inputs[tick] ?? NO_COMMAND;
+  }
+
+  /** Stateless: the command depends on the tick alone. */
+  save(): AgentState {
+    return null;
+  }
+
+  load(): void {
+    // Nothing to restore.
   }
 }

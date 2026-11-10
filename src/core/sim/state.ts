@@ -54,7 +54,7 @@ export type SimState = { readonly [K in F64Name]: Float64Array } & {
   /** Per-entity status slots (see systems/status.ts), MAX_ENTITIES x STATUS_SLOTS x STATUS_STRIDE. */
   readonly status: Int32Array;
   readonly world: Int32Array;
-  /** 7 streams x 4 words, STREAM_NAMES order (see saveStreams/loadStreams). */
+  /** 5 sim streams x 4 words, STREAM_NAMES order (see saveStreams/loadStreams); agent streams are not here. */
   readonly rng: Uint32Array;
 };
 

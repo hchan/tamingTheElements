@@ -3,6 +3,7 @@ import type { ChapterNumber } from '../data/chapters';
 import { CHARACTERS, getCharacter } from '../data/characters';
 import type { CharacterId } from '../data/ids';
 import type { SimFlags } from '../flags';
+import { flagBits } from '../flags';
 import { createStreams, saveStreams } from '../rng/streams';
 import { abilitiesFor, combatantStats } from '../rules/progression';
 import type { Side } from '../rules/progression';
@@ -38,11 +39,6 @@ export const P2_START_X = ARENA_WIDTH - 160 - CHARACTER_WIDTH;
 
 const EAST = 0;
 const WEST = 4;
-
-/** Bit per flag in world[World.flags], in sorted-name order. */
-export function flagBits(flags: SimFlags): number {
-  return (flags.experimentalPathing ? 1 : 0) | (flags.experimentalSpawnCurve ? 2 : 0);
-}
 
 function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSetup): void {
   if (roster.length > GARRISON_MAX_SIZE) throw new RangeError(`roster too large: ${String(roster.length)}`);

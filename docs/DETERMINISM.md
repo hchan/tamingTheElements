@@ -17,19 +17,25 @@ Allowed in `src/core`: `+ - * / %`, comparisons, bit operations, and `Math.sqrt`
 `sign`, `min`, `max`, `fround`, `imul`, `clz32`. These are exactly specified by IEEE 754 or the ECMAScript spec, so every
 engine returns the same bits.
 
-Banned (ESLint bans in `eslint.config.js`, proved by the fixtures in `tests/lint/fixtures/` and `tests/lint/core-bans.test.ts`):
+Banned (ESLint bans in `eslint.config.js`, proved by the fixtures in `tests/lint/fixtures/` and `tests/lint/core-bans.test.ts`,
+which also checks the merged config of a real `src/core` file because flat config replaces rule options instead of merging them):
 
 | Banned | Why |
 |---|---|
 | `Math.sin cos tan asin acos atan atan2 sinh cosh tanh exp expm1 log log1p log2 log10 pow cbrt hypot` and `**`, `**=` | The spec lets engines approximate these, and V8, SpiderMonkey and JavaScriptCore differ in the last bits. One ulp of drift changes a position, then a hit, then the whole match ([ADR 0004](adr/0004-no-transcendentals-in-core.md)). Use the LUTs and integer directions below |
-| `Date`, `performance`, timers (`setTimeout`, `setInterval`, `requestAnimationFrame`) | Wall-clock time differs per run and per machine, and keeps running while paused (the legacy bug). Time is the tick |
+| Any other use of `Math`: computed access (`Math[k]`), aliasing (`const M = Math`, `f(Math)`), and members outside the allowed list (`Math.PI` too) | Each one is a way around the line above. `Math` may only appear as `Math.<allowed function>` |
+| `Date`, `performance`, timers (`setTimeout`, `setInterval`, `requestAnimationFrame`, `queueMicrotask`) | Wall-clock time differs per run and per machine, and keeps running while paused (the legacy bug). Time is the tick |
 | `Math.random`, `crypto` | Unseeded, so not reproducible. Use a seeded stream |
-| `window`, `document`, `fetch`, `localStorage`, `navigator` | Host state is not an input |
+| `window`, `document`, `fetch`, `localStorage`, `navigator`, and the escape hatches `globalThis`, `self`, `global`, `Reflect` | Host state is not an input; the escape hatches reach every banned global under another name |
+| `WeakRef`, `FinalizationRegistry` | Their behaviour depends on garbage collection timing |
+| `async` functions, `await`, `for await` | The step is synchronous; microtask order is not an input |
 | `phaser` and any `src/game`, `src/ui`, `src/testing` import, node builtins | Layering (`.dependency-cruiser.cjs`), so core runs in plain Node |
-| `toFixed` in logic | Formatting is not sim logic |
+| `toFixed`, `toPrecision`, `toExponential`, `toLocaleString`, `toLocaleUpperCase`, `toLocaleLowerCase`, `localeCompare`, `Intl` (also as computed members such as `x['toFixed']`) | Formatting and locale-aware comparison are not sim logic, and the locale is host state |
+| `sort()` and `toSorted()` without a comparator | Pass an explicit total comparator (`compareStrings`, `compareNumbers` in `src/core/math/compare.ts`) so the order is stated, not implied |
 
-Also forbidden by review (no lint rule yet): async code in the step, `WeakRef`, `sort` with a non-total comparator, locale
-formatting in logic, and iteration over objects keyed by floats. Iterate entities in id order only.
+Lint cannot see through every indirection (for example `x[k]` with a computed string on a non-`Math` object), so review still
+applies. Also forbidden by review (no lint rule): `sort` with a non-total comparator, and iteration over objects keyed by
+floats. Iterate entities in id order only.
 
 ## Time
 
@@ -41,16 +47,19 @@ legacy milliseconds and the tick count (`cooldownTicks`, `durationTicks` in `src
 
 ## Randomness
 
-All randomness is the integer-only sfc32 generator (`src/core/rng/sfc32.ts`). `STREAM_NAMES` in `src/core/rng/streams.ts` is
-`combat, capture, spawn, ai.p1, ai.p2, meta, cosmetic`. Each stream is seeded by `seedSfc32` (`src/core/rng/seed.ts`):
+All randomness is the integer-only sfc32 generator (`src/core/rng/sfc32.ts`). `STREAM_NAMES` in `src/core/rng/streams.ts` (the sim
+streams) is `combat, capture, spawn, meta, cosmetic`; `AGENT_STREAM_NAMES` is `ai.p1, ai.p2`. Each stream is seeded by `seedSfc32` (`src/core/rng/seed.ts`):
 `splitmix32(fnv1a("<seed>:<name>"))` fills the four state words, then the first 15 outputs are discarded
 ([ADR 0003](adr/0003-sfc32-rng-streams.md)). `Sfc32.int(n)` is exact because `u32 * n < 2^53` for `n <= 2^21`.
 
 - Sim code draws only from the stream that names its purpose; adding a draw to a stream changes every later draw in it.
 - Cosmetic code (fx, shake, particles) must never draw from a sim stream. `src/game/fx/event-fx.ts` uses its own private
   generator for that reason.
-- The stream words live in `SimState.rng`, so they are part of the snapshot and the hash.
-- Agents draw from their own `ai.pN` stream via the `ObservationView` (`src/core/agents/agent.ts`), never from `combat`.
+- The sim stream words live in `SimState.rng`, so they are part of the snapshot and the hash. The agent streams do not
+  (since `SIM_VERSION` 2).
+- `SimState` is mutated only by `step()`. Agents never write it: each agent owns an `AgentRng` (`src/core/agents/agent-rng.ts`),
+  `seedSfc32(matchSeed, 'ai.p1' | 'ai.p2')` by side, seeded from `ObservationView.matchSeed` on the first draw. So the same
+  setup and commands give the same hash whether or not an agent was asked for a command (`src/core/agents/agents.test.ts`).
 
 ## LUTs and directions
 
@@ -68,9 +77,16 @@ axes. Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.
 - Anything that can affect a later tick must be in those arrays. Do not keep sim state in closures, module variables or
   objects outside `SimState`.
 - `snapshot()` and `restore()` (`src/core/sim/snapshot.ts`) copy every array with `TypedArray.set`; `restore` must be the exact
-  inverse. `SnapshotRing` holds a bounded history for rewind.
-- `hash()` is FNV-1a 32 over the bytes of every array in `stateArrays` order, with `-0` canonicalised to `0` and every NaN to
-  one pattern. `assertNoNaN` is the debug check. Freed slots are zeroed (`freeEntity`) so stale data never reaches the hash.
+  inverse. `SnapshotRing` holds a bounded history for rewind; `restoreTick` takes the newest entry of a tick and drops
+  the later ones.
+- Agent memory and agent random streams are outside `SimState`, so they are snapshotted separately: `Agent.save()` returns
+  plain JSON data and `load()` is its exact inverse. Store `saveAgents(agents)` (an `AgentSnapshot`) as the payload of the
+  same `SnapshotRing` entry and load it in `restoreTick`'s callback; otherwise a restored bot issues different commands.
+- `hash()` is FNV-1a 32 over every value in `stateArrays` order as little-endian bytes (a `Float64` as its low then high
+  32-bit word, an `Int32`/`Uint32` as one word), split with shifts so the platform byte order never matters. `-0` hashes as
+  `0`, and NaN is detected with `v !== v` and hashed as the canonical words `(0, 0x7ff80000)`, never via its stored bits.
+  `assertNoNaN` is the debug check. Freed slots are zeroed, status slots included (`freeEntity`), so stale data never
+  reaches the hash.
 
 ## Events
 
@@ -89,14 +105,17 @@ implemented yet (planned).
 every `HASH_INTERVAL = 50` ticks and a final hash (`src/core/replay/format.ts`, verified by `playReplay` in
 `src/core/replay/player.ts`). `tests/browser/determinism.browser.test.ts` replays it, and records a fresh match, in Chromium,
 Firefox and WebKit (`pnpm test:browser`) and requires the Node-recorded hashes to match at every checkpoint. The first
-divergent tick is reported, which localises a drift. Bots draw from the world's `ai.pN` streams, which a replay does not re-run,
-so `recordBotMatch` runs them on a shadow world and the recorded world only sees the resulting commands.
+divergent tick is reported, which localises a drift. Bots keep their randomness in their own `AgentRng`, so
+`recordBotMatch` consults them on the recorded world itself.
 
 ## Feature flags in replay headers
 
 Sim flags (`SimFlags`, `src/core/flags.ts`, all default off) change the simulation, so they are recorded in the replay header
 as `encodeFlags` output (sorted names of enabled flags, joined by `,`) and `decodeFlags` throws on an unknown name so a replay
-never silently drops a flag. UI flags (`src/game/platform/flags.ts`) must not influence the sim and are not recorded. Unfinished
+never silently drops a flag. In the world state, `flagBits` (`src/core/flags.ts`) sets bit `i` for `FLAG_NAMES[i]` (sorted
+names, at most 16); internal world bits (`CAPTURE_GRANTED_BIT`, `WORLD_ENDED_BIT`) sit at bit 16 and up. Adding a flag
+shifts the bits of the names sorted after it, which changes hashes only of matches with those flags on; bump `SIM_VERSION`
+anyway. UI flags (`src/game/platform/flags.ts`) must not influence the sim and are not recorded. Unfinished
 sim work goes behind a default-off sim flag ([ADR 0013](adr/0013-trunk-based-wps-and-flags.md)).
 
 ## Save format
@@ -110,7 +129,7 @@ bump, unless it also changes sim inputs.
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value
 (`src/core/data/`) requires, in the same change:
 
-1. bump `SIM_VERSION` in `src/core/index.ts`;
+1. bump `SIM_VERSION` in `src/core/version.ts` (its comment lists what each version changed);
 2. regenerate goldens with `pnpm golden:record` (`tools/gen/record-golden.ts`), only when the change is intended;
 3. commit the reviewed hash diff of `tests/fixtures/replays/` and say why in the commit message.
 
@@ -118,7 +137,7 @@ A changed golden without a bump, or a bump without a golden diff, is a blocker.
 
 ## Checklist for reviewers
 
-1. `grep -rnE 'Date|performance|Math\.(random|sin|cos|tan|asin|acos|atan2?|sinh|cosh|tanh|exp|expm1|log1p|log2|log10|log|pow|cbrt|hypot)|\*\*' src/core`
+1. `grep -rnE 'Date|performance|globalThis|Math\.(random|sin|cos|tan|asin|acos|atan2?|sinh|cosh|tanh|exp|expm1|log1p|log2|log10|log|pow|cbrt|hypot)|Math\[|\*\*' src/core`
 2. `pnpm lint` (the bans) and `pnpm test` (replay, snapshot and property tests such as `src/core/sim/sim.property.test.ts`).
 3. Millisecond values divide into ticks; randomness from named streams only; new state is in `SimState`.
 4. `SIM_VERSION` and goldens move together.

@@ -305,17 +305,14 @@ describe('sim properties: determinism', () => {
     fc.assert(
       fc.property(setupArb, fc.integer({ min: 1, max: MAX_TICKS - 1 }), (setup, cut) => {
         const play = (): { final: number; cmds: [Command, Command][]; mid: ReturnType<typeof createSnapshotBuf> } => {
-          // As in record-bots: bots draw from `ai.pN` on a shadow world, the real world only sees commands.
-          const shadow = createMatch(setup);
           const world = createMatch(setup);
           const bots: readonly [Agent, Agent] = [new RandomBot('r0'), new RandomBot('r1')];
           const mid = createSnapshotBuf(world.state);
           const cmds: [Command, Command][] = [];
           for (let t = 0; t < MAX_TICKS; t++) {
             if (t === cut) snapshot(world.state, mid);
-            const c = collectCommands(shadow, bots);
+            const c = collectCommands(world, bots);
             cmds.push(c);
-            step(shadow, c);
             step(world, c);
           }
           return { final: hash(world.state), cmds, mid };

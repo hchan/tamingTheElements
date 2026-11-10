@@ -5,7 +5,8 @@ import type { Aabb } from '../../math/aabb';
 import { Cmd, type Command, NO_COMMAND } from '../../sim/commands';
 import { DEFAULT_ARENA } from '../../sim/world';
 import { EntityFlag } from '../../sim/state';
-import type { Agent, ObservationView } from '../agent';
+import { stateRecord, type Agent, type AgentState, type ObservationView } from '../agent';
+import { AgentRng } from '../agent-rng';
 import { AttackAgent, type AttackAbility, type AttackAgentOptions, type AttackProfile, type Facing } from './attack';
 import { chooseMovement, MovementState } from './movement';
 
@@ -82,7 +83,7 @@ function applyFacing(move: Command, facing: Facing): Command {
   }
 }
 
-/** Scripted enemy: the legacy attack decisions plus the legacy movement, randomness from `ai.pN` only. */
+/** Scripted enemy: the legacy attack decisions plus the legacy movement, randomness from its own `AgentRng` only. */
 export class ScriptedAI implements Agent {
   readonly id: string;
   private readonly profile: ScriptedProfile;
@@ -90,6 +91,7 @@ export class ScriptedAI implements Agent {
   private readonly activeCount: (slot: 0 | 1) => number;
   private readonly movement = new MovementState();
   private readonly arena: Aabb;
+  private readonly rng = new AgentRng();
 
   constructor(profile: ScriptedProfile, options: ScriptedAIOptions = {}) {
     this.profile = profile;
@@ -101,6 +103,17 @@ export class ScriptedAI implements Agent {
 
   get state(): MovementState {
     return this.movement;
+  }
+
+  save(): AgentState {
+    return { movement: this.movement.save(), attack: this.attack.save(), rng: this.rng.save() };
+  }
+
+  load(state: AgentState): void {
+    const rec = stateRecord(state, this.id);
+    this.movement.load(rec['movement'] ?? null);
+    this.attack.load(rec['attack'] ?? null);
+    this.rng.load(rec['rng'] ?? null);
   }
 
   observe(view: ObservationView): Command {
@@ -124,7 +137,7 @@ export class ScriptedAI implements Agent {
     });
     let move: Command = NO_COMMAND;
     if (kind === 'away') move = this.movement.moveAway(view.tick, self, target);
-    else if (kind === 'towards') move = this.movement.moveTowards(view.tick, self, target, this.profile.speed, (n) => view.aiInt(n));
+    else if (kind === 'towards') move = this.movement.moveTowards(view.tick, self, target, this.profile.speed, (n) => this.rng.int(view, n));
     // Refuse steps further out of the arena; the next moveAway call reads them as blocked axes.
     const walls = this.arena;
     const speed = this.profile.speed;

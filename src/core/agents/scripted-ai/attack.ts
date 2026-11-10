@@ -1,13 +1,13 @@
 import { Cmd, type Command, NO_COMMAND } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
-import type { Agent, ObservationView } from '../agent';
+import { stateRecord, type Agent, type AgentState, type ObservationView } from '../agent';
 
 /**
  * Port of the legacy EnemyCharacter attack decisions (baseCharacter.js): updateAttackDirection,
  * isInRangeAxis and the doPrimary/doSecondaryAttackIfNecessary preconditions.
  *
- * Determinism notes: the legacy attack path reads no Math.random, so this agent draws nothing from
- * its `ai.pN` stream (the stream stays reserved for the later movement port). Legacy wall-clock
+ * Determinism notes: the legacy attack path reads no Math.random, so this agent draws no random numbers
+ * (only the movement port in ScriptedAI does, from its own `AgentRng`). Legacy wall-clock
  * cooldowns (Date) are replaced by the per-slot tick cooldowns of the ObservationView, and the
  * active-ability counter by the injectable `activeCount`. The agent's only own state is `facing`.
  */
@@ -152,6 +152,16 @@ export class AttackAgent implements Agent {
     this.facing = r.facing;
     if (r.inRange && this.ready(view, 0, pri)) cmd |= Cmd.primary | FACING_CMD[this.facing];
     return cmd;
+  }
+
+  save(): AgentState {
+    return { facing: this.facing };
+  }
+
+  load(state: AgentState): void {
+    const facing = stateRecord(state, this.id)['facing'];
+    if (facing !== 'n' && facing !== 'e' && facing !== 's' && facing !== 'w') throw new TypeError(`${this.id}: bad facing`);
+    this.facing = facing;
   }
 
   private ready(view: ObservationView, slot: 0 | 1, ability: AttackAbility): boolean {

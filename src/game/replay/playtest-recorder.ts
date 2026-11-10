@@ -1,27 +1,25 @@
-import { ReplayRecorder, createMatch, step, type Command, type MatchSetup, type ReplayFile, type SimWorld } from '@core/index';
+import { ReplayRecorder, type Command, type MatchSetup, type ReplayFile, type SimWorld } from '@core/index';
 
 /**
- * Records the commands a human match feeds to the sim. Live agents (the enemy bot) draw from RNG streams
- * stored in the live world, which a replay never re-runs, so the recording keeps its own shadow world
- * and steps it with exactly the commands the live world received.
+ * Records the commands a human match feeds to the sim, hashing the live world itself. Agents (the enemy bot)
+ * keep their randomness and memory to themselves and `step` is the only thing that mutates SimState, so the
+ * live world is exactly what a replay of the recorded commands rebuilds; no shadow world is needed.
  */
 export class PlaytestRecorder {
-  private readonly world: SimWorld;
   private readonly rec: ReplayRecorder;
-  private ticks = 0;
+  private world: SimWorld | undefined;
   private valid = true;
 
   constructor(setup: MatchSetup) {
-    this.world = createMatch(setup);
     this.rec = new ReplayRecorder(setup);
   }
 
-  /** Call with the final command pair of every live tick (immediately before the live step). */
-  record(cmds: readonly [Command, Command]): void {
+  /** Call with the live world and the final command pair of every live tick, immediately before the live step. */
+  record(world: SimWorld, cmds: readonly [Command, Command]): void {
     if (!this.valid) return;
-    this.rec.record(this.world, cmds);
-    step(this.world, cmds);
-    this.ticks++;
+    if (this.world !== undefined && this.world !== world) throw new Error('PlaytestRecorder records one world');
+    this.world = world;
+    this.rec.record(world, cmds);
   }
 
   /** The live world was changed outside the command stream (test cheats): the recording would not verify. */
@@ -29,8 +27,8 @@ export class PlaytestRecorder {
     this.valid = false;
   }
 
-  /** The replay, or undefined when nothing was recorded or it was invalidated. */
+  /** The replay (final hash taken from the live world now), or undefined when nothing was recorded or it was invalidated. */
   finish(): ReplayFile | undefined {
-    return this.valid && this.ticks > 0 ? this.rec.finish(this.world) : undefined;
+    return this.valid && this.world !== undefined ? this.rec.finish(this.world) : undefined;
   }
 }

@@ -6,13 +6,14 @@ import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { serializeReplay } from '../../src/core/replay/format';
 import { GOLDEN_SETUP, recordBotMatch } from '../../src/core/replay/record-bots';
 import type { MatchSetup } from '../../src/core/sim/match';
+import { SIM_VERSION } from '../../src/core/version';
 
 const TICKS = 1500;
 const OUT = new URL('../../tests/fixtures/replays/random-vs-random.replay.json', import.meta.url);
 
 /** Second golden: two-hero rosters, chapter 3, another seed and difficulty. */
 const SETUP_2V2: MatchSetup = {
-  simVersion: 1,
+  simVersion: SIM_VERSION,
   seed: 0xbeef,
   flags: DEFAULT_SIM_FLAGS,
   chapter: 3,

@@ -20,7 +20,30 @@ const bannedGlobals = [
   'fetch',
   'localStorage',
   'navigator',
+  // Escape hatches to the banned names above, and host-dependent or GC-dependent behaviour.
+  'globalThis',
+  'self',
+  'global',
+  'Intl',
+  'WeakRef',
+  'FinalizationRegistry',
+  'queueMicrotask',
+  'Reflect',
 ].map((name) => ({ name, message: `${name} is banned in src/core (determinism).` }));
+
+/** The only Math members core may touch: exactly specified by IEEE 754 / ECMAScript. */
+const allowedMath = ['sqrt', 'floor', 'ceil', 'round', 'trunc', 'abs', 'min', 'max', 'fround', 'imul', 'sign', 'clz32'];
+
+/** Formatting and locale-aware comparison: host-locale dependent, and never sim logic. */
+const bannedMembers = [
+  'toFixed',
+  'toPrecision',
+  'toExponential',
+  'toLocaleString',
+  'toLocaleUpperCase',
+  'toLocaleLowerCase',
+  'localeCompare',
+];
 
 const bannedMath = [
   'random',
@@ -64,10 +87,35 @@ const bannedSyntax = [
     selector: "NewExpression[callee.name='Date']",
     message: 'new Date is banned in src/core (determinism).',
   },
+  ...bannedMembers.flatMap((name) => [
+    {
+      selector: `MemberExpression[property.name='${name}']`,
+      message: `${name} is banned in src/core (no locale or formatting in logic).`,
+    },
+    {
+      selector: `MemberExpression[computed=true][property.value='${name}']`,
+      message: `${name} is banned in src/core (no locale or formatting in logic).`,
+    },
+  ]),
   {
-    selector: "CallExpression[callee.property.name='toFixed']",
-    message: 'toFixed is banned in src/core (no formatting in logic).',
+    selector: "MemberExpression[computed=true][object.name='Math']",
+    message: 'Math[...] is banned in src/core (computed access bypasses the Math bans).',
   },
+  {
+    selector: `MemberExpression[computed=false][object.name='Math']:not([property.name=/^(${allowedMath.join('|')})$/])`,
+    message: `Math member is banned in src/core (allowed: ${allowedMath.join(' ')}).`,
+  },
+  {
+    selector: "Identifier[name='Math']:not(MemberExpression > Identifier.object)",
+    message: 'Math as a value is banned in src/core (aliasing bypasses the Math bans).',
+  },
+  {
+    selector: "CallExpression[arguments.length=0][callee.property.name=/^(sort|toSorted)$/]",
+    message: 'sort() without a comparator is banned in src/core (pass a total comparator).',
+  },
+  { selector: 'AwaitExpression', message: 'await is banned in src/core (the step is synchronous).' },
+  { selector: 'ForOfStatement[await=true]', message: 'await is banned in src/core (the step is synchronous).' },
+  { selector: ':function[async=true]', message: 'async functions are banned in src/core (the step is synchronous).' },
 ];
 
 const bannedImports = {

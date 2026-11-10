@@ -4,7 +4,7 @@
 // Every seed is played with the sides swapped on odd seeds (team 0 carries the difficulty handicap), so side bias cancels.
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { type Agent, collectCommands } from '../../src/core/agents/agent';
+import { type Agent, type AgentState, collectCommands } from '../../src/core/agents/agent';
 import { RandomBot } from '../../src/core/agents/random-bot';
 import { type AttackAbility, AttackAgent } from '../../src/core/agents/scripted-ai/attack';
 import { CHARACTERS, getCharacter } from '../../src/core/data/characters';
@@ -156,6 +156,15 @@ export class ScriptedAI implements Agent {
       cmd |= dy > 0 ? Cmd.down : Cmd.up;
     }
     return cmd;
+  }
+
+  /** Only the attack facing is remembered; the movement here is a pure function of the view. */
+  save(): AgentState {
+    return this.attack.save();
+  }
+
+  load(state: AgentState): void {
+    this.attack.load(state);
   }
 
   observe(view: Parameters<Agent['observe']>[0]): Command {

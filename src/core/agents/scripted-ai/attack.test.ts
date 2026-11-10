@@ -25,7 +25,8 @@ import {
  * - The fixture calls doPrimary/doSecondaryAttackIfNecessary directly, also for a frozen enemy; the agent
  *   mirrors the EnterFrame guard (frozen -> no AI at all), so frozen rows are checked through the pure
  *   range helpers for direction and through the agent for "never fires".
- * - The legacy attack path never called Math.random, so no ai.pN draws are expected (asserted below).
+ * - The legacy attack path never called Math.random, so the agent never even reads the match seed it would
+ *   need to seed a random stream (asserted below).
  */
 
 const SELF = { x: 500, y: 300, w: 80, h: 80 };
@@ -51,8 +52,9 @@ function view(self: FighterView, opponent: FighterView, cooldowns: number[] = [0
     self,
     opponent,
     cooldowns,
+    /** Reads of `matchSeed`, the only input an agent needs to seed its own random stream. */
     draws: 0,
-    aiInt(): number {
+    get matchSeed(): number {
       v.draws++;
       return 0;
     },
@@ -163,7 +165,7 @@ describe('doSecondaryAttackIfNecessary preconditions', () => {
 });
 
 describe('determinism', () => {
-  it('draws nothing from the ai stream and returns identical commands for identical worlds', () => {
+  it('draws no random numbers and returns identical commands for identical worlds', () => {
     const v = view(fighter(SELF), fighter({ x: 560, y: 300, w: 80, h: 80 }));
     const a = new AttackAgent({ primary: FIRE_BLAST, secondary: VINES });
     a.observe(v);

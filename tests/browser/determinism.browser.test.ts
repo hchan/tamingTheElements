@@ -3,6 +3,7 @@ import golden from '../fixtures/replays/random-vs-random.replay.json';
 import { HASH_INTERVAL, parseReplay, serializeReplay } from '../../src/core/replay/format';
 import { playReplay } from '../../src/core/replay/player';
 import { GOLDEN_SETUP, recordBotMatch } from '../../src/core/replay/record-bots';
+import { SIM_VERSION } from '../../src/core/version';
 
 // Cross-engine determinism gate: the per-50-tick hashes committed from Node must be reproduced
 // bit-for-bit by Chromium, Firefox and WebKit.
@@ -10,7 +11,7 @@ describe('cross-engine determinism', () => {
   const file = parseReplay(JSON.stringify(golden));
 
   it('golden replay verifies against the committed Node hashes', () => {
-    expect(playReplay(file, 1)).toEqual({ ok: true, finalHash: file.finalHash });
+    expect(playReplay(file, SIM_VERSION)).toEqual({ ok: true, finalHash: file.finalHash });
   });
 
   it('a fresh recording reproduces the committed hashes at every checkpoint', () => {

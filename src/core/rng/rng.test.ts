@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { compareNumbers } from '../math/compare';
 import { fnv1a, seedSfc32 } from './seed';
 import { Sfc32 } from './sfc32';
-import { createStreams, loadStreams, saveStreams, STREAM_NAMES } from './streams';
+import { AGENT_STREAM_NAMES, createStreams, loadStreams, saveStreams, STREAM_NAMES } from './streams';
 
 // Independent reference: splitmix32 and sfc32 copied from bryc/code, jshash/PRNGs.md
 // (https://github.com/bryc/code/blob/master/jshash/PRNGs.md). Vectors below were produced by
@@ -74,7 +75,7 @@ describe('Sfc32 helpers', () => {
     const rng = seedSfc32(2, 'combat');
     const seen = new Set<number>();
     for (let i = 0; i < 500; i++) seen.add(rng.int(6));
-    expect([...seen].sort()).toEqual([0, 1, 2, 3, 4, 5]);
+    expect([...seen].sort(compareNumbers)).toEqual([0, 1, 2, 3, 4, 5]);
     expect(() => rng.int(0)).toThrow(RangeError);
     expect(() => rng.int(1.5)).toThrow(RangeError);
     expect(rng.int(1)).toBe(0);
@@ -103,8 +104,9 @@ describe('Sfc32 helpers', () => {
 });
 
 describe('streams', () => {
-  it('has the seven documented streams with distinct sequences', () => {
-    expect([...STREAM_NAMES]).toEqual(['combat', 'capture', 'spawn', 'ai.p1', 'ai.p2', 'meta', 'cosmetic']);
+  it('has the five documented sim streams with distinct sequences; agent streams are separate', () => {
+    expect([...STREAM_NAMES]).toEqual(['combat', 'capture', 'spawn', 'meta', 'cosmetic']);
+    expect([...AGENT_STREAM_NAMES]).toEqual(['ai.p1', 'ai.p2']);
     const s = createStreams(99);
     const firsts = STREAM_NAMES.map((n) => s[n].nextU32());
     expect(new Set(firsts).size).toBe(STREAM_NAMES.length);

@@ -120,8 +120,9 @@ Adding or reordering a system changes every hash: bump `SIM_VERSION` and re-reco
 
 A `Command` is a `u16` bitset per player per tick (`src/core/sim/commands.ts`: up, down, left, right, primary, secondary,
 capture, swap1..4; bits 11..15 reserved). An `Agent` (`src/core/agents/agent.ts`) turns a read-only `ObservationView` into a
-`Command`; it must be a pure function of the view plus its own `ai.pN` stream, whose state lives in `SimState.rng` so it is
-snapshotted. A replay stores the commands, so replays never re-run agents.
+`Command`; it must be a pure function of the view plus its own memory and random stream (`AgentRng`, seeded from
+`view.matchSeed` and the side). Neither lives in `SimState`, and `collectCommands` only reads the world: `step` is the only
+thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents.
 
 ## Events and stable ids
 
@@ -134,18 +135,25 @@ a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-e
 ## RNG streams
 
 `src/core/rng/`: `sfc32.ts` (integer-only generator), `seed.ts` (`fnv1a`, `splitmix32`, `seedSfc32`), `streams.ts`
-(`STREAM_NAMES = combat, capture, spawn, ai.p1, ai.p2, meta, cosmetic`). `createMatch` seeds all seven from the match seed and
-stores them in `SimState.rng`. Today the AI streams are drawn by agents (`agent.ts` loads, draws and saves the stream words);
-`combat`, `capture`, `spawn` are reserved for the sim and `meta` is used by out-of-match rules (`rules/new-game.ts`,
+(`STREAM_NAMES = combat, capture, spawn, meta, cosmetic`, `AGENT_STREAM_NAMES = ai.p1, ai.p2`). `createMatch` seeds the
+five sim streams from the match seed and stores them in `SimState.rng`; agents seed their own `ai.pN` stream (`AgentRng`)
+outside `SimState`. `combat`, `capture`, `spawn` are reserved for the sim and `meta` is used by out-of-match rules (`rules/new-game.ts`,
 `rules/results.ts`, `rules/opponents.ts`, `rules/garrison.ts`), outside the hashed state. See [ADR 0003](adr/0003-sfc32-rng-streams.md).
 
 ## Snapshot, restore, hash
 
 - `src/core/sim/snapshot.ts`: `createSnapshotBuf`, `snapshot` and `restore` copy every array with `TypedArray.set` (no
-  allocation), and `SnapshotRing` keeps a fixed-depth ring keyed by tick for rewind. `state.ts` also has the allocating
+  allocation), and `SnapshotRing` keeps a fixed-depth ring keyed by tick for rewind. `restoreTick` restores the newest
+  entry of a tick and drops the entries pushed after it. Each entry can carry a payload (`SnapshotRing<AgentSnapshot>`)
+  for state outside `SimState` that must rewind with it. `state.ts` also has the allocating
   `snapshotState`/`restoreState` pair.
-- `src/core/sim/hash.ts`: FNV-1a 32 over the bytes of every array in `stateArrays` order; `-0` becomes `0` and every NaN
-  becomes the canonical NaN first. `assertNoNaN` is a debug check.
+- Agent memory (`RandomBot`'s held command, `ScriptedAI`'s movement timers, facing and previous position, every agent's
+  `AgentRng`) is not in `SimState`. `Agent.save()`/`load()` copy it as plain JSON data, and `saveAgents`/`loadAgents`
+  (`src/core/agents/agent.ts`) make the `AgentSnapshot` to store next to the world snapshot, so a bot issues the same
+  commands after a restore (`src/core/agents/agent-snapshot.test.ts`).
+- `src/core/sim/hash.ts`: FNV-1a 32 over every value as little-endian bytes in `stateArrays` order, read as 32-bit words
+  and split with shifts so the platform byte order does not matter; `-0` hashes as `0` and every NaN as the canonical
+  words. `assertNoNaN` is a debug check.
 
 ## Fixed-step driver
 

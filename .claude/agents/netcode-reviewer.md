@@ -12,7 +12,7 @@ You review multiplayer-facing code against `docs/DETERMINISM.md` and `docs/adr/0
 1. Get the change: `git diff main --stat`, then the diff of net, replay and sim command files.
 2. Peers exchange commands only, never state. Flag any peer-supplied value used without validation.
 3. Rollback restores a snapshot (`src/core/sim/snapshot.ts`) then resimulates; resim must not cause render side effects or duplicate events (events are keyed by tick, source id, kind and seq).
-4. Handshake refuses mismatched `SIM_VERSION` (`src/core/index.ts`), flags (`src/core/flags.ts`) or seed.
+4. Handshake refuses mismatched `SIM_VERSION` (`src/core/version.ts`), flags (`src/core/flags.ts`) or seed.
 5. Desync detection compares `hash()` at `HASH_INTERVAL` (`src/core/replay/format.ts`) and reports both hashes plus a replay dump.
 6. Resim cost fits the frame budget; no allocation in the resim loop (`src/core/sim/alloc.test.ts`).
 7. Run `corepack pnpm test` and quote failures.

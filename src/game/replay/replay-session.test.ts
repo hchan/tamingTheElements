@@ -4,7 +4,11 @@ import {
   DEFAULT_SIM_FLAGS,
   HASH_INTERVAL,
   characterId,
+  RandomBot,
+  SIM_VERSION,
+  collectCommands,
   createMatch,
+  hash,
   parseReplay,
   playReplay,
   step,
@@ -15,7 +19,7 @@ import { ReplayCursor } from './cursor';
 import { PlaytestRecorder } from './playtest-recorder';
 
 const GOLDEN_SETUP: MatchSetup = {
-  simVersion: 1,
+  simVersion: SIM_VERSION,
   seed: 0x5eed,
   flags: DEFAULT_SIM_FLAGS,
   chapter: 1,
@@ -25,26 +29,29 @@ const GOLDEN_SETUP: MatchSetup = {
 };
 
 describe('playtest recorder', () => {
-  it('records a human-style command stream that verifies, even when the live world differs', () => {
+  it('records the live world of a human-vs-bot match and the replay verifies', () => {
     const rec = new PlaytestRecorder(GOLDEN_SETUP);
     const live = createMatch(GOLDEN_SETUP);
+    const bot = new RandomBot('p2');
     for (let t = 0; t < 130; t++) {
-      const cmds: [number, number] = [t % 40 < 20 ? 8 : 16, t % 7 === 0 ? 1 : 0];
-      live.state.rng[0] = (live.state.rng[0] ?? 0) + 1; // a live bot advancing its own streams
-      rec.record(cmds);
+      // The bot is consulted on the live world, as in the arena; that must not make the live world diverge.
+      const enemy = collectCommands(live, [undefined, bot])[1];
+      const cmds: [number, number] = [t % 40 < 20 ? 8 : 16, enemy];
+      rec.record(live, cmds);
       step(live, cmds);
     }
     const file = rec.finish() as ReplayFile;
+    expect(file.finalHash).toBe(hash(live.state));
     expect(file.header.tickCount).toBe(130);
     expect(file.header.seed).toBe(GOLDEN_SETUP.seed);
     expect(file.hashes).toHaveLength(Math.ceil(130 / HASH_INTERVAL));
-    expect(playReplay(file, 1).ok).toBe(true);
+    expect(playReplay(file, SIM_VERSION).ok).toBe(true);
   });
 
   it('yields nothing when empty or invalidated', () => {
     expect(new PlaytestRecorder(GOLDEN_SETUP).finish()).toBeUndefined();
     const rec = new PlaytestRecorder(GOLDEN_SETUP);
-    rec.record([0, 0]);
+    rec.record(createMatch(GOLDEN_SETUP), [0, 0]);
     rec.invalidate();
     expect(rec.finish()).toBeUndefined();
   });

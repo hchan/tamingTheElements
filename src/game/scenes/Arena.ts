@@ -116,6 +116,8 @@ export class Arena extends Phaser.Scene {
     this.pool = new EntityViewPool(() => new CharacterView(this), (v) => { v.hide(); });
     this.projPool = new EntityViewPool(() => new ProjectileView(this), (v) => { v.hide(); });
     const pool = this.pool;
+    // Agents keep their own memory and random streams, so every match (scene start) gets fresh ones.
+    this.agents = [new RandomBot('p1'), new RandomBot('p2')];
     this.fx = new EventFx(
       createPhaserFxSink(
         this,
@@ -241,11 +243,12 @@ export class Arena extends Phaser.Scene {
       this.advancePlayback(this.cursor);
       return;
     }
-    // Agents are consulted only when a side has no forced command (their RNG streams live in the sim state).
+    // Agents are consulted only when a side has no forced command. Consulting them never changes the sim
+    // state (step alone mutates it), so forced and live ticks with the same commands hash the same.
     const [f0, f1] = cmds;
     const c = f0 === undefined || f1 === undefined ? collectCommands(world, this.agents) : [0, 0];
     const final: [number, number] = [f0 ?? c[0] ?? 0, f1 ?? c[1] ?? 0];
-    this.launch?.recorder?.record(final);
+    this.launch?.recorder?.record(world, final);
     const events = step(world, final);
     this.fx?.consume(events);
     this.announce(events);
