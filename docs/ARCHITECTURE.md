@@ -1,0 +1,197 @@
+# Architecture
+
+Describes merged code only; anything not yet built is labelled "planned". Determinism rules live in
+[DETERMINISM.md](DETERMINISM.md); decisions in [adr/README.md](adr/README.md); file map in [REPO-MAP.md](REPO-MAP.md).
+
+## Goals and non-goals
+
+- Goal: a deterministic 50 Hz simulation in plain TypeScript (`src/core`) with Phaser as a thin renderer on top, so the same
+  seed and inputs give the same per-tick hash on every engine ([ADR 0002](adr/0002-deterministic-sim-50hz.md)).
+- Non-goals: physics engines (AABB only, [ADR 0005](adr/0005-aabb-no-arcade-physics.md)), gameplay logic in scenes, and
+  changing the frozen legacy game in `war/` (it is the parity oracle, [ADR 0014](adr/0014-legacy-as-parity-oracle.md)).
+
+## Layers and import rules
+
+| Layer | Path | May import | Must not import |
+|---|---|---|---|
+| core | `src/core/` | itself; `valibot` only inside `src/core/save/` | game, ui, testing, phaser, node builtins |
+| game | `src/game/` | core via `src/core/index.ts` only; phaser | ui, testing (except `src/game/app/`, which may import ui) |
+| platform | `src/game/platform/` | core via index; itself | the rest of game, ui |
+| ui | `src/ui/` | core via index; `src/game/platform/` | phaser, testing, other game modules |
+| testing | `src/testing/` | anything | (nothing in `src` outside it, or test files, may import it) |
+
+Enforced by [.dependency-cruiser.cjs](../.dependency-cruiser.cjs) (rules `core-is-pure`, `core-no-node-builtins`,
+`core-only-valibot-in-save`, `core-npm-allowlist`, `ui-layering`, `game-layering`, `core-only-via-index`, `platform-is-leaf`,
+`not-to-testing`, `no-circular`) via `pnpm depcruise`, and for core purity also by the ESLint bans in
+[eslint.config.js](../eslint.config.js). See [ADR 0017](adr/0017-dependency-cruiser-eslint-boundaries.md).
+
+```mermaid
+flowchart TD
+  APP["game/app (composition root)"] --> UI[ui]
+  APP --> GAME["game (scenes, views, hud, fx, audio, input, loop)"]
+  APP --> PLAT["game/platform (flags, storage)"]
+  GAME --> PLAT
+  UI --> PLAT
+  GAME --> IDX["core/index.ts"]
+  UI --> IDX
+  PLAT --> IDX
+  APP --> IDX
+  IDX --> CORE["core (sim, rng, rules, data, replay, save)"]
+  TEST["testing (stubs for legacy tests)"] -.->|any| CORE
+  GAME -.-x|forbidden| UI
+  CORE -.-x|forbidden| GAME
+  CORE -.-x|forbidden| PHASER[phaser]
+  UI -.-x|forbidden| PHASER
+```
+
+## Data flow
+
+```mermaid
+flowchart LR
+  KB[Keyboard] --> HA[KeyboardAgent]
+  BOT[RandomBot / scripted AI] --> CMD
+  RP[ReplayAgent] --> CMD
+  HA --> CMD["Commands [p1, p2] per tick"]
+  CMD --> STEP["core/sim/step.ts step(world, cmds) -> events"]
+  STEP --> ST[(SoA SimState incl. RNG words and tick)]
+  STEP --> EV[SimEvents tick,sourceId,kind,seq]
+  ST --> SNAP[snapshot / restore / hash]
+  ST --> VIEW[RenderView -> Arena and Hud scenes]
+  EV --> FX[fx and audio, dedupe by event id]
+  STEP -->|matchEnded| RES[rules/results]
+  RES --> SAVE[platform storage]
+  SAVE --> UI[DOM menus]
+  UI -->|MatchSetup| STEP
+```
+
+Real files: input in `src/game/input/keyboard-agent.ts`; agents in `src/core/agents/` (`agent.ts`, `random-bot.ts`,
+`replay-agent.ts`, `scripted-ai/attack.ts`); view in `src/core/sim/view.ts`; scenes in `src/game/scenes/`; results in
+`src/core/rules/results.ts`; storage in `src/game/platform/storage/`; app flow in `src/game/app/flow.ts`.
+
+## Sim state layout
+
+`src/core/sim/state.ts`. All state is typed arrays with fixed capacity (`MAX_ENTITIES = 64`); entity id equals slot index.
+
+- Per-entity float arrays (`F64_FIELDS`): `x y px py vx vy w h hp maxHp dmgMult healMult speed baseSpeed restCap`
+  (`px/py` are the previous tick's position, for render interpolation).
+- Per-entity int arrays (`I32_FIELDS`): `kind defId team owner dir flags spawnTick expireTick hitMask`.
+- `SimState.team` is the **per-entity** team index (0 = player, 1 = enemy). `SimState.teams` is the **per-team block**
+  (`Int32Array`, `TEAM_STRIDE` ints per team: `activeSlot`, `swapCooldownUntil`, ability cooldowns, active counts). Index it as
+  `teams[team * TEAM_STRIDE + TeamField.x]`; never alias the two (`tests/repo/no-team-block-alias.test.ts`).
+- `SimState.status`: per-entity status slots (`STATUS_SLOTS` x `STATUS_STRIDE`: id, sourceId, startTick, expireTick,
+  magnitude), see `src/core/sim/systems/status.ts`.
+- `SimState.world`: scalars `tick`, `nextId`, `flags` (sim-flag bits plus the capture-granted bit), `matchSeed`.
+- `SimState.rng`: the 7 RNG streams, 4 words each.
+- `EntityFlag` bits: alive, translucent, frozen, captured, benched, dead. Free slots are derived from the alive flag, so the
+  allocator (`src/core/sim/alloc.ts`, lowest free id first) needs no extra state. `src/core/sim/world.ts` wraps the state with
+  the walkable arena.
+
+`createMatch` (`src/core/sim/match.ts`) builds the tick-0 world from a `MatchSetup`: p1 entities first, then p2, ids in roster
+order, RNG streams seeded from `seed`.
+
+## Tick pipeline
+
+`step(world, cmds)` in `src/core/sim/step.ts` runs the `SYSTEMS` list in this fixed order, then increments `tick` and returns
+the events. `noop` entries are reserved slots that keep the order stable as systems land.
+
+| # | System | Status |
+|---|---|---|
+| 1 | input | no-op (commands are read by the systems that need them) |
+| 2 | swap (`systems/swap.ts`) | implemented |
+| 3 | movement (`systems/movement.ts`) | implemented |
+| 4 | abilities | no-op (planned) |
+| 5 | melee (`systems/melee.ts`) | implemented |
+| 6 | projectiles (`systems/projectile.ts`) | implemented |
+| 7 | capture (`systems/capture.ts`) | implemented |
+| 8 | collision | no-op |
+| 9 | health | no-op |
+| 10 | death (`systems/death.ts`, hp <= 0 decided at end of tick) | implemented |
+| 11 | debuffs (`systems/debuffs.ts`) | implemented |
+| 12 | status (`systems/status.ts`, timers) | implemented |
+| 13 | rest (`systems/rest.ts`, benched healing) | implemented |
+| 14 | cleanup | no-op |
+| 15 | end (`systems/end.ts`, match-end check, `matchEnded` event) | implemented |
+
+Adding or reordering a system changes every hash: bump `SIM_VERSION` and re-record goldens (see DETERMINISM.md).
+
+## Commands and agents
+
+A `Command` is a `u16` bitset per player per tick (`src/core/sim/commands.ts`: up, down, left, right, primary, secondary,
+capture, swap1..4; bits 11..15 reserved). An `Agent` (`src/core/agents/agent.ts`) turns a read-only `ObservationView` into a
+`Command`; it must be a pure function of the view plus its own `ai.pN` stream, whose state lives in `SimState.rng` so it is
+snapshotted. A replay stores the commands, so replays never re-run agents.
+
+## Events and stable ids
+
+`src/core/sim/events.ts`. Each step creates an `EventSink` for the current tick; `emit(sourceId, kind, payload)` numbers events
+with a per-tick `seq`. The id of an event is `(tick, sourceId, kind, seq)`; it is stable across re-simulation because events are
+a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-events-carry-stable-ids.md)). Kinds today:
+`moved, blocked, damage, died, swapped, captured, captureFailed, matchEnded`. Consumers (`src/game/fx/event-fx.ts`,
+`src/game/audio/audio-manager.ts`) dedupe by this id, so rewinding or re-stepping never doubles an effect.
+
+## RNG streams
+
+`src/core/rng/`: `sfc32.ts` (integer-only generator), `seed.ts` (`fnv1a`, `splitmix32`, `seedSfc32`), `streams.ts`
+(`STREAM_NAMES = combat, capture, spawn, ai.p1, ai.p2, meta, cosmetic`). `createMatch` seeds all seven from the match seed and
+stores them in `SimState.rng`. Today the AI streams are drawn by agents (`agent.ts` loads, draws and saves the stream words);
+`combat`, `capture`, `spawn` are reserved for the sim and `meta` is used by out-of-match rules (`rules/new-game.ts`,
+`rules/results.ts`, `rules/opponents.ts`, `rules/garrison.ts`), outside the hashed state. See [ADR 0003](adr/0003-sfc32-rng-streams.md).
+
+## Snapshot, restore, hash
+
+- `src/core/sim/snapshot.ts`: `createSnapshotBuf`, `snapshot` and `restore` copy every array with `TypedArray.set` (no
+  allocation), and `SnapshotRing` keeps a fixed-depth ring keyed by tick for rewind. `state.ts` also has the allocating
+  `snapshotState`/`restoreState` pair.
+- `src/core/sim/hash.ts`: FNV-1a 32 over the bytes of every array in `stateArrays` order; `-0` becomes `0` and every NaN
+  becomes the canonical NaN first. `assertNoNaN` is a debug check.
+
+## Fixed-step driver
+
+`src/game/loop/fixed-step-driver.ts`. The `FixedStepDriver` takes an injected monotonic clock (the Arena passes
+`performance.now`; core never sees a clock), clamps each frame to 250 ms, runs at most 5 ticks of 20 ms per frame, drops the
+leftover when the cap is hit, and returns `alpha = acc / 20` for render interpolation. `pauseOnHidden` pauses while the
+document is hidden. Pause is simply not stepping, so game time never advances while paused.
+
+```mermaid
+sequenceDiagram
+  participant RAF as Phaser frame
+  participant D as FixedStepDriver
+  participant S as core step
+  RAF->>D: frame(now)
+  D->>D: acc += clamp(dt, 0, 250ms)
+  loop while acc >= 20ms and steps < 5
+    D->>S: tick() -> step(world, [cmd1, cmd2])
+    S-->>D: events
+  end
+  D->>RAF: alpha = acc / 20ms
+```
+
+## Replays, save format and flags
+
+- Replays (`src/core/replay/`): `format.ts` (`ReplayHeader`, `ReplayFile`, hash checkpoint every `HASH_INTERVAL = 50` ticks),
+  `rle.ts`, `recorder.ts`, `player.ts` (`playReplay` verifies hashes and reports the first divergent tick), `record-bots.ts`.
+  The golden fixture is `tests/fixtures/replays/random-vs-random.replay.json`.
+- Save format: [SAVE-FORMAT.md](SAVE-FORMAT.md), code in `src/core/save/` (valibot, v0 to v1 migration), storage in
+  `src/game/platform/storage/`.
+- Flags: two kinds. Sim flags (`SimFlags` in `src/core/flags.ts`, all default off) change the simulation, so they are part of
+  `MatchSetup`, written into the replay header by `encodeFlags` (sorted names) and mirrored into `world[World.flags]`. UI flags
+  (`UiFlags` in `src/game/platform/flags.ts`, `?ff=` in dev/test builds only) never affect the sim and are not recorded.
+
+## Scenes and DOM menus
+
+Phaser scenes in `src/game/scenes/`: `Boot`, `Preload`, `Arena` (runs the driver and sim, installs the test probe), `Hud`
+(parallel to Arena, reads `RenderView`), `Cinematic` (data-driven by `src/game/cinematics/`). DOM menus (`src/ui/`) own
+everything outside a match (router, screens); the composition root `src/game/app/` wires them to scenes. Scenes read the sim
+only through the `RenderView` facade in `src/core/sim/view.ts` and never decide gameplay (for example death is a sim system).
+
+## Legacy concept map
+
+| Legacy (Crafty, `war/WEB-INF/private/src/`) | New module |
+|---|---|
+| character, ability, enemy AI scripts | `src/core/data/`, `src/core/sim/systems/`, `src/core/agents/` |
+| `Crafty.e` entity components | SoA arrays in `src/core/sim/state.ts` |
+| HUD scripts (`topHUD.js`) | `src/game/hud/`, `src/game/scenes/Hud.ts` |
+| scenes (`scenes.js`) | `src/game/scenes/`, `src/game/cinematics/` |
+| menus and persistence | `src/ui/`, `src/core/save/`, `src/game/platform/storage/` |
+
+Per-module detail: [legacy/INVENTORY.md](legacy/INVENTORY.md).
