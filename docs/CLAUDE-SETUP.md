@@ -5,7 +5,7 @@ and checks that each `pnpm` script and repo path they mention exists, so this se
 
 ## Settings and hooks
 
-`.claude/settings.json` allows every Bash command, denies reading `war/WEB-INF/user.properties` and `.env*` files, and denies
+`.claude/settings.json` allows every Bash command, denies reading `war/WEB-INF/user.properties` (the old credentials file, now only in git history and the legacy tag) and `.env*` files, and denies
 `rm -rf /*` and piping curl into a shell. Hooks:
 
 | Hook | Event | Behaviour |

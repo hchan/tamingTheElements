@@ -8,7 +8,7 @@ Describes merged code only; anything not yet built is labelled "planned". Determ
 - Goal: a deterministic 50 Hz simulation in plain TypeScript (`src/core`) with Phaser as a thin renderer on top, so the same
   seed and inputs give the same per-tick hash on every engine ([ADR 0002](adr/0002-deterministic-sim-50hz.md)).
 - Non-goals: physics engines (AABB only, [ADR 0005](adr/0005-aabb-no-arcade-physics.md)), gameplay logic in scenes, and
-  changing the frozen legacy game in `war/` (it is the parity oracle, [ADR 0014](adr/0014-legacy-as-parity-oracle.md)).
+  changing the legacy game (retired from the tree, kept at git tag `legacy-crafty-1.0` as the parity oracle, [ADR 0014](adr/0014-legacy-as-parity-oracle.md); [legacy/ARCHIVE.md](legacy/ARCHIVE.md)).
 
 ## Layers and import rules
 
@@ -335,7 +335,7 @@ players.
 
 ## Legacy concept map
 
-| Legacy (Crafty, `war/WEB-INF/private/src/`) | New module |
+| Legacy (Crafty, `war/WEB-INF/private/src/` in tag `legacy-crafty-1.0`) | New module |
 |---|---|
 | character, ability, enemy AI scripts | `src/core/data/`, `src/core/sim/systems/`, `src/core/agents/` |
 | `Crafty.e` entity components | SoA arrays in `src/core/sim/state.ts` |

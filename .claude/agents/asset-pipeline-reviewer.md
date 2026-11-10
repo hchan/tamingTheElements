@@ -11,9 +11,9 @@ You verify that runtime assets are reproducible from the legacy tree and that co
 
 1. Get the change: `git diff main --stat -- tools/assets public src/game/assets imgWorkArea`.
 2. Run `corepack pnpm exec vitest run --project repo tests/repo/assets-manifest.test.ts` and `corepack pnpm exec vitest run --project core src/game/assets`.
-3. Run `corepack pnpm assets:build` and confirm `git status --porcelain public` shows no change (idempotent, sha256 verified).
+3. Run `corepack pnpm oracle:restore` once (the legacy tree is no longer in the repo; it comes from git tag `legacy-crafty-1.0`), then `corepack pnpm assets:build` and confirm `git status --porcelain public` shows no change (idempotent, sha256 verified).
 4. Cross-check asset keys in `src/game/assets/keys.ts` and `src/game/assets/load-list.ts` against the manifest in both directions.
-5. Flag files over 1 MB, new files without a source under `war/WEB-INF/private/img` or `snd`, and anything under `public/` edited by hand.
+5. Flag files over 1 MB, new files that `assets:build` does not produce from the restored legacy tree (`pnpm oracle:restore`, then `.oracle/war/WEB-INF/private/img` or `snd`), and anything under `public/` edited by hand.
 
 ## Report format
 

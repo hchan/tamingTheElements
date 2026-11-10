@@ -72,6 +72,11 @@ describe('docs/PARITY.md', () => {
     expect(errors).toEqual([]);
   });
 
+  it('every row that cites a tests/oracle test says so (oracle-only evidence needs pnpm oracle:restore)', () => {
+    const unmarked = rows.filter((r) => r.evidence.includes('tests/oracle/') && !r.evidence.includes('oracle-only'));
+    expect(unmarked.map((r) => r.id)).toEqual([]);
+  });
+
   it('every open row is listed under Open items', () => {
     const openSection = doc.slice(doc.indexOf('## Open items'));
     const missing = rows.filter((r) => r.status === 'open' && !openSection.includes(`- ${r.id}:`));

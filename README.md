@@ -24,9 +24,9 @@ Eternal Void boss.
 
 ## Status
 
-The game is being ported from a legacy Crafty.js version to Phaser 4 + TypeScript + Vite. The legacy game is still in
-`war/` and serves as the parity oracle for the port (see [docs/PARITY.md](docs/PARITY.md)); it is preserved at the git tag
-`legacy-crafty-1.0`.
+The game is being ported from a legacy Crafty.js version to Phaser 4 + TypeScript + Vite. The legacy game (`war/`) was
+retired from the tree on 2026-11-10; it is preserved at the git tag `legacy-crafty-1.0` and can be restored as a parity
+oracle with `pnpm oracle:restore` (see [docs/legacy/ARCHIVE.md](docs/legacy/ARCHIVE.md), [docs/PARITY.md](docs/PARITY.md)).
 
 ## Quickstart
 
@@ -53,7 +53,9 @@ Run as `pnpm <name>` (or `corepack pnpm <name>`).
 | `typecheck` | `tsc -b` |
 | `lint` | ESLint over the repo |
 | `test` | Vitest `core` and `repo` projects (unit, rules, guards, golden replay) |
-| `test:legacy` | Vitest `legacy` project: characterization tests that run the frozen legacy sources in `node:vm` |
+| `test:legacy` | Vitest `legacy` project: integrity of the recorded legacy fixtures (the frozen parity evidence) |
+| `oracle:restore` | Extract the legacy game from git tag `legacy-crafty-1.0` into the gitignored `.oracle/` (opt-in) |
+| `test:oracle` | Vitest `oracle` project: characterization tests that execute the restored legacy sources in `node:vm` (skipped without `.oracle/`) |
 | `test:browser` | Vitest `browser` project: cross-engine determinism check |
 | `e2e` | Playwright end-to-end tests |
 | `e2e:pages` | Playwright smoke test of the build served under the Pages subpath |
@@ -61,7 +63,7 @@ Run as `pnpm <name>` (or `corepack pnpm <name>`).
 | `golden:record` | Re-record the golden replay after an intended sim change |
 | `sim:match` | Headless AI-vs-AI matches for balance work |
 | `sim:net` | Headless networked bot match over the fake lockstep link ([docs/NETCODE.md](docs/NETCODE.md)) |
-| `assets:build` | Copy manifest images and sounds from the legacy tree into `public/` |
+| `assets:build` | Copy manifest images and sounds from the restored legacy tree (`oracle:restore`) into `public/` |
 | `docs:gen` | Regenerate the generated tables in `docs/GAME-DESIGN.md` |
 | `format` | Placeholder, exits 1 ("not yet") |
 
@@ -78,7 +80,6 @@ Short version; the full map is [docs/REPO-MAP.md](docs/REPO-MAP.md).
 | `tests/` | Cross-cutting, legacy, browser, e2e and Pages tests plus fixtures |
 | `tools/` | Asset, generator and match-runner tooling |
 | `docs/` | Documentation, see [docs/README.md](docs/README.md) |
-| `war/` | Legacy Crafty.js game (parity oracle) |
 | `imgWorkArea/`, `visio/` | Art sources and design diagrams |
 
 ## Architecture

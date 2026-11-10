@@ -16,6 +16,7 @@
 | [BRANCHING.md](BRANCHING.md) | Trunk-based workflow and branch rules |
 | [REPO-MAP.md](REPO-MAP.md) | Where every directory and module lives |
 | [adr/README.md](adr/README.md) | Architecture decision records index |
+| [legacy/ARCHIVE.md](legacy/ARCHIVE.md) | Legacy game retired: git tag, `oracle:restore`, re-recording fixtures |
 | [legacy/INVENTORY.md](legacy/INVENTORY.md) | The legacy game modules |
 | [legacy/KNOWN-BUGS.md](legacy/KNOWN-BUGS.md) | Known legacy bugs and how the port treats them |
 | [legacy/home.md](legacy/home.md) | Retired legacy landing page |

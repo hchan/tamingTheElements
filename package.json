@@ -17,6 +17,8 @@
     "test:coverage": "vitest run --project core --coverage",
     "sbom": "sh tools/sbom/sbom.sh",
     "test:legacy": "vitest run --project legacy",
+    "test:oracle": "vitest run --project oracle",
+    "oracle:restore": "tsx tools/oracle/restore.ts",
     "test:browser": "vitest run --project browser",
     "e2e": "playwright test",
     "visual:capture": "tsx tools/visual/run.ts capture",

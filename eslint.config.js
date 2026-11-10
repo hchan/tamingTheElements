@@ -145,7 +145,7 @@ export default tseslint.config(
       'dist-itch/**',
       'coverage/**',
       'node_modules/**',
-      'war/**',
+      '.oracle/**',
       'imgWorkArea/**',
       'visio/**',
       'tools/**',

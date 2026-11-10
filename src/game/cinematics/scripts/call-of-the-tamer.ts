@@ -1,6 +1,6 @@
 import type { CineScript } from '../../cine/types';
 
-/** Legacy scene "Call of the Tamer" (war/WEB-INF/private/src/scenes.js). */
+/** Legacy scene "Call of the Tamer" (tag legacy-crafty-1.0: war/WEB-INF/private/src/scenes.js). */
 export const CALL_OF_THE_TAMER_SCRIPT: CineScript = {
   id: 'call-of-the-tamer',
   title: 'Call of the Tamer',

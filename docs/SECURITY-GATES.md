@@ -2,7 +2,7 @@
 
 | Gate | Workflow | Blocking | Notes |
 |---|---|---|---|
-| CodeQL (`javascript-typescript`, `security-and-quality`) | `codeql.yml` | Report in Security tab | push to main, PRs, weekly. Scans `src`, `tools`, `tests`, not `war/`. Only the analyze job has `security-events: write`. |
+| CodeQL (`javascript-typescript`, `security-and-quality`) | `codeql.yml` | Report in Security tab | push to main, PRs, weekly. Scans `src`, `tools`, `tests`. Only the analyze job has `security-events: write`. |
 | Secret scan (gitleaks 8.30.1, pinned binary + sha256) | `secrets.yml` | Yes | Full history and working tree, always `--redact`. |
 | Dependency audit (`pnpm audit --prod`, OSV-Scanner on the lockfile) | `osv.yml` | No (`continue-on-error`) | Lockfile PRs, main, nightly. |
 | Coverage floors for `src/core` | `ci.yml` job `coverage` | Yes | `pnpm test:coverage`; report uploaded as artifact `coverage-report`. |

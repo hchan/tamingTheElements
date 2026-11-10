@@ -1,12 +1,13 @@
 // Stage 1 of the asset pipeline: copy the legacy runtime assets listed in the manifest into public/.
-// Run: pnpm assets:build. Idempotent; verifies sha256 of every copied file. Never touches war/.
+// Run: pnpm assets:build. Idempotent; verifies sha256 of every copied file. Reads the legacy tree restored by `pnpm oracle:restore` (.oracle/war); never writes it.
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { ORACLE_WAR, ORACLE_PRIVATE, oracleAvailable } from '../../src/testing/legacy/oracle';
 import manifest from '../../src/game/assets/manifest.generated.json' with { type: 'json' };
 
 const root = resolve(import.meta.dirname, '../..');
-const legacyDir = resolve(root, 'war/WEB-INF/private');
+const legacyDir = ORACLE_PRIVATE;
 const outDir = resolve(root, 'public/assets');
 
 /** Manifest entries whose file is absent from the legacy tree (legacy bug; nothing to copy). */
@@ -27,6 +28,7 @@ export function manifestUrls(): string[] {
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 if (import.meta.main) {
+  if (!oracleAvailable()) throw new Error('legacy tree not found: run `pnpm oracle:restore` first');
   let copied = 0;
   const skipped: string[] = [];
   for (const url of manifestUrls()) {
@@ -44,7 +46,7 @@ if (import.meta.main) {
     if (sha256(src) !== sha256(dest)) throw new Error(`sha256 mismatch: ${url}`);
     copied++;
   }
-  const faviconSrc = resolve(root, 'war/favicon.png');
+  const faviconSrc = resolve(ORACLE_WAR, 'favicon.png');
   const favicon = resolve(root, 'public/favicon.png');
   mkdirSync(dirname(favicon), { recursive: true });
   copyFileSync(faviconSrc, favicon);

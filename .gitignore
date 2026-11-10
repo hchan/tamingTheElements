@@ -18,6 +18,9 @@ playwright-report/
 test-results/
 blob-report/
 
+# Legacy game restored from the git tag legacy-crafty-1.0 (pnpm oracle:restore)
+.oracle/
+
 # Legacy build leftovers
 .sass-cache/
 

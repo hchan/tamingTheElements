@@ -3,7 +3,7 @@ import type { CineScript } from '../../cine/types';
 /** Chain end: legacy `GamePersist.saveStart(); Main.currentObjectives("chapter1")`. */
 export const CHAPTER_1_OBJECTIVES = 'chapter1-objectives';
 
-/** Legacy scene "Restoring Balance" (war/WEB-INF/private/src/scenes.js). */
+/** Legacy scene "Restoring Balance" (tag legacy-crafty-1.0: war/WEB-INF/private/src/scenes.js). */
 export const RESTORING_BALANCE_SCRIPT: CineScript = {
   id: 'restoring-balance',
   title: 'Restoring Balance',
