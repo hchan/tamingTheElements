@@ -78,6 +78,8 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['super cinematic freeze', () => of(K.hitStop).filter((e) => e.cause === 2 && e.ticks === 40).length],
     ['super hits', () => hits.filter((e) => e.strength === 3).length],
     ['super ended', () => of(K.superEnded).length],
+    ['clash that destroys both (void against air)', () => of(K.clash).filter((e) => e.winner === -1).length],
+    ['clash won by element (fire over air)', () => of(K.clash).filter((e) => e.winner === e.a && e.ea === 0 && e.eb === 1).length],
     ['round KO', () => of(K.ko).length],
     ['time over', () => of(K.timeOver).length],
     ['match ended', () => of(K.matchEnded).length],
@@ -113,6 +115,13 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     expect(eclipse).toBeDefined();
     // chaos bolt: 40 base * 1.1 (level 1) * 1.2 (eclipse favours void) against air at x1.0
     expect(hit?.amount).toBeCloseTo(52.8, 6);
+  });
+
+  it('the clash survivor flies on with its damage cut and lands', () => {
+    const won = of(K.clash, weatherRun).find((e) => e.winner !== -1);
+    if (!won) throw new Error('no clash with a survivor');
+    const hit = of(K.hitConfirmed, weatherRun).find((e) => e.sourceId === won.winner && e.tick > won.tick);
+    expect(hit).toBeDefined();
   });
 
   it('the rounds run best of three: a KO win, a time-over loss, a super KO win', () => {

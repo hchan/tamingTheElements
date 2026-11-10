@@ -123,7 +123,13 @@ function weatherScript(): ArcadeScript {
   p1.until(410).tap('swap to void', swap2).until(420).tap('eclipse (void)', weather);
   // A hit under the eclipse: the void bolt crosses the arena and lands with the weather's damage factor.
   p1.until(440).tap('chaos bolt', primary);
-  p1.until(600);
+  // Elemental clash (WP-arcade-clash): shots fired on the same row meet in the middle. Void against air cancels (both
+  // destroyed); then fire (Fiara's Fireball) beats air (the cone), loses half the cone's damage and flies on to land.
+  p1.until(600).tap('chaos bolt', primary);
+  p2.until(600).tap('cone', secondary);
+  p1.until(700).tap('swap to fire', swap1).until(720).tap('fireball', secondary);
+  p2.until(720).tap('cone', secondary);
+  p1.until(900);
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
 

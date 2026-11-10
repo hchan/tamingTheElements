@@ -13,6 +13,7 @@ import { captureSystem } from './systems/capture';
 import { projectileSystem } from './systems/projectile';
 import { endSystem } from './systems/end';
 import { arcadeInputSystem } from './systems/arcade/input';
+import { arcadeClashSystem } from './systems/arcade/clash';
 import { arcadeSuperSystem } from './systems/arcade/super';
 import { arcadeRoundSystem } from './systems/arcade/round';
 import { World as W } from './state';
@@ -21,12 +22,10 @@ import type { SimWorld } from './world';
 
 type System = (world: SimWorld, cmds: readonly [Command, Command], sink: EventSink) => void;
 
-const noop: System = () => undefined;
-
 /** Leading SYSTEMS entries that run even while an Arcade freeze or KO slow motion holds the game clock: just `input`. */
 export const UNFROZEN_SYSTEMS = 1;
 
-/** Fixed system order; systems not yet implemented are no-ops. */
+/** Fixed system order; the Arcade systems fill the `input`, `collision`, `health` and `cleanup` slots and return at once in Classic. */
 export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['input', arcadeInputSystem],
   ['swap', swapSystem],
@@ -35,7 +34,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['melee', meleeSystem],
   ['projectiles', projectileSystem],
   ['capture', captureSystem],
-  ['collision', noop],
+  ['collision', arcadeClashSystem],
   ['health', arcadeSuperSystem],
   ['death', deathSystem],
   ['debuffs', debuffSystem],
