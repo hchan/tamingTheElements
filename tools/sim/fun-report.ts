@@ -80,9 +80,10 @@ export function funBands(r: FunReport): FunBand[] {
   const band = (metric: string, value: number, min: number, max: number): FunBand => ({ metric, value, min, max, ok: value >= min && value <= max });
   const rates = Object.values(raceWinRates(r));
   return [
-    band('round median s', o.medianRoundSeconds, 25, 60),
+    // 2v2 (tag team) rounds run longer: two heroes to wear down (WP-arcade-2v2-tune), and a stalemate up to 1% is tolerated.
+    band('round median s', o.medianRoundSeconds, r.options.teamSize === 2 ? 45 : 25, r.options.teamSize === 2 ? 90 : 60),
     band('time-over rate', o.timeOverRate, 0, 0.15),
-    band('stalemate rate', o.stalemateRate, 0, 0),
+    band('stalemate rate', o.stalemateRate, 0, r.options.teamSize === 2 ? 0.01 : 0),
     band('first hit median s', o.medianFirstHitSeconds, 0, 4),
     band('combo median hits', o.medianComboHits, 2, 4),
     band('combo p90 hits', o.p90ComboHits, 0, 8),

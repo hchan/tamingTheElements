@@ -1,4 +1,4 @@
-import { GUARD_MAX, Q4_ONE } from '../data/arcade';
+import { GUARD_MAX, Q4_ONE, TAG_COOLDOWN_TICKS } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
@@ -198,7 +198,7 @@ export function createRenderView(world: SimWorld): RenderView {
         capture,
         swaps,
         swapReadyTick: s.teams[base + TeamField.swapCooldownUntil] ?? 0,
-        swapCooldownTicks: SWAP_COOLDOWN_TICKS,
+        swapCooldownTicks: isArcade(s) ? TAG_COOLDOWN_TICKS : SWAP_COOLDOWN_TICKS,
       };
     },
     forEachProjectile(visit): void {

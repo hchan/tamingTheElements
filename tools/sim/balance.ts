@@ -23,13 +23,21 @@ export const FULL_PARAMS = {
  */
 export const ARCADE_PARAMS = { ...FULL_PARAMS, maxTicks: ARCADE_MAX_TICKS, ruleset: 'arcade', aiLevel: 3 } as const;
 
-export type BalanceParams = typeof FULL_PARAMS | typeof ARCADE_PARAMS;
+/**
+ * The Arcade 2v2 (tag team) tournament (WP-arcade-2v2-tune): the Arcade round robin with a fixed partner per race
+ * (`--team-size 2`) and the longer match cap of two heroes. Fewer seeds than 1v1 (a 2v2 match is about 4x the work).
+ */
+export const ARCADE_2V2_PARAMS = { ...ARCADE_PARAMS, seeds: 8, maxTicks: ARCADE_MAX_TICKS * 2, teamSize: 2 } as const;
+
+export type BalanceParams = typeof FULL_PARAMS | typeof ARCADE_PARAMS | typeof ARCADE_2V2_PARAMS;
 
 /** A race may move by at most this much (absolute, 0.05 = 5 percentage points) before the compare fails. */
 export const DEFAULT_TOLERANCE = 0.05;
 
 export const BASELINE_PATH = 'tests/fixtures/balance/baseline.json';
 export const ARCADE_BASELINE_PATH = 'tests/fixtures/balance/arcade-baseline.json';
+
+export const ARCADE_2V2_BASELINE_PATH = 'tests/fixtures/balance/arcade-2v2-baseline.json';
 
 export interface BalanceReport {
   readonly params: BalanceParams;
@@ -95,15 +103,19 @@ export function main(argv: readonly string[]): number {
       args: [...argv],
       options: {
         record: { type: 'boolean' }, out: { type: 'string' }, baseline: { type: 'string' }, tolerance: { type: 'string' },
-        ruleset: { type: 'string' },
+        ruleset: { type: 'string' }, 'team-size': { type: 'string' },
       },
     });
     if (values.ruleset !== undefined && values.ruleset !== 'classic' && values.ruleset !== 'arcade') {
       throw new Error(`--ruleset must be classic|arcade, got "${values.ruleset}"`);
     }
     const arcade = values.ruleset === 'arcade';
-    const params = arcade ? ARCADE_PARAMS : FULL_PARAMS;
-    const baselinePath = values.baseline ?? (arcade ? ARCADE_BASELINE_PATH : BASELINE_PATH);
+    const teamSize = values['team-size'] ?? '1';
+    if (teamSize !== '1' && teamSize !== '2') throw new Error('--team-size must be 1 or 2');
+    if (teamSize === '2' && !arcade) throw new Error('--team-size 2 needs --ruleset arcade');
+    const tag = arcade && teamSize === '2';
+    const params = tag ? ARCADE_2V2_PARAMS : arcade ? ARCADE_PARAMS : FULL_PARAMS;
+    const baselinePath = values.baseline ?? (tag ? ARCADE_2V2_BASELINE_PATH : arcade ? ARCADE_BASELINE_PATH : BASELINE_PATH);
     const tolerance = values.tolerance === undefined ? DEFAULT_TOLERANCE : Number(values.tolerance);
     if (!Number.isFinite(tolerance) || tolerance < 0) throw new Error('--tolerance must be a non-negative number');
     const current = toReport(runTournament(params), params);
@@ -125,13 +137,13 @@ export function main(argv: readonly string[]): number {
       writeFileSync(values.out, `${JSON.stringify({ tolerance, failed, baseline: base, current, deltas: rows }, null, 2)}\n`);
     }
     if (failed) {
-      const record = `pnpm balance:record${arcade ? ' --ruleset arcade' : ''}`;
+      const record = `pnpm balance:record${tag ? ' --ruleset arcade --team-size 2' : arcade ? ' --ruleset arcade' : ''}`;
       console.error(`Balance moved beyond tolerance. If intended, run \`${record}\` and say why in the commit.`);
     }
     return failed ? 1 : 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm balance:compare [--ruleset classic|arcade] [--out report.json] [--tolerance 0.05] | pnpm balance:record [--ruleset classic|arcade]');
+    console.error('usage: pnpm balance:compare [--ruleset classic|arcade] [--team-size 1|2] [--out report.json] [--tolerance 0.05] | pnpm balance:record [--ruleset classic|arcade] [--team-size 1|2]');
     return 2;
   }
 }

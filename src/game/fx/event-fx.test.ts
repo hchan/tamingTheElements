@@ -162,6 +162,7 @@ describe('feedback coverage (FUN-DESIGN section 4): every hitConfirmed gets a fl
   const matches = [
     arcadeEvents(['sindarosa', 'curomo'], ['pax', 'wispera']),
     arcadeEvents(['rokcore', 'wispera'], ['cyclonius', 'curomo']),
+    arcadeEvents(['morblass', 'treenoc'], ['sindarosa', 'fiara']),
   ];
 
   it('the matches land light, medium and heavy hits', () => {

@@ -152,3 +152,24 @@ arcade`, 66 pairings x 16 seeds) went from min 43.2 percent (Echo) and max 54.8 
 win rates 40.9 (Echo) to 57.4 (Ishimi), the round median 46.0 s. Stalemates first rose from 4 to 92 of 1056 matches (an earth stage puts a rock on the
 fighters' row); the Arcade AI's rock avoidance (`ArcadeTactics.slide`) brought them to 7, and the baseline was re-recorded
 with it: win rates min 43.2 (Echo) and max 56.0 (Ishimi). No data row was retuned.
+
+## Arcade 2v2 tune (WP-arcade-2v2-tune, SIM_VERSION 22)
+
+`pnpm fun:report --ruleset arcade --team-size 2 --all --seeds 8` (fixed partner per race, `RACES[(i + 6) % 12]`, Normal AI,
+personalities on) before and after. Levers: a per-race 2v2 life multiplier (`ARCADE_2V2_LIFE_PM` in
+`src/core/sim/arcade-numbers.ts`, default 600 pm of the 1v1 Arcade life, applied only to two-hero rosters), bench heal
+`REST_HEAL_PM` 10 -> 3 pm per 10 ticks, and the Arcade AI of a tag team firing along a rock-cut line from tick 64 of every
+256 (`SHOOT_FROM`; two sides that both refused a wasted shot and slid about never traded a hit).
+
+| 2v2 metric | before | after (seeds 41/51/61/71, 8 each) | target |
+|---|---|---|---|
+| rounds ending by time over | 74.6% | 3.7-5.1% | under 15% |
+| round length median (`W.tick`, includes freezes) | 123.4 s | 75-77 s | 45-90 s |
+| matches ending in a stalemate | 0% | 1.3-1.9% | at most 1% (not met; the baseline has 2 of 528) |
+| race win rate spread (one 88-match sample per race) | not measured | 36-61% per fresh seed | 40-60% |
+
+The recorded 2v2 baseline `tests/fixtures/balance/arcade-2v2-baseline.json` (`pnpm balance:record --ruleset arcade
+--team-size 2`, 66 pairings x 8 seeds, 2 stalemates) has race win rates 40.9 (Pax) to 59.1 (Wispera). It is new in this WP: the
+tune changed 2v2 play, there was no 2v2 baseline before. `pnpm balance:compare --ruleset arcade --team-size 2` diffs it (report
+only, 5 pp tolerance). Seed noise is about 5 pp per race, so single fresh seeds reach 36-61%. The 1v1 Arcade baseline and the
+Classic baseline are unchanged (+0.0pp every race); the Arcade goldens were re-recorded (new sim version, 2v2 life, heal and AI).
