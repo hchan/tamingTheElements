@@ -91,7 +91,7 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         mountPoint.id = 'game';
         root.prepend(mountPoint);
         host = mountPoint;
-        game = createGame('game', {
+        game = createGame(mountPoint, {
           setup: setupFromHeader(replay.header),
           playback: {
             replay,

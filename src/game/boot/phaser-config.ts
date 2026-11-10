@@ -18,7 +18,7 @@ export { LOGICAL_HEIGHT, LOGICAL_WIDTH } from './viewport';
  * Scale.FIT, not ENVELOP: FIT letterboxes, so the whole arena, HUD and action bar are always visible
  * with the 16:9 aspect preserved; ENVELOP would crop the edges (action bar, HUD) on any non-16:9 window.
  */
-export function createGameConfig(parent: string, resolution: number = pickResolution(window.devicePixelRatio)): Phaser.Types.Core.GameConfig {
+export function createGameConfig(parent: string | HTMLElement, resolution: number = pickResolution(window.devicePixelRatio)): Phaser.Types.Core.GameConfig {
   return {
     type: Phaser.WEBGL,
     width: LOGICAL_WIDTH * resolution,
@@ -37,12 +37,12 @@ export function createGameConfig(parent: string, resolution: number = pickResolu
  * for the flag-gated bot-vs-bot demo; `false` stays on Preload.
  */
 export function createGame(
-  parent: string,
+  parent: string | HTMLElement,
   arena: ArenaLaunch | boolean = false,
   cinematic: CinematicLaunch | boolean = false,
 ): Phaser.Game {
   const game = new Phaser.Game(createGameConfig(parent));
-  const host = document.getElementById(parent);
+  const host = typeof parent === 'string' ? document.getElementById(parent) : parent;
   if (host) installPresentation(game, host, { rotateHint: arena !== false && !cinematic });
   if (arena !== false || cinematic) {
     game.events.once(PRELOAD_READY, () => {

@@ -10,3 +10,24 @@ export function showWebglError(root: HTMLElement): void {
   box.append(h, p);
   root.replaceChildren(box);
 }
+
+/**
+ * Replaces the container content with an error and a way out. `action` is a link to a route
+ * (default: back to the main menu) so a failed screen never leaves the player stuck.
+ */
+export function showErrorScreen(root: HTMLElement, title: string, message: string, backHref = '#main'): void {
+  const box = document.createElement('div');
+  box.setAttribute('role', 'alert');
+  box.className = 'menuPage';
+  const h = document.createElement('h1');
+  h.className = 'heading';
+  h.textContent = title;
+  const p = document.createElement('p');
+  p.textContent = message;
+  const back = document.createElement('a');
+  back.className = 'menuButton';
+  back.href = backHref;
+  back.textContent = 'Back to menu';
+  box.append(h, p, back);
+  root.replaceChildren(box);
+}
