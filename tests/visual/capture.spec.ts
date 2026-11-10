@@ -320,6 +320,47 @@ for (const vp of VIEWPORTS) {
       await shoot(page, vp, 'arcade', 'arcade-results', 'Arcade Versus results: outcome, fighters, "saves nothing", Rematch, Change fighters, Main Menu');
       expect(errors).toEqual([]);
     });
+
+    test('arcade tag team (2v2)', async ({ page }) => {
+      const errors = collectErrors(page);
+      const frame = (): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.getByLabel('Team').selectOption('2');
+      await page.getByLabel('Your race').selectOption('sindarosa');
+      await page.getByLabel('Your partner (2v2)').selectOption('pax');
+      await page.getByLabel('AI race').selectOption('fiara');
+      await freeze(page);
+      await shoot(page, vp, 'arcade', 'arcade-tag-pick', 'Arcade Versus picker in 2v2: Team 2v2 tag team, your race and partner (enabled), AI race and level');
+      await page.getByRole('button', { name: 'Fight!' }).click();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      // Past the intro and FIGHT!; the lead hurt to 45%, so the red life shows on its bar.
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      const [lead] = await characters(page, 0);
+      await page.evaluate(`window.__TTE__.arena.setHp(${String(lead?.id)}, ${String(Math.round((lead?.maxHp ?? 0) * 0.45))})`);
+      await page.evaluate(`window.__TTE__.arena.step(1)`);
+      await frame();
+      await shoot(page, vp, 'arena', 'arcade-tag-fight', 'Arcade 2v2: gold frame on the active bar, "IN Sindarosa  BENCH Pax 100%" and TAG READY with a full gold bar under each side, the TAG caption over the swap slot, the touch Tag button above Weather');
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(1, [${String(1 << 7)}, 0]); a.step(4); })()`);
+      await frame();
+      await shoot(page, vp, 'arena', 'arcade-tag-in', 'Arcade tag-in, 5 ticks on: TAG! on the left, the entrance flash (white core, ring, speed lines from the left) on Pax at Sindarosa\'s spot, "BENCH Sindarosa 46% +28% red" with red dashes on the bench bar, the tag bar empty with TAG 2.9s');
+      const [pax] = await characters(page, 0);
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(pax?.id)}, 0); a.step(5); })()`);
+      await frame();
+      await shoot(page, vp, 'arena', 'arcade-tag-ko-entrance', 'Arcade KO entrance, 5 ticks on: SINDAROSA IN! in gold, the gold double ring on Sindarosa, "BENCH Pax K.O." and NO TAG');
+      for (let round = 0; round < 2; round++) {
+        for (let k = 0; k < 2; k++) {
+          const [foe] = await characters(page, 1);
+          await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(foe?.id)}, 0); a.step(1); })()`);
+        }
+        await page.evaluate(`window.__TTE__.arena.step(${String(30 + 120 + 60 + 5 + (round === 0 ? ARCADE_INTRO : 0))})`);
+      }
+      await page.getByRole('heading', { level: 1, name: 'Victory!' }).waitFor();
+      await page.evaluate(`window.__TTE__.settled()`);
+      await freeze(page);
+      await shoot(page, vp, 'arcade', 'arcade-tag-results', "Arcade 2v2 results: both heroes of each team with their HP left or knocked out, the round score");
+      expect(errors).toEqual([]);
+    });
   });
 }
 

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 // result. The runtime half of the guarantee is in src/game/app/arcade-setup.test.ts (no storage access at all).
 const root = resolve(import.meta.dirname, '../..');
 const FILES = [
+  'src/game/app/arcade-pick.ts',
   'src/game/app/arcade-setup.ts',
   'src/game/app/arcade-versus.ts',
   'src/ui/screens/arcade-versus.ts',

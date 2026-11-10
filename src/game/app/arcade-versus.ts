@@ -12,9 +12,9 @@ import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
 import { activeSaveStorage } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
-import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, arcadeLaunch, parsePick, type ArcadePick, type ArcadeResult } from './arcade-setup';
+import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, parsePick, partnerFor, type ArcadePick } from './arcade-pick';
+import type { ArcadeHero, ArcadeResult } from './arcade-setup';
 import { downloadReplay } from './download';
-import { mountAimIndicator } from '../fx/aim-view';
 import { destroyGame, type GameHandle } from './game-handle';
 
 /**
@@ -35,13 +35,16 @@ const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { wi
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
 let lastPick: ArcadePick = DEFAULT_PICK;
 
-/** Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold), Dash and Weather (FUN-DESIGN 2.5, 2.7, 2.8, 2.14). */
-const TOUCH = ['Super', 'Guard', 'Dash', 'Weather'] as const;
+/**
+ * Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold), Dash and Weather (FUN-DESIGN 2.5, 2.7, 2.8,
+ * 2.14), and in 2v2 Tag (2.6: the first swap key).
+ */
+const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Tag'] as const;
 
 /**
  * Pointer-only button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
  * listens on window) for as long as the finger is down; an unbound action does nothing. Not in the Tab order: keyboards
- * press the key itself. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`.
+ * press the key itself. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeTag`.
  */
 function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElement {
   const b = el('button', 'menuButton', label);
@@ -58,7 +61,7 @@ function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElem
   b.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     if (code !== undefined) return;
-    code = getBindings()[label.toLowerCase() as Lowercase<typeof label>][0];
+    code = getBindings()[label === 'Tag' ? 'slot3' : (label.toLowerCase() as Lowercase<Exclude<typeof label, 'Tag'>>)][0];
     if (code === undefined) return;
     b.setPointerCapture(e.pointerId);
     window.dispatchEvent(new KeyboardEvent('keydown', { code }));
@@ -66,6 +69,10 @@ function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElem
   for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, release);
   return b;
 }
+
+/** "Sindarosa (fire) 45% left, Pax (earth) knocked out": one team's heroes at the end of a 2v2 match. */
+const team = (heroes: readonly ArcadeHero[], t: number): string =>
+  heroes.filter((h) => h.team === t).map((h) => `${raceLabel(h.race)} ${h.pct ? `${String(h.pct)}% left` : 'knocked out'}`).join(', ');
 
 export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
   let container: HTMLElement | undefined;
@@ -93,7 +100,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       arcadePickView({
         races: ARCADE_RACES,
         levels: ARCADE_AI_LEVELS.map((value) => ({ value, label: LEVEL_LABELS[value] })),
-        current: lastPick,
+        current: { ...lastPick, size: lastPick.partner ? '2' : '1', partner: partnerFor(lastPick.player, lastPick.partner) },
         onStart: (v) => {
           lastPick = parsePick(v);
           startBattle();
@@ -120,7 +127,9 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       arcadeResultsView({
         heading: OUTCOME_HEADINGS[r.outcome],
         summary:
-          `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. ` +
+          (r.heroes
+            ? `Your team: ${team(r.heroes, 0)}. The AI's team (${LEVEL_LABELS[r.pick.level]}): ${team(r.heroes, 1)}. `
+            : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. `) +
           (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : '') +
           'Arcade Versus saves nothing: no XP, no capture, no progress.',
         onRematch: startBattle,
@@ -141,30 +150,24 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
     }
     battle.append(el('h1', 'heading', 'Loading...'));
     focusHeading(battle);
-    const launch: ArenaLaunch = {
-      ...arcadeLaunch(lastPick, deps.flags.seed ?? deps.now() >>> 0, {
-        record: deps.flags.record || getRecordSetting(),
-        replays: deps.replays,
-        onResult: (r) => {
-          if (epoch === mine) showResults(r);
-        },
-      }),
-      arcadeView: (arena, view, alpha) => {
-        mountAimIndicator(arena, view, alpha);
-        // The Arcade audio layers (WP-arcade-audio-layers), their own chunk, on the battle's sound as it is now.
-        const held = arena.audio;
-        void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held); });
-      },
-    };
-    import('../boot/phaser-config')
-      .then(({ createGame }) => {
+    const pick = lastPick;
+    // The match builder (`arcade-setup`, WP-arcade-tag-view) is its own chunk, loaded with Phaser.
+    import('./arcade-setup')
+      .then(({ arcadeLaunch }) => import('../boot/phaser-config').then(({ createGame }) => {
         if (epoch !== mine) return;
+        const launch: ArenaLaunch = arcadeLaunch(pick, deps.flags.seed ?? deps.now() >>> 0, {
+          record: deps.flags.record || getRecordSetting(),
+          replays: deps.replays,
+          onResult: (r) => {
+            if (epoch === mine) showResults(r);
+          },
+        });
         const host = el('div');
         host.id = 'game';
         battle.replaceChildren(host);
         game = createGame(host, launch);
-        host.append(...TOUCH.map(touchButton));
-      })
+        host.append(...TOUCH.slice(0, pick.partner ? 5 : 4).map(touchButton));
+      }))
       .catch((e: unknown) => {
         if (epoch !== mine) return;
         if (game) destroyGame(game, undefined);

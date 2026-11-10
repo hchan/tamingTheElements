@@ -67,6 +67,14 @@ export interface ArenaProbe {
    * none) with its scale; undefined in Classic.
    */
   weather(): Promise<{ kind: number; label: string; fill: number; tint: number; particles: number; call: string; callScale: number } | undefined>;
+  /**
+   * Arcade 2v2 only (async: a lazy chunk): the tag view's last frame (WP-arcade-tag-view): per team its active, bench and
+   * tag lines, the "TAG!" call ('' when none) and its scale, live entrance flashes (and whether one is a KO entrance),
+   * and the swap-slot caption; undefined in Classic and 1v1.
+   */
+  tag(): Promise<{
+    lines: readonly (readonly [string, string, string])[]; call: string; callScale: number; flashes: number; ko: boolean; caption: string;
+  } | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */
   aim(): { visible: boolean; x: number; y: number; angle: number } | undefined;
   /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */

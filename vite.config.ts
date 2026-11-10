@@ -62,6 +62,8 @@ export default defineConfig({
             { name: 'weather-view', test: /\/src\/game\/fx\/weather-/, includeDependenciesRecursively: false },
             // The Arcade clash burst, mounted by the defence view (WP-arcade-clash).
             { name: 'clash-view', test: /\/src\/game\/fx\/clash-/, includeDependenciesRecursively: false },
+            // The Arcade tag-team view, mounted by the weather view (WP-arcade-tag-view).
+            { name: 'tag-view', test: /\/src\/game\/hud\/tag-/, includeDependenciesRecursively: false },
           ],
         },
       },

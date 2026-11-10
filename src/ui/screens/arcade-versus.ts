@@ -11,6 +11,9 @@ export interface PickValues {
   readonly player: string;
   readonly enemy: string;
   readonly level: string;
+  /** '1' (1v1) or '2' (2v2 tag team, WP-arcade-tag-view); the partner is the player's second race (2v2 only). */
+  readonly size?: string;
+  readonly partner?: string;
 }
 
 export interface PickViewOptions {
@@ -25,13 +28,15 @@ export function raceLabel(id: CharacterId): string {
   return `${CHARACTER_TEXT.get(id)?.name ?? id} (${getCharacter(id).element})`;
 }
 
-function select(id: string, label: string, options: readonly { value: string; label: string }[], value: string): HTMLElement {
+/** A labelled select with id `arcade<Name>`; `name` is the `PickValues` key it fills. */
+function select(name: string, label: string, options: readonly { value: string; label: string }[], value = ''): HTMLElement {
+  const id = `arcade${name[0]?.toUpperCase() ?? ''}${name.slice(1)}`;
   const row = el('div', 'settingsOption');
   const lab = el('label', undefined, label);
   lab.htmlFor = id;
   const input = el('select');
   input.id = id;
-  input.name = id;
+  input.name = name;
   for (const o of options) {
     const opt = el('option', undefined, o.label);
     opt.value = o.value;
@@ -50,7 +55,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     el(
       'p',
       undefined,
-      'Preview: one fight against the Arcade AI. Hits stun and push, quick follow-ups combo, hits fill your meter, and a full bar fires your super (X, gamepad RT, or the Super button). Nothing is saved: no XP, no capture, no progress.',
+      'Preview: one fight against the Arcade AI, 1v1 or 2v2 tag team. Hits stun and push, quick follow-ups combo, hits fill your meter, and a full bar fires your super (X, gamepad RT, or the Super button). In 2v2, Tag (3, gamepad LB, or the Tag button) brings your partner in with an attack, and a benched hero wins back its red life. Nothing is saved: no XP, no capture, no progress.',
     ),
   );
   const races = o.races.map((r) => ({ value: r, label: raceLabel(r) }));
@@ -58,9 +63,11 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const set = el('fieldset', 'settingsGroup');
   set.append(
     el('legend', 'heading', 'Fighters'),
-    select('arcadePlayer', 'Your race', races, o.current.player),
-    select('arcadeEnemy', 'AI race', races, o.current.enemy),
-    select('arcadeLevel', 'AI level', o.levels, o.current.level),
+    select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }], o.current.size),
+    select('player', 'Your race', races, o.current.player),
+    select('partner', 'Your partner (2v2)', races, o.current.partner),
+    select('enemy', 'AI race', races, o.current.enemy),
+    select('level', 'AI level', o.levels, o.current.level),
   );
   const start = el('button', 'menuButton', 'Fight!');
   start.type = 'submit';
@@ -68,14 +75,16 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const back = el('a', 'menuButton', 'Back');
   back.href = '#main';
   form.append(set, start, back);
+  // The partner counts in 2v2 only: disabled in 1v1 (out of the Tab order and the form data). The AI's comes from the seed.
+  const f = form.elements as unknown as Record<string, HTMLSelectElement>;
+  const sync = (): void => {
+    (f['partner'] as HTMLSelectElement).disabled = f['size']?.value !== '2';
+  };
+  sync();
+  form.addEventListener('change', sync);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const data = new FormData(form);
-    const get = (k: string): string => {
-      const v = data.get(k);
-      return typeof v === 'string' ? v : '';
-    };
-    o.onStart({ player: get('arcadePlayer'), enemy: get('arcadeEnemy'), level: get('arcadeLevel') });
+    o.onStart(Object.fromEntries(new FormData(form)) as unknown as PickValues);
   });
   page.append(form);
   return page;

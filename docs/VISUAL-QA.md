@@ -38,7 +38,12 @@ the hyper meters) `arena-arcade-weather-rain` and `arena-arcade-weather-sandstor
 Versus from the Settings opt-in: `menu-arcade` (the extra main-menu entry), `arcade-pick` (the picker), `arcade-battle`
 (round 1 intro at tick 40: the ROUND 1 banner, timer and empty round pips, with the touch Super, Guard, Dash and Weather buttons), `arcade-fight`
 (the FIGHT! banner), `arcade-aim`, `arcade-ko` (K.O. with PERFECT during the KO slow motion), `arcade-round-end`
-(PERFECT, YOU WIN ROUND 1, one pip filled) and `arcade-results` (after a second KO: 2-0). The Arcade states step past
+(PERFECT, YOU WIN ROUND 1, one pip filled) and `arcade-results` (after a second KO: 2-0), and the 2v2 tag team
+(WP-arcade-tag-view, Sindarosa and Pax against Fiara and a seeded partner): `arcade-tag-pick` (Team 2v2, the partner
+enabled), `arcade-tag-fight` (the lead at 46%: red life dashes, the gold active frame, IN and BENCH lines, TAG READY bars,
+the TAG caption and the touch Tag button), `arcade-tag-in` (5 ticks after a tag: TAG!, the entrance flash and speed
+lines, the benched lead's red life, TAG 2.9s), `arcade-tag-ko-entrance` (5 ticks after Pax is KO'd: SINDAROSA IN! in
+gold, the double gold ring, BENCH Pax K.O., NO TAG) and `arcade-tag-results` (every hero's HP left or knocked out, 2-0). The Arcade states step past
 round 1's 91-tick intro first (nobody acts before it). Each
 has a `-1280x720` and a `-390x844` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
 notes), size and sha256.

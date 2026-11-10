@@ -13,13 +13,15 @@ import {
   characterId,
   collectCommands,
   createMatch,
+  createRenderView,
   decodeFlags,
   playReplay,
   step,
   type Agent,
   type ReplayFile,
 } from '@core/index';
-import { ARCADE_RACES, DEFAULT_PICK, arcadeEnemy, arcadeLaunch, arcadeSetup, parsePick, type ArcadePick, type ArcadeResult } from './arcade-setup';
+import { ARCADE_RACES, DEFAULT_PICK, parsePick, type ArcadePick } from './arcade-pick';
+import { arcadeEnemy, arcadeLaunch, arcadeSetup, enemyPartner, heroesOf, type ArcadeResult } from './arcade-setup';
 
 const pick: ArcadePick = { player: characterId('sindarosa'), enemy: characterId('pax'), level: 'normal' };
 
@@ -159,5 +161,84 @@ describe('Arcade launch: the result and the only thing it may store', () => {
     run(true);
     run(false);
     expect(touched).toEqual([]);
+  });
+});
+
+describe('Arcade 2v2 tag team (WP-arcade-tag-view)', () => {
+  const duo: ArcadePick = { ...pick, partner: characterId('fiara'), enemy: characterId('lavax') };
+
+  it('parses the team size and a partner distinct from the lead (1v1 when the size is not 2)', () => {
+    const base = { player: 'echo', enemy: 'lavax', level: 'easy' };
+    expect(parsePick({ ...base, size: '2', partner: 'pax' })).toEqual({ ...base, partner: 'pax' });
+    expect(parsePick({ ...base, size: '1', partner: 'pax' })).toEqual(base);
+    expect(parsePick(base)).toEqual(base);
+    // Unknown or equal to the lead: Pax, or the first other race when the lead is Pax.
+    expect(parsePick({ ...base, size: '2', partner: 'nope' }).partner).toBe('pax');
+    expect(parsePick({ ...base, size: '2', partner: 'echo' }).partner).toBe('pax');
+    const pax = parsePick({ ...base, player: 'pax', size: '2', partner: 'pax' });
+    expect(pax.partner).toBe(ARCADE_RACES.find((r) => r !== 'pax'));
+  });
+
+  it('builds two heroes a side; the AI partner comes from the seed and never repeats a picked race', () => {
+    const s = arcadeSetup(duo, 7);
+    expect(s.p1).toEqual([{ character: 'sindarosa', xp: 0 }, { character: 'fiara', xp: 0 }]);
+    expect(s.p2[0]).toEqual({ character: 'lavax', xp: 0 });
+    expect(s.p2[1]).toEqual({ character: enemyPartner(duo, 7), xp: 0 });
+    const partners = new Set<string>();
+    for (let seed = 0; seed < 40; seed++) {
+      const p = enemyPartner(duo, seed);
+      expect(['sindarosa', 'fiara', 'lavax']).not.toContain(p);
+      expect(ARCADE_RACES).toContain(p);
+      expect(enemyPartner(duo, seed)).toBe(p);
+      partners.add(p);
+    }
+    expect(partners.size).toBe(ARCADE_RACES.length - 3);
+    expect(arcadeSetup(pick, 7).p2).toHaveLength(1);
+  });
+
+  it('the AI plays whichever of its heroes is in: a 2v2 match runs to its end, with tags or KO entrances on the way', () => {
+    const setup = arcadeSetup(duo, 11);
+    const world = createMatch(setup);
+    const agents: [Agent, Agent] = [new RandomBot('p1'), arcadeEnemy(duo, setup)];
+    const tagIns: number[] = [];
+    let after = 0;
+    let ended = false;
+    for (let t = 0; t < 40_000 && !ended; t++) {
+      const c = collectCommands(world, agents);
+      if (tagIns.includes(1) && c[1] !== 0) after++;
+      for (const e of step(world, c)) {
+        if (e.kind === SimEventKind.tagIn) tagIns.push(e['team'] ?? -1);
+        if (e.kind === SimEventKind.matchEnded) ended = true;
+      }
+    }
+    expect(ended).toBe(true);
+    expect(tagIns.length).toBeGreaterThan(0);
+    if (tagIns.includes(1)) expect(after).toBeGreaterThan(0);
+  });
+
+  it("saves and loads both heroes' AI memory (the team agent round-trips)", () => {
+    const setup = arcadeSetup(duo, 3);
+    const a = arcadeEnemy(duo, setup);
+    const saved = a.save();
+    expect(Array.isArray(saved)).toBe(true);
+    const b = arcadeEnemy(duo, setup);
+    b.load(saved);
+    expect(b.save()).toEqual(saved);
+  });
+
+  it("reads every hero's HP per cent (0 when knocked out) off the render view, in roster order", () => {
+    const setup = arcadeSetup(duo, 5);
+    const world = createMatch(setup);
+    const s = world.state;
+    const max = s.maxHp[1] ?? 1;
+    const hp = Math.round(max * 0.42);
+    s.hp[1] = hp;
+    s.hp[3] = 0;
+    expect(heroesOf(createRenderView(world), setup)).toEqual([
+      { team: 0, race: 'sindarosa', pct: 100 },
+      { team: 0, race: 'fiara', pct: Math.ceil((hp * 100) / max) },
+      { team: 1, race: 'lavax', pct: 100 },
+      { team: 1, race: enemyPartner(duo, 5), pct: 0 },
+    ]);
   });
 });
