@@ -32,7 +32,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/sbom/` | `sbom.sh` (`pnpm sbom`): production-only CycloneDX SBOM to `out/sbom.cdx.json` |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
-| `.claude/` | Claude Code project config |
+| `.claude/` | Claude Code project config: `settings.json`, `.claude/agents/` (reviewers, analysts), `.claude/skills/` (slash commands), `.claude/hooks/`, `.claude/workflows/full-review.js`; see [CLAUDE-SETUP.md](CLAUDE-SETUP.md), pinned by `tests/repo/claude-setup.test.ts` |
 | `src/` | New TypeScript port (see below) |
 | `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.config.ts`, `playwright.config.ts`, `playwright.pages.config.ts` | pnpm, TypeScript, Vite, Vitest and Playwright project config |
 | `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `.gitignore` | Agent instructions, readme, contributing guide, ignore rules |
