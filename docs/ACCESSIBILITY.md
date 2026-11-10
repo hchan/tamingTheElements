@@ -81,6 +81,12 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   a 120 ms white disc over the fighter, not a full-screen flash. Reduced motion keeps the shield, bar, words, rings (static,
   not growing), the flash and one static spark per hit, and drops the dash afterimages, projectile trails, flying sparks and
   shards and the rising words (FUN-DESIGN section 3).
+- Arcade weather (`src/game/fx/weather-view.ts`, WP-arcade-weather-view): the weather up is a HUD badge with a glyph that
+  differs by shape (sun with rays, drops, blown sand, wind lines, an eclipsed sun), a word and the whole seconds left
+  (`RAIN 9`), and a time bar that reads by length and a notch every 2 s; its colour is an extra cue only (high contrast:
+  an opaque plate and a white bar outline). The label grows up to 1.4x on a phone. A cast also shows its name as a line
+  ("Sunshine!", "Rain!", "Sandstorm!", "Gale!", "Eclipse!") for 1.5 s. Reduced motion keeps the badge, the line (at full
+  size, no scale-in) and a steady sky tint, and drops the particles and the tint fade (FUN-DESIGN 2.14 and section 3).
 
 ## In-battle announcements and pause
 
@@ -101,6 +107,12 @@ The Arcade defence view (WP-arcade-defence-view) adds polite lines through the s
 enemy parried." on a parry, "Your guard broke." or "Enemy guard broken." on a guard break (`LINES` in
 `src/game/fx/defence-fx.ts`); the 6 s repeat filter keeps a parry chain from flooding the reader. Dashes, guarded hits and
 perfect dodges are silent, like hits.
+
+The Arcade weather view (WP-arcade-weather-view) adds polite lines that say who called which weather and what it does:
+"You called Rain: water hits harder, fire softer.", "The enemy called Eclipse: void hits harder.", "You renewed the
+Sunshine." on a recast, and "The Gale is over." when it ends (`changedLine` and `endedLine` in
+`src/game/fx/weather-fx.ts`). Their keys include the weather and the side, so a quick counter-weather is not swallowed
+by the 6 s repeat filter.
 
 Pause (Shift+P, gamepad Start, or the Resume button) opens a `role="dialog"` with `aria-modal`, moves focus to Resume,
 cycles Tab inside (`nextFocusIndex`), closes on Escape, restores the previous focus and drops held keys so a key held
@@ -136,6 +148,11 @@ button on the right edge (each 72 x 48 px or more, 8 px apart); each holds the a
 is down (a pointer-only control: keyboards press the key, so they are not in the Tab order); an unbound action's button
 does nothing.
 
+Arcade weather (FUN-DESIGN 2.14; WP-arcade-weather-view): the **Weather (Arcade)** action is plain R and pad X calls it
+(X has no Classic mapping, so no Classic button changes). It sends `Cmd.weather` only in an Arcade match; it is
+rebindable with the conflict check, and a save that already uses R leaves it unbound. A touch Weather button sits above
+the Dash button, like the others.
+
 ## Tests
 
 | What | Where |
@@ -148,6 +165,7 @@ does nothing.
 | Arcade Versus picker and results: axe, heading focus, Escape back, touch Super button, 390x844 layout; the 8-way aim arrow | `tests/e2e/arcade.spec.ts`, `src/game/fx/aim-view.test.ts` |
 | Arcade round announcer: every round event gives a banner and a live line (fake sink), reduced motion keeps the text without the scale-in, live-region lines in the browser, pips by shape, 0 listeners after leaving | `src/game/hud/round-announcer.test.ts`, `src/game/hud/round-view.test.ts`, `tests/e2e/arcade-rounds.spec.ts` |
 | Arcade defence view: every defence event of real duels gives an effect (fake sink, both motion settings), reduced motion drops only motion, parry and guard-break lines, shield and bar by shape; E, Q, pad RB and LT Arcade only, binding conflicts and old saves; touch Guard and Dash buttons; 0 listeners after leaving | `src/game/fx/defence-fx.test.ts`, `src/game/fx/defence-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-defence.spec.ts` |
+| Arcade weather view: every weather event (each kind, new, replaced, renewed, ended) gives its feedback (fake sink), reduced motion drops only the particles and motion, badge by glyph, word, seconds and notched bar, live lines; R and pad X Arcade only, binding conflicts and old saves; touch Weather button; 0 listeners after leaving | `src/game/fx/weather-fx.test.ts`, `src/game/fx/weather-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-weather.spec.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done

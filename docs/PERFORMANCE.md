@@ -43,7 +43,10 @@ resimulate several ticks in one 16.6 ms frame.
   statically: a `codeSplitting` group in `vite.config.ts` keeps it separate, with `includeDependenciesRecursively: false`
   so the group does not pull the shared colours and viewport out of `phaser-config` (which would make `phaser-config`
   import it statically, Classic included). `phaser-config` pays one more preload entry and one argument (about 25 B); the
-  dash and guard bindings were paid for by writing the pad table's button indices as numbers (about 90 B).
+  dash and guard bindings were paid for by writing the pad table's button indices as numbers (about 90 B). The Arcade
+  weather view (WP-arcade-weather-view, 2.9 KB gzip, budget 3060) is a `weather-view` chunk set up the same way;
+  `phaser-config` pays one more preload entry (about 15 B, with the weather binding: 16956 to 16970 B, budget 17000), and
+  `round-view` the mount (2096 B, budget 2100; it hands the weather view the defence view's consumer so it holds one).
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per
