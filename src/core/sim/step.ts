@@ -1,8 +1,11 @@
 import type { Command } from './commands';
 import type { EventSink, SimEvent } from './events';
 import { EventSink as Sink } from './events';
+import { deathSystem } from './systems/death';
 import { movementSystem } from './systems/movement';
 import { statusSystem } from './systems/status';
+import { restSystem } from './systems/rest';
+import { swapSystem } from './systems/swap';
 import { World as W } from './state';
 import type { SimWorld } from './world';
 
@@ -13,12 +16,15 @@ const noop: System = () => undefined;
 /** Fixed system order; systems not yet implemented are no-ops. */
 export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['input', noop],
+  ['swap', swapSystem],
   ['movement', movementSystem],
   ['abilities', noop],
   ['projectiles', noop],
   ['collision', noop],
   ['health', noop],
+  ['death', deathSystem],
   ['status', statusSystem],
+  ['rest', restSystem],
   ['cleanup', noop],
 ];
 

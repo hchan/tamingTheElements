@@ -68,7 +68,7 @@ export function createObservationView(world: SimWorld, side: 0 | 1): Observation
     self: fighterOf(world, side),
     opponent: fighterOf(world, 1 - side),
     cooldowns: Array.from({ length: 4 }, (_, k) =>
-      Math.max(0, (s.team[base + TeamField.swapCooldownUntil + 1 + k] ?? 0) - tick),
+      Math.max(0, (s.teams[base + TeamField.swapCooldownUntil + 1 + k] ?? 0) - tick),
     ),
     aiInt(n: number): number {
       const rng = new Sfc32(s.rng.subarray(at, at + 4));

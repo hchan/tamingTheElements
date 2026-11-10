@@ -19,6 +19,8 @@ export const EntityFlag = {
   frozen: 4,
   captured: 8,
   benched: 16,
+  /** Killed character: keeps `alive` so its slot is not reallocated; also set benched. */
+  dead: 32,
 } as const;
 
 /** Indices into SimState.world (Int32Array). */
@@ -26,7 +28,7 @@ export const World = { tick: 0, nextId: 1, flags: 2, matchSeed: 3 } as const;
 export const WORLD_SLOTS = 4;
 
 /**
- * Per-team block in SimState.team (Int32Array), TEAM_STRIDE ints per team:
+ * Per-team block in SimState.teams (Int32Array), TEAM_STRIDE ints per team:
  * [activeSlot, swapCooldownUntil, abilityCooldownUntil x ABILITY_SLOTS, activeCount x MAX_ABILITY_DEFS].
  */
 export const TeamField = { activeSlot: 0, swapCooldownUntil: 1 } as const;
@@ -35,7 +37,7 @@ export const TEAM_ACTIVE_COUNTS = TEAM_COOLDOWNS + ABILITY_SLOTS;
 export const TEAM_STRIDE = TEAM_ACTIVE_COUNTS + MAX_ABILITY_DEFS;
 
 export const F64_FIELDS = [
-  'x', 'y', 'px', 'py', 'vx', 'vy', 'w', 'h', 'hp', 'maxHp', 'dmgMult', 'healMult', 'speed', 'baseSpeed',
+  'x', 'y', 'px', 'py', 'vx', 'vy', 'w', 'h', 'hp', 'maxHp', 'dmgMult', 'healMult', 'speed', 'baseSpeed', 'restCap',
 ] as const;
 export const I32_FIELDS = [
   'kind', 'defId', 'team', 'owner', 'dir', 'flags', 'spawnTick', 'expireTick', 'hitMask',
@@ -47,7 +49,8 @@ type I32Name = (typeof I32_FIELDS)[number];
 export type SimState = { readonly [K in F64Name]: Float64Array } & {
   readonly [K in I32Name]: Int32Array;
 } & {
-  readonly team: Int32Array;
+  /** Per-team block (activeSlot, swap cooldown, ability cooldowns, active counts); NOT the per-entity `team`. */
+  readonly teams: Int32Array;
   /** Per-entity status slots (see systems/status.ts), MAX_ENTITIES x STATUS_SLOTS x STATUS_STRIDE. */
   readonly status: Int32Array;
   readonly world: Int32Array;
@@ -60,7 +63,7 @@ export function createSimState(matchSeed = 0): SimState {
   for (const f of F64_FIELDS) s[f] = new Float64Array(MAX_ENTITIES);
   for (const f of I32_FIELDS) s[f] = new Int32Array(MAX_ENTITIES);
   s['status'] = new Int32Array(MAX_ENTITIES * STATUS_SLOTS * STATUS_STRIDE);
-  s['team'] = new Int32Array(TEAM_COUNT * TEAM_STRIDE);
+  s['teams'] = new Int32Array(TEAM_COUNT * TEAM_STRIDE);
   s['world'] = new Int32Array(WORLD_SLOTS);
   s['rng'] = new Uint32Array(RNG_WORDS);
   const state = s as unknown as SimState;
@@ -72,7 +75,7 @@ type AnyArray = Float64Array | Int32Array | Uint32Array;
 
 /** Every backing array in a fixed order; snapshot, restore and hashing all follow it. */
 export function stateArrays(s: SimState): AnyArray[] {
-  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.team, s.status, s.world, s.rng];
+  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.teams, s.status, s.world, s.rng];
 }
 
 export type SimSnapshot = AnyArray[];

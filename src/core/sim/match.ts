@@ -68,12 +68,13 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
     s.h[id] = CHARACTER_HEIGHT;
     s.hp[id] = stats.maxHealth;
     s.maxHp[id] = stats.maxHealth;
+    s.restCap[id] = stats.maxHealth;
     s.dmgMult[id] = stats.damageMultiplier;
     s.healMult[id] = stats.healMultiplier;
     s.speed[id] = def.speed;
     s.baseSpeed[id] = def.speed;
   });
-  s.team[team * TEAM_STRIDE + TeamField.activeSlot] = 0;
+  s.teams[team * TEAM_STRIDE + TeamField.activeSlot] = 0;
 }
 
 /** Builds the tick-0 world for a match: p1 entities first, then p2, ids in roster order. */
