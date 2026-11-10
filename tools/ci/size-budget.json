@@ -1,9 +1,9 @@
 {
   "chunks": {
+    "index": 44800,
     "index.css": 3000,
-    "index": 41600,
     "phaser": 388700,
-    "phaser-config": 13300
+    "phaser-config": 14900
   },
-  "totalGzip": 446700
+  "totalGzip": 451600
 }
