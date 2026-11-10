@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compareStrings } from '../math/compare';
 import { ABILITIES_B } from './abilities-b';
 import dataJson from '../../../tests/fixtures/legacy/data.json';
 import rangeJson from '../../../tests/fixtures/legacy/abilities-range.json';
@@ -27,7 +28,7 @@ const KIND: Record<string, string> = { Melee: 'melee', Buff: 'buff', Heal: 'heal
 
 describe('abilities-b vs legacy data.json', () => {
   it('covers all 13 abilities', () => {
-    expect(ABILITIES_B.map((a) => a.id).sort()).toEqual(Object.keys(NAMES).sort());
+    expect(ABILITIES_B.map((a) => a.id).sort(compareStrings)).toEqual(Object.keys(NAMES).sort(compareStrings));
   });
 
   for (const a of ABILITIES_B) {

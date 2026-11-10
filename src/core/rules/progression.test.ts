@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compareNumbers } from '../math/compare';
 import rules from '@fixtures/legacy/rules.json';
 import { CHARACTERS } from '../data/characters';
 import type { ChapterNumber } from '../data/chapters';
@@ -100,7 +101,7 @@ describe('xpForWin', () => {
       const seen = new Set<number>();
       for (let i = 0; i < 400; i++) seen.add(xpForWin(ch, rng));
       const support = Object.keys(addXP[`chapter${String(ch)}`]?.histogram ?? {}).map(Number);
-      expect([...seen].sort()).toEqual(support.sort());
+      expect([...seen].sort(compareNumbers)).toEqual(support.sort(compareNumbers));
       const a = seedSfc32(9, 'meta');
       const b = seedSfc32(9, 'meta');
       expect(xpForWin(ch, a)).toBe(xpForWin(ch, b));

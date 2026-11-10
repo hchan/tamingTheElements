@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compareStrings } from '../math/compare';
 import { CHARACTERS, getCharacter } from './characters';
 import { ELEMENTS } from './elements';
 import { abilityId, characterId } from './ids';
@@ -26,7 +27,7 @@ const slug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').
 describe('character defs vs legacy data.json', () => {
   it('has all 14 characters', () => {
     expect(CHARACTERS).toHaveLength(14);
-    expect(CHARACTERS.map((c) => c.id).sort()).toEqual(Object.keys(legacy).map(slug).sort());
+    expect(CHARACTERS.map((c) => c.id).sort(compareStrings)).toEqual(Object.keys(legacy).map(slug).sort(compareStrings));
   });
 
   it.each(Object.entries(legacy))('%s maps field by field', (name, { defaults: d }) => {

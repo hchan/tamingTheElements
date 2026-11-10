@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compareStrings } from '../math/compare';
 import captured from '../../../tests/fixtures/legacy/ability-descriptions.json';
 import { ABILITIES_A } from '../data/abilities-a';
 import { ABILITIES_B } from '../data/abilities-b';
@@ -53,7 +54,7 @@ const LEGACY = captured as Record<string, Record<string, string>>;
 
 describe('describeAbility matches captured legacy descriptions', () => {
   it('covers every ability', () => {
-    expect(Object.keys(LEGACY).map(slug).sort()).toEqual(all.map((a) => a.id as string).sort());
+    expect(Object.keys(LEGACY).map(slug).sort(compareStrings)).toEqual(all.map((a) => a.id as string).sort(compareStrings));
   });
 
   for (const [name, byLevel] of Object.entries(LEGACY)) {

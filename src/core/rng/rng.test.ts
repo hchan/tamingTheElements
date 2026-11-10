@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compareNumbers } from '../math/compare';
 import { fnv1a, seedSfc32 } from './seed';
 import { Sfc32 } from './sfc32';
 import { createStreams, loadStreams, saveStreams, STREAM_NAMES } from './streams';
@@ -74,7 +75,7 @@ describe('Sfc32 helpers', () => {
     const rng = seedSfc32(2, 'combat');
     const seen = new Set<number>();
     for (let i = 0; i < 500; i++) seen.add(rng.int(6));
-    expect([...seen].sort()).toEqual([0, 1, 2, 3, 4, 5]);
+    expect([...seen].sort(compareNumbers)).toEqual([0, 1, 2, 3, 4, 5]);
     expect(() => rng.int(0)).toThrow(RangeError);
     expect(() => rng.int(1.5)).toThrow(RangeError);
     expect(rng.int(1)).toBe(0);

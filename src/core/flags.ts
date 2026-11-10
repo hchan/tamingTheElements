@@ -1,3 +1,5 @@
+import { compareStrings } from './math/compare';
+
 /** Sim-affecting feature flags. All default off; they must be recorded in the replay header. */
 export interface SimFlags {
   readonly experimentalSpawnCurve: boolean;
@@ -14,7 +16,7 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   elementalAdvantage: false,
 };
 
-const FLAG_NAMES = Object.keys(DEFAULT_SIM_FLAGS).sort() as SimFlagName[];
+const FLAG_NAMES = Object.keys(DEFAULT_SIM_FLAGS).sort(compareStrings) as SimFlagName[];
 
 /** Stable encoding: sorted names of enabled flags joined by ','; '' when none are on. */
 export function encodeFlags(flags: SimFlags): string {

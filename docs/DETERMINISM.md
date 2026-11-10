@@ -17,19 +17,25 @@ Allowed in `src/core`: `+ - * / %`, comparisons, bit operations, and `Math.sqrt`
 `sign`, `min`, `max`, `fround`, `imul`, `clz32`. These are exactly specified by IEEE 754 or the ECMAScript spec, so every
 engine returns the same bits.
 
-Banned (ESLint bans in `eslint.config.js`, proved by the fixtures in `tests/lint/fixtures/` and `tests/lint/core-bans.test.ts`):
+Banned (ESLint bans in `eslint.config.js`, proved by the fixtures in `tests/lint/fixtures/` and `tests/lint/core-bans.test.ts`,
+which also checks the merged config of a real `src/core` file because flat config replaces rule options instead of merging them):
 
 | Banned | Why |
 |---|---|
 | `Math.sin cos tan asin acos atan atan2 sinh cosh tanh exp expm1 log log1p log2 log10 pow cbrt hypot` and `**`, `**=` | The spec lets engines approximate these, and V8, SpiderMonkey and JavaScriptCore differ in the last bits. One ulp of drift changes a position, then a hit, then the whole match ([ADR 0004](adr/0004-no-transcendentals-in-core.md)). Use the LUTs and integer directions below |
-| `Date`, `performance`, timers (`setTimeout`, `setInterval`, `requestAnimationFrame`) | Wall-clock time differs per run and per machine, and keeps running while paused (the legacy bug). Time is the tick |
+| Any other use of `Math`: computed access (`Math[k]`), aliasing (`const M = Math`, `f(Math)`), and members outside the allowed list (`Math.PI` too) | Each one is a way around the line above. `Math` may only appear as `Math.<allowed function>` |
+| `Date`, `performance`, timers (`setTimeout`, `setInterval`, `requestAnimationFrame`, `queueMicrotask`) | Wall-clock time differs per run and per machine, and keeps running while paused (the legacy bug). Time is the tick |
 | `Math.random`, `crypto` | Unseeded, so not reproducible. Use a seeded stream |
-| `window`, `document`, `fetch`, `localStorage`, `navigator` | Host state is not an input |
+| `window`, `document`, `fetch`, `localStorage`, `navigator`, and the escape hatches `globalThis`, `self`, `global`, `Reflect` | Host state is not an input; the escape hatches reach every banned global under another name |
+| `WeakRef`, `FinalizationRegistry` | Their behaviour depends on garbage collection timing |
+| `async` functions, `await`, `for await` | The step is synchronous; microtask order is not an input |
 | `phaser` and any `src/game`, `src/ui`, `src/testing` import, node builtins | Layering (`.dependency-cruiser.cjs`), so core runs in plain Node |
-| `toFixed` in logic | Formatting is not sim logic |
+| `toFixed`, `toPrecision`, `toExponential`, `toLocaleString`, `toLocaleUpperCase`, `toLocaleLowerCase`, `localeCompare`, `Intl` (also as computed members such as `x['toFixed']`) | Formatting and locale-aware comparison are not sim logic, and the locale is host state |
+| `sort()` and `toSorted()` without a comparator | Pass an explicit total comparator (`compareStrings`, `compareNumbers` in `src/core/math/compare.ts`) so the order is stated, not implied |
 
-Also forbidden by review (no lint rule yet): async code in the step, `WeakRef`, `sort` with a non-total comparator, locale
-formatting in logic, and iteration over objects keyed by floats. Iterate entities in id order only.
+Lint cannot see through every indirection (for example `x[k]` with a computed string on a non-`Math` object), so review still
+applies. Also forbidden by review (no lint rule): `sort` with a non-total comparator, and iteration over objects keyed by
+floats. Iterate entities in id order only.
 
 ## Time
 
@@ -118,7 +124,7 @@ A changed golden without a bump, or a bump without a golden diff, is a blocker.
 
 ## Checklist for reviewers
 
-1. `grep -rnE 'Date|performance|Math\.(random|sin|cos|tan|asin|acos|atan2?|sinh|cosh|tanh|exp|expm1|log1p|log2|log10|log|pow|cbrt|hypot)|\*\*' src/core`
+1. `grep -rnE 'Date|performance|globalThis|Math\.(random|sin|cos|tan|asin|acos|atan2?|sinh|cosh|tanh|exp|expm1|log1p|log2|log10|log|pow|cbrt|hypot)|Math\[|\*\*' src/core`
 2. `pnpm lint` (the bans) and `pnpm test` (replay, snapshot and property tests such as `src/core/sim/sim.property.test.ts`).
 3. Millisecond values divide into ticks; randomness from named streams only; new state is in `SimState`.
 4. `SIM_VERSION` and goldens move together.
