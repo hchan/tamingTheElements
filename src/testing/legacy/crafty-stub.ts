@@ -16,6 +16,7 @@ const NOOP_METHODS = [
   'css', 'text', 'textColor', 'textFont', 'sprite', 'origin', 'flip', 'unflip', 'collision',
   'fourway', 'multiway', 'twoway', 'disableControl', 'enableControl', 'color', 'image', 'attach',
   'detach', 'resize', 'areaMap', 'checkHits', 'stopOnSolids', 'tween', 'unselectable', 'shift',
+  'reel', 'animate', 'pauseAnimation', 'resumeAnimation', 'spriteColor',
 ] as const;
 
 const KEYS: Record<string, number> = {
@@ -158,6 +159,9 @@ export class CraftyEntity {
 
 for (const name of NOOP_METHODS) {
   Object.defineProperty(CraftyEntity.prototype, name, {
+    // writable so components that define the same method (e.g. stopOnSolids) can mix in own props
+    writable: true,
+    configurable: true,
     value(this: CraftyEntity, ...args: unknown[]) {
       const crafty = (this as unknown as { crafty: CraftyStub }).crafty;
       crafty.calls.push({ target: `entity#${String(this.id)}`, method: name, args });

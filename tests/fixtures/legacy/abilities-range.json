@@ -1,0 +1,3967 @@
+{
+  "rangeAbilities": [
+    "Capture",
+    "Wind Cone",
+    "Stick",
+    "Fire Blast",
+    "Icicles",
+    "Hurl Rock",
+    "Tornado",
+    "Ice Blast",
+    "Sonar Blast",
+    "Fireball",
+    "Shards of Ice",
+    "Rock Pellet",
+    "Crimson Fire",
+    "Slime Blast",
+    "Circus of Slime",
+    "Chaos Bolt",
+    "Chaos Orb",
+    "Elemental Advantage : Fire cone"
+  ],
+  "omniAbilities": [
+    "Shards of Ice",
+    "Circus of Slime"
+  ],
+  "abilities": {
+    "Capture": {
+      "type": "Range",
+      "maxActive": 1,
+      "cooldown": 5000,
+      "speed": 8,
+      "damage": {
+        "v": 1.7976931348623157e+308,
+        "bits": "7fefffffffffffff"
+      },
+      "w": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "h": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 120,
+          "y": 220,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 1.7976931348623157e+308,
+            "bits": "7fefffffffffffff"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 128,
+          "y": 220,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 1.7976931348623157e+308,
+            "bits": "7fefffffffffffff"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "4999": false,
+        "5000": false,
+        "5001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 1.7976931348623157e+308,
+          "bits": "7fefffffffffffff"
+        },
+        "targetCaptured": true,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Wind Cone": {
+      "type": "Range",
+      "maxActive": 4,
+      "cooldown": 400,
+      "speed": 8,
+      "damage": {
+        "v": 13,
+        "bits": "402a000000000000"
+      },
+      "w": {
+        "v": 25,
+        "bits": "4039000000000000"
+      },
+      "h": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 127.5,
+          "y": 235,
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 13,
+            "bits": "402a000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 135.5,
+          "y": 235,
+          "w": {
+            "v": 26,
+            "bits": "403a000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 13,
+            "bits": "402a000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "399": false,
+        "400": false,
+        "401": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 13,
+          "bits": "402a000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Stick": {
+      "type": "Range",
+      "maxActive": 1,
+      "cooldown": 2000,
+      "speed": 8,
+      "damage": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "w": {
+        "v": 25,
+        "bits": "4039000000000000"
+      },
+      "h": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 127.5,
+          "y": 235,
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 135.5,
+          "y": 235,
+          "w": {
+            "v": 26,
+            "bits": "403a000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "1999": false,
+        "2000": false,
+        "2001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 10,
+          "bits": "4024000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Fire Blast": {
+      "type": "Range",
+      "maxActive": 2,
+      "cooldown": 600,
+      "speed": 8,
+      "damage": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "w": {
+        "v": 75,
+        "bits": "4052c00000000000"
+      },
+      "h": {
+        "v": 15,
+        "bits": "402e000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 102.5,
+          "y": 232.5,
+          "w": {
+            "v": 75,
+            "bits": "4052c00000000000"
+          },
+          "h": {
+            "v": 15,
+            "bits": "402e000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 110.5,
+          "y": 232.5,
+          "w": {
+            "v": 76,
+            "bits": "4053000000000000"
+          },
+          "h": {
+            "v": 15,
+            "bits": "402e000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "599": false,
+        "600": false,
+        "601": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 40,
+          "bits": "4044000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Icicles": {
+      "type": "Range",
+      "maxActive": 3,
+      "cooldown": 300,
+      "speed": 10,
+      "damage": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "w": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "h": {
+        "v": 25,
+        "bits": "4039000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 135,
+          "y": 227.5,
+          "w": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "h": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 145,
+          "y": 227.5,
+          "w": {
+            "v": 11,
+            "bits": "4026000000000000"
+          },
+          "h": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "299": false,
+        "300": false,
+        "301": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 10,
+          "bits": "4024000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Hurl Rock": {
+      "type": "Range",
+      "maxActive": 2,
+      "cooldown": 500,
+      "speed": 8,
+      "damage": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "w": {
+        "v": 35,
+        "bits": "4041800000000000"
+      },
+      "h": {
+        "v": 35,
+        "bits": "4041800000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 122.5,
+          "y": 222.5,
+          "w": {
+            "v": 35,
+            "bits": "4041800000000000"
+          },
+          "h": {
+            "v": 35,
+            "bits": "4041800000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 130.5,
+          "y": 222.5,
+          "w": {
+            "v": 36,
+            "bits": "4042000000000000"
+          },
+          "h": {
+            "v": 35,
+            "bits": "4041800000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "499": false,
+        "500": false,
+        "501": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 40,
+          "bits": "4044000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Tornado": {
+      "type": "Range",
+      "maxActive": 1,
+      "cooldown": 6000,
+      "speed": 8,
+      "damage": {
+        "v": 0,
+        "bits": "0000000000000000"
+      },
+      "w": {
+        "v": 20,
+        "bits": "4034000000000000"
+      },
+      "h": {
+        "v": 60,
+        "bits": "404e000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 130,
+          "y": 210,
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 60,
+            "bits": "404e000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 0,
+            "bits": "0000000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 138,
+          "y": 210,
+          "w": {
+            "v": 21,
+            "bits": "4035000000000000"
+          },
+          "h": {
+            "v": 60,
+            "bits": "404e000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 0,
+            "bits": "0000000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "5999": false,
+        "6000": false,
+        "6001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 0,
+          "bits": "0000000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": true,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Ice Blast": {
+      "type": "Range",
+      "maxActive": 100,
+      "cooldown": 6000,
+      "speed": 8,
+      "damage": {
+        "v": 15,
+        "bits": "402e000000000000"
+      },
+      "w": {
+        "v": 60,
+        "bits": "404e000000000000"
+      },
+      "h": {
+        "v": 60,
+        "bits": "404e000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 110,
+          "y": 210,
+          "w": {
+            "v": 60,
+            "bits": "404e000000000000"
+          },
+          "h": {
+            "v": 60,
+            "bits": "404e000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 15,
+            "bits": "402e000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 118,
+          "y": 210,
+          "w": {
+            "v": 61,
+            "bits": "404e800000000000"
+          },
+          "h": {
+            "v": 60,
+            "bits": "404e000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 15,
+            "bits": "402e000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "5999": false,
+        "6000": false,
+        "6001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 15,
+          "bits": "402e000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 5,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Sonar Blast": {
+      "type": "Range",
+      "maxActive": 2,
+      "cooldown": 600,
+      "speed": 8,
+      "damage": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "w": {
+        "v": 20,
+        "bits": "4034000000000000"
+      },
+      "h": {
+        "v": 20,
+        "bits": "4034000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 130,
+          "y": 230,
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 138,
+          "y": 230,
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 20.299999999999997,
+            "bits": "40344ccccccccccc"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 39.2,
+            "bits": "404399999999999a"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 0.99,
+            "bits": "3fefae147ae147ae"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "599": false,
+        "600": false,
+        "601": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 39.2,
+          "bits": "404399999999999a"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Fireball": {
+      "type": "Range",
+      "maxActive": 2,
+      "cooldown": 600,
+      "speed": 8,
+      "damage": {
+        "v": 15,
+        "bits": "402e000000000000"
+      },
+      "w": {
+        "v": 25,
+        "bits": "4039000000000000"
+      },
+      "h": {
+        "v": 12,
+        "bits": "4028000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 127.5,
+          "y": 234,
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12,
+            "bits": "4028000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 3.75,
+            "bits": "400e000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 0.25,
+            "bits": "3fd0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 135.5,
+          "y": 234,
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12.18,
+            "bits": "40285c28f5c28f5c"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 3.825,
+            "bits": "400e99999999999a"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 0.2525,
+            "bits": "3fd028f5c28f5c29"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "599": false,
+        "600": false,
+        "601": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 3.825000000000003,
+          "bits": "400e9999999999a0"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Shards of Ice": {
+      "type": "Range Omni-directional",
+      "maxActive": 8,
+      "cooldown": 10000,
+      "speed": 10,
+      "damage": {
+        "v": 20,
+        "bits": "4034000000000000"
+      },
+      "w": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "h": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "spawned": 8,
+      "info": {
+        "curCount": 0,
+        "lastUsed": 0
+      },
+      "bullets": [
+        {
+          "direction": "n",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 270,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "s",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 90,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "e",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "w",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 180,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "nw",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 225,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "ne",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 315,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "sw",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 135,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "se",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 45,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "n",
+          "x": 120,
+          "y": 225,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 271,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "s",
+          "x": 120,
+          "y": 245,
+          "w": {
+            "v": 39,
+            "bits": "4043800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 89,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "e",
+          "x": 130,
+          "y": 235,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "w",
+          "x": 110,
+          "y": 235,
+          "w": {
+            "v": 39,
+            "bits": "4043800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 179,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "nw",
+          "x": 110,
+          "y": 225,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 226,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "ne",
+          "x": 130,
+          "y": 225,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 316,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "sw",
+          "x": 110,
+          "y": 245,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 136,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "se",
+          "x": 130,
+          "y": 245,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 46,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "9999": false,
+        "10000": false,
+        "10001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 20,
+          "bits": "4034000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Rock Pellet": {
+      "type": "Range",
+      "maxActive": 3,
+      "cooldown": 400,
+      "speed": 9,
+      "damage": {
+        "v": 20,
+        "bits": "4034000000000000"
+      },
+      "w": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "h": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 9,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 129,
+          "y": 235,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "speed": 9,
+          "damage": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "399": false,
+        "400": false,
+        "401": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 20,
+          "bits": "4034000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Crimson Fire": {
+      "type": "Range",
+      "maxActive": 2,
+      "cooldown": 400,
+      "speed": 10,
+      "damage": {
+        "v": 13,
+        "bits": "402a000000000000"
+      },
+      "w": {
+        "v": 80,
+        "bits": "4054000000000000"
+      },
+      "h": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 100,
+          "y": 220,
+          "w": {
+            "v": 80,
+            "bits": "4054000000000000"
+          },
+          "h": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 13,
+            "bits": "402a000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 110,
+          "y": 220,
+          "w": {
+            "v": 81,
+            "bits": "4054400000000000"
+          },
+          "h": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 13,
+            "bits": "402a000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "399": false,
+        "400": false,
+        "401": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 13,
+          "bits": "402a000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Slime Blast": {
+      "type": "Range",
+      "maxActive": 3,
+      "cooldown": 1500,
+      "speed": 8,
+      "damage": {
+        "v": 10,
+        "bits": "4024000000000000"
+      },
+      "w": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "h": {
+        "v": 20,
+        "bits": "4034000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 128,
+          "y": 230,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 10,
+            "bits": "4024000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "1499": false,
+        "1500": false,
+        "1501": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 10,
+          "bits": "4024000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Circus of Slime": {
+      "type": "Range Omni-directional",
+      "maxActive": 4,
+      "cooldown": 10000,
+      "speed": 5,
+      "damage": {
+        "v": 16,
+        "bits": "4030000000000000"
+      },
+      "w": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "h": {
+        "v": 20,
+        "bits": "4034000000000000"
+      },
+      "spawned": 8,
+      "info": {
+        "curCount": 0,
+        "lastUsed": 0
+      },
+      "bullets": [
+        {
+          "direction": "n",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 270,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "s",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 90,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "e",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "w",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 180,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "nw",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 225,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "ne",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 315,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "sw",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 135,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "se",
+          "x": 120,
+          "y": 230,
+          "w": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 45,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "n",
+          "x": 120,
+          "y": 225,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 271,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "s",
+          "x": 120,
+          "y": 235,
+          "w": {
+            "v": 39,
+            "bits": "4043800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 89,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "e",
+          "x": 125,
+          "y": 230,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "w",
+          "x": 115,
+          "y": 230,
+          "w": {
+            "v": 39,
+            "bits": "4043800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 179,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "nw",
+          "x": 115,
+          "y": 225,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 226,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "ne",
+          "x": 125,
+          "y": 225,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 316,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "sw",
+          "x": 115,
+          "y": 235,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 136,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        },
+        {
+          "direction": "se",
+          "x": 125,
+          "y": 235,
+          "w": {
+            "v": 41,
+            "bits": "4044800000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "speed": 5,
+          "damage": {
+            "v": 16,
+            "bits": "4030000000000000"
+          },
+          "rotation": 46,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "9999": false,
+        "10000": false,
+        "10001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 16,
+          "bits": "4030000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Chaos Bolt": {
+      "type": "Range",
+      "maxActive": 3,
+      "cooldown": 600,
+      "speed": 10,
+      "damage": {
+        "v": 40,
+        "bits": "4044000000000000"
+      },
+      "w": {
+        "v": 75,
+        "bits": "4052c00000000000"
+      },
+      "h": {
+        "v": 15,
+        "bits": "402e000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 102.5,
+          "y": 232.5,
+          "w": {
+            "v": 75,
+            "bits": "4052c00000000000"
+          },
+          "h": {
+            "v": 15,
+            "bits": "402e000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 112.5,
+          "y": 232.5,
+          "w": {
+            "v": 76,
+            "bits": "4053000000000000"
+          },
+          "h": {
+            "v": 15,
+            "bits": "402e000000000000"
+          },
+          "speed": 10,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "599": false,
+        "600": false,
+        "601": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 40,
+          "bits": "4044000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Chaos Orb": {
+      "type": "Range",
+      "maxActive": 1,
+      "cooldown": 5000,
+      "speed": 2,
+      "damage": {
+        "v": 140,
+        "bits": "4061800000000000"
+      },
+      "w": {
+        "v": 75,
+        "bits": "4052c00000000000"
+      },
+      "h": {
+        "v": 75,
+        "bits": "4052c00000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 102.5,
+          "y": 202.5,
+          "w": {
+            "v": 75,
+            "bits": "4052c00000000000"
+          },
+          "h": {
+            "v": 75,
+            "bits": "4052c00000000000"
+          },
+          "speed": 2,
+          "damage": {
+            "v": 140,
+            "bits": "4061800000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 104.5,
+          "y": 202.5,
+          "w": {
+            "v": 76,
+            "bits": "4053000000000000"
+          },
+          "h": {
+            "v": 75,
+            "bits": "4052c00000000000"
+          },
+          "speed": 2,
+          "damage": {
+            "v": 140,
+            "bits": "4061800000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "4999": false,
+        "5000": false,
+        "5001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 140,
+          "bits": "4061800000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    },
+    "Elemental Advantage : Fire cone": {
+      "type": "Range",
+      "maxActive": 3,
+      "cooldown": 1000,
+      "speed": 8,
+      "damage": {
+        "v": 80,
+        "bits": "4054000000000000"
+      },
+      "w": {
+        "v": 100,
+        "bits": "4059000000000000"
+      },
+      "h": {
+        "v": 80,
+        "bits": "4054000000000000"
+      },
+      "spawned": 1,
+      "info": {
+        "curCount": 1,
+        "lastUsed": 1577836800000
+      },
+      "bullets": [
+        {
+          "direction": "e",
+          "x": 90,
+          "y": 200,
+          "w": {
+            "v": 100,
+            "bits": "4059000000000000"
+          },
+          "h": {
+            "v": 80,
+            "bits": "4054000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 80,
+            "bits": "4054000000000000"
+          },
+          "rotation": 0,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "afterTwoFrames": [
+        {
+          "direction": "e",
+          "x": 98,
+          "y": 200,
+          "w": {
+            "v": 101,
+            "bits": "4059400000000000"
+          },
+          "h": {
+            "v": 80,
+            "bits": "4054000000000000"
+          },
+          "speed": 8,
+          "damage": {
+            "v": 80,
+            "bits": "4054000000000000"
+          },
+          "rotation": 1,
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          }
+        }
+      ],
+      "canFireAtCooldown": {
+        "999": false,
+        "1000": false,
+        "1001": true
+      },
+      "canFireWhileFrozen": false,
+      "hit": {
+        "handlers": [
+          "HUDContainer",
+          "EnemyCharacter"
+        ],
+        "damageDealt": {
+          "v": 80,
+          "bits": "4054000000000000"
+        },
+        "targetCaptured": false,
+        "targetFrozen": false,
+        "targetSpeed": 7,
+        "attackerCurCount": -1,
+        "bulletDead": true,
+        "errors": []
+      }
+    }
+  },
+  "maxActive": {
+    "Capture": {
+      "results": [
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Wind Cone": {
+      "results": [
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        3,
+        4,
+        4,
+        4
+      ]
+    },
+    "Stick": {
+      "results": [
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Fire Blast": {
+      "results": [
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    "Icicles": {
+      "results": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        3,
+        3,
+        3
+      ]
+    },
+    "Hurl Rock": {
+      "results": [
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    "Tornado": {
+      "results": [
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Ice Blast": {
+      "results": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "counts": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ]
+    },
+    "Sonar Blast": {
+      "results": [
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    "Fireball": {
+      "results": [
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    "Shards of Ice": {
+      "results": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "Rock Pellet": {
+      "results": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        3,
+        3,
+        3
+      ]
+    },
+    "Crimson Fire": {
+      "results": [
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    "Slime Blast": {
+      "results": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        3,
+        3,
+        3
+      ]
+    },
+    "Circus of Slime": {
+      "results": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "Chaos Bolt": {
+      "results": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        3,
+        3,
+        3
+      ]
+    },
+    "Chaos Orb": {
+      "results": [
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        1,
+        1
+      ]
+    },
+    "Elemental Advantage : Fire cone": {
+      "results": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "counts": [
+        1,
+        2,
+        3,
+        3,
+        3
+      ]
+    }
+  },
+  "omni": {
+    "Shards of Ice": {
+      "count": 8,
+      "curCount": -8,
+      "canFireAfter": true,
+      "directions": [
+        "n",
+        "s",
+        "e",
+        "w",
+        "nw",
+        "ne",
+        "sw",
+        "se"
+      ],
+      "rotations": [
+        271,
+        89,
+        1,
+        179,
+        226,
+        316,
+        136,
+        46
+      ],
+      "deltas": [
+        [
+          0,
+          -10
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          -10,
+          0
+        ],
+        [
+          -10,
+          -10
+        ],
+        [
+          10,
+          -10
+        ],
+        [
+          -10,
+          10
+        ],
+        [
+          10,
+          10
+        ]
+      ],
+      "speeds": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
+    },
+    "Circus of Slime": {
+      "count": 8,
+      "curCount": -8,
+      "canFireAfter": true,
+      "directions": [
+        "n",
+        "s",
+        "e",
+        "w",
+        "nw",
+        "ne",
+        "sw",
+        "se"
+      ],
+      "rotations": [
+        271,
+        89,
+        1,
+        179,
+        226,
+        316,
+        136,
+        46
+      ],
+      "deltas": [
+        [
+          0,
+          -5
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          -5,
+          0
+        ],
+        [
+          -5,
+          -5
+        ],
+        [
+          5,
+          -5
+        ],
+        [
+          -5,
+          5
+        ],
+        [
+          5,
+          5
+        ]
+      ],
+      "speeds": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    }
+  },
+  "shrink": {
+    "Sonar Blast": {
+      "delayMs": 10,
+      "repeat": -1,
+      "naturalRunsIn1s": "ran",
+      "steps": [
+        {
+          "step": 0,
+          "damage": {
+            "v": 40,
+            "bits": "4044000000000000"
+          },
+          "alpha": {
+            "v": 1,
+            "bits": "3ff0000000000000"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 20,
+            "bits": "4034000000000000"
+          }
+        },
+        {
+          "step": 1,
+          "damage": {
+            "v": 39.2,
+            "bits": "404399999999999a"
+          },
+          "alpha": {
+            "v": 0.99,
+            "bits": "3fefae147ae147ae"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 20.299999999999997,
+            "bits": "40344ccccccccccc"
+          }
+        },
+        {
+          "step": 2,
+          "damage": {
+            "v": 38.416000000000004,
+            "bits": "4043353f7ced9169"
+          },
+          "alpha": {
+            "v": 0.9801,
+            "bits": "3fef5cfaacd9e83e"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 20.604499999999994,
+            "bits": "40349ac083126e96"
+          }
+        },
+        {
+          "step": 3,
+          "damage": {
+            "v": 37.64768,
+            "bits": "4042d2e72da122fb"
+          },
+          "alpha": {
+            "v": 0.9702989999999999,
+            "bits": "3fef0cb07d0aed99"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 20.913567499999992,
+            "bits": "4034e9df8f47303e"
+          }
+        },
+        {
+          "step": 4,
+          "damage": {
+            "v": 36.8947264,
+            "bits": "4042728665096f15"
+          },
+          "alpha": {
+            "v": 0.96059601,
+            "bits": "3feebd33d7f3c762"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 21.22727101249999,
+            "bits": "40353a2e6ede042a"
+          }
+        },
+        {
+          "step": 5,
+          "damage": {
+            "v": 36.156831872000005,
+            "bits": "4042141311189af1"
+          },
+          "alpha": {
+            "v": 0.9509900498999999,
+            "bits": "3fee6e82af648a82"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 21.54568007768749,
+            "bits": "40358bb1b087bf1b"
+          }
+        },
+        {
+          "step": 10,
+          "damage": {
+            "v": 32.68291227550188,
+            "bits": "40405769ab60a8a4"
+          },
+          "alpha": {
+            "v": 0.9043820750088043,
+            "bits": "3fecf0b2ad680bbe"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 23.21081650050298,
+            "bits": "403735f811f71e12"
+          }
+        },
+        {
+          "step": 20,
+          "damage": {
+            "v": 26.70431887020378,
+            "bits": "403ab44e3dd17b1d"
+          },
+          "alpha": {
+            "v": 0.8179069375972307,
+            "bits": "3fea2c4b2b84da0f"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 26.937100131001063,
+            "bits": "403aefe5cb4fba15"
+          }
+        },
+        {
+          "step": 30,
+          "damage": {
+            "v": 21.81937277529749,
+            "bits": "4035d1c26a0922af"
+          },
+          "alpha": {
+            "v": 0.7397003733882802,
+            "bits": "3fe7aba01e115537"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 31.261604409817025,
+            "bits": "403f42f881b0a74c"
+          }
+        },
+        {
+          "step": 40,
+          "damage": {
+            "v": 17.828016158038036,
+            "bits": "4031d3f8ddef553b"
+          },
+          "alpha": {
+            "v": 0.6689717585696803,
+            "bits": "3fe56837762023eb"
+          },
+          "w": {
+            "v": 20,
+            "bits": "4034000000000000"
+          },
+          "h": {
+            "v": 36.28036817337889,
+            "bits": "404223e31ab3c034"
+          }
+        },
+        {
+          "step": 50,
+          "damage": {
+            "v": 14.566787203484678,
+            "bits": "402d2231eead8417"
+          },
+          "alpha": {
+            "v": 0.6050060671375365,
+            "bits": "3fe35c35af0797f5"
+          },
+          "w": {
+            "v": 21.22727101249999,
+            "bits": "40353a2e6ede042a"
+          },
+          "h": {
+            "v": 39.67052419254008,
+            "bits": "4043d5d3bc9b1177"
+          }
+        },
+        {
+          "step": 60,
+          "damage": {
+            "v": 11.902125707684828,
+            "bits": "4027cde36bb6c63e"
+          },
+          "alpha": {
+            "v": 0.5471566423907612,
+            "bits": "3fe1824ea59b7088"
+          },
+          "w": {
+            "v": 24.635114613879168,
+            "bits": "4038a296df0fd29c"
+          },
+          "h": {
+            "v": 39.67052419254008,
+            "bits": "4043d5d3bc9b1177"
+          }
+        }
+      ]
+    },
+    "Fireball": {
+      "delayMs": 10,
+      "repeat": -1,
+      "naturalRunsIn1s": "ran",
+      "steps": [
+        {
+          "step": 0,
+          "damage": {
+            "v": 3.75,
+            "bits": "400e000000000000"
+          },
+          "alpha": {
+            "v": 0.25,
+            "bits": "3fd0000000000000"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12,
+            "bits": "4028000000000000"
+          }
+        },
+        {
+          "step": 1,
+          "damage": {
+            "v": 3.825,
+            "bits": "400e99999999999a"
+          },
+          "alpha": {
+            "v": 0.2525,
+            "bits": "3fd028f5c28f5c29"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12.18,
+            "bits": "40285c28f5c28f5c"
+          }
+        },
+        {
+          "step": 2,
+          "damage": {
+            "v": 3.9015000000000004,
+            "bits": "400f3645a1cac084"
+          },
+          "alpha": {
+            "v": 0.255025,
+            "bits": "3fd0525460aa64c3"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12.362699999999998,
+            "bits": "4028b9b3d07c84b5"
+          }
+        },
+        {
+          "step": 3,
+          "damage": {
+            "v": 3.9795300000000005,
+            "bits": "400fd613d31b9b68"
+          },
+          "alpha": {
+            "v": 0.25757525,
+            "bits": "3fd07c1ce6c093d9"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12.548140499999997,
+            "bits": "402918a5df2239e5"
+          }
+        },
+        {
+          "step": 4,
+          "damage": {
+            "v": 4.059120600000001,
+            "bits": "40103c8a1c4e1461"
+          },
+          "alpha": {
+            "v": 0.2601510025,
+            "bits": "3fd0a65063f09554"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12.736362607499995,
+            "bits": "40297904850a6b66"
+          }
+        },
+        {
+          "step": 5,
+          "damage": {
+            "v": 4.140303012000001,
+            "bits": "40108fab97c047fd"
+          },
+          "alpha": {
+            "v": 0.262752512525,
+            "bits": "3fd0d0efea0f262e"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 12.927408046612493,
+            "bits": "4029dad53a3c7eed"
+          }
+        },
+        {
+          "step": 10,
+          "damage": {
+            "v": 4.571229074980341,
+            "bits": "401248f0464e4274"
+          },
+          "alpha": {
+            "v": 0.27615553135280113,
+            "bits": "3fd1ac883ff14422"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 13.926489900301787,
+            "bits": "402bda5ce25bbdaf"
+          }
+        },
+        {
+          "step": 20,
+          "damage": {
+            "v": 5.572302734918831,
+            "bits": "40164a09ba678d0b"
+          },
+          "alpha": {
+            "v": 0.30504750998699176,
+            "bits": "3fd385e5fdc7b407"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 16.16226007860064,
+            "bits": "40302989e0630940"
+          }
+        },
+        {
+          "step": 30,
+          "damage": {
+            "v": 6.792605940387581,
+            "bits": "401b2ba0e44251e8"
+          },
+          "alpha": {
+            "v": 0.3369622288332266,
+            "bits": "3fd590ca0634dccc"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 18.756962645890216,
+            "bits": "4032c1c84dd06461"
+          }
+        },
+        {
+          "step": 40,
+          "damage": {
+            "v": 8.280148738555704,
+            "bits": "40208f6fa7cc398d"
+          },
+          "alpha": {
+            "v": 0.37221593339705544,
+            "bits": "3fd7d262c73f63d1"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 21.768220904027334,
+            "bits": "4035c4aa200ae6a5"
+          }
+        },
+        {
+          "step": 50,
+          "damage": {
+            "v": 10.09345510902603,
+            "bits": "40242fd95919d263"
+          },
+          "alpha": {
+            "v": 0.41115795546097084,
+            "bits": "3fda5069750c7c6d"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 25.26290904728958,
+            "bits": "4039434e01dfee67"
+          }
+        },
+        {
+          "step": 60,
+          "damage": {
+            "v": 12.303865456370305,
+            "bits": "40289b9440cafd39"
+          },
+          "alpha": {
+            "v": 0.45417417464102305,
+            "bits": "3fdd11308eb157d8"
+          },
+          "w": {
+            "v": 25,
+            "bits": "4039000000000000"
+          },
+          "h": {
+            "v": 29.318637308276745,
+            "bits": "403d519236f25587"
+          }
+        }
+      ]
+    }
+  },
+  "directions": {
+    "Capture": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Wind Cone": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Stick": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Fire Blast": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Icicles": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -10
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 10
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 10,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -10,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -10,
+        "dy": -10
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 10,
+        "dy": -10
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -10,
+        "dy": 10
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 10,
+        "dy": 10
+      }
+    },
+    "Hurl Rock": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Tornado": {
+      "n": {
+        "rotation": 0,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 0,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 0,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 0,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 0,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Ice Blast": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Sonar Blast": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Fireball": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Rock Pellet": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -9
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 9
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 9,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -9,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -9,
+        "dy": -9
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 9,
+        "dy": -9
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -9,
+        "dy": 9
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 9,
+        "dy": 9
+      }
+    },
+    "Crimson Fire": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -10
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 10
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 10,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -10,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -10,
+        "dy": -10
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 10,
+        "dy": -10
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -10,
+        "dy": 10
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 10,
+        "dy": 10
+      }
+    },
+    "Slime Blast": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    },
+    "Chaos Bolt": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -10
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 10
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 10,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -10,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -10,
+        "dy": -10
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 10,
+        "dy": -10
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -10,
+        "dy": 10
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 10,
+        "dy": 10
+      }
+    },
+    "Chaos Orb": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -2
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 2
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 2,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -2,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -2,
+        "dy": -2
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 2,
+        "dy": -2
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -2,
+        "dy": 2
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 2,
+        "dy": 2
+      }
+    },
+    "Elemental Advantage : Fire cone": {
+      "n": {
+        "rotation": 270,
+        "dx": 0,
+        "dy": -8
+      },
+      "s": {
+        "rotation": 90,
+        "dx": 0,
+        "dy": 8
+      },
+      "e": {
+        "rotation": 0,
+        "dx": 8,
+        "dy": 0
+      },
+      "w": {
+        "rotation": 180,
+        "dx": -8,
+        "dy": 0
+      },
+      "nw": {
+        "rotation": 225,
+        "dx": -8,
+        "dy": -8
+      },
+      "ne": {
+        "rotation": 315,
+        "dx": 8,
+        "dy": -8
+      },
+      "sw": {
+        "rotation": 135,
+        "dx": -8,
+        "dy": 8
+      },
+      "se": {
+        "rotation": 45,
+        "dx": 8,
+        "dy": 8
+      }
+    }
+  }
+}
