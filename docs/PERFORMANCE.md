@@ -38,7 +38,12 @@ resimulate several ticks in one 16.6 ms frame.
   static `import.meta.env.DEV || import.meta.env.MODE === 'test'` test (`getUiFlags`, `arcadeEnabled`, the Arena's
   `?ff=arcade` demo) so production bundles drop it. The Arcade round HUD (WP-arcade-announcer-view) is its own `round-view`
   chunk (2.0 KB gzip), imported by the Arena only in Arcade matches, so Classic never downloads it and `phaser-config`
-  pays the import call and the event hand-off (about 250 B with the round score in the match-end line).
+  pays the import call and the event hand-off (about 250 B with the round score in the match-end line). The Arcade
+  defence view (WP-arcade-defence-view, 3.3 KB gzip, budget 3450) is a `defence-view` chunk that `round-view` imports
+  statically: a `codeSplitting` group in `vite.config.ts` keeps it separate, with `includeDependenciesRecursively: false`
+  so the group does not pull the shared colours and viewport out of `phaser-config` (which would make `phaser-config`
+  import it statically, Classic included). `phaser-config` pays one more preload entry and one argument (about 25 B); the
+  dash and guard bindings were paid for by writing the pad table's button indices as numbers (about 90 B).
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per

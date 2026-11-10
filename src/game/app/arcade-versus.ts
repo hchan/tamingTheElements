@@ -35,17 +35,20 @@ const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { wi
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
 let lastPick: ArcadePick = DEFAULT_PICK;
 
+/** Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold) and Dash (FUN-DESIGN 2.5, 2.7, 2.8). */
+const TOUCH = ['Super', 'Guard', 'Dash'] as const;
+
 /**
- * Pointer-only Super button over the arena for touch: it holds the bound super key (the arena's keyboard agent listens on
- * window) for as long as the finger is down. Not in the Tab order: keyboards press the key itself.
+ * Pointer-only button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
+ * listens on window) for as long as the finger is down; an unbound action does nothing. Not in the Tab order: keyboards
+ * press the key itself. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`.
  */
-function superButton(): HTMLButtonElement {
-  const b = el('button', 'menuButton', 'Super');
+function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElement {
+  const b = el('button', 'menuButton', label);
   b.type = 'button';
-  b.id = 'arcadeSuper';
+  b.id = `arcade${label}`;
   b.tabIndex = -1;
-  b.style.cssText =
-    'position:absolute;right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:5;min-width:72px;min-height:48px;touch-action:none;opacity:0.85';
+  b.style.cssText = `position:absolute;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + ${String(row * 56)}px);z-index:5;min-width:72px;min-height:48px;touch-action:none;opacity:0.85`;
   let code: string | undefined;
   const release = (): void => {
     if (code === undefined) return;
@@ -55,7 +58,8 @@ function superButton(): HTMLButtonElement {
   b.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     if (code !== undefined) return;
-    code = getBindings().super[0] ?? 'KeyX';
+    code = getBindings()[label.toLowerCase() as Lowercase<typeof label>][0];
+    if (code === undefined) return;
     b.setPointerCapture(e.pointerId);
     window.dispatchEvent(new KeyboardEvent('keydown', { code }));
   });
@@ -154,7 +158,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         host.id = 'game';
         battle.replaceChildren(host);
         game = createGame(host, launch);
-        host.append(superButton());
+        host.append(...TOUCH.map(touchButton));
       })
       .catch((e: unknown) => {
         if (epoch !== mine) return;

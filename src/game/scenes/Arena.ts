@@ -96,7 +96,10 @@ export class Arena extends Phaser.Scene {
   private projPool: EntityViewPool<ProjectileView> | undefined;
   private fx: EventFx | undefined;
   private arcadeHud: ArcadeHudModel | undefined;
-  /** Arcade only: the round announcer and timer HUD (a lazy chunk), fed the events of every tick once it has loaded. */
+  /**
+   * Arcade only: the round announcer and timer HUD, with the defence view (two lazy chunks), fed the events of every tick
+   * once they have loaded.
+   */
   private rounds: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
@@ -234,7 +237,9 @@ export class Arena extends Phaser.Scene {
     if (hud) {
       const hudScene = this.scene.get(HUD_SCENE);
       void import('../hud/round-view').then((m) => {
-        if (this.arcadeHud === hud) this.rounds = m.mountRoundView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs);
+        if (this.arcadeHud === hud) {
+          this.rounds = m.mountRoundView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs, pool);
+        }
       });
     }
     this.launch?.arcadeView?.(this, view, () => this.frameAlpha);
@@ -325,6 +330,7 @@ export class Arena extends Phaser.Scene {
       },
       superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
       rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),
+      defence: () => import('../fx/defence-view').then((m) => m.defenceState(this)),
       aim: () => {
         const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
         return g ? { visible: g.visible, x: g.x, y: g.y, angle: Math.round(g.angle) } : undefined;

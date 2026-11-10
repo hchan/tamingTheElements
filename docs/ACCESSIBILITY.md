@@ -74,6 +74,13 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   it turns light red, an extra cue only), and the round-win pips beside it are filled when won and hollow when still to
   win, so they read by shape (high contrast: white fill). The announcer banners are words ("ROUND 1", "FIGHT!", "K.O.",
   "PERFECT", "TIME", "YOU WIN ROUND 1", "VICTORY"), never a colour or a sound alone.
+- Arcade defence (`src/game/fx/defence-view.ts`, WP-arcade-defence-view): a guarding fighter is inside a bubble with a
+  white rim (thicker and opaque in high contrast), and its guard bar under it reads by length and its quarter notches
+  (pale blue, orange at 30% or less, an extra cue only); it shows only while guarding or refilling. A parry, a guard break
+  and a perfect dodge each pop a word over the fighter ("PARRY", "GUARD BREAK", "DODGE") with a ring. The parry flash is
+  a 120 ms white disc over the fighter, not a full-screen flash. Reduced motion keeps the shield, bar, words, rings (static,
+  not growing), the flash and one static spark per hit, and drops the dash afterimages, projectile trails, flying sparks and
+  shards and the rising words (FUN-DESIGN section 3).
 
 ## In-battle announcements and pause
 
@@ -89,6 +96,11 @@ You knocked out the enemy.", "K.O. You were knocked out.", "Double K.O.", plus "
 over." go out at once (assertive) with any waiting line folded in; the round result ("You win round 1. Rounds 1 to 0.")
 is polite; the match end line carries the round score ("Victory. You won the match. Rounds 2 to 1."). Each line's key
 includes the round number, so the 6 s repeat filter never swallows the next round's "Fight!".
+
+The Arcade defence view (WP-arcade-defence-view) adds polite lines through the same throttle: "You parried." or "The
+enemy parried." on a parry, "Your guard broke." or "Enemy guard broken." on a guard break (`LINES` in
+`src/game/fx/defence-fx.ts`); the 6 s repeat filter keeps a parry chain from flooding the reader. Dashes, guarded hits and
+perfect dodges are silent, like hits.
 
 Pause (Shift+P, gamepad Start, or the Resume button) opens a `role="dialog"` with `aria-modal`, moves focus to Resume,
 cycles Tab inside (`nextFocusIndex`), closes on Escape, restores the previous focus and drops held keys so a key held
@@ -114,6 +126,16 @@ nothing and RT stays the fourth swap. The super key is rebindable with the same 
 written before the action existed keeps the player's keys: if one of them is already X, the super is left unbound
 (shown as None) instead of resetting the map.
 
+Arcade dash and guard (FUN-DESIGN 2.7, 2.8; WP-arcade-defence-view): the **Dash (Arcade)** action is plain E and the
+**Guard (Arcade)** action plain Q (hold to guard, press to parry; Shift-Q stays the tester cheat), pad RB dashes and LT
+guards. Like the super, they send `Cmd.dash` and `Cmd.guard` only in an Arcade match; in Classic the keys send nothing and
+RB and LT stay the second and third swap (Arcade Versus is 1v1). Both are rebindable with the conflict check, and a save
+that already uses E or Q leaves the new action unbound rather than resetting the map. A double tap of a direction
+dashes too (the sim reads it from the direction presses). On touch screens, Guard and Dash buttons sit above the Super
+button on the right edge (each 72 x 48 px or more, 8 px apart); each holds the action's first bound key while the finger
+is down (a pointer-only control: keyboards press the key, so they are not in the Tab order); an unbound action's button
+does nothing.
+
 ## Tests
 
 | What | Where |
@@ -125,6 +147,7 @@ written before the action existed keeps the player's keys: if one of them is alr
 | super cinematic: reduced motion drops the slide and punch-in and keeps dim, band and name (plan, fake sink and browser); Arcade-only super key and pad RT, binding and pad conflicts | `src/game/fx/super-cinematic.test.ts`, `tests/e2e/arcade-super.spec.ts`, `src/game/input/arcade-bindings.test.ts` |
 | Arcade Versus picker and results: axe, heading focus, Escape back, touch Super button, 390x844 layout; the 8-way aim arrow | `tests/e2e/arcade.spec.ts`, `src/game/fx/aim-view.test.ts` |
 | Arcade round announcer: every round event gives a banner and a live line (fake sink), reduced motion keeps the text without the scale-in, live-region lines in the browser, pips by shape, 0 listeners after leaving | `src/game/hud/round-announcer.test.ts`, `src/game/hud/round-view.test.ts`, `tests/e2e/arcade-rounds.spec.ts` |
+| Arcade defence view: every defence event of real duels gives an effect (fake sink, both motion settings), reduced motion drops only motion, parry and guard-break lines, shield and bar by shape; E, Q, pad RB and LT Arcade only, binding conflicts and old saves; touch Guard and Dash buttons; 0 listeners after leaving | `src/game/fx/defence-fx.test.ts`, `src/game/fx/defence-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-defence.spec.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done

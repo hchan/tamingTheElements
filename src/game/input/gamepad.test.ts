@@ -49,6 +49,14 @@ describe('commandFromPad', () => {
     const buttons = p.buttons.map((b, i) => (i === PadButton.rt ? { pressed: false, value: 0.7 } : b));
     expect(commandFromPad({ ...p, buttons }, false)).toBe(Cmd.swap4);
   });
+  it('is keyed by the named PadButton indices (the table writes them as numbers)', () => {
+    expect(DEFAULT_PAD.buttons).toEqual({
+      [PadButton.a]: Cmd.primary, [PadButton.b]: Cmd.secondary, [PadButton.y]: Cmd.capture, [PadButton.lb]: Cmd.swap1,
+      [PadButton.rb]: Cmd.swap2, [PadButton.lt]: Cmd.swap3, [PadButton.rt]: Cmd.swap4, [PadButton.dpadUp]: Cmd.up,
+      [PadButton.dpadDown]: Cmd.down, [PadButton.dpadLeft]: Cmd.left, [PadButton.dpadRight]: Cmd.right,
+    });
+    expect(DEFAULT_PAD.pauseButton).toBe(PadButton.start);
+  });
   it('only emits declared command bits', () => {
     const all = Object.keys(DEFAULT_PAD.buttons).map(Number);
     const bits = commandFromPad(pad(all, [1, 1]), true);

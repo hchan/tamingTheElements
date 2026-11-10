@@ -26,9 +26,13 @@ production) shows a live fps / frame-time / worst-frame readout at the top right
 `arena-arcade-hitstop` and `arena-arcade-combo` (`?ff=arenaDemo,arcade`: the first Arcade volley during its hit-stop, then a
 later one, with the white flash, element sparks, damage numbers and the combo counter), `arena-arcade-meter` (the
 hyper meters under the HUD after Curomo's casts fill one bar), `arena-arcade-super-freeze` (10 ticks into Curomo's super
-freeze: arena dimmed, caster lit, element band with portrait, super name and element, camera punched in), and Arcade
+freeze: arena dimmed, caster lit, element band with portrait, super name and element, camera punched in), the Arcade
+defence states (same demo, WP-arcade-defence-view): `arena-arcade-guard` (Pax's shield bubble and guard bar, chip sparks
+from Curomo's Shards of Ice), `arena-arcade-parry` (white flash, gold ping ring and PARRY over Pax), `arena-arcade-dash`
+(three tinted afterimages behind Curomo dashing up), `arena-arcade-trails` (Shards of Ice in a ring, three fading dots
+behind each) and `arena-arcade-guard-break` (shards, an orange ring, GUARD BREAK, the empty guard bar), and Arcade
 Versus from the Settings opt-in: `menu-arcade` (the extra main-menu entry), `arcade-pick` (the picker), `arcade-battle`
-(round 1 intro at tick 40: the ROUND 1 banner, timer and empty round pips, with the touch Super button), `arcade-fight`
+(round 1 intro at tick 40: the ROUND 1 banner, timer and empty round pips, with the touch Super, Guard and Dash buttons), `arcade-fight`
 (the FIGHT! banner), `arcade-aim`, `arcade-ko` (K.O. with PERFECT during the KO slow motion), `arcade-round-end`
 (PERFECT, YOU WIN ROUND 1, one pip filled) and `arcade-results` (after a second KO: 2-0). The Arcade states step past
 round 1's 91-tick intro first (nobody acts before it). Each
@@ -87,6 +91,6 @@ Record findings as issues (below) with the screenshot name.
 | V7 | `cinematic-frame*` | Fixed in WP-visual-polish: Skip sits left of the 44 px fullscreen button (clearance computed from the canvas scale) and is padded | `cinematic-frame2-1280x720` |
 | V8 | `arena-*-390x844` | Partly fixed in WP-visual-polish: HUD label, key labels, Capture hint and Skip scale up to 2x (1.4x for the hint) with `phoneBoost`. The letterboxed canvas is still about 0.3x, so the action-bar slots remain smaller than 44 css px; not fixed | `arena-t060-390x844` |
 | V9 | `character-details` | Not reproducible: the page scrolls normally and nothing is clipped at 390x844 or 1280x720 (cards and a portrait were added) | `character-details-1280x720` |
-| V10 | `arena-t060`, `arena-t150` | Fixed in WP-visual-polish: each projectile has a soft additive halo (the same frame, 1.6x). No trail yet | `arena-t150-1280x720` |
+| V10 | `arena-t060`, `arena-t150` | Fixed in WP-visual-polish: each projectile has a soft additive halo (the same frame, 1.6x). Trails added in WP-arcade-defence-view, Arcade only: three dots 2, 4 and 6 ticks behind each projectile (alpha 0.5, 0.3, 0.15, the shooter's element colour with a white core), none with reduced motion (the halo stays); Classic projectiles keep the halo only | `arena-t150-1280x720`, `arena-arcade-trails-1280x720` |
 
 Fix these in separate work packages; this pipeline only reports them.

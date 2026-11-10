@@ -53,6 +53,14 @@ export interface ArenaProbe {
    * up and its scale, the timer text and the round wins shown per team; undefined before it is built and in Classic.
    */
   rounds(): Promise<{ main: string; sub: string; visible: boolean; scale: number; timer: string; won: readonly [number, number] } | undefined>;
+  /**
+   * Arcade only (async: a lazy chunk): the defence view's last frame (WP-arcade-defence-view): visible afterimages, trail
+   * dots, guard shields, guard bars (their meters), the projectiles of the last tick, live sparks and rings, and the words
+   * popped; undefined in Classic.
+   */
+  defence(): Promise<{
+    ghosts: number; trails: number; shields: number; bars: readonly number[]; projectiles: number; sparks: number; rings: number; pops: readonly string[];
+  } | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */
   aim(): { visible: boolean; x: number; y: number; angle: number } | undefined;
   /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */

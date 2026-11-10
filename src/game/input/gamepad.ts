@@ -33,26 +33,37 @@ export interface PadConfig {
   readonly pauseButton: number;
 }
 
+/**
+ * Keyed by the PadButton indices written as numbers: `[PadButton.a]` keeps an object lookup per key in the bundle
+ * (rolldown inlines constants, not object members), which the size budget cannot afford. gamepad.test.ts checks every
+ * key against PadButton.
+ */
 export const DEFAULT_PAD: PadConfig = {
   deadzone: 0.4,
   buttons: {
-    [PadButton.a]: Cmd.primary,
-    [PadButton.b]: Cmd.secondary,
-    [PadButton.y]: Cmd.capture,
-    [PadButton.lb]: Cmd.swap1,
-    [PadButton.rb]: Cmd.swap2,
-    [PadButton.lt]: Cmd.swap3,
-    [PadButton.rt]: Cmd.swap4,
-    [PadButton.dpadUp]: Cmd.up,
-    [PadButton.dpadDown]: Cmd.down,
-    [PadButton.dpadLeft]: Cmd.left,
-    [PadButton.dpadRight]: Cmd.right,
+    0: Cmd.primary, // A
+    1: Cmd.secondary, // B
+    3: Cmd.capture, // Y
+    4: Cmd.swap1, // LB
+    5: Cmd.swap2, // RB
+    6: Cmd.swap3, // LT
+    7: Cmd.swap4, // RT
+    12: Cmd.up, // d-pad
+    13: Cmd.down,
+    14: Cmd.left,
+    15: Cmd.right,
   },
-  pauseButton: PadButton.start,
+  pauseButton: 9, // Start
 };
 
-/** Arcade pad: RT starts the super (FUN-DESIGN 2.5) instead of the fourth swap; Classic keeps DEFAULT_PAD. */
-export const ARCADE_PAD: PadConfig = { ...DEFAULT_PAD, buttons: { ...DEFAULT_PAD.buttons, [PadButton.rt]: Cmd.super } };
+/**
+ * Arcade pad: RT starts the super (FUN-DESIGN 2.5), RB dashes (2.7) and LT guards (2.8) instead of the fourth, second
+ * and third swap (Arcade Versus is 1v1); Classic keeps DEFAULT_PAD.
+ */
+export const ARCADE_PAD: PadConfig = {
+  ...DEFAULT_PAD,
+  buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard }, // RT, RB, LT
+};
 
 function down(pad: PadSnapshot, i: number): boolean {
   const b = pad.buttons[i];
@@ -73,11 +84,9 @@ export function stickCommand(x: number, y: number, deadzone: number): Command {
 export function commandFromPad(pad: PadSnapshot | null, capturable: boolean, cfg: PadConfig = DEFAULT_PAD): Command {
   if (pad === null || pad.connected === false) return 0;
   let cmd = stickCommand(pad.axes[0] ?? 0, pad.axes[1] ?? 0, cfg.deadzone);
-  for (const key of Object.keys(cfg.buttons)) {
-    const i = Number(key);
-    const bit = cfg.buttons[i] ?? 0;
+  for (const [i, bit] of Object.entries(cfg.buttons)) {
     if (bit === Cmd.capture && !capturable) continue;
-    if (down(pad, i)) cmd |= bit;
+    if (down(pad, Number(i))) cmd |= bit;
   }
   return cmd;
 }

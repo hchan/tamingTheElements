@@ -259,7 +259,7 @@ Phaser scenes in `src/game/scenes/`: `Boot`, `Preload`, `Arena` (runs the driver
 everything outside a match (router, screens); the composition root `src/game/app/` wires them to scenes. Scenes read the sim
 only through the `RenderView` facade in `src/core/sim/view.ts` and never decide gameplay (for example death is a sim system).
 `RenderView.arcade()` (undefined in Classic) adds the Arcade read-outs: hit-stop freeze, live combo hits and damage and the
-hyper meter per team, stun, invulnerability and the 8-way cast aim per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
+hyper meter per team, stun, invulnerability, the 8-way cast aim, the guard meter and whether it guards per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
 (`src/game/hud/arcade-hud.ts`: pooled damage numbers, combo counters, hyper meters) from events and `arcade()`, ages it while the driver
 runs, and hands it to `Hud` in `HudData`, which only draws it with pooled texts. The super cinematic is the fx sink's
 `superCut`, started by `EventFx` from the super freeze (`hitStop` cause 2, the caster as its source): the Phaser sink
@@ -271,7 +271,15 @@ its phase, the round timer and the round wins per team: in every Arcade match (r
 `src/game/hud/round-view.ts` (its own `round-view` chunk) and feeds it each tick's events; it draws the round banners,
 the timer and the round pips into the `Hud` scene (so the Arena camera's shake and punch-in never move them) from objects
 made once, under one Hud `update` listener, removed with either scene, and says its lines through the Arena's live-region
-`Announcer`. The banner rules (`round-announcer.ts`) are pure and deduped by event order.
+`Announcer`. The banner rules (`round-announcer.ts`) are pure and deduped by event order. The round view also mounts the
+defence view (`src/game/fx/defence-view.ts`, WP-arcade-defence-view) in the Arena scene and hands it the same events: its
+own `defence-view` chunk (a `codeSplitting` group in `vite.config.ts`, as `round-view` imports it statically), so Classic
+never downloads it. The Arena passes its character view pool, from which the view reads each fighter's drawn sprite (the
+shield and guard bar follow it; the afterimages copy its frame). The rules (`defence-fx.ts`: which effect each of
+`dashed`, `perfectDodge`, `guarded`, `parried` and `guardBroken` gives, reduced motion, live lines) are pure; the Phaser
+side keeps typed-array pools redrawn into two Graphics each frame, six afterimage Images and four pop Texts made on first
+use, samples trails and afterimages on every sim tick, runs on the view tick (it holds while paused), and leaves with the
+Arena under one `postupdate` listener.
 
 Arcade Versus (`#arcade`, FUN-DESIGN WP 11) is a separate flow, not part of `AppFlow` (`flow.ts`, the story: garrison,
 battle, results, save). `main.ts` adds the route with a dynamic import, so its code is its own `arcade-versus` chunk and
@@ -285,8 +293,8 @@ moved and turned after each scene update from `RenderView.arcade().aim`, static 
 variant), removed with the scene. The flow has no save store, so it writes no progress,
 XP, capture, objectives or garrison (a repo test and a unit test guard it); the only write is the playtest replay, when
 recording is on. The route is offered when Settings > Arcade Versus (preview) is ticked (the save's `arcadePreview`) or
-with `?ff=arcade` in dev and test builds; otherwise `#arcade` returns to the main menu. A pointer-only Super button over
-the arena holds the bound super key for touch players.
+with `?ff=arcade` in dev and test builds; otherwise `#arcade` returns to the main menu. Pointer-only Super, Guard and
+Dash buttons over the arena hold the bound key of their action for touch players.
 
 ## Legacy concept map
 

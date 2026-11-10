@@ -21,7 +21,10 @@ export interface KeyboardAgentOptions {
   readonly onEffect?: (effect: KeyEffect) => void;
   /** Current gamepad (e.g. `() => firstPad(navigator.getGamepads())`); mapped to the same Commands as the keys. */
   readonly gamepad?: () => PadSnapshot | null;
-  /** Arcade match: the super key (X) and pad RT send `Cmd.super`; Classic never sends it (RT stays the fourth swap). */
+  /**
+   * Arcade match: the super (X, pad RT), dash (E, RB) and guard (Q, LT) send their Arcade bits; Classic never sends them
+   * (RB, LT and RT stay the second, third and fourth swap).
+   */
   readonly arcade?: boolean;
 }
 
@@ -101,7 +104,7 @@ export class KeyboardAgent implements Agent {
     const down = onKey('down');
     const up = onKey('up');
     const blur = () => {
-      this.handle({ type: 'blur', code: '', shiftKey: false, ctrlKey: false, repeat: false });
+      this.releaseAll();
     };
     source.addEventListener('keydown', down);
     source.addEventListener('keyup', up);

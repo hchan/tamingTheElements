@@ -13,6 +13,8 @@ export const GAME_ACTIONS = [
   'slot5',
   'capture',
   'super',
+  'dash',
+  'guard',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -32,6 +34,9 @@ export const DEFAULT_BINDINGS: Bindings = {
   capture: ['KeyC'],
   // Arcade only (key-map drops it in Classic). Plain X: Shift-X stays the tester cheat.
   super: ['KeyX'],
+  // Arcade only too (FUN-DESIGN 2.7, 2.8). Plain Q: Shift-Q stays the tester cheat.
+  dash: ['KeyE'],
+  guard: ['KeyQ'],
 };
 
 export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
@@ -46,6 +51,8 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   slot5: 'Swap 3',
   capture: 'Capture',
   super: 'Super (Arcade)',
+  dash: 'Dash (Arcade)',
+  guard: 'Guard (Arcade)',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */

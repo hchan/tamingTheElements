@@ -1,13 +1,13 @@
-import { Q4_ONE } from '../data/arcade';
+import { GUARD_MAX, Q4_ONE } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
 import { capturable } from '../rules/progression';
 import {
-  ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_STRIDE, TeamField, World,
+  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_STRIDE, TeamField, World,
 } from './state';
 import { castDir } from './systems/arcade/aim';
-import { isInvulnerable, isStunned } from './systems/arcade/stun';
+import { isGuarding, isInvulnerable, isStunned } from './systems/arcade/stun';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { controlledId } from './systems/movement';
 import { listStatuses } from './systems/status';
@@ -60,6 +60,9 @@ export interface RenderArcade {
   invulnerable(id: number): boolean;
   /** The 8-way cast facing (dir8, 0 = east, then counter-clockwise on screen) of character `id`. */
   aim(id: number): number;
+  /** Guard meter of character `id`, 0..GUARD_MAX (full when it never blocked), and whether it guards now (FUN-DESIGN 2.8). */
+  guard(id: number): number;
+  guarding(id: number): boolean;
 }
 
 /** One active status as the HUD sees it. The object is reused between callbacks. */
@@ -136,6 +139,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const ar: RenderArcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, roundsWon: [0, 0],
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
+    guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
   const pScratch: RenderProjectile = { id: 0, team: 0, sprite: '', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0 };
