@@ -1,15 +1,11 @@
 import {
   CHARACTERS,
-  Cmd,
   DEFAULT_SIM_FLAGS,
   SIM_VERSION,
   getCharacter,
   type Agent,
-  type AgentState,
   type CharacterId,
-  type Command,
   type MatchSetup,
-  type ObservationView,
   type ReplayFile,
 } from '@core/index';
 import { ScriptedAI, scriptedProfileFor } from '@core/lazy-index';
@@ -27,10 +23,10 @@ import type { ArenaLaunch } from '../scenes/launch';
 export const ARCADE_RACES: readonly CharacterId[] = CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
 
 /**
- * AI levels offered, capped at Normal (FUN-DESIGN 2.11 and WP 10). Only the Normal layer exists today; Easy is the same AI
- * that never supers (2.11's Easy super usage), and its other knobs arrive with WP-arcade-ai-personalities.
+ * AI levels offered (FUN-DESIGN 2.11, WP-arcade-ai-personalities): the index is the core AI level (`ARCADE_AI_KNOBS`
+ * row: Easy never supers, combo caps 1, 3 and 5, slower or faster reactions, parries and dodges).
  */
-export const ARCADE_AI_LEVELS = ['easy', 'normal'] as const;
+export const ARCADE_AI_LEVELS = ['easy', 'normal', 'hard'] as const;
 export type ArcadeAiLevel = (typeof ARCADE_AI_LEVELS)[number];
 
 export interface ArcadePick {
@@ -66,27 +62,13 @@ export function arcadeSetup(pick: ArcadePick, seed: number): MatchSetup {
   };
 }
 
-/** Easy: the Normal AI with the super bit dropped; memory and randomness stay the inner agent's. */
-class NoSuperAgent implements Agent {
-  readonly id: string;
-  constructor(private readonly inner: Agent) {
-    this.id = inner.id;
-  }
-  observe(view: ObservationView, tick: number): Command {
-    return this.inner.observe(view, tick) & ~Cmd.super;
-  }
-  save(): AgentState {
-    return this.inner.save();
-  }
-  load(state: AgentState): void {
-    this.inner.load(state);
-  }
-}
-
-/** The Arcade AI for team 1 (never the random bot, FUN-DESIGN 2.11): the scripted AI with its Arcade layer. */
+/**
+ * The Arcade AI for team 1 (never the random bot, FUN-DESIGN 2.11): the scripted AI with its Arcade layer at the picked
+ * level; it plays Turtle when its element is at a disadvantage, else a personality drawn from the match seed.
+ */
 export function arcadeEnemy(pick: ArcadePick): Agent {
-  const ai = new ScriptedAI(scriptedProfileFor(getCharacter(pick.enemy), getCharacter(pick.player)), { id: 'arcade-ai' });
-  return pick.level === 'easy' ? new NoSuperAgent(ai) : ai;
+  const level = ARCADE_AI_LEVELS.indexOf(pick.level) as 0 | 1 | 2;
+  return new ScriptedAI(scriptedProfileFor(getCharacter(pick.enemy), getCharacter(pick.player)), { id: 'arcade-ai', level });
 }
 
 export type ArcadeOutcome = 'win' | 'lose' | 'draw';

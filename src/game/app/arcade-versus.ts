@@ -29,7 +29,7 @@ export interface ArcadeVersusDeps {
   readonly replays: Pick<ReplayStore, 'add'>;
 }
 
-const LEVEL_LABELS: Readonly<Record<ArcadePick['level'], string>> = { easy: 'Easy (never supers)', normal: 'Normal' };
+const LEVEL_LABELS: Readonly<Record<ArcadePick['level'], string>> = { easy: 'Easy', normal: 'Normal', hard: 'Hard' };
 const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { win: 'Victory!', lose: 'Defeat', draw: 'Draw' };
 
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
