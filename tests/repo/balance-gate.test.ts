@@ -9,7 +9,7 @@ import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { createMatch } from '../../src/core/sim/match';
 import { cooldownIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
-import { ARCADE_BASELINE_PATH, ARCADE_PARAMS, BASELINE_PATH, FULL_PARAMS, compareReports, type BalanceReport } from '../../tools/sim/balance';
+import { ARCADE_2V2_BASELINE_PATH, ARCADE_2V2_PARAMS, ARCADE_BASELINE_PATH, ARCADE_PARAMS, BASELINE_PATH, FULL_PARAMS, compareReports, type BalanceReport } from '../../tools/sim/balance';
 import { DEFAULT_MAX_TICKS, RACES, makeAgent, runPairing, runTournament } from '../../tools/sim/run-match';
 
 /** PR sample: every pairing, 2 seeds (one per side assignment), level 1, scripted vs scripted. */
@@ -119,5 +119,15 @@ describe('Arcade balance baseline (WP-arcade-numbers; compared nightly, report o
     expect(FULL_PARAMS).not.toHaveProperty('ruleset');
     const classic = JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) as BalanceReport;
     expect(classic.params).toEqual(FULL_PARAMS);
+  });
+});
+
+describe('Arcade 2v2 balance baseline (WP-arcade-2v2-tune; compared nightly, report only)', () => {
+  const tag = JSON.parse(readFileSync(ARCADE_2V2_BASELINE_PATH, 'utf8')) as BalanceReport;
+
+  it('is the Arcade tag-team round robin over every race, with its own parameters', () => {
+    expect(tag.params).toEqual(ARCADE_2V2_PARAMS);
+    expect(Object.keys(tag.winRates).sort()).toEqual([...RACES].sort());
+    expect(tag.matches).toBe((RACES.length * (RACES.length - 1) * ARCADE_2V2_PARAMS.seeds) / 2);
   });
 });
