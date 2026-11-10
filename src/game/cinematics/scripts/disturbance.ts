@@ -1,6 +1,6 @@
 import type { CineScript } from '../../cine/types';
 
-/** Legacy scene "The Disturbance" (war/WEB-INF/private/src/scenes.js). */
+/** Legacy scene "The Disturbance" (tag legacy-crafty-1.0: war/WEB-INF/private/src/scenes.js). */
 export const DISTURBANCE_SCRIPT: CineScript = {
   id: 'the-disturbance',
   title: 'The Disturbance',

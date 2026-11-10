@@ -12,4 +12,6 @@ Tag `legacy-crafty-1.0` first. Keep legacy runnable as the oracle until parity s
 
 ## Consequences
 
+Update 2026-11-10: with the owner's explicit approval `war/` was deleted from the tree; the oracle is restored on demand from the tag (`pnpm oracle:restore`, [legacy/ARCHIVE.md](../legacy/ARCHIVE.md)).
+
 Safe, recoverable cleanup. Cost: the old code lingers until sign-off.

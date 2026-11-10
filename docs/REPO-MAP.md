@@ -8,18 +8,14 @@ ADR index: [docs/adr/README.md](adr/README.md)
 
 | Path | What it is |
 |---|---|
-| `war/` | Legacy web root (the old App Engine wrapper is retired). The playable game lives in `war/WEB-INF/private/` |
-| `war/WEB-INF/private/src/` | The 24 legacy game scripts (see [legacy/INVENTORY.md](legacy/INVENTORY.md)) |
-| `war/WEB-INF/private/lib/` | Vendored `crafty.js` and `SpriteColor.js` |
-| `war/WEB-INF/private/bower_components/` | Vendored jQuery |
-| `war/WEB-INF/private/css/` | `main.scss`, compiled `main.css` and a Sass cache |
-| `war/WEB-INF/private/img/`, `war/WEB-INF/private/snd/` | Sprite sheets, backgrounds and `.ogg` sound |
+| (retired) | The legacy game directory `war` was removed from the tree on 2026-11-10; it lives at git tag `legacy-crafty-1.0` and `pnpm oracle:restore` extracts it to the gitignored `.oracle` directory, see [legacy/ARCHIVE.md](legacy/ARCHIVE.md) |
 | `imgWorkArea/` | Art working files: PNG and GIMP `.xcf` sources |
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
-| `tools/` | TypeScript build tooling: `tools/assets/` (asset manifest and copy), `tools/gen/` (generated tables, LUTs, golden replays), `tools/sim/` (match CLI), `tools/replay-verify.ts` (`pnpm replay:verify`) |
+| `tools/` | TypeScript build tooling: `tools/oracle/` (`pnpm oracle:restore`), `tools/assets/` (asset manifest and copy), `tools/gen/` (generated tables, LUTs, golden replays), `tools/sim/` (match CLI), `tools/replay-verify.ts` (`pnpm replay:verify`) |
 | `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`); `gen-design-tables.ts` fills the generated tables in `docs/GAME-DESIGN.md` (`pnpm docs:gen`); `record-golden.ts` writes the golden replays, and `arcade-script.ts` (a step-and-duration input authoring helper) with `arcade-moves.ts` (the scripted Arcade goldens) feed it |
 | `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`); `build-assets.ts` (`pnpm assets:build`) copies the manifest's images and sounds plus the favicon into `public/`, verifying sha256 |
 | `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md). `fun-metrics.ts` (pure reducer of sim events into the fun metrics) and `fun-report.ts` (`pnpm fun:report`): see [FUN-DESIGN.md](FUN-DESIGN.md) section 4. `run-net.ts` (`pnpm sim:net`): a bot-vs-bot match over the lockstep session and the fake network, printing stalls, resends and lag; see [NETCODE.md](NETCODE.md) |
+| `tools/oracle/` | `restore.ts` (`pnpm oracle:restore`): extracts the legacy game from git tag `legacy-crafty-1.0` into the gitignored `.oracle` directory, never `user.properties` |
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
 | `docs/` | Documentation: `BRANCHING.md`, `TESTING.md` (test commands, layout, fixtures, guards), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `docs/` | Documentation: [PERFORMANCE.md](PERFORMANCE.md) (budgets and how they are measured), `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
@@ -87,8 +83,8 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; `main-menu.ts` is the main menu), `keyboard.ts` (Escape back, Space on links, focus on navigation), `styles/main.css` |
 | `src/ui/screens/` | One module per DOM screen; `arcade-versus.ts` is the Arcade Versus picker and results DOM (lazy, loaded with the Arcade flow) |
 | `src/ui/tester/` | Tester mode DOM: badge, tester panel, bench health panel, cheat-code matcher and installer |
-| `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
-| `tests/` | Cross-cutting tests (`tests/repo/`, `tests/lint/`), legacy characterization (`tests/legacy/`), browser determinism (`tests/browser/`), Playwright e2e (`tests/e2e/`), fixtures (`tests/fixtures/`); unit tests are colocated in `src/`. See [TESTING.md](TESTING.md) |
+| `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the restored legacy sources (`oracle.ts` locates `.oracle`) in `node:vm` |
+| `tests/` | Cross-cutting tests (`tests/repo/`, `tests/lint/`), recorded-fixture integrity (`tests/legacy/`), oracle characterization (`tests/oracle/`, needs `pnpm oracle:restore`), browser determinism (`tests/browser/`), Playwright e2e (`tests/e2e/`), fixtures (`tests/fixtures/`); unit tests are colocated in `src/`. See [TESTING.md](TESTING.md) |
 | `tests/` | Cross-cutting tests (`tests/repo/`), Playwright e2e (`tests/e2e/`), Pages-subpath smoke (`tests/e2e-pages/`, `pnpm e2e:pages`); unit tests are colocated in `src/` |
 
 ## Where do I put X
@@ -98,4 +94,4 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | A new decision record | `docs/adr/NNNN-<slug>.md`, and add it to `docs/adr/README.md` |
 | Notes about legacy code or bugs | `docs/legacy/` |
 | General documentation | `docs/` |
-| Anything touching the running legacy game | `war/WEB-INF/private/src/`, but the legacy game is frozen as the parity oracle, so prefer not to edit it |
+| Anything touching the legacy game | Nothing: it is retired (git tag `legacy-crafty-1.0`); see [legacy/ARCHIVE.md](legacy/ARCHIVE.md) |

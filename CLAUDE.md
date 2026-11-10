@@ -1,7 +1,7 @@
 # tamingTheElements
 
-Real-time 1v1 elemental arena battler with monster capture. Ported from a legacy Crafty.js game (`war/`, frozen as the
-parity oracle, tag `legacy-crafty-1.0`) to **Phaser 4 + TypeScript + Vite**, with a deterministic 50 Hz simulation in plain
+Real-time 1v1 elemental arena battler with monster capture. Ported from a legacy Crafty.js game (`war/`, retired from the tree
+on 2026-11-10; preserved at tag `legacy-crafty-1.0`) to **Phaser 4 + TypeScript + Vite**, with a deterministic 50 Hz simulation in plain
 TypeScript (`src/core`, no Phaser/DOM) and Phaser as a thin renderer. Live: https://hchan.github.io/tamingTheElements/
 
 Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a test pins it), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
@@ -33,6 +33,8 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
   Re-recording goldens/baselines (`golden:record`, `balance:record`, `TTE_UPDATE_FIXTURES=1`) needs a stated reason in the commit.
 - **Async teardown:** Phaser's `game.destroy(true)` completes a frame later; wait on `__TTE__.settled()` (never `waitForTimeout`).
   Settings/objectives saves are async (IndexedDB); wait for navigation to `#main`.
-- **Do not edit `war/`** (frozen oracle) until the parity sign-off retirement; never read/print credentials (the old
-  `user.properties` is in public git history: rotation is the owner's job, see SECURITY.md).
+- **Legacy game retired (2026-11-10, owner-approved):** `war/` is gone from the tree; it lives at git tag `legacy-crafty-1.0`.
+  `pnpm oracle:restore` extracts it to gitignored `.oracle/`, `pnpm test:oracle` runs the characterization tests against it
+  (skipped without it); fixtures in `tests/fixtures/legacy` stay (see docs/legacy/ARCHIVE.md). Never read/print credentials
+  (the old `user.properties` is in public history and the tag, never extracted: rotation is the owner's job, see SECURITY.md).
 - Keep responses and diffs small; `git worktree` + Sonnet agents were used per work package (see `.claude/`).

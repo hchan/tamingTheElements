@@ -7,7 +7,9 @@ How to run, place and write tests. Run everything with `corepack pnpm <script>` 
 | Command | What it runs |
 |---|---|
 | `pnpm test` | Vitest projects `core` and `repo` (node): unit tests in `src/**/*.test.ts`, plus `tests/repo/` and `tests/lint/` |
-| `pnpm test:legacy` | Vitest project `legacy`: `tests/legacy/**` characterization tests of the frozen `war/` code, run in `node:vm` |
+| `pnpm test:legacy` | Vitest project `legacy`: `tests/legacy/**`, integrity of the recorded legacy fixtures (no legacy code runs) |
+| `pnpm oracle:restore` | Opt-in: extract the legacy game from git tag `legacy-crafty-1.0` into the gitignored `.oracle` directory (never `user.properties`) |
+| `pnpm test:oracle` | Vitest project `oracle`: `tests/oracle/**` characterization tests that run the restored legacy code in `node:vm`; without `.oracle` one skipped placeholder prints how to restore it |
 | `pnpm test:browser` | Vitest project `browser`: `tests/browser/**/*.browser.test.ts` in headless Chromium, Firefox and WebKit |
 | `pnpm e2e` | Playwright (`playwright.config.ts`): `tests/e2e/*.spec.ts` against `vite build --mode test` (written to `node_modules/.tte-e2e`, never `dist/`) served by `vite preview` on port 4173 (`E2E_PORT=n` picks another port for parallel worktrees) |
 | `pnpm visual:capture`, `visual:pacing`, `visual:regress`, `visual:update` | Visual QA (`playwright.visual.config.ts`, `tests/visual/`): screenshots, videos, frame pacing and screenshot regression; `ci:local --visual` adds them. See [VISUAL-QA.md](VISUAL-QA.md) |
@@ -46,8 +48,8 @@ Example: `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500 pnpm test`. Single file: `pnpm e
 | Unit tests for `src/core`, `src/game`, `src/ui` | Colocated next to the code: `src/**/<name>.test.ts` |
 | Data tables vs legacy | `src/core/data/*.test.ts` (compare against `tests/fixtures/legacy/*.json`) |
 | Determinism, snapshot, replay | `src/core/sim/*.test.ts`, `src/core/replay/replay.test.ts` |
-| Characterization of legacy behaviour | `tests/legacy/*.characterization.test.ts`, fixtures in `tests/fixtures/legacy/` |
-| Known legacy bugs | `tests/legacy/known-bugs.characterization.test.ts` (tagged `// KNOWN-BUG:<slug>`, see `docs/legacy/KNOWN-BUGS.md`) |
+| Characterization of legacy behaviour (oracle-only) | `tests/oracle/*.characterization.test.ts`, fixtures in `tests/fixtures/legacy/`; fixture integrity in `tests/legacy/fixtures.test.ts` |
+| Known legacy bugs (oracle-only) | `tests/oracle/known-bugs.characterization.test.ts` (tagged `// KNOWN-BUG:<slug>`, see `docs/legacy/KNOWN-BUGS.md`) |
 | Repo and docs guards | `tests/repo/*.test.ts` |
 | ESLint ban checks | `tests/lint/core-bans.test.ts` with samples in `tests/lint/fixtures/` |
 | Cross-engine determinism | `tests/browser/determinism.browser.test.ts` |
@@ -61,14 +63,14 @@ Example: `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500 pnpm test`. Single file: `pnpm e
 
 ## Characterization fixtures
 
-`tests/fixtures/legacy/*.json` and `tests/fixtures/legacy/saves/` record what the frozen legacy code does today. The
-`tests/legacy` tests compare against them, and port tests (for example `src/core/data/abilities-a.test.ts`) read them as the oracle.
+`tests/fixtures/legacy/*.json` and `tests/fixtures/legacy/saves/` record what the legacy code does (the frozen parity
+evidence; the code itself is retired, see [legacy/ARCHIVE.md](legacy/ARCHIVE.md)). The `tests/oracle` tests compare the restored legacy code against them, and port tests (for example `src/core/data/abilities-a.test.ts`) read them as the oracle.
 
-Regenerate with `TTE_UPDATE_FIXTURES=1 pnpm test:legacy` (the tests rewrite the files they cover instead of only comparing).
+Regenerate with `pnpm oracle:restore` then `TTE_UPDATE_FIXTURES=1 pnpm test:oracle` (the tests rewrite the files they cover instead of only comparing).
 
 When this is allowed:
 
-- Only when the legacy test harness or stubs changed, or a fixture is new. Legacy under `war/` is frozen, so a changed fixture
+- Only when the legacy test harness or stubs changed, or a fixture is new. The legacy code is frozen (git tag `legacy-crafty-1.0`), so a changed fixture
   without a harness change means the characterization is wrong or something unintended moved.
 - Review the full `git diff tests/fixtures/` and explain it in the commit message. Never regenerate just to turn a red test green.
 - Never regenerate to bless a port divergence. Port parity bugs are reproduced, with the correct behaviour written as `it.fails(...)`
@@ -106,7 +108,7 @@ that Chromium, Firefox and WebKit reproduce the committed hashes.
 - `src/core/sim/arcade-numbers.test.ts`: the Arcade numbers table invariants: one row per playable race, integer per mille inside bounds, Classic max health unchanged while Arcade floors `hpPm` of it, and the cooldown overrides (Classic always gets the legacy cooldown).
 - `tests/repo/docs-tables.test.ts`: the generated tables in `docs/GAME-DESIGN.md` must equal the output of `pnpm docs:gen`.
 - `tests/repo/links.test.ts`: every relative markdown link in `README.md`, `CONTRIBUTING.md` and `docs/*.md` must resolve.
-- `tests/repo/assets-manifest.test.ts`, `tests/repo/cine-scripts-a.test.ts`: asset manifest and ported cinematic data checks.
+- `tests/repo/assets-manifest.test.ts`, `tests/repo/cine-scripts-a.test.ts`: asset manifest and ported cinematic data checks (their checks against the legacy text or manifest generator run only when `.oracle` exists).
 - `tests/lint/core-bans.test.ts`: lints sample files to prove the `src/core` bans (`Date`, `Math.random`, transcendental `Math`,
   DOM globals and so on) are enforced.
 
@@ -158,7 +160,7 @@ in `src/core/data/abilities-a.test.ts` and `characters.test.ts`:
 4. If the legacy behaviour is what you are matching and it is buggy, assert the buggy value and add the correct-behaviour
    case as `it.fails(...)` with `// KNOWN-BUG:<slug>`.
 5. A gameplay-affecting data change moves the golden replay: bump `SIM_VERSION`, run `pnpm golden:record`, review the diff.
-6. Run `pnpm test` and `pnpm test:legacy`; then the full pre-merge set above.
+6. Run `pnpm test` and `pnpm test:legacy` (and `pnpm test:oracle` after `pnpm oracle:restore` when oracle-only parity evidence is involved); then the full pre-merge set above.
 
 `src/core` tests obey the same bans as the code: no `Date`, `Math.random` or transcendental `Math`; randomness comes from the
 seeded streams in `src/core/rng/`.

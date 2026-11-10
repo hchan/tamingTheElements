@@ -1,6 +1,6 @@
 # Legacy inventory
 
-Map of the legacy game. Source files are under `war/WEB-INF/private/` and are loaded by `index.html` as plain scripts in a fixed order (jQuery, `lib/crafty.js`, `lib/SpriteColor.js`, then `src/*.js`), sharing globals. "New home" is the planned destination from the migration plan; those paths do not exist yet. Known bugs are tracked in [KNOWN-BUGS.md](KNOWN-BUGS.md).
+Map of the legacy game. The `war/` directory was retired from the tree on 2026-11-10 and lives at git tag `legacy-crafty-1.0` (restore: [ARCHIVE.md](ARCHIVE.md)). Source files were under `war/WEB-INF/private/` and are loaded by `index.html` as plain scripts in a fixed order (jQuery, `lib/crafty.js`, `lib/SpriteColor.js`, then `src/*.js`), sharing globals. "New home" is the planned destination from the migration plan; those paths do not exist yet. Known bugs are tracked in [KNOWN-BUGS.md](KNOWN-BUGS.md).
 
 ## `src/*.js` (24 scripts)
 

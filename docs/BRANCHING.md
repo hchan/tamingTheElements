@@ -57,7 +57,7 @@ is never merged into a branch to catch up. If `main` moved, rebase the unpublish
 
 Unfinished work merges dark. A flag is a plain constant or config entry, off on `main` until its flip.
 
-- **Off means inert:** the new code path is not reached, existing behaviour (the legacy game in `war/`, or the current Phaser
+- **Off means inert:** the new code path is not reached, existing behaviour (the current Phaser
   scene) is unchanged.
 - **A flip is its own small commit** on its own branch, and its message names the check that proves it (a test, or a manual
   playthrough step).

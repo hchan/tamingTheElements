@@ -1,6 +1,6 @@
 import type { CineScript } from '../../cine/types';
 
-/** Legacy scene "Homeworld: Pria" (war/WEB-INF/private/src/scenes.js). */
+/** Legacy scene "Homeworld: Pria" (tag legacy-crafty-1.0: war/WEB-INF/private/src/scenes.js). */
 export const PRIA_SCRIPT: CineScript = {
   id: 'homeworld-pria',
   title: 'Homeworld: Pria',

@@ -9,7 +9,9 @@ Seed: plan section 4.2. Every row maps one legacy behaviour to its new behaviour
 
 Evidence cells hold `path#test title (or a unique part of it)`. `tests/repo/parity.test.ts` checks that every
 reference exists in the named file, that a `matches` row cites at least one test, and that no `matches` row relies on an
-`it.fails`. The cited tests run in the normal `pnpm test` / `pnpm test:legacy` suites. "manual" means the WP 96
+`it.fails`. The cited tests run in the normal `pnpm test` suite, except rows marked oracle-only: those cite `tests/oracle/` tests (or
+the `scenes.js verbatim` cinematic checks) that execute the legacy code and run only under `pnpm test:oracle` after
+`pnpm oracle:restore` (the legacy tree was retired from the repo on 2026-11-10, see [legacy/ARCHIVE.md](legacy/ARCHIVE.md)). "manual" means the WP 96
 sign-off playtest. Bug slugs are those of [docs/legacy/KNOWN-BUGS.md](legacy/KNOWN-BUGS.md) plus the port-found ones
 (tagged `KNOWN-BUG:<slug>` in `src/core`), which are listed there too.
 
@@ -120,6 +122,17 @@ Nothing below is fixed by the checklist work; each needs its own WP or the WP 96
 - U14: default ability keys differ from legacy (positional digits); owner sign-off needed before changing either side.
 - U15: the end-of-match beat is 1.2 s, legacy waits 3 s before the results scene; owner call (it lengthens every e2e battle).
 - E2E: `tests/e2e/parity/golden-paths.spec.ts` covers golden paths 1-9 plus 1c (Story Mode) and 9b (portal via game master presets); none is `test.fixme`. The story chain plays all four legacy scenes (Pria, The Disturbance, Call of the Tamer, Restoring Balance) with per-frame fades approximated by one tween per sprite; the save is written when it ends or is skipped, then the app goes to the garrison (legacy went to chapter 1 objectives).
+
+## Legacy retirement (R7-R9)
+
+- R7 (delete `war/` from the tree): done 2026-11-10 with the owner's explicit authorisation ("get rid of war/"). The
+  full tree remains at git tag `legacy-crafty-1.0`.
+- R8 (keep the oracle reproducible): done. `pnpm oracle:restore` extracts the tag into the gitignored `.oracle`
+  directory and `pnpm test:oracle` runs the characterization tests against it; rows that depend on it are marked
+  oracle-only above and `tests/repo/parity.test.ts` enforces the marker. Fixtures in `tests/fixtures/legacy/` stay.
+- R9 (docs and agents follow): done. [legacy/ARCHIVE.md](legacy/ARCHIVE.md), README, CLAUDE.md and the parity agent and
+  skill describe the new workflow.
+- U14 (key mapping) and U15 (end delay) stay open as documented, accepted differences; retirement does not change them.
 
 ## Sign-off
 

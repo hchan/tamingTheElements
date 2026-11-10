@@ -26,7 +26,7 @@ Workflow details are in [docs/BRANCHING.md](docs/BRANCHING.md): trunk-based, one
 
 - Scope fits the size limit and the checks above pass.
 - Tests are added or updated.
-- Nothing under `war/` is modified unless the work package says so.
+- The legacy game is retired (git tag `legacy-crafty-1.0`); restore it only with `pnpm oracle:restore` and never commit it.
 - Feature flags are listed; docs touched by the change are updated.
 - E2E specs wait on conditions (`__TTE__.settled()`, route changes, `waitForFunction`), never `waitForTimeout`. The test build never overwrites `dist/` (it goes to `node_modules/.tte-e2e`).
 - Untrusted input (imported saves, replay files) goes through `src/core/save/validate.ts` or `src/core/replay/validate.ts` before use.

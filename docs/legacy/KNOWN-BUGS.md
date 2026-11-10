@@ -1,6 +1,6 @@
 # Known legacy bugs
 
-Policy: see [ADR-0015](../adr/0015-known-legacy-bugs-policy.md). Paths are relative to `war/WEB-INF/private/src/`. Line numbers are at the time of writing and approximate. The characterization-test column is filled in by WP-h-known-bugs and later WPs (the legacy rows are asserted as current behaviour with plain `it`; the port-found rows (`omni-no-cooldown` to `melee-dead-caster-lingers`) are tagged `KNOWN-BUG:<slug>` in `src/core` and have no legacy characterization yet, except `melee-range-axes`); the new-test and fix-WP columns are filled in by the porting WPs, and "TBD" means not written yet.
+Policy: see [ADR-0015](../adr/0015-known-legacy-bugs-policy.md). Paths are relative to `war/WEB-INF/private/src/` (retired from the tree: `git show legacy-crafty-1.0:<path>` or `pnpm oracle:restore`, see [ARCHIVE.md](ARCHIVE.md)); the characterization tests are in `tests/oracle/`. Line numbers are at the time of writing and approximate. The characterization-test column is filled in by WP-h-known-bugs and later WPs (the legacy rows are asserted as current behaviour with plain `it`; the port-found rows (`omni-no-cooldown` to `melee-dead-caster-lingers`) are tagged `KNOWN-BUG:<slug>` in `src/core` and have no legacy characterization yet, except `melee-range-axes`); the new-test and fix-WP columns are filled in by the porting WPs, and "TBD" means not written yet.
 
 | Slug | Description | Legacy file:line | Characterization test | New test | Fix WP |
 |---|---|---|---|---|---|
