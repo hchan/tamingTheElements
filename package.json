@@ -21,7 +21,7 @@
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "echo \"not yet\" && exit 1",
     "sim:match": "echo \"not yet\" && exit 1",
-    "assets:build": "echo \"not yet\" && exit 1",
+    "assets:build": "tsx tools/assets/build-assets.ts",
     "format": "echo \"not yet\" && exit 1"
   },
   "devDependencies": {
