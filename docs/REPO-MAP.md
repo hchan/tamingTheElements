@@ -17,6 +17,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `imgWorkArea/` | Art working files: PNG and GIMP `.xcf` sources |
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
 | `tools/` | Five Perl generators for the asset manifests (`generate*.pl`, `imgHelper.pl`) |
+| `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`) |
 | `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
