@@ -1,5 +1,6 @@
 import { SIM_VERSION } from '@core/index';
-import { currentRoute } from '@ui/router';
+import { startRouter } from '@ui/router';
+import '@ui/styles/main.css';
 import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags } from '../platform/flags';
@@ -25,6 +26,10 @@ if (root) {
   if (flags.play || flags.forceNoWebgl) {
     void enterPlay(root);
   } else {
-    root.textContent = `Port in progress; play the legacy build. (sim v${String(SIM_VERSION)}, ${currentRoute()})`;
+    const menu = document.createElement('div');
+    menu.id = 'menu';
+    menu.dataset.simVersion = String(SIM_VERSION);
+    root.replaceChildren(menu);
+    startRouter(menu);
   }
 }

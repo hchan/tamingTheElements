@@ -1,0 +1,315 @@
+/* Ported from war/WEB-INF/private/css/main.scss. */
+:root {
+  --default-font: georgia, serif;
+  --ui-scale: 1;
+  --color-fire: red;
+  --color-water: blue;
+  --color-earth: green;
+  --color-air: #aae3f6;
+  --color-heading: yellow;
+  --color-gold: gold;
+  --color-hover-bg: #f0f8ff;
+  --color-hover-fg: #f00;
+  --color-ready: #070;
+  --color-ready-hover: #0c0;
+}
+
+body {
+  font-family: var(--default-font);
+}
+
+#app {
+  font-size: calc(16px * var(--ui-scale));
+}
+
+a {
+  color: #fff;
+}
+
+.info {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.water {
+  background: var(--color-water);
+}
+.fire {
+  background: var(--color-fire);
+}
+.earth {
+  background: var(--color-earth);
+}
+.air {
+  background: var(--color-air);
+}
+
+.centerMe {
+  margin-inline: auto;
+  width: 400px;
+}
+
+.clickable {
+  text-decoration: underline;
+  vertical-align: middle;
+  list-style-type: none;
+  display: inline;
+}
+
+.clickable:hover {
+  background-color: var(--color-hover-bg);
+  color: var(--color-hover-fg);
+  cursor: pointer;
+}
+
+.notClickableYet {
+  display: inline;
+  text-decoration: underline;
+  color: grey;
+}
+
+#newObjectives {
+  padding-left: 5px;
+  color: red;
+  font-weight: 900;
+}
+
+.back {
+  text-align: left;
+  font-size: 16px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.heading,
+.subHeading {
+  width: 100%;
+  font-size: 26px;
+  font-family: var(--default-font);
+  font-style: italic;
+  font-weight: 900;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+.heading {
+  text-align: center;
+}
+.subHeading {
+  text-align: left;
+  font-size: 24px;
+}
+
+.brief {
+  color: white;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 200;
+}
+
+.chapterBorder {
+  padding: 25px;
+  border: 5px solid;
+  border-radius: 25px;
+}
+
+.chapterHeading,
+.objectivesHeading,
+.progressHeading,
+.chapterBody,
+.objectivesBody,
+.progressBody {
+  width: 100%;
+  text-align: left;
+  font-weight: 900;
+}
+.chapterHeading {
+  color: var(--color-gold);
+  font-size: 32px;
+}
+.objectivesHeading {
+  color: var(--color-gold);
+  font-size: 18px;
+}
+.progressHeading {
+  color: green;
+  font-size: 18px;
+}
+.chapterBody,
+.objectivesBody,
+.progressBody {
+  color: white;
+  font-size: 14px;
+  font-style: italic;
+}
+
+#enterPortalContainer,
+#enterBattlegroundContainer,
+#enterPracticeContainer,
+.continueContainer {
+  display: inline-block;
+  margin-inline: auto;
+  font-size: 22px;
+  color: grey;
+  text-align: center;
+  border: 2px solid;
+  border-radius: 25px;
+  width: 300px;
+  cursor: pointer;
+  position: relative;
+}
+
+.readyToEnterPortal,
+.readyToEnterBattleground,
+.continueContainerColor {
+  background: var(--color-ready);
+  color: white !important;
+}
+.readyToEnterPortal:hover,
+.readyToEnterBattleground:hover,
+.continueContainerColor:hover {
+  background: var(--color-ready-hover);
+  box-shadow: 2px 2px 2px 2px #999;
+}
+
+#garrisonTable {
+  margin-inline: auto;
+}
+.garrisonRow {
+  cursor: pointer;
+}
+.garrisonRow:hover {
+  box-shadow: 1px 1px 1px 1px #fff;
+}
+.selectedGarrisonRow {
+  background-color: #000080;
+}
+.garrisonInfoContainer,
+.garrisonInfoDiv {
+  position: relative;
+}
+.garrisonInfoDiv {
+  height: 100%;
+}
+
+.battlegroundOrderContainer {
+  border-radius: 25px;
+  border: 2px solid;
+  position: absolute;
+  bottom: 0;
+  display: none;
+}
+
+.objectivesMetHR,
+.captureHR {
+  width: 50%;
+}
+.hiddenChapterHeading {
+  display: none;
+}
+
+#garrisonCharacterDetails {
+  color: #dd61dd;
+  height: 100%;
+}
+
+#garrisonTableAndCharacterDetails {
+  border: 5px solid silver;
+  border-radius: 25px;
+  vertical-align: middle;
+  width: 99%;
+}
+
+#garrisonTableScroll {
+  overflow: hidden scroll;
+  height: 100%;
+}
+
+.garrisonCharacterDescription {
+  display: inline-block;
+  vertical-align: middle;
+  overflow: auto;
+  color: #ff8000;
+}
+
+#garrisonCharacterMoreDetailsCell,
+#garrisonAbilitiesInfoCell {
+  vertical-align: top;
+  text-align: left;
+  color: #ff8000;
+}
+#garrisonCharacterImgCell {
+  text-align: left;
+}
+.garrisonCharacterMoreDetailsName {
+  color: yellow;
+  font-size: 20px;
+}
+#garrisonCharacterAbilitiesHeading {
+  text-align: center;
+  font-size: 20px;
+  color: yellow;
+}
+#garrisonCharacterMoreDetailsDiv,
+#garrisonAbilitiesInfoDiv {
+  overflow: hidden auto;
+}
+
+.abilityDescription {
+  margin-left: 15px;
+}
+.abilityName {
+  font-weight: bold;
+  color: #39f;
+}
+
+#defaultGarrisonButtonContainer {
+  width: 100%;
+}
+
+#mainMenu {
+  border-style: solid;
+  border-bottom-style: groove;
+  border-radius: 5px;
+}
+
+#difficultyContainer,
+#garrisonSortOrderContainer,
+#displaySettingsContainer {
+  text-align: left;
+  padding-left: 20px;
+}
+#difficultyRadioContainer,
+#garrisonSortOrderRadioContainer,
+#displaySettingsRadioContainer {
+  padding-left: 20px;
+}
+
+#enterPortalCanvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+}
+
+#loadingMessage {
+  text-align: center;
+  font-size: 28px;
+  color: yellow;
+}
+#loadingProgress {
+  text-align: center;
+  font-size: 20px;
+  color: green;
+}
+
+#gameVersion {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 900;
+  color: yellow;
+  white-space: nowrap;
+}
