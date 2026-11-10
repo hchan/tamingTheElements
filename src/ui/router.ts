@@ -6,6 +6,7 @@ import { aboutScreen } from './screens/about';
 import { keyBindingsScreen } from './screens/key-bindings';
 import { raceScreen } from './screens/race';
 import { wikiScreen } from './screens/wiki';
+import { garrisonScreen } from './screens/garrison';
 
 export const ROUTE_NAMES = [
   'main',
@@ -74,7 +75,7 @@ export function defaultScreens(): ScreenTable {
   return {
     main: mainMenuScreen(),
     newGame: placeholderScreen('New Game'),
-    garrison: placeholderScreen('Garrison'),
+    garrison: garrisonScreen(),
     settings: () => settingsScreen(),
     currentObjectives: placeholderScreen('Current Objectives'),
     about: aboutScreen,
