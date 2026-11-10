@@ -40,6 +40,9 @@ async function expectCanvasFits(page: Page): Promise<Rect> {
   expect(r.x + r.w).toBeLessThanOrEqual(s.iw + 0.5);
   expect(r.y + r.h).toBeLessThanOrEqual(s.ih + 0.5);
   expect(Math.abs(r.w / r.h - 16 / 9)).toBeLessThan(0.02);
+  // Centred both ways at the default display size: the letterbox bands split evenly (VISUAL-QA V1).
+  expect(Math.abs(r.x + r.w / 2 - s.iw / 2)).toBeLessThanOrEqual(1);
+  expect(Math.abs(r.y + r.h / 2 - s.ih / 2)).toBeLessThanOrEqual(1);
   expect(s.sw).toBeLessThanOrEqual(s.iw);
   expect(s.sh).toBeLessThanOrEqual(s.ih);
   return r;
@@ -145,7 +148,8 @@ test('a window resize mid-battle keeps the match state and leaks no listeners', 
     await expect.poll(async () => (await page.evaluate<Rect>(RECT)).w).not.toBe(before.w);
     await expect.poll(async () => {
       const r = await page.evaluate<Rect>(RECT);
-      return r.x + r.w <= w + 0.5 && r.y + r.h <= h + 0.5;
+      // Phaser re-fits and re-centres on its next scale refresh after the resize.
+      return r.x + r.w <= w + 0.5 && r.y + r.h <= h + 0.5 && Math.abs(r.x + r.w / 2 - w / 2) <= 1 && Math.abs(r.y + r.h / 2 - h / 2) <= 1;
     }).toBe(true);
     await expectCanvasFits(page);
     expect(await page.evaluate<number>(`window.__TTE__.arena.hash()`)).toBe(hash);
