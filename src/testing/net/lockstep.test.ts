@@ -2,6 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { characterId } from '../../core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../core/flags';
+import { RandomBot } from '../../core/agents/random-bot';
 import { LockstepSession } from '../../core/net/session';
 import { hash } from '../../core/sim/hash';
 import { createMatch } from '../../core/sim/match';
@@ -102,6 +103,17 @@ describe('lockstep bot-vs-bot', () => {
       }),
       { numRuns: 25 },
     );
+  });
+
+  it('a live bot on one peer (consulted on its own world every update) agrees at every checkpoint', () => {
+    for (const side of [0, 1] as const) {
+      const agents: [RandomBot | undefined, RandomBot | undefined] = [undefined, undefined];
+      agents[side] = new RandomBot(`live${String(side)}`);
+      const r = runNetMatch({ ...base, agents, conditions: lossy(0.1) });
+      expect(r.sessions.map((s) => s.desync)).toEqual([undefined, undefined]);
+      expect(checkpointsAgree(r)).toBeGreaterThan(2);
+      expect(r.hashes[0]).toBe(r.hashes[1]);
+    }
   });
 
   it('adaptive delay rises under latency and both sides stay in sync', () => {

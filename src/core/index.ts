@@ -28,6 +28,7 @@ export * from './sim/step';
 export * from './sim/world';
 export * from './sim/systems/movement';
 export * from './agents/agent';
+export * from './agents/agent-rng';
 export * from './agents/random-bot';
 export * from './agents/replay-agent';
 export * from './agents/scripted-ai/index';

@@ -6,8 +6,8 @@ import type { Agent, ObservationView } from '../agent';
  * Port of the legacy EnemyCharacter attack decisions (baseCharacter.js): updateAttackDirection,
  * isInRangeAxis and the doPrimary/doSecondaryAttackIfNecessary preconditions.
  *
- * Determinism notes: the legacy attack path reads no Math.random, so this agent draws nothing from
- * its `ai.pN` stream (the stream stays reserved for the later movement port). Legacy wall-clock
+ * Determinism notes: the legacy attack path reads no Math.random, so this agent draws no random numbers
+ * (only the movement port in ScriptedAI does, from its own `AgentRng`). Legacy wall-clock
  * cooldowns (Date) are replaced by the per-slot tick cooldowns of the ObservationView, and the
  * active-ability counter by the injectable `activeCount`. The agent's only own state is `facing`.
  */

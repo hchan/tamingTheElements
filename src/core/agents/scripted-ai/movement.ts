@@ -13,7 +13,7 @@ import type { AttackType } from './attack';
  * - Legacy detects "blocked" inside the same call (position after its own move). An agent cannot see
  *   the sim's collision result until the next observation, so blocking is read from the previous
  *   tick's call (one tick = 20 ms late) and only when the last sent command moved on that axis.
- * - moveTowards' random "step off the target axis" draws from `ai.pN` via `aiInt`; legacy moved the
+ * - moveTowards' random "step off the target axis" draws from the agent's own stream via `aiInt`; legacy moved the
  *   position by up to two steps, here the command is a single step (sign of the legacy displacement).
  * - The sim restores x but never y when a step leaves the arena (KNOWN-BUG:bounds-y-typo), so an agent that
  *   keeps retreating would leave the arena for good and the y edge check could never fire. ScriptedAI
@@ -175,7 +175,7 @@ export class MovementState {
 
   /**
    * Legacy moveTowardsTargetPlayer. `speed` is the per-tick step, used only to detect "this step lands
-   * exactly on the target axis", where legacy flips a coin (`ai.pN` here) to step off it.
+   * exactly on the target axis", where legacy flips a coin (the agent's `AgentRng` here) to step off it.
    */
   moveTowards(tick: number, self: Point, target: Point, speed: number, aiInt: (n: number) => number): Command {
     this.remember(tick, self);

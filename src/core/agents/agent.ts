@@ -1,5 +1,3 @@
-import { Sfc32 } from '../rng/sfc32';
-import { STREAM_NAMES, type StreamName } from '../rng/streams';
 import { type Command, NO_COMMAND } from '../sim/commands';
 import { EntityFlag, EntityKind, TEAM_STRIDE, TeamField, World } from '../sim/state';
 import type { SimWorld } from '../sim/world';
@@ -26,8 +24,8 @@ export interface ObservationView {
   readonly opponent: FighterView | undefined;
   /** Ticks until each ability slot of this side is ready (0 = ready). */
   readonly cooldowns: readonly number[];
-  /** Uniform integer in [0, n) from this side's own `ai.pN` stream (state lives in the world, so it is snapshotted). */
-  aiInt(n: number): number;
+  /** The match seed, so an agent can seed its own stream (`AgentRng`); agents never draw from the sim's streams. */
+  readonly matchSeed: number;
 }
 
 export interface Agent {
@@ -60,26 +58,22 @@ export function createObservationView(world: SimWorld, side: 0 | 1): Observation
   const s = world.state;
   const tick = s.world[World.tick] ?? 0;
   const base = side * TEAM_STRIDE;
-  const stream: StreamName = side === 0 ? 'ai.p1' : 'ai.p2';
-  const at = STREAM_NAMES.indexOf(stream) * 4;
   return {
     side,
     tick,
+    matchSeed: s.world[World.matchSeed] ?? 0,
     self: fighterOf(world, side),
     opponent: fighterOf(world, 1 - side),
     cooldowns: Array.from({ length: 4 }, (_, k) =>
       Math.max(0, (s.teams[base + TeamField.swapCooldownUntil + 1 + k] ?? 0) - tick),
     ),
-    aiInt(n: number): number {
-      const rng = new Sfc32(s.rng.subarray(at, at + 4));
-      const v = rng.int(n);
-      s.rng.set(rng.saveState(), at);
-      return v;
-    },
   };
 }
 
-/** Runs one agent per side and returns the command pair for `step`. */
+/**
+ * Runs one agent per side and returns the command pair for `step`. Reads the world only: SimState is mutated by
+ * `step` alone, so consulting agents (or not) never changes the state or its hash.
+ */
 export function collectCommands(
   world: SimWorld,
   agents: readonly [Agent | undefined, Agent | undefined],

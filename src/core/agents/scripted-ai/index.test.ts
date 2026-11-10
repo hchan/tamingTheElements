@@ -79,7 +79,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 }
 
 function view(self: FighterView, opponent: FighterView, cooldowns = [0, 0, 0, 0], tick = 0): ObservationView {
-  return { side: 1, tick, self, opponent, cooldowns, aiInt: () => 1 };
+  return { side: 1, tick, self, opponent, cooldowns, matchSeed: 0 };
 }
 
 describe('ScriptedAI composition', () => {
@@ -136,7 +136,7 @@ describe('ScriptedAI composition', () => {
     expect(new ScriptedAI(blast).observe(none)).toBe(0);
   });
 
-  it('draws nothing from any stream when no step lands on the target axis', () => {
+  it('never changes the sim state and draws nothing when no step lands on the target axis', () => {
     const world = createMatch({
       simVersion: 1,
       seed: 3,
@@ -146,8 +146,17 @@ describe('ScriptedAI composition', () => {
       p1: [{ character: characterId('treenoc'), xp: 20 }],
       p2: [{ character: characterId('sindarosa'), xp: 20 }],
     });
-    const before = world.state.rng.slice();
-    new ScriptedAI(blast).observe(createObservationView(world, 1));
-    expect(world.state.rng).toEqual(before);
+    const before = hash(world.state);
+    const view = createObservationView(world, 1);
+    let seedReads = 0;
+    new ScriptedAI(blast).observe({
+      ...view,
+      get matchSeed(): number {
+        seedReads++;
+        return view.matchSeed;
+      },
+    });
+    expect(hash(world.state)).toBe(before);
+    expect(seedReads).toBe(0);
   });
 });

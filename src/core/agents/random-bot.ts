@@ -1,5 +1,6 @@
 import { Cmd, type Command } from '../sim/commands';
 import type { Agent, ObservationView } from './agent';
+import { AgentRng } from './agent-rng';
 
 const MOVES = [
   0,
@@ -17,16 +18,18 @@ const MOVES = [
 export class RandomBot implements Agent {
   readonly id: string;
   private held: Command = 0;
+  private readonly rng = new AgentRng();
 
   constructor(id = 'random') {
     this.id = id;
   }
 
   observe(view: ObservationView): Command {
-    if (view.aiInt(10) === 0) {
-      let c: number = MOVES[view.aiInt(MOVES.length)] ?? 0;
-      if (view.aiInt(2) === 1) c |= Cmd.primary;
-      if (view.aiInt(4) === 0) c |= Cmd.secondary;
+    const rng = this.rng;
+    if (rng.int(view, 10) === 0) {
+      let c: number = MOVES[rng.int(view, MOVES.length)] ?? 0;
+      if (rng.int(view, 2) === 1) c |= Cmd.primary;
+      if (rng.int(view, 4) === 0) c |= Cmd.secondary;
       this.held = c;
     }
     return this.held;

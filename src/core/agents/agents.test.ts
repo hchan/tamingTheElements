@@ -5,6 +5,9 @@ import { step } from '../sim/step';
 import { EntityFlag, EntityKind } from '../sim/state';
 import { createWorld } from '../sim/world';
 import { Cmd, type Command } from '../sim/commands';
+import { snapshotState } from '../sim/state';
+import { seedSfc32 } from '../rng/seed';
+import { AgentRng } from './agent-rng';
 import { collectCommands, createObservationView, type Agent } from './agent';
 import { RandomBot } from './random-bot';
 import { ReplayAgent } from './replay-agent';
@@ -48,7 +51,7 @@ describe('agents', () => {
     expect(v.self?.x).toBe(200);
   });
 
-  it('random bot is deterministic per seed and its state lives in the world', () => {
+  it('random bot is deterministic per seed', () => {
     const a = setup(5);
     const b = setup(5);
     const la = run(a, [new RandomBot(), new RandomBot()], 300);
@@ -59,14 +62,42 @@ describe('agents', () => {
     expect(la.every((c) => (c & ~0x7f) === 0)).toBe(true);
   });
 
-  it('draws only from the own ai stream', () => {
+  it('consulting agents never writes the sim state', () => {
     const w = setup(5);
-    const before = w.state.rng.slice();
-    createObservationView(w, 0).aiInt(10);
-    const changed = [...w.state.rng].map((x, i) => x !== before[i]);
-    expect(changed.slice(12, 16).some(Boolean)).toBe(true);
-    expect(changed.slice(0, 12).some(Boolean)).toBe(false);
-    expect(changed.slice(16).some(Boolean)).toBe(false);
+    const before = snapshotState(w.state);
+    const bots = [new RandomBot(), new RandomBot()] as const;
+    const seen = new Set<Command>();
+    for (let i = 0; i < 200; i++) for (const c of collectCommands(w, bots)) seen.add(c);
+    expect(seen.size).toBeGreaterThan(3);
+    expect(snapshotState(w.state)).toEqual(before);
+  });
+
+  it('agent streams are seedSfc32(matchSeed, ai.p1 | ai.p2), bound to the view and independent per side', () => {
+    const rng = new AgentRng();
+    const ref1 = seedSfc32(5, 'ai.p1');
+    const ref2 = seedSfc32(5, 'ai.p2');
+    for (let i = 0; i < 20; i++) expect(rng.int({ matchSeed: 5, side: 0 }, 1000)).toBe(ref1.int(1000));
+    const saved = rng.save();
+    expect(rng.int({ matchSeed: 5, side: 1 }, 1000)).toBe(ref2.int(1000)); // re-bound to the other side
+    rng.load(saved);
+    expect(rng.int({ matchSeed: 5, side: 0 }, 1000)).toBe(ref1.int(1000));
+    expect(new AgentRng().save()).toBeNull();
+  });
+
+  it('gives the same hash for the same commands whether or not agents were consulted', () => {
+    const script: [Command, Command][] = Array.from({ length: 300 }, (_, t) => [
+      [Cmd.up, Cmd.right | Cmd.primary, Cmd.down, Cmd.left | Cmd.secondary][(t >> 4) & 3] ?? 0,
+      [Cmd.left, Cmd.down | Cmd.primary, Cmd.right][(t >> 5) % 3] ?? 0,
+    ]);
+    const consulted = setup(11);
+    const plain = setup(11);
+    const bots = [new RandomBot(), new RandomBot()] as const;
+    for (const cmds of script) {
+      collectCommands(consulted, bots); // asked, answer ignored (like the arena's forced-command test hook)
+      step(consulted, cmds);
+      step(plain, cmds);
+      expect(hashState(consulted.state)).toBe(hashState(plain.state));
+    }
   });
 
   it('replay agent reproduces a recorded run and is idle past the end', () => {

@@ -15,7 +15,7 @@ Groundwork for player-vs-player. No real network code exists yet: the pure proto
   5. Remote input is untrusted: bad packets are dropped, reserved command bits are masked, ticks far ahead are ignored.
 - Time is counted in `update` calls, never read from a clock. `timeoutTicks` (250 = 5 s) without any packet forfeits the peer (`forfeitReason: 'timeout'`, we win); `forfeit()` concedes explicitly.
 - **Hidden-tab policy.** On `visibilitychange` the host calls `setHidden(true)`, which sends a packet with the `paused` flag at once, then stops updating (browsers throttle hidden timers). The peer shows `remote-paused` and uses `pauseTimeoutTicks` (1500 = 30 s) instead. On return the host calls `setHidden(false)` and keeps updating; the buffered inputs let both catch up. After the grace period the peer forfeits the hidden player.
-- Bots/agents are network independent: they must be driven from a per-peer shadow world or a script, never from the shared world, because they draw from `ai.pN` RNG streams that are part of the hashed state.
+- Bots/agents may run on a peer's own copy of the shared world: `SimState` is mutated only by `step`, and an agent keeps its random stream (`AgentRng`, `seedSfc32(seed, 'ai.p1' | 'ai.p2')`) and memory to itself, so consulting it never changes the hash. Only the commands it returns travel. `src/testing/net/lockstep.test.ts` plays a live bot on one peer and checks every checkpoint.
 - Wire format: `src/core/net/packet.ts` (`flags u8, ack u32, firstTick u32, n u8, n*u16 inputs, m u8, m*(tick u32, hash u32)`), about 20 bytes in steady state.
 
 ## Rollback (next step, not implemented)

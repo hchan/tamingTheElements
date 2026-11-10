@@ -56,7 +56,9 @@ All randomness is the integer-only sfc32 generator (`src/core/rng/sfc32.ts`). `S
 - Cosmetic code (fx, shake, particles) must never draw from a sim stream. `src/game/fx/event-fx.ts` uses its own private
   generator for that reason.
 - The stream words live in `SimState.rng`, so they are part of the snapshot and the hash.
-- Agents draw from their own `ai.pN` stream via the `ObservationView` (`src/core/agents/agent.ts`), never from `combat`.
+- `SimState` is mutated only by `step()`. Agents never write it: each agent owns an `AgentRng` (`src/core/agents/agent-rng.ts`),
+  `seedSfc32(matchSeed, 'ai.p1' | 'ai.p2')` by side, seeded from `ObservationView.matchSeed` on the first draw. So the same
+  setup and commands give the same hash whether or not an agent was asked for a command (`src/core/agents/agents.test.ts`).
 
 ## LUTs and directions
 
@@ -95,8 +97,8 @@ implemented yet (planned).
 every `HASH_INTERVAL = 50` ticks and a final hash (`src/core/replay/format.ts`, verified by `playReplay` in
 `src/core/replay/player.ts`). `tests/browser/determinism.browser.test.ts` replays it, and records a fresh match, in Chromium,
 Firefox and WebKit (`pnpm test:browser`) and requires the Node-recorded hashes to match at every checkpoint. The first
-divergent tick is reported, which localises a drift. Bots draw from the world's `ai.pN` streams, which a replay does not re-run,
-so `recordBotMatch` runs them on a shadow world and the recorded world only sees the resulting commands.
+divergent tick is reported, which localises a drift. Bots keep their randomness in their own `AgentRng`, so
+`recordBotMatch` consults them on the recorded world itself.
 
 ## Feature flags in replay headers
 

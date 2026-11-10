@@ -3,6 +3,9 @@ import type { Sfc32 } from './sfc32';
 
 export const STREAM_NAMES = ['combat', 'capture', 'spawn', 'ai.p1', 'ai.p2', 'meta', 'cosmetic'] as const;
 export type StreamName = (typeof STREAM_NAMES)[number];
+
+/** Per-side agent streams, indexed by side. Agents own them (`AgentRng`); they are never part of SimState. */
+export const AGENT_STREAM_NAMES = ['ai.p1', 'ai.p2'] as const;
 export type Streams = Readonly<Record<StreamName, Sfc32>>;
 
 /** Creates every named stream from one match seed. Cosmetic code must only touch `cosmetic`. */

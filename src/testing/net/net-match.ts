@@ -1,3 +1,4 @@
+import { createObservationView, type Agent } from '../../core/agents/agent';
 import { LockstepSession, type LockstepOptions } from '../../core/net/session';
 import type { Command } from '../../core/sim/commands';
 import { hash } from '../../core/sim/hash';
@@ -20,6 +21,11 @@ export function botScripts(setup: MatchSetup, ticks: number): Script {
 export interface NetMatchOptions {
   readonly setup: MatchSetup;
   readonly script: Script;
+  /**
+   * Live agents per side: a side with an agent asks it for its command on its own peer's world at every update
+   * (stalls included) instead of reading the script. The other peer only ever sees the resulting commands.
+   */
+  readonly agents?: readonly [Agent | undefined, Agent | undefined];
   readonly tickLimit: number;
   readonly conditions: NetConditions;
   readonly netSeed: number;
@@ -61,7 +67,9 @@ export function runNetMatch(o: NetMatchOptions): NetMatch & { hashes: readonly [
     net.advance();
     o.beforeTick?.(m.wall, m);
     for (const s of m.sessions) {
-      s.update(o.script[s.side][s.nextStampTick] ?? 0);
+      const agent = o.agents?.[s.side];
+      const view = agent && createObservationView(worlds[s.side], s.side);
+      s.update(agent && view ? agent.observe(view, s.simTick) : (o.script[s.side][s.nextStampTick] ?? 0));
     }
   }
   return { ...m, hashes: [hash(worlds[0].state), hash(worlds[1].state)] };
