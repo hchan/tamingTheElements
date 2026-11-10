@@ -327,6 +327,28 @@ describe('known legacy bugs (current behaviour)', () => {
     });
   });
 
+  it('enemy death: Crafty("Bullet") matches nothing (no entity has a Bullet component), so bullets in flight survive', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      Swap.swapNextAliveTeammate = function () { return true; };
+      var p = fighter('PlayerCharacter', { isDead: false, direction: 'e', targetPlayerType: 'EnemyCharacter',
+        abilitiesInfo: { 'Fire Blast': info() }, elementalType: 'fire', damageMultiplier: 1 });
+      var e = fighter('EnemyCharacter', { isDead: false, direction: 'w', targetPlayerType: 'PlayerCharacter',
+        abilitiesInfo: { 'Fire Blast': info() }, elementalType: 'fire', damageMultiplier: 1 });
+      p.unbind('EnterFrame'); e.unbind('EnterFrame');
+      p.targetPlayer = e; e.targetPlayer = p;
+      var mine = Crafty.e('Fire Blast'); mine.initAbility(p);
+      var theirs = Crafty.e('Fire Blast'); theirs.initAbility(e);
+      var bulletComponents = Crafty('Bullet').length;
+      e.die();
+      return { bulletComponents: bulletComponents, enemyDead: e.isDead,
+        survive: [!mine.destroyed, !theirs.destroyed] };`,
+    );
+    expect(result).toEqual({ bulletComponents: 0, enemyDead: true, survive: [true, true] });
+  });
+
   it('damage-uses-target-mult: applyDamage scales by the victim target damageMultiplier, not the hitter', () => {
     // KNOWN-BUG:damage-uses-target-mult
     const env = loadLegacy({ seed: 1 });

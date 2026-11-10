@@ -5,7 +5,7 @@ import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { Cmd, NO_COMMAND } from '../commands';
 import { SimEventKind } from '../events';
 import { createMatch, type MatchSetup } from '../match';
-import { EntityFlag, TEAM_STRIDE, TeamField } from '../state';
+import { EntityFlag, EntityKind, TEAM_STRIDE, TeamField } from '../state';
 import { step } from '../step';
 import { SWAP_COOLDOWN_TICKS } from './swap';
 
@@ -59,6 +59,24 @@ describe('death (detected in the sim, not the HUD: death-in-hud)', () => {
     step(w, idle);
     const dead = EntityFlag.alive | EntityFlag.dead | EntityFlag.benched;
     expect([s.flags[3], s.flags[4]]).toEqual([dead, dead]);
+  });
+});
+
+describe('bullets on death', () => {
+  it('bullets in flight survive an enemy death (legacy Crafty("Bullet") matches nothing)', () => {
+    const sindarosa = { character: characterId('sindarosa'), xp: 1 };
+    const w = createMatch({ ...setup, p1: [sindarosa], p2: [sindarosa, sindarosa] });
+    const s = w.state;
+    step(w, [Cmd.primary, Cmd.primary]); // a Fire Blast each way
+    const flying = (): number =>
+      Array.from({ length: s.kind.length }, (_, i) => i).filter(
+        (i) => s.kind[i] === EntityKind.projectile && ((s.flags[i] ?? 0) & EntityFlag.alive) !== 0,
+      ).length;
+    expect(flying()).toBe(2);
+    s.hp[1] = 0;
+    step(w, idle);
+    expect((s.flags[1] ?? 0) & EntityFlag.dead).toBeTruthy();
+    expect(flying()).toBe(2);
   });
 });
 

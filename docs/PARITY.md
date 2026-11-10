@@ -58,6 +58,7 @@ sign-off playtest. Bug slugs are those of [docs/legacy/KNOWN-BUGS.md](legacy/KNO
 | C24 | ScriptedAI attack decision tables | `ScriptedAI` attack helpers | agents attack module, no RNG draws | matches | `src/core/agents/scripted-ai/attack.test.ts#updateAttackDirection and isInRangeAxis match legacy`<br>`src/core/agents/scripted-ai/attack.test.ts#doPrimaryAttackIfNecessary preconditions`<br>`src/core/agents/scripted-ai/attack.test.ts#doSecondaryAttackIfNecessary preconditions` |
 | C25 | ScriptedAI movement/chase decisions; "matches feel equivalent" | legacy AI | only the attack tables are tested | open | manual (WP 96 playtest) |
 | C26 | Victory/defeat/draw conditions; results XP, level-up and captures written to the save | `topHUD`/results | `endSystem`, `applyMatchResult` | matches | `src/core/rules/results.test.ts#continues while both teams have a member in play, benched included`<br>`src/core/rules/results.test.ts#declares victory once, with captured count and survivors`<br>`src/core/rules/results.test.ts#declares defeat and a draw`<br>`src/core/rules/results.test.ts#gives XP only to the active hero and reports the level-up` |
+| C27 | Enemy death leaves bullets in flight | `EnemyCharacter.die` destroys `Crafty("Bullet")`, but no entity has a `Bullet` component, so nothing is destroyed | death system does not touch projectiles | matches | `tests/legacy/known-bugs.characterization.test.ts#enemy death: Crafty("Bullet") matches nothing`<br>`src/core/sim/systems/death-swap-rest.test.ts#bullets in flight survive an enemy death` |
 
 ## Meta and UI
 
