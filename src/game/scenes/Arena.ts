@@ -346,6 +346,10 @@ export class Arena extends Phaser.Scene {
         this.launch?.recorder?.invalidate();
         world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.meter] = value;
       },
+      setWeatherCharge: (team, value) => {
+        this.launch?.recorder?.invalidate();
+        world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.weatherCharge] = value;
+      },
       setWeather: (kind, team) => {
         // As a cast would (systems/arcade/weather.ts): the slot, then its event to the views. Arcade only.
         this.launch?.recorder?.invalidate();

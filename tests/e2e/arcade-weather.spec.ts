@@ -16,6 +16,9 @@ interface Weather {
   particles: number;
   call: string;
   callScale: number;
+  charge: number;
+  chargeText: string;
+  chargeFill: number;
 }
 
 const WEATHER = 1 << 14;
@@ -27,6 +30,9 @@ const weather = async (page: Page): Promise<Weather | undefined> => {
   await frames(page);
   return page.evaluate<Weather | undefined>(`window.__TTE__.arena.weather()`);
 };
+/** Fills a team's weather charge (WP-arcade-weather-charge): weather does nothing until it is full. */
+const charge = (page: Page, team: number, value = 1000): Promise<unknown> =>
+  page.evaluate(`window.__TTE__.arena.setWeatherCharge(${String(team)}, ${String(value)})`);
 const step = (page: Page, n: number, cmds: [number, number] = [0, 0]): Promise<unknown> =>
   page.evaluate(`window.__TTE__.arena.step(${String(n)}, [${String(cmds[0])}, ${String(cmds[1])}])`);
 const live = (page: Page): Promise<string> =>
@@ -52,6 +58,18 @@ test('Arcade demo: Curomo calls Rain, then Pax replaces it with a Sandstorm; Ecl
   const errors = collectErrors(page);
   await demo(page, 'arenaDemo,arcade');
   await expect.poll(async () => weather(page)).toMatchObject({ kind: 0, label: '', particles: 0, call: '' });
+  // Not available from the start: the chip says WEATHER 0%, and R does nothing until the charge is full.
+  expect(await weather(page)).toMatchObject({ charge: 0, chargeText: 'WEATHER 0%', chargeFill: 0 });
+  await step(page, 1, [WEATHER, 0]);
+  // Past the input buffer, so the refused press cannot cast once the charge fills.
+  await step(page, 30);
+  expect(await weather(page)).toMatchObject({ kind: 0 });
+  await charge(page, 0, 600);
+  await step(page, 2);
+  expect(await weather(page)).toMatchObject({ chargeText: 'WEATHER 60%', chargeFill: 120 });
+  await charge(page, 0);
+  await step(page, 2);
+  expect(await weather(page)).toMatchObject({ chargeText: 'WEATHER READY', chargeFill: 200 });
   await step(page, 1, [WEATHER, 0]);
   await step(page, 5);
   const rain = await weather(page);
@@ -64,6 +82,7 @@ test('Arcade demo: Curomo calls Rain, then Pax replaces it with a Sandstorm; Ecl
   const later = await weather(page);
   expect(later).toMatchObject({ kind: 2, label: 'RAIN 8', call: '' });
   expect(later?.fill).toBeLessThan(rain?.fill ?? 0);
+  await charge(page, 1);
   await step(page, 1, [0, WEATHER]);
   await step(page, 2);
   expect(await weather(page)).toMatchObject({ kind: 3, label: 'SAND 10', call: 'Sandstorm!', particles: 32 });
@@ -91,6 +110,7 @@ test('reduced motion: badge, steady tint and line at full size, no particles; Cl
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await demo(page, 'arenaDemo,arcade');
   await expect.poll(async () => weather(page)).toMatchObject({ kind: 0 });
+  await charge(page, 0);
   await step(page, 1, [WEATHER, 0]);
   await step(page, 1);
   const w = await weather(page);
@@ -104,18 +124,22 @@ test('Arcade Versus: the AI calls Gale, R calls Sunshine, the touch Weather butt
   await versus(page, 'sindarosa', 'cyclonius');
   await expect(page.locator('#arcadeWeather')).toBeVisible();
   // Air is at a disadvantage against fire, so the AI calls its Gale on its first free tick (WP-arcade-ai-personalities).
+  await charge(page, 1);
   await page.evaluate(`window.__TTE__.arena.stepLive(3)`);
   expect(await weather(page)).toMatchObject({ kind: 4, label: 'GALE 10', call: 'Gale!', particles: 12 });
   await page.screenshot({ path: `${process.env['HOME'] ?? ''}/claudetmp/wv-gale.png` });
   // R (live ticks: the keyboard agent plays the player) replaces it; the AI's weather is on its cooldown.
+  await charge(page, 0);
   await page.keyboard.down('KeyR');
   await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
   await page.keyboard.up('KeyR');
   await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
   expect(await weather(page)).toMatchObject({ kind: 1, label: 'SUN 10', call: 'Sunshine!', particles: 5 });
   await page.screenshot({ path: `${process.env['HOME'] ?? ''}/claudetmp/wv-sun.png` });
-  // After both 30 s cooldowns the AI (cast first) calls Gale again, then the touch button calls Sunshine again.
-  await step(page, 1500);
+  // Charged again, the AI (cast first) calls Gale again, then the touch button calls Sunshine again.
+  await step(page, 100);
+  await charge(page, 0);
+  await charge(page, 1);
   await page.evaluate(`window.__TTE__.arena.stepLive(3)`);
   expect(await weather(page)).toMatchObject({ kind: 4, call: 'Gale!' });
   await page.locator('#arcadeWeather').hover();
