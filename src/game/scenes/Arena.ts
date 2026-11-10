@@ -160,12 +160,12 @@ export class Arena extends Phaser.Scene {
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
     const onBlocked = (blocked: boolean): void => {
-      if (blocked) driver.pause();
-      else if (!this.pauseDialog?.isOpen) driver.resume();
+      if (blocked) driver.pause('overlay');
+      else driver.resume('overlay');
     };
     this.game.events.on(BLOCKED_EVENT, onBlocked);
     this.cleanups.push(() => { this.game.events.off(BLOCKED_EVENT, onBlocked); });
-    if (this.game.registry.get(BLOCKED_EVENT) === true) driver.pause();
+    if (this.game.registry.get(BLOCKED_EVENT) === true) driver.pause('overlay');
 
     if (playback) this.attachPlayback(playback, driver);
     this.installProbe(world, driver);
@@ -252,7 +252,7 @@ export class Arena extends Phaser.Scene {
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
     this.ended = true;
-    this.driver?.pause();
+    this.driver?.pause('ended');
     const s = world.state;
     const end = {
       winner: over['winner'] ?? -1,
@@ -269,7 +269,7 @@ export class Arena extends Phaser.Scene {
       if (!events) break;
       this.fx?.consume(events);
     }
-    if (cursor.state !== 'playing') this.driver?.pause();
+    if (cursor.state !== 'playing') this.driver?.pause('ended');
   }
 
   private attachPlayback(playback: NonNullable<ArenaLaunch['playback']>, driver: FixedStepDriver): void {
@@ -281,11 +281,11 @@ export class Arena extends Phaser.Scene {
       },
       setPaused: (p) => {
         if (cursor.state !== 'playing') return;
-        if (p) driver.pause();
-        else driver.resume();
+        if (p) driver.pause('replay');
+        else driver.resume('replay');
       },
       step: () => {
-        driver.pause();
+        driver.pause('replay');
         this.advancePlayback(cursor);
       },
     });
@@ -309,11 +309,11 @@ export class Arena extends Phaser.Scene {
   private togglePause(): void {
     const driver = this.driver;
     if (!driver || this.ended) return;
-    if (driver.isPaused) driver.resume();
-    else driver.pause();
+    if (driver.isPausedFor('user')) driver.resume('user');
+    else driver.pause('user');
     // A key held across the dialog must not replay on resume.
     this.keyboard?.releaseAll();
-    if (driver.isPaused) this.pauseDialog?.open();
+    if (driver.isPausedFor('user')) this.pauseDialog?.open();
     else this.pauseDialog?.close();
   }
 
