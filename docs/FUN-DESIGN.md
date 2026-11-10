@@ -584,8 +584,11 @@ element gets a bonus while standing on a patch. Stages are Archon-style terrain 
 - **Stage:** the first stage is chosen by the match seed (void and the plain backdrops have no patches). After that the
   stage follows the weather (owner, 2026-11-10: each elemental can change the weather): casting Sun turns the stage to
   fire (new fire patches, same symmetric rules), Rain to water, Sandstorm to earth, Gale to air, and the backdrop changes
-  with it. To confirm with the owner: does a weather change also swap the patches, as written here (default), or only the
-  damage modifiers of section 2.14?
+  with it. Owner decision (2026-11-10): a weather change swaps BOTH the damage modifiers (section 2.14) and the terrain
+  patches. Rules: the new patches are re-seeded symmetric, never overlap a hero (inflated by the hero size) or a
+  projectile in flight; the swap has a short telegraph (30 ticks of fade) so nothing changes under a hero's feet without
+  warning; a recast of the same weather only refreshes the timer and keeps the patches; when a weather ends the stage
+  keeps its last patches (only the modifiers end) until the next cast.
 - **Patches:** 3 to 5 rectangles per round, placed from the seeded RNG at the round start, point-symmetric about the arena
   centre so neither side gets a better layout, never overlapping the spawn points, never closer than a hero width to each
   other or the walls, so nothing can trap a hero. State in `SimState.arcade` (kind, rects), integer geometry only.
