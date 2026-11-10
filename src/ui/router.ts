@@ -7,6 +7,7 @@ import { keyBindingsScreen } from './screens/key-bindings';
 import { raceScreen } from './screens/race';
 import { wikiScreen } from './screens/wiki';
 import { garrisonScreen } from './screens/garrison';
+import { gameMasterScreen } from './screens/game-master';
 import { defeatScreen, victoryScreen } from './screens/results';
 
 export const ROUTE_NAMES = [
@@ -25,6 +26,7 @@ export const ROUTE_NAMES = [
   'defeat',
   'exit',
   'race',
+  'gameMaster',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -39,7 +41,10 @@ const RACE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** Explicit allow-list checked with Set.has, so prototype keys like __proto__ never match. */
 const PLAIN_ROUTES: ReadonlySet<string> = new Set<RouteName>(
-  ROUTE_NAMES.filter((n) => n !== 'race' && n !== 'main'),
+  ROUTE_NAMES.filter(
+    (n) =>
+      n !== 'race' && n !== 'main' && (n !== 'gameMaster' || import.meta.env.DEV || import.meta.env.MODE === 'test'),
+  ),
 );
 
 /** Pure hash resolution. Unknown, empty or prototype-ish hashes go to the main menu. */
@@ -90,6 +95,9 @@ export function defaultScreens(): ScreenTable {
     defeat: defeatScreen,
     exit: placeholderScreen('Exit'),
     race: raceScreen,
+    // Statically removed from production builds; the route is also unreachable there (see PLAIN_ROUTES).
+    gameMaster:
+      import.meta.env.DEV || import.meta.env.MODE === 'test' ? gameMasterScreen : placeholderScreen('Not available'),
   };
 }
 
