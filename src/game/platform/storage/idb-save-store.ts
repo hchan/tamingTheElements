@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import { migrate, newEmptyState, type SaveV1 } from '@core/index';
+import { migrate, newEmptyState, type SaveV1 } from '@core/menu-index';
 import { createLocalSaveStore } from './local-save-store';
 import { notify } from './notices';
 import { SAVE_KEY, type Result, type SaveStore, type StorageAdapter } from './save-store';

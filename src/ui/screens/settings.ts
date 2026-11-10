@@ -8,7 +8,7 @@ import {
   migrate,
   newEmptyState,
   type SaveV1,
-} from '@core/index';
+} from '@core/menu-index';
 import { ARCADE_PREVIEW } from '../../game/platform/arcade-setting';
 import { getRecordSetting, setRecordSetting } from '../../game/platform/record-setting';
 import {

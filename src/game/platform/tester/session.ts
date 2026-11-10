@@ -3,7 +3,7 @@
  * production builds. While it is on, saves go to a throwaway slot in sessionStorage seeded from the real save, unless the owner
  * turns on "Keep cheat progress". Nothing here touches the sim rules: the cheats are state edits and a recorded sim flag.
  */
-import type { ArenaCheat, BenchRow, SimFlags, TickCheats } from '@core/index';
+import type { ArenaCheat, BenchRow, SimFlags, TickCheats } from '@core/menu-index';
 import { SAVE_KEY, createMemoryStorage, type SaveStore, type StorageAdapter } from '../storage/save-store';
 import { createLocalSaveStore } from '../storage/local-save-store';
 

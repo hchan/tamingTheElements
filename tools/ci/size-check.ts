@@ -86,17 +86,23 @@ export function staticImports(code: string): string[] {
   return out;
 }
 
+/** Chunks the menu must not load up front: Phaser, and the deterministic sim (fetched by dynamic import once the menu is idle). */
+const LAZY_CHUNKS = ['phaser', 'sim'] as const;
+
 /**
- * The menu must load without Phaser: index.html must not reference the phaser chunk (script, modulepreload, stylesheet), and the
+ * The menu must load without Phaser or the sim: index.html must not reference the phaser chunk (script, modulepreload, stylesheet), and the
  * entry chunk must not statically import it (directly or transitively). Dynamic `import()` is how Phaser is loaded on play.
  */
 export function checkMenuIsPhaserFree(dist: string): string[] {
   const failures: string[] = [];
   const html = readFileSync(join(dist, 'index.html'), 'utf8');
-  const isPhaser = (p: string): boolean => chunkName(p) === 'phaser';
+  const lazyOf = (p: string): string | undefined => LAZY_CHUNKS.find((c) => chunkName(p) === c);
   const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1] ?? '');
-  for (const r of refs) if (isPhaser(r)) failures.push(`index.html references the phaser chunk (${r}); it must only load on play`);
-  if (/modulepreload/.test(html) && refs.some(isPhaser)) failures.push('index.html preloads the phaser chunk');
+  for (const r of refs) {
+    const c = lazyOf(r);
+    if (c !== undefined) failures.push(`index.html references the ${c} chunk (${r}); it must only load on play`);
+  }
+  if (/modulepreload/.test(html) && refs.some((r) => lazyOf(r) === 'phaser')) failures.push('index.html preloads the phaser chunk');
   const entries = refs.filter((r) => r.endsWith('.js'));
   const visited = new Set<string>();
   const walk = (rel: string, via: string): void => {
@@ -107,7 +113,8 @@ export function checkMenuIsPhaserFree(dist: string): string[] {
     if (!existsSync(path)) return;
     for (const imp of staticImports(readFileSync(path, 'utf8'))) {
       const target = join(dirname(file), imp).replace(/\\/g, '/');
-      if (isPhaser(target)) failures.push(`${via} statically imports the phaser chunk (via ${file})`);
+      const c = lazyOf(target);
+      if (c !== undefined) failures.push(`${via} statically imports the ${c} chunk (via ${file})`);
       else walk(target, via);
     }
   };
@@ -147,7 +154,7 @@ function main(argv: readonly string[]): number {
     console.error(`\nsize:check FAILED:\n${failures.map((f) => `  - ${f}`).join('\n')}\n\n${HOW_TO_RAISE}`);
     return 1;
   }
-  console.log('\nsize:check: within budget; menu entry is Phaser-free.');
+  console.log('\nsize:check: within budget; menu entry is Phaser-free and sim-free.');
   return 0;
 }
 

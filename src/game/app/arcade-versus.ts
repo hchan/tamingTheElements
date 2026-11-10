@@ -119,7 +119,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
           'Arcade Versus saves nothing: no XP, no capture, no progress.',
         onRematch: startBattle,
         onChange: showPick,
-        ...(replay ? { onDownload: () => { downloadReplay(replay); } } : {}),
+        ...(replay ? { onDownload: () => { void downloadReplay(replay); } } : {}),
       }),
     );
   };

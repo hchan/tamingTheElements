@@ -1,4 +1,4 @@
-import type { BenchRow } from '@core/index';
+import type { BenchRow } from '@core/menu-index';
 import type { TesterSession } from '../../game/platform/tester/session';
 import { el } from '../dom';
 

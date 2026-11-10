@@ -18,7 +18,17 @@ function shortSha(): string {
   }
 }
 
-const pkg = JSON.parse(readFileSync(src('./package.json'), 'utf8')) as { version: string };
+/**
+ * The deterministic sim, agents, replay code and the match recorder form their own `sim` chunk: the main menu is
+ * Phaser-free and needs none of it, so it is loaded by dynamic import when a match or replay starts (and prefetched
+ * once the menu is idle). See docs/PERFORMANCE.md.
+ */
+const SIM_CHUNK = /\/src\/(core\/(sim|agents|replay|net)\/|game\/replay\/playtest-recorder)/;
+
+/** Data, rules, save and rng: needed by the menu and by the sim, so they get a stable shared chunk (not a content-named one). */
+const CORE_CHUNK = /\/src\/core\/(data|rules|save|rng|math|flags|version|tester\/save-edits)/;
+
+const pkg =JSON.parse(readFileSync(src('./package.json'), 'utf8')) as { version: string };
 
 export default defineConfig({
   // Pages serves under /tamingTheElements/ (set VITE_BASE there); everything else is served from the root.
@@ -38,10 +48,14 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id: string): string | undefined {
-          return id.includes('node_modules/phaser') ? 'phaser' : undefined;
+        codeSplitting: {
+          groups: [
+            { name: 'phaser', test: /node_modules[\\/]phaser/ },
+            { name: 'core', test: CORE_CHUNK },
+            { name: 'sim', test: SIM_CHUNK },
+          ],
         },
       },
     },

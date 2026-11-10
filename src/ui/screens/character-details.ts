@@ -11,8 +11,8 @@ import {
   levelFromXp,
   renderAbilityDescription,
   scaledMaxHealth,
-} from '@core/index';
-import type { AbilityDef, AbilityDefB, ChapterNumber, Element, GarrisonEntry, SaveV1 } from '@core/index';
+} from '@core/menu-index';
+import type { AbilityDef, AbilityDefB, ChapterNumber, Element, GarrisonEntry, SaveV1 } from '@core/menu-index';
 import { activeSaveStorage } from '../../game/platform/tester/session';
 import { el } from '../dom';
 import { loadSave } from './main-menu';

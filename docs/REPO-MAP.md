@@ -43,7 +43,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 
 | Path | What it is |
 |---|---|
-| `src/core/` | Pure deterministic simulation code: no DOM, Phaser, Date or Math.random |
+| `src/core/` | Pure deterministic simulation code: no DOM, Phaser, Date or Math.random; public entries `index.ts` (full), `menu-index.ts` (menu-safe, no sim) and `lazy-index.ts` (dynamic import from the menu graph) |
 | `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore, snapshot ring, state hash, the lowest-id-first entity allocator and the game clock (`clock.ts`: `now`, `isArcade`, freeze gate) |
 | `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore and the lowest-id-first entity allocator |
 | `src/core/sim/systems/` | Per-tick sim systems run by `step` in fixed order (movement, status so far) |
@@ -53,7 +53,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/agents/` | `Agent` interface with a read-only `ObservationView` facade, seeded random bot (own `ai.pN` stream) and replay agent |
 | `src/core/replay/` | Replay file format (header, RLE inputs, hash checkpoints every 50 ticks), recorder, verifying player, `validate.ts` (pre-flight check of untrusted replay files) and the bot-match helper behind the golden fixture in `tests/fixtures/replays/` |
 | `src/core/tester/` | Tester-mode state edits (`cheats.ts`: HP, win, freeze, capture-win, god mode, instant swap, bench rows) and save edits (`save-edits.ts`: levels, chapter, every race); applied outside `step`, never part of Classic play |
-| `src/core/agents/scripted-ai/` | Ports of the legacy EnemyCharacter AI as agents (exported through `src/core/lazy-index.ts`, the core entry for lazy chunks, so the menu entry chunk stays small); `attack.ts` has attack direction, axis and range checks and the primary/secondary preconditions; `arcade.ts` (`ArcadeTactics`) is the Arcade-only layer at Normal: combo cap, stepping in during the opponent's stun, supers on confirm (identity without `ObservationView.arcade`) |
+| `src/core/agents/scripted-ai/` | Ports of the legacy EnemyCharacter AI as agents (exported through `src/core/lazy-index.ts`, the core entry for lazy chunks, so the menu entry chunk stays small, together with the random bot and replay validate/format); `attack.ts` has attack direction, axis and range checks and the primary/secondary preconditions; `arcade.ts` (`ArcadeTactics`) is the Arcade-only layer at Normal: combo cap, stepping in during the opponent's stun, supers on confirm (identity without `ObservationView.arcade`) |
 | `src/core/net/` | Pure lockstep netcode groundwork: `Transport` interface, packet codec and `LockstepSession` (input delay, redundant acked inputs, stall, hash desync check, timeout and hidden-tab policy); no DOM, no Date. See [NETCODE.md](NETCODE.md) |
 | `src/testing/net/` | Test tooling: seeded in-memory `FakeNetwork` (latency, jitter, loss, duplication, reordering), the two-session `runNetMatch` harness and the lockstep tests |
 | `src/core/save/` | Save schema v1 (valibot), v0 to v1 migration, `migrate()` and `validate.ts` (known characters, ranges, sizes); format in [SAVE-FORMAT.md](SAVE-FORMAT.md) |

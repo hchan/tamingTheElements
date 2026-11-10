@@ -1,5 +1,5 @@
-import { BEATS, ELEMENTS } from '@core/index';
-import type { Element } from '@core/index';
+import { BEATS, ELEMENTS } from '@core/menu-index';
+import type { Element } from '@core/menu-index';
 import { el } from '../dom';
 import type { Screen } from './screen';
 

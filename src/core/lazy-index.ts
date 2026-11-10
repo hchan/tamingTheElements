@@ -4,3 +4,6 @@
  * entry's barrel lands in the entry chunk even when only a lazy chunk uses it). Same layering rules as `index.ts`.
  */
 export * from './agents/scripted-ai/index';
+export { RandomBot } from './agents/random-bot';
+export { parseReplayChecked, validateReplay } from './replay/validate';
+export { serializeReplay, setupFromHeader } from './replay/format';

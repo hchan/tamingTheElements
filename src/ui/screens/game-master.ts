@@ -15,7 +15,7 @@ import {
   seedSfc32,
   type Sfc32,
   type SaveV1,
-} from '@core/index';
+} from '@core/menu-index';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';

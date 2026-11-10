@@ -1,5 +1,5 @@
-import { seedSfc32 } from '@core/index';
-import type { SaveV1 } from '@core/index';
+import { seedSfc32 } from '@core/menu-index';
+import type { SaveV1 } from '@core/menu-index';
 import { el } from '../dom';
 import { activeSaveStorage } from '../../game/platform/tester/session';
 import { loadSave } from './main-menu';

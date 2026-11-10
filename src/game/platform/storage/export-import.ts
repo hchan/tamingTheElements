@@ -1,4 +1,4 @@
-import { migrate, type SaveError, type SaveV1 } from '@core/index';
+import { migrate, type SaveError, type SaveV1 } from '@core/menu-index';
 import type { SaveStore, StoreError } from './save-store';
 
 export const EXPORT_FORMAT = 'tte-save';

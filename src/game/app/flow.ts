@@ -1,6 +1,5 @@
 import {
   DEFAULT_SIM_FLAGS,
-  RandomBot,
   SIM_VERSION,
   applyMatchResult,
   characterId,
@@ -15,7 +14,7 @@ import {
   type ReplayFile,
   type SaveV1,
   type SimFlags,
-} from '@core/index';
+} from '@core/menu-index';
 import { el } from '@ui/dom';
 import { defaultScreens, type ScreenTable } from '@ui/router';
 import { objectivesScreen } from '@ui/screens/objectives';
@@ -33,7 +32,6 @@ import { getRecordSetting } from '../platform/record-setting';
 import { activeSaveStorage, tester, type TesterSession } from '../platform/tester/session';
 import { requestOpenTesterPanel } from '@ui/tester/install';
 import type { ReplayStore } from '../platform/storage/replay-store';
-import { PlaytestRecorder } from '../replay/playtest-recorder';
 import { requestPersistence } from '../platform/storage/idb-save-store';
 import { NEW_GAME_SCRIPT } from '../cinematics/chain';
 import type { Result, SaveStore } from '../platform/storage/save-store';
@@ -80,7 +78,9 @@ export function toOutcome(ui: UiSetup, save: Pick<SaveV1, 'garrison'>, end: Matc
 }
 
 /** Enemy agent: the scripted AI is not complete yet, so both settings use the random bot for now. */
-export function enemyAgent(flags: Pick<UiFlags, 'aiScripted'>): Agent {
+export async function enemyAgent(flags: Pick<UiFlags, 'aiScripted'>): Promise<Agent> {
+  // Lazy: the bot lives in the `sim` chunk, which the menu does not load (see docs/PERFORMANCE.md).
+  const { RandomBot } = await import('@core/lazy-index');
   return new RandomBot(flags.aiScripted ? 'p2-scripted-fallback' : 'p2');
 }
 
@@ -285,11 +285,15 @@ export class AppFlow {
       const session = this.session;
       const setup = toCoreSetup(pending.ui, r.value, pending.seed, session.simFlags(DEFAULT_SIM_FLAGS));
       // Tester mode: the replay is kept but flagged `cheats` in its header, and verifiers refuse it.
+      const { PlaytestRecorder } = await import('../replay/playtest-recorder');
+      if (life.isDisposed()) return;
       const recorder = this.recording() ? new PlaytestRecorder(setup, session.enabled) : undefined;
+      const enemy = await enemyAgent(flags);
+      if (life.isDisposed()) return;
       this.lastReplay = undefined;
       const launch: ArenaLaunch = {
         setup,
-        enemy: enemyAgent(flags),
+        enemy,
         ...(recorder ? { recorder } : {}),
         ...(session.enabled ? { tester: { session, openPanel: requestOpenTesterPanel } } : {}),
         onEnd: (end) => {
@@ -437,7 +441,7 @@ export class AppFlow {
           dl.type = 'button';
           dl.id = 'downloadReplay';
           dl.addEventListener('click', () => {
-            downloadReplay(replay);
+            void downloadReplay(replay);
           });
           page.append(dl);
         }

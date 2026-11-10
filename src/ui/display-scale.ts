@@ -1,4 +1,4 @@
-import { DISPLAY_SCALE } from '@core/index';
+import { DISPLAY_SCALE } from '@core/menu-index';
 
 /**
  * Fraction of the viewport the Phaser canvas container may occupy for a display-size setting.

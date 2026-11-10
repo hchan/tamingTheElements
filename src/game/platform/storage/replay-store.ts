@@ -1,5 +1,5 @@
 import { openDB, type DBSchema } from 'idb';
-import type { ReplayFile } from '@core/index';
+import type { ReplayFile } from '@core/menu-index';
 
 export const REPLAY_DB = 'tte-replays';
 export const MAX_REPLAYS = 5;
