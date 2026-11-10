@@ -195,3 +195,27 @@ only through the `RenderView` facade in `src/core/sim/view.ts` and never decide 
 | menus and persistence | `src/ui/`, `src/core/save/`, `src/game/platform/storage/` |
 
 Per-module detail: [legacy/INVENTORY.md](legacy/INVENTORY.md).
+
+## Presentation scaling vs simulation scaling
+
+The simulation is fixed: a logical 1280x720 arena, speeds in px/tick, 50 Hz. Nothing about the window, aspect
+ratio, device pixel ratio or the display-size setting reaches `src/core`; an e2e test
+(`tests/e2e/responsive.spec.ts`) proves the sim hash after 50 stepped ticks is identical at every viewport.
+
+Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `src/ui/styles/main.css`):
+
+- **Scale.FIT with CENTER_BOTH, not ENVELOP.** FIT letterboxes, so the whole arena, HUD and action bar are always
+  visible with 16:9 preserved; ENVELOP would crop the HUD and action bar on any other aspect ratio. Phaser handles
+  window resize, orientation change and fullscreen itself.
+- **Resolution.** The backing store is 1280x720 times `pickResolution(devicePixelRatio)` (ceil, capped at 2: 3 costs
+  2.25x more pixels for little visible gain). Each scene calls `fitScene` (camera zoom = resolution, centred on the
+  logical arena) and Phaser text uses `crisp()`, so scene code and pointer coordinates stay logical. The ratio is read
+  once at game creation.
+- **HUD placement.** HUD and action bar draw inside the logical canvas, so they are anchored to the letterboxed game
+  area by construction. The `#game` box excludes the device safe-area insets (`viewport-fit=cover`).
+- **Fullscreen** button (`#fullscreenToggle`) and the F key, both user gestures, only where the browser allows it.
+- **Rotate hint** on portrait phones during battle (`#rotateOverlay`): dismissible, and the sim is held while it shows.
+- **DOM screens** use `clamp()`-based `em` font sizes, `min()` widths, and 44 px tap targets on `pointer: coarse`.
+- **Display-size setting** still scales `#game` through `--canvas-fraction` and composes with all of the above.
+- **Action bar clicks** map pointer to logical coordinates through the scale manager and camera, then to the same
+  Command bit as the matching key (`KeyboardAgent.press`, one tick).
