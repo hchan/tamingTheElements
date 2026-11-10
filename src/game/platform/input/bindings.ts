@@ -12,6 +12,7 @@ export const GAME_ACTIONS = [
   'slot4',
   'slot5',
   'capture',
+  'super',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -29,6 +30,8 @@ export const DEFAULT_BINDINGS: Bindings = {
   slot4: ['Digit4'],
   slot5: ['Digit5'],
   capture: ['KeyC'],
+  // Arcade only (key-map drops it in Classic). Plain X: Shift-X stays the tester cheat.
+  super: ['KeyX'],
 };
 
 export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
@@ -42,6 +45,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   slot4: 'Swap 2',
   slot5: 'Swap 3',
   capture: 'Capture',
+  super: 'Super (Arcade)',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */
@@ -145,7 +149,8 @@ export function bindingsToSave(bindings: Bindings): Record<string, string[]> | u
 /**
  * Sanitises whatever the save holds. Unknown actions, non-strings, reserved or malformed codes and codes
  * already claimed by an earlier action are dropped; an action left with no key falls back to its default
- * (unless that default is claimed, in which case the whole map falls back to the defaults).
+ * (unless that default is claimed, in which case the whole map falls back to the defaults; an action the save does not
+ * name, such as one added after it was written, stays unbound instead so the player's keys survive).
  */
 export function parseBindings(raw: unknown): Bindings {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return DEFAULT_BINDINGS;
@@ -165,7 +170,10 @@ export function parseBindings(raw: unknown): Bindings {
   for (const a of GAME_ACTIONS) {
     if (out[a].length > 0) continue;
     const fallback = DEFAULT_BINDINGS[a].filter((c) => !taken.has(c));
-    if (fallback.length === 0) return DEFAULT_BINDINGS;
+    if (fallback.length === 0) {
+      if (a in src) return DEFAULT_BINDINGS;
+      continue;
+    }
     out[a] = fallback;
     for (const c of fallback) taken.add(c);
   }

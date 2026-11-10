@@ -160,6 +160,7 @@ export class Arena extends Phaser.Scene {
         gamepad: () => firstPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null),
         // Legacy Shift-Q / X / C cheats exist only in tester mode (docs/TESTER-MODE.md).
         cheatsEnabled: this.launch.tester !== undefined,
+        arcade,
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
           else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });

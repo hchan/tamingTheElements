@@ -27,15 +27,16 @@ export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
   slot4: Cmd.swap2,
   slot5: Cmd.swap3,
   capture: Cmd.capture,
+  super: Cmd.super,
 };
 
-/** Held key codes to a command bitset. Capture is dropped unless `capturable`. */
-export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean): Command {
+/** Held key codes to a command bitset. Capture is dropped unless `capturable`, the super outside Arcade. */
+export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean, arcade = false): Command {
   let cmd = 0;
   for (const code of held) {
     const a = actionForCode(bindings, code);
     if (a === undefined) continue;
-    if (a === 'capture' && !capturable) continue;
+    if (a === 'capture' ? !capturable : a === 'super' && !arcade) continue;
     cmd |= ACTION_COMMAND[a];
   }
   return cmd;
