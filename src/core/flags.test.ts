@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SIM_FLAGS, FLAG_NAMES, decodeFlags, encodeFlags, flagBit, flagBits, flagsFromBits } from './flags';
+import {
+  DEFAULT_SIM_FLAGS,
+  FLAG_NAMES,
+  decodeFlags,
+  encodeFlags,
+  flagBit,
+  flagBits,
+  flagsFromBits,
+} from './flags';
 
 describe('sim flags', () => {
   it('are all off by default', () => {
@@ -18,12 +26,19 @@ describe('sim flags', () => {
     expect(() => decodeFlags('nope')).toThrow(/unknown sim flag/);
   });
 
-  it('keeps every older flag on its bit: rulesetArcade sorts last (FUN-DESIGN section 6)', () => {
-    expect(FLAG_NAMES).toEqual(['elementalAdvantage', 'experimentalPathing', 'experimentalSpawnCurve', 'rulesetArcade']);
+  it('keeps every older flag on its bit: rulesetArcade sorts after them, tester-only testerCapture after that (FUN-DESIGN section 6)', () => {
+    expect(FLAG_NAMES).toEqual([
+      'elementalAdvantage',
+      'experimentalPathing',
+      'experimentalSpawnCurve',
+      'rulesetArcade',
+      'testerCapture',
+    ]);
     expect(flagBit('elementalAdvantage')).toBe(1);
     expect(flagBit('experimentalPathing')).toBe(2);
     expect(flagBit('experimentalSpawnCurve')).toBe(4);
     expect(flagBit('rulesetArcade')).toBe(8);
+    expect(flagBit('testerCapture')).toBe(16);
   });
 
   it('encodes rulesetArcade in the replay header and flagsFromBits inverts flagBits', () => {
