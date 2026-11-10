@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Boot } from '../scenes/Boot';
 import { Arena, ARENA_SCENE } from '../scenes/Arena';
+import { Hud } from '../scenes/Hud';
 import { Preload, PRELOAD_READY } from '../scenes/Preload';
 
 export const LOGICAL_WIDTH = 1280;
@@ -17,7 +18,7 @@ export function createGameConfig(parent: string): Phaser.Types.Core.GameConfig {
     disableContextMenu: true,
     banner: false,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [Boot, Preload, Arena],
+    scene: [Boot, Preload, Arena, Hud],
   };
 }
 

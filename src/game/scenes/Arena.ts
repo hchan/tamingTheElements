@@ -20,6 +20,7 @@ import type { ProbeCharacter } from '../platform/test-hook';
 import { FixedStepDriver } from '../loop/fixed-step-driver';
 import { CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
+import { HUD_SCENE, type HudData } from './Hud';
 
 export const ARENA_SCENE = 'Arena';
 
@@ -104,8 +105,11 @@ export class Arena extends Phaser.Scene {
         };
       }
     }
+    const hudData: HudData = { view: this.view };
+    this.scene.launch(HUD_SCENE, hudData);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scene.stop(HUD_SCENE);
       this.onShutdown();
     });
   }
