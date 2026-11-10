@@ -6,6 +6,30 @@ import { ARENA_READY, SAVE_KEY, START, characters, collectErrors, fixture, goToH
 // builds), the picker, a real Arcade match against the Arcade AI (a hit, a super from the X key or the touch button, the
 // KO), the results and back to the menu, with the save byte-for-byte untouched. Page-side code is passed as strings
 // because tsconfig.node has no DOM lib; `manual=1` starts the arena paused so every tick is stepped.
+/** Client-px test: ids of `#game` buttons that intersect the walkable playfield (arcadePlayfield: y 200..640 of 720, via the canvas box). */
+async function overlapsArena(page: Page): Promise<string[]> {
+  return page.evaluate<string[]>(`(() => {
+    const c = document.querySelector('#game canvas').getBoundingClientRect();
+    const k = c.height / 720;
+    const top = c.top + 200 * k, bottom = c.top + 640 * k;
+    return [...document.querySelectorAll('#game button[id^="arcade"]')].filter((b) => {
+      const r = b.getBoundingClientRect();
+      return r.right > c.left && r.left < c.right && r.bottom > top && r.top < bottom;
+    }).map((b) => b.id);
+  })()`);
+}
+
+test('desktop 1280x720: the Arcade touch buttons stay clickable but never overlap the walkable playfield', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByLabel('Team').selectOption('2');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await expect(page.locator('#arcadeTag')).toBeVisible();
+  expect(await page.locator('#game button[id^="arcade"]').count()).toBe(6);
+  expect(await overlapsArena(page)).toEqual([]);
+});
+
 const PRIMARY = 1 << 4;
 const SUPER = 1 << 13;
 /**
