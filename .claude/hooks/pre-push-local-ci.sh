@@ -14,14 +14,21 @@ esac
 
 root="${CLAUDE_PROJECT_DIR:-$PWD}"
 cd "$root" || exit 0
-if ! command -v pnpm >/dev/null 2>&1 || [ ! -f package.json ]; then
+if command -v pnpm >/dev/null 2>&1; then
+  pn() { pnpm "$@"; }
+elif command -v corepack >/dev/null 2>&1; then
+  pn() { corepack pnpm "$@"; }
+else
+  pn() { return 127; }
+fi
+if [ ! -f package.json ] || ! pn --version >/dev/null 2>&1; then
   echo "pre-push-local-ci: pnpm or package.json missing; skipping local CI (fail open)." >&2
   exit 0
 fi
 
 failed=0
 for s in lint typecheck depcruise test; do
-  body=$(pnpm pkg get "scripts.$s" 2>/dev/null | tr -d '"')
+  body=$(pn pkg get "scripts.$s" 2>/dev/null | tr -d '"')
   if [ -z "$body" ] || [ "$body" = "{}" ] || [ "$body" = "null" ]; then
     echo "pre-push-local-ci: no '$s' script; skipping it (fail open)." >&2
     continue
@@ -31,7 +38,7 @@ for s in lint typecheck depcruise test; do
       echo "pre-push-local-ci: '$s' is a placeholder; skipping it (fail open)." >&2
       continue ;;
   esac
-  if ! out=$(pnpm run --silent "$s" 2>&1); then
+  if ! out=$(pn run --silent "$s" 2>&1); then
     echo "pre-push-local-ci: '$s' FAILED; push blocked." >&2
     printf '%s\n' "$out" | tail -n 30 >&2
     failed=1
