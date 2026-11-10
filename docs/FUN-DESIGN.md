@@ -580,15 +580,14 @@ element gets a bonus while standing on a patch. Stages are Archon-style terrain 
 - **Patches:** 3 to 5 rectangles per round, placed from the seeded RNG at the round start, point-symmetric about the arena
   centre so neither side gets a better layout, never overlapping the spawn points, never closer than a hero width to each
   other or the walls, so nothing can trap a hero. State in `SimState.arcade` (kind, rects), integer geometry only.
-- **Fire patch:** a fire hero standing in it deals more damage. Owner wording: attack power +200 percent. Data row in
-  per-mille (3000 = x3); recommended first value x1.5 (1500) until a playtest, because the numbers pass (WP24) tuned
-  rounds to about 45 s.
+- **Fire patch:** a fire hero standing in it deals double damage (owner: "200%... double", so x2, data row 2000 per mille).
+  Later idea, not in the first slice: an opponent standing in a fire patch burns.
 - **Water patch:** a water hero in it heals 1 HP per second (every 50 ticks). Scale it per mille of max HP, and let the
   data row decide (the owner's 1 HP per second is the default for a 100 HP hero).
 - **Earth patch:** a solid rock: heroes of other elements cannot enter it (movement is clamped like a wall), an earth hero
   walks over it. Open question: do projectiles stop at it? Default: no, only bodies are blocked.
-- **Air patch:** an air hero in it moves faster. Owner wording: +200 percent. Data row (x3 = 3000); recommended first
-  value x1.5, and it does not stack with a dash (the larger applies).
+- **Air patch:** an air hero in it moves at double speed (x2, data row 2000 per mille); it does not stack with a dash (the
+  larger applies).
 - **Stacking:** all modifiers multiply with the weather and element chart, then are capped (data row, default x2.5 total)
   so Sun plus a fire patch cannot blow up a round.
 - **View:** each patch has a distinct pattern and a text/icon label (not colour alone), a soft element glow, a small
