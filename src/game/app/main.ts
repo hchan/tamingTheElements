@@ -7,6 +7,7 @@ import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import { applyPrefsToDocument, getPrefs } from '../platform/a11y/prefs';
 import { getUiFlags } from '../platform/flags';
+import { notify } from '../platform/storage/notices';
 import { createReplayStore } from '../platform/storage/replay-store';
 import { setBindings } from '../platform/input/bindings';
 import { createSaveStore } from '../platform/storage/create-save-store';
@@ -70,7 +71,36 @@ if (root) {
         window.location.hash = `#${route}`;
       },
     });
-    startRouter(menu, flow.screens());
+    startRouter(menu, {
+      ...flow.screens(),
+      // Arcade Versus (preview, FUN-DESIGN WP 11): a separate flow outside the story flow, in its own chunk loaded on first
+      // use. `then` callbacks run in order, so every mount is followed by its unmount. A failed load (offline, or a newer
+      // deploy removed the chunk) says so in the notice banner and returns to the menu.
+      arcade: () => {
+        const chunk = import('./arcade-versus');
+        return {
+          mount: (c) => {
+            chunk.then(
+              (a) => {
+                a.mountArcade(c);
+              },
+              () => {
+                notify('Arcade Versus could not load. Reload the page.');
+                window.location.hash = '#main';
+              },
+            );
+          },
+          unmount: () => {
+            chunk.then(
+              (a) => {
+                a.unmountArcade();
+              },
+              () => undefined,
+            );
+          },
+        };
+      },
+    });
   }
   installTestHook(SIM_VERSION, async (json) => {
     const r = await store.importJson(json);

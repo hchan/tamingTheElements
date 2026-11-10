@@ -61,9 +61,9 @@ module.exports = {
     {
       name: 'core-only-via-index',
       severity: 'error',
-      comment: 'game and ui reach core only through @core/index.',
+      comment: 'game and ui reach core only through @core/index (or @core/lazy-index, for lazily loaded chunks).',
       from: { path: '^src/(game|ui)/' },
-      to: { path: '^src/core/', pathNot: '^src/core/index\\.ts$' },
+      to: { path: '^src/core/', pathNot: '^src/core/(index|lazy-index)\\.ts$' },
     },
     {
       name: 'platform-is-leaf',
