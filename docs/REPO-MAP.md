@@ -16,7 +16,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `war/WEB-INF/private/img/`, `war/WEB-INF/private/snd/` | Sprite sheets, backgrounds and `.ogg` sound |
 | `imgWorkArea/` | Art working files: PNG and GIMP `.xcf` sources |
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
-| `tools/` | TypeScript build tooling: `tools/assets/` (asset manifest and copy), `tools/gen/` (generated tables, LUTs, golden replays), `tools/sim/` (match CLI) |
+| `tools/` | TypeScript build tooling: `tools/assets/` (asset manifest and copy), `tools/gen/` (generated tables, LUTs, golden replays), `tools/sim/` (match CLI), `tools/replay-verify.ts` (`pnpm replay:verify`) |
 | `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`); `gen-design-tables.ts` fills the generated tables in `docs/GAME-DESIGN.md` (`pnpm docs:gen`) |
 | `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`); `build-assets.ts` (`pnpm assets:build`) copies the manifest's images and sounds plus the favicon into `public/`, verifying sha256 |
 | `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md). `run-net.ts` (`pnpm sim:net`): a bot-vs-bot match over the lockstep session and the fake network, printing stalls, resends and lag; see [NETCODE.md](NETCODE.md) |
@@ -66,6 +66,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/fx/` | Cosmetic sim-event effects (`event-fx.ts`): damage flash, hit particles and shake, deduped by event id `(tick,sourceId,kind,seq)` in a bounded set, own cosmetic RNG, reduced-motion aware; pooled `ProjectileView` lives in `src/game/views/` |
 | `src/game/audio/` | Sim-event audio (`audio-manager.ts`, `sound-map.ts`): music/sfx/ui gain buses, music ducking, CTRL-M mute via the input effect callback, context resume on first gesture, deduped by event id; ogg only |
 | `src/game/input/` | Keyboard input: remappable bindings (`key-map.ts`, pure reducer) and `KeyboardAgent` mapping keys to the sim Command bitset; no gameplay logic |
+| `src/game/replay/` | Playtest recording outside core: `PlaytestRecorder` (shadow world stepped with the live commands, so enemy-bot RNG never leaks into the file) and `ReplayCursor` (tick-by-tick playback that checks every recorded hash); the app glue is `src/game/app/replay-viewer.ts` (route `#replay`) and `download.ts`, the local store is `src/game/platform/storage/replay-store.ts` (IndexedDB `tte-replays`, last 5) |
 | `src/game/loop/` | Fixed 50 Hz step driver (injected clock, 250 ms clamp, step cap, pause, render alpha) |
 | `src/game/cinematics/` | Data-driven cinematics: pure `CinematicRunner` step sequencer (header, caption, sprite, tween, wait, waitKey, skip) and the ported intro script; drawn by the `Cinematic` scene (`?ff=cinematicDemo`), which removes all listeners on shutdown or game destroy |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle, settings), `styles/main.css` |

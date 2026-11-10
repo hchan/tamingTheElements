@@ -1,4 +1,5 @@
-import type { Agent, MatchSetup } from '@core/index';
+import type { Agent, MatchSetup, ReplayFile } from '@core/index';
+import type { PlaytestRecorder } from '../replay/playtest-recorder';
 
 /** What Arena reports when the sim emits MatchEnded; the app flow turns it into a save update. */
 export interface MatchEnd {
@@ -10,10 +11,39 @@ export interface MatchEnd {
   readonly capturedIndices: readonly number[];
 }
 
+/** Live state of a replay playing in the Arena, for the viewer's status line. */
+export interface PlaybackStatus {
+  readonly tick: number;
+  readonly total: number;
+  readonly state: 'playing' | 'ok' | 'diverged';
+  readonly paused: boolean;
+  readonly speed: 1 | 2;
+  /** Checkpoint tick of the first hash mismatch. */
+  readonly divergentTick?: number;
+}
+
+/** Controls the Arena hands to the viewer once it is running. */
+export interface PlaybackControls {
+  setSpeed(speed: 1 | 2): void;
+  setPaused(paused: boolean): void;
+  /** Pauses and advances one tick. */
+  step(): void;
+}
+
+/** A replay to play back (no keyboard, no enemy agent), verifying its hashes as it goes. */
+export interface ArenaPlayback {
+  readonly replay: ReplayFile;
+  readonly onStatus: (s: PlaybackStatus) => void;
+  readonly attach: (c: PlaybackControls) => void;
+}
+
 /** Data handed to the Arena scene (Phaser-free so the app flow can build it without loading Phaser). */
 export interface ArenaLaunch {
   readonly setup: MatchSetup;
-  /** Agent for the enemy side; the player side is always the keyboard. */
-  readonly enemy: Agent;
-  readonly onEnd: (end: MatchEnd) => void;
+  /** Agent for the enemy side; the player side is always the keyboard. Absent when `playback` is set. */
+  readonly enemy?: Agent;
+  readonly onEnd?: (end: MatchEnd) => void;
+  /** Records the final command pair of every tick (only present when recording is enabled). */
+  readonly recorder?: PlaytestRecorder;
+  readonly playback?: ArenaPlayback;
 }

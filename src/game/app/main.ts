@@ -5,6 +5,7 @@ import { applyUiScale, loadSave } from '@ui/screens/settings';
 import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags } from '../platform/flags';
+import { createReplayStore } from '../platform/storage/replay-store';
 import { createSaveStore } from '../platform/storage/create-save-store';
 import { installTestHook } from '../platform/test-hook';
 import { AppFlow } from './flow';
@@ -40,6 +41,7 @@ if (root) {
       store,
       flags,
       now: () => Date.now(),
+      replays: createReplayStore(() => Date.now()),
       navigate: (route) => {
         window.location.hash = `#${route}`;
       },

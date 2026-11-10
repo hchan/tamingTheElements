@@ -9,8 +9,9 @@ How to run, place and write tests. Run everything with `corepack pnpm <script>` 
 | `pnpm test` | Vitest projects `core` and `repo` (node): unit tests in `src/**/*.test.ts`, plus `tests/repo/` and `tests/lint/` |
 | `pnpm test:legacy` | Vitest project `legacy`: `tests/legacy/**` characterization tests of the frozen `war/` code, run in `node:vm` |
 | `pnpm test:browser` | Vitest project `browser`: `tests/browser/**/*.browser.test.ts` in headless Chromium, Firefox and WebKit |
-| `pnpm e2e` | Playwright (`playwright.config.ts`): `tests/e2e/*.spec.ts` against `vite build --mode test` served by `vite preview` on port 4173 |
-| `pnpm golden:record` | `tools/gen/record-golden.ts`: rewrites `tests/fixtures/replays/random-vs-random.replay.json` |
+| `pnpm e2e` | Playwright (`playwright.config.ts`): `tests/e2e/*.spec.ts` against `vite build --mode test` served by `vite preview` on port 4173 (`E2E_PORT=n` picks another port for parallel worktrees) |
+| `pnpm golden:record` | `tools/gen/record-golden.ts`: rewrites the bot-vs-bot goldens in `tests/fixtures/replays/` |
+| `pnpm replay:verify <file...>` | `tools/replay-verify.ts`: re-simulates replay files headlessly; exits 1 on a hash mismatch |
 | `pnpm docs:gen` | `tools/gen/gen-design-tables.ts`: refreshes the generated tables in `docs/GAME-DESIGN.md` |
 | `pnpm lint`, `pnpm typecheck`, `pnpm depcruise`, `pnpm build` | ESLint (including the `src/core` determinism bans), `tsc -b`, dependency rules, typecheck plus Vite build |
 
@@ -84,11 +85,27 @@ that Chromium, Firefox and WebKit reproduce the committed hashes.
 - `tests/lint/core-bans.test.ts`: lints sample files to prove the `src/core` bans (`Date`, `Math.random`, transcendental `Math`,
   DOM globals and so on) are enforced.
 
+## Turning a playtest into a regression test
+
+1. Record: play with `?ff=record` (dev and test builds) or tick **Record playtests** in Settings (default off; nothing is
+   recorded or stored without it, no telemetry, local only). Every tick's final command pair goes into a replay in the existing
+   format (seed, rosters, flags, `simVersion`, RLE inputs, hash checkpoints every 50 ticks). Only a match that reaches its end counts.
+2. Save: on the results screen press **Download replay** (a `.replay.json` file). The last 5 are also kept in IndexedDB
+   (`tte-replays`) and listed in the viewer.
+3. Check by eye: open `#replay` (Settings has a link), choose the file and watch it at 1x/2x, pause or single-step; the status
+   line shows `OK` or `DIVERGED at tick N` for the first bad checkpoint.
+4. Promote: copy the file to `tests/fixtures/replays/<name>.replay.json` and run `pnpm replay:verify tests/fixtures/replays/<name>.replay.json`.
+   `tests/repo/replay-fixtures.test.ts` then verifies it (and every other fixture) in `pnpm test`.
+5. A replay is tied to its `simVersion`. After an intended sim change, bump `SIM_VERSION`, re-record the goldens
+   (`pnpm golden:record`) and re-record or retire playtest fixtures; never edit hashes by hand.
+
+Cheat probes (`setHp`, `place`) change the live world outside the command stream, so a recording that used them is discarded.
+
 ## The `__TTE__` hook
 
 `window.__TTE__` is a test-only object installed by `src/game/platform/test-hook.ts`. It exists only in dev and in
 `vite build --mode test` (what Playwright builds); production builds drop it. It exposes `ready`, `version`, `scene`,
-`state()` (route, scene, tick, paused), `hash()` (sim state hash), `step(n)` (pause and step the arena n ticks), `loadSave(json)`,
+`state()` (route, scene, tick, paused), `hash()` (sim state hash), `step(n)` (pause and step the arena n ticks; the `arena` probe also has `stepLive(n)`, which lets the real keyboard decide the commands), `loadSave(json)`,
 `listeners()` (live window/document listener count, 0 after leaving a battle), `settled()` (resolves after game teardown),
 and `arena` / `cinematic` probes while those scenes run.
 
