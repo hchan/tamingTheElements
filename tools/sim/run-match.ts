@@ -198,7 +198,8 @@ export class ScriptedAI implements Agent {
     });
     if (this.melee) cmd |= this.chase(self, opp);
     if (shooting && (cmd & DIR_MASK) === 0) cmd |= FACING[['n', 'e', 's', 'w'].indexOf(this.attack.direction)] ?? 0;
-    return this.arcade.apply(view, cmd, (n) => this.rng.int(view, n));
+    const slot = this.defs.findIndex((d, i) => (d?.kind === 'range' || d?.kind === 'debuff') && (view.cooldowns[i] ?? 0) === 0);
+    return this.arcade.apply(view, cmd, (n) => this.rng.int(view, n), slotBits[slot] ?? 0);
   }
 }
 

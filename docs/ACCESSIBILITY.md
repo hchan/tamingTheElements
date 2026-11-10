@@ -64,6 +64,9 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
 - Arcade hyper meter: the bar count is a number beside the bar (`3 MAX` when full); full segments are solid and the one
   still filling is dashed, with a black and white outline that reads on bright and dark arenas (high contrast: white fill,
   thicker outline). A full meter pulses once a second, under the WCAG 2.3.1 limit of three flashes.
+- Arcade 8-way aim (`src/game/fx/aim-view.ts`): the cast direction is a white arrow with a dark outline beside the
+  player's character, so it reads by shape and position on bright and dark arenas, not by colour. It has no animation
+  (it snaps to the new aim), so reduced motion keeps it as it is.
 
 ## In-battle announcements and pause
 
@@ -106,7 +109,7 @@ written before the action existed keeps the player's keys: if one of them is alr
 | reduce motion (OS default, opt out, opt in, no shake), high contrast, rebinding, gamepad pause, announcements | `tests/e2e/a11y-features.spec.ts` |
 | hit feedback with reduced motion: flash, damage numbers, combo and meter stay, no shake (Arcade); fake-sink rules (static spark, no jitter); meter number, pattern and pulse rate | `tests/e2e/arcade-juice.spec.ts`, `src/game/fx/event-fx.test.ts`, `src/game/hud/arcade-hud.test.ts` |
 | super cinematic: reduced motion drops the slide and punch-in and keeps dim, band and name (plan, fake sink and browser); Arcade-only super key and pad RT, binding and pad conflicts | `src/game/fx/super-cinematic.test.ts`, `tests/e2e/arcade-super.spec.ts`, `src/game/input/arcade-bindings.test.ts` |
-| Arcade Versus picker and results: axe, heading focus, Escape back, touch Super button, 390x844 layout | `tests/e2e/arcade.spec.ts` |
+| Arcade Versus picker and results: axe, heading focus, Escape back, touch Super button, 390x844 layout; the 8-way aim arrow | `tests/e2e/arcade.spec.ts`, `src/game/fx/aim-view.test.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done

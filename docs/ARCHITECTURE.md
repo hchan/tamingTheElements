@@ -119,7 +119,9 @@ sites through `meterOnCast`, a no-op in Classic); the Classic lines run
 unchanged behind `!isArcade`. The cast sites and movement ask `canAct` (Classic: not frozen; Arcade: also not
 stunned and not casting a super), and Arcade movement applies knockback first and holds both axes at the walls. The
 `health` slot is `arcadeSuper` (`arcade/super.ts`): `Cmd.super` spends a meter bar for a super (a 40-tick freeze, then
-an `effect` entity whose hits go through `applyArcadeHit` as strength 3).
+an `effect` entity whose hits go through `applyArcadeHit` as strength 3). Arcade aims 8 ways (`arcade/aim.ts`): movement
+stores the dir8 of the held input in the entity's `aim` slot next to the 4-way `dir` (the reels), and the projectile and
+melee cast sites read `castDir` (the plain `dir` in Classic); the super band keeps the 4-way `dir`.
 
 | # | System | Status |
 |---|---|---|
@@ -238,7 +240,7 @@ Phaser scenes in `src/game/scenes/`: `Boot`, `Preload`, `Arena` (runs the driver
 everything outside a match (router, screens); the composition root `src/game/app/` wires them to scenes. Scenes read the sim
 only through the `RenderView` facade in `src/core/sim/view.ts` and never decide gameplay (for example death is a sim system).
 `RenderView.arcade()` (undefined in Classic) adds the Arcade read-outs: hit-stop freeze, live combo hits and damage and the
-hyper meter per team, stun and invulnerability per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
+hyper meter per team, stun, invulnerability and the 8-way cast aim per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
 (`src/game/hud/arcade-hud.ts`: pooled damage numbers, combo counters, hyper meters) from events and `arcade()`, ages it while the driver
 runs, and hands it to `Hud` in `HudData`, which only draws it with pooled texts. The super cinematic is the fx sink's
 `superCut`, started by `EventFx` from the super freeze (`hitStop` cause 2, the caster as its source): the Phaser sink
@@ -253,7 +255,10 @@ the menu entry stays small and Phaser-free. The screen (`src/game/app/arcade-ver
 `src/ui/screens/arcade-versus.ts`) runs picker, battle and results inside the one route: `arcadeLaunch`
 (`src/game/app/arcade-setup.ts`) builds a 1v1 `MatchSetup` with `rulesetArcade`, `difficulty: 1`, chapter 1 (no Capture)
 and 0 XP, and the core `ScriptedAI` with its Arcade layer as the enemy (Easy drops its super). The Arena needs nothing new:
-the Arcade HUD, juice, super key and cinematic follow the world flag. The flow has no save store, so it writes no progress,
+the Arcade HUD, juice, super key and cinematic follow the world flag. The one Arcade-only view in this chunk is the 8-way
+aim arrow (`src/game/fx/aim-view.ts`), handed to the Arena as the launch's `arcadeView` hook: one Graphics drawn once,
+moved and turned after each scene update from `RenderView.arcade().aim`, static (no tween, so reduced motion needs no
+variant), removed with the scene. The flow has no save store, so it writes no progress,
 XP, capture, objectives or garrison (a repo test and a unit test guard it); the only write is the playtest replay, when
 recording is on. The route is offered when Settings > Arcade Versus (preview) is ticked (the save's `arcadePreview`) or
 with `?ff=arcade` in dev and test builds; otherwise `#arcade` returns to the main menu. A pointer-only Super button over

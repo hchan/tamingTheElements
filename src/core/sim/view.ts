@@ -6,6 +6,7 @@ import { capturable } from '../rules/progression';
 import {
   ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_STRIDE, TeamField, World,
 } from './state';
+import { castDir } from './systems/arcade/aim';
 import { isInvulnerable, isStunned } from './systems/arcade/stun';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { controlledId } from './systems/movement';
@@ -24,7 +25,7 @@ export interface RenderCharacter {
   team: number;
   /** Character sprite key (legacy map sprite name). */
   sprite: string;
-  /** 0..7 clockwise from east (0 = east, 4 = west). */
+  /** 4-way facing as a dir8 index: 0 east, 2 north, 4 west, 6 south (DIR8_X/Y). */
   dir: number;
   flags: number;
   x: number;
@@ -54,6 +55,8 @@ export interface RenderArcade {
   readonly meter: [number, number];
   stunned(id: number): boolean;
   invulnerable(id: number): boolean;
+  /** The 8-way cast facing (dir8, 0 = east, then counter-clockwise on screen) of character `id`. */
+  aim(id: number): number;
 }
 
 /** One active status as the HUD sees it. The object is reused between callbacks. */
@@ -70,7 +73,7 @@ export interface RenderProjectile {
   team: number;
   /** Ability sprite key (`sprite:<key>` texture). */
   sprite: string;
-  /** 0..7 clockwise from east; rotation is dir * 45 degrees. */
+  /** Dir8 index (DIR8_X/Y): 0 east, then counter-clockwise on screen; see `rotationForDir` in the view. */
   dir: number;
   x: number;
   y: number;
@@ -129,7 +132,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
   const ar: RenderArcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0],
-    stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id),
+    stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
   const pScratch: RenderProjectile = { id: 0, team: 0, sprite: '', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0 };

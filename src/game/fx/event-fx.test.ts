@@ -207,7 +207,7 @@ describe('cosmetic helpers', () => {
     }
   });
   it('rotates bullets by dir except Tornado', () => {
-    expect([0, 2, 4, 6, 7].map((d) => rotationForDir(d, 'fireball'))).toEqual([0, 90, 180, 270, 315]);
+    expect([0, 1, 2, 3, 4, 5, 6, 7].map((d) => rotationForDir(d, 'fireball'))).toEqual([0, 315, 270, 225, 180, 135, 90, 45]);
     expect(rotationForDir(2, 'tornado')).toBe(0);
   });
 });

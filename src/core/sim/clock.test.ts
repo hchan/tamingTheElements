@@ -16,7 +16,7 @@ import { createMatch, type MatchSetup } from './match';
 import { createSnapshotBuf, restore, snapshot, SnapshotRing } from './snapshot';
 import {
   ARCADE_E, ARCADE_LENGTH, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_W, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW,
-  cooldownIdx, EntityKind, MAX_ENTITIES, TEAM_COUNT, World, stateArrays, type SimState,
+  cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT, World, stateArrays, type SimState,
 } from './state';
 import { SimEventKind, type SimEvent } from './events';
 import { ABILITY_DEFS } from './systems/projectile';
@@ -35,7 +35,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(13 * MAX_ENTITIES + 16 * TEAM_COUNT + 8);
+    expect(ARCADE_LENGTH).toBe(14 * MAX_ENTITIES + 16 * TEAM_COUNT + 8);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -131,8 +131,8 @@ describe('game clock', () => {
  * (each frozen step must be silent), and then equals Classic in every entity, team, status and rng value and emits the
  * same Classic events (ids aside; Arcade adds melee `damage` and the kinds 40+). An extra freeze of `n` ticks is
  * injected at tick `at`. That proves every timer read goes through the game clock `now(s)`, and that hit-stop only
- * freezes. From the first hit on, hit-stun and knockback (WP-arcade-stun-knockback) and the both-axis walls diverge from
- * Classic by design; the freeze lengths and the game clock are still checked on every step.
+ * freezes. From the first hit on, hit-stun and knockback (WP-arcade-stun-knockback), the both-axis walls and the first
+ * diagonal cast (8-way aim) diverge from Classic by design; the freeze lengths and the game clock are still checked on every step.
  */
 describe('an Arcade match is Classic shifted by its freezes', () => {
   type Inputs = readonly (readonly [number, number])[];
@@ -145,6 +145,18 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       const melee = next?.kind === SimEventKind.hitConfirmed && ABILITY_DEFS[next['ability'] ?? -1]?.kind === 'melee';
       return e.kind < 40 && !(e.kind === SimEventKind.damage && melee);
     });
+  /**
+   * True once an Arcade cast went along a diagonal 8-way aim (WP-arcade-8way-aim): a live projectile or melee with an
+   * odd dir that is not an omni fan bullet. Classic only ever casts along the 4-way facing.
+   */
+  const aimedDiagonally = (s: SimState): boolean => {
+    for (let id = 0; id < MAX_ENTITIES; id++) {
+      const k = s.kind[id];
+      if ((k !== EntityKind.projectile && k !== EntityKind.melee) || ((s.dir[id] ?? 0) & 1) === 0) continue;
+      if (((s.flags[id] ?? 0) & EntityFlag.alive) !== 0 && ABILITY_DEFS[s.defId[id] ?? 0]?.kind !== 'omni') return true;
+    }
+    return false;
+  };
   /** True once any Arcade character has been stunned (Entangling Vines stuns without a `hitConfirmed`). */
   const stunned = (s: SimState): boolean => {
     for (let id = 0; id < MAX_ENTITIES; id++) if ((s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) !== 0) return true;
@@ -175,7 +187,8 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       diverged ||=
         evs.some((e) => e.kind === SimEventKind.hitConfirmed) ||
         cevs.some((e) => e.kind === SimEventKind.blocked) ||
-        stunned(a.state);
+        stunned(a.state) ||
+        aimedDiagonally(a.state);
       if (!diverged) expect(strip(classicPart(evs))).toEqual(strip(cevs));
       const stops = evs.filter((e) => e.kind === SimEventKind.hitStop).map((e) => e['ticks'] ?? 0);
       expect(stops.length).toBe(evs.filter((e) => e.kind === SimEventKind.hitConfirmed).length);

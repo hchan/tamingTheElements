@@ -145,6 +145,44 @@ test('?ff=arcade (dev and test builds) without a save: Escape leaves the picker,
   expect(errors).toEqual([]);
 });
 
+test('8-way aim: the arrow follows the held diagonal, stays after release, and Fire Blast flies that way', async ({ page }, info) => {
+  const UP = 1;
+  const RIGHT = 8;
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByRole('button', { name: 'Fight!' }).waitFor();
+  await fight(page, 'sindarosa', 'pax');
+  const { foe } = await lineUp(page, 1000);
+  type Aim = { visible: boolean; x: number; y: number; angle: number } | undefined;
+  const frames = `new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`;
+  const aim = async (): Promise<Aim> => {
+    await page.evaluate(frames);
+    return page.evaluate<Aim>(`window.__TTE__.arena.aim()`);
+  };
+  // Before any input: the 4-way facing (east), right of the player.
+  const east = await aim();
+  expect(east).toMatchObject({ visible: true, angle: 0 });
+  // Up + right held: north-east (Phaser reports 315 degrees as -45), up and right of the character's centre.
+  await page.evaluate(`window.__TTE__.arena.step(1, [${String(UP | RIGHT)}, 0])`);
+  const ne = await aim();
+  const [me] = await page.evaluate<{ x: number; y: number }[]>(`window.__TTE__.arena.characters().filter((c) => c.team === 0)`);
+  expect(ne).toMatchObject({ visible: true, angle: -45 });
+  const cx = (me?.x ?? 0) + 40;
+  const cy = (me?.y ?? 0) + 40;
+  const d = 64 * Math.SQRT1_2;
+  // The arrow is drawn with the sprite's interpolation (between the last two ticks: 7 px apart).
+  expect(Math.abs((ne?.x ?? 0) - (cx + d))).toBeLessThanOrEqual(8);
+  expect(Math.abs((ne?.y ?? 0) - (cy - d))).toBeLessThanOrEqual(8);
+  await info.attach('arcade-aim-ne', { body: await page.locator('#game canvas').screenshot(), contentType: 'image/png' });
+  // Released: the aim stays north-east, and a shot from here misses the foe on the row (it flies up and right).
+  await page.evaluate(`window.__TTE__.arena.step(1, [${String(PRIMARY)}, 0])`);
+  expect(await aim()).toMatchObject({ visible: true, angle: -45 });
+  const [before] = await characters(page, 1);
+  await page.evaluate(`window.__TTE__.arena.step(80)`);
+  expect((await characters(page, 1)).find((c) => c.id === foe)?.hp).toBe(before?.hp);
+  expect(errors).toEqual([]);
+});
+
 test.describe('390x844 portrait phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

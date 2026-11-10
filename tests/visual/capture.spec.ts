@@ -215,6 +215,9 @@ for (const vp of VIEWPORTS) {
       if (vp.mobile) await page.locator('#rotateDismiss').click();
       await page.evaluate(`window.__TTE__.arena.step(5)`);
       await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus battle at tick 5: Sindarosa vs the Fiara AI, hyper meters, the touch Super button bottom right');
+      // Up + right held, then Fire Blast: the 8-way aim arrow points north-east and the bullet flies that way.
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(3, [9, 0]); a.step(1, [16, 0]); a.step(6); })()`);
+      await shoot(page, vp, 'arena', 'arcade-aim', 'Arcade 8-way aim: the white arrow north-east of Sindarosa (held up + right) and a Fire Blast flying north-east');
       const [foe] = await characters(page, 1);
       await page.evaluate(`window.__TTE__.arena.setHp(${String(foe?.id)}, 0); window.__TTE__.arena.step(1)`);
       await page.getByRole('heading', { level: 1, name: 'Victory!' }).waitFor();

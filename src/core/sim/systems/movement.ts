@@ -6,6 +6,7 @@ import type { SimWorld } from '../world';
 import { isArcade } from '../clock';
 import { stepKnockback } from './arcade/knockback';
 import { canAct } from './arcade/stun';
+import { setAim } from './arcade/aim';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
 const EAST = 0;
@@ -62,7 +63,7 @@ function restoreAtWall(world: SimWorld, id: number, team: number): void {
 
 /**
  * Arcade movement (FUN-DESIGN 2.3): knockback first (it moves a stunned victim too), then the input step when the
- * character can act. Walls hold both axes for both teams.
+ * character can act. Walls hold both axes for both teams. The held input also sets the 8-way aim (arcade/aim.ts).
  */
 function arcadeMove(world: SimWorld, id: number, cmd: Command, sink: EventSink): void {
   const s = world.state;
@@ -73,6 +74,7 @@ function arcadeMove(world: SimWorld, id: number, cmd: Command, sink: EventSink):
   s.dir[id] = facingFor(ax, ay, s.dir[id] ?? EAST);
   const d = dir8FromSigns(ax, ay);
   if (d < 0) return;
+  setAim(s, id, d);
   const speed = s.speed[id] ?? 0;
   const x0 = s.x[id] ?? 0;
   const y0 = s.y[id] ?? 0;

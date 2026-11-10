@@ -152,8 +152,9 @@ export class ScriptedAI implements Agent {
     if (wallX) move &= ~(Cmd.left | Cmd.right);
     if (wallY) move &= ~(Cmd.up | Cmd.down);
     if ((atk & Cmd.primary) !== 0) move = applyFacing(move, this.attack.direction);
-    // Arcade only (a no-op without `view.arcade`): combo cap and supers on confirm.
-    const cmd = this.arcade.apply(view, (move & MOVE_MASK) | (atk & (Cmd.primary | Cmd.secondary)), (n) => this.rng.int(view, n));
+    // Arcade only (a no-op without `view.arcade`): combo cap, supers on confirm and diagonal shots.
+    const shot = ready && primary.type === 'range' ? Cmd.primary : 0;
+    const cmd = this.arcade.apply(view, (move & MOVE_MASK) | (atk & (Cmd.primary | Cmd.secondary)), (n) => this.rng.int(view, n), shot);
     this.movement.noteSent(cmd, wallX, wallY);
     return cmd;
   }

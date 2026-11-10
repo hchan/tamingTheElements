@@ -18,6 +18,9 @@ import {
   COMBO_STUN_CAP_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, SUPER_FREEZE_TICKS,
 } from '../data/arcade';
 import { SUPER_DEF } from './systems/arcade/hit';
+import { castDir } from './systems/arcade/aim';
+import { facingFor } from './systems/movement';
+import { DIR8_X, DIR8_Y } from '../math/dir8';
 import { SimEventKind, type SimEvent } from './events';
 import type { SimWorld } from './world';
 
@@ -163,7 +166,29 @@ function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEven
     last = e.seq;
   }
   if (events.length > EVENT_BOUND) fail(`${String(events.length)} events in one tick`);
+  checkAim(w, fail);
   checkArcade(w, events, wasFrozen, fail);
+}
+
+/**
+ * 8-way aim (FUN-DESIGN 2.12): character reels stay 4-way and are the x-wins facing of the cast aim (`castDir`, the
+ * plain facing in Classic); every bullet flies exactly DIR8 * speed (diagonals +-speed on both axes); only omni fans
+ * fly diagonally in Classic.
+ */
+function checkAim(w: SimWorld, fail: (m: string) => never): void {
+  const s = w.state;
+  for (let i = 0; i < MAX_ENTITIES; i++) {
+    if (((s.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
+    const dir = s.dir[i] ?? 0;
+    if (s.kind[i] === EntityKind.character) {
+      const aim = castDir(s, i);
+      if ((dir & 1) !== 0 || facingFor(DIR8_X[aim] ?? 0, DIR8_Y[aim] ?? 0, -1) !== dir) fail(`character ${String(i)} dir ${String(dir)} aim ${String(aim)}`);
+    } else if (s.kind[i] === EntityKind.projectile) {
+      const sp = s.speed[i] ?? 0;
+      if (s.vx[i] !== (DIR8_X[dir] ?? 0) * sp || s.vy[i] !== (DIR8_Y[dir] ?? 0) * sp) fail(`bullet ${String(i)} off its dir8`);
+      if (!isArcade(s) && (dir & 1) !== 0 && ABILITY_DEFS[s.defId[i] ?? 0]?.kind !== 'omni') fail(`Classic diagonal bullet ${String(i)}`);
+    }
+  }
 }
 
 /** Arcade invariants: a frozen step is silent; every hit stops the clock for at most KO_HIT_STOP_TICKS; caps; meter. */
@@ -314,6 +339,29 @@ describe('sim properties: invariants', () => {
       FC,
     );
     expect(supers).toBeGreaterThan(0);
+  });
+
+  it('hold in Arcade with diagonal input: shots and melee go along the 8-way aim', () => {
+    let diagonal = 0;
+    const diag = fc.constantFrom(Cmd.up | Cmd.right, Cmd.up | Cmd.left, Cmd.down | Cmd.left, Cmd.down | Cmd.right);
+    const fire = fc.constantFrom(0, Cmd.primary, Cmd.secondary);
+    const aimed = fc
+      .array(fc.tuple(fc.integer({ min: 1, max: 30 }), diag, fire, cmdArb), { minLength: 1, maxLength: 12 })
+      .map((runs) => runs.flatMap(([n, d, f, b]) => Array.from({ length: n }, (_, k): [number, number] => [k === 0 ? d : d | f, b])));
+    fc.assert(
+      fc.property(setupArb, aimed, (setup, inputs) => {
+        const arcade = { ...setup, flags: { ...setup.flags, rulesetArcade: true } };
+        // checkAim runs on every step; at the end, count the live aimed (non-omni) diagonal casts for coverage.
+        const s = runInputs(arcade, inputs).world.state;
+        for (let i = 0; i < MAX_ENTITIES; i++) {
+          const k = s.kind[i];
+          if ((k !== EntityKind.projectile && k !== EntityKind.melee) || ((s.dir[i] ?? 0) & 1) === 0) continue;
+          if (((s.flags[i] ?? 0) & EntityFlag.alive) !== 0 && ABILITY_DEFS[s.defId[i] ?? 0]?.kind !== 'omni') diagonal++;
+        }
+      }),
+      FC,
+    );
+    expect(diagonal).toBeGreaterThan(0);
   });
 
   it('ignores command bits outside the ruleset input mask', () => {

@@ -8,7 +8,13 @@ import { createMatch, type MatchSetup } from '../../sim/match';
 import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, World } from '../../sim/state';
 import { step } from '../../sim/step';
 import { createObservationView, type ArcadeView, type FighterView, type ObservationView } from '../agent';
-import { ARCADE_AI_COMBO_CAP, ARCADE_AI_REACTION_MIN, ArcadeTactics, pressStep, superFacing } from './arcade';
+import { getCharacter } from '../../data/characters';
+import { collectCommands } from '../agent';
+import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
+import { SimEventKind } from '../../sim/events';
+import { controlledId } from '../../sim/systems/movement';
+import { ARCADE_AI_COMBO_CAP, ARCADE_AI_REACTION_MIN, ArcadeTactics, diagonalLine, pressStep, superFacing } from './arcade';
+import { ScriptedAI, scriptedProfileFor } from './index';
 
 const SETUP: MatchSetup = {
   simVersion: 1,
@@ -157,6 +163,86 @@ describe('Arcade geometry helpers', () => {
     expect(pressStep(self, fighter(300, 300), Cmd.up)).toBe(Cmd.up); // already close
     expect(pressStep(self, fighter(700, 700), Cmd.up)).toBe(Cmd.up); // no shared axis
     expect(pressStep(self, fighter(700, 300), Cmd.primary | Cmd.up)).toBe(Cmd.primary | Cmd.up);
+  });
+});
+
+describe('8-way aim (WP-arcade-8way-aim)', () => {
+  const self = fighter(200, 300);
+
+  it('diagonalLine finds the diagonal a shot from the centre would follow to the opponent', () => {
+    expect(diagonalLine(self, fighter(500, 600))).toBe(Cmd.right | Cmd.down);
+    expect(diagonalLine(self, fighter(500, 40))).toBe(Cmd.right | Cmd.up); // offsets 300 and 260: within half a body
+    expect(diagonalLine(self, fighter(0, 100))).toBe(Cmd.left | Cmd.up);
+    expect(diagonalLine(self, fighter(540, 40))).toBe(0); // 340 vs 260: off the diagonal
+    expect(diagonalLine(self, fighter(700, 330))).toBe(0); // on the row: an axis shot
+    expect(diagonalLine(self, fighter(230, 700))).toBe(0); // on the column
+  });
+
+  it('fires a ready projectile slot along the diagonal when no axis shot lines up', () => {
+    const t = new ArcadeTactics();
+    const diag = view({}, 0, self, fighter(500, 600));
+    expect(t.apply(diag, Cmd.left, () => 0, Cmd.primary)).toBe(Cmd.primary | Cmd.right | Cmd.down);
+    expect(t.apply(diag, Cmd.left, () => 0, 0)).toBe(Cmd.left); // nothing ready
+    expect(t.apply(view({}, 0, self, fighter(540, 40)), Cmd.left, () => 0, Cmd.primary)).toBe(Cmd.left); // off the line
+    expect(t.apply(view(undefined, 0, self, fighter(500, 600)), Cmd.left, () => 0, Cmd.primary)).toBe(Cmd.left); // Classic
+    expect(t.save()).toEqual(new ArcadeTactics().save()); // no new agent state
+  });
+
+  it("keeps the base AI's 4-way shot: a second movement axis is dropped (Classic's x wins)", () => {
+    const t = new ArcadeTactics();
+    expect(t.apply(view({}), Cmd.primary | Cmd.left | Cmd.up, () => 0, Cmd.primary)).toBe(Cmd.primary | Cmd.left);
+    expect(t.apply(view({}), Cmd.primary | Cmd.up, () => 0, Cmd.primary)).toBe(Cmd.primary | Cmd.up);
+    expect(t.apply(view(undefined), Cmd.primary | Cmd.left | Cmd.up, () => 0)).toBe(Cmd.primary | Cmd.left | Cmd.up);
+  });
+
+  it('in an Arcade match the scripted AI lands a diagonal shot, and its snapshot round trip replays the same commands', () => {
+    const world = createMatch({
+      ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+      p1: [{ character: characterId('pax'), xp: 1 }], p2: [{ character: characterId('sindarosa'), xp: 1 }],
+    });
+    const s = world.state;
+    const me = controlledId(world, 0);
+    const ai = controlledId(world, 1);
+    s.x[me] = 300; s.y[me] = 560; s.x[ai] = 700; s.y[ai] = 160;
+    s.hp[me] = 10_000;
+    const options = { id: 'ai', activeCount: (slot: 0 | 1) => s.abil[countIdx(controlledId(world, 1), slot)] ?? 0 };
+    const profile = scriptedProfileFor(getCharacter(characterId('sindarosa')), getCharacter(characterId('pax')));
+    const agent = new ScriptedAI(profile, options);
+    const idle = { id: 'idle', observe: () => 0, save: () => null, load: () => undefined };
+    let diagonal = false;
+    let hit = false;
+    let saved: ReturnType<ScriptedAI['save']> | undefined;
+    const cmds: number[] = [];
+    for (let i = 0; i < 120 && !hit; i++) {
+      if (i === 1) saved = JSON.parse(JSON.stringify(agent.save())) as ReturnType<ScriptedAI['save']>;
+      const pair = collectCommands(world, [idle, agent]);
+      cmds.push(pair[1]);
+      const evs = step(world, pair);
+      for (let id = 0; id < MAX_ENTITIES; id++) {
+        if (s.kind[id] === EntityKind.projectile && s.team[id] === 1 && ((s.flags[id] ?? 0) & EntityFlag.alive) !== 0) diagonal ||= ((s.dir[id] ?? 0) & 1) === 1;
+      }
+      hit = evs.some((e) => e.kind === SimEventKind.hitConfirmed && e['target'] === me);
+    }
+    expect(diagonal).toBe(true);
+    expect(hit).toBe(true);
+    // Replaying from tick 1: a fresh agent loaded with the saved state chooses the same commands on the same views.
+    const replayWorld = createMatch({
+      ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+      p1: [{ character: characterId('pax'), xp: 1 }], p2: [{ character: characterId('sindarosa'), xp: 1 }],
+    });
+    const r = replayWorld.state;
+    r.x[me] = 300; r.y[me] = 560; r.x[ai] = 700; r.y[ai] = 160;
+    r.hp[me] = 10_000;
+    const first = new ScriptedAI(profile, { id: 'ai', activeCount: (slot: 0 | 1) => r.abil[countIdx(controlledId(replayWorld, 1), slot)] ?? 0 });
+    step(replayWorld, collectCommands(replayWorld, [idle, first]));
+    const copy = new ScriptedAI(profile, { id: 'ai', activeCount: (slot: 0 | 1) => r.abil[countIdx(controlledId(replayWorld, 1), slot)] ?? 0 });
+    copy.load(saved ?? null);
+    for (let i = 1; i < cmds.length; i++) {
+      const pair = collectCommands(replayWorld, [idle, copy]);
+      expect(pair[1]).toBe(cmds[i]);
+      step(replayWorld, pair);
+    }
+    expect(hash(replayWorld.state)).toBe(hash(s));
   });
 });
 

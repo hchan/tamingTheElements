@@ -14,6 +14,7 @@ import { activeSaveStorage } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, arcadeLaunch, parsePick, type ArcadePick, type ArcadeResult } from './arcade-setup';
 import { downloadReplay } from './download';
+import { mountAimIndicator } from '../fx/aim-view';
 import { destroyGame, type GameHandle } from './game-handle';
 
 /**
@@ -135,13 +136,16 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
     }
     battle.append(el('h1', 'heading', 'Loading...'));
     focusHeading(battle);
-    const launch: ArenaLaunch = arcadeLaunch(lastPick, deps.flags.seed ?? deps.now() >>> 0, {
-      record: deps.flags.record || getRecordSetting(),
-      replays: deps.replays,
-      onResult: (r) => {
-        if (epoch === mine) showResults(r);
-      },
-    });
+    const launch: ArenaLaunch = {
+      ...arcadeLaunch(lastPick, deps.flags.seed ?? deps.now() >>> 0, {
+        record: deps.flags.record || getRecordSetting(),
+        replays: deps.replays,
+        onResult: (r) => {
+          if (epoch === mine) showResults(r);
+        },
+      }),
+      arcadeView: mountAimIndicator,
+    };
     import('../boot/phaser-config')
       .then(({ createGame }) => {
         if (epoch !== mine) return;
