@@ -33,6 +33,7 @@ test('new game -> garrison -> battle renders the arena, pause works, exit leaves
 
   // Exit to the menu: the game is destroyed and its listeners are released (no page reload).
   await page.evaluate(`window.location.hash = '#main'`);
+  await page.evaluate(`window.__TTE__.settled()`);
   await expect(page.locator('#game canvas')).toHaveCount(0);
   expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
   expect(errors).toEqual([]);
