@@ -194,7 +194,7 @@ export class Arena extends Phaser.Scene {
       });
       if (tester) {
         this.cleanups.push(
-          tester.session.attachArena({ cheat: (c) => { this.arenaCheat(c); }, bench: () => benchRows(world, 0) }),
+          tester.session.attachArena({ cheat: (c) => { this.arenaCheat(c); }, bench: () => benchRows(world, 0), arcade: world.state.arcade.length > 0 }),
         );
       }
       const live = createLiveRegion();

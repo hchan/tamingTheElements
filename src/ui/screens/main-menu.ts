@@ -114,13 +114,19 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
           list.append(li);
         }
         page.append(list);
-        if (tester.enabled) {
-          const t = el('button', 'menuButton', 'Tester options');
-          t.type = 'button';
-          t.id = 'testerOptionsMenu';
-          t.addEventListener('click', requestOpenTesterPanel);
-          page.append(t);
-        }
+        // Visible in every build: the Konami code still works, this is the same switch without it.
+        const t = el('button', 'menuButton', tester.enabled ? 'Tester options' : 'Cheats');
+        t.type = 'button';
+        t.id = tester.enabled ? 'testerOptionsMenu' : 'cheatsMenu';
+        t.addEventListener('click', () => {
+          if (!tester.enabled) {
+            tester.enable();
+            t.textContent = 'Tester options';
+            t.id = 'testerOptionsMenu';
+          }
+          requestOpenTesterPanel();
+        });
+        page.append(t);
         const footer = el('div', 'versionStamp', versionStamp(import.meta.env));
         footer.id = 'versionStamp';
         page.append(footer);

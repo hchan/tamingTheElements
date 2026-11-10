@@ -49,3 +49,24 @@ export function addEveryRace(save: SaveV1, now: number, ids: IdSource): SaveV1 {
   }
   return { ...save, chapter: Math.max(1, save.chapter), garrison: [...save.garrison, ...added] };
 }
+
+/**
+ * The full cheat garrison: one hero of every character, the last boss included, all at `level`. A hero of that name already in
+ * the garrison is raised to `level`; missing ones are added. Heroes of other names are kept. Starts chapter 1 if needed.
+ */
+export function fullGarrison(save: SaveV1, now: number, ids: IdSource, level = 15): SaveV1 {
+  const experience = xpForLevel(level);
+  const raised = new Set<string>();
+  const garrison: GarrisonMemberV1[] = save.garrison.map((g) => {
+    const known = CHARACTERS.some((c) => (CHARACTER_TEXT.get(c.id)?.name ?? c.id) === g.characterName);
+    if (!known || raised.has(g.characterName)) return g;
+    raised.add(g.characterName);
+    return { ...g, experience, lastModifiedTime: now };
+  });
+  for (const c of CHARACTERS) {
+    const characterName = CHARACTER_TEXT.get(c.id)?.name ?? c.id;
+    if (raised.has(characterName)) continue;
+    garrison.push({ id: ids.next(), experience, characterName, createdTime: now, lastModifiedTime: now });
+  }
+  return { ...save, chapter: Math.max(1, save.chapter), garrison };
+}

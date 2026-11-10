@@ -10,7 +10,8 @@ import { getUiFlags, type UiFlags } from '../platform/flags';
 import { getBindings } from '../platform/input/bindings';
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
-import { activeSaveStorage } from '../platform/tester/session';
+import { requestOpenTesterPanel } from '@ui/tester/install';
+import { activeSaveStorage, tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, parsePick, partnerFor, type ArcadePick } from './arcade-pick';
 import type { ArcadeHero, ArcadeResult } from './arcade-setup';
@@ -155,13 +156,16 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
     import('./arcade-setup')
       .then(({ arcadeLaunch }) => import('../boot/phaser-config').then(({ createGame }) => {
         if (epoch !== mine) return;
-        const launch: ArenaLaunch = arcadeLaunch(pick, deps.flags.seed ?? deps.now() >>> 0, {
+        const base: ArenaLaunch = arcadeLaunch(pick, deps.flags.seed ?? deps.now() >>> 0, {
+          cheats: tester.enabled,
           record: deps.flags.record || getRecordSetting(),
           replays: deps.replays,
           onResult: (r) => {
             if (epoch === mine) showResults(r);
           },
         });
+        // Tester mode: the Arena registers its cheat bridge, so the panel's Arcade toggles work in this battle.
+        const launch: ArenaLaunch = tester.enabled ? { ...base, tester: { session: tester, openPanel: requestOpenTesterPanel } } : base;
         const host = el('div');
         host.id = 'game';
         battle.replaceChildren(host);

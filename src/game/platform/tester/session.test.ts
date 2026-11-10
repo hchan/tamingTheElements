@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SIM_FLAGS } from '@core/index';
 import { SAVE_KEY, createMemoryStorage, type SaveStore } from '../storage/save-store';
-import { DEFAULT_TESTER_OPTIONS, TESTER_STORAGE_KEY, TesterSession, createTesterStore, parsePersisted } from './session';
+import { DEFAULT_TESTER_OPTIONS, FULL_CHEAT_OPTIONS, TESTER_STORAGE_KEY, TesterSession, createTesterStore, parsePersisted } from './session';
 
 const emptySave = { schemaVersion: 1 as const, savedAt: 1, chapter: 1, garrisonSortOrder: 1, difficulty: 1, displaySettings: 1, garrison: [] };
 
@@ -18,7 +18,7 @@ describe('TesterSession', () => {
     const { session, real } = mk();
     expect(session.enabled).toBe(false);
     expect(session.simFlags(DEFAULT_SIM_FLAGS)).toBe(DEFAULT_SIM_FLAGS);
-    expect(session.tickCheats()).toEqual({ godMode: false, instantSwap: false });
+    expect(session.tickCheats()).toEqual({ godMode: false, instantSwap: false, arcadeMeter: false, arcadeNoCooldowns: false });
     expect(session.saveStorage(real)).toBe(real);
     session.setOption('godMode', true);
     expect(session.options.godMode).toBe(false);
@@ -106,5 +106,27 @@ describe('TesterSession', () => {
     expect(parsePersisted('nope').enabled).toBe(false);
     expect(parsePersisted(null).enabled).toBe(false);
     expect(parsePersisted('{"enabled":true,"options":{"godMode":"yes"}}').options.godMode).toBe(false);
+  });
+});
+
+describe('Full cheat preset', () => {
+  it('turns every option on except keepProgress, and does nothing while tester mode is off', () => {
+    const { session } = mk();
+    session.applyFullCheat();
+    expect(session.enabled).toBe(false);
+    session.enable();
+    session.applyFullCheat();
+    expect(session.options).toEqual({ ...FULL_CHEAT_OPTIONS, keepProgress: false });
+    expect(Object.entries(session.options).filter(([, v]) => !v).map(([k]) => k)).toEqual(['keepProgress']);
+    expect(session.usesThrowawaySlot()).toBe(true);
+    expect(session.tickCheats()).toEqual({ godMode: true, instantSwap: true, arcadeMeter: true, arcadeNoCooldowns: true });
+  });
+
+  it('turns keepProgress back off if it was on', () => {
+    const { session } = mk();
+    session.enable();
+    session.setOption('keepProgress', true);
+    session.applyFullCheat();
+    expect(session.options.keepProgress).toBe(false);
   });
 });
