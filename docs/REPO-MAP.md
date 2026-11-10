@@ -20,13 +20,13 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`); `gen-design-tables.ts` fills the generated tables in `docs/GAME-DESIGN.md` (`pnpm docs:gen`) |
 | `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`); `build-assets.ts` (`pnpm assets:build`) copies the manifest's images and sounds plus the favicon into `public/`, verifying sha256 |
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
-| `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
-| `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
+| `docs/` | Documentation: `BRANCHING.md`, `DEPLOYMENT.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
+| `.github/` | CI and Pages deploy workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
 | `.claude/` | Claude Code project config |
 | `src/` | New TypeScript port (see below) |
-| `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.config.ts`, `playwright.config.ts` | pnpm, TypeScript, Vite, Vitest and Playwright project config |
+| `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.config.ts`, `playwright.config.ts`, `playwright.pages.config.ts` | pnpm, TypeScript, Vite, Vitest and Playwright project config |
 | `CLAUDE.md`, `README.md`, `.gitignore` | Agent instructions, readme, ignore rules |
 
 ## New code (`src/` and `tests/`)
@@ -62,7 +62,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; info screens wiki, key-bindings, about, race), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; `main-menu.ts` is the main menu), `styles/main.css` |
 | `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
-| `tests/` | Cross-cutting tests (`tests/repo/`), Playwright e2e (`tests/e2e/`); unit tests are colocated in `src/` |
+| `tests/` | Cross-cutting tests (`tests/repo/`), Playwright e2e (`tests/e2e/`), Pages-subpath smoke (`tests/e2e-pages/`, `pnpm e2e:pages`); unit tests are colocated in `src/` |
 
 ## Where do I put X
 
