@@ -41,7 +41,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/save/` | Save schema v1 (valibot), v0 to v1 migration and `migrate()`; format in [SAVE-FORMAT.md](SAVE-FORMAT.md) |
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags, test-only `window.__TTE__` hook); imports only core via its index |
-| `src/game/platform/storage/` | Save persistence: `SaveStore`, `StorageAdapter` (localStorage / in-memory), raw v0 backup, export/import |
+| `src/game/platform/storage/` | Save persistence: `SaveStore`, `StorageAdapter` (localStorage / in-memory), IndexedDB store with localStorage mirror, raw v0 backup, export/import |
 | `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`) and typed keys (`keys.ts`) |
 | `src/game/boot/` | Phaser boot: WebGL check, error screen and game config (`phaser-config.ts` is the only file that pulls Phaser in, loaded lazily) |
 | `src/game/scenes/` | Phaser scenes |

@@ -18,6 +18,15 @@ Unknown fields are preserved so the legacy game can still read a v1 save.
   non-negative integer, else 0.
 - `savedAt` is copied from `lastModifiedTime` (0 if absent); core never reads a clock.
 
+## Storage (`src/game/platform/storage/`)
+
+`createSaveStore` (`create-save-store.ts`) picks IndexedDB when available, else localStorage. IndexedDB database `tte` (v1) has stores
+`saves` (slot `"main"`), `backups` (autoIncrement, last 5 kept) and `meta`. Schema changes go in the `upgrade`
+switch, one case per old version. A save writes the `backups` record and the `saves` slot in one transaction.
+On first run an existing localStorage save is imported (v0 migrated, raw copy backed up). Every save is also
+mirrored to localStorage for legacy compatibility (removed in WP 105). `requestPersistence()` calls
+`navigator.storage.persist()` once; the app calls it after the first capture or level-up, not before.
+
 ## `migrate(raw)`
 
 Returns a result, never throws.
