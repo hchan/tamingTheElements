@@ -415,7 +415,10 @@ export class Arena extends Phaser.Scene {
       capturedIndices: capturedRosterIndices(s, 1),
       ...(over['won0'] === undefined ? {} : { rounds: [over['won0'], over['won1'] ?? 0] as const }),
     };
-    this.time.delayedCall(END_DELAY_MS, () => { this.launch?.onEnd?.(end); });
+    // Wall clock, not `this.time`: Phaser caps a frame's delta at 200 ms, so under a slow (software) renderer the scene
+    // clock runs several times slower than real time and the results could take many seconds to arrive.
+    const t = setTimeout(() => { this.launch?.onEnd?.(end); }, END_DELAY_MS);
+    this.cleanups.push(() => { clearTimeout(t); });
   }
 
   /** Tester mode only: a one-shot cheat on the running match (a state edit outside `step`; the replay is flagged `cheats`). */
