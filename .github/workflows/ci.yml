@@ -14,6 +14,31 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Docs-only changes skip the slow, docs-independent jobs (coverage, browser). check and e2e always run because
+  # tests/repo checks markdown links and the repo map. A whole-workflow paths-ignore is deliberately NOT used: a skipped
+  # workflow leaves required checks pending and docs edits can break `check`. See docs/DEPLOYMENT.md.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: filter
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          code=true
+          if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            if ! git diff --name-only "$BASE" "$HEAD_SHA" | grep -qvE '(\.md$|^docs/|^LICENSE$)'; then code=false; fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "code changed: $code"
+
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -36,6 +61,8 @@ jobs:
       - run: corepack pnpm build
 
   coverage:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -80,6 +107,8 @@ jobs:
   # Cross-engine determinism gate. Runs on every PR (not nightly): the replay is ~1500 ticks and the whole job
   # is dominated by the browser download (~1-2 min), cheap enough to catch a divergence before merge.
   browser:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

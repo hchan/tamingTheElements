@@ -36,6 +36,53 @@ Workflow: `.github/workflows/ci.yml`.
 One-time setup (the repo owner does this, not the workflow): Settings > Pages > Source = "GitHub Actions". Until then the
 `deploy` job fails harmlessly.
 
+## Deploying without GitHub Actions
+
+Test and deploy from your machine; no workflow minutes are used by these commands.
+
+```sh
+corepack pnpm ci:local            # lint, typecheck, depcruise, test, test:legacy, build, e2e, e2e:pages, test:browser
+corepack pnpm ci:local --fast     # the six node-only steps, no browsers
+corepack pnpm deploy:pages --dry-run   # build + subpath smoke test, show what would be pushed, no push
+corepack pnpm deploy:pages             # same, then publish to the gh-pages branch of origin
+```
+
+- `ci:local` runs the same commands as `ci.yml`, prints a summary table and exits non-zero on any failure. It probes which
+  engines launch; `test:browser` runs per launchable engine (Chromium, Firefox, WebKit) and any engine that cannot launch is
+  reported as SKIP with the reason, never silently. The `coverage` job is not part of it (`pnpm test:coverage` runs it).
+- `deploy:pages` refuses a dirty working tree and a HEAD that is not already on `origin/main`. It runs `e2e:pages`, which builds
+  `dist-pages` with `VITE_BASE=/tamingTheElements/` (as `pages-build` does) and smoke-tests it, then makes a throwaway orphan
+  commit under `~/claudetmp/` containing only the built files plus an empty `.nojekyll`, message `Deploy <sha> (<version>)`,
+  and runs `git push --force origin HEAD:gh-pages`. Force-push is allowed for the hard-coded `gh-pages` branch only; any other
+  target is refused.
+
+One-time switch of Pages from the workflow source to the branch (owner only; `build_type` and `source` are documented at
+<https://docs.github.com/en/rest/pages/pages#update-information-about-a-apiname-pages-site>; run `deploy:pages` once first so
+the branch exists):
+
+```sh
+env -u GITHUB_TOKEN gh api -X PUT repos/hchan/tamingTheElements/pages -f build_type=legacy -f 'source[branch]=gh-pages' -f 'source[path]=/'
+```
+
+Switch back to the workflow source:
+
+```sh
+env -u GITHUB_TOKEN gh api -X PUT repos/hchan/tamingTheElements/pages -f build_type=workflow
+```
+
+While Pages uses the branch source, the `pages-build` and `deploy` jobs still run on pushes to `main` but their deploy
+fails harmlessly (or is superseded); disable them if that bothers you.
+
+Actions minutes. Public repositories get free standard-runner minutes, so this is a convenience, not a cost fix. To use
+fewer anyway:
+
+- `ci.yml` has a `changes` job: when a push or PR touches only `**/*.md`, `docs/**` or `LICENSE`, the `coverage` and `browser`
+  jobs are skipped. A workflow-level `paths-ignore` is not used on purpose: `check` includes `tests/repo`, which checks
+  markdown links and the repo map, so a docs edit can break it, and a skipped workflow leaves any required check pending.
+  Trade-off: a docs-only change gets no cross-engine run (it cannot affect determinism).
+- Put `[skip ci]` in a commit message (GitHub honours it natively for `push` and `pull_request` runs of the head commit).
+  Only for changes you have already verified with `ci:local`.
+
 ## itch.io
 
 ```sh
