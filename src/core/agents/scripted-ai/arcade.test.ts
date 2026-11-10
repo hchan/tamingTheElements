@@ -15,7 +15,7 @@ import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
-import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, awayFrom, diagonalLine, pressStep, sidestep, superFacing } from './arcade';
+import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, sidestep, superFacing } from './arcade';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_SIDESTEP_AT, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
@@ -337,44 +337,20 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     expect(count(AI_HARD, RUSHDOWN)).toBe(400); // Rushdown always did
   });
 
-  it('anti-stalemate: with no HP change for ARCADE_AI_STALE_TICKS a Zoner stops retreating; damage restarts the clock', () => {
-    const self = fighter(400, 300);
-    const close = fighter(480, 300);
-    const retreats = (t: ArcadeTactics, from: number, to: number, opp = close): number => {
+  it('anti-stalemate: with no HP change for ARCADE_AI_STALE_TICKS a Zoner or Turtle plays Rushdown (charges from afar); damage restarts the clock', () => {
+    const self = fighter(100, 300);
+    const far = fighter(700, 300);
+    const charges = (t: ArcadeTactics, from: number, to: number, opp = far): number => {
       let n = 0;
-      for (let i = from; i < to; i++) if ((t.apply(view({}, i, self, opp), cmd) & Cmd.dash) !== 0) n++;
+      for (let i = from; i < to; i++) if ((t.apply(view({ dashIn: 9, chargeIn: 0 }, i, self, opp), cmd) & Cmd.charge) !== 0) n++;
       return n;
     };
-    const t = new ArcadeTactics(AI_HARD, ZONER);
-    expect(retreats(t, 0, ARCADE_AI_STALE_TICKS - 1)).toBeGreaterThan(0);
-    expect(retreats(t, ARCADE_AI_STALE_TICKS, ARCADE_AI_STALE_TICKS + 400)).toBe(0);
-    const hurt = { ...close, hp: 90 };
-    expect(retreats(t, ARCADE_AI_STALE_TICKS + 400, ARCADE_AI_STALE_TICKS + 700, hurt)).toBeGreaterThan(0);
-  });
-
-  it('a crowded Zoner or Turtle dashes away (not into a wall, never a Rushdown, never on cooldown); Easy never', () => {
-    const count = (level: 0 | 1 | 2, style: 0 | 1 | 2, self: FighterView, opp: FighterView, a: Partial<ArcadeView> = {}): number => {
-      const t = new ArcadeTactics(level, style);
-      let n = 0;
-      for (let i = 0; i < 400; i++) {
-        const c = t.apply(view(a, i, self, opp), cmd);
-        if ((c & Cmd.dash) !== 0) {
-          expect(c).toBe(Cmd.primary | Cmd.dash | Cmd.left);
-          n++;
-        }
-      }
-      return n;
-    };
-    const self = fighter(400, 300);
-    const close = fighter(480, 300); // 80 px right of self
-    expect(count(AI_HARD, ZONER, self, close)).toBeGreaterThan(0);
-    expect(count(AI_HARD, TURTLE, self, close)).toBeGreaterThan(0);
-    expect(count(AI_HARD, RUSHDOWN, self, close)).toBe(0);
-    expect(count(AI_EASY, ZONER, self, close)).toBe(0);
-    expect(count(AI_HARD, ZONER, self, close, { dashIn: 4 })).toBe(0);
-    expect(count(AI_HARD, ZONER, self, fighter(700, 300))).toBe(0); // not crowded
-    expect(awayFrom(fighter(0, 300), fighter(80, 300))).toBe(0); // back to the wall
-    expect(awayFrom(self, close)).toBe(Cmd.left);
+    for (const style of [ZONER, TURTLE] as const) {
+      const t = new ArcadeTactics(AI_NORMAL, style); // Normal never charges as a Zoner or Turtle otherwise
+      expect(charges(t, 0, ARCADE_AI_STALE_TICKS - 1)).toBe(0);
+      expect(charges(t, ARCADE_AI_STALE_TICKS, ARCADE_AI_STALE_TICKS + 50)).toBe(50);
+      expect(charges(t, ARCADE_AI_STALE_TICKS + 50, ARCADE_AI_STALE_TICKS + 100, { ...far, hp: 90 })).toBe(0);
+    }
   });
 
   it('Normal and Hard act on almost every threat, Easy on few: the plan draw leaves NO_PLAN rarely', () => {

@@ -8,7 +8,7 @@ import {
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
-  AI_NORMAL, ARCADE_AI_CROWDED_PX, ARCADE_AI_DESPERATE_PM, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_SIDESTEP_AT, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
+  AI_NORMAL, ARCADE_AI_DESPERATE_PM, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_SIDESTEP_AT, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
   NO_PLAN, PARRY, RUSHDOWN, TURTLE, impactIn, toward, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -34,8 +34,8 @@ import {
  *   parry (press guard when the hit is 2 plus a drawn spread game ticks away; past PARRY_TICKS the press whiffs and the
  *   held guard blocks), dodge (a dash towards the opponent 7 ticks before the hit, through the shot on its invulnerable
  *   ticks; a guard press instead while the dash is not ready), guard (hold from 20 ticks away) or nothing.
- * - Spacing: Rushdown dashes in when the opponent is farther than ARCADE_AI_FAR_PX (inside a combo too, closing in on a
- *   stunned opponent), at the level's rate per tick; Zoner and Turtle leave spacing to the base AI's kiting.
+ * - Spacing: Rushdown dashes in when the opponent is farther than ARCADE_AI_FAR_PX, at the level's rate per tick; Zoner and
+ *   Turtle leave spacing to the base AI's kiting, and play Rushdown after ARCADE_AI_STALE_TICKS without an HP change.
  * - Tag (WP-arcade-tag): free, with no threat and the tag ready, it tags (`Cmd.swap1`) when its HP is below
  *   ARCADE_AI_TAG_BELOW_PM and its partner's is more than ARCADE_AI_TAG_MARGIN_PM above; no draw, no memory.
  * - Weather: free, with its weather charged and ready and no threat, it calls its weather when its element is at a disadvantage.
@@ -101,18 +101,6 @@ export function sidestep(self: FighterView, shot: ShotView, room = 90): Command 
   const left = self.x + self.w / 2 < shot.x + shot.w / 2;
   const fits = left ? self.x - room >= pf.x : self.x + self.w + room <= pf.x + pf.w;
   return left === fits ? Cmd.left : Cmd.right;
-}
-
-/** The bits of `toward(self, opp)` reversed, without a direction that would run into a playfield wall within `room` px. */
-export function awayFrom(self: FighterView, opp: FighterView, room = 120): Command {
-  const pf = arcadePlayfield();
-  const t = toward(self, opp);
-  let bits = 0;
-  if ((t & Cmd.right) !== 0 && self.x - room >= pf.x) bits |= Cmd.left;
-  if ((t & Cmd.left) !== 0 && self.x + self.w + room <= pf.x + pf.w) bits |= Cmd.right;
-  if ((t & Cmd.down) !== 0 && self.y - room >= pf.y) bits |= Cmd.up;
-  if ((t & Cmd.up) !== 0 && self.y + self.h + room <= pf.y + pf.h) bits |= Cmd.down;
-  return bits;
 }
 
 /** `pressStep` stops closing in this many px (centre to centre) from the opponent. */
@@ -343,11 +331,6 @@ export class ArcadeTactics {
     if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && a.partnerPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | Cmd.swap1;
     const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
     if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && (style === RUSHDOWN || (k[9] !== 0 && draw(1000) < k[9]))) return Cmd.charge;
-    // A Zoner or Turtle that is crowded dashes back out (not into a wall), keeping the range it wants.
-    if (a.dashIn === 0 && style !== RUSHDOWN && k[10] !== 0 && far < ARCADE_AI_CROWDED_PX) {
-      const away = awayFrom(self, opp);
-      if (away !== 0 && draw(1000) < k[10]) return (cmd & ~MOVE) | Cmd.dash | away;
-    }
     if (a.dashIn === 0 && style === RUSHDOWN && far > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }

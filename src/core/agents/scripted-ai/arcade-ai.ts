@@ -25,7 +25,7 @@ export const DODGE = 1;
 export const GUARD = 2;
 export const NO_PLAN = 3;
 
-type Knobs = readonly [number, number, number, number, number, number, number, number, number, number, number];
+type Knobs = readonly [number, number, number, number, number, number, number, number, number, number];
 
 /**
  * Per level: [0] reaction min and [1] spread (`W.tick` ticks: min plus a draw below the spread, means 24, 14 and 8),
@@ -35,13 +35,12 @@ type Knobs = readonly [number, number, number, number, number, number, number, n
  * Easy never supers. The scales above 1000 (Hard) leave a plan almost every threat (Normal acts on about 80%, Easy
  * on 30%). [7] sidestep (1: a dodge with no dash ready walks out of the line instead of guarding), [8] the rate (pm per
  * tick, doubled below ARCADE_AI_DESPERATE_PM of its HP) at which it spends a full bar on a super that reaches the
- * opponent even without a confirm, [9] the rate at which a Zoner or Turtle melee hero also charges from afar and [10]
- * the rate at which a Zoner or Turtle dashes away from an opponent that has closed in (all pm per tick; Easy: none).
+ * opponent even without a confirm, and [9] the rate at which a Zoner or Turtle melee hero also charges from afar (all pm per tick; Easy: none).
  */
 export const ARCADE_AI_KNOBS: readonly [Knobs, Knobs, Knobs] = [
-  [20, 9, 0, 300, 300, 10, 10, 0, 0, 0, 0],
-  [10, 9, 800, 900, 900, 9, 25, 1, 12, 0, 12],
-  [6, 5, 1100, 1100, 1100, 6, 50, 1, 90, 25, 35],
+  [20, 9, 0, 300, 300, 10, 10, 0, 0, 0],
+  [10, 9, 800, 900, 900, 9, 25, 1, 12, 0],
+  [6, 5, 1100, 1100, 1100, 6, 50, 1, 90, 25],
 ];
 
 type Rates = readonly [parry: number, dodge: number, guard: number];
@@ -76,8 +75,6 @@ export const ARCADE_AI_FAR_PX = 360;
 export const ARCADE_AI_SIDESTEP_AT = 32;
 /** Below this HP per mille the free-super rate doubles. */
 export const ARCADE_AI_DESPERATE_PM = 400;
-/** A retreat dash needs the opponent within this |dx| + |dy| (px). */
-export const ARCADE_AI_CROWDED_PX = 150;
 
 /**
  * Game ticks until `p` (moving vx, vy per game tick) first overlaps `self`, when that is below `max`; `max` otherwise.
