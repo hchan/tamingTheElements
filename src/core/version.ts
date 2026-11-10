@@ -78,5 +78,10 @@
  * 20: Arcade only; Classic hashes unchanged. Arcade playfield insets (top 200, bottom 80 px): the Arcade arena is the
  *    rectangle between the top HUD rows and the action bar, for movement, knockback, entrances, spawns and projectile
  *    expiry; the start row is its centre (WP-arcade-playfield-bounds).
+ * 21: Arcade only; Classic hashes unchanged. Stage terrain: each round draws 3 to 5 point-symmetric element patches
+ *    (stage from the seed, then the weather: a cast swaps the stage and patches after a 30-tick telegraph); a fire
+ *    patch doubles its own-element hero's damage, water heals 10 pm of max HP per 50 ticks, earth is a rock for the
+ *    other elements (blocks bodies and every shot but an earth hero's), air doubles speed; the total modifier is
+ *    capped at 2500 pm; new Arcade state slots (stage, patches, team in-patch flag) (WP-arcade-terrain).
  */
-export const SIM_VERSION = 20;
+export const SIM_VERSION = 21;

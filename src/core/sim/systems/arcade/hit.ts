@@ -17,6 +17,7 @@ import { knockbackDir, setKnockback } from './knockback';
 import { meterOnHit } from './meter';
 import { blockHit, parry } from './guard';
 import { applyStun, isGuarding } from './stun';
+import { capDamage, terrainDamagePm } from './terrain';
 import { weatherDamage } from './weather';
 
 /** Strength tier per ability def index (set A then set B: the ABILITY_DEFS order of projectile.ts and melee.ts). */
@@ -51,7 +52,8 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
 /**
  * The single Arcade hit path (FUN-DESIGN 2.1): `source` (a projectile or melee entity) of ability `defIdx` hits
  * `victim` for `base` damage on behalf of `attacker`, whose multiplier and element apply. The damage is the Classic
- * `computeDamage` arithmetic, then the weather (FUN-DESIGN 2.14, `weatherDamage` of the attacker's element), then the
+ * `computeDamage` arithmetic, then the weather (FUN-DESIGN 2.14, `weatherDamage` of the attacker's element), then a fire
+ * patch under a fire attacker (FUN-DESIGN 2.15, capped with the chart and weather at TERRAIN_CAP_PM of the plain hit), then the
  * attacker race's `damagePm` (FUN-DESIGN 2.13, `arcadeRaceNumbers`; not on a super), then the combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
  * combo and starts a new one). Emits `damage` (as Classic projectiles do) and
  * `hitConfirmed`, then hit-stop by strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by
@@ -82,13 +84,12 @@ export function applyArcadeHit(
   const scalePm = guard ? GUARD_CHIP_PM : comboScalePm(combo, strength);
   const attDef = CHARACTERS[s.defId[attacker] ?? 0];
   const attEl = attDef?.element ?? 'void';
-  const charted = weatherDamage(s, computeDamage({
-    base,
-    attackerMult: s.dmgMult[attacker] ?? 1,
-    attEl,
-    defEl: CHARACTERS[s.defId[victim] ?? 0]?.element ?? 'void',
-    defReductionPct: damageDecreasePct(s, victim),
-  }), attEl);
+  const defEl = CHARACTERS[s.defId[victim] ?? 0]?.element ?? 'void';
+  const input = { base, attackerMult: s.dmgMult[attacker] ?? 1, attEl, defEl, defReductionPct: damageDecreasePct(s, victim) };
+  let charted = weatherDamage(s, computeDamage(input), attEl);
+  // Stage terrain (FUN-DESIGN 2.15): the attacker's patch bonus, the total modifier capped against the plain hit.
+  const tpm = terrainDamagePm(s, attacker);
+  if (tpm !== 1000) charted = capDamage(charted, tpm, computeDamage({ ...input, attEl: 'void', defEl: 'void' }));
   // The attacker race's Arcade damage pm (FUN-DESIGN 2.13), never on the shared super; 1000 keeps the value exact.
   const racePm = sup ? 1000 : arcadeRaceNumbers(attDef?.id ?? '')[1];
   const raw = racePm === 1000 ? charted : (charted * racePm) / 1000;

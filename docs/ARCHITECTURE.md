@@ -142,6 +142,11 @@ out and casts on pending `Cmd.weather` presses once the team's weather charge is
 melee-class walking in `arcade/meter.ts`, spent by the cast, reset each round; the caster's element weather for 500 game ticks, a
 50-tick lockout per character whose first 16 ticks are cast recovery); the world block holds the one weather slot, and
 `applyArcadeHit` scales the attacker's damage by `weatherDamage` between the element chart and the combo scale.
+Stage terrain (`arcade/terrain.ts` queries, `arcade/terrain-layout.ts` layout and per-tick pass, FUN-DESIGN 2.15): a round start
+and a weather swap draw 3 to 5 point-symmetric element patches into the world block; the `input` slot's terrain pass lands a
+swap after its 30-tick telegraph, emits `patchEntered`/`patchLeft` and runs the water heal; `movement.ts` clamps non-earth
+heroes at rocks (`rockStop`) and applies the air speed, `projectile.ts` removes shots at rocks (`shotBlocked`), and
+`applyArcadeHit` applies the fire patch with the capped total (`capDamage`).
 Elemental clash (`arcade/clash.ts`, the `collision` slot): overlapping projectiles of opposing teams clash by their
 owners' elements (pairs `i < j`, one clash per projectile per tick); the advantaged one survives with
 `max(hp - loserHp / 2, hp / 4)` damage, any other relation destroys both, and each side gains 50 meter.

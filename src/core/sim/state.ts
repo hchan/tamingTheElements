@@ -71,21 +71,27 @@ export const ARCADE_E = 16;
  */
 export const ArcadeT = {
   meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 11, lastDir: 12,
-  roundsWon: 13, superState: 14, pressUsed: 15, confirmTick: 16, weatherCharge: 17,
+  roundsWon: 13, superState: 14, pressUsed: 15, confirmTick: 16, weatherCharge: 17, inPatch: 18,
 } as const;
-export const ARCADE_T = 18;
+export const ARCADE_T = 19;
 /**
  * World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil`, `phaseUntil` and `slowMoUntil` are in
  * W.tick units, `roundTimer` in game ticks left. `phase` is a RoundPhase (data/arcade.ts); `roundWinner` holds the
  * KO'd round's winner (-1 = draw) until `roundEnded` (systems/arcade/round.ts). The weather slot (FUN-DESIGN 2.14,
  * systems/arcade/weather.ts): `weather` is a Weather kind (0 none), `weatherUntil` the game tick it ends (ticks left
  * = weatherUntil - now) and `weatherTeam` the team whose cast set or last refreshed it.
+ * The terrain slots (FUN-DESIGN 2.15, systems/arcade/terrain.ts): `stage` is the stage element as a weather kind (1 fire,
+ * 2 water, 3 earth, 4 air), `swapAt` the game tick a telegraphed swap lands (0 none) towards `swapTo`, `terrainGen` the
+ * layouts drawn so far (it seeds the next draw), `patchCount` the live patches and `patches` their rectangles.
  */
 export const ArcadeW = {
   gameTick: 0, freezeUntil: 1, freezeKind: 2, round: 3, phase: 4, phaseUntil: 5, roundTimer: 6, slowMoUntil: 7,
   roundWinner: 8, weather: 9, weatherUntil: 10, weatherTeam: 11,
+  stage: 12, swapAt: 13, swapTo: 14, terrainGen: 15, patchCount: 16, patches: 17,
 } as const;
-export const ARCADE_W = 12;
+/** Terrain patches (FUN-DESIGN 2.15): at most PATCH_MAX rectangles of 4 ints (x, y, w, h) from `ArcadeW.patches`. */
+export const PATCH_MAX = 5;
+export const ARCADE_W = ArcadeW.patches + PATCH_MAX * 4;
 export const ARCADE_TEAM_BASE = MAX_ENTITIES * ARCADE_E;
 export const ARCADE_WORLD_BASE = ARCADE_TEAM_BASE + TEAM_COUNT * ARCADE_T;
 export const ARCADE_LENGTH = ARCADE_WORLD_BASE + ARCADE_W;

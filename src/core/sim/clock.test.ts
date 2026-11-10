@@ -36,7 +36,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(16 * MAX_ENTITIES + 18 * TEAM_COUNT + 12);
+    expect(ARCADE_LENGTH).toBe(16 * MAX_ENTITIES + 19 * TEAM_COUNT + 37);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {

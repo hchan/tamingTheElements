@@ -81,7 +81,7 @@ function beatDown(p1: Track, p2: Track, at: number, n: number): number {
 
 function movesScript(): ArcadeScript {
   const setup: MatchSetup = {
-    simVersion: SIM_VERSION, seed: 0xa4c0de, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
+    simVersion: SIM_VERSION, seed: 0xa4c0df, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
     p1: [{ character: characterId('cyclonius'), xp: 5 }],
     p2: [{ character: characterId('sindarosa'), xp: 1 }],
   };
@@ -140,10 +140,14 @@ function movesScript(): ArcadeScript {
 const WALK_RUN = 66;
 /** Ticks to wait after a weather cast before a tag (the cast recovery is 16 ticks) or the next move. */
 const WEATHER_RECOVERY = 20;
+/** The terrain swap telegraph (TERRAIN_TELEGRAPH_TICKS) plus a margin, then the walk over the rock and the cones at it. */
+const TELEGRAPH_WAIT = 40;
+const ROCK_WALK = 80;
+const ROCK_SHOTS = 3;
 
 function weatherScript(): ArcadeScript {
   const setup: MatchSetup = {
-    simVersion: SIM_VERSION, seed: 0x5ea7e5, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
+    simVersion: SIM_VERSION, seed: 0x5ea7e6, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
     p1: [
       { character: characterId('fiara'), xp: 1 }, // fire
       { character: characterId('rokcore'), xp: 1 }, // earth
@@ -184,6 +188,15 @@ function weatherScript(): ArcadeScript {
   p1.until(e + 280).tap('swap to fire', swap1).until(e + 300).tap('fireball', secondary);
   p2.until(e + 300).tap('cone', secondary);
   p1.until(e + 480);
+  // Stage terrain (WP-arcade-terrain): the stage is water from the seed, fire after the sun, air after the gale. Rokcore
+  // charges up again and calls the sandstorm: the stage turns to earth after the telegraph (the patches become rocks).
+  // Rokcore walks over a rock (`patchEntered`) while Cyclonius' cones, fired along the row, stop at the centre rock.
+  p1.tap('swap to earth', swap1);
+  lap(p1, p1.tick, right, left);
+  p1.tap('sandstorm again', weather).wait(TELEGRAPH_WAIT);
+  p1.step('walk over the rock', right, ROCK_WALK).step('walk back', left, ROCK_WALK);
+  for (let i = 0; i < ROCK_SHOTS; i++) p2.until(p1.tick - ROCK_WALK * 2 + 10 + i * 25).tap('cone at the rock', secondary);
+  p1.until(p1.tick + 60);
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
 
@@ -206,7 +219,7 @@ const TAG_ROUND_2 = 1400;
  */
 function tagScript(): ArcadeScript {
   const setup: MatchSetup = {
-    simVersion: SIM_VERSION, seed: 0x7a6, flags: ARCADE_FLAGS, chapter: 1, difficulty: 0.25,
+    simVersion: SIM_VERSION, seed: 0x7a9, flags: ARCADE_FLAGS, chapter: 1, difficulty: 0.25,
     p1: [{ character: characterId('cyclonius'), xp: 1 }, { character: characterId('sindarosa'), xp: 1 }],
     p2: [{ character: characterId('rokcore'), xp: 1 }, { character: characterId('fiara'), xp: 1 }],
   };

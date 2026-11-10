@@ -19,6 +19,7 @@ import { teamMembers } from '../swap';
 import { endLiveCombos } from './combo';
 import { hitStop } from './hit';
 import { endLiveSupers } from './super';
+import { terrainRound } from './terrain-layout';
 import { endWeather } from './weather';
 
 const AW = (f: number): number => ARCADE_WORLD_BASE + f;
@@ -74,6 +75,7 @@ function resetRound(world: SimWorld, sink: EventSink): void {
     s.arcade.fill(0, b + ArcadeT.pressTick, b + ArcadeT.lastDir + 1);
     s.arcade[b + ArcadeT.pressUsed] = 0;
     s.arcade[b + ArcadeT.weatherCharge] = 0;
+    s.arcade[b + ArcadeT.inPatch] = 0;
     const x = team === 0 ? P1_START_X : P2_START_X;
     teamMembers(world, team).forEach((id, k) => {
       s.flags[id] = EntityFlag.alive | (k === 0 ? 0 : EntityFlag.benched);
@@ -106,6 +108,7 @@ function startRound(world: SimWorld, sink: EventSink, round: number): void {
   a[AW(ArcadeW.roundTimer)] = ROUND_TIMER_TICKS;
   a[AW(ArcadeW.roundWinner)] = 0;
   sink.emit(0, SimEventKind.roundStarted, { round });
+  terrainRound(world, sink);
 }
 
 /** Scores the round for `winner` (both teams on a draw, -1), emits `roundEnded` and holds `roundEnd`. */

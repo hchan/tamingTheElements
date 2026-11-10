@@ -142,3 +142,13 @@ Same command and seeds before and after (66 pairings x 4 seeds, 22 games per rac
 ### Remaining skew
 
 The 96% outliers (Curomo, Ishimi) were the omni cooldown gap and are gone. What is left is mostly class (c) plus bot limits: Sindarosa (100%) and Wispera, Rokcore, Cyclonius lead on sustained ranged damage; Ishimi (0%) has the weakest damage in `data.json` and its Circus of Slime is slow (speed 5, one fan per 10 s); Echo and Treenoc rely on abilities (Hurricane, Vines) whose payoff needs a human to combine them. The scripted agents still do not dodge, retreat or use the Capture/Swap mechanics, and the sim emits no events for melee hits, heals and buffs, so the tournament damage shares are approximate. No further data changes were made: balance values are legacy and need design approval.
+
+## Arcade stage terrain (WP-arcade-terrain, SIM_VERSION 21)
+
+The stage patches of FUN-DESIGN 2.15 changed Arcade play (Classic baseline unchanged, +0.0pp for every race), so the Arcade
+baseline `tests/fixtures/balance/arcade-baseline.json` was re-recorded. Arcade win rates (`pnpm balance:compare --ruleset
+arcade`, 66 pairings x 16 seeds) went from min 43.2 percent (Echo) and max 54.8 (Lavax) to min 45.5 (Echo) and max 54.3
+(Ishimi); the largest single move was Curomo -3.9pp and Wispera +3.7pp. `pnpm fun:report --ruleset arcade --all --seeds 8`: race
+win rates 40.9 (Echo) to 57.4 (Ishimi), the round median 46.0 s. Stalemates rose from 4 to 92 of 1056 matches: an earth stage puts a
+rock on the fighters' row and the scripted AI does not path around it (the AI work package of section 2.15 must). No data row was
+retuned.

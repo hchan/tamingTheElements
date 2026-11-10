@@ -100,6 +100,11 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['entrance attack', () => of(K.tagIn).filter((e) => e.entrance === 1).length],
     ['KO entrance', () => of(K.tagIn).filter(koEntrance).length],
     ['bench recovery', () => runs.reduce((n, r) => n + r.benchHeals, 0)],
+    ['terrain swap telegraph after a weather cast', () => of(K.terrainSwap).length],
+    ['terrain layout drawn for a swap and for each round', () => of(K.terrainChanged).length],
+    ['a hero of the stage element steps onto a patch', () => of(K.patchEntered).filter((e) => e.stage === 2).length],
+    ['an earth hero walks over a rock', () => of(K.patchEntered).filter((e) => e.stage === 3).length],
+    ['a rock stops a shot', () => of(K.projectileBlocked).length],
   ];
 
   it.each(mechanics)('%s', (_name, count) => {

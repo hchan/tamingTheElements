@@ -69,3 +69,32 @@ export const ARCADE_COOLDOWN_TICKS: Readonly<Partial<Record<string, number>>> = 
 export function cooldownTicksFor(def: AbilityDef, arcade: boolean): number {
   return arcade ? (ARCADE_COOLDOWN_TICKS[def.id] ?? def.cooldownTicks) : def.cooldownTicks;
 }
+
+/**
+ * Stage terrain rows (FUN-DESIGN 2.15, WP-arcade-terrain), all integers in per mille unless named. A hero of the stage's
+ * own element standing on a patch (its centre inside): fire deals TERRAIN_FIRE_PM damage, water heals
+ * TERRAIN_WATER_HEAL_PM of max HP every TERRAIN_WATER_EVERY game ticks (10 pm is 1 HP at the 100 HP reference), air moves
+ * at TERRAIN_AIR_PM speed (not stacked with a dash: the dash sets its own, larger speed). Earth patches are rocks for the
+ * other elements. TERRAIN_CAP_PM caps the total damage modifier of the element chart, weather and terrain together
+ * (against the plain hit) and the speed modifier. A swap lands TERRAIN_TELEGRAPH_TICKS after the cast.
+ */
+export const TERRAIN_FIRE_PM = 2000;
+export const TERRAIN_WATER_HEAL_PM = 10;
+export const TERRAIN_WATER_EVERY = 50;
+export const TERRAIN_AIR_PM = 2000;
+export const TERRAIN_CAP_PM = 2500;
+export const TERRAIN_TELEGRAPH_TICKS = 30;
+/**
+ * Patch layout: 3 to 5 patches (TERRAIN_COUNT_MIN + int(TERRAIN_COUNT_SPAN)), sides TERRAIN_SIDE_MIN + k * TERRAIN_SIDE_STEP
+ * for k below TERRAIN_SIDE_STEPS, every patch at least one hero (TERRAIN_GAP) from the walls, from each other and from
+ * every hero, spawn and projectile; TERRAIN_TRIES draws per patch (pair). The centre patch goes first, and a layout
+ * below the minimum count is drawn again (TERRAIN_DRAWS times).
+ */
+export const TERRAIN_COUNT_MIN = 3;
+export const TERRAIN_COUNT_SPAN = 3;
+export const TERRAIN_SIDE_MIN = 80;
+export const TERRAIN_SIDE_STEP = 20;
+export const TERRAIN_SIDE_STEPS = 5;
+export const TERRAIN_GAP = 80;
+export const TERRAIN_TRIES = 64;
+export const TERRAIN_DRAWS = 8;

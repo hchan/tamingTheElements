@@ -8,6 +8,7 @@ import { stepKnockback } from './arcade/knockback';
 import { canAct, dashTick } from './arcade/stun';
 import { setAim } from './arcade/aim';
 import { chargeWeather } from './arcade/meter';
+import { rockStop, terrainSpeedPm } from './arcade/terrain';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
 const EAST = 0;
@@ -65,15 +66,21 @@ function restoreAtWall(world: SimWorld, id: number, team: number): void {
 /**
  * Arcade movement (FUN-DESIGN 2.3): knockback first (it moves a stunned victim too), then a dash step (FUN-DESIGN 2.7:
  * `vx`/`vy` as the dash set them, clamped to the arena; no `moved` event, like knockback) or the input step when the
- * character can act. Walls hold both axes for both teams. The held input also sets the 8-way aim (arcade/aim.ts).
+ * character can act. Walls hold both axes for both teams, and rocks (FUN-DESIGN 2.15, `rockStop`) hold every step the same
+ * way for the other elements. An air patch speeds the input step up (`terrainSpeedPm`). The held input also sets the 8-way
+ * aim (arcade/aim.ts).
  */
 function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sink: EventSink): void {
   const s = world.state;
   stepKnockback(world, id);
+  rockStop(s, id, s.px[id] ?? 0, s.py[id] ?? 0);
+  const x0 = s.x[id] ?? 0;
+  const y0 = s.y[id] ?? 0;
   if (dashTick(s, id) > 0) {
     const a = world.arena;
     s.x[id] = Math.min(Math.max((s.x[id] ?? 0) + (s.vx[id] ?? 0), a.x), a.x + a.w - (s.w[id] ?? 0));
     s.y[id] = Math.min(Math.max((s.y[id] ?? 0) + (s.vy[id] ?? 0), a.y), a.y + a.h - (s.h[id] ?? 0));
+    rockStop(s, id, x0, y0);
     return;
   }
   if (!canAct(world, id)) return;
@@ -83,18 +90,18 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   const d = dir8FromSigns(ax, ay);
   if (d < 0) return;
   setAim(s, id, d);
-  const speed = s.speed[id] ?? 0;
-  const x0 = s.x[id] ?? 0;
-  const y0 = s.y[id] ?? 0;
+  const pm = terrainSpeedPm(s, id);
+  const speed = pm === 1000 ? (s.speed[id] ?? 0) : ((s.speed[id] ?? 0) * pm) / 1000;
   s.vx[id] = (DIR8_X[d] ?? 0) * speed;
   s.vy[id] = (DIR8_Y[d] ?? 0) * speed;
   s.x[id] = x0 + (s.vx[id] ?? 0);
   s.y[id] = y0 + (s.vy[id] ?? 0);
-  const blocked = outOfArena(world, id);
-  if (blocked) {
+  const walled = outOfArena(world, id);
+  if (walled) {
     s.x[id] = x0;
     s.y[id] = y0;
   }
+  const blocked = walled || rockStop(s, id, x0, y0);
   if (!blocked) chargeWeather(s, id, team, false);
   sink.emit(id, blocked ? SimEventKind.blocked : SimEventKind.moved, { x: s.x[id] ?? 0, y: s.y[id] ?? 0 });
 }
