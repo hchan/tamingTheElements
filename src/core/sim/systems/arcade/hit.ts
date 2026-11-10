@@ -23,6 +23,8 @@ export const HIT_STRENGTH: readonly HitStrengthValue[] = [...ABILITIES_A, ...ABI
 export const HIT_STUN: readonly number[] = [...ABILITIES_A, ...ABILITIES_B].map((d, i) =>
   hitStunFor(d.id, HIT_STRENGTH[i] ?? HitStrength.light),
 );
+/** Def index of the super's hitbox entity (arcade/super.ts), right after the abilities: strength 3 (super). */
+export const SUPER_DEF = HIT_STRENGTH.length;
 
 const FREEZE_UNTIL = ARCADE_WORLD_BASE + ArcadeW.freezeUntil;
 const FREEZE_KIND = ARCADE_WORLD_BASE + ArcadeW.freezeKind;
@@ -60,7 +62,7 @@ export function applyArcadeHit(
   const team = s.team[source] ?? 0;
   const counter = isCounterHit(s, victim);
   const combo = comboHit(world, sink, source, team, victim);
-  const strength = HIT_STRENGTH[defIdx] ?? HitStrength.light;
+  const strength = defIdx === SUPER_DEF ? HitStrength.super : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
   const scalePm = comboScalePm(combo, strength);
   const raw = computeDamage({
     base,

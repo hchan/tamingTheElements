@@ -104,7 +104,9 @@ times the combo scale (`arcade/combo.ts`) and sets the hit-stop freeze, knockbac
 `arcade/stun.ts`), then adds the hyper meter gains of both teams (`arcade/meter.ts`; casts add theirs from the cast
 sites through `meterOnCast`, a no-op in Classic); the Classic lines run
 unchanged behind `!isArcade`. The cast sites and movement ask `canAct` (Classic: not frozen; Arcade: also not
-stunned), and Arcade movement applies knockback first and holds both axes at the walls.
+stunned and not casting a super), and Arcade movement applies knockback first and holds both axes at the walls. The
+`health` slot is `arcadeSuper` (`arcade/super.ts`): `Cmd.super` spends a meter bar for a super (a 40-tick freeze, then
+an `effect` entity whose hits go through `applyArcadeHit` as strength 3).
 
 | # | System | Status |
 |---|---|---|
@@ -116,7 +118,7 @@ stunned), and Arcade movement applies knockback first and holds both axes at the
 | 6 | projectiles (`systems/projectile.ts`) | implemented |
 | 7 | capture (`systems/capture.ts`) | implemented |
 | 8 | collision | no-op |
-| 9 | health | no-op |
+| 9 | health (`systems/arcade/super.ts`) | Arcade only (returns at once in Classic): `arcadeSuper`, supers (`superStarted`, `superEnded`) |
 | 10 | death (`systems/death.ts`, hp <= 0 decided at end of tick) | implemented |
 | 11 | debuffs (`systems/debuffs.ts`) | implemented |
 | 12 | status (`systems/status.ts`, timers) | implemented |
@@ -141,7 +143,8 @@ thing that mutates `SimState`. A replay stores the commands, so replays never re
 with a per-tick `seq`. The id of an event is `(tick, sourceId, kind, seq)`; it is stable across re-simulation because events are
 a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-events-carry-stable-ids.md)). Kinds today:
 `moved, blocked, damage, died, swapped, captured, captureFailed, matchEnded` (Classic, kinds 1..30), plus the Arcade-only
-`hitStop` (40), `hitConfirmed` (41), `comboEnded` (42), `meterLevel` (49) and `recovered` (58) ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
+`hitStop` (40), `hitConfirmed` (41), `comboEnded` (42), `meterLevel` (49), `superStarted` (50), `superEnded` (51) and
+`recovered` (58) ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
 `src/game/audio/audio-manager.ts`) dedupe by this id, so rewinding or re-stepping never doubles an effect. In Arcade,
 `EventFx` drives hit feedback from `hitConfirmed` (flash, sparks by strength, damage number) and the `hitStop` after it
 (victim jitter until the freeze deadline, shake by strength or KO) and skips the paired `damage`; Classic keeps reacting to

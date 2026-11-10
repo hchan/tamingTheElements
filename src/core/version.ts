@@ -17,5 +17,8 @@
  * 7: Arcade only; Classic hashes unchanged. Hyper meter per team (0..3000): hits give the attacker 800 and the victim
  *    600 per mille of the share of the victim's life removed, each cast +20; `meterLevel` when the bar count changes
  *    (WP-arcade-meter).
+ * 8: Arcade only; Classic hashes unchanged. Supers: `Cmd.super` spends a bar for the generic Elemental Burst (a 160 px
+ *    band, 5 strength-3 hits), a 40-tick super freeze, caster invulnerability and lock, `superStarted`/`superEnded`; the
+ *    `health` slot runs `arcadeSuper` (WP-arcade-super-core).
  */
-export const SIM_VERSION = 7;
+export const SIM_VERSION = 8;
