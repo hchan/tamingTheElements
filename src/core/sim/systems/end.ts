@@ -4,8 +4,8 @@ import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT, World as W } from '..
 import type { SimState } from '../state';
 import type { SimWorld } from '../world';
 
-/** Bit in world[World.flags] set once MatchEnded has been emitted (bits 0..1 are SimFlags). */
-export const WORLD_ENDED_BIT = 8;
+/** Bit in world[World.flags] set once MatchEnded has been emitted (bits 0..15 belong to sim flags, see flagBits). */
+export const WORLD_ENDED_BIT = 1 << 17;
 
 const IN_PLAY_OUT = EntityFlag.dead | EntityFlag.captured;
 

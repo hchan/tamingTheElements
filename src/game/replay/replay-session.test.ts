@@ -5,6 +5,7 @@ import {
   HASH_INTERVAL,
   characterId,
   RandomBot,
+  SIM_VERSION,
   collectCommands,
   createMatch,
   hash,
@@ -18,7 +19,7 @@ import { ReplayCursor } from './cursor';
 import { PlaytestRecorder } from './playtest-recorder';
 
 const GOLDEN_SETUP: MatchSetup = {
-  simVersion: 1,
+  simVersion: SIM_VERSION,
   seed: 0x5eed,
   flags: DEFAULT_SIM_FLAGS,
   chapter: 1,
@@ -44,7 +45,7 @@ describe('playtest recorder', () => {
     expect(file.header.tickCount).toBe(130);
     expect(file.header.seed).toBe(GOLDEN_SETUP.seed);
     expect(file.hashes).toHaveLength(Math.ceil(130 / HASH_INTERVAL));
-    expect(playReplay(file, 1).ok).toBe(true);
+    expect(playReplay(file, SIM_VERSION).ok).toBe(true);
   });
 
   it('yields nothing when empty or invalidated', () => {

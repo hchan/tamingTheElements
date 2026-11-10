@@ -15,8 +15,8 @@ import type { SimWorld } from '../world';
 import { controlledId } from './movement';
 import { ABILITY_DEFS } from './projectile';
 
-/** Bit in world[World.flags]: Capture is granted (set by createMatch from chapter 2 on). */
-export const CAPTURE_GRANTED_BIT = 4;
+/** Bit in world[World.flags]: Capture is granted (set by createMatch from chapter 2 on). Bits 0..15 are sim flags. */
+export const CAPTURE_GRANTED_BIT = 1 << 16;
 
 const CAPTURE_IDX = ABILITY_DEFS.findIndex((d) => d.id === 'capture');
 const CAPTURE_DEF = ABILITY_DEFS[CAPTURE_IDX];

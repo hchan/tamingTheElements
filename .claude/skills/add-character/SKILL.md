@@ -22,7 +22,7 @@ Add: $ARGUMENTS
 3. Display text: add the name and description ids in `src/core/data/text-ids.ts`.
 4. Sprite: the `sprite` key must exist in `src/game/assets/manifest.generated.json`; assets come from `corepack pnpm assets:build` (never edit `public/` by hand).
 5. Tests: extend `src/core/data/characters.test.ts` (counts, field checks) and add a sim test next to `src/core/sim/ability-probe.test.ts`.
-6. Gameplay data changed: bump `SIM_VERSION` in `src/core/index.ts`, run `corepack pnpm golden:record`, review the diff of `tests/fixtures/replays/`.
+6. Gameplay data changed: bump `SIM_VERSION` in `src/core/version.ts`, run `corepack pnpm golden:record`, review the diff of `tests/fixtures/replays/`.
 7. Balance: run `corepack pnpm balance:compare`; the new race changes the tournament, so a baseline re-record is a user decision (`docs/BALANCE.md`).
 8. Docs: `corepack pnpm docs:gen` for the tables in `docs/GAME-DESIGN.md`; add a `CHANGELOG.md` line; update `docs/PARITY.md` if the character is a legacy behaviour.
 9. Run lint, typecheck, depcruise and test, then the `full-review` skill. Leave changes uncommitted.

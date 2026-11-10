@@ -16,7 +16,25 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   elementalAdvantage: false,
 };
 
-const FLAG_NAMES = Object.keys(DEFAULT_SIM_FLAGS).sort(compareStrings) as SimFlagName[];
+/** Every sim flag name in sorted order: the replay header encoding and the world flag bits both follow it. */
+export const FLAG_NAMES: readonly SimFlagName[] = Object.keys(DEFAULT_SIM_FLAGS).sort(compareStrings) as SimFlagName[];
+
+/** World flag bits 0..15 are reserved for sim flags; internal world bits start at 16 (see sim/systems/end.ts). */
+export const SIM_FLAG_BIT_LIMIT = 16;
+
+/** Bit of a sim flag in world[World.flags]: `1 << index` in FLAG_NAMES. */
+export function flagBit(name: SimFlagName): number {
+  return 1 << FLAG_NAMES.indexOf(name);
+}
+
+/** The enabled sim flags as world flag bits (bit i = FLAG_NAMES[i]). */
+export function flagBits(flags: SimFlags): number {
+  let bits = 0;
+  FLAG_NAMES.forEach((name, i) => {
+    if (flags[name]) bits |= 1 << i;
+  });
+  return bits;
+}
 
 /** Stable encoding: sorted names of enabled flags joined by ','; '' when none are on. */
 export function encodeFlags(flags: SimFlags): string {
@@ -28,7 +46,7 @@ export function decodeFlags(encoded: string): SimFlags {
   const on = new Set<string>();
   for (const part of encoded.split(',')) {
     if (part === '') continue;
-    if (!(FLAG_NAMES as string[]).includes(part)) throw new Error(`unknown sim flag: ${part}`);
+    if (!(FLAG_NAMES as readonly string[]).includes(part)) throw new Error(`unknown sim flag: ${part}`);
     on.add(part);
   }
   return {

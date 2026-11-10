@@ -1,7 +1,8 @@
 import { seedSfc32 } from './seed';
 import type { Sfc32 } from './sfc32';
 
-export const STREAM_NAMES = ['combat', 'capture', 'spawn', 'ai.p1', 'ai.p2', 'meta', 'cosmetic'] as const;
+/** The sim streams stored in SimState.rng. Agent streams are separate (AGENT_STREAM_NAMES) and never in SimState. */
+export const STREAM_NAMES = ['combat', 'capture', 'spawn', 'meta', 'cosmetic'] as const;
 export type StreamName = (typeof STREAM_NAMES)[number];
 
 /** Per-side agent streams, indexed by side. Agents own them (`AgentRng`); they are never part of SimState. */

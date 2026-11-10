@@ -135,9 +135,9 @@ a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-e
 ## RNG streams
 
 `src/core/rng/`: `sfc32.ts` (integer-only generator), `seed.ts` (`fnv1a`, `splitmix32`, `seedSfc32`), `streams.ts`
-(`STREAM_NAMES = combat, capture, spawn, ai.p1, ai.p2, meta, cosmetic`). `createMatch` seeds all seven from the match seed and
-stores them in `SimState.rng`. The `ai.p1`/`ai.p2` words are not drawn by anything: agents draw from their own `AgentRng` with the same seeding;
-`combat`, `capture`, `spawn` are reserved for the sim and `meta` is used by out-of-match rules (`rules/new-game.ts`,
+(`STREAM_NAMES = combat, capture, spawn, meta, cosmetic`, `AGENT_STREAM_NAMES = ai.p1, ai.p2`). `createMatch` seeds the
+five sim streams from the match seed and stores them in `SimState.rng`; agents seed their own `ai.pN` stream (`AgentRng`)
+outside `SimState`. `combat`, `capture`, `spawn` are reserved for the sim and `meta` is used by out-of-match rules (`rules/new-game.ts`,
 `rules/results.ts`, `rules/opponents.ts`, `rules/garrison.ts`), outside the hashed state. See [ADR 0003](adr/0003-sfc32-rng-streams.md).
 
 ## Snapshot, restore, hash

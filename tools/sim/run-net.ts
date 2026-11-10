@@ -5,6 +5,7 @@ import { parseArgs } from 'node:util';
 import { characterId } from '../../src/core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import type { MatchSetup } from '../../src/core/sim/match';
+import { SIM_VERSION } from '../../src/core/version';
 import { botScripts, runNetMatch } from '../../src/testing/net/net-match';
 
 
@@ -32,7 +33,7 @@ export function main(argv: readonly string[]): number {
     };
     const ticks = num('ticks');
     const setup: MatchSetup = {
-      simVersion: 1,
+      simVersion: SIM_VERSION,
       seed: num('seed'),
       flags: DEFAULT_SIM_FLAGS,
       chapter: 1,

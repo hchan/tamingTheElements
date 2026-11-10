@@ -47,15 +47,16 @@ legacy milliseconds and the tick count (`cooldownTicks`, `durationTicks` in `src
 
 ## Randomness
 
-All randomness is the integer-only sfc32 generator (`src/core/rng/sfc32.ts`). `STREAM_NAMES` in `src/core/rng/streams.ts` is
-`combat, capture, spawn, ai.p1, ai.p2, meta, cosmetic`. Each stream is seeded by `seedSfc32` (`src/core/rng/seed.ts`):
+All randomness is the integer-only sfc32 generator (`src/core/rng/sfc32.ts`). `STREAM_NAMES` in `src/core/rng/streams.ts` (the sim
+streams) is `combat, capture, spawn, meta, cosmetic`; `AGENT_STREAM_NAMES` is `ai.p1, ai.p2`. Each stream is seeded by `seedSfc32` (`src/core/rng/seed.ts`):
 `splitmix32(fnv1a("<seed>:<name>"))` fills the four state words, then the first 15 outputs are discarded
 ([ADR 0003](adr/0003-sfc32-rng-streams.md)). `Sfc32.int(n)` is exact because `u32 * n < 2^53` for `n <= 2^21`.
 
 - Sim code draws only from the stream that names its purpose; adding a draw to a stream changes every later draw in it.
 - Cosmetic code (fx, shake, particles) must never draw from a sim stream. `src/game/fx/event-fx.ts` uses its own private
   generator for that reason.
-- The stream words live in `SimState.rng`, so they are part of the snapshot and the hash.
+- The sim stream words live in `SimState.rng`, so they are part of the snapshot and the hash. The agent streams do not
+  (since `SIM_VERSION` 2).
 - `SimState` is mutated only by `step()`. Agents never write it: each agent owns an `AgentRng` (`src/core/agents/agent-rng.ts`),
   `seedSfc32(matchSeed, 'ai.p1' | 'ai.p2')` by side, seeded from `ObservationView.matchSeed` on the first draw. So the same
   setup and commands give the same hash whether or not an agent was asked for a command (`src/core/agents/agents.test.ts`).
@@ -111,7 +112,10 @@ divergent tick is reported, which localises a drift. Bots keep their randomness 
 
 Sim flags (`SimFlags`, `src/core/flags.ts`, all default off) change the simulation, so they are recorded in the replay header
 as `encodeFlags` output (sorted names of enabled flags, joined by `,`) and `decodeFlags` throws on an unknown name so a replay
-never silently drops a flag. UI flags (`src/game/platform/flags.ts`) must not influence the sim and are not recorded. Unfinished
+never silently drops a flag. In the world state, `flagBits` (`src/core/flags.ts`) sets bit `i` for `FLAG_NAMES[i]` (sorted
+names, at most 16); internal world bits (`CAPTURE_GRANTED_BIT`, `WORLD_ENDED_BIT`) sit at bit 16 and up. Adding a flag
+shifts the bits of the names sorted after it, which changes hashes only of matches with those flags on; bump `SIM_VERSION`
+anyway. UI flags (`src/game/platform/flags.ts`) must not influence the sim and are not recorded. Unfinished
 sim work goes behind a default-off sim flag ([ADR 0013](adr/0013-trunk-based-wps-and-flags.md)).
 
 ## Save format
@@ -125,7 +129,7 @@ bump, unless it also changes sim inputs.
 Any change to this contract, to a system or its order in `src/core/sim/step.ts`, to a state layout, or to any sim data value
 (`src/core/data/`) requires, in the same change:
 
-1. bump `SIM_VERSION` in `src/core/index.ts`;
+1. bump `SIM_VERSION` in `src/core/version.ts` (its comment lists what each version changed);
 2. regenerate goldens with `pnpm golden:record` (`tools/gen/record-golden.ts`), only when the change is intended;
 3. commit the reviewed hash diff of `tests/fixtures/replays/` and say why in the commit message.
 

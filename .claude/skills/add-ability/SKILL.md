@@ -22,7 +22,7 @@ Add: $ARGUMENTS
 3. Implement the behaviour as a pure system in `src/core/sim/systems/` (see `abilities.ts` and `projectile.ts`, where `ABILITY_DEFS` is assembled), iterating entities in id order and emitting events from `src/core/sim/events.ts`.
 4. Describe it: `src/core/rules/describe.ts` and the text ids in `src/core/data/text-ids.ts`.
 5. Add tests next to the code: data test (`abilities-a.test.ts` or `abilities-b.test.ts`), a system test, a probe check with `src/core/sim/ability-probe.ts`, and a snapshot/restore round trip (`src/core/sim/snapshot.test.ts` pattern).
-6. Data changed: bump `SIM_VERSION` in `src/core/index.ts`, run `corepack pnpm golden:record`, and show the diff of `tests/fixtures/replays/` for review.
+6. Data changed: bump `SIM_VERSION` in `src/core/version.ts`, run `corepack pnpm golden:record`, and show the diff of `tests/fixtures/replays/` for review.
 7. Balance: run `corepack pnpm balance:compare`; a baseline re-record is a user decision.
 8. Presentation (animation, sound) goes in `src/game/` only; cosmetic code never draws from sim RNG streams.
 9. Docs: `corepack pnpm docs:gen`, `CHANGELOG.md` (append-only), `docs/PARITY.md` if it touches legacy behaviour, `docs/REPO-MAP.md` if files were added.

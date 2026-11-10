@@ -4,12 +4,13 @@ import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { createMatch, type MatchSetup } from '../sim/match';
 import { step } from '../sim/step';
+import { SIM_VERSION } from '../version';
 import type { ReplayFile } from './format';
 import { ReplayRecorder } from './recorder';
 
 /** Fixed setup of the golden bot-vs-bot replay in tests/fixtures/replays. */
 export const GOLDEN_SETUP: MatchSetup = {
-  simVersion: 1,
+  simVersion: SIM_VERSION,
   seed: 0x5eed,
   flags: DEFAULT_SIM_FLAGS,
   chapter: 1,

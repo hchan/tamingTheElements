@@ -4,6 +4,7 @@ import { parseReplay, serializeReplay, HASH_INTERVAL, type ReplayFile } from './
 import { playReplay } from './player';
 import { GOLDEN_SETUP, recordBotMatch } from './record-bots';
 import { rleDecode, rleEncode } from './rle';
+import { SIM_VERSION } from '../version';
 
 describe('rle', () => {
   it('round-trips and compresses runs', () => {
@@ -31,7 +32,7 @@ describe('replay', () => {
   });
 
   it('golden fixture verifies and matches a fresh recording', () => {
-    expect(playReplay(file, 1)).toEqual({ ok: true, finalHash: file.finalHash });
+    expect(playReplay(file, SIM_VERSION)).toEqual({ ok: true, finalHash: file.finalHash });
     expect(file.header.tickCount).toBe(1500);
     expect(serializeReplay(recordBotMatch(GOLDEN_SETUP, file.header.tickCount))).toBe(serializeReplay(file));
   });
@@ -55,6 +56,6 @@ describe('replay', () => {
   });
 
   it('rejects a simVersion mismatch', () => {
-    expect(() => playReplay(file, 2)).toThrow(/simVersion/);
+    expect(() => playReplay(file, SIM_VERSION + 1)).toThrow(/simVersion/);
   });
 });
