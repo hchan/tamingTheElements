@@ -303,7 +303,12 @@ and 0 XP, and the core `ScriptedAI` with its Arcade layer as the enemy (Easy dro
 the Arcade HUD, juice, super key and cinematic follow the world flag. The one Arcade-only view in this chunk is the 8-way
 aim arrow (`src/game/fx/aim-view.ts`), handed to the Arena as the launch's `arcadeView` hook: one Graphics drawn once,
 moved and turned after each scene update from `RenderView.arcade().aim`, static (no tween, so reduced motion needs no
-variant), removed with the scene. The flow has no save store, so it writes no progress,
+variant), removed with the scene. The same hook loads the Arcade audio layers (`src/game/audio/arcade-audio.ts`,
+WP-arcade-audio-layers; its own `arcade-audio` chunk, so Classic never downloads it): they wrap the battle
+`AudioManager`'s `consume` (so they hear the live ticks the sound map hears, and replays stay silent), synthesise short
+cues with oscillators and band-passed noise into the `sfx` bus (no audio files; rules, voice limit and the hit pitch cycle
+in the pure `arcade-cues.ts`), cut the music for 300 ms on a KO, and come off with the Arena (every synth node
+disconnected, the class `consume` back). The flow has no save store, so it writes no progress,
 XP, capture, objectives or garrison (a repo test and a unit test guard it); the only write is the playtest replay, when
 recording is on. The route is offered when Settings > Arcade Versus (preview) is ticked (the save's `arcadePreview`) or
 with `?ff=arcade` in dev and test builds; otherwise `#arcade` returns to the main menu. Pointer-only Super, Guard and

@@ -92,6 +92,15 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   the loser's the outer one, and a cancel (both destroyed) adds a white core, so the outcome reads by shape as well as
   colour (and by which projectile flies on). Reduced motion keeps the ring at full size (no growth), still fading. A clash
   has no live-region line: it is frequent, and its outcome shows in the HP and meter read-outs.
+- Arcade audio layers (`src/game/audio/arcade-audio.ts`, WP-arcade-audio-layers): every synthesised cue doubles
+  something already on screen or in the live region, so nothing is told by sound alone: the hit thump and combo tick
+  (flash, sparks, damage number, `N HITS`), the guard thud, parry ping, guard break crack and dodge (bubble, words
+  "PARRY", "GUARD BREAK", "DODGE" and their live lines), the dash whoosh (afterimages; reduced motion keeps the sound),
+  the clash clang (the ring), the super charge (the cut-in), the weather stingers (badge, called line, live line) and the
+  round stingers and KO music cut (the banners and their live lines). They play on the sfx bus, so Ctrl-M mutes them
+  with everything else; reduced motion does not silence them. Nothing plays before the first key press or tap, or while
+  the tab is hidden. The cues are short (0.7 s at most), and no more than ten synth voices sound at once (round
+  stingers excepted).
 
 ## In-battle announcements and pause
 

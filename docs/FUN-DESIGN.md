@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line) and WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI) and WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -588,7 +588,7 @@ otherwise). The hyper meters moved down to y 124 and 32 px out from the bars' in
 of the timer column. Live-region lines go through the Arena's throttled `Announcer` (see
 [ACCESSIBILITY.md](ACCESSIBILITY.md)); the shared match-end line carries the round score. Objects are made once per match
 (two banner texts, the timer text, one pip Graphics) with one Hud `update` listener, all removed with the Arena or the Hud.
-Not built: the KO white flash and desaturation, the KO camera punch-in and music cut (WP 26), voice.
+Not built: the KO white flash and desaturation, the KO camera punch-in, voice (the KO music cut came with WP 26).
 
 Built in WP 17 (`WP-arcade-defence-view`, view and input only): `RenderView.arcade()` adds `guard(id)` (the guard meter,
 0..1000) and `guarding(id)` (read-outs only; the sim and its hashes are unchanged). Input: the **Dash (Arcade)** (E) and
@@ -607,8 +607,8 @@ and a live line. `guardBroken`: 14 shards, an orange ring, "GUARD BREAK" and a l
 and "DODGE". Reduced motion keeps the shield, bar, words (not rising), rings (static), the flash and one static spark,
 and drops the afterimages, trails, flying sparks and shards. Effects run on the view tick, so they hold while paused.
 Per match: two Graphics, six afterimage Images and four Texts, made on first use; sparks, rings and trails live in
-typed arrays (no per-frame allocation); one Arena `postupdate` listener, all removed with the Arena. Not built: the parry
-ping and guard sounds (WP 26 audio layers); clash bursts came with WP 18.
+typed arrays (no per-frame allocation); one Arena `postupdate` listener, all removed with the Arena. The parry
+ping and guard sounds came with WP 26, clash bursts with WP 18.
 
 Built in WP 30 (`WP-arcade-weather-view`, view and input only): `RenderView.arcade()` adds `weather` (the `Weather` kind,
 0 none) and `weatherLeft` (game ticks left), read-outs only (the sim and its hashes are unchanged); `src/core/index.ts`
@@ -633,8 +633,8 @@ harder, fire softer.", "The enemy called Eclipse: void hits harder.", "You renew
 Reduced motion keeps the badge, a steady tint and the line at full size, and drops the particles, the tint fade and the
 scale-in. Per match, on the first weather: two Arena Graphics, one Hud Graphics and two Hud Texts; one Arena
 `postupdate` listener; all removed with the Arena or the Hud. Eclipse has no Arcade race yet (void races are not
-offered), so its e2e and visual captures put it up through the test probe `arena.setWeather`. Not built: weather
-sounds (WP 26 audio layers), the AI cast, and a cooldown read-out for the weather key.
+offered), so its e2e and visual captures put it up through the test probe `arena.setWeather`. Not built: a
+cooldown read-out for the weather key (the weather stingers came with WP 26, the AI cast with WP 23).
 
 Built in WP 18 (`WP-arcade-clash`, the view half): `src/game/fx/clash-view.ts`, its own lazy chunk `clash-view` that the
 defence view mounts (so it comes with `round-view` in every Arcade match, replays included) and hands each tick's events;
@@ -644,7 +644,33 @@ thicker); a cancel shows both at equal weight with a white core. It grows from 0
 (ease-out) and fades over its second half. Reduced motion: a static ring at full size that still fades. Per match: one
 Arena Graphics made on the first clash and a typed-array pool of 8 bursts (the oldest gives way), no per-frame
 allocation; one Arena `postupdate` listener, removed with the Arena. No live-region line (see
-[ACCESSIBILITY.md](ACCESSIBILITY.md)). Not built: a clash sound (WP 26 audio layers).
+[ACCESSIBILITY.md](ACCESSIBILITY.md)). The clash clang came with WP 26.
+
+Built in WP 26 (`WP-arcade-audio-layers`, view only): `src/game/audio/arcade-audio.ts`, its own lazy chunk
+`arcade-audio` that Arcade Versus loads with the battle (its `arcadeView` hook, beside the aim arrow), so Classic never
+downloads it and its sound map (`sound-map.ts`) is unchanged, pinned by a test; the dev-only `?ff=arenaDemo,arcade` demo
+and replays have no layers. No audio files: every cue is a few layers of oscillators (sine, triangle, square, saw, each
+through a low-pass) or band-passed white noise, each an exponential pitch sweep and decay of at most 0.7 s, in the pure
+table of `arcade-cues.ts`. `hitConfirmed`: a sine thump (120 to 45 Hz, 70 ms) with gain 0.35 / 0.5 / 0.7 / 1 by
+strength, a heavier impact with a noise burst at super strength, and its pitch varied by up to 5% from a fixed ten-step
+cycle indexed by the event's tick and seq (the same match sounds the same, with no RNG and no state); from the second hit
+a combo tick a semitone higher per hit (up to an octave). `guarded` a thud, `parried` a two-sine ping, `guardBroken` a
+noise crack, `dashed` a noise whoosh, `perfectDodge` a rising chirp, `clash` a square clang, `superStarted` a saw charge
+riser under the sound map's `whoosh` (which keeps its music duck), `weatherChanged` a stinger per weather (a rising Sun
+arpeggio, falling Rain drops, a Sandstorm hiss, a Gale gust, a low Eclipse drone), and `roundStarted`, `fight`, `ko`,
+`roundEnded` and `matchEnded` stingers (the match one lower after a loss or draw, over the sound map's victory or death
+sample). Silent on purpose, each with its reason in `SILENT` and a coverage test over every Arcade event kind:
+`hitStop`, `comboEnded`, `meterLevel`, `superEnded`, `timeOver` (its `roundEnded` comes on the same tick), `recovered`
+and `weatherEnded`. On a `ko` the music bus is cut to 0 for 300 ms, then ducked to the end of `DUCK_MS` (600 ms). The
+layers wrap the battle `AudioManager`'s `consume` (so they hear each live tick once, after the sound map), play at half
+level into its `sfx` bus (bus volume, master and Ctrl-M mute apply; reduced motion does not silence them), stay silent
+before the first gesture unlocks audio, while muted and while the tab is hidden, and keep at most 10 synth voices (one per
+layer) at once: an ordinary cue is dropped when it would go over, or when the same cue played under 30 ms ago; the round
+and match stingers always play. Ended voices are disconnected when the pool next looks, and every node at teardown (Arena
+shutdown or destroy), which also gives the manager back its class `consume`. Fake-context tests check the routing, the
+unlock, mute and hidden rules, the voice cap, the KO cut and teardown; an e2e plays an Arcade Versus round through a KO
+with sound unlocked (no page errors, 0 synth nodes and 0 listeners after leaving) and checks that a Classic battle never
+loads the chunk. The mix and the feel still need a human listen. The sim and its hashes are untouched.
 
 ## 4. Fun metrics (automatable)
 
@@ -743,7 +769,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 23 | `WP-arcade-ai-personalities` (done: section 2.11; Rushdown, Zoner and Turtle, Easy/Normal/Hard, Tagger waits for 19) | agents | Personalities, difficulty knobs, dodge and parry from projectile observation | 10, 15, 16, 19 |
 | 24 | `WP-arcade-numbers` | data | HP pm, damage pm overrides, Arcade balance baseline | 5, 23 |
 | 25 | `WP-arcade-gates-tight` | tools+CI | Nightly fun:compare bands, Arcade balance compare, visual states, latency marks | 24 |
-| 26 | `WP-arcade-audio-layers` | view | Synth thump, pitch variation, KO music cut | 6 |
+| 26 | `WP-arcade-audio-layers` (done: section 3; Arcade Versus only, its own `arcade-audio` chunk, no audio files) | view | Synth thump, pitch variation, KO music cut | 6 |
 | 27 | `WP-arcade-8way-aim` (done: section 2.12; bands keep the 4-way facing) | sim+view | Arcade-only 8-way aim: cast facing is `dir8FromSigns` of the held input (Classic keeps 4-way `facingFor`, bit-identical); diagonal projectiles, melee arcs and bands from the 8-way facing, aim indicator in the HUD, AI aims diagonally; characters keep 4-way reels | 3 |
 | 27b | `WP-arcade-quirks` | sim | Remaining Arcade quirk fixes | 3 |
 | 29 | `WP-arcade-weather` (done: sim only; section 2.14) | sim+data | Section 2.14: `Cmd.weather`, per-element weather, damage modifiers, cooldown and duration, events | 3, 7 |
