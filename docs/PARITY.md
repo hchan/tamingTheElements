@@ -100,7 +100,7 @@ Nothing below is fixed by the checklist work; each needs its own WP or the WP 96
 - C25: ScriptedAI movement and match feel (manual).
 - U11: cinematic captions beyond script set A and pacing (manual).
 - U12: sprites, animations, sounds (manual).
-- E2E: the `tests/e2e/parity/*.spec.ts` specs and v0 e2e fixtures of WP 95 are not written; the evidence above is unit and scenario tests plus the existing e2e smoke specs.
+- E2E: `tests/e2e/parity/golden-paths.spec.ts` covers golden paths 1-9; only 1b (New Game -> intro cinematic -> Skip) is `test.fixme`, because New Game goes straight to the garrison and the cinematic is not wired into the flow.
 
 ## Sign-off
 

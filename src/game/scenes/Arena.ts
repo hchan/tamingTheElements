@@ -156,10 +156,22 @@ export class Arena extends Phaser.Scene {
         for (let i = 0; i < MAX_ENTITIES; i++) {
           const f = s.flags[i] ?? 0;
           if (s.kind[i] !== EntityKind.character || (f & EntityFlag.alive) === 0 || (f & EntityFlag.benched) !== 0) continue;
-          out.push({ id: i, team: s.team[i] ?? 0, x: s.x[i] ?? 0, y: s.y[i] ?? 0 });
+          out.push({ id: i, team: s.team[i] ?? 0, x: s.x[i] ?? 0, y: s.y[i] ?? 0, hp: s.hp[i] ?? 0, maxHp: s.maxHp[i] ?? 0 });
         }
         return out;
       },
+      setHp: (id, hp) => {
+        world.state.hp[id] = hp;
+      },
+      place: (id, x, y, dir) => {
+        const st = world.state;
+        st.x[id] = x;
+        st.px[id] = x;
+        st.y[id] = y;
+        st.py[id] = y;
+        st.dir[id] = dir;
+      },
+      captureGranted: () => view.actionBar(0)?.capture !== undefined,
       step: (n, cmds = [0, 0]) => {
         driver.pause();
         for (let k = 0; k < n; k++) this.advance(cmds);

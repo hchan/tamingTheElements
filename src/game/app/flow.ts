@@ -16,6 +16,7 @@ import {
 import { el } from '@ui/dom';
 import { defaultScreens, type ScreenTable } from '@ui/router';
 import { objectivesScreen } from '@ui/screens/objectives';
+import { settingsScreen } from '@ui/screens/settings';
 import { garrisonScreen } from '@ui/screens/garrison';
 import type { MatchSetup as UiSetup } from '@ui/screens/garrison-model';
 import { loadSave } from '@ui/screens/main-menu';
@@ -83,6 +84,11 @@ export class AppFlow {
 
   constructor(private readonly deps: FlowDeps) {}
 
+  /** Battle/opponent seed: `?seed=` in dev and test builds, else the clock. */
+  private seed(): number {
+    return this.deps.flags.seed ?? this.deps.now() >>> 0;
+  }
+
   screens(): ScreenTable {
     const base = defaultScreens();
     const { navigate } = this.deps;
@@ -90,16 +96,17 @@ export class AppFlow {
       ...base,
       newGame: () => this.newGameScreen(),
       battleground: () => redirect(navigate, 'garrison'),
-      currentObjectives: () => objectivesScreen(),
+      currentObjectives: () => objectivesScreen({ store: this.deps.store, navigate }),
+      settings: () => settingsScreen(this.deps.store),
       garrison: garrisonScreen({
         load: () => loadSave(window.localStorage),
         navigate,
         alert: (m) => {
           window.alert(m);
         },
-        seed: () => this.deps.now() >>> 0,
+        seed: () => this.seed(),
         onMatch: (ui) => {
-          this.pending = { ui, seed: this.deps.now() >>> 0 };
+          this.pending = { ui, seed: this.seed() };
         },
         avatarUrl: (sprite) => `url("img/map/${encodeURIComponent(sprite)}.png")`,
       }),

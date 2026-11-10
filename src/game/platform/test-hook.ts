@@ -3,6 +3,8 @@ export interface ProbeCharacter {
   readonly team: number;
   readonly x: number;
   readonly y: number;
+  readonly hp: number;
+  readonly maxHp: number;
 }
 
 /** Deterministic control of the running Arena for e2e: pauses the real-time driver, then steps by hand. */
@@ -14,6 +16,12 @@ export interface ArenaProbe {
   characters(): ProbeCharacter[];
   /** Pauses the real-time driver and runs n sim ticks with the given commands (default: no input). */
   step(n: number, cmds?: readonly [number, number]): void;
+  /** Sets a character's current health (e.g. 0 to win, or <=25% to make it capturable). */
+  setHp(id: number, hp: number): void;
+  /** Moves a character and sets its facing (0..7 clockwise from east), keeping the previous position in sync. */
+  place(id: number, x: number, y: number, dir: number): void;
+  /** True when the player's action bar offers Capture (chapter 2 onward). */
+  captureGranted(): boolean;
 }
 
 /** Test control of the running Cinematic scene. */

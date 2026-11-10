@@ -12,6 +12,8 @@ export interface UiFlags {
   readonly aiScripted: boolean;
   /** Play path starts the intro cinematic after Preload. */
   readonly cinematicDemo: boolean;
+  /** Fixed seed for the battle and opponent draw (`?seed=N`, dev and test builds only), or null for the clock. */
+  readonly seed: number | null;
 }
 
 export const DEFAULT_UI_FLAGS: UiFlags = {
@@ -22,6 +24,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   arenaDemo: false,
   aiScripted: false,
   cinematicDemo: false,
+  seed: null,
 };
 
 export interface FlagEnv {
@@ -32,6 +35,8 @@ export interface FlagEnv {
 export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
   if (!(env.DEV || env.MODE === 'test')) return DEFAULT_UI_FLAGS;
   const raw = new URLSearchParams(search).get('ff') ?? '';
+  const rawSeed = new URLSearchParams(search).get('seed');
+  const seed = rawSeed !== null && /^\d{1,10}$/.test(rawSeed) ? Number(rawSeed) >>> 0 : null;
   const on = new Set(raw.split(',').map((s) => s.trim()));
   return {
     debugOverlay: on.has('debugOverlay'),
@@ -41,6 +46,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     arenaDemo: on.has('arenaDemo'),
     aiScripted: on.has('aiScripted'),
     cinematicDemo: on.has('cinematicDemo'),
+    seed,
   };
 }
 
