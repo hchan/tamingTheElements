@@ -42,13 +42,15 @@ export const DUCK_MS = 600;
 
 /** Plays sim events as sound through music/sfx/ui gain buses. View-only; never touches sim state. */
 export class AudioManager {
-  private readonly ctx: AudioContextLike;
+  /** The context and buses are read by the Arcade audio layers (`arcade-audio.ts`, a lazy chunk) to play into `sfx`. */
+  readonly ctx: AudioContextLike;
   private readonly master: GainLike;
-  private readonly buses: Record<Bus, GainLike>;
+  readonly buses: Record<Bus, GainLike>;
   private readonly deduper: EventDeduper;
   private mutedFlag: boolean;
   private readonly volumes: Record<Bus, number> = { music: 1, sfx: 1, ui: 1 };
-  private duckUntil = 0;
+  /** Audio-clock ms until which the music is ducked; the Arcade layers extend it on a KO. */
+  duckUntil = 0;
   private unlocked = false;
 
   constructor(private readonly opts: AudioOptions) {

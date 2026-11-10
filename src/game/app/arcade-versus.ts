@@ -149,7 +149,12 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
           if (epoch === mine) showResults(r);
         },
       }),
-      arcadeView: mountAimIndicator,
+      arcadeView: (arena, view, alpha) => {
+        mountAimIndicator(arena, view, alpha);
+        // The Arcade audio layers (WP-arcade-audio-layers), their own chunk, on the battle's sound as it is now.
+        const held = arena.audio;
+        void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held); });
+      },
     };
     import('../boot/phaser-config')
       .then(({ createGame }) => {
