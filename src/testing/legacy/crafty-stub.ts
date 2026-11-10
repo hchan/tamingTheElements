@@ -158,6 +158,8 @@ export class CraftyEntity {
 
 for (const name of NOOP_METHODS) {
   Object.defineProperty(CraftyEntity.prototype, name, {
+    writable: true,
+    configurable: true,
     value(this: CraftyEntity, ...args: unknown[]) {
       const crafty = (this as unknown as { crafty: CraftyStub }).crafty;
       crafty.calls.push({ target: `entity#${String(this.id)}`, method: name, args });
