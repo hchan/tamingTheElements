@@ -101,4 +101,4 @@ export async function canvasBox(page: Page): Promise<{ x: number; y: number; w: 
 export const STEP = (n: number, a: number, b: number): string => `window.__TTE__.arena.step(${String(n)}, [${String(a)}, ${String(b)}])`;
 
 /** Command bits (src/core/sim/commands.ts). */
-export const CMD = { up: 1, down: 2, left: 4, right: 8, primary: 16, secondary: 32, capture: 64 } as const;
+export const CMD = { up: 1, down: 2, left: 4, right: 8, primary: 16, secondary: 32, capture: 64, super: 1 << 13 } as const;

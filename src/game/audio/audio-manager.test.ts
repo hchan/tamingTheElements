@@ -90,4 +90,13 @@ describe('AudioManager', () => {
     a.updateDuck();
     expect(gains[1]?.gain.value).toBe(1);
   });
+
+  it('a super start plays its whoosh and ducks the music (Arcade; FUN-DESIGN section 3)', () => {
+    const { ctx, gains, started } = fakeCtx('running');
+    const a = new AudioManager({ ctx, buffers: new Map([['whoosh', 'whoosh']]) });
+    a.unlock();
+    a.consume([ev(SimEventKind.superStarted)]);
+    expect(started).toEqual(['whoosh']);
+    expect(gains[1]?.gain.value).toBe(DUCK_GAIN);
+  });
 });
