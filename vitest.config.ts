@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 const src = (dir: string): string => fileURLToPath(new URL(dir, import.meta.url));
@@ -32,6 +33,20 @@ export default defineConfig({
       {
         resolve: { alias },
         test: { name: 'repo', environment: 'node', include: ['tests/{repo,lint}/**/*.test.ts'] },
+      },
+      {
+        resolve: { alias },
+        test: {
+          name: 'browser',
+          include: ['tests/browser/**/*.browser.test.ts'],
+          browser: {
+            enabled: true,
+            headless: true,
+            screenshotFailures: false,
+            provider: playwright(),
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
+        },
       },
     ],
   },
