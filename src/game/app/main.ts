@@ -4,6 +4,7 @@ import '@ui/styles/main.css';
 import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags } from '../platform/flags';
+import { installTestHook } from '../platform/test-hook';
 
 const root = document.getElementById('app');
 const flags = getUiFlags(window.location.search);
@@ -32,4 +33,5 @@ if (root) {
     root.replaceChildren(menu);
     startRouter(menu);
   }
+  installTestHook(SIM_VERSION);
 }

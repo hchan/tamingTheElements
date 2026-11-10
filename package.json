@@ -16,7 +16,7 @@
     "test": "vitest run --project core --project repo",
     "test:legacy": "vitest run --project legacy",
     "test:browser": "echo \"not yet\" && exit 1",
-    "e2e": "echo \"not yet\" && exit 1",
+    "e2e": "playwright test",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "echo \"not yet\" && exit 1",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@swc/core": "^1.16.22",
     "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.1.0",
