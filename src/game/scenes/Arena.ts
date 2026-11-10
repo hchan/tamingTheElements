@@ -229,6 +229,7 @@ export class Arena extends Phaser.Scene {
     this.installProbe(world, driver);
     const hudData: HudData = { view: this.view, ...(hud ? { arcade: hud } : {}) };
     this.scene.launch(HUD_SCENE, hudData);
+    this.launch?.arcadeView?.(this, view, () => this.frameAlpha);
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
@@ -315,6 +316,10 @@ export class Arena extends Phaser.Scene {
         };
       },
       superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
+      aim: () => {
+        const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
+        return g ? { visible: g.visible, x: g.x, y: g.y, angle: Math.round(g.angle) } : undefined;
+      },
       setMeter: (team, value) => {
         this.launch?.recorder?.invalidate();
         world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.meter] = value;

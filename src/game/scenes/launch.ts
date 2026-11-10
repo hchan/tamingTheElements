@@ -1,4 +1,5 @@
-import type { Agent, MatchSetup, ReplayFile } from '@core/index';
+import type Phaser from 'phaser';
+import type { Agent, MatchSetup, RenderView, ReplayFile } from '@core/index';
 import type { TesterSession } from '../platform/tester/session';
 import type { PlaytestRecorder } from '../replay/playtest-recorder';
 
@@ -49,4 +50,9 @@ export interface ArenaLaunch {
   readonly playback?: ArenaPlayback;
   /** Present only in tester mode (docs/TESTER-MODE.md): the session the Arena registers its cheat bridge with. */
   readonly tester?: { readonly session: TesterSession; readonly openPanel: () => void };
+  /**
+   * Arcade-only view extras from a lazy chunk (the 8-way aim indicator), mounted once in the Arena's `create` with the
+   * render view and the frame's interpolation alpha; they clean up on the scene's shutdown.
+   */
+  readonly arcadeView?: (scene: Phaser.Scene, view: RenderView, alpha: () => number) => void;
 }

@@ -13,9 +13,12 @@ const MAP_SPRITES = manifest.mapSprites as Readonly<Record<string, Entry>>;
 const NO_ROTATE = new Set(['tornado']);
 const FRAME = 'proj';
 
-/** Legacy `createBullet` rotation: east 0, south 90, west 180, north 270, diagonals in between. */
+/**
+ * Legacy `createBullet` rotation (clockwise degrees): east 0, south-east 45, south 90, ..., north 270, north-east 315.
+ * Dir8 indices run counter-clockwise on screen (DIR8_X/Y: 1 north-east, 2 north), so the angle is (8 - dir) * 45.
+ */
 export function rotationForDir(dir: number, sprite: string): number {
-  return NO_ROTATE.has(sprite) ? 0 : (((dir % 8) + 8) % 8) * 45;
+  return NO_ROTATE.has(sprite) ? 0 : ((8 - dir) & 7) * 45;
 }
 
 /** Texture key and manifest entry for an ability sprite (`sprite:` first, then `map:`). */
