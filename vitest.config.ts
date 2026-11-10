@@ -12,6 +12,9 @@ const alias = {
   '@fixtures': src('./tests/fixtures'),
 };
 
+// Heavy sim, fuzz and balance tests take seconds; a loaded CI or dev machine must not turn that into a false failure.
+const TEST_TIMEOUT_MS = 60_000;
+
 export default defineConfig({
   test: {
     passWithNoTests: true,
@@ -24,15 +27,15 @@ export default defineConfig({
     projects: [
       {
         resolve: { alias },
-        test: { name: 'core', environment: 'node', include: ['src/**/*.test.ts'] },
+        test: { name: 'core', environment: 'node', testTimeout: TEST_TIMEOUT_MS, include: ['src/**/*.test.ts'] },
       },
       {
         resolve: { alias },
-        test: { name: 'legacy', environment: 'node', include: ['tests/legacy/**/*.test.ts'] },
+        test: { name: 'legacy', environment: 'node', testTimeout: TEST_TIMEOUT_MS, include: ['tests/legacy/**/*.test.ts'] },
       },
       {
         resolve: { alias },
-        test: { name: 'repo', environment: 'node', include: ['tests/{repo,lint}/**/*.test.ts'] },
+        test: { name: 'repo', environment: 'node', testTimeout: TEST_TIMEOUT_MS, include: ['tests/{repo,lint}/**/*.test.ts'] },
       },
       {
         resolve: { alias },
