@@ -44,7 +44,7 @@ Map of the legacy game. Source files are under `war/WEB-INF/private/` and are lo
 | `war/WEB-INF/{appengine-web.xml,web.xml,jsp/,lib/}` | GAE wrapper | none (retired) |
 | `war/home.html`, `war/todo.html` | Landing page and to-do list | `docs/legacy/home.md`, `docs/legacy/TODO-legacy.md` |
 | `war/favicon.ico`, `war/favicon.png` | Icons | `public/favicon.png` |
-| `tools/*.pl` | Perl asset manifest generators | `tools/assets/*.ts` |
+| `tools/*.pl` | Perl asset manifest generators (retired in R6) | `tools/assets/*.ts` |
 | `imgWorkArea/` | Art sources (PNG, xcf) | `art/png/**`, `art/src/**` (LFS) |
 | `visio/elementalBalanceEquation.*` | Balance diagram | `art/diagrams/` |
 | `Gruntfile.js`, `gulpfile.js`, `node-webkit.package.json` | Build and NW.js packaging | none (retired) |

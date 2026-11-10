@@ -16,7 +16,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `war/WEB-INF/private/img/`, `war/WEB-INF/private/snd/` | Sprite sheets, backgrounds and `.ogg` sound |
 | `imgWorkArea/` | Art working files: PNG and GIMP `.xcf` sources |
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
-| `tools/` | Five Perl generators for the asset manifests (`generate*.pl`, `imgHelper.pl`) |
+| `tools/` | TypeScript build tooling: `tools/assets/` (asset manifest and copy), `tools/gen/` (generated tables, LUTs, golden replays), `tools/sim/` (match CLI) |
 | `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`); `gen-design-tables.ts` fills the generated tables in `docs/GAME-DESIGN.md` (`pnpm docs:gen`) |
 | `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`); `build-assets.ts` (`pnpm assets:build`) copies the manifest's images and sounds plus the favicon into `public/`, verifying sha256 |
 | `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md) |
