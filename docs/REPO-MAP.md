@@ -8,24 +8,21 @@ ADR index: [docs/adr/README.md](adr/README.md)
 
 | Path | What it is |
 |---|---|
-| `war/` | Legacy Google App Engine web root. The playable game lives in `war/WEB-INF/private/` |
+| `war/` | Legacy web root (the old App Engine wrapper is retired). The playable game lives in `war/WEB-INF/private/` |
 | `war/WEB-INF/private/src/` | The 24 legacy game scripts (see [legacy/INVENTORY.md](legacy/INVENTORY.md)) |
 | `war/WEB-INF/private/lib/` | Vendored `crafty.js` and `SpriteColor.js` |
 | `war/WEB-INF/private/bower_components/` | Vendored jQuery |
 | `war/WEB-INF/private/css/` | `main.scss`, compiled `main.css` and a Sass cache |
 | `war/WEB-INF/private/img/`, `war/WEB-INF/private/snd/` | Sprite sheets, backgrounds and `.ogg` sound |
-| `war/WEB-INF/` (rest) | GAE wrapper: `appengine-web.xml`, `web.xml`, `war/WEB-INF/jsp/`, `war/WEB-INF/lib/`, and a credentials file that must not be read or copied |
-| `war/home.html`, `war/todo.html` | Legacy landing page and the author's to-do list |
 | `imgWorkArea/` | Art working files: PNG and GIMP `.xcf` sources |
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
 | `tools/` | Five Perl generators for the asset manifests (`generate*.pl`, `imgHelper.pl`) |
-| `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` |
+| `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
 | `.claude/` | Claude Code project config |
 | `src/` | New TypeScript port (see below) |
-| `.classpath`, `.project`, `.settings/` | Eclipse project files |
 | `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.config.ts` | pnpm, TypeScript, Vite and Vitest project config |
 | `CLAUDE.md`, `README.md`, `.gitignore` | Agent instructions, readme, ignore rules |
 
