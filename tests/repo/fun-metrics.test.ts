@@ -1,0 +1,90 @@
+import { describe, expect, it } from 'vitest';
+import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
+import { percentile, reduceFunMetrics, summarizeFun } from '../../tools/sim/fun-metrics';
+import { parseRuleOptions, runMatch } from '../../tools/sim/run-match';
+
+let seq = 0;
+const ev = (tick: number, kind: number, payload: Record<string, number> = {}): SimEvent =>
+  ({ ...payload, tick, sourceId: 0, kind, seq: seq++ }) as SimEvent;
+const hit = (tick: number, attacker: number, ability: number, amount: number, counter = 0): SimEvent =>
+  ev(tick, SimEventKind.hitConfirmed, { attacker, target: 1 - attacker, ability, amount, counter });
+const meta = { ticks: 500, endReason: 'ko', teamOf: (id: number) => id } as const;
+
+describe('fun-metrics reducer', () => {
+  it('measures first hit, combos, diversity, lead changes and counters on synthetic events', () => {
+    const m = reduceFunMetrics(
+      [
+        ev(10, 54), // fight
+        hit(60, 0, 1, 10, 1),
+        hit(70, 0, 1, 10),
+        ev(80, SimEventKind.comboEnded, { team: 0, hits: 2, damage: 20 }),
+        hit(100, 1, 2, 30), // team 1 takes the lead
+        ev(110, SimEventKind.comboEnded, { team: 1, hits: 1, damage: 30 }),
+        hit(150, 0, 2, 20), // and loses it again
+        ev(120, SimEventKind.recovered, { id: 1, reason: 1 }),
+        ev(121, 46),
+        ev(122, 52),
+        ev(123, 50),
+        ev(124, 48),
+        ev(125, 44),
+      ],
+      meta,
+    );
+    expect(m.seconds).toBe(10);
+    expect(m.firstHitSeconds).toBe(1); // (60 - 10) / 50
+    expect(m.hits).toBe(4);
+    expect(m.counterHits).toBe(1);
+    expect(m.comboHits).toEqual([2, 1]);
+    expect(m.maxCombo).toBe(2);
+    expect(m.damageByAbility).toEqual({ '1': 20, '2': 50 });
+    expect(m.diversity).toBeCloseTo(1 / ((20 / 70) ** 2 + (50 / 70) ** 2), 2);
+    expect(m.topSourceShare).toBeCloseTo(50 / 70, 2);
+    expect(m.leadChanges).toBe(2);
+    expect(m.recovered).toEqual([0, 1, 0]);
+    expect([m.dashes, m.tags, m.supers, m.clashes, m.defence]).toEqual([1, 1, 1, 1, 1]);
+  });
+
+  it('handles an empty match', () => {
+    const m = reduceFunMetrics([], { ...meta, endReason: 'stalemate' });
+    expect(m).toMatchObject({ firstHitSeconds: null, hits: 0, diversity: 0, topSourceShare: 0, leadChanges: 0, comboHits: [] });
+    expect(summarizeFun([m])).toMatchObject({ stalemateRate: 1, medianComboHits: 0, counterHitRate: 0 });
+    expect(summarizeFun([])).toMatchObject({ matches: 0, medianSeconds: 0 });
+  });
+
+  it('pools matches into medians and percentiles', () => {
+    expect(percentile([5, 1, 3], 0.5)).toBe(3);
+    expect(percentile([], 0.9)).toBe(0);
+    const a = reduceFunMetrics([hit(5, 0, 1, 10), ev(9, SimEventKind.comboEnded, { hits: 3 })], { ...meta, ticks: 100 });
+    const b = reduceFunMetrics([hit(5, 0, 1, 10), ev(9, SimEventKind.comboEnded, { hits: 7 })], { ...meta, ticks: 300, endReason: 'timeout' });
+    expect(summarizeFun([a, b])).toMatchObject({ matches: 2, timeoutRate: 0.5, maxComboHits: 7, p90ComboHits: 7, medianSeconds: 6 });
+  });
+});
+
+describe('run-match rule options', () => {
+  const base = { raceA: 'lavax', raceB: 'pax', agentA: 'scripted', agentB: 'scripted', seed: 7, level: 1, difficulty: 1, aIsTeam0: true } as const;
+
+  it('parses and validates', () => {
+    expect(parseRuleOptions(undefined, undefined, undefined)).toEqual({ ruleset: 'classic', teamSize: 1, aiLevel: 3 });
+    expect(parseRuleOptions('arcade', '2', '5')).toEqual({ ruleset: 'arcade', teamSize: 2, aiLevel: 5 });
+    expect(() => parseRuleOptions('x', undefined, undefined)).toThrow();
+    expect(() => parseRuleOptions(undefined, '3', undefined)).toThrow();
+    expect(() => parseRuleOptions(undefined, undefined, '9')).toThrow();
+  });
+
+  it('Classic is unchanged by the new options and carries no fun metrics', () => {
+    const plain = runMatch(base);
+    expect(runMatch({ ...base, ruleset: 'classic', teamSize: 1, aiLevel: 5 })).toEqual(plain);
+    expect(plain.fun).toBeUndefined();
+  });
+
+  it('Arcade runs deterministically with fun metrics and attributes every hit', () => {
+    const a = runMatch({ ...base, ruleset: 'arcade' });
+    expect(runMatch({ ...base, ruleset: 'arcade' })).toEqual(a);
+    expect(a.fun?.hits).toBeGreaterThan(0);
+    expect(a.damageByAbility['unknown']).toBeUndefined();
+  });
+
+  it('Arcade 2v2 runs', () => {
+    expect(runMatch({ ...base, ruleset: 'arcade', teamSize: 2 }).ticks).toBeGreaterThan(0);
+  });
+});

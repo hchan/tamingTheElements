@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import arcadeGolden from '../fixtures/replays/arcade-1v1.replay.json';
 import golden from '../fixtures/replays/random-vs-random.replay.json';
 import { HASH_INTERVAL, parseReplay, serializeReplay } from '../../src/core/replay/format';
 import { playReplay } from '../../src/core/replay/player';
@@ -23,5 +24,10 @@ describe('cross-engine determinism', () => {
     }
     expect(fresh.finalHash).toBe(file.finalHash);
     expect(serializeReplay(fresh)).toBe(serializeReplay(file));
+  });
+
+  it('the Arcade golden verifies against the committed Node hashes', () => {
+    const arcade = parseReplay(JSON.stringify(arcadeGolden));
+    expect(playReplay(arcade, SIM_VERSION)).toEqual({ ok: true, finalHash: arcade.finalHash });
   });
 });
