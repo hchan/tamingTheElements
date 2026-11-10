@@ -3,7 +3,9 @@ import {
 } from '../../../data/arcade';
 import { isArcade, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
-import { ARCADE_E, ArcadeE, EntityFlag, MAX_ENTITIES, type SimState } from '../../state';
+import {
+  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, MAX_ENTITIES, type SimState,
+} from '../../state';
 import type { SimWorld } from '../../world';
 
 /** True while an Arcade hit-stun holds `id` (`stunUntil` is in game ticks). Never true in Classic. */
@@ -17,12 +19,22 @@ export function isInvulnerable(s: SimState, id: number): boolean {
 }
 
 /**
+ * True while `id` casts a super (arcade/super.ts): its team's `superState` holds the super entity id + 1 and `id` owns
+ * it. Never true in Classic.
+ */
+export function inSuper(s: SimState, id: number): boolean {
+  if (!isArcade(s)) return false;
+  const fx = (s.arcade[ARCADE_TEAM_BASE + (s.team[id] ?? 0) * ARCADE_T + ArcadeT.superState] ?? 0) - 1;
+  return fx >= 0 && s.owner[fx] === id;
+}
+
+/**
  * Whether `id` may move or cast (FUN-DESIGN 2.1). Classic: not frozen, exactly the old check. Arcade: also not
- * stunned (guard, dash recovery, super startup and the round phase join with their work packages).
+ * stunned and not casting a super (guard, dash recovery and the round phase join with their work packages).
  */
 export function canAct(world: SimWorld, id: number): boolean {
   const s = world.state;
-  return ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && !isStunned(s, id);
+  return ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && !isStunned(s, id) && !inSuper(s, id);
 }
 
 /** Ends the victim's combo early: no stun, a fresh juggle and stun budget, RECOVERY_INVULN_TICKS of invulnerability. */

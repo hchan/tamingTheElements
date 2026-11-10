@@ -108,3 +108,20 @@ export const METER_CAST = 20;
 export const METER_PARRY = 150;
 export const METER_PERFECT_DODGE = 100;
 export const METER_CLASH = 50;
+
+/**
+ * Super (FUN-DESIGN 2.5, WP 8): costs SUPER_COST meter and `canAct`; freezes the game SUPER_FREEZE_TICKS (the
+ * cinematic) with the caster invulnerable through it and SUPER_INVULN_AFTER_TICKS game ticks past it. The generic
+ * "Elemental Burst" (every race until the archetype WPs) is the Fire Inferno Beam shape: a SUPER_BAND_PX band from the
+ * caster's centre to the arena wall on its facing side, active SUPER_ACTIVE_TICKS, one strength-3 hit of
+ * SUPER_HIT_DAMAGE every SUPER_HIT_EVERY ticks (5 hits). The caster cannot act until `superEnded`.
+ */
+export const SUPER_COST = METER_BAR;
+export const SUPER_FREEZE_TICKS = 40;
+export const SUPER_INVULN_AFTER_TICKS = 8;
+export const SUPER_ACTIVE_TICKS = 30;
+export const SUPER_HIT_EVERY = 6;
+export const SUPER_HIT_DAMAGE = 12;
+export const SUPER_BAND_PX = 160;
+/** `superStarted.superId` of the generic Elemental Burst; the race variants of the archetype WPs get their own ids. */
+export const SUPER_ELEMENTAL_BURST = 0;

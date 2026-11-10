@@ -30,6 +30,15 @@ export function gainMeter(s: SimState, sink: EventSink, source: number, team: nu
   if (bars !== meterBars(before)) sink.emit(source, SimEventKind.meterLevel, { team, bars });
 }
 
+/** Spends `cost` of `team`'s meter (the caller checked it is there); `meterLevel` when the bar count changes. */
+export function spendMeter(s: SimState, sink: EventSink, source: number, team: number, cost: number): void {
+  const i = meterIndex(team);
+  const before = s.arcade[i] ?? 0;
+  s.arcade[i] = before - cost;
+  const bars = meterBars(before - cost);
+  if (bars !== meterBars(before)) sink.emit(source, SimEventKind.meterLevel, { team, bars });
+}
+
 /**
  * Meter for `dealt` health removed from a victim with `maxHp`: `floor(dealt * pm / maxHp)`. A share of the life bar,
  * so the same share gives the same meter at any level. Zero for no damage or no maximum.
