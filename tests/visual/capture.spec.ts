@@ -259,6 +259,8 @@ for (const vp of VIEWPORTS) {
       const errors = collectErrors(page);
       // 40 ticks after each cast: the tint has faded in, the particles fly and the called line still shows.
       const cast = async (cmds: string, state: string, note: string): Promise<void> => {
+        // Weather needs a full charge (WP-arcade-weather-charge): both teams get one for each cast.
+        await page.evaluate(`window.__TTE__.arena.setWeatherCharge(0, 1000); window.__TTE__.arena.setWeatherCharge(1, 1000)`);
         await page.evaluate(cmds);
         await page.evaluate(`window.__TTE__.arena.step(40)`);
         await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);

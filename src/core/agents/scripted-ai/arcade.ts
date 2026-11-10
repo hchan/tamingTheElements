@@ -1,4 +1,4 @@
-import { SUPER_BAND_PX, SUPER_CHORD_TICKS, SUPER_COST } from '../../data/arcade';
+import { SUPER_BAND_PX, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
 import { Cmd, type Command } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
@@ -37,7 +37,7 @@ import {
  *   stunned opponent), at the level's rate per tick; Zoner and Turtle leave spacing to the base AI's kiting.
  * - Tag (WP-arcade-tag): free, with no threat and the tag ready, it tags (`Cmd.swap1`) when its HP is below
  *   ARCADE_AI_TAG_BELOW_PM and its partner's is more than ARCADE_AI_TAG_MARGIN_PM above; no draw, no memory.
- * - Weather: free, with its weather ready and no threat, it calls its weather when its element is at a disadvantage.
+ * - Weather: free, with its weather charged and ready and no threat, it calls its weather when its element is at a disadvantage.
  */
 
 const MOVE = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
@@ -192,7 +192,7 @@ export class ArcadeTactics {
     if (a.dashIn === 0 && style === RUSHDOWN && Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y) > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }
-    return a.weatherIn === 0 && this.unfavourable ? cmd | Cmd.weather : cmd;
+    return a.weatherIn === 0 && a.weatherCharge >= WEATHER_CHARGE_FULL && this.unfavourable ? cmd | Cmd.weather : cmd;
   }
 
   save(): AgentState {

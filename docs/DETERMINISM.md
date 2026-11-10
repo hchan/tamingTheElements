@@ -151,7 +151,10 @@ damage is `dmg * damagePm / 1000` (two correctly rounded IEEE operations, skippe
 stays exact) after the weather and before the combo scale; Arcade cooldown overrides are integer game ticks
 (`cooldownTicksFor`). Classic reads none of them (its branch returns the legacy values), so its hashes are unchanged.
 Weather (`arcade/weather.ts`) is Int32 in the hashed blocks: the world slot (`weather` kind, `weatherUntil` game tick,
-`weatherTeam`) and each character's `weatherReadyAt` (its recovery is derived from it, so there is no extra timer).
+`weatherTeam`), each team's `weatherCharge` (0..1000 per mille, WP 35: integer adds of `WEATHER_CHARGE_CAST` per cast or
+`WEATHER_CHARGE_STEP` per moved tick, capped, spent to 0 by a cast, reset each round; no RNG, no division) and each character's
+`weatherReadyAt` (a 50-tick lockout; its recovery is derived from it, so there is no extra timer). SIM_VERSION 19 added it
+(Arcade only; Classic goldens changed only in their `simVersion` header).
 The damage factor is an integer per mille applied to the Float64 damage in a fixed order: favoured `dmg * 1200 / 1000`,
 counter `dmg * 1000 / 1200` (exactly /1.2, not a rounded 833 pm), each `*` and `/` one correctly rounded IEEE
 operation, identical in every engine; a neutral element (or no weather) keeps the exact Classic value. Rounding: none

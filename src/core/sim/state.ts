@@ -54,7 +54,7 @@ export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE +
  * `dashDodged` 1 once the dash scored its perfect dodge (systems/arcade/dash.ts). `blockUntil` ends the block-stun,
  * `guardDrain` is GUARD_MAX minus the guard meter (so a zeroed block is a full meter), `parryUntil` ends the parry window
  * and `parryLockUntil` the whiff lock, all game ticks (systems/arcade/guard.ts). `weatherReadyAt` is the game tick of
- * the character's next weather cast; its cast recovery ends WEATHER_COOLDOWN_TICKS - WEATHER_RECOVERY_TICKS before it.
+ * the character's next weather cast (a lockout); its cast recovery ends WEATHER_COOLDOWN_TICKS - WEATHER_RECOVERY_TICKS before it.
  */
 export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, blockUntil: 7,
@@ -67,13 +67,13 @@ export const ARCADE_E = 16;
  * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a
  * chord's super press is pending (see systems/arcade/buffer.ts). `lastDir` is the bit of the last rising direction edge
  * and `lastDirPress` its game tick plus one (the double-tap dash); `confirmTick` is the game tick plus one of the team's
- * last confirmed hit (the dash cancel window).
+ * last confirmed hit (the dash cancel window). `weatherCharge` is the weather charge, 0..WEATHER_CHARGE_FULL (weather.ts).
  */
 export const ArcadeT = {
   meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 11, lastDir: 12,
-  roundsWon: 13, superState: 14, pressUsed: 15, confirmTick: 16,
+  roundsWon: 13, superState: 14, pressUsed: 15, confirmTick: 16, weatherCharge: 17,
 } as const;
-export const ARCADE_T = 17;
+export const ARCADE_T = 18;
 /**
  * World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil`, `phaseUntil` and `slowMoUntil` are in
  * W.tick units, `roundTimer` in game ticks left. `phase` is a RoundPhase (data/arcade.ts); `roundWinner` holds the

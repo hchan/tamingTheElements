@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { SimEventKind, WEATHER_TICKS, Weather, type RenderArcade, type RenderView, type SimEvent } from '@core/index';
+import { SimEventKind, WEATHER_CHARGE_FULL, WEATHER_TICKS, Weather, type RenderArcade, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { CALL_TICKS, PARTICLE_COUNTS, SKY_TINTS, TINT_RAMP_TICKS } from './weather-fx';
 import { mountWeatherView, weatherState } from './weather-view';
@@ -73,6 +73,7 @@ function fakeScene(): { scene: Phaser.Scene; events: Emitter; made: Fake[] } {
   const scene = {
     events,
     scale: { width: 1280, displaySize: { width: 1280 } },
+    sys: { isActive: () => true },
     add: { graphics: () => fakeObject('graphics', made), text: () => fakeObject('text', made) },
   } as unknown as Phaser.Scene;
   return { scene, events, made };
@@ -85,7 +86,7 @@ const ended = (tick: number, weather: number): SimEvent => ({ tick, sourceId: -1
 
 function mount(opts: { reduceMotion?: boolean; highContrast?: boolean; weather?: number } = {}) {
   let tick = 100;
-  const arcade = { weather: opts.weather ?? 0, weatherLeft: opts.weather ? WEATHER_TICKS : 0 } as RenderArcade;
+  const arcade = { weather: opts.weather ?? 0, weatherLeft: opts.weather ? WEATHER_TICKS : 0, weatherCharge: [0, 0] } as RenderArcade;
   const view = { get tick() { return tick; }, arcade: () => arcade, forEachCharacter: () => undefined } as unknown as RenderView;
   const arena = fakeScene();
   const hud = fakeScene();
@@ -113,15 +114,49 @@ function mount(opts: { reduceMotion?: boolean; highContrast?: boolean; weather?:
   };
 }
 
-describe('weather view: objects, badge, tint and particles', () => {
-  it('makes nothing until the first weather, then two Arena Graphics and a Hud Graphics with two Texts, reused', () => {
+describe('weather charge chip (WP-arcade-weather-charge)', () => {
+  it('shows team 0 charge as "WEATHER n%" with a proportional bar, and "WEATHER READY" when full', () => {
     const m = mount();
     m.frame();
+    expect(m.state()).toMatchObject({ charge: 0, chargeText: 'WEATHER 0%', chargeFill: 0 });
+    m.arcade.weatherCharge[0] = 600;
+    m.arcade.weatherCharge[1] = 900;
+    m.frame();
+    expect(m.state()).toMatchObject({ charge: 600, chargeText: 'WEATHER 60%', chargeFill: 120 });
+    m.arcade.weatherCharge[0] = 999;
+    m.frame();
+    expect(m.state().chargeText).toBe('WEATHER 99%');
+    m.arcade.weatherCharge[0] = WEATHER_CHARGE_FULL;
+    m.frame();
+    expect(m.state()).toMatchObject({ chargeText: 'WEATHER READY', chargeFill: 200 });
+    m.arcade.weatherCharge[0] = 0;
+    m.frame();
+    expect(m.state().chargeText).toBe('WEATHER 0%');
+  });
+
+  it('draws with no weather up and with reduced motion (nothing animates but the READY blink, which goes steady)', () => {
+    for (const reduceMotion of [false, true]) {
+      const m = mount({ reduceMotion });
+      m.arcade.weatherCharge[0] = WEATHER_CHARGE_FULL;
+      m.frame();
+      for (let t = 100; t < 160; t += 5) {
+        m.feed(t);
+        m.frame();
+        expect(m.state().chargeText).toBe('WEATHER READY');
+      }
+    }
+  });
+});
+
+describe('weather view: objects, badge, tint and particles', () => {
+  it('makes two Arena Graphics and, in the Hud, two Graphics and three Texts on the first frame (the charge chip), then reuses them', () => {
+    const m = mount();
     expect(m.arena.made.length + m.hud.made.length).toBe(0);
+    m.frame();
+    expect(m.arena.made.map((o) => o.kind)).toEqual(['graphics', 'graphics']);
+    expect(m.hud.made.map((o) => o.kind)).toEqual(['graphics', 'text', 'text', 'graphics', 'text']);
     expect(m.state()).toMatchObject({ kind: 0, label: '', fill: 0, tint: 0, particles: 0, call: '' });
     m.cast(100, Weather.rain);
-    expect(m.arena.made.map((o) => o.kind)).toEqual(['graphics', 'graphics']);
-    expect(m.hud.made.map((o) => o.kind)).toEqual(['graphics', 'text', 'text']);
     m.frame();
     expect(m.state()).toMatchObject({ kind: Weather.rain, label: 'RAIN 10', call: 'Rain!', particles: PARTICLE_COUNTS[1] });
     expect(m.state().fill).toBeGreaterThan(0);
@@ -131,7 +166,7 @@ describe('weather view: objects, badge, tint and particles', () => {
       m.frame();
       expect(m.state()).toMatchObject({ kind, particles: PARTICLE_COUNTS[kind - 1] });
     }
-    expect(m.arena.made.length + m.hud.made.length).toBe(5);
+    expect(m.arena.made.length + m.hud.made.length).toBe(7);
   });
   it('fades the tint in after the cast, counts the badge down with its bar, and fades out near the end', () => {
     const m = mount();
@@ -259,10 +294,10 @@ describe('weather view: teardown', () => {
       expect(weatherState(m.arena.scene)).toBeUndefined();
     });
   }
-  it('a view torn down before any weather made nothing and holds no listener', () => {
+  it('a view torn down before any weather holds no listener and destroys what it made', () => {
     const m = mount();
     m.arena.events.emit('destroy');
     expect(m.arena.events.count + m.hud.events.count).toBe(0);
-    expect(m.arena.made.length + m.hud.made.length).toBe(0);
+    expect(weatherState(m.arena.scene)).toBeUndefined();
   });
 });

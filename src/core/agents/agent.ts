@@ -80,6 +80,8 @@ export interface ArcadeView {
   /** Game ticks until this side's dash and weather are ready (0: ready now). */
   readonly dashIn: number;
   readonly weatherIn: number;
+  /** This side's weather charge, 0..WEATHER_CHARGE_FULL; weather needs it full (FUN-DESIGN 2.14). */
+  readonly weatherCharge: number;
   /**
    * Tag team (FUN-DESIGN 2.6): game ticks until this side may tag (0: now), and the HP per mille of the partner a
    * `Cmd.swap1` tag brings in (the first other roster member; -1 when there is none or it is down).
@@ -211,6 +213,7 @@ function arcadeViewOf(
     shots,
     dashIn: left(self, ArcadeE.dashReadyAt),
     weatherIn: left(self, ArcadeE.weatherReadyAt),
+    weatherCharge: team(side, ArcadeT.weatherCharge),
     tagIn: Math.max(0, (s.teams[side * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0) - g),
     partnerPm: Math.max(partnerPm, -1),
   };

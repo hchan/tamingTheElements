@@ -7,6 +7,7 @@ import { isArcade } from '../clock';
 import { stepKnockback } from './arcade/knockback';
 import { canAct, dashTick } from './arcade/stun';
 import { setAim } from './arcade/aim';
+import { chargeWeather } from './arcade/meter';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
 const EAST = 0;
@@ -66,7 +67,7 @@ function restoreAtWall(world: SimWorld, id: number, team: number): void {
  * `vx`/`vy` as the dash set them, clamped to the arena; no `moved` event, like knockback) or the input step when the
  * character can act. Walls hold both axes for both teams. The held input also sets the 8-way aim (arcade/aim.ts).
  */
-function arcadeMove(world: SimWorld, id: number, cmd: Command, sink: EventSink): void {
+function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sink: EventSink): void {
   const s = world.state;
   stepKnockback(world, id);
   if (dashTick(s, id) > 0) {
@@ -94,6 +95,7 @@ function arcadeMove(world: SimWorld, id: number, cmd: Command, sink: EventSink):
     s.x[id] = x0;
     s.y[id] = y0;
   }
+  if (!blocked) chargeWeather(s, id, team, false);
   sink.emit(id, blocked ? SimEventKind.blocked : SimEventKind.moved, { x: s.x[id] ?? 0, y: s.y[id] ?? 0 });
 }
 
@@ -106,7 +108,7 @@ export function movementSystem(world: SimWorld, cmds: readonly [Command, Command
     s.px[id] = s.x[id] ?? 0;
     s.py[id] = s.y[id] ?? 0;
     if (arcade) {
-      arcadeMove(world, id, cmds[team] ?? 0, sink);
+      arcadeMove(world, id, team, cmds[team] ?? 0, sink);
       continue;
     }
     if (!canAct(world, id)) continue;

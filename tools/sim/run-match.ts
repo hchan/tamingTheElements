@@ -22,6 +22,7 @@ import { createMatch, type MatchSetup } from '../../src/core/sim/match';
 import { EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { DEFAULT_ARENA } from '../../src/core/sim/world';
+import { RANGED } from '../../src/core/sim/systems/arcade/meter';
 import { SUPER_DEF } from '../../src/core/sim/systems/arcade/hit';
 import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
 import { type FunMetrics, reduceFunMetrics } from './fun-metrics';
@@ -407,7 +408,7 @@ export function runMatch(o: MatchOptions): MatchResult {
     ticks,
     damageByAbility,
     damageBySide: { a: r3(bySide.a), b: r3(bySide.b) },
-    ...(arcade ? { fun: reduceFunMetrics(log, { ticks, endReason, teamOf: (id) => s.team[id] ?? 0 }) } : {}),
+    ...(arcade ? { fun: reduceFunMetrics(log, { ticks, endReason, teamOf: (id) => s.team[id] ?? 0, rangedOf: (id) => RANGED[s.defId[id] ?? 0] === 1 }) } : {}),
   };
 }
 

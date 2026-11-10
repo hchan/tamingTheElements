@@ -3,7 +3,7 @@ import { SimEventKind, WEATHER_TICKS, Weather, type SimEvent } from '@core/index
 import type { Announcement } from '../a11y/announcer';
 import {
   BADGE_WORDS, CALL_IN_SCALE, CALL_IN_TICKS, CALL_OUT_TICKS, CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TINT_RAMP_TICKS,
-  WEATHER_COLORS, WEATHER_NAMES, WeatherFx, badgeFill, badgeLabel, callAlpha, callScale, changedLine, endedLine, particle,
+  WEATHER_COLORS, WEATHER_NAMES, WeatherFx, badgeFill, badgeLabel, callAlpha, chargeFill, chargeLabel, readyAlpha, callScale, changedLine, endedLine, particle,
   progress, tintAlpha, type Particle, type WeatherSink,
 } from './weather-fx';
 
@@ -109,6 +109,23 @@ describe('weather fx: lines, words and tables', () => {
     expect(badgeFill(WEATHER_TICKS / 2, 150)).toBe(75);
     expect(badgeFill(0, 150)).toBe(0);
     expect(badgeFill(WEATHER_TICKS * 2, 150)).toBe(150);
+  });
+});
+
+describe('weather fx: charge chip', () => {
+  it('reads "WEATHER n%" (rounded down) until full, then "WEATHER READY"', () => {
+    expect(chargeLabel(0)).toBe('WEATHER 0%');
+    expect(chargeLabel(600)).toBe('WEATHER 60%');
+    expect(chargeLabel(999)).toBe('WEATHER 99%');
+    expect(chargeLabel(1000)).toBe('WEATHER READY');
+    expect(chargeLabel(-5)).toBe('WEATHER 0%');
+  });
+  it('fills the bar in proportion, clamped', () => {
+    expect([chargeFill(0, 200), chargeFill(500, 200), chargeFill(1000, 200), chargeFill(2000, 200), chargeFill(-1, 200)]).toEqual([0, 100, 200, 200, 0]);
+  });
+  it('the READY border blinks every 15 view ticks, and holds steady with reduced motion', () => {
+    expect([readyAlpha(0, false), readyAlpha(14, false), readyAlpha(15, false), readyAlpha(30, false)]).toEqual([1, 1, 0.35, 1]);
+    expect([readyAlpha(15, true), readyAlpha(16, true)]).toEqual([1, 1]);
   });
 });
 
