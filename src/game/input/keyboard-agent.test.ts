@@ -96,4 +96,39 @@ describe('KeyboardAgent', () => {
     target.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyA', shiftKey: false, ctrlKey: false, repeat: false }));
     expect(agent.observe(view)).toBe(0);
   });
+
+  it('merges gamepad commands with keys and respects capturable', () => {
+    const pad = { connected: true, axes: [1, 0], buttons: Array.from({ length: 16 }, (_, i) => ({ pressed: i === 0 || i === 3 })) };
+    const agent = new KeyboardAgent({ capturable: () => false, gamepad: () => pad });
+    agent.handle(key('down', 'Digit2'));
+    expect(agent.observe(view)).toBe(Cmd.right | Cmd.primary | Cmd.secondary);
+    const yes = new KeyboardAgent({ capturable: () => true, gamepad: () => pad });
+    expect(yes.observe(view) & Cmd.capture).toBe(Cmd.capture);
+  });
+
+  it('pollPad pauses once per press of Start', () => {
+    const effects: KeyEffect[] = [];
+    let start = false;
+    const agent = new KeyboardAgent({
+      capturable: () => false,
+      onEffect: (e) => effects.push(e),
+      gamepad: () => ({ axes: [], buttons: Array.from({ length: 16 }, (_, i) => ({ pressed: i === 9 && start })) }),
+    });
+    agent.pollPad();
+    start = true;
+    agent.pollPad();
+    agent.pollPad();
+    start = false;
+    agent.pollPad();
+    start = true;
+    agent.pollPad();
+    expect(effects).toEqual(['pause', 'pause']);
+  });
+
+  it('releaseAll drops held keys', () => {
+    const { agent } = make();
+    agent.handle(key('down', 'Enter'));
+    agent.releaseAll();
+    expect(agent.observe(view)).toBe(0);
+  });
 });
