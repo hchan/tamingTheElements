@@ -158,6 +158,9 @@ export class CraftyEntity {
 
 for (const name of NOOP_METHODS) {
   Object.defineProperty(CraftyEntity.prototype, name, {
+    // Writable so components (e.g. Character.stopOnSolids) can override a no-op by own-property copy.
+    writable: true,
+    configurable: true,
     value(this: CraftyEntity, ...args: unknown[]) {
       const crafty = (this as unknown as { crafty: CraftyStub }).crafty;
       crafty.calls.push({ target: `entity#${String(this.id)}`, method: name, args });
@@ -321,7 +324,7 @@ export function createCraftyStub(clock: FakeClock): CraftyStub {
     },
     delay(this: CraftyEntity, func: (this: CraftyEntity) => void, delay: number, repeat?: number) {
       (this['_delays'] as DelayItem[]).push({
-        start: clock.now, delay, func, repeat: repeat ?? 0, pause: 0, pauseBuffer: 0,
+        start: clock.now, delay, func, repeat: (repeat !== undefined && repeat < 0 ? Infinity : repeat) || 0, pause: 0, pauseBuffer: 0,
       });
       return this;
     },
