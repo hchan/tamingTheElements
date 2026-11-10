@@ -1,4 +1,5 @@
 /** Chapter objectives, progress text and chapter advancement (legacy Garrison.* parity). */
+import { levelFromXp } from './progression';
 
 /** Minimal save shape the objective rules read. */
 export interface ObjectivesSave {
@@ -12,21 +13,13 @@ export interface ProgressLine {
   readonly text: string;
 }
 
-/** Legacy Garrison.getLevel; ch1..ch3 XP caps are 5, 20 and 50. */
-function levelOf(experience: number): number {
-  if (experience < 5) return experience;
-  if (experience < 20) return 5 + Math.floor((experience - 5) / 3);
-  if (experience < 50) return 10 + Math.floor((experience - 20) / 6);
-  return 15 + Math.floor((experience - 50) / 10);
-}
-
 function isComplete(save: ObjectivesSave): boolean {
   return save.completeTime != null;
 }
 
 function countAtLevel(save: ObjectivesSave, level: number): number {
   let n = 0;
-  for (const c of save.garrison) if (levelOf(c.experience) === level) n++;
+  for (const c of save.garrison) if (levelFromXp(c.experience) === level) n++;
   return n;
 }
 
@@ -36,7 +29,7 @@ export function objectivesMet(save: ObjectivesSave | null): boolean {
   switch (save.chapter) {
     case 1: {
       const first = save.garrison[0];
-      return first !== undefined && levelOf(first.experience) === 5;
+      return first !== undefined && levelFromXp(first.experience) === 5;
     }
     case 2:
       return countAtLevel(save, 10) >= 3;
@@ -67,7 +60,7 @@ export function progress(save: ObjectivesSave | null): readonly ProgressLine[] {
     case 1: {
       const first = save.garrison[0];
       if (first === undefined) return [];
-      const level = levelOf(first.experience);
+      const level = levelFromXp(first.experience);
       return [
         { text: `Current level of your elemental in your Garrison : ${String(level)}` },
         { text: `You need to level this elemental ${String(5 - level)} level(s) to meet the objectives of this chapter` },
