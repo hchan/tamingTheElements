@@ -19,7 +19,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/` | TypeScript build tooling: `tools/assets/` (asset manifest and copy), `tools/gen/` (generated tables, LUTs, golden replays), `tools/sim/` (match CLI) |
 | `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`); `gen-design-tables.ts` fills the generated tables in `docs/GAME-DESIGN.md` (`pnpm docs:gen`) |
 | `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`); `build-assets.ts` (`pnpm assets:build`) copies the manifest's images and sounds plus the favicon into `public/`, verifying sha256 |
-| `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md) |
+| `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md). `run-net.ts` (`pnpm sim:net`): a bot-vs-bot match over the lockstep session and the fake network, printing stalls, resends and lag; see [NETCODE.md](NETCODE.md) |
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
 | `docs/` | Documentation: `BRANCHING.md`, `TESTING.md` (test commands, layout, fixtures, guards), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `docs/` | Documentation: `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
@@ -48,6 +48,8 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/agents/` | `Agent` interface with a read-only `ObservationView` facade, seeded random bot (own `ai.pN` stream) and replay agent |
 | `src/core/replay/` | Replay file format (header, RLE inputs, hash checkpoints every 50 ticks), recorder, verifying player and the bot-match helper behind the golden fixture in `tests/fixtures/replays/` |
 | `src/core/agents/scripted-ai/` | Ports of the legacy EnemyCharacter AI as agents; `attack.ts` has attack direction, axis and range checks and the primary/secondary preconditions |
+| `src/core/net/` | Pure lockstep netcode groundwork: `Transport` interface, packet codec and `LockstepSession` (input delay, redundant acked inputs, stall, hash desync check, timeout and hidden-tab policy); no DOM, no Date. See [NETCODE.md](NETCODE.md) |
+| `src/testing/net/` | Test tooling: seeded in-memory `FakeNetwork` (latency, jitter, loss, duplication, reordering), the two-session `runNetMatch` harness and the lockstep tests |
 | `src/core/save/` | Save schema v1 (valibot), v0 to v1 migration and `migrate()`; format in [SAVE-FORMAT.md](SAVE-FORMAT.md) |
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags, test-only `window.__TTE__` hook); imports only core via its index |
