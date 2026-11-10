@@ -304,6 +304,34 @@ section 4 and never by editing legacy data:
   rock-pellet 700, slime-blast 2000, ground-shock 1800, hurricane 2000, steal-health 1500; everything else 1000.
 - Hit-stun, knockback and guard break up the fire rate, and parry and dash give the victim an answer.
 
+### 2.14 Weather (Arcade ability, sim + view)
+
+Owner idea (Pokemon weather moves, WoW pet battle weather): a character can change the weather, and the weather
+favours one element. It gives the elements the existing 1.25x chart under-serves a tool of their own, so an unlucky
+matchup becomes something to play around instead of a fixed loss.
+
+- **State:** one `weather` slot in `SimState.arcade` (kind, ticks left, owner team); `none` by default. A new weather
+  replaces the old one, a recast of the same weather only refreshes it (no stacking).
+- **Cast:** a new `Cmd.weather` (Arcade only; its own button, never in Classic's input mask). Each race calls the
+  weather of its element: fire **Sun**, water **Rain**, earth **Sandstorm**, air **Gale**, void **Eclipse**. Cooldown
+  1500 ticks (30 s), duration 500 ticks (10 s). Casting is a medium recovery and builds a little meter.
+- **Effect (data table, one place):** damage of the favoured element x1.2, of its natural counter /1.2, applied after
+  the element chart and before combo scaling: Sun fire up / water down; Rain water up / fire down; Sandstorm earth up /
+  air down; Gale air up / earth down; Eclipse void up and every other element x1.0 (void stays neutral, it only
+  rewards the void side). Rain also puts out burning, Sun melts freeze 10 ticks faster, Sandstorm slows projectile
+  speed by 10 percent, Gale pushes knockback 10 percent further (each a data row, off in the first slice).
+- **Fairness:** both teams feel the weather; the favoured side is whoever matches it, so counter-weather is a real
+  answer (the weak side can swap weather with its own cast once off cooldown). Weather never changes who wins a
+  mirror match.
+- **View:** a weather icon and timer in the HUD (pattern and text, not colour alone), a light sky tint and a few
+  pooled particles, an announcer line ("Sunshine!"); reduced motion drops particles only.
+- **AI:** later; the scripted AI casts its own weather when it is off cooldown and the matchup is unfavourable.
+- **Metrics:** share of matches with at least one cast, win-rate change per race with and without weather (the point
+  is to narrow the spread between elements without making one weather mandatory).
+
+**New abilities:** the owner also allows new abilities in general. New abilities are Arcade-only data behind the
+Arcade flag (Classic keeps the legacy kit); each needs a design row here before it is built (use the add-ability skill).
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)
@@ -447,6 +475,8 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 26 | `WP-arcade-audio-layers` | view | Synth thump, pitch variation, KO music cut | 6 |
 | 27 | `WP-arcade-8way-aim` (pulled forward: owner request, next after the meter and parity merges) | sim+view | Arcade-only 8-way aim: cast facing is `dir8FromSigns` of the held input (Classic keeps 4-way `facingFor`, bit-identical); diagonal projectiles, melee arcs and bands from the 8-way facing, aim indicator in the HUD, AI aims diagonally; characters keep 4-way reels | 3 |
 | 27b | `WP-arcade-quirks` | sim | Remaining Arcade quirk fixes | 3 |
+| 29 | `WP-arcade-weather` | sim+data | Section 2.14: `Cmd.weather`, per-element weather, damage modifiers, cooldown and duration, events | 3, 7 |
+| 30 | `WP-arcade-weather-view` | view | Weather icon, timer, sky tint, particles, announcer line | 29 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid
