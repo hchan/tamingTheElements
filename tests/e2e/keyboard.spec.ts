@@ -24,11 +24,13 @@ async function tabTo(page: Page, text: string, max = 40): Promise<void> {
 }
 
 /**
- * Waits until the screen's async content has rendered: Settings (and other save-backed screens) show "Loading..." until
- * the IndexedDB load resolves, and Tab pressed before that only cycles the controls already there (a real race).
+ * Waits until the new screen has mounted and its async content has rendered. `waitForRoute` only sees `location.hash`,
+ * which changes synchronously on click; the router mounts the screen on the later `hashchange` task, and until then the
+ * main menu (with its own h1) is still on screen, so a Tab pressed now cycles the main menu (measured: ~3% of runs).
+ * Settings and other save-backed screens then show "Loading..." until the IndexedDB load resolves.
  */
 async function loaded(page: Page): Promise<void> {
-  await page.locator('#menu h1').waitFor();
+  await expect(page.locator('#menu h1')).not.toHaveText('Taming the Elements');
   await expect(page.locator('#menu').getByText('Loading...', { exact: true })).toHaveCount(0);
 }
 
