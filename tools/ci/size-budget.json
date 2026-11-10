@@ -1,6 +1,6 @@
 {
   "chunks": {
-    "arcade-versus": 2840,
+    "arcade-versus": 3250,
     "core": 11250,
     "index": 28700,
     "index.css": 3100,
@@ -11,5 +11,5 @@
     "sim": 16300,
     "super-view": 1230
   },
-  "totalGzip": 444100
+  "totalGzip": 444510
 }
