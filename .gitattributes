@@ -1,0 +1,30 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.ogg binary
+*.jar binary
+*.xcf binary
+*.vsd binary
+
+# Large binaries: uncomment to move to Git LFS
+# *.xcf filter=lfs diff=lfs merge=lfs -text
+# *.vsd filter=lfs diff=lfs merge=lfs -text
+
+# Legacy bytes stay unchanged (no renormalization)
+/.classpath -text
+/.gitignore -text
+/.project -text
+/CLAUDE.md -text
+/Gruntfile.js -text
+/README.md -text
+/gulpfile.js -text
+/node-webkit.package.json -text
+/package.json -text
+/.settings/** -text
+/docs/** -text
+/imgWorkArea/** -text
+/tools/** -text
+/visio/** -text
+/war/** -text

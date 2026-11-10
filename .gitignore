@@ -31,3 +31,6 @@ user.properties
 .claude/settings.local.json
 .claude/worktrees/
 .claude/*.lock
+
+# Version control metadata
+.svn/
