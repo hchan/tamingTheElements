@@ -1,6 +1,9 @@
 /** Menu keyboard support: Escape goes back, Space activates a focused link, new screens take focus. */
 
-/** Route name to the hash Escape returns to, or null where Escape does nothing (main, battle, cinematics, results). */
+/**
+ * Route name to the hash Escape returns to, or null where Escape does nothing (main, battle, cinematics, results).
+ * `arcade` hosts its own battle, so it handles Escape itself (only on its fighter picker).
+ */
 export function backHash(route: string): string | null {
   switch (route) {
     case 'main':
@@ -11,6 +14,7 @@ export function backHash(route: string): string | null {
     case 'victory':
     case 'defeat':
     case 'exit':
+    case 'arcade':
       return null;
     case 'character':
       return '#garrison';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newEmptyState } from '@core/index';
-import { loadSave, menuState } from './main-menu';
+import { MENU_ITEMS, loadSave, menuState } from './main-menu';
 
 describe('menuState', () => {
   it('disables garrison and objectives with no save', () => {
@@ -9,6 +9,7 @@ describe('menuState', () => {
       settings: true,
       objectives: false,
       newObjectives: false,
+      arcade: false,
     });
   });
 
@@ -27,6 +28,25 @@ describe('menuState', () => {
     expect(menuState(save)).toMatchObject({ garrison: true, objectives: true, newObjectives: false });
     const met = { ...save, garrison: [{ id: 'a', experience: 5, characterName: 'Fiara' }] };
     expect(menuState(met).newObjectives).toBe(true);
+  });
+});
+
+describe('Arcade Versus entry', () => {
+  const arcade = MENU_ITEMS.find((i) => i.route === 'arcade');
+  const listed = (save: Parameters<typeof menuState>[0], search = ''): string[] =>
+    MENU_ITEMS.filter((i) => i.shown?.(menuState(save, search)) !== false).map((i) => i.label);
+
+  it('is left out of the menu by default, so the Classic menu is unchanged', () => {
+    expect(listed(null)).not.toContain('Arcade Versus');
+    expect(listed({ ...newEmptyState(), arcadePreview: false })).toEqual(listed(null));
+    expect(listed({ ...newEmptyState(), arcadePreview: 'yes' })).toEqual(listed(null));
+  });
+
+  it('is listed (and enabled without a save) with the Settings opt-in or ?ff=arcade', () => {
+    expect(listed({ ...newEmptyState(), arcadePreview: true })).toContain('Arcade Versus');
+    expect(listed(null, '?ff=arcade')).toContain('Arcade Versus');
+    expect(listed(null, '?ff=arenaDemo')).not.toContain('Arcade Versus');
+    expect(arcade?.enabled(menuState(null, '?ff=arcade'))).toBe(true);
   });
 });
 

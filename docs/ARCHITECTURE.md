@@ -15,7 +15,7 @@ Describes merged code only; anything not yet built is labelled "planned". Determ
 | Layer | Path | May import | Must not import |
 |---|---|---|---|
 | core | `src/core/` | itself; `valibot` only inside `src/core/save/` | game, ui, testing, phaser, node builtins |
-| game | `src/game/` | core via `src/core/index.ts` only; phaser | ui, testing (except `src/game/app/`, which may import ui) |
+| game | `src/game/` | core via `src/core/index.ts` (or `src/core/lazy-index.ts`, see below) only; phaser | ui, testing (except `src/game/app/`, which may import ui) |
 | platform | `src/game/platform/` | core via index; itself | the rest of game, ui |
 | ui | `src/ui/` | core via index; `src/game/platform/` | phaser, testing, other game modules |
 | testing | `src/testing/` | anything | (nothing in `src` outside it, or test files, may import it) |
@@ -26,6 +26,10 @@ Enforced by [.dependency-cruiser.cjs](../.dependency-cruiser.cjs) (rules `core-i
 `core-only-valibot-in-save`, `core-npm-allowlist`, `ui-layering`, `game-layering`, `core-only-via-index`, `platform-is-leaf`,
 `not-to-testing`, `no-circular`) via `pnpm depcruise`, and for core purity also by the ESLint bans in
 [eslint.config.js](../eslint.config.js). See [ADR 0017](adr/0017-dependency-cruiser-eslint-boundaries.md).
+
+`src/core/lazy-index.ts` is a second core entry for lazily loaded app chunks: what it re-exports (today the scripted AI,
+used only by Arcade Versus) is not reachable from `src/core/index.ts`, so the bundler keeps it out of the menu entry chunk.
+A module reachable from the entry's barrel lands in the entry chunk even when only a lazy chunk uses it.
 
 ```mermaid
 flowchart TD
@@ -217,7 +221,9 @@ sequenceDiagram
   `?ff=failLoad|failSetup|failGame|failSave`.
 - Flags: two kinds. Sim flags (`SimFlags` in `src/core/flags.ts`, all default off) change the simulation, so they are part of
   `MatchSetup`, written into the replay header by `encodeFlags` (sorted names) and mirrored into `world[World.flags]`. UI flags
-  (`UiFlags` in `src/game/platform/flags.ts`, `?ff=` in dev/test builds only) never affect the sim and are not recorded.
+  (`UiFlags` in `src/game/platform/flags.ts`, `?ff=` in dev/test builds only) never affect the sim and are not recorded;
+  `getUiFlags` tests the build mode statically, so production bundles do not even contain the parser. A production build
+  opts into a preview through a setting instead (Arcade Versus: the `arcadePreview` key of the settings save).
 
 ## Scenes and DOM menus
 
@@ -234,6 +240,18 @@ imports `src/game/fx/super-view.ts` on the first super, so Classic never downloa
 scene it makes one dim overlay, band, portrait and two texts on first use, runs on the view tick (it holds while paused),
 lifts the caster over the dim, punches the camera in about the caster and restores the fit zoom at the end; the frame
 plan (`super-cinematic.ts`) is pure. The music duck is the `superStarted` sound cue's.
+
+Arcade Versus (`#arcade`, FUN-DESIGN WP 11) is a separate flow, not part of `AppFlow` (`flow.ts`, the story: garrison,
+battle, results, save). `main.ts` adds the route with a dynamic import, so its code is its own `arcade-versus` chunk and
+the menu entry stays small and Phaser-free. The screen (`src/game/app/arcade-versus.ts`, DOM in
+`src/ui/screens/arcade-versus.ts`) runs picker, battle and results inside the one route: `arcadeLaunch`
+(`src/game/app/arcade-setup.ts`) builds a 1v1 `MatchSetup` with `rulesetArcade`, `difficulty: 1`, chapter 1 (no Capture)
+and 0 XP, and the core `ScriptedAI` with its Arcade layer as the enemy (Easy drops its super). The Arena needs nothing new:
+the Arcade HUD, juice, super key and cinematic follow the world flag. The flow has no save store, so it writes no progress,
+XP, capture, objectives or garrison (a repo test and a unit test guard it); the only write is the playtest replay, when
+recording is on. The route is offered when Settings > Arcade Versus (preview) is ticked (the save's `arcadePreview`) or
+with `?ff=arcade` in dev and test builds; otherwise `#arcade` returns to the main menu. A pointer-only Super button over
+the arena holds the bound super key for touch players.
 
 ## Legacy concept map
 

@@ -25,6 +25,13 @@ and a per-screen `document.title` (`routeTitle` in `src/ui/router.ts`).
 - After each navigation the new screen's `h1` takes focus, so the screen is announced and Tab starts at the top.
 - `:focus-visible` draws a 3 px outline on every control (4 px white and amber in high contrast).
 - No keyboard traps: Tab leaves key capture, and the only modal (pause) cycles Tab inside it and closes on Escape.
+- Arcade Versus (`#arcade`, opt-in in Settings > Preview): the picker is three labelled native selects (your race, AI
+  race, AI level; each race named with its element word, never by colour or art alone), a Fight! button and a Back link,
+  and Escape goes back from it. Picker, battle and results share one route, so the route's `backHash` is null (Escape
+  in the battle never leaves it) and the screen moves focus to each view's `h1` itself. The battle has a pointer-only
+  Super button (bottom right, 72x48 px, out of the Tab order: keyboards press X) that holds the bound super key while
+  pressed. The picker and results are in the axe audit of `tests/e2e/arcade.spec.ts`, which also checks the 390x844
+  layout (no sideways scroll, 44 px controls).
 
 Tested by `tests/e2e/keyboard.spec.ts`, which completes menu to garrison to battle to pause dialog to main menu with the
 keyboard alone.
@@ -99,6 +106,7 @@ written before the action existed keeps the player's keys: if one of them is alr
 | reduce motion (OS default, opt out, opt in, no shake), high contrast, rebinding, gamepad pause, announcements | `tests/e2e/a11y-features.spec.ts` |
 | hit feedback with reduced motion: flash, damage numbers, combo and meter stay, no shake (Arcade); fake-sink rules (static spark, no jitter); meter number, pattern and pulse rate | `tests/e2e/arcade-juice.spec.ts`, `src/game/fx/event-fx.test.ts`, `src/game/hud/arcade-hud.test.ts` |
 | super cinematic: reduced motion drops the slide and punch-in and keeps dim, band and name (plan, fake sink and browser); Arcade-only super key and pad RT, binding and pad conflicts | `src/game/fx/super-cinematic.test.ts`, `tests/e2e/arcade-super.spec.ts`, `src/game/input/arcade-bindings.test.ts` |
+| Arcade Versus picker and results: axe, heading focus, Escape back, touch Super button, 390x844 layout | `tests/e2e/arcade.spec.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done

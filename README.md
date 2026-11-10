@@ -16,6 +16,10 @@ Eternal Void boss.
 - **12 playable races**, each with its own abilities. Full tables are in [docs/GAME-DESIGN.md](docs/GAME-DESIGN.md).
 - **Capture** unlocks in chapter 2; the Eternal Void cannot be captured.
 - **Four chapters** with XP caps and objectives (chapter 5 is post-game).
+- **Arcade Versus (preview)**: a faster, flashier 1v1 ruleset against the Arcade AI (hit-stop, stun and knockback,
+  combos, a hyper meter and a super on X, gamepad RT or the on-screen Super button). Turn it on in **Settings > Preview >
+  Arcade Versus (preview)** and press Save; it then appears on the main menu. It never writes your save (no XP, capture
+  or progress). Design and status: [docs/FUN-DESIGN.md](docs/FUN-DESIGN.md).
 
 ## Status
 

@@ -23,6 +23,12 @@ resimulate several ticks in one 16.6 ms frame.
   `phaser` chunk and that the entry chunk does not statically import it, transitively. Phaser is loaded by a dynamic
   `import()` of `phaser-config` when play starts. The e2e menu probe confirms it at runtime from the network log and the
   Resource Timing entries.
+- **Lazy features stay out of the entry chunk.** Arcade Versus is its own `arcade-versus` chunk (about 5.5 KB gzip, budget
+  6100), imported when `#arcade` opens; the scripted AI it needs is exported from `src/core/lazy-index.ts`, not the core
+  barrel, or it would land in `index`. Every function a lazy chunk imports from `index` is one more export there, and the
+  renamed exports can move `phaser-config` by a few bytes, so keep those imports few. Dev and test-only code is behind a
+  static `import.meta.env.DEV || import.meta.env.MODE === 'test'` test (`getUiFlags`, `arcadeEnabled`, the Arena's
+  `?ff=arcade` demo) so production bundles drop it.
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per

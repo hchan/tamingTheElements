@@ -200,6 +200,29 @@ for (const vp of VIEWPORTS) {
       await shoot(page, vp, 'arena', 'arena-arcade-super-freeze', 'Arcade: super freeze (arena dimmed, caster lit, element band with portrait, super name and element; camera punched in)');
       expect(errors).toEqual([]);
     });
+
+    test('arcade versus menus (Settings opt-in)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seed(page, { ...(fixture('v0-ch3') as object), arcadePreview: true });
+      await page.goto(`${START}#main`);
+      await page.getByRole('button', { name: 'Arcade Versus' }).waitFor();
+      await freeze(page);
+      await shoot(page, vp, 'main', 'menu-arcade', 'Main menu with Settings > Arcade Versus (preview) ticked: the extra entry under Continue');
+      await menuScreen(page, '#arcade', 'Fight!');
+      await shoot(page, vp, 'arcade', 'arcade-pick', 'Arcade Versus picker: your race, AI race, AI level (labelled selects), Fight! and Back');
+      await page.getByRole('button', { name: 'Fight!' }).click();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      await page.evaluate(`window.__TTE__.arena.step(5)`);
+      await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus battle at tick 5: Sindarosa vs the Fiara AI, hyper meters, the touch Super button bottom right');
+      const [foe] = await characters(page, 1);
+      await page.evaluate(`window.__TTE__.arena.setHp(${String(foe?.id)}, 0); window.__TTE__.arena.step(1)`);
+      await page.getByRole('heading', { level: 1, name: 'Victory!' }).waitFor();
+      await page.evaluate(`window.__TTE__.settled()`);
+      await freeze(page);
+      await shoot(page, vp, 'arcade', 'arcade-results', 'Arcade Versus results: outcome, fighters, "saves nothing", Rematch, Change fighters, Main Menu');
+      expect(errors).toEqual([]);
+    });
   });
 }
 

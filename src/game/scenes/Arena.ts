@@ -124,7 +124,9 @@ export class Arena extends Phaser.Scene {
     fitScene(this);
     const playback = this.launch?.playback;
     this.cursor = playback ? new ReplayCursor(playback.replay) : undefined;
-    const demo = getUiFlags(window.location.search).arcade ? { ...DEMO_SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : DEMO_SETUP;
+    // `?ff=` flags exist only in dev and test builds; the static test drops this branch from production bundles.
+    const ff = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).arcade;
+    const demo = ff ? { ...DEMO_SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : DEMO_SETUP;
     const world = this.cursor?.world ?? createMatch(this.launch?.setup ?? demo);
     this.world = world;
     const view = createRenderView(world);
