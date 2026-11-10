@@ -35,7 +35,7 @@ Settings has an **Accessibility** group.
 
 | Option | Default | Effect |
 |---|---|---|
-| Reduce motion | `prefers-reduced-motion` | Drops screen shake, hit particles and the Arcade hit-stop jitter (`EventFx`; Arcade shows one static 100 ms spark instead of particles), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). Information stays: the hit flash (white for 2 frames, then a tint for 4; no motion), Arcade damage numbers (they fade in place instead of floating up) and the combo counter (no pop; it stays 1 s after the combo). |
+| Reduce motion | `prefers-reduced-motion` | Drops screen shake, hit particles and the Arcade hit-stop jitter (`EventFx`; Arcade shows one static 100 ms spark instead of particles), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). Information stays: the hit flash (white for 2 frames, then a tint for 4; no motion), Arcade damage numbers (they fade in place instead of floating up), the combo counter (no pop; it stays 1 s after the combo) and the hyper meter (a full meter stays steady instead of pulsing once a second). |
 | High contrast | `prefers-contrast: more` | Stronger borders and focus rings, solid text colours, and the colour-blind-safe HUD palette below. |
 
 Both are saved as optional booleans in the v1 save (`reduceMotion`, `highContrast`). A missing field means "follow the OS",
@@ -54,6 +54,9 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
 - High contrast swaps the green to red ramp for an Okabe-Ito set (sky blue, yellow, vermillion) and adds white outlines.
 - Arcade damage numbers (`src/game/hud/arcade-hud.ts`): combo-scaled hits are grey and smaller, counter hits gold and
   labelled `COUNTER`; the combo counter is text (`3 HITS`, `46 DMG`) with a black outline.
+- Arcade hyper meter: the bar count is a number beside the bar (`3 MAX` when full); full segments are solid and the one
+  still filling is dashed, with a black and white outline that reads on bright and dark arenas (high contrast: white fill,
+  thicker outline). A full meter pulses once a second, under the WCAG 2.3.1 limit of three flashes.
 
 ## In-battle announcements and pause
 
@@ -88,7 +91,7 @@ remapping is not offered; browsers expose a pad only after its first button pres
 | axe audit of every screen | `tests/e2e/a11y.spec.ts` |
 | keyboard-only navigation, focus, Escape, Space, no traps, pause dialog | `tests/e2e/keyboard.spec.ts` |
 | reduce motion (OS default, opt out, opt in, no shake), high contrast, rebinding, gamepad pause, announcements | `tests/e2e/a11y-features.spec.ts` |
-| hit feedback with reduced motion: flash, damage numbers and combo stay, no shake (Arcade); fake-sink rules (static spark, no jitter) | `tests/e2e/arcade-juice.spec.ts`, `src/game/fx/event-fx.test.ts`, `src/game/hud/arcade-hud.test.ts` |
+| hit feedback with reduced motion: flash, damage numbers, combo and meter stay, no shake (Arcade); fake-sink rules (static spark, no jitter); meter number, pattern and pulse rate | `tests/e2e/arcade-juice.spec.ts`, `src/game/fx/event-fx.test.ts`, `src/game/hud/arcade-hud.test.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done

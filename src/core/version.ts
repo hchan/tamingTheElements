@@ -14,5 +14,8 @@
  * 6: Arcade only; Classic hashes unchanged. Combo counter and damage scaling by hit index, counter hits (+1 stun tier),
  *    `comboEnded`, and `recovered` reason 0 when a stun runs out; the `input` slot runs the Arcade expiry
  *    (WP-arcade-combo).
+ * 7: Arcade only; Classic hashes unchanged. Hyper meter per team (0..3000): hits give the attacker 800 and the victim
+ *    600 per mille of the share of the victim's life removed, each cast +20; `meterLevel` when the bar count changes
+ *    (WP-arcade-meter).
  */
-export const SIM_VERSION = 6;
+export const SIM_VERSION = 7;

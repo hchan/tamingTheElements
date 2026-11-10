@@ -92,3 +92,19 @@ export function comboScalePm(hit: number, strength: HitStrengthValue): number {
   const pm = COMBO_SCALE_PM[hit - 1] ?? COMBO_SCALE_FLOOR_PM;
   return strength === HitStrength.super ? Math.max(pm, SUPER_COMBO_FLOOR_PM) : pm;
 }
+
+/**
+ * Hyper meter (FUN-DESIGN 2.5): per team, 0..METER_MAX in bars of METER_BAR. Gains are level-independent: dealing
+ * damage gives `floor(dealt * METER_DEAL_PM / victimMaxHp)` (a full life bar dealt is 0.8 bars), taking it
+ * `floor(dealt * METER_TAKE_PM / victimMaxHp)`; each cast +METER_CAST. Parry, perfect dodge and clash gains are used by
+ * their work packages (guard and parry, dash, clash).
+ */
+export const METER_BAR = 1000;
+export const METER_BARS = 3;
+export const METER_MAX = METER_BAR * METER_BARS;
+export const METER_DEAL_PM = 800;
+export const METER_TAKE_PM = 600;
+export const METER_CAST = 20;
+export const METER_PARRY = 150;
+export const METER_PERFECT_DODGE = 100;
+export const METER_CLASH = 50;

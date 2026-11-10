@@ -13,7 +13,7 @@ import { ABILITY_DEFS } from './systems/projectile';
 import { hasEnded } from './systems/end';
 import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
-import { COMBO_STUN_CAP_TICKS, JUGGLE_LIMIT, KO_HIT_STOP_TICKS } from '../data/arcade';
+import { COMBO_STUN_CAP_TICKS, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX } from '../data/arcade';
 import { SimEventKind, type SimEvent } from './events';
 import type { SimWorld } from './world';
 
@@ -153,7 +153,7 @@ function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEven
   checkArcade(w, events, wasFrozen, fail);
 }
 
-/** Hit-stop invariants: a frozen step is silent; every hit stops the clock for at most KO_HIT_STOP_TICKS. */
+/** Arcade invariants: a frozen step is silent; every hit stops the clock for at most KO_HIT_STOP_TICKS; caps; meter. */
 function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolean, fail: (m: string) => never): void {
   const s = w.state;
   if (!isArcade(s)) {
@@ -186,6 +186,13 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   }
   for (const e of events) {
     if (e.kind === SimEventKind.comboEnded && (e['hits'] ?? 0) < 1) fail('empty combo ended');
+  }
+  // Hyper meter (FUN-DESIGN 2.5): within 0..METER_MAX, and a team's last meterLevel of the tick names its bars.
+  for (let t = 0; t < TEAM_COUNT; t++) {
+    const meter = s.arcade[ARCADE_TEAM_BASE + t * ARCADE_T + ArcadeT.meter] ?? 0;
+    if (meter < 0 || meter > METER_MAX) fail(`team ${String(t)} meter ${String(meter)}`);
+    const last = events.filter((e) => e.kind === SimEventKind.meterLevel && e['team'] === t).at(-1);
+    if (last && last['bars'] !== Math.floor(meter / METER_BAR)) fail(`meterLevel ${String(last['bars'])} for meter ${String(meter)}`);
   }
 }
 

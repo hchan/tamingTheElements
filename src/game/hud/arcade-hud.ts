@@ -1,5 +1,7 @@
+import { METER_BAR, METER_BARS } from '@core/index';
+
 /**
- * Pure Arcade HUD model (no Phaser): pooled floating damage numbers and the per-team combo counter
+ * Pure Arcade HUD model (no Phaser): pooled floating damage numbers, the per-team combo counter and the hyper meter
  * (docs/FUN-DESIGN.md section 3). The Arena feeds it and ages it while the sim runs; the Hud scene only draws it.
  */
 
@@ -28,6 +30,23 @@ export interface DamageNumber {
   age: number;
 }
 
+/** Hyper meter bar: METER_BARS segments of SEGMENT_W x SEGMENT_H px with SEGMENT_GAP between, under the HUD. */
+export const SEGMENT_W = 56;
+export const SEGMENT_H = 10;
+export const SEGMENT_GAP = 6;
+export const METER_W = METER_BARS * SEGMENT_W + (METER_BARS - 1) * SEGMENT_GAP;
+export const METER_Y = 106;
+/** A full meter pulses its fill once per METER_PULSE_MS (one flash a second: under the WCAG 2.3.1 limit of 3). */
+export const METER_PULSE_MS = 1000;
+/** Dash pattern (on, off px) of the segment that is still filling, so full and charging differ without colour. */
+export const CHARGE_DASH: readonly [number, number] = [4, 3];
+
+export interface MeterShown {
+  value: number;
+  /** Ms since the meter became full (counts only while full). */
+  full: number;
+}
+
 export interface ComboShown {
   /** Hits shown (0 = hidden). */
   hits: number;
@@ -41,6 +60,7 @@ export interface ComboShown {
 export class ArcadeHudModel {
   readonly numbers: readonly DamageNumber[];
   readonly combos: readonly [ComboShown, ComboShown];
+  readonly meters: readonly [MeterShown, MeterShown] = [{ value: 0, full: 0 }, { value: 0, full: 0 }];
   private next = 0;
 
   constructor() {
@@ -72,8 +92,14 @@ export class ArcadeHudModel {
     n.age = 0;
   }
 
-  /** Advances by `ms`. `hits` and `damage` are the live combo per team (RenderView.arcade()). */
-  update(ms: number, hits: readonly number[], damage: readonly number[]): void {
+  /** Advances by `ms`. `hits`, `damage` and `meter` are the live combo and hyper meter per team (RenderView.arcade()). */
+  update(ms: number, hits: readonly number[], damage: readonly number[], meter: readonly number[] = NO_METER): void {
+    for (let team = 0; team < this.meters.length; team++) {
+      const m = this.meters[team];
+      if (!m) continue;
+      m.value = meter[team] ?? 0;
+      m.full = meterBarsOf(m.value) >= METER_BARS ? m.full + ms : 0;
+    }
     for (const n of this.numbers) {
       if (!n.live) continue;
       n.age += ms;
@@ -95,6 +121,48 @@ export class ArcadeHudModel {
       }
     }
   }
+}
+
+const NO_METER: readonly number[] = [0, 0];
+
+/** Full bars in a meter value. */
+export function meterBarsOf(value: number): number {
+  return Math.min(METER_BARS, Math.floor(value / METER_BAR));
+}
+
+/** The bar count in words: the number, and MAX when full (never colour alone). */
+export function meterLabel(value: number): string {
+  const bars = meterBarsOf(value);
+  return bars >= METER_BARS ? `${String(bars)} MAX` : String(bars);
+}
+
+export interface MeterSegment {
+  readonly x: number;
+  /** Filled width in px (0..SEGMENT_W). */
+  readonly fill: number;
+  /** Full segments are solid; the one still filling is dashed (CHARGE_DASH). */
+  readonly full: boolean;
+}
+
+/** Left edge of a side's meter: team 0 ends at `innerX` (toward the centre), team 1 starts there. */
+export function meterX(team: number, innerX: number): number {
+  return team === 0 ? innerX - METER_W : innerX;
+}
+
+/** The METER_BARS segments, filling left to right on both sides (one reading direction). */
+export function meterSegments(value: number, x: number): MeterSegment[] {
+  const out: MeterSegment[] = [];
+  for (let i = 0; i < METER_BARS; i++) {
+    const part = Math.min(METER_BAR, Math.max(0, value - i * METER_BAR));
+    out.push({ x: x + i * (SEGMENT_W + SEGMENT_GAP), fill: Math.floor((part * SEGMENT_W) / METER_BAR), full: part === METER_BAR });
+  }
+  return out;
+}
+
+/** Fill opacity of the meter: steady unless full; a full meter dims for half of each METER_PULSE_MS (steady with reduced motion). */
+export function meterFlashAlpha(m: MeterShown, reduced: boolean): number {
+  if (reduced || meterBarsOf(m.value) < METER_BARS) return 1;
+  return m.full % METER_PULSE_MS < METER_PULSE_MS / 2 ? 1 : 0.35;
 }
 
 /** Upward offset of a number at `age` ms; reduced motion fades it in place. */

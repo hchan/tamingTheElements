@@ -199,6 +199,12 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - Damage scales with `dmgMult` (level) like every ability. The Eternal Void (boss) is not an Arcade pick.
 - View only: screen dims to 40% brightness, a portrait cut-in band in the element colour, the super name, camera
   punch-in, a music duck (section 3).
+- Built in WP 7 (`systems/arcade/meter.ts`, table in `data/arcade.ts`): the meter is `ArcadeT.meter`. `applyArcadeHit`
+  adds both gains last, from the health actually removed (`damageDealt`: overkill caps at the remaining HP, a hit on a
+  dead victim gives nothing); the attacker is the source's team. The cast sites (projectile, omni, melee, buff and heal;
+  not capture) add +20 once the cooldown is booked, through `meterOnCast`, which returns at once in Classic. `meterLevel`
+  carries the new bar count (0..3) when a gain changes it. The parry, perfect-dodge and clash gains are in the table for
+  WPs 15, 16 and 18. Nothing spends the meter yet (WP 8).
 
 ### 2.6 Tag swap, entrance attack and benched recovery (sim)
 
@@ -375,6 +381,11 @@ holds while the sim is paused, so e2e steps and visual captures see it. Not buil
 numbers, the 3-per-second cap (no full-screen flash exists yet), and the trails and clash rows (WP 17, 18). For testing,
 `?ff=arenaDemo,arcade` (dev and test builds) runs the bot demo with the Arcade ruleset.
 
+Built in WP 7 (`WP-arcade-meter`): `RenderView.arcade().meter` and the hyper meter in `Hud.ts` (model and geometry in
+`arcade-hud.ts`): three 56 x 10 px segments under the HUD toward the centre (team 0 ends at its health bar's inner end,
+team 1 starts at its own), full segments solid, the filling one dashed, the bar count as a number beside it (`3 MAX`
+when full). A full meter pulses its fill once a second; with reduced motion it stays steady.
+
 ## 4. Fun metrics (automatable)
 
 All metrics come from event streams, so the same code measures bot tournaments, golden replays and human playtest
@@ -445,7 +456,7 @@ that uses them, and measurable by `fun:report`.
 | 4 | `WP-arcade-combo` (done) | sim | combo counter, scaling, counter hits, `comboEnded`, `recovered` | Scaling table, reset rules, combo end tick | None big |
 | 5 | `WP-arcade-tooling` (done: report-only gate; `--ai-level` is reserved until WP 10, `fun:compare` and `--replay` are later) | tools | `run-match --ruleset/--team-size/--ai-level`, `tools/sim/fun-metrics.ts`, `fun:report`, `fun-gate.test.ts` (report-only at first), `record-golden --ruleset arcade`, first Arcade golden `tests/fixtures/replays/arcade-1v1.replay.json` | Reducer unit tests on synthetic events; golden verifies | Gate runtime on CI |
 | 6 | `WP-arcade-juice-hits` (done) | view | `RenderView.arcade()`; `event-fx.ts` strength-scaled sparks, working flash (V6), jitter, shake; damage numbers and combo UI in `src/game/hud/` + `Hud.ts` | Fake-sink tests: feedback coverage 100%, reduced motion drops motion only | V6 cause is not known yet (budget a spike) |
-| 7 | `WP-arcade-meter` | sim+view | `arcade/meter.ts` gains, `meterLevel`; meter bar in the HUD | Gain per rule at level 1 and 10 (level-independent); bar pattern cues | Meter too fast or too slow: watch super usage |
+| 7 | `WP-arcade-meter` (done) | sim+view | `arcade/meter.ts` gains, `meterLevel`; meter bar in the HUD | Gain per rule at level 1 and 10 (level-independent); bar pattern cues | Meter too fast or too slow: watch super usage |
 | 8 | `WP-arcade-super-core` | sim | `Cmd.super`; `arcade/super.ts`: freeze 40, invulnerability, generic "Elemental Burst" (the Fire Inferno Beam shape, tinted by element) for all 12 races; `superStarted`/`superEnded` | Freeze and invulnerability ticks, cost, hits and scaling floor, KO during super | One shape for all races is an MVP shortcut |
 | 9 | `WP-arcade-super-view` | view | dim, cut-in, camera punch-in, duck, Arcade bindings (X / pad RT) in `bindings.ts`, `gamepad.ts` | Reduced-motion plan tests; binding conflict tests | Readability of the cut-in at 390x844 |
 | 10 | `WP-arcade-ai-basic` | agents | `ObservationView.arcade`; core `ScriptedAI` presses during the opponent's stun and supers on confirm when the meter is full | Agent snapshot round trip; the tournament uses supers (coverage) | AI too strong once it combos: cap at Normal |

@@ -4,7 +4,8 @@ import { crisp, fitScene } from '../boot/viewport';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import {
-  comboAlpha, comboLabel, comboScale, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
+  CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha,
+  meterSegments, meterX, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -32,6 +33,9 @@ export interface HudData {
 /** Combo counter anchor under each side's bars (logical px). */
 const COMBO_Y = 110;
 const COMBO_MARGIN = 24;
+/** Hyper meter fill (high contrast: white) and the gap between the meter and its bar-count label. */
+const METER_COLOR = 0x4fc3ff;
+const METER_LABEL_GAP = 8;
 
 const TEAMS = [0, 1] as const;
 /** Frames between re-reads of the accessibility prefs (the OS media queries are not free per frame). */
@@ -54,6 +58,7 @@ export class Hud extends Phaser.Scene {
   private numberSerials: number[] = [];
   private comboTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private comboKeys: number[] = [];
+  private meterTexts: (Phaser.GameObjects.Text | undefined)[] = [];
 
   constructor() {
     super(HUD_SCENE);
@@ -78,12 +83,13 @@ export class Hud extends Phaser.Scene {
       this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
       this.gfx?.destroy();
       this.gfx = undefined;
-      for (const t of [...this.labels, ...this.numberTexts, ...this.comboTexts]) t?.destroy();
+      for (const t of [...this.labels, ...this.numberTexts, ...this.comboTexts, ...this.meterTexts]) t?.destroy();
       this.labels = [];
       this.numberTexts = [];
       this.numberSerials = [];
       this.comboTexts = [];
       this.comboKeys = [];
+      this.meterTexts = [];
       this.view = undefined;
       this.arcade = undefined;
     });
@@ -142,7 +148,10 @@ export class Hud extends Phaser.Scene {
     return this.add.text(0, 0, '', crisp(this, style)).setDepth(102);
   }
 
-  /** Damage numbers float up (fade in place with reduced motion); combo counters pop at 3/5/8 hits (no pop when reduced). */
+  /**
+   * Damage numbers float up (fade in place with reduced motion); combo counters pop at 3/5/8 hits (no pop when reduced);
+   * the hyper meters.
+   */
   private drawArcade(model: ArcadeHudModel): void {
     const reduced = this.reduceMotion;
     for (let i = 0; i < model.numbers.length; i++) {
@@ -163,6 +172,7 @@ export class Hud extends Phaser.Scene {
       t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age)).setVisible(true);
     }
     for (const team of TEAMS) {
+      this.drawMeter(model, team);
       const c = model.combos[team];
       let t = this.comboTexts[team];
       if (c.hits === 0) {
@@ -181,6 +191,42 @@ export class Hud extends Phaser.Scene {
       }
       t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
     }
+  }
+
+  /**
+   * Hyper meter under the HUD, toward the centre: three segments, full ones solid and the filling one dashed, the bar
+   * count as a number beside it (MAX when full), and a once-a-second fill pulse when full (steady with reduced motion).
+   */
+  private drawMeter(model: ArcadeHudModel, team: 0 | 1): void {
+    const gfx = this.gfx;
+    const m = model.meters[team];
+    if (!gfx) return;
+    const inner = team === 0 ? mainBar(0).maxX : mainBar(sideOffset(1)).minX;
+    const x = meterX(team, inner);
+    const color = this.highContrast ? 0xffffff : METER_COLOR;
+    const mid = METER_Y + SEGMENT_H / 2;
+    const alpha = meterFlashAlpha(m, this.reduceMotion);
+    for (const seg of meterSegments(m.value, x)) {
+      gfx.fillStyle(0x000000, 0.6);
+      gfx.fillRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+      if (seg.full) {
+        gfx.fillStyle(color, alpha);
+        gfx.fillRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+      } else if (seg.fill > 0) {
+        gfx.lineStyle(SEGMENT_H, color, 1);
+        for (const [x0, x1] of dashSegments(seg.x, seg.x + seg.fill, CHARGE_DASH)) gfx.lineBetween(x0, mid, x1, mid);
+      }
+      // Dark then light outline, so the segments read on both bright and dark arenas.
+      gfx.lineStyle(3, 0x000000, 1);
+      gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+      gfx.lineStyle(this.highContrast ? 2 : 1, 0xffffff, 1);
+      gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+    }
+    const t = (this.meterTexts[team] ??= this.text(16)
+      .setOrigin(team === 0 ? 1 : 0, 0.5)
+      .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
+    const label = meterLabel(m.value);
+    if (t.text !== label) t.setText(label);
   }
 
   private drawBar(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter): void {
