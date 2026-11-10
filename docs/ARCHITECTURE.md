@@ -99,14 +99,15 @@ order, RNG streams seeded from `seed`.
 the events. `noop` entries are reserved slots that keep the order stable as systems land. Systems read time through
 `now(s)` (`src/core/sim/clock.ts`): `tick` in Classic, the Arcade `gameTick` in Arcade. The freeze gate runs only slot 1
 while an Arcade freeze holds `gameTick` (`isFrozen`, never true in Classic); `tick` always advances. In Arcade, melee
-and projectile hits go through `applyArcadeHit` (`systems/arcade/hit.ts`), which keeps the Classic damage arithmetic and
-sets the hit-stop freeze, knockback and hit-stun (`arcade/knockback.ts`, `arcade/stun.ts`); the Classic lines run
+and projectile hits go through `applyArcadeHit` (`systems/arcade/hit.ts`), which keeps the Classic damage arithmetic
+times the combo scale (`arcade/combo.ts`) and sets the hit-stop freeze, knockback and hit-stun (`arcade/knockback.ts`,
+`arcade/stun.ts`); the Classic lines run
 unchanged behind `!isArcade`. The cast sites and movement ask `canAct` (Classic: not frozen; Arcade: also not
 stunned), and Arcade movement applies knockback first and holds both axes at the walls.
 
 | # | System | Status |
 |---|---|---|
-| 1 | input | no-op (commands are read by the systems that need them) |
+| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): stun and combo expiry (`recovered`, `comboEnded`) on unfrozen ticks |
 | 2 | swap (`systems/swap.ts`) | implemented |
 | 3 | movement (`systems/movement.ts`) | implemented |
 | 4 | abilities | no-op (planned) |

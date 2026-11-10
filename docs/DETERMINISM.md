@@ -105,7 +105,9 @@ units), and `step` then runs only the `input` slot. Hit-stop (`src/core/sim/syst
 finishes and the next `n` ticks are frozen; a frozen step emits no events, so event ids stay unique. In Classic
 `isFrozen` is never true and `SimState.arcade` is empty, so Classic hashes are unchanged (pinned by
 `tests/repo/classic-hash-pins.test.ts`). Hit-stun deadlines are in game ticks, and knockback speeds are Int32 in Q4
-(1/16 px per tick) along the integer `DIR8_X/Y`, so `x += kbVx / 16` adds an exact dyadic fraction.
+(1/16 px per tick) along the integer `DIR8_X/Y`, so `x += kbVx / 16` adds an exact dyadic fraction. Combo scaling is
+one `* scalePm / 1000` on the Classic float damage (skipped at 1000 pm, so unscaled hits are bit-identical), and the
+combo damage total is an Int32 in Q4 (`Math.round(amount * 16)`).
 
 ## Cross-browser golden replays
 
