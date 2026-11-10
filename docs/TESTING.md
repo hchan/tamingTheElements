@@ -134,9 +134,10 @@ Typical e2e pattern (see `tests/e2e/app-flow.spec.ts`): `page.waitForFunction("w
 then drive it with `page.evaluate`. Arena demos start with the `?ff=arenaDemo` flag, cinematics with `?ff=cinematicDemo`.
 Do not add game logic that reads the hook.
 
-`state().route` is `location.hash`, which changes synchronously on click, while the router mounts the new screen on the
-later `hashchange` task. After `waitForRoute`, also wait for the new screen itself (a heading or control that only it has;
-`loaded()` in `tests/e2e/keyboard.spec.ts`) before pressing keys: the old screen's own h1 satisfies a bare `#menu h1` wait.
+`state().route` is `location.hash`, which changes synchronously on click, before the router mounts the new screen on the
+later `hashchange` task. `state().mountedRoute` is set by the router (test builds only) after the screen's `mount()` ran, and
+`waitForRoute` waits on it, so keys pressed right after it hit the new screen. Screens with async content (Settings and other
+save-backed screens show "Loading...") still need their own wait (`loaded()` in `tests/e2e/keyboard.spec.ts`).
 
 ## Writing a new ability or character test
 

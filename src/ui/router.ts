@@ -158,8 +158,11 @@ export function startRouter(
     const route = resolveRoute(window.location.hash);
     current = route.name;
     active?.unmount();
+    // Test builds only (statically removed from production): the e2e hook waits on this, as `hashchange` fires before the mount.
+    if (import.meta.env.DEV || import.meta.env.MODE === 'test') delete container.dataset.mountedRoute;
     active = screens[route.name](route.param);
     active.mount(container);
+    if (import.meta.env.DEV || import.meta.env.MODE === 'test') container.dataset.mountedRoute = window.location.hash;
     document.title = routeTitle(route.name);
     focusHeading(container);
   };
