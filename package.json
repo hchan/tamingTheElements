@@ -34,6 +34,7 @@
     "format": "echo \"not yet\" && exit 1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@cyclonedx/cyclonedx-npm": "^7.0.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",

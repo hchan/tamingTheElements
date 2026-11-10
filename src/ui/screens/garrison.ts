@@ -58,17 +58,22 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
         const page = el('div', 'menuPage');
         node = page;
         container.append(page);
-        page.append(el('div', 'heading', 'Garrison'));
+        page.append(el('h1', 'heading', 'Garrison'));
+        const back = el('a', 'menuLink', 'Back');
+        back.setAttribute('href', '#main');
         if (save === null || save.garrison.length === 0) {
-          page.append(el('div', undefined, 'No heroes yet.'));
+          page.append(el('div', undefined, 'No heroes yet.'), back);
           return;
         }
         let sel: Selection = EMPTY_SELECTION;
         const rows = displayOrder(save);
         const table = el('div');
         table.id = 'garrisonTable';
+        table.setAttribute('role', 'group');
+        table.setAttribute('aria-label', 'Heroes: select up to the allowed number, in battle order');
         const buttons = el('div');
-        page.append(table, buttons);
+        page.append(table, buttons, back);
+        let refocus: string | null = null;
 
         const render = (): void => {
           table.replaceChildren();
@@ -77,6 +82,10 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
             const n = orderNumber(sel, v.id);
             const row = el('div', n === null ? 'garrisonRow' : 'garrisonRow selectedGarrisonRow');
             row.id = v.id;
+            // A keyboard-operable toggle: Tab to focus, Enter or Space to select, named by its visible text (name, level, XP, element, battle order).
+            row.tabIndex = 0;
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-pressed', String(n !== null));
             const avatar = el('div', 'garrisonAvatar');
             avatar.style.backgroundImage = d.avatarUrl(v.sprite);
             avatar.style.backgroundSize = 'contain';
@@ -93,9 +102,17 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
             const order = el('div', 'battlegroundOrderContainer', n === null ? '' : String(n));
             if (n === null) order.hidden = true;
             row.append(avatar, info, order);
-            row.addEventListener('click', () => {
+            const toggle = (): void => {
               sel = toggleSelection(sel, v.id, save.chapter);
+              refocus = v.id;
               render();
+            };
+            row.addEventListener('click', toggle);
+            row.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggle();
+              }
             });
             table.append(row);
           }
@@ -107,14 +124,15 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
             const s = states[b.mode];
             const portal = b.mode === 'portal';
             const ready = s.enabled ? (portal ? 'readyToEnterPortal' : 'readyToEnterBattleground') : undefined;
-            const btn = el('div', ready, b.label);
+            const btn = el('button', ready, b.label);
+            btn.type = 'button';
             btn.id = b.id;
             if (portal) {
               // Legacy ChaoticFire: an ember canvas behind the label, animated while hovered or focused.
               const canvas = el('canvas');
               canvas.id = 'enterPortalCanvas';
+              canvas.setAttribute('aria-hidden', 'true');
               btn.prepend(canvas);
-              btn.tabIndex = 0;
               fxs.push(createPortalFx({ canvas: canvas, target: btn }));
             }
             btn.addEventListener('click', () => {
@@ -128,6 +146,10 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
               d.navigate('loading');
             });
             buttons.append(btn);
+          }
+          if (refocus !== null) {
+            document.getElementById(refocus)?.focus();
+            refocus = null;
           }
         };
         render();

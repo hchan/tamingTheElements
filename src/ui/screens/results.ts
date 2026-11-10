@@ -74,7 +74,7 @@ export function setPendingResult(ctx: ResultsContext | null): void {
 }
 
 function renderView(page: HTMLElement, view: ResultsView, victory: boolean): void {
-  page.append(el('div', victory ? 'heading victory' : 'heading defeat', view.heading));
+  page.append(el('h1', victory ? 'heading victory' : 'heading defeat', view.heading));
   if (view.avatarName !== null) {
     const avatar = el('div', 'resultAvatar', view.avatarName);
     avatar.dataset['character'] = view.avatarName;

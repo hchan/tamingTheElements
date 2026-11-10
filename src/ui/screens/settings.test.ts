@@ -25,4 +25,20 @@ describe('applySettings', () => {
     const save = { ...newEmptyState(), extra: 1 };
     expect(applySettings(save, { difficulty: 0.25, displaySettings: 1, garrisonSortOrder: 2 }).extra).toBe(1);
   });
+
+  it('applies the accessibility checkboxes: stored only when they differ from the OS', () => {
+    const calm = { reduceMotion: false, highContrast: false };
+    const form = { difficulty: 0.25, displaySettings: 1, garrisonSortOrder: 2 };
+    const on = applySettings(newEmptyState(), { ...form, reduceMotion: true, highContrast: false }, calm);
+    expect(on.reduceMotion).toBe(true);
+    expect('highContrast' in on).toBe(false);
+    const off = applySettings(on, { ...form, reduceMotion: false }, calm);
+    expect('reduceMotion' in off).toBe(false);
+  });
+
+  it('a form without the checkboxes leaves the saved accessibility choices alone', () => {
+    const save = { ...newEmptyState(), reduceMotion: true };
+    const out = applySettings(save, { difficulty: 0.25, displaySettings: 1, garrisonSortOrder: 2 });
+    expect(out.reduceMotion).toBe(true);
+  });
 });

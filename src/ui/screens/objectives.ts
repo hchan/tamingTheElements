@@ -56,7 +56,7 @@ export function objectivesScreen(deps?: ObjectivesDeps): Screen {
         if (node !== page) return;
         const save = r.ok ? r.value : null;
         const view = objectivesView(save);
-        page.append(el('div', 'heading', view.title));
+        page.append(el('h1', 'heading', view.title));
         for (const line of view.lines) page.append(el('p', 'objectiveLine', line));
         if (view.canAdvance && save !== null) {
           const btn = el('button', 'clickable', view.advanceLabel);

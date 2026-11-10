@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ELEMENTS } from '@core/index';
 import { elementDescription, wikiLines } from './wiki';
-import { KEY_BINDINGS, formatKeys } from './key-bindings';
+import { DEFAULT_BINDINGS, bindSteal } from '../../game/platform/input/bindings';
+import { newEmptyState } from '@core/index';
+import { KEY_BINDINGS, bindingsFromSave, formatKeys, saveWithBindings } from './key-bindings';
 import { findRace, raceRows } from './race';
 
 describe('wiki', () => {
@@ -22,6 +24,15 @@ describe('key bindings', () => {
     const all = KEY_BINDINGS.map((b) => b.action).join('|');
     expect(all).not.toMatch(/I Win|Freeze|CaptureWin/);
     expect(KEY_BINDINGS.flatMap((b) => b.keys)).not.toContain('SHIFT-Q');
+  });
+  it('persists custom bindings in the save and drops them again at the defaults', () => {
+    const custom = bindSteal(DEFAULT_BINDINGS, 'capture', 0, 'KeyV');
+    const saved = saveWithBindings(newEmptyState(), custom);
+    expect(saved.keyBindings?.['capture']).toEqual(['KeyV']);
+    expect(bindingsFromSave(JSON.parse(JSON.stringify(saved)) as typeof saved)).toEqual(custom);
+    const reset = saveWithBindings(saved, DEFAULT_BINDINGS);
+    expect('keyBindings' in reset).toBe(false);
+    expect(bindingsFromSave(null)).toEqual(DEFAULT_BINDINGS);
   });
   it('formats alternates', () => {
     expect(formatKeys(['SPACE', '1'])).toBe('SPACE or 1');

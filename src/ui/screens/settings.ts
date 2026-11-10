@@ -9,6 +9,17 @@ import {
   newEmptyState,
   type SaveV1,
 } from '@core/index';
+import {
+  applyPrefsToDocument,
+  applyPrefsToSave,
+  getPrefs,
+  readOsPrefs,
+  resolvePrefs,
+  savedPrefs,
+  setSavedPrefs,
+  type OsA11y,
+} from '../../game/platform/a11y/prefs';
+import { parseBindings, setBindings } from '../../game/platform/input/bindings';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import { prepareExport, runImport } from '../../game/platform/storage/export-import';
 import { canvasFraction } from '../display-scale';
@@ -23,6 +34,9 @@ export interface SettingsForm {
   readonly difficulty: string | number;
   readonly displaySettings: string | number;
   readonly garrisonSortOrder: string | number;
+  /** Accessibility checkboxes; absent means "leave the saved choice alone". */
+  readonly reduceMotion?: boolean;
+  readonly highContrast?: boolean;
 }
 
 function pick(table: Readonly<Record<string, number>>, raw: string | number, fallback: number): number {
@@ -31,13 +45,26 @@ function pick(table: Readonly<Record<string, number>>, raw: string | number, fal
 }
 
 /** Pure: returns a new save with the form applied. Values are written as NUMBERS (legacy wrote strings). */
-export function applySettings(save: SaveV1, form: SettingsForm): SaveV1 {
-  return {
+export function applySettings(save: SaveV1, form: SettingsForm, os: OsA11y = readOsPrefs()): SaveV1 {
+  const base: SaveV1 = {
     ...save,
     difficulty: pick(DIFFICULTY, form.difficulty, save.difficulty),
     displaySettings: pick(DISPLAY_SCALE, form.displaySettings, save.displaySettings),
     garrisonSortOrder: pick(GARRISON_SORT_ORDER, form.garrisonSortOrder, save.garrisonSortOrder),
   };
+  if (form.reduceMotion === undefined && form.highContrast === undefined) return base;
+  const current = resolvePrefs(savedPrefs(save), os);
+  return applyPrefsToSave(
+    base,
+    { reduceMotion: form.reduceMotion ?? current.reduceMotion, highContrast: form.highContrast ?? current.highContrast },
+    os,
+  );
+}
+
+/** Makes the saved accessibility choices take effect now (document attributes and the fx/HUD readers). */
+export function applyA11y(save: SaveV1): void {
+  setSavedPrefs(savedPrefs(save));
+  applyPrefsToDocument(getPrefs());
 }
 
 export function applyUiScale(scale: number, root: HTMLElement = document.documentElement): void {
@@ -80,6 +107,44 @@ function radioGroup(
   return set;
 }
 
+function checkbox(name: 'reduceMotion' | 'highContrast', label: string, hint: string, checked: boolean): HTMLElement {
+  const row = el('div', 'settingsOption');
+  const id = `setting-${name}`;
+  const input = el('input');
+  input.type = 'checkbox';
+  input.name = name;
+  input.id = id;
+  input.checked = checked;
+  input.setAttribute('aria-describedby', `${id}-hint`);
+  const lab = el('label', undefined, label);
+  lab.htmlFor = id;
+  const note = el('div', 'info', hint);
+  note.id = `${id}-hint`;
+  row.append(input, ' ', lab, note);
+  return row;
+}
+
+function accessibilityGroup(save: SaveV1): HTMLElement {
+  const set = el('fieldset', 'settingsGroup');
+  set.append(el('legend', 'heading', 'Accessibility'));
+  const prefs = resolvePrefs(savedPrefs(save), readOsPrefs());
+  set.append(
+    checkbox(
+      'reduceMotion',
+      'Reduce motion',
+      'Turns off screen shake, particles and spinning animations. Follows your device setting until you change it.',
+      prefs.reduceMotion,
+    ),
+    checkbox(
+      'highContrast',
+      'High contrast',
+      'Stronger borders and a colour-blind-safe palette for health bars and status icons.',
+      prefs.highContrast,
+    ),
+  );
+  return set;
+}
+
 function readForm(form: HTMLFormElement): SettingsForm {
   const data = new FormData(form);
   const get = (k: keyof SettingsForm): string => {
@@ -90,6 +155,8 @@ function readForm(form: HTMLFormElement): SettingsForm {
     difficulty: get('difficulty'),
     displaySettings: get('displaySettings'),
     garrisonSortOrder: get('garrisonSortOrder'),
+    reduceMotion: data.has('reduceMotion'),
+    highContrast: data.has('highContrast'),
   };
 }
 
@@ -138,6 +205,8 @@ function transferControls(): HTMLElement {
       .then((out) => {
         if (out.status === 'imported') {
           applyUiScale(out.save.displaySettings);
+          applyA11y(out.save);
+          setBindings(parseBindings(out.save.keyBindings));
           status.textContent = 'Save imported.';
         } else {
           status.textContent = out.status === 'error' ? out.message : 'Import cancelled.';
@@ -165,8 +234,9 @@ export function settingsScreen(store?: SaveStore): Screen {
     mount(container) {
       const save = loadSave();
       applyUiScale(save.displaySettings);
+      applyA11y(save);
       node = el('div', 'menuPage');
-      node.append(el('div', 'heading', 'Settings'));
+      node.append(el('h1', 'heading', 'Settings'));
       const form = el('form', 'settingsForm');
       form.append(
         radioGroup('difficulty', 'Difficulty', DIFFICULTY, save.difficulty, DEFAULT_DIFFICULTY),
@@ -178,6 +248,7 @@ export function settingsScreen(store?: SaveStore): Screen {
           save.garrisonSortOrder,
           DEFAULT_GARRISON_SORT_ORDER,
         ),
+        accessibilityGroup(save),
       );
       const saveBtn = el('button', 'menuButton', 'Save');
       saveBtn.type = 'submit';
@@ -188,6 +259,7 @@ export function settingsScreen(store?: SaveStore): Screen {
         e.preventDefault();
         const next = applySettings(save, readForm(form));
         applyUiScale(next.displaySettings);
+        applyA11y(next);
         const done = (): void => {
           window.location.hash = '#main';
         };

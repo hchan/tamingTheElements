@@ -16,6 +16,7 @@ import {
 import { el } from '@ui/dom';
 import { defaultScreens, type ScreenTable } from '@ui/router';
 import { objectivesScreen } from '@ui/screens/objectives';
+import { keyBindingsScreen } from '@ui/screens/key-bindings';
 import { settingsScreen } from '@ui/screens/settings';
 import { garrisonScreen } from '@ui/screens/garrison';
 import type { MatchSetup as UiSetup } from '@ui/screens/garrison-model';
@@ -102,6 +103,7 @@ export class AppFlow {
       battleground: () => redirect(navigate, 'garrison'),
       currentObjectives: () => objectivesScreen({ store: this.deps.store, navigate }),
       settings: () => settingsScreen(this.deps.store),
+      keyBindings: () => keyBindingsScreen(this.deps.store),
       garrison: garrisonScreen({
         load: () => loadSave(window.localStorage),
         navigate,
@@ -194,7 +196,7 @@ export class AppFlow {
           showWebglError(mountNode);
           return;
         }
-        mountNode.append(el('div', 'heading', 'Loading...'));
+        mountNode.append(el('h1', 'heading', 'Loading...'));
         void this.deps.store.load().then(async (r) => {
           if (life.disposed || !r.ok) return;
           const setup = toCoreSetup(pending.ui, r.value, pending.seed);
@@ -262,7 +264,7 @@ export class AppFlow {
           this.deps.navigate('main');
           return;
         }
-        page.append(el('div', 'heading', r.victory ? 'Victory!' : 'Defeat'));
+        page.append(el('h1', 'heading', r.victory ? 'Victory!' : 'Defeat'));
         if (r.xp) {
           const lvl = r.xp.leveledUp ? ` Level up! ${String(r.xp.levelBefore)} to ${String(r.xp.levelAfter)}.` : '';
           page.append(el('p', undefined, `${r.xp.characterName} gained ${String(r.xp.gained)} XP.${lvl}`));

@@ -25,10 +25,10 @@ export const raceScreen: ScreenFactory = (param): Screen => {
       node = el('div', 'menuPage');
       const ch = findRace(param);
       if (ch === undefined) {
-        node.append(el('div', 'heading', 'Unknown race'));
+        node.append(el('h1', 'heading', 'Unknown race'));
       } else {
         const text = CHARACTER_TEXT.get(ch.id);
-        node.append(el('div', 'heading', text?.name ?? ch.id));
+        node.append(el('h1', 'heading', text?.name ?? ch.id));
         if (text) node.append(el('p', 'raceDescription', text.description));
         const table = el('table', 'raceTable');
         for (const [k, v] of raceRows(ch)) {
