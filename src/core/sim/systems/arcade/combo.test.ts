@@ -142,7 +142,8 @@ describe('counter hits', () => {
 
 describe('combo properties', () => {
   const race = fc.constantFrom(...CHARACTERS.filter((c) => c.id !== 'eternal-void').map((c) => c.id));
-  const cmd = fc.integer({ min: 0, max: 0x3fff });
+  // No guard (arcade/guard.test.ts covers it): a held guard blocks, so combos would be rare.
+  const cmd = fc.integer({ min: 0, max: 0x3fff }).map((c) => c & ~Cmd.guard);
   const sticky = fc
     .array(fc.tuple(fc.integer({ min: 1, max: 40 }), cmd, cmd), { minLength: 1, maxLength: 12 })
     .map((runs) => runs.flatMap(([k, p, q]) => Array.from({ length: k }, (): [number, number] => [p, q])));

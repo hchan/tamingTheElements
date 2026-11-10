@@ -45,5 +45,11 @@
  *    after the start), a perfect dodge (+100 meter, once per dash), and a dash within 10 ticks of a confirmed hit cancels
  *    melee recovery; `dashed`/`perfectDodge`; the Arcade entity block gains `dashDodged` and the team block
  *    `confirmTick` (WP-arcade-dash).
+ * 14: Arcade only; Classic hashes unchanged. Guard and parry: holding `Cmd.guard` (bit 12) blocks every hit but a super
+ *    (250 pm chip, light knockback, 8 ticks of block-stun, no combo; `guarded`) and drains the guard meter (2000 pm of
+ *    the chip's share of max HP; +5 per game tick while not guarding); empty, `guardBroken` and 60 ticks of stun. A guard
+ *    press opens an 8-tick parry window (`parried`, no damage, 10 ticks of hit-stop, +150 meter; projectiles reflect,
+ *    melee attackers are stunned 20); a whiffed window locks parries for 20 ticks. The Arcade entity block renames
+ *    `guardState`/`guardMeter` to `blockUntil`/`guardDrain` (WP-arcade-guard-parry).
  */
-export const SIM_VERSION = 13;
+export const SIM_VERSION = 14;

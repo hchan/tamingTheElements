@@ -8,8 +8,8 @@ import { meterOf, meterOnCast } from './meter';
 /** Presses in `ArcadeT.pressTick` order (FUN-DESIGN 2.12); primary and secondary are also the ability slots 0 and 1. */
 export const Press = { primary: 0, secondary: 1, dash: 2, guard: 3, super: 4 } as const;
 /** Command bit of each press: dash and guard are the Arcade bits 11 and 12. */
-export const PRESS_BITS = [Cmd.primary, Cmd.secondary, Cmd.dash, 1 << 12, Cmd.super] as const;
-/** Presses `bufferedCmd` replays; the dash press is read by arcade/dash.ts, guard only records its edges until WP 16. */
+export const PRESS_BITS = [Cmd.primary, Cmd.secondary, Cmd.dash, Cmd.guard, Cmd.super] as const;
+/** Presses `bufferedCmd` replays; the dash press is read by arcade/dash.ts, the guard press by arcade/guard.ts. */
 const REPLAYED = [Press.primary, Press.secondary, Press.super] as const;
 /** `pressUsed` flag: the pending super press came from a chord, so held primary and secondary are masked meanwhile. */
 export const CHORD_FLAG = 1 << 5;

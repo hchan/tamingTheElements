@@ -130,7 +130,7 @@ export const SUPER_ELEMENTAL_BURST = 0;
  * Input windows (FUN-DESIGN 2.12), in game ticks (a freeze does not age a press). A press of primary, secondary or super
  * that cannot run at once runs on the first tick it can within BUFFER_TICKS of the press (age 0..BUFFER_TICKS), once.
  * Primary and secondary pressed within SUPER_CHORD_TICKS of each other (0..SUPER_CHORD_TICKS apart) are a super press
- * when the team has SUPER_COST meter and no super running. The dash and parry windows arrive with their work packages.
+ * when the team has SUPER_COST meter and no super running. The dash and parry windows are with the dash and guard tables.
  */
 export const BUFFER_TICKS = 8;
 export const SUPER_CHORD_TICKS = 3;
@@ -172,3 +172,22 @@ export const DASH_RECOVERY_TICKS = 6;
 export const DASH_COOLDOWN_TICKS = 30;
 export const DOUBLE_TAP_TICKS = 12;
 export const DASH_CANCEL_TICKS = 10;
+
+/**
+ * Guard and parry (FUN-DESIGN 2.8, WP 16), in game ticks. Holding `Cmd.guard` blocks every hit but a super: the hit
+ * deals GUARD_CHIP_PM of its damage, the light knockback and BLOCK_STUN_TICKS of block-stun (no hit-stun, no combo),
+ * and drains `floor(chip * GUARD_DRAIN_PM / maxHp)` of the guard meter (GUARD_MAX), which regenerates GUARD_REGEN per
+ * game tick while not guarding. Emptied: `guardBroken` and GUARD_BREAK_STUN_TICKS of stun. A guard press starts a
+ * parry window: a hit 0..PARRY_TICKS game ticks later is parried (no damage, PARRY_HIT_STOP_TICKS, METER_PARRY; a
+ * projectile is reflected, a melee attacker is stunned PARRY_STUN_TICKS). A window that ends without a hit locks new
+ * parries for PARRY_LOCK_TICKS; a press meanwhile is dropped.
+ */
+export const GUARD_CHIP_PM = 250;
+export const BLOCK_STUN_TICKS = 8;
+export const GUARD_MAX = 1000;
+export const GUARD_DRAIN_PM = 2000;
+export const GUARD_REGEN = 5;
+export const GUARD_BREAK_STUN_TICKS = 60;
+export const PARRY_TICKS = 8;
+export const PARRY_STUN_TICKS = 20;
+export const PARRY_LOCK_TICKS = 20;
