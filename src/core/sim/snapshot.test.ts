@@ -70,4 +70,41 @@ describe('snapshot and hash', () => {
     expect(s.x[a]).toBe(3);
     expect(() => new SnapshotRing(s, 0)).toThrow();
   });
+
+  it('restoreTick picks the newest snapshot of a tick, not the lowest slot', () => {
+    const { s, a } = populated();
+    const ring = new SnapshotRing(s, 3);
+    s.x[a] = 1;
+    ring.push(s, 5);
+    s.x[a] = 2;
+    ring.push(s, 6);
+    s.x[a] = 3;
+    ring.push(s, 5); // re-simulated tick 5 after a rollback: slot 2, newer than slot 0
+    s.x[a] = 0;
+    expect(ring.restoreTick(s, 5)).toBe(true);
+    expect(s.x[a]).toBe(3);
+    expect(ring.heldTicks()).toEqual([5, 6, 5]);
+  });
+
+  it('restoreTick drops the entries pushed after the restored one, also after wrapping', () => {
+    const { s, a } = populated();
+    const ring = new SnapshotRing(s, 4);
+    for (let t = 0; t < 6; t++) {
+      s.x[a] = t;
+      ring.push(s, t);
+    }
+    expect(ring.heldTicks()).toEqual([2, 3, 4, 5]);
+    expect(ring.restoreTick(s, 3)).toBe(true);
+    expect(s.x[a]).toBe(3);
+    expect(ring.size).toBe(2);
+    expect(ring.heldTicks()).toEqual([2, 3]);
+    expect(ring.restoreTick(s, 5)).toBe(false);
+    expect(s.x[a]).toBe(3);
+    s.x[a] = 40;
+    ring.push(s, 4);
+    expect(ring.heldTicks()).toEqual([2, 3, 4]);
+    expect(ring.restoreTick(s, 2)).toBe(true);
+    expect(s.x[a]).toBe(2);
+    expect(ring.heldTicks()).toEqual([2]);
+  });
 });

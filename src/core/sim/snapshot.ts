@@ -56,13 +56,19 @@ export class SnapshotRing {
     if (this.count < this.depth) this.count++;
   }
 
-  /** Restores the snapshot taken at tick; returns false when it is not (or no longer) held. */
+  /**
+   * Restores the newest snapshot taken at `tick` and drops every entry pushed after it (they belong to the
+   * timeline being rewound). Returns false, changing nothing, when no snapshot of that tick is held.
+   */
   restoreTick(s: SimState, tick: number): boolean {
-    for (let i = 0; i < this.count; i++) {
-      if (this.ticks[i] === tick) {
-        restore(s, this.bufs[i] as SnapshotBuf);
-        return true;
-      }
+    for (let k = 0; k < this.count; k++) {
+      const i = (this.next - 1 - k + this.depth) % this.depth;
+      if (this.ticks[i] !== tick) continue;
+      restore(s, this.bufs[i] as SnapshotBuf);
+      for (let j = 1; j <= k; j++) this.ticks[(i + j) % this.depth] = -1;
+      this.next = (i + 1) % this.depth;
+      this.count -= k;
+      return true;
     }
     return false;
   }
@@ -70,7 +76,7 @@ export class SnapshotRing {
   /** Oldest to newest held ticks. */
   heldTicks(): number[] {
     const out: number[] = [];
-    const start = this.count < this.depth ? 0 : this.next;
+    const start = (this.next - this.count + this.depth) % this.depth;
     for (let i = 0; i < this.count; i++) out.push(this.ticks[(start + i) % this.depth] as number);
     return out;
   }
