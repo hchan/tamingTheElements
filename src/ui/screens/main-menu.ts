@@ -1,6 +1,7 @@
 import { migrate, objectivesMet } from '@core/index';
 import type { SaveV1 } from '@core/index';
 import { el } from '../dom';
+import { versionStamp } from '../version';
 import type { ScreenFactory } from './screen';
 
 export const STORAGE_KEY = 'Taming the Elements';
@@ -98,6 +99,9 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
           }
         }
         page.append(list);
+        const footer = el('div', 'versionStamp', versionStamp(import.meta.env));
+        footer.id = 'versionStamp';
+        page.append(footer);
         container.append(page);
         node = page;
       },

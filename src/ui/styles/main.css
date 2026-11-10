@@ -94,6 +94,12 @@ a {
 .heading {
   text-align: center;
 }
+.versionStamp {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.6;
+}
 .subHeading {
   text-align: left;
   font-size: 24px;

@@ -10,7 +10,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded PR runs are cancelled; a push to main is never cancelled half way through a deploy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -50,6 +51,8 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm exec playwright install --with-deps chromium
       - run: corepack pnpm e2e
+      # Production build served under the Pages subpath (VITE_BASE=/tamingTheElements/).
+      - run: corepack pnpm e2e:pages
 
   # Cross-engine determinism gate. Runs on every PR (not nightly): the replay is ~1500 ticks and the whole job
   # is dominated by the browser download (~1-2 min), cheap enough to catch a divergence before merge.
@@ -69,3 +72,48 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm exec playwright install --with-deps chromium firefox webkit
       - run: corepack pnpm test:browser
+
+  # Deploy to GitHub Pages: push to main only, and only after check and e2e passed. PRs never reach these jobs.
+  # Pages must be enabled (Source: GitHub Actions) in repo settings first; see docs/DEPLOYMENT.md.
+  pages-build:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # short sha for the version stamp
+          persist-credentials: false
+      - name: Enable corepack (pnpm from packageManager field)
+        run: corepack enable
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Build for Pages
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+        run: corepack pnpm build
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: pages-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

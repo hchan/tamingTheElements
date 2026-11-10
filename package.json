@@ -17,6 +17,7 @@
     "test:legacy": "vitest run --project legacy",
     "test:browser": "vitest run --project browser",
     "e2e": "playwright test",
+    "e2e:pages": "playwright test --config playwright.pages.config.ts",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "tsx tools/gen/record-golden.ts",
