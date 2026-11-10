@@ -14,6 +14,9 @@ import { stateNumber, stateRecord, type AgentState, type FighterView, type Obser
  * - Super: on a confirm (the opponent is stunned) with a full bar (SUPER_COST), after a reaction delay counted from the
  *   first tick it saw that stun, it faces the opponent and presses `Cmd.super`, if the Elemental Burst band would
  *   cover the opponent.
+ * - 8-way aim (WP-arcade-8way-aim): a shot the base AI chose keeps its 4-way facing (a second movement axis is dropped,
+ *   as Classic's x-wins facing would), and when no shot lines up on an axis but the opponent sits on a diagonal
+ *   (`diagonalLine`), a ready projectile slot fires along that diagonal.
  */
 
 /** Normal's combo length cap (FUN-DESIGN 2.11: Easy 1, Casual 2, Normal 3, Hard 5, WTF 8). */
@@ -37,6 +40,20 @@ export function superFacing(self: FighterView, opp: FighterView): Command {
   if (opp.y < cy + half && opp.y + opp.h > cy - half) return opp.x + opp.w / 2 >= cx ? Cmd.right : Cmd.left;
   if (opp.x < cx + half && opp.x + opp.w > cx - half) return opp.y + opp.h / 2 >= cy ? Cmd.down : Cmd.up;
   return 0;
+}
+
+/**
+ * The two movement bits of the diagonal from `self` to `opp` when a diagonal shot from `self`'s centre would meet `opp`
+ * (centres off both axes by more than half the opponent's size, and the two offsets within half its height of each
+ * other); 0 otherwise. A diagonal shot moves +-speed on both axes, so it stays on that line.
+ */
+export function diagonalLine(self: FighterView, opp: FighterView): Command {
+  const dx = opp.x + opp.w / 2 - (self.x + self.w / 2);
+  const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
+  const ax = Math.abs(dx);
+  const ay = Math.abs(dy);
+  if (ax <= opp.w / 2 || ay <= opp.h / 2 || Math.abs(ax - ay) > opp.h / 2) return 0;
+  return (dx > 0 ? Cmd.right : Cmd.left) | (dy > 0 ? Cmd.down : Cmd.up);
 }
 
 /** `pressStep` stops closing in this many px (centre to centre) from the opponent. */
@@ -65,13 +82,17 @@ export class ArcadeTactics {
 
   /**
    * The Arcade version of `cmd` for `view`; `cmd` itself when the view has no `arcade` (Classic). `draw(n)` is the
-   * agent's own uniform integer in [0, n), called once per confirm.
+   * agent's own uniform integer in [0, n), called once per confirm. `shot` is the attack bit of a projectile slot that
+   * can fire now (0: none), used for a diagonal shot.
    */
-  apply(view: ObservationView, cmd: Command, draw: (n: number) => number): Command {
+  apply(view: ObservationView, base: Command, draw: (n: number) => number, shot: Command = 0): Command {
     const a = view.arcade;
     const self = view.self;
     const opp = view.opponent;
-    if (a === undefined || self === undefined || opp === undefined) return cmd;
+    if (a === undefined || self === undefined || opp === undefined) return base;
+    const line = shot === 0 || (base & ATTACK) !== 0 ? 0 : diagonalLine(self, opp);
+    const axisShot = (base & ATTACK) !== 0 && (base & (Cmd.left | Cmd.right)) !== 0;
+    const cmd = line !== 0 ? (base & ~MOVE) | line | shot : axisShot ? base & ~(Cmd.up | Cmd.down) : base;
     if (a.oppStun === 0) {
       this.seenAt = -1;
       return cmd;

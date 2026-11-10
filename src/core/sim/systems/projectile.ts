@@ -19,6 +19,7 @@ import { applyArcadeHit } from './arcade/hit';
 import { meterOnCast } from './arcade/meter';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { releaseCount } from './ability-info';
+import { castDir } from './arcade/aim';
 
 /** Ability index used for SimState.defId (set A then set B). */
 export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -89,8 +90,9 @@ function fire(world: SimWorld, sink: EventSink, team: number, charId: number, sl
     meterOnCast(s, sink, charId, team);
     return;
   }
-  // A full entity table means no bullet: the cast must not book a cooldown or leak an active count.
-  if (!spawnBullet(world, charId, defIdx, def, s.dir[charId] ?? 0)) return;
+  // A full entity table means no bullet: the cast must not book a cooldown or leak an active count. Arcade fires along
+  // the 8-way aim: a diagonal moves +-speed on both axes (DIR8 table, no normalisation).
+  if (!spawnBullet(world, charId, defIdx, def, castDir(s, charId))) return;
   const ci = countIdx(charId, slot);
   s.abil[ci] = (s.abil[ci] ?? 0) + 1;
   // Legacy cooldown is strict (>) in ms, so the next fire is one tick after the cooldown elapses.

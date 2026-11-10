@@ -28,5 +28,8 @@
  *    character; Arcade casts book there too); a hit releases the count on the shooter team's current character
  *    (bullet-count-on-active). A Capture bullet on a faded target only sets the captured flag (no damage, keeps
  *    flying); on the last boss it keeps flying. A frozen character cannot swap.
+ * 10: Arcade only; Classic hashes unchanged. 8-way aim: the Arcade entity block gains `aim` (the dir8 of the last held
+ *    input); shots fly along it (diagonals +-speed on both axes), a diagonal melee is a (w + h) / 2 square off the
+ *    caster's corner, and those hits knock back along it; the super band keeps the 4-way facing (WP-arcade-8way-aim).
  */
-export const SIM_VERSION = 9;
+export const SIM_VERSION = 10;

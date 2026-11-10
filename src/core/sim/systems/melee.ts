@@ -16,6 +16,7 @@ import { applyArcadeHit, HIT_STUN } from './arcade/hit';
 import { meterOnCast } from './arcade/meter';
 import { applyStun, canAct, isInvulnerable } from './arcade/stun';
 import { releaseCount } from './ability-info';
+import { castDir } from './arcade/aim';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -28,7 +29,6 @@ const STEAL_HEALTH = DEF_INDEX.get('steal-health') ?? -1;
 const ICE_SHOCK = DEF_INDEX.get('ice-shock') ?? -1;
 
 const HIT = 1;
-const EAST = 0;
 const NORTH = 2;
 const WEST = 4;
 const SOUTH = 6;
@@ -59,8 +59,15 @@ export function isInRangeExplosion(attX: number, attY: number, tgt: Aabb, rangeW
   return inRange(attX, attY, tgt, rangeW, rangeH, 0.5);
 }
 
-/** Legacy `Melee.reposition`: the (rotation-aware) box a directional melee occupies in front of its caster. */
+/**
+ * Legacy `Melee.reposition`: the (rotation-aware) box a directional melee occupies in front of its caster. Diagonals
+ * (odd dir8, Arcade 8-way aim only) take a square of side (w + h) / 2 off the caster's corner on the aim side.
+ */
 export function directionalBox(dir: number, cx: number, cy: number, cw: number, ch: number, w: number, h: number): Aabb {
+  if ((dir & 1) === 1) {
+    const d = (w + h) / 2;
+    return { x: dir < 3 || dir > 5 ? cx + cw : cx - d, y: dir < 4 ? cy - d : cy + ch, w: d, h: d };
+  }
   if (dir === WEST) return { x: cx - w, y: cy + (ch - h) / 2, w, h };
   if (dir === SOUTH) return { x: cx + (cw - h) / 2, y: cy + ch, w: h, h: w }; // rotated 90 deg
   if (dir === NORTH) return { x: cx + (cw - h) / 2, y: cy - w, w: h, h: w }; // rotated 270 deg
@@ -251,15 +258,16 @@ function cast(world: SimWorld, sink: EventSink, team: number, slot: number, tick
   const cy = s.y[caster] ?? 0;
   const cw = s.w[caster] ?? 0;
   const ch = s.h[caster] ?? 0;
+  const aim = castDir(s, caster);
   const box =
     defId === GROUND_SHOCK || defId === HURRICANE
       ? { x: cx - (w - cw) / 2, y: cy - (h - ch) / 2, w, h }
-      : directionalBox(s.dir[caster] ?? EAST, cx, cy, cw, ch, w, h);
+      : directionalBox(aim, cx, cy, cw, ch, w, h);
   s.kind[id] = EntityKind.melee;
   s.defId[id] = defId;
   s.team[id] = team;
   s.owner[id] = caster;
-  s.dir[id] = s.dir[caster] ?? EAST;
+  s.dir[id] = aim;
   s.x[id] = box.x;
   s.y[id] = box.y;
   s.w[id] = box.w;
