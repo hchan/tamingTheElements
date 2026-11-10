@@ -374,7 +374,7 @@ describe('legacy abilities: heals', () => {
     check('stealHealth', out);
   });
 
-  it('HealWithRest (rest-heal-once): benched character heals only one 0.5% tick because Crafty Delay repeat -1 fires once', () => {
+  it('HealWithRest: a benched character heals 0.5% maxHealth every second (Crafty Delay repeat -1 repeats forever) until maxHealthWithRest', () => {
     const r = rig();
     const { Game } = r.env.globals as any;
     const bench = r.make('PlayerCharacter', 'Pax', 1, -1);

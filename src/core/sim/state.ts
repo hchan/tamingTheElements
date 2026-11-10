@@ -65,6 +65,7 @@ export const ARCADE_LENGTH = ARCADE_WORLD_BASE + ARCADE_W;
 export const F64_FIELDS = [
   'x', 'y', 'px', 'py', 'vx', 'vy', 'w', 'h', 'hp', 'maxHp', 'dmgMult', 'healMult', 'speed', 'baseSpeed', 'restCap',
 ] as const;
+/** `expireTick`: melee/effect expiry; for a character, the next rest-heal tick (0 = no timer, systems/rest.ts). */
 export const I32_FIELDS = [
   'kind', 'defId', 'team', 'owner', 'dir', 'flags', 'spawnTick', 'expireTick', 'hitMask',
 ] as const;

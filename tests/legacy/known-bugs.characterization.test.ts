@@ -226,6 +226,27 @@ describe('known legacy bugs (current behaviour)', () => {
     expect(result).toEqual({ onlyX: { x: 1, y: 20, capitalY: true }, both: { x: 1, y: 2 } });
   });
 
+  it('rest-heal-enemy-in-play: Swap.isBenched is true for every enemy, so a running rest timer heals the active enemy', () => {
+    // KNOWN-BUG:rest-heal-enemy-in-play
+    const env = loadLegacy({ seed: 1 });
+    const before = observe(
+      env,
+      `${PRELUDE}
+      var p = fighter('PlayerCharacter', { isDead: false, curHealth: 50, maxHealth: 150, maxHealthWithRest: 100 });
+      var e = fighter('EnemyCharacter', { isDead: false, curHealth: 50, maxHealth: 150, maxHealthWithRest: 100 });
+      p.unbind('EnterFrame'); e.unbind('EnterFrame'); // no AI or flipping
+      Game.gameScene = { player: p, enemy: e };
+      globalThis.restP = p; globalThis.restE = e;
+      Crafty.e('HealWithRest').doDelay(p);
+      Crafty.e('HealWithRest').doDelay(e);
+      return { playerBenched: Swap.isBenched(p), activeEnemyBenched: Swap.isBenched(e) };`,
+    );
+    env.clock.advance(2040);
+    const after = observe(env, 'return { player: restP.curHealth, enemy: restE.curHealth };');
+    expect(before).toEqual({ playerBenched: false, activeEnemyBenched: true });
+    expect(after).toEqual({ player: 50, enemy: 51.5 });
+  });
+
   it('damage-uses-target-mult: applyDamage scales by the victim target damageMultiplier, not the hitter', () => {
     // KNOWN-BUG:damage-uses-target-mult
     const env = loadLegacy({ seed: 1 });

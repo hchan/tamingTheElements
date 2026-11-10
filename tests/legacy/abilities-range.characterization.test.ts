@@ -166,9 +166,9 @@ function omniSpread(name: string): Dict {
 }
 
 /**
- * Sonar Blast and Fireball change per Delay step. The vendored Crafty removes a delay with
- * repeat -1 after one run (repeat <= 0), so the natural run count is recorded separately and the
- * per-step decay is driven by invoking the queued callback directly.
+ * Sonar Blast and Fireball change per Delay step. Crafty's `delay(fn, 10, -1)` repeats forever
+ * (crafty.js ~11577), so with 20 ms frames the step runs once per frame; the natural run count
+ * over one second is recorded, and the per-step decay is driven by invoking the queued callback.
  */
 function delayShrink(name: string): Dict {
   const s = scene(name);
@@ -189,12 +189,25 @@ function delayShrink(name: string): Dict {
   }
 
   const natural = scene(name);
+  // A real viewport, so the bullet stays in bounds (the stub's is 0x0) and the step keeps running.
+  Object.assign(natural.env.crafty.viewport, { width: 1280, height: 720 });
   fire(natural, name);
+  const naturalItem = ([...natural.env.crafty.entities.values()].find(
+    (e) => (e['_delays'] as unknown[] | undefined)?.length,
+  )?.['_delays'] as { func: Fn }[] | undefined)?.[0];
+  let naturalRuns = 0;
+  if (naturalItem) {
+    const inner = naturalItem.func;
+    naturalItem.func = function (this: unknown, ...args: unknown[]) {
+      naturalRuns++;
+      return inner.apply(this, args);
+    };
+  }
   natural.env.clock.advance(1000);
   return {
     delayMs: item.delay,
-    repeat: item.repeat,
-    naturalRunsIn1s: ((natural.bullets()[0]?.['damage'] as number) !== natural.defaults['damage']) ? 'ran' : 'idle',
+    repeat: String(item.repeat),
+    naturalRunsIn1s: naturalRuns,
     steps,
   };
 }

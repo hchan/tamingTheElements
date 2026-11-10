@@ -10,6 +10,7 @@ import type { Side } from '../rules/progression';
 import { allocEntity } from './alloc';
 import { ABILITY_SLOTS, EntityFlag, EntityKind, TEAM_STRIDE, TeamField, World as W } from './state';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
+import { startRestTimer } from './systems/rest';
 import { createWorld, DEFAULT_ARENA, type SimWorld } from './world';
 
 /** One team's members in garrison order; the first is the active character, the rest start benched. */
@@ -70,6 +71,8 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
     s.healMult[id] = stats.healMultiplier;
     s.speed[id] = def.speed;
     s.baseSpeed[id] = def.speed;
+    // Legacy benches the extra members at scene start (benchHelper), which starts their rest timers.
+    if (i !== 0) startRestTimer(s, id, 0);
   });
   s.teams[team * TEAM_STRIDE + TeamField.activeSlot] = 0;
 }
