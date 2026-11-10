@@ -41,4 +41,15 @@ describe('applySettings', () => {
     const out = applySettings(save, { difficulty: 0.25, displaySettings: 1, garrisonSortOrder: 2 });
     expect(out.reduceMotion).toBe(true);
   });
+
+  it('stores the Arcade Versus opt-in only when on; off (or a form without it) keeps a Classic save identical', () => {
+    const form = { difficulty: 0.25, displaySettings: 1, garrisonSortOrder: 2 };
+    const save = newEmptyState();
+    const on = applySettings(save, { ...form, arcadePreview: true });
+    expect(on['arcadePreview']).toBe(true);
+    const off = applySettings(on, { ...form, arcadePreview: false });
+    expect('arcadePreview' in off).toBe(false);
+    expect(JSON.stringify(applySettings(save, { ...form, arcadePreview: false }))).toBe(JSON.stringify(applySettings(save, form)));
+    expect(applySettings(on, form)['arcadePreview']).toBe(true);
+  });
 });

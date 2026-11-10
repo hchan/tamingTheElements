@@ -31,6 +31,7 @@ export const ROUTE_NAMES = [
   'gameMaster',
   'character',
   'replay',
+  'arcade',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -109,6 +110,7 @@ const ROUTE_TITLES: Readonly<Record<RouteName, string>> = {
   gameMaster: 'Game Master',
   character: 'Character Details',
   replay: 'Replay Viewer',
+  arcade: 'Arcade Versus',
 };
 
 /** Document title for a route, so each screen is named in the tab and to screen readers. */
@@ -140,6 +142,8 @@ export function defaultScreens(): ScreenTable {
       import.meta.env.DEV || import.meta.env.MODE === 'test' ? () => gameMasterScreen() : placeholderScreen('Not available'),
     character: characterDetailsScreen(),
     replay: placeholderScreen('Replay viewer'),
+    // The app wires the lazy Arcade Versus screen (src/game/app/main.ts); it is opt-in (Settings or `?ff=arcade`).
+    arcade: placeholderScreen('Arcade Versus'),
   };
 }
 

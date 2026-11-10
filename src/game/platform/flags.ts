@@ -76,5 +76,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
 }
 
 export function getUiFlags(search: string): UiFlags {
-  return parseUiFlags(search, import.meta.env);
+  // Same result as parseUiFlags in every build; the static build-mode test lets production bundles drop the parser (and
+  // the env object it would be handed) from the menu entry chunk, where every byte counts.
+  return import.meta.env.DEV || import.meta.env.MODE === 'test' ? parseUiFlags(search, import.meta.env) : DEFAULT_UI_FLAGS;
 }

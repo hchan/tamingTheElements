@@ -9,6 +9,7 @@ import {
   newEmptyState,
   type SaveV1,
 } from '@core/index';
+import { ARCADE_PREVIEW } from '../../game/platform/arcade-setting';
 import { getRecordSetting, setRecordSetting } from '../../game/platform/record-setting';
 import {
   applyPrefsToDocument,
@@ -40,6 +41,8 @@ export interface SettingsForm {
   /** Accessibility checkboxes; absent means "leave the saved choice alone". */
   readonly reduceMotion?: boolean;
   readonly highContrast?: boolean;
+  /** "Arcade Versus (preview)" checkbox; absent leaves it alone. Stored only when on (off removes the key). */
+  readonly arcadePreview?: boolean;
 }
 
 function pick(table: Readonly<Record<string, number>>, raw: string | number, fallback: number): number {
@@ -55,6 +58,10 @@ export function applySettings(save: SaveV1, form: SettingsForm, os: OsA11y = rea
     displaySettings: pick(DISPLAY_SCALE, form.displaySettings, save.displaySettings),
     garrisonSortOrder: pick(GARRISON_SORT_ORDER, form.garrisonSortOrder, save.garrisonSortOrder),
   };
+  if (form.arcadePreview !== undefined) {
+    Reflect.deleteProperty(base, ARCADE_PREVIEW);
+    if (form.arcadePreview) base[ARCADE_PREVIEW] = true;
+  }
   if (form.reduceMotion === undefined && form.highContrast === undefined) return base;
   const current = resolvePrefs(savedPrefs(save), os);
   return applyPrefsToSave(
@@ -110,7 +117,7 @@ function radioGroup(
   return set;
 }
 
-function checkbox(name: 'reduceMotion' | 'highContrast', label: string, hint: string, checked: boolean): HTMLElement {
+function checkbox(name: 'reduceMotion' | 'highContrast' | 'arcadePreview', label: string, hint: string, checked: boolean): HTMLElement {
   const row = el('div', 'settingsOption');
   const id = `setting-${name}`;
   const input = el('input');
@@ -148,6 +155,21 @@ function accessibilityGroup(save: SaveV1): HTMLElement {
   return set;
 }
 
+/** Arcade Versus opt-in (FUN-DESIGN WP 11): adds the main-menu entry; off (the default) keeps the Classic menus. */
+function previewGroup(save: SaveV1): HTMLElement {
+  const set = el('fieldset', 'settingsGroup');
+  set.append(
+    el('legend', 'heading', 'Preview'),
+    checkbox(
+      'arcadePreview',
+      'Arcade Versus (preview)',
+      'Adds a 1v1 Arcade mode to the main menu. Its matches are never saved.',
+      save[ARCADE_PREVIEW] === true,
+    ),
+  );
+  return set;
+}
+
 function readForm(form: HTMLFormElement): SettingsForm {
   const data = new FormData(form);
   const get = (k: keyof SettingsForm): string => {
@@ -160,6 +182,7 @@ function readForm(form: HTMLFormElement): SettingsForm {
     garrisonSortOrder: get('garrisonSortOrder'),
     reduceMotion: data.has('reduceMotion'),
     highContrast: data.has('highContrast'),
+    arcadePreview: data.has('arcadePreview'),
   };
 }
 
@@ -304,6 +327,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
         DEFAULT_GARRISON_SORT_ORDER,
       ),
       accessibilityGroup(save),
+      previewGroup(save),
     );
     const saveBtn = el('button', 'menuButton', 'Save');
     saveBtn.type = 'submit';
