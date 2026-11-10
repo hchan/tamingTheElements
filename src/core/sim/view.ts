@@ -1,8 +1,18 @@
 import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
-import { EntityFlag, EntityKind, MAX_ENTITIES, World } from './state';
+import type { AbilityDef } from '../data/types';
+import { capturable } from '../rules/progression';
+import {
+  EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COOLDOWNS, TEAM_STRIDE, TeamField, World,
+} from './state';
+import { CAPTURE_GRANTED_BIT } from './systems/capture';
+import { controlledId } from './systems/movement';
 import { listStatuses } from './systems/status';
 import { ABILITY_DEFS } from './systems/projectile';
+import { SWAP_COOLDOWN_TICKS, teamMembers } from './systems/swap';
+
+/** Capture sits after the character's own two ability slots (see systems/capture.ts). */
+const CAPTURE_SLOT = 2;
 import type { SimWorld } from './world';
 
 /** One character as the renderer sees it. The object is reused between callbacks: copy what you keep. */
@@ -50,9 +60,37 @@ export interface RenderProjectile {
   h: number;
 }
 
+/** One ability slot of the action bar. `readyTick` is the first tick the slot can fire again. */
+export interface RenderActionSlot {
+  /** Ability sprite key (`sprite:<key>` texture). */
+  sprite: string;
+  readyTick: number;
+  cooldownTicks: number;
+}
+
+/** One teammate swap slot: the character sprite and whether it can no longer be swapped to. */
+export interface RenderSwapSlot {
+  sprite: string;
+  dead: boolean;
+}
+
+/** Action bar data for one team's active character; a snapshot, safe to keep. */
+export interface RenderActionBar {
+  tick: number;
+  /** The character's own ability slots (primary, secondary). */
+  abilities: RenderActionSlot[];
+  /** Capture slot, or undefined when not granted (chapter 1) or for the AI side. */
+  capture: (RenderActionSlot & { capturable: boolean }) | undefined;
+  swaps: RenderSwapSlot[];
+  swapReadyTick: number;
+  swapCooldownTicks: number;
+}
+
 /** Read-only facade over a SimWorld for the renderer. Never exposes the sim arrays. */
 export interface RenderView {
   readonly tick: number;
+  /** Action bar of the team's active character, or undefined when the team has none. */
+  actionBar(team: number): RenderActionBar | undefined;
   /** Visits the active statuses of one entity in slot order. */
   forEachStatus(id: number, visit: (st: RenderStatus) => void): void;
   /** Visits every live projectile entity. */
@@ -73,6 +111,41 @@ export function createRenderView(world: SimWorld): RenderView {
   return {
     get tick(): number {
       return s.world[World.tick] ?? 0;
+    },
+    actionBar(team): RenderActionBar | undefined {
+      const cur = controlledId(world, team);
+      if (cur < 0) return undefined;
+      const tick = s.world[World.tick] ?? 0;
+      const base = team * TEAM_STRIDE;
+      const slotOf = (def: AbilityDef | undefined, slot: number): RenderActionSlot => ({
+        sprite: def?.sprite ?? '',
+        readyTick: s.teams[base + TEAM_COOLDOWNS + slot] ?? 0,
+        cooldownTicks: def?.cooldownTicks ?? 0,
+      });
+      const ids = CHARACTERS[s.defId[cur] ?? 0]?.abilities ?? [];
+      const abilities = ids.map((a, i) => slotOf(ABILITY_DEFS.find((d) => d.id === a), i));
+      let capture: RenderActionBar['capture'];
+      const enemy = controlledId(world, 1 - team);
+      if (team === 0 && ((s.world[World.flags] ?? 0) & CAPTURE_GRANTED_BIT) !== 0) {
+        capture = {
+          ...slotOf(ABILITY_DEFS.find((d) => d.id === 'capture'), CAPTURE_SLOT),
+          capturable: enemy >= 0 && capturable(s.hp[enemy] ?? 0, s.maxHp[enemy] ?? 0),
+        };
+      }
+      const swaps = teamMembers(world, team)
+        .filter((m) => m !== cur)
+        .map((m) => ({
+          sprite: CHARACTERS[s.defId[m] ?? 0]?.sprite ?? '',
+          dead: ((s.flags[m] ?? 0) & EntityFlag.dead) !== 0,
+        }));
+      return {
+        tick,
+        abilities,
+        capture,
+        swaps,
+        swapReadyTick: s.teams[base + TeamField.swapCooldownUntil] ?? 0,
+        swapCooldownTicks: SWAP_COOLDOWN_TICKS,
+      };
     },
     forEachProjectile(visit): void {
       for (let i = 0; i < MAX_ENTITIES; i++) {
