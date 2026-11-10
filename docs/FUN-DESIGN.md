@@ -709,20 +709,22 @@ Owner idea (2026-11-10): a melee ability called "Charge" that runs straight up t
 Warcraft warrior's Charge. It gives melee heroes a gap closer, the way weather and supers give other heroes tools.
 
 - **Who:** Arcade-only action for heroes whose primary ability is melee (the same ranged/melee rule as the weather charge).
-  Own input bit (masked in Classic), key F / pad B by default, rebindable, with a touch button.
+  Own input bit (masked in Classic), key H (F is the fullscreen toggle) / pad R3 by default, rebindable, with a touch button (`#arcadeCharge`).
 - **Move:** the hero rushes toward the opponent along the straight line (8-way snapped, 12 ticks at 5x speed, up to 360 px),
   stopping when it touches the opponent. Not invulnerable (unlike dash); it is interrupted by a stun or freeze, and it
   stops at walls, the playfield edge and rocks (earth hero walks over its own rocks). It cannot start while stunned,
   frozen, mid-cast or in hit-stop.
 - **On arrival:** a short stun on the target (20 ticks, counted as a hit-stun so it feeds combos), a small hit (data row,
-  light strength), meter gain, and a free primary buffered for the next tick so a charge flows into a combo.
+  light strength), meter gain (40). As built there is no free primary on arrival: it did not fit the `sim` chunk budget, so the charger
+  presses its own follow-up (the 20-tick stun is long enough for the combo).
 - **Cooldown:** 300 ticks (6 s), data rows for speed, range, stun and cooldown.
 - **Counterplay:** guard blocks the stun (chip damage only), a parry reflects it (the charger is stunned), a dash with
   its invulnerability frames dodges it, a projectile hit mid-charge interrupts it, a rock stops it.
 - **View:** speed lines and a short afterimage trail (the dash effects, tinted), impact spark, "CHARGE!" call, an
   aria-live line; reduced motion keeps the call and drops the trail.
 - **AI:** melee personalities (Rushdown) charge when the distance is above a threshold and the opponent is not
-  guarding or about to cast; Easy never charges.
+  guarding or about to cast; Easy never charges. As built: Rushdown presses it when ready and the foe is 200 px or more
+  away (Manhattan, `CHARGE_AI_MIN_DIST`), when free and with no threat; `ArcadeView.chargeIn` is -1 for a ranged hero.
 - **Metrics:** charges per match, share that connect, win-rate per race (melee races must not dominate).
 
 ## 3. Presentation juice (view only)

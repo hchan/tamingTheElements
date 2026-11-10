@@ -93,7 +93,7 @@ that Chromium, Firefox and WebKit reproduce the committed hashes.
 - `tests/repo/arcade-moves-coverage.test.ts`: coverage by events for the scripted Arcade goldens `arcade-moves.replay.json`,
   `arcade-weather.replay.json` and `arcade-tag.replay.json` (inputs authored with `tools/gen/arcade-script.ts` as named steps with durations, no AI; since WP 35 the weather needs a full charge, so `arcade-moves` has p2 fire 35 blasts off the right wall before its weather and `arcade-weather` walks laps to charge each cast; since WP 31 the seeds of `arcade-moves` and `arcade-tag` are picked so the first stage is not earth, so a rock does not break their timings, and `arcade-weather` ends with a second sandstorm so a rock stops shots and an earth hero walks over one). It
   replays them and asserts each mechanic fired at least once: a buffered cast (a cast on a tick whose button was already
-  released), a 3+ hit combo with scaled damage, a counter hit, a dash with a perfect dodge, a guard with chip, a guard break,
+  released), a 3+ hit combo with scaled damage, a counter hit, a dash with a perfect dodge, a charge that arrives, a guard with chip, a guard break,
   a parry that reflects a projectile, a diagonal (8-way) shot that lands, a meter-built super with its 40-tick freeze and a KO
   by the super's last hit, all five weathers (and a hit under one), a clash that
   destroys both and one won by element whose projectile then lands, and best of three (a KO, a time over, a super KO, then
