@@ -4,7 +4,7 @@
 |---|---|---|---|
 | Local | `http://localhost:5173` (dev), `:4173` (preview) | manual | `/` (default) |
 | GitHub Pages | `https://hchan.github.io/tamingTheElements/` | push to `main`, after `check` and `e2e` pass | `/tamingTheElements/` |
-| itch.io | not built yet | planned, tag-triggered | `./` (planned) |
+| itch.io | HTML5 upload (zip) | `v*` tag or manual dispatch (`.github/workflows/itch.yml`) | `./` |
 
 ## Build config and version stamp
 
@@ -36,12 +36,36 @@ Workflow: `.github/workflows/ci.yml`.
 One-time setup (the repo owner does this, not the workflow): Settings > Pages > Source = "GitHub Actions". Until then the
 `deploy` job fails harmlessly.
 
-## itch.io (outline, not implemented)
+## itch.io
 
-- Build with a relative base (`VITE_BASE=./`) and zip `dist/` with `index.html` at the zip root.
-- Upload as an HTML5 project, set the embed size (1280x720) and enable fullscreen.
-- Game runs in a cross-site iframe: storage can be partitioned or cleared, so offer save export. No service worker.
-- Push with `butler` from a tag-triggered workflow in an approval-gated environment (not written yet).
+```sh
+corepack pnpm build:itch   # VITE_BASE=./ build into dist-itch/site, budget check, zip to dist-itch/taming-the-elements-<version>.zip
+corepack pnpm e2e:itch     # unzips the artifact, serves it at a subpath-less origin, loads the menu (0 console errors, 0 failed requests)
+```
+
+`tools/itch/build-itch.mjs` zips with the system `zip` (macOS/Linux), `index.html` at the zip root.
+
+Size limits. itch.io HTML5 zips (<https://itch.io/docs/creators/html5>): at most 1,000 files, 500 MB extracted in total,
+200 MB per file, 240 characters per path, UTF-8 case-sensitive names, `index.html` required. Our budget (fails `build:itch`)
+is tighter: 500 files, 40 MB extracted total, 20 MB per file, 200 characters per path, no root-absolute URLs in `index.html`.
+Current build: about 154 files, 24.5 MiB extracted, 23.5 MiB zipped (Phaser dominates). Raise `BUDGET` in the script
+deliberately, never to silence a regression.
+
+Workflow `.github/workflows/itch.yml` (tag `v*` or `workflow_dispatch`, `contents: read` only): build, smoke, upload the zip
+as artifact `itch-zip` (90 days), then publish with butler 15.32.0 (pinned, sha256 verified) to channel `html5` with
+`--userversion` from `package.json`. The publish step runs only when the `BUTLER_API_KEY` secret exists; otherwise it logs a
+notice and the run still succeeds. The `ITCH_TARGET` slug (`hchan/taming-the-elements`) is a placeholder to confirm.
+Owner setup: create the itch project (kind HTML5), add `BUTLER_API_KEY` as a repo secret, set embed 1280x720 and tick
+"Fullscreen button". Nothing here publishes without that secret.
+
+Iframe constraints (itch embeds the game in an iframe on another origin):
+
+- Fullscreen: only works with itch's "Fullscreen button" option on; use it or the game's own `requestFullscreen`.
+- Audio: browsers block it until a user gesture, so sound starts after the first click.
+- Keyboard: arrow keys and space scroll the parent page until the iframe has focus; click the game once to focus it.
+- Storage: `localStorage` belongs to the iframe's own origin, so itch saves are separate from the Pages origin and may be
+  partitioned or cleared by the browser. Settings > export/import is the bridge: export on one origin, import on the other.
+- No service worker; the hash router works inside the iframe (deep links are not shareable from the itch page URL).
 
 ## Rollback
 
