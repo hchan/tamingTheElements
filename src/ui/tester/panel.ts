@@ -1,5 +1,6 @@
 import {
   addEveryRace,
+  fullGarrison,
   advanceChapterCheat,
   levelFromXp,
   levelHero,
@@ -34,6 +35,12 @@ export const OPTION_DEFS: readonly OptionDef[] = [
   { key: 'godMode', label: 'God mode (my team stays at full health)', hint: 'Turn it off to watch benched health recover.' },
   { key: 'benchHud', label: 'Bench panel (health / max with rest cap)', hint: 'Shown during battle.' },
   { key: 'keepProgress', label: 'Keep cheat progress (write to my real save)', hint: 'Off: everything goes to a throwaway slot that ends with this tab.' },
+];
+
+/** Shown only while an Arcade battle is running; state edits outside the sim step, like God mode. */
+export const ARCADE_OPTION_DEFS: readonly OptionDef[] = [
+  { key: 'arcadeMeter', label: 'Arcade: full hyper meter', hint: 'Keeps your meter at three bars.' },
+  { key: 'arcadeNoCooldowns', label: 'Arcade: no cooldowns', hint: 'Abilities, dash and weather are always ready.' },
 ];
 
 const CHEATS: readonly { cheat: ArenaCheat; label: string }[] = [
@@ -89,10 +96,8 @@ export function openTesterPanel(deps: PanelDeps): void {
   status.id = 'testerStatus';
   status.setAttribute('role', 'status');
 
-  const options = el('fieldset', 'settingsGroup');
-  options.append(el('legend', 'heading', 'Options'));
   const inputs = new Map<TesterOptionKey, HTMLInputElement>();
-  for (const def of OPTION_DEFS) {
+  const addRow = (parent: HTMLElement, def: OptionDef): void => {
     const row = el('div', 'settingsOption');
     const input = el('input');
     input.type = 'checkbox';
@@ -104,7 +109,7 @@ export function openTesterPanel(deps: PanelDeps): void {
     const hint = el('div', 'info', def.hint);
     hint.id = `${input.id}-hint`;
     row.append(input, ' ', label, hint);
-    options.append(row);
+    parent.append(row);
     inputs.set(def.key, input);
     input.addEventListener('change', () => {
       if (def.key === 'keepProgress') {
@@ -114,7 +119,17 @@ export function openTesterPanel(deps: PanelDeps): void {
       session.setOption(def.key, input.checked);
       status.textContent = `${def.label}: ${input.checked ? 'on' : 'off'}.`;
     });
-  }
+  };
+
+  const options = el('fieldset', 'settingsGroup');
+  options.append(el('legend', 'heading', 'Options'));
+  const fullBtn = button('Full cheat (everything on, full garrison at level 15)', 'tester-full-cheat');
+  options.append(fullBtn);
+  for (const def of OPTION_DEFS) addRow(options, def);
+  const arcadeBox = el('fieldset', 'settingsGroup');
+  arcadeBox.id = 'testerArcadeOptions';
+  arcadeBox.append(el('legend', 'heading', 'Arcade battle'));
+  for (const def of ARCADE_OPTION_DEFS) addRow(arcadeBox, def);
 
   /** Turning "keep" on copies the throwaway slot over the real save (after a confirm); off re-copies the real save. */
   const changeKeep = async (input: HTMLInputElement): Promise<void> => {
@@ -208,17 +223,26 @@ export function openTesterPanel(deps: PanelDeps): void {
     void edit('Add every race', (s) => addEveryRace(s, now, metaIdSource(seedSfc32(now >>> 0, 'meta'))));
   });
   saveBox.append(advance, races);
+  fullBtn.addEventListener('click', () => {
+    // Keep stays off: if it was on, go back to the throwaway slot (re-copied from the real save) before editing anything.
+    if (session.options.keepProgress) session.reseed();
+    session.applyFullCheat();
+    for (const [key, input] of inputs) input.checked = session.options[key];
+    const now = deps.now();
+    void edit('Full cheat', (sv) => fullGarrison(sv, now, metaIdSource(seedSfc32(now >>> 0, 'meta'))));
+  });
 
   const close = button('Close', 'testerClose');
   const turnOff = button('Turn tester mode off', 'testerOff');
 
-  box.append(title, warn, options, match, saveBox, status, close, turnOff);
+  box.append(title, warn, options, arcadeBox, match, saveBox, status, close, turnOff);
   backdrop.append(box);
   document.body.append(backdrop);
 
   const syncArena = (): void => {
     const live = session.arena !== undefined;
     for (const b of cheatButtons) b.disabled = !live;
+    arcadeBox.hidden = session.arena?.arcade !== true;
     matchNote.textContent = live ? 'Acts on the battle that is running.' : 'Start a battle to use these.';
   };
   const offSub = session.subscribe(syncArena);

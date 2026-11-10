@@ -13,7 +13,9 @@ import { newEmptyState } from '../save/v1';
 import { levelFromXp } from '../rules/progression';
 import { objectivesMet } from '../rules/objectives';
 import { applyArenaCheat, applyTickCheats, benchRows } from './cheats';
-import { addEveryRace, advanceChapterCheat, levelHero, xpForLevel } from './save-edits';
+import { METER_MAX } from '../data/arcade';
+import { ArcadeE, ARCADE_E, ARCADE_TEAM_BASE, ArcadeT, cooldownIdx } from '../sim/state';
+import { addEveryRace, fullGarrison, advanceChapterCheat, levelHero, xpForLevel } from './save-edits';
 import { headerFromSetup, isCheatHeader } from '../replay/format';
 import { ReplayRecorder } from '../replay/recorder';
 import { playReplay } from '../replay/player';
@@ -118,6 +120,36 @@ describe('tick cheats', () => {
   });
 });
 
+describe('arcade tick cheats', () => {
+  const arcade = (): ReturnType<typeof createMatch> => createMatch(setup({ ...DEFAULT_SIM_FLAGS, rulesetArcade: true }));
+
+  it('fills team 0 meter and zeroes its cooldowns, leaving the enemy alone', () => {
+    const w = arcade();
+    expect(w.state.arcade.length).toBeGreaterThan(0);
+    w.state.abil[cooldownIdx(0, 1)] = 500;
+    w.state.arcade[0 * ARCADE_E + ArcadeE.dashReadyAt] = 500;
+    w.state.arcade[0 * ARCADE_E + ArcadeE.weatherReadyAt] = 500;
+    w.state.abil[cooldownIdx(5, 1)] = 500;
+    applyTickCheats(w, { godMode: false, instantSwap: false, arcadeMeter: true, arcadeNoCooldowns: true });
+    expect(w.state.arcade[ARCADE_TEAM_BASE + ArcadeT.meter]).toBe(METER_MAX);
+    expect(w.state.abil[cooldownIdx(0, 1)]).toBe(0);
+    expect(w.state.arcade[0 * ARCADE_E + ArcadeE.dashReadyAt]).toBe(0);
+    expect(w.state.arcade[0 * ARCADE_E + ArcadeE.weatherReadyAt]).toBe(0);
+    expect(w.state.abil[cooldownIdx(5, 1)]).toBe(500);
+  });
+
+  it('does nothing in Classic (no Arcade block) and nothing when off', () => {
+    const c = createMatch(setup());
+    const before = hash(c.state);
+    applyTickCheats(c, { godMode: false, instantSwap: false, arcadeMeter: true, arcadeNoCooldowns: true });
+    expect(hash(c.state)).toBe(before);
+    const a = arcade();
+    const h = hash(a.state);
+    applyTickCheats(a, { godMode: false, instantSwap: false });
+    expect(hash(a.state)).toBe(h);
+  });
+});
+
 describe('bench rows and rest-heal', () => {
   it('lists the roster with the active hero marked and shows benched hp rising up to the rest cap', () => {
     const w = createMatch(setup());
@@ -165,6 +197,31 @@ describe('save edits', () => {
     expect(names).toContain('Fiara');
     expect(names).not.toContain('Eternal Void');
     expect(addEveryRace(all, 6, ids).garrison.length).toBe(all.garrison.length);
+  });
+});
+
+describe('full garrison', () => {
+  it('has one level 15 hero of every character including the last boss, raising existing ones and keeping others', () => {
+    const save = {
+      ...newEmptyState(),
+      chapter: 0,
+      garrison: [
+        { id: 'a', experience: 1, characterName: 'Pax' },
+        { id: 'b', experience: 3, characterName: 'Custom' },
+      ],
+    };
+    let n = 0;
+    const ids = { next: () => `id-${String(n++)}` };
+    const full = fullGarrison(save, 9, ids);
+    const names = full.garrison.map((g) => g.characterName);
+    expect(names).toContain('Eternal Void');
+    expect(names).toContain('Custom');
+    expect(names.filter((x) => x === 'Pax')).toHaveLength(1);
+    for (const g of full.garrison) if (g.characterName !== 'Custom') expect(levelFromXp(g.experience)).toBe(15);
+    expect(levelFromXp(full.garrison.find((g) => g.characterName === 'Custom')?.experience ?? 0)).toBe(3);
+    expect(full.chapter).toBe(1);
+    expect(save.garrison[0]?.experience).toBe(1);
+    expect(fullGarrison(full, 10, ids).garrison.length).toBe(full.garrison.length);
   });
 });
 

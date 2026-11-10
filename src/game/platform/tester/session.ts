@@ -20,6 +20,10 @@ export interface TesterOptions {
   readonly benchHud: boolean;
   /** Writes progress to the real save instead of the throwaway slot. */
   readonly keepProgress: boolean;
+  /** Arcade matches only: keeps your hyper meter full. */
+  readonly arcadeMeter: boolean;
+  /** Arcade matches only: no ability, dash or weather cooldowns. */
+  readonly arcadeNoCooldowns: boolean;
 }
 
 export type TesterOptionKey = keyof TesterOptions;
@@ -31,6 +35,20 @@ export const DEFAULT_TESTER_OPTIONS: TesterOptions = {
   godMode: false,
   benchHud: true,
   keepProgress: false,
+  arcadeMeter: false,
+  arcadeNoCooldowns: false,
+};
+
+/** The "Full cheat" preset: every option on except keepProgress (progress stays in the throwaway slot). */
+export const FULL_CHEAT_OPTIONS: TesterOptions = {
+  allAbilities: true,
+  bigTeam: true,
+  instantSwap: true,
+  godMode: true,
+  benchHud: true,
+  keepProgress: false,
+  arcadeMeter: true,
+  arcadeNoCooldowns: true,
 };
 
 export const TESTER_STORAGE_KEY = 'tte.tester';
@@ -41,6 +59,8 @@ type Mem = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 export interface ArenaBridge {
   cheat(cheat: ArenaCheat): void;
   bench(): BenchRow[];
+  /** True when the running match is Arcade (shows the Arcade toggles). */
+  readonly arcade?: boolean;
 }
 
 interface Persisted {
@@ -70,6 +90,8 @@ export function parsePersisted(text: string | null): Persisted {
         godMode: bool(o['godMode'], d.godMode),
         benchHud: bool(o['benchHud'], d.benchHud),
         keepProgress: bool(o['keepProgress'], d.keepProgress),
+        arcadeMeter: bool(o['arcadeMeter'], d.arcadeMeter),
+        arcadeNoCooldowns: bool(o['arcadeNoCooldowns'], d.arcadeNoCooldowns),
       },
     };
   } catch {
@@ -175,6 +197,13 @@ export class TesterSession {
     this.persist();
   }
 
+  /** Applies the Full cheat preset: every option on, "keep progress" off (so the real save is never written). */
+  applyFullCheat(): void {
+    if (!this.state.enabled) return;
+    this.state = { enabled: true, options: FULL_CHEAT_OPTIONS };
+    this.persist();
+  }
+
   subscribe(fn: () => void): () => void {
     this.listeners.add(fn);
     return () => {
@@ -190,7 +219,9 @@ export class TesterSession {
   /** Per-tick cheats for the running match (all off when tester mode is off). */
   tickCheats(): TickCheats {
     const o = this.state.options;
-    return this.state.enabled ? { godMode: o.godMode, instantSwap: o.instantSwap } : { godMode: false, instantSwap: false };
+    return this.state.enabled
+      ? { godMode: o.godMode, instantSwap: o.instantSwap, arcadeMeter: o.arcadeMeter, arcadeNoCooldowns: o.arcadeNoCooldowns }
+      : { godMode: false, instantSwap: false, arcadeMeter: false, arcadeNoCooldowns: false };
   }
 
   attachArena(bridge: ArenaBridge): () => void {

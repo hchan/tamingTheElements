@@ -6,7 +6,19 @@
 import { CAPTURE_HEALTH_FRACTION } from '../data/chapters';
 import { CHARACTERS } from '../data/characters';
 import { CHARACTER_TEXT } from '../data/text-ids';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TeamField } from '../sim/state';
+import { METER_MAX } from '../data/arcade';
+import {
+  ABILITY_SLOTS,
+  ARCADE_E,
+    ARCADE_TEAM_BASE,
+  ArcadeE,
+  ArcadeT,
+  EntityFlag,
+  EntityKind,
+  MAX_ENTITIES,
+  TeamField,
+  cooldownIdx,
+} from '../sim/state';
 import { controlledId } from '../sim/systems/movement';
 import type { SimWorld } from '../sim/world';
 
@@ -18,6 +30,10 @@ export const ARENA_CHEATS: readonly ArenaCheat[] = ['myHp25', 'enemyHp25', 'win'
 export interface TickCheats {
   readonly godMode: boolean;
   readonly instantSwap: boolean;
+  /** Arcade only: keeps team 0's hyper meter full. Ignored in Classic (no Arcade block). */
+  readonly arcadeMeter?: boolean;
+  /** Arcade only: zeroes team 0's ability, dash and weather cooldowns. Ignored in Classic. */
+  readonly arcadeNoCooldowns?: boolean;
 }
 
 const OUT = EntityFlag.dead;
@@ -76,6 +92,16 @@ export function applyTickCheats(world: SimWorld, opts: TickCheats): void {
     }
   }
   if (opts.instantSwap) s.teams[TeamField.swapCooldownUntil] = 0;
+  // Arcade extras are plain state edits like the two above (no sim change); a Classic match has no Arcade block.
+  if (s.arcade.length === 0) return;
+  if (opts.arcadeMeter) s.arcade[ARCADE_TEAM_BASE + ArcadeT.meter] = METER_MAX;
+  if (opts.arcadeNoCooldowns) {
+    for (const id of inPlay(world, 0)) {
+      for (let slot = 0; slot < ABILITY_SLOTS; slot++) s.abil[cooldownIdx(id, slot)] = 0;
+      s.arcade[id * ARCADE_E + ArcadeE.dashReadyAt] = 0;
+      s.arcade[id * ARCADE_E + ArcadeE.weatherReadyAt] = 0;
+    }
+  }
 }
 
 /** One bench-HUD row: current and maximum health plus the rest ceiling the character heals toward. */

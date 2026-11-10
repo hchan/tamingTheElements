@@ -104,6 +104,8 @@ export interface ArcadeLaunchOptions {
   /** Only written to when recording; this is the replay store, never the save. */
   readonly replays: Pick<ReplayStore, 'add'>;
   readonly onResult: (r: ArcadeResult) => void;
+  /** Tester mode is on: the recorded replay is flagged `cheats` (verifiers refuse it). */
+  readonly cheats?: boolean;
 }
 
 /** Every hero's HP per cent off the render view, in roster (entity id) order. */
@@ -121,7 +123,7 @@ export function heroesOf(view: RenderView, setup: MatchSetup): ArcadeHero[] {
 /** Launch data for the Arena: keyboard (team 0) against the Arcade AI; the recorder keeps the Arcade flag in its header. */
 export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOptions): ArenaLaunch {
   const setup = arcadeSetup(pick, seed);
-  const recorder = o.record ? new PlaytestRecorder(setup) : undefined;
+  const recorder = o.record ? new PlaytestRecorder(setup, o.cheats === true) : undefined;
   let view: RenderView | undefined;
   return {
     setup,

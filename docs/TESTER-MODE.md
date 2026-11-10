@@ -7,6 +7,7 @@ cheat code, it lasts only for the browser tab, and it is marked on screen the wh
 
 | How | Where |
 |---|---|
+| Click **Cheats** on the main menu (every build; it turns tester mode on and opens the panel; afterwards it reads **Tester options**) | Main menu |
 | Press **Up Up Down Down Left Right Left Right B A** | on the main menu |
 | Type **`taming-tester`** into **Tester code** and press **Apply code** | Settings |
 | Add `?cheats=1` to the URL | dev and test builds only (never production) |
@@ -17,6 +18,12 @@ the main menu (**Tester options** button) and from the pause dialog during a bat
 Turn it off with **Turn tester mode off** in the panel, or close the tab.
 
 ## What each option does
+
+**Full cheat** (button at the top of the panel): one click turns on every option below (unlock all abilities, 3-hero team,
+instant swap, God mode, bench panel, and the Arcade extras), leaves **Keep cheat progress** off, and fills the garrison with one
+hero of every character, the last boss (Eternal Void) included, at level 15. Heroes you already have are raised to level 15,
+others are kept. The edit goes to the throwaway slot only; if Keep was on, the preset switches it off first (re-copying your real
+save), so the real save is never written.
 
 Options (checkboxes, each on its own):
 
@@ -29,6 +36,10 @@ Options (checkboxes, each on its own):
 - **Bench panel**: during a battle shows every hero on your team with `current / max (rest cap)` as text and bars (grey = the rest
   cap, coloured = current). Benched heroes heal 0.5% of max health every second up to the rest cap; the cap halves the gap each
   time you swap a hero out.
+- **Arcade: full hyper meter** and **Arcade: no cooldowns** (a separate group, shown only while an Arcade battle is running):
+  every tick, before `step`, team 0's meter is set to full and its ability, dash and weather cooldowns are zeroed. Plain state
+  edits like God mode: no sim change, no `SIM_VERSION` bump, goldens unchanged; a Classic match has no Arcade block, so they do
+  nothing there. The replay is flagged `cheats` like any tester match.
 - **Keep cheat progress**: off by default. Off means every save goes to a throwaway slot in this tab (copied from your real save
   when tester mode started) and your real save is never written. On copies the tester slot over your real save (after a confirm)
   and writes there from then on. Turning it off again re-copies your real save.
