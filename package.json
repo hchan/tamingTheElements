@@ -20,7 +20,7 @@
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "tsx tools/gen/record-golden.ts",
-    "sim:match": "echo \"not yet\" && exit 1",
+    "sim:match": "tsx tools/sim/run-match.ts",
     "assets:build": "tsx tools/assets/build-assets.ts",
     "format": "echo \"not yet\" && exit 1"
   },
