@@ -10,7 +10,8 @@ export class PlaytestRecorder {
   private world: SimWorld | undefined;
   private valid = true;
 
-  constructor(setup: MatchSetup) {
+  /** `cheats`: the match is played in tester mode, so the replay is kept but flagged `cheats` (verifiers refuse it). */
+  constructor(setup: MatchSetup, private readonly cheats = false) {
     this.rec = new ReplayRecorder(setup);
   }
 
@@ -24,11 +25,11 @@ export class PlaytestRecorder {
 
   /** The live world was changed outside the command stream (test cheats): the recording would not verify. */
   invalidate(): void {
-    this.valid = false;
+    if (!this.cheats) this.valid = false;
   }
 
   /** The replay (final hash taken from the live world now), or undefined when nothing was recorded or it was invalidated. */
   finish(): ReplayFile | undefined {
-    return this.valid && this.world !== undefined ? this.rec.finish(this.world) : undefined;
+    return this.valid && this.world !== undefined ? this.rec.finish(this.world, this.cheats) : undefined;
   }
 }

@@ -9,6 +9,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
 
 export interface PauseDialogOptions {
   readonly onResume: () => void;
+  /** Tester mode only: adds a "Tester options" button that opens the tester panel. */
+  readonly onTester?: () => void;
   /** Where the dialog is mounted; defaults to `document.body`. */
   readonly host?: HTMLElement;
 }
@@ -54,7 +56,17 @@ export function createPauseDialog(opts: PauseDialogOptions): PauseDialog {
   exit.className = 'menuButton';
   exit.href = '#main';
   exit.textContent = 'Exit to menu';
-  box.append(title, hint, resume, exit);
+  box.append(title, hint, resume);
+  if (opts.onTester) {
+    const tester = document.createElement('button');
+    tester.type = 'button';
+    tester.id = 'pauseTester';
+    tester.className = 'menuButton';
+    tester.textContent = 'Tester options';
+    tester.addEventListener('click', opts.onTester);
+    box.append(tester);
+  }
+  box.append(exit);
   backdrop.append(box);
   host.append(backdrop);
 

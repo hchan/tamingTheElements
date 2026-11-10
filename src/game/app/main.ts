@@ -10,13 +10,18 @@ import { getUiFlags } from '../platform/flags';
 import { createReplayStore } from '../platform/storage/replay-store';
 import { setBindings } from '../platform/input/bindings';
 import { createSaveStore } from '../platform/storage/create-save-store';
+import { createTesterStore, tester } from '../platform/tester/session';
+import { installTesterUi } from '@ui/tester/install';
 import { installTestHook } from '../platform/test-hook';
 import { AppFlow } from './flow';
 import { mountNoticeBanner } from './notice-banner';
 
 const root = document.getElementById('app');
 const flags = getUiFlags(window.location.search);
-const store = createSaveStore(() => Date.now());
+// Tester mode (opt-in, per tab): while on, saves go to a throwaway slot unless "Keep cheat progress" is set.
+if (flags.cheats) tester.enable();
+const realStore = createSaveStore(() => Date.now());
+const store = createTesterStore(realStore, tester, () => Date.now());
 
 async function enterPlay(app: HTMLElement): Promise<void> {
   if (!detectWebgl(flags.forceNoWebgl, () => document.createElement('canvas'))) {
@@ -47,6 +52,7 @@ function initAccessibility(): void {
 
 if (root) {
   mountNoticeBanner();
+  installTesterUi({ session: tester, store, now: () => Date.now() });
   initAccessibility();
   if (flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl) {
     void enterPlay(root);

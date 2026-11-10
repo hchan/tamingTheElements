@@ -22,4 +22,11 @@ describe('ui flags', () => {
   it('ignores ?ff in production', () => {
     expect(parseUiFlags('?ff=showFps', { DEV: false, MODE: 'production' })).toEqual(DEFAULT_UI_FLAGS);
   });
+
+  it('reads ?cheats=1 in dev and test builds only', () => {
+    expect(parseUiFlags('?cheats=1', { DEV: true, MODE: 'development' }).cheats).toBe(true);
+    expect(parseUiFlags('?cheats=1', { DEV: false, MODE: 'test' }).cheats).toBe(true);
+    expect(parseUiFlags('?cheats=0', { DEV: true, MODE: 'development' }).cheats).toBe(false);
+    expect(parseUiFlags('?cheats=1', { DEV: false, MODE: 'production' }).cheats).toBe(false);
+  });
 });

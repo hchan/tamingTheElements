@@ -1,6 +1,8 @@
 import { migrate, objectivesMet } from '@core/index';
 import type { SaveV1 } from '@core/index';
 import { el } from '../dom';
+import { activeSaveStorage, tester } from '../../game/platform/tester/session';
+import { requestOpenTesterPanel } from '../tester/install';
 import { versionStamp } from '../version';
 import type { ScreenFactory } from './screen';
 
@@ -65,7 +67,7 @@ export interface MainMenuDeps {
 
 function browserDeps(): MainMenuDeps {
   return {
-    load: () => loadSave(window.localStorage),
+    load: () => loadSave(activeSaveStorage()),
     navigate: (route) => {
       window.location.hash = `#${route}`;
     },
@@ -104,6 +106,13 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
           list.append(li);
         }
         page.append(list);
+        if (tester.enabled) {
+          const t = el('button', 'menuButton', 'Tester options');
+          t.type = 'button';
+          t.id = 'testerOptionsMenu';
+          t.addEventListener('click', requestOpenTesterPanel);
+          page.append(t);
+        }
         const footer = el('div', 'versionStamp', versionStamp(import.meta.env));
         footer.id = 'versionStamp';
         page.append(footer);

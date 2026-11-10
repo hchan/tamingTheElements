@@ -23,9 +23,11 @@ import {
 import { parseBindings, setBindings } from '../../game/platform/input/bindings';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import { describeError, prepareExport, runImport } from '../../game/platform/storage/export-import';
+import { tester } from '../../game/platform/tester/session';
 import { canvasFraction } from '../display-scale';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
+import { isTesterCode } from '../tester/code';
 import type { Screen } from './screen';
 
 const STORAGE_KEY = 'Taming the Elements';
@@ -76,7 +78,7 @@ export function applyUiScale(scale: number, root: HTMLElement = document.documen
 export function loadSave(): SaveV1 {
   let raw: unknown;
   try {
-    const text = window.localStorage.getItem(STORAGE_KEY);
+    const text = tester.saveStorage(window.localStorage).getItem(STORAGE_KEY);
     raw = text === null ? null : JSON.parse(text);
   } catch {
     raw = null;
@@ -248,6 +250,36 @@ function recordControls(): HTMLElement {
   return box;
 }
 
+/** Tester mode (docs/TESTER-MODE.md): typing the documented code here turns it on, same as the main-menu key sequence. */
+function testerControls(): HTMLElement {
+  const box = el('div', 'settingsGroup');
+  const label = el('label', 'settingsOption', 'Tester code ');
+  const input = el('input');
+  input.type = 'text';
+  input.id = 'testerCode';
+  input.autocomplete = 'off';
+  input.setAttribute('autocapitalize', 'off');
+  input.setAttribute('spellcheck', 'false');
+  label.htmlFor = input.id;
+  const apply = el('button', 'menuButton', 'Apply code');
+  apply.type = 'button';
+  apply.id = 'testerCodeApply';
+  const status = el('div', 'settingsStatus');
+  status.id = 'testerCodeStatus';
+  status.setAttribute('role', 'status');
+  apply.addEventListener('click', () => {
+    if (isTesterCode(input.value)) {
+      tester.enable();
+      status.textContent = 'Tester mode is on. Use the TESTER MODE badge to open the tester options.';
+    } else {
+      status.textContent = 'That is not the tester code.';
+    }
+    input.value = '';
+  });
+  box.append(label, input, apply, status);
+  return box;
+}
+
 /** `store` is the app's shared save store, so the battle (which loads from it) sees the same save. */
 export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now())): Screen {
   let node: HTMLElement | null = null;
@@ -304,6 +336,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
     page.append(
       form,
       recordControls(),
+      testerControls(),
       transferControls(
         store,
         (imported) => {

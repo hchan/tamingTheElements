@@ -13,6 +13,7 @@ import {
   scaledMaxHealth,
 } from '@core/index';
 import type { AbilityDef, AbilityDefB, ChapterNumber, Element, GarrisonEntry, SaveV1 } from '@core/index';
+import { activeSaveStorage } from '../../game/platform/tester/session';
 import { el } from '../dom';
 import { loadSave } from './main-menu';
 import type { Screen, ScreenFactory } from './screen';
@@ -106,7 +107,7 @@ export function characterDetailsScreen(deps?: CharacterDetailsDeps): ScreenFacto
     let node: HTMLElement | null = null;
     return {
       mount(container) {
-        const save = (deps ?? { load: () => loadSave(window.localStorage) }).load();
+        const save = (deps ?? { load: () => loadSave(activeSaveStorage()) }).load();
         const page = el('div', 'menuPage');
         node = page;
         container.append(page);

@@ -5,6 +5,7 @@ import {
   applyMatchResult,
   characterId,
   newGame,
+  objectivesMet,
   seedSfc32,
   type Agent,
   type ChapterNumber,
@@ -13,6 +14,7 @@ import {
   type MatchSetup as CoreSetup,
   type ReplayFile,
   type SaveV1,
+  type SimFlags,
 } from '@core/index';
 import { el } from '@ui/dom';
 import { defaultScreens, type ScreenTable } from '@ui/router';
@@ -28,6 +30,8 @@ import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import type { UiFlags } from '../platform/flags';
 import { getRecordSetting } from '../platform/record-setting';
+import { activeSaveStorage, tester, type TesterSession } from '../platform/tester/session';
+import { requestOpenTesterPanel } from '@ui/tester/install';
 import type { ReplayStore } from '../platform/storage/replay-store';
 import { PlaytestRecorder } from '../replay/playtest-recorder';
 import { requestPersistence } from '../platform/storage/idb-save-store';
@@ -45,13 +49,18 @@ export function slugOf(name: string): string {
 }
 
 /** Garrison selection -> sim setup: heroes in battle order (team 0) against the drawn opponents (team 1). */
-export function toCoreSetup(ui: UiSetup, save: Pick<SaveV1, 'chapter' | 'difficulty'>, seed: number): CoreSetup {
+export function toCoreSetup(
+  ui: UiSetup,
+  save: Pick<SaveV1, 'chapter' | 'difficulty'>,
+  seed: number,
+  flags: SimFlags = DEFAULT_SIM_FLAGS,
+): CoreSetup {
   const roster = (xs: readonly { characterName: string; experience: number }[]): CoreSetup['p1'] =>
     xs.map((x) => ({ character: characterId(slugOf(x.characterName)), xp: x.experience }));
   return {
     simVersion: SIM_VERSION,
     seed,
-    flags: DEFAULT_SIM_FLAGS,
+    flags,
     chapter: Math.min(5, Math.max(1, save.chapter)) as ChapterNumber,
     difficulty: save.difficulty,
     p1: roster(ui.heroes),
@@ -82,6 +91,8 @@ export interface FlowDeps {
   readonly navigate: (route: string) => void;
   /** Local replay store; only written to when recording is on. */
   readonly replays: ReplayStore;
+  /** Tester-mode session; defaults to the app-wide one (off until the cheat code is entered). */
+  readonly tester?: TesterSession;
 }
 
 interface Pending {
@@ -97,9 +108,15 @@ export class AppFlow {
   /** A finished match whose save failed; the results screen offers a retry. */
   private unsaved: SaveV1 | undefined;
   private saveError = '';
+  /** Chapter whose objectives the last result met (so the results screen can point at Current Objectives), or undefined. */
+  private objectivesChapter: number | undefined;
   private failedOnce = false;
 
   constructor(private readonly deps: FlowDeps) {}
+
+  private get session(): TesterSession {
+    return this.deps.tester ?? tester;
+  }
 
   /** Battle/opponent seed: `?seed=` in dev and test builds, else the clock. */
   private seed(): number {
@@ -128,7 +145,8 @@ export class AppFlow {
         : {}),
       keyBindings: () => keyBindingsScreen(this.deps.store),
       garrison: garrisonScreen({
-        load: () => loadSave(window.localStorage),
+        load: () => loadSave(activeSaveStorage()),
+        testerTeam: () => this.session.enabled && this.session.options.bigTeam,
         navigate,
         alert: (m) => {
           window.alert(m);
@@ -264,13 +282,16 @@ export class AppFlow {
         return;
       }
       if (flags.failSetup) throw new Error('injected setup failure');
-      const setup = toCoreSetup(pending.ui, r.value, pending.seed);
-      const recorder = this.recording() ? new PlaytestRecorder(setup) : undefined;
+      const session = this.session;
+      const setup = toCoreSetup(pending.ui, r.value, pending.seed, session.simFlags(DEFAULT_SIM_FLAGS));
+      // Tester mode: the replay is kept but flagged `cheats` in its header, and verifiers refuse it.
+      const recorder = this.recording() ? new PlaytestRecorder(setup, session.enabled) : undefined;
       this.lastReplay = undefined;
       const launch: ArenaLaunch = {
         setup,
         enemy: enemyAgent(flags),
         ...(recorder ? { recorder } : {}),
+        ...(session.enabled ? { tester: { session, openPanel: requestOpenTesterPanel } } : {}),
         onEnd: (end) => {
           const replay = recorder?.finish();
           if (replay) {
@@ -317,6 +338,7 @@ export class AppFlow {
         { now: this.deps.now },
       );
       this.report = report;
+      this.objectivesChapter = report.victory && objectivesMet(save) ? save.chapter : undefined;
       this.pending = undefined;
       const saved = await this.persist(save);
       if (!saved) this.unsaved = save;
@@ -361,6 +383,17 @@ export class AppFlow {
           return;
         }
         page.append(el('h1', 'heading', r.victory ? 'Victory!' : 'Defeat'));
+        if (this.session.enabled) {
+          page.append(
+            el(
+              'p',
+              'testerWarn',
+              this.session.options.keepProgress
+                ? 'TESTER MODE: this result was written to your real save.'
+                : 'TESTER MODE: this result was written to the throwaway slot, not your real save.',
+            ),
+          );
+        }
         const unsaved = this.unsaved;
         if (unsaved) {
           const warn = el('div', 'settingsStatus', `Could not save progress: ${this.saveError}`);
@@ -386,6 +419,17 @@ export class AppFlow {
           page.append(el('p', undefined, `${r.xp.characterName} gained ${String(r.xp.gained)} XP.${lvl}`));
         }
         for (const c of r.captured) page.append(el('p', undefined, `Captured ${c.characterName}!`));
+        if (r.victory && this.objectivesChapter !== undefined) {
+          const note = el(
+            'p',
+            undefined,
+            this.objectivesChapter === 1
+              ? 'Your objectives for this chapter are met. Open Current Objectives to begin chapter 2, where the Capture ability is unlocked!'
+              : 'Your objectives for this chapter are met. Open Current Objectives to begin the next chapter.',
+          );
+          note.id = 'objectivesMet';
+          page.append(note);
+        }
         if (r.gameCompleted) page.append(el('p', undefined, 'You completed the game!'));
         const replay = this.lastReplay;
         if (replay) {

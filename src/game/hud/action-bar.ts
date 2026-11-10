@@ -103,6 +103,17 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
   return out;
 }
 
+/** Ticks (10 s at 50 Hz) after the match starts during which the Capture slot is announced as a new ability. */
+export const CAPTURE_NOTICE_TICKS = 500;
+
+/** "Capture unlocked!" line above the Capture slot, labelled with its live key; null when there is no Capture slot or the notice has timed out. */
+export function captureHint(slots: readonly ActionSlot[], tick: number): { x: number; y: number; text: string } | null {
+  const c = slots.find((s) => s.kind === 'capture');
+  if (c === undefined || tick >= CAPTURE_NOTICE_TICKS) return null;
+  const key = c.label === '' ? 'its key' : c.label;
+  return { x: c.x, y: c.y - 28, text: `Capture unlocked! Press ${key} when the enemy is at 25% health` };
+}
+
 /** The Command a click at (px, py) emits: the slot's key bit, or 0 (no command) if it hits no usable slot. */
 export function commandAt(slots: readonly ActionSlot[], px: number, py: number): Command {
   for (const s of slots) {
@@ -141,6 +152,7 @@ export class ActionBarView {
   private readonly texts: Phaser.GameObjects.Text[] = [];
   private readonly icons: Phaser.GameObjects.Image[] = [];
   private slots: ActionSlot[] = [];
+  private hint: Phaser.GameObjects.Text | undefined;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -178,6 +190,7 @@ export class ActionBarView {
       }
       this.text(i, s);
     });
+    this.drawHint(bar?.tick ?? 0);
     for (let i = this.slots.length; i < this.icons.length; i++) {
       this.icons[i]?.setVisible(false);
       this.texts[i]?.setVisible(false);
@@ -187,6 +200,7 @@ export class ActionBarView {
   destroy(): void {
     this.scene.input.off('pointerdown', this.onPointer);
     this.gfx.destroy();
+    this.hint?.destroy();
     this.icons.forEach((o) => { o.destroy(); });
     this.texts.forEach((o) => { o.destroy(); });
   }
@@ -200,6 +214,20 @@ export class ActionBarView {
     const cmd = commandAt(this.slots, p.worldX, p.worldY);
     if (cmd !== 0) this.emit(cmd);
   };
+
+  private drawHint(tick: number): void {
+    const h = captureHint(this.slots, tick);
+    if (h === null) {
+      this.hint?.setVisible(false);
+      return;
+    }
+    this.hint ??= this.scene.add.text(
+      0, 0, '',
+      crisp(this.scene, { fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: '#ffd700', backgroundColor: '#000000', padding: { x: 6, y: 2 } }),
+    ).setDepth(102);
+    this.hint.setVisible(true).setPosition(h.x, h.y);
+    if (this.hint.text !== h.text) this.hint.setText(h.text);
+  }
 
   private drawIcon(i: number, s: ActionSlot): void {
     const key = `sprite:${s.sprite}`;

@@ -19,6 +19,8 @@ export interface UiFlags {
   readonly failSetup: boolean;
   readonly failGame: boolean;
   readonly failSave: boolean;
+  /** Turns tester mode on at load (`?cheats=1`, dev and test builds only; production uses the cheat code). */
+  readonly cheats: boolean;
   /** Fixed seed for the battle and opponent draw (`?seed=N`, dev and test builds only), or null for the clock. */
   readonly seed: number | null;
 }
@@ -36,6 +38,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   failSetup: false,
   failGame: false,
   failSave: false,
+  cheats: false,
   seed: null,
 };
 
@@ -63,6 +66,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     failSetup: on.has('failSetup'),
     failGame: on.has('failGame'),
     failSave: on.has('failSave'),
+    cheats: new URLSearchParams(search).get('cheats') === '1',
     seed,
   };
 }

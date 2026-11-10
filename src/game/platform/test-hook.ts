@@ -28,8 +28,14 @@ export interface ArenaProbe {
   actionSlots(): { x: number; y: number; size: number; cmd: number }[];
   /** Commands emitted by pointer presses on action slots, oldest first. */
   clicks(): number[];
-  /** True when the player's action bar offers Capture (chapter 2 onward). */
+  /** True when the player's action bar offers Capture (chapter 2 onward, or tester mode "all abilities"). */
   captureGranted(): boolean;
+  /** The player team's roster with current/max/rest-cap health (tester bench HUD data), entity id order. */
+  bench(): { id: number; name: string; active: boolean; dead: boolean; hp: number; maxHp: number; restCap: number }[];
+  /** First tick the player's swap is usable again (0 = ready). */
+  swapReadyTick(): number;
+  /** Runs a tester cheat (only while tester mode is on). */
+  cheat(c: 'myHp25' | 'enemyHp25' | 'win' | 'freezeEnemy' | 'captureWin'): void;
   /** True while the main camera shake effect is running (reduced motion keeps it false). */
   shaking(): boolean;
   /** Key codes bound per action in the running battle's keyboard agent. */

@@ -57,6 +57,21 @@ describe('playtest recorder', () => {
   });
 });
 
+describe('playtest recorder in tester mode', () => {
+  it('keeps the replay through edits but flags the header `cheats`, and the verifier refuses it', () => {
+    const rec = new PlaytestRecorder(GOLDEN_SETUP, true);
+    const world = createMatch(GOLDEN_SETUP);
+    for (let t = 0; t < 60; t++) {
+      rec.record(world, [0, 0]);
+      step(world, [0, 0]);
+    }
+    rec.invalidate();
+    const file = rec.finish() as ReplayFile;
+    expect(file.header.cheats).toBe(true);
+    expect(() => playReplay(file, SIM_VERSION)).toThrow(/tester mode/);
+  });
+});
+
 describe('replay cursor', () => {
   const file = parseReplay(JSON.stringify(golden));
 

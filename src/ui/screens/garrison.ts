@@ -1,6 +1,7 @@
 import { seedSfc32 } from '@core/index';
 import type { SaveV1 } from '@core/index';
 import { el } from '../dom';
+import { activeSaveStorage } from '../../game/platform/tester/session';
 import { loadSave } from './main-menu';
 import { createPortalFx, type PortalFx } from './portal-fx';
 import type { ScreenFactory } from './screen';
@@ -24,11 +25,13 @@ export interface GarrisonDeps {
   readonly onMatch: (setup: MatchSetup) => void;
   /** CSS background-image value for a character sprite key. */
   readonly avatarUrl: (sprite: string) => string;
+  /** Tester mode "3-hero team": pick 1 to 3 heroes in any chapter. */
+  readonly testerTeam?: () => boolean;
 }
 
 function browserDeps(): GarrisonDeps {
   return {
-    load: () => loadSave(window.localStorage),
+    load: () => loadSave(activeSaveStorage()),
     navigate: (route) => {
       window.location.hash = `#${route}`;
     },
@@ -65,6 +68,7 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
           page.append(el('div', undefined, 'No heroes yet.'), back);
           return;
         }
+        const testerTeam = d.testerTeam?.() ?? false;
         let sel: Selection = EMPTY_SELECTION;
         const rows = displayOrder(save);
         const table = el('div');
@@ -103,7 +107,7 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
             if (n === null) order.hidden = true;
             row.append(avatar, info, order);
             const toggle = (): void => {
-              sel = toggleSelection(sel, v.id, save.chapter);
+              sel = toggleSelection(sel, v.id, save.chapter, testerTeam);
               refocus = v.id;
               render();
             };
@@ -118,7 +122,7 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
           }
           for (const fx of fxs.splice(0)) fx.dispose();
           buttons.replaceChildren();
-          const states = buttonStates(save.chapter, sel.order.length);
+          const states = buttonStates(save.chapter, sel.order.length, testerTeam);
           for (const b of BUTTONS) {
             if (b.mode === 'portal' && !states.portalVisible) continue;
             const s = states[b.mode];
@@ -140,7 +144,7 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
                 d.alert(s.message);
                 return;
               }
-              const setup = buildMatchSetup(b.mode, save, sel, seedSfc32(d.seed(), 'meta'));
+              const setup = buildMatchSetup(b.mode, save, sel, seedSfc32(d.seed(), 'meta'), testerTeam);
               if (setup === null) return;
               d.onMatch(setup);
               d.navigate('loading');

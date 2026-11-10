@@ -1,4 +1,5 @@
 import type { Agent, MatchSetup, ReplayFile } from '@core/index';
+import type { TesterSession } from '../platform/tester/session';
 import type { PlaytestRecorder } from '../replay/playtest-recorder';
 
 /** What Arena reports when the sim emits MatchEnded; the app flow turns it into a save update. */
@@ -46,4 +47,6 @@ export interface ArenaLaunch {
   /** Records the final command pair of every tick (only present when recording is enabled). */
   readonly recorder?: PlaytestRecorder;
   readonly playback?: ArenaPlayback;
+  /** Present only in tester mode (docs/TESTER-MODE.md): the session the Arena registers its cheat bridge with. */
+  readonly tester?: { readonly session: TesterSession; readonly openPanel: () => void };
 }

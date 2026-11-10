@@ -649,3 +649,103 @@ a.menuLink {
 #storeNotice[hidden] {
   display: none;
 }
+
+/* Tester mode (docs/TESTER-MODE.md): badge, bench panel, tester panel, capture notice. */
+.testerBadge {
+  position: fixed;
+  top: 4px;
+  right: 4px;
+  z-index: 50;
+  padding: 0.2em 0.6em;
+  font: bold 14px/1.2 Arial, sans-serif;
+  color: #000;
+  background: #ffd700;
+  border: 2px solid #000;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.testerBadge[hidden] {
+  display: none;
+}
+.testerBench {
+  position: fixed;
+  left: 4px;
+  bottom: 90px;
+  z-index: 15;
+  min-width: 260px;
+  max-width: 340px;
+  padding: 6px 8px;
+  font: 13px/1.3 Arial, sans-serif;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffd700;
+  border-radius: 6px;
+  pointer-events: none;
+}
+.testerBench[hidden] {
+  display: none;
+}
+.testerBenchTitle {
+  font-weight: bold;
+  color: #ffd700;
+}
+.testerBenchTrack {
+  position: relative;
+  height: 8px;
+  margin: 2px 0 6px;
+  background: #000;
+  border: 1px solid #fff;
+}
+.testerBenchRest,
+.testerBenchHp {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+.testerBenchRest {
+  background: #888;
+}
+.testerBenchHp {
+  background: #4caf50;
+}
+.testerBench-bench .testerBenchHp {
+  background: #56b4e9;
+}
+.testerBench-dead {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+.testerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+}
+.testerPanel {
+  box-sizing: border-box;
+  width: min(560px, 94vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 1em 1.25em;
+  color: #fff;
+  background: #111;
+  border: 3px solid #ffd700;
+  border-radius: 12px;
+}
+.testerWarn {
+  color: #ffd700;
+  font-weight: bold;
+}
+.abilityNotice {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  margin: 0.75em 0;
+  padding: 0.5em 0.75em;
+  border: 2px solid #ffd700;
+  border-radius: 6px;
+}

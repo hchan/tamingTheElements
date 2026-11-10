@@ -99,3 +99,18 @@ describe('buildMatchSetup', () => {
     );
   });
 });
+
+describe('tester team (any chapter, up to 3)', () => {
+  const ids = ['a', 'b', 'c', 'd'];
+  it('lets chapter 1 pick up to three heroes in order, evicting the third on a fourth pick', () => {
+    let sel: Selection = { order: [] };
+    for (const id of ids) sel = toggleSelection(sel, id, 1, true);
+    expect(sel.order).toEqual(['a', 'b', 'd']);
+    expect(toggleSelection({ order: ['a'] }, 'b', 1).order).toEqual(['b']);
+  });
+  it('needs 1 to 3 heroes for a battle instead of exactly 3', () => {
+    expect(buttonStates(3, 1, true).battle.enabled).toBe(true);
+    expect(buttonStates(3, 1).battle.enabled).toBe(false);
+    expect(buttonStates(1, 0, true).battle.message).not.toBeNull();
+  });
+});

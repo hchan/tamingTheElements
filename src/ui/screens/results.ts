@@ -50,7 +50,7 @@ export function resultsView(ctx: ResultsContext): ResultsView {
   if (ctx.objectivesMet) {
     banner =
       ctx.chapter < 4
-        ? 'Your objectives have been met for this chapter. Click on Current Objectives under the Main Menu to begin the next chapter'
+        ? `Your objectives have been met for this chapter. Click on Current Objectives under the Main Menu to begin the next chapter${ctx.chapter === 1 ? ' (Capture is unlocked in chapter 2)' : ''}`
         : 'Congratulations, you have have finished this game.  Thanks for playing!';
   }
   return {

@@ -41,9 +41,10 @@ export const EMPTY_SELECTION: Selection = { order: [] };
  * Legacy row click. Chapters 1-2: single select (click again clears). Later: toggle; a fourth pick
  * evicts the hero holding slot 3.
  */
-export function toggleSelection(sel: Selection, id: string, chapter: number): Selection {
+export function toggleSelection(sel: Selection, id: string, chapter: number, testerTeam = false): Selection {
   const has = sel.order.includes(id);
-  if (chapter <= 2) return { order: has ? [] : [id] };
+  // Tester mode (docs/TESTER-MODE.md): the later-chapter picker (up to 3) in any chapter.
+  if (chapter <= 2 && !testerTeam) return { order: has ? [] : [id] };
   if (has) return { order: sel.order.filter((x) => x !== id) };
   const kept = sel.order.length >= 3 ? sel.order.slice(0, 2) : sel.order;
   return { order: [...kept, id] };
@@ -62,12 +63,14 @@ function needThree(n: number): string {
 }
 
 /** Enable logic from legacy updateEnterBattlegroundButton / PracticeButton / PortalButton. */
-export function buttonStates(chapter: number, selectedCount: number): ButtonStates {
-  const battleOk = selectedCount >= (chapter <= 2 ? 1 : 3);
+export function buttonStates(chapter: number, selectedCount: number, testerTeam = false): ButtonStates {
+  // Tester team: a battle needs 1 to 3 heroes in any chapter (the picker caps the selection at 3).
+  const single = chapter <= 2 || testerTeam;
+  const battleOk = selectedCount >= (single ? 1 : 3);
   return {
     battle: {
       enabled: battleOk,
-      message: battleOk ? null : chapter <= 2 ? NONE_SELECTED : needThree(selectedCount),
+      message: battleOk ? null : single ? NONE_SELECTED : needThree(selectedCount),
     },
     practice: { enabled: selectedCount > 0, message: selectedCount > 0 ? null : NONE_SELECTED },
     portal: { enabled: selectedCount >= 3, message: selectedCount >= 3 ? null : needThree(selectedCount) },
@@ -111,8 +114,9 @@ export function buildMatchSetup(
   save: Pick<SaveV1, 'chapter' | 'garrison'>,
   sel: Selection,
   meta: Sfc32,
+  testerTeam = false,
 ): MatchSetup | null {
-  const states = buttonStates(save.chapter, sel.order.length);
+  const states = buttonStates(save.chapter, sel.order.length, testerTeam);
   if (!states[mode === 'battle' ? 'battle' : mode].enabled) return null;
   const heroes: GarrisonMemberV1[] = [];
   for (const id of sel.order) {

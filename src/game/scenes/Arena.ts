@@ -4,6 +4,9 @@ import {
   EntityFlag,
   EntityKind,
   MAX_ENTITIES,
+  applyArenaCheat,
+  applyTickCheats,
+  benchRows,
   hash,
   RandomBot,
   SIM_VERSION,
@@ -19,6 +22,7 @@ import {
   type MatchSetup,
   type RenderCharacter,
   type RenderProjectile,
+  type ArenaCheat,
   type RenderView,
   type SimEvent,
   type SimWorld,
@@ -52,6 +56,9 @@ const LOW_HEALTH_POLL_FRAMES = 10;
 
 /** Beat between the final blow and the results route. */
 const END_DELAY_MS = 1200;
+
+/** Legacy cheat keys (key-map CheatAction) to the tester cheats. */
+const CHEAT_KEYS = { cheatQ: 'win', cheatX: 'freezeEnemy', cheatC: 'captureWin' } as const satisfies Record<string, ArenaCheat>;
 
 const DEMO_SETUP: MatchSetup = {
   simVersion: SIM_VERSION,
@@ -138,13 +145,25 @@ export class Arena extends Phaser.Scene {
         capturable: () => true,
         bindings: getBindings(),
         gamepad: () => firstPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null),
+        // Legacy Shift-Q / X / C cheats exist only in tester mode (docs/TESTER-MODE.md).
+        cheatsEnabled: this.launch.tester !== undefined,
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
           else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
+          else this.arenaCheat(CHEAT_KEYS[e]);
         },
       });
       this.keyboard = keyboard;
-      this.pauseDialog = createPauseDialog({ onResume: () => { this.togglePause(); } });
+      const tester = this.launch.tester;
+      this.pauseDialog = createPauseDialog({
+        onResume: () => { this.togglePause(); },
+        ...(tester ? { onTester: tester.openPanel } : {}),
+      });
+      if (tester) {
+        this.cleanups.push(
+          tester.session.attachArena({ cheat: (c) => { this.arenaCheat(c); }, bench: () => benchRows(world, 0) }),
+        );
+      }
       const live = createLiveRegion();
       this.announcer = new Announcer((text, assertive) => { live.speak(text, assertive); }, () => performance.now());
       this.cleanups.push(() => { this.pauseDialog?.destroy(); live.destroy(); });
@@ -252,6 +271,11 @@ export class Arena extends Phaser.Scene {
       actionSlots: () => this.actionBar?.currentSlots.map((s) => ({ x: s.x, y: s.y, size: s.size, cmd: s.cmd })) ?? [],
       clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
+      bench: () => benchRows(world, 0),
+      swapReadyTick: () => world.state.teams[TeamField.swapCooldownUntil] ?? 0,
+      cheat: (c) => {
+        this.arenaCheat(c);
+      },
       shaking: () => this.cameras.main.shakeEffect.isRunning,
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
@@ -280,6 +304,8 @@ export class Arena extends Phaser.Scene {
     const c = f0 === undefined || f1 === undefined ? collectCommands(world, this.agents) : [0, 0];
     const final: [number, number] = [f0 ?? c[0] ?? 0, f1 ?? c[1] ?? 0];
     this.launch?.recorder?.record(world, final);
+    const tester = this.launch?.tester?.session;
+    if (tester) applyTickCheats(world, tester.tickCheats());
     const events = step(world, final);
     this.fx?.consume(events);
     this.audio?.audio.consume(events);
@@ -295,6 +321,13 @@ export class Arena extends Phaser.Scene {
       capturedIndices: capturedRosterIndices(s, 1),
     };
     this.time.delayedCall(END_DELAY_MS, () => { this.launch?.onEnd?.(end); });
+  }
+
+  /** Tester mode only: a one-shot cheat on the running match (a state edit outside `step`; the replay is flagged `cheats`). */
+  private arenaCheat(cheat: ArenaCheat): void {
+    const world = this.world;
+    if (!world || this.ended || !this.launch?.tester) return;
+    applyArenaCheat(world, cheat);
   }
 
   /** Replay mode: one verified tick per call (two at 2x); a finished or diverged replay holds the driver. */

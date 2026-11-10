@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, SLOT_SIDE, buildSlots, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -82,5 +82,19 @@ describe('commandAt', () => {
     expect(commandAt(slots, 2 * SLOT_SIDE + 10, y)).toBe(0);
     expect(commandAt(slots, 3 * SLOT_SIDE + 10, y)).toBe(Cmd.swap1);
     expect(commandAt(slots, 10, 10)).toBe(0);
+  });
+});
+
+describe('captureHint', () => {
+  it('announces the Capture slot with its live key during the first seconds only', () => {
+    const slots = buildSlots(bar(), { [Cmd.capture]: 'V' });
+    const h = captureHint(slots, 0);
+    expect(h?.text).toContain('Capture unlocked!');
+    expect(h?.text).toContain('Press V');
+    expect(h?.x).toBe(slots[2]?.x);
+    expect(captureHint(slots, CAPTURE_NOTICE_TICKS)).toBeNull();
+  });
+  it('is absent without a Capture slot', () => {
+    expect(captureHint(buildSlots(bar({ capture: undefined })), 0)).toBeNull();
   });
 });
