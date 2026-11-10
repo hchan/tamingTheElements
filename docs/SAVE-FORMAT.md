@@ -18,6 +18,23 @@ Unknown fields are preserved so the legacy game can still read a v1 save.
   non-negative integer, else 0.
 - `savedAt` is copied from `lastModifiedTime` (0 if absent); core never reads a clock.
 
+### Optional accessibility fields (no version bump)
+
+Added after v1 shipped as optional fields, which the v1 schema already allows (`looseObject`), so the schema version stays 1
+and existing saves and fixtures migrate and round-trip unchanged (`src/core/save/migrate.test.ts#accessibility fields are optional`).
+Absent means the default; a value of the wrong type is ignored on read, never an error.
+
+| Field | Type | Absent means |
+|---|---|---|
+| `reduceMotion` | boolean | follow the OS `prefers-reduced-motion` |
+| `highContrast` | boolean | follow the OS `prefers-contrast: more` |
+| `keyBindings` | `{ [action]: string[] }` of `KeyboardEvent.code` values | the default bindings |
+
+Settings writes `reduceMotion`/`highContrast` only when the choice differs from the OS value; the Key Bindings screen
+writes `keyBindings` only when it differs from the defaults. `parseBindings` drops unknown actions, reserved or malformed
+codes and duplicates, and refills empty actions from the defaults. See [ACCESSIBILITY.md](ACCESSIBILITY.md). A change
+that needs a different shape (not just a new optional field) must bump `schemaVersion` and add a migration.
+
 ## Storage (`src/game/platform/storage/`)
 
 `createSaveStore` (`create-save-store.ts`) picks IndexedDB when available, else localStorage. IndexedDB database `tte` (v1) has stores

@@ -80,23 +80,28 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
         const d = deps ?? browserDeps();
         const state = menuState(d.load());
         const page = el('div', 'menuPage');
-        page.append(el('div', 'heading', 'Taming the Elements'));
+        page.append(el('h1', 'heading', 'Taming the Elements'));
         const list = el('ul', 'mainMenuList');
         for (const item of MENU_ITEMS) {
           const on = item.enabled(state);
-          const li = el('li', on ? 'clickable' : 'notClickableYet', item.label);
+          const li = el('li');
           li.dataset.route = item.route;
+          // A native button: Tab-focusable, Enter and Space activate, and disabled entries are announced as such.
+          const btn = el('button', on ? 'clickable' : 'notClickableYet', item.label);
+          btn.type = 'button';
+          btn.disabled = !on;
           if (on) {
-            li.addEventListener('click', () => {
+            btn.addEventListener('click', () => {
               d.navigate(item.route);
             });
           }
-          list.append(li);
+          li.append(btn);
           if (item.route === 'currentObjectives' && state.newObjectives) {
             const badge = el('span', undefined, '- NEW -');
             badge.id = 'newObjectives';
-            list.append(badge);
+            li.append(badge);
           }
+          list.append(li);
         }
         page.append(list);
         const footer = el('div', 'versionStamp', versionStamp(import.meta.env));

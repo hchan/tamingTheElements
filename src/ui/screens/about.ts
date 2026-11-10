@@ -37,7 +37,7 @@ export function aboutScreen(): Screen {
     mount(container) {
       const m = aboutModel(import.meta.env);
       node = el('div', 'menuPage');
-      node.append(el('div', 'heading', 'About'));
+      node.append(el('h1', 'heading', 'About'));
       for (const line of m.lines) node.append(el('p', undefined, line));
       node.append(el('div', undefined, 'written by:'), el('div', undefined, m.author));
       const link = el('a', 'contactLink', m.contactUrl);
@@ -45,7 +45,7 @@ export function aboutScreen(): Screen {
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
       node.append(el('p', undefined, m.contactText), link);
-      node.append(el('h3', undefined, 'Credits'));
+      node.append(el('h2', undefined, 'Credits'));
       for (const c of m.credits) node.append(el('div', undefined, c));
       const ver = el('div', 'versionStamp', m.version);
       ver.id = 'aboutVersion';

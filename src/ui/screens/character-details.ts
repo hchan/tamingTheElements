@@ -113,9 +113,9 @@ export function characterDetailsScreen(deps?: CharacterDetailsDeps): ScreenFacto
         const entry = save === null ? undefined : findGarrisonEntry(save, param);
         const v = save === null || entry === undefined ? undefined : characterDetails(entry, save.chapter as ChapterNumber);
         if (v === undefined) {
-          page.append(el('div', 'heading', 'Unknown character'));
+          page.append(el('h1', 'heading', 'Unknown character'));
         } else {
-          page.append(el('div', 'heading', v.name));
+          page.append(el('h1', 'heading', v.name));
           if (v.description !== '') page.append(el('p', 'raceDescription', v.description));
           const stats = el('div', 'characterStats');
           stats.append(
@@ -135,7 +135,7 @@ export function characterDetailsScreen(deps?: CharacterDetailsDeps): ScreenFacto
           page.append(rel);
           for (const a of v.abilities) {
             const box = el('div', 'characterAbility');
-            box.append(el('div', 'heading', a.name));
+            box.append(el('h2', 'heading', a.name));
             for (const line of a.lines) box.append(el('div', undefined, line));
             page.append(box);
           }

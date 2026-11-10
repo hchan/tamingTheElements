@@ -50,6 +50,7 @@ Example: `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500 pnpm test`. Single file: `pnpm e
 | ESLint ban checks | `tests/lint/core-bans.test.ts` with samples in `tests/lint/fixtures/` |
 | Cross-engine determinism | `tests/browser/determinism.browser.test.ts` |
 | End to end (real browser, real build) | `tests/e2e/*.spec.ts` |
+| Accessibility (axe audit, keyboard-only, reduce motion, rebinding, gamepad, announcements) | `tests/e2e/a11y.spec.ts`, `keyboard.spec.ts`, `a11y-features.spec.ts`; see [ACCESSIBILITY.md](ACCESSIBILITY.md) |
 | Legacy loader stubs (Crafty, jQuery, DOM, clock, seeded random) | `src/testing/legacy/` |
 | Golden replay | `tests/fixtures/replays/random-vs-random.replay.json` |
 

@@ -1,4 +1,5 @@
 import type { Agent, Command, ObservationView } from '@core/index';
+import { commandFromPad, pauseEdge, type PadSnapshot } from './gamepad';
 import {
   type Bindings,
   commandFromHeld,
@@ -18,6 +19,8 @@ export interface KeyboardAgentOptions {
   readonly cheatsEnabled?: boolean;
   /** Receives pause/mute and cheat effects; these are app-level and never sim commands. */
   readonly onEffect?: (effect: KeyEffect) => void;
+  /** Current gamepad (e.g. `() => firstPad(navigator.getGamepads())`); mapped to the same Commands as the keys. */
+  readonly gamepad?: () => PadSnapshot | null;
 }
 
 export type KeyEventSource = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>;
@@ -27,11 +30,16 @@ export class KeyboardAgent implements Agent {
   private state: KeyState = INITIAL_KEY_STATE;
   private bindings: Bindings;
   private pressed: Command = 0;
+  private startDown = false;
   private readonly cheatsEnabled: boolean;
 
   constructor(private readonly opts: KeyboardAgentOptions) {
     this.bindings = opts.bindings ?? DEFAULT_BINDINGS;
     this.cheatsEnabled = opts.cheatsEnabled ?? import.meta.env.DEV;
+  }
+
+  currentBindings(): Bindings {
+    return this.bindings;
   }
 
   setBindings(bindings: Bindings): void {
@@ -49,8 +57,22 @@ export class KeyboardAgent implements Agent {
     this.pressed |= cmd;
   }
 
+  /** Call once per rendered frame (also while paused): Start on the pad toggles pause on its press edge. */
+  pollPad(): void {
+    const e = pauseEdge(this.startDown, this.opts.gamepad?.() ?? null);
+    this.startDown = e.down;
+    if (e.pressed) this.opts.onEffect?.('pause');
+  }
+
+  /** Drops held keys, e.g. when a dialog takes focus so a key held across it is not replayed. */
+  releaseAll(): void {
+    this.handle({ type: 'blur', code: '', shiftKey: false, ctrlKey: false, repeat: false });
+  }
+
   observe(view: ObservationView): Command {
-    const cmd = commandFromHeld(this.bindings, this.state.held, this.opts.capturable(view)) | this.pressed;
+    const capturable = this.opts.capturable(view);
+    const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable);
+    const cmd = commandFromHeld(this.bindings, this.state.held, capturable) | pad | this.pressed;
     this.pressed = 0;
     return cmd;
   }

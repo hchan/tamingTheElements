@@ -68,6 +68,25 @@ describe('save migration', () => {
     expect(r.ok && r.value.params).toBeDefined();
   });
 
+  it('accessibility fields are optional: absent after migration, preserved when present', () => {
+    for (const [path, raw] of Object.entries(files)) {
+      const r = migrate(unwrap(raw));
+      expect(r.ok && 'reduceMotion' in r.value, path).toBe(false);
+      expect(r.ok && 'keyBindings' in r.value, path).toBe(false);
+    }
+    const withPrefs = {
+      ...(fixture('v0-ch3') as object),
+      reduceMotion: true,
+      highContrast: false,
+      keyBindings: { capture: ['KeyV'] },
+    };
+    const r = migrate(withPrefs);
+    expect(r.ok && r.value).toMatchObject({ reduceMotion: true, highContrast: false, keyBindings: { capture: ['KeyV'] } });
+    if (!r.ok) return;
+    expect(migrate(JSON.parse(JSON.stringify(r.value)))).toEqual(r);
+    expect(migrate(r.value)).toEqual(r);
+  });
+
   it('null and garbage give the empty state', () => {
     for (const g of [null, undefined, 5, 'x', [], true]) {
       expect(migrate(g)).toEqual({ ok: true, value: newEmptyState() });

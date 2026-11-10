@@ -20,14 +20,21 @@ import {
   type RenderCharacter,
   type RenderProjectile,
   type RenderView,
+  type SimEvent,
   type SimWorld,
 } from '@core/index';
 import { EventFx, createPhaserFxSink } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
 import { counted, type ProbeCharacter } from '../platform/test-hook';
+import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, crisp, fitScene } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
+import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion } from '../a11y/announcer';
+import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
+import { firstPad } from '../input/gamepad';
+import { getBindings } from '../platform/input/bindings';
+import { collectSide } from '../hud/bars';
 import { ActionBarView } from '../hud/action-bar';
 import { CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
@@ -37,6 +44,9 @@ import { HUD_SCENE, type HudData } from './Hud';
 import type { ArenaLaunch } from './launch';
 
 export const ARENA_SCENE = 'Arena';
+
+/** Frames between low-health checks. */
+const LOW_HEALTH_POLL_FRAMES = 10;
 
 /** Beat between the final blow and the results route. */
 const END_DELAY_MS = 1200;
@@ -77,6 +87,11 @@ export class Arena extends Phaser.Scene {
   private pauseText: Phaser.GameObjects.Text | undefined;
   private cursor: ReplayCursor | undefined;
   private speed: 1 | 2 = 1;
+  private keyboard: KeyboardAgent | undefined;
+  private pauseDialog: PauseDialog | undefined;
+  private announcer: Announcer | undefined;
+  private readonly lowHealth = new LowHealthWatch();
+  private frames = 0;
   private cleanups: (() => void)[] = [];
   private ended = false;
 
@@ -110,16 +125,24 @@ export class Arena extends Phaser.Scene {
         },
         (id) => pool.peek(id)?.image,
       ),
-      { reducedMotion: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches },
+      { reducedMotion: () => getPrefs().reduceMotion },
     );
 
     if (this.launch && !playback) {
       const keyboard = new KeyboardAgent({
         capturable: () => true,
+        bindings: getBindings(),
+        gamepad: () => firstPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null),
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
         },
       });
+      this.keyboard = keyboard;
+      this.pauseDialog = createPauseDialog({ onResume: () => { this.togglePause(); } });
+      const live = createLiveRegion();
+      this.announcer = new Announcer((text, assertive) => { live.speak(text, assertive); }, () => performance.now());
+      this.cleanups.push(() => { this.pauseDialog?.destroy(); live.destroy(); });
+      this.announcer.say(MATCH_START);
       this.agents = [keyboard, this.launch.enemy ?? new RandomBot('p2')];
       this.actionBar = new ActionBarView(this, this.view, (cmd) => {
         this.clicks.push(cmd);
@@ -134,16 +157,11 @@ export class Arena extends Phaser.Scene {
     const element = this.view.heroElement();
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1);
-    this.pauseText = this.add
-      .text(width / 2, height / 2, 'Paused\nShift-P to resume', crisp(this, { fontSize: '40px', align: 'center', color: '#ffffff' }))
-      .setOrigin(0.5)
-      .setDepth(200)
-      .setVisible(false);
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
     const onBlocked = (blocked: boolean): void => {
       if (blocked) driver.pause();
-      else if (!this.pauseText?.visible) driver.resume();
+      else if (!this.pauseDialog?.isOpen) driver.resume();
     };
     this.game.events.on(BLOCKED_EVENT, onBlocked);
     this.cleanups.push(() => { this.game.events.off(BLOCKED_EVENT, onBlocked); });
@@ -202,6 +220,8 @@ export class Arena extends Phaser.Scene {
       actionSlots: () => this.actionBar?.currentSlots.map((s) => ({ x: s.x, y: s.y, size: s.size, cmd: s.cmd })) ?? [],
       clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
+      shaking: () => this.cameras.main.shakeEffect.isRunning,
+      boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
       step: (n, cmds = [0, 0]) => {
         driver.pause();
         for (let k = 0; k < n; k++) this.advance(cmds);
@@ -228,6 +248,7 @@ export class Arena extends Phaser.Scene {
     this.launch?.recorder?.record(final);
     const events = step(world, final);
     this.fx?.consume(events);
+    this.announce(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
     this.ended = true;
@@ -290,12 +311,33 @@ export class Arena extends Phaser.Scene {
     if (!driver || this.ended) return;
     if (driver.isPaused) driver.resume();
     else driver.pause();
-    this.pauseText?.setVisible(driver.isPaused);
+    // A key held across the dialog must not replay on resume.
+    this.keyboard?.releaseAll();
+    if (driver.isPaused) this.pauseDialog?.open();
+    else this.pauseDialog?.close();
+  }
+
+  /** Feeds the screen-reader live region with match events. */
+  private announce(events: readonly SimEvent[]): void {
+    const announcer = this.announcer;
+    if (!announcer) return;
+    for (const a of announcementsFor(events)) announcer.say(a);
+  }
+
+  /** Low-health watch: polled every few frames rather than every 50 Hz tick. */
+  private checkLowHealth(): void {
+    const { announcer, view } = this;
+    if (!announcer || !view) return;
+    const hero = collectSide(view, 0).active;
+    if (this.lowHealth.update(hero === undefined ? undefined : hero.hp / Math.max(1, hero.maxHp))) announcer.say(LOW_HEALTH);
   }
 
   override update(): void {
     const { driver, view, pool, projPool } = this;
     if (!driver || !view || !pool || !projPool) return;
+    this.keyboard?.pollPad();
+    this.announcer?.flush();
+    if (++this.frames % LOW_HEALTH_POLL_FRAMES === 0) this.checkLowHealth();
     const alpha = driver.frame();
     const tick = view.tick;
     this.actionBar?.update();
@@ -334,6 +376,9 @@ export class Arena extends Phaser.Scene {
     this.fx = undefined;
     this.cursor = undefined;
     this.driver = undefined;
+    this.keyboard = undefined;
+    this.pauseDialog = undefined;
+    this.announcer = undefined;
     this.view = undefined;
     this.world = undefined;
   }

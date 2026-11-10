@@ -25,6 +25,69 @@ export function getHealthColor(fraction: number): number {
   return 0xff0000 | (Math.ceil(p * 255 * 2) << 8);
 }
 
+export type HealthState = 'healthy' | 'hurt' | 'critical';
+
+/** At or below this fraction a hero is critical (the same 25% line that makes an opponent capturable). */
+export const CRITICAL_AT = 0.25;
+export const HURT_BELOW = 0.5;
+
+/** Colour-blind-safe (Okabe-Ito) fills used by the high-contrast option. */
+export const HC_COLORS: Readonly<Record<HealthState, number>> = {
+  healthy: 0x56b4e9,
+  hurt: 0xf0e442,
+  critical: 0xd55e00,
+};
+
+export function healthState(fraction: number): HealthState {
+  const p = Number.isNaN(fraction) ? 1 : fraction;
+  if (p <= CRITICAL_AT) return 'critical';
+  return p < HURT_BELOW ? 'hurt' : 'healthy';
+}
+
+/**
+ * Health is never shown by colour alone: every state also has a label and a stroke pattern
+ * (solid, long dashes, short dashes), so it reads without telling red from green.
+ */
+export interface HealthCue {
+  readonly state: HealthState;
+  readonly label: string;
+  /** Dash on/off lengths in px, or null for a solid stroke. */
+  readonly dash: readonly [number, number] | null;
+  /** Text such as `72% OK` for the HUD and for assistive text. */
+  readonly text: string;
+}
+
+const CUES: Readonly<Record<HealthState, Pick<HealthCue, 'label' | 'dash'>>> = {
+  healthy: { label: 'OK', dash: null },
+  hurt: { label: 'HURT', dash: [16, 6] },
+  critical: { label: 'LOW', dash: [6, 4] },
+};
+
+export function healthCue(fraction: number): HealthCue {
+  const state = healthState(fraction);
+  const pct = Math.ceil(clamp01(fraction) * 100);
+  return { state, ...CUES[state], text: `${String(pct)}% ${CUES[state].label}` };
+}
+
+function clamp01(f: number): number {
+  return Number.isNaN(f) ? 1 : Math.min(1, Math.max(0, f));
+}
+
+/** Fill colour for a health fraction: the legacy ramp, or the colour-blind-safe palette in high contrast. */
+export function healthFill(fractionValue: number, highContrast: boolean): number {
+  return highContrast ? HC_COLORS[healthState(fractionValue)] : getHealthColor(fractionValue);
+}
+
+/** Splits [fromX, toX] into stroke segments for a dash pattern (one solid segment when `dash` is null). */
+export function dashSegments(fromX: number, toX: number, dash: readonly [number, number] | null): [number, number][] {
+  if (toX <= fromX) return [];
+  if (dash === null) return [[fromX, toX]];
+  const out: [number, number][] = [];
+  const [on, off] = dash;
+  for (let x = fromX; x < toX; x += on + off) out.push([x, Math.min(toX, x + on)]);
+  return out;
+}
+
 /** Health as a 0..1 fraction (0 when maxHp is not positive), clamped. */
 export function fraction(value: number, max: number): number {
   if (max <= 0) return 0;
@@ -48,13 +111,19 @@ export interface BarFill {
 }
 
 /** Legacy `Math.ceil((max - min) * fraction + min)` for the rest and current strokes. */
-export function barFill(g: BarGeometry, hp: number, maxHp: number, restCap: number): BarFill {
+export function barFill(
+  g: BarGeometry,
+  hp: number,
+  maxHp: number,
+  restCap: number,
+  highContrast = false,
+): BarFill {
   const span = g.maxX - g.minX;
   const cur = fraction(hp, maxHp);
   return {
     restX: Math.ceil(span * fraction(restCap, maxHp) + g.minX),
     curX: Math.ceil(span * cur + g.minX),
-    color: getHealthColor(cur),
+    color: healthFill(cur, highContrast),
   };
 }
 

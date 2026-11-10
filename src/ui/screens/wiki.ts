@@ -41,7 +41,7 @@ export function wikiScreen(): Screen {
   return {
     mount(container) {
       node = el('div', 'menuPage');
-      node.append(el('div', 'heading', 'Wiki'));
+      node.append(el('h1', 'heading', 'Wiki'));
       for (const line of wikiLines()) node.append(el('p', 'wikiLine', line));
       node.append(el('p', 'wikiLine', 'Void elementals are neutral against every element.'));
       const back = el('a', 'menuLink', 'Back');

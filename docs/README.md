@@ -8,6 +8,7 @@
 | [TESTING.md](TESTING.md) | Test commands, layout, fixtures and guard tests |
 | [PARITY.md](PARITY.md) | Legacy parity checklist with test evidence |
 | [BALANCE.md](BALANCE.md) | Balance tooling and audit results |
+| [ACCESSIBILITY.md](ACCESSIBILITY.md) | Keyboard, reduce motion, colour-blind HUD, live regions, rebinding, gamepad and the axe audit |
 | [SAVE-FORMAT.md](SAVE-FORMAT.md) | Save schema and migration from v0 |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | GitHub Pages deploy and `VITE_BASE` |
 | [BRANCHING.md](BRANCHING.md) | Trunk-based workflow and branch rules |

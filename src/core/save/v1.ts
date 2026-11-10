@@ -28,6 +28,12 @@ export interface SaveV1 {
   createdTime?: number;
   lastModifiedTime?: number;
   completeTime?: number;
+  /** Accessibility: absent means "follow the OS `prefers-reduced-motion`". Non-boolean values are ignored. */
+  reduceMotion?: boolean;
+  /** Accessibility: absent means "follow the OS `prefers-contrast`". Non-boolean values are ignored. */
+  highContrast?: boolean;
+  /** Remapped keys (`KeyboardEvent.code` lists per action); absent means the default bindings. Sanitised on read. */
+  keyBindings?: Record<string, string[]>;
   [extra: string]: unknown;
 }
 

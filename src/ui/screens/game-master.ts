@@ -95,9 +95,10 @@ export function gameMasterScreen(): Screen {
   return {
     mount(container) {
       node = el('div', 'menuPage');
-      node.append(el('div', 'heading', 'Game Master'));
+      node.append(el('h1', 'heading', 'Game Master'));
       const area = el('textarea');
       area.id = 'gameMasterTextArea';
+      area.setAttribute('aria-label', 'Save JSON');
       area.rows = 24;
       area.cols = 80;
       area.value = readStored();

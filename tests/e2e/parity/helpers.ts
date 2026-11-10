@@ -19,6 +19,9 @@ export interface Save {
   difficulty: number | string;
   garrison: Garrison[];
   params?: unknown;
+  reduceMotion?: boolean;
+  highContrast?: boolean;
+  keyBindings?: Record<string, string[]>;
 }
 
 export function collectErrors(page: Page): string[] {

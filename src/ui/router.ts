@@ -1,4 +1,5 @@
 import { el } from './dom';
+import { focusHeading, installMenuKeys } from './keyboard';
 import { settingsScreen } from './screens/settings';
 import { mainMenuScreen } from './screens/main-menu';
 import type { Screen, ScreenFactory } from './screens/screen';
@@ -76,7 +77,7 @@ export function placeholderScreen(title: string): ScreenFactory {
     return {
       mount(container) {
         node = el('div', 'menuPage');
-        node.append(el('div', 'heading', param === null ? title : `${title}: ${param}`));
+        node.append(el('h1', 'heading', param === null ? title : `${title}: ${param}`));
         container.append(node);
       },
       unmount() {
@@ -85,6 +86,34 @@ export function placeholderScreen(title: string): ScreenFactory {
       },
     };
   };
+}
+
+export const APP_TITLE = 'Taming the Elements';
+
+const ROUTE_TITLES: Readonly<Record<RouteName, string>> = {
+  main: 'Main Menu',
+  newGame: 'New Game',
+  garrison: 'Garrison',
+  settings: 'Settings',
+  currentObjectives: 'Current Objectives',
+  about: 'About',
+  storyMode: 'Story Mode',
+  wiki: 'Wiki',
+  keyBindings: 'Key Bindings',
+  battleground: 'Battleground',
+  loading: 'Battle',
+  victory: 'Results',
+  defeat: 'Defeat',
+  exit: 'Exit',
+  race: 'Race Details',
+  gameMaster: 'Game Master',
+  character: 'Character Details',
+  replay: 'Replay Viewer',
+};
+
+/** Document title for a route, so each screen is named in the tab and to screen readers. */
+export function routeTitle(name: RouteName): string {
+  return name === 'main' ? APP_TITLE : `${ROUTE_TITLES[name]} - ${APP_TITLE}`;
 }
 
 export type ScreenTable = Readonly<Record<RouteName, ScreenFactory>>;
@@ -99,7 +128,7 @@ export function defaultScreens(): ScreenTable {
     about: aboutScreen,
     storyMode: placeholderScreen('Story Mode'),
     wiki: wikiScreen,
-    keyBindings: keyBindingsScreen,
+    keyBindings: () => keyBindingsScreen(),
     battleground: placeholderScreen('Battleground'),
     loading: placeholderScreen('Loading'),
     victory: victoryScreen,
@@ -120,16 +149,24 @@ export function startRouter(
   screens: ScreenTable = defaultScreens(),
 ): () => void {
   let active: Screen | null = null;
+  let current: RouteName = 'main';
   const show = (): void => {
     const route = resolveRoute(window.location.hash);
+    current = route.name;
     active?.unmount();
     active = screens[route.name](route.param);
     active.mount(container);
+    document.title = routeTitle(route.name);
+    focusHeading(container);
   };
   window.addEventListener('hashchange', show);
+  const removeKeys = installMenuKeys(document, () => current, (hash) => {
+    window.location.hash = hash;
+  });
   show();
   return () => {
     window.removeEventListener('hashchange', show);
+    removeKeys();
     active?.unmount();
     active = null;
   };
