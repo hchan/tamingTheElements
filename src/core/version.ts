@@ -87,5 +87,8 @@
  *    ARCADE_2V2_LIFE_PM (per race, default 600 pm; 1v1 unchanged), benched heroes heal 3 pm per 10 ticks (was 10), and
  *    the scripted Arcade AI of a tag team fires along rock-cut lines for part of every 256 ticks, so that 2v2 rounds
  *    end instead of timing out (WP-arcade-2v2-tune).
+ * 23: Arcade only; Classic hashes unchanged. The four super archetypes and their 12 race variants replace the generic
+ *    Elemental Burst: Inferno Beam, Vortex, Quake Rings, Tidal Wave (FUN-DESIGN 2.5); new statuses (super speed, super
+ *    armour, tidal slow); the super id rides in the super entity's hitMask (WP-arcade-supers).
  */
-export const SIM_VERSION = 22;
+export const SIM_VERSION = 23;

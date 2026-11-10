@@ -75,6 +75,9 @@ const tagRun = runs[2]?.events ?? [];
 /** `tagIn` events whose outgoing character died on the same tick (the KO entrance) or not (a manual tag). */
 const koEntrance = (e: SimEvent): boolean => of(K.died).some((d) => d.tick === e.tick && d.sourceId === e.from);
 const hits = of(K.hitConfirmed);
+/** The `superId` of the latest `superStarted` at or before `tick` within one run (ticks restart per golden, so use the run's own events). */
+const superHits = (events: readonly SimEvent[], superId: number): number =>
+  of(K.hitConfirmed, events).filter((h) => h.strength === 3 && of(K.superStarted, events).filter((e) => e.tick <= h.tick).at(-1)?.['superId'] === superId).length;
 
 describe('scripted Arcade goldens: every mechanic fires', () => {
   const mechanics: readonly (readonly [string, () => number])[] = [
@@ -91,6 +94,8 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['super cinematic freeze', () => of(K.hitStop).filter((e) => e.cause === 2 && e.ticks === 40).length],
     ['super hits', () => hits.filter((e) => e.strength === 3).length],
     ['super ended', () => of(K.superEnded).length],
+    ['Eye of the Storm (Vortex) super hits', () => superHits(moves, 4)],
+    ['Hellfire Lance (Inferno Beam) super hits', () => superHits(tagRun, 1)],
     ['clash that destroys both (void against air)', () => of(K.clash).filter((e) => e.winner === -1).length],
     ['clash won by element (fire over air)', () => of(K.clash).filter((e) => e.winner === e.a && e.ea === 0 && e.eb === 1).length],
     ['round KO', () => of(K.ko).length],
@@ -167,9 +172,14 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     expect(second).toMatchObject({ attacker: tag?.to, combo: 2 });
     const deaths = of(K.died, tagRun).filter((e) => e.team === 1);
     const ko = of(K.ko, tagRun)[0];
-    expect(of(K.tagIn, tagRun).filter(koEntrance)).toMatchObject([{ team: 1, from: deaths[0]?.sourceId, entrance: 1 }]);
+    // One KO entrance per round: the lead falls (partner enters), then the partner falls (round KO); round 2 repeats the lead's fall.
+    expect(of(K.tagIn, tagRun).filter(koEntrance)).toMatchObject([
+      { team: 1, from: deaths[0]?.sourceId, entrance: 1 },
+      { team: 1, from: deaths[2]?.sourceId, entrance: 1 },
+    ]);
     expect(ko).toMatchObject({ team: 1 });
-    expect(deaths.map((e) => e.tick)).toEqual([expect.any(Number), ko?.tick]);
+    expect(deaths).toHaveLength(3);
+    expect(deaths[1]?.tick).toBe(ko?.tick);
     expect(of(K.roundStarted, tagRun).map((e) => e.round)).toEqual([1, 2]);
   });
 

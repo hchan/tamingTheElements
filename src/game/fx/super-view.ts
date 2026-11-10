@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import type { Element } from '@core/index';
+import { SUPER_NAMES, type Element } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
 import { ELEMENT_COLORS } from './element-colors';
 import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
@@ -11,8 +11,8 @@ import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
  * a scene update listener exists only while a cinematic runs, and everything is dropped with the scene.
  */
 
-/** The generic MVP super (WP 8); per-race names arrive with the archetype work packages. */
-export const SUPER_NAME = 'ELEMENTAL BURST';
+/** The name of super `superId` (WP-arcade-supers: the race supers; 0 and unknown ids are the generic burst). */
+export const superName = (superId: number): string => SUPER_NAMES[superId] ?? SUPER_NAMES[0] ?? 'ELEMENTAL BURST';
 /**
  * Band centre: under the fighters (clear of the HUD and the action bar) unless the caster reaches that strip, then high,
  * under the meters. Either way the caster stays in view.
@@ -38,20 +38,20 @@ export interface SuperCaster {
 export type SuperState = SuperFrame & { readonly name: string; readonly sub: string; readonly camZoom: number };
 
 interface Runner {
-  start(caster: SuperCaster, from: number, until: number, reduced: boolean): void;
+  start(caster: SuperCaster, from: number, until: number, reduced: boolean, superId: number): void;
   state(): SuperState | undefined;
 }
 
 const runners = new WeakMap<Phaser.Scene, Runner>();
 
 /** Starts (or restarts) the cinematic in `scene`; `tick` is the view tick and `paused` holds the sub-tick motion. */
-export function superCut(scene: Phaser.Scene, caster: SuperCaster, from: number, until: number, reduced: boolean, tick: () => number, paused: () => boolean): void {
+export function superCut(scene: Phaser.Scene, caster: SuperCaster, from: number, until: number, reduced: boolean, tick: () => number, paused: () => boolean, superId = 0): void {
   let r = runners.get(scene);
   if (!r) {
     r = createRunner(scene, tick, paused);
     runners.set(scene, r);
   }
-  r.start(caster, from, until, reduced);
+  r.start(caster, from, until, reduced, superId);
 }
 
 /** The running cinematic's frame in `scene` (test probe), or undefined. */
@@ -133,7 +133,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   scene.events.once('destroy', drop);
 
   return {
-    start(caster, fromTick, untilTick, reducedMotion): void {
+    start(caster, fromTick, untilTick, reducedMotion, superId): void {
       stop(true);
       from = fromTick;
       until = untilTick;
@@ -147,7 +147,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       bandY = img.y + img.displayHeight <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
       parts.band.setFillStyle(ELEMENT_COLORS[caster.element]);
       parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX, PORTRAIT_PX).setFlipX(img.flipX);
-      parts.name.setText(SUPER_NAME);
+      parts.name.setText(superName(superId));
       // The element as a word too: the band colour is not the only cue.
       parts.sub.setText(caster.element.toUpperCase());
       for (const o of all) o.setVisible(true);

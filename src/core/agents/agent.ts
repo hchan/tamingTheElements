@@ -18,6 +18,7 @@ import {
 import type { SimWorld } from '../sim/world';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
+import { superSpecOf } from '../sim/systems/arcade/super';
 import { kindOf, patchRects, stageOf } from '../sim/systems/arcade/terrain';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
@@ -64,6 +65,8 @@ export interface ArcadeView {
   readonly oppCombo: number;
   /** This side's super is running (its caster cannot act until it ends). */
   readonly superActive: boolean;
+  /** The id of the super this side's fighter casts (`SuperSpec.id`; 0 is the generic Elemental Burst). */
+  readonly superId: number;
   /** Round phase (a `RoundPhase`, FUN-DESIGN 2.10): only `fight` (1) lets anyone act. */
   readonly phase: number;
   /**
@@ -220,6 +223,7 @@ function arcadeViewOf(
     combo: team(side, ArcadeT.comboHits),
     oppCombo: team(1 - side, ArcadeT.comboHits),
     superActive: team(side, ArcadeT.superState) !== 0,
+    superId: self === undefined ? 0 : superSpecOf(s, self.id).id,
     phase: roundPhase(s),
     prevCmd: team(side, ArcadeT.prevCmd),
     primaryAge: pressAge(s, side, Press.primary),

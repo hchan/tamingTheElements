@@ -20,7 +20,7 @@ import { applyArcadeHit } from './arcade/hit';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { checkPerfectDodge } from './arcade/dash';
-import { releaseCount } from './ability-info';
+import { releaseCount, SUPER_BULLET } from './ability-info';
 import { castDir } from './arcade/aim';
 import { shotBlocked } from './arcade/terrain';
 
@@ -46,10 +46,15 @@ function canFire(world: SimWorld, charId: number, slot: number, def: AbilityDef)
 }
 
 /** Spawns one bullet; false when the entity table is full. */
-function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: AbilityDef, dir: number): boolean {
+export function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: AbilityDef, dir: number): boolean {
+  return spawnBulletId(world, charId, defIdx, def, dir) >= 0;
+}
+
+/** Spawns one bullet and returns its entity id, or -1 when the entity table is full. */
+export function spawnBulletId(world: SimWorld, charId: number, defIdx: number, def: AbilityDef, dir: number): number {
   const s = world.state;
   const id = allocEntity(s);
-  if (id < 0) return false;
+  if (id < 0) return -1;
   // Set A sizes are fractions of the character box; set B (Ice Blast, the only projectile there) stores pixels.
   const w = def.kind === 'debuff' ? (def.w ?? 0) : (def.w ?? 0) * CHARACTER_WIDTH;
   const h = def.kind === 'debuff' ? (def.h ?? 0) : (def.h ?? 0) * CHARACTER_HEIGHT;
@@ -73,8 +78,11 @@ function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: Abili
   // hp holds the bullet's current damage. Fireball starts at a quarter and grows (legacy myTween).
   s.hp[id] = (def.damage ?? 0) * (def.id === FIREBALL ? 0.25 : 1);
   s.flags[id] = EntityFlag.alive;
-  return true;
+  return id;
 }
+
+/** `hitMask` of a bullet spawned by an Arcade super (Hailstorm icicles): it never held an active count. */
+export { SUPER_BULLET };
 
 export function fire(world: SimWorld, sink: EventSink, team: number, charId: number, slot: number, tick: number): void {
   const s = world.state;
@@ -111,7 +119,7 @@ export function fire(world: SimWorld, sink: EventSink, team: number, charId: num
  */
 function despawn(world: SimWorld, id: number, holder: number): void {
   const s = world.state;
-  releaseCount(s, holder, s.defId[id] ?? 0);
+  if ((s.hitMask[id] ?? 0) !== SUPER_BULLET) releaseCount(s, holder, s.defId[id] ?? 0);
   freeEntity(s, id);
 }
 
