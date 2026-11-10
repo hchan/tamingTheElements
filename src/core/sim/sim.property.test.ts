@@ -28,7 +28,7 @@ import {
   cooldownIdx,
   countIdx,
 } from './state';
-import { ABILITY_DEFS } from './systems/projectile';
+import { ABILITY_DEFS, SUPER_BULLET } from './systems/projectile';
 import { abilitySlot } from './systems/ability-info';
 import { hasEnded } from './systems/end';
 import { step } from './step';
@@ -204,6 +204,8 @@ function checkInvariants(
       kind === EntityKind.melee ||
       (kind === EntityKind.effect && s.defId[i] === CAPTURE_DEF_INDEX);
     if (!counted || ((s.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
+    // Hailstorm icicles (an Arcade super) never held an active count.
+    if (kind === EntityKind.projectile && s.hitMask[i] === SUPER_BULLET) continue;
     // An Arcade parry hands a reflected bullet's count to the parrier (arcade/guard.ts); one without that ability has
     // no count to take, so the bullet flies on uncounted.
     if (abilitySlot(s, s.owner[i] ?? 0, s.defId[i] ?? 0) < 0) continue;

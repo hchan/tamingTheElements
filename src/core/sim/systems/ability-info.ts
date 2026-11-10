@@ -36,3 +36,6 @@ export function releaseCount(s: SimState, holder: number, defIdx: number): void 
   const i = countIdx(holder, slot);
   s.abil[i] = (s.abil[i] ?? 0) - 1;
 }
+
+/** `hitMask` of a bullet spawned by an Arcade super (Hailstorm icicles): it never held an active count. */
+export const SUPER_BULLET = 1;

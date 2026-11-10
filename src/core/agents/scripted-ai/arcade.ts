@@ -1,4 +1,5 @@
-import { arcadePlayfield, SUPER_BAND_PX, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
+import { arcadePlayfield, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
+import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
 import { Cmd, type Command } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
@@ -21,8 +22,8 @@ import {
  *   flies a shorter way and can land inside the stun; it holds the attack buttons once its own combo reaches the
  *   level's combo cap.
  * - Super: on a confirm (the opponent is stunned) with a full bar (SUPER_COST), after a reaction delay counted from the
- *   first tick it saw that stun, it faces the opponent and presses `Cmd.super`, if the Elemental Burst band would
- *   cover the opponent (never on Easy).
+ *   first tick it saw that stun, it faces the opponent and presses `Cmd.super`, if its race's super (band, box,
+ *   rings or wall) would reach the opponent (never on Easy).
  * - 8-way aim (WP-arcade-8way-aim): a shot the base AI chose keeps its 4-way facing (a second movement axis is dropped,
  *   as Classic's x-wins facing would), and when no shot lines up on an axis but the opponent sits on a diagonal
  *   (`diagonalLine`), a ready projectile slot fires along that diagonal.
@@ -44,16 +45,31 @@ const MOVE = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
 const ATTACK = Cmd.primary | Cmd.secondary;
 
 /**
- * The movement bit that faces `self` towards `opp` so the Elemental Burst band (SUPER_BAND_PX across, from the caster's
- * centre to the wall on its facing side; horizontal unless the facing has no x part) overlaps `opp`; 0 when no 4-way
- * facing would.
+ * The movement bit that faces `self` towards `opp` so its super (`superId`, `SuperSpec`) reaches `opp`; 0 when no 4-way
+ * facing would. A beam is a band (`size` across, from the caster's centre to the wall on its facing side); a vortex and
+ * a quake are squares centred on the caster (the quake's reach is its last ring), so the facing only picks the nearer
+ * axis; a tidal wall spans the whole arena across its path, so any opponent on the facing side is hit.
  */
-export function superFacing(self: FighterView, opp: FighterView): Command {
+export function superFacing(self: FighterView, opp: FighterView, superId = 0): Command {
+  const spec = SUPER_SPECS[superId] ?? SUPER_BURST;
   const cx = self.x + self.w / 2;
   const cy = self.y + self.h / 2;
-  const half = SUPER_BAND_PX / 2;
-  if (opp.y < cy + half && opp.y + opp.h > cy - half) return opp.x + opp.w / 2 >= cx ? Cmd.right : Cmd.left;
-  if (opp.x < cx + half && opp.x + opp.w > cx - half) return opp.y + opp.h / 2 >= cy ? Cmd.down : Cmd.up;
+  const dx = opp.x + opp.w / 2 - cx;
+  const dy = opp.y + opp.h / 2 - cy;
+  const horizontal = (): Command => (dx >= 0 ? Cmd.right : Cmd.left);
+  const vertical = (): Command => (dy >= 0 ? Cmd.down : Cmd.up);
+  if (spec.shape === SuperShape.tide) return Math.abs(dx) >= Math.abs(dy) ? horizontal() : vertical();
+  if (spec.shape !== SuperShape.beam) {
+    const reach = spec.shape === SuperShape.quake
+      ? Math.floor(((SUPER_QUAKE_RING_PX[SUPER_QUAKE_RING_PX.length - 1] ?? 0) * spec.scalePm) / 1000)
+      : spec.size;
+    const half = reach / 2;
+    if (opp.x >= cx + half || opp.x + opp.w <= cx - half || opp.y >= cy + half || opp.y + opp.h <= cy - half) return 0;
+    return Math.abs(dx) >= Math.abs(dy) ? horizontal() : vertical();
+  }
+  const half = spec.size / 2;
+  if (opp.y < cy + half && opp.y + opp.h > cy - half) return horizontal();
+  if (opp.x < cx + half && opp.x + opp.w > cx - half) return vertical();
   return 0;
 }
 
@@ -137,6 +153,12 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
 type Memory = [number, number, number, number, number, number, number, number, number];
 const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0];
 
+/** Within every 256 ticks, the tick from which a tag team's AI fires along a rock-cut line (WP-arcade-2v2-tune). */
+const SHOOT_FROM = 64;
+
+/** Within this Manhattan distance (px) a tag team's AI may skip an attack press (see `decide`). */
+const CLOSE_PX = 160;
+
 export class ArcadeTactics {
   /**
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
@@ -166,7 +188,7 @@ export class ArcadeTactics {
     const a = view.arcade;
     if (a === undefined) return base;
     const cmd = this.decide(view, a, base, shot);
-    return avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd));
+    return avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
   }
 
   /**
@@ -177,7 +199,7 @@ export class ArcadeTactics {
    * straight back), ending early when the step is not free. A fighter already inside a rock walks out as it is. Guard,
    * dash and super commands are left alone.
    */
-  private slide(tick: number, self: FighterView, opp: FighterView, rocks: readonly RockView[], cmd: Command): Command {
+  private slide(tick: number, self: FighterView, opp: FighterView, rocks: readonly RockView[], cmd: Command, tagTeam: boolean): Command {
     if ((cmd & (Cmd.guard | Cmd.dash | Cmd.super)) !== 0 || rocks.some((r) => hitsRock(r, self.x, self.y, self.w, self.h))) return cmd;
     const m = this.mem;
     const pf = arcadePlayfield();
@@ -187,7 +209,10 @@ export class ArcadeTactics {
       const y = self.y + dy;
       return x >= pf.x && y >= pf.y && x + self.w <= pf.x + pf.w && y + self.h <= pf.y + pf.h && !rocks.some((r) => hitsRock(r, x, y, self.w, self.h));
     };
-    const wasted = (cmd & ATTACK) !== 0 ? rockOnLine(self, opp, rocks) : undefined;
+    // A tag team (a living partner) shoots on from SHOOT_FROM of every 256 ticks even along a line a rock cuts: two sides
+    // that both refuse a wasted shot and slide about can otherwise never trade a hit (2v2 stalemates).
+    const shoots = tagTeam && (tick & 255) >= SHOOT_FROM;
+    const wasted = (cmd & ATTACK) !== 0 && !shoots ? rockOnLine(self, opp, rocks) : undefined;
     if ((m[7]) !== 0 && tick < (m[8]) && free(m[7])) return (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | (m[7]);
     m[7] = 0;
     const [sx, sy] = stepOf(cmd & MOVE);
@@ -253,11 +278,16 @@ export class ArcadeTactics {
         m[0] = view.tick;
         m[1] = react();
       }
-      const facing = superFacing(self, opp);
+      const facing = superFacing(self, opp, a.superId);
       if (free && this.level > 0 && a.meter >= SUPER_COST && facing !== 0 && view.tick - m[0] >= m[1]) {
         return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
       }
       cmd = a.combo > this.level * 2 ? cmd & ~ATTACK : pressStep(self, opp, cmd);
+    }
+    // Tag team, point blank: both sides firing on the same tick clash their shots (no damage) every time, a lockstep loop
+    // (2v2 stalemates); a drawn one-in-four skip of the press breaks the symmetry. Never in 1v1.
+    if (a.partnerPm >= 0 && (cmd & ATTACK) !== 0 && a.oppStun === 0 && Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y) < CLOSE_PX && draw(4) === 0) {
+      cmd &= ~ATTACK;
     }
     if (!free || threat) return cmd;
     const pm = Math.floor((self.hp * 1000) / self.maxHp);

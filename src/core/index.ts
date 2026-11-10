@@ -37,8 +37,9 @@ export * from './sim/view';
 export { StatusId } from './sim/systems/status';
 export {
   DASH_TICKS, GUARD_MAX, METER_BAR, METER_BARS, METER_MAX, ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, ROUNDS_TO_WIN, RoundPhase,
-  TAG_COOLDOWN_TICKS, WEATHER_CHARGE_FULL, WEATHER_ELEMENTS, WEATHER_TICKS, Weather,
+  TAG_COOLDOWN_TICKS, WEATHER_CHARGE_FULL, WEATHER_ELEMENTS, WEATHER_TICKS, Weather, arcadePlayfield,
 } from './data/arcade';
+export { RACE_SUPERS, SUPER_NAMES, SUPER_SPECS, SuperShape, superOf, type SuperSpec } from './data/arcade-supers';
 export * from './rules/progression';
 export * from './sim/systems/end';
 export * from './rules/results';

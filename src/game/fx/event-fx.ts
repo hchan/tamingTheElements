@@ -76,7 +76,7 @@ export interface FxSink {
    * The super cinematic for `caster` (Arcade): from view tick `fromTick` until `untilTick`, the freeze deadline in W.tick
    * units; `reduced` drops its motion (no slide, no punch-in) and keeps the dim, band and name.
    */
-  superCut(caster: number, fromTick: number, untilTick: number, reduced: boolean): void;
+  superCut(caster: number, fromTick: number, untilTick: number, reduced: boolean, superId?: number): void;
 }
 
 /** Classic hits: six particles, an 80 ms shake and a red-ish tint after the white flash. */
@@ -115,6 +115,8 @@ export class EventFx {
   /** Last `hitConfirmed` (tick, source, victim, strength), to pair it with the `hitStop` that follows it. */
   private hitTick = -1;
   private hitSource = -1;
+  /** The `superId` of the latest `superStarted` (it precedes its freeze's `hitStop` in the same step). */
+  private superId = 0;
   private hitTarget = -1;
   private hitStrength = 0;
 
@@ -129,6 +131,7 @@ export class EventFx {
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
       const k = e.kind;
+      if (k === SimEventKind.superStarted) this.superId = e['superId'] ?? 0;
       if (k === SimEventKind.damage ? this.opts.arcade === true : k !== SimEventKind.hitConfirmed && k !== SimEventKind.hitStop) continue;
       if (!this.deduper.firstSeen(e)) continue;
       if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1);
@@ -177,7 +180,7 @@ export class EventFx {
     const until = e.tick + 1 + (e['ticks'] ?? 0);
     const cause = e['cause'];
     if (cause === SUPER_CAUSE) {
-      this.sink.superCut(e.sourceId, e.tick, until, reduced);
+      this.sink.superCut(e.sourceId, e.tick, until, reduced, this.superId);
       return;
     }
     const paired = e.tick === this.hitTick && e.sourceId === this.hitSource;
@@ -321,9 +324,9 @@ export function createPhaserFxSink(
       const p = centre(target);
       if (p && numberAt) numberAt(p.x, p.y - p.h / 2, amount, scaled, counter);
     },
-    superCut(caster, fromTick, untilTick, reduced): void {
+    superCut(caster, fromTick, untilTick, reduced, superId): void {
       const v = viewOf(caster);
-      if (v) void import('./super-view').then((m) => { m.superCut(scene, v, fromTick, untilTick, reduced, viewTick, paused); });
+      if (v) void import('./super-view').then((m) => { m.superCut(scene, v, fromTick, untilTick, reduced, viewTick, paused, superId); });
     },
   };
 }

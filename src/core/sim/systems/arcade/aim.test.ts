@@ -148,7 +148,7 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
   });
 
   it('the super band keeps the 4-way facing: aimed north-east it runs east, 160 px tall', () => {
-    const world = duel();
+    const world = duel('dummy');
     const s = world.state;
     s.arcade[ARCADE_TEAM_BASE + ArcadeT.meter] = SUPER_COST;
     step(world, [right | up, 0]);

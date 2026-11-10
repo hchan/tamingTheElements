@@ -83,5 +83,12 @@
  *    patch doubles its own-element hero's damage, water heals 10 pm of max HP per 50 ticks, earth is a rock for the
  *    other elements (blocks bodies and every shot but an earth hero's), air doubles speed; the total modifier is
  *    capped at 2500 pm; new Arcade state slots (stage, patches, team in-patch flag) (WP-arcade-terrain).
+ * 22: Arcade only; Classic hashes unchanged. 2v2 tune: a hero's Arcade max HP in a two-hero roster is further scaled by
+ *    ARCADE_2V2_LIFE_PM (per race, default 600 pm; 1v1 unchanged), benched heroes heal 3 pm per 10 ticks (was 10), and
+ *    the scripted Arcade AI of a tag team fires along rock-cut lines for part of every 256 ticks, so that 2v2 rounds
+ *    end instead of timing out (WP-arcade-2v2-tune).
+ * 23: Arcade only; Classic hashes unchanged. The four super archetypes and their 12 race variants replace the generic
+ *    Elemental Burst: Inferno Beam, Vortex, Quake Rings, Tidal Wave (FUN-DESIGN 2.5); new statuses (super speed, super
+ *    armour, tidal slow); the super id rides in the super entity's hitMask (WP-arcade-supers).
  */
-export const SIM_VERSION = 21;
+export const SIM_VERSION = 23;

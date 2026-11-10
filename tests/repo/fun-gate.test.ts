@@ -36,3 +36,19 @@ describe('fun gate (report only)', () => {
     for (const b of bands) expect(b.ok).toBe(b.value >= b.min && b.value <= b.max);
   });
 });
+
+describe('Arcade 2v2 fun report (WP-arcade-2v2-tune, report only)', () => {
+  const TAG = { ruleset: 'arcade', teamSize: 2, aiLevel: 3, seeds: 1, seed: 1, level: 1, all: false } as const;
+
+  it('plays the tag-team sample deterministically, tags, finishes its rounds and uses the 2v2 round band', () => {
+    const report = funReport(TAG);
+    console.log(`\n${formatFunReport(report)}`);
+    expect(funReport(TAG)).toEqual(report);
+    expect(report.overall.matches).toBe(report.pairs.length * TAG.seeds);
+    expect(report.overall.tags).toBeGreaterThan(0);
+    // The 2v2 tune made rounds end: the old 67% time-over would fail this, a single sample seed stays well inside it.
+    expect(report.overall.timeOverRate).toBeLessThan(0.5);
+    const round = funBands(report).find((b) => b.metric === 'round median s');
+    expect([round?.min, round?.max]).toEqual([45, 90]);
+  });
+});

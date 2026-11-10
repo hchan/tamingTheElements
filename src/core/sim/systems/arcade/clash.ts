@@ -7,7 +7,7 @@ import type { Command } from '../../commands';
 import { SimEventKind, type EventSink } from '../../events';
 import { EntityFlag, EntityKind, MAX_ENTITIES, type SimState } from '../../state';
 import type { SimWorld } from '../../world';
-import { releaseCount } from '../ability-info';
+import { releaseCount, SUPER_BULLET } from '../ability-info';
 import { gainMeter } from './meter';
 
 const live = (s: SimState, id: number): boolean =>
@@ -35,7 +35,7 @@ function overlap(s: SimState, i: number, j: number): boolean {
 
 /** Frees a clashed projectile; its active count goes back to its owner, as when it leaves the arena. */
 function destroy(s: SimState, id: number): void {
-  releaseCount(s, s.owner[id] ?? 0, s.defId[id] ?? 0);
+  if ((s.hitMask[id] ?? 0) !== SUPER_BULLET) releaseCount(s, s.owner[id] ?? 0, s.defId[id] ?? 0);
   freeEntity(s, id);
 }
 

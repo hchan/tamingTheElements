@@ -128,6 +128,8 @@ function movesScript(): ArcadeScript {
   p1.until(h).tap('tornado', primary, 1, 6);
   for (let i = 0; i < 3; i++) p1.tap('cone', secondary, 1, 19);
   p1.until(h + 110).tap('cone', secondary);
+  // Eye of the Storm's 480 px box needs p2 within 280 px (centre to centre): walk in 250 px first.
+  p1.until(h + 120).step('walk in for the vortex', right, 50);
   p1.until(h + 175).tap('super', sup);
   p1.until(h + 520);
   return { file: 'arcade-moves', setup, inputs: buildScript(p1, p2) };
@@ -233,7 +235,9 @@ function tagScript(): ArcadeScript {
   p2.until(h);
   for (let i = 0; i < 4; i++) p2.tap('rock pellet', secondary, 1, BLAST_EVERY - 1);
   p1.until(p2.tick + 100).tap('tag out', swap1);
-  p1.until(p2.tick + 300);
+  // Sindarosa, tagged in, spends the meter round 1 built on her Hellfire Lance (the 200 px beam).
+  p1.until(p2.tick + 200).tap('hellfire lance', sup);
+  p1.until(p2.tick + 400);
   return { file: 'arcade-tag', setup, inputs: buildScript(p1, p2) };
 }
 
