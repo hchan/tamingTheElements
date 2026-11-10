@@ -8,6 +8,7 @@
 | [TESTING.md](TESTING.md) | Test commands, layout, fixtures and guard tests |
 | [PARITY.md](PARITY.md) | Legacy parity checklist with test evidence |
 | [BALANCE.md](BALANCE.md) | Balance tooling and audit results |
+| [FUN-DESIGN.md](FUN-DESIGN.md) | Fun diagnosis and the planned opt-in Arcade ruleset: features, juice, fun metrics, work packages |
 | [ACCESSIBILITY.md](ACCESSIBILITY.md) | Keyboard, reduce motion, colour-blind HUD, live regions, rebinding, gamepad and the axe audit |
 | [SAVE-FORMAT.md](SAVE-FORMAT.md) | Save schema and migration from v0 |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | GitHub Pages deploy and `VITE_BASE` |

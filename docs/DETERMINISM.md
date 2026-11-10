@@ -97,7 +97,8 @@ re-simulation: events are a pure function of the tick, numbered by a per-tick co
 ## Hit-stop and slow motion
 
 Gameplay hit-stop or slow motion must freeze or skip ticks inside the sim. Phaser `timeScale` is cosmetic only. Not
-implemented yet (planned).
+implemented yet (planned); the design (a frozen game clock next to `W.tick`, Arcade ruleset only) is in
+[FUN-DESIGN.md](FUN-DESIGN.md).
 
 ## Cross-browser golden replays
 
