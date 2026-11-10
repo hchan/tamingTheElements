@@ -178,8 +178,11 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
   return undefined;
 }
 
-type Memory = [number, number, number, number, number, number, number, number, number];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0];
+type Memory = [number, number, number, number, number, number, number, number, number, number, number];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0];
+
+/** Game ticks without any HP change on the field after which the AI stops retreating and presses (no stalemates). */
+export const ARCADE_AI_STALE_TICKS = 400;
 
 /** Within every 256 ticks, the tick from which a tag team's AI fires along a rock-cut line (WP-arcade-2v2-tune). */
 const SHOOT_FROM = 64;
@@ -192,7 +195,7 @@ export class ArcadeTactics {
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
    * drawn for it; [2] the tick the current threat was first seen (-1: none), [3] its reaction, [4] its plan (PARRY,
    * DODGE, GUARD or NO_PLAN) and [5] how many game ticks before the hit it acts; [6] the personality (-1 until the
-   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until.
+   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock).
    */
   private mem: Memory = [...FRESH];
   private readonly rng = new AgentRng(ARCADE_AI_STREAM_NAMES);
@@ -273,7 +276,10 @@ export class ArcadeTactics {
     const draw = (n: number): number => this.rng.int(view, n);
     const react = (): number => k[0] + draw(k[1]);
     if (m[6] < 0) m[6] = this.style ?? (this.unfavourable ? TURTLE : draw(3));
-    const style = m[6] as Style;
+    // Anti-stalemate: no HP change for ARCADE_AI_STALE_TICKS and Zoner/Turtle play Rushdown (no retreat, close in and charge).
+    const hpSum = self.hp + opp.hp;
+    if (hpSum !== m[10]) [m[9], m[10]] = [view.tick, hpSum];
+    const style = view.tick - m[9] >= ARCADE_AI_STALE_TICKS ? RUSHDOWN : (m[6] as Style);
     const line = shot === 0 || (base & ATTACK) !== 0 ? 0 : diagonalLine(self, opp);
     const axisShot = (base & ATTACK) !== 0 && (base & (Cmd.left | Cmd.right)) !== 0;
     let cmd = line !== 0 ? (base & ~MOVE) | line | shot : axisShot ? base & ~(Cmd.up | Cmd.down) : base;
