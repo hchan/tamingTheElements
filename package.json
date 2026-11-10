@@ -17,6 +17,7 @@
     "test:legacy": "vitest run --project legacy",
     "test:browser": "echo \"not yet\" && exit 1",
     "e2e": "echo \"not yet\" && exit 1",
+    "docs:gen": "tsx tools/gen/gen-design-tables.ts",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "echo \"not yet\" && exit 1",
     "sim:match": "echo \"not yet\" && exit 1",
