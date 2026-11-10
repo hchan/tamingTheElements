@@ -149,6 +149,6 @@ The stage patches of FUN-DESIGN 2.15 changed Arcade play (Classic baseline uncha
 baseline `tests/fixtures/balance/arcade-baseline.json` was re-recorded. Arcade win rates (`pnpm balance:compare --ruleset
 arcade`, 66 pairings x 16 seeds) went from min 43.2 percent (Echo) and max 54.8 (Lavax) to min 45.5 (Echo) and max 54.3
 (Ishimi); the largest single move was Curomo -3.9pp and Wispera +3.7pp. `pnpm fun:report --ruleset arcade --all --seeds 8`: race
-win rates 40.9 (Echo) to 57.4 (Ishimi), the round median 46.0 s. Stalemates rose from 4 to 92 of 1056 matches: an earth stage puts a
-rock on the fighters' row and the scripted AI does not path around it (the AI work package of section 2.15 must). No data row was
-retuned.
+win rates 40.9 (Echo) to 57.4 (Ishimi), the round median 46.0 s. Stalemates first rose from 4 to 92 of 1056 matches (an earth stage puts a rock on the
+fighters' row); the Arcade AI's rock avoidance (`ArcadeTactics.slide`) brought them to 7, and the baseline was re-recorded
+with it: win rates min 43.2 (Echo) and max 56.0 (Ishimi). No data row was retuned.

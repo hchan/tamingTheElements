@@ -27,7 +27,7 @@ export function stageOf(s: SimState): number {
 }
 
 /** The element kind of character `id` (see `elementKind`). */
-function kindOf(s: SimState, id: number): number {
+export function kindOf(s: SimState, id: number): number {
   return elementKind(CHARACTERS[s.defId[id] ?? 0]?.element);
 }
 
@@ -41,6 +41,14 @@ export function patchOver(s: SimState, x: number, y: number, w: number, h: numbe
     if (x < px + (a[p + 2] ?? 0) && px < x + w && y < py + (a[p + 3] ?? 0) && py < y + h) return i;
   }
   return -1;
+}
+
+/** The live patches as fresh plain rectangles (for observation views; never aliases the state). */
+export function patchRects(s: SimState): { x: number; y: number; w: number; h: number }[] {
+  const a = s.arcade;
+  return Array.from({ length: a[COUNT] ?? 0 }, (_, i) => ({
+    x: a[P0 + i * 4] ?? 0, y: a[P0 + i * 4 + 1] ?? 0, w: a[P0 + i * 4 + 2] ?? 0, h: a[P0 + i * 4 + 3] ?? 0,
+  }));
 }
 
 /** True when `id` is of the stage's element and its centre is inside a patch: the patch effect applies to it. */

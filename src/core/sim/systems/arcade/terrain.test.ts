@@ -147,6 +147,35 @@ describe('layout (rule: 3 to 5 symmetric patches, inside the playfield, clear of
       }), { numRuns: 300, seed: 0x7e44 });
   });
 
+  it('never traps a hero: a hero-sized box can walk from the left spawn to the right spawn round every patch (property)', () => {
+    const STEP = 10;
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 0xffffffff }), (seed) => {
+        const { rects } = firstLayout(seed);
+        const free = (x: number, y: number): boolean =>
+          x >= PF.x && y >= PF.y && x + CHARACTER_WIDTH <= PF.x + PF.w && y + CHARACTER_HEIGHT <= PF.y + PF.h &&
+          !rects.some((r) => x < r[0] + r[2] && r[0] < x + CHARACTER_WIDTH && y < r[1] + r[3] && r[1] < y + CHARACTER_HEIGHT);
+        const seen = new Set<number>();
+        const todo: [number, number][] = [[P1_START_X, ARCADE_START_Y]];
+        seen.add(P1_START_X * 4096 + ARCADE_START_Y);
+        let reached = false;
+        while (todo.length > 0 && !reached) {
+          const [x, y] = todo.pop() ?? [0, 0];
+          if (x === P2_START_X && y === ARCADE_START_Y) reached = true;
+          for (const [dx, dy] of [[STEP, 0], [-STEP, 0], [0, STEP], [0, -STEP]] as const) {
+            const k = (x + dx) * 4096 + (y + dy);
+            if (!seen.has(k) && free(x + dx, y + dy)) {
+              seen.add(k);
+              todo.push([x + dx, y + dy]);
+            }
+          }
+        }
+        expect(reached, `seed ${String(seed)}`).toBe(true);
+      }),
+      { numRuns: 150, seed: 0x7e44 },
+    );
+  });
+
   it('takes the stage from the seed: all four stages appear, the same seed gives the same stage and layout', () => {
     const stages = new Set<number>();
     for (let seed = 0; seed < 60; seed++) stages.add(firstLayout(seed).stage);

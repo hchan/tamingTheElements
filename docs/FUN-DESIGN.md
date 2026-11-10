@@ -657,8 +657,10 @@ new layout (`terrainChanged {stage, count}`); the same weather again keeps the p
 cancels a pending swap, and a weather that ends keeps the last patches. Round start redraws the layout (a pending swap lands
 first). Events: `terrainChanged` 61, `terrainSwap` 62, `patchEntered` 63, `patchLeft` 64 (`{team, stage}`), `patchHeal` 65
 (`{amount}`), `projectileBlocked` 66. Not built: the view (WP 32), AI use of patches, the 2v2 tune. Known cost: an earth stage
-often puts a rock on the middle row (the centre patch sits on the fighters' row), and the scripted AI neither walks round it nor fires over it, so Arcade
-stalemates rose (balance:compare stalemates 4 to 92 of 528 matches); the AI work package must path around rocks.
+often puts a rock on the middle row (the centre patch sits on the fighters' row), and the scripted AI first neither walked round it nor fired over it, so Arcade
+stalemates rose (balance:compare stalemates 4 to 92 of 1056 matches). Basic rock avoidance is in `ArcadeTactics` (`ObservationView.arcade.rocks`:
+the earth patches for a fighter that cannot cross them): a move that would enter a rock, or an attack along a line a rock cuts, starts a
+30-tick slide along the other axis towards the nearer free side (up or left on a tie), and the stalemates are 7 of 1056.
 
 ### 2.16 Sprite sheets: diagonals, more frames and poses (view, assets)
 

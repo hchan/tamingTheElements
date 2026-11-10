@@ -15,7 +15,7 @@ import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
-import { ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing } from './arcade';
+import { ARCADE_AI_SLIDE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing } from './arcade';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
@@ -39,7 +39,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, prevCmd: 0,
-  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, weatherCharge: 1000, tagIn: 0, partnerPm: -1,
+  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, weatherCharge: 1000, tagIn: 0, partnerPm: -1, rocks: [],
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -95,12 +95,12 @@ describe('ObservationView.arcade', () => {
     expect(createObservationView(world, 0).arcade).toEqual({
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
-      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, weatherCharge: 0, tagIn: 0, partnerPm: -1,
+      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
-      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, weatherCharge: 0, tagIn: 0, partnerPm: -1,
+      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
     });
     expect(hash(s)).toBe(before);
   });
@@ -112,13 +112,13 @@ describe('ArcadeTactics: confirms, supers and combo caps', () => {
   it('returns the Classic command untouched and never seeds its stream without view.arcade', () => {
     const t = new ArcadeTactics();
     for (const tick of [0, 1, 2]) expect(t.apply(view(undefined, tick), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0], rng: null });
   });
 
   it('leaves the command alone while the opponent is free and nothing threatens (a given Zoner draws nothing)', () => {
     const t = new ArcadeTactics(AI_NORMAL, ZONER);
     expect(t.apply(view({ meter: SUPER_COST }), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0], rng: null });
   });
 
   it('supers on a confirm with a full bar after its drawn reaction delay, facing the opponent', () => {
@@ -518,7 +518,7 @@ describe('the Arcade AI tags (WP-arcade-tag)', () => {
     expect(tags({ partnerPm: -1 }, 1)).toBe(false); // no partner (1v1, or down)
     expect(tags({ partnerPm: 900, tagIn: 1 })).toBe(false); // cooldown
     expect(tags({ partnerPm: 900, selfStun: 5 })).toBe(false); // not free
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0], rng: null });
     expect(tags({ partnerPm: 900, shots: [shotIn(10)] })).toBe(false); // threatened
   });
 
@@ -542,5 +542,99 @@ describe('the Arcade AI tags (WP-arcade-tag)', () => {
     }
     expect(tags).toBeGreaterThan(0);
     expect(ended).toBe(true);
+  });
+});
+
+describe('ArcadeTactics: rock avoidance (FUN-DESIGN 2.15)', () => {
+  /** A rock 100 px right of a fighter at (200, 300): x 380..480, y 260..460 (centre y 360). */
+  const rock = { x: 380, y: 260, w: 100, h: 200 };
+  const near = (rocks: ArcadeView['rocks'], self = fighter(296, 300), opp = fighter(900, 300), tick = 0): ObservationView =>
+    view({ rocks }, tick, self, opp);
+  const MOVES = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
+
+  it('slides along the rock edge when a move would enter it, keeping the move and taking the nearer free side', () => {
+    // Fighter at y 300 (bottom 380): up clears the rock top (260) in 120 px, down its bottom (460) in 160: up.
+    // Touching the rock a diagonal would still enter it, so the slide is the other axis alone; farther away it keeps the move.
+    const up = new ArcadeTactics(AI_NORMAL, ZONER).apply(near([rock]), Cmd.right);
+    expect(up).toBe(Cmd.up);
+    // Lower fighter (y 380, bottom 460): the bottom edge is nearer.
+    const down = new ArcadeTactics(AI_NORMAL, ZONER).apply(near([rock], fighter(296, 380)), Cmd.right);
+    expect(down).toBe(Cmd.down);
+  });
+
+  it('breaks a tie upwards and a horizontal tie to the left, and never stands still against a rock', () => {
+    const level = { x: 380, y: 300, w: 100, h: 80 };
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(near([level], fighter(296, 300)), Cmd.right) & Cmd.up).toBe(Cmd.up);
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    expect(t.apply(view({ rocks: [{ x: 300, y: 400, w: 80, h: 100 }] }, 0, fighter(300, 320), fighter(300, 700)), Cmd.down) & Cmd.left).toBe(Cmd.left);
+    for (const c of [Cmd.right, Cmd.right | Cmd.up, Cmd.right | Cmd.down]) {
+      expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(near([rock]), c) & MOVES).not.toBe(0);
+    }
+  });
+
+  it('holds the slide for ARCADE_AI_SLIDE_TICKS, whatever the base command says, then decides afresh', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    expect(t.apply(near([rock]), Cmd.right)).toBe(Cmd.up);
+    expect(t.apply(near([rock], fighter(296, 290), fighter(900, 300), 5), Cmd.down)).toBe(Cmd.up);
+    expect(t.apply(near([rock], fighter(296, 290), fighter(900, 300), ARCADE_AI_SLIDE_TICKS), Cmd.down)).toBe(Cmd.down);
+  });
+
+  it('leaves the command alone with no rock in the way, for guard, dash and super, inside a rock, and in Classic', () => {
+    const t = (): ArcadeTactics => new ArcadeTactics(AI_NORMAL, ZONER);
+    expect(t().apply(near([rock]), Cmd.left)).toBe(Cmd.left);
+    expect(t().apply(near([rock]), Cmd.up)).toBe(Cmd.up);
+    expect(t().apply(near([rock], fighter(150, 300)), Cmd.right)).toBe(Cmd.right);
+    expect(t().apply(near([rock]), Cmd.guard)).toBe(Cmd.guard);
+    expect(t().apply(near([rock]), Cmd.right | Cmd.dash)).toBe(Cmd.right | Cmd.dash);
+    expect(t().apply(near([rock], fighter(400, 300)), Cmd.right)).toBe(Cmd.right);
+    expect(t().apply(near([]), Cmd.right)).toBe(Cmd.right);
+    expect(t().apply(view(undefined), Cmd.right)).toBe(Cmd.right);
+  });
+
+  it('repositions instead of shooting into a rock: the attack goes, a slide to a clear line starts', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    const cmd = t.apply(near([rock], fighter(200, 300)), Cmd.primary);
+    expect(cmd & Cmd.primary).toBe(0);
+    expect(cmd & MOVES).not.toBe(0);
+    // A clear line fires as before.
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(near([rock], fighter(200, 500), fighter(900, 500)), Cmd.secondary)).toBe(Cmd.secondary);
+  });
+
+  it('stays clear of the playfield walls: the slide takes the other side when the nearer one has no room', () => {
+    const top = { x: 380, y: 200, w: 100, h: 200 };
+    const cmd = new ArcadeTactics(AI_NORMAL, ZONER).apply(near([top], fighter(296, 200)), Cmd.right);
+    expect(cmd).toBe(Cmd.down);
+  });
+
+  it('save() and load() round-trip the slide', () => {
+    const a = new ArcadeTactics(AI_NORMAL, ZONER);
+    a.apply(near([rock]), Cmd.right);
+    const b = new ArcadeTactics(AI_NORMAL, ZONER);
+    b.load(JSON.parse(JSON.stringify(a.save())) as AgentState);
+    const v = near([rock], fighter(296, 290), fighter(900, 300), 5);
+    expect(b.apply(v, Cmd.down)).toBe(a.apply(v, Cmd.down));
+    expect(b.save()).toEqual(a.save());
+    // An older memory without the slide slots loads as no slide.
+    const old = new ArcadeTactics(AI_NORMAL, ZONER);
+    old.load({ mem: [-1, 0, -1, 0, 3, 0, 1], rng: null });
+    expect(old.apply(near([rock]), Cmd.left)).toBe(Cmd.left);
+  });
+
+  it('the observation lists the rocks as fresh plain rectangles, none for an earth fighter or off an earth stage', () => {
+    const mk = (race: string): ReturnType<typeof createMatch> => {
+      const w = skipIntro(createMatch({ ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, p1: [{ character: characterId(race), xp: 1 }] }));
+      w.state.arcade[ARCADE_WORLD_BASE + ArcadeW.stage] = 3;
+      w.state.arcade[ARCADE_WORLD_BASE + ArcadeW.patchCount] = 1;
+      w.state.arcade.set([400, 300, 100, 100], ARCADE_WORLD_BASE + ArcadeW.patches);
+      return w;
+    };
+    const rocks = createObservationView(mk('sindarosa'), 0).arcade?.rocks;
+    expect(rocks).toEqual([{ x: 400, y: 300, w: 100, h: 100 }]);
+    expect(createObservationView(mk('rokcore'), 0).arcade?.rocks).toEqual([]);
+    const w = mk('sindarosa');
+    w.state.arcade[ARCADE_WORLD_BASE + ArcadeW.stage] = 1;
+    expect(createObservationView(w, 0).arcade?.rocks).toEqual([]);
+    const first = createObservationView(mk('sindarosa'), 0).arcade?.rocks;
+    expect(first).not.toBe(createObservationView(mk('sindarosa'), 0).arcade?.rocks);
   });
 });
