@@ -23,6 +23,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
 | `docs/` | Documentation: `BRANCHING.md`, `TESTING.md` (test commands, layout, fixtures, guards), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `docs/` | Documentation: `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
+| `docs/` | Documentation: `BRANCHING.md`, `PARITY.md` (legacy parity checklist with test evidence), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/` | Documentation: `BRANCHING.md`, `DEPLOYMENT.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI and Pages deploy workflow (`workflows/ci.yml`), Dependabot config and the PR template |
