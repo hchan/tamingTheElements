@@ -13,6 +13,8 @@ import { controlledId } from '../movement';
 import { pending, Press, usePress } from './buffer';
 import { gainMeter, weatherCharge } from './meter';
 import { canAct } from './stun';
+import { elementKind } from './terrain';
+import { castTerrain } from './terrain-layout';
 
 const KIND = ARCADE_WORLD_BASE + ArcadeW.weather;
 const UNTIL = ARCADE_WORLD_BASE + ArcadeW.weatherUntil;
@@ -54,7 +56,7 @@ export function weatherTick(world: SimWorld, sink: EventSink): void {
     const e = id * ARCADE_E + ArcadeE.weatherReadyAt;
     if (id < 0 || !pending(s, team, Press.weather) || g < (a[e] ?? 0) || weatherCharge(s, team) < WEATHER_CHARGE_FULL || !canAct(world, id)) continue;
     const el = CHARACTERS[s.defId[id] ?? 0]?.element;
-    const kind = WEATHER_ELEMENTS.findIndex((r) => r[0] === el) + 1;
+    const kind = elementKind(el);
     const prev = a[KIND] ?? 0;
     a[KIND] = kind;
     a[UNTIL] = g + WEATHER_TICKS;
@@ -62,6 +64,7 @@ export function weatherTick(world: SimWorld, sink: EventSink): void {
     a[e] = g + WEATHER_COOLDOWN_TICKS;
     a[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.weatherCharge] = 0;
     usePress(s, team, Press.weather);
+    castTerrain(s, sink, kind, g);
     sink.emit(id, SimEventKind.weatherChanged, { weather: kind, prev, team });
     gainMeter(s, sink, id, team, METER_WEATHER);
   }

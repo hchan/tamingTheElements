@@ -22,6 +22,7 @@ import { canAct, isInvulnerable } from './arcade/stun';
 import { checkPerfectDodge } from './arcade/dash';
 import { releaseCount } from './ability-info';
 import { castDir } from './arcade/aim';
+import { shotBlocked } from './arcade/terrain';
 
 /** Ability index used for SimState.defId (set A then set B). */
 export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -148,6 +149,11 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     const y = s.y[id] ?? 0;
     // Legacy tests only the top-left corner against the viewport.
     if (x > a.x + a.w || x < a.x || y > a.y + a.h || y < a.y) {
+      despawn(world, id, s.owner[id] ?? 0);
+      continue;
+    }
+    // Arcade only: a rock stops every shot but an earth hero's own (FUN-DESIGN 2.15).
+    if (isArcade(s) && shotBlocked(s, sink, id)) {
       despawn(world, id, s.owner[id] ?? 0);
       continue;
     }

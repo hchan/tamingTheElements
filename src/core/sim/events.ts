@@ -3,7 +3,8 @@ export const SimEventKind = {
   moved: 1, blocked: 2, damage: 22, died: 20, swapped: 21, captured: 23, captureFailed: 24, matchEnded: 30,
   hitStop: 40, hitConfirmed: 41, comboEnded: 42, guarded: 43, parried: 44, guardBroken: 45, dashed: 46, perfectDodge: 47, clash: 48, meterLevel: 49, superStarted: 50,
   superEnded: 51, tagIn: 52, roundStarted: 53, fight: 54, ko: 55, timeOver: 56, roundEnded: 57, recovered: 58,
-  weatherChanged: 59, weatherEnded: 60,
+  weatherChanged: 59, weatherEnded: 60, terrainChanged: 61, terrainSwap: 62, patchEntered: 63, patchLeft: 64,
+  patchHeal: 65, projectileBlocked: 66,
 } as const;
 export type SimEventKindValue = (typeof SimEventKind)[keyof typeof SimEventKind];
 

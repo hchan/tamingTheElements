@@ -150,6 +150,11 @@ Arcade max HP is `Math.floor(maxHealth * hpPm / 1000)` once at spawn (`createMat
 damage is `dmg * damagePm / 1000` (two correctly rounded IEEE operations, skipped when the pm is 1000 so the value
 stays exact) after the weather and before the combo scale; Arcade cooldown overrides are integer game ticks
 (`cooldownTicksFor`). Classic reads none of them (its branch returns the legacy values), so its hashes are unchanged.
+Terrain (`arcade/terrain*.ts`, SIM_VERSION 21) is Int32 in the hashed Arcade block too (`stage`, `swapAt`, `swapTo`, `terrainGen`,
+`patchCount`, 5 rectangles of 4 ints, and each team's `inPatch` flag). Each layout draw seeds its own sfc32 from the match seed and
+the stored draw counter (`seedSfc32(seed, 'terrain.<n>')`), so no `SimState.rng` word moves and Classic hashes are unchanged; the
+draw loops are bounded (64 tries per patch pair, 8 redraws) and use `rng.int`, integer geometry and the mirror `2c - x - w`
+only. The fire modifier is a Float64 `* pm / 1000` (the cap `min(.., plain * 2500 / 1000)`), skipped when the pm is 1000.
 Weather (`arcade/weather.ts`) is Int32 in the hashed blocks: the world slot (`weather` kind, `weatherUntil` game tick,
 `weatherTeam`), each team's `weatherCharge` (0..1000 per mille, WP 35: integer adds of `WEATHER_CHARGE_CAST` per cast or
 `WEATHER_CHARGE_STEP` per moved tick, capped, spent to 0 by a cast, reset each round; no RNG, no division) and each character's

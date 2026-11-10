@@ -755,7 +755,7 @@ describe('sim properties: invariants', () => {
         ended += matchEnds;
       }),
       // Heavy (2500 ticks with invariants every tick): fewer PR runs so the instrumented coverage job stays inside the timeout.
-      { ...FC, numRuns: RUNS > 100 ? RUNS : 8 },
+      { ...FC, numRuns: RUNS > 100 ? RUNS : 12 },
     );
     expect(ended).toBeGreaterThan(0);
   });

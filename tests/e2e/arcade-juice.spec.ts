@@ -35,8 +35,8 @@ async function openDemo(page: Page, ff: string): Promise<number> {
     const a = window.__TTE__.arena;
     a.step(${String(ff.includes('arcade') ? INTRO : 0)});
     const [me, foe] = a.characters();
-    a.place(me.id, 500, 360, 0);
-    a.place(foe.id, 580, 360, 4);
+    a.place(me.id, 100, 380, 0);
+    a.place(foe.id, 180, 380, 4);
     return foe.id;
   })()`);
 }

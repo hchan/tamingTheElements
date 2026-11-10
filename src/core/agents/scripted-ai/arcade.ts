@@ -1,9 +1,9 @@
-import { SUPER_BAND_PX, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
+import { arcadePlayfield, SUPER_BAND_PX, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
 import { Cmd, type Command } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
 import {
-  stateRecord, type AgentState, type ArcadeView, type FighterView, type ObservationView,
+  stateRecord, type AgentState, type ArcadeView, type FighterView, type ObservationView, type RockView,
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
@@ -105,15 +105,44 @@ export function avoidChord(a: ArcadeView, cmd: Command): Command {
   return cmd;
 }
 
-type Memory = [number, number, number, number, number, number, number];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1];
+/** Rock avoidance (FUN-DESIGN 2.15): the look-ahead step in px, how many `W.tick` ticks a chosen slide is held, and the line samples. */
+export const ARCADE_AI_ROCK_STEP = 8;
+export const ARCADE_AI_SLIDE_TICKS = 30;
+const LINE_SAMPLES = 16;
+
+const hitsRock = (r: RockView, x: number, y: number, w: number, h: number): boolean =>
+  x < r.x + r.w && r.x < x + w && y < r.y + r.h && r.y < y + h;
+
+/** The movement bits `cmd` holds, as a step (left/right and up/down cancel). */
+const stepOf = (cmd: Command): readonly [number, number] => [
+  ((cmd & Cmd.right) !== 0 ? ARCADE_AI_ROCK_STEP : 0) - ((cmd & Cmd.left) !== 0 ? ARCADE_AI_ROCK_STEP : 0),
+  ((cmd & Cmd.down) !== 0 ? ARCADE_AI_ROCK_STEP : 0) - ((cmd & Cmd.up) !== 0 ? ARCADE_AI_ROCK_STEP : 0),
+];
+
+/** The first rock on the straight line between the two centres (sampled at LINE_SAMPLES + 1 points), or undefined. */
+export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly RockView[]): RockView | undefined {
+  const cx = self.x + self.w / 2;
+  const cy = self.y + self.h / 2;
+  const dx = opp.x + opp.w / 2 - cx;
+  const dy = opp.y + opp.h / 2 - cy;
+  for (let i = 1; i < LINE_SAMPLES; i++) {
+    const px = cx + (dx * i) / LINE_SAMPLES;
+    const py = cy + (dy * i) / LINE_SAMPLES;
+    const r = rocks.find((k) => hitsRock(k, px, py, 0, 0));
+    if (r !== undefined) return r;
+  }
+  return undefined;
+}
+
+type Memory = [number, number, number, number, number, number, number, number, number];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0];
 
 export class ArcadeTactics {
   /**
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
    * drawn for it; [2] the tick the current threat was first seen (-1: none), [3] its reaction, [4] its plan (PARRY,
    * DODGE, GUARD or NO_PLAN) and [5] how many game ticks before the hit it acts; [6] the personality (-1 until the
-   * first Arcade tick).
+   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until.
    */
   private mem: Memory = [...FRESH];
   private readonly rng = new AgentRng(ARCADE_AI_STREAM_NAMES);
@@ -135,7 +164,51 @@ export class ArcadeTactics {
    */
   apply(view: ObservationView, base: Command, shot: Command = 0): Command {
     const a = view.arcade;
-    return a === undefined ? base : avoidChord(a, this.decide(view, a, base, shot));
+    if (a === undefined) return base;
+    const cmd = this.decide(view, a, base, shot);
+    return avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd));
+  }
+
+  /**
+   * Rock avoidance (FUN-DESIGN 2.15; `a.rocks` is empty for an earth fighter, which walks over them). A move whose next
+   * step would enter a rock, or an attack along a line a rock cuts (the shot would be wasted), starts a slide: the
+   * movement along the other axis towards the nearer free side of the rock (up or left on a tie), kept together with
+   * the move along the blocked axis and held ARCADE_AI_SLIDE_TICKS ticks (so the base AI's alignment cannot pull it
+   * straight back), ending early when the step is not free. A fighter already inside a rock walks out as it is. Guard,
+   * dash and super commands are left alone.
+   */
+  private slide(tick: number, self: FighterView, opp: FighterView, rocks: readonly RockView[], cmd: Command): Command {
+    if ((cmd & (Cmd.guard | Cmd.dash | Cmd.super)) !== 0 || rocks.some((r) => hitsRock(r, self.x, self.y, self.w, self.h))) return cmd;
+    const m = this.mem;
+    const pf = arcadePlayfield();
+    const free = (bits: Command): boolean => {
+      const [dx, dy] = stepOf(bits);
+      const x = self.x + dx;
+      const y = self.y + dy;
+      return x >= pf.x && y >= pf.y && x + self.w <= pf.x + pf.w && y + self.h <= pf.y + pf.h && !rocks.some((r) => hitsRock(r, x, y, self.w, self.h));
+    };
+    const wasted = (cmd & ATTACK) !== 0 ? rockOnLine(self, opp, rocks) : undefined;
+    if ((m[7]) !== 0 && tick < (m[8]) && free(m[7])) return (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | (m[7]);
+    m[7] = 0;
+    const [sx, sy] = stepOf(cmd & MOVE);
+    const blocker = sx === 0 && sy === 0 ? undefined : rocks.find((r) => hitsRock(r, self.x + sx, self.y + sy, self.w, self.h));
+    const rock = blocker ?? wasted;
+    if (rock === undefined) return cmd;
+    // The axis of the move (the opponent's side when standing still) and the other axis to slide along.
+    const dxo = opp.x + opp.w / 2 - (self.x + self.w / 2);
+    const horizontal = sx !== 0 || (sy === 0 && Math.abs(dxo) >= Math.abs(opp.y - self.y));
+    const keep = horizontal ? (sx !== 0 ? cmd & (Cmd.left | Cmd.right) : dxo > 0 ? Cmd.right : Cmd.left) : cmd & (Cmd.up | Cmd.down);
+    const [lo, hi] = horizontal ? [Cmd.up, Cmd.down] : [Cmd.left, Cmd.right];
+    const toLo = horizontal ? self.y + self.h - rock.y : self.x + self.w - rock.x;
+    const toHi = horizontal ? rock.y + rock.h - self.y : rock.x + rock.w - self.x;
+    const [first, second] = toLo <= toHi ? [lo, hi] : [hi, lo];
+    for (const bits of [keep | first, first, keep | second, second]) {
+      if (!free(bits)) continue;
+      m[7] = bits;
+      m[8] = tick + ARCADE_AI_SLIDE_TICKS;
+      return (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | bits;
+    }
+    return cmd;
   }
 
   private decide(view: ObservationView, a: ArcadeView, base: Command, shot: Command): Command {
@@ -202,7 +275,9 @@ export class ArcadeTactics {
   /** Inverse of save(); null resets. Throws on a state that is not a record. */
   load(state: AgentState): void {
     const rec = stateRecord(state ?? { mem: FRESH, rng: null }, 'ArcadeTactics');
-    this.mem = [...(rec['mem'] as Memory)];
+    const mem = [...(rec['mem'] as number[])];
+    while (mem.length < FRESH.length) mem.push(0);
+    this.mem = mem as Memory;
     this.rng.load(rec['rng'] ?? null);
   }
 }

@@ -18,6 +18,7 @@ import {
 import type { SimWorld } from '../sim/world';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
+import { kindOf, patchRects, stageOf } from '../sim/systems/arcade/terrain';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
 export interface FighterView {
@@ -88,6 +89,19 @@ export interface ArcadeView {
    */
   readonly tagIn: number;
   readonly partnerPm: number;
+  /**
+   * The rocks (FUN-DESIGN 2.15) this side cannot cross: the earth patches when the stage is earth and this side's
+   * fighter is not of the earth element, else none. Fresh plain rectangles.
+   */
+  readonly rocks: readonly RockView[];
+}
+
+/** One rock as `ArcadeView.rocks` lists it; plain numbers. */
+export interface RockView {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
 }
 
 /** One enemy projectile or melee box as `ArcadeView.shots` lists it; plain numbers. */
@@ -216,6 +230,7 @@ function arcadeViewOf(
     weatherCharge: team(side, ArcadeT.weatherCharge),
     tagIn: Math.max(0, (s.teams[side * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0) - g),
     partnerPm: Math.max(partnerPm, -1),
+    rocks: stageOf(s) === 3 && self !== undefined && kindOf(s, self.id) !== 3 ? patchRects(s) : [],
   };
 }
 

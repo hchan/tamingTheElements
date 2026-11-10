@@ -77,6 +77,12 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   recovered: 'no feedback in the design',
   tagIn: 'the swap sample plays (WP 20 adds the entrance)',
   weatherEnded: 'the badge and the live line say it',
+  terrainChanged: 'terrain feedback is the view work package (WP 32)',
+  terrainSwap: 'terrain feedback is the view work package (WP 32)',
+  patchEntered: 'terrain feedback is the view work package (WP 32)',
+  patchLeft: 'terrain feedback is the view work package (WP 32)',
+  patchHeal: 'terrain feedback is the view work package (WP 32)',
+  projectileBlocked: 'terrain feedback is the view work package (WP 32)',
 };
 
 /** Hit thump gain by strength (light, medium, heavy, super). */

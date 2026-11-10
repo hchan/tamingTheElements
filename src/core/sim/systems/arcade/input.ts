@@ -8,6 +8,7 @@ import { expireCombos } from './combo';
 import { startDash } from './dash';
 import { guardTick } from './guard';
 import { expireStuns } from './stun';
+import { terrainTick } from './terrain-layout';
 import { weatherTick } from './weather';
 
 /**
@@ -17,7 +18,8 @@ import { weatherTick } from './weather';
  * stuns that ran out give `recovered` (reason 0), then combos whose victim is free give `comboEnded`. Then pending
  * dash presses start dashes (arcade/dash.ts, FUN-DESIGN 2.7), then the guard pass runs (arcade/guard.ts, FUN-DESIGN
  * 2.8: guard meter regeneration and parry windows), then the weather pass (arcade/weather.ts, FUN-DESIGN 2.14: expiry,
- * then casts).
+ * then casts), then the terrain pass (arcade/terrain.ts, FUN-DESIGN 2.15: a telegraphed swap landing, patch enter and
+ * leave events, the water patch heal).
  */
 export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
@@ -31,4 +33,5 @@ export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Comm
     guardTick(world, team);
   }
   weatherTick(world, sink);
+  terrainTick(world, sink);
 }
