@@ -21,7 +21,7 @@ const CAPTURE = 64;
 
 async function saveSettings(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.waitForFunction(`window.__TTE__.state().route === '#main'`);
+  await page.waitForFunction(`window.__TTE__.state().mountedRoute === '#main'`);
 }
 
 test.describe('reduce motion follows the OS by default', () => {
@@ -151,7 +151,7 @@ test.describe('key rebinding', () => {
     await page.locator('#bind-slot3-0').click();
     await page.keyboard.press('Escape');
     await expect(page.locator('#bind-slot3-0')).toHaveText('3');
-    await page.waitForFunction(`window.__TTE__.state().route === '#keyBindings'`);
+    await page.waitForFunction(`window.__TTE__.state().mountedRoute === '#keyBindings'`);
 
     // The battle uses the saved bindings.
     await page.goto('/?seed=7');

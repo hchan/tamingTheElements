@@ -55,8 +55,9 @@ export async function storedSave(page: Page): Promise<Save> {
   return JSON.parse(text as string) as Save;
 }
 
+/** Waits until the screen for `hash` has mounted (not merely until the hash changed, which precedes the mount). */
 export async function waitForRoute(page: Page, hash: string): Promise<void> {
-  await page.waitForFunction(`window.__TTE__.state().route === ${JSON.stringify(hash)}`);
+  await page.waitForFunction(`window.__TTE__.state().mountedRoute === ${JSON.stringify(hash)}`);
 }
 
 export async function goToHash(page: Page, hash: string): Promise<void> {

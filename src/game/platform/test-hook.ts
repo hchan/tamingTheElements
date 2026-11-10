@@ -93,6 +93,8 @@ export interface CinematicProbe {
 
 export interface HookState {
   readonly route: string;
+  /** The hash whose screen has finished mounting ('' while a switch is in progress); `route` flips earlier, on hashchange. */
+  readonly mountedRoute: string;
   readonly scene: string | undefined;
   readonly tick: number;
   readonly paused: boolean;
@@ -164,6 +166,7 @@ export function installTestHook(version: number, loadSave: (json: string) => Pro
       version,
       state: () => ({
         route: window.location.hash,
+        mountedRoute: document.getElementById('menu')?.dataset.mountedRoute ?? '',
         scene: hook.scene,
         tick: hook.arena?.tick ?? -1,
         paused: hook.arena?.paused ?? false,

@@ -3,7 +3,7 @@ import { collectErrors, fixture, goToHash, SAVE_KEY, seedViaGameMaster, storedSa
 
 async function saveSettings(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.waitForFunction(`window.__TTE__.state().route === '#main'`);
+  await page.waitForFunction(`window.__TTE__.state().mountedRoute === '#main'`);
 }
 
 test('a stale localStorage mirror does not wipe the IndexedDB save when settings are saved', async ({ page }) => {

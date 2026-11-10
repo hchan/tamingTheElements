@@ -79,7 +79,7 @@ for (const vp of VIEWPORTS) {
       await page.getByText('New Game', { exact: true }).waitFor();
       for (const route of ['#main', '#settings', '#about']) {
         await page.evaluate(`window.location.hash = '${route}'`);
-        await page.waitForFunction(`window.__TTE__.state().route === '${route}'`);
+        await page.waitForFunction(`window.__TTE__.state().mountedRoute === '${route}'`);
         const s = await page.evaluate<Scroll>(SCROLL);
         expect(s.sw, `${route} scrollWidth`).toBeLessThanOrEqual(s.iw);
       }
