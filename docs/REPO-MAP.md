@@ -43,6 +43,8 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags, test-only `window.__TTE__` hook); imports only core via its index |
 | `src/game/platform/storage/` | Save persistence: `SaveStore`, `StorageAdapter` (localStorage / in-memory), raw v0 backup, export/import |
 | `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`), typed keys (`keys.ts`) and the pure `manifestToLoadList` (`load-list.ts`) used by the Preload scene |
+| `src/game/platform/storage/` | Save persistence: `SaveStore`, `StorageAdapter` (localStorage / in-memory), IndexedDB store with localStorage mirror, raw v0 backup, export/import |
+| `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`) and typed keys (`keys.ts`) |
 | `src/game/boot/` | Phaser boot: WebGL check, error screen and game config (`phaser-config.ts` is the only file that pulls Phaser in, loaded lazily) |
 | `src/game/scenes/` | Phaser scenes |
 | `src/game/loop/` | Fixed 50 Hz step driver (injected clock, 250 ms clamp, step cap, pause, render alpha) |
