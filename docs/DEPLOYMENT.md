@@ -27,7 +27,7 @@ corepack pnpm e2e:pages                # build with VITE_BASE=/tamingTheElements
 Workflow: `.github/workflows/ci.yml`.
 
 - Pull requests run `check`, `e2e` (including `e2e:pages`) and `browser` only. They never deploy.
-- A push to `main` additionally runs `pages-build` and `deploy`, which `needs` both `check` and `e2e`.
+- A push to `main` additionally runs `pages-build` and `deploy`, which `needs` `check`, `e2e` and the cross-browser `browser` job. `browser` is skipped on docs-only runs, so the job condition accepts `skipped` and blocks only on `failure` or `cancelled`. Pages and itch builds are production builds written to `dist/`, `dist-pages/` and `dist-itch/`; the e2e test build (`--mode test`, contains `window.__TTE__`) goes to `node_modules/.tte-e2e` and `pnpm size:check` fails if `dist/` ever contains `__TTE__`.
 - Only the `deploy` job has `pages: write` and `id-token: write`; the workflow default is `contents: read`.
 - `deploy` uses concurrency group `pages` with `cancel-in-progress: false`, so a deploy is never cut off.
 - Action versions are pinned to commit SHAs (verified with `env -u GITHUB_TOKEN gh api repos/<owner>/<repo>/git/ref/tags/<tag>`).
@@ -98,11 +98,13 @@ is tighter: 500 files, 40 MB extracted total, 20 MB per file, 200 characters per
 Current build: about 154 files, 24.5 MiB extracted, 23.5 MiB zipped (Phaser dominates). Raise `BUDGET` in the script
 deliberately, never to silence a regression.
 
-Workflow `.github/workflows/itch.yml` (tag `v*` or `workflow_dispatch`, `contents: read` only): build, smoke, upload the zip
-as artifact `itch-zip` (90 days), then publish with butler 15.32.0 (pinned, sha256 verified) to channel `html5` with
-`--userversion` from `package.json`. The publish step runs only when the `BUTLER_API_KEY` secret exists; otherwise it logs a
-notice and the run still succeeds. The `ITCH_TARGET` slug (`hchan/taming-the-elements`) is a placeholder to confirm.
-Owner setup: create the itch project (kind HTML5), add `BUTLER_API_KEY` as a repo secret, set embed 1280x720 and tick
+Workflow `.github/workflows/itch.yml` has two jobs. `build` (tag `v*` or `workflow_dispatch`, `contents: read` only) builds,
+smoke-tests and uploads the zip as artifact `itch-zip` (90 days); a manual dispatch is a dry run and never publishes.
+`publish` runs only for `refs/tags/v*`, in the `itch` GitHub Environment that holds `BUTLER_API_KEY`, and only downloads
+that artifact (no checkout, install, build or Playwright, so no node or dev dependency runs next to the key). It uses butler
+15.32.0 (pinned, sha256 verified) to push to channel `html5` with `--userversion` taken from the tag. If the secret is
+missing it logs a notice and the run still succeeds. The `ITCH_TARGET` slug (`hchan/taming-the-elements`) is a placeholder to confirm.
+Owner setup: create the itch project (kind HTML5), create a GitHub Environment named `itch` (restrict deployments to `v*` tags, optionally require a reviewer) and add `BUTLER_API_KEY` as an environment secret there, set embed 1280x720 and tick
 "Fullscreen button". Nothing here publishes without that secret.
 
 Iframe constraints (itch embeds the game in an iframe on another origin):

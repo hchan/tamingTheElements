@@ -22,7 +22,7 @@ import {
 } from '../../game/platform/a11y/prefs';
 import { parseBindings, setBindings } from '../../game/platform/input/bindings';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
-import { prepareExport, runImport } from '../../game/platform/storage/export-import';
+import { describeError, prepareExport, runImport } from '../../game/platform/storage/export-import';
 import { canvasFraction } from '../display-scale';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
@@ -167,15 +167,17 @@ function download(file: { filename: string; text: string }): void {
   a.href = url;
   a.download = file.filename;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 10_000);
 }
 
 /** Export save / Import save buttons with a status line for validation errors. */
-function transferControls(): HTMLElement {
+function transferControls(store: SaveStore, onImported: (save: SaveV1) => void, notice = ''): HTMLElement {
   const box = el('div', 'settingsTransfer');
   const status = el('div', 'settingsStatus');
   status.setAttribute('role', 'status');
-  const store = createSaveStore(() => Date.now());
+  status.textContent = notice;
 
   const exportBtn = el('button', 'menuButton', 'Export save');
   exportBtn.type = 'button';
@@ -208,7 +210,7 @@ function transferControls(): HTMLElement {
           applyUiScale(out.save.displaySettings);
           applyA11y(out.save);
           setBindings(parseBindings(out.save.keyBindings));
-          status.textContent = 'Save imported.';
+          onImported(out.save);
         } else {
           status.textContent = out.status === 'error' ? out.message : 'Import cancelled.';
         }
@@ -247,56 +249,93 @@ function recordControls(): HTMLElement {
 }
 
 /** `store` is the app's shared save store, so the battle (which loads from it) sees the same save. */
-export function settingsScreen(store?: SaveStore): Screen {
+export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now())): Screen {
   let node: HTMLElement | null = null;
-  return {
-    mount(container) {
-      const save = loadSave();
-      applyUiScale(save.displaySettings);
-      applyA11y(save);
-      node = el('div', 'menuPage');
-      node.append(el('h1', 'heading', 'Settings'));
-      const form = el('form', 'settingsForm');
-      form.append(
-        radioGroup('difficulty', 'Difficulty', DIFFICULTY, save.difficulty, DEFAULT_DIFFICULTY),
-        radioGroup('displaySettings', 'Display Size', DISPLAY_SCALE, save.displaySettings, DEFAULT_DISPLAY_SCALE),
-        radioGroup(
-          'garrisonSortOrder',
-          'Garrison Sort Order',
-          GARRISON_SORT_ORDER,
-          save.garrisonSortOrder,
-          DEFAULT_GARRISON_SORT_ORDER,
-        ),
-        accessibilityGroup(save),
-      );
-      const saveBtn = el('button', 'menuButton', 'Save');
-      saveBtn.type = 'submit';
-      const back = el('a', 'menuButton', 'Back');
-      back.href = '#main';
-      form.append(saveBtn, back);
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const next = applySettings(save, readForm(form));
-        applyUiScale(next.displaySettings);
-        applyA11y(next);
-        const done = (): void => {
-          window.location.hash = '#main';
-        };
-        if (store) {
-          void store.save(next).then(done);
+  let alive = false;
+  const isAlive = (): boolean => alive;
+
+  function renderForm(page: HTMLElement, save: SaveV1, notice = ''): void {
+    applyUiScale(save.displaySettings);
+    applyA11y(save);
+    page.replaceChildren(el('h1', 'heading', 'Settings'));
+    const form = el('form', 'settingsForm');
+    const status = el('div', 'settingsStatus');
+    status.setAttribute('role', 'status');
+    form.append(
+      radioGroup('difficulty', 'Difficulty', DIFFICULTY, save.difficulty, DEFAULT_DIFFICULTY),
+      radioGroup('displaySettings', 'Display Size', DISPLAY_SCALE, save.displaySettings, DEFAULT_DISPLAY_SCALE),
+      radioGroup(
+        'garrisonSortOrder',
+        'Garrison Sort Order',
+        GARRISON_SORT_ORDER,
+        save.garrisonSortOrder,
+        DEFAULT_GARRISON_SORT_ORDER,
+      ),
+      accessibilityGroup(save),
+    );
+    const saveBtn = el('button', 'menuButton', 'Save');
+    saveBtn.type = 'submit';
+    const back = el('a', 'menuButton', 'Back');
+    back.href = '#main';
+    form.append(saveBtn, back, status);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const values = readForm(form);
+      // Apply onto the freshest stored save (an import or another tab may have changed it) and never
+      // write when it could not be read: that would replace real progress with an empty save.
+      void store.load().then(async (r) => {
+        if (!alive) return;
+        if (!r.ok) {
+          status.textContent = `Could not load your save, so nothing was changed. ${describeError(r.error)}`;
           return;
         }
-        try {
-          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          /* storage unavailable: still apply for this session */
+        const next = applySettings(r.value, values);
+        const w = await store.save(next);
+        if (!isAlive()) return;
+        if (!w.ok) {
+          status.textContent = `Could not save settings. ${describeError(w.error)}`;
+          return;
         }
-        done();
+        applyUiScale(next.displaySettings);
+        applyA11y(next);
+        window.location.hash = '#main';
       });
-      node.append(form, recordControls(), transferControls());
-      container.append(node);
+    });
+    page.append(
+      form,
+      recordControls(),
+      transferControls(
+        store,
+        (imported) => {
+          if (alive) renderForm(page, imported, 'Save imported.');
+        },
+        notice,
+      ),
+    );
+  }
+
+  return {
+    mount(container) {
+      alive = true;
+      const page = el('div', 'menuPage');
+      node = page;
+      container.append(page);
+      page.append(el('h1', 'heading', 'Settings'), el('p', undefined, 'Loading...'));
+      void store.load().then((r) => {
+        if (!alive) return;
+        if (r.ok) {
+          renderForm(page, r.value);
+          return;
+        }
+        const msg = el('div', 'settingsStatus', `Could not load your save. ${describeError(r.error)}`);
+        msg.setAttribute('role', 'alert');
+        const back = el('a', 'menuButton', 'Back');
+        back.href = '#main';
+        page.replaceChildren(el('h1', 'heading', 'Settings'), msg, back);
+      });
     },
     unmount() {
+      alive = false;
       node?.remove();
       node = null;
     },

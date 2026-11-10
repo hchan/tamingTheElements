@@ -160,7 +160,9 @@ outside `SimState`. `combat`, `capture`, `spawn` are reserved for the sim and `m
 `src/game/loop/fixed-step-driver.ts`. The `FixedStepDriver` takes an injected monotonic clock (the Arena passes
 `performance.now`; core never sees a clock), clamps each frame to 250 ms, runs at most 5 ticks of 20 ms per frame, drops the
 leftover when the cap is hit, and returns `alpha = acc / 20` for render interpolation. `pauseOnHidden` pauses while the
-document is hidden. Pause is simply not stepping, so game time never advances while paused.
+document is hidden. Pause is simply not stepping, so game time never advances while paused. Pauses are tracked per reason
+(`user`, `hidden`, `overlay`, `replay`, `ended`): the sim runs only when no reason holds it, so showing the tab again never
+resumes a battle the user paused.
 
 ```mermaid
 sequenceDiagram
@@ -182,7 +184,13 @@ sequenceDiagram
   `rle.ts`, `recorder.ts`, `player.ts` (`playReplay` verifies hashes and reports the first divergent tick), `record-bots.ts`.
   The golden fixture is `tests/fixtures/replays/random-vs-random.replay.json`.
 - Save format: [SAVE-FORMAT.md](SAVE-FORMAT.md), code in `src/core/save/` (valibot, v0 to v1 migration), storage in
-  `src/game/platform/storage/`.
+  `src/game/platform/storage/`. `src/core/save/validate.ts` adds semantic checks (known characters, ranges, sizes) that
+  `migrate()` runs; `src/core/replay/validate.ts` validates a replay (including RLE run lengths, without decoding) before
+  `createMatch`. Neither changes the on-disk formats. The IndexedDB store restores the newest good backup of the last 5 when
+  the live save is corrupt, and warns through `notices.ts` (shown by `#storeNotice`) when another tab saved.
+- App flow failures: `AppFlow` never leaves the battle screen hung; load, setup and Phaser creation errors show an error
+  screen with Back to menu, and a failed post-match save shows the result with a retry. Test builds inject each failure with
+  `?ff=failLoad|failSetup|failGame|failSave`.
 - Flags: two kinds. Sim flags (`SimFlags` in `src/core/flags.ts`, all default off) change the simulation, so they are part of
   `MatchSetup`, written into the replay header by `encodeFlags` (sorted names) and mirrored into `world[World.flags]`. UI flags
   (`UiFlags` in `src/game/platform/flags.ts`, `?ff=` in dev/test builds only) never affect the sim and are not recorded.

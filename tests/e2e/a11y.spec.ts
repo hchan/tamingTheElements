@@ -79,6 +79,7 @@ test.describe('axe-core audit of every DOM screen', () => {
     await show(page, '#settings');
     await page.getByLabel('High contrast').check();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await waitForRoute(page, '#main');
     await show(page, '#settings');
     expect(await page.evaluate<string>(`document.documentElement.dataset.highContrast`)).toBe('true');
     await audit(page, 'settings (high contrast)');

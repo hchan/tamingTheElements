@@ -1,7 +1,9 @@
 name: itch
 
-# Builds the itch.io HTML5 zip from a v* tag (or manual dispatch), smoke-tests it, uploads it as an artifact and publishes
-# with butler ONLY when the BUTLER_API_KEY secret exists. A missing secret is a skip, never a failure.
+# `build` builds and smoke-tests the itch.io HTML5 zip (tag v* or a manual dry run) and uploads it as an artifact.
+# `publish` runs ONLY for refs/tags/v*, in the `itch` Environment that holds BUTLER_API_KEY, and only downloads that
+# artifact: no checkout, no install, no build, so no node or dev dependency ever runs next to the key.
+# A manual dispatch never publishes (it is a dry-run build).
 on:
   push:
     tags: ['v*']
@@ -23,7 +25,7 @@ env:
   CHANNEL: html5
 
 jobs:
-  itch:
+  build:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -33,7 +35,7 @@ jobs:
           persist-credentials: false
       - name: Enable corepack (pnpm from packageManager field)
         run: corepack enable
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -53,23 +55,37 @@ jobs:
         run: corepack pnpm build:itch
       - name: Smoke test the unzipped artifact
         run: corepack pnpm e2e:itch
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: itch-zip
           path: dist-itch/*.zip
           if-no-files-found: error
           retention-days: 90
-      - name: Publish with butler
+
+  publish:
+    needs: build
+    # Never from workflow_dispatch or a branch: only a pushed v* tag can publish.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: itch # holds BUTLER_API_KEY; add required reviewers and a tag-only deployment rule here
+    permissions: {}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: itch-zip
+          path: zip
+      - name: Publish with butler (pinned, checksum verified)
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          TAG: ${{ github.ref_name }}
         run: |
           if [ -z "${BUTLER_API_KEY}" ]; then
-            echo "::notice::BUTLER_API_KEY is not set: skipping the itch.io publish. The zip is in the itch-zip artifact."
+            echo "::notice::BUTLER_API_KEY is not set in the itch environment: skipping the publish. The zip is in the itch-zip artifact."
             exit 0
           fi
           curl -fsSL -o "${RUNNER_TEMP}/butler.zip" "https://broth.itch.zone/butler/linux-amd64/${BUTLER_VERSION}/archive/default"
           echo "${BUTLER_SHA256}  ${RUNNER_TEMP}/butler.zip" | sha256sum -c -
           unzip -q "${RUNNER_TEMP}/butler.zip" -d "${RUNNER_TEMP}/butler"
           chmod +x "${RUNNER_TEMP}/butler/butler"
-          VERSION="$(node -p "require('./package.json').version")"
-          "${RUNNER_TEMP}/butler/butler" push dist-itch/taming-the-elements-*.zip "${ITCH_TARGET}:${CHANNEL}" --userversion "${VERSION}"
+          "${RUNNER_TEMP}/butler/butler" push zip/taming-the-elements-*.zip "${ITCH_TARGET}:${CHANNEL}" --userversion "${TAG#v}"

@@ -84,6 +84,10 @@ export class AudioManager {
     if (bus !== 'music') this.buses[bus].gain.value = this.volumes[bus];
   }
 
+  get isUnlocked(): boolean {
+    return this.unlocked;
+  }
+
   /** Call from the first user gesture (pointerdown/keydown); resumes a suspended context once. */
   unlock(): void {
     if (this.unlocked) return;

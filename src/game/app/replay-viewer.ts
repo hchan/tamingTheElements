@@ -1,4 +1,4 @@
-import { SIM_VERSION, parseReplay, setupFromHeader, type ReplayFile } from '@core/index';
+import { SIM_VERSION, parseReplayChecked, setupFromHeader, validateReplay, type ReplayFile } from '@core/index';
 import { el } from '@ui/dom';
 import type { Screen } from '@ui/screens/screen';
 import { showWebglError } from '../boot/error-screen';
@@ -19,6 +19,16 @@ export function describeStatus(s: PlaybackStatus): string {
   if (s.state === 'ok') return `OK: all hashes verified (${at})`;
   if (s.state === 'diverged') return `DIVERGED at tick ${String(s.divergentTick ?? s.tick)}`;
   return `${s.paused ? 'Paused' : 'Playing'} ${String(s.speed)}x, ${at}`;
+}
+
+/**
+ * The screen-reader text: state, pause and speed only, never the tick counter, so the live region changes
+ * only when something worth announcing changes (not 50 times a second).
+ */
+export function describeAnnouncement(s: PlaybackStatus): string {
+  if (s.state === 'ok') return 'OK: all hashes verified';
+  if (s.state === 'diverged') return `DIVERGED at tick ${String(s.divergentTick ?? s.tick)}`;
+  return `${s.paused ? 'Paused' : 'Playing'} ${String(s.speed)}x`;
 }
 
 /** Loads a replay file (or a recent playtest) and plays it in the Arena, verifying the recorded hashes. */
@@ -43,6 +53,9 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
       status.id = 'replayStatus';
       status.setAttribute('role', 'status');
       status.textContent = 'Choose a .replay.json file.';
+      // Visible progress (tick counter) is not a live region: it updates every frame.
+      const progress = el('span');
+      progress.id = 'replayProgress';
       const controls: { current: PlaybackControls | undefined } = { current: undefined };
       const button = (id: string, label: string, run: (c: PlaybackControls) => void): HTMLButtonElement => {
         const b = el('button', 'menuButton', label);
@@ -63,12 +76,19 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         button('replay2x', '2x', (c) => { c.setSpeed(2); }),
         button('replayStep', 'Step', (c) => { c.step(); }),
         status,
+        progress,
         back,
       );
       root.append(bar);
       container.append(root);
 
-      const open = async (replay: ReplayFile): Promise<void> => {
+      const open = async (candidate: ReplayFile): Promise<void> => {
+        const checked = validateReplay(candidate);
+        if (!checked.ok) {
+          status.textContent = checked.message;
+          return;
+        }
+        const replay = checked.value;
         const mine = ++life.generation;
         const stale = (): boolean => life.disposed || mine !== life.generation;
         controls.current = undefined;
@@ -91,12 +111,14 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         mountPoint.id = 'game';
         root.prepend(mountPoint);
         host = mountPoint;
-        game = createGame('game', {
+        game = createGame(mountPoint, {
           setup: setupFromHeader(replay.header),
           playback: {
             replay,
             onStatus: (s) => {
-              status.textContent = describeStatus(s);
+              progress.textContent = describeStatus(s);
+              const text = describeAnnouncement(s);
+              if (status.textContent !== text) status.textContent = text;
               status.dataset['state'] = s.state;
             },
             attach: (c) => {
@@ -112,7 +134,14 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         if (!file) return;
         void file
           .text()
-          .then((text) => open(parseReplay(text)))
+          .then((text) => {
+            const r = parseReplayChecked(text);
+            if (!r.ok) {
+              status.textContent = r.message;
+              return undefined;
+            }
+            return open(r.value);
+          })
           .catch((e: unknown) => {
             status.textContent = `Invalid replay: ${e instanceof Error ? e.message : String(e)}`;
           });

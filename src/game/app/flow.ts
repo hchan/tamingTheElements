@@ -18,12 +18,13 @@ import { el } from '@ui/dom';
 import { defaultScreens, type ScreenTable } from '@ui/router';
 import { objectivesScreen } from '@ui/screens/objectives';
 import { keyBindingsScreen } from '@ui/screens/key-bindings';
+import { gameMasterScreen } from '@ui/screens/game-master';
 import { settingsScreen } from '@ui/screens/settings';
 import { garrisonScreen } from '@ui/screens/garrison';
 import type { MatchSetup as UiSetup } from '@ui/screens/garrison-model';
 import { loadSave } from '@ui/screens/main-menu';
 import type { Screen } from '@ui/screens/screen';
-import { showWebglError } from '../boot/error-screen';
+import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import type { UiFlags } from '../platform/flags';
 import { getRecordSetting } from '../platform/record-setting';
@@ -31,7 +32,8 @@ import type { ReplayStore } from '../platform/storage/replay-store';
 import { PlaytestRecorder } from '../replay/playtest-recorder';
 import { requestPersistence } from '../platform/storage/idb-save-store';
 import { NEW_GAME_SCRIPT } from '../cinematics/chain';
-import type { SaveStore } from '../platform/storage/save-store';
+import type { Result, SaveStore } from '../platform/storage/save-store';
+import { describeError } from '../platform/storage/export-import';
 import type { ArenaLaunch, MatchEnd } from '../scenes/launch';
 import { downloadReplay } from './download';
 import { destroyGame, type GameHandle } from './game-handle';
@@ -92,6 +94,10 @@ export class AppFlow {
   private pending: Pending | undefined;
   private report: MatchReport | undefined;
   private lastReplay: ReplayFile | undefined;
+  /** A finished match whose save failed; the results screen offers a retry. */
+  private unsaved: SaveV1 | undefined;
+  private saveError = '';
+  private failedOnce = false;
 
   constructor(private readonly deps: FlowDeps) {}
 
@@ -117,6 +123,9 @@ export class AppFlow {
       battleground: () => redirect(navigate, 'garrison'),
       currentObjectives: () => objectivesScreen({ store: this.deps.store, navigate }),
       settings: () => settingsScreen(this.deps.store),
+      ...(import.meta.env.DEV || import.meta.env.MODE === 'test'
+        ? { gameMaster: () => gameMasterScreen(this.deps.store) }
+        : {}),
       keyBindings: () => keyBindingsScreen(this.deps.store),
       garrison: garrisonScreen({
         load: () => loadSave(window.localStorage),
@@ -162,21 +171,27 @@ export class AppFlow {
           showWebglError(mountNode);
           return;
         }
-        void import('../boot/phaser-config').then(({ createGame }) => {
-          if (life.disposed) return;
-          const host = el('div');
-          host.id = 'game';
-          mountNode.replaceChildren(host);
-          let ended = false;
-          game = createGame('game', false, {
-            script: NEW_GAME_SCRIPT,
-            onEnd: () => {
-              if (ended || life.disposed) return;
-              ended = true;
-              onEnd();
-            },
+        void import('../boot/phaser-config')
+          .then(({ createGame }) => {
+            if (life.disposed) return;
+            const host = el('div');
+            host.id = 'game';
+            mountNode.replaceChildren(host);
+            let ended = false;
+            if (this.deps.flags.failGame) throw new Error('WebGL unsupported (injected)');
+            game = createGame(host, false, {
+              script: NEW_GAME_SCRIPT,
+              onEnd: () => {
+                if (ended || life.disposed) return;
+                ended = true;
+                onEnd();
+              },
+            });
+          })
+          .catch((e: unknown) => {
+            if (life.disposed) return;
+            showErrorScreen(mountNode, 'The intro could not start', e instanceof Error ? e.message : String(e));
           });
-        });
       },
       unmount: () => {
         life.disposed = true;
@@ -213,31 +228,13 @@ export class AppFlow {
           return;
         }
         mountNode.append(el('h1', 'heading', 'Loading...'));
-        void this.deps.store.load().then(async (r) => {
-          if (life.disposed || !r.ok) return;
-          const setup = toCoreSetup(pending.ui, r.value, pending.seed);
-          const recorder = this.recording() ? new PlaytestRecorder(setup) : undefined;
-          this.lastReplay = undefined;
-          const launch: ArenaLaunch = {
-            setup,
-            enemy: enemyAgent(this.deps.flags),
-            ...(recorder ? { recorder } : {}),
-            onEnd: (end) => {
-              const replay = recorder?.finish();
-              if (replay) {
-                this.lastReplay = replay;
-                void this.deps.replays.add(replay).catch(() => undefined);
-              }
-              void this.finish(pending, setup, end);
-            },
-          };
-          const { createGame } = await import('../boot/phaser-config');
+        const fail = (title: string, message: string): void => {
           if (life.isDisposed()) return;
-          const host = el('div');
-          host.id = 'game';
-          mountNode.replaceChildren(host);
-          game = createGame('game', launch);
-        });
+          destroyGame(game, undefined);
+          game = undefined;
+          showErrorScreen(mountNode, title, message);
+        };
+        void this.startBattle(pending, mountNode, life, (g) => (game = g), fail);
       },
       unmount: () => {
         life.disposed = true;
@@ -248,32 +245,106 @@ export class AppFlow {
     };
   }
 
-  private async finish(pending: Pending, setup: CoreSetup, end: MatchEnd): Promise<void> {
-    const loaded = await this.deps.store.load();
-    if (!loaded.ok) return;
-    const meta = seedSfc32(pending.seed, 'results');
-    const now = this.deps.now();
-    // Results rules need stamped garrison entries; older saves may lack the timestamps.
-    const current = {
-      ...loaded.value,
-      garrison: loaded.value.garrison.map((g) => ({
-        ...g,
-        createdTime: g.createdTime ?? now,
-        lastModifiedTime: g.lastModifiedTime ?? now,
-      })),
-    };
-    const { save, report } = applyMatchResult(
-      current,
-      setup,
-      toOutcome(pending.ui, current, end),
-      meta,
-      { now: this.deps.now },
-    );
-    await this.deps.store.save(save);
-    if (report.captured.length > 0 || report.xp?.leveledUp === true) void requestPersistence();
-    this.report = report;
-    this.pending = undefined;
-    this.deps.navigate('victory');
+  /** Loads the save, builds the setup and starts the Phaser game; every failure ends in a visible error screen. */
+  private async startBattle(
+    pending: Pending,
+    mountNode: HTMLElement,
+    life: { isDisposed(): boolean },
+    setGame: (g: GameHandle) => void,
+    fail: (title: string, message: string) => void,
+  ): Promise<void> {
+    const { flags } = this.deps;
+    try {
+      const r: Result<SaveV1> = flags.failLoad
+        ? { ok: false, error: { kind: 'storage', message: 'injected load failure' } }
+        : await this.deps.store.load();
+      if (life.isDisposed()) return;
+      if (!r.ok) {
+        fail('Could not load your save', describeError(r.error));
+        return;
+      }
+      if (flags.failSetup) throw new Error('injected setup failure');
+      const setup = toCoreSetup(pending.ui, r.value, pending.seed);
+      const recorder = this.recording() ? new PlaytestRecorder(setup) : undefined;
+      this.lastReplay = undefined;
+      const launch: ArenaLaunch = {
+        setup,
+        enemy: enemyAgent(flags),
+        ...(recorder ? { recorder } : {}),
+        onEnd: (end) => {
+          const replay = recorder?.finish();
+          if (replay) {
+            this.lastReplay = replay;
+            void this.deps.replays.add(replay).catch(() => undefined);
+          }
+          void this.finish(pending, setup, end, () => !life.isDisposed());
+        },
+      };
+      const { createGame } = await import('../boot/phaser-config');
+      if (life.isDisposed()) return;
+      const host = el('div');
+      host.id = 'game';
+      mountNode.replaceChildren(host);
+      // Phaser can throw (WebGL missing an extension, context creation refused) after detectWebgl passed.
+      if (flags.failGame) throw new Error('WebGL unsupported (injected)');
+      setGame(createGame(host, launch));
+    } catch (e) {
+      fail('The battle could not start', e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  private async finish(pending: Pending, setup: CoreSetup, end: MatchEnd, screenIsCurrent: () => boolean): Promise<void> {
+    this.unsaved = undefined;
+    try {
+      const loaded = await this.deps.store.load();
+      if (!loaded.ok) throw new Error(describeError(loaded.error));
+      const meta = seedSfc32(pending.seed, 'results');
+      const now = this.deps.now();
+      // Results rules need stamped garrison entries; older saves may lack the timestamps.
+      const current = {
+        ...loaded.value,
+        garrison: loaded.value.garrison.map((g) => ({
+          ...g,
+          createdTime: g.createdTime ?? now,
+          lastModifiedTime: g.lastModifiedTime ?? now,
+        })),
+      };
+      const { save, report } = applyMatchResult(
+        current,
+        setup,
+        toOutcome(pending.ui, current, end),
+        meta,
+        { now: this.deps.now },
+      );
+      this.report = report;
+      this.pending = undefined;
+      const saved = await this.persist(save);
+      if (!saved) this.unsaved = save;
+      else if (report.captured.length > 0 || report.xp?.leveledUp === true) void requestPersistence();
+    } catch (e) {
+      // Without a result there is nothing to show: report and go back rather than leaving the arena frozen.
+      this.report = undefined;
+      this.saveError = `Could not apply the match result: ${e instanceof Error ? e.message : String(e)}`;
+    }
+    // The player may have left while the save was in flight; the result is stored but not navigated to.
+    if (screenIsCurrent()) this.deps.navigate('victory');
+  }
+
+  /** Writes to the store; false (never a throw) when it failed. */
+  private async persist(save: SaveV1): Promise<boolean> {
+    if (this.deps.flags.failSave && !this.failedOnce) {
+      this.failedOnce = true;
+      this.saveError = 'injected save failure';
+      return false;
+    }
+    try {
+      const w = await this.deps.store.save(save);
+      if (!w.ok) this.saveError = describeError(w.error);
+      return w.ok;
+    } catch (e) {
+      this.saveError = e instanceof Error ? e.message : String(e);
+      return false;
+    }
   }
 
   private resultsScreen(): Screen {
@@ -285,10 +356,31 @@ export class AppFlow {
         node = page;
         container.append(page);
         if (!r) {
-          this.deps.navigate('main');
+          if (this.saveError) showErrorScreen(page, 'Match result lost', this.saveError);
+          else this.deps.navigate('main');
           return;
         }
         page.append(el('h1', 'heading', r.victory ? 'Victory!' : 'Defeat'));
+        const unsaved = this.unsaved;
+        if (unsaved) {
+          const warn = el('div', 'settingsStatus', `Could not save progress: ${this.saveError}`);
+          warn.setAttribute('role', 'alert');
+          const retry = el('button', 'menuButton', 'Retry saving');
+          retry.type = 'button';
+          retry.id = 'retrySave';
+          retry.addEventListener('click', () => {
+            void this.persist(unsaved).then((ok) => {
+              if (ok) {
+                this.unsaved = undefined;
+                warn.remove();
+                retry.remove();
+              } else {
+                warn.textContent = `Could not save progress: ${this.saveError}`;
+              }
+            });
+          });
+          page.append(warn, retry);
+        }
         if (r.xp) {
           const lvl = r.xp.leveledUp ? ` Level up! ${String(r.xp.levelBefore)} to ${String(r.xp.levelAfter)}.` : '';
           page.append(el('p', undefined, `${r.xp.characterName} gained ${String(r.xp.gained)} XP.${lvl}`));

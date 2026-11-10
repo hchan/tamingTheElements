@@ -86,7 +86,7 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Coverage (src/core thresholds enforced)
         run: corepack pnpm test:coverage
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: coverage-report
@@ -155,9 +155,14 @@ jobs:
 
   # Deploy to GitHub Pages: push to main only, and only after check and e2e passed. PRs never reach these jobs.
   # Pages must be enabled (Source: GitHub Actions) in repo settings first; see docs/DEPLOYMENT.md.
+  # The cross-browser determinism job is a dependency too, but it is skipped on docs-only runs, so the condition accepts
+  # `skipped` and rejects only `failure` and `cancelled` (always() is needed or a skipped need would skip this job).
   pages-build:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [check, e2e]
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.check.result == 'success' && needs.e2e.result == 'success' &&
+      (needs.browser.result == 'success' || needs.browser.result == 'skipped')
+    needs: [check, e2e, browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

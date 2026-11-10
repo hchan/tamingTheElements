@@ -116,6 +116,17 @@ export function checkMenuIsPhaserFree(dist: string): string[] {
   return failures;
 }
 
+/** The production bundle must never contain the `window.__TTE__` test hook (a `--mode test` build does). */
+export function checkNoTestHook(dist: string): string[] {
+  const failures: string[] = [];
+  const assets = join(dist, 'assets');
+  const files = ['index.html', ...(existsSync(assets) ? readdirSync(assets).filter((f) => /\.(js|html)$/.test(f)).map((f) => `assets/${f}`) : [])];
+  for (const f of files) {
+    if (readFileSync(join(dist, f), 'utf8').includes('__TTE__')) failures.push(`${f} contains the __TTE__ test hook; dist/ must be a production build`);
+  }
+  return failures;
+}
+
 function main(argv: readonly string[]): number {
   const print = argv.includes('--print');
   const dist = DEFAULT_DIST;
@@ -131,7 +142,7 @@ function main(argv: readonly string[]): number {
     return 0;
   }
   const budget = JSON.parse(readFileSync(DEFAULT_BUDGET, 'utf8')) as Budget;
-  const failures = [...checkSizes(measured, budget), ...checkMenuIsPhaserFree(dist)];
+  const failures = [...checkSizes(measured, budget), ...checkMenuIsPhaserFree(dist), ...checkNoTestHook(dist)];
   if (failures.length > 0) {
     console.error(`\nsize:check FAILED:\n${failures.map((f) => `  - ${f}`).join('\n')}\n\n${HOW_TO_RAISE}`);
     return 1;

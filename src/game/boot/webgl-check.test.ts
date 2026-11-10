@@ -22,6 +22,12 @@ describe('webgl check', () => {
       }),
     ).toBe(false);
   });
+  it('releases the probe context with loseContext', () => {
+    let lost = 0;
+    const gl = { getExtension: (n: string) => (n === 'WEBGL_lose_context' ? { loseContext: () => { lost++; } } : null) };
+    expect(hasWebgl({ getContext: () => gl })).toBe(true);
+    expect(lost).toBe(1);
+  });
   it('forceNoWebgl wins and skips the probe', () => {
     let created = false;
     const make = () => {

@@ -58,6 +58,8 @@ export const RESERVED_CODES: ReadonlySet<string> = new Set([
   'MetaRight',
   'CapsLock',
   'ContextMenu',
+  // Fullscreen toggle (presentation.ts) is hard-wired to F.
+  'KeyF',
 ]);
 
 const CODE_SHAPE = /^[A-Za-z0-9]{1,24}$/;

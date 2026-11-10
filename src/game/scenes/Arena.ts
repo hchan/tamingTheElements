@@ -23,6 +23,8 @@ import {
   type SimEvent,
   type SimWorld,
 } from '@core/index';
+import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
+import type { AudioContextLike } from '../audio/audio-manager';
 import { EventFx, createPhaserFxSink } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
@@ -33,9 +35,9 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion } from '../a11y/announcer';
 import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
 import { firstPad } from '../input/gamepad';
-import { getBindings } from '../platform/input/bindings';
+import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
-import { ActionBarView } from '../hud/action-bar';
+import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
 import { CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
@@ -88,6 +90,7 @@ export class Arena extends Phaser.Scene {
   private cursor: ReplayCursor | undefined;
   private speed: 1 | 2 = 1;
   private keyboard: KeyboardAgent | undefined;
+  private audio: ArenaAudio | undefined;
   private pauseDialog: PauseDialog | undefined;
   private announcer: Announcer | undefined;
   private readonly lowHealth = new LowHealthWatch();
@@ -137,6 +140,7 @@ export class Arena extends Phaser.Scene {
         gamepad: () => firstPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null),
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
+          else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
         },
       });
       this.keyboard = keyboard;
@@ -146,13 +150,26 @@ export class Arena extends Phaser.Scene {
       this.cleanups.push(() => { this.pauseDialog?.destroy(); live.destroy(); });
       this.announcer.say(MATCH_START);
       this.agents = [keyboard, this.launch.enemy ?? new RandomBot('p2')];
-      this.actionBar = new ActionBarView(this, this.view, (cmd) => {
-        this.clicks.push(cmd);
-        keyboard.press(cmd);
-      });
+      let labelled: { bindings: Bindings; labels: KeyLabels } | undefined;
+      const labels = (): KeyLabels => {
+        const b = keyboard.currentBindings();
+        if (labelled?.bindings !== b) labelled = { bindings: b, labels: labelsFromBindings(b) };
+        return labelled.labels;
+      };
+      this.actionBar = new ActionBarView(
+        this,
+        this.view,
+        (cmd) => {
+          this.clicks.push(cmd);
+          keyboard.press(cmd);
+        },
+        0,
+        labels,
+      );
       this.cleanups.push(keyboard.attach(counted(window)));
     }
     this.cleanups.push(pauseOnHidden(counted(document), driver));
+    this.setupAudio();
 
     const width = LOGICAL_WIDTH;
     const height = LOGICAL_HEIGHT;
@@ -162,12 +179,12 @@ export class Arena extends Phaser.Scene {
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
     const onBlocked = (blocked: boolean): void => {
-      if (blocked) driver.pause();
-      else if (!this.pauseDialog?.isOpen) driver.resume();
+      if (blocked) driver.pause('overlay');
+      else driver.resume('overlay');
     };
     this.game.events.on(BLOCKED_EVENT, onBlocked);
     this.cleanups.push(() => { this.game.events.off(BLOCKED_EVENT, onBlocked); });
-    if (this.game.registry.get(BLOCKED_EVENT) === true) driver.pause();
+    if (this.game.registry.get(BLOCKED_EVENT) === true) driver.pause('overlay');
 
     if (playback) this.attachPlayback(playback, driver);
     this.installProbe(world, driver);
@@ -175,8 +192,21 @@ export class Arena extends Phaser.Scene {
     this.scene.launch(HUD_SCENE, hudData);
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.onShutdown(); });
-    this.events.once(Phaser.Scenes.Events.DESTROY, () => { this.onShutdown(); });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
+  }
+
+  /** Sounds Phaser already decoded, played through the AudioManager (Ctrl-M mute, unlock on the first gesture). */
+  private setupAudio(): void {
+    const mgr = this.sound as unknown as { context?: AudioContextLike };
+    const audio = createArenaAudio({
+      ctx: mgr.context,
+      buffer: (id): unknown => this.cache.audio.get(`snd:${id}`) as unknown,
+      gestures: counted(window),
+      storage: window.localStorage,
+    });
+    this.audio = audio;
+    if (audio) this.cleanups.push(() => { audio.dispose(); this.audio = undefined; });
   }
 
   /** Test-build-only hook (statically removed from production builds). */
@@ -223,6 +253,7 @@ export class Arena extends Phaser.Scene {
       clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
       shaking: () => this.cameras.main.shakeEffect.isRunning,
+      audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
       step: (n, cmds = [0, 0]) => {
         driver.pause();
@@ -251,11 +282,12 @@ export class Arena extends Phaser.Scene {
     this.launch?.recorder?.record(world, final);
     const events = step(world, final);
     this.fx?.consume(events);
+    this.audio?.audio.consume(events);
     this.announce(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
     this.ended = true;
-    this.driver?.pause();
+    this.driver?.pause('ended');
     const s = world.state;
     const end = {
       winner: over['winner'] ?? -1,
@@ -272,7 +304,7 @@ export class Arena extends Phaser.Scene {
       if (!events) break;
       this.fx?.consume(events);
     }
-    if (cursor.state !== 'playing') this.driver?.pause();
+    if (cursor.state !== 'playing') this.driver?.pause('ended');
   }
 
   private attachPlayback(playback: NonNullable<ArenaLaunch['playback']>, driver: FixedStepDriver): void {
@@ -284,11 +316,11 @@ export class Arena extends Phaser.Scene {
       },
       setPaused: (p) => {
         if (cursor.state !== 'playing') return;
-        if (p) driver.pause();
-        else driver.resume();
+        if (p) driver.pause('replay');
+        else driver.resume('replay');
       },
       step: () => {
-        driver.pause();
+        driver.pause('replay');
         this.advancePlayback(cursor);
       },
     });
@@ -312,11 +344,11 @@ export class Arena extends Phaser.Scene {
   private togglePause(): void {
     const driver = this.driver;
     if (!driver || this.ended) return;
-    if (driver.isPaused) driver.resume();
-    else driver.pause();
+    if (driver.isPausedFor('user')) driver.resume('user');
+    else driver.pause('user');
     // A key held across the dialog must not replay on resume.
     this.keyboard?.releaseAll();
-    if (driver.isPaused) this.pauseDialog?.open();
+    if (driver.isPausedFor('user')) this.pauseDialog?.open();
     else this.pauseDialog?.close();
   }
 
@@ -345,17 +377,29 @@ export class Arena extends Phaser.Scene {
     const tick = view.tick;
     this.actionBar?.update();
     this.reportPlayback();
+    this.frameTick = tick;
+    this.frameAlpha = alpha;
     pool.begin();
-    view.forEachCharacter((c: RenderCharacter) => {
-      pool.acquire(c.id).apply(c, tick, alpha);
-    });
+    view.forEachCharacter(this.drawCharacter);
     pool.end();
     projPool.begin();
-    view.forEachProjectile((p: RenderProjectile) => {
-      projPool.acquire(p.id).apply(p, alpha);
-    });
+    view.forEachProjectile(this.drawProjectile);
     projPool.end();
   }
+
+  /** Per-frame callbacks are fields so `update` allocates no closures. */
+  private frameTick = 0;
+  private frameAlpha = 0;
+  private readonly drawCharacter = (c: RenderCharacter): void => {
+    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha);
+  };
+  private readonly drawProjectile = (p: RenderProjectile): void => {
+    this.projPool?.acquire(p.id).apply(p, this.frameAlpha);
+  };
+
+  private readonly shutdownHandler = (): void => {
+    this.onShutdown();
+  };
 
   private onShutdown(): void {
     for (const off of this.cleanups.splice(0)) off();
@@ -366,8 +410,9 @@ export class Arena extends Phaser.Scene {
         delete hook.scene;
       }
     }
-    this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
-    this.events.removeAllListeners(Phaser.Scenes.Events.DESTROY);
+    // Remove only our own handler: removeAllListeners would also drop Phaser's internal scene hooks.
+    this.events.off(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
+    this.events.off(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
     this.actionBar?.destroy();
     this.actionBar = undefined;
     this.pool?.forEachView((v) => { v.destroy(); });

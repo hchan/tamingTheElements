@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkMenuIsPhaserFree, checkSizes, chunkName, staticImports, suggestBudget } from '../../tools/ci/size-check';
+import { checkMenuIsPhaserFree, checkNoTestHook, checkSizes, chunkName, staticImports, suggestBudget } from '../../tools/ci/size-check';
 
 const budget = { chunks: { index: 100, phaser: 1000 }, totalGzip: 1200 };
 const m = (name: string, gzip: number) => ({ name, file: `assets/${name}-AAAAAAAA.js`, gzip });
@@ -43,5 +43,21 @@ describe('size-check', () => {
     expect(checkMenuIsPhaserFree(dist)[0]).toContain('statically imports the phaser chunk');
     writeFileSync(join(dist, 'index.html'), '<script type="module" src="/assets/index-AAAAAAAA.js"></script><link rel="modulepreload" href="/assets/phaser-CCCCCCCC.js">');
     expect(checkMenuIsPhaserFree(dist).join('\n')).toContain('preloads the phaser chunk');
+  });
+});
+
+describe('checkNoTestHook', () => {
+  const dist = (js: string): string => {
+    const root = join(homedir(), 'claudetmp');
+    mkdirSync(root, { recursive: true });
+    const dir = mkdtempSync(join(root, 'nohook-'));
+    mkdirSync(join(dir, 'assets'));
+    writeFileSync(join(dir, 'index.html'), '<html></html>');
+    writeFileSync(join(dir, 'assets', 'index-AAAAAAAA.js'), js);
+    return dir;
+  };
+  it('passes a clean bundle and flags one containing the hook', () => {
+    expect(checkNoTestHook(dist('console.log(1)'))).toEqual([]);
+    expect(checkNoTestHook(dist('window.__TTE__={}'))[0]).toContain('__TTE__');
   });
 });

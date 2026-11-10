@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { validateReplay } from '@core/index';
 import { verifyReplayText } from '../../tools/replay-verify';
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
@@ -12,6 +13,10 @@ describe('replay fixtures', () => {
 
   it.each(files)('%s verifies', (name) => {
     expect(verifyReplayText(readFileSync(new URL(name, DIR), 'utf8'))).toMatchObject({ ok: true });
+  });
+
+  it.each(files)('%s passes the pre-flight validator', (name) => {
+    expect(validateReplay(JSON.parse(readFileSync(new URL(name, DIR), 'utf8'))).ok).toBe(true);
   });
 
   it('reports a corrupted replay as a failure', () => {

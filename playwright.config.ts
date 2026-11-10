@@ -18,7 +18,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
     // `--mode test` compiles in the window.__TTE__ hook; production builds never contain it.
-    command: `corepack pnpm exec vite build --mode test && corepack pnpm preview --port ${PORT} --strictPort`,
+    command: `corepack pnpm exec vite build --mode test --outDir node_modules/.tte-e2e --emptyOutDir && corepack pnpm exec vite preview --outDir node_modules/.tte-e2e --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -14,6 +14,11 @@ export interface UiFlags {
   readonly cinematicDemo: boolean;
   /** Record playtests (`?ff=record`, dev and test builds); production uses the Settings checkbox instead. */
   readonly record: boolean;
+  /** Failure injection for the e2e suite (`?ff=failLoad|failSetup|failGame|failSave`, dev and test builds only). */
+  readonly failLoad: boolean;
+  readonly failSetup: boolean;
+  readonly failGame: boolean;
+  readonly failSave: boolean;
   /** Fixed seed for the battle and opponent draw (`?seed=N`, dev and test builds only), or null for the clock. */
   readonly seed: number | null;
 }
@@ -27,6 +32,10 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   aiScripted: false,
   cinematicDemo: false,
   record: false,
+  failLoad: false,
+  failSetup: false,
+  failGame: false,
+  failSave: false,
   seed: null,
 };
 
@@ -50,6 +59,10 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     aiScripted: on.has('aiScripted'),
     cinematicDemo: on.has('cinematicDemo'),
     record: on.has('record'),
+    failLoad: on.has('failLoad'),
+    failSetup: on.has('failSetup'),
+    failGame: on.has('failGame'),
+    failSave: on.has('failSave'),
     seed,
   };
 }
