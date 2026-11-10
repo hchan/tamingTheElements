@@ -21,6 +21,16 @@ export function describeStatus(s: PlaybackStatus): string {
   return `${s.paused ? 'Paused' : 'Playing'} ${String(s.speed)}x, ${at}`;
 }
 
+/**
+ * The screen-reader text: state, pause and speed only, never the tick counter, so the live region changes
+ * only when something worth announcing changes (not 50 times a second).
+ */
+export function describeAnnouncement(s: PlaybackStatus): string {
+  if (s.state === 'ok') return 'OK: all hashes verified';
+  if (s.state === 'diverged') return `DIVERGED at tick ${String(s.divergentTick ?? s.tick)}`;
+  return `${s.paused ? 'Paused' : 'Playing'} ${String(s.speed)}x`;
+}
+
 /** Loads a replay file (or a recent playtest) and plays it in the Arena, verifying the recorded hashes. */
 export function replayViewerScreen(deps: ViewerDeps): Screen {
   let node: HTMLElement | undefined;
@@ -43,6 +53,9 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
       status.id = 'replayStatus';
       status.setAttribute('role', 'status');
       status.textContent = 'Choose a .replay.json file.';
+      // Visible progress (tick counter) is not a live region: it updates every frame.
+      const progress = el('span');
+      progress.id = 'replayProgress';
       const controls: { current: PlaybackControls | undefined } = { current: undefined };
       const button = (id: string, label: string, run: (c: PlaybackControls) => void): HTMLButtonElement => {
         const b = el('button', 'menuButton', label);
@@ -63,6 +76,7 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         button('replay2x', '2x', (c) => { c.setSpeed(2); }),
         button('replayStep', 'Step', (c) => { c.step(); }),
         status,
+        progress,
         back,
       );
       root.append(bar);
@@ -102,7 +116,9 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
           playback: {
             replay,
             onStatus: (s) => {
-              status.textContent = describeStatus(s);
+              progress.textContent = describeStatus(s);
+              const text = describeAnnouncement(s);
+              if (status.textContent !== text) status.textContent = text;
               status.dataset['state'] = s.state;
             },
             attach: (c) => {

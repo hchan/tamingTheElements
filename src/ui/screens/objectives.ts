@@ -51,12 +51,15 @@ export function objectivesScreen(deps?: ObjectivesDeps): Screen {
       const d = deps ?? browserDeps();
       const page = el('div', 'menuPage');
       node = page;
+      // The heading exists before the router focuses it; its text is filled in once the save has loaded.
+      const heading = el('h1', 'heading', 'Current Objectives');
+      page.append(heading);
       container.append(page);
       void d.store.load().then((r) => {
         if (node !== page) return;
         const save = r.ok ? r.value : null;
         const view = objectivesView(save);
-        page.append(el('h1', 'heading', view.title));
+        heading.textContent = view.title;
         for (const line of view.lines) page.append(el('p', 'objectiveLine', line));
         if (view.canAdvance && save !== null) {
           const btn = el('button', 'clickable', view.advanceLabel);
