@@ -41,6 +41,7 @@
     "balance:compare": "tsx tools/sim/balance.ts",
     "balance:record": "tsx tools/sim/balance.ts --record",
     "assets:build": "tsx tools/assets/build-assets.ts",
+    "assets:sheets": "tsx tools/assets/pack-sheets.ts",
     "format": "echo \"not yet\" && exit 1"
   },
   "devDependencies": {

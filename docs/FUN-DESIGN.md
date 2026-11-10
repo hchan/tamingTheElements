@@ -685,6 +685,17 @@ Plan, cheapest first:
 2. **Sheet spec and pipeline:** a documented sheet layout (80x80 frames, rows = action x 8 directions: idle, walk, cast,
    hurt, guard, dash, KO, victory, tag-in), a packer in `tools/assets` that builds the sheet and manifest from per-frame
    PNGs, validation tests (frame counts, sizes, no missing action) and legacy art as the fallback for any missing row.
+   Built in WP 34 (tools and tests only; no sim, view or art change): `tools/assets/sheet-spec.ts` (80x80 frames, 4 columns, 72 rows =
+   idle 4, walk 4, cast 4, hurt 2, guard 2, dash 3, KO 4, victory 4, tag-in 4 frames, each x 8 directions E, SE, S, SW, W, NW, N, NE;
+   sheet 320x5760), `png-lite.ts` (dependency-free PNG decode/encode, level-9 zlib, so output bytes depend only on the pixels),
+   `pack-sheets.ts` (`pnpm assets:sheets`, `--check` fails on stale outputs). Sources are per-frame PNGs at
+   `imgWorkArea/sheets/<sprite>/<action>/<dir>/<NN>.png` plus a `license.txt` per character (required once any frame exists);
+   outputs are `public/assets/img/sheets/<sprite>.png` and `src/game/assets/sheets.generated.json` (spec, and per character the url,
+   sha256, licence and the rows that have art). A row is all-or-nothing (right frame count, 80x80) and every other row uses
+   `legacyFallback()`: E/NE/SE play the legacy right strip, W/NW/SW the left strip (mirrored as today), N/S the up/down strips where the
+   legacy sprite has them; walk plays the strip, other actions hold frame 0 for the pose layer. 21 characters are covered (the 80px
+   legacy map sprites); today all 21 are pure fallback, 0 sheets exist. `tests/repo/sprite-sheets.test.ts` covers spec, fallback,
+   validation errors, reproducibility and the committed outputs. Reading sheets in `character-view` is left for step 3.
 3. **New art:** drawn by the owner or an artist, or generated; every new asset needs a licence note in the manifest.
    Needs an owner decision on who makes the art.
 
@@ -1010,7 +1021,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 31 | `WP-arcade-terrain` (done: sim only; section 2.15) | sim+data | Section 2.15: stage element, seeded symmetric patches, per-element effects, caps, events | 3, 29 |
 | 32 | `WP-arcade-terrain-view` | view | Patch art with pattern and label, buff badge, particles | 31 |
 | 33 | `WP-arcade-pose-layer` (done: section 2.16 step 1) | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
-| 34 | `WP-sprite-sheet-pipeline` | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
+| 34 | `WP-sprite-sheet-pipeline` (done: section 2.16 step 2; tools and tests only, no art, view not yet reading sheets) | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 35 | `WP-arcade-weather-charge` (done; section 2.14) | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
 | 36 | `WP-arcade-charge` | sim+view+AI | Section 2.17: melee Charge gap closer, stun on arrival, counterplay, AI use | 3, 16, 31 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
