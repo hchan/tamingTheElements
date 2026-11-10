@@ -144,6 +144,7 @@ test('reduced motion keeps the call at full size; 1v1 builds no tag view and no 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await fight2v2(page);
   await page.keyboard.down('Digit3');
+  await frames(page);
   await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
   await page.keyboard.up('Digit3');
   expect(await tag(page)).toMatchObject({ call: 'TAG!', callScale: 1, flashes: 1 });
