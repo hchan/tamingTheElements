@@ -93,6 +93,8 @@ export default tseslint.config(
     ignores: [
       '.claude/**',
       'dist/**',
+      'dist-pages/**',
+      'dist-itch/**',
       'coverage/**',
       'node_modules/**',
       'war/**',
