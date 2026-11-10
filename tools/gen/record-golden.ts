@@ -12,6 +12,7 @@ import { createMatch, type MatchSetup } from '../../src/core/sim/match';
 import { step } from '../../src/core/sim/step';
 import { SIM_VERSION } from '../../src/core/version';
 import { makeAgent } from '../sim/run-match';
+import { arcadeScripts, recordArcadeScript } from './arcade-moves';
 
 const TICKS = 1500;
 const OUT = new URL('../../tests/fixtures/replays/random-vs-random.replay.json', import.meta.url);
@@ -60,6 +61,13 @@ if (values.ruleset === 'arcade') {
   assertNoTesterFlags(SETUP_ARCADE.flags);
   writeFileSync(OUT_ARCADE, serializeReplay(recordScripted(SETUP_ARCADE, TICKS, 'lavax', 'pax')));
   console.log(`wrote ${OUT_ARCADE.pathname} (${TICKS} ticks)`);
+  // The scripted goldens (hand-authored inputs, see arcade-moves.ts) that reach every Arcade mechanic.
+  for (const script of arcadeScripts()) {
+    assertNoTesterFlags(script.setup.flags);
+    const out = new URL(`../../tests/fixtures/replays/${script.file}.replay.json`, import.meta.url);
+    writeFileSync(out, serializeReplay(recordArcadeScript(script)));
+    console.log(`wrote ${out.pathname} (${String(script.inputs[0].length)} ticks)`);
+  }
   process.exit(0);
 }
 
