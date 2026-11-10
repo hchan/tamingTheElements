@@ -140,6 +140,9 @@ const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0];
 /** Within every 256 ticks, the tick from which a tag team's AI fires along a rock-cut line (WP-arcade-2v2-tune). */
 const SHOOT_FROM = 64;
 
+/** Within this Manhattan distance (px) a tag team's AI may skip an attack press (see `decide`). */
+const CLOSE_PX = 160;
+
 export class ArcadeTactics {
   /**
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
@@ -264,6 +267,11 @@ export class ArcadeTactics {
         return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
       }
       cmd = a.combo > this.level * 2 ? cmd & ~ATTACK : pressStep(self, opp, cmd);
+    }
+    // Tag team, point blank: both sides firing on the same tick clash their shots (no damage) every time, a lockstep loop
+    // (2v2 stalemates); a drawn one-in-four skip of the press breaks the symmetry. Never in 1v1.
+    if (a.partnerPm >= 0 && (cmd & ATTACK) !== 0 && a.oppStun === 0 && Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y) < CLOSE_PX && draw(4) === 0) {
+      cmd &= ~ATTACK;
     }
     if (!free || threat) return cmd;
     const pm = Math.floor((self.hp * 1000) / self.maxHp);

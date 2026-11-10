@@ -70,7 +70,7 @@ const owned = (w: SimWorld, owner: number, kind: number = EntityKind.projectile)
 describe('tag table (FUN-DESIGN 2.6)', () => {
   it('has the design numbers', () => {
     expect([TAG_COOLDOWN_TICKS, TAG_INVULN_TICKS, KO_ENTRANCE_INVULN_TICKS]).toEqual([150, 20, 60]);
-    expect([REST_HEAL_EVERY, REST_HEAL_PM]).toEqual([10, 10]);
+    expect([REST_HEAL_EVERY, REST_HEAL_PM]).toEqual([10, 3]);
   });
 });
 

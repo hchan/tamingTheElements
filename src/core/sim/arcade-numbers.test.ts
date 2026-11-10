@@ -6,7 +6,7 @@ import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { compareStrings } from '../math/compare';
 import { combatantStats } from '../rules/progression';
-import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_RACE_NUMBERS, arcadeRaceNumbers, cooldownTicksFor } from './arcade-numbers';
+import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_2V2_LIFE_DEFAULT_PM, ARCADE_2V2_LIFE_PM, ARCADE_RACE_NUMBERS, arcadeLifePm, arcadeRaceNumbers, cooldownTicksFor } from './arcade-numbers';
 import { createMatch, type MatchSetup } from './match';
 
 /** The 12 playable races (Arcade Versus and the tournaments): every character but the void ones. */
@@ -68,5 +68,19 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
       expect([slug, def?.kind]).toEqual([slug, 'range']);
       expect(Number.isInteger(ticks) && (ticks ?? 0) > 0).toBe(true);
     }
+  });
+});
+
+describe('Arcade 2v2 life (WP-arcade-2v2-tune)', () => {
+  it('leaves a 1v1 life alone and scales a two-hero roster by the per-race table, within sane bounds', () => {
+    for (const race of PLAYABLE) {
+      const hp = arcadeRaceNumbers(race)[0];
+      expect(arcadeLifePm(hp, 1, race)).toBe(hp);
+      const pm = ARCADE_2V2_LIFE_PM[race] ?? ARCADE_2V2_LIFE_DEFAULT_PM;
+      expect(pm).toBeGreaterThanOrEqual(300);
+      expect(pm).toBeLessThanOrEqual(1000);
+      expect(arcadeLifePm(hp, 2, race)).toBe(Math.floor((hp * pm) / 1000));
+    }
+    expect(Object.keys(ARCADE_2V2_LIFE_PM).every((k) => PLAYABLE.includes(k))).toBe(true);
   });
 });

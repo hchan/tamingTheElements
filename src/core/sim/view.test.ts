@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { characterId } from '../data/ids';
-import { GUARD_MAX, WEATHER_CHARGE_FULL, WEATHER_TICKS, Weather } from '../data/arcade';
+import { GUARD_MAX, TAG_COOLDOWN_TICKS, WEATHER_CHARGE_FULL, WEATHER_TICKS, Weather } from '../data/arcade';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from './state';
 import { Cmd } from './commands';
@@ -78,5 +78,11 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     const els: string[] = [];
     createRenderView(createMatch(match(false))).forEachCharacter((c: RenderCharacter) => els.push(c.element));
     expect(els).toEqual(['fire', 'earth']);
+  });
+
+  it('reads the tag cooldown as 150 ticks in Arcade and the swap cooldown as 250 in Classic (WP-arcade-2v2-tune)', () => {
+    expect(createRenderView(createMatch(match(true))).actionBar(0)?.swapCooldownTicks).toBe(TAG_COOLDOWN_TICKS);
+    expect(TAG_COOLDOWN_TICKS).toBe(150);
+    expect(createRenderView(createMatch(match(false))).actionBar(0)?.swapCooldownTicks).toBe(250);
   });
 });
