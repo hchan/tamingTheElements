@@ -99,24 +99,25 @@ test('reduced motion: badge, steady tint and line at full size, no particles; Cl
   expect(w?.tint).toBeCloseTo(0.2, 5);
 });
 
-test('Arcade Versus: R calls Sunshine, the touch Weather button too; the AI side calls Gale; 0 listeners after', async ({ page }) => {
+test('Arcade Versus: the AI calls Gale, R calls Sunshine, the touch Weather button too; 0 listeners after', async ({ page }) => {
   const errors = collectErrors(page);
   await versus(page, 'sindarosa', 'cyclonius');
   await expect(page.locator('#arcadeWeather')).toBeVisible();
-  // R (live ticks: the keyboard agent plays the player).
+  // Air is at a disadvantage against fire, so the AI calls its Gale on its first free tick (WP-arcade-ai-personalities).
+  await page.evaluate(`window.__TTE__.arena.stepLive(3)`);
+  expect(await weather(page)).toMatchObject({ kind: 4, label: 'GALE 10', call: 'Gale!', particles: 12 });
+  await page.screenshot({ path: `${process.env['HOME'] ?? ''}/claudetmp/wv-gale.png` });
+  // R (live ticks: the keyboard agent plays the player) replaces it; the AI's weather is on its cooldown.
   await page.keyboard.down('KeyR');
   await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
   await page.keyboard.up('KeyR');
   await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
   expect(await weather(page)).toMatchObject({ kind: 1, label: 'SUN 10', call: 'Sunshine!', particles: 5 });
   await page.screenshot({ path: `${process.env['HOME'] ?? ''}/claudetmp/wv-sun.png` });
-  // The AI side (forced) replaces it with a Gale.
-  await step(page, 1, [0, WEATHER]);
-  await step(page, 2);
-  expect(await weather(page)).toMatchObject({ kind: 4, label: 'GALE 10', call: 'Gale!', particles: 12 });
-  await page.screenshot({ path: `${process.env['HOME'] ?? ''}/claudetmp/wv-gale.png` });
-  // Sindarosa's weather is on its 30 s cooldown; after it, the touch button calls Sunshine again.
+  // After both 30 s cooldowns the AI (cast first) calls Gale again, then the touch button calls Sunshine again.
   await step(page, 1500);
+  await page.evaluate(`window.__TTE__.arena.stepLive(3)`);
+  expect(await weather(page)).toMatchObject({ kind: 4, call: 'Gale!' });
   await page.locator('#arcadeWeather').hover();
   await page.mouse.down();
   await page.evaluate(`window.__TTE__.arena.stepLive(1)`);

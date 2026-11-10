@@ -70,6 +70,24 @@ export interface ArcadeView {
   readonly prevCmd: Command;
   readonly primaryAge: number;
   readonly secondaryAge: number;
+  /**
+   * Every live enemy projectile and melee box on the field, in entity id order (WP-arcade-ai-personalities): position,
+   * size and velocity per game tick (a melee box has none). Only what the screen shows; the AI predicts from it.
+   */
+  readonly shots: readonly ShotView[];
+  /** Game ticks until this side's dash and weather are ready (0: ready now). */
+  readonly dashIn: number;
+  readonly weatherIn: number;
+}
+
+/** One enemy projectile or melee box as `ArcadeView.shots` lists it; plain numbers. */
+export interface ShotView {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly vx: number;
+  readonly vy: number;
 }
 
 /** Opaque, JSON-serialisable agent memory: what `Agent.save` returns and only the same kind of agent can `load`. */
@@ -151,13 +169,21 @@ function arcadeViewOf(
   const a = s.arcade;
   const g = now(s);
   const team = (t: number, f: number): number => a[ARCADE_TEAM_BASE + t * ARCADE_T + f] ?? 0;
-  const stun = (f: FighterView | undefined): number =>
-    f === undefined ? 0 : Math.max(0, (a[f.id * ARCADE_E + ArcadeE.stunUntil] ?? 0) - g);
+  const left = (f: FighterView | undefined, field: number): number =>
+    f === undefined ? 0 : Math.max(0, (a[f.id * ARCADE_E + field] ?? 0) - g);
+  const shots: ShotView[] = [];
+  for (let i = 0; i < s.kind.length; i++) {
+    const k = s.kind[i];
+    // A freed slot is cleared (kind 0, a character), so a projectile kind is a live projectile.
+    if (k === EntityKind.projectile && s.team[i] !== side) {
+      shots.push({ x: s.x[i] ?? 0, y: s.y[i] ?? 0, w: s.w[i] ?? 0, h: s.h[i] ?? 0, vx: s.vx[i] ?? 0, vy: s.vy[i] ?? 0 });
+    }
+  }
   return {
     meter: team(side, ArcadeT.meter),
     oppMeter: team(1 - side, ArcadeT.meter),
-    selfStun: stun(self),
-    oppStun: stun(opp),
+    selfStun: left(self, ArcadeE.stunUntil),
+    oppStun: left(opp, ArcadeE.stunUntil),
     freeze: Math.max(
       0,
       (a[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] ?? 0) - (s.world[World.tick] ?? 0),
@@ -169,6 +195,9 @@ function arcadeViewOf(
     prevCmd: team(side, ArcadeT.prevCmd),
     primaryAge: pressAge(s, side, Press.primary),
     secondaryAge: pressAge(s, side, Press.secondary),
+    shots,
+    dashIn: left(self, ArcadeE.dashReadyAt),
+    weatherIn: left(self, ArcadeE.weatherReadyAt),
   };
 }
 
