@@ -6,16 +6,16 @@ import { ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, TEAM_COUNT, type SimState } from '
 import { chargeWeather, meterOf, meterOnCast } from './meter';
 
 /** Presses in `ArcadeT.pressTick` order (FUN-DESIGN 2.12); primary and secondary are also the ability slots 0 and 1. */
-export const Press = { primary: 0, secondary: 1, dash: 2, guard: 3, super: 4, weather: 5 } as const;
-/** Command bit of each press: dash, guard and weather are the Arcade bits 11, 12 and 14. */
-export const PRESS_BITS = [Cmd.primary, Cmd.secondary, Cmd.dash, Cmd.guard, Cmd.super, Cmd.weather] as const;
+export const Press = { primary: 0, secondary: 1, dash: 2, guard: 3, super: 4, weather: 5, charge: 6 } as const;
+/** Command bit of each press: dash, guard, weather and charge are the Arcade bits 11, 12, 14 and 15. */
+export const PRESS_BITS = [Cmd.primary, Cmd.secondary, Cmd.dash, Cmd.guard, Cmd.super, Cmd.weather, Cmd.charge] as const;
 /**
- * Presses `bufferedCmd` replays; the dash press is read by arcade/dash.ts, the guard press by arcade/guard.ts and the
- * weather press by arcade/weather.ts.
+ * Presses `bufferedCmd` replays; the dash press is read by arcade/dash.ts, the guard press by arcade/guard.ts the
+ * weather press by arcade/weather.ts and the charge press by arcade/charge.ts.
  */
 const REPLAYED = [Press.primary, Press.secondary, Press.super] as const;
 /** `pressUsed` flag: the pending super press came from a chord, so held primary and secondary are masked meanwhile. */
-export const CHORD_FLAG = 1 << 6;
+export const CHORD_FLAG = 1 << 7;
 const ATTACK = Cmd.primary | Cmd.secondary;
 /** Bits an Arcade match accepts: `prevCmd` keeps only these, so reserved bits never reach the hash. */
 const ARCADE_MASK = inputMaskFor({ rulesetArcade: true });

@@ -92,7 +92,7 @@ describe('Arcade launch: the result and the only thing it may store', () => {
   function run(record: boolean): { result: ArcadeResult | undefined; added: ReplayFile[]; winner: number } {
     const added: ReplayFile[] = [];
     let result: ArcadeResult | undefined;
-    const launch = arcadeLaunch(pick, 11, {
+    const launch = arcadeLaunch(pick, 12, {
       record,
       replays: {
         add: (r) => {

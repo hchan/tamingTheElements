@@ -133,7 +133,7 @@ holds every second tick through the same freeze gate (`clockHeld` in `sim/clock.
 clears the buffered presses. Arcade dashes (`arcade/dash.ts`): the `input` slot starts a dash on a pending `Cmd.dash`
 press or a double-tapped direction (recorded by the buffer), movement steps it (12 ticks at 3x speed), `isInvulnerable`
 covers its dash ticks 2..7 (an enemy projectile overlapping then is a perfect dodge in the projectile system), `canAct`
-waits out its recovery, and a dash within 10 ticks of the team's last confirmed hit cancels melee recovery. Guard and
+waits out its recovery, and a dash within 10 ticks of the team's last confirmed hit cancels melee recovery. A melee Charge (`arcade/charge.ts`, FUN-DESIGN 2.17): the `input` slot starts it on a pending `Cmd.charge` (`chargeStarted`), movement steps it (12 ticks at 5x speed, at most 30 px a step, ending `blocked` at a wall or rock), and the `collision` slot ends it on contact (`arrived`, the 8-damage hit with 20 ticks of stun, 40 meter), at the last tick (`expired`) or on a stun (`interrupted`); `chargeEnded` carries the reason. Guard and
 parry (`arcade/guard.ts`): after the dash the `input` slot regenerates the guard meter and opens a parry window on a
 pending guard press (with a whiff lock); `applyArcadeHit` checks the window first (a parry: no damage, the projectile is
 reflected or the melee attacker stunned) and then `isGuarding` (chip damage, block-stun, guard meter drain and break);
@@ -179,13 +179,13 @@ Adding or reordering a system changes every hash: bump `SIM_VERSION` and re-reco
 ## Commands and agents
 
 A `Command` is a `u16` bitset per player per tick (`src/core/sim/commands.ts`: up, down, left, right, primary, secondary,
-capture, swap1..4; bits 11..15 reserved in Classic, while Arcade opens 11..13 for dash, guard and super; `inputMaskFor(flags)`
+capture, swap1..4; bits 11..15 reserved in Classic, while Arcade opens 11..15 for dash, guard, super, weather and charge; `inputMaskFor(flags)`
 gives the accepted bits for the net session and replay validation). An `Agent` (`src/core/agents/agent.ts`) turns a read-only `ObservationView` into a
 `Command`; it must be a pure function of the view plus its own memory and random stream (`AgentRng`, seeded from
 `view.matchSeed` and the side). Neither lives in `SimState`, and `collectCommands` only reads the world: `step` is the only
 thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents. In Arcade the view also
 carries `arcade` (`ArcadeView`: both meters, both stuns, the freeze, both live combos, own super running, the round
-phase, the press ages, the enemy projectiles on the field with their velocity, and the ticks until its own dash and weather
+phase, the press ages, the enemy projectiles on the field with their velocity, and the ticks until its own dash, weather and charge
 are ready plus its weather charge; only what the screen shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`, knobs and
 personalities in `scripted-ai/arcade-ai.ts`) reads, drawing from its own `ai.arcade.pN` stream; Classic views have no
 `arcade`, so Classic agents decide exactly as before.

@@ -109,6 +109,7 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['terrain layout drawn for a swap and for each round', () => of(K.terrainChanged).length],
     ['a hero of the stage element steps onto a patch', () => of(K.patchEntered).filter((e) => e.stage === 2).length],
     ['an earth hero walks over a rock', () => of(K.patchEntered).filter((e) => e.stage === 3).length],
+    ['a charge starts and arrives with a hit', () => of(K.chargeStarted).length * of(K.chargeEnded).filter((e) => e['reason'] === 1).length],
     ['a rock stops a shot', () => of(K.projectileBlocked).length],
   ];
 

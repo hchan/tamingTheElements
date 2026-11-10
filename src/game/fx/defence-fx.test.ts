@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  Cmd, DASH_TICKS, DEFAULT_SIM_FLAGS, SIM_VERSION, SimEventKind, characterId, createMatch, step, type SimEvent,
+  CHARGE_TICKS, Cmd, ChargeEnd, DASH_TICKS, DEFAULT_SIM_FLAGS, SIM_VERSION, SimEventKind, characterId, createMatch, step, type SimEvent,
 } from '@core/index';
 import {
-  AFTERIMAGE_ALPHA, AFTERIMAGE_FADE, BREAK_COLOR, BREAK_WORD, CHIP_SPARKS, DODGE_COLOR, DODGE_WORD, DefenceFx, GUARD_COLOR,
+  AFTERIMAGE_ALPHA, AFTERIMAGE_FADE, BREAK_COLOR, BREAK_WORD, CHARGE_WORD, CHIP_SPARKS, DODGE_COLOR, DODGE_WORD, DefenceFx, GUARD_COLOR,
   LINES, PARRY_COLOR, PARRY_WORD, REFLECT_SPARKS, SHARD_TICKS, SHATTER_SHARDS, SPARK_TICKS, ghostAlpha, guardFill, popAlpha,
   popRise, progress, ringRadius, type DefenceSink,
 } from './defence-fx';
@@ -36,6 +36,17 @@ describe('DefenceFx: one effect set per defence event (FUN-DESIGN 2.7, 2.8, sect
     const { sink, log } = recorder();
     fx(sink).consume([ev(SimEventKind.dashed, 100, 0, 0, { dir: 0 }), ev(SimEventKind.perfectDodge, 104, 0, 0, { projectile: 9 })]);
     expect(log).toEqual([`ghosts0@100<${String(100 + DASH_TICKS)}`, `ring0:${hex(DODGE_COLOR)}`, `pop0:${DODGE_WORD}:${hex(DODGE_COLOR)}`]);
+  });
+  it('a charge leaves speed-line afterimages for its 12 ticks, calls CHARGE! and speaks; its end adds nothing (the arrival hit sparks itself)', () => {
+    const { sink, log } = recorder();
+    const f = fx(sink);
+    f.consume([ev(SimEventKind.chargeStarted, 50, 0, 1, { dir: 4 }), ev(SimEventKind.chargeEnded, 55, 0, 1, { reason: ChargeEnd.arrived })]);
+    expect(log).toEqual([`ghosts1@50<${String(50 + CHARGE_TICKS)}`, `pop1:${CHARGE_WORD}:${hex(BREAK_COLOR)}`, `say:The enemy charged.`]);
+  });
+  it('a charge in reduced motion drops the afterimages; the word and line stay', () => {
+    const { sink, log } = recorder();
+    fx(sink, true).consume([ev(SimEventKind.chargeStarted, 5, 0, 0, { dir: 0 })]);
+    expect(log).toEqual([`pop0:${CHARGE_WORD}:${hex(BREAK_COLOR)}r`, `say:You charged.`]);
   });
   it('a guarded hit throws chip sparks off the target in the guard colour', () => {
     const { sink, log } = recorder();

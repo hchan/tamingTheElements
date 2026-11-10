@@ -149,7 +149,7 @@ describe('dash and guard keys (WP-arcade-defence-view): E and Q, rebindable, Arc
   });
   it('every Arcade-only action sends a bit from the dash up, every Classic one a bit below it', () => {
     for (const a of GAME_ACTIONS) {
-      const arcadeOnly = a === 'super' || a === 'dash' || a === 'guard' || a === 'weather';
+      const arcadeOnly = a === 'super' || a === 'dash' || a === 'guard' || a === 'weather' || a === 'charge';
       expect(ACTION_COMMAND[a] >= ARCADE_ONLY, a).toBe(arcadeOnly);
     }
   });
@@ -197,6 +197,28 @@ describe('weather key and pad button (WP-arcade-weather-view): R and pad X, rebi
     for (const arcade of [true, false]) {
       const agent = new KeyboardAgent({ capturable: () => false, arcade, gamepad: () => pad([PadButton.x]) });
       expect(agent.observe(view)).toBe(arcade ? Cmd.weather : 0);
+    }
+  });
+});
+
+describe('charge key and pad button (WP-arcade-charge): H and pad R3, rebindable, Arcade only', () => {
+  it('defaults to plain H, bindable, labelled as an Arcade action; F stays the reserved fullscreen key', () => {
+    expect(DEFAULT_BINDINGS.charge).toEqual(['KeyH']);
+    expect(actionForCode(DEFAULT_BINDINGS, 'KeyH')).toBe('charge');
+    expect(ACTION_LABELS.charge).toBe('Charge (Arcade)');
+    expect(ACTION_COMMAND.charge).toBe(Cmd.charge);
+    expect(tryBind(DEFAULT_BINDINGS, 'charge', 0, 'KeyF')).toEqual({ ok: false, reason: 'reserved' });
+  });
+  it('rebinding detects conflicts both ways', () => {
+    expect(tryBind(DEFAULT_BINDINGS, 'charge', 0, 'KeyR')).toEqual({ ok: false, reason: 'conflict', with: 'weather' });
+    expect(tryBind(DEFAULT_BINDINGS, 'up', 1, 'KeyH')).toEqual({ ok: false, reason: 'conflict', with: 'charge' });
+  });
+  it('held H and pad R3 send the charge in Arcade only', () => {
+    expect(commandFromHeld(DEFAULT_BINDINGS, new Set(['KeyH']), true, true)).toBe(Cmd.charge);
+    expect(commandFromHeld(DEFAULT_BINDINGS, new Set(['KeyH']), true, false)).toBe(0);
+    for (const arcade of [true, false]) {
+      const agent = new KeyboardAgent({ capturable: () => false, arcade, gamepad: () => pad([11]) });
+      expect(agent.observe(view)).toBe(arcade ? Cmd.charge : 0);
     }
   });
 });

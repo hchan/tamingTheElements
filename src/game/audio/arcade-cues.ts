@@ -58,7 +58,7 @@ export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'fight'
  */
 export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
   43: 'guard', 44: 'parry', 45: 'crack', 46: 'dash', 47: 'dodge', 48: 'clang', 50: 'charge', 53: 'round', 54: 'fight',
-  55: 'ko', 57: 'roundEnd',
+  55: 'ko', 57: 'roundEnd', 67: 'dash',
 };
 const HIT: Kinds['hitConfirmed'] = 41;
 const WEATHER: Kinds['weatherChanged'] = 59;
@@ -83,6 +83,7 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   patchLeft: 'terrain feedback is the view work package (WP 32)',
   patchHeal: 'terrain feedback is the view work package (WP 32)',
   projectileBlocked: 'terrain feedback is the view work package (WP 32)',
+  chargeEnded: 'the arrival hit plays the thump; the charge start plays the dash whoosh',
 };
 
 /** Hit thump gain by strength (light, medium, heavy, super). */

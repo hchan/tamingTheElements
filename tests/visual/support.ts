@@ -103,5 +103,5 @@ export const STEP = (n: number, a: number, b: number): string => `window.__TTE__
 /** Command bits (src/core/sim/commands.ts). */
 export const CMD = {
   up: 1, down: 2, left: 4, right: 8, primary: 16, secondary: 32, capture: 64, dash: 1 << 11, guard: 1 << 12, super: 1 << 13,
-  weather: 1 << 14,
+  weather: 1 << 14, charge: 1 << 15,
 } as const;

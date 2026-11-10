@@ -243,6 +243,22 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('arcade charge (demo, Arcade ruleset)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
+      await page.locator('#game canvas').waitFor();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      const frames = `new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`;
+      // Pax (the demo's melee hero, team 1) charges Curomo from across the arena, a few ticks in.
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 300, 360, 0); a.place(foe.id, 1100, 360, 4); })()`);
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(1, [0, ${String(CMD.charge)}]); a.step(4); })()`);
+      await page.evaluate(frames);
+      await shoot(page, vp, 'arena', 'arena-arcade-charge', 'Arcade charge: CHARGE! over Pax, orange afterimages behind him rushing at Curomo');
+      expect(errors).toEqual([]);
+    });
+
     test('arcade defence (demo, Arcade ruleset)', async ({ page }) => {
       const errors = collectErrors(page);
       await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');

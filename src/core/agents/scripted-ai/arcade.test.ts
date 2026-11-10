@@ -39,7 +39,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
-  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, weatherCharge: 1000, tagIn: 0, partnerPm: -1, rocks: [],
+  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 1000, tagIn: 0, partnerPm: -1, rocks: [],
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -95,12 +95,12 @@ describe('ObservationView.arcade', () => {
     expect(createObservationView(world, 0).arcade).toEqual({
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, superId: 1,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
-      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
+      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, superId: 2,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
-      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
+      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
     });
     expect(hash(s)).toBe(before);
   });
@@ -263,6 +263,16 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     expect(count(new ArcadeTactics(AI_HARD, RUSHDOWN), {}, fighter(400, 300))).toBe(0);
     expect(count(new ArcadeTactics(AI_HARD, ZONER), {})).toBe(0);
     expect(count(new ArcadeTactics(AI_HARD, TURTLE), {})).toBe(0);
+  });
+
+  it('a Rushdown melee hero charges from far away; ranged, close, cooling down and other styles do not', () => {
+    const go = (t: ArcadeTactics, a: Partial<ArcadeView>, self = fighter(200, 300)): boolean =>
+      (t.apply(view({ dashIn: 9, ...a }, 0, self), cmd) & Cmd.charge) !== 0;
+    expect(go(new ArcadeTactics(AI_NORMAL, RUSHDOWN), { chargeIn: 0 })).toBe(true);
+    expect(go(new ArcadeTactics(AI_NORMAL, RUSHDOWN), { chargeIn: -1 })).toBe(false);
+    expect(go(new ArcadeTactics(AI_NORMAL, RUSHDOWN), { chargeIn: 40 })).toBe(false);
+    expect(go(new ArcadeTactics(AI_NORMAL, RUSHDOWN), { chargeIn: 0 }, fighter(600, 300))).toBe(false);
+    expect(go(new ArcadeTactics(AI_NORMAL, ZONER), { chargeIn: 0 })).toBe(false);
   });
 
   it('calls its weather when its element is at a disadvantage, free, ready and unthreatened', () => {

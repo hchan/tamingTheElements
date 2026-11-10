@@ -5,8 +5,10 @@ import { TEAM_COUNT } from '../../state';
 import type { SimWorld } from '../../world';
 import { recordPresses } from './buffer';
 import { expireCombos } from './combo';
+import { startCharge } from './charge';
 import { startDash } from './dash';
 import { guardTick } from './guard';
+import { controlledId } from '../movement';
 import { expireStuns } from './stun';
 import { terrainTick } from './terrain-layout';
 import { weatherTick } from './weather';
@@ -16,7 +18,7 @@ import { weatherTick } from './weather';
  * tick records the press edges for the input buffer (2.12), so presses made while frozen are kept. Expiry waits for an
  * unfrozen tick (the game clock stands still while frozen, so nothing can expire then and a frozen step stays silent):
  * stuns that ran out give `recovered` (reason 0), then combos whose victim is free give `comboEnded`. Then pending
- * dash presses start dashes (arcade/dash.ts, FUN-DESIGN 2.7), then the guard pass runs (arcade/guard.ts, FUN-DESIGN
+ * dash presses start dashes (arcade/dash.ts, FUN-DESIGN 2.7) and charge presses charges (arcade/charge.ts, 2.17), then the guard pass runs (arcade/guard.ts, FUN-DESIGN
  * 2.8: guard meter regeneration and parry windows), then the weather pass (arcade/weather.ts, FUN-DESIGN 2.14: expiry,
  * then casts), then the terrain pass (arcade/terrain.ts, FUN-DESIGN 2.15: a telegraphed swap landing, patch enter and
  * leave events, the water patch heal).
@@ -30,6 +32,7 @@ export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Comm
   expireCombos(world, sink);
   for (let team = 0; team < TEAM_COUNT; team++) {
     startDash(world, sink, team, cmds[team] ?? 0);
+    startCharge(world, sink, team, controlledId(world, team), controlledId(world, 1 - team));
     guardTick(world, team);
   }
   weatherTick(world, sink);

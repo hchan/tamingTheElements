@@ -1,4 +1,4 @@
-import { DASH_TICKS, SimEventKind, type SimEvent } from '@core/index';
+import { CHARGE_TICKS, DASH_TICKS, SimEventKind, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 
 /**
@@ -38,6 +38,7 @@ export const GUARD_LOW_PM = 300;
 export const PARRY_WORD = 'PARRY';
 export const BREAK_WORD = 'GUARD BREAK';
 export const DODGE_WORD = 'DODGE';
+export const CHARGE_WORD = 'CHARGE!';
 
 /** Live-region lines (through the Arena's throttled announcer), by whose fighter it was. */
 export const LINES = {
@@ -84,7 +85,7 @@ export class DefenceFx {
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
       const k = e.kind;
-      if (k < SimEventKind.guarded || k > SimEventKind.perfectDodge) continue;
+      if ((k < SimEventKind.guarded || k > SimEventKind.perfectDodge) && k !== SimEventKind.chargeStarted) continue;
       if (e.tick < this.lastTick || (e.tick === this.lastTick && e.seq <= this.lastSeq)) continue;
       this.lastTick = e.tick;
       this.lastSeq = e.seq;
@@ -98,6 +99,12 @@ export class DefenceFx {
     const target = e['target'] ?? -1;
     const mine = this.opts.teamOf(target) === 0;
     switch (k) {
+      case SimEventKind.chargeStarted:
+        // Speed lines are the afterimage trail (normal motion only); the word and the live-region line always show.
+        if (!reduced) sink.ghosts(e.sourceId, e.tick, e.tick + CHARGE_TICKS);
+        sink.pop(e.sourceId, CHARGE_WORD, BREAK_COLOR, reduced);
+        sink.say({ key: 'charge', text: this.opts.teamOf(e.sourceId) === 0 ? 'You charged.' : 'The enemy charged.', important: false });
+        break;
       case SimEventKind.dashed:
         if (!reduced) sink.ghosts(e.sourceId, e.tick, e.tick + DASH_TICKS);
         break;

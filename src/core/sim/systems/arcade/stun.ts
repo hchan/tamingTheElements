@@ -1,5 +1,5 @@
 import {
-  COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
+  CHARGE_TICKS, ChargeEnd, COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
   MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, WEATHER_COOLDOWN_TICKS, WEATHER_RECOVERY_TICKS,
 } from '../../../data/arcade';
 import { inFight, isArcade, now } from '../../clock';
@@ -9,6 +9,7 @@ import {
   ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, MAX_ENTITIES, type SimState,
 } from '../../state';
 import type { SimWorld } from '../../world';
+import { endCharge } from './charge-move';
 
 /** True while an Arcade hit-stun holds `id` (`stunUntil` is in game ticks). Never true in Classic. */
 export function isStunned(s: SimState, id: number): boolean {
@@ -20,6 +21,13 @@ export function dashTick(s: SimState, id: number): number {
   const until = s.arcade[id * ARCADE_E + ArcadeE.dashUntil] ?? 0;
   const g = now(s);
   return g < until ? g - until + DASH_TICKS + 1 : 0;
+}
+
+/** The 1-based tick of `id`'s charge this game tick (FUN-DESIGN 2.17), 0 when it is not charging. Always 0 in Classic. */
+export function chargeTick(s: SimState, id: number): number {
+  const until = s.arcade[id * ARCADE_E + ArcadeE.chargeUntil] ?? 0;
+  const g = now(s);
+  return g < until ? g - until + CHARGE_TICKS + 1 : 0;
 }
 
 /** True on `id`'s invulnerable dash ticks (DASH_INVULN_FROM..DASH_INVULN_TO). */
@@ -64,6 +72,7 @@ export function isFree(s: SimState, id: number): boolean {
   const dash = s.arcade[e + ArcadeE.dashUntil] ?? 0;
   const g = now(s);
   return !isStunned(s, id) && !inSuper(s, id) && inFight(s) && !(dash > 0 && g < dash + DASH_RECOVERY_TICKS) &&
+    (s.arcade[e + ArcadeE.chargeUntil] ?? 0) <= g &&
     (s.arcade[e + ArcadeE.blockUntil] ?? 0) <= g && !inWeatherRecovery(s, id);
 }
 
@@ -125,7 +134,7 @@ export function expireStuns(world: SimWorld, sink: EventSink): void {
  * Stun only extends (`stunUntil` never moves back) and `comboStunTotal` sums the extensions, so the chain is exactly
  * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= 5`, or one that would push the chain past 150 ticks, ends
  * the stun with `recovered` (reason 1 or 2) and 20 ticks of invulnerability instead. Either way it ends the victim's
- * dash (its DASH_RECOVERY_TICKS still follow).
+ * dash (its DASH_RECOVERY_TICKS still follow) or charge (`chargeEnded`, reason interrupted).
  */
 export function applyStun(world: SimWorld, sink: EventSink, source: number, victim: number, base: number): void {
   const s = world.state;
@@ -133,6 +142,7 @@ export function applyStun(world: SimWorld, sink: EventSink, source: number, vict
   const e = victim * ARCADE_E;
   const g = now(s);
   if ((a[e + ArcadeE.dashUntil] ?? 0) > g) a[e + ArcadeE.dashUntil] = g;
+  if ((a[e + ArcadeE.chargeUntil] ?? 0) > g) endCharge(s, sink, victim, ChargeEnd.interrupted);
   const until = a[e + ArcadeE.stunUntil] ?? 0;
   if (until <= g) {
     a[e + ArcadeE.juggle] = 0;

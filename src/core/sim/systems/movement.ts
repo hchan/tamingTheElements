@@ -1,3 +1,4 @@
+import { ChargeEnd } from '../../data/arcade';
 import { DIR8_X, DIR8_Y, dir8FromSigns } from '../../math/dir8';
 import { cmdAxisX, cmdAxisY, type Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
@@ -5,7 +6,8 @@ import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT } from '../state';
 import type { SimWorld } from '../world';
 import { isArcade } from '../clock';
 import { stepKnockback } from './arcade/knockback';
-import { canAct, dashTick } from './arcade/stun';
+import { endCharge } from './arcade/charge-move';
+import { canAct, chargeTick, dashTick } from './arcade/stun';
 import { setAim } from './arcade/aim';
 import { chargeWeather } from './arcade/meter';
 import { rockStop, terrainSpeedPm } from './arcade/terrain';
@@ -76,11 +78,15 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   rockStop(s, id, s.px[id] ?? 0, s.py[id] ?? 0);
   const x0 = s.x[id] ?? 0;
   const y0 = s.y[id] ?? 0;
-  if (dashTick(s, id) > 0) {
+  const charging = chargeTick(s, id) > 0;
+  if (charging || dashTick(s, id) > 0) {
     const a = world.arena;
-    s.x[id] = Math.min(Math.max((s.x[id] ?? 0) + (s.vx[id] ?? 0), a.x), a.x + a.w - (s.w[id] ?? 0));
-    s.y[id] = Math.min(Math.max((s.y[id] ?? 0) + (s.vy[id] ?? 0), a.y), a.y + a.h - (s.h[id] ?? 0));
-    rockStop(s, id, x0, y0);
+    const tx = (s.x[id] ?? 0) + (s.vx[id] ?? 0);
+    const ty = (s.y[id] ?? 0) + (s.vy[id] ?? 0);
+    s.x[id] = Math.min(Math.max(tx, a.x), a.x + a.w - (s.w[id] ?? 0));
+    s.y[id] = Math.min(Math.max(ty, a.y), a.y + a.h - (s.h[id] ?? 0));
+    const blocked = rockStop(s, id, x0, y0) || s.x[id] !== tx || s.y[id] !== ty;
+    if (charging && blocked) endCharge(s, sink, id, ChargeEnd.blocked);
     return;
   }
   if (!canAct(world, id)) return;

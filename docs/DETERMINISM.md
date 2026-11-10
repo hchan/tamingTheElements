@@ -140,6 +140,7 @@ A dash (`arcade/dash.ts`) is Int32 game-tick deadlines in the entity block (`das
 `dashDodged` flag) plus its velocity in the Float64 `vx`/`vy` (`DIR8 * speed * 3`, an exact product); the double tap
 reads `lastDir`/`lastDirPress` and the dash cancel `confirmTick` in the team block, all hashed and snapshotted. A hit or
 stun ends a dash by moving `dashUntil` back to the current game tick.
+A charge (`arcade/charge.ts`) is the same: Int32 `chargeUntil`/`chargeReadyAt` deadlines in the entity block and its velocity in `vx`/`vy` (`DIR8 * min(5 * speed, 30)`, an exact product, aimed once at the start); contact is an integer-free AABB test, so nothing needs a LUT; replays and snapshots in the middle of a charge restore to the same future (`charge.test.ts`).
 Guard and parry (`arcade/guard.ts`) are Int32 game ticks and counters in the entity block (`blockUntil`, `parryUntil`,
 `parryLockUntil`, and `guardDrain`, stored as the drained amount so the zero-filled block and the round reset are a full
 meter); whether a character guards is read from the hashed `prevCmd`, never from the raw command. Chip damage is the
