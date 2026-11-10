@@ -25,7 +25,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `docs/legacy/` | Legacy module inventory and known-bug table |
 | `.claude/` | Claude Code project config |
 | `src/` | New TypeScript port (see below) |
-| `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.config.ts` | pnpm, TypeScript, Vite and Vitest project config |
+| `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.config.ts`, `playwright.config.ts` | pnpm, TypeScript, Vite, Vitest and Playwright project config |
 | `CLAUDE.md`, `README.md`, `.gitignore` | Agent instructions, readme, ignore rules |
 
 ## New code (`src/` and `tests/`)
@@ -34,13 +34,13 @@ ADR index: [docs/adr/README.md](adr/README.md)
 |---|---|
 | `src/core/` | Pure deterministic simulation code: no DOM, Phaser, Date or Math.random |
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
-| `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags); imports only core via its index |
+| `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags, test-only `window.__TTE__` hook); imports only core via its index |
 | `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`) and typed keys (`keys.ts`) |
 | `src/game/boot/` | Phaser boot: WebGL check, error screen and game config (`phaser-config.ts` is the only file that pulls Phaser in, loaded lazily) |
 | `src/game/scenes/` | Phaser scenes |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle), `styles/main.css` |
 | `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
-| `tests/` | Cross-cutting tests (`tests/repo/`); unit tests are colocated in `src/` |
+| `tests/` | Cross-cutting tests (`tests/repo/`), Playwright e2e (`tests/e2e/`); unit tests are colocated in `src/` |
 
 ## Where do I put X
 
