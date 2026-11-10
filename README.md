@@ -55,6 +55,7 @@ Run as `pnpm <name>` (or `corepack pnpm <name>`).
 | `depcruise` | dependency-cruiser layer boundaries for `src/` |
 | `golden:record` | Re-record the golden replay after an intended sim change |
 | `sim:match` | Headless AI-vs-AI matches for balance work |
+| `sim:net` | Headless networked bot match over the fake lockstep link ([docs/NETCODE.md](docs/NETCODE.md)) |
 | `assets:build` | Copy manifest images and sounds from the legacy tree into `public/` |
 | `docs:gen` | Regenerate the generated tables in `docs/GAME-DESIGN.md` |
 | `format` | Placeholder, exits 1 ("not yet") |

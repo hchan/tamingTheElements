@@ -20,6 +20,8 @@ Describes merged code only; anything not yet built is labelled "planned". Determ
 | ui | `src/ui/` | core via index; `src/game/platform/` | phaser, testing, other game modules |
 | testing | `src/testing/` | anything | (nothing in `src` outside it, or test files, may import it) |
 
+`src/core/net/` (lockstep session, packet codec, `Transport` interface) is part of core, so it is pure: no DOM, Phaser, `Date`, game or ui. A real WebRTC `Transport` adapter will live in `src/game/`; the fake link and two-peer harness live in `src/testing/net/`. See [NETCODE.md](NETCODE.md).
+
 Enforced by [.dependency-cruiser.cjs](../.dependency-cruiser.cjs) (rules `core-is-pure`, `core-no-node-builtins`,
 `core-only-valibot-in-save`, `core-npm-allowlist`, `ui-layering`, `game-layering`, `core-only-via-index`, `platform-is-leaf`,
 `not-to-testing`, `no-circular`) via `pnpm depcruise`, and for core purity also by the ESLint bans in
