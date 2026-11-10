@@ -35,13 +35,13 @@ const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { wi
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
 let lastPick: ArcadePick = DEFAULT_PICK;
 
-/** Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold) and Dash (FUN-DESIGN 2.5, 2.7, 2.8). */
-const TOUCH = ['Super', 'Guard', 'Dash'] as const;
+/** Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold), Dash and Weather (FUN-DESIGN 2.5, 2.7, 2.8, 2.14). */
+const TOUCH = ['Super', 'Guard', 'Dash', 'Weather'] as const;
 
 /**
  * Pointer-only button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
  * listens on window) for as long as the finger is down; an unbound action does nothing. Not in the Tab order: keyboards
- * press the key itself. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`.
+ * press the key itself. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`.
  */
 function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElement {
   const b = el('button', 'menuButton', label);

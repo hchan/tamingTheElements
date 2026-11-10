@@ -15,6 +15,7 @@ export const GAME_ACTIONS = [
   'super',
   'dash',
   'guard',
+  'weather',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -37,6 +38,8 @@ export const DEFAULT_BINDINGS: Bindings = {
   // Arcade only too (FUN-DESIGN 2.7, 2.8). Plain Q: Shift-Q stays the tester cheat.
   dash: ['KeyE'],
   guard: ['KeyQ'],
+  // Arcade only (FUN-DESIGN 2.14): calls the weather of the fighter's element.
+  weather: ['KeyR'],
 };
 
 export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
@@ -53,6 +56,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   super: 'Super (Arcade)',
   dash: 'Dash (Arcade)',
   guard: 'Guard (Arcade)',
+  weather: 'Weather (Arcade)',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */

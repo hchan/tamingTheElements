@@ -7,8 +7,9 @@ import { ARCADE_PAD, DEFAULT_PAD, PadButton, commandFromPad, type PadSnapshot } 
 import { ACTION_COMMAND, ARCADE_ONLY, commandFromHeld, type KeyInput } from './key-map';
 import { KeyboardAgent } from './keyboard-agent';
 
-// Arcade super, dash and guard input (FUN-DESIGN 2.5, 2.7, 2.8; WP-arcade-super-view, WP-arcade-defence-view): keyboard
-// X, E and Q, pad RT, RB and LT, live only in an Arcade match.
+// Arcade super, dash, guard and weather input (FUN-DESIGN 2.5, 2.7, 2.8, 2.14; WP-arcade-super-view,
+// WP-arcade-defence-view, WP-arcade-weather-view): keyboard X, E, Q and R, pad RT, RB, LT and X, live only in an Arcade
+// match.
 
 const view = {} as ObservationView;
 const key = (type: KeyInput['type'], code: string, shiftKey = false): KeyInput => ({ type, code, shiftKey, ctrlKey: false, repeat: false });
@@ -71,11 +72,12 @@ describe('super pad button: RT in Arcade, Classic pad unchanged', () => {
     expect(bitsOf(DEFAULT_PAD.buttons)).not.toContain(Cmd.super);
     expect(commandFromPad(pad([PadButton.rt]), false)).toBe(Cmd.swap4);
   });
-  it('Arcade RT is the super, RB the dash, LT the guard; every other button keeps its Classic bit, no two share one', () => {
+  it('Arcade RT is the super, RB the dash, LT the guard, X the weather; every other button keeps its Classic bit, no two share one', () => {
     expect(commandFromPad(pad([PadButton.rt]), false, ARCADE_PAD)).toBe(Cmd.super);
     expect(commandFromPad(pad([PadButton.rb]), false, ARCADE_PAD)).toBe(Cmd.dash);
     expect(commandFromPad(pad([PadButton.lt]), false, ARCADE_PAD)).toBe(Cmd.guard);
-    const arcadeOnly: number[] = [PadButton.rt, PadButton.rb, PadButton.lt];
+    expect(commandFromPad(pad([PadButton.x]), false, ARCADE_PAD)).toBe(Cmd.weather);
+    const arcadeOnly: number[] = [PadButton.rt, PadButton.rb, PadButton.lt, PadButton.x];
     for (const [i, bit] of Object.entries(DEFAULT_PAD.buttons)) {
       if (!arcadeOnly.includes(Number(i))) expect(ARCADE_PAD.buttons[Number(i)]).toBe(bit);
     }
@@ -147,8 +149,54 @@ describe('dash and guard keys (WP-arcade-defence-view): E and Q, rebindable, Arc
   });
   it('every Arcade-only action sends a bit from the dash up, every Classic one a bit below it', () => {
     for (const a of GAME_ACTIONS) {
-      const arcadeOnly = a === 'super' || a === 'dash' || a === 'guard';
+      const arcadeOnly = a === 'super' || a === 'dash' || a === 'guard' || a === 'weather';
       expect(ACTION_COMMAND[a] >= ARCADE_ONLY, a).toBe(arcadeOnly);
+    }
+  });
+});
+
+describe('weather key and pad button (WP-arcade-weather-view): R and pad X, rebindable, Arcade only', () => {
+  it('defaults to plain R, a bindable key no other action uses, labelled as an Arcade action', () => {
+    expect(DEFAULT_BINDINGS.weather).toEqual(['KeyR']);
+    expect(RESERVED_CODES.has('KeyR')).toBe(false);
+    expect(actionForCode(DEFAULT_BINDINGS, 'KeyR')).toBe('weather');
+    expect(ACTION_LABELS.weather).toBe('Weather (Arcade)');
+    expect(ACTION_COMMAND.weather).toBe(Cmd.weather);
+  });
+  it('rebinding detects conflicts both ways and moves a stolen key', () => {
+    expect(tryBind(DEFAULT_BINDINGS, 'weather', 0, 'KeyE')).toEqual({ ok: false, reason: 'conflict', with: 'dash' });
+    expect(tryBind(DEFAULT_BINDINGS, 'weather', 0, 'KeyX')).toEqual({ ok: false, reason: 'conflict', with: 'super' });
+    expect(tryBind(DEFAULT_BINDINGS, 'up', 1, 'KeyR')).toEqual({ ok: false, reason: 'conflict', with: 'weather' });
+    expect(tryBind(DEFAULT_BINDINGS, 'weather', 0, 'KeyF')).toEqual({ ok: false, reason: 'reserved' });
+    const moved = bindSteal(DEFAULT_BINDINGS, 'weather', 0, 'KeyQ');
+    expect(moved.weather).toEqual(['KeyQ']);
+    expect(moved.guard).toEqual([]);
+    const ok = tryBind(DEFAULT_BINDINGS, 'weather', 1, 'KeyT');
+    expect(ok.ok && ok.bindings.weather).toEqual(['KeyR', 'KeyT']);
+  });
+  it('a save from before keeps the player keys: R already in use leaves the weather unbound', () => {
+    const b = parseBindings({ slot3: ['KeyR'] });
+    expect(b.slot3).toEqual(['KeyR']);
+    expect(b.weather).toEqual([]);
+    expect(parseBindings({ up: ['KeyI'] }).weather).toEqual(['KeyR']);
+  });
+  it('held R sends the weather in Arcade only, from the keyboard agent too', () => {
+    const held = new Set(['KeyR']);
+    expect(commandFromHeld(DEFAULT_BINDINGS, held, true, true)).toBe(Cmd.weather);
+    expect(commandFromHeld(DEFAULT_BINDINGS, held, true, false)).toBe(0);
+    for (const arcade of [true, false]) {
+      const agent = new KeyboardAgent({ capturable: () => false, arcade });
+      agent.handle(key('down', 'KeyR'));
+      expect(agent.observe(view)).toBe(arcade ? Cmd.weather : 0);
+    }
+  });
+  it('pad X sends the weather in Arcade only; Classic has no X mapping at all', () => {
+    expect(DEFAULT_PAD.buttons[PadButton.x]).toBeUndefined();
+    expect(bitsOf(DEFAULT_PAD.buttons)).not.toContain(Cmd.weather);
+    expect(commandFromPad(pad([PadButton.x]), true)).toBe(0);
+    for (const arcade of [true, false]) {
+      const agent = new KeyboardAgent({ capturable: () => false, arcade, gamepad: () => pad([PadButton.x]) });
+      expect(agent.observe(view)).toBe(arcade ? Cmd.weather : 0);
     }
   });
 });

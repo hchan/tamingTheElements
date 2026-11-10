@@ -22,8 +22,8 @@ export interface KeyboardAgentOptions {
   /** Current gamepad (e.g. `() => firstPad(navigator.getGamepads())`); mapped to the same Commands as the keys. */
   readonly gamepad?: () => PadSnapshot | null;
   /**
-   * Arcade match: the super (X, pad RT), dash (E, RB) and guard (Q, LT) send their Arcade bits; Classic never sends them
-   * (RB, LT and RT stay the second, third and fourth swap).
+   * Arcade match: the super (X, pad RT), dash (E, RB), guard (Q, LT) and weather (R, pad X) send their Arcade bits;
+   * Classic never sends them (RB, LT and RT stay the second, third and fourth swap; pad X does nothing).
    */
   readonly arcade?: boolean;
 }
