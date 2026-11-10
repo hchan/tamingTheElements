@@ -89,11 +89,11 @@ describe('projectile system vs abilities-range.json', () => {
         });
       });
 
-      it(def.kind === 'omni' ? 'sets no cooldown (KNOWN-BUG:omni-no-cooldown)' : 'sets a strict cooldown', () => {
+      it('sets a strict cooldown', () => {
         const world = scene(own.char, fixtureTarget);
         step(world, [fire, 0]);
         const until = world.state.teams[TEAM_COOLDOWNS + own.slot];
-        expect(until).toBe(def.kind === 'omni' ? 0 : a.cooldown / 20 + 1);
+        expect(until).toBe(a.cooldown / 20 + 1);
       });
     });
   }
@@ -111,12 +111,19 @@ describe('projectile system vs abilities-range.json', () => {
     expect(bulletIds(world)).toHaveLength(2);
   });
 
-  it('omni abilities have no cooldown and fire the 8-way fan (KNOWN-BUG:omni-no-cooldown)', () => {
+  it('omni abilities fire the 8-way fan once per cooldown (doAbility books lastUsed)', () => {
     const o = owner('shards-of-ice');
     const world = scene(o?.char ?? 0, fixtureTarget);
+    world.state.x[1] = 5000;
+    const cd = (abilities['Shards of Ice'] as Entry).cooldown / 20;
     step(world, [Cmd.secondary, 0]);
     step(world, [Cmd.secondary, 0]);
-    expect(bulletIds(world)).toHaveLength(16);
+    expect(bulletIds(world)).toHaveLength(8);
+    expect(world.state.teams[TEAM_COOLDOWNS + 1]).toBe(cd + 1);
+    for (let t = 2; t <= cd; t++) step(world, [Cmd.secondary, 0]); // ticks 2..cd: still cooling down
+    expect(world.state.teams[TEAM_COOLDOWNS + 1]).toBe(cd + 1);
+    step(world, [Cmd.secondary, 0]); // tick cd + 1: strict >, fires again
+    expect(world.state.teams[TEAM_COOLDOWNS + 1]).toBe(2 * cd + 2);
   });
 });
 

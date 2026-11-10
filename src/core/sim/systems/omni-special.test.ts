@@ -63,11 +63,16 @@ describe('omni abilities vs abilities-range.json', () => {
       });
     });
 
-    it(`${name} ignores maxActive and leaves the active count negative once bullets leave (KNOWN-BUG:omni-no-cooldown)`, () => {
+    it(`${name} ignores maxActive and leaves the active count negative once bullets leave (KNOWN-BUG:omni-no-cooldown, curCount only)`, () => {
       const { world, slot } = scene(slug);
       const cmd = slot === 0 ? Cmd.primary : Cmd.secondary;
-      for (let i = 0; i < 3; i++) step(world, [cmd, 0]);
-      expect(bullets(world)).toHaveLength(24);
+      const cd = ABILITY_DEFS.find((d) => d.id === slug)?.cooldownTicks ?? 0;
+      // curCount stays at or below 0, so maxActive never blocks; only the doAbility cooldown spaces the fans.
+      for (let i = 0; i < 3; i++) {
+        step(world, [cmd, 0]);
+        expect(bullets(world)).toHaveLength(8);
+        for (let t = 0; t < cd; t++) step(world, [0, 0]);
+      }
       for (let t = 0; t < 400; t++) step(world, [0, 0]);
       expect(bullets(world)).toHaveLength(0);
       const idx = ABILITY_DEFS.findIndex((d) => d.id === slug);

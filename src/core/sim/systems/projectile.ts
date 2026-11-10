@@ -76,9 +76,12 @@ function fire(world: SimWorld, team: number, charId: number, slot: number, tick:
   if (def === undefined || (def.kind !== 'range' && def.kind !== 'omni' && def.kind !== 'debuff')) return;
   if (!canFire(world, team, charId, slot, def, defIdx)) return;
   if (def.kind === 'omni') {
-    // KNOWN-BUG:omni-no-cooldown: legacy omni abilities never go through doRange, so curCount is
-    // not incremented and lastUsed is never set: no cooldown, no maxActive cap. Replicated.
+    // KNOWN-BUG:omni-no-cooldown: initAbility of an omni ability never goes through doRange, so curCount is
+    // not incremented and the maxActive cap never applies. Replicated. The cooldown, however, is booked by
+    // doAbility (`lastUsed = now`) for every ability cast from a slot, so it does apply (abilities-range.json
+    // canFireAtCooldown 10000 false / 10001 true).
     for (const d of OMNI_DIRS) spawnBullet(world, charId, defIdx, def, d);
+    s.teams[team * TEAM_STRIDE + TEAM_COOLDOWNS + slot] = tick + def.cooldownTicks + 1;
     return;
   }
   // A full entity table means no bullet: the cast must not book a cooldown or leak an active count.
