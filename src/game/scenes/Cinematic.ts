@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { cinematicKeyAction } from '../cinematics/keys';
 import { CinematicRunner, type CinematicScript, type CinematicSink, type Rect, type TweenTarget } from '../cinematics/runner';
 import { INTRO_SCRIPT } from '../cinematics/scripts';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, crisp, fitScene } from '../boot/viewport';
@@ -52,7 +53,11 @@ export class Cinematic extends Phaser.Scene {
     skip.on(Phaser.Input.Events.POINTER_DOWN, () => { this.runner?.skip(); });
 
     const win = counted(window);
-    const onKey = (): void => { this.runner?.key(); };
+    const onKey = (e: KeyboardEvent): void => {
+      const action = cinematicKeyAction(e);
+      if (action === 'skip') this.runner?.skip();
+      else if (action === 'advance') this.runner?.key();
+    };
     win.addEventListener('keydown', onKey);
     this.cleanups.push(() => { win.removeEventListener('keydown', onKey); });
 

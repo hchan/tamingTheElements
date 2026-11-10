@@ -35,7 +35,7 @@ describe('tryBind', () => {
     expect(tryBind(DEFAULT_BINDINGS, 'up', 1, 'KeyW').ok).toBe(true);
   });
   it('rejects reserved and malformed codes', () => {
-    for (const c of ['Escape', 'Tab', 'ShiftLeft', 'ControlRight', '', 'a b', 'x'.repeat(40)]) {
+    for (const c of ['Escape', 'KeyF', 'Tab', 'ShiftLeft', 'ControlRight', '', 'a b', 'x'.repeat(40)]) {
       expect(tryBind(DEFAULT_BINDINGS, 'up', 0, c)).toEqual({ ok: false, reason: 'reserved' });
     }
   });

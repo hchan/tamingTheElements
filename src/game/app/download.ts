@@ -1,5 +1,8 @@
 import { serializeReplay, type ReplayFile } from '@core/index';
 
+/** Revoking right after click() can cancel the download in some browsers; give it time to start. */
+const REVOKE_DELAY_MS = 10_000;
+
 export function replayFilename(r: ReplayFile): string {
   return `tte-${String(r.header.seed)}-${String(r.header.tickCount)}.replay.json`;
 }
@@ -11,5 +14,7 @@ export function downloadReplay(r: ReplayFile): void {
   a.href = url;
   a.download = replayFilename(r);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, REVOKE_DELAY_MS);
 }
