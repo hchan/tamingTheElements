@@ -23,8 +23,8 @@ const VIEWPORTS: readonly Vp[] = [
   { name: '844x390 landscape phone', w: 844, h: 390, dsf: 3, mobile: true },
 ];
 
-/** Sim hash after 50 manual ticks of the arena demo (no input). It must not depend on the viewport. SIM_VERSION 2 hash. */
-const HASH_AFTER_50 = 3453419568;
+/** Sim hash after 50 manual ticks of the arena demo (no input). It must not depend on the viewport. SIM_VERSION 7 hash. */
+const HASH_AFTER_50 = 1799425776;
 
 const RECT = `(() => { const r = document.querySelector('#game canvas').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, bw: document.querySelector('#game canvas').width, bh: document.querySelector('#game canvas').height }; })()`;
 const SCROLL = `({ sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight, iw: window.innerWidth, ih: window.innerHeight })`;

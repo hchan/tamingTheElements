@@ -1,5 +1,5 @@
 import { type Command, NO_COMMAND } from '../sim/commands';
-import { EntityFlag, EntityKind, TEAM_STRIDE, TeamField, World } from '../sim/state';
+import { cooldownIdx, EntityFlag, EntityKind, World } from '../sim/state';
 import type { SimWorld } from '../sim/world';
 import { now } from '../sim/clock';
 
@@ -99,15 +99,16 @@ export function createObservationView(world: SimWorld, side: 0 | 1): Observation
   const s = world.state;
   const tick = s.world[World.tick] ?? 0;
   const gameTick = now(s);
-  const base = side * TEAM_STRIDE;
+  const self = fighterOf(world, side);
   return {
     side,
     tick,
     matchSeed: s.world[World.matchSeed] ?? 0,
-    self: fighterOf(world, side),
+    self,
     opponent: fighterOf(world, 1 - side),
+    // The active character's own cooldowns (legacy abilitiesInfo is per character).
     cooldowns: Array.from({ length: 4 }, (_, k) =>
-      Math.max(0, (s.teams[base + TeamField.swapCooldownUntil + 1 + k] ?? 0) - gameTick),
+      self === undefined ? 0 : Math.max(0, (s.abil[cooldownIdx(self.id, k)] ?? 0) - gameTick),
     ),
   };
 }

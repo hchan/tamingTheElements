@@ -20,5 +20,13 @@
  * 8: Arcade only; Classic hashes unchanged. Supers: `Cmd.super` spends a bar for the generic Elemental Burst (a 160 px
  *    band, 5 strength-3 hits), a 40-tick super freeze, caster invulnerability and lock, `superStarted`/`superEnded`; the
  *    `health` slot runs `arcadeSuper` (WP-arcade-super-core).
+ * 9: Classic and Arcade rule fixes from the parity audit (WP-parity-fixes); Classic hashes change on purpose. The bench
+ *    rest heal repeats every 50 ticks from the bench and stops at the rest cap (legacy delay -1 repeats forever), and an
+ *    enemy back in play keeps healing (legacy isBenched quirk). Classic walls hold y too: the player undoes its whole
+ *    step, the enemy restores x, then y, then both (legacy stopOnSolids / resetIfOutOfBounds). Ability cooldowns and
+ *    active counts move from the per-team block to the per-character `SimState.abil` (legacy abilitiesInfo is per
+ *    character; Arcade casts book there too); a hit releases the count on the shooter team's current character
+ *    (bullet-count-on-active). A Capture bullet on a faded target only sets the captured flag (no damage, keeps
+ *    flying); on the last boss it keeps flying. A frozen character cannot swap.
  */
-export const SIM_VERSION = 8;
+export const SIM_VERSION = 9;

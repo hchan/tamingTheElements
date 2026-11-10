@@ -2821,8 +2821,8 @@
   "shrink": {
     "Sonar Blast": {
       "delayMs": 10,
-      "repeat": -1,
-      "naturalRunsIn1s": "ran",
+      "repeat": "Infinity",
+      "naturalRunsIn1s": 50,
       "steps": [
         {
           "step": 0,
@@ -3056,8 +3056,8 @@
     },
     "Fireball": {
       "delayMs": 10,
-      "repeat": -1,
-      "naturalRunsIn1s": "ran",
+      "repeat": "Infinity",
+      "naturalRunsIn1s": 50,
       "steps": [
         {
           "step": 0,

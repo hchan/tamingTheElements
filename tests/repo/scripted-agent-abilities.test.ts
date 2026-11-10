@@ -3,7 +3,7 @@ import { collectCommands } from '../../src/core/agents/agent';
 import { characterId } from '../../src/core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { createMatch } from '../../src/core/sim/match';
-import { TEAM_COOLDOWNS } from '../../src/core/sim/state';
+import { cooldownIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { RACES, makeAgent } from '../../tools/sim/run-match';
 
@@ -22,7 +22,7 @@ function slotUses(race: string): [number, number] {
     for (let t = 0; t < 3000 && (s.hp[0] ?? 0) > 0 && (s.hp[1] ?? 0) > 0; t++) {
       step(world, collectCommands(world, agents));
       for (const slot of [0, 1] as const) {
-        const cd = s.teams[TEAM_COOLDOWNS + slot] ?? 0;
+        const cd = s.abil[cooldownIdx(0, slot)] ?? 0;
         if (cd !== last[slot]) uses[slot]++;
         last[slot] = cd;
       }

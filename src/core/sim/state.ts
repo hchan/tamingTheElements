@@ -27,14 +27,22 @@ export const EntityFlag = {
 export const World = { tick: 0, nextId: 1, flags: 2, matchSeed: 3 } as const;
 export const WORLD_SLOTS = 4;
 
-/**
- * Per-team block in SimState.teams (Int32Array), TEAM_STRIDE ints per team:
- * [activeSlot, swapCooldownUntil, abilityCooldownUntil x ABILITY_SLOTS, activeCount x MAX_ABILITY_DEFS].
- */
+/** Per-team block in SimState.teams (Int32Array), TEAM_STRIDE ints per team: [activeSlot, swapCooldownUntil]. */
 export const TeamField = { activeSlot: 0, swapCooldownUntil: 1 } as const;
-export const TEAM_COOLDOWNS = 2;
-export const TEAM_ACTIVE_COUNTS = TEAM_COOLDOWNS + ABILITY_SLOTS;
-export const TEAM_STRIDE = TEAM_ACTIVE_COUNTS + MAX_ABILITY_DEFS;
+export const TEAM_STRIDE = 2;
+
+/**
+ * Per-character ability block in SimState.abil (Int32Array), ABIL_STRIDE ints per entity id:
+ * [cooldownUntil x ABILITY_SLOTS, activeCount x ABILITY_SLOTS]. Legacy deep-copies `abilitiesInfo` (lastUsed,
+ * curCount) into every character, so cooldowns and active counts belong to the character, not to its team or slot.
+ * Slots: 0 primary, 1 secondary, 2 Capture.
+ */
+export const ABIL_ACTIVE_COUNTS = ABILITY_SLOTS;
+export const ABIL_STRIDE = 2 * ABILITY_SLOTS;
+/** Index of a character's cooldown deadline (game tick from which it may cast again) for an ability slot. */
+export const cooldownIdx = (id: number, slot: number): number => id * ABIL_STRIDE + slot;
+/** Index of a character's active count (legacy `curCount`) for an ability slot. */
+export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE + ABIL_ACTIVE_COUNTS + slot;
 
 /**
  * Arcade block in SimState.arcade (Int32Array), docs/FUN-DESIGN.md section 2.1. Empty (length 0) in Classic, so it adds
@@ -65,6 +73,7 @@ export const ARCADE_LENGTH = ARCADE_WORLD_BASE + ARCADE_W;
 export const F64_FIELDS = [
   'x', 'y', 'px', 'py', 'vx', 'vy', 'w', 'h', 'hp', 'maxHp', 'dmgMult', 'healMult', 'speed', 'baseSpeed', 'restCap',
 ] as const;
+/** `expireTick`: melee/effect expiry; for a character, the next rest-heal tick (0 = no timer, systems/rest.ts). */
 export const I32_FIELDS = [
   'kind', 'defId', 'team', 'owner', 'dir', 'flags', 'spawnTick', 'expireTick', 'hitMask',
 ] as const;
@@ -75,8 +84,10 @@ type I32Name = (typeof I32_FIELDS)[number];
 export type SimState = { readonly [K in F64Name]: Float64Array } & {
   readonly [K in I32Name]: Int32Array;
 } & {
-  /** Per-team block (activeSlot, swap cooldown, ability cooldowns, active counts); NOT the per-entity `team`. */
+  /** Per-team block (activeSlot, swap cooldown); NOT the per-entity `team`. */
   readonly teams: Int32Array;
+  /** Per-character ability cooldowns and active counts (ABIL_STRIDE per entity id, see cooldownIdx/countIdx). */
+  readonly abil: Int32Array;
   /** Per-entity status slots (see systems/status.ts), MAX_ENTITIES x STATUS_SLOTS x STATUS_STRIDE. */
   readonly status: Int32Array;
   readonly world: Int32Array;
@@ -93,6 +104,7 @@ export function createSimState(matchSeed = 0, arcade = false): SimState {
   for (const f of I32_FIELDS) s[f] = new Int32Array(MAX_ENTITIES);
   s['status'] = new Int32Array(MAX_ENTITIES * STATUS_SLOTS * STATUS_STRIDE);
   s['teams'] = new Int32Array(TEAM_COUNT * TEAM_STRIDE);
+  s['abil'] = new Int32Array(MAX_ENTITIES * ABIL_STRIDE);
   s['world'] = new Int32Array(WORLD_SLOTS);
   s['rng'] = new Uint32Array(RNG_WORDS);
   s['arcade'] = new Int32Array(arcade ? ARCADE_LENGTH : 0);
@@ -105,7 +117,7 @@ type AnyArray = Float64Array | Int32Array | Uint32Array;
 
 /** Every backing array in a fixed order; snapshot, restore and hashing all follow it. `arcade` is empty in Classic. */
 export function stateArrays(s: SimState): AnyArray[] {
-  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.teams, s.status, s.world, s.rng, s.arcade];
+  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.teams, s.abil, s.status, s.world, s.rng, s.arcade];
 }
 
 export type SimSnapshot = AnyArray[];

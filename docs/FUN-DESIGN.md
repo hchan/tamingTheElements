@@ -22,8 +22,8 @@ damage lands in the unattributed `melee-or-status` bucket.
    `src/core/sim/systems/projectile.ts` and `applyHit` in `src/core/sim/systems/melee.ts`. The victim keeps moving and
    firing the same tick: no hit-stun, no knockback, no interrupt. With 100 HP and Fire Blast at 40 damage per 31 ticks
    (`maxActive` 2), three hits end it, so trading hits is always correct and whoever lines up first wins.
-2. **Two cooldown-gated buttons and walking.** Every action is a per-slot cooldown in the team block
-   (`TEAM_COOLDOWNS`, booked `tick + cooldownTicks + 1`). There are no normals, no cancels, nothing to do between
+2. **Two cooldown-gated buttons and walking.** Every action is a per-slot cooldown on the character
+   (`cooldownIdx`, booked `tick + cooldownTicks + 1`; per team before WP-parity-fixes). There are no normals, no cancels, nothing to do between
    cooldowns. Shots go along the 4-way facing only (`facingFor` in `systems/movement.ts`: x wins over y), so aiming means
    standing on the opponent's row or column.
 3. **No defensive verbs.** No block, dash, dodge or parry. Defence is two translucency buffs on 6-10 s cooldowns (Fade,
@@ -80,7 +80,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 - **Can act.** `canAct(world, id)`: Classic is `!frozen`; Arcade also requires no stun, guard, dash recovery or super
   startup, and phase `fight`. It replaces the frozen checks in the four cast sites (projectile `canFire`, melee `cast`,
   abilities `castSelf`, capture `canCapture`) and in movement.
-- **Legacy quirks fixed in Arcade only:** `bounds-y-typo` (knockback needs real walls), `damage-uses-target-mult`
+- **Legacy quirks fixed in Arcade only:** `bounds-y-typo` (knockback needs real walls; since WP-parity-fixes Classic
+  holds y too, because the legacy typo turned out to be harmless), `damage-uses-target-mult`
   (tag entrances must use the caster's multiplier), `melee-dead-caster-lingers`, `vines-stacking`,
   `steal-health-translucent`, `ice-shock-ignores-translucent`. Classic keeps them.
 - **Arcade events** use kinds 40..69 (Classic uses 1..30). Arcade still emits `damage` (22) for every hit, so existing

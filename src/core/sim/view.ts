@@ -4,7 +4,7 @@ import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
 import { capturable } from '../rules/progression';
 import {
-  ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COOLDOWNS, TEAM_STRIDE, TeamField, World,
+  ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_STRIDE, TeamField, World,
 } from './state';
 import { isInvulnerable, isStunned } from './systems/arcade/stun';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
@@ -146,7 +146,7 @@ export function createRenderView(world: SimWorld): RenderView {
       const base = team * TEAM_STRIDE;
       const slotOf = (def: AbilityDef | undefined, slot: number): RenderActionSlot => ({
         sprite: def?.sprite ?? '',
-        readyTick: s.teams[base + TEAM_COOLDOWNS + slot] ?? 0,
+        readyTick: s.abil[cooldownIdx(cur, slot)] ?? 0,
         cooldownTicks: def?.cooldownTicks ?? 0,
       });
       const ids = CHARACTERS[s.defId[cur] ?? 0]?.abilities ?? [];

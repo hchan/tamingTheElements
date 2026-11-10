@@ -42,6 +42,15 @@ describe('sound map', () => {
   });
 });
 
+describe('legacy sound cues', () => {
+  const withWinner = (winner: number): SimEvent => ({ ...ev(SimEventKind.matchEnded), winner });
+  it('plays victory only for a player win, death for a defeat or draw, and nothing for a single death', () => {
+    expect([cueFor(withWinner(0))?.id, cueFor(withWinner(1))?.id, cueFor(withWinner(-1))?.id]).toEqual(['victory', 'death', 'death']);
+    expect(cueFor(ev(SimEventKind.died))).toBeUndefined();
+    expect(cueFor(ev(SimEventKind.captureFailed))?.id).toBe('evilLaugh');
+  });
+});
+
 describe('AudioManager', () => {
   it('resumes once on first gesture and stays silent before it', () => {
     const { ctx, started, resume } = fakeCtx();
@@ -84,7 +93,7 @@ describe('AudioManager', () => {
     const { ctx, gains } = fakeCtx('running');
     const a = new AudioManager({ ctx, buffers });
     a.unlock();
-    a.consume([ev(SimEventKind.died)]);
+    a.consume([{ ...ev(SimEventKind.matchEnded), winner: 1 }]);
     expect(gains[1]?.gain.value).toBe(DUCK_GAIN);
     ctx.currentTime = DUCK_MS / 1000 + 0.1;
     a.updateDuck();

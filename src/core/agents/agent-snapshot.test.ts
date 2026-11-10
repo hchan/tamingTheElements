@@ -6,9 +6,9 @@ import type { Command } from '../sim/commands';
 import { hash } from '../sim/hash';
 import { createMatch, type MatchSetup } from '../sim/match';
 import { SnapshotRing } from '../sim/snapshot';
-import { TEAM_ACTIVE_COUNTS, TEAM_STRIDE, World } from '../sim/state';
+import { countIdx, World } from '../sim/state';
 import { hasEnded } from '../sim/systems/end';
-import { ABILITY_DEFS } from '../sim/systems/projectile';
+import { controlledId } from '../sim/systems/movement';
 import { step } from '../sim/step';
 import type { SimWorld } from '../sim/world';
 import { collectCommands, loadAgents, saveAgents, type Agent, type AgentSnapshot } from './agent';
@@ -34,9 +34,8 @@ function scripted(world: SimWorld, side: 0 | 1): ScriptedAI {
   const roster = [SETUP.p1, SETUP.p2] as const;
   const self = getCharacter(roster[side][0]?.character ?? characterId('pax'));
   const other = getCharacter(roster[1 - side]?.[0]?.character ?? characterId('pax'));
-  const defIndex = (slot: number): number => ABILITY_DEFS.findIndex((d) => d.id === self.abilities[slot]);
   return new ScriptedAI(scriptedProfileFor(self, other), {
-    activeCount: (slot) => world.state.teams[side * TEAM_STRIDE + TEAM_ACTIVE_COUNTS + defIndex(slot)] ?? 0,
+    activeCount: (slot) => world.state.abil[countIdx(controlledId(world, side), slot)] ?? 0,
   });
 }
 

@@ -20,9 +20,9 @@ export interface TickCheats {
   readonly instantSwap: boolean;
 }
 
-const OUT = EntityFlag.dead | EntityFlag.captured;
+const OUT = EntityFlag.dead;
 
-/** Ids of a team's characters still in play (alive, not dead, not captured), benched included. */
+/** Ids of a team's characters still in play (alive, not dead), benched included; see `inPlay` in systems/end.ts. */
 function inPlay(world: SimWorld, team: number): number[] {
   const s = world.state;
   const out: number[] = [];
@@ -95,7 +95,8 @@ export function benchRows(world: SimWorld, team: number): BenchRow[] {
   const rows: BenchRow[] = [];
   for (let id = 0; id < MAX_ENTITIES; id++) {
     const f = s.flags[id] ?? 0;
-    if (s.kind[id] !== EntityKind.character || s.team[id] !== team || (f & EntityFlag.alive) === 0 || (f & EntityFlag.captured) !== 0) continue;
+    const capturedOut = (f & EntityFlag.captured) !== 0 && (f & EntityFlag.dead) !== 0;
+    if (s.kind[id] !== EntityKind.character || s.team[id] !== team || (f & EntityFlag.alive) === 0 || capturedOut) continue;
     const def = CHARACTERS[s.defId[id] ?? 0];
     rows.push({
       id,

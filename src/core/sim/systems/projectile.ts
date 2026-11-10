@@ -9,9 +9,7 @@ import { computeDamage } from '../../rules/damage';
 import { allocEntity, freeEntity } from '../alloc';
 import { Cmd, hasCmd, type Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
-import {
-  EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_COOLDOWNS, TEAM_COUNT, TEAM_STRIDE,
-} from '../state';
+import { cooldownIdx, countIdx, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT } from '../state';
 import type { SimWorld } from '../world';
 import { onProjectileHit } from './debuffs';
 import { damageDecreasePct } from './status';
@@ -20,8 +18,9 @@ import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
 import { meterOnCast } from './arcade/meter';
 import { canAct, isInvulnerable } from './arcade/stun';
+import { releaseCount } from './ability-info';
 
-/** Ability index used for SimState.defId and the per-team activeCount table (set A then set B). */
+/** Ability index used for SimState.defId (set A then set B). */
 export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
 
 /** Dir8 indices of the omni fan, in the legacy order n, s, e, w, nw, ne, sw, se. */
@@ -32,15 +31,14 @@ const FIREBALL = 'fireball';
 const GROW_H_LIMIT = CHARACTER_HEIGHT * 0.5;
 
 /**
- * Legacy canFire: not frozen (`canAct`; Arcade also not stunned), curCount < maxActive and elapsed time strictly above
- * the cooldown.
+ * Legacy canFire: not frozen (`canAct`; Arcade also not stunned), the character's curCount < maxActive and elapsed time
+ * strictly above the cooldown. Both live on the character (legacy abilitiesInfo is per character).
  */
-function canFire(world: SimWorld, team: number, charId: number, slot: number, def: AbilityDef, defIdx: number): boolean {
+function canFire(world: SimWorld, charId: number, slot: number, def: AbilityDef): boolean {
   const s = world.state;
   if (!canAct(world, charId)) return false;
-  const base = team * TEAM_STRIDE;
-  if (def.maxActive <= (s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] ?? 0)) return false;
-  return now(s) >= (s.teams[base + TEAM_COOLDOWNS + slot] ?? 0);
+  if (def.maxActive <= (s.abil[countIdx(charId, slot)] ?? 0)) return false;
+  return now(s) >= (s.abil[cooldownIdx(charId, slot)] ?? 0);
 }
 
 /** Spawns one bullet; false when the entity table is full. */
@@ -80,32 +78,42 @@ function fire(world: SimWorld, sink: EventSink, team: number, charId: number, sl
   const defIdx = ABILITY_DEFS.findIndex((d) => d.id === abilityId);
   const def = ABILITY_DEFS[defIdx];
   if (def === undefined || (def.kind !== 'range' && def.kind !== 'omni' && def.kind !== 'debuff')) return;
-  if (!canFire(world, team, charId, slot, def, defIdx)) return;
+  if (!canFire(world, charId, slot, def)) return;
   if (def.kind === 'omni') {
     // KNOWN-BUG:omni-no-cooldown: initAbility of an omni ability never goes through doRange, so curCount is
     // not incremented and the maxActive cap never applies. Replicated. The cooldown, however, is booked by
     // doAbility (`lastUsed = now`) for every ability cast from a slot, so it does apply (abilities-range.json
     // canFireAtCooldown 10000 false / 10001 true).
     for (const d of OMNI_DIRS) spawnBullet(world, charId, defIdx, def, d);
-    s.teams[team * TEAM_STRIDE + TEAM_COOLDOWNS + slot] = tick + def.cooldownTicks + 1;
+    s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
     meterOnCast(s, sink, charId, team);
     return;
   }
   // A full entity table means no bullet: the cast must not book a cooldown or leak an active count.
   if (!spawnBullet(world, charId, defIdx, def, s.dir[charId] ?? 0)) return;
-  const base = team * TEAM_STRIDE;
-  s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] = (s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] ?? 0) + 1;
+  const ci = countIdx(charId, slot);
+  s.abil[ci] = (s.abil[ci] ?? 0) + 1;
   // Legacy cooldown is strict (>) in ms, so the next fire is one tick after the cooldown elapses.
-  s.teams[base + TEAM_COOLDOWNS + slot] = tick + def.cooldownTicks + 1;
+  s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
   meterOnCast(s, sink, charId, team);
 }
 
-/** Frees a bullet and decrements its team's active count (omni counts go negative, as in legacy). */
-function despawn(world: SimWorld, id: number): void {
+/**
+ * Frees a bullet and decrements `holder`'s active count (omni counts go negative, as in legacy). Leaving the arena
+ * releases on the caster (legacy `character.removeBullet`); a hit releases on the shooter team's current character
+ * (legacy `opponent.targetPlayer.removeBullet`, KNOWN-BUG:bullet-count-on-active), which is a no-op when that character
+ * lacks the ability.
+ */
+function despawn(world: SimWorld, id: number, holder: number): void {
   const s = world.state;
-  const idx = (s.team[id] ?? 0) * TEAM_STRIDE + TEAM_ACTIVE_COUNTS + (s.defId[id] ?? 0);
-  s.teams[idx] = (s.teams[idx] ?? 0) - 1;
+  releaseCount(s, holder, s.defId[id] ?? 0);
   freeEntity(s, id);
+}
+
+/** The shooter team's current character (legacy `opponent.targetPlayer`), or the caster when the team is wiped. */
+export function hitHolder(world: SimWorld, id: number): number {
+  const active = controlledId(world, world.state.team[id] ?? 0);
+  return active >= 0 ? active : (world.state.owner[id] ?? 0);
 }
 
 /** One Delay step of Sonar Blast (decays) or Fireball (grows). Alpha is cosmetic and not simulated. */
@@ -136,7 +144,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     const y = s.y[id] ?? 0;
     // Legacy tests only the top-left corner against the viewport.
     if (x > a.x + a.w || x < a.x || y > a.y + a.h || y < a.y) {
-      despawn(world, id);
+      despawn(world, id, s.owner[id] ?? 0);
       continue;
     }
     const target = controlledId(world, 1 - (s.team[id] ?? 0));
@@ -160,7 +168,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
       sink.emit(id, SimEventKind.damage, { target, attacker, amount });
     }
     onProjectileHit(world, ABILITY_DEFS[s.defId[id] ?? 0]?.id ?? '', target, attacker);
-    despawn(world, id);
+    despawn(world, id, hitHolder(world, id));
   }
   for (let team = 0; team < TEAM_COUNT; team++) {
     const charId = controlledId(world, team);

@@ -6,7 +6,7 @@ import { DIR8_X, DIR8_Y } from '../../math/dir8';
 import { allocEntity } from '../alloc';
 import { Cmd } from '../commands';
 import { step } from '../step';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_STRIDE } from '../state';
+import { countIdx, EntityFlag, EntityKind, MAX_ENTITIES } from '../state';
 import { createWorld, type SimWorld } from '../world';
 import { ABILITY_DEFS } from './projectile';
 
@@ -75,8 +75,7 @@ describe('omni abilities vs abilities-range.json', () => {
       }
       for (let t = 0; t < 400; t++) step(world, [0, 0]);
       expect(bullets(world)).toHaveLength(0);
-      const idx = ABILITY_DEFS.findIndex((d) => d.id === slug);
-      expect(world.state.teams[TEAM_STRIDE * 0 + TEAM_ACTIVE_COUNTS + idx]).toBe(-24);
+      expect(world.state.abil[countIdx(0, slot)]).toBe(-24);
     });
   }
 });

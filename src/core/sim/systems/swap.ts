@@ -11,6 +11,7 @@ import {
 import type { SimWorld } from '../world';
 import { P1_START_X, P2_START_X, START_Y } from '../match';
 import { now } from '../clock';
+import { startRestTimer } from './rest';
 
 /** Legacy `Game.swapCooldown` 5000 ms at 50 Hz. */
 export const SWAP_COOLDOWN_TICKS = 250;
@@ -42,7 +43,7 @@ export function nextAliveTeammate(world: SimWorld, team: number, id: number): nu
   return -1;
 }
 
-/** Legacy benchHelper/unbenchHelper plus the swap cooldown stamp. Keeps hp; halves the rest-heal gap. */
+/** Legacy benchHelper/unbenchHelper plus the swap cooldown stamp. Keeps hp; halves the rest-heal gap; starts the rest timer. */
 export function performSwap(
   world: SimWorld,
   sink: EventSink,
@@ -55,6 +56,7 @@ export function performSwap(
   const cur = s.hp[from] ?? 0;
   s.restCap[from] = cur + ((s.restCap[from] ?? 0) - cur) / 2;
   s.flags[from] = (s.flags[from] ?? 0) | EntityFlag.benched;
+  startRestTimer(s, from, tick);
   s.flags[to] = (s.flags[to] ?? 0) & ~EntityFlag.benched;
   s.x[to] = team === 0 ? P1_START_X : P2_START_X;
   s.y[to] = START_Y;
@@ -90,8 +92,9 @@ export function swapSystem(
     if (slot < 0) continue;
     if (tick < (s.teams[team * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0)) continue;
     const cur = activeOf(world, team);
-    // Both sides need a living active character (a dead one is auto-swapped by the death system).
-    if (cur < 0) continue;
+    // Both sides need a living active character (a dead one is auto-swapped by the death system). A frozen one cannot
+    // swap: legacy PlayerCharacter KeyDown ignores every key while `isFrozen` (the AI never swaps by hand).
+    if (cur < 0 || ((s.flags[cur] ?? 0) & EntityFlag.frozen) !== 0) continue;
     const from = cur;
     const target = teamMembers(world, team).filter((m) => m !== from)[slot];
     if (target === undefined || !isLiving(world, target)) continue;

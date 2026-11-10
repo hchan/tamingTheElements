@@ -70,7 +70,7 @@ describe('known legacy bugs (current behaviour)', () => {
     });
   });
 
-  it('capture-ignores-fade: Capture succeeds against a faded target while a normal bullet does not', () => {
+  it('capture-ignores-fade: Capture marks a faded target captured but deals no damage and keeps flying', () => {
     // KNOWN-BUG:capture-ignores-fade
     const env = loadLegacy({ seed: 1 });
     const result = observe(
@@ -90,13 +90,40 @@ describe('known legacy bugs (current behaviour)', () => {
       var cap = Crafty.e('Capture'); cap.initAbility(p);
       cap.hitHandlers[cap.hitHandlers.length - 1].cb.call(cap, [{ obj: t }]);
       return { afterBlast: afterBlast, translucent: t.isTranslucent, captured: t.isCaptured,
-        hpAfterCapture: t.curHealth < 0 };`,
+        hpAfterCapture: t.curHealth < 0, bulletAlive: !cap.isDead && !cap.destroyed,
+        captureCount: p.abilitiesInfo['Capture'].curCount };`,
     );
     expect(result).toEqual({
       afterBlast: { hp: 100, captured: false },
       translucent: true,
       captured: true,
-      hpAfterCapture: false, // captured flag set, but no damage: the translucency check lives in the skipped default callback
+      // captured flag set, but no damage and the bullet is not removed: the translucency check lives in the default callback
+      hpAfterCapture: false,
+      bulletAlive: true,
+      captureCount: 1,
+    });
+  });
+
+  it('capture vs the last boss: the evil laugh, no capture, no damage, and the bullet keeps flying', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      var sounds = [];
+      Global.playSound = function (n) { sounds.push(n); };
+      var p = fighter('PlayerCharacter', { isDead: false, direction: 'e', targetPlayerType: 'EnemyCharacter',
+        abilitiesInfo: { 'Capture': info() }, elementalType: 'fire', damageMultiplier: 1 });
+      var t = fighter('EnemyCharacter', { isDead: false, isTranslucent: false, isCaptured: false,
+        characterName: Game.lastBoss, curHealth: 100, maxHealth: 1000, elementalType: 'void', damageMultiplier: 1 });
+      p.targetPlayer = t; t.targetPlayer = p;
+      var cap = Crafty.e('Capture'); cap.initAbility(p);
+      var cb = cap.hitHandlers[cap.hitHandlers.length - 1].cb;
+      cb.call(cap, [{ obj: t }]);
+      cb.call(cap, [{ obj: t }]); // still overlapping on the next frame
+      return { captured: t.isCaptured, hp: t.curHealth, bulletAlive: !cap.isDead && !cap.destroyed, sounds: sounds };`,
+    );
+    expect(result).toEqual({
+      captured: false, hp: 100, bulletAlive: true, sounds: ['capture', 'evilLaugh', 'evilLaugh'],
     });
   });
 
@@ -205,7 +232,7 @@ describe('known legacy bugs (current behaviour)', () => {
     expect(env.run('Garrison.getGarrison().length')).toBe(11);
   });
 
-  it('bounds-y-typo: resetIfOutOfBounds reads this.Y so y is never restored from the questionable value', () => {
+  it('bounds-y-typo: resetIfOutOfBounds reads this.Y into an unused variable; it restores x, then y, then both', () => {
     // KNOWN-BUG:bounds-y-typo
     const env = loadLegacy({ seed: 1 });
     const result = observe(
@@ -222,8 +249,119 @@ describe('known legacy bugs (current behaviour)', () => {
       d.resetIfOutOfBounds();
       return { onlyX: onlyX, both: { x: d.x, y: d.y } };`,
     );
-    // x is restored to previousX; the colliding y is left as it was (no questionableY is ever written back).
+    // The typo is harmless: x is restored first, and y is restored too when x alone does not free the character.
     expect(result).toEqual({ onlyX: { x: 1, y: 20, capitalY: true }, both: { x: 1, y: 2 } });
+  });
+
+  it('bounds: the player (Fourway stopOnSolids) undoes both axes of its step on a Solid hit', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      var p = fighter('PlayerCharacter', {});
+      p._movement = { x: 7, y: 7 };
+      p.x = 17; p.y = 27; // one diagonal step from (10, 20) into a wall
+      p.stopMovement();
+      return { x: p.x, y: p.y };`,
+    );
+    expect(result).toEqual({ x: 10, y: 20 });
+  });
+
+  it('rest-heal-enemy-in-play: Swap.isBenched is true for every enemy, so a running rest timer heals the active enemy', () => {
+    // KNOWN-BUG:rest-heal-enemy-in-play
+    const env = loadLegacy({ seed: 1 });
+    const before = observe(
+      env,
+      `${PRELUDE}
+      var p = fighter('PlayerCharacter', { isDead: false, curHealth: 50, maxHealth: 150, maxHealthWithRest: 100 });
+      var e = fighter('EnemyCharacter', { isDead: false, curHealth: 50, maxHealth: 150, maxHealthWithRest: 100 });
+      p.unbind('EnterFrame'); e.unbind('EnterFrame'); // no AI or flipping
+      Game.gameScene = { player: p, enemy: e };
+      globalThis.restP = p; globalThis.restE = e;
+      Crafty.e('HealWithRest').doDelay(p);
+      Crafty.e('HealWithRest').doDelay(e);
+      return { playerBenched: Swap.isBenched(p), activeEnemyBenched: Swap.isBenched(e) };`,
+    );
+    env.clock.advance(2040);
+    const after = observe(env, 'return { player: restP.curHealth, enemy: restE.curHealth };');
+    expect(before).toEqual({ playerBenched: false, activeEnemyBenched: true });
+    expect(after).toEqual({ player: 50, enemy: 51.5 });
+  });
+
+  it('player keys: digit N is action-bar slot N (abilities, Capture from chapter 2, then swaps); a frozen player does nothing', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      var swaps = [];
+      Swap.getTeammates = function () { return [{ character: { name: 'mate1' } }, { character: { name: 'mate2' } }]; };
+      Swap.canPlayerSwap = function () { return true; };
+      Swap.swapPlayer = function (c) { swaps.push(c.name); };
+      var p = fighter('PlayerCharacter', { isDead: false, isFrozen: false });
+      p.unbind('EnterFrame');
+      var captureChecks = 0; // key 3 reaches the Capture branch, which first asks the target
+      p.targetPlayer = { isCapturable: function () { captureChecks++; return false; } };
+      function press(slots, digit, frozen) {
+        swaps = [];
+        Game.actionBar = { slots: slots.map(function (n) { return { name: n, abilityInfo: info() }; }) };
+        p.isFrozen = frozen;
+        p.trigger('KeyDown', { keyCode: 48 + digit });
+        return swaps.slice();
+      }
+      var ch1 = ['Fire Blast', 'Translucent Flame', 'Swap1', 'Swap2'];
+      var ch2 = ['Fire Blast', 'Translucent Flame', 'Capture', 'Swap1', 'Swap2'];
+      return {
+        chapter1: { k3: press(ch1, 3, false), k4: press(ch1, 4, false), k5: press(ch1, 5, false) },
+        chapter2: { k3: press(ch2, 3, false), k4: press(ch2, 4, false), k5: press(ch2, 5, false) },
+        frozen: press(ch2, 4, true),
+        frozenCapture: press(ch2, 3, true),
+        captureChecks: captureChecks,
+      };`,
+    );
+    expect(result).toEqual({
+      chapter1: { k3: ['mate1'], k4: ['mate2'], k5: [] },
+      chapter2: { k3: [], k4: ['mate1'], k5: ['mate2'] },
+      frozen: [],
+      frozenCapture: [],
+      captureChecks: 1,
+    });
+  });
+
+  it('enemy death: Crafty("Bullet") matches nothing (no entity has a Bullet component), so bullets in flight survive', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      Swap.swapNextAliveTeammate = function () { return true; };
+      var p = fighter('PlayerCharacter', { isDead: false, direction: 'e', targetPlayerType: 'EnemyCharacter',
+        abilitiesInfo: { 'Fire Blast': info() }, elementalType: 'fire', damageMultiplier: 1 });
+      var e = fighter('EnemyCharacter', { isDead: false, direction: 'w', targetPlayerType: 'PlayerCharacter',
+        abilitiesInfo: { 'Fire Blast': info() }, elementalType: 'fire', damageMultiplier: 1 });
+      p.unbind('EnterFrame'); e.unbind('EnterFrame');
+      p.targetPlayer = e; e.targetPlayer = p;
+      var mine = Crafty.e('Fire Blast'); mine.initAbility(p);
+      var theirs = Crafty.e('Fire Blast'); theirs.initAbility(e);
+      var bulletComponents = Crafty('Bullet').length;
+      e.die();
+      return { bulletComponents: bulletComponents, enemyDead: e.isDead,
+        survive: [!mine.destroyed, !theirs.destroyed] };`,
+    );
+    expect(result).toEqual({ bulletComponents: 0, enemyDead: true, survive: [true, true] });
+  });
+
+  it('end delay: the Victory scene starts about 3000 ms after the last enemy dies', () => {
+    const env = loadLegacy({ seed: 1 });
+    env.run(`${PRELUDE}
+      Swap.swapNextAliveTeammate = function () { return false; };
+      globalThis.scenes = [];
+      Crafty.scene = function (n) { scenes.push(n); };
+      var last = fighter('EnemyCharacter', { isDead: false });
+      last.unbind('EnterFrame');
+      last.die();`);
+    env.clock.advance(2980);
+    const early = env.run('scenes.slice()') as string[];
+    env.clock.advance(40);
+    expect({ early, later: env.run('scenes.slice()') }).toEqual({ early: [], later: ['Victory'] });
   });
 
   it('damage-uses-target-mult: applyDamage scales by the victim target damageMultiplier, not the hitter', () => {

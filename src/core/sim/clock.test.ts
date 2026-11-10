@@ -16,7 +16,7 @@ import { createMatch, type MatchSetup } from './match';
 import { createSnapshotBuf, restore, snapshot, SnapshotRing } from './snapshot';
 import {
   ARCADE_E, ARCADE_LENGTH, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_W, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW,
-  EntityKind, MAX_ENTITIES, TEAM_COUNT, TEAM_COOLDOWNS, World, stateArrays, type SimState,
+  cooldownIdx, EntityKind, MAX_ENTITIES, TEAM_COUNT, World, stateArrays, type SimState,
 } from './state';
 import { SimEventKind, type SimEvent } from './events';
 import { ABILITY_DEFS } from './systems/projectile';
@@ -89,7 +89,7 @@ describe('game clock', () => {
     const w = createMatch(ARCADE);
     const s = w.state;
     step(w, [Cmd.primary, 0]);
-    const ready = s.teams[TEAM_COOLDOWNS] ?? 0;
+    const ready = s.abil[cooldownIdx(0, 0)] ?? 0;
     expect(ready).toBeGreaterThan(1);
     s.arcade[FREEZE_UNTIL] = (s.world[World.tick] ?? 0) + 5;
     const before = stateArrays(s).map((a) => Array.from(a));
@@ -107,11 +107,11 @@ describe('game clock', () => {
     expect(isFrozen(s)).toBe(false);
     // Fire Blast is ready again at game time `ready`, which is now W.tick ready + 5: pressing earlier does nothing.
     while ((s.world[World.tick] ?? 0) < ready + 5) step(w, [Cmd.primary, 0]);
-    expect(s.teams[TEAM_COOLDOWNS]).toBe(ready);
+    expect(s.abil[cooldownIdx(0, 0)]).toBe(ready);
     expect(now(s)).toBe(ready);
     step(w, [Cmd.primary, 0]);
     expect(now(s)).toBe(ready + 1);
-    expect(s.teams[TEAM_COOLDOWNS]).toBeGreaterThan(ready);
+    expect(s.abil[cooldownIdx(0, 0)]).toBeGreaterThan(ready);
   });
 
   it('the Arcade block exists exactly when the flag is on', () => {

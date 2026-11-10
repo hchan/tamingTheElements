@@ -128,7 +128,7 @@ describe('endSystem', () => {
 
   it('declares victory once, with captured count and survivors', () => {
     const w = createMatch(setup());
-    kill(w, 2, EntityFlag.captured);
+    kill(w, 2, EntityFlag.captured | EntityFlag.dead); // a Capture hit kills in the same tick
     kill(w, 3, EntityFlag.dead);
     const ev = ended(step(w, [0, 0]));
     expect(ev).toHaveLength(1);

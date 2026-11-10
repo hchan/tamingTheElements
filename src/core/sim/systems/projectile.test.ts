@@ -5,8 +5,11 @@ import { allocEntity } from '../alloc';
 import { Cmd } from '../commands';
 import { SimEventKind } from '../events';
 import { step } from '../step';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_COOLDOWNS, TEAM_STRIDE, World as W } from '../state';
+import { cooldownIdx, countIdx, EntityFlag, EntityKind, MAX_ENTITIES, World as W } from '../state';
 import { createWorld, type SimWorld } from '../world';
+import { createMatch } from '../match';
+import { characterId } from '../../data/ids';
+import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { ABILITY_DEFS } from './projectile';
 
 interface Num { v: number }
@@ -92,7 +95,7 @@ describe('projectile system vs abilities-range.json', () => {
       it('sets a strict cooldown', () => {
         const world = scene(own.char, fixtureTarget);
         step(world, [fire, 0]);
-        const until = world.state.teams[TEAM_COOLDOWNS + own.slot];
+        const until = world.state.abil[cooldownIdx(0, own.slot)];
         expect(until).toBe(a.cooldown / 20 + 1);
       });
     });
@@ -119,11 +122,11 @@ describe('projectile system vs abilities-range.json', () => {
     step(world, [Cmd.secondary, 0]);
     step(world, [Cmd.secondary, 0]);
     expect(bulletIds(world)).toHaveLength(8);
-    expect(world.state.teams[TEAM_COOLDOWNS + 1]).toBe(cd + 1);
+    expect(world.state.abil[cooldownIdx(0, 1)]).toBe(cd + 1);
     for (let t = 2; t <= cd; t++) step(world, [Cmd.secondary, 0]); // ticks 2..cd: still cooling down
-    expect(world.state.teams[TEAM_COOLDOWNS + 1]).toBe(cd + 1);
+    expect(world.state.abil[cooldownIdx(0, 1)]).toBe(cd + 1);
     step(world, [Cmd.secondary, 0]); // tick cd + 1: strict >, fires again
-    expect(world.state.teams[TEAM_COOLDOWNS + 1]).toBe(2 * cd + 2);
+    expect(world.state.abil[cooldownIdx(0, 1)]).toBe(2 * cd + 2);
   });
 });
 
@@ -140,7 +143,7 @@ describe('projectile hits and despawn', () => {
     expect(dmg?.['amount']).toBe(10);
     expect(s.hp[1]).toBe(990);
     expect(bulletIds(world)).toHaveLength(0);
-    expect(s.teams[TEAM_STRIDE * 0 + TEAM_ACTIVE_COUNTS + ABILITY_DEFS.findIndex((d) => d.id === 'stick')]).toBe(0);
+    expect(s.abil[countIdx(0, own?.slot ?? 0)]).toBe(0);
   });
 
   it('passes through translucent opponents and despawns outside the arena', () => {
@@ -175,9 +178,8 @@ describe('projectile hits and despawn', () => {
       /* fill the table */
     }
     step(world, [Cmd.primary, 0]);
-    const defIdx = ABILITY_DEFS.findIndex((d) => d.id === 'stick');
-    expect(s.teams[TEAM_ACTIVE_COUNTS + defIdx]).toBe(0);
-    expect(s.teams[TEAM_COOLDOWNS + (own?.slot ?? 0)]).toBe(0);
+    expect(s.abil[countIdx(0, own?.slot ?? 0)]).toBe(0);
+    expect(s.abil[cooldownIdx(0, (own?.slot ?? 0))]).toBe(0);
   });
 });
 
@@ -203,4 +205,44 @@ describe('Sonar Blast and Fireball shrink', () => {
       }
     });
   }
+});
+
+describe('per-character ability info (legacy abilitiesInfo is deep-copied per character)', () => {
+  const sindarosa = { character: characterId('sindarosa'), xp: 1 };
+  const cd = (ABILITY_DEFS.find((d) => d.id === 'fire-blast')?.cooldownTicks ?? 0) + 1;
+  const duo = (): SimWorld =>
+    createMatch({
+      simVersion: 1, seed: 1, flags: DEFAULT_SIM_FLAGS, chapter: 1, difficulty: 1,
+      p1: [sindarosa, sindarosa, { character: characterId('pax'), xp: 1 }],
+      p2: [{ character: characterId('pax'), xp: 1 }],
+    });
+  const projectiles = (w: SimWorld): number =>
+    Array.from({ length: MAX_ENTITIES }, (_, i) => i).filter(
+      (i) => w.state.kind[i] === EntityKind.projectile && ((w.state.flags[i] ?? 0) & EntityFlag.alive) !== 0,
+    ).length;
+
+  it('a swapped-in character casts on its own cooldown and count', () => {
+    const w = duo();
+    const s = w.state;
+    step(w, [Cmd.primary, 0]);
+    expect([s.abil[cooldownIdx(0, 0)], s.abil[countIdx(0, 0)]]).toEqual([cd, 1]);
+    step(w, [Cmd.swap1 | Cmd.primary, 0]); // char 1 comes in and fires at once: its Fire Blast is not cooling down
+    expect([s.abil[cooldownIdx(1, 0)], s.abil[countIdx(1, 0)]]).toEqual([1 + cd, 1]);
+    expect(s.abil[countIdx(0, 0)]).toBe(1);
+    expect(projectiles(w)).toBe(2);
+  });
+
+  it("a hit releases the count on the shooter team's current character (KNOWN-BUG:bullet-count-on-active)", () => {
+    for (const [swap, holder] of [[Cmd.swap1, 1], [Cmd.swap2, 2]] as const) {
+      const w = duo();
+      const s = w.state;
+      step(w, [Cmd.primary, 0]);
+      step(w, [swap, 0]); // swapped out while the bullet flies
+      for (let t = 0; t < 200 && projectiles(w) > 0; t++) step(w, [0, 0]);
+      expect(s.hp[3]).toBeLessThan(s.maxHp[3] ?? 0); // it hit
+      // Legacy opponent.targetPlayer.removeBullet: the shooter keeps its count; the new character (same race) goes
+      // to -1; a character without Fire Blast (Pax) throws in the try/catch and nothing changes.
+      expect([s.abil[countIdx(0, 0)], s.abil[countIdx(holder, 0)]]).toEqual([1, holder === 1 ? -1 : 0]);
+    }
+  });
 });

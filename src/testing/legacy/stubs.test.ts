@@ -73,6 +73,18 @@ describe('Delay on the fake clock', () => {
     expect(fired).toEqual([120, 240]);
   });
 
+  it('repeats forever with repeat -1 (crafty.js: repeat < 0 ? Infinity : repeat)', () => {
+    const { clock, crafty } = setup();
+    const e = crafty.e('Delay');
+    let fired = 0;
+    (e['delay'] as (f: () => void, ms: number, r: number) => void)(() => fired++, 1000, -1);
+    clock.advance(10_200);
+    expect(fired).toBe(10);
+    e.destroy();
+    clock.advance(5_000);
+    expect(fired).toBe(10);
+  });
+
   it('does not fire while paused and shifts by the paused time', () => {
     const { clock, crafty } = setup();
     const e = crafty.e('Delay');

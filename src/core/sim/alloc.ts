@@ -1,11 +1,12 @@
 import { now } from './clock';
-import { ARCADE_E, EntityFlag, F64_FIELDS, I32_FIELDS, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World, type SimState } from './state';
+import { ABIL_STRIDE, ARCADE_E, EntityFlag, F64_FIELDS, I32_FIELDS, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World, type SimState } from './state';
 
 function clearSlot(s: SimState, id: number): void {
   for (const f of F64_FIELDS) s[f][id] = 0;
   for (const f of I32_FIELDS) s[f][id] = 0;
   const per = STATUS_SLOTS * STATUS_STRIDE;
   s.status.fill(0, id * per, (id + 1) * per);
+  s.abil.fill(0, id * ABIL_STRIDE, (id + 1) * ABIL_STRIDE);
   if (s.arcade.length > 0) s.arcade.fill(0, id * ARCADE_E, (id + 1) * ARCADE_E);
 }
 
