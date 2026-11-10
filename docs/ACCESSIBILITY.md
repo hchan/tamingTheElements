@@ -142,6 +142,12 @@ Sunshine." on a recast, and "The Gale is over." when it ends (`changedLine` and 
 `src/game/fx/weather-fx.ts`). Their keys include the weather and the side, so a quick counter-weather is not swallowed
 by the 6 s repeat filter.
 
+The Arcade terrain view (WP-arcade-terrain-view) says "The stage will turn to fire." when a weather cast starts the 30-tick swap,
+"The stage turns to fire." when it lands, "You stand on a fire patch: damage doubled." when the player's hero steps on a patch of
+its element and "Rock blocks the shot." when a rock stops a projectile (`src/game/fx/terrain-fx.ts`). Each patch has its own pattern
+(flames, waves, bricks, swirls) and a word (FIRE x2, WATER +HP, ROCK, AIR x2), so no cue is colour alone; the buff badge is an icon
+plus text. Reduced motion drops the particles, the glow pulse and the fades.
+
 The Arcade tag view (WP-arcade-tag-view) adds polite lines: "Tag! Pax is in, Sindarosa rests." or "The enemy tagged in
 Lavax." on a tag, "Sindarosa is down. Pax steps in." or "Enemy Fiara is down. Lavax steps in." on a KO entrance (after
 the base "Your elemental was defeated." line; `tagLine` in `src/game/hud/tag-fx.ts`). Keys differ per side and kind.
@@ -203,6 +209,7 @@ Classic name, so Classic menus are unchanged.
 | Arcade Versus picker and results: axe, heading focus, Escape back, touch Super button, 390x844 layout; the 8-way aim arrow | `tests/e2e/arcade.spec.ts`, `src/game/fx/aim-view.test.ts` |
 | Arcade round announcer: every round event gives a banner and a live line (fake sink), reduced motion keeps the text without the scale-in, live-region lines in the browser, pips by shape, 0 listeners after leaving | `src/game/hud/round-announcer.test.ts`, `src/game/hud/round-view.test.ts`, `tests/e2e/arcade-rounds.spec.ts` |
 | Arcade defence view: every defence event of real duels gives an effect (fake sink, both motion settings), reduced motion drops only motion, parry and guard-break lines, shield and bar by shape; E, Q, pad RB and LT Arcade only, binding conflicts and old saves; touch Guard and Dash buttons; 0 listeners after leaving | `src/game/fx/defence-fx.test.ts`, `src/game/fx/defence-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-defence.spec.ts` |
+| Arcade terrain view: every terrain event gives its feedback (fake sink), a distinct pattern and word per element (not colour alone), reduced motion drops only particles, glow pulse and fades, buff badge, live lines, 0 listeners after leaving | `src/game/fx/terrain-fx.test.ts`, `src/game/fx/terrain-view.test.ts`, `tests/e2e/arcade-terrain.spec.ts` |
 | Arcade weather view: every weather event (each kind, new, replaced, renewed, ended) gives its feedback (fake sink), reduced motion drops only the particles and motion, badge by glyph, word, seconds and notched bar, live lines; R and pad X Arcade only, binding conflicts and old saves; touch Weather button; 0 listeners after leaving | `src/game/fx/weather-fx.test.ts`, `src/game/fx/weather-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-weather.spec.ts` |
 | Arcade tag view: team lines, red life by dashes and words, tag cooldown bar and word, TAG! and KO-entrance calls, live lines, reduced motion keeps the call at full size and drops the slide; the picker's Team and partner (Tab order, disabled in 1v1); key 3 and the touch Tag button; 0 listeners after leaving | `src/game/hud/tag-fx.test.ts`, `src/game/hud/tag-view.test.ts`, `tests/e2e/arcade-tag.spec.ts` |
 | Arcade clash burst: every `clash` gives one burst (fake sink), winner colour on top, cancel core, reduced motion keeps a static ring; one pooled Graphics, 0 listeners after leaving | `src/game/fx/clash-fx.test.ts`, `src/game/fx/clash-view.test.ts` |

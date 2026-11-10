@@ -75,6 +75,15 @@ export interface ArenaProbe {
   tag(): Promise<{
     lines: readonly (readonly [string, string, string])[]; call: string; callScale: number; flashes: number; ko: boolean; caption: string;
   } | undefined>;
+  /**
+   * Arcade only (async: a lazy chunk): the terrain view's last frame (WP-arcade-terrain-view): the stage drawn (1 fire ..
+   * 4 air, 0 none), the patches drawn and their flat rectangles (x, y, w, h), each patch's word, the patch and glow alpha,
+   * the particles and sparks drawn, the backdrop element, the next backdrop's alpha during a swap and the buff badge text.
+   */
+  terrain(): Promise<{
+    stage: number; patches: number; rects: readonly number[]; labels: readonly string[]; alpha: number; glow: number;
+    particles: number; sparks: number; backdrop: string; nextBackdrop: number; badge: string;
+  } | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */
   aim(): { visible: boolean; x: number; y: number; angle: number } | undefined;
   /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */
