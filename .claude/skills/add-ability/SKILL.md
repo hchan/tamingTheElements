@@ -17,11 +17,13 @@ Add: $ARGUMENTS
 
 ## Procedure
 
-1. Read `docs/DETERMINISM.md`, `docs/HOWTO-ADD-CHARACTER.md` and `docs/BALANCE.md` if present, and find the closest existing ability to copy the pattern from.
-2. Add the data entry (cooldown, cost, damage, range in ticks and integer units) in the data tables.
-3. Implement the sim logic as a pure step function in `src/core`, iterating entities in id order and emitting events `{tick, sourceId, kind, seq}`.
-4. Add tests: unit tests for the ability, a determinism test (same seed gives the same hash), and a snapshot/restore round trip.
-5. Because data changed, bump `SIM_VERSION`, run `pnpm golden:record`, and show the hash diff for review.
-6. Add presentation hooks (animation, sound) in the renderer only; cosmetic code never draws from sim RNG streams.
-7. Update docs (balance table, character checklist, `docs/REPO-MAP.md` and `CHANGELOG.md`, append-only).
-8. Run `pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test`, then the `full-review` skill. Report results; leave changes uncommitted.
+1. Read `docs/DETERMINISM.md` and `docs/BALANCE.md`, and find the closest existing ability to copy the pattern from.
+2. Add the data row (kind, damage, cooldown ms rounded up to ticks by `msToTicks`, speed, size) to `src/core/data/abilities-a.ts` or `src/core/data/abilities-b.ts`; ids are kebab-case slugs from `abilityId` in `src/core/data/ids.ts`. Attach it to a character in `src/core/data/characters.ts`.
+3. Implement the behaviour as a pure system in `src/core/sim/systems/` (see `abilities.ts` and `projectile.ts`, where `ABILITY_DEFS` is assembled), iterating entities in id order and emitting events from `src/core/sim/events.ts`.
+4. Describe it: `src/core/rules/describe.ts` and the text ids in `src/core/data/text-ids.ts`.
+5. Add tests next to the code: data test (`abilities-a.test.ts` or `abilities-b.test.ts`), a system test, a probe check with `src/core/sim/ability-probe.ts`, and a snapshot/restore round trip (`src/core/sim/snapshot.test.ts` pattern).
+6. Data changed: bump `SIM_VERSION` in `src/core/index.ts`, run `corepack pnpm golden:record`, and show the diff of `tests/fixtures/replays/` for review.
+7. Balance: run `corepack pnpm balance:compare`; a baseline re-record is a user decision.
+8. Presentation (animation, sound) goes in `src/game/` only; cosmetic code never draws from sim RNG streams.
+9. Docs: `corepack pnpm docs:gen`, `CHANGELOG.md` (append-only), `docs/PARITY.md` if it touches legacy behaviour, `docs/REPO-MAP.md` if files were added.
+10. Run `corepack pnpm lint && corepack pnpm typecheck && corepack pnpm depcruise && corepack pnpm test`, then the `full-review` skill. Report results; leave changes uncommitted.
