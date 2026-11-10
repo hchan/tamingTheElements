@@ -13,7 +13,7 @@ import { ABILITY_SLOTS, EntityFlag, EntityKind, TEAM_STRIDE, TeamField, World as
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { startRestTimer } from './systems/rest';
 import { arcadeLifePm, arcadeRaceNumbers } from './arcade-numbers';
-import { createWorld, DEFAULT_ARENA, type SimWorld } from './world';
+import { CLASSIC_BAR_ARENA, createWorld, DEFAULT_ARENA, type SimWorld } from './world';
 
 /** One team's members in garrison order; the first is the active character, the rest start benched. */
 export type Roster = readonly { readonly character: CharacterId; readonly xp: number }[];
@@ -85,7 +85,7 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
 /** Builds the tick-0 world for a match: p1 entities first, then p2, ids in roster order. */
 export function createMatch(setup: MatchSetup): SimWorld {
   const arcade = setup.flags.rulesetArcade;
-  const world = createWorld(setup.seed, arcade ? arcadePlayfield() : DEFAULT_ARENA, arcade);
+  const world = createWorld(setup.seed, arcade ? arcadePlayfield() : setup.flags.walkAboveActionBar ? CLASSIC_BAR_ARENA : DEFAULT_ARENA, arcade);
   const s = world.state;
   s.world[W.flags] = flagBits(setup.flags) | (setup.chapter > 1 || setup.flags.testerCapture ? CAPTURE_GRANTED_BIT : 0);
   s.rng.set(saveStreams(createStreams(setup.seed)));

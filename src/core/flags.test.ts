@@ -33,7 +33,9 @@ describe('sim flags', () => {
       'experimentalSpawnCurve',
       'rulesetArcade',
       'testerCapture',
+      'walkAboveActionBar',
     ]);
+    expect(flagBit('walkAboveActionBar')).toBe(32);
     expect(flagBit('elementalAdvantage')).toBe(1);
     expect(flagBit('experimentalPathing')).toBe(2);
     expect(flagBit('experimentalSpawnCurve')).toBe(4);

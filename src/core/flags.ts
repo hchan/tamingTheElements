@@ -17,6 +17,12 @@ export interface SimFlags {
    * (testerCapture sorts after it, but it is never on in a real match).
    */
   readonly rulesetArcade: boolean;
+  /**
+   * Classic only: the walkable arena ends at the action bar (y 640) instead of the legacy y 720, so a fighter cannot walk
+   * behind the bar (KNOWN-BUGS). Off in tests/tools (bit-identical legacy arena); on in real play from the game app.
+   * Sorts after every other flag, so no existing flag bit moves.
+   */
+  readonly walkAboveActionBar: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -27,6 +33,7 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   elementalAdvantage: false,
   testerCapture: false,
   rulesetArcade: false,
+  walkAboveActionBar: false,
 };
 
 /** Flags that only tester mode may turn on. */
@@ -90,5 +97,6 @@ export function decodeFlags(encoded: string): SimFlags {
     elementalAdvantage: on.has('elementalAdvantage'),
     testerCapture: on.has('testerCapture'),
     rulesetArcade: on.has('rulesetArcade'),
+    walkAboveActionBar: on.has('walkAboveActionBar'),
   };
 }

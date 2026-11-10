@@ -3,6 +3,8 @@ import { createSimState, type SimState } from './state';
 
 /** Default arena in px (legacy size depends on the window; this is a fixed stand-in). */
 export const DEFAULT_ARENA: Aabb = { x: 0, y: 100, w: 1280, h: 620 };
+/** Classic arena ending at the action bar (BAR_Y 640 of the view): used only with the `walkAboveActionBar` flag. */
+export const CLASSIC_BAR_ARENA: Aabb = { x: 0, y: 100, w: 1280, h: 540 };
 
 export interface SimWorld {
   readonly state: SimState;

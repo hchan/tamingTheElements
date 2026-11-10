@@ -283,7 +283,7 @@ export class AppFlow {
       }
       if (flags.failSetup) throw new Error('injected setup failure');
       const session = this.session;
-      const setup = toCoreSetup(pending.ui, r.value, pending.seed, session.simFlags(DEFAULT_SIM_FLAGS));
+      const setup = toCoreSetup(pending.ui, r.value, pending.seed, session.simFlags({ ...DEFAULT_SIM_FLAGS, walkAboveActionBar: true }));
       // Tester mode: the replay is kept but flagged `cheats` in its header, and verifiers refuse it.
       const { PlaytestRecorder } = await import('../replay/playtest-recorder');
       if (life.isDisposed()) return;
