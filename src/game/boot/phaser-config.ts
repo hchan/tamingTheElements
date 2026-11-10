@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Boot } from '../scenes/Boot';
 import { Arena, ARENA_SCENE } from '../scenes/Arena';
+import { Cinematic, CINEMATIC_SCENE } from '../scenes/Cinematic';
 import { Hud } from '../scenes/Hud';
 import type { ArenaLaunch } from '../scenes/launch';
 import { Preload, PRELOAD_READY } from '../scenes/Preload';
@@ -19,7 +20,7 @@ export function createGameConfig(parent: string): Phaser.Types.Core.GameConfig {
     disableContextMenu: true,
     banner: false,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [Boot, Preload, Arena, Hud],
+    scene: [Boot, Preload, Arena, Hud, Cinematic],
   };
 }
 
@@ -27,12 +28,13 @@ export function createGameConfig(parent: string): Phaser.Types.Core.GameConfig {
  * Jumps from Preload into the Arena. `arena` is launch data from the app flow (a real match), or `true`
  * for the flag-gated bot-vs-bot demo; `false` stays on Preload.
  */
-export function createGame(parent: string, arena: ArenaLaunch | boolean = false): Phaser.Game {
+export function createGame(parent: string, arena: ArenaLaunch | boolean = false, cinematic = false): Phaser.Game {
   const game = new Phaser.Game(createGameConfig(parent));
-  if (arena !== false) {
+  if (arena !== false || cinematic) {
     game.events.once(PRELOAD_READY, () => {
       game.scene.stop('Preload');
-      game.scene.start(ARENA_SCENE, arena === true ? undefined : arena);
+      if (cinematic) game.scene.start(CINEMATIC_SCENE);
+      else game.scene.start(ARENA_SCENE, arena === true || arena === false ? undefined : arena);
     });
   }
   return game;

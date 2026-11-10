@@ -10,6 +10,8 @@ export interface UiFlags {
   readonly arenaDemo: boolean;
   /** Enemy uses the scripted AI instead of the random bot (falls back to the bot until the AI is complete). */
   readonly aiScripted: boolean;
+  /** Play path starts the intro cinematic after Preload. */
+  readonly cinematicDemo: boolean;
 }
 
 export const DEFAULT_UI_FLAGS: UiFlags = {
@@ -19,6 +21,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   forceNoWebgl: false,
   arenaDemo: false,
   aiScripted: false,
+  cinematicDemo: false,
 };
 
 export interface FlagEnv {
@@ -37,6 +40,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     forceNoWebgl: on.has('forceNoWebgl'),
     arenaDemo: on.has('arenaDemo'),
     aiScripted: on.has('aiScripted'),
+    cinematicDemo: on.has('cinematicDemo'),
   };
 }
 

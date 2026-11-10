@@ -16,6 +16,15 @@ export interface ArenaProbe {
   step(n: number, cmds?: readonly [number, number]): void;
 }
 
+/** Test control of the running Cinematic scene. */
+export interface CinematicProbe {
+  readonly finished: boolean;
+  /** Presses the Skip button. */
+  skip(): void;
+  /** Destroys the whole Phaser game (like exit-to-menu); `settled()` resolves after Phaser's destroy event. */
+  destroyGame(): void;
+}
+
 export interface HookState {
   readonly route: string;
   readonly scene: string | undefined;
@@ -29,6 +38,7 @@ export interface TestHook {
   /** Name of the active game scene, set by scenes in test builds. */
   scene?: string;
   arena?: ArenaProbe;
+  cinematic?: CinematicProbe;
   state(): HookState;
   /** Hash of the running arena's sim state, or 0 outside a battle. */
   hash(): number;

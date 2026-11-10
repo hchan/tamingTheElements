@@ -55,6 +55,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/audio/` | Sim-event audio (`audio-manager.ts`, `sound-map.ts`): music/sfx/ui gain buses, music ducking, CTRL-M mute via the input effect callback, context resume on first gesture, deduped by event id; ogg only |
 | `src/game/input/` | Keyboard input: remappable bindings (`key-map.ts`, pure reducer) and `KeyboardAgent` mapping keys to the sim Command bitset; no gameplay logic |
 | `src/game/loop/` | Fixed 50 Hz step driver (injected clock, 250 ms clamp, step cap, pause, render alpha) |
+| `src/game/cinematics/` | Data-driven cinematics: pure `CinematicRunner` step sequencer (header, caption, sprite, tween, wait, waitKey, skip) and the ported intro script; drawn by the `Cinematic` scene (`?ff=cinematicDemo`), which removes all listeners on shutdown or game destroy |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle, settings), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; info screens wiki, key-bindings, about, race), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; `main-menu.ts` is the main menu), `styles/main.css` |

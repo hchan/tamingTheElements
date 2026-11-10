@@ -23,11 +23,11 @@ async function enterPlay(app: HTMLElement): Promise<void> {
   app.append(game);
   // Phaser is loaded lazily so it stays in its own chunk and out of the menu path.
   const { createGame } = await import('../boot/phaser-config');
-  createGame('game', flags.arenaDemo);
+  createGame('game', flags.arenaDemo, flags.cinematicDemo);
 }
 
 if (root) {
-  if (flags.play || flags.arenaDemo || flags.forceNoWebgl) {
+  if (flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl) {
     void enterPlay(root);
   } else {
     const menu = document.createElement('div');
