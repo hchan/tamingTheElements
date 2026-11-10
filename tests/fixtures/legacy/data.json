@@ -1,0 +1,918 @@
+{
+  "abilities": {
+    "Adrenaline": {
+      "defaults": {
+        "abilityName": "Adrenaline",
+        "character": null,
+        "cooldown": 15000,
+        "damageDecreasePercentage": 25,
+        "duration": 3000,
+        "maxActive": 100,
+        "speedIncrease": 5,
+        "spriteName": "adrenaline",
+        "type": "Buff"
+      },
+      "extras": {}
+    },
+    "Capture": {
+      "defaults": {
+        "abilityName": "Capture",
+        "cooldown": 5000,
+        "damage": 1.7976931348623157e+308,
+        "h": 40,
+        "maxActive": 1,
+        "speed": 8,
+        "spriteName": "capture",
+        "type": "Range",
+        "w": 40
+      },
+      "extras": {}
+    },
+    "Chaos Bolt": {
+      "defaults": {
+        "abilityName": "Chaos Bolt",
+        "cooldown": 600,
+        "damage": 40,
+        "h": 15,
+        "maxActive": 3,
+        "speed": 10,
+        "spriteName": "chaosBolt",
+        "type": "Range",
+        "w": 75
+      },
+      "extras": {}
+    },
+    "Chaos Orb": {
+      "defaults": {
+        "abilityName": "Chaos Orb",
+        "cooldown": 5000,
+        "damage": 140,
+        "h": 75,
+        "maxActive": 1,
+        "speed": 2,
+        "spriteName": "chaosOrb",
+        "type": "Range",
+        "w": 75
+      },
+      "extras": {}
+    },
+    "Circus of Slime": {
+      "defaults": {
+        "abilityName": "Circus of Slime",
+        "cooldown": 10000,
+        "damage": 16,
+        "h": 20,
+        "maxActive": 4,
+        "speed": 5,
+        "spriteName": "circusOfSlimeIcon",
+        "type": "Range Omni-directional",
+        "w": 40
+      },
+      "extras": {}
+    },
+    "Crimson Fire": {
+      "defaults": {
+        "abilityName": "Crimson Fire",
+        "cooldown": 400,
+        "damage": 13,
+        "h": 40,
+        "maxActive": 2,
+        "speed": 10,
+        "spriteName": "crimsonFire",
+        "type": "Range",
+        "w": 80
+      },
+      "extras": {}
+    },
+    "Elemental Advantage : Fire cone": {
+      "defaults": {
+        "abilityName": "Elemental Advantage : Fire cone",
+        "additionalDescription": "Only usable on water elementals",
+        "character": null,
+        "cooldown": 1000,
+        "damage": 80,
+        "duration": 3000,
+        "h": 80,
+        "maxActive": 3,
+        "speed": 8,
+        "spriteName": "fireCone",
+        "type": "Range",
+        "w": 100
+      },
+      "extras": {}
+    },
+    "Entangling Vines": {
+      "defaults": {
+        "abilityName": "Entangling Vines",
+        "additionalDescription": "Entangles the opponent so it cannot move or cast any abilities",
+        "cooldown": 5000,
+        "damage": 0,
+        "delayAfterAttack": 250,
+        "duration": 3000,
+        "effectSpriteName": "vineTrap",
+        "h": 40,
+        "maxActive": 2,
+        "speed": "n/a",
+        "spriteName": "entanglingVines",
+        "spriteNameLong": "entanglingVinesLong",
+        "type": "Melee",
+        "w": 360
+      },
+      "extras": {}
+    },
+    "Fade": {
+      "defaults": {
+        "abilityName": "Fade",
+        "additionalDescription": "Become translucent (opponent's attacks will go through you)",
+        "character": null,
+        "cooldown": 10000,
+        "duration": 3000,
+        "maxActive": 100,
+        "spriteName": "fade",
+        "type": "Buff"
+      },
+      "extras": {}
+    },
+    "Fire Blast": {
+      "defaults": {
+        "abilityName": "Fire Blast",
+        "cooldown": 600,
+        "damage": 40,
+        "h": 15,
+        "maxActive": 2,
+        "speed": 8,
+        "spriteName": "fireBlast",
+        "type": "Range",
+        "w": 75
+      },
+      "extras": {}
+    },
+    "Fire Dance": {
+      "defaults": {
+        "abilityName": "Fire Dance",
+        "character": null,
+        "cooldown": 16000,
+        "duration": 5000,
+        "maxActive": 100,
+        "speedIncrease": 2,
+        "spriteName": "fireDance",
+        "type": "Buff"
+      },
+      "extras": {}
+    },
+    "Fire Heal": {
+      "defaults": {
+        "abilityName": "Fire Heal",
+        "cooldown": 40000,
+        "heal": 10,
+        "maxActive": 100,
+        "spriteName": "fireHeal",
+        "type": "Heal"
+      },
+      "extras": {}
+    },
+    "Fireball": {
+      "defaults": {
+        "abilityName": "Fireball",
+        "additionalDescription": "Project grows in width and increases amount of damage done over distance",
+        "cooldown": 600,
+        "damage": 15,
+        "h": 12,
+        "maxActive": 2,
+        "speed": 8,
+        "spriteName": "fireball",
+        "type": "Range",
+        "w": 25
+      },
+      "extras": {}
+    },
+    "Ground Shock": {
+      "defaults": {
+        "abilityName": "Ground Shock",
+        "additionalDescription": "Omni-directional melee attack",
+        "cooldown": 3000,
+        "damage": 25,
+        "delayAfterAttack": 250,
+        "h": 240,
+        "maxActive": 1,
+        "speed": "n/a",
+        "spriteName": "groundShock",
+        "type": "Melee",
+        "w": 240
+      },
+      "extras": {}
+    },
+    "Hurl Rock": {
+      "defaults": {
+        "abilityName": "Hurl Rock",
+        "cooldown": 500,
+        "damage": 40,
+        "h": 35,
+        "maxActive": 2,
+        "speed": 8,
+        "spriteName": "hurlRock",
+        "type": "Range",
+        "w": 35
+      },
+      "extras": {}
+    },
+    "Hurricane": {
+      "defaults": {
+        "abilityName": "Hurricane",
+        "additionalDescription": "Melee attack that moves with the player and inflicts damage when opponent is inside the hurricane",
+        "cooldown": 6000,
+        "damage": 13,
+        "delayAfterAttack": 0,
+        "duration": 3000,
+        "h": 240,
+        "lastHitTime": null,
+        "maxActive": 100,
+        "nextDamgeInterval": 500,
+        "speed": "n/a",
+        "spriteName": "hurricane",
+        "type": "Melee",
+        "w": 240
+      },
+      "extras": {}
+    },
+    "Ice Blast": {
+      "defaults": {
+        "abilityName": "Ice Blast",
+        "additionalDescription": "Inflicts damage and reduces opponent's speed",
+        "character": null,
+        "cooldown": 6000,
+        "damage": 15,
+        "duration": 3000,
+        "effectSpriteName": "iceSheet",
+        "h": 60,
+        "maxActive": 100,
+        "speed": 8,
+        "speedIncrease": -2,
+        "spriteName": "iceBlast",
+        "type": "Range",
+        "w": 60
+      },
+      "extras": {}
+    },
+    "Ice Shock": {
+      "defaults": {
+        "abilityName": "Ice Shock",
+        "cooldown": 1000,
+        "damage": 20,
+        "delayAfterAttack": 250,
+        "h": 40,
+        "maxActive": 2,
+        "speed": "n/a",
+        "spriteName": "iceShock",
+        "type": "Melee",
+        "w": 240
+      },
+      "extras": {}
+    },
+    "Icicles": {
+      "defaults": {
+        "abilityName": "Icicles",
+        "cooldown": 300,
+        "damage": 10,
+        "h": 25,
+        "maxActive": 3,
+        "speed": 10,
+        "spriteName": "icicles",
+        "type": "Range",
+        "w": 10
+      },
+      "extras": {}
+    },
+    "Rock Armour": {
+      "defaults": {
+        "abilityName": "Rock Armour",
+        "cooldown": 15000,
+        "damageDecreasePercentage": 75,
+        "duration": 3000,
+        "maxActive": 100,
+        "spriteName": "rockArmour",
+        "type": "Buff"
+      },
+      "extras": {}
+    },
+    "Rock Pellet": {
+      "defaults": {
+        "abilityName": "Rock Pellet",
+        "cooldown": 400,
+        "damage": 20,
+        "h": 10,
+        "maxActive": 3,
+        "speed": 9,
+        "spriteName": "rockPellet",
+        "type": "Range",
+        "w": 40
+      },
+      "extras": {}
+    },
+    "Shards of Ice": {
+      "defaults": {
+        "abilityName": "Shards of Ice",
+        "cooldown": 10000,
+        "damage": 20,
+        "h": 10,
+        "maxActive": 8,
+        "speed": 10,
+        "spriteName": "shardsOfIce",
+        "type": "Range Omni-directional",
+        "w": 40
+      },
+      "extras": {}
+    },
+    "Slime Blast": {
+      "defaults": {
+        "abilityName": "Slime Blast",
+        "cooldown": 1500,
+        "damage": 10,
+        "h": 20,
+        "maxActive": 3,
+        "speed": 8,
+        "spriteName": "slimeBlast",
+        "type": "Range",
+        "w": 40
+      },
+      "extras": {}
+    },
+    "Sonar Blast": {
+      "defaults": {
+        "abilityName": "Sonar Blast",
+        "additionalDescription": "Project grows in width but decreases amount of damage done over distance",
+        "cooldown": 600,
+        "damage": 40,
+        "h": 20,
+        "maxActive": 2,
+        "speed": 8,
+        "spriteName": "sonarBlast",
+        "type": "Range",
+        "w": 20
+      },
+      "extras": {}
+    },
+    "Steal Health": {
+      "defaults": {
+        "abilityName": "Steal Health",
+        "additionalDescription": "Will heal you for the amount of damage done",
+        "cooldown": 1000,
+        "damage": 10,
+        "delayAfterAttack": 250,
+        "h": 40,
+        "maxActive": 2,
+        "speed": "n/a",
+        "spriteName": "stealHealth",
+        "type": "Melee",
+        "w": 240
+      },
+      "extras": {}
+    },
+    "Stick": {
+      "defaults": {
+        "abilityName": "Stick",
+        "cooldown": 2000,
+        "damage": 10,
+        "h": 10,
+        "maxActive": 1,
+        "speed": 8,
+        "spriteName": "stick",
+        "type": "Range",
+        "w": 25
+      },
+      "extras": {}
+    },
+    "Strangling Branches": {
+      "defaults": {
+        "abilityName": "Strangling Branches",
+        "cooldown": 1000,
+        "damage": 20,
+        "delayAfterAttack": 250,
+        "h": 40,
+        "maxActive": 2,
+        "speed": "n/a",
+        "spriteName": "stranglingBranches",
+        "type": "Melee",
+        "w": 120
+      },
+      "extras": {}
+    },
+    "Tornado": {
+      "defaults": {
+        "abilityName": "Tornado",
+        "additionalDescription": "Will stun the opponent",
+        "character": null,
+        "cooldown": 6000,
+        "damage": 0,
+        "duration": 3000,
+        "h": 60,
+        "maxActive": 1,
+        "speed": 8,
+        "spriteName": "tornado",
+        "type": "Range",
+        "w": 20
+      },
+      "extras": {}
+    },
+    "Translucent Flame": {
+      "defaults": {
+        "abilityName": "Translucent Flame",
+        "additionalDescription": "Become translucent (opponent's attacks will go through you)",
+        "character": null,
+        "cooldown": 6000,
+        "duration": 1500,
+        "maxActive": 100,
+        "spriteName": "translucentFlame",
+        "type": "Buff"
+      },
+      "extras": {}
+    },
+    "Wind Cone": {
+      "defaults": {
+        "abilityName": "Wind Cone",
+        "cooldown": 400,
+        "damage": 13,
+        "h": 10,
+        "maxActive": 4,
+        "speed": 8,
+        "spriteName": "windCone",
+        "type": "Range",
+        "w": 25
+      },
+      "extras": {}
+    }
+  },
+  "characters": {
+    "Curomo": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Ice Shock": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Shards of Ice": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "good",
+        "characterName": "Curomo",
+        "characterSpeed": 6,
+        "curHealth": 100,
+        "elementalType": "water",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "curomo"
+      },
+      "extras": {}
+    },
+    "Cyclonius": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Tornado": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Wind Cone": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "evil",
+        "characterName": "Cyclonius",
+        "characterSpeed": 7,
+        "curHealth": 100,
+        "elementalType": "air",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "cyclonius"
+      },
+      "extras": {}
+    },
+    "Dummy": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Stick": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "neutral",
+        "characterName": "Dummy",
+        "characterSpeed": {
+          "bits": "3fc999999999999a",
+          "n": 0.2
+        },
+        "curHealth": 100,
+        "elementalType": "void",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "dummyTarget",
+        "unselectable": true
+      },
+      "extras": {}
+    },
+    "Echo": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Fade": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Hurricane": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "neutral",
+        "characterName": "Echo",
+        "characterSpeed": 6,
+        "curHealth": 100,
+        "elementalType": "air",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "echo"
+      },
+      "extras": {}
+    },
+    "Eternal Void": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Chaos Bolt": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Chaos Orb": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "evil",
+        "characterName": "Eternal Void",
+        "characterSpeed": 8,
+        "curHealth": 1000,
+        "elementalType": "void",
+        "isTranslucent": false,
+        "maxHealth": 1000,
+        "npc": true,
+        "spriteName": "eternalVoid"
+      },
+      "extras": {}
+    },
+    "Fiara": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Fire Heal": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Fireball": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "good",
+        "characterName": "Fiara",
+        "characterSpeed": 7,
+        "curHealth": 130,
+        "elementalType": "fire",
+        "isTranslucent": false,
+        "maxHealth": 130,
+        "spriteName": "fiara"
+      },
+      "extras": {}
+    },
+    "Ishimi": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Circus of Slime": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Slime Blast": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "neutral",
+        "characterName": "Ishimi",
+        "characterSpeed": 7,
+        "curHealth": 100,
+        "elementalType": "water",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "ishimi"
+      },
+      "extras": {}
+    },
+    "Lavax": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Crimson Fire": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Fire Dance": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "neutral",
+        "characterName": "Lavax",
+        "characterSpeed": 6,
+        "curHealth": 100,
+        "elementalType": "fire",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "lavax"
+      },
+      "extras": {}
+    },
+    "Morblass": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Ice Blast": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Icicles": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "good",
+        "characterName": "Morblass",
+        "characterSpeed": 7,
+        "curHealth": 100,
+        "elementalType": "water",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "morblass"
+      },
+      "extras": {}
+    },
+    "Pax": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Adrenaline": {
+            "lastUsed": 0
+          },
+          "Ground Shock": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "evil",
+        "characterName": "Pax",
+        "characterSpeed": 5,
+        "curHealth": 150,
+        "elementalType": "earth",
+        "isTranslucent": false,
+        "maxHealth": 150,
+        "spriteName": "pax"
+      },
+      "extras": {}
+    },
+    "Rokcore": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Rock Armour": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Rock Pellet": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "good",
+        "characterName": "Rokcore",
+        "characterSpeed": 7,
+        "curHealth": 120,
+        "elementalType": "earth",
+        "isTranslucent": false,
+        "maxHealth": 120,
+        "spriteName": "rokcore"
+      },
+      "extras": {}
+    },
+    "Sindarosa": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Fire Blast": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Translucent Flame": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "evil",
+        "characterName": "Sindarosa",
+        "characterSpeed": 7,
+        "curHealth": 100,
+        "elementalType": "fire",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "sindarosa"
+      },
+      "extras": {}
+    },
+    "Treenoc": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Entangling Vines": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Strangling Branches": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "neutral",
+        "characterName": "Treenoc",
+        "characterSpeed": 6,
+        "curHealth": 90,
+        "elementalType": "earth",
+        "isTranslucent": false,
+        "maxHealth": 90,
+        "spriteName": "treenoc"
+      },
+      "extras": {}
+    },
+    "Wispera": {
+      "defaults": {
+        "abilitiesInfo": {
+          "Sonar Blast": {
+            "curCount": 0,
+            "lastUsed": 0
+          },
+          "Steal Health": {
+            "curCount": 0,
+            "lastUsed": 0
+          }
+        },
+        "alignment": "good",
+        "characterName": "Wispera",
+        "characterSpeed": 5,
+        "curHealth": 100,
+        "elementalType": "air",
+        "isTranslucent": false,
+        "maxHealth": 100,
+        "spriteName": "wispera"
+      },
+      "extras": {}
+    }
+  },
+  "charactersArray": [
+    "Cyclonius",
+    "Sindarosa",
+    "Morblass",
+    "Pax",
+    "Wispera",
+    "Fiara",
+    "Curomo",
+    "Rokcore",
+    "Echo",
+    "Lavax",
+    "Ishimi",
+    "Treenoc"
+  ],
+  "charactersArrayIncludesBossOrDummy": false,
+  "elementalCharactersByType": {
+    "air": [
+      "Cyclonius",
+      "Wispera",
+      "Echo"
+    ],
+    "earth": [
+      "Pax",
+      "Rokcore",
+      "Treenoc"
+    ],
+    "fire": [
+      "Sindarosa",
+      "Fiara",
+      "Lavax"
+    ],
+    "water": [
+      "Morblass",
+      "Curomo",
+      "Ishimi"
+    ]
+  },
+  "game": {
+    "actionBar": null,
+    "backgroundColor": "#FFFFCC",
+    "borderColor": "#666666",
+    "borderHeight": 2,
+    "borderWidth": 2,
+    "capturableHealthPercentage": {
+      "bits": "3fd0000000000000",
+      "n": 0.25
+    },
+    "characterDisplayHeight": 80,
+    "characterDisplayWidth": 80,
+    "dummyTarget": "Dummy",
+    "gameName": "Taming the Elements",
+    "gameScene": null,
+    "gameVersion": "Version 1.0",
+    "gameWorldName": "Pria",
+    "hiddenCanvas": null,
+    "hud_height": 100,
+    "inBeta": true,
+    "lastBoss": "Eternal Void",
+    "nodeWebKitGui": null,
+    "params": null,
+    "swapCooldown": 5000
+  },
+  "garrison": {
+    "MAX_SIZE": 10,
+    "MaxXP": {
+      "chapter1": 5,
+      "chapter2": 20,
+      "chapter3": 50,
+      "chapter4": 100
+    }
+  },
+  "global": {
+    "Alert": null,
+    "actionBarHeight": 80,
+    "defaultBulletSpeed": 8,
+    "defaultMaxHealth": 100,
+    "defaultSpeed": 7,
+    "elementalDamageMultiplier": {
+      "bits": "3ff4000000000000",
+      "n": 1.25
+    },
+    "elementalDamageReductionMultiplier": {
+      "bits": "3ff4000000000000",
+      "n": 1.25
+    },
+    "imgDir": "img",
+    "imgMapDir": "img/map",
+    "sndDir": "snd",
+    "sound": true
+  },
+  "settings": {
+    "difficultyEnum": {
+      "Casual": {
+        "bits": "3fe51eb851eb851f",
+        "n": 0.66
+      },
+      "Easy": {
+        "bits": "3fd0000000000000",
+        "n": 0.25
+      },
+      "Hard": {
+        "bits": "3ff1eb851eb851ec",
+        "n": 1.12
+      },
+      "Normal": {
+        "bits": "3feb333333333333",
+        "n": 0.85
+      },
+      "WTF (Way Too Fun)": {
+        "bits": "3ff8000000000000",
+        "n": 1.5
+      }
+    },
+    "displaySettingsEnum": {
+      "Large": {
+        "bits": "3ff6666666666666",
+        "n": 1.4
+      },
+      "Largest": {
+        "bits": "3ff999999999999a",
+        "n": 1.6
+      },
+      "Medium": {
+        "bits": "3ff4000000000000",
+        "n": 1.25
+      },
+      "Smaller": {
+        "bits": "3ff199999999999a",
+        "n": 1.1
+      },
+      "Smallest": 1
+    },
+    "garrisonSortOrderEnum": {
+      "Elemental Type, Experience, Name": 3,
+      "Experience, Name, Elemental Type": 1,
+      "Name, Experience, Elemental Type": 2
+    },
+    "scalars": {
+      "defaultDifficulty": {
+        "bits": "3fe51eb851eb851f",
+        "n": 0.66
+      },
+      "defaultDisplaySettings": {
+        "bits": "3ff4000000000000",
+        "n": 1.25
+      },
+      "defaultGarrisonSortOrder": 1
+    }
+  }
+}

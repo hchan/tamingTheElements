@@ -1,0 +1,34 @@
+{
+  "garrisonSortOrder": 1,
+  "difficulty": 0.66,
+  "displaySettings": 1.25,
+  "chapter": 1,
+  "garrison": [
+    {
+      "id": "6f698de2-66a2-44b3-a221-52a394ea3c5a",
+      "experience": 1,
+      "characterName": "Fiara",
+      "createdTime": 1577836800000,
+      "lastModifiedTime": 1577836800000
+    }
+  ],
+  "createdTime": 1577836800000,
+  "lastModifiedTime": 1577836801000,
+  "params": {
+    "heroes": [
+      {
+        "id": "h1",
+        "experience": 1,
+        "characterName": "Cyclonius"
+      }
+    ],
+    "opponents": [
+      {
+        "id": "h1opponent",
+        "experience": 1,
+        "characterName": "Pax"
+      }
+    ],
+    "practice": true
+  }
+}
