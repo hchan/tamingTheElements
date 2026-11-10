@@ -18,6 +18,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
 | `tools/` | Five Perl generators for the asset manifests (`generate*.pl`, `imgHelper.pl`) |
 | `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`) |
+| `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`) |
 | `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
@@ -34,6 +35,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/` | Pure deterministic simulation code: no DOM, Phaser, Date or Math.random |
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags); imports only core via its index |
+| `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`) and typed keys (`keys.ts`) |
 | `src/ui/` | DOM menus in vanilla TS |
 | `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
 | `tests/` | Cross-cutting tests (`tests/repo/`); unit tests are colocated in `src/` |
