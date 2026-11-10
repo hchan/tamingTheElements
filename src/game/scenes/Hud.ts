@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { RenderView } from '@core/index';
+import { fitScene } from '../boot/viewport';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import {
   MAX_COLOR,
@@ -38,6 +39,7 @@ export class Hud extends Phaser.Scene {
   }
 
   create(): void {
+    fitScene(this);
     this.gfx = this.add.graphics().setDepth(100);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
