@@ -22,7 +22,9 @@ production) shows a live fps / frame-time / worst-frame readout at the top right
 `menu-no-save`, `menu-with-save`, `cinematic-frame1..3` (wall-clock timed, not deterministic), `garrison-1`, `garrison-6`,
 `garrison-6-selected`, `settings`, `objectives`, `wiki`, `key-bindings`, `about`, `character-details`, `arena-t005`,
 `arena-t060`, `arena-t150` (scripted commands: both sides firing), `arena-low-health`, `arena-capture-window`, `victory`,
-`defeat`, `rotate-overlay` (390x844 only), `error-no-webgl`, `error-unknown-character`, `arena-demo-t150` (bot vs bot). Each
+`defeat`, `rotate-overlay` (390x844 only), `error-no-webgl`, `error-unknown-character`, `arena-demo-t150` (bot vs bot),
+`arena-arcade-hitstop` and `arena-arcade-combo` (`?ff=arenaDemo,arcade`: the first Arcade volley during its hit-stop, then a
+later one, with the white flash, element sparks, damage numbers and the combo counter). Each
 has a `-1280x720` and a `-390x844` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
 notes), size and sha256.
 
@@ -74,7 +76,7 @@ Record findings as issues (below) with the screenshot name.
 | V3 | `arena-*` action bar | An empty third slot labelled `4` | human review |
 | V4 | `arena-*`, `garrison-*` | No character names or avatars on the HUD; garrison avatars render as blank space | human review and `garrison-6-*` |
 | V5 | `menu-*`, `victory`, `defeat`, `settings`... | Menu pages are bare black with left-aligned underlined links and no layout or art | human review |
-| V6 | `arena-t060`, `arena-t150` | The hit flash never visibly renders (found in code review; cause not yet confirmed). `createPhaserFxSink.flash` in `src/game/fx/event-fx.ts` sets a tint and clears it after 60 ms; no captured frame shows a tinted character | code review |
+| V6 | `arena-t060`, `arena-t150` | Fixed in WP-arcade-juice-hits. The hit flash did render, but too little and too briefly to see: a 60 ms wall-clock timer (`scene.time.delayedCall`) cleared a mild multiply tint (`0xff7777`) after 3 to 4 frames, which had always expired by the time a stepped capture was taken; the frozen tint, rewritten every frame, overwrote it on frozen victims; and Classic melee hits emit no `damage` event, so they never flashed. Now `CharacterView` owns the tint and counts rendered frames (white fill for 2, then the hit tint for 4, over the frozen tint), and effects hold while the sim is paused, so stepped captures show them. Classic melee still has no flash (no event; a sim change) | code review, `tests/e2e/arcade-juice.spec.ts` |
 | V7 | `cinematic-frame*` | The fullscreen toggle overlaps the Skip button (top right) | `cinematic-frame2-1280x720` |
 | V8 | `arena-*-390x844` | HUD text and action bar are tiny (a letterboxed 390 px wide canvas) | `arena-t060-390x844` |
 | V9 | `character-details` | Content runs past the bottom of the viewport with no visible scroll cue | `character-details-1280x720` |

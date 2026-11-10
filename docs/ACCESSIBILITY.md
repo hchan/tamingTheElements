@@ -35,7 +35,7 @@ Settings has an **Accessibility** group.
 
 | Option | Default | Effect |
 |---|---|---|
-| Reduce motion | `prefers-reduced-motion` | Drops screen shake and hit particles (`EventFx`), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). The white hit flash stays: it is a 60 ms tint, not motion. |
+| Reduce motion | `prefers-reduced-motion` | Drops screen shake, hit particles and the Arcade hit-stop jitter (`EventFx`; Arcade shows one static 100 ms spark instead of particles), replaces cinematic spins and moves with an instant change plus a short cross-fade (`planTween`), shows the portal embers as one still frame, and turns off CSS animation and smooth scrolling (`html[data-reduce-motion]`). Information stays: the hit flash (white for 2 frames, then a tint for 4; no motion), Arcade damage numbers (they fade in place instead of floating up) and the combo counter (no pop; it stays 1 s after the combo). |
 | High contrast | `prefers-contrast: more` | Stronger borders and focus rings, solid text colours, and the colour-blind-safe HUD palette below. |
 
 Both are saved as optional booleans in the v1 save (`reduceMotion`, `highContrast`). A missing field means "follow the OS",
@@ -52,6 +52,8 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
 - The bar stroke changes pattern with the state: solid, long dashes, short dashes (`healthCue`, `dashSegments`).
 - Status icons carry a plus (buff) or a cross (debuff) in addition to green or red.
 - High contrast swaps the green to red ramp for an Okabe-Ito set (sky blue, yellow, vermillion) and adds white outlines.
+- Arcade damage numbers (`src/game/hud/arcade-hud.ts`): combo-scaled hits are grey and smaller, counter hits gold and
+  labelled `COUNTER`; the combo counter is text (`3 HITS`, `46 DMG`) with a black outline.
 
 ## In-battle announcements and pause
 
@@ -86,10 +88,12 @@ remapping is not offered; browsers expose a pad only after its first button pres
 | axe audit of every screen | `tests/e2e/a11y.spec.ts` |
 | keyboard-only navigation, focus, Escape, Space, no traps, pause dialog | `tests/e2e/keyboard.spec.ts` |
 | reduce motion (OS default, opt out, opt in, no shake), high contrast, rebinding, gamepad pause, announcements | `tests/e2e/a11y-features.spec.ts` |
+| hit feedback with reduced motion: flash, damage numbers and combo stay, no shake (Arcade); fake-sink rules (static spark, no jitter) | `tests/e2e/arcade-juice.spec.ts`, `src/game/fx/event-fx.test.ts`, `src/game/hud/arcade-hud.test.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done
 
 Moderate and minor axe findings are not gated. There is no text-scaling control beyond Display Size, no separate
 volume controls, no gamepad button remapping, and the Phaser canvas itself is not exposed to assistive technology (the
-live regions and the HUD text cue stand in for it).
+live regions and the HUD text cue stand in for it). The setting that hides Arcade damage numbers (FUN-DESIGN section 3) is
+not built yet; hits and combos are not announced in the live region.

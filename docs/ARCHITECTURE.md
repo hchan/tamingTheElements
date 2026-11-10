@@ -141,7 +141,10 @@ with a per-tick `seq`. The id of an event is `(tick, sourceId, kind, seq)`; it i
 a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-events-carry-stable-ids.md)). Kinds today:
 `moved, blocked, damage, died, swapped, captured, captureFailed, matchEnded` (Classic, kinds 1..30), plus the Arcade-only
 `hitStop` (40), `hitConfirmed` (41) and `recovered` (58) ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
-`src/game/audio/audio-manager.ts`) dedupe by this id, so rewinding or re-stepping never doubles an effect.
+`src/game/audio/audio-manager.ts`) dedupe by this id, so rewinding or re-stepping never doubles an effect. In Arcade,
+`EventFx` drives hit feedback from `hitConfirmed` (flash, sparks by strength, damage number) and the `hitStop` after it
+(victim jitter until the freeze deadline, shake by strength or KO) and skips the paired `damage`; Classic keeps reacting to
+`damage`. `CharacterView` owns the tint and counts rendered frames for the flash; effects hold while the driver is paused.
 
 ## RNG streams
 
@@ -212,6 +215,10 @@ Phaser scenes in `src/game/scenes/`: `Boot`, `Preload`, `Arena` (runs the driver
 (parallel to Arena, reads `RenderView`), `Cinematic` (data-driven by `src/game/cinematics/`). DOM menus (`src/ui/`) own
 everything outside a match (router, screens); the composition root `src/game/app/` wires them to scenes. Scenes read the sim
 only through the `RenderView` facade in `src/core/sim/view.ts` and never decide gameplay (for example death is a sim system).
+`RenderView.arcade()` (undefined in Classic) adds the Arcade read-outs: hit-stop freeze, live combo hits and damage per
+team, stun and invulnerability per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
+(`src/game/hud/arcade-hud.ts`: pooled damage numbers, combo counters) from events and `arcade()`, ages it while the driver
+runs, and hands it to `Hud` in `HudData`, which only draws it with pooled texts.
 
 ## Legacy concept map
 
