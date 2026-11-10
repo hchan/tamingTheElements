@@ -31,4 +31,5 @@ export * from './agents/agent';
 export * from './agents/random-bot';
 export * from './agents/replay-agent';
 export * from './sim/match';
+export * from './sim/view';
 export * from './rules/progression';
