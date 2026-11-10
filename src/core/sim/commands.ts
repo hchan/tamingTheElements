@@ -20,6 +20,8 @@ export const Cmd = {
   swap4: 1 << 10,
   /** Arcade only (masked off in Classic by inputMaskFor): dash (FUN-DESIGN 2.7). */
   dash: 1 << 11,
+  /** Arcade only (masked off in Classic by inputMaskFor): hold to guard, press to parry (FUN-DESIGN 2.8). */
+  guard: 1 << 12,
   /** Arcade only (masked off in Classic by inputMaskFor): start a super (FUN-DESIGN 2.5). */
   super: 1 << 13,
 } as const;

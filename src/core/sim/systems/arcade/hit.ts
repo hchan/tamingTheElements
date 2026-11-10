@@ -1,8 +1,8 @@
 import { ABILITIES_A } from '../../../data/abilities-a';
 import { ABILITIES_B } from '../../../data/abilities-b';
 import {
-  HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, KO_HIT_STOP_TICKS, comboScalePm, hitStrengthFor,
-  hitStunFor, type HitStrengthValue,
+  GUARD_CHIP_PM, HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, KO_HIT_STOP_TICKS,
+  PARRY_HIT_STOP_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import { computeDamage, damageDealt } from '../../../rules/damage';
@@ -14,7 +14,8 @@ import { damageDecreasePct } from '../status';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
 import { knockbackDir, setKnockback } from './knockback';
 import { meterOnHit } from './meter';
-import { applyStun } from './stun';
+import { blockHit, parry } from './guard';
+import { applyStun, isGuarding } from './stun';
 
 /** Strength tier per ability def index (set A then set B: the ABILITY_DEFS order of projectile.ts and melee.ts). */
 export const HIT_STRENGTH: readonly HitStrengthValue[] = [...ABILITIES_A, ...ABILITIES_B].map((d) =>
@@ -54,7 +55,10 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * strength and hit-stun with the juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap
  * ends the combo); a counter hit (victim in its own cast recovery) stuns one tier more. Last, both teams' hyper meters
  * gain from the health removed (FUN-DESIGN 2.5, `meterLevel` when a bar fills). The hit is the team's last confirm
- * (`confirmTick`, the dash cancel window of FUN-DESIGN 2.7). Returns the health removed.
+ * (`confirmTick`, the dash cancel window of FUN-DESIGN 2.7). Guard and parry (FUN-DESIGN 2.8, arcade/guard.ts; never a
+ * super): a parry window turns the hit into `parried` and the parry hit-stop (no damage, returns 0); a guarding victim
+ * takes GUARD_CHIP_PM of the damage with `guarded` instead of `hitConfirmed`, no combo or confirm, the light knockback
+ * and block-stun instead of hit-stun. Returns the health removed.
  */
 export function applyArcadeHit(
   world: SimWorld, sink: EventSink, source: number, attacker: number, victim: number, base: number, defIdx: number,
@@ -62,10 +66,17 @@ export function applyArcadeHit(
 ): number {
   const s = world.state;
   const team = s.team[source] ?? 0;
-  const counter = isCounterHit(s, victim);
-  const combo = comboHit(world, sink, source, team, victim);
   const strength = defIdx === SUPER_DEF ? HitStrength.super : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
-  const scalePm = comboScalePm(combo, strength);
+  // Supers are unblockable (FUN-DESIGN 2.8).
+  const sup = strength === HitStrength.super;
+  if (!sup && parry(world, sink, source, attacker, victim)) {
+    hitStop(world, sink, source, PARRY_HIT_STOP_TICKS, HitStopCause.parry);
+    return 0;
+  }
+  const guard = !sup && isGuarding(s, victim);
+  const counter = isCounterHit(s, victim);
+  const combo = guard ? 1 : comboHit(world, sink, source, team, victim);
+  const scalePm = guard ? GUARD_CHIP_PM : comboScalePm(combo, strength);
   const raw = computeDamage({
     base,
     attackerMult: s.dmgMult[attacker] ?? 1,
@@ -77,19 +88,24 @@ export function applyArcadeHit(
   const amount = scalePm === 1000 ? raw : (raw * scalePm) / 1000;
   const before = s.hp[victim] ?? 0;
   s.hp[victim] = before - amount;
-  addComboDamage(s, team, amount);
-  s.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.confirmTick] = now(s) + 1;
   sink.emit(source, SimEventKind.damage, { target: victim, attacker, amount });
-  sink.emit(source, SimEventKind.hitConfirmed, {
-    target: victim, attacker, ability: defIdx, strength, amount, scalePm, combo, dir, counter: counter ? 1 : 0,
-  });
+  if (guard) {
+    sink.emit(source, SimEventKind.guarded, { target: victim, attacker, chip: amount });
+  } else {
+    addComboDamage(s, team, amount);
+    s.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.confirmTick] = now(s) + 1;
+    sink.emit(source, SimEventKind.hitConfirmed, {
+      target: victim, attacker, ability: defIdx, strength, amount, scalePm, combo, dir, counter: counter ? 1 : 0,
+    });
+  }
   const ko = before > 0 && before - amount <= 0;
   const ticks = ko ? KO_HIT_STOP_TICKS : HIT_STOP_TICKS[strength];
   hitStop(world, sink, source, ticks, ko ? HitStopCause.ko : HitStopCause.hit);
-  setKnockback(s, victim, KNOCKBACK_Q4[strength], knockbackDir(s, source, victim, dir));
-  const stun = HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength];
-  applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
+  setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
   const dealt = damageDealt(before, amount);
+  const stun = HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength];
+  if (guard) blockHit(world, sink, source, victim, dealt);
+  else applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
   meterOnHit(s, sink, source, team, victim, dealt);
   return dealt;
 }

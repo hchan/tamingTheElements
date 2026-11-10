@@ -59,8 +59,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 - **State.** One new `SimState.arcade: Int32Array`, **length 0 when the flag is off**. `hash()` and `snapshot()` iterate
   `stateArrays`, so a zero-length array adds no bytes and Classic hashes stay identical. Layout (all Int32):
   - per entity (`ARCADE_E = 15` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
-    dashUntil, dashReadyAt, guardState, parryUntil, parryLockUntil, guardMeter, comboStunTotal, wallBounced, aim,
-    dashDodged`;
+    dashUntil, dashReadyAt, blockUntil, parryUntil, parryLockUntil, guardDrain, comboStunTotal, wallBounced, aim,
+    dashDodged` (WP 16 renamed `guardState` and `guardMeter`: `guardDrain` is 1000 minus the guard meter);
   - per team (`ARCADE_T = 16` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 5
     (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState, pressUsed, confirmTick`;
   - world (`ARCADE_W = 8`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil`.
@@ -272,6 +272,27 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   A parried projectile is **reflected**: its dir is reversed and its team and owner become the parrier's. A parried melee
   stuns its attacker for 20 ticks. A whiffed parry (no hit within 8 ticks) locks new parries for 20 ticks (no mashing).
   Owner: `arcade/hit.ts` checks `parryUntil` before applying damage.
+- Built in WP 16 (`systems/arcade/guard.ts`, table in `data/arcade.ts`): `Cmd.guard` is bit 12 (Classic masks it); its
+  key and pad binding come with the defence view (WP 17), the AI guards with WP 23. A character guards while its team
+  holds the bit and it could otherwise act (not stunned, block-stunned, dashing or in dash recovery, in a super or in
+  melee cast recovery; `fight` phase), and through its block-stun even with the bit released. `canAct` is false while the
+  bit is held, but a dash press still starts a dash out of guard (the dash cancels guard; its invulnerable ticks are not
+  hit at all). Supers are unblockable and cannot be parried. A guarded hit deals 250 pm of the hit's damage (the
+  combo-scale multiply) with `damage` and `guarded {target, attacker, chip}` instead of `hitConfirmed`, keeps the hit's
+  strength hit-stop, sets the light knockback and `blockUntil = gameTick + 8`, counts no combo and no confirm (no dash
+  cancel), and the meter gains apply to the chip. "Dealt" in the drain is the chip removed:
+  `guardDrain += floor(chip * 2000 / maxHp)`, capped at 1000; at 1000 `guardBroken {target}` follows the `hitStop` and
+  the 60-tick stun goes through `applyStun` (caps, `recovered`) instead of the block-stun. The controlled character
+  regenerates 5 per unfrozen game tick while it does not guard (a benched one keeps its meter until it is back). A guard
+  press is buffered like the dash: the `input` slot, after the dash, uses it once the character could act, and opens the
+  window `parryUntil = start + 9` (a hit 0..8 game ticks after the start is parried), with the whiff lock
+  `parryLockUntil = start + 29`; a press before the lock ends is dropped (so mashing never parries, also inside a live
+  window), and a parry clears both. A parry emits `parried {target, attacker, reflected}`, +150 meter and then
+  `hitStop {10, cause 1}`, deals nothing and returns 0 (Steal Health heals nothing). A projectile is reflected: `vx`/`vy`
+  negated, dir8 `(dir + 4) & 7`, team and owner the parrier's, and its active count moves from the shooter to the
+  parrier (when the parrier has that ability), so neither side leaks a bullet; it flies on in the same tick. A melee
+  stuns its attacker for 20 through `applyStun`. Entangling Vines deals no damage and stays outside the hit path (2.2),
+  so it is not guarded nor parried, like a throw; a guarded Ice Blast still slows.
 
 ### 2.9 Elemental clash (sim)
 
@@ -359,7 +380,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   leaves both presses 0..3 game ticks old and the team has a bar and no super running, the pair becomes a super press
   (an edge feeds one chord), and held primary and secondary are masked while it is pending, so the chord is only the
   super (without a bar it stays two attacks). Dash and guard edges are recorded for WPs 15 and 16, which consume them
-  (the dash press since WP 15, section 2.7).
+  (the dash press since WP 15, section 2.7; the guard press, a parry window, since WP 16, section 2.8).
   The Arcade AI drops a press that would complete a chord by accident (`avoidChord`, from the new `ArcadeView.prevCmd`,
   `primaryAge` and `secondaryAge`), so Easy still never supers. Intro-phase buffering came with `canAct`'s phase check
   (WP 13): a press in the last 8 game ticks of an intro runs on the first fight tick; the reset between rounds clears
@@ -588,7 +609,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 13 | `WP-arcade-rounds` (done: section 2.10) | sim | Phases, timer, best of 3, KO slow-motion, time-over rule, `matchEnded` after 2 wins, round events | 2 |
 | 14 | `WP-arcade-announcer-view` (done: section 3; also the timer and round pips, and the canvas centred vertically, VISUAL-QA V1) | view | Round intro, timer HUD, KO, TIME, PERFECT text, live-region lines | 13 |
 | 15 | `WP-arcade-dash` (done: section 2.7; binding in 17, AI in 23) | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |
-| 16 | `WP-arcade-guard-parry` | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
+| 16 | `WP-arcade-guard-parry` (done: section 2.8; binding in 17, AI in 23) | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
 | 17 | `WP-arcade-defence-view` | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |
 | 18 | `WP-arcade-clash` | sim+view | Projectile clash by element, clash burst | 2 |
 | 19 | `WP-arcade-tag` | sim | 2v2 setup, swap 150, entrance at the outgoing position, entrance attack, tag combo, rest rate, KO entrance | 3, 4 |

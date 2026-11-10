@@ -202,12 +202,15 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       diverged ||=
         evs.some((e) => e.kind === SimEventKind.hitConfirmed || e.kind === SimEventKind.died || e.kind === SimEventKind.dashed) ||
         cevs.some((e) => e.kind === SimEventKind.blocked) ||
+        ((p | q) & Cmd.guard) !== 0 ||
         stunned(a.state) ||
         aimedDiagonally(a.state);
       if (!diverged) expect(strip(classicPart(evs))).toEqual(strip(cevs));
       const stops = evs.filter((e) => e.kind === SimEventKind.hitStop).map((e) => e['ticks'] ?? 0);
-      // Every hit stops the clock; a KO that no hit caused (the round's `ko`) adds the round's KO stop.
-      const hits = evs.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
+      // Every hit (guarded and parried ones too) stops the clock; a KO that no hit caused (the round's `ko`) adds the
+      // round's KO stop.
+      const stopping: number[] = [SimEventKind.hitConfirmed, SimEventKind.guarded, SimEventKind.parried];
+      const hits = evs.filter((e) => stopping.includes(e.kind)).length;
       expect(stops.length).toBeGreaterThanOrEqual(hits);
       expect(stops.length).toBeLessThanOrEqual(hits + evs.filter((e) => e.kind === SimEventKind.ko).length);
       let frozen = 0;

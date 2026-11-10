@@ -51,11 +51,13 @@ export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE +
  * Knockback speeds are Q4 (1/16 px per tick); `wallBounced` is 1 once the victim bounced off a wall in this combo.
  * `aim` is the 8-way cast facing plus one (0 = no input yet: the 4-way `dir`), see systems/arcade/aim.ts.
  * `dashUntil` is the game tick a dash ends (start + DASH_TICKS), `dashReadyAt` the first tick of the next dash and
- * `dashDodged` 1 once the dash scored its perfect dodge (systems/arcade/dash.ts).
+ * `dashDodged` 1 once the dash scored its perfect dodge (systems/arcade/dash.ts). `blockUntil` ends the block-stun,
+ * `guardDrain` is GUARD_MAX minus the guard meter (so a zeroed block is a full meter), `parryUntil` ends the parry window
+ * and `parryLockUntil` the whiff lock, all game ticks (systems/arcade/guard.ts).
  */
 export const ArcadeE = {
-  stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, guardState: 7,
-  parryUntil: 8, parryLockUntil: 9, guardMeter: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
+  stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, blockUntil: 7,
+  parryUntil: 8, parryLockUntil: 9, guardDrain: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
   dashDodged: 14,
 } as const;
 export const ARCADE_E = 15;

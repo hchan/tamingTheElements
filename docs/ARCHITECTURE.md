@@ -117,7 +117,8 @@ times the combo scale (`arcade/combo.ts`) and sets the hit-stop freeze, knockbac
 `arcade/stun.ts`), then adds the hyper meter gains of both teams (`arcade/meter.ts`; casts add theirs from the cast
 sites through `onArcadeCast`, a no-op in Classic); the Classic lines run
 unchanged behind `!isArcade`. The cast sites and movement ask `canAct` (Classic: not frozen; Arcade: also not
-stunned, not casting a super, in the fight phase and not dashing or in dash recovery), and Arcade movement applies knockback first and holds both axes at the walls. The
+stunned or block-stunned, not casting a super, in the fight phase, not dashing or in dash recovery and not holding
+`Cmd.guard`), and Arcade movement applies knockback first and holds both axes at the walls. The
 `health` slot is `arcadeSuper` (`arcade/super.ts`): `Cmd.super` spends a meter bar for a super (a 40-tick freeze, then
 an `effect` entity whose hits go through `applyArcadeHit` as strength 3). Arcade aims 8 ways (`arcade/aim.ts`): movement
 stores the dir8 of the held input in the entity's `aim` slot next to the 4-way `dir` (the reels), and the projectile and
@@ -131,11 +132,15 @@ holds every second tick through the same freeze gate (`clockHeld` in `sim/clock.
 clears the buffered presses. Arcade dashes (`arcade/dash.ts`): the `input` slot starts a dash on a pending `Cmd.dash`
 press or a double-tapped direction (recorded by the buffer), movement steps it (12 ticks at 3x speed), `isInvulnerable`
 covers its dash ticks 2..7 (an enemy projectile overlapping then is a perfect dodge in the projectile system), `canAct`
-waits out its recovery, and a dash within 10 ticks of the team's last confirmed hit cancels melee recovery.
+waits out its recovery, and a dash within 10 ticks of the team's last confirmed hit cancels melee recovery. Guard and
+parry (`arcade/guard.ts`): after the dash the `input` slot regenerates the guard meter and opens a parry window on a
+pending guard press (with a whiff lock); `applyArcadeHit` checks the window first (a parry: no damage, the projectile is
+reflected or the melee attacker stunned) and then `isGuarding` (chip damage, block-stun, guard meter drain and break);
+supers skip both.
 
 | # | System | Status |
 |---|---|---|
-| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`) and dash starts (`dashed`) on unfrozen ticks |
+| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`), dash starts (`dashed`), guard meter regeneration and parry windows on unfrozen ticks |
 | 2 | swap (`systems/swap.ts`) | implemented |
 | 3 | movement (`systems/movement.ts`) | implemented |
 | 4 | abilities | no-op (planned) |

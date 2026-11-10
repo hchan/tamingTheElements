@@ -3,6 +3,7 @@ import {
   MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason,
 } from '../../../data/arcade';
 import { inFight, isArcade, now } from '../../clock';
+import { Cmd } from '../../commands';
 import { SimEventKind, type EventSink } from '../../events';
 import {
   ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, MAX_ENTITIES, type SimState,
@@ -47,21 +48,40 @@ export function inSuper(s: SimState, id: number): boolean {
 }
 
 /**
- * `canAct` without the cast recovery (the `frozen` flag): not stunned, not casting a super, in the `fight` phase, and
- * not dashing nor in the DASH_RECOVERY_TICKS after a dash. Always true in Classic (the block is empty).
+ * `canAct` without the cast recovery (the `frozen` flag) and the guard: not stunned nor block-stunned, not casting a
+ * super, in the `fight` phase, and not dashing nor in the DASH_RECOVERY_TICKS after a dash. Always true in Classic (the
+ * block is empty).
  */
 export function isFree(s: SimState, id: number): boolean {
-  const dash = s.arcade[id * ARCADE_E + ArcadeE.dashUntil] ?? 0;
-  return !isStunned(s, id) && !inSuper(s, id) && inFight(s) && !(dash > 0 && now(s) < dash + DASH_RECOVERY_TICKS);
+  const e = id * ARCADE_E;
+  const dash = s.arcade[e + ArcadeE.dashUntil] ?? 0;
+  const g = now(s);
+  return !isStunned(s, id) && !inSuper(s, id) && inFight(s) && !(dash > 0 && g < dash + DASH_RECOVERY_TICKS) &&
+    (s.arcade[e + ArcadeE.blockUntil] ?? 0) <= g;
+}
+
+/** `isFree` and out of cast recovery: `canAct` without the guard (Classic's whole `canAct`). */
+export const isReady = (s: SimState, id: number): boolean => ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && isFree(s, id);
+
+/** True while `id`'s team holds `Cmd.guard` (its `prevCmd`, this tick's command). Never true in Classic. */
+const guardHeld = (s: SimState, id: number): boolean =>
+  ((s.arcade[ARCADE_TEAM_BASE + (s.team[id] ?? 0) * ARCADE_T + ArcadeT.prevCmd] ?? 0) & Cmd.guard) !== 0;
+
+/**
+ * True while `id` guards (FUN-DESIGN 2.8): block-stunned, or holding `Cmd.guard` while it could act otherwise. Only
+ * the controlled character is ever hit, so the team's held guard is its own.
+ */
+export function isGuarding(s: SimState, id: number): boolean {
+  return (s.arcade[id * ARCADE_E + ArcadeE.blockUntil] ?? 0) > now(s) || (guardHeld(s, id) && isReady(s, id));
 }
 
 /**
  * Whether `id` may move or cast (FUN-DESIGN 2.1). Classic: not frozen, exactly the old check. Arcade: also `isFree`
- * (guard joins with its work package).
+ * and not holding guard.
  */
 export function canAct(world: SimWorld, id: number): boolean {
   const s = world.state;
-  return ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && isFree(s, id);
+  return isReady(s, id) && !guardHeld(s, id);
 }
 
 /** Ends the victim's combo early: no stun, a fresh juggle and stun budget, RECOVERY_INVULN_TICKS of invulnerability. */

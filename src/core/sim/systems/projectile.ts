@@ -163,6 +163,8 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     const attacker = s.owner[id] ?? 0;
     if (isArcade(s)) {
       applyArcadeHit(world, sink, id, attacker, target, s.hp[id] ?? 0, s.defId[id] ?? 0, s.dir[id] ?? 0);
+      // A parry reflected it (arcade/guard.ts): it flies on for the parrier's team.
+      if (s.team[id] === s.team[target]) continue;
     } else {
       const amount = computeDamage({
         base: s.hp[id] ?? 0,
