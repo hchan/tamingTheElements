@@ -3,6 +3,8 @@ import { CinematicRunner, type CinematicScript, type CinematicSink, type Rect, t
 import { INTRO_SCRIPT } from '../cinematics/scripts';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, crisp, fitScene } from '../boot/viewport';
 import { counted, teardown } from '../platform/test-hook';
+import { getPrefs } from '../platform/a11y/prefs';
+import { planTween } from '../fx/motion';
 
 export const CINEMATIC_SCENE = 'Cinematic';
 
@@ -100,18 +102,26 @@ export class Cinematic extends Phaser.Scene {
     };
   }
 
+  /** Reduced motion (Settings or the OS) swaps spins and moves for an instant change plus a short cross-fade. */
   private tweenSprite(id: string, to: TweenTarget, ms: number): void {
     const img = this.sprites.get(id);
     if (!img) return;
+    const plan = planTween(to, ms, getPrefs().reduceMotion);
+    const apply = (t: TweenTarget, props: Record<string, number>, set: boolean): void => {
+      if (t.alpha !== undefined) props['alpha'] = t.alpha;
+      if (t.spin !== undefined) props['angle'] = img.angle + t.spin;
+      const r: Partial<Rect> = t;
+      if (r.w !== undefined) props['displayWidth'] = r.w;
+      if (r.h !== undefined) props['displayHeight'] = r.h;
+      if (r.x !== undefined) props['x'] = r.x + (r.w ?? img.displayWidth) / 2;
+      if (r.y !== undefined) props['y'] = r.y + (r.h ?? img.displayHeight) / 2;
+      if (set) Object.assign(img, props);
+    };
+    apply(plan.instant, {}, true);
+    if (plan.animated === null) return;
     const props: Record<string, number> = {};
-    if (to.alpha !== undefined) props['alpha'] = to.alpha;
-    if (to.spin !== undefined) props['angle'] = img.angle + to.spin;
-    const r: Partial<Rect> = to;
-    if (r.w !== undefined) props['displayWidth'] = r.w;
-    if (r.h !== undefined) props['displayHeight'] = r.h;
-    if (r.x !== undefined) props['x'] = r.x + (r.w ?? img.displayWidth) / 2;
-    if (r.y !== undefined) props['y'] = r.y + (r.h ?? img.displayHeight) / 2;
-    this.tweens.add({ targets: img, duration: ms, ...props });
+    apply(plan.animated, props, false);
+    this.tweens.add({ targets: img, duration: plan.ms, ...props });
   }
 
   /** Test-build-only hook (statically removed from production builds). */

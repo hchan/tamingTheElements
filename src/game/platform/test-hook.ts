@@ -26,6 +26,10 @@ export interface ArenaProbe {
   clicks(): number[];
   /** True when the player's action bar offers Capture (chapter 2 onward). */
   captureGranted(): boolean;
+  /** True while the main camera shake effect is running (reduced motion keeps it false). */
+  shaking(): boolean;
+  /** Key codes bound per action in the running battle's keyboard agent. */
+  boundCodes(): Record<string, readonly string[]>;
 }
 
 /** Test control of the running Cinematic scene. */

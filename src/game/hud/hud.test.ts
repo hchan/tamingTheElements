@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { barFill, benchBar, fraction, getHealthColor, mainBar, sideOffset } from './bars';
-import { elapsedFraction, isHostile } from './buffs';
+import {
+  HC_COLORS,
+  barFill,
+  benchBar,
+  dashSegments,
+  fraction,
+  getHealthColor,
+  healthCue,
+  healthFill,
+  healthState,
+  mainBar,
+  sideOffset,
+} from './bars';
+import { buffColor, elapsedFraction, isHostile } from './buffs';
 import { StatusId } from '@core/index';
 
 describe('getHealthColor (legacy ramp)', () => {
@@ -51,5 +63,51 @@ describe('buff slots', () => {
     expect(isHostile(StatusId.tornado)).toBe(true);
     expect(isHostile(StatusId.iceBlast)).toBe(true);
     expect(isHostile(StatusId.adrenaline)).toBe(false);
+  });
+});
+
+describe('colour-blind-safe health cues', () => {
+  it('classifies health into three states at the 50% and 25% lines', () => {
+    expect(healthState(1)).toBe('healthy');
+    expect(healthState(0.5)).toBe('healthy');
+    expect(healthState(0.49)).toBe('hurt');
+    expect(healthState(0.26)).toBe('hurt');
+    expect(healthState(0.25)).toBe('critical');
+    expect(healthState(0)).toBe('critical');
+    expect(healthState(Number.NaN)).toBe('healthy');
+  });
+  it('every state has a distinct label and a distinct stroke pattern, independent of colour', () => {
+    const cues = [1, 0.4, 0.1].map(healthCue);
+    expect(new Set(cues.map((c) => c.label)).size).toBe(3);
+    expect(new Set(cues.map((c) => JSON.stringify(c.dash))).size).toBe(3);
+    expect(cues[0]?.dash).toBeNull();
+    expect(healthCue(0.72).text).toBe('72% OK');
+    expect(healthCue(0.1).text).toBe('10% LOW');
+  });
+  it('splits a bar into dash segments and keeps a solid bar whole', () => {
+    expect(dashSegments(0, 40, null)).toEqual([[0, 40]]);
+    expect(dashSegments(0, 40, [16, 6])).toEqual([
+      [0, 16],
+      [22, 38],
+    ]);
+    expect(dashSegments(0, 30, [16, 6])).toEqual([
+      [0, 16],
+      [22, 30],
+    ]);
+    expect(dashSegments(10, 10, [4, 4])).toEqual([]);
+  });
+  it('high contrast uses a palette whose states differ in more than red versus green', () => {
+    const fills = [1, 0.4, 0.1].map((f) => healthFill(f, true));
+    expect(new Set(fills).size).toBe(3);
+    for (const c of fills) {
+      expect(c).not.toBe(0xff0000);
+      expect(c).not.toBe(0x00ff00);
+    }
+    expect(healthFill(1, false)).toBe(0x00ff00);
+    expect(barFill(mainBar(0), 10, 100, 100, true).color).toBe(HC_COLORS.critical);
+  });
+  it('buffs differ by colour in both palettes (and by glyph in the HUD)', () => {
+    expect(buffColor(true, false)).not.toBe(buffColor(false, false));
+    expect(buffColor(true, true)).not.toBe(buffColor(false, true));
   });
 });

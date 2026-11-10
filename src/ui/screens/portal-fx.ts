@@ -1,4 +1,5 @@
 /** ChaoticFire: fiery canvas effect shown while hovering the portal (final boss entry) button. Cosmetic only. */
+import { getPrefs } from '../../game/platform/a11y/prefs';
 
 export interface Ember {
   x: number;
@@ -52,8 +53,9 @@ const START_EVENTS = ['mouseenter', 'focus'] as const;
 const STOP_EVENTS = ['mouseleave', 'blur'] as const;
 const TWO_PI = 6.283185307179586;
 
+/** Effective reduce-motion: the Settings choice if saved, else the OS `prefers-reduced-motion`. */
 export function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return typeof window !== 'undefined' && getPrefs().reduceMotion;
 }
 
 /** Advance embers one frame: drift with jitter, rise, age. Returns the surviving embers (mutated in place). */
