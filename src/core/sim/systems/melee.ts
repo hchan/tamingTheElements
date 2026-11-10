@@ -20,7 +20,8 @@ import { controlledId } from './movement';
 import { damageDecreasePct } from './status';
 import type { EventSink } from '../events';
 import { isArcade, now } from '../clock';
-import { applyArcadeHit } from './arcade/hit';
+import { applyArcadeHit, HIT_STUN } from './arcade/hit';
+import { applyStun, canAct, isInvulnerable } from './arcade/stun';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -148,6 +149,12 @@ function meleeHit(world: SimWorld, sink: EventSink, id: number, victim: number):
 
   if (defId === VINES) {
     if (victimTranslucent) return;
+    if (isArcade(s)) {
+      // Arcade: one 60-tick stun per cast that obeys the juggle and stun caps, instead of the 150-tick freeze.
+      if ((s.hitMask[id] ?? 0) === 0) applyStun(world, sink, id, victim, HIT_STUN[VINES] ?? 0);
+      s.hitMask[id] = HIT;
+      return;
+    }
     setFlag(world, victim, EntityFlag.frozen, true);
     // KNOWN-BUG:vines-stacking  legacy schedules an unfreeze per overlapping frame; one per cast is
     // kept here (later ones are no-ops unless something else froze the target). Each cast's expiry
@@ -212,6 +219,7 @@ function updateMelee(world: SimWorld, sink: EventSink, id: number, tick: number)
 
   const victim = controlledId(world, 1 - (s.team[id] ?? 0));
   if (victim < 0) return;
+  if (isInvulnerable(s, victim)) return; // Arcade only
   const box: Aabb = { x: s.x[victim] ?? 0, y: s.y[victim] ?? 0, w: s.w[victim] ?? 0, h: s.h[victim] ?? 0 };
   const mine: Aabb = { x: s.x[id] ?? 0, y: s.y[id] ?? 0, w: s.w[id] ?? 0, h: s.h[id] ?? 0 };
   if (aabbOverlap(mine, box)) meleeHit(world, sink, id, victim);
@@ -229,7 +237,7 @@ function updateEffect(world: SimWorld, id: number, tick: number): void {
 function cast(world: SimWorld, team: number, slot: number, tick: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
-  if (caster < 0 || ((s.flags[caster] ?? 0) & EntityFlag.frozen) !== 0) return;
+  if (caster < 0 || !canAct(world, caster)) return;
   const abilityId = CHARACTERS[s.defId[caster] ?? 0]?.abilities[slot];
   const defId = abilityId === undefined ? undefined : DEF_INDEX.get(abilityId);
   const def = defId === undefined ? undefined : ABILITY_DEFS[defId];

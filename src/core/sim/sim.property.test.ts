@@ -8,12 +8,12 @@ import { Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { restore, snapshot, createSnapshotBuf } from './snapshot';
-import { ARCADE_WORLD_BASE, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_ACTIVE_COUNTS, TEAM_STRIDE, TeamField, World } from './state';
+import { ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_ACTIVE_COUNTS, TEAM_STRIDE, TeamField, World } from './state';
 import { ABILITY_DEFS } from './systems/projectile';
 import { hasEnded } from './systems/end';
 import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
-import { KO_HIT_STOP_TICKS } from '../data/arcade';
+import { COMBO_STUN_CAP_TICKS, JUGGLE_LIMIT, KO_HIT_STOP_TICKS } from '../data/arcade';
 import { SimEventKind, type SimEvent } from './events';
 import type { SimWorld } from './world';
 
@@ -166,6 +166,19 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   const hits = events.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
   if (hits !== events.filter((e) => e.kind === SimEventKind.hitStop).length) fail('hit without hit-stop');
   if (hits > 0 && !isFrozen(s)) fail('hit did not freeze');
+  // Stun and knockback (FUN-DESIGN 2.3): the caps hold, a stun never outlasts its combo's budget, and walls hold y too.
+  const g = now(s);
+  for (let i = 0; i < MAX_ENTITIES; i++) {
+    const e = i * ARCADE_E;
+    const juggle = s.arcade[e + ArcadeE.juggle] ?? 0;
+    const total = s.arcade[e + ArcadeE.comboStunTotal] ?? 0;
+    if (juggle > JUGGLE_LIMIT || total > COMBO_STUN_CAP_TICKS) fail(`juggle ${String(juggle)}, stun total ${String(total)}`);
+    if ((s.arcade[e + ArcadeE.stunUntil] ?? 0) - g > total) fail(`stun of ${String(i)} outlasts its combo budget`);
+    const f = s.flags[i] ?? 0;
+    if (s.kind[i] !== EntityKind.character || (f & EntityFlag.alive) === 0 || (f & EntityFlag.benched) !== 0) continue;
+    const y = s.y[i] ?? 0;
+    if (y < w.arena.y || y + (s.h[i] ?? 0) > w.arena.y + w.arena.h) fail(`character ${String(i)} outside arena in y`);
+  }
 }
 
 function runInputs(setup: MatchSetup, inputs: Cmds, check = true): { world: SimWorld; hashes: number[]; events: SimEvent[][] } {

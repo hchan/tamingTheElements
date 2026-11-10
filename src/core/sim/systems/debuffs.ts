@@ -3,7 +3,7 @@ import { ABILITIES_B } from '../../data/abilities-b';
 import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE } from '../state';
 import type { SimWorld } from '../world';
 import { StatusId } from './status';
-import { now } from '../clock';
+import { isArcade, now } from '../clock';
 
 /**
  * Hostile debuffs applied by projectile hits: Tornado (freeze) and Ice Blast (slow). Timers are
@@ -50,6 +50,8 @@ export function onProjectileHit(world: SimWorld, abilitySlug: string, victim: nu
   const s = world.state;
   if (((s.flags[victim] ?? 0) & EntityFlag.translucent) !== 0) return false;
   if (abilitySlug === 'tornado') {
+    // Arcade: the hit path already stunned the victim for 60 ticks (arcade/stun.ts) instead of this 150-tick freeze.
+    if (isArcade(s)) return false;
     s.flags[victim] = (s.flags[victim] ?? 0) | EntityFlag.frozen;
     addSlot(world, victim, StatusId.tornado, caster, TORNADO_TICKS);
     return true;

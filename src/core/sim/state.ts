@@ -40,13 +40,13 @@ export const TEAM_STRIDE = TEAM_ACTIVE_COUNTS + MAX_ABILITY_DEFS;
  * Arcade block in SimState.arcade (Int32Array), docs/FUN-DESIGN.md section 2.1. Empty (length 0) in Classic, so it adds
  * no bytes to the hash or snapshot. Layout: ARCADE_E ints per entity (id * ARCADE_E + field), then ARCADE_T per team
  * (ARCADE_TEAM_BASE + team * ARCADE_T + field), then ARCADE_W world ints (ARCADE_WORLD_BASE + field).
- * Knockback speeds are Q4 (1/16 px per tick).
+ * Knockback speeds are Q4 (1/16 px per tick); `wallBounced` is 1 once the victim bounced off a wall in this combo.
  */
 export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, guardState: 7,
-  parryUntil: 8, parryLockUntil: 9, guardMeter: 10, comboStunTotal: 11,
+  parryUntil: 8, parryLockUntil: 9, guardMeter: 10, comboStunTotal: 11, wallBounced: 12,
 } as const;
-export const ARCADE_E = 12;
+export const ARCADE_E = 13;
 /** Per team; `pressTick` is 5 ints (primary, secondary, dash, guard, super). */
 export const ArcadeT = {
   meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 10, lastDir: 11,

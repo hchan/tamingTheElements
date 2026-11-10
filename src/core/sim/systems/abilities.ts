@@ -1,11 +1,12 @@
 import { CHARACTERS } from '../../data/characters';
 import { Cmd, hasCmd, type Command } from '../commands';
-import { EntityFlag, TEAM_COOLDOWNS, TEAM_COUNT, TEAM_STRIDE } from '../state';
+import { TEAM_COOLDOWNS, TEAM_COUNT, TEAM_STRIDE } from '../state';
 import type { SimWorld } from '../world';
 import { ABILITY_DEFS } from './projectile';
 import { controlledId } from './movement';
 import { applyBuff, applyHeal } from './status';
 import { now } from '../clock';
+import { canAct } from './arcade/stun';
 
 /**
  * Self-targeted abilities (kind buff or heal): Adrenaline, Rock Armour, Fire Dance, Translucent Flame,
@@ -18,7 +19,7 @@ import { now } from '../clock';
 function castSelf(world: SimWorld, team: number, slot: number, tick: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
-  if (caster < 0 || ((s.flags[caster] ?? 0) & EntityFlag.frozen) !== 0) return;
+  if (caster < 0 || !canAct(world, caster)) return;
   const abilityId = CHARACTERS[s.defId[caster] ?? 0]?.abilities[slot];
   const def = ABILITY_DEFS.find((d) => d.id === abilityId);
   if (def?.kind !== 'buff' && def?.kind !== 'heal') return;

@@ -8,5 +8,8 @@
  *    (length 0 in Classic), the `now()` game clock and the freeze gate (WP-arcade-flag).
  * 4: Arcade only; Classic hashes unchanged. Hit-stop: the Arcade hit path (`systems/arcade/hit.ts`) freezes the game
  *    clock by hit strength and emits `hitConfirmed`/`hitStop`; Arcade melee hits emit `damage` (WP-arcade-hitstop).
+ * 5: Arcade only; Classic hashes unchanged. Hit-stun, Q4 knockback with wall clamp and one bounce, juggle and stun caps
+ *    with `recovered`, `canAct` in the cast sites and movement, Tornado and Vines as 60-tick stuns; the Arcade entity
+ *    block gains `wallBounced` (WP-arcade-stun-knockback).
  */
-export const SIM_VERSION = 4;
+export const SIM_VERSION = 5;
