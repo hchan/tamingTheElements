@@ -2,6 +2,7 @@ import { seedSfc32 } from '@core/index';
 import type { SaveV1 } from '@core/index';
 import { el } from '../dom';
 import { loadSave } from './main-menu';
+import { createPortalFx, type PortalFx } from './portal-fx';
 import type { ScreenFactory } from './screen';
 import {
   EMPTY_SELECTION,
@@ -43,12 +44,13 @@ function browserDeps(): GarrisonDeps {
 const BUTTONS: readonly { mode: MatchMode; id: string; label: string }[] = [
   { mode: 'battle', id: 'enterBattlegroundContainer', label: 'Enter Battleground' },
   { mode: 'practice', id: 'enterPracticeContainer', label: 'Practice' },
-  { mode: 'portal', id: 'enterPortalContainer', label: 'Portal' },
+  { mode: 'portal', id: 'enterPortalContainer', label: 'Enter Portal' },
 ];
 
 export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
   return () => {
     let node: HTMLElement | null = null;
+    const fxs: PortalFx[] = [];
     return {
       mount(container) {
         const d = deps ?? browserDeps();
@@ -97,13 +99,24 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
             });
             table.append(row);
           }
+          for (const fx of fxs.splice(0)) fx.dispose();
           buttons.replaceChildren();
           const states = buttonStates(save.chapter, sel.order.length);
           for (const b of BUTTONS) {
             if (b.mode === 'portal' && !states.portalVisible) continue;
             const s = states[b.mode];
-            const btn = el('div', s.enabled ? 'readyToEnterBattleground' : undefined, b.label);
+            const portal = b.mode === 'portal';
+            const ready = s.enabled ? (portal ? 'readyToEnterPortal' : 'readyToEnterBattleground') : undefined;
+            const btn = el('div', ready, b.label);
             btn.id = b.id;
+            if (portal) {
+              // Legacy ChaoticFire: an ember canvas behind the label, animated while hovered or focused.
+              const canvas = el('canvas');
+              canvas.id = 'enterPortalCanvas';
+              btn.prepend(canvas);
+              btn.tabIndex = 0;
+              fxs.push(createPortalFx({ canvas: canvas, target: btn }));
+            }
             btn.addEventListener('click', () => {
               if (s.message !== null) {
                 d.alert(s.message);
@@ -120,6 +133,7 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
         render();
       },
       unmount() {
+        for (const fx of fxs.splice(0)) fx.dispose();
         node?.remove();
         node = null;
       },
