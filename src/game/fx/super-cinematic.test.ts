@@ -49,7 +49,9 @@ describe('super cinematic plan (FUN-DESIGN section 3)', () => {
   });
 });
 
-/** A real Arcade duel where team 0 (Sindarosa, id 0) has a full bar and presses the super at tick 5. */
+const INTRO = 91;
+
+/** A real Arcade duel where team 0 (Sindarosa, id 0) has a full bar and presses the super 5 ticks into the fight. */
 function superEvents(arcade = true): SimEvent[] {
   const world = createMatch({
     simVersion: SIM_VERSION, seed: 3, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: arcade }, chapter: 1, difficulty: 1,
@@ -57,7 +59,8 @@ function superEvents(arcade = true): SimEvent[] {
   });
   if (arcade) world.state.arcade[ARCADE_TEAM_BASE + ArcadeT.meter] = 1000;
   const events: SimEvent[] = [];
-  for (let t = 0; t < 60; t++) events.push(...step(world, [t === 5 ? Cmd.super : 0, 0]));
+  // Round 1's intro (FUN-DESIGN 2.10: 90 ticks after the roundStarted tick) holds every action; the fight starts at 91.
+  for (let t = 0; t < INTRO + 60; t++) events.push(...step(world, [t === INTRO + 5 ? Cmd.super : 0, 0]));
   return events;
 }
 

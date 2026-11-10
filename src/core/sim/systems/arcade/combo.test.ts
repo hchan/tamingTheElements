@@ -12,6 +12,7 @@ import { Cmd } from '../../commands';
 import { EventSink, SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
 import { createMatch, type MatchSetup } from '../../match';
+import { skipIntro } from './round-testkit';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag } from '../../state';
 import { step } from '../../step';
@@ -31,7 +32,7 @@ function duel(attacker: string, victim: string): SimWorld {
     p1: [{ character: characterId(attacker), xp: 1 }],
     p2: [{ character: characterId(victim), xp: 1 }],
   };
-  const world = createMatch(setup);
+  const world = skipIntro(createMatch(setup));
   const s = world.state;
   s.x[0] = 500; s.y[0] = 300; s.x[1] = 580; s.y[1] = 300; s.dir[0] = 0;
   s.hp[1] = 10_000;

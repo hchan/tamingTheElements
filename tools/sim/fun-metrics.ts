@@ -4,7 +4,7 @@ import { SimEventKind } from '../../src/core/sim/events';
 import type { SimEvent } from '../../src/core/sim/events';
 
 /** Arcade event kinds the reducer reads beyond `SimEventKind` (docs/FUN-DESIGN.md 2.1 table). */
-const K = { guarded: 43, parried: 44, dashed: 46, perfectDodge: 47, clash: 48, superStarted: 50, tagIn: 52, fight: 54 } as const;
+const K = { guarded: 43, parried: 44, dashed: 46, perfectDodge: 47, clash: 48, tagIn: 52 } as const;
 
 export const TICKS_PER_SECOND = 50;
 
@@ -19,8 +19,15 @@ export interface FunMatchMeta {
 export interface FunMetrics {
   readonly seconds: number;
   readonly endReason: FunMatchMeta['endReason'];
-  /** Seconds from the fight start (tick 0 until the Arcade `fight` event exists) to the first `hitConfirmed`; null if none. */
+  /** Seconds from the first fight start (`fight`, else tick 0) to the first `hitConfirmed`; null if none. */
   readonly firstHitSeconds: number | null;
+  /** Per round (FUN-DESIGN 2.10): seconds from `fight` to its first `hitConfirmed` (rounds without a hit are left out). */
+  readonly roundFirstHitSeconds: readonly number[];
+  /** Per finished round: seconds of `W.tick` from `fight` to `roundEnded`. */
+  readonly roundSeconds: readonly number[];
+  /** Rounds that ended in `timeOver`, and KOs with the winner at full HP. */
+  readonly timeOvers: number;
+  readonly perfects: number;
   readonly hits: number;
   readonly counterHits: number;
   /** `comboEnded.hits` of every combo. */
@@ -54,7 +61,13 @@ const r3 = (n: number): number => Math.round(n * 1000) / 1000;
 
 export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta): FunMetrics {
   let fightTick = 0;
+  let firstFight: number | null = null;
   let firstHit: number | null = null;
+  let roundHit = false;
+  const roundFirstHits: number[] = [];
+  const roundSeconds: number[] = [];
+  let timeOvers = 0;
+  let perfects = 0;
   let hits = 0;
   let counters = 0;
   const combos: number[] = [];
@@ -67,13 +80,26 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
   for (const e of events) {
     const kind: number = e.kind; // wider than SimEventKindValue: the Arcade kinds are not all in the enum yet
     switch (kind) {
-      case K.fight:
+      case SimEventKind.fight:
         fightTick = e.tick;
+        firstFight ??= e.tick;
+        roundHit = false;
+        break;
+      case SimEventKind.roundEnded:
+        roundSeconds.push(r3((e.tick - fightTick) / TICKS_PER_SECOND));
+        break;
+      case SimEventKind.timeOver:
+        timeOvers++;
+        break;
+      case SimEventKind.ko:
+        if ((e['perfect'] ?? 0) !== 0) perfects++;
         break;
       case SimEventKind.hitConfirmed: {
         hits++;
         if ((e['counter'] ?? 0) !== 0) counters++;
         firstHit ??= e.tick;
+        if (!roundHit) roundFirstHits.push(r3((e.tick - fightTick) / TICKS_PER_SECOND));
+        roundHit = true;
         const key = String(e['ability'] ?? -1);
         const amount = e['amount'] ?? 0;
         dmg[key] = (dmg[key] ?? 0) + amount;
@@ -99,7 +125,7 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
       case K.tagIn:
         count.tags++;
         break;
-      case K.superStarted:
+      case SimEventKind.superStarted:
         count.supers++;
         break;
       case K.clash:
@@ -119,7 +145,11 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
   return {
     seconds: r3(meta.ticks / TICKS_PER_SECOND),
     endReason: meta.endReason,
-    firstHitSeconds: firstHit === null ? null : r3((firstHit - fightTick) / TICKS_PER_SECOND),
+    firstHitSeconds: firstHit === null ? null : r3((firstHit - (firstFight ?? 0)) / TICKS_PER_SECOND),
+    roundFirstHitSeconds: roundFirstHits,
+    roundSeconds,
+    timeOvers,
+    perfects,
     hits,
     counterHits: counters,
     comboHits: combos,
@@ -140,7 +170,15 @@ export interface FunSummary {
   readonly medianSeconds: number;
   readonly p10Seconds: number;
   readonly p90Seconds: number;
+  /** Over every round's first hit (FUN-DESIGN section 4 "first-hit time"). */
   readonly medianFirstHitSeconds: number;
+  /** Rounds played to the end, their length (`fight` to `roundEnded`), and the share that ended in `timeOver`. */
+  readonly rounds: number;
+  readonly medianRoundSeconds: number;
+  readonly p10RoundSeconds: number;
+  readonly p90RoundSeconds: number;
+  readonly timeOverRate: number;
+  readonly perfects: number;
   readonly medianComboHits: number;
   readonly p90ComboHits: number;
   readonly maxComboHits: number;
@@ -164,6 +202,7 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
   const sum = (f: (m: FunMetrics) => number): number => list.reduce((x, m) => x + f(m), 0);
   const hits = sum((m) => m.hits);
   const combos = list.flatMap((m) => m.comboHits);
+  const roundTimes = list.flatMap((m) => m.roundSeconds);
   return {
     matches: n,
     stalemateRate: rate((m) => m.endReason === 'stalemate'),
@@ -171,7 +210,13 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
     medianSeconds: percentile(list.map((m) => m.seconds), 0.5),
     p10Seconds: percentile(list.map((m) => m.seconds), 0.1),
     p90Seconds: percentile(list.map((m) => m.seconds), 0.9),
-    medianFirstHitSeconds: percentile(list.flatMap((m) => (m.firstHitSeconds === null ? [] : [m.firstHitSeconds])), 0.5),
+    medianFirstHitSeconds: percentile(list.flatMap((m) => m.roundFirstHitSeconds), 0.5),
+    rounds: roundTimes.length,
+    medianRoundSeconds: percentile(roundTimes, 0.5),
+    p10RoundSeconds: percentile(roundTimes, 0.1),
+    p90RoundSeconds: percentile(roundTimes, 0.9),
+    timeOverRate: roundTimes.length === 0 ? 0 : r3(sum((m) => m.timeOvers) / roundTimes.length),
+    perfects: sum((m) => m.perfects),
     medianComboHits: percentile(combos, 0.5),
     p90ComboHits: percentile(combos, 0.9),
     maxComboHits: combos.reduce((m, h) => Math.max(m, h), 0),

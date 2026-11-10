@@ -14,7 +14,7 @@ import {
   type SimState,
 } from '../sim/state';
 import type { SimWorld } from '../sim/world';
-import { isArcade, now } from '../sim/clock';
+import { isArcade, now, roundPhase } from '../sim/clock';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
 export interface FighterView {
@@ -60,6 +60,8 @@ export interface ArcadeView {
   readonly oppCombo: number;
   /** This side's super is running (its caster cannot act until it ends). */
   readonly superActive: boolean;
+  /** Round phase (a `RoundPhase`, FUN-DESIGN 2.10): only `fight` (1) lets anyone act. */
+  readonly phase: number;
 }
 
 /** Opaque, JSON-serialisable agent memory: what `Agent.save` returns and only the same kind of agent can `load`. */
@@ -155,6 +157,7 @@ function arcadeViewOf(
     combo: team(side, ArcadeT.comboHits),
     oppCombo: team(1 - side, ArcadeT.comboHits),
     superActive: team(side, ArcadeT.superState) !== 0,
+    phase: roundPhase(s),
   };
 }
 

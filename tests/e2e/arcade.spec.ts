@@ -7,6 +7,13 @@ import { ARENA_READY, SAVE_KEY, START, characters, collectErrors, fixture, goToH
 // KO), the results and back to the menu, with the save byte-for-byte untouched. Page-side code is passed as strings
 // because tsconfig.node has no DOM lib; `manual=1` starts the arena paused so every tick is stepped.
 const PRIMARY = 1 << 4;
+const SUPER = 1 << 13;
+/**
+ * Rounds (FUN-DESIGN 2.10, best of 3): round 1's intro holds everyone until tick 91; after a KO the 30-tick KO stop and
+ * the 120-tick KO phase, the 60-tick round end, then the next 90-tick intro (or the match end).
+ */
+const INTRO = 91;
+const KO_TO_ROUND_END = 30 + 120 + 60;
 const CLASSIC_MENU = ['New Game', 'Continue', 'Garrison', 'Settings', 'Current Objectives', 'Story Mode', 'Wiki', 'Key Bindings', 'About'];
 
 async function audit(page: Page, name: string): Promise<void> {
@@ -29,6 +36,7 @@ async function fight(page: Page, player: string, enemy: string, level = 'normal'
   await page.getByLabel('AI level').selectOption(level);
   await page.getByRole('button', { name: 'Fight!' }).click();
   await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
 }
 
 /** Player at the left facing east, the AI on the same row; returns their ids. */
@@ -46,11 +54,22 @@ async function primeSuper(page: Page, foe: number): Promise<void> {
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setMeter(0, 1000); a.setHp(${String(foe)}, 1); })()`);
 }
 
-/** The super plays out, the foe is KO'd, and (after the arena's end beat) the results replace the arena. */
+/**
+ * The super plays out and KOs the foe: round 1. Round 2 starts with both fighters reset to full health; a forced super
+ * KOs the foe again, and after that round end the results (2-0) replace the arena.
+ */
 async function finishOnResults(page: Page): Promise<void> {
   await expect.poll(() => superName(page)).toBe('ELEMENTAL BURST');
-  await page.evaluate(`window.__TTE__.arena.step(90)`);
+  const [full] = await characters(page, 1);
+  await page.evaluate(`window.__TTE__.arena.step(${String(90 + KO_TO_ROUND_END + INTRO)})`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toHaveCount(0);
+  const [reset] = await characters(page, 1);
+  expect(reset?.hp).toBe(reset?.maxHp);
+  expect(reset?.hp).toBeGreaterThan(full?.hp ?? 0);
+  await primeSuper(page, reset?.id ?? -1);
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(1, [${String(SUPER)}, 0]); a.step(${String(90 + KO_TO_ROUND_END)}); })()`);
   await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toBeVisible();
+  await expect(page.locator('#arcadeResults')).toContainText('Rounds 2-0.');
   await page.evaluate(`window.__TTE__.settled()`);
   await expect(page.locator('#game canvas')).toHaveCount(0);
 }
@@ -68,7 +87,7 @@ test('off by default: the Classic menu is unchanged, #arcade goes to the main me
   expect(errors).toEqual([]);
 });
 
-test('Settings opt-in -> Arcade Versus: a hit, a super with X, KO, results, rematch, back to the menu; the save is untouched', async ({ page }) => {
+test('Settings opt-in -> Arcade Versus: a hit, a super with X, KO, round 2, results 2-0, rematch, back to the menu; the save is untouched', async ({ page }) => {
   const errors = collectErrors(page);
   await seedViaGameMaster(page, fixture('v0-ch3'));
   await goToHash(page, '#settings');

@@ -1,6 +1,8 @@
+import { ROUNDS_TO_WIN, RoundPhase } from '../../data/arcade';
+import { isArcade, roundPhase } from '../clock';
 import type { Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT, World as W } from '../state';
+import { ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT, World as W } from '../state';
 import type { SimState } from '../state';
 import type { SimWorld } from '../world';
 
@@ -34,8 +36,19 @@ export function capturedIds(s: SimState, team: number): number[] {
   return out;
 }
 
-/** Winning team, -1 when both sides are out, or null while the match continues. */
+const roundsOf = (s: SimState, team: number): number => s.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.roundsWon] ?? 0;
+
+/**
+ * Winning team, -1 when both sides are out, or null while the match continues. Arcade (FUN-DESIGN 2.10): decided by
+ * round wins once the last round end is over (`over` phase): the team on ROUNDS_TO_WIN wins, both on it is a draw.
+ */
 export function matchWinner(s: SimState): number | null {
+  if (isArcade(s)) {
+    if (roundPhase(s) !== RoundPhase.over) return null;
+    const won0 = roundsOf(s, 0) >= ROUNDS_TO_WIN;
+    const won1 = roundsOf(s, 1) >= ROUNDS_TO_WIN;
+    return won0 === won1 ? -1 : won0 ? 0 : 1;
+  }
   const alive: boolean[] = [];
   for (let t = 0; t < TEAM_COUNT; t++) alive.push(survivorsOf(s, t) > 0);
   if (alive[0] && alive[1]) return null;
@@ -47,13 +60,22 @@ export function hasEnded(s: SimState): boolean {
   return ((s.world[W.flags] ?? 0) & WORLD_ENDED_BIT) !== 0;
 }
 
-/** Ends the match when a team has no members left; emits MatchEnded exactly once. */
+/**
+ * Ends the match when a team has no members left (Arcade: after the round that gave a team its second round win);
+ * emits MatchEnded exactly once. Arcade adds the round wins `won0` and `won1` to the payload.
+ */
 export function endSystem(world: SimWorld, _cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
   if (hasEnded(s)) return;
   const winner = matchWinner(s);
   if (winner === null) return;
   s.world[W.flags] = (s.world[W.flags] ?? 0) | WORLD_ENDED_BIT;
+  if (isArcade(s)) {
+    sink.emit(0, SimEventKind.matchEnded, {
+      winner, captured: 0, survivors: winner < 0 ? 0 : survivorsOf(s, winner), won0: roundsOf(s, 0), won1: roundsOf(s, 1),
+    });
+    return;
+  }
   sink.emit(0, SimEventKind.matchEnded, {
     winner,
     captured: winner === 0 ? capturedIds(s, 1).length : 0,

@@ -62,11 +62,16 @@ export const ArcadeT = {
   roundsWon: 12, superState: 13,
 } as const;
 export const ARCADE_T = 16;
-/** World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil` is in W.tick units. */
+/**
+ * World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil`, `phaseUntil` and `slowMoUntil` are in
+ * W.tick units, `roundTimer` in game ticks left. `phase` is a RoundPhase (data/arcade.ts); `roundWinner` holds the
+ * KO'd round's winner (-1 = draw) until `roundEnded` (systems/arcade/round.ts).
+ */
 export const ArcadeW = {
   gameTick: 0, freezeUntil: 1, freezeKind: 2, round: 3, phase: 4, phaseUntil: 5, roundTimer: 6, slowMoUntil: 7,
+  roundWinner: 8,
 } as const;
-export const ARCADE_W = 8;
+export const ARCADE_W = 9;
 export const ARCADE_TEAM_BASE = MAX_ENTITIES * ARCADE_E;
 export const ARCADE_WORLD_BASE = ARCADE_TEAM_BASE + TEAM_COUNT * ARCADE_T;
 export const ARCADE_LENGTH = ARCADE_WORLD_BASE + ARCADE_W;

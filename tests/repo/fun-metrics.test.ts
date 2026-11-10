@@ -51,11 +51,37 @@ describe('fun-metrics reducer', () => {
     expect([m.dashes, m.tags, m.supers, m.clashes, m.defence]).toEqual([1, 1, 1, 1, 1]);
   });
 
+  it('measures rounds: length from `fight` to `roundEnded`, first hit per round, time over and perfects (FUN-DESIGN 2.10)', () => {
+    const m = reduceFunMetrics(
+      [
+        ev(0, SimEventKind.roundStarted, { round: 1 }),
+        ev(90, SimEventKind.fight),
+        hit(140, 0, 1, 10),
+        ev(590, SimEventKind.ko, { team: 1, perfect: 1 }),
+        ev(740, SimEventKind.roundEnded, { winner: 0, won0: 1, won1: 0 }),
+        ev(800, SimEventKind.roundStarted, { round: 2 }),
+        ev(890, SimEventKind.fight),
+        hit(1090, 1, 2, 10),
+        hit(1100, 1, 2, 10),
+        ev(5390, SimEventKind.timeOver),
+        ev(5390, SimEventKind.roundEnded, { winner: 1, won0: 1, won1: 1 }),
+        ev(5450, SimEventKind.roundStarted, { round: 3 }),
+        ev(5540, SimEventKind.fight), // a round with no hit and no end (the run stopped)
+      ],
+      { ...meta, ticks: 5600 },
+    );
+    expect(m.firstHitSeconds).toBe(1); // (140 - 90) / 50, from the first fight
+    expect(m.roundFirstHitSeconds).toEqual([1, 4]);
+    expect(m.roundSeconds).toEqual([13, 90]);
+    expect([m.timeOvers, m.perfects]).toEqual([1, 1]);
+    expect(summarizeFun([m])).toMatchObject({ rounds: 2, medianRoundSeconds: 90, p10RoundSeconds: 13, timeOverRate: 0.5, perfects: 1, medianFirstHitSeconds: 4 });
+  });
+
   it('handles an empty match', () => {
     const m = reduceFunMetrics([], { ...meta, endReason: 'stalemate' });
     expect(m).toMatchObject({ firstHitSeconds: null, hits: 0, diversity: 0, topSourceShare: 0, leadChanges: 0, comboHits: [] });
     expect(summarizeFun([m])).toMatchObject({ stalemateRate: 1, medianComboHits: 0, counterHitRate: 0 });
-    expect(summarizeFun([])).toMatchObject({ matches: 0, medianSeconds: 0 });
+    expect(summarizeFun([])).toMatchObject({ matches: 0, medianSeconds: 0, rounds: 0, timeOverRate: 0 });
   });
 
   it('pools matches into medians and percentiles', () => {

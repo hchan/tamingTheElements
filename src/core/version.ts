@@ -31,5 +31,10 @@
  * 10: Arcade only; Classic hashes unchanged. 8-way aim: the Arcade entity block gains `aim` (the dir8 of the last held
  *    input); shots fly along it (diagonals +-speed on both axes), a diagonal melee is a (w + h) / 2 square off the
  *    caster's corner, and those hits knock back along it; the super band keeps the 4-way facing (WP-arcade-8way-aim).
+ * 11: Arcade only; Classic hashes unchanged. Rounds: the `cleanup` slot runs `arcadeRound` (intro 90 ticks, fight with
+ *    a 4500 game-tick timer, KO with 60 ticks of half-speed slow motion after the KO hit-stop, round end 60), best of 3
+ *    (`matchEnded` after 2 round wins, a draw round scores for both), time over by roster HP per mille, a full reset
+ *    between rounds (meters carry over), `roundStarted`/`fight`/`ko`/`timeOver`/`roundEnded`; nobody acts or is hit
+ *    outside `fight`; a KO keeps the damage multiplier; the Arcade world block gains `roundWinner` (WP-arcade-rounds).
  */
-export const SIM_VERSION = 10;
+export const SIM_VERSION = 11;

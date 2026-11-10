@@ -125,3 +125,24 @@ export const SUPER_HIT_DAMAGE = 12;
 export const SUPER_BAND_PX = 160;
 /** `superStarted.superId` of the generic Elemental Burst; the race variants of the archetype WPs get their own ids. */
 export const SUPER_ELEMENTAL_BURST = 0;
+
+/**
+ * Rounds (FUN-DESIGN 2.10, WP 13): `ArcadeW.phase` values. A fresh Arcade world is in `intro` of round 0; the `cleanup`
+ * slot (`arcadeRound`) starts round 1 on the first tick. `over` follows the last `roundEnd`, and `endSystem` then emits
+ * `matchEnded`. Only `fight` lets characters act or be hit.
+ */
+export const RoundPhase = { intro: 0, fight: 1, ko: 2, roundEnd: 3, over: 4 } as const;
+/**
+ * Phase lengths in `W.tick` ticks (real time; a phase ends on the first tick that runs its systems at or past the
+ * deadline): the intro, the KO phase after the KO hit-stop (its first KO_SLOWMO_TICKS run at half speed: the game clock
+ * advances every second tick), and the round end. The round timer is in game ticks, so it pauses during freezes.
+ */
+export const ROUND_INTRO_TICKS = 90;
+export const KO_PHASE_TICKS = 120;
+export const KO_SLOWMO_TICKS = 60;
+export const ROUND_END_TICKS = 60;
+export const ROUND_TIMER_TICKS = 4500;
+/** Best of 3: the match ends once a team has this many round wins (a draw round scores for both). */
+export const ROUNDS_TO_WIN = 2;
+/** Time over compares the sum of `floor(hp * HP_PM / maxHp)` over each team's roster: higher wins, equal is a draw. */
+export const HP_PM = 1000;

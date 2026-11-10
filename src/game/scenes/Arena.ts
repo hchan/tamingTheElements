@@ -366,6 +366,7 @@ export class Arena extends Phaser.Scene {
       winner: over['winner'] ?? -1,
       activeSlot: s.teams[TeamField.activeSlot] ?? 0,
       capturedIndices: capturedRosterIndices(s, 1),
+      ...(over['won0'] === undefined ? {} : { rounds: [over['won0'], over['won1'] ?? 0] as const }),
     };
     this.time.delayedCall(END_DELAY_MS, () => { this.launch?.onEnd?.(end); });
   }

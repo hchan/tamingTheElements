@@ -10,7 +10,7 @@ import {
 } from '../state';
 import type { SimWorld } from '../world';
 import { P1_START_X, P2_START_X, START_Y } from '../match';
-import { now } from '../clock';
+import { inFight, now } from '../clock';
 import { startRestTimer } from './rest';
 
 /** Legacy `Game.swapCooldown` 5000 ms at 50 Hz. */
@@ -90,6 +90,7 @@ export function swapSystem(
     const cmd = cmds[team] ?? 0;
     const slot = SWAP_BITS.findIndex((bit) => hasCmd(cmd, bit));
     if (slot < 0) continue;
+    if (!inFight(s)) continue; // Arcade only: no swaps outside the round's fight phase (always true in Classic)
     if (tick < (s.teams[team * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0)) continue;
     const cur = activeOf(world, team);
     // Both sides need a living active character (a dead one is auto-swapped by the death system). A frozen one cannot

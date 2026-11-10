@@ -7,6 +7,8 @@ const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!win
 const SECONDARY = 32;
 const WHITE = 0xffffff;
 const FILL = 1;
+/** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91; Classic has none. */
+const INTRO = 91;
 
 interface Fx {
   tints: { id: number; tint: number; mode: number }[];
@@ -31,6 +33,7 @@ async function openDemo(page: Page, ff: string): Promise<number> {
   await page.waitForFunction(ARENA_READY);
   return page.evaluate<number>(`(() => {
     const a = window.__TTE__.arena;
+    a.step(${String(ff.includes('arcade') ? INTRO : 0)});
     const [me, foe] = a.characters();
     a.place(me.id, 500, 360, 0);
     a.place(foe.id, 580, 360, 4);

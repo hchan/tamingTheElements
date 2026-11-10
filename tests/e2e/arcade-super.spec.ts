@@ -6,6 +6,8 @@ import { expect, test, type Page } from '@playwright/test';
 // between steps and a step moves it on.
 const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena`;
 const SUPER = 1 << 13;
+/** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91; Classic has none. */
+const INTRO = 91;
 
 interface SuperFx {
   dim: number;
@@ -34,12 +36,13 @@ async function castSuper(page: Page, ff: string, ticks: number): Promise<void> {
   await page.goto(`/?ff=${ff}&manual=1&seed=7`);
   await page.locator('#game canvas').waitFor();
   await page.waitForFunction(ARENA_READY);
-  await cast(page, ticks);
+  await cast(page, ticks, ff.includes('arcade'));
 }
 
-async function cast(page: Page, ticks: number): Promise<void> {
+async function cast(page: Page, ticks: number, arcade = true): Promise<void> {
   await page.evaluate(`(() => {
     const a = window.__TTE__.arena;
+    a.step(${String(arcade ? INTRO : 0)});
     const [me, foe] = a.characters();
     a.place(me.id, 300, 360, 0);
     a.place(foe.id, 900, 360, 4);

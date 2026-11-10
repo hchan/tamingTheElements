@@ -61,3 +61,11 @@ export function expireCombos(world: SimWorld, sink: EventSink): void {
     endCombo(s, sink, Math.max(victim, 0), team);
   }
 }
+
+/** Ends every live combo (the round reset, arcade/round.ts), so each combo still ends exactly once. */
+export function endLiveCombos(world: SimWorld, sink: EventSink): void {
+  const s = world.state;
+  for (let team = 0; team < TEAM_COUNT; team++) {
+    if ((s.arcade[teamBase(team) + ArcadeT.comboHits] ?? 0) !== 0) endCombo(s, sink, Math.max(controlledId(world, 1 - team), 0), team);
+  }
+}

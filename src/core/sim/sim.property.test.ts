@@ -15,7 +15,8 @@ import { hasEnded } from './systems/end';
 import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
 import {
-  COMBO_STUN_CAP_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, SUPER_FREEZE_TICKS,
+  COMBO_STUN_CAP_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, ROUNDS_TO_WIN,
+  ROUND_TIMER_TICKS, RoundPhase, SUPER_FREEZE_TICKS,
 } from '../data/arcade';
 import { SUPER_DEF } from './systems/arcade/hit';
 import { castDir } from './systems/arcade/aim';
@@ -203,7 +204,9 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   if (left > Math.max(KO_HIT_STOP_TICKS, SUPER_FREEZE_TICKS)) fail(`freeze of ${String(left)} ticks`);
   const hits = events.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
   const stops = events.filter((e) => e.kind === SimEventKind.hitStop && e['cause'] !== HitStopCause.super).length;
-  if (hits !== stops) fail('hit without hit-stop');
+  // Every hit stops the clock; a KO that no hit caused takes the round's KO stop (one per `ko`).
+  const kos = events.filter((e) => e.kind === SimEventKind.ko).length;
+  if (stops < hits || stops > hits + kos) fail('hit without hit-stop');
   if (hits > 0 && !isFrozen(s)) fail('hit did not freeze');
   // Stun and knockback (FUN-DESIGN 2.3): the caps hold, a stun never outlasts its combo's budget, and walls hold y too.
   const g = now(s);
@@ -245,6 +248,31 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   }
   for (const e of events) {
     if (e.kind === SimEventKind.superStarted && !isFrozen(s)) fail('super did not freeze');
+  }
+  checkRounds(w, events, fail);
+}
+
+/**
+ * Rounds (FUN-DESIGN 2.10): a known phase, at most 3 rounds and 2 wins a side, a timer within its 4500 game ticks; a hit
+ * lands only in the fight (or on the tick whose hit ended it with a KO); `roundEnded` reports the stored wins, and
+ * `matchEnded` comes only in `over` with a side on 2 wins.
+ */
+function checkRounds(w: SimWorld, events: readonly SimEvent[], fail: (m: string) => never): void {
+  const s = w.state;
+  const phase = s.arcade[ARCADE_WORLD_BASE + ArcadeW.phase] ?? -1;
+  const round = s.arcade[ARCADE_WORLD_BASE + ArcadeW.round] ?? 0;
+  const timer = s.arcade[ARCADE_WORLD_BASE + ArcadeW.roundTimer] ?? -1;
+  const won = [0, 1].map((t) => s.arcade[ARCADE_TEAM_BASE + t * ARCADE_T + ArcadeT.roundsWon] ?? 0);
+  if (phase < RoundPhase.intro || phase > RoundPhase.over) fail(`phase ${String(phase)}`);
+  if (round < 1 || round > 3) fail(`round ${String(round)}`);
+  if (timer < 0 || timer > ROUND_TIMER_TICKS) fail(`round timer ${String(timer)}`);
+  if (won.some((n) => n > ROUNDS_TO_WIN)) fail(`round wins ${won.join('-')}`);
+  const has = (kind: number): boolean => events.some((e) => e.kind === kind);
+  if (has(SimEventKind.hitConfirmed) && phase !== RoundPhase.fight && !has(SimEventKind.ko)) fail('hit outside the fight');
+  for (const e of events) {
+    if (e.kind === SimEventKind.roundEnded && (e['won0'] !== won[0] || e['won1'] !== won[1])) fail('roundEnded wins differ from the state');
+    if (e.kind === SimEventKind.matchEnded && (phase !== RoundPhase.over || Math.max(won[0] ?? 0, won[1] ?? 0) < ROUNDS_TO_WIN))
+      fail('matchEnded before a side has 2 round wins');
   }
 }
 
@@ -362,6 +390,51 @@ describe('sim properties: invariants', () => {
       FC,
     );
     expect(diagonal).toBeGreaterThan(0);
+  });
+
+  it('hold in Arcade across rounds: legal phase order, best of 3, one matchEnded, half-speed KO slow motion', () => {
+    const NEXT: Readonly<Record<number, readonly number[]>> = {
+      [RoundPhase.intro]: [RoundPhase.fight],
+      [RoundPhase.fight]: [RoundPhase.ko, RoundPhase.roundEnd],
+      [RoundPhase.ko]: [RoundPhase.roundEnd],
+      [RoundPhase.roundEnd]: [RoundPhase.intro, RoundPhase.over],
+      [RoundPhase.over]: [],
+    };
+    let ended = 0;
+    // Low HP so KOs come fast; random bots on both sides; long enough for a whole best of 3.
+    const frail = fc.integer({ min: 1, max: 30 });
+    fc.assert(
+      fc.property(setupArb, frail, (setup, hp) => {
+        const world = createMatch({ ...setup, flags: { ...setup.flags, rulesetArcade: true } });
+        const s = world.state;
+        for (let i = 0; i < MAX_ENTITIES; i++) if (s.kind[i] === EntityKind.character) s.maxHp[i] = s.hp[i] = s.restCap[i] = hp;
+        const bots: readonly [Agent, Agent] = [new RandomBot('r0'), new RandomBot('r1')];
+        let phase: number = RoundPhase.intro;
+        let matchEnds = 0;
+        let gameAtKo = -1;
+        for (let t = 0; t < 2500; t++) {
+          const tick = s.world[World.tick] ?? 0;
+          const wasFrozen = isFrozen(s);
+          const game = now(s);
+          const ev = step(world, collectCommands(world, bots));
+          checkInvariants(world, tick, ev, wasFrozen);
+          if (now(s) - game > 1) throw new Error('game clock jumped');
+          const next = s.arcade[ARCADE_WORLD_BASE + ArcadeW.phase] ?? 0;
+          if (next !== phase && !(NEXT[phase] ?? []).includes(next)) throw new Error(`phase ${String(phase)} -> ${String(next)}`);
+          // The KO phase: 30 frozen ticks, 60 at half speed, 60 at full speed (from the KO tick to roundEnded: 150 W.ticks,
+          // 90 game ticks). A KO from a super freeze still pending can only stretch the frozen part.
+          if (ev.some((e) => e.kind === SimEventKind.ko)) gameAtKo = now(s);
+          if (ev.some((e) => e.kind === SimEventKind.roundEnded) && phase === RoundPhase.ko && now(s) - gameAtKo !== 90)
+            throw new Error(`KO phase lasted ${String(now(s) - gameAtKo)} game ticks`);
+          phase = next;
+          matchEnds += ev.filter((e) => e.kind === SimEventKind.matchEnded).length;
+        }
+        if (matchEnds !== (hasEnded(s) ? 1 : 0)) throw new Error('matchEnded count');
+        ended += matchEnds;
+      }),
+      FC,
+    );
+    expect(ended).toBeGreaterThan(0);
   });
 
   it('ignores command bits outside the ruleset input mask', () => {

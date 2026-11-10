@@ -104,16 +104,19 @@ describe('Arcade launch: the result and the only thing it may store', () => {
     const world = createMatch(launch.setup);
     const agents: [Agent, Agent] = [new RandomBot('p1'), launch.enemy ?? new RandomBot('p2')];
     let winner = -1;
-    for (let t = 0; t < 9000; t++) {
+    let rounds: [number, number] = [0, 0];
+    // Best of 3 (FUN-DESIGN 2.10): up to three rounds of at most 90 s each, plus the intros, KOs and round ends.
+    for (let t = 0; t < 20_000; t++) {
       const c = collectCommands(world, agents);
       launch.recorder?.record(world, c);
       const over = step(world, c).find((e) => e.kind === SimEventKind.matchEnded);
       if (over) {
         winner = over['winner'] ?? -1;
+        rounds = [over['won0'] ?? -1, over['won1'] ?? -1];
         break;
       }
     }
-    launch.onEnd?.({ winner, activeSlot: 0, capturedIndices: [] });
+    launch.onEnd?.({ winner, activeSlot: 0, capturedIndices: [], rounds });
     return { result, added, winner };
   }
 
@@ -123,6 +126,9 @@ describe('Arcade launch: the result and the only thing it may store', () => {
     expect(result?.outcome).toBe(winner === 0 ? 'win' : 'lose');
     expect(result?.pick).toEqual(pick);
     expect(result?.replay).toBeUndefined();
+    // Best of 3: the winner has 2 round wins, the loser fewer, and the result carries the score.
+    expect(result?.rounds?.[winner]).toBe(2);
+    expect(result?.rounds?.[1 - winner]).toBeLessThan(2);
   });
 
   it('records a verifiable replay whose header carries the Arcade flag, and stores it in the replay store only', () => {

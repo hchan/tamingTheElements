@@ -5,6 +5,7 @@ import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { Cmd } from '../../sim/commands';
 import { hash } from '../../sim/hash';
 import { createMatch, type MatchSetup } from '../../sim/match';
+import { skipIntro } from '../../sim/systems/arcade/round-testkit';
 import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, World } from '../../sim/state';
 import { step } from '../../sim/step';
 import { createObservationView, type ArcadeView, type FighterView, type ObservationView } from '../agent';
@@ -30,7 +31,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
   return { id: 0, x, y, w: 80, h: 80, hp: 100, maxHp: 100, flags, alive: true };
 }
 
-const FREE: ArcadeView = { meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false };
+const FREE: ArcadeView = { meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, phase: 1 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
   return {
@@ -50,7 +51,7 @@ describe('ObservationView.arcade', () => {
     expect('arcade' in createObservationView(createMatch(SETUP), 0)).toBe(false);
   });
 
-  it('copies the visible Arcade state per side and never changes the world', () => {
+  it('copies the visible Arcade state per side and never changes the world (a fresh match is in the intro, phase 0)', () => {
     const world = createMatch({ ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } });
     const s = world.state;
     const v0 = createObservationView(world, 0);
@@ -67,10 +68,10 @@ describe('ObservationView.arcade', () => {
     s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] = (s.world[World.tick] ?? 0) + 6;
     const before = hash(s);
     expect(createObservationView(world, 0).arcade).toEqual({
-      meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true,
+      meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, phase: 0,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
-      meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false,
+      meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, phase: 0,
     });
     expect(hash(s)).toBe(before);
   });
@@ -196,10 +197,10 @@ describe('8-way aim (WP-arcade-8way-aim)', () => {
   });
 
   it('in an Arcade match the scripted AI lands a diagonal shot, and its snapshot round trip replays the same commands', () => {
-    const world = createMatch({
+    const world = skipIntro(createMatch({
       ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
       p1: [{ character: characterId('pax'), xp: 1 }], p2: [{ character: characterId('sindarosa'), xp: 1 }],
-    });
+    }));
     const s = world.state;
     const me = controlledId(world, 0);
     const ai = controlledId(world, 1);
@@ -226,10 +227,10 @@ describe('8-way aim (WP-arcade-8way-aim)', () => {
     expect(diagonal).toBe(true);
     expect(hit).toBe(true);
     // Replaying from tick 1: a fresh agent loaded with the saved state chooses the same commands on the same views.
-    const replayWorld = createMatch({
+    const replayWorld = skipIntro(createMatch({
       ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
       p1: [{ character: characterId('pax'), xp: 1 }], p2: [{ character: characterId('sindarosa'), xp: 1 }],
-    });
+    }));
     const r = replayWorld.state;
     r.x[me] = 300; r.y[me] = 560; r.x[ai] = 700; r.y[ai] = 160;
     r.hp[me] = 10_000;
