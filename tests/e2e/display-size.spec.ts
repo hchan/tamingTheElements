@@ -7,6 +7,8 @@ async function chooseSize(page: import('@playwright/test').Page, label: string):
   await page.goto('/#settings');
   await page.getByLabel(label, { exact: false }).first().check();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
+  // Saving is asynchronous (IndexedDB); the screen navigates to #main only after the store has persisted.
+  await page.waitForFunction(`window.location.hash === '#main'`);
 }
 
 async function arenaWidthAndHash(page: import('@playwright/test').Page): Promise<[number, number]> {
