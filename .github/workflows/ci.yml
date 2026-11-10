@@ -59,6 +59,8 @@ jobs:
       - run: corepack pnpm depcruise
       - run: corepack pnpm test
       - run: corepack pnpm build
+      - name: Bundle size budgets (tools/ci/size-budget.json)
+        run: corepack pnpm size:check
 
   coverage:
     needs: changes
