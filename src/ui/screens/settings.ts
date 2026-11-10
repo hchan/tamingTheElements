@@ -9,6 +9,8 @@ import {
   newEmptyState,
   type SaveV1,
 } from '@core/index';
+import { createSaveStore } from '../../game/platform/storage/create-save-store';
+import { prepareExport, runImport } from '../../game/platform/storage/export-import';
 import { el } from '../dom';
 import type { Screen } from './screen';
 
@@ -88,6 +90,71 @@ function readForm(form: HTMLFormElement): SettingsForm {
   };
 }
 
+function download(file: { filename: string; text: string }): void {
+  const url = URL.createObjectURL(new Blob([file.text], { type: 'application/json' }));
+  const a = el('a');
+  a.href = url;
+  a.download = file.filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Export save / Import save buttons with a status line for validation errors. */
+function transferControls(): HTMLElement {
+  const box = el('div', 'settingsTransfer');
+  const status = el('div', 'settingsStatus');
+  status.setAttribute('role', 'status');
+  const store = createSaveStore(() => Date.now());
+
+  const exportBtn = el('button', 'menuButton', 'Export save');
+  exportBtn.type = 'button';
+  exportBtn.addEventListener('click', () => {
+    void prepareExport(store).then((r) => {
+      if (r.ok) {
+        download(r.value);
+        status.textContent = `Exported ${r.value.filename}`;
+      } else {
+        status.textContent = r.message;
+      }
+    });
+  });
+
+  const fileInput = el('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'application/json,.json';
+  fileInput.hidden = true;
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    fileInput.value = '';
+    if (!file) return;
+    void file
+      .text()
+      .then((text) =>
+        runImport(store, text, () => window.confirm('Importing will overwrite your current save. Continue?')),
+      )
+      .then((out) => {
+        if (out.status === 'imported') {
+          applyUiScale(out.save.displaySettings);
+          status.textContent = 'Save imported.';
+        } else {
+          status.textContent = out.status === 'error' ? out.message : 'Import cancelled.';
+        }
+      })
+      .catch((e: unknown) => {
+        status.textContent = `Import failed: ${e instanceof Error ? e.message : String(e)}`;
+      });
+  });
+
+  const importBtn = el('button', 'menuButton', 'Import save');
+  importBtn.type = 'button';
+  importBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  box.append(exportBtn, importBtn, fileInput, status);
+  return box;
+}
+
 export function settingsScreen(): Screen {
   let node: HTMLElement | null = null;
   return {
@@ -124,7 +191,7 @@ export function settingsScreen(): Screen {
         applyUiScale(next.displaySettings);
         window.location.hash = '#main';
       });
-      node.append(form);
+      node.append(form, transferControls());
       container.append(node);
     },
     unmount() {
