@@ -55,7 +55,7 @@ export function meterOnHit(s: SimState, sink: EventSink, source: number, attacke
   gainMeter(s, sink, source, s.team[victim] ?? 0, meterForDamage(dealt, maxHp, METER_TAKE_PM));
 }
 
-/** A cast by `caster` of `team` (projectile, melee, buff or heal; not capture): +METER_CAST. Returns at once in Classic. */
+/** A cast by `caster` of `team` (projectile, melee, buff or heal; not capture; through `onArcadeCast`): +METER_CAST. */
 export function meterOnCast(s: SimState, sink: EventSink, caster: number, team: number): void {
   if (isArcade(s)) gainMeter(s, sink, caster, team, METER_CAST);
 }

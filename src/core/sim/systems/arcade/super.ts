@@ -13,6 +13,7 @@ import {
 } from '../../state';
 import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
+import { bufferedCmd, Press, usePress } from './buffer';
 import { applyArcadeHit, hitStop, SUPER_DEF } from './hit';
 import { meterOf, spendMeter } from './meter';
 import { canAct, isInvulnerable } from './stun';
@@ -105,18 +106,20 @@ function startSuper(world: SimWorld, sink: EventSink, team: number): void {
   s.arcade[stateIndex(team)] = fx + 1;
   const inv = caster * ARCADE_E + ArcadeE.invulnUntil;
   s.arcade[inv] = Math.max(s.arcade[inv] ?? 0, g + 1 + SUPER_INVULN_AFTER_TICKS);
+  usePress(s, team, Press.super);
   sink.emit(caster, SimEventKind.superStarted, { caster, superId: SUPER_ELEMENTAL_BURST });
   hitStop(world, sink, caster, SUPER_FREEZE_TICKS, HitStopCause.super);
 }
 
 /**
- * The `health` slot (FUN-DESIGN 2.1), `arcadeSuper`: live supers run first, then `Cmd.super` starts new ones (team 0,
- * then team 1). Returns at once in Classic, where `inputMaskFor` also masks the super bit.
+ * The `health` slot (FUN-DESIGN 2.1), `arcadeSuper`: live supers run first, then `Cmd.super` (held, buffered or a
+ * primary and secondary chord, see arcade/buffer.ts) starts new ones (team 0, then team 1); a start uses the super
+ * press. Returns at once in Classic, where `inputMaskFor` also masks the super bit.
  */
 export function arcadeSuperSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   if (!isArcade(world.state)) return;
   for (let team = 0; team < TEAM_COUNT; team++) runSuper(world, sink, team);
   for (let team = 0; team < TEAM_COUNT; team++) {
-    if (hasCmd(cmds[team] ?? 0, Cmd.super)) startSuper(world, sink, team);
+    if (hasCmd(bufferedCmd(world.state, team, cmds[team] ?? 0), Cmd.super)) startSuper(world, sink, team);
   }
 }

@@ -125,3 +125,12 @@ export const SUPER_HIT_DAMAGE = 12;
 export const SUPER_BAND_PX = 160;
 /** `superStarted.superId` of the generic Elemental Burst; the race variants of the archetype WPs get their own ids. */
 export const SUPER_ELEMENTAL_BURST = 0;
+
+/**
+ * Input windows (FUN-DESIGN 2.12), in game ticks (a freeze does not age a press). A press of primary, secondary or super
+ * that cannot run at once runs on the first tick it can within BUFFER_TICKS of the press (age 0..BUFFER_TICKS), once.
+ * Primary and secondary pressed within SUPER_CHORD_TICKS of each other (0..SUPER_CHORD_TICKS apart) are a super press
+ * when the team has SUPER_COST meter and no super running. The dash and parry windows arrive with their work packages.
+ */
+export const BUFFER_TICKS = 8;
+export const SUPER_CHORD_TICKS = 3;

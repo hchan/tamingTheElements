@@ -6,7 +6,7 @@ import { ABILITY_DEFS } from './projectile';
 import { controlledId } from './movement';
 import { applyBuff, applyHeal } from './status';
 import { now } from '../clock';
-import { meterOnCast } from './arcade/meter';
+import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { canAct } from './arcade/stun';
 import type { EventSink } from '../events';
 
@@ -30,13 +30,13 @@ function castSelf(world: SimWorld, sink: EventSink, team: number, slot: number, 
   if (def.kind === 'heal') applyHeal(world, caster, def.id);
   else if (!applyBuff(world, caster, def.id)) return;
   s.abil[cd] = tick + def.cooldownTicks + 1;
-  meterOnCast(s, sink, caster, team);
+  onArcadeCast(s, sink, caster, team, slot);
 }
 
 export function abilitiesSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const tick = now(world.state);
   for (let team = 0; team < TEAM_COUNT; team++) {
-    const cmd = cmds[team] ?? 0;
+    const cmd = bufferedCmd(world.state, team, cmds[team] ?? 0);
     if (hasCmd(cmd, Cmd.primary)) castSelf(world, sink, team, 0, tick);
     if (hasCmd(cmd, Cmd.secondary)) castSelf(world, sink, team, 1, tick);
   }

@@ -1,7 +1,9 @@
-import { SUPER_BAND_PX, SUPER_COST } from '../../data/arcade';
+import { SUPER_BAND_PX, SUPER_CHORD_TICKS, SUPER_COST } from '../../data/arcade';
 import { Cmd, type Command } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
-import { stateNumber, stateRecord, type AgentState, type FighterView, type ObservationView } from '../agent';
+import {
+  stateNumber, stateRecord, type AgentState, type ArcadeView, type FighterView, type ObservationView,
+} from '../agent';
 
 /**
  * Arcade layer of the scripted AI (FUN-DESIGN 2.11, WP-arcade-ai-basic), at the Normal difficulty cap. It only edits
@@ -17,6 +19,8 @@ import { stateNumber, stateRecord, type AgentState, type FighterView, type Obser
  * - 8-way aim (WP-arcade-8way-aim): a shot the base AI chose keeps its 4-way facing (a second movement axis is dropped,
  *   as Classic's x-wins facing would), and when no shot lines up on an axis but the opponent sits on a diagonal
  *   (`diagonalLine`), a ready projectile slot fires along that diagonal.
+ * - Chords (WP-arcade-buffer): primary and secondary pressed within SUPER_CHORD_TICKS start a super, so the layer drops a
+ *   press that would complete one by accident (`avoidChord`); its own super is always `Cmd.super`.
  */
 
 /** Normal's combo length cap (FUN-DESIGN 2.11: Easy 1, Casual 2, Normal 3, Hard 5, WTF 8). */
@@ -75,6 +79,21 @@ export function pressStep(self: FighterView, opp: FighterView, cmd: Command): Co
   return (cmd & ~MOVE) | bit;
 }
 
+/**
+ * `cmd` without the attack press that would complete a primary and secondary super chord (FUN-DESIGN 2.12), when a
+ * chord would start a super (a bar of meter, no super running): a new secondary press goes when primary is new too or
+ * was pressed SUPER_CHORD_TICKS or fewer game ticks ago, then a new primary press goes on the same test against
+ * secondary.
+ */
+export function avoidChord(a: ArcadeView, cmd: Command): Command {
+  if (a.meter < SUPER_COST || a.superActive) return cmd;
+  const rise = cmd & ~a.prevCmd;
+  const recent = (age: number): boolean => age >= 0 && age <= SUPER_CHORD_TICKS;
+  if ((rise & Cmd.secondary) !== 0 && ((rise & Cmd.primary) !== 0 || recent(a.primaryAge))) return cmd & ~Cmd.secondary;
+  if ((rise & Cmd.primary) !== 0 && recent(a.secondaryAge)) return cmd & ~Cmd.primary;
+  return cmd;
+}
+
 export class ArcadeTactics {
   /** `W.tick` at which the current opponent stun was first seen (-1: none) and the reaction drawn for it. */
   private seenAt = -1;
@@ -86,6 +105,11 @@ export class ArcadeTactics {
    * can fire now (0: none), used for a diagonal shot.
    */
   apply(view: ObservationView, base: Command, draw: (n: number) => number, shot: Command = 0): Command {
+    const cmd = this.decide(view, base, draw, shot);
+    return view.arcade === undefined ? cmd : avoidChord(view.arcade, cmd);
+  }
+
+  private decide(view: ObservationView, base: Command, draw: (n: number) => number, shot: Command): Command {
     const a = view.arcade;
     const self = view.self;
     const opp = view.opponent;

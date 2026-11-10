@@ -31,5 +31,9 @@
  * 10: Arcade only; Classic hashes unchanged. 8-way aim: the Arcade entity block gains `aim` (the dir8 of the last held
  *    input); shots fly along it (diagonals +-speed on both axes), a diagonal melee is a (w + h) / 2 square off the
  *    caster's corner, and those hits knock back along it; the super band keeps the 4-way facing (WP-arcade-8way-aim).
+ * 11: Arcade only; Classic hashes unchanged. Input buffer: the `input` slot records press edges every tick (frozen ones
+ *    too) in the Arcade team block (`prevCmd`, `pressTick`, the new `pressUsed`); a primary, secondary or super press
+ *    that cannot run at once runs on the first tick it can within 8 game ticks, once; primary and secondary within 3
+ *    ticks are a super press when a bar is there (WP-arcade-buffer).
  */
-export const SIM_VERSION = 10;
+export const SIM_VERSION = 11;
