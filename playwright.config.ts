@@ -1,12 +1,15 @@
 import { defineConfig } from '@playwright/test';
 
+// E2E_PORT lets parallel worktrees run the suite side by side.
+const PORT = process.env['E2E_PORT'] ?? '4173';
+
 export default defineConfig({
   testDir: 'tests/e2e',
   workers: 1,
   retries: 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${PORT}`,
     launchOptions: {
       // SwiftShader software WebGL; never --disable-gpu.
       args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
@@ -15,8 +18,8 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
     // `--mode test` compiles in the window.__TTE__ hook; production builds never contain it.
-    command: 'corepack pnpm exec vite build --mode test && corepack pnpm preview --port 4173 --strictPort',
-    url: 'http://localhost:4173',
+    command: `corepack pnpm exec vite build --mode test && corepack pnpm preview --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
