@@ -4,7 +4,7 @@ import { collectCommands, type Agent } from '../agents/agent';
 import { RandomBot } from '../agents/random-bot';
 import type { ChapterNumber } from '../data/chapters';
 import { CHARACTERS } from '../data/characters';
-import { Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
+import { ARCADE_CMD_BITS, Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { restore, snapshot, createSnapshotBuf } from './snapshot';
@@ -14,7 +14,10 @@ import { abilitySlot } from './systems/ability-info';
 import { hasEnded } from './systems/end';
 import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
-import { COMBO_STUN_CAP_TICKS, JUGGLE_LIMIT, KO_HIT_STOP_TICKS } from '../data/arcade';
+import {
+  COMBO_STUN_CAP_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, SUPER_FREEZE_TICKS,
+} from '../data/arcade';
+import { SUPER_DEF } from './systems/arcade/hit';
 import { SimEventKind, type SimEvent } from './events';
 import type { SimWorld } from './world';
 
@@ -163,7 +166,7 @@ function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEven
   checkArcade(w, events, wasFrozen, fail);
 }
 
-/** Hit-stop invariants: a frozen step is silent; every hit stops the clock for at most KO_HIT_STOP_TICKS. */
+/** Arcade invariants: a frozen step is silent; every hit stops the clock for at most KO_HIT_STOP_TICKS; caps; meter. */
 function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolean, fail: (m: string) => never): void {
   const s = w.state;
   if (!isArcade(s)) {
@@ -172,9 +175,10 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   }
   if (wasFrozen && events.length > 0) fail('events while frozen');
   const left = (s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] ?? 0) - (s.world[World.tick] ?? 0);
-  if (left > KO_HIT_STOP_TICKS) fail(`freeze of ${String(left)} ticks`);
+  if (left > Math.max(KO_HIT_STOP_TICKS, SUPER_FREEZE_TICKS)) fail(`freeze of ${String(left)} ticks`);
   const hits = events.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
-  if (hits !== events.filter((e) => e.kind === SimEventKind.hitStop).length) fail('hit without hit-stop');
+  const stops = events.filter((e) => e.kind === SimEventKind.hitStop && e['cause'] !== HitStopCause.super).length;
+  if (hits !== stops) fail('hit without hit-stop');
   if (hits > 0 && !isFrozen(s)) fail('hit did not freeze');
   // Stun and knockback (FUN-DESIGN 2.3): the caps hold, a stun never outlasts its combo's budget, and walls hold y too.
   const g = now(s);
@@ -197,10 +201,33 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   for (const e of events) {
     if (e.kind === SimEventKind.comboEnded && (e['hits'] ?? 0) < 1) fail('empty combo ended');
   }
+  // Hyper meter (FUN-DESIGN 2.5): within 0..METER_MAX, and a team's last meterLevel of the tick names its bars.
+  for (let t = 0; t < TEAM_COUNT; t++) {
+    const meter = s.arcade[ARCADE_TEAM_BASE + t * ARCADE_T + ArcadeT.meter] ?? 0;
+    if (meter < 0 || meter > METER_MAX) fail(`team ${String(t)} meter ${String(meter)}`);
+    const last = events.filter((e) => e.kind === SimEventKind.meterLevel && e['team'] === t).at(-1);
+    if (last && last['bars'] !== Math.floor(meter / METER_BAR)) fail(`meterLevel ${String(last['bars'])} for meter ${String(meter)}`);
+  }
+  // Supers (FUN-DESIGN 2.5): `superState` names the team's one live super entity, owned by a character of the team.
+  for (let t = 0; t < TEAM_COUNT; t++) {
+    const fx = (s.arcade[ARCADE_TEAM_BASE + t * ARCADE_T + ArcadeT.superState] ?? 0) - 1;
+    let live = 0;
+    for (let i = 0; i < MAX_ENTITIES; i++) {
+      if (s.kind[i] === EntityKind.effect && s.defId[i] === SUPER_DEF && s.team[i] === t && ((s.flags[i] ?? 0) & EntityFlag.alive) !== 0) live++;
+    }
+    if (live !== (fx >= 0 ? 1 : 0) || (fx >= 0 && (s.defId[fx] !== SUPER_DEF || s.team[s.owner[fx] ?? 0] !== t)))
+      fail(`team ${String(t)} super state ${String(fx)} with ${String(live)} live supers`);
+  }
+  for (const e of events) {
+    if (e.kind === SimEventKind.superStarted && !isFrozen(s)) fail('super did not freeze');
+  }
 }
 
-function runInputs(setup: MatchSetup, inputs: Cmds, check = true): { world: SimWorld; hashes: number[]; events: SimEvent[][] } {
+function runInputs(
+  setup: MatchSetup, inputs: Cmds, check = true, prep?: (w: SimWorld) => void,
+): { world: SimWorld; hashes: number[]; events: SimEvent[][] } {
   const world = createMatch(setup);
+  prep?.(world);
   const hashes: number[] = [];
   const events: SimEvent[][] = [];
   let prevCd = cooldowns(world);
@@ -267,6 +294,26 @@ describe('sim properties: invariants', () => {
       }),
       FC,
     );
+  });
+
+  it('hold in Arcade with full hyper meters: supers start, freeze, run and end exactly once each', () => {
+    let supers = 0;
+    const full = (w: SimWorld): void => {
+      for (let t = 0; t < TEAM_COUNT; t++) w.state.arcade[ARCADE_TEAM_BASE + t * ARCADE_T + ArcadeT.meter] = METER_MAX;
+    };
+    fc.assert(
+      fc.property(setupArb, inputsArb, (setup, inputs) => {
+        const arcade = { ...setup, flags: { ...setup.flags, rulesetArcade: true } };
+        const { world, events } = runInputs(arcade, inputs, true, full);
+        const all = events.flat();
+        const started = all.filter((e) => e.kind === SimEventKind.superStarted).length;
+        const live = [0, 1].filter((t) => (world.state.arcade[ARCADE_TEAM_BASE + t * ARCADE_T + ArcadeT.superState] ?? 0) !== 0);
+        expect(all.filter((e) => e.kind === SimEventKind.superEnded).length).toBe(started - live.length);
+        supers += started;
+      }),
+      FC,
+    );
+    expect(supers).toBeGreaterThan(0);
   });
 
   it('ignores command bits outside the ruleset input mask', () => {
@@ -388,8 +435,12 @@ describe('sim properties: determinism', () => {
 });
 
 describe('sim properties: command constants', () => {
-  it('command bits do not overlap the reserved mask', () => {
-    const all = Object.values(Cmd).reduce<Command>((m, b) => m | b, 0);
+  it('Classic command bits do not overlap the reserved mask; Arcade bits are Arcade-only', () => {
+    const { super: superBit, ...classic } = Cmd;
+    const all = Object.values(classic).reduce<Command>((m, b) => m | b, 0);
     expect(all & CMD_RESERVED_MASK).toBe(0);
+    expect(superBit & ARCADE_CMD_BITS).toBe(superBit);
+    expect(superBit & inputMaskFor({ rulesetArcade: false })).toBe(0);
+    expect(superBit & inputMaskFor({ rulesetArcade: true })).toBe(superBit);
   });
 });

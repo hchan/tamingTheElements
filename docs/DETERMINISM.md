@@ -107,7 +107,12 @@ finishes and the next `n` ticks are frozen; a frozen step emits no events, so ev
 `tests/repo/classic-hash-pins.test.ts`). Hit-stun deadlines are in game ticks, and knockback speeds are Int32 in Q4
 (1/16 px per tick) along the integer `DIR8_X/Y`, so `x += kbVx / 16` adds an exact dyadic fraction. Combo scaling is
 one `* scalePm / 1000` on the Classic float damage (skipped at 1000 pm, so unscaled hits are bit-identical), and the
-combo damage total is an Int32 in Q4 (`Math.round(amount * 16)`).
+combo damage total is an Int32 in Q4 (`Math.round(amount * 16)`). The hyper meter (`arcade/meter.ts`) is an Int32 per
+team: each gain is `Math.floor(dealt * pm / maxHp)` on the Classic float health removed (IEEE-exact multiply and divide,
+no transcendental) or a fixed integer (+20 per cast), capped at 3000. A super (`arcade/super.ts`) spends 1000 and
+sets the same `freezeUntil` deadline for 40 ticks (`freezeKind` 2); its band is an `effect` entity whose timing is in
+game ticks (`spawnTick`, `expireTick`), and the team's `superState` holds its id + 1, so both snapshot and hash with
+the rest of the state.
 
 ## Cross-browser golden replays
 

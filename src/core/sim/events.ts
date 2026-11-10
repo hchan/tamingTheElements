@@ -1,7 +1,8 @@
 /** Classic kinds are 1..30; Arcade-only kinds are 40..69 (docs/FUN-DESIGN.md section 2.1), never emitted in Classic. */
 export const SimEventKind = {
   moved: 1, blocked: 2, damage: 22, died: 20, swapped: 21, captured: 23, captureFailed: 24, matchEnded: 30,
-  hitStop: 40, hitConfirmed: 41, comboEnded: 42, recovered: 58,
+  hitStop: 40, hitConfirmed: 41, comboEnded: 42, meterLevel: 49, superStarted: 50, superEnded: 51,
+  recovered: 58,
 } as const;
 export type SimEventKindValue = (typeof SimEventKind)[keyof typeof SimEventKind];
 

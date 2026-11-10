@@ -12,6 +12,7 @@ interface Fx {
   tints: { id: number; tint: number; mode: number }[];
   numbers: string[];
   combo: [number, number];
+  meter: [number, number];
 }
 
 function collectErrors(page: Page): string[] {
@@ -57,6 +58,7 @@ test('Classic: a projectile hit renders the white hit flash (V6) and no Arcade H
   expect(flashed(f, foe)).toBe(true);
   expect(f.numbers).toEqual([]);
   expect(f.combo).toEqual([0, 0]);
+  expect(f.meter).toEqual([0, 0]);
   expect(errors).toEqual([]);
 });
 
@@ -71,6 +73,9 @@ test('Arcade: flash, damage numbers and combo counter; they hold while paused', 
   expect(f.numbers.length).toBeGreaterThanOrEqual(2);
   expect(f.numbers.every((n) => /^\d+( COUNTER)?$/.test(n))).toBe(true);
   expect(f.combo[0]).toBeGreaterThanOrEqual(2);
+  // Hyper meter (WP-arcade-meter): the attacker gains more than the victim, both from the hits.
+  expect(f.meter[1]).toBeGreaterThan(0);
+  expect(f.meter[0]).toBeGreaterThan(f.meter[1]);
   // Several more frames while paused: the flash and the numbers are still there.
   for (let i = 0; i < 5; i++) await page.evaluate(`new Promise((r) => requestAnimationFrame(r))`);
   const later = await fx(page);
@@ -90,6 +95,7 @@ test('Arcade with reduced motion: no shake, but the flash, numbers and combo sta
   expect(flashed(f, foe)).toBe(true);
   expect(f.numbers.length).toBeGreaterThanOrEqual(1);
   expect(f.combo[0]).toBeGreaterThanOrEqual(2);
+  expect(f.meter[0]).toBeGreaterThan(0);
   expect(await page.evaluate<boolean>(`window.__TTE__.arena.shaking()`)).toBe(false);
   expect(errors).toEqual([]);
 });

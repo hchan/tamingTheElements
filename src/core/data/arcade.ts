@@ -92,3 +92,36 @@ export function comboScalePm(hit: number, strength: HitStrengthValue): number {
   const pm = COMBO_SCALE_PM[hit - 1] ?? COMBO_SCALE_FLOOR_PM;
   return strength === HitStrength.super ? Math.max(pm, SUPER_COMBO_FLOOR_PM) : pm;
 }
+
+/**
+ * Hyper meter (FUN-DESIGN 2.5): per team, 0..METER_MAX in bars of METER_BAR. Gains are level-independent: dealing
+ * damage gives `floor(dealt * METER_DEAL_PM / victimMaxHp)` (a full life bar dealt is 0.8 bars), taking it
+ * `floor(dealt * METER_TAKE_PM / victimMaxHp)`; each cast +METER_CAST. Parry, perfect dodge and clash gains are used by
+ * their work packages (guard and parry, dash, clash).
+ */
+export const METER_BAR = 1000;
+export const METER_BARS = 3;
+export const METER_MAX = METER_BAR * METER_BARS;
+export const METER_DEAL_PM = 800;
+export const METER_TAKE_PM = 600;
+export const METER_CAST = 20;
+export const METER_PARRY = 150;
+export const METER_PERFECT_DODGE = 100;
+export const METER_CLASH = 50;
+
+/**
+ * Super (FUN-DESIGN 2.5, WP 8): costs SUPER_COST meter and `canAct`; freezes the game SUPER_FREEZE_TICKS (the
+ * cinematic) with the caster invulnerable through it and SUPER_INVULN_AFTER_TICKS game ticks past it. The generic
+ * "Elemental Burst" (every race until the archetype WPs) is the Fire Inferno Beam shape: a SUPER_BAND_PX band from the
+ * caster's centre to the arena wall on its facing side, active SUPER_ACTIVE_TICKS, one strength-3 hit of
+ * SUPER_HIT_DAMAGE every SUPER_HIT_EVERY ticks (5 hits). The caster cannot act until `superEnded`.
+ */
+export const SUPER_COST = METER_BAR;
+export const SUPER_FREEZE_TICKS = 40;
+export const SUPER_INVULN_AFTER_TICKS = 8;
+export const SUPER_ACTIVE_TICKS = 30;
+export const SUPER_HIT_EVERY = 6;
+export const SUPER_HIT_DAMAGE = 12;
+export const SUPER_BAND_PX = 160;
+/** `superStarted.superId` of the generic Elemental Burst; the race variants of the archetype WPs get their own ids. */
+export const SUPER_ELEMENTAL_BURST = 0;

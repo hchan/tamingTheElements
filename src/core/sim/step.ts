@@ -13,6 +13,7 @@ import { captureSystem } from './systems/capture';
 import { projectileSystem } from './systems/projectile';
 import { endSystem } from './systems/end';
 import { arcadeInputSystem } from './systems/arcade/input';
+import { arcadeSuperSystem } from './systems/arcade/super';
 import { World as W } from './state';
 import { advanceGameClock, isFrozen } from './clock';
 import type { SimWorld } from './world';
@@ -34,7 +35,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['projectiles', projectileSystem],
   ['capture', captureSystem],
   ['collision', noop],
-  ['health', noop],
+  ['health', arcadeSuperSystem],
   ['death', deathSystem],
   ['debuffs', debuffSystem],
   ['status', statusSystem],

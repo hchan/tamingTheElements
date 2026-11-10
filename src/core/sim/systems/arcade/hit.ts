@@ -12,6 +12,7 @@ import type { SimWorld } from '../../world';
 import { damageDecreasePct } from '../status';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
 import { knockbackDir, setKnockback } from './knockback';
+import { meterOnHit } from './meter';
 import { applyStun } from './stun';
 
 /** Strength tier per ability def index (set A then set B: the ABILITY_DEFS order of projectile.ts and melee.ts). */
@@ -22,6 +23,8 @@ export const HIT_STRENGTH: readonly HitStrengthValue[] = [...ABILITIES_A, ...ABI
 export const HIT_STUN: readonly number[] = [...ABILITIES_A, ...ABILITIES_B].map((d, i) =>
   hitStunFor(d.id, HIT_STRENGTH[i] ?? HitStrength.light),
 );
+/** Def index of the super's hitbox entity (arcade/super.ts), right after the abilities: strength 3 (super). */
+export const SUPER_DEF = HIT_STRENGTH.length;
 
 const FREEZE_UNTIL = ARCADE_WORLD_BASE + ArcadeW.freezeUntil;
 const FREEZE_KIND = ARCADE_WORLD_BASE + ArcadeW.freezeKind;
@@ -48,7 +51,8 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * on a free victim ends the team's live combo and starts a new one). Emits `damage` (as Classic projectiles do) and
  * `hitConfirmed`, then hit-stop by strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by
  * strength and hit-stun with the juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap
- * ends the combo); a counter hit (victim in its own cast recovery) stuns one tier more. Returns the health removed.
+ * ends the combo); a counter hit (victim in its own cast recovery) stuns one tier more. Last, both teams' hyper meters
+ * gain from the health removed (FUN-DESIGN 2.5, `meterLevel` when a bar fills). Returns the health removed.
  */
 export function applyArcadeHit(
   world: SimWorld, sink: EventSink, source: number, attacker: number, victim: number, base: number, defIdx: number,
@@ -58,7 +62,7 @@ export function applyArcadeHit(
   const team = s.team[source] ?? 0;
   const counter = isCounterHit(s, victim);
   const combo = comboHit(world, sink, source, team, victim);
-  const strength = HIT_STRENGTH[defIdx] ?? HitStrength.light;
+  const strength = defIdx === SUPER_DEF ? HitStrength.super : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
   const scalePm = comboScalePm(combo, strength);
   const raw = computeDamage({
     base,
@@ -82,5 +86,7 @@ export function applyArcadeHit(
   setKnockback(s, victim, KNOCKBACK_Q4[strength], knockbackDir(s, source, victim, dir));
   const stun = HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength];
   applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
-  return damageDealt(before, amount);
+  const dealt = damageDealt(before, amount);
+  meterOnHit(s, sink, source, team, victim, dealt);
+  return dealt;
 }

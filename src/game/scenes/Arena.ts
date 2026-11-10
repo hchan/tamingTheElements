@@ -304,6 +304,7 @@ export class Arena extends Phaser.Scene {
           tints,
           numbers: hud?.numbers.filter((n) => n.live).map((n) => numberLabel(n.amount, n.counter)) ?? [],
           combo: [hud?.combos[0].hits ?? 0, hud?.combos[1].hits ?? 0],
+          meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };
       },
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
@@ -440,7 +441,7 @@ export class Arena extends Phaser.Scene {
     // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them).
     const live = !driver.isPaused;
     const arcade = this.arcadeHud && view.arcade();
-    if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage);
+    if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
     this.reportPlayback();
     this.frameTick = tick;

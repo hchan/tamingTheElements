@@ -41,8 +41,8 @@ export interface RenderCharacter {
 }
 
 /**
- * Arcade read-outs for the view (docs/FUN-DESIGN.md section 3). The object is reused between calls. Meter, round,
- * timer and phase join with their work packages.
+ * Arcade read-outs for the view (docs/FUN-DESIGN.md section 3). The object is reused between calls. Round, timer and
+ * phase join with their work packages.
  */
 export interface RenderArcade {
   /** True while a hit-stop (or another game-clock freeze) holds the game. */
@@ -50,6 +50,8 @@ export interface RenderArcade {
   /** Live combo per team: hits (0 = none) and scaled damage so far. */
   readonly comboHits: [number, number];
   readonly comboDamage: [number, number];
+  /** Hyper meter per team, 0..METER_MAX (1000 per bar). */
+  readonly meter: [number, number];
   stunned(id: number): boolean;
   invulnerable(id: number): boolean;
 }
@@ -126,7 +128,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const s = world.state;
   const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
   const ar: RenderArcade = {
-    frozen: false, comboHits: [0, 0], comboDamage: [0, 0],
+    frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0],
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
@@ -223,6 +225,7 @@ export function createRenderView(world: SimWorld): RenderView {
         const b = ARCADE_TEAM_BASE + t * ARCADE_T;
         ar.comboHits[t] = s.arcade[b + ArcadeT.comboHits] ?? 0;
         ar.comboDamage[t] = (s.arcade[b + ArcadeT.comboDamageQ4] ?? 0) / Q4_ONE;
+        ar.meter[t] = s.arcade[b + ArcadeT.meter] ?? 0;
       }
       return ar;
     },

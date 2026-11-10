@@ -104,9 +104,12 @@ the events. `noop` entries are reserved slots that keep the order stable as syst
 while an Arcade freeze holds `gameTick` (`isFrozen`, never true in Classic); `tick` always advances. In Arcade, melee
 and projectile hits go through `applyArcadeHit` (`systems/arcade/hit.ts`), which keeps the Classic damage arithmetic
 times the combo scale (`arcade/combo.ts`) and sets the hit-stop freeze, knockback and hit-stun (`arcade/knockback.ts`,
-`arcade/stun.ts`); the Classic lines run
+`arcade/stun.ts`), then adds the hyper meter gains of both teams (`arcade/meter.ts`; casts add theirs from the cast
+sites through `meterOnCast`, a no-op in Classic); the Classic lines run
 unchanged behind `!isArcade`. The cast sites and movement ask `canAct` (Classic: not frozen; Arcade: also not
-stunned), and Arcade movement applies knockback first and holds both axes at the walls.
+stunned and not casting a super), and Arcade movement applies knockback first and holds both axes at the walls. The
+`health` slot is `arcadeSuper` (`arcade/super.ts`): `Cmd.super` spends a meter bar for a super (a 40-tick freeze, then
+an `effect` entity whose hits go through `applyArcadeHit` as strength 3).
 
 | # | System | Status |
 |---|---|---|
@@ -118,7 +121,7 @@ stunned), and Arcade movement applies knockback first and holds both axes at the
 | 6 | projectiles (`systems/projectile.ts`) | implemented |
 | 7 | capture (`systems/capture.ts`) | implemented |
 | 8 | collision | no-op |
-| 9 | health | no-op |
+| 9 | health (`systems/arcade/super.ts`) | Arcade only (returns at once in Classic): `arcadeSuper`, supers (`superStarted`, `superEnded`) |
 | 10 | death (`systems/death.ts`, hp <= 0 decided at end of tick) | implemented |
 | 11 | debuffs (`systems/debuffs.ts`) | implemented |
 | 12 | status (`systems/status.ts`, timers) | implemented |
@@ -143,7 +146,8 @@ thing that mutates `SimState`. A replay stores the commands, so replays never re
 with a per-tick `seq`. The id of an event is `(tick, sourceId, kind, seq)`; it is stable across re-simulation because events are
 a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-events-carry-stable-ids.md)). Kinds today:
 `moved, blocked, damage, died, swapped, captured, captureFailed, matchEnded` (Classic, kinds 1..30), plus the Arcade-only
-`hitStop` (40), `hitConfirmed` (41) and `recovered` (58) ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
+`hitStop` (40), `hitConfirmed` (41), `comboEnded` (42), `meterLevel` (49), `superStarted` (50), `superEnded` (51) and
+`recovered` (58) ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
 `src/game/audio/audio-manager.ts`) dedupe by this id, so rewinding or re-stepping never doubles an effect. In Arcade,
 `EventFx` drives hit feedback from `hitConfirmed` (flash, sparks by strength, damage number) and the `hitStop` after it
 (victim jitter until the freeze deadline, shake by strength or KO) and skips the paired `damage`; Classic keeps reacting to
@@ -218,9 +222,9 @@ Phaser scenes in `src/game/scenes/`: `Boot`, `Preload`, `Arena` (runs the driver
 (parallel to Arena, reads `RenderView`), `Cinematic` (data-driven by `src/game/cinematics/`). DOM menus (`src/ui/`) own
 everything outside a match (router, screens); the composition root `src/game/app/` wires them to scenes. Scenes read the sim
 only through the `RenderView` facade in `src/core/sim/view.ts` and never decide gameplay (for example death is a sim system).
-`RenderView.arcade()` (undefined in Classic) adds the Arcade read-outs: hit-stop freeze, live combo hits and damage per
-team, stun and invulnerability per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
-(`src/game/hud/arcade-hud.ts`: pooled damage numbers, combo counters) from events and `arcade()`, ages it while the driver
+`RenderView.arcade()` (undefined in Classic) adds the Arcade read-outs: hit-stop freeze, live combo hits and damage and the
+hyper meter per team, stun and invulnerability per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
+(`src/game/hud/arcade-hud.ts`: pooled damage numbers, combo counters, hyper meters) from events and `arcade()`, ages it while the driver
 runs, and hands it to `Hud` in `HudData`, which only draws it with pooled texts.
 
 ## Legacy concept map

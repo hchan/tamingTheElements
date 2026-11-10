@@ -16,6 +16,7 @@ import { damageDecreasePct } from './status';
 import { controlledId } from './movement';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
+import { meterOnCast } from './arcade/meter';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { releaseCount } from './ability-info';
 
@@ -71,7 +72,7 @@ function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: Abili
   return true;
 }
 
-function fire(world: SimWorld, charId: number, slot: number, tick: number): void {
+function fire(world: SimWorld, sink: EventSink, team: number, charId: number, slot: number, tick: number): void {
   const s = world.state;
   const abilityId = CHARACTERS[s.defId[charId] ?? 0]?.abilities[slot];
   const defIdx = ABILITY_DEFS.findIndex((d) => d.id === abilityId);
@@ -85,6 +86,7 @@ function fire(world: SimWorld, charId: number, slot: number, tick: number): void
     // canFireAtCooldown 10000 false / 10001 true).
     for (const d of OMNI_DIRS) spawnBullet(world, charId, defIdx, def, d);
     s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
+    meterOnCast(s, sink, charId, team);
     return;
   }
   // A full entity table means no bullet: the cast must not book a cooldown or leak an active count.
@@ -93,6 +95,7 @@ function fire(world: SimWorld, charId: number, slot: number, tick: number): void
   s.abil[ci] = (s.abil[ci] ?? 0) + 1;
   // Legacy cooldown is strict (>) in ms, so the next fire is one tick after the cooldown elapses.
   s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
+  meterOnCast(s, sink, charId, team);
 }
 
 /**
@@ -171,7 +174,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     const charId = controlledId(world, team);
     if (charId < 0) continue;
     const cmd = cmds[team] ?? 0;
-    if (hasCmd(cmd, Cmd.primary)) fire(world, charId, 0, tick);
-    if (hasCmd(cmd, Cmd.secondary)) fire(world, charId, 1, tick);
+    if (hasCmd(cmd, Cmd.primary)) fire(world, sink, team, charId, 0, tick);
+    if (hasCmd(cmd, Cmd.secondary)) fire(world, sink, team, charId, 1, tick);
   }
 }
