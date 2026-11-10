@@ -11,7 +11,7 @@ How to run, place and write tests. Run everything with `corepack pnpm <script>` 
 | `pnpm test:browser` | Vitest project `browser`: `tests/browser/**/*.browser.test.ts` in headless Chromium, Firefox and WebKit |
 | `pnpm e2e` | Playwright (`playwright.config.ts`): `tests/e2e/*.spec.ts` against `vite build --mode test` (written to `node_modules/.tte-e2e`, never `dist/`) served by `vite preview` on port 4173 (`E2E_PORT=n` picks another port for parallel worktrees) |
 | `pnpm visual:capture`, `visual:pacing`, `visual:regress`, `visual:update` | Visual QA (`playwright.visual.config.ts`, `tests/visual/`): screenshots, videos, frame pacing and screenshot regression; `ci:local --visual` adds them. See [VISUAL-QA.md](VISUAL-QA.md) |
-| `pnpm golden:record` | `tools/gen/record-golden.ts`: rewrites the bot-vs-bot goldens in `tests/fixtures/replays/`; `--ruleset arcade` writes only `arcade-1v1.replay.json` (scripted AI, Arcade flag) and leaves the Classic goldens alone |
+| `pnpm golden:record` | `tools/gen/record-golden.ts`: rewrites the bot-vs-bot goldens in `tests/fixtures/replays/`; `--ruleset arcade` writes only the Arcade goldens (`arcade-1v1.replay.json`: scripted AI; `arcade-moves` and `arcade-weather`: hand-scripted inputs from `tools/gen/arcade-moves.ts`) and leaves the Classic goldens alone |
 | `pnpm fun:report` | `tools/sim/fun-report.ts`: plays AI-vs-AI matches (`--ruleset arcade`, `--team-size 1\|2`, `--all` for 66 pairings) and prints the [FUN-DESIGN.md](FUN-DESIGN.md) section 4 metrics from `tools/sim/fun-metrics.ts`; writes `out/fun-report.json` |
 | `pnpm replay:verify <file...>` | `tools/replay-verify.ts`: re-simulates replay files headlessly; exits 1 on a hash mismatch |
 | `pnpm docs:gen` | `tools/gen/gen-design-tables.ts`: refreshes the generated tables in `docs/GAME-DESIGN.md` |
@@ -88,6 +88,15 @@ that Chromium, Firefox and WebKit reproduce the committed hashes.
 - `tests/repo/classic-hash-pins.test.ts`: every Classic golden in `tests/fixtures/replays/` (flags without `rulesetArcade`)
   keeps a pinned `hashes` list and `finalHash`, so an Arcade `SIM_VERSION` bump (a header-only golden diff) cannot hide a
   Classic hash change ([FUN-DESIGN.md](FUN-DESIGN.md) section 6). A new Classic fixture needs a pin in the same change.
+- `tests/repo/arcade-moves-coverage.test.ts`: coverage by events for the scripted Arcade goldens `arcade-moves.replay.json` and
+  `arcade-weather.replay.json` (inputs authored with `tools/gen/arcade-script.ts` as named steps with durations, no AI). It
+  replays them and asserts each mechanic fired at least once: a buffered cast (a cast on a tick whose button was already
+  released), a 3+ hit combo with scaled damage, a counter hit, a dash with a perfect dodge, a guard with chip, a guard break,
+  a parry that reflects a projectile, a diagonal (8-way) shot that lands, a meter-built super with its 40-tick freeze and a KO
+  by the super's last hit, all five weathers (and a hit under one), and best of three (a KO, a time over, a super KO, then
+  `matchEnded` 2-1). It also checks that the committed files equal what the scripts record today. When a sim change moves a
+  hit by a few ticks, this fails by mechanic name; re-tune the offset in the script (trace the events), then
+  `pnpm golden:record --ruleset arcade`. The files also run in the Node verification above and in the cross-browser list.
 - `tests/repo/fun-metrics.test.ts`: the fun-metrics reducer on synthetic events, and the `run-match` `--ruleset/--team-size/--ai-level` options (Classic results unchanged).
 - `tests/repo/fun-gate.test.ts`: REPORT-ONLY Arcade sample (`fun:report` numbers are printed); it asserts only that the run is deterministic, never metric values yet.
 - `tests/repo/docs-tables.test.ts`: the generated tables in `docs/GAME-DESIGN.md` must equal the output of `pnpm docs:gen`.

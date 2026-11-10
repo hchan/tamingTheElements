@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import arcadeGolden from '../fixtures/replays/arcade-1v1.replay.json';
+import arcadeMovesGolden from '../fixtures/replays/arcade-moves.replay.json';
+import arcadeWeatherGolden from '../fixtures/replays/arcade-weather.replay.json';
 import golden from '../fixtures/replays/random-vs-random.replay.json';
 import { HASH_INTERVAL, parseReplay, serializeReplay } from '../../src/core/replay/format';
 import { playReplay } from '../../src/core/replay/player';
@@ -30,4 +32,13 @@ describe('cross-engine determinism', () => {
     const arcade = parseReplay(JSON.stringify(arcadeGolden));
     expect(playReplay(arcade, SIM_VERSION)).toEqual({ ok: true, finalHash: arcade.finalHash });
   });
+
+  // Hand-scripted inputs (tools/gen/arcade-moves.ts): dash, guard, parry, super, all five weathers and the round flow.
+  it.each([['arcade-moves', arcadeMovesGolden], ['arcade-weather', arcadeWeatherGolden]])(
+    'the scripted Arcade golden %s verifies against the committed Node hashes',
+    (_name, golden) => {
+      const scripted = parseReplay(JSON.stringify(golden));
+      expect(playReplay(scripted, SIM_VERSION)).toEqual({ ok: true, finalHash: scripted.finalHash });
+    },
+  );
 });

@@ -157,6 +157,13 @@ Firefox and WebKit (`pnpm test:browser`) and requires the Node-recorded hashes t
 divergent tick is reported, which localises a drift. Bots keep their randomness in their own `AgentRng`, so
 `recordBotMatch` consults them on the recorded world itself.
 
+The Arcade goldens `arcade-moves.replay.json` and `arcade-weather.replay.json` are in the same cross-browser list. Their
+inputs are hand-authored (`tools/gen/arcade-moves.ts`, built with `tools/gen/arcade-script.ts`), not recorded from an AI, so
+they cover the mechanics the random bots of `arcade-1v1` never press: buffered casts, combos, counter hits, dash and perfect
+dodge, guard, guard break, parry reflection, the super freeze and a KO during a super, all five weathers and the round flow
+(KO, time over, best of three). `tests/repo/arcade-moves-coverage.test.ts` asserts from the events that each still fires.
+`pnpm golden:record --ruleset arcade` rewrites them; like every golden they move only with an intended sim change.
+
 ## Feature flags in replay headers
 
 Sim flags (`SimFlags`, `src/core/flags.ts`, all default off) change the simulation, so they are recorded in the replay header
