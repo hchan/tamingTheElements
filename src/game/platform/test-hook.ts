@@ -38,6 +38,11 @@ export interface ArenaProbe {
   cheat(c: 'myHp25' | 'enemyHp25' | 'win' | 'freezeEnemy' | 'captureWin'): void;
   /** True while the main camera shake effect is running (reduced motion keeps it false). */
   shaking(): boolean;
+  /**
+   * Hit feedback as drawn: per active character its tint and Phaser tint mode (1 = fill: the white hit flash); live
+   * damage-number labels and the combo hits shown per team (Arcade only; empty and [0, 0] in Classic).
+   */
+  fx(): { tints: { id: number; tint: number; mode: number }[]; numbers: string[]; combo: [number, number] };
   /** Key codes bound per action in the running battle's keyboard agent. */
   boundCodes(): Record<string, readonly string[]>;
   /** Whether the battle's audio is muted (Ctrl-M toggles), and whether the first gesture has unlocked it. */

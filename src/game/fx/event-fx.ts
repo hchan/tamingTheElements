@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
-import { SimEventKind, type SimEvent } from '@core/index';
+import { SimEventKind, type Element, type SimEvent } from '@core/index';
+import { shakeFor } from './motion';
 
 /**
  * Cosmetic effects driven by sim events. View-only: nothing here touches sim state or the sim RNG
@@ -59,24 +60,59 @@ export class CosmeticRng {
 
 /** Where effects land; the Phaser implementation is `createPhaserFxSink`. */
 export interface FxSink {
-  flash(target: number): void;
-  /** `dx`/`dy` are unit-ish offsets, one pair per particle. */
-  burst(target: number, offsets: readonly (readonly [number, number])[]): void;
+  /** White fill for 2 render frames, then `tint` for 4 (CharacterView owns the tint). */
+  flash(target: number, tint: number): void;
+  /** `count` particles flying out; `offsets[2i], offsets[2i + 1]` are unit-ish directions (reused buffer). */
+  burst(target: number, offsets: Float32Array, count: number, color: number): void;
+  /** One static spark for 100 ms: the reduced-motion stand-in for `burst`. */
+  spark(target: number, color: number): void;
   shake(durationMs: number, intensity: number): void;
+  /** Hit-stop jitter on `target` while the view tick is below `untilTick` (the freeze deadline, W.tick units). */
+  jitter(target: number, untilTick: number): void;
+  /** Floating damage number over `target`. */
+  number(target: number, amount: number, scaled: boolean, counter: boolean): void;
 }
 
+/** Classic hits: six particles, an 80 ms shake and a red-ish tint after the white flash. */
 export const HIT_PARTICLES = 6;
+export const CLASSIC_HIT_TINT = 0xff7777;
+/** Arcade sparks by hit strength (light, medium, heavy, super); FUN-DESIGN section 3. */
+export const SPARKS_BY_STRENGTH = [6, 10, 16, 24] as const;
+/** Arcade shake by hit strength: light none, then medium, heavy, super; KO has its own. */
+export const SHAKE_BY_STRENGTH: readonly ([number, number] | null)[] = [null, [60, 0.002], [100, 0.004], [250, 0.008]];
+export const KO_SHAKE: readonly [number, number] = [300, 0.01];
+/** `hitStop.cause` of the KO stop (src/core/data/arcade.ts HitStopCause). */
+const KO_CAUSE = 3;
+const MAX_SPARKS = SPARKS_BY_STRENGTH[3];
+
+/** Hit colour by the attacker's element. */
+export const ELEMENT_COLORS: Readonly<Record<Element, number>> = {
+  fire: 0xff7a1a, air: 0xc8f0ff, earth: 0xc89650, water: 0x3aa0ff, void: 0xc080ff,
+};
 
 export interface FxOptions {
   readonly reducedMotion: () => boolean;
+  /** Arcade match: `hitConfirmed` drives the hit feedback (its paired `damage` is skipped). */
+  readonly arcade?: boolean;
+  /** Element of a character (for the hit colour), or undefined when it has no view. */
+  readonly elementOf?: (id: number) => Element | undefined;
   readonly rng?: CosmeticRng;
   readonly deduper?: EventDeduper;
 }
 
-/** Turns sim events into effects once each. Reduced motion keeps the flash but drops shake and particles. */
+/**
+ * Turns sim events into effects once each. Reduced motion keeps the flash and the damage number but drops shake,
+ * jitter and flying particles (one static spark instead in Arcade).
+ */
 export class EventFx {
   private readonly rng: CosmeticRng;
   private readonly deduper: EventDeduper;
+  private readonly offsets = new Float32Array(MAX_SPARKS * 2);
+  /** Last `hitConfirmed` (tick, source, victim, strength), to pair it with the `hitStop` that follows it. */
+  private hitTick = -1;
+  private hitSource = -1;
+  private hitTarget = -1;
+  private hitStrength = 0;
 
   constructor(
     private readonly sink: FxSink,
@@ -88,28 +124,91 @@ export class EventFx {
 
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
-      if (e.kind !== SimEventKind.damage || !this.deduper.firstSeen(e)) continue;
-      const target = e['target'] ?? -1;
-      this.sink.flash(target);
-      if (this.opts.reducedMotion()) continue;
-      const offsets: [number, number][] = [];
-      for (let i = 0; i < HIT_PARTICLES; i++) offsets.push([this.rng.next() * 2 - 1, this.rng.next() * 2 - 1]);
-      this.sink.burst(target, offsets);
-      this.sink.shake(80, 0.002);
+      const k = e.kind;
+      if (k === SimEventKind.damage ? this.opts.arcade === true : k !== SimEventKind.hitConfirmed && k !== SimEventKind.hitStop) continue;
+      if (!this.deduper.firstSeen(e)) continue;
+      if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1);
+      else if (k === SimEventKind.hitConfirmed) this.arcadeHit(e);
+      else this.hitStop(e);
     }
+  }
+
+  private fill(count: number): Float32Array {
+    for (let i = 0; i < count * 2; i++) this.offsets[i] = this.rng.next() * 2 - 1;
+    return this.offsets;
+  }
+
+  private classicHit(target: number): void {
+    this.sink.flash(target, CLASSIC_HIT_TINT);
+    if (this.opts.reducedMotion()) return;
+    this.sink.burst(target, this.fill(HIT_PARTICLES), HIT_PARTICLES, 0xffddaa);
+    this.sink.shake(80, 0.002);
+  }
+
+  private arcadeHit(e: SimEvent): void {
+    const target = e['target'] ?? -1;
+    const strength = Math.min(3, Math.max(0, e['strength'] ?? 0));
+    const color = ELEMENT_COLORS[this.opts.elementOf?.(e['attacker'] ?? -1) ?? 'void'];
+    this.hitTick = e.tick;
+    this.hitSource = e.sourceId;
+    this.hitTarget = target;
+    this.hitStrength = strength;
+    this.sink.flash(target, color);
+    this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
+    if (this.opts.reducedMotion()) {
+      this.sink.spark(target, color);
+      return;
+    }
+    const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
+    this.sink.burst(target, this.fill(n), n, color);
+  }
+
+  /** The stop that follows a hit: victim jitter for the freeze, and the shake by strength (or the KO shake). */
+  private hitStop(e: SimEvent): void {
+    const reduced = this.opts.reducedMotion();
+    const ticks = e['ticks'] ?? 0;
+    if (!reduced && e.tick === this.hitTick && e.sourceId === this.hitSource) this.sink.jitter(this.hitTarget, e.tick + 1 + ticks);
+    const s = e['cause'] === KO_CAUSE ? KO_SHAKE : SHAKE_BY_STRENGTH[this.hitStrength];
+    const shake = s ? shakeFor(s[0], s[1], reduced) : null;
+    if (shake) this.sink.shake(shake.durationMs, shake.intensity);
   }
 }
 
 const BURST_DISTANCE = 24;
 const BURST_MS = 250;
+/** Particles start a quarter of the way out, so a burst reads as a ring even on its first (or a paused) frame. */
+const BURST_START = 0.25;
+const SPARK_MS = 100;
+/** Pool size of spark dots: at most this many in flight; extra particles are dropped. */
+export const SPARK_POOL = 64;
 
-/** Phaser-backed sink. `at` resolves an entity id to its current centre, or undefined if it has no view. */
+/** What the Phaser sink needs from the arena's character views. */
+export interface FxTarget {
+  flash(tint: number): void;
+  jitter(untilTick: number): void;
+}
+
+/** A character's box centre and height in logical px. */
+export interface FxPoint {
+  readonly x: number;
+  readonly y: number;
+  readonly h: number;
+}
+
+/**
+ * Phaser-backed sink. `viewOf` resolves an entity id to its character view and `at` to its current sim position (not
+ * the last drawn one, which lags a placement or a step made between two renders); `numberAt` receives floating damage
+ * numbers (the Arcade HUD model) in logical coordinates; `paused` holds particles while the sim is paused.
+ */
 export function createPhaserFxSink(
   scene: Phaser.Scene,
-  at: (id: number) => { x: number; y: number } | undefined,
-  tintOf: (id: number) => Phaser.GameObjects.Image | undefined,
+  viewOf: (id: number) => FxTarget | undefined,
+  at: (id: number) => FxPoint | undefined,
+  paused: () => boolean,
+  numberAt?: (x: number, y: number, amount: number, scaled: boolean, counter: boolean) => void,
 ): FxSink {
-  // Pooled burst dots, advanced by one scene update listener that only exists while dots are in flight.
+  // Pooled dots (at most SPARK_POOL): dots[0..live) are in flight, advanced by one scene update listener that only
+  // exists while dots are in flight. Finished dots are swapped behind `live`, so nothing allocates after warm-up.
   interface Dot {
     circle: Phaser.GameObjects.Arc;
     x0: number;
@@ -117,9 +216,10 @@ export function createPhaserFxSink(
     dx: number;
     dy: number;
     age: number;
+    life: number;
   }
-  const free: Phaser.GameObjects.Arc[] = [];
-  const live: Dot[] = [];
+  const dots: Dot[] = [];
+  let live = 0;
   let attached = false;
   const detach = (): void => {
     if (!attached) return;
@@ -130,25 +230,28 @@ export function createPhaserFxSink(
   };
   /** Scene is going away: Phaser destroys the circles with it, so just forget them. */
   const drop = (): void => {
-    live.length = 0;
-    free.length = 0;
+    dots.length = 0;
+    live = 0;
     detach();
   };
   function tick(_time: number, delta: number): void {
-    for (let i = live.length - 1; i >= 0; i--) {
-      const d = live[i];
+    if (paused()) return;
+    for (let i = live - 1; i >= 0; i--) {
+      const d = dots[i];
       if (!d) continue;
       d.age += delta;
-      const t = d.age / BURST_MS;
+      const t = d.age / d.life;
       if (t >= 1) {
         d.circle.setVisible(false);
-        free.push(d.circle);
-        live.splice(i, 1);
+        live--;
+        dots[i] = dots[live] ?? d;
+        dots[live] = d;
         continue;
       }
-      d.circle.setPosition(d.x0 + d.dx * t, d.y0 + d.dy * t).setAlpha(1 - t);
+      const k = BURST_START + (1 - BURST_START) * t;
+      d.circle.setPosition(d.x0 + d.dx * k, d.y0 + d.dy * k).setAlpha(1 - t);
     }
-    if (live.length === 0) detach();
+    if (live === 0) detach();
   }
   const attach = (): void => {
     if (attached) return;
@@ -157,27 +260,48 @@ export function createPhaserFxSink(
     scene.events.once('shutdown', drop);
     scene.events.once('destroy', drop);
   };
+  const centre = at;
+  const spawn = (x: number, y: number, dx: number, dy: number, color: number, radius: number, life: number): void => {
+    if (live >= SPARK_POOL) return;
+    let d = dots[live];
+    if (!d) {
+      d = { circle: scene.add.circle(0, 0, radius, color).setDepth(10), x0: 0, y0: 0, dx: 0, dy: 0, age: 0, life };
+      dots.push(d);
+    }
+    d.circle.setRadius(radius).setFillStyle(color).setPosition(x + dx * BURST_START, y + dy * BURST_START).setAlpha(1).setVisible(true);
+    d.x0 = x;
+    d.y0 = y;
+    d.dx = dx;
+    d.dy = dy;
+    d.age = 0;
+    d.life = life;
+    live++;
+    attach();
+  };
   return {
-    flash(target): void {
-      const img = tintOf(target);
-      if (!img) return;
-      img.setTint(0xff7777);
-      scene.time.delayedCall(60, () => {
-        img.clearTint();
-      });
+    flash(target, tint): void {
+      viewOf(target)?.flash(tint);
     },
-    burst(target, offsets): void {
-      const p = at(target);
+    burst(target, offsets, count, color): void {
+      const p = centre(target);
       if (!p) return;
-      for (const [dx, dy] of offsets) {
-        const circle = free.pop() ?? scene.add.circle(0, 0, 3, 0xffddaa).setDepth(10);
-        circle.setPosition(p.x, p.y).setAlpha(1).setVisible(true);
-        live.push({ circle, x0: p.x, y0: p.y, dx: dx * BURST_DISTANCE, dy: dy * BURST_DISTANCE, age: 0 });
+      for (let i = 0; i < count; i++) {
+        spawn(p.x, p.y, (offsets[2 * i] ?? 0) * BURST_DISTANCE, (offsets[2 * i + 1] ?? 0) * BURST_DISTANCE, color, 4, BURST_MS);
       }
-      attach();
+    },
+    spark(target, color): void {
+      const p = centre(target);
+      if (p) spawn(p.x, p.y, 0, 0, color, 8, SPARK_MS);
     },
     shake(durationMs, intensity): void {
       scene.cameras.main.shake(durationMs, intensity);
+    },
+    jitter(target, untilTick): void {
+      viewOf(target)?.jitter(untilTick);
+    },
+    number(target, amount, scaled, counter): void {
+      const p = centre(target);
+      if (p && numberAt) numberAt(p.x, p.y - p.h / 2, amount, scaled, counter);
     },
   };
 }

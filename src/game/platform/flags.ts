@@ -8,6 +8,8 @@ export interface UiFlags {
   readonly forceNoWebgl: boolean;
   /** Play path starts a random-bot vs random-bot Arena after Preload. */
   readonly arenaDemo: boolean;
+  /** The `arenaDemo` match runs the Arcade ruleset (dev and test builds; the menu entry is WP-arcade-entry). */
+  readonly arcade: boolean;
   /** Enemy uses the scripted AI instead of the random bot (falls back to the bot until the AI is complete). */
   readonly aiScripted: boolean;
   /** Play path starts the intro cinematic after Preload. */
@@ -31,6 +33,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   play: false,
   forceNoWebgl: false,
   arenaDemo: false,
+  arcade: false,
   aiScripted: false,
   cinematicDemo: false,
   record: false,
@@ -59,6 +62,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     play: on.has('play'),
     forceNoWebgl: on.has('forceNoWebgl'),
     arenaDemo: on.has('arenaDemo'),
+    arcade: on.has('arcade'),
     aiScripted: on.has('aiScripted'),
     cinematicDemo: on.has('cinematicDemo'),
     record: on.has('record'),

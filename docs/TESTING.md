@@ -53,6 +53,7 @@ Example: `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500 pnpm test`. Single file: `pnpm e
 | Cross-engine determinism | `tests/browser/determinism.browser.test.ts` |
 | End to end (real browser, real build) | `tests/e2e/*.spec.ts` |
 | Accessibility (axe audit, keyboard-only, reduce motion, rebinding, gamepad, announcements) | `tests/e2e/a11y.spec.ts`, `keyboard.spec.ts`, `a11y-features.spec.ts`; see [ACCESSIBILITY.md](ACCESSIBILITY.md) |
+| Hit feedback (fake sinks: 100% feedback coverage over real Arcade matches, reduced motion; the V6 flash in the browser) | `src/game/fx/event-fx.test.ts`, `src/game/views/character-view.test.ts`, `src/game/hud/arcade-hud.test.ts`, `tests/e2e/arcade-juice.spec.ts` |
 | Tester mode (cheat core, session and save slot, UI pieces, e2e) | `src/core/tester/tester.test.ts`, `src/game/platform/tester/session.test.ts`, `src/ui/tester/tester-ui.test.ts`, `tests/e2e/tester-mode.spec.ts`; see [TESTER-MODE.md](TESTER-MODE.md) |
 | Legacy loader stubs (Crafty, jQuery, DOM, clock, seeded random) | `src/testing/legacy/` |
 | Golden replay | `tests/fixtures/replays/random-vs-random.replay.json` |

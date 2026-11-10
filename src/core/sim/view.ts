@@ -1,10 +1,12 @@
+import { Q4_ONE } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
 import { capturable } from '../rules/progression';
 import {
-  EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COOLDOWNS, TEAM_STRIDE, TeamField, World,
+  ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COOLDOWNS, TEAM_STRIDE, TeamField, World,
 } from './state';
+import { isInvulnerable, isStunned } from './systems/arcade/stun';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { controlledId } from './systems/movement';
 import { listStatuses } from './systems/status';
@@ -14,7 +16,7 @@ import { SWAP_COOLDOWN_TICKS, teamMembers } from './systems/swap';
 /** Capture sits after the character's own two ability slots (see systems/capture.ts). */
 const CAPTURE_SLOT = 2;
 import type { SimWorld } from './world';
-import { now } from './clock';
+import { isArcade, isFrozen, now } from './clock';
 
 /** One character as the renderer sees it. The object is reused between callbacks: copy what you keep. */
 export interface RenderCharacter {
@@ -35,6 +37,21 @@ export interface RenderCharacter {
   maxHp: number;
   /** Rest ceiling: benched characters heal up to this. */
   restCap: number;
+  element: Element;
+}
+
+/**
+ * Arcade read-outs for the view (docs/FUN-DESIGN.md section 3). The object is reused between calls. Meter, round,
+ * timer and phase join with their work packages.
+ */
+export interface RenderArcade {
+  /** True while a hit-stop (or another game-clock freeze) holds the game. */
+  frozen: boolean;
+  /** Live combo per team: hits (0 = none) and scaled damage so far. */
+  readonly comboHits: [number, number];
+  readonly comboDamage: [number, number];
+  stunned(id: number): boolean;
+  invulnerable(id: number): boolean;
 }
 
 /** One active status as the HUD sees it. The object is reused between callbacks. */
@@ -101,11 +118,17 @@ export interface RenderView {
   heroElement(): Element | undefined;
   /** Visits every live character entity (benched and dead included; check `flags`). */
   forEachCharacter(visit: (c: RenderCharacter) => void): void;
+  /** Arcade read-outs, or undefined in Classic. */
+  arcade(): RenderArcade | undefined;
 }
 
 export function createRenderView(world: SimWorld): RenderView {
   const s = world.state;
-  const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0 };
+  const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
+  const ar: RenderArcade = {
+    frozen: false, comboHits: [0, 0], comboDamage: [0, 0],
+    stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id),
+  };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
   const pScratch: RenderProjectile = { id: 0, team: 0, sprite: '', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0 };
   const isCharacter = (i: number): boolean =>
@@ -176,7 +199,9 @@ export function createRenderView(world: SimWorld): RenderView {
         if (!isCharacter(i)) continue;
         scratch.id = i;
         scratch.team = s.team[i] ?? 0;
-        scratch.sprite = CHARACTERS[s.defId[i] ?? 0]?.sprite ?? '';
+        const def = CHARACTERS[s.defId[i] ?? 0];
+        scratch.sprite = def?.sprite ?? '';
+        scratch.element = def?.element ?? 'void';
         scratch.dir = s.dir[i] ?? 0;
         scratch.flags = s.flags[i] ?? 0;
         scratch.x = s.x[i] ?? 0;
@@ -190,6 +215,16 @@ export function createRenderView(world: SimWorld): RenderView {
         scratch.restCap = s.restCap[i] ?? 0;
         visit(scratch);
       }
+    },
+    arcade(): RenderArcade | undefined {
+      if (!isArcade(s)) return undefined;
+      ar.frozen = isFrozen(s);
+      for (let t = 0; t < 2; t++) {
+        const b = ARCADE_TEAM_BASE + t * ARCADE_T;
+        ar.comboHits[t] = s.arcade[b + ArcadeT.comboHits] ?? 0;
+        ar.comboDamage[t] = (s.arcade[b + ArcadeT.comboDamageQ4] ?? 0) / Q4_ONE;
+      }
+      return ar;
     },
     forEachStatus(id, visit): void {
       for (const st of listStatuses(s, id)) {
