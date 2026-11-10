@@ -143,11 +143,16 @@ per character whose first 16 ticks are cast recovery); the world block holds the
 Elemental clash (`arcade/clash.ts`, the `collision` slot): overlapping projectiles of opposing teams clash by their
 owners' elements (pairs `i < j`, one clash per projectile per tick); the advantaged one survives with
 `max(hp - loserHp / 2, hp / 4)` damage, any other relation destroys both, and each side gains 50 meter.
+Tag team (FUN-DESIGN 2.6): the `swap` slot is the tag in Arcade. A tag needs the active character free (`isFree`) and
+books 150 game ticks; `performSwap` puts the partner at the outgoing character's spot and runs the tag entrance
+(`arcade/tag.ts`: 20 ticks of invulnerability, 60 after a KO auto-swap from the `death` slot, and the primary cast at
+once through the usual cast functions with its cooldown restored, so it is free; `tagIn`). The `rest` slot heals benched
+characters 1% of max HP every 10 game ticks up to the rest cap (the red life), and only while benched.
 
 | # | System | Status |
 |---|---|---|
 | 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`), dash starts (`dashed`), guard meter regeneration and parry windows, weather expiry and casts (`weatherEnded`, `weatherChanged`) on unfrozen ticks |
-| 2 | swap (`systems/swap.ts`) | implemented |
+| 2 | swap (`systems/swap.ts`) | implemented; Arcade: the tag and its entrance (`systems/arcade/tag.ts`, `tagIn`) |
 | 3 | movement (`systems/movement.ts`) | implemented |
 | 4 | abilities | no-op (planned) |
 | 5 | melee (`systems/melee.ts`) | implemented |
@@ -158,7 +163,7 @@ owners' elements (pairs `i < j`, one clash per projectile per tick); the advanta
 | 10 | death (`systems/death.ts`, hp <= 0 decided at end of tick) | implemented |
 | 11 | debuffs (`systems/debuffs.ts`) | implemented |
 | 12 | status (`systems/status.ts`, timers) | implemented |
-| 13 | rest (`systems/rest.ts`, benched healing) | implemented |
+| 13 | rest (`systems/rest.ts`, benched healing) | implemented; Arcade: 1% every 10 game ticks, benched only |
 | 14 | cleanup (`systems/arcade/round.ts`) | Arcade only (returns at once in Classic): `arcadeRound`, round phases, timer, KO, best of 3, reset between rounds (`roundStarted`, `fight`, `ko`, `timeOver`, `roundEnded`) |
 | 15 | end (`systems/end.ts`, match-end check, `matchEnded` event) | implemented; Arcade: after the round that gives a side 2 round wins |
 

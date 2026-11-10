@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) and WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) and WP 19 (`WP-arcade-tag`, sim only: the 2v2 tag team, its entrance attack, KO entrance and bench recovery, section 2.6; the 2-pick menu and the entrance view are WP 20) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -86,7 +86,9 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 - **Legacy quirks fixed in Arcade only:** `bounds-y-typo` (knockback needs real walls; since WP-parity-fixes Classic
   holds y too, because the legacy typo turned out to be harmless), `damage-uses-target-mult`
   (tag entrances must use the caster's multiplier), `melee-dead-caster-lingers`, `vines-stacking`,
-  `steal-health-translucent`, `ice-shock-ignores-translucent`. Classic keeps them.
+  `steal-health-translucent`, `ice-shock-ignores-translucent`, and since WP 19 `rest-heal-enemy-in-play` (only benched
+  characters heal) and `bullet-count-on-active` (a bullet hit releases its shooter's count, so a tag cannot strand it).
+  Classic keeps them.
 - **Arcade events** use kinds 40..69 (Classic uses 1..30). Arcade still emits `damage` (22) for every hit, so existing
   tools keep working, plus the richer `hitConfirmed`.
 
@@ -104,7 +106,7 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 | 49 | `meterLevel` | `team, bars` (only when the bar count changes) | arcade/meter |
 | 50 | `superStarted` | `caster, superId` | arcade/super |
 | 51 | `superEnded` | `caster` | arcade/super |
-| 52 | `tagIn` | `from, to, team, entrance` | swap (Arcade branch) |
+| 52 | `tagIn` | `from, to, team, entrance` (1 when the entrance attack was cast) | swap (Arcade branch, `arcade/tag.ts`) |
 | 53 | `roundStarted` | `round` | arcade/round |
 | 54 | `fight` | none | arcade/round |
 | 55 | `ko` | `team, perfect` | arcade/round |
@@ -238,6 +240,23 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   styles it as the "red life" a player can win back by tagging out.
 - If the active character is KO'd, the auto-swap (`deathSystem`) brings the partner in with the entrance attack and
   60 ticks of invulnerability, so nobody loses to the arrival.
+- Built in WP 19 (`systems/swap.ts` and `systems/rest.ts` Arcade branches, `systems/arcade/tag.ts`, table in
+  `data/arcade.ts`): Arcade 2v2 is a `MatchSetup` with two-hero rosters (the 2-pick menu is WP 20). A tag (the swap keys,
+  held like Classic) needs the active character free as well as out of cast recovery (`isFree`: not stunned,
+  block-stunned, dashing, in a super or in weather recovery), so a stunned character cannot tag out of a combo, and books
+  `TAG_COOLDOWN_TICKS` = 150 game ticks (also after a KO auto-swap). The partner takes the outgoing character's spot,
+  facing and 8-way aim; `tagEntrance` makes it invulnerable 20 game ticks (60 after a KO) and casts its primary at once
+  through the ordinary cast path (cast meter, press, active count) with the cooldown deadline written back, so the
+  entrance is free and a running cooldown keeps running. A primary that is a buff or heal (Pax, Rokcore, Echo, Fiara) is
+  that self-cast; a partner that cannot act (guard held) or is at its active cap enters without it (`tagIn.entrance` 0).
+  Events: Classic `swapped`, then `tagIn {from, to, team, entrance}`. The combo counter is per team and the victim of a
+  combo is the opponent's active character, so a tag while the opponent is stunned continues the combo (the entrance hit
+  counts and scales). Benched recovery: `REST_HEAL_PM` = 10 pm of max HP every `REST_HEAL_EVERY` = 10 game ticks
+  toward the unchanged rest cap (red life), benched only. A round ends only when every hero of a side is down
+  (`survivorsOf` counts the bench); the round reset restores both heroes (HP, rest cap, start spot, the first one
+  active) and clears the tag cooldown. Meter is per team and carries over; a super's caster cannot tag (not free), and
+  its super still ends if it is KO'd. AI (`ArcadeTactics`, no new memory or draws): free, unthreatened and with the tag
+  ready, it tags (`Cmd.swap1`) when its HP is under 350 pm and its partner's is more than 250 pm higher.
 
 ### 2.7 Dash and dodge (sim)
 
@@ -803,7 +822,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 16 | `WP-arcade-guard-parry` (done: section 2.8; binding in 17, AI in 23) | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
 | 17 | `WP-arcade-defence-view` (done: section 3; also the dash and guard keys, pad buttons and touch buttons, the guard bar and the live lines) | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |
 | 18 | `WP-arcade-clash` (done: section 2.9 and section 3) | sim+view | Projectile clash by element, clash burst | 2 |
-| 19 | `WP-arcade-tag` | sim | 2v2 setup, swap 150, entrance at the outgoing position, entrance attack, tag combo, rest rate, KO entrance | 3, 4 |
+| 19 | `WP-arcade-tag` (done: sim only, section 2.6; scripted golden `arcade-tag`; the AI tags when low) | sim | 2v2 setup, swap 150, entrance at the outgoing position, entrance attack, tag combo, rest rate, KO entrance | 3, 4 |
 | 20 | `WP-arcade-tag-view` | view+ui | Entrance flash, red-life styling, 2-pick Arcade menu | 19, 11 |
 | 21 | `WP-arcade-supers-fire-air` | sim+data | Inferno Beam and Vortex archetypes and their 6 race variants | 8 |
 | 22 | `WP-arcade-supers-earth-water` | sim+data | Quake Rings and Tidal Wave archetypes and their 6 race variants | 8 |
