@@ -27,5 +27,6 @@ Policy: see [ADR-0015](../adr/0015-known-legacy-bugs-policy.md). Paths are relat
 | Slug | Description | New test |
 |---|---|---|
 | `projectile-table-leak` | In legacy, entities are unbounded. In the port a cast with a full entity table is now refused, so it books no cooldown and leaks no active count (intentional divergence, parity row C18) | `src/core/sim/systems/projectile.test.ts` (`a cast with a full entity table books no cooldown and leaks no active count`) |
+| `prod-cheats` | Shift-Q (I win), Shift-X (freeze) and Shift-C (capture win) are live in production | `input.js:10` to `input.js:12` | TBD | plain `it` (cheats DEV-only) | by construction |
 
 Related, not yet tracked as bugs: `Math.random` is used for opponent picks and GUIDs (`components.js:124`, `baseCharacter.js:992`, `baseCharacter.js:1008`); the port replaces it with seeded RNG streams (ADR-0003).
