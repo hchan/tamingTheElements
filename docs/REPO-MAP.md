@@ -22,6 +22,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md) |
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
 | `docs/` | Documentation: `BRANCHING.md`, `TESTING.md` (test commands, layout, fixtures, guards), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
+| `docs/` | Documentation: `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
