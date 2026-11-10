@@ -35,3 +35,7 @@ export * from './sim/view';
 export * from './rules/progression';
 export * from './sim/systems/end';
 export * from './rules/results';
+export * from './replay/format';
+export * from './replay/rle';
+export * from './replay/recorder';
+export * from './replay/player';

@@ -38,6 +38,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore and the lowest-id-first entity allocator |
 | `src/core/sim/systems/` | Per-tick sim systems run by `step` in fixed order (movement, status so far) |
 | `src/core/agents/` | `Agent` interface with a read-only `ObservationView` facade, seeded random bot (own `ai.pN` stream) and replay agent |
+| `src/core/replay/` | Replay file format (header, RLE inputs, hash checkpoints every 50 ticks), recorder, verifying player and the bot-match helper behind the golden fixture in `tests/fixtures/replays/` |
 | `src/core/save/` | Save schema v1 (valibot), v0 to v1 migration and `migrate()`; format in [SAVE-FORMAT.md](SAVE-FORMAT.md) |
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags, test-only `window.__TTE__` hook); imports only core via its index |
