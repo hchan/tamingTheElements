@@ -33,7 +33,11 @@ resimulate several ticks in one 16.6 ms frame.
   429.7 KB to 431.1 KB (three small extra chunks). New sim code now grows `sim`, not `index`. `size:check` also fails if the entry
   graph statically imports `sim`.
 - **Lazy features stay out of the entry chunk.** Arcade Versus is its own `arcade-versus` chunk (about 2.8 KB gzip, budget
-  2840), imported when `#arcade` opens; the scripted AI it needs is exported from `src/core/lazy-index.ts` (it lives in `sim`). Every function a lazy chunk imports from `index` is one more export there, and the
+  2840), imported when `#arcade` opens; the scripted AI it needs is exported from `src/core/lazy-index.ts` (it lives in `sim`).
+  `lazy-index` is imported dynamically, so its namespace keeps every export alive: it names its exports (WP-arcade-ai-personalities
+  replaced `export *` from the scripted-ai barrel, `lazy-index` 536 B to 228 B gzip), and the Arcade AI keeps its tables in
+  `scripted-ai/arcade-ai.ts`, outside the barrel, so they are inlined (that WP took `sim` from 19178 B to 19699 B of its
+  19700 B budget and `arcade-versus` from 3249 B to 3175 B). Every function a lazy chunk imports from `index` is one more export there, and the
   renamed exports can move `phaser-config` by a few bytes, so keep those imports few. Dev and test-only code is behind a
   static `import.meta.env.DEV || import.meta.env.MODE === 'test'` test (`getUiFlags`, `arcadeEnabled`, the Arena's
   `?ff=arcade` demo) so production bundles drop it. The Arcade round HUD (WP-arcade-announcer-view) is its own `round-view`

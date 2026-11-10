@@ -170,8 +170,10 @@ gives the accepted bits for the net session and replay validation). An `Agent` (
 `view.matchSeed` and the side). Neither lives in `SimState`, and `collectCommands` only reads the world: `step` is the only
 thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents. In Arcade the view also
 carries `arcade` (`ArcadeView`: both meters, both stuns, the freeze, both live combos, own super running, the round
-phase; only what the HUD shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`) reads; Classic views have no `arcade`, so Classic
-agents decide exactly as before.
+phase, the press ages, the enemy projectiles on the field with their velocity, and the ticks until its own dash and weather
+are ready; only what the screen shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`, knobs and
+personalities in `scripted-ai/arcade-ai.ts`) reads, drawing from its own `ai.arcade.pN` stream; Classic views have no
+`arcade`, so Classic agents decide exactly as before.
 
 ## Events and stable ids
 
@@ -190,9 +192,10 @@ a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-e
 ## RNG streams
 
 `src/core/rng/`: `sfc32.ts` (integer-only generator), `seed.ts` (`fnv1a`, `splitmix32`, `seedSfc32`), `streams.ts`
-(`STREAM_NAMES = combat, capture, spawn, meta, cosmetic`, `AGENT_STREAM_NAMES = ai.p1, ai.p2`). `createMatch` seeds the
-five sim streams from the match seed and stores them in `SimState.rng`; agents seed their own `ai.pN` stream (`AgentRng`)
-outside `SimState`. `combat`, `capture`, `spawn` are reserved for the sim and `meta` is used by out-of-match rules (`rules/new-game.ts`,
+(`STREAM_NAMES = combat, capture, spawn, meta, cosmetic`, `AGENT_STREAM_NAMES = ai.p1, ai.p2`,
+`ARCADE_AI_STREAM_NAMES = ai.arcade.p1, ai.arcade.p2`). `createMatch` seeds the five sim streams from the match seed and
+stores them in `SimState.rng`; agents seed their own `ai.pN` stream (`AgentRng`), and the Arcade AI layer its
+`ai.arcade.pN` one, outside `SimState`. `combat`, `capture`, `spawn` are reserved for the sim and `meta` is used by out-of-match rules (`rules/new-game.ts`,
 `rules/results.ts`, `rules/opponents.ts`, `rules/garrison.ts`), outside the hashed state. See [ADR 0003](adr/0003-sfc32-rng-streams.md).
 
 ## Snapshot, restore, hash
@@ -203,7 +206,7 @@ outside `SimState`. `combat`, `capture`, `spawn` are reserved for the sim and `m
   for state outside `SimState` that must rewind with it. `state.ts` also has the allocating
   `snapshotState`/`restoreState` pair.
 - Agent memory (`RandomBot`'s held command, `ScriptedAI`'s movement timers, facing and previous position, the Arcade
-  layer's confirm tick and reaction delay, every agent's `AgentRng`) is not in `SimState`. `Agent.save()`/`load()` copy it as plain JSON data, and `saveAgents`/`loadAgents`
+  layer's confirm and threat ticks, reactions, defence plan and personality, every agent's `AgentRng`) is not in `SimState`. `Agent.save()`/`load()` copy it as plain JSON data, and `saveAgents`/`loadAgents`
   (`src/core/agents/agent.ts`) make the `AgentSnapshot` to store next to the world snapshot, so a bot issues the same
   commands after a restore (`src/core/agents/agent-snapshot.test.ts`).
 - `src/core/sim/hash.ts`: FNV-1a 32 over every value as little-endian bytes in `stateArrays` order, read as 32-bit words
