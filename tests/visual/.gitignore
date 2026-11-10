@@ -1,0 +1,3 @@
+# Baselines for platforms other than linux are local only; linux is the CI source of truth.
+__baselines__/darwin/
+__baselines__/win32/
