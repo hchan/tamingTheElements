@@ -656,7 +656,7 @@ cast (kinds 1 to 4; eclipse has no terrain) starts `terrainSwap {stage, ticks: 3
 new layout (`terrainChanged {stage, count}`); the same weather again keeps the patches, a cast back to the standing stage
 cancels a pending swap, and a weather that ends keeps the last patches. Round start redraws the layout (a pending swap lands
 first). Events: `terrainChanged` 61, `terrainSwap` 62, `patchEntered` 63, `patchLeft` 64 (`{team, stage}`), `patchHeal` 65
-(`{amount}`), `projectileBlocked` 66. Not built: AI use of patches (basic rock avoidance only), the 2v2 tune. The view is WP 32 (below). Known cost: an earth stage
+(`{amount}`), `projectileBlocked` 66. Not built: AI use of patches (basic rock avoidance only). The 2v2 tune is WP-arcade-2v2-tune (below). The view is WP 32 (below). Known cost: an earth stage
 often puts a rock on the middle row (the centre patch sits on the fighters' row), and the scripted AI first neither walked round it nor fired over it, so Arcade
 stalemates rose (balance:compare stalemates 4 to 92 of 1056 matches). Basic rock avoidance is in `ArcadeTactics` (`ObservationView.arcade.rocks`:
 the earth patches for a fighter that cannot cross them): a move that would enter a rock, or an attack along a line a rock cuts, starts a
@@ -1149,3 +1149,14 @@ Hand over: the downloaded replays and the scorecard. The coordinator runs `pnpm 
 `pnpm fun:report --replay <file>` and compares the human numbers (round length, first hit, combos, supers, comeback) with
 the bot tournament. Arcade passes the playtest when it beats Classic on at least 4 of 5 questions and "another round" is
 4 or more.
+
+### WP-arcade-2v2-tune (SIM_VERSION 22): 2v2 rounds that finish
+
+Problem: 2v2 rounds (two heroes a side, HP shared out over a roster) ended by time over in 74.6% of rounds, median 123 s, and the
+action bar read the Classic 250-tick swap timer instead of the 150-tick tag cooldown (`RenderActionBar.swapCooldownTicks`,
+`src/core/sim/view.ts`). Fix, data first: a per-race 2v2 life multiplier (`ARCADE_2V2_LIFE_PM`, default 600 pm), bench heal 3 pm
+per 10 ticks, and a small AI change (a tag team shoots along rock-cut lines for part of each 256 ticks, which removed rock-line
+stalemates). Result at Normal AI with personalities (4 fresh seeds of `fun:report --team-size 2 --all --seeds 8`): time over
+3.7-5.1%, round median 75-77 s, stalemates 1.3-1.9% of matches (target 1%, report only), race win rates 36-61%. Numbers and the
+new baseline are in [BALANCE.md](BALANCE.md) "Arcade 2v2 tune". Not verified: a human 2v2 playtest of the feel; the tag cooldown
+and invulnerability were not changed.
