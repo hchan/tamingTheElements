@@ -152,12 +152,17 @@ describe('round view (Phaser side, fake scenes)', () => {
     expect(defenceState(arena.scene)).toMatchObject({ shields: 0, pops: [] });
     expect(weatherState(arena.scene)).toMatchObject({ kind: 0, call: '' });
     // The defence view's two Graphics in the Arena (the weather view makes its objects on the first weather); the
-    // round view's shutdown and destroy listeners, and the defence and weather views' postupdate, shutdown and destroy.
+    // round view's shutdown and destroy listeners, and the defence, clash and weather views' postupdate, shutdown and
+    // destroy (the clash view makes its Graphics on the first clash).
     expect(arena.made).toHaveLength(2);
-    expect(arena.events.count).toBe(8);
+    expect(arena.events.count).toBe(11);
     feed([ev(1, SimEventKind.roundStarted, 0, { round: 1 }), ev(2, SimEventKind.weatherChanged, 0, { weather: 2, prev: 0, team: 1 })]);
     expect(lines.map((l) => l.text)).toEqual(['Round 1.', 'The enemy called Rain: water hits harder, fire softer.']);
     expect(weatherState(arena.scene)?.call).toBe('Rain!');
+    // A clash reaches the clash burst through the defence view: its one Graphics.
+    const before = arena.made.length;
+    feed([ev(3, SimEventKind.clash, 2, { a: 2, b: 3, winner: -1, x: 400, y: 300, ea: 0, eb: 0 })]);
+    expect(arena.made).toHaveLength(before + 1);
     arena.events.emit('shutdown');
     expect(arena.events.count + hud.events.count).toBe(0);
     expect(weatherState(arena.scene)).toBeUndefined();

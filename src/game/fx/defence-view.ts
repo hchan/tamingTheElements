@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, GUARD_MAX, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
+import { mountClashView } from './clash-view';
 import { ELEMENT_COLORS } from './element-colors';
 import {
   AFTERIMAGE_ALPHA, AFTERIMAGE_GAP, BREAK_COLOR, DefenceFx, FLASH_TICKS, GUARD_COLOR, GUARD_LOW_PM,
@@ -16,7 +17,7 @@ import {
  * everything else over them), six afterimage Images and four pop Texts, on first use, and reuses them; the effects live
  * in typed-array pools redrawn into the Graphics each frame, so nothing allocates per frame. Effects run on the view
  * tick (smoothed by frame time between ticks), so they hold while the sim is paused. One Arena `postupdate` listener;
- * everything goes with the Arena (shutdown or destroy).
+ * everything goes with the Arena (shutdown or destroy). It mounts the clash burst (`clash-view.ts`) and feeds it too.
  */
 
 /** Trails under the fighters (0) and over the background (-1); afterimages just under the fighters. */
@@ -230,6 +231,8 @@ export function mountDefenceView(
     rings[o + 7] = flash ? 1 : 0;
   };
 
+  // The clash burst (WP-arcade-clash), its own chunk: projectile effects come with the defence view.
+  const clash = mountClashView(scene, view, prefs);
   // Prefs are read on defence events (and once a second for the trails and the shield rim), never per frame.
   const fx = new DefenceFx(sink, { reducedMotion: () => prefs().reduceMotion, teamOf });
 
@@ -457,6 +460,7 @@ export function mountDefenceView(
     tick = view.tick;
     sub = 0;
     fx.consume(events);
+    clash(events);
     onTick();
   };
 }

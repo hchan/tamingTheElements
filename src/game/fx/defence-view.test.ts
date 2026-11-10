@@ -239,7 +239,8 @@ describe('defence view: teardown', () => {
       const m = mount();
       m.feed(100, [ev(SimEventKind.dashed, 100, 0), ev(SimEventKind.parried, 100, 0, { target: 1, reflected: 0 })]);
       m.frame();
-      expect(m.events.count).toBe(3);
+      // Its own postupdate, shutdown and destroy, and the same three of the clash burst it mounts (clash-view.ts).
+      expect(m.events.count).toBe(6);
       m.events.emit(how);
       expect(m.events.count).toBe(0);
       expect(m.made.every((o) => o.destroyed)).toBe(true);
