@@ -23,6 +23,17 @@ pnpm sim:match --tournament --seeds 4 [--agents scripted,scripted] [--json]
 
 Round robin over all 66 unordered pairs of the 12 races, `--seeds` matches each. Output: a race ranking (score = wins + half draws over games) and a 4x4 element matchup matrix (fire, air, earth, water; win rate of the row element against the column element). `--json` also lists every pairing summary.
 
+## Regression gate
+
+Two tiers, both deterministic (scripted bots, fixed seeds), so any change in the numbers comes from a sim, data or bot change.
+
+- **PR sample** (`tests/repo/balance-gate.test.ts`, about 5 s, part of `pnpm test`): all 66 pairings, 2 seeds, level 1, scripted vs scripted, 9000-tick cap. Hard invariants only: no match times out, stalemates are at most 10% of matches (full tournament: 48 of 1056, 4.5%), results are identical when re-run, every ability of every race is cast at least once (cooldown booked, each race against all others), and no race sits at 0% or 100% win rate except the explicit allowlist `KNOWN_OUTLIERS` (sindarosa 100%, ishimi 0%, the legacy-numbers outliers under "Remaining skew"). It never asserts win-rate values.
+- **Nightly full** (`.github/workflows/nightly.yml`, schedule plus `workflow_dispatch`): `pnpm balance:compare` plays the full tournament and diffs it against `tests/fixtures/balance/baseline.json`; it also runs `pnpm test` with `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500` (see `docs/TESTING.md`). The JSON report (`out/balance-report.json`: baseline, current, per-race deltas) is uploaded as the `balance-report` artifact.
+
+Baseline parameters (`FULL_PARAMS` in `tools/sim/balance.ts`): 66 pairings x 16 seeds = 1056 matches, `--seed 1`, level 1, difficulty 1, scripted vs scripted, max 9000 ticks, stalemate after 1500 ticks without an HP change. It stores per-race win rates, total stalemates and timeouts.
+
+`pnpm balance:compare [--out file] [--tolerance 0.05]` prints per-race baseline, current and delta, and exits 1 when any race moves by more than 5 percentage points (or a race is added or removed). Intentional sim, data or bot changes re-record the baseline with `pnpm balance:record` and say why in the commit message; reviewers read the baseline diff as the balance change.
+
 ## Speed
 
 Measured on a laptop: roughly 20k ticks/s with random bots (cold start included) and 100k+ ticks/s with scripted bots. The full 12-race tournament at 2 seeds (132 matches) runs in under a second. `tests/repo/sim-match.test.ts` benchmarks the runner with a generous bound of 5000 ticks/s so slow CI does not flake.
