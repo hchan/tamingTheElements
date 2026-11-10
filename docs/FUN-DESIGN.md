@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim) and WP 27 (`WP-arcade-8way-aim`) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips) and WP 27 (`WP-arcade-8way-aim`) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -294,7 +294,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   supers end with their events; meter and round wins carry over) and runs its intro, or the phase becomes `over` and
   `endSystem` emits `matchEnded` with `won0`/`won1` in the same tick. `matchWinner` reads the round wins in Arcade. A KO
   keeps the character's damage multiplier (Classic zeroes it), since the next round brings it back.
-  `ObservationView.arcade.phase` gives the AI the phase. The view (announcer, timer) is WP 14.
+  `ObservationView.arcade.phase` gives the AI the phase. The view (announcer, timer) is WP 14, built (section 3).
 
 ### 2.11 AI personalities and difficulty (agents, outside SimState)
 
@@ -446,8 +446,8 @@ numbers, the 3-per-second cap (no full-screen flash exists yet), and the trails 
 `?ff=arenaDemo,arcade` (dev and test builds) runs the bot demo with the Arcade ruleset.
 
 Built in WP 7 (`WP-arcade-meter`): `RenderView.arcade().meter` and the hyper meter in `Hud.ts` (model and geometry in
-`arcade-hud.ts`): three 56 x 10 px segments under the HUD toward the centre (team 0 ends at its health bar's inner end,
-team 1 starts at its own), full segments solid, the filling one dashed, the bar count as a number beside it (`3 MAX`
+`arcade-hud.ts`): three 56 x 10 px segments under the HUD toward the centre (since WP 14 at y 124, team 0 ending and
+team 1 starting 32 px out from its health bar's inner end), full segments solid, the filling one dashed, the bar count as a number beside it (`3 MAX`
 when full). A full meter pulses its fill once a second; with reduced motion it stays steady.
 
 Built in WP 9 (`WP-arcade-super-view`): the super cinematic and the Arcade super input. `EventFx` turns the super freeze
@@ -463,6 +463,24 @@ in) and no punch-in; dim, band, name and element stay. The `superStarted` sound 
 `DUCK_MS`. Input: the **Super (Arcade)** binding (plain X; Shift-X stays the tester cheat) and pad RT (`ARCADE_PAD`; Classic
 keeps RT as the fourth swap) send `Cmd.super` only when the `KeyboardAgent` runs an Arcade match. The band of the super's
 hitboxes is not drawn yet (its hits show as sparks); the race names come with WPs 21 and 22.
+
+Built in WP 14 (`WP-arcade-announcer-view`, view only): `RenderView.arcade()` adds `round`, `phase`, `timer` and
+`roundsWon` (read-outs only; the sim and its hashes are unchanged). The Arena loads `src/game/hud/round-view.ts` (its own
+lazy chunk `round-view`, so Classic never downloads it; the Arena pays only the import call) in every Arcade match,
+replays included, and feeds it each tick's events; it draws into the Hud scene, so the Arena camera's shake and super
+punch-in never move it. The rules are pure (`round-announcer.ts`, `RoundAnnouncer`): `roundStarted` shows "ROUND n"
+("FINAL ROUND" at 1-1) for the intro, `fight` "FIGHT!" for 50 ticks, `ko` "K.O." ("DOUBLE K.O." for both, "PERFECT"
+under it), `timeOver` "TIME", `roundEnded` the result under it ("YOU WIN ROUND 1", "YOU LOSE ROUND 2", "ROUND 3 DRAW";
+the main line becomes "PERFECT" after a perfect KO) and `matchEnded` "VICTORY", "DEFEAT" or "DRAW" with the score
+("2 - 1"). Banners are 96 px (48 px sub line) at the centre, timed on the view tick (they hold while paused), and scale in
+from 2x over 600 ms (ease-out); reduced motion shows them at full size. A view that loads after the first tick catches up
+with the intro from `RenderView.arcade()`. The top centre, between the health bars, has the round timer (44 px, whole
+seconds, 2 digits; light red from 10 s, an extra cue) and two round-win pips per side under it (filled when won, hollow
+otherwise). The hyper meters moved down to y 124 and 32 px out from the bars' inner ends, clear of the health text and
+of the timer column. Live-region lines go through the Arena's throttled `Announcer` (see
+[ACCESSIBILITY.md](ACCESSIBILITY.md)); the shared match-end line carries the round score. Objects are made once per match
+(two banner texts, the timer text, one pip Graphics) with one Hud `update` listener, all removed with the Arena or the Hud.
+Not built: the KO white flash and desaturation, the KO camera punch-in and music cut (WP 26), voice.
 
 ## 4. Fun metrics (automatable)
 
@@ -549,7 +567,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 |---|---|---|---|---|
 | 12 | `WP-arcade-buffer` (done: section 2.12; windows count game ticks) | sim | Input buffer 8 ticks, super chord 3, edge tests | 1 |
 | 13 | `WP-arcade-rounds` (done: section 2.10) | sim | Phases, timer, best of 3, KO slow-motion, time-over rule, `matchEnded` after 2 wins, round events | 2 |
-| 14 | `WP-arcade-announcer-view` | view | Round intro, timer HUD, KO, TIME, PERFECT text, live-region lines | 13 |
+| 14 | `WP-arcade-announcer-view` (done: section 3; also the timer and round pips, and the canvas centred vertically, VISUAL-QA V1) | view | Round intro, timer HUD, KO, TIME, PERFECT text, live-region lines | 13 |
 | 15 | `WP-arcade-dash` | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |
 | 16 | `WP-arcade-guard-parry` | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
 | 17 | `WP-arcade-defence-view` | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |

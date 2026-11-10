@@ -169,7 +169,8 @@ with a per-tick `seq`. The id of an event is `(tick, sourceId, kind, seq)`; it i
 a pure function of the tick and are never stored in state ([ADR 0009](adr/0009-events-carry-stable-ids.md)). Kinds today:
 `moved, blocked, damage, died, swapped, captured, captureFailed, matchEnded` (Classic, kinds 1..30), plus the Arcade-only
 `hitStop` (40), `hitConfirmed` (41), `comboEnded` (42), `meterLevel` (49), `superStarted` (50), `superEnded` (51) and
-`recovered` (58) ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
+`roundStarted` (53), `fight` (54), `ko` (55), `timeOver` (56), `roundEnded` (57) and `recovered` (58)
+([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1). Consumers (`src/game/fx/event-fx.ts`,
 `src/game/audio/audio-manager.ts`) dedupe by this id, so rewinding or re-stepping never doubles an effect. In Arcade,
 `EventFx` drives hit feedback from `hitConfirmed` (flash, sparks by strength, damage number) and the `hitStop` after it
 (victim jitter until the freeze deadline, shake by strength or KO) and skips the paired `damage`; Classic keeps reacting to
@@ -254,7 +255,12 @@ runs, and hands it to `Hud` in `HudData`, which only draws it with pooled texts.
 imports `src/game/fx/super-view.ts` on the first super, so Classic never downloads it (its own `super-view` chunk). Per
 scene it makes one dim overlay, band, portrait and two texts on first use, runs on the view tick (it holds while paused),
 lifts the caster over the dim, punches the camera in about the caster and restores the fit zoom at the end; the frame
-plan (`super-cinematic.ts`) is pure. The music duck is the `superStarted` sound cue's.
+plan (`super-cinematic.ts`) is pure. The music duck is the `superStarted` sound cue's. `arcade()` also reads the round,
+its phase, the round timer and the round wins per team: in every Arcade match (replays included) the Arena imports
+`src/game/hud/round-view.ts` (its own `round-view` chunk) and feeds it each tick's events; it draws the round banners,
+the timer and the round pips into the `Hud` scene (so the Arena camera's shake and punch-in never move them) from objects
+made once, under one Hud `update` listener, removed with either scene, and says its lines through the Arena's live-region
+`Announcer`. The banner rules (`round-announcer.ts`) are pure and deduped by event order.
 
 Arcade Versus (`#arcade`, FUN-DESIGN WP 11) is a separate flow, not part of `AppFlow` (`flow.ts`, the story: garrison,
 battle, results, save). `main.ts` adds the route with a dynamic import, so its code is its own `arcade-versus` chunk and

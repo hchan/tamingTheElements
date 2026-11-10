@@ -28,7 +28,10 @@ later one, with the white flash, element sparks, damage numbers and the combo co
 hyper meters under the HUD after Curomo's casts fill one bar), `arena-arcade-super-freeze` (10 ticks into Curomo's super
 freeze: arena dimmed, caster lit, element band with portrait, super name and element, camera punched in), and Arcade
 Versus from the Settings opt-in: `menu-arcade` (the extra main-menu entry), `arcade-pick` (the picker), `arcade-battle`
-(tick 5, with the touch Super button) and `arcade-results`. Each
+(round 1 intro at tick 40: the ROUND 1 banner, timer and empty round pips, with the touch Super button), `arcade-fight`
+(the FIGHT! banner), `arcade-aim`, `arcade-ko` (K.O. with PERFECT during the KO slow motion), `arcade-round-end`
+(PERFECT, YOU WIN ROUND 1, one pip filled) and `arcade-results` (after a second KO: 2-0). The Arcade states step past
+round 1's 91-tick intro first (nobody acts before it). Each
 has a `-1280x720` and a `-390x844` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
 notes), size and sha256.
 
@@ -75,7 +78,7 @@ Record findings as issues (below) with the screenshot name.
 
 | # | Screenshot | Defect | Source |
 |---|---|---|---|
-| V1 | arena at the default display size | Canvas is 1000x563 pinned to the top of a 1280x720 window: not centred, a 157 px black band below | human review |
+| V1 | arena at the default display size | Fixed in WP-arcade-announcer-view. Canvas was 1000x563 pinned to the top of a 1280x720 window: not centred, a 157 px black band below. A running game's `#game` box now gets a top margin of half the space the display-size fraction leaves, so the bands split evenly at every window size; `tests/e2e/display-size.spec.ts` and `tests/e2e/responsive.spec.ts` check the canvas centre within 1 px of the window centre | human review |
 | V2 | `arena-*` HUD | Health text (for example `100% OK`) is overlapped by the health bar | human review |
 | V3 | `arena-*` action bar | An empty third slot labelled `4` | human review |
 | V4 | `arena-*`, `garrison-*` | No character names or avatars on the HUD; garrison avatars render as blank space | human review and `garrison-6-*` |
