@@ -21,7 +21,7 @@ describe('EntityViewPool', () => {
     pool.begin();
     expect(pool.acquire(3)).toBe(a);
     pool.end();
-    expect(pool.activeCount).toBe(1);
+    expect(pool.peek(3)).toBe(a);
   });
 
   it('parks unseen views and reuses them for new ids', () => {
@@ -34,13 +34,13 @@ describe('EntityViewPool', () => {
     pool.acquire(2);
     pool.end();
     expect(parked).toEqual([a.n]);
-    expect(pool.freeCount).toBe(1);
+    expect(pool.peek(1)).toBeUndefined();
     pool.begin();
     pool.acquire(2);
     expect(pool.acquire(9)).toBe(a);
     pool.end();
     expect(made()).toBe(2);
-    expect(pool.freeCount).toBe(0);
+    expect(pool.peek(9)).toBe(a);
   });
 
   it('visits active and parked views', () => {

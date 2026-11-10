@@ -29,7 +29,7 @@ hyper meters under the HUD after Curomo's casts fill one bar), `arena-arcade-sup
 freeze: arena dimmed, caster lit, element band with portrait, super name and element, camera punched in), the Arcade
 defence states (same demo, WP-arcade-defence-view): `arena-arcade-guard` (Pax's shield bubble and guard bar, chip sparks
 from Curomo's Shards of Ice), `arena-arcade-parry` (white flash, gold ping ring and PARRY over Pax), `arena-arcade-dash`
-(three tinted afterimages behind Curomo dashing up), `arena-arcade-trails` (Shards of Ice in a ring, three fading dots
+(three tinted afterimages behind Curomo dashing up), `pose-walk-e|ne|n|nw|w|sw|s|se` (the Arcade walk cycle in the 8 directions, one tick per rendered frame: nearest side, up or down reel, mirrored and leaning into the heading), `pose-cast`, `pose-bullet`, `pose-hurt`, `pose-guard` and `pose-dash` (WP-arcade-pose-layer: squash and stretch, tilt, crouch and stretch, with a bullet in flight; timing-dependent, so not pinned), `arena-arcade-trails` (Shards of Ice in a ring, three fading dots
 behind each) and `arena-arcade-guard-break` (shards, an orange ring, GUARD BREAK, the empty guard bar), the Arcade
 weather states (WP-arcade-weather-view, 40 ticks after each cast: tint, particles, the called line and the HUD badge under
 the hyper meters) `arena-arcade-weather-rain` and `arena-arcade-weather-sandstorm` (the demo's casts),
@@ -67,6 +67,10 @@ frame under 250 ms, sim advanced more than 200 ticks). **SwiftShader is software
 these numbers say nothing about real-device smoothness.** Check that on a real machine: open a dev or test build
 (`pnpm dev`, then `/?ff=arenaDemo,fps`) and read the overlay while playing; look for sustained 60 fps, worst frame under about
 33 ms, and no hitching when abilities fire.
+
+`visual:pacing` for WP-arcade-pose-layer: before p99 50 ms, after 16.8 ms and 66.7 ms in two runs on a shared machine (SwiftShader
+noise; see docs/PERFORMANCE.md). Smoothness is asserted by numbers in `src/game/views/pose-layer.test.ts` (fake clock, 50 to
+165 Hz), not by eye; real-device feel is still checked by hand with `?ff=fps`.
 
 ## Reviewer checklist (apply to every PNG)
 

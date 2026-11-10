@@ -10,7 +10,6 @@ const SPRITES = manifest.sprites as Readonly<Record<string, Entry>>;
 const MAP_SPRITES = manifest.mapSprites as Readonly<Record<string, Entry>>;
 
 /** Legacy Tornado is created with `shouldNotRotateBullet`; every other bullet rotates to its direction. */
-const NO_ROTATE = new Set(['tornado']);
 const FRAME = 'proj';
 /** Phaser.BlendModes.ADD (a type-only Phaser import keeps this module unit-testable without the engine). */
 const BLEND_ADD = 1;
@@ -20,7 +19,7 @@ const BLEND_ADD = 1;
  * Dir8 indices run counter-clockwise on screen (DIR8_X/Y: 1 north-east, 2 north), so the angle is (8 - dir) * 45.
  */
 export function rotationForDir(dir: number, sprite: string): number {
-  return NO_ROTATE.has(sprite) ? 0 : ((8 - dir) & 7) * 45;
+  return sprite === 'tornado' ? 0 : ((8 - dir) & 7) * 45;
 }
 
 /** Texture key and manifest entry for an ability sprite (`sprite:` first, then `map:`). */
@@ -35,7 +34,7 @@ function lookup(sprite: string): { key: string; entry: Entry } | undefined {
 export class ProjectileView {
   readonly image: Phaser.GameObjects.Image;
   /** Soft additive halo behind the sprite so small bolts and dashes have depth against bright arenas (the same frame, enlarged). */
-  private readonly glow: Phaser.GameObjects.Image;
+  readonly glow: Phaser.GameObjects.Image;
   private key = '';
 
   constructor(private readonly scene: Phaser.Scene) {
@@ -59,12 +58,11 @@ export class ProjectileView {
     this.image.setDisplaySize(p.w, p.h);
     this.image.setPosition(lerp(p.px, p.x, alpha) + p.w / 2, lerp(p.py, p.y, alpha) + p.h / 2);
     this.image.setAngle(rotationForDir(p.dir, p.sprite));
-    // Thin bolts get a proportionally larger halo; both grow around the same centre and rotate with the sprite.
+    // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
       .setVisible(true)
       .setDisplaySize(p.w * 1.6 + 6, p.h * 1.6 + 6)
       .setPosition(this.image.x, this.image.y)
-      .setAngle(this.image.angle)
       .setDepth(this.image.depth - 0.01);
   }
 

@@ -20,19 +20,16 @@ export function tintStage(flashLeft: number, frozen: boolean): TintStage {
   if (flashLeft > 0) return 'hit';
   return frozen ? 'frozen' : 'none';
 }
-/** Render ticks per animation frame while moving (about 8 fps at 50 Hz). */
-export const TICKS_PER_FRAME = 6;
-
-type FrameSet = 'left' | 'right' | 'up' | 'down';
+export type FrameSet = 'left' | 'right' | 'up' | 'down';
 type Frames = readonly (readonly number[])[];
-interface MapSprite {
+export interface MapSprite {
   readonly coords: readonly number[];
   readonly leftFrames?: Frames;
   readonly rightFrames?: Frames;
   readonly upFrames?: Frames;
   readonly downFrames?: Frames;
 }
-const MAP_SPRITES = manifest.mapSprites as Readonly<Record<string, MapSprite>>;
+export const MAP_SPRITES = manifest.mapSprites as Readonly<Record<string, MapSprite>>;
 
 /** Legacy `doAnimation`: north/south use the Up/Down reels, everything else the side reel. */
 export function frameSetFor(dir: number): FrameSet {
@@ -46,17 +43,11 @@ export function flipForDir(dir: number): boolean {
   return dir >= 3 && dir <= 5;
 }
 
-/** Frame index for a looping reel; frozen at 0 while standing still (legacy `pauseAnimation`). */
-export function frameIndex(tick: number, count: number, moving: boolean): number {
-  if (!moving || count <= 0) return 0;
-  return Math.floor(tick / TICKS_PER_FRAME) % count;
-}
-
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-function framesOf(sprite: MapSprite, set: FrameSet): Frames {
+export function framesOf(sprite: MapSprite, set: FrameSet): Frames {
   const own = set === 'left' ? sprite.leftFrames : set === 'up' ? sprite.upFrames : set === 'down' ? sprite.downFrames : sprite.rightFrames;
   return own && own.length > 0 ? own : (sprite.rightFrames ?? []);
 }
@@ -75,7 +66,7 @@ function ensureFrames(scene: Phaser.Scene, key: string, sprite: MapSprite): void
 
 const FRAME_NAMES: Record<FrameSet, string[]> = { left: [], right: [], up: [], down: [] };
 /** Frame name like `left3`, built once per (set, index) so the per-frame path allocates no strings. */
-function frameName(set: FrameSet, i: number): string {
+export function frameName(set: FrameSet, i: number): string {
   const names = FRAME_NAMES[set];
   return (names[i] ??= `${set}${String(i)}`);
 }
@@ -126,8 +117,9 @@ export class CharacterView {
       this.spriteName = c.sprite;
       this.sprite = MAP_SPRITES[c.sprite];
       if (this.sprite) {
-        this.image.setTexture(key);
         ensureFrames(this.scene, key, this.sprite);
+        // The standing frame; the pose layer (views/pose-layer.ts) picks the facing (mirror) and walk frame once loaded.
+        this.image.setTexture(key, frameName('right', 0));
       }
     }
     let x = lerp(c.px, c.x, alpha);
@@ -139,13 +131,6 @@ export class CharacterView {
     }
     this.image.setPosition(x, y);
     this.image.setDisplaySize(c.w, c.h);
-    if (this.sprite) {
-      const set = frameSetFor(c.dir);
-      const count = framesOf(this.sprite, set).length;
-      const moving = c.x !== c.px || c.y !== c.py;
-      this.image.setFrame(frameName(set, frameIndex(tick, count, moving)));
-    }
-    this.image.setFlipX(flipForDir(c.dir));
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
     const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
     if (live && this.flashLeft > 0) this.flashLeft--;

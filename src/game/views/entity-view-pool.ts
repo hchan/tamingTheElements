@@ -35,17 +35,9 @@ export class EntityViewPool<V> {
     }
   }
 
-  get activeCount(): number {
-    return this.active.size;
-  }
-
   /** The active view for an id, without acquiring one. */
   peek(id: number): V | undefined {
     return this.active.get(id);
-  }
-
-  get freeCount(): number {
-    return this.free.length;
   }
 
   /** Visits every view, active or parked (for destroy on shutdown). */

@@ -105,6 +105,7 @@ export class Arena extends Phaser.Scene {
    * once they have loaded.
    */
   private rounds: ((events: readonly SimEvent[]) => void) | undefined;
+  private poses: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
   private clicks: number[] = [];
@@ -144,7 +145,8 @@ export class Arena extends Phaser.Scene {
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     this.pool = new EntityViewPool(() => new CharacterView(this), (v) => { v.hide(); });
-    this.projPool = new EntityViewPool(() => new ProjectileView(this), (v) => { v.hide(); });
+    const projPool = new EntityViewPool(() => new ProjectileView(this), (v) => { v.hide(); });
+    this.projPool = projPool;
     const pool = this.pool;
     // Agents keep their own memory and random streams, so every match (scene start) gets fresh ones.
     this.agents = [new RandomBot('p1'), new RandomBot('p2')];
@@ -247,6 +249,10 @@ export class Arena extends Phaser.Scene {
         }
       });
     }
+    // The pose layer (lazy chunk): smooth walking, leans, Arcade poses, projectile easing (docs/ARCHITECTURE.md).
+    void import('../views/pose-layer').then((m) => {
+      if (this.view === view) this.poses = m.mountPoseLayer(this, view, pool, projPool, getPrefs);
+    });
     this.launch?.arcadeView?.(this, view, () => this.frameAlpha);
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
@@ -397,6 +403,7 @@ export class Arena extends Phaser.Scene {
     this.audio?.audio.consume(events);
     this.announce(events);
     this.rounds?.(events);
+    this.poses?.(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
     this.ended = true;
@@ -425,6 +432,7 @@ export class Arena extends Phaser.Scene {
       if (!events) break;
       this.fx?.consume(events);
       this.rounds?.(events);
+      this.poses?.(events);
     }
     if (cursor.state !== 'playing') this.driver?.pause('ended');
   }
@@ -552,6 +560,7 @@ export class Arena extends Phaser.Scene {
     this.fx = undefined;
     this.arcadeHud = undefined;
     this.rounds = undefined;
+    this.poses = undefined;
     this.cursor = undefined;
     this.driver = undefined;
     this.keyboard = undefined;

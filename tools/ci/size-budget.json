@@ -11,6 +11,7 @@
     "lazy-index": 550,
     "phaser": 388700,
     "phaser-config": 17000,
+    "pose-layer": 3772,
     "rolldown-runtime": 200,
     "round-view": 2100,
     "sim": 21600,
@@ -18,5 +19,5 @@
     "tag-view": 2802,
     "weather-view": 3470
   },
-  "totalGzip": 454800
+  "totalGzip": 458572
 }

@@ -204,6 +204,45 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('arcade poses and smooth walking (pose layer)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
+      await page.locator('#game canvas').waitFor();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      const frame = `new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`;
+      // One tick per rendered frame, so the pose layer sees real movement and its animation clock runs (manual mode
+      // otherwise holds the sim and the clock between steps). The shots are timing-dependent: not pinned.
+      const run = (n: number, a: number, b: number): Promise<unknown> =>
+        page.evaluate(`(async () => { const a = window.__TTE__.arena; for (let i = 0; i < ${String(n)}; i++) { a.step(1, [${String(a)}, ${String(b)}]); await ${frame}; } })()`);
+      const place = (meX: number, foeX: number, y = 360): string =>
+        `(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, ${String(meX)}, ${String(y)}, 0); a.place(foe.id, ${String(foeX)}, ${String(y)}, 4); })()`;
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      const dirs: [string, number][] = [['e', CMD.right], ['ne', CMD.up | CMD.right], ['n', CMD.up], ['nw', CMD.up | CMD.left], ['w', CMD.left], ['sw', CMD.down | CMD.left], ['s', CMD.down], ['se', CMD.down | CMD.right]];
+      for (const [name, bits] of dirs) {
+        await page.evaluate(place(560, 1180, 360));
+        await run(14, bits, 0);
+        await shoot(page, vp, 'arena', `pose-walk-${name}`, `Arcade walk cycle heading ${name} (8-way): nearest side/up/down reel, mirrored, leaning into the heading`, false);
+      }
+      await page.evaluate(place(500, 580));
+      await run(3, CMD.secondary, 0);
+      await shoot(page, vp, 'arena', 'pose-cast', "Arcade cast follow-through: Curomo's squash and stretch on the cast tick, bolts leaving", false);
+      await run(6, 0, 0);
+      await shoot(page, vp, 'arena', 'pose-bullet', 'Arcade bullets in flight: eased spawn, glow, trail dots, rotation to the heading', false);
+      await run(14, 0, 0);
+      await shoot(page, vp, 'arena', 'pose-hurt', 'Arcade hurt reel: Pax tilted back and squashed after the hit, white flash gone', false);
+      await page.evaluate(`window.__TTE__.arena.step(60)`);
+      await page.evaluate(place(500, 580));
+      await run(10, 0, CMD.guard);
+      await shoot(page, vp, 'arena', 'pose-guard', 'Arcade guard crouch: Pax squashed down behind the shield bubble', false);
+      await page.evaluate(`window.__TTE__.arena.step(60)`);
+      await page.evaluate(place(500, 1000));
+      await run(1, CMD.dash | CMD.right, 0);
+      await run(3, CMD.right, 0);
+      await shoot(page, vp, 'arena', 'pose-dash', 'Arcade dash: horizontal stretch with the afterimages', false);
+      expect(errors).toEqual([]);
+    });
+
     test('arcade defence (demo, Arcade ruleset)', async ({ page }) => {
       const errors = collectErrors(page);
       await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
