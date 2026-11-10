@@ -42,3 +42,39 @@ export function hitStrengthFor(slug: string, baseDamage: number, melee: boolean)
   const tier = baseDamage >= HEAVY_MIN_DAMAGE ? 2 : baseDamage >= MEDIUM_MIN_DAMAGE ? 1 : 0;
   return (melee && tier < 2 ? tier + 1 : tier) as HitStrengthValue;
 }
+
+/**
+ * Hit-stun in game ticks by strength (FUN-DESIGN 2.3): light 12, medium 16, heavy 22, super 26. Each hit taken while
+ * already stunned (`juggle`) takes JUGGLE_STUN_STEP off, never below MIN_HIT_STUN_TICKS.
+ */
+export const HIT_STUN_TICKS: PerStrength = [12, 16, 22, 26];
+export const JUGGLE_STUN_STEP = 2;
+export const MIN_HIT_STUN_TICKS = 6;
+/** At `juggle >= JUGGLE_LIMIT` the next hit deals damage but no stun and the victim recovers. */
+export const JUGGLE_LIMIT = 5;
+/** A combo's stun chain never exceeds this many game ticks (3 s): the hit that would pass it ends the stun instead. */
+export const COMBO_STUN_CAP_TICKS = 150;
+/** Invulnerability after either cap ends a combo (`recovered` reason 1 or 2), so a capped combo cannot restart at once. */
+export const RECOVERY_INVULN_TICKS = 20;
+/** Tornado and Entangling Vines stun (heavy, obeying the caps) instead of the Classic 150-tick freeze. */
+export const FREEZE_STUN_TICKS = 60;
+export const HIT_STUN_OVERRIDE: Readonly<Partial<Record<string, number>>> = {
+  tornado: FREEZE_STUN_TICKS,
+  'entangling-vines': FREEZE_STUN_TICKS,
+};
+
+/** Base hit-stun of an ability's hit: the override, else the strength table. */
+export function hitStunFor(slug: string, strength: HitStrengthValue): number {
+  return HIT_STUN_OVERRIDE[slug] ?? HIT_STUN_TICKS[strength];
+}
+
+/** `recovered.reason` payload values (FUN-DESIGN 2.1 event table). */
+export const RecoveredReason = { stunEnded: 0, juggleCap: 1, stunCap: 2 } as const;
+
+/**
+ * Knockback start speed in Q4 (1/16 px per tick) by strength: light 96 (6 px per tick), medium 144, heavy 224, super
+ * 256. It decays by KNOCKBACK_DECAY_Q4 (1 px per tick) every game tick, so light travels 21 px, medium 45, heavy 105.
+ */
+export const KNOCKBACK_Q4: PerStrength = [96, 144, 224, 256];
+export const KNOCKBACK_DECAY_Q4 = 16;
+export const Q4_ONE = 16;

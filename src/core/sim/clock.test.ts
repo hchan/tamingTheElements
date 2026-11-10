@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { ABILITIES_B } from '../data/abilities-b';
 import { HitStrength } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import { characterId } from '../data/ids';
@@ -34,7 +35,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(12 * MAX_ENTITIES + 16 * TEAM_COUNT + 8);
+    expect(ARCADE_LENGTH).toBe(13 * MAX_ENTITIES + 16 * TEAM_COUNT + 8);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -125,12 +126,13 @@ describe('game clock', () => {
 });
 
 /**
- * Classic and Arcade side by side. The only Arcade rule so far is hit-stop (arcade/hit.ts: the same damage arithmetic,
- * plus events and a freeze), so an Arcade match is Classic shifted in W.tick by the freezes it took: after every step
- * the Arcade world is stepped through its freeze (each frozen step must be silent), and then equals Classic in every
- * entity, team, status and rng value and emits the same Classic events (ids aside; Arcade adds melee `damage` and the
- * kinds 40+). An extra freeze of `n` ticks is injected at tick `at`. That proves every timer read goes through the
- * game clock `now(s)`, and that hit-stop only freezes.
+ * Classic and Arcade side by side. Until the first Arcade hit (or stun) and the first wall contact, an Arcade match is
+ * Classic shifted in W.tick by the freezes it took: after every step the Arcade world is stepped through its freeze
+ * (each frozen step must be silent), and then equals Classic in every entity, team, status and rng value and emits the
+ * same Classic events (ids aside; Arcade adds melee `damage` and the kinds 40+). An extra freeze of `n` ticks is
+ * injected at tick `at`. That proves every timer read goes through the game clock `now(s)`, and that hit-stop only
+ * freezes. From the first hit on, hit-stun and knockback (WP-arcade-stun-knockback) and the both-axis walls diverge from
+ * Classic by design; the freeze lengths and the game clock are still checked on every step.
  */
 describe('an Arcade match is Classic shifted by its freezes', () => {
   type Inputs = readonly (readonly [number, number])[];
@@ -143,6 +145,11 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       const melee = next?.kind === SimEventKind.hitConfirmed && ABILITY_DEFS[next['ability'] ?? -1]?.kind === 'melee';
       return e.kind < 40 && !(e.kind === SimEventKind.damage && melee);
     });
+  /** True once any Arcade character has been stunned (Entangling Vines stuns without a `hitConfirmed`). */
+  const stunned = (s: SimState): boolean => {
+    for (let id = 0; id < MAX_ENTITIES; id++) if ((s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) !== 0) return true;
+    return false;
+  };
   /** `prep` edits both tick-0 worlds the same way (hurt everyone, place the fighters). Returns the Arcade events. */
   const runBoth = (
     setup: MatchSetup, inputs: Inputs, at: number, n: number, prep?: (s: SimState) => void,
@@ -155,6 +162,7 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
     const aa = stateArrays(a.state);
     const all: SimEvent[] = [];
     let shift = 0;
+    let diverged = false;
     inputs.forEach(([p, q], t) => {
       if (t === at && n > 0) {
         a.state.arcade[FREEZE_UNTIL] = (a.state.world[World.tick] ?? 0) + n;
@@ -163,7 +171,12 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       }
       const evs = step(a, [p, q]);
       all.push(...evs);
-      expect(strip(classicPart(evs))).toEqual(strip(step(c, [p, q])));
+      const cevs = step(c, [p, q]);
+      diverged ||=
+        evs.some((e) => e.kind === SimEventKind.hitConfirmed) ||
+        cevs.some((e) => e.kind === SimEventKind.blocked) ||
+        stunned(a.state);
+      if (!diverged) expect(strip(classicPart(evs))).toEqual(strip(cevs));
       const stops = evs.filter((e) => e.kind === SimEventKind.hitStop).map((e) => e['ticks'] ?? 0);
       expect(stops.length).toBe(evs.filter((e) => e.kind === SimEventKind.hitConfirmed).length);
       let frozen = 0;
@@ -173,6 +186,8 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       }
       expect(frozen).toBe(Math.max(0, ...stops));
       shift += frozen;
+      expect(now(a.state)).toBe(now(c.state));
+      if (diverged) return;
       // stateArrays ends with world, rng, arcade: every entity, team, status and rng array must match exactly.
       for (let k = 0; k < ca.length - 1; k++) if (k !== ca.length - 3) expect(aa[k]).toEqual(ca[k]);
       expect(Array.from(a.state.world)).toEqual(
@@ -180,7 +195,6 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
           i === World.flags ? v | flagBit('rulesetArcade') : i === World.tick ? v + shift : v,
         ),
       );
-      expect(now(a.state)).toBe(now(c.state));
     });
     return all;
   };
@@ -222,15 +236,28 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
   });
 
   it('Hurricane hit intervals (hitMask) run on the game clock across a freeze', () => {
-    const duel = { ...CLASSIC, p1: [{ character: characterId('echo'), xp: 1 }], p2: [{ character: characterId('pax'), xp: 1 }] };
-    const adjacent = (s: SimState): void => {
-      s.x[0] = 500; s.y[0] = 300; s.x[1] = 580; s.y[1] = 300; s.dir[0] = 0;
-    };
-    const hold = Array.from({ length: 120 }, (): [number, number] => [Cmd.secondary, 0]);
+    const duel = { ...ARCADE, p1: [{ character: characterId('echo'), xp: 1 }], p2: [{ character: characterId('pax'), xp: 1 }] };
+    const interval = (ABILITIES_B.find((d) => d.id === 'hurricane')?.damageIntervalTicks ?? 0) + 1;
     for (const at of [3, 5, 9]) {
-      const hits = runBoth(duel, hold, at, 7, adjacent).filter((e) => e.kind === SimEventKind.hitConfirmed);
-      expect(hits.length).toBeGreaterThan(1);
-      expect(hits.every((e) => e['strength'] === HitStrength.light)).toBe(true);
+      const w = createMatch(duel);
+      const s = w.state;
+      s.x[0] = 500; s.y[0] = 300; s.dir[0] = 0;
+      const hits: [number, number][] = [];
+      for (let t = 0; t < 120; t++) {
+        if (t === at) s.arcade[FREEZE_UNTIL] = (s.world[World.tick] ?? 0) + 7;
+        s.x[1] = 580; s.y[1] = 300; // pinned: knockback would carry Pax out of the hurricane
+        const [tick, game] = [s.world[World.tick] ?? 0, now(s)];
+        const evs = step(w, [Cmd.secondary, 0]);
+        for (const e of evs) if (e.kind === SimEventKind.hitConfirmed) hits.push([tick, game]);
+        expect(evs.filter((e) => e.kind === SimEventKind.hitConfirmed).every((e) => e['strength'] === HitStrength.light)).toBe(true);
+      }
+      expect(hits.length).toBeGreaterThan(2);
+      // Game-clock gaps are the Classic interval; W.tick gaps add the 4-tick light hit-stop (and the injected freeze).
+      for (let i = 1; i < hits.length; i++) {
+        const [[t0, g0], [t1, g1]] = [hits[i - 1] ?? [0, 0], hits[i] ?? [0, 0]];
+        expect(g1 - g0).toBe(interval);
+        expect(t1 - t0).toBeGreaterThanOrEqual(interval + 4);
+      }
     }
   });
 });

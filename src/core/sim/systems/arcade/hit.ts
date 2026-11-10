@@ -1,7 +1,8 @@
 import { ABILITIES_A } from '../../../data/abilities-a';
 import { ABILITIES_B } from '../../../data/abilities-b';
 import {
-  HIT_STOP_TICKS, HitStopCause, HitStrength, KO_HIT_STOP_TICKS, hitStrengthFor, type HitStrengthValue,
+  HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, KO_HIT_STOP_TICKS, hitStrengthFor, hitStunFor,
+  type HitStrengthValue,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import { computeDamage, damageDealt } from '../../../rules/damage';
@@ -9,10 +10,16 @@ import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_WORLD_BASE, ArcadeW, World as W } from '../../state';
 import type { SimWorld } from '../../world';
 import { damageDecreasePct } from '../status';
+import { knockbackDir, setKnockback } from './knockback';
+import { applyStun } from './stun';
 
 /** Strength tier per ability def index (set A then set B: the ABILITY_DEFS order of projectile.ts and melee.ts). */
 export const HIT_STRENGTH: readonly HitStrengthValue[] = [...ABILITIES_A, ...ABILITIES_B].map((d) =>
   hitStrengthFor(d.id, d.damage ?? 0, d.kind === 'melee'),
+);
+/** Base hit-stun per ability def index (FUN-DESIGN 2.3; Tornado and Entangling Vines stun 60). */
+export const HIT_STUN: readonly number[] = [...ABILITIES_A, ...ABILITIES_B].map((d, i) =>
+  hitStunFor(d.id, HIT_STRENGTH[i] ?? HitStrength.light),
 );
 
 const FREEZE_UNTIL = ARCADE_WORLD_BASE + ArcadeW.freezeUntil;
@@ -37,7 +44,9 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * The single Arcade hit path (FUN-DESIGN 2.1): `source` (a projectile or melee entity) of ability `defIdx` hits
  * `victim` for `base` damage on behalf of `attacker`, whose multiplier and element apply. The damage is the Classic
  * `computeDamage` arithmetic. Emits `damage` (as Classic projectiles do) and `hitConfirmed`, then hit-stop by
- * strength, or the KO hit-stop when the hit empties the victim's HP. Returns the health actually removed.
+ * strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by strength and hit-stun with the
+ * juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap ends the combo). Returns the
+ * health actually removed.
  */
 export function applyArcadeHit(
   world: SimWorld, sink: EventSink, source: number, attacker: number, victim: number, base: number, defIdx: number,
@@ -62,5 +71,7 @@ export function applyArcadeHit(
   const ko = before > 0 && before - amount <= 0;
   const ticks = ko ? KO_HIT_STOP_TICKS : HIT_STOP_TICKS[strength];
   hitStop(world, sink, source, ticks, ko ? HitStopCause.ko : HitStopCause.hit);
+  setKnockback(s, victim, KNOCKBACK_Q4[strength], knockbackDir(s, source, victim, dir));
+  applyStun(world, sink, source, victim, HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength]);
   return damageDealt(before, amount);
 }

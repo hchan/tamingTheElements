@@ -3,6 +3,9 @@ import { cmdAxisX, cmdAxisY, type Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
 import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT } from '../state';
 import type { SimWorld } from '../world';
+import { isArcade } from '../clock';
+import { stepKnockback } from './arcade/knockback';
+import { canAct } from './arcade/stun';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
 const EAST = 0;
@@ -38,14 +41,47 @@ function outOfArena(world: SimWorld, id: number): boolean {
   return x < a.x || y < a.y || x + (s.w[id] ?? 0) > a.x + a.w || y + (s.h[id] ?? 0) > a.y + a.h;
 }
 
+/**
+ * Arcade movement (FUN-DESIGN 2.3): knockback first (it moves a stunned victim too), then the input step when the
+ * character can act. Walls hold both axes (the Classic bounds-y-typo is fixed in Arcade only).
+ */
+function arcadeMove(world: SimWorld, id: number, cmd: Command, sink: EventSink): void {
+  const s = world.state;
+  stepKnockback(world, id);
+  if (!canAct(world, id)) return;
+  const ax = cmdAxisX(cmd);
+  const ay = cmdAxisY(cmd);
+  s.dir[id] = facingFor(ax, ay, s.dir[id] ?? EAST);
+  const d = dir8FromSigns(ax, ay);
+  if (d < 0) return;
+  const speed = s.speed[id] ?? 0;
+  const x0 = s.x[id] ?? 0;
+  const y0 = s.y[id] ?? 0;
+  s.vx[id] = (DIR8_X[d] ?? 0) * speed;
+  s.vy[id] = (DIR8_Y[d] ?? 0) * speed;
+  s.x[id] = x0 + (s.vx[id] ?? 0);
+  s.y[id] = y0 + (s.vy[id] ?? 0);
+  const blocked = outOfArena(world, id);
+  if (blocked) {
+    s.x[id] = x0;
+    s.y[id] = y0;
+  }
+  sink.emit(id, blocked ? SimEventKind.blocked : SimEventKind.moved, { x: s.x[id] ?? 0, y: s.y[id] ?? 0 });
+}
+
 export function movementSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
+  const arcade = isArcade(s);
   for (let team = 0; team < TEAM_COUNT; team++) {
     const id = controlledId(world, team);
     if (id < 0) continue;
     s.px[id] = s.x[id] ?? 0;
     s.py[id] = s.y[id] ?? 0;
-    if (((s.flags[id] ?? 0) & EntityFlag.frozen) !== 0) continue;
+    if (arcade) {
+      arcadeMove(world, id, cmds[team] ?? 0, sink);
+      continue;
+    }
+    if (!canAct(world, id)) continue;
     const cmd = cmds[team] ?? 0;
     const ax = cmdAxisX(cmd);
     const ay = cmdAxisY(cmd);

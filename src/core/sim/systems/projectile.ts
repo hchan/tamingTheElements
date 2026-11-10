@@ -18,6 +18,7 @@ import { damageDecreasePct } from './status';
 import { controlledId } from './movement';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
+import { canAct, isInvulnerable } from './arcade/stun';
 
 /** Ability index used for SimState.defId and the per-team activeCount table (set A then set B). */
 export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -29,10 +30,13 @@ const SONAR = 'sonar-blast';
 const FIREBALL = 'fireball';
 const GROW_H_LIMIT = CHARACTER_HEIGHT * 0.5;
 
-/** Legacy canFire: not frozen, curCount < maxActive and elapsed time strictly above the cooldown. */
+/**
+ * Legacy canFire: not frozen (`canAct`; Arcade also not stunned), curCount < maxActive and elapsed time strictly above
+ * the cooldown.
+ */
 function canFire(world: SimWorld, team: number, charId: number, slot: number, def: AbilityDef, defIdx: number): boolean {
   const s = world.state;
-  if (((s.flags[charId] ?? 0) & EntityFlag.frozen) !== 0) return false;
+  if (!canAct(world, charId)) return false;
   const base = team * TEAM_STRIDE;
   if (def.maxActive <= (s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] ?? 0)) return false;
   return now(s) >= (s.teams[base + TEAM_COOLDOWNS + slot] ?? 0);
@@ -134,6 +138,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     }
     const target = controlledId(world, 1 - (s.team[id] ?? 0));
     if (target < 0 || ((s.flags[target] ?? 0) & EntityFlag.translucent) !== 0) continue;
+    if (isInvulnerable(s, target)) continue; // Arcade only: an invulnerable character lets bullets through
     const box = { x, y, w: s.w[id] ?? 0, h: s.h[id] ?? 0 };
     const tbox = { x: s.x[target] ?? 0, y: s.y[target] ?? 0, w: s.w[target] ?? 0, h: s.h[target] ?? 0 };
     if (!aabbOverlap(box, tbox)) continue;

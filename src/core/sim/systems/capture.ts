@@ -15,6 +15,7 @@ import type { SimWorld } from '../world';
 import { controlledId } from './movement';
 import { ABILITY_DEFS } from './projectile';
 import { now } from '../clock';
+import { canAct } from './arcade/stun';
 
 /** Bit in world[World.flags]: Capture is granted (set by createMatch from chapter 2 on). Bits 0..15 are sim flags. */
 export const CAPTURE_GRANTED_BIT = 1 << 16;
@@ -28,7 +29,7 @@ const CAPTURE_SLOT = 2;
 function canCapture(world: SimWorld, team: number, charId: number, target: number, tick: number): boolean {
   const s = world.state;
   if (CAPTURE_DEF === undefined || team !== 0 || ((s.world[W.flags] ?? 0) & CAPTURE_GRANTED_BIT) === 0) return false;
-  if (((s.flags[charId] ?? 0) & EntityFlag.frozen) !== 0 || target < 0) return false;
+  if (!canAct(world, charId) || target < 0) return false;
   if (!capturable(s.hp[target] ?? 0, s.maxHp[target] ?? 0)) return false;
   const base = team * TEAM_STRIDE;
   if (CAPTURE_DEF.maxActive <= (s.teams[base + TEAM_ACTIVE_COUNTS + CAPTURE_IDX] ?? 0)) return false;
