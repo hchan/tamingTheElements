@@ -17,6 +17,9 @@ How to run, place and write tests. Run everything with `corepack pnpm <script>` 
 Pre-merge set (CI runs lint, typecheck, depcruise, test and build; `e2e` and `test:browser` are separate CI jobs):
 `pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm test:legacy && pnpm build`.
 
+`pnpm ci:local` runs all of the above plus `e2e`, `e2e:pages` and `test:browser` per launchable engine and prints a summary
+table (`--fast` skips browsers); use it instead of waiting for Actions. See [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Browser engines for `test:browser` and `e2e` need `pnpm exec playwright install chromium firefox webkit` once (e2e uses chromium only).
 
 ### Property tests

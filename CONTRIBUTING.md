@@ -13,6 +13,9 @@ Workflow details are in [docs/BRANCHING.md](docs/BRANCHING.md): trunk-based, one
    pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm test:legacy && pnpm build && pnpm e2e
    ```
 
+   Or run `pnpm ci:local` (everything CI runs, with a summary; `--fast` skips browsers). The owner can deploy Pages without
+   Actions via `pnpm deploy:pages` ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
+
    Also run `pnpm test:coverage` when you touch `src/core` (floors are enforced in CI). Never commit credentials; the
    secret scan, CodeQL and dependency audit are described in [docs/SECURITY-GATES.md](docs/SECURITY-GATES.md).
 

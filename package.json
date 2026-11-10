@@ -21,6 +21,8 @@
     "e2e": "playwright test",
     "e2e:pages": "playwright test --config playwright.pages.config.ts",
     "build:itch": "node tools/itch/build-itch.mjs",
+    "ci:local": "tsx tools/ci/local-ci.ts",
+    "deploy:pages": "tsx tools/ci/deploy-pages.ts",
     "e2e:itch": "playwright test --config playwright.itch.config.ts",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
