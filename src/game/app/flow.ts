@@ -26,6 +26,7 @@ import { detectWebgl } from '../boot/webgl-check';
 import type { UiFlags } from '../platform/flags';
 import { requestPersistence } from '../platform/storage/idb-save-store';
 import { teardown } from '../platform/test-hook';
+import { NEW_GAME_SCRIPT } from '../cinematics/chain';
 import type { SaveStore } from '../platform/storage/save-store';
 import type { ArenaLaunch, MatchEnd } from '../scenes/launch';
 
@@ -95,6 +96,9 @@ export class AppFlow {
     return {
       ...base,
       newGame: () => this.newGameScreen(),
+      storyMode: () => this.cinematicScreen(() => {
+        navigate('main');
+      }),
       battleground: () => redirect(navigate, 'garrison'),
       currentObjectives: () => objectivesScreen({ store: this.deps.store, navigate }),
       settings: () => settingsScreen(this.deps.store),
@@ -115,24 +119,60 @@ export class AppFlow {
     };
   }
 
+  /** Legacy order: the intro chain plays first and the new save is written when it ends or is skipped. */
   private newGameScreen(): Screen {
+    return this.cinematicScreen(() => {
+      const meta = seedSfc32(this.deps.now() >>> 0, 'meta');
+      void this.deps.store.save(newGame(meta, { now: this.deps.now })).then(() => {
+        this.deps.navigate('garrison');
+      });
+    });
+  }
+
+  /** Plays the story chain in a Phaser game that lives only as long as the screen; `onEnd` runs once. */
+  private cinematicScreen(onEnd: () => void): Screen {
+    let node: HTMLElement | undefined;
+    let game: GameHandle | undefined;
+    const life = { disposed: false };
     return {
-      mount: () => {
-        const meta = seedSfc32(this.deps.now() >>> 0, 'meta');
-        void this.deps.store.save(newGame(meta, { now: this.deps.now })).then(() => {
-          this.deps.navigate('garrison');
+      mount: (container) => {
+        const mountNode = el('div');
+        node = mountNode;
+        mountNode.id = 'cinematic';
+        container.append(mountNode);
+        if (!detectWebgl(this.deps.flags.forceNoWebgl, () => document.createElement('canvas'))) {
+          showWebglError(mountNode);
+          return;
+        }
+        void import('../boot/phaser-config').then(({ createGame }) => {
+          if (life.disposed) return;
+          const host = el('div');
+          host.id = 'game';
+          mountNode.replaceChildren(host);
+          let ended = false;
+          game = createGame('game', false, {
+            script: NEW_GAME_SCRIPT,
+            onEnd: () => {
+              if (ended || life.disposed) return;
+              ended = true;
+              onEnd();
+            },
+          });
         });
       },
-      unmount: () => undefined,
+      unmount: () => {
+        life.disposed = true;
+        destroyGame(game, node);
+        game = undefined;
+        node = undefined;
+      },
     };
   }
 
   /** The battle screen owns the Phaser game: mount creates it, unmount destroys it (exit-to-menu). */
   private battleScreen(): Screen {
     let node: HTMLElement | undefined;
-    let game:
-      | { destroy(removeCanvas: boolean): void; events: { once(event: string, fn: () => void): unknown } }
-      | undefined;
+    let game: GameHandle | undefined;
     const life = {
       disposed: false,
       isDisposed(): boolean {
@@ -175,23 +215,9 @@ export class AppFlow {
       },
       unmount: () => {
         life.disposed = true;
-        const doomed = game;
-        const doomedNode = node;
+        destroyGame(game, node);
         game = undefined;
         node = undefined;
-        if (!doomed) {
-          doomedNode?.remove();
-          return;
-        }
-        // Phaser destroys on its next frame; keep the DOM until then so the canvas is removed by Phaser itself.
-        const done = new Promise<void>((resolve) => {
-          doomed.events.once('destroy', () => {
-            doomedNode?.remove();
-            resolve();
-          });
-        });
-        teardown.settled = Promise.all([teardown.settled, done]).then(() => undefined);
-        doomed.destroy(true);
       },
     };
   }
@@ -260,6 +286,27 @@ export class AppFlow {
       },
     };
   }
+}
+
+type GameHandle = {
+  destroy(removeCanvas: boolean): void;
+  events: { once(event: string, fn: () => void): unknown };
+};
+
+/** Phaser destroys on its next frame; keep the DOM until then so the canvas is removed by Phaser itself. */
+function destroyGame(doomed: GameHandle | undefined, doomedNode: HTMLElement | undefined): void {
+  if (!doomed) {
+    doomedNode?.remove();
+    return;
+  }
+  const done = new Promise<void>((resolve) => {
+    doomed.events.once('destroy', () => {
+      doomedNode?.remove();
+      resolve();
+    });
+  });
+  teardown.settled = Promise.all([teardown.settled, done]).then(() => undefined);
+  doomed.destroy(true);
 }
 
 function redirect(navigate: (route: string) => void, route: string): Screen {

@@ -14,6 +14,8 @@ export interface TweenTarget extends Partial<Rect> {
 }
 
 export type CinematicStep =
+  /** Removes everything drawn so far (between chained scenes). */
+  | { readonly kind: 'clear' }
   | { readonly kind: 'background'; readonly key: string }
   | { readonly kind: 'header'; readonly text: string; readonly ms: number }
   | { readonly kind: 'caption'; readonly text: string }
@@ -24,6 +26,7 @@ export type CinematicStep =
   | { readonly kind: 'waitKey' };
 
 export interface CinematicSink {
+  clear(): void;
   background(key: string): void;
   header(text: string): void;
   /** Called when the header time is up. */
@@ -92,6 +95,9 @@ export class CinematicRunner {
         return;
       }
       switch (step.kind) {
+        case 'clear':
+          this.sink.clear();
+          break;
         case 'background':
           this.sink.background(step.key);
           break;

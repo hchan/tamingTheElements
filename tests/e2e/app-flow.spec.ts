@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { newGameToGarrison } from './parity/helpers';
 
 // Page-side code is passed as strings because tsconfig.node has no DOM lib.
 const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena`;
@@ -15,7 +16,7 @@ function collectErrors(page: Page): string[] {
 test('new game -> garrison -> battle renders the arena, pause works, exit leaves no listeners', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/');
-  await page.getByText('New Game', { exact: true }).click();
+  await newGameToGarrison(page);
   await page.locator('#garrisonTable .garrisonRow').first().click();
   await page.locator('#enterPracticeContainer').click();
 

@@ -93,6 +93,22 @@ export async function killEnemy(page: Page): Promise<void> {
   await page.evaluate(`window.__TTE__.arena.setHp(${String(enemy?.id)}, 0); window.__TTE__.arena.step(1)`);
 }
 
+export const CINEMATIC_READY = `window.__TTE__ && window.__TTE__.scene === 'Cinematic' && !!window.__TTE__.cinematic`;
+
+/** Waits for the running Cinematic scene and presses Skip. */
+export async function skipCinematic(page: Page): Promise<void> {
+  await page.waitForFunction(CINEMATIC_READY);
+  await page.evaluate(`window.__TTE__.cinematic.skip()`);
+}
+
+/** Main menu -> New Game -> intro cinematic -> Skip -> garrison (the cinematic game is torn down first). */
+export async function newGameToGarrison(page: Page): Promise<void> {
+  await page.getByText('New Game', { exact: true }).click();
+  await skipCinematic(page);
+  await waitForRoute(page, '#garrison');
+  await page.evaluate(`window.__TTE__.settled()`);
+}
+
 /** Exits the battle to the menu and waits for the Phaser teardown. */
 export async function leaveBattle(page: Page): Promise<void> {
   await page.evaluate(`window.location.hash = '#main'`);

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   BACKUP_KEY,
+  CINEMATIC_READY,
   START,
   characters,
   collectErrors,
@@ -9,6 +10,8 @@ import {
   goToHash,
   killEnemy,
   leaveBattle,
+  newGameToGarrison,
+  skipCinematic,
   seedViaGameMaster,
   startBattle,
   storedSave,
@@ -24,7 +27,7 @@ test.describe('parity golden paths', () => {
   test('1. empty storage -> New Game -> garrison has 1 character in chapter 1 (no capture yet)', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(START);
-    await page.getByText('New Game', { exact: true }).click();
+    await newGameToGarrison(page);
     await expect(page.locator('#garrisonTable .garrisonRow')).toHaveCount(1);
     const save = await storedSave(page);
     expect(save.chapter).toBe(1);
@@ -35,9 +38,78 @@ test.describe('parity golden paths', () => {
     expect(errors).toEqual([]);
   });
 
-  test.fixme('1b. New Game -> intro cinematic -> Skip -> garrison', () => {
-    // Not wired: the newGame screen saves and navigates straight to #garrison; the cinematic only runs
-    // behind ?ff=cinematicDemo (covered by cinematic-teardown.spec.ts).
+  test('1b. New Game -> intro cinematic -> Skip -> garrison', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto(START);
+    await page.getByText('New Game', { exact: true }).click();
+    await page.waitForFunction(CINEMATIC_READY);
+    expect(await page.evaluate<string>(`window.__TTE__.state().route`)).toBe('#newGame');
+    // Legacy writes the save when the story ends, so nothing is stored while it plays.
+    expect(await page.evaluate<string | null>(`window.localStorage.getItem('Taming the Elements')`)).toBeNull();
+    expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBeGreaterThan(0);
+
+    await skipCinematic(page);
+    await waitForRoute(page, '#garrison');
+    await page.evaluate(`window.__TTE__.settled()`);
+    await expect(page.locator('#garrisonTable .garrisonRow')).toHaveCount(1);
+    await expect(page.locator('#game canvas')).toHaveCount(0);
+    expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
+    const save = await storedSave(page);
+    expect(save.chapter).toBe(1);
+    expect(save.garrison).toHaveLength(1);
+    expect(errors).toEqual([]);
+  });
+
+  test('1c. Story Mode plays the story; Skip returns to the main menu and writes no save', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto(START);
+    await page.getByText('Story Mode', { exact: true }).click();
+    await skipCinematic(page);
+    await waitForRoute(page, '#main');
+    await page.evaluate(`window.__TTE__.settled()`);
+    await expect(page.locator('#game canvas')).toHaveCount(0);
+    expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
+    expect(await page.evaluate<string | null>(`window.localStorage.getItem('Taming the Elements')`)).toBeNull();
+    expect(errors).toEqual([]);
+  });
+
+  test('9b. game master presets: chapter 3 has no portal; chapter complete shows it and enters the Eternal Void', async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    await page.goto(START + '#gameMaster');
+    await page.getByText('Chapter 3', { exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('Chapter 3 preset written.');
+    await goToHash(page, '#garrison');
+    await expect(page.locator('#' + PORTAL)).toHaveCount(0);
+
+    await goToHash(page, '#gameMaster');
+    await page.getByText('Chapter complete', { exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('Chapter complete preset written.');
+    await goToHash(page, '#garrison');
+    await expect(page.locator('#' + PORTAL)).toBeVisible();
+    await expect(page.locator('#' + PORTAL + ' canvas')).toHaveCount(1);
+    await page.locator('#' + PORTAL).hover();
+
+    // Fewer than three heroes selected: the legacy alert, no battle.
+    let alert = '';
+    page.once('dialog', (d) => {
+      alert = d.message();
+      void d.dismiss();
+    });
+    await page.locator('#' + PORTAL).click();
+    expect(alert).toContain('You must select 3 heroes');
+    expect(await page.evaluate<string>(`window.__TTE__.state().route`)).toBe('#garrison');
+
+    await startBattle(page, PORTAL, 3);
+    expect(await characters(page, 0)).toHaveLength(1);
+    const foes = await characters(page, 1);
+    expect(foes).toHaveLength(1);
+    // The boss alone: Eternal Void is the only opponent, at the chapter cap.
+    expect(foes[0]?.maxHp).toBeGreaterThan(0);
+    await leaveBattle(page);
+    expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
+    expect(errors).toEqual([]);
   });
 
   test('2. chapter-1 battle won -> Victory shows XP -> garrison XP updates and persists across reload', async ({
@@ -45,7 +117,7 @@ test.describe('parity golden paths', () => {
   }) => {
     const errors = collectErrors(page);
     await page.goto(START);
-    await page.getByText('New Game', { exact: true }).click();
+    await newGameToGarrison(page);
     await expect(page.locator('#garrisonTable .garrisonRow')).toHaveCount(1);
     expect(await storedSave(page)).toMatchObject({ garrison: [{ experience: 1 }] });
 
@@ -112,7 +184,7 @@ test.describe('parity golden paths', () => {
   test('5. practice vs the Dummy gives no XP', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(START);
-    await page.getByText('New Game', { exact: true }).click();
+    await newGameToGarrison(page);
     await expect(page.locator('#garrisonTable .garrisonRow')).toHaveCount(1);
 
     await startBattle(page, PRACTICE);
@@ -127,7 +199,7 @@ test.describe('parity golden paths', () => {
   test('6. settings difficulty persists and changes the player max HP', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(START);
-    await page.getByText('New Game', { exact: true }).click();
+    await newGameToGarrison(page);
     await expect(page.locator('#garrisonTable .garrisonRow')).toHaveCount(1);
 
     await startBattle(page, PRACTICE);
@@ -179,7 +251,7 @@ test.describe('parity golden paths', () => {
   test('8. pause via keyboard stops stepping, and resuming steps again', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto('/?seed=7');
-    await page.getByText('New Game', { exact: true }).click();
+    await newGameToGarrison(page);
     await expect(page.locator('#garrisonTable .garrisonRow')).toHaveCount(1);
     await page.locator('#garrisonTable .garrisonRow').first().click();
     await page.locator(`#${PRACTICE}`).click();
