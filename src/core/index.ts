@@ -35,7 +35,10 @@ export * from './agents/replay-agent';
 export * from './sim/match';
 export * from './sim/view';
 export { StatusId } from './sim/systems/status';
-export { DASH_TICKS, GUARD_MAX, METER_BAR, METER_BARS, METER_MAX, ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, ROUNDS_TO_WIN, RoundPhase } from './data/arcade';
+export {
+  DASH_TICKS, GUARD_MAX, METER_BAR, METER_BARS, METER_MAX, ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, ROUNDS_TO_WIN, RoundPhase,
+  WEATHER_ELEMENTS, WEATHER_TICKS, Weather,
+} from './data/arcade';
 export * from './rules/progression';
 export * from './sim/systems/end';
 export * from './rules/results';

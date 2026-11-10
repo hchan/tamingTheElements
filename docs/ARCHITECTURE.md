@@ -279,7 +279,11 @@ shield and guard bar follow it; the afterimages copy its frame). The rules (`def
 `dashed`, `perfectDodge`, `guarded`, `parried` and `guardBroken` gives, reduced motion, live lines) are pure; the Phaser
 side keeps typed-array pools redrawn into two Graphics each frame, six afterimage Images and four pop Texts made on first
 use, samples trails and afterimages on every sim tick, runs on the view tick (it holds while paused), and leaves with the
-Arena under one `postupdate` listener.
+Arena under one `postupdate` listener. The round view mounts the weather view (`src/game/fx/weather-view.ts`,
+WP-arcade-weather-view) the same way (its own `weather-view` chunk and `codeSplitting` group); its consumer hands each
+tick's events on to the defence view's, so the round view holds one. It draws the sky tint and particles in the Arena and
+the weather badge and called line in the `Hud` scene, follows `RenderView.arcade().weather` and `weatherLeft` for what is
+up, and takes the called line and live lines from `weatherChanged` and `weatherEnded` (pure rules in `weather-fx.ts`).
 
 Arcade Versus (`#arcade`, FUN-DESIGN WP 11) is a separate flow, not part of `AppFlow` (`flow.ts`, the story: garrison,
 battle, results, save). `main.ts` adds the route with a dynamic import, so its code is its own `arcade-versus` chunk and

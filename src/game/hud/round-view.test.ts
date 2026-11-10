@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { RoundPhase, SimEventKind, type RenderArcade, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { defenceState } from '../fx/defence-view';
+import { weatherState } from '../fx/weather-view';
 import { mountRoundView, roundState } from './round-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
@@ -61,7 +62,7 @@ function fakeScene(active: boolean): { scene: Phaser.Scene; events: Emitter; mad
   };
   const scene = {
     events,
-    scale: { width: 1280 },
+    scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => isActive },
     add: { text: obj, graphics: obj },
   } as unknown as Phaser.Scene;
@@ -72,7 +73,7 @@ function fakeView(): { view: RenderView; arcade: RenderArcade; setTick: (t: numb
   let tick = 0;
   const arcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: RoundPhase.intro, timer: 0,
-    roundsWon: [0, 0], stunned: () => false, invulnerable: () => false, aim: () => 0, guard: () => 1000, guarding: () => false,
+    roundsWon: [0, 0], stunned: () => false, invulnerable: () => false, aim: () => 0, guard: () => 1000, guarding: () => false, weather: 0, weatherLeft: 0,
   } as RenderArcade;
   const view = { get tick() { return tick; }, arcade: () => arcade } as unknown as RenderView;
   return { view, arcade, setTick: (t) => { tick = t; } };
@@ -141,7 +142,7 @@ describe('round view (Phaser side, fake scenes)', () => {
     expect(arena.events.count + hud.events.count).toBe(0);
   });
 
-  it('with the Arena fighter pool it mounts the defence view in the Arena, feeds it the same events, and both leave', () => {
+  it('with the Arena fighter pool it mounts the defence and weather views in the Arena, feeds them the same events, and all leave', () => {
     const arena = fakeScene(true);
     const hud = fakeScene(true);
     const v = fakeView();
@@ -149,13 +150,17 @@ describe('round view (Phaser side, fake scenes)', () => {
     const lines: Announcement[] = [];
     const feed = mountRoundView(arena.scene, hud.scene, view, (l) => lines.push(l), prefs(false), { peek: () => undefined });
     expect(defenceState(arena.scene)).toMatchObject({ shields: 0, pops: [] });
-    // The defence view's two Graphics in the Arena; its postupdate, shutdown and destroy listeners.
+    expect(weatherState(arena.scene)).toMatchObject({ kind: 0, call: '' });
+    // The defence view's two Graphics in the Arena (the weather view makes its objects on the first weather); the
+    // round view's shutdown and destroy listeners, and the defence and weather views' postupdate, shutdown and destroy.
     expect(arena.made).toHaveLength(2);
-    expect(arena.events.count).toBe(5);
-    feed([ev(1, SimEventKind.roundStarted, 0, { round: 1 })]);
-    expect(lines.map((l) => l.text)).toEqual(['Round 1.']);
+    expect(arena.events.count).toBe(8);
+    feed([ev(1, SimEventKind.roundStarted, 0, { round: 1 }), ev(2, SimEventKind.weatherChanged, 0, { weather: 2, prev: 0, team: 1 })]);
+    expect(lines.map((l) => l.text)).toEqual(['Round 1.', 'The enemy called Rain: water hits harder, fire softer.']);
+    expect(weatherState(arena.scene)?.call).toBe('Rain!');
     arena.events.emit('shutdown');
     expect(arena.events.count + hud.events.count).toBe(0);
+    expect(weatherState(arena.scene)).toBeUndefined();
     expect(defenceState(arena.scene)).toBeUndefined();
   });
 

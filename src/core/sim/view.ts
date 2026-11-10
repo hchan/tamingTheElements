@@ -63,6 +63,9 @@ export interface RenderArcade {
   /** Guard meter of character `id`, 0..GUARD_MAX (full when it never blocked), and whether it guards now (FUN-DESIGN 2.8). */
   guard(id: number): number;
   guarding(id: number): boolean;
+  /** The weather up (a `Weather` kind, 0 none) and the game ticks it has left (0 with none), FUN-DESIGN 2.14. */
+  weather: number;
+  weatherLeft: number;
 }
 
 /** One active status as the HUD sees it. The object is reused between callbacks. */
@@ -138,6 +141,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
   const ar: RenderArcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, roundsWon: [0, 0],
+    weather: 0, weatherLeft: 0,
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
   };
@@ -241,6 +245,8 @@ export function createRenderView(world: SimWorld): RenderView {
       ar.round = s.arcade[ARCADE_WORLD_BASE + ArcadeW.round] ?? 0;
       ar.phase = s.arcade[ARCADE_WORLD_BASE + ArcadeW.phase] ?? 0;
       ar.timer = s.arcade[ARCADE_WORLD_BASE + ArcadeW.roundTimer] ?? 0;
+      ar.weather = s.arcade[ARCADE_WORLD_BASE + ArcadeW.weather] ?? 0;
+      ar.weatherLeft = ar.weather && Math.max(0, (s.arcade[ARCADE_WORLD_BASE + ArcadeW.weatherUntil] ?? 0) - now(s));
       return ar;
     },
     forEachStatus(id, visit): void {

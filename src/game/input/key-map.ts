@@ -30,12 +30,13 @@ export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
   super: Cmd.super,
   dash: Cmd.dash,
   guard: Cmd.guard,
+  weather: Cmd.weather,
 };
 
-/** The Arcade-only command bits (dash 11, guard 12, super 13): every bit from the dash up. */
+/** The Arcade-only command bits (dash 11, guard 12, super 13, weather 14): every bit from the dash up. */
 export const ARCADE_ONLY = Cmd.dash;
 
-/** Held key codes to a command bitset. Capture is dropped unless `capturable`, the super, dash and guard outside Arcade. */
+/** Held key codes to a command bitset. Capture is dropped unless `capturable`, the Arcade-only actions outside Arcade. */
 export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean, arcade = false): Command {
   let cmd = 0;
   for (const code of held) {

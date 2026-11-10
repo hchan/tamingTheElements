@@ -58,11 +58,11 @@ export const DEFAULT_PAD: PadConfig = {
 
 /**
  * Arcade pad: RT starts the super (FUN-DESIGN 2.5), RB dashes (2.7) and LT guards (2.8) instead of the fourth, second
- * and third swap (Arcade Versus is 1v1); Classic keeps DEFAULT_PAD.
+ * and third swap (Arcade Versus is 1v1), and X (free in Classic) calls the weather (2.14); Classic keeps DEFAULT_PAD.
  */
 export const ARCADE_PAD: PadConfig = {
   ...DEFAULT_PAD,
-  buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard }, // RT, RB, LT
+  buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard, 2: Cmd.weather }, // RT, RB, LT, X
 };
 
 function down(pad: PadSnapshot, i: number): boolean {

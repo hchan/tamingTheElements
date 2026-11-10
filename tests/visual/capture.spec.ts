@@ -255,6 +255,38 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('arcade weather (demo and Arcade Versus)', async ({ page }) => {
+      const errors = collectErrors(page);
+      // 40 ticks after each cast: the tint has faded in, the particles fly and the called line still shows.
+      const cast = async (cmds: string, state: string, note: string): Promise<void> => {
+        await page.evaluate(cmds);
+        await page.evaluate(`window.__TTE__.arena.step(40)`);
+        await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+        await shoot(page, vp, 'arena', state, note);
+      };
+      const badge = 'the HUD badge under the round pips (glyph, word, seconds left, notched time bar)';
+      await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
+      await page.locator('#game canvas').waitFor();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      // Past the intro and the 1 s FIGHT! banner.
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      await cast(STEP(1, CMD.weather, 0), 'arena-arcade-weather-rain', `Arcade Rain (Curomo's cast): blue-grey sky tint, rain streaks slanting down, "Rain!" and ${badge} RAIN 10`);
+      await cast(STEP(1, 0, CMD.weather), 'arena-arcade-weather-sandstorm', `Arcade Sandstorm (Pax replaces the Rain): sandy tint, grains blown to the right, "Sandstorm!" and ${badge} SAND 10`);
+      // No void race is offered in Arcade, so Eclipse comes through the test probe (as a cast would).
+      await cast(`window.__TTE__.arena.setWeather(5, 1)`, 'arena-arcade-weather-eclipse', `Arcade Eclipse (test probe): the arena dimmed, dark violet motes rising, "Eclipse!" and ${badge} ECLIPSE 10 with an eclipsed-sun glyph`);
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.getByLabel('Your race').selectOption('sindarosa');
+      await page.getByLabel('AI race').selectOption('cyclonius');
+      await page.getByRole('button', { name: 'Fight!' }).click();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      await cast(STEP(1, CMD.weather, 0), 'arcade-weather-sun', `Arcade Versus Sunshine (Sindarosa's cast): warm tint, five sun rays from the top-left corner, "Sunshine!" and ${badge} SUN 10; the touch Weather button above Dash`);
+      await cast(STEP(1, 0, CMD.weather), 'arcade-weather-gale', `Arcade Versus Gale (Cyclonius replaces the Sunshine): pale tint, long wind streaks, "Gale!" and ${badge} GALE 10`);
+      expect(errors).toEqual([]);
+    });
+
     test('arcade versus menus (Settings opt-in)', async ({ page }) => {
       const errors = collectErrors(page);
       await seed(page, { ...(fixture('v0-ch3') as object), arcadePreview: true });
@@ -269,7 +301,7 @@ for (const vp of VIEWPORTS) {
       if (vp.mobile) await page.locator('#rotateDismiss').click();
       await expect.poll(() => page.evaluate<string | undefined>(`window.__TTE__.arena.rounds().then((r) => r && r.main)`)).toBe('ROUND 1');
       await page.evaluate(`window.__TTE__.arena.step(40)`);
-      await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus round 1 intro (tick 40): ROUND 1 banner, timer 90 and empty round pips top centre, hyper meters, the touch Super, Guard and Dash buttons bottom right');
+      await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus round 1 intro (tick 40): ROUND 1 banner, timer 90 and empty round pips top centre, hyper meters, the touch Super, Guard, Dash and Weather buttons bottom right');
       await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO - 40 + 30)})`);
       await shoot(page, vp, 'arena', 'arcade-fight', 'Arcade Versus FIGHT! banner 30 ticks into the fight (scale-in done)');
       // Up + right held, then Fire Blast: the 8-way aim arrow points north-east and the bullet flies that way.

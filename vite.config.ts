@@ -58,6 +58,8 @@ export default defineConfig({
             // The Arcade defence view: the lazy round-view chunk imports it statically, but it stays its own chunk (and
             // budget); its own imports stay where they are (the shared colours and viewport in the phaser-config chunk).
             { name: 'defence-view', test: /\/src\/game\/fx\/defence-/, includeDependenciesRecursively: false },
+            // The Arcade weather view, the same way (WP-arcade-weather-view).
+            { name: 'weather-view', test: /\/src\/game\/fx\/weather-/, includeDependenciesRecursively: false },
           ],
         },
       },

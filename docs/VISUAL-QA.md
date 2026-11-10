@@ -30,9 +30,13 @@ freeze: arena dimmed, caster lit, element band with portrait, super name and ele
 defence states (same demo, WP-arcade-defence-view): `arena-arcade-guard` (Pax's shield bubble and guard bar, chip sparks
 from Curomo's Shards of Ice), `arena-arcade-parry` (white flash, gold ping ring and PARRY over Pax), `arena-arcade-dash`
 (three tinted afterimages behind Curomo dashing up), `arena-arcade-trails` (Shards of Ice in a ring, three fading dots
-behind each) and `arena-arcade-guard-break` (shards, an orange ring, GUARD BREAK, the empty guard bar), and Arcade
+behind each) and `arena-arcade-guard-break` (shards, an orange ring, GUARD BREAK, the empty guard bar), the Arcade
+weather states (WP-arcade-weather-view, 40 ticks after each cast: tint, particles, the called line and the HUD badge under
+the hyper meters) `arena-arcade-weather-rain` and `arena-arcade-weather-sandstorm` (the demo's casts),
+`arena-arcade-weather-eclipse` (through the test probe: no void race is offered), `arcade-weather-sun` and
+`arcade-weather-gale` (Arcade Versus, Sindarosa against Cyclonius, with the touch Weather button), and Arcade
 Versus from the Settings opt-in: `menu-arcade` (the extra main-menu entry), `arcade-pick` (the picker), `arcade-battle`
-(round 1 intro at tick 40: the ROUND 1 banner, timer and empty round pips, with the touch Super, Guard and Dash buttons), `arcade-fight`
+(round 1 intro at tick 40: the ROUND 1 banner, timer and empty round pips, with the touch Super, Guard, Dash and Weather buttons), `arcade-fight`
 (the FIGHT! banner), `arcade-aim`, `arcade-ko` (K.O. with PERFECT during the KO slow motion), `arcade-round-end`
 (PERFECT, YOU WIN ROUND 1, one pip filled) and `arcade-results` (after a second KO: 2-0). The Arcade states step past
 round 1's 91-tick intro first (nobody acts before it). Each
