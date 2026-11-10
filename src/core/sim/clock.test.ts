@@ -36,7 +36,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(14 * MAX_ENTITIES + 16 * TEAM_COUNT + 9);
+    expect(ARCADE_LENGTH).toBe(15 * MAX_ENTITIES + 16 * TEAM_COUNT + 9);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -101,16 +101,19 @@ describe('game clock', () => {
     const tickArray = stateArrays(s).indexOf(s.world);
     const arcadeArray = stateArrays(s).indexOf(s.arcade);
     // The input slot still records press edges for the buffer (FUN-DESIGN 2.12): team 1's new primary press, at game
-    // tick 1 (stored plus one); team 0 kept holding primary, so it has no new press.
+    // tick 1 (stored plus one); team 0 kept holding primary, so it has no new press. Both new direction edges are recorded
+    // for the double-tap dash (FUN-DESIGN 2.7).
     const team = (t: number, f: number): number => ARCADE_TEAM_BASE + t * ARCADE_T + f;
     expect(s.arcade[team(1, ArcadeT.pressTick)]).toBe(2);
     expect(s.arcade[team(0, ArcadeT.pressTick)]).toBe(1);
     expect(s.arcade[team(1, ArcadeT.prevCmd)]).toBe(Cmd.left | Cmd.primary);
+    expect([s.arcade[team(0, ArcadeT.lastDir)], s.arcade[team(1, ArcadeT.lastDir)]]).toEqual([Cmd.right, Cmd.left]);
     stateArrays(s).forEach((a, k) => {
       const want = before[k] as number[];
       if (k === tickArray) want[World.tick] = 6;
       if (k === arcadeArray) {
         for (const i of [team(0, ArcadeT.prevCmd), team(1, ArcadeT.prevCmd), team(1, ArcadeT.pressTick)]) want[i] = a[i] ?? 0;
+        for (const t of [0, 1]) for (const f of [ArcadeT.lastDir, ArcadeT.lastDirPress]) want[team(t, f)] = a[team(t, f)] ?? 0;
       }
       expect(Array.from(a)).toEqual(want);
     });
@@ -143,7 +146,7 @@ describe('game clock', () => {
  * same Classic events (ids aside; Arcade adds melee `damage` and the kinds 40+). An extra freeze of `n` ticks is
  * injected at tick `at`. That proves every timer read goes through the game clock `now(s)`, and that hit-stop only
  * freezes. From the first hit on, hit-stun and knockback (WP-arcade-stun-knockback), the both-axis walls and the first
- * diagonal cast (8-way aim) diverge from Classic by design; the freeze lengths and the game clock are still checked on every step.
+ * diagonal cast (8-way aim) and the first dash (FUN-DESIGN 2.7) diverge from Classic by design; the freeze lengths and the game clock are still checked on every step.
  */
 describe('an Arcade match is Classic shifted by its freezes', () => {
   type Inputs = readonly (readonly [number, number])[];
@@ -197,7 +200,7 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       const cevs = step(c, [p, q]);
       // A death diverges too: Arcade keeps the multiplier and its round system takes over (KO, rounds; FUN-DESIGN 2.10).
       diverged ||=
-        evs.some((e) => e.kind === SimEventKind.hitConfirmed || e.kind === SimEventKind.died) ||
+        evs.some((e) => e.kind === SimEventKind.hitConfirmed || e.kind === SimEventKind.died || e.kind === SimEventKind.dashed) ||
         cevs.some((e) => e.kind === SimEventKind.blocked) ||
         stunned(a.state) ||
         aimedDiagonally(a.state);

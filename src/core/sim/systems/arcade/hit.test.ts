@@ -190,7 +190,8 @@ describe('hit-stop', () => {
 
 describe('hit-stop properties', () => {
   const race = fc.constantFrom(...CHARACTERS.filter((c) => c.id !== 'eternal-void').map((c) => c.id));
-  const cmd = fc.integer({ min: 0, max: 0x3fff });
+  // No dash bit: dashes (FUN-DESIGN 2.7, dash.test.ts) would dodge most of the hits this property needs.
+  const cmd = fc.integer({ min: 0, max: 0x3fff }).map((c) => c & ~Cmd.dash);
   const sticky = fc
     .array(fc.tuple(fc.integer({ min: 1, max: 40 }), cmd, cmd), { minLength: 1, maxLength: 12 })
     .map((runs) => runs.flatMap(([k, p, q]) => Array.from({ length: k }, (): [number, number] => [p, q])));
@@ -231,7 +232,7 @@ describe('hit-stop properties', () => {
         });
         expect(again).toEqual(first.hashes.slice(k));
       }),
-      { numRuns: 30, seed: 0x5709 },
+      { numRuns: 40, seed: 0x5709 },
     );
     expect(hits).toBeGreaterThan(30);
   });

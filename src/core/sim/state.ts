@@ -50,20 +50,25 @@ export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE +
  * (ARCADE_TEAM_BASE + team * ARCADE_T + field), then ARCADE_W world ints (ARCADE_WORLD_BASE + field).
  * Knockback speeds are Q4 (1/16 px per tick); `wallBounced` is 1 once the victim bounced off a wall in this combo.
  * `aim` is the 8-way cast facing plus one (0 = no input yet: the 4-way `dir`), see systems/arcade/aim.ts.
+ * `dashUntil` is the game tick a dash ends (start + DASH_TICKS), `dashReadyAt` the first tick of the next dash and
+ * `dashDodged` 1 once the dash scored its perfect dodge (systems/arcade/dash.ts).
  */
 export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, guardState: 7,
   parryUntil: 8, parryLockUntil: 9, guardMeter: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
+  dashDodged: 14,
 } as const;
-export const ARCADE_E = 14;
+export const ARCADE_E = 15;
 /**
  * Per team; `pressTick` is 5 ints (primary, secondary, dash, guard, super): the game tick of the last rising edge plus
  * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a
- * chord's super press is pending (see systems/arcade/buffer.ts).
+ * chord's super press is pending (see systems/arcade/buffer.ts). `lastDir` is the bit of the last rising direction edge
+ * and `lastDirPress` its game tick plus one (the double-tap dash); `confirmTick` is the game tick plus one of the team's
+ * last confirmed hit (the dash cancel window).
  */
 export const ArcadeT = {
   meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 10, lastDir: 11,
-  roundsWon: 12, superState: 13, pressUsed: 14,
+  roundsWon: 12, superState: 13, pressUsed: 14, confirmTick: 15,
 } as const;
 export const ARCADE_T = 16;
 /**

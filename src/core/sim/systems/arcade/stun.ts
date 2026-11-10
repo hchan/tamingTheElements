@@ -1,5 +1,6 @@
 import {
-  COMBO_STUN_CAP_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP, MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason,
+  COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
+  MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason,
 } from '../../../data/arcade';
 import { inFight, isArcade, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
@@ -13,12 +14,26 @@ export function isStunned(s: SimState, id: number): boolean {
   return isArcade(s) && (s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) > now(s);
 }
 
+/** The 1-based tick of `id`'s dash this game tick (FUN-DESIGN 2.7), 0 when it is not dashing. Always 0 in Classic. */
+export function dashTick(s: SimState, id: number): number {
+  const until = s.arcade[id * ARCADE_E + ArcadeE.dashUntil] ?? 0;
+  const g = now(s);
+  return g < until ? g - until + DASH_TICKS + 1 : 0;
+}
+
+/** True on `id`'s invulnerable dash ticks (DASH_INVULN_FROM..DASH_INVULN_TO). */
+export function isDashInvulnerable(s: SimState, id: number): boolean {
+  const t = dashTick(s, id);
+  return t >= DASH_INVULN_FROM && t <= DASH_INVULN_TO;
+}
+
 /**
  * True while `id` is invulnerable in Arcade: projectiles pass through it and melee does not touch it. Outside the
- * `fight` phase (intro, KO, round end) everyone is.
+ * `fight` phase (intro, KO, round end) everyone is, and a dasher is on its invulnerable dash ticks.
  */
 export function isInvulnerable(s: SimState, id: number): boolean {
-  return isArcade(s) && ((s.arcade[id * ARCADE_E + ArcadeE.invulnUntil] ?? 0) > now(s) || !inFight(s));
+  const until = s.arcade[id * ARCADE_E + ArcadeE.invulnUntil] ?? 0;
+  return isArcade(s) && (until > now(s) || !inFight(s) || isDashInvulnerable(s, id));
 }
 
 /**
@@ -32,12 +47,21 @@ export function inSuper(s: SimState, id: number): boolean {
 }
 
 /**
- * Whether `id` may move or cast (FUN-DESIGN 2.1). Classic: not frozen, exactly the old check. Arcade: also not
- * stunned, not casting a super and in the `fight` phase (guard and dash recovery join with their work packages).
+ * `canAct` without the cast recovery (the `frozen` flag): not stunned, not casting a super, in the `fight` phase, and
+ * not dashing nor in the DASH_RECOVERY_TICKS after a dash. Always true in Classic (the block is empty).
+ */
+export function isFree(s: SimState, id: number): boolean {
+  const dash = s.arcade[id * ARCADE_E + ArcadeE.dashUntil] ?? 0;
+  return !isStunned(s, id) && !inSuper(s, id) && inFight(s) && !(dash > 0 && now(s) < dash + DASH_RECOVERY_TICKS);
+}
+
+/**
+ * Whether `id` may move or cast (FUN-DESIGN 2.1). Classic: not frozen, exactly the old check. Arcade: also `isFree`
+ * (guard joins with its work package).
  */
 export function canAct(world: SimWorld, id: number): boolean {
   const s = world.state;
-  return ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && !isStunned(s, id) && !inSuper(s, id) && inFight(s);
+  return ((s.flags[id] ?? 0) & EntityFlag.frozen) === 0 && isFree(s, id);
 }
 
 /** Ends the victim's combo early: no stun, a fresh juggle and stun budget, RECOVERY_INVULN_TICKS of invulnerability. */
@@ -73,13 +97,15 @@ export function expireStuns(world: SimWorld, sink: EventSink): void {
  * budget and wall bounce reset); a hit while stunned raises `juggle` and stuns `base - 2 * juggle`, never under 6.
  * Stun only extends (`stunUntil` never moves back) and `comboStunTotal` sums the extensions, so the chain is exactly
  * `comboStunTotal` game ticks long. Caps: a hit at `juggle >= 5`, or one that would push the chain past 150 ticks, ends
- * the stun with `recovered` (reason 1 or 2) and 20 ticks of invulnerability instead.
+ * the stun with `recovered` (reason 1 or 2) and 20 ticks of invulnerability instead. Either way it ends the victim's
+ * dash (its DASH_RECOVERY_TICKS still follow).
  */
 export function applyStun(world: SimWorld, sink: EventSink, source: number, victim: number, base: number): void {
   const s = world.state;
   const a = s.arcade;
   const e = victim * ARCADE_E;
   const g = now(s);
+  if ((a[e + ArcadeE.dashUntil] ?? 0) > g) a[e + ArcadeE.dashUntil] = g;
   const until = a[e + ArcadeE.stunUntil] ?? 0;
   if (until <= g) {
     a[e + ArcadeE.juggle] = 0;

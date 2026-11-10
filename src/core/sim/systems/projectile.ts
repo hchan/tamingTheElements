@@ -18,6 +18,7 @@ import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { canAct, isInvulnerable } from './arcade/stun';
+import { checkPerfectDodge } from './arcade/dash';
 import { releaseCount } from './ability-info';
 import { castDir } from './arcade/aim';
 
@@ -151,10 +152,14 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     }
     const target = controlledId(world, 1 - (s.team[id] ?? 0));
     if (target < 0 || ((s.flags[target] ?? 0) & EntityFlag.translucent) !== 0) continue;
-    if (isInvulnerable(s, target)) continue; // Arcade only: an invulnerable character lets bullets through
     const box = { x, y, w: s.w[id] ?? 0, h: s.h[id] ?? 0 };
     const tbox = { x: s.x[target] ?? 0, y: s.y[target] ?? 0, w: s.w[target] ?? 0, h: s.h[target] ?? 0 };
     if (!aabbOverlap(box, tbox)) continue;
+    if (isInvulnerable(s, target)) {
+      // Arcade only: an invulnerable character lets bullets through; a dasher may score a perfect dodge.
+      checkPerfectDodge(s, sink, id, target);
+      continue;
+    }
     const attacker = s.owner[id] ?? 0;
     if (isArcade(s)) {
       applyArcadeHit(world, sink, id, attacker, target, s.hp[id] ?? 0, s.defId[id] ?? 0, s.dir[id] ?? 0);

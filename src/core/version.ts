@@ -40,5 +40,10 @@
  *    (`matchEnded` after 2 round wins, a draw round scores for both), time over by roster HP per mille, a full reset
  *    between rounds (meters carry over), `roundStarted`/`fight`/`ko`/`timeOver`/`roundEnded`; nobody acts or is hit
  *    outside `fight`; a KO keeps the damage multiplier; the Arcade world block gains `roundWinner` (WP-arcade-rounds).
+ * 13: Arcade only; Classic hashes unchanged. Dash: `Cmd.dash` (bit 11) or a double tap of a direction within 12 game
+ *    ticks starts a 12-tick dash at 3x speed (invulnerable on dash ticks 2..7, 6 ticks of recovery, ready again 30 ticks
+ *    after the start), a perfect dodge (+100 meter, once per dash), and a dash within 10 ticks of a confirmed hit cancels
+ *    melee recovery; `dashed`/`perfectDodge`; the Arcade entity block gains `dashDodged` and the team block
+ *    `confirmTick` (WP-arcade-dash).
  */
-export const SIM_VERSION = 12;
+export const SIM_VERSION = 13;

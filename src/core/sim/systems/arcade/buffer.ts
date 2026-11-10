@@ -1,4 +1,4 @@
-import { BUFFER_TICKS, SUPER_CHORD_TICKS, SUPER_COST } from '../../../data/arcade';
+import { BUFFER_TICKS, DOUBLE_TAP_TICKS, SUPER_CHORD_TICKS, SUPER_COST } from '../../../data/arcade';
 import { isArcade, now } from '../../clock';
 import { Cmd, inputMaskFor, type Command } from '../../commands';
 import type { EventSink } from '../../events';
@@ -8,8 +8,8 @@ import { meterOf, meterOnCast } from './meter';
 /** Presses in `ArcadeT.pressTick` order (FUN-DESIGN 2.12); primary and secondary are also the ability slots 0 and 1. */
 export const Press = { primary: 0, secondary: 1, dash: 2, guard: 3, super: 4 } as const;
 /** Command bit of each press: dash and guard are the Arcade bits 11 and 12. */
-export const PRESS_BITS = [Cmd.primary, Cmd.secondary, 1 << 11, 1 << 12, Cmd.super] as const;
-/** Presses the buffer replays; dash and guard only record their edges until their work packages consume them. */
+export const PRESS_BITS = [Cmd.primary, Cmd.secondary, Cmd.dash, 1 << 12, Cmd.super] as const;
+/** Presses `bufferedCmd` replays; the dash press is read by arcade/dash.ts, guard only records its edges until WP 16. */
 const REPLAYED = [Press.primary, Press.secondary, Press.super] as const;
 /** `pressUsed` flag: the pending super press came from a chord, so held primary and secondary are masked meanwhile. */
 export const CHORD_FLAG = 1 << 5;
@@ -25,8 +25,10 @@ export function pressAge(s: SimState, team: number, k: number): number {
   return at === 0 ? -1 : now(s) - (at - 1);
 }
 
+const DIRS = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
+
 /** Press `k` of `team` is pending: pressed BUFFER_TICKS or fewer game ticks ago and not used yet. */
-function pending(s: SimState, team: number, k: number): boolean {
+export function pending(s: SimState, team: number, k: number): boolean {
   const age = pressAge(s, team, k);
   return age >= 0 && age <= BUFFER_TICKS && ((s.arcade[teamBase(team) + ArcadeT.pressUsed] ?? 0) & (1 << k)) === 0;
 }
@@ -37,6 +39,8 @@ const withinChord = (age: number): boolean => age >= 0 && age <= SUPER_CHORD_TIC
  * Records `team`'s rising edges of `cmd` (from `prevCmd`) as press ticks, then turns a primary and secondary pair within
  * SUPER_CHORD_TICKS into a super press when the team has SUPER_COST meter and no super running: the pair's press ticks
  * are cleared (an edge feeds one chord) and CHORD_FLAG masks the held buttons while that super press is pending.
+ * A rising direction edge (the lowest bit when several rise) that repeats `lastDir` within DOUBLE_TAP_TICKS is a dash
+ * press (FUN-DESIGN 2.7) and clears `lastDirPress`, so a third tap starts a new pair.
  */
 function recordTeam(s: SimState, team: number, cmd: Command, g: number): void {
   const a = s.arcade;
@@ -52,6 +56,17 @@ function recordTeam(s: SimState, team: number, cmd: Command, g: number): void {
     used &= ~(1 << k);
   });
   if ((rise & Cmd.super) !== 0) used &= ~CHORD_FLAG;
+  const dir = rise & DIRS & -(rise & DIRS);
+  if (dir !== 0) {
+    const last = a[b + ArcadeT.lastDirPress] ?? 0;
+    const tap = last !== 0 && a[b + ArcadeT.lastDir] === dir && g + 1 - last <= DOUBLE_TAP_TICKS;
+    a[b + ArcadeT.lastDir] = dir;
+    a[b + ArcadeT.lastDirPress] = tap ? 0 : g + 1;
+    if (tap) {
+      a[at + Press.dash] = g + 1;
+      used &= ~(1 << Press.dash);
+    }
+  }
   const chord =
     (rise & ATTACK) !== 0 &&
     withinChord(pressAge(s, team, Press.primary)) &&

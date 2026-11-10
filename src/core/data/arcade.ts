@@ -155,3 +155,20 @@ export const ROUND_TIMER_TICKS = 4500;
 export const ROUNDS_TO_WIN = 2;
 /** Time over compares the sum of `floor(hp * HP_PM / maxHp)` over each team's roster: higher wins, equal is a draw. */
 export const HP_PM = 1000;
+
+/**
+ * Dash (FUN-DESIGN 2.7, WP 15), in game ticks. A dash press (`Cmd.dash`, buffered like the attacks) or the same
+ * direction pressed twice within DOUBLE_TAP_TICKS (rising edges, 0..DOUBLE_TAP_TICKS apart) starts a dash: DASH_TICKS
+ * at DASH_SPEED_MULT x `speed` along the held direction (or the aim), invulnerable on dash ticks DASH_INVULN_FROM ..
+ * DASH_INVULN_TO (1-based), then DASH_RECOVERY_TICKS without acting; the next dash is ready DASH_COOLDOWN_TICKS after
+ * the start. An enemy projectile overlapping the dasher on its invulnerable ticks is a perfect dodge (METER_PERFECT_DODGE,
+ * once per dash). A dash within DASH_CANCEL_TICKS of the team's last confirmed hit cancels the dasher's melee recovery.
+ */
+export const DASH_TICKS = 12;
+export const DASH_SPEED_MULT = 3;
+export const DASH_INVULN_FROM = 2;
+export const DASH_INVULN_TO = 7;
+export const DASH_RECOVERY_TICKS = 6;
+export const DASH_COOLDOWN_TICKS = 30;
+export const DOUBLE_TAP_TICKS = 12;
+export const DASH_CANCEL_TICKS = 10;

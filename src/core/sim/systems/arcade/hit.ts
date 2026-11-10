@@ -6,8 +6,9 @@ import {
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import { computeDamage, damageDealt } from '../../../rules/damage';
+import { now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
-import { ARCADE_WORLD_BASE, ArcadeW, World as W } from '../../state';
+import { ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, World as W } from '../../state';
 import type { SimWorld } from '../../world';
 import { damageDecreasePct } from '../status';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
@@ -52,7 +53,8 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * `hitConfirmed`, then hit-stop by strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by
  * strength and hit-stun with the juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap
  * ends the combo); a counter hit (victim in its own cast recovery) stuns one tier more. Last, both teams' hyper meters
- * gain from the health removed (FUN-DESIGN 2.5, `meterLevel` when a bar fills). Returns the health removed.
+ * gain from the health removed (FUN-DESIGN 2.5, `meterLevel` when a bar fills). The hit is the team's last confirm
+ * (`confirmTick`, the dash cancel window of FUN-DESIGN 2.7). Returns the health removed.
  */
 export function applyArcadeHit(
   world: SimWorld, sink: EventSink, source: number, attacker: number, victim: number, base: number, defIdx: number,
@@ -76,6 +78,7 @@ export function applyArcadeHit(
   const before = s.hp[victim] ?? 0;
   s.hp[victim] = before - amount;
   addComboDamage(s, team, amount);
+  s.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.confirmTick] = now(s) + 1;
   sink.emit(source, SimEventKind.damage, { target: victim, attacker, amount });
   sink.emit(source, SimEventKind.hitConfirmed, {
     target: victim, attacker, ability: defIdx, strength, amount, scalePm, combo, dir, counter: counter ? 1 : 0,

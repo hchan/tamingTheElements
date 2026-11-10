@@ -15,7 +15,7 @@ import { hasEnded } from './systems/end';
 import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
 import {
-  BUFFER_TICKS, COMBO_STUN_CAP_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, ROUNDS_TO_WIN,
+  BUFFER_TICKS, COMBO_STUN_CAP_TICKS, DASH_COOLDOWN_TICKS, DASH_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, ROUNDS_TO_WIN,
   ROUND_TIMER_TICKS, RoundPhase, SUPER_FREEZE_TICKS,
 } from '../data/arcade';
 import { CHORD_FLAG, PRESS_BITS, pressAge } from './systems/arcade/buffer';
@@ -258,6 +258,18 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
       if ((s.arcade[b + ArcadeT.pressTick + k] ?? 0) - 1 > g) fail(`team ${String(t)} press ${String(k)} in the future`);
     }
     if (((s.arcade[b + ArcadeT.pressUsed] ?? 0) & ~(CHORD_FLAG | ((1 << PRESS_BITS.length) - 1))) !== 0) fail('bad pressUsed');
+  }
+  // Dash (FUN-DESIGN 2.7): a dash lasts at most DASH_TICKS and its next one is ready no sooner than DASH_COOLDOWN_TICKS
+  // after its start; `dashed` books that on its tick, and a perfect dodge marks its dash.
+  for (let i = 0; i < MAX_ENTITIES; i++) {
+    const until = s.arcade[i * ARCADE_E + ArcadeE.dashUntil] ?? 0;
+    const ready = s.arcade[i * ARCADE_E + ArcadeE.dashReadyAt] ?? 0;
+    if (until - g >= DASH_TICKS || (until > 0 && ready - until < DASH_COOLDOWN_TICKS - DASH_TICKS)) fail(`dash of ${String(i)}`);
+  }
+  for (const e of events) {
+    const at = (f: number): number => s.arcade[e.sourceId * ARCADE_E + f] ?? 0;
+    if (e.kind === SimEventKind.dashed && at(ArcadeE.dashReadyAt) !== g - 1 + DASH_COOLDOWN_TICKS) fail('dash cooldown');
+    if (e.kind === SimEventKind.perfectDodge && at(ArcadeE.dashDodged) !== 1) fail('unmarked perfect dodge');
   }
   checkRounds(w, events, fail);
 }
@@ -634,11 +646,13 @@ describe('sim properties: determinism', () => {
 
 describe('sim properties: command constants', () => {
   it('Classic command bits do not overlap the reserved mask; Arcade bits are Arcade-only', () => {
-    const { super: superBit, ...classic } = Cmd;
+    const { super: superBit, dash, ...classic } = Cmd;
     const all = Object.values(classic).reduce<Command>((m, b) => m | b, 0);
     expect(all & CMD_RESERVED_MASK).toBe(0);
-    expect(superBit & ARCADE_CMD_BITS).toBe(superBit);
-    expect(superBit & inputMaskFor({ rulesetArcade: false })).toBe(0);
-    expect(superBit & inputMaskFor({ rulesetArcade: true })).toBe(superBit);
+    for (const bit of [superBit, dash]) {
+      expect(bit & ARCADE_CMD_BITS).toBe(bit);
+      expect(bit & inputMaskFor({ rulesetArcade: false })).toBe(0);
+      expect(bit & inputMaskFor({ rulesetArcade: true })).toBe(bit);
+    }
   });
 });

@@ -143,7 +143,7 @@ function arcadeEvents(p1: readonly string[], p2: readonly string[]): SimEvent[] 
   const roster = (ids: readonly string[]): { character: ReturnType<typeof characterId>; xp: number }[] =>
     ids.map((id) => ({ character: characterId(id), xp: 0 }));
   const world = createMatch({
-    simVersion: SIM_VERSION, seed: 3, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
+    simVersion: SIM_VERSION, seed: 4, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
     p1: roster(p1), p2: roster(p2),
   });
   const s = world.state;

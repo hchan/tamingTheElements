@@ -5,7 +5,7 @@ import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT } from '../state';
 import type { SimWorld } from '../world';
 import { isArcade } from '../clock';
 import { stepKnockback } from './arcade/knockback';
-import { canAct } from './arcade/stun';
+import { canAct, dashTick } from './arcade/stun';
 import { setAim } from './arcade/aim';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
@@ -62,12 +62,19 @@ function restoreAtWall(world: SimWorld, id: number, team: number): void {
 }
 
 /**
- * Arcade movement (FUN-DESIGN 2.3): knockback first (it moves a stunned victim too), then the input step when the
+ * Arcade movement (FUN-DESIGN 2.3): knockback first (it moves a stunned victim too), then a dash step (FUN-DESIGN 2.7:
+ * `vx`/`vy` as the dash set them, clamped to the arena; no `moved` event, like knockback) or the input step when the
  * character can act. Walls hold both axes for both teams. The held input also sets the 8-way aim (arcade/aim.ts).
  */
 function arcadeMove(world: SimWorld, id: number, cmd: Command, sink: EventSink): void {
   const s = world.state;
   stepKnockback(world, id);
+  if (dashTick(s, id) > 0) {
+    const a = world.arena;
+    s.x[id] = Math.min(Math.max((s.x[id] ?? 0) + (s.vx[id] ?? 0), a.x), a.x + a.w - (s.w[id] ?? 0));
+    s.y[id] = Math.min(Math.max((s.y[id] ?? 0) + (s.vy[id] ?? 0), a.y), a.y + a.h - (s.h[id] ?? 0));
+    return;
+  }
   if (!canAct(world, id)) return;
   const ax = cmdAxisX(cmd);
   const ay = cmdAxisY(cmd);
