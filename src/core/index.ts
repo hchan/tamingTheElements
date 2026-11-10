@@ -41,3 +41,5 @@ export * from './replay/format';
 export * from './replay/rle';
 export * from './replay/recorder';
 export * from './replay/player';
+export * from './data/abilities-a';
+export * from './data/abilities-b';

@@ -8,6 +8,7 @@ import { raceScreen } from './screens/race';
 import { wikiScreen } from './screens/wiki';
 import { garrisonScreen } from './screens/garrison';
 import { gameMasterScreen } from './screens/game-master';
+import { characterDetailsScreen } from './screens/character-details';
 import { defeatScreen, victoryScreen } from './screens/results';
 
 export const ROUTE_NAMES = [
@@ -27,6 +28,7 @@ export const ROUTE_NAMES = [
   'exit',
   'race',
   'gameMaster',
+  'character',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -37,13 +39,17 @@ export interface ResolvedRoute {
 
 const MAIN: ResolvedRoute = { name: 'main', param: null };
 const RACE_PREFIX = '#race_';
+const CHARACTER_PREFIX = '#character_';
 const RACE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** Explicit allow-list checked with Set.has, so prototype keys like __proto__ never match. */
 const PLAIN_ROUTES: ReadonlySet<string> = new Set<RouteName>(
   ROUTE_NAMES.filter(
     (n) =>
-      n !== 'race' && n !== 'main' && (n !== 'gameMaster' || import.meta.env.DEV || import.meta.env.MODE === 'test'),
+      n !== 'race' &&
+      n !== 'character' &&
+      n !== 'main' &&
+      (n !== 'gameMaster' || import.meta.env.DEV || import.meta.env.MODE === 'test'),
   ),
 );
 
@@ -52,6 +58,10 @@ export function resolveRoute(hash: string): ResolvedRoute {
   if (hash.startsWith(RACE_PREFIX)) {
     const id = hash.slice(RACE_PREFIX.length);
     return RACE_ID.test(id) ? { name: 'race', param: id } : MAIN;
+  }
+  if (hash.startsWith(CHARACTER_PREFIX)) {
+    const id = hash.slice(CHARACTER_PREFIX.length);
+    return RACE_ID.test(id) ? { name: 'character', param: id } : MAIN;
   }
   const name = hash.startsWith('#') ? hash.slice(1) : hash;
   if (PLAIN_ROUTES.has(name)) return { name: name as RouteName, param: null };
@@ -98,6 +108,7 @@ export function defaultScreens(): ScreenTable {
     // Statically removed from production builds; the route is also unreachable there (see PLAIN_ROUTES).
     gameMaster:
       import.meta.env.DEV || import.meta.env.MODE === 'test' ? gameMasterScreen : placeholderScreen('Not available'),
+    character: characterDetailsScreen(),
   };
 }
 
