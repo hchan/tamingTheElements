@@ -54,13 +54,15 @@ export class ProjectileView {
         this.glow.setTexture(found.key, FRAME);
       }
     }
-    this.image.setVisible(true);
+    // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
+    this.image.setVisible(true).setAlpha(1);
     this.image.setDisplaySize(p.w, p.h);
     this.image.setPosition(lerp(p.px, p.x, alpha) + p.w / 2, lerp(p.py, p.y, alpha) + p.h / 2);
     this.image.setAngle(rotationForDir(p.dir, p.sprite));
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
       .setVisible(true)
+      .setAlpha(0.5)
       .setDisplaySize(p.w * 1.6 + 6, p.h * 1.6 + 6)
       .setPosition(this.image.x, this.image.y)
       .setDepth(this.image.depth - 0.01);
