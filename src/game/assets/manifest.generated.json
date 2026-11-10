@@ -1,0 +1,3206 @@
+{
+  "sprites": {
+    "adrenaline": {
+      "url": "img/adrenaline.png",
+      "coords": [
+        0,
+        0,
+        52,
+        53
+      ]
+    },
+    "air": {
+      "url": "img/air.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "airCircle": {
+      "url": "img/airCircle.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "airCorner": {
+      "url": "img/airCorner.png",
+      "coords": [
+        0,
+        0,
+        1192,
+        591
+      ]
+    },
+    "beta": {
+      "url": "img/beta.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "capture": {
+      "url": "img/capture.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "chaosBolt": {
+      "url": "img/chaosBolt.png",
+      "coords": [
+        0,
+        0,
+        80,
+        41
+      ]
+    },
+    "chaosOrb": {
+      "url": "img/chaosOrb.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "chaoticFire": {
+      "url": "img/chaoticFire.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "circusOfSlimeIcon": {
+      "url": "img/circusOfSlimeIcon.png",
+      "coords": [
+        0,
+        0,
+        80,
+        78
+      ]
+    },
+    "crimsonFire": {
+      "url": "img/crimsonFire.png",
+      "coords": [
+        0,
+        0,
+        80,
+        64
+      ]
+    },
+    "death": {
+      "url": "img/death.png",
+      "coords": [
+        0,
+        0,
+        714,
+        696
+      ]
+    },
+    "earth": {
+      "url": "img/earth.png",
+      "coords": [
+        0,
+        0,
+        29,
+        80
+      ]
+    },
+    "earthCircle": {
+      "url": "img/earthCircle.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "earthCorner": {
+      "url": "img/earthCorner.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ]
+    },
+    "elementalSigns": {
+      "url": "img/elementalSigns.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "entanglingVines": {
+      "url": "img/entanglingVines.png",
+      "coords": [
+        0,
+        0,
+        80,
+        61
+      ]
+    },
+    "entanglingVinesLong": {
+      "url": "img/entanglingVinesLong.png",
+      "coords": [
+        0,
+        0,
+        80,
+        18
+      ]
+    },
+    "evilEyes": {
+      "url": "img/evilEyes.png",
+      "coords": [
+        0,
+        0,
+        300,
+        300
+      ]
+    },
+    "fade": {
+      "url": "img/fade.png",
+      "coords": [
+        0,
+        0,
+        78,
+        80
+      ]
+    },
+    "favicon": {
+      "url": "img/favicon.png",
+      "coords": [
+        0,
+        0,
+        358,
+        358
+      ]
+    },
+    "fire": {
+      "url": "img/fire.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "fireBlast": {
+      "url": "img/fireBlast.png",
+      "coords": [
+        0,
+        0,
+        74,
+        26
+      ]
+    },
+    "fireCircle": {
+      "url": "img/fireCircle.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "fireCorner": {
+      "url": "img/fireCorner.png",
+      "coords": [
+        0,
+        0,
+        274,
+        480
+      ]
+    },
+    "fireDance": {
+      "url": "img/fireDance.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "fireHeal": {
+      "url": "img/fireHeal.png",
+      "coords": [
+        0,
+        0,
+        80,
+        79
+      ]
+    },
+    "fireball": {
+      "url": "img/fireball.png",
+      "coords": [
+        0,
+        0,
+        80,
+        50
+      ]
+    },
+    "groundShock": {
+      "url": "img/groundShock.png",
+      "coords": [
+        0,
+        0,
+        77,
+        80
+      ]
+    },
+    "hurlRock": {
+      "url": "img/hurlRock.png",
+      "coords": [
+        0,
+        0,
+        80,
+        64
+      ]
+    },
+    "hurricane": {
+      "url": "img/hurricane.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "iceBlast": {
+      "url": "img/iceBlast.png",
+      "coords": [
+        0,
+        0,
+        80,
+        49
+      ]
+    },
+    "iceBreath": {
+      "url": "img/iceBreath.png",
+      "coords": [
+        0,
+        0,
+        80,
+        53
+      ]
+    },
+    "iceSheet": {
+      "url": "img/iceSheet.png",
+      "coords": [
+        0,
+        0,
+        80,
+        48
+      ]
+    },
+    "iceShock": {
+      "url": "img/iceShock.png",
+      "coords": [
+        0,
+        0,
+        80,
+        32
+      ]
+    },
+    "icicles": {
+      "url": "img/icicles.png",
+      "coords": [
+        0,
+        0,
+        80,
+        42
+      ]
+    },
+    "pria": {
+      "url": "img/pria.png",
+      "coords": [
+        0,
+        0,
+        837,
+        797
+      ]
+    },
+    "redX": {
+      "url": "img/redX.png",
+      "coords": [
+        0,
+        0,
+        20,
+        20
+      ]
+    },
+    "rockArmour": {
+      "url": "img/rockArmour.png",
+      "coords": [
+        0,
+        0,
+        65,
+        80
+      ]
+    },
+    "rockElementalRed": {
+      "url": "img/rockElementalRed.png",
+      "coords": [
+        0,
+        0,
+        80,
+        20
+      ]
+    },
+    "rockPellet": {
+      "url": "img/rockPellet.png",
+      "coords": [
+        0,
+        0,
+        80,
+        19
+      ]
+    },
+    "shardsOfIce": {
+      "url": "img/shardsOfIce.png",
+      "coords": [
+        0,
+        0,
+        80,
+        11
+      ]
+    },
+    "slimeBlast": {
+      "url": "img/slimeBlast.png",
+      "coords": [
+        0,
+        0,
+        80,
+        45
+      ]
+    },
+    "sonarBlast": {
+      "url": "img/sonarBlast.png",
+      "coords": [
+        0,
+        0,
+        80,
+        38
+      ]
+    },
+    "stealHealth": {
+      "url": "img/stealHealth.png",
+      "coords": [
+        0,
+        0,
+        80,
+        59
+      ]
+    },
+    "stick": {
+      "url": "img/stick.png",
+      "coords": [
+        0,
+        0,
+        40,
+        19
+      ]
+    },
+    "stranglingBranches": {
+      "url": "img/stranglingBranches.png",
+      "coords": [
+        0,
+        0,
+        80,
+        44
+      ]
+    },
+    "victory": {
+      "url": "img/victory.png",
+      "coords": [
+        0,
+        0,
+        1920,
+        1080
+      ]
+    },
+    "vineTrap": {
+      "url": "img/vineTrap.png",
+      "coords": [
+        0,
+        0,
+        70,
+        80
+      ]
+    },
+    "voidCircle": {
+      "url": "img/voidCircle.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "water": {
+      "url": "img/water.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "waterCircle": {
+      "url": "img/waterCircle.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "waterCorner": {
+      "url": "img/waterCorner.png",
+      "coords": [
+        0,
+        0,
+        1024,
+        79
+      ]
+    },
+    "windCone": {
+      "url": "img/windCone.png",
+      "coords": [
+        0,
+        0,
+        27,
+        14
+      ]
+    }
+  },
+  "mapSprites": {
+    "circusOfSlime": {
+      "url": "img/map/circusOfSlime.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/circusOfSlimeLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "circusOfSlimeLarge": {
+      "url": "img/map/circusOfSlimeLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "curomo": {
+      "url": "img/map/curomo.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/curomoLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "curomoLarge": {
+      "url": "img/map/curomoLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "cyclonius": {
+      "url": "img/map/cyclonius.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/cycloniusLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "upFrames": [
+        [
+          0,
+          160
+        ],
+        [
+          80,
+          160
+        ],
+        [
+          160,
+          160
+        ],
+        [
+          240,
+          160
+        ]
+      ],
+      "downFrames": [
+        [
+          0,
+          80
+        ],
+        [
+          80,
+          80
+        ],
+        [
+          160,
+          80
+        ],
+        [
+          240,
+          80
+        ]
+      ]
+    },
+    "cycloniusDown": {
+      "url": "img/map/cycloniusDown.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/cycloniusDownLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "cycloniusDownLarge": {
+      "url": "img/map/cycloniusDownLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "cycloniusLarge": {
+      "url": "img/map/cycloniusLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "cycloniusUp": {
+      "url": "img/map/cycloniusUp.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/cycloniusUpLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "cycloniusUpLarge": {
+      "url": "img/map/cycloniusUpLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "dummyTarget": {
+      "url": "img/map/dummyTarget.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/dummyTargetLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "dummyTargetLarge": {
+      "url": "img/map/dummyTargetLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "echo": {
+      "url": "img/map/echo.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/echoLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "echoFade": {
+      "url": "img/map/echoFade.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/echoFadeLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "echoFadeLarge": {
+      "url": "img/map/echoFadeLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "echoLarge": {
+      "url": "img/map/echoLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "eternalVoid": {
+      "url": "img/map/eternalVoid.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/eternalVoidLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "eternalVoidLarge": {
+      "url": "img/map/eternalVoidLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "fiara": {
+      "url": "img/map/fiara.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/fiaraLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "fiaraLarge": {
+      "url": "img/map/fiaraLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "fireCone": {
+      "url": "img/map/fireCone.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/fireConeLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "fireConeLarge": {
+      "url": "img/map/fireConeLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "ishimi": {
+      "url": "img/map/ishimi.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/ishimiLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "ishimiLarge": {
+      "url": "img/map/ishimiLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "lavax": {
+      "url": "img/map/lavax.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/lavaxLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "lavaxLarge": {
+      "url": "img/map/lavaxLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "morblass": {
+      "url": "img/map/morblass.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/morblassLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "morblassLarge": {
+      "url": "img/map/morblassLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "pax": {
+      "url": "img/map/pax.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/paxLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "paxAdrenaline": {
+      "url": "img/map/paxAdrenaline.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/paxAdrenalineLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "paxAdrenalineLarge": {
+      "url": "img/map/paxAdrenalineLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "paxLarge": {
+      "url": "img/map/paxLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "priaUnbalanced": {
+      "url": "img/map/priaUnbalanced.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "urlLarge": "img/map/priaUnbalancedLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ],
+        [
+          400,
+          0
+        ],
+        [
+          480,
+          0
+        ],
+        [
+          560,
+          0
+        ],
+        [
+          640,
+          0
+        ],
+        [
+          720,
+          0
+        ],
+        [
+          800,
+          0
+        ],
+        [
+          880,
+          0
+        ],
+        [
+          960,
+          0
+        ],
+        [
+          1040,
+          0
+        ],
+        [
+          1120,
+          0
+        ],
+        [
+          1200,
+          0
+        ],
+        [
+          1280,
+          0
+        ],
+        [
+          1360,
+          0
+        ],
+        [
+          1440,
+          0
+        ],
+        [
+          1520,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ],
+        [
+          400,
+          0
+        ],
+        [
+          480,
+          0
+        ],
+        [
+          560,
+          0
+        ],
+        [
+          640,
+          0
+        ],
+        [
+          720,
+          0
+        ],
+        [
+          800,
+          0
+        ],
+        [
+          880,
+          0
+        ],
+        [
+          960,
+          0
+        ],
+        [
+          1040,
+          0
+        ],
+        [
+          1120,
+          0
+        ],
+        [
+          1200,
+          0
+        ],
+        [
+          1280,
+          0
+        ],
+        [
+          1360,
+          0
+        ],
+        [
+          1440,
+          0
+        ],
+        [
+          1520,
+          0
+        ]
+      ]
+    },
+    "rokcore": {
+      "url": "img/map/rokcore.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/rokcoreLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "rokcoreLarge": {
+      "url": "img/map/rokcoreLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "rokcoreRockArmour": {
+      "url": "img/map/rokcoreRockArmour.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/rokcoreRockArmourLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "rokcoreRockArmourLarge": {
+      "url": "img/map/rokcoreRockArmourLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "sindarosa": {
+      "url": "img/map/sindarosa.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/sindarosaLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "sindarosaLarge": {
+      "url": "img/map/sindarosaLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "tornado": {
+      "url": "img/map/tornado.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/tornadoLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "tornadoLarge": {
+      "url": "img/map/tornadoLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "translucentFlame": {
+      "url": "img/map/translucentFlame.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/translucentFlameLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "translucentFlameLarge": {
+      "url": "img/map/translucentFlameLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "treenoc": {
+      "url": "img/map/treenoc.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/treenocLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "treenocLarge": {
+      "url": "img/map/treenocLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    },
+    "wispera": {
+      "url": "img/map/wispera.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/wisperaLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "wisperaLarge": {
+      "url": "img/map/wisperaLarge.png",
+      "coords": [
+        0,
+        0,
+        400,
+        400
+      ],
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          320,
+          0
+        ]
+      ]
+    }
+  },
+  "backgrounds": {
+    "air": {
+      "url": "img/background/air.png",
+      "coords": [
+        0,
+        0,
+        634,
+        416
+      ]
+    },
+    "earth": {
+      "url": "img/background/earth.png",
+      "coords": [
+        0,
+        0,
+        1600,
+        1200
+      ]
+    },
+    "fire": {
+      "url": "img/background/fire.png",
+      "coords": [
+        0,
+        0,
+        1404,
+        964
+      ]
+    },
+    "risingSun": {
+      "url": "img/background/risingSun.png",
+      "coords": [
+        0,
+        0,
+        1280,
+        720
+      ]
+    },
+    "stars": {
+      "url": "img/background/stars.png",
+      "coords": [
+        0,
+        0,
+        1280,
+        1024
+      ]
+    },
+    "void": {
+      "url": "img/background/void.png",
+      "coords": [
+        0,
+        0,
+        450,
+        281
+      ]
+    },
+    "water": {
+      "url": "img/background/water.png",
+      "coords": [
+        0,
+        0,
+        1600,
+        1200
+      ]
+    }
+  },
+  "sounds": [
+    {
+      "id": "adrenaline",
+      "url": "snd/adrenaline.ogg"
+    },
+    {
+      "id": "board_room_applause",
+      "url": "snd/board_room_applause.ogg"
+    },
+    {
+      "id": "candy_dish_lid",
+      "url": "snd/candy_dish_lid.ogg"
+    },
+    {
+      "id": "capture",
+      "url": "snd/capture.ogg"
+    },
+    {
+      "id": "chaosBolt",
+      "url": "snd/chaosBolt.ogg"
+    },
+    {
+      "id": "chaosOrb",
+      "url": "snd/chaosOrb.ogg"
+    },
+    {
+      "id": "circusOfSlime",
+      "url": "snd/circusOfSlime.ogg"
+    },
+    {
+      "id": "cirmsonFire",
+      "url": "snd/cirmsonFire.ogg"
+    },
+    {
+      "id": "crimsonFire",
+      "url": "snd/crimsonFire.ogg"
+    },
+    {
+      "id": "damage",
+      "url": "snd/damage.ogg"
+    },
+    {
+      "id": "death",
+      "url": "snd/death.ogg"
+    },
+    {
+      "id": "door_knock_3x",
+      "url": "snd/door_knock_3x.ogg"
+    },
+    {
+      "id": "entanglingVines",
+      "url": "snd/entanglingVines.ogg"
+    },
+    {
+      "id": "evilLaugh",
+      "url": "snd/evilLaugh.ogg"
+    },
+    {
+      "id": "fade",
+      "url": "snd/fade.ogg"
+    },
+    {
+      "id": "fadeIn",
+      "url": "snd/fadeIn.ogg"
+    },
+    {
+      "id": "fadeOut",
+      "url": "snd/fadeOut.ogg"
+    },
+    {
+      "id": "fireBreath",
+      "url": "snd/fireBreath.ogg"
+    },
+    {
+      "id": "fireCone",
+      "url": "snd/fireCone.ogg"
+    },
+    {
+      "id": "fireDance",
+      "url": "snd/fireDance.ogg"
+    },
+    {
+      "id": "fireHeal",
+      "url": "snd/fireHeal.ogg"
+    },
+    {
+      "id": "flame",
+      "url": "snd/flame.ogg"
+    },
+    {
+      "id": "freezing",
+      "url": "snd/freezing.ogg"
+    },
+    {
+      "id": "hurricane",
+      "url": "snd/hurricane.ogg"
+    },
+    {
+      "id": "iceBlast",
+      "url": "snd/iceBlast.ogg"
+    },
+    {
+      "id": "iceShard",
+      "url": "snd/iceShard.ogg"
+    },
+    {
+      "id": "iceShock",
+      "url": "snd/iceShock.ogg"
+    },
+    {
+      "id": "laser1",
+      "url": "snd/laser1.ogg"
+    },
+    {
+      "id": "laser2",
+      "url": "snd/laser2.ogg"
+    },
+    {
+      "id": "rockArmour",
+      "url": "snd/rockArmour.ogg"
+    },
+    {
+      "id": "rockBullet",
+      "url": "snd/rockBullet.ogg"
+    },
+    {
+      "id": "rockPellet",
+      "url": "snd/rockPellet.ogg"
+    },
+    {
+      "id": "slimeBlast",
+      "url": "snd/slimeBlast.ogg"
+    },
+    {
+      "id": "sonarBlast",
+      "url": "snd/sonarBlast.ogg"
+    },
+    {
+      "id": "stealHealth",
+      "url": "snd/stealHealth.ogg"
+    },
+    {
+      "id": "stick",
+      "url": "snd/stick.ogg"
+    },
+    {
+      "id": "stranglingBranches",
+      "url": "snd/stranglingBranches.ogg"
+    },
+    {
+      "id": "swap",
+      "url": "snd/swap.ogg"
+    },
+    {
+      "id": "victory",
+      "url": "snd/victory.ogg"
+    },
+    {
+      "id": "whoosh",
+      "url": "snd/whoosh.ogg"
+    }
+  ]
+}
