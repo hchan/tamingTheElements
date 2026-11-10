@@ -22,3 +22,8 @@ export * from './data/types';
 export * from './data/characters';
 export * from './data/text-ids';
 export * from './rules/new-game';
+export * from './sim/commands';
+export * from './sim/events';
+export * from './sim/step';
+export * from './sim/world';
+export * from './sim/systems/movement';
