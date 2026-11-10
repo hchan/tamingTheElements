@@ -16,6 +16,7 @@ export const GAME_ACTIONS = [
   'dash',
   'guard',
   'weather',
+  'charge',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -40,6 +41,8 @@ export const DEFAULT_BINDINGS: Bindings = {
   guard: ['KeyQ'],
   // Arcade only (FUN-DESIGN 2.14): calls the weather of the fighter's element.
   weather: ['KeyR'],
+  // Arcade only (FUN-DESIGN 2.17): the melee Charge. H, because F is the fullscreen toggle.
+  charge: ['KeyH'],
 };
 
 export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
@@ -57,6 +60,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   dash: 'Dash (Arcade)',
   guard: 'Guard (Arcade)',
   weather: 'Weather (Arcade)',
+  charge: 'Charge (Arcade)',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */
