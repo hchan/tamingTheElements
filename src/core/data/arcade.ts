@@ -1,7 +1,7 @@
 /**
  * Arcade ruleset tuning (docs/FUN-DESIGN.md sections 2 and 2.13). Skeleton: each Arcade work package adds its table
  * here as starting values, tuned by the fun metrics. Sim data: changing a value bumps SIM_VERSION. Classic never reads
- * this file.
+ * this file. The per-race Arcade numbers (WP-arcade-numbers) are in `src/core/sim/arcade-numbers.ts`.
  */
 import type { Element } from './elements';
 
@@ -45,10 +45,13 @@ export function hitStrengthFor(slug: string, baseDamage: number, melee: boolean)
 }
 
 /**
- * Hit-stun in game ticks by strength (FUN-DESIGN 2.3): light 12, medium 16, heavy 22, super 26. Each hit taken while
- * already stunned (`juggle`) takes JUGGLE_STUN_STEP off, never below MIN_HIT_STUN_TICKS.
+ * Hit-stun in game ticks by strength (FUN-DESIGN 2.3): light 32, medium 38, heavy 44, super 48. Each hit taken while
+ * already stunned (`juggle`) takes JUGGLE_STUN_STEP off, never below MIN_HIT_STUN_TICKS. WP-arcade-numbers raised them
+ * from the first 12/16/22/26: the projectile cooldowns are 15-30 game ticks (Fire Blast, Sonar Blast and Fireball 30,
+ * Wind Cone and Rock Pellet 20, Icicles 15), so a stun shorter than the cooldown ended before any follow-up could land and median combo
+ * was 1 hit; at 32 a light hit covers one cooldown (median combo 2+ in the round robin). The caps below still bound it.
  */
-export const HIT_STUN_TICKS: PerStrength = [12, 16, 22, 26];
+export const HIT_STUN_TICKS: PerStrength = [32, 38, 44, 48];
 export const JUGGLE_STUN_STEP = 2;
 export const MIN_HIT_STUN_TICKS = 6;
 /** At `juggle >= JUGGLE_LIMIT` the next hit deals damage but no stun and the victim recovers. */
@@ -195,7 +198,12 @@ export const DASH_CANCEL_TICKS = 10;
 export const GUARD_CHIP_PM = 250;
 export const BLOCK_STUN_TICKS = 8;
 export const GUARD_MAX = 1000;
-export const GUARD_DRAIN_PM = 2000;
+/**
+ * 2000 before WP-arcade-numbers. The drain is a share of the guard's max HP, and Arcade lives are now about 4x the
+ * damage that hits them (ARCADE_RACE_NUMBERS: `hpPm / damagePm` is about 4 for every race), so at 2000 a guard took
+ * about 4x the blocked hits to break (a guard held against Fire Blast never broke); 4 x 2000 keeps the hit count.
+ */
+export const GUARD_DRAIN_PM = 8000;
 export const GUARD_REGEN = 5;
 export const GUARD_BREAK_STUN_TICKS = 60;
 export const PARRY_TICKS = 8;

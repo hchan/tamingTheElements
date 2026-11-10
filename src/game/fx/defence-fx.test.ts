@@ -143,7 +143,8 @@ describe('feedback coverage: every defence event of a real Arcade duel gets an e
   const scenarios = {
     'guard held until it breaks': duel(() => Cmd.guard, 1500),
     'guard pressed as each shot arrives': duel((t) => (t % 31 === 0 ? Cmd.guard : 0), 300),
-    'dash into each shot': duel((t) => (t % 31 === 0 ? Cmd.dash | Cmd.right : 0), 200),
+    // 400 ticks: a heavy hit stuns 44 since WP-arcade-numbers, so early dashes are lost to stun; a later one dodges.
+    'dash into each shot': duel((t) => (t % 31 === 0 ? Cmd.dash | Cmd.right : 0), 400),
   };
   const all = Object.values(scenarios).flat();
   const kinds = [SimEventKind.guarded, SimEventKind.parried, SimEventKind.guardBroken, SimEventKind.dashed, SimEventKind.perfectDodge];

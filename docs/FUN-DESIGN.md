@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI) and WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) and WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -137,7 +137,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 
 ### 2.3 Hit-stun, knockback and juggle limits (sim)
 
-- On a hit: `stunUntil = gameTick + stun`, with stun by strength light 12, medium 16, heavy 22, super 26, minus
+- On a hit: `stunUntil = gameTick + stun`, with stun by strength light 32, medium 38, heavy 44, super 48 (12, 16, 22, 26 before WP 24, section 2.13), minus
   `2 * juggle`, but never under 6. A stunned character cannot move or cast. `juggle` counts the hits taken while
   already stunned.
 - Knockback is set in Q4 along the projectile's dir8, or for melee the sign of the attacker-to-victim centre delta:
@@ -270,7 +270,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 ### 2.8 Guard and parry (sim)
 
 - **Guard (hold `Cmd.guard`, default Q / pad LT):** cannot move or cast. Hits take 250 pm chip damage, no hit-stun,
-  8 ticks of block-stun, light knockback. A guard meter (0..1000) drains `floor(dealt * 2000 / maxHp)` per blocked hit
+  8 ticks of block-stun, light knockback. A guard meter (0..1000) drains `floor(dealt * 8000 / maxHp)` (2000 before WP 24) per blocked hit
   and regenerates 5 per game tick while not guarding. At 0: `guardBroken` and 60 ticks of stun.
 - **Parry:** a guard press (rising edge) up to 8 ticks before a hit lands. The hit does no damage, 10 ticks of hit-stop.
   A parried projectile is **reflected**: its dir is reversed and its team and owner become the parrier's. A parried melee
@@ -285,7 +285,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   combo-scale multiply) with `damage` and `guarded {target, attacker, chip}` instead of `hitConfirmed`, keeps the hit's
   strength hit-stop, sets the light knockback and `blockUntil = gameTick + 8`, counts no combo and no confirm (no dash
   cancel), and the meter gains apply to the chip. "Dealt" in the drain is the chip removed:
-  `guardDrain += floor(chip * 2000 / maxHp)`, capped at 1000; at 1000 `guardBroken {target}` follows the `hitStop` and
+  `guardDrain += floor(chip * 8000 / maxHp)`, capped at 1000; at 1000 `guardBroken {target}` follows the `hitStop` and
   the 60-tick stun goes through `applyStun` (caps, `recovered`) instead of the block-stun. The controlled character
   regenerates 5 per unfrozen game tick while it does not guard (a benched one keeps its meter until it is back). A guard
   press is buffered like the dash: the `input` slot, after the dash, uses it once the character could act, and opens the
@@ -453,13 +453,54 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 
 ### 2.13 Arcade numbers that slow the DPS race (data)
 
-The round target is 40-90 s; today one KO takes about 5 s. Starting levers, all in `src/core/data/arcade.ts`, tuned by
-section 4 and never by editing legacy data:
+The round target is 25-60 s (section 4 asks 40-90 s); before WP 24 one round took about 12 s. Built in WP 24
+(`WP-arcade-numbers`), data only, Classic untouched (its goldens differ only in the `simVersion` header, the Classic
+balance baseline moved +0.0 pp on every race):
 
-- `ARCADE_HP_PM = 3000`: Arcade max HP is 3x legacy (applied in `createMatch`'s Arcade branch).
-- Per-ability `damagePm` overrides that pull sustained damage into about 20-40/s: fire-blast 600, sonar-blast 600,
-  rock-pellet 700, slime-blast 2000, ground-shock 1800, hurricane 2000, steal-health 1500; everything else 1000.
-- Hit-stun, knockback and guard break up the fire rate, and parry and dash give the victim an answer.
+- **Per race life and damage** (`ARCADE_RACE_NUMBERS` in `src/core/sim/arcade-numbers.ts`, next to the sim so it ships in
+  the sim chunk, not the menu's core chunk): `[hpPm, damagePm]` per race. Arcade max HP is `floor(maxHealth * hpPm /
+  1000)` (`createMatch`'s Arcade branch); an ability hit deals `damagePm / 1000` of the Classic value, after the weather
+  and before the combo scale (`applyArcadeHit`); the shared super is not scaled. Races outside the table (the dummy,
+  Eternal Void) get 4000 / 1000. The design's first idea (a flat 3x life and per-ability damage) was replaced by per-race
+  pairs found by the tournament: each race's power moved by `(0.5 / winRate) ^ 0.6-0.8` per pass and was split evenly
+  between life and damage, so every race keeps a life-to-damage ratio of about 4 and round length does not depend on
+  the pairing.
+
+| Race | hpPm | damagePm | Win rate before | After (16 seeds) |
+|---|---|---|---|---|
+| curomo | 6140 | 1420 | 39.2% | 50.6% |
+| cyclonius | 4490 | 1010 | 52.3% | 50.6% |
+| echo | 6360 | 1840 | 23.9% | 47.2% |
+| fiara | 5140 | 1750 | 48.9% | 46.9% |
+| ishimi | 6180 | 1550 | 32.4% | 57.1% |
+| lavax | 3320 | 870 | 56.8% | 53.1% |
+| morblass | 3370 | 930 | 80.7% | 45.5% |
+| pax | 5870 | 1580 | 9.1% | 50.9% |
+| rokcore | 2470 | 690 | 86.9% | 43.2% |
+| sindarosa | 2620 | 650 | 70.5% | 50.0% |
+| treenoc | 8470 | 1640 | 24.4% | 56.8% |
+| wispera | 3490 | 800 | 75.0% | 48.3% |
+
+- **Hit-stun** 32 / 38 / 44 / 48 by strength (was 12 / 16 / 22 / 26, `HIT_STUN_TICKS`): the projectile cooldowns are 15-30
+  game ticks, so a shorter stun ended before a follow-up could land and the median combo was 1 hit. The juggle and stun
+  caps (section 2.3) still bound every chain.
+- **Guard drain** 8000 pm (was 2000, `GUARD_DRAIN_PM`): the drain is a share of the guard's max HP, which is now about 4x
+  the damage that hits it, so 4 x 2000 keeps the number of blocked hits that breaks a guard.
+- **Two cooldown overrides** (`ARCADE_COOLDOWN_TICKS`, `cooldownTicksFor`; projectile slots): Fireball 26 (Classic 30) and
+  Crimson Fire 18 (Classic 20). Fiara against Sindarosa and Lavax against Rokcore fired at the same cadence along the
+  start row, so every shot met the other in a clash that destroyed both and the match stood still (every round-robin
+  stalemate was in these pairs).
+
+Measured with `pnpm fun:report --ruleset arcade --all --seeds 8` (528 matches, scripted Arcade AI at Normal, its personality
+drawn per match), before / after: round length median 12.5 / 45.4 s (p10 8.7 / 29.1, p90 22.1 / 74.5), time over 0.0 /
+1.6%, hits per combo median 1 / 2 (p90 5 / 6), first hit median 2.0 / 2.0 s, stalemates 0.9 / 0.2%, best and worst race
+86.9 / 9.1% (spread 77.8 pp) before and 57.4 / 41.5% (15.9 pp) after; the 16-seed baseline
+(`tests/fixtures/balance/arcade-baseline.json`, 1056 matches) has 57.1 / 43.2% (13.9 pp) and 3 stalemates. At AI Hard
+the spread is 23.9 pp (39.8-63.6%, 8 seeds; two Fiara-Ishimi matches hit the 18000-tick cap); at Easy (no supers, combo cap 1, little defence) it is 71.6 pp (Curomo 90%, Cyclonius 18%): Easy is not tuned. What is left: the
+3 stalemates are Ishimi parrying every Rock Pellet or Crimson Fire and the reflections clashing with the next shot (an AI
+habit; the round timer ends it in play), and Treenoc's 8470 life is large because its kit (Vines deal nothing, Branches
+are melee) is weak in the AI's hands. Feel (does 45 s feel long, do 32-tick light stuns feel sticky) needs the owner's
+playtest (section 7).
 
 ### 2.14 Weather (Arcade ability, sim + view)
 
@@ -767,7 +808,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 21 | `WP-arcade-supers-fire-air` | sim+data | Inferno Beam and Vortex archetypes and their 6 race variants | 8 |
 | 22 | `WP-arcade-supers-earth-water` | sim+data | Quake Rings and Tidal Wave archetypes and their 6 race variants | 8 |
 | 23 | `WP-arcade-ai-personalities` (done: section 2.11; Rushdown, Zoner and Turtle, Easy/Normal/Hard, Tagger waits for 19) | agents | Personalities, difficulty knobs, dodge and parry from projectile observation | 10, 15, 16, 19 |
-| 24 | `WP-arcade-numbers` | data | HP pm, damage pm overrides, Arcade balance baseline | 5, 23 |
+| 24 | `WP-arcade-numbers` (done: section 2.13; per-race life and damage, stun 32-48, guard drain 8000, two cooldown overrides, `balance:compare --ruleset arcade` with `arcade-baseline.json`, report-only nightly) | data | HP pm, damage pm overrides, Arcade balance baseline | 5, 23 |
 | 25 | `WP-arcade-gates-tight` | tools+CI | Nightly fun:compare bands, Arcade balance compare, visual states, latency marks | 24 |
 | 26 | `WP-arcade-audio-layers` (done: section 3; Arcade Versus only, its own `arcade-audio` chunk, no audio files) | view | Synth thump, pitch variation, KO music cut | 6 |
 | 27 | `WP-arcade-8way-aim` (done: section 2.12; bands keep the 4-way facing) | sim+view | Arcade-only 8-way aim: cast facing is `dir8FromSigns` of the held input (Classic keeps 4-way `facingFor`, bit-identical); diagonal projectiles, melee arcs and bands from the 8-way facing, aim indicator in the HUD, AI aims diagonally; characters keep 4-way reels | 3 |
@@ -839,8 +880,8 @@ Packages 26 and 27 hang off 6 and 3 and can go anywhere after them. 28 packages 
   inside a version bump. Arcade goldens are re-recorded in the same commit with the reason.
 - **Goldens and baselines.** Classic: `tests/fixtures/replays/*.replay.json` and `tests/fixtures/balance/baseline.json`
   are untouched except the header version. Arcade: new `arcade-*.replay.json` files (1v1 from WP 5, 2v2 from WP 19),
-  replayed in all three browsers by `tests/browser/determinism.browser.test.ts`; `arcade-baseline.json` and
-  `tests/fixtures/fun/arcade-baseline.json` from WP 24.
+  replayed in all three browsers by `tests/browser/determinism.browser.test.ts`; `tests/fixtures/balance/arcade-baseline.json`
+  came with WP 24 (`balance:record --ruleset arcade`); `tests/fixtures/fun/arcade-baseline.json` (`fun:compare`) is WP 25.
 - **Determinism details.** Arcade counters are Int32 (meter, stun, Q4 knockback); damage keeps the Classic float
   arithmetic plus a single `* scalePm / 1000`. No transcendentals (the knockback direction comes from `DIR8_X/Y` or
   signs). No new RNG draws in the sim; AI randomness stays in `AgentRng`. Iteration is in id order (clash pairs `i < j`).

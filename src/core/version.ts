@@ -61,5 +61,10 @@
  *    projectiles of opposing teams clash by their owners' elements, the advantaged one survives with damage
  *    `max(hp - loserHp / 2, hp / 4)`, any other relation destroys both; `clash`, +50 meter to each side
  *    (WP-arcade-clash).
+ * 17: Arcade only (data); Classic hashes unchanged. Arcade numbers: per race, max HP is `floor(maxHealth * hpPm /
+ *    1000)` and ability hits deal `damagePm / 1000` (after the weather, before the combo scale; the super is not
+ *    scaled), from ARCADE_RACE_NUMBERS (default 4000 / 1000); hit-stun by strength is 32/38/44/48 (was 12/16/22/26);
+ *    the guard drain is 8000 pm (was 2000); Fireball and Crimson Fire cool down in 26 and 18 game ticks (Classic 30
+ *    and 20; `cooldownTicksFor`) (WP-arcade-numbers).
  */
-export const SIM_VERSION = 16;
+export const SIM_VERSION = 17;

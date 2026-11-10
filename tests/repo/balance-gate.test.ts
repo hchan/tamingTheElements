@@ -9,7 +9,7 @@ import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { createMatch } from '../../src/core/sim/match';
 import { cooldownIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
-import { BASELINE_PATH, compareReports, type BalanceReport } from '../../tools/sim/balance';
+import { ARCADE_BASELINE_PATH, ARCADE_PARAMS, BASELINE_PATH, FULL_PARAMS, compareReports, type BalanceReport } from '../../tools/sim/balance';
 import { DEFAULT_MAX_TICKS, RACES, makeAgent, runPairing, runTournament } from '../../tools/sim/run-match';
 
 /** PR sample: every pairing, 2 seeds (one per side assignment), level 1, scripted vs scripted. */
@@ -103,5 +103,21 @@ describe('balance baseline', () => {
     expect(compareReports(baseline, withRates(moved)).find((r) => r.race === 'fiara')?.exceeds).toBe(true);
     const rest = Object.fromEntries(Object.entries(baseline.winRates).filter(([k]) => k !== 'fiara'));
     expect(compareReports(baseline, withRates(rest)).find((r) => r.race === 'fiara')?.exceeds).toBe(true);
+  });
+});
+
+describe('Arcade balance baseline (WP-arcade-numbers; compared nightly, report only)', () => {
+  const arcade = JSON.parse(readFileSync(ARCADE_BASELINE_PATH, 'utf8')) as BalanceReport;
+
+  it('is the Arcade round robin over every race, with its own parameters', () => {
+    expect(arcade.params).toEqual(ARCADE_PARAMS);
+    expect(Object.keys(arcade.winRates).sort()).toEqual([...RACES].sort());
+    expect(arcade.matches).toBe((RACES.length * (RACES.length - 1) * ARCADE_PARAMS.seeds) / 2);
+  });
+
+  it('leaves the Classic parameters alone (Classic stays bit-identical)', () => {
+    expect(FULL_PARAMS).not.toHaveProperty('ruleset');
+    const classic = JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) as BalanceReport;
+    expect(classic.params).toEqual(FULL_PARAMS);
   });
 });

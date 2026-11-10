@@ -79,7 +79,7 @@ function landAt(world: SimWorld, g: number, c0: Command = 0): readonly SimEvent[
 describe('guard and parry table (FUN-DESIGN 2.8, 2.12)', () => {
   it('has the design numbers', () => {
     expect([GUARD_CHIP_PM, BLOCK_STUN_TICKS, GUARD_MAX, GUARD_DRAIN_PM, GUARD_REGEN, GUARD_BREAK_STUN_TICKS])
-      .toEqual([250, 8, 1000, 2000, 5, 60]);
+      .toEqual([250, 8, 1000, 8000, 5, 60]);
     expect([PARRY_TICKS, PARRY_HIT_STOP_TICKS, PARRY_STUN_TICKS, PARRY_LOCK_TICKS, METER_PARRY]).toEqual([8, 10, 20, 20, 150]);
   });
 
@@ -162,7 +162,7 @@ describe('guarded hit (rule: 250 pm chip, no hit-stun, 8 ticks of block-stun, li
   });
 });
 
-describe('guard meter (rule: drains floor(dealt * 2000 / maxHp), regenerates 5 per game tick, breaks at 0)', () => {
+describe('guard meter (rule: drains floor(dealt * 8000 / maxHp), regenerates 5 per game tick, breaks at 0)', () => {
   it('drains by the chip share of max HP and regenerates 5 per game tick only while not guarding', () => {
     const world = duel();
     const s = world.state;

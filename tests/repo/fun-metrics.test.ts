@@ -128,6 +128,8 @@ describe('run-match rule options', () => {
   });
 
   it('the scripted agent (Arcade layer included) rewinds with save/load through JSON', () => {
+    // Long enough for a super (Arcade lives are about 4x the hits since WP-arcade-numbers, so the meter fills later).
+    const PLAY_TICKS = 1200;
     const setup: MatchSetup = {
       simVersion: 1, seed: 0x5eed, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
       p1: [{ character: characterId('fiara'), xp: 1 }], p2: [{ character: characterId('morblass'), xp: 1 }],
@@ -138,7 +140,7 @@ describe('run-match rule options', () => {
     const snap = snapshotState(world.state);
     const saved = JSON.stringify(agents.map((a) => a.save()));
     const play = (pair: typeof agents): number[] =>
-      Array.from({ length: 400 }, () => {
+      Array.from({ length: PLAY_TICKS }, () => {
         const c = collectCommands(world, pair);
         step(world, c);
         return c[0] | (c[1] << 16);

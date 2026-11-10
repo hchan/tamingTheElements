@@ -69,7 +69,7 @@ const stunOf = (id: string): number => HIT_STUN[ABILITY_DEFS.findIndex((d) => d.
 
 describe('stun and knockback tables (FUN-DESIGN 2.3)', () => {
   it('has the design numbers', () => {
-    expect(HIT_STUN_TICKS).toEqual([12, 16, 22, 26]);
+    expect(HIT_STUN_TICKS).toEqual([32, 38, 44, 48]);
     expect([JUGGLE_STUN_STEP, MIN_HIT_STUN_TICKS, JUGGLE_LIMIT]).toEqual([2, 6, 5]);
     expect([COMBO_STUN_CAP_TICKS, RECOVERY_INVULN_TICKS, FREEZE_STUN_TICKS]).toEqual([150, 20, 60]);
     expect(KNOCKBACK_Q4).toEqual([96, 144, 224, 256]);
@@ -80,7 +80,7 @@ describe('stun and knockback tables (FUN-DESIGN 2.3)', () => {
   it('per ability: stun by strength, Tornado and Entangling Vines 60', () => {
     expect(HIT_STUN).toHaveLength(ABILITY_DEFS.length);
     const want: Record<string, number> = {
-      'wind-cone': 12, fireball: 16, 'fire-blast': 22, 'ground-shock': 22, hurricane: 12, tornado: 60,
+      'wind-cone': 32, fireball: 38, 'fire-blast': 44, 'ground-shock': 44, hurricane: 32, tornado: 60,
       'entangling-vines': 60,
     };
     for (const [id, n] of Object.entries(want)) expect([id, stunOf(id)]).toEqual([id, n]);
@@ -89,10 +89,10 @@ describe('stun and knockback tables (FUN-DESIGN 2.3)', () => {
 
 describe('hit-stun', () => {
   const cases = [
-    ['cyclonius', Cmd.secondary, 'wind-cone', 12],
-    ['fiara', Cmd.secondary, 'fireball', 16],
-    ['sindarosa', Cmd.primary, 'fire-blast', 22],
-    ['pax', Cmd.secondary, 'ground-shock', 22],
+    ['cyclonius', Cmd.secondary, 'wind-cone', 32],
+    ['fiara', Cmd.secondary, 'fireball', 38],
+    ['sindarosa', Cmd.primary, 'fire-blast', 44],
+    ['pax', Cmd.secondary, 'ground-shock', 44],
     ['cyclonius', Cmd.primary, 'tornado', 60],
   ] as const;
   for (const [race, cmd, id, n] of cases) {
@@ -116,7 +116,7 @@ describe('hit-stun', () => {
     const s = world.state;
     const [game] = firstHit(world, Cmd.primary);
     const until = s.arcade[E(1, ArcadeE.stunUntil)] ?? 0;
-    expect(until).toBe(game + 22);
+    expect(until).toBe(game + 44);
     const cd = cooldownIdx(1, 0);
     const ready = s.abil[cd];
     while (now(s) < until) {

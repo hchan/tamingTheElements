@@ -5,6 +5,7 @@ import {
   WEATHER_ELEMENTS, WEATHER_PM, WEATHER_RECOVERY_TICKS, WEATHER_TICKS, Weather,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
+import { arcadeRaceNumbers } from '../../arcade-numbers';
 import type { Element } from '../../../data/elements';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -27,6 +28,11 @@ import { canAct } from './stun';
 import { weatherDamage } from './weather';
 
 const W = Cmd.weather;
+/** The attacker race's Arcade damage pm (FUN-DESIGN 2.13), applied after the weather exactly as `applyArcadeHit` does. */
+const racePm = (race: string, dmg: number): number => {
+  const pm = arcadeRaceNumbers(race)[1];
+  return pm === 1000 ? dmg : (dmg * pm) / 1000;
+};
 const E = (id: number, f: number): number => id * ARCADE_E + f;
 const T = (team: number, f: number): number => ARCADE_TEAM_BASE + team * ARCADE_T + f;
 const AW = (f: number): number => ARCADE_WORLD_BASE + f;
@@ -121,13 +127,15 @@ describe('damage modifier (rule: favoured x1.2, counter /1.2, after the chart, b
           const raw = computeDamage({ base: 10, attackerMult: s.dmgMult[0] ?? 1, attEl: att, defEl: def, defReductionPct: 0 });
           const sink = new EventSink(0);
           applyArcadeHit(w, sink, 0, 0, 1, 10, 0, 0);
-          expect(of(sink.events, SimEventKind.damage)[0]?.['amount'], `${att} on ${def}, weather ${String(kind)}`).toBe(factor(kind, att, raw));
+          expect(of(sink.events, SimEventKind.damage)[0]?.['amount'], `${att} on ${def}, weather ${String(kind)}`).toBe(
+            racePm(RACE[att], factor(kind, att, raw)),
+          );
         }
       }
     }
   });
 
-  it('applies before the combo scale: hit 3 of a combo under Sun is (raw * 1200 / 1000) * 900 / 1000', () => {
+  it('applies before the race pm and the combo scale: hit 3 under Sun is ((raw * 1200 / 1000) * pm / 1000) * 900 / 1000', () => {
     const w = duel('sindarosa', 'pax');
     const s = w.state;
     setWeather(w, Weather.sun);
@@ -137,7 +145,7 @@ describe('damage modifier (rule: favoured x1.2, counter /1.2, after the chart, b
     const sink = new EventSink(0);
     applyArcadeHit(w, sink, 0, 0, 1, 40, 0, 0);
     expect(of(sink.events, SimEventKind.hitConfirmed)[0]).toMatchObject({ combo: 3, scalePm: COMBO_SCALE_PM[2] });
-    expect(of(sink.events, SimEventKind.damage)[0]?.['amount']).toBe((((raw * 1200) / 1000) * 900) / 1000);
+    expect(of(sink.events, SimEventKind.damage)[0]?.['amount']).toBe((racePm('sindarosa', (raw * 1200) / 1000) * 900) / 1000);
   });
 
   it('never changes who wins a mirror: both sides of a mirror take the same factor', () => {

@@ -354,7 +354,7 @@ describe('dash properties', () => {
         });
         expect(rest).toEqual(hashes.slice(k));
       }),
-      { numRuns: 100, seed: 0xda54 },
+      { numRuns: 160, seed: 0xda54 },
     );
     expect(dashes).toBeGreaterThan(120);
     expect(dodges).toBeGreaterThan(2);

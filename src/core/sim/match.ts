@@ -11,6 +11,7 @@ import { allocEntity } from './alloc';
 import { ABILITY_SLOTS, EntityFlag, EntityKind, TEAM_STRIDE, TeamField, World as W } from './state';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { startRestTimer } from './systems/rest';
+import { arcadeRaceNumbers } from './arcade-numbers';
 import { createWorld, DEFAULT_ARENA, type SimWorld } from './world';
 
 /** One team's members in garrison order; the first is the active character, the rest start benched. */
@@ -64,9 +65,11 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
     s.py[id] = START_Y;
     s.w[id] = CHARACTER_WIDTH;
     s.h[id] = CHARACTER_HEIGHT;
-    s.hp[id] = stats.maxHealth;
-    s.maxHp[id] = stats.maxHealth;
-    s.restCap[id] = stats.maxHealth;
+    // Arcade life (FUN-DESIGN 2.13): the race's hpPm of the Classic value, floored. Classic keeps it as it is.
+    const maxHp = setup.flags.rulesetArcade ? Math.floor((stats.maxHealth * arcadeRaceNumbers(def.id)[0]) / 1000) : stats.maxHealth;
+    s.hp[id] = maxHp;
+    s.maxHp[id] = maxHp;
+    s.restCap[id] = maxHp;
     s.dmgMult[id] = stats.damageMultiplier;
     s.healMult[id] = stats.healMultiplier;
     s.speed[id] = def.speed;
