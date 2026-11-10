@@ -49,6 +49,8 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`) and typed keys (`keys.ts`) |
 | `src/game/boot/` | Phaser boot: WebGL check, error screen and game config (`phaser-config.ts` is the only file that pulls Phaser in, loaded lazily) |
 | `src/game/scenes/` | Phaser scenes |
+| `src/game/cine/` | Cinematic script data types (`types.ts`, append-only) consumed by the CinematicScene runner |
+| `src/game/cinematics/scripts/` | Cinematic scripts as data ported from legacy `scenes.js`: Homeworld: Pria and The Disturbance (captions verbatim) |
 | `src/game/views/` | Arena renderer views: pooled `CharacterView` sprites and the pure `EntityViewPool`; the `Arena` scene (in `src/game/scenes/`) reads the core `RenderView` facade (`src/core/sim/view.ts`) and interpolates by the step driver's alpha; `?ff=arenaDemo` runs a bot-vs-bot match |
 | `src/game/hud/` | Pure top-HUD geometry and data (`bars.ts`: legacy `topHUD.js` layout at 1280, health colour ramp; `buffs.ts`: buff slots; `action-bar.ts`: action bar slots, key labels, cooldown sweep, click-to-Command, fed by `RenderView.actionBar`); the parallel `Hud` scene (`src/game/scenes/Hud.ts`) draws them from the `RenderView` and never decides death (intentional divergence from legacy) |
 | `src/game/fx/` | Cosmetic sim-event effects (`event-fx.ts`): damage flash, hit particles and shake, deduped by event id `(tick,sourceId,kind,seq)` in a bounded set, own cosmetic RNG, reduced-motion aware; pooled `ProjectileView` lives in `src/game/views/` |
