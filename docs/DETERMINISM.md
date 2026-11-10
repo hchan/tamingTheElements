@@ -60,6 +60,11 @@ streams) is `combat, capture, spawn, meta, cosmetic`; `AGENT_STREAM_NAMES` is `a
 - `SimState` is mutated only by `step()`. Agents never write it: each agent owns an `AgentRng` (`src/core/agents/agent-rng.ts`),
   `seedSfc32(matchSeed, 'ai.p1' | 'ai.p2')` by side, seeded from `ObservationView.matchSeed` on the first draw. So the same
   setup and commands give the same hash whether or not an agent was asked for a command (`src/core/agents/agents.test.ts`).
+- The Arcade AI layer (`src/core/agents/scripted-ai/arcade.ts`, `ArcadeTactics`) reads `ObservationView.arcade`, a copy of
+  visible Arcade state, and draws its reaction delay from the agent's own `AgentRng` once per confirm. Without
+  `view.arcade` (Classic) it returns the command unchanged and draws nothing, so Classic agent streams and decisions are
+  identical. Its memory (confirm tick, reaction) is in the agent's `save()`. AI is not sim state, so it needs no
+  `SIM_VERSION` bump; the Arcade golden is re-recorded because its commands come from the AI.
 
 ## LUTs and directions
 

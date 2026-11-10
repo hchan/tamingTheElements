@@ -67,7 +67,7 @@ flowchart LR
 ```
 
 Real files: input in `src/game/input/keyboard-agent.ts`; agents in `src/core/agents/` (`agent.ts`, `random-bot.ts`,
-`replay-agent.ts`, `scripted-ai/attack.ts`); view in `src/core/sim/view.ts`; scenes in `src/game/scenes/`; results in
+`replay-agent.ts`, `scripted-ai/attack.ts`, `scripted-ai/arcade.ts`); view in `src/core/sim/view.ts`; scenes in `src/game/scenes/`; results in
 `src/core/rules/results.ts`; storage in `src/game/platform/storage/`; app flow in `src/game/app/flow.ts`.
 
 ## Sim state layout
@@ -135,7 +135,10 @@ capture, swap1..4; bits 11..15 reserved in Classic, while Arcade opens 11..13 fo
 gives the accepted bits for the net session and replay validation). An `Agent` (`src/core/agents/agent.ts`) turns a read-only `ObservationView` into a
 `Command`; it must be a pure function of the view plus its own memory and random stream (`AgentRng`, seeded from
 `view.matchSeed` and the side). Neither lives in `SimState`, and `collectCommands` only reads the world: `step` is the only
-thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents.
+thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents. In Arcade the view also
+carries `arcade` (`ArcadeView`: both meters, both stuns, the freeze, both live combos, own super running; only what the HUD
+shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`) reads; Classic views have no `arcade`, so Classic
+agents decide exactly as before.
 
 ## Events and stable ids
 
@@ -165,8 +168,8 @@ outside `SimState`. `combat`, `capture`, `spawn` are reserved for the sim and `m
   entry of a tick and drops the entries pushed after it. Each entry can carry a payload (`SnapshotRing<AgentSnapshot>`)
   for state outside `SimState` that must rewind with it. `state.ts` also has the allocating
   `snapshotState`/`restoreState` pair.
-- Agent memory (`RandomBot`'s held command, `ScriptedAI`'s movement timers, facing and previous position, every agent's
-  `AgentRng`) is not in `SimState`. `Agent.save()`/`load()` copy it as plain JSON data, and `saveAgents`/`loadAgents`
+- Agent memory (`RandomBot`'s held command, `ScriptedAI`'s movement timers, facing and previous position, the Arcade
+  layer's confirm tick and reaction delay, every agent's `AgentRng`) is not in `SimState`. `Agent.save()`/`load()` copy it as plain JSON data, and `saveAgents`/`loadAgents`
   (`src/core/agents/agent.ts`) make the `AgentSnapshot` to store next to the world snapshot, so a bot issues the same
   commands after a restore (`src/core/agents/agent-snapshot.test.ts`).
 - `src/core/sim/hash.ts`: FNV-1a 32 over every value as little-endian bytes in `stateArrays` order, read as 32-bit words
