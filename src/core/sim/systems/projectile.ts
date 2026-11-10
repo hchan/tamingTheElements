@@ -42,8 +42,9 @@ function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: Abili
   const s = world.state;
   const id = allocEntity(s);
   if (id < 0) return false;
-  const w = (def.w ?? 0) * CHARACTER_WIDTH;
-  const h = (def.h ?? 0) * CHARACTER_HEIGHT;
+  // Set A sizes are fractions of the character box; set B (Ice Blast, the only projectile there) stores pixels.
+  const w = def.kind === 'debuff' ? (def.w ?? 0) : (def.w ?? 0) * CHARACTER_WIDTH;
+  const h = def.kind === 'debuff' ? (def.h ?? 0) : (def.h ?? 0) * CHARACTER_HEIGHT;
   const x = (s.x[charId] ?? 0) + ((s.w[charId] ?? 0) - w) / 2;
   const y = (s.y[charId] ?? 0) + ((s.h[charId] ?? 0) - h) / 2;
   const speed = def.speed ?? 0;
@@ -72,7 +73,7 @@ function fire(world: SimWorld, team: number, charId: number, slot: number, tick:
   const abilityId = CHARACTERS[s.defId[charId] ?? 0]?.abilities[slot];
   const defIdx = ABILITY_DEFS.findIndex((d) => d.id === abilityId);
   const def = ABILITY_DEFS[defIdx];
-  if (def === undefined || (def.kind !== 'range' && def.kind !== 'omni')) return;
+  if (def === undefined || (def.kind !== 'range' && def.kind !== 'omni' && def.kind !== 'debuff')) return;
   if (!canFire(world, team, charId, slot, def, defIdx)) return;
   if (def.kind === 'omni') {
     // KNOWN-BUG:omni-no-cooldown: legacy omni abilities never go through doRange, so curCount is
