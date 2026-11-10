@@ -42,7 +42,7 @@ const live = (page: Page): Promise<string> =>
   page.evaluate<string>(`[document.getElementById('liveRegion'), document.getElementById('liveRegionAssertive')].map((n) => n ? n.textContent : '').join(' | ')`);
 
 /** Demo arena (Curomo vs Pax) past the intro, Curomo 80 px left of Pax, facing: Shards of Ice land within a few ticks. */
-async function demo(page: Page, ff: string, foeX = 580): Promise<void> {
+async function demo(page: Page, ff: string, foeX = 180): Promise<void> {
   await page.goto(`/?ff=${ff}&manual=1&seed=7`);
   await page.locator('#game canvas').waitFor();
   await page.waitForFunction(ARENA_READY);
@@ -50,8 +50,8 @@ async function demo(page: Page, ff: string, foeX = 580): Promise<void> {
     const a = window.__TTE__.arena;
     a.step(${String(INTRO)});
     const [me, foe] = a.characters();
-    a.place(me.id, 500, 360, 0);
-    a.place(foe.id, ${String(foeX)}, 360, 4);
+    a.place(me.id, 100, 380, 0);
+    a.place(foe.id, ${String(foeX)}, 380, 4);
   })()`);
 }
 
@@ -68,7 +68,7 @@ async function guardedHit(page: Page): Promise<void> {
  */
 async function parry(page: Page): Promise<number> {
   for (let i = 1; i <= 4; i++) {
-    await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(COOLDOWN)}); const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 580, 360, 4); })()`);
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(COOLDOWN)}); const [me, foe] = a.characters(); a.place(me.id, 100, 380, 0); a.place(foe.id, 180, 380, 4); })()`);
     await step(page, 1, [0, GUARD]);
     await step(page, 1, [PRIMARY, 0]);
     await step(page, 3);
