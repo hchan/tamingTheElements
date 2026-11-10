@@ -349,6 +349,21 @@ describe('known legacy bugs (current behaviour)', () => {
     expect(result).toEqual({ bulletComponents: 0, enemyDead: true, survive: [true, true] });
   });
 
+  it('end delay: the Victory scene starts about 3000 ms after the last enemy dies', () => {
+    const env = loadLegacy({ seed: 1 });
+    env.run(`${PRELUDE}
+      Swap.swapNextAliveTeammate = function () { return false; };
+      globalThis.scenes = [];
+      Crafty.scene = function (n) { scenes.push(n); };
+      var last = fighter('EnemyCharacter', { isDead: false });
+      last.unbind('EnterFrame');
+      last.die();`);
+    env.clock.advance(2980);
+    const early = env.run('scenes.slice()') as string[];
+    env.clock.advance(40);
+    expect({ early, later: env.run('scenes.slice()') }).toEqual({ early: [], later: ['Victory'] });
+  });
+
   it('damage-uses-target-mult: applyDamage scales by the victim target damageMultiplier, not the hitter', () => {
     // KNOWN-BUG:damage-uses-target-mult
     const env = loadLegacy({ seed: 1 });

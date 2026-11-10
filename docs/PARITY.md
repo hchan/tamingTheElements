@@ -75,9 +75,10 @@ sign-off playtest. Bug slugs are those of [docs/legacy/KNOWN-BUGS.md](legacy/KNO
 | U09 | Legacy save (each v0 fixture, incl. string-typed settings) loads with an identical garrison and chapter | v0 localStorage | `migrate`, local store | matches | `src/core/save/migrate.test.ts#migrates`<br>`src/core/save/migrate.test.ts#normalises numeric strings and preserves unknown fields`<br>`src/game/platform/storage/local-save-store.test.ts#migrates v0 once, backs it up raw and writes v1 back`<br>`src/ui/screens/main-menu.test.ts#migrates a legacy v0 save` |
 | U10 | HUD health/rest bars and cooldown sweep geometry | `topHUD`, `drawCooldown` | HUD helpers | matches | `src/game/hud/hud.test.ts#matches legacy topHUD at 1280`<br>`src/game/hud/hud.test.ts#is green at full, yellow at half, red at zero`<br>`src/game/hud/action-bar.test.ts#starts as the full square from top-centre and ends as a thin wedge` |
 | U11 | Cinematic captions verbatim, ordering, pacing | `scenes.js` | `CinematicRunner` + scripts | open | `tests/repo/cine-scripts-a.test.ts#text matches legacy scenes.js verbatim` covers script set A only; the rest and pacing are manual (WP 96) |
-| U12 | Sprites, animations, backgrounds per element, sounds per ability, mute | assets | views, audio manager | open | `src/game/audio/audio-manager.test.ts#only maps to ids present in the manifest`<br>`src/game/audio/audio-manager.test.ts#toggles mute via the input effect and reports it` (logic only; visuals and sounds manual, WP 96) |
+| U12 | Sprites, animations, backgrounds per element, sounds per ability, mute | assets; `death` only when the player's team is wiped, `victory` on the Victory scene, `evilLaugh` when Capture meets the last boss, `swap` on a swap, a sound per ability cast | views, audio manager; `matchEnded` plays `victory` for a player win and `death` otherwise, a single death is silent, `captureFailed` plays `evilLaugh`; no cast events in the sim yet, so cast sounds are missing | open | `src/game/audio/audio-manager.test.ts#only maps to ids present in the manifest`<br>`src/game/audio/audio-manager.test.ts#plays victory only for a player win, death for a defeat or draw`<br>`src/game/audio/audio-manager.test.ts#toggles mute via the input effect and reports it` (logic only; visuals, cast sounds and the rest manual, WP 96) |
 | U13 | Victory/defeat results text | results screen | `resultsView` | matches | `src/ui/screens/results.test.ts#formats victory text like legacy`<br>`src/ui/screens/results.test.ts#defeat has text and continues to garrison` |
 | U14 | Default ability keys (needs owner sign-off) | positional: digit N fires action-bar slot N (primary, secondary, then Capture from chapter 2, then Swap1/Swap2), so 3 = Swap1 and 4 = Swap2 in chapter 1, and 3 = Capture, 4/5 = Swap1/2 from chapter 2 | fixed in every chapter: C = Capture, 3/4/5 = Swap 1/2/3 (rebindable, V15, V19); kept until the owner decides | open | `tests/legacy/known-bugs.characterization.test.ts#player keys: digit N is action-bar slot N`<br>`src/game/platform/input/bindings.test.ts#Capture is C and digits 3 to 5 are Swap 1 to 3 in every chapter` |
+| U15 | Beat between the final death and the results screen (needs owner sign-off) | `die()` schedules the Victory / YouJustDied scene with `delay(fn, 3000, 0)` | `END_DELAY_MS` 1200 in `Arena.ts` | open | `tests/legacy/known-bugs.characterization.test.ts#end delay: the Victory scene starts about 3000 ms after the last enemy dies` |
 
 ## Intentional divergences
 
@@ -115,8 +116,9 @@ Nothing below is fixed by the checklist work; each needs its own WP or the WP 96
 
 - C25: ScriptedAI movement and match feel (manual).
 - U11: cinematic captions beyond script set A and pacing (manual).
-- U12: sprites, animations, sounds (manual).
+- U12: sprites, animations, sounds (manual); cast sounds need sim cast events.
 - U14: default ability keys differ from legacy (positional digits); owner sign-off needed before changing either side.
+- U15: the end-of-match beat is 1.2 s, legacy waits 3 s before the results scene; owner call (it lengthens every e2e battle).
 - E2E: `tests/e2e/parity/golden-paths.spec.ts` covers golden paths 1-9 plus 1c (Story Mode) and 9b (portal via game master presets); none is `test.fixme`. The story chain plays all four legacy scenes (Pria, The Disturbance, Call of the Tamer, Restoring Balance) with per-frame fades approximated by one tween per sprite; the save is written when it ends or is skipped, then the app goes to the garrison (legacy went to chapter 1 objectives).
 
 ## Sign-off
