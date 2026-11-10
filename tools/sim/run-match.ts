@@ -24,7 +24,7 @@ import { EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { DEFAULT_ARENA } from '../../src/core/sim/world';
 import { RANGED } from '../../src/core/sim/systems/arcade/meter';
-import { SUPER_DEF } from '../../src/core/sim/systems/arcade/hit';
+import { CHARGE_DEF, SUPER_DEF } from '../../src/core/sim/systems/arcade/hit';
 import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
 import { type FunMetrics, reduceFunMetrics } from './fun-metrics';
 
@@ -41,6 +41,8 @@ export type Ruleset = 'classic' | 'arcade';
 export const UNATTRIBUTED = 'melee-or-status';
 /** Damage source name of Arcade super hits (`hitConfirmed.ability === SUPER_DEF`, outside ABILITY_DEFS). */
 export const SUPER_SOURCE = 'super';
+/** Damage source name of Arcade charge arrival hits (`ability === CHARGE_DEF`). */
+export const CHARGE_SOURCE = 'charge';
 
 export const DEFAULT_MAX_TICKS = 9000; // 3 minutes
 /**
@@ -361,7 +363,7 @@ export function runMatch(o: MatchOptions): MatchResult {
       if (arcade) log.push(e);
       if (arcade && e.kind === SimEventKind.hitConfirmed) {
         // Arcade names the ability on every hit (melee included), so nothing is approximated for hits.
-        const name = e['ability'] === SUPER_DEF ? SUPER_SOURCE : (ABILITY_DEFS[e['ability'] ?? -1]?.id ?? 'unknown');
+        const name = e['ability'] === SUPER_DEF ? SUPER_SOURCE : e['ability'] === CHARGE_DEF ? CHARGE_SOURCE : (ABILITY_DEFS[e['ability'] ?? -1]?.id ?? 'unknown');
         const amount = e['amount'] ?? 0;
         byAbility[name] = (byAbility[name] ?? 0) + amount;
         const victim = s.team[e['target'] ?? 0] ?? 0;
