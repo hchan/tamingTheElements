@@ -1,0 +1,1390 @@
+{
+ "range:80x80": {
+  "offsets": [
+   0,
+   5,
+   16,
+   24,
+   32,
+   40,
+   48,
+   64,
+   80,
+   100,
+   120,
+   128,
+   160,
+   200,
+   240,
+   320
+  ],
+  "Ground Shock": {
+   "type": "Melee",
+   "w": 240,
+   "h": 240,
+   "helper": "explosion",
+   "rows": [
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000"
+   ]
+  },
+  "Hurricane": {
+   "type": "Melee",
+   "w": 240,
+   "h": 240,
+   "helper": "explosion",
+   "rows": [
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000"
+   ]
+  },
+  "Steal Health": {
+   "type": "Melee",
+   "w": 240,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000"
+   ]
+  },
+  "Ice Shock": {
+   "type": "Melee",
+   "w": 240,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000"
+   ]
+  },
+  "Strangling Branches": {
+   "type": "Melee",
+   "w": 120,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000"
+   ]
+  },
+  "Entangling Vines": {
+   "type": "Melee",
+   "w": 360,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000",
+    "1111110000000000"
+   ]
+  }
+ },
+ "range:40x120": {
+  "offsets": [
+   0,
+   5,
+   16,
+   24,
+   32,
+   40,
+   48,
+   64,
+   80,
+   100,
+   120,
+   128,
+   160,
+   200,
+   240,
+   320
+  ],
+  "Ground Shock": {
+   "type": "Melee",
+   "w": 240,
+   "h": 240,
+   "helper": "explosion",
+   "rows": [
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000"
+   ]
+  },
+  "Hurricane": {
+   "type": "Melee",
+   "w": 240,
+   "h": 240,
+   "helper": "explosion",
+   "rows": [
+    "1111111111000000",
+    "1111111111000000",
+    "1111111111000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000"
+   ]
+  },
+  "Steal Health": {
+   "type": "Melee",
+   "w": 240,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000"
+   ]
+  },
+  "Ice Shock": {
+   "type": "Melee",
+   "w": 240,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000"
+   ]
+  },
+  "Strangling Branches": {
+   "type": "Melee",
+   "w": 120,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000"
+   ]
+  },
+  "Entangling Vines": {
+   "type": "Melee",
+   "w": 360,
+   "h": 40,
+   "helper": "directional",
+   "rows": [
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000",
+    "1111111000000000"
+   ]
+  }
+ },
+ "range:sign": {
+  "right": true,
+  "left": true,
+  "far": false
+ },
+ "adrenaline": {
+  "before": {
+   "speed": {
+    "v": 5,
+    "hex": "4014000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "pax",
+   "controlsDisabled": null
+  },
+  "after": {
+   "speed": {
+    "v": 10,
+    "hex": "4024000000000000"
+   },
+   "dmgDec": 25,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "paxAdrenaline",
+   "controlsDisabled": null
+  },
+  "info": {
+   "lastUsed": 1577836800000
+  },
+  "buff": {
+   "lastUsed": 1577836800000,
+   "duration": 3000,
+   "type": "friendly"
+  },
+  "fourway": [
+   [
+    5
+   ],
+   [
+    10
+   ]
+  ],
+  "at3000": {
+   "v": 10,
+   "hex": "4024000000000000"
+  },
+  "expired": {
+   "speed": {
+    "v": 5,
+    "hex": "4014000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "pax",
+   "controlsDisabled": null
+  },
+  "fourwayAfter": [
+   [
+    5
+   ],
+   [
+    10
+   ],
+   [
+    5
+   ]
+  ]
+ },
+ "adrenaline:stack": {
+  "stacked": {
+   "speed": {
+    "v": 15,
+    "hex": "402e000000000000"
+   },
+   "dmgDec": 50,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "paxAdrenalineAdrenaline",
+   "controlsDisabled": null
+  },
+  "error": "Cannot read properties of undefined (reading 'rightFrames')",
+  "afterFirst": {
+   "speed": {
+    "v": 10,
+    "hex": "4024000000000000"
+   },
+   "dmgDec": 25,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "paxAdrenalineAdrenaline",
+   "controlsDisabled": null
+  }
+ },
+ "fireDance": {
+  "before": {
+   "speed": {
+    "v": 6,
+    "hex": "4018000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "lavax",
+   "controlsDisabled": null
+  },
+  "after": {
+   "speed": {
+    "v": 8,
+    "hex": "4020000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "lavax",
+   "controlsDisabled": null
+  },
+  "buff": {
+   "lastUsed": 1577836800000,
+   "duration": 5000,
+   "type": "friendly"
+  },
+  "spriteAlpha0": 0.5,
+  "alpha1s": {
+   "v": 0.4411793965015034,
+   "hex": "3fdc3c4881e9267c"
+  },
+  "at4980": {
+   "v": 8,
+   "hex": "4020000000000000"
+  },
+  "expired": {
+   "speed": {
+    "v": 6,
+    "hex": "4018000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "lavax",
+   "controlsDisabled": null
+  },
+  "spriteDestroyed": true
+ },
+ "rockArmour": {
+  "plain": [
+   {
+    "v": 8,
+    "hex": "4020000000000000"
+   },
+   {
+    "v": 32,
+    "hex": "4040000000000000"
+   },
+   {
+    "v": 112,
+    "hex": "405c000000000000"
+   }
+  ],
+  "armoured": {
+   "dec": 75,
+   "sprite": "rokcoreRockArmour",
+   "hits": [
+    {
+     "v": 2,
+     "hex": "4000000000000000"
+    },
+    {
+     "v": 8,
+     "hex": "4020000000000000"
+    },
+    {
+     "v": 28,
+     "hex": "403c000000000000"
+    }
+   ]
+  },
+  "expired": {
+   "dec": 0,
+   "sprite": "rokcore"
+  }
+ },
+ "translucency:Translucent Flame": {
+  "before": {
+   "speed": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "sindarosa",
+   "controlsDisabled": null
+  },
+  "defaultSprite": "sindarosa",
+  "during": {
+   "speed": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": true,
+   "sprite": "translucentFlame",
+   "controlsDisabled": null
+  },
+  "buff": {
+   "lastUsed": 1577836800000,
+   "duration": 1500,
+   "type": "friendly"
+  },
+  "size": [
+   80,
+   80
+  ],
+  "justBefore": true,
+  "after": {
+   "speed": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "sindarosa",
+   "controlsDisabled": null
+  }
+ },
+ "translucency:dead:Translucent Flame": {
+  "speed": {
+   "v": 7,
+   "hex": "401c000000000000"
+  },
+  "dmgDec": 0,
+  "hp": {
+   "v": 100,
+   "hex": "4059000000000000"
+  },
+  "frozen": false,
+  "translucent": true,
+  "sprite": "translucentFlame",
+  "controlsDisabled": null
+ },
+ "translucency:Fade": {
+  "before": {
+   "speed": {
+    "v": 6,
+    "hex": "4018000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "echo",
+   "controlsDisabled": null
+  },
+  "defaultSprite": "echo",
+  "during": {
+   "speed": {
+    "v": 6,
+    "hex": "4018000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": true,
+   "sprite": "echoFade",
+   "controlsDisabled": null
+  },
+  "buff": {
+   "lastUsed": 1577836800000,
+   "duration": 3000,
+   "type": "friendly"
+  },
+  "size": [
+   80,
+   80
+  ],
+  "justBefore": true,
+  "after": {
+   "speed": {
+    "v": 6,
+    "hex": "4018000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "echo",
+   "controlsDisabled": null
+  }
+ },
+ "translucency:dead:Fade": {
+  "speed": {
+   "v": 6,
+   "hex": "4018000000000000"
+  },
+  "dmgDec": 0,
+  "hp": {
+   "v": 100,
+   "hex": "4059000000000000"
+  },
+  "frozen": false,
+  "translucent": true,
+  "sprite": "echoFade",
+  "controlsDisabled": null
+ },
+ "tornado": {
+  "frozen": {
+   "speed": {
+    "v": 5,
+    "hex": "4014000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": true,
+   "translucent": false,
+   "sprite": "pax",
+   "controlsDisabled": null,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "added": {
+   "spriteColor": true,
+   "calls": [
+    [
+     null,
+     null,
+     255,
+     null
+    ]
+   ]
+  },
+  "expired": {
+   "speed": {
+    "v": 5,
+    "hex": "4014000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": false,
+   "translucent": false,
+   "sprite": "pax",
+   "controlsDisabled": null,
+   "spriteColor": false
+  },
+  "translucentImmune": false
+ },
+ "tornado:casterDead": {
+  "speed": {
+   "v": 5,
+   "hex": "4014000000000000"
+  },
+  "dmgDec": 0,
+  "hp": {
+   "v": 150,
+   "hex": "4062c00000000000"
+  },
+  "frozen": true,
+  "translucent": false,
+  "sprite": "pax",
+  "controlsDisabled": null
+ },
+ "iceBlast:clamps": {
+  "normal:7": {
+   "start": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "hit": {
+    "v": 5,
+    "hex": "4014000000000000"
+   },
+   "expired": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "normal:3": {
+   "start": {
+    "v": 3,
+    "hex": "4008000000000000"
+   },
+   "hit": {
+    "v": 1,
+    "hex": "3ff0000000000000"
+   },
+   "expired": {
+    "v": 3,
+    "hex": "4008000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "normal:2.1": {
+   "start": {
+    "v": 2.1,
+    "hex": "4000cccccccccccd"
+   },
+   "hit": {
+    "v": 0.10000000000000009,
+    "hex": "3fb99999999999a0"
+   },
+   "expired": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "normal:2": {
+   "start": {
+    "v": 2,
+    "hex": "4000000000000000"
+   },
+   "hit": {
+    "v": 0,
+    "hex": "0000000000000000"
+   },
+   "expired": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "normal:1": {
+   "start": {
+    "v": 1,
+    "hex": "3ff0000000000000"
+   },
+   "hit": {
+    "v": 3.5,
+    "hex": "400c000000000000"
+   },
+   "expired": {
+    "v": 5.5,
+    "hex": "4016000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "normal:0.5": {
+   "start": {
+    "v": 0.5,
+    "hex": "3fe0000000000000"
+   },
+   "hit": {
+    "v": 3.5,
+    "hex": "400c000000000000"
+   },
+   "expired": {
+    "v": 5.5,
+    "hex": "4016000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "normal:0.2": {
+   "start": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "hit": {
+    "v": 3.5,
+    "hex": "400c000000000000"
+   },
+   "expired": {
+    "v": 5.5,
+    "hex": "4016000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "normal:0": {
+   "start": {
+    "v": 0,
+    "hex": "0000000000000000"
+   },
+   "hit": {
+    "v": 3.5,
+    "hex": "400c000000000000"
+   },
+   "expired": {
+    "v": 5.5,
+    "hex": "4016000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:7": {
+   "start": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "hit": {
+    "v": 5,
+    "hex": "4014000000000000"
+   },
+   "expired": {
+    "v": 7,
+    "hex": "401c000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:3": {
+   "start": {
+    "v": 3,
+    "hex": "4008000000000000"
+   },
+   "hit": {
+    "v": 1,
+    "hex": "3ff0000000000000"
+   },
+   "expired": {
+    "v": 3,
+    "hex": "4008000000000000"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:2.1": {
+   "start": {
+    "v": 2.1,
+    "hex": "4000cccccccccccd"
+   },
+   "hit": {
+    "v": 0.10000000000000009,
+    "hex": "3fb99999999999a0"
+   },
+   "expired": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:2": {
+   "start": {
+    "v": 2,
+    "hex": "4000000000000000"
+   },
+   "hit": {
+    "v": 0,
+    "hex": "0000000000000000"
+   },
+   "expired": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:1": {
+   "start": {
+    "v": 1,
+    "hex": "3ff0000000000000"
+   },
+   "hit": {
+    "v": 0.1,
+    "hex": "3fb999999999999a"
+   },
+   "expired": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:0.5": {
+   "start": {
+    "v": 0.5,
+    "hex": "3fe0000000000000"
+   },
+   "hit": {
+    "v": 0.1,
+    "hex": "3fb999999999999a"
+   },
+   "expired": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:0.2": {
+   "start": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "hit": {
+    "v": 0.1,
+    "hex": "3fb999999999999a"
+   },
+   "expired": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  },
+  "dummy:0": {
+   "start": {
+    "v": 0,
+    "hex": "0000000000000000"
+   },
+   "hit": {
+    "v": 0.1,
+    "hex": "3fb999999999999a"
+   },
+   "expired": {
+    "v": 0.2,
+    "hex": "3fc999999999999a"
+   },
+   "fourway": 1,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   }
+  }
+ },
+ "iceBlast:misc": {
+  "stacked": 1,
+  "afterStack": 5,
+  "immune": 5,
+  "casterDead": 3,
+  "defaults": 5
+ },
+ "vines": {
+  "casterAfterCast": {
+   "frozen": true,
+   "disabled": true
+  },
+  "target": {
+   "speed": {
+    "v": 5,
+    "hex": "4014000000000000"
+   },
+   "dmgDec": 0,
+   "hp": {
+    "v": 150,
+    "hex": "4062c00000000000"
+   },
+   "frozen": true,
+   "translucent": false,
+   "controlsDisabled": null,
+   "buff": {
+    "lastUsed": 1577836800000,
+    "duration": 3000,
+    "type": "hostile"
+   },
+   "spriteColor": false
+  },
+  "casterAt260": {
+   "frozen": false,
+   "disabled": false
+  },
+  "targetAt260": true,
+  "targetExpired": {
+   "frozen": false
+  },
+  "translucentImmune": false
+ },
+ "vines:double": {
+  "afterFirstExpiry": false,
+  "final": false
+ },
+ "fireHeal": {
+  "1:10": {
+   "hp": {
+    "v": 20,
+    "hex": "4034000000000000"
+   },
+   "lastUsed": 0
+  },
+  "1:95": {
+   "hp": {
+    "v": 105,
+    "hex": "405a400000000000"
+   },
+   "lastUsed": 0
+  },
+  "1:100": {
+   "hp": {
+    "v": 110,
+    "hex": "405b800000000000"
+   },
+   "lastUsed": 0
+  },
+  "1.1:10": {
+   "hp": {
+    "v": 21,
+    "hex": "4035000000000000"
+   },
+   "lastUsed": 0
+  },
+  "1.1:95": {
+   "hp": {
+    "v": 106,
+    "hex": "405a800000000000"
+   },
+   "lastUsed": 0
+  },
+  "1.1:100": {
+   "hp": {
+    "v": 111,
+    "hex": "405bc00000000000"
+   },
+   "lastUsed": 0
+  },
+  "2:10": {
+   "hp": {
+    "v": 30,
+    "hex": "403e000000000000"
+   },
+   "lastUsed": 0
+  },
+  "2:95": {
+   "hp": {
+    "v": 115,
+    "hex": "405cc00000000000"
+   },
+   "lastUsed": 0
+  },
+  "2:100": {
+   "hp": {
+    "v": 120,
+    "hex": "405e000000000000"
+   },
+   "lastUsed": 0
+  },
+  "0:10": {
+   "hp": {
+    "v": 10,
+    "hex": "4024000000000000"
+   },
+   "lastUsed": 0
+  },
+  "0:95": {
+   "hp": {
+    "v": 95,
+    "hex": "4057c00000000000"
+   },
+   "lastUsed": 0
+  },
+  "0:100": {
+   "hp": {
+    "v": 100,
+    "hex": "4059000000000000"
+   },
+   "lastUsed": 0
+  }
+ },
+ "stealHealth": {
+  "wounded": {
+   "first": {
+    "me": {
+     "v": 60,
+     "hex": "404e000000000000"
+    },
+    "foe": {
+     "v": 90,
+     "hex": "4056800000000000"
+    }
+   },
+   "afterSecondHit": {
+    "me": 60,
+    "foe": 90
+   },
+   "hasHit": true
+  },
+  "full": {
+   "first": {
+    "me": {
+     "v": 100,
+     "hex": "4059000000000000"
+    },
+    "foe": {
+     "v": 90,
+     "hex": "4056800000000000"
+    }
+   },
+   "afterSecondHit": {
+    "me": 100,
+    "foe": 90
+   },
+   "hasHit": true
+  },
+  "foeLow": {
+   "first": {
+    "me": {
+     "v": 54,
+     "hex": "404b000000000000"
+    },
+    "foe": {
+     "v": -6,
+     "hex": "c018000000000000"
+    }
+   },
+   "afterSecondHit": {
+    "me": 54,
+    "foe": -6
+   },
+   "hasHit": true
+  },
+  "healMult": {
+   "first": {
+    "me": {
+     "v": 70,
+     "hex": "4051800000000000"
+    },
+    "foe": {
+     "v": 90,
+     "hex": "4056800000000000"
+    }
+   },
+   "afterSecondHit": {
+    "me": 70,
+    "foe": 90
+   },
+   "hasHit": true
+  },
+  "foeMult": {
+   "first": {
+    "me": {
+     "v": 80,
+     "hex": "4054000000000000"
+    },
+    "foe": {
+     "v": 70,
+     "hex": "4051800000000000"
+    }
+   },
+   "afterSecondHit": {
+    "me": 80,
+    "foe": 70
+   },
+   "hasHit": true
+  },
+  "translucent": {
+   "me": 60,
+   "foe": 90
+  }
+ },
+ "healWithRest": {
+  "trace": [
+   {
+    "v": 50.75,
+    "hex": "4049600000000000"
+   },
+   {
+    "v": 50.75,
+    "hex": "4049600000000000"
+   },
+   {
+    "v": 50.75,
+    "hex": "4049600000000000"
+   },
+   {
+    "v": 50.75,
+    "hex": "4049600000000000"
+   },
+   {
+    "v": 50.75,
+    "hex": "4049600000000000"
+   },
+   {
+    "v": 50.75,
+    "hex": "4049600000000000"
+   }
+  ],
+  "destroyedAtCap": false,
+  "activePlayerHp": 50,
+  "deadBenchedHp": 50
+ },
+ "hurricane": {
+  "start": {
+   "x": 20,
+   "y": 20,
+   "w": 240,
+   "h": 240
+  },
+  "delayAfterAttack": 0,
+  "casterFrozen": false,
+  "hits": [
+   {
+    "t": 20,
+    "hp": 983.75
+   },
+   {
+    "t": 540,
+    "hp": 975.625
+   },
+   {
+    "t": 1060,
+    "hp": 971.5625
+   },
+   {
+    "t": 1580,
+    "hp": 969.53125
+   },
+   {
+    "t": 2100,
+    "hp": 968.515625
+   },
+   {
+    "t": 2620,
+    "hp": 968.0078125
+   }
+  ],
+  "destroyed": true,
+  "isDead": false,
+  "alpha": {
+   "v": 0.21923726936647234,
+   "hex": "3fcc0ff782ff25cf"
+  },
+  "rotation": 151,
+  "curCount": -1,
+  "finalDamage": {
+   "v": 0.203125,
+   "hex": "3fca000000000000"
+  }
+ },
+ "hurricane:follow": {
+  "followed": {
+   "x": 220,
+   "y": 20
+  },
+  "immune": 150,
+  "destroyed": true,
+  "curCount": -1
+ }
+}

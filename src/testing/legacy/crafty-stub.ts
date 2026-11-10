@@ -325,7 +325,7 @@ export function createCraftyStub(clock: FakeClock): CraftyStub {
     },
     delay(this: CraftyEntity, func: (this: CraftyEntity) => void, delay: number, repeat?: number) {
       (this['_delays'] as DelayItem[]).push({
-        start: clock.now, delay, func, repeat: repeat ?? 0, pause: 0, pauseBuffer: 0,
+        start: clock.now, delay, func, repeat: repeat || 0, pause: 0, pauseBuffer: 0,
       });
       return this;
     },

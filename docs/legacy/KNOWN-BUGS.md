@@ -14,5 +14,6 @@ Policy: see [ADR-0015](../adr/0015-known-legacy-bugs-policy.md). Paths are relat
 | `bounds-y-typo` | `resetIfOutOfBounds` reads `this.Y` (typo), so x is restored but y is never restored | `baseCharacter.js:131`, `baseCharacter.js:150` | TBD | `it.fails` | TBD |
 | `damage-uses-target-mult` | `applyDamage` multiplies by `this.targetPlayer.damageMultiplier` (the defender's current target) instead of the actual hitter, which is wrong after swaps | `baseCharacter.js:50` | TBD | `it.fails` | TBD |
 | `prod-cheats` | Shift-Q (I win), Shift-X (freeze) and Shift-C (capture win) are live in production | `input.js:10` to `input.js:12` | TBD | plain `it` (cheats DEV-only) | by construction |
+| `rest-heal-once` | Benched characters heal one 0.5% tick, not every second: `HealWithRest` uses `delay(fn, 1000, -1)` and Crafty's `Delay` runs a non-positive repeat once | `delay.js:11` + `crafty.js:11526-11535` | `abilities-effects.characterization` | rest healing every second to the cap | tick-based timers (WP sim) |
 
 Related, not yet tracked as bugs: `Math.random` is used for opponent picks and GUIDs (`components.js:124`, `baseCharacter.js:992`, `baseCharacter.js:1008`); the port replaces it with seeded RNG streams (ADR-0003).
