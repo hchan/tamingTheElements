@@ -18,7 +18,8 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
 | `tools/` | Five Perl generators for the asset manifests (`generate*.pl`, `imgHelper.pl`) |
 | `tools/gen/` | Node generators for `src/core` tables: `gen-luts.ts` writes `src/core/math/lut.generated.ts` (run with `pnpm exec tsx`); `gen-design-tables.ts` fills the generated tables in `docs/GAME-DESIGN.md` (`pnpm docs:gen`) |
-| `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`) |
+| `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`); `build-assets.ts` (`pnpm assets:build`) copies the manifest's images and sounds plus the favicon into `public/`, verifying sha256 |
+| `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
 | `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
