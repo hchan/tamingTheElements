@@ -1,5 +1,9 @@
 import { el } from './dom';
 import type { Screen, ScreenFactory } from './screens/screen';
+import { aboutScreen } from './screens/about';
+import { keyBindingsScreen } from './screens/key-bindings';
+import { raceScreen } from './screens/race';
+import { wikiScreen } from './screens/wiki';
 
 export const ROUTE_NAMES = [
   'main',
@@ -71,15 +75,15 @@ export function defaultScreens(): ScreenTable {
     garrison: placeholderScreen('Garrison'),
     settings: placeholderScreen('Settings'),
     currentObjectives: placeholderScreen('Current Objectives'),
-    about: placeholderScreen('About'),
+    about: aboutScreen,
     storyMode: placeholderScreen('Story Mode'),
-    wiki: placeholderScreen('Wiki'),
-    keyBindings: placeholderScreen('Key Bindings'),
+    wiki: wikiScreen,
+    keyBindings: keyBindingsScreen,
     battleground: placeholderScreen('Battleground'),
     loading: placeholderScreen('Loading'),
     victory: placeholderScreen('Victory'),
     exit: placeholderScreen('Exit'),
-    race: placeholderScreen('Race'),
+    race: raceScreen,
   };
 }
 
