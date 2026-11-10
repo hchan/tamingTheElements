@@ -32,6 +32,7 @@ export * from './agents/random-bot';
 export * from './agents/replay-agent';
 export * from './sim/match';
 export * from './sim/view';
+export { StatusId } from './sim/systems/status';
 export * from './rules/progression';
 export * from './sim/systems/end';
 export * from './rules/results';
