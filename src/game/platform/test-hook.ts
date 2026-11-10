@@ -38,6 +38,8 @@ export interface TestHook {
   loadSave(json: string): Promise<boolean>;
   /** Number of window/document listeners currently held by a battle (0 after exit-to-menu). */
   listeners(): number;
+  /** Resolves once any in-flight game teardown has completed. */
+  settled(): Promise<void>;
 }
 
 declare global {
@@ -48,6 +50,9 @@ declare global {
 
 /** Live count of listeners added through `counted`, exposed by the test hook to catch leaks. */
 export const listenerCount = { n: 0 };
+
+/** Resolves when the most recent game teardown (Phaser destroys asynchronously) has finished. */
+export const teardown: { settled: Promise<void> } = { settled: Promise.resolve() };
 
 type Add = EventTarget['addEventListener'];
 type Remove = EventTarget['removeEventListener'];
@@ -93,6 +98,7 @@ export function installTestHook(version: number, loadSave: (json: string) => Pro
       },
       loadSave,
       listeners: () => listenerCount.n,
+      settled: () => teardown.settled,
     };
     window.__TTE__ = hook;
   }

@@ -24,6 +24,7 @@ import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import type { UiFlags } from '../platform/flags';
 import { requestPersistence } from '../platform/storage/idb-save-store';
+import { teardown } from '../platform/test-hook';
 import type { SaveStore } from '../platform/storage/save-store';
 import type { ArenaLaunch, MatchEnd } from '../scenes/launch';
 
@@ -122,7 +123,9 @@ export class AppFlow {
   /** The battle screen owns the Phaser game: mount creates it, unmount destroys it (exit-to-menu). */
   private battleScreen(): Screen {
     let node: HTMLElement | undefined;
-    let game: { destroy(removeCanvas: boolean): void } | undefined;
+    let game:
+      | { destroy(removeCanvas: boolean): void; events: { once(event: string, fn: () => void): unknown } }
+      | undefined;
     const life = {
       disposed: false,
       isDisposed(): boolean {
@@ -165,10 +168,23 @@ export class AppFlow {
       },
       unmount: () => {
         life.disposed = true;
-        game?.destroy(true);
+        const doomed = game;
+        const doomedNode = node;
         game = undefined;
-        node?.remove();
         node = undefined;
+        if (!doomed) {
+          doomedNode?.remove();
+          return;
+        }
+        // Phaser destroys on its next frame; keep the DOM until then so the canvas is removed by Phaser itself.
+        const done = new Promise<void>((resolve) => {
+          doomed.events.once('destroy', () => {
+            doomedNode?.remove();
+            resolve();
+          });
+        });
+        teardown.settled = Promise.all([teardown.settled, done]).then(() => undefined);
+        doomed.destroy(true);
       },
     };
   }
