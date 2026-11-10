@@ -27,3 +27,4 @@ export * from './sim/events';
 export * from './sim/step';
 export * from './sim/world';
 export * from './sim/systems/movement';
+export * from './sim/match';
