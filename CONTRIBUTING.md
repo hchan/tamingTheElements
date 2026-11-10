@@ -28,6 +28,8 @@ Workflow details are in [docs/BRANCHING.md](docs/BRANCHING.md): trunk-based, one
 - Tests are added or updated.
 - Nothing under `war/` is modified unless the work package says so.
 - Feature flags are listed; docs touched by the change are updated.
+- E2E specs wait on conditions (`__TTE__.settled()`, route changes, `waitForFunction`), never `waitForTimeout`. The test build never overwrites `dist/` (it goes to `node_modules/.tte-e2e`).
+- Untrusted input (imported saves, replay files) goes through `src/core/save/validate.ts` or `src/core/replay/validate.ts` before use.
 
 ## Guard tests
 
