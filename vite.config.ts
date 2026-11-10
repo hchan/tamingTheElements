@@ -60,6 +60,8 @@ export default defineConfig({
             { name: 'defence-view', test: /\/src\/game\/fx\/defence-/, includeDependenciesRecursively: false },
             // The Arcade weather view, the same way (WP-arcade-weather-view).
             { name: 'weather-view', test: /\/src\/game\/fx\/weather-/, includeDependenciesRecursively: false },
+            // The Arcade terrain view (WP-arcade-terrain-view), mounted by the Arena in every Arcade match.
+            { name: 'terrain-view', test: /\/src\/game\/fx\/terrain-/, includeDependenciesRecursively: false },
             // The procedural pose layer, mounted by the Arena once the match scene is up (WP-arcade-pose-layer).
             { name: 'pose-layer', test: /\/src\/game\/views\/pose-/, includeDependenciesRecursively: false },
             // The Arcade clash burst, mounted by the defence view (WP-arcade-clash).

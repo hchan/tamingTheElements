@@ -328,6 +328,55 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('arcade terrain (the four stages)', async ({ page }) => {
+      const errors = collectErrors(page);
+      const frames = (): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      const stage = async (cmds: string, state: string, note: string, wait = 70): Promise<void> => {
+        await page.evaluate(`window.__TTE__.arena.setWeatherCharge(0, 1000); window.__TTE__.arena.setWeatherCharge(1, 1000)`);
+        await page.evaluate(cmds);
+        await page.evaluate(`window.__TTE__.arena.step(${String(wait)})`);
+        await frames();
+        await shoot(page, vp, 'arena', state, note);
+      };
+      // The demo (Curomo against Pax): Rain turns the stage to water, then the Sandstorm to earth.
+      await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
+      await page.locator('#game canvas').waitFor();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      await stage(STEP(1, CMD.weather, 0), 'arcade-terrain-water', 'Arcade stage water (Curomo calls Rain, 70 ticks on): the water backdrop and blue wave-pattern patches labelled WATER +HP, with their glow, droplets and the Rain weather tint');
+      await stage(STEP(1, 0, CMD.weather), 'arcade-terrain-earth-telegraph', 'Arcade stage swap telegraph (Pax calls Sandstorm, 15 ticks on): the old water patches half faded, the earth backdrop fading in', 15);
+      await page.evaluate(`window.__TTE__.arena.step(60)`);
+      await frames();
+      await shoot(page, vp, 'arena', 'arcade-terrain-earth', 'Arcade stage earth (the swap landed): the earth backdrop and raised brick rocks with a shadow and a dark front face, labelled ROCK, with dust');
+      // Arcade Versus: Sindarosa (fire) and Cyclonius (air).
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.getByLabel('Your race').selectOption('sindarosa');
+      await page.getByLabel('AI race').selectOption('cyclonius');
+      await page.getByRole('button', { name: 'Fight!' }).click();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      await stage(STEP(1, 0, CMD.weather), 'arcade-terrain-air', 'Arcade stage air (Cyclonius calls Gale): the air backdrop and pale swirl-pattern patches labelled AIR x2, with wind streaks');
+      await stage(STEP(1, CMD.weather, 0), 'arcade-terrain-fire', 'Arcade stage fire (Sindarosa calls Sunshine): the fire backdrop and orange flame-pattern patches labelled FIRE x2, with embers');
+      // The player (a fire hero) stands in a fire patch: the buff badge FIRE x2 at the left under the hyper meter.
+      await page.evaluate(`(() => {
+        const a = window.__TTE__.arena;
+        a.terrain().then((t) => { window.__rects = t.rects; });
+      })()`);
+      await frames();
+      await page.evaluate(`(() => {
+        const a = window.__TTE__.arena;
+        const r = window.__rects;
+        const me = a.characters().find((c) => c.team === 0);
+        a.place(me.id, r[0] + r[2] / 2 - 40, r[1] + r[3] / 2 - 40, 0);
+        a.step(2);
+      })()`);
+      await frames();
+      await shoot(page, vp, 'arena', 'arcade-terrain-fire-badge', 'Arcade fire stage with Sindarosa standing in a fire patch: the HUD buff badge FIRE x2 (flame icon) at the left, under the hyper meter');
+      expect(errors).toEqual([]);
+    });
+
     test('arcade versus menus (Settings opt-in)', async ({ page }) => {
       const errors = collectErrors(page);
       await seed(page, { ...(fixture('v0-ch3') as object), arcadePreview: true });

@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { EntityFlag, type RenderCharacter, type RenderView } from '@core/index';
+import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 
 /**
  * Arcade 8-way aim indicator (FUN-DESIGN 2.12, WP-arcade-8way-aim): one arrow at AIM_RADIUS_PX from the player's
@@ -13,6 +13,8 @@ import { EntityFlag, type RenderCharacter, type RenderView } from '@core/index';
 export const AIM_RADIUS_PX = 64;
 /** Over the characters (0), under the super dim (5) and the hit sparks (10). */
 export const AIM_DEPTH = 4;
+/** Half the arrow's longest extent (its 22 px tip to tail, 14 px forward): it is hidden when any of that leaves the playfield. */
+const ARROW_REACH_PX = 14;
 /** Game object name, for the test probe. */
 export const AIM_NAME = 'aim';
 const BENCHED_OR_DEAD = EntityFlag.benched | EntityFlag.dead;
@@ -36,6 +38,15 @@ export function aimPose(c: Pick<RenderCharacter, 'x' | 'y' | 'px' | 'py' | 'w' |
   return out;
 }
 
+/**
+ * True when an arrow centred at height `y` lies inside the Arcade playfield's vertical band (so it never draws over the
+ * action bar or the top HUD when a fighter stands at an edge and aims outwards; the sides are the canvas edge).
+ */
+export function insidePlayfield(y: number): boolean {
+  const pf = arcadePlayfield();
+  return y - ARROW_REACH_PX >= pf.y && y + ARROW_REACH_PX <= pf.y + pf.h;
+}
+
 /** Mounts the indicator in the Arena `scene` (ArenaLaunch.arcadeView); it removes itself when the scene shuts down. */
 export function mountAimIndicator(scene: Phaser.Scene, view: RenderView, alpha: () => number): void {
   const g = scene.add.graphics().setName(AIM_NAME).setDepth(AIM_DEPTH).setVisible(false);
@@ -50,8 +61,8 @@ export function mountAimIndicator(scene: Phaser.Scene, view: RenderView, alpha: 
   const draw = (): void => {
     pose.shown = false;
     view.forEachCharacter(visit);
-    // Hidden without a player character in play (the last pose is kept, never shown).
-    g.setVisible(pose.shown).setPosition(pose.x, pose.y).setAngle(pose.angle);
+    // Hidden without a player character in play (the last pose is kept, never shown) and outside the playfield.
+    g.setVisible((pose.shown as boolean) && insidePlayfield(pose.y)).setPosition(pose.x, pose.y).setAngle(pose.angle);
   };
   scene.events.on('postupdate', draw);
   const off = (): void => {

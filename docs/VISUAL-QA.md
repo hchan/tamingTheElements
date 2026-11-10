@@ -44,7 +44,10 @@ enabled), `arcade-tag-fight` (the lead at 46%: red life dashes, the gold active 
 the TAG caption and the touch Tag button), `arcade-tag-in` (5 ticks after a tag: TAG!, the entrance flash and speed
 lines, the benched lead's red life, TAG 2.9s), `arcade-tag-ko-entrance` (5 ticks after Pax is KO'd: SINDAROSA IN! in
 gold, the double gold ring, BENCH Pax K.O., NO TAG) and `arcade-tag-results` (every hero's HP left or knocked out, 2-0). The Arcade states step past
-round 1's 91-tick intro first (nobody acts before it). Each
+round 1's 91-tick intro first (nobody acts before it). The Arcade terrain states (WP-arcade-terrain-view): `arcade-terrain-water` and `arcade-terrain-earth-telegraph` (15 ticks into the
+swap to earth: the water patches half faded, the earth backdrop fading in) and `arcade-terrain-earth` (the demo's Rain, then Sandstorm),
+`arcade-terrain-air`, `arcade-terrain-fire` and `arcade-terrain-fire-badge` (Arcade Versus, Cyclonius's Gale and Sindarosa's Sunshine; the
+badge shot has Sindarosa standing in a fire patch). Each
 has a `-1280x720` and a `-390x844` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
 notes), size and sha256.
 

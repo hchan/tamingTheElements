@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) WP 19 (`WP-arcade-tag`, sim only: the 2v2 tag team, its entrance attack, KO entrance and bench recovery, section 2.6) and WP 20 (`WP-arcade-tag-view`: the 1v1 or 2v2 pick in Arcade Versus, the team HUD with red life and the tag cooldown, the TAG! call and entrance flash, the touch Tag button and the 2v2 results; section 3) and WP 35 (`WP-arcade-weather-charge`: weather needs a charge, section 2.14) and the Arcade playfield insets (`WP-arcade-playfield-bounds`: fighters stay out of the HUD) and WP 31 (`WP-arcade-terrain`, sim only: stage element patches, section 2.15) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) WP 19 (`WP-arcade-tag`, sim only: the 2v2 tag team, its entrance attack, KO entrance and bench recovery, section 2.6) and WP 20 (`WP-arcade-tag-view`: the 1v1 or 2v2 pick in Arcade Versus, the team HUD with red life and the tag cooldown, the TAG! call and entrance flash, the touch Tag button and the 2v2 results; section 3) and WP 35 (`WP-arcade-weather-charge`: weather needs a charge, section 2.14) and the Arcade playfield insets (`WP-arcade-playfield-bounds`: fighters stay out of the HUD) and WP 31 (`WP-arcade-terrain`, sim only: stage element patches, section 2.15) and WP 32 (`WP-arcade-terrain-view`: the patch art, backdrop, buff badge and block spark) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -656,11 +656,26 @@ cast (kinds 1 to 4; eclipse has no terrain) starts `terrainSwap {stage, ticks: 3
 new layout (`terrainChanged {stage, count}`); the same weather again keeps the patches, a cast back to the standing stage
 cancels a pending swap, and a weather that ends keeps the last patches. Round start redraws the layout (a pending swap lands
 first). Events: `terrainChanged` 61, `terrainSwap` 62, `patchEntered` 63, `patchLeft` 64 (`{team, stage}`), `patchHeal` 65
-(`{amount}`), `projectileBlocked` 66. Not built: the view (WP 32), AI use of patches, the 2v2 tune. Known cost: an earth stage
+(`{amount}`), `projectileBlocked` 66. Not built: AI use of patches (basic rock avoidance only), the 2v2 tune. The view is WP 32 (below). Known cost: an earth stage
 often puts a rock on the middle row (the centre patch sits on the fighters' row), and the scripted AI first neither walked round it nor fired over it, so Arcade
 stalemates rose (balance:compare stalemates 4 to 92 of 1056 matches). Basic rock avoidance is in `ArcadeTactics` (`ObservationView.arcade.rocks`:
 the earth patches for a fighter that cannot cross them): a move that would enter a rock, or an attack along a line a rock cuts, starts a
 30-tick slide along the other axis towards the nearer free side (up or left on a tie), and the stalemates are 7 of 1056.
+
+Built in WP 32 (`WP-arcade-terrain-view`, view only; `src/game/fx/terrain-fx.ts` pure rules and `terrain-view.ts`, its own lazy
+`terrain-view` chunk the Arena mounts in every Arcade match): from `RenderArcade.stage`, `swapLeft`, `swapTo`, `patchCount` and
+`patches` (the only core change: read-outs in `sim/view.ts`, plus `arcadePlayfield` exported). Each patch is a rectangle with its own
+PATTERN (flame tongues, wavy lines, staggered bricks, swirls) and a word above it (`FIRE x2`, `WATER +HP`, `ROCK`, `AIR x2`), never
+colour alone, with a soft glow that pulses; earth patches are drawn raised and solid (a lit brick top, a dark front face, a shadow
+beyond the footprint, the footprint being the sim's collision box). Four pooled ambient particles per patch (embers, droplets, dust,
+wind streaks). The backdrop image follows the stage element (over the hero's). A pending swap fades the old patches to 35 percent (a
+rock still blocks until it lands) while the next backdrop fades in over the 30 ticks; the new layout then fades in from 35 percent.
+The HUD buff badge (left of the weather badge: `FIRE x2`, `HEAL`, `AIR x2`, `ROCK PASS` with an element icon) shows while the
+player's hero is of the stage element with its centre in a patch (the sim rule); a heal pulses it. A rock-blocked shot draws an
+eight-ray spark. Live lines: "The stage will turn to fire." (telegraph), "The stage turns to fire." (landing), "You stand on a fire
+patch: damage doubled.", "Rock blocks the shot.". Reduced motion drops the particles, the glow pulse, the fades and the spark's
+growth and keeps the patterns, words, badge and spark. Also fixed here: the 8-way aim arrow hides when it would leave the
+playfield's vertical band (it drew over the action bar for a fighter on the bottom edge). Visual QA states `arcade-terrain-*`.
 
 ### 2.16 Sprite sheets: diagonals, more frames and poses (view, assets)
 
@@ -687,6 +702,28 @@ Plan, cheapest first:
    PNGs, validation tests (frame counts, sizes, no missing action) and legacy art as the fallback for any missing row.
 3. **New art:** drawn by the owner or an artist, or generated; every new asset needs a licence note in the manifest.
    Needs an owner decision on who makes the art.
+
+### 2.17 Charge (new Arcade melee ability, sim + view + AI)
+
+Owner idea (2026-11-10): a melee ability called "Charge" that runs straight up to the opponent, like the World of
+Warcraft warrior's Charge. It gives melee heroes a gap closer, the way weather and supers give other heroes tools.
+
+- **Who:** Arcade-only action for heroes whose primary ability is melee (the same ranged/melee rule as the weather charge).
+  Own input bit (masked in Classic), key F / pad B by default, rebindable, with a touch button.
+- **Move:** the hero rushes toward the opponent along the straight line (8-way snapped, 12 ticks at 5x speed, up to 360 px),
+  stopping when it touches the opponent. Not invulnerable (unlike dash); it is interrupted by a stun or freeze, and it
+  stops at walls, the playfield edge and rocks (earth hero walks over its own rocks). It cannot start while stunned,
+  frozen, mid-cast or in hit-stop.
+- **On arrival:** a short stun on the target (20 ticks, counted as a hit-stun so it feeds combos), a small hit (data row,
+  light strength), meter gain, and a free primary buffered for the next tick so a charge flows into a combo.
+- **Cooldown:** 300 ticks (6 s), data rows for speed, range, stun and cooldown.
+- **Counterplay:** guard blocks the stun (chip damage only), a parry reflects it (the charger is stunned), a dash with
+  its invulnerability frames dodges it, a projectile hit mid-charge interrupts it, a rock stops it.
+- **View:** speed lines and a short afterimage trail (the dash effects, tinted), impact spark, "CHARGE!" call, an
+  aria-live line; reduced motion keeps the call and drops the trail.
+- **AI:** melee personalities (Rushdown) charge when the distance is above a threshold and the opponent is not
+  guarding or about to cast; Easy never charges.
+- **Metrics:** charges per match, share that connect, win-rate per race (melee races must not dominate).
 
 ## 3. Presentation juice (view only)
 
@@ -986,10 +1023,11 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 29 | `WP-arcade-weather` (done: sim only; section 2.14) | sim+data | Section 2.14: `Cmd.weather`, per-element weather, damage modifiers, cooldown and duration, events | 3, 7 |
 | 30 | `WP-arcade-weather-view` (done; section 3) | view | Weather icon, timer, sky tint, particles, announcer line | 29 |
 | 31 | `WP-arcade-terrain` (done: sim only; section 2.15) | sim+data | Section 2.15: stage element, seeded symmetric patches, per-element effects, caps, events | 3, 29 |
-| 32 | `WP-arcade-terrain-view` | view | Patch art with pattern and label, buff badge, particles | 31 |
+| 32 | `WP-arcade-terrain-view` (done) | view | Patch art with pattern and label, buff badge, particles | 31 |
 | 33 | `WP-arcade-pose-layer` (done: section 2.16 step 1) | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
 | 34 | `WP-sprite-sheet-pipeline` | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 35 | `WP-arcade-weather-charge` (done; section 2.14) | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
+| 36 | `WP-arcade-charge` | sim+view+AI | Section 2.17: melee Charge gap closer, stun on arrival, counterplay, AI use | 3, 16, 31 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid
