@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -100,7 +100,7 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 | 45 | `guardBroken` | `target` | arcade/hit |
 | 46 | `dashed` | `dir` | arcade/input |
 | 47 | `perfectDodge` | `projectile` | projectile (Arcade branch) |
-| 48 | `clash` | `a, b, winner` (-1 = both destroyed) | arcade/clash |
+| 48 | `clash` | `a, b, winner` (-1 = both destroyed), `x, y` (overlap centre), `ea, eb` (`ELEMENTS` indices) | arcade/clash |
 | 49 | `meterLevel` | `team, bars` (only when the bar count changes) | arcade/meter |
 | 50 | `superStarted` | `caster, superId` | arcade/super |
 | 51 | `superEnded` | `caster` | arcade/super |
@@ -308,6 +308,23 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   same element or void: both are destroyed. Emits `clash`, +50 meter to each side. Omni bullets and supers' wall
   projectiles take part; capture effects do not.
 - At most 2016 pair checks over 64 entities, no allocation.
+- Built in WP 18 (`systems/arcade/clash.ts` in the `collision` slot, table in `data/arcade.ts`): after the projectiles
+  moved, hit and fired, `arcadeClash` visits live `EntityKind.projectile` entities (range shots, omni fans, Ice Blast;
+  capture and super hitboxes are `effect` entities and never clash) in pairs `i < j`, skips same-team pairs and tests the
+  box interiors (touching edges do not clash). A projectile's element is its owner's, so a parried projectile (2.8)
+  clashes as the parrier's, with the parrier's team; one that hit a character this tick is already gone. Each projectile
+  is in at most one clash per tick (two 32-bit masks): a survivor meets the next overlapping enemy on the next tick.
+  `elementRelation` of the owners' elements: `adv` keeps the first, `dis` the second; the same element, void and the two
+  neutral pairs (fire and earth, air and water) destroy both. The survivor's damage (`hp`, Float64 as in Classic) becomes
+  `max(hp - loserHp / 2, hp / 4)` (`CLASH_LOSER_DIV`, `CLASH_FLOOR_DIV`). Rounding: no integer rounding; the divisions
+  are by powers of two, so exact, and only the IEEE subtraction rounds (Fireball and Sonar Blast keep growing or decaying
+  from the new value). A destroyed projectile is freed and gives its active count back to its owner (as on leaving the
+  arena). `clash {a, b, winner, x, y, ea, eb}` (source `a`; the overlap centre in whole pixels, `Math.round`, and the
+  `ELEMENTS` indices, for the view), then +50 meter to each side (`meterLevel` when a bar fills). Hit-stop: a clash sets
+  none, and the `collision` slot is behind the freeze gate, so nothing clashes (or moves) while a hit-stop, parry or super
+  freeze holds; a parry's reflection and its clash can share the parry's tick (the freeze starts on the next). Classic:
+  the slot returns at once and projectiles pass through each other, as in legacy. The scripted golden
+  `arcade-weather.replay.json` has a cancel (void against air) and a fire-over-air win whose Fireball flies on and lands.
 
 ### 2.10 Rounds, timer, best of 3, KO and announcer (sim events, view text)
 
@@ -507,7 +524,7 @@ Classic keeps its six particles, 80 ms shake and `0xff7777` hit tint. Damage num
 `src/game/hud/arcade-hud.ts` (pooled model, 16 numbers; fed and aged by the Arena, drawn by `Hud.ts` with pooled texts);
 numbers fan out so a multi-hit volley stays readable; the combo shows from 2 hits under the attacker's bars. Every effect
 holds while the sim is paused, so e2e steps and visual captures see it. Not built yet: the setting that hides damage
-numbers, the 3-per-second cap (no full-screen flash exists yet), and the clash row (WP 18; the trails came with WP 17). For testing,
+numbers and the 3-per-second cap (no full-screen flash exists yet); the trails came with WP 17 and the clash row with WP 18. For testing,
 `?ff=arenaDemo,arcade` (dev and test builds) runs the bot demo with the Arcade ruleset.
 
 Built in WP 7 (`WP-arcade-meter`): `RenderView.arcade().meter` and the hyper meter in `Hud.ts` (model and geometry in
@@ -565,7 +582,7 @@ and "DODGE". Reduced motion keeps the shield, bar, words (not rising), rings (st
 and drops the afterimages, trails, flying sparks and shards. Effects run on the view tick, so they hold while paused.
 Per match: two Graphics, six afterimage Images and four Texts, made on first use; sparks, rings and trails live in
 typed arrays (no per-frame allocation); one Arena `postupdate` listener, all removed with the Arena. Not built: the parry
-ping and guard sounds (WP 26 audio layers), clash bursts (WP 18).
+ping and guard sounds (WP 26 audio layers); clash bursts came with WP 18.
 
 Built in WP 30 (`WP-arcade-weather-view`, view and input only): `RenderView.arcade()` adds `weather` (the `Weather` kind,
 0 none) and `weatherLeft` (game ticks left), read-outs only (the sim and its hashes are unchanged); `src/core/index.ts`
@@ -592,6 +609,16 @@ scale-in. Per match, on the first weather: two Arena Graphics, one Hud Graphics 
 `postupdate` listener; all removed with the Arena or the Hud. Eclipse has no Arcade race yet (void races are not
 offered), so its e2e and visual captures put it up through the test probe `arena.setWeather`. Not built: weather
 sounds (WP 26 audio layers), the AI cast, and a cooldown read-out for the weather key.
+
+Built in WP 18 (`WP-arcade-clash`, the view half): `src/game/fx/clash-view.ts`, its own lazy chunk `clash-view` that the
+defence view mounts (so it comes with `round-view` in every Arcade match, replays included) and hands each tick's events;
+the rules are pure (`clash-fx.ts`, `ClashFx`, events deduped by tick and seq). Each `clash` gives one burst at the overlap
+centre carried by the event: a dark rim, the loser's element colour as the outer ring and the winner's on top (inner,
+thicker); a cancel shows both at equal weight with a white core. It grows from 0.35x to 36 px over 18 view ticks
+(ease-out) and fades over its second half. Reduced motion: a static ring at full size that still fades. Per match: one
+Arena Graphics made on the first clash and a typed-array pool of 8 bursts (the oldest gives way), no per-frame
+allocation; one Arena `postupdate` listener, removed with the Arena. No live-region line (see
+[ACCESSIBILITY.md](ACCESSIBILITY.md)). Not built: a clash sound (WP 26 audio layers).
 
 ## 4. Fun metrics (automatable)
 
@@ -682,7 +709,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 15 | `WP-arcade-dash` (done: section 2.7; binding in 17, AI in 23) | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |
 | 16 | `WP-arcade-guard-parry` (done: section 2.8; binding in 17, AI in 23) | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
 | 17 | `WP-arcade-defence-view` (done: section 3; also the dash and guard keys, pad buttons and touch buttons, the guard bar and the live lines) | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |
-| 18 | `WP-arcade-clash` | sim+view | Projectile clash by element, clash burst | 2 |
+| 18 | `WP-arcade-clash` (done: section 2.9 and section 3) | sim+view | Projectile clash by element, clash burst | 2 |
 | 19 | `WP-arcade-tag` | sim | 2v2 setup, swap 150, entrance at the outgoing position, entrance attack, tag combo, rest rate, KO entrance | 3, 4 |
 | 20 | `WP-arcade-tag-view` | view+ui | Entrance flash, red-life styling, 2-pick Arcade menu | 19, 11 |
 | 21 | `WP-arcade-supers-fire-air` | sim+data | Inferno Beam and Vortex archetypes and their 6 race variants | 8 |

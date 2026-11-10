@@ -87,6 +87,11 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   an opaque plate and a white bar outline). The label grows up to 1.4x on a phone. A cast also shows its name as a line
   ("Sunshine!", "Rain!", "Sandstorm!", "Gale!", "Eclipse!") for 1.5 s. Reduced motion keeps the badge, the line (at full
   size, no scale-in) and a steady sky tint, and drops the particles and the tint fade (FUN-DESIGN 2.14 and section 3).
+- Arcade clash (`src/game/fx/clash-view.ts`, WP-arcade-clash): two projectiles that meet show a ring at the meeting
+  point with a dark rim, so it reads on light and dark arenas; the winner's element colour is the inner, thicker ring and
+  the loser's the outer one, and a cancel (both destroyed) adds a white core, so the outcome reads by shape as well as
+  colour (and by which projectile flies on). Reduced motion keeps the ring at full size (no growth), still fading. A clash
+  has no live-region line: it is frequent, and its outcome shows in the HP and meter read-outs.
 
 ## In-battle announcements and pause
 
@@ -166,6 +171,7 @@ the Dash button, like the others.
 | Arcade round announcer: every round event gives a banner and a live line (fake sink), reduced motion keeps the text without the scale-in, live-region lines in the browser, pips by shape, 0 listeners after leaving | `src/game/hud/round-announcer.test.ts`, `src/game/hud/round-view.test.ts`, `tests/e2e/arcade-rounds.spec.ts` |
 | Arcade defence view: every defence event of real duels gives an effect (fake sink, both motion settings), reduced motion drops only motion, parry and guard-break lines, shield and bar by shape; E, Q, pad RB and LT Arcade only, binding conflicts and old saves; touch Guard and Dash buttons; 0 listeners after leaving | `src/game/fx/defence-fx.test.ts`, `src/game/fx/defence-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-defence.spec.ts` |
 | Arcade weather view: every weather event (each kind, new, replaced, renewed, ended) gives its feedback (fake sink), reduced motion drops only the particles and motion, badge by glyph, word, seconds and notched bar, live lines; R and pad X Arcade only, binding conflicts and old saves; touch Weather button; 0 listeners after leaving | `src/game/fx/weather-fx.test.ts`, `src/game/fx/weather-view.test.ts`, `src/game/input/arcade-bindings.test.ts`, `tests/e2e/arcade-weather.spec.ts` |
+| Arcade clash burst: every `clash` gives one burst (fake sink), winner colour on top, cancel core, reduced motion keeps a static ring; one pooled Graphics, 0 listeners after leaving | `src/game/fx/clash-fx.test.ts`, `src/game/fx/clash-view.test.ts` |
 | prefs, bindings, motion planner, gamepad mapping, HUD cues, announcer, focus trap, menu key rules | `src/game/platform/a11y/prefs.test.ts`, `src/game/platform/input/bindings.test.ts`, `src/game/fx/motion.test.ts`, `src/game/input/gamepad.test.ts`, `src/game/hud/hud.test.ts`, `src/game/a11y/a11y.test.ts`, `src/ui/keyboard.test.ts` |
 
 ## Not done

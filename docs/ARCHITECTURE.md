@@ -140,6 +140,9 @@ supers skip both. Weather (`arcade/weather.ts`): after the guard pass the `input
 out and casts on pending `Cmd.weather` presses (the caster's element weather for 500 game ticks, a 1500-tick cooldown
 per character whose first 16 ticks are cast recovery); the world block holds the one weather slot, and
 `applyArcadeHit` scales the attacker's damage by `weatherDamage` between the element chart and the combo scale.
+Elemental clash (`arcade/clash.ts`, the `collision` slot): overlapping projectiles of opposing teams clash by their
+owners' elements (pairs `i < j`, one clash per projectile per tick); the advantaged one survives with
+`max(hp - loserHp / 2, hp / 4)` damage, any other relation destroys both, and each side gains 50 meter.
 
 | # | System | Status |
 |---|---|---|
@@ -150,7 +153,7 @@ per character whose first 16 ticks are cast recovery); the world block holds the
 | 5 | melee (`systems/melee.ts`) | implemented |
 | 6 | projectiles (`systems/projectile.ts`) | implemented |
 | 7 | capture (`systems/capture.ts`) | implemented |
-| 8 | collision | no-op |
+| 8 | collision (`systems/arcade/clash.ts`) | Arcade only (returns at once in Classic): `arcadeClash`, projectile clash by element (`clash`) |
 | 9 | health (`systems/arcade/super.ts`) | Arcade only (returns at once in Classic): `arcadeSuper`, supers (`superStarted`, `superEnded`) |
 | 10 | death (`systems/death.ts`, hp <= 0 decided at end of tick) | implemented |
 | 11 | debuffs (`systems/debuffs.ts`) | implemented |
@@ -284,6 +287,9 @@ WP-arcade-weather-view) the same way (its own `weather-view` chunk and `codeSpli
 tick's events on to the defence view's, so the round view holds one. It draws the sky tint and particles in the Arena and
 the weather badge and called line in the `Hud` scene, follows `RenderView.arcade().weather` and `weatherLeft` for what is
 up, and takes the called line and live lines from `weatherChanged` and `weatherEnded` (pure rules in `weather-fx.ts`).
+The defence view mounts the clash burst (`src/game/fx/clash-view.ts`, WP-arcade-clash; its own `clash-view` chunk and
+`codeSplitting` group) in the Arena and hands it the same events: one Graphics made on the first `clash`, a typed-array
+pool of bursts drawn at the overlap centre the event carries, one `postupdate` listener (pure rules in `clash-fx.ts`).
 
 Arcade Versus (`#arcade`, FUN-DESIGN WP 11) is a separate flow, not part of `AppFlow` (`flow.ts`, the story: garrison,
 battle, results, save). `main.ts` adds the route with a dynamic import, so its code is its own `arcade-versus` chunk and
