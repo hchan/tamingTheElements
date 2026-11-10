@@ -445,7 +445,8 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 24 | `WP-arcade-numbers` | data | HP pm, damage pm overrides, Arcade balance baseline | 5, 23 |
 | 25 | `WP-arcade-gates-tight` | tools+CI | Nightly fun:compare bands, Arcade balance compare, visual states, latency marks | 24 |
 | 26 | `WP-arcade-audio-layers` | view | Synth thump, pitch variation, KO music cut | 6 |
-| 27 | `WP-arcade-8way-quirks` | sim | 8-way aim, remaining Arcade quirk fixes | 3 |
+| 27 | `WP-arcade-8way-aim` (pulled forward: owner request, next after the meter and parity merges) | sim+view | Arcade-only 8-way aim: cast facing is `dir8FromSigns` of the held input (Classic keeps 4-way `facingFor`, bit-identical); diagonal projectiles, melee arcs and bands from the 8-way facing, aim indicator in the HUD, AI aims diagonally; characters keep 4-way reels | 3 |
+| 27b | `WP-arcade-quirks` | sim | Remaining Arcade quirk fixes | 3 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid
