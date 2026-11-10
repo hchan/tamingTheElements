@@ -193,6 +193,11 @@ for (const vp of VIEWPORTS) {
       await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 100, 360, 4); a.place(foe.id, 1100, 360, 4); a.step(2600, [${String(CMD.primary)}, 0]); })()`);
       await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
       await shoot(page, vp, 'arena', 'arena-arcade-meter', 'Arcade: hyper meters under the HUD (full segments solid, the filling one dashed, bar count as a number)');
+      // Facing each other, Curomo spends a bar on its super; 10 ticks into the 40-tick freeze the cut-in is in place.
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 300, 360, 0); a.place(foe.id, 900, 360, 4); a.step(1, [${String(CMD.super)}, 0]); a.step(10); })()`);
+      await expect.poll(() => page.evaluate<string | undefined>(`window.__TTE__.arena.superFx().then((f) => f && f.name)`)).toBe('ELEMENTAL BURST');
+      await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      await shoot(page, vp, 'arena', 'arena-arcade-super-freeze', 'Arcade: super freeze (arena dimmed, caster lit, element band with portrait, super name and element; camera punched in)');
       expect(errors).toEqual([]);
     });
   });

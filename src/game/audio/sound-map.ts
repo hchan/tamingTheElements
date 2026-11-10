@@ -22,6 +22,8 @@ const CUES: Readonly<Record<number, SoundCue>> = {
   [SimEventKind.swapped]: { id: 'swap', bus: 'sfx', duck: false },
   [SimEventKind.captured]: { id: 'capture', bus: 'sfx', duck: true },
   [SimEventKind.captureFailed]: { id: 'evilLaugh', bus: 'sfx', duck: true },
+  // Arcade only: the super cinematic's sound, with the music duck (FUN-DESIGN section 3).
+  [SimEventKind.superStarted]: { id: 'whoosh', bus: 'sfx', duck: true },
 };
 const VICTORY: SoundCue = { id: 'victory', bus: 'sfx', duck: true };
 const DEFEAT: SoundCue = { id: 'death', bus: 'sfx', duck: true };

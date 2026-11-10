@@ -51,6 +51,9 @@ export const DEFAULT_PAD: PadConfig = {
   pauseButton: PadButton.start,
 };
 
+/** Arcade pad: RT starts the super (FUN-DESIGN 2.5) instead of the fourth swap; Classic keeps DEFAULT_PAD. */
+export const ARCADE_PAD: PadConfig = { ...DEFAULT_PAD, buttons: { ...DEFAULT_PAD.buttons, [PadButton.rt]: Cmd.super } };
+
 function down(pad: PadSnapshot, i: number): boolean {
   const b = pad.buttons[i];
   return b !== undefined && (b.pressed || (b.value ?? 0) > 0.5);

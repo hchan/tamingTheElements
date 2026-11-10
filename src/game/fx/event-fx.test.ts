@@ -34,6 +34,7 @@ function recorder(): { sink: FxSink; log: string[] } {
       shake: (ms, i) => log.push(`shake${String(ms)}@${String(i)}`),
       jitter: (t, until) => log.push(`jitter${String(t)}<${String(until)}`),
       number: (t, a, scaled, counter) => log.push(`number${String(t)}=${String(a)}${scaled ? 's' : ''}${counter ? 'c' : ''}`),
+      superCut: (c, from, until, reduced) => log.push(`super${String(c)}@${String(from)}<${String(until)}${reduced ? 'r' : ''}`),
     },
   };
 }
@@ -112,6 +113,23 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
     const { sink, log } = recorder();
     arcadeFx(sink).consume([confirmed(10, 1), { ...stop(11, 6), sourceId: 4 }]);
     expect(log.some((l) => l.startsWith('jitter'))).toBe(false);
+  });
+  it('the super freeze (cause 2, the caster as source) starts the cinematic until its deadline, once, with no shake', () => {
+    const { sink, log } = recorder();
+    const fx = arcadeFx(sink);
+    const freeze = { ...stop(20, 40, 2), sourceId: 0 };
+    // A heavy hit earlier in the same tick must not lend its shake (or jitter) to the super freeze.
+    fx.consume([confirmed(20, 2), freeze]);
+    fx.consume([freeze]);
+    expect(log.slice(3)).toEqual(['super0@20<61']);
+    const reduced = recorder();
+    arcadeFx(reduced.sink, true).consume([freeze]);
+    expect(reduced.log).toEqual(['super0@20<61r']);
+  });
+  it('an unpaired stop neither jitters nor shakes with an earlier hit strength', () => {
+    const { sink, log } = recorder();
+    arcadeFx(sink).consume([confirmed(10, 3), { ...stop(11, 6), sourceId: 4 }]);
+    expect(log.slice(3)).toEqual([]);
   });
   it('reduced motion drops motion only: one static spark, no particles, shake or jitter; flash and number stay', () => {
     const { sink, log } = recorder();

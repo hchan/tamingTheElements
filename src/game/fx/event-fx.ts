@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type Element, type SimEvent } from '@core/index';
+import { ELEMENT_COLORS } from './element-colors';
 import { shakeFor } from './motion';
 
 /**
@@ -71,6 +72,11 @@ export interface FxSink {
   jitter(target: number, untilTick: number): void;
   /** Floating damage number over `target`. */
   number(target: number, amount: number, scaled: boolean, counter: boolean): void;
+  /**
+   * The super cinematic for `caster` (Arcade): from view tick `fromTick` until `untilTick`, the freeze deadline in W.tick
+   * units; `reduced` drops its motion (no slide, no punch-in) and keeps the dim, band and name.
+   */
+  superCut(caster: number, fromTick: number, untilTick: number, reduced: boolean): void;
 }
 
 /** Classic hits: six particles, an 80 ms shake and a red-ish tint after the white flash. */
@@ -81,14 +87,12 @@ export const SPARKS_BY_STRENGTH = [6, 10, 16, 24] as const;
 /** Arcade shake by hit strength: light none, then medium, heavy, super; KO has its own. */
 export const SHAKE_BY_STRENGTH: readonly ([number, number] | null)[] = [null, [60, 0.002], [100, 0.004], [250, 0.008]];
 export const KO_SHAKE: readonly [number, number] = [300, 0.01];
-/** `hitStop.cause` of the KO stop (src/core/data/arcade.ts HitStopCause). */
+/** `hitStop.cause` of the super freeze and of the KO stop (src/core/data/arcade.ts HitStopCause). */
+const SUPER_CAUSE = 2;
 const KO_CAUSE = 3;
 const MAX_SPARKS = SPARKS_BY_STRENGTH[3];
 
-/** Hit colour by the attacker's element. */
-export const ELEMENT_COLORS: Readonly<Record<Element, number>> = {
-  fire: 0xff7a1a, air: 0xc8f0ff, earth: 0xc89650, water: 0x3aa0ff, void: 0xc080ff,
-};
+export { ELEMENT_COLORS };
 
 export interface FxOptions {
   readonly reducedMotion: () => boolean;
@@ -163,12 +167,22 @@ export class EventFx {
     this.sink.burst(target, this.fill(n), n, color);
   }
 
-  /** The stop that follows a hit: victim jitter for the freeze, and the shake by strength (or the KO shake). */
+  /**
+   * The stop that follows a hit: victim jitter for the freeze, and the shake by strength (or the KO shake). The super
+   * freeze (emitted right after `superStarted`, with the caster as its source) is the super cinematic instead; it does
+   * not shake (only a hit's own stop does, so no stale strength from an earlier hit).
+   */
   private hitStop(e: SimEvent): void {
     const reduced = this.opts.reducedMotion();
-    const ticks = e['ticks'] ?? 0;
-    if (!reduced && e.tick === this.hitTick && e.sourceId === this.hitSource) this.sink.jitter(this.hitTarget, e.tick + 1 + ticks);
-    const s = e['cause'] === KO_CAUSE ? KO_SHAKE : SHAKE_BY_STRENGTH[this.hitStrength];
+    const until = e.tick + 1 + (e['ticks'] ?? 0);
+    const cause = e['cause'];
+    if (cause === SUPER_CAUSE) {
+      this.sink.superCut(e.sourceId, e.tick, until, reduced);
+      return;
+    }
+    const paired = e.tick === this.hitTick && e.sourceId === this.hitSource;
+    if (!reduced && paired) this.sink.jitter(this.hitTarget, until);
+    const s = cause === KO_CAUSE ? KO_SHAKE : paired ? SHAKE_BY_STRENGTH[this.hitStrength] : null;
     const shake = s ? shakeFor(s[0], s[1], reduced) : null;
     if (shake) this.sink.shake(shake.durationMs, shake.intensity);
   }
@@ -182,8 +196,10 @@ const SPARK_MS = 100;
 /** Pool size of spark dots: at most this many in flight; extra particles are dropped. */
 export const SPARK_POOL = 64;
 
-/** What the Phaser sink needs from the arena's character views. */
+/** What the Phaser sink needs from the arena's character views (the image and element feed the super cut-in). */
 export interface FxTarget {
+  readonly image: Phaser.GameObjects.Image;
+  readonly element: Element;
   flash(tint: number): void;
   jitter(untilTick: number): void;
 }
@@ -198,13 +214,15 @@ export interface FxPoint {
 /**
  * Phaser-backed sink. `viewOf` resolves an entity id to its character view and `at` to its current sim position (not
  * the last drawn one, which lags a placement or a step made between two renders); `numberAt` receives floating damage
- * numbers (the Arcade HUD model) in logical coordinates; `paused` holds particles while the sim is paused.
+ * numbers (the Arcade HUD model) in logical coordinates; `paused` holds particles while the sim is paused; `viewTick` is the
+ * view tick (the super cinematic runs on it). The super cinematic code is loaded on the first super (Arcade only).
  */
 export function createPhaserFxSink(
   scene: Phaser.Scene,
   viewOf: (id: number) => FxTarget | undefined,
   at: (id: number) => FxPoint | undefined,
   paused: () => boolean,
+  viewTick: () => number,
   numberAt?: (x: number, y: number, amount: number, scaled: boolean, counter: boolean) => void,
 ): FxSink {
   // Pooled dots (at most SPARK_POOL): dots[0..live) are in flight, advanced by one scene update listener that only
@@ -302,6 +320,10 @@ export function createPhaserFxSink(
     number(target, amount, scaled, counter): void {
       const p = centre(target);
       if (p && numberAt) numberAt(p.x, p.y - p.h / 2, amount, scaled, counter);
+    },
+    superCut(caster, fromTick, untilTick, reduced): void {
+      const v = viewOf(caster);
+      if (v) void import('./super-view').then((m) => { m.superCut(scene, v, fromTick, untilTick, reduced, viewTick, paused); });
     },
   };
 }

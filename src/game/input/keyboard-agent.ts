@@ -1,5 +1,5 @@
 import type { Agent, AgentState, Command, ObservationView } from '@core/index';
-import { commandFromPad, pauseEdge, type PadSnapshot } from './gamepad';
+import { ARCADE_PAD, commandFromPad, pauseEdge, type PadSnapshot } from './gamepad';
 import {
   type Bindings,
   commandFromHeld,
@@ -21,6 +21,8 @@ export interface KeyboardAgentOptions {
   readonly onEffect?: (effect: KeyEffect) => void;
   /** Current gamepad (e.g. `() => firstPad(navigator.getGamepads())`); mapped to the same Commands as the keys. */
   readonly gamepad?: () => PadSnapshot | null;
+  /** Arcade match: the super key (X) and pad RT send `Cmd.super`; Classic never sends it (RT stays the fourth swap). */
+  readonly arcade?: boolean;
 }
 
 export type KeyEventSource = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>;
@@ -71,8 +73,9 @@ export class KeyboardAgent implements Agent {
 
   observe(view: ObservationView): Command {
     const capturable = this.opts.capturable(view);
-    const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable);
-    const cmd = commandFromHeld(this.bindings, this.state.held, capturable) | pad | this.pressed;
+    const arcade = this.opts.arcade;
+    const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable, arcade ? ARCADE_PAD : undefined);
+    const cmd = commandFromHeld(this.bindings, this.state.held, capturable, arcade) | pad | this.pressed;
     this.pressed = 0;
     return cmd;
   }

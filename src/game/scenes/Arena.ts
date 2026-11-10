@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import {
+  ARCADE_T,
+  ARCADE_TEAM_BASE,
+  ArcadeT,
   DEFAULT_SIM_FLAGS,
   EntityFlag,
   EntityKind,
@@ -148,6 +151,7 @@ export class Arena extends Phaser.Scene {
           return p;
         },
         () => driver.isPaused,
+        () => view.tick,
         hud && ((x, y, amount, scaled, counter) => { hud.spawn(x, y, amount, scaled, counter); }),
       ),
       { reducedMotion: () => getPrefs().reduceMotion, arcade, elementOf: (id) => pool.peek(id)?.element },
@@ -160,6 +164,7 @@ export class Arena extends Phaser.Scene {
         gamepad: () => firstPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null),
         // Legacy Shift-Q / X / C cheats exist only in tester mode (docs/TESTER-MODE.md).
         cheatsEnabled: this.launch.tester !== undefined,
+        arcade,
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
           else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
@@ -306,6 +311,11 @@ export class Arena extends Phaser.Scene {
           combo: [hud?.combos[0].hits ?? 0, hud?.combos[1].hits ?? 0],
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };
+      },
+      superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
+      setMeter: (team, value) => {
+        this.launch?.recorder?.invalidate();
+        world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.meter] = value;
       },
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),

@@ -228,7 +228,12 @@ only through the `RenderView` facade in `src/core/sim/view.ts` and never decide 
 `RenderView.arcade()` (undefined in Classic) adds the Arcade read-outs: hit-stop freeze, live combo hits and damage and the
 hyper meter per team, stun and invulnerability per character. In an Arcade match the Arena feeds an `ArcadeHudModel`
 (`src/game/hud/arcade-hud.ts`: pooled damage numbers, combo counters, hyper meters) from events and `arcade()`, ages it while the driver
-runs, and hands it to `Hud` in `HudData`, which only draws it with pooled texts.
+runs, and hands it to `Hud` in `HudData`, which only draws it with pooled texts. The super cinematic is the fx sink's
+`superCut`, started by `EventFx` from the super freeze (`hitStop` cause 2, the caster as its source): the Phaser sink
+imports `src/game/fx/super-view.ts` on the first super, so Classic never downloads it (its own `super-view` chunk). Per
+scene it makes one dim overlay, band, portrait and two texts on first use, runs on the view tick (it holds while paused),
+lifts the caster over the dim, punches the camera in about the caster and restores the fit zoom at the end; the frame
+plan (`super-cinematic.ts`) is pure. The music duck is the `superStarted` sound cue's.
 
 ## Legacy concept map
 

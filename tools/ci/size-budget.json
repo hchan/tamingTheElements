@@ -3,7 +3,8 @@
     "index": 50000,
     "index.css": 3200,
     "phaser": 388700,
-    "phaser-config": 16500
+    "phaser-config": 16500,
+    "super-view": 1300
   },
   "totalGzip": 458600
 }

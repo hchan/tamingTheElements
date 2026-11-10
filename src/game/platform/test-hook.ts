@@ -43,6 +43,13 @@ export interface ArenaProbe {
    * damage-number labels, the combo hits and the hyper meter shown per team (Arcade only; empty and [0, 0] in Classic).
    */
   fx(): { tints: { id: number; tint: number; mode: number }[]; numbers: string[]; combo: [number, number]; meter: [number, number] };
+  /**
+   * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the
+   * texts shown and the camera zoom over the fit zoom; undefined otherwise (always in Classic).
+   */
+  superFx(): Promise<{ dim: number; bandAlpha: number; slide: number; zoom: number; name: string; sub: string; camZoom: number } | undefined>;
+  /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */
+  setMeter(team: number, value: number): void;
   /** Key codes bound per action in the running battle's keyboard agent. */
   boundCodes(): Record<string, readonly string[]>;
   /** Whether the battle's audio is muted (Ctrl-M toggles), and whether the first gesture has unlocked it. */
