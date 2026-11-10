@@ -44,7 +44,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | Path | What it is |
 |---|---|
 | `src/core/` | Pure deterministic simulation code: no DOM, Phaser, Date or Math.random |
-| `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore, snapshot ring, state hash and the lowest-id-first entity allocator |
+| `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore, snapshot ring, state hash, the lowest-id-first entity allocator and the game clock (`clock.ts`: `now`, `isArcade`, freeze gate) |
 | `src/core/sim/` | Typed-array (SoA) sim state with fixed capacities, snapshot/restore and the lowest-id-first entity allocator |
 | `src/core/sim/systems/` | Per-tick sim systems run by `step` in fixed order (movement, status so far) |
 | `src/core/agents/` | `Agent` interface with a read-only `ObservationView` facade, seeded random bot (own `AgentRng` stream, outside `SimState`) and replay agent |

@@ -96,9 +96,13 @@ re-simulation: events are a pure function of the tick, numbered by a per-tick co
 
 ## Hit-stop and slow motion
 
-Gameplay hit-stop or slow motion must freeze or skip ticks inside the sim. Phaser `timeScale` is cosmetic only. Not
-implemented yet (planned); the design (a frozen game clock next to `W.tick`, Arcade ruleset only) is in
-[FUN-DESIGN.md](FUN-DESIGN.md).
+Gameplay hit-stop or slow motion must freeze or skip ticks inside the sim. Phaser `timeScale` is cosmetic only. The
+plumbing exists for the Arcade ruleset only ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.1, `src/core/sim/clock.ts`): systems
+read `now(s)`, which is `W.tick` in Classic and the Arcade `gameTick` in Arcade. `W.tick` stays the replay and event index
+and always advances; `gameTick` does not advance while `isFrozen` (`W.tick < freezeUntil`, so `freezeUntil` is in `W.tick`
+units), and `step` then runs only the `input` slot. Nothing sets a freeze yet (hit-stop is WP-arcade-hitstop). In Classic
+`isFrozen` is never true and `SimState.arcade` is empty, so Classic hashes are unchanged (pinned by
+`tests/repo/classic-hash-pins.test.ts`).
 
 ## Cross-browser golden replays
 

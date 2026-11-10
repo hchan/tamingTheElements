@@ -81,6 +81,9 @@ that Chromium, Firefox and WebKit reproduce the committed hashes.
   updating the map in the same change.
 - `tests/repo/no-team-block-alias.test.ts`: `SimState.team` is per entity, `SimState.teams` is the per-team block. The test
   fails when a `.team[...]` index looks like a per-team block offset (`TEAM_`, `TeamField`, `STRIDE`, `idx`, `*` ...). Use `.teams[...]`.
+- `tests/repo/classic-hash-pins.test.ts`: every Classic golden in `tests/fixtures/replays/` (flags without `rulesetArcade`)
+  keeps a pinned `hashes` list and `finalHash`, so an Arcade `SIM_VERSION` bump (a header-only golden diff) cannot hide a
+  Classic hash change ([FUN-DESIGN.md](FUN-DESIGN.md) section 6). A new Classic fixture needs a pin in the same change.
 - `tests/repo/docs-tables.test.ts`: the generated tables in `docs/GAME-DESIGN.md` must equal the output of `pnpm docs:gen`.
 - `tests/repo/links.test.ts`: every relative markdown link in `README.md`, `CONTRIBUTING.md` and `docs/*.md` must resolve.
 - `tests/repo/assets-manifest.test.ts`, `tests/repo/cine-scripts-a.test.ts`: asset manifest and ported cinematic data checks.
