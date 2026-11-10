@@ -8,6 +8,7 @@ import { abilitiesFor, combatantStats } from '../rules/progression';
 import type { Side } from '../rules/progression';
 import { allocEntity } from './alloc';
 import { ABILITY_SLOTS, EntityFlag, EntityKind, TEAM_STRIDE, TeamField, World as W } from './state';
+import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { createWorld, type SimWorld } from './world';
 
 /** One team's members in garrison order; the first is the active character, the rest start benched. */
@@ -81,7 +82,7 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
 export function createMatch(setup: MatchSetup): SimWorld {
   const world = createWorld(setup.seed);
   const s = world.state;
-  s.world[W.flags] = flagBits(setup.flags);
+  s.world[W.flags] = flagBits(setup.flags) | (setup.chapter > 1 ? CAPTURE_GRANTED_BIT : 0);
   s.rng.set(saveStreams(createStreams(setup.seed)));
   spawnTeam(world, 0, setup.p1, setup);
   spawnTeam(world, 1, setup.p2, setup);

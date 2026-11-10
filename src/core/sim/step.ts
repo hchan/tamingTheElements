@@ -7,6 +7,7 @@ import { statusSystem } from './systems/status';
 import { restSystem } from './systems/rest';
 import { swapSystem } from './systems/swap';
 import { meleeSystem } from './systems/melee';
+import { captureSystem } from './systems/capture';
 import { projectileSystem } from './systems/projectile';
 import { World as W } from './state';
 import type { SimWorld } from './world';
@@ -23,6 +24,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['abilities', noop],
   ['melee', meleeSystem],
   ['projectiles', projectileSystem],
+  ['capture', captureSystem],
   ['collision', noop],
   ['health', noop],
   ['death', deathSystem],
