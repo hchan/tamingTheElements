@@ -88,6 +88,20 @@ describe('manual swap', () => {
   });
 });
 
+describe('frozen swap', () => {
+  it('a frozen character cannot swap (legacy KeyDown ignores every key while frozen)', () => {
+    const w = createMatch(setup);
+    const s = w.state;
+    s.flags[0] = (s.flags[0] ?? 0) | EntityFlag.frozen;
+    step(w, [Cmd.swap1, NO_COMMAND]);
+    expect([benched(s.flags[0]), benched(s.flags[1])]).toEqual([false, true]);
+    expect(s.teams[TeamField.swapCooldownUntil]).toBe(0);
+    s.flags[0] = EntityFlag.alive;
+    step(w, [Cmd.swap1, NO_COMMAND]);
+    expect([benched(s.flags[0]), benched(s.flags[1])]).toEqual([true, false]);
+  });
+});
+
 describe('rest heal', () => {
   it('heals a benched character 0.5% maxHp every 50 ticks from the bench and stops at restCap (fixture healWithRest)', () => {
     // Legacy HealWithRest: Crafty delay(fn, 1000, -1) repeats forever until the heal passes maxHealthWithRest.

@@ -21,5 +21,6 @@
  *    active counts move from the per-team block to the per-character `SimState.abil` (legacy abilitiesInfo is per
  *    character); a hit releases the count on the shooter team's current character (bullet-count-on-active). A Capture
  *    bullet on a faded target only sets the captured flag (no damage, keeps flying); on the last boss it keeps flying.
+ *    A frozen character cannot swap.
  */
 export const SIM_VERSION = 7;

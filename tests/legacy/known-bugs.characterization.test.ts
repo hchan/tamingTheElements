@@ -288,6 +288,45 @@ describe('known legacy bugs (current behaviour)', () => {
     expect(after).toEqual({ player: 50, enemy: 51.5 });
   });
 
+  it('player keys: digit N is action-bar slot N (abilities, Capture from chapter 2, then swaps); a frozen player does nothing', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      var swaps = [];
+      Swap.getTeammates = function () { return [{ character: { name: 'mate1' } }, { character: { name: 'mate2' } }]; };
+      Swap.canPlayerSwap = function () { return true; };
+      Swap.swapPlayer = function (c) { swaps.push(c.name); };
+      var p = fighter('PlayerCharacter', { isDead: false, isFrozen: false });
+      p.unbind('EnterFrame');
+      var captureChecks = 0; // key 3 reaches the Capture branch, which first asks the target
+      p.targetPlayer = { isCapturable: function () { captureChecks++; return false; } };
+      function press(slots, digit, frozen) {
+        swaps = [];
+        Game.actionBar = { slots: slots.map(function (n) { return { name: n, abilityInfo: info() }; }) };
+        p.isFrozen = frozen;
+        p.trigger('KeyDown', { keyCode: 48 + digit });
+        return swaps.slice();
+      }
+      var ch1 = ['Fire Blast', 'Translucent Flame', 'Swap1', 'Swap2'];
+      var ch2 = ['Fire Blast', 'Translucent Flame', 'Capture', 'Swap1', 'Swap2'];
+      return {
+        chapter1: { k3: press(ch1, 3, false), k4: press(ch1, 4, false), k5: press(ch1, 5, false) },
+        chapter2: { k3: press(ch2, 3, false), k4: press(ch2, 4, false), k5: press(ch2, 5, false) },
+        frozen: press(ch2, 4, true),
+        frozenCapture: press(ch2, 3, true),
+        captureChecks: captureChecks,
+      };`,
+    );
+    expect(result).toEqual({
+      chapter1: { k3: ['mate1'], k4: ['mate2'], k5: [] },
+      chapter2: { k3: [], k4: ['mate1'], k5: ['mate2'] },
+      frozen: [],
+      frozenCapture: [],
+      captureChecks: 1,
+    });
+  });
+
   it('damage-uses-target-mult: applyDamage scales by the victim target damageMultiplier, not the hitter', () => {
     // KNOWN-BUG:damage-uses-target-mult
     const env = loadLegacy({ seed: 1 });

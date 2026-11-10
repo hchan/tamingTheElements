@@ -92,8 +92,9 @@ export function swapSystem(
     if (slot < 0) continue;
     if (tick < (s.teams[team * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0)) continue;
     const cur = activeOf(world, team);
-    // Both sides need a living active character (a dead one is auto-swapped by the death system).
-    if (cur < 0) continue;
+    // Both sides need a living active character (a dead one is auto-swapped by the death system). A frozen one cannot
+    // swap: legacy PlayerCharacter KeyDown ignores every key while `isFrozen` (the AI never swaps by hand).
+    if (cur < 0 || ((s.flags[cur] ?? 0) & EntityFlag.frozen) !== 0) continue;
     const from = cur;
     const target = teamMembers(world, team).filter((m) => m !== from)[slot];
     if (target === undefined || !isLiving(world, target)) continue;
