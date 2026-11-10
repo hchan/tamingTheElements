@@ -570,6 +570,48 @@ matchup becomes something to play around instead of a fixed loss.
 **New abilities:** the owner also allows new abilities in general. New abilities are Arcade-only data behind the
 Arcade flag (Classic keeps the legacy kit); each needs a design row here before it is built (use the add-ability skill).
 
+### 2.15 Stage terrain: element patches (Arcade, sim + view)
+
+Owner idea (2026-11-10): the arena background is one of the four elements (fire, water, earth, air; the legacy art already
+has `background/{fire,water,earth,air}.png`), and random patches of that element lie on the floor. A hero of the SAME
+element gets a bonus while standing on a patch. Stages are Archon-style terrain with the fighting-game stage idea.
+
+- **Stage:** chosen by the match seed (later: loser picks, or a menu choice). Void and the plain backdrops have no patches.
+- **Patches:** 3 to 5 rectangles per round, placed from the seeded RNG at the round start, point-symmetric about the arena
+  centre so neither side gets a better layout, never overlapping the spawn points, never closer than a hero width to each
+  other or the walls, so nothing can trap a hero. State in `SimState.arcade` (kind, rects), integer geometry only.
+- **Fire patch:** a fire hero standing in it deals more damage. Owner wording: attack power +200 percent. Data row in
+  per-mille (3000 = x3); recommended first value x1.5 (1500) until a playtest, because the numbers pass (WP24) tuned
+  rounds to about 45 s.
+- **Water patch:** a water hero in it heals 1 HP per second (every 50 ticks). Scale it per mille of max HP, and let the
+  data row decide (the owner's 1 HP per second is the default for a 100 HP hero).
+- **Earth patch:** a solid rock: heroes of other elements cannot enter it (movement is clamped like a wall), an earth hero
+  walks over it. Open question: do projectiles stop at it? Default: no, only bodies are blocked.
+- **Air patch:** an air hero in it moves faster. Owner wording: +200 percent. Data row (x3 = 3000); recommended first
+  value x1.5, and it does not stack with a dash (the larger applies).
+- **Stacking:** all modifiers multiply with the weather and element chart, then are capped (data row, default x2.5 total)
+  so Sun plus a fire patch cannot blow up a round.
+- **View:** each patch has a distinct pattern and a text/icon label (not colour alone), a soft element glow, a small
+  pooled particle effect; reduced motion drops the particles. HUD shows a small buff badge while a hero stands in a patch.
+- **AI:** later; the scripted AI walks to its own-element patch when idle and avoids rock it cannot cross.
+- **Metrics:** share of time heroes stand on patches, win-rate per race on each stage (the stage must not decide the match).
+- **Classic:** untouched; terrain is Arcade-only and behind `rulesetArcade`.
+
+### 2.16 Sprite sheets: diagonals, more frames and poses (view, assets)
+
+Today every character sheet has right/left/up/down frame sets (left mirrors right), 80x80 frames, built by
+`tools/assets/build-assets.ts` from `imgWorkArea` (layered GIMP sources) into `public/assets/img` and a manifest.
+Plan, cheapest first:
+
+1. **Procedural pose layer (no new art):** diagonals reuse the nearest side frame flipped, with a lean (small rotation)
+   and the dir8 aim arrow; anticipation/impact poses via squash-and-stretch, bob, tint, afterimages and hit-reel tweens
+   (view only, pooled, reduced-motion safe).
+2. **Sheet spec and pipeline:** a documented sheet layout (80x80 frames, rows = action x 8 directions: idle, walk, cast,
+   hurt, guard, dash, KO, victory, tag-in), a packer in `tools/assets` that builds the sheet and manifest from per-frame
+   PNGs, validation tests (frame counts, sizes, no missing action) and legacy art as the fallback for any missing row.
+3. **New art:** drawn by the owner or an artist, or generated; every new asset needs a licence note in the manifest.
+   Needs an owner decision on who makes the art.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)
@@ -861,6 +903,10 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 27b | `WP-arcade-quirks` | sim | Remaining Arcade quirk fixes | 3 |
 | 29 | `WP-arcade-weather` (done: sim only; section 2.14) | sim+data | Section 2.14: `Cmd.weather`, per-element weather, damage modifiers, cooldown and duration, events | 3, 7 |
 | 30 | `WP-arcade-weather-view` (done; section 3) | view | Weather icon, timer, sky tint, particles, announcer line | 29 |
+| 31 | `WP-arcade-terrain` | sim+data | Section 2.15: stage element, seeded symmetric patches, per-element effects, caps, events | 3, 29 |
+| 32 | `WP-arcade-terrain-view` | view | Patch art with pattern and label, buff badge, particles | 31 |
+| 33 | `WP-arcade-pose-layer` | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
+| 34 | `WP-sprite-sheet-pipeline` | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid
