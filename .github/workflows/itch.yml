@@ -24,7 +24,7 @@ env:
 
 jobs:
   itch:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,8 +42,10 @@ jobs:
       # costs ~5 minutes of Actions time, not the whole job timeout.
       - name: Install Playwright browsers (retry)
         run: |
-          for attempt in 1 2 3; do
-            timeout 300 corepack pnpm exec playwright install --with-deps chromium && exit 0
+          # Wait for the dpkg lock (unattended upgrades / a previous attempt) instead of failing on it.
+          echo 'DPkg::Lock::Timeout "600";' | sudo tee /etc/apt/apt.conf.d/99-lock-timeout >/dev/null
+          for attempt in 1 2; do
+            timeout --kill-after=30 600 corepack pnpm exec playwright install --with-deps chromium && exit 0
             echo "playwright install attempt $attempt failed or timed out"; sleep 10
           done
           exit 1

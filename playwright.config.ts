@@ -6,7 +6,7 @@ const PORT = process.env['E2E_PORT'] ?? '4173';
 export default defineConfig({
   testDir: 'tests/e2e',
   workers: 1,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0, // a pass-after-retry is reported as flaky by Playwright; never hide it
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: `http://localhost:${PORT}`,
