@@ -5,7 +5,7 @@ import 'node:fs';
 import '@game/x';
 import '@ui/x';
 import '@testing/x';
-import '../../../src/ui/router';
+import '../../../src/ui/missing';
 
 export const globalsUsed = [
   Date,
