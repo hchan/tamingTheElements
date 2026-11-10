@@ -5,6 +5,9 @@ export const MAX_ENTITIES = 64;
 export const TEAM_COUNT = 2;
 export const ABILITY_SLOTS = 4;
 export const MAX_ABILITY_DEFS = 32;
+/** Status slots per entity, each STATUS_STRIDE ints: [id, sourceId, startTick, expireTick, magnitude]; id 0 = empty. */
+export const STATUS_SLOTS = 8;
+export const STATUS_STRIDE = 5;
 export const RNG_WORDS = STREAM_NAMES.length * 4;
 
 export const EntityKind = { character: 0, projectile: 1, melee: 2, effect: 3 } as const;
@@ -45,6 +48,8 @@ export type SimState = { readonly [K in F64Name]: Float64Array } & {
   readonly [K in I32Name]: Int32Array;
 } & {
   readonly team: Int32Array;
+  /** Per-entity status slots (see systems/status.ts), MAX_ENTITIES x STATUS_SLOTS x STATUS_STRIDE. */
+  readonly status: Int32Array;
   readonly world: Int32Array;
   /** 7 streams x 4 words, STREAM_NAMES order (see saveStreams/loadStreams). */
   readonly rng: Uint32Array;
@@ -54,6 +59,7 @@ export function createSimState(matchSeed = 0): SimState {
   const s: Record<string, Float64Array | Int32Array | Uint32Array> = {};
   for (const f of F64_FIELDS) s[f] = new Float64Array(MAX_ENTITIES);
   for (const f of I32_FIELDS) s[f] = new Int32Array(MAX_ENTITIES);
+  s['status'] = new Int32Array(MAX_ENTITIES * STATUS_SLOTS * STATUS_STRIDE);
   s['team'] = new Int32Array(TEAM_COUNT * TEAM_STRIDE);
   s['world'] = new Int32Array(WORLD_SLOTS);
   s['rng'] = new Uint32Array(RNG_WORDS);
@@ -66,7 +72,7 @@ type AnyArray = Float64Array | Int32Array | Uint32Array;
 
 /** Every backing array in a fixed order; snapshot, restore and hashing all follow it. */
 export function stateArrays(s: SimState): AnyArray[] {
-  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.team, s.world, s.rng];
+  return [...F64_FIELDS.map((f) => s[f]), ...I32_FIELDS.map((f) => s[f]), s.team, s.status, s.world, s.rng];
 }
 
 export type SimSnapshot = AnyArray[];
