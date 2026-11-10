@@ -1,0 +1,30 @@
+{
+  "params": {
+    "agents": [
+      "scripted",
+      "scripted"
+    ],
+    "seeds": 16,
+    "seed": 1,
+    "level": 1,
+    "difficulty": 1,
+    "maxTicks": 9000
+  },
+  "matches": 1056,
+  "stalemates": 48,
+  "timeouts": 0,
+  "winRates": {
+    "curomo": 0.455,
+    "cyclonius": 0.773,
+    "echo": 0.182,
+    "fiara": 0.318,
+    "ishimi": 0,
+    "lavax": 0.455,
+    "morblass": 0.455,
+    "pax": 0.455,
+    "rokcore": 0.818,
+    "sindarosa": 1,
+    "treenoc": 0.273,
+    "wispera": 0.818
+  }
+}

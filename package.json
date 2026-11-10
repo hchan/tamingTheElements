@@ -24,6 +24,8 @@
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "tsx tools/gen/record-golden.ts",
     "sim:match": "tsx tools/sim/run-match.ts",
+    "balance:compare": "tsx tools/sim/balance.ts",
+    "balance:record": "tsx tools/sim/balance.ts --record",
     "assets:build": "tsx tools/assets/build-assets.ts",
     "format": "echo \"not yet\" && exit 1"
   },

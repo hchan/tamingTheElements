@@ -36,3 +36,6 @@ user.properties
 
 # Version control metadata
 .svn/
+
+# Generated reports (balance compare)
+/out/
