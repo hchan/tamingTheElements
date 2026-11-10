@@ -58,6 +58,12 @@ jobs:
       - run: corepack pnpm typecheck
       - run: corepack pnpm depcruise
       - run: corepack pnpm test
+      # The legacy characterization suites are the parity oracle for the whole port; they must run on every change.
+      - run: corepack pnpm test:legacy
+      # Fixtures, goldens and the balance baseline may only change in a reviewed commit: nothing in the test run
+      # above may modify them, so a dirty tree here means a test regenerated a fixture.
+      - name: Fixtures unchanged by the test run
+        run: git diff --exit-code -- tests/fixtures
       - run: corepack pnpm build
       - name: Bundle size budgets (tools/ci/size-budget.json)
         run: corepack pnpm size:check
