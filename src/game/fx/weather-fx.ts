@@ -1,4 +1,4 @@
-import { SimEventKind, WEATHER_ELEMENTS, WEATHER_TICKS, type SimEvent } from '@core/index';
+import { SimEventKind, WEATHER_CHARGE_FULL, WEATHER_ELEMENTS, WEATHER_TICKS, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 
 /**
@@ -135,6 +135,24 @@ export function badgeLabel(kind: number, left: number): string {
 /** Time-bar fill in px of a bar `w` px wide with `left` game ticks of WEATHER_TICKS to go. */
 export function badgeFill(left: number, w: number): number {
   return Math.max(0, Math.min(w, Math.round((left * w) / WEATHER_TICKS)));
+}
+
+/**
+ * Weather-charge chip text (WP-arcade-weather-charge): "WEATHER 60%" while it fills (whole percent, rounded down, so a
+ * bar one short of full never reads 100%), "WEATHER READY" once the cast is unlocked. Words, not colour alone.
+ */
+export function chargeLabel(pm: number): string {
+  return pm >= WEATHER_CHARGE_FULL ? 'WEATHER READY' : `WEATHER ${String(Math.floor((Math.max(0, pm) * 100) / WEATHER_CHARGE_FULL))}%`;
+}
+
+/** Charge-bar fill in px of a bar `w` px wide. */
+export function chargeFill(pm: number, w: number): number {
+  return Math.max(0, Math.min(w, Math.floor((pm * w) / WEATHER_CHARGE_FULL)));
+}
+
+/** READY border alpha at view time `t`: it blinks every 15 view ticks, steady when reduced motion is on. */
+export function readyAlpha(t: number, reduced: boolean): number {
+  return reduced || Math.floor(t / 15) % 2 === 0 ? 1 : 0.35;
 }
 
 /** One particle as drawn: a line from (x, y) by (dx, dy), or a dot of radius `r` when dx and dy are 0; alpha `a`. */

@@ -73,6 +73,7 @@ function resetRound(world: SimWorld, sink: EventSink): void {
     const b = ARCADE_TEAM_BASE + team * ARCADE_T;
     s.arcade.fill(0, b + ArcadeT.pressTick, b + ArcadeT.lastDir + 1);
     s.arcade[b + ArcadeT.pressUsed] = 0;
+    s.arcade[b + ArcadeT.weatherCharge] = 0;
     const x = team === 0 ? P1_START_X : P2_START_X;
     teamMembers(world, team).forEach((id, k) => {
       s.flags[id] = EntityFlag.alive | (k === 0 ? 0 : EntityFlag.benched);

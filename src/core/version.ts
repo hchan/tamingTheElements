@@ -71,5 +71,9 @@
  *    invulnerability (60 after a KO) and a free primary cast (the entrance attack; `tagIn`); a bullet hit releases the
  *    count on its shooter (bullet-count-on-active fixed in Arcade); benched characters heal 10 pm of max HP every 10
  *    game ticks up to the rest cap, and only while benched (rest-heal-enemy-in-play fixed in Arcade) (WP-arcade-tag).
+ * 19: Arcade only; Classic hashes unchanged. Weather power: weather is locked until the team's weather charge (a new
+ *    team field, 0..1000 pm, reset each round) reaches WEATHER_CHARGE_FULL; ranged heroes (primary range/omni) gain
+ *    WEATHER_CHARGE_CAST per primary or secondary cast, the others WEATHER_CHARGE_STEP per walked tick; a cast spends
+ *    the whole charge and the 1500-tick cooldown becomes a 50-tick lockout (WP-arcade-weather-charge).
  */
-export const SIM_VERSION = 18;
+export const SIM_VERSION = 19;

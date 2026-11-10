@@ -39,7 +39,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, prevCmd: 0,
-  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, tagIn: 0, partnerPm: -1,
+  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, weatherCharge: 1000, tagIn: 0, partnerPm: -1,
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -95,12 +95,12 @@ describe('ObservationView.arcade', () => {
     expect(createObservationView(world, 0).arcade).toEqual({
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
-      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, tagIn: 0, partnerPm: -1,
+      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, weatherCharge: 0, tagIn: 0, partnerPm: -1,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
-      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, tagIn: 0, partnerPm: -1,
+      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, weatherCharge: 0, tagIn: 0, partnerPm: -1,
     });
     expect(hash(s)).toBe(before);
   });
@@ -269,6 +269,9 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     const t = new ArcadeTactics(AI_NORMAL, ZONER, true);
     expect(t.apply(view({}), cmd)).toBe(cmd | Cmd.weather);
     expect(t.apply(view({ weatherIn: 30 }), cmd)).toBe(cmd);
+    // WP-arcade-weather-charge: nothing to cast until the charge is full.
+    expect(t.apply(view({ weatherCharge: 999 }), cmd)).toBe(cmd);
+    expect(t.apply(view({ weatherCharge: 0 }), cmd)).toBe(cmd);
     expect(t.apply(view({ selfStun: 3 }), cmd)).toBe(cmd);
     expect(t.apply(view(threat(30), 1), cmd)).toBe(cmd);
     expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({}), cmd)).toBe(cmd);

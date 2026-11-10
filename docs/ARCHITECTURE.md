@@ -137,8 +137,9 @@ parry (`arcade/guard.ts`): after the dash the `input` slot regenerates the guard
 pending guard press (with a whiff lock); `applyArcadeHit` checks the window first (a parry: no damage, the projectile is
 reflected or the melee attacker stunned) and then `isGuarding` (chip damage, block-stun, guard meter drain and break);
 supers skip both. Weather (`arcade/weather.ts`): after the guard pass the `input` slot ends a weather whose timer ran
-out and casts on pending `Cmd.weather` presses (the caster's element weather for 500 game ticks, a 1500-tick cooldown
-per character whose first 16 ticks are cast recovery); the world block holds the one weather slot, and
+out and casts on pending `Cmd.weather` presses once the team's weather charge is full (`ArcadeT.weatherCharge`, filled by ranged casts or
+melee-class walking in `arcade/meter.ts`, spent by the cast, reset each round; the caster's element weather for 500 game ticks, a
+50-tick lockout per character whose first 16 ticks are cast recovery); the world block holds the one weather slot, and
 `applyArcadeHit` scales the attacker's damage by `weatherDamage` between the element chart and the combo scale.
 Elemental clash (`arcade/clash.ts`, the `collision` slot): overlapping projectiles of opposing teams clash by their
 owners' elements (pairs `i < j`, one clash per projectile per tick); the advantaged one survives with
@@ -179,7 +180,7 @@ gives the accepted bits for the net session and replay validation). An `Agent` (
 thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents. In Arcade the view also
 carries `arcade` (`ArcadeView`: both meters, both stuns, the freeze, both live combos, own super running, the round
 phase, the press ages, the enemy projectiles on the field with their velocity, and the ticks until its own dash and weather
-are ready; only what the screen shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`, knobs and
+are ready plus its weather charge; only what the screen shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`, knobs and
 personalities in `scripted-ai/arcade-ai.ts`) reads, drawing from its own `ai.arcade.pN` stream; Classic views have no
 `arcade`, so Classic agents decide exactly as before.
 
@@ -293,7 +294,7 @@ use, samples trails and afterimages on every sim tick, runs on the view tick (it
 Arena under one `postupdate` listener. The round view mounts the weather view (`src/game/fx/weather-view.ts`,
 WP-arcade-weather-view) the same way (its own `weather-view` chunk and `codeSplitting` group); its consumer hands each
 tick's events on to the defence view's, so the round view holds one. It draws the sky tint and particles in the Arena and
-the weather badge and called line in the `Hud` scene, follows `RenderView.arcade().weather` and `weatherLeft` for what is
+the weather badge, called line and charge chip (WP-arcade-weather-charge, from `RenderView.arcade().weatherCharge`) in the `Hud` scene, follows `RenderView.arcade().weather` and `weatherLeft` for what is
 up, and takes the called line and live lines from `weatherChanged` and `weatherEnded` (pure rules in `weather-fx.ts`).
 The defence view mounts the clash burst (`src/game/fx/clash-view.ts`, WP-arcade-clash; its own `clash-view` chunk and
 `codeSplitting` group) in the Arena and hands it the same events: one Graphics made on the first `clash`, a typed-array

@@ -1,11 +1,11 @@
 import type Phaser from 'phaser';
-import type { RenderView, SimEvent } from '@core/index';
+import { WEATHER_CHARGE_FULL, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountTagView } from '../hud/tag-view';
 import {
   CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TICK_MS, WEATHER_COLORS, WEATHER_NAMES, WeatherFx,
-  badgeFill, badgeLabel, callAlpha, callScale, particle, progress, tintAlpha, type Particle,
+  badgeFill, badgeLabel, callAlpha, callScale, chargeFill, chargeLabel, particle, progress, readyAlpha, tintAlpha, type Particle,
 } from './weather-fx';
 
 /**
@@ -39,6 +39,13 @@ const GLYPH = 26;
 const BAR_H = 6;
 /** Time-bar notches every 2 s: the bar reads by its length and pattern, not colour. */
 const NOTCHES = 5;
+/**
+ * Weather-charge chip (WP-arcade-weather-charge): team 0's charge ("WEATHER 60%" and a bar notched in quarters, or
+ * "WEATHER READY" with a blinking border) always shown, centred under the badge's slot.
+ */
+const CHARGE_Y = 200;
+const CHARGE_PX = 22;
+const CHARGE_BAR_W = 200;
 /** The called line: between the badge and the round banners (y 320). */
 const CALL_Y = 244;
 const CALL_PX = 64;
@@ -57,6 +64,10 @@ export interface WeatherState {
   /** Sky tint alpha and the particles drawn on the last frame. */
   readonly tint: number;
   readonly particles: number;
+  /** The charge chip: team 0's charge (per mille), its text and the bar fill (px). */
+  readonly charge: number;
+  readonly chargeText: string;
+  readonly chargeFill: number;
   /** The called line while it shows ('' otherwise) and its scale. */
   readonly call: string;
   readonly callScale: number;
@@ -87,7 +98,11 @@ export function mountWeatherView(
   let reduced = prefs().reduceMotion;
   let highContrast = prefs().highContrast;
   let parts:
-    | { sky: Phaser.GameObjects.Graphics; fall: Phaser.GameObjects.Graphics; badge: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text; call: Phaser.GameObjects.Text }
+    | {
+      sky: Phaser.GameObjects.Graphics; fall: Phaser.GameObjects.Graphics; badge: Phaser.GameObjects.Graphics;
+      label: Phaser.GameObjects.Text; call: Phaser.GameObjects.Text;
+      bar: Phaser.GameObjects.Graphics; chip: Phaser.GameObjects.Text;
+    }
     | undefined;
 
   // View time: the view tick plus the frame time since it changed (capped below one tick, so it holds while paused).
@@ -100,7 +115,7 @@ export function mountWeatherView(
   let startedAt = Number.NEGATIVE_INFINITY;
   let callFrom = Number.NEGATIVE_INFINITY;
   let callReduced = false;
-  const drawn = { kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1 };
+  const drawn = { kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1, charge: -1, chargeText: '', chargeFill: 0, ready: 1 };
   const pt: Particle = { x: 0, y: 0, dx: 0, dy: 0, r: 0, a: 0 };
 
   const text = (px: number, stroke: number): Phaser.GameObjects.Text =>
@@ -112,7 +127,7 @@ export function mountWeatherView(
       .setDepth(HUD_DEPTH)
       .setVisible(false);
 
-  /** The objects, made on the first weather (a match without one makes none). */
+  /** The objects, made on the first frame the Hud runs. */
   const made = (): NonNullable<typeof parts> => {
     parts ??= {
       sky: arena.add.graphics().setDepth(SKY_DEPTH),
@@ -121,6 +136,8 @@ export function mountWeatherView(
       // Up to 1.4x on a phone (as `phoneBoost` in boot/viewport.ts), so the label stays near 12 CSS px.
       label: text(Math.round(LABEL_PX * Math.min(1.4, Math.max(1, 900 / (hud.scale.displaySize.width || 900)))), 5).setOrigin(0, 0),
       call: text(CALL_PX, 8).setOrigin(0.5),
+      bar: hud.add.graphics().setDepth(HUD_DEPTH),
+      chip: text(CHARGE_PX, 4).setOrigin(0.5, 0).setVisible(true),
     };
     return parts;
   };
@@ -168,16 +185,40 @@ export function mountWeatherView(
     for (let q = 1; q < NOTCHES; q++) g.lineBetween(x + (q * w) / NOTCHES, by, x + (q * w) / NOTCHES, by + BAR_H);
   };
 
+  /** The charge chip: its text, then a plate, the bar (notched in quarters) and, ready, a blinking border. */
+  const drawCharge = (p: NonNullable<typeof parts>, pm: number, clock: number): void => {
+    const ready = pm >= WEATHER_CHARGE_FULL;
+    const alpha = ready ? readyAlpha(clock, reduced) : 1;
+    if (pm === drawn.charge && alpha === drawn.ready) return;
+    drawn.charge = pm;
+    drawn.ready = alpha;
+    const label = chargeLabel(pm);
+    if (label !== drawn.chargeText) p.chip.setText(label);
+    drawn.chargeText = label;
+    drawn.chargeFill = chargeFill(pm, CHARGE_BAR_W);
+    const x = BADGE_X - CHARGE_BAR_W / 2;
+    p.chip.setPosition(BADGE_X, CHARGE_Y);
+    const by = CHARGE_Y + p.chip.height + 2;
+    const g = p.bar.clear();
+    g.fillStyle(0x000000, highContrast ? 0.85 : 0.55).fillRoundedRect(x - 8, CHARGE_Y - 4, CHARGE_BAR_W + 16, p.chip.height + BAR_H + 12, 6);
+    g.fillStyle(0x000000, 0.8).fillRect(x, by, CHARGE_BAR_W, BAR_H);
+    g.fillStyle(ready ? 0xffe066 : 0x9fd8ff, 1).fillRect(x, by, drawn.chargeFill, BAR_H);
+    g.lineStyle(highContrast || ready ? 2 : 1, highContrast || ready ? 0xffffff : 0x000000, alpha).strokeRect(x, by, CHARGE_BAR_W, BAR_H);
+    for (let q = 1; q < 4; q++) g.lineBetween(x + (q * CHARGE_BAR_W) / 4, by, x + (q * CHARGE_BAR_W) / 4, by + BAR_H);
+  };
+
   function draw(_time: number, delta: number): void {
     if (drawnTick !== tick) sub = 0;
     else sub = Math.min(TICK_MS - 1, sub + delta);
     drawnTick = tick;
-    const p = parts;
+    // The objects are made on the first frame the Hud runs (the chip shows from then on, with or without a weather).
+    const p = parts ?? (hud.sys.isActive() ? made() : undefined);
     if (!p) return;
     const clock = now();
     const ar = view.arcade();
     const kind = ar?.weather ?? 0;
     const left = ar?.weatherLeft ?? 0;
+    drawCharge(p, ar?.weatherCharge[0] ?? 0, clock);
     // The called line, timed on the view tick.
     if (p.call.visible) {
       const c = progress(clock, callFrom, CALL_TICKS);
@@ -235,9 +276,9 @@ export function mountWeatherView(
   arena.events.on('postupdate', draw);
   for (const s of [arena, hud]) s.events.once('shutdown', off).once('destroy', off);
   // A weather already up when the view mounts (a replay seeking, or a slow chunk) shows at once, with no called line.
-  if ((view.arcade()?.weather ?? 0) > 0) made();
   states.set(arena, () => ({
     kind: drawn.kind, label: drawn.label, fill: Math.max(0, drawn.fill), tint: drawn.tint, particles: drawn.particles,
+    charge: Math.max(0, drawn.charge), chargeText: drawn.chargeText, chargeFill: drawn.chargeFill,
     call: parts?.call.visible ? parts.call.text : '', callScale: drawn.scale,
   }));
   return (events) => {

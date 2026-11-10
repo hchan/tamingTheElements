@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) WP 19 (`WP-arcade-tag`, sim only: the 2v2 tag team, its entrance attack, KO entrance and bench recovery, section 2.6) and WP 20 (`WP-arcade-tag-view`: the 1v1 or 2v2 pick in Arcade Versus, the team HUD with red life and the tag cooldown, the TAG! call and entrance flash, the touch Tag button and the 2v2 results; section 3) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 17 (`WP-arcade-defence-view`: the dash and guard keys, pad buttons and touch buttons, and their effects), WP 18 (`WP-arcade-clash`: projectile clash by element and its burst), WP 27 (`WP-arcade-8way-aim`), WP 29 (`WP-arcade-weather`, sim only) and WP 30 (`WP-arcade-weather-view`: the weather key, pad button and touch button, and its HUD badge, sky tint, particles and called line), WP 23 (`WP-arcade-ai-personalities`: personalities, Easy/Normal/Hard, parry, dodge, guard, dashes and weather in the AI), WP 24 (`WP-arcade-numbers`: Arcade life, damage, stun and cooldown numbers, section 2.13, and the Arcade balance baseline) WP 26 (`WP-arcade-audio-layers`: synthesised hit, defence, clash, super, weather and round cues and the KO music cut) WP 19 (`WP-arcade-tag`, sim only: the 2v2 tag team, its entrance attack, KO entrance and bench recovery, section 2.6) and WP 20 (`WP-arcade-tag-view`: the 1v1 or 2v2 pick in Arcade Versus, the team HUD with red life and the tag cooldown, the TAG! call and entrance flash, the touch Tag button and the 2v2 results; section 3) and WP 35 (`WP-arcade-weather-charge`: weather needs a charge, section 2.14) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -61,9 +61,9 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   - per entity (`ARCADE_E = 16` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
     dashUntil, dashReadyAt, blockUntil, parryUntil, parryLockUntil, guardDrain, comboStunTotal, wallBounced, aim,
     dashDodged, weatherReadyAt` (WP 16 renamed `guardState` and `guardMeter`: `guardDrain` is 1000 minus the guard meter);
-  - per team (`ARCADE_T = 17` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 6
+  - per team (`ARCADE_T = 18` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 6
     (primary, secondary, dash, guard, super, weather), lastDirPress, lastDir, roundsWon, superState, pressUsed,
-    confirmTick`;
+    confirmTick, weatherCharge`;
   - world (`ARCADE_W = 12`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil,
     roundWinner, weather, weatherUntil, weatherTeam`.
 - **Game clock.** `W.tick` stays the replay and event index and always advances. Arcade adds `gameTick`, which does
@@ -534,6 +534,22 @@ matchup becomes something to play around instead of a fixed loss.
   by pressing attack buttons (each cast adds), melee heroes charge it just by walking and running (distance moved).
   Casting spends the full charge; the 30 s cooldown is replaced by the charge. Numbers are data rows (threshold, gain per
   cast, gain per walked pixel); start so that a normal fight unlocks weather around the middle of a round. See WP 35.
+  Built in WP 35 (`WP-arcade-weather-charge`, SIM_VERSION 19), decisions: the charge is per TEAM (a 2v2 team shares one
+  bar and one swap does not lose it), 0..1000 per mille (`ArcadeT.weatherCharge`), and it **resets to 0 at every round
+  start** (it does not carry; the round reset empties it with the rest of the round state). Ranged vs melee comes from
+  the controlled hero's PRIMARY ability kind: `range` and `omni` (`WEATHER_RANGED_KINDS`) are ranged, everything else
+  (melee, buff, heal, debuff: Curomo, Treenoc, Pax, Rokcore, Echo, Fiara, Morblass) is melee-class. A ranged hero gains
+  `WEATHER_CHARGE_CAST` (30) per primary or secondary cast (`onArcadeCast`); a melee-class hero gains
+  `WEATHER_CHARGE_STEP` (4) per tick it walks or runs (a `moved` tick: not blocked by a wall, not a dash, not stunned);
+  the other source gives nothing. `WEATHER_CHARGE_FULL` (1000) unlocks the cast; a cast spends all of it and the cooldown
+  is now a `WEATHER_COOLDOWN_TICKS` = 50 lockout (a held key cannot double-cast; `weatherReadyAt` keeps the 16-tick
+  recovery). Measured (`pnpm fun:report --ruleset arcade --seeds 8`, scripted vs scripted): the charge is full a median of
+  22.8 s into a round for ranged heroes and 22.0 s for melee-class ones (round median 41 to 43 s, so about the middle;
+  Ishimi, whose primary is a 10 s omni, is the slow one at about 62 s); weather casts per match fell from 1.51 to 0.79
+  because the AI now also waits for the charge (first cast in a round, median 28.6 s ranged, 27.2 s melee, against 3.9 s
+  and 3.5 s); the Arcade balance compare moved at most 4.5 pp (Sindarosa 50.0 to 45.5; the spread of 43.2 to 57.1 became
+  45.2 to 55.7), so the Arcade baseline was re-recorded. The scripted AI (`ObservationView.arcade.weatherCharge`) casts only
+  when the charge is full; `RenderView.arcade().weatherCharge` is `[team 0, team 1]` for the HUD.
 - **Cast:** a new `Cmd.weather` (Arcade only; its own button, never in Classic's input mask). Each race calls the
   weather of its element: fire **Sun**, water **Rain**, earth **Sandstorm**, air **Gale**, void **Eclipse**. Cooldown
   1500 ticks (30 s), duration 500 ticks (10 s). Casting is a medium recovery and builds a little meter.
@@ -555,8 +571,9 @@ matchup becomes something to play around instead of a fixed loss.
   and guard passes, first ends a weather whose `weatherUntil` has come (`weatherEnded {weather}`), then team 0 and then
   team 1 cast on a pending press when the controlled character `canAct` and its `weatherReadyAt` has come: the slot
   becomes `weather` = the kind of the caster's element (1 Sun, 2 Rain, 3 Sandstorm, 4 Gale, 5 Eclipse),
-  `weatherUntil = gameTick + 500`, `weatherTeam` = the caster's team; `weatherReadyAt = gameTick + 1500` (per
-  character, like the ability cooldowns; a 2v2 team has one weather per member); +50 meter;
+  `weatherUntil = gameTick + 500`, `weatherTeam` = the caster's team; `weatherReadyAt = gameTick + 1500` (WP 35
+  made it a 50-tick lockout and gated the cast by the team's weather charge, see 2.14 above; per
+  character, like the ability cooldowns); +50 meter;
   `weatherChanged {weather, prev, team}`. A replacement has no `weatherEnded`; on a same-tick tie team 1's cast wins.
   The recovery is the 16 game ticks after the cast (read from `weatherReadyAt`): `isFree` is false and a hit on the
   caster is a counter hit. Damage: `applyArcadeHit` runs the Classic `computeDamage`, then `weatherDamage` by the
@@ -721,6 +738,12 @@ and drops the afterimages, trails, flying sparks and shards. Effects run on the 
 Per match: two Graphics, six afterimage Images and four Texts, made on first use; sparks, rings and trails live in
 typed arrays (no per-frame allocation); one Arena `postupdate` listener, all removed with the Arena. The parry
 ping and guard sounds came with WP 26, clash bursts with WP 18.
+
+Built in WP 35 (`WP-arcade-weather-charge`, view): a charge chip in the weather view (same lazy chunk), centred under the
+badge slot (y 200) from the first frame of an Arcade match: the text `WEATHER 60%` (whole percent, rounded down) while it fills
+and `WEATHER READY` once full, a bar notched in quarters whose length is the charge, and a white blinking border when
+ready (steady with reduced motion; the pattern, the notches and the words carry it, colour is only an extra cue). It shows
+team 0's charge (the local player's).
 
 Built in WP 30 (`WP-arcade-weather-view`, view and input only): `RenderView.arcade()` adds `weather` (the `Weather` kind,
 0 none) and `weatherLeft` (game ticks left), read-outs only (the sim and its hashes are unchanged); `src/core/index.ts`
@@ -917,7 +940,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 32 | `WP-arcade-terrain-view` | view | Patch art with pattern and label, buff badge, particles | 31 |
 | 33 | `WP-arcade-pose-layer` | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
 | 34 | `WP-sprite-sheet-pipeline` | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
-| 35 | `WP-arcade-weather-charge` | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
+| 35 | `WP-arcade-weather-charge` (done; section 2.14) | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid

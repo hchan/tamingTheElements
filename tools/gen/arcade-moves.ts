@@ -55,10 +55,17 @@ function home(p1: Track, p2: Track, at: number, walk: number, rows = 31): number
  * WP-arcade-numbers timings: cones in each beat-down, when round 2 and round 3 start their segments (each after the
  * round before ended), and the round 2 guard (held while GUARD_BLASTS come; about 11 blocked blasts break it).
  */
-const BEAT_ROUND_1 = 9;
+const BEAT_ROUND_1 = 10;
 const BEAT_ROUND_3 = 11;
-const ROUND_2 = 3800;
-const ROUND_3 = 8600;
+/**
+ * Weather power (WP-arcade-weather-charge): the weather needs a full charge, and a Fire Blast adds WEATHER_CHARGE_CAST,
+ * so segment C starts CHARGE_SHIFT ticks late and p2 first fires CHARGE_BLASTS blasts away from p1 (east, off the
+ * right wall); every later segment moves by the same shift.
+ */
+const CHARGE_SHIFT = 1300;
+const CHARGE_BLASTS = 35;
+const ROUND_2 = 3800 + CHARGE_SHIFT;
+const ROUND_3 = 8600 + CHARGE_SHIFT;
 const GUARD_HOLD = 800;
 const GUARD_BLASTS = 14;
 /** Cone spacing in a beat-down: past the light hit-stun (32) plus its hit-stop, so each cone is a fresh 1-hit combo. */
@@ -87,20 +94,20 @@ function movesScript(): ArcadeScript {
   let h = home(p1, p2, 260, 100);
   p1.until(h).tap('tornado', primary, 1, 6);
   for (let i = 0; i < 3; i++) p1.tap('cone', secondary, 1, 19);
+  // Charge: p2 fires blasts east from the right wall until its weather charge is full.
+  p2.until(720).step('p2 to the right wall', right, 140);
+  for (let i = 0; i < CHARGE_BLASTS; i++) p2.tap('charge blast', primary, 1, 30);
   // Segment C: counter hit (p2 calls its weather, and its recovery is when p1's cone lands).
-  h = home(p1, p2, 720, 100);
+  h = home(p1, p2, 720 + CHARGE_SHIFT, 100);
   p1.until(h + 10).tap('cone', secondary);
   p2.until(h + 57).tap('sun', weather);
   // Segment D: dash with a perfect dodge (p2's fire blast passes through p1's invulnerable dash ticks).
-  h = home(p1, p2, 1130, 100);
+  h = home(p1, p2, 1130 + CHARGE_SHIFT, 100);
   p2.until(h + 10).tap('fire blast', primary);
   p1.until(h + 60).tap('dash up', up | dash);
-  // Segment F: 8-way aim (p1 stands up on the top wall and shoots down-right at p2: a diagonal hit).
-  h = home(p1, p2, 1640, 138, 0);
-  p1.until(h).step('aim down-right', right | down, 1).tap('diagonal cone', secondary);
   // Beat-down (WP-arcade-numbers: Arcade lives are about 4x the hits now): single cones a stun apart, so p2 is low
   // enough for the parry's reflection to KO it.
-  h = beatDown(p1, p2, 2250, BEAT_ROUND_1);
+  h = beatDown(p1, p2, 1700 + CHARGE_SHIFT, BEAT_ROUND_1);
   // Segment E: parry (p1 taps guard as the blast arrives: it is reflected, and the reflection KOs p2, who is low by now).
   h = home(p1, p2, h + 60, 100);
   p2.until(h + 10).tap('fire blast', primary);
@@ -110,6 +117,10 @@ function movesScript(): ArcadeScript {
   p1.until(h).step('hold guard', guard, GUARD_HOLD);
   p2.until(h + 10);
   for (let i = 0; i < GUARD_BLASTS; i++) p2.tap('fire blast', primary, 1, 35);
+  // Segment F (WP-arcade-weather-charge: moved here, so round 1 fits the timer): 8-way aim (p1 stands up on the top
+  // wall and shoots down-right at p2: a diagonal hit).
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 60, 138, 0);
+  p1.until(h).step('aim down-right', right | down, 1).tap('diagonal cone', secondary);
   // Round 3: p1 carries its meter over, wears p2 down, scores a combo and a cone, then spends a bar on the super that
   // finishes p2.
   h = beatDown(p1, p2, ROUND_3, BEAT_ROUND_3);
@@ -126,6 +137,10 @@ function movesScript(): ArcadeScript {
  * Weather: the caster's element picks the weather, so one match calls all five by swapping heroes (the weather is ready
  * per character, and each hero casts once). Sun, rain, sandstorm, gale, eclipse.
  */
+const WALK_RUN = 66;
+/** Ticks to wait after a weather cast before a tag (the cast recovery is 16 ticks) or the next move. */
+const WEATHER_RECOVERY = 20;
+
 function weatherScript(): ArcadeScript {
   const setup: MatchSetup = {
     simVersion: SIM_VERSION, seed: 0x5ea7e5, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
@@ -141,21 +156,34 @@ function weatherScript(): ArcadeScript {
   };
   const p1 = new Track();
   const p2 = new Track();
-  p1.until(100).tap('sun (fire)', weather);
-  p2.until(130).tap('rain (water)', weather);
-  p1.until(150).tap('swap to earth', swap1).until(160).tap('sandstorm (earth)', weather);
-  p2.until(170).tap('swap to air', swap1).until(180).tap('gale (air)', weather);
-  // The swap cooldown is 250 ticks: the second swap of p1 comes after it. From rokcore the teammates are fiara, void.
-  p1.until(410).tap('swap to void', swap2).until(420).tap('eclipse (void)', weather);
+  // Weather power: fire, earth and void walk the charge up (melee-class heroes gain it by walking; a lap of four runs
+  // of WALK_RUN ticks returns to the start spot), and the cast follows once it is full.
+  const lap = (p: Track, at: number, out: number, back: number): void => {
+    p.until(at);
+    for (const dir of [out, back, out, back]) p.step('walk', dir, WALK_RUN);
+  };
+  lap(p1, 100, right, left);
+  p1.tap('sun (fire)', weather).wait(WEATHER_RECOVERY).tap('swap to earth', swap1);
+  lap(p1, p1.tick, right, left);
+  p1.tap('sandstorm (earth)', weather);
+  lap(p1, p1.tick, right, left);
+  p1.wait(WEATHER_RECOVERY).tap('swap to void', swap2).wait(30).tap('eclipse (void)', weather);
+  lap(p2, 110, left, right);
+  p2.tap('rain (water)', weather).wait(WEATHER_RECOVERY);
+  lap(p2, p2.tick, left, right);
+  p2.tap('swap to air', swap1).tap('gale (air)', weather);
+  const e = p1.tick;
   // A hit under the eclipse: the void bolt crosses the arena and lands with the weather's damage factor.
-  p1.until(440).tap('chaos bolt', primary);
+  p1.until(e + 18).step('face east', right, 1);
+  p2.until(e + 18).step('face west', left, 1);
+  p1.until(e + 24).tap('chaos bolt', primary);
   // Elemental clash (WP-arcade-clash): shots fired on the same row meet in the middle. Void against air cancels (both
   // destroyed); then fire (Fiara's Fireball) beats air (the cone), loses half the cone's damage and flies on to land.
-  p1.until(600).tap('chaos bolt', primary);
-  p2.until(600).tap('cone', secondary);
-  p1.until(700).tap('swap to fire', swap1).until(720).tap('fireball', secondary);
-  p2.until(720).tap('cone', secondary);
-  p1.until(900);
+  p1.until(e + 180).tap('chaos bolt', primary);
+  p2.until(e + 180).tap('cone', secondary);
+  p1.until(e + 280).tap('swap to fire', swap1).until(e + 300).tap('fireball', secondary);
+  p2.until(e + 300).tap('cone', secondary);
+  p1.until(e + 480);
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
 

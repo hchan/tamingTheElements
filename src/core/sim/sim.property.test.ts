@@ -55,7 +55,7 @@ import {
 } from '../data/arcade';
 import { CHORD_FLAG, PRESS_BITS, pressAge } from './systems/arcade/buffer';
 import { SUPER_DEF } from './systems/arcade/hit';
-import { skipIntro } from './systems/arcade/round-testkit';
+import { chargedWeather, skipIntro } from './systems/arcade/round-testkit';
 import { castDir } from './systems/arcade/aim';
 import { facingFor } from './systems/movement';
 import { DIR8_X, DIR8_Y } from '../math/dir8';
@@ -603,7 +603,7 @@ describe('sim properties: invariants', () => {
       fc.property(setupArb, inputsArb, (setup, inputs) => {
         const arcade = { ...setup, flags: { ...setup.flags, rulesetArcade: true } };
         // Into the fight at once, so the intro does not eat short input streams.
-        const { events } = runInputs(arcade, inputs, true, skipIntro);
+        const { events } = runInputs(arcade, inputs, true, (w) => chargedWeather(skipIntro(w)));
         const all = events.flat();
         const started = all.filter(
           (e) => e.kind === SimEventKind.weatherChanged && e['prev'] === 0,

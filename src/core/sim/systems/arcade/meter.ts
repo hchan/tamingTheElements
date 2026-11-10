@@ -1,4 +1,10 @@
-import { METER_BAR, METER_CAST, METER_DEAL_PM, METER_MAX, METER_TAKE_PM } from '../../../data/arcade';
+import {
+  METER_BAR, METER_CAST, METER_DEAL_PM, METER_MAX,
+  METER_TAKE_PM, WEATHER_CHARGE_CAST, WEATHER_CHARGE_FULL, WEATHER_CHARGE_STEP, WEATHER_RANGED_KINDS,
+} from '../../../data/arcade';
+import { ABILITIES_A } from '../../../data/abilities-a';
+import { ABILITIES_B } from '../../../data/abilities-b';
+import { CHARACTERS } from '../../../data/characters';
 import { isArcade } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, type SimState } from '../../state';
@@ -58,4 +64,26 @@ export function meterOnHit(s: SimState, sink: EventSink, source: number, attacke
 /** A cast by `caster` of `team` (projectile, melee, buff or heal; not capture; through `onArcadeCast`): +METER_CAST. */
 export function meterOnCast(s: SimState, sink: EventSink, caster: number, team: number): void {
   if (isArcade(s)) gainMeter(s, sink, caster, team, METER_CAST);
+}
+
+/** By character def index: 1 when its primary ability is ranged (WEATHER_RANGED_KINDS): it charges weather by casting. */
+export const RANGED: readonly number[] = CHARACTERS.map((c) => {
+  const kind = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === c.abilities[0])?.kind ?? '';
+  return WEATHER_RANGED_KINDS.includes(kind) ? 1 : 0;
+});
+
+/** `team`'s weather charge (0..WEATHER_CHARGE_FULL, FUN-DESIGN 2.14). */
+export function weatherCharge(s: SimState, team: number): number {
+  return s.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.weatherCharge] ?? 0;
+}
+
+/**
+ * `char` of `team` cast (`cast` true) or walked a tick (false): its team's weather charge rises by WEATHER_CHARGE_CAST
+ * if it is ranged and cast, by WEATHER_CHARGE_STEP if it is not and walked, capped at WEATHER_CHARGE_FULL.
+ */
+export function chargeWeather(s: SimState, char: number, team: number, cast: boolean): void {
+  const ranged = RANGED[s.defId[char] ?? 0] === 1;
+  if (ranged !== cast) return;
+  const i = ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.weatherCharge;
+  s.arcade[i] = Math.min(WEATHER_CHARGE_FULL, (s.arcade[i] ?? 0) + (cast ? WEATHER_CHARGE_CAST : WEATHER_CHARGE_STEP));
 }

@@ -67,6 +67,8 @@ export interface RenderArcade {
   /** The weather up (a `Weather` kind, 0 none) and the game ticks it has left (0 with none), FUN-DESIGN 2.14. */
   weather: number;
   weatherLeft: number;
+  /** Each team's weather charge, 0..WEATHER_CHARGE_FULL (FUN-DESIGN 2.14, WP 35). */
+  weatherCharge: [number, number];
 }
 
 /** One active status as the HUD sees it. The object is reused between callbacks. */
@@ -142,7 +144,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
   const ar: RenderArcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, roundsWon: [0, 0],
-    weather: 0, weatherLeft: 0,
+    weather: 0, weatherLeft: 0, weatherCharge: [0, 0],
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
   };
@@ -242,6 +244,7 @@ export function createRenderView(world: SimWorld): RenderView {
         ar.comboDamage[t] = (s.arcade[b + ArcadeT.comboDamageQ4] ?? 0) / Q4_ONE;
         ar.meter[t] = s.arcade[b + ArcadeT.meter] ?? 0;
         ar.roundsWon[t] = s.arcade[b + ArcadeT.roundsWon] ?? 0;
+        ar.weatherCharge[t] = s.arcade[b + ArcadeT.weatherCharge] ?? 0;
       }
       ar.round = s.arcade[ARCADE_WORLD_BASE + ArcadeW.round] ?? 0;
       ar.phase = s.arcade[ARCADE_WORLD_BASE + ArcadeW.phase] ?? 0;

@@ -14,6 +14,8 @@ export interface FunMatchMeta {
   readonly endReason: 'ko' | 'timeout' | 'stalemate';
   /** Team (0 or 1) of an entity id; used to split hits by side. */
   readonly teamOf: (entityId: number) => number;
+  /** True when the character entity charges weather by casting (ranged primary), false when by walking (WP 35). */
+  readonly rangedOf?: (entityId: number) => boolean;
 }
 
 export interface FunMetrics {
@@ -54,6 +56,9 @@ export interface FunMetrics {
   readonly parries: number;
   readonly dodges: number;
   readonly weathers: number;
+  /** Seconds from `fight` to the first weather cast of each round, by the caster's kind (WP 35: ranged / melee). */
+  readonly firstWeatherRanged: readonly number[];
+  readonly firstWeatherMelee: readonly number[];
 }
 
 export function percentile(values: readonly number[], p: number): number {
@@ -69,6 +74,8 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
   let firstFight: number | null = null;
   let firstHit: number | null = null;
   let roundHit = false;
+  let roundWeather = false;
+  const firstWeather: [number[], number[]] = [[], []];
   const roundFirstHits: number[] = [];
   const roundSeconds: number[] = [];
   let timeOvers = 0;
@@ -89,6 +96,7 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
         fightTick = e.tick;
         firstFight ??= e.tick;
         roundHit = false;
+        roundWeather = false;
         break;
       case SimEventKind.roundEnded:
         roundSeconds.push(r3((e.tick - fightTick) / TICKS_PER_SECOND));
@@ -150,6 +158,8 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
         break;
       case K.weatherChanged:
         count.weathers++;
+        if (!roundWeather) firstWeather[meta.rangedOf?.(e.sourceId) === true ? 0 : 1].push(r3((e.tick - fightTick) / TICKS_PER_SECOND));
+        roundWeather = true;
         break;
       default:
     }
@@ -175,6 +185,8 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
     leadChanges,
     recovered,
     ...count,
+    firstWeatherRanged: firstWeather[0],
+    firstWeatherMelee: firstWeather[1],
   };
 }
 
@@ -212,6 +224,9 @@ export interface FunSummary {
   readonly parries: number;
   readonly dodges: number;
   readonly weathers: number;
+  /** Median seconds into a round of the first weather cast, by caster kind (0 with no cast). */
+  readonly medianFirstWeatherRanged: number;
+  readonly medianFirstWeatherMelee: number;
 }
 
 /** Pools per-match metrics into the section 4 table values (medians and percentiles over matches or combos). */
@@ -254,5 +269,7 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
     parries: sum((m) => m.parries),
     dodges: sum((m) => m.dodges),
     weathers: sum((m) => m.weathers),
+    medianFirstWeatherRanged: percentile(list.flatMap((m) => m.firstWeatherRanged), 0.5),
+    medianFirstWeatherMelee: percentile(list.flatMap((m) => m.firstWeatherMelee), 0.5),
   };
 }

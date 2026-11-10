@@ -3,7 +3,7 @@ import { isArcade, now } from '../../clock';
 import { Cmd, inputMaskFor, type Command } from '../../commands';
 import type { EventSink } from '../../events';
 import { ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, TEAM_COUNT, type SimState } from '../../state';
-import { meterOf, meterOnCast } from './meter';
+import { chargeWeather, meterOf, meterOnCast } from './meter';
 
 /** Presses in `ArcadeT.pressTick` order (FUN-DESIGN 2.12); primary and secondary are also the ability slots 0 and 1. */
 export const Press = { primary: 0, secondary: 1, dash: 2, guard: 3, super: 4, weather: 5 } as const;
@@ -123,5 +123,6 @@ export function usePress(s: SimState, team: number, k: number): void {
 export function onArcadeCast(s: SimState, sink: EventSink, caster: number, team: number, slot: number): void {
   if (!isArcade(s)) return;
   meterOnCast(s, sink, caster, team);
+  chargeWeather(s, caster, team, true);
   usePress(s, team, slot);
 }

@@ -88,6 +88,9 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   an opaque plate and a white bar outline). The label grows up to 1.4x on a phone. A cast also shows its name as a line
   ("Sunshine!", "Rain!", "Sandstorm!", "Gale!", "Eclipse!") for 1.5 s. Reduced motion keeps the badge, the line (at full
   size, no scale-in) and a steady sky tint, and drops the particles and the tint fade (FUN-DESIGN 2.14 and section 3).
+  The weather charge chip (WP-arcade-weather-charge) under the badge says `WEATHER 60%` and then `WEATHER READY`, so it reads
+  as text and by the bar's length and quarter notches, not by colour; READY adds a white border that blinks, steady with
+  reduced motion; high contrast uses an opaque plate and a white bar outline.
 - Arcade 2v2 tag team (`src/game/hud/tag-view.ts`, WP-arcade-tag-view): under each side's bars, words say who is in
   ("IN Sindarosa") and the bench's state ("BENCH Pax 40% +20% red", "BENCH Pax K.O."); the active bar has a gold frame
   (white and thicker in high contrast) and the red life (the rest cap above the health, which a benched hero wins back)
