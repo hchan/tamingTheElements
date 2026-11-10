@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allocEntity, freeEntity, isAlive, liveIds } from './alloc';
-import { MAX_ENTITIES, World, createSimState, restoreState, snapshotState } from './state';
+import { hash } from './hash';
+import { MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World, createSimState, restoreState, snapshotState } from './state';
 
 describe('sim state alloc', () => {
   it('allocates lowest id first and reuses freed ids deterministically', () => {
@@ -38,5 +39,24 @@ describe('sim state alloc', () => {
     expect(isAlive(s, a)).toBe(true);
     expect(s.x[3]).toBe(0);
     expect(s.world[World.matchSeed]).toBe(42);
+  });
+
+  it('freeing an entity clears its status slots and only its own', () => {
+    const s = createSimState(3);
+    const a = allocEntity(s);
+    const b = allocEntity(s);
+    const clean = createSimState(3);
+    allocEntity(clean);
+    allocEntity(clean);
+    const per = STATUS_SLOTS * STATUS_STRIDE;
+    s.status.fill(7, a * per, (a + 1) * per);
+    s.status.fill(9, b * per, (b + 1) * per);
+    freeEntity(s, a);
+    expect(Array.from(s.status.subarray(a * per, (a + 1) * per))).toEqual(new Array<number>(per).fill(0));
+    expect(Array.from(s.status.subarray(b * per, (b + 1) * per))).toEqual(new Array<number>(per).fill(9));
+    freeEntity(s, b);
+    freeEntity(clean, a);
+    freeEntity(clean, b);
+    expect(hash(s)).toBe(hash(clean));
   });
 });

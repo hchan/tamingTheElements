@@ -1,8 +1,10 @@
-import { EntityFlag, F64_FIELDS, I32_FIELDS, MAX_ENTITIES, World, type SimState } from './state';
+import { EntityFlag, F64_FIELDS, I32_FIELDS, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, World, type SimState } from './state';
 
 function clearSlot(s: SimState, id: number): void {
   for (const f of F64_FIELDS) s[f][id] = 0;
   for (const f of I32_FIELDS) s[f][id] = 0;
+  const per = STATUS_SLOTS * STATUS_STRIDE;
+  s.status.fill(0, id * per, (id + 1) * per);
 }
 
 /**
@@ -23,7 +25,7 @@ export function allocEntity(s: SimState): number {
   return -1;
 }
 
-/** Frees an entity, clearing every field so stale data never reaches the hash. */
+/** Frees an entity, clearing every field and its status slots so stale data never reaches the hash. */
 export function freeEntity(s: SimState, id: number): void {
   if (id < 0 || id >= MAX_ENTITIES || !isAlive(s, id)) return;
   clearSlot(s, id);
