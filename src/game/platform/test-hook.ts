@@ -8,11 +8,19 @@ export interface ProbeCharacter {
 /** Deterministic control of the running Arena for e2e: pauses the real-time driver, then steps by hand. */
 export interface ArenaProbe {
   readonly tick: number;
+  readonly paused: boolean;
   hash(): number;
   /** Active (alive, not benched) characters. */
   characters(): ProbeCharacter[];
   /** Pauses the real-time driver and runs n sim ticks with the given commands (default: no input). */
   step(n: number, cmds?: readonly [number, number]): void;
+}
+
+export interface HookState {
+  readonly route: string;
+  readonly scene: string | undefined;
+  readonly tick: number;
+  readonly paused: boolean;
 }
 
 export interface TestHook {
@@ -21,6 +29,15 @@ export interface TestHook {
   /** Name of the active game scene, set by scenes in test builds. */
   scene?: string;
   arena?: ArenaProbe;
+  state(): HookState;
+  /** Hash of the running arena's sim state, or 0 outside a battle. */
+  hash(): number;
+  /** Pauses the driver and steps the running arena n ticks (manual stepping mode). */
+  step(n: number): void;
+  /** Imports a save (JSON text) into the save store and refreshes the current screen. */
+  loadSave(json: string): Promise<boolean>;
+  /** Number of window/document listeners currently held by a battle (0 after exit-to-menu). */
+  listeners(): number;
 }
 
 declare global {
@@ -29,12 +46,54 @@ declare global {
   }
 }
 
+/** Live count of listeners added through `counted`, exposed by the test hook to catch leaks. */
+export const listenerCount = { n: 0 };
+
+type Add = EventTarget['addEventListener'];
+type Remove = EventTarget['removeEventListener'];
+
+/** Wraps an event target so every add/remove is tallied in `listenerCount`. */
+export function counted<T extends Pick<EventTarget, 'addEventListener' | 'removeEventListener'>>(target: T): T {
+  const add: Add = (type, listener, options) => {
+    target.addEventListener(type, listener, options);
+    listenerCount.n++;
+  };
+  const remove: Remove = (type, listener, options) => {
+    target.removeEventListener(type, listener, options);
+    listenerCount.n--;
+  };
+  return new Proxy(target, {
+    get(t, prop) {
+      if (prop === 'addEventListener') return add;
+      if (prop === 'removeEventListener') return remove;
+      const v = Reflect.get(t, prop, t) as unknown;
+      return typeof v === 'function' ? (v as (...a: unknown[]) => unknown).bind(t) : v;
+    },
+  });
+}
+
 /**
  * Exposes `window.__TTE__` for e2e tests. The guard is statically replaced by Vite, so production
  * builds drop the whole body (and the property name) as dead code. E2E builds use `--mode test`.
  */
-export function installTestHook(version: number): void {
+export function installTestHook(version: number, loadSave: (json: string) => Promise<boolean>): void {
   if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
-    window.__TTE__ = { ready: true, version };
+    const hook: TestHook = {
+      ready: true,
+      version,
+      state: () => ({
+        route: window.location.hash,
+        scene: hook.scene,
+        tick: hook.arena?.tick ?? -1,
+        paused: hook.arena?.paused ?? false,
+      }),
+      hash: () => hook.arena?.hash() ?? 0,
+      step: (n) => {
+        hook.arena?.step(n);
+      },
+      loadSave,
+      listeners: () => listenerCount.n,
+    };
+    window.__TTE__ = hook;
   }
 }
