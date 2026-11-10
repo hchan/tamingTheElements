@@ -121,7 +121,9 @@ stunned and not casting a super), and Arcade movement applies knockback first an
 `health` slot is `arcadeSuper` (`arcade/super.ts`): `Cmd.super` spends a meter bar for a super (a 40-tick freeze, then
 an `effect` entity whose hits go through `applyArcadeHit` as strength 3). Arcade aims 8 ways (`arcade/aim.ts`): movement
 stores the dir8 of the held input in the entity's `aim` slot next to the 4-way `dir` (the reels), and the projectile and
-melee cast sites read `castDir` (the plain `dir` in Classic); the super band keeps the 4-way `dir`.
+melee cast sites read `castDir` (the plain `dir` in Classic); the super band keeps the 4-way `dir`. Arcade matches are best of 3
+(`arcade/round.ts` in the `cleanup` slot): only the `fight` phase lets anyone act or be hit, and the KO slow motion holds
+every second tick through the same freeze gate (`clockHeld` in `sim/clock.ts`).
 
 | # | System | Status |
 |---|---|---|
@@ -138,8 +140,8 @@ melee cast sites read `castDir` (the plain `dir` in Classic); the super band kee
 | 11 | debuffs (`systems/debuffs.ts`) | implemented |
 | 12 | status (`systems/status.ts`, timers) | implemented |
 | 13 | rest (`systems/rest.ts`, benched healing) | implemented |
-| 14 | cleanup | no-op |
-| 15 | end (`systems/end.ts`, match-end check, `matchEnded` event) | implemented |
+| 14 | cleanup (`systems/arcade/round.ts`) | Arcade only (returns at once in Classic): `arcadeRound`, round phases, timer, KO, best of 3, reset between rounds (`roundStarted`, `fight`, `ko`, `timeOver`, `roundEnded`) |
+| 15 | end (`systems/end.ts`, match-end check, `matchEnded` event) | implemented; Arcade: after the round that gives a side 2 round wins |
 
 Adding or reordering a system changes every hash: bump `SIM_VERSION` and re-record goldens (see DETERMINISM.md).
 
@@ -151,8 +153,8 @@ gives the accepted bits for the net session and replay validation). An `Agent` (
 `Command`; it must be a pure function of the view plus its own memory and random stream (`AgentRng`, seeded from
 `view.matchSeed` and the side). Neither lives in `SimState`, and `collectCommands` only reads the world: `step` is the only
 thing that mutates `SimState`. A replay stores the commands, so replays never re-run agents. In Arcade the view also
-carries `arcade` (`ArcadeView`: both meters, both stuns, the freeze, both live combos, own super running; only what the HUD
-shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`) reads; Classic views have no `arcade`, so Classic
+carries `arcade` (`ArcadeView`: both meters, both stuns, the freeze, both live combos, own super running, the round
+phase; only what the HUD shows), which the scripted AI's Arcade layer (`scripted-ai/arcade.ts`) reads; Classic views have no `arcade`, so Classic
 agents decide exactly as before.
 
 ## Events and stable ids
