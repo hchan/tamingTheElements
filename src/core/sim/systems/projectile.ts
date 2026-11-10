@@ -75,7 +75,7 @@ function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: Abili
   return true;
 }
 
-function fire(world: SimWorld, sink: EventSink, team: number, charId: number, slot: number, tick: number): void {
+export function fire(world: SimWorld, sink: EventSink, team: number, charId: number, slot: number, tick: number): void {
   const s = world.state;
   const abilityId = CHARACTERS[s.defId[charId] ?? 0]?.abilities[slot];
   const defIdx = ABILITY_DEFS.findIndex((d) => d.id === abilityId);
@@ -178,7 +178,8 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
       sink.emit(id, SimEventKind.damage, { target, attacker, amount });
     }
     onProjectileHit(world, ABILITY_DEFS[s.defId[id] ?? 0]?.id ?? '', target, attacker);
-    despawn(world, id, hitHolder(world, id));
+    // Arcade releases on the shooter (KNOWN-BUG:bullet-count-on-active fixed there: a tag must not strand its count).
+    despawn(world, id, isArcade(s) ? attacker : hitHolder(world, id));
   }
   for (let team = 0; team < TEAM_COUNT; team++) {
     const charId = controlledId(world, team);

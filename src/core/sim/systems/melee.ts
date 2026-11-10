@@ -231,7 +231,7 @@ function updateEffect(world: SimWorld, id: number, tick: number): void {
   freeEntity(s, id);
 }
 
-function cast(world: SimWorld, sink: EventSink, team: number, slot: number, tick: number): void {
+export function castMelee(world: SimWorld, sink: EventSink, team: number, slot: number, tick: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
   if (caster < 0 || !canAct(world, caster)) return;
@@ -295,7 +295,7 @@ export function meleeSystem(world: SimWorld, cmds: readonly [Command, Command], 
   }
   for (let team = 0; team < TEAM_COUNT; team++) {
     const cmd = bufferedCmd(s, team, cmds[team] ?? 0);
-    if (hasCmd(cmd, Cmd.primary)) cast(world, sink, team, 0, tick);
-    if (hasCmd(cmd, Cmd.secondary)) cast(world, sink, team, 1, tick);
+    if (hasCmd(cmd, Cmd.primary)) castMelee(world, sink, team, 0, tick);
+    if (hasCmd(cmd, Cmd.secondary)) castMelee(world, sink, team, 1, tick);
   }
 }

@@ -18,7 +18,7 @@ import type { EventSink } from '../events';
  * these, so maxActive (100) can only be reached by the 8 status slots filling up.
  * Cooldowns are booked on the caster per ability slot (primary 0, secondary 1) like the other cast systems.
  */
-function castSelf(world: SimWorld, sink: EventSink, team: number, slot: number, tick: number): void {
+export function castSelf(world: SimWorld, sink: EventSink, team: number, slot: number, tick: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
   if (caster < 0 || !canAct(world, caster)) return;

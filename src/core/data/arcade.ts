@@ -240,3 +240,17 @@ export const WEATHER_EFFECTS = [
   { effect: 'meltFreezeTicks', value: 10 }, { effect: 'extinguishBurn', value: 1 },
   { effect: 'projectileSpeedPm', value: 900 }, { effect: 'knockbackPm', value: 1100 }, { effect: 'none', value: 0 },
 ] as const;
+
+/**
+ * Tag team (FUN-DESIGN 2.6, WP 19), in game ticks. A tag (the swap keys) needs the active character free (`isFree`, and
+ * not in cast recovery) and books TAG_COOLDOWN_TICKS (Classic 250). The partner enters at the outgoing character's
+ * position, facing and aim, invulnerable TAG_INVULN_TICKS (KO_ENTRANCE_INVULN_TICKS when the death auto-swap brought it
+ * in), and casts its primary at once for free (the entrance attack: its cooldown is left as it was). Benched characters
+ * heal REST_HEAL_PM of max HP every REST_HEAL_EVERY game ticks up to the rest cap (Classic 5 pm every 50 ticks), and
+ * only while benched (KNOWN-BUG `rest-heal-enemy-in-play` fixed in Arcade).
+ */
+export const TAG_COOLDOWN_TICKS = 150;
+export const TAG_INVULN_TICKS = 20;
+export const KO_ENTRANCE_INVULN_TICKS = 60;
+export const REST_HEAL_EVERY = 10;
+export const REST_HEAL_PM = 10;

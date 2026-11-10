@@ -75,6 +75,7 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   superEnded: 'the super start and its hits carry it',
   timeOver: 'the round-end stinger plays on the same tick',
   recovered: 'no feedback in the design',
+  tagIn: 'the swap sample plays (WP 20 adds the entrance)',
   weatherEnded: 'the badge and the live line say it',
 };
 
