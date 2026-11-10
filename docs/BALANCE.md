@@ -32,7 +32,42 @@ Two tiers, both deterministic (scripted bots, fixed seeds), so any change in the
 
 Baseline parameters (`FULL_PARAMS` in `tools/sim/balance.ts`): 66 pairings x 16 seeds = 1056 matches, `--seed 1`, level 1, difficulty 1, scripted vs scripted, max 9000 ticks, stalemate after 1500 ticks without an HP change. It stores per-race win rates, total stalemates and timeouts.
 
-`pnpm balance:compare [--out file] [--tolerance 0.05]` prints per-race baseline, current and delta, and exits 1 when any race moves by more than 5 percentage points (or a race is added or removed). Intentional sim, data or bot changes re-record the baseline with `pnpm balance:record` and say why in the commit message; reviewers read the baseline diff as the balance change.
+`pnpm balance:compare [--ruleset classic|arcade] [--out file] [--tolerance 0.05]` prints per-race baseline, current and delta, and exits 1 when any race moves by more than 5 percentage points (or a race is added or removed). Intentional sim, data or bot changes re-record the baseline with `pnpm balance:record` and say why in the commit message; reviewers read the baseline diff as the balance change.
+
+## Arcade numbers
+
+The Arcade ruleset ([FUN-DESIGN.md](FUN-DESIGN.md) section 2.13, WP-arcade-numbers) has its own per-race life and damage
+(`ARCADE_RACE_NUMBERS` in `src/core/sim/arcade-numbers.ts`), tuned on the Arcade round robin; Classic data is untouched.
+
+- `pnpm balance:compare --ruleset arcade` and `pnpm balance:record --ruleset arcade` play `ARCADE_PARAMS` (`tools/sim/balance.ts`):
+  the same 66 pairings x 16 seeds, under `rulesetArcade`, scripted Arcade AI at Normal (`aiLevel` 3) with its personality
+  drawn per match, an 18000-tick tooling cap (`ARCADE_MAX_TICKS`: a best of 3 always ends by its round timers, but three
+  long rounds outlast 9000) and the same stalemate rule. Baseline: `tests/fixtures/balance/arcade-baseline.json`, compared
+  with the same 5 pp tolerance. The nightly runs it and `pnpm fun:report --ruleset arcade --all --seeds 8` REPORT ONLY
+  (`continue-on-error`) and uploads both reports; the Classic compare still fails the job. `fun:report` prints per-race win
+  rates and the WP-arcade-numbers bands (round median 25-60 s, time over at most 15%, stalemates 0, first hit at most 4 s,
+  combo median 2-4 and p90 at most 8, every race 35-65% with `--all`) as `ok` or `OUT`, never as a failure.
+- `pnpm sim:match` and `fun:report` use `ARCADE_MAX_TICKS` for Arcade matches unless `--max-ticks` is given.
+
+Win rates (draws count half), before (main at SIM_VERSION 16, 8 seeds) and after (the 16-seed baseline):
+
+| Race | hpPm | damagePm | Before | After |
+|---|---|---|---|---|
+| curomo | 6140 | 1420 | 39.2% | 50.6% |
+| cyclonius | 4490 | 1010 | 52.3% | 50.6% |
+| echo | 6360 | 1840 | 23.9% | 47.2% |
+| fiara | 5140 | 1750 | 48.9% | 46.9% |
+| ishimi | 6180 | 1550 | 32.4% | 57.1% |
+| lavax | 3320 | 870 | 56.8% | 53.1% |
+| morblass | 3370 | 930 | 80.7% | 45.5% |
+| pax | 5870 | 1580 | 9.1% | 50.9% |
+| rokcore | 2470 | 690 | 86.9% | 43.2% |
+| sindarosa | 2620 | 650 | 70.5% | 50.0% |
+| treenoc | 8470 | 1640 | 24.4% | 56.8% |
+| wispera | 3490 | 800 | 75.0% | 48.3% |
+
+Spread (best minus worst) 77.8 pp before, 13.9 pp after (15.9 pp on the 8-seed `fun:report`); at AI
+Hard (8 seeds) 23.9 pp (39.8-63.6%), at Easy 71.6 pp (not tuned: no supers, combo cap 1). The fun numbers before and after are in FUN-DESIGN section 2.13.
 
 ## Speed
 

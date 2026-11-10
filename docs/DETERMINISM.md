@@ -143,8 +143,13 @@ stun ends a dash by moving `dashUntil` back to the current game tick.
 Guard and parry (`arcade/guard.ts`) are Int32 game ticks and counters in the entity block (`blockUntil`, `parryUntil`,
 `parryLockUntil`, and `guardDrain`, stored as the drained amount so the zero-filled block and the round reset are a full
 meter); whether a character guards is read from the hashed `prevCmd`, never from the raw command. Chip damage is the
-Classic arithmetic times `250 / 1000` (the combo-scale multiply), the drain is `Math.floor(chip * 2000 / maxHp)` (as the
+Classic arithmetic times `250 / 1000` (the combo-scale multiply), the drain is `Math.floor(chip * 8000 / maxHp)` (as the
 meter gains), and a reflected projectile negates its Float64 velocity and reverses its dir8 with `(dir + 4) & 7`.
+The Arcade numbers (`ARCADE_RACE_NUMBERS` in `src/core/data/arcade.ts`, WP-arcade-numbers) are integer per mille:
+Arcade max HP is `Math.floor(maxHealth * hpPm / 1000)` once at spawn (`createMatch`), and an ability hit's Float64
+damage is `dmg * damagePm / 1000` (two correctly rounded IEEE operations, skipped when the pm is 1000 so the value
+stays exact) after the weather and before the combo scale; Arcade cooldown overrides are integer game ticks
+(`cooldownTicksFor`). Classic reads none of them (its branch returns the legacy values), so its hashes are unchanged.
 Weather (`arcade/weather.ts`) is Int32 in the hashed blocks: the world slot (`weather` kind, `weatherUntil` game tick,
 `weatherTeam`) and each character's `weatherReadyAt` (its recovery is derived from it, so there is no extra timer).
 The damage factor is an integer per mille applied to the Float64 damage in a fixed order: favoured `dmg * 1200 / 1000`,

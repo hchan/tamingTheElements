@@ -97,9 +97,12 @@ that Chromium, Firefox and WebKit reproduce the committed hashes.
   destroys both and one won by element whose projectile then lands, and best of three (a KO, a time over, a super KO, then
   `matchEnded` 2-1). It also checks that the committed files equal what the scripts record today. When a sim change moves a
   hit by a few ticks, this fails by mechanic name; re-tune the offset in the script (trace the events), then
-  `pnpm golden:record --ruleset arcade`. The files also run in the Node verification above and in the cross-browser list.
+  `pnpm golden:record --ruleset arcade`. When a data change moves how much a hit takes off (WP-arcade-numbers), re-tune the
+  `BEAT_ROUND_*` cone counts and the `GUARD_*` hold and blast counts at the top of `movesScript` instead. The files also run in the Node verification above and in the cross-browser list.
 - `tests/repo/fun-metrics.test.ts`: the fun-metrics reducer on synthetic events, and the `run-match` `--ruleset/--team-size/--ai-level` options (Classic results unchanged).
-- `tests/repo/fun-gate.test.ts`: REPORT-ONLY Arcade sample (`fun:report` numbers are printed); it asserts only that the run is deterministic, never metric values yet.
+- `tests/repo/fun-gate.test.ts`: REPORT-ONLY Arcade sample (`fun:report` numbers, per-race win rates and the WP-arcade-numbers bands marked `ok` or `OUT` are printed); it asserts only that the run is deterministic, super and combo coverage and that the bands are computed, never metric values.
+- `tests/repo/balance-gate.test.ts` also checks the Arcade baseline `tests/fixtures/balance/arcade-baseline.json` (every race, `ARCADE_PARAMS`) and that the Classic parameters stay as they are. `pnpm balance:compare --ruleset arcade` diffs it nightly, report only ([BALANCE.md](BALANCE.md) "Arcade numbers").
+- `src/core/sim/arcade-numbers.test.ts`: the Arcade numbers table invariants: one row per playable race, integer per mille inside bounds, Classic max health unchanged while Arcade floors `hpPm` of it, and the cooldown overrides (Classic always gets the legacy cooldown).
 - `tests/repo/docs-tables.test.ts`: the generated tables in `docs/GAME-DESIGN.md` must equal the output of `pnpm docs:gen`.
 - `tests/repo/links.test.ts`: every relative markdown link in `README.md`, `CONTRIBUTING.md` and `docs/*.md` must resolve.
 - `tests/repo/assets-manifest.test.ts`, `tests/repo/cine-scripts-a.test.ts`: asset manifest and ported cinematic data checks.
