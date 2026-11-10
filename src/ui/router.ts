@@ -7,6 +7,7 @@ import { keyBindingsScreen } from './screens/key-bindings';
 import { raceScreen } from './screens/race';
 import { wikiScreen } from './screens/wiki';
 import { garrisonScreen } from './screens/garrison';
+import { defeatScreen, victoryScreen } from './screens/results';
 
 export const ROUTE_NAMES = [
   'main',
@@ -21,6 +22,7 @@ export const ROUTE_NAMES = [
   'battleground',
   'loading',
   'victory',
+  'defeat',
   'exit',
   'race',
 ] as const;
@@ -84,7 +86,8 @@ export function defaultScreens(): ScreenTable {
     keyBindings: keyBindingsScreen,
     battleground: placeholderScreen('Battleground'),
     loading: placeholderScreen('Loading'),
-    victory: placeholderScreen('Victory'),
+    victory: victoryScreen,
+    defeat: defeatScreen,
     exit: placeholderScreen('Exit'),
     race: raceScreen,
   };
