@@ -41,8 +41,8 @@ One-time setup (the repo owner does this, not the workflow): Settings > Pages > 
 Test and deploy from your machine; no workflow minutes are used by these commands.
 
 ```sh
-corepack pnpm ci:local            # lint, typecheck, depcruise, test, test:legacy, build, e2e, e2e:pages, test:browser
-corepack pnpm ci:local --fast     # the six node-only steps, no browsers
+corepack pnpm ci:local            # lint, typecheck, depcruise, test, test:legacy, build, size:check, e2e, e2e:pages, test:browser
+corepack pnpm ci:local --fast     # the seven node-only steps, no browsers
 corepack pnpm deploy:pages --dry-run   # build + subpath smoke test, show what would be pushed, no push
 corepack pnpm deploy:pages             # same, then publish to the gh-pages branch of origin
 ```
