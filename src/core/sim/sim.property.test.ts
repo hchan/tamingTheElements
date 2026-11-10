@@ -8,7 +8,7 @@ import { Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { restore, snapshot, createSnapshotBuf } from './snapshot';
-import { ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_ACTIVE_COUNTS, TEAM_STRIDE, TeamField, World } from './state';
+import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_ACTIVE_COUNTS, TEAM_STRIDE, TeamField, World } from './state';
 import { ABILITY_DEFS } from './systems/projectile';
 import { hasEnded } from './systems/end';
 import { step } from './step';
@@ -178,6 +178,14 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
     if (s.kind[i] !== EntityKind.character || (f & EntityFlag.alive) === 0 || (f & EntityFlag.benched) !== 0) continue;
     const y = s.y[i] ?? 0;
     if (y < w.arena.y || y + (s.h[i] ?? 0) > w.arena.y + w.arena.h) fail(`character ${String(i)} outside arena in y`);
+  }
+  // Combos (FUN-DESIGN 2.4): the juggle cap bounds a combo at JUGGLE_LIMIT + 2 hits (start, juggles, the capped hit).
+  for (let t = 0; t < TEAM_COUNT; t++) {
+    const hits = s.arcade[ARCADE_TEAM_BASE + t * ARCADE_T + ArcadeT.comboHits] ?? 0;
+    if (hits < 0 || hits > JUGGLE_LIMIT + 2) fail(`team ${String(t)} combo of ${String(hits)} hits`);
+  }
+  for (const e of events) {
+    if (e.kind === SimEventKind.comboEnded && (e['hits'] ?? 0) < 1) fail('empty combo ended');
   }
 }
 

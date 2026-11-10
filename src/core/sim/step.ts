@@ -12,6 +12,7 @@ import { meleeSystem } from './systems/melee';
 import { captureSystem } from './systems/capture';
 import { projectileSystem } from './systems/projectile';
 import { endSystem } from './systems/end';
+import { arcadeInputSystem } from './systems/arcade/input';
 import { World as W } from './state';
 import { advanceGameClock, isFrozen } from './clock';
 import type { SimWorld } from './world';
@@ -25,7 +26,7 @@ export const UNFROZEN_SYSTEMS = 1;
 
 /** Fixed system order; systems not yet implemented are no-ops. */
 export const SYSTEMS: readonly (readonly [string, System])[] = [
-  ['input', noop],
+  ['input', arcadeInputSystem],
   ['swap', swapSystem],
   ['movement', movementSystem],
   ['abilities', abilitiesSystem],
