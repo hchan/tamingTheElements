@@ -10,7 +10,7 @@ import type { SimWorld } from '../world';
  * then slot index. Timers are tick-based (intentional divergence: legacy used Date/Delay, which kept
  * running while paused).
  */
-export const StatusId = { none: 0, adrenaline: 1, fireDance: 2, rockArmour: 3, translucent: 4 } as const;
+export const StatusId = { none: 0, adrenaline: 1, fireDance: 2, rockArmour: 3, translucent: 4, tornado: 5, iceBlast: 6 } as const;
 export type StatusIdValue = (typeof StatusId)[keyof typeof StatusId];
 
 const F_ID = 0;
