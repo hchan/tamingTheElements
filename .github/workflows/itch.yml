@@ -38,7 +38,15 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm exec playwright install --with-deps chromium
+      # Browser downloads and apt installs occasionally stall for minutes; cap each attempt and retry so a stall
+      # costs ~5 minutes of Actions time, not the whole job timeout.
+      - name: Install Playwright browsers (retry)
+        run: |
+          for attempt in 1 2 3; do
+            timeout 300 corepack pnpm exec playwright install --with-deps chromium && exit 0
+            echo "playwright install attempt $attempt failed or timed out"; sleep 10
+          done
+          exit 1
       - name: Build zip (size budget enforced)
         run: corepack pnpm build:itch
       - name: Smoke test the unzipped artifact
