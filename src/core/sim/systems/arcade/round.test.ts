@@ -113,6 +113,18 @@ describe('intro', () => {
     expect(s.x[0]).toBeGreaterThan(P1_START_X);
   });
 
+  it('a press in the last 8 game ticks of the intro is buffered into the first fight tick (FUN-DESIGN 2.12); an older one is not', () => {
+    for (const [at, casts] of [[FIRST_FIGHT_TICK - 8, true], [FIRST_FIGHT_TICK - 9, false]] as const) {
+      const w = duel();
+      run(w, at);
+      step(w, [Cmd.primary, 0]);
+      run(w, FIRST_FIGHT_TICK - at - 1);
+      expect(w.state.abil[cooldownIdx(0, 0)]).toBe(0);
+      step(w, IDLE);
+      expect((w.state.abil[cooldownIdx(0, 0)] ?? 0) > 0).toBe(casts);
+    }
+  });
+
   it('blocks a manual swap until the fight', () => {
     const w = duel(['sindarosa', 'lavax']);
     expect(of(run(w, ROUND_INTRO_TICKS + 1, [Cmd.swap1, 0]), SimEventKind.swapped)).toEqual([]);
@@ -261,6 +273,8 @@ describe('between rounds', () => {
     s.status[(0 * 8) * STATUS_STRIDE] = StatusId.tornado;
     s.status[(0 * 8) * STATUS_STRIDE + 3] = 1_000_000;
     s.arcade[METER(0)] = 1234;
+    s.arcade[ARCADE_TEAM_BASE + ArcadeT.pressTick] = now(s);
+    s.arcade[ARCADE_TEAM_BASE + ArcadeT.pressUsed] = 3;
     s.arcade[ARCADE_TEAM_BASE + ArcadeT.comboHits] = 2;
     s.arcade[2 * ARCADE_E + ArcadeE.stunUntil] = 1_000_000;
     s.arcade[2 * ARCADE_E + ArcadeE.comboStunTotal] = 20;
@@ -298,6 +312,9 @@ describe('between rounds', () => {
     expect(s.status.every((v) => v === 0)).toBe(true);
     expect(s.arcade.subarray(0, ARCADE_TEAM_BASE).every((v) => v === 0)).toBe(true);
     expect(s.arcade[ARCADE_TEAM_BASE + ArcadeT.comboHits]).toBe(0);
+    // The input buffer forgets the old round's presses.
+    expect(Array.from(s.arcade.subarray(ARCADE_TEAM_BASE + ArcadeT.pressTick, ARCADE_TEAM_BASE + ArcadeT.lastDir + 1))).toEqual([0, 0, 0, 0, 0, 0, 0]);
+    expect(s.arcade[ARCADE_TEAM_BASE + ArcadeT.pressUsed]).toBe(0);
     // Round 2 plays like round 1: a full intro first.
     const intro = toFight(w);
     expect(intro.filter((e) => e.kind === SimEventKind.fight)).toEqual([expect.objectContaining({ tick: endTick + ROUND_END_TICKS + ROUND_INTRO_TICKS })]);

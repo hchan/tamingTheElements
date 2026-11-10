@@ -4,12 +4,12 @@
     "core": 11250,
     "index": 28700,
     "index.css": 3100,
-    "lazy-index": 530,
+    "lazy-index": 550,
     "phaser": 388700,
     "phaser-config": 17000,
     "rolldown-runtime": 200,
-    "sim": 16300,
+    "sim": 17100,
     "super-view": 1230
   },
-  "totalGzip": 444510
+  "totalGzip": 445340
 }

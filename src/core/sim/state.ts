@@ -56,10 +56,14 @@ export const ArcadeE = {
   parryUntil: 8, parryLockUntil: 9, guardMeter: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
 } as const;
 export const ARCADE_E = 14;
-/** Per team; `pressTick` is 5 ints (primary, secondary, dash, guard, super). */
+/**
+ * Per team; `pressTick` is 5 ints (primary, secondary, dash, guard, super): the game tick of the last rising edge plus
+ * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a
+ * chord's super press is pending (see systems/arcade/buffer.ts).
+ */
 export const ArcadeT = {
   meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 10, lastDir: 11,
-  roundsWon: 12, superState: 13,
+  roundsWon: 12, superState: 13, pressUsed: 14,
 } as const;
 export const ARCADE_T = 16;
 /**

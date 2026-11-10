@@ -15,10 +15,12 @@ import { hasEnded } from './systems/end';
 import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
 import {
-  COMBO_STUN_CAP_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, ROUNDS_TO_WIN,
+  BUFFER_TICKS, COMBO_STUN_CAP_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, ROUNDS_TO_WIN,
   ROUND_TIMER_TICKS, RoundPhase, SUPER_FREEZE_TICKS,
 } from '../data/arcade';
+import { CHORD_FLAG, PRESS_BITS, pressAge } from './systems/arcade/buffer';
 import { SUPER_DEF } from './systems/arcade/hit';
+import { skipIntro } from './systems/arcade/round-testkit';
 import { castDir } from './systems/arcade/aim';
 import { facingFor } from './systems/movement';
 import { DIR8_X, DIR8_Y } from '../math/dir8';
@@ -249,6 +251,14 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   for (const e of events) {
     if (e.kind === SimEventKind.superStarted && !isFrozen(s)) fail('super did not freeze');
   }
+  // Input buffer (FUN-DESIGN 2.12): no press is stamped in the future; `pressUsed` holds press bits and CHORD_FLAG only.
+  for (let t = 0; t < TEAM_COUNT; t++) {
+    const b = ARCADE_TEAM_BASE + t * ARCADE_T;
+    for (let k = 0; k < PRESS_BITS.length; k++) {
+      if ((s.arcade[b + ArcadeT.pressTick + k] ?? 0) - 1 > g) fail(`team ${String(t)} press ${String(k)} in the future`);
+    }
+    if (((s.arcade[b + ArcadeT.pressUsed] ?? 0) & ~(CHORD_FLAG | ((1 << PRESS_BITS.length) - 1))) !== 0) fail('bad pressUsed');
+  }
   checkRounds(w, events, fail);
 }
 
@@ -274,6 +284,52 @@ function checkRounds(w: SimWorld, events: readonly SimEvent[], fail: (m: string)
     if (e.kind === SimEventKind.matchEnded && (phase !== RoundPhase.over || Math.max(won[0] ?? 0, won[1] ?? 0) < ROUNDS_TO_WIN))
       fail('matchEnded before a side has 2 round wins');
   }
+}
+
+/**
+ * Steps tapped inputs and checks every cast of team 0's primary and secondary: a cast on a tick whose raw command lacks
+ * the button (a buffered cast) needs a press that no cast or chord used yet, at most BUFFER_TICKS game ticks old.
+ * Returns the number of buffered casts.
+ */
+function bufferedCasts(setup: MatchSetup, inputs: Cmds): number {
+  // Straight into the fight: most tap sequences are shorter than the 91-tick round intro (FUN-DESIGN 2.10).
+  const world = skipIntro(createMatch(setup));
+  const s = world.state;
+  const armed = [false, false];
+  const pressedAt = [0, 0];
+  let prev = 0;
+  let count = 0;
+  const team0Cds = (k: number): number[] => {
+    const out: number[] = [];
+    for (let i = 0; i < MAX_ENTITIES; i++) {
+      const char = s.kind[i] === EntityKind.character && ((s.flags[i] ?? 0) & EntityFlag.alive) !== 0;
+      out.push(char && s.team[i] === 0 ? (s.abil[cooldownIdx(i, k)] ?? 0) : 0);
+    }
+    return out;
+  };
+  for (const [a, b] of inputs) {
+    const g = now(s);
+    const before = [team0Cds(0), team0Cds(1)];
+    const rise = a & ~prev;
+    prev = a;
+    for (const k of [0, 1]) {
+      if ((rise & (PRESS_BITS[k] ?? 0)) !== 0) {
+        armed[k] = true;
+        pressedAt[k] = g;
+      }
+    }
+    step(world, [a, b]);
+    for (const k of [0, 1]) {
+      const cast = team0Cds(k).some((v, i) => v !== before[k]?.[i]);
+      if (cast && (a & (PRESS_BITS[k] ?? 0)) === 0) {
+        if (!isArcade(s)) throw new Error(`Classic cast of slot ${String(k)} without its button at game tick ${String(g)}`);
+        if (armed[k] !== true || g - (pressedAt[k] ?? 0) > BUFFER_TICKS) throw new Error(`stale or reused press ${String(k)} at ${String(g)}`);
+        count++;
+      }
+      if (cast || (isArcade(s) && pressAge(s, 0, k) < 0)) armed[k] = false;
+    }
+  }
+  return count;
 }
 
 function runInputs(
@@ -435,6 +491,27 @@ describe('sim properties: invariants', () => {
       FC,
     );
     expect(ended).toBeGreaterThan(0);
+  });
+
+  it('hold in Arcade with tapped buttons: a buffered cast uses one fresh press, once; Classic never buffers', () => {
+    let buffered = 0;
+    const press = fc.constantFrom(0, Cmd.primary, Cmd.secondary, Cmd.primary | Cmd.secondary, Cmd.super);
+    const taps = fc
+      .array(fc.tuple(fc.integer({ min: 1, max: 12 }), press, cmdArb), { minLength: 1, maxLength: 40 })
+      .map((runs) => runs.flatMap(([n, f, b]) => Array.from({ length: n }, (_, k): [number, number] => [k === 0 ? f : 0, b])));
+    fc.assert(
+      fc.property(setupArb, taps, fc.integer({ min: 0, max: METER_MAX }), (setup, inputs, meter) => {
+        const arcade = { ...setup, flags: { ...setup.flags, rulesetArcade: true } };
+        buffered += bufferedCasts(arcade, inputs);
+        expect(bufferedCasts({ ...setup, flags: { ...setup.flags, rulesetArcade: false } }, inputs)).toBe(0);
+        // The invariants hold too, with meter for chords.
+        runInputs(arcade, inputs, true, (w) => {
+          w.state.arcade[ARCADE_TEAM_BASE + ArcadeT.meter] = meter;
+        });
+      }),
+      FC,
+    );
+    expect(buffered).toBeGreaterThan(0);
   });
 
   it('ignores command bits outside the ruleset input mask', () => {

@@ -120,12 +120,17 @@ team: each gain is `Math.floor(dealt * pm / maxHp)` on the Classic float health 
 no transcendental) or a fixed integer (+20 per cast), capped at 3000. A super (`arcade/super.ts`) spends 1000 and
 sets the same `freezeUntil` deadline for 40 ticks (`freezeKind` 2); its band is an `effect` entity whose timing is in
 game ticks (`spawnTick`, `expireTick`), and the team's `superState` holds its id + 1, so both snapshot and hash with
-the rest of the state. KO slow motion (`arcade/round.ts`) is the same gate: for the 60 ticks before `slowMoUntil` (a `W.tick` deadline)
+the rest of the state. The input buffer (`arcade/buffer.ts`) is state too: the team block holds the last command
+(`prevCmd`, masked to the Arcade input bits), the game tick of each press edge plus one (`pressTick`) and the used
+presses (`pressUsed`), all Int32. `bufferedCmd` only reads them, so every cast system sees the same command for the
+tick; a snapshot taken while a press is pending restores it, and a replay of the same commands fires it on the same
+tick.
+KO slow motion (`arcade/round.ts`) is the same gate: for the 60 ticks before `slowMoUntil` (a `W.tick` deadline)
 `isSlowMoHold` is true on every second tick, so `step` runs only the `input` slot there and the game clock advances at
 half speed (`clockHeld` = frozen or held). Round phases, the timer and round wins are Int32 in the Arcade world and team
 blocks; phase deadlines are `W.tick` values, the timer counts game ticks, the time-over score is
 `Math.floor(hp * 1000 / maxHp)` summed per roster (an IEEE-exact multiply and divide), and the reset between rounds writes
-fixed start values, so a snapshot anywhere in a round, the KO or a reset restores to the same future.
+fixed start values (and clears the buffered presses), so a snapshot anywhere in a round, the KO or a reset restores to the same future.
 
 ## Cross-browser golden replays
 

@@ -16,7 +16,7 @@ import { damageDecreasePct } from './status';
 import { controlledId } from './movement';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
-import { meterOnCast } from './arcade/meter';
+import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { releaseCount } from './ability-info';
 import { castDir } from './arcade/aim';
@@ -87,7 +87,7 @@ function fire(world: SimWorld, sink: EventSink, team: number, charId: number, sl
     // canFireAtCooldown 10000 false / 10001 true).
     for (const d of OMNI_DIRS) spawnBullet(world, charId, defIdx, def, d);
     s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
-    meterOnCast(s, sink, charId, team);
+    onArcadeCast(s, sink, charId, team, slot);
     return;
   }
   // A full entity table means no bullet: the cast must not book a cooldown or leak an active count. Arcade fires along
@@ -97,7 +97,7 @@ function fire(world: SimWorld, sink: EventSink, team: number, charId: number, sl
   s.abil[ci] = (s.abil[ci] ?? 0) + 1;
   // Legacy cooldown is strict (>) in ms, so the next fire is one tick after the cooldown elapses.
   s.abil[cooldownIdx(charId, slot)] = tick + def.cooldownTicks + 1;
-  meterOnCast(s, sink, charId, team);
+  onArcadeCast(s, sink, charId, team, slot);
 }
 
 /**
@@ -175,7 +175,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
   for (let team = 0; team < TEAM_COUNT; team++) {
     const charId = controlledId(world, team);
     if (charId < 0) continue;
-    const cmd = cmds[team] ?? 0;
+    const cmd = bufferedCmd(s, team, cmds[team] ?? 0);
     if (hasCmd(cmd, Cmd.primary)) fire(world, sink, team, charId, 0, tick);
     if (hasCmd(cmd, Cmd.secondary)) fire(world, sink, team, charId, 1, tick);
   }

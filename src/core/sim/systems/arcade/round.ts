@@ -50,8 +50,8 @@ export function teamHpPm(s: SimState, team: number): { readonly score: number; r
 /**
  * Puts every character back to its match start (FUN-DESIGN 2.10): full HP and rest cap, base speed, start position and
  * facing, the roster's first member active and the rest benched with a fresh rest timer, no statuses, cooldowns,
- * stun, knockback or invulnerability. Live combos and supers end first (with their events), then every other entity
- * goes. Meters and round wins carry over.
+ * stun, knockback, invulnerability or buffered presses. Live combos and supers end first (with their events), then
+ * every other entity goes. Meters and round wins carry over.
  */
 function resetRound(world: SimWorld, sink: EventSink): void {
   const s = world.state;
@@ -66,6 +66,11 @@ function resetRound(world: SimWorld, sink: EventSink): void {
   s.arcade.fill(0, 0, ARCADE_TEAM_BASE);
   const g = now(s);
   for (let team = 0; team < TEAM_COUNT; team++) {
+    // The input buffer forgets the last round's presses (press ticks, used flags, direction presses); `prevCmd` stays,
+    // so a button held across the reset is no new press.
+    const b = ARCADE_TEAM_BASE + team * ARCADE_T;
+    s.arcade.fill(0, b + ArcadeT.pressTick, b + ArcadeT.lastDir + 1);
+    s.arcade[b + ArcadeT.pressUsed] = 0;
     const x = team === 0 ? P1_START_X : P2_START_X;
     teamMembers(world, team).forEach((id, k) => {
       s.flags[id] = EntityFlag.alive | (k === 0 ? 0 : EntityFlag.benched);

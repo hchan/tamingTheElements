@@ -127,6 +127,15 @@ export const SUPER_BAND_PX = 160;
 export const SUPER_ELEMENTAL_BURST = 0;
 
 /**
+ * Input windows (FUN-DESIGN 2.12), in game ticks (a freeze does not age a press). A press of primary, secondary or super
+ * that cannot run at once runs on the first tick it can within BUFFER_TICKS of the press (age 0..BUFFER_TICKS), once.
+ * Primary and secondary pressed within SUPER_CHORD_TICKS of each other (0..SUPER_CHORD_TICKS apart) are a super press
+ * when the team has SUPER_COST meter and no super running. The dash and parry windows arrive with their work packages.
+ */
+export const BUFFER_TICKS = 8;
+export const SUPER_CHORD_TICKS = 3;
+
+/**
  * Rounds (FUN-DESIGN 2.10, WP 13): `ArcadeW.phase` values. A fresh Arcade world is in `intro` of round 0; the `cleanup`
  * slot (`arcadeRound`) starts round 1 on the first tick. `over` follows the last `roundEnd`, and `endSystem` then emits
  * `matchEnded`. Only `fight` lets characters act or be hit.
