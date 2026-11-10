@@ -74,6 +74,7 @@ that Chromium, Firefox and WebKit reproduce the committed hashes.
 - `tests/repo/no-team-block-alias.test.ts`: `SimState.team` is per entity, `SimState.teams` is the per-team block. The test
   fails when a `.team[...]` index looks like a per-team block offset (`TEAM_`, `TeamField`, `STRIDE`, `idx`, `*` ...). Use `.teams[...]`.
 - `tests/repo/docs-tables.test.ts`: the generated tables in `docs/GAME-DESIGN.md` must equal the output of `pnpm docs:gen`.
+- `tests/repo/links.test.ts`: every relative markdown link in `README.md`, `CONTRIBUTING.md` and `docs/*.md` must resolve.
 - `tests/repo/assets-manifest.test.ts`, `tests/repo/cine-scripts-a.test.ts`: asset manifest and ported cinematic data checks.
 - `tests/lint/core-bans.test.ts`: lints sample files to prove the `src/core` bans (`Date`, `Math.random`, transcendental `Math`,
   DOM globals and so on) are enforced.
