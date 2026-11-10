@@ -14,7 +14,7 @@ import type { AbilityDef } from '../../src/core/data/types';
 import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { SIM_VERSION } from '../../src/core/index';
 import { fnv1a, splitmix32 } from '../../src/core/rng/seed';
-import { Cmd, type Command } from '../../src/core/sim/commands';
+import { Cmd, type Command, NO_COMMAND } from '../../src/core/sim/commands';
 import { SimEventKind } from '../../src/core/sim/events';
 import { createMatch, type MatchSetup } from '../../src/core/sim/match';
 import { EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
@@ -81,31 +81,81 @@ function toAttack(def: AbilityDef | undefined): AttackAbility {
   }
 }
 
+/** Pixel distance inside which an aligned opponent can hurt us (bullets cover ~8 px per tick). */
+const THREAT_DX = 560;
+const OMNI_DX = 400;
+const HEAL_BELOW = 0.6;
+/** Vertical offset (px) that keeps a melee chaser clear of bullets and the shooter's alignment test. */
+const OFFSET_DY = 52;
+const OFFSET_SLACK = 6;
+/** Horizontal distance (px) under which the legacy melee range test passes (it compares dx with half a body), and where the dash starts. */
+const MELEE_DX = 36;
+const DASH_DX = 160;
+
+/** Slots the scripted agent drives itself (self-cast kinds); the legacy-port AttackAgent only handles range, debuff and melee. */
+function isSelfCast(def: AbilityDef | undefined): boolean {
+  return def?.kind === 'buff' || def?.kind === 'heal' || def?.kind === 'omni';
+}
+
+/**
+ * Whether a self-cast ability is worth using right now. Defensive buffs (armour, adrenaline, translucency) wait until the
+ * opponent is lined up and close enough to hit us, so their short windows are not wasted; Fire Dance (speed) is used on
+ * cooldown; heals below 60% health; omni fans when the opponent is within their reach.
+ */
+function wantsSelfCast(def: AbilityDef, self: { x: number; y: number; hp: number; maxHp: number }, opp: { x: number; y: number; h: number }): boolean {
+  const dx = Math.abs(opp.x - self.x);
+  const aligned = Math.abs(opp.y - self.y) <= opp.h / 2 || dx <= opp.h / 2;
+  switch (def.kind) {
+    case 'heal':
+      return self.hp <= self.maxHp * HEAL_BELOW;
+    case 'omni':
+      return dx < OMNI_DX && aligned;
+    case 'buff':
+      return def.id === 'fire-dance' || (aligned && dx < THREAT_DX);
+    default:
+      return false;
+  }
+}
+
 /**
  * Scripted opponent: the legacy attack decisions (AttackAgent) plus what the legacy movement port will later own:
- * melee races close the distance, passive primaries (buff, heal) are used when ready, and shots carry a direction.
+ * melee races close the distance, shots carry a direction, and every slot is used: range, debuff and melee through the
+ * AttackAgent, buffs, heals and omni fans through `wantsSelfCast`.
  */
 export class ScriptedAI implements Agent {
   readonly id: string;
   private readonly attack: AttackAgent;
-  private readonly passivePrimary: boolean;
-  private readonly healPrimary: boolean;
-  private readonly chaseReach: number;
+  private readonly defs: readonly (AbilityDef | undefined)[];
+  private readonly melee: boolean;
 
   constructor(race: string, id = 'scripted') {
     this.id = id;
-    const abilities = getCharacter(characterId(race)).abilities.map((a) => defOf(a));
-    const [primary, secondary] = abilities.map(toAttack);
+    this.defs = getCharacter(characterId(race)).abilities.slice(0, 2).map((a) => defOf(a));
+    const [primary, secondary] = this.defs.map(toAttack);
     this.attack = new AttackAgent(
       { primary: primary ?? { type: 'other', maxActive: 1 }, ...(secondary === undefined ? {} : { secondary }) },
       { id },
     );
-    this.passivePrimary = primary?.type === 'other' || primary?.type === 'heal';
-    this.healPrimary = primary?.type === 'heal';
-    const reaches = abilities
-      .filter((d) => d?.kind === 'melee')
-      .map((d) => (EXPLOSION.has(d?.id ?? '') ? 0.5 : 1) * Math.max(d?.w ?? 0, d?.h ?? 0));
-    this.chaseReach = reaches.length === 0 ? 0 : 0.8 * Math.min(...reaches);
+    this.melee = this.defs.some((d) => d?.kind === 'melee');
+  }
+
+  /**
+   * Melee approach. KNOWN-BUG:melee-range-axes makes the legacy attack decision accept a melee only within MELEE_DX
+   * horizontally, so a melee race has to close right in. Far away it stays just off the opponent's firing line (bullets
+   * fly along the shooter's axis and the legacy decision only fires when the target is within half a body of it), then
+   * steps in line for the last DASH_DX.
+   */
+  private chase(self: { x: number; y: number }, opp: { x: number; y: number }): Command {
+    const dx = Math.abs(opp.x - self.x);
+    const dy = opp.y - self.y;
+    let cmd: Command = dx <= MELEE_DX ? NO_COMMAND : opp.x > self.x ? Cmd.right : Cmd.left;
+    if (dx > DASH_DX) {
+      if (Math.abs(dy) < OFFSET_DY) cmd |= dy > 0 ? Cmd.up : Cmd.down;
+      else if (Math.abs(dy) > OFFSET_DY + OFFSET_SLACK) cmd |= dy > 0 ? Cmd.down : Cmd.up;
+    } else if (Math.abs(dy) > OFFSET_SLACK) {
+      cmd |= dy > 0 ? Cmd.down : Cmd.up;
+    }
+    return cmd;
   }
 
   observe(view: Parameters<Agent['observe']>[0]): Command {
@@ -113,14 +163,19 @@ export class ScriptedAI implements Agent {
     const self = view.self;
     const opp = view.opponent;
     if (self === undefined || opp === undefined || (self.flags & EntityFlag.frozen) !== 0) return cmd;
-    if (this.passivePrimary && (view.cooldowns[0] ?? 0) === 0 && (!this.healPrimary || self.hp < self.maxHp)) {
-      cmd |= Cmd.primary;
-    }
-    if (this.chaseReach > 0 && Math.abs(opp.x - self.x) > this.chaseReach) {
-      cmd |= opp.x > self.x ? Cmd.right : Cmd.left;
-    } else if ((cmd & (Cmd.primary | Cmd.secondary)) !== 0 && (cmd & DIR_MASK) === 0) {
-      cmd |= FACING[['n', 'e', 's', 'w'].indexOf(this.attack.direction)] ?? 0;
-    }
+    const slotBits = [Cmd.primary, Cmd.secondary] as const;
+    let shooting = false;
+    this.defs.forEach((def, slot) => {
+      const bit = slotBits[slot] ?? 0;
+      if (def !== undefined && isSelfCast(def)) {
+        cmd &= ~bit;
+        if ((view.cooldowns[slot] ?? 0) === 0 && wantsSelfCast(def, self, opp)) cmd |= bit;
+      } else if ((cmd & bit) !== 0) {
+        shooting = true;
+      }
+    });
+    if (this.melee) cmd |= this.chase(self, opp);
+    if (shooting && (cmd & DIR_MASK) === 0) cmd |= FACING[['n', 'e', 's', 'w'].indexOf(this.attack.direction)] ?? 0;
     return cmd;
   }
 }
