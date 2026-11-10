@@ -58,8 +58,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   (`src/core/sim/clock.ts`) reads the world flag bit (hashed state), never a module variable.
 - **State.** One new `SimState.arcade: Int32Array`, **length 0 when the flag is off**. `hash()` and `snapshot()` iterate
   `stateArrays`, so a zero-length array adds no bytes and Classic hashes stay identical. Layout (all Int32):
-  - per entity (`ARCADE_E = 12` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
-    dashUntil, dashReadyAt, guardState, parryUntil, parryLockUntil, guardMeter, comboStunTotal`;
+  - per entity (`ARCADE_E = 13` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
+    dashUntil, dashReadyAt, guardState, parryUntil, parryLockUntil, guardMeter, comboStunTotal, wallBounced`;
   - per team (`ARCADE_T = 16` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 5
     (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState`;
   - world (`ARCADE_W = 8`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil`.
@@ -144,6 +144,17 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   `recovered` (reason 2). Together they rule out infinites; a property test proves it.
 - Classic freezes inside Arcade: Tornado and Entangling Vines freeze for 60 ticks instead of 150 and count as heavy stun
   (they obey the juggle and stun caps). Ground Shock's self-freeze becomes recovery that a confirmed hit can cancel.
+- Built in WP 3 (`systems/arcade/stun.ts`, `systems/arcade/knockback.ts`, tables in `data/arcade.ts`): `applyArcadeHit`
+  sets knockback and stun after the hit-stop. Stun only extends (`stunUntil` never moves back) and `comboStunTotal`
+  sums the extensions, so a stun chain is exactly `comboStunTotal` game ticks; a hit on a free victim starts a new combo
+  (juggle, budget and wall bounce reset). Both caps end the stun with `recovered` (after the `hitStop`) and the same 20
+  ticks of invulnerability, so a capped combo cannot restart on the next tick; the hit that would pass 150 ticks is the
+  one that ends it. Invulnerable characters let projectiles through and are not touched by melee. Knockback replaces
+  any left, moves the victim even while stunned, uses `DIR8_X/Y` (diagonals are +-speed on both axes), and the bounce
+  halves both axes (truncated) and reverses the wall's axis. The new `wallBounced` entity int marks the bounce. `canAct`
+  lives in `arcade/stun.ts`. Tornado's 60-tick stun comes from the hit path (no `frozen` flag, no status slot); Vines
+  stuns once per cast without a hit event. Deferred: the Ground Shock recovery cancel arrives with the dash cancel
+  (WP 15), and `recovered` reason 0 with `comboEnded` (WP 4).
 
 ### 2.4 Combo counter and damage scaling (sim)
 
@@ -376,7 +387,7 @@ that uses them, and measurable by `fun:report`.
 |---|---|---|---|---|---|
 | 1 | `WP-arcade-flag` (done) | sim | `rulesetArcade` in `flags.ts`; `SimState.arcade` (length 0 when off) in `state.ts` and `createMatch`; `isArcade`, `now(s)` clock helper replacing `W.tick` reads in every system; freeze gate in `step.ts`; `inputMaskFor(flags)` in `commands.ts`, `net/session.ts`, `replay/validate.ts`; `src/core/data/arcade.ts` skeleton | Classic goldens: hashes identical; new `classic-hash-pins` test; flag-bit order test (old names keep their bits); arcade state length 0 when off; snapshot round trip with the flag on | The `now()` refactor touches every system: it must be mechanical, proven by the goldens and the balance baseline (0 delta) |
 | 2 | `WP-arcade-hitstop` (done) | sim | `systems/arcade/hit.ts` (strength, hit-stop, `hitConfirmed`, Arcade `damage`); Arcade branches in `projectile.ts` and `melee.ts`; `arcadeInput` clock | Freeze length per strength; events keep unique ids while frozen; cooldowns do not elapse while frozen; Classic untouched | Melee hits and DoT also need the hit path; Hurricane multi-hit |
-| 3 | `WP-arcade-stun-knockback` | sim | stun, Q4 knockback, wall clamp and bounce (bounds-y fixed in Arcade), juggle and stun caps, `canAct` in the 4 cast sites and movement, Tornado and Vines caps | Distances per strength; wall bounce once; property test: no stun chain over 150 ticks under random commands (`sim.property.test.ts` style) | Freeze abilities feel weak or still abusive; tune in data |
+| 3 | `WP-arcade-stun-knockback` (done) | sim | stun, Q4 knockback, wall clamp and bounce (bounds-y fixed in Arcade), juggle and stun caps, `canAct` in the 4 cast sites and movement, Tornado and Vines caps | Distances per strength; wall bounce once; property test: no stun chain over 150 ticks under random commands (`sim.property.test.ts` style) | Freeze abilities feel weak or still abusive; tune in data |
 | 4 | `WP-arcade-combo` | sim | combo counter, scaling, counter hits, `comboEnded`, `recovered` | Scaling table, reset rules, combo end tick | None big |
 | 5 | `WP-arcade-tooling` | tools | `run-match --ruleset/--team-size/--ai-level`, `tools/sim/fun-metrics.ts`, `fun:report`, `fun-gate.test.ts` (report-only at first), `record-golden --ruleset arcade`, first Arcade golden `tests/fixtures/replays/arcade-1v1.replay.json` | Reducer unit tests on synthetic events; golden verifies | Gate runtime on CI |
 | 6 | `WP-arcade-juice-hits` | view | `RenderView.arcade()`; `event-fx.ts` strength-scaled sparks, working flash (V6), jitter, shake; damage numbers and combo UI in `src/game/hud/` + `Hud.ts` | Fake-sink tests: feedback coverage 100%, reduced motion drops motion only | V6 cause is not known yet (budget a spike) |

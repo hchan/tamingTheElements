@@ -104,7 +104,8 @@ units), and `step` then runs only the `input` slot. Hit-stop (`src/core/sim/syst
 `freezeUntil = max(freezeUntil, tick + 1 + n)` on a hit, `n` by hit strength (4, 6, 8, 10; KO 30), so the hit's own tick
 finishes and the next `n` ticks are frozen; a frozen step emits no events, so event ids stay unique. In Classic
 `isFrozen` is never true and `SimState.arcade` is empty, so Classic hashes are unchanged (pinned by
-`tests/repo/classic-hash-pins.test.ts`).
+`tests/repo/classic-hash-pins.test.ts`). Hit-stun deadlines are in game ticks, and knockback speeds are Int32 in Q4
+(1/16 px per tick) along the integer `DIR8_X/Y`, so `x += kbVx / 16` adds an exact dyadic fraction.
 
 ## Cross-browser golden replays
 
