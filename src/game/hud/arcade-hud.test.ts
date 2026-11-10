@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ArcadeHudModel, CHARGE_DASH, COMBO_HOLD_MS, COMBO_POP_MS, METER_PULSE_MS, METER_W, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
+  ArcadeHudModel, CHARGE_DASH, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
   SEGMENT_GAP, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, meterSegments, meterX,
   numberAlpha, numberLabel, numberRise,
 } from './arcade-hud';
-import { dashSegments } from './bars';
+import { HUD_HEIGHT, dashSegments, mainBar, sideOffset } from './bars';
+import { PIP_R, PIP_Y, pips } from './round-announcer';
 
 describe('damage numbers', () => {
   it('float up 24 px over 500 ms; reduced motion fades them in place', () => {
@@ -76,9 +77,19 @@ describe('hyper meter', () => {
     expect(meterSegments(3000, 0).every((s) => s.full)).toBe(true);
     expect(meterSegments(0, 0).every((s) => s.fill === 0 && !s.full)).toBe(true);
   });
-  it('sits toward the centre on both sides', () => {
-    expect(meterX(0, 560)).toBe(560 - METER_W);
-    expect(meterX(1, 760)).toBe(760);
+  it('sits toward the centre on both sides, with clear space from the health text and the timer column', () => {
+    const inner0 = mainBar(0).maxX;
+    const inner1 = mainBar(sideOffset(1)).minX;
+    expect(meterX(0, inner0)).toBe(inner0 - METER_INSET - METER_W);
+    expect(meterX(1, inner1)).toBe(inner1 + METER_INSET);
+    // Health text: 16 px at y 24 under each bar (about 20 px tall); the meter row starts well below it and the HUD block.
+    expect(METER_Y - (24 + 20)).toBeGreaterThanOrEqual(64);
+    expect(METER_Y - HUD_HEIGHT).toBeGreaterThanOrEqual(20);
+    // The round pips (the widest part of the centre column) end well before either meter.
+    const xs = pips([0, 0]).map((p) => p.x);
+    expect(Math.min(...xs) - PIP_R - (meterX(0, inner0) + METER_W)).toBeGreaterThanOrEqual(40);
+    expect(meterX(1, inner1) - (Math.max(...xs) + PIP_R)).toBeGreaterThanOrEqual(40);
+    expect(METER_Y).toBeGreaterThan(PIP_Y + PIP_R + 24);
   });
   it('tracks the sim value; a full meter pulses once a second (steady with reduced motion)', () => {
     const m = new ArcadeHudModel();

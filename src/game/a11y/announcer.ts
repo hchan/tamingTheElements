@@ -27,9 +27,11 @@ export function announcementsFor(events: readonly SimEvent[]): Announcement[] {
         break;
       case SimEventKind.matchEnded: {
         const w = e['winner'] ?? -1;
+        // Arcade (best of 3) carries the round score.
+        const rounds = e['won0'] === undefined ? '' : ` Rounds ${String(e['won0'])} to ${String(e['won1'] ?? 0)}.`;
         out.push({
           key: 'matchEnded',
-          text: w === 0 ? 'Victory. You won the match.' : w === 1 ? 'Defeat. You lost the match.' : 'The match ended in a draw.',
+          text: (w === 0 ? 'Victory. You won the match.' : w === 1 ? 'Defeat. You lost the match.' : 'The match ended in a draw.') + rounds,
           important: true,
         });
         break;
