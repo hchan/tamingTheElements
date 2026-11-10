@@ -17,7 +17,8 @@
     "sim": 23600,
     "super-view": 1230,
     "tag-view": 2802,
+    "terrain-view": 4350,
     "weather-view": 3470
   },
-  "totalGzip": 461082
+  "totalGzip": 465432
 }

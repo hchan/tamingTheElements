@@ -105,6 +105,7 @@ export class Arena extends Phaser.Scene {
    * once they have loaded.
    */
   private rounds: ((events: readonly SimEvent[]) => void) | undefined;
+  private terrain: ((events: readonly SimEvent[]) => void) | undefined;
   private poses: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
@@ -248,6 +249,10 @@ export class Arena extends Phaser.Scene {
           this.rounds = m.mountRoundView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs, pool);
         }
       });
+      // The terrain view (its own lazy chunk), fed beside the round view.
+      void import('../fx/terrain-view').then((m) => {
+        if (this.arcadeHud === hud) this.terrain = m.mountTerrainView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs);
+      });
     }
     // The pose layer (lazy chunk): smooth walking, leans, Arcade poses, projectile easing (docs/ARCHITECTURE.md).
     void import('../views/pose-layer').then((m) => {
@@ -344,6 +349,7 @@ export class Arena extends Phaser.Scene {
       defence: () => import('../fx/defence-view').then((m) => m.defenceState(this)),
       weather: () => import('../fx/weather-view').then((m) => m.weatherState(this)),
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
+      terrain: () => import('../fx/terrain-view').then((m) => m.terrainState(this)),
       aim: () => {
         const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
         return g ? { visible: g.visible, x: g.x, y: g.y, angle: Math.round(g.angle) } : undefined;
@@ -403,6 +409,7 @@ export class Arena extends Phaser.Scene {
     this.audio?.audio.consume(events);
     this.announce(events);
     this.rounds?.(events);
+    this.terrain?.(events);
     this.poses?.(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
@@ -435,6 +442,7 @@ export class Arena extends Phaser.Scene {
       if (!events) break;
       this.fx?.consume(events);
       this.rounds?.(events);
+      this.terrain?.(events);
       this.poses?.(events);
     }
     if (cursor.state !== 'playing') this.driver?.pause('ended');
@@ -563,6 +571,7 @@ export class Arena extends Phaser.Scene {
     this.fx = undefined;
     this.arcadeHud = undefined;
     this.rounds = undefined;
+    this.terrain = undefined;
     this.poses = undefined;
     this.cursor = undefined;
     this.driver = undefined;
