@@ -32,6 +32,8 @@ export interface ArenaProbe {
   shaking(): boolean;
   /** Key codes bound per action in the running battle's keyboard agent. */
   boundCodes(): Record<string, readonly string[]>;
+  /** Whether the battle's audio is muted (Ctrl-M toggles), and whether the first gesture has unlocked it. */
+  audio(): { muted: boolean; unlocked: boolean } | undefined;
 }
 
 /** Test control of the running Cinematic scene. */

@@ -23,6 +23,8 @@ import {
   type SimEvent,
   type SimWorld,
 } from '@core/index';
+import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
+import type { AudioContextLike } from '../audio/audio-manager';
 import { EventFx, createPhaserFxSink } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
@@ -88,6 +90,7 @@ export class Arena extends Phaser.Scene {
   private cursor: ReplayCursor | undefined;
   private speed: 1 | 2 = 1;
   private keyboard: KeyboardAgent | undefined;
+  private audio: ArenaAudio | undefined;
   private pauseDialog: PauseDialog | undefined;
   private announcer: Announcer | undefined;
   private readonly lowHealth = new LowHealthWatch();
@@ -135,6 +138,7 @@ export class Arena extends Phaser.Scene {
         gamepad: () => firstPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null),
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
+          else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
         },
       });
       this.keyboard = keyboard;
@@ -163,6 +167,7 @@ export class Arena extends Phaser.Scene {
       this.cleanups.push(keyboard.attach(counted(window)));
     }
     this.cleanups.push(pauseOnHidden(counted(document), driver));
+    this.setupAudio();
 
     const width = LOGICAL_WIDTH;
     const height = LOGICAL_HEIGHT;
@@ -187,6 +192,19 @@ export class Arena extends Phaser.Scene {
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
+  }
+
+  /** Sounds Phaser already decoded, played through the AudioManager (Ctrl-M mute, unlock on the first gesture). */
+  private setupAudio(): void {
+    const mgr = this.sound as unknown as { context?: AudioContextLike };
+    const audio = createArenaAudio({
+      ctx: mgr.context,
+      buffer: (id): unknown => this.cache.audio.get(`snd:${id}`) as unknown,
+      gestures: counted(window),
+      storage: window.localStorage,
+    });
+    this.audio = audio;
+    if (audio) this.cleanups.push(() => { audio.dispose(); this.audio = undefined; });
   }
 
   /** Test-build-only hook (statically removed from production builds). */
@@ -233,6 +251,7 @@ export class Arena extends Phaser.Scene {
       clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
       shaking: () => this.cameras.main.shakeEffect.isRunning,
+      audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
       step: (n, cmds = [0, 0]) => {
         driver.pause();
@@ -260,6 +279,7 @@ export class Arena extends Phaser.Scene {
     this.launch?.recorder?.record(final);
     const events = step(world, final);
     this.fx?.consume(events);
+    this.audio?.audio.consume(events);
     this.announce(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     if (!over) return;
