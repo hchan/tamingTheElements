@@ -96,7 +96,8 @@ describe('melee system', () => {
     step(world, [0, 0]);
     step(world, [0, 0]);
     expect(s.hp[p]).toBe(50 + 4 * (s.healMult[p] ?? 1)); // dealt = min(4, dmg) = 4
-    expect(s.hp[e]).toBeLessThan(0);
+    expect(s.hp[e]).toBeLessThanOrEqual(0); // legacy leaves it negative until the HUD kills; the sim death system clamps to 0
+    expect((s.flags[e] ?? 0) & EntityFlag.dead).toBeTruthy();
   });
 
   // KNOWN-BUG:steal-health-translucent
