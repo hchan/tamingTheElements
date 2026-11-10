@@ -16,6 +16,7 @@ import {
 import { el } from '@ui/dom';
 import { defaultScreens, type ScreenTable } from '@ui/router';
 import { objectivesScreen } from '@ui/screens/objectives';
+import { settingsScreen } from '@ui/screens/settings';
 import { garrisonScreen } from '@ui/screens/garrison';
 import type { MatchSetup as UiSetup } from '@ui/screens/garrison-model';
 import { loadSave } from '@ui/screens/main-menu';
@@ -90,7 +91,8 @@ export class AppFlow {
       ...base,
       newGame: () => this.newGameScreen(),
       battleground: () => redirect(navigate, 'garrison'),
-      currentObjectives: () => objectivesScreen(),
+      currentObjectives: () => objectivesScreen({ store: this.deps.store, navigate }),
+      settings: () => settingsScreen(this.deps.store),
       garrison: garrisonScreen({
         load: () => loadSave(window.localStorage),
         navigate,

@@ -11,6 +11,7 @@ import {
 } from '@core/index';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import { prepareExport, runImport } from '../../game/platform/storage/export-import';
+import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
 import type { Screen } from './screen';
 
@@ -155,7 +156,8 @@ function transferControls(): HTMLElement {
   return box;
 }
 
-export function settingsScreen(): Screen {
+/** `store` is the app's shared save store, so the battle (which loads from it) sees the same save. */
+export function settingsScreen(store?: SaveStore): Screen {
   let node: HTMLElement | null = null;
   return {
     mount(container) {
@@ -183,13 +185,20 @@ export function settingsScreen(): Screen {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const next = applySettings(save, readForm(form));
+        applyUiScale(next.displaySettings);
+        const done = (): void => {
+          window.location.hash = '#main';
+        };
+        if (store) {
+          void store.save(next).then(done);
+          return;
+        }
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         } catch {
           /* storage unavailable: still apply for this session */
         }
-        applyUiScale(next.displaySettings);
-        window.location.hash = '#main';
+        done();
       });
       node.append(form, transferControls());
       container.append(node);
