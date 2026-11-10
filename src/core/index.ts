@@ -14,3 +14,4 @@ export * from './rules/garrison';
 export * from './rules/opponents';
 export * from './save/migrate';
 export * from './save/v1';
+export * from './rules/new-game';

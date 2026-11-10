@@ -1,4 +1,5 @@
 import { el } from './dom';
+import { mainMenuScreen } from './screens/main-menu';
 import type { Screen, ScreenFactory } from './screens/screen';
 
 export const ROUTE_NAMES = [
@@ -66,7 +67,7 @@ export type ScreenTable = Readonly<Record<RouteName, ScreenFactory>>;
 
 export function defaultScreens(): ScreenTable {
   return {
-    main: placeholderScreen('Taming the Elements'),
+    main: mainMenuScreen(),
     newGame: placeholderScreen('New Game'),
     garrison: placeholderScreen('Garrison'),
     settings: placeholderScreen('Settings'),
