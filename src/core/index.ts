@@ -8,3 +8,5 @@ export * from './data/settings';
 export * from './rules/objectives';
 export * from './rules/damage';
 export * from './rules/describe';
+export * from './sim/state';
+export * from './sim/alloc';

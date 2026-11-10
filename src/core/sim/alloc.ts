@@ -1,0 +1,41 @@
+import { EntityFlag, F64_FIELDS, I32_FIELDS, MAX_ENTITIES, World, type SimState } from './state';
+
+function clearSlot(s: SimState, id: number): void {
+  for (const f of F64_FIELDS) s[f][id] = 0;
+  for (const f of I32_FIELDS) s[f][id] = 0;
+}
+
+/**
+ * Allocates the lowest free entity id (a slot whose alive flag is clear), zeroes its
+ * fields, marks it alive and returns the id. Returns -1 when full. The free set is
+ * derived from the alive flags, so it is part of the snapshot with no extra state.
+ */
+export function allocEntity(s: SimState): number {
+  for (let id = 0; id < MAX_ENTITIES; id++) {
+    if (!isAlive(s, id)) {
+      clearSlot(s, id);
+      s.flags[id] = EntityFlag.alive;
+      s.spawnTick[id] = s.world[World.tick] ?? 0;
+      s.world[World.nextId] = (s.world[World.nextId] ?? 0) + 1;
+      return id;
+    }
+  }
+  return -1;
+}
+
+/** Frees an entity, clearing every field so stale data never reaches the hash. */
+export function freeEntity(s: SimState, id: number): void {
+  if (id < 0 || id >= MAX_ENTITIES || !isAlive(s, id)) return;
+  clearSlot(s, id);
+}
+
+export function isAlive(s: SimState, id: number): boolean {
+  return ((s.flags[id] ?? 0) & EntityFlag.alive) !== 0;
+}
+
+/** Live entity ids in ascending order. */
+export function liveIds(s: SimState): number[] {
+  const out: number[] = [];
+  for (let id = 0; id < MAX_ENTITIES; id++) if (isAlive(s, id)) out.push(id);
+  return out;
+}
