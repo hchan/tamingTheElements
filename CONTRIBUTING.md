@@ -13,6 +13,7 @@ Workflow details are in [docs/BRANCHING.md](docs/BRANCHING.md): trunk-based, one
    pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm test:legacy && pnpm build && pnpm e2e
    ```
 
+   `pnpm size:check` (after `build`) enforces the bundle-size budgets; to raise one deliberately see [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
    Or run `pnpm ci:local` (everything CI runs, with a summary; `--fast` skips browsers). The owner can deploy Pages without
    Actions via `pnpm deploy:pages` ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
 

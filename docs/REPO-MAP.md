@@ -22,13 +22,13 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md). `run-net.ts` (`pnpm sim:net`): a bot-vs-bot match over the lockstep session and the fake network, printing stalls, resends and lag; see [NETCODE.md](NETCODE.md) |
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
 | `docs/` | Documentation: `BRANCHING.md`, `TESTING.md` (test commands, layout, fixtures, guards), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
-| `docs/` | Documentation: `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
+| `docs/` | Documentation: [PERFORMANCE.md](PERFORMANCE.md) (budgets and how they are measured), `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `docs/` | Documentation: `BRANCHING.md`, `PARITY.md` (legacy parity checklist with test evidence), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config, the PR template and `.github/ISSUE_TEMPLATE/` |
 | `docs/` | Documentation: `BRANCHING.md`, `DEPLOYMENT.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI and Pages deploy workflow (`workflows/ci.yml`), Dependabot config, the PR template and `.github/ISSUE_TEMPLATE/` |
 | `.github/workflows/` (security) | `codeql.yml`, `secrets.yml` (gitleaks, baseline in `.gitleaksignore`), `osv.yml` (audit, non-blocking), `sbom.yml` (CycloneDX artifact), plus the `coverage` job in `ci.yml`; see [SECURITY-GATES.md](SECURITY-GATES.md) |
-| `tools/ci/` | `local-ci.ts` (`pnpm ci:local [--fast]`): runs the CI commands locally with a summary table; `deploy-pages.ts` (`pnpm deploy:pages [--dry-run]`): publishes the Pages build to the `gh-pages` branch without Actions; see [DEPLOYMENT.md](DEPLOYMENT.md) |
+| `tools/ci/` | `size-check.ts` + `size-budget.json` (`pnpm size:check`): gzip size budgets per chunk and a check that the menu does not load Phaser, see [PERFORMANCE.md](PERFORMANCE.md); `local-ci.ts` (`pnpm ci:local [--fast]`): runs the CI commands locally with a summary table; `deploy-pages.ts` (`pnpm deploy:pages [--dry-run]`): publishes the Pages build to the `gh-pages` branch without Actions; see [DEPLOYMENT.md](DEPLOYMENT.md) |
 | `tools/sbom/` | `sbom.sh` (`pnpm sbom`): production-only CycloneDX SBOM to `out/sbom.cdx.json` |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |

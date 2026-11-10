@@ -30,7 +30,7 @@ export function parseCliArgs(argv: readonly string[]): Options {
 }
 
 /** The same order and commands as the `check` and `e2e` jobs in ci.yml. */
-export const CORE_STEPS: readonly Step[] = ['lint', 'typecheck', 'depcruise', 'test', 'test:legacy', 'build'].map((s) => ({
+export const CORE_STEPS: readonly Step[] = ['lint', 'typecheck', 'depcruise', 'test', 'test:legacy', 'build', 'size:check'].map((s) => ({
   name: s,
   args: [s],
 }));

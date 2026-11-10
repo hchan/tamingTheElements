@@ -11,7 +11,7 @@ describe('ci:local', () => {
 
   it('fast mode runs no browsers and says so', () => {
     const { run, skipped } = planSteps({ fast: true });
-    expect(run.map((s) => s.name)).toEqual(['lint', 'typecheck', 'depcruise', 'test', 'test:legacy', 'build']);
+    expect(run.map((s) => s.name)).toEqual(['lint', 'typecheck', 'depcruise', 'test', 'test:legacy', 'build', 'size:check']);
     expect(skipped.every((s) => s.status === 'skip' && s.note.includes('--fast'))).toBe(true);
   });
 
