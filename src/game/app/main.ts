@@ -1,6 +1,7 @@
 import { SIM_VERSION } from '@core/index';
 import { startRouter } from '@ui/router';
 import '@ui/styles/main.css';
+import { applyUiScale, loadSave } from '@ui/screens/settings';
 import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags } from '../platform/flags';
@@ -17,6 +18,7 @@ async function enterPlay(app: HTMLElement): Promise<void> {
     showWebglError(app);
     return;
   }
+  applyUiScale(loadSave().displaySettings);
   app.replaceChildren();
   const game = document.createElement('div');
   game.id = 'game';

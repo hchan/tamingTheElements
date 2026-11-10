@@ -67,10 +67,10 @@ sign-off playtest. Bug slugs are those of [docs/legacy/KNOWN-BUGS.md](legacy/KNO
 | U02 | Garrison: select, order, enable rules; battle/practice/portal setup; character details numbers | garrison screen | pure view-models | matches | `src/ui/screens/garrison-model.test.ts#follows the legacy enable rules`<br>`src/ui/screens/garrison-model.test.ts#single-selects in chapters 1-2 and clears on re-click`<br>`src/ui/screens/garrison-model.test.ts#practice uses the dummy at the first hero XP; portal uses the last boss`<br>`src/ui/screens/character-details.test.ts#scales health by level and lists abilities with descriptions` |
 | U03 | Main menu enable rules | menu | `menuState` | matches | `src/ui/screens/main-menu.test.ts#disables garrison and objectives with no save`<br>`src/ui/screens/main-menu.test.ts#enables everything and flags NEW when chapter 1 objectives are met` |
 | U04 | Settings persist and apply as numbers from the radio values | string-typed settings | numeric settings | matches | `src/ui/screens/settings.test.ts#writes numbers from string radio values`<br>`src/game/platform/storage/local-save-store.test.ts#save stamps savedAt; clear removes` |
-| U05 | Display scale setting applied to the running game | window-size based | fixed 1280x720 arena, FIT scaling | open | none (no test proves the scale setting reaches the renderer) |
+| U05 | Display scale setting applied to the running game | window-size based | fixed 1280x720 arena, FIT scaling in a container sized by the setting | matches | `src/ui/display-scale.test.ts#is 1 at Largest and grows monotonically with the setting`<br>`tests/e2e/display-size.spec.ts#display size changes the canvas CSS size but not the sim state hash` |
 | U06 | Key bindings page lists player bindings only | key page | `keyBindings` view | matches | `src/ui/screens/info-screens.test.ts#omits cheats`<br>`src/game/input/keyboard-agent.test.ts#rebinding moves a code between actions` |
 | U07 | Wiki element text and race pages | wiki | info screens | matches | `src/ui/screens/info-screens.test.ts#matches the legacy text for air`<br>`src/ui/screens/info-screens.test.ts#lists rows` |
-| U08 | About page | about | present in routes only | open | none |
+| U08 | About page | about | About view-model with GitHub link, credits, version stamp | matches | `src/ui/screens/about.test.ts#links to the GitHub repository and exposes no email address`<br>`src/ui/screens/about.test.ts#includes author, credits and the version stamp` |
 | U09 | Legacy save (each v0 fixture, incl. string-typed settings) loads with an identical garrison and chapter | v0 localStorage | `migrate`, local store | matches | `src/core/save/migrate.test.ts#migrates`<br>`src/core/save/migrate.test.ts#normalises numeric strings and preserves unknown fields`<br>`src/game/platform/storage/local-save-store.test.ts#migrates v0 once, backs it up raw and writes v1 back`<br>`src/ui/screens/main-menu.test.ts#migrates a legacy v0 save` |
 | U10 | HUD health/rest bars and cooldown sweep geometry | `topHUD`, `drawCooldown` | HUD helpers | matches | `src/game/hud/hud.test.ts#matches legacy topHUD at 1280`<br>`src/game/hud/hud.test.ts#is green at full, yellow at half, red at zero`<br>`src/game/hud/action-bar.test.ts#starts as the full square from top-centre and ends as a thin wedge` |
 | U11 | Cinematic captions verbatim, ordering, pacing | `scenes.js` | `CinematicRunner` + scripts | open | `tests/repo/cine-scripts-a.test.ts#text matches legacy scenes.js verbatim` covers script set A only; the rest and pacing are manual (WP 96) |
@@ -103,8 +103,6 @@ Nothing below is fixed by the checklist work; each needs its own WP or the WP 96
 - C22: dead-caster melee lingering has no test.
 - C23: `damage-uses-target-mult` is reproduced but not asserted in the sim.
 - C25: ScriptedAI movement and match feel (manual).
-- U05: display scale applied to the renderer.
-- U08: About page.
 - U11: cinematic captions beyond script set A and pacing (manual).
 - U12: sprites, animations, sounds (manual).
 - E2E: the `tests/e2e/parity/*.spec.ts` specs and v0 e2e fixtures of WP 95 are not written; the evidence above is unit and scenario tests plus the existing e2e smoke specs.

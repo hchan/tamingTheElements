@@ -11,6 +11,7 @@ import {
 } from '@core/index';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import { prepareExport, runImport } from '../../game/platform/storage/export-import';
+import { canvasFraction } from '../display-scale';
 import { el } from '../dom';
 import type { Screen } from './screen';
 
@@ -40,9 +41,10 @@ export function applySettings(save: SaveV1, form: SettingsForm): SaveV1 {
 
 export function applyUiScale(scale: number, root: HTMLElement = document.documentElement): void {
   root.style.setProperty('--ui-scale', String(scale));
+  root.style.setProperty('--canvas-fraction', String(canvasFraction(scale)));
 }
 
-function loadSave(): SaveV1 {
+export function loadSave(): SaveV1 {
   let raw: unknown;
   try {
     const text = window.localStorage.getItem(STORAGE_KEY);
