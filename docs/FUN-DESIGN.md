@@ -1,6 +1,6 @@
 # Fun design: the Arcade ruleset
 
-Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips) and WP 27 (`WP-arcade-8way-aim`) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
+Status: **WP 1 (`WP-arcade-flag`, the ruleset plumbing), WP 2 (`WP-arcade-hitstop`), WP 3 (`WP-arcade-stun-knockback`), WP 4 (`WP-arcade-combo`), WP 5 (`WP-arcade-tooling`, report-only gate), WP 6 (`WP-arcade-juice-hits`), WP 7 (`WP-arcade-meter`), WP 8 (`WP-arcade-super-core`), WP 9 (`WP-arcade-super-view`), WP 10 (`WP-arcade-ai-basic`) and WP 11 (`WP-arcade-entry`, Arcade Versus on the main menu, playable on the live site: see section 7) are built, so the MVP is playable; after it, WP 12 (`WP-arcade-buffer`), WP 13 (`WP-arcade-rounds`, best of 3 in the sim), WP 14 (`WP-arcade-announcer-view`, the round banners, timer and pips), WP 15 (`WP-arcade-dash`), WP 16 (`WP-arcade-guard-parry`), WP 27 (`WP-arcade-8way-aim`) and WP 29 (`WP-arcade-weather`, sim only) are built too; everything else is design.** Owner direction: "make sure the game is fun, and if it is not fun, make it
 fun, like Street Fighter vs Capcom". This doc diagnoses the current combat, specifies an opt-in **Arcade** ruleset (fast,
 flashy, readable, tag-team, big specials) on top of the deterministic sim, defines measurable fun gates, and cuts the work
 into packages. **Classic** (the legacy-parity ruleset, [PARITY.md](PARITY.md)) stays the default and stays bit-identical.
@@ -58,12 +58,14 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   (`src/core/sim/clock.ts`) reads the world flag bit (hashed state), never a module variable.
 - **State.** One new `SimState.arcade: Int32Array`, **length 0 when the flag is off**. `hash()` and `snapshot()` iterate
   `stateArrays`, so a zero-length array adds no bytes and Classic hashes stay identical. Layout (all Int32):
-  - per entity (`ARCADE_E = 15` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
+  - per entity (`ARCADE_E = 16` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
     dashUntil, dashReadyAt, blockUntil, parryUntil, parryLockUntil, guardDrain, comboStunTotal, wallBounced, aim,
-    dashDodged` (WP 16 renamed `guardState` and `guardMeter`: `guardDrain` is 1000 minus the guard meter);
-  - per team (`ARCADE_T = 16` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 5
-    (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState, pressUsed, confirmTick`;
-  - world (`ARCADE_W = 8`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil`.
+    dashDodged, weatherReadyAt` (WP 16 renamed `guardState` and `guardMeter`: `guardDrain` is 1000 minus the guard meter);
+  - per team (`ARCADE_T = 17` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 6
+    (primary, secondary, dash, guard, super, weather), lastDirPress, lastDir, roundsWon, superState, pressUsed,
+    confirmTick`;
+  - world (`ARCADE_W = 12`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil,
+    roundWinner, weather, weatherUntil, weatherTeam`.
 - **Game clock.** `W.tick` stays the replay and event index and always advances. Arcade adds `gameTick`, which does
   not advance during hit-stop or super freeze and advances every second tick during KO slow-motion (WP 13). Built in WP 1:
   `advanceGameClock` advances it at the end of every unfrozen `step`, so with no freeze set `gameTick == W.tick`. Systems read
@@ -72,8 +74,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 - **Freeze gate.** `step()` runs the `input` slot (now `arcadeInput`) every tick. While `gameTick` is frozen it skips
   every other system. In Classic the gate is never true. Frozen means `W.tick < freezeUntil`: `freezeUntil` is in `W.tick`
   units, because a deadline in `gameTick` would never arrive while `gameTick` stands still.
-- **Commands.** Arcade names reserved bits: 11 `dash`, 12 `guard`, 13 `super`; 14 and 15 stay reserved. Classic keeps
-  masking 11..15. `inputMaskFor(flags)` replaces the fixed `INPUT_MASK` in `src/core/net/session.ts` and is used by
+- **Commands.** Arcade names reserved bits: 11 `dash`, 12 `guard`, 13 `super`, 14 `weather` (WP 29); 15 stays reserved.
+  Classic keeps masking 11..15. `inputMaskFor(flags)` replaces the fixed `INPUT_MASK` in `src/core/net/session.ts` and is used by
   replay validation.
 - **One hit path.** `applyArcadeHit(world, sink, attackerTeam, attacker, victim, base, abilityDefId, dir)` in
   `src/core/sim/systems/arcade/hit.ts`. In Arcade, `projectile.ts` and `melee.ts` call it instead of subtracting HP. The
@@ -109,6 +111,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 | 56 | `timeOver` | none | arcade/round |
 | 57 | `roundEnded` | `winner, won0, won1` | arcade/round |
 | 58 | `recovered` | `id, reason` (0 stun ended, 1 juggle cap, 2 stun cap) | arcade/hit, arcade/input |
+| 59 | `weatherChanged` | `weather, prev, team` (the source is the caster; `prev == weather` is a refresh) | arcade/input |
+| 60 | `weatherEnded` | `weather` | arcade/input, arcade/round |
 
 System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order is unchanged: `input` becomes
 `arcadeInput` (clock, edges, buffer, stun and combo expiry, dash), `collision` becomes `arcadeClash`, `health` becomes
@@ -438,6 +442,27 @@ matchup becomes something to play around instead of a fixed loss.
 - **AI:** later; the scripted AI casts its own weather when it is off cooldown and the matchup is unfavourable.
 - **Metrics:** share of matches with at least one cast, win-rate change per race with and without weather (the point
   is to narrow the spread between elements without making one weather mandatory).
+- Built in WP 29 (`systems/arcade/weather.ts`, table in `data/arcade.ts`; sim only, the view is WP 30 and the AI later):
+  `Cmd.weather` is bit 14 (Classic masks it), buffered like the dash (press slot 5). The `input` slot, after the dash
+  and guard passes, first ends a weather whose `weatherUntil` has come (`weatherEnded {weather}`), then team 0 and then
+  team 1 cast on a pending press when the controlled character `canAct` and its `weatherReadyAt` has come: the slot
+  becomes `weather` = the kind of the caster's element (1 Sun, 2 Rain, 3 Sandstorm, 4 Gale, 5 Eclipse),
+  `weatherUntil = gameTick + 500`, `weatherTeam` = the caster's team; `weatherReadyAt = gameTick + 1500` (per
+  character, like the ability cooldowns; a 2v2 team has one weather per member); +50 meter;
+  `weatherChanged {weather, prev, team}`. A replacement has no `weatherEnded`; on a same-tick tie team 1's cast wins.
+  The recovery is the 16 game ticks after the cast (read from `weatherReadyAt`): `isFree` is false and a hit on the
+  caster is a counter hit. Damage: `applyArcadeHit` runs the Classic `computeDamage`, then `weatherDamage` by the
+  attacker's element (favoured `* 1200 / 1000`, counter `* 1000 / 1200`, which is exactly /1.2 up to one IEEE rounding,
+  not an 833 pm approximation; anything else untouched), then the combo or chip scale; it covers every Arcade hit
+  (projectiles, melee, supers, guarded chip), not damage over time or heals. The round reset ends the weather
+  (`weatherEnded` before `roundStarted`) and clears every weather cooldown (the entity block reset). Secondary effects
+  are `WEATHER_EFFECTS` rows with `WEATHER_EFFECTS_ON = false`: no system reads them yet.
+- Measured (scratch run of `funReport --all`, 8 seeds, 528 Arcade matches, scripted vs scripted, the AI wrapped to
+  press weather whenever it can): with no weather the per-race win-rate spread is 82.9 pp (Ishimi 10.2%, Pax 8.0%,
+  Sindarosa 90.9%); with both sides casting it is 85.2 pp (4.4 casts per match, median match 29.4 s vs 29.7 s). With
+  only one race casting, its own win rate moves: Treenoc +22.7 pp, Ishimi +18.2, Fiara +11.4, Lavax +11.4, Pax +11.3,
+  Sindarosa +9.1, Rokcore +6.9, Echo +1.2, Morblass +1.2, Wispera -1.1, Curomo -4.6, Cyclonius -8.0 (the blind
+  always-cast policy pays the recovery at bad moments). The AI that casts on an unfavourable matchup is later work.
 
 **New abilities:** the owner also allows new abilities in general. New abilities are Arcade-only data behind the
 Arcade flag (Classic keeps the legacy kit); each needs a design row here before it is built (use the add-ability skill).
@@ -622,7 +647,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 26 | `WP-arcade-audio-layers` | view | Synth thump, pitch variation, KO music cut | 6 |
 | 27 | `WP-arcade-8way-aim` (done: section 2.12; bands keep the 4-way facing) | sim+view | Arcade-only 8-way aim: cast facing is `dir8FromSigns` of the held input (Classic keeps 4-way `facingFor`, bit-identical); diagonal projectiles, melee arcs and bands from the 8-way facing, aim indicator in the HUD, AI aims diagonally; characters keep 4-way reels | 3 |
 | 27b | `WP-arcade-quirks` | sim | Remaining Arcade quirk fixes | 3 |
-| 29 | `WP-arcade-weather` | sim+data | Section 2.14: `Cmd.weather`, per-element weather, damage modifiers, cooldown and duration, events | 3, 7 |
+| 29 | `WP-arcade-weather` (done: sim only; section 2.14) | sim+data | Section 2.14: `Cmd.weather`, per-element weather, damage modifiers, cooldown and duration, events | 3, 7 |
 | 30 | `WP-arcade-weather-view` | view | Weather icon, timer, sky tint, particles, announcer line | 29 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
@@ -671,8 +696,8 @@ Packages 26 and 27 hang off 6 and 3 and can go anywhere after them. 28 packages 
 - Arcade in the story campaign: XP, capture, chapters, saves. Arcade Versus writes nothing to the save.
 - Online play UI, rollback and ranked play (only the handshake rule in WP 28).
 - New character art or animation reels (hit-stun uses a tint and a tilt), voice-acted announcer, new races, jumping or
-  air juggles (the arena is top-down; "juggle" means stun-combo count here), an assist call without a swap (bit 14 stays
-  reserved for it), training mode and frame data display.
+  air juggles (the arena is top-down; "juggle" means stun-combo count here), an assist call without a swap (bit 15 stays
+  reserved for it; bit 14 became `weather`), training mode and frame data display.
 
 ## 6. Keeping Classic parity and determinism
 
@@ -706,7 +731,7 @@ Packages 26 and 27 hang off 6 and 3 and can go anywhere after them. 28 packages 
      it.
   3. Each sim WP bumps the version, so old local playtest replays stop loading (already the policy; the replay store
      keeps 5).
-  4. Command bit reuse: bit 15 stays reserved; bit 14 stays reserved for a future assist call.
+  4. Command bit reuse: bit 14 is `weather` (WP 29); bit 15 stays reserved for a future assist call.
   5. Design risk: stun plus freeze abilities could make infinites. The juggle and stun caps and the property test guard
      against it.
   6. The fun gates can be gamed by tuning bots instead of the game. Rule: a WP that changes the AI and the gates must not

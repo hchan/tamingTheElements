@@ -140,6 +140,13 @@ Guard and parry (`arcade/guard.ts`) are Int32 game ticks and counters in the ent
 meter); whether a character guards is read from the hashed `prevCmd`, never from the raw command. Chip damage is the
 Classic arithmetic times `250 / 1000` (the combo-scale multiply), the drain is `Math.floor(chip * 2000 / maxHp)` (as the
 meter gains), and a reflected projectile negates its Float64 velocity and reverses its dir8 with `(dir + 4) & 7`.
+Weather (`arcade/weather.ts`) is Int32 in the hashed blocks: the world slot (`weather` kind, `weatherUntil` game tick,
+`weatherTeam`) and each character's `weatherReadyAt` (its recovery is derived from it, so there is no extra timer).
+The damage factor is an integer per mille applied to the Float64 damage in a fixed order: favoured `dmg * 1200 / 1000`,
+counter `dmg * 1000 / 1200` (exactly /1.2, not a rounded 833 pm), each `*` and `/` one correctly rounded IEEE
+operation, identical in every engine; a neutral element (or no weather) keeps the exact Classic value. Rounding: none
+beyond IEEE round-to-nearest of those two operations; then the combo scale multiplies as before. Casts run team 0 then
+team 1 in the `input` slot, so a same-tick tie always resolves to team 1's weather; no RNG is drawn.
 
 ## Cross-browser golden replays
 

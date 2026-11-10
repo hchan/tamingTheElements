@@ -136,11 +136,14 @@ waits out its recovery, and a dash within 10 ticks of the team's last confirmed 
 parry (`arcade/guard.ts`): after the dash the `input` slot regenerates the guard meter and opens a parry window on a
 pending guard press (with a whiff lock); `applyArcadeHit` checks the window first (a parry: no damage, the projectile is
 reflected or the melee attacker stunned) and then `isGuarding` (chip damage, block-stun, guard meter drain and break);
-supers skip both.
+supers skip both. Weather (`arcade/weather.ts`): after the guard pass the `input` slot ends a weather whose timer ran
+out and casts on pending `Cmd.weather` presses (the caster's element weather for 500 game ticks, a 1500-tick cooldown
+per character whose first 16 ticks are cast recovery); the world block holds the one weather slot, and
+`applyArcadeHit` scales the attacker's damage by `weatherDamage` between the element chart and the combo scale.
 
 | # | System | Status |
 |---|---|---|
-| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`), dash starts (`dashed`), guard meter regeneration and parry windows on unfrozen ticks |
+| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`), dash starts (`dashed`), guard meter regeneration and parry windows, weather expiry and casts (`weatherEnded`, `weatherChanged`) on unfrozen ticks |
 | 2 | swap (`systems/swap.ts`) | implemented |
 | 3 | movement (`systems/movement.ts`) | implemented |
 | 4 | abilities | no-op (planned) |
