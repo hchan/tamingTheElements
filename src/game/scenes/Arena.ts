@@ -185,8 +185,8 @@ export class Arena extends Phaser.Scene {
     this.scene.launch(HUD_SCENE, hudData);
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.onShutdown(); });
-    this.events.once(Phaser.Scenes.Events.DESTROY, () => { this.onShutdown(); });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
   }
 
   /** Test-build-only hook (statically removed from production builds). */
@@ -354,17 +354,29 @@ export class Arena extends Phaser.Scene {
     const tick = view.tick;
     this.actionBar?.update();
     this.reportPlayback();
+    this.frameTick = tick;
+    this.frameAlpha = alpha;
     pool.begin();
-    view.forEachCharacter((c: RenderCharacter) => {
-      pool.acquire(c.id).apply(c, tick, alpha);
-    });
+    view.forEachCharacter(this.drawCharacter);
     pool.end();
     projPool.begin();
-    view.forEachProjectile((p: RenderProjectile) => {
-      projPool.acquire(p.id).apply(p, alpha);
-    });
+    view.forEachProjectile(this.drawProjectile);
     projPool.end();
   }
+
+  /** Per-frame callbacks are fields so `update` allocates no closures. */
+  private frameTick = 0;
+  private frameAlpha = 0;
+  private readonly drawCharacter = (c: RenderCharacter): void => {
+    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha);
+  };
+  private readonly drawProjectile = (p: RenderProjectile): void => {
+    this.projPool?.acquire(p.id).apply(p, this.frameAlpha);
+  };
+
+  private readonly shutdownHandler = (): void => {
+    this.onShutdown();
+  };
 
   private onShutdown(): void {
     for (const off of this.cleanups.splice(0)) off();
@@ -375,8 +387,9 @@ export class Arena extends Phaser.Scene {
         delete hook.scene;
       }
     }
-    this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
-    this.events.removeAllListeners(Phaser.Scenes.Events.DESTROY);
+    // Remove only our own handler: removeAllListeners would also drop Phaser's internal scene hooks.
+    this.events.off(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
+    this.events.off(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
     this.actionBar?.destroy();
     this.actionBar = undefined;
     this.pool?.forEachView((v) => { v.destroy(); });

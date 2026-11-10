@@ -210,7 +210,10 @@ export class ActionBarView {
     }
     const has = this.scene.textures.exists(key);
     icon.setVisible(has);
-    if (has) icon.setTexture(key).setPosition(s.x, s.y).setDisplaySize(s.size, s.size);
+    if (has) {
+      if (icon.texture.key !== key) icon.setTexture(key);
+      icon.setPosition(s.x, s.y).setDisplaySize(s.size, s.size);
+    }
   }
 
   private text(i: number, s: ActionSlot): void {
@@ -220,6 +223,7 @@ export class ActionBarView {
       t.setDepth(101);
       this.texts[i] = t;
     }
-    t.setVisible(true).setText(s.label).setPosition(s.x + 2, s.y);
+    t.setVisible(true).setPosition(s.x + 2, s.y);
+    if (t.text !== s.label) t.setText(s.label);
   }
 }

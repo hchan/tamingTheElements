@@ -100,12 +100,63 @@ export class EventFx {
   }
 }
 
+const BURST_DISTANCE = 24;
+const BURST_MS = 250;
+
 /** Phaser-backed sink. `at` resolves an entity id to its current centre, or undefined if it has no view. */
 export function createPhaserFxSink(
   scene: Phaser.Scene,
   at: (id: number) => { x: number; y: number } | undefined,
   tintOf: (id: number) => Phaser.GameObjects.Image | undefined,
 ): FxSink {
+  // Pooled burst dots, advanced by one scene update listener that only exists while dots are in flight.
+  interface Dot {
+    circle: Phaser.GameObjects.Arc;
+    x0: number;
+    y0: number;
+    dx: number;
+    dy: number;
+    age: number;
+  }
+  const free: Phaser.GameObjects.Arc[] = [];
+  const live: Dot[] = [];
+  let attached = false;
+  const detach = (): void => {
+    if (!attached) return;
+    attached = false;
+    scene.events.off('update', tick);
+    scene.events.off('shutdown', drop);
+    scene.events.off('destroy', drop);
+  };
+  /** Scene is going away: Phaser destroys the circles with it, so just forget them. */
+  const drop = (): void => {
+    live.length = 0;
+    free.length = 0;
+    detach();
+  };
+  function tick(_time: number, delta: number): void {
+    for (let i = live.length - 1; i >= 0; i--) {
+      const d = live[i];
+      if (!d) continue;
+      d.age += delta;
+      const t = d.age / BURST_MS;
+      if (t >= 1) {
+        d.circle.setVisible(false);
+        free.push(d.circle);
+        live.splice(i, 1);
+        continue;
+      }
+      d.circle.setPosition(d.x0 + d.dx * t, d.y0 + d.dy * t).setAlpha(1 - t);
+    }
+    if (live.length === 0) detach();
+  }
+  const attach = (): void => {
+    if (attached) return;
+    attached = true;
+    scene.events.on('update', tick);
+    scene.events.once('shutdown', drop);
+    scene.events.once('destroy', drop);
+  };
   return {
     flash(target): void {
       const img = tintOf(target);
@@ -119,18 +170,11 @@ export function createPhaserFxSink(
       const p = at(target);
       if (!p) return;
       for (const [dx, dy] of offsets) {
-        const dot = scene.add.circle(p.x, p.y, 3, 0xffddaa).setDepth(10);
-        scene.tweens.add({
-          targets: dot,
-          x: p.x + dx * 24,
-          y: p.y + dy * 24,
-          alpha: 0,
-          duration: 250,
-          onComplete: () => {
-            dot.destroy();
-          },
-        });
+        const circle = free.pop() ?? scene.add.circle(0, 0, 3, 0xffddaa).setDepth(10);
+        circle.setPosition(p.x, p.y).setAlpha(1).setVisible(true);
+        live.push({ circle, x0: p.x, y0: p.y, dx: dx * BURST_DISTANCE, dy: dy * BURST_DISTANCE, age: 0 });
       }
+      attach();
     },
     shake(durationMs, intensity): void {
       scene.cameras.main.shake(durationMs, intensity);

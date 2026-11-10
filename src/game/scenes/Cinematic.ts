@@ -57,8 +57,8 @@ export class Cinematic extends Phaser.Scene {
     this.cleanups.push(() => { win.removeEventListener('keydown', onKey); });
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.onShutdown(); });
-    this.events.once(Phaser.Scenes.Events.DESTROY, () => { this.onShutdown(); });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
 
     this.installProbe();
     this.runner = new CinematicRunner(this.launch?.script ?? INTRO_SCRIPT, this.sink());
@@ -147,6 +147,10 @@ export class Cinematic extends Phaser.Scene {
     };
   }
 
+  private readonly shutdownHandler = (): void => {
+    this.onShutdown();
+  };
+
   private onShutdown(): void {
     for (const off of this.cleanups.splice(0)) off();
     if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
@@ -156,8 +160,9 @@ export class Cinematic extends Phaser.Scene {
         delete hook.scene;
       }
     }
-    this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
-    this.events.removeAllListeners(Phaser.Scenes.Events.DESTROY);
+    // Remove only our own handler: removeAllListeners would also drop Phaser's internal scene hooks.
+    this.events.off(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
+    this.events.off(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
     this.tweens.killAll();
     this.sprites.clear();
     this.backgrounds = [];

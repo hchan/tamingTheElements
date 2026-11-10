@@ -40,7 +40,7 @@ export function lerp(a: number, b: number, t: number): number {
 }
 
 function framesOf(sprite: MapSprite, set: FrameSet): Frames {
-  const own = sprite[`${set}Frames`];
+  const own = set === 'left' ? sprite.leftFrames : set === 'up' ? sprite.upFrames : set === 'down' ? sprite.downFrames : sprite.rightFrames;
   return own && own.length > 0 ? own : (sprite.rightFrames ?? []);
 }
 
@@ -56,11 +56,20 @@ function ensureFrames(scene: Phaser.Scene, key: string, sprite: MapSprite): void
   }
 }
 
+const FRAME_NAMES: Record<FrameSet, string[]> = { left: [], right: [], up: [], down: [] };
+/** Frame name like `left3`, built once per (set, index) so the per-frame path allocates no strings. */
+function frameName(set: FrameSet, i: number): string {
+  const names = FRAME_NAMES[set];
+  return (names[i] ??= `${set}${String(i)}`);
+}
+
 /** One pooled character sprite; `apply` is the only thing that touches Phaser state each frame. */
 export class CharacterView {
   readonly image: Phaser.GameObjects.Image;
-  private key = '';
+  private spriteName = '';
   private sprite: MapSprite | undefined;
+  /** True only while this view itself holds the frozen tint, so it never clears the hit flash (set by the fx sink). */
+  private frozenTint = false;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
@@ -70,10 +79,10 @@ export class CharacterView {
     const hidden = (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0;
     this.image.setVisible(!hidden);
     if (hidden) return;
-    const key = `map:${c.sprite}`;
-    if (key !== this.key) {
+    if (c.sprite !== this.spriteName) {
+      const key = `map:${c.sprite}`;
+      this.spriteName = c.sprite;
       this.sprite = MAP_SPRITES[c.sprite];
-      this.key = key;
       if (this.sprite) {
         this.image.setTexture(key);
         ensureFrames(this.scene, key, this.sprite);
@@ -87,12 +96,17 @@ export class CharacterView {
       const set = frameSetFor(c.dir);
       const count = framesOf(this.sprite, set).length;
       const moving = c.x !== c.px || c.y !== c.py;
-      this.image.setFrame(`${set}${String(frameIndex(tick, count, moving))}`);
+      this.image.setFrame(frameName(set, frameIndex(tick, count, moving)));
     }
     this.image.setFlipX(flipForDir(c.dir));
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
-    if ((c.flags & EntityFlag.frozen) !== 0) this.image.setTint(FROZEN_TINT);
-    else this.image.clearTint();
+    if ((c.flags & EntityFlag.frozen) !== 0) {
+      this.image.setTint(FROZEN_TINT);
+      this.frozenTint = true;
+    } else if (this.frozenTint) {
+      this.image.clearTint();
+      this.frozenTint = false;
+    }
   }
 
   hide(): void {
