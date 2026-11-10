@@ -1,0 +1,111 @@
+# Testing
+
+How to run, place and write tests. Run everything with `corepack pnpm <script>` (or plain `pnpm` if corepack is enabled).
+
+## Commands
+
+| Command | What it runs |
+|---|---|
+| `pnpm test` | Vitest projects `core` and `repo` (node): unit tests in `src/**/*.test.ts`, plus `tests/repo/` and `tests/lint/` |
+| `pnpm test:legacy` | Vitest project `legacy`: `tests/legacy/**` characterization tests of the frozen `war/` code, run in `node:vm` |
+| `pnpm test:browser` | Vitest project `browser`: `tests/browser/**/*.browser.test.ts` in headless Chromium, Firefox and WebKit |
+| `pnpm e2e` | Playwright (`playwright.config.ts`): `tests/e2e/*.spec.ts` against `vite build --mode test` served by `vite preview` on port 4173 |
+| `pnpm golden:record` | `tools/gen/record-golden.ts`: rewrites `tests/fixtures/replays/random-vs-random.replay.json` |
+| `pnpm docs:gen` | `tools/gen/gen-design-tables.ts`: refreshes the generated tables in `docs/GAME-DESIGN.md` |
+| `pnpm lint`, `pnpm typecheck`, `pnpm depcruise`, `pnpm build` | ESLint (including the `src/core` determinism bans), `tsc -b`, dependency rules, typecheck plus Vite build |
+
+Pre-merge set (CI runs lint, typecheck, depcruise, test and build; `e2e` and `test:browser` are separate CI jobs):
+`pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm test:legacy && pnpm build`.
+
+Browser engines for `test:browser` and `e2e` need `pnpm exec playwright install chromium firefox webkit` once (e2e uses chromium only).
+
+### Property tests
+
+`src/core/sim/sim.property.test.ts` uses fast-check. Environment variables:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SIM_FUZZ_RUNS` | 25 | Property runs per test (raise for a nightly-style soak) |
+| `SIM_FUZZ_TICKS` | 300 | Maximum ticks per run |
+| `FC_SEED` | `0x7a11` (31249) | fast-check seed; pinned so failures reproduce. Use the seed printed by a failure |
+
+Example: `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500 pnpm test`. Single file: `pnpm exec vitest run --project core src/core/sim/sim.property.test.ts`.
+
+## Where each kind of test lives
+
+| Kind | Location |
+|---|---|
+| Unit tests for `src/core`, `src/game`, `src/ui` | Colocated next to the code: `src/**/<name>.test.ts` |
+| Data tables vs legacy | `src/core/data/*.test.ts` (compare against `tests/fixtures/legacy/*.json`) |
+| Determinism, snapshot, replay | `src/core/sim/*.test.ts`, `src/core/replay/replay.test.ts` |
+| Characterization of legacy behaviour | `tests/legacy/*.characterization.test.ts`, fixtures in `tests/fixtures/legacy/` |
+| Known legacy bugs | `tests/legacy/known-bugs.characterization.test.ts` (tagged `// KNOWN-BUG:<slug>`, see `docs/legacy/KNOWN-BUGS.md`) |
+| Repo and docs guards | `tests/repo/*.test.ts` |
+| ESLint ban checks | `tests/lint/core-bans.test.ts` with samples in `tests/lint/fixtures/` |
+| Cross-engine determinism | `tests/browser/determinism.browser.test.ts` |
+| End to end (real browser, real build) | `tests/e2e/*.spec.ts` |
+| Legacy loader stubs (Crafty, jQuery, DOM, clock, seeded random) | `src/testing/legacy/` |
+| Golden replay | `tests/fixtures/replays/random-vs-random.replay.json` |
+
+## Characterization fixtures
+
+`tests/fixtures/legacy/*.json` and `tests/fixtures/legacy/saves/` record what the frozen legacy code does today. The
+`tests/legacy` tests compare against them, and port tests (for example `src/core/data/abilities-a.test.ts`) read them as the oracle.
+
+Regenerate with `TTE_UPDATE_FIXTURES=1 pnpm test:legacy` (the tests rewrite the files they cover instead of only comparing).
+
+When this is allowed:
+
+- Only when the legacy test harness or stubs changed, or a fixture is new. Legacy under `war/` is frozen, so a changed fixture
+  without a harness change means the characterization is wrong or something unintended moved.
+- Review the full `git diff tests/fixtures/` and explain it in the commit message. Never regenerate just to turn a red test green.
+- Never regenerate to bless a port divergence. Port parity bugs are reproduced, with the correct behaviour written as `it.fails(...)`
+  tagged `// KNOWN-BUG:<slug>`; only a `fix-*` work package flips them.
+
+The golden replay is separate: run `pnpm golden:record` only when a simulation change is intended. Bump `SIM_VERSION`
+(`src/core/index.ts`) in the same change, review the hash diff, and say why in the commit message. The browser gate then checks
+that Chromium, Firefox and WebKit reproduce the committed hashes.
+
+## Guard tests (`tests/repo/`, `tests/lint/`)
+
+- `tests/repo/repo-map.test.ts`: every top-level directory tracked by git and every `src/*` directory must appear in
+  `docs/REPO-MAP.md` as `` `dir/ `` text, and every backticked directory in that file must exist. Adding a directory means
+  updating the map in the same change.
+- `tests/repo/no-team-block-alias.test.ts`: `SimState.team` is per entity, `SimState.teams` is the per-team block. The test
+  fails when a `.team[...]` index looks like a per-team block offset (`TEAM_`, `TeamField`, `STRIDE`, `idx`, `*` ...). Use `.teams[...]`.
+- `tests/repo/docs-tables.test.ts`: the generated tables in `docs/GAME-DESIGN.md` must equal the output of `pnpm docs:gen`.
+- `tests/repo/assets-manifest.test.ts`, `tests/repo/cine-scripts-a.test.ts`: asset manifest and ported cinematic data checks.
+- `tests/lint/core-bans.test.ts`: lints sample files to prove the `src/core` bans (`Date`, `Math.random`, transcendental `Math`,
+  DOM globals and so on) are enforced.
+
+## The `__TTE__` hook
+
+`window.__TTE__` is a test-only object installed by `src/game/platform/test-hook.ts`. It exists only in dev and in
+`vite build --mode test` (what Playwright builds); production builds drop it. It exposes `ready`, `version`, `scene`,
+`state()` (route, scene, tick, paused), `hash()` (sim state hash), `step(n)` (pause and step the arena n ticks), `loadSave(json)`,
+`listeners()` (live window/document listener count, 0 after leaving a battle), `settled()` (resolves after game teardown),
+and `arena` / `cinematic` probes while those scenes run.
+
+Typical e2e pattern (see `tests/e2e/app-flow.spec.ts`): `page.waitForFunction("window.__TTE__ && window.__TTE__.ready === true")`,
+then drive it with `page.evaluate`. Arena demos start with the `?ff=arenaDemo` flag, cinematics with `?ff=cinematicDemo`.
+Do not add game logic that reads the hook.
+
+## Writing a new ability or character test
+
+Abilities and characters are data in `src/core/data/` (`abilities-a.ts`, `abilities-b.ts`, `characters.ts`). Follow the pattern
+in `src/core/data/abilities-a.test.ts` and `characters.test.ts`:
+
+1. Add the data entry, then a colocated test that compares each field with the legacy fixtures
+   (`tests/fixtures/legacy/data.json`, `abilities-range.json`, `abilities-effects.json`) imported from `tests/fixtures/legacy/`.
+   Port the legacy numbers (ticks = ms / 20); do not hand-copy values into the test.
+2. For sim behaviour, add a test beside `src/core/sim/step.test.ts` or `match.test.ts`: build a sim from a fixed seed, apply the
+   ability through the Command bitset, step N ticks, and assert on events and state, not on rendering.
+3. Assert determinism: the same seed and inputs give the same state hash, and snapshot then restore continues identically
+   (`snapshot.test.ts` shows the round trip).
+4. If the legacy behaviour is what you are matching and it is buggy, assert the buggy value and add the correct-behaviour
+   case as `it.fails(...)` with `// KNOWN-BUG:<slug>`.
+5. A gameplay-affecting data change moves the golden replay: bump `SIM_VERSION`, run `pnpm golden:record`, review the diff.
+6. Run `pnpm test` and `pnpm test:legacy`; then the full pre-merge set above.
+
+`src/core` tests obey the same bans as the code: no `Date`, `Math.random` or transcendental `Math`; randomness comes from the
+seeded streams in `src/core/rng/`.

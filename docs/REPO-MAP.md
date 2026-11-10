@@ -21,7 +21,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/assets/` | `extract-legacy-manifest.ts` vm-loads the legacy asset manifests and writes `src/game/assets/manifest.generated.json` (run with `pnpm exec tsx`); `build-assets.ts` (`pnpm assets:build`) copies the manifest's images and sounds plus the favicon into `public/`, verifying sha256 |
 | `tools/sim/` | `run-match.ts` (`pnpm sim:match`): headless AI-vs-AI matches, seeds, per-match metrics, round-robin tournament and element matrix; see [BALANCE.md](BALANCE.md) |
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
-| `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
+| `docs/` | Documentation: `BRANCHING.md`, `TESTING.md` (test commands, layout, fixtures, guards), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
@@ -63,7 +63,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; info screens wiki, key-bindings, about, race), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; `main-menu.ts` is the main menu), `styles/main.css` |
 | `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
-| `tests/` | Cross-cutting tests (`tests/repo/`), Playwright e2e (`tests/e2e/`); unit tests are colocated in `src/` |
+| `tests/` | Cross-cutting tests (`tests/repo/`, `tests/lint/`), legacy characterization (`tests/legacy/`), browser determinism (`tests/browser/`), Playwright e2e (`tests/e2e/`), fixtures (`tests/fixtures/`); unit tests are colocated in `src/`. See [TESTING.md](TESTING.md) |
 
 ## Where do I put X
 
