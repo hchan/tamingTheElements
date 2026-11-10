@@ -16,6 +16,7 @@ import { knockbackDir, setKnockback } from './knockback';
 import { meterOnHit } from './meter';
 import { blockHit, parry } from './guard';
 import { applyStun, isGuarding } from './stun';
+import { weatherDamage } from './weather';
 
 /** Strength tier per ability def index (set A then set B: the ABILITY_DEFS order of projectile.ts and melee.ts). */
 export const HIT_STRENGTH: readonly HitStrengthValue[] = [...ABILITIES_A, ...ABILITIES_B].map((d) =>
@@ -49,8 +50,9 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
 /**
  * The single Arcade hit path (FUN-DESIGN 2.1): `source` (a projectile or melee entity) of ability `defIdx` hits
  * `victim` for `base` damage on behalf of `attacker`, whose multiplier and element apply. The damage is the Classic
- * `computeDamage` arithmetic times the combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit
- * on a free victim ends the team's live combo and starts a new one). Emits `damage` (as Classic projectiles do) and
+ * `computeDamage` arithmetic, then the weather (FUN-DESIGN 2.14, `weatherDamage` of the attacker's element), then the
+ * combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
+ * combo and starts a new one). Emits `damage` (as Classic projectiles do) and
  * `hitConfirmed`, then hit-stop by strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by
  * strength and hit-stun with the juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap
  * ends the combo); a counter hit (victim in its own cast recovery) stuns one tier more. Last, both teams' hyper meters
@@ -77,13 +79,14 @@ export function applyArcadeHit(
   const counter = isCounterHit(s, victim);
   const combo = guard ? 1 : comboHit(world, sink, source, team, victim);
   const scalePm = guard ? GUARD_CHIP_PM : comboScalePm(combo, strength);
-  const raw = computeDamage({
+  const attEl = CHARACTERS[s.defId[attacker] ?? 0]?.element ?? 'void';
+  const raw = weatherDamage(s, computeDamage({
     base,
     attackerMult: s.dmgMult[attacker] ?? 1,
-    attEl: CHARACTERS[s.defId[attacker] ?? 0]?.element ?? 'void',
+    attEl,
     defEl: CHARACTERS[s.defId[victim] ?? 0]?.element ?? 'void',
     defReductionPct: damageDecreasePct(s, victim),
-  });
+  }), attEl);
   // Unscaled hits keep the Classic value exactly (x * 1000 / 1000 can round).
   const amount = scalePm === 1000 ? raw : (raw * scalePm) / 1000;
   const before = s.hp[victim] ?? 0;

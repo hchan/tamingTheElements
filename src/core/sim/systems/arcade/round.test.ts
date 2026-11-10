@@ -313,7 +313,7 @@ describe('between rounds', () => {
     expect(s.arcade.subarray(0, ARCADE_TEAM_BASE).every((v) => v === 0)).toBe(true);
     expect(s.arcade[ARCADE_TEAM_BASE + ArcadeT.comboHits]).toBe(0);
     // The input buffer forgets the old round's presses.
-    expect(Array.from(s.arcade.subarray(ARCADE_TEAM_BASE + ArcadeT.pressTick, ARCADE_TEAM_BASE + ArcadeT.lastDir + 1))).toEqual([0, 0, 0, 0, 0, 0, 0]);
+    expect(Array.from(s.arcade.subarray(ARCADE_TEAM_BASE + ArcadeT.pressTick, ARCADE_TEAM_BASE + ArcadeT.lastDir + 1))).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
     expect(s.arcade[ARCADE_TEAM_BASE + ArcadeT.pressUsed]).toBe(0);
     // Round 2 plays like round 1: a full intro first.
     const intro = toFight(w);

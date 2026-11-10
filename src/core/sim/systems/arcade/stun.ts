@@ -1,6 +1,6 @@
 import {
   COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
-  MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason,
+  MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, WEATHER_COOLDOWN_TICKS, WEATHER_RECOVERY_TICKS,
 } from '../../../data/arcade';
 import { inFight, isArcade, now } from '../../clock';
 import { Cmd } from '../../commands';
@@ -48,16 +48,23 @@ export function inSuper(s: SimState, id: number): boolean {
 }
 
 /**
+ * True in `id`'s WEATHER_RECOVERY_TICKS after its weather cast (FUN-DESIGN 2.14), read from its `weatherReadyAt` (0
+ * before a first cast, so never true then, nor in Classic).
+ */
+export const inWeatherRecovery = (s: SimState, id: number): boolean =>
+  now(s) < (s.arcade[id * ARCADE_E + ArcadeE.weatherReadyAt] ?? 0) - WEATHER_COOLDOWN_TICKS + WEATHER_RECOVERY_TICKS;
+
+/**
  * `canAct` without the cast recovery (the `frozen` flag) and the guard: not stunned nor block-stunned, not casting a
- * super, in the `fight` phase, and not dashing nor in the DASH_RECOVERY_TICKS after a dash. Always true in Classic (the
- * block is empty).
+ * super, in the `fight` phase, not dashing nor in the DASH_RECOVERY_TICKS after a dash, and not in weather recovery.
+ * Always true in Classic (the block is empty).
  */
 export function isFree(s: SimState, id: number): boolean {
   const e = id * ARCADE_E;
   const dash = s.arcade[e + ArcadeE.dashUntil] ?? 0;
   const g = now(s);
   return !isStunned(s, id) && !inSuper(s, id) && inFight(s) && !(dash > 0 && g < dash + DASH_RECOVERY_TICKS) &&
-    (s.arcade[e + ArcadeE.blockUntil] ?? 0) <= g;
+    (s.arcade[e + ArcadeE.blockUntil] ?? 0) <= g && !inWeatherRecovery(s, id);
 }
 
 /** `isFree` and out of cast recovery: `canAct` without the guard (Classic's whole `canAct`). */

@@ -51,5 +51,11 @@
  *    press opens an 8-tick parry window (`parried`, no damage, 10 ticks of hit-stop, +150 meter; projectiles reflect,
  *    melee attackers are stunned 20); a whiffed window locks parries for 20 ticks. The Arcade entity block renames
  *    `guardState`/`guardMeter` to `blockUntil`/`guardDrain` (WP-arcade-guard-parry).
+ * 15: Arcade only; Classic hashes unchanged. Weather: `Cmd.weather` (bit 14, buffered) calls the caster's element
+ *    weather (Sun, Rain, Sandstorm, Gale, Eclipse) for 500 game ticks; a new one replaces, the same one refreshes;
+ *    1500-tick cooldown per character, 16 ticks of recovery (counter-hittable), +50 meter; hits of the favoured element
+ *    x1.2 and of its counter /1.2 (after the chart, before combo scaling); `weatherChanged`/`weatherEnded`. The Arcade
+ *    entity block gains `weatherReadyAt`, the team block a sixth press tick, the world block the weather slot
+ *    (WP-arcade-weather).
  */
-export const SIM_VERSION = 14;
+export const SIM_VERSION = 15;

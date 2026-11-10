@@ -3,6 +3,7 @@
  * here as starting values, tuned by the fun metrics. Sim data: changing a value bumps SIM_VERSION. Classic never reads
  * this file.
  */
+import type { Element } from './elements';
 
 /** Hit strength tier, the index into every per-strength table (hit-stop, stun, knockback). */
 export const HitStrength = { light: 0, medium: 1, heavy: 2, super: 3 } as const;
@@ -191,3 +192,34 @@ export const GUARD_BREAK_STUN_TICKS = 60;
 export const PARRY_TICKS = 8;
 export const PARRY_STUN_TICKS = 20;
 export const PARRY_LOCK_TICKS = 20;
+
+/**
+ * Weather (FUN-DESIGN 2.14, WP 29), in game ticks. A `Cmd.weather` press (buffered like the dash) by a character that
+ * `canAct` and whose weather is ready calls the weather of its element (the WEATHER_ELEMENTS row whose favoured element
+ * is the caster's) for WEATHER_TICKS; a new weather replaces the old one, the same weather only refreshes its timer.
+ * The caster is in recovery for WEATHER_RECOVERY_TICKS (medium: it cannot act and a hit on it is a counter hit), gains
+ * METER_WEATHER, and its next cast is ready WEATHER_COOLDOWN_TICKS after this one (per character, like the ability
+ * cooldowns). While a weather is up, every Arcade hit by an attacker of the favoured element deals `* WEATHER_PM /
+ * 1000` and one by an attacker of the counter element `* 1000 / WEATHER_PM` (exactly /1.2, not 833 pm), after the
+ * element chart and before the combo scale. Both teams feel it.
+ */
+export const Weather = { none: 0, sun: 1, rain: 2, sandstorm: 3, gale: 4, eclipse: 5 } as const;
+/** By weather kind - 1: [favoured element, its counter (null: Eclipse leaves every other element at x1.0)]. */
+export const WEATHER_ELEMENTS: readonly (readonly [Element, Element | null])[] = [
+  ['fire', 'water'], ['water', 'fire'], ['earth', 'air'], ['air', 'earth'], ['void', null],
+];
+export const WEATHER_PM = 1200;
+export const WEATHER_TICKS = 500;
+export const WEATHER_COOLDOWN_TICKS = 1500;
+export const WEATHER_RECOVERY_TICKS = 16;
+export const METER_WEATHER = 50;
+/**
+ * Secondary effects by weather kind - 1 (FUN-DESIGN 2.14). Data only and OFF in this slice (WEATHER_EFFECTS_ON is
+ * false and no system reads the rows): Sun melts freeze 10 ticks faster, Rain puts out burning, Sandstorm slows
+ * projectiles to 900 pm, Gale pushes knockback to 1100 pm, Eclipse has none.
+ */
+export const WEATHER_EFFECTS_ON = false;
+export const WEATHER_EFFECTS = [
+  { effect: 'meltFreezeTicks', value: 10 }, { effect: 'extinguishBurn', value: 1 },
+  { effect: 'projectileSpeedPm', value: 900 }, { effect: 'knockbackPm', value: 1100 }, { effect: 'none', value: 0 },
+] as const;

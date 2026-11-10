@@ -16,7 +16,7 @@ import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
 import {
   BUFFER_TICKS, COMBO_STUN_CAP_TICKS, DASH_COOLDOWN_TICKS, DASH_TICKS, HitStopCause, JUGGLE_LIMIT, KO_HIT_STOP_TICKS, METER_BAR, METER_MAX, ROUNDS_TO_WIN,
-  ROUND_TIMER_TICKS, RoundPhase, SUPER_FREEZE_TICKS,
+  ROUND_TIMER_TICKS, RoundPhase, SUPER_FREEZE_TICKS, WEATHER_COOLDOWN_TICKS, WEATHER_TICKS,
 } from '../data/arcade';
 import { CHORD_FLAG, PRESS_BITS, pressAge } from './systems/arcade/buffer';
 import { SUPER_DEF } from './systems/arcade/hit';
@@ -204,7 +204,9 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
   if (wasFrozen && events.length > 0) fail('events while frozen');
   const left = (s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] ?? 0) - (s.world[World.tick] ?? 0);
   if (left > Math.max(KO_HIT_STOP_TICKS, SUPER_FREEZE_TICKS)) fail(`freeze of ${String(left)} ticks`);
-  const hits = events.filter((e) => e.kind === SimEventKind.hitConfirmed).length;
+  // Guarded and parried hits stop the clock too (FUN-DESIGN 2.8).
+  const stopping: number[] = [SimEventKind.hitConfirmed, SimEventKind.guarded, SimEventKind.parried];
+  const hits = events.filter((e) => stopping.includes(e.kind)).length;
   const stops = events.filter((e) => e.kind === SimEventKind.hitStop && e['cause'] !== HitStopCause.super).length;
   // Every hit stops the clock; a KO that no hit caused takes the round's KO stop (one per `ko`).
   const kos = events.filter((e) => e.kind === SimEventKind.ko).length;
@@ -270,6 +272,17 @@ function checkArcade(w: SimWorld, events: readonly SimEvent[], wasFrozen: boolea
     const at = (f: number): number => s.arcade[e.sourceId * ARCADE_E + f] ?? 0;
     if (e.kind === SimEventKind.dashed && at(ArcadeE.dashReadyAt) !== g - 1 + DASH_COOLDOWN_TICKS) fail('dash cooldown');
     if (e.kind === SimEventKind.perfectDodge && at(ArcadeE.dashDodged) !== 1) fail('unmarked perfect dodge');
+  }
+  // Weather (FUN-DESIGN 2.14): a known kind with a timer within WEATHER_TICKS (an empty slot is all zero), and no
+  // character's next cast more than WEATHER_COOLDOWN_TICKS away.
+  const weather = s.arcade[ARCADE_WORLD_BASE + ArcadeW.weather] ?? 0;
+  const wLeft = (s.arcade[ARCADE_WORLD_BASE + ArcadeW.weatherUntil] ?? 0) - g;
+  const owner = s.arcade[ARCADE_WORLD_BASE + ArcadeW.weatherTeam] ?? 0;
+  if (weather === 0 ? wLeft !== -g || owner !== 0 : weather > 5 || wLeft < 0 || wLeft >= WEATHER_TICKS || owner > 1) {
+    fail(`weather ${String(weather)} with ${String(wLeft)} ticks left, team ${String(owner)}`);
+  }
+  for (let i = 0; i < MAX_ENTITIES; i++) {
+    if ((s.arcade[i * ARCADE_E + ArcadeE.weatherReadyAt] ?? 0) - g > WEATHER_COOLDOWN_TICKS) fail(`weather cooldown of ${String(i)}`);
   }
   checkRounds(w, events, fail);
 }
@@ -435,6 +448,23 @@ describe('sim properties: invariants', () => {
       FC,
     );
     expect(supers).toBeGreaterThan(0);
+  });
+
+  it('hold in Arcade with weather presses: weathers start, and each ends at most once per start', () => {
+    let casts = 0;
+    fc.assert(
+      fc.property(setupArb, inputsArb, (setup, inputs) => {
+        const arcade = { ...setup, flags: { ...setup.flags, rulesetArcade: true } };
+        // Into the fight at once, so the intro does not eat short input streams.
+        const { events } = runInputs(arcade, inputs, true, skipIntro);
+        const all = events.flat();
+        const started = all.filter((e) => e.kind === SimEventKind.weatherChanged && e['prev'] === 0).length;
+        expect(all.filter((e) => e.kind === SimEventKind.weatherEnded).length).toBeLessThanOrEqual(started);
+        casts += started;
+      }),
+      FC,
+    );
+    expect(casts).toBeGreaterThan(0);
   });
 
   it('hold in Arcade with diagonal input: shots and melee go along the 8-way aim', () => {
@@ -646,10 +676,10 @@ describe('sim properties: determinism', () => {
 
 describe('sim properties: command constants', () => {
   it('Classic command bits do not overlap the reserved mask; Arcade bits are Arcade-only', () => {
-    const { super: superBit, dash, guard, ...classic } = Cmd;
+    const { super: superBit, dash, guard, weather, ...classic } = Cmd;
     const all = Object.values(classic).reduce<Command>((m, b) => m | b, 0);
     expect(all & CMD_RESERVED_MASK).toBe(0);
-    for (const bit of [superBit, dash, guard]) {
+    for (const bit of [superBit, dash, guard, weather]) {
       expect(bit & ARCADE_CMD_BITS).toBe(bit);
       expect(bit & inputMaskFor({ rulesetArcade: false })).toBe(0);
       expect(bit & inputMaskFor({ rulesetArcade: true })).toBe(bit);

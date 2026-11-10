@@ -4,7 +4,7 @@ import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, EntityFlag, TEAM_COUNT, type SimState } from '../../state';
 import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
-import { inSuper, isStunned } from './stun';
+import { inSuper, inWeatherRecovery, isStunned } from './stun';
 
 const teamBase = (team: number): number => ARCADE_TEAM_BASE + team * ARCADE_T;
 
@@ -44,11 +44,11 @@ export function addComboDamage(s: SimState, team: number, amount: number): void 
 }
 
 /**
- * True when the victim was in its own cast recovery (melee `delayAfterAttack`, the `frozen` flag in Arcade) or casting
- * a super (it cannot act until `superEnded`).
+ * True when the victim was in its own cast recovery (melee `delayAfterAttack`, the `frozen` flag in Arcade, or a
+ * weather cast) or casting a super (it cannot act until `superEnded`).
  */
 export function isCounterHit(s: SimState, victim: number): boolean {
-  return ((s.flags[victim] ?? 0) & EntityFlag.frozen) !== 0 || inSuper(s, victim);
+  return ((s.flags[victim] ?? 0) & EntityFlag.frozen) !== 0 || inSuper(s, victim) || inWeatherRecovery(s, victim);
 }
 
 /** Ends every combo whose victim (the opposing team's controlled character) is no longer stunned. */
