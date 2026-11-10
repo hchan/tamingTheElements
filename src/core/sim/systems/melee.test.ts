@@ -5,7 +5,7 @@ import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { computeDamage } from '../../rules/damage';
 import { Cmd } from '../commands';
 import { createMatch } from '../match';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_STRIDE } from '../state';
+import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_COOLDOWNS, TEAM_STRIDE } from '../state';
 import { step } from '../step';
 import type { SimWorld } from '../world';
 import { directionalBox, isInRangeDirectional, isInRangeExplosion } from './melee';
@@ -98,6 +98,15 @@ describe('melee system', () => {
     expect(s.hp[p]).toBe(50 + 4 * (s.healMult[p] ?? 1)); // dealt = min(4, dmg) = 4
     expect(s.hp[e]).toBeLessThanOrEqual(0); // legacy leaves it negative until the HUD kills; the sim death system clamps to 0
     expect((s.flags[e] ?? 0) & EntityFlag.dead).toBeTruthy();
+  });
+
+  it('writes cooldown and active count to the per-team block, never to the per-entity team field', () => {
+    const { world, p, e } = duel('wispera', 'pax');
+    const s = world.state;
+    const teamsBefore = [s.team[p], s.team[e]];
+    step(world, [Cmd.secondary, 0]);
+    expect([s.team[p], s.team[e]]).toEqual(teamsBefore);
+    expect(s.teams[TEAM_COOLDOWNS + 1]).toBeGreaterThan(0);
   });
 
   // KNOWN-BUG:steal-health-translucent

@@ -87,7 +87,7 @@ function countIndex(team: number, defId: number): number {
 function release(world: SimWorld, id: number): void {
   const s = world.state;
   const i = countIndex(s.team[id] ?? 0, s.defId[id] ?? 0);
-  s.team[i] = (s.team[i] ?? 0) - 1;
+  s.teams[i] = (s.teams[i] ?? 0) - 1;
   freeEntity(s, id);
 }
 
@@ -232,13 +232,13 @@ function cast(world: SimWorld, team: number, slot: number, tick: number): void {
 
   const cdIndex = team * TEAM_STRIDE + TEAM_COOLDOWNS + slot;
   const countIdx = countIndex(team, defId);
-  if (tick < (s.team[cdIndex] ?? 0) || (s.team[countIdx] ?? 0) >= def.maxActive) return;
+  if (tick < (s.teams[cdIndex] ?? 0) || (s.teams[countIdx] ?? 0) >= def.maxActive) return;
 
   const id = allocEntity(s);
   if (id < 0) return;
   // Legacy: usable when elapsed > cooldown, hence the +1 tick.
-  s.team[cdIndex] = tick + def.cooldownTicks + 1;
-  s.team[countIdx] = (s.team[countIdx] ?? 0) + 1;
+  s.teams[cdIndex] = tick + def.cooldownTicks + 1;
+  s.teams[countIdx] = (s.teams[countIdx] ?? 0) + 1;
 
   const w = def.w ?? 0;
   const h = def.h ?? 0;
