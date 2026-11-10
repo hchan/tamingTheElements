@@ -20,6 +20,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
 | `tools/` | Five Perl generators for the asset manifests (`generate*.pl`, `imgHelper.pl`) |
 | `docs/` | Documentation: `BRANCHING.md`, this map, `docs/adr/`, `docs/legacy/` |
+| `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config and the PR template |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
 | `.claude/` | Claude Code project config |
