@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Boot } from '../scenes/Boot';
-import { Preload } from '../scenes/Preload';
+import { Arena, ARENA_SCENE } from '../scenes/Arena';
+import { Preload, PRELOAD_READY } from '../scenes/Preload';
 
 export const LOGICAL_WIDTH = 1280;
 export const LOGICAL_HEIGHT = 720;
@@ -16,10 +17,18 @@ export function createGameConfig(parent: string): Phaser.Types.Core.GameConfig {
     disableContextMenu: true,
     banner: false,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [Boot, Preload],
+    scene: [Boot, Preload, Arena],
   };
 }
 
-export function createGame(parent: string): Phaser.Game {
-  return new Phaser.Game(createGameConfig(parent));
+/** `arenaDemo` (flag-gated, default off) jumps from Preload straight into a bot-vs-bot Arena. */
+export function createGame(parent: string, arenaDemo = false): Phaser.Game {
+  const game = new Phaser.Game(createGameConfig(parent));
+  if (arenaDemo) {
+    game.events.once(PRELOAD_READY, () => {
+      game.scene.stop('Preload');
+      game.scene.start(ARENA_SCENE);
+    });
+  }
+  return game;
 }

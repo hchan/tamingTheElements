@@ -6,9 +6,17 @@ export interface UiFlags {
   readonly play: boolean;
   /** Pretend WebGL is unavailable, to exercise the error screen. */
   readonly forceNoWebgl: boolean;
+  /** Play path starts a random-bot vs random-bot Arena after Preload. */
+  readonly arenaDemo: boolean;
 }
 
-export const DEFAULT_UI_FLAGS: UiFlags = { debugOverlay: false, showFps: false, play: false, forceNoWebgl: false };
+export const DEFAULT_UI_FLAGS: UiFlags = {
+  debugOverlay: false,
+  showFps: false,
+  play: false,
+  forceNoWebgl: false,
+  arenaDemo: false,
+};
 
 export interface FlagEnv {
   readonly DEV: boolean;
@@ -24,6 +32,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     showFps: on.has('showFps'),
     play: on.has('play'),
     forceNoWebgl: on.has('forceNoWebgl'),
+    arenaDemo: on.has('arenaDemo'),
   };
 }
 
