@@ -1,0 +1,43 @@
+# Historical findings only (one old commit that imported legacy .svn metadata; plaintext credentials
+# from the legacy login config live in git history). Fingerprints only, no secret values.
+# See SECURITY.md. Do NOT add entries for new findings: rotate/remove them instead.
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/03/03dccb7aab58d962aac37d8a8e5bbed0c1b8a98b.svn-base:generic-api-key:140
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/03/03dccb7aab58d962aac37d8a8e5bbed0c1b8a98b.svn-base:generic-api-key:175
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/03/03dccb7aab58d962aac37d8a8e5bbed0c1b8a98b.svn-base:generic-api-key:195
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/14/148589a12653b10bf084bd3e033dd46cfc4eb771.svn-base:generic-api-key:30
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/1e/1e69f76a130534c33fc373664c14d688b79a0e5a.svn-base:generic-api-key:30
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/30/30e06392d417c4826aa260bc4c82c57477350975.svn-base:generic-api-key:112
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/30/30e06392d417c4826aa260bc4c82c57477350975.svn-base:generic-api-key:161
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/30/30e06392d417c4826aa260bc4c82c57477350975.svn-base:generic-api-key:221
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/30/30e06392d417c4826aa260bc4c82c57477350975.svn-base:generic-api-key:390
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/30/30e06392d417c4826aa260bc4c82c57477350975.svn-base:generic-api-key:422
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/50/50d09908fff35599a2d419885010ae3cd926311b.svn-base:private-key:244
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/52/52d52895697070dfc8df9093000975cc7b305fcc.svn-base:generic-api-key:45
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/5a/5a8576cb4ed03698669f46833a243ee32bade860.svn-base:generic-api-key:112
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/5a/5a8576cb4ed03698669f46833a243ee32bade860.svn-base:generic-api-key:161
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/5a/5a8576cb4ed03698669f46833a243ee32bade860.svn-base:generic-api-key:221
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/5a/5a8576cb4ed03698669f46833a243ee32bade860.svn-base:generic-api-key:390
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/5a/5a8576cb4ed03698669f46833a243ee32bade860.svn-base:generic-api-key:422
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/86/86be7de4cbdd16f5e2dcb8a7640032af9fcaeb48.svn-base:sourcegraph-access-token:49
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/b9/b99af9612887a59b6f1e73c0f5718be3f580aa78.svn-base:generic-api-key:30
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/b9/b99af9612887a59b6f1e73c0f5718be3f580aa78.svn-base:generic-api-key:566
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/b9/b99af9612887a59b6f1e73c0f5718be3f580aa78.svn-base:generic-api-key:595
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/b9/b99af9612887a59b6f1e73c0f5718be3f580aa78.svn-base:generic-api-key:625
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/bc/bc7a92c54fbb9a40cd8933331d35078e113097f0.svn-base:generic-api-key:14
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/c2/c2e3b845fe820fd9b46843b4467e6f09c4ca56cb.svn-base:generic-api-key:30
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/c2/c2e3b845fe820fd9b46843b4467e6f09c4ca56cb.svn-base:generic-api-key:597
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/c2/c2e3b845fe820fd9b46843b4467e6f09c4ca56cb.svn-base:generic-api-key:636
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/c2/c2e3b845fe820fd9b46843b4467e6f09c4ca56cb.svn-base:generic-api-key:665
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/d0/d098c9ae374341303f6fd8c56073776766e41459.svn-base:generic-api-key:11
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/d0/d098c9ae374341303f6fd8c56073776766e41459.svn-base:generic-api-key:23
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/d0/d098c9ae374341303f6fd8c56073776766e41459.svn-base:generic-api-key:25
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/d0/d098c9ae374341303f6fd8c56073776766e41459.svn-base:generic-api-key:27
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/d0/d098c9ae374341303f6fd8c56073776766e41459.svn-base:generic-api-key:37
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/d0/d098c9ae374341303f6fd8c56073776766e41459.svn-base:generic-api-key:39
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/d2/d2d850bb2c55999b22a19445e687191b8d393b25.svn-base:generic-api-key:29
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/f9/f9ca4472b1f310ba11e82b7ac4c10d020aa8af74.svn-base:generic-api-key:45
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/fd/fdf5516398a87c556128dfe8cf9998802cc6a4f5.svn-base:generic-api-key:30
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/fd/fdf5516398a87c556128dfe8cf9998802cc6a4f5.svn-base:generic-api-key:597
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/fd/fdf5516398a87c556128dfe8cf9998802cc6a4f5.svn-base:generic-api-key:636
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/fd/fdf5516398a87c556128dfe8cf9998802cc6a4f5.svn-base:generic-api-key:665
+9fdf7febaccbf1b6af0406738470de5b3b1b05cb:.svn/pristine/ff/ff10659cc6a7fe9286ce708b97053a5c93e337f2.svn-base:generic-api-key:28
