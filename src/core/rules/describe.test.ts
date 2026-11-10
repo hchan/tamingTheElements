@@ -51,11 +51,6 @@ describe('describeAbility vs legacy getAbilityDescription', () => {
 const slug = (n: string): string => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const LEGACY = captured as Record<string, Record<string, string>>;
 
-// DIVERGENCE (open, D10): the new ability data lacks the legacy additional-info text for these four
-// (Fire cone, Fireball, Sonar Blast, Tornado), and legacy Capture overrides getDescription with a
-// fixed string. The expected strings are the captured legacy ones, so these are it.fails until fixed.
-const DIVERGENT = new Set(['Capture', 'Elemental Advantage : Fire cone', 'Fireball', 'Sonar Blast', 'Tornado']);
-
 describe('describeAbility matches captured legacy descriptions', () => {
   it('covers every ability', () => {
     expect(Object.keys(LEGACY).map(slug).sort()).toEqual(all.map((a) => a.id as string).sort());
@@ -63,7 +58,7 @@ describe('describeAbility matches captured legacy descriptions', () => {
 
   for (const [name, byLevel] of Object.entries(LEGACY)) {
     for (const [level, expected] of Object.entries(byLevel)) {
-      (DIVERGENT.has(name) ? it.fails : it)(`${name} L${level}`, () => {
+      it(`${name} L${level}`, () => {
         expect(render(slug(name), Number(level))).toBe(expected);
       });
     }
