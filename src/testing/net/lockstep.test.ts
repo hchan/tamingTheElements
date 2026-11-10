@@ -222,8 +222,8 @@ describe('input mask per ruleset', () => {
     return seen;
   };
 
-  it('Classic drops bits 11..15; Arcade keeps dash, guard and super (11..13) and drops 14 and 15', () => {
+  it('Classic drops bits 11..15; Arcade keeps dash, guard, super and weather (11..14) and drops 15', () => {
     expect(applied(false)).toBe(0x7ff);
-    expect(applied(true)).toBe(0x3fff);
+    expect(applied(true)).toBe(0x7fff);
   });
 });

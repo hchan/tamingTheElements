@@ -36,7 +36,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(15 * MAX_ENTITIES + 16 * TEAM_COUNT + 9);
+    expect(ARCADE_LENGTH).toBe(16 * MAX_ENTITIES + 17 * TEAM_COUNT + 12);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -47,7 +47,7 @@ describe('arcade state block', () => {
     };
     check(ArcadeE, ARCADE_E);
     check(ArcadeT, ARCADE_T);
-    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(5);
+    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(6);
     check(ArcadeW, ARCADE_W);
     expect(ARCADE_TEAM_BASE).toBe(ARCADE_E * MAX_ENTITIES);
     expect(ARCADE_WORLD_BASE).toBe(ARCADE_TEAM_BASE + ARCADE_T * TEAM_COUNT);
@@ -200,7 +200,8 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
       const cevs = step(c, [p, q]);
       // A death diverges too: Arcade keeps the multiplier and its round system takes over (KO, rounds; FUN-DESIGN 2.10).
       diverged ||=
-        evs.some((e) => e.kind === SimEventKind.hitConfirmed || e.kind === SimEventKind.died || e.kind === SimEventKind.dashed) ||
+        evs.some((e) => e.kind === SimEventKind.hitConfirmed || e.kind === SimEventKind.died || e.kind === SimEventKind.dashed ||
+          e.kind === SimEventKind.weatherChanged) ||
         cevs.some((e) => e.kind === SimEventKind.blocked) ||
         ((p | q) & Cmd.guard) !== 0 ||
         stunned(a.state) ||
@@ -332,8 +333,8 @@ describe('Arcade snapshot and replay', () => {
 });
 
 describe('inputMaskFor', () => {
-  it('Classic accepts bits 0..10; Arcade adds dash, guard and super (11..13); 14 and 15 stay reserved', () => {
+  it('Classic accepts bits 0..10; Arcade adds dash, guard, super and weather (11..14); 15 stays reserved', () => {
     expect(inputMaskFor(DEFAULT_SIM_FLAGS)).toBe(0x7ff);
-    expect(inputMaskFor(ARCADE.flags)).toBe(0x3fff);
+    expect(inputMaskFor(ARCADE.flags)).toBe(0x7fff);
   });
 });

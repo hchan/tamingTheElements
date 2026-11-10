@@ -8,6 +8,7 @@ import { expireCombos } from './combo';
 import { startDash } from './dash';
 import { guardTick } from './guard';
 import { expireStuns } from './stun';
+import { weatherTick } from './weather';
 
 /**
  * The `input` slot (FUN-DESIGN 2.1), the only system that runs while frozen. Returns at once in Classic. Every Arcade
@@ -15,7 +16,8 @@ import { expireStuns } from './stun';
  * unfrozen tick (the game clock stands still while frozen, so nothing can expire then and a frozen step stays silent):
  * stuns that ran out give `recovered` (reason 0), then combos whose victim is free give `comboEnded`. Then pending
  * dash presses start dashes (arcade/dash.ts, FUN-DESIGN 2.7), then the guard pass runs (arcade/guard.ts, FUN-DESIGN
- * 2.8: guard meter regeneration and parry windows).
+ * 2.8: guard meter regeneration and parry windows), then the weather pass (arcade/weather.ts, FUN-DESIGN 2.14: expiry,
+ * then casts).
  */
 export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
@@ -28,4 +30,5 @@ export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Comm
     startDash(world, sink, team, cmds[team] ?? 0);
     guardTick(world, team);
   }
+  weatherTick(world, sink);
 }

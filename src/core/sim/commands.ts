@@ -2,7 +2,7 @@ import type { SimFlags } from '../flags';
 
 /**
  * One player's input for one tick: a u16 bitset. Bits 11..15 are reserved and must be zero in Classic. The Arcade
- * ruleset names bits 11 dash, 12 guard and 13 super; 14 and 15 stay reserved (see inputMaskFor).
+ * ruleset names bits 11 dash, 12 guard, 13 super and 14 weather; 15 stays reserved (see inputMaskFor).
  */
 export type Command = number;
 
@@ -24,11 +24,13 @@ export const Cmd = {
   guard: 1 << 12,
   /** Arcade only (masked off in Classic by inputMaskFor): start a super (FUN-DESIGN 2.5). */
   super: 1 << 13,
+  /** Arcade only (masked off in Classic by inputMaskFor): call the caster's weather (FUN-DESIGN 2.14). */
+  weather: 1 << 14,
 } as const;
 
 export const CMD_RESERVED_MASK = 0xffff & ~((1 << 11) - 1);
-/** Bits 11 (dash), 12 (guard) and 13 (super): reserved in Classic, live in Arcade. */
-export const ARCADE_CMD_BITS = 0b111 << 11;
+/** Bits 11 (dash), 12 (guard), 13 (super) and 14 (weather): reserved in Classic, live in Arcade. */
+export const ARCADE_CMD_BITS = 0b1111 << 11;
 export const NO_COMMAND: Command = 0;
 
 /** Command bits a match with these flags accepts; everything else is masked off (net) or rejected (replay validation). */
