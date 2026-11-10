@@ -64,7 +64,8 @@ streams) is `combat, capture, spawn, meta, cosmetic`; `AGENT_STREAM_NAMES` is `a
   visible Arcade state, and draws its reaction delay from the agent's own `AgentRng` once per confirm. Without
   `view.arcade` (Classic) it returns the command unchanged and draws nothing, so Classic agent streams and decisions are
   identical. Its memory (confirm tick, reaction) is in the agent's `save()`. AI is not sim state, so it needs no
-  `SIM_VERSION` bump; the Arcade golden is re-recorded because its commands come from the AI.
+  `SIM_VERSION` bump; the Arcade golden is re-recorded because its commands come from the AI. Its diagonal shots
+  (`diagonalLine`, 8-way aim) are a pure function of the view and the ready slot: no draw, no new memory.
 
 ## LUTs and directions
 
@@ -72,7 +73,9 @@ Non-integer exponentials (the level multiplier curve) are precomputed at build t
 `tests/fixtures/legacy/rules.json` into `src/core/math/lut.generated.ts` as exact double literals. Never edit that file by
 hand and never compute `pow` or `exp` at runtime in core. Directions are the integer 8-way tables `DIR8_X` and `DIR8_Y` in
 `src/core/math/dir8.ts`; diagonals are `(+-1, +-1)` and deliberately not normalised, because legacy moves at full speed on both
-axes. Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.ts`).
+axes. The Arcade 8-way aim (`src/core/sim/systems/arcade/aim.ts`) uses the same tables: a diagonal shot moves exactly
+`+-speed` on both axes (no `sqrt`), a diagonal melee box is the integer-friendly `(w + h) / 2` square, and the aim is an
+Int32 in the Arcade entity block (hashed and snapshotted with it; Classic has no block, and `castDir` is its plain `dir`). Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.ts`).
 
 ## State, snapshot and hash
 

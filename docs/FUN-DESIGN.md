@@ -316,7 +316,23 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - Windows: super chord 3 ticks, double-tap dash 12, parry 8, dash cancel 10. Every window is in the data table and has
   a unit test at its edge (window - 1, window, window + 1).
 - **8-way aim:** in Arcade, the facing used for casting is `dir8FromSigns` of the held input (Classic keeps 4-way
-  `facingFor`). The projectile view already rotates by `dir * 45` degrees; character reels stay 4-way.
+  `facingFor`). The projectile view rotates each bullet to its dir8; character reels stay 4-way.
+- Built in WP 27 (`systems/arcade/aim.ts`): Arcade movement stores the dir8 of the held input, plus one, in the new
+  `ArcadeE.aim` int whenever it updates the 4-way `dir`, so a released input keeps its last aim (0 = no input yet: the
+  4-way `dir`, east or west at the start). `castDir` is that aim in Arcade and the plain `dir` in Classic, so Classic
+  is bit-identical. Projectiles (range and Ice Blast) fly along it at `DIR8 * speed`: a diagonal is exactly +-speed on
+  both axes (no normalisation, as for knockback), and leaves the arena by the legacy top-left test on whichever axis
+  goes out first. A diagonal directional melee is a square of side `(w + h) / 2` (Ice Shock 240 x 40: 140) off the
+  caster's corner on the aim side; the centred melees (Ground Shock, Hurricane) and the omni fans do not change. Those
+  hits knock back along the aim (projectiles) or the centre delta (melee), both 8-way. Bands keep the 4-way facing: the
+  Elemental Burst band runs along `dir`, which is the x-wins projection of the aim (a north-east aim fires it east), so
+  it stays a well-defined 160 px band; later band supers (Inferno Beam) follow the same rule. The Arcade AI keeps its
+  base 4-way shots (it drops a second movement axis when shooting, as Classic's x-wins facing would) and fires a ready
+  projectile slot along a diagonal when the opponent sits on it (`diagonalLine`: centre offsets within half the
+  opponent's height of each other). The view draws the aim as an arrow 64 px from the player's character (in the
+  `arcade-versus` chunk; static, so reduced motion needs no variant), and `rotationForDir` now follows the legacy
+  `createBullet` table (`(8 - dir) * 45`: north 270, north-east 315), which also fixes Classic's north and south
+  bullets that were drawn pointing backwards.
 
 ### 2.13 Arcade numbers that slow the DPS race (data)
 
@@ -516,7 +532,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 24 | `WP-arcade-numbers` | data | HP pm, damage pm overrides, Arcade balance baseline | 5, 23 |
 | 25 | `WP-arcade-gates-tight` | tools+CI | Nightly fun:compare bands, Arcade balance compare, visual states, latency marks | 24 |
 | 26 | `WP-arcade-audio-layers` | view | Synth thump, pitch variation, KO music cut | 6 |
-| 27 | `WP-arcade-8way-aim` (pulled forward: owner request, next after the meter and parity merges) | sim+view | Arcade-only 8-way aim: cast facing is `dir8FromSigns` of the held input (Classic keeps 4-way `facingFor`, bit-identical); diagonal projectiles, melee arcs and bands from the 8-way facing, aim indicator in the HUD, AI aims diagonally; characters keep 4-way reels | 3 |
+| 27 | `WP-arcade-8way-aim` (done: section 2.12; bands keep the 4-way facing) | sim+view | Arcade-only 8-way aim: cast facing is `dir8FromSigns` of the held input (Classic keeps 4-way `facingFor`, bit-identical); diagonal projectiles, melee arcs and bands from the 8-way facing, aim indicator in the HUD, AI aims diagonally; characters keep 4-way reels | 3 |
 | 27b | `WP-arcade-quirks` | sim | Remaining Arcade quirk fixes | 3 |
 | 29 | `WP-arcade-weather` | sim+data | Section 2.14: `Cmd.weather`, per-element weather, damage modifiers, cooldown and duration, events | 3, 7 |
 | 30 | `WP-arcade-weather-view` | view | Weather icon, timer, sky tint, particles, announcer line | 29 |
