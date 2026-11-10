@@ -15,11 +15,12 @@ import { DEFAULT_SIM_FLAGS, assertNoTesterFlags } from '../../src/core/flags';
 import { SIM_VERSION } from '../../src/core/index';
 import { fnv1a, splitmix32 } from '../../src/core/rng/seed';
 import { Cmd, type Command, NO_COMMAND } from '../../src/core/sim/commands';
-import { SimEventKind } from '../../src/core/sim/events';
+import { type SimEvent, SimEventKind } from '../../src/core/sim/events';
 import { createMatch, type MatchSetup } from '../../src/core/sim/match';
 import { EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
+import { type FunMetrics, reduceFunMetrics } from './fun-metrics';
 
 /** The 12 playable races (the dummy target and the Eternal Void boss are excluded). */
 export const RACES: readonly string[] = CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
@@ -28,6 +29,7 @@ export const MATRIX_ELEMENTS: readonly Element[] = ELEMENTS.filter((e) => e !== 
 
 export type AgentKind = 'scripted' | 'random';
 export type EndReason = 'ko' | 'timeout' | 'stalemate';
+export type Ruleset = 'classic' | 'arcade';
 
 /** Damage the projectile events cannot attribute (melee hits, damage over time): approximate, from per-tick HP drops. */
 export const UNATTRIBUTED = 'melee-or-status';
@@ -209,6 +211,12 @@ export interface MatchOptions {
   readonly aIsTeam0: boolean;
   readonly maxTicks?: number;
   readonly stalemateTicks?: number;
+  /** Default 'classic' (bit-identical to before the option existed). */
+  readonly ruleset?: Ruleset;
+  /** Heroes per side: 1, or 2 (the lead plus the next race in RACES). The scripted agent only plays the lead's kit. */
+  readonly teamSize?: 1 | 2;
+  /** AI level 1..5. Reserved for the Arcade AI knobs (FUN-DESIGN 2.11, WP-arcade-ai-basic): no effect on the scripted AI yet. */
+  readonly aiLevel?: number;
 }
 
 export interface MatchResult {
@@ -220,6 +228,8 @@ export interface MatchResult {
   /** Damage dealt per ability id (both sides pooled), plus the approximate UNATTRIBUTED bucket. */
   readonly damageByAbility: Readonly<Record<string, number>>;
   readonly damageBySide: { readonly a: number; readonly b: number };
+  /** Fun metrics of the match; Arcade only. */
+  readonly fun?: FunMetrics;
 }
 
 function teamHp(world: ReturnType<typeof createMatch>, team: number): number {
@@ -237,14 +247,20 @@ export function runMatch(o: MatchOptions): MatchResult {
   const maxTicks = o.maxTicks ?? DEFAULT_MAX_TICKS;
   const stalemateTicks = o.stalemateTicks ?? DEFAULT_STALEMATE_TICKS;
   const xp = xpForLevel(o.level);
-  const rosterA = [{ character: characterId(o.raceA), xp }];
-  const rosterB = [{ character: characterId(o.raceB), xp }];
+  const arcade = o.ruleset === 'arcade';
+  const roster = (race: string): { character: ReturnType<typeof characterId>; xp: number }[] =>
+    [race, ...(o.teamSize === 2 ? [RACES[(RACES.indexOf(race) + 1) % RACES.length] ?? race] : [])].map((r) => ({
+      character: characterId(r),
+      xp,
+    }));
+  const rosterA = roster(o.raceA);
+  const rosterB = roster(o.raceB);
   const setup: MatchSetup = {
     simVersion: SIM_VERSION,
     seed: o.seed,
-    flags: DEFAULT_SIM_FLAGS,
+    flags: arcade ? { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } : DEFAULT_SIM_FLAGS,
     chapter: 1,
-    difficulty: o.difficulty,
+    difficulty: arcade ? 1 : o.difficulty, // Arcade ignores difficulty for stats (FUN-DESIGN 2.11)
     p1: o.aIsTeam0 ? rosterA : rosterB,
     p2: o.aIsTeam0 ? rosterB : rosterA,
   };
@@ -264,6 +280,7 @@ export function runMatch(o: MatchOptions): MatchResult {
   let hp = [teamHp(world, 0), teamHp(world, 1)];
   let lastChange = 0;
   let ticks = 0;
+  const log: SimEvent[] = [];
 
   for (; ticks < maxTicks; ) {
     // A projectile that hits is freed (and its fields cleared) inside the step, so note what each one is first.
@@ -274,7 +291,18 @@ export function runMatch(o: MatchOptions): MatchResult {
     ticks++;
     const evented = [0, 0];
     for (const e of events) {
-      if (e.kind === SimEventKind.damage) {
+      if (arcade) log.push(e);
+      if (arcade && e.kind === SimEventKind.hitConfirmed) {
+        // Arcade names the ability on every hit (melee included), so nothing is approximated for hits.
+        const name = ABILITY_DEFS[e['ability'] ?? -1]?.id ?? 'unknown';
+        const amount = e['amount'] ?? 0;
+        byAbility[name] = (byAbility[name] ?? 0) + amount;
+        const victim = s.team[e['target'] ?? 0] ?? 0;
+        evented[victim] = (evented[victim] ?? 0) + amount;
+        bySide[victim === teamA ? 'b' : 'a'] += amount;
+      } else if (arcade && e.kind === SimEventKind.damage) {
+        continue; // counted through its hitConfirmed
+      } else if (e.kind === SimEventKind.damage) {
         const name = ABILITY_DEFS[projectileAbility[e.sourceId] ?? -1]?.id ?? 'unknown';
         const amount = e['amount'] ?? 0;
         byAbility[name] = (byAbility[name] ?? 0) + amount;
@@ -315,6 +343,7 @@ export function runMatch(o: MatchOptions): MatchResult {
     ticks,
     damageByAbility,
     damageBySide: { a: r3(bySide.a), b: r3(bySide.b) },
+    ...(arcade ? { fun: reduceFunMetrics(log, { ticks, endReason, teamOf: (id) => s.team[id] ?? 0 }) } : {}),
   };
 }
 
@@ -400,6 +429,9 @@ export interface PairingOptions {
   readonly difficulty: number;
   readonly maxTicks?: number;
   readonly stalemateTicks?: number;
+  readonly ruleset?: Ruleset;
+  readonly teamSize?: 1 | 2;
+  readonly aiLevel?: number;
 }
 
 export function runPairing(o: PairingOptions): { summary: PairingSummary; results: MatchResult[] } {
@@ -417,6 +449,9 @@ export function runPairing(o: PairingOptions): { summary: PairingSummary; result
         aIsTeam0: i % 2 === 0,
         ...(o.maxTicks === undefined ? {} : { maxTicks: o.maxTicks }),
         ...(o.stalemateTicks === undefined ? {} : { stalemateTicks: o.stalemateTicks }),
+        ...(o.ruleset === undefined ? {} : { ruleset: o.ruleset }),
+        ...(o.teamSize === undefined ? {} : { teamSize: o.teamSize }),
+        ...(o.aiLevel === undefined ? {} : { aiLevel: o.aiLevel }),
       }),
     );
   }
@@ -568,6 +603,19 @@ function num(v: string | undefined, def: number, name: string): number {
   return n;
 }
 
+export function parseRuleOptions(
+  ruleset: string | undefined,
+  teamSize: string | undefined,
+  aiLevel: string | undefined,
+): { ruleset: Ruleset; teamSize: 1 | 2; aiLevel: number } {
+  if (ruleset !== undefined && ruleset !== 'classic' && ruleset !== 'arcade') throw new Error(`--ruleset must be classic|arcade, got "${ruleset}"`);
+  const size = num(teamSize, 1, 'team-size');
+  if (size !== 1 && size !== 2) throw new Error('--team-size must be 1 or 2');
+  const ai = num(aiLevel, 3, 'ai-level');
+  if (!Number.isInteger(ai) || ai < 1 || ai > 5) throw new Error('--ai-level must be an integer 1..5');
+  return { ruleset: ruleset ?? 'classic', teamSize: size, aiLevel: ai };
+}
+
 export function main(argv: readonly string[]): number {
   try {
     const { values } = parseArgs({
@@ -582,6 +630,9 @@ export function main(argv: readonly string[]): number {
         difficulty: { type: 'string' },
         'max-ticks': { type: 'string' },
         'stalemate-ticks': { type: 'string' },
+        ruleset: { type: 'string' },
+        'team-size': { type: 'string' },
+        'ai-level': { type: 'string' },
         tournament: { type: 'boolean' },
         json: { type: 'boolean' },
       },
@@ -594,6 +645,7 @@ export function main(argv: readonly string[]): number {
       difficulty: num(values.difficulty, 1, 'difficulty'),
       maxTicks: num(values['max-ticks'], DEFAULT_MAX_TICKS, 'max-ticks'),
       stalemateTicks: num(values['stalemate-ticks'], DEFAULT_STALEMATE_TICKS, 'stalemate-ticks'),
+      ...parseRuleOptions(values.ruleset, values['team-size'], values['ai-level']),
     };
     if (values.tournament === true) {
       const t = runTournament(base);
@@ -608,7 +660,7 @@ export function main(argv: readonly string[]): number {
     return 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--json]');
+    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2] [--ai-level 1..5] [--json]');
     console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--json]');
     return 2;
   }
