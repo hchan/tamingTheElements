@@ -43,3 +43,6 @@ export * from './replay/recorder';
 export * from './replay/player';
 export * from './data/abilities-a';
 export * from './data/abilities-b';
+export * from './net/transport';
+export * from './net/packet';
+export * from './net/session';
