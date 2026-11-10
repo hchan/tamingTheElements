@@ -17,15 +17,17 @@
     "test:legacy": "vitest run --project legacy",
     "test:browser": "echo \"not yet\" && exit 1",
     "e2e": "echo \"not yet\" && exit 1",
-    "depcruise": "echo \"not yet\" && exit 1",
+    "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "echo \"not yet\" && exit 1",
     "sim:match": "echo \"not yet\" && exit 1",
     "assets:build": "echo \"not yet\" && exit 1",
     "format": "echo \"not yet\" && exit 1"
   },
   "devDependencies": {
+    "@swc/core": "^1.16.22",
     "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.1.0",
+    "dependency-cruiser": "^18.7.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.7",
     "vitest": "^5.1.0"
