@@ -15,6 +15,7 @@ import {
 import type { AbilityDef, AbilityDefB, ChapterNumber, Element, GarrisonEntry, SaveV1 } from '@core/menu-index';
 import { activeSaveStorage } from '../../game/platform/tester/session';
 import { el } from '../dom';
+import { avatarCss } from './garrison';
 import { loadSave } from './main-menu';
 import type { Screen, ScreenFactory } from './screen';
 
@@ -64,6 +65,11 @@ export function elementRelations(element: Element): {
 }
 
 type Member = Pick<GarrisonEntry, 'id' | 'characterName' | 'experience'>;
+
+function spriteOf(entry: Member | undefined): string {
+  const slug = (entry?.characterName ?? '').toLowerCase().replace(/ /g, '-');
+  return CHARACTERS.find((c) => c.id === slug)?.sprite ?? 'dummyTarget';
+}
 
 export function findGarrisonEntry(
   save: { readonly garrison: readonly Member[] },
@@ -117,6 +123,10 @@ export function characterDetailsScreen(deps?: CharacterDetailsDeps): ScreenFacto
           page.append(el('h1', 'heading', 'Unknown character'));
         } else {
           page.append(el('h1', 'heading', v.name));
+          const portrait = el('div', 'garrisonAvatar detailAvatar');
+          portrait.style.backgroundImage = avatarCss(spriteOf(entry));
+          portrait.setAttribute('aria-hidden', 'true');
+          page.append(portrait);
           if (v.description !== '') page.append(el('p', 'raceDescription', v.description));
           const stats = el('div', 'characterStats');
           stats.append(

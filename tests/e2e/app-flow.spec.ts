@@ -13,6 +13,22 @@ function collectErrors(page: Page): string[] {
   return errors;
 }
 
+test('garrison rows show a loaded avatar, and a selection fills a labelled slot', async ({ page }) => {
+  const failed: string[] = [];
+  page.on('response', (r) => {
+    if (r.status() >= 400) failed.push(r.url());
+  });
+  await page.goto('/');
+  await newGameToGarrison(page);
+  const row = page.locator('#garrisonTable .garrisonRow').first();
+  await expect(row.locator('.garrisonAvatar')).toHaveCSS('background-image', /assets\/img\/map\/.+\.png/);
+  await expect(page.locator('.teamSlot').first()).toContainText('Empty');
+  await row.click();
+  await expect(page.locator('.teamSlot').first()).not.toContainText('Empty');
+  await expect(row.locator('.battlegroundOrderContainer')).toHaveText('Slot 1');
+  expect(failed).toEqual([]);
+});
+
 test('new game -> garrison -> battle renders the arena, pause works, exit leaves no listeners', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/');

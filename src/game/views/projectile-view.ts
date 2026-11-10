@@ -12,6 +12,8 @@ const MAP_SPRITES = manifest.mapSprites as Readonly<Record<string, Entry>>;
 /** Legacy Tornado is created with `shouldNotRotateBullet`; every other bullet rotates to its direction. */
 const NO_ROTATE = new Set(['tornado']);
 const FRAME = 'proj';
+/** Phaser.BlendModes.ADD (a type-only Phaser import keeps this module unit-testable without the engine). */
+const BLEND_ADD = 1;
 
 /**
  * Legacy `createBullet` rotation (clockwise degrees): east 0, south-east 45, south 90, ..., north 270, north-east 315.
@@ -32,9 +34,12 @@ function lookup(sprite: string): { key: string; entry: Entry } | undefined {
 /** One pooled projectile sprite, drawn about its centre so rotation pivots like legacy `origin("center")`. */
 export class ProjectileView {
   readonly image: Phaser.GameObjects.Image;
+  /** Soft additive halo behind the sprite so small bolts and dashes have depth against bright arenas (the same frame, enlarged). */
+  private readonly glow: Phaser.GameObjects.Image;
   private key = '';
 
   constructor(private readonly scene: Phaser.Scene) {
+    this.glow = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false).setBlendMode(BLEND_ADD).setAlpha(0.5);
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
   }
 
@@ -47,19 +52,29 @@ export class ProjectileView {
         const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
         if (!tex.has(FRAME)) tex.add(FRAME, 0, fx, fy, fw, fh);
         this.image.setTexture(found.key, FRAME);
+        this.glow.setTexture(found.key, FRAME);
       }
     }
     this.image.setVisible(true);
     this.image.setDisplaySize(p.w, p.h);
     this.image.setPosition(lerp(p.px, p.x, alpha) + p.w / 2, lerp(p.py, p.y, alpha) + p.h / 2);
     this.image.setAngle(rotationForDir(p.dir, p.sprite));
+    // Thin bolts get a proportionally larger halo; both grow around the same centre and rotate with the sprite.
+    this.glow
+      .setVisible(true)
+      .setDisplaySize(p.w * 1.6 + 6, p.h * 1.6 + 6)
+      .setPosition(this.image.x, this.image.y)
+      .setAngle(this.image.angle)
+      .setDepth(this.image.depth - 0.01);
   }
 
   hide(): void {
     this.image.setVisible(false);
+    this.glow.setVisible(false);
   }
 
   destroy(): void {
+    this.glow.destroy();
     this.image.destroy();
   }
 }

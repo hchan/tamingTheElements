@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { cinematicKeyAction } from '../cinematics/keys';
 import { CinematicRunner, type CinematicScript, type CinematicSink, type Rect, type TweenTarget } from '../cinematics/runner';
 import { INTRO_SCRIPT } from '../cinematics/scripts';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, crisp, fitScene } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, crisp, fitScene, phoneBoost } from '../boot/viewport';
 import { counted, teardown } from '../platform/test-hook';
 import { getPrefs } from '../platform/a11y/prefs';
 import { planTween } from '../fx/motion';
@@ -12,6 +12,12 @@ export const CINEMATIC_SCENE = 'Cinematic';
 export interface CinematicLaunch {
   readonly script: CinematicScript;
   readonly onEnd?: (skipped: boolean) => void;
+}
+
+/** Logical px the DOM fullscreen button (44 css px plus its 4 px inset, top right of the canvas) covers at the current canvas size. */
+function fullscreenClearance(scene: Phaser.Scene): number {
+  const w = scene.scale.displaySize.width;
+  return Math.ceil((52 * LOGICAL_WIDTH) / Math.max(1, w > 0 ? w : LOGICAL_WIDTH)) + 8;
 }
 
 const TEXT_STYLE = { fontSize: '32px', align: 'center', color: '#ffffff', wordWrap: { width: 1000 } };
@@ -46,7 +52,8 @@ export class Cinematic extends Phaser.Scene {
     this.header = this.add.text(width / 2, 80, '', crisp(this, { ...TEXT_STYLE, fontSize: '56px' })).setOrigin(0.5).setDepth(10);
     this.caption = this.add.text(width / 2, height - 140, '', crisp(this, TEXT_STYLE)).setOrigin(0.5).setDepth(10);
     const skip = this.add
-      .text(width - 24, 24, 'Skip', crisp(this, { fontSize: '28px', color: '#ffff88' }))
+      // Left of the DOM fullscreen button (44 css px, top right of the canvas), never under it; padded to a usable touch target.
+      .text(width - 24 - fullscreenClearance(this), 24, 'Skip', crisp(this, { fontSize: `${String(Math.round(28 * phoneBoost(this)))}px`, color: '#ffff88', backgroundColor: '#00000066', padding: { x: 12, y: 8 } }))
       .setOrigin(1, 0)
       .setDepth(20)
       .setInteractive({ useHandCursor: true });

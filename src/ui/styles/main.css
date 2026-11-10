@@ -26,7 +26,7 @@ body {
 
 body {
   font-family: var(--default-font);
-  background: var(--color-bg);
+  background: radial-gradient(ellipse at 50% 0, #1b1030, var(--color-bg) 70%) fixed var(--color-bg);
   color: var(--color-fg);
 }
 
@@ -219,12 +219,8 @@ html[data-high-contrast='true'] :focus-visible {
 }
 
 @media (max-width: 600px) {
-  .heading,
-  .subHeading {
+  .heading {
     white-space: normal;
-  }
-  .chapterBorder {
-    padding: 12px;
   }
 }
 
@@ -341,24 +337,6 @@ a.menuLink {
   font-size: 0.875em;
 }
 
-.water {
-  background: var(--color-water);
-}
-.fire {
-  background: var(--color-fire);
-}
-.earth {
-  background: var(--color-earth);
-}
-.air {
-  background: var(--color-air);
-}
-
-.centerMe {
-  margin-inline: auto;
-  width: min(400px, 100%);
-}
-
 .clickable {
   text-decoration: underline;
   vertical-align: middle;
@@ -390,9 +368,7 @@ a.menuLink {
   text-decoration: underline;
   cursor: pointer;
 }
-
-.heading,
-.subHeading {
+.heading {
   width: 100%;
   font-size: 1.625em;
   font-family: var(--default-font);
@@ -410,60 +386,9 @@ a.menuLink {
   font-size: 0.75em;
   opacity: 0.6;
 }
-.subHeading {
-  text-align: left;
-  font-size: 1.5em;
-}
-
-.brief {
-  color: white;
-  width: 100%;
-  text-align: center;
-  font-size: 0.875em;
-  font-style: italic;
-  font-weight: 200;
-}
-
-.chapterBorder {
-  padding: 25px;
-  border: 5px solid;
-  border-radius: 25px;
-}
-
-.chapterHeading,
-.objectivesHeading,
-.progressHeading,
-.chapterBody,
-.objectivesBody,
-.progressBody {
-  width: 100%;
-  text-align: left;
-  font-weight: 900;
-}
-.chapterHeading {
-  color: var(--color-gold);
-  font-size: 2em;
-}
-.objectivesHeading {
-  color: var(--color-gold);
-  font-size: 1.125em;
-}
-.progressHeading {
-  color: green;
-  font-size: 1.125em;
-}
-.chapterBody,
-.objectivesBody,
-.progressBody {
-  color: white;
-  font-size: 0.875em;
-  font-style: italic;
-}
-
 #enterPortalContainer,
 #enterBattlegroundContainer,
-#enterPracticeContainer,
-.continueContainer {
+#enterPracticeContainer {
   font-family: inherit;
   background: transparent;
   color: #b3b3b3;
@@ -478,16 +403,13 @@ a.menuLink {
   cursor: pointer;
   position: relative;
 }
-
 .readyToEnterPortal,
-.readyToEnterBattleground,
-.continueContainerColor {
+.readyToEnterBattleground {
   background: var(--color-ready);
   color: white !important;
 }
 .readyToEnterPortal:hover,
-.readyToEnterBattleground:hover,
-.continueContainerColor:hover {
+.readyToEnterBattleground:hover {
   background: var(--color-ready-hover);
   box-shadow: 2px 2px 2px 2px #999;
 }
@@ -504,7 +426,6 @@ a.menuLink {
 .selectedGarrisonRow {
   background-color: #000080;
 }
-.garrisonInfoContainer,
 .garrisonInfoDiv {
   position: relative;
 }
@@ -520,117 +441,11 @@ a.menuLink {
   display: none;
 }
 
-.objectivesMetHR,
-.captureHR {
-  width: 50%;
-}
-.hiddenChapterHeading {
-  display: none;
-}
-
-#garrisonCharacterDetails {
-  color: #dd61dd;
-  height: 100%;
-}
-
-#garrisonTableAndCharacterDetails {
-  border: 5px solid silver;
-  border-radius: 25px;
-  vertical-align: middle;
-  width: 99%;
-}
-
-#garrisonTableScroll {
-  overflow: hidden scroll;
-  height: 100%;
-}
-
-.garrisonCharacterDescription {
-  display: inline-block;
-  vertical-align: middle;
-  overflow: auto;
-  color: #ff8000;
-}
-
-#garrisonCharacterMoreDetailsCell,
-#garrisonAbilitiesInfoCell {
-  vertical-align: top;
-  text-align: left;
-  color: #ff8000;
-}
-#garrisonCharacterImgCell {
-  text-align: left;
-}
-.garrisonCharacterMoreDetailsName {
-  color: yellow;
-  font-size: 1.25em;
-}
-#garrisonCharacterAbilitiesHeading {
-  text-align: center;
-  font-size: 1.25em;
-  color: yellow;
-}
-#garrisonCharacterMoreDetailsDiv,
-#garrisonAbilitiesInfoDiv {
-  overflow: hidden auto;
-}
-
-.abilityDescription {
-  margin-left: 15px;
-}
-.abilityName {
-  font-weight: bold;
-  color: #39f;
-}
-
-#defaultGarrisonButtonContainer {
-  width: 100%;
-}
-
-#mainMenu {
-  border-style: solid;
-  border-bottom-style: groove;
-  border-radius: 5px;
-}
-
-#difficultyContainer,
-#garrisonSortOrderContainer,
-#displaySettingsContainer {
-  text-align: left;
-  padding-left: 20px;
-}
-#difficultyRadioContainer,
-#garrisonSortOrderRadioContainer,
-#displaySettingsRadioContainer {
-  padding-left: 20px;
-}
-
 #enterPortalCanvas {
   position: absolute;
   width: 100%;
   height: 100%;
   left: 0;
-}
-
-#loadingMessage {
-  text-align: center;
-  font-size: 1.75em;
-  color: yellow;
-}
-#loadingProgress {
-  text-align: center;
-  font-size: 1.25em;
-  color: green;
-}
-
-#gameVersion {
-  width: 100%;
-  text-align: center;
-  font-size: 0.75em;
-  font-style: italic;
-  font-weight: 900;
-  color: yellow;
-  white-space: nowrap;
 }
 
 /* Replay viewer: the controls float over the bottom of the (full-viewport) game area. */
@@ -756,4 +571,146 @@ a.menuLink {
   padding: 0.5em 0.75em;
   border: 2px solid #ffd700;
   border-radius: 6px;
+}
+
+/* Theme: one centred column of cards on a dark backdrop,
+the four element circles as the crest (see docs/VISUAL-QA.md). */
+#menu .menuPage {
+  max-width: 44em;
+  margin-inline: auto;
+}
+.mainMenuList,
+.teamSlots {
+  display: grid;
+  gap: 0.4em;
+  padding: 0;
+}
+.mainMenuList::before {
+  content: '';
+  height: 5em;
+  background: url(/assets/img/elementalSigns.png) center / contain no-repeat;
+}
+.mainMenuList li button {
+  padding: 0.55em 1em;
+  min-height: 44px;
+  background: #1c1c2a;
+  border: 2px solid #8a8aa8;
+  border-radius: 10px;
+  text-decoration: none;
+}
+.mainMenuList li button.notClickableYet {
+  color: #bbb;
+  border-style: dashed;
+  background: #111;
+}
+.mainMenuList li button.clickable:hover,
+.mainMenuList li button.clickable:focus-visible {
+  text-decoration: underline;
+  border-color: var(--color-gold);
+}
+.garrisonRow {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  position: relative;
+  margin: 0.4em 0;
+  padding: 0.5em 0.8em;
+  background: #1c1c2a;
+  border: 2px solid #8a8aa8;
+  border-radius: 10px;
+}
+.garrisonAvatar {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  /* Map sprites are 4-frame sheets, 80 px a frame: show the first. */
+  background: 0 0 / 400% auto no-repeat;
+}
+.detailAvatar {
+  margin: 0 auto;
+  width: 120px;
+  height: 120px;
+}
+.garrisonName {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--color-heading);
+}
+.elementBadge::before {
+  content: '';
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.3em;
+  vertical-align: -0.2em;
+  background: center / contain no-repeat;
+}
+.element-fire::before {
+  background-image: url(/assets/img/fireCircle.png);
+}
+.element-water::before {
+  background-image: url(/assets/img/waterCircle.png);
+}
+.element-earth::before {
+  background-image: url(/assets/img/earthCircle.png);
+}
+.element-air::before {
+  background-image: url(/assets/img/airCircle.png);
+}
+.selectedGarrisonRow {
+  border-color: var(--color-gold);
+  border-width: 3px;
+}
+.battlegroundOrderContainer {
+  position: static;
+  display: block;
+  margin-left: auto;
+  padding: 0.2em 0.7em;
+  font-weight: bold;
+  color: #000;
+  background: var(--color-gold);
+  border-radius: 1em;
+}
+.battlegroundOrderContainer[hidden] {
+  display: none;
+}
+.teamSlots {
+  grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
+  margin: 0.5em 0;
+  list-style: none;
+}
+.teamSlot {
+  display: flex;
+  flex-direction: column;
+  padding: 0.4em 0.8em;
+  border: 2px solid var(--color-gold);
+  border-radius: 10px;
+}
+.emptySlot {
+  color: #c8c8d8;
+  border-style: dashed;
+  border-color: #8a8aa8;
+}
+.characterAbility,
+.characterStats,
+.characterRelations {
+  margin: 0.5em 0;
+  padding: 0.3em 0.8em;
+  background: #1c1c2a;
+  border-radius: 10px;
+}
+#menu fieldset {
+  background: #14141f;
+  border-radius: 10px;
+}
+.menuStatus {
+  text-align: center;
+}
+@media (max-width: 600px) {.garrisonAvatar {
+    width: 56px;
+    height: 56px;
+  }
+}
+body:has(#game:not(:empty)) {
+  background: var(--color-bg);
 }
