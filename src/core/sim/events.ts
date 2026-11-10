@@ -1,4 +1,4 @@
-export const SimEventKind = { moved: 1, blocked: 2, damage: 22, died: 20, swapped: 21, captured: 23, captureFailed: 24 } as const;
+export const SimEventKind = { moved: 1, blocked: 2, damage: 22, died: 20, swapped: 21, captured: 23, captureFailed: 24, matchEnded: 30 } as const;
 export type SimEventKindValue = (typeof SimEventKind)[keyof typeof SimEventKind];
 
 /** Stable id of an event is (tick, sourceId, kind, seq); seq is unique within a tick. */

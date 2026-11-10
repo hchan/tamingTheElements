@@ -9,6 +9,7 @@ import { swapSystem } from './systems/swap';
 import { meleeSystem } from './systems/melee';
 import { captureSystem } from './systems/capture';
 import { projectileSystem } from './systems/projectile';
+import { endSystem } from './systems/end';
 import { World as W } from './state';
 import type { SimWorld } from './world';
 
@@ -31,6 +32,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['status', statusSystem],
   ['rest', restSystem],
   ['cleanup', noop],
+  ['end', endSystem],
 ];
 
 /** Advances the world one 50 Hz tick and returns the events it produced. */
