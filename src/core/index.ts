@@ -3,3 +3,5 @@ export * from './flags';
 export * from './rng/sfc32';
 export * from './rng/seed';
 export * from './rng/streams';
+export * from './data/chapters';
+export * from './data/settings';
