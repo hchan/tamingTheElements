@@ -7,14 +7,16 @@ import type { SimWorld } from '../world';
 /** Bit in world[World.flags] set once MatchEnded has been emitted (bits 0..15 belong to sim flags, see flagBits). */
 export const WORLD_ENDED_BIT = 1 << 17;
 
-const IN_PLAY_OUT = EntityFlag.dead | EntityFlag.captured;
-
+/**
+ * A captured character is killed in the same tick (hp 0, then the death system), so `dead` alone takes it out of play.
+ * A faded target hit by Capture is flagged captured but keeps fighting (KNOWN-BUG:capture-ignores-fade).
+ */
 function inPlay(s: SimState, id: number): boolean {
   const f = s.flags[id] ?? 0;
-  return (f & EntityFlag.alive) !== 0 && (f & IN_PLAY_OUT) === 0 && s.kind[id] === EntityKind.character;
+  return (f & EntityFlag.alive) !== 0 && (f & EntityFlag.dead) === 0 && s.kind[id] === EntityKind.character;
 }
 
-/** Characters of `team` still able to fight (alive, not dead, not captured; benched counts). */
+/** Characters of `team` still able to fight (alive, not dead; benched counts). */
 export function survivorsOf(s: SimState, team: number): number {
   let n = 0;
   for (let id = 0; id < MAX_ENTITIES; id++) if (s.team[id] === team && inPlay(s, id)) n++;

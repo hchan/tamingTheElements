@@ -74,9 +74,12 @@ function despawn(world: SimWorld, id: number, holder: number): void {
 /**
  * Capture: fired from Cmd.capture only against a capturable (<=25% health) enemy, granted from
  * chapter 2. The bullet flies like a range projectile; on hit the target is flagged captured and
- * killed (the death system emits `died`), except the last boss, which emits `captureFailed` (the
- * evil laugh). KNOWN-BUG:capture-ignores-fade is reproduced for parity: the bullet hits
- * translucent (Faded) targets, unlike every other projectile.
+ * killed (the death system emits `died`). Legacy runs its own onHit before the default bullet callback:
+ * - the last boss: the evil laugh (`captureFailed`, once per bullet here; legacy replays it every overlapping frame),
+ *   no capture, no damage, and the bullet keeps flying;
+ * - a faded (translucent) target: KNOWN-BUG:capture-ignores-fade, the captured flag is set (so the target joins the
+ *   garrison if it is defeated later) but the default callback skips translucent targets, so there is no damage, no
+ *   event, and the bullet keeps flying.
  */
 export function captureSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {
   const s = world.state;
@@ -101,12 +104,14 @@ export function captureSystem(world: SimWorld, cmds: readonly [Command, Command]
     if (!aabbOverlap(box, tbox)) continue;
     const attacker = s.owner[id] ?? 0;
     if (BOSS_IDX >= 0 && s.defId[target] === BOSS_IDX) {
-      sink.emit(id, SimEventKind.captureFailed, { target, attacker });
-    } else {
-      s.flags[target] = (s.flags[target] ?? 0) | EntityFlag.captured;
-      s.hp[target] = 0;
-      sink.emit(id, SimEventKind.captured, { target, attacker });
+      if ((s.hitMask[id] ?? 0) === 0) sink.emit(id, SimEventKind.captureFailed, { target, attacker });
+      s.hitMask[id] = 1;
+      continue;
     }
+    s.flags[target] = (s.flags[target] ?? 0) | EntityFlag.captured;
+    if (((s.flags[target] ?? 0) & EntityFlag.translucent) !== 0) continue;
+    s.hp[target] = 0;
+    sink.emit(id, SimEventKind.captured, { target, attacker });
     despawn(world, id, hitHolder(world, id));
   }
   const charId = controlledId(world, 0);

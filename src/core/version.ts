@@ -19,6 +19,7 @@
  *    enemy back in play keeps healing (legacy isBenched quirk). Classic walls hold y too: the player undoes its whole
  *    step, the enemy restores x, then y, then both (legacy stopOnSolids / resetIfOutOfBounds). Ability cooldowns and
  *    active counts move from the per-team block to the per-character `SimState.abil` (legacy abilitiesInfo is per
- *    character); a hit releases the count on the shooter team's current character (bullet-count-on-active).
+ *    character); a hit releases the count on the shooter team's current character (bullet-count-on-active). A Capture
+ *    bullet on a faded target only sets the captured flag (no damage, keeps flying); on the last boss it keeps flying.
  */
 export const SIM_VERSION = 7;

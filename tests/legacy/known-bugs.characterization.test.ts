@@ -70,7 +70,7 @@ describe('known legacy bugs (current behaviour)', () => {
     });
   });
 
-  it('capture-ignores-fade: Capture succeeds against a faded target while a normal bullet does not', () => {
+  it('capture-ignores-fade: Capture marks a faded target captured but deals no damage and keeps flying', () => {
     // KNOWN-BUG:capture-ignores-fade
     const env = loadLegacy({ seed: 1 });
     const result = observe(
@@ -90,13 +90,40 @@ describe('known legacy bugs (current behaviour)', () => {
       var cap = Crafty.e('Capture'); cap.initAbility(p);
       cap.hitHandlers[cap.hitHandlers.length - 1].cb.call(cap, [{ obj: t }]);
       return { afterBlast: afterBlast, translucent: t.isTranslucent, captured: t.isCaptured,
-        hpAfterCapture: t.curHealth < 0 };`,
+        hpAfterCapture: t.curHealth < 0, bulletAlive: !cap.isDead && !cap.destroyed,
+        captureCount: p.abilitiesInfo['Capture'].curCount };`,
     );
     expect(result).toEqual({
       afterBlast: { hp: 100, captured: false },
       translucent: true,
       captured: true,
-      hpAfterCapture: false, // captured flag set, but no damage: the translucency check lives in the skipped default callback
+      // captured flag set, but no damage and the bullet is not removed: the translucency check lives in the default callback
+      hpAfterCapture: false,
+      bulletAlive: true,
+      captureCount: 1,
+    });
+  });
+
+  it('capture vs the last boss: the evil laugh, no capture, no damage, and the bullet keeps flying', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      var sounds = [];
+      Global.playSound = function (n) { sounds.push(n); };
+      var p = fighter('PlayerCharacter', { isDead: false, direction: 'e', targetPlayerType: 'EnemyCharacter',
+        abilitiesInfo: { 'Capture': info() }, elementalType: 'fire', damageMultiplier: 1 });
+      var t = fighter('EnemyCharacter', { isDead: false, isTranslucent: false, isCaptured: false,
+        characterName: Game.lastBoss, curHealth: 100, maxHealth: 1000, elementalType: 'void', damageMultiplier: 1 });
+      p.targetPlayer = t; t.targetPlayer = p;
+      var cap = Crafty.e('Capture'); cap.initAbility(p);
+      var cb = cap.hitHandlers[cap.hitHandlers.length - 1].cb;
+      cb.call(cap, [{ obj: t }]);
+      cb.call(cap, [{ obj: t }]); // still overlapping on the next frame
+      return { captured: t.isCaptured, hp: t.curHealth, bulletAlive: !cap.isDead && !cap.destroyed, sounds: sounds };`,
+    );
+    expect(result).toEqual({
+      captured: false, hp: 100, bulletAlive: true, sounds: ['capture', 'evilLaugh', 'evilLaugh'],
     });
   });
 
