@@ -14,10 +14,10 @@
     "pose-layer": 3772,
     "rolldown-runtime": 200,
     "round-view": 2100,
-    "sim": 21600,
+    "sim": 23600,
     "super-view": 1230,
     "tag-view": 2802,
     "weather-view": 3470
   },
-  "totalGzip": 459082
+  "totalGzip": 461082
 }
