@@ -1,4 +1,4 @@
-import type { SaveV1 } from '@core/index';
+import type { SaveV1 } from '@core/menu-index';
 
 /** What the player chose and saved. `undefined` means "follow the operating system". */
 export interface SavedA11y {

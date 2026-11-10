@@ -5,8 +5,8 @@ import {
   portalOpponent,
   practiceOpponent,
   sortGarrison,
-} from '@core/index';
-import type { GarrisonEntry, GarrisonMemberV1, Opponent, SaveV1, Sfc32 } from '@core/index';
+} from '@core/menu-index';
+import type { GarrisonEntry, GarrisonMemberV1, Opponent, SaveV1, Sfc32 } from '@core/menu-index';
 
 export type MatchMode = 'battle' | 'practice' | 'portal';
 

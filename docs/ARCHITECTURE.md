@@ -15,7 +15,7 @@ Describes merged code only; anything not yet built is labelled "planned". Determ
 | Layer | Path | May import | Must not import |
 |---|---|---|---|
 | core | `src/core/` | itself; `valibot` only inside `src/core/save/` | game, ui, testing, phaser, node builtins |
-| game | `src/game/` | core via `src/core/index.ts` (or `src/core/lazy-index.ts`, see below) only; phaser | ui, testing (except `src/game/app/`, which may import ui) |
+| game | `src/game/` | core via `src/core/index.ts` (or `menu-index.ts` / `lazy-index.ts`, see below) only; phaser | ui, testing (except `src/game/app/`, which may import ui) |
 | platform | `src/game/platform/` | core via index; itself | the rest of game, ui |
 | ui | `src/ui/` | core via index; `src/game/platform/` | phaser, testing, other game modules |
 | testing | `src/testing/` | anything | (nothing in `src` outside it, or test files, may import it) |
@@ -27,9 +27,15 @@ Enforced by [.dependency-cruiser.cjs](../.dependency-cruiser.cjs) (rules `core-i
 `not-to-testing`, `no-circular`) via `pnpm depcruise`, and for core purity also by the ESLint bans in
 [eslint.config.js](../eslint.config.js). See [ADR 0017](adr/0017-dependency-cruiser-eslint-boundaries.md).
 
-`src/core/lazy-index.ts` is a second core entry for lazily loaded app chunks: what it re-exports (today the scripted AI,
-used only by Arcade Versus) is not reachable from `src/core/index.ts`, so the bundler keeps it out of the menu entry chunk.
-A module reachable from the entry's barrel lands in the entry chunk even when only a lazy chunk uses it.
+Core has three public entries. `src/core/index.ts` is the full barrel (sim, agents, replay, net; used by the Arena and the other
+lazily loaded Phaser code, by tests and by tools). `src/core/menu-index.ts` is the menu-safe subset (data, rules, save, rng,
+flags, plus erased `export type`s): the menu entry graph (`src/ui`, `src/game/app` flow/main/viewer, `src/game/platform`) imports
+core only through it, so no sim module is reachable from the entry chunk (`tests/repo/menu-index.test.ts`). `src/core/lazy-index.ts`
+is the entry for dynamic `import()` from the menu graph (random bot, replay validate/format, scripted AI): flow, download and the
+replay viewer load it at match, download or replay time, and `main.ts` prefetches it once the menu is idle. A module reachable
+from the entry's barrel lands in the entry chunk even when only a lazy chunk uses it; that is why the menu graph must not touch
+`index.ts`. `vite.config.ts` pins two stable chunks: `core` (data, rules, save, rng, `preloaded` by the menu) and `sim`
+(`src/core/sim|agents|replay|net` plus the match recorder, lazy), next to `phaser`. Budgets and numbers: [PERFORMANCE.md](PERFORMANCE.md).
 
 ```mermaid
 flowchart TD

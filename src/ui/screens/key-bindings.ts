@@ -1,4 +1,4 @@
-import { migrate, newEmptyState, type SaveV1 } from '@core/index';
+import { migrate, newEmptyState, type SaveV1 } from '@core/menu-index';
 import {
   ACTION_LABELS,
   GAME_ACTIONS,

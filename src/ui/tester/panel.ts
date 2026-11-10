@@ -8,7 +8,7 @@ import {
   type ArenaCheat,
   type LevelEdit,
   type SaveV1,
-} from '@core/index';
+} from '@core/menu-index';
 import type { TesterAwareStore, TesterOptionKey, TesterSession } from '../../game/platform/tester/session';
 import { el } from '../dom';
 

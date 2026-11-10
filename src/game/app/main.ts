@@ -1,4 +1,4 @@
-import { SIM_VERSION } from '@core/index';
+import { SIM_VERSION } from '@core/menu-index';
 import { startRouter } from '@ui/router';
 import '@ui/styles/main.css';
 import { bindingsFromSave } from '@ui/screens/key-bindings';
@@ -49,6 +49,23 @@ function initAccessibility(): void {
       applyPrefsToDocument(getPrefs());
     });
   }
+}
+
+/**
+ * The deterministic sim lives in its own `sim` chunk (kept out of the menu entry; see docs/PERFORMANCE.md). Fetch it once the
+ * menu is interactive and the browser is idle so starting a match does not wait on it. A failure is ignored: the real
+ * import at match start reports it.
+ */
+function prefetchSimWhenIdle(): void {
+  const go = (): void => {
+    void import('@core/lazy-index').catch(() => undefined);
+  };
+  const run = (): void => {
+    if ('requestIdleCallback' in window) window.requestIdleCallback(go, { timeout: 4000 });
+    else setTimeout(go, 1000);
+  };
+  if (document.readyState === 'complete') run();
+  else window.addEventListener('load', run, { once: true });
 }
 
 if (root) {
@@ -102,6 +119,7 @@ if (root) {
       },
     });
   }
+  if (!(flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl)) prefetchSimWhenIdle();
   installTestHook(SIM_VERSION, async (json) => {
     const r = await store.importJson(json);
     if (r.ok) window.dispatchEvent(new HashChangeEvent('hashchange'));

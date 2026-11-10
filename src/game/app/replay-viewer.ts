@@ -1,4 +1,4 @@
-import { SIM_VERSION, parseReplayChecked, setupFromHeader, validateReplay, type ReplayFile } from '@core/index';
+import { SIM_VERSION, type ReplayFile } from '@core/menu-index';
 import { el } from '@ui/dom';
 import type { Screen } from '@ui/screens/screen';
 import { showWebglError } from '../boot/error-screen';
@@ -83,6 +83,7 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
       container.append(root);
 
       const open = async (candidate: ReplayFile): Promise<void> => {
+        const { validateReplay, setupFromHeader } = await import('@core/lazy-index');
         const checked = validateReplay(candidate);
         if (!checked.ok) {
           status.textContent = checked.message;
@@ -134,7 +135,8 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         if (!file) return;
         void file
           .text()
-          .then((text) => {
+          .then(async (text) => {
+            const { parseReplayChecked } = await import('@core/lazy-index');
             const r = parseReplayChecked(text);
             if (!r.ok) {
               status.textContent = r.message;

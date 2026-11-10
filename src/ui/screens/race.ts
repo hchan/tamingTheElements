@@ -1,5 +1,5 @@
-import { ABILITY_NAMES, CHARACTERS, CHARACTER_TEXT } from '@core/index';
-import type { CharacterDef } from '@core/index';
+import { ABILITY_NAMES, CHARACTERS, CHARACTER_TEXT } from '@core/menu-index';
+import type { CharacterDef } from '@core/menu-index';
 import { el } from '../dom';
 import type { Screen, ScreenFactory } from './screen';
 

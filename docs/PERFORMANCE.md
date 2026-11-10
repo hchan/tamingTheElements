@@ -6,8 +6,8 @@ resimulate several ticks in one 16.6 ms frame.
 
 | Gate | Command | Where | Bound | Measured (2026-11) |
 | --- | --- | --- | --- | --- |
-| Bundle size | `pnpm size:check` | `check` job, `ci:local` | per-chunk gzip budgets in `tools/ci/size-budget.json` | index 32.0 KB, phaser 353.3 KB, phaser-config 8.7 KB, css 2.0 KB |
-| Menu is Phaser-free | `pnpm size:check` | same | `index.html` and the entry chunk never reference the `phaser` chunk | passes |
+| Bundle size | `pnpm size:check` | `check` job, `ci:local` | per-chunk gzip budgets in `tools/ci/size-budget.json` | index 27.8 KB, core 10.9 KB, sim 15.8 KB, phaser 353.3 KB, phaser-config 16.5 KB, css 3.0 KB |
+| Menu is Phaser-free and sim-free | `pnpm size:check` | same | `index.html` and the entry chunk never reference or statically import the `phaser` or `sim` chunk | passes |
 | Sim speed | `tests/repo/sim-perf.test.ts` (`pnpm test`) | `check` job | median tick under 0.5 ms; 1000 ticks under 2 s | 0.036 ms/tick, 36 ms per 1000 ticks |
 | Sim allocation | same file | same | no retained growth over 20000 ticks | heap +0.003 MB, ArrayBuffers +0 B |
 | Frame time | `tests/e2e/perf.spec.ts` (`pnpm e2e`) | `e2e` job | average frame under 250 ms, under half the frames over 100 ms (SwiftShader) | avg 17 ms, max 117 ms, 1 long frame |
@@ -17,15 +17,23 @@ resimulate several ticks in one 16.6 ms frame.
 
 - **Bundle size.** `tools/ci/size-check.ts` gzips (level 9) every `dist/` file and keys it by name without the content hash
   (`assets/index-BRhiXssy.js` is `index`). Each chunk, and the total, must be within `size-budget.json`. A chunk with no budget or a
-  budgeted chunk that disappeared also fails, so renames are noticed. Budgets are the measured size plus about 10%. Run it after
+  budgeted chunk that disappeared also fails, so renames are noticed. Budgets are the measured size plus about 3% for the menu chunks (`index`, `core`, `sim`, ...; `phaser` keeps 10%). Run it after
   `pnpm build`; an e2e run writes a `--mode test` build to `dist/` that is slightly larger.
 - **Phaser stays out of the menu.** The script checks that `index.html` has no reference (script, modulepreload, link) to the
   `phaser` chunk and that the entry chunk does not statically import it, transitively. Phaser is loaded by a dynamic
   `import()` of `phaser-config` when play starts. The e2e menu probe confirms it at runtime from the network log and the
   Resource Timing entries.
-- **Lazy features stay out of the entry chunk.** Arcade Versus is its own `arcade-versus` chunk (about 5.5 KB gzip, budget
-  6100), imported when `#arcade` opens; the scripted AI it needs is exported from `src/core/lazy-index.ts`, not the core
-  barrel, or it would land in `index`. Every function a lazy chunk imports from `index` is one more export there, and the
+- **The sim is its own chunk.** `vite.config.ts` (`build.rolldownOptions.output.codeSplitting.groups`) pins `phaser`, `core` (data,
+  rules, save, rng: shared by the menu and the sim, preloaded by `index.html`) and `sim` (`src/core/sim|agents|replay|net`, the
+  scripted AI and the playtest recorder). The menu graph imports core through `src/core/menu-index.ts` only and reaches the sim
+  through `import('@core/lazy-index')` (random bot at match start, replay validate/format on download and in the viewer);
+  `main.ts` fetches that import when the menu is idle. Before (2026-11, WP-sim-chunk): `index` 49.8 KB gzip held all of core and
+  grew about 700 B per Arcade package. After: `index` 27.8 KB + `core` 10.9 KB = 38.8 KB the menu must download (-11.1 KB, -22%;
+  html and css are unchanged), `sim` 15.8 KB lazy, `arcade-versus` 2.8 KB (its scripted AI moved into `sim`). Total gzip went from
+  429.7 KB to 431.1 KB (three small extra chunks). New sim code now grows `sim`, not `index`. `size:check` also fails if the entry
+  graph statically imports `sim`.
+- **Lazy features stay out of the entry chunk.** Arcade Versus is its own `arcade-versus` chunk (about 2.8 KB gzip, budget
+  2840), imported when `#arcade` opens; the scripted AI it needs is exported from `src/core/lazy-index.ts` (it lives in `sim`). Every function a lazy chunk imports from `index` is one more export there, and the
   renamed exports can move `phaser-config` by a few bytes, so keep those imports few. Dev and test-only code is behind a
   static `import.meta.env.DEV || import.meta.env.MODE === 'test'` test (`getUiFlags`, `arcadeEnabled`, the Arena's
   `?ff=arcade` demo) so production bundles drop it.

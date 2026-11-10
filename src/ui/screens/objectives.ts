@@ -1,5 +1,5 @@
-import { advanceChapter, objectivesMet, progress } from '@core/index';
-import type { SaveV1 } from '@core/index';
+import { advanceChapter, objectivesMet, progress } from '@core/menu-index';
+import type { SaveV1 } from '@core/menu-index';
 import { codeLabel, getBindings } from '../../game/platform/input/bindings';
 import { browserStorage, createLocalSaveStore } from '../../game/platform/storage/local-save-store';
 import { createMemoryStorage } from '../../game/platform/storage/save-store';

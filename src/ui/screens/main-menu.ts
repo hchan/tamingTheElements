@@ -1,5 +1,5 @@
-import { migrate, objectivesMet } from '@core/index';
-import type { SaveV1 } from '@core/index';
+import { migrate, objectivesMet } from '@core/menu-index';
+import type { SaveV1 } from '@core/menu-index';
 import { el } from '../dom';
 import { arcadeEnabled } from '../../game/platform/arcade-setting';
 import { activeSaveStorage, tester } from '../../game/platform/tester/session';

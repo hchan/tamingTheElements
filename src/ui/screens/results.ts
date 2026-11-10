@@ -1,5 +1,5 @@
-import { levelFromXp } from '@core/index';
-import type { MatchReport } from '@core/index';
+import { levelFromXp } from '@core/menu-index';
+import type { MatchReport } from '@core/menu-index';
 import { el } from '../dom';
 import type { Screen } from './screen';
 

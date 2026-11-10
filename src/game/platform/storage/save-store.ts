@@ -1,4 +1,4 @@
-import type { SaveError, SaveV1 } from '@core/index';
+import type { SaveError, SaveV1 } from '@core/menu-index';
 
 export const SAVE_KEY = 'Taming the Elements';
 export const BACKUP_KEY = 'Taming the Elements.v0.bak';

@@ -43,6 +43,12 @@ describe('size-check', () => {
     expect(checkMenuIsPhaserFree(dist)[0]).toContain('statically imports the phaser chunk');
     writeFileSync(join(dist, 'index.html'), '<script type="module" src="/assets/index-AAAAAAAA.js"></script><link rel="modulepreload" href="/assets/phaser-CCCCCCCC.js">');
     expect(checkMenuIsPhaserFree(dist).join('\n')).toContain('preloads the phaser chunk');
+    // The sim chunk is lazy too: neither a static import from the entry graph nor a preload in index.html is allowed.
+    writeFileSync(join(dist, 'index.html'), '<script type="module" src="/assets/index-AAAAAAAA.js"></script>');
+    writeFileSync(join(dist, 'assets/helper-BBBBBBBB.js'), 'import{x}from"./sim-DDDDDDDD.js";');
+    expect(checkMenuIsPhaserFree(dist)[0]).toContain('statically imports the sim chunk');
+    writeFileSync(join(dist, 'index.html'), '<script type="module" src="/assets/index-AAAAAAAA.js"></script><link rel="modulepreload" href="/assets/sim-DDDDDDDD.js">');
+    expect(checkMenuIsPhaserFree(dist).join('\n')).toContain('references the sim chunk');
   });
 });
 
