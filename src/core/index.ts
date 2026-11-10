@@ -6,3 +6,4 @@ export * from './rng/streams';
 export * from './data/chapters';
 export * from './data/settings';
 export * from './rules/objectives';
+export * from './rules/damage';
