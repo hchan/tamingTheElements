@@ -172,6 +172,25 @@ for (const vp of VIEWPORTS) {
       await page.evaluate(`window.__TTE__.arena.step(150)`);
       await shoot(page, vp, 'arena', 'arena-demo-t150', 'Bot-vs-bot demo arena at tick 150 (no HUD data from a save)');
     });
+
+    test('arcade hit feedback (demo, Arcade ruleset)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
+      await page.locator('#game canvas').waitFor();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      // Curomo 80 px from Pax, facing: Shards of Ice land within a few ticks. Paused effects hold their frame.
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 580, 360, 4); })()`);
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; for (let i = 0; i < 20 && a.fx().numbers.length === 0; i++) a.step(1, [${String(CMD.secondary)}, 0]); })()`);
+      expect(await page.evaluate<number>(`window.__TTE__.arena.fx().numbers.length`)).toBeGreaterThan(0);
+      await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      await shoot(page, vp, 'arena', 'arena-arcade-hitstop', 'Arcade: first hit, during hit-stop (white flash, element sparks, damage number)');
+      // Keep firing until the next volley lands (the numbers of the first one stay: paused effects do not age).
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; const n = a.fx().numbers.length; for (let i = 0; i < 60 && a.fx().numbers.length <= n; i++) a.step(1, [${String(CMD.secondary)}, 0]); })()`);
+      await page.waitForFunction(`window.__TTE__.arena.fx().combo[0] >= 2`);
+      await shoot(page, vp, 'arena', 'arena-arcade-combo', 'Arcade: a later volley (combo counter top left; greyed smaller numbers are combo-scaled)');
+      expect(errors).toEqual([]);
+    });
   });
 }
 

@@ -1,8 +1,25 @@
 import type Phaser from 'phaser';
-import { EntityFlag, type RenderCharacter } from '@core/index';
+import { EntityFlag, type Element, type RenderCharacter } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 
 export const FROZEN_TINT = 0x88ccff;
+/** Hit flash (FUN-DESIGN section 3, VISUAL-QA V6): white fill for 2 rendered frames, then the hit tint for 4. */
+export const FLASH_FILL_FRAMES = 2;
+export const FLASH_TINT_FRAMES = 4;
+/** Hit-stop jitter amplitude in px. */
+export const JITTER_PX = 2;
+/** Phaser.TintModes values (a type-only Phaser import keeps this module loadable in Node tests). */
+const TINT_MULTIPLY = 0;
+const TINT_FILL = 1;
+
+export type TintStage = 'fill' | 'hit' | 'frozen' | 'none';
+
+/** Which tint a character shows this frame, given the flash frames left: the flash wins over the frozen tint. */
+export function tintStage(flashLeft: number, frozen: boolean): TintStage {
+  if (flashLeft > FLASH_TINT_FRAMES) return 'fill';
+  if (flashLeft > 0) return 'hit';
+  return frozen ? 'frozen' : 'none';
+}
 /** Render ticks per animation frame while moving (about 8 fps at 50 Hz). */
 export const TICKS_PER_FRAME = 6;
 
@@ -68,17 +85,42 @@ export class CharacterView {
   readonly image: Phaser.GameObjects.Image;
   private spriteName = '';
   private sprite: MapSprite | undefined;
-  /** True only while this view itself holds the frozen tint, so it never clears the hit flash (set by the fx sink). */
-  private frozenTint = false;
+  /** Element of the character shown (hit colour of its attacks). */
+  element: Element = 'void';
+  /**
+   * The view is the only owner of the tint: the flash counts rendered frames here instead of a wall-clock timer, so
+   * it cannot expire between two renders, the frozen tint cannot overwrite it, and it holds while the sim is paused.
+   */
+  private flashLeft = 0;
+  private flashTint = 0xffffff;
+  private tinted = false;
+  private jitterUntil = 0;
+  private jitterSign = 1;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
   }
 
-  apply(c: RenderCharacter, tick: number, alpha: number): void {
+  /** Starts the hit flash: white fill, then `tint`. */
+  flash(tint: number): void {
+    this.flashLeft = FLASH_FILL_FRAMES + FLASH_TINT_FRAMES;
+    this.flashTint = tint;
+  }
+
+  /** Hit-stop jitter while the view tick is below `untilTick`. */
+  jitter(untilTick: number): void {
+    this.jitterUntil = untilTick;
+  }
+
+  /** `live` is false while the sim is paused: the flash and jitter then hold their frame. */
+  apply(c: RenderCharacter, tick: number, alpha: number, live = true): void {
+    this.element = c.element;
     const hidden = (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0;
     this.image.setVisible(!hidden);
-    if (hidden) return;
+    if (hidden) {
+      this.flashLeft = 0;
+      return;
+    }
     if (c.sprite !== this.spriteName) {
       const key = `map:${c.sprite}`;
       this.spriteName = c.sprite;
@@ -88,8 +130,13 @@ export class CharacterView {
         ensureFrames(this.scene, key, this.sprite);
       }
     }
-    const x = lerp(c.px, c.x, alpha);
-    const y = lerp(c.py, c.y, alpha);
+    let x = lerp(c.px, c.x, alpha);
+    let y = lerp(c.py, c.y, alpha);
+    if (tick < this.jitterUntil) {
+      if (live) this.jitterSign = -this.jitterSign;
+      x += JITTER_PX * this.jitterSign;
+      y -= JITTER_PX * this.jitterSign;
+    }
     this.image.setPosition(x, y);
     this.image.setDisplaySize(c.w, c.h);
     if (this.sprite) {
@@ -100,17 +147,23 @@ export class CharacterView {
     }
     this.image.setFlipX(flipForDir(c.dir));
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
-    if ((c.flags & EntityFlag.frozen) !== 0) {
-      this.image.setTint(FROZEN_TINT);
-      this.frozenTint = true;
-    } else if (this.frozenTint) {
-      this.image.clearTint();
-      this.frozenTint = false;
+    const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
+    if (live && this.flashLeft > 0) this.flashLeft--;
+    if (stage === 'none') {
+      if (this.tinted) this.image.clearTint();
+      this.tinted = false;
+      return;
     }
+    this.tinted = true;
+    this.image
+      .setTint(stage === 'fill' ? 0xffffff : stage === 'hit' ? this.flashTint : FROZEN_TINT)
+      .setTintMode(stage === 'fill' ? TINT_FILL : TINT_MULTIPLY);
   }
 
   hide(): void {
     this.image.setVisible(false);
+    this.flashLeft = 0;
+    this.jitterUntil = 0;
   }
 
   destroy(): void {

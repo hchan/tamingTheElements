@@ -29,10 +29,12 @@ import {
 } from '@core/index';
 import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
 import type { AudioContextLike } from '../audio/audio-manager';
-import { EventFx, createPhaserFxSink } from '../fx/event-fx';
+import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
 import { counted, type ProbeCharacter } from '../platform/test-hook';
+import { getUiFlags } from '../platform/flags';
+import { ArcadeHudModel, numberLabel } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
@@ -90,6 +92,7 @@ export class Arena extends Phaser.Scene {
   private pool: EntityViewPool<CharacterView> | undefined;
   private projPool: EntityViewPool<ProjectileView> | undefined;
   private fx: EventFx | undefined;
+  private arcadeHud: ArcadeHudModel | undefined;
   private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
   private clicks: number[] = [];
@@ -118,9 +121,11 @@ export class Arena extends Phaser.Scene {
     fitScene(this);
     const playback = this.launch?.playback;
     this.cursor = playback ? new ReplayCursor(playback.replay) : undefined;
-    const world = this.cursor?.world ?? createMatch(this.launch?.setup ?? DEMO_SETUP);
+    const demo = getUiFlags(window.location.search).arcade ? { ...DEMO_SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : DEMO_SETUP;
+    const world = this.cursor?.world ?? createMatch(this.launch?.setup ?? demo);
     this.world = world;
-    this.view = createRenderView(world);
+    const view = createRenderView(world);
+    this.view = view;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     this.pool = new EntityViewPool(() => new CharacterView(this), (v) => { v.hide(); });
@@ -128,16 +133,24 @@ export class Arena extends Phaser.Scene {
     const pool = this.pool;
     // Agents keep their own memory and random streams, so every match (scene start) gets fresh ones.
     this.agents = [new RandomBot('p1'), new RandomBot('p2')];
+    const arcade = view.arcade() !== undefined;
+    const hud = arcade ? new ArcadeHudModel() : undefined;
+    this.arcadeHud = hud;
     this.fx = new EventFx(
       createPhaserFxSink(
         this,
+        (id) => pool.peek(id),
         (id) => {
-          const v = pool.peek(id)?.image;
-          return v ? { x: v.x + v.displayWidth / 2, y: v.y + v.displayHeight / 2 } : undefined;
+          let p: FxPoint | undefined;
+          view.forEachCharacter((c) => {
+            if (c.id === id) p = { x: c.x + c.w / 2, y: c.y + c.h / 2, h: c.h };
+          });
+          return p;
         },
-        (id) => pool.peek(id)?.image,
+        () => driver.isPaused,
+        hud && ((x, y, amount, scaled, counter) => { hud.spawn(x, y, amount, scaled, counter); }),
       ),
-      { reducedMotion: () => getPrefs().reduceMotion },
+      { reducedMotion: () => getPrefs().reduceMotion, arcade, elementOf: (id) => pool.peek(id)?.element },
     );
 
     if (this.launch && !playback) {
@@ -207,7 +220,7 @@ export class Arena extends Phaser.Scene {
 
     if (playback) this.attachPlayback(playback, driver);
     this.installProbe(world, driver);
-    const hudData: HudData = { view: this.view };
+    const hudData: HudData = { view: this.view, ...(hud ? { arcade: hud } : {}) };
     this.scene.launch(HUD_SCENE, hudData);
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
@@ -280,6 +293,19 @@ export class Arena extends Phaser.Scene {
         this.arenaCheat(c);
       },
       shaking: () => this.cameras.main.shakeEffect.isRunning,
+      fx: () => {
+        const hud = this.arcadeHud;
+        const tints: { id: number; tint: number; mode: number }[] = [];
+        view.forEachCharacter((c) => {
+          const img = this.pool?.peek(c.id)?.image;
+          if (img?.visible) tints.push({ id: c.id, tint: img.tintTopLeft, mode: img.tintMode });
+        });
+        return {
+          tints,
+          numbers: hud?.numbers.filter((n) => n.live).map((n) => numberLabel(n.amount, n.counter)) ?? [],
+          combo: [hud?.combos[0].hits ?? 0, hud?.combos[1].hits ?? 0],
+        };
+      },
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
       step: (n, cmds = [0, 0]) => {
@@ -411,10 +437,15 @@ export class Arena extends Phaser.Scene {
     if (++this.frames % LOW_HEALTH_POLL_FRAMES === 0) this.checkLowHealth();
     const alpha = driver.frame();
     const tick = view.tick;
+    // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them).
+    const live = !driver.isPaused;
+    const arcade = this.arcadeHud && view.arcade();
+    if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage);
     this.actionBar?.update();
     this.reportPlayback();
     this.frameTick = tick;
     this.frameAlpha = alpha;
+    this.frameLive = live;
     pool.begin();
     view.forEachCharacter(this.drawCharacter);
     pool.end();
@@ -426,8 +457,9 @@ export class Arena extends Phaser.Scene {
   /** Per-frame callbacks are fields so `update` allocates no closures. */
   private frameTick = 0;
   private frameAlpha = 0;
+  private frameLive = true;
   private readonly drawCharacter = (c: RenderCharacter): void => {
-    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha);
+    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive);
   };
   private readonly drawProjectile = (p: RenderProjectile): void => {
     this.projPool?.acquire(p.id).apply(p, this.frameAlpha);
@@ -458,6 +490,7 @@ export class Arena extends Phaser.Scene {
     this.pool = undefined;
     this.projPool = undefined;
     this.fx = undefined;
+    this.arcadeHud = undefined;
     this.cursor = undefined;
     this.driver = undefined;
     this.keyboard = undefined;

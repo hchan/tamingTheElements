@@ -4,6 +4,10 @@ import { crisp, fitScene } from '../boot/viewport';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import {
+  comboAlpha, comboLabel, comboScale, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
+} from '../hud/arcade-hud';
+import {
+  HUD_WIDTH,
   MAX_COLOR,
   REST_COLOR,
   barFill,
@@ -21,7 +25,13 @@ export const HUD_SCENE = 'Hud';
 
 export interface HudData {
   readonly view: RenderView;
+  /** Arcade matches only: damage numbers and combo counters, fed and aged by the Arena. */
+  readonly arcade?: ArcadeHudModel;
 }
+
+/** Combo counter anchor under each side's bars (logical px). */
+const COMBO_Y = 110;
+const COMBO_MARGIN = 24;
 
 const TEAMS = [0, 1] as const;
 /** Frames between re-reads of the accessibility prefs (the OS media queries are not free per frame). */
@@ -36,7 +46,14 @@ export class Hud extends Phaser.Scene {
   private gfx: Phaser.GameObjects.Graphics | undefined;
   private labels: Phaser.GameObjects.Text[] = [];
   private highContrast = false;
+  private reduceMotion = false;
   private frame = 0;
+  private arcade: ArcadeHudModel | undefined;
+  /** Pooled texts, created on first use: one per damage-number slot and one combo counter per team. */
+  private numberTexts: (Phaser.GameObjects.Text | undefined)[] = [];
+  private numberSerials: number[] = [];
+  private comboTexts: (Phaser.GameObjects.Text | undefined)[] = [];
+  private comboKeys: number[] = [];
 
   constructor() {
     super(HUD_SCENE);
@@ -44,6 +61,7 @@ export class Hud extends Phaser.Scene {
 
   init(data: HudData): void {
     this.view = data.view;
+    this.arcade = data.arcade;
   }
 
   create(): void {
@@ -55,14 +73,19 @@ export class Hud extends Phaser.Scene {
         .text(mainBar(sideOffset(team)).minX, 24, '', crisp(this, { fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }))
         .setDepth(101),
     );
-    this.highContrast = getPrefs().highContrast;
+    this.refreshPrefs();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
       this.gfx?.destroy();
       this.gfx = undefined;
-      for (const t of this.labels) t.destroy();
+      for (const t of [...this.labels, ...this.numberTexts, ...this.comboTexts]) t?.destroy();
       this.labels = [];
+      this.numberTexts = [];
+      this.numberSerials = [];
+      this.comboTexts = [];
+      this.comboKeys = [];
       this.view = undefined;
+      this.arcade = undefined;
     });
   }
 
@@ -70,7 +93,7 @@ export class Hud extends Phaser.Scene {
     const { view, gfx } = this;
     if (!view || !gfx) return;
     gfx.clear();
-    if (++this.frame % PREFS_REFRESH_FRAMES === 0) this.highContrast = getPrefs().highContrast;
+    if (++this.frame % PREFS_REFRESH_FRAMES === 0) this.refreshPrefs();
     for (const team of TEAMS) {
       const side = collectSide(view, team);
       const x = sideOffset(team);
@@ -104,6 +127,59 @@ export class Hud extends Phaser.Scene {
       side.bench.forEach((c, i) => {
         this.drawBar(gfx, benchBar(x, i), c);
       });
+    }
+    if (this.arcade) this.drawArcade(this.arcade);
+  }
+
+  private refreshPrefs(): void {
+    const prefs = getPrefs();
+    this.highContrast = prefs.highContrast;
+    this.reduceMotion = prefs.reduceMotion;
+  }
+
+  private text(size: number): Phaser.GameObjects.Text {
+    const style = { fontSize: `${String(size)}px`, color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 };
+    return this.add.text(0, 0, '', crisp(this, style)).setDepth(102);
+  }
+
+  /** Damage numbers float up (fade in place with reduced motion); combo counters pop at 3/5/8 hits (no pop when reduced). */
+  private drawArcade(model: ArcadeHudModel): void {
+    const reduced = this.reduceMotion;
+    for (let i = 0; i < model.numbers.length; i++) {
+      const n = model.numbers[i];
+      let t = this.numberTexts[i];
+      if (!n?.live) {
+        t?.setVisible(false);
+        continue;
+      }
+      t ??= this.numberTexts[i] = this.text(24).setOrigin(0.5, 1);
+      if (this.numberSerials[i] !== n.serial) {
+        this.numberSerials[i] = n.serial;
+        // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
+        t.setText(numberLabel(n.amount, n.counter))
+          .setColor(n.scaled ? '#b0b0b0' : n.counter ? '#ffd23f' : '#ffffff')
+          .setFontSize(n.scaled ? 18 : 24);
+      }
+      t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age)).setVisible(true);
+    }
+    for (const team of TEAMS) {
+      const c = model.combos[team];
+      let t = this.comboTexts[team];
+      if (c.hits === 0) {
+        t?.setVisible(false);
+        continue;
+      }
+      t ??= this.comboTexts[team] = this.text(28)
+        .setColor('#ffe066')
+        .setOrigin(team === 0 ? 0 : 1, 0)
+        .setAlign(team === 0 ? 'left' : 'right')
+        .setPosition(team === 0 ? COMBO_MARGIN : HUD_WIDTH - COMBO_MARGIN, COMBO_Y);
+      const key = c.hits * 100_000 + Math.round(c.damage);
+      if (this.comboKeys[team] !== key) {
+        this.comboKeys[team] = key;
+        t.setText(comboLabel(c.hits, c.damage));
+      }
+      t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
     }
   }
 
