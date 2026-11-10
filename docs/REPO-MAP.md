@@ -36,6 +36,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/core/` | Pure deterministic simulation code: no DOM, Phaser, Date or Math.random |
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
 | `src/ui/` | DOM menus in vanilla TS |
+| `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
 | `tests/` | Cross-cutting tests (`tests/repo/`); unit tests are colocated in `src/` |
 
 ## Where do I put X
