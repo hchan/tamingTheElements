@@ -48,7 +48,7 @@ function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElem
   b.type = 'button';
   b.id = `arcade${label}`;
   b.tabIndex = -1;
-  b.style.cssText = `position:absolute;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + ${String(row * 56)}px);z-index:5;min-width:72px;min-height:48px;touch-action:none;opacity:0.85`;
+  b.style.cssText = `position:absolute;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + ${String(row * 56)}px);z-index:5;min-width:72px;min-height:48px;touch-action:none;opacity:.85`;
   let code: string | undefined;
   const release = (): void => {
     if (code === undefined) return;

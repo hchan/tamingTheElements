@@ -3,6 +3,7 @@ import { ROUND_TIMER_TICKS, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
+import { mountWeatherView } from '../fx/weather-view';
 import {
   PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_LOW_TICKS, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerLabel,
 } from './round-announcer';
@@ -58,9 +59,9 @@ export function mountRoundView(
   prefs: () => RoundPrefs,
   fighters?: Fighters,
 ): (events: readonly SimEvent[]) => void {
-  // The defence view (WP-arcade-defence-view) comes with the round HUD, in its own chunk (vite.config.ts), so the Arena
-  // pays only for one more argument.
-  const defence = fighters && mountDefenceView(arena, view, say, prefs, fighters);
+  // The defence and weather views (WP-arcade-defence-view, WP-arcade-weather-view) come with the round HUD, each in its
+  // own chunk (vite.config.ts), so the Arena pays only for one more argument.
+  const views = mountWeatherView(arena, hud, view, say, prefs, fighters && mountDefenceView(arena, view, say, prefs, fighters));
   const banner = { main: '', sub: '', from: 0, until: 0, reduced: false };
   const announcer = new RoundAnnouncer({
     banner(main, sub, from, until): void {
@@ -140,7 +141,7 @@ export function mountRoundView(
   for (const s of [arena, hud]) s.events.once('shutdown', off).once('destroy', off);
   return (events) => {
     announcer.consume(events);
-    defence?.(events);
+    views(events);
   };
 }
 

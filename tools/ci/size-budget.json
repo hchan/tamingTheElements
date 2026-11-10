@@ -11,7 +11,8 @@
     "rolldown-runtime": 200,
     "round-view": 2100,
     "sim": 19700,
-    "super-view": 1230
+    "super-view": 1230,
+    "weather-view": 3060
   },
   "totalGzip": 447940
 }

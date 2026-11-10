@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { characterId } from '../data/ids';
-import { GUARD_MAX } from '../data/arcade';
+import { GUARD_MAX, WEATHER_TICKS, Weather } from '../data/arcade';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from './state';
+import { Cmd } from './commands';
 import { EventSink } from './events';
 import { createMatch, type MatchSetup } from './match';
 import { ABILITY_DEFS } from './systems/projectile';
 import { applyArcadeHit } from './systems/arcade/hit';
 import { skipIntro } from './systems/arcade/round-testkit';
+import { step } from './step';
 import { createRenderView, type RenderCharacter } from './view';
 import { SIM_VERSION } from '../version';
 
@@ -54,6 +56,22 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(ar?.guard(0)).toBe(GUARD_MAX - 300);
     expect(ar?.guarding(0)).toBe(true);
     expect(ar?.guarding(1)).toBe(false);
+  });
+
+  it('reports the weather up and the game ticks it has left (read-outs only)', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const view = createRenderView(world);
+    expect(view.arcade()).toMatchObject({ weather: Weather.none, weatherLeft: 0 });
+    // Sindarosa (fire) calls Sunshine for WEATHER_TICKS game ticks, counted from the cast.
+    step(world, [Cmd.weather, 0]);
+    const left = view.arcade()?.weatherLeft ?? 0;
+    expect(view.arcade()?.weather).toBe(Weather.sun);
+    expect(left).toBeGreaterThan(WEATHER_TICKS - 3);
+    expect(left).toBeLessThanOrEqual(WEATHER_TICKS);
+    for (let i = 0; i < 10; i++) step(world, [0, 0]);
+    expect(view.arcade()?.weatherLeft).toBe(left - 10);
+    for (let i = 0; i < WEATHER_TICKS; i++) step(world, [0, 0]);
+    expect(view.arcade()).toMatchObject({ weather: Weather.none, weatherLeft: 0 });
   });
 
   it('gives every character its element', () => {

@@ -61,10 +61,21 @@ export interface ArenaProbe {
   defence(): Promise<{
     ghosts: number; trails: number; shields: number; bars: readonly number[]; projectiles: number; sparks: number; rings: number; pops: readonly string[];
   } | undefined>;
+  /**
+   * Arcade only (async: a lazy chunk): the weather view's last frame (WP-arcade-weather-view): the weather drawn (0 none),
+   * its HUD badge text and time-bar fill (px), the sky tint alpha, the particles drawn, and the called line ('' when
+   * none) with its scale; undefined in Classic.
+   */
+  weather(): Promise<{ kind: number; label: string; fill: number; tint: number; particles: number; call: string; callScale: number } | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */
   aim(): { visible: boolean; x: number; y: number; angle: number } | undefined;
   /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */
   setMeter(team: number, value: number): void;
+  /**
+   * Arcade only: puts weather `kind` (1 Sun .. 5 Eclipse) up for WEATHER_TICKS as if `team` had cast it, and hands the
+   * views its `weatherChanged` event; for weathers no Arcade race can cast (Eclipse: no void race is offered).
+   */
+  setWeather(kind: number, team: number): void;
   /** Key codes bound per action in the running battle's keyboard agent. */
   boundCodes(): Record<string, readonly string[]>;
   /** Whether the battle's audio is muted (Ctrl-M toggles), and whether the first gesture has unlocked it. */
