@@ -10,6 +10,8 @@ export * from './rules/damage';
 export * from './rules/describe';
 export * from './sim/state';
 export * from './sim/alloc';
+export * from './sim/snapshot';
+export * from './sim/hash';
 export * from './rules/garrison';
 export * from './rules/opponents';
 export * from './save/migrate';
