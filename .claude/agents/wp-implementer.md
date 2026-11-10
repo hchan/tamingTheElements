@@ -25,7 +25,7 @@ You implement ONE work package. You never commit, push or tag; the coordinator d
 - Never open, cat, grep or print `war/WEB-INF/user.properties`.
 - Do not edit files outside the WP list.
 - No new dependencies beyond those the WP names.
-- Do not delete or modify anything under `war/`, `imgWorkArea/`, `visio/` or `tools/*.pl` (except in `ret-*` and `art-*` WPs).
+- Do not delete or modify anything under `war/`, `imgWorkArea/`, or `visio/` (except in `ret-*` and `art-*` WPs).
 - No `Date`, `Math.random` or transcendental `Math` in `src/core`.
 - `package.json` and `pnpm-lock.yaml` only in WPs marked +deps; never hand-merge a lockfile.
 - Known-bug policy: legacy characterization tests assert today's behaviour; the correct behaviour is an `it.fails(...)` tagged `// KNOWN-BUG:<slug>`.
