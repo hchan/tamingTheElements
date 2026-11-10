@@ -131,6 +131,10 @@ half speed (`clockHeld` = frozen or held). Round phases, the timer and round win
 blocks; phase deadlines are `W.tick` values, the timer counts game ticks, the time-over score is
 `Math.floor(hp * 1000 / maxHp)` summed per roster (an IEEE-exact multiply and divide), and the reset between rounds writes
 fixed start values (and clears the buffered presses), so a snapshot anywhere in a round, the KO or a reset restores to the same future.
+A dash (`arcade/dash.ts`) is Int32 game-tick deadlines in the entity block (`dashUntil`, `dashReadyAt`, the
+`dashDodged` flag) plus its velocity in the Float64 `vx`/`vy` (`DIR8 * speed * 3`, an exact product); the double tap
+reads `lastDir`/`lastDirPress` and the dash cancel `confirmTick` in the team block, all hashed and snapshotted. A hit or
+stun ends a dash by moving `dashUntil` back to the current game tick.
 
 ## Cross-browser golden replays
 

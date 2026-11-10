@@ -117,7 +117,7 @@ times the combo scale (`arcade/combo.ts`) and sets the hit-stop freeze, knockbac
 `arcade/stun.ts`), then adds the hyper meter gains of both teams (`arcade/meter.ts`; casts add theirs from the cast
 sites through `onArcadeCast`, a no-op in Classic); the Classic lines run
 unchanged behind `!isArcade`. The cast sites and movement ask `canAct` (Classic: not frozen; Arcade: also not
-stunned and not casting a super), and Arcade movement applies knockback first and holds both axes at the walls. The
+stunned, not casting a super, in the fight phase and not dashing or in dash recovery), and Arcade movement applies knockback first and holds both axes at the walls. The
 `health` slot is `arcadeSuper` (`arcade/super.ts`): `Cmd.super` spends a meter bar for a super (a 40-tick freeze, then
 an `effect` entity whose hits go through `applyArcadeHit` as strength 3). Arcade aims 8 ways (`arcade/aim.ts`): movement
 stores the dir8 of the held input in the entity's `aim` slot next to the 4-way `dir` (the reels), and the projectile and
@@ -128,11 +128,14 @@ ticks old, not used yet) and turns a primary and secondary chord into `Cmd.super
 Classic). A cast marks its slot's press used (`onArcadeCast`), a super start the super press. Arcade matches are best
 of 3 (`arcade/round.ts` in the `cleanup` slot): only the `fight` phase lets anyone act or be hit, the KO slow motion
 holds every second tick through the same freeze gate (`clockHeld` in `sim/clock.ts`), and the reset between rounds
-clears the buffered presses.
+clears the buffered presses. Arcade dashes (`arcade/dash.ts`): the `input` slot starts a dash on a pending `Cmd.dash`
+press or a double-tapped direction (recorded by the buffer), movement steps it (12 ticks at 3x speed), `isInvulnerable`
+covers its dash ticks 2..7 (an enemy projectile overlapping then is a perfect dodge in the projectile system), `canAct`
+waits out its recovery, and a dash within 10 ticks of the team's last confirmed hit cancels melee recovery.
 
 | # | System | Status |
 |---|---|---|
-| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`) on unfrozen ticks |
+| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`) and dash starts (`dashed`) on unfrozen ticks |
 | 2 | swap (`systems/swap.ts`) | implemented |
 | 3 | movement (`systems/movement.ts`) | implemented |
 | 4 | abilities | no-op (planned) |

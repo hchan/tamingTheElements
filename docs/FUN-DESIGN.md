@@ -58,10 +58,11 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   (`src/core/sim/clock.ts`) reads the world flag bit (hashed state), never a module variable.
 - **State.** One new `SimState.arcade: Int32Array`, **length 0 when the flag is off**. `hash()` and `snapshot()` iterate
   `stateArrays`, so a zero-length array adds no bytes and Classic hashes stay identical. Layout (all Int32):
-  - per entity (`ARCADE_E = 13` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
-    dashUntil, dashReadyAt, guardState, parryUntil, parryLockUntil, guardMeter, comboStunTotal, wallBounced`;
+  - per entity (`ARCADE_E = 15` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
+    dashUntil, dashReadyAt, guardState, parryUntil, parryLockUntil, guardMeter, comboStunTotal, wallBounced, aim,
+    dashDodged`;
   - per team (`ARCADE_T = 16` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 5
-    (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState, pressUsed`;
+    (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState, pressUsed, confirmTick`;
   - world (`ARCADE_W = 8`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil`.
 - **Game clock.** `W.tick` stays the replay and event index and always advances. Arcade adds `gameTick`, which does
   not advance during hit-stop or super freeze and advances every second tick during KO slow-motion (WP 13). Built in WP 1:
@@ -155,7 +156,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   halves both axes (truncated) and reverses the wall's axis. The new `wallBounced` entity int marks the bounce. `canAct`
   lives in `arcade/stun.ts`. Tornado's 60-tick stun comes from the hit path (no `frozen` flag, no status slot); Vines
   stuns once per cast without a hit event. Deferred: the Ground Shock recovery cancel arrives with the dash cancel
-  (WP 15). `recovered` reason 0 came with WP 4.
+  (WP 15, done). `recovered` reason 0 came with WP 4.
 
 ### 2.4 Combo counter and damage scaling (sim)
 
@@ -244,6 +245,23 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   +100 meter (at most once per dash).
 - **Cancels:** on a confirmed hit, a dash can cancel the attacker's remaining melee recovery within 10 ticks of the
   confirm (the dash-cancel combo route).
+- Built in WP 15 (`systems/arcade/dash.ts`, table in `data/arcade.ts`): `Cmd.dash` is bit 11 (Classic masks it); its
+  key and pad binding come with the defence view (WP 17), and the AI does not dash on purpose yet (WP 23; its
+  movement can double-tap by accident: 87 dashes and 21 perfect dodges in the 24 `fun:report` matches). The buffer
+  records the dash press like the attacks (8 game ticks, used once); a rising direction edge (the lowest bit when
+  several rise) that repeats `lastDir` 0..12 game ticks after the last one is a dash press too, and clears the pair, so
+  a third tap starts a new one (held directions are one press). The `input` slot starts the dash on an unfrozen tick
+  when the controlled character is free (no stun, super, dash or dash recovery; `fight` phase) and `dashReadyAt` has
+  come: dash tick 1 is the start tick, `dashUntil = start + 12`, `dashReadyAt = start + 30`, and `dashed {dir}` gives
+  the dir8 of the held input, else the aim (facing and aim are left to movement). Movement steps it at `DIR8 * speed *
+  3` per game tick (diagonals +-3x speed on both axes) in `vx`/`vy`, clamped at the walls, with no `moved` event (like
+  knockback) and ignoring input; `canAct` is false for the 12 dash ticks and the 6 after (free again at start + 18).
+  `isInvulnerable` covers dash ticks 2..7, so projectiles pass and melee misses. An enemy projectile that overlaps the
+  dasher on those ticks gives `perfectDodge {projectile}` (from the dasher) and +100 meter, once per dash
+  (`dashDodged`). A hit or a stun ends the dash at once (its recovery still follows). Every Arcade hit stores the
+  team's `confirmTick`; a dash in cast recovery (the `frozen` flag that only melee `delayAfterAttack` sets in Arcade,
+  Ground Shock's included) starts only 0..10 game ticks after it and clears the flag; later, the press waits for the
+  recovery to end, within the buffer.
 
 ### 2.8 Guard and parry (sim)
 
@@ -328,8 +346,8 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   `prevCmd`.
 - **Buffer:** an action that cannot run now (cooldown, stun, hit-stop, recovery, intro) runs on the first tick it can if
   it was pressed within 8 ticks (160 ms). A buffered press is used once.
-- Windows: super chord 3 ticks, double-tap dash 12, parry 8, dash cancel 10. Every window is in the data table and has
-  a unit test at its edge (window - 1, window, window + 1).
+- Windows: super chord 3 ticks, double-tap dash 12 (WP 15), parry 8, dash cancel 10 (WP 15). Every window is in the
+  data table and has a unit test at its edge (window - 1, window, window + 1).
 - Built in WP 12 (`systems/arcade/buffer.ts`, windows `BUFFER_TICKS` and `SUPER_CHORD_TICKS` in `data/arcade.ts`): the
   `input` slot records rising edges on every tick, frozen ones included, as the game tick plus one in `pressTick`
   (`prevCmd` keeps the last command, masked to the Arcade input bits). Windows count game ticks, so a hit-stop or super
@@ -340,7 +358,8 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   hold-to-fire behaviour. The new team int `pressUsed` holds the used presses. Chord: when a primary or secondary edge
   leaves both presses 0..3 game ticks old and the team has a bar and no super running, the pair becomes a super press
   (an edge feeds one chord), and held primary and secondary are masked while it is pending, so the chord is only the
-  super (without a bar it stays two attacks). Dash and guard edges are recorded for WPs 15 and 16, which consume them.
+  super (without a bar it stays two attacks). Dash and guard edges are recorded for WPs 15 and 16, which consume them
+  (the dash press since WP 15, section 2.7).
   The Arcade AI drops a press that would complete a chord by accident (`avoidChord`, from the new `ArcadeView.prevCmd`,
   `primaryAge` and `secondaryAge`), so Easy still never supers. Intro-phase buffering came with `canAct`'s phase check
   (WP 13): a press in the last 8 game ticks of an intro runs on the first fight tick; the reset between rounds clears
@@ -550,7 +569,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 12 | `WP-arcade-buffer` (done: section 2.12; windows count game ticks) | sim | Input buffer 8 ticks, super chord 3, edge tests | 1 |
 | 13 | `WP-arcade-rounds` (done: section 2.10) | sim | Phases, timer, best of 3, KO slow-motion, time-over rule, `matchEnded` after 2 wins, round events | 2 |
 | 14 | `WP-arcade-announcer-view` | view | Round intro, timer HUD, KO, TIME, PERFECT text, live-region lines | 13 |
-| 15 | `WP-arcade-dash` | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |
+| 15 | `WP-arcade-dash` (done: section 2.7; binding in 17, AI in 23) | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |
 | 16 | `WP-arcade-guard-parry` | sim | Guard, chip, guard meter, break, parry, reflection, whiff lock | 3, 12 |
 | 17 | `WP-arcade-defence-view` | view | Dash afterimages, projectile trails (V10), guard and parry sparks, parry ping | 15, 16 |
 | 18 | `WP-arcade-clash` | sim+view | Projectile clash by element, clash burst | 2 |
