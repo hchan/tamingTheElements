@@ -11,10 +11,11 @@ export interface TesterUiDeps {
 }
 
 /** Opens the tester panel; set by `installTesterUi`, a no-op before that (and in unit tests of single screens). */
-let opener: () => void = () => undefined;
+let opener: (fullCheat: boolean) => void = () => undefined;
 
-export function requestOpenTesterPanel(): void {
-  opener();
+/** `fullCheat` also applies the Full cheat preset (the menu's Cheats button does, on first enable). */
+export function requestOpenTesterPanel(fullCheat = false): void {
+  opener(fullCheat);
 }
 
 /** True on the main menu route (the only place the key sequence counts). */
@@ -38,11 +39,13 @@ function refresh(): void {
  */
 export function installTesterUi(deps: TesterUiDeps): () => void {
   const { session, store, now } = deps;
-  const open = (): void => {
-    openTesterPanel({ session, store, now, confirm: (m) => window.confirm(m), refresh });
+  const open = (fullCheat = false): void => {
+    openTesterPanel({ session, store, now, confirm: (m) => window.confirm(m), refresh, fullCheat });
   };
   opener = open;
-  const offBadge = mountTesterBadge(session, open);
+  const offBadge = mountTesterBadge(session, () => {
+    open();
+  });
   const offBench = mountBenchPanel(session);
   let progress = 0;
   const onKey = (e: KeyboardEvent): void => {

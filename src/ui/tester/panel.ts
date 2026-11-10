@@ -20,6 +20,8 @@ export interface PanelDeps {
   readonly confirm: (message: string) => boolean;
   /** Re-renders the current screen after a save edit. */
   readonly refresh: () => void;
+  /** Applies the Full cheat preset as soon as the panel opens (the menu's first Cheats click). */
+  readonly fullCheat?: boolean;
 }
 
 interface OptionDef {
@@ -231,6 +233,8 @@ export function openTesterPanel(deps: PanelDeps): void {
     const now = deps.now();
     void edit('Full cheat', (sv) => fullGarrison(sv, now, metaIdSource(seedSfc32(now >>> 0, 'meta'))));
   });
+
+  if (deps.fullCheat === true) fullBtn.click();
 
   const close = button('Close', 'testerClose');
   const turnOff = button('Turn tester mode off', 'testerOff');

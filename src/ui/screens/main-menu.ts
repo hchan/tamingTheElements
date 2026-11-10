@@ -119,12 +119,13 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
         t.type = 'button';
         t.id = tester.enabled ? 'testerOptionsMenu' : 'cheatsMenu';
         t.addEventListener('click', () => {
-          if (!tester.enabled) {
+          const first = !tester.enabled;
+          if (first) {
             tester.enable();
             t.textContent = 'Tester options';
             t.id = 'testerOptionsMenu';
           }
-          requestOpenTesterPanel();
+          requestOpenTesterPanel(first);
         });
         page.append(t);
         const footer = el('div', 'versionStamp', versionStamp(import.meta.env));
