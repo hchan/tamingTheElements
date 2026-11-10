@@ -60,6 +60,16 @@ describe('clear, reset and compare', () => {
   });
 });
 
+describe('default keys', () => {
+  // Legacy is positional (digit N = action-bar slot N: 3 = Capture from chapter 2, else Swap1); the port keeps fixed keys
+  // pending owner sign-off (docs/PARITY.md U14).
+  it('Capture is C and digits 3 to 5 are Swap 1 to 3 in every chapter', () => {
+    expect(DEFAULT_BINDINGS.capture).toEqual(['KeyC']);
+    expect([DEFAULT_BINDINGS.slot3, DEFAULT_BINDINGS.slot4, DEFAULT_BINDINGS.slot5]).toEqual([['Digit3'], ['Digit4'], ['Digit5']]);
+    expect(actionForCode(DEFAULT_BINDINGS, 'Digit3')).toBe('slot3');
+  });
+});
+
 describe('save round trip', () => {
   it('defaults serialise to nothing', () => {
     expect(bindingsToSave(DEFAULT_BINDINGS)).toBeUndefined();
