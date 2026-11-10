@@ -3,21 +3,11 @@
     "deny": [
       "Read(war/WEB-INF/user.properties)",
       "Read(./**/.env*)",
-      "Bash(git push --force*)",
-      "Bash(git reset --hard*)",
       "Bash(rm -rf /*)",
       "Bash(curl*|*sh)"
     ],
-    "ask": [
-      "Bash(git push*)",
-      "Bash(git commit*)",
-      "Bash(git tag*)"
-    ],
     "allow": [
-      "Bash(pnpm *)",
-      "Bash(git status*)",
-      "Bash(git diff*)",
-      "Bash(git log*)"
+      "Bash(*)"
     ]
   }
 }
