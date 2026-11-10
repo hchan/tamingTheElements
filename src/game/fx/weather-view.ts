@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { RenderView, SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
+import { mountTagView } from '../hud/tag-view';
 import {
   CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TICK_MS, WEATHER_COLORS, WEATHER_NAMES, WeatherFx,
   badgeFill, badgeLabel, callAlpha, callScale, particle, progress, tintAlpha, type Particle,
@@ -81,6 +82,8 @@ export function mountWeatherView(
   prefs: () => WeatherPrefs,
   then?: (events: readonly SimEvent[]) => void,
 ): (events: readonly SimEvent[]) => void {
+  // The tag-team view (WP-arcade-tag-view, its own chunk) rides on this one: it builds nothing in 1v1.
+  then = mountTagView(arena, hud, view, say, prefs, then);
   let reduced = prefs().reduceMotion;
   let highContrast = prefs().highContrast;
   let parts:

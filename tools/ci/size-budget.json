@@ -1,6 +1,7 @@
 {
   "chunks": {
     "arcade-audio": 1899,
+    "arcade-setup": 1410,
     "arcade-versus": 3250,
     "clash-view": 943,
     "core": 11250,
@@ -14,6 +15,7 @@
     "round-view": 2100,
     "sim": 20750,
     "super-view": 1230,
+    "tag-view": 2802,
     "weather-view": 3060
   },
   "totalGzip": 453800

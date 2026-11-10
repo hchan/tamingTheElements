@@ -1,77 +1,92 @@
 import {
-  CHARACTERS,
+  Cmd,
   DEFAULT_SIM_FLAGS,
+  EntityFlag,
   SIM_VERSION,
   getCharacter,
   type Agent,
+  type AgentState,
   type CharacterId,
   type MatchSetup,
+  type RenderView,
   type ReplayFile,
 } from '@core/index';
 import { ScriptedAI, scriptedProfileFor } from '@core/lazy-index';
 import type { ReplayStore } from '../platform/storage/replay-store';
+import { mountAimIndicator } from '../fx/aim-view';
 import { PlaytestRecorder } from '../replay/playtest-recorder';
 import type { ArenaLaunch } from '../scenes/launch';
+import { ARCADE_AI_LEVELS, ARCADE_RACES, type ArcadePick } from './arcade-pick';
 
 /**
- * Arcade Versus (FUN-DESIGN WP 11), the Phaser-free part: the fighter pick, the sim setup, the Arcade AI and the launch.
- * It is a separate flow from the story (`flow.ts`): no save is read or written here, so no XP, capture, objective or
- * garrison change can come out of an Arcade match. The only thing it may store is the playtest replay (when recording).
+ * Arcade Versus (FUN-DESIGN WP 11, 2v2 in WP 20), the Phaser-free match builder: the sim setup, the Arcade AI and the
+ * launch. Its own lazy chunk (`arcade-setup`), loaded with the battle, so the picker chunk stays small. It is a separate
+ * flow from the story (`flow.ts`): no save is read or written here, so no XP, capture, objective or garrison change can
+ * come out of an Arcade match. The only thing it may store is the playtest replay (when recording).
  */
-
-/** The 12 playable races (the two void characters are story-only). */
-export const ARCADE_RACES: readonly CharacterId[] = CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
 
 /**
- * AI levels offered (FUN-DESIGN 2.11, WP-arcade-ai-personalities): the index is the core AI level (`ARCADE_AI_KNOBS`
- * row: Easy never supers, combo caps 1, 3 and 5, slower or faster reactions, parries and dodges).
+ * The AI's second race in 2v2: drawn from the match seed among the races neither side picked (the sim allows mirrors,
+ * but two identical bots on one spot trade cancelling shots, see tools/sim/run-match.ts), so a seed replays the same team.
  */
-export const ARCADE_AI_LEVELS = ['easy', 'normal', 'hard'] as const;
-export type ArcadeAiLevel = (typeof ARCADE_AI_LEVELS)[number];
-
-export interface ArcadePick {
-  readonly player: CharacterId;
-  readonly enemy: CharacterId;
-  readonly level: ArcadeAiLevel;
+export function enemyPartner(pick: ArcadePick, seed: number): CharacterId {
+  const free = ARCADE_RACES.filter((r) => r !== pick.player && r !== pick.partner && r !== pick.enemy);
+  return free[(seed >>> 0) % free.length] ?? pick.enemy;
 }
 
-const race = (raw: string, fallback: CharacterId): CharacterId => ARCADE_RACES.find((r) => r === raw) ?? fallback;
-
-/** Default: the owner playtest's Sindarosa (FUN-DESIGN section 7) against a ranged opponent, AI Normal. */
-export const DEFAULT_PICK: ArcadePick = { player: 'sindarosa' as CharacterId, enemy: 'fiara' as CharacterId, level: 'normal' };
-
-/** Form values to a pick; anything unknown falls back to the default. */
-export function parsePick(raw: { readonly player: string; readonly enemy: string; readonly level: string }): ArcadePick {
-  return {
-    player: race(raw.player, DEFAULT_PICK.player),
-    enemy: race(raw.enemy, DEFAULT_PICK.enemy),
-    level: ARCADE_AI_LEVELS.find((l) => l === raw.level) ?? DEFAULT_PICK.level,
-  };
-}
-
-/** One race each, Arcade on, `difficulty: 1` (Arcade never scales stats by difficulty), chapter 1 (no Capture), 0 XP. */
+/** Arcade on, `difficulty: 1` (Arcade never scales stats by difficulty), chapter 1 (no Capture), 0 XP; 1 or 2 heroes a side. */
 export function arcadeSetup(pick: ArcadePick, seed: number): MatchSetup {
+  const hero = (character: CharacterId): { character: CharacterId; xp: number } => ({ character, xp: 0 });
   return {
     simVersion: SIM_VERSION,
     seed: seed >>> 0,
     flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
     chapter: 1,
     difficulty: 1,
-    p1: [{ character: pick.player, xp: 0 }],
-    p2: [{ character: pick.enemy, xp: 0 }],
+    p1: pick.partner ? [hero(pick.player), hero(pick.partner)] : [hero(pick.player)],
+    p2: pick.partner ? [hero(pick.enemy), hero(enemyPartner(pick, seed))] : [hero(pick.enemy)],
   };
 }
 
 /**
  * The Arcade AI for team 1 (never the random bot, FUN-DESIGN 2.11): the scripted AI with its Arcade layer at the picked
- * level; it plays Turtle when its element is at a disadvantage, else a personality drawn from the match seed.
+ * level; it plays Turtle when its element is at a disadvantage, else a personality drawn from the match seed. In 2v2 each
+ * hero has its own scripted AI (its own kit) and the one in play answers; it tags when low (WP-arcade-tag). Like the tools'
+ * team bot (`makeTeamAgent`), an idle hero steps onto the opponent's row, since a tag can drop it off every firing line.
  */
-export function arcadeEnemy(pick: ArcadePick): Agent {
+export function arcadeEnemy(pick: ArcadePick, setup: MatchSetup = arcadeSetup(pick, 0)): Agent {
   const level = ARCADE_AI_LEVELS.indexOf(pick.level) as 0 | 1 | 2;
-  return new ScriptedAI(scriptedProfileFor(getCharacter(pick.enemy), getCharacter(pick.player)), { id: 'arcade-ai', level });
+  const heroes = setup.p2.map(
+    (m) => new ScriptedAI(scriptedProfileFor(getCharacter(m.character), getCharacter(pick.player)), { id: 'arcade-ai', level }),
+  );
+  const lead = heroes[0] as Agent;
+  const first = setup.p1.length;
+  if (heroes.length < 2) return lead;
+  return {
+    id: lead.id,
+    observe: (view, tick) => {
+      const cmd = (heroes[(view.self?.id ?? first) - first] ?? lead).observe(view, tick);
+      const dy = (view.opponent?.y ?? 0) - (view.self?.y ?? 0);
+      if (cmd !== 0 || Math.abs(dy) <= (view.opponent?.h ?? 0) / 2) return cmd;
+      return dy > 0 ? Cmd.down : Cmd.up;
+    },
+    save: () => heroes.map((h) => h.save()),
+    load: (state) => {
+      heroes.forEach((h, i) => {
+        h.load(Array.isArray(state) ? ((state as readonly AgentState[])[i] ?? null) : null);
+      });
+    },
+  };
 }
 
 export type ArcadeOutcome = 'win' | 'lose' | 'draw';
+
+/** One hero at the end of the match (the last round): its team, race, and HP per cent (0 when K.O.). */
+export interface ArcadeHero {
+  readonly team: number;
+  readonly race: CharacterId;
+  readonly pct: number;
+}
 
 export interface ArcadeResult {
   readonly outcome: ArcadeOutcome;
@@ -80,6 +95,8 @@ export interface ArcadeResult {
   readonly rounds?: readonly [number, number];
   /** The recorded replay (recording on and nothing invalidated it). */
   readonly replay?: ReplayFile;
+  /** 2v2: every hero's state at the end, in roster order (team 0 first); absent in 1v1. */
+  readonly heroes?: readonly ArcadeHero[];
 }
 
 export interface ArcadeLaunchOptions {
@@ -89,19 +106,41 @@ export interface ArcadeLaunchOptions {
   readonly onResult: (r: ArcadeResult) => void;
 }
 
+/** Every hero's HP per cent off the render view, in roster (entity id) order. */
+export function heroesOf(view: RenderView, setup: MatchSetup): ArcadeHero[] {
+  const races = [...setup.p1, ...setup.p2].map((m) => m.character);
+  const out: ArcadeHero[] = [];
+  view.forEachCharacter((c) => {
+    const race = races[c.id];
+    const ko = (c.flags & EntityFlag.dead) !== 0 || c.hp <= 0;
+    if (race) out.push({ team: c.team, race, pct: ko ? 0 : Math.max(1, Math.ceil((c.hp * 100) / Math.max(1, c.maxHp))) });
+  });
+  return out;
+}
+
 /** Launch data for the Arena: keyboard (team 0) against the Arcade AI; the recorder keeps the Arcade flag in its header. */
 export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOptions): ArenaLaunch {
   const setup = arcadeSetup(pick, seed);
   const recorder = o.record ? new PlaytestRecorder(setup) : undefined;
+  let view: RenderView | undefined;
   return {
     setup,
-    enemy: arcadeEnemy(pick),
+    enemy: arcadeEnemy(pick, setup),
     ...(recorder ? { recorder } : {}),
+    // Arcade Versus only: the 8-way aim arrow and the Arcade audio layers (WP-arcade-audio-layers, their own chunk, on
+    // the battle's sound as it is now); the view is kept for the 2v2 results.
+    arcadeView: (arena, v, alpha) => {
+      view = v;
+      mountAimIndicator(arena, v, alpha);
+      const held = arena.audio;
+      void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held); });
+    },
     onEnd: (end) => {
       const replay = recorder?.finish();
       if (replay) void o.replays.add(replay).catch(() => undefined);
       const outcome: ArcadeOutcome = end.winner === 0 ? 'win' : end.winner === 1 ? 'lose' : 'draw';
-      o.onResult({ outcome, pick, ...(end.rounds ? { rounds: end.rounds } : {}), ...(replay ? { replay } : {}) });
+      const heroes = pick.partner && view ? heroesOf(view, setup) : undefined;
+      o.onResult({ outcome, pick, ...(end.rounds ? { rounds: end.rounds } : {}), ...(replay ? { replay } : {}), ...(heroes ? { heroes } : {}) });
     },
   };
 }

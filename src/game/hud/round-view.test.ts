@@ -75,7 +75,7 @@ function fakeView(): { view: RenderView; arcade: RenderArcade; setTick: (t: numb
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: RoundPhase.intro, timer: 0,
     roundsWon: [0, 0], stunned: () => false, invulnerable: () => false, aim: () => 0, guard: () => 1000, guarding: () => false, weather: 0, weatherLeft: 0,
   } as RenderArcade;
-  const view = { get tick() { return tick; }, arcade: () => arcade } as unknown as RenderView;
+  const view = { get tick() { return tick; }, arcade: () => arcade, forEachCharacter: () => undefined } as unknown as RenderView;
   return { view, arcade, setTick: (t) => { tick = t; } };
 }
 

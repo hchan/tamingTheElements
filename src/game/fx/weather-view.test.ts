@@ -86,7 +86,7 @@ const ended = (tick: number, weather: number): SimEvent => ({ tick, sourceId: -1
 function mount(opts: { reduceMotion?: boolean; highContrast?: boolean; weather?: number } = {}) {
   let tick = 100;
   const arcade = { weather: opts.weather ?? 0, weatherLeft: opts.weather ? WEATHER_TICKS : 0 } as RenderArcade;
-  const view = { get tick() { return tick; }, arcade: () => arcade } as unknown as RenderView;
+  const view = { get tick() { return tick; }, arcade: () => arcade, forEachCharacter: () => undefined } as unknown as RenderView;
   const arena = fakeScene();
   const hud = fakeScene();
   const lines: Announcement[] = [];
