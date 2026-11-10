@@ -1,7 +1,20 @@
 import { type Command, NO_COMMAND } from '../sim/commands';
-import { cooldownIdx, EntityFlag, EntityKind, World } from '../sim/state';
+import {
+  ARCADE_E,
+  ARCADE_T,
+  ARCADE_TEAM_BASE,
+  ARCADE_WORLD_BASE,
+  ArcadeE,
+  ArcadeT,
+  ArcadeW,
+  cooldownIdx,
+  EntityFlag,
+  EntityKind,
+  World,
+  type SimState,
+} from '../sim/state';
 import type { SimWorld } from '../sim/world';
-import { now } from '../sim/clock';
+import { isArcade, now } from '../sim/clock';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
 export interface FighterView {
@@ -27,10 +40,31 @@ export interface ObservationView {
   readonly cooldowns: readonly number[];
   /** The match seed, so an agent can seed its own stream (`AgentRng`); agents never draw from the sim's streams. */
   readonly matchSeed: number;
+  /** Arcade state both players can see on the HUD (FUN-DESIGN 2.11); absent in Classic. */
+  readonly arcade?: ArcadeView;
+}
+
+/**
+ * Read-only copy of the visible Arcade state for one side: nothing a human could not read off the screen. Stun is in
+ * game ticks left (0 = free), `freeze` in `W.tick` ticks left of a hit-stop or super freeze. Own cooldowns are
+ * `ObservationView.cooldowns` (game ticks in Arcade).
+ */
+export interface ArcadeView {
+  readonly meter: number;
+  readonly oppMeter: number;
+  readonly selfStun: number;
+  readonly oppStun: number;
+  readonly freeze: number;
+  /** Live combo hits of this side (on the opponent) and of the opponent (on this side). */
+  readonly combo: number;
+  readonly oppCombo: number;
+  /** This side's super is running (its caster cannot act until it ends). */
+  readonly superActive: boolean;
 }
 
 /** Opaque, JSON-serialisable agent memory: what `Agent.save` returns and only the same kind of agent can `load`. */
-export type AgentState = null | boolean | number | string | readonly AgentState[] | { readonly [key: string]: AgentState };
+export type AgentState =
+  null | boolean | number | string | readonly AgentState[] | { readonly [key: string]: AgentState };
 
 export interface Agent {
   readonly id: string;
@@ -54,7 +88,10 @@ export function saveAgents(agents: readonly [Agent | undefined, Agent | undefine
   return [agents[0]?.save() ?? null, agents[1]?.save() ?? null];
 }
 
-export function loadAgents(agents: readonly [Agent | undefined, Agent | undefined], snap: AgentSnapshot): void {
+export function loadAgents(
+  agents: readonly [Agent | undefined, Agent | undefined],
+  snap: AgentSnapshot,
+): void {
   agents[0]?.load(snap[0]);
   agents[1]?.load(snap[1]);
 }
@@ -95,21 +132,49 @@ function fighterOf(world: SimWorld, team: number): FighterView | undefined {
   return undefined;
 }
 
+function arcadeViewOf(
+  s: SimState,
+  side: number,
+  self: FighterView | undefined,
+  opp: FighterView | undefined,
+): ArcadeView {
+  const a = s.arcade;
+  const g = now(s);
+  const team = (t: number, f: number): number => a[ARCADE_TEAM_BASE + t * ARCADE_T + f] ?? 0;
+  const stun = (f: FighterView | undefined): number =>
+    f === undefined ? 0 : Math.max(0, (a[f.id * ARCADE_E + ArcadeE.stunUntil] ?? 0) - g);
+  return {
+    meter: team(side, ArcadeT.meter),
+    oppMeter: team(1 - side, ArcadeT.meter),
+    selfStun: stun(self),
+    oppStun: stun(opp),
+    freeze: Math.max(
+      0,
+      (a[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] ?? 0) - (s.world[World.tick] ?? 0),
+    ),
+    combo: team(side, ArcadeT.comboHits),
+    oppCombo: team(1 - side, ArcadeT.comboHits),
+    superActive: team(side, ArcadeT.superState) !== 0,
+  };
+}
+
 export function createObservationView(world: SimWorld, side: 0 | 1): ObservationView {
   const s = world.state;
   const tick = s.world[World.tick] ?? 0;
   const gameTick = now(s);
   const self = fighterOf(world, side);
+  const opponent = fighterOf(world, 1 - side);
   return {
     side,
     tick,
     matchSeed: s.world[World.matchSeed] ?? 0,
     self,
-    opponent: fighterOf(world, 1 - side),
+    opponent,
     // The active character's own cooldowns (legacy abilitiesInfo is per character).
     cooldowns: Array.from({ length: 4 }, (_, k) =>
       self === undefined ? 0 : Math.max(0, (s.abil[cooldownIdx(self.id, k)] ?? 0) - gameTick),
     ),
+    ...(isArcade(s) && { arcade: arcadeViewOf(s, side, self, opponent) }),
   };
 }
 

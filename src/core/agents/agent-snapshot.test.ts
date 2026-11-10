@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getCharacter } from '../data/characters';
 import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../flags';
-import type { Command } from '../sim/commands';
+import { Cmd, type Command } from '../sim/commands';
 import { hash } from '../sim/hash';
 import { createMatch, type MatchSetup } from '../sim/match';
 import { SnapshotRing } from '../sim/snapshot';
@@ -30,8 +30,16 @@ const CUT = 400;
 
 type Pair = readonly [Agent, Agent];
 
-function scripted(world: SimWorld, side: 0 | 1): ScriptedAI {
-  const roster = [SETUP.p1, SETUP.p2] as const;
+/** Arcade: scripted morblass vs wispera supers near tick 1057 and ends near 1163, after CUT. */
+const ARCADE_SETUP: MatchSetup = {
+  ...SETUP,
+  flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+  p1: [{ character: characterId('morblass'), xp: 20 }],
+  p2: [{ character: characterId('wispera'), xp: 20 }],
+};
+
+function scripted(world: SimWorld, side: 0 | 1, setup = SETUP): ScriptedAI {
+  const roster = [setup.p1, setup.p2] as const;
   const self = getCharacter(roster[side][0]?.character ?? characterId('pax'));
   const other = getCharacter(roster[1 - side]?.[0]?.character ?? characterId('pax'));
   return new ScriptedAI(scriptedProfileFor(self, other), {
@@ -85,6 +93,20 @@ describe('agent memory rewinds with the world (AgentSnapshot next to the Snapsho
     const first = playOut(world, agents);
     ring.restoreTick(world.state, CUT);
     expect(playOut(world, agents).cmds).not.toEqual(first.cmds);
+  });
+
+  it('ScriptedAI in Arcade: the Arcade layer memory (confirm tick, reaction) rewinds too, supers included', () => {
+    const world = createMatch(ARCADE_SETUP);
+    const make = (): Pair => [scripted(world, 0, ARCADE_SETUP), scripted(world, 1, ARCADE_SETUP)];
+    const agents = make();
+    const ring = new SnapshotRing<AgentSnapshot>(world.state, 4);
+    for (let t = 0; t < CUT; t++) step(world, collectCommands(world, agents));
+    ring.push(world.state, CUT, saveAgents(agents));
+    const first = playOut(world, agents);
+    expect(first.cmds.some((pair) => (((pair[0] ?? 0) | (pair[1] ?? 0)) & Cmd.super) !== 0)).toBe(true);
+    const fresh = make();
+    expect(ring.restoreTick(world.state, CUT, (a) => { if (a) loadAgents(fresh, JSON.parse(JSON.stringify(a)) as AgentSnapshot); })).toBe(true);
+    expect(playOut(world, fresh)).toEqual(first);
   });
 
   it('saved state shares nothing with the agent', () => {
