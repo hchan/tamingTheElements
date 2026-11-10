@@ -204,6 +204,57 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('arcade defence (demo, Arcade ruleset)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
+      await page.locator('#game canvas').waitFor();
+      await page.waitForFunction(ARENA_READY);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      const frames = `new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`;
+      const pops = (): Promise<string[]> => page.evaluate<string[]>(`window.__TTE__.arena.defence().then((d) => d ? d.pops : [])`);
+      // Curomo 80 px from Pax; Pax guards past the parry window, then Curomo's Shards of Ice land on the shield.
+      const place = (meX: number, foeX: number): string =>
+        `(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, ${String(meX)}, 360, 0); a.place(foe.id, ${String(foeX)}, 360, 4); })()`;
+      // Past the intro and the 1 s FIGHT! banner.
+      await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO + 50)})`);
+      await page.evaluate(place(500, 580));
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(12, [0, ${String(CMD.guard)}]); a.step(1, [${String(CMD.secondary)}, ${String(CMD.guard)}]); a.step(3, [0, ${String(CMD.guard)}]); })()`);
+      await page.evaluate(frames);
+      await shoot(page, vp, 'arena', 'arena-arcade-guard', "Arcade guard: Pax's shield bubble (white rim) and guard bar (quarter notches) under him, pale blue chip sparks from Curomo's Shards of Ice");
+      // A guard press, then Curomo's Ice Shock lands inside the parry window (tried after the cooldown and whiff lock).
+      for (let i = 0; i < 4 && !(await pops()).includes('PARRY'); i++) {
+        await page.evaluate(`window.__TTE__.arena.step(60)`);
+        await page.evaluate(place(500, 580));
+        await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(1, [0, ${String(CMD.guard)}]); a.step(1, [${String(CMD.primary)}, 0]); a.step(2); })()`);
+      }
+      expect(await pops()).toContain('PARRY');
+      await page.evaluate(frames);
+      await shoot(page, vp, 'arena', 'arena-arcade-parry', 'Arcade parry: white flash and gold ping ring on Pax, PARRY over him; Curomo stunned by the parried Ice Shock');
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(40); a.step(1, [${String(CMD.dash | CMD.up)}, 0]); a.step(5); })()`);
+      await page.evaluate(frames);
+      await shoot(page, vp, 'arena', 'arena-arcade-dash', "Arcade dash: three afterimages (alpha 0.5, 0.3, 0.15, in Curomo's element colour) behind Curomo dashing up");
+      // Shards of Ice again (10 s cooldown) from across the arena: a ring of bullets, each trailing three fading dots.
+      await page.evaluate(`window.__TTE__.arena.step(500)`);
+      await page.evaluate(place(300, 1100));
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(1, [${String(CMD.secondary)}, 0]); a.step(15); })()`);
+      await page.evaluate(frames);
+      await shoot(page, vp, 'arena', 'arena-arcade-trails', 'Arcade projectile trails (VISUAL-QA V10): Shards of Ice flying out in a ring, three fading dots behind each');
+      // Pax keeps guarding Ice Shocks (put back in reach after each knockback) until the guard meter runs out.
+      const broke = await page.evaluate<boolean>(`(async () => {
+        const a = window.__TTE__.arena;
+        for (let i = 0; i < 240; i++) {
+          if (i % 6 === 0) ${place(500, 580)};
+          a.step(10, [${String(CMD.primary)}, ${String(CMD.guard)}]);
+          if ((await a.defence()).pops.includes('GUARD BREAK')) return true;
+        }
+        return false;
+      })()`);
+      expect(broke).toBe(true);
+      await page.evaluate(frames);
+      await shoot(page, vp, 'arena', 'arena-arcade-guard-break', 'Arcade guard break: shield shards flying out, an orange ring and GUARD BREAK over Pax, his guard bar empty');
+      expect(errors).toEqual([]);
+    });
+
     test('arcade versus menus (Settings opt-in)', async ({ page }) => {
       const errors = collectErrors(page);
       await seed(page, { ...(fixture('v0-ch3') as object), arcadePreview: true });
@@ -218,7 +269,7 @@ for (const vp of VIEWPORTS) {
       if (vp.mobile) await page.locator('#rotateDismiss').click();
       await expect.poll(() => page.evaluate<string | undefined>(`window.__TTE__.arena.rounds().then((r) => r && r.main)`)).toBe('ROUND 1');
       await page.evaluate(`window.__TTE__.arena.step(40)`);
-      await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus round 1 intro (tick 40): ROUND 1 banner, timer 90 and empty round pips top centre, hyper meters, the touch Super button bottom right');
+      await shoot(page, vp, 'arena', 'arcade-battle', 'Arcade Versus round 1 intro (tick 40): ROUND 1 banner, timer 90 and empty round pips top centre, hyper meters, the touch Super, Guard and Dash buttons bottom right');
       await page.evaluate(`window.__TTE__.arena.step(${String(ARCADE_INTRO - 40 + 30)})`);
       await shoot(page, vp, 'arena', 'arcade-fight', 'Arcade Versus FIGHT! banner 30 ticks into the fight (scale-in done)');
       // Up + right held, then Fire Blast: the 8-way aim arrow points north-east and the bullet flies that way.

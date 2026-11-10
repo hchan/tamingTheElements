@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { characterId } from '../data/ids';
+import { GUARD_MAX } from '../data/arcade';
 import { DEFAULT_SIM_FLAGS } from '../flags';
+import { ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from './state';
 import { EventSink } from './events';
 import { createMatch, type MatchSetup } from './match';
 import { ABILITY_DEFS } from './systems/projectile';
@@ -40,6 +42,18 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(after?.meter[1]).toBeGreaterThan(0);
     expect(after?.stunned(1)).toBe(true);
     expect(after?.invulnerable(1)).toBe(false);
+  });
+
+  it('reports the guard meter (full until drained) and whether a character guards (read-outs only)', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const ar = createRenderView(world).arcade();
+    expect(ar?.guard(0)).toBe(GUARD_MAX);
+    expect(ar?.guarding(0)).toBe(false);
+    world.state.arcade[ArcadeE.guardDrain] = 300;
+    world.state.arcade[ArcadeE.blockUntil] = (world.state.arcade[ARCADE_WORLD_BASE + ArcadeW.gameTick] ?? 0) + 5;
+    expect(ar?.guard(0)).toBe(GUARD_MAX - 300);
+    expect(ar?.guarding(0)).toBe(true);
+    expect(ar?.guarding(1)).toBe(false);
   });
 
   it('gives every character its element', () => {

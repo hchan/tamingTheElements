@@ -55,6 +55,9 @@ export default defineConfig({
             { name: 'phaser', test: /node_modules[\\/]phaser/ },
             { name: 'core', test: CORE_CHUNK },
             { name: 'sim', test: SIM_CHUNK },
+            // The Arcade defence view: the lazy round-view chunk imports it statically, but it stays its own chunk (and
+            // budget); its own imports stay where they are (the shared colours and viewport in the phaser-config chunk).
+            { name: 'defence-view', test: /\/src\/game\/fx\/defence-/, includeDependenciesRecursively: false },
           ],
         },
       },

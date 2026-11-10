@@ -2,6 +2,7 @@
   "chunks": {
     "arcade-versus": 3250,
     "core": 11250,
+    "defence-view": 3450,
     "index": 28700,
     "index.css": 3100,
     "lazy-index": 550,
