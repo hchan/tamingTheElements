@@ -158,6 +158,20 @@ describe('projectile hits and despawn', () => {
     step(world, [Cmd.primary, 0]);
     expect(bulletIds(world)).toHaveLength(0);
   });
+
+  // Regression: a cast with no free entity slot used to book its cooldown and active count anyway.
+  it('a cast with a full entity table books no cooldown and leaks no active count', () => {
+    const own = owner('stick');
+    const world = scene(own?.char ?? 0, fixtureTarget);
+    const s = world.state;
+    while (allocEntity(s) >= 0) {
+      /* fill the table */
+    }
+    step(world, [Cmd.primary, 0]);
+    const defIdx = ABILITY_DEFS.findIndex((d) => d.id === 'stick');
+    expect(s.teams[TEAM_ACTIVE_COUNTS + defIdx]).toBe(0);
+    expect(s.teams[TEAM_COOLDOWNS + (own?.slot ?? 0)]).toBe(0);
+  });
 });
 
 describe('Sonar Blast and Fireball shrink', () => {

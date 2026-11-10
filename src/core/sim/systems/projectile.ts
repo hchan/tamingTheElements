@@ -36,10 +36,11 @@ function canFire(world: SimWorld, team: number, charId: number, slot: number, de
   return (s.world[W.tick] ?? 0) >= (s.teams[base + TEAM_COOLDOWNS + slot] ?? 0);
 }
 
-function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: AbilityDef, dir: number): void {
+/** Spawns one bullet; false when the entity table is full. */
+function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: AbilityDef, dir: number): boolean {
   const s = world.state;
   const id = allocEntity(s);
-  if (id < 0) return;
+  if (id < 0) return false;
   const w = (def.w ?? 0) * CHARACTER_WIDTH;
   const h = (def.h ?? 0) * CHARACTER_HEIGHT;
   const x = (s.x[charId] ?? 0) + ((s.w[charId] ?? 0) - w) / 2;
@@ -62,6 +63,7 @@ function spawnBullet(world: SimWorld, charId: number, defIdx: number, def: Abili
   // hp holds the bullet's current damage. Fireball starts at a quarter and grows (legacy myTween).
   s.hp[id] = (def.damage ?? 0) * (def.id === FIREBALL ? 0.25 : 1);
   s.flags[id] = EntityFlag.alive;
+  return true;
 }
 
 function fire(world: SimWorld, team: number, charId: number, slot: number, tick: number): void {
@@ -77,11 +79,12 @@ function fire(world: SimWorld, team: number, charId: number, slot: number, tick:
     for (const d of OMNI_DIRS) spawnBullet(world, charId, defIdx, def, d);
     return;
   }
+  // A full entity table means no bullet: the cast must not book a cooldown or leak an active count.
+  if (!spawnBullet(world, charId, defIdx, def, s.dir[charId] ?? 0)) return;
   const base = team * TEAM_STRIDE;
   s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] = (s.teams[base + TEAM_ACTIVE_COUNTS + defIdx] ?? 0) + 1;
   // Legacy cooldown is strict (>) in ms, so the next fire is one tick after the cooldown elapses.
   s.teams[base + TEAM_COOLDOWNS + slot] = tick + def.cooldownTicks + 1;
-  spawnBullet(world, charId, defIdx, def, s.dir[charId] ?? 0);
 }
 
 /** Frees a bullet and decrements its team's active count (omni counts go negative, as in legacy). */
