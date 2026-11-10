@@ -71,14 +71,14 @@ test.describe('keyboard-only menu navigation', () => {
     await expect(page).toHaveTitle('Wiki - Taming the Elements');
     expect(await page.evaluate<string>(`document.activeElement.tagName`)).toBe('H1');
     await page.keyboard.press('Escape');
-    await waitForRoute(page, '#main');
+    await expect(page).toHaveTitle('Taming the Elements');
 
     await tabTo(page, 'About');
     await page.keyboard.press('Space');
-    await waitForRoute(page, '#about');
+    await expect(page).toHaveTitle('About - Taming the Elements');
     await tabTo(page, 'Back');
     await page.keyboard.press('Space');
-    await waitForRoute(page, '#main');
+    await expect(page).toHaveTitle('Taming the Elements');
   });
 
   for (const route of ['settings', 'keyBindings', 'about', 'wiki', 'garrison', 'race_fiara', 'currentObjectives']) {
