@@ -1,5 +1,0 @@
-GamePersist = {
-		chapter : null,
-		characterArray : [],
-		lastSavedTime : null
-};
