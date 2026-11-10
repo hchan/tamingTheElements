@@ -22,7 +22,11 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/core/**'],
       exclude: ['**/*.test.ts'],
-      thresholds: { lines: 0, functions: 0, branches: 0, statements: 0 },
+      reporter: ['text-summary', 'json-summary', 'lcov'],
+      reportsDirectory: 'coverage',
+      // Measured 2026-11: lines 95.5, statements 94.0, functions 94.9, branches 72.9. Floors are measured minus ~3 points.
+      // Raise them when coverage improves; never lower without a reason in the PR. See docs/TESTING.md.
+      thresholds: { lines: 92, functions: 91, branches: 69, statements: 91 },
     },
     projects: [
       {

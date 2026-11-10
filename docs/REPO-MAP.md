@@ -27,6 +27,8 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config, the PR template and `.github/ISSUE_TEMPLATE/` |
 | `docs/` | Documentation: `BRANCHING.md`, `DEPLOYMENT.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI and Pages deploy workflow (`workflows/ci.yml`), Dependabot config, the PR template and `.github/ISSUE_TEMPLATE/` |
+| `.github/workflows/` (security) | `codeql.yml`, `secrets.yml` (gitleaks, baseline in `.gitleaksignore`), `osv.yml` (audit, non-blocking), `sbom.yml` (CycloneDX artifact), plus the `coverage` job in `ci.yml`; see [SECURITY-GATES.md](SECURITY-GATES.md) |
+| `tools/sbom/` | `sbom.sh` (`pnpm sbom`): production-only CycloneDX SBOM to `out/sbom.cdx.json` |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
 | `.claude/` | Claude Code project config |
