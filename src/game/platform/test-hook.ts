@@ -40,9 +40,9 @@ export interface ArenaProbe {
   shaking(): boolean;
   /**
    * Hit feedback as drawn: per active character its tint and Phaser tint mode (1 = fill: the white hit flash); live
-   * damage-number labels and the combo hits shown per team (Arcade only; empty and [0, 0] in Classic).
+   * damage-number labels, the combo hits and the hyper meter shown per team (Arcade only; empty and [0, 0] in Classic).
    */
-  fx(): { tints: { id: number; tint: number; mode: number }[]; numbers: string[]; combo: [number, number] };
+  fx(): { tints: { id: number; tint: number; mode: number }[]; numbers: string[]; combo: [number, number]; meter: [number, number] };
   /** Key codes bound per action in the running battle's keyboard agent. */
   boundCodes(): Record<string, readonly string[]>;
   /** Whether the battle's audio is muted (Ctrl-M toggles), and whether the first gesture has unlocked it. */

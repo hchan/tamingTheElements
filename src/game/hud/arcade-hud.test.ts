@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ArcadeHudModel, COMBO_HOLD_MS, COMBO_POP_MS, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS, comboAlpha, comboLabel, comboScale,
+  ArcadeHudModel, CHARGE_DASH, COMBO_HOLD_MS, COMBO_POP_MS, METER_PULSE_MS, METER_W, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
+  SEGMENT_GAP, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, meterSegments, meterX,
   numberAlpha, numberLabel, numberRise,
 } from './arcade-hud';
+import { dashSegments } from './bars';
 
 describe('damage numbers', () => {
   it('float up 24 px over 500 ms; reduced motion fades them in place', () => {
@@ -59,5 +61,42 @@ describe('combo counter', () => {
   });
   it('labels hits and rounded damage', () => {
     expect(comboLabel(4, 41.6)).toBe('4 HITS\n42 DMG');
+  });
+});
+
+describe('hyper meter', () => {
+  it('says the bar count as a number, and MAX when full', () => {
+    expect([0, 999, 1000, 2999, 3000].map(meterLabel)).toEqual(['0', '0', '1', '2', '3 MAX']);
+  });
+  it('draws three segments: full ones solid, the filling one dashed (a pattern, not only colour)', () => {
+    const segs = meterSegments(1500, 100);
+    expect(segs.map((s) => s.x)).toEqual([100, 100 + SEGMENT_W + SEGMENT_GAP, 100 + 2 * (SEGMENT_W + SEGMENT_GAP)]);
+    expect(segs.map((s) => [s.fill, s.full])).toEqual([[SEGMENT_W, true], [SEGMENT_W / 2, false], [0, false]]);
+    expect(dashSegments(0, SEGMENT_W / 2, CHARGE_DASH).length).toBeGreaterThan(1);
+    expect(meterSegments(3000, 0).every((s) => s.full)).toBe(true);
+    expect(meterSegments(0, 0).every((s) => s.fill === 0 && !s.full)).toBe(true);
+  });
+  it('sits toward the centre on both sides', () => {
+    expect(meterX(0, 560)).toBe(560 - METER_W);
+    expect(meterX(1, 760)).toBe(760);
+  });
+  it('tracks the sim value; a full meter pulses once a second (steady with reduced motion)', () => {
+    const m = new ArcadeHudModel();
+    m.update(16, [0, 0], [0, 0], [1200, 3000]);
+    expect(m.meters.map((x) => x.value)).toEqual([1200, 3000]);
+    expect(meterFlashAlpha(m.meters[0], false)).toBe(1);
+    const pulses: number[] = [];
+    for (let ms = 0; ms < METER_PULSE_MS * 2; ms += 100) {
+      pulses.push(meterFlashAlpha(m.meters[1], false));
+      expect(meterFlashAlpha(m.meters[1], true)).toBe(1);
+      m.update(100, [0, 0], [0, 0], [1200, 3000]);
+    }
+    // Dims (one flash) at most twice in 2 s: well under 3 flashes per second.
+    const flashes = pulses.filter((a, i) => a < 1 && (pulses[i - 1] ?? 1) === 1).length;
+    expect(flashes).toBe(2);
+    m.update(16, [0, 0], [0, 0], [1200, 0]);
+    expect(m.meters[1]).toMatchObject({ value: 0, full: 0 });
+    m.update(16, [0, 0], [0, 0]);
+    expect(m.meters.map((x) => x.value)).toEqual([0, 0]);
   });
 });
