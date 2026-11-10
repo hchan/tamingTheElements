@@ -26,7 +26,9 @@ production) shows a live fps / frame-time / worst-frame readout at the top right
 `arena-arcade-hitstop` and `arena-arcade-combo` (`?ff=arenaDemo,arcade`: the first Arcade volley during its hit-stop, then a
 later one, with the white flash, element sparks, damage numbers and the combo counter), `arena-arcade-meter` (the
 hyper meters under the HUD after Curomo's casts fill one bar), `arena-arcade-super-freeze` (10 ticks into Curomo's super
-freeze: arena dimmed, caster lit, element band with portrait, super name and element, camera punched in). Each
+freeze: arena dimmed, caster lit, element band with portrait, super name and element, camera punched in), and Arcade
+Versus from the Settings opt-in: `menu-arcade` (the extra main-menu entry), `arcade-pick` (the picker), `arcade-battle`
+(tick 5, with the touch Super button) and `arcade-results`. Each
 has a `-1280x720` and a `-390x844` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
 notes), size and sha256.
 
