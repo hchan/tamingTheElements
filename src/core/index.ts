@@ -30,7 +30,7 @@ export * from './sim/systems/movement';
 export * from './agents/agent';
 export * from './agents/random-bot';
 export * from './agents/replay-agent';
-export * from './agents/scripted-ai/attack';
+export * from './agents/scripted-ai/index';
 export * from './sim/match';
 export * from './sim/view';
 export { StatusId } from './sim/systems/status';
