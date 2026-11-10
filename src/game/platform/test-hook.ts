@@ -80,6 +80,12 @@ export interface ArenaProbe {
   boundCodes(): Record<string, readonly string[]>;
   /** Whether the battle's audio is muted (Ctrl-M toggles), and whether the first gesture has unlocked it. */
   audio(): { muted: boolean; unlocked: boolean } | undefined;
+  /**
+   * The Arcade audio layers (async: a lazy chunk; WP-arcade-audio-layers): whether they are on this battle's audio, the
+   * cues played, the voices sounding, the synth nodes still connected over every battle (0 after teardown) and whether
+   * the KO music cut is on. `mounted` is false in Classic.
+   */
+  arcadeAudio(): Promise<{ mounted: boolean; played: number; voices: number; nodes: number; musicCut: boolean }>;
 }
 
 /** Test control of the running Cinematic scene. */

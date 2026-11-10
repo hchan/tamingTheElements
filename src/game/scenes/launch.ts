@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { Agent, MatchSetup, RenderView, ReplayFile } from '@core/index';
 import type { TesterSession } from '../platform/tester/session';
 import type { PlaytestRecorder } from '../replay/playtest-recorder';
+import type { ArenaAudio } from '../audio/arena-audio';
 
 /** What Arena reports when the sim emits MatchEnded; the app flow turns it into a save update. */
 export interface MatchEnd {
@@ -53,8 +54,9 @@ export interface ArenaLaunch {
   /** Present only in tester mode (docs/TESTER-MODE.md): the session the Arena registers its cheat bridge with. */
   readonly tester?: { readonly session: TesterSession; readonly openPanel: () => void };
   /**
-   * Arcade-only view extras from a lazy chunk (the 8-way aim indicator), mounted once in the Arena's `create` with the
-   * render view and the frame's interpolation alpha; they clean up on the scene's shutdown.
+   * Arcade-only view extras from a lazy chunk (the 8-way aim indicator and the Arcade audio layers), mounted once in the
+   * Arena's `create` (after its audio) with the render view and the frame's interpolation alpha; they clean up on the
+   * scene's shutdown.
    */
-  readonly arcadeView?: (scene: Phaser.Scene, view: RenderView, alpha: () => number) => void;
+  readonly arcadeView?: (scene: Phaser.Scene & { readonly audio?: ArenaAudio }, view: RenderView, alpha: () => number) => void;
 }

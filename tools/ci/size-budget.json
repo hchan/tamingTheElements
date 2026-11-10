@@ -1,5 +1,6 @@
 {
   "chunks": {
+    "arcade-audio": 1899,
     "arcade-versus": 3250,
     "clash-view": 943,
     "core": 11250,

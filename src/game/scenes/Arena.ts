@@ -112,7 +112,8 @@ export class Arena extends Phaser.Scene {
   private cursor: ReplayCursor | undefined;
   private speed: 1 | 2 = 1;
   private keyboard: KeyboardAgent | undefined;
-  private audio: ArenaAudio | undefined;
+  /** The battle's sound; public so the Arcade audio layers (`audio/arcade-audio.ts`, a lazy chunk) can find it. */
+  audio: ArenaAudio | undefined;
   private pauseDialog: PauseDialog | undefined;
   private announcer: Announcer | undefined;
   private readonly lowHealth = new LowHealthWatch();
@@ -357,6 +358,7 @@ export class Arena extends Phaser.Scene {
         this.rounds?.([{ tick, sourceId: -1, kind: SimEventKind.weatherChanged, seq: 1000, weather: kind, prev, team }]);
       },
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
+      arcadeAudio: () => import('../audio/arcade-audio').then((m) => m.arcadeAudioState(this.audio?.audio)),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
       step: (n, cmds = [0, 0]) => {
         driver.pause();

@@ -54,7 +54,12 @@ resimulate several ticks in one 16.6 ms frame.
   The Arcade clash burst (WP-arcade-clash, 915 B gzip, budget 943) is a `clash-view` chunk set up the same way and
   mounted by `defence-view` (3346 to 3378 B, budget 3450), since `round-view` has no room for another mount;
   `phaser-config` pays one more preload entry (16973 to 16984 B, budget 17000). The clash rules add 415 B to `sim`
-  (19178 to 19593 B, budget 19700).
+  (19178 to 19593 B, budget 19700). The Arcade audio layers (WP-arcade-audio-layers, 1843 B gzip, budget 1899: the
+  measured size plus 3%, since the total budget has little room) are an `arcade-audio` chunk loaded by `arcade-versus`
+  (3170 to 3221 B, budget 3250) from its `arcadeView` hook, so `phaser-config` pays nothing (16980 B). The chunk imports
+  core and the audio manager as types only, with the event kinds as numbers checked by type or by a test: a value import
+  would wrap its `import()` in Vite's preload helper with a dependency list, and loading it from `weather-view` that way
+  had pulled the helper (and two more preload entries for `round-view`) into the Arcade chunks.
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per
