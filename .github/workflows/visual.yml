@@ -62,7 +62,7 @@ jobs:
       - name: Visual regression (only when linux baselines exist)
         if: steps.baselines.outputs.present == 'true'
         run: corepack pnpm visual:regress
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: visual-screenshots
@@ -70,7 +70,7 @@ jobs:
             test-results/visual/*.png
             test-results/visual/manifest.json
           if-no-files-found: warn
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: visual-videos-and-pacing
@@ -78,7 +78,7 @@ jobs:
             test-results/visual/*.webm
             test-results/visual/pacing.json
           if-no-files-found: warn
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: visual-regression-diffs
@@ -110,7 +110,7 @@ jobs:
           exit 1
       - name: Regenerate baselines (playwright test --update-snapshots)
         run: corepack pnpm visual:update
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-baselines-linux
           path: tests/visual/__baselines__/linux/
