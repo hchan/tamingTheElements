@@ -1,37 +1,19 @@
 import { Cmd, type Command } from '@core/index';
 
-/** Gameplay actions a key can be bound to. Pure data: no gameplay logic lives here. */
-export type GameAction =
-  | 'up'
-  | 'down'
-  | 'left'
-  | 'right'
-  | 'slot1'
-  | 'slot2'
-  | 'slot3'
-  | 'slot4'
-  | 'slot5'
-  | 'capture';
+import {
+  actionForCode,
+  DEFAULT_BINDINGS,
+  rebind,
+  type Bindings,
+  type GameAction,
+} from '../platform/input/bindings';
+
+export { actionForCode, DEFAULT_BINDINGS, rebind };
+export type { Bindings, GameAction };
 
 /** App-level actions: handled by the shell, never sent to the sim. */
 export type AppAction = 'pause' | 'mute';
 export type CheatAction = 'cheatQ' | 'cheatX' | 'cheatC';
-
-/** Bindings map an action to `KeyboardEvent.code` values. */
-export type Bindings = Readonly<Record<GameAction, readonly string[]>>;
-
-export const DEFAULT_BINDINGS: Bindings = {
-  up: ['ArrowUp', 'KeyW'],
-  down: ['ArrowDown', 'KeyS'],
-  left: ['ArrowLeft', 'KeyA'],
-  right: ['ArrowRight', 'KeyD'],
-  slot1: ['Digit1', 'Space'],
-  slot2: ['Digit2', 'Enter'],
-  slot3: ['Digit3'],
-  slot4: ['Digit4'],
-  slot5: ['Digit5'],
-  capture: ['KeyC'],
-};
 
 /** Sim command bit(s) per action; slots 3..5 are the character swaps. */
 export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
@@ -46,23 +28,6 @@ export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
   slot5: Cmd.swap3,
   capture: Cmd.capture,
 };
-
-/** Rebinds one action. A code can only drive one action, so it is removed from all others. */
-export function rebind(bindings: Bindings, action: GameAction, codes: readonly string[]): Bindings {
-  const out = {} as Record<GameAction, readonly string[]>;
-  for (const a of Object.keys(bindings) as GameAction[]) {
-    out[a] = a === action ? [...codes] : bindings[a].filter((c) => !codes.includes(c));
-  }
-  return out;
-}
-
-/** The action a code is bound to, if any. */
-export function actionForCode(bindings: Bindings, code: string): GameAction | undefined {
-  for (const a of Object.keys(bindings) as GameAction[]) {
-    if (bindings[a].includes(code)) return a;
-  }
-  return undefined;
-}
 
 /** Held key codes to a command bitset. Capture is dropped unless `capturable`. */
 export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean): Command {
