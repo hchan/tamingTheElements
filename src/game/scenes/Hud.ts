@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { RenderView } from '@core/index';
-import { crisp, fitScene } from '../boot/viewport';
+import { crisp, fitScene, phoneBoost } from '../boot/viewport';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import {
@@ -73,9 +73,24 @@ export class Hud extends Phaser.Scene {
     fitScene(this);
     this.gfx = this.add.graphics().setDepth(100);
     // One text per side next to the bar: health state in words, so it never depends on red versus green.
+    // Larger on phones (the canvas is drawn about 0.3x there), wrapped to the free column left of the bench bars, and outlined so it
+    // reads on bright arenas without touching the bars beside it.
+    const boost = phoneBoost(this, 2);
     this.labels = TEAMS.map((team) =>
       this.add
-        .text(mainBar(sideOffset(team)).minX, 24, '', crisp(this, { fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }))
+        .text(
+          mainBar(sideOffset(team)).minX,
+          22,
+          '',
+          crisp(this, {
+            fontSize: `${String(Math.round(16 * boost))}px`,
+            color: '#ffffff',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3,
+            wordWrap: { width: 110 },
+          }),
+        )
         .setDepth(101),
     );
     this.refreshPrefs();

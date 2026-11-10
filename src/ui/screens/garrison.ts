@@ -29,6 +29,11 @@ export interface GarrisonDeps {
   readonly testerTeam?: () => boolean;
 }
 
+/** CSS background-image for a character's map sprite (Vite base aware; the files live under assets/img/map). */
+export function avatarCss(sprite: string): string {
+  return `url("${import.meta.env.BASE_URL}assets/img/map/${encodeURIComponent(sprite)}.png")`;
+}
+
 function browserDeps(): GarrisonDeps {
   return {
     load: () => loadSave(activeSaveStorage()),
@@ -40,7 +45,7 @@ function browserDeps(): GarrisonDeps {
     },
     seed: () => Math.floor(Math.random() * 0x100000000),
     onMatch: () => undefined,
-    avatarUrl: (sprite) => `url("img/map/${encodeURIComponent(sprite)}.png")`,
+    avatarUrl: avatarCss,
   };
 }
 
@@ -75,12 +80,22 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
         table.id = 'garrisonTable';
         table.setAttribute('role', 'group');
         table.setAttribute('aria-label', 'Heroes: select up to the allowed number, in battle order');
+        const slots = el('ol', 'teamSlots');
+        slots.setAttribute('aria-label', 'Battle order');
+        const slotCount = save.chapter <= 2 && !testerTeam ? 1 : 3;
         const buttons = el('div');
-        page.append(table, buttons, back);
+        page.append(slots, table, buttons, back);
         let refocus: string | null = null;
 
         const render = (): void => {
           table.replaceChildren();
+          slots.replaceChildren();
+          for (let i = 0; i < slotCount; i++) {
+            const who = rows.find((g) => g.id === sel.order[i]);
+            const li = el('li', who === undefined ? 'teamSlot emptySlot' : 'teamSlot');
+            li.append(el('b', undefined, `Slot ${String(i + 1)}`), el('span', undefined, who?.characterName ?? 'Empty - pick a hero below'));
+            slots.append(li);
+          }
           for (const entry of rows) {
             const v = rowView(entry);
             const n = orderNumber(sel, v.id);
@@ -92,18 +107,16 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
             row.setAttribute('aria-pressed', String(n !== null));
             const avatar = el('div', 'garrisonAvatar');
             avatar.style.backgroundImage = d.avatarUrl(v.sprite);
-            avatar.style.backgroundSize = 'contain';
-            avatar.style.backgroundRepeat = 'no-repeat';
-            avatar.style.width = '80px';
-            avatar.style.height = '80px';
+            avatar.setAttribute('aria-hidden', 'true');
             const info = el('div', 'garrisonInfoDiv');
             info.append(
-              el('div', undefined, v.name),
+              el('div', 'garrisonName', v.name),
               el('div', undefined, `Level ${String(v.level)}`),
               el('div', undefined, `XP ${String(v.xp)}`),
-              el('div', `element-${v.element}`, v.element),
+              el('div', `elementBadge element-${v.element}`, v.element),
             );
-            const order = el('div', 'battlegroundOrderContainer', n === null ? '' : String(n));
+            // The slot number is text, so a selection never depends on the row's colour.
+            const order = el('div', 'battlegroundOrderContainer', n === null ? '' : `Slot ${String(n)}`);
             if (n === null) order.hidden = true;
             row.append(avatar, info, order);
             const toggle = (): void => {

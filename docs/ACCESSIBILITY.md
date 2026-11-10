@@ -19,6 +19,9 @@ and a per-screen `document.title` (`routeTitle` in `src/ui/router.ts`).
   Tab order is DOM order and Enter or Space activates. Disabled entries are real `disabled` buttons and are skipped.
 - Garrison rows are `role="button"` with `aria-pressed`; Enter or Space toggles, and focus stays on the row after the list
   re-renders. The garrison now has a Back link (it had none).
+  Garrison rows show the battle order as text (`Slot 1`..), and a `Slot 1..3` strip names who fills each slot or says `Empty`
+  (dashed border), so a selection is never only a colour. Avatars and element icons are decorative (`aria-hidden`); the
+  element and name are text. On small canvases the Phaser HUD labels, key labels, Capture hint and Skip scale up (`phoneBoost`).
 - Every screen except the main menu, battle, cinematics and results goes back on **Escape** (`backHash`,
   `src/ui/keyboard.ts`). Space also activates a focused link. Escape is left alone inside text fields, inside the pause
   dialog and while a key is being captured for rebinding.

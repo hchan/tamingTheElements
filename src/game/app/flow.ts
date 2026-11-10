@@ -21,7 +21,7 @@ import { objectivesScreen } from '@ui/screens/objectives';
 import { keyBindingsScreen } from '@ui/screens/key-bindings';
 import { gameMasterScreen } from '@ui/screens/game-master';
 import { settingsScreen } from '@ui/screens/settings';
-import { garrisonScreen } from '@ui/screens/garrison';
+import { avatarCss, garrisonScreen } from '@ui/screens/garrison';
 import type { MatchSetup as UiSetup } from '@ui/screens/garrison-model';
 import { loadSave } from '@ui/screens/main-menu';
 import type { Screen } from '@ui/screens/screen';
@@ -155,7 +155,7 @@ export class AppFlow {
         onMatch: (ui) => {
           this.pending = { ui, seed: this.seed() };
         },
-        avatarUrl: (sprite) => `url("img/map/${encodeURIComponent(sprite)}.png")`,
+        avatarUrl: avatarCss,
       }),
       loading: () => this.battleScreen(),
       victory: () => this.resultsScreen(),

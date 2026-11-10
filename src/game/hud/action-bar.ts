@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderView } from '@core/index';
 import { Cmd } from '@core/index';
-import { crisp } from '../boot/viewport';
+import { crisp, phoneBoost } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { codeLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
@@ -223,7 +223,7 @@ export class ActionBarView {
     }
     this.hint ??= this.scene.add.text(
       0, 0, '',
-      crisp(this.scene, { fontFamily: 'Arial', fontSize: '18px', fontStyle: 'bold', color: '#ffd700', backgroundColor: '#000000', padding: { x: 6, y: 2 } }),
+      crisp(this.scene, { fontFamily: 'Arial', fontSize: `${String(Math.round(18 * phoneBoost(this.scene, 1.4)))}px`, fontStyle: 'bold', color: '#ffd700', backgroundColor: '#000000', padding: { x: 6, y: 2 } }),
     ).setDepth(102);
     this.hint.setVisible(true).setPosition(h.x, h.y);
     if (this.hint.text !== h.text) this.hint.setText(h.text);
@@ -247,7 +247,7 @@ export class ActionBarView {
   private text(i: number, s: ActionSlot): void {
     let t = this.texts[i];
     if (!t) {
-      t = this.scene.add.text(0, 0, '', crisp(this.scene, { fontFamily: 'Arial', fontSize: '16px', fontStyle: 'bold', color: '#000' }));
+      t = this.scene.add.text(0, 0, '', crisp(this.scene, { fontFamily: 'Arial', fontSize: `${String(Math.round(16 * Math.min(1.8, phoneBoost(this.scene))))}px`, fontStyle: 'bold', color: '#000' }));
       t.setDepth(101);
       this.texts[i] = t;
     }
