@@ -7,13 +7,11 @@ import { capturable } from '../../rules/progression';
 import { allocEntity, freeEntity } from '../alloc';
 import { Cmd, hasCmd, type Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
-import {
-  EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_COOLDOWNS, TEAM_STRIDE,
-  World as W,
-} from '../state';
+import { cooldownIdx, countIdx, EntityFlag, EntityKind, MAX_ENTITIES, World as W } from '../state';
 import type { SimWorld } from '../world';
 import { controlledId } from './movement';
-import { ABILITY_DEFS } from './projectile';
+import { ABILITY_DEFS, hitHolder } from './projectile';
+import { CAPTURE_SLOT, releaseCount } from './ability-info';
 import { now } from '../clock';
 import { canAct } from './arcade/stun';
 
@@ -23,17 +21,14 @@ export const CAPTURE_GRANTED_BIT = 1 << 16;
 const CAPTURE_IDX = ABILITY_DEFS.findIndex((d) => d.id === 'capture');
 const CAPTURE_DEF = ABILITY_DEFS[CAPTURE_IDX];
 const BOSS_IDX = CHARACTERS.findIndex((c) => c.id === 'eternal-void');
-/** Capture sits after the character's own ability slots (legacy appends it). */
-const CAPTURE_SLOT = 2;
 
 function canCapture(world: SimWorld, team: number, charId: number, target: number, tick: number): boolean {
   const s = world.state;
   if (CAPTURE_DEF === undefined || team !== 0 || ((s.world[W.flags] ?? 0) & CAPTURE_GRANTED_BIT) === 0) return false;
   if (!canAct(world, charId) || target < 0) return false;
   if (!capturable(s.hp[target] ?? 0, s.maxHp[target] ?? 0)) return false;
-  const base = team * TEAM_STRIDE;
-  if (CAPTURE_DEF.maxActive <= (s.teams[base + TEAM_ACTIVE_COUNTS + CAPTURE_IDX] ?? 0)) return false;
-  return tick >= (s.teams[base + TEAM_COOLDOWNS + CAPTURE_SLOT] ?? 0);
+  if (CAPTURE_DEF.maxActive <= (s.abil[countIdx(charId, CAPTURE_SLOT)] ?? 0)) return false;
+  return tick >= (s.abil[cooldownIdx(charId, CAPTURE_SLOT)] ?? 0);
 }
 
 function fire(world: SimWorld, team: number, charId: number, tick: number): void {
@@ -64,15 +59,15 @@ function fire(world: SimWorld, team: number, charId: number, tick: number): void
   s.vy[id] = (DIR8_Y[dir] ?? 0) * speed;
   s.hp[id] = CAPTURE_DAMAGE;
   s.flags[id] = EntityFlag.alive;
-  const base = team * TEAM_STRIDE;
-  s.teams[base + TEAM_ACTIVE_COUNTS + CAPTURE_IDX] = (s.teams[base + TEAM_ACTIVE_COUNTS + CAPTURE_IDX] ?? 0) + 1;
-  s.teams[base + TEAM_COOLDOWNS + CAPTURE_SLOT] = tick + def.cooldownTicks + 1;
+  const ci = countIdx(charId, CAPTURE_SLOT);
+  s.abil[ci] = (s.abil[ci] ?? 0) + 1;
+  s.abil[cooldownIdx(charId, CAPTURE_SLOT)] = tick + def.cooldownTicks + 1;
 }
 
-function despawn(world: SimWorld, id: number): void {
+/** Frees the bullet; `holder` loses one active Capture (the caster when it leaves, the current character on a hit). */
+function despawn(world: SimWorld, id: number, holder: number): void {
   const s = world.state;
-  const idx = (s.team[id] ?? 0) * TEAM_STRIDE + TEAM_ACTIVE_COUNTS + CAPTURE_IDX;
-  s.teams[idx] = (s.teams[idx] ?? 0) - 1;
+  releaseCount(s, holder, CAPTURE_IDX);
   freeEntity(s, id);
 }
 
@@ -96,7 +91,7 @@ export function captureSystem(world: SimWorld, cmds: readonly [Command, Command]
     const x = s.x[id] ?? 0;
     const y = s.y[id] ?? 0;
     if (x > a.x + a.w || x < a.x || y > a.y + a.h || y < a.y) {
-      despawn(world, id);
+      despawn(world, id, s.owner[id] ?? 0);
       continue;
     }
     const target = controlledId(world, 1 - (s.team[id] ?? 0));
@@ -112,7 +107,7 @@ export function captureSystem(world: SimWorld, cmds: readonly [Command, Command]
       s.hp[target] = 0;
       sink.emit(id, SimEventKind.captured, { target, attacker });
     }
-    despawn(world, id);
+    despawn(world, id, hitHolder(world, id));
   }
   const charId = controlledId(world, 0);
   if (charId >= 0 && hasCmd(cmds[0], Cmd.capture)) fire(world, 0, charId, tick);

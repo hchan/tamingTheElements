@@ -8,8 +8,9 @@ import { Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { restore, snapshot, createSnapshotBuf } from './snapshot';
-import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_ACTIVE_COUNTS, TEAM_STRIDE, TeamField, World } from './state';
+import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COUNT, TEAM_STRIDE, TeamField, World, cooldownIdx, countIdx } from './state';
 import { ABILITY_DEFS } from './systems/projectile';
+import { abilitySlot } from './systems/ability-info';
 import { hasEnded } from './systems/end';
 import { step } from './step';
 import { isArcade, isFrozen, now } from './clock';
@@ -68,11 +69,13 @@ function aliveCount(w: SimWorld): number {
   return n;
 }
 
-/** Cooldown-until values of both teams (swap cooldown, then the four ability slots). */
+/** Cooldown-until values: both teams' swap cooldowns, then every character's four ability slots. */
 function cooldowns(w: SimWorld): number[] {
   const out: number[] = [];
-  for (let t = 0; t < TEAM_COUNT; t++) {
-    for (let k = 0; k < 1 + 4; k++) out.push(w.state.teams[t * TEAM_STRIDE + TeamField.swapCooldownUntil + k] ?? 0);
+  for (let t = 0; t < TEAM_COUNT; t++) out.push(w.state.teams[t * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0);
+  for (let i = 0; i < MAX_ENTITIES; i++) {
+    if (w.state.kind[i] !== EntityKind.character || ((w.state.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
+    for (let k = 0; k < 4; k++) out.push(w.state.abil[cooldownIdx(i, k)] ?? 0);
   }
   return out;
 }
@@ -126,17 +129,24 @@ function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEven
     const key = (s.team[i] ?? 0) * 100 + (s.defId[i] ?? 0);
     live.set(key, (live.get(key) ?? 0) + 1);
   }
+  // Active counts live on the characters (legacy abilitiesInfo). A hit releases on the shooter team's current character
+  // (KNOWN-BUG:bullet-count-on-active), so a team's sum can only stay above its live entities, never drop below.
   for (let t = 0; t < TEAM_COUNT; t++) {
     for (let d = 0; d < ABILITY_DEFS.length; d++) {
-      const n = s.teams[t * TEAM_STRIDE + TEAM_ACTIVE_COUNTS + d] ?? 0;
-      const def = ABILITY_DEFS[d];
-      if (def?.kind === 'omni') {
+      let n = 0;
+      for (let i = 0; i < MAX_ENTITIES; i++) {
+        if (s.kind[i] !== EntityKind.character || s.team[i] !== t || ((s.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
+        const slot = abilitySlot(s, i, d);
+        if (slot < 0) continue;
+        const c = s.abil[countIdx(i, slot)] ?? 0;
+        if (c > (ABILITY_DEFS[d]?.maxActive ?? Infinity)) fail(`active count ${String(c)} > maxActive for ${String(i)} def ${String(d)}`);
+        n += c;
+      }
+      if (ABILITY_DEFS[d]?.kind === 'omni') {
         // KNOWN-BUG:omni-no-cooldown: omni bullets despawn without ever being counted, so the counter only drifts down.
         if (n > 0) fail(`omni active count ${String(n)} > 0 for team ${String(t)} def ${String(d)}`);
-      } else if (n !== (live.get(t * 100 + d) ?? 0)) {
-        fail(`active count ${String(n)} != live projectiles for team ${String(t)} def ${String(d)}`);
-      } else if (n > (def?.maxActive ?? Infinity)) {
-        fail(`active count ${String(n)} > maxActive for team ${String(t)} def ${String(d)}`);
+      } else if (n < (live.get(t * 100 + d) ?? 0)) {
+        fail(`active count ${String(n)} < live entities for team ${String(t)} def ${String(d)}`);
       }
     }
   }

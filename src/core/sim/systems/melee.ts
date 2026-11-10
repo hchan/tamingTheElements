@@ -6,15 +6,7 @@ import type { AbilityDef } from '../../data/types';
 import { computeDamage, computeHeal, damageDealt } from '../../rules/damage';
 import { allocEntity, freeEntity } from '../alloc';
 import { Cmd, hasCmd, type Command } from '../commands';
-import {
-  EntityFlag,
-  EntityKind,
-  TEAM_ACTIVE_COUNTS,
-  TEAM_COOLDOWNS,
-  TEAM_COUNT,
-  TEAM_STRIDE,
-  MAX_ENTITIES,
-} from '../state';
+import { cooldownIdx, countIdx, EntityFlag, EntityKind, TEAM_COUNT, MAX_ENTITIES } from '../state';
 import type { SimWorld } from '../world';
 import { controlledId } from './movement';
 import { damageDecreasePct } from './status';
@@ -22,6 +14,7 @@ import type { EventSink } from '../events';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit, HIT_STUN } from './arcade/hit';
 import { applyStun, canAct, isInvulnerable } from './arcade/stun';
+import { releaseCount } from './ability-info';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -84,14 +77,10 @@ function setFlag(world: SimWorld, id: number, flag: number, on: boolean): void {
   world.state.flags[id] = on ? f | flag : f & ~flag;
 }
 
-function countIndex(team: number, defId: number): number {
-  return team * TEAM_STRIDE + TEAM_ACTIVE_COUNTS + defId;
-}
-
+/** Legacy `character.removeMelee`: frees the melee and decrements its caster's active count. */
 function release(world: SimWorld, id: number): void {
   const s = world.state;
-  const i = countIndex(s.team[id] ?? 0, s.defId[id] ?? 0);
-  s.teams[i] = (s.teams[i] ?? 0) - 1;
+  releaseCount(s, s.owner[id] ?? 0, s.defId[id] ?? 0);
   freeEntity(s, id);
 }
 
@@ -243,15 +232,16 @@ function cast(world: SimWorld, team: number, slot: number, tick: number): void {
   const def = defId === undefined ? undefined : ABILITY_DEFS[defId];
   if (defId === undefined || def?.kind !== 'melee') return;
 
-  const cdIndex = team * TEAM_STRIDE + TEAM_COOLDOWNS + slot;
-  const countIdx = countIndex(team, defId);
-  if (tick < (s.teams[cdIndex] ?? 0) || (s.teams[countIdx] ?? 0) >= def.maxActive) return;
+  // Cooldown and active count belong to the caster (legacy abilitiesInfo is per character).
+  const cd = cooldownIdx(caster, slot);
+  const ci = countIdx(caster, slot);
+  if (tick < (s.abil[cd] ?? 0) || (s.abil[ci] ?? 0) >= def.maxActive) return;
 
   const id = allocEntity(s);
   if (id < 0) return;
   // Legacy: usable when elapsed > cooldown, hence the +1 tick.
-  s.teams[cdIndex] = tick + def.cooldownTicks + 1;
-  s.teams[countIdx] = (s.teams[countIdx] ?? 0) + 1;
+  s.abil[cd] = tick + def.cooldownTicks + 1;
+  s.abil[ci] = (s.abil[ci] ?? 0) + 1;
 
   const w = def.w ?? 0;
   const h = def.h ?? 0;

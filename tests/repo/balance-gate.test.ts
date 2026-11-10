@@ -7,7 +7,7 @@ import { getCharacter } from '../../src/core/data/characters';
 import { characterId } from '../../src/core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { createMatch } from '../../src/core/sim/match';
-import { TEAM_COOLDOWNS } from '../../src/core/sim/state';
+import { cooldownIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { BASELINE_PATH, compareReports, type BalanceReport } from '../../tools/sim/balance';
 import { DEFAULT_MAX_TICKS, RACES, makeAgent, runPairing, runTournament } from '../../tools/sim/run-match';
@@ -37,7 +37,7 @@ function castAbilities(race: string, foe: string, used: Set<string>): void {
   for (let tick = 0; tick < 3000 && (s.hp[0] ?? 0) > 0 && (s.hp[1] ?? 0) > 0; tick++) {
     step(world, collectCommands(world, agents));
     for (const slot of [0, 1] as const) {
-      const cd = s.teams[TEAM_COOLDOWNS + slot] ?? 0;
+      const cd = s.abil[cooldownIdx(0, slot)] ?? 0;
       if (cd !== last[slot]) used.add(String(abilities[slot]));
       last[slot] = cd;
     }

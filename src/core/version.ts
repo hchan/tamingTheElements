@@ -17,6 +17,8 @@
  * 7: Classic and Arcade rule fixes from the parity audit (WP-parity-fixes); Classic hashes change on purpose. The bench
  *    rest heal repeats every 50 ticks from the bench and stops at the rest cap (legacy delay -1 repeats forever), and an
  *    enemy back in play keeps healing (legacy isBenched quirk). Classic walls hold y too: the player undoes its whole
- *    step, the enemy restores x, then y, then both (legacy stopOnSolids / resetIfOutOfBounds).
+ *    step, the enemy restores x, then y, then both (legacy stopOnSolids / resetIfOutOfBounds). Ability cooldowns and
+ *    active counts move from the per-team block to the per-character `SimState.abil` (legacy abilitiesInfo is per
+ *    character); a hit releases the count on the shooter team's current character (bullet-count-on-active).
  */
 export const SIM_VERSION = 7;

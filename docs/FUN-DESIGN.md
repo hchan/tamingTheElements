@@ -22,8 +22,8 @@ damage lands in the unattributed `melee-or-status` bucket.
    `src/core/sim/systems/projectile.ts` and `applyHit` in `src/core/sim/systems/melee.ts`. The victim keeps moving and
    firing the same tick: no hit-stun, no knockback, no interrupt. With 100 HP and Fire Blast at 40 damage per 31 ticks
    (`maxActive` 2), three hits end it, so trading hits is always correct and whoever lines up first wins.
-2. **Two cooldown-gated buttons and walking.** Every action is a per-slot cooldown in the team block
-   (`TEAM_COOLDOWNS`, booked `tick + cooldownTicks + 1`). There are no normals, no cancels, nothing to do between
+2. **Two cooldown-gated buttons and walking.** Every action is a per-slot cooldown on the character
+   (`cooldownIdx`, booked `tick + cooldownTicks + 1`; per team before WP-parity-fixes). There are no normals, no cancels, nothing to do between
    cooldowns. Shots go along the 4-way facing only (`facingFor` in `systems/movement.ts`: x wins over y), so aiming means
    standing on the opponent's row or column.
 3. **No defensive verbs.** No block, dash, dodge or parry. Defence is two translucency buffs on 6-10 s cooldowns (Fade,

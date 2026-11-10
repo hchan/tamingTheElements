@@ -13,7 +13,7 @@ import { EventSink, SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
 import { createMatch, type MatchSetup } from '../../match';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
-import { ARCADE_WORLD_BASE, ArcadeW, TEAM_COOLDOWNS, World as W } from '../../state';
+import { ARCADE_WORLD_BASE, ArcadeW, cooldownIdx, World as W } from '../../state';
 import { step } from '../../step';
 import type { SimWorld } from '../../world';
 import { ABILITY_DEFS } from '../projectile';
@@ -137,13 +137,13 @@ describe('hit-stop', () => {
     const s = world.state;
     const cd = (ABILITY_DEFS.find((d) => d.id === 'fire-blast')?.cooldownTicks ?? 0) + 1;
     const casts: [number, number][] = [];
-    let ready = s.teams[TEAM_COOLDOWNS] ?? 0;
+    let ready = s.abil[cooldownIdx(0, 0)] ?? 0;
     for (let t = 0; t < 200; t++) {
       const [tick, game] = [s.world[W.tick] ?? 0, now(s)];
       s.x[1] = 580; // pinned: knockback would carry the victim out of reach before the next cast
       step(world, [Cmd.primary, 0]);
-      if ((s.teams[TEAM_COOLDOWNS] ?? 0) !== ready) {
-        ready = s.teams[TEAM_COOLDOWNS] ?? 0;
+      if ((s.abil[cooldownIdx(0, 0)] ?? 0) !== ready) {
+        ready = s.abil[cooldownIdx(0, 0)] ?? 0;
         casts.push([tick, game]);
       }
     }

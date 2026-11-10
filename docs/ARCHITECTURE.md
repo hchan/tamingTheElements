@@ -78,8 +78,11 @@ Real files: input in `src/game/input/keyboard-agent.ts`; agents in `src/core/age
   (`px/py` are the previous tick's position, for render interpolation).
 - Per-entity int arrays (`I32_FIELDS`): `kind defId team owner dir flags spawnTick expireTick hitMask`.
 - `SimState.team` is the **per-entity** team index (0 = player, 1 = enemy). `SimState.teams` is the **per-team block**
-  (`Int32Array`, `TEAM_STRIDE` ints per team: `activeSlot`, `swapCooldownUntil`, ability cooldowns, active counts). Index it as
+  (`Int32Array`, `TEAM_STRIDE` ints per team: `activeSlot`, `swapCooldownUntil`). Index it as
   `teams[team * TEAM_STRIDE + TeamField.x]`; never alias the two (`tests/repo/no-team-block-alias.test.ts`).
+- `SimState.abil`: per-character ability cooldowns and active counts (`ABIL_STRIDE` ints per entity id, index with
+  `cooldownIdx(id, slot)` / `countIdx(id, slot)`; slot 0 primary, 1 secondary, 2 Capture). Legacy deep-copies
+  `abilitiesInfo` into every character, so a swapped-in character has its own cooldowns.
 - `SimState.status`: per-entity status slots (`STATUS_SLOTS` x `STATUS_STRIDE`: id, sourceId, startTick, expireTick,
   magnitude), see `src/core/sim/systems/status.ts`.
 - `SimState.world`: scalars `tick`, `nextId`, `flags` (sim-flag bits plus the capture-granted bit), `matchSeed`.

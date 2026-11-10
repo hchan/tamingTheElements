@@ -14,8 +14,7 @@ import { hash } from '../../hash';
 import { createMatch, type MatchSetup } from '../../match';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import {
-  ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW, EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, TEAM_COOLDOWNS,
-  TEAM_STRIDE,
+  ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW, EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, cooldownIdx,
 } from '../../state';
 import { step } from '../../step';
 import type { SimWorld } from '../../world';
@@ -117,8 +116,8 @@ describe('hit-stun', () => {
     const [game] = firstHit(world, Cmd.primary);
     const until = s.arcade[E(1, ArcadeE.stunUntil)] ?? 0;
     expect(until).toBe(game + 22);
-    const cd = TEAM_STRIDE + TEAM_COOLDOWNS;
-    const ready = s.teams[cd];
+    const cd = cooldownIdx(1, 0);
+    const ready = s.abil[cd];
     while (now(s) < until) {
       expect([isStunned(s, 1), canAct(world, 1)]).toEqual([true, false]);
       const x = s.x[1] ?? 0;
@@ -126,12 +125,12 @@ describe('hit-stun', () => {
       const kb = isFrozen(s) ? 0 : (s.arcade[E(1, ArcadeE.kbVx)] ?? 0) / 16;
       const evs = step(world, [0, Cmd.left | Cmd.primary]);
       expect(evs.some((e) => e.sourceId === 1)).toBe(false);
-      expect([s.x[1], s.teams[cd]]).toEqual([x + kb, ready]);
+      expect([s.x[1], s.abil[cd]]).toEqual([x + kb, ready]);
     }
     expect(s.x[1]).toBe(580 + 105);
     expect([isStunned(s, 1), canAct(world, 1)]).toEqual([false, true]);
     step(world, [0, Cmd.left | Cmd.primary]);
-    expect(s.teams[cd]).not.toBe(ready);
+    expect(s.abil[cd]).not.toBe(ready);
   });
 
   it('juggle: each hit while stunned takes 2 off, never under 6; at juggle 5 the next hit recovers (reason 1)', () => {

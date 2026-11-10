@@ -5,9 +5,9 @@ import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { Cmd } from '../../sim/commands';
 import { createMatch } from '../../sim/match';
 import { hash } from '../../sim/hash';
-import { TEAM_ACTIVE_COUNTS, TEAM_STRIDE } from '../../sim/state';
+import { countIdx } from '../../sim/state';
 import { hasEnded, matchWinner } from '../../sim/systems/end';
-import { ABILITY_DEFS } from '../../sim/systems/projectile';
+import { controlledId } from '../../sim/systems/movement';
 import { step } from '../../sim/step';
 import { collectCommands, createObservationView, type FighterView, type ObservationView } from '../agent';
 import { RandomBot } from '../random-bot';
@@ -49,9 +49,8 @@ function play(scripted: string, other: string, seed: number): { winner: number |
     p2: [{ character: characterId(scripted), xp: 20 }],
   });
   const def = getCharacter(characterId(scripted));
-  const defIndex = (slot: number): number => ABILITY_DEFS.findIndex((d) => d.id === def.abilities[slot]);
   const ai = new ScriptedAI(scriptedProfileFor(def, getCharacter(characterId(other))), {
-    activeCount: (slot) => world.state.teams[TEAM_STRIDE + TEAM_ACTIVE_COUNTS + defIndex(slot)] ?? 0,
+    activeCount: (slot) => world.state.abil[countIdx(controlledId(world, 1), slot)] ?? 0,
   });
   const bot = new RandomBot();
   for (let t = 0; t < MAX_TICKS && !hasEnded(world.state); t++) step(world, collectCommands(world, [bot, ai]));

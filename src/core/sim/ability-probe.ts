@@ -3,7 +3,7 @@ import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { Cmd, NO_COMMAND, type Command } from './commands';
 import { createMatch } from './match';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COOLDOWNS } from './state';
+import { EntityFlag, EntityKind, MAX_ENTITIES, cooldownIdx } from './state';
 import { step } from './step';
 import type { SimWorld } from './world';
 
@@ -70,7 +70,7 @@ export function probeAbility(race: string, slot: 0 | 1): ProbeResult {
   for (let t = 0; t < PROBE_TICKS; t++) {
     step(world, [bitOf(slot), NO_COMMAND]);
     healed = Math.max(healed, (s.hp.at(0) ?? 0) - 50);
-    fired ||= spawned(world) || s.status.some((v) => v !== 0) || (s.teams[TEAM_COOLDOWNS + slot] ?? 0) > 0;
+    fired ||= spawned(world) || s.status.some((v) => v !== 0) || (s.abil[cooldownIdx(0, slot)] ?? 0) > 0;
     casterSpeed = Math.max(casterSpeed, (s.speed[0] ?? 0) - casterSpeed0);
     targetSpeed = Math.min(targetSpeed, (s.speed[1] ?? 0) - targetSpeed0);
     targetFrozen ||= ((s.flags[1] ?? 0) & EntityFlag.frozen) !== 0;

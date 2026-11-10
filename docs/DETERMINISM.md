@@ -72,7 +72,7 @@ axes. Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.
 ## State, snapshot and hash
 
 - State is structure-of-arrays typed arrays plus scalars in `SimState` (`src/core/sim/state.ts`): per-entity `Float64Array` and
-  `Int32Array` fields, the per-team block `teams` (not the per-entity `team`), `status`, `world` scalars (`tick`, `nextId`,
+  `Int32Array` fields, the per-team block `teams` (not the per-entity `team`), the per-character ability block `abil`, `status`, `world` scalars (`tick`, `nextId`,
   `flags`, `matchSeed`) and `rng`. Entities are iterated in ascending id order; the allocator hands out the lowest free id.
 - Anything that can affect a later tick must be in those arrays. Do not keep sim state in closures, module variables or
   objects outside `SimState`.

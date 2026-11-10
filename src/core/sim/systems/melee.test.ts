@@ -5,7 +5,7 @@ import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { computeDamage } from '../../rules/damage';
 import { Cmd } from '../commands';
 import { createMatch } from '../match';
-import { EntityFlag, EntityKind, MAX_ENTITIES, TEAM_ACTIVE_COUNTS, TEAM_COOLDOWNS, TEAM_STRIDE } from '../state';
+import { cooldownIdx, countIdx, EntityFlag, EntityKind, MAX_ENTITIES } from '../state';
 import { step } from '../step';
 import type { SimWorld } from '../world';
 import { directionalBox, isInRangeDirectional, isInRangeExplosion } from './melee';
@@ -74,18 +74,19 @@ describe('melee system', () => {
     expect(s.hp[e]).toBe(want);
     expect(meleeIds(world)).toHaveLength(0);
     expect(frozen(world, p)).toBe(false);
-    expect(Array.from(s.teams.slice(TEAM_ACTIVE_COUNTS, TEAM_STRIDE)).every((c) => c === 0)).toBe(true);
+    expect(Array.from(s.abil.slice(countIdx(p, 0), countIdx(p, 0) + 4)).every((c) => c === 0)).toBe(true);
   });
 
-  // Regression: cooldown and active count were written to the per-entity `team` array instead of `teams`.
-  it('a melee cast books its cooldown and count in the per-team block, for both teams', () => {
+  // Regression: cooldown and active count were once written to the per-entity `team` array.
+  it('a melee cast books its cooldown and count on the caster (legacy abilitiesInfo), for both teams', () => {
     for (const casterTeam of [0, 1] as const) {
       const { world } = duel('pax', 'pax');
       const s = world.state;
       step(world, casterTeam === 0 ? [Cmd.secondary, 0] : [0, Cmd.secondary]);
-      const base = casterTeam * TEAM_STRIDE;
-      expect(s.teams[base + TEAM_COOLDOWNS + 1]).toBeGreaterThan(0);
-      expect(Array.from(s.teams.slice(base + TEAM_ACTIVE_COUNTS, base + TEAM_STRIDE)).reduce((a, b) => a + b, 0)).toBe(1);
+      const caster = casterTeam;
+      expect(s.abil[cooldownIdx(caster, 1)]).toBeGreaterThan(0);
+      expect(s.abil[cooldownIdx(1 - caster, 1)]).toBe(0);
+      expect(s.abil[countIdx(caster, 1)]).toBe(1);
       expect(Array.from(s.team.slice(0, 3))).toEqual([0, 1, casterTeam]);
       expect(Array.from(s.team.slice(3)).every((t) => t === 0)).toBe(true);
     }
@@ -114,13 +115,13 @@ describe('melee system', () => {
     expect((s.flags[e] ?? 0) & EntityFlag.dead).toBeTruthy();
   });
 
-  it('writes cooldown and active count to the per-team block, never to the per-entity team field', () => {
+  it('writes cooldown and active count to the per-character block, never to the per-entity team field', () => {
     const { world, p, e } = duel('wispera', 'pax');
     const s = world.state;
     const teamsBefore = [s.team[p], s.team[e]];
     step(world, [Cmd.secondary, 0]);
     expect([s.team[p], s.team[e]]).toEqual(teamsBefore);
-    expect(s.teams[TEAM_COOLDOWNS + 1]).toBeGreaterThan(0);
+    expect(s.abil[cooldownIdx(p, 1)]).toBeGreaterThan(0);
   });
 
   // KNOWN-BUG:steal-health-translucent
@@ -218,7 +219,7 @@ describe('melee system', () => {
     const s = world.state;
     step(world, [Cmd.primary, 0]); // tick 0: first cast; first hit at tick 1 -> expiry tick 151
     for (let t = 1; t <= 60; t++) step(world, [0, 0]);
-    s.teams[TEAM_COOLDOWNS] = 0; // skip the 5000 ms cooldown so the casts overlap
+    s.abil[cooldownIdx(0, 0)] = 0; // skip the 5000 ms cooldown so the casts overlap
     step(world, [Cmd.primary, 0]); // tick 61: second cast; its hit at tick 62 -> would expire at tick 212
     for (let t = 62; t <= 150; t++) step(world, [0, 0]);
     expect(frozen(world, e)).toBe(true);

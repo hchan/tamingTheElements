@@ -412,6 +412,36 @@ describe('legacy abilities: heals', () => {
   });
 });
 
+describe('legacy abilities: per-character ability info', () => {
+  it('abilitiesInfo is deep-copied per character, so cooldowns and active counts are per character', () => {
+    const r = rig('Sindarosa', 'Pax');
+    const mate = r.make('PlayerCharacter', 'Sindarosa', 1, -1);
+    expect(mate.abilitiesInfo).not.toBe(r.me.abilitiesInfo);
+    expect(mate.abilitiesInfo['Fire Blast']).not.toBe(r.me.abilitiesInfo['Fire Blast']);
+    r.advance(1000);
+    r.fire('Fire Blast');
+    expect([r.me.abilitiesInfo['Fire Blast'].curCount, mate.abilitiesInfo['Fire Blast'].curCount]).toEqual([1, 0]);
+    expect([r.me.canFire('Fire Blast'), mate.canFire('Fire Blast')]).toEqual([false, true]);
+  });
+
+  it("a bullet that hits decrements the count of the shooter team's current character (opponent.targetPlayer)", () => {
+    const r = rig('Sindarosa', 'Pax');
+    const same = r.make('PlayerCharacter', 'Sindarosa', 1, -1);
+    const other = r.make('PlayerCharacter', 'Pax', 1, -1);
+    r.advance(1000);
+    const first = r.fire('Fire Blast');
+    r.foe.targetPlayer = same; // swapped in while the bullet flies
+    r.hit(first);
+    const afterSame = [r.me.abilitiesInfo['Fire Blast'].curCount, same.abilitiesInfo['Fire Blast'].curCount];
+    r.advance(1000);
+    const second = r.fire('Fire Blast');
+    r.foe.targetPlayer = other; // no Fire Blast entry: the decrement throws and is swallowed
+    r.hit(second);
+    expect({ afterSame, afterOther: r.me.abilitiesInfo['Fire Blast'].curCount, other: other.abilitiesInfo['Fire Blast'] })
+      .toEqual({ afterSame: [1, -1], afterOther: 2, other: undefined });
+  });
+});
+
 describe('legacy abilities: Hurricane ticks', () => {
   it('damages every >500 ms, halving each tick, and disappears after 3000 ms', () => {
     const r = rig('Echo', 'Pax');

@@ -4,7 +4,7 @@ import { characterId } from '../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { Cmd, NO_COMMAND } from '../commands';
 import { createMatch } from '../match';
-import { EntityFlag, TEAM_COOLDOWNS } from '../state';
+import { cooldownIdx, EntityFlag } from '../state';
 import { step } from '../step';
 import type { SimWorld } from '../world';
 import { damageDecreasePct } from './status';
@@ -83,7 +83,7 @@ describe('self-cast abilities through step() (abilities-effects fixture)', () =>
     const w = duel('pax');
     const s = w.state;
     press(w, Cmd.primary);
-    expect(s.teams[TEAM_COOLDOWNS]).toBe(0 + 750 + 1);
+    expect(s.abil[cooldownIdx(0, 0)]).toBe(0 + 750 + 1);
     press(w, Cmd.primary, 700);
     expect(damageDecreasePct(s, 0)).toBe(0);
     idle(w, 49);
