@@ -97,8 +97,8 @@ export function comboScalePm(hit: number, strength: HitStrengthValue): number {
 /**
  * Hyper meter (FUN-DESIGN 2.5): per team, 0..METER_MAX in bars of METER_BAR. Gains are level-independent: dealing
  * damage gives `floor(dealt * METER_DEAL_PM / victimMaxHp)` (a full life bar dealt is 0.8 bars), taking it
- * `floor(dealt * METER_TAKE_PM / victimMaxHp)`; each cast +METER_CAST. Parry, perfect dodge and clash gains are used by
- * their work packages (guard and parry, dash, clash).
+ * `floor(dealt * METER_TAKE_PM / victimMaxHp)`; each cast +METER_CAST, a parry +METER_PARRY, a perfect dodge
+ * +METER_PERFECT_DODGE and a clash +METER_CLASH to each side.
  */
 export const METER_BAR = 1000;
 export const METER_BARS = 3;
@@ -109,6 +109,15 @@ export const METER_CAST = 20;
 export const METER_PARRY = 150;
 export const METER_PERFECT_DODGE = 100;
 export const METER_CLASH = 50;
+
+/**
+ * Elemental clash (FUN-DESIGN 2.9, WP 18): overlapping projectiles of opposing teams clash by their owners' elements.
+ * The advantaged one survives with damage `max(hp - loserHp / CLASH_LOSER_DIV, hp / CLASH_FLOOR_DIV)`; any other
+ * relation destroys both. Both divisors are powers of two, so the divisions are exact in binary floating point (no
+ * rounding; only the IEEE subtraction rounds, the same in every engine). Each side gains METER_CLASH.
+ */
+export const CLASH_LOSER_DIV = 2;
+export const CLASH_FLOOR_DIV = 4;
 
 /**
  * Super (FUN-DESIGN 2.5, WP 8): costs SUPER_COST meter and `canAct`; freezes the game SUPER_FREEZE_TICKS (the

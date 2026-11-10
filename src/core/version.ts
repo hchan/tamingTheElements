@@ -57,5 +57,9 @@
  *    x1.2 and of its counter /1.2 (after the chart, before combo scaling); `weatherChanged`/`weatherEnded`. The Arcade
  *    entity block gains `weatherReadyAt`, the team block a sixth press tick, the world block the weather slot
  *    (WP-arcade-weather).
+ * 16: Arcade only; Classic hashes unchanged. Elemental clash: the `collision` slot runs `arcadeClash`; overlapping
+ *    projectiles of opposing teams clash by their owners' elements, the advantaged one survives with damage
+ *    `max(hp - loserHp / 2, hp / 4)`, any other relation destroys both; `clash`, +50 meter to each side
+ *    (WP-arcade-clash).
  */
-export const SIM_VERSION = 15;
+export const SIM_VERSION = 16;

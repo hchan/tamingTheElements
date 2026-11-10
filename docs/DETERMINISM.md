@@ -147,6 +147,13 @@ counter `dmg * 1000 / 1200` (exactly /1.2, not a rounded 833 pm), each `*` and `
 operation, identical in every engine; a neutral element (or no weather) keeps the exact Classic value. Rounding: none
 beyond IEEE round-to-nearest of those two operations; then the combo scale multiplies as before. Casts run team 0 then
 team 1 in the `input` slot, so a same-tick tie always resolves to team 1's weather; no RNG is drawn.
+Elemental clash (`arcade/clash.ts`, the `collision` slot) iterates live projectiles in ascending id order (pairs
+`i < j`, each projectile in at most one clash per tick, tracked in two local 32-bit masks: no allocation, nothing
+stored). The winner comes from `elementRelation` of the owners' elements (no RNG). The survivor's Float64 damage becomes
+`max(hp - loserHp / 2, hp / 4)`: both divisions are by powers of two and so exact, and the subtraction is one correctly
+rounded IEEE operation, identical in every engine; there is no integer rounding. The event's overlap centre is
+`Math.round` of a half-sum (view data only, never read back). The slot sits behind the freeze gate like every system but
+`input`, and returns at once in Classic.
 
 ## Cross-browser golden replays
 
@@ -160,8 +167,8 @@ divergent tick is reported, which localises a drift. Bots keep their randomness 
 The Arcade goldens `arcade-moves.replay.json` and `arcade-weather.replay.json` are in the same cross-browser list. Their
 inputs are hand-authored (`tools/gen/arcade-moves.ts`, built with `tools/gen/arcade-script.ts`), not recorded from an AI, so
 they cover the mechanics the random bots of `arcade-1v1` never press: buffered casts, combos, counter hits, dash and perfect
-dodge, guard, guard break, parry reflection, the super freeze and a KO during a super, all five weathers and the round flow
-(KO, time over, best of three). `tests/repo/arcade-moves-coverage.test.ts` asserts from the events that each still fires.
+dodge, guard, guard break, parry reflection, the super freeze and a KO during a super, all five weathers, two clashes (a cancel and a
+win by element whose projectile flies on) and the round flow (KO, time over, best of three). `tests/repo/arcade-moves-coverage.test.ts` asserts from the events that each still fires.
 `pnpm golden:record --ruleset arcade` rewrites them; like every golden they move only with an intended sim change.
 
 ## Feature flags in replay headers

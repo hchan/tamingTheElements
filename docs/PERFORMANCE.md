@@ -47,6 +47,10 @@ resimulate several ticks in one 16.6 ms frame.
   weather view (WP-arcade-weather-view, 2.9 KB gzip, budget 3060) is a `weather-view` chunk set up the same way;
   `phaser-config` pays one more preload entry (about 15 B, with the weather binding: 16956 to 16970 B, budget 17000), and
   `round-view` the mount (2096 B, budget 2100; it hands the weather view the defence view's consumer so it holds one).
+  The Arcade clash burst (WP-arcade-clash, 915 B gzip, budget 943) is a `clash-view` chunk set up the same way and
+  mounted by `defence-view` (3346 to 3378 B, budget 3450), since `round-view` has no room for another mount;
+  `phaser-config` pays one more preload entry (16973 to 16984 B, budget 17000). The clash rules add 415 B to `sim`
+  (19178 to 19593 B, budget 19700).
 - **Sim speed.** `tests/repo/sim-perf.test.ts` plays a 2-team, 2-member-per-team match (Fiara and Curomo: fireballs and ice
   projectiles, adrenaline and fire dance statuses refreshed every 60 ticks) with a pre-built pseudo-random command stream. It checks the
   workload really produces projectiles and statuses, warms up, then times 1000 ticks seven times and asserts on the median per
