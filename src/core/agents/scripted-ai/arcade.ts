@@ -7,7 +7,7 @@ import {
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
-  AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
+  AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
   NO_PLAN, PARRY, RUSHDOWN, TURTLE, impactIn, toward, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -35,6 +35,8 @@ import {
  *   ticks; a guard press instead while the dash is not ready), guard (hold from 20 ticks away) or nothing.
  * - Spacing: Rushdown dashes in when the opponent is farther than ARCADE_AI_FAR_PX (inside a combo too, closing in on a
  *   stunned opponent), at the level's rate per tick; Zoner and Turtle leave spacing to the base AI's kiting.
+ * - Tag (WP-arcade-tag): free, with no threat and the tag ready, it tags (`Cmd.swap1`) when its HP is below
+ *   ARCADE_AI_TAG_BELOW_PM and its partner's is more than ARCADE_AI_TAG_MARGIN_PM above; no draw, no memory.
  * - Weather: free, with its weather ready and no threat, it calls its weather when its element is at a disadvantage.
  */
 
@@ -185,6 +187,8 @@ export class ArcadeTactics {
       cmd = a.combo > this.level * 2 ? cmd & ~ATTACK : pressStep(self, opp, cmd);
     }
     if (!free || threat) return cmd;
+    const pm = Math.floor((self.hp * 1000) / self.maxHp);
+    if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && a.partnerPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | Cmd.swap1;
     if (a.dashIn === 0 && style === RUSHDOWN && Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y) > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }

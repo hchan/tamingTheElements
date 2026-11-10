@@ -39,7 +39,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, prevCmd: 0,
-  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0,
+  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, tagIn: 0, partnerPm: -1,
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -95,12 +95,12 @@ describe('ObservationView.arcade', () => {
     expect(createObservationView(world, 0).arcade).toEqual({
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
-      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0,
+      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, tagIn: 0, partnerPm: -1,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
-      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700,
+      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, tagIn: 0, partnerPm: -1,
     });
     expect(hash(s)).toBe(before);
   });
@@ -484,5 +484,60 @@ describe('the Arcade AI in a match (WP-arcade-ai-personalities)', () => {
     expect(turtle.guarded).toBeGreaterThan(0);
     expect(turtle.parried).toBeGreaterThan(0);
     expect(defence(RUSHDOWN).perfectDodge).toBeGreaterThan(0);
+  });
+});
+
+describe('the Arcade AI tags (WP-arcade-tag)', () => {
+  const low = (hp: number): FighterView => ({ ...fighter(200, 300), hp });
+
+  it('the view carries the tag cooldown and the swap1 partner HP per mille (-1 once it is down)', () => {
+    const world = skipIntro(createMatch({
+      ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+      p1: [{ character: characterId('sindarosa'), xp: 1 }, { character: characterId('fiara'), xp: 1 }],
+    }));
+    const s = world.state;
+    s.hp[1] = (s.maxHp[1] ?? 0) / 2;
+    s.teams[1] = (s.arcade[ARCADE_WORLD_BASE + ArcadeW.gameTick] ?? 0) + 40;
+    expect(createObservationView(world, 0).arcade).toMatchObject({ tagIn: 40, partnerPm: 500 });
+    expect(createObservationView(world, 1).arcade).toMatchObject({ tagIn: 0, partnerPm: -1 });
+    s.flags[1] = (s.flags[1] ?? 0) | EntityFlag.dead;
+    expect(createObservationView(world, 0).arcade?.partnerPm).toBe(-1);
+  });
+
+  it('tags when low and the partner is healthier by the margin, free, ready and unthreatened; no draw', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    const tags = (a: Partial<ArcadeView>, hp = 30): boolean =>
+      (t.apply(view(a, 0, low(hp)), Cmd.left) & Cmd.swap1) !== 0;
+    expect(tags({ partnerPm: 600 })).toBe(true);
+    expect(tags({ partnerPm: 600 }, 34)).toBe(true);
+    expect(tags({ partnerPm: 600 }, 35)).toBe(false); // not below ARCADE_AI_TAG_BELOW_PM
+    expect(tags({ partnerPm: 550 })).toBe(false); // not more than ARCADE_AI_TAG_MARGIN_PM healthier
+    expect(tags({ partnerPm: -1 }, 1)).toBe(false); // no partner (1v1, or down)
+    expect(tags({ partnerPm: 900, tagIn: 1 })).toBe(false); // cooldown
+    expect(tags({ partnerPm: 900, selfStun: 5 })).toBe(false); // not free
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER], rng: null });
+    expect(tags({ partnerPm: 900, shots: [shotIn(10)] })).toBe(false); // threatened
+  });
+
+  it('two scripted AIs in a 2v2 Arcade match tag, enter with their entrance attack and finish the match', () => {
+    const setup: MatchSetup = {
+      ...SETUP, seed: 21, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+      p1: [{ character: characterId('sindarosa'), xp: 1 }, { character: characterId('curomo'), xp: 1 }],
+      p2: [{ character: characterId('lavax'), xp: 1 }, { character: characterId('cyclonius'), xp: 1 }],
+    };
+    const world = createMatch(setup);
+    const ai = (me: string, opp: string, id: string): ScriptedAI =>
+      new ScriptedAI(scriptedProfileFor(getCharacter(characterId(me)), getCharacter(characterId(opp))), { id, level: AI_HARD });
+    const agents = [ai('sindarosa', 'lavax', 'a'), ai('lavax', 'sindarosa', 'b')] as const;
+    let tags = 0;
+    let ended = false;
+    for (let i = 0; i < 20_000 && !ended; i++) {
+      for (const e of step(world, collectCommands(world, agents))) {
+        if (e.kind === SimEventKind.tagIn) tags++;
+        if (e.kind === SimEventKind.matchEnded) ended = true;
+      }
+    }
+    expect(tags).toBeGreaterThan(0);
+    expect(ended).toBe(true);
   });
 });
