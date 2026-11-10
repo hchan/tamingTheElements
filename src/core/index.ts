@@ -14,3 +14,8 @@ export * from './rules/garrison';
 export * from './rules/opponents';
 export * from './save/migrate';
 export * from './save/v1';
+export * from './sim/commands';
+export * from './sim/events';
+export * from './sim/step';
+export * from './sim/world';
+export * from './sim/systems/movement';
