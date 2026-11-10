@@ -4,10 +4,13 @@ import '@ui/styles/main.css';
 import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags } from '../platform/flags';
+import { createSaveStore } from '../platform/storage/create-save-store';
 import { installTestHook } from '../platform/test-hook';
+import { AppFlow } from './flow';
 
 const root = document.getElementById('app');
 const flags = getUiFlags(window.location.search);
+const store = createSaveStore(() => Date.now());
 
 async function enterPlay(app: HTMLElement): Promise<void> {
   if (!detectWebgl(flags.forceNoWebgl, () => document.createElement('canvas'))) {
@@ -31,7 +34,19 @@ if (root) {
     menu.id = 'menu';
     menu.dataset.simVersion = String(SIM_VERSION);
     root.replaceChildren(menu);
-    startRouter(menu);
+    const flow = new AppFlow({
+      store,
+      flags,
+      now: () => Date.now(),
+      navigate: (route) => {
+        window.location.hash = `#${route}`;
+      },
+    });
+    startRouter(menu, flow.screens());
   }
-  installTestHook(SIM_VERSION);
+  installTestHook(SIM_VERSION, async (json) => {
+    const r = await store.importJson(json);
+    if (r.ok) window.dispatchEvent(new HashChangeEvent('hashchange'));
+    return r.ok;
+  });
 }

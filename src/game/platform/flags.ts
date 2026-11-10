@@ -8,6 +8,8 @@ export interface UiFlags {
   readonly forceNoWebgl: boolean;
   /** Play path starts a random-bot vs random-bot Arena after Preload. */
   readonly arenaDemo: boolean;
+  /** Enemy uses the scripted AI instead of the random bot (falls back to the bot until the AI is complete). */
+  readonly aiScripted: boolean;
 }
 
 export const DEFAULT_UI_FLAGS: UiFlags = {
@@ -16,6 +18,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   play: false,
   forceNoWebgl: false,
   arenaDemo: false,
+  aiScripted: false,
 };
 
 export interface FlagEnv {
@@ -33,6 +36,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     play: on.has('play'),
     forceNoWebgl: on.has('forceNoWebgl'),
     arenaDemo: on.has('arenaDemo'),
+    aiScripted: on.has('aiScripted'),
   };
 }
 

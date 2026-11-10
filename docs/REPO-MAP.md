@@ -52,6 +52,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/views/` | Arena renderer views: pooled `CharacterView` sprites and the pure `EntityViewPool`; the `Arena` scene (in `src/game/scenes/`) reads the core `RenderView` facade (`src/core/sim/view.ts`) and interpolates by the step driver's alpha; `?ff=arenaDemo` runs a bot-vs-bot match |
 | `src/game/hud/` | Pure top-HUD geometry and data (`bars.ts`: legacy `topHUD.js` layout at 1280, health colour ramp; `buffs.ts`: buff slots); the parallel `Hud` scene (`src/game/scenes/Hud.ts`) draws them from the `RenderView` and never decides death (intentional divergence from legacy) |
 | `src/game/fx/` | Cosmetic sim-event effects (`event-fx.ts`): damage flash, hit particles and shake, deduped by event id `(tick,sourceId,kind,seq)` in a bounded set, own cosmetic RNG, reduced-motion aware; pooled `ProjectileView` lives in `src/game/views/` |
+| `src/game/input/` | Keyboard input: remappable bindings (`key-map.ts`, pure reducer) and `KeyboardAgent` mapping keys to the sim Command bitset; no gameplay logic |
 | `src/game/loop/` | Fixed 50 Hz step driver (injected clock, 250 ms clamp, step cap, pause, render alpha) |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle, settings), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; info screens wiki, key-bindings, about, race), `styles/main.css` |
