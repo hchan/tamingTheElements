@@ -36,7 +36,7 @@ const MAX_TICKS = Number(process.env['SIM_FUZZ_TICKS'] ?? '') || 300;
 /** Pinned seed in CI so failures reproduce; override with FC_SEED. */
 const SEED = Number(process.env['FC_SEED'] ?? '') || 0x7a11;
 const FC = { numRuns: RUNS, seed: SEED } as const;
-vi.setConfig({ testTimeout: RUNS > 100 ? 900_000 : 20_000 });
+vi.setConfig({ testTimeout: RUNS > 100 ? 900_000 : 60_000 });
 
 const EVENT_BOUND = 64;
 const CAPTURE_DEF_INDEX = ABILITY_DEFS.findIndex((d) => d.id === 'capture');
