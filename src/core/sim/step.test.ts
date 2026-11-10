@@ -57,17 +57,27 @@ describe('movement', () => {
     expect(world.state.dir[id]).toBe(4);
   });
 
-  it('restores x at the wall (replicating bounds-y-typo)', () => {
-    const { world, id } = setup(318, 200);
-    step(world, [Cmd.right, 0]);
-    expect(world.state.x[id]).toBe(318);
+  it('the player (team 0) reverts the whole step at a wall, like Fourway stopOnSolids', () => {
+    for (const [x, y, cmd] of [[318, 200, Cmd.right | Cmd.down], [100, 318, Cmd.down | Cmd.right], [318, 318, Cmd.right]] as const) {
+      const { world, id } = setup(x, y);
+      step(world, [cmd, 0]);
+      expect([world.state.x[id], world.state.y[id]]).toEqual([x, y]);
+    }
   });
 
-  // KNOWN-BUG:bounds-y-typo
-  it.fails('restores y', () => {
-    const { world, id } = setup(100, 318);
-    step(world, [Cmd.down, 0]);
-    expect(world.state.y[id]).toBe(318);
+  it('the enemy (team 1) restores x first, then y, then both, like resetIfOutOfBounds', () => {
+    // KNOWN-BUG:bounds-y-typo is harmless: the misspelt `this.Y` lands in a variable that is never read.
+    const table: [number, number, number, number][] = [
+      [318, 200, 318, 207], // x restored: slides down
+      [100, 318, 107, 318], // x alone does not free it: y restored, keeps the new x
+      [318, 318, 318, 318], // neither alone: both restored
+    ];
+    for (const [x, y, ex, ey] of table) {
+      const { world, id } = setup(x, y);
+      world.state.team[id] = 1;
+      step(world, [0, Cmd.right | Cmd.down]);
+      expect([world.state.x[id], world.state.y[id]]).toEqual([ex, ey]);
+    }
   });
 
   it('advances the tick and gives unique event ids', () => {

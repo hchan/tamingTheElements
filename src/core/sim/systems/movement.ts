@@ -42,8 +42,27 @@ function outOfArena(world: SimWorld, id: number): boolean {
 }
 
 /**
+ * Classic wall handling. The player (team 0, legacy Fourway + `stopOnSolids`) undoes the whole step. The enemy (team 1,
+ * legacy AI `resetIfOutOfBounds`) restores x; if still blocked it keeps the new x and restores y; if still blocked it
+ * restores both. KNOWN-BUG:bounds-y-typo is harmless: the misspelt `this.Y` goes into a variable nobody reads.
+ */
+function restoreAtWall(world: SimWorld, id: number, team: number): void {
+  const s = world.state;
+  const nx = s.x[id] ?? 0;
+  s.x[id] = s.px[id] ?? 0;
+  if (team === 0) {
+    s.y[id] = s.py[id] ?? 0;
+    return;
+  }
+  if (!outOfArena(world, id)) return;
+  s.x[id] = nx;
+  s.y[id] = s.py[id] ?? 0;
+  if (outOfArena(world, id)) s.x[id] = s.px[id] ?? 0;
+}
+
+/**
  * Arcade movement (FUN-DESIGN 2.3): knockback first (it moves a stunned victim too), then the input step when the
- * character can act. Walls hold both axes (the Classic bounds-y-typo is fixed in Arcade only).
+ * character can act. Walls hold both axes for both teams.
  */
 function arcadeMove(world: SimWorld, id: number, cmd: Command, sink: EventSink): void {
   const s = world.state;
@@ -94,8 +113,7 @@ export function movementSystem(world: SimWorld, cmds: readonly [Command, Command
     s.x[id] = (s.px[id] ?? 0) + (s.vx[id] ?? 0);
     s.y[id] = (s.py[id] ?? 0) + (s.vy[id] ?? 0);
     if (outOfArena(world, id)) {
-      // bounds-y-typo: legacy reads `this.Y` (undefined), so x is restored and y never is.
-      s.x[id] = s.px[id] ?? 0;
+      restoreAtWall(world, id, team);
       sink.emit(id, SimEventKind.blocked, { x: s.x[id] ?? 0, y: s.y[id] ?? 0 });
     } else {
       sink.emit(id, SimEventKind.moved, { x: s.x[id] ?? 0, y: s.y[id] ?? 0 });

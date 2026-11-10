@@ -102,9 +102,9 @@ function checkInvariants(w: SimWorld, prevTick: number, events: readonly SimEven
       if ((f & EntityFlag.dead) === 0 && (f & EntityFlag.benched) === 0) {
         const x = s.x[i] ?? 0;
         const y = s.y[i] ?? 0;
-        // KNOWN-BUG:bounds-y-typo: legacy never restores y, so only x is held inside the arena.
+        // Both axes are held inside the arena (KNOWN-BUG:bounds-y-typo is harmless in legacy).
         if (x < a.x || x + (s.w[i] ?? 0) > a.x + a.w) fail(`character ${String(i)} outside arena in x at ${String(x)}`);
-        if (!Number.isFinite(y)) fail(`character ${String(i)} y is not finite`);
+        if (y < a.y || y + (s.h[i] ?? 0) > a.y + a.h) fail(`character ${String(i)} outside arena in y at ${String(y)}`);
       }
     }
     for (let k = 0; k < STATUS_SLOTS; k++) {

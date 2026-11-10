@@ -205,7 +205,7 @@ describe('known legacy bugs (current behaviour)', () => {
     expect(env.run('Garrison.getGarrison().length')).toBe(11);
   });
 
-  it('bounds-y-typo: resetIfOutOfBounds reads this.Y so y is never restored from the questionable value', () => {
+  it('bounds-y-typo: resetIfOutOfBounds reads this.Y into an unused variable; it restores x, then y, then both', () => {
     // KNOWN-BUG:bounds-y-typo
     const env = loadLegacy({ seed: 1 });
     const result = observe(
@@ -222,8 +222,22 @@ describe('known legacy bugs (current behaviour)', () => {
       d.resetIfOutOfBounds();
       return { onlyX: onlyX, both: { x: d.x, y: d.y } };`,
     );
-    // x is restored to previousX; the colliding y is left as it was (no questionableY is ever written back).
+    // The typo is harmless: x is restored first, and y is restored too when x alone does not free the character.
     expect(result).toEqual({ onlyX: { x: 1, y: 20, capitalY: true }, both: { x: 1, y: 2 } });
+  });
+
+  it('bounds: the player (Fourway stopOnSolids) undoes both axes of its step on a Solid hit', () => {
+    const env = loadLegacy({ seed: 1 });
+    const result = observe(
+      env,
+      `${PRELUDE}
+      var p = fighter('PlayerCharacter', {});
+      p._movement = { x: 7, y: 7 };
+      p.x = 17; p.y = 27; // one diagonal step from (10, 20) into a wall
+      p.stopMovement();
+      return { x: p.x, y: p.y };`,
+    );
+    expect(result).toEqual({ x: 10, y: 20 });
   });
 
   it('rest-heal-enemy-in-play: Swap.isBenched is true for every enemy, so a running rest timer heals the active enemy', () => {

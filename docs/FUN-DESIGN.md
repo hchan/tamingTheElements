@@ -80,7 +80,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
 - **Can act.** `canAct(world, id)`: Classic is `!frozen`; Arcade also requires no stun, guard, dash recovery or super
   startup, and phase `fight`. It replaces the frozen checks in the four cast sites (projectile `canFire`, melee `cast`,
   abilities `castSelf`, capture `canCapture`) and in movement.
-- **Legacy quirks fixed in Arcade only:** `bounds-y-typo` (knockback needs real walls), `damage-uses-target-mult`
+- **Legacy quirks fixed in Arcade only:** `bounds-y-typo` (knockback needs real walls; since WP-parity-fixes Classic
+  holds y too, because the legacy typo turned out to be harmless), `damage-uses-target-mult`
   (tag entrances must use the caster's multiplier), `melee-dead-caster-lingers`, `vines-stacking`,
   `steal-health-translucent`, `ice-shock-ignores-translucent`. Classic keeps them.
 - **Arcade events** use kinds 40..69 (Classic uses 1..30). Arcade still emits `damage` (22) for every hit, so existing
