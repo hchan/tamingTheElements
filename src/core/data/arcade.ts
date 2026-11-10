@@ -75,6 +75,24 @@ export function hitStunFor(slug: string, strength: HitStrengthValue): number {
 }
 
 /** `recovered.reason` payload values (FUN-DESIGN 2.1 event table). */
+/**
+ * Charge (FUN-DESIGN 2.17, WP 36), in game ticks. A melee hero's charge press rushes along the 8-way line towards the
+ * opponent for CHARGE_TICKS at CHARGE_SPEED_MULT x `speed`, at most CHARGE_MAX_STEP_PX per axis and tick (so 360 px in
+ * all), not invulnerable. Touching a vulnerable opponent lands a light-strength hit of CHARGE_DAMAGE base damage and
+ * CHARGE_STUN_TICKS of hit-stun, gives the charger METER_CHARGE and buffers its primary for the next tick. The next
+ * charge is ready CHARGE_COOLDOWN_TICKS after the start. A diagonal needs each axis offset under twice the other.
+ * `ChargeEnd` is the `chargeEnded` reason; the AI charges from CHARGE_AI_MIN_DIST px (centre distance, per axis).
+ */
+export const CHARGE_TICKS = 12;
+export const CHARGE_SPEED_MULT = 5;
+export const CHARGE_MAX_STEP_PX = 30;
+export const CHARGE_COOLDOWN_TICKS = 300;
+export const CHARGE_STUN_TICKS = 20;
+export const CHARGE_DAMAGE = 8;
+export const METER_CHARGE = 40;
+export const CHARGE_AI_MIN_DIST = 200;
+export const ChargeEnd = { expired: 0, arrived: 1, blocked: 2, interrupted: 3 } as const;
+
 export const RecoveredReason = { stunEnded: 0, juggleCap: 1, stunCap: 2 } as const;
 
 /**

@@ -90,5 +90,10 @@
  * 23: Arcade only; Classic hashes unchanged. The four super archetypes and their 12 race variants replace the generic
  *    Elemental Burst: Inferno Beam, Vortex, Quake Rings, Tidal Wave (FUN-DESIGN 2.5); new statuses (super speed, super
  *    armour, tidal slow); the super id rides in the super entity's hitMask (WP-arcade-supers).
+ * 24: Arcade only; Classic hashes unchanged. Melee Charge (FUN-DESIGN 2.17): `Cmd.charge` (bit 15, buffered) rushes a
+ *    melee hero up to 360 px along the 8-way line towards the opponent (12 ticks at 5x speed), a touch lands a light hit
+ *    with 20 ticks of hit-stun and a free primary, 300-tick cooldown; `chargeStarted`/`chargeEnded`. The Arcade entity
+ *    block gains `chargeUntil`/`chargeReadyAt`, the team block a seventh press tick; CHORD_FLAG moves to bit 7
+ *    (WP-arcade-charge).
  */
-export const SIM_VERSION = 23;
+export const SIM_VERSION = 24;

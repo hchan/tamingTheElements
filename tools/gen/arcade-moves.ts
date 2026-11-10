@@ -35,7 +35,7 @@ export function recordArcadeScript(script: ArcadeScript): ReplayFile {
 }
 
 const ARCADE_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true };
-const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2 } = Cmd;
+const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge } = Cmd;
 
 /**
  * Both players to known spots, so a segment does not depend on what the one before it did: p1 goes to the top wall and
@@ -199,6 +199,8 @@ function weatherScript(): ArcadeScript {
   p1.step('walk over the rock', right, ROCK_WALK).step('walk back', left, ROCK_WALK);
   for (let i = 0; i < ROCK_SHOTS; i++) p2.until(p1.tick - ROCK_WALK * 2 + 10 + i * 25).tap('cone at the rock', secondary);
   p1.until(p1.tick + 60);
+  // Charge (WP-arcade-charge): Rokcore (melee) charges east along the row at Cyclonius, who stands on the right.
+  p1.step('close in', right, 120).tap('charge', right | charge, 1, 1).wait(60);
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
 

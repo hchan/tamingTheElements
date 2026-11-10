@@ -54,26 +54,26 @@ export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE +
  * `dashDodged` 1 once the dash scored its perfect dodge (systems/arcade/dash.ts). `blockUntil` ends the block-stun,
  * `guardDrain` is GUARD_MAX minus the guard meter (so a zeroed block is a full meter), `parryUntil` ends the parry window
  * and `parryLockUntil` the whiff lock, all game ticks (systems/arcade/guard.ts). `weatherReadyAt` is the game tick of
- * the character's next weather cast (a lockout); its cast recovery ends WEATHER_COOLDOWN_TICKS - WEATHER_RECOVERY_TICKS before it.
+ * the character's next weather cast (a lockout); `chargeUntil` is the game tick a charge ends (start + CHARGE_TICKS, 0 = none) and `chargeReadyAt` the first tick of the next one (systems/arcade/charge.ts); its cast recovery ends WEATHER_COOLDOWN_TICKS - WEATHER_RECOVERY_TICKS before it.
  */
 export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, blockUntil: 7,
   parryUntil: 8, parryLockUntil: 9, guardDrain: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
-  dashDodged: 14, weatherReadyAt: 15,
+  dashDodged: 14, weatherReadyAt: 15, chargeUntil: 16, chargeReadyAt: 17,
 } as const;
-export const ARCADE_E = 16;
+export const ARCADE_E = 18;
 /**
- * Per team; `pressTick` is 6 ints (primary, secondary, dash, guard, super, weather): the game tick of the last rising edge plus
+ * Per team; `pressTick` is 7 ints (primary, secondary, dash, guard, super, weather, charge): the game tick of the last rising edge plus
  * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a
  * chord's super press is pending (see systems/arcade/buffer.ts). `lastDir` is the bit of the last rising direction edge
  * and `lastDirPress` its game tick plus one (the double-tap dash); `confirmTick` is the game tick plus one of the team's
  * last confirmed hit (the dash cancel window). `weatherCharge` is the weather charge, 0..WEATHER_CHARGE_FULL (weather.ts).
  */
 export const ArcadeT = {
-  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 11, lastDir: 12,
-  roundsWon: 13, superState: 14, pressUsed: 15, confirmTick: 16, weatherCharge: 17, inPatch: 18,
+  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 12, lastDir: 13,
+  roundsWon: 14, superState: 15, pressUsed: 16, confirmTick: 17, weatherCharge: 18, inPatch: 19,
 } as const;
-export const ARCADE_T = 19;
+export const ARCADE_T = 20;
 /**
  * World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil`, `phaseUntil` and `slowMoUntil` are in
  * W.tick units, `roundTimer` in game ticks left. `phase` is a RoundPhase (data/arcade.ts); `roundWinner` holds the

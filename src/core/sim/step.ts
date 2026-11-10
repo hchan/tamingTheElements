@@ -13,6 +13,7 @@ import { captureSystem } from './systems/capture';
 import { projectileSystem } from './systems/projectile';
 import { endSystem } from './systems/end';
 import { arcadeInputSystem } from './systems/arcade/input';
+import { chargeSystem } from './systems/arcade/charge';
 import { arcadeClashSystem } from './systems/arcade/clash';
 import { arcadeSuperSystem } from './systems/arcade/super';
 import { arcadeRoundSystem } from './systems/arcade/round';
@@ -35,6 +36,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['projectiles', projectileSystem],
   ['capture', captureSystem],
   ['collision', arcadeClashSystem],
+  ['charge', chargeSystem],
   ['health', arcadeSuperSystem],
   ['death', deathSystem],
   ['debuffs', debuffSystem],

@@ -935,10 +935,10 @@ describe('sim properties: determinism', () => {
 
 describe('sim properties: command constants', () => {
   it('Classic command bits do not overlap the reserved mask; Arcade bits are Arcade-only', () => {
-    const { super: superBit, dash, guard, weather, ...classic } = Cmd;
+    const { super: superBit, dash, guard, weather, charge, ...classic } = Cmd;
     const all = Object.values(classic).reduce<Command>((m, b) => m | b, 0);
     expect(all & CMD_RESERVED_MASK).toBe(0);
-    for (const bit of [superBit, dash, guard, weather]) {
+    for (const bit of [superBit, dash, guard, weather, charge]) {
       expect(bit & ARCADE_CMD_BITS).toBe(bit);
       expect(bit & inputMaskFor({ rulesetArcade: false })).toBe(0);
       expect(bit & inputMaskFor({ rulesetArcade: true })).toBe(bit);

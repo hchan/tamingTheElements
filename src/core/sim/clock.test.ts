@@ -36,7 +36,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(16 * MAX_ENTITIES + 19 * TEAM_COUNT + 37);
+    expect(ARCADE_LENGTH).toBe(18 * MAX_ENTITIES + 20 * TEAM_COUNT + 37);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -47,7 +47,7 @@ describe('arcade state block', () => {
     };
     check(ArcadeE, ARCADE_E);
     check(ArcadeT, ARCADE_T);
-    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(6);
+    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(7);
     check(ArcadeW, ARCADE_W);
     expect(ARCADE_TEAM_BASE).toBe(ARCADE_E * MAX_ENTITIES);
     expect(ARCADE_WORLD_BASE).toBe(ARCADE_TEAM_BASE + ARCADE_T * TEAM_COUNT);
@@ -333,8 +333,8 @@ describe('Arcade snapshot and replay', () => {
 });
 
 describe('inputMaskFor', () => {
-  it('Classic accepts bits 0..10; Arcade adds dash, guard, super and weather (11..14); 15 stays reserved', () => {
+  it('Classic accepts bits 0..10; Arcade adds dash, guard, super, weather and charge (11..15)', () => {
     expect(inputMaskFor(DEFAULT_SIM_FLAGS)).toBe(0x7ff);
-    expect(inputMaskFor(ARCADE.flags)).toBe(0x7fff);
+    expect(inputMaskFor(ARCADE.flags)).toBe(0xffff);
   });
 });
