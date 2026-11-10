@@ -1,0 +1,212 @@
+{
+ "Adrenaline": {
+  "0": "Type : Buff<br/>Speed Increase : 5<br/>Damage Taken Reduced By : 25%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "5": "Type : Buff<br/>Speed Increase : 5<br/>Damage Taken Reduced By : 25%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "10": "Type : Buff<br/>Speed Increase : 5<br/>Damage Taken Reduced By : 25%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "15": "Type : Buff<br/>Speed Increase : 5<br/>Damage Taken Reduced By : 25%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "20": "Type : Buff<br/>Speed Increase : 5<br/>Damage Taken Reduced By : 25%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>"
+ },
+ "Capture": {
+  "0": "Caputures an opponent",
+  "5": "Caputures an opponent",
+  "10": "Caputures an opponent",
+  "15": "Caputures an opponent",
+  "20": "Caputures an opponent"
+ },
+ "Chaos Bolt": {
+  "0": "Type : Range<br/>Damage : 40<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 600ms <br/>",
+  "5": "Type : Range<br/>Damage : 64<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 600ms <br/>",
+  "10": "Type : Range<br/>Damage : 103<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 600ms <br/>",
+  "15": "Type : Range<br/>Damage : 167<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 600ms <br/>",
+  "20": "Type : Range<br/>Damage : 269<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 600ms <br/>"
+ },
+ "Chaos Orb": {
+  "0": "Type : Range<br/>Damage : 140<br/>Projectile Speed : 2<br/>Max projectiles active : 1<br/>Cooldown : 5000ms <br/>",
+  "5": "Type : Range<br/>Damage : 225<br/>Projectile Speed : 2<br/>Max projectiles active : 1<br/>Cooldown : 5000ms <br/>",
+  "10": "Type : Range<br/>Damage : 363<br/>Projectile Speed : 2<br/>Max projectiles active : 1<br/>Cooldown : 5000ms <br/>",
+  "15": "Type : Range<br/>Damage : 584<br/>Projectile Speed : 2<br/>Max projectiles active : 1<br/>Cooldown : 5000ms <br/>",
+  "20": "Type : Range<br/>Damage : 941<br/>Projectile Speed : 2<br/>Max projectiles active : 1<br/>Cooldown : 5000ms <br/>"
+ },
+ "Circus of Slime": {
+  "0": "Type : Range Omni-directional<br/>Damage : 16<br/>Cooldown : 10000ms <br/>",
+  "5": "Type : Range Omni-directional<br/>Damage : 25<br/>Cooldown : 10000ms <br/>",
+  "10": "Type : Range Omni-directional<br/>Damage : 41<br/>Cooldown : 10000ms <br/>",
+  "15": "Type : Range Omni-directional<br/>Damage : 66<br/>Cooldown : 10000ms <br/>",
+  "20": "Type : Range Omni-directional<br/>Damage : 107<br/>Cooldown : 10000ms <br/>"
+ },
+ "Crimson Fire": {
+  "0": "Type : Range<br/>Damage : 13<br/>Projectile Speed : 10<br/>Max projectiles active : 2<br/>Cooldown : 400ms <br/>",
+  "5": "Type : Range<br/>Damage : 20<br/>Projectile Speed : 10<br/>Max projectiles active : 2<br/>Cooldown : 400ms <br/>",
+  "10": "Type : Range<br/>Damage : 33<br/>Projectile Speed : 10<br/>Max projectiles active : 2<br/>Cooldown : 400ms <br/>",
+  "15": "Type : Range<br/>Damage : 54<br/>Projectile Speed : 10<br/>Max projectiles active : 2<br/>Cooldown : 400ms <br/>",
+  "20": "Type : Range<br/>Damage : 87<br/>Projectile Speed : 10<br/>Max projectiles active : 2<br/>Cooldown : 400ms <br/>"
+ },
+ "Elemental Advantage : Fire cone": {
+  "0": "Type : Range<br/>Damage : 80<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Duration : 3000ms <br/>Cooldown : 1000ms <br/>Addtional info : Only usable on water elementals<br/>",
+  "5": "Type : Range<br/>Damage : 128<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Duration : 3000ms <br/>Cooldown : 1000ms <br/>Addtional info : Only usable on water elementals<br/>",
+  "10": "Type : Range<br/>Damage : 207<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Duration : 3000ms <br/>Cooldown : 1000ms <br/>Addtional info : Only usable on water elementals<br/>",
+  "15": "Type : Range<br/>Damage : 334<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Duration : 3000ms <br/>Cooldown : 1000ms <br/>Addtional info : Only usable on water elementals<br/>",
+  "20": "Type : Range<br/>Damage : 538<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Duration : 3000ms <br/>Cooldown : 1000ms <br/>Addtional info : Only usable on water elementals<br/>"
+ },
+ "Entangling Vines": {
+  "0": "Type : Melee<br/>Damage : 0<br/>Duration : 3000ms <br/>Cooldown : 5000ms <br/>Addtional info : Entangles the opponent so it cannot move or cast any abilities<br/>",
+  "5": "Type : Melee<br/>Damage : 0<br/>Duration : 3000ms <br/>Cooldown : 5000ms <br/>Addtional info : Entangles the opponent so it cannot move or cast any abilities<br/>",
+  "10": "Type : Melee<br/>Damage : 0<br/>Duration : 3000ms <br/>Cooldown : 5000ms <br/>Addtional info : Entangles the opponent so it cannot move or cast any abilities<br/>",
+  "15": "Type : Melee<br/>Damage : 0<br/>Duration : 3000ms <br/>Cooldown : 5000ms <br/>Addtional info : Entangles the opponent so it cannot move or cast any abilities<br/>",
+  "20": "Type : Melee<br/>Damage : 0<br/>Duration : 3000ms <br/>Cooldown : 5000ms <br/>Addtional info : Entangles the opponent so it cannot move or cast any abilities<br/>"
+ },
+ "Fade": {
+  "0": "Type : Buff<br/>Duration : 3000ms <br/>Cooldown : 10000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "5": "Type : Buff<br/>Duration : 3000ms <br/>Cooldown : 10000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "10": "Type : Buff<br/>Duration : 3000ms <br/>Cooldown : 10000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "15": "Type : Buff<br/>Duration : 3000ms <br/>Cooldown : 10000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "20": "Type : Buff<br/>Duration : 3000ms <br/>Cooldown : 10000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>"
+ },
+ "Fire Blast": {
+  "0": "Type : Range<br/>Damage : 40<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>",
+  "5": "Type : Range<br/>Damage : 64<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>",
+  "10": "Type : Range<br/>Damage : 103<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>",
+  "15": "Type : Range<br/>Damage : 167<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>",
+  "20": "Type : Range<br/>Damage : 269<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>"
+ },
+ "Fire Dance": {
+  "0": "Type : Buff<br/>Speed Increase : 2<br/>Duration : 5000ms <br/>Cooldown : 16000ms <br/>",
+  "5": "Type : Buff<br/>Speed Increase : 2<br/>Duration : 5000ms <br/>Cooldown : 16000ms <br/>",
+  "10": "Type : Buff<br/>Speed Increase : 2<br/>Duration : 5000ms <br/>Cooldown : 16000ms <br/>",
+  "15": "Type : Buff<br/>Speed Increase : 2<br/>Duration : 5000ms <br/>Cooldown : 16000ms <br/>",
+  "20": "Type : Buff<br/>Speed Increase : 2<br/>Duration : 5000ms <br/>Cooldown : 16000ms <br/>"
+ },
+ "Fire Heal": {
+  "0": "Type : Heal<br/>Heal : 10<br/>Cooldown : 40000ms <br/>",
+  "5": "Type : Heal<br/>Heal : 16<br/>Cooldown : 40000ms <br/>",
+  "10": "Type : Heal<br/>Heal : 25<br/>Cooldown : 40000ms <br/>",
+  "15": "Type : Heal<br/>Heal : 41<br/>Cooldown : 40000ms <br/>",
+  "20": "Type : Heal<br/>Heal : 67<br/>Cooldown : 40000ms <br/>"
+ },
+ "Fireball": {
+  "0": "Type : Range<br/>Damage : 15<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width and increases amount of damage done over distance<br/>",
+  "5": "Type : Range<br/>Damage : 24<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width and increases amount of damage done over distance<br/>",
+  "10": "Type : Range<br/>Damage : 38<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width and increases amount of damage done over distance<br/>",
+  "15": "Type : Range<br/>Damage : 62<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width and increases amount of damage done over distance<br/>",
+  "20": "Type : Range<br/>Damage : 100<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width and increases amount of damage done over distance<br/>"
+ },
+ "Ground Shock": {
+  "0": "Type : Melee<br/>Damage : 25<br/>Cooldown : 3000ms <br/>Addtional info : Omni-directional melee attack<br/>",
+  "5": "Type : Melee<br/>Damage : 40<br/>Cooldown : 3000ms <br/>Addtional info : Omni-directional melee attack<br/>",
+  "10": "Type : Melee<br/>Damage : 64<br/>Cooldown : 3000ms <br/>Addtional info : Omni-directional melee attack<br/>",
+  "15": "Type : Melee<br/>Damage : 104<br/>Cooldown : 3000ms <br/>Addtional info : Omni-directional melee attack<br/>",
+  "20": "Type : Melee<br/>Damage : 168<br/>Cooldown : 3000ms <br/>Addtional info : Omni-directional melee attack<br/>"
+ },
+ "Hurl Rock": {
+  "0": "Type : Range<br/>Damage : 40<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 500ms <br/>",
+  "5": "Type : Range<br/>Damage : 64<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 500ms <br/>",
+  "10": "Type : Range<br/>Damage : 103<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 500ms <br/>",
+  "15": "Type : Range<br/>Damage : 167<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 500ms <br/>",
+  "20": "Type : Range<br/>Damage : 269<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 500ms <br/>"
+ },
+ "Hurricane": {
+  "0": "Type : Melee<br/>Damage : 13<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Melee attack that moves with the player and inflicts damage when opponent is inside the hurricane<br/>",
+  "5": "Type : Melee<br/>Damage : 20<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Melee attack that moves with the player and inflicts damage when opponent is inside the hurricane<br/>",
+  "10": "Type : Melee<br/>Damage : 33<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Melee attack that moves with the player and inflicts damage when opponent is inside the hurricane<br/>",
+  "15": "Type : Melee<br/>Damage : 54<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Melee attack that moves with the player and inflicts damage when opponent is inside the hurricane<br/>",
+  "20": "Type : Melee<br/>Damage : 87<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Melee attack that moves with the player and inflicts damage when opponent is inside the hurricane<br/>"
+ },
+ "Ice Blast": {
+  "0": "Type : Range<br/>Damage : 15<br/>Projectile Speed : 8<br/>Max projectiles active : 100<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Inflicts damage and reduces opponent's speed<br/>",
+  "5": "Type : Range<br/>Damage : 24<br/>Projectile Speed : 8<br/>Max projectiles active : 100<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Inflicts damage and reduces opponent's speed<br/>",
+  "10": "Type : Range<br/>Damage : 38<br/>Projectile Speed : 8<br/>Max projectiles active : 100<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Inflicts damage and reduces opponent's speed<br/>",
+  "15": "Type : Range<br/>Damage : 62<br/>Projectile Speed : 8<br/>Max projectiles active : 100<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Inflicts damage and reduces opponent's speed<br/>",
+  "20": "Type : Range<br/>Damage : 100<br/>Projectile Speed : 8<br/>Max projectiles active : 100<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Inflicts damage and reduces opponent's speed<br/>"
+ },
+ "Ice Shock": {
+  "0": "Type : Melee<br/>Damage : 20<br/>Cooldown : 1000ms <br/>",
+  "5": "Type : Melee<br/>Damage : 32<br/>Cooldown : 1000ms <br/>",
+  "10": "Type : Melee<br/>Damage : 51<br/>Cooldown : 1000ms <br/>",
+  "15": "Type : Melee<br/>Damage : 83<br/>Cooldown : 1000ms <br/>",
+  "20": "Type : Melee<br/>Damage : 134<br/>Cooldown : 1000ms <br/>"
+ },
+ "Icicles": {
+  "0": "Type : Range<br/>Damage : 10<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 300ms <br/>",
+  "5": "Type : Range<br/>Damage : 16<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 300ms <br/>",
+  "10": "Type : Range<br/>Damage : 25<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 300ms <br/>",
+  "15": "Type : Range<br/>Damage : 41<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 300ms <br/>",
+  "20": "Type : Range<br/>Damage : 67<br/>Projectile Speed : 10<br/>Max projectiles active : 3<br/>Cooldown : 300ms <br/>"
+ },
+ "Rock Armour": {
+  "0": "Type : Buff<br/>Damage Taken Reduced By : 75%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "5": "Type : Buff<br/>Damage Taken Reduced By : 75%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "10": "Type : Buff<br/>Damage Taken Reduced By : 75%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "15": "Type : Buff<br/>Damage Taken Reduced By : 75%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>",
+  "20": "Type : Buff<br/>Damage Taken Reduced By : 75%<br/>Duration : 3000ms <br/>Cooldown : 15000ms <br/>"
+ },
+ "Rock Pellet": {
+  "0": "Type : Range<br/>Damage : 20<br/>Projectile Speed : 9<br/>Max projectiles active : 3<br/>Cooldown : 400ms <br/>",
+  "5": "Type : Range<br/>Damage : 32<br/>Projectile Speed : 9<br/>Max projectiles active : 3<br/>Cooldown : 400ms <br/>",
+  "10": "Type : Range<br/>Damage : 51<br/>Projectile Speed : 9<br/>Max projectiles active : 3<br/>Cooldown : 400ms <br/>",
+  "15": "Type : Range<br/>Damage : 83<br/>Projectile Speed : 9<br/>Max projectiles active : 3<br/>Cooldown : 400ms <br/>",
+  "20": "Type : Range<br/>Damage : 134<br/>Projectile Speed : 9<br/>Max projectiles active : 3<br/>Cooldown : 400ms <br/>"
+ },
+ "Shards of Ice": {
+  "0": "Type : Range Omni-directional<br/>Damage : 20<br/>Cooldown : 10000ms <br/>",
+  "5": "Type : Range Omni-directional<br/>Damage : 32<br/>Cooldown : 10000ms <br/>",
+  "10": "Type : Range Omni-directional<br/>Damage : 51<br/>Cooldown : 10000ms <br/>",
+  "15": "Type : Range Omni-directional<br/>Damage : 83<br/>Cooldown : 10000ms <br/>",
+  "20": "Type : Range Omni-directional<br/>Damage : 134<br/>Cooldown : 10000ms <br/>"
+ },
+ "Slime Blast": {
+  "0": "Type : Range<br/>Damage : 10<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Cooldown : 1500ms <br/>",
+  "5": "Type : Range<br/>Damage : 16<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Cooldown : 1500ms <br/>",
+  "10": "Type : Range<br/>Damage : 25<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Cooldown : 1500ms <br/>",
+  "15": "Type : Range<br/>Damage : 41<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Cooldown : 1500ms <br/>",
+  "20": "Type : Range<br/>Damage : 67<br/>Projectile Speed : 8<br/>Max projectiles active : 3<br/>Cooldown : 1500ms <br/>"
+ },
+ "Sonar Blast": {
+  "0": "Type : Range<br/>Damage : 40<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width but decreases amount of damage done over distance<br/>",
+  "5": "Type : Range<br/>Damage : 64<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width but decreases amount of damage done over distance<br/>",
+  "10": "Type : Range<br/>Damage : 103<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width but decreases amount of damage done over distance<br/>",
+  "15": "Type : Range<br/>Damage : 167<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width but decreases amount of damage done over distance<br/>",
+  "20": "Type : Range<br/>Damage : 269<br/>Projectile Speed : 8<br/>Max projectiles active : 2<br/>Cooldown : 600ms <br/>Addtional info : Project grows in width but decreases amount of damage done over distance<br/>"
+ },
+ "Steal Health": {
+  "0": "Type : Melee<br/>Damage : 10<br/>Cooldown : 1000ms <br/>Addtional info : Will heal you for the amount of damage done<br/>",
+  "5": "Type : Melee<br/>Damage : 16<br/>Cooldown : 1000ms <br/>Addtional info : Will heal you for the amount of damage done<br/>",
+  "10": "Type : Melee<br/>Damage : 25<br/>Cooldown : 1000ms <br/>Addtional info : Will heal you for the amount of damage done<br/>",
+  "15": "Type : Melee<br/>Damage : 41<br/>Cooldown : 1000ms <br/>Addtional info : Will heal you for the amount of damage done<br/>",
+  "20": "Type : Melee<br/>Damage : 67<br/>Cooldown : 1000ms <br/>Addtional info : Will heal you for the amount of damage done<br/>"
+ },
+ "Stick": {
+  "0": "Type : Range<br/>Damage : 10<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Cooldown : 2000ms <br/>",
+  "5": "Type : Range<br/>Damage : 16<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Cooldown : 2000ms <br/>",
+  "10": "Type : Range<br/>Damage : 25<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Cooldown : 2000ms <br/>",
+  "15": "Type : Range<br/>Damage : 41<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Cooldown : 2000ms <br/>",
+  "20": "Type : Range<br/>Damage : 67<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Cooldown : 2000ms <br/>"
+ },
+ "Strangling Branches": {
+  "0": "Type : Melee<br/>Damage : 20<br/>Cooldown : 1000ms <br/>",
+  "5": "Type : Melee<br/>Damage : 32<br/>Cooldown : 1000ms <br/>",
+  "10": "Type : Melee<br/>Damage : 51<br/>Cooldown : 1000ms <br/>",
+  "15": "Type : Melee<br/>Damage : 83<br/>Cooldown : 1000ms <br/>",
+  "20": "Type : Melee<br/>Damage : 134<br/>Cooldown : 1000ms <br/>"
+ },
+ "Tornado": {
+  "0": "Type : Range<br/>Damage : 0<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Will stun the opponent<br/>",
+  "5": "Type : Range<br/>Damage : 0<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Will stun the opponent<br/>",
+  "10": "Type : Range<br/>Damage : 0<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Will stun the opponent<br/>",
+  "15": "Type : Range<br/>Damage : 0<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Will stun the opponent<br/>",
+  "20": "Type : Range<br/>Damage : 0<br/>Projectile Speed : 8<br/>Max projectiles active : 1<br/>Duration : 3000ms <br/>Cooldown : 6000ms <br/>Addtional info : Will stun the opponent<br/>"
+ },
+ "Translucent Flame": {
+  "0": "Type : Buff<br/>Duration : 1500ms <br/>Cooldown : 6000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "5": "Type : Buff<br/>Duration : 1500ms <br/>Cooldown : 6000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "10": "Type : Buff<br/>Duration : 1500ms <br/>Cooldown : 6000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "15": "Type : Buff<br/>Duration : 1500ms <br/>Cooldown : 6000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>",
+  "20": "Type : Buff<br/>Duration : 1500ms <br/>Cooldown : 6000ms <br/>Addtional info : Become translucent (opponent's attacks will go through you)<br/>"
+ },
+ "Wind Cone": {
+  "0": "Type : Range<br/>Damage : 13<br/>Projectile Speed : 8<br/>Max projectiles active : 4<br/>Cooldown : 400ms <br/>",
+  "5": "Type : Range<br/>Damage : 20<br/>Projectile Speed : 8<br/>Max projectiles active : 4<br/>Cooldown : 400ms <br/>",
+  "10": "Type : Range<br/>Damage : 33<br/>Projectile Speed : 8<br/>Max projectiles active : 4<br/>Cooldown : 400ms <br/>",
+  "15": "Type : Range<br/>Damage : 54<br/>Projectile Speed : 8<br/>Max projectiles active : 4<br/>Cooldown : 400ms <br/>",
+  "20": "Type : Range<br/>Damage : 87<br/>Projectile Speed : 8<br/>Max projectiles active : 4<br/>Cooldown : 400ms <br/>"
+ }
+}

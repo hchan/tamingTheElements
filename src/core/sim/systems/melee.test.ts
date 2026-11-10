@@ -212,6 +212,86 @@ describe('melee system', () => {
     expect(meleeIds(world)).toHaveLength(0);
   });
 
+  // KNOWN-BUG:vines-stacking (C13): two overlapping hits; the first cast's expiry unfreezes while the second holds.
+  it('Entangling Vines: the first expiry unfreezes the target while a second cast is still active', () => {
+    const { world, e } = duel('treenoc', 'pax');
+    const s = world.state;
+    step(world, [Cmd.primary, 0]); // tick 0: first cast; first hit at tick 1 -> expiry tick 151
+    for (let t = 1; t <= 60; t++) step(world, [0, 0]);
+    s.teams[TEAM_COOLDOWNS] = 0; // skip the 5000 ms cooldown so the casts overlap
+    step(world, [Cmd.primary, 0]); // tick 61: second cast; its hit at tick 62 -> would expire at tick 212
+    for (let t = 62; t <= 150; t++) step(world, [0, 0]);
+    expect(frozen(world, e)).toBe(true);
+    step(world, [0, 0]); // tick 151: first expiry
+    expect(frozen(world, e)).toBe(false); // legacy bug: the second hit (until 212) is cut short
+    for (let t = 152; t <= 211; t++) step(world, [0, 0]);
+    expect(frozen(world, e)).toBe(false);
+    step(world, [0, 0]); // tick 212: second expiry changes nothing
+    expect(frozen(world, e)).toBe(false);
+  });
+
+  // KNOWN-BUG:ice-shock-ignores-translucent (C21)
+  it('Ice Shock hits a translucent victim (legacy has no translucency check)', () => {
+    const { world, e } = duel('curomo', 'pax');
+    const s = world.state;
+    s.flags[e] = (s.flags[e] ?? 0) | EntityFlag.translucent;
+    const hp0 = s.hp[e] ?? 0;
+    step(world, [Cmd.primary, 0]);
+    step(world, [0, 0]);
+    expect(s.hp[e]).toBeLessThan(hp0);
+  });
+
+  it('Ground Shock skips a translucent victim (contrast with Ice Shock)', () => {
+    const { world, e } = duel('pax', 'wispera');
+    const s = world.state;
+    s.flags[e] = (s.flags[e] ?? 0) | EntityFlag.translucent;
+    const hp0 = s.hp[e];
+    step(world, [Cmd.secondary, 0]);
+    step(world, [0, 0]);
+    expect(s.hp[e]).toBe(hp0);
+  });
+
+  // KNOWN-BUG:melee-dead-caster-lingers (C22)
+  it('a melee whose caster died lingers past its expiry and still lands its hit', () => {
+    const { world, p, e } = duel('pax', 'wispera');
+    const s = world.state;
+    const hp0 = s.hp[e] ?? 0;
+    step(world, [Cmd.secondary, 0]); // tick 0: spawn, expiry at tick 13
+    expect(meleeIds(world)).toHaveLength(1);
+    s.flags[p] = (s.flags[p] ?? 0) & ~EntityFlag.alive; // caster dies before the hit lands
+    for (let t = 1; t <= 40; t++) step(world, [0, 0]);
+    expect(meleeIds(world)).toHaveLength(1); // still there long after tick 13
+    expect(s.hp[e]).toBeLessThan(hp0);
+  });
+
+  // KNOWN-BUG:damage-uses-target-mult (C23)
+  it('damage uses the attacker team current character (multiplier and element), not the casting entity', () => {
+    const world = createMatch({
+      simVersion: 1, seed: 1, flags: DEFAULT_SIM_FLAGS, chapter: 1, difficulty: 1,
+      p1: [{ character: characterId('pax'), xp: 1 }, { character: characterId('curomo'), xp: 1 }],
+      p2: [{ character: characterId('wispera'), xp: 1 }],
+    });
+    const s = world.state;
+    const chars = (team: number) =>
+      Array.from({ length: MAX_ENTITIES }, (_, i) => i).filter(
+        (i) => ((s.flags[i] ?? 0) & EntityFlag.alive) !== 0 && s.kind[i] === EntityKind.character && s.team[i] === team,
+      );
+    const [caster, other] = chars(0) as [number, number];
+    const [victim] = chars(1) as [number];
+    s.x[caster] = 500; s.y[caster] = 300; s.x[victim] = 580; s.y[victim] = 300; s.dir[caster] = 0;
+    s.dmgMult[caster] = 1;
+    s.dmgMult[other] = 3; // the benched teammate becomes the team's current character
+    const hp0 = s.hp[victim] ?? 0;
+    step(world, [Cmd.secondary, 0]); // tick 0: pax casts Ground Shock (25)
+    s.flags[caster] = (s.flags[caster] ?? 0) | EntityFlag.benched;
+    s.flags[other] = (s.flags[other] ?? 0) & ~EntityFlag.benched;
+    step(world, [0, 0]); // tick 1: the hit lands
+    const viaCaster = computeDamage({ base: 25, attackerMult: 1, attEl: 'earth', defEl: 'air', defReductionPct: 0 });
+    const viaCurrent = computeDamage({ base: 25, attackerMult: 3, attEl: 'water', defEl: 'air', defReductionPct: 0 });
+    expect(viaCurrent).not.toBe(viaCaster);
+    expect(hp0 - (s.hp[victim] ?? 0)).toBe(viaCurrent);
+  });
+
   it('directionalBox mirrors legacy reposition for all four facings', () => {
     expect(directionalBox(0, 100, 100, 80, 80, 240, 40)).toEqual({ x: 180, y: 120, w: 240, h: 40 });
     expect(directionalBox(4, 100, 100, 80, 80, 240, 40)).toEqual({ x: -140, y: 120, w: 240, h: 40 });
