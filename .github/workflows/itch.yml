@@ -1,0 +1,65 @@
+name: itch
+
+# Builds the itch.io HTML5 zip from a v* tag (or manual dispatch), smoke-tests it, uploads it as an artifact and publishes
+# with butler ONLY when the BUTLER_API_KEY secret exists. A missing secret is a skip, never a failure.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: itch
+  cancel-in-progress: false
+
+env:
+  BUTLER_VERSION: 15.32.0
+  # sha256 of https://broth.itch.zone/butler/linux-amd64/15.32.0/archive/default, recorded when this workflow was written
+  BUTLER_SHA256: 2335971394ef6596f95ded0833e85ee28755e13761716ef4c91d6b11f69162f5
+  # user-approval: confirm the itch.io account/game slug before the first publish
+  ITCH_TARGET: hchan/taming-the-elements
+  CHANNEL: html5
+
+jobs:
+  itch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Enable corepack (pnpm from packageManager field)
+        run: corepack enable
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Build zip (size budget enforced)
+        run: corepack pnpm build:itch
+      - name: Smoke test the unzipped artifact
+        run: corepack pnpm e2e:itch
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: itch-zip
+          path: dist-itch/*.zip
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish with butler
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [ -z "${BUTLER_API_KEY}" ]; then
+            echo "::notice::BUTLER_API_KEY is not set: skipping the itch.io publish. The zip is in the itch-zip artifact."
+            exit 0
+          fi
+          curl -fsSL -o "${RUNNER_TEMP}/butler.zip" "https://broth.itch.zone/butler/linux-amd64/${BUTLER_VERSION}/archive/default"
+          echo "${BUTLER_SHA256}  ${RUNNER_TEMP}/butler.zip" | sha256sum -c -
+          unzip -q "${RUNNER_TEMP}/butler.zip" -d "${RUNNER_TEMP}/butler"
+          chmod +x "${RUNNER_TEMP}/butler/butler"
+          VERSION="$(node -p "require('./package.json').version")"
+          "${RUNNER_TEMP}/butler/butler" push dist-itch/taming-the-elements-*.zip "${ITCH_TARGET}:${CHANNEL}" --userversion "${VERSION}"

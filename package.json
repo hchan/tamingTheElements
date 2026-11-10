@@ -18,6 +18,8 @@
     "test:browser": "vitest run --project browser",
     "e2e": "playwright test",
     "e2e:pages": "playwright test --config playwright.pages.config.ts",
+    "build:itch": "node tools/itch/build-itch.mjs",
+    "e2e:itch": "playwright test --config playwright.itch.config.ts",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "golden:record": "tsx tools/gen/record-golden.ts",
