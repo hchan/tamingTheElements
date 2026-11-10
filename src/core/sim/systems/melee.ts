@@ -13,7 +13,7 @@ import { damageDecreasePct } from './status';
 import type { EventSink } from '../events';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit, HIT_STUN } from './arcade/hit';
-import { meterOnCast } from './arcade/meter';
+import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { applyStun, canAct, isInvulnerable } from './arcade/stun';
 import { releaseCount } from './ability-info';
 import { castDir } from './arcade/aim';
@@ -250,7 +250,7 @@ function cast(world: SimWorld, sink: EventSink, team: number, slot: number, tick
   // Legacy: usable when elapsed > cooldown, hence the +1 tick.
   s.abil[cd] = tick + def.cooldownTicks + 1;
   s.abil[ci] = (s.abil[ci] ?? 0) + 1;
-  meterOnCast(s, sink, caster, team);
+  onArcadeCast(s, sink, caster, team, slot);
 
   const w = def.w ?? 0;
   const h = def.h ?? 0;
@@ -294,7 +294,7 @@ export function meleeSystem(world: SimWorld, cmds: readonly [Command, Command], 
     else if (kind === EntityKind.effect) updateEffect(world, id, tick);
   }
   for (let team = 0; team < TEAM_COUNT; team++) {
-    const cmd = cmds[team] ?? 0;
+    const cmd = bufferedCmd(s, team, cmds[team] ?? 0);
     if (hasCmd(cmd, Cmd.primary)) cast(world, sink, team, 0, tick);
     if (hasCmd(cmd, Cmd.secondary)) cast(world, sink, team, 1, tick);
   }

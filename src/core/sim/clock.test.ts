@@ -98,9 +98,19 @@ describe('game clock', () => {
       expect(step(w, [Cmd.right | Cmd.primary, Cmd.left | Cmd.primary])).toEqual([]);
     }
     const tickArray = stateArrays(s).indexOf(s.world);
+    const arcadeArray = stateArrays(s).indexOf(s.arcade);
+    // The input slot still records press edges for the buffer (FUN-DESIGN 2.12): team 1's new primary press, at game
+    // tick 1 (stored plus one); team 0 kept holding primary, so it has no new press.
+    const team = (t: number, f: number): number => ARCADE_TEAM_BASE + t * ARCADE_T + f;
+    expect(s.arcade[team(1, ArcadeT.pressTick)]).toBe(2);
+    expect(s.arcade[team(0, ArcadeT.pressTick)]).toBe(1);
+    expect(s.arcade[team(1, ArcadeT.prevCmd)]).toBe(Cmd.left | Cmd.primary);
     stateArrays(s).forEach((a, k) => {
       const want = before[k] as number[];
       if (k === tickArray) want[World.tick] = 6;
+      if (k === arcadeArray) {
+        for (const i of [team(0, ArcadeT.prevCmd), team(1, ArcadeT.prevCmd), team(1, ArcadeT.pressTick)]) want[i] = a[i] ?? 0;
+      }
       expect(Array.from(a)).toEqual(want);
     });
     expect(now(s)).toBe(1);

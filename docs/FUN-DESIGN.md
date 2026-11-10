@@ -61,7 +61,7 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   - per entity (`ARCADE_E = 13` ints x 64): `stunUntil, kbVx, kbVy` (Q4: 1/16 px per tick), `juggle, invulnUntil,
     dashUntil, dashReadyAt, guardState, parryUntil, parryLockUntil, guardMeter, comboStunTotal, wallBounced`;
   - per team (`ARCADE_T = 16` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 5
-    (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState`;
+    (primary, secondary, dash, guard, super), lastDirPress, lastDir, roundsWon, superState, pressUsed`;
   - world (`ARCADE_W = 8`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil`.
 - **Game clock.** `W.tick` stays the replay and event index and always advances. Arcade adds `gameTick`, which does
   not advance during hit-stop or super freeze and advances every second tick during KO slow-motion (WP 13). Built in WP 1:
@@ -217,7 +217,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   missed). The team's `superState` holds the entity id + 1. The caster cannot act until `superEnded {caster}`, and a hit
   on it meanwhile is a counter hit. The super ends after its 30 ticks, when the caster leaves play (KO or bench, on the
   next tick), or at once when its hit KOs the victim (after that hit's KO stop, before `died`). Meter gains from its
-  hits apply as for any hit. The super chord (primary and secondary) waits for the buffer WP.
+  hits apply as for any hit. The super chord (primary and secondary) came with the buffer WP (2.12).
 
 ### 2.6 Tag swap, entrance attack and benched recovery (sim)
 
@@ -315,6 +315,20 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   it was pressed within 8 ticks (160 ms). A buffered press is used once.
 - Windows: super chord 3 ticks, double-tap dash 12, parry 8, dash cancel 10. Every window is in the data table and has
   a unit test at its edge (window - 1, window, window + 1).
+- Built in WP 12 (`systems/arcade/buffer.ts`, windows `BUFFER_TICKS` and `SUPER_CHORD_TICKS` in `data/arcade.ts`): the
+  `input` slot records rising edges on every tick, frozen ones included, as the game tick plus one in `pressTick`
+  (`prevCmd` keeps the last command, masked to the Arcade input bits). Windows count game ticks, so a hit-stop or super
+  freeze does not age a press: a press made during a freeze is fresh when the game resumes. The cast systems (abilities,
+  melee, projectiles) and `arcadeSuper` read `bufferedCmd`: the raw command plus every pending press of primary,
+  secondary and super (pressed 0..8 game ticks ago and not used). A cast marks its slot's press used (`onArcadeCast`,
+  which also adds the +20 meter), and a super start the super press, so a press runs once; a held button keeps the old
+  hold-to-fire behaviour. The new team int `pressUsed` holds the used presses. Chord: when a primary or secondary edge
+  leaves both presses 0..3 game ticks old and the team has a bar and no super running, the pair becomes a super press
+  (an edge feeds one chord), and held primary and secondary are masked while it is pending, so the chord is only the
+  super (without a bar it stays two attacks). Dash and guard edges are recorded for WPs 15 and 16, which consume them.
+  The Arcade AI drops a press that would complete a chord by accident (`avoidChord`, from the new `ArcadeView.prevCmd`,
+  `primaryAge` and `secondaryAge`), so Easy still never supers. Intro-phase buffering arrives with `canAct`'s phase
+  check (WP 13).
 - **8-way aim:** in Arcade, the facing used for casting is `dir8FromSigns` of the held input (Classic keeps 4-way
   `facingFor`). The projectile view rotates each bullet to its dir8; character reels stay 4-way.
 - Built in WP 27 (`systems/arcade/aim.ts`): Arcade movement stores the dir8 of the held input, plus one, in the new
@@ -517,7 +531,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 
 | # | WP | Kind | Scope | Depends on |
 |---|---|---|---|---|
-| 12 | `WP-arcade-buffer` | sim | Input buffer 8 ticks, super chord 3, edge tests | 1 |
+| 12 | `WP-arcade-buffer` (done: section 2.12; windows count game ticks) | sim | Input buffer 8 ticks, super chord 3, edge tests | 1 |
 | 13 | `WP-arcade-rounds` | sim | Phases, timer, best of 3, KO slow-motion, time-over rule, `matchEnded` after 2 wins, round events | 2 |
 | 14 | `WP-arcade-announcer-view` | view | Round intro, timer HUD, KO, TIME, PERFECT text, live-region lines | 13 |
 | 15 | `WP-arcade-dash` | sim | Dash, double-tap, invulnerable ticks, perfect dodge, dash cancel | 3, 12 |

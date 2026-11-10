@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SUPER_COST } from '../../data/arcade';
+import { SUPER_CHORD_TICKS, SUPER_COST } from '../../data/arcade';
 import { characterId } from '../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { Cmd } from '../../sim/commands';
@@ -13,7 +13,9 @@ import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
-import { ARCADE_AI_COMBO_CAP, ARCADE_AI_REACTION_MIN, ArcadeTactics, diagonalLine, pressStep, superFacing } from './arcade';
+import {
+  ARCADE_AI_COMBO_CAP, ARCADE_AI_REACTION_MIN, ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing,
+} from './arcade';
 import { ScriptedAI, scriptedProfileFor } from './index';
 
 const SETUP: MatchSetup = {
@@ -30,7 +32,10 @@ function fighter(x: number, y: number, flags = 1): FighterView {
   return { id: 0, x, y, w: 80, h: 80, hp: 100, maxHp: 100, flags, alive: true };
 }
 
-const FREE: ArcadeView = { meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false };
+const FREE: ArcadeView = {
+  meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, prevCmd: 0,
+  primaryAge: -1, secondaryAge: -1,
+};
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
   return {
@@ -65,12 +70,16 @@ describe('ObservationView.arcade', () => {
     s.arcade[opp * ARCADE_E + ArcadeE.stunUntil] = g + 14;
     s.arcade[self * ARCADE_E + ArcadeE.stunUntil] = g - 3;
     s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] = (s.world[World.tick] ?? 0) + 6;
+    s.arcade[t(0, ArcadeT.prevCmd)] = Cmd.primary;
+    s.arcade[t(0, ArcadeT.pressTick)] = g + 1 - 2;
     const before = hash(s);
     expect(createObservationView(world, 0).arcade).toEqual({
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true,
+      prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false,
+      prevCmd: 0, primaryAge: -1, secondaryAge: -1,
     });
     expect(hash(s)).toBe(before);
   });
@@ -143,6 +152,35 @@ describe('ArcadeTactics (Normal)', () => {
     expect(() => {
       copy.load(7);
     }).toThrow(TypeError);
+  });
+});
+
+describe('avoidChord (WP-arcade-buffer)', () => {
+  const both = Cmd.primary | Cmd.secondary | Cmd.left;
+  const bar = { ...FREE, meter: SUPER_COST };
+
+  it('drops the press that would complete a chord, at the window edges', () => {
+    expect(avoidChord(bar, both)).toBe(Cmd.primary | Cmd.left);
+    expect(avoidChord({ ...bar, primaryAge: SUPER_CHORD_TICKS - 1 }, Cmd.secondary)).toBe(0);
+    expect(avoidChord({ ...bar, primaryAge: SUPER_CHORD_TICKS }, Cmd.secondary)).toBe(0);
+    expect(avoidChord({ ...bar, primaryAge: SUPER_CHORD_TICKS + 1 }, Cmd.secondary)).toBe(Cmd.secondary);
+    expect(avoidChord({ ...bar, secondaryAge: SUPER_CHORD_TICKS }, Cmd.primary)).toBe(0);
+    expect(avoidChord({ ...bar, secondaryAge: SUPER_CHORD_TICKS + 1 }, Cmd.primary)).toBe(Cmd.primary);
+  });
+
+  it('keeps held buttons, and every press when a chord would not start a super', () => {
+    expect(avoidChord({ ...bar, prevCmd: Cmd.secondary, primaryAge: 0 }, Cmd.primary | Cmd.secondary)).toBe(
+      Cmd.primary | Cmd.secondary,
+    );
+    expect(avoidChord({ ...bar, meter: SUPER_COST - 1 }, both)).toBe(both);
+    expect(avoidChord({ ...bar, superActive: true }, both)).toBe(both);
+  });
+
+  it('ArcadeTactics applies it, but never to its own super', () => {
+    expect(new ArcadeTactics().apply(view({ meter: SUPER_COST }), both, () => 0)).toBe(Cmd.primary | Cmd.left);
+    const t = new ArcadeTactics();
+    t.apply(view({ meter: SUPER_COST, oppStun: 20, primaryAge: 0 }, 0), both, () => 0);
+    expect(t.apply(view({ meter: SUPER_COST, oppStun: 20, primaryAge: 0 }, 50), both, () => 0)).toBe(Cmd.super | Cmd.right);
   });
 });
 

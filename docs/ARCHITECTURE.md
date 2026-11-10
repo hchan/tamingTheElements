@@ -115,17 +115,21 @@ while an Arcade freeze holds `gameTick` (`isFrozen`, never true in Classic); `ti
 and projectile hits go through `applyArcadeHit` (`systems/arcade/hit.ts`), which keeps the Classic damage arithmetic
 times the combo scale (`arcade/combo.ts`) and sets the hit-stop freeze, knockback and hit-stun (`arcade/knockback.ts`,
 `arcade/stun.ts`), then adds the hyper meter gains of both teams (`arcade/meter.ts`; casts add theirs from the cast
-sites through `meterOnCast`, a no-op in Classic); the Classic lines run
+sites through `onArcadeCast`, a no-op in Classic); the Classic lines run
 unchanged behind `!isArcade`. The cast sites and movement ask `canAct` (Classic: not frozen; Arcade: also not
 stunned and not casting a super), and Arcade movement applies knockback first and holds both axes at the walls. The
 `health` slot is `arcadeSuper` (`arcade/super.ts`): `Cmd.super` spends a meter bar for a super (a 40-tick freeze, then
 an `effect` entity whose hits go through `applyArcadeHit` as strength 3). Arcade aims 8 ways (`arcade/aim.ts`): movement
 stores the dir8 of the held input in the entity's `aim` slot next to the 4-way `dir` (the reels), and the projectile and
-melee cast sites read `castDir` (the plain `dir` in Classic); the super band keeps the 4-way `dir`.
+melee cast sites read `castDir` (the plain `dir` in Classic); the super band keeps the 4-way `dir`. The Arcade input
+buffer (`arcade/buffer.ts`) records press edges in the `input` slot on every tick, frozen ones included; the cast
+systems and `arcadeSuper` read their command through `bufferedCmd`, which adds a press that is pending (at most 8 game
+ticks old, not used yet) and turns a primary and secondary chord into `Cmd.super` (it returns the raw command in
+Classic). A cast marks its slot's press used (`onArcadeCast`), a super start the super press.
 
 | # | System | Status |
 |---|---|---|
-| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): stun and combo expiry (`recovered`, `comboEnded`) on unfrozen ticks |
+| 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`) on unfrozen ticks |
 | 2 | swap (`systems/swap.ts`) | implemented |
 | 3 | movement (`systems/movement.ts`) | implemented |
 | 4 | abilities | no-op (planned) |
