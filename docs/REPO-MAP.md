@@ -36,6 +36,8 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/` | Phaser renderer and app glue (browser only); `src/game/app/` is the composition root |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags); imports only core via its index |
 | `src/game/assets/` | Generated legacy asset manifest (`manifest.generated.json`) and typed keys (`keys.ts`) |
+| `src/game/boot/` | Phaser boot: WebGL check, error screen and game config (`phaser-config.ts` is the only file that pulls Phaser in, loaded lazily) |
+| `src/game/scenes/` | Phaser scenes |
 | `src/ui/` | DOM menus in vanilla TS |
 | `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the frozen legacy sources in `node:vm` |
 | `tests/` | Cross-cutting tests (`tests/repo/`); unit tests are colocated in `src/` |
