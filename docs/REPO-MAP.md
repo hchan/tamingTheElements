@@ -31,6 +31,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/ci/` | `size-check.ts` + `size-budget.json` (`pnpm size:check`): gzip size budgets per chunk and a check that the menu does not load Phaser, see [PERFORMANCE.md](PERFORMANCE.md); `local-ci.ts` (`pnpm ci:local [--fast]`): runs the CI commands locally with a summary table; `deploy-pages.ts` (`pnpm deploy:pages [--dry-run]`): publishes the Pages build to the `gh-pages` branch without Actions; see [DEPLOYMENT.md](DEPLOYMENT.md) |
 | `tools/visual/` | `run.ts` (`pnpm visual:capture`, `visual:pacing`, `visual:regress`, `visual:update`): wrapper over `playwright.visual.config.ts`; specs live in `tests/visual/`, see [VISUAL-QA.md](VISUAL-QA.md) |
 | `tools/sbom/` | `sbom.sh` (`pnpm sbom`): production-only CycloneDX SBOM to `out/sbom.cdx.json` |
+| `docs/FUN-DESIGN.md` | Design (not built) of the opt-in Arcade ruleset behind the `rulesetArcade` sim flag: fun diagnosis, features in ticks, juice, fun metrics and the work-package plan, see [FUN-DESIGN.md](FUN-DESIGN.md) |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
 | `.claude/` | Claude Code project config: `settings.json`, `.claude/agents/` (reviewers, analysts), `.claude/skills/` (slash commands), `.claude/hooks/`, `.claude/workflows/full-review.js`; see [CLAUDE-SETUP.md](CLAUDE-SETUP.md), pinned by `tests/repo/claude-setup.test.ts` |
