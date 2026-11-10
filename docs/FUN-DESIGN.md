@@ -688,6 +688,28 @@ Plan, cheapest first:
 3. **New art:** drawn by the owner or an artist, or generated; every new asset needs a licence note in the manifest.
    Needs an owner decision on who makes the art.
 
+### 2.17 Charge (new Arcade melee ability, sim + view + AI)
+
+Owner idea (2026-11-10): a melee ability called "Charge" that runs straight up to the opponent, like the World of
+Warcraft warrior's Charge. It gives melee heroes a gap closer, the way weather and supers give other heroes tools.
+
+- **Who:** Arcade-only action for heroes whose primary ability is melee (the same ranged/melee rule as the weather charge).
+  Own input bit (masked in Classic), key F / pad B by default, rebindable, with a touch button.
+- **Move:** the hero rushes toward the opponent along the straight line (8-way snapped, 12 ticks at 5x speed, up to 360 px),
+  stopping when it touches the opponent. Not invulnerable (unlike dash); it is interrupted by a stun or freeze, and it
+  stops at walls, the playfield edge and rocks (earth hero walks over its own rocks). It cannot start while stunned,
+  frozen, mid-cast or in hit-stop.
+- **On arrival:** a short stun on the target (20 ticks, counted as a hit-stun so it feeds combos), a small hit (data row,
+  light strength), meter gain, and a free primary buffered for the next tick so a charge flows into a combo.
+- **Cooldown:** 300 ticks (6 s), data rows for speed, range, stun and cooldown.
+- **Counterplay:** guard blocks the stun (chip damage only), a parry reflects it (the charger is stunned), a dash with
+  its invulnerability frames dodges it, a projectile hit mid-charge interrupts it, a rock stops it.
+- **View:** speed lines and a short afterimage trail (the dash effects, tinted), impact spark, "CHARGE!" call, an
+  aria-live line; reduced motion keeps the call and drops the trail.
+- **AI:** melee personalities (Rushdown) charge when the distance is above a threshold and the opponent is not
+  guarding or about to cast; Easy never charges.
+- **Metrics:** charges per match, share that connect, win-rate per race (melee races must not dominate).
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)
@@ -990,6 +1012,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 33 | `WP-arcade-pose-layer` (done: section 2.16 step 1) | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
 | 34 | `WP-sprite-sheet-pipeline` | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 35 | `WP-arcade-weather-charge` (done; section 2.14) | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
+| 36 | `WP-arcade-charge` | sim+view+AI | Section 2.17: melee Charge gap closer, stun on arrival, counterplay, AI use | 3, 16, 31 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid
