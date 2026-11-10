@@ -120,7 +120,11 @@ team: each gain is `Math.floor(dealt * pm / maxHp)` on the Classic float health 
 no transcendental) or a fixed integer (+20 per cast), capped at 3000. A super (`arcade/super.ts`) spends 1000 and
 sets the same `freezeUntil` deadline for 40 ticks (`freezeKind` 2); its band is an `effect` entity whose timing is in
 game ticks (`spawnTick`, `expireTick`), and the team's `superState` holds its id + 1, so both snapshot and hash with
-the rest of the state.
+the rest of the state. The input buffer (`arcade/buffer.ts`) is state too: the team block holds the last command
+(`prevCmd`, masked to the Arcade input bits), the game tick of each press edge plus one (`pressTick`) and the used
+presses (`pressUsed`), all Int32. `bufferedCmd` only reads them, so every cast system sees the same command for the
+tick; a snapshot taken while a press is pending restores it, and a replay of the same commands fires it on the same
+tick.
 
 ## Cross-browser golden replays
 
