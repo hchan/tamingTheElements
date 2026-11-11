@@ -2,7 +2,7 @@
 import { CHARACTERS } from '../data/characters';
 import {
   DEFAULT_DIFFICULTY,
-  DEFAULT_DISPLAY_SCALE,
+  DISPLAY_SCALE,
   DEFAULT_GARRISON_SORT_ORDER,
 } from '../data/settings';
 import { CHARACTER_TEXT } from '../data/text-ids';
@@ -22,7 +22,7 @@ export function newGame(meta: Sfc32, clock: Clock): SaveV1 {
     chapter: 1,
     garrisonSortOrder: DEFAULT_GARRISON_SORT_ORDER,
     difficulty: DEFAULT_DIFFICULTY,
-    displaySettings: DEFAULT_DISPLAY_SCALE,
+    displaySettings: DISPLAY_SCALE.Largest, // new players start at Largest; stored saves keep theirs
     garrison: [{ id, experience: 1, characterName, createdTime: now, lastModifiedTime: now }],
     createdTime: now,
     lastModifiedTime: now,

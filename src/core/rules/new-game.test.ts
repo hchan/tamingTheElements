@@ -10,7 +10,7 @@ describe('newGame', () => {
     const s = newGame(seedSfc32(1, 'meta'), clock);
     expect(s.chapter).toBe(1);
     expect(s.difficulty).toBe(0.66);
-    expect(s.displaySettings).toBe(1.25);
+    expect(s.displaySettings).toBe(1.6);
     expect(s.garrisonSortOrder).toBe(1);
     expect(s.garrison).toHaveLength(1);
     expect(s.garrison[0]).toMatchObject({ experience: 1, createdTime: 1234, lastModifiedTime: 1234 });

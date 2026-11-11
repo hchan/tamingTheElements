@@ -1,6 +1,6 @@
 import {
   DEFAULT_DIFFICULTY,
-  DEFAULT_DISPLAY_SCALE,
+  DISPLAY_SCALE,
   DEFAULT_GARRISON_SORT_ORDER,
 } from '../data/settings';
 
@@ -44,7 +44,7 @@ export function newEmptyState(): SaveV1 {
     chapter: 0,
     garrisonSortOrder: DEFAULT_GARRISON_SORT_ORDER,
     difficulty: DEFAULT_DIFFICULTY,
-    displaySettings: DEFAULT_DISPLAY_SCALE,
+    displaySettings: DISPLAY_SCALE.Largest, // new players start at Largest; stored saves keep theirs
     garrison: [],
   };
 }

@@ -49,7 +49,7 @@ describe('save migration', () => {
 
   it('empty fixture matches its expected state', () => {
     const r = migrate(unwrap(fixture('v0-empty')));
-    expect(r.ok && r.value).toMatchObject({ chapter: 0, displaySettings: 1.25 });
+    expect(r.ok && r.value).toMatchObject({ chapter: 0, displaySettings: 1.6 });
   });
 
   it('normalises numeric strings and preserves unknown fields', () => {
