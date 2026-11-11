@@ -11,6 +11,8 @@ import { createMatch, type MatchSetup } from './match';
 
 /** The 12 playable races (Arcade Versus and the tournaments): every character but the void ones. */
 const PLAYABLE = CHARACTERS.filter((c) => c.element !== 'void').map((c) => String(c.id));
+/** The World Tour's final boss, the one non-playable row (FUN-DESIGN 2.18). */
+const BOSS = 'eternal-void';
 
 /** Sanity bounds of the Arcade numbers (FUN-DESIGN 2.13): no race below Classic life, none a one-shot or a wall. */
 const HP_PM = { min: 1000, max: 9000 };
@@ -24,12 +26,13 @@ function setup(race: string, arcade: boolean, xp = 1): MatchSetup {
 }
 
 describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
-  it('has exactly one row per playable race', () => {
-    expect(Object.keys(ARCADE_RACE_NUMBERS).sort(compareStrings)).toEqual([...PLAYABLE].sort(compareStrings));
+  it('has exactly one row per playable race, plus the Tour boss', () => {
+    expect(Object.keys(ARCADE_RACE_NUMBERS).sort(compareStrings)).toEqual([...PLAYABLE, BOSS].sort(compareStrings));
   });
 
   it('holds integer per-mille values inside the bounds', () => {
-    for (const [race, [hpPm, damagePm]] of Object.entries({ ...ARCADE_RACE_NUMBERS, default: ARCADE_RACE_DEFAULT })) {
+    const rows = Object.entries({ ...ARCADE_RACE_NUMBERS, default: ARCADE_RACE_DEFAULT }).filter(([race]) => race !== BOSS);
+    for (const [race, [hpPm, damagePm]] of rows) {
       expect([race, Number.isInteger(hpPm), Number.isInteger(damagePm)]).toEqual([race, true, true]);
       expect(hpPm, race).toBeGreaterThanOrEqual(HP_PM.min);
       expect(hpPm, race).toBeLessThanOrEqual(HP_PM.max);
@@ -40,12 +43,18 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
 
   it('falls back to the default row for races outside the table', () => {
     expect(arcadeRaceNumbers('dummy')).toBe(ARCADE_RACE_DEFAULT);
-    expect(arcadeRaceNumbers('eternal-void')).toBe(ARCADE_RACE_DEFAULT);
     expect(arcadeRaceNumbers('sindarosa')).toBe(ARCADE_RACE_NUMBERS['sindarosa']);
   });
 
+  it('the Tour boss is a lone 580 HP Void with legacy damage (FUN-DESIGN 2.18, boss probe)', () => {
+    expect(arcadeRaceNumbers(BOSS)).toEqual([580, 1000]);
+    // At 0 XP, as the Tour sets up every fighter (arcadeSetup); Classic keeps the legacy 1000.
+    expect(createMatch(setup(BOSS, true, 0)).state.maxHp[0]).toBe(580);
+    expect(createMatch(setup(BOSS, false, 0)).state.maxHp[0]).toBe(1000);
+  });
+
   it('Classic keeps the legacy max health; Arcade floors hpPm of it, at any level', () => {
-    for (const race of PLAYABLE) {
+    for (const race of [...PLAYABLE, BOSS]) {
       for (const xp of [1, 37]) {
         const legacy = combatantStats(getCharacter(characterId(race)), xp, 'player', 1).maxHealth;
         const classic = createMatch(setup(race, false, xp)).state;

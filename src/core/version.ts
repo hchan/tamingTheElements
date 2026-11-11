@@ -95,5 +95,8 @@
  *    with 20 ticks of hit-stun and a free primary, 300-tick cooldown; `chargeStarted`/`chargeEnded`. The Arcade entity
  *    block gains `chargeUntil`/`chargeReadyAt`, the team block a seventh press tick; CHORD_FLAG moves to bit 7
  *    (WP-arcade-charge).
+ * 25: Arcade only (data); Classic hashes unchanged. The Eternal Void, the World Tour's final boss, gets its own
+ *    ARCADE_RACE_NUMBERS row [580, 1000] (was the default 4000 / 1000): 580 HP alone, legacy damage, so a 3-hero team
+ *    can beat it (boss probe, FUN-DESIGN 2.18) (WP-tour-void-boss).
  */
-export const SIM_VERSION = 24;
+export const SIM_VERSION = 25;

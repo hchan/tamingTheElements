@@ -19,9 +19,13 @@ import type { AbilityDef } from '../data/types';
  * opinion: a high number is a weak kit, a low one a strong kit.
  */
 export type ArcadeRaceNumbers = readonly [hpPm: number, damagePm: number];
-/** Races outside the table (the dummy, Eternal Void): the plain base life x4 and legacy damage. */
+/** Races outside the table (the dummy): the plain base life x4 and legacy damage. */
 export const ARCADE_RACE_DEFAULT: ArcadeRaceNumbers = [4000, 1000];
 export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = {
+  // Not a pick: the World Tour's final boss, alone against three heroes (FUN-DESIGN 2.18). 580 pm of its Classic 1000
+  // life (580 HP at the Tour's 0 XP; 4000 before SIM_VERSION 25, which no AI team ever beat), legacy damage. Set with
+  // tools/sim/boss-probe.ts so Normal AI heroes win about 38% (Easy 48%, Hard 39%; 96 matches each) and no round times out.
+  'eternal-void': [580, 1000],
   // Ice Shock melee plus a 10 s fan: has to close in through fire.
   curomo: [6140, 1420],
   // Tornado stun into Wind Cone is the natural combo; near the legacy power.

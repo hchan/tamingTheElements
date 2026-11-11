@@ -489,8 +489,10 @@ balance baseline moved +0.0 pp on every race):
 - **Per race life and damage** (`ARCADE_RACE_NUMBERS` in `src/core/sim/arcade-numbers.ts`, next to the sim so it ships in
   the sim chunk, not the menu's core chunk): `[hpPm, damagePm]` per race. Arcade max HP is `floor(maxHealth * hpPm /
   1000)` (`createMatch`'s Arcade branch); an ability hit deals `damagePm / 1000` of the Classic value, after the weather
-  and before the combo scale (`applyArcadeHit`); the shared super is not scaled. Races outside the table (the dummy,
-  Eternal Void) get 4000 / 1000. The design's first idea (a flat 3x life and per-ability damage) was replaced by per-race
+  and before the combo scale (`applyArcadeHit`); the shared super is not scaled. Races outside the table (the dummy) get
+  4000 / 1000. The Eternal Void, not a pick but the World Tour's final boss, has its own row since SIM_VERSION 25: 580 /
+  1000, a lone 580 HP boss at the Tour's 0 XP (4000 before, which no AI team beat; set with the boss probe, section 2.18).
+  The design's first idea (a flat 3x life and per-ability damage) was replaced by per-race
   pairs found by the tournament: each race's power moved by `(0.5 / winRate) ^ 0.6-0.8` per pass and was split evenly
   between life and damage, so every race keeps a life-to-damage ratio of about 4 and round length does not depend on
   the pairing.
@@ -756,8 +758,8 @@ final boss, the Eternal Void. Design (not built yet):
   Remaining stops are drawn from the seed. The map pins are those locations (not flags per race).
 - **Ladder:** 8 opponent teams, in order Easy, Normal, Normal, Normal, Hard, Hard, Hard, then the Void. The four element stops come
   first in a seed-shuffled order, then four more drawn from the seed; the 8th is the hero's elemental rival. Every team has a lead of the
-  location's element. The Void is the final boss (a lone Void, or a Void with two shades: decided after the 3v3 WP and the boss probe),
-  with the Arcade boss numbers (2.13).
+  location's element. The Void is the final boss, alone (the boss probe ruled out two shades), with the Arcade boss numbers (2.13: 580 HP,
+  legacy damage; see "Void tuned" below).
 - **Presentation:** a world-map screen between fights (a stage backdrop per race, the next opponent highlighted, a "stage N of 9" line), the
   versus splash, and an ending card after the Void. A loss offers Continue (replay that fight, up to 3 times) then Game Over.
   Reduced motion and keyboard, pad and touch all reach every button.
@@ -792,10 +794,42 @@ bodies, each 2400 HP because a 3-roster scales life by 0.6 (`arcadeLifePm`), 720
   where the scripted bots win 39% and a human playing better than the AI should win most. Keep 1000 pm damage. If the owner wants a harder final
   boss, tune between 600 and 1000 with this script; above 1000 the AI team never wins. Shades, if wanted, should be weak (a few hundred HP in
   all) and need a real character first. Caveat: the heroes here are the scripted AI, not a human; confirm by playtest (section 7). Changing the number
-  is a core data change (SIM_VERSION bump, Arcade-only) and was not done here.
+  is a core data change (SIM_VERSION bump, Arcade-only) and was not done here (done since: "Void tuned" below).
 
-**TODO (Tour WP4, tour-shell):** the first playable Tour (`#tour`, `src/game/app/tour.ts`) ships with the Void at today's 4000 HP, so stage 9 is
-unwinnable until the core change above is made (`ARCADE_RACE_NUMBERS['eternal-void']` hpPm about 600, SIM_VERSION bump). The shell does not change `src/core`;
+#### Void tuned (WP-tour-void-boss, SIM_VERSION 25)
+
+`ARCADE_RACE_NUMBERS['eternal-void']` is now **[580, 1000]**: hpPm 580, damage kept at 1000 pm. That is 580 HP at the Tour's 0 XP (`arcadeSetup`),
+was 4000. The probe plays every fighter at level 1 (x1.1 on both sides), so the Void there has 638 HP; the ratio to the heroes is the
+same. Lone Void only, 24 seeds (seeds 1000-1023, sides swapped on odd seeds), 4 leads, so 96 matches per cell; the probe's levels drive both sides
+(in the Tour the Void plays Hard against a human). The lone rows of `pnpm exec tsx tools/sim/boss-probe.ts 24 <hpPm>` (the same matches, plus a
+count of round time-overs); 16 seeds (64 matches) for the rows marked *:
+
+| Void hpPm | Easy (AI 1) | Normal (AI 3) | Hard (AI 4) | Round time-overs | Median best of 3 (Normal) |
+|---|---|---|---|---|---|
+| 700* | 44% | 20% | 19% | 0 | 143 s |
+| 600* | 48% | 28% | 44% | 0 | 154 s |
+| 590 | 48% | 32% | 40% | 0 | 134 s |
+| **580 (chosen)** | **48%** | **38%** | **39%** | **0** | **146 s** |
+| 570 | 49% | 38% | 50% | 0 | 146 s |
+| 560 | 49% | 46% | 51% | 0 | 142 s |
+| 550* | 48% | 52% | 58% | 0 | 155 s |
+| 500* | 50% | 70% | 69% | 0 | 131 s |
+| 450* | 59% | 75% | 77% | 0 | 130 s |
+| 400* | 61% | 91% | 83% | 0 | 116 s |
+
+- **Why 580:** the curve is steep between 600 and 550 (Normal 28% to 52%). 580 is the one value where all three levels sit inside 30-50%
+  (Normal 36/96, Hard 37/96, Easy 46/96); 570 puts Hard at the 50% edge, 590 Normal at the 30% edge. A human who plays better than the AI should
+  win more often; confirm by playtest (section 7).
+- **The clock:** no round in any row ended by `timeOver` (the 90 s timer); a few matches per cell (at most 4 of 64 or 96) ended on the tool's
+  stalemate cap (1 of 96 at Normal 580). Per lead the AI's kit still matters: at 580 Normal, Rokcore 14/24 and Curomo 16/24 win most, Fiara
+  3/24 and Cyclonius 3/24 rarely, as at every life tried.
+- **Classic and the other Arcade races are untouched:** the Classic goldens change only in their `simVersion` header and Classic
+  `balance:compare` is +0.0 pp on every race. The balance round robins never field the Void, so no baseline moves (the Arcade tournament gives
+  the same report with and without the Void row). Of the Arcade goldens only `arcade-weather` (the one with a Void on a roster, p1's third hero)
+  changes its hashes, since that Void's max HP is part of the state (2640 to 382: 3-hero roster, xp 1); it is never hit and its events are the same.
+
+**Done (was a TODO of Tour WP4, tour-shell):** the first playable Tour (`#tour`, `src/game/app/tour.ts`) shipped with the Void at 4000 HP, so stage 9
+was unwinnable; since SIM_VERSION 25 it is the lone 580 HP Void above. The shell does not change `src/core`;
 the Void stage is a lone boss against the three heroes. The sim has no terrain setting, so a stage's element is chosen by the match seed
 (`tour-match.ts` `matchSeed` searches for a seed whose round-1 stage draw is the location's element; a unit test checks it against the sim).
 
