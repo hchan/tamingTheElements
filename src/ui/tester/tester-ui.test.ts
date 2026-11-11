@@ -43,5 +43,6 @@ describe('badge', () => {
   it('says whether progress is kept', () => {
     expect(badgeText(false)).toBe('TESTER MODE - progress not saved');
     expect(badgeText(true)).toBe('TESTER MODE - keeping progress');
+    expect(badgeText(false, true)).toBe('TESTER MODE - progress not saved - GOD MODE (you take no damage)');
   });
 });
