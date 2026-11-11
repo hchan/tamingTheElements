@@ -810,6 +810,13 @@ skinned at runtime, so the view, the size budgets and the sheet fallback are unc
 
   No rig and no art ship yet. Bump `BAKE_VERSION` when the algorithm changes on purpose.
 
+- **Cut-assist** (`WP-rig-assist`, `tools/rig-assist/`, offline, outside the gate and CI, not shipped, no `package.json` change):
+  `cut.py` cuts a legacy sprite frame into rig parts. The artist gives per-part click points (`points.json`), SAM 2 makes the
+  masks, and the script makes them exactly disjoint, grows each part 8 to 12 px beneath the parts drawn above it (edge-extend
+  fill, no diffusion), and writes `parts/*.png` plus a `rig.json` skeleton with suggested pivots (centroid of the contact with the
+  parent). A `--no-sam` mode takes hand-drawn polygons, and `selftest.py` checks it with numpy and pillow only. The output is a
+  starting point: pivots, curves and a truthful `license.txt` are still hand work. See its README.
+
 ### 2.17 Charge (new Arcade melee ability, sim + view + AI)
 
 Owner idea (2026-11-10): a melee ability called "Charge" that runs straight up to the opponent, like the World of

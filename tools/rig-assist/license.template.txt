@@ -1,0 +1,12 @@
+Rig parts for <sprite>, cut with tools/rig-assist/cut.py.
+
+Source sprite: <public/assets/img/map/NAME.png or NAMELarge.png, frame col,row, crop x,y,w,h>
+Source sprite provenance and licence: <who drew it, where it came from, its licence; this file must be true before the parts are committed>
+Edits: parts cut and underlap-filled automatically (edge-extend), then retouched by hand: <yes/no, by whom>
+Licence of these parts: <same as the source sprite, or CC0 if you drew them yourself>
+
+Tooling notes (delete once read):
+- Segmentation model: SAM 2 (segment-anything-2), Apache-2.0, https://github.com/facebookresearch/sam2. The masks only say which
+  pixels belong to which part; the licence of the parts follows the source sprite.
+- Model checkpoint (sam2.1_hiera_*.pt): Apache-2.0, downloaded by you, never committed. Record the checkpoint name here: <checkpoint>
+- With --no-sam the masks are hand-drawn polygons and no model is involved.

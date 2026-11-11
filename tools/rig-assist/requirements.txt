@@ -1,0 +1,8 @@
+# Offline rig cut-assist. Not part of the game, the gate or CI. Pins are the last versions known to work together
+# at the time of writing; the --no-sam fallback and selftest.py need only the first two.
+numpy==2.2.6
+pillow==11.3.0
+# SAM 2 mode only (not needed for --no-sam). Install the CPU or MPS build of torch for your machine.
+torch==2.7.1
+torchvision==0.22.1
+sam2==1.1.0
