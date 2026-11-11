@@ -68,17 +68,14 @@ describe('TesterSession', () => {
     expect(session.usesThrowawaySlot()).toBe(false);
   });
 
-  it('persists per tab (sessionStorage) and disabling discards the slot', () => {
+  it('never persists: a new session starts off and nothing is written to storage', () => {
     const { session, real, tab } = mk();
     session.enable();
     session.setOption('instantSwap', true);
-    const again = new TesterSession(tab, real);
-    expect(again.enabled).toBe(true);
-    expect(again.options.instantSwap).toBe(true);
-    session.disable();
     expect(tab.getItem(TESTER_STORAGE_KEY)).toBeNull();
-    expect(session.slotText()).toBeNull();
     expect(new TesterSession(tab, real).enabled).toBe(false);
+    session.disable();
+    expect(session.slotText()).toBeNull();
   });
 
   it('turning "all abilities" off leaves the sim flags alone', () => {

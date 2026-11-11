@@ -1,6 +1,6 @@
 /**
- * Tester mode state (docs/TESTER-MODE.md). Opt-in, per browser tab (sessionStorage, so it ends with the tab) and available in
- * production builds. While it is on, saves go to a throwaway slot in sessionStorage seeded from the real save, unless the owner
+ * Tester mode state (docs/TESTER-MODE.md). Opt-in, in memory only (never persisted: a reload turns it off) and available in
+ * production builds. While it is on, saves go to a throwaway in-memory slot seeded from the real save, unless the owner
  * turns on "Keep cheat progress". Nothing here touches the sim rules: the cheats are state edits and a recorded sim flag.
  */
 import type { ArenaCheat, BenchRow, SimFlags, TickCheats } from '@core/menu-index';
@@ -115,28 +115,15 @@ export class TesterSession {
   private readonly slot: Mem;
 
   constructor(
-    private readonly session: Mem | undefined,
+    _session: Mem | undefined,
     private readonly real: Pick<Mem, 'getItem'> | undefined,
   ) {
-    this.slot = session ?? createMemoryStorage();
-    this.state = parsePersisted(this.read());
+    this.slot = createMemoryStorage();
+    this.state = { enabled: false, options: DEFAULT_TESTER_OPTIONS };
   }
 
-  private read(): string | null {
-    try {
-      return this.session?.getItem(TESTER_STORAGE_KEY) ?? null;
-    } catch {
-      return null;
-    }
-  }
-
+  /** Cheat settings are never stored: a reload always starts with tester mode off. */
   private persist(): void {
-    try {
-      if (this.state.enabled) this.session?.setItem(TESTER_STORAGE_KEY, JSON.stringify(this.state));
-      else this.session?.removeItem(TESTER_STORAGE_KEY);
-    } catch {
-      /* the choice then lasts only until the page reloads */
-    }
     for (const fn of [...this.listeners]) fn();
   }
 

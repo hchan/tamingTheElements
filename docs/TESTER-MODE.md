@@ -1,7 +1,7 @@
 # Tester mode
 
 An opt-in playtest mode that is also in production builds, so the live site can be playtested. It is off until you enter the
-cheat code, it lasts only for the browser tab, and it is marked on screen the whole time.
+cheat code, it is never saved anywhere: a reload turns it off, and it is marked on screen the whole time.
 
 ## Turn it on
 
@@ -15,7 +15,7 @@ cheat code, it lasts only for the browser tab, and it is marked on screen the wh
 A yellow **TESTER MODE** badge (top right) shows on every screen, including during play. It says whether progress is thrown
 away ("progress not saved") or kept ("keeping progress"). Click it to open **Tester options**. The panel is also reachable from
 the main menu (**Tester options** button) and from the pause dialog during a battle (**Tester options**, pause with Escape or Shift-P).
-Turn it off with **Turn tester mode off** in the panel, or close the tab.
+Turn it off with **Turn tester mode off** in the panel, or reload the page.
 
 ## What each option does
 
@@ -40,7 +40,7 @@ Options (checkboxes, each on its own):
   every tick, before `step`, team 0's meter is set to full and its ability, dash and weather cooldowns are zeroed. Plain state
   edits like God mode: no sim change, no `SIM_VERSION` bump, goldens unchanged; a Classic match has no Arcade block, so they do
   nothing there. The replay is flagged `cheats` like any tester match.
-- **Keep cheat progress**: off by default. Off means every save goes to a throwaway slot in this tab (copied from your real save
+- **Keep cheat progress**: off by default. Off means every save goes to a throwaway slot in memory (copied from your real save
   when tester mode started) and your real save is never written. On copies the tester slot over your real save (after a confirm)
   and writes there from then on. Turning it off again re-copies your real save.
 

@@ -117,9 +117,11 @@ test.describe('Tester mode', () => {
     await goToHash(page, '#settings');
     await page.locator('#unlockGarrison').check();
     await expect(page.locator('#testerBadge')).toContainText('TESTER MODE - progress not saved');
-    // Per tab: it survives a reload, and the menu now offers the tester options.
+    // Never persisted: a reload turns it off. Turn it on again; the menu then offers the tester options.
     await page.reload();
-    await expect(page.locator('#testerBadge')).toContainText('TESTER MODE');
+    await expect(page.locator('#testerBadge')).toBeHidden();
+    await goToHash(page, '#settings');
+    await page.locator('#unlockGarrison').check();
     await goToHash(page, '#main');
     await page.locator('#testerOptionsMenu').click();
     await expect(page.locator('#testerPanel')).toBeVisible();
@@ -284,7 +286,7 @@ test.describe('Tester mode', () => {
     expect(errors).toEqual([]);
   });
 
-  test('tester options (God mode) survive a reload of the same tab', async ({ page }) => {
+  test('cheat options are never persisted: a reload turns tester mode off', async ({ page }) => {
     test.setTimeout(120_000);
     const errors = collectErrors(page);
     await page.goto(`${START}&cheats=1`);
@@ -293,9 +295,7 @@ test.describe('Tester mode', () => {
     await page.locator('#tester-opt-godMode').check();
     await closePanel(page);
     await page.reload();
-    await expect(page.locator('#testerBadge')).toContainText('TESTER MODE');
-    await openPanel(page);
-    await expect(page.locator('#tester-opt-godMode')).toBeChecked();
+    await expect(page.locator('#testerBadge')).toBeHidden();
     expect(errors).toEqual([]);
   });
 
