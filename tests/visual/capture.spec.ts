@@ -183,10 +183,10 @@ for (const vp of VIEWPORTS) {
       if (vp.mobile) await page.locator('#rotateDismiss').click();
       // Round 1's intro first (nobody acts until tick 91). Curomo 80 px from Pax, facing: Shards of Ice land within a few
       // ticks. Paused effects hold their frame.
-      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(ARCADE_INTRO)}); const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 580, 360, 4); })()`);
-      await page.evaluate(`(() => { const a = window.__TTE__.arena; for (let i = 0; i < 20 && a.fx().numbers.length === 0; i++) a.step(1, [${String(CMD.secondary)}, 0]); })()`);
-      expect(await page.evaluate<number>(`window.__TTE__.arena.fx().numbers.length`)).toBeGreaterThan(0);
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(ARCADE_INTRO)}); const [me, foe] = a.characters(); a.place(me.id, 100, 380, 0); a.place(foe.id, 180, 380, 4); })()`);
+      await page.evaluate(`(async () => { const a = window.__TTE__.arena; const foeId = a.characters()[1].id; const hp = () => a.characters().find((c) => c.id === foeId).hp; const start = hp(); for (let i = 0; i < 40 && hp() === start; i++) { a.step(1, [${String(CMD.secondary)}, 0]); await new Promise((r) => requestAnimationFrame(r)); } })()`);
       await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      expect(await page.evaluate<number>(`window.__TTE__.arena.fx().numbers.length`)).toBeGreaterThan(0);
       await shoot(page, vp, 'arena', 'arena-arcade-hitstop', 'Arcade: first hit, during hit-stop (white flash, element sparks, damage number)');
       // Keep firing until the next volley lands (the numbers of the first one stay: paused effects do not age).
       await page.evaluate(`(() => { const a = window.__TTE__.arena; const n = a.fx().numbers.length; for (let i = 0; i < 60 && a.fx().numbers.length <= n; i++) a.step(1, [${String(CMD.secondary)}, 0]); })()`);
@@ -198,7 +198,7 @@ for (const vp of VIEWPORTS) {
       await shoot(page, vp, 'arena', 'arena-arcade-meter', 'Arcade: hyper meters under the HUD (full segments solid, the filling one dashed, bar count as a number)');
       // Facing each other, Curomo spends a bar on its super; 10 ticks into the 40-tick freeze the cut-in is in place.
       await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 300, 360, 0); a.place(foe.id, 900, 360, 4); a.step(1, [${String(CMD.super)}, 0]); a.step(10); })()`);
-      await expect.poll(() => page.evaluate<string | undefined>(`window.__TTE__.arena.superFx().then((f) => f && f.name)`)).toBe('ELEMENTAL BURST');
+      await expect.poll(() => page.evaluate<string | undefined>(`window.__TTE__.arena.superFx().then((f) => f && f.name)`)).toBe('GLACIER CRASH');
       await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
       await shoot(page, vp, 'arena', 'arena-arcade-super-freeze', 'Arcade: super freeze (arena dimmed, caster lit, element band with portrait, super name and element; camera punched in)');
       expect(errors).toEqual([]);
