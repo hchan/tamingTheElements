@@ -179,6 +179,16 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('classic HUD in a real battle (enemy side)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seed(page, fixture('v0-ch4'));
+      await startBattle(page, 'enterBattlegroundContainer', 3);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      await page.evaluate(STEP(5, 0, 0));
+      await shoot(page, vp, 'arena', 'hud-battleground', 'Classic HUD in a battleground match: enemy side portraits');
+      expect(errors).toEqual([]);
+    });
+
     test('defeat screen', async ({ page }) => {
       // The results routes render from the save, so navigate directly (a lost practice match does not reach #defeat).
       await seed(page, fixture('v0-ch4'));
