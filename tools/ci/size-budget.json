@@ -9,7 +9,7 @@
     "index": 28800,
     "index.css": 3400,
     "lazy-index": 550,
-    "online-versus": 3290,
+    "online-versus": 3470,
     "phaser": 388700,
     "phaser-config": 20740,
     "pose-layer": 3772,
@@ -21,5 +21,5 @@
     "terrain-view": 4350,
     "weather-view": 3470
   },
-  "totalGzip": 478960
+  "totalGzip": 479130
 }

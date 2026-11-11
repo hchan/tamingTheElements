@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { netStatusText, phaseText } from './online-versus';
+import { endText, netStatusText, phaseText } from './online-versus';
 
 describe('phaseText', () => {
   it('says each outcome in words', () => {
@@ -19,5 +19,13 @@ describe('netStatusText', () => {
     expect(netStatusText('forfeit', 'timeout')).toMatch(/you win/);
     expect(netStatusText('forfeit', 'remote-conceded')).toMatch(/left/);
     expect(netStatusText('remote-paused', undefined)).toMatch(/switched tabs/);
+  });
+});
+
+describe('endText', () => {
+  it('speaks from the player\'s own side', () => {
+    expect(endText(0, 0, [2, 1])).toBe('You won the match! Rounds 2-1.');
+    expect(endText(0, 1, [2, 1])).toBe('Your friend won the match. Rounds 1-2.');
+    expect(endText(-1, 0, undefined)).toBe('The match was a draw.');
   });
 });

@@ -34,6 +34,15 @@ export function netStatusText(status: SessionStatus, reason: string | undefined)
   return undefined;
 }
 
+/** Words for a finished match from `side`'s point of view: never colour alone. */
+export function endText(winner: number, side: 0 | 1, rounds: readonly [number, number] | undefined): string {
+  const verdict = winner < 0 ? 'The match was a draw.' : winner === side ? 'You won the match!' : 'Your friend won the match.';
+  if (rounds === undefined) return verdict;
+  const mine = rounds[side];
+  const theirs = rounds[side === 0 ? 1 : 0];
+  return `${verdict} Rounds ${String(mine)}-${String(theirs)}.`;
+}
+
 function area(id: string, label: string, readOnly: boolean): { row: HTMLElement; box: HTMLTextAreaElement } {
   const row = el('div', 'settingsOption');
   const lab = el('label', undefined, label);
@@ -76,7 +85,7 @@ export function onlineVersusScreen(): Screen {
     peer = undefined;
   };
 
-  return {
+  const screen: Screen = {
     mount(container) {
       gone = false;
       node = el('div', 'menuPage');
@@ -100,6 +109,23 @@ export function onlineVersusScreen(): Screen {
           node.append(holder);
           const launch: ArenaLaunch = {
             setup,
+            onEnd: (end) => {
+              if (gone) return;
+              say(endText(end.winner, side, end.rounds));
+              destroyGame(game, arenaNode);
+              game = undefined;
+              arenaNode = undefined;
+              peer?.close();
+              peer = undefined;
+              const again = button('onlineAgain', 'New match', () => {
+                const c = node?.parentElement;
+                stop();
+                node?.remove();
+                if (c) screen.mount(c);
+              });
+              node?.insertBefore(again, status);
+              again.focus();
+            },
             net: {
               side,
               input: p.input,
@@ -226,6 +252,7 @@ export function onlineVersusScreen(): Screen {
       node = null;
     },
   };
+  return screen;
 }
 
 let active: Screen | undefined;
