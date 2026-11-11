@@ -140,7 +140,11 @@ export class Arena extends Phaser.Scene {
     this.cursor = playback ? new ReplayCursor(playback.replay) : undefined;
     // `?ff=` flags exist only in dev and test builds; the static test drops this branch from production bundles.
     const ff = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).arcade;
-    const demo = ff ? { ...DEMO_SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : DEMO_SETUP;
+    const dev = import.meta.env.DEV || import.meta.env.MODE === 'test';
+    // `?p1=<character slug>` (dev/test only) swaps the demo hero, so visual captures can render any character's abilities.
+    const hero = dev ? new URLSearchParams(window.location.search).get('p1') : null;
+    const demoBase = hero ? { ...DEMO_SETUP, p1: [{ character: characterId(hero), xp: 0 }, ...DEMO_SETUP.p1.slice(1)] } : DEMO_SETUP;
+    const demo = ff ? { ...demoBase, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : demoBase;
     const world = this.cursor?.world ?? createMatch(this.launch?.setup ?? demo);
     this.world = world;
     const view = createRenderView(world);
