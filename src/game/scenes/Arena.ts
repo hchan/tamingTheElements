@@ -9,6 +9,7 @@ import {
   DEFAULT_SIM_FLAGS,
   EntityFlag,
   EntityKind,
+  RoundPhase,
   MAX_ENTITIES,
   applyArenaCheat,
   applyTickCheats,
@@ -57,6 +58,7 @@ import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
 import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
+import { SwapNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
 import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
@@ -119,6 +121,8 @@ export class Arena extends Phaser.Scene {
   private actionBar: ActionBarView | undefined;
   private backdrop: Backdrop | undefined;
   private clicks: number[] = [];
+  /** Arcade: the line shown when a swap press is refused (hud/swap-notice.ts); view only. */
+  private swapNotice: SwapNotice | undefined;
   private pauseText: Phaser.GameObjects.Text | undefined;
   private cursor: ReplayCursor | undefined;
   private speed: 1 | 2 = 1;
@@ -203,6 +207,9 @@ export class Arena extends Phaser.Scene {
         // Legacy Shift-Q / X / C cheats exist only in tester mode (docs/TESTER-MODE.md).
         cheatsEnabled: this.launch.tester !== undefined,
         arcade,
+        // A swap sent on a tick where the game clock stood still (hit-stop, KO slow motion) is sent again on the next one.
+        clock: () => view.actionBar(0)?.tick ?? 0,
+        onSwap: (swaps) => { this.noteSwap(swaps); },
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
           else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
@@ -264,6 +271,11 @@ export class Arena extends Phaser.Scene {
       this.cleanups.push(() => { document.removeEventListener('visibilitychange', onVis); });
     } else this.cleanups.push(pauseOnHidden(counted(document), driver));
     this.setupAudio();
+    if (arcade && this.launch && !playback) {
+      const notice = new SwapNotice(this, () => getPrefs().reduceMotion);
+      this.swapNotice = notice;
+      this.cleanups.push(() => { notice.destroy(); this.swapNotice = undefined; });
+    }
 
     const width = LOGICAL_WIDTH;
     const height = LOGICAL_HEIGHT;
@@ -369,6 +381,7 @@ export class Arena extends Phaser.Scene {
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
       bench: () => benchRows(world, 0),
       swapReadyTick: () => world.state.teams[TeamField.swapCooldownUntil] ?? 0,
+      swapNotice: () => this.swapNotice?.current ?? '',
       cheat: (c) => {
         this.arenaCheat(c);
       },
@@ -442,6 +455,33 @@ export class Arena extends Phaser.Scene {
     const audio = this.audio?.audio;
     if (!audio || !this.view) return;
     for (const id of this.casts.detect(this.view)) audio.playSfx(id);
+  }
+
+  /** Arcade: explains a swap press the sim is about to refuse (cooldown, frozen, stunned, no partner, no fight). View only. */
+  private noteSwap(swaps: number): void {
+    const { view, swapNotice: notice } = this;
+    const arcade = view?.arcade();
+    const bar = view?.actionBar(0);
+    if (!view || !notice || !arcade || !bar) return;
+    // A hit-stop skips the swap on this tick but the press is sent again, so it is not a refusal.
+    if (arcade.frozen) return;
+    let active = -1;
+    let flags = 0;
+    view.forEachCharacter((c) => {
+      if (c.team === 0 && (c.flags & (EntityFlag.dead | EntityFlag.benched)) === 0 && active < 0) {
+        active = c.id;
+        flags = c.flags;
+      }
+    });
+    const slot = swapSlotOf(swaps);
+    const line = swapNotice({
+      fighting: arcade.phase === RoundPhase.fight,
+      frozen: (flags & EntityFlag.frozen) !== 0,
+      stunned: active >= 0 && arcade.stunned(active),
+      noPartner: bar.swaps[slot] === undefined || bar.swaps[slot].dead,
+      cooldownTicks: bar.swapReadyTick - bar.tick,
+    });
+    if (line !== undefined) notice.show(line, this.time.now);
   }
 
   /** One sim tick: agents (or the given commands) in, events out to the effects and the end check. */
@@ -597,6 +637,7 @@ export class Arena extends Phaser.Scene {
     const arcade = this.arcadeHud && view.arcade();
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
+    this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
     this.reportPlayback();
     this.frameTick = tick;

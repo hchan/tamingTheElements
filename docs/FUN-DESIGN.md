@@ -265,6 +265,15 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   active) and clears the tag cooldown. Meter is per team and carries over; a super's caster cannot tag (not free), and
   its super still ends if it is KO'd. AI (`ArcadeTactics`, no new memory or draws): free, unthreatened and with the tag
   ready, it tags (`Cmd.swap1`) when its HP is under 350 pm and its partner's is more than 250 pm higher.
+- **Swap press (input and view, no sim change):** a swap is an edge, not a held key. The `KeyboardAgent` latches a press
+  (key, pad button or slot click) until the next sim tick, so a tap shorter than a tick is never lost; one press is one
+  swap, so holding the key neither chains a second tag when the 150-tick cooldown ends nor re-fires on OS key repeat. A
+  swap sent on a tick where the game clock did not advance (hit-stop or KO slow-motion hold skip the swap system) is sent
+  again, for up to 25 observations. When the view shows the press will be refused, `swap-notice.ts` puts a line above the
+  action bar for 1.6 s ("Swap ready in 2.4s", "Can't swap: frozen" / "stunned" / "round not started" / "no partner to
+  tag in"): text, not colour alone, and no fade with reduced motion. A refusal for dash, super or guard is not in the view
+  and shows no line. The active hero's avatar sits flush with the end of its main bar (same gap on both sides, top edge
+  level with the bar).
 
 ### 2.7 Dash and dodge (sim)
 
@@ -1034,8 +1043,8 @@ ring, and drops the slide, the ring's growth and the scale-in. Input: the tag is
 pad LB, unchanged; the key-binding screen keeps its Classic name), labelled Tag in the match, and a touch **Tag** button
 above Weather in 2v2. Results: in 2v2 every hero's HP left or "knocked out" in the last round, read off the render view at
 the match end. Per match in 2v2: one Hud Graphics and up to seven Hud Texts, one Arena Graphics and one Arena Text; one
-Arena `postupdate` listener; all removed with the Arena or the Hud. Not built: an assist call, a portrait per hero on the
-HUD, a tag cooldown in the action bar's sweep (the render view still reports the Classic 250-tick swap cooldown length
+Arena `postupdate` listener; all removed with the Arena or the Hud. Not built: an assist call, a portrait per bench hero on the
+HUD (the active hero has an avatar at its bar), a tag cooldown in the action bar's sweep (the render view still reports the Classic 250-tick swap cooldown length
 there, so the slot's sweep starts part-filled; the tag view's own bar uses the 150-tick tag cooldown).
 
 ## 4. Fun metrics (automatable)

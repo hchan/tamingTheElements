@@ -142,6 +142,21 @@ export function mainBar(xOffset: number): BarGeometry {
   };
 }
 
+/** Arcade active-hero avatar: a square this size, flush with the main bar's end and top edge (`arcadeAvatar`). */
+export const AVATAR_SIZE = 32;
+const AVATAR_GAP = 4;
+
+/**
+ * Where the active hero's avatar goes in the Arcade HUD: on the outer end of its main bar (left of the player's, right of
+ * the enemy's) with the same gap on both sides, its top edge level with the bar's top edge, so it reads as the bar's
+ * head. The right one stays clear of the fullscreen button's column.
+ */
+export function arcadeAvatar(team: number): { readonly x: number; readonly y: number; readonly size: number } {
+  const bar = mainBar(sideOffset(team));
+  const y = bar.y - bar.line / 2;
+  return { x: team === 0 ? bar.minX - AVATAR_GAP - AVATAR_SIZE : bar.maxX + AVATAR_GAP, y, size: AVATAR_SIZE };
+}
+
 /** Bench row `i` (0-based): avatar slot at x_offset + 2*hud_height, bar starts after the avatar. */
 export function benchBar(xOffset: number, i: number): BarGeometry {
   const main = mainBar(xOffset);

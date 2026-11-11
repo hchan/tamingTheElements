@@ -203,3 +203,30 @@ test('reduced motion keeps the call at full size; 1v1 builds no tag view and no 
   await expect(page.locator('#arcadeTag')).toHaveCount(0);
   expect(await tag(page)).toBeUndefined();
 });
+
+test('swap press: one tag per press (a held key does not chain), and a press in the cooldown says when it is ready', async ({ page }) => {
+  const errors = collectErrors(page);
+  await fight2v2(page);
+  const notice = (): Promise<string> => page.evaluate<string>(`window.__TTE__.arena.swapNotice()`);
+  const press = async (): Promise<void> => {
+    await page.keyboard.down('Digit3');
+    await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+    await page.keyboard.up('Digit3');
+  };
+  expect(await notice()).toBe('');
+  await page.keyboard.down('Digit3');
+  await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+  expect((await tag(page))?.lines[0]?.[0]).toBe('IN Pax');
+  expect(await notice()).toBe(''); // the tag went through: no refusal
+  // Still held through the cooldown and past it: no second tag.
+  await page.evaluate(`window.__TTE__.arena.stepLive(200)`);
+  expect((await tag(page))?.lines[0]?.[0]).toBe('IN Pax');
+  await page.keyboard.up('Digit3');
+  // A fresh press once ready tags back; the next one, inside the cooldown, is refused with a visible line.
+  await press();
+  expect((await tag(page))?.lines[0]?.[0]).toBe('IN Sindarosa');
+  await press();
+  expect(await notice()).toMatch(/^Swap ready in \d\.\ds$/);
+  expect((await tag(page))?.lines[0]?.[0]).toBe('IN Sindarosa');
+  expect(errors).toEqual([]);
+});

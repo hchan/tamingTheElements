@@ -12,7 +12,7 @@
     "local-two": 430,
     "online-versus": 3900,
     "phaser": 388700,
-    "phaser-config": 20950,
+    "phaser-config": 21950,
     "pose-layer": 3772,
     "rolldown-runtime": 200,
     "round-view": 2100,
@@ -24,5 +24,5 @@
     "terrain-view": 4350,
     "weather-view": 3470
   },
-  "totalGzip": 488800
+  "totalGzip": 489650
 }

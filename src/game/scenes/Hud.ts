@@ -21,6 +21,7 @@ import {
   shade,
   dashSegments,
   healthCue,
+  arcadeAvatar,
   mainBar,
   regenLabel,
   regenState,
@@ -154,7 +155,8 @@ export class Hud extends Phaser.Scene {
       if (side.active) {
         this.drawBar(gfx, mainBar(x), side.active, true);
         label?.setText(this.classic ? `HP ${healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text}\ncap ${String(restCapPct(side.active))}%` : healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text);
-        if (!this.arcade) this.drawPortrait(gfx, team, side.active, side.bench);
+        if (this.arcade) this.drawArcadeAvatar(gfx, team, side.active);
+        else this.drawPortrait(gfx, team, side.active, side.bench);
         for (const b of collectBuffs(view, side.active.id, x, this.highContrast)) {
           gfx.lineStyle(this.highContrast ? 2 : 1, this.highContrast ? 0xffffff : 0x111111, 1);
           gfx.strokeRect(b.x, b.y, BUFF_SLOT, BUFF_SLOT);
@@ -190,6 +192,15 @@ export class Hud extends Phaser.Scene {
 
   private get classic(): boolean {
     return !this.arcade && !this.highContrast;
+  }
+
+  /** Arcade: the active hero's picture at the end of its health bar (`arcadeAvatar`), in an element-coloured frame. */
+  private drawArcadeAvatar(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter): void {
+    const a = arcadeAvatar(team);
+    this.back?.fillStyle(0x070a12, 0.78).fillRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
+    this.placePortrait(this.portraits[team], c, a.x, a.y, a.size, team === 1);
+    gfx.lineStyle(this.highContrast ? 3 : 2, this.highContrast ? 0xffffff : ELEMENT_COLORS[c.element], 0.95);
+    gfx.strokeRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
   }
 
   /** Portrait frame, the active monster's picture and a small picture per benched teammate (dimmed with a cross when knocked out). */

@@ -1,4 +1,4 @@
-import type { Agent, AgentState, Command, ObservationView } from '@core/index';
+import { Cmd, type Agent, type AgentState, type Command, type ObservationView } from '@core/index';
 import { ARCADE_PAD, commandFromPad, pauseEdge, type PadSnapshot } from './gamepad';
 import {
   type Bindings,
@@ -26,7 +26,19 @@ export interface KeyboardAgentOptions {
    * Classic never sends them (RB, LT and RT stay the second, third and fourth swap; pad X does nothing).
    */
   readonly arcade?: boolean;
+  /**
+   * The game clock the sim runs on (the action bar's `tick`). A swap sent on a tick where it did not advance (an Arcade
+   * hit-stop or KO slow-motion hold skips the swap system) is sent again on the next tick, for up to `SWAP_RETRY_TICKS`.
+   */
+  readonly clock?: () => number;
+  /** Called once per swap press with its bits, on the observation that sends it (view-only refusal feedback hangs here). */
+  readonly onSwap?: (swaps: Command) => void;
 }
+
+/** The four swap bits: sent once per press (a key, pad button or slot click), never while held. */
+export const SWAP_MASK: Command = Cmd.swap1 | Cmd.swap2 | Cmd.swap3 | Cmd.swap4;
+/** How many observations a swap press may wait for a tick on which the sim actually runs its swap system (0.5 s). */
+export const SWAP_RETRY_TICKS = 25;
 
 export type KeyEventSource = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>;
 
@@ -38,6 +50,12 @@ export class KeyboardAgent implements Agent {
   /** Keys pressed since the last observation, so a tap that is released before the next tick still counts once. */
   private tapped = new Set<string>();
   private startDown = false;
+  /** Swap presses waiting for the next observation (a press shorter than a tick, or a retry after a held clock). */
+  private swapLatched: Command = 0;
+  /** Pad buttons held at the last poll, so only a fresh press latches a swap. */
+  private padSwapDown: Command = 0;
+  /** The swap bits sent last, the game clock they were sent on and how many times they were retried. */
+  private sent: { bits: Command; clock: number; retries: number } | undefined;
   private readonly cheatsEnabled: boolean;
 
   constructor(private readonly opts: KeyboardAgentOptions) {
@@ -55,8 +73,13 @@ export class KeyboardAgent implements Agent {
 
   handle(input: KeyInput): void {
     const r = reduceKey(this.state, input, this.bindings, this.cheatsEnabled);
-    if (input.type === 'down' && r.effect === undefined) this.tapped.add(input.code);
-    if (input.type === 'blur') this.tapped = new Set();
+    // OS key repeat is not a press: it must not re-latch a swap (or any tap) while the key is held.
+    if (input.type === 'down' && r.effect === undefined && !input.repeat) this.tapped.add(input.code);
+    if (input.type === 'blur') {
+      this.tapped = new Set();
+      this.swapLatched = 0;
+      this.sent = undefined;
+    }
     this.state = r.state;
     if (r.effect !== undefined) this.opts.onEffect?.(r.effect);
   }
@@ -66,8 +89,18 @@ export class KeyboardAgent implements Agent {
     this.pressed |= cmd;
   }
 
+  /** Latches a pad swap button's press edge, so a tap shorter than a frame is still sent on the next tick. */
+  private latchPad(): Command {
+    const arcade = this.opts.arcade;
+    const down = commandFromPad(this.opts.gamepad?.() ?? null, true, arcade ? ARCADE_PAD : undefined) & SWAP_MASK;
+    this.swapLatched |= down & ~this.padSwapDown;
+    this.padSwapDown = down;
+    return down;
+  }
+
   /** Call once per rendered frame (also while paused): Start on the pad toggles pause on its press edge. */
   pollPad(): void {
+    this.latchPad();
     const e = pauseEdge(this.startDown, this.opts.gamepad?.() ?? null);
     this.startDown = e.down;
     if (e.pressed) this.opts.onEffect?.('pause');
@@ -81,11 +114,25 @@ export class KeyboardAgent implements Agent {
   observe(view: ObservationView): Command {
     const capturable = this.opts.capturable(view);
     const arcade = this.opts.arcade;
+    this.latchPad();
     const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable, arcade ? ARCADE_PAD : undefined);
-    const keys = this.tapped.size === 0 ? this.state.held : new Set([...this.state.held, ...this.tapped]);
+    // Movement and abilities follow the held keys; a swap is an edge: only keys pressed since the last tick (not repeats).
+    const held = this.tapped.size === 0 ? this.state.held : new Set([...this.state.held, ...this.tapped]);
+    const taps = commandFromHeld(this.bindings, this.tapped, capturable, arcade) & SWAP_MASK;
+    let swaps = this.swapLatched | taps | (this.pressed & SWAP_MASK);
+    this.swapLatched = 0;
+    const fresh = swaps;
+    const clock = this.opts.clock?.();
+    const was = this.sent;
+    this.sent = undefined;
+    if (was && clock !== undefined && clock === was.clock && was.retries < SWAP_RETRY_TICKS) {
+      swaps |= was.bits; // the sim held its clock on that tick and never looked at the swap: send it again
+    }
     this.tapped = new Set();
-    const cmd = commandFromHeld(this.bindings, keys, capturable, arcade) | pad | this.pressed;
+    const cmd = ((commandFromHeld(this.bindings, held, capturable, arcade) | pad | this.pressed) & ~SWAP_MASK) | swaps;
     this.pressed = 0;
+    if (swaps !== 0 && clock !== undefined) this.sent = { bits: swaps, clock, retries: was && swaps === was.bits ? was.retries + 1 : 0 };
+    if (fresh !== 0) this.opts.onSwap?.(fresh);
     return cmd;
   }
 

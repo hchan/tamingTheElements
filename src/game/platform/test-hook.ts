@@ -34,6 +34,8 @@ export interface ArenaProbe {
   bench(): { id: number; name: string; active: boolean; dead: boolean; hp: number; maxHp: number; restCap: number }[];
   /** First tick the player's swap is usable again (0 = ready). */
   swapReadyTick(): number;
+  /** Arcade: the refused-swap line while it shows ('' otherwise). */
+  swapNotice(): string;
   /** Runs a tester cheat (only while tester mode is on). */
   cheat(c: 'myHp25' | 'enemyHp25' | 'win' | 'freezeEnemy' | 'captureWin'): void;
   /** True while the main camera shake effect is running (reduced motion keeps it false). */
