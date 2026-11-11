@@ -47,12 +47,18 @@ const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag'] as const;
  * listens on window) for as long as the finger is down; an unbound action does nothing. Not in the Tab order: keyboards
  * press the key itself. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`.
  */
+const coarsePointer = (): boolean => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElement {
   const b = el('button', 'menuButton', label);
   b.type = 'button';
   b.id = `arcade${label}`;
   b.tabIndex = -1;
-  b.style.cssText = `position:absolute;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + ${String(row * 56)}px);z-index:5;min-width:72px;min-height:48px;touch-action:none;opacity:.85`;
+  // Touch: a column up the right edge (>= 48 px, safe areas). Mouse/keyboard: a compact row in the bottom band under the
+  // walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at the arena edge.
+  b.style.cssText = coarsePointer()
+    ? `position:absolute;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + ${String(row * 56)}px);z-index:5;min-width:72px;min-height:48px;touch-action:none;opacity:.85`
+    : `position:absolute;right:${String(4 + row * 68)}px;bottom:2px;z-index:5;width:64px;height:28px;min-height:0;padding:0;font-size:12px;touch-action:none;opacity:.7`;
   let code: string | undefined;
   const release = (): void => {
     if (code === undefined) return;
