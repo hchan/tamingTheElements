@@ -34,6 +34,7 @@ import {
   type SimEvent,
   type SimWorld,
 } from '@core/index';
+import { CastDetector } from '../audio/cast-sounds';
 import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
 import type { AudioContextLike } from '../audio/audio-manager';
 import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
@@ -398,6 +399,15 @@ export class Arena extends Phaser.Scene {
     };
   }
 
+  private readonly casts = new CastDetector();
+
+  /** Legacy plays a sound when an ability is cast; the sim has no cast event, so the action bars are watched. */
+  private playCasts(): void {
+    const audio = this.audio?.audio;
+    if (!audio || !this.view) return;
+    for (const id of this.casts.detect(this.view)) audio.playSfx(id);
+  }
+
   /** One sim tick: agents (or the given commands) in, events out to the effects and the end check. */
   private advance(cmds: readonly [number | undefined, number | undefined]): void {
     const world = this.world;
@@ -417,6 +427,7 @@ export class Arena extends Phaser.Scene {
     const events = step(world, final);
     this.fx?.consume(events);
     this.audio?.audio.consume(events);
+    this.playCasts();
     this.announce(events);
     this.rounds?.(events);
     this.terrain?.(events);

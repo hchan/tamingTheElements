@@ -14,8 +14,8 @@ export interface SoundCue {
  * Sim event kind to cue. Sound ids come from the legacy asset manifest; unmapped kinds are silent. Legacy plays no sound
  * for a death that swaps in a teammate (the swap plays 'swap') and none for an enemy death: 'death' only when the
  * player's team is wiped and 'victory' only on the Victory scene, so both hang off `matchEnded`. The boss's
- * `captureFailed` is the evil laugh. Legacy also plays a sound when each ability is cast; the sim emits no cast events
- * yet (docs/PARITY.md U12).
+ * `captureFailed` is the evil laugh. Legacy also plays a sound when each ability is cast; the sim emits no cast event, so
+ * `cast-sounds.ts` spots casts on the action bars (view side, docs/PARITY.md U12).
  */
 const CUES: Readonly<Record<number, SoundCue>> = {
   [SimEventKind.damage]: { id: 'damage', bus: 'sfx', duck: false },

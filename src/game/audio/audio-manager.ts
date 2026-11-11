@@ -113,6 +113,17 @@ export class AudioManager {
     this.updateDuck();
   }
 
+  /** Plays one sound now (view-side cues such as ability casts); silent while muted, locked or unloaded. */
+  playSfx(id: string, duck = false): void {
+    const buffer = this.opts.buffers.get(id);
+    if (this.mutedFlag || !this.unlocked || buffer === undefined) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    src.connect(this.buses.sfx);
+    src.start();
+    if (duck) this.duckUntil = this.ctx.currentTime * 1000 + DUCK_MS;
+  }
+
   /** Call each frame (or after consume) to restore the music bus once the duck window passes. */
   updateDuck(): void {
     const ducked = this.ctx.currentTime * 1000 < this.duckUntil;
