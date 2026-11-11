@@ -15,6 +15,8 @@ import {
   REST_COLOR,
   barFill,
   benchBar,
+  BENCH_LINE,
+  BENCH_SPRITE,
   collectSide,
   criticalPulse,
   shade,
@@ -93,7 +95,7 @@ export class Hud extends Phaser.Scene {
     fitScene(this);
     this.back = this.add.graphics().setDepth(98);
     this.gfx = this.add.graphics().setDepth(100);
-    this.portraits = TEAMS.map(() => this.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99).setVisible(false));
+    this.portraits = [...TEAMS, ...TEAMS.flatMap((t) => [t, t, t, t])].map(() => this.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99).setVisible(false));
     // One text per side next to the bar: health state in words, so it never depends on red versus green.
     // Larger on phones (the canvas is drawn about 0.3x there), wrapped to the free column left of the bench bars, and outlined so it
     // reads on bright arenas without touching the bars beside it.
@@ -174,7 +176,7 @@ export class Hud extends Phaser.Scene {
         }
       } else {
         label?.setText('');
-        this.portraits[team]?.setVisible(false);
+        for (const i of [team, ...[0, 1, 2, 3].map((k) => TEAMS.length + team * 4 + k)]) this.portraits[i]?.setVisible(false);
       }
       side.bench.forEach((c, i) => {
         this.drawBar(gfx, benchBar(x, i), c, false);
@@ -189,36 +191,51 @@ export class Hud extends Phaser.Scene {
     return !this.arcade && !this.highContrast;
   }
 
-  /** Portrait frame, the active monster's picture and one pip per benched teammate (grey with a cross when knocked out). */
+  /** Portrait frame, the active monster's picture and a small picture per benched teammate (dimmed with a cross when knocked out). */
   private drawPortrait(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, bench: readonly HudCharacter[]): void {
     const x = portraitX(team);
     const back = this.back;
     back?.fillStyle(0x070a12, 0.78);
     back?.fillRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
-    const im = this.portraits[team];
+    this.placePortrait(this.portraits[team], c, x, PORTRAIT_Y, PORTRAIT, team === 1);
+    gfx.lineStyle(2, ELEMENT_COLORS[c.element], 0.95);
+    gfx.strokeRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
+    // Benched teammates: their picture sits in the slot just left of their own bar.
+    for (let i = 0; i < 4; i++) {
+      const b = bench[i];
+      const im = this.portraits[TEAMS.length + team * 4 + i];
+      if (!b) {
+        im?.setVisible(false);
+        continue;
+      }
+      const g = benchBar(sideOffset(team), i);
+      const s = BENCH_SPRITE - 6;
+      const bx = g.minX - BENCH_LINE - s - 2;
+      const by = g.y - s / 2;
+      back?.fillStyle(0x070a12, 0.78);
+      back?.fillRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
+      this.placePortrait(im, b, bx, by, s, team === 1);
+      im?.setAlpha(b.dead ? 0.35 : 1);
+      gfx.lineStyle(2, b.dead ? 0x777777 : ELEMENT_COLORS[b.element], 0.95);
+      gfx.strokeRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
+      if (b.dead) {
+        gfx.lineStyle(2, 0xff5a4a, 1);
+        gfx.lineBetween(bx + 3, by + 3, bx + s - 3, by + s - 3);
+        gfx.lineBetween(bx + 3, by + s - 3, bx + s - 3, by + 3);
+      }
+    }
+  }
+
+  /** Put a character's picture (the first frame of its sprite sheet) in a pooled image, or hide the image when it has none. */
+  private placePortrait(im: Phaser.GameObjects.Image | undefined, c: HudCharacter, x: number, y: number, size: number, flip: boolean): void {
     const found = lookup(c.sprite);
     if (im && found && this.textures.exists(found.key)) {
       const tex = this.textures.get(found.key);
       const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
       if (!tex.has(PORTRAIT_FRAME)) tex.add(PORTRAIT_FRAME, 0, fx, fy, fw, fh);
       if (im.texture.key !== found.key || im.frame.name !== PORTRAIT_FRAME) im.setTexture(found.key, PORTRAIT_FRAME);
-      im.setPosition(x, PORTRAIT_Y).setDisplaySize(PORTRAIT, PORTRAIT).setFlipX(team === 1).setVisible(true);
+      im.setPosition(x, y).setDisplaySize(size, size).setFlipX(flip).setAlpha(1).setVisible(true);
     } else im?.setVisible(false);
-    gfx.lineStyle(2, ELEMENT_COLORS[c.element], 0.95);
-    gfx.strokeRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
-    bench.forEach((b, i) => {
-      const cx = x + 8 + i * 16;
-      const cy = PORTRAIT_Y + PORTRAIT + 12;
-      gfx.fillStyle(b.dead ? 0x555555 : ELEMENT_COLORS[b.element], b.dead ? 0.6 : 1);
-      gfx.fillCircle(cx, cy, 5);
-      gfx.lineStyle(1, 0xffffff, 0.8);
-      gfx.strokeCircle(cx, cy, 5);
-      if (b.dead) {
-        gfx.lineStyle(2, 0xff5a4a, 1);
-        gfx.lineBetween(cx - 3, cy - 3, cx + 3, cy + 3);
-        gfx.lineBetween(cx - 3, cy + 3, cx + 3, cy - 3);
-      }
-    });
   }
 
   /** Regen text for a bench row: the live +N/s while healing, `rested` at the cap. Right of the player's bars, left of the enemy's. */

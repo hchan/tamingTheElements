@@ -83,7 +83,10 @@ export function buttonStates(chapter: number, selectedCount: number, testerTeam 
  * (KNOWN-BUG garrison-sort-ignored); the new screen applies it by request.
  */
 export function displayOrder(save: Pick<SaveV1, 'garrisonSortOrder' | 'garrison'>): GarrisonEntry[] {
-  return sortGarrison(save.garrison as readonly GarrisonEntry[], save.garrisonSortOrder);
+  const sorted = sortGarrison(save.garrison as readonly GarrisonEntry[], save.garrisonSortOrder);
+  // The practice Dummy is not a real hero: it always sits at the bottom, whatever the sort order.
+  const isDummy = (g: GarrisonEntry): boolean => g.characterName === 'Dummy';
+  return [...sorted.filter((g) => !isDummy(g)), ...sorted.filter(isDummy)];
 }
 
 export interface RowView {

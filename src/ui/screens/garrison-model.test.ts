@@ -66,6 +66,11 @@ describe('displayOrder', () => {
     const byName = [g('1', 'Pax', 2), g('2', 'Echo', 9), g('3', 'Aaa', 5)];
     expect(displayOrder({ garrisonSortOrder: 2, garrison: byName }).map((x) => x.id)).toEqual(['3', '2', '1']);
   });
+
+  it('keeps the Dummy at the bottom under every sort order', () => {
+    const withDummy = [g('1', 'Pax', 2), g('d', 'Dummy', 15), g('2', 'Echo', 9)];
+    for (const order of [0, 1, 2]) expect(displayOrder({ garrisonSortOrder: order, garrison: withDummy }).at(-1)?.id).toBe('d');
+  });
 });
 
 describe('rowView', () => {
