@@ -9,7 +9,7 @@ cheat code, it lasts only for the browser tab, and it is marked on screen the wh
 |---|---|
 | Click **Cheats** on the main menu (every build; it turns tester mode on and opens the panel; afterwards it reads **Tester options**) | Main menu |
 | Press **Up Up Down Down Left Right Left Right B A** | on the main menu |
-| Type **`taming-tester`** into **Tester code** and press **Apply code** | Settings |
+| Tick **Unlock full garrison** | Settings |
 | Add `?cheats=1` to the URL | dev and test builds only (never production) |
 
 A yellow **TESTER MODE** badge (top right) shows on every screen, including during play. It says whether progress is thrown

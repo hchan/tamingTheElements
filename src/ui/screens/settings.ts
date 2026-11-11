@@ -5,8 +5,11 @@ import {
   DIFFICULTY,
   DISPLAY_SCALE,
   GARRISON_SORT_ORDER,
+  fullGarrison,
+  metaIdSource,
   migrate,
   newEmptyState,
+  seedSfc32,
   type SaveV1,
 } from '@core/menu-index';
 import { ARCADE_PREVIEW } from '../../game/platform/arcade-setting';
@@ -28,7 +31,6 @@ import { tester } from '../../game/platform/tester/session';
 import { canvasFraction } from '../display-scale';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
-import { isTesterCode } from '../tester/code';
 import type { Screen } from './screen';
 
 const STORAGE_KEY = 'Taming the Elements';
@@ -273,33 +275,34 @@ function recordControls(): HTMLElement {
   return box;
 }
 
-/** Tester mode (docs/TESTER-MODE.md): typing the documented code here turns it on, same as the main-menu key sequence. */
-function testerControls(): HTMLElement {
+/** Tester mode (docs/TESTER-MODE.md) as one checkbox: ticking it unlocks a full garrison (every race, level 15) in a throwaway save. */
+function testerControls(store: SaveStore): HTMLElement {
   const box = el('div', 'settingsGroup');
-  const label = el('label', 'settingsOption', 'Tester code ');
+  const row = el('label', 'settingsOption');
   const input = el('input');
-  input.type = 'text';
-  input.id = 'testerCode';
-  input.autocomplete = 'off';
-  input.setAttribute('autocapitalize', 'off');
-  input.setAttribute('spellcheck', 'false');
-  label.htmlFor = input.id;
-  const apply = el('button', 'menuButton', 'Apply code');
-  apply.type = 'button';
-  apply.id = 'testerCodeApply';
+  input.type = 'checkbox';
+  input.id = 'unlockGarrison';
+  input.checked = tester.enabled;
   const status = el('div', 'settingsStatus');
   status.id = 'testerCodeStatus';
   status.setAttribute('role', 'status');
-  apply.addEventListener('click', () => {
-    if (isTesterCode(input.value)) {
-      tester.enable();
-      status.textContent = 'Tester mode is on. Use the TESTER MODE badge to open the tester options.';
-    } else {
-      status.textContent = 'That is not the tester code.';
+  input.addEventListener('change', () => {
+    if (!input.checked) {
+      tester.disable();
+      status.textContent = 'Tester mode is off.';
+      return;
     }
-    input.value = '';
+    tester.enable();
+    tester.applyFullCheat();
+    const now = Date.now();
+    void store.load().then(async (r) => {
+      if (!r.ok) return;
+      await store.save(fullGarrison(r.value, now, metaIdSource(seedSfc32(now >>> 0, 'meta'))));
+      status.textContent = 'Full garrison unlocked (tester mode: progress is not saved). Turn it off from the TESTER MODE badge or here.';
+    });
   });
-  box.append(label, input, apply, status);
+  row.append(input, ' Unlock full garrison (tester mode, progress not saved)');
+  box.append(row, status);
   return box;
 }
 
@@ -360,7 +363,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
     page.append(
       form,
       recordControls(),
-      testerControls(),
+      testerControls(store),
       transferControls(
         store,
         (imported) => {

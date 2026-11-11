@@ -109,18 +109,13 @@ test.describe('Capture through normal progression (no cheats)', () => {
 });
 
 test.describe('Tester mode', () => {
-  test('is off by default and the Settings code field turns it on', async ({ page }) => {
+  test('is off by default and the Settings checkbox turns it on', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(START);
     await expect(page.locator('#testerBadge')).toBeHidden();
     await expect(page.locator('#testerOptionsMenu')).toHaveCount(0);
     await goToHash(page, '#settings');
-    await page.locator('#testerCode').fill('wrong');
-    await page.locator('#testerCodeApply').click();
-    await expect(page.locator('#testerCodeStatus')).toHaveText('That is not the tester code.');
-    await expect(page.locator('#testerBadge')).toBeHidden();
-    await page.locator('#testerCode').fill('Taming-Tester');
-    await page.locator('#testerCodeApply').click();
+    await page.locator('#unlockGarrison').check();
     await expect(page.locator('#testerBadge')).toContainText('TESTER MODE - progress not saved');
     // Per tab: it survives a reload, and the menu now offers the tester options.
     await page.reload();

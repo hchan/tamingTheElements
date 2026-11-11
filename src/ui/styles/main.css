@@ -714,3 +714,54 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
 body:has(#game:not(:empty)) {
   background: var(--color-bg);
 }
+
+/* Settings: option chips in a wrapping row, readable controls, styled text input. */
+#menu .settingsGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 0.75em;
+  padding: 0.6em 0.9em 0.9em;
+}
+#menu .settingsGroup > legend {
+  flex: 0 0 100%;
+}
+#menu .settingsGroup > label.settingsOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.3em 0.8em;
+  border: 1px solid #666;
+  border-radius: 999px;
+  background: #1c1c2a;
+  cursor: pointer;
+}
+#menu .settingsGroup > label.settingsOption:has(input:checked) {
+  border-color: #ffe600;
+  background: #2b2a12;
+  color: #ffe600;
+}
+#menu .settingsGroup > label.settingsOption:focus-within {
+  outline: 2px solid #8cf;
+}
+#menu .settingsGroup > div.settingsOption {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.6em;
+  align-items: center;
+}
+#menu .settingsGroup > div.settingsOption > .info {
+  grid-column: 2;
+  font-weight: normal;
+  opacity: 0.8;
+}
+#menu .settingsOption input[type='radio'],
+#menu .settingsOption input[type='checkbox'] {
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0;
+  accent-color: #ffe600;
+}
+#menu div.settingsGroup {
+  padding: 0;
+}
