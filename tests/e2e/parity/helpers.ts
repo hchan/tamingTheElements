@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 
 // Page-side code is passed as strings because tsconfig.node has no DOM lib.
-export const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena`;
+export const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena && window.__TTE__.arena.viewsReady()`;
 export const SAVE_KEY = 'Taming the Elements';
 export const BACKUP_KEY = 'Taming the Elements.v0.bak';
 /** Manual stepping (battle starts paused) and a fixed seed for the opponent draw and the sim. */

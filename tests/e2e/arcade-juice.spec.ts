@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ARENA_READY } from './parity/helpers';
 
 // Hit feedback in the browser (WP-arcade-juice-hits, VISUAL-QA V6). Page-side code is passed as strings because
 // tsconfig.node has no DOM lib. Manual stepping keeps the driver paused, and paused effects hold their frame, so what a
 // step produced is still on screen when the probe reads it.
-const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena`;
 const SECONDARY = 32;
 const WHITE = 0xffffff;
 const FILL = 1;

@@ -145,6 +145,17 @@ later `hashchange` task. `state().mountedRoute` is set by the router (test build
 `waitForRoute` waits on it, so keys pressed right after it hit the new screen. Screens with async content (Settings and other
 save-backed screens show "Loading...") still need their own wait (`loaded()` in `tests/e2e/keyboard.spec.ts`).
 
+### Driving the arena in a spec
+
+- Wait with the shared `ARENA_READY` (`tests/e2e/parity/helpers.ts`), never a local copy: it also requires `arena.viewsReady()`. The Arcade
+  views (round, weather, tag, defence) are lazy chunks that mount after the probe exists; a sim event emitted before they mount is not
+  drawn (a "TAG!" call, a banner, a flash), and the probe then returns a state with no call. On a slow renderer (CI SwiftShader) the
+  race shows up; locally it hides. Throttle to check: CDP `Emulation.setCPUThrottlingRate` rate 6 in a scratch copy of the spec.
+- Drive ticks only with the probe: `step(n)` / `stepLive(n)` pause the live driver first, so no real-time tick lands between
+  evaluates. Do not rely on wall-clock progress.
+- Known limitation (product): in a real match the first ticks are the 90-tick intro, so a view mounting a few frames late never
+  misses a visible event; mounted views do not replay events from before their mount.
+
 ## Writing a new ability or character test
 
 Abilities and characters are data in `src/core/data/` (`abilities-a.ts`, `abilities-b.ts`, `characters.ts`). Follow the pattern

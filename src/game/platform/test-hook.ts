@@ -67,6 +67,8 @@ export interface ArenaProbe {
    * none) with its scale; undefined in Classic.
    */
   weather(): Promise<{ kind: number; label: string; fill: number; tint: number; particles: number; call: string; callScale: number } | undefined>;
+  /** True once the lazy Arcade views (round, weather, tag, defence) are mounted and the Hud runs; events before it are not drawn. */
+  viewsReady(): boolean;
   /**
    * Arcade 2v2 only (async: a lazy chunk): the tag view's last frame (WP-arcade-tag-view): per team its active, bench and
    * tag lines, the "TAG!" call ('' when none) and its scale, live entrance flashes (and whether one is a KO entrance),
