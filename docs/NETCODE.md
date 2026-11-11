@@ -18,17 +18,17 @@ Groundwork for player-vs-player. No real network code exists yet: the pure proto
 - Bots/agents may run on a peer's own copy of the shared world: `SimState` is mutated only by `step`, and an agent keeps its random stream (`AgentRng`, `seedSfc32(seed, 'ai.p1' | 'ai.p2')`) and memory to itself, so consulting it never changes the hash. Only the commands it returns travel. `src/testing/net/lockstep.test.ts` plays a live bot on one peer and checks every checkpoint.
 - Wire format: `src/core/net/packet.ts` (`match u8, flags u8, ack u32, firstTick u32, n u8, n*u16 inputs, m u8, m*(tick u32, hash u32)`), about 20 bytes in steady state.
 
-## Rollback (next step, not implemented)
+## Rollback (opt-in, `LockstepOptions.rollbackWindow`)
 
-Lockstep hides latency only through input delay. Rollback predicts the missing remote input (repeat last), steps ahead, and on a late real input restores the snapshot at that tick and re-simulates. The hooks exist:
+Lockstep hides latency only through input delay. With `rollbackWindow > 0` (default 0 = plain lockstep) the session predicts a missing remote input (repeats the last remote command), steps ahead, and when the real input differs restores the snapshot of that tick and re-simulates to the present.
 
-- `SnapshotRing` already stores world snapshots by tick (no allocation), each with an optional payload: store the agents'
-  `AgentSnapshot` (`saveAgents`) there so a peer's bots rewind with the world. `restoreTick` takes the newest entry of a
-  tick and drops the later ones.
-- `LockstepSession.captureSnapshot()` returns a plain-data copy of the bookkeeping (inputs, acks, hashes).
-- `sim/step` is a pure function of state and commands, and events are derived data, so re-simulation is safe.
-
-To add: prediction in `update` (step with a guessed remote input), a restore-and-resimulate path, event de-duplication for the renderer (stable event id is `(tick, sourceId, kind, seq)`), and a max-rollback window that falls back to a stall.
+- A `SnapshotRing` (depth window + 2) is pushed before every step. `confirmed` is the first tick stepped with a predicted remote input: everything below it is final.
+- Prediction runs at most `rollbackWindow` ticks past `confirmed`; beyond that the session stalls (`waiting`) exactly as lockstep does. Remote inputs older than `confirmed` are ignored.
+- `reconcile` (start of each update) finds the earliest tick whose real input differs from the one used, `restoreTick`s it and re-steps to the old present. Matching predictions cost nothing.
+- Hashes: a checkpoint hash is held back until its tick is confirmed, then recorded and compared. A predicted tick is never hashed, so a wrong guess cannot report a desync. The match end (win or `tickLimit`) is likewise only final once confirmed; the sim does not step past a pending end.
+- Events: `UpdateResult.events` surfaces each stable id `(tick, sourceId, kind, seq)` once. Events from predicted steps show immediately; re-simulation re-emits only ids that are new or whose payload changed (a correction), and `UpdateResult.retracted` lists events shown earlier that the corrected timeline no longer produces. A renderer that only wants final events can hold events until their tick is below the confirmed frontier. Per-tick bookkeeping is dropped as ticks confirm.
+- Stats: `predictedSteps`, `rollbacks`, `resimTicks`, `maxRollbackDepth`.
+- Limits: agents' memory is not rewound (a live bot on a session reads the predicted world; the ring supports an `AgentSnapshot` payload if that is wanted); the Arena (`ArenaLaunch.net`) does not enable it yet. Tests: `src/testing/net/rollback.test.ts`.
 
 ## WebRTC plan
 
@@ -53,7 +53,7 @@ To add: prediction in `update` (step with a guessed remote input), a restore-and
 - [x] Two-session bot-vs-bot tests at 0, 10, 30 percent loss, property test over network conditions
 - [x] Headless `pnpm sim:net`
 - [x] Session snapshot hook for rollback
-- [ ] Rollback with input prediction and event de-duplication
+- [x] Rollback with input prediction and event de-duplication (opt-in `rollbackWindow`; not yet used by the Arena)
 - [x] Match-setup protocol over a reliable pipe: `src/core/net/handshake.ts` (simVersion, flags, seed, rosters; cheats refused) and `control.ts` (`SetupHandshake`: HELLO, READY, REJECT, never throws on junk)
 - [x] `RTCDataChannel` adapters `inputTransport` (id 0) and `controlPipe` (id 1) in `src/game/net/rtc-channels.ts` (binary only, capped inbox, send never throws; unit-tested with a fake channel)
 - [x] Creating the `RTCPeerConnection` and its two negotiated channels
