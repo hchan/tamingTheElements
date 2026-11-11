@@ -1,10 +1,11 @@
+import { getCharacter, type CharacterId } from '@core/index';
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import { loadSave } from '@ui/screens/main-menu';
 import type { Screen } from '@ui/screens/screen';
-import { tourCardView, tourPickView } from '@ui/screens/tour';
-import { mapLayout, tourMapView } from '@ui/screens/tour-map';
+import { tourCardView, tourPickView, tourSplashView, type SplashSide } from '@ui/screens/tour';
+import { elementGlyph, mapLayout, tourMapView } from '@ui/screens/tour-map';
 import { requestOpenTesterPanel } from '@ui/tester/install';
 import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
@@ -17,6 +18,7 @@ import { TOUCH, touchButton } from './arcade-versus';
 import { destroyGame, type GameHandle } from './game-handle';
 import { currentStage, matchSeed, parseTeam, stagePick } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
+import { runSummary } from './tour-summary';
 import { browserTourStorage, clearRun, loadRun, saveRun, type TourStorage } from './tour-store';
 
 /**
@@ -32,6 +34,9 @@ export interface TourDeps {
   readonly randomSeed: () => number;
 }
 
+/** How long the versus splash stays before the match starts. */
+const SPLASH_MS = 1200;
+
 const ELEMENT_WORD = (e: string): string => (e[0] ?? '').toUpperCase() + e.slice(1);
 
 export function tourScreen(deps: TourDeps): Screen {
@@ -42,9 +47,12 @@ export function tourScreen(deps: TourDeps): Screen {
   let epoch = 0;
   let offKeys: (() => void) | undefined;
   let run: TourRun | undefined;
+  /** Removes the versus splash's timer and key listener, when one is up. */
+  let offSplash: (() => void) | undefined;
 
   const show = (next: HTMLElement): void => {
     epoch++;
+    offSplash?.();
     if (game) destroyGame(game, view);
     else view?.remove();
     game = undefined;
@@ -114,21 +122,23 @@ export function tourScreen(deps: TourDeps): Screen {
     const left = `${String(r.continues)} of ${String(TOUR_CONTINUES)} continues left`;
     const foe = stage.opponents.map(raceLabel).join(', ');
     if (r.status === 'won') {
+      const sum = runSummary(r, raceLabel);
       show(
         tourCardView({
           id: 'tourEnding',
           heading: 'The tour is complete!',
-          lines: [`You beat all ${String(TOUR_STAGES)} stages, the Eternal Void included. Team: ${r.hero.map(raceLabel).join(', ')}.`],
-          actions: [{ id: 'tourAgain', label: 'New tour', onClick: () => { clearRun(deps.storage); showPick(); } }],
+          lines: [`Congratulations! You beat all ${String(TOUR_STAGES)} stages, the Eternal Void included.`, ...sum.lines],
+          actions: [{ id: 'tourAgain', label: 'Play again', onClick: () => { clearRun(deps.storage); showPick(); } }],
         }),
       );
     } else if (r.status === 'over') {
+      const sum = runSummary(r, raceLabel);
       show(
         tourCardView({
           id: 'tourOver',
           heading: 'Game over',
-          lines: [`The tour ended at ${n}. No continues were left or you gave up.`],
-          actions: [{ id: 'tourAgain', label: 'New tour', onClick: () => { clearRun(deps.storage); showPick(); } }],
+          lines: [`The tour ended at ${n}: no continues were left or you gave up.`, ...sum.lines],
+          actions: [{ id: 'tourAgain', label: 'Play again', onClick: () => { clearRun(deps.storage); showPick(); } }],
         }),
       );
     } else if (r.status === 'lost') {
@@ -162,10 +172,53 @@ export function tourScreen(deps: TourDeps): Screen {
             `Opponent: ${foe}.`,
             `Difficulty: ${ELEMENT_WORD(stage.aiLevel)}. ${left}.`,
           ],
-          actions: [{ id: 'tourFight', label: 'Fight', onClick: startBattle }],
+          actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { showSplash(r); } }],
         }),
       );
     }
+  }
+
+  /**
+   * The versus splash: 1.2 s, skipped by Enter, Space or a click/tap. Under reduced motion it is not shown at all. The view change
+   * bumps `epoch` (and `show` drops the listeners), so leaving the screen mid-splash never starts a battle.
+   */
+  function showSplash(r: TourRun): void {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      startBattle();
+      return;
+    }
+    const stage = currentStage(r);
+    const lead = (id: CharacterId, who: string): SplashSide => ({ who, name: raceLabel(id), element: getCharacter(id).element });
+    const view2 = tourSplashView(
+      `Stage ${String(stage.index + 1)} of ${String(TOUR_STAGES)}`,
+      lead(r.hero[0] as CharacterId, 'You'),
+      lead(stage.opponents[0] as CharacterId, 'Opponent'),
+      (e) => elementGlyph(e, 64),
+    );
+    show(view2);
+    const mine = epoch;
+    let done = false;
+    const go = (): void => {
+      if (done || epoch !== mine) return;
+      done = true;
+      cleanup();
+      startBattle();
+    };
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        go();
+      }
+    };
+    const timer = window.setTimeout(go, SPLASH_MS);
+    const cleanup = (): void => {
+      window.clearTimeout(timer);
+      document.removeEventListener('keydown', onKey);
+      offSplash = undefined;
+    };
+    document.addEventListener('keydown', onKey);
+    view2.addEventListener('click', go);
+    offSplash = cleanup;
   }
 
   function startBattle(): void {
@@ -223,6 +276,7 @@ export function tourScreen(deps: TourDeps): Screen {
     },
     unmount: () => {
       epoch++;
+      offSplash?.();
       offKeys?.();
       offKeys = undefined;
       destroyGame(game, view);

@@ -89,6 +89,15 @@ function pinGroup(p: MapPin, animate: boolean): SVGElement {
   return g;
 }
 
+/** A small standalone SVG of an element's pin shape (decorative: the caller gives the words). */
+export function elementGlyph(element: string, size = 48): SVGElement {
+  const root = svg('svg', { viewBox: '0 0 40 40', width: String(size), height: String(size), 'aria-hidden': 'true', focusable: 'false' });
+  const shape = shapePoints(element, 20, 20);
+  const attrs = { fill: FILL[element] ?? '#888', stroke: '#fff', 'stroke-width': '1.5' };
+  root.append(shape ? svg('polygon', { points: shape, ...attrs }) : svg('circle', { cx: '20', cy: '20', r: '11', ...attrs }));
+  return root;
+}
+
 /** The map picture plus the text list of pins; the current pin's list item is focusable and marked `aria-current`. */
 export function tourMapView(pins: readonly MapPin[], reducedMotion: boolean): HTMLElement {
   const wrap = el('div');

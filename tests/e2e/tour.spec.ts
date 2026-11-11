@@ -40,7 +40,12 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   expect(await page.evaluate<string | null>(`localStorage.getItem('${KEY}')`)).toContain('"stage":0');
 
   await page.getByRole('button', { name: 'Fight' }).click();
+  // The versus splash shows first; this run lets it auto-advance (1.2 s) into the match.
+  await expect(page.locator('#tourSplash')).toContainText('Stage 1 of 9');
+  await expect(page.locator('#tourSplash')).toContainText('You: Fiara (fire)');
+  await expect(page.locator('#tourSplash')).toContainText('Opponent:');
   await page.waitForFunction(ARENA_READY);
+  await expect(page.locator('#tourSplash')).toHaveCount(0);
   await step(page, INTRO);
   await winRound(page);
   await step(page, INTRO);
@@ -60,5 +65,55 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   await expect(page.locator('#tourResume')).toContainText('stage 2 of 9');
   await page.getByRole('button', { name: 'Resume' }).click();
   await expect(page.getByRole('heading', { name: 'Stage 2 of 9' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('World Tour: the versus splash is skipped by Enter and by a click', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByRole('button', { name: 'Start tour' }).click();
+  await page.getByRole('button', { name: 'Fight' }).click();
+  await expect(page.locator('#tourSplash svg')).toHaveCount(2);
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(ARENA_READY, undefined, { timeout: 1_000 });
+  await expect(page.locator('#tourSplash')).toHaveCount(0);
+
+  // Leaving mid-splash never starts a battle; a click skips it.
+  await page.goto(`${START}&ff=arcade#main`);
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Fight' }).click();
+  await page.locator('#tourSplash').click();
+  await page.waitForFunction(ARENA_READY, undefined, { timeout: 1_000 });
+  await page.evaluate(`window.__TTE__.settled()`);
+  expect(errors).toEqual([]);
+});
+
+test('World Tour: reduced motion skips the splash', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByRole('button', { name: 'Start tour' }).click();
+  await page.getByRole('button', { name: 'Fight' }).click();
+  await page.waitForFunction(ARENA_READY, undefined, { timeout: 1_000 });
+  await expect(page.locator('#tourSplash')).toHaveCount(0);
+});
+
+test('World Tour: no continues left shows the Game Over card with the summary, and Play again starts a new pick', async ({ page }) => {
+  const errors = collectErrors(page);
+  const run = { v: 1, seed: 5, hero: ['fiara', 'rokcore', 'curomo'], stage: 2, continues: 0, status: 'lost' };
+  await page.goto(`${START}&ff=arcade#main`);
+  await page.evaluate(`localStorage.setItem('${KEY}', ${JSON.stringify(JSON.stringify(run))})`);
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await expect(page.locator('#tourContinue')).toBeDisabled();
+  await page.getByRole('button', { name: 'Give up' }).click();
+  const over = page.locator('#tourOver');
+  await expect(over.getByRole('heading', { name: 'Game over' })).toBeVisible();
+  await expect(over).toContainText('Stages cleared: 2 of 9.');
+  await expect(over).toContainText('Continues used: 3 of 3');
+  await expect(over).toContainText('Hero team: Fiara (fire), Rokcore (earth), Curomo (water).');
+  await expect(over.getByRole('link', { name: 'Main Menu' })).toBeVisible();
+  await over.getByRole('button', { name: 'Play again' }).click();
+  await expect(page.getByRole('button', { name: 'Start tour' })).toBeVisible();
   expect(errors).toEqual([]);
 });
