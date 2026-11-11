@@ -745,10 +745,17 @@ Warcraft warrior's Charge. It gives melee heroes a gap closer, the way weather a
 Owner direction: like Street Fighter II, a tour of the world: pick a hero, beat eight opponents in a fixed ladder, then fight the
 final boss, the Eternal Void. Design (not built yet):
 
-- **Ladder:** the 11 other playable races, 7 drawn from the tour seed in a fixed order that rises Easy, Normal, Normal, Normal, Hard, Hard, Hard
-  (the 8th is the hero's elemental counter, a "rival"), then the Void as fight 9. Each fight is a normal Arcade best-of-3 match; the sim is untouched
-  (the app builds one match per fight with `arcade-setup`). The Void uses the existing Arcade boss numbers (section 2.13), is the only non-pickable
-  opponent, and has no tag partner.
+- **3v3 always (owner, 2026-11-11):** the player brings a team of 3 heroes (as in Classic's garrison) and every opponent is a team of 3. This
+  needs a sim change: Arcade tag (section 2.6) is 2v2 today, so a 3-per-side tag (swap to either bench member, KO entrance, bench
+  recovery, team HUD, AI) is a prerequisite WP (Opus, SIM_VERSION bump, Arcade-only, Classic bit-identical). 3v3 is the Tour's format;
+  Arcade Versus and Online may offer 1v1, 2v2 and 3v3 later.
+- **Locations:** the tour visits at least four element locations, Fire, Earth, Water and Air (a stage backdrop and the stage's terrain element, 2.15,
+  match the location), and at least one opponent at each location has that element. Each stop is a best-of-3 match against a 3-hero team.
+  Remaining stops are drawn from the seed. The map pins are those locations (not flags per race).
+- **Ladder:** 8 opponent teams, in order Easy, Normal, Normal, Normal, Hard, Hard, Hard, then the Void. The four element stops come
+  first in a seed-shuffled order, then four more drawn from the seed; the 8th is the hero's elemental rival. Every team has a lead of the
+  location's element. The Void is the final boss (a lone Void, or a Void with two shades: decided after the 3v3 WP and the boss probe),
+  with the Arcade boss numbers (2.13).
 - **Presentation:** a world-map screen between fights (a stage backdrop per race, the next opponent highlighted, a "stage N of 9" line), the
   versus splash, and an ending card after the Void. A loss offers Continue (replay that fight, up to 3 times) then Game Over.
   Reduced motion and keyboard, pad and touch all reach every button.
