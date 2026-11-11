@@ -1,22 +1,19 @@
-import { SetupHandshake, helloOf, type SessionStatus, type SetupPhase } from '@core/index';
+import { SetupHandshake, helloOf, type MatchSetup, type SessionStatus, type SetupPhase } from '@core/index';
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import type { Screen } from '@ui/screens/screen';
 import { hostPeer, joinPeer, type Peer } from '../net/peer';
 import { destroyGame, type GameHandle } from './game-handle';
-import { DEFAULT_PICK } from './arcade-pick';
-import { arcadeSetup } from './arcade-setup';
+import { ARCADE_RACES, DEFAULT_PICK } from './arcade-pick';
+import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-pick';
+import { raceLabel } from '@ui/screens/arcade-versus';
 import type { ArenaLaunch } from '../scenes/launch';
 
 /**
  * The `#online` route (preview, shown with Arcade Versus), its own chunk. Two players connect with copy-pasted codes (no
  * server): the host makes an offer code, the friend pastes it and sends an answer code back. Once the link is open both
- * sides run the setup handshake (sim version, flags, rosters) as a connection check. Playing the match over the link is the
- * next work package (docs/NETCODE.md), so this screen stops at "Connected".
+ * sides pick a hero, swap picks (the host's seed decides the match), then run the setup handshake and play in lockstep.
  */
-
-/** Fixed setup for the connection check: both builds must derive the same one, or the handshake says why not. */
-const CHECK_SEED = 1;
 
 /** Words for the status line: never colour alone. */
 export function phaseText(phase: SetupPhase, reason: string | undefined): string {
@@ -94,7 +91,7 @@ export function onlineVersusScreen(): Screen {
         el('p', undefined, 'Play a friend over the internet with no server: one of you hosts and sends a code, the other joins and sends a code back.'),
       );
 
-      const startMatch = (p: Peer, say: (s: string) => void): void => {
+      const startMatch = (p: Peer, say: (s: string) => void, setup: MatchSetup): void => {
         void import('../boot/phaser-config').then(({ createGame }) => {
           if (gone || !node) return;
           const holder = el('div');
@@ -102,7 +99,7 @@ export function onlineVersusScreen(): Screen {
           arenaNode = holder;
           node.append(holder);
           const launch: ArenaLaunch = {
-            setup: arcadeSetup(DEFAULT_PICK, CHECK_SEED),
+            setup,
             net: {
               side,
               input: p.input,
@@ -115,22 +112,64 @@ export function onlineVersusScreen(): Screen {
           game = createGame(holder, launch);
         });
       };
+      const handshake = (p: Peer, setup: MatchSetup): void => {
+        const hs = new SetupHandshake(p.control, helloOf(setup));
+        timer = setInterval(() => {
+          const phase = hs.poll();
+          say(phaseText(phase, hs.reason));
+          if ((phase === 'go' || phase === 'rejected') && timer !== undefined) {
+            clearInterval(timer);
+            timer = undefined;
+            if (phase === 'go') startMatch(p, say, setup);
+          }
+        }, 50);
+      };
+      /** Hero choice: send ours, wait for theirs (one message only, so the handshake's HELLO stays queued), then both derive the setup. */
+      const pickPhase = (p: Peer): void => {
+        const row = el('div', 'settingsOption');
+        const lab = el('label', undefined, 'Your hero');
+        const sel = el('select');
+        sel.id = 'onlineRace';
+        lab.htmlFor = sel.id;
+        for (const r of ARCADE_RACES) {
+          const o = el('option', undefined, raceLabel(r));
+          o.value = r;
+          sel.append(o);
+        }
+        sel.value = DEFAULT_PICK.player;
+        const ready = button('onlineReady', 'Ready', () => {
+          ready.disabled = true;
+          sel.disabled = true;
+          const race = ARCADE_RACES.find((r) => r === sel.value) ?? DEFAULT_PICK.player;
+          const mine: OnlinePick = { race, seed: side === 0 ? crypto.getRandomValues(new Uint32Array(1))[0] ?? 1 : 0 };
+          p.control.send(encodePick(mine));
+          say('Waiting for your friend to pick...');
+          timer = setInterval(() => {
+            const m = p.control.receive();
+            if (m === undefined) return;
+            if (timer !== undefined) clearInterval(timer);
+            timer = undefined;
+            const theirs = decodePick(m);
+            if (theirs === undefined) {
+              say('Your friend sent something unexpected. Both reload the page.');
+              return;
+            }
+            handshake(p, side === 0 ? onlineSetup(mine, theirs) : onlineSetup(theirs, mine));
+          }, 50);
+        });
+        row.append(lab, sel);
+        node?.insertBefore(row, status);
+        node?.insertBefore(ready, status);
+        sel.focus();
+      };
       const watch = (p: Peer): void => {
         peer = p;
         say('Waiting for the link to open...');
         p.open.then(
           () => {
             if (gone) return;
-            const hs = new SetupHandshake(p.control, helloOf(arcadeSetup(DEFAULT_PICK, CHECK_SEED)));
-            timer = setInterval(() => {
-              const phase = hs.poll();
-              say(phaseText(phase, hs.reason));
-              if ((phase === 'go' || phase === 'rejected') && timer !== undefined) {
-                clearInterval(timer);
-                timer = undefined;
-                if (phase === 'go') startMatch(p, say);
-              }
-            }, 50);
+            say('Link open. Choose your hero, then press Ready.');
+            pickPhase(p);
           },
           () => {
             if (!gone) say('The connection failed. Check both codes and try again (a strict network may need a relay).');

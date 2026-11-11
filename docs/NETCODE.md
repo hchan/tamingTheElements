@@ -58,7 +58,8 @@ To add: prediction in `update` (step with a guessed remote input), a restore-and
 - [x] `RTCDataChannel` adapters `inputTransport` (id 0) and `controlPipe` (id 1) in `src/game/net/rtc-channels.ts` (binary only, capped inbox, send never throws; unit-tested with a fake channel)
 - [x] Creating the `RTCPeerConnection` and its two negotiated channels
 - [x] Manual copy-paste signalling screen (`#online`, shown with the Arcade preview; connects, runs the setup handshake, then plays a fixed Arcade 1v1 in lockstep: host is side 0, joiner side 1; `ArenaLaunch.net` makes the Arena step through a `LockstepSession`, no pause, hidden tab via `setHidden`)
-- [ ] Online picker (choose heroes), real MatchSetup in the handshake, rematch/lobby, results screen
+- [x] Online hero pick exchange, real MatchSetup in the handshake
+- [ ] Rematch/lobby, results screen
 - [ ] Relay signalling (short room codes) and TURN
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
 - [ ] Browser e2e with two pages

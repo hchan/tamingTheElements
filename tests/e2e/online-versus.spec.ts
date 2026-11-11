@@ -25,6 +25,10 @@ test('two players connect through the Online Versus screen with pasted codes', a
 
   await a.locator('#onlineAnswerIn').fill(answer);
   await a.locator('#onlineConnect').click();
+  await a.locator('#onlineRace').selectOption({ index: 0 });
+  await b.locator('#onlineRace').selectOption({ index: 2 });
+  await a.locator('#onlineReady').click();
+  await b.locator('#onlineReady').click();
   await expect(a.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
   await expect(b.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
   // The match then runs in lockstep on both pages: the shared sim advances on each and nobody reports a desync.
