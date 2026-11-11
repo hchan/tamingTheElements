@@ -10,8 +10,6 @@ export interface UiFlags {
   readonly arenaDemo: boolean;
   /** The `arenaDemo` match runs the Arcade ruleset (dev and test builds; the menu entry is WP-arcade-entry). */
   readonly arcade: boolean;
-  /** Enemy uses the scripted AI instead of the random bot (falls back to the bot until the AI is complete). */
-  readonly aiScripted: boolean;
   /** Play path starts the intro cinematic after Preload. */
   readonly cinematicDemo: boolean;
   /** Record playtests (`?ff=record`, dev and test builds); production uses the Settings checkbox instead. */
@@ -34,7 +32,6 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   forceNoWebgl: false,
   arenaDemo: false,
   arcade: false,
-  aiScripted: false,
   cinematicDemo: false,
   record: false,
   failLoad: false,
@@ -63,7 +60,6 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     forceNoWebgl: on.has('forceNoWebgl'),
     arenaDemo: on.has('arenaDemo'),
     arcade: on.has('arcade'),
-    aiScripted: on.has('aiScripted'),
     cinematicDemo: on.has('cinematicDemo'),
     record: on.has('record'),
     failLoad: on.has('failLoad'),
