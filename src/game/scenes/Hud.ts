@@ -15,7 +15,6 @@ import {
   REST_COLOR,
   barFill,
   benchBar,
-  BENCH_LINE,
   BENCH_SPRITE,
   collectSide,
   criticalPulse,
@@ -52,6 +51,8 @@ const PORTRAIT = 52;
 /** Below the fullscreen button in the top-right corner. */
 const PORTRAIT_Y = 44;
 const PORTRAIT_FRAME = 'portrait';
+/** Lowest the top of a bench portrait may sit: just under the main bar. */
+const BENCH_TOP = 24;
 function portraitX(team: number): number {
   return team === 0 ? 30 : HUD_WIDTH - 20 - PORTRAIT;
 }
@@ -209,9 +210,10 @@ export class Hud extends Phaser.Scene {
         continue;
       }
       const g = benchBar(sideOffset(team), i);
-      const s = BENCH_SPRITE - 6;
-      const bx = g.minX - BENCH_LINE - s - 2;
-      const by = g.y - s / 2;
+      // Small enough to clear the main bar above and the health words to the left.
+      const s = BENCH_SPRITE - 14;
+      const bx = g.minX - 5 - s;
+      const by = Math.max(g.y - s / 2, BENCH_TOP);
       back?.fillStyle(0x070a12, 0.78);
       back?.fillRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
       this.placePortrait(im, b, bx, by, s, team === 1);

@@ -158,6 +158,16 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('classic HUD with a 3-hero bench', async ({ page }) => {
+      const errors = collectErrors(page);
+      await seed(page, fixture('v0-ch4'));
+      await startBattle(page, 'enterPracticeContainer', 3);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      await page.evaluate(STEP(5, 0, 0));
+      await shoot(page, vp, 'arena', 'hud-bench-classic', 'Classic HUD: a portrait beside the active bar and beside each bench bar');
+      expect(errors).toEqual([]);
+    });
+
     test('defeat screen', async ({ page }) => {
       // The results routes render from the save, so navigate directly (a lost practice match does not reach #defeat).
       await seed(page, fixture('v0-ch4'));
