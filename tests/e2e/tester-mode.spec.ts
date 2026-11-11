@@ -299,6 +299,20 @@ test.describe('Tester mode', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the God mode checkbox is on screen when the panel opens, with no scrolling (laptop viewport)', async ({ page }) => {
+    test.setTimeout(120_000);
+    const errors = collectErrors(page);
+    await page.setViewportSize({ width: 1280, height: 640 });
+    await page.goto(`${START}&cheats=1`);
+    await newGameToGarrison(page);
+    await openPanel(page);
+    const box = await page.locator('#tester-opt-godMode').boundingBox();
+    const view = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect((box?.y ?? -1) >= 0 && (box?.y ?? 0) + (box?.height ?? 0) <= (view?.height ?? 0)).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
   test('the pause dialog reaches the tester options; Escape closes only the panel, and Shift-Q wins once cheats are on', async ({ page }) => {
     test.setTimeout(120_000);
     const errors = collectErrors(page);
