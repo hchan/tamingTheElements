@@ -7,7 +7,7 @@
     "core": 12100,
     "defence-view": 3450,
     "index": 28700,
-    "index.css": 3300,
+    "index.css": 3400,
     "lazy-index": 550,
     "phaser": 388700,
     "phaser-config": 17510,
@@ -20,5 +20,5 @@
     "terrain-view": 4350,
     "weather-view": 3470
   },
-  "totalGzip": 468300
+  "totalGzip": 468400
 }

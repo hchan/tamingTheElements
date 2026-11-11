@@ -763,5 +763,23 @@ body:has(#game:not(:empty)) {
   accent-color: #ffe600;
 }
 #menu div.settingsGroup {
+  border: 1px solid #888;
+  border-radius: 10px;
+  background: #14141f;
+  margin: 0.75em 0;
+  padding: 0.7em 0.9em;
+  align-items: center;
+}
+#menu div.settingsGroup > label.settingsOption,
+#menu div.settingsGroup > label.settingsOption:has(input:checked) {
+  border: 0;
+  background: none;
   padding: 0;
+}
+#menu #testerCodeStatus {
+  flex: 0 0 100%;
+}
+#menu .settingsGroup + .settingsGroup,
+#menu form > div:has(> .menuButton) {
+  margin-top: 0.75em;
 }
