@@ -168,6 +168,17 @@ for (const vp of VIEWPORTS) {
       expect(errors).toEqual([]);
     });
 
+    test('high-contrast HUD with a 3-hero bench (OS prefers-contrast)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.emulateMedia({ contrast: 'more' });
+      await seed(page, fixture('v0-ch4'));
+      await startBattle(page, 'enterPracticeContainer', 3);
+      if (vp.mobile) await page.locator('#rotateDismiss').click();
+      await page.evaluate(STEP(5, 0, 0));
+      await shoot(page, vp, 'arena', 'hud-bench-contrast', 'High-contrast HUD: bars with portraits beside the bench bars');
+      expect(errors).toEqual([]);
+    });
+
     test('defeat screen', async ({ page }) => {
       // The results routes render from the save, so navigate directly (a lost practice match does not reach #defeat).
       await seed(page, fixture('v0-ch4'));
