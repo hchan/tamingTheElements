@@ -30,6 +30,8 @@ Lockstep hides latency only through input delay. With `rollbackWindow > 0` (defa
 - Stats: `predictedSteps`, `rollbacks`, `resimTicks`, `maxRollbackDepth`.
 - Limits: agents' memory is not rewound (a live bot on a session reads the predicted world; the ring supports an `AgentSnapshot` payload if that is wanted); the Arena (`ArenaLaunch.net`) does not enable it yet. Tests: `src/testing/net/rollback.test.ts`.
 
+Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs below the peer's ack) are dropped in batches, and hash history keeps the last 64 ticks, so a hash older than that is ignored.
+
 ## WebRTC plan
 
 - Input channel: `pc.createDataChannel('input', { negotiated: true, id: 0, ordered: false, maxRetransmits: 0 })`. Unordered and unreliable on purpose: stale inputs are useless and the redundancy above replaces retransmission.

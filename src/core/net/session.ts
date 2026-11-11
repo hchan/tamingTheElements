@@ -98,6 +98,8 @@ export interface SessionStats {
 export interface SessionSnapshot {
   readonly simTick: number;
   readonly inputDelay: number;
+  /** Tick of index 0 in `local` and `remote` (older entries are dropped once the peer acked them and they are final). */
+  readonly firstTick: number;
   readonly local: readonly Command[];
   readonly remote: readonly (Command | undefined)[];
   readonly remoteAck: number;
@@ -109,6 +111,40 @@ export interface SessionSnapshot {
 const MAX_AHEAD = 2 * MAX_INPUTS_PER_PACKET;
 const ADAPT_WINDOW = 50;
 const ADAPT_STALLS = 5;
+/** Checkpoint hashes kept for `hashAt` and late comparison (the wire carries only the last MAX_HASHES_PER_PACKET). */
+const HASH_HISTORY = 64;
+/** A `TickBuf` compacts once this many leading entries are dead. */
+const TRIM_BATCH = 32;
+
+/** Per-tick array that can forget its past: absolute tick indices, `dropBelow` frees the prefix. */
+class TickBuf<T> {
+  private items: (T | undefined)[] = [];
+  private base = 0;
+  get length(): number {
+    return this.base + this.items.length;
+  }
+  get first(): number {
+    return this.base;
+  }
+  get(tick: number): T | undefined {
+    return this.items[tick - this.base];
+  }
+  set(tick: number, v: T): void {
+    if (tick >= this.base) this.items[tick - this.base] = v;
+  }
+  push(v: T): void {
+    this.items.push(v);
+  }
+  slice(from: number, to: number): T[] {
+    return this.items.slice(Math.max(from, this.base) - this.base, to - this.base) as T[];
+  }
+  dropBelow(tick: number): void {
+    const n = Math.min(tick - this.base, this.items.length);
+    if (n < TRIM_BATCH) return;
+    this.items.splice(0, n);
+    this.base += n;
+  }
+}
 
 /**
  * Two-player deterministic lockstep over an unreliable, unordered `Transport`.
@@ -160,8 +196,8 @@ export class LockstepSession {
   private readonly pauseTimeoutTicks: number;
   private readonly tickLimit: number;
   private delay: number;
-  private readonly local: Command[] = [];
-  private readonly remote: (Command | undefined)[] = [];
+  private readonly local = new TickBuf<Command>();
+  private readonly remote = new TickBuf<Command>();
   /** Next remote tick not yet held contiguously (what we ack). */
   private remoteNeeded = 0;
   /** Next local tick the peer has not acked. */
@@ -185,7 +221,7 @@ export class LockstepSession {
   private readonly rbWindow: number;
   private readonly ring: SnapshotRing | undefined;
   /** Remote command actually fed to the sim at each tick (real or predicted); overwritten by re-simulation. */
-  private readonly used: Command[] = [];
+  private readonly used = new TickBuf<Command>();
   /** Ticks below this were stepped with real remote inputs only: final, never rolled back. */
   private confirmed = 0;
   /** State hashes of checkpoint ticks reached but not yet confirmed. */
@@ -193,7 +229,12 @@ export class LockstepSession {
   /** The sim reached its end (win or tick limit) on a not yet confirmed timeline. */
   private endPending = false;
   /** Events already surfaced per unconfirmed tick, for de-duplication. */
-  private readonly delivered = new Map<number, readonly SimEvent[]>();
+  private readonly delivered = new Map<number, SimEvent[]>();
+  /** Recycled per-tick event buffers and the match flags of the current `surface` call (no per-tick allocation). */
+  private readonly eventPool: SimEvent[][] = [];
+  private readonly matched: boolean[] = [];
+  /** Hash ticks below this were dropped; late remote hashes for them are ignored. */
+  private hashFloor = 0;
 
   constructor(opts: LockstepOptions) {
     this.world = opts.world;
@@ -296,11 +337,11 @@ export class LockstepSession {
         const out: SimEvent[] = [];
         this.reconcile(out, retracted);
         const t = this.simTick;
-        const mine = this.local[t];
+        const mine = this.local.get(t);
         const canStep =
           mine !== undefined &&
           !this.endPending &&
-          (this.remote[t] !== undefined || t - this.confirmed < this.rbWindow);
+          (this.remote.get(t) !== undefined || t - this.confirmed < this.rbWindow);
         if (canStep) {
           this.stepOne(out, retracted);
           stepped = true;
@@ -312,8 +353,8 @@ export class LockstepSession {
         events = out;
       } else {
         const t = this.simTick;
-        const mine = this.local[t];
-        const theirs = this.remote[t];
+        const mine = this.local.get(t);
+        const theirs = this.remote.get(t);
         if (mine !== undefined && theirs !== undefined) {
           this.lastCommands = this.side === 0 ? [mine, theirs] : [theirs, mine];
           events = step(this.world, this.lastCommands);
@@ -337,6 +378,7 @@ export class LockstepSession {
         this.winner = this.side;
       }
     }
+    this.trim();
     this.sendPacket();
     return { status: this.status, stepped, inputAccepted, events, retracted };
   }
@@ -346,12 +388,21 @@ export class LockstepSession {
     return {
       simTick: this.simTick,
       inputDelay: this.delay,
-      local: this.local.slice(),
-      remote: this.remote.slice(),
+      firstTick: Math.min(this.local.first, this.remote.first),
+      local: this.local.slice(0, this.local.length),
+      remote: this.remote.slice(0, this.remote.length),
       remoteAck: this.remoteAck,
       remoteNeeded: this.remoteNeeded,
       hashes: this.hashTicks.map((tick) => ({ tick, hash: this.localHashes.get(tick) as number })),
     };
+  }
+
+  /** Forgets bookkeeping nothing can need again: confirmed/stepped remote inputs, inputs the peer acked, old used commands. */
+  private trim(): void {
+    const final = this.ring === undefined ? this.simTick : this.confirmed;
+    this.remote.dropBelow(final);
+    this.local.dropBelow(Math.min(this.remoteAck, final));
+    this.used.dropBelow(final - 1);
   }
 
   private noteStall(): void {
@@ -370,11 +421,11 @@ export class LockstepSession {
   private stepOne(out: SimEvent[], retracted: SimEvent[]): boolean {
     const ring = this.ring as SnapshotRing;
     const t = this.simTick;
-    const real = this.remote[t];
-    const theirs = real ?? this.used[t - 1] ?? NO_COMMAND;
+    const real = this.remote.get(t);
+    const theirs = real ?? this.used.get(t - 1) ?? NO_COMMAND;
     if (real === undefined) this.stats.predictedSteps++;
-    this.used[t] = theirs;
-    const mine = this.local[t] as Command;
+    this.used.set(t, theirs);
+    const mine = this.local.get(t) as Command;
     ring.push(this.world.state, t);
     this.lastCommands = this.side === 0 ? [mine, theirs] : [theirs, mine];
     const evs = step(this.world, this.lastCommands);
@@ -394,16 +445,42 @@ export class LockstepSession {
     retracted: SimEvent[],
   ): void {
     const prev = this.delivered.get(tick);
-    const id = (e: SimEvent): string => `${String(e.sourceId)}:${String(e.kind)}:${String(e.seq)}`;
-    const old = new Map<string, SimEvent>();
-    for (const e of prev ?? []) old.set(id(e), e);
-    for (const e of evs) {
-      const o = old.get(id(e));
-      old.delete(id(e));
-      if (o === undefined || !sameEvent(o, e)) out.push(e);
+    const m = this.matched;
+    if (prev === undefined) {
+      for (const e of evs) out.push(e);
+    } else {
+      m.length = prev.length;
+      m.fill(false);
+      for (const e of evs) {
+        let j = -1;
+        for (let k = 0; k < prev.length; k++) {
+          const o = prev[k] as SimEvent;
+          if (!m[k] && o.sourceId === e.sourceId && o.kind === e.kind && o.seq === e.seq) {
+            j = k;
+            break;
+          }
+        }
+        if (j < 0) out.push(e);
+        else {
+          m[j] = true;
+          if (!sameEvent(prev[j] as SimEvent, e)) out.push(e);
+        }
+      }
+      for (let k = 0; k < prev.length; k++) if (!m[k]) retracted.push(prev[k] as SimEvent);
     }
-    for (const e of old.values()) retracted.push(e);
-    this.delivered.set(tick, evs.slice());
+    const buf = prev ?? this.eventPool.pop() ?? [];
+    buf.length = 0;
+    for (const e of evs) buf.push(e);
+    this.delivered.set(tick, buf);
+  }
+
+  /** Forgets the events shown for a tick (returns the buffer to the pool); the caller reads them first. */
+  private releaseDelivered(tick: number): void {
+    const buf = this.delivered.get(tick);
+    if (buf === undefined) return;
+    this.delivered.delete(tick);
+    buf.length = 0;
+    if (this.eventPool.length < this.rbWindow + 4) this.eventPool.push(buf);
   }
 
   /** Compares arrived real inputs with what was predicted; on the first difference rewinds and re-simulates. */
@@ -412,8 +489,8 @@ export class LockstepSession {
     const target = this.simTick;
     let bad = -1;
     for (let t = this.confirmed; t < target; t++) {
-      const r = this.remote[t];
-      if (r !== undefined && r !== this.used[t]) {
+      const r = this.remote.get(t);
+      if (r !== undefined && r !== this.used.get(t)) {
         bad = t;
         break;
       }
@@ -424,7 +501,7 @@ export class LockstepSession {
     } else if (bad >= 0) {
       this.stats.rollbacks++;
       this.stats.maxRollbackDepth = Math.max(this.stats.maxRollbackDepth, target - bad);
-      for (const k of [...this.specHashes.keys()]) if (k > bad) this.specHashes.delete(k);
+      for (const k of this.specHashes.keys()) if (k > bad) this.specHashes.delete(k);
       this.endPending = false;
       while (this.simTick < target) {
         const ended = this.stepOne(out, retracted);
@@ -433,8 +510,9 @@ export class LockstepSession {
       }
       // Ticks the corrected timeline no longer reaches produced events that must be withdrawn.
       for (let t = this.simTick; t < target; t++) {
-        for (const e of this.delivered.get(t) ?? []) retracted.push(e);
-        this.delivered.delete(t);
+        const gone = this.delivered.get(t);
+        if (gone !== undefined) for (const e of gone) retracted.push(e);
+        this.releaseDelivered(t);
       }
     }
     this.settle();
@@ -443,11 +521,11 @@ export class LockstepSession {
   /** Advances the confirmed frontier, commits the hashes it covers and finalises a confirmed match end. */
   private settle(): void {
     const now = this.simTick;
-    while (this.confirmed < now && this.remote[this.confirmed] !== undefined) {
-      this.delivered.delete(this.confirmed);
+    while (this.confirmed < now && this.remote.get(this.confirmed) !== undefined) {
+      this.releaseDelivered(this.confirmed);
       this.confirmed++;
     }
-    for (const [tick, h] of [...this.specHashes]) {
+    for (const [tick, h] of this.specHashes) {
       if (tick > this.confirmed) continue;
       this.specHashes.delete(tick);
       this.recordHash(tick, h);
@@ -475,6 +553,14 @@ export class LockstepSession {
     this.localHashes.set(tick, h);
     this.hashTicks.push(tick);
     this.compare(tick);
+    if (this.hashTicks.length > HASH_HISTORY) this.dropOldHash();
+  }
+
+  private dropOldHash(): void {
+    const old = this.hashTicks.shift() as number;
+    this.localHashes.delete(old);
+    this.hashFloor = old + 1;
+    for (const k of this.remoteHashes.keys()) if (k < this.hashFloor) this.remoteHashes.delete(k);
   }
 
   private compare(tick: number): void {
@@ -507,11 +593,12 @@ export class LockstepSession {
       const now = this.ring === undefined ? this.simTick : this.confirmed;
       p.inputs.forEach((cmd, i) => {
         const tick = p.firstTick + i;
-        if (tick < now || tick >= now + MAX_AHEAD || this.remote[tick] !== undefined) return;
-        this.remote[tick] = cmd & this.inputMask;
+        if (tick < now || tick >= now + MAX_AHEAD || this.remote.get(tick) !== undefined) return;
+        this.remote.set(tick, cmd & this.inputMask);
       });
-      while (this.remote[this.remoteNeeded] !== undefined) this.remoteNeeded++;
+      while (this.remote.get(this.remoteNeeded) !== undefined) this.remoteNeeded++;
       for (const h of p.hashes) {
+        if (h.tick < this.hashFloor) continue;
         if (!this.remoteHashes.has(h.tick)) this.remoteHashes.set(h.tick, h.hash);
         this.compare(h.tick);
       }
@@ -542,7 +629,7 @@ export class LockstepSession {
 }
 
 function sameEvent(a: SimEvent, b: SimEvent): boolean {
-  const ka = Object.keys(a);
-  if (ka.length !== Object.keys(b).length) return false;
-  return ka.every((k) => a[k] === b[k]);
+  for (const k in a) if (a[k] !== b[k]) return false;
+  for (const k in b) if (!(k in a)) return false;
+  return true;
 }
