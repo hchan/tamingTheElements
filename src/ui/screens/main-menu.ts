@@ -47,6 +47,7 @@ export const MENU_ITEMS: readonly MenuItem[] = [
   { label: 'New Game', route: 'newGame', enabled: always },
   { label: 'Continue', route: 'battleground', enabled: (s) => s.objectives },
   { label: 'Arcade Versus', route: 'arcade', enabled: always, shown: (s) => s.arcade },
+  { label: 'Online Versus', route: 'online', enabled: always, shown: (s) => s.arcade },
   { label: 'Garrison', route: 'garrison', enabled: (s) => s.garrison },
   { label: 'Settings', route: 'settings', enabled: (s) => s.settings },
   { label: 'Current Objectives', route: 'currentObjectives', enabled: (s) => s.objectives },

@@ -118,7 +118,7 @@ test('Settings opt-in -> Arcade Versus: a hit, a super with X, KO, round 2, resu
   await page.getByLabel('Arcade Versus (preview)').check();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await waitForRoute(page, '#main');
-  expect(await menuLabels(page)).toEqual([...CLASSIC_MENU.slice(0, 2), 'Arcade Versus', ...CLASSIC_MENU.slice(2)]);
+  expect(await menuLabels(page)).toEqual([...CLASSIC_MENU.slice(0, 2), 'Arcade Versus', 'Online Versus', ...CLASSIC_MENU.slice(2)]);
   const before = await savedText(page);
   expect(JSON.parse(before ?? '{}')).toMatchObject({ arcadePreview: true, chapter: 3 });
 

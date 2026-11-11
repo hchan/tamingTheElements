@@ -32,6 +32,7 @@ export const ROUTE_NAMES = [
   'character',
   'replay',
   'arcade',
+  'online',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -111,6 +112,7 @@ const ROUTE_TITLES: Readonly<Record<RouteName, string>> = {
   character: 'Character Details',
   replay: 'Replay Viewer',
   arcade: 'Arcade Versus',
+  online: 'Online Versus',
 };
 
 /** Document title for a route, so each screen is named in the tab and to screen readers. */
@@ -144,6 +146,8 @@ export function defaultScreens(): ScreenTable {
     replay: placeholderScreen('Replay viewer'),
     // The app wires the lazy Arcade Versus screen (src/game/app/main.ts); it is opt-in (Settings or `?ff=arcade`).
     arcade: placeholderScreen('Arcade Versus'),
+    // The app wires the lazy online screen (src/game/app/online-versus.ts).
+    online: placeholderScreen('Online Versus'),
   };
 }
 

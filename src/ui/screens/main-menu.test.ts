@@ -61,3 +61,11 @@ describe('loadSave', () => {
     expect(loadSave({ getItem: () => v0 })?.chapter).toBe(1);
   });
 });
+
+describe('Online Versus entry', () => {
+  it('follows the Arcade preview gate, so the Classic menu is unchanged', () => {
+    const online = MENU_ITEMS.find((i) => i.route === 'online');
+    expect(online?.shown?.(menuState(null, ''))).toBe(false);
+    expect(online?.shown?.(menuState(null, '?ff=arcade'))).toBe(true);
+  });
+});

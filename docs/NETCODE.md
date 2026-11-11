@@ -57,7 +57,8 @@ To add: prediction in `update` (step with a guessed remote input), a restore-and
 - [x] Match-setup protocol over a reliable pipe: `src/core/net/handshake.ts` (simVersion, flags, seed, rosters; cheats refused) and `control.ts` (`SetupHandshake`: HELLO, READY, REJECT, never throws on junk)
 - [x] `RTCDataChannel` adapters `inputTransport` (id 0) and `controlPipe` (id 1) in `src/game/net/rtc-channels.ts` (binary only, capped inbox, send never throws; unit-tested with a fake channel)
 - [x] Creating the `RTCPeerConnection` and its two negotiated channels
-- [ ] Signalling (manual SDP first, relay later) and TURN
+- [x] Manual copy-paste signalling screen (`#online`, shown with the Arcade preview; connects and runs the setup handshake as a connection check)
+- [ ] Relay signalling (short room codes) and TURN
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
 - [ ] Browser e2e with two pages
 - [ ] Clock sync / frame pacing so both peers run the same wall rate (today each peer stalls to the slower one)

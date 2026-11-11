@@ -117,6 +117,30 @@ if (root) {
           },
         };
       },
+      online: () => {
+        const chunk = import('./online-versus');
+        return {
+          mount: (c) => {
+            chunk.then(
+              (a) => {
+                a.mountOnline(c);
+              },
+              () => {
+                notify('Online Versus could not load. Reload the page.');
+                window.location.hash = '#main';
+              },
+            );
+          },
+          unmount: () => {
+            chunk.then(
+              (a) => {
+                a.unmountOnline();
+              },
+              () => undefined,
+            );
+          },
+        };
+      },
     });
   }
   if (!(flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl)) prefetchSimWhenIdle();
