@@ -1,3 +1,4 @@
+import { PlayOnce } from '../net/play-once';
 import Phaser from 'phaser';
 import {
   ARCADE_T,
@@ -123,6 +124,8 @@ export class Arena extends Phaser.Scene {
   private keyboard: KeyboardAgent | undefined;
   /** Online matches only: the lockstep session that owns stepping (docs/NETCODE.md). */
   private session: LockstepSession | undefined;
+  /** Rollback only: shows each event id once, so a corrected payload does not replay a sound or effect. */
+  private playOnce: PlayOnce | undefined;
   /** The battle's sound; public so the Arcade audio layers (`audio/arcade-audio.ts`, a lazy chunk) can find it. */
   audio: ArenaAudio | undefined;
   private pauseDialog: PauseDialog | undefined;
@@ -158,6 +161,7 @@ export class Arena extends Phaser.Scene {
     this.view = view;
     const net = this.launch?.net;
     const rollbackWindow = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).rollback ? ROLLBACK_WINDOW : 0;
+    if (rollbackWindow > 0) this.playOnce = new PlayOnce();
     this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow }) : undefined;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
@@ -445,7 +449,7 @@ export class Arena extends Phaser.Scene {
         if (r.status === 'desync' || r.status === 'forfeit') this.driver?.pause('ended');
         return;
       }
-      events = r.events;
+      events = this.playOnce ? this.playOnce.fresh(r.events) : r.events;
     } else {
       // Agents are consulted only when a side has no forced command. Consulting them never changes the sim
       // state (step alone mutates it), so forced and live ticks with the same commands hash the same.
