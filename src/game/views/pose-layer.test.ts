@@ -5,6 +5,8 @@ import { FixedStepDriver, STEP_MS } from '../loop/fixed-step-driver';
 import { CharacterView } from './character-view';
 import { PoseLayer } from './pose-layer';
 import { MAX_DT_MS, STRIDE_PX, shortestArc } from './pose-math';
+import { createFrameResolver } from '../assets/sheet-frames';
+import { ACTIONS, DIRS, FRAME, framesIn, layoutAtlas, rowKey, type Action, type Dir, type SheetsManifest } from '../assets/sheet-spec';
 
 /** A chainable stand-in for the Phaser Image calls the views and the pose layer make. */
 class FakeImage {
@@ -46,8 +48,15 @@ interface Rig {
   readonly images: FakeImage[];
   readonly scene: Phaser.Scene;
   readonly shake: { isRunning: boolean; progress: number; intensity: { x: number; y: number; set(x: number, y: number): void } };
+  /** Textures not loaded yet (every other key exists), the images the loader was asked for, and its pending completions. */
+  readonly missing: Set<string>;
+  readonly loads: string[];
+  readonly done: Map<string, () => void>;
 }
 function rig(): Rig {
+  const missing = new Set<string>();
+  const loads: string[] = [];
+  const done = new Map<string, () => void>();
   const images: FakeImage[] = [];
   const shake = {
     isRunning: false,
@@ -56,10 +65,15 @@ function rig(): Rig {
   };
   const scene = {
     add: { image: () => { const i = new FakeImage(); images.push(i); return i; } },
-    textures: { exists: () => true, get: () => ({ has: () => true, add: () => undefined }) },
+    textures: { exists: (k: string) => !missing.has(k), get: () => ({ has: () => false, add: () => undefined }) },
+    load: {
+      image: (key: string, url: string) => { loads.push(`${key} ${url}`); },
+      once: (event: string, fn: () => void) => { done.set(event, fn); },
+      start: () => undefined,
+    },
     cameras: { main: { shakeEffect: shake } },
   } as unknown as Phaser.Scene;
-  return { images, scene, shake };
+  return { images, scene, shake, missing, loads, done };
 }
 
 const SPEED = 5;
@@ -77,6 +91,7 @@ interface Harness {
   readonly projs: RenderProjectile[];
   readonly shake: Rig['shake'];
   readonly images: FakeImage[];
+  readonly loader: Pick<Rig, 'missing' | 'loads' | 'done'>;
   /** Renders one frame `ms` after the previous one; returns the interpolated x the base view drew. */
   step(ms: number): number;
   /** Runs the sim to `now` with the driver, then renders. */
@@ -86,8 +101,11 @@ interface Harness {
   consume(events: SimEvent[]): void;
 }
 
-function harness(opts: { arcade?: boolean; reduced?: boolean; vx?: number; vy?: number } = {}): Harness {
-  const { scene, images, shake } = rig();
+function harness(
+  opts: { arcade?: boolean; reduced?: boolean; vx?: number; vy?: number; sheets?: SheetsManifest; missing?: string[] } = {},
+): Harness {
+  const { scene, images, shake, missing, loads, done } = rig();
+  for (const k of opts.missing ?? []) missing.add(k);
   const c = char();
   const projs: RenderProjectile[] = [];
   const projView = new Map<number, { image: FakeImage; glow: FakeImage }>();
@@ -113,6 +131,7 @@ function harness(opts: { arcade?: boolean; reduced?: boolean; vx?: number; vy?: 
       },
     },
     reduced: () => opts.reduced === true,
+    ...(opts.sheets && { sheets: createFrameResolver(opts.sheets), sheetBase: '/base/' }),
   });
   const driver = new FixedStepDriver({
     tick: () => {
@@ -125,7 +144,7 @@ function harness(opts: { arcade?: boolean; reduced?: boolean; vx?: number; vy?: 
     now: () => clock.t,
   });
   const h: Harness = {
-    layer, cv, img, c, sim, projs, projView, shake, images, driver,
+    layer, cv, img, c, sim, projs, projView, shake, images, driver, loader: { missing, loads, done },
     get now() { return clock.t; },
     step(ms) {
       const before = clock.t;
@@ -633,5 +652,102 @@ describe('ability VFX (Arcade only)', () => {
 describe('stride constant', () => {
   it('is exported for the docs and the tests', () => {
     expect(STRIDE_PX).toBe(30);
+  });
+});
+
+/** A one-atlas manifest for the harness character with `rows` (packed as the packer would). */
+function sheetsWith(rows: readonly [Action, Dir][], sprite = 'circusOfSlime'): SheetsManifest {
+  const spec = rows.map(([a, d]) => ({ key: rowKey(a, d), frames: framesIn(a) }));
+  const { placements } = layoutAtlas(spec);
+  return {
+    spec: { frame: FRAME, maxSize: 2048, dirs: [...DIRS], actions: ACTIONS.map(([action, frames]) => ({ action, frames })) },
+    sheets: [{
+      sprite, url: `img/sheets/${sprite}.png`,
+      rows: spec.map((r, k) => ({ key: r.key, frames: Array.from({ length: r.frames }, (_, i) => [(placements[k]?.x ?? 0) + i * FRAME, placements[k]?.y ?? 0] as const) })),
+    }],
+  };
+}
+
+describe('sprite sheets (FUN-DESIGN 2.16 step 3)', () => {
+  it('the shipped manifest (no atlases) loads nothing and draws the legacy art exactly as before', () => {
+    for (const vx of [0, SPEED]) {
+      const h = harness({ vx, missing: ['sheet:circusOfSlime'] });
+      for (let i = 0; i < 120; i++) {
+        h.step(1000 / 60);
+        expect(h.img.texture.key).not.toMatch(/^sheet:/);
+      }
+      expect(h.loader.loads).toEqual([]);
+      expect(h.layer.sheetProbe().loaded).toEqual([]);
+    }
+  });
+
+  it("loads a character's atlas lazily, once, and switches to it when the file completes", () => {
+    const h = harness({ vx: 0, sheets: sheetsWith([['idle', 'E']]), missing: ['sheet:circusOfSlime'] });
+    for (let i = 0; i < 10; i++) h.step(16);
+    expect(h.loader.loads).toEqual(['sheet:circusOfSlime /base/assets/img/sheets/circusOfSlime.png']);
+    expect(h.img.frame.name).toBe('right0');
+    h.loader.missing.clear();
+    h.loader.done.get('filecomplete-image-sheet:circusOfSlime')?.();
+    h.step(16);
+    expect(h.img.texture.key).toBe('sheet:circusOfSlime');
+    expect(h.img.frame.name).toMatch(/^idle\/E#[0-3]$/);
+    expect(h.loader.loads).toHaveLength(1);
+    expect(h.layer.sheetProbe().loaded).toEqual(['circusOfSlime']);
+  });
+
+  it('a sheet row replaces the procedural breathing and lean: standing still is drawn unscaled and upright', () => {
+    const h = harness({ vx: 0, sheets: sheetsWith([['idle', 'E']]) });
+    const frames = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+      const baseX = h.step(1000 / 60);
+      frames.add(h.img.frame.name);
+      expect(h.img.rotation).toBe(0);
+      expect(h.img.scaleY).toBe(1);
+      expect(h.img.x).toBe(baseX);
+    }
+    expect([...frames].sort()).toEqual(['idle/E#0', 'idle/E#1', 'idle/E#2', 'idle/E#3']);
+  });
+
+  it('walking plays the walk row by distance with no bob or lean; west mirrors the east row; a missing row is legacy again', () => {
+    const h = harness({ arcade: true, vy: 2, sheets: sheetsWith([['idle', 'E'], ['walk', 'E']]) });
+    const frames = new Set<string>();
+    for (let i = 0; i < 120; i++) {
+      h.step(1000 / 60);
+      if (i < 20) continue;
+      frames.add(h.img.frame.name);
+      expect(h.img.rotation).toBe(0);
+      expect(h.img.scaleY).toBe(1);
+      expect(h.img.flipX).toBe(false);
+    }
+    expect([...frames].sort()).toEqual(['walk/E#0', 'walk/E#1', 'walk/E#2', 'walk/E#3']);
+    h.sim.aim = 4;
+    h.step(16);
+    expect(h.img.frame.name).toMatch(/^walk\/E#/);
+    expect(h.img.flipX).toBe(true);
+    // North has no row and nothing to mirror: back to the legacy texture, strip and lean.
+    h.sim.aim = 2;
+    h.step(16);
+    expect(h.img.texture.key).toBe('map:circusOfSlime');
+    expect(h.img.frame.name).toMatch(/^down\d$/);
+    let leaned = false;
+    for (let i = 0; i < 30; i++) { h.step(16); leaned ||= h.img.rotation !== 0; }
+    expect(leaned).toBe(true);
+  });
+
+  it("KO: a sheet's ko row plays in the ghost instead of the procedural fall-over", () => {
+    const h = harness({ arcade: true, vx: 0, sheets: sheetsWith([['idle', 'E'], ['ko', 'E']]) });
+    for (let i = 0; i < 10; i++) h.step(16);
+    h.consume([{ tick: 1, sourceId: 1, kind: SimEventKind.died, seq: 0 }]);
+    h.c.flags = EntityFlag.dead;
+    const ghost = h.images[1];
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      h.step(16);
+      if (ghost?.visible === true) {
+        seen.add(ghost.frame.name);
+        expect(ghost.rotation).toBe(0);
+      }
+    }
+    expect([...seen].sort()).toEqual(['ko/E#0', 'ko/E#1', 'ko/E#2', 'ko/E#3']);
   });
 });

@@ -401,6 +401,7 @@ export class Arena extends Phaser.Scene {
         };
       },
       superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
+      sheets: () => import('../views/pose-layer').then((m) => m.sheetState(this)),
       rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),
       defence: () => import('../fx/defence-view').then((m) => m.defenceState(this)),
       weather: () => import('../fx/weather-view').then((m) => m.weatherState(this)),

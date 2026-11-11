@@ -2,6 +2,16 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import { PoseVfx } from './pose-vfx';
 import { FX_ELEMENTS } from './pose-vfx-math';
+import { createFrameResolver, generatedSheets, walkTime, type FrameResolver, type SheetFrame } from '../assets/sheet-frames';
+import type { Action, SheetsManifest } from '../assets/sheet-spec';
+
+declare global {
+  interface Window {
+    /** Dev and test builds: a sheets manifest that replaces the shipped one for the next match (e2e fixture). */
+    __TTE_SHEETS__?: SheetsManifest;
+  }
+}
+import { SheetBook } from './pose-sheets';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
 import {
@@ -36,6 +46,9 @@ const SUPER_CHARGE_MS = 700;
 const CHARGE_MS = 220;
 const STOP_MS = 170;
 const DEAD_OR_BENCHED = EntityFlag.benched | EntityFlag.dead;
+/** Sheet row for each transient `PoseKind`. */
+const KIND_ACTION: readonly Action[] = ['idle', 'cast', 'hurt', 'dash', 'tagIn', 'victory'];
+const GUARD_ROW_MS = 140;
 
 /** Read-out for the test probe. */
 export interface PoseState {
@@ -60,6 +73,9 @@ interface Ghost {
   /** 0 projectile fade (centre origin), 1 KO fall (feet pivot, top-left origin). */
   kind: number;
   dir: number;
+  /** KO fall: the sprite and facing, to play its sheet's `ko` row when it has one. */
+  sprite: string;
+  face: number;
 }
 
 export interface PoseLayerDeps {
@@ -68,6 +84,9 @@ export interface PoseLayerDeps {
   readonly characters: { peek(id: number): Pick<CharacterView, 'image' | 'scale'> | undefined };
   readonly projectiles: { peek(id: number): Pick<ProjectileView, 'image' | 'glow'> | undefined };
   readonly reduced: () => boolean;
+  /** Sprite sheet lookup (default: the shipped manifest) and the URL base its atlases load from. */
+  readonly sheets?: FrameResolver;
+  readonly sheetBase?: string;
 }
 
 export class PoseLayer {
@@ -86,6 +105,7 @@ export class PoseLayer {
   private victoryAt = 0;
   private posed = 0;
   private readonly vfx: PoseVfx;
+  readonly book: SheetBook;
   private readonly pose: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
   // Per character slot (entity id).
   private readonly have = new Uint8Array(SLOTS);
@@ -104,6 +124,8 @@ export class PoseLayer {
   private readonly kindPower = new Float64Array(SLOTS);
   private readonly edge = new Uint8Array(SLOTS);
   private readonly edgeAt = new Float64Array(SLOTS);
+  private readonly face = new Uint8Array(SLOTS);
+  private readonly spriteOf: string[] = new Array<string>(SLOTS).fill('');
   // Per projectile slot.
   private readonly pid = new Int32Array(SLOTS).fill(-1);
   private readonly born = new Float64Array(SLOTS);
@@ -119,6 +141,7 @@ export class PoseLayer {
 
   constructor(private readonly deps: PoseLayerDeps) {
     this.vfx = new PoseVfx(deps.scene);
+    this.book = new SheetBook(deps.scene, deps.sheets ?? createFrameResolver(generatedSheets), deps.sheetBase ?? '');
   }
 
   /** The rendered ghosts in use (test probe). */
@@ -126,6 +149,17 @@ export class PoseLayer {
     let ghosts = 0;
     for (const g of this.ghosts) if (g.from > Number.NEGATIVE_INFINITY) ghosts++;
     return { animMs: this.animMs, posed: this.posed, ghosts, fx: this.vfx.live };
+  }
+
+  sheetProbe(): { loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[] } {
+    const characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[] = [];
+    this.deps.view.forEachCharacter((c) => {
+      const img = this.deps.characters.peek(c.id)?.image;
+      if (img && (c.flags & DEAD_OR_BENCHED) === 0) {
+        characters.push({ id: c.id, texture: img.texture.key, frame: img.frame.name, flipX: img.flipX, rotation: img.rotation });
+      }
+    });
+    return { loaded: this.book.loaded, characters };
   }
 
   /** Feeds one tick's events (once each: the caller dedupes). */
@@ -205,6 +239,8 @@ export class PoseLayer {
   private character(c: RenderCharacter): void {
     const v = this.deps.characters.peek(c.id);
     const i = c.id & (SLOTS - 1);
+    // Every character of the match (the bench too) gets its sheet loaded, if the manifest has one.
+    this.book.want(c.sprite);
     if (!v || (c.flags & DEAD_OR_BENCHED) !== 0) {
       this.have[i] = 0;
       this.moving[i] = 0;
@@ -240,24 +276,39 @@ export class PoseLayer {
     this.phase[i] = !walking && m < 0.05 ? 0 : (this.phase[i] ?? 0) + dist;
     const ar = this.deps.view.arcade();
     const face = ar ? ar.aim(c.id) : c.dir;
+    this.face[i] = face;
+    this.spriteOf[i] = c.sprite;
 
-    // Walk cycle by distance walked (all views), the facing and the lean for 8-way movement and aim.
+    // A sheet row when the character has one (its own art carries the walk, idle and lean), else the legacy art: the walk
+    // cycle by distance walked (all views), the facing, and the procedural lean and bob for 8-way movement and aim.
+    const sheet = this.book.has(c.sprite) ? this.sheetFrame(c, i, face, walking || m > 0.05) : undefined;
     const sprite = MAP_SPRITES[c.sprite];
-    if (sprite) {
-      const set = frameSetFor(face);
-      const count = framesOf(sprite, set).length;
-      img.setFrame(frameName(set, m > 0.05 || walking ? walkFrame(this.phase[i] ?? 0, count) : 0));
+    if (sheet) {
+      if (img.texture.key === sheet.texture) img.setFrame(sheet.frame);
+      else img.setTexture(sheet.texture, sheet.frame);
+      img.setFlipX(sheet.flipX);
+      this.lean[i] = 0;
+    } else {
+      if (sprite) {
+        const set = frameSetFor(face);
+        const count = framesOf(sprite, set).length;
+        const name = frameName(set, m > 0.05 || walking ? walkFrame(this.phase[i] ?? 0, count) : 0);
+        if (img.texture.key.startsWith('sheet:')) img.setTexture(`map:${c.sprite}`, name);
+        else img.setFrame(name);
+      }
+      img.setFlipX(flipForDir(face));
     }
-    img.setFlipX(flipForDir(face));
 
     const p = resetPose(this.pose);
-    if (!this.reduced) {
+    if (!this.reduced && !sheet) {
       const heading = walking ? headingOf(ddx, ddy) : -1;
       const target = (heading >= 0 ? leanFor(heading) * m : 0) + (walking || (face & 1) === 0 ? 0 : leanFor(face) * 0.4);
       this.lean[i] = (this.lean[i] ?? 0) + (target - (this.lean[i] ?? 0)) * follow(dt, 90);
       p.rot = this.lean[i] ?? 0;
       breathe(p, this.animMs + i * 370, 1 - m);
       p.oy -= 1.5 * Math.abs(Math.sin(((this.phase[i] ?? 0) / STRIDE_PX) * Math.PI)) * m;
+    }
+    if (!this.reduced) {
       const e = this.edge[i] ?? 0;
       if (e !== 0) {
         const age = this.animMs - (this.edgeAt[i] ?? 0);
@@ -286,6 +337,18 @@ export class PoseLayer {
       if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.animMs - this.victoryAt, 1, 0, this.reduced);
     }
     this.place(img, c.w * v.scale, c.h * v.scale, p);
+  }
+
+  /** The sheet frame to show: a running event pose, the victory, guard, walk (by distance walked) or idle row. */
+  private sheetFrame(c: RenderCharacter, i: number, face: number, walking: boolean): SheetFrame | undefined {
+    const k = this.kind[i] ?? 0;
+    const age = this.animMs - (this.kindAt[i] ?? 0);
+    const g = this.guard[i] ?? 0;
+    if (k !== 0 && age < (POSE_MS[k] ?? 0)) return this.book.frame(c.sprite, KIND_ACTION[k] ?? 'idle', face, age);
+    if (this.victoryTeam === c.team) return this.book.frame(c.sprite, 'victory', face, this.animMs - this.victoryAt);
+    if (g > 0.05) return this.book.frame(c.sprite, 'guard', face, g * GUARD_ROW_MS);
+    if (walking) return this.book.frame(c.sprite, 'walk', face, walkTime(this.phase[i] ?? 0, STRIDE_PX));
+    return this.book.frame(c.sprite, 'idle', face, this.animMs + i * 370);
   }
 
   /** Applies `p` about the feet centre of the base box (x, y, w, h) the character view just drew. */
@@ -398,6 +461,8 @@ export class PoseLayer {
     g.x = img.x + g.w / 2;
     g.y = img.y + g.h;
     g.rot = 0;
+    g.sprite = this.spriteOf[id & (SLOTS - 1)] ?? '';
+    g.face = this.face[id & (SLOTS - 1)] ?? 0;
     g.image.setTexture(img.texture.key, img.frame.name).setOrigin(0, 0).setFlipX(img.flipX).setVisible(true).setDepth(img.depth);
   }
 
@@ -405,7 +470,7 @@ export class PoseLayer {
     for (const g of this.ghosts) if (g.from === Number.NEGATIVE_INFINITY) return g;
     if (this.ghosts.length >= GHOSTS) return undefined;
     const image = this.deps.scene.add.image(0, 0, '__DEFAULT').setVisible(false);
-    const g: Ghost = { image, from: Number.NEGATIVE_INFINITY, ms: 0, x: 0, y: 0, w: 0, h: 0, rot: 0, kind: 0, dir: 1 };
+    const g: Ghost = { image, from: Number.NEGATIVE_INFINITY, ms: 0, x: 0, y: 0, w: 0, h: 0, rot: 0, kind: 0, dir: 1, sprite: '', face: 0 };
     this.ghosts.push(g);
     return g;
   }
@@ -427,6 +492,14 @@ export class PoseLayer {
       } else {
         const p = resetPose(this.pose);
         koFall(p, t, g.dir, this.reduced);
+        // A sheet's own KO row replaces the procedural fall-over (the fade stays).
+        const ko = this.book.has(g.sprite) ? this.book.frame(g.sprite, 'ko', g.face, t * KO_MS) : undefined;
+        if (ko) {
+          img.setTexture(ko.texture, ko.frame).setFlipX(ko.flipX);
+          p.rot = 0;
+          p.ox = 0;
+          p.oy = 0;
+        }
         img.setDisplaySize(g.w, g.h);
         img.setAlpha(p.alpha);
         const r = p.rot * DEG;
@@ -461,6 +534,17 @@ export class PoseLayer {
   }
 }
 
+const layers = new WeakMap<Phaser.Scene, PoseLayer>();
+
+/** Test probe: the sheets loaded and, per drawn character, the texture, frame, mirror and rotation shown (undefined before the mount). */
+export function sheetState(scene: Phaser.Scene): {
+  loaded: string[];
+  characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[];
+} | undefined {
+  const layer = layers.get(scene);
+  return layer?.sheetProbe();
+}
+
 /** Mounts the layer in the Arena `scene`; returns the event consumer the Arena feeds each tick. Torn down with the scene. */
 export function mountPoseLayer(
   scene: Phaser.Scene,
@@ -469,10 +553,17 @@ export function mountPoseLayer(
   projectiles: PoseLayerDeps['projectiles'],
   prefs: () => { readonly reduceMotion: boolean },
 ): (events: readonly SimEvent[]) => void {
-  const layer = new PoseLayer({ scene, view, characters, projectiles, reduced: () => prefs().reduceMotion });
+  // Dev and test builds only: an e2e may hand in its own sheets manifest (a fixture atlas served by the test, never shipped).
+  const fixture = import.meta.env.DEV || import.meta.env.MODE === 'test' ? window.__TTE_SHEETS__ : undefined;
+  const sheets = fixture === undefined ? undefined : createFrameResolver(fixture);
+  const layer = new PoseLayer({
+    scene, view, characters, projectiles, reduced: () => prefs().reduceMotion, sheetBase: import.meta.env.BASE_URL, ...(sheets && { sheets }),
+  });
+  layers.set(scene, layer);
   const onFrame = (time: number, delta: number): void => { layer.frame(time, delta); };
   const off = (): void => {
     scene.events.off('postupdate', onFrame).off('shutdown', off).off('destroy', off);
+    layers.delete(scene);
     layer.destroy();
   };
   scene.events.on('postupdate', onFrame);

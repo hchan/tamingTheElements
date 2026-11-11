@@ -732,9 +732,35 @@ Plan, cheapest first:
    atlas and 12 MB for all, checked by `pnpm size:check` (`sheets` in `tools/ci/size-budget.json`, measured on `dist/assets/img/sheets`;
    zero today) and by the packer for the per-file limit. 21 characters are covered (the 80px legacy map sprites); today all 21 are pure
    fallback, 0 atlases exist. `tests/repo/sprite-sheets.test.ts` covers spec, atlas layout (wrap, determinism, oversize errors), rectangle
-   lookup, fallback order, validation errors, reproducibility and the committed outputs. Reading atlases in `character-view` is left for step 3.
+   lookup, fallback order, validation errors, reproducibility and the committed outputs.
 3. **New art:** drawn by the owner or an artist, or generated; every new asset needs a licence note in the manifest.
    Needs an owner decision on who makes the art.
+   **View side, built in `WP-sheet-view` (no art, no visible change while the manifest has no atlas):**
+   - The lookup is pure `resolveFrame(sprite, action, dir8, t)` in `src/game/assets/sheet-frames.ts`, with no Phaser. It
+     returns the texture key `sheet:<sprite>`, the frame `<action>/<dir>#<i>`, the rectangle and the flip, or `legacy`.
+     Fallback is as `resolveRow`. Results are built once per slot, so the per-frame path allocates nothing.
+   - Frame timing per action (`FRAME_TIMING`):
+     - idle loops at 450 ms per frame.
+     - walk steps once per 30 px walked, like the legacy strip.
+     - The one-shot rows hold their last frame and fit inside the procedural pose they replace: cast 220, hurt 300,
+       dash 200, tag-in 320, KO 700 ms.
+     - victory loops.
+   - Loading: `pose-sheets.ts` (`SheetBook`) loads `assets/<url>` lazily, the first time a character of the current match
+     is seen, and only when the manifest has an atlas for it. With the committed manifest nothing is ever requested. The
+     frames are registered on the texture, and a later match reuses them.
+   - Drawing: the pose layer draws the sheet row in priority order: event pose (cast, hurt, dash, tag-in, victory), victory
+     team, guard, walk, idle. On a sheet row it turns off the procedural lean, breathing and stride bounce, because the art
+     carries them.
+   - Still applied on sheet rows: the start squash, stop rebound, guard crouch, event squash and offsets, and hit-stop
+     jitter.
+   - The KO ghost plays the `ko` row instead of the rotation fall.
+   - Any row that falls back to legacy draws exactly what it drew before, with its lean and bob.
+   - Tests: unit tests in `sheet-frames.test.ts` and `pose-layer.test.ts`. The e2e `tests/e2e/sprite-sheets.spec.ts` uses
+     a test-only manifest (`window.__TTE_SHEETS__`, read by dev and test builds only) and a fixture atlas generated in the
+     test and served by `page.route`. Neither is in `public/` or the build.
+   - Size: `pose-layer` 5749 to 7827 B gzip, budget 7900. The manifest and the lookup code join the pose-layer chunk
+     group, so there is no extra request. `phaser-config` grew 3 B (budget 21970), because its preload list now includes
+     the index chunk.
 
 ### 2.17 Charge (new Arcade melee ability, sim + view + AI)
 
@@ -1163,7 +1189,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 31 | `WP-arcade-terrain` (done: sim only; section 2.15) | sim+data | Section 2.15: stage element, seeded symmetric patches, per-element effects, caps, events | 3, 29 |
 | 32 | `WP-arcade-terrain-view` (done) | view | Patch art with pattern and label, buff badge, particles | 31 |
 | 33 | `WP-arcade-pose-layer` (done: section 2.16 step 1) | view | Section 2.16 step 1: procedural diagonals and poses, no new art | 27 |
-| 34 | `WP-sprite-sheet-pipeline` (done: section 2.16 step 2; tools and tests only, no art, view not yet reading sheets) | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
+| 34 | `WP-sprite-sheet-pipeline` (done: section 2.16 step 2; tools and tests only, no art; the view reads sheets since `WP-sheet-view`) | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 35 | `WP-arcade-weather-charge` (done; section 2.14) | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
 | 36 | `WP-arcade-charge` | sim+view+AI | Section 2.17: melee Charge gap closer, stun on arrival, counterplay, AI use | 3, 16, 31 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |

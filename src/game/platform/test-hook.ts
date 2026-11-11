@@ -111,6 +111,13 @@ export interface ArenaProbe {
    * the KO music cut is on. `mounted` is false in Classic.
    */
   arcadeAudio(): Promise<{ mounted: boolean; played: number; voices: number; nodes: number; musicCut: boolean }>;
+  /**
+   * The pose layer's sprite sheets (async: a lazy chunk; WP-sheet-view): the sprites whose atlas is loaded and, per drawn
+   * character, the texture key, frame name, mirror and rotation shown; undefined before the layer is mounted.
+   */
+  sheets(): Promise<{
+    loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[];
+  } | undefined>;
 }
 
 /** Test control of the running Cinematic scene. */
