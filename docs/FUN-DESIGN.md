@@ -385,7 +385,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 
 ### 2.11 AI personalities and difficulty (agents, outside SimState)
 
-- **Harder Normal/Hard (2026-11):** from Normal up a dodge with the dash on cooldown sidesteps out of the shot's line instead of guarding, the AI spends a full bar on a super that reaches the opponent without waiting for a confirm (doubled rate when low on HP), Hard Zoner/Turtle melee heroes also charge, and a crowded Zoner/Turtle dashes away. Plan rates are higher; Easy is unchanged. Knobs 7..10 of `ARCADE_AI_KNOBS`; `pnpm ai:duel` pits the new AI against the frozen previous one (`tools/sim/arcade-ai-v1`): about 55% on Hard and Normal. The AI is outside the sim, so no SIM_VERSION bump and no golden changes.
+- **Harder Normal/Hard (2026-11):** plan rates are higher and Hard reacts faster (4 plus a draw below 3 ticks); Easy is unchanged. Zoner/Turtle that see no HP change for `ARCADE_AI_STALE_TICKS` (400 ticks) play Rushdown (dash in, charge), so the AI never stalls a match (`pnpm fun:report` stalemate 0%). A sidestep, a free super without a confirm, a retreat dash and a Zoner charge were tried and dropped (retreat dashes caused stalemates; the rest did not fit the sim size budget). `pnpm ai:duel` pits the AI against the frozen previous one (`tools/sim/arcade-ai-v1`): about 54% on Hard. The AI is outside the sim, so no SIM_VERSION bump and no golden changes.
 
 - An `ObservationView.arcade` extension (only in Arcade): meter, `stunUntil` of both sides, guard meter, phase, and the
   incoming projectiles (up to 8 nearest: x, y, vx, vy, element). It is a read-only copy; agents still never write state.
