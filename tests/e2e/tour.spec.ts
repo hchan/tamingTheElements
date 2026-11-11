@@ -117,3 +117,30 @@ test('World Tour: no continues left shows the Game Over card with the summary, a
   await expect(page.getByRole('button', { name: 'Start tour' })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test.describe('World Tour on a touch device', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 844, height: 390 } });
+
+  test('the fight shows the 7 Arcade touch buttons as a right-edge column, 48 px tall at least', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto(`${START}&ff=arcade#tour`);
+    await page.getByRole('button', { name: 'Start tour' }).tap();
+    await page.getByRole('button', { name: 'Fight' }).tap();
+    await page.locator('#tourSplash').tap();
+    await page.waitForFunction(ARENA_READY);
+    const buttons = page.locator('#game button.menuButton');
+    await expect(buttons).toHaveCount(7);
+    const boxes = await page.evaluate<{ right: number; height: number }[]>(
+      `Array.from(document.querySelectorAll('#game button.menuButton'), (b) => { const r = b.getBoundingClientRect(); return { right: r.right, height: r.height }; })`,
+    );
+    for (const b of boxes) expect(b.height).toBeGreaterThanOrEqual(48);
+    expect(new Set(boxes.map((b) => Math.round(b.right))).size).toBe(1);
+    await expect(page.locator('#arcadeTag2')).toBeVisible();
+    // A tap on Super reaches the arena as the bound key; the match goes on without errors.
+    await page.locator('#arcadeSuper').tap();
+    await page.evaluate(`window.__TTE__.arena.step(5)`);
+    await page.goto(`${START}&ff=arcade#main`);
+    await page.evaluate(`window.__TTE__.settled()`);
+    expect(errors).toEqual([]);
+  });
+});

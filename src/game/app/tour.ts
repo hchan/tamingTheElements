@@ -12,8 +12,8 @@ import { getUiFlags, type UiFlags } from '../platform/flags';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
-import { TOUCH, touchButton } from './arcade-versus';
 import { destroyGame, type GameHandle } from './game-handle';
+import { touchButtons } from './touch-controls';
 import { currentStage, matchSeed, parseTeam, stagePick } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
 import { runSummary } from './tour-summary';
@@ -250,7 +250,7 @@ export function tourScreen(deps: TourDeps): Screen {
         host.id = 'game';
         battle.replaceChildren(host);
         game = createGame(host, launch);
-        host.append(...TOUCH.slice(0, 7).map(touchButton));
+        host.append(...touchButtons(3));
       }))
       .catch((e: unknown) => {
         if (epoch !== mine) return;
