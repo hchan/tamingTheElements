@@ -2,9 +2,10 @@ name: Visual QA
 
 # Screenshots, videos, frame-pacing numbers and (when linux baselines exist) visual regression. See docs/VISUAL-QA.md.
 # Never commits anything: baselines are regenerated as an artifact for human review.
+# Weekly and on demand, not on every push: it is the heaviest job and GitHub Actions minutes are limited.
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '23 5 * * 1'
   workflow_dispatch:
     inputs:
       update_baselines:

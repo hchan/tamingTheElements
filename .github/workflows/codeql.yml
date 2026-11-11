@@ -1,8 +1,7 @@
 name: CodeQL
 
+# Weekly, on pull requests and on demand, not on every push to main (GitHub Actions minutes are limited).
 on:
-  push:
-    branches: [main]
   pull_request:
   schedule:
     - cron: '41 4 * * 1'
