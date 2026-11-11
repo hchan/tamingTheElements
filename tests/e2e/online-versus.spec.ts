@@ -1,16 +1,17 @@
 import { expect, test } from '@playwright/test';
 
 // The #online screen end to end in two real pages: host code -> answer code -> link opens -> setup handshake says "Connected".
-test('two players connect through the Online Versus screen with pasted codes', async ({ browser }) => {
+// Once as plain lockstep and once with `?ff=rollback` (input prediction, docs/NETCODE.md): both must run and agree.
+for (const ff of ['arcade', 'arcade,rollback']) test(`two players connect through the Online Versus screen with pasted codes (${ff})`, async ({ browser }) => {
   test.setTimeout(60_000);
   const ctx = await browser.newContext();
   const a = await ctx.newPage();
   const b = await ctx.newPage();
-  await a.goto('/?ff=arcade');
-  await b.goto('/?ff=arcade');
+  await a.goto(`/?ff=${ff}`);
+  await b.goto(`/?ff=${ff}`);
   await expect(a.getByRole('button', { name: 'Online Versus' })).toBeVisible();
   await a.getByRole('button', { name: 'Online Versus' }).click();
-  await b.goto('/?ff=arcade#online');
+  await b.goto(`/?ff=${ff}#online`);
   await expect(a.locator('#onlineHost')).toBeVisible();
   await expect(b.locator('#onlineJoin')).toBeVisible();
 
