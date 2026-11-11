@@ -418,7 +418,10 @@ export class LockstepSession {
         break;
       }
     }
-    if (bad >= 0 && ring.restoreTick(this.world.state, bad)) {
+    if (bad >= 0 && !ring.restoreTick(this.world.state, bad)) {
+      // Cannot happen while the ring holds window + 2 snapshots; fail loudly instead of drifting to a later hash mismatch.
+      if (this.desync === undefined || bad < this.desync.tick) this.desync = { tick: bad, local: 0, remote: 0 };
+    } else if (bad >= 0) {
       this.stats.rollbacks++;
       this.stats.maxRollbackDepth = Math.max(this.stats.maxRollbackDepth, target - bad);
       for (const k of [...this.specHashes.keys()]) if (k > bad) this.specHashes.delete(k);

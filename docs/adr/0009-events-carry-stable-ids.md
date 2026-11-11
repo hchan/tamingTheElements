@@ -8,7 +8,7 @@ Views need to play sounds and effects once per sim event, even across rewinds or
 
 ## Decision
 
-Each sim event has a stable id derived from tick and ordinal. Consumers dedupe by that id.
+Each sim event has a stable id derived from tick and ordinal. Consumers dedupe by that id. With rollback (docs/NETCODE.md) the same id can come again with a different payload: that is a correction and replaces the earlier event; an id the corrected timeline no longer produces arrives in `retracted`.
 
 ## Consequences
 
