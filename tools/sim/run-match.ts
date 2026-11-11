@@ -279,6 +279,8 @@ export interface MatchOptions {
   readonly ruleset?: Ruleset;
   /** Heroes per side: 1, 2 or 3 (the lead plus partners further on in RACES). The scripted agent only plays the lead's kit. */
   readonly teamSize?: 1 | 2 | 3;
+  /** Explicit roster of side B (boss probe, `tools/sim/boss-probe.ts`): replaces B's `teamSize` partners; side A is unchanged. */
+  readonly rosterB?: readonly string[];
   /**
    * AI level 1..5 (default 3, Normal): the Arcade AI knobs (FUN-DESIGN 2.11, `arcadeLevel`). Classic ignores it.
    */
@@ -327,7 +329,7 @@ export function runMatch(o: MatchOptions): MatchResult {
       xp,
     }));
   const rosterA = roster(o.raceA);
-  const rosterB = roster(o.raceB);
+  const rosterB = o.rosterB === undefined ? roster(o.raceB) : o.rosterB.map((r) => ({ character: characterId(r), xp }));
   const setup: MatchSetup = {
     simVersion: SIM_VERSION,
     seed: o.seed,

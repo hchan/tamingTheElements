@@ -766,6 +766,34 @@ final boss, the Eternal Void. Design (not built yet):
 - **Work packages (proposed):** WP-tour-model (pure ladder and run state in `src/game/app`, unit tests), WP-tour-view (map, splash, ending, e2e).
   Needs no new art: the map is drawn procedurally.
 
+#### Boss probe results (Tour WP1, 2026-11-11)
+
+`tools/sim/boss-probe.ts` (`pnpm exec tsx tools/sim/boss-probe.ts [seeds] [voidHpPm]`; one added `rosterB` option in `run-match.ts`, no core,
+golden or baseline change). A scripted 3-hero Arcade team (lead Fiara, Rokcore, Curomo or Cyclonius; partners as in `--team-size 3`) against
+the Eternal Void, 6 seeds (sides swapped on odd seeds), 12 configurations per row group (4 leads x AI level 1 / 3 / 4, which is Easy / Normal /
+Hard and drives both sides), best of 3. "Void+2" is a lone-Void-bodied stand-in for the shades (there is no shade character): three Void
+bodies, each 2400 HP because a 3-roster scales life by 0.6 (`arcadeLifePm`), 7200 HP in all. Hero wins out of 72 matches:
+
+| Void life (lone, as 2.13 says: 1000 base x hpPm) | Lone Void | Void + 2 Void bodies |
+|---|---|---|
+| 4000 HP (today's default) | 0 | 0 |
+| 2000 | 1 | 0 |
+| 1000 | 2 | 0 |
+| 600 | 28 (39%; Easy 12/24, Normal 6/24, Hard 10/24) | 0 |
+| 300 | 67 (93%) | 20 (28%; per body 180 HP) |
+
+- **Time:** 719 of the 720 matches ended by a KO (one hit the stalemate or tooling cap); the median best-of-3 took 140-155 s (Easy shorter, about
+  100 s; Hard up to 250 s), so a round is 45-80 s and the 90 s round timer is not the limit. The heroes are the problem, not the clock.
+- **Winnable at 4000 HP: no.** The AI team deals about 1000-2000 damage over a whole best of 3 (about a third of a boss life per round) and the
+  Void kills the three heroes first, at every level and for every element of lead. The Void also kills a hero faster than it dies because its
+  damage (1000 pm) hits a 3-roster hero with only about 0.6 of a solo life.
+- **Recommendation:** make the Void a lone boss (Void + 2 bodies is hopeless: 7200 HP; even at 300 HP per Void it is 28%) and cut its life
+  to a number the Tour can win with human help: **about 600 HP** (`ARCADE_RACE_NUMBERS['eternal-void']` hpPm 600, i.e. 15% of today's 4000),
+  where the scripted bots win 39% and a human playing better than the AI should win most. Keep 1000 pm damage. If the owner wants a harder final
+  boss, tune between 600 and 1000 with this script; above 1000 the AI team never wins. Shades, if wanted, should be weak (a few hundred HP in
+  all) and need a real character first. Caveat: the heroes here are the scripted AI, not a human; confirm by playtest (section 7). Changing the number
+  is a core data change (SIM_VERSION bump, Arcade-only) and was not done here.
+
 ### 2.19 Deprecating Capture (owner request 2026-11-11)
 
 Capture (taming an enemy at 25% HP or less into the garrison) is Classic-only; Arcade never had it. Decision: deprecate it with the rest
