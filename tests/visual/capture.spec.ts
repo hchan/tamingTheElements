@@ -186,7 +186,7 @@ for (const vp of VIEWPORTS) {
       await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(ARCADE_INTRO)}); const [me, foe] = a.characters(); a.place(me.id, 100, 380, 0); a.place(foe.id, 180, 380, 4); })()`);
       await page.evaluate(`(async () => { const a = window.__TTE__.arena; const foeId = a.characters()[1].id; const hp = () => a.characters().find((c) => c.id === foeId).hp; const start = hp(); for (let i = 0; i < 40 && hp() === start; i++) { a.step(1, [${String(CMD.secondary)}, 0]); await new Promise((r) => requestAnimationFrame(r)); } })()`);
       await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
-      expect(await page.evaluate<number>(`window.__TTE__.arena.fx().numbers.length`)).toBeGreaterThan(0);
+      await expect.poll(() => page.evaluate<number>(`window.__TTE__.arena.fx().numbers.length`)).toBeGreaterThan(0);
       await shoot(page, vp, 'arena', 'arena-arcade-hitstop', 'Arcade: first hit, during hit-stop (white flash, element sparks, damage number)');
       // Keep firing until the next volley lands (the numbers of the first one stay: paused effects do not age).
       await page.evaluate(`(() => { const a = window.__TTE__.arena; const n = a.fx().numbers.length; for (let i = 0; i < 60 && a.fx().numbers.length <= n; i++) a.step(1, [${String(CMD.secondary)}, 0]); })()`);
