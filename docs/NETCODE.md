@@ -55,7 +55,7 @@ To add: prediction in `update` (step with a guessed remote input), a restore-and
 - [x] Session snapshot hook for rollback
 - [ ] Rollback with input prediction and event de-duplication
 - [ ] Real `RTCDataChannel` transport adapter in `src/game/` (browser only)
-- [ ] Reliable control channel, match setup handshake, `simVersion` check
+- [ ] Reliable control channel (still open). Done: the handshake message and check, `src/core/net/handshake.ts` (simVersion, flags, seed, rosters; cheats refused)
 - [ ] Signalling (manual SDP first, relay later) and TURN
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
 - [ ] Browser e2e with two pages
