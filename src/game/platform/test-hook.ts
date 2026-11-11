@@ -72,12 +72,12 @@ export interface ArenaProbe {
   /** True once the lazy Arcade views (round, weather, tag, defence) are mounted and the Hud runs; events before it are not drawn. */
   viewsReady(): boolean;
   /**
-   * Arcade 2v2 only (async: a lazy chunk): the tag view's last frame (WP-arcade-tag-view): per team its active, bench and
-   * tag lines, the "TAG!" call ('' when none) and its scale, live entrance flashes (and whether one is a KO entrance),
-   * and the swap-slot caption; undefined in Classic and 1v1.
+   * Arcade 2v2 and 3v3 only (async: a lazy chunk): the tag view's last frame (WP-arcade-tag-view): per team its active
+   * line, a line per bench hero and the tag word, the "TAG!" call ('' when none) and its scale, live entrance flashes (and
+   * whether one is a KO entrance), and the swap-slot caption; undefined in Classic and 1v1.
    */
   tag(): Promise<{
-    lines: readonly (readonly [string, string, string])[]; call: string; callScale: number; flashes: number; ko: boolean; caption: string;
+    lines: readonly (readonly string[])[]; call: string; callScale: number; flashes: number; ko: boolean; caption: string;
   } | undefined>;
   /**
    * Arcade only (async: a lazy chunk): the terrain view's last frame (WP-arcade-terrain-view): the stage drawn (1 fire ..

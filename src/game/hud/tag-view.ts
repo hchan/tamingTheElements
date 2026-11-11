@@ -2,8 +2,8 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
-  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, benchBarOf, benchLabel, callPose, callText, dashes,
-  flashPose, mainBarOf, redSpan, tagLine, tagReadout, teamX, type Bar, type TagHero,
+  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, TAG_BAR_H, TAG_BAR_W, activeLabel, benchBarOf, benchLabel, callPose,
+  callText, dashes, flashPose, mainBarOf, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
 
 /**
@@ -11,12 +11,13 @@ import {
  * (so it comes with the round view in every Arcade match, replays included) and hands it each tick's events; it is its
  * own chunk `tag-view` (vite.config.ts), so Classic never downloads it, and it builds nothing unless a side has two
  * heroes. In the Hud scene: the red life (rest cap above the health) as red dashes on every hero bar, a gold frame on the
- * active hero's bar, "IN Sindarosa" and "BENCH Pax 40% +20% red" lines and a tag-cooldown bar with its word ("TAG 2.4s",
- * "TAG READY") under each side's bars, and the announcer-style "TAG!" ("PAX IN!" after a KO) on the tagging side. In the
+ * active hero's bar, "IN Sindarosa" and "BENCH Pax 40% +20% red" lines (one per bench hero; 3v3 has two, `tagLayout`) and
+ * a tag-cooldown bar with its word ("TAG 2.4s", "TAG READY") under each side's bars, and the announcer-style "TAG!" ("PAX
+ * IN!" after a KO) on the tagging side. In the
  * Arena: the entrance flash at the entrance spot (a white core, a growing ring, gold after a KO, and speed lines sliding
  * in from the team's side) and a "TAG" caption over the player's swap slot. Live-region lines go through `say`. Reduced
  * motion keeps every word, ring and bar and drops the slide, the ring's growth and the scale-in. Per match: one Hud
- * Graphics and up to seven Hud Texts, one Arena Graphics and one Arena Text, made once; one Arena `postupdate` listener;
+ * Graphics and up to nine Hud Texts, one Arena Graphics and one Arena Text, made once; one Arena `postupdate` listener;
  * everything goes with the Arena or the Hud (shutdown or destroy).
  */
 
@@ -31,10 +32,6 @@ export const TAG_SLOT_Y = 640;
 /** Over the fighters (0) and the aim arrow (4), under the super dim (5). */
 const FLASH_DEPTH = 4.5;
 const GOLD = 0xffd23f;
-/** Three rows under each side's bars, from the bench bar's start: who is in, the bench, the tag bar and word. */
-const LINE_Y = 32;
-const TAG_BAR_W = 72;
-const TAG_BAR_H = 8;
 const CALL_Y = 210;
 const CALL_PX = 60;
 const LINE_PX = 15;
@@ -46,8 +43,8 @@ export interface TagPrefs {
 
 /** Read-out for the test probe. */
 export interface TagState {
-  /** Per team: the active and bench lines and the tag word ('' for a one-hero side). */
-  readonly lines: readonly (readonly [string, string, string])[];
+  /** Per team: the active line, a line per bench hero and the tag word (three '' for a one-hero side). */
+  readonly lines: readonly (readonly string[])[];
   /** The call while it shows ('' otherwise) and its scale; the live entrance flashes; the swap-slot caption. */
   readonly call: string;
   readonly callScale: number;
@@ -98,7 +95,7 @@ export function mountTagView(
   // Up to 1.3x on a phone, so the longest bench line still ends left of the round pips.
   const boost = Math.min(1.3, Math.max(1, 900 / (hud.scale.displaySize.width || 900)));
   const rowH = Math.round(LINE_PX * boost) + 5;
-  const tagY = LINE_Y + 2 * rowH + (rowH - 5 - TAG_BAR_H) / 2;
+  const layouts = teams.map((t) => tagLayout(t.length, rowH, boost));
   const text = (scene: Phaser.Scene, px: number, stroke: number): Phaser.GameObjects.Text =>
     scene.add
       .text(0, 0, '', {
@@ -114,7 +111,7 @@ export function mountTagView(
     parts = {
       g: hud.add.graphics().setDepth(HUD_DEPTH),
       texts: teams.map((t, team) =>
-        t.length < 2 ? [] : [0, 1, 2].map((row) => text(hud, LINE_PX * boost, 4).setPosition(benchBarOf(team, 0).minX + (row > 1 ? TAG_BAR_W + 8 : 0), LINE_Y + row * rowH)),
+        t.length < 2 ? [] : (layouts[team]?.rows ?? []).map(([x, y]) => text(hud, LINE_PX * boost, 4).setPosition(benchBarOf(team, 0).minX + x, y)),
       ),
       call: text(hud, CALL_PX, 8).setOrigin(0.5).setVisible(false),
     };
@@ -126,7 +123,7 @@ export function mountTagView(
   let callFrom = -CALL_TICKS;
   let callReduced = false;
   let shownTick = -1;
-  const lines: [string, string, string][] = [['', '', ''], ['', '', '']];
+  const lines: string[][] = [['', '', ''], ['', '', '']];
   /** Live entrance flashes: centre, height, team, start tick, KO. */
   const flashes: { x: number; y: number; h: number; team: number; from: number; ko: boolean }[] = [];
 
@@ -152,11 +149,16 @@ export function mountTagView(
       }
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
-      const partner = bench[0];
-      const tag = tagReadout(bar ? bar.swapReadyTick - bar.tick : 0, !active || !partner || partner.dead);
+      const tag = tagReadout(bar ? bar.swapReadyTick - bar.tick : 0, !active || bench.every((h) => h.dead));
       if (team === 0) caption?.setVisible(tag.label !== 'NO TAG');
-      const line: [string, string, string] = [active ? activeLabel(active.sprite) : '', partner ? benchLabel(partner) : '', tag.label];
-      const bx = benchBarOf(team, 0).minX;
+      // One line per bench row (an empty one if a hero is missing), so the texts keep their rows.
+      const benchLines = Array.from({ length: t.length - 1 }, (_, i) => {
+        const h = bench[i];
+        return h ? benchLabel(h) : '';
+      });
+      const line = [active ? activeLabel(active.sprite) : '', ...benchLines, tag.label];
+      const [ox, tagY] = layouts[team]?.bar ?? [0, 0];
+      const bx = benchBarOf(team, 0).minX + ox;
       // The cooldown bar fills as the tag comes back: dashed while it does, solid gold (white in high contrast) when ready.
       g.fillStyle(0x000000, 0.6).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
       if (tag.fill >= 1) g.fillStyle(highContrast ? 0xffffff : GOLD, 1).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
@@ -167,7 +169,7 @@ export function mountTagView(
       g.lineStyle(highContrast ? 2 : 1, 0xffffff, 1).strokeRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
       const prev = lines[team] ?? line;
       line.forEach((l, i) => {
-        if (prev[i] !== l) texts[team]?.[i]?.setText(l).setColor(i > 1 && tag.fill >= 1 ? '#ffe066' : i ? '#e0e0e0' : '#ffffff');
+        if (prev[i] !== l) texts[team]?.[i]?.setText(l).setColor(i === line.length - 1 && tag.fill >= 1 ? '#ffe066' : i ? '#e0e0e0' : '#ffffff');
       });
       lines[team] = line;
     });
@@ -259,7 +261,7 @@ export function mountTagView(
   states.set(arena, () => {
     draw();
     return {
-      lines: lines.map((l) => [...l] as const), call: parts?.call.visible ? parts.call.text : '', callScale: parts?.call.scaleX ?? 1,
+      lines: lines.map((l) => [...l]), call: parts?.call.visible ? parts.call.text : '', callScale: parts?.call.scaleX ?? 1,
       flashes: flashes.length, ko: flashes.some((f) => f.ko), caption: caption?.visible ? caption.text : '',
     };
   });

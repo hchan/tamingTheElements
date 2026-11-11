@@ -39,7 +39,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
-  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 1000, tagIn: 0, partnerPm: -1, rocks: [],
+  primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 1000, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -95,12 +95,12 @@ describe('ObservationView.arcade', () => {
     expect(createObservationView(world, 0).arcade).toEqual({
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, superId: 1,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
-      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
+      shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, superId: 2,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
-      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, rocks: [],
+      shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
     });
     expect(hash(s)).toBe(before);
   });
@@ -583,6 +583,28 @@ describe('the Arcade AI tags (WP-arcade-tag)', () => {
     expect(tags({ partnerPm: 900, selfStun: 5 })).toBe(false); // not free
     expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 130], rng: null });
     expect(tags({ partnerPm: 900, shots: [shotIn(10)] })).toBe(false); // threatened
+  });
+
+  it('3v3 (WP-arcade-3v3): the view carries both bench heroes in tag order, a downed one skipped', () => {
+    const world = skipIntro(createMatch({
+      ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+      p1: ['sindarosa', 'fiara', 'curomo'].map((c) => ({ character: characterId(c), xp: 1 })),
+    }));
+    const s = world.state;
+    s.hp[1] = (s.maxHp[1] ?? 0) / 2;
+    s.hp[2] = (s.maxHp[2] ?? 0) / 4;
+    expect(createObservationView(world, 0).arcade).toMatchObject({ partnerPm: 500, partner2Pm: 250 });
+    s.flags[1] = (s.flags[1] ?? 0) | EntityFlag.dead;
+    expect(createObservationView(world, 0).arcade).toMatchObject({ partnerPm: 250, partner2Pm: -1 });
+  });
+
+  it('3v3: tags in the healthier bench hero, with Tag 2 when it is the second one', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    const tag = (a: Partial<ArcadeView>): number => t.apply(view(a, 0, low(30)), Cmd.left) & (Cmd.swap1 | Cmd.swap2);
+    expect(tag({ partnerPm: 400, partner2Pm: 900 })).toBe(Cmd.swap2);
+    expect(tag({ partnerPm: 900, partner2Pm: 400 })).toBe(Cmd.swap1);
+    expect(tag({ partnerPm: 700, partner2Pm: 700 })).toBe(Cmd.swap1);
+    expect(tag({ partnerPm: 100, partner2Pm: 200 })).toBe(0); // neither is healthier by the margin
   });
 
   it('two scripted AIs in a 2v2 Arcade match tag, enter with their entrance attack and finish the match', () => {

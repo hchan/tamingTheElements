@@ -19,15 +19,18 @@ async function overlapsArena(page: Page): Promise<string[]> {
   })()`);
 }
 
-test('desktop 1280x720: the Arcade touch buttons stay clickable but never overlap the walkable playfield', async ({ page }) => {
+test('desktop 1280x720: the Arcade touch buttons stay clickable but never overlap the walkable playfield (2v2 and 3v3)', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto(`${START}&ff=arcade#arcade`);
-  await page.getByLabel('Team').selectOption('2');
-  await page.getByRole('button', { name: 'Fight!' }).click();
-  await page.waitForFunction(ARENA_READY);
-  await expect(page.locator('#arcadeTag')).toBeVisible();
-  expect(await page.locator('#game button[id^="arcade"]').count()).toBe(6);
-  expect(await overlapsArena(page)).toEqual([]);
+  for (const [size, buttons] of [['2', 6], ['3', 7]] as const) {
+    await page.goto('about:blank');
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByLabel('Team').selectOption(size);
+    await page.getByRole('button', { name: 'Fight!' }).click();
+    await page.waitForFunction(ARENA_READY);
+    await expect(page.locator('#arcadeTag')).toBeVisible();
+    expect(await page.locator('#game button[id^="arcade"]').count()).toBe(buttons);
+    expect(await overlapsArena(page)).toEqual([]);
+  }
 });
 
 const PRIMARY = 1 << 4;

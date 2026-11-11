@@ -35,6 +35,25 @@ export const teamX = (team: number): number => team * 640;
 export const mainBarOf = (team: number): Bar => ({ minX: teamX(team) + 120, maxX: teamX(team) + 560, y: 10, line: 10 });
 export const benchBarOf = (team: number, i: number): Bar => ({ minX: teamX(team) + 246, maxX: teamX(team) + 560, y: 26 + i * 40, line: 6 });
 
+/** The tag-cooldown bar's size. */
+export const TAG_BAR_W = 72;
+export const TAG_BAR_H = 8;
+
+/**
+ * Where a side's tag lines go, as [x, y] from its first bench bar's start (x) and the HUD top (y), in line order (IN, the
+ * BENCH lines, the tag word), and the tag bar's top left; `rowH` is a text row's height. Two heroes: three rows under the
+ * bench bar. Three (3v3, WP-arcade-3v3): each BENCH line under its own bench bar, then a row with the tag bar, its word
+ * and the IN line (the gold frame on the main bar shows who is in as well).
+ */
+export function tagLayout(heroes: number, rowH: number, boost: number): { readonly rows: [number, number][]; readonly bar: [number, number] } {
+  const under = (i: number): number => benchBarOf(0, i).y + 6;
+  const word = TAG_BAR_W + 8;
+  const barY = (y: number): number => y + (rowH - 5 - TAG_BAR_H) / 2;
+  if (heroes < 3) return { rows: [[0, under(0)], [0, under(0) + rowH], [word, under(0) + 2 * rowH]], bar: [0, barY(under(0) + 2 * rowH)] };
+  const y = under(1) + rowH;
+  return { rows: [[word + Math.round(110 * boost), y], [0, under(0)], [0, under(1)], [word, y]], bar: [0, barY(y)] };
+}
+
 /** Splits [from, to] into [on, off] dashes, as `dashSegments`. */
 export function dashes(from: number, to: number, [on, off]: readonly [number, number]): [number, number][] {
   const out: [number, number][] = [];
@@ -79,8 +98,8 @@ export function benchLabel(h: TagHero): string {
 export const activeLabel = (sprite: string): string => `IN ${heroName(sprite)}`;
 
 /**
- * Tag readiness from the game ticks left on the tag cooldown: the label ("TAG READY", "TAG 2.4s", "NO TAG" when the
- * partner is down) and the elapsed fraction (0..1) the cooldown bar fills to.
+ * Tag readiness from the game ticks left on the tag cooldown: the label ("TAG READY", "TAG 2.4s", "NO TAG" when every
+ * bench hero is down) and the elapsed fraction (0..1) the cooldown bar fills to.
  */
 export function tagReadout(left: number, partnerDown: boolean): { readonly label: string; readonly fill: number } {
   if (partnerDown) return { label: 'NO TAG', fill: 0 };

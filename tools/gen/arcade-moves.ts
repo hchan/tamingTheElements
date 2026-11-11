@@ -243,6 +243,39 @@ function tagScript(): ArcadeScript {
   return { file: 'arcade-tag', setup, inputs: buildScript(p1, p2) };
 }
 
+/** 3v3 script timings: ticks between tags (past TAG_COOLDOWN_TICKS) and the Fire Blasts that KO the three p2 heroes. */
+const TAG3_EVERY = 160;
+const TAG3_BLASTS = 16;
+
+/**
+ * Tag team 3v3 (WP-arcade-3v3); p1 deals 4x. Tag 2 brings the third hero (Curomo) in, Tag 1 then brings the first
+ * living bench hero in roster order (Cyclonius), and Tag 1 again the other (Sindarosa). Her blasts KO Rokcore, Fiara
+ * enters (a KO entrance), then Pax (the last hero's entrance); the round ends only when all three are down.
+ */
+function tag3Script(): ArcadeScript {
+  const setup: MatchSetup = {
+    simVersion: SIM_VERSION, seed: 0x3a3, flags: ARCADE_FLAGS, chapter: 1, difficulty: 0.25,
+    p1: [
+      { character: characterId('cyclonius'), xp: 1 },
+      { character: characterId('sindarosa'), xp: 1 },
+      { character: characterId('curomo'), xp: 1 },
+    ],
+    p2: [
+      { character: characterId('rokcore'), xp: 1 },
+      { character: characterId('fiara'), xp: 1 },
+      { character: characterId('pax'), xp: 1 },
+    ],
+  };
+  const p1 = new Track();
+  const p2 = new Track();
+  const h = home(p1, p2, 100, 100);
+  p1.until(h).tap('tag 2: curomo', swap2).wait(TAG3_EVERY).tap('tag 1: cyclonius', swap1);
+  p1.wait(TAG3_EVERY).tap('tag 1: sindarosa', swap1).wait(TAG3_EVERY);
+  for (let i = 0; i < TAG3_BLASTS; i++) p1.tap('fire blast', primary, 1, BLAST_EVERY - 1);
+  p1.wait(300);
+  return { file: 'arcade-tag3', setup, inputs: buildScript(p1, p2) };
+}
+
 export function arcadeScripts(): ArcadeScript[] {
-  return [movesScript(), weatherScript(), tagScript()];
+  return [movesScript(), weatherScript(), tagScript(), tag3Script()];
 }

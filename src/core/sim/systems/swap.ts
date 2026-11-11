@@ -49,6 +49,15 @@ export function nextAliveTeammate(world: SimWorld, team: number, id: number): nu
 }
 
 /**
+ * Arcade tag targets (WP-arcade-3v3): the living teammates of `id` in roster order. Tag N (swapN) brings in entry N-1,
+ * so Tag 1 brings the first living bench hero and, in 3v3, Tag 2 the other one; a downed hero is skipped (Classic keeps
+ * a dead target as a no-op). A KO brings in entry 0 (`nextAliveTeammate`). With 2 heroes: the partner, or nothing.
+ */
+export function tagTargets(world: SimWorld, team: number, id: number): number[] {
+  return teamMembers(world, team).filter((m) => m !== id && isLiving(world, m));
+}
+
+/**
  * Legacy benchHelper/unbenchHelper plus the swap cooldown stamp. Keeps hp; halves the rest-heal gap; starts the rest timer.
  * Arcade (FUN-DESIGN 2.6): `to` enters at `from`'s position (not the team start), the cooldown is TAG_COOLDOWN_TICKS,
  * and the tag entrance follows (`tagEntrance`: invulnerability, the free entrance attack, `tagIn`).
@@ -93,7 +102,7 @@ function activeOf(world: SimWorld, team: number): number {
   return -1;
 }
 
-/** Manual swap: swapN picks the N-th teammate (roster order, excluding the active one). */
+/** Manual swap: swapN picks the N-th teammate (roster order, excluding the active one; Arcade: `tagTargets`). */
 export function swapSystem(
   world: SimWorld,
   cmds: readonly [Command, Command],
@@ -113,7 +122,7 @@ export function swapSystem(
     // needs it free (`isFree`: not stunned, block-stunned, dashing, in a super or weather recovery; always true in Classic).
     if (cur < 0 || ((s.flags[cur] ?? 0) & EntityFlag.frozen) !== 0 || !isFree(s, cur)) continue;
     const from = cur;
-    const target = teamMembers(world, team).filter((m) => m !== from)[slot];
+    const target = isArcade(s) ? tagTargets(world, team, from)[slot] : teamMembers(world, team).filter((m) => m !== from)[slot];
     if (target === undefined || !isLiving(world, target)) continue;
     performSwap(world, sink, team, from, target);
   }

@@ -30,11 +30,23 @@ import { ARCADE_AI_LEVELS, ARCADE_RACES, type ArcadePick } from './arcade-pick';
  * but two identical bots on one spot trade cancelling shots, see tools/sim/run-match.ts), so a seed replays the same team.
  */
 export function enemyPartner(pick: ArcadePick, seed: number): CharacterId {
-  const free = ARCADE_RACES.filter((r) => r !== pick.player && r !== pick.partner && r !== pick.enemy);
+  const free = ARCADE_RACES.filter((r) => r !== pick.player && r !== pick.partner && r !== pick.partner2 && r !== pick.enemy);
   return free[(seed >>> 0) % free.length] ?? pick.enemy;
 }
 
-/** Arcade on, `difficulty: 1` (Arcade never scales stats by difficulty), chapter 1 (no Capture), 0 XP; 1 or 2 heroes a side. */
+/**
+ * The AI's partners: none in 1v1, `enemyPartner` in 2v2, and in 3v3 (WP-arcade-3v3) a third race drawn from the seed's
+ * higher bits among the races still free.
+ */
+export function enemyPartners(pick: ArcadePick, seed: number): CharacterId[] {
+  if (!pick.partner) return [];
+  const first = enemyPartner(pick, seed);
+  if (!pick.partner2) return [first];
+  const free = ARCADE_RACES.filter((r) => r !== pick.player && r !== pick.partner && r !== pick.partner2 && r !== pick.enemy && r !== first);
+  return [first, free[((seed >>> 0) >>> 8) % free.length] ?? pick.enemy];
+}
+
+/** Arcade on, `difficulty: 1` (Arcade never scales stats by difficulty), chapter 1 (no Capture), 0 XP; 1, 2 or 3 heroes a side. */
 export function arcadeSetup(pick: ArcadePick, seed: number): MatchSetup {
   const hero = (character: CharacterId): { character: CharacterId; xp: number } => ({ character, xp: 0 });
   return {
@@ -43,14 +55,14 @@ export function arcadeSetup(pick: ArcadePick, seed: number): MatchSetup {
     flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
     chapter: 1,
     difficulty: 1,
-    p1: pick.partner ? [hero(pick.player), hero(pick.partner)] : [hero(pick.player)],
-    p2: pick.partner ? [hero(pick.enemy), hero(enemyPartner(pick, seed))] : [hero(pick.enemy)],
+    p1: [pick.player, ...(pick.partner ? [pick.partner] : []), ...(pick.partner && pick.partner2 ? [pick.partner2] : [])].map(hero),
+    p2: [pick.enemy, ...enemyPartners(pick, seed)].map(hero),
   };
 }
 
 /**
  * The Arcade AI for team 1 (never the random bot, FUN-DESIGN 2.11): the scripted AI with its Arcade layer at the picked
- * level; it plays Turtle when its element is at a disadvantage, else a personality drawn from the match seed. In 2v2 each
+ * level; it plays Turtle when its element is at a disadvantage, else a personality drawn from the match seed. In 2v2/3v3 each
  * hero has its own scripted AI (its own kit) and the one in play answers; it tags when low (WP-arcade-tag). Like the tools'
  * team bot (`makeTeamAgent`), an idle hero steps onto the opponent's row, since a tag can drop it off every firing line.
  */
@@ -95,7 +107,7 @@ export interface ArcadeResult {
   readonly rounds?: readonly [number, number];
   /** The recorded replay (recording on and nothing invalidated it). */
   readonly replay?: ReplayFile;
-  /** 2v2: every hero's state at the end, in roster order (team 0 first); absent in 1v1. */
+  /** 2v2 and 3v3: every hero's state at the end, in roster order (team 0 first); absent in 1v1. */
   readonly heroes?: readonly ArcadeHero[];
 }
 

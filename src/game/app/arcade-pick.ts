@@ -25,17 +25,23 @@ export interface ArcadePick {
    * 1v1. The AI's second race is drawn from the match seed (`enemyPartner` in `arcade-setup.ts`).
    */
   readonly partner?: CharacterId;
+  /**
+   * 3v3 tag team (WP-arcade-3v3): the player's third race, with `partner` set, never the same as `player` or `partner`;
+   * the AI's third race also comes from the seed (`enemyPartners`).
+   */
+  readonly partner2?: CharacterId;
   /** Local two-player: a second human (Player 2, `enemy` is their race) instead of the AI; 1v1 only; `level` is unused. */
   readonly local?: true;
 }
 
-/** Form values as the picker sends them; `size` is '2' for a 2v2 tag team (anything else is 1v1). */
+/** Form values as the picker sends them; `size` is '2' or '3' for a 2v2 or 3v3 tag team (anything else is 1v1). */
 export interface PickForm {
   readonly player: string;
   readonly enemy: string;
   readonly level: string;
   readonly size?: string;
   readonly partner?: string;
+  readonly partner2?: string;
   /** 'local' for two players on this computer (anything else is the AI). */
   readonly mode?: string;
 }
@@ -47,17 +53,30 @@ export const DEFAULT_PICK: ArcadePick = { player: 'sindarosa' as CharacterId, en
 
 const PAX = 'pax' as CharacterId;
 
+const CUROMO = 'curomo' as CharacterId;
+
 /** The 2v2 partner: the raw race when known and not the lead's, else Pax (earth), else the first other race. */
 export const partnerFor = (player: CharacterId, raw?: string): CharacterId =>
   [race(raw, PAX), PAX, ...ARCADE_RACES].find((r) => r !== player) ?? PAX;
 
-/** Form values to a pick; anything unknown falls back to the default, and a 2v2 partner is never the lead's race. */
+/** The 3v3 third race: the raw race when known and not already on the team, else Curomo (water), else the first free race. */
+export const partner2For = (player: CharacterId, partner: CharacterId, raw?: string): CharacterId =>
+  [race(raw, CUROMO), CUROMO, ...ARCADE_RACES].find((r) => r !== player && r !== partner) ?? CUROMO;
+
+/** The tag team part of a pick for the form's size: none (1v1), `partner` (2v2) or both partners (3v3). */
+function team(player: CharacterId, raw: PickForm): Pick<ArcadePick, 'partner' | 'partner2'> {
+  if (raw.size !== '2' && raw.size !== '3') return {};
+  const partner = partnerFor(player, raw.partner);
+  return raw.size === '3' ? { partner, partner2: partner2For(player, partner, raw.partner2) } : { partner };
+}
+
+/** Form values to a pick; anything unknown falls back to the default, and no race is on a tag team twice. */
 export function parsePick(raw: PickForm): ArcadePick {
   const player = race(raw.player, DEFAULT_PICK.player);
   return {
     player,
     enemy: race(raw.enemy, DEFAULT_PICK.enemy),
     level: ARCADE_AI_LEVELS.find((l) => l === raw.level) ?? DEFAULT_PICK.level,
-    ...(raw.mode === 'local' ? { local: true as const } : raw.size === '2' ? { partner: partnerFor(player, raw.partner) } : {}),
+    ...(raw.mode === 'local' ? { local: true as const } : team(player, raw)),
   };
 }

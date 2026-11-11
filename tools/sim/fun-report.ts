@@ -9,7 +9,7 @@ import { RACES, type Ruleset, parseRuleOptions, runPairing } from './run-match';
 
 export interface FunReportOptions {
   readonly ruleset: Ruleset;
-  readonly teamSize: 1 | 2;
+  readonly teamSize: 1 | 2 | 3;
   readonly aiLevel: number;
   readonly seeds: number;
   readonly seed: number;

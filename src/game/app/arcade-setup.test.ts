@@ -21,7 +21,7 @@ import {
   type ReplayFile,
 } from '@core/index';
 import { ARCADE_RACES, DEFAULT_PICK, parsePick, type ArcadePick } from './arcade-pick';
-import { arcadeEnemy, arcadeLaunch, arcadeSetup, enemyPartner, heroesOf, type ArcadeResult } from './arcade-setup';
+import { arcadeEnemy, arcadeLaunch, arcadeSetup, enemyPartner, enemyPartners, heroesOf, type ArcadeResult } from './arcade-setup';
 
 const pick: ArcadePick = { player: characterId('sindarosa'), enemy: characterId('pax'), level: 'normal' };
 
@@ -240,5 +240,56 @@ describe('Arcade 2v2 tag team (WP-arcade-tag-view)', () => {
       { team: 1, race: 'lavax', pct: 100 },
       { team: 1, race: enemyPartner(duo, 5), pct: 0 },
     ]);
+  });
+});
+
+describe('Arcade 3v3 tag team (WP-arcade-3v3)', () => {
+  const trio: ArcadePick = { ...pick, partner: characterId('fiara'), partner2: characterId('curomo'), enemy: characterId('lavax') };
+
+  it('parses size 3 into two partners, distinct from each other and from the lead', () => {
+    const base = { player: 'echo', enemy: 'lavax', level: 'easy' };
+    expect(parsePick({ ...base, size: '3', partner: 'pax', partner2: 'fiara' })).toEqual({ ...base, partner: 'pax', partner2: 'fiara' });
+    expect(parsePick({ ...base, size: '2', partner: 'pax', partner2: 'fiara' })).toEqual({ ...base, partner: 'pax' });
+    // Unknown, or already on the team: Curomo, or the first race not yet on it.
+    expect(parsePick({ ...base, size: '3', partner: 'pax', partner2: 'nope' }).partner2).toBe('curomo');
+    expect(parsePick({ ...base, size: '3', partner: 'pax', partner2: 'pax' }).partner2).toBe('curomo');
+    const taken = parsePick({ ...base, player: 'curomo', size: '3', partner: 'pax', partner2: 'curomo' });
+    expect(taken.partner2).toBe(ARCADE_RACES.find((r) => r !== 'curomo' && r !== 'pax'));
+  });
+
+  it('builds three heroes a side; the AI partners come from the seed, distinct, never a picked race; 2v2 is unchanged', () => {
+    const s = arcadeSetup(trio, 7);
+    expect(s.p1.map((m) => m.character)).toEqual(['sindarosa', 'fiara', 'curomo']);
+    expect(s.p2.map((m) => m.character)).toEqual(['lavax', ...enemyPartners(trio, 7)]);
+    const seen = new Set<string>();
+    for (let seed = 0; seed < 4000; seed += 37) {
+      const [a, b] = enemyPartners(trio, seed);
+      expect(a).not.toBe(b);
+      for (const r of [a, b]) {
+        expect(['sindarosa', 'fiara', 'curomo', 'lavax']).not.toContain(r);
+        expect(ARCADE_RACES).toContain(r);
+      }
+      seen.add(`${String(a)}/${String(b)}`);
+    }
+    expect(seen.size).toBeGreaterThan(10);
+    const duo: ArcadePick = { ...pick, partner: characterId('fiara') };
+    expect(enemyPartners(duo, 9)).toEqual([enemyPartner(duo, 9)]);
+    expect(enemyPartners(pick, 9)).toEqual([]);
+  });
+
+  it('a 3v3 match against the AI runs to its end', () => {
+    const setup = arcadeSetup(trio, 11);
+    const world = createMatch(setup);
+    const agents: [Agent, Agent] = [new RandomBot('p1'), arcadeEnemy(trio, setup)];
+    const tagIns: number[] = [];
+    let ended = false;
+    for (let t = 0; t < 60_000 && !ended; t++) {
+      for (const e of step(world, collectCommands(world, agents))) {
+        if (e.kind === SimEventKind.tagIn) tagIns.push(e['to'] ?? -1);
+        if (e.kind === SimEventKind.matchEnded) ended = true;
+      }
+    }
+    expect(ended).toBe(true);
+    expect(tagIns.length).toBeGreaterThan(0);
   });
 });

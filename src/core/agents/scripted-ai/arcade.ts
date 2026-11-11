@@ -37,7 +37,8 @@ import {
  * - Spacing: Rushdown dashes in when the opponent is farther than ARCADE_AI_FAR_PX, at the level's rate per tick; Zoner and
  *   Turtle leave spacing to the base AI's kiting, and play Rushdown after ARCADE_AI_STALE_TICKS without an HP change.
  * - Tag (WP-arcade-tag): free, with no threat and the tag ready, it tags (`Cmd.swap1`) when its HP is below
- *   ARCADE_AI_TAG_BELOW_PM and its partner's is more than ARCADE_AI_TAG_MARGIN_PM above; no draw, no memory.
+ *   ARCADE_AI_TAG_BELOW_PM and its partner's is more than ARCADE_AI_TAG_MARGIN_PM above; no draw, no memory. 3v3
+ *   (WP-arcade-3v3): the healthier of the two bench heroes, `Cmd.swap2` when it is the second one.
  * - Weather: free, with its weather charged and ready and no threat, it calls its weather when its element is at a disadvantage.
  */
 
@@ -301,7 +302,10 @@ export class ArcadeTactics {
     }
     if (!free || threat) return cmd;
     const pm = (self.hp * 1000) / self.maxHp;
-    if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && a.partnerPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | Cmd.swap1;
+    // Tags in the healthier bench hero (3v3: Tag 2 when the other one is healthier; WP-arcade-3v3).
+    const two = a.partner2Pm > a.partnerPm;
+    const benchPm = two ? a.partner2Pm : a.partnerPm;
+    if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && benchPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | (two ? Cmd.swap2 : Cmd.swap1);
     if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && style === RUSHDOWN) return Cmd.charge;
     if (a.dashIn === 0 && style === RUSHDOWN && far > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);

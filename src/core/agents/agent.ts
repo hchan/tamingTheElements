@@ -91,10 +91,12 @@ export interface ArcadeView {
   readonly weatherCharge: number;
   /**
    * Tag team (FUN-DESIGN 2.6): game ticks until this side may tag (0: now), and the HP per mille of the partner a
-   * `Cmd.swap1` tag brings in (the first other roster member; -1 when there is none or it is down).
+   * `Cmd.swap1` tag brings in (the first living teammate in roster order, `tagTargets`; -1 when there is none);
+   * `partner2Pm` the same for `Cmd.swap2`, the other bench hero in 3v3 (WP-arcade-3v3; always -1 in 1v1 and 2v2).
    */
   readonly tagIn: number;
   readonly partnerPm: number;
+  readonly partner2Pm: number;
   /**
    * The rocks (FUN-DESIGN 2.15) this side cannot cross: the earth patches when the stage is earth and this side's
    * fighter is not of the earth element, else none. Fresh plain rectangles.
@@ -190,6 +192,17 @@ function fighterOf(world: SimWorld, team: number): FighterView | undefined {
   return undefined;
 }
 
+/**
+ * The HP per mille of the heroes Tag 1 and Tag 2 bring in: the living teammates in roster order (`tagTargets`), -1 for
+ * none. With no active hero: the roster order, a downed hero as -1.
+ */
+function partnersPm(s: SimState, members: readonly number[], self: FighterView | undefined): { partnerPm: number; partner2Pm: number } {
+  const pm = (i: number): number => ((s.flags[i] ?? 0) & EntityFlag.dead) !== 0 ? -1 : Math.floor(((s.hp[i] ?? 0) * 1000) / (s.maxHp[i] ?? 1));
+  const others = members.filter((m) => m !== self?.id).map(pm);
+  const order = self === undefined ? others : others.filter((p) => p >= 0);
+  return { partnerPm: order[0] ?? -1, partner2Pm: order[1] ?? -1 };
+}
+
 function arcadeViewOf(
   s: SimState,
   side: number,
@@ -202,13 +215,11 @@ function arcadeViewOf(
   const left = (f: FighterView | undefined, field: number): number =>
     f === undefined ? 0 : Math.max(0, (a[f.id * ARCADE_E + field] ?? 0) - g);
   const shots: ShotView[] = [];
-  let partnerPm = -2;
+  const members: number[] = [];
   for (let i = 0; i < s.kind.length; i++) {
     const k = s.kind[i];
     const f = s.flags[i] ?? 0;
-    if (partnerPm < -1 && k === EntityKind.character && s.team[i] === side && i !== self?.id && (f & EntityFlag.alive) !== 0) {
-      partnerPm = (f & EntityFlag.dead) !== 0 ? -1 : Math.floor(((s.hp[i] ?? 0) * 1000) / (s.maxHp[i] ?? 1));
-    }
+    if (k === EntityKind.character && s.team[i] === side && (f & EntityFlag.alive) !== 0) members.push(i);
     // A freed slot is cleared (kind 0, a character), so a projectile kind is a live projectile.
     if (k === EntityKind.projectile && s.team[i] !== side) {
       shots.push({ x: s.x[i] ?? 0, y: s.y[i] ?? 0, w: s.w[i] ?? 0, h: s.h[i] ?? 0, vx: s.vx[i] ?? 0, vy: s.vy[i] ?? 0 });
@@ -237,7 +248,7 @@ function arcadeViewOf(
     chargeIn: RANGED[s.defId[self?.id ?? 0] ?? 0] ? -1 : left(self, ArcadeE.chargeReadyAt),
     weatherCharge: team(side, ArcadeT.weatherCharge),
     tagIn: Math.max(0, (s.teams[side * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0) - g),
-    partnerPm: Math.max(partnerPm, -1),
+    ...partnersPm(s, members, self),
     rocks: stageOf(s) === 3 && self !== undefined && kindOf(s, self.id) !== 3 ? patchRects(s) : [],
   };
 }

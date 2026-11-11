@@ -3,9 +3,10 @@ import { TAG_COOLDOWN_TICKS } from '@core/index';
 import { BAR_Y, SLOT_SIDE, slotX } from './action-bar';
 import { barFill, benchBar, dashSegments, mainBar, sideOffset } from './bars';
 import {
-  CALL_TICKS, FLASH_TICKS, activeLabel, benchBarOf, benchLabel, callPose, callText, dashes, flashPose, heroName, mainBarOf,
-  redPct, redSpan, tagLine, tagReadout, teamX, type TagHero,
+  CALL_TICKS, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
+  heroName, mainBarOf, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
 } from './tag-fx';
+import { METER_Y } from './arcade-hud';
 import { TAG_SLOT_X, TAG_SLOT_Y } from './tag-view';
 
 const hero = (o: Partial<TagHero> = {}): TagHero => ({ sprite: 'pax', hp: 400, maxHp: 1000, restCap: 600, dead: false, ...o });
@@ -61,6 +62,24 @@ describe('tag view rules: geometry and motion', () => {
     }
     expect(dashes(10, 40, [6, 4])).toEqual(dashSegments(10, 40, [6, 4]));
     expect(dashes(10, 10, [6, 4])).toEqual([]);
+  });
+
+  it('lays the lines out: three rows under the bench bar for two heroes, each BENCH line under its own bar in 3v3', () => {
+    const rowH = 20;
+    // 2v2: IN, BENCH and the tag word stacked from y 32 (as before 3v3), the tag bar left of the word.
+    expect(tagLayout(2, rowH, 1)).toEqual({ rows: [[0, 32], [0, 52], [TAG_BAR_W + 8, 72]], bar: [0, 72 + (rowH - 5 - TAG_BAR_H) / 2] });
+    const three = tagLayout(3, rowH, 1);
+    expect(three.rows).toHaveLength(4);
+    const [inRow, a, b, word] = three.rows as [[number, number], [number, number], [number, number], [number, number]];
+    const top = (i: number): number => benchBarOf(0, i).y + 6;
+    expect([a, b]).toEqual([[0, top(0)], [0, top(1)]]);
+    expect(word).toEqual([TAG_BAR_W + 8, top(1) + rowH]);
+    expect(inRow[1]).toBe(word[1]);
+    expect(inRow[0]).toBeGreaterThan(word[0] + 80);
+    // Every row clear of the second bench bar's stroke, and the last row above the super meter.
+    for (const [, y] of three.rows) expect(y >= top(1) || y + rowH - 5 <= benchBarOf(0, 1).y - 3).toBe(true);
+    const boosted = tagLayout(3, 25, 1.3);
+    expect(Math.max(...boosted.rows.map(([, y]) => y)) + 25 - 5).toBeLessThan(METER_Y - 2);
   });
 
   it('puts the TAG caption over the third action-bar slot', () => {

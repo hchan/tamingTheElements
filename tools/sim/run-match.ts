@@ -277,8 +277,8 @@ export interface MatchOptions {
   readonly stalemateTicks?: number;
   /** Default 'classic' (bit-identical to before the option existed). */
   readonly ruleset?: Ruleset;
-  /** Heroes per side: 1, or 2 (the lead plus the next race in RACES). The scripted agent only plays the lead's kit. */
-  readonly teamSize?: 1 | 2;
+  /** Heroes per side: 1, 2 or 3 (the lead plus partners further on in RACES). The scripted agent only plays the lead's kit. */
+  readonly teamSize?: 1 | 2 | 3;
   /**
    * AI level 1..5 (default 3, Normal): the Arcade AI knobs (FUN-DESIGN 2.11, `arcadeLevel`). Classic ignores it.
    */
@@ -319,8 +319,10 @@ export function runMatch(o: MatchOptions): MatchResult {
   const xp = xpForLevel(o.level);
   // A 2v2 partner is the race half the list on: the pairings play neighbours (a against a + 1), so the partners never
   // repeat a race of the other side (a mirror of identical bots stands on one spot and its shots cancel forever).
+  // 3v3 (WP-arcade-3v3): the two partners are a third and two thirds of the list on, on the same reasoning.
+  const offsets = o.teamSize === 3 ? [RACES.length / 3, (2 * RACES.length) / 3] : o.teamSize === 2 ? [RACES.length / 2] : [];
   const roster = (race: string): { character: ReturnType<typeof characterId>; xp: number }[] =>
-    [race, ...(o.teamSize === 2 ? [RACES[(RACES.indexOf(race) + RACES.length / 2) % RACES.length] ?? race] : [])].map((r) => ({
+    [race, ...offsets.map((k) => RACES[(RACES.indexOf(race) + k) % RACES.length] ?? race)].map((r) => ({
       character: characterId(r),
       xp,
     }));
@@ -502,7 +504,7 @@ export interface PairingOptions {
   readonly maxTicks?: number;
   readonly stalemateTicks?: number;
   readonly ruleset?: Ruleset;
-  readonly teamSize?: 1 | 2;
+  readonly teamSize?: 1 | 2 | 3;
   readonly aiLevel?: number;
 }
 
@@ -679,10 +681,10 @@ export function parseRuleOptions(
   ruleset: string | undefined,
   teamSize: string | undefined,
   aiLevel: string | undefined,
-): { ruleset: Ruleset; teamSize: 1 | 2; aiLevel: number } {
+): { ruleset: Ruleset; teamSize: 1 | 2 | 3; aiLevel: number } {
   if (ruleset !== undefined && ruleset !== 'classic' && ruleset !== 'arcade') throw new Error(`--ruleset must be classic|arcade, got "${ruleset}"`);
   const size = num(teamSize, 1, 'team-size');
-  if (size !== 1 && size !== 2) throw new Error('--team-size must be 1 or 2');
+  if (size !== 1 && size !== 2 && size !== 3) throw new Error('--team-size must be 1, 2 or 3');
   const ai = num(aiLevel, 3, 'ai-level');
   if (!Number.isInteger(ai) || ai < 1 || ai > 5) throw new Error('--ai-level must be an integer 1..5');
   return { ruleset: ruleset ?? 'classic', teamSize: size, aiLevel: ai };
@@ -732,7 +734,7 @@ export function main(argv: readonly string[]): number {
     return 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2] [--ai-level 1..5] [--json]');
+    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--json]');
     console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--json]');
     return 2;
   }

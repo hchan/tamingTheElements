@@ -104,7 +104,8 @@ describe('run-match rule options', () => {
     expect(parseRuleOptions(undefined, undefined, undefined)).toEqual({ ruleset: 'classic', teamSize: 1, aiLevel: 3 });
     expect(parseRuleOptions('arcade', '2', '5')).toEqual({ ruleset: 'arcade', teamSize: 2, aiLevel: 5 });
     expect(() => parseRuleOptions('x', undefined, undefined)).toThrow();
-    expect(() => parseRuleOptions(undefined, '3', undefined)).toThrow();
+    expect(parseRuleOptions('arcade', '3', undefined)).toEqual({ ruleset: 'arcade', teamSize: 3, aiLevel: 3 });
+    expect(() => parseRuleOptions(undefined, '4', undefined)).toThrow();
     expect(() => parseRuleOptions(undefined, undefined, '9')).toThrow();
   });
 
@@ -155,5 +156,11 @@ describe('run-match rule options', () => {
 
   it('Arcade 2v2 runs', () => {
     expect(runMatch({ ...base, ruleset: 'arcade', teamSize: 2 }).ticks).toBeGreaterThan(0);
+  });
+
+  it('Arcade 3v3 runs to a winner (WP-arcade-3v3)', () => {
+    const r = runMatch({ ...base, ruleset: 'arcade', teamSize: 3 });
+    expect(r.endReason).not.toBe('stalemate');
+    expect(r.winner).not.toBe('draw');
   });
 });

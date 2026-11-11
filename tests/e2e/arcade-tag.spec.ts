@@ -5,11 +5,11 @@ import { ARENA_READY, START, characters, collectErrors } from './parity/helpers'
 // (keyboard order, the partner disabled in 1v1), a 2v2 Arcade Versus match with the team HUD (who is in, the bench with
 // its HP and red life, the tag cooldown), a tag on the 3 key and on the touch Tag button (the "TAG!" call, the entrance
 // flash, the live line), a KO entrance through the test probe, the match end with both heroes on the results, 0
-// listeners after leaving and the Classic menu unchanged. Page-side code is passed as strings because tsconfig.node has
+// listeners after leaving and the Classic menu unchanged; 3v3 (WP-arcade-3v3) with two BENCH lines and Tag 2. Page-side code is passed as strings because tsconfig.node has
 // no DOM lib; `manual=1` starts the arena paused, and the effects run on the view tick, so they hold between steps.
 
 interface Tag {
-  lines: [string, string, string][];
+  lines: string[][];
   call: string;
   callScale: number;
   flashes: number;
@@ -137,6 +137,50 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   // Without the opt-in the Classic menu is unchanged.
   await page.goto(START);
   await expect(page.locator('#menu .mainMenuList li button')).toHaveText(CLASSIC_MENU);
+  expect(errors).toEqual([]);
+});
+
+test('3v3: the third hero only in 3v3, a BENCH line each, Tag 2 on the 4 key, three KOs a round; results with all six', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade#arcade`);
+  const third = page.getByLabel('Your third hero (3v3)');
+  await expect(third).toBeDisabled();
+  await page.getByLabel('Team').selectOption('2');
+  await expect(third).toBeDisabled();
+  await page.getByLabel('Team').selectOption('3');
+  await expect(third).toBeEnabled();
+  await page.getByLabel('Your race').selectOption('sindarosa');
+  await page.getByLabel('Your partner (2v2)').selectOption('pax');
+  await third.selectOption('curomo');
+  await page.getByLabel('AI race').selectOption('fiara');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await step(page, INTRO);
+  await expect(page.locator('#arcadeTag')).toBeVisible();
+  await expect(page.locator('#arcadeTag2')).toBeVisible();
+  const start = await tag(page);
+  expect(start?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax 100%', 'BENCH Curomo 100%', 'TAG READY']);
+  expect(start?.lines[1]).toHaveLength(4);
+  expect(start?.lines[1]?.[0]).toBe('IN Fiara');
+  // Tag 2 (the 4 key) brings the third hero in; the bench reads in roster order.
+  await page.keyboard.down('Digit4');
+  await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+  await page.keyboard.up('Digit4');
+  const tagged = await tag(page);
+  expect(tagged).toMatchObject({ call: 'TAG!', flashes: 1 });
+  expect(tagged?.lines[0]?.slice(0, 3)).toEqual(['IN Curomo', 'BENCH Sindarosa 100%', 'BENCH Pax 100%']);
+  // All three AI heroes down twice (two KO entrances, then the KO): 2-0, and the results name all six heroes.
+  for (let round = 0; round < 2; round++) {
+    for (let k = 0; k < 3; k++) {
+      const [foe] = await characters(page, 1);
+      await page.evaluate(`window.__TTE__.arena.setHp(${String(foe?.id)}, 0)`);
+      await step(page, 1);
+    }
+    await step(page, KO_TO_ROUND_END + (round === 0 ? INTRO : 0));
+  }
+  await expect(page.locator('#arcadeResults')).toBeVisible({ timeout: 10_000 });
+  const summary = await page.locator('#arcadeResults p').innerText();
+  expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left, Curomo \(\w+\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out, .+ knocked out\. Rounds 2-0\./);
   expect(errors).toEqual([]);
 });
 

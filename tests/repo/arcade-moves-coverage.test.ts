@@ -16,7 +16,7 @@ import { arcadeScripts, recordArcadeScript } from '../../tools/gen/arcade-moves'
 // of leaving a golden that quietly stopped covering it.
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
-const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag'] as const;
+const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3'] as const;
 const K = SimEventKind;
 
 interface Run {
@@ -72,6 +72,7 @@ const of = (kind: number, from: readonly SimEvent[] = all): SimEvent[] => from.f
 const moves = runs[0]?.events ?? [];
 const weatherRun = runs[1]?.events ?? [];
 const tagRun = runs[2]?.events ?? [];
+const tag3Run = runs[3]?.events ?? [];
 /** `tagIn` events whose outgoing character died on the same tick (the KO entrance) or not (a manual tag). */
 const koEntrance = (e: SimEvent): boolean => of(K.died).some((d) => d.tick === e.tick && d.sourceId === e.from);
 const hits = of(K.hitConfirmed);
@@ -182,6 +183,22 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     expect(deaths).toHaveLength(3);
     expect(deaths[1]?.tick).toBe(ko?.tick);
     expect(of(K.roundStarted, tagRun).map((e) => e.round)).toEqual([1, 2]);
+  });
+
+  it('the 3v3 tag team: Tag 2 reaches the third hero, KO entrances bring both bench heroes, the round ends at the third KO', () => {
+    // p1 ids 0..2, p2 3..5 (roster order). Tag 2 from hero 0 brings hero 2; Tag 1 then brings the first living one in roster order.
+    const tags = of(K.tagIn, tag3Run).filter((e) => e.team === 0);
+    expect(tags.map((e) => [e.from, e.to])).toEqual([[0, 2], [2, 0], [0, 1]]);
+    const deaths = of(K.died, tag3Run).filter((e) => e.team === 1);
+    expect(deaths.map((e) => e.sourceId)).toEqual([3, 4, 5]);
+    expect(of(K.tagIn, tag3Run).filter((e) => e.team === 1).map((e) => [e.tick, e.from, e.to])).toEqual([
+      [deaths[0]?.tick, 3, 4],
+      [deaths[1]?.tick, 4, 5],
+    ]);
+    const ko = of(K.ko, tag3Run);
+    expect(ko).toHaveLength(1);
+    expect(ko[0]).toMatchObject({ team: 1, tick: deaths[2]?.tick });
+    expect(of(K.roundEnded, tag3Run)[0]).toMatchObject({ winner: 0 });
   });
 
   it('the committed goldens are what the scripts record today', () => {

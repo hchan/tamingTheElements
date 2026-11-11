@@ -12,7 +12,7 @@ import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { controlledId } from './systems/movement';
 import { listStatuses } from './systems/status';
 import { ABILITY_DEFS } from './systems/projectile';
-import { SWAP_COOLDOWN_TICKS, teamMembers } from './systems/swap';
+import { SWAP_COOLDOWN_TICKS, tagTargets, teamMembers } from './systems/swap';
 
 /** Capture sits after the character's own two ability slots (see systems/capture.ts). */
 const CAPTURE_SLOT = 2;
@@ -202,8 +202,10 @@ export function createRenderView(world: SimWorld): RenderView {
           capturable: enemy >= 0 && capturable(s.hp[enemy] ?? 0, s.maxHp[enemy] ?? 0),
         };
       }
-      const swaps = teamMembers(world, team)
-        .filter((m) => m !== cur)
+      // Arcade: slot N is what Tag N brings in (`tagTargets`: the living, in roster order), then the KO'd; Classic: roster order.
+      const others = teamMembers(world, team).filter((m) => m !== cur);
+      const order = isArcade(s) ? tagTargets(world, team, cur) : others;
+      const swaps = [...order, ...others.filter((m) => !order.includes(m))]
         .map((m) => ({
           sprite: CHARACTERS[s.defId[m] ?? 0]?.sprite ?? '',
           dead: ((s.flags[m] ?? 0) & EntityFlag.dead) !== 0,
