@@ -10,15 +10,15 @@
     "index.css": 3100,
     "lazy-index": 550,
     "phaser": 388700,
-    "phaser-config": 17510,
+    "phaser-config": 19900,
     "pose-layer": 3772,
     "rolldown-runtime": 200,
     "round-view": 2100,
-    "sim": 25300,
+    "sim": 25330,
     "super-view": 1290,
     "tag-view": 2802,
     "terrain-view": 4350,
     "weather-view": 3470
   },
-  "totalGzip": 468100
+  "totalGzip": 470850
 }
