@@ -56,7 +56,7 @@ function rig(): Rig {
   };
   const scene = {
     add: { image: () => { const i = new FakeImage(); images.push(i); return i; } },
-    textures: { get: () => ({ has: () => true, add: () => undefined }) },
+    textures: { exists: () => true, get: () => ({ has: () => true, add: () => undefined }) },
     cameras: { main: { shakeEffect: shake } },
   } as unknown as Phaser.Scene;
   return { images, scene, shake };
@@ -556,6 +556,77 @@ describe('projectiles and shake', () => {
     expect(made.length).toBeGreaterThan(0);
     h.layer.destroy();
     expect(made.every((i) => i.destroyed)).toBe(true);
+  });
+});
+
+describe('ability VFX (Arcade only)', () => {
+  const bolt = (x: number): RenderProjectile => ({ id: 5, team: 0, sprite: 'fireball', dir: 0, x, y: 220, px: x, py: 220, w: 20, h: 20 });
+  const fly = (h: Harness, frames: number): void => {
+    for (let i = 0; i < frames; i++) {
+      h.projs[0] = bolt(120 + i * 12);
+      const p = h.projView.get(5);
+      if (p) p.image.x = 130 + i * 12;
+      h.step(16);
+    }
+  };
+
+  it('Classic shows none', () => {
+    const h = harness({ vx: 0 });
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.projs.push(bolt(120));
+    fly(h, 12);
+    h.projs.length = 0;
+    h.step(16);
+    expect(h.layer.state.fx).toBe(0);
+  });
+
+  it('a cast flares, the bolt trails, the end bursts, and everything is pooled and ends', () => {
+    const h = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.projs.push(bolt(120));
+    fly(h, 1);
+    expect(h.layer.state.fx).toBeGreaterThan(0);
+    fly(h, 12);
+    const inFlight = h.layer.state.fx;
+    expect(inFlight).toBeGreaterThan(2);
+    h.projs.length = 0;
+    h.step(16);
+    expect(h.layer.state.fx).toBeGreaterThan(inFlight - 3);
+    for (let i = 0; i < 60; i++) h.step(16);
+    expect(h.layer.state.fx).toBe(0);
+    h.projs.push(bolt(120));
+    fly(h, 12);
+    h.projs.length = 0;
+    for (let i = 0; i < 60; i++) h.step(16);
+    expect(h.images.length).toBeLessThanOrEqual(100);
+  });
+
+  it('a super charges through the freeze (the animation clock stands still) and ends in a flourish', () => {
+    const h = harness({ arcade: true, vx: 0 });
+    h.step(16);
+    h.sim.frozen = true;
+    h.consume([{ tick: 1, sourceId: 1, kind: SimEventKind.superStarted, seq: 0, caster: 1, superId: 1 }]);
+    const clock = h.layer.state.animMs;
+    for (let i = 0; i < 20; i++) h.step(16);
+    expect(h.layer.state.animMs).toBe(clock);
+    expect(h.layer.state.fx).toBeGreaterThan(3);
+    for (let i = 0; i < 40; i++) h.step(16);
+    expect(h.layer.state.fx).toBeGreaterThan(8);
+    for (let i = 0; i < 80; i++) h.step(16);
+    expect(h.layer.state.fx).toBe(0);
+  });
+
+  it('reduced motion: no motes in flight, one brief fading flash at the end', () => {
+    const h = harness({ arcade: true, vx: 0, reduced: true });
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.projs.push(bolt(120));
+    fly(h, 12);
+    expect(h.layer.state.fx).toBeLessThanOrEqual(1);
+    h.projs.length = 0;
+    h.step(16);
+    expect(h.layer.state.fx).toBeGreaterThan(0);
+    for (let i = 0; i < 20; i++) h.step(16);
+    expect(h.layer.state.fx).toBe(0);
   });
 });
 

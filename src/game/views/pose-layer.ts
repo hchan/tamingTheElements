@@ -1,5 +1,7 @@
 import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
+import { PoseVfx } from './pose-vfx';
+import { FX_ELEMENTS } from './pose-vfx-math';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
 import {
@@ -30,6 +32,8 @@ const ROT_TAU_MS = 45;
 const KO_MS = 700;
 const GHOSTS = 8;
 const START_MS = 100;
+const SUPER_CHARGE_MS = 700;
+const CHARGE_MS = 220;
 const STOP_MS = 170;
 const DEAD_OR_BENCHED = EntityFlag.benched | EntityFlag.dead;
 
@@ -39,6 +43,8 @@ export interface PoseState {
   /** Characters with a pose or locomotion effect applied on the last frame, ghosts fading, and shortest-arc rotation steps taken. */
   readonly posed: number;
   readonly ghosts: number;
+  /** Ability VFX motes and glows showing. */
+  readonly fx: number;
 }
 
 interface Ghost {
@@ -79,11 +85,13 @@ export class PoseLayer {
   private victoryTeam = -1;
   private victoryAt = 0;
   private posed = 0;
+  private readonly vfx: PoseVfx;
   private readonly pose: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
   // Per character slot (entity id).
   private readonly have = new Uint8Array(SLOTS);
   private readonly moving = new Uint8Array(SLOTS);
   private readonly team = new Int8Array(SLOTS).fill(-1);
+  private readonly elem = new Uint8Array(SLOTS);
   private readonly lx = new Float64Array(SLOTS);
   private readonly ly = new Float64Array(SLOTS);
   private readonly phase = new Float64Array(SLOTS);
@@ -101,6 +109,7 @@ export class PoseLayer {
   private readonly born = new Float64Array(SLOTS);
   private readonly ang = new Float64Array(SLOTS);
   private readonly seen = new Int32Array(SLOTS);
+  private readonly pel = new Uint8Array(SLOTS);
   private readonly snap = new Float64Array(SLOTS * 5);
   private readonly snapKey: string[] = new Array<string>(SLOTS).fill('');
   private readonly snapFrame: string[] = new Array<string>(SLOTS).fill('');
@@ -108,13 +117,15 @@ export class PoseLayer {
   private readonly eachChar = (c: RenderCharacter): void => { this.character(c); };
   private readonly eachProj = (p: RenderProjectile): void => { this.projectile(p); };
 
-  constructor(private readonly deps: PoseLayerDeps) {}
+  constructor(private readonly deps: PoseLayerDeps) {
+    this.vfx = new PoseVfx(deps.scene);
+  }
 
   /** The rendered ghosts in use (test probe). */
   get state(): PoseState {
     let ghosts = 0;
     for (const g of this.ghosts) if (g.from > Number.NEGATIVE_INFINITY) ghosts++;
-    return { animMs: this.animMs, posed: this.posed, ghosts };
+    return { animMs: this.animMs, posed: this.posed, ghosts, fx: this.vfx.live };
   }
 
   /** Feeds one tick's events (once each: the caller dedupes). */
@@ -135,6 +146,12 @@ export class PoseLayer {
         }
         case SimEventKind.tagIn:
           this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, (e['team'] ?? 0) === 0 ? 1 : -1, 1);
+          break;
+        case SimEventKind.superStarted:
+          this.vfx.charge((e['caster'] ?? e.sourceId) & (SLOTS - 1), SUPER_CHARGE_MS, true);
+          break;
+        case SimEventKind.chargeStarted:
+          this.vfx.charge(e.sourceId & (SLOTS - 1), CHARGE_MS, false);
           break;
         case SimEventKind.died:
           this.knockOut(e.sourceId);
@@ -165,6 +182,8 @@ export class PoseLayer {
     const stalled = nowMs - this.lastTickAt > STALL_MS || ar?.frozen === true;
     this.dt = stalled ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS);
     this.animMs += this.dt;
+    // The VFX clock keeps running through a hit-stop freeze (a super's charge happens inside it) and stops only on a real pause.
+    if (this.arcade) this.vfx.frame(nowMs - this.lastTickAt > STALL_MS && ar?.frozen !== true ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS), this.reduced);
     this.frameNo++;
     this.posed = 0;
     view.forEachCharacter(this.eachChar);
@@ -193,9 +212,11 @@ export class PoseLayer {
     }
     const img = v.image;
     this.team[i] = c.team;
+    this.elem[i] = Math.max(FX_ELEMENTS.indexOf(c.element), 0);
     // The drawn position without the hit-stop jitter (which only exists while the character is held still).
     const dx = c.x !== c.px ? img.x : c.x;
     const dy = c.y !== c.py ? img.y : c.y;
+    if (this.arcade) this.vfx.anchor(i, dx + c.w / 2, dy + c.h / 2, this.elem[i] ?? 0);
     let dist = 0;
     if (this.have[i] === 1) {
       dist = Math.hypot(dx - (this.lx[i] ?? dx), dy - (this.ly[i] ?? dy));
@@ -294,15 +315,18 @@ export class PoseLayer {
     const i = p.id & (SLOTS - 1);
     const { image, glow } = v;
     const target = image.angle;
+    let fresh = false;
     if (this.pid[i] !== p.id) {
       this.pid[i] = p.id;
       this.born[i] = this.animMs;
       this.ang[i] = target;
-      if (this.arcade) this.casterOf(p);
+      fresh = true;
+      if (this.arcade) this.casterOf(p, i);
     } else if (this.dt > 0) {
       this.ang[i] = (this.ang[i] ?? target) + shortestArc(this.ang[i] ?? target, target) * follow(this.dt, ROT_TAU_MS);
     }
     this.seen[i] = this.frameNo;
+    if (this.arcade) this.vfx.trail(i, image.x, image.y, this.pel[i] ?? 0, fresh, this.reduced);
     const a = this.ang[i] ?? target;
     const k = easeOutCubic((this.animMs - (this.born[i] ?? 0)) / SPAWN_MS);
     const grow = this.reduced ? 1 : SPAWN_FROM + (1 - SPAWN_FROM) * k;
@@ -323,7 +347,7 @@ export class PoseLayer {
   }
 
   /** A projectile first seen: the nearest same-team character just cast it. */
-  private casterOf(p: RenderProjectile): void {
+  private casterOf(p: RenderProjectile, slot: number): void {
     let best = -1;
     let bestD = Infinity;
     for (let j = 0; j < SLOTS; j++) {
@@ -334,13 +358,17 @@ export class PoseLayer {
         best = j;
       }
     }
-    if (best >= 0) this.start(best, PoseKind.cast, p.dir === 0 || p.dir === 1 || p.dir === 7 ? 1 : -1, 1);
+    if (best < 0) return;
+    this.start(best, PoseKind.cast, p.dir === 0 || p.dir === 1 || p.dir === 7 ? 1 : -1, 1);
+    this.pel[slot] = this.elem[best] ?? 0;
+    this.vfx.release(best);
   }
 
   /** A projectile slot that was not drawn this frame has hit or expired: fade its last pose out. */
   private retire(i: number): void {
     this.pid[i] = -1;
     const o = i * 5;
+    if (this.arcade) this.vfx.impact(this.snap[o] ?? 0, this.snap[o + 1] ?? 0, this.pel[i] ?? 0, this.reduced);
     const g = this.free();
     if (!g) return;
     g.kind = 0;
@@ -429,6 +457,7 @@ export class PoseLayer {
   destroy(): void {
     for (const g of this.ghosts) g.image.destroy();
     this.ghosts.length = 0;
+    this.vfx.destroy();
   }
 }
 
