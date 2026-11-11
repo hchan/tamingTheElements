@@ -493,7 +493,8 @@ a.menuLink {
 .testerBench {
   position: fixed;
   left: 4px;
-  bottom: 90px;
+  /* Sit just above the action bar (the bottom 80/720 of the 16:9 canvas, which is letterboxed and centred in the window). */
+  bottom: calc((100vh - min(100vh, 56.25vw)) / 2 + min(100vh, 56.25vw) * 0.112 + 8px);
   z-index: 15;
   min-width: 260px;
   max-width: 340px;
