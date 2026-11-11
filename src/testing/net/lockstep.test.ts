@@ -43,11 +43,34 @@ function checkpointsAgree(r: ReturnType<typeof runNetMatch>): number {
 
 describe('packet codec', () => {
   it('round-trips and rejects garbage', () => {
-    const p = { flags: PacketFlag.paused, ack: 9, firstTick: 4, inputs: [1, 2, 0x7ff], hashes: [{ tick: 50, hash: 0xdeadbeef }] };
+    const p = { match: 3, flags: PacketFlag.paused, ack: 9, firstTick: 4, inputs: [1, 2, 0x7ff], hashes: [{ tick: 50, hash: 0xdeadbeef }] };
     expect(decodePacket(encodePacket(p))).toEqual(p);
     expect(decodePacket(new Uint8Array(3))).toBeUndefined();
     const bad = encodePacket(p);
     expect(decodePacket(bad.subarray(0, bad.length - 1))).toBeUndefined();
+  });
+});
+
+describe('match number', () => {
+  it('drops packets of another match on the same link and counts them', () => {
+    const worlds = [createMatch(SETUP), createMatch(SETUP)] as const;
+    const net = new FakeNetwork(3, PERFECT_NET);
+    const old = new LockstepSession({ world: createMatch(SETUP), side: 0, transport: net.a, match: 0 });
+    const a = new LockstepSession({ world: worlds[0], side: 0, transport: net.a, match: 1 });
+    const b = new LockstepSession({ world: worlds[1], side: 1, transport: net.b, match: 1 });
+    for (let i = 0; i < 6; i++) {
+      net.advance();
+      old.update(0); // a leftover session of the previous match keeps sending on the same link
+    }
+    for (let i = 0; i < 30; i++) {
+      net.advance();
+      a.update(0);
+      b.update(0);
+    }
+    expect(b.stats.packetsStale).toBeGreaterThan(0);
+    expect(a.simTick).toBeGreaterThan(10);
+    expect(Math.abs(b.simTick - a.simTick)).toBeLessThanOrEqual(2);
+    expect(b.desync).toBeUndefined();
   });
 });
 

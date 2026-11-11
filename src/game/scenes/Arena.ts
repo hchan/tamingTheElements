@@ -154,7 +154,7 @@ export class Arena extends Phaser.Scene {
     const view = createRenderView(world);
     this.view = view;
     const net = this.launch?.net;
-    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input }) : undefined;
+    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match }) : undefined;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;

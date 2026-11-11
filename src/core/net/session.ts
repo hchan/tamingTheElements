@@ -17,6 +17,8 @@ export interface LockstepOptions {
   /** Which command slot this peer owns. */
   readonly side: 0 | 1;
   readonly transport: Transport;
+  /** Match number on this link (default 0); packets carrying another number are dropped (a rematch uses the next one). */
+  readonly match?: number;
   /** Initial input delay in ticks (default 2). */
   readonly inputDelay?: number;
   /** Upper bound for adaptive delay (default 4). */
@@ -57,6 +59,7 @@ export interface SessionStats {
   packetsSent: number;
   packetsReceived: number;
   packetsMalformed: number;
+  packetsStale: number;
   /** Inputs put on the wire again after an earlier send (loss recovery). */
   resentInputs: number;
   /** Worst gap between update calls (wall ticks) and sim ticks done; bounds latency lockstep absorbed with no rollback. */
@@ -101,6 +104,7 @@ export class LockstepSession {
     packetsSent: 0,
     packetsReceived: 0,
     packetsMalformed: 0,
+    packetsStale: 0,
     resentInputs: 0,
     maxLagTicks: 0,
     delayRaises: 0,
@@ -115,6 +119,7 @@ export class LockstepSession {
   /** Command bits this match accepts (inputMaskFor its world flags); the rest are dropped on both sides. */
   private readonly inputMask: number;
   private readonly transport: Transport;
+  private readonly match: number;
   private readonly maxDelay: number;
   private readonly adaptive: boolean;
   private readonly hashInterval: number;
@@ -148,6 +153,7 @@ export class LockstepSession {
     this.inputMask = inputMaskFor(flagsFromBits(opts.world.state.world[World.flags] ?? 0));
     this.side = opts.side;
     this.transport = opts.transport;
+    this.match = (opts.match ?? 0) & 0xff;
     this.delay = opts.inputDelay ?? 2;
     this.maxDelay = Math.max(this.delay, opts.maxInputDelay ?? 4);
     this.adaptive = opts.adaptive ?? true;
@@ -311,6 +317,10 @@ export class LockstepSession {
         this.stats.packetsMalformed++;
         continue;
       }
+      if (p.match !== this.match) {
+        this.stats.packetsStale++;
+        continue;
+      }
       this.stats.packetsReceived++;
       this.lastHeard = this.clock;
       this.remotePaused = (p.flags & PacketFlag.paused) !== 0;
@@ -342,7 +352,7 @@ export class LockstepSession {
       .slice(-MAX_HASHES_PER_PACKET)
       .map((tick) => ({ tick, hash: this.localHashes.get(tick) as number }));
     const flags = (this.hidden ? PacketFlag.paused : 0) | (this.forfeited ? PacketFlag.forfeit : 0);
-    this.transport.send(encodePacket({ flags, ack: this.remoteNeeded, firstTick: first, inputs, hashes }));
+    this.transport.send(encodePacket({ match: this.match, flags, ack: this.remoteNeeded, firstTick: first, inputs, hashes }));
     this.stats.packetsSent++;
   }
 }

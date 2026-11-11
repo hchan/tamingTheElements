@@ -71,6 +71,8 @@ export function onlineVersusScreen(): Screen {
   let timer: ReturnType<typeof setInterval> | undefined;
   let gone = false;
   let side: 0 | 1 = 0;
+  /** Match number on this link; a rematch bumps it so late packets of the finished match are dropped. */
+  let matchNo = 0;
   let game: GameHandle | undefined;
   let arenaNode: HTMLElement | undefined;
 
@@ -115,19 +117,18 @@ export function onlineVersusScreen(): Screen {
               destroyGame(game, arenaNode);
               game = undefined;
               arenaNode = undefined;
-              peer?.close();
-              peer = undefined;
-              const again = button('onlineAgain', 'New match', () => {
-                const c = node?.parentElement;
-                stop();
-                node?.remove();
-                if (c) screen.mount(c);
+              const again = button('onlineAgain', 'Rematch', () => {
+                again.remove();
+                matchNo = (matchNo + 1) & 0xff;
+                say('Rematch: choose your hero, then press Ready.');
+                pickPhase(p);
               });
               node?.insertBefore(again, status);
               again.focus();
             },
             net: {
               side,
+              match: matchNo,
               input: p.input,
               onStatus: (st, session) => {
                 const t = netStatusText(st, session.forfeitReason);
@@ -150,8 +151,10 @@ export function onlineVersusScreen(): Screen {
           }
         }, 50);
       };
-      /** Hero choice: send ours, wait for theirs (one message only, so the handshake's HELLO stays queued), then both derive the setup. */
+      /** Hero choice: send ours, wait for theirs (one message only, so the handshake's HELLO stays queued; also the rematch entry), then both derive the setup. */
       const pickPhase = (p: Peer): void => {
+        node?.querySelector('#onlineReady')?.remove();
+        node?.querySelector('#onlineRace')?.closest('.settingsOption')?.remove();
         const row = el('div', 'settingsOption');
         const lab = el('label', undefined, 'Your hero');
         const sel = el('select');
