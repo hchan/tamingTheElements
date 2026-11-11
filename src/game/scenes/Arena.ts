@@ -392,6 +392,9 @@ export class Arena extends Phaser.Scene {
         driver.pause();
         for (let k = 0; k < n; k++) this.advance(cmds);
       },
+      ageFx: (on) => {
+        this.fxAges = on;
+      },
       stepLive: (n) => {
         driver.pause();
         for (let k = 0; k < n; k++) this.advance([undefined, undefined]);
@@ -538,7 +541,7 @@ export class Arena extends Phaser.Scene {
     const alpha = driver.frame();
     const tick = view.tick;
     // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them).
-    const live = !driver.isPaused;
+    const live = !driver.isPaused || this.fxAges;
     const arcade = this.arcadeHud && view.arcade();
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
@@ -561,6 +564,8 @@ export class Arena extends Phaser.Scene {
   private frameTick = 0;
   private frameAlpha = 0;
   private frameLive = true;
+  /** Test hook: let view effects (hit flash) age on real frames while the sim stays paused. */
+  private fxAges = false;
   private readonly drawCharacter = (c: RenderCharacter): void => {
     this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive);
   };

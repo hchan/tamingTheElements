@@ -42,6 +42,8 @@ export interface ArenaProbe {
    * Hit feedback as drawn: per active character its tint and Phaser tint mode (1 = fill: the white hit flash); live
    * damage-number labels, the combo hits and the hyper meter shown per team (Arcade only; empty and [0, 0] in Classic).
    */
+  /** Let view effects (hit flash) age in real time while the sim stays paused. */
+  ageFx(on: boolean): void;
   fx(): { tints: { id: number; tint: number; mode: number }[]; numbers: string[]; combo: [number, number]; meter: [number, number] };
   /**
    * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the

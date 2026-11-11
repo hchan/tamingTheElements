@@ -65,6 +65,19 @@ test('Classic: a projectile hit renders the white hit flash (V6) and no Arcade H
   expect(errors).toEqual([]);
 });
 
+test('Classic: once the white flash ends the hit leaves a red tint, then clears', async ({ page }) => {
+  const errors = collectErrors(page);
+  const foe = await openDemo(page, 'arenaDemo');
+  await hit(page, foe);
+  expect(flashed(await fx(page), foe)).toBe(true);
+  // Let the view effects age on real frames (sim stays paused): fill, then red, then nothing.
+  await page.evaluate(`window.__TTE__.arena.ageFx(true)`);
+  await page.waitForFunction(`window.__TTE__.arena.fx().tints.some((t) => t.id === ${String(foe)} && t.tint === 0xff3a3a && t.mode === 0)`, undefined, { timeout: 5000 });
+  await page.waitForFunction(`!window.__TTE__.arena.fx().tints.some((t) => t.id === ${String(foe)} && t.tint === 0xff3a3a)`, undefined, { timeout: 5000 });
+  await page.evaluate(`window.__TTE__.arena.ageFx(false)`);
+  expect(errors).toEqual([]);
+});
+
 test('Arcade: flash, damage numbers and combo counter; they hold while paused', async ({ page }) => {
   const errors = collectErrors(page);
   const foe = await openDemo(page, 'arenaDemo,arcade');
