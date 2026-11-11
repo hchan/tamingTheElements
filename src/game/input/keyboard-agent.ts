@@ -35,6 +35,8 @@ export class KeyboardAgent implements Agent {
   private state: KeyState = INITIAL_KEY_STATE;
   private bindings: Bindings;
   private pressed: Command = 0;
+  /** Keys pressed since the last observation, so a tap that is released before the next tick still counts once. */
+  private tapped = new Set<string>();
   private startDown = false;
   private readonly cheatsEnabled: boolean;
 
@@ -53,6 +55,8 @@ export class KeyboardAgent implements Agent {
 
   handle(input: KeyInput): void {
     const r = reduceKey(this.state, input, this.bindings, this.cheatsEnabled);
+    if (input.type === 'down' && r.effect === undefined) this.tapped.add(input.code);
+    if (input.type === 'blur') this.tapped = new Set();
     this.state = r.state;
     if (r.effect !== undefined) this.opts.onEffect?.(r.effect);
   }
@@ -78,7 +82,9 @@ export class KeyboardAgent implements Agent {
     const capturable = this.opts.capturable(view);
     const arcade = this.opts.arcade;
     const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable, arcade ? ARCADE_PAD : undefined);
-    const cmd = commandFromHeld(this.bindings, this.state.held, capturable, arcade) | pad | this.pressed;
+    const keys = this.tapped.size === 0 ? this.state.held : new Set([...this.state.held, ...this.tapped]);
+    this.tapped = new Set();
+    const cmd = commandFromHeld(this.bindings, keys, capturable, arcade) | pad | this.pressed;
     this.pressed = 0;
     return cmd;
   }

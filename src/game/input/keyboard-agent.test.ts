@@ -29,6 +29,21 @@ describe('KeyboardAgent', () => {
     expect(agent.observe(view)).toBe(Cmd.right);
   });
 
+  it('a tap released before the next observation still counts, once', () => {
+    const { agent } = make();
+    agent.handle(key('down', 'Digit3'));
+    agent.handle(key('up', 'Digit3'));
+    expect(agent.observe(view) & Cmd.swap1).toBe(Cmd.swap1);
+    expect(agent.observe(view) & Cmd.swap1).toBe(0);
+  });
+
+  it('a blur drops a pending tap', () => {
+    const { agent } = make();
+    agent.handle(key('down', 'Digit3'));
+    agent.releaseAll();
+    expect(agent.observe(view)).toBe(0);
+  });
+
   it('maps Space, Enter and digits to slots', () => {
     const { agent } = make();
     agent.handle(key('down', 'Space'));
