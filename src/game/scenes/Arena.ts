@@ -51,7 +51,8 @@ import { firstPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
-import { CharacterView } from '../views/character-view';
+import { Backdrop } from '../views/backdrop';
+import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import { ReplayCursor } from '../replay/cursor';
@@ -109,6 +110,7 @@ export class Arena extends Phaser.Scene {
   private poses: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
+  private backdrop: Backdrop | undefined;
   private clicks: number[] = [];
   private pauseText: Phaser.GameObjects.Text | undefined;
   private cursor: ReplayCursor | undefined;
@@ -145,7 +147,8 @@ export class Arena extends Phaser.Scene {
     this.view = view;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
-    this.pool = new EntityViewPool(() => new CharacterView(this), (v) => { v.hide(); });
+    const arcadeMatch = this.view.arcade() !== undefined;
+    this.pool = new EntityViewPool(() => new CharacterView(this, arcadeMatch ? 1 : CLASSIC_SPRITE_SCALE), (v) => { v.hide(); });
     const projPool = new EntityViewPool(() => new ProjectileView(this), (v) => { v.hide(); });
     this.projPool = projPool;
     const pool = this.pool;
@@ -217,6 +220,7 @@ export class Arena extends Phaser.Scene {
         },
         0,
         labels,
+        !arcade,
       );
       this.cleanups.push(keyboard.attach(counted(window)));
     }
@@ -227,7 +231,8 @@ export class Arena extends Phaser.Scene {
     const height = LOGICAL_HEIGHT;
     const element = this.view.heroElement();
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
-    if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1);
+    if (!arcade && element) this.backdrop = new Backdrop(this, element, bg && `bg:${bg}`);
+    else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1);
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
     const onBlocked = (blocked: boolean): void => {
@@ -522,6 +527,7 @@ export class Arena extends Phaser.Scene {
     const arcade = this.arcadeHud && view.arcade();
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
+    this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
     this.reportPlayback();
     this.frameTick = tick;
     this.frameAlpha = alpha;
@@ -531,6 +537,8 @@ export class Arena extends Phaser.Scene {
     pool.end();
     projPool.begin();
     view.forEachProjectile(this.drawProjectile);
+    // Classic melee boxes (Ice Shock, Ground Shock, ...) were never drawn: show their sprite over the hit box.
+    if (view.arcade() === undefined) view.forEachProjectile(this.drawMelee, true);
     projPool.end();
   }
 
@@ -543,6 +551,10 @@ export class Arena extends Phaser.Scene {
   };
   private readonly drawProjectile = (p: RenderProjectile): void => {
     this.projPool?.acquire(p.id).apply(p, this.frameAlpha);
+  };
+
+  private readonly drawMelee = (p: RenderProjectile): void => {
+    this.projPool?.acquire(p.id).apply(p, this.frameAlpha, true);
   };
 
   private readonly shutdownHandler = (): void => {
@@ -563,6 +575,8 @@ export class Arena extends Phaser.Scene {
     this.events.off(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
     this.actionBar?.destroy();
     this.actionBar = undefined;
+    this.backdrop?.destroy();
+    this.backdrop = undefined;
     this.pool?.forEachView((v) => { v.destroy(); });
     this.pool?.clear();
     this.projPool?.forEachView((v) => { v.destroy(); });

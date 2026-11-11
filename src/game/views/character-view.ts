@@ -2,6 +2,8 @@ import type Phaser from 'phaser';
 import { EntityFlag, type Element, type RenderCharacter } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 
+/** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
+export const CLASSIC_SPRITE_SCALE = 1.4;
 export const FROZEN_TINT = 0x88ccff;
 /** Hit flash (FUN-DESIGN section 3, VISUAL-QA V6): white fill for 2 rendered frames, then the hit tint for 4. */
 export const FLASH_FILL_FRAMES = 2;
@@ -88,7 +90,7 @@ export class CharacterView {
   private jitterUntil = 0;
   private jitterSign = 1;
 
-  constructor(private readonly scene: Phaser.Scene) {
+  constructor(private readonly scene: Phaser.Scene, readonly scale = 1) {
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
   }
 
@@ -129,8 +131,9 @@ export class CharacterView {
       x += JITTER_PX * this.jitterSign;
       y -= JITTER_PX * this.jitterSign;
     }
-    this.image.setPosition(x, y);
-    this.image.setDisplaySize(c.w, c.h);
+    const k = this.scale;
+    this.image.setPosition(x - (c.w * (k - 1)) / 2, y - c.h * (k - 1));
+    this.image.setDisplaySize(c.w * k, c.h * k);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
     const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
     if (live && this.flashLeft > 0) this.flashLeft--;

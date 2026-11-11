@@ -139,8 +139,8 @@ export interface RenderView {
   actionBar(team: number): RenderActionBar | undefined;
   /** Visits the active statuses of one entity in slot order. */
   forEachStatus(id: number, visit: (st: RenderStatus) => void): void;
-  /** Visits every live projectile entity. */
-  forEachProjectile(visit: (p: RenderProjectile) => void): void;
+  /** Visits every live projectile entity, or with `melee` every live melee box (Ice Shock, Ground Shock, ...: the same shape, so the renderer can draw its sprite). */
+  forEachProjectile(visit: (p: RenderProjectile) => void, melee?: boolean): void;
   /** Element of the first player-side character (picks the background), or undefined with no heroes. */
   heroElement(): Element | undefined;
   /** Visits every live character entity (benched and dead included; check `flags`). */
@@ -152,6 +152,23 @@ export interface RenderView {
 export function createRenderView(world: SimWorld): RenderView {
   const s = world.state;
   const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
+  const pScratch: RenderProjectile = { id: 0, team: 0, sprite: '', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0 };
+  const eachBox = (kind: number, visit: (p: RenderProjectile) => void): void => {
+    for (let i = 0; i < MAX_ENTITIES; i++) {
+      if (s.kind[i] !== kind || ((s.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
+      pScratch.id = i;
+      pScratch.team = s.team[i] ?? 0;
+      pScratch.sprite = ABILITY_DEFS[s.defId[i] ?? 0]?.sprite ?? '';
+      pScratch.dir = s.dir[i] ?? 0;
+      pScratch.x = s.x[i] ?? 0;
+      pScratch.y = s.y[i] ?? 0;
+      pScratch.px = s.px[i] ?? 0;
+      pScratch.py = s.py[i] ?? 0;
+      pScratch.w = s.w[i] ?? 0;
+      pScratch.h = s.h[i] ?? 0;
+      visit(pScratch);
+    }
+  };
   const ar: RenderArcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, roundsWon: [0, 0],
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
@@ -159,7 +176,6 @@ export function createRenderView(world: SimWorld): RenderView {
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
-  const pScratch: RenderProjectile = { id: 0, team: 0, sprite: '', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0 };
   const isCharacter = (i: number): boolean =>
     s.kind[i] === EntityKind.character && ((s.flags[i] ?? 0) & EntityFlag.alive) !== 0;
   return {
@@ -201,21 +217,8 @@ export function createRenderView(world: SimWorld): RenderView {
         swapCooldownTicks: isArcade(s) ? TAG_COOLDOWN_TICKS : SWAP_COOLDOWN_TICKS,
       };
     },
-    forEachProjectile(visit): void {
-      for (let i = 0; i < MAX_ENTITIES; i++) {
-        if (s.kind[i] !== EntityKind.projectile || ((s.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
-        pScratch.id = i;
-        pScratch.team = s.team[i] ?? 0;
-        pScratch.sprite = ABILITY_DEFS[s.defId[i] ?? 0]?.sprite ?? '';
-        pScratch.dir = s.dir[i] ?? 0;
-        pScratch.x = s.x[i] ?? 0;
-        pScratch.y = s.y[i] ?? 0;
-        pScratch.px = s.px[i] ?? 0;
-        pScratch.py = s.py[i] ?? 0;
-        pScratch.w = s.w[i] ?? 0;
-        pScratch.h = s.h[i] ?? 0;
-        visit(pScratch);
-      }
+    forEachProjectile(visit, melee = false): void {
+      eachBox(melee ? EntityKind.melee : EntityKind.projectile, visit);
     },
     heroElement(): Element | undefined {
       for (let i = 0; i < MAX_ENTITIES; i++) {

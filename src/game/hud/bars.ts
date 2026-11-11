@@ -1,4 +1,4 @@
-import type { RenderCharacter, RenderView } from '@core/index';
+import type { Element, RenderCharacter, RenderView } from '@core/index';
 import { EntityFlag } from '@core/index';
 
 /**
@@ -159,10 +159,12 @@ export function benchBar(xOffset: number, i: number): BarGeometry {
 export interface HudCharacter {
   readonly id: number;
   readonly sprite: string;
+  readonly element: Element;
   readonly hp: number;
   readonly maxHp: number;
   readonly restCap: number;
   readonly dead: boolean;
+  readonly benched: boolean;
 }
 
 export interface HudSide {
@@ -176,10 +178,12 @@ function copy(c: RenderCharacter): HudCharacter {
   return {
     id: c.id,
     sprite: c.sprite,
+    element: c.element,
     hp: c.hp,
     maxHp: c.maxHp,
     restCap: c.restCap,
     dead: (c.flags & EntityFlag.dead) !== 0,
+    benched: (c.flags & EntityFlag.benched) !== 0,
   };
 }
 
@@ -193,4 +197,46 @@ export function collectSide(view: RenderView, team: number): HudSide {
     else bench.push(copy(c));
   });
   return { team, active, bench };
+}
+
+/** Classic bar chrome (presentation): fill shades from one base colour, so the bar has a lit top edge and a shaded foot. */
+export function shade(color: number, factor: number): number {
+  const ch = (v: number): number => Math.min(255, Math.max(0, Math.round(v * factor)));
+  return (ch((color >> 16) & 0xff) << 16) | (ch((color >> 8) & 0xff) << 8) | ch(color & 0xff);
+}
+
+/** Pulse (0..1) of the critical-health border; a steady 1 with reduced motion. */
+export function criticalPulse(timeMs: number, reduced: boolean): number {
+  if (reduced) return 1;
+  const t = (timeMs % 700) / 700;
+  return 0.45 + 0.55 * (t < 0.5 ? t * 2 : 2 - t * 2);
+}
+
+/** Rest heal (sim `restSystem`): a benched, living character heals 0.5% of max health every second up to its rest cap. */
+export const REST_HEAL_PER_SEC = 0.005;
+
+/** `healing` on the bench below its cap, `capped` on the bench at its cap, `inPlay` for the fighter (no regen), `none` when knocked out. */
+export type RegenState = 'healing' | 'capped' | 'inPlay' | 'none';
+
+export function regenState(c: Pick<HudCharacter, 'dead' | 'benched' | 'hp' | 'restCap'>): RegenState {
+  if (c.dead) return 'none';
+  if (!c.benched) return 'inPlay';
+  return c.hp < c.restCap ? 'healing' : 'capped';
+}
+
+/** Health per second a healing benched character gains, rounded to one decimal. */
+export function regenPerSec(maxHp: number): number {
+  return Math.round(maxHp * REST_HEAL_PER_SEC * 10) / 10;
+}
+
+/** Text beside a bench bar: the live rate while healing, `FULL` at the cap. */
+export function regenLabel(c: Pick<HudCharacter, 'dead' | 'benched' | 'hp' | 'restCap' | 'maxHp'>): string {
+  const st = regenState(c);
+  if (st === 'healing') return `+${String(regenPerSec(c.maxHp))}/s`;
+  return st === 'capped' ? 'rested' : '';
+}
+
+/** Percent of max health the fighter can recover to on the bench (its rest cap). */
+export function restCapPct(c: Pick<HudCharacter, 'restCap' | 'maxHp'>): number {
+  return Math.round(fraction(c.restCap, c.maxHp) * 100);
 }

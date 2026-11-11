@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import type { RenderView } from '@core/index';
+import { ELEMENT_COLORS } from '../fx/element-colors';
 import { crisp, fitScene, phoneBoost } from '../boot/viewport';
+import { lookup } from '../views/projectile-view';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import {
@@ -14,9 +16,14 @@ import {
   barFill,
   benchBar,
   collectSide,
+  criticalPulse,
+  shade,
   dashSegments,
   healthCue,
   mainBar,
+  regenLabel,
+  regenState,
+  restCapPct,
   sideOffset,
   type BarGeometry,
   type HudCharacter,
@@ -38,6 +45,15 @@ const METER_COLOR = 0x4fc3ff;
 const METER_LABEL_GAP = 8;
 
 const TEAMS = [0, 1] as const;
+/** Classic portrait: the active monster beside its health bar (left of the player's, right of the enemy's). */
+const PORTRAIT = 52;
+/** Below the fullscreen button in the top-right corner. */
+const PORTRAIT_Y = 44;
+const PORTRAIT_FRAME = 'portrait';
+function portraitX(team: number): number {
+  return team === 0 ? 30 : HUD_WIDTH - 20 - PORTRAIT;
+}
+const HUD_FONT = '"Trebuchet MS", Verdana, "Segoe UI", sans-serif';
 /** Frames between re-reads of the accessibility prefs (the OS media queries are not free per frame). */
 const PREFS_REFRESH_FRAMES = 30;
 
@@ -49,6 +65,10 @@ export class Hud extends Phaser.Scene {
   private view: RenderView | undefined;
   private gfx: Phaser.GameObjects.Graphics | undefined;
   private labels: Phaser.GameObjects.Text[] = [];
+  private back: Phaser.GameObjects.Graphics | undefined;
+  private portraits: Phaser.GameObjects.Image[] = [];
+  /** Regen text per bench row, pooled: index team * 4 + row. */
+  private regenTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private highContrast = false;
   private reduceMotion = false;
   private frame = 0;
@@ -71,7 +91,9 @@ export class Hud extends Phaser.Scene {
 
   create(): void {
     fitScene(this);
+    this.back = this.add.graphics().setDepth(98);
     this.gfx = this.add.graphics().setDepth(100);
+    this.portraits = TEAMS.map(() => this.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99).setVisible(false));
     // One text per side next to the bar: health state in words, so it never depends on red versus green.
     // Larger on phones (the canvas is drawn about 0.3x there), wrapped to the free column left of the bench bars, and outlined so it
     // reads on bright arenas without touching the bars beside it.
@@ -83,7 +105,8 @@ export class Hud extends Phaser.Scene {
           22,
           '',
           crisp(this, {
-            fontSize: `${String(Math.round(16 * boost))}px`,
+            fontFamily: HUD_FONT,
+            fontSize: `${String(Math.round(17 * boost))}px`,
             color: '#ffffff',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -98,8 +121,13 @@ export class Hud extends Phaser.Scene {
       this.events.removeAllListeners(Phaser.Scenes.Events.SHUTDOWN);
       this.gfx?.destroy();
       this.gfx = undefined;
-      for (const t of [...this.labels, ...this.numberTexts, ...this.comboTexts, ...this.meterTexts]) t?.destroy();
+      this.back?.destroy();
+      this.back = undefined;
+      for (const im of this.portraits) im.destroy();
+      this.portraits = [];
+      for (const t of [...this.labels, ...this.regenTexts, ...this.numberTexts, ...this.comboTexts, ...this.meterTexts]) t?.destroy();
       this.labels = [];
+      this.regenTexts = [];
       this.numberTexts = [];
       this.numberSerials = [];
       this.comboTexts = [];
@@ -114,14 +142,16 @@ export class Hud extends Phaser.Scene {
     const { view, gfx } = this;
     if (!view || !gfx) return;
     gfx.clear();
+    this.back?.clear();
     if (++this.frame % PREFS_REFRESH_FRAMES === 0) this.refreshPrefs();
     for (const team of TEAMS) {
       const side = collectSide(view, team);
       const x = sideOffset(team);
       const label = this.labels[team];
       if (side.active) {
-        this.drawBar(gfx, mainBar(x), side.active);
-        label?.setText(healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text);
+        this.drawBar(gfx, mainBar(x), side.active, true);
+        label?.setText(this.classic ? `HP ${healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text}\ncap ${String(restCapPct(side.active))}%` : healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text);
+        if (this.classic) this.drawPortrait(gfx, team, side.active, side.bench);
         for (const b of collectBuffs(view, side.active.id, x, this.highContrast)) {
           gfx.lineStyle(this.highContrast ? 2 : 1, this.highContrast ? 0xffffff : 0x111111, 1);
           gfx.strokeRect(b.x, b.y, BUFF_SLOT, BUFF_SLOT);
@@ -144,12 +174,70 @@ export class Hud extends Phaser.Scene {
         }
       } else {
         label?.setText('');
+        this.portraits[team]?.setVisible(false);
       }
       side.bench.forEach((c, i) => {
-        this.drawBar(gfx, benchBar(x, i), c);
+        this.drawBar(gfx, benchBar(x, i), c, false);
+        if (this.classic) this.drawRegenText(team, i, c);
       });
+      for (let i = side.bench.length; i < 4; i++) this.regenTexts[team * 4 + i]?.setVisible(false);
     }
     if (this.arcade) this.drawArcade(this.arcade);
+  }
+
+  private get classic(): boolean {
+    return !this.arcade && !this.highContrast;
+  }
+
+  /** Portrait frame, the active monster's picture and one pip per benched teammate (grey with a cross when knocked out). */
+  private drawPortrait(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, bench: readonly HudCharacter[]): void {
+    const x = portraitX(team);
+    const back = this.back;
+    back?.fillStyle(0x070a12, 0.78);
+    back?.fillRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
+    const im = this.portraits[team];
+    const found = lookup(c.sprite);
+    if (im && found && this.textures.exists(found.key)) {
+      const tex = this.textures.get(found.key);
+      const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
+      if (!tex.has(PORTRAIT_FRAME)) tex.add(PORTRAIT_FRAME, 0, fx, fy, fw, fh);
+      if (im.texture.key !== found.key || im.frame.name !== PORTRAIT_FRAME) im.setTexture(found.key, PORTRAIT_FRAME);
+      im.setPosition(x, PORTRAIT_Y).setDisplaySize(PORTRAIT, PORTRAIT).setFlipX(team === 1).setVisible(true);
+    } else im?.setVisible(false);
+    gfx.lineStyle(2, ELEMENT_COLORS[c.element], 0.95);
+    gfx.strokeRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
+    bench.forEach((b, i) => {
+      const cx = x + 8 + i * 16;
+      const cy = PORTRAIT_Y + PORTRAIT + 12;
+      gfx.fillStyle(b.dead ? 0x555555 : ELEMENT_COLORS[b.element], b.dead ? 0.6 : 1);
+      gfx.fillCircle(cx, cy, 5);
+      gfx.lineStyle(1, 0xffffff, 0.8);
+      gfx.strokeCircle(cx, cy, 5);
+      if (b.dead) {
+        gfx.lineStyle(2, 0xff5a4a, 1);
+        gfx.lineBetween(cx - 3, cy - 3, cx + 3, cy + 3);
+        gfx.lineBetween(cx - 3, cy + 3, cx + 3, cy - 3);
+      }
+    });
+  }
+
+  /** Regen text for a bench row: the live +N/s while healing, `rested` at the cap. Right of the player's bars, left of the enemy's. */
+  private drawRegenText(team: number, row: number, c: HudCharacter): void {
+    const slot = team * 4 + row;
+    const text = regenLabel(c);
+    if (text === '') {
+      this.regenTexts[slot]?.setVisible(false);
+      return;
+    }
+    const g = benchBar(sideOffset(team), row);
+    const t = this.regenTexts[slot] ?? this.text(13).setOrigin(team === 0 ? 0 : 1, 0.5);
+    this.regenTexts[slot] = t;
+    const healing = regenState(c) === 'healing';
+    t.setPosition(team === 0 ? g.maxX + 10 : sideOffset(1) + 120 - 10 - 2, g.y)
+      .setColor(healing ? '#9dffa0' : '#c8d0e0')
+      .setAlpha(healing && !this.reduceMotion ? criticalPulse(this.time.now, false) * 0.4 + 0.6 : 1)
+      .setVisible(true);
+    if (t.text !== text) t.setText(text);
   }
 
   private refreshPrefs(): void {
@@ -244,7 +332,11 @@ export class Hud extends Phaser.Scene {
     if (t.text !== label) t.setText(label);
   }
 
-  private drawBar(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter): void {
+  private drawBar(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter, main: boolean): void {
+    if (!this.arcade && !this.highContrast) {
+      this.drawClassicBar(gfx, g, c, main);
+      return;
+    }
     const stroke = (width: number, color: number, toX: number): void => {
       gfx.lineStyle(width, color, 1);
       gfx.lineBetween(g.minX, g.y, toX, g.y);
@@ -260,5 +352,54 @@ export class Hud extends Phaser.Scene {
       gfx.lineStyle(g.line, fill.color, 1);
       for (const [x0, x1] of dashSegments(g.minX, fill.curX, cue.dash)) gfx.lineBetween(x0, g.y, x1, g.y);
     }
+  }
+
+  /**
+   * Classic bar: a dark rounded plate with an element-coloured edge, the legacy health/rest geometry inside (same dash
+   * cues), a lit top edge on the fill, a pulsing red border when critical and a cross over a knocked-out teammate.
+   */
+  private drawClassicBar(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter, main: boolean): void {
+    const h = g.lineMax;
+    const top = g.y - h / 2;
+    const pad = main ? 3 : 2;
+    const px = g.minX - pad;
+    const pw = g.maxX - g.minX + pad * 2;
+    const ph = h + pad * 2;
+    const accent = ELEMENT_COLORS[c.element];
+    const frac = c.maxHp > 0 ? c.hp / c.maxHp : 0;
+    const critical = !c.dead && c.hp > 0 && healthCue(frac).state === 'critical';
+    gfx.fillStyle(0x070a12, c.dead ? 0.45 : 0.78);
+    gfx.fillRoundedRect(px, top - pad, pw, ph, 4);
+    if (critical) {
+      gfx.lineStyle(2, 0xff3b30, criticalPulse(this.time.now, this.reduceMotion));
+      gfx.strokeRoundedRect(px, top - pad, pw, ph, 4);
+    } else {
+      gfx.lineStyle(main ? 2 : 1, accent, c.dead ? 0.3 : 0.9);
+      gfx.strokeRoundedRect(px, top - pad, pw, ph, 4);
+    }
+    if (c.dead) {
+      gfx.lineStyle(2, 0xff5a4a, 0.85);
+      const cx = g.minX + 7;
+      gfx.lineBetween(cx - 4, g.y - 4, cx + 4, g.y + 4);
+      gfx.lineBetween(cx - 4, g.y + 4, cx + 4, g.y - 4);
+      return;
+    }
+    const fill = barFill(g, c.hp, c.maxHp, c.restCap, false);
+    gfx.lineStyle(g.line, REST_COLOR, 0.55);
+    gfx.lineBetween(g.minX, g.y, fill.restX, g.y);
+    // Recovering ghost: the span between health and the rest cap that a benched teammate refills (pulsing light green while healing).
+    if (c.benched && fill.restX > fill.curX && c.hp > 0) {
+      const pulse = this.reduceMotion ? 0.5 : criticalPulse(this.time.now, false);
+      gfx.lineStyle(g.line, 0xb6ffb0, 0.3 + 0.35 * pulse);
+      gfx.lineBetween(fill.curX, g.y, fill.restX, g.y);
+    }
+    if (c.hp <= 0) return;
+    const cue = healthCue(frac);
+    const segs = dashSegments(g.minX, fill.curX, cue.dash);
+    gfx.lineStyle(g.line, shade(fill.color, 0.8), 1);
+    for (const [x0, x1] of segs) gfx.lineBetween(x0, g.y, x1, g.y);
+    // Lit top edge of the fill.
+    gfx.lineStyle(Math.max(2, Math.round(g.line / 3)), shade(fill.color, 1.35), 0.9);
+    for (const [x0, x1] of segs) gfx.lineBetween(x0, g.y - g.line / 3, x1, g.y - g.line / 3);
   }
 }
