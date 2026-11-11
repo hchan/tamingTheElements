@@ -227,3 +227,26 @@ describe('input mask per ruleset', () => {
     expect(applied(true)).toBe(0xffff);
   });
 });
+
+describe('lockstep Arcade match to its end', () => {
+  const ARCADE: MatchSetup = {
+    ...SETUP,
+    flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+    p1: [{ character: characterId('lavax'), xp: 0 }],
+    p2: [{ character: characterId('pax'), xp: 0 }],
+  };
+  const limit = 6000;
+  const script = botScripts(ARCADE, limit + 200);
+
+  for (const loss of [0, 0.2]) {
+    it(`both peers finish with the same result and state (${String(loss * 100)}% loss)`, () => {
+      const r = runNetMatch({ setup: ARCADE, script, tickLimit: limit, netSeed: 11, session: { adaptive: false }, conditions: lossy(loss) });
+      expect(r.sessions.map((s) => s.status)).toEqual(['ended', 'ended']);
+      expect(r.sessions[0].desync).toBeUndefined();
+      expect(r.sessions[1].desync).toBeUndefined();
+      expect(r.sessions[0].winner).toBe(r.sessions[1].winner);
+      expect(r.hashes[0]).toBe(r.hashes[1]);
+      expect(r.hashes[0]).toBe(referenceHash(ARCADE, script, limit, 2));
+    });
+  }
+});
