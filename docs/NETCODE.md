@@ -56,7 +56,7 @@ To add: prediction in `update` (step with a guessed remote input), a restore-and
 - [ ] Rollback with input prediction and event de-duplication
 - [x] Match-setup protocol over a reliable pipe: `src/core/net/handshake.ts` (simVersion, flags, seed, rosters; cheats refused) and `control.ts` (`SetupHandshake`: HELLO, READY, REJECT, never throws on junk)
 - [x] `RTCDataChannel` adapters `inputTransport` (id 0) and `controlPipe` (id 1) in `src/game/net/rtc-channels.ts` (binary only, capped inbox, send never throws; unit-tested with a fake channel)
-- [ ] Creating the `RTCPeerConnection` and its two negotiated channels
+- [x] Creating the `RTCPeerConnection` and its two negotiated channels
 - [ ] Signalling (manual SDP first, relay later) and TURN
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
 - [ ] Browser e2e with two pages
