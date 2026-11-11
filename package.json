@@ -73,5 +73,10 @@
     "idb": "^8.0.4",
     "phaser": "4.2.1",
     "valibot": "^1.5.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
