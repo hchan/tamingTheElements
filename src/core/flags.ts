@@ -23,6 +23,11 @@ export interface SimFlags {
    * Sorts after every other flag, so no existing flag bit moves.
    */
   readonly walkAboveActionBar: boolean;
+  /**
+   * Classic only: a swapped-in hero enters where the outgoing one stands instead of at the team start (Arcade always does).
+   * Off in tests/tools (bit-identical legacy); on in real play. Sorts last, so no existing flag bit moves.
+   */
+  readonly walkSwapInPlace: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -34,6 +39,7 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   testerCapture: false,
   rulesetArcade: false,
   walkAboveActionBar: false,
+  walkSwapInPlace: false,
 };
 
 /** Flags that only tester mode may turn on. */
@@ -98,5 +104,6 @@ export function decodeFlags(encoded: string): SimFlags {
     testerCapture: on.has('testerCapture'),
     rulesetArcade: on.has('rulesetArcade'),
     walkAboveActionBar: on.has('walkAboveActionBar'),
+    walkSwapInPlace: on.has('walkSwapInPlace'),
   };
 }

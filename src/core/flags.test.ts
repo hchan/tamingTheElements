@@ -34,7 +34,9 @@ describe('sim flags', () => {
       'rulesetArcade',
       'testerCapture',
       'walkAboveActionBar',
+      'walkSwapInPlace',
     ]);
+    expect(flagBit('walkSwapInPlace')).toBe(64);
     expect(flagBit('walkAboveActionBar')).toBe(32);
     expect(flagBit('elementalAdvantage')).toBe(1);
     expect(flagBit('experimentalPathing')).toBe(2);

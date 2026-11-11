@@ -7,10 +7,12 @@ import {
   TEAM_COUNT,
   TEAM_STRIDE,
   TeamField,
+  World as W,
 } from '../state';
 import type { SimWorld } from '../world';
 import { P1_START_X, P2_START_X, START_Y } from '../match';
 import { inFight, isArcade, now } from '../clock';
+import { flagBit } from '../../flags';
 import { TAG_COOLDOWN_TICKS } from '../../data/arcade';
 import { startRestTimer } from './rest';
 import { isFree } from './arcade/stun';
@@ -68,7 +70,7 @@ export function performSwap(
   s.x[to] = team === 0 ? P1_START_X : P2_START_X;
   s.y[to] = START_Y;
   const arcade = isArcade(s);
-  if (arcade) {
+  if (arcade || ((s.world[W.flags] ?? 0) & flagBit('walkSwapInPlace')) !== 0) {
     s.x[to] = s.x[from] ?? 0;
     s.y[to] = s.y[from] ?? 0;
   }

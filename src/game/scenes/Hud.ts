@@ -153,7 +153,7 @@ export class Hud extends Phaser.Scene {
       if (side.active) {
         this.drawBar(gfx, mainBar(x), side.active, true);
         label?.setText(this.classic ? `HP ${healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text}\ncap ${String(restCapPct(side.active))}%` : healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text);
-        if (this.classic) this.drawPortrait(gfx, team, side.active, side.bench);
+        if (!this.arcade) this.drawPortrait(gfx, team, side.active, side.bench);
         for (const b of collectBuffs(view, side.active.id, x, this.highContrast)) {
           gfx.lineStyle(this.highContrast ? 2 : 1, this.highContrast ? 0xffffff : 0x111111, 1);
           gfx.strokeRect(b.x, b.y, BUFF_SLOT, BUFF_SLOT);
