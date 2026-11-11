@@ -8,7 +8,7 @@ import {
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
-  AI_NORMAL, ARCADE_AI_DESPERATE_PM, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
+  AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
   NO_PLAN, PARRY, RUSHDOWN, TURTLE, impactIn, toward, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -56,20 +56,20 @@ export function superFacing(self: FighterView, opp: FighterView, superId = 0): C
   const cy = self.y + self.h / 2;
   const dx = opp.x + opp.w / 2 - cx;
   const dy = opp.y + opp.h / 2 - cy;
-  const horizontal = (): Command => (dx >= 0 ? Cmd.right : Cmd.left);
-  const vertical = (): Command => (dy >= 0 ? Cmd.down : Cmd.up);
-  if (spec.shape === SuperShape.tide) return Math.abs(dx) >= Math.abs(dy) ? horizontal() : vertical();
+  const horizontal = dx >= 0 ? Cmd.right : Cmd.left;
+  const vertical = dy >= 0 ? Cmd.down : Cmd.up;
+  if (spec.shape === SuperShape.tide) return Math.abs(dx) >= Math.abs(dy) ? horizontal : vertical;
   if (spec.shape !== SuperShape.beam) {
     const reach = spec.shape === SuperShape.quake
       ? Math.floor(((SUPER_QUAKE_RING_PX[SUPER_QUAKE_RING_PX.length - 1] ?? 0) * spec.scalePm) / 1000)
       : spec.size;
     const half = reach / 2;
     if (opp.x >= cx + half || opp.x + opp.w <= cx - half || opp.y >= cy + half || opp.y + opp.h <= cy - half) return 0;
-    return Math.abs(dx) >= Math.abs(dy) ? horizontal() : vertical();
+    return Math.abs(dx) >= Math.abs(dy) ? horizontal : vertical;
   }
   const half = spec.size / 2;
-  if (opp.y < cy + half && opp.y + opp.h > cy - half) return horizontal();
-  if (opp.x < cx + half && opp.x + opp.w > cx - half) return vertical();
+  if (opp.y < cy + half && opp.y + opp.h > cy - half) return horizontal;
+  if (opp.x < cx + half && opp.x + opp.w > cx - half) return vertical;
   return 0;
 }
 
@@ -216,7 +216,8 @@ export class ArcadeTactics {
     // that both refuse a wasted shot and slide about can otherwise never trade a hit (2v2 stalemates).
     const shoots = tagTeam && (tick & 255) >= SHOOT_FROM;
     const wasted = (cmd & ATTACK) !== 0 && !shoots ? rockOnLine(self, opp, rocks) : undefined;
-    if ((m[7]) !== 0 && tick < (m[8]) && free(m[7])) return (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | (m[7]);
+    const out = (bits: Command): Command => (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | bits;
+    if (m[7] !== 0 && tick < m[8] && free(m[7])) return out(m[7]);
     m[7] = 0;
     const [sx, sy] = stepOf(cmd & MOVE);
     const blocker = sx === 0 && sy === 0 ? undefined : rocks.find((r) => hitsRock(r, self.x + sx, self.y + sy, self.w, self.h));
@@ -234,7 +235,7 @@ export class ArcadeTactics {
       if (!free(bits)) continue;
       m[7] = bits;
       m[8] = tick + ARCADE_AI_SLIDE_TICKS;
-      return (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | bits;
+      return out(bits);
     }
     return cmd;
   }
@@ -249,12 +250,15 @@ export class ArcadeTactics {
     const react = (): number => k[0] + draw(k[1]);
     if (m[6] < 0) m[6] = this.style ?? (this.unfavourable ? TURTLE : draw(3));
     // Anti-stalemate: no HP change for ARCADE_AI_STALE_TICKS and Zoner/Turtle play Rushdown (no retreat, close in and charge).
-    const hpSum = self.hp + opp.hp;
-    if (hpSum !== m[10]) [m[9], m[10]] = [view.tick, hpSum];
-    const style = view.tick - m[9] >= ARCADE_AI_STALE_TICKS ? RUSHDOWN : (m[6] as Style);
+    if (m[10] !== self.hp + opp.hp) {
+      m[9] = view.tick;
+      m[10] = self.hp + opp.hp;
+    }
+    const style = view.tick - m[9] < ARCADE_AI_STALE_TICKS ? (m[6] as Style) : RUSHDOWN;
     const line = shot === 0 || (base & ATTACK) !== 0 ? 0 : diagonalLine(self, opp);
     const axisShot = (base & ATTACK) !== 0 && (base & (Cmd.left | Cmd.right)) !== 0;
     let cmd = line !== 0 ? (base & ~MOVE) | line | shot : axisShot ? base & ~(Cmd.up | Cmd.down) : base;
+    const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
     const free = a.selfStun === 0 && !a.superActive && (self.flags & EntityFlag.frozen) === 0;
 
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
@@ -292,19 +296,13 @@ export class ArcadeTactics {
     }
     // Tag team, point blank: both sides firing on the same tick clash their shots (no damage) every time, a lockstep loop
     // (2v2 stalemates); a drawn one-in-four skip of the press breaks the symmetry. Never in 1v1.
-    if (a.partnerPm >= 0 && (cmd & ATTACK) !== 0 && a.oppStun === 0 && Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y) < CLOSE_PX && draw(4) === 0) {
+    if (a.partnerPm >= 0 && (cmd & ATTACK) !== 0 && a.oppStun === 0 && far < CLOSE_PX && draw(4) === 0) {
       cmd &= ~ATTACK;
     }
     if (!free || threat) return cmd;
-    const pm = Math.floor((self.hp * 1000) / self.maxHp);
-    // A full bar is spent on a super that reaches the opponent even without a confirm, more eagerly when low on HP.
-    if (a.oppStun === 0 && a.meter >= SUPER_COST && k[7] !== 0) {
-      const facing = superFacing(self, opp, a.superId);
-      if (facing !== 0 && draw(1000) < k[7] * (pm < ARCADE_AI_DESPERATE_PM ? 2 : 1)) return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
-    }
+    const pm = (self.hp * 1000) / self.maxHp;
     if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && a.partnerPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | Cmd.swap1;
-    const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
-    if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && (style === RUSHDOWN || (k[8] !== 0 && draw(1000) < k[8]))) return Cmd.charge;
+    if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && style === RUSHDOWN) return Cmd.charge;
     if (a.dashIn === 0 && style === RUSHDOWN && far > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }

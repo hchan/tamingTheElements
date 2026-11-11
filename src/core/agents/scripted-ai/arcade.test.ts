@@ -271,47 +271,6 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     expect(count(new ArcadeTactics(AI_HARD, TURTLE), {})).toBe(0);
   });
 
-  it('a Normal or Hard AI spends a full bar on a super that reaches the opponent, without a confirm, and more eagerly when low', () => {
-    const count = (level: 0 | 1 | 2, self: FighterView, opp: FighterView, a: Partial<ArcadeView> = {}): number => {
-      const t = new ArcadeTactics(level, ZONER);
-      let n = 0;
-      for (let i = 0; i < 400; i++) {
-        const c = t.apply(view({ meter: SUPER_COST, ...a }, i, self, opp), cmd);
-        if ((c & Cmd.super) !== 0) {
-          expect(c).toBe(Cmd.super | Cmd.right);
-          n++;
-        }
-      }
-      return n;
-    };
-    const self = fighter(200, 300);
-    const near = fighter(500, 300);
-    expect(count(AI_EASY, self, near)).toBe(0);
-    const normal = count(AI_NORMAL, self, near);
-    const hard = count(AI_HARD, self, near);
-    expect(normal).toBeGreaterThan(0);
-    expect(hard).toBeGreaterThan(normal);
-    expect(count(AI_HARD, { ...self, hp: 20 }, near)).toBeGreaterThan(hard); // below DESPERATE_PM
-    expect(count(AI_HARD, self, fighter(500, 700))).toBe(0); // off the band
-    expect(count(AI_HARD, self, near, { meter: SUPER_COST - 1 })).toBe(0);
-    expect(count(AI_HARD, self, near, { selfStun: 3 })).toBe(0);
-    expect(count(AI_HARD, self, near, { superActive: true })).toBe(0);
-    expect(count(AI_HARD, self, near, { shots: [shotIn(10)] })).toBe(0); // defends first
-  });
-
-  it('on Hard a Zoner melee hero charges from afar too, a Turtle as well; Normal leaves it to Rushdown', () => {
-    const count = (level: 0 | 1 | 2, style: 0 | 1 | 2): number => {
-      const t = new ArcadeTactics(level, style);
-      let n = 0;
-      for (let i = 0; i < 400; i++) if ((t.apply(view({ dashIn: 9, chargeIn: 0 }, i), cmd) & Cmd.charge) !== 0) n++;
-      return n;
-    };
-    expect(count(AI_HARD, ZONER)).toBeGreaterThan(0);
-    expect(count(AI_HARD, TURTLE)).toBeGreaterThan(0);
-    expect(count(AI_NORMAL, ZONER)).toBe(0);
-    expect(count(AI_HARD, RUSHDOWN)).toBe(400); // Rushdown always did
-  });
-
   it('anti-stalemate: with no HP change for ARCADE_AI_STALE_TICKS a Zoner or Turtle plays Rushdown (charges from afar); damage restarts the clock', () => {
     const self = fighter(100, 300);
     const far = fighter(700, 300);
