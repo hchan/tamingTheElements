@@ -162,7 +162,7 @@ export class Arena extends Phaser.Scene {
     const net = this.launch?.net;
     const rollbackWindow = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).rollback ? ROLLBACK_WINDOW : 0;
     if (rollbackWindow > 0) this.playOnce = new PlayOnce();
-    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow }) : undefined;
+    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow, ...(net.tickLimit === undefined ? {} : { tickLimit: net.tickLimit }) }) : undefined;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;
@@ -469,15 +469,17 @@ export class Arena extends Phaser.Scene {
     this.terrain?.(events);
     this.poses?.(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
-    if (!over) return;
+    // Online only: the session's tick limit stops the match without a sim `matchEnded` (a draw, or the session's winner).
+    const timedOut = !over && this.session !== undefined && this.session.status === 'ended';
+    if (!over && !timedOut) return;
     this.ended = true;
     this.driver?.pause('ended');
     const s = world.state;
     const end = {
-      winner: over['winner'] ?? -1,
+      winner: over ? (over['winner'] ?? -1) : (this.session?.winner ?? -1),
       activeSlot: s.teams[TeamField.activeSlot] ?? 0,
       capturedIndices: capturedRosterIndices(s, 1),
-      ...(over['won0'] === undefined ? {} : { rounds: [over['won0'], over['won1'] ?? 0] as const }),
+      ...(over?.['won0'] === undefined ? {} : { rounds: [over['won0'], over['won1'] ?? 0] as const }),
     };
     // Wall clock, not `this.time`: Phaser caps a frame's delta at 200 ms, so under a slow (software) renderer the scene
     // clock runs several times slower than real time and the results could take many seconds to arrive.

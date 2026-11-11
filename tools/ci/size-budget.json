@@ -11,7 +11,7 @@
     "lazy-index": 550,
     "online-versus": 3500,
     "phaser": 388700,
-    "phaser-config": 20770,
+    "phaser-config": 20830,
     "pose-layer": 3772,
     "rolldown-runtime": 200,
     "round-view": 2100,
@@ -21,5 +21,5 @@
     "terrain-view": 4350,
     "weather-view": 3470
   },
-  "totalGzip": 480760
+  "totalGzip": 480840
 }

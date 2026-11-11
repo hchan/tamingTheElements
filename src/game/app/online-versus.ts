@@ -65,7 +65,15 @@ function button(id: string, label: string, onClick: () => void): HTMLButtonEleme
   return b;
 }
 
+/** `?matchticks=N` (dev and test builds only): end the match as a draw at tick N. */
+function matchTicksParam(): number | undefined {
+  if (!(import.meta.env.DEV || import.meta.env.MODE === 'test')) return undefined;
+  const n = Number(new URLSearchParams(window.location.search).get('matchticks'));
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+}
+
 export function onlineVersusScreen(): Screen {
+  const matchTicks = matchTicksParam();
   let node: HTMLElement | null = null;
   let peer: Peer | undefined;
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -129,6 +137,7 @@ export function onlineVersusScreen(): Screen {
             net: {
               side,
               match: matchNo,
+              ...(matchTicks === undefined ? {} : { tickLimit: matchTicks }),
               input: p.input,
               onStatus: (st, session) => {
                 const t = netStatusText(st, session.forfeitReason);

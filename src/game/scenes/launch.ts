@@ -57,6 +57,8 @@ export interface ArenaLaunch {
     readonly input: Transport;
     /** Match number on the link (a rematch bumps it); default 0. */
     readonly match?: number;
+    /** Dev/test builds only (`?matchticks=N`): the match ends as a draw at this tick, so a rematch can be tested quickly. */
+    readonly tickLimit?: number;
     readonly onStatus?: (status: SessionStatus, session: LockstepSession) => void;
   };
   /** Present only in tester mode (docs/TESTER-MODE.md): the session the Arena registers its cheat bridge with. */

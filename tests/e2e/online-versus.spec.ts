@@ -46,3 +46,28 @@ test('a junk code is refused in words, not a crash', async ({ page }) => {
   await page.locator('#onlineJoin').click();
   await expect(page.locator('#onlineStatus')).toContainText('not a connection code');
 });
+
+// The Rematch flow: with `?matchticks=` the match ends as a draw quickly; both sides get a Rematch button, pick again and a second match (a new match number) runs.
+test('a finished online match offers a Rematch that starts a second match', async ({ browser }) => {
+  test.setTimeout(90_000);
+  const ctx = await browser.newContext();
+  const a = await ctx.newPage();
+  const b = await ctx.newPage();
+  const q = '/?ff=arcade&matchticks=120';
+  await a.goto(q);
+  await b.goto(`${q}#online`);
+  await a.getByRole('button', { name: 'Online Versus' }).click();
+  await a.locator('#onlineHost').click();
+  await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
+  await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
+  await b.locator('#onlineJoin').click();
+  await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });
+  await a.locator('#onlineAnswerIn').fill(await b.locator('#onlineAnswer').inputValue());
+  await a.locator('#onlineConnect').click();
+  for (const round of [1, 2]) {
+    for (const page of [a, b]) await page.locator('#onlineReady').click();
+    for (const page of [a, b]) await expect(page.locator('#onlineAgain')).toBeVisible({ timeout: 40_000 });
+    for (const page of [a, b]) await expect(page.locator('#onlineStatus')).toContainText('draw');
+    if (round === 1) for (const page of [a, b]) await page.locator('#onlineAgain').click();
+  }
+});
