@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ARENA_READY } from './parity/helpers';
 
 // Super cinematic in the browser (WP-arcade-super-view): dim, element cut-in, camera punch-in; reduced motion keeps the
 // information and drops the motion; Classic never shows it; it adds no listeners. Page-side code is passed as
 // strings because tsconfig.node has no DOM lib. Manual stepping: the cinematic runs on the view tick, so it holds
 // between steps and a step moves it on.
-const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena`;
 const SUPER = 1 << 13;
 /** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91; Classic has none. */
 const INTRO = 91;

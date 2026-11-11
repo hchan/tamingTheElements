@@ -343,6 +343,7 @@ export class Arena extends Phaser.Scene {
       rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),
       defence: () => import('../fx/defence-view').then((m) => m.defenceState(this)),
       weather: () => import('../fx/weather-view').then((m) => m.weatherState(this)),
+      viewsReady: () => (!this.arcadeHud || this.rounds !== undefined) && this.scene.isActive(HUD_SCENE),
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
       aim: () => {
         const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
