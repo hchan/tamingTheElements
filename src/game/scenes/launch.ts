@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import type { Agent, MatchSetup, RenderView, ReplayFile } from '@core/index';
+import type { Agent, LockstepSession, MatchSetup, RenderView, ReplayFile, SessionStatus, Transport } from '@core/index';
 import type { TesterSession } from '../platform/tester/session';
 import type { PlaytestRecorder } from '../replay/playtest-recorder';
 import type { ArenaAudio } from '../audio/arena-audio';
@@ -51,6 +51,12 @@ export interface ArenaLaunch {
   /** Records the final command pair of every tick (only present when recording is enabled). */
   readonly recorder?: PlaytestRecorder;
   readonly playback?: ArenaPlayback;
+  /** Online match (docs/NETCODE.md): the keyboard drives `side`, a LockstepSession over `input` steps the shared sim. */
+  readonly net?: {
+    readonly side: 0 | 1;
+    readonly input: Transport;
+    readonly onStatus?: (status: SessionStatus, session: LockstepSession) => void;
+  };
   /** Present only in tester mode (docs/TESTER-MODE.md): the session the Arena registers its cheat bridge with. */
   readonly tester?: { readonly session: TesterSession; readonly openPanel: () => void };
   /**

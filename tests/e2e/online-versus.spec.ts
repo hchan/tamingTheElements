@@ -27,6 +27,12 @@ test('two players connect through the Online Versus screen with pasted codes', a
   await a.locator('#onlineConnect').click();
   await expect(a.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
   await expect(b.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
+  // The match then runs in lockstep on both pages: the shared sim advances on each and nobody reports a desync.
+  for (const page of [a, b]) {
+    await expect.poll(() => page.evaluate<number>('window.__TTE__.state().tick'), { timeout: 30_000 }).toBeGreaterThan(150);
+  }
+  await expect(a.locator('#onlineStatus')).not.toContainText('disagree');
+  await expect(b.locator('#onlineStatus')).not.toContainText('disagree');
 });
 
 test('a junk code is refused in words, not a crash', async ({ page }) => {

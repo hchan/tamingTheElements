@@ -21,6 +21,7 @@ import {
   World,
   capturedRosterIndices,
   characterId,
+  LockstepSession,
   collectCommands,
   createMatch,
   createRenderView,
@@ -109,7 +110,7 @@ export class Arena extends Phaser.Scene {
   private rounds: ((events: readonly SimEvent[]) => void) | undefined;
   private terrain: ((events: readonly SimEvent[]) => void) | undefined;
   private poses: ((events: readonly SimEvent[]) => void) | undefined;
-  private agents: readonly [Agent, Agent] = [new RandomBot('p1'), new RandomBot('p2')];
+  private agents: readonly [Agent | undefined, Agent | undefined] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
   private backdrop: Backdrop | undefined;
   private clicks: number[] = [];
@@ -117,6 +118,8 @@ export class Arena extends Phaser.Scene {
   private cursor: ReplayCursor | undefined;
   private speed: 1 | 2 = 1;
   private keyboard: KeyboardAgent | undefined;
+  /** Online matches only: the lockstep session that owns stepping (docs/NETCODE.md). */
+  private session: LockstepSession | undefined;
   /** The battle's sound; public so the Arcade audio layers (`audio/arcade-audio.ts`, a lazy chunk) can find it. */
   audio: ArenaAudio | undefined;
   private pauseDialog: PauseDialog | undefined;
@@ -150,6 +153,8 @@ export class Arena extends Phaser.Scene {
     this.world = world;
     const view = createRenderView(world);
     this.view = view;
+    const net = this.launch?.net;
+    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input }) : undefined;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;
@@ -209,7 +214,7 @@ export class Arena extends Phaser.Scene {
       this.announcer = new Announcer((text, assertive) => { live.speak(text, assertive); }, () => performance.now());
       this.cleanups.push(() => { this.pauseDialog?.destroy(); live.destroy(); });
       this.announcer.say(MATCH_START);
-      this.agents = [keyboard, this.launch.enemy ?? new RandomBot('p2')];
+      this.agents = [keyboard, this.launch.enemy ?? (this.session ? undefined : new RandomBot('p2'))];
       let labelled: { bindings: Bindings; labels: KeyLabels } | undefined;
       const labels = (): KeyLabels => {
         const b = keyboard.currentBindings();
@@ -229,7 +234,12 @@ export class Arena extends Phaser.Scene {
       );
       this.cleanups.push(keyboard.attach(counted(window)));
     }
-    this.cleanups.push(pauseOnHidden(counted(document), driver));
+    if (this.session) {
+      const session = this.session;
+      const onVis = (): void => { session.setHidden(document.hidden); };
+      document.addEventListener('visibilitychange', onVis);
+      this.cleanups.push(() => { document.removeEventListener('visibilitychange', onVis); });
+    } else this.cleanups.push(pauseOnHidden(counted(document), driver));
     this.setupAudio();
 
     const width = LOGICAL_WIDTH;
@@ -419,15 +429,30 @@ export class Arena extends Phaser.Scene {
       this.advancePlayback(this.cursor);
       return;
     }
-    // Agents are consulted only when a side has no forced command. Consulting them never changes the sim
-    // state (step alone mutates it), so forced and live ticks with the same commands hash the same.
-    const [f0, f1] = cmds;
-    const c = f0 === undefined || f1 === undefined ? collectCommands(world, this.agents) : [0, 0];
-    const final: [number, number] = [f0 ?? c[0] ?? 0, f1 ?? c[1] ?? 0];
-    this.launch?.recorder?.record(world, final);
-    const tester = this.launch?.tester?.session;
-    if (tester) applyTickCheats(world, tester.tickCheats());
-    const events = step(world, final);
+    let events: readonly SimEvent[];
+    if (this.session) {
+      // Online: only our own side is read locally; the session swaps commands with the peer and steps the shared sim itself,
+      // or reports a stall (no step this call) while the peer's command is late.
+      const side = this.session.side;
+      const mine = collectCommands(world, side === 0 ? [this.agents[0], undefined] : [undefined, this.agents[0]])[side];
+      const r = this.session.update(mine);
+      this.launch?.net?.onStatus?.(r.status, this.session);
+      if (!r.stepped) {
+        if (r.status === 'desync' || r.status === 'forfeit') this.driver?.pause('ended');
+        return;
+      }
+      events = r.events;
+    } else {
+      // Agents are consulted only when a side has no forced command. Consulting them never changes the sim
+      // state (step alone mutates it), so forced and live ticks with the same commands hash the same.
+      const [f0, f1] = cmds;
+      const c = f0 === undefined || f1 === undefined ? collectCommands(world, this.agents) : [0, 0];
+      const final: [number, number] = [f0 ?? c[0] ?? 0, f1 ?? c[1] ?? 0];
+      this.launch?.recorder?.record(world, final);
+      const tester = this.launch?.tester?.session;
+      if (tester) applyTickCheats(world, tester.tickCheats());
+      events = step(world, final);
+    }
     this.fx?.consume(events);
     this.audio?.audio.consume(events);
     this.playCasts();
@@ -508,7 +533,8 @@ export class Arena extends Phaser.Scene {
 
   private togglePause(): void {
     const driver = this.driver;
-    if (!driver || this.ended) return;
+    // A shared online match cannot be paused by one side.
+    if (!driver || this.ended || this.session) return;
     if (driver.isPausedFor('user')) driver.resume('user');
     else driver.pause('user');
     // A key held across the dialog must not replay on resume.

@@ -1,10 +1,12 @@
-import { SetupHandshake, helloOf, type SetupPhase } from '@core/index';
+import { SetupHandshake, helloOf, type SessionStatus, type SetupPhase } from '@core/index';
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import type { Screen } from '@ui/screens/screen';
 import { hostPeer, joinPeer, type Peer } from '../net/peer';
+import { destroyGame, type GameHandle } from './game-handle';
 import { DEFAULT_PICK } from './arcade-pick';
 import { arcadeSetup } from './arcade-setup';
+import type { ArenaLaunch } from '../scenes/launch';
 
 /**
  * The `#online` route (preview, shown with Arcade Versus), its own chunk. Two players connect with copy-pasted codes (no
@@ -25,6 +27,14 @@ export function phaseText(phase: SetupPhase, reason: string | undefined): string
       : `Connected, but the games do not match (${reason ?? 'unknown'}).`;
   }
   return 'Link open. Checking that both games match...';
+}
+
+/** Words for a stopped match: never colour alone. */
+export function netStatusText(status: SessionStatus, reason: string | undefined): string | undefined {
+  if (status === 'desync') return 'The two games disagree about the match, so it was stopped. Please play again.';
+  if (status === 'forfeit') return reason === 'timeout' ? 'Your friend stopped responding, so you win.' : 'The match ended: a player left.';
+  if (status === 'remote-paused') return 'Your friend switched tabs; waiting for them.';
+  return undefined;
 }
 
 function area(id: string, label: string, readOnly: boolean): { row: HTMLElement; box: HTMLTextAreaElement } {
@@ -54,11 +64,17 @@ export function onlineVersusScreen(): Screen {
   let peer: Peer | undefined;
   let timer: ReturnType<typeof setInterval> | undefined;
   let gone = false;
+  let side: 0 | 1 = 0;
+  let game: GameHandle | undefined;
+  let arenaNode: HTMLElement | undefined;
 
   const stop = (): void => {
     gone = true;
     if (timer !== undefined) clearInterval(timer);
     timer = undefined;
+    destroyGame(game, arenaNode);
+    game = undefined;
+    arenaNode = undefined;
     peer?.close();
     peer = undefined;
   };
@@ -78,6 +94,27 @@ export function onlineVersusScreen(): Screen {
         el('p', undefined, 'Play a friend over the internet with no server: one of you hosts and sends a code, the other joins and sends a code back.'),
       );
 
+      const startMatch = (p: Peer, say: (s: string) => void): void => {
+        void import('../boot/phaser-config').then(({ createGame }) => {
+          if (gone || !node) return;
+          const holder = el('div');
+          holder.id = 'game';
+          arenaNode = holder;
+          node.append(holder);
+          const launch: ArenaLaunch = {
+            setup: arcadeSetup(DEFAULT_PICK, CHECK_SEED),
+            net: {
+              side,
+              input: p.input,
+              onStatus: (st, session) => {
+                const t = netStatusText(st, session.forfeitReason);
+                if (t !== undefined) say(t);
+              },
+            },
+          };
+          game = createGame(holder, launch);
+        });
+      };
       const watch = (p: Peer): void => {
         peer = p;
         say('Waiting for the link to open...');
@@ -91,6 +128,7 @@ export function onlineVersusScreen(): Screen {
               if ((phase === 'go' || phase === 'rejected') && timer !== undefined) {
                 clearInterval(timer);
                 timer = undefined;
+                if (phase === 'go') startMatch(p, say);
               }
             }, 50);
           },
@@ -115,6 +153,7 @@ export function onlineVersusScreen(): Screen {
           peer?.close();
           offerOut.box.value = offer;
           peer = p;
+          side = 0;
           say('Send your code to your friend, then paste their answer below and press Connect.');
         }, fail);
       });
@@ -129,6 +168,7 @@ export function onlineVersusScreen(): Screen {
           if (gone) { p.close(); return; }
           peer?.close();
           answerOut.box.value = answer;
+          side = 1;
           watch(p);
         }, fail);
       });
