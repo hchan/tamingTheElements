@@ -20,7 +20,7 @@ interface Tag {
 /** Round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91. */
 const INTRO = 91;
 const KO_TO_ROUND_END = 30 + 120 + 60;
-const CLASSIC_MENU = ['New Game', 'Continue', 'Garrison', 'Settings', 'Current Objectives', 'Story Mode', 'Wiki', 'Key Bindings', 'About'];
+const MENU = ['World Tour', 'Arcade Versus', 'Online Versus', 'New Game', 'Continue', 'Garrison', 'Settings', 'Current Objectives', 'Story Mode', 'Wiki', 'Key Bindings', 'About'];
 
 const frames = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 const tag = async (page: Page): Promise<Tag | undefined> => {
@@ -134,9 +134,9 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   await expect(page.locator('#game canvas')).toHaveCount(0);
   await expect(page.locator('#arcadeTag')).toHaveCount(0);
   expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
-  // Without the opt-in the Classic menu is unchanged.
+  // Arcade is on by default: the menu leads with it.
   await page.goto(START);
-  await expect(page.locator('#menu .mainMenuList li button')).toHaveText(CLASSIC_MENU);
+  await expect(page.locator('#menu .mainMenuList li button')).toHaveText(MENU);
   expect(errors).toEqual([]);
 });
 

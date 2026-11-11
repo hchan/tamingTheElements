@@ -1,18 +1,16 @@
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { arcadePickView, arcadeResultsView, raceLabel } from '@ui/screens/arcade-versus';
-import { loadSave } from '@ui/screens/main-menu';
 import type { Screen } from '@ui/screens/screen';
 import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
-import { arcadeEnabled } from '../platform/arcade-setting';
 import { getUiFlags, type UiFlags } from '../platform/flags';
 import { controlsHint, P2_BINDINGS } from '../input/local-two';
 import { getBindings } from '../platform/input/bindings';
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
 import { requestOpenTesterPanel } from '@ui/tester/install';
-import { activeSaveStorage, tester } from '../platform/tester/session';
+import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
 import type { ArcadeHero, ArcadeResult } from './arcade-setup';
@@ -214,11 +212,6 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
   return {
     mount: (c) => {
       container = c;
-      // Off unless opted in (Settings) or `?ff=arcade`: a typed #arcade goes to the Classic menu.
-      if (!arcadeEnabled(loadSave(activeSaveStorage()))) {
-        deps.navigate('main');
-        return;
-      }
       showPick();
     },
     unmount: () => {

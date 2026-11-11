@@ -44,11 +44,14 @@ test.describe('keyboard-only menu navigation', () => {
   test('tab order follows the visual order and focus is clearly visible', async ({ page }) => {
     await seededMenu(page);
     const seen: string[] = [];
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 12; i++) {
       await page.keyboard.press('Tab');
       seen.push(await activeText(page));
     }
     expect(seen).toEqual([
+      'World Tour',
+      'Arcade Versus',
+      'Online Versus',
       'New Game',
       'Continue',
       'Garrison',
@@ -68,9 +71,11 @@ test.describe('keyboard-only menu navigation', () => {
     await page.goto('/');
     await page.getByRole('heading', { level: 1 }).waitFor();
     await page.keyboard.press('Tab');
-    expect(await activeText(page)).toBe('New Game');
-    await page.keyboard.press('Tab');
-    expect(await activeText(page)).toBe('Settings');
+    expect(await activeText(page)).toBe('World Tour');
+    for (const next of ['Arcade Versus', 'Online Versus', 'New Game', 'Settings']) {
+      await page.keyboard.press('Tab');
+      expect(await activeText(page)).toBe(next);
+    }
   });
 
   test('Enter opens a screen, Escape goes back, Space activates a Back link', async ({ page }) => {

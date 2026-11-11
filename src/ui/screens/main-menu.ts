@@ -1,7 +1,6 @@
 import { migrate, objectivesMet } from '@core/menu-index';
 import type { SaveV1 } from '@core/menu-index';
 import { el } from '../dom';
-import { arcadeEnabled } from '../../game/platform/arcade-setting';
 import { activeSaveStorage, tester } from '../../game/platform/tester/session';
 import { requestOpenTesterPanel } from '../tester/install';
 import { versionStamp } from '../version';
@@ -14,22 +13,19 @@ export interface MenuState {
   readonly settings: boolean;
   readonly objectives: boolean;
   readonly newObjectives: boolean;
-  /** Arcade Versus (preview) is offered: the Settings opt-in, or `?ff=arcade` in dev and test builds. */
-  readonly arcade: boolean;
 }
 
 /**
  * Enable rules from legacy updateGarrisonsLink/SettingsLink/ObjectivesLink.
  * Legacy getGameState never returns null (it falls back to chapter 0), so settings is always on.
  */
-export function menuState(save: SaveV1 | null, search?: string): MenuState {
+export function menuState(save: SaveV1 | null): MenuState {
   const started = save !== null && save.chapter !== 0;
   return {
     garrison: save !== null && save.garrison.length > 0,
     settings: true,
     objectives: started,
     newObjectives: started && objectivesMet(save),
-    arcade: arcadeEnabled(save, search),
   };
 }
 
@@ -37,18 +33,19 @@ export interface MenuItem {
   readonly label: string;
   readonly route: string;
   readonly enabled: (s: MenuState) => boolean;
-  /** Absent: always listed. Otherwise the entry is left out entirely when false (so Classic menus stay identical). */
-  readonly shown?: (s: MenuState) => boolean;
+  /** A non-interactive group heading (no button, not focusable): "Classic (original rules)". */
+  readonly heading?: boolean;
 }
 
 const always = (): boolean => true;
 
 export const MENU_ITEMS: readonly MenuItem[] = [
+  { label: 'World Tour', route: 'tour', enabled: always },
+  { label: 'Arcade Versus', route: 'arcade', enabled: always },
+  { label: 'Online Versus', route: 'online', enabled: always },
+  { label: 'Classic (original rules)', route: 'classic', enabled: always, heading: true },
   { label: 'New Game', route: 'newGame', enabled: always },
   { label: 'Continue', route: 'battleground', enabled: (s) => s.objectives },
-  { label: 'Arcade Versus', route: 'arcade', enabled: always, shown: (s) => s.arcade },
-  { label: 'Online Versus', route: 'online', enabled: always, shown: (s) => s.arcade },
-  { label: 'World Tour (preview)', route: 'tour', enabled: always, shown: (s) => s.arcade },
   { label: 'Garrison', route: 'garrison', enabled: (s) => s.garrison },
   { label: 'Settings', route: 'settings', enabled: (s) => s.settings },
   { label: 'Current Objectives', route: 'currentObjectives', enabled: (s) => s.objectives },
@@ -94,7 +91,11 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
         page.append(el('h1', 'heading', 'Taming the Elements'));
         const list = el('ul', 'mainMenuList');
         for (const item of MENU_ITEMS) {
-          if (item.shown?.(state) === false) continue;
+          if (item.heading) {
+            const h = el('li', 'menuGroup', item.label);
+            list.append(h);
+            continue;
+          }
           const on = item.enabled(state);
           const li = el('li');
           li.dataset.route = item.route;

@@ -251,6 +251,9 @@ fieldset {
   display: flex;
   align-items: center;
 }
+.menuGroup {
+  margin-top: 0.6em;
+}
 .mainMenuList li button {
   display: block;
   flex: 1 1 auto;

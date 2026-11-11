@@ -2,16 +2,14 @@ import { getCharacter, type CharacterId } from '@core/index';
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { raceLabel } from '@ui/screens/arcade-versus';
-import { loadSave } from '@ui/screens/main-menu';
 import type { Screen } from '@ui/screens/screen';
 import { tourCardView, tourPickView, tourSplashView, type SplashSide } from '@ui/screens/tour';
 import { elementGlyph, mapLayout, tourMapView } from '@ui/screens/tour-map';
 import { requestOpenTesterPanel } from '@ui/tester/install';
 import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
-import { arcadeEnabled } from '../platform/arcade-setting';
 import { getUiFlags, type UiFlags } from '../platform/flags';
-import { activeSaveStorage, tester } from '../platform/tester/session';
+import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { TOUCH, touchButton } from './arcade-versus';
@@ -99,7 +97,7 @@ export function tourScreen(deps: TourDeps): Screen {
     show(
       tourCardView({
         id: 'tourResume',
-        heading: 'World Tour (preview)',
+        heading: 'World Tour',
         lines: [
           `A tour is in progress: stage ${stage} of ${String(TOUR_STAGES)}, ${String(saved.continues)} continues left, team ${saved.hero.map(raceLabel).join(', ')}.`,
         ],
@@ -265,10 +263,6 @@ export function tourScreen(deps: TourDeps): Screen {
   return {
     mount: (c) => {
       container = c;
-      if (!arcadeEnabled(loadSave(activeSaveStorage()))) {
-        deps.navigate('main');
-        return;
-      }
       listenEscape();
       const saved = loadRun(deps.storage);
       if (saved && (saved.status === 'playing' || saved.status === 'lost')) showResume(saved);

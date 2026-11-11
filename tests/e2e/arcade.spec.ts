@@ -41,7 +41,7 @@ const SUPER = 1 << 13;
  */
 const INTRO = 91;
 const KO_TO_ROUND_END = 30 + 120 + 60;
-const CLASSIC_MENU = ['New Game', 'Continue', 'Garrison', 'Settings', 'Current Objectives', 'Story Mode', 'Wiki', 'Key Bindings', 'About'];
+const MENU = ['World Tour', 'Arcade Versus', 'Online Versus', 'New Game', 'Continue', 'Garrison', 'Settings', 'Current Objectives', 'Story Mode', 'Wiki', 'Key Bindings', 'About'];
 
 async function audit(page: Page, name: string): Promise<void> {
   const result = await new AxeBuilder({ page }).analyze();
@@ -101,29 +101,28 @@ async function finishOnResults(page: Page): Promise<void> {
   await expect(page.locator('#game canvas')).toHaveCount(0);
 }
 
-test('off by default: the Classic menu is unchanged, #arcade goes to the main menu, the Settings toggle is unticked', async ({ page }) => {
+test('on by default: the menu leads with World Tour, Arcade Versus, Online, then the Classic group; no Settings toggle; #arcade opens', async ({ page }) => {
   const errors = collectErrors(page);
   await seedViaGameMaster(page, fixture('v0-ch3'));
   await goToHash(page, '#main');
-  expect(await menuLabels(page)).toEqual(CLASSIC_MENU);
+  expect(await menuLabels(page)).toEqual(MENU);
+  await expect(page.locator('#menu .mainMenuList li').nth(3)).toHaveText('Classic (original rules)');
+  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('World Tour');
   await page.evaluate(`window.location.hash = '#arcade'`);
-  await waitForRoute(page, '#main');
-  await expect(page.locator('#arcadePick')).toHaveCount(0);
+  await waitForRoute(page, '#arcade');
+  await expect(page.locator('#arcadePick')).toHaveCount(1);
   await goToHash(page, '#settings');
-  await expect(page.getByLabel('Arcade Versus (preview)')).not.toBeChecked();
+  await expect(page.getByLabel('Arcade Versus (preview)')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test('Settings opt-in -> Arcade Versus: a hit, a super with X, KO, round 2, results 2-0, rematch, back to the menu; the save is untouched', async ({ page }) => {
+test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2-0, rematch, back to the menu; the save is untouched', async ({ page }) => {
   const errors = collectErrors(page);
   await seedViaGameMaster(page, fixture('v0-ch3'));
-  await goToHash(page, '#settings');
-  await page.getByLabel('Arcade Versus (preview)').check();
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await waitForRoute(page, '#main');
-  expect(await menuLabels(page)).toEqual([...CLASSIC_MENU.slice(0, 2), 'Arcade Versus', 'Online Versus', 'World Tour (preview)', ...CLASSIC_MENU.slice(2)]);
+  await goToHash(page, '#main');
+  expect(await menuLabels(page)).toEqual(MENU);
   const before = await savedText(page);
-  expect(JSON.parse(before ?? '{}')).toMatchObject({ arcadePreview: true, chapter: 3 });
+  expect(JSON.parse(before ?? '{}')).toMatchObject({ chapter: 3 });
 
   await page.getByRole('button', { name: 'Arcade Versus' }).click();
   await waitForRoute(page, '#arcade');
