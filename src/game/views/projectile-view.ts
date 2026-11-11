@@ -22,8 +22,14 @@ export function rotationForDir(dir: number, sprite: string): number {
   return sprite === 'tornado' ? 0 : ((8 - dir) & 7) * 45;
 }
 
+/** How a melee box shows its sprite: east/west boxes stay flat (mirrored facing west), tall north/south boxes turn the sprite 90 degrees. */
+export function meleeLook(dir: number, w: number, h: number): { angle: number; w: number; h: number; flip: boolean } {
+  if ((dir === 2 || dir === 6) && h > w) return { angle: dir === 2 ? 270 : 90, w: h, h: w, flip: false };
+  return { angle: 0, w, h, flip: dir >= 3 && dir <= 5 };
+}
+
 /** Texture key and manifest entry for an ability sprite (`sprite:` first, then `map:`). */
-function lookup(sprite: string): { key: string; entry: Entry } | undefined {
+export function lookup(sprite: string): { key: string; entry: Entry } | undefined {
   const a = SPRITES[sprite];
   if (a) return { key: `sprite:${sprite}`, entry: a };
   const m = MAP_SPRITES[sprite];
@@ -42,7 +48,8 @@ export class ProjectileView {
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
   }
 
-  apply(p: RenderProjectile, alpha: number): void {
+  /** `melee`: a melee box (Ice Shock, Ground Shock, ...) drawn stretched over its hit box, mirrored west and turned for north/south. */
+  apply(p: RenderProjectile, alpha: number, melee = false): void {
     if (p.sprite !== this.key) {
       this.key = p.sprite;
       const found = lookup(p.sprite);
@@ -56,14 +63,17 @@ export class ProjectileView {
     }
     // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
     this.image.setVisible(true).setAlpha(1);
-    this.image.setDisplaySize(p.w, p.h);
+    const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
+    this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);
     this.image.setPosition(lerp(p.px, p.x, alpha) + p.w / 2, lerp(p.py, p.y, alpha) + p.h / 2);
-    this.image.setAngle(rotationForDir(p.dir, p.sprite));
+    this.image.setAngle(look.angle);
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
       .setVisible(true)
       .setAlpha(0.5)
-      .setDisplaySize(p.w * 1.6 + 6, p.h * 1.6 + 6)
+      .setDisplaySize(look.w * 1.6 + 6, look.h * 1.6 + 6)
+      .setFlipX(look.flip)
+      .setAngle(look.angle)
       .setPosition(this.image.x, this.image.y)
       .setDepth(this.image.depth - 0.01);
   }

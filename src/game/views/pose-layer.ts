@@ -59,7 +59,7 @@ interface Ghost {
 export interface PoseLayerDeps {
   readonly scene: Phaser.Scene;
   readonly view: RenderView;
-  readonly characters: { peek(id: number): Pick<CharacterView, 'image'> | undefined };
+  readonly characters: { peek(id: number): Pick<CharacterView, 'image' | 'scale'> | undefined };
   readonly projectiles: { peek(id: number): Pick<ProjectileView, 'image' | 'glow'> | undefined };
   readonly reduced: () => boolean;
 }
@@ -264,7 +264,7 @@ export class PoseLayer {
       }
       if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.animMs - this.victoryAt, 1, 0, this.reduced);
     }
-    this.place(img, c.w, c.h, p);
+    this.place(img, c.w * v.scale, c.h * v.scale, p);
   }
 
   /** Applies `p` about the feet centre of the base box (x, y, w, h) the character view just drew. */

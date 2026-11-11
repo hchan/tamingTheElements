@@ -7,7 +7,7 @@ interface FakeImage { alpha: number; [method: string]: unknown }
 function fakeImage(): FakeImage {
   const img: FakeImage = { alpha: 1 };
   img.setAlpha = (a: number) => { img.alpha = a; return img; };
-  for (const m of ['setOrigin', 'setVisible', 'setDisplaySize', 'setPosition', 'setAngle', 'setDepth', 'setBlendMode', 'setTexture', 'destroy']) {
+  for (const m of ['setOrigin', 'setVisible', 'setDisplaySize', 'setFlipX', 'setPosition', 'setAngle', 'setDepth', 'setBlendMode', 'setTexture', 'destroy']) {
     img[m] = () => img;
   }
   return img;
