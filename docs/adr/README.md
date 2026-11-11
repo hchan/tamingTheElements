@@ -20,3 +20,4 @@ Status: all accepted. Format: Context, Decision, Consequences.
 - [0016](0016-art-sources-in-git-lfs.md) Art sources in Git LFS; runtime = exported PNG/atlases
 - [0017](0017-dependency-cruiser-eslint-boundaries.md) dependency-cruiser + ESLint for layer boundaries
 - [0018](0018-colocated-unit-tests.md) Colocated unit tests; tests/ for cross-cutting suites
+- [0019](0019-rig-and-bake.md) Cutout rigs baked offline into sheet frames (deterministic, fixed-point, no runtime skinning)

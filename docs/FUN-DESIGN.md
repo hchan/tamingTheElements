@@ -762,6 +762,54 @@ Plan, cheapest first:
      group, so there is no extra request. `phaser-config` grew 3 B (budget 21970), because its preload list now includes
      the index chunk.
 
+#### Rig and bake (tools only, no art; `WP-rig-bake`, ADR-0019)
+
+Drawing 9 actions x 5 directions per character by hand is the costly part of step 3. A cutout rig cuts that down: the artist
+draws the body parts once per direction (or once, reused), and keyframe curves pose them. `tools/assets/bake-rig.ts`
+(`pnpm assets:bake [--check]`) bakes a rig offline into the per-frame PNGs that `pnpm assets:sheets` packs. Nothing is
+skinned at runtime, so the view, the size budgets and the sheet fallback are unchanged.
+
+- **Input** `imgWorkArea/rigs/<sprite>/`, where `<sprite>` is a sheet character (`sheetCharacters()`):
+  - `rig.json` has `dirs`, `parts` and `actions`, plus an optional `extends`.
+    - `dirs` lists the authored directions, from E, SE, S, N and NE. W, SW and NW are rejected, because `resolveRow` mirrors
+      them at runtime.
+    - `parts` lists `{id, parent?, png, pivot, at, z?, hide?, views?}`. `pivot` is in the part's own pixels. `at` places the
+      pivot in the parent's pivot space, or in the 80x80 frame for a root part. `z` sets the draw order. `views` holds
+      per-direction overrides of any of `png`, `pivot`, `at`, `z` and `hide`.
+    - `actions` maps each action to `{frames, curves}`. `frames` must equal the sheet spec. `curves` gives per part `rot`
+      (integer degrees, clockwise), `dx` and `dy` (pixels), and `sx` and `sy` (percent), with one integer per frame.
+  - `parts/*.png` holds the part images.
+  - `keys/<action>/<dir>/<NN>.png` is optional. These hand-painted 80x80 frames replace the baked frame.
+  - `license.txt` is required, but may come from a base.
+  - Rigs named `_<name>` are abstract bases and are never baked. A variant (`"extends": "_base"`) merges parts by id (fields
+    and views), replaces actions by name, and takes `dirs` from the nearest rig that sets them. Part images are looked up in
+    the rig first, then in its bases.
+- **Output**:
+  - `imgWorkArea/sheets/<sprite>/<action>/<dir>/<NN>.png` and `license.txt`, for the authored directions only.
+  - `imgWorkArea/rigs/bake.lock.json`, holding sha256 of every input and output per rig plus the bake version.
+  - `--check` fails, writing nothing, when the lock or any frame differs or a frame from the last bake is left over.
+  - After a bake, run `pnpm assets:sheets`.
+- **Determinism**: the bytes depend only on the inputs. There is no host maths:
+  - Angles are integer degrees through a literal Q14 sine table.
+  - Transforms are Q16 integer affine matrices: world = parent · T(at + d) · R(rot) · S(sx, sy).
+  - Each output pixel centre is inverse-mapped to the nearest part pixel.
+  - Alpha is composited in integers.
+  - The output is encoded with `png-lite`.
+- **Errors**: the schema is validated in code, and every error names the file and the JSON path. Covered: unknown keys,
+  mirrored or unknown directions, frame counts off the spec, curve lengths and ranges, unknown parents or parent cycles,
+  `extends` that is unknown or cyclic, missing part images or licences, keys for frames the rig does not bake, and
+  stray files.
+- **Gate**: `tests/repo/bake-rig.test.ts` runs the real `--check`, which is cheap while there are no rigs. The test also
+  covers:
+  - determinism (twice and in any input order, plus a pinned lock hash);
+  - rotation about a pivot on a known pixel pattern;
+  - keys;
+  - `extends`;
+  - schema errors;
+  - stale detection, using the synthetic fixture in `tests/fixtures/rigs/`.
+
+  No rig and no art ship yet. Bump `BAKE_VERSION` when the algorithm changes on purpose.
+
 ### 2.17 Charge (new Arcade melee ability, sim + view + AI)
 
 Owner idea (2026-11-10): a melee ability called "Charge" that runs straight up to the opponent, like the World of

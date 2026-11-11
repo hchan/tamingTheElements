@@ -1,0 +1,11 @@
+{
+  "dirs": ["E", "SE"],
+  "parts": [
+    { "id": "body", "png": "body.png", "pivot": [6, 20], "at": [40, 70] },
+    { "id": "arm", "parent": "body", "png": "arm.png", "pivot": [2, 0], "at": [0, -16], "z": 1, "views": { "SE": { "z": -1 } } }
+  ],
+  "actions": {
+    "idle": { "frames": 4, "curves": { "body": { "dy": [0, -1, -2, -1] }, "arm": { "rot": [0, 15, 30, 15] } } },
+    "hurt": { "frames": 2, "curves": { "body": { "rot": [-10, -20], "sx": [100, 110], "sy": [100, 90] } } }
+  }
+}

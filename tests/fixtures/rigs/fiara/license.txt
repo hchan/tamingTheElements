@@ -1,0 +1,1 @@
+CC0, synthetic test fixture for tests/repo/bake-rig.test.ts (not game art)
