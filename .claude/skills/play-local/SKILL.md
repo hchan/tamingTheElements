@@ -11,13 +11,11 @@ Runs Taming the Elements on your machine. Use `corepack pnpm` (`pnpm` may not be
 
 ## Procedure
 
-1. Mode from `$ARGUMENTS` (default `dev`), port default `5173`. Never use 4173/4373/4473/4573/4673/4773 (reserved for e2e and agents).
-2. Check the port is free: `lsof -i :<port>`. If a stale vite of yours is on it, kill only that PID (`kill <pid>` from lsof). Never `pkill -f vite`: it also kills dev servers other agents are using.
-3. Start it in the background (`run_in_background`) so the session stays usable:
-   - **dev** (hot reload, URL flags work): `corepack pnpm dev --port <port> --strictPort`
-   - **preview** (what ships; URL flags do NOT work): `corepack pnpm build && corepack pnpm preview --port <port>`
-4. Wait for the "Local: http://localhost:<port>/" line, then `open http://localhost:<port>/` and tell the user the URL.
-5. When finished, `kill` the PID holding the port. Use `--strictPort` so vite fails instead of silently moving to another port.
+Run the script (it checks the port, starts the server detached, waits until it answers, opens the browser, prints one line):
+
+`tools/dev/play-local.sh [dev|preview] [port] [query]` e.g. `tools/dev/play-local.sh dev 5173 '?ff=play&seed=7'`
+
+Mode default `dev`, port default `5173`; it refuses the reserved e2e ports. Preview builds first (URL flags do NOT work there). If the port is already serving, it just opens the browser. Report the printed URL and pid. When finished, `kill <pid>` (never `pkill -f vite`).
 
 ## URL flags (dev/test builds only)
 
