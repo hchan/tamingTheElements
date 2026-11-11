@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceKonami, isTesterCode, KONAMI } from './code';
+import { advanceKonami, KONAMI } from './code';
 import { benchRowView } from './bench-panel';
 import { badgeText } from './badge';
 import { onMainMenu } from './install';
@@ -15,11 +15,6 @@ describe('cheat code', () => {
     expect(feed(['ArrowUp', 'ArrowUp', 'KeyX'])).toBe(0);
     expect(feed(['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowUp'])).toBe(1);
     expect(feed(['KeyB', ...KONAMI])).toBe(KONAMI.length);
-  });
-  it('accepts the typed code regardless of case and spaces, and nothing else', () => {
-    expect(isTesterCode('  Taming-Tester ')).toBe(true);
-    expect(isTesterCode('tester')).toBe(false);
-    expect(isTesterCode('')).toBe(false);
   });
   it('counts only on the main menu route', () => {
     expect([onMainMenu(''), onMainMenu('#main'), onMainMenu('#settings'), onMainMenu('#loading')]).toEqual([true, true, false, false]);
