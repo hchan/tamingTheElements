@@ -710,20 +710,29 @@ Plan, cheapest first:
    tests); `phaser-config` 16993 to 16998 B (budget 17000), `pose-layer` 3662 B (budget 3772); `visual:pacing` p99 50 ms before
    and 16.8 or 66.7 ms after (SwiftShader noise). Not done: a trail-length rework (the dots are already sampled per tick) and
    easing of rings and pops (they already ease out). Real-device feel is unverified.
-2. **Sheet spec and pipeline:** a documented sheet layout (80x80 frames, rows = action x 8 directions: idle, walk, cast,
-   hurt, guard, dash, KO, victory, tag-in), a packer in `tools/assets` that builds the sheet and manifest from per-frame
-   PNGs, validation tests (frame counts, sizes, no missing action) and legacy art as the fallback for any missing row.
-   Built in WP 34 (tools and tests only; no sim, view or art change): `tools/assets/sheet-spec.ts` (80x80 frames, 4 columns, 72 rows =
-   idle 4, walk 4, cast 4, hurt 2, guard 2, dash 3, KO 4, victory 4, tag-in 4 frames, each x 8 directions E, SE, S, SW, W, NW, N, NE;
-   sheet 320x5760), `png-lite.ts` (dependency-free PNG decode/encode, level-9 zlib, so output bytes depend only on the pixels),
-   `pack-sheets.ts` (`pnpm assets:sheets`, `--check` fails on stale outputs). Sources are per-frame PNGs at
-   `imgWorkArea/sheets/<sprite>/<action>/<dir>/<NN>.png` plus a `license.txt` per character (required once any frame exists);
-   outputs are `public/assets/img/sheets/<sprite>.png` and `src/game/assets/sheets.generated.json` (spec, and per character the url,
-   sha256, licence and the rows that have art). A row is all-or-nothing (right frame count, 80x80) and every other row uses
-   `legacyFallback()`: E/NE/SE play the legacy right strip, W/NW/SW the left strip (mirrored as today), N/S the up/down strips where the
-   legacy sprite has them; walk plays the strip, other actions hold frame 0 for the pose layer. 21 characters are covered (the 80px
-   legacy map sprites); today all 21 are pure fallback, 0 sheets exist. `tests/repo/sprite-sheets.test.ts` covers spec, fallback,
-   validation errors, reproducibility and the committed outputs. Reading sheets in `character-view` is left for step 3.
+2. **Sheet spec and pipeline:** a documented atlas layout (80x80 frames; actions idle, walk, cast, hurt, guard, dash, KO, victory, tag-in x 8
+   directions), a packer in `tools/assets` that builds the atlas and manifest from per-frame PNGs, validation tests (frame counts, sizes)
+   and legacy art as the fallback for any missing row.
+   Built in WP 34, reworked in `WP-sheet-spec-v2` (tools and tests only; no sim, view or art change). The first layout was a fixed
+   320x5760 grid of 72 rows; that exceeds the 4096 px texture limit of many phone GPUs, is 7.4 MB decoded per character (about 55 MB for
+   21) and mostly empty. Now: the pure spec is `src/game/assets/sheet-spec.ts` (so the view can import it; `tools/assets/sheet-spec.ts`
+   re-exports it): frames per action (idle 4, walk 4, cast 4, hurt 2, guard 2, dash 3, KO 4, victory 4, tag-in 4), the directions E, SE, S,
+   SW, W, NW, N, NE, `layoutAtlas`, the manifest types, `frameRect` and `resolveRow`. One atlas per character holds only the rows that have
+   art, in canonical order (action block, then direction), packed left to right in 80 px shelves that wrap at `ATLAS_MAX` = 2048 px (width
+   is the widest shelf, height the shelf count; a row wider than 2048 or shelves taller than 2048 are packer errors). `png-lite.ts` is the
+   dependency-free PNG decode/encode (level-9 zlib), so the bytes depend only on the pixels and a given set of frames always gives the
+   same file. `pack-sheets.ts` (`pnpm assets:sheets`, `--check` fails on stale outputs) reads per-frame PNGs from
+   `imgWorkArea/sheets/<sprite>/<action>/<dir>/<NN>.png` plus a `license.txt` per character (required once any frame exists) and writes
+   `public/assets/img/sheets/<sprite>.png` and `src/game/assets/sheets.generated.json` (the spec, and per character the url, sha256,
+   licence, atlas width and height, and for each packed row its `action/dir` key and the top-left corner of every frame). A row is
+   all-or-nothing (right frame count, 80x80). **Fallback order** (`resolveRow`): (1) the character's own row for that action and direction;
+   (2) the mirrored east-side row, drawn flipped (W from E, NW from NE, SW from SE; the east side is never mirrored from the west);
+   (3) legacy art (`legacyFallback()`: E/NE/SE play the legacy right strip, W/NW/SW the left strip mirrored as today, N/S the up/down strips
+   where the legacy sprite has them; walk plays the strip, other actions hold frame 0 for the pose layer). Weight: at most 600 KB per
+   atlas and 12 MB for all, checked by `pnpm size:check` (`sheets` in `tools/ci/size-budget.json`, measured on `dist/assets/img/sheets`;
+   zero today) and by the packer for the per-file limit. 21 characters are covered (the 80px legacy map sprites); today all 21 are pure
+   fallback, 0 atlases exist. `tests/repo/sprite-sheets.test.ts` covers spec, atlas layout (wrap, determinism, oversize errors), rectangle
+   lookup, fallback order, validation errors, reproducibility and the committed outputs. Reading atlases in `character-view` is left for step 3.
 3. **New art:** drawn by the owner or an artist, or generated; every new asset needs a licence note in the manifest.
    Needs an owner decision on who makes the art.
 

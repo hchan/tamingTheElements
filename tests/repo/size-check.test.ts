@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkMenuIsPhaserFree, checkNoTestHook, checkSizes, chunkName, staticImports, suggestBudget } from '../../tools/ci/size-check';
+import { checkMenuIsPhaserFree, checkNoTestHook, checkSheetWeight, checkSizes, chunkName, staticImports, suggestBudget } from '../../tools/ci/size-check';
 
 const budget = { chunks: { index: 100, phaser: 1000 }, totalGzip: 1200 };
 const m = (name: string, gzip: number) => ({ name, file: `assets/${name}-AAAAAAAA.js`, gzip });
@@ -49,6 +49,19 @@ describe('size-check', () => {
     expect(checkMenuIsPhaserFree(dist)[0]).toContain('statically imports the sim chunk');
     writeFileSync(join(dist, 'index.html'), '<script type="module" src="/assets/index-AAAAAAAA.js"></script><link rel="modulepreload" href="/assets/sim-DDDDDDDD.js">');
     expect(checkMenuIsPhaserFree(dist).join('\n')).toContain('references the sim chunk');
+  });
+});
+
+describe('checkSheetWeight', () => {
+  const b = { ...budget, sheets: { perSheetBytes: 600, totalBytes: 1000 } };
+  it('passes with no sheets (today), at the limits, and with no sheet budget', () => {
+    expect(checkSheetWeight([], b)).toEqual([]);
+    expect(checkSheetWeight([{ file: 'a.png', bytes: 600 }, { file: 'b.png', bytes: 400 }], b)).toEqual([]);
+    expect(checkSheetWeight([{ file: 'a.png', bytes: 1e9 }], budget)).toEqual([]);
+  });
+  it('fails a heavy sheet and a heavy total', () => {
+    expect(checkSheetWeight([{ file: 'a.png', bytes: 601 }], b)[0]).toContain('per sheet');
+    expect(checkSheetWeight([{ file: 'a.png', bytes: 600 }, { file: 'b.png', bytes: 401 }], b)[0]).toContain('total 1001');
   });
 });
 

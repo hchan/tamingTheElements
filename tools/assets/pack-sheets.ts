@@ -1,22 +1,27 @@
-// Sprite sheet packer (FUN-DESIGN section 2.16 step 2). Builds one sheet per character from per-frame PNGs under imgWorkArea/sheets
-// and writes src/game/assets/sheets.generated.json. Characters or rows without art are listed as legacy fallbacks (see sheet-spec.ts).
+// Sprite sheet packer (FUN-DESIGN section 2.16 step 2). Builds one compact atlas per character from per-frame PNGs under imgWorkArea/sheets
+// and writes src/game/assets/sheets.generated.json. Characters or rows without art follow the fallback order of sheet-spec.ts.
 // Run: pnpm assets:sheets (writes) or pnpm assets:sheets --check (fails if the committed outputs are stale). Deterministic and idempotent.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { decodePng, encodePng } from './png-lite';
+import { decodePng, encodePng, type Image } from './png-lite';
 import {
   ACTIONS,
   ALL_ROWS,
+  ATLAS_MAX,
   DIRS,
   FRAME,
+  layoutAtlas,
   OUT_DIR,
-  SHEET_COLS,
-  SHEET_H,
-  SHEET_W,
+  SHEET_MAX_BYTES,
   SOURCE_DIR,
   sheetCharacters,
+  type SheetEntry,
+  type SheetRow,
+  type SheetsManifest,
 } from './sheet-spec';
+
+export type { SheetEntry, SheetsManifest };
 
 const root = resolve(import.meta.dirname, '../..');
 export const SHEETS_MANIFEST_PATH = resolve(root, 'src/game/assets/sheets.generated.json');
@@ -24,31 +29,9 @@ export const SHEETS_MANIFEST_PATH = resolve(root, 'src/game/assets/sheets.genera
 /** Source files keyed by path relative to SOURCE_DIR, e.g. `fiara/cast/E/00.png`, `fiara/license.txt`. */
 export type SourceFiles = ReadonlyMap<string, Uint8Array>;
 
-export interface SheetEntry {
-  readonly sprite: string;
-  /** Present only when at least one row has art. */
-  readonly url?: string;
-  readonly sha256?: string;
-  readonly license?: string;
-  /** Rows with art, as `action/dir`. Every other row uses `legacyFallback(sprite, action, dir)` (sheet-spec.ts), so none are listed. */
-  readonly rows: readonly string[];
-}
-
-export interface SheetsManifest {
-  readonly spec: {
-    readonly frame: number;
-    readonly cols: number;
-    readonly width: number;
-    readonly height: number;
-    readonly dirs: readonly string[];
-    readonly actions: readonly { readonly action: string; readonly frames: number }[];
-  };
-  readonly sheets: readonly SheetEntry[];
-}
-
 export interface PackResult {
   readonly manifest: SheetsManifest;
-  /** Sheet PNG bytes by sprite name (only characters with art). */
+  /** Atlas PNG bytes by sprite name (only characters with art). */
   readonly pngs: ReadonlyMap<string, Uint8Array>;
   readonly errors: readonly string[];
 }
@@ -94,9 +77,9 @@ export function packSheets(files: SourceFiles): PackResult {
   const pngs = new Map<string, Uint8Array>();
   const sheets: SheetEntry[] = [];
   for (const sprite of characters) {
-    const present: string[] = [];
-    const sheet = new Uint8Array(SHEET_W * SHEET_H * 4);
     const rows = found.get(sprite);
+    // Validated rows in canonical order, frames decoded and checked.
+    const good: { key: string; frames: number; images: Image[] }[] = [];
     for (const row of ALL_ROWS) {
       const frames = rows?.get(row.key);
       if (!frames) continue;
@@ -106,8 +89,9 @@ export function packSheets(files: SourceFiles): PackResult {
         errors.push(`${sprite}/${row.key}: needs frames 00-${String(row.frames - 1).padStart(2, '0')}, found ${[...frames.keys()].sort((a, b) => a - b).join(',')}`);
         continue;
       }
+      const images: Image[] = [];
       for (let i = 0; i < row.frames; i++) {
-        let img;
+        let img: Image;
         try {
           img = decodePng(frames.get(i) as Uint8Array);
         } catch (e) {
@@ -120,32 +104,44 @@ export function packSheets(files: SourceFiles): PackResult {
           ok = false;
           continue;
         }
-        for (let y = 0; y < FRAME; y++) {
-          sheet.set(img.data.subarray(y * FRAME * 4, (y + 1) * FRAME * 4), ((row.index * FRAME + y) * SHEET_W + i * FRAME) * 4);
-        }
+        images.push(img);
       }
-      if (ok) present.push(row.key);
+      if (ok) good.push({ key: row.key, frames: row.frames, images });
     }
-    if (present.length === 0) {
+    if (good.length === 0) {
       sheets.push({ sprite, rows: [] });
       continue;
     }
     const license = licenses.get(sprite);
     if (!license) errors.push(`${sprite}: art without ${SOURCE_DIR}/${sprite}/license.txt (every new asset needs a licence note)`);
-    const png = encodePng({ width: SHEET_W, height: SHEET_H, data: sheet });
+    let layout;
+    try {
+      layout = layoutAtlas(good, ATLAS_MAX);
+    } catch (e) {
+      errors.push(`${sprite}: ${(e as Error).message}`);
+      sheets.push({ sprite, rows: [] });
+      continue;
+    }
+    const { width, height } = layout;
+    const data = new Uint8Array(width * height * 4);
+    const outRows: SheetRow[] = good.map((row, n) => {
+      const at = layout.placements[n] as { x: number; y: number };
+      const frames: [number, number][] = [];
+      row.images.forEach((img, i) => {
+        const fx = at.x + i * FRAME;
+        frames.push([fx, at.y]);
+        for (let y = 0; y < FRAME; y++) data.set(img.data.subarray(y * FRAME * 4, (y + 1) * FRAME * 4), ((at.y + y) * width + fx) * 4);
+      });
+      return { key: row.key, frames };
+    });
+    const png = encodePng({ width, height, data });
+    if (png.length > SHEET_MAX_BYTES) errors.push(`${sprite}: atlas is ${String(png.length)} B, budget ${String(SHEET_MAX_BYTES)} B per sheet`);
     pngs.set(sprite, png);
-    sheets.push({ sprite, url: `img/sheets/${sprite}.png`, sha256: sha256(png), license: license ?? '', rows: present });
+    sheets.push({ sprite, url: `img/sheets/${sprite}.png`, sha256: sha256(png), license: license ?? '', width, height, rows: outRows });
   }
   return {
     manifest: {
-      spec: {
-        frame: FRAME,
-        cols: SHEET_COLS,
-        width: SHEET_W,
-        height: SHEET_H,
-        dirs: DIRS,
-        actions: ACTIONS.map(([action, frames]) => ({ action, frames })),
-      },
+      spec: { frame: FRAME, maxSize: ATLAS_MAX, dirs: DIRS, actions: ACTIONS.map(([action, frames]) => ({ action, frames })) },
       sheets,
     },
     pngs,

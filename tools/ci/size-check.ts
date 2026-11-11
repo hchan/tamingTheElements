@@ -1,7 +1,7 @@
 // `pnpm size:check`: gzip size of every chunk in dist/ against tools/ci/size-budget.json, and a check that the menu entry
 // does not pull in the Phaser chunk. Run it after `pnpm build` (a `--mode test` e2e build also writes dist/ and is larger).
 // `pnpm size:check --print` prints the measured sizes and a suggested budget file (measured + headroom). See docs/PERFORMANCE.md.
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -16,6 +16,8 @@ export interface Budget {
   readonly chunks: Readonly<Record<string, number>>;
   /** Max gzip bytes of everything in dist/ (html, js, css). */
   readonly totalGzip: number;
+  /** Raw (PNG, already compressed) bytes of the character atlases in dist/assets/img/sheets (FUN-DESIGN 2.16). Optional for old budgets. */
+  readonly sheets?: { readonly perSheetBytes: number; readonly totalBytes: number };
 }
 
 export interface Measured {
@@ -76,6 +78,27 @@ export function checkSizes(measured: readonly Measured[], budget: Budget): strin
   }
   const total = measured.reduce((a, m) => a + m.gzip, 0);
   if (total > budget.totalGzip) failures.push(`total is ${String(total)} B gzip, budget ${String(budget.totalGzip)} B`);
+  return failures;
+}
+
+/** Sizes in bytes of the sheet atlases under `<dist>/assets/img/sheets` (empty while no sheet art exists). */
+export function measureSheets(dist: string): { file: string; bytes: number }[] {
+  const dir = join(dist, 'assets/img/sheets');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.png'))
+    .sort()
+    .map((f) => ({ file: f, bytes: statSync(join(dir, f)).size }));
+}
+
+/** Pure check of atlas weight: each file against `perSheetBytes`, the sum against `totalBytes`. */
+export function checkSheetWeight(sheets: readonly { file: string; bytes: number }[], budget: Budget): string[] {
+  const b = budget.sheets;
+  if (b === undefined) return [];
+  const failures: string[] = [];
+  for (const s of sheets) if (s.bytes > b.perSheetBytes) failures.push(`sheet ${s.file} is ${String(s.bytes)} B, budget ${String(b.perSheetBytes)} B per sheet`);
+  const total = sheets.reduce((a, s) => a + s.bytes, 0);
+  if (total > b.totalBytes) failures.push(`sheets total ${String(total)} B, budget ${String(b.totalBytes)} B`);
   return failures;
 }
 
@@ -149,7 +172,7 @@ function main(argv: readonly string[]): number {
     return 0;
   }
   const budget = JSON.parse(readFileSync(DEFAULT_BUDGET, 'utf8')) as Budget;
-  const failures = [...checkSizes(measured, budget), ...checkMenuIsPhaserFree(dist), ...checkNoTestHook(dist)];
+  const failures = [...checkSizes(measured, budget), ...checkSheetWeight(measureSheets(dist), budget), ...checkMenuIsPhaserFree(dist), ...checkNoTestHook(dist)];
   if (failures.length > 0) {
     console.error(`\nsize:check FAILED:\n${failures.map((f) => `  - ${f}`).join('\n')}\n\n${HOW_TO_RAISE}`);
     return 1;
