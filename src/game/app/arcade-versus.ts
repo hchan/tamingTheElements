@@ -42,7 +42,7 @@ let lastPick: ArcadePick = DEFAULT_PICK;
  * Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
  * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3).
  */
-const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2'] as const;
+export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2'] as const;
 type TouchLabel = (typeof TOUCH)[number];
 const TOUCH_KEY = { Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weather', Charge: 'charge', Tag: 'slot3', Tag2: 'slot4' } as const;
 
@@ -53,7 +53,7 @@ const TOUCH_KEY = { Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weat
  */
 const coarsePointer = (): boolean => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
-function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
+export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   const b = el('button', 'menuButton', label === 'Tag2' ? 'Tag 2' : label);
   b.type = 'button';
   b.id = `arcade${label}`;

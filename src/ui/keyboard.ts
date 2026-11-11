@@ -15,6 +15,7 @@ export function backHash(route: string): string | null {
     case 'defeat':
     case 'exit':
     case 'arcade':
+    case 'tour':
       return null;
     case 'character':
       return '#garrison';

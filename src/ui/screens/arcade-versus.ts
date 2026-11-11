@@ -42,7 +42,7 @@ export function raceLabel(id: CharacterId): string {
 }
 
 /** A labelled select with id `arcade<Name>`; `name` is the `PickValues` key it fills. */
-function select(name: string, label: string, options: readonly { value: string; label: string }[], value = ''): HTMLElement {
+export function select(name: string, label: string, options: readonly { value: string; label: string }[], value = ''): HTMLElement {
   const id = `arcade${name[0]?.toUpperCase() ?? ''}${name.slice(1)}`;
   const row = el('div', 'settingsOption');
   const lab = el('label', undefined, label);

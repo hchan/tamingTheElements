@@ -794,6 +794,11 @@ bodies, each 2400 HP because a 3-roster scales life by 0.6 (`arcadeLifePm`), 720
   all) and need a real character first. Caveat: the heroes here are the scripted AI, not a human; confirm by playtest (section 7). Changing the number
   is a core data change (SIM_VERSION bump, Arcade-only) and was not done here.
 
+**TODO (Tour WP4, tour-shell):** the first playable Tour (`#tour`, `src/game/app/tour.ts`) ships with the Void at today's 4000 HP, so stage 9 is
+unwinnable until the core change above is made (`ARCADE_RACE_NUMBERS['eternal-void']` hpPm about 600, SIM_VERSION bump). The shell does not change `src/core`;
+the Void stage is a lone boss against the three heroes. The sim has no terrain setting, so a stage's element is chosen by the match seed
+(`tour-match.ts` `matchSeed` searches for a seed whose round-1 stage draw is the location's element; a unit test checks it against the sim).
+
 ### 2.19 Deprecating Capture (owner request 2026-11-11)
 
 Capture (taming an enemy at 25% HP or less into the garrison) is Classic-only; Arcade never had it. Decision: deprecate it with the rest

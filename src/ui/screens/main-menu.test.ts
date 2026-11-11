@@ -69,3 +69,13 @@ describe('Online Versus entry', () => {
     expect(online?.shown?.(menuState(null, '?ff=arcade'))).toBe(true);
   });
 });
+
+describe('World Tour entry', () => {
+  it('follows the Arcade preview gate and sits after Online Versus', () => {
+    const tour = MENU_ITEMS.find((i) => i.route === 'tour');
+    expect(tour?.label).toBe('World Tour (preview)');
+    expect(tour?.shown?.(menuState(null, ''))).toBe(false);
+    expect(tour?.shown?.(menuState(null, '?ff=arcade'))).toBe(true);
+    expect(MENU_ITEMS.findIndex((i) => i.route === 'tour')).toBe(MENU_ITEMS.findIndex((i) => i.route === 'online') + 1);
+  });
+});

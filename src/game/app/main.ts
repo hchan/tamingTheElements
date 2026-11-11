@@ -141,6 +141,31 @@ if (root) {
           },
         };
       },
+      // World Tour (preview, FUN-DESIGN 2.18): its own chunk like Arcade; same failed-load handling.
+      tour: () => {
+        const chunk = import('./tour');
+        return {
+          mount: (c) => {
+            chunk.then(
+              (a) => {
+                a.mountTour(c);
+              },
+              () => {
+                notify('World Tour could not load. Reload the page.');
+                window.location.hash = '#main';
+              },
+            );
+          },
+          unmount: () => {
+            chunk.then(
+              (a) => {
+                a.unmountTour();
+              },
+              () => undefined,
+            );
+          },
+        };
+      },
     });
   }
   if (!(flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl)) prefetchSimWhenIdle();
