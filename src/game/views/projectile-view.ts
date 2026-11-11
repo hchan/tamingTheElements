@@ -65,13 +65,15 @@ export class ProjectileView {
     this.image.setVisible(true).setAlpha(1);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);
-    this.image.setPosition(lerp(p.px, p.x, alpha) + p.w / 2, lerp(p.py, p.y, alpha) + p.h / 2);
+    // Melee boxes are placed once and never moved, so their previous position (px/py) is unset: do not lerp from it.
+    const a = melee ? 1 : alpha;
+    this.image.setPosition(lerp(p.px, p.x, a) + p.w / 2, lerp(p.py, p.y, a) + p.h / 2);
     this.image.setAngle(look.angle);
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
       .setVisible(true)
-      .setAlpha(0.5)
-      .setDisplaySize(look.w * 1.6 + 6, look.h * 1.6 + 6)
+      .setAlpha(melee ? 0.2 : 0.5)
+      .setDisplaySize(look.w * (melee ? 1 : 1.6) + 6, look.h * (melee ? 1 : 1.6) + 6)
       .setFlipX(look.flip)
       .setAngle(look.angle)
       .setPosition(this.image.x, this.image.y)

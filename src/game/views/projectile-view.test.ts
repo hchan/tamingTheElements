@@ -13,6 +13,24 @@ function fakeImage(): FakeImage {
   return img;
 }
 
+describe('ProjectileView melee placement', () => {
+  it('draws a melee box at its own position even though its px/py are unset', () => {
+    const pos: number[][] = [];
+    const scene = {
+      add: {
+        image: () => {
+          const i = fakeImage();
+          i.setPosition = (x: number, y: number) => { pos.push([x, y]); return i; };
+          return i;
+        },
+      },
+    } as unknown as Phaser.Scene;
+    const view = new ProjectileView(scene);
+    view.apply({ id: 1, team: 0, sprite: 'no-such-sprite', dir: 0, x: 300, y: 200, px: 0, py: 0, w: 240, h: 40 }, 0.5, true);
+    expect(pos[0]).toEqual([420, 220]);
+  });
+});
+
 describe('ProjectileView alpha', () => {
   it('resets image and glow alpha every frame, so a pose-layer ease-in cannot dim a pooled bolt for good', () => {
     const imgs: FakeImage[] = [];
