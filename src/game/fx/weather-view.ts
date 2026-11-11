@@ -215,6 +215,9 @@ export function mountWeatherView(
     const p = parts ?? (hud.sys.isActive() ? made() : undefined);
     if (!p) return;
     const clock = now();
+    // The super banner's high band covers the badge, chip and called line: hide them while it runs (alpha, so the draw caches hold).
+    const a = hud.registry.get('tte.band') === true ? 0 : 1;
+    for (const o of [p.badge, p.label, p.call, p.bar, p.chip]) o.setAlpha(a);
     const ar = view.arcade();
     const kind = ar?.weather ?? 0;
     const left = ar?.weatherLeft ?? 0;
@@ -224,7 +227,7 @@ export function mountWeatherView(
       const c = progress(clock, callFrom, CALL_TICKS);
       drawn.scale = callScale(c, callReduced);
       if (c >= 1) p.call.setVisible(false);
-      else p.call.setPosition(BADGE_X, CALL_Y).setScale(drawn.scale).setAlpha(callAlpha(c));
+      else p.call.setPosition(BADGE_X, CALL_Y).setScale(drawn.scale).setAlpha(a * callAlpha(c));
     }
     if (kind === 0) {
       if (drawn.kind !== 0) {

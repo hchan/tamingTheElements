@@ -41,16 +41,18 @@ interface Fake {
   scale: number;
   destroyed: boolean;
   calls: string[];
+  alpha: number;
 }
 
 /** A game object whose every setter chains; graphics record their draw calls (cleared by `clear`). */
 function fakeObject(kind: string, made: Fake[]): Fake {
-  const o: Fake = { kind, visible: true, text: '', width: 0, height: 34, scale: 1, destroyed: false, calls: [] };
+  const o: Fake = { kind, visible: true, text: '', width: 0, height: 34, scale: 1, destroyed: false, calls: [], alpha: 1 };
   const record: Record<string, (...a: never[]) => void> = {
     setVisible: (v: boolean) => { o.visible = v; },
     setText: (t: string) => { o.text = t; o.width = t.length * 17; },
     setScale: (s: number) => { o.scale = s; },
     clear: () => { o.calls = []; },
+    setAlpha: (a: number) => { o.alpha = a; },
   };
   const proxy: Fake = new Proxy(o, {
     get(target, key: string) {
@@ -67,11 +69,14 @@ function fakeObject(kind: string, made: Fake[]): Fake {
   return proxy;
 }
 
+const reg = new Map<string, unknown>();
+
 function fakeScene(): { scene: Phaser.Scene; events: Emitter; made: Fake[] } {
   const events = new Emitter();
   const made: Fake[] = [];
   const scene = {
     events,
+    registry: { get: (k: string) => reg.get(k) },
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => true },
     add: { graphics: () => fakeObject('graphics', made), text: () => fakeObject('text', made) },
@@ -299,5 +304,21 @@ describe('weather view: teardown', () => {
     m.arena.events.emit('destroy');
     expect(m.arena.events.count + m.hud.events.count).toBe(0);
     expect(weatherState(m.arena.scene)).toBeUndefined();
+  });
+});
+
+describe('super banner overlap', () => {
+  it('hides the badge, chip and called line while the high super band is up, then shows them again', () => {
+    const m = mount({ weather: 2 });
+    const alphas = (): number[] => m.hud.made.map((f) => f.alpha);
+    m.frame();
+    expect(m.hud.made.length).toBeGreaterThan(0);
+    reg.set('tte.band', true);
+    m.frame();
+    expect(alphas().filter((a) => a !== 0)).toEqual([]);
+    reg.set('tte.band', false);
+    m.frame();
+    expect(alphas()).toContain(1);
+    expect(alphas().filter((a) => a === 0)).toEqual([]);
   });
 });

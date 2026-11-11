@@ -97,6 +97,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     if (!running) return;
     running = false;
     scene.events.off('update', update);
+    if (scene.registry.get('tte.band') === true) scene.registry.set('tte.band', false);
     if (live) {
       lifted?.setDepth(0);
       for (const o of all) o.setVisible(false);
@@ -151,6 +152,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       // The element as a word too: the band colour is not the only cue.
       parts.sub.setText(caster.element.toUpperCase());
       for (const o of all) o.setVisible(true);
+      scene.registry.set('tte.band', bandY === BAND_HIGH_Y);
       lifted = img.setDepth(DIM_DEPTH + 1);
       running = true;
       scene.events.on('update', update);
