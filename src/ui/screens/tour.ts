@@ -24,6 +24,8 @@ export interface TourCardOptions {
   readonly actions: readonly TourAction[];
   /** Adds the Main Menu link after the buttons (default true). */
   readonly menu?: boolean;
+  /** Shown between the paragraphs and the buttons (the Tour map). */
+  readonly extra?: HTMLElement;
 }
 
 const mainMenuLink = (): HTMLAnchorElement => {
@@ -37,6 +39,7 @@ export function tourCardView(o: TourCardOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = o.id;
   page.append(el('h1', 'heading', o.heading), ...o.lines.map((t) => el('p', undefined, t)));
+  if (o.extra) page.append(o.extra);
   const actions = el('div');
   for (const a of o.actions) {
     const b = el('button', 'menuButton', a.label);

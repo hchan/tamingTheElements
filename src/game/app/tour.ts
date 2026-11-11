@@ -4,6 +4,7 @@ import { raceLabel } from '@ui/screens/arcade-versus';
 import { loadSave } from '@ui/screens/main-menu';
 import type { Screen } from '@ui/screens/screen';
 import { tourCardView, tourPickView } from '@ui/screens/tour';
+import { mapLayout, tourMapView } from '@ui/screens/tour-map';
 import { requestOpenTesterPanel } from '@ui/tester/install';
 import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
@@ -15,7 +16,7 @@ import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pi
 import { TOUCH, touchButton } from './arcade-versus';
 import { destroyGame, type GameHandle } from './game-handle';
 import { currentStage, matchSeed, parseTeam, stagePick } from './tour-match';
-import { TOUR_CONTINUES, TOUR_STAGES, advance, gameOver, startRun, useContinue, type TourRun } from './tour-model';
+import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
 import { browserTourStorage, clearRun, loadRun, saveRun, type TourStorage } from './tour-store';
 
 /**
@@ -152,6 +153,10 @@ export function tourScreen(deps: TourDeps): Screen {
         tourCardView({
           id: 'tourStage',
           heading: n,
+          extra: tourMapView(
+            mapLayout(buildTour(r.hero, r.seed).map((s) => s.location), r.stage, false),
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+          ),
           lines: [
             `Location: ${ELEMENT_WORD(stage.location)}.`,
             `Opponent: ${foe}.`,

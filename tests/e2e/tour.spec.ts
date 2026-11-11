@@ -32,6 +32,11 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   await expect(card).toContainText('Opponent:');
   await expect(card).toContainText('Difficulty: Easy');
   await expect(card).toContainText('3 of 3 continues left');
+  await expect(page.locator('#tourMap svg[role="img"]')).toHaveAttribute('aria-label', /0 of 9 stages cleared/);
+  await expect(page.locator('#tourMap svg [data-pin]')).toHaveCount(9);
+  await expect(page.locator('#tourPins li[data-state="current"]')).toContainText('Stage 1:');
+  await expect(page.locator('#tourPins li[data-state="locked"]')).toHaveCount(8);
+  await expect(page.locator('#tourPins li[data-state="locked"]').first()).toContainText('Locked');
   expect(await page.evaluate<string | null>(`localStorage.getItem('${KEY}')`)).toContain('"stage":0');
 
   await page.getByRole('button', { name: 'Fight' }).click();
@@ -45,6 +50,8 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   await expect(page.getByRole('heading', { name: 'Stage 2 of 9' })).toBeVisible({ timeout: 15_000 });
   await page.evaluate(`window.__TTE__.settled()`);
   await expect(page.locator('#game canvas')).toHaveCount(0);
+  await expect(page.locator('#tourPins li[data-state="cleared"]')).toHaveCount(1);
+  await expect(page.locator('#tourPins li[data-state="cleared"]')).toContainText('Cleared');
   expect(await page.evaluate<string | null>(`localStorage.getItem('${KEY}')`)).toContain('"stage":1');
 
   // Reload: the run is offered, and Resume lands on the same card.
