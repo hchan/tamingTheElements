@@ -190,10 +190,10 @@ export class ActionBarView {
     g.clear();
     this.back.clear();
     if (this.slots.length > 0 && this.styled) {
-      g.fillStyle(0x070a12, 0.82);
-      g.fillRect(0, BAR_Y, HUD_WIDTH, ACTION_BAR_HEIGHT);
-      g.fillStyle(0xffffff, 0.06);
-      g.fillRect(0, BAR_Y, HUD_WIDTH, 3);
+      this.back.fillStyle(0x070a12, 0.82);
+      this.back.fillRect(0, BAR_Y, HUD_WIDTH, ACTION_BAR_HEIGHT);
+      this.back.fillStyle(0xffffff, 0.06);
+      this.back.fillRect(0, BAR_Y, HUD_WIDTH, 3);
       g.lineStyle(2, 0x8fa4c8, 0.9);
       g.lineBetween(0, BAR_Y + 1, HUD_WIDTH, BAR_Y + 1);
     } else if (this.slots.length > 0) {
@@ -202,7 +202,7 @@ export class ActionBarView {
     }
     this.slots.forEach((s, i) => {
       if (this.styled) {
-        this.back.fillStyle(s.sprite === '' ? 0x05070c : 0x141b2e, 0.9);
+        this.back.fillStyle(s.sprite === '' ? 0x05070c : 0x2c3d63, 0.95);
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 5);
       }
       this.drawIcon(i, s);
