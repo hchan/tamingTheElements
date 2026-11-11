@@ -740,6 +740,33 @@ Warcraft warrior's Charge. It gives melee heroes a gap closer, the way weather a
   away (Manhattan, `CHARGE_AI_MIN_DIST`), when free and with no threat; `ArcadeView.chargeIn` is -1 for a ranged hero.
 - **Metrics:** charges per match, share that connect, win-rate per race (melee races must not dominate).
 
+### 2.18 World Tour: eight fights, then the Void (Arcade, view + app, owner request 2026-11-11)
+
+Owner direction: like Street Fighter II, a tour of the world: pick a hero, beat eight opponents in a fixed ladder, then fight the
+final boss, the Eternal Void. Design (not built yet):
+
+- **Ladder:** the 11 other playable races, 7 drawn from the tour seed in a fixed order that rises Easy, Normal, Normal, Normal, Hard, Hard, Hard
+  (the 8th is the hero's elemental counter, a "rival"), then the Void as fight 9. Each fight is a normal Arcade best-of-3 match; the sim is untouched
+  (the app builds one match per fight with `arcade-setup`). The Void uses the existing Arcade boss numbers (section 2.13), is the only non-pickable
+  opponent, and has no tag partner.
+- **Presentation:** a world-map screen between fights (a stage backdrop per race, the next opponent highlighted, a "stage N of 9" line), the
+  versus splash, and an ending card after the Void. A loss offers Continue (replay that fight, up to 3 times) then Game Over.
+  Reduced motion and keyboard, pad and touch all reach every button.
+- **State:** the run (hero, seed, stage, continues) lives in memory and in a small separate localStorage key so a reload resumes; it never
+  touches the Classic save (the section 1 out-of-scope rule stands). Same seed, same tour (deterministic ladder from `rng`).
+- **Work packages (proposed):** WP-tour-model (pure ladder and run state in `src/game/app`, unit tests), WP-tour-view (map, splash, ending, e2e).
+  Needs no new art: the map is drawn procedurally.
+
+### 2.19 Deprecating Capture (owner request 2026-11-11)
+
+Capture (taming an enemy at 25% HP or less into the garrison) is Classic-only; Arcade never had it. Decision: deprecate it with the rest
+of Classic, in stages so parity stays honest:
+
+1. **Now:** documented here and in `docs/PARITY.md`; no behaviour change (the sim, goldens and the golden-path e2e "4. enemy at <=25% HP + capture" stay).
+2. **With the World Tour:** the Tour replaces collecting; the Classic menu entries are labelled "Classic (original rules)".
+3. **Removal (needs owner sign-off on goldens):** drop the Capture ability from Classic data and UI. It changes sim data, so it needs
+   a `golden:record` and `balance:record` with the stated reason "capture deprecated" and a `SIM_VERSION` bump.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)
