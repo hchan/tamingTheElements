@@ -1,3 +1,5 @@
+import { bobOffset, lungeOffset, popScale } from './pose-anim';
+
 /**
  * Pure maths of the procedural pose layer (WP-arcade-pose-layer, FUN-DESIGN 2.16 step 1). No Phaser, no DOM, no clock:
  * everything is a function of its arguments so it is unit-tested in Node at any simulated display refresh rate.
@@ -104,7 +106,12 @@ export function applyPose(p: Pose, kind: number, ageMs: number, dir: number, pow
   const t = ageMs / dur;
   if (kind === PoseKind.tagIn) {
     p.alpha *= easeOutCubic(t);
-    if (!reduced) p.ox += -dir * 48 * (1 - easeOutCubic(t));
+    if (!reduced) {
+      p.ox += -dir * 48 * (1 - easeOutCubic(t));
+      const pop = popScale(t);
+      p.sx *= pop;
+      p.sy *= pop;
+    }
     return;
   }
   if (reduced) return;
@@ -116,6 +123,7 @@ export function applyPose(p: Pose, kind: number, ageMs: number, dir: number, pow
       p.sy *= 1 - sq;
       p.sx *= 1 + sq * 0.8;
       p.rot += dir * 3 * bell;
+      p.ox += lungeOffset(t, dir);
       break;
     }
     case PoseKind.hurt: {
@@ -156,4 +164,5 @@ export function breathe(p: Pose, ms: number, amount: number): void {
   const w = Math.sin((ms * 2 * Math.PI) / 2400) * 0.014 * amount;
   p.sy *= 1 + w;
   p.sx *= 1 - w * 0.5;
+  p.oy += bobOffset(ms, amount);
 }

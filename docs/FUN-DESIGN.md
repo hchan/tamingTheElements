@@ -875,6 +875,7 @@ are unchanged by construction. Phaser `timeScale` is never used for gameplay tim
 | Clash burst | `clash` | Two-colour ring, winner element on top | 30 | Static ring |
 | Announcer text | round events | Large centred text, 600 ms scale-in | 50 | No scale-in; live-region lines always |
 | Audio punch layers | strength events | Existing `damage` cue plus a synthesized low thump (WebAudio oscillator, 60 ms, gain by strength), plus or minus 5% pitch from the cosmetic RNG; parry "ping"; music duck on super and KO (`DUCK_MS`) | 90 | Every audio cue has a visual counterpart; mute (Ctrl-M) covers all layers |
+| Character motion (view only, no art) | idle, `cast`, `tagIn` | `pose-anim.ts` pure triangle-wave helpers inside the pose layer (2.16 step 1): idle bob (1.2 px, 1.8 s, fades with walking), 5 px cast lunge towards the facing on top of the squash-and-stretch, tag-in pop (up to 1.14x) on top of the slide; hurt tilt and flash and hit-stop jitter unchanged | 40, none | Off: `breathe` and `applyPose` are not reached for the bob and lunge, and a tag-in only fades |
 | Input feedback | own command | A 1-frame press flash on the action-bar slot even when the action is buffered | 20 | Kept |
 
 Juice budget: at most 1 ms of main-thread time per frame for fx at 1280x720 on a mid laptop (`?ff=fps`), no per-frame
