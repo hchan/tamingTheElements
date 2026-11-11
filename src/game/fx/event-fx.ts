@@ -81,7 +81,7 @@ export interface FxSink {
 
 /** Classic hits: six particles, an 80 ms shake and a red-ish tint after the white flash. */
 export const HIT_PARTICLES = 6;
-export const CLASSIC_HIT_TINT = 0xff7777;
+export const CLASSIC_HIT_TINT = 0xff3a3a;
 /** Arcade sparks by hit strength (light, medium, heavy, super); FUN-DESIGN section 3. */
 export const SPARKS_BY_STRENGTH = [6, 10, 16, 24] as const;
 /** Arcade shake by hit strength: light none, then medium, heavy, super; KO has its own. */

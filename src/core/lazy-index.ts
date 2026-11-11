@@ -5,6 +5,7 @@
  * Named exports only: the app imports this module dynamically, so its namespace keeps every export alive in the bundle.
  */
 export { ScriptedAI, scriptedProfileFor, type ScriptedAIOptions, type ScriptedProfile } from './agents/scripted-ai/index';
+export { getCharacter } from './data/characters';
 export { RandomBot } from './agents/random-bot';
 export { parseReplayChecked, validateReplay } from './replay/validate';
 export { serializeReplay, setupFromHeader } from './replay/format';

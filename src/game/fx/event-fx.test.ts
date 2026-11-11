@@ -80,7 +80,7 @@ describe('EventFx, Classic', () => {
   it('reduced motion keeps the flash but drops particles and shake', () => {
     const { sink, log } = recorder();
     new EventFx(sink, { reducedMotion: () => true }).consume([dmg(1, 0)]);
-    expect(log).toEqual(['flash3:ff7777']);
+    expect(log).toEqual(['flash3:ff3a3a']);
   });
 });
 

@@ -77,11 +77,17 @@ export function toOutcome(ui: UiSetup, save: Pick<SaveV1, 'garrison'>, end: Matc
   };
 }
 
-/** Enemy agent: the scripted AI is not complete yet, so both settings use the random bot for now. */
-export async function enemyAgent(flags: Pick<UiFlags, 'aiScripted'>): Promise<Agent> {
-  // Lazy: the bot lives in the `sim` chunk, which the menu does not load (see docs/PERFORMANCE.md).
-  const { RandomBot } = await import('@core/lazy-index');
-  return new RandomBot(flags.aiScripted ? 'p2-scripted-fallback' : 'p2');
+/**
+ * Enemy agent: the scripted AI (medium level), profiled for the enemy lead against the player's lead. It was a RandomBot
+ * that stood still, which made Classic campaign fights nearly harmless. A deliberate difficulty change, view side only:
+ * the agent only chooses commands, so sim hashes and goldens are untouched.
+ */
+export async function enemyAgent(setup: Pick<CoreSetup, 'p1' | 'p2'>): Promise<Agent> {
+  const { ScriptedAI, scriptedProfileFor, getCharacter, RandomBot } = await import('@core/lazy-index');
+  const self = setup.p2[0];
+  const foe = setup.p1[0];
+  if (!self || !foe) return new RandomBot('p2');
+  return new ScriptedAI(scriptedProfileFor(getCharacter(self.character), getCharacter(foe.character)), { id: 'campaign-ai', level: 1 });
 }
 
 export interface FlowDeps {
@@ -288,7 +294,7 @@ export class AppFlow {
       const { PlaytestRecorder } = await import('../replay/playtest-recorder');
       if (life.isDisposed()) return;
       const recorder = this.recording() ? new PlaytestRecorder(setup, session.enabled) : undefined;
-      const enemy = await enemyAgent(flags);
+      const enemy = await enemyAgent(setup);
       if (life.isDisposed()) return;
       this.lastReplay = undefined;
       const launch: ArenaLaunch = {

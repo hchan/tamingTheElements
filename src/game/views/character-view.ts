@@ -5,9 +5,9 @@ import manifest from '../assets/manifest.generated.json';
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
 export const FROZEN_TINT = 0x88ccff;
-/** Hit flash (FUN-DESIGN section 3, VISUAL-QA V6): white fill for 2 rendered frames, then the hit tint for 4. */
+/** Hit flash (FUN-DESIGN section 3, VISUAL-QA V6): white fill for 2 rendered frames, then the hit tint for 8 (red in Classic, so a hit reads as an injury). */
 export const FLASH_FILL_FRAMES = 2;
-export const FLASH_TINT_FRAMES = 4;
+export const FLASH_TINT_FRAMES = 8;
 /** Hit-stop jitter amplitude in px. */
 export const JITTER_PX = 2;
 /** Phaser.TintModes values (a type-only Phaser import keeps this module loadable in Node tests). */

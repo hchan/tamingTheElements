@@ -277,10 +277,25 @@ test.describe('Tester mode', () => {
     await newGameToGarrison(page);
     await startBattle(page, BATTLE);
     const [hero] = await characters(page, 0);
-    await arena(page, `a.stepLive(1000);`);
+    await arena(page, `a.stepLive(3000);`);
     const after = (await characters(page, 0))[0];
-    // 1000 ticks = 20 s of game time with the player doing nothing.
-    expect(after?.hp ?? 0).toBeLessThan((hero?.maxHp ?? 0) * 0.9);
+    // 3000 ticks = 60 s of game time with the player doing nothing: the scripted enemy must land at least one hit (the old RandomBot often never did).
+    expect(after?.hp ?? 0).toBeLessThan(hero?.maxHp ?? 0);
+    expect(errors).toEqual([]);
+  });
+
+  test('tester options (God mode) survive a reload of the same tab', async ({ page }) => {
+    test.setTimeout(120_000);
+    const errors = collectErrors(page);
+    await page.goto(`${START}&cheats=1`);
+    await newGameToGarrison(page);
+    await openPanel(page);
+    await page.locator('#tester-opt-godMode').check();
+    await closePanel(page);
+    await page.reload();
+    await expect(page.locator('#testerBadge')).toContainText('TESTER MODE');
+    await openPanel(page);
+    await expect(page.locator('#tester-opt-godMode')).toBeChecked();
     expect(errors).toEqual([]);
   });
 

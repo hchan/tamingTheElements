@@ -47,14 +47,14 @@ describe('CharacterView hit flash and jitter (V6)', () => {
     view.flash(0x123456);
     view.apply(frozen, 0, 1, false);
     const seen = [shown(img)];
-    for (let f = 0; f < 7; f++) {
+    for (let f = 0; f < 11; f++) {
       view.apply(frozen, 0, 1);
       seen.push(shown(img));
     }
-    expect(seen).toEqual(['ffffff/1', 'ffffff/1', 'ffffff/1', '123456/0', '123456/0', '123456/0', '123456/0', '88ccff/0']);
+    expect(seen).toEqual(['ffffff/1', 'ffffff/1', 'ffffff/1', ...Array<string>(8).fill('123456/0'), '88ccff/0']);
     expect(view.element).toBe('fire');
     view.flash(0x123456);
-    for (let f = 0; f < 7; f++) view.apply(char(EntityFlag.alive), 0, 1);
+    for (let f = 0; f < 11; f++) view.apply(char(EntityFlag.alive), 0, 1);
     expect(shown(img)).toBe('ffffff/0');
   });
 
@@ -87,13 +87,13 @@ describe('character view helpers', () => {
   it('lerps', () => {
     expect(lerp(10, 20, 0.5)).toBe(15);
   });
-  it('hit flash (V6): white fill for 2 frames, then the hit tint for 4, over the frozen tint, then frozen or none', () => {
+  it('hit flash (V6): white fill for 2 frames, then the hit tint for 8, over the frozen tint, then frozen or none', () => {
     const stages = (frozen: boolean): string[] => {
       const out: string[] = [];
       for (let left = FLASH_FILL_FRAMES + FLASH_TINT_FRAMES; left >= 0; left--) out.push(tintStage(left, frozen));
       return out;
     };
-    expect(stages(false)).toEqual(['fill', 'fill', 'hit', 'hit', 'hit', 'hit', 'none']);
-    expect(stages(true)).toEqual(['fill', 'fill', 'hit', 'hit', 'hit', 'hit', 'frozen']);
+    expect(stages(false)).toEqual(['fill', 'fill', ...Array<string>(8).fill('hit'), 'none']);
+    expect(stages(true)).toEqual(['fill', 'fill', ...Array<string>(8).fill('hit'), 'frozen']);
   });
 });

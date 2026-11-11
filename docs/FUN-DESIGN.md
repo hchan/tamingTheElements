@@ -28,8 +28,8 @@ damage lands in the unattributed `melee-or-status` bucket.
    standing on the opponent's row or column.
 3. **No defensive verbs.** No block, dash, dodge or parry. Defence is two translucency buffs on 6-10 s cooldowns (Fade,
    Translucent Flame) and two passive damage reductions (Adrenaline, Rock Armour).
-4. **The opponent is a coin flip.** The shipped game's enemy is a `RandomBot` (`enemyAgent` in `src/game/app/flow.ts`:
-   "the scripted AI is not complete yet"). The scripted AI (`src/core/agents/scripted-ai/`) never dodges because it cannot
+4. **The opponent is a coin flip.** (Fixed 2026-11-10: `enemyAgent` in `src/game/app/flow.ts` now returns the scripted AI at
+   medium level; it was a `RandomBot` that stood still. Classic campaign fights are harder: owner to review.) The scripted AI (`src/core/agents/scripted-ai/`) never dodges because it cannot
    see projectiles: `ObservationView` (`src/core/agents/agent.ts`) has only `self`, `opponent` and cooldowns.
 5. **Almost no feedback.** `src/game/fx/event-fx.ts` reacts only to `damage`, which only projectiles emit; melee, damage
    over time, heals, buffs and freezes emit nothing (`meleeSystem` docstring). The hit flash is a 60 ms tint that never
@@ -776,7 +776,7 @@ and invulnerability; undefined in Classic; meter, round, timer and phase join wi
 strength (light none) or with the KO shake. The jitter alternates plus and minus 2 px per rendered frame (no RNG). The
 flash fix (V6, both rulesets): `CharacterView` owns the tint and counts rendered frames (white fill 2, then the hit tint 4,
 over the frozen tint); the cause was a 60 ms wall-clock timer on a faint multiply tint ([VISUAL-QA.md](VISUAL-QA.md) V6).
-Classic keeps its six particles, 80 ms shake and `0xff7777` hit tint. Damage numbers and combo counters live in
+Classic keeps its six particles, 80 ms shake and `0xff3a3a` hit tint (8 frames after the 2-frame white fill; stronger than the original `0xff7777` so a hit reads as an injury). Damage numbers and combo counters live in
 `src/game/hud/arcade-hud.ts` (pooled model, 16 numbers; fed and aged by the Arena, drawn by `Hud.ts` with pooled texts);
 numbers fan out so a multi-hit volley stays readable; the combo shows from 2 hits under the attacker's bars. Every effect
 holds while the sim is paused, so e2e steps and visual captures see it. Not built yet: the setting that hides damage
