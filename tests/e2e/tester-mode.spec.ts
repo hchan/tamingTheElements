@@ -270,6 +270,20 @@ test.describe('Tester mode', () => {
     expect(errors).toEqual([]);
   });
 
+  test('with God mode off the opponent really hurts an idle player (real battle, not the headless sim)', async ({ page }) => {
+    test.setTimeout(120_000);
+    const errors = collectErrors(page);
+    await page.goto(`${START}&cheats=1`);
+    await newGameToGarrison(page);
+    await startBattle(page, BATTLE);
+    const [hero] = await characters(page, 0);
+    await arena(page, `a.stepLive(1000);`);
+    const after = (await characters(page, 0))[0];
+    // 1000 ticks = 20 s of game time with the player doing nothing.
+    expect(after?.hp ?? 0).toBeLessThan((hero?.maxHp ?? 0) * 0.9);
+    expect(errors).toEqual([]);
+  });
+
   test('the pause dialog reaches the tester options; Escape closes only the panel, and Shift-Q wins once cheats are on', async ({ page }) => {
     test.setTimeout(120_000);
     const errors = collectErrors(page);
