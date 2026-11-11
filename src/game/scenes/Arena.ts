@@ -47,6 +47,9 @@ import { ArcadeHudModel, numberLabel } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
+
+/** Ticks the online preview may predict ahead with `?ff=rollback` (dev and test builds only). */
+const ROLLBACK_WINDOW = 6;
 import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion } from '../a11y/announcer';
 import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
 import { firstPad } from '../input/gamepad';
@@ -154,7 +157,8 @@ export class Arena extends Phaser.Scene {
     const view = createRenderView(world);
     this.view = view;
     const net = this.launch?.net;
-    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match }) : undefined;
+    const rollbackWindow = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).rollback ? ROLLBACK_WINDOW : 0;
+    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow }) : undefined;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;

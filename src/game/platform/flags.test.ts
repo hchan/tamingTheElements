@@ -15,6 +15,8 @@ describe('ui flags', () => {
     expect(parseUiFlags('?ff=forceNoWebgl', { DEV: true, MODE: 'development' }).forceNoWebgl).toBe(true);
     expect(parseUiFlags('?ff=arenaDemo,arcade', { DEV: false, MODE: 'test' })).toMatchObject({ arenaDemo: true, arcade: true });
     expect(parseUiFlags('?ff=arcade', { DEV: false, MODE: 'production' }).arcade).toBe(false);
+    expect(parseUiFlags('?ff=rollback', { DEV: false, MODE: 'test' }).rollback).toBe(true);
+    expect(parseUiFlags('?ff=rollback', { DEV: false, MODE: 'production' }).rollback).toBe(false);
   });
   it('parses ?seed only in dev and test', () => {
     expect(parseUiFlags('?seed=42', { DEV: false, MODE: 'test' }).seed).toBe(42);

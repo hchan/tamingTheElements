@@ -10,6 +10,8 @@ export interface UiFlags {
   readonly arenaDemo: boolean;
   /** The `arenaDemo` match runs the Arcade ruleset (dev and test builds; the menu entry is WP-arcade-entry). */
   readonly arcade: boolean;
+  /** Online matches predict the missing remote input and roll back (`?ff=rollback`, dev and test builds; docs/NETCODE.md). */
+  readonly rollback: boolean;
   /** Play path starts the intro cinematic after Preload. */
   readonly cinematicDemo: boolean;
   /** Record playtests (`?ff=record`, dev and test builds); production uses the Settings checkbox instead. */
@@ -32,6 +34,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   forceNoWebgl: false,
   arenaDemo: false,
   arcade: false,
+  rollback: false,
   cinematicDemo: false,
   record: false,
   failLoad: false,
@@ -60,6 +63,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     forceNoWebgl: on.has('forceNoWebgl'),
     arenaDemo: on.has('arenaDemo'),
     arcade: on.has('arcade'),
+    rollback: on.has('rollback'),
     cinematicDemo: on.has('cinematicDemo'),
     record: on.has('record'),
     failLoad: on.has('failLoad'),
