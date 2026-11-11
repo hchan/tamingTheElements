@@ -10,12 +10,15 @@ const stepLive = (page: Page, n: number): Promise<unknown> => page.evaluate(`win
 async function start(page: Page): Promise<{ p1: number; p2: number }> {
   await page.goto(`${START}&ff=arcade#arcade`);
   await page.getByLabel('Opponent').selectOption('local');
-  await expect(page.getByLabel('Player 1 race')).toBeVisible();
-  await expect(page.getByLabel('Player 2 race')).toBeVisible();
+  await expect(page.getByLabel('Player 1 hero 1')).toBeVisible();
+  await expect(page.getByLabel('Player 2 hero 1')).toBeVisible();
   await expect(page.getByLabel('AI level')).toBeDisabled();
   await expect(page.locator('#arcadeLocalHelp')).toBeVisible();
-  await page.getByLabel('Player 1 race').selectOption('sindarosa');
-  await page.getByLabel('Player 2 race').selectOption('sindarosa');
+  // The first two tests duel one hero each: the Team select keeps the 1v1 option.
+  await page.getByLabel('Team').selectOption('1');
+  await expect(page.getByLabel('Player 1 hero 2')).toBeDisabled();
+  await page.getByLabel('Player 1 hero 1').selectOption('sindarosa');
+  await page.getByLabel('Player 2 hero 1').selectOption('sindarosa');
   await page.getByRole('button', { name: 'Fight!' }).click();
   await page.waitForFunction(ARENA_READY);
   await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
@@ -69,4 +72,54 @@ test('both players attack with their own keys: each hero hurts the other', async
   await page.keyboard.up('KeyU');
   await stepLive(page, 60);
   expect((await at(page, p1)).hp).toBeLessThan((await at(page, p1)).maxHp);
+});
+
+const tagLines = async (page: Page): Promise<string[][]> => {
+  await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+  return (await page.evaluate<{ lines: string[][] } | undefined>(`window.__TTE__.arena.tag()`))?.lines ?? [];
+};
+
+test('Two players is a 3v3 duel: three hero selects each, both players tag with their own keys', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await expect(page.getByLabel('Player 2 hero 2')).toBeHidden();
+  await page.getByLabel('Opponent').selectOption('local');
+  await expect(page.getByLabel('Team')).toHaveValue('3');
+  for (const l of ['Player 1 hero 1', 'Player 1 hero 2', 'Player 1 hero 3', 'Player 2 hero 1', 'Player 2 hero 2', 'Player 2 hero 3']) {
+    await expect(page.getByLabel(l)).toBeEnabled();
+  }
+  await page.getByLabel('Team').selectOption('2');
+  await expect(page.getByLabel('Player 1 hero 3')).toBeDisabled();
+  await expect(page.getByLabel('Player 2 hero 3')).toBeDisabled();
+  await page.getByLabel('Team').selectOption('3');
+  await page.getByLabel('Player 1 hero 1').selectOption('sindarosa');
+  await page.getByLabel('Player 1 hero 2').selectOption('pax');
+  await page.getByLabel('Player 1 hero 3').selectOption('curomo');
+  await page.getByLabel('Player 2 hero 1').selectOption('fiara');
+  await page.getByLabel('Player 2 hero 2').selectOption('echo');
+  await page.getByLabel('Player 2 hero 3').selectOption('lavax');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+  await expect(page.locator('#arcadeKeysHint')).toContainText('V tag, Comma tag 2');
+  const start = await tagLines(page);
+  expect(start[0]?.slice(0, 3)).toEqual(['IN Sindarosa', 'BENCH Pax 100%', 'BENCH Curomo 100%']);
+  expect(start[1]?.slice(0, 3)).toEqual(['IN Fiara', 'BENCH Echo 100%', 'BENCH Lavax 100%']);
+  // Player 1 tags with 4 (Tag 2): Curomo in. Player 2 tags with V (Tag): Echo in.
+  await page.keyboard.down('Digit4');
+  await stepLive(page, 1);
+  await page.keyboard.up('Digit4');
+  await page.keyboard.down('KeyV');
+  await stepLive(page, 1);
+  await page.keyboard.up('KeyV');
+  const tagged = await tagLines(page);
+  expect(tagged[0]?.[0]).toBe('IN Curomo');
+  expect(tagged[1]?.[0]).toBe('IN Echo');
+  // Player 2's Tag 2 (Comma) reaches their other bench hero once the tag cooldown is over.
+  await stepLive(page, 300);
+  await page.keyboard.down('Comma');
+  await stepLive(page, 1);
+  await page.keyboard.up('Comma');
+  expect((await tagLines(page))[1]?.[0]).not.toBe('IN Echo');
+  expect(errors).toEqual([]);
 });

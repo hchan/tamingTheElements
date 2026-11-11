@@ -56,7 +56,7 @@ export function arcadeSetup(pick: ArcadePick, seed: number): MatchSetup {
     chapter: 1,
     difficulty: 1,
     p1: [pick.player, ...(pick.partner ? [pick.partner] : []), ...(pick.partner && pick.partner2 ? [pick.partner2] : [])].map(hero),
-    p2: [pick.enemy, ...enemyPartners(pick, seed)].map(hero),
+    p2: [pick.enemy, ...(pick.enemyBench ?? enemyPartners(pick, seed))].map(hero),
   };
 }
 

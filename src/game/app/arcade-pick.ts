@@ -30,8 +30,13 @@ export interface ArcadePick {
    * the AI's third race also comes from the seed (`enemyPartners`).
    */
   readonly partner2?: CharacterId;
-  /** Local two-player: a second human (Player 2, `enemy` is their race) instead of the AI; 1v1 only; `level` is unused. */
+  /**
+   * Local two-player: a second human (Player 2, `enemy` is their race) instead of the AI; `level` is unused. A duel between two
+   * teams (WP-pvp-3heroes): `partner`/`partner2` are Player 1's bench, `enemyBench` Player 2's (same size, 0 to 2 heroes).
+   */
   readonly local?: true;
+  /** Player 2's bench in local two-player (no seed draw); absent against the AI, whose bench `enemyPartners` draws. */
+  readonly enemyBench?: readonly CharacterId[];
 }
 
 /** Form values as the picker sends them; `size` is '2' or '3' for a 2v2 or 3v3 tag team (anything else is 1v1). */
@@ -42,6 +47,9 @@ export interface PickForm {
   readonly size?: string;
   readonly partner?: string;
   readonly partner2?: string;
+  /** Player 2's second and third hero in local two-player. */
+  readonly enemyPartner?: string;
+  readonly enemyPartner2?: string;
   /** 'local' for two players on this computer (anything else is the AI). */
   readonly mode?: string;
 }
@@ -70,13 +78,21 @@ function team(player: CharacterId, raw: PickForm): Pick<ArcadePick, 'partner' | 
   return raw.size === '3' ? { partner, partner2: partner2For(player, partner, raw.partner2) } : { partner };
 }
 
+/** Player 2's bench in local two-player: the same size as Player 1's, each hero distinct within the team (mirrors across teams are fine). */
+function bench(enemy: CharacterId, raw: PickForm): CharacterId[] {
+  if (raw.size !== '2' && raw.size !== '3') return [];
+  const second = partnerFor(enemy, raw.enemyPartner);
+  return raw.size === '3' ? [second, partner2For(enemy, second, raw.enemyPartner2)] : [second];
+}
+
 /** Form values to a pick; anything unknown falls back to the default, and no race is on a tag team twice. */
 export function parsePick(raw: PickForm): ArcadePick {
   const player = race(raw.player, DEFAULT_PICK.player);
+  const enemy = race(raw.enemy, DEFAULT_PICK.enemy);
   return {
     player,
-    enemy: race(raw.enemy, DEFAULT_PICK.enemy),
+    enemy,
     level: ARCADE_AI_LEVELS.find((l) => l === raw.level) ?? DEFAULT_PICK.level,
-    ...(raw.mode === 'local' ? { local: true as const } : team(player, raw)),
+    ...(raw.mode === 'local' ? { local: true as const, ...team(player, raw), enemyBench: bench(enemy, raw) } : team(player, raw)),
   };
 }

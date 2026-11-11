@@ -125,6 +125,8 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
           size: lastPick.partner2 ? '3' : lastPick.partner ? '2' : '1',
           partner: partnerFor(lastPick.player, lastPick.partner),
           partner2: partner2For(lastPick.player, partnerFor(lastPick.player, lastPick.partner), lastPick.partner2),
+          enemyPartner: partnerFor(lastPick.enemy, lastPick.enemyBench?.[0]),
+          enemyPartner2: partner2For(lastPick.enemy, partnerFor(lastPick.enemy, lastPick.enemyBench?.[0]), lastPick.enemyBench?.[1]),
         },
         onStart: (v) => {
           lastPick = parsePick(v);
@@ -153,7 +155,9 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         heading: r.pick.local ? LOCAL_HEADINGS[r.outcome] : OUTCOME_HEADINGS[r.outcome],
         summary:
           (r.pick.local
-            ? `Player 1 (${raceLabel(r.pick.player)}) against Player 2 (${raceLabel(r.pick.enemy)}). `
+            ? r.heroes
+              ? `Player 1's team: ${team(r.heroes, 0)}. Player 2's team: ${team(r.heroes, 1)}. `
+              : `Player 1 (${raceLabel(r.pick.player)}) against Player 2 (${raceLabel(r.pick.enemy)}). `
             : r.heroes
             ? `Your team: ${team(r.heroes, 0)}. The AI's team (${LEVEL_LABELS[r.pick.level]}): ${team(r.heroes, 1)}. `
             : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. `) +

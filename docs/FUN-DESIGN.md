@@ -749,6 +749,8 @@ final boss, the Eternal Void. Design (not built yet):
   needs a sim change: Arcade tag (section 2.6) is 2v2 today, so a 3-per-side tag (swap to either bench member, KO entrance, bench
   recovery, team HUD, AI) is a prerequisite WP (Opus, SIM_VERSION bump, Arcade-only, Classic bit-identical). 3v3 is the Tour's format;
   Arcade Versus and Online may offer 1v1, 2v2 and 3v3 later.
+- **Player vs Player (WP-pvp-3heroes):** local two-player and Online are a 1v1 duel where each player brings 3 heroes (3v3 tag team, both humans
+  tagging: P1 on 3/4, P2 on V/Comma, online on 3/4); the Team select still offers 1v1 and 2v2 locally. Arcade vs AI is unchanged.
 - **Locations:** the tour visits at least four element locations, Fire, Earth, Water and Air (a stage backdrop and the stage's terrain element, 2.15,
   match the location), and at least one opponent at each location has that element. Each stop is a best-of-3 match against a 3-hero team.
   Remaining stops are drawn from the seed. The map pins are those locations (not flags per race).

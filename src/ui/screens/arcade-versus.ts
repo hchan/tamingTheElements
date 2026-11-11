@@ -2,8 +2,8 @@ import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
 import { el } from '../dom';
 
 /** Key help for the two-player option (the defaults; Player 1's keys can be rebound on Key Bindings). */
-const P1_HELP = 'W A S D or arrows move, Space attack, Enter second attack, E dash, Q guard, X super, R weather, H charge, 3 tag';
-const P2_HELP = 'I J K L move, U attack, O second attack, Y dash, N guard, B super, T weather, G charge, V tag';
+const P1_HELP = 'W A S D or arrows move, Space attack, Enter second attack, E dash, Q guard, X super, R weather, H charge, 3 tag, 4 tag 2';
+const P2_HELP = 'I J K L move, U attack, O second attack, Y dash, N guard, B super, T weather, G charge, V tag, Comma tag 2';
 
 /**
  * DOM of the Arcade Versus screens (FUN-DESIGN WP 11): the fighter picker and the results. Plain native controls (labelled
@@ -22,6 +22,9 @@ export interface PickValues {
   readonly size?: string;
   readonly partner?: string;
   readonly partner2?: string;
+  /** Player 2's second and third hero (local two-player, WP-pvp-3heroes). */
+  readonly enemyPartner?: string;
+  readonly enemyPartner2?: string;
   /** 'ai' (default) or 'local': two players on this computer. */
   readonly mode?: string;
 }
@@ -65,13 +68,13 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     el(
       'p',
       undefined,
-      'Preview: one fight against the Arcade AI, 1v1, or a 2v2 or 3v3 tag team. Hits stun and push, quick follow-ups combo, hits fill your meter, and a full bar fires your super (X, gamepad RT, or the Super button). In a tag team, Tag (3, gamepad LB, or the Tag button) brings your partner in with an attack (in 3v3, Tag 2 on 4, gamepad RB, or the Tag 2 button brings the other one), and a benched hero wins back its red life. Nothing is saved: no XP, no capture, no progress.',
+      'Preview: one fight against the Arcade AI, 1v1, or a 2v2 or 3v3 tag team, or a duel between two players on this computer (each brings three heroes). Hits stun and push, quick follow-ups combo, hits fill your meter, and a full bar fires your super (X, gamepad RT, or the Super button). In a tag team, Tag (3, gamepad LB, or the Tag button) brings your partner in with an attack (in 3v3, Tag 2 on 4, gamepad RB, or the Tag 2 button brings the other one), and a benched hero wins back its red life. Nothing is saved: no XP, no capture, no progress.',
     ),
   );
   const races = o.races.map((r) => ({ value: r, label: raceLabel(r) }));
   const form = el('form', 'settingsForm');
   const setText = (id: string, text: string): void => {
-    const l = form.querySelector(`label[for="${id.replace('Label', '')}"]`);
+    const l = form.querySelector(`label[for="${id}"]`);
     if (l) l.textContent = text;
   };
   const hint = el('p', undefined, `Two players share this keyboard. Player 1: ${P1_HELP}. Player 2: ${P2_HELP}. Each player may also use a gamepad (the first one connected is Player 1, the second Player 2).`);
@@ -85,6 +88,8 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     select('partner', 'Your partner (2v2)', races, o.current.partner),
     select('partner2', 'Your third hero (3v3)', races, o.current.partner2),
     select('enemy', 'AI race', races, o.current.enemy),
+    select('enemyPartner', 'Player 2 hero 2', races, o.current.enemyPartner),
+    select('enemyPartner2', 'Player 2 hero 3', races, o.current.enemyPartner2),
     select('level', 'AI level', o.levels, o.current.level),
   );
   const start = el('button', 'menuButton', 'Fight!');
@@ -97,16 +102,30 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const f = form.elements as unknown as Record<string, HTMLSelectElement>;
   const sync = (): void => {
     const local = f['mode']?.value === 'local';
-    (f['partner'] as HTMLSelectElement).disabled = local || f['size']?.value === '1';
-    (f['partner2'] as HTMLSelectElement).disabled = local || f['size']?.value !== '3';
-    (f['size'] as HTMLSelectElement).disabled = local;
+    const size = f['size']?.value;
+    (f['partner'] as HTMLSelectElement).disabled = size === '1';
+    (f['partner2'] as HTMLSelectElement).disabled = size !== '3';
+    // Player 2's bench is the same size as Player 1's; only in local two-player.
+    (f['enemyPartner'] as HTMLSelectElement).disabled = !local || size === '1';
+    (f['enemyPartner2'] as HTMLSelectElement).disabled = !local || size !== '3';
+    // The row's own display rule beats the hidden attribute, so hide it by style (out of the layout and the accessibility tree).
+    for (const n of ['enemyPartner', 'enemyPartner2']) {
+      const row = (f[n] as HTMLSelectElement).closest<HTMLElement>('.settingsOption');
+      if (row) row.style.display = local ? '' : 'none';
+    }
     (f['level'] as HTMLSelectElement).disabled = local;
-    setText('arcadeEnemyLabel', local ? 'Player 2 race' : 'AI race');
-    setText('arcadePlayerLabel', local ? 'Player 1 race' : 'Your race');
+    setText('arcadeEnemy', local ? 'Player 2 hero 1' : 'AI race');
+    setText('arcadePlayer', local ? 'Player 1 hero 1' : 'Your race');
+    setText('arcadePartner', local ? 'Player 1 hero 2' : 'Your partner (2v2)');
+    setText('arcadePartner2', local ? 'Player 1 hero 3' : 'Your third hero (3v3)');
     hint.hidden = !local;
   };
   sync();
-  form.addEventListener('change', sync);
+  form.addEventListener('change', (e) => {
+    // Two players is a 3v3 duel by default (each brings three heroes); the Team select still offers 1v1 and 2v2.
+    if (e.target === f['mode'] && (f['mode']).value === 'local') (f['size'] as HTMLSelectElement).value = '3';
+    sync();
+  });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     o.onStart(Object.fromEntries(new FormData(form)) as unknown as PickValues);

@@ -53,6 +53,24 @@ describe('Arcade Versus setup', () => {
     expect(parsePick({ player: 'echo', enemy: 'lavax', level: 'hard' })).toEqual({ player: 'echo', enemy: 'lavax', level: 'hard' });
     expect(parsePick({ player: 'eternal-void', enemy: '__proto__', level: 'wtf' })).toEqual(DEFAULT_PICK);
   });
+
+  it('local two-player is a duel of two teams (WP-pvp-3heroes): both benches from the form, distinct within a team, the same size', () => {
+    const f = { player: 'sindarosa', enemy: 'sindarosa', level: 'normal', mode: 'local' };
+    const p = parsePick({ ...f, size: '3', partner: 'pax', partner2: 'echo', enemyPartner: 'lavax', enemyPartner2: 'curomo' });
+    expect(p).toEqual({ player: 'sindarosa', enemy: 'sindarosa', level: 'normal', local: true, partner: 'pax', partner2: 'echo', enemyBench: ['lavax', 'curomo'] });
+    const s = arcadeSetup(p, 9);
+    expect(s.p1.map((m) => m.character)).toEqual(['sindarosa', 'pax', 'echo']);
+    expect(s.p2.map((m) => m.character)).toEqual(['sindarosa', 'lavax', 'curomo']);
+    // A repeat within a team is replaced; a mirror across the teams is kept.
+    const dup = parsePick({ ...f, size: '3', partner: 'sindarosa', partner2: 'sindarosa', enemyPartner: 'sindarosa', enemyPartner2: 'sindarosa' });
+    expect(new Set([dup.player, dup.partner, dup.partner2]).size).toBe(3);
+    expect(new Set([dup.enemy, ...(dup.enemyBench ?? [])]).size).toBe(3);
+    expect(parsePick({ ...f, size: '2' }).enemyBench).toHaveLength(1);
+    expect(parsePick({ ...f, size: '1' })).toEqual({ player: 'sindarosa', enemy: 'sindarosa', level: 'normal', local: true, enemyBench: [] });
+    expect(arcadeSetup(parsePick({ ...f, size: '1' }), 1).p2).toHaveLength(1);
+    // Against the AI nothing changes: the AI's bench still comes from the seed.
+    expect(parsePick({ ...f, mode: 'ai', size: '3', enemyPartner: 'pax' }).enemyBench).toBeUndefined();
+  });
 });
 
 /** Team 1's commands, against a random-bot player, until the match ends; `meterFull` keeps team 1's bar full every tick. */

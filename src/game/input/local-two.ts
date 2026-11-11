@@ -4,7 +4,7 @@ import { GAME_ACTIONS, codeLabel, type Bindings, type GameAction } from '../plat
  * Local two-player Arcade Versus (two humans, one keyboard): Player 2's fixed key set, on the right-hand block so it never
  * meets Player 1's defaults (arrows/WASD, Space/Enter, 1-5, X, E, Q, R, H, C) or the shell keys (F fullscreen, Shift-P
  * pause, Ctrl-M mute, Escape). Not rebindable (Player 1's are, on the Key Bindings screen); listed in the README and shown
- * on the battle screen. Capture and the third swap do not exist in Arcade, so they stay unbound.
+ * on the battle screen. Capture and the fifth swap do not exist in Arcade, so they stay unbound.
  */
 export const P2_BINDINGS: Bindings = {
   up: ['KeyI'],
@@ -13,8 +13,8 @@ export const P2_BINDINGS: Bindings = {
   right: ['KeyL'],
   slot1: ['KeyU'],
   slot2: ['KeyO'],
-  slot3: ['KeyV'], // Tag (2v2)
-  slot4: [],
+  slot3: ['KeyV'], // Tag (2v2 and 3v3)
+  slot4: ['Comma'], // Tag 2 (3v3); Comma, because M is the mute key's partner (Ctrl-M)
   slot5: [],
   capture: [],
   super: ['KeyB'],
@@ -25,7 +25,7 @@ export const P2_BINDINGS: Bindings = {
 };
 
 const HINT: readonly (readonly [GameAction, string])[] = [
-  ['slot1', 'attack'], ['slot2', 'second attack'], ['dash', 'dash'], ['guard', 'guard (hold)'], ['super', 'super'], ['weather', 'weather'], ['charge', 'charge'],
+  ['slot1', 'attack'], ['slot2', 'second attack'], ['dash', 'dash'], ['guard', 'guard (hold)'], ['super', 'super'], ['weather', 'weather'], ['charge', 'charge'], ['slot3', 'tag'], ['slot4', 'tag 2'],
 ];
 
 /** "Player 2: I J K L move, U attack, ...": the keys of one binding set, in words (never colour). */

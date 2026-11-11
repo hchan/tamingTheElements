@@ -21,7 +21,7 @@ describe('local two-player key sets', () => {
   });
   it('every Arcade action but capture and the unused swaps has a Player 2 key, and the key sets map the same bits', () => {
     const unbound = GAME_ACTIONS.filter((a: GameAction) => P2_BINDINGS[a].length === 0);
-    expect(unbound).toEqual(['slot4', 'slot5', 'capture']);
+    expect(unbound).toEqual(['slot5', 'capture']);
     expect(commandFromHeld(P2_BINDINGS, new Set(['KeyI', 'KeyJ', 'KeyU', 'KeyY', 'KeyB']), true, true))
       .toBe(Cmd.up | Cmd.left | Cmd.primary | Cmd.dash | Cmd.super);
   });
@@ -45,7 +45,7 @@ describe('local two-player key sets', () => {
   });
   it('the hint lists both sets in words', () => {
     expect(controlsHint('Player 2', P2_BINDINGS)).toBe(
-      'Player 2: I J K L move, U attack, O second attack, Y dash, N guard (hold), B super, T weather, G charge',
+      'Player 2: I J K L move, U attack, O second attack, Y dash, N guard (hold), B super, T weather, G charge, V tag, Comma tag 2',
     );
     expect(controlsHint('Player 1', DEFAULT_BINDINGS)).toMatch(/^Player 1: W A S D move, /);
   });

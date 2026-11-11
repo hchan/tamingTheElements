@@ -9,8 +9,8 @@
     "index": 28800,
     "index.css": 3400,
     "lazy-index": 550,
-    "local-two": 400,
-    "online-versus": 3520,
+    "local-two": 430,
+    "online-versus": 3900,
     "phaser": 388700,
     "phaser-config": 20950,
     "pose-layer": 3772,
@@ -22,5 +22,5 @@
     "terrain-view": 4350,
     "weather-view": 3470
   },
-  "totalGzip": 482800
+  "totalGzip": 483100
 }

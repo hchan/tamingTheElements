@@ -4,7 +4,7 @@ import { focusHeading } from '@ui/keyboard';
 import type { Screen } from '@ui/screens/screen';
 import { hostPeer, joinPeer, type Peer } from '../net/peer';
 import { destroyGame, type GameHandle } from './game-handle';
-import { ARCADE_RACES, DEFAULT_PICK } from './arcade-pick';
+import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-pick';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import type { ArenaLaunch } from '../scenes/launch';
@@ -12,7 +12,7 @@ import type { ArenaLaunch } from '../scenes/launch';
 /**
  * The `#online` route (preview, shown with Arcade Versus), its own chunk. Two players connect with copy-pasted codes (no
  * server): the host makes an offer code, the friend pastes it and sends an answer code back. Once the link is open both
- * sides pick a hero, swap picks (the host's seed decides the match), then run the setup handshake and play in lockstep.
+ * sides pick three heroes, swap picks (the host's seed decides the match), then run the setup handshake and play in lockstep.
  */
 
 /** Words for the status line: never colour alone. */
@@ -128,7 +128,7 @@ export function onlineVersusScreen(): Screen {
               const again = button('onlineAgain', 'Rematch', () => {
                 again.remove();
                 matchNo = (matchNo + 1) & 0xff;
-                say('Rematch: choose your hero, then press Ready.');
+                say('Rematch: choose your three heroes, then press Ready.');
                 pickPhase(p);
               });
               node?.insertBefore(again, status);
@@ -163,23 +163,33 @@ export function onlineVersusScreen(): Screen {
       /** Hero choice: send ours, wait for theirs (one message only, so the handshake's HELLO stays queued; also the rematch entry), then both derive the setup. */
       const pickPhase = (p: Peer): void => {
         node?.querySelector('#onlineReady')?.remove();
-        node?.querySelector('#onlineRace')?.closest('.settingsOption')?.remove();
-        const row = el('div', 'settingsOption');
-        const lab = el('label', undefined, 'Your hero');
-        const sel = el('select');
-        sel.id = 'onlineRace';
-        lab.htmlFor = sel.id;
-        for (const r of ARCADE_RACES) {
-          const o = el('option', undefined, raceLabel(r));
-          o.value = r;
-          sel.append(o);
-        }
-        sel.value = DEFAULT_PICK.player;
+        node?.querySelector('#onlineTeam')?.remove();
+        // Three heroes a side (WP-pvp-3heroes): a 1v1 duel of two teams; ids onlineRace (lead), onlineRace2, onlineRace3.
+        const team = el('div');
+        team.id = 'onlineTeam';
+        const sels = ['Your hero 1', 'Your hero 2', 'Your hero 3'].map((text, i) => {
+          const row = el('div', 'settingsOption');
+          const lab = el('label', undefined, text);
+          const sel = el('select');
+          sel.id = i === 0 ? 'onlineRace' : `onlineRace${String(i + 1)}`;
+          lab.htmlFor = sel.id;
+          for (const r of ARCADE_RACES) {
+            const o = el('option', undefined, raceLabel(r));
+            o.value = r;
+            sel.append(o);
+          }
+          sel.value = [DEFAULT_PICK.player, 'pax', 'curomo'][i] ?? DEFAULT_PICK.player;
+          row.append(lab, ' ', sel);
+          team.append(row);
+          return sel;
+        });
         const ready = button('onlineReady', 'Ready', () => {
           ready.disabled = true;
-          sel.disabled = true;
-          const race = ARCADE_RACES.find((r) => r === sel.value) ?? DEFAULT_PICK.player;
-          const mine: OnlinePick = { race, seed: side === 0 ? crypto.getRandomValues(new Uint32Array(1))[0] ?? 1 : 0 };
+          for (const s of sels) s.disabled = true;
+          const race = ARCADE_RACES.find((r) => r === sels[0]?.value) ?? DEFAULT_PICK.player;
+          const second = partnerFor(race, sels[1]?.value);
+          const bench = [second, partner2For(race, second, sels[2]?.value)];
+          const mine: OnlinePick = { race, bench, seed: side === 0 ? crypto.getRandomValues(new Uint32Array(1))[0] ?? 1 : 0 };
           p.control.send(encodePick(mine));
           say('Waiting for your friend to pick...');
           timer = setInterval(() => {
@@ -195,10 +205,9 @@ export function onlineVersusScreen(): Screen {
             handshake(p, side === 0 ? onlineSetup(mine, theirs) : onlineSetup(theirs, mine));
           }, 50);
         });
-        row.append(lab, sel);
-        node?.insertBefore(row, status);
+        node?.insertBefore(team, status);
         node?.insertBefore(ready, status);
-        sel.focus();
+        sels[0]?.focus();
       };
       const watch = (p: Peer): void => {
         peer = p;
@@ -206,7 +215,7 @@ export function onlineVersusScreen(): Screen {
         p.open.then(
           () => {
             if (gone) return;
-            say('Link open. Choose your hero, then press Ready.');
+            say('Link open. Choose your three heroes, then press Ready.');
             pickPhase(p);
           },
           () => {
