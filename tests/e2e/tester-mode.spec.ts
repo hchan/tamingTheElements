@@ -233,8 +233,8 @@ test.describe('Tester mode', () => {
     await waitForRoute(page, '#victory');
     await expect(page.getByText('written to the throwaway slot')).toBeVisible();
     expect((await storedSave(page)).garrison[0]?.experience).toBe(1);
-    const slot = await page.evaluate<string>(`window.sessionStorage.getItem(${JSON.stringify(SAVE_KEY)})`);
-    expect((JSON.parse(slot) as { garrison: { experience: number }[] }).garrison[0]?.experience).toBe(2);
+    // The throwaway slot lives in memory only: nothing reaches sessionStorage.
+    expect(await page.evaluate<string | null>(`window.sessionStorage.getItem(${JSON.stringify(SAVE_KEY)})`)).toBeNull();
 
     const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#downloadReplay').click()]);
     const file = testInfo.outputPath('tester.replay.json');
@@ -294,7 +294,7 @@ test.describe('Tester mode', () => {
     await openPanel(page);
     await page.locator('#tester-opt-godMode').check();
     await closePanel(page);
-    await page.reload();
+    await page.goto(START);
     await expect(page.locator('#testerBadge')).toBeHidden();
     expect(errors).toEqual([]);
   });
