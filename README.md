@@ -20,7 +20,7 @@ Eternal Void boss.
   and knockback, combos, a hyper meter and a super on X, gamepad RT or the on-screen Super button; in 2v2, tag with 3,
   gamepad LB or the Tag button). Turn it on in **Settings > Preview >
   Arcade Versus (preview)** and press Save; it then appears on the main menu. It never writes your save (no XP, capture
-  or progress). Design and status: [docs/FUN-DESIGN.md](docs/FUN-DESIGN.md).
+  or progress). **Two players on one computer**: pick *Opponent: Two players (this computer)* on the picker (1v1; each player picks a race). Player 1 keeps the usual keys (W A S D or arrows, Space/Enter, E dash, Q guard (hold), X super, R weather, H charge, rebindable on Key Bindings); Player 2 uses **I J K L** move, **U** attack, **O** second attack, **Y** dash, **N** guard (hold), **B** super, **T** weather, **G** charge (fixed). A second gamepad drives Player 2 (the first drives Player 1). Pause (Shift-P), mute (Ctrl-M) and fullscreen (F) stay shared. Design and status: [docs/FUN-DESIGN.md](docs/FUN-DESIGN.md).
 
 ## Status
 

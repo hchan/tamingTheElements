@@ -7,6 +7,7 @@ import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
 import { arcadeEnabled } from '../platform/arcade-setting';
 import { getUiFlags, type UiFlags } from '../platform/flags';
+import { controlsHint, P2_BINDINGS } from '../input/local-two';
 import { getBindings } from '../platform/input/bindings';
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
@@ -31,6 +32,7 @@ export interface ArcadeVersusDeps {
 }
 
 const LEVEL_LABELS: Readonly<Record<ArcadePick['level'], string>> = { easy: 'Easy', normal: 'Normal', hard: 'Hard' };
+const LOCAL_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { win: 'Player 1 wins!', lose: 'Player 2 wins!', draw: 'Draw' };
 const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { win: 'Victory!', lose: 'Defeat', draw: 'Draw' };
 
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
@@ -77,6 +79,14 @@ function touchButton(label: (typeof TOUCH)[number], row: number): HTMLButtonElem
   return b;
 }
 
+/** Both players' keys as words, along the bottom-left of a local two-player battle (left of the touch buttons). */
+function keysHint(): HTMLElement {
+  const p = el('p', undefined, `${controlsHint('Player 1', getBindings())}. ${controlsHint('Player 2', P2_BINDINGS)}.`);
+  p.id = 'arcadeKeysHint';
+  p.style.cssText = 'position:absolute;left:4px;bottom:2px;right:420px;margin:0;z-index:4;font-size:11px;line-height:1.2;pointer-events:none;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000';
+  return p;
+}
+
 /** "Sindarosa (fire) 45% left, Pax (earth) knocked out": one team's heroes at the end of a 2v2 match. */
 const team = (heroes: readonly ArcadeHero[], t: number): string =>
   heroes.filter((h) => h.team === t).map((h) => `${raceLabel(h.race)} ${h.pct ? `${String(h.pct)}% left` : 'knocked out'}`).join(', ');
@@ -107,7 +117,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       arcadePickView({
         races: ARCADE_RACES,
         levels: ARCADE_AI_LEVELS.map((value) => ({ value, label: LEVEL_LABELS[value] })),
-        current: { ...lastPick, size: lastPick.partner ? '2' : '1', partner: partnerFor(lastPick.player, lastPick.partner) },
+        current: { ...lastPick, mode: lastPick.local ? 'local' : 'ai', size: lastPick.partner ? '2' : '1', partner: partnerFor(lastPick.player, lastPick.partner) },
         onStart: (v) => {
           lastPick = parsePick(v);
           startBattle();
@@ -132,9 +142,11 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
     const replay = r.replay;
     show(
       arcadeResultsView({
-        heading: OUTCOME_HEADINGS[r.outcome],
+        heading: r.pick.local ? LOCAL_HEADINGS[r.outcome] : OUTCOME_HEADINGS[r.outcome],
         summary:
-          (r.heroes
+          (r.pick.local
+            ? `Player 1 (${raceLabel(r.pick.player)}) against Player 2 (${raceLabel(r.pick.enemy)}). `
+            : r.heroes
             ? `Your team: ${team(r.heroes, 0)}. The AI's team (${LEVEL_LABELS[r.pick.level]}): ${team(r.heroes, 1)}. `
             : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. `) +
           (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : '') +
@@ -176,6 +188,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         host.id = 'game';
         battle.replaceChildren(host);
         game = createGame(host, launch);
+        if (pick.local) host.append(keysHint());
         host.append(...TOUCH.slice(0, pick.partner ? 6 : 5).map(touchButton));
       }))
       .catch((e: unknown) => {

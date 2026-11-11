@@ -123,11 +123,12 @@ export function heroesOf(view: RenderView, setup: MatchSetup): ArcadeHero[] {
 /** Launch data for the Arena: keyboard (team 0) against the Arcade AI; the recorder keeps the Arcade flag in its header. */
 export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOptions): ArenaLaunch {
   const setup = arcadeSetup(pick, seed);
+  const local = pick.local === true;
   const recorder = o.record ? new PlaytestRecorder(setup, o.cheats === true) : undefined;
   let view: RenderView | undefined;
   return {
     setup,
-    enemy: arcadeEnemy(pick, setup),
+    ...(local ? { local2: true } : { enemy: arcadeEnemy(pick, setup) }),
     ...(recorder ? { recorder } : {}),
     // Arcade Versus only: the 8-way aim arrow and the Arcade audio layers (WP-arcade-audio-layers, their own chunk, on
     // the battle's sound as it is now); the view is kept for the 2v2 results.

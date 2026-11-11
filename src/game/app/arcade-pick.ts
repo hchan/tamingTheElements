@@ -25,6 +25,8 @@ export interface ArcadePick {
    * 1v1. The AI's second race is drawn from the match seed (`enemyPartner` in `arcade-setup.ts`).
    */
   readonly partner?: CharacterId;
+  /** Local two-player: a second human (Player 2, `enemy` is their race) instead of the AI; 1v1 only; `level` is unused. */
+  readonly local?: true;
 }
 
 /** Form values as the picker sends them; `size` is '2' for a 2v2 tag team (anything else is 1v1). */
@@ -34,6 +36,8 @@ export interface PickForm {
   readonly level: string;
   readonly size?: string;
   readonly partner?: string;
+  /** 'local' for two players on this computer (anything else is the AI). */
+  readonly mode?: string;
 }
 
 const race = (raw: string | undefined, fallback: CharacterId): CharacterId => ARCADE_RACES.find((r) => r === raw) ?? fallback;
@@ -54,6 +58,6 @@ export function parsePick(raw: PickForm): ArcadePick {
     player,
     enemy: race(raw.enemy, DEFAULT_PICK.enemy),
     level: ARCADE_AI_LEVELS.find((l) => l === raw.level) ?? DEFAULT_PICK.level,
-    ...(raw.size === '2' ? { partner: partnerFor(player, raw.partner) } : {}),
+    ...(raw.mode === 'local' ? { local: true as const } : raw.size === '2' ? { partner: partnerFor(player, raw.partner) } : {}),
   };
 }

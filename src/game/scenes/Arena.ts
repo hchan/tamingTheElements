@@ -41,6 +41,7 @@ import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
 import type { AudioContextLike } from '../audio/audio-manager';
 import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
+import { P2_BINDINGS } from '../input/local-two';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
 import { counted, type ProbeCharacter } from '../platform/test-hook';
 import { getUiFlags } from '../platform/flags';
@@ -53,7 +54,7 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 const ROLLBACK_WINDOW = 6;
 import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion } from '../a11y/announcer';
 import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
-import { firstPad } from '../input/gamepad';
+import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
@@ -122,6 +123,7 @@ export class Arena extends Phaser.Scene {
   private cursor: ReplayCursor | undefined;
   private speed: 1 | 2 = 1;
   private keyboard: KeyboardAgent | undefined;
+  private second: KeyboardAgent | undefined;
   /** Online matches only: the lockstep session that owns stepping (docs/NETCODE.md). */
   private session: LockstepSession | undefined;
   /** Rollback only: shows each event id once, so a corrected payload does not replay a sound or effect. */
@@ -222,7 +224,20 @@ export class Arena extends Phaser.Scene {
       this.announcer = new Announcer((text, assertive) => { live.speak(text, assertive); }, () => performance.now());
       this.cleanups.push(() => { this.pauseDialog?.destroy(); live.destroy(); });
       this.announcer.say(MATCH_START);
-      this.agents = [keyboard, this.launch.enemy ?? (this.session ? undefined : new RandomBot('p2'))];
+      let second: KeyboardAgent | undefined;
+      if (this.launch.local2) {
+        // Player 2: its own keys and the second pad; pause, mute and cheats stay Player 1's (no onEffect, cheats off).
+        second = new KeyboardAgent({
+          capturable: () => true,
+          bindings: P2_BINDINGS,
+          gamepad: () => nthPad(typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null, 1),
+          cheatsEnabled: false,
+          arcade,
+        });
+        this.cleanups.push(second.attach(counted(window)));
+      }
+      this.second = second;
+      this.agents = [keyboard, second ?? this.launch.enemy ?? (this.session ? undefined : new RandomBot('p2'))];
       let labelled: { bindings: Bindings; labels: KeyLabels } | undefined;
       const labels = (): KeyLabels => {
         const b = keyboard.currentBindings();
@@ -549,6 +564,7 @@ export class Arena extends Phaser.Scene {
     else driver.pause('user');
     // A key held across the dialog must not replay on resume.
     this.keyboard?.releaseAll();
+    this.second?.releaseAll();
     if (driver.isPausedFor('user')) this.pauseDialog?.open();
     else this.pauseDialog?.close();
   }
@@ -647,6 +663,7 @@ export class Arena extends Phaser.Scene {
     this.cursor = undefined;
     this.driver = undefined;
     this.keyboard = undefined;
+    this.second = undefined;
     this.pauseDialog = undefined;
     this.announcer = undefined;
     this.view = undefined;

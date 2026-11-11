@@ -47,6 +47,8 @@ export interface ArenaLaunch {
   readonly setup: MatchSetup;
   /** Agent for the enemy side; the player side is always the keyboard. Absent when `playback` is set. */
   readonly enemy?: Agent;
+  /** Local two-player (Arcade Versus): a second KeyboardAgent (Player 2's keys, the second gamepad) drives side 1; no `enemy`. */
+  readonly local2?: boolean;
   readonly onEnd?: (end: MatchEnd) => void;
   /** Records the final command pair of every tick (only present when recording is enabled). */
   readonly recorder?: PlaytestRecorder;

@@ -111,3 +111,13 @@ export function firstPad(pads: ArrayLike<PadSnapshot | null> | null | undefined)
   }
   return null;
 }
+
+/** The `n`th (0-based) connected pad: Player 1 is the first, Player 2 the second (local two-player). */
+export function nthPad(pads: ArrayLike<PadSnapshot | null> | null | undefined, n: number): PadSnapshot | null {
+  let seen = 0;
+  for (let i = 0; pads && i < pads.length; i++) {
+    const p = pads[i];
+    if (p && p.connected !== false && seen++ === n) return p;
+  }
+  return null;
+}

@@ -1,6 +1,10 @@
 import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
 import { el } from '../dom';
 
+/** Key help for the two-player option (the defaults; Player 1's keys can be rebound on Key Bindings). */
+const P1_HELP = 'W A S D or arrows move, Space attack, Enter second attack, E dash, Q guard, X super, R weather, H charge, 3 tag';
+const P2_HELP = 'I J K L move, U attack, O second attack, Y dash, N guard, B super, T weather, G charge, V tag';
+
 /**
  * DOM of the Arcade Versus screens (FUN-DESIGN WP 11): the fighter picker and the results. Plain native controls (labelled
  * selects, buttons, links) in the existing menu classes, so keyboard, touch and the 44 px touch rule work without new CSS.
@@ -14,6 +18,8 @@ export interface PickValues {
   /** '1' (1v1) or '2' (2v2 tag team, WP-arcade-tag-view); the partner is the player's second race (2v2 only). */
   readonly size?: string;
   readonly partner?: string;
+  /** 'ai' (default) or 'local': two players on this computer. */
+  readonly mode?: string;
 }
 
 export interface PickViewOptions {
@@ -60,9 +66,16 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   );
   const races = o.races.map((r) => ({ value: r, label: raceLabel(r) }));
   const form = el('form', 'settingsForm');
+  const setText = (id: string, text: string): void => {
+    const l = form.querySelector(`label[for="${id.replace('Label', '')}"]`);
+    if (l) l.textContent = text;
+  };
+  const hint = el('p', undefined, `Two players share this keyboard. Player 1: ${P1_HELP}. Player 2: ${P2_HELP}. Each player may also use a gamepad (the first one connected is Player 1, the second Player 2).`);
+  hint.id = 'arcadeLocalHelp';
   const set = el('fieldset', 'settingsGroup');
   set.append(
     el('legend', 'heading', 'Fighters'),
+    select('mode', 'Opponent', [{ value: 'ai', label: 'Arcade AI' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode),
     select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }], o.current.size),
     select('player', 'Your race', races, o.current.player),
     select('partner', 'Your partner (2v2)', races, o.current.partner),
@@ -74,11 +87,17 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   start.id = 'arcadeStart';
   const back = el('a', 'menuButton', 'Back');
   back.href = '#main';
-  form.append(set, start, back);
+  form.append(set, hint, start, back);
   // The partner counts in 2v2 only: disabled in 1v1 (out of the Tab order and the form data). The AI's comes from the seed.
   const f = form.elements as unknown as Record<string, HTMLSelectElement>;
   const sync = (): void => {
-    (f['partner'] as HTMLSelectElement).disabled = f['size']?.value !== '2';
+    const local = f['mode']?.value === 'local';
+    (f['partner'] as HTMLSelectElement).disabled = local || f['size']?.value !== '2';
+    (f['size'] as HTMLSelectElement).disabled = local;
+    (f['level'] as HTMLSelectElement).disabled = local;
+    setText('arcadeEnemyLabel', local ? 'Player 2 race' : 'AI race');
+    setText('arcadePlayerLabel', local ? 'Player 1 race' : 'Your race');
+    hint.hidden = !local;
   };
   sync();
   form.addEventListener('change', sync);
