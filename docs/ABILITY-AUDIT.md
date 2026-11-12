@@ -1,0 +1,73 @@
+# Ability audit: inventory and balance (2026-11-12)
+
+Steps 1 and 3 of [ideas/brainstorm/ability-audit.md](../ideas/brainstorm/ability-audit.md). Read-only: no data, AI or baseline was changed. The graphics column is `TBD` until the screenshot pass (step 2).
+
+Sources: `src/core/data/abilities-a.ts`, `abilities-b.ts`, `characters.ts`, `arcade.ts`, `arcade-supers.ts`, `src/core/sim/arcade-numbers.ts`; runs `pnpm sim:match --tournament --json` (Classic, 2 seeds per pairing, scripted vs scripted), the same with `--seeds 6` (identical result, so the Classic scripted sim is deterministic per pairing and more seeds add nothing), `--ruleset arcade --seeds 4`, and `pnpm balance:compare` (all deltas +0.0 pp, 0 stalemates; `balance:record` not run).
+
+Units: damage is base (Classic) damage; DPS = damage / cooldown (a ceiling, not hit rate); speed is px per 20 ms tick (8 = 400 px/s); w x h are legacy px (80 px = one tile). "Arcade" notes list what differs under `rulesetArcade`: per-race `[hpPm, damagePm]` scale life and ability damage (table at the end), Snag replaces one slot of four heroes, supers and the shared actions exist.
+
+## Ability table
+
+| Hero (element, HP, speed) | Ability | Kind | Numbers | Balance finding | Graphics |
+|---|---|---|---|---|---|
+| Curomo (water, 100, 6) | Ice Shock | melee | 20 dmg, 1 s cd, max 2, 240x40 px, 250 ms delay; 20 DPS | Longest-reach melee on a 6-speed hero. Arcade: Curomo is the top race (87.5%), 100% vs 7 of 11 | TBD (known bad, see curomo-ability-visibility) |
+| Curomo | Shards of Ice | omni | 20 dmg x up to 8, 10 s cd, speed 10, 40x10; 16 DPS if all hit | Classic only (Arcade slot 1 becomes Snag). 3.8% of Classic damage; payoff needs all 8 to land | TBD |
+| Curomo (Arcade) | Snag (slot 1) | rope root | see Shared | see Shared | TBD |
+| Cyclonius (air, 100, 7) | Tornado | range (stun) | 0 dmg, 6 s cd, 3 s duration, speed 8, 20x60; Arcade: 60-tick stun | 0.0% of damage in every run: dominated or unused by the AI, its value is the follow-up Wind Cone | TBD |
+| Cyclonius | Wind Cone | range | 13 dmg, 0.4 s cd, max 4, speed 8, 25x10; 32.5 DPS | 10.5% of Classic damage, 6.8% Arcade; fine. Classic 77%, Arcade 37.5% | TBD |
+| Echo (air, 100, 6) | Fade | buff | 10 s cd, 3 s, translucent (shots pass through) | Classic only (Arcade slot 0 becomes Snag). Defensive; damage share not measurable | TBD |
+| Echo | Hurricane | melee DOT | 13 dmg every 500 ms for 3 s (up to 6 hits), 6 s cd, 240x240 follows caster; Arcade: damage halves each hit, strength forced light | 4.1% Arcade damage. Echo is last-but-one Classic (18%) and last Arcade (34%) | TBD |
+| Echo (Arcade) | Snag (slot 0) | rope root | see Shared | see Shared | TBD |
+| Fiara (fire, 130, 7) | Fire Heal | heal | +10 HP, 40 s cd | Heals 10 of 130 HP once per 40 s: about 8% of life, the weakest utility in data (the AI rarely survives long enough). Fiara Classic 32%, Arcade 45% | TBD |
+| Fiara | Fireball | range | 15 dmg, 0.6 s cd (Arcade 26 ticks), max 2, speed 8, 25x12; 25 DPS | 7.5% Classic damage; lowest ranged DPS of the fire heroes, the Arcade damagePm is 1450 to compensate | TBD |
+| Ishimi (water, 100, 7) | Circus of Slime | omni | 16 dmg x up to 4, 10 s cd, speed 5, 40x20; 6.4 DPS | 1.4% Classic, 4.0% Arcade. Slowest projectile in the game | TBD |
+| Ishimi | Slime Blast | range | 10 dmg, 1.5 s cd, max 3, speed 8, 40x20; 6.7 DPS | Lowest sustained damage of any hero (BALANCE.md). Ishimi is 0% Classic (0 of 22), 57% Arcade after a 6400/1550 re-fit | TBD |
+| Lavax (fire, 100, 6) | Crimson Fire | range | 13 dmg, 0.4 s cd (Arcade 18 ticks), max 2, speed 10, 80x40; 32.5 DPS | Widest projectile (80x40), 7.8% Classic damage. 45% Classic, 47% Arcade; most stalemates in Arcade (7 of 13) | TBD |
+| Lavax | Fire Dance | buff | speed +2 for 5 s, 16 s cd | Pure mobility; not measurable by damage | TBD |
+| Morblass (water, 100, 7) | Ice Blast | debuff proj | 15 dmg, speed 8, 60x60, 6 s cd; slow -2 for 3 s; 2.5 DPS | 1.8% Classic, 0.6% Arcade damage: the weakest damage source of any playable ability; the slow is the only value | TBD |
+| Morblass | Icicles | range | 10 dmg, 0.3 s cd, max 3, speed 10, 10x25; 33 DPS | 6.1% Classic, 5.0% Arcade. Arcade 39% | TBD |
+| Pax (earth, 150, 5) | Adrenaline | buff | speed +5, 25% damage reduction, 3 s, 15 s cd | Helps the slowest hero close in; Pax 45% Classic, 44% Arcade | TBD (known bad, see pax-look-fix) |
+| Pax | Ground Shock | melee omni | 25 dmg, 3 s cd, max 1, 240x240, 250 ms delay; 8.3 DPS | 7.3% Arcade damage; the lowest-DPS melee, relies on a huge radius | TBD |
+| Rokcore (earth, 120, 7) | Rock Armour | buff | 75% damage reduction, 3 s, 15 s cd | Strongest defensive buff in data. Rokcore is 82% Classic, 48% Arcade (life 2470/damage 690 pm) | TBD |
+| Rokcore | Rock Pellet | range | 20 dmg, 0.4 s cd, max 3, speed 9, 40x10; 50 DPS | 10.5% Classic, 7.2% Arcade. Second-best ranged DPS, and its 20-tick cadence clashes with Crimson Fire | TBD |
+| Sindarosa (fire, 100, 7) | Fire Blast | range | 40 dmg, 0.6 s cd, max 2, speed 8, 75x15; 66.7 DPS | 13.1% of Classic damage, top ability. Sindarosa is 100% Classic (22 of 22); 44% Arcade after a 2620/650 re-fit. Heavy-tier (40 >= 30) stun | TBD |
+| Sindarosa | Translucent Flame | buff | 6 s cd, 1.5 s translucent | Shortest invulnerability window; cheap, fine | TBD |
+| Treenoc (earth, 90, 6) | Entangling Vines (Classic) / Snag (Arcade, slot 0) | melee root | Classic: 0 dmg, 5 s cd, 3 s root, 360x40; Arcade: see Shared | Classic 0 damage and the AI cannot chain it: Treenoc 18%. Arcade 60% (Snag 11.6% of damage, the biggest single non-super ability) | TBD |
+| Treenoc | Strangling Branches | melee | 20 dmg, 1 s cd, max 2, 120x40; 20 DPS | 5.5% Arcade. Shortest-reach melee | TBD |
+| Wispera (air, 100, 5) | Sonar Blast (Classic) / Snag (Arcade, slot 0) | range | 40 dmg, 0.6 s cd, max 2, speed 8, 20x20; 66.7 DPS | Classic 82% (ties for 2nd): same DPS as Fire Blast on a small hitbox. Arcade drops it | TBD |
+| Wispera | Steal Health | melee heal | 10 dmg, 1 s cd, max 2, 240x40; heals the damage dealt; 10 DPS | 4.2% Arcade damage; Arcade 57% on 7900/1400 | TBD |
+| Eternal Void (void, 1000, 8) | Chaos Bolt | range | 40 dmg, 0.6 s cd, max 3, speed 10, 75x15 | Boss only (Arcade 580/1000, tuned by boss-probe, not in the tournament) | TBD |
+| Eternal Void | Chaos Orb | range | 140 dmg, 5 s cd, max 1, speed 2, 75x75 | Boss only; very slow | TBD |
+| Dummy (void, 100, 0.2) | Stick | range | 10 dmg, 2 s cd, speed 8, 25x10 | Training target | TBD |
+| none (unowned) | Hurl Rock | range | 40 dmg, 0.5 s cd, max 2, speed 8, 35x35; 80 DPS | On no hero: dead data (highest DPS in data) | n/a |
+| none (unowned) | Elemental Advantage Fire Cone | range | 80 dmg, 1 s cd, max 3, 100x80, 3 s | On no hero (text: only usable on water elementals): dead data | n/a |
+| Shared | Capture | capture | kills anything hit (Number.MAX_VALUE), 5 s cd, speed 8, 40x40 | Classic mechanic; Arcade replaces the concept with Snag (see snag-ability) | TBD |
+| Shared (Arcade) | Snag | rope root | 30 dmg (x damagePm), range 240 px x 40 px, cd 400 ticks (8 s), 60-tick root, 20-tick hit-stun, 75-tick immunity after; a guard wastes it; fire shots and Sun free the target | 4 heroes. 11.6% of all Arcade damage, 2x any other ability. Results by holder: Curomo 87.5%, Treenoc 60%, Wispera 57%, Echo 34% | TBD |
+| Shared (Arcade) | Super (meter 1000, 3 bars) | super | freeze 40 ticks, 8 ticks invulnerable after; beam 12 per 6 ticks x 5 = 60 (160 px, Hellfire 200); vortex 9 per 6 ticks x 6 = 54 (480 box); quake 3 rings of 20 = 60 (160/320/480, Titan Slam x1.25); tide 50 wall (120 px, Slime Tsunami 180) + slow 40 ticks | 15.9% of Arcade damage, the largest single source; extras per race: drain (Phoenix 100%, Siren 150%), armour 100 ticks (Mountain Breaker), root 40/30 ticks (Overgrowth, Glacier Crash), 6 icicles (Hailstorm), speed +2 for 150 ticks (Crimson Tide), translucent 60 ticks (Phantom Squall) | TBD |
+| Shared (Arcade) | Weather | field | meter 50, 16-tick recovery, 500 ticks, x1.2 favoured / /1.2 counter, charge 1000 (ranged +30 per cast, others +4 per walked tick), 50-tick lockout; secondary effects data OFF | Effects off (`WEATHER_EFFECTS_ON = false`); not exercised by the tournament AI | TBD |
+| Shared (Arcade) | Charge | dash attack | 12 ticks, speed x5, 8 dmg, 20-tick stun, 300-tick cd, meter 40 | 0.8% of damage: nearly never lands or is not used by the AI | TBD |
+| Shared (Arcade) | Dash | movement | 12 ticks, speed x3, invulnerable ticks 2 to 7, 6 recovery, 30-tick cd, double tap 12 ticks | Perfect dodge gives 100 meter; not measurable by damage | TBD |
+| Shared (Arcade) | Guard / Parry | defence | chip 250 pm, block-stun 8, guard max 1000, drain 8000 pm of max HP, regen 5 per tick, break stun 60; parry window 8 ticks (reflects projectiles, stuns melee 20, +150 meter), lock 20 | Not measured (the scripted AI does not parry) | TBD |
+
+## Balance summary
+
+Classic (identical at 2 and 6 seeds): Sindarosa 100%, Rokcore 82, Wispera 82, Cyclonius 77, Curomo 55, Lavax 45, Morblass 45, Pax 45, Fiara 32, Echo 18, Treenoc 18, Ishimi 0. 396 of 396 matches end in KO, mean 326 ticks (6.5 s). The scripted AI is deterministic, so almost every pairing is 0 or 1 (0.5 appears only on a side split); the matrix reads as a rock-paper-scissors dataset rather than statistics. Element matrix (row beats column, Classic): fire 50/61/67/56, air 39/50/67/78, earth 33/33/50/78, water 44/22/22/50.
+
+Arcade (4 seeds, 264 matches, Normal AI): Curomo 87.5%, Treenoc 60, Ishimi 57, Wispera 57, Rokcore 48, Lavax 47, Fiara 45, Pax 44, Sindarosa 44, Morblass 39, Cyclonius 38, Echo 34. Spread 53 pp, with 13 stalemates (5%; lavax has 7: vs Sindarosa 2, Pax 2, Morblass, Rokcore, Treenoc; Ishimi 4) and mean round 5345 ticks (about 107 s, the longest pairings 10 600 to 12 500 ticks, Fiara vs Wispera, Fiara vs Treenoc, Fiara vs Pax, Echo vs Pax). Arcade matchups worth noting: Curomo beats Echo, Fiara, Ishimi, Lavax, Morblass, Sindarosa and Wispera 100% and Cyclonius 88%, but loses to Treenoc 25% (Treenoc beats Curomo 75%, Morblass and Pax 100%); Fiara beats Wispera and Cyclonius 100%; Wispera beats Echo, Ishimi, Pax, Rokcore and Treenoc 100%; Echo scores 0% against Curomo, Fiara, Ishimi, Sindarosa and Wispera.
+
+Damage share (Arcade): Super 15.9, Snag 11.6, Ground Shock 7.3, Rock Pellet 7.2, Fire Blast 6.9, Wind Cone 6.8, Ice Shock 6.3, Fireball 6.0, Strangling Branches 5.5, Icicles 5.0, Crimson Fire 4.8, Steal Health 4.2, Hurricane 4.1, Circus 4.0, Slime Blast 2.3, Charge 0.8, Ice Blast 0.6, Tornado 0.0.
+Damage share (Classic): melee/status 23.7 (not split), Fire Blast 13.1, Wind Cone 10.5, Rock Pellet 10.5, Sonar Blast 10.3, Crimson Fire 7.8, Fireball 7.5, Icicles 6.1, Shards 3.8, Slime Blast 3.4, Ice Blast 1.8, Circus 1.4, Tornado 0.0 (note: the sim emits no events for melee hits, heals or buffs, so Classic shares are approximate).
+
+Arcade per-race numbers (`ARCADE_RACE_NUMBERS`, `[hpPm, damagePm]`, effective HP = max health x hpPm / 1000, so Curomo 630 HP, Pax 795, Rokcore 296, Sindarosa 262): curomo 6300/1560, cyclonius 4490/1010, echo 5300/1530, fiara 5140/1450, ishimi 6400/1550, lavax 3500/870, morblass 3370/930, pax 5300/1580, rokcore 2470/690, sindarosa 2620/650, treenoc 6500/1270, wispera 7900/1400. The "hp to damage" ratio is about 4 for all; the effective lives differ by 3x, so a hero's glass-cannon level, not its abilities, now carries most of the balance.
+
+## Prioritised findings
+
+1. **Arcade Curomo is an outlier (87.5%, 100% vs 7 of 11 races).** Ice Shock (240 px reach, 20 base x 1.56) plus Snag (30 x 1.56 and a root) on 630 HP. Re-fit hpPm/damagePm up (or cut Ice Shock reach). Idea: curomo-arcade-nerf.
+2. **Snag is 11.6% of all Arcade damage with four holders at 34 to 87%.** Its 30 damage is scaled by each holder's damagePm (1270 to 1560), so it is stronger on high-damagePm heroes. Consider a flat Snag damage. Idea: snag-damage-flat.
+3. **Echo, Cyclonius and Morblass trail (34, 38, 39% Arcade; Echo 18% Classic).** Echo's Hurricane DOT halves each hit and Fade is gone in Arcade; Cyclonius' Tornado deals 0 and the AI does not combo it; Morblass' Ice Blast is the weakest damage in the game (0.6%). Ideas: echo-arcade-buff, tornado-combo-ai, ice-blast-rework.
+4. **Supers are 15.9% of Arcade damage.** The meter fills at 800 pm of damage dealt, so supers lead the damage table; all four archetypes deal 54 to 60 base damage in a 30 to 36 tick window plus a freeze. Check super tuning against hit counts before adding more. Idea: super-damage-share.
+5. **Classic spread is 100% to 0% (Sindarosa vs Ishimi).** Classic data is legacy and frozen behind goldens and the baseline; Ishimi's 6.7 DPS and Sindarosa's 66.7 DPS (with 40-damage heavy stun) are legacy values. Only change as part of the one-game merge. Idea: classic-sindarosa-ishimi-gap.
+6. **Stalemates: Lavax pairs (7 of 13) and Ishimi (4).** Slow or wide projectiles that destroy each other (Crimson Fire 80x40 at 18 ticks, Slime/Circus) plus 107 s mean rounds. Idea: arcade-stalemate-lavax-ishimi.
+7. **Unmeasurable abilities: Fire Heal, Rock Armour, Adrenaline, Fire Dance, Translucent Flame, Fade, Dash, Parry, Weather.** The sim emits no use or uptime events for them and the scripted AI barely uses Dash, Parry or Weather, so their value cannot be tested. Idea: ability-usage-metrics.
+8. **Dead or weak data.** Hurl Rock (80 DPS, no owner), Elemental Advantage Fire Cone, Capture, Stick, Charge (0.8%), Weather secondary effects (off), Fire Heal (10 HP per 40 s). Idea: dead-ability-cleanup and fire-heal-buff.
+9. **Seeds are not independent in Classic.** The scripted sim gives the same result at 2 and 6 seeds; use `--agents` variants or Arcade (which varies the AI personality) for statistics. Idea: ability-usage-metrics (include it).
