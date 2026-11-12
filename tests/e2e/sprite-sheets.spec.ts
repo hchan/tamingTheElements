@@ -72,14 +72,14 @@ async function face(page: Page, id: number, dir: number): Promise<void> {
 }
 const drawnAs = async (page: Page, id: number): Promise<Drawn | undefined> => (await probe(page))?.characters.find((c) => c.id === id);
 
-test('the shipped manifest only loads atlases of characters in the match (the demo has Fiara, Pax and Curomo: all rigged, none drawn from legacy)', async ({ page }) => {
+test('the shipped manifest only loads atlases of characters in the match (the demo has Fiara, Pax, Curomo and Cyclonius: all rigged, none drawn from legacy)', async ({ page }) => {
   const { errors, sheetRequests } = collect(page);
   await openDemo(page);
   for (let i = 0; i < 3; i++) await page.evaluate('window.__TTE__.arena.step(10)');
   const p = await probe(page);
-  expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax' && s !== 'curomo')).toEqual([]);
-  expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax') && !t.endsWith(':curomo')).sort()).toEqual([]);
-  expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png') || u.endsWith('img/sheets/curomo.png'))).toBe(true);
+  expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax' && s !== 'curomo' && s !== 'cyclonius')).toEqual([]);
+  expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax') && !t.endsWith(':curomo') && !t.endsWith(':cyclonius')).sort()).toEqual([]);
+  expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png') || u.endsWith('img/sheets/curomo.png') || u.endsWith('img/sheets/cyclonius.png'))).toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -126,7 +126,7 @@ test('Morblass (?p1=morblass) is drawn from its rigged atlas in the real game', 
   expect(errors).toEqual([]);
 });
 
-for (const sprite of ['rokcore', 'curomo', 'lavax', 'sindarosa']) {
+for (const sprite of ['rokcore', 'curomo', 'lavax', 'sindarosa', 'wispera', 'cyclonius']) {
   test(`${sprite} (?p1=${sprite}) is drawn from its rigged atlas in the real game`, async ({ page }, info) => {
     const { errors } = collect(page);
     await page.goto(`/?ff=arenaDemo&manual=1&seed=7&p1=${sprite}`);
