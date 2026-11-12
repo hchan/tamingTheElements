@@ -126,7 +126,7 @@ test('Morblass (?p1=morblass) is drawn from its rigged atlas in the real game', 
   expect(errors).toEqual([]);
 });
 
-for (const sprite of ['rokcore', 'curomo', 'lavax', 'sindarosa', 'wispera', 'cyclonius']) {
+for (const sprite of ['rokcore', 'curomo', 'lavax', 'sindarosa', 'wispera', 'cyclonius', 'ishimi', 'echo']) {
   test(`${sprite} (?p1=${sprite}) is drawn from its rigged atlas in the real game`, async ({ page }, info) => {
     const { errors } = collect(page);
     await page.goto(`/?ff=arenaDemo&manual=1&seed=7&p1=${sprite}`);
