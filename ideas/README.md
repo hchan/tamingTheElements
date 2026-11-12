@@ -4,6 +4,7 @@ One markdown file per idea, decision or planned work package, so the queue lives
 
 Three folders say where an idea stands:
 
+- `epics/`: themed groups (`status: epic`); each lists its member ideas by link, so an agent can take a whole theme. Members stay in their own folder.
 - `brainstorm/`: not started (`status: idea`, or `planned` once the owner approved it).
 - `in-progress/`: being built (`status: in-progress`).
 - `done/`: shipped (`status: done`); kept for history.
