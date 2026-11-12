@@ -106,3 +106,22 @@ test('a fixture sheet: own row, mirrored row, legacy fallback, and only the char
   expect(sheetRequests.map((u) => u.replace(/^.*\/assets\//, ''))).toEqual(['img/sheets/curomo.png']);
   expect(errors).toEqual([]);
 });
+
+test('Morblass (?p1=morblass) is drawn from its rigged atlas in the real game', async ({ page }, info) => {
+  const { errors } = collect(page);
+  await page.goto('/?ff=arenaDemo&manual=1&seed=7&p1=morblass');
+  await page.locator('#game canvas').waitFor();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate('window.__TTE__.arena.step(1)');
+  await expect.poll(async () => (await probe(page))?.characters.length ?? 0).toBe(2);
+  const morb = (await probe(page))?.characters.find((c) => c.texture.endsWith(':morblass'));
+  expect(morb, JSON.stringify((await probe(page))?.characters)).toBeDefined();
+  const id = morb?.id ?? -1;
+  await face(page, id, 0);
+  await expect.poll(async () => (await drawnAs(page, id))?.texture).toBe('sheet:morblass');
+  await page.screenshot({ path: info.outputPath('morblass-idle-e.png') });
+  await face(page, id, 7);
+  await expect.poll(async () => (await drawnAs(page, id))?.frame).toMatch(/^idle\/SE#[0-3]$/);
+  await page.screenshot({ path: info.outputPath('morblass-idle-se.png') });
+  expect(errors).toEqual([]);
+});
