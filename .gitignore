@@ -42,3 +42,4 @@ user.properties
 
 # Generated reports (balance compare)
 /out/
+__pycache__/
