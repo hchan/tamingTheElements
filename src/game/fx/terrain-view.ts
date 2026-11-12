@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
+import { mountStageBackdrop, type StageBackdrop } from './terrain-stage';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
 import {
   MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_DARK, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
@@ -96,6 +97,7 @@ export function mountTerrainView(
   let reduced = prefs().reduceMotion;
   let highContrast = prefs().highContrast;
   const tiles: TileFloor = mountTileFloor(arena, base, seed, TILES_DEPTH);
+  const stageArt: StageBackdrop = mountStageBackdrop(arena, base);
   let parts:
     | {
       bg: Phaser.GameObjects.Image | undefined; next: Phaser.GameObjects.Image | undefined;
@@ -281,6 +283,7 @@ export function mountTerrainView(
     drawn.glow = glowAlpha(clock, drawn.alpha, reduced);
     p.floor.setAlpha(drawn.alpha);
     tiles.update(stage, drawn.alpha);
+    stageArt.update(stage, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
     p.glow.setAlpha(drawn.glow);
     for (const t of p.labels) t.setAlpha(drawn.alpha);
     // Particles (motion only) and sparks.
@@ -331,6 +334,7 @@ export function mountTerrainView(
     hud.events.off('shutdown', off).off('destroy', off);
     states.delete(arena);
     tiles.destroy();
+    stageArt.destroy();
     if (parts) {
       for (const o of [parts.bg, parts.next, parts.glow, parts.floor, parts.fx, parts.plate, parts.badge, ...parts.labels]) o?.destroy();
     }

@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { arcadePlayfield } from '@core/index';
+import { WALL_Y } from './terrain-stage-layout';
 import { TILE_COLUMNS, TILE_SIZE, TILE_TEXTURE, TILE_URL, tileGrid } from './terrain-tiles';
 
 /**
@@ -14,6 +15,8 @@ const COLS = Math.ceil(arcadePlayfield().w / TILE_SIZE);
 const ROWS = Math.ceil(720 / TILE_SIZE);
 /** The grid is centred on the arena (its overhang is cropped equally top and bottom), so its point symmetry is the arena's. */
 const ORIGIN_Y = (720 - ROWS * TILE_SIZE) / 2;
+/** The top rows are left out: the stage backdrop (terrain-stage.ts) shows there, above the wall at WALL_Y. */
+const BAND_ROWS = Math.round((WALL_Y - ORIGIN_Y) / TILE_SIZE);
 /** A little of the stage backdrop shows through, so the floor sits in the scene instead of covering it. */
 const FLOOR_ALPHA = 0.9;
 
@@ -38,14 +41,14 @@ export function mountTileFloor(scene: Phaser.Scene, base: string, seed: number, 
   const rows = (stage: number): number[][] => {
     const grid = tileGrid(stage, seed, COLS, ROWS);
     const first = (stage - 1) * TILE_COLUMNS;
-    return Array.from({ length: ROWS }, (_, y) => grid.slice(y * COLS, (y + 1) * COLS).map((k) => first + k));
+    return Array.from({ length: ROWS - BAND_ROWS }, (_, y) => grid.slice((y + BAND_ROWS) * COLS, (y + BAND_ROWS + 1) * COLS).map((k) => first + k));
   };
 
   const build = (stage: number): void => {
     if (!layer) {
       map = scene.make.tilemap({ data: rows(stage), tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
       const tileset = map.addTilesetImage(TILE_TEXTURE, TILE_TEXTURE, TILE_SIZE, TILE_SIZE, 0, 0, 0);
-      layer = (tileset && map.createLayer(0, tileset, 0, ORIGIN_Y)) || undefined;
+      layer = (tileset && map.createLayer(0, tileset, 0, ORIGIN_Y + BAND_ROWS * TILE_SIZE)) || undefined;
       layer?.setDepth(depth);
     } else layer.putTilesAt(rows(stage), 0, 0);
     built = stage;
