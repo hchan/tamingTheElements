@@ -63,11 +63,48 @@ lavax 12.5, sindarosa 10.6.
   (1.1 vs 0.08 a match): rounds drag in 3v3.
 - Tag swaps are used heavily (13 and 23 a match; tag-ins also include the forced swap on a KO, not separated here) and nearly every match
   uses them (9 of 1584 with none).
-- Not measured: which swaps are voluntary vs forced, bench recovery effects, 2v2 with random partners.
+- Not measured here: which swaps are voluntary vs forced, bench recovery effects. Random partners: section 3.
+
+## 3. Random partners (re-measure, same day)
+
+Harness mode `partners` (`tsx tools/sim/snag-trap-teams.mts partners 2|3 24 out.json`, tables by `tsx tools/sim/summarize-partners.mts out.json`).
+Same 66 pairings x 24 seeds = 1584 matches, Arcade, Normal AI, sides alternate. The two leads are the pairing; every partner is drawn from a
+seeded sfc32 stream (`seedSfc32(matchSeed ^ pairing, 'partners')`) among races on neither roster, so all 2N races on a match are distinct and
+the run is reproducible (a 1-seed rerun is byte-identical). `tools/sim/run-match.ts` gained an optional `rosterA` (tools only; `rosterB` existed).
+"On roster" = team win rate over every roster the race is on, as lead or partner (about 500 to 820 rosters a race); lead = only as the pairing's lead (264 each).
+
+| | 2v2 | 3v3 |
+|---|---|---|
+| KO / stalemate / timeout | 1573 / 11 / 0 | 1575 / 9 / 0 |
+| Tags a match | 12.9 | 24.9 |
+| Round clock expiries a match | 0.17 | 1.48 |
+| Length p50 / p90 | 190 s / 277 s | 259 s / 389 s |
+| On-roster spread | **20.6% (lavax) to 77.0% (wispera)** = 56 pp | **22.0% (lavax) to 71.3% (wispera)** = 49 pp |
+
+On-roster win %, 2v2: wispera 77.0, curomo 57.1, morblass 55.9, sindarosa 55.6, treenoc 55.5, pax 51.4, fiara 50.6, ishimi 50.6, echo 46.0,
+rokcore 42.5, cyclonius 33.4, lavax 20.6.
+
+On-roster win %, 3v3: wispera 71.3, curomo 57.2, morblass 56.8, ishimi 55.3, fiara 53.3, pax 53.0, sindarosa 52.0, treenoc 51.7, echo 47.9,
+rokcore 41.3, cyclonius 35.2, lavax 22.0.
+
+- The 10.6 to 85.2% fixed-partner spread was mostly roster luck, as suspected: pax (81% fixed 3v3) is 53% and sindarosa (11%) is 52% once partners
+  vary. Fixed-partner 2v2 and 3v3 rankings barely agreed; random ones agree closely (same top 1, same bottom 3: wispera, then rokcore,
+  cyclonius, lavax last), so the per-race effect is real and stable across team sizes.
+- A real spread remains: about 50 pp, wider than 1v1 (41 to 56%). Two outliers carry it: **wispera** (71 to 77%) and **lavax** (21 to 22%); the
+  middle nine races sit in 46 to 57%. Wispera as a partner is a strong carry: best pairs are X+wispera at 80 to 95% (fiara+wispera 94.6% in 2v2,
+  morblass+wispera 83.7% in 3v3). Lavax drags any roster to 6 to 20% (ishimi+lavax 6.3% in 2v2, cyclonius+lavax 7.8% in 3v3).
+- Lead-only rates agree with on-roster rates within about 8 pp (wispera 78, lavax 19 to 22), so the effect is the race's kit, not a leader
+  bonus. Rokcore's lead rate (34 to 36) is below its on-roster rate (41 to 43): it is a slightly better partner than lead.
+- Clock expiries and stalemates: 3v3 still drags (1.5 expiries a match vs 0.17); stalemates 0.6 to 0.7%, no match timeouts.
+- Caveats: 24 seeds a pairing, each roster drawn once, so a pair table row has about 40 to 160 matches (one standard error about 4 to 8 pp);
+  pair synergy is noisy and only the extremes above are read. The scripted agent is the same Normal AI for every roster.
 
 ## Follow-up ideas (each its own file)
 - [snag-trap-ai-combo](snag-trap-ai-combo.md): teach the AI to Snag into its own trap (or lay a trap, then rope the foe over it).
 - [control-streak-8s-investigation](control-streak-8s-investigation.md): longest no-control streak is 8.4 s; find what stacks past the 3 s cap.
-- [team-mode-3v3-spread](team-mode-3v3-spread.md): 3v3 spans 10.6% to 85.2% by roster; randomise partners and re-fit.
-- [team-harness-random-partners](team-harness-random-partners.md): the fixed-partner harness confounds race with roster.
+- [team-mode-3v3-spread](team-mode-3v3-spread.md): re-measured with random partners: still about 50 pp, from two outlier races.
+- [team-harness-random-partners](team-harness-random-partners.md): done (mode `partners`); the pair-synergy table needs more seeds.
 - [tag-swap-forced-vs-voluntary](tag-swap-forced-vs-voluntary.md): split tag-ins in fun-metrics and judge whether tag is overused.
+- [wispera-team-dominance](wispera-team-dominance.md): wispera is on the winning roster 71 to 77% of the time in teams.
+- [lavax-team-weakness](lavax-team-weakness.md): lavax is 21 to 22% in teams and sinks any roster it joins.
+- [team-pair-synergy-more-seeds](team-pair-synergy-more-seeds.md): rerun `partners` at 200+ seeds to make the pair table readable.

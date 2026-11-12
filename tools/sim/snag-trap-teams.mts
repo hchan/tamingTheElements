@@ -1,7 +1,11 @@
 // Analysis harness (ideas/brainstorm/snag-trap-and-team-modes-findings.md); read-only, no sim change.
 // usage (repo root): tsx tools/sim/snag-trap-teams.mts snag <seeds> <out.json>
 //                    tsx tools/sim/snag-trap-teams.mts teams <2|3> <seeds> <out.json>
+//                    tsx tools/sim/snag-trap-teams.mts partners <2|3> <seeds> <out.json>
 // snag: 1v1 Arcade round robin (Normal AI); measures Snag-then-trap and longest no-control streaks.
+// partners: like teams, but both rosters are drawn per match from a seeded sfc32 stream (seedSfc32(matchSeed ^ pairing, 'partners')): the
+//   leads are the pairing, the partners are distinct random races not on either roster. Reports per-race effect (team win rate over every
+//   roster the race is on, as lead or partner), lead-only rate, and a same-team pair table. Deterministic: same args, same output.
 // teams: 2v2 / 3v3 Arcade round robin via runMatch; win rate per race, endReason, tags, stalemates.
 import { writeFileSync } from 'node:fs';
 const R = process.cwd() + '/';
@@ -16,6 +20,7 @@ const { SimEventKind: K } = await import(R + 'src/core/sim/events.ts');
 const { ARCADE_E, ArcadeE } = await import(R + 'src/core/sim/state.ts');
 const { now } = await import(R + 'src/core/sim/clock.ts');
 const hit = await import(R + 'src/core/sim/systems/arcade/hit.ts');
+const { seedSfc32 } = await import(R + 'src/core/rng/seed.ts');
 const mode = process.argv[2];
 const RACES: string[] = rm.RACES;
 const inc = (o: any, k: string, v = 1) => { o[k] = (o[k] ?? 0) + v; };
@@ -94,5 +99,32 @@ if (mode === 'snag') {
   }
   tot.secs.sort((x: number, y: number) => x - y); tot.secsP50 = tot.secs[tot.secs.length >> 1]; tot.secsP90 = tot.secs[Math.floor(tot.secs.length * 0.9)]; delete tot.secs;
   writeFileSync(process.argv[5] ?? 'teams.json', JSON.stringify({ size, rows, tot }, null, 1));
+}
+else if (mode === 'partners') {
+  const size = Number(process.argv[3]) as 2 | 3, seeds = Number(process.argv[4] ?? 24);
+  const rows: Record<string, any> = Object.fromEntries(RACES.map((r) => [r, { lead: 0, leadW: 0, any: 0, anyW: 0, draws: 0 }]));
+  const pairs: Record<string, { g: number; w: number }> = {};
+  const tot: any = { n: 0, ko: 0, timeout: 0, stalemate: 0, draws: 0, tags: 0, timeOvers: 0, secs: [] as number[], seeds, size };
+  for (let i = 0; i < RACES.length; i++) for (let j = i + 1; j < RACES.length; j++) for (let k = 0; k < seeds; k++) {
+    const a = RACES[i]!, b = RACES[j]!, seed = rm.matchSeed(1, k), rng = seedSfc32(seed ^ (i * 64 + j), 'partners');
+    const pool = RACES.filter((r) => r !== a && r !== b);
+    const draw = (): string => pool.splice(rng.nextU32() % pool.length, 1)[0]!; // no repeats across the two rosters
+    const rosterA = [a], rosterB = [b];
+    for (let p = 1; p < size; p++) { rosterA.push(draw()); rosterB.push(draw()); }
+    const r = rm.runMatch({ raceA: a, raceB: b, rosterA, rosterB, agentA: 'scripted', agentB: 'scripted', seed, aIsTeam0: k % 2 === 0, level: 1, difficulty: 1, ruleset: 'arcade', teamSize: size, aiLevel: 3 });
+    tot.n++; tot[r.endReason]++; tot.secs.push(r.ticks / 50);
+    const f = r.fun; if (f) { tot.tags += f.tags; tot.timeOvers += f.timeOvers; }
+    const res = r.winner === 'a' ? 1 : r.winner === 'b' ? -1 : 0; if (res === 0) tot.draws++;
+    for (const [roster, sign] of [[rosterA, 1], [rosterB, -1]] as const) {
+      const won = res === sign;
+      rows[roster[0]!].lead++; if (won) rows[roster[0]!].leadW++; if (res === 0) rows[roster[0]!].draws++;
+      for (const m of roster) { rows[m].any++; if (won) rows[m].anyW++; }
+      for (let x = 0; x < roster.length; x++) for (let y = x + 1; y < roster.length; y++) {
+        const key = [roster[x]!, roster[y]!].sort().join('+'); const pr = (pairs[key] ??= { g: 0, w: 0 }); pr.g++; if (won) pr.w++;
+      }
+    }
+  }
+  tot.secs.sort((x: number, y: number) => x - y); tot.secsP50 = tot.secs[tot.secs.length >> 1]; tot.secsP90 = tot.secs[Math.floor(tot.secs.length * 0.9)]; delete tot.secs;
+  writeFileSync(process.argv[5] ?? 'partners.json', JSON.stringify({ size, rows, pairs, tot }, null, 1));
 }
 console.log('done');

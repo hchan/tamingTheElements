@@ -290,6 +290,8 @@ export interface MatchOptions {
   readonly teamSize?: 1 | 2 | 3;
   /** Explicit roster of side B (boss probe, `tools/sim/boss-probe.ts`): replaces B's `teamSize` partners; side A is unchanged. */
   readonly rosterB?: readonly string[];
+  /** Explicit roster of side A (random-partner harness, `tools/sim/snag-trap-teams.mts partners`): replaces A's `teamSize` partners. */
+  readonly rosterA?: readonly string[];
   /**
    * AI level 1..5 (default 3, Normal): the Arcade AI knobs (FUN-DESIGN 2.11, `arcadeLevel`). Classic ignores it.
    */
@@ -339,7 +341,7 @@ export function runMatch(o: MatchOptions): MatchResult {
       character: characterId(r),
       xp,
     }));
-  const rosterA = roster(o.raceA);
+  const rosterA = o.rosterA === undefined ? roster(o.raceA) : o.rosterA.map((r) => ({ character: characterId(r), xp }));
   const rosterB = o.rosterB === undefined ? roster(o.raceB) : o.rosterB.map((r) => ({ character: characterId(r), xp }));
   const setup: MatchSetup = {
     simVersion: SIM_VERSION,
