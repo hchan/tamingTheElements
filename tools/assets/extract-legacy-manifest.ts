@@ -36,6 +36,7 @@ function load(file: string, name: string): unknown {
   return Global[name];
 }
 
+const MAP_REDRAWN = new Set(['tornado', 'fireCone', 'translucentFlame', 'echoFade', 'circusOfSlime']);
 const FRAME_KEYS = ['leftFrames', 'rightFrames', 'upFrames', 'downFrames'] as const;
 
 function sprites(file: string, name: string): Record<string, SpriteEntry> {
@@ -47,7 +48,8 @@ function sprites(file: string, name: string): Record<string, SpriteEntry> {
     // Redrawn effect sprites live in the repo (tools/assets/fx-gen writes public/assets/img/fx/<key>.png); they replace the legacy url.
     const fx = `img/fx/${key}.png`;
     const fxPath = resolve(root, 'public/assets', fx);
-    const redrawn = file === 'imgAssets.js' && existsSync(fxPath);
+    // Map strips redrawn by fx-gen/batch-e-map.py (320x80, four 80x80 frames) keep the legacy Large url.
+    const redrawn = (file === 'imgAssets.js' || (file === 'imgMapAssets.js' && MAP_REDRAWN.has(key))) && existsSync(fxPath);
     const coords = r.coords as SpriteEntry['coords'];
     if (redrawn && key === 'iceShock') {
       // iceShock alone changed size (240x72); the others keep the legacy frame size.
