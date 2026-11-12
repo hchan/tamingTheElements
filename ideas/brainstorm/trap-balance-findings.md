@@ -135,6 +135,8 @@ Against the acceptance above:
   a Puddle slow and timeout, a Spike hit, a Gust shove and a douse. `tests/repo/arcade-moves-coverage.test.ts`
   checks each one.
 
+Note: this figure counted Puddle dry-ups as timeouts; split out, the true timeout share after WP 39f is 41.9% (see ai-trap-use.md).
+
 ## View polish shipped with this note (no sim change)
 
 `src/game/audio/arcade-cues.ts`: `trapTriggered` with reason doused plays a short hiss (`trapDouse`) instead of the blast pop, and a Puddle drying up at its timeout is silent (it used to pop like a bomb). Test in `arcade-cues.test.ts`.

@@ -61,14 +61,16 @@ describe('fun-metrics reducer', () => {
         ev(10, SimEventKind.trapPlaced, { slot: 0, trap: 1, x: 0, y: 0, team: 0 }),
         ev(11, SimEventKind.trapPlaced, { slot: 1, trap: 2, x: 0, y: 0, team: 1 }),
         ev(12, SimEventKind.trapPlaced, { slot: 2, trap: 2, x: 0, y: 0, team: 1 }),
+        ev(13, SimEventKind.trapPlaced, { slot: 3, trap: 3, x: 0, y: 0, team: 1 }),
         ev(50, SimEventKind.trapTriggered, { slot: 0, trap: 1, reason: 0 }),
-        ev(60, SimEventKind.trapTriggered, { slot: 1, trap: 2, reason: 1 }),
+        ev(60, SimEventKind.trapTriggered, { slot: 1, trap: 2, reason: 1 }), // a Puddle drying up is not a true timeout
+        ev(65, SimEventKind.trapTriggered, { slot: 3, trap: 3, reason: 1 }), // a Spike expiring is
         ev(70, SimEventKind.trapTriggered, { slot: 2, trap: 2, reason: 2 }),
       ],
       meta,
     );
-    expect([m.trapsPlaced, m.trapHits, m.trapTimeouts, m.trapDouses]).toEqual([3, 1, 1, 1]);
-    expect(summarizeFun([m, m])).toMatchObject({ trapsPlaced: 6, trapHits: 2, trapTimeouts: 2, trapDouses: 2 });
+    expect([m.trapsPlaced, m.trapHits, m.trapTimeouts, m.trapPuddleDryups, m.trapDouses]).toEqual([4, 1, 1, 1, 1]);
+    expect(summarizeFun([m, m])).toMatchObject({ trapsPlaced: 8, trapHits: 2, trapTimeouts: 2, trapPuddleDryups: 2, trapDouses: 2 });
   });
 
   it('measures rounds: length from `fight` to `roundEnded`, first hit per round, time over and perfects (FUN-DESIGN 2.10)', () => {

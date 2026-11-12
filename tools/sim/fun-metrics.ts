@@ -1,5 +1,6 @@
 // Fun metrics (docs/FUN-DESIGN.md section 4): a pure reducer over sim events. No sim access, so it measures bot matches,
 // golden replays and playtest replays alike. Only metrics the shipped Arcade events can produce are computed.
+import { TrapKind } from '../../src/core/data/arcade';
 import { SimEventKind } from '../../src/core/sim/events';
 import type { SimEvent } from '../../src/core/sim/events';
 
@@ -60,6 +61,8 @@ export interface FunMetrics {
   readonly trapsPlaced: number;
   readonly trapHits: number;
   readonly trapTimeouts: number;
+  /** A Puddle whose life ended (it never fires, so every Puddle ends this way unless doused); not counted in `trapTimeouts`. */
+  readonly trapPuddleDryups: number;
   readonly trapDouses: number;
   /** Seconds from `fight` to the first weather cast of each round, by the caster's kind (WP 35: ranged / melee). */
   readonly firstWeatherRanged: readonly number[];
@@ -91,7 +94,7 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
   const dmg: Record<string, number> = {};
   const recovered: [number, number, number] = [0, 0, 0];
   const count = { dashes: 0, tags: 0, supers: 0, clashes: 0, defence: 0, guards: 0, parries: 0, dodges: 0, weathers: 0,
-    trapsPlaced: 0, trapHits: 0, trapTimeouts: 0, trapDouses: 0 };
+    trapsPlaced: 0, trapHits: 0, trapTimeouts: 0, trapPuddleDryups: 0, trapDouses: 0 };
   let diff = 0; // damage dealt by team 0 minus team 1
   let lead = 0;
   let leadChanges = 0;
@@ -173,7 +176,10 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
       case SimEventKind.trapTriggered: {
         const reason = e['reason'] ?? 0;
         if (reason === 0) count.trapHits++;
-        else if (reason === 1) count.trapTimeouts++;
+        else if (reason === 1) {
+          if (e['trap'] === TrapKind.puddle) count.trapPuddleDryups++;
+          else count.trapTimeouts++;
+        }
         else count.trapDouses++;
         break;
       }
@@ -243,6 +249,8 @@ export interface FunSummary {
   readonly trapsPlaced: number;
   readonly trapHits: number;
   readonly trapTimeouts: number;
+  /** A Puddle whose life ended (it never fires, so every Puddle ends this way unless doused); not counted in `trapTimeouts`. */
+  readonly trapPuddleDryups: number;
   readonly trapDouses: number;
   /** Median seconds into a round of the first weather cast, by caster kind (0 with no cast). */
   readonly medianFirstWeatherRanged: number;
@@ -292,6 +300,7 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
     trapsPlaced: sum((m) => m.trapsPlaced),
     trapHits: sum((m) => m.trapHits),
     trapTimeouts: sum((m) => m.trapTimeouts),
+    trapPuddleDryups: sum((m) => m.trapPuddleDryups),
     trapDouses: sum((m) => m.trapDouses),
     medianFirstWeatherRanged: percentile(list.flatMap((m) => m.firstWeatherRanged), 0.5),
     medianFirstWeatherMelee: percentile(list.flatMap((m) => m.firstWeatherMelee), 0.5),
