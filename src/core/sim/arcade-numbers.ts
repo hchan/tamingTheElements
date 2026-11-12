@@ -38,7 +38,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Slime Blast 10 per 1.5 s, the lowest sustained damage in data.json. Life 6180 -> 6400 in SIM_VERSION 27.
   ishimi: [6400, 1550],
   // Crimson Fire is fast and wide: strong. Life 3320 -> 3500 in SIM_VERSION 27.
-  lavax: [3500, 870],
+  lavax: [3900, 870],
   // Icicles every 15 ticks plus the Ice Blast slow: strong. Re-fit in SIM_VERSION 31 (was [3370, 930]).
   morblass: [3950, 1070],
   // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest). Life 5870 -> 5300 in SIM_VERSION 27.
