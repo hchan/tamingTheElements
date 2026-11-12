@@ -95,9 +95,8 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   (SF2 style). Spawns sit on the centred 1280 span (x 480 and 1360), so round start looks as before. The camera is view
   only (`src/game/fx/arena-camera.ts` pure rules, `arena-pan.ts` Phaser glue; no sim state, no hash): it follows the
   midpoint of the two live fighters (active fighter per team in 2v2), keeps each at least 160 px inside the visible edge by
-  zooming out down to 0.8 (1600 px visible), clamps the view to the world so walls show and no void appears, and eases
-  exponentially (snaps on a round reset or a jump over 400 px). Reduced motion: snap, zoom fixed at 1. Fighters farther
-  apart than 1280 px are still both on screen (the clamp, not a sim limit, keeps them in view); screen walls would be a sim
+  zooming out down to 2/3 (the whole 1920 world visible), clamps the view to the world so walls show and no void appears, and eases
+  exponentially (snaps on a round reset or a jump over 400 px). Reduced motion: snap, zoom fixed at 1. Both fighters are always on screen (the zoom floor shows the whole world, as in SF2 and MvC nobody leaves the picture); screen walls would be a sim
   change and are not built. The super cinematic composes on top (`applyCamera`, `viewBox`); the HUD is its own scene so
   it does not move. Classic never pans (1280 arena, fit camera). Browser test: `tests/e2e/arcade-pan.spec.ts`.
 - **Legacy quirks fixed in Arcade only:** `bounds-y-typo` (knockback needs real walls; since WP-parity-fixes Classic

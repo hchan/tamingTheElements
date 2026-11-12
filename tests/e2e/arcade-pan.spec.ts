@@ -7,7 +7,7 @@ import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
 const WORLD = 1920;
 const VIEW = 1280;
-const ZOOM_MIN = 0.8;
+const ZOOM_MIN = 1280 / 1920;
 const MARGIN = 160;
 const HERO_W = 80;
 const EPS = 0.5;
@@ -52,7 +52,7 @@ async function openArcade(page: Page): Promise<void> {
 test('Arcade: far-apart fighters zoom out to the floor and the view stays inside the 1920 world', async ({ page }) => {
   const errors = collectErrors(page);
   await openArcade(page);
-  const c = await placeAndSettle(page, 200, 1700);
+  const c = await placeAndSettle(page, 100, 1800);
   expect(c.zoom).toBeCloseTo(ZOOM_MIN, 2);
   expect(c.camZoom).toBeCloseTo(ZOOM_MIN, 2);
   const [l, r] = span(c);
@@ -122,13 +122,13 @@ test('Arcade: the action bar stays fixed on screen and clickable while the camer
   expect(home.scrollX).toBeCloseTo(0, 1);
   const base = await barRects(page);
   expect(base).toHaveLength(4); // attack, second attack, the Trap slot (WP 39b) and the Element slot (2.24)
-  const far = await placeAndSettle(page, 200, 1700);
+  const far = await placeAndSettle(page, 100, 1800);
   expect(far.zoom).toBeCloseTo(ZOOM_MIN, 2);
   const zoomed = await barRects(page);
   const right = await placeAndSettle(page, 1600, 1800);
   expect(right.scrollX).toBeGreaterThan(400);
   const edge = await barRects(page);
-  await placeAndSettle(page, 200, 1700);
+  await placeAndSettle(page, 100, 1800);
   for (const rects of [zoomed, edge]) {
     expect(rects).toHaveLength(base.length);
     rects.forEach((r, i) => {
@@ -154,7 +154,7 @@ test('the ?ff=arenaDemo,arcade hook mounts the pan camera too', async ({ page })
   await page.locator('#game canvas').waitFor();
   await page.waitForFunction(ARENA_READY);
   await page.evaluate(`window.__TTE__.arena.step(91)`);
-  const c = await placeAndSettle(page, 200, 1700);
+  const c = await placeAndSettle(page, 100, 1800);
   expect(c.zoom).toBeCloseTo(ZOOM_MIN, 2);
   expect(c.camZoom).toBeCloseTo(ZOOM_MIN, 2);
   expect(errors).toEqual([]);

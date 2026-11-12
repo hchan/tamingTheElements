@@ -31,8 +31,8 @@ describe('arena camera', () => {
   });
 
   it('keeps both fighters inside the margin at max separation', () => {
-    const x1 = 320;
-    const x2 = 1600; // separation 1280 = what ZOOM_MIN shows with both margins
+    const x1 = 160;
+    const x2 = 1760; // separation 1600 = what ZOOM_MIN shows with both margins
     const f = idealFraming({ ...base, x1, x2 });
     const half = 1280 / f.zoom / 2;
     expect(f.zoom).toBeCloseTo(CAMERA_ZOOM_MIN, 10);

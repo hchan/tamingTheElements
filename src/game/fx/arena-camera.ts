@@ -5,10 +5,10 @@
 
 /** Keep each fighter at least this far (world px) inside the visible edge. */
 export const CAMERA_MARGIN = 160;
-/** Widest view allowed: 1280 / 1600. */
-export const CAMERA_ZOOM_MIN = 0.8;
+/** Widest view allowed: 1920 px (the whole Arcade world), so both fighters are always on screen (SF2/MvC: nobody leaves the picture). */
+export const CAMERA_ZOOM_MIN = 1280 / 1920;
 /** Ease rate per second: 1 - exp(-rate * dt) equals about 0.15 per frame at 60 fps. */
-export const CAMERA_EASE_RATE = 9.75;
+export const CAMERA_EASE_RATE = 12;
 
 export interface CameraFraming {
   /** World x the camera looks at. */
