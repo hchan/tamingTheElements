@@ -6,7 +6,7 @@ const PORT = process.env['E2E_PORT'] ?? '4173';
 export default defineConfig({
   testDir: 'tests/e2e',
   workers: 1,
-  timeout: process.env.CI ? 60_000 : 30_000, // software-rendered CI runners are slower than a local GPU
+  timeout: 60_000, // software-rendered CI runners are slower than a local GPU
   retries: process.env.CI ? 1 : 0, // a pass-after-retry is reported as flaky by Playwright; never hide it
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {

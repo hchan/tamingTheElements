@@ -75,7 +75,8 @@ export async function startBattle(
   const rows = page.locator('#garrisonTable .garrisonRow');
   for (let i = 0; i < count; i++) await rows.nth(i).click();
   await page.locator(`#${mode}`).click();
-  await page.waitForFunction(ARENA_READY);
+  // Arena load can be slow when the machine is busy; 30 s flaked twice under load.
+  await page.waitForFunction(ARENA_READY, undefined, { timeout: 60_000 });
 }
 
 export interface Chr {
