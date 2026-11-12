@@ -38,6 +38,7 @@ export default defineConfig({
     { name: 'capture', testMatch: /capture\.spec\.ts/, use: { browserName: 'chromium' } },
     { name: 'regression', testMatch: /regression\.spec\.ts/, use: { browserName: 'chromium' } },
     { name: 'videos', testMatch: /videos\.spec\.ts/, use: { browserName: 'chromium' } },
+    { name: 'abilities', testMatch: /ability-audit\.spec\.ts/, use: { browserName: 'chromium' } },
     { name: 'pacing', testMatch: /pacing\.spec\.ts/, use: { browserName: 'chromium' } },
   ],
   webServer: {

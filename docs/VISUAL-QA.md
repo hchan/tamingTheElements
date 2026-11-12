@@ -12,6 +12,7 @@ human, or an AI agent that can open PNGs, reviews. Config: `playwright.visual.co
 | `pnpm visual:pacing` | Real-time (not manual) bot-vs-bot battle, 10 s of requestAnimationFrame deltas; writes `test-results/visual/pacing.json` and prints p50/p95/p99, long frames over 50 ms, dropped-frame ratio |
 | `pnpm visual:regress` | `expect(page).toHaveScreenshot()` for the deterministic subset (DOM screens, stepped arena frames) against committed baselines. Skipped when this platform has no baselines |
 | `pnpm visual:update` | Same specs with `--update-snapshots`: (re)creates baselines for the current platform |
+| `pnpm visual:abilities` | Ability graphics audit shots (`tests/visual/ability-audit.spec.ts`): casts Snag, Charge, Dash, Guard, Weather, supers, Stick, Capture and boss abilities, saves frames at fixed tick offsets to `test-results/visual/abilities/` (`ABILITY_OUT`, `ABILITY_ONLY=name,...`); feeds docs/ABILITY-AUDIT.md |
 | `pnpm ci:local --visual` | The usual local CI plus capture, pacing and regress |
 
 Use `E2E_PORT=n` to avoid port collisions between worktrees. `?ff=fps` (dev and test builds only, statically removed from
