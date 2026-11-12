@@ -72,14 +72,14 @@ async function face(page: Page, id: number, dir: number): Promise<void> {
 }
 const drawnAs = async (page: Page, id: number): Promise<Drawn | undefined> => (await probe(page))?.characters.find((c) => c.id === id);
 
-test('the shipped manifest has three atlases (Fiara, Pax, Treenoc): nothing else is loaded and the other heroes draw the legacy art', async ({ page }) => {
+test('the shipped manifest only loads atlases of characters in the match (the demo has Fiara, Pax and Curomo: all rigged, none drawn from legacy)', async ({ page }) => {
   const { errors, sheetRequests } = collect(page);
   await openDemo(page);
   for (let i = 0; i < 3; i++) await page.evaluate('window.__TTE__.arena.step(10)');
   const p = await probe(page);
-  expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax' && s !== 'treenoc')).toEqual([]);
-  expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax') && !t.endsWith(':treenoc')).sort()).toEqual(['map:curomo']);
-  expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png') || u.endsWith('img/sheets/treenoc.png'))).toBe(true);
+  expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax' && s !== 'curomo')).toEqual([]);
+  expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax') && !t.endsWith(':curomo')).sort()).toEqual([]);
+  expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png') || u.endsWith('img/sheets/curomo.png'))).toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -125,3 +125,24 @@ test('Morblass (?p1=morblass) is drawn from its rigged atlas in the real game', 
   await page.screenshot({ path: info.outputPath('morblass-idle-se.png') });
   expect(errors).toEqual([]);
 });
+
+for (const sprite of ['rokcore', 'curomo']) {
+  test(`${sprite} (?p1=${sprite}) is drawn from its rigged atlas in the real game`, async ({ page }, info) => {
+    const { errors } = collect(page);
+    await page.goto(`/?ff=arenaDemo&manual=1&seed=7&p1=${sprite}`);
+    await page.locator('#game canvas').waitFor();
+    await page.waitForFunction(ARENA_READY);
+    await page.evaluate('window.__TTE__.arena.step(1)');
+    await expect.poll(async () => (await probe(page))?.characters.length ?? 0).toBe(2);
+    const ch = (await probe(page))?.characters.find((c) => c.texture.endsWith(`:${sprite}`));
+    expect(ch, JSON.stringify((await probe(page))?.characters)).toBeDefined();
+    const id = ch?.id ?? -1;
+    await face(page, id, 0);
+    await expect.poll(async () => (await drawnAs(page, id))?.texture).toBe(`sheet:${sprite}`);
+    await page.screenshot({ path: info.outputPath(`${sprite}-idle-e.png`) });
+    await face(page, id, 7);
+    await expect.poll(async () => (await drawnAs(page, id))?.frame).toMatch(/^idle\/SE#[0-3]$/);
+    await page.screenshot({ path: info.outputPath(`${sprite}-idle-se.png`) });
+    expect(errors).toEqual([]);
+  });
+}
