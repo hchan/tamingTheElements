@@ -203,13 +203,13 @@ export class Hud extends Phaser.Scene {
     this.placePortrait(this.portraits[team], c, a.x, a.y, a.size, team === 1);
     gfx.lineStyle(this.highContrast ? 3 : 2, this.highContrast ? 0xffffff : ELEMENT_COLORS[c.element], 0.95);
     gfx.strokeRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
-    this.drawMark(gfx, c.element, a.x + 7, a.y + 7, 5);
+    this.drawMark(gfx, c.element, a.x + 9, a.y + 9, 7);
   }
 
   /** Element silhouette (white on a dark chip) so identity is never the frame colour alone: see `elementMark`. */
   private drawMark(gfx: Phaser.GameObjects.Graphics, element: HudCharacter['element'], x: number, y: number, r: number): void {
     gfx.fillStyle(0x070a12, 0.9).fillCircle(x, y, r + 3);
-    gfx.lineStyle(1, 0xffffff, 1).fillStyle(0xffffff, 1);
+    gfx.lineStyle(2, 0xffffff, 1).fillStyle(0xffffff, 1);
     const m = elementMark(element, r);
     const at = (flat: readonly number[]): Phaser.Math.Vector2[] => {
       const out: Phaser.Math.Vector2[] = [];
@@ -217,7 +217,10 @@ export class Hud extends Phaser.Scene {
       return out;
     };
     if (m.kind === 'circle') gfx.fillCircle(x, y, m.r);
-    else if (m.kind === 'poly') gfx.fillPoints(at(m.pts), true);
+    else if (m.kind === 'poly') {
+      gfx.fillPoints(at(m.pts), true);
+      if (m.hole) gfx.fillStyle(0x070a12, 1).fillPoints(at(m.hole), true);
+    }
     else for (const run of m.runs) gfx.strokePoints(at(run), false);
   }
 
@@ -230,7 +233,7 @@ export class Hud extends Phaser.Scene {
     this.placePortrait(this.portraits[team], c, x, PORTRAIT_Y, PORTRAIT, team === 1);
     gfx.lineStyle(2, ELEMENT_COLORS[c.element], 0.95);
     gfx.strokeRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
-    this.drawMark(gfx, c.element, x + 8, PORTRAIT_Y + 8, 5);
+    this.drawMark(gfx, c.element, x + 10, PORTRAIT_Y + 10, 8);
     // Benched teammates: their picture sits in the slot just left of their own bar.
     for (let i = 0; i < 4; i++) {
       const b = bench[i];
@@ -250,7 +253,7 @@ export class Hud extends Phaser.Scene {
       im?.setAlpha(b.dead ? 0.35 : 1);
       gfx.lineStyle(2, b.dead ? 0x777777 : ELEMENT_COLORS[b.element], 0.95);
       gfx.strokeRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
-      this.drawMark(gfx, b.element, bx + 5, by + s - 5, 3);
+      this.drawMark(gfx, b.element, bx + 6, by + s - 6, 5);
       if (b.dead) {
         gfx.lineStyle(2, 0xff5a4a, 1);
         gfx.lineBetween(bx + 3, by + 3, bx + s - 3, by + s - 3);
