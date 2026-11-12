@@ -1026,6 +1026,16 @@ html[data-high-contrast='true'] button.touchBtn {
   font-size: 1.15em;
   overflow-wrap: anywhere;
 }
+#arcadePick .vsAbilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin-top: 2px;
+  font-size: 0.75em;
+}
+#arcadePick .vsAbility {
+  white-space: nowrap;
+}
 #arcadePick .vsUnpicked .vsSlotName {
   font-weight: normal;
   font-style: italic;

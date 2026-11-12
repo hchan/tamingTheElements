@@ -1,6 +1,7 @@
 import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
 import { el } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
+import { abilitiesSpeech, abilityChips } from './hero-abilities';
 
 /**
  * Battle keys for the two-player option, as (action word, keys) pairs for the cheat sheet (Player 1's are the defaults and can be
@@ -222,6 +223,19 @@ function rosterView(
         rosterElement(element),
         el('span', 'vsStats', done ? statsOf(sel.value) : 'Not picked yet'),
       );
+      if (done) {
+        const abil = el('span', 'vsAbilities');
+        // Inside a button, so its text is part of the button's name for screen readers; the title repeats it as a sentence.
+        abil.title = abilitiesSpeech(sel.value as CharacterId);
+        for (const c of abilityChips(sel.value as CharacterId)) {
+          const chip = el('span', 'vsAbility');
+          const mark = el('span', 'vsAbilityMark', c.mark);
+          mark.setAttribute('aria-hidden', 'true');
+          chip.append(mark, ` ${c.name} (${c.kind})`);
+          abil.append(chip);
+        }
+        text.append(abil);
+      }
       b.append(face, text);
       b.dataset['element'] = element;
       b.setAttribute('aria-pressed', String(isActive));
