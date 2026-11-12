@@ -24,3 +24,19 @@ Not run: `balance:compare`. Per-slot damage labels are approximate (verified for
 3. Lavax: `hpPm` 3500 to about 4000 (est. +3 pp; may cut stalemates).
 4. Cyclonius: shorter time to first hit (tornado cooldown or first wind-cone), weakest-supported (est. +3 pp).
 Any change bumps SIM_VERSION and re-records Arcade baselines with a stated reason.
+
+## Findings (investigation WP, no sim or AI change; SIM_VERSION stays 35)
+
+Harness: scratch scripts (12 seeds per pairing, Normal, sides alternate), variants set at runtime: `void` (both elements neutral), `flat` (all hpPm/damagePm = 4000/1000), forced personality, level.
+
+**What decides the 0/100 matchups**
+- The AI is deterministic and kit strength dominates: even with elements void and stats flat, 53 of 66 pairings are extreme (below 10% or above 90%). The per-race hp/damage fit cancels kit strength on average only; each pairing stays step-like.
+- The element chart (1.25 each way = 1.5625x damage ratio, plus x1.2 weather) pushes more pairings to the ends: 42 of 66 extreme with elements vs 24 of 66 with void.
+- Forced personality (Rushdown, Zoner, Turtle) and side swap do not move the 0% results: personality is not the cause.
+- Lavax vs Morblass is 0% in every variant, including void + flat: Morblass icicles land 58 hits (599 dmg) a match, 31.5 projectile clashes a match, Lavax deals about 405 vs 932. Kit/clash issue, not stats or element.
+- Cyclonius vs Lavax stays 0% under void + flat (kit). Rokcore vs Echo: flat stats give 100%, so the fitted stats (2470/690) combined with the element chart make it 0% (stat fit and element interplay).
+
+**Tactics layer (arcade.ts, arcade-ai.ts)**
+- Rokcore (12 seeds, all opponents): 11.0 dashes a match, but the tactics layer adds only about 1.0 (dodge 0.8, trap-avoid 0.1, rush 0.1). The rest come from the base ScriptedAI/kit, not from ArcadeTactics. First hit own 85 of 286 rounds (30%), after 3.2 s vs foe 2.0 s.
+- Lavax: first cast 0.28 s, first own hit 4.4 s; Cyclonius first cast 0.29 s, first hit 4.1 s. They fire immediately, so the slow first hit is projectile travel, spacing and the foe dodge/guard plans, not hesitation in tactics (tactics dashes 1-3 a match).
+- Result: no small, clearly-correct tactics fix found; nothing implemented. Remaining levers are balance (stats/kit), proposals 2 to 4 above, and the Lavax-vs-Morblass clash handling.
