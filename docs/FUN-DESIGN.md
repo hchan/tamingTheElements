@@ -953,8 +953,8 @@ In Arcade, the "throw something at the foe" role of Capture goes to **Snag**, a 
 
 **Design.** Snag is a rope throw that **roots** its target for a short time. It is Arcade only (`rulesetArcade`). It overrides one
 Classic slot of four heroes, and the Classic data is unchanged. The ability under it is the Entangling Vines melee
-(`SNAG_ABILITY`). In Arcade it hits a box along the aim and roots the target. It does not use the Classic freeze, the effect entity or the
-Arcade stun (`HIT_STUN_OVERRIDE` is not reached for it).
+(`SNAG_ABILITY`). In Arcade it hits a box along the aim and roots the target. It does not use the Classic freeze or the effect entity. Since WP-snag-tune
+the rope also hurts and stuns briefly (`SNAG_DAMAGE`, `SNAG_STUN_TICKS`, via `HIT_STUN_OVERRIDE`).
 
 | Hero | Slot | Replaces |
 | --- | --- | --- |
@@ -973,6 +973,8 @@ Pax and the fire heroes get no Snag. The table is `ARCADE_SNAG_SLOT` in `src/cor
 | `SNAG_COOLDOWN_TICKS` | 400 | the next throw is ready 400 game ticks after this one, hit or miss |
 | `SNAG_ROOT_TICKS` | 60 | the root lasts 60 game ticks (1.2 s) |
 | `SNAG_IMMUNE_TICKS` | 75 | after the root is freed or expires, no new root for 75 game ticks |
+| `SNAG_DAMAGE` | 30 | base damage of the rope hit, before the thrower's `damagePm` (WP-snag-tune; it was 0) |
+| `SNAG_STUN_TICKS` | 20 | hit-stun of the rope hit (the old vines hit stunned 60; WP-snag-tune) |
 
 **Rules** (`src/core/sim/systems/arcade/snag.ts`):
 
@@ -991,8 +993,11 @@ Pax and the fire heroes get no Snag. The table is `ARCADE_SNAG_SLOT` in `src/cor
 - **State and events:**
   - Two per-entity Arcade ints: `rootUntil` and `rootImmuneUntil`. They are in the snapshot and the hash. Classic's `arcade` array stays empty.
   - Event `snag` with `{ id, reason }`, where `reason` is `SnagEvent`: `rooted`, `guarded`, `freed` or `expired`.
-  - `SIM_VERSION` 26.
-- **AI** (`scripted-ai/arcade.ts`): the AI throws when the foe is in the box and not guarding. A melee hero then closes in.
+  - `SIM_VERSION` 26; 27 for WP-snag-tune.
+- **AI** (`scripted-ai/arcade.ts`):
+  - The AI throws when the foe is in the box and not guarding. A melee hero then closes in, but stops under 100 px (`SNAG_CLOSE_PX`).
+  - With overlapped boxes the rope starts behind the foe and misses, so `snagLane` returns 0 and a hero whose Snag is ready steps away to open a gap (WP-snag-tune).
+    Before this, two Snag heroes pressed into each other and froze.
 
 **Presentation (view only):**
 
@@ -1007,14 +1012,39 @@ Pax and the fire heroes get no Snag. The table is `ARCADE_SNAG_SLOT` in `src/cor
 - **Wispera:** she keeps the ranged weather-charge flag, although her slot 0 is now a melee Snag.
 - **Who can burn a root:** no Snag hero is fire, so in 1v1 only the rooted fighter's own Fire shots or Sun cast can free it. Fire shots reach it in 2v2 and 3v3.
 
-**Balance at landing** (`balance:compare`, not re-recorded):
+**Balance at landing** (before the tuning pass): Classic +0.0 pp on every race. Arcade moved far past 5 pp:
+Wispera 43 to 3% (1v1) and 48 to 10% (2v2), Curomo 60 to 24% (1v1), Lavax 53 to 8% (2v2). Stalemates 42 to 52 (1v1).
 
-- Classic: +0.0 pp on every race.
-- Arcade 1v1 and 2v2: the baselines moved well beyond the 5 pp tolerance. The biggest moves are:
-  - Wispera: 43 to 3% in 1v1, 48 to 10% in 2v2. She lost her ranged primary.
-  - Curomo: 60 to 24% in 1v1, 66 to 44% in 2v2.
-  - Lavax: 53 to 8% in 2v2.
-- These need a tuning pass (for example, giving Wispera a ranged slot 0 back) before the baselines are recorded.
+**Tuning pass (WP-snag-tune, `SIM_VERSION` 27).** Levers used:
+
+1. The rope hurts: `SNAG_DAMAGE` 30 (before `damagePm`) and `SNAG_STUN_TICKS` 20, so a Snag hero's slot has a damage role again.
+2. The AI fix above (no throw with overlapped boxes, step away, melee stops closing under 100 px). This took 1v1 stalemates from 52 back to 45.
+3. `ARCADE_RACE_NUMBERS` `[hpPm, damagePm]`: Treenoc [6500, 1270] (was [8470, 1640]), Wispera [7900, 1400] (was [3490, 800]),
+   Curomo [6300, 1560] (was [6140, 1420]), Echo [5300, 1530] (was [6360, 1840]); nudges for non-Snag races:
+   Fiara damage 1750 to 1450, Ishimi life 6180 to 6400, Lavax life 3320 to 3500, Pax life 5870 to 5300.
+4. `ARCADE_2V2_LIFE_PM`: curomo 760, cyclonius 740, echo 560, ishimi 600, morblass 960, pax 500, rokcore 670, treenoc 690, wispera 1050
+   (the table's upper bound is now 1200).
+
+Unchanged: cooldown 400, root 60, immunity 75, range and width, Classic. Win rates (16 seeds 1v1, 8 seeds 2v2):
+
+| Race | 1v1 old baseline | 1v1 landing | 1v1 tuned | 2v2 old baseline | 2v2 landing | 2v2 tuned |
+| --- | --- | --- | --- | --- | --- | --- |
+| curomo | 59.7 | 23.6 | 58.5 | 65.9 | 44.3 | 67.0 |
+| cyclonius | 44.0 | 55.7 | 48.3 | 45.5 | 73.3 | 42.0 |
+| echo | 35.8 | 25.9 | 34.7 | 38.6 | 49.4 | 37.5 |
+| fiara | 46.6 | 55.1 | 50.6 | 63.1 | 63.1 | 59.7 |
+| ishimi | 58.8 | 72.7 | 54.8 | 31.8 | 68.2 | 36.9 |
+| lavax | 61.9 | 65.9 | 61.6 | 53.4 | 8.0 | 54.0 |
+| morblass | 52.6 | 63.9 | 53.7 | 69.3 | 43.2 | 68.2 |
+| pax | 43.8 | 62.5 | 46.6 | 38.1 | 61.4 | 40.3 |
+| rokcore | 59.4 | 56.5 | 63.4 | 39.2 | 48.3 | 41.5 |
+| sindarosa | 52.6 | 57.1 | 50.3 | 54.5 | 62.5 | 55.1 |
+| treenoc | 41.8 | 58.5 | 38.9 | 52.3 | 68.8 | 48.3 |
+| wispera | 43.2 | 2.6 | 38.6 | 48.3 | 9.7 | 49.4 |
+| stalemates | 42 | 52 | 45 | 23 | 22 | 29 |
+
+The Arcade baselines were re-recorded at the tuned state. Every race is within 5.1 pp of the old baseline. Open: 2v2 stalemates are 29
+(old baseline +6, one over the +5 aim); 2v2 pair win rates are noisy and nonlinear (partners feed each other's rate).
 
 **Out of scope:**
 

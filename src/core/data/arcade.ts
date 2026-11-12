@@ -62,11 +62,13 @@ export const JUGGLE_LIMIT = 5;
 export const COMBO_STUN_CAP_TICKS = 150;
 /** Invulnerability after either cap ends a combo (`recovered` reason 1 or 2), so a capped combo cannot restart at once. */
 export const RECOVERY_INVULN_TICKS = 20;
-/** Tornado and Entangling Vines stun (heavy, obeying the caps) instead of the Classic 150-tick freeze. */
+/** Tornado stuns (heavy, obeying the caps) instead of the Classic 150-tick freeze. */
 export const FREEZE_STUN_TICKS = 60;
+/** WP-snag-tune: hit-stun of the Snag hit in game ticks (the Vines' 60 stun would chain into the root; FUN-DESIGN 2.20). */
+export const SNAG_STUN_TICKS = 20;
 export const HIT_STUN_OVERRIDE: Readonly<Partial<Record<string, number>>> = {
   tornado: FREEZE_STUN_TICKS,
-  'entangling-vines': FREEZE_STUN_TICKS,
+  'entangling-vines': SNAG_STUN_TICKS,
 };
 
 /** Base hit-stun of an ability's hit: the override, else the strength table. */
@@ -110,6 +112,9 @@ export const SNAG_RANGE_PX = 240;
 export const SNAG_WIDTH_PX = 40;
 export const SNAG_COOLDOWN_TICKS = 400;
 export const SNAG_ROOT_TICKS = 60;
+/** WP-snag-tune: the throw also hurts, base damage before the thrower's `damagePm` (the Classic vines deal 0). */
+export const SNAG_DAMAGE = 30;
+
 export const SNAG_IMMUNE_TICKS = 75;
 export const SNAG_FIRE_ABILITIES: readonly string[] = ['fireball', 'crimson-fire', 'fire-blast', 'elemental-advantage-fire-cone'];
 export const SnagEvent = { rooted: 0, guarded: 1, freed: 2, expired: 3 } as const;

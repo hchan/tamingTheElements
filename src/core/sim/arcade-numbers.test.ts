@@ -88,7 +88,7 @@ describe('Arcade 2v2 life (WP-arcade-2v2-tune)', () => {
       expect(arcadeLifePm(hp, 1, race)).toBe(hp);
       const pm = ARCADE_2V2_LIFE_PM[race] ?? ARCADE_2V2_LIFE_DEFAULT_PM;
       expect(pm).toBeGreaterThanOrEqual(300);
-      expect(pm).toBeLessThanOrEqual(1000);
+      expect(pm).toBeLessThanOrEqual(1200);
       expect(arcadeLifePm(hp, 2, race)).toBe(Math.floor((hp * pm) / 1000));
     }
     expect(Object.keys(ARCADE_2V2_LIFE_PM).every((k) => PLAYABLE.includes(k))).toBe(true);

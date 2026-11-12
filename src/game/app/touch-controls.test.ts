@@ -50,7 +50,7 @@ describe('touch controls', () => {
     stubDom(true);
     expect(touchButton('Dash', 2).style.cssText).toContain('bottom:calc(max(8px,env(safe-area-inset-bottom)) + 112px)');
     stubDom(false);
-    expect(touchButton('Dash', 2).style.cssText).toContain('right:140px;bottom:2px');
+    expect(touchButton('Dash', 2).style.cssText).toContain('right:166px;bottom:8px');
   });
 
   it('holds the bound key while the finger is down and releases it once', () => {

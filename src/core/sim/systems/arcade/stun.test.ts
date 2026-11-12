@@ -77,11 +77,11 @@ describe('stun and knockback tables (FUN-DESIGN 2.3)', () => {
     expect([RecoveredReason.stunEnded, RecoveredReason.juggleCap, RecoveredReason.stunCap]).toEqual([0, 1, 2]);
   });
 
-  it('per ability: stun by strength, Tornado and Entangling Vines 60', () => {
+  it('per ability: stun by strength, Tornado 60 and Entangling Vines (the Snag hit) 20', () => {
     expect(HIT_STUN).toHaveLength(ABILITY_DEFS.length);
     const want: Record<string, number> = {
       'wind-cone': 32, fireball: 38, 'fire-blast': 44, 'ground-shock': 44, hurricane: 32, tornado: 60,
-      'entangling-vines': 60,
+      'entangling-vines': 20,
     };
     for (const [id, n] of Object.entries(want)) expect([id, stunOf(id)]).toEqual([id, n]);
   });
@@ -208,7 +208,7 @@ describe('hit-stun', () => {
     }
   });
 
-  it('Entangling Vines is Snag in Arcade (FUN-DESIGN 2.20): it roots 60 once per cast, no stun, no Classic freeze or effect entity', () => {
+  it('Entangling Vines is Snag in Arcade (FUN-DESIGN 2.20): it roots 60 once per cast and its hit stuns SNAG_STUN_TICKS (20), no Classic freeze or effect entity', () => {
     const world = duel('treenoc', 'rokcore');
     const s = world.state;
     let game = -1;
@@ -218,10 +218,11 @@ describe('hit-stun', () => {
       if ((s.arcade[E(1, ArcadeE.rootUntil)] ?? 0) !== 0) game = g;
     }
     expect(s.arcade[E(1, ArcadeE.rootUntil)]).toBe(game + 60);
-    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(0);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(game + 20);
+    expect(s.hp[1]).toBeLessThan(10_000); // the rope hurts (SNAG_DAMAGE)
     expect((s.flags[1] ?? 0) & EntityFlag.frozen).toBe(0);
     for (let t = 0; t < 10; t++) step(world, [0, 0]);
-    expect([s.arcade[E(1, ArcadeE.rootUntil)], s.arcade[E(1, ArcadeE.stunUntil)], s.arcade[E(1, ArcadeE.juggle)]]).toEqual([game + 60, 0, 0]);
+    expect(s.arcade[E(1, ArcadeE.rootUntil)]).toBe(game + 60); // one root per cast, not renewed by the hit box
   });
 });
 

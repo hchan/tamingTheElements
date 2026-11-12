@@ -103,5 +103,9 @@
  *    throw along the aim with a 400-tick cooldown that roots (no walk, Dash or Charge) for 60 ticks; fire shots and a
  *    Sun cast free it, guard wastes it, 75 ticks of immunity follow; `snag` event. The Arcade entity block gains
  *    `rootUntil`/`rootImmuneUntil`; the Arcade AI throws it (WP-snag).
+ * 27: Arcade only; Classic hashes unchanged. Snag tuning (WP-snag-tune, FUN-DESIGN 2.20): the throw hurts (SNAG_DAMAGE 30
+ *    before the thrower's damagePm) and stuns 20 ticks (SNAG_STUN_TICKS; the old vines hit stunned 60); new
+ *    ARCADE_RACE_NUMBERS rows for Treenoc, Wispera, Curomo and Echo and re-fit 2v2 life factors; the Arcade AI no longer
+ *    throws with overlapped boxes (the rope starts behind the foe and missed) and steps away to open the gap instead.
  */
-export const SIM_VERSION = 26;
+export const SIM_VERSION = 27;

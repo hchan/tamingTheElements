@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ARCADE_SNAG_SLOT, SNAG_ABILITY, SNAG_COOLDOWN_TICKS, SNAG_FIRE_ABILITIES, SNAG_IMMUNE_TICKS, SNAG_RANGE_PX,
+  ARCADE_SNAG_SLOT, SNAG_ABILITY, SNAG_COOLDOWN_TICKS, SNAG_DAMAGE, SNAG_FIRE_ABILITIES, SNAG_STUN_TICKS, SNAG_IMMUNE_TICKS, SNAG_RANGE_PX,
   SNAG_ROOT_TICKS, SNAG_WIDTH_PX, SnagEvent, Weather, WEATHER_CHARGE_FULL,
 } from '../../../data/arcade';
 import { ABILITIES_A } from '../../../data/abilities-a';
@@ -58,6 +58,7 @@ function throwSnag(world: SimWorld, slot = 0, foeCmd: Command = 0): SimEvent[] {
 describe('Snag data (FUN-DESIGN 2.20)', () => {
   it('has the design numbers and slots', () => {
     expect([SNAG_RANGE_PX, SNAG_WIDTH_PX, SNAG_COOLDOWN_TICKS, SNAG_ROOT_TICKS, SNAG_IMMUNE_TICKS]).toEqual([240, 40, 400, 60, 75]);
+    expect([SNAG_DAMAGE, SNAG_STUN_TICKS]).toEqual([30, 20]);
     expect(ARCADE_SNAG_SLOT).toEqual({ treenoc: 0, wispera: 0, curomo: 1, echo: 0 });
     expect(SNAG_ABILITY).toBe('entangling-vines');
     const ids = [...ABILITIES_A, ...ABILITIES_B].map((d) => d.id);
@@ -84,9 +85,17 @@ describe('Snag root', () => {
     const g = now(s) - 1; // the game tick the throw landed on
     expect(s.arcade[E(1, ArcadeE.rootUntil)]).toBe(g + SNAG_ROOT_TICKS);
     expect(isRooted(s, 1)).toBe(true);
-    // Pax holds left: it cannot walk while rooted, but it turns and aims.
+    // The rope's hit stuns SNAG_STUN_TICKS and knocks back; let that settle, then Pax holds left: it cannot walk while
+    // rooted, but it turns and aims.
+    // (The hit also holds the game clock for a few steps: step by game tick, not by call.)
+    const until = (tick: number, c: Command): SimEvent[] => {
+      let out: SimEvent[] = [];
+      while (now(s) < tick) out = out.concat(step(world, [0, c]));
+      return out;
+    };
+    expect(snags(until(g + SNAG_STUN_TICKS + 10, 0))).toEqual([]);
     const x = s.x[1];
-    expect(snags(run(world, SNAG_ROOT_TICKS - 1, [0, Cmd.left]))).toEqual([]);
+    expect(snags(until(g + SNAG_ROOT_TICKS, Cmd.left))).toEqual([]);
     expect(s.x[1]).toBe(x);
     expect(s.arcade[E(1, ArcadeE.aim)]).toBe(5); // dir8 4 (west) + 1
     // The root covers game ticks g .. g + 59; the 60th step after the landing runs on g + 60 and ends it.
@@ -129,6 +138,7 @@ describe('Snag root', () => {
     const s = world.state;
     throwSnag(world);
     expect(isRooted(s, 1)).toBe(true);
+    run(world, SNAG_STUN_TICKS + 2, [0, 0]); // the rope's hit stun ends first
     const evs = run(world, 4, [0, Cmd.dash | Cmd.left]).concat(run(world, 2, [0, Cmd.charge]));
     expect(evs.filter((e) => e.kind === SimEventKind.dashed || e.kind === SimEventKind.chargeStarted)).toEqual([]);
     expect(s.arcade[E(1, ArcadeE.chargeUntil)] ?? 0).toBe(0);
@@ -186,6 +196,7 @@ describe('Snag counters', () => {
     const s = world.state;
     throwSnag(world);
     expect(isRooted(s, 1)).toBe(true);
+    run(world, SNAG_STUN_TICKS + 12, [0, 0]); // the rope's hit stun (and its hit-stop) ends first
     s.arcade[ARCADE_TEAM_BASE + 1 * ARCADE_T + ArcadeT.weatherCharge] = WEATHER_CHARGE_FULL;
     const evs = run(world, 2, [0, Cmd.weather]);
     expect(evs.find((e) => e.kind === SimEventKind.weatherChanged)).toMatchObject({ weather: Weather.sun });

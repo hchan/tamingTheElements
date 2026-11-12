@@ -27,30 +27,30 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // life (580 HP at the Tour's 0 XP; 4000 before SIM_VERSION 25, which no AI team ever beat), legacy damage. Set with
   // tools/sim/boss-probe.ts so Normal AI heroes win about 38% (Easy 48%, Hard 39%; 96 matches each) and no round times out.
   'eternal-void': [580, 1000],
-  // Ice Shock melee plus a 10 s fan: has to close in through fire.
-  curomo: [6140, 1420],
+  // Ice Shock melee plus a 10 s fan: has to close in through fire. Re-fit in SIM_VERSION 27 (Snag replaced Shards of Ice; was [6140, 1420]).
+  curomo: [6300, 1560],
   // Tornado stun into Wind Cone is the natural combo; near the legacy power.
   cyclonius: [4490, 1010],
-  // Hurricane halves each hit and Fade only defends: one of the weakest kits (24% before).
-  echo: [6360, 1840],
-  // Fireball starts at 0.25x and Fire Heal is a 40 s heal.
-  fiara: [5140, 1750],
-  // Slime Blast 10 per 1.5 s, the lowest sustained damage in data.json.
-  ishimi: [6180, 1550],
-  // Crimson Fire is fast and wide: strong.
-  lavax: [3320, 870],
+  // Hurricane halves each hit and Fade only defends: one of the weakest kits (24% before). Snag replaced Fade; re-fit in SIM_VERSION 27 (was [6360, 1840]).
+  echo: [5300, 1530],
+  // Fireball starts at 0.25x and Fire Heal is a 40 s heal. Damage 1750 -> 1450 in SIM_VERSION 27 (the Snag heroes' lines fed her wins).
+  fiara: [5140, 1450],
+  // Slime Blast 10 per 1.5 s, the lowest sustained damage in data.json. Life 6180 -> 6400 in SIM_VERSION 27.
+  ishimi: [6400, 1550],
+  // Crimson Fire is fast and wide: strong. Life 3320 -> 3500 in SIM_VERSION 27.
+  lavax: [3500, 870],
   // Icicles every 15 ticks plus the Ice Blast slow: strong.
   morblass: [3370, 930],
-  // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest).
-  pax: [5870, 1580],
+  // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest). Life 5870 -> 5300 in SIM_VERSION 27.
+  pax: [5300, 1580],
   // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before).
   rokcore: [2470, 690],
   // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong.
   sindarosa: [2620, 650],
-  // Entangling Vines deals nothing and Strangling Branches is melee: weak in the AI's hands.
-  treenoc: [8470, 1640],
-  // Sonar Blast 67/s plus Steal Health: strong.
-  wispera: [3490, 800],
+  // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]).
+  treenoc: [6500, 1270],
+  // Snag replaced Sonar Blast (67/s), leaving Steal Health: life 3490 -> 7900, damage 800 -> 1400 in SIM_VERSION 27.
+  wispera: [7900, 1400],
 };
 
 /**
@@ -60,18 +60,18 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
  */
 export const ARCADE_2V2_LIFE_DEFAULT_PM = 600;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
-  curomo: 695,
-  cyclonius: 660,
-  echo: 662,
+  curomo: 760,
+  cyclonius: 740,
+  echo: 560,
   fiara: 613,
-  ishimi: 816,
+  ishimi: 600,
   lavax: 537,
-  morblass: 837,
-  pax: 566,
-  rokcore: 658,
+  morblass: 960,
+  pax: 500,
+  rokcore: 670,
   sindarosa: 840,
-  treenoc: 330,
-  wispera: 945,
+  treenoc: 690,
+  wispera: 1050,
 };
 /** Race life `hpPm` of `slug` for a roster of `size` heroes. */
 export function arcadeLifePm(hpPm: number, size: number, slug: string): number {

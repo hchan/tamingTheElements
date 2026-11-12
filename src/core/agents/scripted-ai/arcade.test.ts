@@ -763,6 +763,15 @@ describe('the Arcade AI throws Snag (FUN-DESIGN 2.20, WP-snag)', () => {
     expect(go({ chargeIn: -1 })).toBe(Cmd.up);
   });
 
+  it('overlapped boxes: no throw (the rope starts behind the foe); it steps away to open a gap; a melee hero stops closing in under 100 px (WP-snag-tune)', () => {
+    expect(snagLane(fighter(200, 300), fighter(230, 310))).toBe(0);
+    const go = (a: Partial<ArcadeView>, opp: FighterView, x = 200): number =>
+      new ArcadeTactics(AI_NORMAL, ZONER).apply({ ...view({ ...ready, ...a }, 0, fighter(x, 300), opp), cooldowns: [0, 0, 0, 0] }, Cmd.up);
+    expect(go({}, fighter(230, 310))).toBe(Cmd.left); // the foe is on the right: back off to the left
+    expect(go({}, fighter(170, 310))).toBe(Cmd.right);
+    expect(go({ oppRooted: 30, chargeIn: 40, snagSlot: -1 }, fighter(270, 300))).toBe(Cmd.up); // 70 px: close enough, keeps its command
+  });
+
   it('the view carries the Snag slot and the foe guard, root and immunity; a scripted Treenoc roots an idle foe', () => {
     const world = skipIntro(createMatch({
       ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },

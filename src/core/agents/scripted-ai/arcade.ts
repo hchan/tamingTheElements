@@ -171,10 +171,20 @@ export function snagLane(self: FighterView, opp: FighterView): Command {
   const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
   const gapX = Math.abs(dx) - (self.w + opp.w) / 2;
   const gapY = Math.abs(dy) - (self.h + opp.h) / 2;
+  // Overlapped boxes: the rope starts at the thrower's edge, behind the foe, and misses (a wasted cooldown; WP-snag-tune).
+  if (gapX < 0 && gapY < 0) return 0;
   if (Math.abs(dy) * 2 < SNAG_WIDTH_PX + opp.h && gapX < SNAG_RANGE_PX) return dx >= 0 ? Cmd.right : Cmd.left;
   if (Math.abs(dx) * 2 < SNAG_WIDTH_PX + opp.w && gapY < SNAG_RANGE_PX) return dy >= 0 ? Cmd.down : Cmd.up;
   return 0;
 }
+
+/** True when the two boxes overlap (the Snag rope would start behind the foe). */
+function boxesOverlap(a: FighterView, b: FighterView): boolean {
+  return Math.abs(b.x + b.w / 2 - (a.x + a.w / 2)) * 2 < a.w + b.w && Math.abs(b.y + b.h / 2 - (a.y + a.h / 2)) * 2 < a.h + b.h;
+}
+
+/** A melee hero closes in on a rooted foe until its Manhattan distance (corner to corner, px) is under this (WP-snag-tune). */
+const SNAG_CLOSE_PX = 100;
 
 /** Within this Manhattan distance (px) a tag team's AI may skip an attack press (see `decide`). */
 const CLOSE_PX = 160;
@@ -323,8 +333,13 @@ export class ArcadeTactics {
     }
     if (!free || threat) return cmd;
     if (lane !== 0) return (cmd & ~(MOVE | ATTACK)) | lane | snagBit;
+    // Snag ready but the boxes overlap: step away to open a gap for the throw (else two Snag heroes freeze in place).
+    if (snagBit !== 0 && (view.cooldowns[a.snagSlot] ?? 1) === 0 && !a.oppGuarding && a.oppRooted === 0 && a.oppRootImmune === 0 && boxesOverlap(self, opp)) {
+      return (cmd & ~(MOVE | ATTACK)) | (opp.x + opp.w / 2 >= self.x + self.w / 2 ? Cmd.left : Cmd.right);
+    }
     // A rooted opponent cannot walk away: a melee hero closes in (a Charge from afar).
-    if (a.oppRooted > 0 && a.chargeIn !== -1) {
+    // Not onto its body: a melee box starts at the edge, so two overlapped fighters never hit (stalemates); stop at SNAG_CLOSE_PX.
+    if (a.oppRooted > 0 && a.chargeIn !== -1 && far >= SNAG_CLOSE_PX) {
       return a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST ? Cmd.charge : (cmd & ~MOVE) | toward(self, opp);
     }
     const pm = (self.hp * 1000) / self.maxHp;

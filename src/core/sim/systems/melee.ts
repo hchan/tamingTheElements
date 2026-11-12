@@ -2,7 +2,7 @@ import { aabbOverlap, type Aabb } from '../../math/aabb';
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B, type AbilityDefB } from '../../data/abilities-b';
 import { CHARACTERS } from '../../data/characters';
-import { SNAG_RANGE_PX, SNAG_WIDTH_PX } from '../../data/arcade';
+import { SNAG_DAMAGE, SNAG_RANGE_PX, SNAG_WIDTH_PX } from '../../data/arcade';
 import type { AbilityDef } from '../../data/types';
 import { computeDamage, computeHeal, damageDealt } from '../../rules/damage';
 import { allocEntity, freeEntity } from '../alloc';
@@ -151,7 +151,12 @@ function meleeHit(world: SimWorld, sink: EventSink, id: number, victim: number):
     if (victimTranslucent) return;
     if (isArcade(s)) {
       // Arcade: the Snag throw (FUN-DESIGN 2.20) roots once per cast instead of the 150-tick freeze.
-      if ((s.hitMask[id] ?? 0) === 0) snagHit(world, sink, id, victim);
+      if ((s.hitMask[id] ?? 0) === 0) {
+        snagHit(world, sink, id, victim);
+        s.hitMask[id] = HIT;
+        // WP-snag-tune: the rope also hurts (SNAG_DAMAGE, the hit path of every Arcade melee).
+        applyHit(world, sink, id, caster, victim, s.hp[id] ?? 0);
+      }
       s.hitMask[id] = HIT;
       return;
     }
@@ -276,7 +281,7 @@ export function castMelee(world: SimWorld, sink: EventSink, team: number, slot: 
   s.y[id] = box.y;
   s.w[id] = box.w;
   s.h[id] = box.h;
-  s.hp[id] = damageOf(def); // current damage; Hurricane halves it per hit
+  s.hp[id] = snag ? SNAG_DAMAGE : damageOf(def); // current damage; Hurricane halves it per hit
   const delay = def.delayAfterAttackTicks ?? 0;
   s.expireTick[id] = tick + (defId === HURRICANE ? (def.durationTicks ?? 0) : delay);
   if (delay !== 0) setFlag(world, caster, EntityFlag.frozen, true);
