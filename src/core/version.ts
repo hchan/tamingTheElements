@@ -113,5 +113,8 @@
  *    4-way facing follow the foe, so attacks face the opponent whichever way the hero was moving; a held diagonal still overrides.
  * 30: Arcade only; Classic hashes unchanged. Curomo's Arcade numbers 6300/1560 -> 6000/1250 hpPm/damagePm (Arcade tournament win rate
  *    87.5% -> 60%, the outlier of docs/ABILITY-AUDIT.md finding 1); Classic data untouched.
+ * 31: Arcade only; Classic hashes unchanged. Arcade numbers re-fit (8-seed tournament, every race 45-57%): wispera 7900/1400 -> 7300/1280
+ *    (66%), echo 5300/1530 -> 6200/1600 (35%), cyclonius 4490/1010 -> 4800/1080 (39%), morblass 3370/930 -> 3950/1070 (40%),
+ *    curomo 6000/1250 -> 5800/1200, fiara 5140/1450 -> 5400/1520 (docs/ABILITY-AUDIT.md finding 3); Classic data untouched.
  */
-export const SIM_VERSION = 30;
+export const SIM_VERSION = 31;
