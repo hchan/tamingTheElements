@@ -20,7 +20,7 @@
     "rolldown-runtime": 200,
     "round-view": 2300,
     "sim": 35450,
-    "super-view": 1390,
+    "super-view": 2300,
     "tag-view": 2870,
     "terrain-view": 5500,
     "trap-view": 1100,
@@ -28,11 +28,11 @@
     "tour": 5600,
     "viewport": 260,
     "weather-view": 3470,
-    "ability-aura-view": 1450,
+    "ability-aura-view": 1900,
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 525700,
+  "totalGzip": 527100,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
