@@ -46,6 +46,14 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(after?.invulnerable(1)).toBe(false);
   });
 
+  it('reports the sudden-death slot (read-out only)', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const view = createRenderView(world);
+    expect(view.arcade()?.sudden).toBe(false);
+    world.state.arcade[ARCADE_WORLD_BASE + ArcadeW.sudden] = 1;
+    expect(view.arcade()?.sudden).toBe(true);
+  });
+
   it('reports the guard meter (full until drained) and whether a character guards (read-outs only)', () => {
     const world = skipIntro(createMatch(match(true)));
     const ar = createRenderView(world).arcade();

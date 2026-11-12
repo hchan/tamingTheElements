@@ -64,8 +64,14 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   - per team (`ARCADE_T = 18` ints x 2): `meter, comboHits, comboDamageQ4, comboStart, prevCmd, pressTick x 6
     (primary, secondary, dash, guard, super, weather), lastDirPress, lastDir, roundsWon, superState, pressUsed,
     confirmTick, weatherCharge`;
-  - world (`ARCADE_W = 12`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil,
-    roundWinner, weather, weatherUntil, weatherTeam`.
+  - world (`ARCADE_W = 66`): `gameTick, freezeUntil, freezeKind, round, phase, phaseUntil, roundTimer, slowMoUntil,
+    roundWinner, weather, weatherUntil, weatherTeam`, then the terrain slots (`stage, swapAt, swapTo, terrainGen,
+    patchCount`), `sudden` (1 in the sudden-death round), the patch rectangles (5 x 4) and the trap table (4 x 7).
+    The count is `ARCADE_W` in `src/core/sim/state.ts`; `clock.test.ts` pins the layout.
+  - **Sudden death.** A draw round that leaves both teams on `ROUNDS_TO_WIN` starts one extra round: everyone at
+    `SUDDEN_HP_PM` (10%) of max life, a `SUDDEN_TIMER_TICKS` (30 s) timer, `ArcadeW.sudden = 1`. Its winner takes the
+    match; a draw there stands. Players see a "SUDDEN DEATH" banner and a screen-reader line (the view reads
+    `RenderArcade.sudden`; `round-announcer.ts`).
 - **Game clock.** `W.tick` stays the replay and event index and always advances. Arcade adds `gameTick`, which does
   not advance during hit-stop or super freeze and advances every second tick during KO slow-motion (WP 13). Built in WP 1:
   `advanceGameClock` advances it at the end of every unfrozen `step`, so with no freeze set `gameTick == W.tick`. Systems read

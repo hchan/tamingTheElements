@@ -68,7 +68,7 @@ export function mountRoundView(
       Object.assign(banner, { main, sub, from, until, reduced: prefs().reduceMotion });
     },
     say,
-  });
+  }, () => view.arcade()?.sudden === true);
   const a = view.arcade();
   if (a) announcer.sync(a, view.tick);
 
