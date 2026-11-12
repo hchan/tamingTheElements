@@ -95,7 +95,7 @@ export const ARCADE_T = 22;
 export const ArcadeW = {
   gameTick: 0, freezeUntil: 1, freezeKind: 2, round: 3, phase: 4, phaseUntil: 5, roundTimer: 6, slowMoUntil: 7,
   roundWinner: 8, weather: 9, weatherUntil: 10, weatherTeam: 11,
-  stage: 12, swapAt: 13, swapTo: 14, terrainGen: 15, patchCount: 16, patches: 17,
+  stage: 12, swapAt: 13, swapTo: 14, terrainGen: 15, patchCount: 16, sudden: 17, patches: 18,
 } as const;
 /** Terrain patches (FUN-DESIGN 2.15): at most PATCH_MAX rectangles of 4 ints (x, y, w, h) from `ArcadeW.patches`. */
 export const PATCH_MAX = 5;

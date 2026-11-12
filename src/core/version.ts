@@ -148,5 +148,8 @@
  * 41: Arcade only; Classic hashes unchanged, and so is every 1x hero. Giant heroes (ideas/in-progress/giant-heroes-size-for-speed.md, data/size.ts):
  *    a per-character integer size in percent; Rokcore is 200 (2x): a 160 x 160 box spawned on the 1x centre, +45% life, +12% damage,
  *    knockback taken / 1.6 and walk and dash speed x0.72 (Classic ignores size).
+ * 42: Arcade only; Classic hashes unchanged. Sudden death (ideas/in-progress/sf-round-timer-draws.md): a draw round that leaves both
+ *    teams on ROUNDS_TO_WIN starts one extra round at 10% life with a 1500-tick timer (new world slot `ArcadeW.sudden`;
+ *    the terrain patch table moves up one); the match winner is then the team with more round wins.
  */
-export const SIM_VERSION = 41;
+export const SIM_VERSION = 42;

@@ -442,7 +442,7 @@ function checkRounds(w: SimWorld, events: readonly SimEvent[], fail: (m: string)
   if (phase < RoundPhase.intro || phase > RoundPhase.over) fail(`phase ${String(phase)}`);
   if (round < 1 || round > 3) fail(`round ${String(round)}`);
   if (timer < 0 || timer > ROUND_TIMER_TICKS) fail(`round timer ${String(timer)}`);
-  if (won.some((n) => n > ROUNDS_TO_WIN)) fail(`round wins ${won.join('-')}`);
+  if (won.some((n) => n > ROUNDS_TO_WIN + 1)) fail(`round wins ${won.join('-')}`);
   const has = (kind: number): boolean => events.some((e) => e.kind === kind);
   if (has(SimEventKind.hitConfirmed) && phase !== RoundPhase.fight && !has(SimEventKind.ko))
     fail('hit outside the fight');

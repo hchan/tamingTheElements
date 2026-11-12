@@ -1,6 +1,6 @@
 import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
 import {
-  HP_PM, HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUNDS_TO_WIN, ROUND_END_TICKS,
+  HP_PM, HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUNDS_TO_WIN, ROUND_END_TICKS, SUDDEN_HP_PM, SUDDEN_TIMER_TICKS,
   ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y, ARCADE_P1_START_X, ARCADE_P2_START_X,
 } from '../../../data/arcade';
 import { SIZE_ONE, sizeHeightPx, sizeOfDef, sizeWidthPx } from '../../../data/size';
@@ -106,14 +106,23 @@ function resetRound(world: SimWorld, sink: EventSink): void {
 }
 
 /** Starts round `round` (after the reset from round 2 on): `intro` for ROUND_INTRO_TICKS, a full timer, `roundStarted`. */
-function startRound(world: SimWorld, sink: EventSink, round: number): void {
+function startRound(world: SimWorld, sink: EventSink, round: number, sudden = false): void {
   const s = world.state;
   if (round > 1) resetRound(world, sink);
   const a = s.arcade;
+  a[AW(ArcadeW.sudden)] = sudden ? 1 : 0;
+  if (sudden) {
+    for (let id = 0; id < MAX_ENTITIES; id++) {
+      if (s.kind[id] !== EntityKind.character || ((s.flags[id] ?? 0) & EntityFlag.alive) === 0) continue;
+      const hp = Math.max(1, Math.floor(((s.maxHp[id] ?? 0) * SUDDEN_HP_PM) / HP_PM));
+      s.hp[id] = hp;
+      s.restCap[id] = hp;
+    }
+  }
   a[AW(ArcadeW.round)] = round;
   a[AW(ArcadeW.phase)] = RoundPhase.intro;
   a[AW(ArcadeW.phaseUntil)] = (s.world[W.tick] ?? 0) + 1 + ROUND_INTRO_TICKS;
-  a[AW(ArcadeW.roundTimer)] = ROUND_TIMER_TICKS;
+  a[AW(ArcadeW.roundTimer)] = sudden ? SUDDEN_TIMER_TICKS : ROUND_TIMER_TICKS;
   a[AW(ArcadeW.roundWinner)] = 0;
   sink.emit(0, SimEventKind.roundStarted, { round });
   terrainRound(world, sink);
@@ -163,7 +172,7 @@ function timeOver(world: SimWorld, sink: EventSink): void {
  * The `cleanup` slot, `arcadeRound` (FUN-DESIGN 2.10): runs the round phases on every tick whose systems run (not while
  * a freeze or a KO slow-motion hold stops the game clock). Round 1 starts on the first tick. `intro` -> `fight` (`fight`
  * event) -> `ko` on a wipe, or `roundEnded` straight away on time over (the timer counts fight game ticks) -> `roundEnd`
- * -> the next round, or `over` once a team has ROUNDS_TO_WIN (then `endSystem` emits `matchEnded` in the same tick).
+ * -> the next round, or `over` once a team has ROUNDS_TO_WIN (both on it after a draw: one sudden-death round first; then `endSystem` emits `matchEnded` in the same tick).
  * Phase deadlines are `W.tick` values: a phase ends on the tick before its deadline. Returns at once in Classic.
  */
 export function arcadeRoundSystem(world: SimWorld, _cmds: readonly [Command, Command], sink: EventSink): void {
@@ -199,7 +208,8 @@ export function arcadeRoundSystem(world: SimWorld, _cmds: readonly [Command, Com
       return;
     case RoundPhase.roundEnd:
       if (!due) return;
-      if ((a[WON(0)] ?? 0) >= ROUNDS_TO_WIN || (a[WON(1)] ?? 0) >= ROUNDS_TO_WIN) a[AW(ArcadeW.phase)] = RoundPhase.over;
+      if (a[AW(ArcadeW.sudden)] === 0 && a[WON(0)] === a[WON(1)] && (a[WON(0)] ?? 0) >= ROUNDS_TO_WIN) startRound(world, sink, round + 1, true);
+      else if ((a[WON(0)] ?? 0) >= ROUNDS_TO_WIN || (a[WON(1)] ?? 0) >= ROUNDS_TO_WIN) a[AW(ArcadeW.phase)] = RoundPhase.over;
       else startRound(world, sink, round + 1);
       return;
     default:

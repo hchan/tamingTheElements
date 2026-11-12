@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, METER_BAR, ROUNDS_TO_WIN, ROUND_END_TICKS,
+  HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, METER_BAR, ROUNDS_TO_WIN, ROUND_END_TICKS, SUDDEN_HP_PM, SUDDEN_TIMER_TICKS,
   ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
@@ -375,8 +375,46 @@ describe('best of 3', () => {
       d.state.hp[0] = 0;
       koByHp(d, 1);
     }
-    expect(of(until(d, SimEventKind.matchEnded), SimEventKind.matchEnded)[0]).toMatchObject({ winner: -1, won0: 2, won1: 2, survivors: 0 });
-    expect(roundsWon(d.state, 0)).toBe(2);
+    // 2-2 does not end the match: a sudden-death round (3rd) is played; a double KO there leaves the draw standing.
+    toFight(d);
+    expect(d.state.arcade[AW(ArcadeW.sudden)]).toBe(1);
+    d.state.hp[0] = 0;
+    koByHp(d, 1);
+    expect(of(until(d, SimEventKind.matchEnded), SimEventKind.matchEnded)[0]).toMatchObject({ winner: -1, won0: 3, won1: 3, survivors: 0 });
+    expect(roundsWon(d.state, 0)).toBe(3);
+  });
+
+  it('a draw that levels the score starts a sudden-death round (10% life, 1500-tick timer); its winner takes the match', () => {
+    const w = duel();
+    const s = w.state;
+    toFight(w);
+    koByHp(w, 1); // 1-0
+    toFight(w);
+    s.hp[0] = (s.maxHp[0] ?? 0) / 2;
+    s.hp[1] = (s.maxHp[1] ?? 0) / 2;
+    s.arcade[AW(ArcadeW.roundTimer)] = 1;
+    expect(of(until(w, SimEventKind.roundEnded), SimEventKind.roundEnded)[0]).toMatchObject({ winner: -1, won0: 2, won1: 1 });
+    // 2-1 after a draw: team 0 already won, no sudden death.
+    expect(of(until(w, SimEventKind.matchEnded), SimEventKind.matchEnded)[0]).toMatchObject({ winner: 0, won0: 2, won1: 1 });
+
+    const d = duel();
+    const t = d.state;
+    toFight(d);
+    t.arcade[AW(ArcadeW.roundTimer)] = 1;
+    until(d, SimEventKind.roundEnded); // draw 1-1
+    toFight(d);
+    t.arcade[AW(ArcadeW.roundTimer)] = 1;
+    until(d, SimEventKind.roundEnded); // draw 2-2
+    expect(t.arcade[AW(ArcadeW.sudden)]).toBe(0);
+    const ev = until(d, SimEventKind.roundStarted);
+    expect(of(ev, SimEventKind.roundStarted)[0]).toMatchObject({ round: 3 });
+    expect([t.arcade[AW(ArcadeW.sudden)], t.arcade[AW(ArcadeW.roundTimer)], t.hp[0], t.hp[1]]).toEqual([
+      1, SUDDEN_TIMER_TICKS, Math.floor(((t.maxHp[0] ?? 0) * SUDDEN_HP_PM) / 1000), Math.floor(((t.maxHp[1] ?? 0) * SUDDEN_HP_PM) / 1000),
+    ]);
+    toFight(d);
+    koByHp(d, 1);
+    expect(of(until(d, SimEventKind.matchEnded), SimEventKind.matchEnded)[0]).toMatchObject({ winner: 0, won0: 3, won1: 2 });
+    expect(matchWinner(t)).toBe(0);
   });
 });
 
