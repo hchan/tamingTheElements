@@ -16,9 +16,12 @@ import {
   type SimState,
 } from '../sim/state';
 import type { SimWorld } from '../sim/world';
+import { ARCADE_SNAG_SLOT } from '../data/arcade';
+import { CHARACTERS } from '../data/characters';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
 import { RANGED } from '../sim/systems/arcade/meter';
+import { isGuarding } from '../sim/systems/arcade/stun';
 import { superSpecOf } from '../sim/systems/arcade/super';
 import { kindOf, patchRects, stageOf } from '../sim/systems/arcade/terrain';
 
@@ -102,6 +105,14 @@ export interface ArcadeView {
    * fighter is not of the earth element, else none. Fresh plain rectangles.
    */
   readonly rocks: readonly RockView[];
+  /**
+   * Snag (FUN-DESIGN 2.20): the slot (0 or 1) of this side's Snag throw, or -1 for a hero without one; whether the
+   * opponent holds guard (a guard wastes the throw); game ticks left of the opponent's root and of its root immunity.
+   */
+  readonly snagSlot: number;
+  readonly oppGuarding: boolean;
+  readonly oppRooted: number;
+  readonly oppRootImmune: number;
 }
 
 /** One rock as `ArcadeView.rocks` lists it; plain numbers. */
@@ -250,6 +261,10 @@ function arcadeViewOf(
     tagIn: Math.max(0, (s.teams[side * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0) - g),
     ...partnersPm(s, members, self),
     rocks: stageOf(s) === 3 && self !== undefined && kindOf(s, self.id) !== 3 ? patchRects(s) : [],
+    snagSlot: self === undefined ? -1 : (ARCADE_SNAG_SLOT[CHARACTERS[s.defId[self.id] ?? 0]?.id ?? ''] ?? -1),
+    oppGuarding: opp !== undefined && isGuarding(s, opp.id),
+    oppRooted: left(opp, ArcadeE.rootUntil),
+    oppRootImmune: left(opp, ArcadeE.rootImmuneUntil),
   };
 }
 

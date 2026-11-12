@@ -1,4 +1,4 @@
-import { CHARGE_TICKS, DASH_TICKS, SimEventKind, type SimEvent } from '@core/index';
+import { CHARGE_TICKS, DASH_TICKS, SimEventKind, SnagEvent, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 
 /**
@@ -39,6 +39,10 @@ export const PARRY_WORD = 'PARRY';
 export const BREAK_WORD = 'GUARD BREAK';
 export const DODGE_WORD = 'DODGE';
 export const CHARGE_WORD = 'CHARGE!';
+/** Snag (FUN-DESIGN 2.20): a rope-brown root ring and word; fire burning it pops FREE in the break orange. */
+export const ROPE_COLOR = 0xc8a060;
+export const ROOTED_WORD = 'ROOTED';
+export const FREED_WORD = 'FREE';
 
 /** Live-region lines (through the Arena's throttled announcer), by whose fighter it was. */
 export const LINES = {
@@ -85,7 +89,7 @@ export class DefenceFx {
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
       const k = e.kind;
-      if ((k < SimEventKind.guarded || k > SimEventKind.perfectDodge) && k !== SimEventKind.chargeStarted) continue;
+      if ((k < SimEventKind.guarded || k > SimEventKind.perfectDodge) && k !== SimEventKind.chargeStarted && k !== SimEventKind.snag) continue;
       if (e.tick < this.lastTick || (e.tick === this.lastTick && e.seq <= this.lastSeq)) continue;
       this.lastTick = e.tick;
       this.lastSeq = e.seq;
@@ -104,6 +108,9 @@ export class DefenceFx {
         if (!reduced) sink.ghosts(e.sourceId, e.tick, e.tick + CHARGE_TICKS);
         sink.pop(e.sourceId, CHARGE_WORD, BREAK_COLOR, reduced);
         sink.say({ key: 'charge', text: this.opts.teamOf(e.sourceId) === 0 ? 'You charged.' : 'The enemy charged.', important: false });
+        break;
+      case SimEventKind.snag:
+        this.snag(e);
         break;
       case SimEventKind.dashed:
         if (!reduced) sink.ghosts(e.sourceId, e.tick, e.tick + DASH_TICKS);
@@ -128,6 +135,23 @@ export class DefenceFx {
         sink.ring(target, BREAK_COLOR, reduced);
         sink.pop(target, BREAK_WORD, BREAK_COLOR, reduced);
         sink.say(mine ? LINES.breakMine : LINES.breakFoe);
+    }
+  }
+
+  /** A Snag rooted (ring, word, line), was guarded (chip sparks) or burnt free (sparks, word); an expiry shows nothing. */
+  private snag(e: SimEvent): void {
+    const sink = this.sink;
+    const reduced = this.opts.reducedMotion();
+    const id = e['id'] ?? -1;
+    const reason = e['reason'];
+    if (reason === SnagEvent.rooted) {
+      sink.ring(id, ROPE_COLOR, reduced);
+      sink.pop(id, ROOTED_WORD, ROPE_COLOR, reduced);
+      sink.say({ key: 'snag', text: this.opts.teamOf(id) === 0 ? 'You are rooted.' : 'Enemy rooted.', important: false });
+    } else if (reason === SnagEvent.guarded) sink.sparks(id, reduced ? 1 : CHIP_SPARKS, GUARD_COLOR, SPARK_TICKS, reduced);
+    else if (reason === SnagEvent.freed) {
+      sink.sparks(id, reduced ? 1 : CHIP_SPARKS, BREAK_COLOR, SPARK_TICKS, reduced);
+      sink.pop(id, FREED_WORD, BREAK_COLOR, reduced);
     }
   }
 }

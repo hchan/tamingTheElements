@@ -96,6 +96,25 @@ export const ChargeEnd = { expired: 0, arrived: 1, blocked: 2, interrupted: 3 } 
 export const RecoveredReason = { stunEnded: 0, juggleCap: 1, stunCap: 2 } as const;
 
 /**
+ * Snag (FUN-DESIGN 2.20, WP-snag), in game ticks and px. A rope throw that roots: the Entangling Vines melee on the
+ * ARCADE_SNAG_SLOT slot of these heroes (Arcade only; Classic data unchanged), a SNAG_RANGE_PX x SNAG_WIDTH_PX box along
+ * the aim, ready SNAG_COOLDOWN_TICKS after a throw. A hit roots the target SNAG_ROOT_TICKS (no walking, Dash or Charge;
+ * it can still turn, aim, cast and guard); a guarding target wastes the throw. A shot of SNAG_FIRE_ABILITIES or a Sun
+ * weather frees it at once. Freed or expired, the target is immune to a new root for SNAG_IMMUNE_TICKS.
+ * `SnagEvent` is the `snag` event reason; the payload `id` is the target, `sourceId` the rope (rooted, guarded), the
+ * fire shot or Sun caster (freed), or the target itself (expired).
+ */
+export const ARCADE_SNAG_SLOT: Readonly<Partial<Record<string, number>>> = { treenoc: 0, wispera: 0, curomo: 1, echo: 0 };
+export const SNAG_ABILITY = 'entangling-vines';
+export const SNAG_RANGE_PX = 240;
+export const SNAG_WIDTH_PX = 40;
+export const SNAG_COOLDOWN_TICKS = 400;
+export const SNAG_ROOT_TICKS = 60;
+export const SNAG_IMMUNE_TICKS = 75;
+export const SNAG_FIRE_ABILITIES: readonly string[] = ['fireball', 'crimson-fire', 'fire-blast', 'elemental-advantage-fire-cone'];
+export const SnagEvent = { rooted: 0, guarded: 1, freed: 2, expired: 3 } as const;
+
+/**
  * Knockback start speed in Q4 (1/16 px per tick) by strength: light 96 (6 px per tick), medium 144, heavy 224, super
  * 256. It decays by KNOCKBACK_DECAY_Q4 (1 px per tick) every game tick, so light travels 21 px, medium 45, heavy 105.
  */

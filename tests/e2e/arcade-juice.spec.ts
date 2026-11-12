@@ -5,6 +5,9 @@ import { ARENA_READY } from './parity/helpers';
 // tsconfig.node has no DOM lib. Manual stepping keeps the driver paused, and paused effects hold their frame, so what a
 // step produced is still on screen when the probe reads it.
 const SECONDARY = 32;
+const PRIMARY = 16;
+/** Arcade Charge (FUN-DESIGN 2.17): its arrival hit stuns, so the Ice Shock pressed after its hit-stop (it lands 6 ticks on) is the combo's second hit. */
+const CHARGE = 1 << 15;
 const WHITE = 0xffffff;
 const FILL = 1;
 /** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91; Classic has none. */
@@ -26,7 +29,7 @@ function collectErrors(page: Page): string[] {
   return errors;
 }
 
-/** Demo arena (Curomo vs Pax), the two placed 80 px apart and facing: Curomo's Shards of Ice land on the next ticks. */
+/** Demo arena (Curomo vs Pax), the two placed 80 px apart and facing: Curomo's Shards of Ice (Classic) or Charge (Arcade) land within a few ticks. */
 async function openDemo(page: Page, ff: string): Promise<number> {
   await page.goto(`/?ff=${ff}&manual=1&seed=7`);
   await page.locator('#game canvas').waitFor();
@@ -41,11 +44,14 @@ async function openDemo(page: Page, ff: string): Promise<number> {
   })()`);
 }
 
-/** Steps with Curomo firing until the foe loses health, then lets two frames render. */
-async function hit(page: Page, foe: number): Promise<void> {
+/**
+ * Steps with Curomo pressing `cmd` (Shards of Ice by default; in Arcade that slot is Snag, FUN-DESIGN 2.20, so the
+ * Arcade tests charge) until the foe loses health, then lets two frames render.
+ */
+async function hit(page: Page, foe: number, cmd = SECONDARY): Promise<void> {
   const hp = (): Promise<number> => page.evaluate<number>(`window.__TTE__.arena.characters().find((c) => c.id === ${String(foe)}).hp`);
   const start = await hp();
-  for (let i = 0; i < 20 && (await hp()) === start; i++) await page.evaluate(`window.__TTE__.arena.step(1, [${String(SECONDARY)}, 0])`);
+  for (let i = 0; i < 20 && (await hp()) === start; i++) await page.evaluate(`window.__TTE__.arena.step(1, [${String(cmd)}, 0])`);
   expect(await hp()).toBeLessThan(start);
   await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 }
@@ -81,8 +87,8 @@ test('Classic: once the white flash ends the hit leaves a red tint, then clears'
 test('Arcade: flash, damage numbers and combo counter; they hold while paused', async ({ page }) => {
   const errors = collectErrors(page);
   const foe = await openDemo(page, 'arenaDemo,arcade');
-  await hit(page, foe);
-  await page.evaluate(`window.__TTE__.arena.step(3, [${String(SECONDARY)}, 0])`);
+  await hit(page, foe, CHARGE);
+  await page.evaluate(`window.__TTE__.arena.step(8, [${String(PRIMARY)}, 0])`);
   await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
   const f = await fx(page);
   expect(flashed(f, foe)).toBe(true);
@@ -104,8 +110,8 @@ test('Arcade with reduced motion: no shake, but the flash, numbers and combo sta
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const errors = collectErrors(page);
   const foe = await openDemo(page, 'arenaDemo,arcade');
-  await hit(page, foe);
-  await page.evaluate(`window.__TTE__.arena.step(3, [${String(SECONDARY)}, 0])`);
+  await hit(page, foe, CHARGE);
+  await page.evaluate(`window.__TTE__.arena.step(8, [${String(PRIMARY)}, 0])`);
   await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
   const f = await fx(page);
   expect(flashed(f, foe)).toBe(true);

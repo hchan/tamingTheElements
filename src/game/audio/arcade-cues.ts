@@ -35,6 +35,8 @@ export const CUES = {
   clang: [[2, 523, 510, 200, 0.15], [2, 784, 770, 170, 0.1], [NOISE, 2500, 1500, 60, 0.3]],
   /** The super's charge riser, under the sound map's whoosh. */
   charge: [[3, 110, 880, 420, 0.16]],
+  /** Snag (FUN-DESIGN 2.20): the rope whip and its snap. */
+  snag: [[NOISE, 1800, 400, 110, 0.35], [1, 330, 165, 90, 0.2, 60]],
   sun: [[1, 523, 523, 140, 0.2], [1, 659, 659, 140, 0.2, 90], [1, 784, 784, 220, 0.2, 180]],
   rain: [[0, 1397, 1046, 90, 0.2], [0, 1175, 880, 90, 0.2, 110], [0, 988, 698, 140, 0.2, 220]],
   sand: [[NOISE, 300, 1200, 420, 0.3], [1, 147, 147, 300, 0.15]],
@@ -63,6 +65,9 @@ export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
 const HIT: Kinds['hitConfirmed'] = 41;
 const WEATHER: Kinds['weatherChanged'] = 59;
 const MATCH_END: Kinds['matchEnded'] = 30;
+const SNAG: Kinds['snag'] = 69;
+/** `SnagEvent.expired` (data/arcade.ts): a root running out is silent; rooted, guarded and freed whip the rope. */
+const SNAG_EXPIRED = 3;
 
 /** Weather stinger per `Weather` kind (1 Sun .. 5 Eclipse). */
 export const WEATHER_CUES: readonly CueName[] = ['sun', 'rain', 'sand', 'gale', 'eclipse'];
@@ -123,6 +128,8 @@ export function pickCues(e: SimEvent, play: PlayCue): void {
     if (cue) play(cue, 1, 1);
   } else if (e.kind === MATCH_END) {
     play('match', e['winner'] === 0 ? 1 : LOSS_PITCH, 1);
+  } else if (e.kind === SNAG) {
+    if (e['reason'] !== SNAG_EXPIRED) play('snag', 1, 1);
   } else {
     const cue = KIND_CUES[e.kind];
     if (cue) play(cue, 1, 1);

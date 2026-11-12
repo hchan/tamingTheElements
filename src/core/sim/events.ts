@@ -6,6 +6,7 @@ export const SimEventKind = {
   weatherChanged: 59, weatherEnded: 60, terrainChanged: 61, terrainSwap: 62, patchEntered: 63, patchLeft: 64,
   patchHeal: 65, projectileBlocked: 66,
   chargeStarted: 67, chargeEnded: 68,
+  snag: 69,
 } as const;
 export type SimEventKindValue = (typeof SimEventKind)[keyof typeof SimEventKind];
 

@@ -9,6 +9,7 @@ import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, typ
 import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
 import { castDir } from './aim';
+import { isRooted } from './snag';
 import { pending, Press, usePress } from './buffer';
 import { gainMeter } from './meter';
 import { isDashInvulnerable, isFree } from './stun';
@@ -25,7 +26,7 @@ export function startDash(world: SimWorld, sink: EventSink, team: number, raw: C
   const id = controlledId(world, team);
   const e = id * ARCADE_E;
   const g = now(s);
-  if (id < 0 || !pending(s, team, Press.dash) || g < (s.arcade[e + ArcadeE.dashReadyAt] ?? 0) || !isFree(s, id)) return;
+  if (id < 0 || !pending(s, team, Press.dash) || g < (s.arcade[e + ArcadeE.dashReadyAt] ?? 0) || !isFree(s, id) || isRooted(s, id)) return;
   const cancel = ((s.flags[id] ?? 0) & EntityFlag.frozen) !== 0;
   const confirm = s.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.confirmTick] ?? 0;
   if (cancel && (confirm === 0 || g + 1 - confirm > DASH_CANCEL_TICKS)) return;

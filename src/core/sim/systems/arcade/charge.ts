@@ -14,6 +14,7 @@ import { gainMeter, RANGED } from './meter';
 import { controlledId, facingFor } from '../movement';
 import { endCharge } from './charge-move';
 import { canAct, chargeTick, isInvulnerable } from './stun';
+import { isRooted } from './snag';
 
 /** The 8-way direction from `id` towards `foe` (FUN-DESIGN 2.17): a diagonal unless one axis offset is 2x the other. */
 function chargeDir(s: SimState, id: number, foe: number): number {
@@ -32,7 +33,7 @@ export function startCharge(world: SimWorld, sink: EventSink, team: number, id: 
   const s = world.state;
   const g = now(s);
   if (id < 0 || !pending(s, team, Press.charge) || RANGED[s.defId[id] ?? 0]) return;
-  if (g < (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) || !canAct(world, id)) return;
+  if (g < (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) || !canAct(world, id) || isRooted(s, id)) return;
   const dir = foe >= 0 ? chargeDir(s, id, foe) : castDir(s, id);
   const step = Math.min((s.speed[id] ?? 0) * CHARGE_SPEED_MULT, CHARGE_MAX_STEP_PX);
   const ax = DIR8_X[dir] ?? 0;

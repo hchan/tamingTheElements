@@ -59,11 +59,12 @@ export interface ArenaProbe {
   rounds(): Promise<{ main: string; sub: string; visible: boolean; scale: number; timer: string; won: readonly [number, number] } | undefined>;
   /**
    * Arcade only (async: a lazy chunk): the defence view's last frame (WP-arcade-defence-view): visible afterimages, trail
-   * dots, guard shields, guard bars (their meters), the projectiles of the last tick, live sparks and rings, and the words
-   * popped; undefined in Classic.
+   * dots, guard shields, guard bars (their meters), the projectiles of the last tick, live sparks and rings, the words
+   * popped and the fighters drawn with a Snag rope (FUN-DESIGN 2.20); undefined in Classic.
    */
   defence(): Promise<{
     ghosts: number; trails: number; shields: number; bars: readonly number[]; projectiles: number; sparks: number; rings: number; pops: readonly string[];
+    roots: number;
   } | undefined>;
   /**
    * Arcade only (async: a lazy chunk): the weather view's last frame (WP-arcade-weather-view): the weather drawn (0 none),

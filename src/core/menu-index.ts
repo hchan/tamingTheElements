@@ -25,7 +25,7 @@ export * from './data/types';
 export * from './data/characters';
 export * from './data/text-ids';
 export * from './rules/new-game';
-export { METER_BAR, METER_BARS, METER_MAX } from './data/arcade';
+export { ARCADE_SNAG_SLOT, METER_BAR, METER_BARS, METER_MAX } from './data/arcade';
 export * from './rules/progression';
 export * from './rules/results';
 export * from './data/abilities-a';

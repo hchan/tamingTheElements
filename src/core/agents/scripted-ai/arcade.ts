@@ -1,4 +1,6 @@
-import { arcadePlayfield, CHARGE_AI_MIN_DIST, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL } from '../../data/arcade';
+import {
+  arcadePlayfield, CHARGE_AI_MIN_DIST, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL,
+} from '../../data/arcade';
 import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
 import { Cmd, type Command } from '../../sim/commands';
@@ -160,6 +162,20 @@ export const ARCADE_AI_STALE_TICKS = 400;
 /** Within every 256 ticks, the tick from which a tag team's AI fires along a rock-cut line (WP-arcade-2v2-tune). */
 const SHOOT_FROM = 64;
 
+/**
+ * Snag (FUN-DESIGN 2.20): the movement bit that faces `opp` along an axis where the SNAG_RANGE_PX x SNAG_WIDTH_PX throw
+ * reaches it (its box overlaps the band along the axis, within range of `self`'s edge), else 0.
+ */
+export function snagLane(self: FighterView, opp: FighterView): Command {
+  const dx = opp.x + opp.w / 2 - (self.x + self.w / 2);
+  const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
+  const gapX = Math.abs(dx) - (self.w + opp.w) / 2;
+  const gapY = Math.abs(dy) - (self.h + opp.h) / 2;
+  if (Math.abs(dy) * 2 < SNAG_WIDTH_PX + opp.h && gapX < SNAG_RANGE_PX) return dx >= 0 ? Cmd.right : Cmd.left;
+  if (Math.abs(dx) * 2 < SNAG_WIDTH_PX + opp.w && gapY < SNAG_RANGE_PX) return dy >= 0 ? Cmd.down : Cmd.up;
+  return 0;
+}
+
 /** Within this Manhattan distance (px) a tag team's AI may skip an attack press (see `decide`). */
 const CLOSE_PX = 160;
 
@@ -261,6 +277,11 @@ export class ArcadeTactics {
     let cmd = line !== 0 ? (base & ~MOVE) | line | shot : axisShot ? base & ~(Cmd.up | Cmd.down) : base;
     const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
     const free = a.selfStun === 0 && !a.superActive && (self.flags & EntityFlag.frozen) === 0;
+    // Snag (FUN-DESIGN 2.20): the Classic AI never presses the Snag slot (it would waste the long cooldown); `snag` is the
+    // throw when it is ready, the opponent is in a lane in range, not guarding, not rooted and not immune.
+    const snagBit = a.snagSlot === 0 ? Cmd.primary : a.snagSlot === 1 ? Cmd.secondary : 0;
+    cmd &= ~snagBit;
+    const lane = snagBit === 0 || (view.cooldowns[a.snagSlot] ?? 1) !== 0 || a.oppGuarding || a.oppRooted > 0 || a.oppRootImmune > 0 ? 0 : snagLane(self, opp);
 
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
     let t = ARCADE_AI_LOOKAHEAD + 1;
@@ -301,6 +322,11 @@ export class ArcadeTactics {
       cmd &= ~ATTACK;
     }
     if (!free || threat) return cmd;
+    if (lane !== 0) return (cmd & ~(MOVE | ATTACK)) | lane | snagBit;
+    // A rooted opponent cannot walk away: a melee hero closes in (a Charge from afar).
+    if (a.oppRooted > 0 && a.chargeIn !== -1) {
+      return a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST ? Cmd.charge : (cmd & ~MOVE) | toward(self, opp);
+    }
     const pm = (self.hp * 1000) / self.maxHp;
     // Tags in the healthier bench hero (3v3: Tag 2 when the other one is healthier; WP-arcade-3v3).
     const two = a.partner2Pm > a.partnerPm;

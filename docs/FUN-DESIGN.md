@@ -947,6 +947,82 @@ of Classic, in stages so parity stays honest:
 3. **Removal (needs owner sign-off on goldens):** drop the Capture ability from Classic data and UI. It changes sim data, so it needs
    a `golden:record` and `balance:record` with the stated reason "capture deprecated" and a `SIM_VERSION` bump.
 
+In Arcade, the "throw something at the foe" role of Capture goes to **Snag**, a rope throw that roots the target (section 2.20).
+
+### 2.20 Snag (Arcade, sim, WP-snag, owner-approved 2026-11-11)
+
+**Design.** Snag is a rope throw that **roots** its target for a short time. It is Arcade only (`rulesetArcade`). It overrides one
+Classic slot of four heroes, and the Classic data is unchanged. The ability under it is the Entangling Vines melee
+(`SNAG_ABILITY`). In Arcade it hits a box along the aim and roots the target. It does not use the Classic freeze, the effect entity or the
+Arcade stun (`HIT_STUN_OVERRIDE` is not reached for it).
+
+| Hero | Slot | Replaces |
+| --- | --- | --- |
+| Treenoc | 0 | Entangling Vines (the vines slot becomes Snag) |
+| Wispera | 0 | Sonar Blast |
+| Curomo | 1 | Shards of Ice |
+| Echo | 0 | Fade |
+
+Pax and the fire heroes get no Snag. The table is `ARCADE_SNAG_SLOT` in `src/core/data/arcade.ts`.
+
+**Numbers** (`src/core/data/arcade.ts`):
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `SNAG_RANGE_PX` x `SNAG_WIDTH_PX` | 240 x 40 | the hit box along the 8-way aim, from the thrower |
+| `SNAG_COOLDOWN_TICKS` | 400 | the next throw is ready 400 game ticks after this one, hit or miss |
+| `SNAG_ROOT_TICKS` | 60 | the root lasts 60 game ticks (1.2 s) |
+| `SNAG_IMMUNE_TICKS` | 75 | after the root is freed or expires, no new root for 75 game ticks |
+
+**Rules** (`src/core/sim/systems/arcade/snag.ts`):
+
+- **Rooted:**
+  - A rooted target cannot walk, start a Dash or start a Charge. A dash press stays buffered for its normal 8 ticks.
+  - It can still turn, aim, cast, guard and tag.
+  - A Dash or Charge that is already running continues to its end; the root only stops new ones.
+- **Guard:** a guarding target wastes the throw (`snag` reason `guarded`), and the thrower still spends its cooldown.
+- **Fire burns the rope:**
+  - A hit by `SNAG_FIRE_ABILITIES` (Fireball, Crimson Fire, Fire Blast, the fire cone of Elemental Advantage) frees the target at once, and the shot still deals its damage.
+  - A Sun weather cast frees every rooted fighter.
+- **No refresh, no chain:**
+  - A throw at a fighter that is already rooted or immune does nothing.
+  - The root is not refreshed.
+  - After the root is freed or expires, the fighter is immune to new roots for 75 ticks.
+- **State and events:**
+  - Two per-entity Arcade ints: `rootUntil` and `rootImmuneUntil`. They are in the snapshot and the hash. Classic's `arcade` array stays empty.
+  - Event `snag` with `{ id, reason }`, where `reason` is `SnagEvent`: `rooted`, `guarded`, `freed` or `expired`.
+  - `SIM_VERSION` 26.
+- **AI** (`scripted-ai/arcade.ts`): the AI throws when the foe is in the box and not guarding. A melee hero then closes in.
+
+**Presentation (view only):**
+
+- The Entangling Vines sprite is reused, with rope loops drawn on the rooted fighter, a "ROOTED" pop and a spoken line.
+- Fire or Sun pops "FREE". A guarded throw shows guard sparks.
+- A short rope cue plays (`arcade-cues.ts`).
+- The race page names the slot "Snag" and says it roots and fire burns it. No player-visible text says "Capture".
+
+**Interactions noted in WP-snag:**
+
+- **Tag entrance:** the free tag entrance casts slot 0, so Treenoc, Wispera and Echo throw a free Snag when they tag in.
+- **Wispera:** she keeps the ranged weather-charge flag, although her slot 0 is now a melee Snag.
+- **Who can burn a root:** no Snag hero is fire, so in 1v1 only the rooted fighter's own Fire shots or Sun cast can free it. Fire shots reach it in 2v2 and 3v3.
+
+**Balance at landing** (`balance:compare`, not re-recorded):
+
+- Classic: +0.0 pp on every race.
+- Arcade 1v1 and 2v2: the baselines moved well beyond the 5 pp tolerance. The biggest moves are:
+  - Wispera: 43 to 3% in 1v1, 48 to 10% in 2v2. She lost her ranged primary.
+  - Curomo: 60 to 24% in 1v1, 66 to 44% in 2v2.
+  - Lavax: 53 to 8% in 2v2.
+- These need a tuning pass (for example, giving Wispera a ranged slot 0 back) before the baselines are recorded.
+
+**Out of scope:**
+
+- Capture in Classic, which is retired as in 2.19.
+- A Snag golden: no recorded golden throws a Snag yet.
+- The touch Charge button still reads the Classic slot-0 kind.
+- The race wiki shows Snag in both rulesets.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)

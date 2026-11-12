@@ -1,5 +1,5 @@
 import {
-  METER_WEATHER, WEATHER_CHARGE_FULL, WEATHER_COOLDOWN_TICKS, WEATHER_ELEMENTS, WEATHER_PM, WEATHER_TICKS,
+  METER_WEATHER, Weather, WEATHER_CHARGE_FULL, WEATHER_COOLDOWN_TICKS, WEATHER_ELEMENTS, WEATHER_PM, WEATHER_TICKS,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import type { Element } from '../../../data/elements';
@@ -15,6 +15,7 @@ import { gainMeter, weatherCharge } from './meter';
 import { canAct } from './stun';
 import { elementKind } from './terrain';
 import { castTerrain } from './terrain-layout';
+import { freeAllRoots } from './snag';
 
 const KIND = ARCADE_WORLD_BASE + ArcadeW.weather;
 const UNTIL = ARCADE_WORLD_BASE + ArcadeW.weatherUntil;
@@ -65,6 +66,7 @@ export function weatherTick(world: SimWorld, sink: EventSink): void {
     a[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.weatherCharge] = 0;
     usePress(s, team, Press.weather);
     castTerrain(s, sink, kind, g);
+    if (kind === Weather.sun) freeAllRoots(s, sink, id); // the Sun burns every Snag rope (FUN-DESIGN 2.20)
     sink.emit(id, SimEventKind.weatherChanged, { weather: kind, prev, team });
     gainMeter(s, sink, id, team, METER_WEATHER);
   }

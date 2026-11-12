@@ -2,6 +2,7 @@ import { aabbOverlap, type Aabb } from '../../math/aabb';
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B, type AbilityDefB } from '../../data/abilities-b';
 import { CHARACTERS } from '../../data/characters';
+import { SNAG_RANGE_PX, SNAG_WIDTH_PX } from '../../data/arcade';
 import type { AbilityDef } from '../../data/types';
 import { computeDamage, computeHeal, damageDealt } from '../../rules/damage';
 import { allocEntity, freeEntity } from '../alloc';
@@ -12,10 +13,12 @@ import { controlledId } from './movement';
 import { damageDecreasePct } from './status';
 import type { EventSink } from '../events';
 import { isArcade, now } from '../clock';
-import { applyArcadeHit, HIT_STUN } from './arcade/hit';
+import { applyArcadeHit } from './arcade/hit';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
-import { applyStun, canAct, isInvulnerable } from './arcade/stun';
-import { releaseCount } from './ability-info';
+import { canAct, isInvulnerable } from './arcade/stun';
+import { releaseCount, slotAbility } from './ability-info';
+import { snagHit } from './arcade/snag';
+import { cooldownTicksFor } from '../arcade-numbers';
 import { castDir } from './arcade/aim';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
@@ -147,8 +150,8 @@ function meleeHit(world: SimWorld, sink: EventSink, id: number, victim: number):
   if (defId === VINES) {
     if (victimTranslucent) return;
     if (isArcade(s)) {
-      // Arcade: one 60-tick stun per cast that obeys the juggle and stun caps, instead of the 150-tick freeze.
-      if ((s.hitMask[id] ?? 0) === 0) applyStun(world, sink, id, victim, HIT_STUN[VINES] ?? 0);
+      // Arcade: the Snag throw (FUN-DESIGN 2.20) roots once per cast instead of the 150-tick freeze.
+      if ((s.hitMask[id] ?? 0) === 0) snagHit(world, sink, id, victim);
       s.hitMask[id] = HIT;
       return;
     }
@@ -235,7 +238,7 @@ export function castMelee(world: SimWorld, sink: EventSink, team: number, slot: 
   const s = world.state;
   const caster = controlledId(world, team);
   if (caster < 0 || !canAct(world, caster)) return;
-  const abilityId = CHARACTERS[s.defId[caster] ?? 0]?.abilities[slot];
+  const abilityId = slotAbility(s, caster, slot);
   const defId = abilityId === undefined ? undefined : DEF_INDEX.get(abilityId);
   const def = defId === undefined ? undefined : ABILITY_DEFS[defId];
   if (defId === undefined || def?.kind !== 'melee') return;
@@ -247,13 +250,14 @@ export function castMelee(world: SimWorld, sink: EventSink, team: number, slot: 
 
   const id = allocEntity(s);
   if (id < 0) return;
-  // Legacy: usable when elapsed > cooldown, hence the +1 tick.
-  s.abil[cd] = tick + def.cooldownTicks + 1;
+  // Legacy: usable when elapsed > cooldown, hence the +1 tick. Arcade: the Snag cooldown (arcade-numbers.ts).
+  s.abil[cd] = tick + cooldownTicksFor(def, isArcade(s)) + 1;
   s.abil[ci] = (s.abil[ci] ?? 0) + 1;
   onArcadeCast(s, sink, caster, team, slot);
 
-  const w = def.w ?? 0;
-  const h = def.h ?? 0;
+  const snag = defId === VINES && isArcade(s);
+  const w = snag ? SNAG_RANGE_PX : (def.w ?? 0);
+  const h = snag ? SNAG_WIDTH_PX : (def.h ?? 0);
   const cx = s.x[caster] ?? 0;
   const cy = s.y[caster] ?? 0;
   const cw = s.w[caster] ?? 0;

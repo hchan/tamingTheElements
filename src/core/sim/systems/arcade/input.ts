@@ -9,6 +9,7 @@ import { startCharge } from './charge';
 import { startDash } from './dash';
 import { guardTick } from './guard';
 import { controlledId } from '../movement';
+import { expireRoots } from './snag';
 import { expireStuns } from './stun';
 import { terrainTick } from './terrain-layout';
 import { weatherTick } from './weather';
@@ -17,7 +18,8 @@ import { weatherTick } from './weather';
  * The `input` slot (FUN-DESIGN 2.1), the only system that runs while frozen. Returns at once in Classic. Every Arcade
  * tick records the press edges for the input buffer (2.12), so presses made while frozen are kept. Expiry waits for an
  * unfrozen tick (the game clock stands still while frozen, so nothing can expire then and a frozen step stays silent):
- * stuns that ran out give `recovered` (reason 0), then combos whose victim is free give `comboEnded`. Then pending
+ * stuns that ran out give `recovered` (reason 0), then combos whose victim is free give `comboEnded`, then Snag roots that ran out give `snag` expired (arcade/snag.ts,
+ * FUN-DESIGN 2.20). Then pending
  * dash presses start dashes (arcade/dash.ts, FUN-DESIGN 2.7) and charge presses charges (arcade/charge.ts, 2.17), then the guard pass runs (arcade/guard.ts, FUN-DESIGN
  * 2.8: guard meter regeneration and parry windows), then the weather pass (arcade/weather.ts, FUN-DESIGN 2.14: expiry,
  * then casts), then the terrain pass (arcade/terrain.ts, FUN-DESIGN 2.15: a telegraphed swap landing, patch enter and
@@ -30,6 +32,7 @@ export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Comm
   if (isFrozen(s)) return;
   expireStuns(world, sink);
   expireCombos(world, sink);
+  expireRoots(world, sink);
   for (let team = 0; team < TEAM_COUNT; team++) {
     startDash(world, sink, team, cmds[team] ?? 0);
     startCharge(world, sink, team, controlledId(world, team), controlledId(world, 1 - team));

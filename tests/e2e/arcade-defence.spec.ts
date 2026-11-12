@@ -28,8 +28,6 @@ const GUARD = 1 << 12;
 const INTRO = 91;
 /** Curomo's Ice Shock cooldown (59 ticks), longer than the parry window and its whiff lock (29 ticks after a press). */
 const COOLDOWN = 60;
-/** Curomo's Shards of Ice cooldown (10 s), counted from its cast in `guardedHit`. */
-const SHARDS_COOLDOWN = 500;
 
 const frames = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 const defence = async (page: Page): Promise<Defence | undefined> => {
@@ -41,7 +39,7 @@ const step = (page: Page, n: number, cmds: [number, number] = [0, 0]): Promise<u
 const live = (page: Page): Promise<string> =>
   page.evaluate<string>(`[document.getElementById('liveRegion'), document.getElementById('liveRegionAssertive')].map((n) => n ? n.textContent : '').join(' | ')`);
 
-/** Demo arena (Curomo vs Pax) past the intro, Curomo 80 px left of Pax, facing: Shards of Ice land within a few ticks. */
+/** Demo arena (Curomo vs Pax) past the intro, Curomo 80 px left of Pax, facing: Ice Shock lands the next tick. */
 async function demo(page: Page, ff: string, foeX = 180): Promise<void> {
   await page.goto(`/?ff=${ff}&manual=1&seed=7`);
   await page.locator('#game canvas').waitFor();
@@ -55,11 +53,14 @@ async function demo(page: Page, ff: string, foeX = 180): Promise<void> {
   })()`);
 }
 
-/** Steps (Curomo casting, Pax guarding) until Pax's guard bar drops: a guarded hit. */
+/**
+ * Steps (Curomo casting Ice Shock, Pax guarding) until Pax's guard bar drops: a guarded hit. Ice Shock, not Shards of
+ * Ice: in Arcade Curomo's secondary is Snag (FUN-DESIGN 2.20), which a guard wastes without chip.
+ */
 async function guardedHit(page: Page): Promise<void> {
   // Held past the parry window first, so the hit is guarded, not parried.
   await step(page, 12, [0, GUARD]);
-  await page.evaluate(`(() => { const a = window.__TTE__.arena; for (let i = 0; i < 40; i++) a.step(1, [${String(SECONDARY)}, ${String(GUARD)}]); })()`);
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; for (let i = 0; i < 40; i++) a.step(1, [${String(PRIMARY)}, ${String(GUARD)}]); })()`);
 }
 
 /**
@@ -88,12 +89,18 @@ async function dash(page: Page): Promise<void> {
 }
 
 /**
- * Curomo far from Pax casts Shards of Ice (a ring of bullets) once its cooldown is over; returns the trail dots drawn 4
- * ticks into the flight (after checking that the shards fly).
+ * A new Arcade Versus match (Sindarosa vs Pax; the demo's Curomo has no projectile in Arcade, his Shards of Ice slot is
+ * Snag, FUN-DESIGN 2.20): Sindarosa far from Pax casts Fire Blast; returns the trail dots drawn 4 ticks into the flight
+ * (after checking that the shot flies).
  */
 async function trails(page: Page): Promise<number> {
-  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(SHARDS_COOLDOWN)}); const [me, foe] = a.characters(); a.place(me.id, 300, 360, 0); a.place(foe.id, 1100, 360, 4); })()`);
-  await step(page, 1, [SECONDARY, 0]);
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByLabel('Your race').selectOption('sindarosa');
+  await page.getByLabel('AI race').selectOption('pax');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(${String(INTRO)}); const [me, foe] = a.characters(); a.place(me.id, 300, 360, 0); a.place(foe.id, 1100, 360, 4); })()`);
+  await step(page, 1, [PRIMARY, 0]);
   await step(page, 4);
   const d = await defence(page);
   expect(d?.projectiles).toBeGreaterThan(0);
@@ -122,7 +129,7 @@ test('Arcade: the guard shield and bar, chip sparks, a parry with its flash, pin
   // Curomo (stunned by the parried Ice Shock) recovers, then dashes up: afterimages behind him.
   await dash(page);
   expect((await defence(page))?.ghosts).toBeGreaterThan(0);
-  // From across the arena, Shards of Ice leave trails.
+  // From across the arena, a Fire Blast leaves trails.
   expect(await trails(page)).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });

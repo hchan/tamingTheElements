@@ -3,6 +3,7 @@
  * cooldown overrides. Sim data like src/core/data/arcade.ts (changing a value bumps SIM_VERSION); Classic never reads
  * an Arcade value (`cooldownTicksFor` hands Classic the legacy cooldown).
  */
+import { SNAG_ABILITY, SNAG_COOLDOWN_TICKS } from '../data/arcade';
 import type { AbilityDef } from '../data/types';
 
 /**
@@ -87,11 +88,12 @@ export function arcadeRaceNumbers(slug: string): ArcadeRaceNumbers {
  * keeps its legacy cooldown. Two pairs fired at the same cadence along the start row, so every shot met the other's
  * in a clash that destroyed both and the match stood still (every round-robin stalemate was in these pairs): Fireball
  * and Fire Blast (both 30 ticks, fire against fire) and Crimson Fire against Rock Pellet (both 20). A few ticks off
- * the cadence lets one shot in a few through. Projectile slots only.
+ * the cadence lets one shot in a few through. Entangling Vines is the Snag throw in Arcade (FUN-DESIGN 2.20).
  */
 export const ARCADE_COOLDOWN_TICKS: Readonly<Partial<Record<string, number>>> = {
   fireball: 26, // 30 in Classic: off Fire Blast's 30
   'crimson-fire': 18, // 20 in Classic: off Rock Pellet's 20
+  [SNAG_ABILITY]: SNAG_COOLDOWN_TICKS, // Snag (WP-snag)
 };
 
 /** The cooldown `def` books: its Arcade override in Arcade, else (and always in Classic) the legacy `cooldownTicks`. */

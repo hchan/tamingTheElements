@@ -8,7 +8,9 @@ import {
 } from './state';
 import { castDir } from './systems/arcade/aim';
 import { isGuarding, isInvulnerable, isStunned } from './systems/arcade/stun';
+import { isRooted } from './systems/arcade/snag';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
+import { slotAbility } from './systems/ability-info';
 import { controlledId } from './systems/movement';
 import { listStatuses } from './systems/status';
 import { ABILITY_DEFS } from './systems/projectile';
@@ -64,6 +66,8 @@ export interface RenderArcade {
   /** Guard meter of character `id`, 0..GUARD_MAX (full when it never blocked), and whether it guards now (FUN-DESIGN 2.8). */
   guard(id: number): number;
   guarding(id: number): boolean;
+  /** True while a Snag root holds character `id` (FUN-DESIGN 2.20). */
+  rooted(id: number): boolean;
   /** The weather up (a `Weather` kind, 0 none) and the game ticks it has left (0 with none), FUN-DESIGN 2.14. */
   weather: number;
   weatherLeft: number;
@@ -174,6 +178,7 @@ export function createRenderView(world: SimWorld): RenderView {
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
+    rooted: (id) => isRooted(s, id),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
   const isCharacter = (i: number): boolean =>
@@ -193,7 +198,7 @@ export function createRenderView(world: SimWorld): RenderView {
         cooldownTicks: def === undefined ? 0 : cooldownTicksFor(def, isArcade(s)),
       });
       const ids = CHARACTERS[s.defId[cur] ?? 0]?.abilities ?? [];
-      const abilities = ids.map((a, i) => slotOf(ABILITY_DEFS.find((d) => d.id === a), i));
+      const abilities = ids.map((_, i) => slotOf(ABILITY_DEFS.find((d) => d.id === slotAbility(s, cur, i)), i));
       let capture: RenderActionBar['capture'];
       const enemy = controlledId(world, 1 - team);
       if (team === 0 && ((s.world[World.flags] ?? 0) & CAPTURE_GRANTED_BIT) !== 0) {

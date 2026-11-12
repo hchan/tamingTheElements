@@ -20,9 +20,11 @@ import { applyArcadeHit } from './arcade/hit';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { checkPerfectDodge } from './arcade/dash';
-import { releaseCount, SUPER_BULLET } from './ability-info';
+import { releaseCount, slotAbility, SUPER_BULLET } from './ability-info';
 import { castDir } from './arcade/aim';
 import { shotBlocked } from './arcade/terrain';
+import { freeRoot } from './arcade/snag';
+import { SNAG_FIRE_ABILITIES } from '../../data/arcade';
 
 /** Ability index used for SimState.defId (set A then set B). */
 export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
@@ -86,7 +88,7 @@ export { SUPER_BULLET };
 
 export function fire(world: SimWorld, sink: EventSink, team: number, charId: number, slot: number, tick: number): void {
   const s = world.state;
-  const abilityId = CHARACTERS[s.defId[charId] ?? 0]?.abilities[slot];
+  const abilityId = slotAbility(s, charId, slot);
   const defIdx = ABILITY_DEFS.findIndex((d) => d.id === abilityId);
   const def = ABILITY_DEFS[defIdx];
   if (def === undefined || (def.kind !== 'range' && def.kind !== 'omni' && def.kind !== 'debuff')) return;
@@ -180,6 +182,8 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
       applyArcadeHit(world, sink, id, attacker, target, s.hp[id] ?? 0, s.defId[id] ?? 0, s.dir[id] ?? 0);
       // A parry reflected it (arcade/guard.ts): it flies on for the parrier's team.
       if (s.team[id] === s.team[target]) continue;
+      // Fire burns a Snag rope (FUN-DESIGN 2.20): the hit lands as usual and the root ends.
+      if (SNAG_FIRE_ABILITIES.includes(ABILITY_DEFS[s.defId[id] ?? 0]?.id ?? '')) freeRoot(s, sink, id, target);
     } else {
       const amount = computeDamage({
         base: s.hp[id] ?? 0,

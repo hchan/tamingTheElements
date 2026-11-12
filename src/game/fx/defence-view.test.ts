@@ -1,10 +1,10 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
 import {
-  EntityFlag, GUARD_MAX, SimEventKind, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent,
+  EntityFlag, GUARD_MAX, SimEventKind, SnagEvent, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent,
 } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
-import { AFTERIMAGE_FADE, BREAK_WORD, LINES, PARRY_WORD, POP_TICKS } from './defence-fx';
+import { AFTERIMAGE_FADE, BREAK_WORD, FREED_WORD, LINES, PARRY_WORD, POP_TICKS, ROOTED_WORD } from './defence-fx';
 import { defenceState, mountDefenceView, type Fighters } from './defence-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
@@ -89,14 +89,17 @@ const fighter = (id: number, team: number, x: number): RenderCharacter => ({
 /** Two fighters (ids 0 and 1), a list of projectiles, and the guard read-outs the test sets. */
 function world(): {
   view: RenderView; fighters: Fighters; chars: RenderCharacter[]; projs: RenderProjectile[]; guard: number[]; guarding: boolean[];
-  setTick: (t: number) => void;
+  rooted: boolean[]; setTick: (t: number) => void;
 } {
   let tick = 100;
   const chars = [fighter(0, 0, 200), fighter(1, 1, 800)];
   const projs: RenderProjectile[] = [];
   const guard = [GUARD_MAX, GUARD_MAX];
   const guarding = [false, false];
-  const arcade = { guard: (id: number) => guard[id] ?? 0, guarding: (id: number) => guarding[id] ?? false } as unknown as RenderArcade;
+  const rooted = [false, false];
+  const arcade = {
+    guard: (id: number) => guard[id] ?? 0, guarding: (id: number) => guarding[id] ?? false, rooted: (id: number) => rooted[id] ?? false,
+  } as unknown as RenderArcade;
   const view = {
     get tick() { return tick; },
     arcade: () => arcade,
@@ -107,7 +110,7 @@ function world(): {
     x: c.x, y: c.y, displayWidth: c.w, displayHeight: c.h, visible: true, texture: { key: 'map:pax' }, frame: { name: 'right0' }, flipX: false,
   }));
   const fighters: Fighters = { peek: (id) => (images[id] ? { image: images[id] as unknown as Phaser.GameObjects.Image } : undefined) };
-  return { view, fighters, chars, projs, guard, guarding, setTick: (t) => { tick = t; } };
+  return { view, fighters, chars, projs, guard, guarding, rooted, setTick: (t) => { tick = t; } };
 }
 
 /** Events with a fresh seq each (the sim numbers a tick's events from 0; the view skips repeats by tick and seq). */
@@ -230,6 +233,30 @@ describe('defence view: parry and guard-break effects', () => {
     expect(st.rings).toBeLessThanOrEqual(8);
     expect(m.made.filter((o) => o.kind === 'text')).toHaveLength(4);
     expect(m.made.filter((o) => o.kind === 'graphics')).toHaveLength(2);
+  });
+});
+
+describe('defence view: Snag root (FUN-DESIGN 2.20)', () => {
+  it('a rooted fighter gets rope loops while rooted; the rooted event rings and pops ROOTED, freed pops FREE', () => {
+    const m = mount();
+    m.rooted[1] = true;
+    m.feed(100, [ev(SimEventKind.snag, 100, 0, { id: 1, reason: SnagEvent.rooted })]);
+    m.frame();
+    expect(state(m.scene)).toMatchObject({ roots: 1, rings: 1, pops: [ROOTED_WORD] });
+    expect(m.lines.map((l) => l.text)).toEqual(['Enemy rooted.']);
+    m.rooted[1] = false;
+    m.feed(100 + POP_TICKS, [ev(SimEventKind.snag, 100 + POP_TICKS, 4, { id: 1, reason: SnagEvent.freed })]);
+    m.frame();
+    expect(state(m.scene)).toMatchObject({ roots: 0, pops: [FREED_WORD] });
+    expect(state(m.scene).sparks).toBeGreaterThan(0);
+  });
+  it('a guarded throw only sparks; an expiry draws nothing', () => {
+    const m = mount();
+    m.feed(100, [ev(SimEventKind.snag, 100, 1, { id: 0, reason: SnagEvent.guarded }), ev(SimEventKind.snag, 100, 1, { id: 1, reason: SnagEvent.expired })]);
+    m.frame();
+    expect(state(m.scene)).toMatchObject({ roots: 0, rings: 0, pops: [] });
+    expect(state(m.scene).sparks).toBeGreaterThan(0);
+    expect(m.lines).toEqual([]);
   });
 });
 

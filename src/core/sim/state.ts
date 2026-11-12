@@ -55,13 +55,15 @@ export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE +
  * `guardDrain` is GUARD_MAX minus the guard meter (so a zeroed block is a full meter), `parryUntil` ends the parry window
  * and `parryLockUntil` the whiff lock, all game ticks (systems/arcade/guard.ts). `weatherReadyAt` is the game tick of
  * the character's next weather cast (a lockout); `chargeUntil` is the game tick a charge ends (start + CHARGE_TICKS, 0 = none) and `chargeReadyAt` the first tick of the next one (systems/arcade/charge.ts); its cast recovery ends WEATHER_COOLDOWN_TICKS - WEATHER_RECOVERY_TICKS before it.
+ * `rootUntil` is the game tick a Snag root ends (0 = not rooted) and `rootImmuneUntil` the end of the immunity after it
+ * (systems/arcade/snag.ts).
  */
 export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, blockUntil: 7,
   parryUntil: 8, parryLockUntil: 9, guardDrain: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
-  dashDodged: 14, weatherReadyAt: 15, chargeUntil: 16, chargeReadyAt: 17,
+  dashDodged: 14, weatherReadyAt: 15, chargeUntil: 16, chargeReadyAt: 17, rootUntil: 18, rootImmuneUntil: 19,
 } as const;
-export const ARCADE_E = 18;
+export const ARCADE_E = 20;
 /**
  * Per team; `pressTick` is 7 ints (primary, secondary, dash, guard, super, weather, charge): the game tick of the last rising edge plus
  * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a

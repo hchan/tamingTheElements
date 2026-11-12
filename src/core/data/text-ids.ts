@@ -52,3 +52,7 @@ export const ABILITY_NAMES: ReadonlyMap<AbilityId, string> = new Map([
   [abilityId('translucent-flame'), "Translucent Flame"],
   [abilityId('wind-cone'), "Wind Cone"],
 ]);
+
+/** Snag (FUN-DESIGN 2.20): the name and line of the rope throw on a hero's ARCADE_SNAG_SLOT (data/arcade.ts). */
+export const SNAG_NAME = 'Snag';
+export const SNAG_DESCRIPTION = 'Throws a rope that roots the foe for a moment: no walking, Dash or Charge. Fire burns it.';

@@ -1,4 +1,4 @@
-import { ABILITY_NAMES, CHARACTERS, CHARACTER_TEXT } from '@core/menu-index';
+import { ABILITY_NAMES, ARCADE_SNAG_SLOT, CHARACTERS, CHARACTER_TEXT, SNAG_DESCRIPTION, SNAG_NAME } from '@core/menu-index';
 import type { CharacterDef } from '@core/menu-index';
 import { el } from '../dom';
 import type { Screen, ScreenFactory } from './screen';
@@ -7,14 +7,17 @@ export function findRace(slug: string | null): CharacterDef | undefined {
   return slug === null ? undefined : CHARACTERS.find((c) => c.id === slug);
 }
 
-/** Readonly label/value rows for a race. */
+/** Readonly label/value rows for a race; a Snag hero's Snag slot reads "Snag" with its line (FUN-DESIGN 2.20). */
 export function raceRows(ch: CharacterDef): readonly (readonly [string, string])[] {
+  const snag = ARCADE_SNAG_SLOT[ch.id];
+  const names = ch.abilities.map((a, i) => (i === snag ? SNAG_NAME : (ABILITY_NAMES.get(a) ?? a)));
   return [
     ['Element', ch.element],
     ['Alignment', ch.alignment],
     ['Health', String(ch.maxHealth)],
     ['Speed', String(ch.speed)],
-    ['Abilities', ch.abilities.map((a) => ABILITY_NAMES.get(a) ?? a).join(', ')],
+    ['Abilities', names.join(', ')],
+    ...(snag === undefined ? [] : [[SNAG_NAME, SNAG_DESCRIPTION] as const]),
   ];
 }
 

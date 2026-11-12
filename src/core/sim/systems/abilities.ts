@@ -1,4 +1,3 @@
-import { CHARACTERS } from '../../data/characters';
 import { Cmd, hasCmd, type Command } from '../commands';
 import { cooldownIdx, TEAM_COUNT } from '../state';
 import type { SimWorld } from '../world';
@@ -8,6 +7,7 @@ import { applyBuff, applyHeal } from './status';
 import { now } from '../clock';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { canAct } from './arcade/stun';
+import { slotAbility } from './ability-info';
 import type { EventSink } from '../events';
 
 /**
@@ -22,7 +22,7 @@ export function castSelf(world: SimWorld, sink: EventSink, team: number, slot: n
   const s = world.state;
   const caster = controlledId(world, team);
   if (caster < 0 || !canAct(world, caster)) return;
-  const abilityId = CHARACTERS[s.defId[caster] ?? 0]?.abilities[slot];
+  const abilityId = slotAbility(s, caster, slot);
   const def = ABILITY_DEFS.find((d) => d.id === abilityId);
   if (def?.kind !== 'buff' && def?.kind !== 'heal') return;
   const cd = cooldownIdx(caster, slot);

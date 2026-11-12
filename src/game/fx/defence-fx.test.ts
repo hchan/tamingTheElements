@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CHARGE_TICKS, Cmd, ChargeEnd, DASH_TICKS, DEFAULT_SIM_FLAGS, SIM_VERSION, SimEventKind, characterId, createMatch, step, type SimEvent,
+  CHARGE_TICKS, Cmd, ChargeEnd, DASH_TICKS, DEFAULT_SIM_FLAGS, SIM_VERSION, SimEventKind, SnagEvent, characterId, createMatch, step, type SimEvent,
 } from '@core/index';
 import {
-  AFTERIMAGE_ALPHA, AFTERIMAGE_FADE, BREAK_COLOR, BREAK_WORD, CHARGE_WORD, CHIP_SPARKS, DODGE_COLOR, DODGE_WORD, DefenceFx, GUARD_COLOR,
+  AFTERIMAGE_ALPHA, AFTERIMAGE_FADE, BREAK_COLOR, BREAK_WORD, CHARGE_WORD, CHIP_SPARKS, DODGE_COLOR, DODGE_WORD, DefenceFx, FREED_WORD, GUARD_COLOR,
   LINES, PARRY_COLOR, PARRY_WORD, REFLECT_SPARKS, SHARD_TICKS, SHATTER_SHARDS, SPARK_TICKS, ghostAlpha, guardFill, popAlpha,
-  popRise, progress, ringRadius, type DefenceSink,
+  popRise, progress, ringRadius, ROOTED_WORD, ROPE_COLOR, type DefenceSink,
 } from './defence-fx';
 
 const hex = (c: number): string => c.toString(16);
@@ -102,6 +102,18 @@ describe('DefenceFx: one effect set per defence event (FUN-DESIGN 2.7, 2.8, sect
     expect(log).toHaveLength(2);
     f.consume([ev(SimEventKind.guarded, 5, 3, 9, { target: 1 }), ev(SimEventKind.guarded, 6, 0, 9, { target: 1 })]);
     expect(log).toHaveLength(4);
+  });
+  it('Snag: rooted rings, pops ROOTED and speaks; guarded chips; freed sparks and pops FREE; an expiry shows nothing', () => {
+    const { sink, log } = recorder();
+    fx(sink).consume([
+      ev(SimEventKind.snag, 100, 0, 1, { id: 0, reason: SnagEvent.rooted }), ev(SimEventKind.snag, 101, 0, 0, { id: 1, reason: SnagEvent.guarded }),
+      ev(SimEventKind.snag, 102, 0, 1, { id: 0, reason: SnagEvent.freed }), ev(SimEventKind.snag, 103, 0, 0, { id: 0, reason: SnagEvent.expired }),
+    ]);
+    expect(log).toEqual([
+      `ring0:${hex(ROPE_COLOR)}`, `pop0:${ROOTED_WORD}:${hex(ROPE_COLOR)}`, 'say:You are rooted.',
+      `sparks1x${String(CHIP_SPARKS)}:${hex(GUARD_COLOR)}/${String(SPARK_TICKS)}`,
+      `sparks0x${String(CHIP_SPARKS)}:${hex(BREAK_COLOR)}/${String(SPARK_TICKS)}`, `pop0:${FREED_WORD}:${hex(BREAK_COLOR)}`,
+    ]);
   });
 });
 

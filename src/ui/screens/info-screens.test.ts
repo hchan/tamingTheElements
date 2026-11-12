@@ -50,4 +50,14 @@ describe('race', () => {
     expect(ch).toBeDefined();
     if (ch) expect(raceRows(ch)).toContainEqual(['Abilities', 'Fire Heal, Fireball']);
   });
+  it('names the Snag slot and says what it does (FUN-DESIGN 2.20)', () => {
+    const rows = (slug: string): readonly (readonly [string, string])[] => {
+      const ch = findRace(slug);
+      return ch ? raceRows(ch) : [];
+    };
+    expect(rows('curomo')).toContainEqual(['Abilities', 'Ice Shock, Snag']);
+    expect(rows('curomo').find(([k]) => k === 'Snag')?.[1]).toMatch(/roots.*Fire burns it/);
+    expect(rows('treenoc').flat().join(' ')).not.toMatch(/Capture|Entangling/);
+    expect(rows('fiara').some(([k]) => k === 'Snag')).toBe(false);
+  });
 });

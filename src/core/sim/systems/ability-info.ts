@@ -1,6 +1,8 @@
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B } from '../../data/abilities-b';
+import { ARCADE_SNAG_SLOT, SNAG_ABILITY } from '../../data/arcade';
 import { CHARACTERS } from '../../data/characters';
+import { isArcade } from '../clock';
 import { countIdx, type SimState } from '../state';
 
 /**
@@ -16,6 +18,16 @@ const CAPTURE_IDX = DEFS.findIndex((d) => d.id === 'capture');
 export const CAPTURE_SLOT = 2;
 
 /**
+ * The ability slug in `slot` of character `id`: its character data, except in Arcade, where Snag (Entangling Vines) sits
+ * on the ARCADE_SNAG_SLOT slot of the heroes listed there (FUN-DESIGN 2.20). Undefined for an empty slot.
+ */
+export function slotAbility(s: SimState, id: number, slot: number): string | undefined {
+  const c = CHARACTERS[s.defId[id] ?? 0];
+  if (c !== undefined && isArcade(s) && ARCADE_SNAG_SLOT[c.id] === slot) return SNAG_ABILITY;
+  return c?.abilities[slot];
+}
+
+/**
  * Slot of ability `defIdx` (index into abilities A then B) on character `id`, or -1 when the character has no such
  * ability (legacy `abilitiesInfo[name]` is undefined). Capture is slot 2 on the player side only.
  */
@@ -23,7 +35,8 @@ export function abilitySlot(s: SimState, id: number, defIdx: number): number {
   if (defIdx === CAPTURE_IDX) return s.team[id] === 0 ? CAPTURE_SLOT : -1;
   const abilityId = DEFS[defIdx]?.id;
   if (abilityId === undefined) return -1;
-  return CHARACTERS[s.defId[id] ?? 0]?.abilities.indexOf(abilityId) ?? -1;
+  for (let slot = 0; slot < CAPTURE_SLOT; slot++) if (slotAbility(s, id, slot) === abilityId) return slot;
+  return -1;
 }
 
 /**

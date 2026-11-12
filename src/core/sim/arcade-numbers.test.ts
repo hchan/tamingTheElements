@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ABILITIES_A } from '../data/abilities-a';
 import { ABILITIES_B } from '../data/abilities-b';
+import { SNAG_ABILITY } from '../data/arcade';
 import { CHARACTERS, getCharacter } from '../data/characters';
 import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../flags';
@@ -66,7 +67,7 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
     }
   });
 
-  it('cooldown overrides: Classic always gets the legacy cooldown; Arcade only changes the listed projectile slots', () => {
+  it('cooldown overrides: Classic always gets the legacy cooldown; Arcade only changes the listed projectile slots and Snag', () => {
     const defs = [...ABILITIES_A, ...ABILITIES_B];
     for (const def of defs) {
       expect([def.id, cooldownTicksFor(def, false)]).toEqual([def.id, def.cooldownTicks]);
@@ -74,7 +75,7 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
     }
     for (const [slug, ticks] of Object.entries(ARCADE_COOLDOWN_TICKS)) {
       const def = defs.find((d) => d.id === slug);
-      expect([slug, def?.kind]).toEqual([slug, 'range']);
+      expect([slug, def?.kind]).toEqual([slug, slug === SNAG_ABILITY ? 'melee' : 'range']);
       expect(Number.isInteger(ticks) && (ticks ?? 0) > 0).toBe(true);
     }
   });

@@ -6,7 +6,7 @@ import { mountClashView } from './clash-view';
 import { ELEMENT_COLORS } from './element-colors';
 import {
   AFTERIMAGE_ALPHA, AFTERIMAGE_GAP, BREAK_COLOR, DefenceFx, FLASH_TICKS, GUARD_COLOR, GUARD_LOW_PM,
-  POP_TICKS, RING_TICKS, SPARK_TICKS, TICK_MS, ghostAlpha, guardFill, popAlpha, popRise, progress, ringRadius, type DefenceSink,
+  POP_TICKS, RING_TICKS, ROPE_COLOR, SPARK_TICKS, TICK_MS, ghostAlpha, guardFill, popAlpha, popRise, progress, ringRadius, type DefenceSink,
 } from './defence-fx';
 
 /**
@@ -44,6 +44,8 @@ const DASH_POOL = 2;
 const SLOTS = 64;
 const TRAIL = AFTERIMAGE_ALPHA.length * AFTERIMAGE_GAP + 1;
 const BENCHED_OR_DEAD = EntityFlag.benched | EntityFlag.dead;
+/** Snag root loops: [lift, colour, line width], dark under-rims first. */
+const ROPE_LOOPS: readonly (readonly [number, number, number])[] = [[0, 0x2a1a08, 6], [1, 0x2a1a08, 6], [0, ROPE_COLOR, 3], [1, ROPE_COLOR, 3]];
 const HIDDEN = Number.NEGATIVE_INFINITY;
 
 /** The Arena's character views by entity id (its `EntityViewPool`): each has the sprite drawn this frame. */
@@ -58,10 +60,11 @@ export interface DefencePrefs {
 
 /** Read-out for the test probe. */
 export interface DefenceState {
-  /** Visible afterimages, trail dots, shields and guard bars (their meters) drawn on the last frame. */
+  /** Visible afterimages, trail dots, shields, Snag root rings and guard bars (their meters) drawn on the last frame. */
   readonly ghosts: number;
   readonly trails: number;
   readonly shields: number;
+  readonly roots: number;
   readonly bars: readonly number[];
   /** Projectiles seen on the last tick (trailed unless motion is reduced). */
   readonly projectiles: number;
@@ -122,7 +125,7 @@ export function mountDefenceView(
   const trailN = new Uint8Array(SLOTS);
   const trailTick = new Int32Array(SLOTS).fill(-2);
   const teamColor = [GUARD_COLOR, GUARD_COLOR];
-  const drawn = { ghosts: 0, trails: 0, shields: 0, bars: [0, 0], nBars: 0, projectiles: 0 };
+  const drawn = { ghosts: 0, trails: 0, shields: 0, roots: 0, bars: [0, 0], nBars: 0, projectiles: 0 };
   const pt = { x: 0, y: 0, size: 0 };
 
   /**
@@ -328,6 +331,14 @@ export function mountDefenceView(
     const w = img.displayWidth;
     const h = img.displayHeight;
     const cx = img.x + w / 2;
+    if (ar.rooted(c.id)) {
+      // Snag (FUN-DESIGN 2.20): two rope loops round the feet, a dark rim under the rope colour (a shape cue).
+      const fy = img.y + h * 0.88;
+      for (const [k, color, lw] of ROPE_LOOPS) {
+        over.lineStyle(highContrast ? lw + 2 : lw, color, 1).strokeEllipse(cx, fy - k * h * 0.12, w * (0.9 - k * 0.15), h * 0.22);
+      }
+      drawn.roots++;
+    }
     const guarding = ar.guarding(c.id);
     if (guarding) {
       // A bubble with a white rim: a shape cue, not only a colour.
@@ -370,6 +381,7 @@ export function mountDefenceView(
     over.clear();
     drawn.trails = 0;
     drawn.shields = 0;
+    drawn.roots = 0;
     drawn.nBars = 0;
     ar = view.arcade();
     view.forEachCharacter(drawFighter);
@@ -440,7 +452,7 @@ export function mountDefenceView(
     const pops: string[] = [];
     for (const t of texts) if (t.visible) pops.push(t.text);
     return {
-      ghosts: drawn.ghosts, trails: drawn.trails, shields: drawn.shields, bars: drawn.bars.slice(0, Math.min(2, drawn.nBars)),
+      ghosts: drawn.ghosts, trails: drawn.trails, shields: drawn.shields, roots: drawn.roots, bars: drawn.bars.slice(0, Math.min(2, drawn.nBars)),
       projectiles: drawn.projectiles,
       sparks: liveSparks, rings: liveRings, pops,
     };

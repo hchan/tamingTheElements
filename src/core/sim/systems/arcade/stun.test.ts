@@ -208,19 +208,20 @@ describe('hit-stun', () => {
     }
   });
 
-  it('Entangling Vines stuns 60 once per cast in Arcade, without the Classic freeze or its effect entity', () => {
+  it('Entangling Vines is Snag in Arcade (FUN-DESIGN 2.20): it roots 60 once per cast, no stun, no Classic freeze or effect entity', () => {
     const world = duel('treenoc', 'rokcore');
     const s = world.state;
     let game = -1;
     for (let t = 0; t < 30 && game < 0; t++) {
       const g = now(s);
       step(world, [Cmd.primary, 0]);
-      if ((s.arcade[E(1, ArcadeE.stunUntil)] ?? 0) !== 0) game = g;
+      if ((s.arcade[E(1, ArcadeE.rootUntil)] ?? 0) !== 0) game = g;
     }
-    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(game + 60);
+    expect(s.arcade[E(1, ArcadeE.rootUntil)]).toBe(game + 60);
+    expect(s.arcade[E(1, ArcadeE.stunUntil)]).toBe(0);
     expect((s.flags[1] ?? 0) & EntityFlag.frozen).toBe(0);
     for (let t = 0; t < 10; t++) step(world, [0, 0]);
-    expect([s.arcade[E(1, ArcadeE.stunUntil)], s.arcade[E(1, ArcadeE.juggle)]]).toEqual([game + 60, 0]);
+    expect([s.arcade[E(1, ArcadeE.rootUntil)], s.arcade[E(1, ArcadeE.stunUntil)], s.arcade[E(1, ArcadeE.juggle)]]).toEqual([game + 60, 0, 0]);
   });
 });
 

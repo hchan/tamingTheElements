@@ -98,5 +98,10 @@
  * 25: Arcade only (data); Classic hashes unchanged. The Eternal Void, the World Tour's final boss, gets its own
  *    ARCADE_RACE_NUMBERS row [580, 1000] (was the default 4000 / 1000): 580 HP alone, legacy damage, so a 3-hero team
  *    can beat it (boss probe, FUN-DESIGN 2.18) (WP-tour-void-boss).
+ * 26: Arcade only; Classic hashes unchanged. Snag (FUN-DESIGN 2.20) replaces Capture in Arcade: the Entangling Vines
+ *    melee sits on a Snag slot of Treenoc, Wispera (sonar-blast), Curomo (shards-of-ice) and Echo (fade), a 240 x 40 px
+ *    throw along the aim with a 400-tick cooldown that roots (no walk, Dash or Charge) for 60 ticks; fire shots and a
+ *    Sun cast free it, guard wastes it, 75 ticks of immunity follow; `snag` event. The Arcade entity block gains
+ *    `rootUntil`/`rootImmuneUntil`; the Arcade AI throws it (WP-snag).
  */
-export const SIM_VERSION = 25;
+export const SIM_VERSION = 26;

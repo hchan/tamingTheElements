@@ -113,7 +113,7 @@ describe('Classic sound map', () => {
       perfectDodge: null, clash: null, meterLevel: null, superStarted: { id: 'whoosh', bus: 'sfx', duck: true },
       superEnded: null, tagIn: null, roundStarted: null, fight: null, ko: null, timeOver: null, roundEnded: null, recovered: null,
       weatherChanged: null, weatherEnded: null, terrainChanged: null, terrainSwap: null, patchEntered: null, patchLeft: null,
-      patchHeal: null, projectileBlocked: null, chargeStarted: null, chargeEnded: null,
+      patchHeal: null, projectileBlocked: null, chargeStarted: null, chargeEnded: null, snag: null,
     });
     expect(cueFor({ ...ev(SimEventKind.matchEnded), winner: 1 })?.id).toBe('death');
   });

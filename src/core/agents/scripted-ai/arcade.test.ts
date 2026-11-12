@@ -15,7 +15,8 @@ import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
-import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, superFacing } from './arcade';
+import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, snagLane, superFacing } from './arcade';
+import { now } from '../../sim/clock';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
@@ -40,6 +41,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
   primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 1000, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0,
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -96,11 +98,13 @@ describe('ObservationView.arcade', () => {
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, superId: 1,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
       shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, superId: 2,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
       shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0,
     });
     expect(hash(s)).toBe(before);
   });
@@ -721,5 +725,65 @@ describe('ArcadeTactics: rock avoidance (FUN-DESIGN 2.15)', () => {
     expect(createObservationView(w, 0).arcade?.rocks).toEqual([]);
     const first = createObservationView(mk('sindarosa'), 0).arcade?.rocks;
     expect(first).not.toBe(createObservationView(mk('sindarosa'), 0).arcade?.rocks);
+  });
+});
+
+describe('the Arcade AI throws Snag (FUN-DESIGN 2.20, WP-snag)', () => {
+  const cmd = Cmd.primary | Cmd.secondary | Cmd.up;
+  const ready = { snagSlot: 0, dashIn: 9 };
+
+  it('snagLane faces the opponent along an axis the throw reaches, else 0', () => {
+    expect(snagLane(fighter(200, 300), fighter(500, 300))).toBe(Cmd.right);
+    expect(snagLane(fighter(500, 300), fighter(200, 320))).toBe(Cmd.left);
+    expect(snagLane(fighter(200, 300), fighter(200, 500))).toBe(Cmd.down);
+    expect(snagLane(fighter(200, 300), fighter(600, 300))).toBe(0); // a 320 px gap: out of range
+    expect(snagLane(fighter(200, 300), fighter(400, 400))).toBe(0); // off both lanes
+  });
+
+  it('throws the Snag slot along the lane when ready, the foe free, unguarded, unrooted and not immune', () => {
+    const go = (a: Partial<ArcadeView>, cooldowns = [0, 0, 0, 0]): number =>
+      new ArcadeTactics(AI_NORMAL, ZONER).apply({ ...view({ ...ready, ...a }, 0, fighter(200, 300), fighter(500, 300)), cooldowns }, cmd);
+    expect(go({})).toBe(Cmd.primary | Cmd.right);
+    expect(go({ snagSlot: 1 })).toBe(Cmd.secondary | Cmd.right);
+    // Not now: the press is stripped (the Classic AI would waste the long cooldown), the rest of the command is kept.
+    expect(go({}, [12, 0, 0, 0])).toBe(Cmd.secondary | Cmd.up);
+    expect(go({ oppGuarding: true })).toBe(Cmd.secondary | Cmd.up);
+    expect(go({ oppRooted: 30 })).toBe(Cmd.secondary | Cmd.up);
+    expect(go({ oppRootImmune: 30 })).toBe(Cmd.secondary | Cmd.up);
+    expect(go({ snagSlot: 1, oppRootImmune: 30 })).toBe(Cmd.primary | Cmd.up);
+    // A hero without Snag keeps the command.
+    expect(go({ snagSlot: -1 })).toBe(cmd);
+  });
+
+  it('a melee hero closes in on a rooted foe (a Charge from afar); a ranged one does not', () => {
+    const go = (a: Partial<ArcadeView>, opp = fighter(330, 300)): number =>
+      new ArcadeTactics(AI_NORMAL, ZONER).apply({ ...view({ ...ready, oppRooted: 30, ...a }, 0, fighter(200, 300), opp), cooldowns: [99, 0, 0, 0] }, Cmd.up);
+    expect(go({ chargeIn: 40 })).toBe(Cmd.right);
+    expect(go({ chargeIn: 0 }, fighter(600, 300))).toBe(Cmd.charge);
+    expect(go({ chargeIn: -1 })).toBe(Cmd.up);
+  });
+
+  it('the view carries the Snag slot and the foe guard, root and immunity; a scripted Treenoc roots an idle foe', () => {
+    const world = skipIntro(createMatch({
+      ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+      p1: [{ character: characterId('treenoc'), xp: 1 }], p2: [{ character: characterId('pax'), xp: 1 }],
+    }));
+    const s = world.state;
+    expect(createObservationView(world, 0).arcade?.snagSlot).toBe(0);
+    expect(createObservationView(world, 1).arcade?.snagSlot).toBe(-1);
+    const profile = scriptedProfileFor(getCharacter(characterId('treenoc')), getCharacter(characterId('pax')));
+    const agent = new ScriptedAI(profile, { id: 'ai', level: AI_NORMAL, personality: ZONER });
+    const idle = { id: 'idle', observe: () => 0, save: () => null, load: () => undefined };
+    let rooted = 0;
+    for (let i = 0; i < 600 && rooted === 0; i++) {
+      for (const e of step(world, collectCommands(world, [agent, idle]))) if (e.kind === SimEventKind.snag && e['reason'] === 0) rooted++;
+    }
+    expect(rooted).toBe(1);
+    const a = createObservationView(world, 0).arcade;
+    expect(a?.oppRooted).toBeGreaterThan(0);
+    expect(a?.oppRootImmune).toBe(0);
+    const opp = controlledId(world, 1);
+    s.arcade[opp * ARCADE_E + ArcadeE.blockUntil] = now(s) + 5;
+    expect(createObservationView(world, 0).arcade?.oppGuarding).toBe(true);
   });
 });
