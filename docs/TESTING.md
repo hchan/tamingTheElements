@@ -56,10 +56,10 @@ Example: `SIM_FUZZ_RUNS=500 SIM_FUZZ_TICKS=1500 pnpm test`. Single file: `pnpm e
 | End to end (real browser, real build) | `tests/e2e/*.spec.ts` |
 | Accessibility (axe audit, keyboard-only, reduce motion, rebinding, gamepad, announcements) | `tests/e2e/a11y.spec.ts`, `keyboard.spec.ts`, `a11y-features.spec.ts`; see [ACCESSIBILITY.md](ACCESSIBILITY.md) |
 | Hit feedback (fake sinks: 100% feedback coverage over real Arcade matches, reduced motion; the V6 flash in the browser) | `src/game/fx/event-fx.test.ts`, `src/game/views/character-view.test.ts`, `src/game/hud/arcade-hud.test.ts`, `tests/e2e/arcade-juice.spec.ts` |
-| Arcade Versus (setup builder, Arcade AI levels, recorded flag, no storage access; no save store in its modules; 2v2: team-size and partner parsing, the AI's seeded partner, the per-hero AI, every hero's end state; e2e: Settings opt-in, hit, super from X and the touch button, KO, results, rematch, save untouched, 390x844 picker; the 2v2 picker, tag on 3 and the touch Tag button, KO entrance, 2v2 results) | `src/game/app/arcade-setup.test.ts`, `tests/repo/arcade-no-save-writes.test.ts`, `tests/e2e/arcade.spec.ts`, `tests/e2e/arcade-tag.spec.ts`; the production path (`?ff=` ignored, Settings opt-in, lazy chunk under the Pages subpath) in `tests/e2e-pages/pages-arcade.spec.ts` |
+| Arcade Versus (setup builder, Arcade AI levels, recorded flag, no storage access; no save store in its modules; 2v2: team-size and partner parsing, the AI's seeded partner, the per-hero AI, every hero's end state; e2e: on the menu by default, hit, super from X and the touch button, KO, results, rematch, save untouched, 390x844 picker; the 2v2 picker, tag on 3 and the touch Tag button, KO entrance, 2v2 results) | `src/game/app/arcade-setup.test.ts`, `tests/repo/arcade-no-save-writes.test.ts`, `tests/e2e/arcade.spec.ts`, `tests/e2e/arcade-tag.spec.ts`; the production path (`?ff=` ignored, on by default, lazy chunk under the Pages subpath) in `tests/e2e-pages/pages-arcade.spec.ts` |
 | Tester mode (cheat core, session and save slot, UI pieces, e2e) | `src/core/tester/tester.test.ts`, `src/game/platform/tester/session.test.ts`, `src/ui/tester/tester-ui.test.ts`, `tests/e2e/tester-mode.spec.ts`; see [TESTER-MODE.md](TESTER-MODE.md) |
 | Legacy loader stubs (Crafty, jQuery, DOM, clock, seeded random) | `src/testing/legacy/` |
-| Golden replay | `tests/fixtures/replays/random-vs-random.replay.json` |
+| Golden replay | `tests/fixtures/replays/*.replay.json` (random-vs-random, random-2v2-ch3 and the arcade-* replays) |
 
 ## Characterization fixtures
 
@@ -77,7 +77,7 @@ When this is allowed:
   tagged `// KNOWN-BUG:<slug>`; only a `fix-*` work package flips them.
 
 The golden replay is separate: run `pnpm golden:record` only when a simulation change is intended. Bump `SIM_VERSION`
-(`src/core/index.ts`) in the same change, review the hash diff, and say why in the commit message. The browser gate then checks
+(`src/core/version.ts`) in the same change, review the hash diff, and say why in the commit message. The browser gate then checks
 that Chromium, Firefox and WebKit reproduce the committed hashes.
 
 ## Guard tests (`tests/repo/`, `tests/lint/`)

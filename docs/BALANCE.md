@@ -174,3 +174,24 @@ The recorded 2v2 baseline `tests/fixtures/balance/arcade-2v2-baseline.json` (`pn
 tune changed 2v2 play, there was no 2v2 baseline before. `pnpm balance:compare --ruleset arcade --team-size 2` diffs it (report
 only, 5 pp tolerance). Seed noise is about 5 pp per race, so single fresh seeds reach 36-61%. The 1v1 Arcade baseline and the
 Classic baseline are unchanged (+0.0pp every race); the Arcade goldens were re-recorded (new sim version, 2v2 life, heal and AI).
+
+## Current Arcade state (SIM_VERSION 38)
+
+The two tables above are the history of the first tune and the 2v2 tune; later work packages (Snag, the smarter AI, the 1920 field, traps, hpPm retunes in SIM_VERSION 27, 30, 31, 36, 37 and the AI round-reset fix in 38) re-fit the rows and re-recorded both baselines. Today's `ARCADE_RACE_NUMBERS` and the recorded baselines (`tests/fixtures/balance/arcade-baseline.json`: 1056 matches, 14 stalemates; `arcade-2v2-baseline.json`: 528 matches, 9 stalemates, 36000-tick cap):
+
+| Race | hpPm | damagePm | 1v1 win rate | 2v2 win rate |
+|---|---|---|---|---|
+| curomo | 5800 | 1200 | 44.3% | 77.3% |
+| cyclonius | 5000 | 1080 | 48.9% | 23.9% |
+| echo | 6200 | 1600 | 43.8% | 40.9% |
+| fiara | 5400 | 1520 | 52.0% | 54.0% |
+| ishimi | 6400 | 1550 | 51.1% | 48.9% |
+| lavax | 4000 | 870 | 48.6% | 60.2% |
+| morblass | 3950 | 1070 | 52.3% | 67.0% |
+| pax | 5300 | 1580 | 54.0% | 25.6% |
+| rokcore | 2600 | 690 | 46.0% | 34.7% |
+| sindarosa | 2620 | 650 | 50.0% | 59.1% |
+| treenoc | 6500 | 1270 | 55.7% | 49.4% |
+| wispera | 7300 | 1280 | 53.4% | 59.1% |
+
+The 1v1 spread is 11.9 pp (43.8-55.7%). The 2v2 spread is 53.4 pp (23.9-77.3%): the 2v2 life factors (`ARCADE_2V2_LIFE_PM`) have not been re-fit since the 1v1 numbers moved, and the 2v2 baseline was recorded with those outliers accepted (see the SIM_VERSION 28 commit). The 2v2 and 3v3 tournaments pair each race with a fixed partner (the race half, or a third and two thirds, of the list on); `tools/sim/snag-trap-teams.mts partners` plays random partners instead (the random-partner harness).

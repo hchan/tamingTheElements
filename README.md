@@ -14,7 +14,7 @@ Eternal Void boss.
 - **Four elements** plus void. Fire beats air, air beats earth, earth beats water, water beats fire (x1.25 damage; the
   reverse is divided by 1.25). Void is neutral.
 - **12 playable races**, each with its own abilities. Full tables are in [docs/GAME-DESIGN.md](docs/GAME-DESIGN.md).
-- **Capture** unlocks in chapter 2; the Eternal Void cannot be captured.
+- **Capture** (Snag in the new menus) unlocks in chapter 2; the Eternal Void cannot be captured.
 - **Four chapters** with XP caps and objectives (chapter 5 is post-game).
 - **World Tour and Arcade Versus**: the main menu has five entries: Play, Versus, Online, Settings, Help (the old Classic routes still work as deep links). Arcade Versus is a faster, flashier ruleset against the Arcade AI, 1v1 or a 2v2 tag team (hit-stop, stun
   and knockback, combos, a hyper meter and a super on X, gamepad RT or the on-screen Super button; in 2v2, tag with 3,
@@ -62,6 +62,9 @@ Run as `pnpm <name>` (or `corepack pnpm <name>`).
 | `golden:record` | Re-record the golden replay after an intended sim change |
 | `sim:match` | Headless AI-vs-AI matches for balance work |
 | `sim:net` | Headless networked bot match over the fake lockstep link ([docs/NETCODE.md](docs/NETCODE.md)) |
+| `fun:report` | Fun metrics of Arcade matches (round length, combos, race win rates); report only, see [docs/BALANCE.md](docs/BALANCE.md) |
+| `balance:compare` / `balance:record` | Diff or re-record the balance baselines in `tests/fixtures/balance` (`--ruleset arcade`, `--team-size 2`) |
+| `e2e:itch` / `build:itch` | Itch.io build and its Playwright smoke test |
 | `assets:build` | Copy manifest images and sounds from the restored legacy tree (`oracle:restore`) into `public/` |
 | `docs:gen` | Regenerate the generated tables in `docs/GAME-DESIGN.md` |
 | `format` | Placeholder, exits 1 ("not yet") |

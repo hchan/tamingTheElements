@@ -1370,14 +1370,14 @@ How each is measured with existing tools, and what is new:
 - `pnpm sim:match` / `tools/sim/run-match.ts`: add `--ruleset arcade`, `--team-size 2`, `--ai-level`; pass the flag
   through `MatchSetup.flags`. Arcade's `hitConfirmed.ability` removes the approximate `melee-or-status` bucket.
 - New `tools/sim/fun-metrics.ts`: a pure reducer `(events per tick, final state) -> FunMetrics`, used by `run-match`,
-  by a new `pnpm fun:report` (writes `out/fun-report.json`) and by `pnpm fun:compare` against
-  `tests/fixtures/fun/arcade-baseline.json` (bands, not exact values).
+  by a new `pnpm fun:report` (writes `out/fun-report.json`) (a planned `pnpm fun:compare` against
+  `tests/fixtures/fun/arcade-baseline.json` with bands is not built yet).
 - `pnpm balance:compare` stays Classic-only; a new `tests/fixtures/balance/arcade-baseline.json` and
   `balance.ts --ruleset arcade` track Arcade win rates separately.
 - PR gate: new `tests/repo/fun-gate.test.ts`, next to `balance-gate.test.ts`: 66 pairings x 2 seeds 1v1, hard
   invariants only (stalemate 0, no timeout over 25%, juggle cap respected, every ability, super, dash and tag used at
   least once, no race at 0% or 100%, median round 30-120 s, re-run identical). It must stay under 15 s.
-- Nightly: `.github/workflows/nightly.yml` adds `fun:compare` and the Arcade balance compare, and uploads
+- Nightly: `.github/workflows/nightly.yml` adds the Arcade balance compare and `fun:report` (a `fun:compare` is not built), and uploads
   `fun-report.json`.
 - Replays: `pnpm replay:verify` works unchanged. A new `pnpm fun:report --replay <file>` re-simulates a human playtest
   replay and prints the same metrics, so owner playtests and bot runs are comparable.
@@ -1514,7 +1514,7 @@ Packages 26 and 27 hang off 6 and 3 and can go anywhere after them. 28 packages 
 - **Goldens and baselines.** Classic: `tests/fixtures/replays/*.replay.json` and `tests/fixtures/balance/baseline.json`
   are untouched except the header version. Arcade: new `arcade-*.replay.json` files (1v1 from WP 5, 2v2 from WP 19),
   replayed in all three browsers by `tests/browser/determinism.browser.test.ts`; `tests/fixtures/balance/arcade-baseline.json`
-  came with WP 24 (`balance:record --ruleset arcade`); `tests/fixtures/fun/arcade-baseline.json` (`fun:compare`) is WP 25.
+  came with WP 24 (`balance:record --ruleset arcade`); `tests/fixtures/fun/arcade-baseline.json` (`fun:compare`) is planned for WP 25 and does not exist.
 - **Determinism details.** Arcade counters are Int32 (meter, stun, Q4 knockback); damage keeps the Classic float
   arithmetic plus a single `* scalePm / 1000`. No transcendentals (the knockback direction comes from `DIR8_X/Y` or
   signs). No new RNG draws in the sim; AI randomness stays in `AgentRng`. Iteration is in id order (clash pairs `i < j`).
@@ -1548,8 +1548,8 @@ under Continue: pick your race, the AI's race and the AI level (Easy, Normal or 
 button on touch): your partner enters at your spot with a free attack, and the benched hero heals back its red life (the
 red dashes on its bar, "+N% red" in the BENCH line under your bars); the tag cooldown is the bar and word beside "TAG".
 A KO'd hero's partner enters at once; a round ends only when both heroes of a side are down. Arcade Versus never writes the save (no XP,
-capture, objectives or garrison change); untick the setting to get the Classic menus back. In a dev build,
-`pnpm dev` and `/?ff=arcade,record,fps` give the same entry without the setting. The recorder keeps the last 5 replays in
+capture, objectives or garrison change). The old Settings > Preview opt-in is retired: the entry is on the main menu for everyone. In a dev build,
+`pnpm dev` and `/?ff=arcade,record,fps` add the recorder and fps flags. The recorder keeps the last 5 replays in
 IndexedDB; download them from the results or from Settings > Replay viewer (`#replay`).
 
 | Time | Do | Look for |
