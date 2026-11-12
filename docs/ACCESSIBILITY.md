@@ -28,12 +28,12 @@ and a per-screen `document.title` (`routeTitle` in `src/ui/router.ts`).
 - After each navigation the new screen's `h1` takes focus, so the screen is announced and Tab starts at the top.
 - `:focus-visible` draws a 3 px outline on every control (4 px white and amber in high contrast).
 - No keyboard traps: Tab leaves key capture, and the only modal (pause) cycles Tab inside it and closes on Escape.
-- Arcade Versus (`#arcade`, opt-in in Settings > Preview): the picker is five labelled native selects in Tab order (Team:
+- Arcade Versus (`#arcade`, on for everyone): the picker is five labelled native selects in Tab order (Team:
   1v1 or 2v2 tag team; your race; your partner, disabled and out of the Tab order and the form data in 1v1; AI race;
   AI level; each race named with its element word, never by colour or art alone), a Fight! button and a Back link,
   and Escape goes back from it. Picker, battle and results share one route, so the route's `backHash` is null (Escape
   in the battle never leaves it) and the screen moves focus to each view's `h1` itself. The battle has a pointer-only
-  Super button (bottom right, 72x48 px, out of the Tab order: keyboards press X) that holds the bound super key while
+  Super button (bottom right, a 72 px square, out of the Tab order: keyboards press X) that holds the bound super key while
   pressed. The picker and results are in the axe audit of `tests/e2e/arcade.spec.ts`, which also checks the 390x844
   layout (no sideways scroll, 44 px controls).
 
@@ -184,7 +184,7 @@ guards. Like the super, they send `Cmd.dash` and `Cmd.guard` only in an Arcade m
 RB and LT stay the second and third swap (an Arcade team has one partner, tagged on LB). Both are rebindable with the
 conflict check, and a save that already uses E or Q leaves the new action unbound rather than resetting the map. A double tap of a direction
 dashes too (the sim reads it from the direction presses). On touch screens, Guard and Dash buttons sit above the Super
-button on the right edge (each 72 x 48 px or more, 8 px apart); each holds the action's first bound key while the finger
+button on the right edge (each a 72 px square, 48 px at least, 6 px apart; the on-screen row is the numbered action row); each holds the action's first bound key while the finger
 is down (a pointer-only control: keyboards press the key, so they are not in the Tab order); an unbound action's button
 does nothing.
 
