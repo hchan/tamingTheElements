@@ -72,6 +72,7 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         input,
         button('replayPause', 'Pause', (c) => { c.setPaused(true); }),
         button('replayPlay', 'Play', (c) => { c.setPaused(false); }),
+        button('replayHalf', '0.5x', (c) => { c.setSpeed(0.5); }),
         button('replay1x', '1x', (c) => { c.setSpeed(1); }),
         button('replay2x', '2x', (c) => { c.setSpeed(2); }),
         button('replayStep', 'Step', (c) => { c.step(); }),

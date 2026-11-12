@@ -115,8 +115,8 @@ describe('replay viewer screen', () => {
       step: () => calls.push('step'),
     };
     pb?.attach(controls);
-    for (const id of ['replayPause', 'replayPlay', 'replay1x', 'replay2x', 'replayStep']) $(id).click();
-    expect(calls).toEqual(['pausedtrue', 'pausedfalse', 'speed1', 'speed2', 'step']);
+    for (const id of ['replayPause', 'replayPlay', 'replayHalf', 'replay1x', 'replay2x', 'replayStep']) $(id).click();
+    expect(calls).toEqual(['pausedtrue', 'pausedfalse', 'speed0.5', 'speed1', 'speed2', 'step']);
 
     pb?.onStatus(status());
     expect($('replayProgress').textContent).toBe('Playing 1x, tick 5 / 100');

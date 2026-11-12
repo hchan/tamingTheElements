@@ -73,7 +73,7 @@ import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import { ReplayCursor } from '../replay/cursor';
 import { HUD_SCENE, type HudData } from './Hud';
-import type { ArenaLaunch } from './launch';
+import type { ArenaLaunch, PlaybackSpeed } from './launch';
 
 export const ARENA_SCENE = 'Arena';
 
@@ -137,7 +137,9 @@ export class Arena extends Phaser.Scene {
   private swapNotice: SwapNotice | undefined;
   private pauseText: Phaser.GameObjects.Text | undefined;
   private cursor: ReplayCursor | undefined;
-  private speed: 1 | 2 = 1;
+  private speed: PlaybackSpeed = 1;
+  /** Frame parity for 0.5x playback. */
+  private slowFrame = false;
   private keyboard: KeyboardAgent | undefined;
   private second: KeyboardAgent | undefined;
   /** Online matches only: the lockstep session that owns stepping (docs/NETCODE.md). */
@@ -634,7 +636,11 @@ export class Arena extends Phaser.Scene {
 
   /** Replay mode: one verified tick per call (two at 2x); a finished or diverged replay holds the driver. */
   private advancePlayback(cursor: ReplayCursor): void {
-    for (let k = 0; k < this.speed; k++) {
+    if (this.speed === 0.5) {
+      this.slowFrame = !this.slowFrame;
+      if (this.slowFrame) return;
+    }
+    for (let k = 0; k < Math.max(1, this.speed); k++) {
       const events = cursor.next();
       if (!events) break;
       this.fx?.consume(events);
