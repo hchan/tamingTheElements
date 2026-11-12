@@ -65,7 +65,7 @@ import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
-import { SwapNotice, chargeNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
+import { SwapNotice, chargeNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
 import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
@@ -521,6 +521,10 @@ export class Arena extends Phaser.Scene {
     if ((bits & Cmd.super) !== 0 && arcade.meter[0] < METER_BAR) line = 'Super not ready';
     else if ((bits & Cmd.weather) !== 0 && arcade.weatherCharge[0] < WEATHER_CHARGE_FULL) line = 'Weather not ready';
     else if ((bits & Cmd.charge) !== 0) line = this.chargeLine(arcade);
+    else if ((bits & Cmd.elemental) !== 0) {
+      const bar = this.view?.actionBar(0);
+      if (bar) line = elementalNotice(true, bar.tick, bar.elemental);
+    }
     if (line === undefined) return;
     notice.show(line, this.time.now);
     this.announcer?.say({ key: 'refusal', text: line, important: false });

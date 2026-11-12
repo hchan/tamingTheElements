@@ -43,6 +43,8 @@ export const CUES = {
   trapPop: [[NOISE, 1400, 250, 180, 0.5], [0, 110, 40, 140, 0.5]],
   /** A fire shot or blast putting out an enemy Puddle or Gust: a short hiss, not the blast pop. */
   trapDouse: [[NOISE, 3200, 900, 140, 0.25]],
+  /** Elemental ability (FUN-DESIGN 2.24): a short rising chime as the hero calls on its element. */
+  elemental: [[1, 440, 880, 160, 0.22], [0, 1320, 1760, 140, 0.12, 80]],
   /** A refused action (a swap while stunned or cooling down): two short low buzzes, never a stinger. */
   denied: [[2, 150, 120, 70, 0.3], [2, 150, 120, 70, 0.3, 100]],
   sun: [[1, 523, 523, 140, 0.2], [1, 659, 659, 140, 0.2, 90], [1, 784, 784, 220, 0.2, 180]],
@@ -69,6 +71,7 @@ export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'fight'
 export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
   43: 'guard', 44: 'parry', 45: 'crack', 46: 'dash', 47: 'dodge', 48: 'clang', 50: 'charge', 53: 'round', 54: 'fight',
   55: 'ko', 57: 'roundEnd', 67: 'dash', 70: 'trapSet', 71: 'trapArm', 72: 'trapPop',
+  73: 'elemental',
 };
 const HIT: Kinds['hitConfirmed'] = 41;
 const WEATHER: Kinds['weatherChanged'] = 59;
@@ -101,6 +104,7 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   patchLeft: 'terrain feedback is the view work package (WP 32)',
   patchHeal: 'terrain feedback is the view work package (WP 32)',
   projectileBlocked: 'terrain feedback is the view work package (WP 32)',
+  elementalEnded: 'the HUD slot says it (the name, then its cooldown)',
   chargeEnded: 'the arrival hit plays the thump; the charge start plays the dash whoosh',
 };
 

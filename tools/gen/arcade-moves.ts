@@ -37,7 +37,7 @@ export function recordArcadeScript(script: ArcadeScript): ReplayFile {
 }
 
 const ARCADE_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true };
-const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge, trap } = Cmd;
+const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge, trap, elemental } = Cmd;
 
 /**
  * Ticks p2 walks back in from the right wall of the wide Arcade arena (WP 38d, 1920 px) so the pair stands as it did
@@ -326,6 +326,36 @@ function trapsScript(): ArcadeScript {
   return { file: 'arcade-traps', setup, inputs: buildScript(p1, p2) };
 }
 
+/** Elemental script timings: the Fire Blasts thrown under Ember, and game ticks past the buff's end (ELEMENTAL_TICKS 250). */
+const ELEM_BLASTS = 4;
+const ELEM_EXPIRE = 300;
+
+/**
+ * Elemental ability (FUN-DESIGN 2.24): one cast of each kind. Sindarosa calls Ember and blasts Rokcore, who answers with
+ * Stoneskin; both buffs run out. p2 tags in Morblass, p1 tags in Curomo; Morblass's Ice Blast slows Curomo, who Cleanses
+ * it. p1 then tags in Cyclonius, who calls Gale and walks in.
+ */
+function elementalScript(): ArcadeScript {
+  const setup: MatchSetup = {
+    simVersion: SIM_VERSION, seed: 0xe1e, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
+    p1: [{ character: characterId('sindarosa'), xp: 1 }, { character: characterId('curomo'), xp: 1 }, { character: characterId('cyclonius'), xp: 1 }],
+    p2: [{ character: characterId('rokcore'), xp: 1 }, { character: characterId('morblass'), xp: 1 }, { character: characterId('pax'), xp: 1 }],
+  };
+  const p1 = new Track();
+  const p2 = new Track();
+  let h = home(p1, p2, 100, 100);
+  p1.until(h).tap('ember', elemental, 1, 9);
+  for (let i = 0; i < ELEM_BLASTS; i++) p1.tap('fire blast', primary, 1, BLAST_EVERY - 1);
+  p2.until(h + 60).tap('stoneskin', elemental);
+  p1.until(h + ELEM_EXPIRE);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 20, 100);
+  p1.until(h).tap('tag 1: curomo', swap1);
+  p2.until(h).tap('tag 1: morblass', swap1).wait(40).tap('ice blast', primary);
+  p1.until(p2.tick + 60).tap('cleanse', elemental).wait(100).tap('tag 2: cyclonius', swap2).wait(TAG3_EVERY);
+  p1.tap('gale', elemental).step('walk in', right, 40).wait(ELEM_EXPIRE);
+  return { file: 'arcade-elemental', setup, inputs: buildScript(p1, p2) };
+}
+
 export function arcadeScripts(): ArcadeScript[] {
-  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript()];
+  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript(), elementalScript()];
 }

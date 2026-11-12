@@ -6,23 +6,28 @@ import { codeLabel, getBindings } from '../platform/input/bindings';
 
 /**
  * Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
- * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), and last Trap
- * (WP 39), always there.
+ * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), then Trap
+ * (WP 39) and Element (2.24, the hero's elemental ability), always there.
  */
-export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2', 'Trap'] as const;
+export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2', 'Trap', 'Element'] as const;
 type TouchLabel = (typeof TOUCH)[number];
-const TOUCH_KEY = { Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weather', Charge: 'charge', Tag: 'slot3', Tag2: 'slot4', Trap: 'trap' } as const;
+const TOUCH_KEY = {
+  Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weather', Charge: 'charge', Tag: 'slot3', Tag2: 'slot4', Trap: 'trap',
+  Element: 'elemental',
+} as const;
 /**
  * The numbered action row (FUN-DESIGN 2.17): each button wears its number key, 3 Tag, 4 Tag 2, 5 Charge, 6 Weather, 7 Dash,
  * 8 Guard, 9 Super, 0 Trap. The numbers are fixed, so hiding Charge for a team without a melee hero never renumbers the others.
+ * Element has no number (all ten are taken): it wears its letter key (V by default).
  */
 export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5, Tag: 3, Tag2: 4, Trap: 0 } as const;
 
 /** The key shown on a button: its number while that number key is bound to the action, else the action's first key. */
 export function touchKeyLabel(label: TouchLabel): string {
   const keys = getBindings()[TOUCH_KEY[label]];
-  const digit = `Digit${String(TOUCH_DIGIT[label])}`;
   const first = keys[0];
+  if (label === 'Element') return first === undefined ? '' : codeLabel(first);
+  const digit = `Digit${String(TOUCH_DIGIT[label])}`;
   return keys.includes(digit) || first === undefined ? String(TOUCH_DIGIT[label]) : codeLabel(first);
 }
 
@@ -55,6 +60,14 @@ export function touchStatus(label: TouchLabel, view: RenderView): string {
     const left = label === 'Dash' ? ar.dashIn(id) : ar.chargeIn(id);
     return left < 0 ? '' : left === 0 ? 'ready' : `${String(Math.ceil(left / 50))}s`;
   }
+  if (label === 'Element') {
+    // 'on' while the buff runs, then seconds left or 'ready' (short: the square never overflows); '' for a hero with none.
+    const bar = view.actionBar(0);
+    const e = bar?.elemental;
+    if (!bar || !e) return '';
+    const left = Math.max(0, e.readyTick - bar.tick);
+    return bar.tick < e.activeUntil ? 'on' : left > 0 ? `${String(Math.ceil(left / 50))}s` : 'ready';
+  }
   // Trap
   const t = view.actionBar(0)?.trap;
   if (!t) return '';
@@ -85,7 +98,7 @@ export function setTouchText(b: HTMLButtonElement, label: TouchLabel, status = '
 
 /**
  * The buttons in DOM order for `append`: Tab must follow the visual left-to-right, top-to-bottom order. Slot 0 (Super) sits lowest and
- * rightmost, the last slot (Trap) highest and leftmost, so the DOM order is the slot order reversed.
+ * rightmost, the last slot (Element) highest and leftmost, so the DOM order is the slot order reversed.
  */
 export function inVisualOrder(buttons: readonly HTMLButtonElement[]): HTMLButtonElement[] {
   return [...buttons].reverse();
@@ -111,7 +124,7 @@ const MIN_KEY_HOLD_MS = 100;
 /**
  * Button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
  * listens on window) for as long as the finger is down; an unbound action does nothing. Focusable: Enter or Space
- * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`.
+ * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`, `arcadeElement`.
  */
 export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   const b = el('button', 'menuButton');
@@ -190,11 +203,12 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
 }
 
 /**
- * The buttons of a battle with this many heroes a side: Super, Guard, Dash, Weather, Charge, plus Tag (2 heroes) and Tag 2 (3), then Trap.
+ * The buttons of a battle with this many heroes a side: Super, Guard, Dash, Weather, Charge, plus Tag (2 heroes) and Tag 2 (3), then Trap
+ * and Element.
  * `melee` says whether each of the player's heroes is melee; when given and none is, Charge is left out (it is a melee-only
  * ability) and the rest close the gap, keeping their numbers.
  */
 export function touchButtons(heroes: 1 | 2 | 3, melee?: readonly boolean[]): HTMLButtonElement[] {
   const noCharge = melee !== undefined && !melee.some(Boolean);
-  return [...TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')), 'Trap' as const].map(touchButton);
+  return [...TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')), 'Trap' as const, 'Element' as const].map(touchButton);
 }

@@ -284,3 +284,31 @@ describe('Trap input (WP 39): Z, 0 and pad Y, Arcade only', () => {
     }
   });
 });
+
+describe('Element input (FUN-DESIGN 2.24): V, minus and pad L3, Arcade only, a held command (not a swap)', () => {
+  it('V and minus send the elemental bit in Arcade only', () => {
+    expect(DEFAULT_BINDINGS.elemental).toEqual(['KeyV', 'Minus']);
+    expect(ACTION_LABELS.elemental).toBe('Element');
+    for (const code of ['KeyV', 'Minus']) {
+      expect(commandFromHeld(DEFAULT_BINDINGS, new Set([code]), true, true), code).toBe(Cmd.elemental);
+      expect(commandFromHeld(DEFAULT_BINDINGS, new Set([code]), true, false), code).toBe(0);
+    }
+    expect(tryBind(DEFAULT_BINDINGS, 'elemental', 0, 'KeyZ')).toEqual({ ok: false, reason: 'conflict', with: 'trap' });
+  });
+  it('pad L3 sends it with the Arcade pad; the Classic pad has no L3', () => {
+    expect(commandFromPad(pad([10]), false, ARCADE_PAD)).toBe(Cmd.elemental);
+    expect(commandFromPad(pad([10]), false, DEFAULT_PAD)).toBe(0);
+  });
+  it('held V stays down every tick in Arcade (the sim finds the press edge), unlike a swap key', () => {
+    const agent = new KeyboardAgent({ capturable: () => false, arcade: true, gamepad: () => pad([]) });
+    agent.handle(key('down', 'KeyV'));
+    expect(agent.observe(view)).toBe(Cmd.elemental);
+    expect(agent.observe(view)).toBe(Cmd.elemental);
+    agent.handle(key('up', 'KeyV'));
+    expect(agent.observe(view)).toBe(0);
+    const swapper = new KeyboardAgent({ capturable: () => false, arcade: false });
+    swapper.handle(key('down', 'Digit4'));
+    expect(swapper.observe(view)).toBe(Cmd.swap2);
+    expect(swapper.observe(view)).toBe(0);
+  });
+});

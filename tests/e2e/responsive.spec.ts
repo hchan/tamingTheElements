@@ -162,9 +162,9 @@ test('a window resize mid-battle keeps the match state and leaks no listeners', 
 test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
   test.use({ viewport: { width: 640, height: 360 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
-  test('every button sits inside the viewport, at least 48 px tall, in at most two right-edge columns, none overlapping', async ({ page }) => {
+  test('every button sits inside the viewport, at least 48 px tall, in at most three right-edge columns, none overlapping', async ({ page }) => {
     const errors = collectErrors(page);
-    // The World Tour fields a team of three, so all 8 buttons are present.
+    // The World Tour fields a team of three, so all 9 buttons are present.
     await page.goto(`${START}&ff=arcade#tour`);
     await page.getByRole('button', { name: 'Start tour' }).tap();
     await page.getByRole('button', { name: 'Fight' }).tap();
@@ -173,7 +173,7 @@ test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
     const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; over: boolean; left: boolean }[]>(
       `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight, left: getComputedStyle(n).textAlign === 'left' }; })`,
     );
-    expect(boxes).toHaveLength(8);
+    expect(boxes).toHaveLength(9);
     // One square size for every button, left-aligned content, nothing clipped or overflowing.
     expect(new Set(boxes.map((k) => `${String(Math.round(k.r - k.x))}x${String(Math.round(k.b - k.y))}`)).size).toBe(1);
     expect(Math.round((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0))).toBe(Math.round((boxes[0]?.b ?? 0) - (boxes[0]?.y ?? 0)));
@@ -188,7 +188,7 @@ test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
       expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(360);
       expect(k.b - k.y, `${k.id} height`).toBeGreaterThanOrEqual(48);
     }
-    expect(new Set(boxes.map((k) => Math.round(k.r))).size).toBeLessThanOrEqual(2);
+    expect(new Set(boxes.map((k) => Math.round(k.r))).size).toBeLessThanOrEqual(3);
     for (const [i, p] of boxes.entries()) {
       for (const q of boxes.slice(i + 1)) {
         const apart = p.r <= q.x || q.r <= p.x || p.b <= q.y || q.b <= p.y;

@@ -20,7 +20,7 @@ import {
   type SimState,
 } from '../sim/state';
 import type { SimWorld } from '../sim/world';
-import { ARCADE_SNAG_SLOT, SNAG_FIRE_ABILITIES } from '../data/arcade';
+import { ARCADE_SNAG_SLOT, ELEMENTAL_COOLDOWN_TICKS, SNAG_FIRE_ABILITIES } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
@@ -29,6 +29,7 @@ import { isGuarding } from '../sim/systems/arcade/stun';
 import { superSpecOf } from '../sim/systems/arcade/super';
 import { kindOf, patchRects, stageOf } from '../sim/systems/arcade/terrain';
 import { trapCount } from '../sim/systems/arcade/trap';
+import { hasSlow } from '../sim/systems/debuffs';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
 export interface FighterView {
@@ -127,6 +128,16 @@ export interface ArcadeView {
   readonly trapIn: number;
   readonly trapCount: number;
   readonly fireShot: boolean;
+  /**
+   * Elemental ability (FUN-DESIGN 2.24): this side's hero's element (`kindOf`: 1 fire, 2 water, 3 earth, 4 air, 5 void;
+   * 0 none), game ticks until its elemental ability is ready (0: now; -1: none, a void hero), game ticks left of its own
+   * Snag root, whether it is slowed (a Puddle, Ice Blast or tidal slow) and whether the opponent's super is running.
+   */
+  readonly elemKind: number;
+  readonly elemIn: number;
+  readonly selfRooted: number;
+  readonly selfSlowed: boolean;
+  readonly oppSuperActive: boolean;
 }
 
 /**
@@ -252,6 +263,7 @@ function arcadeViewOf(
   const team = (t: number, f: number): number => a[ARCADE_TEAM_BASE + t * ARCADE_T + f] ?? 0;
   const left = (f: FighterView | undefined, field: number): number =>
     f === undefined ? 0 : Math.max(0, (a[f.id * ARCADE_E + field] ?? 0) - g);
+  const elemKind = self === undefined ? 0 : kindOf(s, self.id);
   const shots: ShotView[] = [];
   const members: number[] = [];
   for (let i = 0; i < s.kind.length; i++) {
@@ -296,6 +308,11 @@ function arcadeViewOf(
     trapIn: left(self, ArcadeE.trapReadyAt),
     trapCount: trapCount(s, side),
     fireShot: self !== undefined && SNAG_FIRE_ABILITIES.includes(CHARACTERS[s.defId[self.id] ?? 0]?.abilities[0] ?? ''),
+    elemKind,
+    elemIn: (ELEMENTAL_COOLDOWN_TICKS[elemKind] ?? 0) === 0 ? -1 : left(self, ArcadeE.elemReadyAt),
+    selfRooted: left(self, ArcadeE.rootUntil),
+    selfSlowed: self !== undefined && (left(self, ArcadeE.trapSlowUntil) > 0 || hasSlow(s.status, self.id)),
+    oppSuperActive: team(1 - side, ArcadeT.superState) !== 0,
   };
 }
 

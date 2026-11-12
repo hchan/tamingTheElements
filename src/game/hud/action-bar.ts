@@ -44,14 +44,17 @@ export function labelsFromBindings(bindings: Bindings): KeyLabels {
   const out: Record<number, string> = {};
   for (const action of GAME_ACTIONS) {
     const code = bindings[action][0];
-    // Trap shares Capture's command bit 6, so its label lives under TRAP_LABEL.
-    if (code !== undefined) out[action === 'trap' ? TRAP_LABEL : ACTION_COMMAND[action]] = codeLabel(code);
+    // Trap shares Capture's command bit 6 and the elemental ability the fourth swap's bit 10, so theirs live apart.
+    const at = action === 'trap' ? TRAP_LABEL : action === 'elemental' ? ELEMENTAL_LABEL : ACTION_COMMAND[action];
+    if (code !== undefined) out[at] = codeLabel(code);
   }
   return out;
 }
 
 /** Where the Trap key's label sits in a KeyLabels (its command bit is Capture's). */
 export const TRAP_LABEL = 100;
+/** Where the elemental ability key's label sits in a KeyLabels (its command bit is the fourth swap's). */
+export const ELEMENTAL_LABEL = 101;
 
 export const DEFAULT_KEY_LABELS: KeyLabels = labelsFromBindings(DEFAULT_BINDINGS);
 
@@ -59,7 +62,9 @@ const SWAP_CMDS = [Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4] as const;
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 
 export interface ActionSlot {
-  readonly kind: 'ability' | 'capture' | 'swap' | 'trap';
+  readonly kind: 'ability' | 'capture' | 'swap' | 'trap' | 'elemental';
+  /** Elemental slot only: the element kind (1 fire, 2 water, 3 earth, 4 air) whose symbol is drawn as its icon, else 0. */
+  readonly element?: number;
   readonly x: number;
   readonly y: number;
   readonly size: number;
@@ -83,6 +88,33 @@ export function trapNote(tick: number, t: { readyTick: number; count: number; ma
   return t.count >= t.max ? 'Trap full' : `Trap ${String(t.count)}/${String(t.max)}`;
 }
 
+/** The elemental slot's words (never colour alone): "<Name> on" while its buff runs, whole seconds left while cooling, else the name. */
+export function elementalNote(tick: number, e: { name: string; readyTick: number; activeUntil: number }): string {
+  if (tick < e.activeUntil) return `${e.name} on`;
+  if (tick < e.readyTick) return `${e.name} ${String(Math.ceil((e.readyTick - tick) / 50))}s`;
+  return e.name;
+}
+
+/** Line colour per element kind (a second cue only: the symbol's shape and the slot's words say which). */
+const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
+
+/**
+ * The alchemical element symbol centred on (cx, cy) with half-size r: a triangle pointing up (fire, air) or down (water,
+ * earth), crossed by a bar for air and earth. Pure, for tests.
+ */
+export function elementSymbol(kind: number, cx: number, cy: number, r: number): {
+  tri: [number, number, number, number, number, number]; bar: [number, number, number, number] | undefined;
+} {
+  const up = kind === 1 || kind === 4;
+  const apex = up ? cy - r : cy + r;
+  const base = up ? cy + r : cy - r;
+  const barY = up ? cy - r / 3 : cy + r / 3; // through the apex half, as in the alchemical air and earth signs
+  return {
+    tri: [cx, apex, cx + r, base, cx - r, base],
+    bar: kind === 3 || kind === 4 ? [cx - r, barY, cx + r, barY] : undefined,
+  };
+}
+
 /** Elapsed fraction of a cooldown that ends (becomes usable) at `readyTick`; 1 once ready. */
 export function cooldownProgress(tick: number, readyTick: number, cooldownTicks: number): number {
   if (tick >= readyTick || cooldownTicks <= 0) return 1;
@@ -98,7 +130,8 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
   const out: ActionSlot[] = [];
   const y = BAR_Y + SLOT_BORDER / 2;
   const add = (s: Omit<ActionSlot, 'x' | 'y' | 'size' | 'label' | 'note'> & { note?: string }): void => {
-    out.push({ note: '', ...s, x: slotX(out.length), y, size: SLOT_SIDE, label: labels[s.kind === 'trap' ? TRAP_LABEL : s.cmd] ?? '' });
+    const at = s.kind === 'trap' ? TRAP_LABEL : s.kind === 'elemental' ? ELEMENTAL_LABEL : s.cmd;
+    out.push({ note: '', ...s, x: slotX(out.length), y, size: SLOT_SIDE, label: labels[at] ?? '' });
   };
   bar.abilities.forEach((a, i) => {
     const cmd = ABILITY_CMDS[i];
@@ -119,7 +152,8 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
   const swapProgress = cooldownProgress(bar.tick, bar.swapReadyTick, bar.swapCooldownTicks);
   bar.swaps.forEach((w, i) => {
     const cmd = SWAP_CMDS[i];
-    if (cmd === undefined) return;
+    // Arcade (it has the Trap slot) has no fourth swap: bit 10 is the elemental ability there.
+    if (cmd === undefined || (bar.trap !== undefined && cmd === Cmd.swap4)) return;
     add({
       kind: 'swap', cmd, sprite: w.sprite, highlight: false, disabled: w.dead,
       progress: w.dead ? 1 : swapProgress,
@@ -130,6 +164,13 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     add({
       kind: 'trap', cmd: Cmd.trap, sprite: '', highlight: false, disabled: false,
       progress: cooldownProgress(bar.tick, t.readyTick, t.cooldownTicks), note: trapNote(bar.tick, t),
+    });
+  }
+  if (bar.elemental) {
+    const e = bar.elemental;
+    add({
+      kind: 'elemental', cmd: Cmd.elemental, sprite: '', highlight: bar.tick < e.activeUntil, disabled: false, element: e.kind,
+      progress: cooldownProgress(bar.tick, e.readyTick, e.cooldownTicks), note: elementalNote(bar.tick, e),
     });
   }
   return out;
@@ -248,6 +289,7 @@ export class ActionBarView {
       }
       this.drawIcon(i, s);
       if (s.kind === 'trap') this.back.fillStyle(0xffd23f, 1).fillTriangle(s.x + s.size / 2, s.y + 44, s.x + s.size / 2 + 13, s.y + s.size - 8, s.x + s.size / 2 - 13, s.y + s.size - 8);
+      if (s.kind === 'elemental') this.drawElementSymbol(s);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
         g.lineStyle(s.highlight ? 4 : 2, s.highlight ? CAPTURE_READY_COLOR : ready ? 0xdfe8ff : 0x3b4660, 1);
@@ -318,6 +360,13 @@ export class ActionBarView {
     ).setDepth(102);
     this.hint.setVisible(true).setPosition(this.wx(h.x), this.wy(h.y)).setScale(this.box.scale);
     if (this.hint.text !== h.text) this.hint.setText(h.text);
+  }
+
+  /** The slot's icon: the element's alchemical triangle (fire up, water down, air up and earth down with a bar), by shape not colour. */
+  private drawElementSymbol(s: ActionSlot): void {
+    const sym = elementSymbol(s.element ?? 0, s.x + s.size / 2, s.y + s.size - 22, 13);
+    this.back.lineStyle(3, ELEMENT_TINT[s.element ?? 0] ?? 0xffffff, 1).strokeTriangle(...sym.tri);
+    if (sym.bar) this.back.lineBetween(...sym.bar);
   }
 
   private drawIcon(i: number, s: ActionSlot): void {

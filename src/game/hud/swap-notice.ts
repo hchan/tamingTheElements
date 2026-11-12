@@ -54,6 +54,17 @@ export function chargeNotice(s: ChargeState): string | undefined {
   return undefined;
 }
 
+/**
+ * The refusal line for an elemental ability press (FUN-DESIGN 2.24), from the action bar's elemental slot (undefined: a
+ * hero with none), or undefined when nothing the view can see would refuse it.
+ */
+export function elementalNotice(fighting: boolean, tick: number, e: { name: string; readyTick: number } | undefined): string | undefined {
+  if (!fighting) return undefined;
+  if (e === undefined) return 'No element ability for this hero';
+  if (e.readyTick > tick) return `${e.name} ready in ${swapSeconds(e.readyTick - tick)}`;
+  return undefined;
+}
+
 /** How long the line stays up (ms) and how much of that it fades over. */
 export const NOTICE_MS = 1600;
 const FADE_MS = 300;

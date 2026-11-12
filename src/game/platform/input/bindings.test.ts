@@ -21,12 +21,12 @@ function allCodes(b: Bindings): string[] {
 
 describe('tryBind', () => {
   it('replaces the primary key of an action', () => {
-    const r = tryBind(DEFAULT_BINDINGS, 'capture', 0, 'KeyV');
-    expect(r.ok && r.bindings.capture).toEqual(['KeyV']);
+    const r = tryBind(DEFAULT_BINDINGS, 'capture', 0, 'KeyG');
+    expect(r.ok && r.bindings.capture).toEqual(['KeyG']);
   });
   it('adds an alternate in slot 1', () => {
-    const r = tryBind(DEFAULT_BINDINGS, 'capture', 1, 'KeyV');
-    expect(r.ok && r.bindings.capture).toEqual(['KeyC', 'KeyV']);
+    const r = tryBind(DEFAULT_BINDINGS, 'capture', 1, 'KeyG');
+    expect(r.ok && r.bindings.capture).toEqual(['KeyC', 'KeyG']);
   });
   it('detects a conflict with another action and changes nothing', () => {
     const r = tryBind(DEFAULT_BINDINGS, 'capture', 0, 'KeyW');

@@ -20,7 +20,8 @@ export const P2_KEYS: readonly ControlRow[] = [
   { action: 'Charge', keys: 'G' },
   { action: 'Super', keys: 'B' },
   { action: 'Trap', keys: 'M' },
-  { action: 'Tag', keys: 'V' },
+  { action: 'Element', keys: ';' },
+  { action: 'Tag', keys: '.' },
   { action: 'Tag 2', keys: ',' },
 ];
 
@@ -33,6 +34,7 @@ const P1_ROWS: readonly (readonly [string, GameAction])[] = [
   ['Charge', 'charge'],
   ['Super', 'super'],
   ['Trap', 'trap'],
+  ['Element', 'elemental'],
   ['Tag', 'slot3'],
   ['Tag 2', 'slot4'],
 ];
@@ -55,6 +57,7 @@ export const GAMEPAD_ROWS: readonly ControlRow[] = [
   { action: 'Charge', keys: 'Press the right stick' },
   { action: 'Super', keys: 'Right trigger' },
   { action: 'Trap', keys: 'Y' },
+  { action: 'Element', keys: 'Press the left stick' },
   { action: 'Tag', keys: 'Left bumper' },
   { action: 'Pause', keys: 'Start' },
 ];
@@ -62,7 +65,7 @@ export const GAMEPAD_ROWS: readonly ControlRow[] = [
 export const TOUCH_ROWS: readonly ControlRow[] = [
   { action: 'Move', keys: 'Drag the on-screen pad' },
   { action: 'Attack, second attack', keys: 'Tap the attack buttons' },
-  { action: 'Dash, Guard, Weather, Charge, Super, Trap, Tag, Tag 2', keys: 'Tap the button of the same name; each shows its key and its state in words' },
+  { action: 'Dash, Guard, Weather, Charge, Super, Trap, Element, Tag, Tag 2', keys: 'Tap the button of the same name; each shows its key and its state in words' },
 ];
 
 export const SYSTEM_ROWS: readonly ControlRow[] = [

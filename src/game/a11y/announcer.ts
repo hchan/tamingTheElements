@@ -44,6 +44,11 @@ export function announcementsFor(events: readonly SimEvent[], teamOf: (entity: n
         if (a) out.push(a);
         break;
       }
+      case SimEventKind.elementalCast: {
+        const a = elementalAnnouncement(e);
+        if (a) out.push(a);
+        break;
+      }
       default:
         break;
     }
@@ -69,6 +74,26 @@ function trapAnnouncement(e: SimEvent, teamOf: (entity: number) => number): Anno
   if (reason === TrapReason.doused) return { key: `${side}Doused`, text: `${who} ${name} doused.`, important: false };
   if (reason === TrapReason.timeout) return mine ? { key: `${side}Expired`, text: `Your ${name} expired.`, important: false } : undefined;
   return { key: `${side}Triggered`, text: `${who} ${name} triggered.`, important: false };
+}
+
+/** Elemental ability lines (FUN-DESIGN 2.24) by element kind (1 fire, 2 water, 3 earth, 4 air): the name, then what it does. */
+const ELEMENTAL_LINES: readonly (readonly [string, string])[] = [
+  ['', ''],
+  ['Ember', 'attack up'],
+  ['Cleanse', 'debuffs cleared'],
+  ['Stoneskin', 'armor up'],
+  ['Gale', 'speed up'],
+];
+
+/** "Your Gale: speed up." / "Enemy Cleanse: 2 debuffs cleared." Polite; the key carries the side and the element. */
+function elementalAnnouncement(e: SimEvent): Announcement | undefined {
+  const kind = e['element'] ?? 0;
+  const line = ELEMENTAL_LINES[kind];
+  if (!line || line[0] === '') return undefined;
+  const mine = (e['team'] ?? 0) === 0;
+  const cleared = e['cleared'] ?? 0;
+  const what = kind === 2 ? (cleared > 0 ? `${String(cleared)} ${cleared === 1 ? 'debuff' : 'debuffs'} cleared` : 'nothing to clear') : line[1];
+  return { key: `elemental${mine ? 'Mine' : 'Foe'}${String(kind)}`, text: `${mine ? 'Your' : 'Enemy'} ${line[0]}: ${what}.`, important: false };
 }
 
 export const MATCH_START: Announcement = {

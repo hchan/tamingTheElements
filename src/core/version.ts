@@ -138,5 +138,10 @@
  *    count [15]) is reset outside the `fight` phase, so the Gust count dropping to 0 at the round reset no longer opens a spurious
  *    45-tick press at the start of a round, and a leftover window from the last round is dropped
  *    (ideas/brainstorm/ai-round-reset-gust-window.md); the hash definition is unchanged, only scripted-AI commands differ.
+ * 39: Arcade only; Classic hashes unchanged. Elemental ability (FUN-DESIGN 2.24, ideas/in-progress/elemental-ability.md): command
+ *    bit 10 (swap4, which Arcade never has) is the elemental press, buffered; Ember (fire: damage dealt x1.25), Gale (air: walk
+ *    x1.3), Stoneskin (earth: damage taken x0.8) for 250 game ticks, Cleanse (water: ends its Snag root, Puddle slow, Ice Blast and
+ *    tidal slows); cooldown 1750 ticks (water 1250), none for void heroes; the Arcade entity block gains elemReadyAt/elemUntil,
+ *    the team block a ninth press tick (CHORD_FLAG moves to bit 9); `elementalCast`/`elementalEnded`; the scripted Arcade AI uses it.
  */
-export const SIM_VERSION = 38;
+export const SIM_VERSION = 39;

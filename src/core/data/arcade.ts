@@ -155,6 +155,21 @@ export const TRAP_TEAM_MAX = 2;
 export const TRAP_MIN_GAP_PX = 64;
 
 /**
+ * Elemental ability (FUN-DESIGN 2.24, SIM_VERSION 39): one always-ready button per hero, chosen by its element, on its own
+ * cooldown (no meter). Fire (Ember) deals ELEMENTAL_DAMAGE_PM per mille damage, earth (Stoneskin) takes ELEMENTAL_ARMOR_PM
+ * per mille, air (Gale) walks at ELEMENTAL_SPEED_PM, each for ELEMENTAL_TICKS game ticks; water (Cleanse) is instant and
+ * ends its roots and slows. Void heroes (the training dummy and the World Tour's final boss) have none.
+ */
+export const ELEMENTAL_TICKS = 250;
+/** By element kind (0 none, 1 fire, 2 water, 3 earth, 4 air, 5 void; 0 = no ability): the cooldown in game ticks. */
+export const ELEMENTAL_COOLDOWN_TICKS: readonly number[] = [0, 1750, 1250, 1750, 1750, 0];
+export const ELEMENTAL_DAMAGE_PM = 1250;
+export const ELEMENTAL_ARMOR_PM = 800;
+export const ELEMENTAL_SPEED_PM = 1300;
+/** Player-facing names by element kind (never the word for the mechanic itself). */
+export const ELEMENTAL_NAMES: readonly string[] = ['', 'Ember', 'Cleanse', 'Stoneskin', 'Gale', ''];
+
+/**
  * Knockback start speed in Q4 (1/16 px per tick) by strength: light 96 (6 px per tick), medium 144, heavy 224, super
  * 256. It decays by KNOCKBACK_DECAY_Q4 (1 px per tick) every game tick, so light travels 21 px, medium 45, heavy 105.
  */

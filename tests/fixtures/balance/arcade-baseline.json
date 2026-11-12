@@ -13,20 +13,20 @@
     "aiLevel": 3
   },
   "matches": 1056,
-  "stalemates": 14,
+  "stalemates": 15,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.443,
-    "cyclonius": 0.489,
-    "echo": 0.438,
-    "fiara": 0.52,
-    "ishimi": 0.511,
-    "lavax": 0.486,
-    "morblass": 0.523,
-    "pax": 0.54,
-    "rokcore": 0.46,
-    "sindarosa": 0.5,
-    "treenoc": 0.557,
-    "wispera": 0.534
+    "curomo": 0.474,
+    "cyclonius": 0.48,
+    "echo": 0.457,
+    "fiara": 0.537,
+    "ishimi": 0.517,
+    "lavax": 0.494,
+    "morblass": 0.446,
+    "pax": 0.543,
+    "rokcore": 0.517,
+    "sindarosa": 0.489,
+    "treenoc": 0.517,
+    "wispera": 0.528
   }
 }

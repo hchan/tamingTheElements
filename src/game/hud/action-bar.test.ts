@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, TRAP_LABEL, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { BAR_Y, ELEMENTAL_LABEL, TRAP_LABEL, elementSymbol, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -17,6 +17,7 @@ const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
   swapReadyTick: 100,
   swapCooldownTicks: 250,
   trap: undefined,
+  elemental: undefined,
   ...over,
 });
 
@@ -38,6 +39,35 @@ describe('Trap slot', () => {
     const slots = buildSlots(bar({ trap: t }));
     const last = slots[slots.length - 1];
     expect(commandAt(slots, (last?.x ?? 0) + 5, (last?.y ?? 0) + 5)).toBe(Cmd.trap);
+  });
+});
+
+describe('Element slot (FUN-DESIGN 2.24)', () => {
+  const e = { name: 'Ember', kind: 1, readyTick: 100, cooldownTicks: 1750, activeUntil: 0 };
+  const t = { readyTick: 100, cooldownTicks: 500, count: 0, max: 2 };
+  it('comes last with its own key label (V, not a swap\'s) and emits the elemental bit', () => {
+    const slots = buildSlots(bar({ trap: t, elemental: e }));
+    const last = slots[slots.length - 1];
+    expect([last?.kind, last?.cmd, last?.label, last?.note, last?.element]).toEqual(['elemental', Cmd.elemental, 'V', 'Ember', 1]);
+    expect(labelsFromBindings(DEFAULT_BINDINGS)[ELEMENTAL_LABEL]).toBe('V');
+    expect(commandAt(slots, (last?.x ?? 0) + 5, (last?.y ?? 0) + 5)).toBe(Cmd.elemental);
+  });
+  it('says "on" while the buff runs (highlighted), then the seconds left, then the name', () => {
+    expect(elementalNote(100, { ...e, readyTick: 1850, activeUntil: 350 })).toBe('Ember on');
+    expect(elementalNote(400, { ...e, readyTick: 1850, activeUntil: 350 })).toBe('Ember 29s');
+    expect(elementalNote(1850, { ...e, readyTick: 1850 })).toBe('Ember');
+    expect(buildSlots(bar({ trap: t, elemental: { ...e, activeUntil: 101 } })).at(-1)?.highlight).toBe(true);
+  });
+  it('an Arcade bar never shows a fourth swap slot (bit 10 is the elemental ability there)', () => {
+    const swaps = [{ sprite: 'w', dead: false }, { sprite: 'x', dead: false }, { sprite: 'y', dead: false }, { sprite: 'z', dead: false }];
+    expect(buildSlots(bar({ swaps })).filter((s) => s.cmd === Cmd.swap4)).toHaveLength(1);
+    expect(buildSlots(bar({ swaps, trap: t })).filter((s) => s.kind === 'swap')).toHaveLength(3);
+  });
+  it('draws the alchemical symbols: fire and air point up, water and earth down, air and earth barred', () => {
+    expect(elementSymbol(1, 0, 0, 10)).toEqual({ tri: [0, -10, 10, 10, -10, 10], bar: undefined });
+    expect(elementSymbol(2, 0, 0, 10).tri[1]).toBe(10);
+    expect(elementSymbol(3, 0, 0, 9).bar).toEqual([-9, 3, 9, 3]);
+    expect(elementSymbol(4, 0, 0, 9).bar).toEqual([-9, -3, 9, -3]);
   });
 });
 

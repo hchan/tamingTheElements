@@ -101,17 +101,17 @@ test('Two players is a 3v3 duel: three hero selects each, both players tag with 
   await page.getByRole('button', { name: 'Fight!' }).click();
   await page.waitForFunction(ARENA_READY);
   await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
-  await expect(page.locator('#arcadeKeysHint')).toContainText('V tag, Comma tag 2');
+  await expect(page.locator('#arcadeKeysHint')).toContainText('Period tag, Comma tag 2');
   const start = await tagLines(page);
   expect(start[0]?.slice(0, 3)).toEqual(['IN Sindarosa', 'BENCH Pax 100%', 'BENCH Curomo 100%']);
   expect(start[1]?.slice(0, 3)).toEqual(['IN Fiara', 'BENCH Echo 100%', 'BENCH Lavax 100%']);
-  // Player 1 tags with 4 (Tag 2): Curomo in. Player 2 tags with V (Tag): Echo in.
+  // Player 1 tags with 4 (Tag 2): Curomo in. Player 2 tags with Period (Tag): Echo in.
   await page.keyboard.down('Digit4');
   await stepLive(page, 1);
   await page.keyboard.up('Digit4');
-  await page.keyboard.down('KeyV');
+  await page.keyboard.down('Period');
   await stepLive(page, 1);
-  await page.keyboard.up('KeyV');
+  await page.keyboard.up('Period');
   const tagged = await tagLines(page);
   expect(tagged[0]?.[0]).toBe('IN Curomo');
   expect(tagged[1]?.[0]).toBe('IN Echo');

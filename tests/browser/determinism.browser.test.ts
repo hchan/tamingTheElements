@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import arcadeGolden from '../fixtures/replays/arcade-1v1.replay.json';
+import arcadeElementalGolden from '../fixtures/replays/arcade-elemental.replay.json';
 import arcadeMovesGolden from '../fixtures/replays/arcade-moves.replay.json';
 import arcadeTagGolden from '../fixtures/replays/arcade-tag.replay.json';
 import arcadeTag3Golden from '../fixtures/replays/arcade-tag3.replay.json';
@@ -37,13 +38,14 @@ describe('cross-engine determinism', () => {
   });
 
   // Hand-scripted inputs (tools/gen/arcade-moves.ts): dash, guard, parry, super, all five weathers, the round flow and
-  // the 2v2 and 3v3 tag teams, and each trap kind.
+  // the 2v2 and 3v3 tag teams, each trap kind and each elemental ability.
   it.each([
     ['arcade-moves', arcadeMovesGolden],
     ['arcade-weather', arcadeWeatherGolden],
     ['arcade-tag', arcadeTagGolden],
     ['arcade-tag3', arcadeTag3Golden],
     ['arcade-traps', arcadeTrapsGolden],
+    ['arcade-elemental', arcadeElementalGolden],
   ])(
     'the scripted Arcade golden %s verifies against the committed Node hashes',
     (_name, golden) => {
