@@ -37,7 +37,7 @@ export function recordArcadeScript(script: ArcadeScript): ReplayFile {
 }
 
 const ARCADE_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true };
-const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge } = Cmd;
+const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge, trap } = Cmd;
 
 /**
  * Ticks p2 walks back in from the right wall of the wide Arcade arena (WP 38d, 1920 px) so the pair stands as it did
@@ -290,6 +290,42 @@ function tag3Script(): ArcadeScript {
   return { file: 'arcade-tag3', setup, inputs: buildScript(p1, p2) };
 }
 
+/** Traps script timings: ticks after the plant before the foe walks in (past TRAP_ARM_TICKS), and the walk in. */
+const TRAP_WALK_AT = 40;
+const TRAP_WALK = 90;
+
+/**
+ * Traps (WP 39, 39e): one of each kind fires on a foe. p1 tags through Fiara, Curomo and Treenoc, plants each hero's trap
+ * between the pair, and Cyclonius walks into it: a Fire Bomb hit, a Puddle slow (the Puddle stays and times out), a
+ * Spike hit and stun. Cyclonius' Gust shoves Treenoc, who walks into it, and Fiara's Fireball douses the next one.
+ */
+function trapsScript(): ArcadeScript {
+  const setup: MatchSetup = {
+    simVersion: SIM_VERSION, seed: 0x7a95, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
+    p1: [{ character: characterId('fiara'), xp: 1 }, { character: characterId('curomo'), xp: 1 }, { character: characterId('treenoc'), xp: 1 }],
+    p2: [{ character: characterId('cyclonius'), xp: 1 }],
+  };
+  const p1 = new Track();
+  const p2 = new Track();
+  const walkIn = (p: Track, at: number, dir: number): void => void p.until(at + TRAP_WALK_AT).step('walk into the trap', dir, TRAP_WALK);
+  let h = home(p1, p2, 100, 100);
+  p1.until(h).tap('fire bomb', trap);
+  walkIn(p2, h, left);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 20, 100);
+  p1.until(h).tap('tag 1: curomo', swap1).wait(20).tap('puddle', trap);
+  walkIn(p2, h + 22, left);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 20, 100);
+  p1.until(h).tap('tag 2: treenoc', swap2).wait(20).tap('spike', trap);
+  walkIn(p2, h + 22, left);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 20, 100);
+  p2.until(h).tap('gust', trap);
+  walkIn(p1, h, right);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick, h + 500) + 20, 100);
+  p2.until(h).tap('gust to douse', trap);
+  p1.until(h).tap('tag 1: fiara', swap1).wait(20).tap('fireball', secondary).wait(60);
+  return { file: 'arcade-traps', setup, inputs: buildScript(p1, p2) };
+}
+
 export function arcadeScripts(): ArcadeScript[] {
-  return [movesScript(), weatherScript(), tagScript(), tag3Script()];
+  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript()];
 }

@@ -1133,6 +1133,13 @@ from 149 to 71 (1v1) and from 84 to 54 (2v2) over those three seeds, through the
 
 `pnpm fun:report` prints traps placed / triggered on a foe / timed out / doused (`trapPlaced`, `trapTriggered` reasons).
 
+**Trap numbers after WP 39e** (`SIM_VERSION` 34, `src/core/data/arcade.ts`, findings in
+`ideas/brainstorm/trap-balance-findings.md`). These are the lives after arming (`TRAP_LIFE_TICKS`): Fire Bomb 120 ticks (was 150),
+Puddle 250 (300), Spike 160 (200) and Gust 150 (200). A Puddle slows to 500 pm (was 600) and lingers 60 ticks (40). A Gust
+shoves at 288 Q4 (224), about 171 px. A Fire Bomb (22) or Spike (18) hit is its base times the owner race's Arcade
+`damagePm`, floored at `TRAP_HIT_FLOOR` 20 before the element chart. Before this, Sindarosa's and Rokcore's traps hit
+for 13 to 14 and Fiara's for 33.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)

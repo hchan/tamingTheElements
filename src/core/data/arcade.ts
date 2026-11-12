@@ -132,18 +132,24 @@ export const TrapReason = { overlap: 0, timeout: 1, doused: 2 } as const;
 export const TRAP_PLACE_PX = 72;
 export const TRAP_CAST_TICKS = 14;
 export const TRAP_ARM_TICKS = 30;
-/** Life after arming by TrapKind (index 0 unused). */
-export const TRAP_LIFE_TICKS: readonly number[] = [0, 150, 300, 200, 200];
+/** Life after arming by TrapKind (index 0 unused). WP 39e: bomb 150 -> 120, puddle 300 -> 250, spike 200 -> 160, gust 200 -> 150. */
+export const TRAP_LIFE_TICKS: readonly number[] = [0, 120, 250, 160, 150];
 export const TRAP_BOX_PX = 56;
 export const TRAP_TRIGGER_PX = 24;
 export const TRAP_BLAST_PX = 112;
 export const TRAP_FIRE_DAMAGE = 22;
 export const TRAP_SPIKE_DAMAGE = 18;
+/**
+ * WP 39e: a Fire Bomb or Spike hit is the base times the owner race's Arcade damagePm, floored at this many HP before the
+ * element chart, weather and combo scale (Sindarosa's and Rokcore's damagePm of 650/690 left their traps at 13 to 14 per hit).
+ */
+export const TRAP_HIT_FLOOR = 20;
 export const TRAP_SPIKE_STUN_TICKS = 50;
-export const TRAP_PUDDLE_SLOW_PM = 600;
-export const TRAP_PUDDLE_LINGER_TICKS = 40;
-/** A heavy hit's knockback (KNOCKBACK_Q4[heavy]): about 105 px, into the wall bounce. */
-export const TRAP_GUST_KB_Q4 = 224;
+/** WP 39e: 600 -> 500 (half speed) and a 40 -> 60 tick linger. */
+export const TRAP_PUDDLE_SLOW_PM = 500;
+export const TRAP_PUDDLE_LINGER_TICKS = 60;
+/** WP 39e: 224 (a heavy hit's knockback, 105 px) -> 288, about 171 px: one wall bounce from mid-arena. */
+export const TRAP_GUST_KB_Q4 = 288;
 export const TRAP_COOLDOWN_TICKS = 500;
 export const TRAP_TEAM_MAX = 2;
 export const TRAP_MIN_GAP_PX = 64;

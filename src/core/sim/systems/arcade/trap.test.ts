@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  RoundPhase, TRAP_ARM_TICKS, TRAP_BLAST_PX, TRAP_BOX_PX, TRAP_CAST_TICKS, TRAP_COOLDOWN_TICKS, TRAP_LIFE_TICKS,
-  TRAP_MIN_GAP_PX, TRAP_PLACE_PX, TRAP_PUDDLE_LINGER_TICKS, TRAP_PUDDLE_SLOW_PM, TRAP_TEAM_MAX, TRAP_TRIGGER_PX, TrapKind,
+  RoundPhase, TRAP_ARM_TICKS, TRAP_BLAST_PX, TRAP_BOX_PX, TRAP_CAST_TICKS, TRAP_COOLDOWN_TICKS, TRAP_FIRE_DAMAGE,
+  TRAP_GUST_KB_Q4, TRAP_HIT_FLOOR, TRAP_LIFE_TICKS, TRAP_MIN_GAP_PX, TRAP_SPIKE_DAMAGE, TRAP_PLACE_PX, TRAP_PUDDLE_LINGER_TICKS, TRAP_PUDDLE_SLOW_PM, TRAP_TEAM_MAX, TRAP_TRIGGER_PX, TrapKind,
   TrapReason,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
@@ -58,8 +58,9 @@ const toArm = (world: SimWorld): SimEvent[] => run(world, TRAP_ARM_TICKS - 1);
 describe('Trap data (WP 39)', () => {
   it('has the design numbers', () => {
     expect([TRAP_PLACE_PX, TRAP_CAST_TICKS, TRAP_ARM_TICKS, TRAP_BOX_PX, TRAP_TRIGGER_PX, TRAP_BLAST_PX]).toEqual([72, 14, 30, 56, 24, 112]);
-    expect([...TRAP_LIFE_TICKS]).toEqual([0, 150, 300, 200, 200]);
-    expect([TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX, TRAP_MIN_GAP_PX, TRAP_PUDDLE_SLOW_PM, TRAP_PUDDLE_LINGER_TICKS]).toEqual([500, 2, 64, 600, 40]);
+    expect([...TRAP_LIFE_TICKS]).toEqual([0, 120, 250, 160, 150]);
+    expect([TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX, TRAP_MIN_GAP_PX, TRAP_PUDDLE_SLOW_PM, TRAP_PUDDLE_LINGER_TICKS]).toEqual([500, 2, 64, 500, 60]);
+    expect([TRAP_FIRE_DAMAGE, TRAP_SPIKE_DAMAGE, TRAP_HIT_FLOOR, TRAP_GUST_KB_Q4]).toEqual([22, 18, 20, 288]);
   });
 
   it('plants the hero element, else the stage element, else a Fire Bomb', () => {
@@ -81,7 +82,7 @@ describe('Trap placement', () => {
     expect(placed).toHaveLength(1);
     expect(placed[0]).toMatchObject({ slot: 0, trap: TrapKind.fireBomb, x: 340 + 72 - 28, y: 340 - 28, team: 0, sourceId: 0 });
     expect(s.arcade[T(0, TrapF.armAt)]).toBe(g + TRAP_ARM_TICKS);
-    expect(s.arcade[T(0, TrapF.endAt)]).toBe(g + TRAP_ARM_TICKS + 150);
+    expect(s.arcade[T(0, TrapF.endAt)]).toBe(g + TRAP_ARM_TICKS + 120);
     expect(s.arcade[E(0, ArcadeE.trapReadyAt)]).toBe(g + TRAP_COOLDOWN_TICKS);
     expect(trapCount(s, 0)).toBe(1);
     expect(inTrapRecovery(s, 0)).toBe(true);
@@ -185,6 +186,18 @@ describe('Trap fuse and triggers', () => {
     expect(s.hp[1]).toBeLessThan(hp);
     expect(isStunned(s, 1)).toBe(true);
     expect(s.arcade[E(1, ArcadeE.juggle)]).toBe(1);
+  });
+
+  it('a damage trap hit is the base times the race damagePm, floored at TRAP_HIT_FLOOR (WP 39e)', () => {
+    const bombHit = (hero: string): number => {
+      const world = duel(hero, 'pax', 420);
+      const evs = run(world, 1, [Cmd.trap, 0]).concat(toArm(world), step(world, [0, 0]));
+      return of(evs, SimEventKind.hitConfirmed)[0]?.['amount'] ?? 0;
+    };
+    const sindarosa = bombHit('sindarosa'); // 22 x 650 pm = 14.3, floored at 20
+    expect(sindarosa).toBeGreaterThan(0);
+    expect(bombHit('lavax')).toBe(sindarosa); // 22 x 870 pm = 19.1, floored at 20
+    expect(bombHit('fiara') / sindarosa).toBeCloseTo((TRAP_FIRE_DAMAGE * 1520) / 1000 / TRAP_HIT_FLOOR, 9); // 33.4, above it
   });
 
   it('a Gust shoves the foe away without damage', () => {

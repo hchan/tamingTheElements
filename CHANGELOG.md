@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Trap tuning (WP 39e, ideas/brainstorm/trap-balance-findings.md): Arcade only. `SIM_VERSION` goes from 33 to 34; the Classic goldens change their header only.
+  - Lives after arming: bomb 120, puddle 250, spike 160 and gust 150 ticks.
+  - The Puddle slows to 500 pm and lingers 60 ticks.
+  - The Gust knockback is 288 Q4.
+  - A Fire Bomb or Spike hit is its base times the owner race's `damagePm`, floored at 20 (`TRAP_HIT_FLOOR`). Sindarosa's and Rokcore's traps used to hit for 13 to 14.
+
+  The Arcade goldens were re-recorded because trap hits and timings changed. The `arcade-1v1` inputs also move because its AI-recorded inputs had drifted on main since 39c. A new scripted golden, `arcade-traps`, fires each trap kind and also covers a timeout and a douse. The Arcade 1v1 and 2v2 balance baselines were re-recorded because the 2v2 moved past tolerance (Treenoc -6.8, Pax +5.7).
+
 - Trap AI (WP 39c, FUN-DESIGN 2.23): Arcade only, Classic untouched. The scripted AI sees traps (`ArcadeView.traps`, `trapIn`, `trapCount`, `fireShot`), plants when a foe closes through its personality's band (Rushdown late, Zoner early) or when cornered (Easy 20, Normal 80, Hard 300 pm per tick; Hard at once on a foe its Snag roots), never under 96 px, steps round foe traps or dashes across an arming Fire Bomb or Spike (Normal, Hard), and Hard fire heroes shoot a foe Puddle or Gust in the way; Easy walks into some. `fun:report` counts traps. AI only: no `SIM_VERSION` bump, goldens unchanged. Anti-stalemate changes, for stale fights only (400 ticks with no HP change):
   - no zoning or corner plants;
   - every level walks on through foe traps;

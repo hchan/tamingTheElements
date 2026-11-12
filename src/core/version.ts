@@ -122,5 +122,9 @@
  * 33: Arcade only; Classic hashes unchanged. Traps (WP 39): command bit 6 is Trap in Arcade (Classic keeps it as capture);
  *    the `traps` system after `movement`; the Arcade block grows (entity trapReadyAt/trapSlowUntil, a trap press slot per
  *    team, a 4 x 7 world trap table), so every Arcade hash changes even with no trap cast.
+ * 34: Arcade only; Classic hashes unchanged. Trap tuning (WP 39e, ideas/brainstorm/trap-balance-findings.md): lives after
+ *    arming bomb 150 -> 120, puddle 300 -> 250, spike 200 -> 160, gust 200 -> 150; Puddle slow 600 -> 500 pm and linger
+ *    40 -> 60 ticks; Gust knockback 224 -> 288 Q4; a Fire Bomb or Spike hit is its base times the owner race's damagePm,
+ *    floored at TRAP_HIT_FLOOR 20 before the element chart (Sindarosa, Rokcore and Lavax traps hit for 13 to 19 before).
  */
-export const SIM_VERSION = 33;
+export const SIM_VERSION = 34;

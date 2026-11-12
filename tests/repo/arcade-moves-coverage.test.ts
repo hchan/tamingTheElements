@@ -5,6 +5,7 @@ import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
 import { createMatch } from '../../src/core/sim/match';
 import { cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
+import { trapSlowPm } from '../../src/core/sim/systems/arcade/stun';
 import { controlledId } from '../../src/core/sim/systems/movement';
 import { rleDecode } from '../../src/core/replay/rle';
 import { parseReplay, serializeReplay, setupFromHeader } from '../../src/core/replay/format';
@@ -16,7 +17,7 @@ import { arcadeScripts, recordArcadeScript } from '../../tools/gen/arcade-moves'
 // of leaving a golden that quietly stopped covering it.
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
-const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3'] as const;
+const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps'] as const;
 const K = SimEventKind;
 
 interface Run {
@@ -25,6 +26,8 @@ interface Run {
   readonly bufferedCasts: number;
   /** Ticks on which a benched character's HP rose (the bench recovery of FUN-DESIGN 2.6). */
   readonly benchHeals: number;
+  /** Ticks on which a character moved under a Puddle's slow (WP 39). */
+  readonly slowTicks: number;
   readonly ticks: number;
 }
 
@@ -41,6 +44,7 @@ function run(name: string): Run {
   const stamp = new Map<number, number>();
   let bufferedCasts = 0;
   let benchHeals = 0;
+  let slowTicks = 0;
   const s = world.state;
   for (let t = 0; t < replay.header.tickCount; t++) {
     const cmds = [in0[t] ?? 0, in1[t] ?? 0] as const;
@@ -50,6 +54,7 @@ function run(name: string): Run {
       const f = s.flags[id] ?? 0;
       const benched = (f & (EntityFlag.alive | EntityFlag.benched | EntityFlag.dead)) === (EntityFlag.alive | EntityFlag.benched);
       if (benched && s.kind[id] === EntityKind.character && (s.hp[id] ?? 0) > (hp[id] ?? 0)) benchHeals++;
+      if (s.kind[id] === EntityKind.character && (f & EntityFlag.alive) !== 0 && trapSlowPm(s, id) < 1000) slowTicks++;
     }
     for (const team of [0, 1]) {
       const id = controlledId(world, team);
@@ -63,7 +68,7 @@ function run(name: string): Run {
       }
     }
   }
-  return { events, bufferedCasts, benchHeals, ticks: replay.header.tickCount };
+  return { events, bufferedCasts, benchHeals, slowTicks, ticks: replay.header.tickCount };
 }
 
 const runs = FILES.map(run);
@@ -73,12 +78,18 @@ const moves = runs[0]?.events ?? [];
 const weatherRun = runs[1]?.events ?? [];
 const tagRun = runs[2]?.events ?? [];
 const tag3Run = runs[3]?.events ?? [];
+const trapsRun = runs[4];
 /** `tagIn` events whose outgoing character died on the same tick (the KO entrance) or not (a manual tag). */
 const koEntrance = (e: SimEvent): boolean => of(K.died).some((d) => d.tick === e.tick && d.sourceId === e.from);
 const hits = of(K.hitConfirmed);
 /** The `superId` of the latest `superStarted` at or before `tick` within one run (ticks restart per golden, so use the run's own events). */
 const superHits = (events: readonly SimEvent[], superId: number): number =>
   of(K.hitConfirmed, events).filter((h) => h.strength === 3 && of(K.superStarted, events).filter((e) => e.tick <= h.tick).at(-1)?.['superId'] === superId).length;
+
+/** Hits that land on the tick a trap of `kind` fired on a foe (overlap), from that trap's owner. */
+const trapHits = (kind: number): number =>
+  of(K.trapTriggered, trapsRun?.events).filter((t) => t['trap'] === kind && t['reason'] === 0)
+    .filter((t) => of(K.hitConfirmed, trapsRun?.events).some((h) => h.tick === t.tick && h.attacker === t.sourceId)).length;
 
 describe('scripted Arcade goldens: every mechanic fires', () => {
   const mechanics: readonly (readonly [string, () => number])[] = [
@@ -112,6 +123,12 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['an earth hero walks over a rock', () => of(K.patchEntered).filter((e) => e.stage === 3).length],
     ['a charge starts and arrives with a hit', () => of(K.chargeStarted).length * of(K.chargeEnded).filter((e) => e['reason'] === 1).length],
     ['a rock stops a shot', () => of(K.projectileBlocked).length],
+    ['a Fire Bomb fires on a foe and hits', () => trapHits(1)],
+    ['a Spike fires on a foe and hits', () => trapHits(3)],
+    ['a Gust fires on a foe', () => of(K.trapTriggered).filter((e) => e['trap'] === 4 && e['reason'] === 0).length],
+    ['a Puddle slows a foe', () => trapsRun?.slowTicks ?? 0],
+    ['a trap times out', () => of(K.trapTriggered).filter((e) => e['reason'] === 1).length],
+    ['a fire shot douses a trap', () => of(K.trapTriggered).filter((e) => e['reason'] === 2).length],
   ];
 
   it.each(mechanics)('%s', (_name, count) => {

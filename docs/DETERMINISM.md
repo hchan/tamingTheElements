@@ -93,6 +93,13 @@ Arcade and capture in Classic (`systems/capture.ts` is gated with `!isArcade`); 
 Classic hashes are unchanged (goldens change only in their `simVersion` header); the Arcade goldens were re-recorded
 because the hashed Arcade block grew.
 
+SIM_VERSION 34 (WP 39e, trap tuning) changes data only: trap lives, the Puddle slow and linger and the Gust knockback in
+`src/core/data/arcade.ts`, and a Fire Bomb or Spike hit takes the owner race's `damagePm` on its base, floored at
+`TRAP_HIT_FLOOR` (`Math.max(base * pm / 1000, 20)`: one IEEE multiply and divide by the constant 1000, then the plain
+`computeDamage` chain with a race pm of 1000), instead of after the weather. No new state, no RNG. Classic hashes are
+unchanged (header only); the Arcade goldens were re-recorded because trap hits and timings changed, and a new scripted `arcade-traps` golden
+fires each trap kind.
+
 ## State, snapshot and hash
 
 - State is structure-of-arrays typed arrays plus scalars in `SimState` (`src/core/sim/state.ts`): per-entity `Float64Array` and
