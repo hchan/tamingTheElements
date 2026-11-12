@@ -451,6 +451,13 @@ export class Arena extends Phaser.Scene {
         this.launch?.recorder?.invalidate();
         world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.meter] = value;
       },
+      setRoundsWon: (won0, won1) => {
+        // Dev/test only (the hook is dropped from production): lets a test reach the 2-2 draw that starts sudden death.
+        this.launch?.recorder?.invalidate();
+        const a = world.state.arcade;
+        a[ARCADE_TEAM_BASE + ArcadeT.roundsWon] = won0;
+        a[ARCADE_TEAM_BASE + ARCADE_T + ArcadeT.roundsWon] = won1;
+      },
       setWeatherCharge: (team, value) => {
         this.launch?.recorder?.invalidate();
         world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.weatherCharge] = value;

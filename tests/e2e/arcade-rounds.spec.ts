@@ -94,3 +94,28 @@ test('Arcade Versus: live-region lines for the round, the fight and the KO; leav
   expect(await page.locator('#liveRegion').count()).toBe(0);
   expect(errors).toEqual([]);
 });
+
+test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line and a screenshot', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  await versus(page);
+  await expect.poll(async () => (await rounds(page))?.main).toBe('ROUND 1');
+  await step(page, INTRO);
+  // Rounds are 1-1; a double KO is a draw that makes it 2-2, which needs one more round.
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setRoundsWon(1, 1); for (const c of a.characters()) a.setHp(c.id, 0); a.step(1); })()`);
+  expect(await rounds(page)).toMatchObject({ main: 'DOUBLE K.O.' });
+  await step(page, KO_TO_RESULT);
+  expect(await rounds(page)).toMatchObject({ sub: 'ROUND 1 DRAW', won: [2, 2] });
+  await step(page, 60);
+  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, won: [2, 2] });
+  await expect.poll(() => page.evaluate<string>(`document.getElementById('liveRegionAssertive')?.textContent ?? ''`))
+    .toContain('Sudden death. One hit may decide the match.');
+  const hp = await characters(page, 0);
+  expect(hp[0]?.hp).toBeLessThan((hp[0]?.maxHp ?? 0) / 5);
+  // The banner scales in over 30 view ticks; the picture is taken once it is at rest (it must fit the 1280 px width).
+  await step(page, 30);
+  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, scale: 1 });
+  await page.screenshot({ path: info.outputPath('sudden-death.png') });
+  await step(page, 60);
+  expect(await rounds(page)).toMatchObject({ main: 'FIGHT!' });
+  expect(errors).toEqual([]);
+});
