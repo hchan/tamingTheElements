@@ -159,6 +159,39 @@ test('a window resize mid-battle keeps the match state and leaks no listeners', 
   expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
 });
 
+test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
+  test.use({ viewport: { width: 640, height: 360 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+
+  test('every button sits inside the viewport, at least 48 px tall, in at most two right-edge columns, none overlapping', async ({ page }) => {
+    const errors = collectErrors(page);
+    // The World Tour fields a team of three, so all 8 buttons are present.
+    await page.goto(`${START}&ff=arcade#tour`);
+    await page.getByRole('button', { name: 'Start tour' }).tap();
+    await page.getByRole('button', { name: 'Fight' }).tap();
+    await page.locator('#tourSplash').tap();
+    await page.waitForFunction(ARENA_READY);
+    const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number }[]>(
+      `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom }; })`,
+    );
+    expect(boxes).toHaveLength(8);
+    for (const k of boxes) {
+      expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(0);
+      expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(0);
+      expect(k.r, `${k.id} right`).toBeLessThanOrEqual(640);
+      expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(360);
+      expect(k.b - k.y, `${k.id} height`).toBeGreaterThanOrEqual(48);
+    }
+    expect(new Set(boxes.map((k) => Math.round(k.r))).size).toBeLessThanOrEqual(2);
+    for (const [i, p] of boxes.entries()) {
+      for (const q of boxes.slice(i + 1)) {
+        const apart = p.r <= q.x || q.r <= p.x || p.b <= q.y || q.b <= p.y;
+        expect(apart, `${p.id} and ${q.id} overlap`).toBe(true);
+      }
+    }
+    expect(errors).toEqual([]);
+  });
+});
+
 test('the F key and the button toggle fullscreen where the browser allows it', async ({ page }) => {
   await page.goto('/?ff=arenaDemo&manual=1');
   await page.waitForFunction(ARENA_READY);

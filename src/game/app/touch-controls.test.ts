@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RenderView } from '@core/index';
 import { setBindings, DEFAULT_BINDINGS, getBindings } from '../platform/input/bindings';
 import { TOUCH, isMeleeRace, setTouchText, touchButton, touchButtons, touchKeyLabel, touchStatus } from './touch-controls';
@@ -71,6 +71,12 @@ describe('touch controls', () => {
 });
 
 describe('keyboard activation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
   const key = (k: string, repeat = false) => ({ pointerId: 0, key: k, repeat, preventDefault: vi.fn(), stopPropagation: vi.fn() });
   it('Enter or Space holds the bound key like a finger and releases it on keyup, ignoring auto-repeat', () => {
     for (const k of ['Enter', ' ']) {
@@ -83,8 +89,23 @@ describe('keyboard activation', () => {
       expect(e.preventDefault).toHaveBeenCalled();
       expect(e.stopPropagation).toHaveBeenCalled();
       b.listeners.get('keyup')?.(key(k));
+      // A quick tap is held for at least 100 ms, so the sim sees the key down for a few ticks.
+      expect(sent).toEqual([`keydown:${String(getBindings().dash[0])}`]);
+      vi.advanceTimersByTime(100);
       expect(sent).toEqual([`keydown:${String(getBindings().dash[0])}`, `keyup:${String(getBindings().dash[0])}`]);
     }
+  });
+  it('a finger and a key hold the action separately: letting go of one does not release the other', () => {
+    const { sent } = stubDom(true);
+    const b = touchButton('Dash', 0) as unknown as { listeners: Map<string, Listener> };
+    const code = String(getBindings().dash[0]);
+    b.listeners.get('pointerdown')?.({ pointerId: 1, preventDefault: vi.fn() });
+    b.listeners.get('keydown')?.(key('Enter'));
+    vi.advanceTimersByTime(500);
+    b.listeners.get('keyup')?.(key('Enter'));
+    expect(sent).toEqual([`keydown:${code}`]);
+    b.listeners.get('pointerup')?.(key(''));
+    expect(sent).toEqual([`keydown:${code}`, `keyup:${code}`]);
   });
   it('ignores other keys and releases on blur', () => {
     const { sent } = stubDom(true);

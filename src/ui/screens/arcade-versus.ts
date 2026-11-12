@@ -39,7 +39,12 @@ export interface PickViewOptions {
 
 /** The element glyph plus its word, so the tile never relies on colour. */
 function rosterElement(element: string): HTMLElement {
-  return el('span', 'rosterElement', `${ELEMENT_MARKS[element] ?? ''} ${element}`);
+  const box = el('span', 'rosterElement');
+  // The glyph is decoration for sighted users; screen readers read only the element word.
+  const mark = el('span', undefined, ELEMENT_MARKS[element] ?? '');
+  mark.setAttribute('aria-hidden', 'true');
+  box.append(mark, ` ${element}`);
+  return box;
 }
 
 /** "Sindarosa (fire)": the element word, so the choice never depends on colour or art. */

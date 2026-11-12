@@ -17,8 +17,8 @@ describe('announcementsFor', () => {
     expect(text(ev(SimEventKind.matchEnded, { winner: 0 }))).toMatch(/Victory/);
     expect(text(ev(SimEventKind.matchEnded, { winner: 1 }))).toMatch(/Defeat/);
     expect(text(ev(SimEventKind.matchEnded, { winner: -1 }))).toMatch(/draw/);
-    expect(text(ev(SimEventKind.captured))).toMatch(/Captured/);
-    expect(text(ev(SimEventKind.captureFailed))).toMatch(/failed/);
+    expect(text(ev(SimEventKind.captured))).toMatch(/Snagged/);
+    expect(text(ev(SimEventKind.captureFailed))).toMatch(/Snag failed/);
     expect(text(ev(SimEventKind.died, { team: 0 }))).toMatch(/Your elemental/);
     expect(text(ev(SimEventKind.died, { team: 1 }))).toMatch(/Enemy/);
     expect(announcementsFor([ev(SimEventKind.damage), ev(SimEventKind.moved), ev(SimEventKind.swapped)])).toEqual([]);
@@ -51,6 +51,21 @@ describe('announcementsFor', () => {
     expect(spoken).toEqual(['Your Spike placed.']);
     for (const t of [1, 2, 3, 4]) a.say({ key: `k${String(t)}`, text: String(t), important: false });
     expect(a.pending).toBe(3);
+  });
+  it('different trap kinds do not silence each other; the same kind still repeats only after the window', () => {
+    const spoken: string[] = [];
+    const a = new Announcer((x) => spoken.push(x), () => 0, { minGapMs: 0 });
+    for (const trap of [3, 2]) for (const l of announcementsFor([ev(SimEventKind.trapPlaced, { team: 0, trap })])) a.say(l);
+    expect(spoken).toEqual(['Your Spike placed.', 'Your Puddle placed.']);
+  });
+  it('over the queue cap, trap lines are dropped before death lines', () => {
+    const spoken: string[] = [];
+    const a = new Announcer((x) => spoken.push(x), () => 0);
+    a.say({ key: 'first', text: 'first', important: false });
+    a.say({ key: 'heroDied', text: 'died', important: false });
+    for (const k of ['trapMine1Placed', 'trapMine2Placed', 'trapMine3Placed']) a.say({ key: k, text: k, important: false });
+    expect(a.pending).toBe(3);
+    expect(a.queued).toContain('died');
   });
   it('the match result is important', () => {
     expect(announcementsFor([ev(SimEventKind.matchEnded, { winner: 0 })])[0]?.important).toBe(true);
