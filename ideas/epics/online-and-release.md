@@ -17,7 +17,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [nightly-fun-gates](../brainstorm/nightly-fun-gates.md)
 - [release-itch-pages](../brainstorm/release-itch-pages.md)
 - [repo-housekeeping](../brainstorm/repo-housekeeping.md)
-- [docs-refresh](../brainstorm/docs-refresh.md)
+- [docs-refresh](../done/docs-refresh.md)
 - [parity-open-rows](../brainstorm/parity-open-rows.md)
 - [polish-backlog](../brainstorm/polish-backlog.md)
 - [sf-versus-join-in](../brainstorm/sf-versus-join-in.md)

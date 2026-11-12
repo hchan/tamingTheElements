@@ -175,7 +175,10 @@ tune changed 2v2 play, there was no 2v2 baseline before. `pnpm balance:compare -
 only, 5 pp tolerance). Seed noise is about 5 pp per race, so single fresh seeds reach 36-61%. The 1v1 Arcade baseline and the
 Classic baseline are unchanged (+0.0pp every race); the Arcade goldens were re-recorded (new sim version, 2v2 life, heal and AI).
 
-## Current Arcade state (SIM_VERSION 38)
+## Current Arcade state (SIM_VERSION 38 tables; sim is at 41)
+
+Later versions: 39 added the elemental ability (baselines re-recorded), 40 changed the 2v2/3v3 life table (`ARCADE_2V2_LIFE_PM` lavax 900, wispera 700) and 41 added giant heroes (Rokcore at 2x, hpPm 2100 / damagePm 650 plus the size bonus; see FUN-DESIGN 2.25). The rows below are the SIM_VERSION 38 snapshot; `pnpm balance:compare` against `tests/fixtures/balance` is the current truth.
+
 
 The two tables above are the history of the first tune and the 2v2 tune; later work packages (Snag, the smarter AI, the 1920 field, traps, hpPm retunes in SIM_VERSION 27, 30, 31, 36, 37 and the AI round-reset fix in 38) re-fit the rows and re-recorded both baselines. Today's `ARCADE_RACE_NUMBERS` and the recorded baselines (`tests/fixtures/balance/arcade-baseline.json`: 1056 matches, 14 stalemates; `arcade-2v2-baseline.json`: 528 matches, 9 stalemates, 36000-tick cap):
 
