@@ -9,7 +9,9 @@ import { ARENA_READY, CMD, START, STEP, collectErrors, fixture, freeze, goToHash
 
 const BASELINES = join(process.cwd(), 'tests', 'visual', '__baselines__', process.platform, 'regression');
 
-test.beforeEach((_fixtures, testInfo) => {
+// Playwright wants the first argument destructured; no fixture is needed here.
+// eslint-disable-next-line no-empty-pattern
+test.beforeEach(({}, testInfo) => {
   const have = existsSync(BASELINES) && readdirSync(BASELINES).length > 0;
   testInfo.skip(
     testInfo.config.updateSnapshots === 'none' && !have,
