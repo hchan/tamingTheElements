@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HC_COLORS,
+  activeHeroText,
   barFill,
   benchBar,
   dashSegments,
@@ -109,5 +110,18 @@ describe('colour-blind-safe health cues', () => {
   it('buffs differ by colour in both palettes (and by glyph in the HUD)', () => {
     expect(buffColor(true, false)).not.toBe(buffColor(false, false));
     expect(buffColor(true, true)).not.toBe(buffColor(false, true));
+  });
+});
+
+describe('activeHeroText', () => {
+  const c = { hp: 150, maxHp: 150, restCap: 150 };
+  it('puts the hero name on the first line, then the health words', () => {
+    const lines = activeHeroText('Pax', c, false).split('\n');
+    expect(lines[0]).toBe('Pax');
+    expect(lines[1]).toBe(healthCue(1).text);
+  });
+  it('the Classic HUD keeps its HP and cap lines under the name', () => {
+    const lines = activeHeroText('Curomo', c, true).split('\n');
+    expect(lines).toEqual(['Curomo', `HP ${healthCue(1).text}`, 'cap 100%']);
   });
 });

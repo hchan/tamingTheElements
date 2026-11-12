@@ -3,6 +3,7 @@ import type { RenderView } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
 import { crisp, fitScene, phoneBoost } from '../boot/viewport';
 import { lookup } from '../views/projectile-view';
+import { heroName } from '../hud/tag-fx';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import {
@@ -20,12 +21,12 @@ import {
   criticalPulse,
   shade,
   dashSegments,
+  activeHeroText,
   healthCue,
   arcadeAvatar,
   mainBar,
   regenLabel,
   regenState,
-  restCapPct,
   sideOffset,
   type BarGeometry,
   type HudCharacter,
@@ -154,7 +155,7 @@ export class Hud extends Phaser.Scene {
       const label = this.labels[team];
       if (side.active) {
         this.drawBar(gfx, mainBar(x), side.active, true);
-        label?.setText(this.classic ? `HP ${healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text}\ncap ${String(restCapPct(side.active))}%` : healthCue(side.active.hp / Math.max(1, side.active.maxHp)).text);
+        label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
         if (this.arcade) this.drawArcadeAvatar(gfx, team, side.active);
         else this.drawPortrait(gfx, team, side.active, side.bench);
         for (const b of collectBuffs(view, side.active.id, x, this.highContrast)) {

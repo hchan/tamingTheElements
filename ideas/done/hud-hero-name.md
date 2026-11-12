@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 added: 2026-11-11
 ---
 

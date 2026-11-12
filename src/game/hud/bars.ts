@@ -252,6 +252,15 @@ export function regenLabel(c: Pick<HudCharacter, 'dead' | 'benched' | 'hp' | 're
 }
 
 /** Percent of max health the fighter can recover to on the bench (its rest cap). */
+/**
+ * The words beside the active hero's main bar: its name on the first line (so the avatar is never anonymous), then the health
+ * state; the Classic HUD adds the rest cap. `name` comes from `heroName(sprite)`.
+ */
+export function activeHeroText(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap'>, classic: boolean): string {
+  const health = healthCue(c.hp / Math.max(1, c.maxHp)).text;
+  return classic ? `${name}\nHP ${health}\ncap ${String(restCapPct(c))}%` : `${name}\n${health}`;
+}
+
 export function restCapPct(c: Pick<HudCharacter, 'restCap' | 'maxHp'>): number {
   return Math.round(fraction(c.restCap, c.maxHp) * 100);
 }
