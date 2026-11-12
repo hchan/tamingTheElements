@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { SimEventKind, type Element, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from './element-colors';
 import { shakeFor } from './motion';
+import { FlashGate } from './flash-gate';
 
 /**
  * Cosmetic effects driven by sim events. View-only: nothing here touches sim state or the sim RNG
@@ -282,6 +283,7 @@ export function createPhaserFxSink(
     scene.events.once('destroy', drop);
   };
   const centre = at;
+  const gate = new FlashGate();
   const spawn = (x: number, y: number, dx: number, dy: number, color: number, radius: number, life: number): void => {
     if (live >= SPARK_POOL) return;
     let d = dots[live];
@@ -301,7 +303,7 @@ export function createPhaserFxSink(
   };
   return {
     flash(target, tint): void {
-      viewOf(target)?.flash(tint);
+      if (gate.allow(target, viewTick())) viewOf(target)?.flash(tint);
     },
     burst(target, offsets, count, color): void {
       const p = centre(target);
