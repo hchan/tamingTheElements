@@ -108,4 +108,27 @@ describe('AudioManager', () => {
     expect(started).toEqual(['whoosh']);
     expect(gains[1]?.gain.value).toBe(DUCK_GAIN);
   });
+
+  it('varies the damage sample rate by hit size and sequence, and leaves other cues alone', () => {
+    const rates: (number | undefined)[] = [];
+    const { ctx } = fakeCtx('running');
+    ctx.createBufferSource = () => {
+      const src = {
+        buffer: null as unknown,
+        playbackRate: { value: 1 },
+        connect: vi.fn(),
+        start: () => {
+          rates.push(src.playbackRate.value);
+        },
+      };
+      return src;
+    };
+    const a = new AudioManager({ ctx, buffers: new Map([['damage', 'd'], ['swap', 's']]) });
+    a.unlock();
+    a.consume([{ ...ev(SimEventKind.damage, 0), amount: 0 }, { ...ev(SimEventKind.damage, 1), amount: 0 }, { ...ev(SimEventKind.damage, 2), amount: 400 }]);
+    a.consume([ev(SimEventKind.swapped, 3)]);
+    expect(rates[0]).not.toBe(rates[1]);
+    expect(rates[2]).toBeLessThan(rates[0] as number);
+    expect(rates[3]).toBe(1);
+  });
 });
