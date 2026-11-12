@@ -1,4 +1,5 @@
 import { Cmd, type Command } from '@core/index';
+import { PAD_ROWS, getPadOverrides, padButtonFor, type PadOverrides } from '../platform/input/pad-bindings';
 
 /** The part of the Gamepad API the mapping needs (`navigator.getGamepads()` entries satisfy it). */
 export interface PadSnapshot {
@@ -31,6 +32,8 @@ export interface PadConfig {
   readonly buttons: Readonly<Record<number, Command>>;
   /** Button index that toggles pause (an app effect, never a sim command). */
   readonly pauseButton: number;
+  /** True for the partner game's pad (its Y is Trap, never gated like Capture). */
+  readonly arcade?: boolean;
 }
 
 /**
@@ -64,9 +67,51 @@ export const DEFAULT_PAD: PadConfig = {
  */
 export const ARCADE_PAD: PadConfig = {
   ...DEFAULT_PAD,
+  arcade: true,
   // RT, RB, LT, X, R3, Y (Trap shares Capture's bit 6), L3
   buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard, 2: Cmd.weather, 11: Cmd.charge, 3: Cmd.trap, 10: Cmd.elemental },
 };
+
+/** Per rebindable row: the command bit it sends in the one-hero game and in the partner game (undefined: not there). */
+const ROW_CMDS: Readonly<Record<string, readonly [Command | undefined, Command | undefined]>> = {
+  primary: [Cmd.primary, Cmd.primary],
+  secondary: [Cmd.secondary, Cmd.secondary],
+  capture: [Cmd.capture, Cmd.trap],
+  swap1: [Cmd.swap1, Cmd.swap1],
+  swap2: [Cmd.swap2, Cmd.dash],
+  swap3: [Cmd.swap3, Cmd.guard],
+  swap4: [Cmd.swap4, Cmd.super],
+  weather: [undefined, Cmd.weather],
+  charge: [undefined, Cmd.charge],
+  elemental: [undefined, Cmd.elemental],
+  up: [Cmd.up, Cmd.up],
+  down: [Cmd.down, Cmd.down],
+  left: [Cmd.left, Cmd.left],
+  right: [Cmd.right, Cmd.right],
+};
+
+/** Button index to command for one game kind, with the overrides applied. */
+export function padButtonsFor(o: PadOverrides, arcade: boolean): Record<number, Command> {
+  const out: Record<number, Command> = {};
+  for (const r of PAD_ROWS) {
+    const bit = ROW_CMDS[r.id]?.[arcade ? 1 : 0];
+    if (bit !== undefined) out[padButtonFor(o, r.id)] = bit;
+  }
+  return out;
+}
+
+let built: { o: PadOverrides; arcade: PadConfig; classic: PadConfig } | null = null;
+
+/** The pad mapping for a game kind: the defaults, or those with the player's rebinding (platform/input/pad-bindings). */
+export function padConfigFor(arcade: boolean): PadConfig {
+  const o = getPadOverrides();
+  if (Object.keys(o).length === 0) return arcade ? ARCADE_PAD : DEFAULT_PAD;
+  if (built?.o !== o) {
+    const mk = (base: PadConfig, a: boolean): PadConfig => ({ ...base, buttons: padButtonsFor(o, a), pauseButton: padButtonFor(o, 'pause') });
+    built = { o, arcade: mk(ARCADE_PAD, true), classic: mk(DEFAULT_PAD, false) };
+  }
+  return arcade ? built.arcade : built.classic;
+}
 
 function down(pad: PadSnapshot, i: number): boolean {
   const b = pad.buttons[i];
@@ -88,7 +133,7 @@ export function commandFromPad(pad: PadSnapshot | null, capturable: boolean, cfg
   if (pad === null || pad.connected === false) return 0;
   let cmd = stickCommand(pad.axes[0] ?? 0, pad.axes[1] ?? 0, cfg.deadzone);
   for (const [i, bit] of Object.entries(cfg.buttons)) {
-    if (bit === Cmd.capture && !capturable && cfg !== ARCADE_PAD) continue; // Arcade's Y is Trap, never gated
+    if (bit === Cmd.capture && !capturable && cfg.arcade !== true) continue; // Arcade's Y is Trap, never gated
     if (down(pad, Number(i))) cmd |= bit;
   }
   return cmd;
