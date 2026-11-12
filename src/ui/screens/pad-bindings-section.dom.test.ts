@@ -8,7 +8,7 @@ let screen: Screen | undefined;
 let root: HTMLElement;
 let down: number[] = [];
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
   localStorage.clear();
   setPadOverrides({});
@@ -21,6 +21,7 @@ beforeEach(() => {
   document.body.append(root);
   screen = keyBindingsScreen();
   screen.mount(root);
+  await vi.dynamicImportSettled();
 });
 afterEach(() => {
   screen?.unmount();

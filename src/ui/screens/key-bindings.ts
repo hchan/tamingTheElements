@@ -16,7 +16,7 @@ import {
 } from '../../game/platform/input/bindings';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
-import { padBindingsSection, type PadSection } from './pad-bindings-section';
+import type { PadSection } from './pad-bindings-section';
 import type { Screen } from './screen';
 
 export interface KeyBinding {
@@ -236,11 +236,17 @@ export function keyBindingsScreen(store?: SaveStore): Screen {
         tr.append(th, el('td', undefined, formatKeys(b.keys)));
         system.append(tr);
       }
-      padSection = padBindingsSection();
+      // Lazy: the gamepad section is its own chunk, fetched when this screen opens (keeps the menu entry small).
+      const padSlot = el('div');
+      void import('./pad-bindings-section').then((m) => {
+        if (!padSlot.isConnected) return;
+        padSection = m.padBindingsSection();
+        padSlot.append(padSection.node);
+      }, () => undefined);
 
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
-      page.append(table, reset, status, el('h2', undefined, 'Other controls'), system, padSection.node, back);
+      page.append(table, reset, status, el('h2', undefined, 'Other controls'), system, padSlot, back);
       render();
       container.append(page);
     },
