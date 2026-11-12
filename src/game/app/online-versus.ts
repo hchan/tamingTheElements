@@ -113,6 +113,10 @@ export function onlineVersusScreen(): Screen {
       const startMatch = (p: Peer, say: (s: string) => void, setup: MatchSetup): void => {
         void import('../boot/phaser-config').then(({ createGame }) => {
           if (gone || !node) return;
+          // The previous match's arena stayed up after its end (it keeps answering the friend's session, see onEnd): its end is now certain.
+          destroyGame(game, arenaNode);
+          game = undefined;
+          arenaNode = undefined;
           const holder = el('div');
           holder.id = 'game';
           arenaNode = holder;
@@ -122,9 +126,8 @@ export function onlineVersusScreen(): Screen {
             onEnd: (end) => {
               if (gone) return;
               say(endText(end.winner, side, end.rounds));
-              destroyGame(game, arenaNode);
-              game = undefined;
-              arenaNode = undefined;
+              // The finished arena stays up (its sim paused, its session still answering) until the next match starts or the screen
+              // closes: the datagram link is lossy, and a side gone silent at its own end can strand a friend who is one input short.
               const again = button('onlineAgain', 'Rematch', () => {
                 again.remove();
                 matchNo = (matchNo + 1) & 0xff;
