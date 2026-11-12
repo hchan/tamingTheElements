@@ -87,8 +87,8 @@ test('Arcade Versus: patches drawn, Sunshine turns the stage to fire, the buff b
   expect((await terrain(page))?.badge).toBe('FIRE x2');
   await expect.poll(() => live(page), { timeout: 5000 }).toContain('You stand on a fire patch: damage doubled.');
 
-  // The aim arrow is hidden when the fighter is at the bottom edge of the playfield and aims south (it would draw over the action bar).
-  await page.evaluate(`(() => { const a = window.__TTE__.arena; const me = a.characters().find((c) => c.team === 0); a.place(me.id, 40, 400, 0); a.step(150, [2, 0]); })()`);
+  // The aim arrow is hidden when the fighter is at the bottom edge of the playfield and aims south-west (a held diagonal overrides the auto-face; it would draw over the action bar).
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; const me = a.characters().find((c) => c.team === 0); a.place(me.id, 40, 400, 0); a.step(150, [2, 0]); a.step(1, [2 | 4, 0]); })()`);
   await frames(page);
   expect(await page.evaluate<{ visible: boolean } | undefined>(`window.__TTE__.arena.aim()`)).toMatchObject({ visible: false });
 

@@ -189,7 +189,7 @@ test('?ff=arcade (dev and test builds) without a save: Escape leaves the picker,
   expect(errors).toEqual([]);
 });
 
-test('8-way aim: the arrow follows the held diagonal, stays after release, and Fire Blast flies that way', async ({ page }, info) => {
+test('8-way aim: the arrow follows the held diagonal, turns back to the foe after release, and Fire Blast hits', async ({ page }, info) => {
   const UP = 1;
   const RIGHT = 8;
   const errors = collectErrors(page);
@@ -218,12 +218,12 @@ test('8-way aim: the arrow follows the held diagonal, stays after release, and F
   expect(Math.abs((ne?.x ?? 0) - (cx + d))).toBeLessThanOrEqual(8);
   expect(Math.abs((ne?.y ?? 0) - (cy - d))).toBeLessThanOrEqual(8);
   await info.attach('arcade-aim-ne', { body: await page.locator('#game canvas').screenshot(), contentType: 'image/png' });
-  // Released: the aim stays north-east, and a shot from here misses the foe on the row (it flies up and right).
+  // Released (auto-face, FUN-DESIGN 2.22): with no diagonal held the aim turns back to the foe, who is due east on the row, and the shot hits.
   await page.evaluate(`window.__TTE__.arena.step(1, [${String(PRIMARY)}, 0])`);
-  expect(await aim()).toMatchObject({ visible: true, angle: -45 });
+  expect(await aim()).toMatchObject({ visible: true, angle: 0 });
   const [before] = await characters(page, 1);
   await page.evaluate(`window.__TTE__.arena.step(80)`);
-  expect((await characters(page, 1)).find((c) => c.id === foe)?.hp).toBe(before?.hp);
+  expect((await characters(page, 1)).find((c) => c.id === foe)?.hp).toBeLessThan(before?.hp ?? 0);
   expect(errors).toEqual([]);
 });
 

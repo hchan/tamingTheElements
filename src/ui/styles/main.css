@@ -822,6 +822,13 @@ button.touchBtn {
     border-radius: 6px;
   }
 }
+/* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
+@media (pointer: coarse) {
+  #menu button.touchBtn {
+    min-height: 48px;
+    min-width: 72px;
+  }
+}
 html[data-high-contrast='true'] button.touchBtn {
   opacity: 1;
   background: #000;
