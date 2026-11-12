@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { characterId } from '../data/ids';
 import { GUARD_MAX, TAG_COOLDOWN_TICKS, WEATHER_CHARGE_FULL, WEATHER_TICKS, Weather } from '../data/arcade';
 import { DEFAULT_SIM_FLAGS } from '../flags';
-import { ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from './state';
+import { ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from './state';
 import { Cmd } from './commands';
 import { EventSink } from './events';
 import { createMatch, type MatchSetup } from './match';
@@ -56,6 +56,15 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(ar?.guard(0)).toBe(GUARD_MAX - 300);
     expect(ar?.guarding(0)).toBe(true);
     expect(ar?.guarding(1)).toBe(false);
+  });
+
+  it('reports the ticks until a melee hero can charge (0 ready) and -1 for a ranged hero (read-out only)', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const ar = createRenderView(world).arcade();
+    expect(ar?.chargeIn(0)).toBe(-1); // Sindarosa casts at range
+    expect(ar?.chargeIn(1)).toBe(0); // Pax
+    world.state.arcade[1 * ARCADE_E + ArcadeE.chargeReadyAt] = (world.state.arcade[ARCADE_WORLD_BASE + ArcadeW.gameTick] ?? 0) + 120;
+    expect(ar?.chargeIn(1)).toBe(120);
   });
 
   it('reports the weather up and the game ticks it has left (read-outs only)', () => {

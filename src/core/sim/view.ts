@@ -7,6 +7,7 @@ import {
   ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, PATCH_MAX, TEAM_STRIDE, TeamField, TRAP_STRIDE, TRAP_TABLE, TRAP_WORLD_MAX, TrapF, World,
 } from './state';
 import { castDir } from './systems/arcade/aim';
+import { RANGED } from './systems/arcade/meter';
 import { isGuarding, isInvulnerable, isStunned } from './systems/arcade/stun';
 import { isRooted } from './systems/arcade/snag';
 import { trapCount } from './systems/arcade/trap';
@@ -69,6 +70,8 @@ export interface RenderArcade {
   guarding(id: number): boolean;
   /** True while a Snag root holds character `id` (FUN-DESIGN 2.20). */
   rooted(id: number): boolean;
+  /** Game ticks until character `id`'s melee Charge is ready (0: now), or -1 for a ranged hero, which has none (FUN-DESIGN 2.17). */
+  chargeIn(id: number): number;
   /** The weather up (a `Weather` kind, 0 none) and the game ticks it has left (0 with none), FUN-DESIGN 2.14. */
   weather: number;
   weatherLeft: number;
@@ -191,6 +194,7 @@ export function createRenderView(world: SimWorld): RenderView {
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
     rooted: (id) => isRooted(s, id),
+    chargeIn: (id) => (RANGED[s.defId[id] ?? 0] ? -1 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) - now(s))),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
   const isCharacter = (i: number): boolean =>

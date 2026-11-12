@@ -36,6 +36,7 @@ import {
   type Agent,
   type MatchSetup,
   type RenderCharacter,
+  type RenderArcade,
   type RenderProjectile,
   type ArenaCheat,
   type RenderView,
@@ -64,7 +65,7 @@ import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
-import { SwapNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
+import { SwapNotice, chargeNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
 import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
@@ -328,6 +329,12 @@ export class Arena extends Phaser.Scene {
       if (this.view === view) this.poses = m.mountPoseLayer(this, view, pool, projPool, getPrefs);
     });
     this.launch?.arcadeView?.(this, view, () => this.frameAlpha);
+    // The `?ff=arenaDemo,arcade` hook has no `arcadeView` (Phaser hands the scene `{}` as launch data): mount the pan camera so it shows the real view.
+    if (!this.launch?.arcadeView && arcade) {
+      void import('../fx/arena-pan').then((m) => {
+        if (this.view === view) m.mountArenaPan(this, view, () => this.frameAlpha, () => getPrefs().reduceMotion);
+      });
+    }
 
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
@@ -513,9 +520,27 @@ export class Arena extends Phaser.Scene {
     let line: string | undefined;
     if ((bits & Cmd.super) !== 0 && arcade.meter[0] < METER_BAR) line = 'Super not ready';
     else if ((bits & Cmd.weather) !== 0 && arcade.weatherCharge[0] < WEATHER_CHARGE_FULL) line = 'Weather not ready';
+    else if ((bits & Cmd.charge) !== 0) line = this.chargeLine(arcade);
     if (line === undefined) return;
     notice.show(line, this.time.now);
+    this.announcer?.say({ key: 'refusal', text: line, important: false });
     (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
+  }
+
+  /** Arcade: the reason a Charge press does nothing (ranged hero, cooldown, stun, root, guard), or undefined. View only. */
+  private chargeLine(arcade: RenderArcade): string | undefined {
+    let active = -1;
+    let flags = 0;
+    this.view?.forEachCharacter((c) => {
+      if (c.team === 0 && (c.flags & (EntityFlag.dead | EntityFlag.benched)) === 0 && active < 0) {
+        active = c.id;
+        flags = c.flags;
+      }
+    });
+    if (active < 0) return undefined;
+    const blocked = (flags & EntityFlag.frozen) !== 0 ? 'frozen' : arcade.stunned(active) ? 'stunned' : arcade.rooted(active) ? 'rooted'
+      : arcade.guarding(active) ? 'guarding' : undefined;
+    return chargeNotice({ fighting: arcade.phase === RoundPhase.fight, chargeIn: arcade.chargeIn(active), blocked });
   }
 
   /** One sim tick: agents (or the given commands) in, events out to the effects and the end check. */

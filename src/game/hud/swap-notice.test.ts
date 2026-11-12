@@ -1,7 +1,7 @@
 import { Cmd } from '@core/index';
 import { describe, expect, it } from 'vitest';
 import { arcadeAvatar, AVATAR_SIZE, mainBar, sideOffset } from './bars';
-import { NOTICE_MS, noticeAlpha, swapNotice, swapSeconds, swapSlotOf, type SwapState } from './swap-notice';
+import { NOTICE_MS, chargeNotice, noticeAlpha, swapNotice, swapSeconds, swapSlotOf, type SwapState } from './swap-notice';
 
 const ok: SwapState = { fighting: true, frozen: false, stunned: false, noPartner: false, cooldownTicks: 0 };
 
@@ -54,5 +54,20 @@ describe('arcadeAvatar', () => {
     expect(a0.y).toBe(a1.y);
     expect(a0.y).toBe(b0.y - b0.line / 2);
     expect(a0.size).toBe(AVATAR_SIZE);
+  });
+});
+
+describe('chargeNotice', () => {
+  const go = { fighting: true, chargeIn: 0, blocked: undefined };
+
+  it('says nothing when the charge would start', () => {
+    expect(chargeNotice(go)).toBeUndefined();
+  });
+
+  it('names why a charge does nothing, hardest reason first', () => {
+    expect(chargeNotice({ ...go, fighting: false, chargeIn: -1 })).toBe("Can't charge: round not started");
+    expect(chargeNotice({ ...go, chargeIn: -1 })).toBe("Can't charge: ranged hero");
+    expect(chargeNotice({ ...go, chargeIn: 120, blocked: 'stunned' })).toBe("Can't charge: stunned");
+    expect(chargeNotice({ ...go, chargeIn: 120 })).toBe('Charge ready in 2.4s');
   });
 });

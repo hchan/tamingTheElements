@@ -128,4 +128,17 @@ describe('KeyboardAgent action press', () => {
     agent.observe(view);
     expect(seen).toEqual([Cmd.super, Cmd.super, Cmd.weather]);
   });
+
+  it('reports Charge once per press too', () => {
+    const seen: number[] = [];
+    const agent = new KeyboardAgent({ capturable: () => false, cheatsEnabled: false, arcade: true, onAction: (b) => seen.push(b) });
+    agent.handle(key('down', 'Digit5'));
+    agent.observe(view);
+    agent.observe(view);
+    agent.handle(key('up', 'Digit5'));
+    agent.observe(view);
+    agent.handle(key('down', 'Digit5'));
+    agent.observe(view);
+    expect(seen).toEqual([Cmd.charge, Cmd.charge]);
+  });
 });

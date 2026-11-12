@@ -33,12 +33,12 @@ export interface KeyboardAgentOptions {
   readonly clock?: () => number;
   /** Called once per swap press with its bits, on the observation that sends it (view-only refusal feedback hangs here). */
   readonly onSwap?: (swaps: Command) => void;
-  /** Called with the Super and Weather bits that went from up to down on this observation (view-only refusal feedback). */
+  /** Called with the Super, Weather and Charge bits that went from up to down on this observation (view-only refusal feedback). */
   readonly onAction?: (bits: Command) => void;
 }
 
-/** The Super and Weather bits, whose press edge feeds `onAction`. */
-const ACTION_MASK: Command = Cmd.super | Cmd.weather;
+/** The Super, Weather and Charge bits, whose press edge feeds `onAction`. */
+const ACTION_MASK: Command = Cmd.super | Cmd.weather | Cmd.charge;
 
 /** The four swap bits: sent once per press (a key, pad button or slot click), never while held. */
 export const SWAP_MASK: Command = Cmd.swap1 | Cmd.swap2 | Cmd.swap3 | Cmd.swap4;
