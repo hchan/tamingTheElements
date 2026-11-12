@@ -8,7 +8,7 @@ import { Cmd } from '../../src/core/sim/commands';
 import { createMatch, type MatchSetup } from '../../src/core/sim/match';
 import { snapshotState, restoreState } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
-import { makeAgent, parseRuleOptions, runMatch, SUPER_SOURCE } from '../../tools/sim/run-match';
+import { makeAgent, parseRuleOptions, runMatch, SUPER_SOURCE, withoutTraps } from '../../tools/sim/run-match';
 
 let seq = 0;
 const ev = (tick: number, kind: number, payload: Record<string, number> = {}): SimEvent =>
@@ -129,6 +129,18 @@ describe('run-match rule options', () => {
     const plain = runMatch(base);
     expect(runMatch({ ...base, ruleset: 'classic', teamSize: 1, aiLevel: 5 })).toEqual(plain);
     expect(plain.fun).toBeUndefined();
+  });
+
+  it('--no-traps masks the Trap bit and trap hits are named by kind', () => {
+    expect(withoutTraps({ id: 'x', observe: () => Cmd.trap | Cmd.primary, save: () => null, load: () => undefined }).observe({} as never, 0)).toBe(Cmd.primary);
+    const on = Array.from({ length: 6 }, (_, i) => runMatch({ ...base, seed: 7 + i, ruleset: 'arcade' }));
+    for (const r of on) expect(r.damageByAbility['unknown']).toBeUndefined();
+    for (let i = 0; i < 6; i++) {
+      const off = runMatch({ ...base, seed: 7 + i, ruleset: 'arcade', noTraps: true });
+      expect(off.damageByAbility['trap-bomb']).toBeUndefined();
+      expect(off.damageByAbility['trap-spike']).toBeUndefined();
+    }
+    expect(on.some((r) => (r.damageByAbility['trap-bomb'] ?? 0) + (r.damageByAbility['trap-spike'] ?? 0) > 0)).toBe(true);
   });
 
   it('Arcade runs deterministically with fun metrics and attributes every hit', () => {

@@ -10,6 +10,7 @@ pnpm sim:match --a fiara --b curomo --agents scripted,random --seeds 20 --level 
 
 - `--a`, `--b`: one of the 12 playable races (the dummy target and Eternal Void are excluded).
 - `--agents <x>[,<y>]`: `scripted` (the `AttackAgent` port of the legacy attack decisions plus melee chase and situational use of buffs, heals and omni fans, see the port-gap audit below) or `random` (`RandomBot`). One value applies to both sides; two are for `a` and `b`.
+- `--no-traps` (Arcade only): masks the Trap command bit (`Cmd.trap`) from every agent, for trap ablations (`tools/sim/trap-ablation/trapstats.mts` reuses `withoutTraps` with `NOTRAP=1`). Arcade trap hits appear in `damageByAbility` as `trap-bomb` and `trap-spike`.
 - `--seeds N` matches, seeded from `--seed S` (default 1) through `matchSeed(S, i)`, so a run is reproducible. Odd seeds swap which side is team 0, so the difficulty handicap and any side bias cancel.
 - `--level L` sets both sides' level (via XP), `--difficulty D` the player-side divisor (default 1), `--max-ticks` (default 9000, a timeout) and `--stalemate-ticks` (default 1500: no HP change on either side ends the match as a stalemate).
 - Per-match metrics: winner, end reason (`ko`, `timeout`, `stalemate`), ticks, damage per ability. The summary adds the win rate of `a` (draws count half) with a Wilson 95% CI, mean ticks, end-reason counts and each ability's damage share.
