@@ -14,7 +14,7 @@ import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, chargeSensible, elementalSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward, trapDashable, trapNudge,
+  centreDist, chargeSensible, elementalSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -430,6 +430,11 @@ export class ArcadeTactics {
       cmd &= ~ATTACK;
     }
     if (!free || threat) return cmd;
+    // A stale fight with the boxes overlapped (typically both stuck in a wall corner): step apart so a hit can land.
+    if (stale && a.oppStun === 0 && a.oppRooted === 0) {
+      const apart = stepApart(self, opp, arcadePlayfield());
+      if (apart !== 0) return (cmd & ~(MOVE | ATTACK)) | apart;
+    }
     if (lane !== 0) return (cmd & ~(MOVE | ATTACK)) | lane | snagBit;
     // Snag ready but the boxes overlap: step away to open a gap for the throw (else two Snag heroes freeze in place).
     if (snagBit !== 0 && (view.cooldowns[a.snagSlot] ?? 1) === 0 && !a.oppGuarding && a.oppRooted === 0 && a.oppRootImmune === 0 && boxesOverlap(self, opp)) {
