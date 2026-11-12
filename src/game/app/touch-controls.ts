@@ -94,7 +94,7 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   // walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at the arena edge.
   b.style.cssText = coarsePointer()
     ? `position:absolute;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + ${String(row * 56)}px);z-index:5;min-width:72px;min-height:48px;white-space:pre-line;touch-action:none;opacity:.85`
-    : `position:absolute;right:${String(4 + row * 68)}px;bottom:2px;z-index:5;width:64px;height:36px;min-height:0;padding:0;font-size:10px;line-height:1.1;white-space:pre-line;touch-action:none;opacity:.7`;
+    : `position:absolute;right:${String(6 + row * 80)}px;bottom:8px;z-index:5;width:74px;height:48px;min-height:0;padding:0;font-size:12px;font-weight:bold;line-height:1.15;white-space:pre-line;touch-action:none;opacity:.95;background:#2c3d63;color:#fff;border:2px solid #8fa4c8;border-radius:6px`;
   let code: string | undefined;
   const release = (): void => {
     if (code === undefined) return;
