@@ -8,3 +8,10 @@ WP 39e (trap tuning) left Curomo, Cyclonius and Lavax under 45% and trap damage 
 rates because the Normal AI places traps but does not follow up (slowed foe not chased, shoved foe not pressured).
 Work: in the Arcade AI agent, place traps where the foe will walk, press a slowed or shoved foe, plant more often at Normal.
 Acceptance: trap damage share 2 to 5%, timeout share under 45%, race win rates 45 to 57 (see trap-balance-findings.md).
+
+## Results (WP 39f, SIM_VERSION 35)
+Normal plant rate 80 -> 240; AI presses a foe in its own armed Puddle (60 ticks after leaving) and 45 ticks after its own Gust ends.
+24 seeds Normal: trap damage share 1.52% -> 2.06% (met); timeout share 57.5% -> 58.2% (not met; the foe AI avoids traps, and a dried-up
+Puddle counts as timeout); win rates: Cyclonius 41.7, Lavax 40.5, Rokcore 44.7 below 45 (Cyclonius/Lavax were already low: race or AI
+issue, not traps). Tried and dropped: lane-check and blind "plant where the foe will walk". Next: foe AI that deliberately walks into
+traps is not wanted; revisit the timeout metric (split Puddle dry-up from true timeouts) and the low races separately.
