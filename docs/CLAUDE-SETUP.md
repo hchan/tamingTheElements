@@ -11,7 +11,7 @@ and checks that each `pnpm` script and repo path they mention exists, so this se
 | Hook | Event | Behaviour |
 |---|---|---|
 | `.claude/hooks/pre-push-local-ci.sh` | `PreToolUse` on Bash | Before a `git push`, runs lint, typecheck, depcruise and test; a failure blocks the push. It fails open when pnpm is missing. Commits are never touched. |
-| `.claude/hooks/session-start-handoff.sh` | `SessionStart` | Prints the newest `~/claudetmp/handoff/*.md` (written by `/handoff`). |
+| `.claude/hooks/session-start-handoff.sh` | `SessionStart` | Prints the newest `~/claudetmp/handoff/*.md` (a note I keep up to date by hand; the `/handoff` skill is gone). |
 
 Commits and pushes still happen only when the user asks (see `CLAUDE.md`).
 
@@ -49,7 +49,6 @@ Invoke with `/<name>`. Skills marked user-only set `disable-model-invocation: tr
 | `/parity-check` | Checks `docs/PARITY.md` against cited tests |
 | `/add-character`, `/add-ability` | Guided additions to the sim data; need design approval; user-only for add-character |
 | `/mermaid` | Rendering rules for diagrams in docs |
-| `/handoff` | Writes a session note to `~/claudetmp/handoff/` |
 | `/status` | Git, CI and open items |
 | `/full-review` | Parallel code, determinism and docs reviewers over the diff |
 | `/repo-score` | Read-only health score |

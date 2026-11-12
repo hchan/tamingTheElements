@@ -90,7 +90,7 @@ describe('.claude skills', () => {
   it('has the expected skills', () => {
     const names = skills.map((s) => s.split('/').slice(-2)[0]);
     for (const n of [
-      'sim-run', 'balance-report', 'replay', 'e2e-test', 'parity-check', 'add-character', 'add-ability', 'mermaid', 'handoff', 'status',
+      'sim-run', 'balance-report', 'replay', 'e2e-test', 'parity-check', 'add-character', 'add-ability', 'mermaid', 'status',
     ]) {
       expect(names).toContain(n);
     }
