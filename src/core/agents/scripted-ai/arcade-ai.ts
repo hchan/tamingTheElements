@@ -205,8 +205,12 @@ export const ARCADE_AI_TRAP_CORNER_PX = 120;
 export const ARCADE_AI_TRAP_ROOT_PX = 200;
 /** Per level, the plant rate (pm per tick) while a zoning or corner reason holds. */
 export const ARCADE_AI_TRAP_RATE: readonly [number, number, number] = [20, 240, 300];
-/** Follow-up (WP 39f): game ticks a Normal or Hard AI presses a foe held by its own Puddle (the slow lingers 60) or just shoved by its Gust. */
+/**
+ * Follow-up (WP 39f): sim ticks (`view.tick`, which counts through hit-stop) a Normal or Hard AI keeps pressing a foe in its own
+ * Puddle. Re-armed every tick the foe is in it, so the press lasts this long after the foe leaves (the Puddle's linger).
+ */
 export const ARCADE_AI_PRESS_PUDDLE_TICKS = 60;
+/** Follow-up (WP 39f): sim ticks (through hit-stop) of pressing after one of its Gusts fires (and shoves the foe). */
 export const ARCADE_AI_PRESS_GUST_TICKS = 45;
 /** A ranged hero presses a slowed or shoved foe until it is this near (px, `far`); a melee hero until SNAG_CLOSE_PX. */
 export const ARCADE_AI_PRESS_RANGED_PX = 200;

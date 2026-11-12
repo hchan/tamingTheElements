@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-12
 ---
 # Scripted Arcade AI: reset the Gust follow-up memory between rounds
@@ -10,3 +10,5 @@ leftover window from the previous round (`src/core/agents/scripted-ai/arcade.ts`
 Fix: reset `m[14]`/`m[15]` at round start, or only open the Gust window when the foe actually moved. AI change: bump SIM_VERSION, header-only golden change.
 Nits: `ARCADE_AI_PRESS_*_TICKS` comment says "game ticks" but compares with `view.tick` (counts through hit-stop); orphaned comment "1000 keeps the value exact." in
 `src/core/sim/systems/arcade/hit.ts`; import order in `trap.test.ts`. Do it after the Cyclonius/Rokcore tuning merges (same SIM_VERSION bump).
+
+Closed: the round-reset fix shipped with SIM_VERSION 38 (arcade.ts followUp). The three nits were fixed as a comment/import-only cleanup (no behaviour change).

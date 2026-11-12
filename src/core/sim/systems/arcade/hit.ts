@@ -103,7 +103,7 @@ export function applyArcadeHit(
   // Stage terrain (FUN-DESIGN 2.15): the attacker's patch bonus, the total modifier capped against the plain hit.
   const tpm = terrainDamagePm(s, attacker);
   if (tpm !== 1000) charted = capDamage(charted, tpm, computeDamage({ ...input, attEl: 'void', defEl: 'void' }));
-  // 1000 keeps the value exact.
+  // The race damage pm (a trap hit or a super uses 1000); 1000 keeps the value exact.
   const raw = racePm === 1000 ? charted : (charted * racePm) / 1000;
   // Unscaled hits keep the Classic value exactly (x * 1000 / 1000 can round).
   const amount = scalePm === 1000 ? raw : (raw * scalePm) / 1000;
