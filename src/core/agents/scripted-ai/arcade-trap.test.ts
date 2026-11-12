@@ -291,6 +291,21 @@ describe('Trap follow-up (WP 39f)', () => {
     expect(t.apply(view({ chargeIn: 500, traps: [] }, 11, ME, far), 0) & Cmd.right).not.toBe(0);
   });
 
+  it('the round reset (Gust count n -> 0 outside a fight) opens no press window and drops a leftover one (SIM_VERSION 38)', () => {
+    const gust = own(TrapKind.gust, 400, 290);
+    const t = new ArcadeTactics(AI_NORMAL, RUSHDOWN);
+    t.apply(view({ chargeIn: 500, traps: [gust] }, 10, ME, far), 0);
+    // Round end: the traps are cleared in the intro phase, the next round's fight starts with no Gust.
+    t.apply(view({ chargeIn: 500, traps: [], phase: 0 }, 11, ME, far), 0);
+    expect(t.apply(view({ chargeIn: 500, traps: [] }, 12, ME, far), 0) & Cmd.right).toBe(0);
+    // A window left open by the last round is gone at the start of the next.
+    const u = new ArcadeTactics(AI_NORMAL, RUSHDOWN);
+    u.apply(view({ chargeIn: 500, traps: [gust] }, 10, ME, far), 0);
+    u.apply(view({ chargeIn: 500, traps: [] }, 11, ME, far), 0); // a real Gust drop in a fight opens the window
+    u.apply(view({ chargeIn: 500, traps: [], phase: 0 }, 12, ME, far), 0);
+    expect(u.apply(view({ chargeIn: 500, traps: [] }, 13, ME, far), 0) & Cmd.right).toBe(0);
+  });
+
   it('Easy never presses', () => {
     const t = new ArcadeTactics(AI_EASY, RUSHDOWN);
     expect(t.apply(view({ chargeIn: 500, traps: [own(TrapKind.puddle, 400, 290)] }, 10, ME, far), 0) & Cmd.right).toBe(0);
