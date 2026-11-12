@@ -146,6 +146,25 @@ describe('replay viewer screen', () => {
     expect(h.created).toHaveLength(0);
   });
 
+  it('shows both fighters inputs up to the current tick and toggles the display', async () => {
+    mount();
+    const rep = { ...replayOf(), inputs: [[0, 2, 24, 3], [8, 5]] };
+    await chooseFile(JSON.stringify(rep));
+    const pb = h.created[0]?.launch.playback;
+    pb?.onStatus(status({ tick: 4 }));
+    expect($('inputList1').textContent).toBe('→ A×2·×2');
+    expect($('inputList2').textContent).toBe('→×4');
+    const toggle = $('replayInputs');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    toggle.click();
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.textContent).toBe('Inputs: off');
+    expect($('inputDisplay').hidden).toBe(true);
+    toggle.click();
+    expect($('inputDisplay').hidden).toBe(false);
+    expect($('inputList1').textContent).toBe('→ A×2·×2');
+  });
+
   it('ignores an empty file selection', async () => {
     mount();
     const input = $<HTMLInputElement>('replayFile');
