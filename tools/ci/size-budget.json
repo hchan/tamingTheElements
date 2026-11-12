@@ -2,13 +2,13 @@
   "chunks": {
     "arcade-audio": 2100,
     "arcade-setup": 1600,
-    "arcade-versus": 3250,
+    "arcade-versus": 5700,
     "arena-pan": 950,
     "clash-view": 943,
     "core": 12340,
     "defence-view": 3750,
     "index": 29950,
-    "index.css": 4500,
+    "index.css": 6000,
     "lazy-index": 550,
     "local-two": 455,
     "online-versus": 3900,
@@ -27,7 +27,7 @@
     "viewport": 260,
     "weather-view": 3470
   },
-  "totalGzip": 511400,
+  "totalGzip": 515500,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912

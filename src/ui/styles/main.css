@@ -906,56 +906,332 @@ html[data-high-contrast='true'] button.touchBtn {
 .touchBtn-Dash { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5l7 7-7 7M12 5l7 7-7 7' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .touchBtn-Guard { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z' fill='black'/%3E%3C/svg%3E"); }
 .touchBtn-Super { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l3 7 7.5.6-5.7 4.9 1.8 7.4L12 17l-6.6 3.9 1.8-7.4L1.5 8.6 9 8z' fill='black'/%3E%3C/svg%3E"); }
-/* Hero roster of the Versus picker (replaces the race pulldowns). */
-.rosterSlots,
-.rosterGrid {
+/* Versus hero select (Street Fighter / Marvel vs. Capcom style): P1 and P2 sides around a hero grid, P1/P2 cursors, a key cheat sheet.
+   Colour is never the only cue: every cursor, pick and element carries a text flag or glyph (docs/VISUAL-QA.md). */
+#menu #arcadePick {
+  --vs-p1: #4da3ff;
+  --vs-p2: #ff6fb0;
+  max-width: min(96vw, 80em);
+}
+#arcadePick .heading {
+  white-space: nowrap;
+}
+#menu #arcadePick .settingsGroup {
+  min-width: 0;
+  margin-inline: 0;
+}
+#menu #arcadePick .settingsGroup > div.settingsOption.vsControl {
+  flex: 0 0 auto;
   display: flex;
-  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+}
+#arcadePick .vsStage {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(14em, 17em) minmax(0, 1fr) minmax(14em, 17em);
+  grid-template-areas: 'side1 grid side2';
+  gap: 0.75em;
+  align-items: start;
+  margin: 0;
+}
+#arcadePick .vsSide1 {
+  grid-area: side1;
+  border-color: var(--vs-p1);
+}
+#arcadePick .vsSide2 {
+  grid-area: side2;
+  border-color: var(--vs-p2);
+}
+#arcadePick .rosterGrid {
+  grid-area: grid;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5em, 1fr));
   gap: 6px;
-  margin: 0.5em 0;
+  margin: 0;
 }
-.rosterSlots li[hidden] {
-  display: none;
+#arcadePick .vsSide {
+  min-width: 0;
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 0.5em;
+  background: #101020;
+  text-align: left;
 }
-.rosterSlot {
+#arcadePick .vsSideTitle {
+  margin: 0 0 0.4em;
+  font-size: 1.1em;
+  color: var(--color-fg);
+}
+#arcadePick .vsSide .teamSlots {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#arcadePick .vsSlotItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+#arcadePick .vsSlotItem[hidden] {
+  display: none;
+}
+#arcadePick .rosterSlot {
+  display: flex;
+  flex-direction: row;
   align-items: center;
+  gap: 0.6em;
   width: 100%;
   min-height: 44px;
+  margin: 0;
+  padding: 0.3em 0.5em;
+  text-align: left;
   color: inherit;
   font: inherit;
   background: #1c1c2a;
-  cursor: pointer;
+  border: 2px solid #888;
+  border-radius: 8px;
 }
-.rosterActive {
-  border-width: 4px;
-  background: #000080;
+#arcadePick .vsSlotP1.rosterActive {
+  border-color: var(--vs-p1);
+  background: #0f2440;
+  box-shadow: 0 0 0 2px var(--vs-p1);
 }
-.rosterTile[aria-pressed='true'] {
-  outline: 2px solid var(--color-gold);
+#arcadePick .vsSlotP2.rosterActive {
+  border-color: var(--vs-p2);
+  background: #40122c;
+  box-shadow: 0 0 0 2px var(--vs-p2);
 }
-.rosterTile {
+#arcadePick .vsBigFace {
+  width: 64px;
+  height: 64px;
+}
+#arcadePick .vsSlotText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+#arcadePick .vsSlotLabel,
+#arcadePick .vsStats {
+  font-size: 0.8em;
+  opacity: 0.9;
+}
+#arcadePick .vsSlotName {
+  font-size: 1.15em;
+  overflow-wrap: anywhere;
+}
+#arcadePick .vsUnpicked .vsSlotName {
+  font-weight: normal;
+  font-style: italic;
+  opacity: 0.8;
+}
+#arcadePick .vsSlotActions {
+  display: flex;
+  gap: 6px;
+}
+#arcadePick .vsSmall {
+  margin: 0;
+  min-height: 44px;
+  padding: 0.1em 0.6em;
+  font-size: 0.85em;
+}
+#arcadePick .vsStatus {
+  margin: 0.4em 0 0.2em;
+  font-size: 0.9em;
+}
+#arcadePick .vsReady {
+  width: 100%;
+  margin: 0;
+  min-height: 44px;
+}
+#arcadePick .vsReady[hidden],
+#arcadePick .vsStatus[hidden] {
+  display: none;
+}
+#arcadePick .vsReadyOn .vsReady {
+  background: var(--color-ready);
+}
+#arcadePick .rosterTile {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 4px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 104px;
-  min-height: 44px;
-  padding: 4px;
+  gap: 2px;
+  border-width: 3px;
+  border-top-width: 6px;
+  border-color: #888;
+  overflow: hidden;
 }
-.rosterFace {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  background: 0 0 / 400% auto no-repeat;
-  image-rendering: pixelated;
+#arcadePick .rosterTile[data-element='fire'] { border-top-color: #ff5a3c; }
+#arcadePick .rosterTile[data-element='water'] { border-top-color: #5aa0ff; }
+#arcadePick .rosterTile[data-element='earth'] { border-top-color: #4fc16a; }
+#arcadePick .rosterTile[data-element='air'] { border-top-color: #aee8ff; }
+#arcadePick .rosterTile .rosterFace {
+  width: 56px;
+  height: 56px;
 }
-.rosterName {
+#arcadePick .rosterName {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.1;
+}
+#arcadePick .rosterElement {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: 0.85em;
+}
+#arcadePick .rosterTile[aria-pressed='true'] {
+  outline: 0;
+  background: #2b2a12;
+}
+#arcadePick .vsCursor1 { border-color: var(--vs-p1); box-shadow: 0 0 0 2px var(--vs-p1); }
+#arcadePick .vsCursor2 { border-color: var(--vs-p2); box-shadow: 0 0 0 2px var(--vs-p2); }
+#arcadePick .vsCursor1.vsCursor2 { box-shadow: 0 0 0 2px var(--vs-p1), inset 0 0 0 2px var(--vs-p2); }
+#arcadePick .vsFlags,
+#arcadePick .vsCursors {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  min-height: 1.3em;
+}
+#arcadePick .vsFlags[hidden] {
+  display: none;
+}
+#arcadePick .vsCursors {
+  position: absolute;
+  top: 8px;
+  left: 3px;
+  min-height: 0;
+  flex-direction: column;
+}
+#arcadePick .vsChip {
+  display: inline-block;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: bold;
+  line-height: 1.4;
+  color: #000;
+  white-space: nowrap;
+}
+#arcadePick .vsP1 { background: var(--vs-p1); }
+#arcadePick .vsP2 { background: var(--vs-p2); }
+#arcadePick .vsKeys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75em;
+  margin: 0.75em 0 0;
+  text-align: left;
+}
+#arcadePick .vsKeys[hidden] {
+  display: none;
+}
+#arcadePick .vsKeysPlayer {
+  min-width: 0;
+  border: 1px solid #888;
+  border-radius: 10px;
+  padding: 0.4em 0.7em;
+  background: #14141f;
+}
+#arcadePick .vsKeysTitle {
+  margin: 0 0 0.3em;
+  font-size: 1em;
+}
+#arcadePick .vsKeyList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
+  gap: 2px 1em;
+  margin: 0;
+}
+#arcadePick .vsKeyList > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5em;
+}
+#arcadePick .vsKeyList dt,
+#arcadePick .vsKeyList dd {
+  margin: 0;
+}
+#arcadePick .vsKeyList dd {
+  font-family: monospace;
   font-weight: bold;
 }
-.rosterElement {
-  font-size: 1em;
-  text-transform: capitalize;
+#arcadePick .vsKeysPick,
+#arcadePick .vsPads {
+  margin: 0.4em 0 0;
+  font-size: 0.85em;
+}
+#arcadePick .vsPads {
+  grid-column: 1 / -1;
+}
+#arcadePick .vsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.75em;
+}
+#arcadePick .vsFight {
+  min-width: 8em;
+  min-height: 48px;
+  font-weight: bold;
+  background: var(--color-ready);
+}
+#arcadePick .vsBothReady .vsSide {
+  box-shadow: 0 0 0 2px var(--color-gold);
+}
+#arcadePick button:focus-visible,
+#arcadePick a:focus-visible,
+#arcadePick select:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+@media (max-width: 1000px) {
+  #arcadePick .vsStage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: 'side1 side2' 'grid grid';
+  }
+}
+@media (max-width: 640px) {
+  #arcadePick .vsStage {
+    gap: 0.5em;
+  }
+  #arcadePick .vsSide {
+    padding: 0.3em;
+  }
+  #arcadePick .rosterSlot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2em;
+  }
+  #arcadePick .vsBigFace {
+    width: 40px;
+    height: 40px;
+  }
+  #arcadePick .vsStats {
+    display: none;
+  }
+  #arcadePick .vsSlotActions {
+    flex-wrap: wrap;
+  }
+  #arcadePick .rosterGrid {
+    grid-template-columns: repeat(auto-fill, minmax(5.2em, 1fr));
+  }
+  #arcadePick .vsKeys {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Help: Controls tables (text, never colour alone). */
