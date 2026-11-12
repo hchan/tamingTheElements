@@ -20,7 +20,7 @@ import { now } from '../../sim/clock';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
-  ZONER, impactIn, toward,
+  ZONER, chargeSensible, guardReflex, impactIn, sidestepBit, soonestShot, spacingBit, tagChoice, toward, weatherSensible,
 } from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
 
@@ -116,17 +116,17 @@ describe('ArcadeTactics: confirms, supers and combo caps', () => {
   it('returns the Classic command untouched and never seeds its stream without view.arcade', () => {
     const t = new ArcadeTactics();
     for (const tick of [0, 1, 2]) expect(t.apply(view(undefined, tick), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0], rng: null });
   });
 
   it('leaves the command alone while the opponent is free and nothing threatens (a given Zoner draws nothing)', () => {
     const t = new ArcadeTactics(AI_NORMAL, ZONER);
     expect(t.apply(view({}), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0], rng: null });
     // Easy keeps its bar for a confirm: no free super, no draw.
     const easy = new ArcadeTactics(AI_EASY, ZONER);
     expect(easy.apply(view({ meter: SUPER_COST }), cmd)).toBe(cmd);
-    expect(easy.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200], rng: null });
+    expect(easy.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0], rng: null });
   });
 
   it('supers on a confirm with a full bar after its drawn reaction delay, facing the opponent', () => {
@@ -236,7 +236,7 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
       const counts = [0, 0, 0, 0];
       const t = new ArcadeTactics(level, style);
       for (let i = 0; i < 400; i++) {
-        t.apply(view(threat(30), 2 * i), cmd);
+        t.apply(view(threat(30), 2 * i, fighter(200, 300), { ...fighter(700, 300), hp: 1000 - i }), cmd); // hp moves: the style is not stale
         const plan = mem(t)[4] ?? NO_PLAN;
         counts[plan] = (counts[plan] ?? 0) + 1;
         t.apply(view({}, 2 * i + 1), cmd);
@@ -585,7 +585,7 @@ describe('the Arcade AI tags (WP-arcade-tag)', () => {
     expect(tags({ partnerPm: -1 }, 1)).toBe(false); // no partner (1v1, or down)
     expect(tags({ partnerPm: 900, tagIn: 1 })).toBe(false); // cooldown
     expect(tags({ partnerPm: 900, selfStun: 5 })).toBe(false); // not free
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 130], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 130, -1000, 0], rng: null });
     expect(tags({ partnerPm: 900, shots: [shotIn(10)] })).toBe(false); // threatened
   });
 
@@ -794,5 +794,84 @@ describe('the Arcade AI throws Snag (FUN-DESIGN 2.20, WP-snag)', () => {
     const opp = controlledId(world, 1);
     s.arcade[opp * ARCADE_E + ArcadeE.blockUntil] = now(s) + 5;
     expect(createObservationView(world, 0).arcade?.oppGuarding).toBe(true);
+  });
+});
+
+describe('smarter Arcade play (WP-arcade-ai-smarter, FUN-DESIGN 2.21)', () => {
+  const pf = { x: 0, y: 0, w: 1000, h: 800 };
+
+  it('soonestShot picks the first hit within the bound, else undefined', () => {
+    const self = fighter(200, 300);
+    expect(soonestShot(self, [shotIn(12), shotIn(5)], ARCADE_AI_LOOKAHEAD)?.t).toBe(5);
+    expect(soonestShot(self, [shotIn(12)], ARCADE_AI_LOOKAHEAD)?.shot).toEqual(shotIn(12));
+    expect(soonestShot(self, [shotIn(12)], 10)).toBeUndefined();
+    expect(soonestShot(self, [], ARCADE_AI_LOOKAHEAD)).toBeUndefined();
+  });
+
+  it('guardReflex needs a hit within 3 ticks, an armed draw and 40 ticks since the last reflex', () => {
+    expect(guardReflex(3, 100, -1000, true)).toBe(true);
+    expect(guardReflex(4, 100, -1000, true)).toBe(false);
+    expect(guardReflex(3, 100, -1000, false)).toBe(false);
+    expect(guardReflex(3, 139, 100, true)).toBe(false); // no spam
+    expect(guardReflex(3, 140, 100, true)).toBe(true);
+  });
+
+  it('sidestepBit leaves the line away from the shot, flips at a wall, is 0 for melee', () => {
+    const self = fighter(200, 300);
+    expect(sidestepBit(self, { x: 500, y: 320, w: 20, h: 20, vx: -8, vy: 0 }, pf)).toBe(Cmd.down); // shot above the centre line... self lower
+    expect(sidestepBit(self, { x: 500, y: 350, w: 20, h: 20, vx: -8, vy: 0 }, pf)).toBe(Cmd.up);
+    expect(sidestepBit(fighter(200, 700), { x: 500, y: 700, w: 20, h: 20, vx: -8, vy: 0 }, pf)).toBe(Cmd.up); // wall below: flips
+    expect(sidestepBit(self, { x: 200, y: 0, w: 20, h: 20, vx: 0, vy: 8 }, pf)).toBe(Cmd.right); // vertical shot: sideways, the centre line is the self box centre or right of it
+    expect(sidestepBit(self, { x: 500, y: 320, w: 40, h: 40, vx: 0, vy: 0 }, pf)).toBe(0); // melee box
+    expect(sidestepBit(fighter(0, 0), { x: 500, y: 0, w: 20, h: 20, vx: -8, vy: 0 }, { x: 0, y: 0, w: 100, h: 100 })).toBe(0); // no room
+  });
+
+  it('spacingBit: ranged backs off inside 200 px (when there is room), melee closes in beyond 320 px', () => {
+    expect(spacingBit(fighter(400, 300), fighter(500, 300), true, pf)).toBe(Cmd.left);
+    expect(spacingBit(fighter(400, 300), fighter(300, 300), true, pf)).toBe(Cmd.right);
+    expect(spacingBit(fighter(400, 300), fighter(700, 300), true, pf)).toBe(0); // in range
+    expect(spacingBit(fighter(20, 300), fighter(120, 300), true, pf)).toBe(0); // cornered
+    expect(spacingBit(fighter(100, 300), fighter(600, 300), false, pf)).toBe(Cmd.right);
+    expect(spacingBit(fighter(100, 300), fighter(100, 700), false, pf)).toBe(Cmd.down);
+    expect(spacingBit(fighter(100, 300), fighter(300, 300), false, pf)).toBe(0);
+  });
+
+  it('chargeSensible, weatherSensible and tagChoice', () => {
+    expect(chargeSensible(true, false)).toBe(true);
+    expect(chargeSensible(true, true)).toBe(false);
+    expect(chargeSensible(false, false)).toBe(false);
+    expect(weatherSensible(AI_NORMAL, false, 100)).toBe(false);
+    expect(weatherSensible(AI_NORMAL, true, 900)).toBe(true);
+    expect(weatherSensible(AI_HARD, false, 400)).toBe(true);
+    expect(weatherSensible(AI_HARD, false, 600)).toBe(false);
+    expect(tagChoice(AI_NORMAL, 0, 300, 800, -1)).toBe(1);
+    expect(tagChoice(AI_NORMAL, 0, 300, 400, 900)).toBe(2);
+    expect(tagChoice(AI_NORMAL, 5, 300, 800, -1)).toBe(0); // not ready
+    expect(tagChoice(AI_NORMAL, 0, 400, 900, -1)).toBe(0); // not low enough on Normal
+    expect(tagChoice(AI_HARD, 0, 400, 900, -1)).toBe(1); // Hard tags earlier
+    expect(tagChoice(AI_HARD, 0, 400, 500, -1)).toBe(0); // bench not healthier enough
+  });
+
+  it('Hard: a guard reflex parries a projectile 3 ticks away, once per 40 ticks; a dodge dashes sideways', () => {
+    const hard = new ArcadeTactics(AI_HARD, ZONER);
+    const cmd = Cmd.primary | Cmd.left;
+    // Plan NO_PLAN so only the reflex can act; armed (mem[12] = 1).
+    hard.load({ mem: [-1, 0, 0, 0, NO_PLAN, 9, ZONER, 0, 0, 0, 200, -1000, 1], rng: null });
+    expect(hard.apply(view({ shots: [shotIn(5)] }, 10), cmd)).toBe(cmd);
+    expect(hard.apply(view({ shots: [shotIn(3)] }, 11), cmd)).toBe(Cmd.guard);
+    expect(hard.apply(view({ shots: [shotIn(2)] }, 12), cmd)).toBe(cmd); // not again within 40 ticks
+    const dodge = new ArcadeTactics(AI_HARD, ZONER);
+    dodge.load({ mem: [-1, 0, 0, 0, DODGE, ARCADE_AI_DODGE_AT, ZONER], rng: null });
+    const side = dodge.apply(view({ shots: [{ ...shotIn(ARCADE_AI_DODGE_AT), y: 320 }] }, 10), cmd);
+    expect(side & Cmd.dash).toBe(Cmd.dash);
+    expect(side & (Cmd.up | Cmd.down)).not.toBe(0);
+    expect(side & Cmd.right).toBe(0);
+  });
+
+  it('Easy and Classic skip all of it', () => {
+    const easy = new ArcadeTactics(AI_EASY, ZONER);
+    easy.load({ mem: [-1, 0, 0, 0, NO_PLAN, 9, ZONER, 0, 0, 0, 200, -1000, 1], rng: null });
+    expect(easy.apply(view({ shots: [shotIn(3)] }, 11, fighter(200, 300), fighter(300, 300)), Cmd.primary | Cmd.left)).toBe(Cmd.primary | Cmd.left);
+    expect(new ArcadeTactics(AI_HARD, ZONER).apply(view(undefined, 0), Cmd.up)).toBe(Cmd.up);
   });
 });

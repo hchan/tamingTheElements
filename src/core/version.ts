@@ -107,5 +107,7 @@
  *    before the thrower's damagePm) and stuns 20 ticks (SNAG_STUN_TICKS; the old vines hit stunned 60); new
  *    ARCADE_RACE_NUMBERS rows for Treenoc, Wispera, Curomo and Echo and re-fit 2v2 life factors; the Arcade AI no longer
  *    throws with overlapped boxes (the rope starts behind the foe and missed) and steps away to open the gap instead.
+ * 28: Arcade only; Classic hashes unchanged. Smarter Arcade AI (WP-arcade-ai-smarter, FUN-DESIGN 2.21): guard reflex, Hard
+ *    sidestep dash, spacing, Hard super on a rooted foe, Rushdown charge, Hard weather and earlier tag; agent memory grows.
  */
-export const SIM_VERSION = 27;
+export const SIM_VERSION = 28;

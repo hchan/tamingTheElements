@@ -1053,6 +1053,31 @@ The Arcade baselines were re-recorded at the tuned state. Every race is within 5
 - The touch Charge button still reads the Classic slot-0 kind.
 - The race wiki shows Snag in both rulesets.
 
+### 2.21 Smarter Arcade AI (sim, WP-arcade-ai-smarter)
+
+The Arcade computer opponent (`ArcadeTactics`, 2.11) plays more like a fighting-game opponent. Classic is untouched (no `view.arcade`, no
+change); Easy uses none of it. Each behaviour is a small pure helper in `arcade-ai.ts` with unit tests, composed in `arcade.ts`:
+
+- **Guard reflex** (`guardReflex`): when a hit is at most 3 game ticks away, the guard is ready and a per-threat draw is on (`ARCADE_AI_KNOBS[7]`: Easy 0,
+  Normal 30 pm, Hard 900 pm), it presses guard, so the press lands inside the 8-tick parry window. Never twice within 40 ticks (a whiffed parry
+  locks 20), so it cannot mash.
+- **Sidestep** (`sidestepBit`, Hard): a planned dodge dashes sideways out of the moving shot's line (flipped at a wall, none with under 140 px of room)
+  instead of toward the foe.
+- **Spacing** (`spacingBit`): a melee hero with no move closes in beyond 320 px; at Hard a non-Rushdown ranged hero backs off an opponent closer
+  than 200 px (room behind it permitting).
+- **Charge, Super, Weather, Tag**: a Rushdown melee hero charges from afar, never into a guard (`chargeSensible`); Hard supers on a rooted foe;
+  Hard also calls weather under 500 pm HP (`weatherSensible`); Hard tags out below 450 pm instead of 350 (`tagChoice`).
+- **Snag**: the 2.20 throw and the overlap step-apart are unchanged. Not burn-aware: `ArcadeView` carries neither the AI's own root nor
+  abilities' elements, so a burn-aware throw needs a view field first (open).
+
+Tuning findings: a Normal guard reflex at 150 to 400 pm or a Normal sidestep moved single races 10 to 22 pp and raised stalemates, so Normal
+gets 30 pm and sidestep is Hard only. Charging in every style at Hard (a Zoner or Turtle ends the rush overlapped, where a melee box never
+hits) raised Hard stalemates from 12 to 144 of 264, so charge is Rushdown only. Normal draws one more value per threat, so Arcade goldens
+and baselines changed (`SIM_VERSION` 27 to 28; Classic goldens change only their simVersion header).
+
+Numbers (Normal, 1v1, vs the old baseline): every race within 4.8 pp (largest: Sindarosa +4.8, Fiara -4.0); stalemates 45 to 46. 2v2: Echo +7.4,
+Rokcore -8.0, Wispera -6.8, the rest within 4.6; stalemates 29 to 19. Hard 1v1 tournament, 4 seeds: 18 stalemates (old 12).
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)

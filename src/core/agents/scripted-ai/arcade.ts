@@ -10,8 +10,9 @@ import {
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
-  AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_TAG_BELOW_PM, ARCADE_AI_TAG_MARGIN_PM, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
-  NO_PLAN, PARRY, RUSHDOWN, TURTLE, impactIn, toward, type ArcadeAiLevel, type Style,
+  AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
+  AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE, chargeSensible, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward,
+  weatherSensible, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
 /**
@@ -41,6 +42,9 @@ import {
  * - Tag (WP-arcade-tag): free, with no threat and the tag ready, it tags (`Cmd.swap1`) when its HP is below
  *   ARCADE_AI_TAG_BELOW_PM and its partner's is more than ARCADE_AI_TAG_MARGIN_PM above; no draw, no memory. 3v3
  *   (WP-arcade-3v3): the healthier of the two bench heroes, `Cmd.swap2` when it is the second one.
+ * - Smarter play (WP-arcade-ai-smarter, FUN-DESIGN 2.21; helpers in arcade-ai.ts): a guard reflex when a hit is 3 ticks away
+ *   (a drawn share of threats by level, never twice within 40 ticks), a dodge that dashes sideways out of a moving shot's line,
+ *   spacing (ranged heroes back off inside 200 px at Hard, melee heroes close in beyond 320 px), Rushdown never charges into a guard, Hard supers on a rooted foe, calls weather and tags out earlier. Easy uses none of it.
  * - Weather: free, with its weather charged and ready and no threat, it calls its weather when its element is at a disadvantage.
  */
 
@@ -153,8 +157,8 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
   return undefined;
 }
 
-type Memory = [number, number, number, number, number, number, number, number, number, number, number];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0];
+type Memory = [number, number, number, number, number, number, number, number, number, number, number, number, number];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0];
 
 /** Game ticks without any HP change on the field after which the AI stops retreating and presses (no stalemates). */
 export const ARCADE_AI_STALE_TICKS = 400;
@@ -194,7 +198,7 @@ export class ArcadeTactics {
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
    * drawn for it; [2] the tick the current threat was first seen (-1: none), [3] its reaction, [4] its plan (PARRY,
    * DODGE, GUARD or NO_PLAN) and [5] how many game ticks before the hit it acts; [6] the personality (-1 until the
-   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock).
+   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock); [11] the `W.tick` of the last guard reflex and [12] whether the current threat's reflex is armed.
    */
   private mem: Memory = [...FRESH];
   private readonly rng = new AgentRng(ARCADE_AI_STREAM_NAMES);
@@ -294,9 +298,9 @@ export class ArcadeTactics {
     const lane = snagBit === 0 || (view.cooldowns[a.snagSlot] ?? 1) !== 0 || a.oppGuarding || a.oppRooted > 0 || a.oppRootImmune > 0 ? 0 : snagLane(self, opp);
 
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
-    let t = ARCADE_AI_LOOKAHEAD + 1;
-    for (const p of a.shots) t = impactIn(self, p, t);
-    const threat = t <= ARCADE_AI_LOOKAHEAD;
+    const soon = soonestShot(self, a.shots, ARCADE_AI_LOOKAHEAD);
+    const t = soon?.t ?? ARCADE_AI_LOOKAHEAD + 1;
+    const threat = soon !== undefined;
     if (!threat) m[2] = -1;
     else {
       if (m[2] < 0) {
@@ -307,10 +311,19 @@ export class ArcadeTactics {
         m[2] = view.tick;
         m[3] = react();
         m[4] = plan;
+        m[12] = draw(1000) < k[7] ? 1 : 0;
         m[5] = plan === PARRY ? 2 + draw(k[5]) : plan === DODGE ? ARCADE_AI_DODGE_AT : ARCADE_AI_GUARD_AT;
       }
       if (free && m[4] < NO_PLAN && view.tick - m[2] >= m[3]) {
-        if (t <= m[5]) return m[4] === DODGE && a.dashIn === 0 ? Cmd.dash | toward(self, opp) : Cmd.guard;
+        if (t <= m[5]) {
+          if (m[4] !== DODGE || a.dashIn !== 0) return Cmd.guard;
+          const side = this.level >= AI_HARD ? sidestepBit(self, soon.shot, arcadePlayfield()) : 0;
+          return Cmd.dash | (side !== 0 ? side : toward(self, opp));
+        }
+      }
+      if (free && this.level > 0 && m[12] === 1 && (soon.shot.vx !== 0 || soon.shot.vy !== 0) && guardReflex(t, view.tick, m[11], true)) {
+        m[11] = view.tick;
+        return Cmd.guard;
       }
     }
 
@@ -325,6 +338,11 @@ export class ArcadeTactics {
         return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
       }
       cmd = a.combo > this.level * 2 ? cmd & ~ATTACK : pressStep(self, opp, cmd);
+    }
+    // A rooted foe cannot walk out of a super (Hard).
+    if (free && this.level >= AI_HARD && a.oppRooted > 0 && a.meter >= SUPER_COST && !threat) {
+      const facing = superFacing(self, opp, a.superId);
+      if (facing !== 0) return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
     }
     // Tag team, point blank: both sides firing on the same tick clash their shots (no damage) every time, a lockstep loop
     // (2v2 stalemates); a drawn one-in-four skip of the press breaks the symmetry. Never in 1v1.
@@ -344,14 +362,22 @@ export class ArcadeTactics {
     }
     const pm = (self.hp * 1000) / self.maxHp;
     // Tags in the healthier bench hero (3v3: Tag 2 when the other one is healthier; WP-arcade-3v3).
-    const two = a.partner2Pm > a.partnerPm;
-    const benchPm = two ? a.partner2Pm : a.partnerPm;
-    if (a.tagIn === 0 && pm < ARCADE_AI_TAG_BELOW_PM && benchPm - pm > ARCADE_AI_TAG_MARGIN_PM) return cmd | (two ? Cmd.swap2 : Cmd.swap1);
-    if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && style === RUSHDOWN) return Cmd.charge;
+    const tag = tagChoice(this.level, a.tagIn, pm, a.partnerPm, a.partner2Pm);
+    if (tag !== 0) return cmd | (tag === 2 ? Cmd.swap2 : Cmd.swap1);
+    if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && chargeSensible(style === RUSHDOWN, a.oppGuarding)) return Cmd.charge;
     if (a.dashIn === 0 && style === RUSHDOWN && far > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }
-    return a.weatherIn === 0 && a.weatherCharge >= WEATHER_CHARGE_FULL && this.unfavourable ? cmd | Cmd.weather : cmd;
+    if (a.weatherIn === 0 && a.weatherCharge >= WEATHER_CHARGE_FULL && weatherSensible(this.level, this.unfavourable, pm)) return cmd | Cmd.weather;
+    // Spacing: melee closes in when it has no move (Normal and Hard); a ranged hero backs off from a close foe (Hard; Rushdown never).
+    if (this.level > 0 && (cmd & ATTACK) === 0 && a.oppStun === 0 && a.oppRooted === 0) {
+      const ranged = a.chargeIn === -1;
+      if (!ranged ? (cmd & MOVE) === 0 : this.level >= AI_HARD && style !== RUSHDOWN) {
+        const bit = spacingBit(self, opp, ranged, arcadePlayfield());
+        if (bit !== 0) return (cmd & ~MOVE) | bit;
+      }
+    }
+    return cmd;
   }
 
   save(): AgentState {

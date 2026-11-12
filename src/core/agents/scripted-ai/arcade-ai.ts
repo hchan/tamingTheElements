@@ -25,20 +25,20 @@ export const DODGE = 1;
 export const GUARD = 2;
 export const NO_PLAN = 3;
 
-type Knobs = readonly [number, number, number, number, number, number, number];
+type Knobs = readonly [number, number, number, number, number, number, number, number];
 
 /**
  * Per level: [0] reaction min and [1] spread (`W.tick` ticks: min plus a draw below the spread, means 24, 14 and 8),
  * [2..4] the parry, dodge and guard scales (pm of the personality's rates; Easy never parries), [5] the parry timing
  * spread (the press comes 2 plus a draw below it game ticks before the hit; PARRY_TICKS is the window, so Normal whiffs
  * 2 in 9 and Hard never) and [6] the spacing dash rate (pm per tick). The combo cap is `1 + 2 * level` (1, 3, 5) and
- * Easy never supers. The scales above 1000 (Hard) leave a plan almost every threat (Normal acts on about 80%, Easy
+ * Easy never supers; [7] is the guard-reflex rate (pm of threats; WP-arcade-ai-smarter). The scales above 1000 (Hard) leave a plan almost every threat (Normal acts on about 80%, Easy
  * on 30%).
  */
 export const ARCADE_AI_KNOBS: readonly [Knobs, Knobs, Knobs] = [
-  [20, 9, 0, 300, 300, 10, 10],
-  [10, 9, 800, 900, 900, 9, 25],
-  [4, 3, 1100, 1100, 1100, 6, 50],
+  [20, 9, 0, 300, 300, 10, 10, 0],
+  [10, 9, 800, 900, 900, 9, 25, 30],
+  [4, 3, 1100, 1100, 1100, 6, 50, 900],
 ];
 
 type Rates = readonly [parry: number, dodge: number, guard: number];
@@ -89,4 +89,104 @@ export function toward(self: Aabb, opp: Aabb): Command {
   const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
   return (dx > opp.w / 2 ? Cmd.right : dx < -opp.w / 2 ? Cmd.left : 0) |
     (dy > opp.h / 2 ? Cmd.down : dy < -opp.h / 2 ? Cmd.up : 0);
+}
+
+/**
+ * Smarter play (FUN-DESIGN 2.21, WP-arcade-ai-smarter): small pure helpers that `ArcadeTactics` composes. Easy uses none.
+ */
+
+/** A hit this many game ticks away or fewer is met by a guard reflex (the press then lands inside the 8-tick parry window). */
+export const ARCADE_AI_REFLEX_TICKS = 3;
+/** Minimum `W.tick` ticks between two guard reflexes (a whiffed parry locks 20 game ticks; this keeps it from mashing). */
+export const ARCADE_AI_REFLEX_GAP = 40;
+/** Room (px) a sidestep dash needs on its side of the arena before it is taken. */
+export const ARCADE_AI_SIDESTEP_ROOM = 140;
+/** A ranged hero backs off when the opponent is closer than this (centre to centre, per axis max), a melee hero closes in beyond MELEE_PX. */
+export const ARCADE_AI_RANGED_MIN_PX = 200;
+export const ARCADE_AI_MELEE_PX = 320;
+/** Hard tags out one notch earlier. */
+export const ARCADE_AI_HARD_TAG_BELOW_PM = 450;
+
+/** The first of `shots` that hits `self` within `within` game ticks, with the ticks until it does; undefined when none. */
+export function soonestShot(self: Aabb, shots: readonly ShotView[], within: number): { readonly shot: ShotView; readonly t: number } | undefined {
+  let best: { shot: ShotView; t: number } | undefined;
+  let t = within + 1;
+  for (const p of shots) {
+    const n = impactIn(self, p, t);
+    if (n < t) {
+      t = n;
+      best = { shot: p, t: n };
+    }
+  }
+  return best;
+}
+
+/**
+ * Guard reflex (1): press guard when a hit is at most ARCADE_AI_REFLEX_TICKS away, the guard is not in use lately
+ * (`lastTick` is the `W.tick` of the last reflex, at least ARCADE_AI_REFLEX_GAP ago) and the drawn reflex is on.
+ */
+export function guardReflex(t: number, tick: number, lastTick: number, armed: boolean): boolean {
+  return armed && t <= ARCADE_AI_REFLEX_TICKS && tick - lastTick >= ARCADE_AI_REFLEX_GAP;
+}
+
+/**
+ * Sidestep (2): the movement bit of a dash that leaves the line of `shot` (a moving shot: sideways of its main axis, away
+ * from its centre line, flipped when that side has under ARCADE_AI_SIDESTEP_ROOM px of the playfield `pf`); 0 for a shot
+ * that does not move (melee) or when neither side has room.
+ */
+export function sidestepBit(self: Aabb, shot: ShotView, pf: Aabb): Command {
+  if (shot.vx === 0 && shot.vy === 0) return 0;
+  const horizontal = Math.abs(shot.vx) >= Math.abs(shot.vy);
+  const c = horizontal ? self.y + self.h / 2 - (shot.y + shot.h / 2) : self.x + self.w / 2 - (shot.x + shot.w / 2);
+  const lo = horizontal ? Cmd.up : Cmd.left;
+  const hi = horizontal ? Cmd.down : Cmd.right;
+  const roomLo = horizontal ? self.y - pf.y : self.x - pf.x;
+  const roomHi = horizontal ? pf.y + pf.h - self.y - self.h : pf.x + pf.w - self.x - self.w;
+  const [first, second, roomFirst, roomSecond] = c >= 0 ? [hi, lo, roomHi, roomLo] : [lo, hi, roomLo, roomHi];
+  return roomFirst >= ARCADE_AI_SIDESTEP_ROOM ? first : roomSecond >= ARCADE_AI_SIDESTEP_ROOM ? second : 0;
+}
+
+/**
+ * Spacing (3): the movement bit that keeps the hero's preferred range along the dominant axis; 0 when it is in range.
+ * A ranged hero steps away from an opponent closer than ARCADE_AI_RANGED_MIN_PX (when `pf` leaves room behind it), a melee
+ * hero steps in on one farther than ARCADE_AI_MELEE_PX.
+ */
+export function spacingBit(self: Aabb, opp: Aabb, ranged: boolean, pf: Aabb): Command {
+  const dx = opp.x + opp.w / 2 - (self.x + self.w / 2);
+  const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+  const d = horizontal ? dx : dy;
+  const dist = Math.max(Math.abs(dx), Math.abs(dy));
+  const towardBit = horizontal ? (d >= 0 ? Cmd.right : Cmd.left) : d >= 0 ? Cmd.down : Cmd.up;
+  if (!ranged) return dist > ARCADE_AI_MELEE_PX ? towardBit : 0;
+  if (dist >= ARCADE_AI_RANGED_MIN_PX) return 0;
+  const awayBit = horizontal ? (d >= 0 ? Cmd.left : Cmd.right) : d >= 0 ? Cmd.up : Cmd.down;
+  const room = horizontal
+    ? (d >= 0 ? self.x - pf.x : pf.x + pf.w - self.x - self.w)
+    : (d >= 0 ? self.y - pf.y : pf.y + pf.h - self.y - self.h);
+  return room >= ARCADE_AI_SIDESTEP_ROOM / 2 ? awayBit : 0;
+}
+
+/**
+ * Charge (4): a Rushdown melee hero charges from afar, never into a guard. (Charging in every style at Hard was tried:
+ * Zoners and Turtles end the rush overlapped with the foe, where a melee box never hits, and Hard stalemates rose from 12 to 144 of 264.)
+ */
+export function chargeSensible(rushdown: boolean, oppGuarding: boolean): boolean {
+  return rushdown && !oppGuarding;
+}
+
+/** Weather (4): an unfavourable element calls its weather; Hard also does when its own HP is under 500 pm. */
+export function weatherSensible(level: ArcadeAiLevel, unfavourable: boolean, pm: number): boolean {
+  return unfavourable || (level >= AI_HARD && pm < 500);
+}
+
+/**
+ * Tag (4): 0 for no tag, 1 for `Cmd.swap1`, 2 for `Cmd.swap2`: the tag is ready, own HP (pm) is below the level's line
+ * and the healthier bench hero (`bench1Pm`, `bench2Pm`; -1: none) is more than ARCADE_AI_TAG_MARGIN_PM above it.
+ */
+export function tagChoice(level: ArcadeAiLevel, tagIn: number, pm: number, bench1Pm: number, bench2Pm: number): 0 | 1 | 2 {
+  const two = bench2Pm > bench1Pm;
+  const bench = two ? bench2Pm : bench1Pm;
+  const below = level >= AI_HARD ? ARCADE_AI_HARD_TAG_BELOW_PM : ARCADE_AI_TAG_BELOW_PM;
+  return tagIn === 0 && pm < below && bench - pm > ARCADE_AI_TAG_MARGIN_PM ? (two ? 2 : 1) : 0;
 }
