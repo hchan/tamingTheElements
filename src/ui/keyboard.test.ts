@@ -3,11 +3,12 @@ import { ROUTE_NAMES } from './router';
 import { backHash, shouldClickLinkOnSpace, shouldGoBack } from './keyboard';
 
 describe('backHash', () => {
-  it('has no back target on the main menu, battle, cinematics and results', () => {
-    for (const r of ['main', 'loading', 'newGame', 'storyMode', 'victory', 'defeat', 'arcade', 'tour']) expect(backHash(r)).toBeNull();
+  it('has no back target on the main menu and the battle hosts', () => {
+    for (const r of ['main', 'loading', 'arcade', 'tour']) expect(backHash(r)).toBeNull();
+    expect(ROUTE_NAMES.filter((r) => backHash(r) === null).sort()).toEqual(['arcade', 'loading', 'main', 'tour']);
   });
   it('info and settings screens go back to the main menu; a character goes back to the garrison', () => {
-    for (const r of ['settings', 'about', 'wiki', 'keyBindings', 'currentObjectives', 'garrison', 'race', 'gameMaster']) {
+    for (const r of ['newGame', 'storyMode', 'battleground', 'victory', 'defeat', 'exit', 'settings', 'about', 'wiki', 'keyBindings', 'currentObjectives', 'garrison', 'race', 'gameMaster']) {
       expect(backHash(r)).toBe('#main');
     }
     expect(backHash('character')).toBe('#garrison');

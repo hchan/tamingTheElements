@@ -1,19 +1,14 @@
 /** Menu keyboard support: Escape goes back, Space activates a focused link, new screens take focus. */
 
 /**
- * Route name to the hash Escape returns to, or null where Escape does nothing (main, battle, cinematics, results).
+ * Route name to the hash Escape returns to, or null where Escape does nothing (main, and the battle hosts, which pause instead).
+ * Placeholder sub-screens and the results screens leave to the main menu like every other sub-screen.
  * `arcade` hosts its own battle, so it handles Escape itself (only on its fighter picker).
  */
 export function backHash(route: string): string | null {
   switch (route) {
     case 'main':
     case 'loading':
-    case 'battleground':
-    case 'newGame':
-    case 'storyMode':
-    case 'victory':
-    case 'defeat':
-    case 'exit':
     case 'arcade':
     case 'tour':
       return null;
