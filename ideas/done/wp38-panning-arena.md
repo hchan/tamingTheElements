@@ -1,11 +1,11 @@
 ---
-status: in-progress
+status: done
 added: 2026-11-12
 ---
 
 # WP 38: panning wide arena (SF2-style)
 
-Make the Arcade arena wider than the 1280x720 screen, with a camera that pans to keep both fighters in view, as in Street Fighter II. Design only; nothing is built yet. Related: [pan and traps memory note], FUN-DESIGN 2.1 (playfield insets), `ideas/in-progress/tilemap-environments.md` (the arenas the art must fit).
+Make the Arcade arena wider than the 1280x720 screen, with a camera that pans to keep both fighters in view, as in Street Fighter II. Built (WP 38a to 38f, 2026-11-12): arena 1920 wide (SIM_VERSION 32), view-only camera, `tests/e2e/arcade-pan.spec.ts`; docs in FUN-DESIGN 2.1 and ARCHITECTURE. The text below is the original design. Related: [pan and traps memory note], FUN-DESIGN 2.1 (playfield insets), `ideas/in-progress/tilemap-environments.md` (the arenas the art must fit).
 
 ## Current state (read from the code)
 

@@ -84,13 +84,22 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   startup, and phase `fight`. It replaces the frozen checks in the four cast sites (projectile `canFire`, melee `cast`,
   abilities `castSelf`, capture `canCapture`) and in movement.
 - **Playfield insets (WP-arcade-playfield-bounds, built):** the Arcade arena is not the full canvas. `arcadePlayfield()`
-  (`src/core/data/arcade.ts`) is the rectangle x 0..1280, y 200..640: top inset 200 (the bars block 100, the hyper meters
+  (`src/core/data/arcade.ts`) is the rectangle x 0..1920 (`ARCADE_ARENA_WIDTH`, 1.5 screens since WP 38d), y 200..640: top inset 200 (the bars block 100, the hyper meters
   to y 134 and the weather badge plate, which reaches y 196 on a phone), bottom inset 80 (the action bar, `BAR_Y` 640), in
   integer logical px; the canvas scales to the window, so they hold at every size. `createMatch` gives it to the world, so the
   movement and dash clamp, knockback clamp and bounce, projectile expiry, the super band and the AI walls (`ScriptedAI`)
   all use it, and the Arcade start row is its centre (`ARCADE_START_Y` 380); a tag entrance appears at the outgoing spot,
   already inside. `tests/repo/arcade-playfield-hud.test.ts` asserts the insets against the HUD constants so they cannot drift; section
   2.15's patches use the same rectangle. Classic keeps the legacy arena (y 100..720) for parity. SIM_VERSION 19.
+- **Panning arena (WP 38, built):** the Arcade playfield is 1920 wide and the view stays 1280x720, so a camera pans
+  (SF2 style). Spawns sit on the centred 1280 span (x 480 and 1360), so round start looks as before. The camera is view
+  only (`src/game/fx/arena-camera.ts` pure rules, `arena-pan.ts` Phaser glue; no sim state, no hash): it follows the
+  midpoint of the two live fighters (active fighter per team in 2v2), keeps each at least 160 px inside the visible edge by
+  zooming out down to 0.8 (1600 px visible), clamps the view to the world so walls show and no void appears, and eases
+  exponentially (snaps on a round reset or a jump over 400 px). Reduced motion: snap, zoom fixed at 1. Fighters farther
+  apart than 1280 px are still both on screen (the clamp, not a sim limit, keeps them in view); screen walls would be a sim
+  change and are not built. The super cinematic composes on top (`applyCamera`, `viewBox`); the HUD is its own scene so
+  it does not move. Classic never pans (1280 arena, fit camera). Browser test: `tests/e2e/arcade-pan.spec.ts`.
 - **Legacy quirks fixed in Arcade only:** `bounds-y-typo` (knockback needs real walls; since WP-parity-fixes Classic
   holds y too, because the legacy typo turned out to be harmless), `damage-uses-target-mult`
   (tag entrances must use the caster's multiplier), `melee-dead-caster-lingers`, `vines-stacking`,

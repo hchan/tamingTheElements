@@ -392,3 +392,9 @@ Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `
 - **Display-size setting** still scales `#game` through `--canvas-fraction` and composes with all of the above.
 - **Action bar clicks** map pointer to logical coordinates through the scale manager and camera, then to the same
   Command bit as the matching key (`KeyboardAgent.press`, one tick).
+- **Arcade arena width and the pan camera (WP 38).** The Arcade playfield (`arcadePlayfield()`) is 1920 wide, Classic's
+  stays 1280. The logical canvas stays 1280x720; the Arena's main camera is driven each frame by `mountArenaPan`
+  (`src/game/fx/arena-pan.ts`) from the pure `cameraTarget` (`arena-camera.ts`): centre on the fighters' midpoint, zoom out
+  to a floor of 0.8 to keep both inside a 160 px margin, clamp to the world. It reads the render view and writes only
+  `cameras.main`, so it adds no sim state, no hash input and no netcode work. The `Hud` scene is its own camera and does
+  not pan; the super cinematic composes through `applyCamera`/`viewBox`. `__TTE__.arena.camera()` exposes the framing to e2e.
