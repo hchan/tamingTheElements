@@ -865,7 +865,7 @@ final boss, the Eternal Void. Design (not built yet):
   recovery, team HUD, AI) is a prerequisite WP (Opus, SIM_VERSION bump, Arcade-only, Classic bit-identical). 3v3 is the Tour's format;
   Arcade Versus and Online may offer 1v1, 2v2 and 3v3 later.
 - **Player vs Player (WP-pvp-3heroes):** local two-player and Online are a 1v1 duel where each player brings 3 heroes (3v3 tag team, both humans
-  tagging: P1 on 3/4, P2 on V/Comma, online on 3/4); the Team select still offers 1v1 and 2v2 locally. Arcade vs AI is unchanged.
+  tagging: P1 on 3/4, P2 on Period/Comma (V until 2.24 gave V to Player 1's Element), online on 3/4); the Team select still offers 1v1 and 2v2 locally. Arcade vs AI is unchanged.
 - **Locations:** the tour visits at least four element locations, Fire, Earth, Water and Air (a stage backdrop and the stage's terrain element, 2.15,
   match the location), and at least one opponent at each location has that element. Each stop is a best-of-3 match against a 3-hero team.
   Remaining stops are drawn from the seed. The map pins are those locations (not flags per race).
@@ -1139,6 +1139,49 @@ Puddle 250 (300), Spike 160 (200) and Gust 150 (200). A Puddle slows to 500 pm (
 shoves at 288 Q4 (224), about 171 px. A Fire Bomb (22) or Spike (18) hit is its base times the owner race's Arcade
 `damagePm`, floored at `TRAP_HIT_FLOOR` 20 before the element chart. Before this, Sindarosa's and Rokcore's traps hit
 for 13 to 14 and Fiara's for 33.
+
+### 2.24 Elemental ability (Arcade, sim, SIM_VERSION 39)
+
+One more button for every hero, picked by the hero's element and always there: no meter, just a cooldown (an MMO
+"racial"; idea file `ideas/in-progress/elemental-ability.md`). Numbers in `src/core/data/arcade.ts`, cast in
+`src/core/sim/systems/arcade/elemental.ts`, the timed factors in `arcade/elemental-buff.ts`.
+
+| Element | Name | Effect | Cooldown |
+| --- | --- | --- | --- |
+| Fire | Ember | deals 1250 pm damage for 250 ticks (5 s) | 1750 ticks (35 s) |
+| Water | Cleanse | at once ends its own Snag root, Puddle slow, and Ice Blast and tidal slows | 1250 ticks (25 s) |
+| Earth | Stoneskin | takes 800 pm damage for 250 ticks | 1750 ticks |
+| Air | Gale | walks at 1300 pm for 250 ticks | 1750 ticks |
+
+- **Void: none.** Only the training dummy and the Eternal Void boss are void, neither has a natural self-buff, and the
+  boss's damage is tuned on its own. A press on a void hero is refused ("No element ability for this hero").
+- **State:** Arcade only (`ArcadeE.elemReadyAt`, `ArcadeE.elemUntil`, per entity, reset each round); `Cmd.elemental` is
+  bit 10 (the fourth swap's bit, which Arcade never uses), buffered like the other presses. Refused outside the fight,
+  while not free (stunned, dashing, charging, in a super), or on cooldown; a rooted or guarding hero may cast, since
+  Cleanse is the way out of a root (the usual post-root immunity follows). Classic reads 0 everywhere: factors stay 1000.
+- **Stacking:** Ember and Stoneskin multiply on every hit, supers and traps included, after the weather, the stage terrain
+  and the race `damagePm` (a fire hero in Sunshine gets both). Gale multiplies after the terrain and Puddle factors.
+  A tag keeps each hero's own timers: the incoming hero's buff is its own.
+- **Events:** `elementalCast {element, team, cleared}` and `elementalEnded {element}`; one audio cue on a cast (the end is silent: the HUD slot shows it).
+- **Keys:** P1 V or Minus (rebindable; the digit row is full), pad L3, P2 Semicolon (P2 Tag moved from V to Period, Tag 2 is
+  Comma), touch button Element (a square like the others, its key on it).
+- **HUD:** the action bar slot draws the element's alchemical symbol (triangle up for fire and air, down for water and
+  earth, barred for air and earth), the name, "Ember on" while it runs, whole seconds while cooling; a refused press
+  shows "Ember ready in 12 s". Never colour alone. Announcer: "Your Gale: speed up.", "Enemy Cleanse: 2 debuffs cleared."
+  (polite). Help lists Element for keyboard, the second player and the pad.
+- **AI** (`elementalSensible`, Normal and Hard; Easy never; no draw): Ember on a stunned foe or one within 240 px, Cleanse
+  when rooted or slowed, Stoneskin while the foe's super runs or under 500 pm HP, Gale when the foe is farther than
+  `ARCADE_AI_FAR_PX`.
+- **Golden:** `arcade-elemental` (Sindarosa's Ember against Rokcore's Stoneskin, both running out; Curomo Cleanses
+  Morblass's Ice Blast slow; Cyclonius's Gale). Every Arcade golden was re-recorded because the hashed Arcade block grew
+  two ints per entity and the AI casts; Classic goldens change only the `simVersion` header.
+- **Balance** (24-seed 1v1 matrix, Hard, `tools/sim/low-races/lowraces.mts`, before (SIM 38 main) to after): Curomo 46.2
+  to 46.5, Cyclonius 47.7 to 46.0, Echo 47.7 to 46.9, Fiara 51.7 to 53.2, Ishimi 51.5 to 51.1, Lavax 46.0 to 48.4,
+  Morblass 50.3 to 45.2, Pax 55.6 to 55.3, Rokcore 47.7 to 50.5, Sindarosa 46.5 to 48.8, Treenoc 56.0 to 53.0, Wispera
+  52.6 to 54.5. Stoneskin was first 700 pm: Pax 56.2 and Treenoc 56.6, so it was eased to 800. Morblass loses most:
+  water foes Cleanse its Ice Blast slow (Curomo 12 to 8 wins of 24). The Arcade 1v1 and 2v2 balance baselines were
+  re-recorded because the new button changes every Arcade fight; the 16-seed 1v1 moved Morblass -7.7 and Rokcore +5.7 pp,
+  the noisy 8-seed 2v2 (already 23.9 to 77.3 % before) moved Fiara +15.9, Treenoc +10.3 and Curomo -9.1 pp.
 
 ## 3. Presentation juice (view only)
 

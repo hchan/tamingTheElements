@@ -80,6 +80,21 @@ describe('announcementsFor', () => {
   it('the match result is important', () => {
     expect(announcementsFor([ev(SimEventKind.matchEnded, { winner: 0 })])[0]?.important).toBe(true);
   });
+  it('elemental casts read the name and the effect in words, per side, politely', () => {
+    const cast = (team: number, element: number, cleared = 0): string | undefined =>
+      announcementsFor([ev(SimEventKind.elementalCast, { team, element, cleared })])[0]?.text;
+    expect(cast(0, 1)).toBe('Your Ember: attack up.');
+    expect(cast(1, 3)).toBe('Enemy Stoneskin: armor up.');
+    expect(cast(0, 4)).toBe('Your Gale: speed up.');
+    expect(cast(0, 2, 2)).toBe('Your Cleanse: 2 debuffs cleared.');
+    expect(cast(1, 2, 1)).toBe('Enemy Cleanse: 1 debuff cleared.');
+    expect(cast(0, 2, 0)).toBe('Your Cleanse: nothing to clear.');
+    expect(cast(0, 5)).toBeUndefined();
+    const [mine] = announcementsFor([ev(SimEventKind.elementalCast, { team: 0, element: 4 })]);
+    const [foe] = announcementsFor([ev(SimEventKind.elementalCast, { team: 1, element: 4 })]);
+    expect(mine?.important).toBe(false);
+    expect(mine?.key).not.toBe(foe?.key);
+  });
 });
 
 describe('LowHealthWatch', () => {

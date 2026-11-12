@@ -790,14 +790,16 @@ body:has(#game:not(:empty)) {
   margin-top: 0.75em;
 }
 
-/* Touch/action row buttons. Touch: a column up the right edge (>= 48 px, safe areas), two columns of four on short screens. Mouse/keyboard:
+/* Touch/action row buttons. Touch: a column up the right edge (>= 48 px, safe areas), columns of four on short screens. Mouse/keyboard:
    a compact row in the bottom band under the walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at
-   the arena edge; two rows of four in narrow windows so the row cannot run into the left HUD. --touch-row is the slot, with --touch-col (row mod 4) and --touch-line (row div 4) beside it, all set inline.
+   the arena edge; two rows of five in narrow windows so the row cannot run into the left HUD. --touch-row is the slot, with --touch-col (row mod 4) and --touch-line (row div 4), plus --touch-col5 and --touch-line5 (the same by five) beside it, all set inline.
    The background is solid (opacity 1): a translucent button over a bright arena would lose its text contrast. */
 button.touchBtn {
   --touch-row: 0;
   --touch-col: 0;
   --touch-line: 0;
+  --touch-col5: 0;
+  --touch-line5: 0;
   --touch-size: 72px;
   --touch-pitch: 78px;
   position: absolute;
@@ -835,11 +837,11 @@ button.touchBtn {
     border-radius: 6px;
   }
 }
-/* Narrow windows with a mouse: wrap to two rows of four (slot = column + 4 * row). */
+/* Narrow windows with a mouse: wrap to two rows of five (slot = column + 5 * row), so up to 10 buttons never reach a third row. */
 @media (pointer: fine) and (max-width: 1100px) {
   button.touchBtn {
-    right: calc(6px + var(--touch-col) * var(--touch-pitch));
-    bottom: calc(4px + var(--touch-line) * var(--touch-pitch));
+    right: calc(6px + var(--touch-col5) * var(--touch-pitch));
+    bottom: calc(4px + var(--touch-line5) * var(--touch-pitch));
   }
 }
 /* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
@@ -872,8 +874,10 @@ html[data-high-contrast='true'] button.touchBtn {
 .touchBtn-Tag { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .touchBtn-Tag2 { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .touchBtn-Trap { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l10 18H2z' fill='black'/%3E%3C/svg%3E"); }
-/* Short touch screens (a 640x360 phone in landscape): two columns of four, slot = row in the column (0 to 3) and column (0 or 1), so up
-   to 8 buttons never run off the top. */
+/* Element: the up (fire, air) and down (water, earth) alchemical triangles crossed, outlined so it never reads as Trap's filled one. */
+.touchBtn-Element { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 15.5H3zM12 22L3 6.5h18z' fill='none' stroke='black' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+/* Short touch screens (a 640x360 phone in landscape): columns of four, slot = row in the column (0 to 3) and column (0, 1 or 2), so up
+   to 9 buttons never run off the top. */
 @media (pointer: coarse) and (max-height: 520px) {
   #menu button.touchBtn {
     right: calc(max(8px, env(safe-area-inset-right)) + var(--touch-line) * var(--touch-pitch));

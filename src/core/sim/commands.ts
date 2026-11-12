@@ -23,6 +23,12 @@ export const Cmd = {
   swap2: 1 << 8,
   swap3: 1 << 9,
   swap4: 1 << 10,
+  /**
+   * Arcade's name for bit 10 (FUN-DESIGN 2.24): the elemental ability (Ember, Cleanse, Gale, Stoneskin). An Arcade team has
+   * at most three heroes, so the fourth swap never exists there and swapSystem ignores the bit in Arcade; Classic never
+   * reads it as the elemental ability. The mask, packet and replay formats are unchanged.
+   */
+  elemental: 1 << 10,
   /** Arcade only (masked off in Classic by inputMaskFor): dash (FUN-DESIGN 2.7). */
   dash: 1 << 11,
   /** Arcade only (masked off in Classic by inputMaskFor): hold to guard, press to parry (FUN-DESIGN 2.8). */

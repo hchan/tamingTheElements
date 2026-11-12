@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Elemental ability (FUN-DESIGN 2.24, ideas/in-progress/elemental-ability.md): Arcade only. Every hero gets one button by its element, with a cooldown and no meter: Ember (fire, 1250 pm damage for 5 s), Cleanse (water, ends its own root and slows at once), Stoneskin (earth, takes 800 pm damage for 5 s) and Gale (air, 1300 pm walk speed for 5 s). Cooldowns are 35 s, or 25 s for Cleanse. Void heroes (the dummy and the boss) have none. Keys: V or Minus (rebindable), pad L3, Player 2 Semicolon (Player 2 Tag moves from V to Period, Tag 2 is Comma), touch Element button. The action bar shows the element's symbol and words, and the live region reads each cast. The Normal and Hard AI cast on simple rules. `SIM_VERSION` goes from 38 to 39.
+  - The Arcade goldens were re-recorded because the hashed Arcade block grew two ints per entity and the AI casts; the Classic goldens change only the `simVersion` header. New scripted golden: `arcade-elemental`.
+  - The Arcade 1v1 and 2v2 balance baselines were re-recorded because the new button changes every Arcade fight (16-seed 1v1: Morblass -7.7, Rokcore +5.7 pp; 8-seed 2v2: Fiara +15.9, Treenoc +10.3, Curomo -9.1 pp). On the 24-seed 1v1 matrix every race stays within 45.2 (Morblass) to 55.3 (Pax) %; Stoneskin was eased from 700 to 800 pm for that.
+  - The size budget was raised on purpose, about +1.9 KB gzip in total (508800 to 510700). The sim chunk went from 33750 to 34750: the cast, buffs and AI rules run every Arcade tick. phaser-config went from 24300 to 24920: the HUD slot, symbols and announcer lines live in the Arena. Several small chunks rose by under 40 B for the key, touch button and cue. None of this can be lazy-loaded because it runs in every Arcade fight.
+
 - Trap tuning (WP 39e, ideas/brainstorm/trap-balance-findings.md): Arcade only. `SIM_VERSION` goes from 33 to 34; the Classic goldens change their header only.
   - Lives after arming: bomb 120, puddle 250, spike 160 and gust 150 ticks.
   - The Puddle slows to 500 pm and lingers 60 ticks.

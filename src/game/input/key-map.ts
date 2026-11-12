@@ -34,13 +34,17 @@ export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
   weather: Cmd.weather,
   charge: Cmd.charge,
   trap: Cmd.trap,
+  elemental: Cmd.elemental,
 };
 
 /** The Arcade-only command bits (dash 11, guard 12, super 13, weather 14, charge 15): every bit from the dash up. */
 export const ARCADE_ONLY = Cmd.dash;
 
-/** Trap shares command bit 6 with Capture: Arcade-only, though its bit is below ARCADE_ONLY. */
-const arcadeOnly = (a: GameAction): boolean => a === 'trap' || ACTION_COMMAND[a] >= ARCADE_ONLY;
+/**
+ * Trap shares command bit 6 with Capture and the elemental ability bit 10 with the fourth swap: both Arcade-only, though
+ * their bits are below ARCADE_ONLY.
+ */
+const arcadeOnly = (a: GameAction): boolean => a === 'trap' || a === 'elemental' || ACTION_COMMAND[a] >= ARCADE_ONLY;
 
 /**
  * The action a held code drives. In Arcade an Arcade-only action that lists the code wins (so Digit5 is Charge there, while

@@ -14,7 +14,7 @@ import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, chargeSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward, trapDashable, trapNudge,
+  centreDist, chargeSensible, elementalSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -49,6 +49,9 @@ import {
  *   (a drawn share of threats by level, never twice within 40 ticks), a dodge that dashes sideways out of a moving shot's line,
  *   spacing (ranged heroes back off inside 200 px at Hard, melee heroes close in beyond 320 px), Rushdown never charges into a guard, Hard supers on a rooted foe, calls weather and tags out earlier. Easy uses none of it.
  * - Weather: free, with its weather charged and ready and no threat, it calls its weather when its element is at a disadvantage.
+ * - Elemental ability (FUN-DESIGN 2.24, Normal and Hard; `elementalSensible`): free, with the ability ready, it adds the
+ *   press to whatever it does: Ember close in or on a stunned foe, Cleanse when rooted or slowed, Stoneskin against a super
+ *   or at low HP, Gale from afar.
  * - Traps (WP 39c, FUN-DESIGN 2.23; helpers in arcade-ai.ts): free, with no threat, the trap ready and its team under
  *   TRAP_TEAM_MAX, it plants (auto-faced at the foe, never under 96 px from it, never on a spot another trap blocks) when
  *   the foe closes in through its personality's band (Rushdown late, Zoner early), when its back is to a side wall, at
@@ -233,7 +236,20 @@ export class ArcadeTactics {
     const a = view.arcade;
     if (a === undefined) return base;
     const cmd = this.avoidTraps(view, a, this.decide(view, a, base, shot));
-    return avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
+    const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
+    return this.elemental(view, a) ? out | Cmd.elemental : out;
+  }
+
+  /**
+   * The elemental press (FUN-DESIGN 2.24, `elementalSensible`): in the fight, free (not stunned, not in its super, not
+   * frozen) and a fresh press (the bit was up last tick, so a held bit never swallows the edge). It rides on any command.
+   */
+  private elemental(view: ObservationView, a: ArcadeView): boolean {
+    const self = view.self;
+    const opp = view.opponent;
+    if (self === undefined || opp === undefined || a.phase !== RoundPhase.fight || (a.prevCmd & Cmd.elemental) !== 0) return false;
+    if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return false;
+    return elementalSensible(this.level, a, (self.hp * 1000) / self.maxHp, centreDist(self, opp));
   }
 
   /**

@@ -18,6 +18,7 @@ export const GAME_ACTIONS = [
   'weather',
   'charge',
   'trap',
+  'elemental',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -51,6 +52,9 @@ export const DEFAULT_BINDINGS: Bindings = {
   // Arcade only (WP 39): the Trap. Z, because F is the fullscreen toggle; Digit0 ends the numbered row (Charge 5 .. Super 9).
   // Shares the sim's command bit 6 with Capture, which Arcade does not have (key-map reads it as Trap there only).
   trap: ['KeyZ', 'Digit0'],
+  // Arcade only (FUN-DESIGN 2.24): the elemental ability. V next to Z X C; Minus after Digit0, as the digit row is full.
+  // Shares the sim's command bit 10 with the fourth swap, which Arcade (three heroes at most) never has.
+  elemental: ['KeyV', 'Minus'],
 };
 
 /** Digit5 may drive both Swap 3 (Classic) and Charge (Arcade) at once; every other code drives one action. */
@@ -76,6 +80,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   weather: 'Weather',
   charge: 'Charge',
   trap: 'Trap',
+  elemental: 'Element',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */

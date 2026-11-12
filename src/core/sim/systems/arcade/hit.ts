@@ -16,6 +16,7 @@ import { addComboDamage, comboHit, isCounterHit } from './combo';
 import { knockbackDir, setKnockback } from './knockback';
 import { meterOnHit } from './meter';
 import { blockHit, parry } from './guard';
+import { elementalDamagePm } from './elemental-buff';
 import { applyStun, isGuarding } from './stun';
 import { capDamage, terrainDamagePm } from './terrain';
 import { weatherDamage } from './weather';
@@ -60,7 +61,7 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * `computeDamage` arithmetic, then the weather (FUN-DESIGN 2.14, `weatherDamage` of the attacker's element), then a fire
  * patch under a fire attacker (FUN-DESIGN 2.15, capped with the chart and weather at TERRAIN_CAP_PM of the plain hit), then the
  * attacker race's `damagePm` (FUN-DESIGN 2.13, `arcadeRaceNumbers`; not on a super; a trap takes it on its base, floored
- * at TRAP_HIT_FLOOR), then the combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
+ * at TRAP_HIT_FLOOR), then the elemental buffs (FUN-DESIGN 2.24: Ember x1.25 dealt, Stoneskin x0.8 taken), then the combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
  * combo and starts a new one). Emits `damage` (as Classic projectiles do) and
  * `hitConfirmed`, then hit-stop by strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by
  * strength and hit-stun with the juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap
@@ -104,7 +105,10 @@ export function applyArcadeHit(
   const tpm = terrainDamagePm(s, attacker);
   if (tpm !== 1000) charted = capDamage(charted, tpm, computeDamage({ ...input, attEl: 'void', defEl: 'void' }));
   // The race damage pm (a trap hit or a super uses 1000); 1000 keeps the value exact.
-  const raw = racePm === 1000 ? charted : (charted * racePm) / 1000;
+  const raced = racePm === 1000 ? charted : (charted * racePm) / 1000;
+  // Ember and Stoneskin (FUN-DESIGN 2.24) on every hit, supers and traps too.
+  const epm = elementalDamagePm(s, attacker, victim);
+  const raw = epm === 1000 ? raced : (raced * epm) / 1000;
   // Unscaled hits keep the Classic value exactly (x * 1000 / 1000 can round).
   const amount = scalePm === 1000 ? raw : (raw * scalePm) / 1000;
   const before = s.hp[victim] ?? 0;

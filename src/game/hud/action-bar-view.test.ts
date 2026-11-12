@@ -83,6 +83,7 @@ const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
   swapReadyTick: 100,
   swapCooldownTicks: 250,
   trap: undefined,
+  elemental: undefined,
   ...over,
 });
 

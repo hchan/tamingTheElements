@@ -3,8 +3,8 @@ import { el } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
 
 /** Key help for the two-player option (the defaults; Player 1's keys can be rebound on Key Bindings). */
-const P1_HELP = 'W A S D or arrows move, Space attack, Enter second attack, E dash, Q guard, X super, R weather, H charge, Z trap, 3 tag, 4 tag 2';
-const P2_HELP = 'I J K L move, U attack, O second attack, Y dash, N guard, B super, T weather, G charge, M trap, V tag, Comma tag 2';
+const P1_HELP = 'W A S D or arrows move, Space attack, Enter second attack, E dash, Q guard, X super, R weather, H charge, Z trap, V element, 3 tag, 4 tag 2';
+const P2_HELP = 'I J K L move, U attack, O second attack, Y dash, N guard, B super, T weather, G charge, M trap, Semicolon element, Period tag, Comma tag 2';
 
 /**
  * DOM of the Arcade Versus screens (FUN-DESIGN WP 11): the fighter picker and the results. Plain native controls (labelled

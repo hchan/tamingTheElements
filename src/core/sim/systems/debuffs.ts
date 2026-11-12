@@ -2,7 +2,7 @@ import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B } from '../../data/abilities-b';
 import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE } from '../state';
 import type { SimWorld } from '../world';
-import { StatusId } from './status';
+import { StatusId, SUPER_MAG_SCALE } from './status';
 import { isArcade, now } from '../clock';
 
 /**
@@ -93,4 +93,37 @@ export function debuffSystem(world: SimWorld): void {
       s.status.fill(0, b, b + STATUS_STRIDE);
     }
   }
+}
+
+/** True while `id` carries an Ice Blast or tidal slow (what a Cleanse ends besides the root and the Puddle slow). */
+export function hasSlow(status: Int32Array, id: number): boolean {
+  for (let slot = 0; slot < STATUS_SLOTS; slot++) {
+    const sid = status[base(id, slot)] ?? 0;
+    if (sid === StatusId.iceBlast || sid === StatusId.superSlow) return true;
+  }
+  return false;
+}
+
+/**
+ * Arcade Cleanse (FUN-DESIGN 2.24): ends `id`'s Ice Blast and tidal slows at once and gives their speed back, whoever cast
+ * them (an Ice Blast restores as at expiry: below 0.2 snaps to the default speed, otherwise the slow is added back; a
+ * tidal slow adds back its stored magnitude). Returns how many slots were cleared.
+ */
+export function cleanseSlows(world: SimWorld, id: number): number {
+  const s = world.state;
+  let n = 0;
+  for (let slot = 0; slot < STATUS_SLOTS; slot++) {
+    const b = base(id, slot);
+    const sid = s.status[b] ?? 0;
+    if (sid === StatusId.iceBlast) {
+      s.speed[id] = (s.speed[id] ?? 0) < 0.2 ? (s.baseSpeed[id] ?? 0) : (s.speed[id] ?? 0) - ICE_BLAST_DELTA;
+    } else if (sid === StatusId.superSlow) {
+      s.speed[id] = (s.speed[id] ?? 0) - (s.status[b + 4] ?? 0) / SUPER_MAG_SCALE;
+    } else {
+      continue;
+    }
+    s.status.fill(0, b, b + STATUS_STRIDE);
+    n++;
+  }
+  return n;
 }

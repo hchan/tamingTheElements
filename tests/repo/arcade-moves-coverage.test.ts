@@ -17,7 +17,7 @@ import { arcadeScripts, recordArcadeScript } from '../../tools/gen/arcade-moves'
 // of leaving a golden that quietly stopped covering it.
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
-const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps'] as const;
+const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental'] as const;
 const K = SimEventKind;
 
 interface Run {
@@ -79,6 +79,16 @@ const weatherRun = runs[1]?.events ?? [];
 const tagRun = runs[2]?.events ?? [];
 const tag3Run = runs[3]?.events ?? [];
 const trapsRun = runs[4];
+const elemRun = runs[5]?.events ?? [];
+/** Elemental casts (FUN-DESIGN 2.24) of `element` in the elemental golden. */
+const elemCasts = (element: number): SimEvent[] => of(K.elementalCast, elemRun).filter((e) => e['element'] === element);
+/** Hits dealt or taken by the caster of the first `element` cast while that timed buff ran (cast to `elementalEnded`). */
+const hitsUnderBuff = (element: number): number => {
+  const cast = elemCasts(element)[0];
+  const end = of(K.elementalEnded, elemRun).find((e) => e.sourceId === cast?.sourceId && e['element'] === element);
+  if (cast === undefined || end === undefined) return 0;
+  return of(K.hitConfirmed, elemRun).filter((h) => h.tick > cast.tick && h.tick <= end.tick && (h.attacker === cast.sourceId || h.target === cast.sourceId)).length;
+};
 /** `tagIn` events whose outgoing character died on the same tick (the KO entrance) or not (a manual tag). */
 const koEntrance = (e: SimEvent): boolean => of(K.died).some((d) => d.tick === e.tick && d.sourceId === e.from);
 const hits = of(K.hitConfirmed);
@@ -129,6 +139,10 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['a Puddle slows a foe', () => trapsRun?.slowTicks ?? 0],
     ['a trap times out', () => of(K.trapTriggered).filter((e) => e['reason'] === 1).length],
     ['a fire shot douses a trap', () => of(K.trapTriggered).filter((e) => e['reason'] === 2).length],
+    ['Ember is called and hits land under it', () => hitsUnderBuff(1)],
+    ['Stoneskin is called and hits land on it', () => hitsUnderBuff(3)],
+    ['Gale is called and runs out', () => elemCasts(4).length * of(K.elementalEnded, elemRun).filter((e) => e['element'] === 4).length],
+    ['Cleanse clears a debuff', () => elemCasts(2).filter((e) => Number(e['cleared']) > 0).length],
   ];
 
   it.each(mechanics)('%s', (_name, count) => {

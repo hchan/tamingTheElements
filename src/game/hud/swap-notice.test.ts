@@ -1,7 +1,7 @@
 import { Cmd } from '@core/index';
 import { describe, expect, it } from 'vitest';
 import { arcadeAvatar, AVATAR_SIZE, mainBar, sideOffset } from './bars';
-import { NOTICE_MS, chargeNotice, noticeAlpha, swapNotice, swapSeconds, swapSlotOf, type SwapState } from './swap-notice';
+import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapNotice, swapSeconds, swapSlotOf, type SwapState } from './swap-notice';
 
 const ok: SwapState = { fighting: true, frozen: false, stunned: false, noPartner: false, cooldownTicks: 0 };
 
@@ -69,5 +69,14 @@ describe('chargeNotice', () => {
     expect(chargeNotice({ ...go, chargeIn: -1 })).toBe("Can't charge: ranged hero");
     expect(chargeNotice({ ...go, chargeIn: 120, blocked: 'stunned' })).toBe("Can't charge: stunned");
     expect(chargeNotice({ ...go, chargeIn: 120 })).toBe('Charge ready in 2.4s');
+  });
+});
+
+describe('elementalNotice', () => {
+  it('names the ability and the seconds left while it cools, and says nothing when it would cast', () => {
+    expect(elementalNotice(true, 100, { name: 'Gale', readyTick: 220 })).toBe('Gale ready in 2.4s');
+    expect(elementalNotice(true, 220, { name: 'Gale', readyTick: 220 })).toBeUndefined();
+    expect(elementalNotice(false, 100, { name: 'Gale', readyTick: 220 })).toBeUndefined();
+    expect(elementalNotice(true, 100, undefined)).toBe('No element ability for this hero');
   });
 });

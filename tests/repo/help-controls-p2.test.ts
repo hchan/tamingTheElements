@@ -6,9 +6,12 @@ import { P2_KEYS } from '../../src/ui/screens/help-controls';
 // src/ui may not import src/game/input, so Help repeats Player 2's fixed keys; this pins the copy.
 describe('Help Player 2 keys', () => {
   it('match the fixed P2 bindings', () => {
-    const k = (a: keyof typeof P2_BINDINGS): string => P2_BINDINGS[a].map(codeLabel).join('/').replace('Comma', ',');
+    const punct: Readonly<Record<string, string>> = { Comma: ',', Period: '.', Semicolon: ';' };
+    const k = (a: keyof typeof P2_BINDINGS): string =>
+      P2_BINDINGS[a].map((c) => punct[c] ?? codeLabel(c)).join('/');
     const by = Object.fromEntries(P2_KEYS.map((r) => [r.action, r.keys]));
     expect(by['Trap']).toBe(k('trap'));
+    expect(by['Element']).toBe(k('elemental'));
     expect(by['Tag']).toBe(k('slot3'));
     expect(by['Tag 2']).toBe(k('slot4'));
     expect(by['Attack']).toBe(k('slot1'));

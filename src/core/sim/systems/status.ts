@@ -88,7 +88,7 @@ export function applyBuff(world: SimWorld, id: number, abilitySlug: string, sour
 }
 
 /** Super-status speed deltas are stored in thousandths: the status block is integer, half an odd speed is not. */
-const SUPER_MAG_SCALE = 1000;
+export const SUPER_MAG_SCALE = 1000;
 
 /**
  * Arcade super effects: a timed status of `ticks` game ticks with a speed change `speedDelta` (restored at expiry by the

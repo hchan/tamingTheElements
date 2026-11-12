@@ -12,6 +12,7 @@ import { dirToward, isDiagonal8, setAim } from './arcade/aim';
 import { isRooted } from './arcade/snag';
 import { chargeWeather } from './arcade/meter';
 import { rockStop, terrainSpeedPm } from './arcade/terrain';
+import { elementalSpeedPm } from './arcade/elemental-buff';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
 const EAST = 0;
@@ -107,7 +108,10 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   }
   if (d < 0) return;
   if (isRooted(s, id) || inTrapRecovery(s, id)) return; // a Snag root or a trap cast: turn and aim, no step (FUN-DESIGN 2.20)
-  const pm = (terrainSpeedPm(s, id) * trapSlowPm(s, id)) / 1000; // exact when no Puddle slows `id`
+  // Exact when no Puddle slows `id`; Gale (FUN-DESIGN 2.24) multiplies in after.
+  const tpm = (terrainSpeedPm(s, id) * trapSlowPm(s, id)) / 1000;
+  const gale = elementalSpeedPm(s, id);
+  const pm = gale === 1000 ? tpm : (tpm * gale) / 1000;
   const speed = pm === 1000 ? (s.speed[id] ?? 0) : ((s.speed[id] ?? 0) * pm) / 1000;
   s.vx[id] = (DIR8_X[d] ?? 0) * speed;
   s.vy[id] = (DIR8_Y[d] ?? 0) * speed;

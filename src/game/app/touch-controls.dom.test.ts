@@ -171,9 +171,9 @@ describe('touchButton (real DOM events)', () => {
 });
 
 describe('touchButtons / setTouchText (real DOM)', () => {
-  it('builds the right ids in order, with Trap last and Charge dropped for an all-ranged team', () => {
-    expect(touchButtons(1).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeCharge', 'arcadeTrap']);
-    expect(touchButtons(2, [false, false]).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeTag', 'arcadeTrap']);
+  it('builds the right ids in order, with Trap then Element last and Charge dropped for an all-ranged team', () => {
+    expect(touchButtons(1).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeCharge', 'arcadeTrap', 'arcadeElement']);
+    expect(touchButtons(2, [false, false]).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeTag', 'arcadeTrap', 'arcadeElement']);
     expect(touchButtons(3).map((b) => b.id)).toEqual(TOUCH.map((l) => `arcade${l}`));
   });
 

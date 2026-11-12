@@ -128,10 +128,10 @@ test.describe('key rebinding', () => {
     // A free key rebinds the Swap 2 action and is saved.
     await page.locator('#bind-slot4-0').click();
     await expect(page.locator('#bind-slot4-0')).toHaveText('Press a key...');
-    await page.keyboard.press('KeyV');
-    await expect(page.locator('#bind-slot4-0')).toHaveText('V');
-    await expect(status).toContainText('Swap 2 is now V');
-    await expect.poll(async () => (await storedSave(page)).keyBindings?.['slot4']).toEqual(['KeyV']);
+    await page.keyboard.press('KeyG');
+    await expect(page.locator('#bind-slot4-0')).toHaveText('G');
+    await expect(status).toContainText('Swap 2 is now G');
+    await expect.poll(async () => (await storedSave(page)).keyBindings?.['slot4']).toEqual(['KeyG']);
 
     // A key owned by another action is a conflict: nothing changes until the player confirms.
     await page.locator('#bind-slot4-1').click();
@@ -142,7 +142,7 @@ test.describe('key rebinding', () => {
     await expect(page.locator('#bind-slot4-1')).toHaveText('W');
     await expect
       .poll(async () => (await storedSave(page)).keyBindings)
-      .toMatchObject({ slot4: ['KeyV', 'KeyW'], up: ['ArrowUp'] });
+      .toMatchObject({ slot4: ['KeyG', 'KeyW'], up: ['ArrowUp'] });
 
     // Reserved keys are refused, Escape cancels.
     await page.locator('#bind-slot3-0').click();
@@ -157,7 +157,7 @@ test.describe('key rebinding', () => {
     await page.goto('/?seed=7');
     await startBattleFromMenu(page);
     expect(await page.evaluate<Record<string, string[]>>(`window.__TTE__.arena.boundCodes()`)).toMatchObject({
-      slot4: ['KeyV', 'KeyW'],
+      slot4: ['KeyG', 'KeyW'],
       up: ['ArrowUp'],
     });
 

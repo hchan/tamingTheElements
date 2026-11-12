@@ -33,7 +33,7 @@ export interface KeyboardAgentOptions {
   readonly clock?: () => number;
   /** Called once per swap press with its bits, on the observation that sends it (view-only refusal feedback hangs here). */
   readonly onSwap?: (swaps: Command) => void;
-  /** Called with the Super, Weather and Charge bits that went from up to down on this observation (view-only refusal feedback). */
+  /** Called with the Super, Weather, Charge (and in Arcade elemental) bits that went from up to down on this observation (view-only refusal feedback). */
   readonly onAction?: (bits: Command) => void;
 }
 
@@ -95,10 +95,18 @@ export class KeyboardAgent implements Agent {
     this.pressed |= cmd;
   }
 
+  /**
+   * The swap bits of this game. In Arcade bit 10 is the elemental ability (the fourth swap does not exist there): a held
+   * command like any other, whose press edge the sim finds itself.
+   */
+  private swapMask(): Command {
+    return this.opts.arcade ? SWAP_MASK & ~Cmd.elemental : SWAP_MASK;
+  }
+
   /** Latches a pad swap button's press edge, so a tap shorter than a frame is still sent on the next tick. */
   private latchPad(): Command {
     const arcade = this.opts.arcade;
-    const down = commandFromPad(this.opts.gamepad?.() ?? null, true, arcade ? ARCADE_PAD : undefined) & SWAP_MASK;
+    const down = commandFromPad(this.opts.gamepad?.() ?? null, true, arcade ? ARCADE_PAD : undefined) & this.swapMask();
     this.swapLatched |= down & ~this.padSwapDown;
     this.padSwapDown = down;
     return down;
@@ -124,8 +132,9 @@ export class KeyboardAgent implements Agent {
     const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable, arcade ? ARCADE_PAD : undefined);
     // Movement and abilities follow the held keys; a swap is an edge: only keys pressed since the last tick (not repeats).
     const held = this.tapped.size === 0 ? this.state.held : new Set([...this.state.held, ...this.tapped]);
-    const taps = commandFromHeld(this.bindings, this.tapped, capturable, arcade) & SWAP_MASK;
-    let swaps = this.swapLatched | taps | (this.pressed & SWAP_MASK);
+    const swapMask = this.swapMask();
+    const taps = commandFromHeld(this.bindings, this.tapped, capturable, arcade) & swapMask;
+    let swaps = this.swapLatched | taps | (this.pressed & swapMask);
     this.swapLatched = 0;
     const fresh = swaps;
     const clock = this.opts.clock?.();
@@ -135,12 +144,13 @@ export class KeyboardAgent implements Agent {
       swaps |= was.bits; // the sim held its clock on that tick and never looked at the swap: send it again
     }
     this.tapped = new Set();
-    const cmd = ((commandFromHeld(this.bindings, held, capturable, arcade) | pad | this.pressed) & ~SWAP_MASK) | swaps;
+    const cmd = ((commandFromHeld(this.bindings, held, capturable, arcade) | pad | this.pressed) & ~swapMask) | swaps;
     this.pressed = 0;
     if (swaps !== 0 && clock !== undefined) this.sent = { bits: swaps, clock, retries: was && swaps === was.bits ? was.retries + 1 : 0 };
     if (fresh !== 0) this.opts.onSwap?.(fresh);
-    const edge = cmd & ACTION_MASK & ~this.lastActions;
-    this.lastActions = cmd & ACTION_MASK;
+    const actions = arcade ? ACTION_MASK | Cmd.elemental : ACTION_MASK;
+    const edge = cmd & actions & ~this.lastActions;
+    this.lastActions = cmd & actions;
     if (edge !== 0) this.opts.onAction?.(edge);
     return cmd;
   }

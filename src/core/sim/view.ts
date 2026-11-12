@@ -1,4 +1,6 @@
-import { GUARD_MAX, Q4_ONE, TAG_COOLDOWN_TICKS, TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX } from '../data/arcade';
+import {
+  ELEMENTAL_COOLDOWN_TICKS, ELEMENTAL_NAMES, GUARD_MAX, Q4_ONE, TAG_COOLDOWN_TICKS, TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX,
+} from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
@@ -10,6 +12,7 @@ import { castDir } from './systems/arcade/aim';
 import { RANGED } from './systems/arcade/meter';
 import { isGuarding, isInvulnerable, isStunned } from './systems/arcade/stun';
 import { isRooted } from './systems/arcade/snag';
+import { kindOf } from './systems/arcade/terrain';
 import { trapCount } from './systems/arcade/trap';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { slotAbility } from './systems/ability-info';
@@ -152,6 +155,12 @@ export interface RenderActionBar {
   swapCooldownTicks: number;
   /** Arcade Trap slot (WP 39): the first game tick it can plant again, its cooldown, the team's live traps and the cap. */
   trap: { readyTick: number; cooldownTicks: number; count: number; max: number } | undefined;
+  /**
+   * Arcade elemental ability (FUN-DESIGN 2.24) of the active hero, undefined in Classic and for a void hero: its name
+   * (Ember, Cleanse, Stoneskin, Gale), element kind (1 fire, 2 water, 3 earth, 4 air), the first game tick it can cast
+   * again, its cooldown, and the tick its buff ends (0 when none is running).
+   */
+  elemental: { name: string; kind: number; readyTick: number; cooldownTicks: number; activeUntil: number } | undefined;
 }
 
 /** Read-only facade over a SimWorld for the renderer. Never exposes the sim arrays. */
@@ -203,6 +212,16 @@ export function createRenderView(world: SimWorld): RenderView {
     chargeIn: (id) => (RANGED[s.defId[id] ?? 0] ? -1 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) - now(s))),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
+  const elementalSlot = (cur: number): RenderActionBar['elemental'] => {
+    const kind = isArcade(s) ? kindOf(s, cur) : 0;
+    const cooldownTicks = ELEMENTAL_COOLDOWN_TICKS[kind] ?? 0;
+    if (cooldownTicks === 0) return undefined;
+    const e = cur * ARCADE_E;
+    return {
+      name: ELEMENTAL_NAMES[kind] ?? '', kind, cooldownTicks,
+      readyTick: s.arcade[e + ArcadeE.elemReadyAt] ?? 0, activeUntil: s.arcade[e + ArcadeE.elemUntil] ?? 0,
+    };
+  };
   const isCharacter = (i: number): boolean =>
     s.kind[i] === EntityKind.character && ((s.flags[i] ?? 0) & EntityFlag.alive) !== 0;
   return {
@@ -247,6 +266,7 @@ export function createRenderView(world: SimWorld): RenderView {
         trap: isArcade(s)
           ? { readyTick: s.arcade[cur * ARCADE_E + ArcadeE.trapReadyAt] ?? 0, cooldownTicks: TRAP_COOLDOWN_TICKS, count: trapCount(s, team), max: TRAP_TEAM_MAX }
           : undefined,
+        elemental: elementalSlot(cur),
       };
     },
     forEachProjectile(visit, melee = false): void {

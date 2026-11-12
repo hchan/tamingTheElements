@@ -1,7 +1,7 @@
 import { TRAP_BOX_PX, TRAP_MIN_GAP_PX, TRAP_PLACE_PX, TRAP_TRIGGER_PX, TrapKind } from '../../data/arcade';
 import type { Aabb } from '../../math/aabb';
 import { Cmd, type Command } from '../../sim/commands';
-import type { ShotView, TrapView } from '../agent';
+import type { ArcadeView, ShotView, TrapView } from '../agent';
 
 /**
  * Tables and threat geometry of the Arcade AI layer (`ArcadeTactics`, FUN-DESIGN 2.11, WP-arcade-ai-personalities).
@@ -179,6 +179,26 @@ export function chargeSensible(rushdown: boolean, oppGuarding: boolean): boolean
 /** Weather (4): an unfavourable element calls its weather; Hard also does when its own HP is under 500 pm. */
 export function weatherSensible(level: ArcadeAiLevel, unfavourable: boolean, pm: number): boolean {
   return unfavourable || (level >= AI_HARD && pm < 500);
+}
+
+/** Elemental ability (FUN-DESIGN 2.24): a fire hero's Ember once the foe is this close (centre to centre, the larger axis offset). */
+export const ARCADE_AI_EMBER_PX = 240;
+
+/**
+ * Elemental ability (FUN-DESIGN 2.24), Normal and Hard (Easy never): with the ability ready, Ember (fire) on a stunned
+ * foe or one within ARCADE_AI_EMBER_PX, Cleanse (water) when rooted or slowed, Stoneskin (earth) while the foe's super
+ * runs or under 500 pm of HP, Gale (air) when the foe is farther than ARCADE_AI_FAR_PX. No draw. `pm` is own HP per
+ * mille, `dist` the `centreDist` to the foe.
+ */
+export function elementalSensible(level: ArcadeAiLevel, a: ArcadeView, pm: number, dist: number): boolean {
+  if (level === AI_EASY || a.elemIn !== 0) return false;
+  switch (a.elemKind) {
+    case 1: return a.oppStun > 0 || dist <= ARCADE_AI_EMBER_PX;
+    case 2: return a.selfRooted > 0 || a.selfSlowed;
+    case 3: return a.oppSuperActive || pm < 500;
+    case 4: return dist > ARCADE_AI_FAR_PX;
+    default: return false;
+  }
 }
 
 /**
