@@ -62,10 +62,10 @@ describe('resolveFrame: fallback order', () => {
     expect(res.sheetUrl('curomo')).toBe('img/sheets/curomo.png');
   });
 
-  it('the shipped manifest has only the Fiara, Pax, Treenoc, Morblass, Rokcore and Curomo atlases: every other character resolves to legacy, they have art for idle, walk and cast only', () => {
+  it('the shipped manifest has only the Fiara, Pax, Treenoc, Morblass, Rokcore, Curomo, Lavax and Sindarosa atlases: every other character resolves to legacy, they have art for idle, walk and cast only', () => {
     const shipped = createFrameResolver(generatedSheets);
     for (const s of generatedSheets.sheets) {
-      if (s.sprite === 'fiara' || s.sprite === 'pax' || s.sprite === 'treenoc' || s.sprite === 'morblass' || s.sprite === 'rokcore' || s.sprite === 'curomo') continue;
+      if (s.sprite === 'fiara' || s.sprite === 'pax' || s.sprite === 'treenoc' || s.sprite === 'morblass' || s.sprite === 'rokcore' || s.sprite === 'curomo' || s.sprite === 'lavax' || s.sprite === 'sindarosa') continue;
       expect(shipped.hasSheet(s.sprite)).toBe(false);
       for (const [a] of ACTIONS) for (let d = 0; d < 8; d++) expect(shipped.resolveFrame(s.sprite, a, d, 0).source).toBe('legacy');
     }
@@ -75,7 +75,9 @@ describe('resolveFrame: fallback order', () => {
     expect(shipped.hasSheet('morblass')).toBe(true);
     expect(shipped.hasSheet('rokcore')).toBe(true);
     expect(shipped.hasSheet('curomo')).toBe(true);
-    for (const sp of ['fiara', 'pax', 'treenoc', 'morblass', 'rokcore', 'curomo']) for (const d of [0, 1, 7]) expect(shipped.resolveFrame(sp, 'idle', d, 0).source).not.toBe('legacy');
+    expect(shipped.hasSheet('lavax')).toBe(true);
+    expect(shipped.hasSheet('sindarosa')).toBe(true);
+    for (const sp of ['fiara', 'pax', 'treenoc', 'morblass', 'rokcore', 'curomo', 'lavax', 'sindarosa']) for (const d of [0, 1, 7]) expect(shipped.resolveFrame(sp, 'idle', d, 0).source).not.toBe('legacy');
     expect(shipped.resolveFrame('fiara', 'ko', 0, 0).source).toBe('legacy');
 });
 });
