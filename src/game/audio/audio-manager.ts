@@ -1,5 +1,6 @@
 import type { SimEvent } from '@core/index';
 import { EventDeduper } from '../fx/event-fx';
+import { hitRate } from './hit-variety';
 import { cueFor, type Bus } from './sound-map';
 
 /** The slice of the Web Audio API used here, so tests can inject a fake. */
@@ -9,6 +10,8 @@ export interface GainLike {
 }
 export interface SourceLike {
   buffer: unknown;
+  /** Optional so minimal fakes work; the real node has it. */
+  playbackRate?: { value: number };
   connect(dest: unknown): void;
   start(): void;
 }
@@ -52,6 +55,7 @@ export class AudioManager {
   /** Audio-clock ms until which the music is ducked; the Arcade layers extend it on a KO. */
   duckUntil = 0;
   private unlocked = false;
+  private hits = 0;
 
   constructor(private readonly opts: AudioOptions) {
     this.ctx = opts.ctx;
@@ -106,6 +110,7 @@ export class AudioManager {
       if (this.mutedFlag || !this.unlocked || buffer === undefined) continue;
       const src = this.ctx.createBufferSource();
       src.buffer = buffer;
+      if (cue.id === 'damage' && src.playbackRate) src.playbackRate.value = hitRate(e['amount'], this.hits++);
       src.connect(this.buses[cue.bus]);
       src.start();
       if (cue.duck) this.duckUntil = this.ctx.currentTime * 1000 + DUCK_MS;
