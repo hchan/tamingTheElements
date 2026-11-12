@@ -1,5 +1,6 @@
 // Headless AI-vs-AI match runner (`pnpm sim:match`). Node only: no Phaser, no DOM.
 // Single pairing:  pnpm sim:match --a fiara --b curomo --agents scripted,random --seeds 20 --level 5 [--json]
+// --no-traps (Arcade): masks the Trap command bit from every agent; trap hits show as trap-bomb / trap-spike in damageByAbility.
 // Round robin:     pnpm sim:match --tournament --seeds 4 [--agents scripted,scripted] [--json]
 // Every seed is played with the sides swapped on odd seeds (team 0 carries the difficulty handicap), so side bias cancels.
 import { pathToFileURL } from 'node:url';
@@ -25,7 +26,7 @@ import { EntityFlag, EntityKind, MAX_ENTITIES } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { DEFAULT_ARENA } from '../../src/core/sim/world';
 import { RANGED } from '../../src/core/sim/systems/arcade/meter';
-import { CHARGE_DEF, SUPER_DEF } from '../../src/core/sim/systems/arcade/hit';
+import { CHARGE_DEF, SUPER_DEF, TRAP_BOMB_DEF, TRAP_SPIKE_DEF } from '../../src/core/sim/systems/arcade/hit';
 import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
 import { type FunMetrics, reduceFunMetrics } from './fun-metrics';
 
@@ -44,6 +45,14 @@ export const UNATTRIBUTED = 'melee-or-status';
 export const SUPER_SOURCE = 'super';
 /** Damage source name of Arcade charge arrival hits (`ability === CHARGE_DEF`). */
 export const CHARGE_SOURCE = 'charge';
+/** Damage source names of Arcade trap hits (`ability === TRAP_BOMB_DEF` / `TRAP_SPIKE_DEF`, outside ABILITY_DEFS). */
+export const TRAP_BOMB_SOURCE = 'trap-bomb';
+export const TRAP_SPIKE_SOURCE = 'trap-spike';
+
+/** `--no-traps`: the agent with the Trap command bit (Cmd.trap) cleared from every command it issues. */
+export function withoutTraps(agent: Agent): Agent {
+  return { id: agent.id, observe: (v, t) => agent.observe(v, t) & ~Cmd.trap, save: () => agent.save(), load: (x) => agent.load(x) };
+}
 
 export const DEFAULT_MAX_TICKS = 9000; // 3 minutes
 /**
@@ -287,6 +296,8 @@ export interface MatchOptions {
   readonly aiLevel?: number;
   /** Which side plays the frozen pre-smarter Arcade AI (tools/sim/arcade-ai-v1), for `ai:duel`; default neither. */
   readonly frozenV1?: 'a' | 'b';
+  /** Mask the Trap command bit from both agents (`--no-traps`); only Arcade reads that bit as a trap. */
+  readonly noTraps?: boolean;
 }
 
 export interface MatchResult {
@@ -346,7 +357,8 @@ export function runMatch(o: MatchOptions): MatchResult {
   const races = (r: { character: string }[]): string[] => r.map((m) => m.character);
   const agentA = makeTeamAgent(o.agentA, races(rosterA), o.raceB, o.aIsTeam0 ? 0 : rosterB.length, o.aiLevel, o.frozenV1 === 'a');
   const agentB = makeTeamAgent(o.agentB, races(rosterB), o.raceA, o.aIsTeam0 ? rosterA.length : 0, o.aiLevel, o.frozenV1 === 'b');
-  const agents: [Agent, Agent] = o.aIsTeam0 ? [agentA, agentB] : [agentB, agentA];
+  const pair: [Agent, Agent] = o.aIsTeam0 ? [agentA, agentB] : [agentB, agentA];
+  const agents: [Agent, Agent] = o.noTraps === true && arcade ? [withoutTraps(pair[0]), withoutTraps(pair[1])] : pair;
 
   const projectileAbility = new Int32Array(MAX_ENTITIES);
   const byAbility: Record<string, number> = {};
@@ -370,7 +382,7 @@ export function runMatch(o: MatchOptions): MatchResult {
       if (arcade) log.push(e);
       if (arcade && e.kind === SimEventKind.hitConfirmed) {
         // Arcade names the ability on every hit (melee included), so nothing is approximated for hits.
-        const name = e['ability'] === SUPER_DEF ? SUPER_SOURCE : e['ability'] === CHARGE_DEF ? CHARGE_SOURCE : (ABILITY_DEFS[e['ability'] ?? -1]?.id ?? 'unknown');
+        const name = e['ability'] === SUPER_DEF ? SUPER_SOURCE : e['ability'] === CHARGE_DEF ? CHARGE_SOURCE : e['ability'] === TRAP_BOMB_DEF ? TRAP_BOMB_SOURCE : e['ability'] === TRAP_SPIKE_DEF ? TRAP_SPIKE_SOURCE : (ABILITY_DEFS[e['ability'] ?? -1]?.id ?? 'unknown');
         const amount = e['amount'] ?? 0;
         byAbility[name] = (byAbility[name] ?? 0) + amount;
         const victim = s.team[e['target'] ?? 0] ?? 0;
@@ -508,6 +520,7 @@ export interface PairingOptions {
   readonly ruleset?: Ruleset;
   readonly teamSize?: 1 | 2 | 3;
   readonly aiLevel?: number;
+  readonly noTraps?: boolean;
 }
 
 export function runPairing(o: PairingOptions): { summary: PairingSummary; results: MatchResult[] } {
@@ -528,6 +541,7 @@ export function runPairing(o: PairingOptions): { summary: PairingSummary; result
         ...(o.ruleset === undefined ? {} : { ruleset: o.ruleset }),
         ...(o.teamSize === undefined ? {} : { teamSize: o.teamSize }),
         ...(o.aiLevel === undefined ? {} : { aiLevel: o.aiLevel }),
+        ...(o.noTraps === true ? { noTraps: true } : {}),
       }),
     );
   }
@@ -709,6 +723,7 @@ export function main(argv: readonly string[]): number {
         ruleset: { type: 'string' },
         'team-size': { type: 'string' },
         'ai-level': { type: 'string' },
+        'no-traps': { type: 'boolean' },
         tournament: { type: 'boolean' },
         json: { type: 'boolean' },
       },
@@ -722,6 +737,7 @@ export function main(argv: readonly string[]): number {
       ...(values['max-ticks'] === undefined ? {} : { maxTicks: num(values['max-ticks'], DEFAULT_MAX_TICKS, 'max-ticks') }),
       stalemateTicks: num(values['stalemate-ticks'], DEFAULT_STALEMATE_TICKS, 'stalemate-ticks'),
       ...parseRuleOptions(values.ruleset, values['team-size'], values['ai-level']),
+      ...(values['no-traps'] === true ? { noTraps: true } : {}),
     };
     if (values.tournament === true) {
       const t = runTournament(base);
@@ -736,7 +752,7 @@ export function main(argv: readonly string[]): number {
     return 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--json]');
+    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--no-traps] [--json]');
     console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--json]');
     return 2;
   }

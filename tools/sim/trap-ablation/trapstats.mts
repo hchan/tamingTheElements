@@ -33,7 +33,7 @@ for (let i = 0; i < RACES.length; i++) {
       const s = world.state;
       const agentA = rm.makeTeamAgent('scripted', [a], b, aIsTeam0 ? 0 : 1, aiLevel);
       const agentB = rm.makeTeamAgent('scripted', [b], a, aIsTeam0 ? 1 : 0, aiLevel);
-      const strip=(g:any)=>process.env.NOTRAP?({id:g.id,observe:(v:any,k:number)=>g.observe(v,k)&~(1<<6),save:()=>g.save(),load:(x:any)=>g.load(x)}):g;
+      const strip = (g: any) => (process.env.NOTRAP ? rm.withoutTraps(g) : g); // same mask as run-match --no-traps
       const agents = (aIsTeam0 ? [strip(agentA), strip(agentB)] : [strip(agentB), strip(agentA)]) as any;
       const raceOfTeam = aIsTeam0 ? [a, b] : [b, a];
       const raceOfEnt = (id: number): string => raceOfTeam[s.team[id] ?? 0]!;
