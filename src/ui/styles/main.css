@@ -650,10 +650,10 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
   background: center / contain no-repeat;
 }
 .element-fire::before {
-  background-image: url(/assets/img/fireCircle.png);
+  background-image: url(/assets/img/fx/fireCircle.png);
 }
 .element-water::before {
-  background-image: url(/assets/img/waterCircle.png);
+  background-image: url(/assets/img/fx/waterCircle.png);
 }
 .element-earth::before {
   background-image: url(/assets/img/earthCircle.png);

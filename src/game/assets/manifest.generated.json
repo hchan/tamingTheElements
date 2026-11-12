@@ -10,7 +10,7 @@
       ]
     },
     "air": {
-      "url": "img/air.png",
+      "url": "img/fx/air.png",
       "coords": [
         0,
         0,
@@ -55,7 +55,7 @@
       ]
     },
     "chaosBolt": {
-      "url": "img/chaosBolt.png",
+      "url": "img/fx/chaosBolt.png",
       "coords": [
         0,
         0,
@@ -64,7 +64,7 @@
       ]
     },
     "chaosOrb": {
-      "url": "img/chaosOrb.png",
+      "url": "img/fx/chaosOrb.png",
       "coords": [
         0,
         0,
@@ -73,7 +73,7 @@
       ]
     },
     "chaoticFire": {
-      "url": "img/chaoticFire.png",
+      "url": "img/fx/chaoticFire.png",
       "coords": [
         0,
         0,
@@ -91,7 +91,7 @@
       ]
     },
     "crimsonFire": {
-      "url": "img/crimsonFire.png",
+      "url": "img/fx/crimsonFire.png",
       "coords": [
         0,
         0,
@@ -109,7 +109,7 @@
       ]
     },
     "earth": {
-      "url": "img/earth.png",
+      "url": "img/fx/earth.png",
       "coords": [
         0,
         0,
@@ -145,7 +145,7 @@
       ]
     },
     "entanglingVines": {
-      "url": "img/entanglingVines.png",
+      "url": "img/fx/entanglingVines.png",
       "coords": [
         0,
         0,
@@ -154,7 +154,7 @@
       ]
     },
     "entanglingVinesLong": {
-      "url": "img/entanglingVinesLong.png",
+      "url": "img/fx/entanglingVinesLong.png",
       "coords": [
         0,
         0,
@@ -190,7 +190,7 @@
       ]
     },
     "fire": {
-      "url": "img/fire.png",
+      "url": "img/fx/fire.png",
       "coords": [
         0,
         0,
@@ -199,7 +199,7 @@
       ]
     },
     "fireBlast": {
-      "url": "img/fireBlast.png",
+      "url": "img/fx/fireBlast.png",
       "coords": [
         0,
         0,
@@ -208,7 +208,7 @@
       ]
     },
     "fireCircle": {
-      "url": "img/fireCircle.png",
+      "url": "img/fx/fireCircle.png",
       "coords": [
         0,
         0,
@@ -226,7 +226,7 @@
       ]
     },
     "fireDance": {
-      "url": "img/fireDance.png",
+      "url": "img/fx/fireDance.png",
       "coords": [
         0,
         0,
@@ -235,7 +235,7 @@
       ]
     },
     "fireHeal": {
-      "url": "img/fireHeal.png",
+      "url": "img/fx/fireHeal.png",
       "coords": [
         0,
         0,
@@ -244,7 +244,7 @@
       ]
     },
     "fireball": {
-      "url": "img/fireball.png",
+      "url": "img/fx/fireball.png",
       "coords": [
         0,
         0,
@@ -253,7 +253,7 @@
       ]
     },
     "groundShock": {
-      "url": "img/groundShock.png",
+      "url": "img/fx/groundShock.png",
       "coords": [
         0,
         0,
@@ -262,7 +262,7 @@
       ]
     },
     "hurlRock": {
-      "url": "img/hurlRock.png",
+      "url": "img/fx/hurlRock.png",
       "coords": [
         0,
         0,
@@ -271,7 +271,7 @@
       ]
     },
     "hurricane": {
-      "url": "img/hurricane.png",
+      "url": "img/fx/hurricane.png",
       "coords": [
         0,
         0,
@@ -280,7 +280,7 @@
       ]
     },
     "iceBlast": {
-      "url": "img/iceBlast.png",
+      "url": "img/fx/iceBlast.png",
       "coords": [
         0,
         0,
@@ -289,7 +289,7 @@
       ]
     },
     "iceBreath": {
-      "url": "img/iceBreath.png",
+      "url": "img/fx/iceBreath.png",
       "coords": [
         0,
         0,
@@ -298,7 +298,7 @@
       ]
     },
     "iceSheet": {
-      "url": "img/iceSheet.png",
+      "url": "img/fx/iceSheet.png",
       "coords": [
         0,
         0,
@@ -316,7 +316,7 @@
       ]
     },
     "icicles": {
-      "url": "img/icicles.png",
+      "url": "img/fx/icicles.png",
       "coords": [
         0,
         0,
@@ -343,7 +343,7 @@
       ]
     },
     "rockArmour": {
-      "url": "img/rockArmour.png",
+      "url": "img/fx/rockArmour.png",
       "coords": [
         0,
         0,
@@ -352,7 +352,7 @@
       ]
     },
     "rockElementalRed": {
-      "url": "img/rockElementalRed.png",
+      "url": "img/fx/rockElementalRed.png",
       "coords": [
         0,
         0,
@@ -361,7 +361,7 @@
       ]
     },
     "rockPellet": {
-      "url": "img/rockPellet.png",
+      "url": "img/fx/rockPellet.png",
       "coords": [
         0,
         0,
@@ -370,7 +370,7 @@
       ]
     },
     "shardsOfIce": {
-      "url": "img/shardsOfIce.png",
+      "url": "img/fx/shardsOfIce.png",
       "coords": [
         0,
         0,
@@ -379,7 +379,7 @@
       ]
     },
     "slimeBlast": {
-      "url": "img/slimeBlast.png",
+      "url": "img/fx/slimeBlast.png",
       "coords": [
         0,
         0,
@@ -388,7 +388,7 @@
       ]
     },
     "sonarBlast": {
-      "url": "img/sonarBlast.png",
+      "url": "img/fx/sonarBlast.png",
       "coords": [
         0,
         0,
@@ -397,7 +397,7 @@
       ]
     },
     "stealHealth": {
-      "url": "img/stealHealth.png",
+      "url": "img/fx/stealHealth.png",
       "coords": [
         0,
         0,
@@ -415,7 +415,7 @@
       ]
     },
     "stranglingBranches": {
-      "url": "img/stranglingBranches.png",
+      "url": "img/fx/stranglingBranches.png",
       "coords": [
         0,
         0,
@@ -433,7 +433,7 @@
       ]
     },
     "vineTrap": {
-      "url": "img/vineTrap.png",
+      "url": "img/fx/vineTrap.png",
       "coords": [
         0,
         0,
@@ -442,7 +442,7 @@
       ]
     },
     "voidCircle": {
-      "url": "img/voidCircle.png",
+      "url": "img/fx/voidCircle.png",
       "coords": [
         0,
         0,
@@ -451,7 +451,7 @@
       ]
     },
     "water": {
-      "url": "img/water.png",
+      "url": "img/fx/water.png",
       "coords": [
         0,
         0,
@@ -460,7 +460,7 @@
       ]
     },
     "waterCircle": {
-      "url": "img/waterCircle.png",
+      "url": "img/fx/waterCircle.png",
       "coords": [
         0,
         0,
@@ -469,7 +469,7 @@
       ]
     },
     "waterCorner": {
-      "url": "img/waterCorner.png",
+      "url": "img/fx/waterCorner.png",
       "coords": [
         0,
         0,
@@ -478,7 +478,7 @@
       ]
     },
     "windCone": {
-      "url": "img/windCone.png",
+      "url": "img/fx/windCone.png",
       "coords": [
         0,
         0,
