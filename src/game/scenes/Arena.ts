@@ -1,3 +1,4 @@
+import { LowLifeVignette } from '../fx/low-life-vignette';
 import { PlayOnce } from '../net/play-once';
 import Phaser from 'phaser';
 import {
@@ -140,6 +141,7 @@ export class Arena extends Phaser.Scene {
   private pauseDialog: PauseDialog | undefined;
   private announcer: Announcer | undefined;
   private readonly lowHealth = new LowHealthWatch();
+  private lowLife: LowLifeVignette | undefined;
   private frames = 0;
   private cleanups: (() => void)[] = [];
   private ended = false;
@@ -642,7 +644,10 @@ export class Arena extends Phaser.Scene {
     const { announcer, view } = this;
     if (!announcer || !view) return;
     const hero = collectSide(view, 0).active;
-    if (this.lowHealth.update(hero === undefined ? undefined : hero.hp / Math.max(1, hero.maxHp))) announcer.say(LOW_HEALTH);
+    const fraction = hero === undefined ? undefined : hero.hp / Math.max(1, hero.maxHp);
+    this.lowLife ??= new LowLifeVignette(this.cameras.main);
+    this.lowLife.set(fraction);
+    if (this.lowHealth.update(fraction)) announcer.say(LOW_HEALTH);
   }
 
   override update(): void {
@@ -709,6 +714,7 @@ export class Arena extends Phaser.Scene {
     this.events.off(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
     this.actionBar?.destroy();
     this.actionBar = undefined;
+    this.lowLife = undefined;
     this.backdrop?.destroy();
     this.backdrop = undefined;
     this.pool?.forEachView((v) => { v.destroy(); });
