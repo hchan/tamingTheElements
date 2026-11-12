@@ -2,7 +2,7 @@ import { ABILITIES_A } from '../../../data/abilities-a';
 import { ABILITIES_B } from '../../../data/abilities-b';
 import {
   CHARGE_STUN_TICKS, GUARD_CHIP_PM, HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, KO_HIT_STOP_TICKS,
-  PARRY_HIT_STOP_TICKS, TRAP_SPIKE_STUN_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
+  PARRY_HIT_STOP_TICKS, TRAP_HIT_FLOOR, TRAP_SPIKE_STUN_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import { arcadeRaceNumbers } from '../../arcade-numbers';
@@ -59,7 +59,8 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * `victim` for `base` damage on behalf of `attacker`, whose multiplier and element apply. The damage is the Classic
  * `computeDamage` arithmetic, then the weather (FUN-DESIGN 2.14, `weatherDamage` of the attacker's element), then a fire
  * patch under a fire attacker (FUN-DESIGN 2.15, capped with the chart and weather at TERRAIN_CAP_PM of the plain hit), then the
- * attacker race's `damagePm` (FUN-DESIGN 2.13, `arcadeRaceNumbers`; not on a super), then the combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
+ * attacker race's `damagePm` (FUN-DESIGN 2.13, `arcadeRaceNumbers`; not on a super; a trap takes it on its base, floored
+ * at TRAP_HIT_FLOOR), then the combo scale (FUN-DESIGN 2.4: `scalePm / 1000` by the hit's combo index; a hit on a free victim ends the team's live
  * combo and starts a new one). Emits `damage` (as Classic projectiles do) and
  * `hitConfirmed`, then hit-stop by strength, or the KO hit-stop when the hit empties the victim's HP. Then knockback by
  * strength and hit-stun with the juggle and stun caps (FUN-DESIGN 2.3; `recovered` follows the `hitStop` when a cap
@@ -91,13 +92,18 @@ export function applyArcadeHit(
   const attDef = CHARACTERS[s.defId[attacker] ?? 0];
   const attEl = attDef?.element ?? 'void';
   const defEl = CHARACTERS[s.defId[victim] ?? 0]?.element ?? 'void';
-  const input = { base, attackerMult: s.dmgMult[attacker] ?? 1, attEl, defEl, defReductionPct: damageDecreasePct(s, victim) };
+  // The attacker race's Arcade damage pm (FUN-DESIGN 2.13), never on the shared super. A trap hit takes it on its base,
+  // floored at TRAP_HIT_FLOOR, before the chart (WP 39e), so a low-damagePm race's trap is not worth 13 HP.
+  const pm = sup ? 1000 : arcadeRaceNumbers(attDef?.id ?? '')[1];
+  const trap = defIdx === TRAP_BOMB_DEF || defIdx === TRAP_SPIKE_DEF;
+  const hitBase = trap ? Math.max((base * pm) / 1000, TRAP_HIT_FLOOR) : base;
+  const racePm = trap ? 1000 : pm;
+  const input = { base: hitBase, attackerMult: s.dmgMult[attacker] ?? 1, attEl, defEl, defReductionPct: damageDecreasePct(s, victim) };
   let charted = weatherDamage(s, computeDamage(input), attEl);
   // Stage terrain (FUN-DESIGN 2.15): the attacker's patch bonus, the total modifier capped against the plain hit.
   const tpm = terrainDamagePm(s, attacker);
   if (tpm !== 1000) charted = capDamage(charted, tpm, computeDamage({ ...input, attEl: 'void', defEl: 'void' }));
-  // The attacker race's Arcade damage pm (FUN-DESIGN 2.13), never on the shared super; 1000 keeps the value exact.
-  const racePm = sup ? 1000 : arcadeRaceNumbers(attDef?.id ?? '')[1];
+  // 1000 keeps the value exact.
   const raw = racePm === 1000 ? charted : (charted * racePm) / 1000;
   // Unscaled hits keep the Classic value exactly (x * 1000 / 1000 can round).
   const amount = scalePm === 1000 ? raw : (raw * scalePm) / 1000;

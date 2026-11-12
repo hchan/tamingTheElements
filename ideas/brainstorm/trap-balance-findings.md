@@ -94,6 +94,47 @@ Priority order; each is one constant in `src/core/data/arcade.ts`.
 
 Acceptance for the follow-up WP: race win rates within 45 to 57 (or no worse than the ablation baseline for races already outside it), trap damage share 2 to 5% at Normal, timeout-share of fired traps under 45%, 0 change in `classic-hash-pins`, new Arcade golden that casts each kind.
 
+## WP 39e results (items 1 to 3 shipped, `SIM_VERSION` 34)
+
+Item 1 is the caster stat. A trap hit took the owner race's Arcade `damagePm` (Fiara 1520, Sindarosa 650, Rokcore 690,
+Lavax 870). Once the hits are divided by it, the per-hit means sit at 1.0 to 1.16 of base; the rest comes from the
+element chart, weather and Rock Armour. It is now `max(base * pm / 1000, 20)` with no second race scale
+(`TRAP_HIT_FLOOR`). The new means are Sindarosa 20.4, Rokcore 21.0, Lavax 20.9 and Fiara 35.8 (unchanged).
+
+Measured over 24 seeds at Normal (264 games per race, about +-6 points of noise). The three columns are main before
+39e, after 39e, and after 39e with traps off (`NOTRAP=1`):
+
+| Race | Before | After | Traps off |
+| --- | --- | --- | --- |
+| curomo | 47.3 | 44.7 | 46.6 |
+| cyclonius | 44.7 | 43.9 | 46.6 |
+| echo | 50.4 | 50.8 | 52.3 |
+| fiara | 53.0 | 50.8 | 45.8 |
+| ishimi | 51.9 | 54.2 | 54.2 |
+| lavax | 38.6 | 40.5 | 42.4 |
+| morblass | 50.8 | 50.8 | 52.3 |
+| pax | 55.7 | 55.3 | 54.9 |
+| rokcore | 45.5 | 45.5 | 41.7 |
+| sindarosa | 48.1 | 49.6 | 50.0 |
+| treenoc | 55.3 | 54.9 | 54.2 |
+| wispera | 53.8 | 53.4 | 52.3 |
+
+Against the acceptance above:
+
+- **Win rates: not met.** Curomo 44.7, Cyclonius 43.9 and Lavax 40.5 are under 45 and under their traps-off rates.
+  Lavax and Cyclonius are better than before 39e; Curomo is worse, but within noise.
+- **Trap damage share: not met.** It went from 1.47% to 1.52%, against a target of 2 to 5%. Item 5 says not to buff
+  the base, so the share needs more placements (a 39c AI rate change) rather than bigger numbers.
+- **Timeout share: not met, and the target conflicts with item 3.** It went from 54.2% to 57.5% of placed traps
+  (61.8% of traps that ended by overlap, timeout or douse). Shorter lives give a foe less time to walk in. Under 45%
+  needs the AI to steer foes onto traps, or a target that counts only damage traps.
+- **Puddle and Gust races: no measurable move.** Ishimi gained 2.3 points, Curomo lost 2.6, and the Gust races moved
+  under 1. The AI still does not cash in the slow or the shove; that is a follow-up in AI (39c-style), not in numbers.
+- **`classic-hash-pins`: met.** No change.
+- **Arcade golden that casts each kind: met.** `arcade-traps` (`tools/gen/arcade-moves.ts`) covers a Fire Bomb hit,
+  a Puddle slow and timeout, a Spike hit, a Gust shove and a douse. `tests/repo/arcade-moves-coverage.test.ts`
+  checks each one.
+
 ## View polish shipped with this note (no sim change)
 
 `src/game/audio/arcade-cues.ts`: `trapTriggered` with reason doused plays a short hiss (`trapDouse`) instead of the blast pop, and a Puddle drying up at its timeout is silent (it used to pop like a bomb). Test in `arcade-cues.test.ts`.
