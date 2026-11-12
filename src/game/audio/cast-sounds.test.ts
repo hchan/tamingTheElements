@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { ABILITIES_A, ABILITIES_B } from '@core/index';
+import legacySounds from '../../../tests/fixtures/legacy/ability-sounds.json';
 import type { RenderView } from '@core/index';
 import { CastDetector, castSoundFor } from './cast-sounds';
 
@@ -29,4 +31,21 @@ describe('CastDetector', () => {
     expect(d.detect(viewWith(30))).toEqual([]);
     expect(d.detect(viewWith(60))).toEqual(['fireBreath']);
   });
+});
+
+describe('cast sounds per ability vs legacy abilities.js', () => {
+  const legacy = legacySounds.sounds as Record<string, string | null>;
+  const sprites = [...new Set([...ABILITIES_A, ...ABILITIES_B].map((a) => a.sprite))];
+
+  it('covers every legacy ability and no more (fixture and data agree on the sprite set)', () => {
+    expect(sprites.sort()).toEqual(Object.keys(legacy).sort());
+  });
+
+  for (const sprite of Object.keys(legacy)) {
+    it(`${sprite} plays its legacy cast sound`, () => {
+      const expected = legacy[sprite];
+      // Capture's sound is played from its own event cues, not the action-bar watch.
+      expect(castSoundFor(sprite)).toBe(sprite === 'capture' ? undefined : (expected ?? undefined));
+    });
+  }
 });
