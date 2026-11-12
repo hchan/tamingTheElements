@@ -1,5 +1,6 @@
 import { el } from '@ui/dom';
 import { ABILITIES_A, ABILITIES_B, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, type CharacterId, type RenderView } from '@core/index';
+import { touchHaptic } from '../platform/a11y/touch-layout';
 import { codeLabel, getBindings } from '../platform/input/bindings';
 
 /** Shared on-screen touch controls of the Arcade battle (Arcade Versus and the World Tour fight); DOM only, no Phaser. */
@@ -174,6 +175,7 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   b.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     if (press()) {
+      touchHaptic();
       byPointer = true;
       b.setPointerCapture(e.pointerId);
     }

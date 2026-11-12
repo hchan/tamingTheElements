@@ -185,6 +185,13 @@ function touchGroup(current: TouchLayout): HTMLElement {
   add('touchSize', 'compact', 'Size: compact', current.size === 'compact');
   add('touchSide', 'right', 'Side: right', current.side === 'right');
   add('touchSide', 'left', 'Side: left (left-handed)', current.side === 'left');
+  const hap = el('label', 'settingsOption');
+  const box = el('input');
+  box.type = 'checkbox';
+  box.name = 'touchHaptics';
+  box.checked = current.haptics;
+  hap.append(box, ' Vibrate when a button is pressed (phones and tablets)');
+  set.append(hap);
   return set;
 }
 
@@ -196,6 +203,7 @@ export function readTouchForm(form: HTMLFormElement): TouchLayout {
   return {
     size: (size === 'large' || size === 'compact' ? size : 'auto') satisfies TouchSize,
     side: (side === 'left' ? 'left' : 'right') satisfies TouchSide,
+    haptics: data.get('touchHaptics') !== null,
   };
 }
 

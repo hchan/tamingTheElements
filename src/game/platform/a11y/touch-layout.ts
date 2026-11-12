@@ -9,10 +9,12 @@ export type TouchSide = 'right' | 'left';
 export interface TouchLayout {
   readonly size: TouchSize;
   readonly side: TouchSide;
+  /** Short vibration when an on-screen button is pressed (devices without `navigator.vibrate` ignore it). */
+  readonly haptics: boolean;
 }
 
 export const TOUCH_LAYOUT_KEY = 'tte.touchLayout';
-export const DEFAULT_TOUCH_LAYOUT: TouchLayout = { size: 'auto', side: 'right' };
+export const DEFAULT_TOUCH_LAYOUT: TouchLayout = { size: 'auto', side: 'right', haptics: true };
 
 type MatchMedia = (query: string) => { readonly matches: boolean };
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -33,9 +35,11 @@ export function readTouchLayout(store: Store | undefined = defaultStore()): Touc
     const o = JSON.parse(raw) as Record<string, unknown> | null;
     const size = o?.['size'];
     const side = o?.['side'];
+    const haptics = o?.['haptics'];
     return {
       size: size === 'large' || size === 'compact' || size === 'auto' ? size : 'auto',
       side: side === 'left' || side === 'right' ? side : 'right',
+      haptics: typeof haptics === 'boolean' ? haptics : true,
     };
   } catch {
     return DEFAULT_TOUCH_LAYOUT;
@@ -64,4 +68,18 @@ export function applyTouchLayout(
   const anyCoarse = matchMedia?.('(any-pointer: coarse)').matches ?? false;
   root.dataset['touchSize'] = resolveTouchSize(layout.size, anyCoarse);
   root.dataset['touchSide'] = layout.side;
+  root.dataset['touchHaptics'] = String(layout.haptics);
+}
+
+/** One short buzz for a button press, if the setting is on and the device can vibrate. Never throws. */
+export function touchHaptic(
+  root: HTMLElement | undefined = typeof document === 'undefined' ? undefined : document.documentElement,
+  nav: { vibrate?: (pattern: number) => boolean } | undefined = typeof navigator === 'undefined' ? undefined : navigator,
+): void {
+  if (root?.dataset['touchHaptics'] === 'false') return;
+  try {
+    nav?.vibrate?.(12);
+  } catch {
+    // Vibration blocked by the browser: nothing to do.
+  }
 }
