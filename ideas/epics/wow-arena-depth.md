@@ -21,3 +21,4 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [wow-arena-ladder-seasons](../brainstorm/wow-arena-ladder-seasons.md)
 - [wow-rewards-and-titles](../brainstorm/wow-rewards-and-titles.md)
 - [wow-arena-spectator-and-replays](../brainstorm/wow-arena-spectator-and-replays.md)
+- [giant-heroes-size-for-speed](../brainstorm/giant-heroes-size-for-speed.md)
