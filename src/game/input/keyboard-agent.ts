@@ -1,5 +1,5 @@
 import { Cmd, type Agent, type AgentState, type Command, type ObservationView } from '@core/index';
-import { ARCADE_PAD, commandFromPad, pauseEdge, type PadSnapshot } from './gamepad';
+import { commandFromPad, padConfigFor, pauseEdge, type PadSnapshot } from './gamepad';
 import {
   type Bindings,
   commandFromHeld,
@@ -106,7 +106,7 @@ export class KeyboardAgent implements Agent {
   /** Latches a pad swap button's press edge, so a tap shorter than a frame is still sent on the next tick. */
   private latchPad(): Command {
     const arcade = this.opts.arcade;
-    const down = commandFromPad(this.opts.gamepad?.() ?? null, true, arcade ? ARCADE_PAD : undefined) & this.swapMask();
+    const down = commandFromPad(this.opts.gamepad?.() ?? null, true, padConfigFor(arcade === true)) & this.swapMask();
     this.swapLatched |= down & ~this.padSwapDown;
     this.padSwapDown = down;
     return down;
@@ -115,7 +115,7 @@ export class KeyboardAgent implements Agent {
   /** Call once per rendered frame (also while paused): Start on the pad toggles pause on its press edge. */
   pollPad(): void {
     this.latchPad();
-    const e = pauseEdge(this.startDown, this.opts.gamepad?.() ?? null);
+    const e = pauseEdge(this.startDown, this.opts.gamepad?.() ?? null, padConfigFor(this.opts.arcade === true));
     this.startDown = e.down;
     if (e.pressed) this.opts.onEffect?.('pause');
   }
@@ -129,7 +129,7 @@ export class KeyboardAgent implements Agent {
     const capturable = this.opts.capturable(view);
     const arcade = this.opts.arcade;
     this.latchPad();
-    const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable, arcade ? ARCADE_PAD : undefined);
+    const pad = commandFromPad(this.opts.gamepad?.() ?? null, capturable, padConfigFor(arcade === true));
     // Movement and abilities follow the held keys; a swap is an edge: only keys pressed since the last tick (not repeats).
     const held = this.tapped.size === 0 ? this.state.held : new Set([...this.state.held, ...this.tapped]);
     const swapMask = this.swapMask();

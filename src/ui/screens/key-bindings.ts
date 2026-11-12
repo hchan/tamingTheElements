@@ -16,6 +16,7 @@ import {
 } from '../../game/platform/input/bindings';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
+import { padBindingsSection, type PadSection } from './pad-bindings-section';
 import type { Screen } from './screen';
 
 export interface KeyBinding {
@@ -77,6 +78,7 @@ type Capture = { action: GameAction; slot: number } | null;
 export function keyBindingsScreen(store?: SaveStore): Screen {
   let node: HTMLElement | null = null;
   let stopCapture: (() => void) | null = null;
+  let padSection: PadSection | null = null;
   return {
     mount(container) {
       let bindings = bindingsFromSave(readLocal());
@@ -234,19 +236,17 @@ export function keyBindingsScreen(store?: SaveStore): Screen {
         tr.append(th, el('td', undefined, formatKeys(b.keys)));
         system.append(tr);
       }
-      const pad = el(
-        'p',
-        undefined,
-        'Gamepad: left stick or d-pad moves, A and B use abilities, Y captures, bumpers and triggers swap, Start pauses.',
-      );
+      padSection = padBindingsSection();
 
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
-      page.append(table, reset, status, el('h2', undefined, 'Other controls'), system, pad, back);
+      page.append(table, reset, status, el('h2', undefined, 'Other controls'), system, padSection.node, back);
       render();
       container.append(page);
     },
     unmount() {
+      padSection?.dispose();
+      padSection = null;
       stopCapture?.();
       stopCapture = null;
       node?.remove();
