@@ -913,3 +913,26 @@ html[data-high-contrast='true'] button.touchBtn {
   font-size: 1em;
   text-transform: capitalize;
 }
+
+/* Help: Controls tables (text, never colour alone). */
+.helpControls {
+  text-align: left;
+  margin: 1em auto;
+  max-width: 40em;
+}
+.helpControlsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1em;
+}
+.helpControlsTable caption {
+  font-weight: bold;
+  text-align: left;
+  padding: 0.25em 0;
+}
+.helpControlsTable th,
+.helpControlsTable td {
+  text-align: left;
+  padding: 0.2em 0.5em;
+  border-bottom: 1px solid currentColor;
+}
