@@ -79,6 +79,7 @@ function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emit
   let active = true;
   const scene = {
     events,
+    cameras: { main: { midPoint: { x: 960 } } },
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => active },
     textures: { exists: (k: string) => textures.includes(k) },
@@ -142,16 +143,16 @@ describe('terrain view (fake scenes)', () => {
   it('tile floor: requests the atlas when missing, builds one layer once it is there, re-fills it on a stage swap', () => {
     const missing = mount();
     missing.frame();
-    expect(missing.arena.loads).toEqual([TILES]);
+    expect(missing.arena.loads).toEqual([TILES, 'stagebg']); // the floor atlas and the stage backdrop atlas
     expect(missing.arena.layers).toHaveLength(0);
 
     const m = mount({ atlas: true });
-    expect(m.arena.loads).toEqual([]);
+    expect(m.arena.loads).toEqual(['stagebg']);
     m.frame();
     m.frame();
     expect(m.arena.layers).toHaveLength(1);
     const layer = m.arena.layers[0];
-    expect(layer?.data).toHaveLength(23);
+    expect(layer?.data).toHaveLength(17); // 23 rows less the 6 under the stage backdrop band (WALL_Y)
     expect(layer?.data[0]).toHaveLength(60); // 1920 / 32: the wide Arcade arena (WP 38d)
     expect(layer?.data.flat().every((v) => v >= 0 && v < 8)).toBe(true); // the fire row of the atlas
     expect(layer?.puts).toHaveLength(0);

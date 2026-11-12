@@ -20,14 +20,14 @@
     "sim": 34750,
     "super-view": 1390,
     "tag-view": 2870,
-    "terrain-view": 4800,
+    "terrain-view": 5500,
     "trap-view": 1100,
     "touch-controls": 1620,
     "tour": 5600,
     "viewport": 260,
     "weather-view": 3470
   },
-  "totalGzip": 511400,
+  "totalGzip": 512100,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
