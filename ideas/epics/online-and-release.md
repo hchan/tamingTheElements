@@ -10,7 +10,7 @@ Online play, e2e stability, test infrastructure, release and housekeeping.
 Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as one theme, in separate small work packages):
 
 - [online-play](../brainstorm/online-play.md)
-- [online-rematch-e2e-flake-under-load](../brainstorm/online-rematch-e2e-flake-under-load.md)
+- [online-rematch-e2e-flake-under-load](../done/online-rematch-e2e-flake-under-load.md)
 - [e2e-coverage-and-browsers](../in-progress/e2e-coverage-and-browsers.md)
 - [e2e-stability-runs](../brainstorm/e2e-stability-runs.md)
 - [test-dom-environment-for-menus](../brainstorm/test-dom-environment-for-menus.md)

@@ -277,7 +277,8 @@ describe('online versus screen', () => {
     // End of match: result text, game torn down, Rematch bumps the match number and returns to the picker.
     launch?.onEnd?.({ winner: 0, activeSlot: 0, capturedIndices: [], rounds: [2, 0] });
     expect(statusText()).toBe('You won the match! Rounds 2-0.');
-    expect(h.created[0]?.destroyed).toBe(true);
+    // The finished arena lingers (it keeps answering the friend's session) until the rematch's match replaces it.
+    expect(h.created[0]?.destroyed).toBe(false);
     await tick(0);
     await click('onlineAgain');
     expect(host.querySelector('#onlineAgain')).toBeNull();

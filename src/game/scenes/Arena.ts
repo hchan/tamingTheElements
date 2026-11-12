@@ -83,6 +83,9 @@ const LOW_HEALTH_POLL_FRAMES = 10;
 /** Beat between the final blow and the results route. */
 const END_DELAY_MS = 1200;
 
+/** Online: how often an ended session still answers its peer (one wall tick, as the driver would). */
+const LINGER_MS = 20;
+
 /** Legacy cheat keys (key-map CheatAction) to the tester cheats. */
 const CHEAT_KEYS = { cheatQ: 'win', cheatX: 'freezeEnemy', cheatC: 'captureWin' } as const satisfies Record<string, ArenaCheat>;
 
@@ -598,6 +601,7 @@ export class Arena extends Phaser.Scene {
     if (!over && !timedOut) return;
     this.ended = true;
     this.driver?.pause('ended');
+    if (this.session) this.lingerSession(this.session);
     const s = world.state;
     const end = {
       winner: over ? (over['winner'] ?? -1) : (this.session?.winner ?? -1),
@@ -609,6 +613,16 @@ export class Arena extends Phaser.Scene {
     // clock runs several times slower than real time and the results could take many seconds to arrive.
     const t = setTimeout(() => { this.launch?.onEnd?.(end); }, END_DELAY_MS);
     this.cleanups.push(() => { clearTimeout(t); });
+  }
+
+  /**
+   * Online: the datagram link is lossy and a lockstep side that ended may still owe its peer the inputs it needs to end too. Keep
+   * receiving and re-sending (no stepping: an ended session only does that) until the scene shuts down, so the peer always finishes
+   * instead of stalling to a timeout. Wall clock, not the paused driver.
+   */
+  private lingerSession(session: LockstepSession): void {
+    const t = setInterval(() => { session.update(0); }, LINGER_MS);
+    this.cleanups.push(() => { clearInterval(t); });
   }
 
   /** Tester mode only: a one-shot cheat on the running match (a state edit outside `step`; the replay is flagged `cheats`). */
