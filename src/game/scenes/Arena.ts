@@ -447,6 +447,7 @@ export class Arena extends Phaser.Scene {
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
       terrain: () => import('../fx/terrain-view').then((m) => m.terrainState(this)),
       traps: () => import('../fx/trap-view').then((m) => m.trapState(this)),
+      heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
       dangerZones: () => import('../fx/danger-view').then((m) => m.dangerState(this)),
       aim: () => {
         const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;

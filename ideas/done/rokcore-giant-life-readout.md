@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-12
 ---
 # Rokcore giant life readout (365 vs Pax 795): by design, make it visible
@@ -9,3 +9,5 @@ Checked after the giant-heroes merge (SIM_VERSION 41). `balance:compare` (Classi
 The screenshot numbers are not a bug: Rokcore maxHp = floor(floor(120 * 2100 / 1000) * 1450 / 1000) = 252 * 1.45 = 365; Pax = 150 * 5300 / 1000 = 795. The x1.45 is correct, but `ARCADE_RACE_NUMBERS.rokcore` hpPm was cut 2600 -> 2100 in the same commit, so net life only rose from 312 to 365 (x1.17), not x1.45. Rokcore stays the lowest-life hero by design (strongest kit, 75% Rock Armour).
 
 Open: players see a 2x body with less than half Pax's life; consider a life bar scaled to body size or a short tutorial hint. Not changed (design call).
+
+Done (2026-11-12): the Arcade HUD label beside each main bar now ends with `Life hp/max` (e.g. `Life 365/365` for Rokcore, `Life 795/795` for Pax), words and numbers, not colour. Presentation only (`lifeReadout` in `src/game/hud/bars.ts`); no sim change, no SIM_VERSION bump. Unit tests in `src/game/hud/hud.test.ts`, e2e `tests/e2e/life-readout.spec.ts`. The bar itself is not rescaled.

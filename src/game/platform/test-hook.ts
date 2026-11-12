@@ -97,6 +97,8 @@ export interface ArenaProbe {
   } | undefined>;
   /** Arcade only (async: a lazy chunk): the trap markers drawn on the last frame (WP 39b), or undefined before the view mounts. */
   traps(): Promise<readonly { kind: number; x: number; y: number; team: number; label: string; alpha: number }[] | undefined>;
+  /** The words beside each side's main HUD bar (name, element, health words, `Life hp/max`). */
+  heroLabels(): string[];
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
   dangerZones(): Promise<readonly { id: number; x: number; y: number; w: number; h: number; alpha: number }[] | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */

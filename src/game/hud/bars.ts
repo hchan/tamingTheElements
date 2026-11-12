@@ -259,7 +259,12 @@ export function regenLabel(c: Pick<HudCharacter, 'dead' | 'benched' | 'hp' | 're
 export function activeHeroText(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap'> & { readonly element?: Element }, classic: boolean): string {
   const health = healthCue(c.hp / Math.max(1, c.maxHp)).text;
   const head = c.element === undefined ? name : `${name}\n${elementCue(c.element)}`;
-  return classic ? `${head}\nHP ${health}\ncap ${String(restCapPct(c))}%` : `${head}\n${health}`;
+  return classic ? `${head}\nHP ${health}\ncap ${String(restCapPct(c))}%` : `${head}\n${health}\n${lifeReadout(c)}`;
+}
+
+/** Absolute life as words and numbers (`Life 365/365`), so a giant's small life pool is readable next to its big body, not guessed from the bar. */
+export function lifeReadout(c: Pick<HudCharacter, 'hp' | 'maxHp'>): string {
+  return `Life ${String(Math.max(0, Math.ceil(c.hp)))}/${String(Math.round(c.maxHp))}`;
 }
 
 /** Element as a glyph plus its name (never the frame colour alone): fire ▲, air ≈, earth ■, water ●, void ◆. */
