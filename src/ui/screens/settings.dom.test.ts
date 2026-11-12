@@ -213,8 +213,12 @@ describe('applyUiScale / loadSave', () => {
     };
     set('touchSize', 'compact');
     set('touchSide', 'left');
+    const hap = document.querySelector<HTMLInputElement>('input[name="touchHaptics"]');
+    expect(hap?.checked).toBe(true);
+    if (hap) hap.checked = false;
     await submit();
-    expect(JSON.parse(localStorage.getItem('tte.touchLayout') ?? '{}')).toEqual({ size: 'compact', side: 'left' });
+    expect(JSON.parse(localStorage.getItem('tte.touchLayout') ?? '{}')).toEqual({ size: 'compact', side: 'left', haptics: false });
+    expect(document.documentElement.dataset['touchHaptics']).toBe('false');
     expect(document.documentElement.dataset['touchSize']).toBe('compact');
     expect(document.documentElement.dataset['touchSide']).toBe('left');
     localStorage.removeItem('tte.touchLayout');
