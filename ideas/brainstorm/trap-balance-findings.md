@@ -63,7 +63,7 @@ Outcome of the traps that ended (Normal, 2530 of 2750 placed; the rest were clea
 | lavax | 36.4 | 42.0 | -5.7 |
 
 - Range with traps 36.4 to 56.8, without 39.8 to 55.7: traps barely move the spread. Mean absolute change 2.8 points (Normal) and 5.6 (Hard), both inside the noise of 88 games.
-- Outside the 45 to 57% band with traps on: lavax 36.4, rokcore 43.2, sindarosa 44.3. Lavax and Rokcore were already low without traps (42.0 and 39.8), so that is an AI/race issue, not a trap one (see `ideas/brainstorm/arcade-stalemate-lavax-ishimi.md`).
+- Outside the 45 to 57% band with traps on: lavax 36.4, rokcore 43.2, sindarosa 44.3. Lavax and Rokcore were already low without traps (42.0 and 39.8), so that is an AI/race issue, not a trap one (see `ideas/done/arcade-stalemate-lavax-ishimi.md`).
 - Hard (`--ai-level 4`): race range 11% to 82% with traps and 14% to 84% without. That spread is the Hard AI, not traps; do not tune traps against it.
 - Dominance: no race is dominated by traps. Fiara gains the most (+5.7 Normal, +4.5 Hard), Lavax and Sindarosa lose (a placed bomb is a pure damage trade at base 22 and their hits do the least). Direction is consistent for Fiara (+, +) and Sindarosa (-, -), the only two that repeat across both levels.
 - Water and air traps (Puddle, Gust) leave win rate unchanged (curomo and cyclonius have a delta of exactly 0.0 at Normal): the slow and shove are not converting into damage for the AI.
