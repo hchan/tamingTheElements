@@ -108,7 +108,7 @@ describe('dash movement (rule: 12 ticks at 3x speed along the held direction, el
 
   it('stops at the arena wall', () => {
     const world = duel();
-    world.state.x[0] = 1100;
+    world.state.x[0] = world.arena.x + world.arena.w - 180;
     dashTicks(world, tap(D | R, 14));
     expect(world.state.x[0]).toBe(world.arena.x + world.arena.w - 80);
   });

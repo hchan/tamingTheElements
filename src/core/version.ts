@@ -116,5 +116,8 @@
  * 31: Arcade only; Classic hashes unchanged. Arcade numbers re-fit (8-seed tournament, every race 45-57%): wispera 7900/1400 -> 7300/1280
  *    (66%), echo 5300/1530 -> 6200/1600 (35%), cyclonius 4490/1010 -> 4800/1080 (39%), morblass 3370/930 -> 3950/1070 (40%),
  *    curomo 6000/1250 -> 5800/1200, fiara 5140/1450 -> 5400/1520 (docs/ABILITY-AUDIT.md finding 3); Classic data untouched.
+ * 32: Arcade only; Classic hashes unchanged. Panning wide arena (WP 38d): the Arcade playfield is ARCADE_ARENA_WIDTH = 1920
+ *    wide (was 1280); fighters start on the old 1280 span centred in it (x 480 and 1360, ARCADE_P1/P2_START_X), the round
+ *    reset and the terrain spawn keep-clear use the same spots, and terrain layouts are drawn about the new centre (960).
  */
-export const SIM_VERSION = 31;
+export const SIM_VERSION = 32;

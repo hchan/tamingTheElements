@@ -1,3 +1,8 @@
+---
+status: idea
+added: 2026-11-12
+---
+
 # Hit flash rate cap (a11y)
 
 Repeated hits can flash a target more than 3 times a second (WCAG 2.3.1 general flash threshold). Add a minimum gap per target

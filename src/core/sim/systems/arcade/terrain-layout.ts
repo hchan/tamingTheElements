@@ -1,5 +1,5 @@
-import { ARCADE_START_Y } from '../../../data/arcade';
-import { CHARACTER_HEIGHT, CHARACTER_WIDTH, ARENA_WIDTH } from '../../../data/chapters';
+import { ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y } from '../../../data/arcade';
+import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
 import { seedSfc32 } from '../../../rng/seed';
 import {
   TERRAIN_COUNT_MIN, TERRAIN_COUNT_SPAN, TERRAIN_DRAWS, TERRAIN_GAP, TERRAIN_SIDE_MIN, TERRAIN_SIDE_STEP,
@@ -25,8 +25,8 @@ const SWAP_TO = AW(ArcadeW.swapTo);
 const GEN = AW(ArcadeW.terrainGen);
 const COUNT = AW(ArcadeW.patchCount);
 const P0 = AW(ArcadeW.patches);
-/** The start spots of the two teams (match.ts `P1_START_X`, `P2_START_X`; a test pins the equality: match.ts cannot be imported here without a cycle). */
-const SPAWN_X = [160, ARENA_WIDTH - 160 - CHARACTER_WIDTH] as const;
+/** The Arcade start spots of the two teams (the ones `createMatch` and the round reset use; a test pins the equality). */
+const SPAWN_X = [ARCADE_P1_START_X, ARCADE_P2_START_X] as const;
 
 /** True when the box overlaps any `keep-clear` box (x, y, w, h flat) grown by TERRAIN_GAP on every side. */
 function crowded(boxes: readonly number[], x: number, y: number, w: number, h: number): boolean {

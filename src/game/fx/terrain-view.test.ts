@@ -152,7 +152,7 @@ describe('terrain view (fake scenes)', () => {
     expect(m.arena.layers).toHaveLength(1);
     const layer = m.arena.layers[0];
     expect(layer?.data).toHaveLength(23);
-    expect(layer?.data[0]).toHaveLength(40);
+    expect(layer?.data[0]).toHaveLength(60); // 1920 / 32: the wide Arcade arena (WP 38d)
     expect(layer?.data.flat().every((v) => v >= 0 && v < 8)).toBe(true); // the fire row of the atlas
     expect(layer?.puts).toHaveLength(0);
     m.arcade.stage = 2;

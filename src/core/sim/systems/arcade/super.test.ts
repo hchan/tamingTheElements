@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   HitStopCause, HitStrength, KO_HIT_STOP_TICKS, METER_BAR, SUPER_ACTIVE_TICKS, SUPER_BAND_PX, SUPER_COST,
-  SUPER_FREEZE_TICKS, SUPER_HIT_DAMAGE, SUPER_HIT_EVERY, SUPER_ELEMENTAL_BURST, SUPER_INVULN_AFTER_TICKS, comboScalePm,
+  SUPER_FREEZE_TICKS, SUPER_HIT_DAMAGE, SUPER_HIT_EVERY, SUPER_ELEMENTAL_BURST, SUPER_INVULN_AFTER_TICKS, arcadePlayfield,
+  comboScalePm,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -150,7 +151,7 @@ describe('super invulnerability and lock', () => {
 
 describe('Elemental Burst (the Inferno Beam shape)', () => {
   it('is a 160 px band from the caster centre to the wall on its facing side', () => {
-    const cases = [[0, 440, 340, 840, 160], [4, 0, 340, 440, 160], [2, 360, 200, 160, 220], [6, 360, 420, 160, 220]] as const;
+    const cases = [[0, 440, 340, arcadePlayfield().w - 440, 160], [4, 0, 340, 440, 160], [2, 360, 200, 160, 220], [6, 360, 420, 160, 220]] as const;
     for (const [dir, x, y, w, h] of cases) {
       const world = duel('dummy');
       const s = world.state;

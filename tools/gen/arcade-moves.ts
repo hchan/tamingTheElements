@@ -5,6 +5,8 @@
 // which puts both fighters on known spots, so the segments do not depend on each other; the offsets inside a segment
 // (cast tick to hit tick, dash press to the blast's arrival) were measured with a trace of the sim, and the coverage
 // test fails loudly when a sim change moves them.
+import { ARCADE_ARENA_WIDTH } from '../../src/core/data/arcade';
+import { ARENA_WIDTH } from '../../src/core/data/chapters';
 import { characterId } from '../../src/core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
 import { ReplayRecorder } from '../../src/core/replay/recorder';
@@ -38,16 +40,23 @@ const ARCADE_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true };
 const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge } = Cmd;
 
 /**
+ * Ticks p2 walks back in from the right wall of the wide Arcade arena (WP 38d, 1920 px) so the pair stands as it did
+ * on the old 1280 arena: the 640 extra px at the speed of every hero `home` moves (7 px per tick), rounded up.
+ */
+const WIDE_STEP_IN = Math.ceil((ARCADE_ARENA_WIDTH - ARENA_WIDTH) / 7);
+
+/**
  * Both players to known spots, so a segment does not depend on what the one before it did: p1 goes to the top wall and
  * back down `rows` ticks (31 is the start row, 0 stays at the top; p2 always returns to the start row), then p1 goes to
- * the left wall and walks `walk` ticks toward p2, while p2 goes to the right wall. Nobody needs to turn: with no diagonal
- * held, a hero's aim and facing follow the foe (FUN-DESIGN 2.22). Returns the tick at which both are in place.
+ * the left wall and walks `walk` ticks toward p2, while p2 goes to the right wall and steps back in WIDE_STEP_IN ticks
+ * (so p2 stands where the old 1280 arena's right wall was, in the same number of ticks). Nobody needs to turn: with no
+ * diagonal held, a hero's aim and facing follow the foe (FUN-DESIGN 2.22). Returns the tick at which both are in place.
  */
 function home(p1: Track, p2: Track, at: number, walk: number, rows = 31): number {
   p1.until(at).step('p1 to the top wall', up, 50).step('p1 back down', down, rows);
   p2.until(at).step('p2 to the top wall', up, 50).step('p2 back down', down, 31);
   p1.step('p1 to the left wall', left, 140).step('p1 walks in', right, walk);
-  p2.step('p2 to the right wall', right, 140 + walk);
+  p2.step('p2 to the right wall', right, 140 + walk - WIDE_STEP_IN).step('p2 steps in', left, WIDE_STEP_IN);
   return Math.max(p1.tick, p2.tick);
 }
 
@@ -146,6 +155,9 @@ const WEATHER_RECOVERY = 20;
 const TELEGRAPH_WAIT = 40;
 const ROCK_WALK = 80;
 const ROCK_SHOTS = 3;
+/** WP 38d (1920 px arena): Curomo's walk onto the right-hand water patch, and Rokcore's walk before the charge. */
+const WATER_VISIT = 40;
+const CHARGE_CLOSE_IN = 140;
 
 function weatherScript(): ArcadeScript {
   const setup: MatchSetup = {
@@ -176,6 +188,8 @@ function weatherScript(): ArcadeScript {
   p1.wait(WEATHER_RECOVERY).tap('swap to void', swap2).wait(30).tap('eclipse (void)', weather);
   lap(p2, 110, left, right);
   p2.tap('rain (water)', weather).wait(WEATHER_RECOVERY);
+  // WP 38d: on the wide arena the water stage's patches lie off Curomo's lap, so it visits the right-hand one.
+  p2.step('onto the water patch', right, WATER_VISIT).step('back from the patch', left, WATER_VISIT);
   lap(p2, p2.tick, left, right);
   p2.tap('swap to air', swap1).tap('gale (air)', weather);
   const e = p1.tick;
@@ -193,13 +207,14 @@ function weatherScript(): ArcadeScript {
   // Rokcore walks over a rock (`patchEntered`) while Cyclonius' cones, fired along the row, stop at the centre rock.
   p1.tap('swap to earth', swap1);
   p1.step('to the left wall', left, 140); // out of the middle band, so the new layout has room for rocks
+  p1.step('back in to the old wall spot', right, WIDE_STEP_IN / 2); // WP 38d: as far from the centre as on the 1280 arena
   lap(p1, p1.tick, right, left);
   p1.tap('sandstorm again', weather).wait(TELEGRAPH_WAIT);
   p1.step('walk over the rock', right, ROCK_WALK).step('walk back', left, ROCK_WALK);
   for (let i = 0; i < ROCK_SHOTS; i++) p2.until(p1.tick - ROCK_WALK * 2 + 10 + i * 25).tap('cone at the rock', secondary);
   p1.until(p1.tick + 60);
   // Charge (WP-arcade-charge): Rokcore (melee) charges east along the row at Cyclonius, who stands on the right.
-  p1.step('close in', right, 120).tap('charge', right | charge, 1, 1).wait(60);
+  p1.step('close in', right, CHARGE_CLOSE_IN).tap('charge', right | charge, 1, 1).wait(60);
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
 

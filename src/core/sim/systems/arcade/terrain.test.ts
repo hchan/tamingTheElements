@@ -1,7 +1,9 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { ARCADE_START_Y, arcadePlayfield, DASH_SPEED_MULT, WEATHER_TICKS, Weather } from '../../../data/arcade';
-import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
+import {
+  ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y, arcadePlayfield, DASH_SPEED_MULT, WEATHER_TICKS, Weather,
+} from '../../../data/arcade';
+import { ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
 import { CHARACTERS } from '../../../data/characters';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -16,7 +18,7 @@ import { Cmd, inputMaskFor, type Command } from '../../commands';
 import { EventSink, SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
 import { compareNumbers, compareStrings } from '../../../math/compare';
-import { createMatch, P1_START_X, P2_START_X, type MatchSetup } from '../../match';
+import { createMatch, type MatchSetup } from '../../match';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import {
   ARCADE_T, ARCADE_W, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, cooldownIdx, countIdx, EntityFlag, EntityKind, MAX_ENTITIES,
@@ -105,9 +107,12 @@ describe('terrain data rows (FUN-DESIGN 2.15)', () => {
 
   it('keeps the layout spawn spots equal to the match start spots', () => {
     const w = createMatch(setup(['sindarosa'], ['curomo']));
-    expect([w.state.x[0], w.state.x[1]]).toEqual([P1_START_X, P2_START_X]);
-    expect(P2_START_X).toBe(1280 - 160 - CHARACTER_WIDTH);
-    expect(P1_START_X).toBe(160);
+    expect([w.state.x[0], w.state.x[1]]).toEqual([ARCADE_P1_START_X, ARCADE_P2_START_X]);
+    // WP 38d: the old 1280 spawns, centred in the 1920 arena.
+    const span = (arcadePlayfield().w - ARENA_WIDTH) / 2;
+    expect(ARCADE_P2_START_X).toBe(span + 1280 - 160 - CHARACTER_WIDTH);
+    expect(ARCADE_P1_START_X).toBe(span + 160);
+    expect([ARCADE_P1_START_X, ARCADE_P2_START_X]).toEqual([480, 1360]);
   });
 
   it('1 HP per 50 ticks is 10 pm of a 100 HP hero', () => {
@@ -124,7 +129,7 @@ describe('layout (rule: 3 to 5 symmetric patches, inside the playfield, clear of
     expect(rects.length).toBeLessThanOrEqual(PATCH_MAX);
     const mirrored = rects.map(([x, y, w, h]) => [2 * PF.x + PF.w - x - w, 2 * PF.y + PF.h - y - h, w, h].join());
     expect(mirrored.sort(compareStrings)).toEqual(rects.map((r) => r.join()).sort(compareStrings));
-    const spawns: Rect[] = [[P1_START_X, ARCADE_START_Y, CHARACTER_WIDTH, CHARACTER_HEIGHT], [P2_START_X, ARCADE_START_Y, CHARACTER_WIDTH, CHARACTER_HEIGHT]];
+    const spawns: Rect[] = [[ARCADE_P1_START_X, ARCADE_START_Y, CHARACTER_WIDTH, CHARACTER_HEIGHT], [ARCADE_P2_START_X, ARCADE_START_Y, CHARACTER_WIDTH, CHARACTER_HEIGHT]];
     rects.forEach((r, i) => {
       const [x, y, w, h] = r;
       expect(Number.isInteger(x) && Number.isInteger(y) && Number.isInteger(w) && Number.isInteger(h)).toBe(true);
@@ -156,12 +161,12 @@ describe('layout (rule: 3 to 5 symmetric patches, inside the playfield, clear of
           x >= PF.x && y >= PF.y && x + CHARACTER_WIDTH <= PF.x + PF.w && y + CHARACTER_HEIGHT <= PF.y + PF.h &&
           !rects.some((r) => x < r[0] + r[2] && r[0] < x + CHARACTER_WIDTH && y < r[1] + r[3] && r[1] < y + CHARACTER_HEIGHT);
         const seen = new Set<number>();
-        const todo: [number, number][] = [[P1_START_X, ARCADE_START_Y]];
-        seen.add(P1_START_X * 4096 + ARCADE_START_Y);
+        const todo: [number, number][] = [[ARCADE_P1_START_X, ARCADE_START_Y]];
+        seen.add(ARCADE_P1_START_X * 4096 + ARCADE_START_Y);
         let reached = false;
         while (todo.length > 0 && !reached) {
           const [x, y] = todo.pop() ?? [0, 0];
-          if (x === P2_START_X && y === ARCADE_START_Y) reached = true;
+          if (x === ARCADE_P2_START_X && y === ARCADE_START_Y) reached = true;
           for (const [dx, dy] of [[STEP, 0], [-STEP, 0], [0, STEP], [0, -STEP]] as const) {
             const k = (x + dx) * 4096 + (y + dy);
             if (!seen.has(k) && free(x + dx, y + dy)) {
@@ -338,7 +343,7 @@ describe('water patch (rule: a water hero heals TERRAIN_WATER_HEAL_PM of max HP 
     }
     const intro = createMatch(setup(['curomo'], ['sindarosa']));
     step(intro, IDLE);
-    terrain(intro, WATER, [[P1_START_X - 40, 260, 160, 160]]);
+    terrain(intro, WATER, [[ARCADE_P1_START_X - 40, 260, 160, 160]]);
     intro.state.hp[0] = (intro.state.maxHp[0] ?? 0) / 2;
     const e = run(intro, 60);
     expect(of(e, K.patchHeal)).toHaveLength(0);

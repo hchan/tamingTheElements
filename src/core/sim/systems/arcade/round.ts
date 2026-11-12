@@ -1,13 +1,12 @@
 import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
 import {
   HP_PM, HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUNDS_TO_WIN, ROUND_END_TICKS,
-  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y,
+  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y, ARCADE_P1_START_X, ARCADE_P2_START_X,
 } from '../../../data/arcade';
 import { freeEntity } from '../../alloc';
 import { isArcade, now } from '../../clock';
 import type { Command } from '../../commands';
 import { SimEventKind, type EventSink } from '../../events';
-import { P1_START_X, P2_START_X } from '../../match';
 import {
   ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, EntityFlag, EntityKind, MAX_ENTITIES, TEAM_COUNT,
   World as W, type SimState,
@@ -76,7 +75,7 @@ function resetRound(world: SimWorld, sink: EventSink): void {
     s.arcade[b + ArcadeT.pressUsed] = 0;
     s.arcade[b + ArcadeT.weatherCharge] = 0;
     s.arcade[b + ArcadeT.inPatch] = 0;
-    const x = team === 0 ? P1_START_X : P2_START_X;
+    const x = team === 0 ? ARCADE_P1_START_X : ARCADE_P2_START_X;
     teamMembers(world, team).forEach((id, k) => {
       s.flags[id] = EntityFlag.alive | (k === 0 ? 0 : EntityFlag.benched);
       s.x[id] = x;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, METER_BAR, ROUNDS_TO_WIN, ROUND_END_TICKS,
-  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y,
+  ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -9,7 +9,7 @@ import { clockHeld, inFight, isFrozen, isSlowMoHold, now, roundPhase } from '../
 import { Cmd, type Command } from '../../commands';
 import { SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
-import { createMatch, P1_START_X, P2_START_X, type MatchSetup } from '../../match';
+import { createMatch, P1_START_X, type MatchSetup } from '../../match';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import {
   ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, EntityFlag, EntityKind,
@@ -102,7 +102,7 @@ describe('intro', () => {
     // Holding right and both abilities through the intro: no move, no cast, no swap; both sides are untouchable.
     const intro = run(w, ROUND_INTRO_TICKS - 1, [Cmd.right | Cmd.primary | Cmd.secondary | Cmd.super, Cmd.left | Cmd.primary]);
     expect(intro).toEqual([]);
-    expect(s.x[0]).toBe(P1_START_X);
+    expect(s.x[0]).toBe(ARCADE_P1_START_X);
     expect(s.abil[cooldownIdx(0, 0)]).toBe(0);
     expect([canAct(w, 0), isInvulnerable(s, 0), isInvulnerable(s, 1), roundPhase(s)]).toEqual([false, true, true, RoundPhase.intro]);
     const go = step(w, IDLE);
@@ -110,7 +110,7 @@ describe('intro', () => {
     expect([inFight(s), canAct(w, 0), isInvulnerable(s, 1)]).toEqual([true, true, false]);
     expect(tickOf(w)).toBe(FIRST_FIGHT_TICK);
     step(w, [Cmd.right, 0]);
-    expect(s.x[0]).toBeGreaterThan(P1_START_X);
+    expect(s.x[0]).toBeGreaterThan(ARCADE_P1_START_X);
   });
 
   it('a press in the last 8 game ticks of the intro is buffered into the first fight tick (FUN-DESIGN 2.12); an older one is not', () => {
@@ -297,7 +297,7 @@ describe('between rounds', () => {
       expect(s.restCap[id]).toBe(s.maxHp[id]);
       expect(s.speed[id]).toBe(s.baseSpeed[id]);
       expect([s.x[id], s.px[id], s.y[id], s.w[id], s.h[id]]).toEqual([
-        id === 2 ? P2_START_X : P1_START_X, id === 2 ? P2_START_X : P1_START_X, ARCADE_START_Y, 80, 80,
+        id === 2 ? ARCADE_P2_START_X : ARCADE_P1_START_X, id === 2 ? ARCADE_P2_START_X : ARCADE_P1_START_X, ARCADE_START_Y, 80, 80,
       ]);
       expect(s.dir[id]).toBe(id === 2 ? 4 : 0);
       for (let k = 0; k < 4; k++) expect([s.abil[cooldownIdx(id, k)], s.abil[countIdx(id, k)]]).toEqual([0, 0]);

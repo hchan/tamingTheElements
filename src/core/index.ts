@@ -58,3 +58,4 @@ export * from './net/session';
 export * from './tester/cheats';
 export * from './tester/save-edits';
 export { WEATHER_RANGED_KINDS } from './data/arcade';
+export { ARCADE_ARENA_WIDTH, ARCADE_P1_START_X, ARCADE_P2_START_X } from './data/arcade';

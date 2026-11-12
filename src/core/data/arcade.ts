@@ -4,7 +4,7 @@
  * this file. The per-race Arcade numbers (WP-arcade-numbers) are in `src/core/sim/arcade-numbers.ts`.
  */
 import type { Aabb } from '../math/aabb';
-import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT } from './chapters';
+import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH } from './chapters';
 import type { Element } from './elements';
 
 /** Hit strength tier, the index into every per-strength table (hit-stop, stun, knockback). */
@@ -311,18 +311,28 @@ export const REST_HEAL_EVERY = 10;
 export const REST_HEAL_PM = 3;
 
 /**
- * Playfield (FUN-DESIGN 2.1, WP-arcade-playfield-bounds), in integer logical px of the fixed 1280x720 canvas. The Arcade
- * arena is not the full canvas: fighters, knockback, dashes, projectiles and the super band stay inside the rectangle
- * between the top HUD (health bars, round timer, hyper meters y 124-134, the weather badge plate to y 200 on a phone) and the
- * action bar (y 640). The view's own constants are asserted against these in `tests/repo/arcade-playfield-hud.test.ts`.
- * Classic keeps the legacy arena (`DEFAULT_ARENA`, y 100-720).
+ * Playfield (FUN-DESIGN 2.1, WP-arcade-playfield-bounds), in integer logical px. The Arcade arena is not the full canvas:
+ * fighters, knockback, dashes, projectiles and the super band stay inside the rectangle between the top HUD (health bars,
+ * round timer, hyper meters y 124-134, the weather badge plate to y 200 on a phone) and the action bar (y 640). It is
+ * ARCADE_ARENA_WIDTH wide (WP 38d, SIM_VERSION 32: 1.5 screens; the view camera pans over it, `src/game/fx/arena-pan.ts`).
+ * The view's own constants are asserted against these in `tests/repo/arcade-playfield-hud.test.ts`.
+ * Classic keeps the legacy arena (`DEFAULT_ARENA`, y 100-720, 1280 wide).
  */
+export const ARCADE_ARENA_WIDTH = 1920;
 export const PLAYFIELD_INSET_TOP = 200;
 export const PLAYFIELD_INSET_BOTTOM = 80;
-const PLAYFIELD: Aabb = { x: 0, y: PLAYFIELD_INSET_TOP, w: ARENA_WIDTH, h: ARENA_HEIGHT - PLAYFIELD_INSET_TOP - PLAYFIELD_INSET_BOTTOM };
+const PLAYFIELD: Aabb = { x: 0, y: PLAYFIELD_INSET_TOP, w: ARCADE_ARENA_WIDTH, h: ARENA_HEIGHT - PLAYFIELD_INSET_TOP - PLAYFIELD_INSET_BOTTOM };
 /** The one Arcade walkable rectangle (the terrain patches of FUN-DESIGN 2.15 use it too). Do not mutate. */
 export function arcadePlayfield(): Aabb {
   return PLAYFIELD;
 }
 /** Arcade start row: fighters vertically centred in the playfield. */
 export const ARCADE_START_Y = PLAYFIELD_INSET_TOP + (PLAYFIELD.h - CHARACTER_HEIGHT) / 2;
+/**
+ * Arcade start columns (WP 38d): the Classic spots (160 px inside a 1280 span) on the 1280 span centred in the wider
+ * arena, so a round starts as it looked on the 1280 arena (P1 x 480, P2 x 1360). Wider spawns are a later tuning WP.
+ */
+export const ARCADE_SPAWN_SPAN_X = (ARCADE_ARENA_WIDTH - ARENA_WIDTH) / 2;
+export const ARCADE_SPAWN_INSET = 160;
+export const ARCADE_P1_START_X = ARCADE_SPAWN_SPAN_X + ARCADE_SPAWN_INSET;
+export const ARCADE_P2_START_X = ARCADE_SPAWN_SPAN_X + ARENA_WIDTH - ARCADE_SPAWN_INSET - CHARACTER_WIDTH;

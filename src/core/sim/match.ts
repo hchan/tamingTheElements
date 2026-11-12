@@ -1,7 +1,7 @@
 import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH, GARRISON_MAX_SIZE } from '../data/chapters';
 import type { ChapterNumber } from '../data/chapters';
 import { CHARACTERS, getCharacter } from '../data/characters';
-import { ARCADE_START_Y, arcadePlayfield } from '../data/arcade';
+import { ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y, arcadePlayfield } from '../data/arcade';
 import type { CharacterId } from '../data/ids';
 import type { SimFlags } from '../flags';
 import { flagBits } from '../flags';
@@ -34,11 +34,14 @@ export interface MatchSetup {
 /**
  * Start positions: legacy `setStartPosition` is window-relative; mapped to the fixed 1280x720
  * arena as vertically centred, player on the left (x=160) and enemy on the right (mirrored).
- * Benched members share their team's start position.
+ * Benched members share their team's start position. Arcade uses ARCADE_P1_START_X / ARCADE_P2_START_X (the same spots
+ * on the 1280 span centred in its wider arena, `src/core/data/arcade.ts`).
  */
 export const START_Y = (ARENA_HEIGHT - CHARACTER_HEIGHT) / 2;
 export const P1_START_X = 160;
 export const P2_START_X = ARENA_WIDTH - 160 - CHARACTER_WIDTH;
+const CLASSIC_START_X = [P1_START_X, P2_START_X] as const;
+const ARCADE_START_X = [ARCADE_P1_START_X, ARCADE_P2_START_X] as const;
 
 const EAST = 0;
 const WEST = 4;
@@ -53,7 +56,7 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
     const stats = combatantStats(def, member.xp, side, setup.difficulty);
     const id = allocEntity(s);
     if (id < 0) throw new RangeError('entity capacity exceeded');
-    const x = team === 0 ? P1_START_X : P2_START_X;
+    const x = (setup.flags.rulesetArcade ? ARCADE_START_X : CLASSIC_START_X)[team] ?? 0;
     s.kind[id] = EntityKind.character;
     s.defId[id] = CHARACTERS.indexOf(def);
     s.team[id] = team;

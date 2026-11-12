@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ARCADE_START_Y, PLAYFIELD_INSET_BOTTOM, PLAYFIELD_INSET_TOP, SUPER_COST, arcadePlayfield } from '../../../data/arcade';
+import {
+  ARCADE_ARENA_WIDTH, ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y, PLAYFIELD_INSET_BOTTOM, PLAYFIELD_INSET_TOP,
+  SUPER_COST, arcadePlayfield,
+} from '../../../data/arcade';
 import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -45,8 +48,9 @@ const inside = (w: SimWorld, id: number): boolean => {
 };
 
 describe('playfield rectangle', () => {
-  it('is integer, 1280 wide, between the HUD (200) and the action bar (640), and one shared object', () => {
-    expect(PF).toEqual({ x: 0, y: 200, w: ARENA_WIDTH, h: 440 });
+  it('is integer, 1920 wide (WP 38d), between the HUD (200) and the action bar (640), and one shared object', () => {
+    expect(PF).toEqual({ x: 0, y: 200, w: ARCADE_ARENA_WIDTH, h: 440 });
+    expect(ARCADE_ARENA_WIDTH).toBe(1920);
     expect([PLAYFIELD_INSET_TOP, PLAYFIELD_INSET_BOTTOM]).toEqual([200, 80]);
     expect(PF.y + PF.h).toBe(ARENA_HEIGHT - PLAYFIELD_INSET_BOTTOM);
     expect(arcadePlayfield()).toBe(PF);
@@ -64,6 +68,13 @@ describe('playfield rectangle', () => {
     for (let id = 0; id < 4; id++) expect(s.y[id]).toBe(ARCADE_START_Y);
     expect(ARCADE_START_Y - PF.y).toBe(PF.y + PF.h - ARCADE_START_Y - CHARACTER_HEIGHT);
     expect((s.x[0] ?? 0) - PF.x).toBe(PF.x + PF.w - (s.x[2] ?? 0) - CHARACTER_WIDTH);
+  });
+
+  it('spawns stand on the old 1280 span, centred in the wide arena (160 px in from its ends)', () => {
+    const s = match(true, true).state;
+    const span = (PF.w - ARENA_WIDTH) / 2;
+    expect([s.x[0], s.x[2]]).toEqual([ARCADE_P1_START_X, ARCADE_P2_START_X]);
+    expect([ARCADE_P1_START_X, ARCADE_P2_START_X]).toEqual([span + 160, span + ARENA_WIDTH - 160 - CHARACTER_WIDTH]);
   });
 });
 
