@@ -37,11 +37,22 @@ const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { wi
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
 let lastPick: ArcadePick = DEFAULT_PICK;
 
-/** Both players' keys as words, along the bottom-left of a local two-player battle (left of the touch buttons). */
-function keysHint(): HTMLElement {
+/** How long the battle key hint stays before it fades out (the keys stay on the pause screen and Help). */
+export const KEYS_HINT_MS = 8000;
+
+/**
+ * Both players' keys as words, along the bottom-left of a local two-player battle, just above the action bar (the bar is 80 of
+ * the 720 logical px high, so a percentage keeps it clear at any size). Fades out after `KEYS_HINT_MS`.
+ */
+export function keysHint(fadeMs = KEYS_HINT_MS): HTMLElement {
   const p = el('p', undefined, `${controlsHint('Player 1', getBindings())}. ${controlsHint('Player 2', P2_BINDINGS)}.`);
   p.id = 'arcadeKeysHint';
-  p.style.cssText = 'position:absolute;left:4px;bottom:2px;right:420px;margin:0;z-index:4;font-size:11px;line-height:1.2;pointer-events:none;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000';
+  p.style.cssText =
+    'position:absolute;left:4px;bottom:12%;right:40%;margin:0;z-index:4;font-size:11px;line-height:1.2;pointer-events:none;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000;transition:opacity 1s';
+  // Harmless if the battle view has gone by then (the timer only touches this detached node).
+  window.setTimeout(() => {
+    p.style.opacity = '0';
+  }, fadeMs);
   return p;
 }
 
