@@ -118,6 +118,8 @@ export interface ArcadeLaunchOptions {
   readonly onResult: (r: ArcadeResult) => void;
   /** Tester mode is on: the recorded replay is flagged `cheats` (verifiers refuse it). */
   readonly cheats?: boolean;
+  /** Called once with the battle's render view (the touch buttons read their ready state from it). */
+  readonly onView?: (view: RenderView) => void;
 }
 
 /** Every hero's HP per cent off the render view, in roster (entity id) order. */
@@ -146,6 +148,7 @@ export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOpti
     // the battle's sound as it is now); the view is kept for the 2v2 results.
     arcadeView: (arena, v, alpha) => {
       view = v;
+      o.onView?.(v);
       mountAimIndicator(arena, v, alpha);
       const held = arena.audio;
       void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held); });

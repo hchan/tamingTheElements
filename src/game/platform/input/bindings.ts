@@ -35,15 +35,25 @@ export const DEFAULT_BINDINGS: Bindings = {
   slot5: ['Digit5'],
   capture: ['KeyC'],
   // Arcade only (key-map drops it in Classic). Plain X: Shift-X stays the tester cheat.
-  super: ['KeyX'],
+  // The numbered action row (Charge 5, Weather 6, Dash 7, Guard 8, Super 9, after Tag 3 / Tag 2 4) adds a DigitN alternate
+  // to each Arcade action; the letter keys stay as the primary.
+  super: ['KeyX', 'Digit9'],
   // Arcade only too (FUN-DESIGN 2.7, 2.8). Plain Q: Shift-Q stays the tester cheat.
-  dash: ['KeyE'],
-  guard: ['KeyQ'],
+  dash: ['KeyE', 'Digit7'],
+  guard: ['KeyQ', 'Digit8'],
   // Arcade only (FUN-DESIGN 2.14): calls the weather of the fighter's element.
-  weather: ['KeyR'],
+  weather: ['KeyR', 'Digit6'],
   // Arcade only (FUN-DESIGN 2.17): the melee Charge. H, because F is the fullscreen toggle.
-  charge: ['KeyH'],
+  // Digit5 is also Swap 3 (slot5): the one deliberately shared default code (SHARED_CODE). Swap 3 is the fourth hero, which
+  // only a Classic party has; Arcade has at most three heroes, so there key-map reads Digit5 as Charge and Classic as Swap 3.
+  charge: ['KeyH', 'Digit5'],
 };
+
+/** Digit5 may drive both Swap 3 (Classic) and Charge (Arcade) at once; every other code drives one action. */
+export const SHARED_CODE = 'Digit5';
+function shared(a: GameAction, b: GameAction, code: string): boolean {
+  return code === SHARED_CODE && ((a === 'slot5' && b === 'charge') || (a === 'charge' && b === 'slot5'));
+}
 
 export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   up: 'Move Up',
@@ -104,7 +114,7 @@ export function actionForCode(bindings: Bindings, code: string): GameAction | un
 /** Rebinds one action to exactly `codes`. A code can drive one action, so it is removed from all others. */
 export function rebind(bindings: Bindings, action: GameAction, codes: readonly string[]): Bindings {
   const out = {} as Record<GameAction, readonly string[]>;
-  for (const a of GAME_ACTIONS) out[a] = a === action ? [...codes] : bindings[a].filter((c) => !codes.includes(c));
+  for (const a of GAME_ACTIONS) out[a] = a === action ? [...codes] : bindings[a].filter((c) => !codes.includes(c) || shared(a, action, c));
   return out;
 }
 
@@ -129,7 +139,7 @@ function withSlot(keys: readonly string[], slot: number, code: string): string[]
  */
 export function tryBind(bindings: Bindings, action: GameAction, slot: number, code: string): BindResult {
   if (!isBindableCode(code)) return { ok: false, reason: 'reserved' };
-  const owner = actionForCode(bindings, code);
+  const owner = GAME_ACTIONS.find((a) => a !== action && bindings[a].includes(code) && !shared(a, action, code));
   if (owner !== undefined && owner !== action) return { ok: false, reason: 'conflict', with: owner };
   return { ok: true, bindings: rebind(bindings, action, withSlot(bindings[action], slot, code)) };
 }
@@ -176,7 +186,8 @@ export function parseBindings(raw: unknown): Bindings {
     const list = Array.isArray(src[a]) ? (src[a] as unknown[]) : [];
     const keys: string[] = [];
     for (const c of list) {
-      if (typeof c !== 'string' || !isBindableCode(c) || taken.has(c) || keys.includes(c)) continue;
+      if (typeof c !== 'string' || !isBindableCode(c) || keys.includes(c)) continue;
+      if (taken.has(c) && !(a === 'charge' && c === SHARED_CODE && out.slot5.includes(c))) continue;
       if (keys.length < SLOTS_PER_ACTION) keys.push(c);
     }
     for (const c of keys) taken.add(c);
@@ -184,7 +195,7 @@ export function parseBindings(raw: unknown): Bindings {
   }
   for (const a of GAME_ACTIONS) {
     if (out[a].length > 0) continue;
-    const fallback = DEFAULT_BINDINGS[a].filter((c) => !taken.has(c));
+    const fallback = DEFAULT_BINDINGS[a].filter((c) => !taken.has(c) || (a === 'charge' && c === SHARED_CODE && out.slot5.includes(c)));
     if (fallback.length === 0) {
       if (a in src) return DEFAULT_BINDINGS;
       continue;

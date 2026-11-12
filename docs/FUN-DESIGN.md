@@ -824,6 +824,11 @@ Warcraft warrior's Charge. It gives melee heroes a gap closer, the way weather a
 
 - **Who:** Arcade-only action for heroes whose primary ability is melee (the same ranged/melee rule as the weather charge).
   Own input bit (masked in Classic), key H (F is the fullscreen toggle) / pad R3 by default, rebindable, with a touch button (`#arcadeCharge`).
+  **Numbered action row:** the Arcade actions also have number keys beside their letters, 5 Charge, 6 Weather, 7 Dash, 8 Guard, 9 Super
+  (Tag and Tag 2 are 3 and 4), and the touch buttons wear them (`5 Charge`, with the ready state in words: `ready`, a percentage or seconds;
+  Dash, Guard and Charge have no read-out yet). Digit5 is also Swap 3, the fourth hero a Classic party has: in Arcade (at most three
+  heroes) `key-map` reads Digit5 as Charge, in Classic it stays Swap 3, bit for bit. The Charge button is left out when none of the
+  player's heroes is melee; the other buttons keep their numbers. Saves that already name an action keep their own keys.
 - **Move:** the hero rushes toward the opponent along the straight line (8-way snapped, 12 ticks at 5x speed, up to 360 px),
   stopping when it touches the opponent. Not invulnerable (unlike dash); it is interrupted by a stun or freeze, and it
   stops at walls, the playfield edge and rocks (earth hero walks over its own rocks). It cannot start while stunned,

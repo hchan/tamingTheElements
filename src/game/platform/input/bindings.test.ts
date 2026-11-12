@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_BINDINGS,
   GAME_ACTIONS,
+  SHARED_CODE,
   actionForCode,
   bindSteal,
   bindingsToSave,
@@ -43,7 +44,7 @@ describe('tryBind', () => {
     const stolen = bindSteal(DEFAULT_BINDINGS, 'capture', 0, 'KeyW');
     expect(stolen.capture).toEqual(['KeyW']);
     expect(stolen.up).toEqual(['ArrowUp']);
-    const codes = allCodes(stolen);
+    const codes = allCodes(stolen).filter((c) => c !== SHARED_CODE);
     expect(new Set(codes).size).toBe(codes.length);
     expect(actionForCode(stolen, 'KeyW')).toBe('capture');
   });
@@ -67,6 +68,32 @@ describe('default keys', () => {
     expect(DEFAULT_BINDINGS.capture).toEqual(['KeyC']);
     expect([DEFAULT_BINDINGS.slot3, DEFAULT_BINDINGS.slot4, DEFAULT_BINDINGS.slot5]).toEqual([['Digit3'], ['Digit4'], ['Digit5']]);
     expect(actionForCode(DEFAULT_BINDINGS, 'Digit3')).toBe('slot3');
+  });
+  it('the numbered action row: 5 Charge, 6 Weather, 7 Dash, 8 Guard, 9 Super, beside the letter keys', () => {
+    expect(DEFAULT_BINDINGS.charge).toEqual(['KeyH', 'Digit5']);
+    expect(DEFAULT_BINDINGS.weather).toEqual(['KeyR', 'Digit6']);
+    expect(DEFAULT_BINDINGS.dash).toEqual(['KeyE', 'Digit7']);
+    expect(DEFAULT_BINDINGS.guard).toEqual(['KeyQ', 'Digit8']);
+    expect(DEFAULT_BINDINGS.super).toEqual(['KeyX', 'Digit9']);
+  });
+  it('Digit5 is the only code two default actions share (Swap 3 in Classic, Charge in Arcade); it survives round trips and rebinds', () => {
+    const seen = new Map<string, number>();
+    for (const a of GAME_ACTIONS) for (const c of DEFAULT_BINDINGS[a]) seen.set(c, (seen.get(c) ?? 0) + 1);
+    expect([...seen].filter(([, n]) => n > 1)).toEqual([[SHARED_CODE, 2]]);
+    expect(parseBindings(JSON.parse(JSON.stringify(bindingsToSave(bindSteal(DEFAULT_BINDINGS, 'capture', 0, 'KeyV')))) as unknown).charge).toEqual(['KeyH', 'Digit5']);
+    // Re-binding either owner to Digit5 is not a conflict with the other, and does not take it away.
+    const again = tryBind(DEFAULT_BINDINGS, 'slot5', 0, 'Digit5');
+    expect(again.ok && again.bindings.charge).toEqual(['KeyH', 'Digit5']);
+    const other = tryBind(DEFAULT_BINDINGS, 'charge', 1, 'Digit5');
+    expect(other.ok && other.bindings.slot5).toEqual(['Digit5']);
+    // Any other action taking Digit5 is a conflict with slot5, and stealing it leaves Charge's own copy alone.
+    expect(tryBind(DEFAULT_BINDINGS, 'capture', 0, 'Digit5')).toEqual({ ok: false, reason: 'conflict', with: 'slot5' });
+    expect(tryBind(DEFAULT_BINDINGS, 'capture', 0, 'Digit7')).toEqual({ ok: false, reason: 'conflict', with: 'dash' });
+  });
+  it('a customised save is left alone: no digit alternates are added to actions it names', () => {
+    const b = parseBindings({ charge: ['KeyJ'], slot5: ['Digit5'], weather: ['KeyR'] });
+    expect(b.charge).toEqual(['KeyJ']);
+    expect(b.weather).toEqual(['KeyR']);
   });
 });
 
@@ -94,7 +121,7 @@ describe('save round trip', () => {
     expect(b.up).toEqual(['KeyW']);
     expect(b.down).toEqual(['ArrowDown', 'KeyS']);
     expect(b.capture).toEqual(['KeyC']);
-    const codes = allCodes(b);
+    const codes = allCodes(b).filter((c) => c !== SHARED_CODE);
     expect(new Set(codes).size).toBe(codes.length);
     for (const a of GAME_ACTIONS) expect(b[a].length).toBeGreaterThan(0);
   });

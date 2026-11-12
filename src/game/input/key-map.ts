@@ -3,6 +3,7 @@ import { Cmd, type Command } from '@core/index';
 import {
   actionForCode,
   DEFAULT_BINDINGS,
+  GAME_ACTIONS,
   rebind,
   type Bindings,
   type GameAction,
@@ -37,11 +38,23 @@ export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
 /** The Arcade-only command bits (dash 11, guard 12, super 13, weather 14, charge 15): every bit from the dash up. */
 export const ARCADE_ONLY = Cmd.dash;
 
+/**
+ * The action a held code drives. In Arcade an Arcade-only action that lists the code wins (so Digit5 is Charge there, while
+ * Swap 3 is the fourth hero, which only Classic has); outside Arcade this is plain `actionForCode` (Digit5 stays Swap 3).
+ */
+function resolveAction(bindings: Bindings, code: string, arcade: boolean): GameAction | undefined {
+  if (arcade) {
+    const a = GAME_ACTIONS.find((x) => ACTION_COMMAND[x] >= ARCADE_ONLY && bindings[x].includes(code));
+    if (a !== undefined) return a;
+  }
+  return actionForCode(bindings, code);
+}
+
 /** Held key codes to a command bitset. Capture is dropped unless `capturable`, the Arcade-only actions outside Arcade. */
 export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean, arcade = false): Command {
   let cmd = 0;
   for (const code of held) {
-    const a = actionForCode(bindings, code);
+    const a = resolveAction(bindings, code, arcade);
     if (a === undefined) continue;
     if (a === 'capture' ? !capturable : !arcade && ACTION_COMMAND[a] >= ARCADE_ONLY) continue;
     cmd |= ACTION_COMMAND[a];

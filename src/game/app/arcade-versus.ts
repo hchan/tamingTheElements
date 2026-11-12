@@ -7,7 +7,7 @@ import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags, type UiFlags } from '../platform/flags';
 import { controlsHint, P2_BINDINGS } from '../input/local-two';
 import { getBindings } from '../platform/input/bindings';
-import { touchButtons } from './touch-controls';
+import { isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
 import { requestOpenTesterPanel } from '@ui/tester/install';
@@ -142,7 +142,9 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
     import('./arcade-setup')
       .then(({ arcadeLaunch }) => import('../boot/phaser-config').then(({ createGame }) => {
         if (epoch !== mine) return;
+        const buttons = touchButtons(pick.partner2 ? 3 : pick.partner ? 2 : 1, [pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined).map(isMeleeRace));
         const base: ArenaLaunch = arcadeLaunch(pick, deps.flags.seed ?? deps.now() >>> 0, {
+          onView: (v) => { watchTouch(buttons, v); },
           cheats: tester.enabled,
           record: deps.flags.record || getRecordSetting(),
           replays: deps.replays,
@@ -157,7 +159,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         battle.replaceChildren(host);
         game = createGame(host, launch);
         if (pick.local) host.append(keysHint());
-        host.append(...touchButtons(pick.partner2 ? 3 : pick.partner ? 2 : 1));
+        host.append(...buttons);
       }))
       .catch((e: unknown) => {
         if (epoch !== mine) return;

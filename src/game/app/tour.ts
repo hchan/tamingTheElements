@@ -13,7 +13,7 @@ import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { destroyGame, type GameHandle } from './game-handle';
-import { touchButtons } from './touch-controls';
+import { isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { currentStage, matchSeed, parseTeam, stagePick } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
 import { runSummary } from './tour-summary';
@@ -236,7 +236,10 @@ export function tourScreen(deps: TourDeps): Screen {
     import('./arcade-setup')
       .then(({ arcadeLaunch }) => import('../boot/phaser-config').then(({ createGame }) => {
         if (epoch !== mine) return;
-        const base: ArenaLaunch = arcadeLaunch(stagePick(r, stage), matchSeed(r, stage), {
+        const pick = stagePick(r, stage);
+        const buttons = touchButtons(3, [pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined).map(isMeleeRace));
+        const base: ArenaLaunch = arcadeLaunch(pick, matchSeed(r, stage), {
+          onView: (v) => { watchTouch(buttons, v); },
           cheats: tester.enabled,
           record: false,
           // Never recording, so the store is never written: the Tour keeps only its own run.
@@ -250,7 +253,7 @@ export function tourScreen(deps: TourDeps): Screen {
         host.id = 'game';
         battle.replaceChildren(host);
         game = createGame(host, launch);
-        host.append(...touchButtons(3));
+        host.append(...buttons);
       }))
       .catch((e: unknown) => {
         if (epoch !== mine) return;
