@@ -15,7 +15,7 @@ import { collectCommands } from '../agent';
 import { EntityFlag, EntityKind, MAX_ENTITIES, countIdx } from '../../sim/state';
 import { SimEventKind } from '../../sim/events';
 import { controlledId } from '../../sim/systems/movement';
-import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, diagonalLine, pressStep, snagLane, superFacing } from './arcade';
+import { ARCADE_AI_SLIDE_TICKS, ARCADE_AI_STALE_TICKS, ArcadeTactics, avoidChord, alignStep, diagonalLine, pressStep, slotReady, snagLane, superFacing } from './arcade';
 import { now } from '../../sim/clock';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
@@ -414,6 +414,22 @@ describe('Arcade geometry helpers', () => {
     expect(superFacing(self, fighter(720, 300), 8)).toBe(Cmd.right);
     expect(superFacing(self, fighter(900, 650), 10)).toBe(Cmd.right);
     expect(superFacing(self, fighter(380, 650), 10)).toBe(Cmd.down);
+  });
+
+  it('alignStep steps onto the foe line along the smaller offset, and leaves a shared line alone', () => {
+    const self = fighter(100, 100);
+    expect(alignStep(self, fighter(400, 160), Cmd.up)).toBe(Cmd.down); // dy 60 < dx 300
+    expect(alignStep(self, fighter(160, 400), 0)).toBe(Cmd.right); // dx 60 < dy 300
+    expect(alignStep(self, fighter(400, 100), Cmd.up)).toBe(Cmd.up); // same row
+    expect(alignStep(self, fighter(100, 400), Cmd.left)).toBe(Cmd.left); // same column
+  });
+
+  it('slotReady needs a zero cooldown and a slot that is not the Snag slot', () => {
+    const view = { cooldowns: [0, 5] } as unknown as ObservationView;
+    expect(slotReady(view, 0, -1)).toBe(true);
+    expect(slotReady(view, 0, 0)).toBe(false);
+    expect(slotReady(view, 1, -1)).toBe(false);
+    expect(slotReady(view, 2, -1)).toBe(false);
   });
 
   it('pressStep closes in along the shared axis only, and never turns a shot', () => {

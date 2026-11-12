@@ -151,5 +151,7 @@
  * 42: Arcade only; Classic hashes unchanged. Sudden death (ideas/in-progress/sf-round-timer-draws.md): a draw round that leaves both
  *    teams on ROUNDS_TO_WIN starts one extra round at 10% life with a 1500-tick timer (new world slot `ArcadeW.sudden`;
  *    the terrain patch table moves up one); the match winner is then the team with more round wins.
+ * 43: Arcade only; AI only (Classic hashes unchanged). Combo follow-up: during a hit stun Normal and Hard heroes step onto the stunned foe's
+ *    line (ranged) or close in (melee) when a slot is ready, and use Charge as a follow-up from range.
  */
-export const SIM_VERSION = 42;
+export const SIM_VERSION = 43;

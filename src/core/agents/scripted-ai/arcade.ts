@@ -23,7 +23,7 @@ import {
  * the command the Classic AI chose, and only when the view carries `arcade`, so Classic decisions are untouched; its
  * randomness is its own `AgentRng` stream (ARCADE_AI_STREAM_NAMES), drawn only in Arcade.
  *
- * - Combo: the base AI already fires whenever a ready shot lines up, which keeps hitting a stunned (still) opponent.
+ * - Combo: the base AI already fires whenever a ready shot lines up, which keeps hitting a stunned (still) opponent; Normal and Hard also line up (alignStep), close in or Charge when a slot is ready.
  *   While the opponent is stunned the layer steps in along the line it shares with it (`pressStep`), so the next shot
  *   flies a shorter way and can land inside the stun; it holds the attack buttons once its own combo reaches the
  *   level's combo cap.
@@ -124,6 +124,26 @@ export function pressStep(self: FighterView, opp: FighterView, cmd: Command): Co
   else if (Math.abs(dx) <= opp.w / 2 && Math.abs(dy) > ARCADE_AI_PRESS_MIN_PX) bit = dy > 0 ? Cmd.down : Cmd.up;
   if (bit === 0) return cmd;
   if ((cmd & ATTACK) !== 0 && (cmd & MOVE) !== 0 && (cmd & MOVE) !== bit) return cmd;
+  return (cmd & ~MOVE) | bit;
+}
+
+/** True when ability slot `slot` is off cooldown and is not the Snag slot (`snagSlot`; Snag never chains). */
+export function slotReady(view: ObservationView, slot: number, snagSlot: number): boolean {
+  return slot !== snagSlot && (view.cooldowns[slot] ?? 1) === 0;
+}
+
+/**
+ * Follow-up (combo chaining): `cmd` with its movement replaced by one step that brings `self` onto a line it shares with
+ * the (stunned, so still) opponent: along the axis with the smaller offset, towards it, when that offset is more than
+ * half the opponent's size; `cmd` when a line is already shared. Once the lines match, the base AI's own shot fires.
+ */
+export function alignStep(self: FighterView, opp: FighterView, cmd: Command): Command {
+  const dx = opp.x + opp.w / 2 - (self.x + self.w / 2);
+  const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
+  const offX = Math.abs(dx) > opp.w / 2;
+  const offY = Math.abs(dy) > opp.h / 2;
+  if (!offX || !offY) return cmd;
+  const bit = Math.abs(dy) <= Math.abs(dx) ? (dy > 0 ? Cmd.down : Cmd.up) : dx > 0 ? Cmd.right : Cmd.left;
   return (cmd & ~MOVE) | bit;
 }
 
@@ -417,7 +437,16 @@ export class ArcadeTactics {
       if (free && this.level > 0 && a.meter >= SUPER_COST && facing !== 0 && view.tick - m[0] >= m[1]) {
         return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
       }
-      cmd = a.combo > this.level * 2 ? cmd & ~ATTACK : pressStep(self, opp, cmd);
+      if (a.combo > this.level * 2) cmd &= ~ATTACK;
+      else if (free && this.level > AI_EASY && a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST) return Cmd.charge;
+      else {
+        const pressed = pressStep(self, opp, cmd);
+        // Follow-up (Normal and Hard): the base AI has no attack lined up but a slot is ready. A ranged hero steps onto the foe's
+        // line (it is still for the stun); a melee hero closes in, never onto its body (SNAG_CLOSE_PX).
+        if (pressed !== cmd || this.level === AI_EASY || (cmd & ATTACK) !== 0 || !(slotReady(view, 0, a.snagSlot) || slotReady(view, 1, a.snagSlot))) cmd = pressed;
+        else if (a.chargeIn === -1) cmd = alignStep(self, opp, cmd);
+        else if (far >= SNAG_CLOSE_PX) cmd = (cmd & ~MOVE) | toward(self, opp);
+      }
     }
     // A rooted foe cannot walk out of a super (Hard).
     if (free && this.level >= AI_HARD && a.oppRooted > 0 && a.meter >= SUPER_COST && !threat) {
