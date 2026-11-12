@@ -87,3 +87,21 @@ test('the touch Charge button holds the charge key while pressed', async ({ page
   expect(d?.pops).toContain('CHARGE!');
   expect(d?.ghosts).toBeGreaterThan(0);
 });
+
+test('a Charge press that does nothing says why: on screen and in the live region', async ({ page }) => {
+  const errors = collectErrors(page);
+  await start(page);
+  const notice = (): Promise<string> => page.evaluate<string>(`window.__TTE__.arena.swapNotice()`);
+  const press = async (): Promise<void> => {
+    await page.keyboard.down('KeyH');
+    await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+    await page.keyboard.up('KeyH');
+  };
+  await press();
+  expect(await notice()).toBe(''); // the first charge goes through
+  await page.evaluate(`window.__TTE__.arena.stepLive(30)`);
+  await press();
+  expect(await notice()).toMatch(/^Charge ready in \d\.\ds$/);
+  await expect.poll(() => live(page), { timeout: 5000 }).toMatch(/Charge ready in \d\.\ds/);
+  expect(errors).toEqual([]);
+});

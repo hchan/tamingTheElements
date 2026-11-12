@@ -37,6 +37,23 @@ export function swapNotice(s: SwapState): string | undefined {
   return undefined;
 }
 
+/** What the view knows about a pressed Charge (FUN-DESIGN 2.17). `chargeIn` is the view's: ticks left, 0 ready, -1 a ranged hero. */
+export interface ChargeState {
+  readonly fighting: boolean;
+  readonly chargeIn: number;
+  /** Frozen, stunned, rooted or guarding: the sim starts no charge then. */
+  readonly blocked: string | undefined;
+}
+
+/** The refusal line for a Charge press, or undefined when nothing the view can see would refuse it. */
+export function chargeNotice(s: ChargeState): string | undefined {
+  if (!s.fighting) return "Can't charge: round not started";
+  if (s.chargeIn < 0) return "Can't charge: ranged hero";
+  if (s.blocked !== undefined) return `Can't charge: ${s.blocked}`;
+  if (s.chargeIn > 0) return `Charge ready in ${swapSeconds(s.chargeIn)}`;
+  return undefined;
+}
+
 /** How long the line stays up (ms) and how much of that it fades over. */
 export const NOTICE_MS = 1600;
 const FADE_MS = 300;

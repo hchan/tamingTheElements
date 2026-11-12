@@ -147,3 +147,15 @@ test('Arcade: the action bar stays fixed on screen and clickable while the camer
   expect(await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`)).toEqual([slots[1]?.cmd]);
   expect(errors).toEqual([]);
 });
+
+test('the ?ff=arenaDemo,arcade hook mounts the pan camera too', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arenaDemo,arcade`);
+  await page.locator('#game canvas').waitFor();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(91)`);
+  const c = await placeAndSettle(page, 200, 1700);
+  expect(c.zoom).toBeCloseTo(ZOOM_MIN, 2);
+  expect(c.camZoom).toBeCloseTo(ZOOM_MIN, 2);
+  expect(errors).toEqual([]);
+});
