@@ -22,3 +22,4 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [sf-round-timer-draws](../brainstorm/sf-round-timer-draws.md)
 - [sf-tick-draw-cpu-win](../brainstorm/sf-tick-draw-cpu-win.md)
 - [sf-turbo-game-speed](../brainstorm/sf-turbo-game-speed.md)
+- [health-bar-status-icons](../brainstorm/health-bar-status-icons.md)
