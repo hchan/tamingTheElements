@@ -302,7 +302,7 @@ WP-arcade-weather-view) the same way (its own `weather-view` chunk and `codeSpli
 tick's events on to the defence view's, so the round view holds one. It draws the sky tint and particles in the Arena and
 the weather badge, called line and charge chip (WP-arcade-weather-charge, from `RenderView.arcade().weatherCharge`) in the `Hud` scene, follows `RenderView.arcade().weather` and `weatherLeft` for what is
 up, and takes the called line and live lines from `weatherChanged` and `weatherEnded` (pure rules in `weather-fx.ts`).
-The Arena mounts the terrain view (`src/game/fx/terrain-view.ts` with pure `terrain-fx.ts`, WP-arcade-terrain-view, its own
+The Arena mounts the terrain view (`src/game/fx/terrain-view.ts` with pure `terrain-fx.ts` and the tiled floor `terrain-tiles.ts`/`terrain-floor.ts`: a seeded, point-symmetric grid per stage on one tilemap layer, WP-tile-floor, WP-arcade-terrain-view, its own
 `terrain-view` chunk and `codeSplitting` group) beside the round view in every Arcade match and feeds it each tick's events. It draws
 from `RenderView.arcade()` (`stage`, `swapLeft`, `swapTo`, `patchCount`, `patches`): the stage backdrop, the patch art (patterns,
 word labels, glow, raised rocks) redrawn only when the layout changes (fades are object alpha), pooled particles and block sparks

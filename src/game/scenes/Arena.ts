@@ -166,7 +166,8 @@ export class Arena extends Phaser.Scene {
     const hero = dev ? new URLSearchParams(window.location.search).get('p1') : null;
     const demoBase = hero ? { ...DEMO_SETUP, p1: [{ character: characterId(hero), xp: 0 }, ...DEMO_SETUP.p1.slice(1)] } : DEMO_SETUP;
     const demo = ff ? { ...demoBase, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : demoBase;
-    const world = this.cursor?.world ?? createMatch(this.launch?.setup ?? demo);
+    const setup = this.launch?.setup ?? demo;
+    const world = this.cursor?.world ?? createMatch(setup);
     this.world = world;
     const view = createRenderView(world);
     this.view = view;
@@ -312,7 +313,7 @@ export class Arena extends Phaser.Scene {
       });
       // The terrain view (its own lazy chunk), fed beside the round view.
       void import('../fx/terrain-view').then((m) => {
-        if (this.arcadeHud === hud) this.terrain = m.mountTerrainView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs);
+        if (this.arcadeHud === hud) this.terrain = m.mountTerrainView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs, setup.seed, import.meta.env.BASE_URL);
       });
     }
     // The pose layer (lazy chunk): smooth walking, leans, Arcade poses, projectile easing (docs/ARCHITECTURE.md).

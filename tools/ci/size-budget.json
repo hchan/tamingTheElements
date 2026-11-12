@@ -21,10 +21,10 @@
     "tag-view": 2870,
     "tour": 5600,
     "touch-controls": 1380,
-    "terrain-view": 4350,
+    "terrain-view": 4800,
     "weather-view": 3470
   },
-  "totalGzip": 499300,
+  "totalGzip": 499850,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912

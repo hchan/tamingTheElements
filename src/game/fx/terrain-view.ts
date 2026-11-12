@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
+import { mountTileFloor, type TileFloor } from './terrain-floor';
 import {
   MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_DARK, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
   TerrainFx, badgeText, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
@@ -10,8 +11,8 @@ import {
 /**
  * Phaser side of the Arcade terrain view (WP-arcade-terrain-view, FUN-DESIGN 2.15 and section 3). The Arena mounts it in
  * every Arcade match (its own lazy chunk `terrain-view`, vite.config.ts, so Classic never downloads it) and feeds it each
- * tick's events. In the Arena, from `RenderArcade.stage` and its patches: the backdrop of the stage's element (over the
- * hero's), each patch as a rectangle with its own PATTERN (flames, waves, bricks, swirls), a word label above it and a soft glow;
+ * tick's events. In the Arena, from `RenderArcade.stage` and its patches: a randomised tile floor (`terrain-floor.ts`, one
+ * tilemap layer, seeded per match, rebuilt only when the stage swaps) over the hero's backdrop, then the backdrop of the stage's element, each patch as a rectangle with its own PATTERN (flames, waves, bricks, swirls), a word label above it and a soft glow;
  * earth patches are drawn raised and solid with a shadow so they read as walls; a few ambient particles (embers,
  * droplets, dust, wind streaks) and a spark where a rock stops a shot. A pending stage swap fades the old patches (and
  * crossfades the backdrop) over its 30-tick telegraph, and the new layout fades in. In the Hud scene (so the camera's
@@ -25,6 +26,8 @@ import {
 
 /** Over the hero's backdrop (-1), under the weather tint (-0.75), the trails (-0.5) and the fighters (0). */
 const BG_DEPTH = -0.95;
+/** The tiled floor: over the backdrops, under the glow and the patches (WP-tile-floor). */
+const TILES_DEPTH = -0.8;
 const GLOW_DEPTH = -0.72;
 const FLOOR_DEPTH = -0.7;
 /** Particles and sparks over the fighters (0), under the shields (3). */
@@ -85,9 +88,13 @@ export function mountTerrainView(
   view: RenderView,
   say: (line: Announcement) => void,
   prefs: () => TerrainPrefs,
+  /** The match seed (the tile floor's random stream) and Vite's BASE_URL (its atlas URL). */
+  seed = 1,
+  base = '/',
 ): (events: readonly SimEvent[]) => void {
   let reduced = prefs().reduceMotion;
   let highContrast = prefs().highContrast;
+  const tiles: TileFloor = mountTileFloor(arena, base, seed, TILES_DEPTH);
   let parts:
     | {
       bg: Phaser.GameObjects.Image | undefined; next: Phaser.GameObjects.Image | undefined;
@@ -272,6 +279,7 @@ export function mountTerrainView(
     drawn.alpha = patchAlpha(ar.swapLeft, clock - landedAt, reduced);
     drawn.glow = glowAlpha(clock, drawn.alpha, reduced);
     p.floor.setAlpha(drawn.alpha);
+    tiles.update(stage, drawn.alpha);
     p.glow.setAlpha(drawn.glow);
     for (const t of p.labels) t.setAlpha(drawn.alpha);
     // Particles (motion only) and sparks.
@@ -321,6 +329,7 @@ export function mountTerrainView(
     arena.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     hud.events.off('shutdown', off).off('destroy', off);
     states.delete(arena);
+    tiles.destroy();
     if (parts) {
       for (const o of [parts.bg, parts.next, parts.glow, parts.floor, parts.fx, parts.plate, parts.badge, ...parts.labels]) o?.destroy();
     }

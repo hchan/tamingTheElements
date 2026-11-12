@@ -71,22 +71,34 @@ function fakeObject(kind: string, made: Fake[], key = ''): Fake {
   return proxy;
 }
 
-function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emitter; made: Fake[]; setActive: (a: boolean) => void } {
+function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emitter; made: Fake[]; setActive: (a: boolean) => void; loads: string[]; layers: { data: number[][]; puts: number[][][] }[] } {
   const events = new Emitter();
   const made: Fake[] = [];
+  const loads: string[] = [];
+  const layers: { data: number[][]; puts: number[][][] }[] = [];
   let active = true;
   const scene = {
     events,
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => active },
     textures: { exists: (k: string) => textures.includes(k) },
+    load: { image: (k: string) => { loads.push(k); }, start: () => undefined },
+    make: {
+      tilemap: ({ data }: { data: number[][] }) => {
+        const rec = { data, puts: [] as number[][][] };
+        layers.push(rec);
+        const layer = fakeObject('layer', made);
+        Object.assign(layer, { putTilesAt: (d: number[][]) => { rec.puts.push(d); return layer; } });
+        return { addTilesetImage: () => ({}), createLayer: () => layer, destroy: () => undefined };
+      },
+    },
     add: {
       graphics: () => fakeObject('graphics', made),
       text: () => fakeObject('text', made),
       image: (_x: number, _y: number, key: string) => fakeObject('image', made, key),
     },
   } as unknown as Phaser.Scene;
-  return { scene, events, made, setActive: (a) => { active = a; } };
+  return { scene, events, made, setActive: (a) => { active = a; }, loads, layers };
 }
 
 let seq = 0;
@@ -94,10 +106,11 @@ const ev = (kind: number, tick: number, payload: Record<string, number> = {}): S
   ({ tick, sourceId: 0, kind: kind as SimEvent['kind'], seq: seq++, ...payload });
 
 const BGS = ['bg:fire', 'bg:water', 'bg:earth', 'bg:air'];
+const TILES = 'tilefloor';
 /** Two patches: a 80x80 at (100, 300) and a 120x100 at (500, 320). */
 const PATCHES = [100, 300, 80, 80, 500, 320, 120, 100];
 
-function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string; x?: number; y?: number } = {}) {
+function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string; x?: number; y?: number; atlas?: boolean } = {}) {
   let tick = 100;
   const patches = new Array<number>(20).fill(0);
   PATCHES.forEach((v, i) => { patches[i] = v; });
@@ -108,7 +121,7 @@ function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string;
     arcade: () => arcade,
     forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(hero); },
   } as unknown as RenderView;
-  const arena = fakeScene(BGS);
+  const arena = fakeScene(opts.atlas ? [...BGS, TILES] : BGS);
   const hud = fakeScene();
   const lines: Announcement[] = [];
   const prefs = { reduceMotion: opts.reduceMotion ?? false, highContrast: false };
@@ -126,6 +139,30 @@ function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string;
 }
 
 describe('terrain view (fake scenes)', () => {
+  it('tile floor: requests the atlas when missing, builds one layer once it is there, re-fills it on a stage swap', () => {
+    const missing = mount();
+    missing.frame();
+    expect(missing.arena.loads).toEqual([TILES]);
+    expect(missing.arena.layers).toHaveLength(0);
+
+    const m = mount({ atlas: true });
+    expect(m.arena.loads).toEqual([]);
+    m.frame();
+    m.frame();
+    expect(m.arena.layers).toHaveLength(1);
+    const layer = m.arena.layers[0];
+    expect(layer?.data).toHaveLength(23);
+    expect(layer?.data[0]).toHaveLength(40);
+    expect(layer?.data.flat().every((v) => v >= 0 && v < 8)).toBe(true); // the fire row of the atlas
+    expect(layer?.puts).toHaveLength(0);
+    m.arcade.stage = 2;
+    m.frame();
+    m.frame();
+    expect(m.arena.layers).toHaveLength(1);
+    expect(layer?.puts).toHaveLength(1);
+    expect(layer?.puts[0]?.flat().every((v) => v >= 8 && v < 16)).toBe(true); // the water row
+  });
+
   it('draws each patch with its word, the stage backdrop and, for a fire hero in a fire patch, the FIRE x2 badge', () => {
     const m = mount();
     m.frame();
