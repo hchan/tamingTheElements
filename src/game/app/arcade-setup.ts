@@ -154,7 +154,7 @@ export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOpti
       mountAimIndicator(arena, v, alpha);
       mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion);
       const held = arena.audio;
-      void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held); });
+      void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held, () => v.arcade()?.sudden === true); });
     },
     onEnd: (end) => {
       const replay = recorder?.finish();

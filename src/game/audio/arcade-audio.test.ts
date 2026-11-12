@@ -72,7 +72,7 @@ function fakeCtx() {
 const ev = (kind: SimEvent['kind'], extra: Record<string, number> = {}, tick = 100, seq = 0): SimEvent => ({ ...extra, tick, sourceId: 1, kind, seq });
 const SOUNDS = ['damage', 'swap', 'capture', 'evilLaugh', 'whoosh', 'victory', 'death'];
 
-function setup(opts: { muted?: boolean; unlock?: boolean } = {}) {
+function setup(opts: { muted?: boolean; unlock?: boolean; sudden?: boolean } = {}) {
   const { ctx, nodes } = fakeCtx();
   const started: unknown[] = [];
   const createBufferSource = ctx.createBufferSource.bind(ctx);
@@ -86,7 +86,7 @@ function setup(opts: { muted?: boolean; unlock?: boolean } = {}) {
   const audio = new AudioManager({ ctx, buffers: new Map(SOUNDS.map((s) => [s, s])), muted: opts.muted ?? false });
   if (opts.unlock ?? true) audio.unlock();
   let hidden = false;
-  const dispose = addArcadeLayer(audio, () => hidden);
+  const dispose = addArcadeLayer(audio, () => hidden, () => opts.sudden === true);
   return { ctx, nodes, audio, started, dispose, hide: (h: boolean) => { hidden = h; } };
 }
 
@@ -300,5 +300,20 @@ describe('mountArcadeAudio', () => {
     expect(events.count).toBe(0);
     expect(arcadeAudioState(old.audio).mounted).toBe(false);
     expect(arcadeAudioState(now.audio).mounted).toBe(false);
+  });
+});
+
+describe('sudden-death sting', () => {
+  it('plays its own sting for the sudden-death round start (3 layers) and the round cue otherwise (2 layers)', () => {
+    const count = (sudden: boolean): number => {
+      const s = setup({ sudden });
+      const before = s.nodes.length;
+      s.audio.consume([ev(SimEventKind.roundStarted, { round: 3 }, 1)]);
+      expect(arcadeAudioState(s.audio).played).toBe(1);
+      const made = s.nodes.length - before;
+      s.dispose();
+      return made;
+    };
+    expect(count(true)).toBeGreaterThan(count(false));
   });
 });

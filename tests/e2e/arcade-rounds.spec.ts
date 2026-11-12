@@ -12,6 +12,7 @@ interface Rounds {
   visible: boolean;
   scale: number;
   timer: string;
+  timerColor: string;
   won: [number, number];
 }
 
@@ -22,6 +23,7 @@ const KO_TO_RESULT = 30 + 120;
 
 const rounds = (page: Page): Promise<Rounds | undefined> => page.evaluate<Rounds | undefined>(`window.__TTE__.arena.rounds()`);
 const step = (page: Page, n: number): Promise<unknown> => page.evaluate(`window.__TTE__.arena.step(${String(n)})`);
+const played = (page: Page): Promise<number> => page.evaluate<number>(`window.__TTE__.arena.arcadeAudio().then((a) => a.played)`);
 const live = (page: Page): Promise<string> =>
   page.evaluate<string>(`[document.getElementById('liveRegion'), document.getElementById('liveRegionAssertive')].map((n) => n ? n.textContent : '').join(' | ')`);
 
@@ -99,14 +101,21 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
   const errors = collectErrors(page);
   await versus(page);
   await expect.poll(async () => (await rounds(page))?.main).toBe('ROUND 1');
+  // The first key press unlocks audio (browsers start a context suspended), so the sudden-death sting can be counted.
+  await page.keyboard.press('Shift');
+  await page.waitForFunction(`window.__TTE__.arena.audio().unlocked === true`);
   await step(page, INTRO);
   // Rounds are 1-1; a double KO is a draw that makes it 2-2, which needs one more round.
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setRoundsWon(1, 1); for (const c of a.characters()) a.setHp(c.id, 0); a.step(1); })()`);
   expect(await rounds(page)).toMatchObject({ main: 'DOUBLE K.O.' });
   await step(page, KO_TO_RESULT);
   expect(await rounds(page)).toMatchObject({ sub: 'ROUND 1 DRAW', won: [2, 2] });
+  const before = await played(page);
   await step(page, 60);
   expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, won: [2, 2] });
+  // The sting (one cue) played at the round start, and the timer says it in words and its own colour, not only red.
+  expect(await played(page)).toBe(before + 1);
+  expect(await rounds(page)).toMatchObject({ timer: expect.stringMatching(/^SUDDEN \d\d$/), timerColor: '#ff5ad2' });
   await expect.poll(() => page.evaluate<string>(`document.getElementById('liveRegionAssertive')?.textContent ?? ''`))
     .toContain('Sudden death. One hit may decide the match.');
   const hp = await characters(page, 0);

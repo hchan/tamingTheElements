@@ -53,6 +53,8 @@ export const CUES = {
   gale: [[NOISE, 800, 3000, 300, 0.3], [NOISE, 3000, 900, 300, 0.25, 250]],
   eclipse: [[3, 98, 92, 500, 0.15], [3, 147, 139, 500, 0.12]],
   round: [[1, 262, 262, 200, 0.3], [1, 392, 392, 260, 0.3, 160]],
+  /** The sudden-death round's start: a low, falling two-note warning (plays instead of `round`). */
+  sudden: [[3, 196, 185, 220, 0.25], [3, 147, 110, 360, 0.25, 160], [NOISE, 400, 120, 300, 0.2, 160]],
   fight: [[2, 440, 880, 140, 0.18], [NOISE, 1500, 600, 120, 0.35]],
   ko: [[0, 80, 28, 500, 1], [NOISE, 1800, 120, 380, 0.5]],
   roundEnd: [[1, 392, 392, 320, 0.2], [1, 494, 494, 320, 0.16], [1, 587, 587, 320, 0.16]],
@@ -62,7 +64,7 @@ export const CUES = {
 export type CueName = keyof typeof CUES;
 
 /** Round and match stingers always play; any other cue is dropped when the voice pool is full. */
-export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'fight', 'ko', 'roundEnd', 'match']);
+export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'sudden', 'fight', 'ko', 'roundEnd', 'match']);
 
 /**
  * The cue of each `SimEventKind` (numbers, see `KO`; a test checks every key against the names): hitConfirmed (41) plays
@@ -73,6 +75,7 @@ export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
   55: 'ko', 57: 'roundEnd', 67: 'dash', 70: 'trapSet', 71: 'trapArm', 72: 'trapPop',
   73: 'elemental',
 };
+const ROUND_STARTED: Kinds['roundStarted'] = 53;
 const HIT: Kinds['hitConfirmed'] = 41;
 const WEATHER: Kinds['weatherChanged'] = 59;
 const MATCH_END: Kinds['matchEnded'] = 30;
@@ -133,9 +136,11 @@ export const KO_DUCK_MS = 600;
 
 export type PlayCue = (name: CueName, pitch: number, gain: number) => void;
 
-/** Calls `play` for each cue of event `e` (none for a silent or Classic event). */
-export function pickCues(e: SimEvent, play: PlayCue): void {
-  if (e.kind === HIT) {
+/** Calls `play` for each cue of event `e` (none for a silent or Classic event); `sudden` says a round starting is the sudden-death one. */
+export function pickCues(e: SimEvent, play: PlayCue, sudden: () => boolean = () => false): void {
+  if (e.kind === ROUND_STARTED && sudden()) {
+    play('sudden', 1, 1);
+  } else if (e.kind === HIT) {
     const s = Math.min(3, Math.max(0, e['strength'] ?? 0));
     play(s === 3 ? 'impact' : 'thump', PITCH_VARY[(e.tick + e.seq) % PITCH_VARY.length] ?? 1, THUMP_GAIN[s] ?? 1);
     const hits = e['combo'] ?? 0;

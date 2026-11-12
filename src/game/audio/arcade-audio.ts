@@ -66,7 +66,7 @@ export function arcadeAudioState(audio: AudioManager | undefined): ArcadeAudioSt
 }
 
 /** Adds the layers to `audio` and returns their teardown. `hidden` reads whether the tab is hidden. */
-export function addArcadeLayer(audio: AudioManager, hidden: () => boolean): () => void {
+export function addArcadeLayer(audio: AudioManager, hidden: () => boolean, sudden: () => boolean = () => false): () => void {
   const synth = audio.ctx as unknown as SynthContext;
   const out = synth.createGain();
   out.gain.value = LEVEL;
@@ -144,7 +144,7 @@ export function addArcadeLayer(audio: AudioManager, hidden: () => boolean): () =
         cutUntil = ms + KO_CUT_MS;
         audio.duckUntil = Math.max(audio.duckUntil, ms + KO_DUCK_MS);
       }
-      if (on) pickCues(e, play);
+      if (on) pickCues(e, play, sudden);
     }
     // After the manager's own duck update: the music stays cut through the KO window.
     if (ms < cutUntil) audio.buses.music.gain.value = 0;
@@ -183,9 +183,9 @@ function whiteNoise(ctx: SynthContext): unknown {
  * Mounts the layers on the Arena's battle audio if `held` (read when the battle mounted its Arcade view) is still the
  * Arena's when the chunk arrives, and takes them off when the Arena shuts down or is destroyed.
  */
-export function mountArcadeAudio(arena: Phaser.Scene & { readonly audio?: ArenaAudio }, held: ArenaAudio | undefined): void {
+export function mountArcadeAudio(arena: Phaser.Scene & { readonly audio?: ArenaAudio }, held: ArenaAudio | undefined, sudden?: () => boolean): void {
   if (!held || arena.audio !== held) return;
-  const dispose = addArcadeLayer(held.audio, () => document.hidden);
+  const dispose = addArcadeLayer(held.audio, () => document.hidden, sudden);
   const off = (): void => {
     arena.events.off('shutdown', off).off('destroy', off);
     dispose();
