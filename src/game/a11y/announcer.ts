@@ -6,6 +6,8 @@ export interface Announcement {
   readonly key: string;
   readonly text: string;
   readonly important: boolean;
+  /** Low-priority chatter (trap lines): dropped first when the queue is over its cap. */
+  readonly low?: boolean;
 }
 
 /** Pure: sim events to announcements. Hits are deliberately silent (they would flood a screen reader). `teamOf` maps an entity id to its team (trap armed events carry only the owner). */
@@ -63,12 +65,12 @@ function trapAnnouncement(e: SimEvent, teamOf: (entity: number) => number): Anno
   const who = mine ? 'Your' : 'Enemy';
   const kind = String(e['trap'] ?? 0);
   const side = mine ? `trapMine${kind}` : `trapFoe${kind}`;
-  if (e.kind === SimEventKind.trapPlaced) return { key: `${side}Placed`, text: `${who} ${name} placed.`, important: false };
-  if (e.kind === SimEventKind.trapArmed) return mine ? { key: `${side}Armed`, text: `Your ${name} is armed.`, important: false } : undefined;
+  if (e.kind === SimEventKind.trapPlaced) return { key: `${side}Placed`, text: `${who} ${name} placed.`, important: false, low: true };
+  if (e.kind === SimEventKind.trapArmed) return mine ? { key: `${side}Armed`, text: `Your ${name} is armed.`, important: false, low: true } : undefined;
   const reason = e['reason'] ?? TrapReason.overlap;
-  if (reason === TrapReason.doused) return { key: `${side}Doused`, text: `${who} ${name} doused.`, important: false };
-  if (reason === TrapReason.timeout) return mine ? { key: `${side}Expired`, text: `Your ${name} expired.`, important: false } : undefined;
-  return { key: `${side}Triggered`, text: `${who} ${name} triggered.`, important: false };
+  if (reason === TrapReason.doused) return { key: `${side}Doused`, text: `${who} ${name} doused.`, important: false, low: true };
+  if (reason === TrapReason.timeout) return mine ? { key: `${side}Expired`, text: `Your ${name} expired.`, important: false, low: true } : undefined;
+  return { key: `${side}Triggered`, text: `${who} ${name} triggered.`, important: false, low: true };
 }
 
 export const MATCH_START: Announcement = {
@@ -149,7 +151,7 @@ export class Announcer {
     this.queue.push(a);
     // Over the cap: drop trap chatter first (oldest first), then the oldest line, so a death or defeat is never lost to a trap line.
     while (this.queue.length > this.maxQueue) {
-      const trap = this.queue.findIndex((q) => q.key.startsWith('trap'));
+      const trap = this.queue.findIndex((q) => q.low === true);
       this.queue.splice(trap < 0 ? 0 : trap, 1);
     }
   }

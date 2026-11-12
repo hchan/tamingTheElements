@@ -792,10 +792,12 @@ body:has(#game:not(:empty)) {
 
 /* Touch/action row buttons. Touch: a column up the right edge (>= 48 px, safe areas), two columns of four on short screens. Mouse/keyboard:
    a compact row in the bottom band under the walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at
-   the arena edge; two rows of four in narrow windows so the row cannot run into the left HUD. --touch-row is the slot, set inline.
+   the arena edge; two rows of four in narrow windows so the row cannot run into the left HUD. --touch-row is the slot, with --touch-col (row mod 4) and --touch-line (row div 4) beside it, all set inline.
    The background is solid (opacity 1): a translucent button over a bright arena would lose its text contrast. */
 button.touchBtn {
   --touch-row: 0;
+  --touch-col: 0;
+  --touch-line: 0;
   --touch-size: 72px;
   --touch-pitch: 78px;
   position: absolute;
@@ -835,8 +837,8 @@ button.touchBtn {
 /* Narrow windows with a mouse: wrap to two rows of four (slot = column + 4 * row). */
 @media (pointer: fine) and (max-width: 1100px) {
   button.touchBtn {
-    right: calc(6px + mod(var(--touch-row), 4) * var(--touch-pitch));
-    bottom: calc(8px + round(down, var(--touch-row) / 4, 1) * var(--touch-pitch));
+    right: calc(6px + var(--touch-col) * var(--touch-pitch));
+    bottom: calc(8px + var(--touch-line) * var(--touch-pitch));
   }
 }
 /* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
@@ -873,8 +875,8 @@ html[data-high-contrast='true'] button.touchBtn {
    to 8 buttons never run off the top. */
 @media (pointer: coarse) and (max-height: 520px) {
   #menu button.touchBtn {
-    right: calc(max(8px, env(safe-area-inset-right)) + round(down, var(--touch-row) / 4, 1) * var(--touch-pitch));
-    bottom: calc(max(8px, env(safe-area-inset-bottom)) + mod(var(--touch-row), 4) * var(--touch-pitch));
+    right: calc(max(8px, env(safe-area-inset-right)) + var(--touch-line) * var(--touch-pitch));
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-col) * var(--touch-pitch));
   }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }

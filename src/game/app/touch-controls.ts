@@ -5,7 +5,7 @@ import { codeLabel, getBindings } from '../platform/input/bindings';
 /** Shared on-screen touch controls of the Arcade battle (Arcade Versus and the World Tour fight); DOM only, no Phaser. */
 
 /**
- * Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
+ * Touch buttons, bottom-up on the right edge, one `--touch-pitch` (78 to 86 px, CSS) apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
  * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), and last Trap
  * (WP 39), always there.
  */
@@ -66,17 +66,13 @@ function fill(v: number, full: number): string {
   return v >= full ? 'ready' : `${String(Math.floor((Math.min(v, full) * 100) / full))}%`;
 }
 
-/** The last text written to each button (see `setTouchText`). */
-const written = new WeakMap<HTMLButtonElement, string>();
-
 /** Writes a button's text, one left-aligned line each: the key (the icon is CSS, before it), the name, then the state when there is one. */
 export function setTouchText(b: HTMLButtonElement, label: TouchLabel, status = ''): void {
   const name = label === 'Tag2' ? 'Tag 2' : label;
   const text = `${touchKeyLabel(label)}\n${name}`;
   // Only write what changed: rewriting identical text or a label makes screen readers re-announce the control.
   const shown = status === '' ? text : `${text}\n${status}`;
-  if (written.get(b) === shown) return;
-  written.set(b, shown);
+  if (b.textContent === shown) return;
   b.textContent = shown;
   // The visible key stays in the accessible name (WCAG 2.5.3 label in name): "9 Super, 40%".
   const spoken = `${touchKeyLabel(label)} ${name}`;
@@ -94,6 +90,8 @@ export function inVisualOrder(buttons: readonly HTMLButtonElement[]): HTMLButton
 /** Refreshes the state words of `buttons` four times a second off `view`; stops once they leave the page. */
 export function watchTouch(buttons: readonly HTMLButtonElement[], view: RenderView): void {
   const timer = setInterval(() => {
+    // A button removed mid-hold gets no blur or pointerup: let go of its key here, so it is never stuck down.
+    for (const b of buttons) if (!b.isConnected) releaseTouch(b);
     if (buttons.every((b) => !b.isConnected)) {
       clearInterval(timer);
       return;
@@ -103,6 +101,14 @@ export function watchTouch(buttons: readonly HTMLButtonElement[], view: RenderVi
       if (label) setTouchText(b, label, touchStatus(label, view));
     }
   }, 250);
+}
+
+/** Releases whatever a button still holds (pointer, key, min-hold timer); see `touchButton`. */
+const releasers = new WeakMap<HTMLButtonElement, () => void>();
+
+/** Lets go of a held key and clears the min-hold timer of `b`; a no-op for a button that holds nothing. */
+export function releaseTouch(b: HTMLButtonElement): void {
+  releasers.get(b)?.();
 }
 
 /** Shortest time a keyboard activation holds the action (about five sim ticks), so a quick tap is never a one-frame press. */
@@ -121,7 +127,8 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   // The icon beside the number is CSS (`.touchBtn-<label>::before` in main.css), so the text stays plain and the state words still update.
   // Layout, sizes and the high-contrast look are all CSS (`.touchBtn`, coarse and fine pointer rules); only the slot is inline.
   b.className = `menuButton touchBtn touchBtn-${label}`;
-  b.style.cssText = `--touch-row:${String(row)}`;
+  // Plain integers (column and line of the two-wide wrap), so the CSS needs no mod() or round() and old browsers lay out the same.
+  b.style.cssText = `--touch-row:${String(row)};--touch-col:${String(row % 4)};--touch-line:${String(Math.floor(row / 4))}`;
   let code: string | undefined;
   // Pointer and keyboard hold the action separately: the key goes up only when neither is still holding it.
   let byPointer = false;
@@ -167,7 +174,16 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
     if (!activation(e)) return;
     e.preventDefault();
     e.stopPropagation();
-    if (e.repeat || byKey) return;
+    if (e.repeat) return;
+    if (byKey) {
+      // A second tap inside the min-hold window: the key is still down, so the hold carries on for another full minimum.
+      if (keyTimer !== undefined) {
+        clearTimeout(keyTimer);
+        keyTimer = undefined;
+        keyDownAt = Date.now();
+      }
+      return;
+    }
     if (press()) {
       byKey = true;
       keyDownAt = Date.now();
@@ -182,10 +198,12 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
     if (wait > 0) keyTimer = setTimeout(releaseKey, wait);
     else releaseKey();
   });
-  b.addEventListener('blur', () => {
+  const releaseAll = (): void => {
     releasePointer();
     releaseKey();
-  });
+  };
+  b.addEventListener('blur', releaseAll);
+  releasers.set(b, releaseAll);
   return b;
 }
 

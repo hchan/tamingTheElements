@@ -63,9 +63,19 @@ describe('announcementsFor', () => {
     const a = new Announcer((x) => spoken.push(x), () => 0);
     a.say({ key: 'first', text: 'first', important: false });
     a.say({ key: 'heroDied', text: 'died', important: false });
-    for (const k of ['trapMine1Placed', 'trapMine2Placed', 'trapMine3Placed']) a.say({ key: k, text: k, important: false });
+    // Real trapAnnouncement output (flagged low), not hand-written keys.
+    for (const trap of [1, 2, 3]) for (const l of announcementsFor([ev(SimEventKind.trapPlaced, { team: 0, trap })])) a.say(l);
     expect(a.pending).toBe(3);
     expect(a.queued).toContain('died');
+  });
+  it('eviction follows the low flag, not the key name', () => {
+    const a = new Announcer(() => undefined, () => 0);
+    a.say({ key: 'first', text: 'first', important: false });
+    a.say({ key: 'trapdoorOpened', text: 'door', important: false });
+    a.say({ key: 'quiet', text: 'quiet', important: false, low: true });
+    a.say({ key: 'heroDied', text: 'died', important: false });
+    a.say({ key: 'foeDied', text: 'foe', important: false });
+    expect(a.queued).toEqual(['door', 'died', 'foe']);
   });
   it('the match result is important', () => {
     expect(announcementsFor([ev(SimEventKind.matchEnded, { winner: 0 })])[0]?.important).toBe(true);
