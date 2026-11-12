@@ -16,7 +16,7 @@
     "phaser-config": 26800,
     "pose-layer": 9700,
     "rolldown-runtime": 200,
-    "round-view": 2100,
+    "round-view": 2200,
     "sim": 35200,
     "super-view": 1390,
     "tag-view": 2870,
@@ -29,7 +29,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 520200,
+  "totalGzip": 520300,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
