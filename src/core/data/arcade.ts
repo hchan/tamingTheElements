@@ -260,6 +260,13 @@ export const ROUND_END_TICKS = 60;
 export const ROUND_TIMER_TICKS = 4500;
 /** Best of 3: the match ends once a team has this many round wins (a draw round scores for both). */
 export const ROUNDS_TO_WIN = 2;
+/**
+ * Sudden death: when a draw round leaves both teams on ROUNDS_TO_WIN, one extra round decides the match (a deciding
+ * round; round wins may reach ROUNDS_TO_WIN + 1). Everyone starts at SUDDEN_HP_PM of max life (a hit or two decides it)
+ * with a SUDDEN_TIMER_TICKS timer; a draw there stands as a drawn match.
+ */
+export const SUDDEN_HP_PM = 100;
+export const SUDDEN_TIMER_TICKS = 1500;
 /** Time over compares the sum of `floor(hp * HP_PM / maxHp)` over each team's roster: higher wins, equal is a draw. */
 export const HP_PM = 1000;
 

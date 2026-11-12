@@ -19,7 +19,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [sf-crossups-and-jumps](../brainstorm/sf-crossups-and-jumps.md)
 - [sf-throws](../brainstorm/sf-throws.md)
 - [sf-super-cinematics](../brainstorm/sf-super-cinematics.md)
-- [sf-round-timer-draws](../brainstorm/sf-round-timer-draws.md)
+- [sf-round-timer-draws](../in-progress/sf-round-timer-draws.md)
 - [sf-tick-draw-cpu-win](../brainstorm/sf-tick-draw-cpu-win.md)
 - [sf-turbo-game-speed](../brainstorm/sf-turbo-game-speed.md)
 - [health-bar-status-icons](../in-progress/health-bar-status-icons.md)

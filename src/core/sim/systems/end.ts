@@ -45,9 +45,11 @@ const roundsOf = (s: SimState, team: number): number => s.arcade[ARCADE_TEAM_BAS
 export function matchWinner(s: SimState): number | null {
   if (isArcade(s)) {
     if (roundPhase(s) !== RoundPhase.over) return null;
-    const won0 = roundsOf(s, 0) >= ROUNDS_TO_WIN;
-    const won1 = roundsOf(s, 1) >= ROUNDS_TO_WIN;
-    return won0 === won1 ? -1 : won0 ? 0 : 1;
+    const w0 = roundsOf(s, 0);
+    const w1 = roundsOf(s, 1);
+    // Both on ROUNDS_TO_WIN is a draw unless the sudden-death round (one more win) split them.
+    if (w0 >= ROUNDS_TO_WIN && w1 >= ROUNDS_TO_WIN) return w0 === w1 ? -1 : w0 > w1 ? 0 : 1;
+    return w0 >= ROUNDS_TO_WIN ? 0 : 1;
   }
   const alive: boolean[] = [];
   for (let t = 0; t < TEAM_COUNT; t++) alive.push(survivorsOf(s, t) > 0);
