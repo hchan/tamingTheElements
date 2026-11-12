@@ -1,0 +1,4 @@
+Effect sprites in public/assets/img/fx/ are procedural and original: drawn by the scripts in this folder
+(batch-a-ice.py, batch-b-fire.py, batch-c-earth.py, batch-d-air-water-chaos.py, ice-shock.py), with no third-party art.
+They replace the legacy effect PNGs (still in git tag legacy-crafty-1.0). Needs Pillow and tools/assets/rig-gen/palette.py.
+Run: python tools/assets/fx-gen/<script>.py [outdir, default public/assets/img/fx]

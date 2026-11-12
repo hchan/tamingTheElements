@@ -32,6 +32,11 @@ if (import.meta.main) {
   let copied = 0;
   const skipped: string[] = [];
   for (const url of manifestUrls()) {
+    // Redrawn effect sprites are generated in the repo by tools/assets/fx-gen, not copied from the legacy tree.
+    if (url.startsWith('img/fx/')) {
+      if (!existsSync(resolve(outDir, url))) throw new Error(`generated asset missing (run tools/assets/fx-gen): ${url}`);
+      continue;
+    }
     const src = resolve(legacyDir, url);
     if (!existsSync(src)) {
       if (KNOWN_MISSING.has(url)) {

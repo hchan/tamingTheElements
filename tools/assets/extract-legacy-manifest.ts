@@ -1,6 +1,6 @@
 // Generates src/game/assets/manifest.generated.json from the frozen legacy asset manifests.
 // Needs the legacy tree: run `pnpm oracle:restore` first. Run: pnpm exec tsx tools/assets/extract-legacy-manifest.ts
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import vm from 'node:vm';
 import { ORACLE_PRIVATE } from '../../src/testing/legacy/oracle';
@@ -44,7 +44,18 @@ function sprites(file: string, name: string): Record<string, SpriteEntry> {
   for (const key of Object.keys(raw).sort()) {
     const r = raw[key] as Record<string, unknown>;
     if (r.name !== key) throw new Error(`${file}: name mismatch for ${key}`);
-    const e: SpriteEntry = { url: r.url as string, coords: r.coords as SpriteEntry['coords'] };
+    // Redrawn effect sprites live in the repo (tools/assets/fx-gen writes public/assets/img/fx/<key>.png); they replace the legacy url.
+    const fx = `img/fx/${key}.png`;
+    const fxPath = resolve(root, 'public/assets', fx);
+    const redrawn = file === 'imgAssets.js' && existsSync(fxPath);
+    const coords = r.coords as SpriteEntry['coords'];
+    if (redrawn && key === 'iceShock') {
+      // iceShock alone changed size (240x72); the others keep the legacy frame size.
+      const png = readFileSync(fxPath);
+      coords[2] = png.readUInt32BE(16);
+      coords[3] = png.readUInt32BE(20);
+    }
+    const e: SpriteEntry = { url: redrawn ? fx : (r.url as string), coords };
     if (r.urlLarge !== undefined) e.urlLarge = r.urlLarge as string;
     for (const f of FRAME_KEYS) if (r[f] !== undefined) e[f] = r[f] as Frames;
     out[key] = e;

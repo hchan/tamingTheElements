@@ -9,7 +9,7 @@ Outline and rim keep it readable on every floor (dark outline on the light Earth
 import os, sys
 from PIL import Image, ImageDraw
 
-OUT = sys.argv[1]
+OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else "public/assets/img/fx", "iceShock.png")
 W, H, SS = 240, 72, 4
 YS = 1.8  # drawn 1.8x taller than the 240x40 hit box (the view enlarges the display to match, see projectile-view.ts)
 OUTLINE = (12, 14, 66)
