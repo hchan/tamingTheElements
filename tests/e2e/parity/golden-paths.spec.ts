@@ -136,6 +136,7 @@ test.describe('parity golden paths', () => {
   });
 
   test('3. 4 XP -> win -> objectives met -> chapter 2, where capture is available', async ({ page }) => {
+    test.setTimeout(60_000); // two battle loads in one test; 30 s flaked once under load
     const errors = collectErrors(page);
     const save = fixture('v0-new-game');
     (save.garrison[0] as { experience: number }).experience = 4;
