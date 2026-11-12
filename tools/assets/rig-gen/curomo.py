@@ -81,12 +81,12 @@ def render(name, view, pts, g, seed):
         t = np.where(sc, t + 0.08, t)
     t = np.clip(np.round(np.clip(t, 0, 1) * 5.0) / 5.0, 0, 1)
     rgb = palette.ramp(SCALE, t)
-    inner = np.asarray(m.filter(ImageFilter.MinFilter(SS * 2 + 1)), np.float32) / 255.0
+    inner = np.asarray(m.filter(ImageFilter.MinFilter(SS * 3 + 1)), np.float32) / 255.0
     edge = np.clip(np.subtract(ma, inner), 0, 1)
     shifted = np.roll(np.roll(ma, SS * 2, axis=0), SS * 2, axis=1)
     lit = np.clip(np.subtract(ma, shifted), 0, 1) * inner.clip(0, 1)
     lit = np.asarray(Image.fromarray((lit * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(SS * 0.5)), np.float32) / 255.0
-    rgb = rgb * (1 - 0.85 * edge[..., None]) + OUTLINE[None, None, :] * (0.85 * edge[..., None])
+    rgb = rgb * (1 - 1.0 * edge[..., None]) + OUTLINE[None, None, :] * (1.0 * edge[..., None])
     rgb = rgb * (1 - 0.7 * lit[..., None]) + RIM[None, None, :] * (0.7 * lit[..., None])
     return Image.fromarray(np.dstack([np.clip(rgb, 0, 255), ma * 255.0]).astype(np.uint8), "RGBA")
 

@@ -1,0 +1,353 @@
+{
+  "dirs": [
+    "E",
+    "SE",
+    "NE"
+  ],
+  "parts": [
+    {
+      "id": "tail",
+      "parent": "torso",
+      "png": "tail.png",
+      "pivot": [
+        26,
+        14
+      ],
+      "at": [
+        -10,
+        12
+      ],
+      "z": 1,
+      "views": {
+        "SE": {
+          "png": "tail_se.png",
+          "pivot": [
+            24,
+            14
+          ],
+          "at": [
+            -8,
+            11
+          ]
+        },
+        "NE": {
+          "png": "tail_ne.png",
+          "pivot": [
+            24,
+            14
+          ],
+          "at": [
+            -8,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "id": "wingB",
+      "parent": "torso",
+      "png": "wingB.png",
+      "pivot": [
+        3,
+        36
+      ],
+      "at": [
+        4,
+        -16
+      ],
+      "z": 2,
+      "views": {
+        "SE": {
+          "png": "wingB_se.png",
+          "pivot": [
+            3,
+            37
+          ],
+          "at": [
+            5,
+            -17
+          ]
+        },
+        "NE": {
+          "png": "wingB_ne.png",
+          "pivot": [
+            3,
+            37
+          ],
+          "at": [
+            5,
+            -16
+          ]
+        }
+      }
+    },
+    {
+      "id": "torso",
+      "png": "torso.png",
+      "pivot": [
+        18,
+        23
+      ],
+      "at": [
+        40,
+        54
+      ],
+      "z": 5,
+      "views": {
+        "SE": {
+          "png": "torso_se.png",
+          "pivot": [
+            17,
+            23
+          ],
+          "at": [
+            41,
+            56
+          ]
+        },
+        "NE": {
+          "png": "torso_ne.png",
+          "pivot": [
+            18,
+            23
+          ],
+          "at": [
+            38,
+            53
+          ]
+        }
+      }
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "png": "head.png",
+      "pivot": [
+        5,
+        24
+      ],
+      "at": [
+        7,
+        -26
+      ],
+      "z": 7,
+      "views": {
+        "SE": {
+          "png": "head_se.png",
+          "pivot": [
+            5,
+            27
+          ],
+          "at": [
+            2,
+            -25
+          ]
+        },
+        "NE": {
+          "png": "head_ne.png",
+          "pivot": [
+            5,
+            23
+          ],
+          "at": [
+            5,
+            -26
+          ]
+        }
+      }
+    },
+    {
+      "id": "wingF",
+      "parent": "torso",
+      "png": "wingF.png",
+      "pivot": [
+        30,
+        37
+      ],
+      "at": [
+        -10,
+        -14
+      ],
+      "z": 8,
+      "views": {
+        "SE": {
+          "png": "wingF_se.png",
+          "pivot": [
+            28,
+            37
+          ],
+          "at": [
+            -8,
+            -15
+          ]
+        },
+        "NE": {
+          "png": "wingF_ne.png",
+          "pivot": [
+            28,
+            37
+          ],
+          "at": [
+            -8,
+            -14
+          ]
+        }
+      }
+    }
+  ],
+  "actions": {
+    "idle": {
+      "frames": 4,
+      "curves": {
+        "torso": {
+          "dy": [
+            0,
+            0,
+            -1,
+            -1
+          ]
+        },
+        "head": {
+          "rot": [
+            0,
+            1,
+            2,
+            1
+          ],
+          "dy": [
+            0,
+            0,
+            1,
+            0
+          ]
+        },
+        "wingF": {
+          "rot": [
+            0,
+            -3,
+            -5,
+            -2
+          ]
+        },
+        "wingB": {
+          "rot": [
+            0,
+            -2,
+            -4,
+            -1
+          ]
+        },
+        "tail": {
+          "rot": [
+            0,
+            3,
+            5,
+            2
+          ]
+        }
+      }
+    },
+    "walk": {
+      "frames": 4,
+      "curves": {
+        "torso": {
+          "rot": [
+            -2,
+            0,
+            2,
+            0
+          ],
+          "dy": [
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        "head": {
+          "rot": [
+            2,
+            0,
+            -2,
+            0
+          ]
+        },
+        "wingF": {
+          "rot": [
+            -8,
+            4,
+            -8,
+            4
+          ]
+        },
+        "wingB": {
+          "rot": [
+            -6,
+            3,
+            -6,
+            3
+          ]
+        },
+        "tail": {
+          "rot": [
+            6,
+            0,
+            -6,
+            0
+          ]
+        }
+      }
+    },
+    "cast": {
+      "frames": 4,
+      "curves": {
+        "torso": {
+          "rot": [
+            0,
+            -3,
+            -4,
+            2
+          ],
+          "dy": [
+            0,
+            -1,
+            -2,
+            1
+          ]
+        },
+        "head": {
+          "rot": [
+            0,
+            -10,
+            -16,
+            6
+          ]
+        },
+        "wingF": {
+          "rot": [
+            0,
+            -22,
+            -36,
+            -8
+          ]
+        },
+        "wingB": {
+          "rot": [
+            0,
+            -18,
+            -30,
+            -6
+          ]
+        },
+        "tail": {
+          "rot": [
+            0,
+            6,
+            10,
+            -4
+          ]
+        }
+      }
+    }
+  }
+}
