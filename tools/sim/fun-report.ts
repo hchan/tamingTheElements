@@ -109,7 +109,8 @@ export function formatFunReport(r: FunReport): string {
     `  dash/tag/super/clash/defence  ${[o.dashes, o.tags, o.supers, o.clashes, o.defence].join('/')} (zero until their work packages land)`,
     `  guard/parry/perfect dodge/weather  ${[o.guards, o.parries, o.dodges, o.weathers].join('/')}`,
     `  weather per match  ${(o.weathers / Math.max(1, o.matches)).toFixed(2)}; first cast in a round, median ranged ${o.medianFirstWeatherRanged.toFixed(1)} s, melee ${o.medianFirstWeatherMelee.toFixed(1)} s`,
-    `  race win rates     ${rates.map(([race, w]) => `${race} ${(w * 100).toFixed(1)}%`).join(', ')}`,
+    `  traps placed/on a foe/timed out/doused  ${[o.trapsPlaced, o.trapHits, o.trapTimeouts, o.trapDouses].join('/')}`,
+    `  race win rates    ${rates.map(([race, w]) => `${race} ${(w * 100).toFixed(1)}%`).join(', ')}`,
     '  bands (report only):',
     ...funBands(r).map((b) => `    ${b.ok ? 'ok ' : 'OUT'} ${b.metric.padEnd(20)} ${String(Math.round(b.value * 1000) / 1000).padStart(7)} in [${String(b.min)}, ${String(b.max)}]`),
   ].join('\n');

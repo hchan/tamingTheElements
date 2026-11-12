@@ -106,7 +106,7 @@ These are not bugs for Classic: most are legacy behaviour that parity requires. 
   `steal-health-translucent`, `ice-shock-ignores-translucent`, and since WP 19 `rest-heal-enemy-in-play` (only benched
   characters heal) and `bullet-count-on-active` (a bullet hit releases its shooter's count, so a tag cannot strand it).
   Classic keeps them.
-- **Arcade events** use kinds 40..69 (Classic uses 1..30). Arcade still emits `damage` (22) for every hit, so existing
+- **Arcade events** use kinds 40..72 (Classic uses 1..30). Arcade still emits `damage` (22) for every hit, so existing
   tools keep working, plus the richer `hitConfirmed`.
 
 | Kind | Name | Payload | Emitted by |
@@ -1095,6 +1095,43 @@ dropped, so the aim snaps to the nearest of 8) and the 4-way reel facing follows
 (manual control, 2.12); a held cardinal does not, so retreating or strafing still shoots back. Releasing returns the aim to the foe.
 Shots, melee boxes, knockback, dash and charge already read `castDir`, so they need no change; the super band stays on the 4-way facing.
 Classic is untouched. Arcade goldens and baselines were re-recorded (`SIM_VERSION` 28 to 29) because every Arcade aim now differs.
+
+### 2.23 Trap AI (agents, WP 39c)
+
+The scripted Arcade AI (`ArcadeTactics`) plants and avoids the traps of WP 39a/39b. `ArcadeView` lists every live trap
+(`TrapView`: kind, box, own or foe, ticks until armed and until it ends), plus `trapIn` (own cooldown), `trapCount` (team
+traps, cap `TRAP_TEAM_MAX`) and `fireShot`. Pure helpers in `arcade-ai.ts`, tested one by one in `arcade-trap.test.ts`:
+
+- **Plant** (`trapReason`, distance = larger centre-to-centre axis offset): a foe closing in through the personality's band
+  (`ARCADE_AI_TRAP_BAND`: Rushdown 160 to 220 px, late; Zoner 240 to 360, early; Turtle 160 to 300), or the AI's back within
+  120 px of a side wall with the foe within 360 px (cornered), at `ARCADE_AI_TRAP_RATE` pm per tick (Easy 20, Normal 80,
+  Hard 300). Hard also plants at once (no draw) on a foe its own Snag roots within 200 px. In a stale fight (no HP change
+  for `ARCADE_AI_STALE_TICKS`, when the AI already presses as Rushdown) only the rooted plant remains. Never under 96 px, never while
+  stunned, under a shot threat, guarding or in a super (the plant comes after those steps in `decide`), never when the press
+  would be refused (cooldown, team cap, a held press, a spot within `TRAP_MIN_GAP_PX` of another trap: `trapSpotFree`).
+  The plant press drops movement and attacks, so the auto-face aim puts the trap between the AI and the foe.
+- **Avoid** (`trapOnStep`, `trapNudge`): a move whose next 12 px step enters a foe trap's trigger square becomes a lateral
+  nudge round it (the nearer side first, staying in the playfield and off other foe traps; standing still if boxed in).
+  Normal and Hard instead dash across a foe Fire Bomb or Spike still arming for more than 12 ticks (`trapDashable`): dash
+  i-frames (dash ticks 2 to 7 of `DASH_TICKS` 12) cannot cover a trigger span, so an armed trap is stepped round, never dashed. Easy
+  ignores foe traps in the second half of every 256 ticks (no draw), so it walks into some. In a stale fight every level walks
+  on through foe traps: two sides stepping round each other's traps could otherwise never trade a hit.
+- **Stale ranged fight** (Normal and Hard): in a stale fight a ranged hero with no move and no attack walks at the foe
+  (`toward`). Before this, two ranged heroes off each other's lines stood still for good, e.g. the Lavax-Sindarosa fire
+  mirror with one of them at a wall. That freeze predates traps.
+- **Counter** (Hard, a fire shot): a foe Puddle or Gust in the foe's 8-way direction and nearer than the foe is shot
+  (`trapToDouse`); the shot douses it on the way.
+
+AI only: no sim state changed, no `SIM_VERSION` bump, goldens unchanged (they replay recorded commands). The plant draw
+reshuffles later AI draws, so the Arcade balance baselines move by seed noise alone: Normal at rate 0 (no plant ever, one
+extra draw) already moved Echo -6.3 pp (1v1) and Ishimi +5.7 pp (2v2), past the 5 pp tolerance. The Arcade 1v1 and 2v2
+baselines were therefore re-recorded. Averaged over the match seeds 1, 101 and 201, each race moves as follows against
+the old AI. In 1v1 all stay within 5 pp: Treenoc +4.7, Echo -4.0, Lavax -3.6. In 2v2 Wispera falls 5.6 pp, from 58.3 to
+52.7, so it moves towards parity; with no plants (rate 0) Wispera stays at 58.4, so planting Gusts costs it. Ishimi
+gains 3.6 and every other race stays within 2.1. Stalemates fall
+from 149 to 71 (1v1) and from 84 to 54 (2v2) over those three seeds, through the stale rules above.
+
+`pnpm fun:report` prints traps placed / triggered on a foe / timed out / doused (`trapPlaced`, `trapTriggered` reasons).
 
 ## 3. Presentation juice (view only)
 

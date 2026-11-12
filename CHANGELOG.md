@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Trap AI (WP 39c, FUN-DESIGN 2.23): Arcade only, Classic untouched. The scripted AI sees traps (`ArcadeView.traps`, `trapIn`, `trapCount`, `fireShot`), plants when a foe closes through its personality's band (Rushdown late, Zoner early) or when cornered (Easy 20, Normal 80, Hard 300 pm per tick; Hard at once on a foe its Snag roots), never under 96 px, steps round foe traps or dashes across an arming Fire Bomb or Spike (Normal, Hard), and Hard fire heroes shoot a foe Puddle or Gust in the way; Easy walks into some. `fun:report` counts traps. AI only: no `SIM_VERSION` bump, goldens unchanged. Anti-stalemate changes, for stale fights only (400 ticks with no HP change):
+  - no zoning or corner plants;
+  - every level walks on through foe traps;
+  - an idle ranged hero walks at the foe, which ends a ranged freeze that predates traps (the Lavax-Sindarosa mirror).
+
+  The Arcade 1v1 and 2v2 balance baselines were re-recorded because the plant draw reshuffles AI decisions. That reshuffle alone pushes some races past 5 pp: at rate 0, Echo moved -6.3 pp in 1v1 and Ishimi +5.7 pp in 2v2.
+
+  Averaged over match seeds 1, 101 and 201:
+  - 1v1: every race stays within 5 pp (Treenoc +4.7, Echo -4.0, Lavax -3.6).
+  - 2v2: Wispera falls 5.6 pp, to 52.7, towards parity. Every other race stays within 3.6.
+  - Stalemates: 1v1 drops from 149 to 71 and 2v2 from 84 to 54.
+
+  The size budget was raised on purpose: sim chunk 32500 to 33550 and total 505500 to 506300 (about +1 KB gzip). The trap AI runs in the sim chunk, so it cannot be lazy-loaded.
+
 - Traps, sim (WP 39a, ideas/in-progress/wp39-bomb-trap.md): Arcade only. Command bit 6 is Trap in Arcade (Classic keeps it as capture; the Arcade capture path is gated off). A hero plants its element's trap 72 px ahead along the aim: Fire Bomb, Puddle (slows), Spike (stun, juggle) or Gust (shove). It arms in 30 game ticks, fires on the foe or at the end of its life, has a 500-tick cooldown and allows 2 per team; fire shots and bomb blasts douse enemy Puddles and Gusts; a new round clears them. New events `trapPlaced`/`trapArmed`/`trapTriggered` with audio cues. No input, view or AI yet (39b/39c), so players cannot plant one. `SIM_VERSION` 32 to 33. The Arcade goldens were re-recorded because the hashed Arcade array grew for the trap table (inputs and tick counts identical); the Classic goldens change only the `simVersion` header. The Arcade 1v1 and 2v2 and Classic balance runs are unchanged (+0.0 pp, same stalemates), so no baseline was re-recorded.
 - Panning wide arena, sim (WP 38d): the Arcade playfield is 1920 px wide (was 1280); fighters start on the old 1280 spots, centred (x 480 / 1360); the terrain keep-clear and the round reset follow. `SIM_VERSION` 31 to 32. Arcade goldens re-recorded because the arena changed (the scripted goldens were retuned so every mechanic still fires); Classic goldens change only the simVersion header.
 - Smarter Arcade AI (WP-arcade-ai-smarter, FUN-DESIGN 2.21): Arcade only, Classic untouched. Guard reflex (Normal 30 pm, Hard 900 pm of threats, never twice in 40 ticks), Hard sidestep dash out of a shot line, spacing (melee closes in, Hard ranged backs off), Rushdown charge, Hard super on a rooted foe, Hard weather under 500 pm HP, Hard tags at 450 pm; each a pure helper with tests. `SIM_VERSION` 27 to 28; Arcade goldens and Arcade balance baselines re-recorded because the AI changed (inputs identical); Classic goldens change only the simVersion header. Arcade 1v1 within 4.8 pp, stalemates 45 to 46; 2v2 stalemates 29 to 19.

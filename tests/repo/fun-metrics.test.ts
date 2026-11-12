@@ -55,6 +55,22 @@ describe('fun-metrics reducer', () => {
     expect([m.guards, m.parries, m.dodges, m.weathers]).toEqual([1, 1, 1, 1]);
   });
 
+  it('counts traps placed and how they ended: on a foe, timed out, doused (WP 39c)', () => {
+    const m = reduceFunMetrics(
+      [
+        ev(10, SimEventKind.trapPlaced, { slot: 0, trap: 1, x: 0, y: 0, team: 0 }),
+        ev(11, SimEventKind.trapPlaced, { slot: 1, trap: 2, x: 0, y: 0, team: 1 }),
+        ev(12, SimEventKind.trapPlaced, { slot: 2, trap: 2, x: 0, y: 0, team: 1 }),
+        ev(50, SimEventKind.trapTriggered, { slot: 0, trap: 1, reason: 0 }),
+        ev(60, SimEventKind.trapTriggered, { slot: 1, trap: 2, reason: 1 }),
+        ev(70, SimEventKind.trapTriggered, { slot: 2, trap: 2, reason: 2 }),
+      ],
+      meta,
+    );
+    expect([m.trapsPlaced, m.trapHits, m.trapTimeouts, m.trapDouses]).toEqual([3, 1, 1, 1]);
+    expect(summarizeFun([m, m])).toMatchObject({ trapsPlaced: 6, trapHits: 2, trapTimeouts: 2, trapDouses: 2 });
+  });
+
   it('measures rounds: length from `fight` to `roundEnded`, first hit per round, time over and perfects (FUN-DESIGN 2.10)', () => {
     const m = reduceFunMetrics(
       [

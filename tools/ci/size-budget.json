@@ -17,7 +17,7 @@
     "pose-layer": 9700,
     "rolldown-runtime": 200,
     "round-view": 2100,
-    "sim": 32500,
+    "sim": 33550,
     "super-view": 1390,
     "tag-view": 2870,
     "terrain-view": 4800,
@@ -27,7 +27,7 @@
     "viewport": 260,
     "weather-view": 3470
   },
-  "totalGzip": 505500,
+  "totalGzip": 506300,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912

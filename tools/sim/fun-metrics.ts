@@ -56,6 +56,11 @@ export interface FunMetrics {
   readonly parries: number;
   readonly dodges: number;
   readonly weathers: number;
+  /** Traps (WP 39c): `trapPlaced`, and `trapTriggered` by reason: on a foe (overlap), at the end of their life, doused by fire. */
+  readonly trapsPlaced: number;
+  readonly trapHits: number;
+  readonly trapTimeouts: number;
+  readonly trapDouses: number;
   /** Seconds from `fight` to the first weather cast of each round, by the caster's kind (WP 35: ranged / melee). */
   readonly firstWeatherRanged: readonly number[];
   readonly firstWeatherMelee: readonly number[];
@@ -85,7 +90,8 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
   const combos: number[] = [];
   const dmg: Record<string, number> = {};
   const recovered: [number, number, number] = [0, 0, 0];
-  const count = { dashes: 0, tags: 0, supers: 0, clashes: 0, defence: 0, guards: 0, parries: 0, dodges: 0, weathers: 0 };
+  const count = { dashes: 0, tags: 0, supers: 0, clashes: 0, defence: 0, guards: 0, parries: 0, dodges: 0, weathers: 0,
+    trapsPlaced: 0, trapHits: 0, trapTimeouts: 0, trapDouses: 0 };
   let diff = 0; // damage dealt by team 0 minus team 1
   let lead = 0;
   let leadChanges = 0;
@@ -161,6 +167,16 @@ export function reduceFunMetrics(events: Iterable<SimEvent>, meta: FunMatchMeta)
         if (!roundWeather) firstWeather[meta.rangedOf?.(e.sourceId) === true ? 0 : 1].push(r3((e.tick - fightTick) / TICKS_PER_SECOND));
         roundWeather = true;
         break;
+      case SimEventKind.trapPlaced:
+        count.trapsPlaced++;
+        break;
+      case SimEventKind.trapTriggered: {
+        const reason = e['reason'] ?? 0;
+        if (reason === 0) count.trapHits++;
+        else if (reason === 1) count.trapTimeouts++;
+        else count.trapDouses++;
+        break;
+      }
       default:
     }
   }
@@ -224,6 +240,10 @@ export interface FunSummary {
   readonly parries: number;
   readonly dodges: number;
   readonly weathers: number;
+  readonly trapsPlaced: number;
+  readonly trapHits: number;
+  readonly trapTimeouts: number;
+  readonly trapDouses: number;
   /** Median seconds into a round of the first weather cast, by caster kind (0 with no cast). */
   readonly medianFirstWeatherRanged: number;
   readonly medianFirstWeatherMelee: number;
@@ -269,6 +289,10 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
     parries: sum((m) => m.parries),
     dodges: sum((m) => m.dodges),
     weathers: sum((m) => m.weathers),
+    trapsPlaced: sum((m) => m.trapsPlaced),
+    trapHits: sum((m) => m.trapHits),
+    trapTimeouts: sum((m) => m.trapTimeouts),
+    trapDouses: sum((m) => m.trapDouses),
     medianFirstWeatherRanged: percentile(list.flatMap((m) => m.firstWeatherRanged), 0.5),
     medianFirstWeatherMelee: percentile(list.flatMap((m) => m.firstWeatherMelee), 0.5),
   };

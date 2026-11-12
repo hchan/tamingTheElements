@@ -12,11 +12,15 @@ import {
   EntityKind,
   TEAM_STRIDE,
   TeamField,
+  TRAP_STRIDE,
+  TRAP_TABLE,
+  TRAP_WORLD_MAX,
+  TrapF,
   World,
   type SimState,
 } from '../sim/state';
 import type { SimWorld } from '../sim/world';
-import { ARCADE_SNAG_SLOT } from '../data/arcade';
+import { ARCADE_SNAG_SLOT, SNAG_FIRE_ABILITIES } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
@@ -24,6 +28,7 @@ import { RANGED } from '../sim/systems/arcade/meter';
 import { isGuarding } from '../sim/systems/arcade/stun';
 import { superSpecOf } from '../sim/systems/arcade/super';
 import { kindOf, patchRects, stageOf } from '../sim/systems/arcade/terrain';
+import { trapCount } from '../sim/systems/arcade/trap';
 
 /** Read-only snapshot of one fighter; plain numbers, never aliases sim arrays. */
 export interface FighterView {
@@ -113,6 +118,28 @@ export interface ArcadeView {
   readonly oppGuarding: boolean;
   readonly oppRooted: number;
   readonly oppRootImmune: number;
+  /**
+   * Traps (WP 39c): every live trap on the field in table order (the rings the screen shows, both teams); game ticks
+   * until this side's fighter may plant again (0: now) and its team's live traps (the cap is TRAP_TEAM_MAX); whether
+   * this side's primary is a fire shot (it douses foe Puddles and Gusts).
+   */
+  readonly traps: readonly TrapView[];
+  readonly trapIn: number;
+  readonly trapCount: number;
+  readonly fireShot: boolean;
+}
+
+/**
+ * One trap as `ArcadeView.traps` lists it: its `TrapKind`, the top-left of its TRAP_BOX_PX square, whether this side
+ * owns it, game ticks until it arms (0: armed) and until its fuse or life ends.
+ */
+export interface TrapView {
+  readonly kind: number;
+  readonly x: number;
+  readonly y: number;
+  readonly own: boolean;
+  readonly armIn: number;
+  readonly left: number;
 }
 
 /** One rock as `ArcadeView.rocks` lists it; plain numbers. */
@@ -265,7 +292,30 @@ function arcadeViewOf(
     oppGuarding: opp !== undefined && isGuarding(s, opp.id),
     oppRooted: left(opp, ArcadeE.rootUntil),
     oppRootImmune: left(opp, ArcadeE.rootImmuneUntil),
+    traps: trapsOf(s, side, g),
+    trapIn: left(self, ArcadeE.trapReadyAt),
+    trapCount: trapCount(s, side),
+    fireShot: self !== undefined && SNAG_FIRE_ABILITIES.includes(CHARACTERS[s.defId[self.id] ?? 0]?.abilities[0] ?? ''),
   };
+}
+
+/** The live traps of the world trap table in slot order, for `side` at game tick `g`. */
+function trapsOf(s: SimState, side: number, g: number): TrapView[] {
+  const out: TrapView[] = [];
+  for (let slot = 0; slot < TRAP_WORLD_MAX; slot++) {
+    const b = ARCADE_WORLD_BASE + TRAP_TABLE + slot * TRAP_STRIDE;
+    const kind = s.arcade[b + TrapF.kind] ?? 0;
+    if (kind === 0) continue;
+    out.push({
+      kind,
+      x: s.arcade[b + TrapF.x] ?? 0,
+      y: s.arcade[b + TrapF.y] ?? 0,
+      own: s.arcade[b + TrapF.team] === side,
+      armIn: Math.max(0, (s.arcade[b + TrapF.armAt] ?? 0) - g),
+      left: Math.max(0, (s.arcade[b + TrapF.endAt] ?? 0) - g),
+    });
+  }
+  return out;
 }
 
 export function createObservationView(world: SimWorld, side: 0 | 1): ObservationView {

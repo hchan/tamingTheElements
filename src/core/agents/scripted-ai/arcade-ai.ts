@@ -1,6 +1,7 @@
+import { TRAP_BOX_PX, TRAP_MIN_GAP_PX, TRAP_PLACE_PX, TRAP_TRIGGER_PX, TrapKind } from '../../data/arcade';
 import type { Aabb } from '../../math/aabb';
 import { Cmd, type Command } from '../../sim/commands';
-import type { ShotView } from '../agent';
+import type { ShotView, TrapView } from '../agent';
 
 /**
  * Tables and threat geometry of the Arcade AI layer (`ArcadeTactics`, FUN-DESIGN 2.11, WP-arcade-ai-personalities).
@@ -189,4 +190,145 @@ export function tagChoice(level: ArcadeAiLevel, tagIn: number, pm: number, bench
   const bench = two ? bench2Pm : bench1Pm;
   const below = level >= AI_HARD ? ARCADE_AI_HARD_TAG_BELOW_PM : ARCADE_AI_TAG_BELOW_PM;
   return tagIn === 0 && pm < below && bench - pm > ARCADE_AI_TAG_MARGIN_PM ? (two ? 2 : 1) : 0;
+}
+
+/**
+ * Traps (WP 39c, FUN-DESIGN 2.23): pure helpers `ArcadeTactics` composes. Distances are centre to centre, the larger axis
+ * offset (as `spacingBit`). Never plant closer than ARCADE_AI_TRAP_MIN_PX (the foe would only cross it while it arms).
+ */
+export const ARCADE_AI_TRAP_MIN_PX = 96;
+/** Per personality, the band (px) in which an approaching foe draws a plant: Rushdown late, Zoner early, Turtle in between. */
+export const ARCADE_AI_TRAP_BAND: readonly (readonly [number, number])[] = [[160, 220], [240, 360], [160, 300]];
+/** Cornered: own back within this many px of a side wall, the foe on the open side and at most the Zoner band's far edge away. */
+export const ARCADE_AI_TRAP_CORNER_PX = 120;
+/** Hard plants on a foe its own Snag roots within this distance (the trap lands TRAP_PLACE_PX ahead, the foe inside its trigger). */
+export const ARCADE_AI_TRAP_ROOT_PX = 200;
+/** Per level, the plant rate (pm per tick) while a zoning or corner reason holds. */
+export const ARCADE_AI_TRAP_RATE: readonly [number, number, number] = [20, 80, 300];
+/** Look-ahead (px) of the avoid rule: a step this long that newly enters a foe trap's trigger square is on the path. */
+export const ARCADE_AI_TRAP_LOOK_PX = 12;
+/** A foe Fire Bomb or Spike arming in more game ticks than this is dashed across (DASH_TICKS: the dash is over first). */
+export const ARCADE_AI_TRAP_DASH_TICKS = 12;
+/** Easy ignores foe traps in the second half of every 256 `W.tick` ticks ("walks into traps now and then"; no draw). */
+export const ARCADE_AI_EASY_TRAP_BLIND = 128;
+
+/** Why to plant now: 0 none, 1 an approaching foe in the style's band, 2 cornered, 3 a foe rooted by own Snag (Hard). */
+export const TRAP_NONE = 0;
+export const TRAP_ZONE = 1;
+export const TRAP_CORNER = 2;
+export const TRAP_ROOT = 3;
+
+/** The larger axis offset between the two centres (px). */
+export function centreDist(self: Aabb, opp: Aabb): number {
+  return Math.max(Math.abs(opp.x + opp.w / 2 - self.x - self.w / 2), Math.abs(opp.y + opp.h / 2 - self.y - self.h / 2));
+}
+
+/**
+ * The plant reason (TRAP_NONE when there is none) for `self` facing `opp` at `dist` (`centreDist`) that was `prevDist`
+ * a tick earlier (-1: unknown), in playfield `pf`, with `rooted` the foe's root by this side's own Snag (ticks left; 0 none).
+ */
+export function trapReason(level: ArcadeAiLevel, style: Style, self: Aabb, opp: Aabb, dist: number, prevDist: number, rooted: number, pf: Aabb): number {
+  if (dist < ARCADE_AI_TRAP_MIN_PX) return TRAP_NONE;
+  if (level >= AI_HARD && rooted > 0 && dist <= ARCADE_AI_TRAP_ROOT_PX) return TRAP_ROOT;
+  const band = ARCADE_AI_TRAP_BAND[style] ?? [0, 0];
+  if (dist >= band[0] && dist <= band[1] && prevDist > dist) return TRAP_ZONE;
+  const oppRight = opp.x + opp.w / 2 >= self.x + self.w / 2;
+  const back = oppRight ? self.x - pf.x : pf.x + pf.w - self.x - self.w;
+  return back <= ARCADE_AI_TRAP_CORNER_PX && dist <= (ARCADE_AI_TRAP_BAND[ZONER]?.[1] ?? 0) ? TRAP_CORNER : TRAP_NONE;
+}
+
+/** True when `self` moved by (`dx`, `dy`) overlaps trap `t`'s trigger square (TRAP_BOX_PX inflated by TRAP_TRIGGER_PX). */
+function inTrigger(self: Aabb, t: TrapView, dx: number, dy: number): boolean {
+  const x = self.x + dx;
+  const y = self.y + dy;
+  return x < t.x + TRAP_BOX_PX + TRAP_TRIGGER_PX && t.x - TRAP_TRIGGER_PX < x + self.w &&
+    y < t.y + TRAP_BOX_PX + TRAP_TRIGGER_PX && t.y - TRAP_TRIGGER_PX < y + self.h;
+}
+
+/** The x and y of the movement bits of `cmd` as a ARCADE_AI_TRAP_LOOK_PX step (no tuple: this runs every tick). */
+function stepX(cmd: Command): number {
+  return ((cmd & Cmd.right) !== 0 ? ARCADE_AI_TRAP_LOOK_PX : 0) - ((cmd & Cmd.left) !== 0 ? ARCADE_AI_TRAP_LOOK_PX : 0);
+}
+function stepY(cmd: Command): number {
+  return ((cmd & Cmd.down) !== 0 ? ARCADE_AI_TRAP_LOOK_PX : 0) - ((cmd & Cmd.up) !== 0 ? ARCADE_AI_TRAP_LOOK_PX : 0);
+}
+
+/** The first foe trap that the movement of `cmd` steps into (from outside its trigger square), or undefined. */
+export function trapOnStep(self: Aabb, traps: readonly TrapView[], cmd: Command): TrapView | undefined {
+  const dx = stepX(cmd);
+  const dy = stepY(cmd);
+  if (dx === 0 && dy === 0) return undefined;
+  for (const t of traps) if (!t.own && !inTrigger(self, t, 0, 0) && inTrigger(self, t, dx, dy)) return t;
+  return undefined;
+}
+
+/**
+ * Avoid (WP 39c): the movement bits that step around foe trap `t` met by `cmd` (a lateral nudge: the other axis towards
+ * the nearer side of its trigger square, with or without the blocked move, first one that stays in `pf` and off every
+ * foe trap), or 0 to stand still when none does.
+ */
+export function trapNudge(self: Aabb, traps: readonly TrapView[], t: TrapView, cmd: Command, pf: Aabb): Command {
+  const horizontal = stepX(cmd) !== 0;
+  const keep = cmd & (horizontal ? Cmd.left | Cmd.right : Cmd.up | Cmd.down);
+  const c = horizontal ? self.y + self.h / 2 - t.y - TRAP_BOX_PX / 2 : self.x + self.w / 2 - t.x - TRAP_BOX_PX / 2;
+  const lo = horizontal ? Cmd.up : Cmd.left;
+  const hi = horizontal ? Cmd.down : Cmd.right;
+  const first = c < 0 ? lo : hi;
+  const second = c < 0 ? hi : lo;
+  for (let k = 0; k < 4; k++) {
+    const bits = (k & 1 ? 0 : keep) | (k < 2 ? first : second);
+    const x = self.x + stepX(bits);
+    const y = self.y + stepY(bits);
+    const inside = x >= pf.x && y >= pf.y && x + self.w <= pf.x + pf.w && y + self.h <= pf.y + pf.h;
+    if (inside && trapOnStep(self, traps, bits) === undefined) return bits;
+  }
+  return 0;
+}
+
+/** Normal and Hard dash across a foe Fire Bomb or Spike that arms after the dash is over (walking across takes longer). */
+export function trapDashable(level: ArcadeAiLevel, t: TrapView): boolean {
+  return level > AI_EASY && (t.kind === TrapKind.fireBomb || t.kind === TrapKind.spike) && t.armIn > ARCADE_AI_TRAP_DASH_TICKS;
+}
+
+/** The sign of offset `d` in an 8-way direction (the auto-face aim, `dirToward`): 0 when the `other` axis is at least twice it. */
+function aimSign(d: number, other: number): number {
+  return Math.abs(d) * 2 <= Math.abs(other) ? 0 : Math.sign(d);
+}
+
+/** An 8-way direction code of (dx, dy) as `aimSign` picks it. */
+function dir8(dx: number, dy: number): number {
+  return aimSign(dx, dy) * 3 + aimSign(dy, dx);
+}
+
+/**
+ * True when a trap planted now (auto-faced at `opp`: TRAP_PLACE_PX ahead of the centre, clamped to `pf`) would not be
+ * refused for lying within TRAP_MIN_GAP_PX of another trap on both axes (a refused press would hold the AI still).
+ */
+export function trapSpotFree(self: Aabb, opp: Aabb, traps: readonly TrapView[], pf: Aabb): boolean {
+  const cx = self.x + self.w / 2;
+  const cy = self.y + self.h / 2;
+  const dx = opp.x + opp.w / 2 - cx;
+  const dy = opp.y + opp.h / 2 - cy;
+  const x = Math.trunc(Math.min(Math.max(cx + aimSign(dx, dy) * TRAP_PLACE_PX - TRAP_BOX_PX / 2, pf.x), pf.x + pf.w - TRAP_BOX_PX));
+  const y = Math.trunc(Math.min(Math.max(cy + aimSign(dy, dx) * TRAP_PLACE_PX - TRAP_BOX_PX / 2, pf.y), pf.y + pf.h - TRAP_BOX_PX));
+  for (const t of traps) if (Math.abs(t.x - x) < TRAP_MIN_GAP_PX && Math.abs(t.y - y) < TRAP_MIN_GAP_PX) return false;
+  return true;
+}
+
+/**
+ * Counter (Hard, a fire shot): a foe Puddle or Gust nearer than the foe in the same 8-way direction (as the auto-face
+ * aim picks it: a diagonal unless one offset is twice the other) is on the shot's way, so a shot douses it.
+ */
+export function trapToDouse(self: Aabb, opp: Aabb, traps: readonly TrapView[]): boolean {
+  const cx = self.x + self.w / 2;
+  const cy = self.y + self.h / 2;
+  const fx = opp.x + opp.w / 2 - cx;
+  const fy = opp.y + opp.h / 2 - cy;
+  for (const t of traps) {
+    if (t.own || (t.kind !== TrapKind.puddle && t.kind !== TrapKind.gust)) continue;
+    const tx = t.x + TRAP_BOX_PX / 2 - cx;
+    const ty = t.y + TRAP_BOX_PX / 2 - cy;
+    if (dir8(tx, ty) === dir8(fx, fy) && Math.max(Math.abs(tx), Math.abs(ty)) < Math.max(Math.abs(fx), Math.abs(fy))) return true;
+  }
+  return false;
 }

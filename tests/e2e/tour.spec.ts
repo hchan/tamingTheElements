@@ -123,7 +123,7 @@ test('World Tour: no continues left shows the Game Over card with the summary, a
 test.describe('World Tour on a touch device', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 844, height: 390 } });
 
-  test('the fight shows the 7 Arcade touch buttons as a right-edge column, 48 px tall at least', async ({ page }) => {
+  test('the fight shows the 8 Arcade touch buttons in at most two right-edge columns, 48 px tall at least', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(`${START}&ff=arcade#tour`);
     await page.getByRole('button', { name: 'Start tour' }).tap();
@@ -131,12 +131,13 @@ test.describe('World Tour on a touch device', () => {
     await page.locator('#tourSplash').tap();
     await page.waitForFunction(ARENA_READY);
     const buttons = page.locator('#game button.menuButton');
-    await expect(buttons).toHaveCount(7);
+    await expect(buttons).toHaveCount(8);
     const boxes = await page.evaluate<{ right: number; height: number }[]>(
       `Array.from(document.querySelectorAll('#game button.menuButton'), (b) => { const r = b.getBoundingClientRect(); return { right: r.right, height: r.height }; })`,
     );
     for (const b of boxes) expect(b.height).toBeGreaterThanOrEqual(48);
-    expect(new Set(boxes.map((b) => Math.round(b.right))).size).toBe(1);
+    // 8 buttons no longer fit one column on a short screen (WP 39b): a second column.
+    expect(new Set(boxes.map((b) => Math.round(b.right))).size).toBeLessThanOrEqual(2);
     await expect(page.locator('#arcadeTag2')).toBeVisible();
     // A tap on Super reaches the arena as the bound key; the match goes on without errors.
     await page.locator('#arcadeSuper').tap();

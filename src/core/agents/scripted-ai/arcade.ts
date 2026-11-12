@@ -1,5 +1,6 @@
 import {
-  arcadePlayfield, CHARGE_AI_MIN_DIST, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, WEATHER_CHARGE_FULL,
+  arcadePlayfield, CHARGE_AI_MIN_DIST, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
+  WEATHER_CHARGE_FULL,
 } from '../../data/arcade';
 import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
@@ -10,9 +11,10 @@ import {
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
-  AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS, ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, DODGE,
-  AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE, chargeSensible, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward,
-  weatherSensible, type ArcadeAiLevel, type Style,
+  AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
+  ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
+  centreDist, chargeSensible, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward, trapDashable, trapNudge,
+  trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
 /**
@@ -46,10 +48,18 @@ import {
  *   (a drawn share of threats by level, never twice within 40 ticks), a dodge that dashes sideways out of a moving shot's line,
  *   spacing (ranged heroes back off inside 200 px at Hard, melee heroes close in beyond 320 px), Rushdown never charges into a guard, Hard supers on a rooted foe, calls weather and tags out earlier. Easy uses none of it.
  * - Weather: free, with its weather charged and ready and no threat, it calls its weather when its element is at a disadvantage.
+ * - Traps (WP 39c, FUN-DESIGN 2.23; helpers in arcade-ai.ts): free, with no threat, the trap ready and its team under
+ *   TRAP_TEAM_MAX, it plants (auto-faced at the foe, never under 96 px from it, never on a spot another trap blocks) when
+ *   the foe closes in through its personality's band (Rushdown late, Zoner early), when its back is to a side wall, at
+ *   the level's rate per tick (not in a stale fight), and at Hard at once on a foe its Snag roots. It steps round a foe trap its next step would
+ *   enter (a lateral nudge); Normal and Hard dash across a foe Fire Bomb or Spike that arms after the dash; Easy ignores
+ *   foe traps half the time. Hard with a fire shot shoots a foe Puddle or Gust that lies between it and the foe.
  */
 
 const MOVE = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
 const ATTACK = Cmd.primary | Cmd.secondary;
+/** A plant: no movement (the aim auto-faces the foe; a held diagonal would turn it) and no attack press this tick. */
+const plant = (cmd: Command): Command => (cmd & ~(MOVE | ATTACK)) | Cmd.trap;
 
 /**
  * The movement bit that faces `self` towards `opp` so its super (`superId`, `SuperSpec`) reaches `opp`; 0 when no 4-way
@@ -157,8 +167,8 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
   return undefined;
 }
 
-type Memory = [number, number, number, number, number, number, number, number, number, number, number, number, number];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0];
+type Memory = [number, number, number, number, number, number, number, number, number, number, number, number, number, number];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1];
 
 /** Game ticks without any HP change on the field after which the AI stops retreating and presses (no stalemates). */
 export const ARCADE_AI_STALE_TICKS = 400;
@@ -198,7 +208,7 @@ export class ArcadeTactics {
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
    * drawn for it; [2] the tick the current threat was first seen (-1: none), [3] its reaction, [4] its plan (PARRY,
    * DODGE, GUARD or NO_PLAN) and [5] how many game ticks before the hit it acts; [6] the personality (-1 until the
-   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock); [11] the `W.tick` of the last guard reflex and [12] whether the current threat's reflex is armed.
+   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock); [11] the `W.tick` of the last guard reflex and [12] whether the current threat's reflex is armed; [13] the opponent's distance (`centreDist`) last tick (-1: none; the trap rule's closing test).
    */
   private mem: Memory = [...FRESH];
   private readonly rng = new AgentRng(ARCADE_AI_STREAM_NAMES);
@@ -221,7 +231,7 @@ export class ArcadeTactics {
   apply(view: ObservationView, base: Command, shot: Command = 0): Command {
     const a = view.arcade;
     if (a === undefined) return base;
-    const cmd = this.decide(view, a, base, shot);
+    const cmd = this.avoidTraps(view, a, this.decide(view, a, base, shot));
     return avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
   }
 
@@ -271,6 +281,29 @@ export class ArcadeTactics {
     return cmd;
   }
 
+  /**
+   * Trap avoidance (WP 39c): a move whose next step enters a foe trap's trigger square becomes a dash across it (Normal
+   * and Hard, a Fire Bomb or Spike that arms after the dash, the dash ready) or a lateral nudge round it (`trapNudge`).
+   * Guard, dash, super and charge commands are left alone, Easy walks on in the second half of every 256 ticks, and
+   * everyone walks on in a stale fight (ARCADE_AI_STALE_TICKS without an HP change).
+   */
+  private avoidTraps(view: ObservationView, a: ArcadeView, cmd: Command): Command {
+    const self = view.self;
+    if (self === undefined || a.traps.length === 0 || (cmd & (Cmd.guard | Cmd.dash | Cmd.super | Cmd.charge)) !== 0) return cmd;
+    if (this.level === AI_EASY && (view.tick & 255) >= ARCADE_AI_EASY_TRAP_BLIND) return cmd;
+    // A stale fight walks on through foe traps: two sides stepping round traps can otherwise never trade a hit.
+    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS) return cmd;
+    const t = trapOnStep(self, a.traps, cmd);
+    if (t === undefined) return cmd;
+    if (a.dashIn === 0 && a.selfStun === 0 && trapDashable(this.level, t)) return Cmd.dash | (cmd & MOVE);
+    return (cmd & ~MOVE) | trapNudge(self, a.traps, t, cmd, arcadePlayfield());
+  }
+
+  /** True when a trap press now plants: free (the caller checks), ready, under the team cap, a fresh press, a free spot. */
+  private canPlant(self: FighterView, opp: FighterView, a: ArcadeView): boolean {
+    return a.trapIn === 0 && a.trapCount < TRAP_TEAM_MAX && (a.prevCmd & Cmd.trap) === 0 && trapSpotFree(self, opp, a.traps, arcadePlayfield());
+  }
+
   private decide(view: ObservationView, a: ArcadeView, base: Command, shot: Command): Command {
     const self = view.self;
     const opp = view.opponent;
@@ -285,7 +318,13 @@ export class ArcadeTactics {
       m[9] = view.tick;
       m[10] = self.hp + opp.hp;
     }
-    const style = view.tick - m[9] < ARCADE_AI_STALE_TICKS ? (m[6] as Style) : RUSHDOWN;
+    const stale = view.tick - m[9] >= ARCADE_AI_STALE_TICKS;
+    const style = stale ? RUSHDOWN : (m[6] as Style);
+    const dist = centreDist(self, opp);
+    // A stale fight presses: no zoning or corner plant then (a planted trap holds the planter and turns the foe away).
+    const found = trapReason(this.level, style, self, opp, dist, m[13], a.oppRooted, arcadePlayfield());
+    const reason = stale && found !== TRAP_ROOT ? TRAP_NONE : found;
+    m[13] = dist;
     const line = shot === 0 || (base & ATTACK) !== 0 ? 0 : diagonalLine(self, opp);
     const axisShot = (base & ATTACK) !== 0 && (base & (Cmd.left | Cmd.right)) !== 0;
     let cmd = line !== 0 ? (base & ~MOVE) | line | shot : axisShot ? base & ~(Cmd.up | Cmd.down) : base;
@@ -355,6 +394,12 @@ export class ArcadeTactics {
     if (snagBit !== 0 && (view.cooldowns[a.snagSlot] ?? 1) === 0 && !a.oppGuarding && a.oppRooted === 0 && a.oppRootImmune === 0 && boxesOverlap(self, opp)) {
       return (cmd & ~(MOVE | ATTACK)) | (opp.x + opp.w / 2 >= self.x + self.w / 2 ? Cmd.left : Cmd.right);
     }
+    // A rooted foe cannot walk off a trap planted on it (Hard; no draw).
+    if (reason === TRAP_ROOT && this.canPlant(self, opp, a)) return plant(cmd);
+    // Counter (Hard): a fire shot douses a foe Puddle or Gust between the two (the shot auto-faces the foe).
+    if (this.level >= AI_HARD && a.fireShot && shot !== 0 && a.snagSlot !== 0 && trapToDouse(self, opp, a.traps)) {
+      return (cmd & ~(MOVE | ATTACK)) | shot;
+    }
     // A rooted opponent cannot walk away: a melee hero closes in (a Charge from afar).
     // Not onto its body: a melee box starts at the edge, so two overlapped fighters never hit (stalemates); stop at SNAG_CLOSE_PX.
     if (a.oppRooted > 0 && a.chargeIn !== -1 && far >= SNAG_CLOSE_PX) {
@@ -364,14 +409,18 @@ export class ArcadeTactics {
     // Tags in the healthier bench hero (3v3: Tag 2 when the other one is healthier; WP-arcade-3v3).
     const tag = tagChoice(this.level, a.tagIn, pm, a.partnerPm, a.partner2Pm);
     if (tag !== 0) return cmd | (tag === 2 ? Cmd.swap2 : Cmd.swap1);
+    // Traps: an approaching foe in the personality's band, or own back to a wall, at the level's rate per tick.
+    if (reason !== TRAP_NONE && reason !== TRAP_ROOT && this.canPlant(self, opp, a) && draw(1000) < ARCADE_AI_TRAP_RATE[this.level]) return plant(cmd);
     if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && chargeSensible(style === RUSHDOWN, a.oppGuarding)) return Cmd.charge;
     if (a.dashIn === 0 && style === RUSHDOWN && far > ARCADE_AI_FAR_PX && draw(1000) < k[6]) {
       return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
     }
     if (a.weatherIn === 0 && a.weatherCharge >= WEATHER_CHARGE_FULL && weatherSensible(this.level, this.unfavourable, pm)) return cmd | Cmd.weather;
     // Spacing: melee closes in when it has no move (Normal and Hard); a ranged hero backs off from a close foe (Hard; Rushdown never).
+    // In a stale fight an idle ranged hero walks at the foe: two ranged heroes off each other's lines otherwise stand forever.
     if (this.level > 0 && (cmd & ATTACK) === 0 && a.oppStun === 0 && a.oppRooted === 0) {
       const ranged = a.chargeIn === -1;
+      if (ranged && stale && (cmd & MOVE) === 0) return cmd | toward(self, opp);
       if (!ranged ? (cmd & MOVE) === 0 : this.level >= AI_HARD && style !== RUSHDOWN) {
         const bit = spacingBit(self, opp, ranged, arcadePlayfield());
         if (bit !== 0) return (cmd & ~MOVE) | bit;

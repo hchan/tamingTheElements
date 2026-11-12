@@ -41,7 +41,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
   primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 1000, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: false,
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -98,13 +98,13 @@ describe('ObservationView.arcade', () => {
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, superId: 1,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
       shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, superId: 2,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
       shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true,
     });
     expect(hash(s)).toBe(before);
   });
@@ -116,17 +116,17 @@ describe('ArcadeTactics: confirms, supers and combo caps', () => {
   it('returns the Classic command untouched and never seeds its stream without view.arcade', () => {
     const t = new ArcadeTactics();
     for (const tick of [0, 1, 2]) expect(t.apply(view(undefined, tick), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1], rng: null });
   });
 
   it('leaves the command alone while the opponent is free and nothing threatens (a given Zoner draws nothing)', () => {
     const t = new ArcadeTactics(AI_NORMAL, ZONER);
     expect(t.apply(view({}), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0, 500], rng: null });
     // Easy keeps its bar for a confirm: no free super, no draw.
     const easy = new ArcadeTactics(AI_EASY, ZONER);
     expect(easy.apply(view({ meter: SUPER_COST }), cmd)).toBe(cmd);
-    expect(easy.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0], rng: null });
+    expect(easy.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0, 500], rng: null });
   });
 
   it('supers on a confirm with a full bar after its drawn reaction delay, facing the opponent', () => {
@@ -585,7 +585,7 @@ describe('the Arcade AI tags (WP-arcade-tag)', () => {
     expect(tags({ partnerPm: -1 }, 1)).toBe(false); // no partner (1v1, or down)
     expect(tags({ partnerPm: 900, tagIn: 1 })).toBe(false); // cooldown
     expect(tags({ partnerPm: 900, selfStun: 5 })).toBe(false); // not free
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 130, -1000, 0], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 130, -1000, 0, 500], rng: null });
     expect(tags({ partnerPm: 900, shots: [shotIn(10)] })).toBe(false); // threatened
   });
 
