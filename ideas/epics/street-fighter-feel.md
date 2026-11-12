@@ -10,7 +10,7 @@ Moment-to-moment combat feel: hit-stop, links, stun, crossups, supers, timers. S
 Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as one theme, in separate small work packages):
 
 - [sf-mvc-feel](../brainstorm/sf-mvc-feel.md)
-- [sf-hit-stop-juice](../brainstorm/sf-hit-stop-juice.md)
+- [sf-hit-stop-juice](../done/sf-hit-stop-juice.md)
 - [sf-light-medium-heavy](../brainstorm/sf-light-medium-heavy.md)
 - [sf-combo-links-cancels](../brainstorm/sf-combo-links-cancels.md)
 - [sf-special-move-inputs](../brainstorm/sf-special-move-inputs.md)

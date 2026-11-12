@@ -80,7 +80,22 @@ describe('EventFx, Classic', () => {
   it('reduced motion keeps the flash but drops particles and shake', () => {
     const { sink, log } = recorder();
     new EventFx(sink, { reducedMotion: () => true }).consume([dmg(1, 0)]);
-    expect(log).toEqual(['flash3:ff3a3a']);
+    expect(log).toEqual(['flash3:ff3a3a', 'spark3']);
+  });
+  it('scales the shake by damage: harder hits shake longer and stronger, capped', () => {
+    const shakeOf = (amount: number): number[] => {
+      const { sink, log } = recorder();
+      new EventFx(sink, { reducedMotion: () => false }).consume([{ ...dmg(1, 0), amount }]);
+      const m = /shake(\d+)@([\d.]+)/.exec(log.join(' '));
+      return [Number(m?.[1]), Number(m?.[2])];
+    };
+    expect(shakeOf(5)).toEqual([80, 0.002]);
+    const [d2 = 0, i2 = 0] = shakeOf(2);
+    const [d10 = 0, i10 = 0] = shakeOf(10);
+    expect(d10).toBeGreaterThan(d2);
+    expect(i10).toBeGreaterThan(i2);
+    expect(shakeOf(500)).toEqual([120, 0.006]);
+    expect(shakeOf(0)[0]).toBeLessThan(80);
   });
 });
 

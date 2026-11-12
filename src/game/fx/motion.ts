@@ -49,3 +49,9 @@ export interface ShakeParams {
 export function shakeFor(durationMs: number, intensity: number, reduced: boolean): ShakeParams | null {
   return reduced ? null : { durationMs, intensity };
 }
+
+/** Classic hit shake scaled by damage: 80 ms at 0.002 for 5 damage (the old fixed shake), growing to 120 ms at 0.006 from 15. */
+export function classicShakeFor(amount: number): { readonly durationMs: number; readonly intensity: number } {
+  const a = Math.min(15, Math.max(1, Number.isFinite(amount) ? amount : 5));
+  return { durationMs: 60 + 4 * a, intensity: Math.round(a * 4) / 10000 };
+}
