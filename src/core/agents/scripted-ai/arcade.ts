@@ -1,6 +1,6 @@
 import {
   arcadePlayfield, CHARGE_AI_MIN_DIST, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
-  TrapKind, WEATHER_CHARGE_FULL,
+  RoundPhase, TrapKind, WEATHER_CHARGE_FULL,
 } from '../../data/arcade';
 import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
@@ -308,6 +308,13 @@ export class ArcadeTactics {
   private followUp(tick: number, a: ArcadeView, opp: FighterView): void {
     const m = this.mem;
     const gusts = a.traps.filter((t) => t.own && t.kind === TrapKind.gust).length;
+    // Outside a fight (the round reset clears every trap, so the Gust count drops to 0 then) a window never opens and a
+    // leftover one is dropped: no spurious press at the start of a round (SIM_VERSION 38).
+    if (a.phase !== RoundPhase.fight) {
+      m[14] = 0;
+      m[15] = gusts;
+      return;
+    }
     if (gusts < m[15]) m[14] = tick + ARCADE_AI_PRESS_GUST_TICKS;
     m[15] = gusts;
     if (foeInOwnPuddle(opp, a.traps)) m[14] = Math.max(m[14], tick + ARCADE_AI_PRESS_PUDDLE_TICKS);

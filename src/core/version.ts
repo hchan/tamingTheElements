@@ -134,5 +134,9 @@
  * 37: Arcade only (data); Classic hashes unchanged. Arcade life hpPm Cyclonius 4800 -> 5000, Rokcore 2470 -> 2600, Lavax 3900 -> 4000
  *    (damagePm unchanged; the 3v3 tag golden script fires 18 blasts, was 16): 24-seed Normal win rates 41.7/44.7/44.7% -> 47.7/47.0/45.1%, every race 45.1-54.9%
  *    (ideas/brainstorm/arcade-low-races-analysis.md); Classic data untouched.
+ * 38: Arcade only (scripted AI); Classic hashes unchanged. The scripted Arcade AI's follow-up memory (press window [14], own Gust
+ *    count [15]) is reset outside the `fight` phase, so the Gust count dropping to 0 at the round reset no longer opens a spurious
+ *    45-tick press at the start of a round, and a leftover window from the last round is dropped
+ *    (ideas/brainstorm/ai-round-reset-gust-window.md); the hash definition is unchanged, only scripted-AI commands differ.
  */
-export const SIM_VERSION = 37;
+export const SIM_VERSION = 38;
