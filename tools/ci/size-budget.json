@@ -5,7 +5,7 @@
     "arcade-versus": 3250,
     "arena-pan": 950,
     "clash-view": 943,
-    "core": 12340,
+    "core": 12600,
     "defence-view": 3750,
     "index": 29950,
     "index.css": 4500,
@@ -17,7 +17,7 @@
     "pose-layer": 9700,
     "rolldown-runtime": 200,
     "round-view": 2100,
-    "sim": 34750,
+    "sim": 35150,
     "super-view": 1390,
     "tag-view": 2870,
     "terrain-view": 4800,
@@ -27,7 +27,7 @@
     "viewport": 260,
     "weather-view": 3470
   },
-  "totalGzip": 511400,
+  "totalGzip": 512000,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912

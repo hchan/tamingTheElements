@@ -3,6 +3,7 @@ import {
   HP_PM, HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUNDS_TO_WIN, ROUND_END_TICKS,
   ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y, ARCADE_P1_START_X, ARCADE_P2_START_X,
 } from '../../../data/arcade';
+import { SIZE_ONE, sizeHeightPx, sizeOfDef, sizeWidthPx } from '../../../data/size';
 import { freeEntity } from '../../alloc';
 import { isArcade, now } from '../../clock';
 import type { Command } from '../../commands';
@@ -80,14 +81,20 @@ function resetRound(world: SimWorld, sink: EventSink): void {
     const x = team === 0 ? ARCADE_P1_START_X : ARCADE_P2_START_X;
     teamMembers(world, team).forEach((id, k) => {
       s.flags[id] = EntityFlag.alive | (k === 0 ? 0 : EntityFlag.benched);
-      s.x[id] = x;
-      s.px[id] = x;
-      s.y[id] = ARCADE_START_Y;
-      s.py[id] = ARCADE_START_Y;
+      const size = sizeOfDef(s.defId[id] ?? 0);
+      const w = size === SIZE_ONE ? CHARACTER_WIDTH : sizeWidthPx(size);
+      const h = size === SIZE_ONE ? CHARACTER_HEIGHT : sizeHeightPx(size);
+      // A giant spawns on the same centre as a 1x hero.
+      const sx = size === SIZE_ONE ? x : x - (w - CHARACTER_WIDTH) / 2;
+      const sy = size === SIZE_ONE ? ARCADE_START_Y : ARCADE_START_Y - (h - CHARACTER_HEIGHT) / 2;
+      s.x[id] = sx;
+      s.px[id] = sx;
+      s.y[id] = sy;
+      s.py[id] = sy;
       s.vx[id] = 0;
       s.vy[id] = 0;
-      s.w[id] = CHARACTER_WIDTH;
-      s.h[id] = CHARACTER_HEIGHT;
+      s.w[id] = w;
+      s.h[id] = h;
       s.hp[id] = s.maxHp[id] ?? 0;
       s.restCap[id] = s.maxHp[id] ?? 0;
       s.speed[id] = s.baseSpeed[id] ?? 0;

@@ -1,3 +1,4 @@
+import { SIZE_ONE, sizeDamagePm, sizeHeightPx, sizeLifePm, sizeOfSlug, sizeSpeedPm, sizeWidthPx } from '../data/size';
 import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH, GARRISON_MAX_SIZE } from '../data/chapters';
 import type { ChapterNumber } from '../data/chapters';
 import { CHARACTERS, getCharacter } from '../data/characters';
@@ -68,17 +69,29 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
     const y = setup.flags.rulesetArcade ? ARCADE_START_Y : START_Y;
     s.y[id] = y;
     s.py[id] = y;
-    s.w[id] = CHARACTER_WIDTH;
-    s.h[id] = CHARACTER_HEIGHT;
+    // Giants (data/size.ts) are Arcade only: a bigger box on the same centre, more life and damage, less speed.
+    const size = setup.flags.rulesetArcade ? sizeOfSlug(def.id) : SIZE_ONE;
+    const w = size === SIZE_ONE ? CHARACTER_WIDTH : sizeWidthPx(size);
+    const h = size === SIZE_ONE ? CHARACTER_HEIGHT : sizeHeightPx(size);
+    s.w[id] = w;
+    s.h[id] = h;
+    if (size !== SIZE_ONE) {
+      s.x[id] = x - (w - CHARACTER_WIDTH) / 2;
+      s.px[id] = s.x[id] ?? 0;
+      s.y[id] = y - (h - CHARACTER_HEIGHT) / 2;
+      s.py[id] = s.y[id] ?? 0;
+    }
     // Arcade life (FUN-DESIGN 2.13): the race's hpPm of the Classic value, floored. Classic keeps it as it is.
-    const maxHp = setup.flags.rulesetArcade ? Math.floor((stats.maxHealth * arcadeLifePm(arcadeRaceNumbers(def.id)[0], roster.length, def.id)) / 1000) : stats.maxHealth;
+    const lifeBase = setup.flags.rulesetArcade ? Math.floor((stats.maxHealth * arcadeLifePm(arcadeRaceNumbers(def.id)[0], roster.length, def.id)) / 1000) : stats.maxHealth;
+    const maxHp = size === SIZE_ONE ? lifeBase : Math.floor((lifeBase * sizeLifePm(size)) / 1000);
     s.hp[id] = maxHp;
     s.maxHp[id] = maxHp;
     s.restCap[id] = maxHp;
-    s.dmgMult[id] = stats.damageMultiplier;
+    s.dmgMult[id] = size === SIZE_ONE ? stats.damageMultiplier : (stats.damageMultiplier * sizeDamagePm(size)) / 1000;
     s.healMult[id] = stats.healMultiplier;
-    s.speed[id] = def.speed;
-    s.baseSpeed[id] = def.speed;
+    const speed = size === SIZE_ONE ? def.speed : (def.speed * sizeSpeedPm(size)) / 1000;
+    s.speed[id] = speed;
+    s.baseSpeed[id] = speed;
     // Legacy benches the extra members at scene start (benchHelper), which starts their rest timers.
     if (i !== 0) startRestTimer(s, id, 0);
   });

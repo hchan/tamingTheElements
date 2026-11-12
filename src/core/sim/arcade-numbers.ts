@@ -44,7 +44,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   // Ground Shock 25 per 3 s melee; Adrenaline helps it close (9% before, the weakest). Life 5870 -> 5300 in SIM_VERSION 27.
   pax: [5300, 1580],
   // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before). Life 2470 -> 2600 in SIM_VERSION 37.
-  rokcore: [2600, 690],
+  rokcore: [2100, 650], // a 2x giant (data/size.ts) adds x1.45 life and x1.12 damage on top: 2600 / 690 before giants
   // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong.
   sindarosa: [2620, 650],
   // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]).
@@ -68,7 +68,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   lavax: 900,
   morblass: 960,
   pax: 500,
-  rokcore: 670,
+  rokcore: 540,
   sindarosa: 840,
   treenoc: 690,
   wispera: 700,

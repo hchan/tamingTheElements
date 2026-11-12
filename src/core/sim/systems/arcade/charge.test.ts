@@ -24,7 +24,7 @@ const C = Cmd.charge;
 const E = (id: number, f: number): number => id * ARCADE_E + f;
 
 /** `p1` (id 0, melee) at (300, 300) against `p2` (id 1) at `foeX`, straight into the fight. */
-function duel(foeX = 900, p1 = 'rokcore', p2 = 'pax'): SimWorld {
+function duel(foeX = 900, p1 = 'pax', p2 = 'pax'): SimWorld {
   const setup: MatchSetup = {
     simVersion: 24, seed: 9, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
     p1: [{ character: characterId(p1), xp: 1 }],
@@ -53,9 +53,9 @@ describe('charge numbers (FUN-DESIGN 2.17)', () => {
     expect(inputMaskFor({ rulesetArcade: true }) & C).toBe(C);
   });
 
-  it('Rokcore is melee and Sindarosa is ranged', () => {
+  it('Pax is melee and Sindarosa is ranged', () => {
     const idx = (id: string): number => CHARACTERS.findIndex((c) => c.id === id);
-    expect([RANGED[idx('rokcore')], RANGED[idx('sindarosa')]]).toEqual([0, 1]);
+    expect([RANGED[idx('pax')], RANGED[idx('sindarosa')]]).toEqual([0, 1]);
   });
 });
 
@@ -118,7 +118,7 @@ describe('charge arrival', () => {
   });
 
   it('a foe on its invulnerable dash ticks is passed through', () => {
-    const world = duel(560);
+    const world = duel(520);
     const s = world.state;
     const hp0 = s.hp[1] ?? 0;
     step(world, [C, Cmd.dash | Cmd.left]);

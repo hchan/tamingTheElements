@@ -97,7 +97,7 @@ describe('hit-stun', () => {
   ] as const;
   for (const [race, cmd, id, n] of cases) {
     it(`${id} stuns ${String(n)} game ticks from the hit`, () => {
-      const world = duel(race, 'rokcore');
+      const world = duel(race, 'pax');
       const [game, evs] = firstHit(world, cmd);
       expect(slug(evs.find((e) => e.kind === SimEventKind.hitConfirmed)?.['ability'] ?? -1)).toBe(id);
       const s = world.state;
@@ -135,7 +135,7 @@ describe('hit-stun', () => {
   });
 
   it('juggle: each hit while stunned takes 2 off, never under 6; at juggle 5 the next hit recovers (reason 1)', () => {
-    const world = duel('sindarosa', 'rokcore');
+    const world = duel('sindarosa', 'pax');
     const s = world.state;
     const sink = new EventSink(0);
     const stuns: number[] = [];
@@ -161,7 +161,7 @@ describe('hit-stun', () => {
   });
 
   it('stun cap: the hit that would push the chain past 150 ticks ends the stun instead (reason 2)', () => {
-    const world = duel('sindarosa', 'rokcore');
+    const world = duel('sindarosa', 'pax');
     const s = world.state;
     const sink = new EventSink(0);
     const hit = (g: number): void => {
@@ -181,7 +181,7 @@ describe('hit-stun', () => {
   });
 
   it('a shorter stun never cuts a longer one, and a hit on a free victim starts a new combo', () => {
-    const world = duel('sindarosa', 'rokcore');
+    const world = duel('sindarosa', 'pax');
     const s = world.state;
     const sink = new EventSink(0);
     applyStun(world, sink, 0, 1, 60);
@@ -198,7 +198,7 @@ describe('hit-stun', () => {
 
   it('an invulnerable character lets projectiles through and is not touched by melee', () => {
     for (const [race, cmd] of [['sindarosa', Cmd.primary], ['pax', Cmd.secondary]] as const) {
-      const world = duel(race, 'rokcore');
+      const world = duel(race, 'pax');
       world.state.arcade[E(1, ArcadeE.invulnUntil)] = 1000;
       for (let t = 0; t < 120; t++) {
         world.state.x[1] = 580;
@@ -209,7 +209,7 @@ describe('hit-stun', () => {
   });
 
   it('Entangling Vines is Snag in Arcade (FUN-DESIGN 2.20): it roots 60 once per cast and its hit stuns SNAG_STUN_TICKS (20), no Classic freeze or effect entity', () => {
-    const world = duel('treenoc', 'rokcore');
+    const world = duel('treenoc', 'pax');
     const s = world.state;
     let game = -1;
     for (let t = 0; t < 30 && game < 0; t++) {
@@ -229,24 +229,24 @@ describe('hit-stun', () => {
 describe('knockback', () => {
   it('travels 21, 45, 105 and 136 px for light, medium, heavy and super, and moves a stunned victim', () => {
     const got = KNOCKBACK_Q4.map((q) => {
-      const world = duel('sindarosa', 'rokcore');
+      const world = duel('sindarosa', 'pax');
       world.state.x[1] = 400;
       setKnockback(world.state, 1, q, EAST);
       return slide(world)[0];
     });
     expect(got).toEqual([21, 45, 105, 136]);
-    const world = duel('sindarosa', 'rokcore');
+    const world = duel('sindarosa', 'pax');
     world.state.arcade[E(1, ArcadeE.stunUntil)] = 1000;
     setKnockback(world.state, 1, KNOCKBACK_Q4[HitStrength.light], 5); // dir8 5: south-west
     expect(slide(world)).toEqual([-21, 21]);
   });
 
   it('a projectile pushes along its dir8; melee along the caster-to-victim centre delta', () => {
-    const proj = duel('sindarosa', 'rokcore');
+    const proj = duel('sindarosa', 'pax');
     firstHit(proj, Cmd.primary);
     expect([proj.state.arcade[E(1, ArcadeE.kbVx)], proj.state.arcade[E(1, ArcadeE.kbVy)]]).toEqual([224, 0]);
     // Ground Shock is centred on Pax; the victim sits up and to the left of it.
-    const melee = duel('pax', 'rokcore');
+    const melee = duel('pax', 'treenoc');
     melee.state.x[1] = 440;
     melee.state.y[1] = 240;
     firstHit(melee, Cmd.secondary);
@@ -254,7 +254,7 @@ describe('knockback', () => {
   });
 
   it('bounces off the first wall of a combo at half speed, then stops at the next one; a new combo resets it', () => {
-    const world = duel('sindarosa', 'rokcore');
+    const world = duel('sindarosa', 'pax');
     const s = world.state;
     const maxX = world.arena.x + world.arena.w - (s.w[1] ?? 0);
     s.x[1] = maxX - 30;
@@ -270,7 +270,7 @@ describe('knockback', () => {
   });
 
   it('clamps both axes to the arena (the bounds-y typo is fixed in Arcade)', () => {
-    const world = duel('sindarosa', 'rokcore');
+    const world = duel('sindarosa', 'pax');
     const s = world.state;
     s.y[1] = world.arena.y + 5;
     s.arcade[E(1, ArcadeE.wallBounced)] = 1;
@@ -292,7 +292,7 @@ describe('stun properties', () => {
     });
     fc.assert(
       fc.property(hits, (seq) => {
-        const world = duel('sindarosa', 'rokcore');
+        const world = duel('sindarosa', 'pax');
         const s = world.state;
         const sink = new EventSink(0);
         let g = 0;
