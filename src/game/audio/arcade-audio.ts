@@ -46,6 +46,9 @@ const QUIET = 0.0001;
 /** Nodes the layers hold connected, over every battle (0 after teardown; test probe). */
 let liveNodes = 0;
 
+/** The refusal cue the layers hang on the manager while mounted (the Arena reads it without importing this chunk). */
+export type RefusalAudio = AudioManager & { refuse?: () => void };
+
 export interface ArcadeAudioState {
   readonly mounted: boolean;
   readonly played: number;
@@ -124,6 +127,12 @@ export function addArcadeLayer(audio: AudioManager, hidden: () => boolean): () =
     for (const [w, f0, f1, ms, g, delay = 0] of cue) voice(w, f0 * pitch, f1 * pitch, ms, g * gain, delay);
   };
 
+  /** The Arena calls this for an action the sim will refuse; silent while muted, locked or hidden like the other cues. */
+  (audio as RefusalAudio).refuse = (): void => {
+    now = synth.currentTime;
+    if (!audio.muted && audio.isUnlocked && !hidden()) play('denied', 1, 1);
+  };
+
   const base = audio.consume.bind(audio);
   audio.consume = (events: readonly SimEvent[]): void => {
     base(events);
@@ -149,6 +158,7 @@ export function addArcadeLayer(audio: AudioManager, hidden: () => boolean): () =
   return () => {
     // The manager plays the sound map alone again.
     audio.consume = base;
+    delete (audio as RefusalAudio).refuse;
     states.delete(audio);
     voices.clear();
     out.disconnect();

@@ -37,6 +37,8 @@ export const CUES = {
   charge: [[3, 110, 880, 420, 0.16]],
   /** Snag (FUN-DESIGN 2.20): the rope whip and its snap. */
   snag: [[NOISE, 1800, 400, 110, 0.35], [1, 330, 165, 90, 0.2, 60]],
+  /** A refused action (a swap while stunned or cooling down): two short low buzzes, never a stinger. */
+  denied: [[2, 150, 120, 70, 0.3], [2, 150, 120, 70, 0.3, 100]],
   sun: [[1, 523, 523, 140, 0.2], [1, 659, 659, 140, 0.2, 90], [1, 784, 784, 220, 0.2, 180]],
   rain: [[0, 1397, 1046, 90, 0.2], [0, 1175, 880, 90, 0.2, 110], [0, 988, 698, 140, 0.2, 220]],
   sand: [[NOISE, 300, 1200, 420, 0.3], [1, 147, 147, 300, 0.15]],

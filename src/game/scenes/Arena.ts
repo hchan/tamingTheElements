@@ -482,7 +482,10 @@ export class Arena extends Phaser.Scene {
       noPartner: bar.swaps[slot] === undefined || bar.swaps[slot].dead,
       cooldownTicks: bar.swapReadyTick - bar.tick,
     });
-    if (line !== undefined) notice.show(line, this.time.now);
+    if (line !== undefined) {
+      notice.show(line, this.time.now);
+      (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
+    }
   }
 
   /** One sim tick: agents (or the given commands) in, events out to the effects and the end check. */

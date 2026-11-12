@@ -175,6 +175,22 @@ describe('Arcade audio layers', () => {
     s.dispose();
   });
 
+  it('plays the denied buzz for a refused action, silent when muted or hidden, and is gone after teardown', () => {
+    const buzz = (s: ReturnType<typeof setup>): number => {
+      (s.audio as { refuse?: () => void }).refuse?.();
+      return s.nodes.filter((n) => n.kind === 'osc').length;
+    };
+    const s = setup();
+    expect(buzz(s)).toBe(2);
+    s.hide(true);
+    expect(buzz(s)).toBe(2);
+    s.dispose();
+    expect((s.audio as { refuse?: () => void }).refuse).toBeUndefined();
+    const m = setup({ muted: true });
+    expect(buzz(m)).toBe(0);
+    m.dispose();
+  });
+
   it('caps the voices: a burst of hits and defence cues never sounds more than MAX_VOICES at once', () => {
     const s = setup();
     const burst: SimEvent[] = [];
