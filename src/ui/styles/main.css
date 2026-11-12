@@ -154,7 +154,7 @@ html[data-high-contrast='true'] :focus-visible {
   min-width: 44px;
   min-height: 44px;
   font-size: 1.25em;
-  opacity: 0.6;
+  opacity: 0.8;
   cursor: pointer;
 }
 #fullscreenToggle:hover,
@@ -386,8 +386,8 @@ a.menuLink {
 .versionStamp {
   margin-top: 24px;
   text-align: center;
-  font-size: 0.75em;
-  opacity: 0.6;
+  font-size: 1em;
+  opacity: 0.75;
 }
 #enterPortalContainer,
 #enterBattlegroundContainer,
@@ -788,7 +788,47 @@ body:has(#game:not(:empty)) {
   margin-top: 0.75em;
 }
 
-/* Touch/action row buttons: an icon beside the number key, same size on every button. */
+/* Touch/action row buttons. Touch: a column up the right edge (>= 48 px, safe areas). Mouse/keyboard: a compact row in the bottom
+   band under the walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at the arena edge.
+   --touch-row is the slot, set inline. */
+button.touchBtn {
+  --touch-row: 0;
+  position: absolute;
+  z-index: 5;
+  white-space: pre-line;
+  touch-action: none;
+  right: max(8px, env(safe-area-inset-right));
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-row) * 56px);
+  min-width: 72px;
+  min-height: 48px;
+  opacity: 0.85;
+}
+@media (pointer: fine) {
+  button.touchBtn {
+    right: calc(6px + var(--touch-row) * 88px);
+    bottom: 8px;
+    width: 84px;
+    height: 58px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1.15;
+    opacity: 0.95;
+    background: #2c3d63;
+    color: #fff;
+    border: 2px solid #8fa4c8;
+    border-radius: 6px;
+  }
+}
+html[data-high-contrast='true'] button.touchBtn {
+  opacity: 1;
+  background: #000;
+  color: #fff;
+  border: 3px solid #fff;
+}
+/* Icon beside the number key, same size on every button. */
 .touchBtn::before {
   content: '';
   display: inline-block;
@@ -855,6 +895,6 @@ body:has(#game:not(:empty)) {
   font-weight: bold;
 }
 .rosterElement {
-  font-size: 0.8em;
+  font-size: 1em;
   text-transform: capitalize;
 }

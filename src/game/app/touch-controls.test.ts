@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RenderView } from '@core/index';
-import { setBindings, DEFAULT_BINDINGS } from '../platform/input/bindings';
+import { setBindings, DEFAULT_BINDINGS, getBindings } from '../platform/input/bindings';
 import { TOUCH, isMeleeRace, setTouchText, touchButton, touchButtons, touchKeyLabel, touchStatus } from './touch-controls';
 
-type Listener = (e: { pointerId: number; preventDefault: () => void }) => void;
+type Listener = (e: { pointerId: number; preventDefault: () => void; key?: string; repeat?: boolean; stopPropagation?: () => void }) => void;
 
 /** A minimal button: the module only sets fields, adds listeners and captures the pointer. */
 function fakeButton(): Record<string, unknown> {
@@ -43,14 +43,13 @@ describe('touch controls', () => {
     const b = touchButtons(3);
     expect(b.map((x) => x.id)).toEqual(TOUCH.map((l) => `arcade${l}`));
     expect(b[6]?.textContent).toBe('4 Tag 2');
-    expect(b.every((x) => x.tabIndex === -1)).toBe(true);
+    expect(b.every((x) => x.tabIndex !== -1)).toBe(true);
   });
 
-  it('lays out a right-edge column on coarse pointers and a bottom row otherwise', () => {
+  it('puts layout in CSS classes and only the slot inline', () => {
     stubDom(true);
-    expect(touchButton('Dash', 2).style.cssText).toContain('bottom:calc(max(8px,env(safe-area-inset-bottom)) + 112px)');
-    stubDom(false);
-    expect(touchButton('Dash', 2).style.cssText).toContain('right:166px;bottom:8px');
+    expect(touchButton('Dash', 2).style.cssText).toBe('--touch-row:2');
+    expect(touchButton('Dash', 2).className).toContain('touchBtn');
   });
 
   it('holds the bound key while the finger is down and releases it once', () => {
@@ -70,6 +69,33 @@ describe('touch controls', () => {
   });
 });
 
+describe('keyboard activation', () => {
+  const key = (k: string, repeat = false) => ({ pointerId: 0, key: k, repeat, preventDefault: vi.fn(), stopPropagation: vi.fn() });
+  it('Enter or Space holds the bound key like a finger and releases it on keyup, ignoring auto-repeat', () => {
+    for (const k of ['Enter', ' ']) {
+      const { sent } = stubDom(true);
+      const b = touchButton('Dash', 0) as unknown as { listeners: Map<string, Listener> };
+      const e = key(k);
+      b.listeners.get('keydown')?.(e);
+      b.listeners.get('keydown')?.(key(k, true));
+      expect(sent).toEqual([`keydown:${String(getBindings().dash[0])}`]);
+      expect(e.preventDefault).toHaveBeenCalled();
+      expect(e.stopPropagation).toHaveBeenCalled();
+      b.listeners.get('keyup')?.(key(k));
+      expect(sent).toEqual([`keydown:${String(getBindings().dash[0])}`, `keyup:${String(getBindings().dash[0])}`]);
+    }
+  });
+  it('ignores other keys and releases on blur', () => {
+    const { sent } = stubDom(true);
+    const b = touchButton('Guard', 0) as unknown as { listeners: Map<string, Listener> };
+    b.listeners.get('keydown')?.(key('a'));
+    expect(sent).toEqual([]);
+    b.listeners.get('keydown')?.(key('Enter'));
+    b.listeners.get('blur')?.(key(''));
+    expect(sent).toEqual([`keydown:${String(getBindings().guard[0])}`, `keyup:${String(getBindings().guard[0])}`]);
+  });
+});
+
 describe('numbered action row', () => {
   it('labels each button with its key number, Charge 5 to Super 9, Tag 3 and 4', () => {
     stubDom(true);
@@ -80,7 +106,7 @@ describe('numbered action row', () => {
     stubDom(true);
     const b = touchButtons(2, [false, false]);
     expect(b.map((x) => x.textContent)).toEqual(['9 Super', '8 Guard', '7 Dash', '6 Weather', '3 Tag']);
-    expect(b[4]?.style.cssText).toContain('+ 224px');
+    expect(b[4]?.style.cssText).toBe('--touch-row:4');
     expect(touchButtons(2, [false, true])).toHaveLength(6);
     expect(touchButtons(1)).toHaveLength(5);
   });

@@ -76,40 +76,53 @@ export function watchTouch(buttons: readonly HTMLButtonElement[], view: RenderVi
 }
 
 /**
- * Pointer-only button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
- * listens on window) for as long as the finger is down; an unbound action does nothing. Not in the Tab order: keyboards
- * press the key itself. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`.
+ * Button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
+ * listens on window) for as long as the finger is down; an unbound action does nothing. Focusable: Enter or Space
+ * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`.
  */
-const coarsePointer = (): boolean => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-
 export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   const b = el('button', 'menuButton');
   setTouchText(b, label);
   b.type = 'button';
   b.id = `arcade${label}`;
   // The icon beside the number is CSS (`.touchBtn-<label>::before` in main.css), so the text stays plain and the state words still update.
+  // Layout, sizes and the high-contrast look are all CSS (`.touchBtn`, coarse and fine pointer rules); only the slot is inline.
   b.className = `menuButton touchBtn touchBtn-${label}`;
-  b.tabIndex = -1;
-  // Touch: a column up the right edge (>= 48 px, safe areas). Mouse/keyboard: a compact row in the bottom band under the
-  // walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at the arena edge.
-  b.style.cssText = coarsePointer()
-    ? `position:absolute;right:max(8px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + ${String(row * 56)}px);z-index:5;min-width:72px;min-height:48px;white-space:pre-line;touch-action:none;opacity:.85`
-    : `position:absolute;right:${String(6 + row * 80)}px;bottom:8px;z-index:5;width:74px;height:48px;min-height:0;padding:0;font-size:12px;font-weight:bold;line-height:1.15;white-space:pre-line;touch-action:none;opacity:.95;background:#2c3d63;color:#fff;border:2px solid #8fa4c8;border-radius:6px`;
+  b.style.cssText = `--touch-row:${String(row)}`;
   let code: string | undefined;
   const release = (): void => {
     if (code === undefined) return;
     window.dispatchEvent(new KeyboardEvent('keyup', { code }));
     code = undefined;
   };
+  const press = (): boolean => {
+    if (code !== undefined) return false;
+    code = getBindings()[TOUCH_KEY[label]][0];
+    if (code === undefined) return false;
+    window.dispatchEvent(new KeyboardEvent('keydown', { code }));
+    return true;
+  };
   b.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (code !== undefined) return;
-    code = getBindings()[TOUCH_KEY[label]][0];
-    if (code === undefined) return;
-    b.setPointerCapture(e.pointerId);
-    window.dispatchEvent(new KeyboardEvent('keydown', { code }));
+    if (press()) b.setPointerCapture(e.pointerId);
   });
   for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, release);
+  // Keyboard, switch and screen-reader users: Enter or Space holds the action like a finger does (same keydown, then keyup).
+  // The real key event stops here so Enter or Space never reaches the arena's own bindings or fires a click.
+  const activation = (e: KeyboardEvent): boolean => e.key === 'Enter' || e.key === ' ';
+  b.addEventListener('keydown', (e) => {
+    if (!activation(e)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.repeat) press();
+  });
+  b.addEventListener('keyup', (e) => {
+    if (!activation(e)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    release();
+  });
+  b.addEventListener('blur', release);
   return b;
 }
 

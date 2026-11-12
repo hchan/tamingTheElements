@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HC_COLORS,
   activeHeroText,
+  elementCue,
   barFill,
   benchBar,
   dashSegments,
@@ -15,6 +16,8 @@ import {
 } from './bars';
 import { buffColor, elapsedFraction, isHostile } from './buffs';
 import { StatusId } from '@core/index';
+
+const ELEMENTS = ['fire', 'air', 'earth', 'water', 'void'] as const;
 
 describe('getHealthColor (legacy ramp)', () => {
   it('is green at full, yellow at half, red at zero', () => {
@@ -119,6 +122,11 @@ describe('activeHeroText', () => {
     const lines = activeHeroText('Pax', c, false).split('\n');
     expect(lines[0]).toBe('Pax');
     expect(lines[1]).toBe(healthCue(1).text);
+  });
+  it('adds the element as a glyph and word under the name, never colour alone', () => {
+    expect(activeHeroText('Pax', { ...c, element: 'water' }, false).split('\n')).toEqual(['Pax', '● Water', healthCue(1).text]);
+    expect(activeHeroText('Pax', { ...c, element: 'fire' }, true).split('\n').slice(0, 2)).toEqual(['Pax', '▲ Fire']);
+    expect(new Set(ELEMENTS.map(elementCue)).size).toBe(ELEMENTS.length);
   });
   it('the Classic HUD keeps its HP and cap lines under the name', () => {
     const lines = activeHeroText('Curomo', c, true).split('\n');

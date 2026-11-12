@@ -256,9 +256,16 @@ export function regenLabel(c: Pick<HudCharacter, 'dead' | 'benched' | 'hp' | 're
  * The words beside the active hero's main bar: its name on the first line (so the avatar is never anonymous), then the health
  * state; the Classic HUD adds the rest cap. `name` comes from `heroName(sprite)`.
  */
-export function activeHeroText(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap'>, classic: boolean): string {
+export function activeHeroText(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap'> & { readonly element?: Element }, classic: boolean): string {
   const health = healthCue(c.hp / Math.max(1, c.maxHp)).text;
-  return classic ? `${name}\nHP ${health}\ncap ${String(restCapPct(c))}%` : `${name}\n${health}`;
+  const head = c.element === undefined ? name : `${name}\n${elementCue(c.element)}`;
+  return classic ? `${head}\nHP ${health}\ncap ${String(restCapPct(c))}%` : `${head}\n${health}`;
+}
+
+/** Element as a glyph plus its name (never the frame colour alone): fire ▲, air ≈, earth ■, water ●, void ◆. */
+const ELEMENT_GLYPH: Readonly<Record<Element, string>> = { fire: '▲', air: '≈', earth: '■', water: '●', void: '◆' };
+export function elementCue(e: Element): string {
+  return `${ELEMENT_GLYPH[e]} ${e.charAt(0).toUpperCase()}${e.slice(1)}`;
 }
 
 export function restCapPct(c: Pick<HudCharacter, 'restCap' | 'maxHp'>): number {
