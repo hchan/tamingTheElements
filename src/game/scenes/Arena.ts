@@ -260,7 +260,7 @@ export class Arena extends Phaser.Scene {
         },
         0,
         labels,
-        !arcade,
+        true,
       );
       this.cleanups.push(keyboard.attach(counted(window)));
     }
