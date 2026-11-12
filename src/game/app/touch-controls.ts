@@ -69,17 +69,18 @@ function fill(v: number, full: number): string {
 /** The last text written to each button (see `setTouchText`). */
 const written = new WeakMap<HTMLButtonElement, string>();
 
-/** Writes a button's text: `5 Charge`, plus a second line with the state when there is one. */
+/** Writes a button's text, one left-aligned line each: the key (the icon is CSS, before it), the name, then the state when there is one. */
 export function setTouchText(b: HTMLButtonElement, label: TouchLabel, status = ''): void {
   const name = label === 'Tag2' ? 'Tag 2' : label;
-  const text = `${touchKeyLabel(label)} ${name}`;
+  const text = `${touchKeyLabel(label)}\n${name}`;
   // Only write what changed: rewriting identical text or a label makes screen readers re-announce the control.
   const shown = status === '' ? text : `${text}\n${status}`;
   if (written.get(b) === shown) return;
   written.set(b, shown);
   b.textContent = shown;
   // The visible key stays in the accessible name (WCAG 2.5.3 label in name): "9 Super, 40%".
-  b.setAttribute('aria-label', status === '' ? text : `${text}, ${status}`);
+  const spoken = `${touchKeyLabel(label)} ${name}`;
+  b.setAttribute('aria-label', status === '' ? spoken : `${spoken}, ${status}`);
 }
 
 /**
