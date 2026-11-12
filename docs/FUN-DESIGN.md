@@ -1383,6 +1383,9 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 34 | `WP-sprite-sheet-pipeline` (done: section 2.16 step 2; tools and tests only, no art; the view reads sheets since `WP-sheet-view`) | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 35 | `WP-arcade-weather-charge` (done; section 2.14) | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
 | 36 | `WP-arcade-charge` | sim+view+AI | Section 2.17: melee Charge gap closer, stun on arrival, counterplay, AI use | 3, 16, 31 |
+| 37 | `WP-arcade-auto-face` (planned; owner-approved 2026-11-11) | sim+view+AI | Default: an attack auto-faces the opponent (nearest foe) whatever way the hero was moving, the Street Fighter feel. Holding a direction (8-way) at the moment of the cast overrides it for manual control. Arcade only; needs a `SIM_VERSION` bump and re-recorded Arcade goldens with a stated reason; Classic stays byte-identical. Touches `castDir` in `src/core/sim/systems/arcade/aim.ts` | 27 |
+| 38 | `WP-arcade-pan` (planned; owner request 2026-11-11) | sim+view | SF2-style panning: a wider sim playfield, a camera following the fighters' midpoint and zooming out as they part, the tile floor spanning the wider arena | 37 |
+| 39 | `WP-arcade-traps` (planned; owner request 2026-11-11) | sim+view+AI | Bomb/trap ability with timers: arming delay, visible countdown, per-team cap, counter-play (e.g. fire burns traps). Design first via the `add-ability` skill | 38 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |
 
 ```mermaid
