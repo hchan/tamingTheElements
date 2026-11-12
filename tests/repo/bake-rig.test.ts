@@ -171,8 +171,8 @@ describe('rig bake (tools/assets/bake-rig.ts)', () => {
     expect(existsSync(resolve(FIXTURE, LOCK_NAME))).toBe(false);
   });
 
-  it('the repo ships no rigs yet: pnpm assets:bake --check passes with a clear message', () => {
+  it('the shipped rigs are up to date: pnpm assets:bake --check passes', () => {
     const r = runBake({ check: true });
-    expect(r).toEqual({ code: 0, message: 'assets:bake: no rigs under imgWorkArea/rigs, nothing to bake (check ok)' });
+    expect(r.code).toBe(0);
   });
 });

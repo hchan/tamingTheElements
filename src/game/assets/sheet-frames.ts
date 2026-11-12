@@ -101,8 +101,8 @@ export function createFrameResolver(m: SheetsManifest): FrameResolver {
   };
 }
 
-/** The committed `sheets.generated.json` (no atlases yet: every frame resolves to legacy). */
-export const generatedSheets: SheetsManifest = generated;
+/** The committed `sheets.generated.json` (JSON imports widen frame pairs to number[], hence the cast). */
+export const generatedSheets = generated as unknown as SheetsManifest;
 
 let shipped: FrameResolver | undefined;
 /** `resolveFrame` over the committed manifest. */

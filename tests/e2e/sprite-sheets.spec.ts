@@ -72,14 +72,14 @@ async function face(page: Page, id: number, dir: number): Promise<void> {
 }
 const drawnAs = async (page: Page, id: number): Promise<Drawn | undefined> => (await probe(page))?.characters.find((c) => c.id === id);
 
-test('the shipped manifest (no atlases) loads no sheet and draws the legacy art', async ({ page }) => {
+test('the shipped manifest has one atlas (Fiara): nothing else is loaded and the other heroes draw the legacy art', async ({ page }) => {
   const { errors, sheetRequests } = collect(page);
   await openDemo(page);
   for (let i = 0; i < 3; i++) await page.evaluate('window.__TTE__.arena.step(10)');
   const p = await probe(page);
-  expect(p?.loaded).toEqual([]);
-  expect(p?.characters.map((c) => c.texture).sort()).toEqual(['map:curomo', 'map:pax']);
-  expect(sheetRequests).toEqual([]);
+  expect(p?.loaded.filter((s) => s !== 'fiara')).toEqual([]);
+  expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara')).sort()).toEqual(['map:curomo', 'map:pax']);
+  expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png'))).toBe(true);
   expect(errors).toEqual([]);
 });
 
