@@ -38,8 +38,9 @@ async function openDemo(page: Page, ff: string): Promise<number> {
     const a = window.__TTE__.arena;
     a.step(${String(ff.includes('arcade') ? INTRO : 0)});
     const [me, foe] = a.characters();
-    a.place(me.id, 100, 380, 0);
-    a.place(foe.id, 180, 380, 4);
+    const x = ${String(ff.includes('arcade') ? 700 : 100)}; // Arcade's 1920 wide field: fight mid-field, clear of the left wall
+    a.place(me.id, x, 380, 0);
+    a.place(foe.id, x + 80, 380, 4);
     return foe.id;
   })()`);
 }
