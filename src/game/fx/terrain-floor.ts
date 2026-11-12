@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { arcadePlayfield } from '@core/index';
 import { TILE_COLUMNS, TILE_SIZE, TILE_TEXTURE, TILE_URL, tileGrid } from './terrain-tiles';
 
 /**
@@ -10,7 +10,7 @@ import { TILE_COLUMNS, TILE_SIZE, TILE_TEXTURE, TILE_URL, tileGrid } from './ter
  * alpha is already 1 then).
  */
 
-const COLS = Math.ceil(LOGICAL_WIDTH / TILE_SIZE);
+const COLS = Math.ceil(arcadePlayfield().w / TILE_SIZE);
 const ROWS = Math.ceil(720 / TILE_SIZE);
 /** The grid is centred on the arena (its overhang is cropped equally top and bottom), so its point symmetry is the arena's. */
 const ORIGIN_Y = (720 - ROWS * TILE_SIZE) / 2;

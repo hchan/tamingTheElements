@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { WEATHER_CHARGE_FULL, type RenderView, type SimEvent } from '@core/index';
+import { WEATHER_CHARGE_FULL, arcadePlayfield, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountTagView } from '../hud/tag-view';
@@ -243,7 +243,7 @@ export function mountWeatherView(
     drawn.kind = kind;
     const tint = SKY_TINTS[kind - 1] ?? SKY_TINTS[0];
     drawn.tint = tintAlpha(kind, clock - startedAt, left, reduced);
-    p.sky.clear().fillStyle(tint[0], drawn.tint).fillRect(0, 0, LOGICAL_WIDTH, ARENA_H);
+    p.sky.clear().fillStyle(tint[0], drawn.tint).fillRect(0, 0, arcadePlayfield().w, ARENA_H);
     // Particles are motion only: none with reduced motion (the tint, badge and line carry the information).
     const fall = p.fall.clear();
     const n = reduced ? 0 : Math.min(MAX_PARTICLES, PARTICLE_COUNTS[kind - 1] ?? 0);

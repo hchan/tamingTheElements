@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { EntityFlag, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
@@ -34,7 +34,8 @@ const FLOOR_DEPTH = -0.7;
 const FX_DEPTH = 2.5;
 /** Over the HUD (100-102), like the weather badge. */
 const HUD_DEPTH = 110;
-const ARENA_W = LOGICAL_WIDTH;
+/** The world width: the Arcade playfield (1280 today; WP 38d widens it). */
+const ARENA_W = arcadePlayfield().w;
 const ARENA_H = 720;
 /** Left of the weather badge, on its row: under the player's hyper meter (the playfield starts at y 200). */
 const BADGE_X = 16;

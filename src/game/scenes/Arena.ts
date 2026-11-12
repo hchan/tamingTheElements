@@ -25,6 +25,7 @@ import {
   TeamField,
   WEATHER_TICKS,
   World,
+  arcadePlayfield,
   capturedRosterIndices,
   characterId,
   LockstepSession,
@@ -289,7 +290,7 @@ export class Arena extends Phaser.Scene {
     const element = this.view.heroElement();
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (!arcade && element) this.backdrop = new Backdrop(this, element, bg && `bg:${bg}`);
-    else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(width, height).setDepth(-1);
+    else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1);
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
     const onBlocked = (blocked: boolean): void => {
