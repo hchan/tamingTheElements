@@ -143,5 +143,7 @@
  *    x1.3), Stoneskin (earth: damage taken x0.8) for 250 game ticks, Cleanse (water: ends its Snag root, Puddle slow, Ice Blast and
  *    tidal slows); cooldown 1750 ticks (water 1250), none for void heroes; the Arcade entity block gains elemReadyAt/elemUntil,
  *    the team block a ninth press tick (CHORD_FLAG moves to bit 9); `elementalCast`/`elementalEnded`; the scripted Arcade AI uses it.
+ * 40: Arcade only (data); Classic hashes unchanged. Team life table: ARCADE_2V2_LIFE_PM lavax 537 -> 900, wispera 1050 -> 700 (2v2/3v3 balance probe:
+ *    Lavax was the weakest team hero, Wispera the strongest; against the Normal AI 2v2 Lavax 55.9% / Wispera 55.7%) (WP 44).
  */
-export const SIM_VERSION = 39;
+export const SIM_VERSION = 40;
