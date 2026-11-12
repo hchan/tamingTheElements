@@ -259,7 +259,7 @@ function tagScript(): ArcadeScript {
 
 /** 3v3 script timings: ticks between tags (past TAG_COOLDOWN_TICKS) and the Fire Blasts that KO the three p2 heroes. */
 const TAG3_EVERY = 160;
-const TAG3_BLASTS = 16;
+const TAG3_BLASTS = 18;
 
 /**
  * Tag team 3v3 (WP-arcade-3v3); p1 deals 4x. Tag 2 brings the third hero (Curomo) in, Tag 1 then brings the first

@@ -54,3 +54,24 @@ read or write scratch paths under `~/claudetmp/`.
 ## Result: Lavax hpPm 3500 to 3900 (WP 39i, SIM_VERSION 36)
 
 Lavax overall 40.5% to 44.7% (24 seeds, Normal); no race became extreme. Lavax vs Morblass is still 0%, so the clash/kit change for that pairing remains open. Arcade goldens and both Arcade baselines re-recorded (Lavax max HP changes every Arcade hash); Classic goldens changed only in the simVersion header.
+
+## Result: Cyclonius, Rokcore, Lavax hpPm (SIM_VERSION 37)
+
+24 seeds, Normal, `tools/sim/low-races/lowraces.mts`. Win % before (SIM 36) -> after, hpPm only (damagePm unchanged):
+
+| Race | hpPm | Before | After |
+|---|---|---|---|
+| curomo | 5800 | 49.6 | 45.8 |
+| cyclonius | 4800 -> 5000 | 41.7 | 47.7 |
+| echo | 6200 | 50.0 | 47.3 |
+| fiara | 5400 | 51.5 | 51.1 |
+| ishimi | 6400 | 52.3 | 51.5 |
+| lavax | 3900 -> 4000 | 44.7 | 45.1 |
+| morblass | 3950 | 50.0 | 50.0 |
+| pax | 5300 | 55.3 | 54.9 |
+| rokcore | 2470 -> 2600 | 44.7 | 47.0 |
+| sindarosa | 2620 | 45.8 | 46.6 |
+| treenoc | 6500 | 54.9 | 54.9 |
+| wispera | 7300 | 53.4 | 52.3 |
+
+All races 45.1-54.9%. Stats are steep: a first try (Cyclonius 5300, Rokcore 2800, Lavax 3900) overshot (Cyclonius 54.9, Rokcore 52.7) and pushed Curomo to 45.1 and Lavax to 43.9, so Lavax got +100 to stay above 45. Lavax and Curomo sit close to the 45% line (24-seed noise is about 2 pp). Arcade goldens and both Arcade baselines re-recorded (max HP changes every Arcade hash); Classic goldens changed only in the simVersion header.
