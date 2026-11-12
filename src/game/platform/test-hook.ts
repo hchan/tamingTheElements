@@ -51,6 +51,8 @@ export interface ArenaProbe {
    * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the
    * texts shown and the camera zoom over the fit zoom; undefined otherwise (always in Classic).
    */
+  /** Arcade pan camera (WP 38b): framing centre x and zoom, the camera's real zoom over the fit zoom and its scroll x. */
+  camera(): Promise<{ centerX: number; zoom: number; camZoom: number; scrollX: number }>;
   superFx(): Promise<{ dim: number; bandAlpha: number; slide: number; zoom: number; name: string; sub: string; camZoom: number } | undefined>;
   /**
    * Arcade only (async: its code is a lazy chunk): the round HUD as drawn, i.e. the banner texts, whether the banner is

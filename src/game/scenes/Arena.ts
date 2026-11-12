@@ -407,6 +407,7 @@ export class Arena extends Phaser.Scene {
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };
       },
+      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / (this.scale.width / LOGICAL_WIDTH), scrollX: this.cameras.main.scrollX })),
       superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
       sheets: () => import('../views/pose-layer').then((m) => m.sheetState(this)),
       rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),

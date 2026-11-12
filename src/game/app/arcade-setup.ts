@@ -14,6 +14,8 @@ import {
 import { ScriptedAI, scriptedProfileFor } from '@core/lazy-index';
 import type { ReplayStore } from '../platform/storage/replay-store';
 import { mountAimIndicator } from '../fx/aim-view';
+import { mountArenaPan } from '../fx/arena-pan';
+import { getPrefs } from '../platform/a11y/prefs';
 import { PlaytestRecorder } from '../replay/playtest-recorder';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_AI_LEVELS, ARCADE_RACES, type ArcadePick } from './arcade-pick';
@@ -150,6 +152,7 @@ export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOpti
       view = v;
       o.onView?.(v);
       mountAimIndicator(arena, v, alpha);
+      mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion);
       const held = arena.audio;
       void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held); });
     },

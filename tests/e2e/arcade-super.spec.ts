@@ -70,6 +70,8 @@ test('Arcade: a super dims the arena, slides in the element cut-in and punches t
   await page.evaluate(`window.__TTE__.arena.step(40)`);
   await frames(page);
   expect(await superFx(page)).toBeUndefined();
+  // The pan camera (WP 38b) is pinned on the 1280 playfield: after the cinematic the framing is the fit camera again.
+  expect(await page.evaluate<{ centerX: number; zoom: number; camZoom: number }>(`window.__TTE__.arena.camera()`)).toMatchObject({ centerX: 640, zoom: 1, camZoom: 1 });
   expect(errors).toEqual([]);
 });
 

@@ -18,6 +18,10 @@ describe('arena camera', () => {
     expect(idealFraming({ ...base, worldWidth: 1280, x1: 100, x2: 300 })).toEqual({ centerX: 640, zoom: 1 });
   });
 
+  it('never zooms out past the world: a 1280 world pins zoom 1 even at max separation', () => {
+    expect(idealFraming({ ...base, worldWidth: 1280, x1: 100, x2: 1180 })).toEqual({ centerX: 640, zoom: 1 });
+  });
+
   it('zooms out when separation plus margins exceeds the view, down to the floor', () => {
     const z = idealFraming({ ...base, x1: 400, x2: 1500 }).zoom;
     expect(z).toBeCloseTo(1280 / (1100 + 2 * CAMERA_MARGIN), 10);

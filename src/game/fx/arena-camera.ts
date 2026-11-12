@@ -37,9 +37,9 @@ export function clampCenter(centerX: number, zoom: number, worldWidth: number, v
 
 /** The framing the camera wants this instant (no smoothing). */
 export function idealFraming(i: CameraInput): CameraFraming {
-  const zoom = i.reducedMotion
-    ? 1
-    : Math.min(1, Math.max(CAMERA_ZOOM_MIN, i.viewWidth / (Math.abs(i.x1 - i.x2) + 2 * CAMERA_MARGIN)));
+  // Never zoom out past the world itself (a 1280 world stays at zoom 1: the picture is identical to the fixed camera).
+  const floor = Math.min(1, Math.max(CAMERA_ZOOM_MIN, i.viewWidth / i.worldWidth));
+  const zoom = i.reducedMotion ? 1 : Math.min(1, Math.max(floor, i.viewWidth / (Math.abs(i.x1 - i.x2) + 2 * CAMERA_MARGIN)));
   return { centerX: clampCenter((i.x1 + i.x2) / 2, zoom, i.worldWidth, i.viewWidth), zoom };
 }
 

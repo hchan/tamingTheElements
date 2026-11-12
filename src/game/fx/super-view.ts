@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { SUPER_NAMES, type Element } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
+import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { ELEMENT_COLORS } from './element-colors';
 import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
 
@@ -88,9 +89,9 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   let lifted: Phaser.GameObjects.Image | undefined;
   let running = false;
 
-  /** Zooms the camera by `z` about (px, py), which keeps its place on screen; z = 1 is viewport.ts `fitScene`. */
+  /** Zooms the camera by `z` about (px, py) over the pan framing (arena-pan.ts; pinned it is viewport.ts `fitScene`). */
   const aim = (z: number): void => {
-    scene.cameras.main.setZoom(res() * z).centerOn(px + (LOGICAL_WIDTH / 2 - px) / z, py + (LOGICAL_HEIGHT / 2 - py) / z);
+    applyCamera(scene, z, px, py);
   };
   /** Ends the cinematic; `live` is false when the scene is going away (Phaser then destroys the objects itself). */
   const stop = (live: boolean): void => {
@@ -101,6 +102,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     if (live) {
       lifted?.setDepth(0);
       for (const o of all) o.setVisible(false);
+      holdCamera(scene, false);
       aim(1);
     }
     lifted = undefined;
@@ -117,11 +119,19 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     lastTick = t;
     superFrame((t - from) * TICK_MS + sub, (until - from) * TICK_MS, reduced, frame);
     const dx = frame.slide * LOGICAL_WIDTH * side;
-    parts.dim.setAlpha(frame.dim);
-    parts.band.setPosition(dx, bandY).setAlpha(frame.bandAlpha * 0.9);
-    parts.portrait.setPosition(dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY).setAlpha(frame.bandAlpha);
-    parts.name.setPosition(dx + LOGICAL_WIDTH / 2, bandY - 26).setAlpha(frame.bandAlpha);
-    parts.sub.setPosition(dx + LOGICAL_WIDTH / 2, bandY + 44).setAlpha(frame.bandAlpha);
+    // Screen-space layout in 1280x720 units, mapped onto the visible window (identity while the camera is pinned).
+    const v = viewBox(scene, frame.zoom, px, py);
+    const put = (o: Phaser.GameObjects.Components.Transform & { setAlpha(a: number): unknown }, sx: number, sy: number, a: number): void => {
+      o.setPosition(v.x + sx * v.scale, v.y + sy * v.scale);
+      o.setAlpha(a);
+    };
+    for (const o of [parts.dim, parts.band, parts.name, parts.sub]) o.setScale(v.scale);
+    parts.portrait.setDisplaySize(PORTRAIT_PX * v.scale, PORTRAIT_PX * v.scale);
+    put(parts.dim, 0, 0, frame.dim);
+    put(parts.band, dx, bandY, frame.bandAlpha * 0.9);
+    put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
+    put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26, frame.bandAlpha);
+    put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44, frame.bandAlpha);
     aim(frame.zoom);
   }
   const drop = (): void => {
@@ -155,6 +165,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       scene.registry.set('tte.band', bandY === BAND_HIGH_Y);
       lifted = img.setDepth(DIM_DEPTH + 1);
       running = true;
+      holdCamera(scene, true);
       scene.events.on('update', update);
       update(0, 0);
     },
