@@ -124,7 +124,8 @@ describe('every Arcade clamp site respects it', () => {
     for (const dir of [2, 6]) {
       const w = duel(500, 300);
       w.state.arcade[ARCADE_TEAM_BASE + ArcadeT.meter] = SUPER_COST;
-      w.state.dir[0] = dir;
+      // Auto-face: the band follows the foe, so put the foe above (dir 2) or below (dir 6) the caster.
+      [w.state.x[1], w.state.y[1]] = [500, dir === 2 ? 0 : 600];
       step(w, [Cmd.super, 0]);
       const fx = (w.state.arcade[ARCADE_TEAM_BASE + ArcadeT.superState] ?? 0) - 1;
       const [fy, fh] = [w.state.y[fx] ?? 0, w.state.h[fx] ?? 0];

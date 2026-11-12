@@ -1078,6 +1078,15 @@ and baselines changed (`SIM_VERSION` 27 to 28; Classic goldens change only their
 Numbers (Normal, 1v1, vs the old baseline): every race within 4.8 pp (largest: Sindarosa +4.8, Fiara -4.0); stalemates 45 to 46. 2v2: Echo +7.4,
 Rokcore -8.0, Wispera -6.8, the rest within 4.6; stalemates 29 to 19. Hard 1v1 tournament, 4 seeds: 18 stalemates (old 12).
 
+### 2.22 Auto-face aim (sim, WP-arcade-auto-face)
+
+The Street Fighter feel: an Arcade hero attacks toward its opponent whichever way it was moving. Each tick (`arcadeMove`), if no diagonal is
+held, the aim is set to the 8-way direction toward the foe (`dirToward` in `aim.ts`: centre to centre, a component under half the other is
+dropped, so the aim snaps to the nearest of 8) and the 4-way reel facing follows it. A held diagonal overrides it for as long as it is held
+(manual control, 2.12); a held cardinal does not, so retreating or strafing still shoots back. Releasing returns the aim to the foe.
+Shots, melee boxes, knockback, dash and charge already read `castDir`, so they need no change; the super band stays on the 4-way facing.
+Classic is untouched. Arcade goldens and baselines were re-recorded (`SIM_VERSION` 28 to 29) because every Arcade aim now differs.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)
@@ -1383,7 +1392,7 @@ PR gate holds its invariants, and the owner can play it (section 7).
 | 34 | `WP-sprite-sheet-pipeline` (done: section 2.16 step 2; tools and tests only, no art; the view reads sheets since `WP-sheet-view`) | tools+assets | Section 2.16 step 2: sheet spec, packer, validation, fallback | 33 |
 | 35 | `WP-arcade-weather-charge` (done; section 2.14) | sim+view+AI | Section 2.14 'Weather power': weather charge bar, ranged heroes charge on attacks, melee on walking, spend on cast, AI waits for charge, HUD bar | 29, 30 |
 | 36 | `WP-arcade-charge` | sim+view+AI | Section 2.17: melee Charge gap closer, stun on arrival, counterplay, AI use | 3, 16, 31 |
-| 37 | `WP-arcade-auto-face` (planned; owner-approved 2026-11-11) | sim+view+AI | Default: an attack auto-faces the opponent (nearest foe) whatever way the hero was moving, the Street Fighter feel. Holding a direction (8-way) at the moment of the cast overrides it for manual control. Arcade only; needs a `SIM_VERSION` bump and re-recorded Arcade goldens with a stated reason; Classic stays byte-identical. Touches `castDir` in `src/core/sim/systems/arcade/aim.ts` | 27 |
+| 37 | `WP-arcade-auto-face` (done; owner-approved 2026-11-11; 2.22, `SIM_VERSION` 29) | sim+view+AI | Default: an attack auto-faces the opponent (nearest foe) whatever way the hero was moving, the Street Fighter feel. Holding a direction (8-way) at the moment of the cast overrides it for manual control. Arcade only; needs a `SIM_VERSION` bump and re-recorded Arcade goldens with a stated reason; Classic stays byte-identical. Touches `castDir` in `src/core/sim/systems/arcade/aim.ts` | 27 |
 | 38 | `WP-arcade-pan` (planned; owner request 2026-11-11) | sim+view | SF2-style panning: a wider sim playfield, a camera following the fighters' midpoint and zooming out as they part, the tile floor spanning the wider arena | 37 |
 | 39 | `WP-arcade-traps` (planned; owner request 2026-11-11) | sim+view+AI | Bomb/trap ability with timers: arming delay, visible countdown, per-team cap, counter-play (e.g. fire burns traps). Design first via the `add-ability` skill | 38 |
 | 28 | `WP-arcade-net` | net | Flags and simVersion in the planned control-channel handshake, `inputMaskFor` per session, two-peer Arcade lockstep test | 1, 13 |

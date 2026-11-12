@@ -40,14 +40,14 @@ const { up, down, left, right, primary, secondary, dash, guard, super: sup, weat
 /**
  * Both players to known spots, so a segment does not depend on what the one before it did: p1 goes to the top wall and
  * back down `rows` ticks (31 is the start row, 0 stays at the top; p2 always returns to the start row), then p1 goes to
- * the left wall and walks `walk` ticks toward p2, while p2 goes to the right wall and turns to face p1. Returns the tick
- * at which both are in place.
+ * the left wall and walks `walk` ticks toward p2, while p2 goes to the right wall. Nobody needs to turn: with no diagonal
+ * held, a hero's aim and facing follow the foe (FUN-DESIGN 2.22). Returns the tick at which both are in place.
  */
 function home(p1: Track, p2: Track, at: number, walk: number, rows = 31): number {
   p1.until(at).step('p1 to the top wall', up, 50).step('p1 back down', down, rows);
   p2.until(at).step('p2 to the top wall', up, 50).step('p2 back down', down, 31);
   p1.step('p1 to the left wall', left, 140).step('p1 walks in', right, walk);
-  p2.step('p2 to the right wall', right, 140 + walk).step('p2 faces p1', left, 1);
+  p2.step('p2 to the right wall', right, 140 + walk);
   return Math.max(p1.tick, p2.tick);
 }
 
@@ -59,8 +59,8 @@ const BEAT_ROUND_1 = 10;
 const BEAT_ROUND_3 = 11;
 /**
  * Weather power (WP-arcade-weather-charge): the weather needs a full charge, and a Fire Blast adds WEATHER_CHARGE_CAST,
- * so segment C starts CHARGE_SHIFT ticks late and p2 first fires CHARGE_BLASTS blasts away from p1 (east, off the
- * right wall); every later segment moves by the same shift.
+ * so segment C starts CHARGE_SHIFT ticks late and p2 first fires CHARGE_BLASTS blasts away from p1 (aim held
+ * up-right: a held diagonal overrides the auto-face, so they fly off the top right corner and never reach p1); every later segment moves by the same shift.
  */
 const CHARGE_SHIFT = 1300;
 const CHARGE_BLASTS = 35;
@@ -94,9 +94,9 @@ function movesScript(): ArcadeScript {
   let h = home(p1, p2, 260, 100);
   p1.until(h).tap('tornado', primary, 1, 6);
   for (let i = 0; i < 3; i++) p1.tap('cone', secondary, 1, 19);
-  // Charge: p2 fires blasts east from the right wall until its weather charge is full.
+  // Charge: p2 fires blasts up-right from the right wall until its weather charge is full.
   p2.until(720).step('p2 to the right wall', right, 140);
-  for (let i = 0; i < CHARGE_BLASTS; i++) p2.tap('charge blast', primary, 1, 30);
+  for (let i = 0; i < CHARGE_BLASTS; i++) p2.tap('charge blast', primary | up | right, 1, 30);
   // Segment C: counter hit (p2 calls its weather, and its recovery is when p1's cone lands).
   h = home(p1, p2, 720 + CHARGE_SHIFT, 100);
   p1.until(h + 10).tap('cone', secondary);
@@ -104,7 +104,7 @@ function movesScript(): ArcadeScript {
   // Segment D: dash with a perfect dodge (p2's fire blast passes through p1's invulnerable dash ticks).
   h = home(p1, p2, 1130 + CHARGE_SHIFT, 100);
   p2.until(h + 10).tap('fire blast', primary);
-  p1.until(h + 60).tap('dash up', up | dash);
+  p1.until(h + 61).tap('dash up', up | dash);
   // Beat-down (WP-arcade-numbers: Arcade lives are about 4x the hits now): single cones a stun apart, so p2 is low
   // enough for the parry's reflection to KO it.
   h = beatDown(p1, p2, 1700 + CHARGE_SHIFT, BEAT_ROUND_1);
@@ -164,15 +164,15 @@ function weatherScript(): ArcadeScript {
   const p2 = new Track();
   // Weather power: fire, earth and void walk the charge up (melee-class heroes gain it by walking; a lap of four runs
   // of WALK_RUN ticks returns to the start spot), and the cast follows once it is full.
-  const lap = (p: Track, at: number, out: number, back: number): void => {
+  const lap = (p: Track, at: number, out: number, back: number, runs = 4): void => {
     p.until(at);
-    for (const dir of [out, back, out, back]) p.step('walk', dir, WALK_RUN);
+    for (let i = 0; i < runs; i++) p.step('walk', i % 2 === 0 ? out : back, WALK_RUN);
   };
   lap(p1, 100, right, left);
   p1.tap('sun (fire)', weather).wait(WEATHER_RECOVERY).tap('swap to earth', swap1);
   lap(p1, p1.tick, right, left);
   p1.tap('sandstorm (earth)', weather);
-  lap(p1, p1.tick, right, left);
+  lap(p1, p1.tick, right, left, 6); // the sandstorm's rocks block some steps (no charge), so the void lap is longer
   p1.wait(WEATHER_RECOVERY).tap('swap to void', swap2).wait(30).tap('eclipse (void)', weather);
   lap(p2, 110, left, right);
   p2.tap('rain (water)', weather).wait(WEATHER_RECOVERY);
@@ -180,8 +180,6 @@ function weatherScript(): ArcadeScript {
   p2.tap('swap to air', swap1).tap('gale (air)', weather);
   const e = p1.tick;
   // A hit under the eclipse: the void bolt crosses the arena and lands with the weather's damage factor.
-  p1.until(e + 18).step('face east', right, 1);
-  p2.until(e + 18).step('face west', left, 1);
   p1.until(e + 24).tap('chaos bolt', primary);
   // Elemental clash (WP-arcade-clash): shots fired on the same row meet in the middle. Void against air cancels (both
   // destroyed); then fire (Fiara's Fireball) beats air (the cone), loses half the cone's damage and flies on to land.
@@ -194,6 +192,7 @@ function weatherScript(): ArcadeScript {
   // charges up again and calls the sandstorm: the stage turns to earth after the telegraph (the patches become rocks).
   // Rokcore walks over a rock (`patchEntered`) while Cyclonius' cones, fired along the row, stop at the centre rock.
   p1.tap('swap to earth', swap1);
+  p1.step('to the left wall', left, 140); // out of the middle band, so the new layout has room for rocks
   lap(p1, p1.tick, right, left);
   p1.tap('sandstorm again', weather).wait(TELEGRAPH_WAIT);
   p1.step('walk over the rock', right, ROCK_WALK).step('walk back', left, ROCK_WALK);

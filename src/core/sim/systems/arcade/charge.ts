@@ -1,13 +1,13 @@
 import {
   CHARGE_COOLDOWN_TICKS, CHARGE_DAMAGE, CHARGE_MAX_STEP_PX, CHARGE_SPEED_MULT, CHARGE_TICKS, ChargeEnd, METER_CHARGE,
 } from '../../../data/arcade';
-import { DIR8_X, DIR8_Y, dir8FromSigns } from '../../../math/dir8';
+import { DIR8_X, DIR8_Y } from '../../../math/dir8';
 import { isArcade, now } from '../../clock';
 import type { Command } from '../../commands';
 import { SimEventKind, type EventSink } from '../../events';
-import { ARCADE_E, ArcadeE, TEAM_COUNT, type SimState } from '../../state';
+import { ARCADE_E, ArcadeE, TEAM_COUNT } from '../../state';
 import type { SimWorld } from '../../world';
-import { castDir, setAim } from './aim';
+import { castDir, dirToward, setAim } from './aim';
 import { pending, Press, usePress } from './buffer';
 import { applyArcadeHit, CHARGE_DEF } from './hit';
 import { gainMeter, RANGED } from './meter';
@@ -15,13 +15,6 @@ import { controlledId, facingFor } from '../movement';
 import { endCharge } from './charge-move';
 import { canAct, chargeTick, isInvulnerable } from './stun';
 import { isRooted } from './snag';
-
-/** The 8-way direction from `id` towards `foe` (FUN-DESIGN 2.17): a diagonal unless one axis offset is 2x the other. */
-function chargeDir(s: SimState, id: number, foe: number): number {
-  const dx = (s.x[foe] ?? 0) + (s.w[foe] ?? 0) / 2 - (s.x[id] ?? 0) - (s.w[id] ?? 0) / 2;
-  const dy = (s.y[foe] ?? 0) + (s.h[foe] ?? 0) / 2 - (s.y[id] ?? 0) - (s.h[id] ?? 0) / 2;
-  return dir8FromSigns(Math.abs(dx) * 2 <= Math.abs(dy) ? 0 : dx, Math.abs(dy) * 2 <= Math.abs(dx) ? 0 : dy);
-}
 
 /**
  * Starts `team`'s charge (FUN-DESIGN 2.17) on a pending charge press when the controlled melee hero (primary not
@@ -34,7 +27,7 @@ export function startCharge(world: SimWorld, sink: EventSink, team: number, id: 
   const g = now(s);
   if (id < 0 || !pending(s, team, Press.charge) || RANGED[s.defId[id] ?? 0]) return;
   if (g < (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) || !canAct(world, id) || isRooted(s, id)) return;
-  const dir = foe >= 0 ? chargeDir(s, id, foe) : castDir(s, id);
+  const dir = foe >= 0 ? dirToward(s, id, foe) : castDir(s, id);
   const step = Math.min((s.speed[id] ?? 0) * CHARGE_SPEED_MULT, CHARGE_MAX_STEP_PX);
   const ax = DIR8_X[dir] ?? 0;
   const ay = DIR8_Y[dir] ?? 0;

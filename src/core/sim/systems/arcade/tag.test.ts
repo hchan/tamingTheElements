@@ -78,17 +78,17 @@ describe('tag swap and entrance attack', () => {
   it("brings the partner in at the outgoing character's spot, facing and aim, with a free entrance attack", () => {
     const w = tagDuel();
     const s = w.state;
-    s.arcade[E(0, ArcadeE.aim)] = 2; // 8-way aim north-east (dir8 1), 4-way facing east
+    // Auto-face (FUN-DESIGN 2.22): the foe is east-ish of the caster, so the aim is east (dir8 0, stored 1).
     const g = now(s);
     const ev = step(w, TAG);
     expect([benched(w, 0), benched(w, 1)]).toEqual([true, false]);
-    expect([s.x[1], s.y[1], s.px[1], s.py[1], s.dir[1], s.arcade[E(1, ArcadeE.aim)]]).toEqual([300, 200, 300, 200, 0, 2]);
+    expect([s.x[1], s.y[1], s.px[1], s.py[1], s.dir[1], s.arcade[E(1, ArcadeE.aim)]]).toEqual([300, 200, 300, 200, 0, 1]);
     expect(of(ev, SimEventKind.swapped)).toMatchObject([{ from: 0, to: 1, team: 0 }]);
     expect(of(ev, SimEventKind.tagIn)).toMatchObject([{ sourceId: 1, from: 0, to: 1, team: 0, entrance: 1 }]);
     expect(s.teams[COOLDOWN]).toBe(g + TAG_COOLDOWN_TICKS);
     // The entrance Tornado flies along the outgoing aim; the cast is free (no cooldown booked) but counts and pays meter.
     const [shot] = owned(w, 1);
-    expect(shot === undefined ? -1 : s.dir[shot]).toBe(1);
+    expect(shot === undefined ? -1 : s.dir[shot]).toBe(0);
     expect(s.abil[cooldownIdx(1, 0)]).toBe(0);
     expect(s.abil[countIdx(1, 0)]).toBe(1);
     expect(s.arcade[ARCADE_TEAM_BASE + ArcadeT.meter]).toBe(METER_CAST);

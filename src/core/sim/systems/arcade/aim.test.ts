@@ -54,25 +54,38 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
       const [b] = bullets(world);
       expect(b).toBeDefined();
       const id = b ?? 0;
-      expect([s.dir[id], s.vx[id], s.vy[id]]).toEqual([d, (DIR8_X[d] ?? 0) * FIRE_BLAST_SPEED, (DIR8_Y[d] ?? 0) * FIRE_BLAST_SPEED]);
+      // Auto-face (FUN-DESIGN 2.22): a held diagonal overrides; a held cardinal still faces the foe (east in this duel).
+      const e = d % 2 === 1 ? d : 0;
+      expect([s.dir[id], s.vx[id], s.vy[id]]).toEqual([e, (DIR8_X[e] ?? 0) * FIRE_BLAST_SPEED, (DIR8_Y[e] ?? 0) * FIRE_BLAST_SPEED]);
       const [x, y] = [s.x[id] ?? 0, s.y[id] ?? 0];
+      const faced = s.dir[0];
       step(world, [0, 0]);
-      expect([(s.x[id] ?? 0) - x, (s.y[id] ?? 0) - y]).toEqual([(DIR8_X[d] ?? 0) * 8, (DIR8_Y[d] ?? 0) * 8]);
+      expect([(s.x[id] ?? 0) - x, (s.y[id] ?? 0) - y]).toEqual([(DIR8_X[e] ?? 0) * 8, (DIR8_Y[e] ?? 0) * 8]);
       // The reel facing stays 4-way: x wins, as in Classic.
-      expect(s.dir[0]).toBe(facingFor(DIR8_X[d] ?? 0, DIR8_Y[d] ?? 0, -1));
+      expect(faced).toBe(facingFor(DIR8_X[e] ?? 0, DIR8_Y[e] ?? 0, -1));
     });
   });
 
-  it('keeps the last held aim after the input is released; before any input it is the 4-way facing', () => {
+  it('auto-faces the foe when nothing is held, and a held diagonal overrides it only while held (FUN-DESIGN 2.22)', () => {
     const world = duel();
     const s = world.state;
     expect([castDir(s, 0), castDir(s, 1)]).toEqual([0, 4]);
-    expect(s.arcade[E(0, ArcadeE.aim)]).toBe(0);
     step(world, [left | down, 0]);
     expect([s.arcade[E(0, ArcadeE.aim)], castDir(s, 0), s.dir[0]]).toEqual([6, 5, 4]);
     step(world, [primary, 0]);
     const [b] = bullets(world);
-    expect(s.dir[b ?? 0]).toBe(5);
+    expect(s.dir[b ?? 0]).toBe(0); // released: the shot flies at the foe (east), not along the old diagonal
+    expect(s.arcade[E(0, ArcadeE.aim)]).toBe(1);
+  });
+
+  it('a held cardinal does not override: moving away or sideways still faces and fires at the foe', () => {
+    for (const held of [left, up, down]) {
+      const world = duel();
+      const s = world.state;
+      step(world, [held | primary, 0]);
+      const [b] = bullets(world);
+      expect([s.dir[b ?? 0], s.dir[0]]).toEqual([0, 0]);
+    }
   });
 
   it('Classic keeps the 4-way facing: a diagonal input fires along x, and there is no aim slot', () => {
@@ -180,6 +193,6 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
       step(c, cmds);
       expect(hash(c.state)).toBe(hash(a.state));
     }
-    expect(c.state.dir[bullets(c)[0] ?? 0]).toBe(1);
+    expect(c.state.dir[bullets(c)[0] ?? 0]).toBe(0); // released before the cast: auto-faces the foe (east)
   });
 });

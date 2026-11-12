@@ -154,7 +154,9 @@ describe('Elemental Burst (the Inferno Beam shape)', () => {
     for (const [dir, x, y, w, h] of cases) {
       const world = duel('dummy');
       const s = world.state;
-      s.dir[0] = dir;
+      // Auto-face: the band follows the foe, so place the foe on the facing side.
+      const foe = s.x.length > 1 ? 1 : 0;
+      [s.x[foe], s.y[foe]] = [dir === 0 ? 800 : dir === 4 ? 0 : 400, dir === 2 ? 0 : dir === 6 ? 700 : 340];
       step(world, SUPER);
       const fx = (s.arcade[SUPER_STATE(0)] ?? 0) - 1;
       expect([s.kind[fx], s.defId[fx], s.owner[fx], s.team[fx]]).toEqual([EntityKind.effect, SUPER_DEF, 0, 0]);

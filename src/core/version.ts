@@ -109,5 +109,7 @@
  *    throws with overlapped boxes (the rope starts behind the foe and missed) and steps away to open the gap instead.
  * 28: Arcade only; Classic hashes unchanged. Smarter Arcade AI (WP-arcade-ai-smarter, FUN-DESIGN 2.21): guard reflex, Hard
  *    sidestep dash, spacing, Hard super on a rooted foe, Rushdown charge, Hard weather and earlier tag; agent memory grows.
+ * 29: Arcade only; Classic hashes unchanged. Auto-face (WP-arcade-auto-face, FUN-DESIGN 2.22): with no diagonal held, the Arcade aim and
+ *    4-way facing follow the foe, so attacks face the opponent whichever way the hero was moving; a held diagonal still overrides.
  */
-export const SIM_VERSION = 28;
+export const SIM_VERSION = 29;

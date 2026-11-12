@@ -8,7 +8,7 @@ import { isArcade } from '../clock';
 import { stepKnockback } from './arcade/knockback';
 import { endCharge } from './arcade/charge-move';
 import { canAct, chargeTick, dashTick } from './arcade/stun';
-import { setAim } from './arcade/aim';
+import { dirToward, isDiagonal8, setAim } from './arcade/aim';
 import { isRooted } from './arcade/snag';
 import { chargeWeather } from './arcade/meter';
 import { rockStop, terrainSpeedPm } from './arcade/terrain';
@@ -93,10 +93,19 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   if (!canAct(world, id)) return;
   const ax = cmdAxisX(cmd);
   const ay = cmdAxisY(cmd);
-  s.dir[id] = facingFor(ax, ay, s.dir[id] ?? EAST);
   const d = dir8FromSigns(ax, ay);
+  // Auto-face (FUN-DESIGN 2.22): the aim, and the reel facing that follows it, is the foe's direction unless a diagonal is
+  // held (the player's override); with no foe the held input decides, as before.
+  const foe = controlledId(world, 1 - team);
+  if (foe >= 0 && !isDiagonal8(d)) {
+    const toward = dirToward(s, id, foe);
+    setAim(s, id, toward);
+    s.dir[id] = facingFor(DIR8_X[toward] ?? 0, DIR8_Y[toward] ?? 0, s.dir[id] ?? EAST);
+  } else {
+    s.dir[id] = facingFor(ax, ay, s.dir[id] ?? EAST);
+    if (d >= 0) setAim(s, id, d);
+  }
   if (d < 0) return;
-  setAim(s, id, d);
   if (isRooted(s, id)) return; // a Snag root: turn and aim, no step (FUN-DESIGN 2.20)
   const pm = terrainSpeedPm(s, id);
   const speed = pm === 1000 ? (s.speed[id] ?? 0) : ((s.speed[id] ?? 0) * pm) / 1000;
