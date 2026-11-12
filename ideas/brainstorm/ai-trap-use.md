@@ -15,3 +15,10 @@ Normal plant rate 80 -> 240; AI presses a foe in its own armed Puddle (60 ticks 
 Puddle counts as timeout); win rates: Cyclonius 41.7, Lavax 40.5, Rokcore 44.7 below 45 (Cyclonius/Lavax were already low: race or AI
 issue, not traps). Tried and dropped: lane-check and blind "plant where the foe will walk". Next: foe AI that deliberately walks into
 traps is not wanted; revisit the timeout metric (split Puddle dry-up from true timeouts) and the low races separately.
+
+## Timeout metric split (tools only, no sim change)
+`trapstats.mts` / `report.mjs` and `fun-metrics` (`trapTimeouts`, new `trapPuddleDryups`) now count a Puddle whose life ended apart from a
+true timeout (a Puddle never fires, so every undoused Puddle ends that way). Same 24 seeds Normal run (1584 matches, 11363 traps placed):
+true timeout 41.9% of placed traps (44.7% of traps that ended; target under 45% is **met**), Puddle dry-ups 16.4% (17.5% of ended),
+combined old metric 58.3% (the 58.2% above, within rounding of the rerun). So the 58.2% was mostly Puddle lifetimes, not foes dodging
+Bombs, Spikes and Gusts; 733/886 Curomo, 471/670 Ishimi and 659/847 Morblass Puddles dried up. Remaining gap: the low races (Cyclonius, Lavax, Rokcore).

@@ -16,7 +16,7 @@ const aiLevel = Number(process.argv[3] ?? 3);
 const RACES: string[] = rm.RACES;
 const KIND = ['', 'bomb', 'puddle', 'spike', 'gust'];
 const REASON = ['overlap', 'timeout', 'doused'];
-const mk = (): Record<string, any> => ({ games: 0, wins: 0, placed: 0, kinds: {}, hitsBomb: 0, hitsSpike: 0, dmgBomb: 0, dmgSpike: 0, dmgTotalDealt: 0, trapKOs: 0, overlap: 0, timeout: 0, doused: 0, matchTicks: 0, matchesWithTrap: 0 });
+const mk = (): Record<string, any> => ({ games: 0, wins: 0, placed: 0, kinds: {}, hitsBomb: 0, hitsSpike: 0, dmgBomb: 0, dmgSpike: 0, dmgTotalDealt: 0, trapKOs: 0, overlap: 0, timeout: 0, puddleDry: 0, doused: 0, matchTicks: 0, matchesWithTrap: 0 });
 const rows: Record<string, Record<string, any>> = Object.fromEntries(RACES.map((r) => [r, mk()]));
 const placeTicks: number[] = [];
 let nMatches = 0;
@@ -56,7 +56,9 @@ for (let i = 0; i < RACES.length; i++) {
             r.kinds[kn] = (r.kinds[kn] ?? 0) + 1;
             placeTicks.push(t);
           } else if (e.kind === SimEventKind.trapTriggered) {
-            rows[raceOfEnt(e.sourceId)]![REASON[e['reason'] ?? 0]!]++;
+            // A Puddle never fires: its life ending is a dry-up, not a true timeout (counted apart, see ai-trap-use.md).
+            const reason = e['reason'] === 1 && e['trap'] === 2 ? 'puddleDry' : REASON[e['reason'] ?? 0]!;
+            rows[raceOfEnt(e.sourceId)]![reason]++;
           } else if (e.kind === SimEventKind.hitConfirmed) {
             const att = e['attacker'] ?? e.sourceId;
             const amt = e['amount'] ?? 0;
