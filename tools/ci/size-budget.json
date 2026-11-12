@@ -5,6 +5,7 @@
     "arcade-versus": 5700,
     "arena-pan": 950,
     "clash-view": 943,
+    "danger-view": 750,
     "core": 12600,
     "defence-view": 3750,
     "index": 30100,
@@ -29,7 +30,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 521100,
+  "totalGzip": 521800,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
