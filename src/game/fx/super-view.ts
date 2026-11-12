@@ -4,6 +4,7 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { ELEMENT_COLORS } from './element-colors';
 import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
+import { BURST_COLOR, BURST_SHAPE, superBurst } from './super-burst';
 
 /**
  * Phaser side of the super cinematic. The Phaser fx sink imports this module on the first super (Arcade only), so
@@ -28,6 +29,8 @@ const PORTRAIT_PX = 140;
 const PORTRAIT_X = 120;
 /** Over the characters (0), under the caster (lifted to DIM_DEPTH + 1), the band and the hit sparks (10). */
 const DIM_DEPTH = 5;
+/** The element burst: over the dim, under the lifted caster. */
+const BURST_DEPTH = DIM_DEPTH + 0.5;
 
 /** The caster's pooled character view (`FxTarget` in event-fx.ts): portrait texture and frame, lifted over the dim. */
 export interface SuperCaster {
@@ -44,6 +47,20 @@ interface Runner {
 }
 
 const runners = new WeakMap<Phaser.Scene, Runner>();
+const bursts = new WeakMap<Phaser.Scene, () => SuperBurstState | undefined>();
+
+/** Read-out for the test probe: the element burst's shape, age (view ticks) and path count while it is drawn. */
+export interface SuperBurstState {
+  readonly element: Element;
+  readonly shape: string;
+  readonly age: number;
+  readonly paths: number;
+}
+
+/** The element burst drawn on the last frame in `scene` (test probe), or undefined when none. */
+export function superBurstState(scene: Phaser.Scene): SuperBurstState | undefined {
+  return bursts.get(scene)?.();
+}
 
 /** Starts (or restarts) the cinematic in `scene`; `tick` is the view tick and `paused` holds the sub-tick motion. */
 export function superCut(scene: Phaser.Scene, caster: SuperCaster, from: number, until: number, reduced: boolean, tick: () => number, paused: () => boolean, superId = 0): void {
@@ -75,6 +92,35 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     sub: text(SUB_PX),
   };
   const all = Object.values(parts);
+  // The element burst outlives the cinematic: one Graphics redrawn on `postupdate` until its clock runs out.
+  let burstG: Phaser.GameObjects.Graphics | undefined;
+  let burst: { element: Element; x: number; y: number; from: number; reduced: boolean } | undefined;
+  let burstShown: SuperBurstState | undefined;
+  const drawBurst = (): void => {
+    burstG?.clear();
+    burstShown = undefined;
+    if (!burst) return;
+    const age = tick() - burst.from;
+    const b = superBurst(burst.element, burst.x, burst.y, age, burst.reduced);
+    if (!b) {
+      burst = undefined;
+      scene.events.off('postupdate', drawBurst);
+      return;
+    }
+    const g = (burstG ??= scene.add.graphics().setDepth(BURST_DEPTH));
+    const color = BURST_COLOR[burst.element];
+    for (const p of b.paths) {
+      const pts: Phaser.Math.Vector2[] = [];
+      for (let i = 0; i + 1 < p.pts.length; i += 2) pts.push({ x: p.pts[i] ?? 0, y: p.pts[i + 1] ?? 0 } as Phaser.Math.Vector2);
+      // Dark outline, element colour, white core line: readable on any floor.
+      if (p.fill) g.fillStyle(color, 0.55 * b.alpha).fillPoints(pts, true);
+      g.lineStyle(14, 0x000000, 0.85 * b.alpha).strokePoints(pts, p.closed);
+      g.lineStyle(8, color, b.alpha).strokePoints(pts, p.closed);
+      g.lineStyle(2, 0xffffff, b.alpha).strokePoints(pts, p.closed);
+    }
+    burstShown = { element: burst.element, shape: BURST_SHAPE[burst.element], age, paths: b.paths.length };
+  };
+  bursts.set(scene, () => burstShown);
   for (const o of all) o.setVisible(false);
   const frame: SuperFrame = { dim: 0, bandAlpha: 0, slide: 0, zoom: 1 };
   let from = 0;
@@ -136,6 +182,11 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   }
   const drop = (): void => {
     stop(false);
+    scene.events.off('postupdate', drawBurst);
+    bursts.delete(scene);
+    burstG?.destroy();
+    burstG = undefined;
+    burst = undefined;
     runners.delete(scene);
     scene.events.off('shutdown', drop);
     scene.events.off('destroy', drop);
@@ -161,6 +212,9 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       parts.name.setText(superName(superId));
       // The element as a word too: the band colour is not the only cue.
       parts.sub.setText(caster.element.toUpperCase());
+      scene.events.off('postupdate', drawBurst);
+      burst = { element: caster.element, x: px, y: py, from: fromTick, reduced: reducedMotion };
+      scene.events.on('postupdate', drawBurst);
       for (const o of all) o.setVisible(true);
       scene.registry.set('tte.band', bandY === BAND_HIGH_Y);
       lifted = img.setDepth(DIM_DEPTH + 1);

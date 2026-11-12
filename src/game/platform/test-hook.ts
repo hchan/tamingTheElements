@@ -56,6 +56,8 @@ export interface ArenaProbe {
   /** Arcade pan camera (WP 38b): framing centre x and zoom, the camera's real zoom over the fit zoom and its scroll x. */
   camera(): Promise<{ centerX: number; zoom: number; camZoom: number; scrollX: number }>;
   superFx(): Promise<{ dim: number; bandAlpha: number; slide: number; zoom: number; name: string; sub: string; camZoom: number } | undefined>;
+  /** The per-element super burst drawn on the last frame (ability-graphics-audit-defects), or undefined. */
+  superBurst(): Promise<{ element: string; shape: string; age: number; paths: number } | undefined>;
   /**
    * Arcade only (async: its code is a lazy chunk): the round HUD as drawn, i.e. the banner texts, whether the banner is
    * up and its scale, the timer text and the round wins shown per team; undefined before it is built and in Classic.
@@ -100,7 +102,7 @@ export interface ArenaProbe {
   /** The words beside each side's main HUD bar (name, element, health words, `Life hp/max`). */
   heroLabels(): string[];
   /** The buff auras and heal pops drawn on the last frame (ability-graphics-audit-defects). */
-  abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string }[] } | undefined>;
+  abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string }[]; lashes: readonly { team: number; age: number }[] } | undefined>;
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
   dangerZones(): Promise<readonly { id: number; x: number; y: number; w: number; h: number; alpha: number }[] | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */

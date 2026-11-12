@@ -75,3 +75,40 @@ export function popLook(age: number, reduced: boolean): { dy: number; alpha: num
   const k = Math.min(1, Math.max(0, age / POP_TICKS));
   return { dy: reduced ? 0 : -34 * k, alpha: k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4 };
 }
+
+/** Snag cast cue (the throw has no sim event until it hits): a rope lash flung along the aim, then fading. */
+export const SNAG_SPRITE = 'entanglingVines';
+export const SNAG_ROPE_COLOR = 0xc8a060;
+export const SNAG_REACH = 240;
+export const LASH_TICKS = 24;
+const LASH_GROW_TICKS = 6;
+const LASH_SEGS = 12;
+
+export interface Lash {
+  /** Polyline x,y pairs: a wavy rope from the caster to its knot. */
+  readonly pts: number[];
+  /** Knot (a ring at the rope end): centre and radius. */
+  readonly knot: { x: number; y: number; r: number };
+  readonly alpha: number;
+}
+
+/**
+ * The lash `age` view ticks after the cast, from (x, y) along dir8 `dir` (0 east, 2 north, 4 west, 6 south). It grows over a few
+ * ticks and wriggles (reduced motion: full length, straight-ish and still), then fades; undefined once over.
+ */
+export function snagLash(x: number, y: number, dir: number, age: number, reduced: boolean): Lash | undefined {
+  if (age < 0 || age > LASH_TICKS) return undefined;
+  const a = (dir * Math.PI) / 4;
+  const dx = Math.cos(a);
+  const dy = -Math.sin(a);
+  const len = reduced ? SNAG_REACH : SNAG_REACH * Math.min(1, (age + 1) / LASH_GROW_TICKS);
+  const pts: number[] = [];
+  for (let i = 0; i <= LASH_SEGS; i++) {
+    const f = i / LASH_SEGS;
+    const wob = Math.sin(f * 9 + (reduced ? 0 : age * 0.9)) * 10 * f * (1 - f) * 4;
+    pts.push(x + dx * len * f - dy * wob, y + dy * len * f + dx * wob);
+  }
+  const k = LASH_SEGS * 2;
+  const alpha = age < LASH_TICKS * 0.5 ? 1 : 1 - (age - LASH_TICKS * 0.5) / (LASH_TICKS * 0.5);
+  return { pts, knot: { x: pts[k] ?? x, y: pts[k + 1] ?? y, r: 14 }, alpha };
+}

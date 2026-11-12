@@ -46,9 +46,9 @@ const NOTCHES = 5;
 const CHARGE_Y = 200;
 const CHARGE_PX = 22;
 const CHARGE_BAR_W = 200;
-/** The called line: between the badge and the round banners (y 320). */
-const CALL_Y = 244;
-const CALL_PX = 64;
+/** The called line: below the charge chip (its bar ends near y 246), clear of the round banners (y 320). */
+const CALL_Y = 296;
+const CALL_PX = 52;
 
 export interface WeatherPrefs {
   readonly reduceMotion: boolean;
