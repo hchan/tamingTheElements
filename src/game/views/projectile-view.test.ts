@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { ProjectileView } from './projectile-view';
+import { MIN_BOLT_LONG_SIDE, ProjectileView, boltDisplaySize } from './projectile-view';
 
 /** Chainable fake Image that really stores alpha, so the test sees what the pose layer would multiply. */
 interface FakeImage { alpha: number; [method: string]: unknown }
@@ -46,5 +46,26 @@ describe('ProjectileView alpha', () => {
     view.apply(p, 1);
     expect(view.image.alpha).toBe(1);
     expect(view.glow.alpha).toBe(0.5);
+  });
+});
+
+describe('boltDisplaySize', () => {
+  it('enlarges a tiny fireball (25x12 box, 80x50 art) keeping the art aspect', () => {
+    const s = boltDisplaySize(25, 12, 80, 50);
+    expect(s.w).toBeGreaterThanOrEqual(MIN_BOLT_LONG_SIDE);
+    expect(s.w / s.h).toBeCloseTo(80 / 50, 5);
+  });
+  it('never draws smaller than the box length and keeps the aspect for a wide box (fire blast 75x15, art 74x26)', () => {
+    const s = boltDisplaySize(75, 15, 74, 26);
+    expect(s.w).toBeGreaterThanOrEqual(75);
+    expect(s.w / s.h).toBeCloseTo(74 / 26, 5);
+  });
+  it('thickens a thin bolt only up to 1.5x (shards of ice 40x10, art 80x11)', () => {
+    const s = boltDisplaySize(40, 10, 80, 11);
+    expect(s.w / s.h).toBeCloseTo(80 / 11, 5);
+    expect(s.w).toBeLessThanOrEqual(MIN_BOLT_LONG_SIDE * 1.5 + 1e-9);
+  });
+  it('falls back to the box when the art size is unknown', () => {
+    expect(boltDisplaySize(20, 10, 0, 0)).toEqual({ w: 20, h: 10 });
   });
 });

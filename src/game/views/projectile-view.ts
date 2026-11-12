@@ -31,6 +31,22 @@ export function meleeLook(dir: number, w: number, h: number): { angle: number; w
 /** View-only: melee sprites drawn taller than their hit box (the art, not the box, is what the player must read). Ice Shock: 40 -> 72. */
 const MELEE_ART_THICKNESS: Readonly<Record<string, number>> = { iceShock: 1.8 };
 
+/** View-only: the shortest long side (px) a flying bolt is drawn at, so small hit boxes (fireball 25x12) still read. */
+export const MIN_BOLT_LONG_SIDE = 44;
+/** View-only: how much thicker than the length-matched scale a thin bolt may be drawn, to reach its box thickness. */
+const MAX_THICKEN = 1.5;
+
+/**
+ * Display size of a flying bolt: the art keeps its aspect ratio (no squashing into the hit box), is at least as long as the box,
+ * at least `MIN_BOLT_LONG_SIDE` on its long side, and thickened up to `MAX_THICKEN` toward the box thickness. Hit boxes are untouched.
+ */
+export function boltDisplaySize(boxW: number, boxH: number, artW: number, artH: number): { w: number; h: number } {
+  if (artW <= 0 || artH <= 0) return { w: boxW, h: boxH };
+  const lengthScale = Math.max(boxW / artW, MIN_BOLT_LONG_SIDE / Math.max(artW, artH));
+  const scale = Math.max(lengthScale, Math.min(boxH / artH, lengthScale * MAX_THICKEN));
+  return { w: artW * scale, h: artH * scale };
+}
+
 /** Texture key and manifest entry for an ability sprite (`sprite:` first, then `map:`). */
 export function lookup(sprite: string): { key: string; entry: Entry } | undefined {
   const a = SPRITES[sprite];
@@ -45,6 +61,8 @@ export class ProjectileView {
   /** Soft additive halo behind the sprite so small bolts and dashes have depth against bright arenas (the same frame, enlarged). */
   readonly glow: Phaser.GameObjects.Image;
   private key = '';
+  private artW = 0;
+  private artH = 0;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.glow = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false).setBlendMode(BLEND_ADD).setAlpha(0.5);
@@ -55,11 +73,15 @@ export class ProjectileView {
   apply(p: RenderProjectile, alpha: number, melee = false): void {
     if (p.sprite !== this.key) {
       this.key = p.sprite;
+      this.artW = 0;
+      this.artH = 0;
       const found = lookup(p.sprite);
       if (found) {
         const tex = this.scene.textures.get(found.key);
         const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
         if (!tex.has(FRAME)) tex.add(FRAME, 0, fx, fy, fw, fh);
+        this.artW = fw;
+        this.artH = fh;
         this.image.setTexture(found.key, FRAME);
         this.glow.setTexture(found.key, FRAME);
       }
@@ -68,6 +90,7 @@ export class ProjectileView {
     this.image.setVisible(true).setAlpha(1);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
     if (melee) look.h *= MELEE_ART_THICKNESS[p.sprite] ?? 1;
+    else if (this.artW > 0) Object.assign(look, boltDisplaySize(p.w, p.h, this.artW, this.artH));
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);
     // Melee boxes are placed once and never moved, so their previous position (px/py) is unset: do not lerp from it.
     const a = melee ? 1 : alpha;
