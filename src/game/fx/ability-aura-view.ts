@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import type { RenderCharacter, RenderView } from '@core/index';
-import { AURAS, auraPolys, POP_TICKS, popLook } from './ability-aura';
+import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
 /**
  * Phaser side of the buff auras and the Fire Heal pop (see ability-aura.ts). Lazy chunk mounted by the Arena: one Graphics
@@ -13,6 +13,8 @@ const BENCHED_OR_DEAD = 16 | 32;
 export interface AbilityFxProbe {
   readonly auras: readonly { id: number; kind: string; shape: string }[];
   readonly pops: readonly { id: number; word: string }[];
+  /** Snag cast lashes live on the last frame (team, view ticks since the cast). */
+  readonly lashes: readonly { team: number; age: number }[];
 }
 
 const states = new WeakMap<Phaser.Scene, () => AbilityFxProbe>();
@@ -31,11 +33,20 @@ interface Pop {
   text?: Phaser.GameObjects.Text;
 }
 
+function toPoints(pts: readonly number[]): Phaser.Math.Vector2[] {
+  const out: Phaser.Math.Vector2[] = [];
+  for (let i = 0; i + 1 < pts.length; i += 2) out.push({ x: pts[i] ?? 0, y: pts[i + 1] ?? 0 } as Phaser.Math.Vector2);
+  return out;
+}
+
 export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, reduceMotion: () => boolean): void {
   let g: Phaser.GameObjects.Graphics | undefined;
   const born = new Map<string, number>();
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
+  let lashes: { team: number; x: number; y: number; dir: number; born: number }[] = [];
+  let lashDrawn: { team: number; age: number }[] = [];
+  const aim = new Map<number, { x: number; y: number; dir: number }>();
   const lastReady = new Map<number, number>();
   let popId = 0;
 
@@ -50,6 +61,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     const visit = (c: RenderCharacter): void => {
       if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
       anchor.set(c.team, { x: c.x + c.w / 2, y: c.y });
+      aim.set(c.team, { x: c.x + c.w / 2, y: c.y + c.h / 2, dir: c.dir });
       view.forEachStatus(c.id, (st) => {
         const a = AURAS.find((k) => k.status === st.id);
         if (!a) return;
@@ -80,6 +92,30 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const at = anchor.get(team);
       if (prev !== undefined && slot.readyTick > prev && at) pops.push({ id: ++popId, word: 'HEAL', x: at.x, y: at.y - 8, born: now });
     }
+    for (const team of [0, 1]) {
+      const slot = view.actionBar(team)?.abilities.find((s) => s.sprite === SNAG_SPRITE);
+      if (!slot) continue;
+      const key = team + 2;
+      const prev = lastReady.get(key);
+      lastReady.set(key, slot.readyTick);
+      const at = aim.get(team);
+      if (prev !== undefined && slot.readyTick > prev && at) {
+        lashes.push({ team, ...at, born: now });
+        pops.push({ id: ++popId, word: 'SNAG', x: at.x, y: anchor.get(team)?.y ?? at.y - 8, born: now });
+      }
+    }
+    lashDrawn = [];
+    lashes = lashes.filter((l) => {
+      const age = now - l.born;
+      const lash = snagLash(l.x, l.y, l.dir, age, reduced);
+      if (!lash) return false;
+      lashDrawn.push({ team: l.team, age });
+      gfx.lineStyle(11, 0x000000, lash.alpha).strokePoints(toPoints(lash.pts), false);
+      gfx.lineStyle(6, SNAG_ROPE_COLOR, lash.alpha).strokePoints(toPoints(lash.pts), false);
+      gfx.lineStyle(5, 0x000000, lash.alpha).strokeCircle(lash.knot.x, lash.knot.y, lash.knot.r + 2);
+      gfx.lineStyle(4, 0xffffff, lash.alpha).strokeCircle(lash.knot.x, lash.knot.y, lash.knot.r);
+      return age <= LASH_TICKS;
+    });
     pops = pops.filter((p) => {
       const age = now - p.born;
       if (age > POP_TICKS) {
@@ -88,7 +124,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       }
       const look = popLook(age, reduced);
       p.text ??= arena.add
-        .text(p.x, p.y, `+ ${p.word}`, { fontFamily: 'Arial', fontSize: '22px', fontStyle: 'bold', color: '#7dff9a', stroke: '#000000', strokeThickness: 4 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Arial', fontSize: '22px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#7dff9a' : '#e8c27a', stroke: '#000000', strokeThickness: 4 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       p.text.setPosition(p.x, p.y + look.dy).setAlpha(look.alpha);
@@ -103,8 +139,9 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     g = undefined;
     for (const p of pops) p.text?.destroy();
     pops = [];
+    lashes = [];
   };
   arena.events.on('postupdate', draw);
   arena.events.once('shutdown', off).once('destroy', off);
-  states.set(arena, () => ({ auras: drawn, pops: pops.map((p) => ({ id: p.id, word: p.word })) }));
+  states.set(arena, () => ({ auras: drawn, pops: pops.map((p) => ({ id: p.id, word: p.word })), lashes: lashDrawn }));
 }

@@ -41,6 +41,7 @@ export interface SpriteBoost { readonly minLong: number; readonly glowAlpha: num
 export const SPRITE_BOOST: Readonly<Record<string, SpriteBoost>> = {
   rockPellet: { minLong: 64, glowAlpha: 0.95, glowScale: 2.2, glowTint: 0xffd36b },
   stranglingBranches: { minLong: 0, glowAlpha: 0.7, glowScale: 1.5, glowTint: 0xc8ff7a },
+  entanglingVines: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0xe8c27a },
   crimsonFire: { minLong: 0, glowAlpha: 0.8, glowScale: 1.5, glowTint: 0xffe9a0 },
 };
 

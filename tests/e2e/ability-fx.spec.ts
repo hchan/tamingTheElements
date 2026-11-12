@@ -9,6 +9,7 @@ import { ARENA_READY, START, collectErrors } from './parity/helpers';
 interface AuraProbe {
   readonly auras: readonly { id: number; kind: string; shape: string }[];
   readonly pops: readonly { id: number; word: string }[];
+  readonly lashes: readonly { team: number; age: number }[];
 }
 const INTRO = 91;
 const PRIMARY = 16;
@@ -49,6 +50,9 @@ const CASES = [
   { name: 'strangling-branches', me: 'treenoc', gap: 150, cmd: SECONDARY },
   { name: 'fire-heal', me: 'fiara', gap: 800, cmd: PRIMARY },
   { name: 'fire-dance', me: 'lavax', gap: 800, cmd: SECONDARY },
+  { name: 'snag-treenoc', me: 'treenoc', gap: 500, cmd: PRIMARY },
+  { name: 'snag-curomo', me: 'curomo', gap: 500, cmd: SECONDARY },
+  { name: 'snag-echo', me: 'echo', gap: 500, cmd: PRIMARY },
   { name: 'crimson-fire', me: 'lavax', gap: 600, cmd: PRIMARY },
 ] as const;
 
@@ -93,3 +97,46 @@ test.describe('reduced motion', () => {
     expect((await probe(page))?.auras.map((a) => a.kind)).toContain('rockArmour');
   });
 });
+
+test('snag: a rope lash and a SNAG word show on the cast, before any hit', async ({ page }) => {
+  const errors = collectErrors(page);
+  await start(page, 'treenoc', 'sindarosa', 900);
+  await page.evaluate(`window.__TTE__.arena.step(1, [${String(PRIMARY)}, 0])`);
+  await frames(page);
+  const p = await probe(page);
+  expect(p?.lashes.length).toBe(1);
+  expect(p?.pops.map((x) => x.word)).toContain('SNAG');
+  await page.evaluate(`window.__TTE__.arena.step(40)`);
+  await frames(page);
+  expect((await probe(page))?.lashes).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+const SUPER = 1 << 13;
+const ELEMENT_SHAPES = [
+  { race: 'lavax', element: 'fire', shape: 'star' },
+  { race: 'curomo', element: 'water', shape: 'rings' },
+  { race: 'cyclonius', element: 'air', shape: 'swirl' },
+  { race: 'rokcore', element: 'earth', shape: 'squares' },
+] as const;
+
+for (const e of ELEMENT_SHAPES) {
+  test(`super (${e.race}): a ${e.shape} burst of its own shape shows and clears`, async ({ page }) => {
+    const errors = collectErrors(page);
+    await start(page, e.race, 'sindarosa', 500);
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setMeter(0, 1000); a.step(1, [${String(SUPER)}, 0]); a.step(10); })()`);
+    const read = (): Promise<{ element: string; shape: string; age: number; paths: number } | undefined> =>
+      page.evaluate(`window.__TTE__.arena.superBurst()`);
+    await expect.poll(async () => (await read())?.shape).toBe(e.shape);
+    expect((await read())?.element).toBe(e.element);
+    if (SHOT_DIR) {
+      mkdirSync(SHOT_DIR, { recursive: true });
+      await frames(page);
+      await page.locator('#game canvas').screenshot({ path: `${SHOT_DIR}/super-${e.race}-10.png` });
+    }
+    await page.evaluate(`window.__TTE__.arena.step(90)`);
+    await frames(page);
+    expect(await read()).toBeUndefined();
+    expect(errors).toEqual([]);
+  });
+}

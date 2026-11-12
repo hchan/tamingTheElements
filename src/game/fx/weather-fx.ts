@@ -30,7 +30,7 @@ export const MAX_PARTICLES = 32;
 /** The called line: shown this long, scaled in from CALL_IN_SCALE over CALL_IN_TICKS, faded over the last CALL_OUT_TICKS. */
 export const CALL_TICKS = 75;
 export const CALL_IN_TICKS = 15;
-export const CALL_IN_SCALE = 1.8;
+export const CALL_IN_SCALE = 1.4;
 export const CALL_OUT_TICKS = 15;
 /** The sky tint fades in over this many view ticks after a cast and out over the last game ticks of the weather. */
 export const TINT_RAMP_TICKS = 25;
