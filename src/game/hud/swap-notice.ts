@@ -53,7 +53,7 @@ export class SwapNotice {
   private readonly text: Phaser.GameObjects.Text;
   private shownAt = -Infinity;
 
-  constructor(scene: Phaser.Scene, private readonly reduced: () => boolean) {
+  constructor(scene: Phaser.Scene, private readonly reduced: () => boolean, private readonly place?: () => { x: number; y: number; scale: number }) {
     this.text = scene.add
       .text(4, 604, '', {
         fontSize: '22px', fontStyle: 'bold', color: '#ffe066', stroke: '#000000', strokeThickness: 5,
@@ -71,6 +71,8 @@ export class SwapNotice {
 
   update(now: number): void {
     if (!this.text.visible) return;
+    const box = this.place?.();
+    if (box) this.text.setPosition(box.x + 4 * box.scale, box.y + 604 * box.scale).setScale(box.scale);
     const a = noticeAlpha(now - this.shownAt, this.reduced());
     if (a <= 0) this.text.setVisible(false);
     else this.text.setAlpha(a);

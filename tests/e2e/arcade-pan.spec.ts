@@ -107,3 +107,43 @@ test('Classic: the camera never pans or zooms, wherever the fighters stand', asy
   expect(c.scrollX).toBeCloseTo(0, 1);
   expect(errors).toEqual([]);
 });
+
+interface Rect {
+  x: number;
+  y: number;
+  size: number;
+}
+const barRects = (page: Page): Promise<Rect[]> => page.evaluate<Rect[]>(`window.__TTE__.arena.actionBarScreen()`);
+
+test('Arcade: the action bar stays fixed on screen and clickable while the camera pans and zooms', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openArcade(page);
+  const home = await placeAndSettle(page, 100, 300);
+  expect(home.scrollX).toBeCloseTo(0, 1);
+  const base = await barRects(page);
+  expect(base).toHaveLength(2);
+  const far = await placeAndSettle(page, 200, 1700);
+  expect(far.zoom).toBeCloseTo(ZOOM_MIN, 2);
+  const zoomed = await barRects(page);
+  const right = await placeAndSettle(page, 1600, 1800);
+  expect(right.scrollX).toBeGreaterThan(400);
+  const edge = await barRects(page);
+  await placeAndSettle(page, 200, 1700);
+  for (const rects of [zoomed, edge]) {
+    expect(rects).toHaveLength(base.length);
+    rects.forEach((r, i) => {
+      expect(r.x).toBeCloseTo(base[i]?.x ?? NaN, 1);
+      expect(r.y).toBeCloseTo(base[i]?.y ?? NaN, 1);
+      expect(r.size).toBeCloseTo(base[i]?.size ?? NaN, 1);
+    });
+  }
+  // A real pointer click on slot 2 (secondary) lands while zoomed out.
+  const slots = await page.evaluate<{ cmd: number }[]>(`window.__TTE__.arena.actionSlots()`);
+  const box = await page.locator('#game canvas').boundingBox();
+  const slot = zoomed[1];
+  if (!box || !slot) throw new Error('no canvas or slot');
+  const k = box.width / VIEW;
+  await page.mouse.click(box.x + (slot.x + slot.size / 2) * k, box.y + (slot.y + slot.size / 2) * k);
+  expect(await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`)).toEqual([slots[1]?.cmd]);
+  expect(errors).toEqual([]);
+});

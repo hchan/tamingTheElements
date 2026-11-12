@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderView } from '@core/index';
 import { Cmd } from '@core/index';
-import { crisp, phoneBoost } from '../boot/viewport';
+import { LOGICAL_WIDTH as LOGICAL_W, crisp, phoneBoost } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { codeLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
@@ -159,6 +159,14 @@ export function cooldownSweep(progress: number, x: number, y: number, size: numb
   return pts;
 }
 
+/** Where the 1280x720 screen sits in world px: top-left `x`,`y` and world px per logical px (`scale`). Identity for a fixed camera. */
+export interface ScreenBox {
+  readonly x: number;
+  readonly y: number;
+  readonly scale: number;
+}
+const IDENTITY: ScreenBox = { x: 0, y: 0, scale: 1 };
+
 /** Phaser renderer for the bar. Call `update()` each frame; clicks go to `emit` as Commands. */
 export class ActionBarView {
   private readonly gfx: Phaser.GameObjects.Graphics;
@@ -177,13 +185,27 @@ export class ActionBarView {
     private readonly labels: () => KeyLabels = () => DEFAULT_KEY_LABELS,
     /** Classic dressing: a dark panel, rounded slot frames and outlined key labels (Arcade keeps the plain legacy look). */
     private readonly styled = false,
+    /** Arcade pan/zoom camera: keeps the bar fixed on screen by mapping its logical layout onto the visible window every frame. */
+    private readonly place?: () => ScreenBox,
   ) {
     this.back = scene.add.graphics().setDepth(98);
     this.gfx = scene.add.graphics().setDepth(100);
     scene.input.on('pointerdown', this.onPointer);
   }
 
+  /** Logical (screen) x/y to world, through the current screen box. */
+  private box: ScreenBox = IDENTITY;
+  private wx(x: number): number {
+    return this.box.x + x * this.box.scale;
+  }
+  private wy(y: number): number {
+    return this.box.y + y * this.box.scale;
+  }
+
   update(): void {
+    this.box = this.place?.() ?? IDENTITY;
+    this.gfx.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
+    this.back.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
     const bar = this.view.actionBar(this.team);
     this.slots = bar ? buildSlots(bar, this.labels()) : [];
     const g = this.gfx;
@@ -242,13 +264,25 @@ export class ActionBarView {
     this.texts.forEach((o) => { o.destroy(); });
   }
 
+  /** Slot rects as the player sees them, in logical screen px (world transform of the bar's graphics through the live camera), for tests. */
+  screenSlots(): { x: number; y: number; size: number }[] {
+    const cam = this.scene.cameras.main;
+    const res = this.scene.scale.width / LOGICAL_W;
+    const k = this.gfx.scaleX * cam.zoom / res;
+    const sx = (this.gfx.x - (cam.scrollX + cam.width / 2 - cam.width / 2 / cam.zoom)) * cam.zoom / res;
+    const sy = (this.gfx.y - (cam.scrollY + cam.height / 2 - cam.height / 2 / cam.zoom)) * cam.zoom / res;
+    return this.slots.map((s) => ({ x: sx + s.x * k, y: sy + s.y * k, size: s.size * k }));
+  }
+
   /** Current slots (logical coordinates), for tests and the click probe. */
   get currentSlots(): readonly ActionSlot[] {
     return this.slots;
   }
 
   private readonly onPointer = (p: Phaser.Input.Pointer): void => {
-    const cmd = commandAt(this.slots, p.worldX, p.worldY);
+    // Fixed camera: world == logical. Panned camera: the bar is screen-fixed, so use the pointer's screen position in logical px.
+    const res = this.scene.scale.width / LOGICAL_W;
+    const cmd = this.place ? commandAt(this.slots, p.x / res, p.y / res) : commandAt(this.slots, p.worldX, p.worldY);
     if (cmd !== 0) this.emit(cmd);
   };
 
@@ -262,7 +296,7 @@ export class ActionBarView {
       0, 0, '',
       crisp(this.scene, { fontFamily: 'Arial', fontSize: `${String(Math.round(18 * phoneBoost(this.scene, 1.4)))}px`, fontStyle: 'bold', color: '#ffd700', backgroundColor: '#000000', padding: { x: 6, y: 2 } }),
     ).setDepth(102);
-    this.hint.setVisible(true).setPosition(h.x, h.y);
+    this.hint.setVisible(true).setPosition(this.wx(h.x), this.wy(h.y)).setScale(this.box.scale);
     if (this.hint.text !== h.text) this.hint.setText(h.text);
   }
 
@@ -283,7 +317,7 @@ export class ActionBarView {
     if (icon.texture.key !== found.key || icon.frame.name !== ICON_FRAME) icon.setTexture(found.key, ICON_FRAME);
     const pad = this.styled ? ICON_PAD : 0;
     const fit = fitIcon(fw, fh, s.size - pad * 2);
-    icon.setVisible(true).setPosition(s.x + pad + fit.dx, s.y + pad + fit.dy).setDisplaySize(fit.w, fit.h);
+    icon.setVisible(true).setPosition(this.wx(s.x + pad + fit.dx), this.wy(s.y + pad + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
   }
 
   private text(i: number, s: ActionSlot): void {
@@ -299,7 +333,7 @@ export class ActionBarView {
       t.setDepth(101);
       this.texts[i] = t;
     }
-    t.setVisible(true).setPosition(s.x + (this.styled ? 5 : 2), s.y + (this.styled ? 2 : 0));
+    t.setVisible(true).setPosition(this.wx(s.x + (this.styled ? 5 : 2)), this.wy(s.y + (this.styled ? 2 : 0))).setScale(this.box.scale);
     if (t.text !== s.label) t.setText(s.label);
   }
 }

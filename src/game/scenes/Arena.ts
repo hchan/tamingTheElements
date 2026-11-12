@@ -63,6 +63,7 @@ import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
 import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
+import { screenBox } from '../hud/screen-box';
 import { SwapNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
 import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
@@ -269,6 +270,7 @@ export class Arena extends Phaser.Scene {
         0,
         labels,
         true,
+        arcade ? () => screenBox(this) : undefined,
       );
       this.cleanups.push(keyboard.attach(counted(window)));
     }
@@ -280,7 +282,7 @@ export class Arena extends Phaser.Scene {
     } else this.cleanups.push(pauseOnHidden(counted(document), driver));
     this.setupAudio();
     if (arcade && this.launch && !playback) {
-      const notice = new SwapNotice(this, () => getPrefs().reduceMotion);
+      const notice = new SwapNotice(this, () => getPrefs().reduceMotion, () => screenBox(this));
       this.swapNotice = notice;
       this.cleanups.push(() => { notice.destroy(); this.swapNotice = undefined; });
     }
@@ -385,6 +387,7 @@ export class Arena extends Phaser.Scene {
         this.actionBar?.currentSlots.map((s) => ({
           x: s.x, y: s.y, size: s.size, cmd: s.cmd, kind: s.kind, label: s.label, disabled: s.disabled, highlight: s.highlight,
         })) ?? [],
+      actionBarScreen: () => this.actionBar?.screenSlots() ?? [],
       clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
       bench: () => benchRows(world, 0),
