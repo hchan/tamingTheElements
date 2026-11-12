@@ -3,7 +3,7 @@ import { ROUND_INTRO_TICKS, RoundPhase, SimEventKind, type SimEvent } from '@cor
 import { announcementsFor, type Announcement } from '../a11y/announcer';
 import {
   BANNER_IN_MS, FIGHT_BANNER_TICKS, HOLD, PIP_INNER, PIP_STEP, ROUND_EVENT_KINDS, RoundAnnouncer, TIMER_X, bannerScale, pips,
-  timerLabel, type RoundSink,
+  timerLabel, timerStyle, type RoundSink,
 } from './round-announcer';
 
 interface Shown {
@@ -154,6 +154,13 @@ describe('round HUD helpers', () => {
   it('the timer shows whole seconds left, two digits', () => {
     expect([4500, 4451, 4450, 500, 49, 1, 0, -5].map(timerLabel)).toEqual(['90', '90', '89', '10', '01', '01', '00', '00']);
   });
+  it('the timer style adds the word SUDDEN and a magenta colour in sudden death, red only under 10 s otherwise', () => {
+    expect(timerStyle(3000, false)).toMatchObject({ text: '60', color: '#ffffff' });
+    expect(timerStyle(500, false)).toMatchObject({ text: '10', color: '#ff8080' });
+    expect(timerStyle(3000, true)).toMatchObject({ text: 'SUDDEN 60', color: '#ff5ad2', px: 32 });
+    expect(timerStyle(3000, true).color).not.toBe(timerStyle(500, false).color);
+  });
+
   it('pips: two per team either side of the timer, filled once won', () => {
     expect(pips([1, 2])).toEqual([
       { x: TIMER_X - PIP_INNER, team: 0, won: true },

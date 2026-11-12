@@ -55,6 +55,7 @@ function fakeScene(active: boolean): { scene: Phaser.Scene; events: Emitter; mad
       setVisible: chain((v: boolean) => { o.visible = v; }),
       setScale: chain((s: number) => { o.scale = s; }),
       setColor: chain((c: string) => { o.color = c; }),
+      setFontSize: chain(),
       destroy: () => { o.destroyed = true; },
     });
     made.push(o);
@@ -85,6 +86,22 @@ const ev = (tick: number, kind: number, seq: number, payload: Record<string, num
 const prefs = (reduceMotion: boolean) => () => ({ reduceMotion, highContrast: false });
 
 describe('round view (Phaser side, fake scenes)', () => {
+  it('shows the sudden-death timer with a word and its own colour for the whole round, not only the last 10 s', () => {
+    const hud = fakeScene(true);
+    const v = fakeView();
+    mountRoundView(fakeScene(true).scene, hud.scene, v.view, () => undefined, prefs(false));
+    Object.assign(v.arcade, { round: 3, timer: 3000, sudden: true });
+    v.setTick(5);
+    hud.events.emit('update');
+    expect(roundState(hud.scene)).toMatchObject({ timer: 'SUDDEN 60', timerColor: '#ff5ad2' });
+    v.arcade.timer = 100;
+    hud.events.emit('update');
+    expect(roundState(hud.scene)).toMatchObject({ timer: 'SUDDEN 02', timerColor: '#ff5ad2' });
+    v.arcade.sudden = false;
+    hud.events.emit('update');
+    expect(roundState(hud.scene)).toMatchObject({ timer: '02', timerColor: '#ff8080' });
+  });
+
   it('waits for the Hud create, draws the timer, pips and banner from pooled objects, and tears down to 0 listeners', () => {
     const arena = fakeScene(true);
     const hud = fakeScene(false);

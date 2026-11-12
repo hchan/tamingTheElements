@@ -56,6 +56,21 @@ describe('Arcade cue coverage', () => {
   });
 });
 
+describe('sudden-death sting', () => {
+  it('plays instead of the round cue when the round starting is the sudden-death one, as a stinger', () => {
+    const start = ev(SimEventKind.roundStarted, { round: 3 });
+    const names = (sudden: boolean): CueName[] => {
+      const out: CueName[] = [];
+      pickCues(start, (n) => out.push(n), () => sudden);
+      return out;
+    };
+    expect(names(true)).toEqual(['sudden']);
+    expect(names(false)).toEqual(['round']);
+    expect(cues(start).map((c) => c[0])).toEqual(['round']);
+    expect(STINGERS.has('sudden')).toBe(true);
+  });
+});
+
 describe('trap trigger cue', () => {
   const trig = (trap: number, reason: number): CueName[] => cues(ev(SimEventKind.trapTriggered, { trap, reason })).map((c) => c[0]);
 

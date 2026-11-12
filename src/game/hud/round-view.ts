@@ -5,7 +5,7 @@ import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
 import { mountWeatherView } from '../fx/weather-view';
 import {
-  PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_LOW_TICKS, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerLabel,
+  PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
 
 /**
@@ -36,6 +36,7 @@ export interface RoundState {
   readonly visible: boolean;
   readonly scale: number;
   readonly timer: string;
+  readonly timerColor: string;
   readonly won: readonly [number, number];
 }
 
@@ -75,7 +76,7 @@ export function mountRoundView(
   let parts: { main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics } | undefined;
   let shownTimer = '';
   const shownWon: [number, number] = [-1, -1];
-  let shownLow = false;
+  let shownColor = '';
   let scale = 1;
 
   const text = (size: number, y: number, stroke: number): Phaser.GameObjects.Text =>
@@ -98,13 +99,12 @@ export function mountRoundView(
     parts.sub.setVisible(on && banner.sub !== '');
     // Before its first tick (round 0) the world has no timer yet: show the full one round 1 starts with.
     const left = ar.round === 0 ? ROUND_TIMER_TICKS : ar.timer;
-    const label = timerLabel(left);
-    const low = left <= TIMER_LOW_TICKS;
-    if (label !== shownTimer || low !== shownLow) {
-      shownTimer = label;
-      shownLow = low;
-      // The number is the cue; the warning colour only adds to it.
-      parts.timer.setText(label).setColor(low ? '#ff8080' : '#ffffff');
+    const style = timerStyle(left, ar.sudden);
+    if (style.text !== shownTimer || style.color !== shownColor) {
+      shownTimer = style.text;
+      shownColor = style.color;
+      // The number is the cue; the warning colour (and the word in sudden death) only adds to it.
+      parts.timer.setText(style.text).setColor(style.color).setFontSize(style.px);
     }
     if (ar.roundsWon[0] !== shownWon[0] || ar.roundsWon[1] !== shownWon[1]) {
       shownWon[0] = ar.roundsWon[0];
@@ -124,7 +124,7 @@ export function mountRoundView(
     // The probe draws first, so it reads the current tick even between two rendered frames.
     states.set(hud, () => {
       draw();
-      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, won: [shownWon[0], shownWon[1]] };
+      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, timerColor: shownColor, won: [shownWon[0], shownWon[1]] };
     });
     draw();
   };
