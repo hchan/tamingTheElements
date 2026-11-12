@@ -489,7 +489,7 @@
   },
   "mapSprites": {
     "circusOfSlime": {
-      "url": "img/map/circusOfSlime.png",
+      "url": "img/fx/circusOfSlime.png",
       "coords": [
         0,
         0,
@@ -1165,7 +1165,7 @@
       ]
     },
     "echoFade": {
-      "url": "img/map/echoFade.png",
+      "url": "img/fx/echoFade.png",
       "coords": [
         0,
         0,
@@ -1515,7 +1515,7 @@
       ]
     },
     "fireCone": {
-      "url": "img/map/fireCone.png",
+      "url": "img/fx/fireCone.png",
       "coords": [
         0,
         0,
@@ -2580,7 +2580,7 @@
       ]
     },
     "tornado": {
-      "url": "img/map/tornado.png",
+      "url": "img/fx/tornado.png",
       "coords": [
         0,
         0,
@@ -2679,7 +2679,7 @@
       ]
     },
     "translucentFlame": {
-      "url": "img/map/translucentFlame.png",
+      "url": "img/fx/translucentFlame.png",
       "coords": [
         0,
         0,
