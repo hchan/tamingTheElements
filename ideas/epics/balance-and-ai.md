@@ -18,7 +18,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [trap-balance-findings](../brainstorm/trap-balance-findings.md)
 - [snag-trap-ai-combo](../brainstorm/snag-trap-ai-combo.md)
 - [snag-trap-and-team-modes-findings](../brainstorm/snag-trap-and-team-modes-findings.md)
-- [ai-trap-use](../brainstorm/ai-trap-use.md)
+- [ai-trap-use](../done/ai-trap-use.md)
 - [ai-tuning-more](../brainstorm/ai-tuning-more.md)
 - [tornado-combo-ai](../brainstorm/tornado-combo-ai.md)
 - [arcade-low-races-analysis](../brainstorm/arcade-low-races-analysis.md)
