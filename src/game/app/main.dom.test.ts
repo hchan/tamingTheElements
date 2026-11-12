@@ -127,9 +127,19 @@ describe('main menu path', () => {
 
   it('reapplies the preferences when the OS motion or contrast preference changes', async () => {
     await boot();
-    expect(m.mq.length).toBe(2);
+    expect(m.mq.length).toBe(3);
     m.mq[0]?.();
     expect(m.applyPrefs).toHaveBeenCalledWith({ prefs: true });
+  });
+
+  it('applies the on-screen button layout at start-up and again when a touch screen appears or goes (any-pointer)', async () => {
+    delete document.documentElement.dataset['touchSize'];
+    await boot();
+    expect(document.documentElement.dataset['touchSize']).toBe('compact');
+    delete document.documentElement.dataset['touchSize'];
+    m.mq[2]?.();
+    expect(document.documentElement.dataset['touchSize']).toBe('compact');
+    expect(document.documentElement.dataset['touchSide']).toBe('right');
   });
 
   it('the injected loadSave hook imports and re-renders on success only', async () => {

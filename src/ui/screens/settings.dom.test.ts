@@ -199,4 +199,26 @@ describe('applyUiScale / loadSave', () => {
     localStorage.setItem('Taming the Elements', JSON.stringify({ ...newEmptyState(), difficulty: DIFFICULTY.Hard }));
     expect(loadSave().difficulty).toBe(DIFFICULTY.Hard);
   });
+
+  it('on-screen button size and side: default to auto/right, and submit stores them device-locally and applies them', async () => {
+    localStorage.removeItem('tte.touchLayout');
+    await mountWith(fakeStore());
+    expect(checked('touchSize')).toBe('auto');
+    expect(checked('touchSide')).toBe('right');
+    for (const r of [...radios('touchSize'), ...radios('touchSide')]) expect(r.closest('label')?.textContent.trim()).not.toBe('');
+    const set = (name: string, value: string): void => {
+      const r = radios(name).find((x) => x.value === value);
+      if (!r) throw new Error('no radio');
+      r.checked = true;
+    };
+    set('touchSize', 'compact');
+    set('touchSide', 'left');
+    await submit();
+    expect(JSON.parse(localStorage.getItem('tte.touchLayout') ?? '{}')).toEqual({ size: 'compact', side: 'left' });
+    expect(document.documentElement.dataset['touchSize']).toBe('compact');
+    expect(document.documentElement.dataset['touchSide']).toBe('left');
+    localStorage.removeItem('tte.touchLayout');
+    delete document.documentElement.dataset['touchSize'];
+    delete document.documentElement.dataset['touchSide'];
+  });
 });
