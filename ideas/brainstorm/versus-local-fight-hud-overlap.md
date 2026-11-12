@@ -1,3 +1,8 @@
+---
+status: idea
+added: 2026-11-12
+---
+
 # Local Versus: fight HUD problems found by a headless playthrough
 
 Found 2026-11-12 driving `#arcade` (two players, 3v3) headless at 1280x720; screenshots were in `~/claudetmp/pvp/`.
