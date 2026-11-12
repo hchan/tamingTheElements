@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 added: 2026-11-12
 ---
 
@@ -190,3 +190,7 @@ Screenshots (real game, `?ff=play`): each variant arming and armed, the fuse nea
 - Bit 6 reuse vs widening the command to u32: the recommendation is bit 6; confirm no Arcade path still reads capture before 39a starts.
 - Friendly fire: left off. A later variant ("both-side bombs" as a stage hazard) fits Archon II better and belongs in its own idea.
 - The `SIM_VERSION` number depends on the merge order with WP 38d.
+
+## Status
+
+39a-c done (sim, input, view, AI); two full e2e runs green (176/176). 39d/39e (polish, balance) are unbuilt.
