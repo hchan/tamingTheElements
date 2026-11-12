@@ -2,7 +2,7 @@ import type { Element } from '@core/index';
 
 /** A mark as plain geometry, so a test can pin it without Phaser: filled polygons, a filled circle, or open polylines (air). */
 export type ElementMark =
-  | { readonly kind: 'poly'; readonly pts: readonly number[] }
+  | { readonly kind: 'poly'; readonly pts: readonly number[]; readonly hole?: readonly number[] }
   | { readonly kind: 'circle'; readonly r: number }
   | { readonly kind: 'lines'; readonly runs: readonly (readonly number[])[] };
 
@@ -15,7 +15,8 @@ export function elementMark(e: Element, r: number): ElementMark {
     case 'fire': return { kind: 'poly', pts: [0, -r, r, r * 0.8, -r, r * 0.8] };
     case 'earth': return { kind: 'poly', pts: [-r * 0.8, -r * 0.8, r * 0.8, -r * 0.8, r * 0.8, r * 0.8, -r * 0.8, r * 0.8] };
     case 'water': return { kind: 'circle', r: r * 0.85 };
-    case 'void': return { kind: 'poly', pts: [0, -r, r, 0, 0, r, -r, 0] };
+    // Void is a diamond with a dark diamond cut out of it (a hollow frame), so it differs from the solid earth/fire shapes.
+    case 'void': return { kind: 'poly', pts: [0, -r, r, 0, 0, r, -r, 0], hole: [0, -r * 0.45, r * 0.45, 0, 0, r * 0.45, -r * 0.45, 0] };
     case 'air': {
       const w = (y: number): readonly number[] => [-r, y, -r / 2, y - r * 0.4, 0, y, r / 2, y - r * 0.4, r, y];
       return { kind: 'lines', runs: [w(-r * 0.35), w(r * 0.45)] };
