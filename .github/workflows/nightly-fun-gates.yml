@@ -1,0 +1,39 @@
+name: Nightly fun gates
+
+# DRAFT (ideas/in-progress/nightly-fun-gates.md): headless sim metrics judged against tight bands; fails the run when a
+# band is missed. Bands live in tools/ci/fun-gates.ts. Not part of PR CI.
+on:
+  schedule:
+    - cron: '47 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fun-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enable corepack (pnpm from packageManager field)
+        run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Fun gates (Arcade 1v1 and 2v2, all pairings)
+        run: corepack pnpm fun:gates --seeds 8 --out out/fun-gates.json
+      - name: Arcade balance compare
+        run: corepack pnpm balance:compare --ruleset arcade --out out/arcade-balance-report.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: fun-gates
+          path: |
+            out/fun-gates.json
+            out/arcade-balance-report.json
+          if-no-files-found: ignore
