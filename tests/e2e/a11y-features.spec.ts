@@ -123,7 +123,7 @@ test.describe('key rebinding', () => {
   test('rebind, detect a conflict, persist, reach the battle, then reset', async ({ page }) => {
     await seedViaGameMaster(page, fixture('v0-ch3'));
     await goToHash(page, '#keyBindings');
-    const status = page.getByRole('status');
+    const status = page.getByRole('status').filter({ hasText: /\S/ });
 
     // A free key rebinds the Swap 2 action and is saved.
     await page.locator('#bind-slot4-0').click();
