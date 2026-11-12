@@ -10,6 +10,9 @@ import {
   EntityFlag,
   EntityKind,
   RoundPhase,
+  Cmd,
+  METER_BAR,
+  WEATHER_CHARGE_FULL,
   MAX_ENTITIES,
   applyArenaCheat,
   applyTickCheats,
@@ -210,6 +213,7 @@ export class Arena extends Phaser.Scene {
         // A swap sent on a tick where the game clock stood still (hit-stop, KO slow motion) is sent again on the next one.
         clock: () => view.actionBar(0)?.tick ?? 0,
         onSwap: (swaps) => { this.noteSwap(swaps); },
+        onAction: (bits) => { this.noteAction(bits); },
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
           else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
@@ -486,6 +490,19 @@ export class Arena extends Phaser.Scene {
       notice.show(line, this.time.now);
       (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
     }
+  }
+
+  /** Arcade: says why a Super or Weather press does nothing yet (meter or weather charge not full). View only. */
+  private noteAction(bits: number): void {
+    const arcade = this.view?.arcade();
+    const notice = this.swapNotice;
+    if (!arcade || !notice || arcade.phase !== RoundPhase.fight || arcade.frozen) return;
+    let line: string | undefined;
+    if ((bits & Cmd.super) !== 0 && arcade.meter[0] < METER_BAR) line = 'Super not ready';
+    else if ((bits & Cmd.weather) !== 0 && arcade.weatherCharge[0] < WEATHER_CHARGE_FULL) line = 'Weather not ready';
+    if (line === undefined) return;
+    notice.show(line, this.time.now);
+    (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
   }
 
   /** One sim tick: agents (or the given commands) in, events out to the effects and the end check. */

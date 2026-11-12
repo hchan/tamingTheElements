@@ -112,3 +112,20 @@ describe('KeyboardAgent swap press', () => {
     expect(swap(agent.observe(view))).toBe(0);
   });
 });
+
+describe('KeyboardAgent action press', () => {
+  it('reports Super and Weather once per press, not while held', () => {
+    const seen: number[] = [];
+    const agent = new KeyboardAgent({ capturable: () => false, cheatsEnabled: false, arcade: true, onAction: (b) => seen.push(b) });
+    agent.handle(key('down', 'Digit9'));
+    agent.observe(view);
+    agent.observe(view);
+    agent.handle(key('up', 'Digit9'));
+    agent.observe(view);
+    agent.handle(key('down', 'Digit9'));
+    agent.observe(view);
+    agent.handle(key('down', 'Digit6'));
+    agent.observe(view);
+    expect(seen).toEqual([Cmd.super, Cmd.super, Cmd.weather]);
+  });
+});

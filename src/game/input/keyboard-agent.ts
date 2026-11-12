@@ -33,7 +33,12 @@ export interface KeyboardAgentOptions {
   readonly clock?: () => number;
   /** Called once per swap press with its bits, on the observation that sends it (view-only refusal feedback hangs here). */
   readonly onSwap?: (swaps: Command) => void;
+  /** Called with the Super and Weather bits that went from up to down on this observation (view-only refusal feedback). */
+  readonly onAction?: (bits: Command) => void;
 }
+
+/** The Super and Weather bits, whose press edge feeds `onAction`. */
+const ACTION_MASK: Command = Cmd.super | Cmd.weather;
 
 /** The four swap bits: sent once per press (a key, pad button or slot click), never while held. */
 export const SWAP_MASK: Command = Cmd.swap1 | Cmd.swap2 | Cmd.swap3 | Cmd.swap4;
@@ -52,6 +57,7 @@ export class KeyboardAgent implements Agent {
   private startDown = false;
   /** Swap presses waiting for the next observation (a press shorter than a tick, or a retry after a held clock). */
   private swapLatched: Command = 0;
+  private lastActions: Command = 0;
   /** Pad buttons held at the last poll, so only a fresh press latches a swap. */
   private padSwapDown: Command = 0;
   /** The swap bits sent last, the game clock they were sent on and how many times they were retried. */
@@ -133,6 +139,9 @@ export class KeyboardAgent implements Agent {
     this.pressed = 0;
     if (swaps !== 0 && clock !== undefined) this.sent = { bits: swaps, clock, retries: was && swaps === was.bits ? was.retries + 1 : 0 };
     if (fresh !== 0) this.opts.onSwap?.(fresh);
+    const edge = cmd & ACTION_MASK & ~this.lastActions;
+    this.lastActions = cmd & ACTION_MASK;
+    if (edge !== 0) this.opts.onAction?.(edge);
     return cmd;
   }
 
