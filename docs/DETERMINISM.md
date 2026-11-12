@@ -82,6 +82,17 @@ axes. The Arcade 8-way aim (`src/core/sim/systems/arcade/aim.ts`) uses the same 
 `+-speed` on both axes (no `sqrt`), a diagonal melee box is the integer-friendly `(w + h) / 2` square, and the aim is an
 Int32 in the Arcade entity block (hashed and snapshotted with it; Classic has no block, and `castDir` is its plain `dir`). Geometry is AABB overlap with integer-friendly maths (`src/core/math/aabb.ts`). The Arcade playfield insets (`arcadePlayfield()` in `src/core/data/arcade.ts`, y 200..640) are integer px and the arena rectangle of every Arcade world (Classic keeps `DEFAULT_ARENA`), so every clamp is the same integer comparison. SIM_VERSION 32 (WP 38d, the panning wide arena) made it `ARCADE_ARENA_WIDTH` = 1920 px wide (was 1280); the Arcade start columns (`ARCADE_P1_START_X` 480, `ARCADE_P2_START_X` 1360: the old 1280 spots centred in it), the round reset and the terrain spawn keep-clear are integer constants too, and the terrain mirror centre moves to 960. Classic hashes are unchanged (its goldens changed only in their `simVersion` header); the Arcade goldens were re-recorded.
 
+SIM_VERSION 33 (WP 39, traps) adds the Arcade `traps` system (`src/core/sim/systems/arcade/trap.ts`, after `movement`): a
+4-entry world trap table of 7 Int32 each (kind, x, y, team, armAt, endAt, owner; kind 0 = free, scanned in index order and
+never compacted, so snapshot/restore stays a plain array copy), the per-entity `trapReadyAt`/`trapSlowUntil` and a trap
+press slot per team. Every trap time is a game tick (`now(s)`), so hit-stop and super freezes pause the fuse. Positions are
+integer px (`Math.trunc` of the aim offset, clamped to the arena); trigger, blast and douse tests are AABB overlaps; the
+Gust and blast direction is `dir8FromSigns` of integer offsets (the `dirToward` 2x rule, no `atan2`); the Puddle slow is one
+per-mille multiply and divide by the constant 1000 (exact when no Puddle slows the walker). No RNG. Command bit 6 is Trap in
+Arcade and capture in Classic (`systems/capture.ts` is gated with `!isArcade`); no recorded golden input stream set it.
+Classic hashes are unchanged (goldens change only in their `simVersion` header); the Arcade goldens were re-recorded
+because the hashed Arcade block grew.
+
 ## State, snapshot and hash
 
 - State is structure-of-arrays typed arrays plus scalars in `SimState` (`src/core/sim/state.ts`): per-entity `Float64Array` and

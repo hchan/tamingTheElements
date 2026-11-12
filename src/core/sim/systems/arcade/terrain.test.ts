@@ -22,7 +22,7 @@ import { createMatch, type MatchSetup } from '../../match';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import {
   ARCADE_T, ARCADE_W, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, cooldownIdx, countIdx, EntityFlag, EntityKind, MAX_ENTITIES,
-  PATCH_MAX,
+  PATCH_MAX, TRAP_STRIDE, TRAP_TABLE, TRAP_WORLD_MAX,
 } from '../../state';
 import { step } from '../../step';
 import type { SimWorld } from '../../world';
@@ -717,8 +717,9 @@ describe('determinism', () => {
     );
   });
 
-  it('the terrain slots end the Arcade world block', () => {
-    expect(ArcadeW.patches + PATCH_MAX * 4).toBe(ARCADE_W);
+  it('the terrain slots end the Arcade world block before the trap table (WP 39)', () => {
+    expect(ArcadeW.patches + PATCH_MAX * 4).toBe(TRAP_TABLE);
+    expect(TRAP_TABLE + TRAP_WORLD_MAX * TRAP_STRIDE).toBe(ARCADE_W);
     expect(ArcadeT.inPatch).toBe(ARCADE_T - 1);
   });
 });

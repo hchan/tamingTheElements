@@ -14,6 +14,11 @@ export const Cmd = {
   primary: 1 << 4,
   secondary: 1 << 5,
   capture: 1 << 6,
+  /**
+   * Arcade's name for bit 6 (WP 39): plant a trap. Arcade never reads it as `capture` (systems/capture.ts is
+   * Classic-only for it), Classic never reads it as a trap; the mask, packet and replay formats are unchanged.
+   */
+  trap: 1 << 6,
   swap1: 1 << 7,
   swap2: 1 << 8,
   swap3: 1 << 9,

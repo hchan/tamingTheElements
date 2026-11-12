@@ -37,6 +37,10 @@ export const CUES = {
   charge: [[3, 110, 880, 420, 0.16]],
   /** Snag (FUN-DESIGN 2.20): the rope whip and its snap. */
   snag: [[NOISE, 1800, 400, 110, 0.35], [1, 330, 165, 90, 0.2, 60]],
+  /** Traps (WP 39): the plant thunk, the arming click and the trigger pop. */
+  trapSet: [[0, 180, 90, 90, 0.4]],
+  trapArm: [[1, 1320, 1320, 40, 0.15]],
+  trapPop: [[NOISE, 1400, 250, 180, 0.5], [0, 110, 40, 140, 0.5]],
   /** A refused action (a swap while stunned or cooling down): two short low buzzes, never a stinger. */
   denied: [[2, 150, 120, 70, 0.3], [2, 150, 120, 70, 0.3, 100]],
   sun: [[1, 523, 523, 140, 0.2], [1, 659, 659, 140, 0.2, 90], [1, 784, 784, 220, 0.2, 180]],
@@ -62,7 +66,7 @@ export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'fight'
  */
 export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
   43: 'guard', 44: 'parry', 45: 'crack', 46: 'dash', 47: 'dodge', 48: 'clang', 50: 'charge', 53: 'round', 54: 'fight',
-  55: 'ko', 57: 'roundEnd', 67: 'dash',
+  55: 'ko', 57: 'roundEnd', 67: 'dash', 70: 'trapSet', 71: 'trapArm', 72: 'trapPop',
 };
 const HIT: Kinds['hitConfirmed'] = 41;
 const WEATHER: Kinds['weatherChanged'] = 59;

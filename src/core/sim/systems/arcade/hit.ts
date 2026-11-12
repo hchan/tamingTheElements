@@ -2,7 +2,7 @@ import { ABILITIES_A } from '../../../data/abilities-a';
 import { ABILITIES_B } from '../../../data/abilities-b';
 import {
   CHARGE_STUN_TICKS, GUARD_CHIP_PM, HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, KO_HIT_STOP_TICKS,
-  PARRY_HIT_STOP_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
+  PARRY_HIT_STOP_TICKS, TRAP_SPIKE_STUN_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import { arcadeRaceNumbers } from '../../arcade-numbers';
@@ -32,6 +32,9 @@ export const HIT_STUN: readonly number[] = [...ABILITIES_A, ...ABILITIES_B].map(
 export const SUPER_DEF = HIT_STRENGTH.length;
 /** Def index of the charge arrival hit (arcade/charge.ts): light strength, CHARGE_STUN_TICKS of hit-stun. */
 export const CHARGE_DEF = SUPER_DEF + 1;
+/** Def indices of the Fire Bomb blast and the Spike (arcade/trap.ts, WP 39): medium strength; the Spike stuns longer. */
+export const TRAP_BOMB_DEF = SUPER_DEF + 2;
+export const TRAP_SPIKE_DEF = SUPER_DEF + 3;
 
 const FREEZE_UNTIL = ARCADE_WORLD_BASE + ArcadeW.freezeUntil;
 const FREEZE_KIND = ARCADE_WORLD_BASE + ArcadeW.freezeKind;
@@ -73,7 +76,8 @@ export function applyArcadeHit(
 ): number {
   const s = world.state;
   const team = s.team[source] ?? 0;
-  const strength = defIdx === SUPER_DEF ? HitStrength.super : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
+  const strength = defIdx === SUPER_DEF ? HitStrength.super
+    : defIdx >= TRAP_BOMB_DEF ? HitStrength.medium : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
   // Supers are unblockable (FUN-DESIGN 2.8).
   const sup = strength === HitStrength.super;
   if (!sup && parry(world, sink, source, attacker, victim)) {
@@ -114,7 +118,8 @@ export function applyArcadeHit(
   hitStop(world, sink, source, ticks, ko ? HitStopCause.ko : HitStopCause.hit);
   setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
   const dealt = damageDealt(before, amount);
-  const stun = defIdx === CHARGE_DEF ? CHARGE_STUN_TICKS : (HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength]);
+  const stun = defIdx === CHARGE_DEF ? CHARGE_STUN_TICKS
+    : defIdx === TRAP_SPIKE_DEF ? TRAP_SPIKE_STUN_TICKS : (HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength]);
   if (guard) blockHit(world, sink, source, victim, dealt);
   else applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
   meterOnHit(s, sink, source, team, victim, dealt);

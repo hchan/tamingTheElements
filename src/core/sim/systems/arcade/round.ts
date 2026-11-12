@@ -18,6 +18,7 @@ import { teamMembers } from '../swap';
 import { endLiveCombos } from './combo';
 import { hitStop } from './hit';
 import { endLiveSupers } from './super';
+import { clearTraps } from './trap';
 import { terrainRound } from './terrain-layout';
 import { endWeather } from './weather';
 
@@ -59,6 +60,7 @@ function resetRound(world: SimWorld, sink: EventSink): void {
   endLiveCombos(world, sink);
   endLiveSupers(world, sink);
   endWeather(s, sink);
+  clearTraps(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     if (((s.flags[id] ?? 0) & EntityFlag.alive) !== 0 && s.kind[id] !== EntityKind.character) freeEntity(s, id);
   }

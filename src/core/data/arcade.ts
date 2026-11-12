@@ -120,6 +120,35 @@ export const SNAG_FIRE_ABILITIES: readonly string[] = ['fireball', 'crimson-fire
 export const SnagEvent = { rooted: 0, guarded: 1, freed: 2, expired: 3 } as const;
 
 /**
+ * Traps (WP 39, ideas/in-progress/wp39-bomb-trap.md), game ticks and px. `Cmd.trap` plants the caster's element trap
+ * TRAP_PLACE_PX ahead along its aim; it arms after TRAP_ARM_TICKS, then fires when a foe touches its TRAP_BOX_PX box
+ * inflated by TRAP_TRIGGER_PX, or when its life (TRAP_LIFE_TICKS by kind, from arming) runs out. TrapKind: 1 Fire Bomb
+ * (a TRAP_BLAST_PX blast), 2 Puddle (TRAP_PUDDLE_SLOW_PM walk speed, TRAP_PUDDLE_LINGER_TICKS after leaving; it stays
+ * until its life ends), 3 Spike (one hit, longer stun), 4 Gust (a heavy shove, no damage). TrapReason is the
+ * `trapTriggered` reason.
+ */
+export const TrapKind = { none: 0, fireBomb: 1, puddle: 2, spike: 3, gust: 4 } as const;
+export const TrapReason = { overlap: 0, timeout: 1, doused: 2 } as const;
+export const TRAP_PLACE_PX = 72;
+export const TRAP_CAST_TICKS = 14;
+export const TRAP_ARM_TICKS = 30;
+/** Life after arming by TrapKind (index 0 unused). */
+export const TRAP_LIFE_TICKS: readonly number[] = [0, 150, 300, 200, 200];
+export const TRAP_BOX_PX = 56;
+export const TRAP_TRIGGER_PX = 24;
+export const TRAP_BLAST_PX = 112;
+export const TRAP_FIRE_DAMAGE = 22;
+export const TRAP_SPIKE_DAMAGE = 18;
+export const TRAP_SPIKE_STUN_TICKS = 50;
+export const TRAP_PUDDLE_SLOW_PM = 600;
+export const TRAP_PUDDLE_LINGER_TICKS = 40;
+/** A heavy hit's knockback (KNOCKBACK_Q4[heavy]): about 105 px, into the wall bounce. */
+export const TRAP_GUST_KB_Q4 = 224;
+export const TRAP_COOLDOWN_TICKS = 500;
+export const TRAP_TEAM_MAX = 2;
+export const TRAP_MIN_GAP_PX = 64;
+
+/**
  * Knockback start speed in Q4 (1/16 px per tick) by strength: light 96 (6 px per tick), medium 144, heavy 224, super
  * 256. It decays by KNOCKBACK_DECAY_Q4 (1 px per tick) every game tick, so light travels 21 px, medium 45, heavy 105.
  */

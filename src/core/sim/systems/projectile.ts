@@ -24,6 +24,7 @@ import { releaseCount, slotAbility, SUPER_BULLET } from './ability-info';
 import { castDir } from './arcade/aim';
 import { shotBlocked } from './arcade/terrain';
 import { freeRoot } from './arcade/snag';
+import { douseTraps } from './arcade/trap';
 import { SNAG_FIRE_ABILITIES } from '../../data/arcade';
 
 /** Ability index used for SimState.defId (set A then set B). */
@@ -166,6 +167,10 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     if (isArcade(s) && shotBlocked(s, sink, id)) {
       despawn(world, id, s.owner[id] ?? 0);
       continue;
+    }
+    // Arcade only: fire douses enemy Puddle and Gust traps (arcade/trap.ts) and flies on.
+    if (isArcade(s) && SNAG_FIRE_ABILITIES.includes(ABILITY_DEFS[s.defId[id] ?? 0]?.id ?? '')) {
+      douseTraps(s, sink, s.team[id] ?? 0, x, y, s.w[id] ?? 0, s.h[id] ?? 0);
     }
     const target = controlledId(world, 1 - (s.team[id] ?? 0));
     if (target < 0 || ((s.flags[target] ?? 0) & EntityFlag.translucent) !== 0) continue;

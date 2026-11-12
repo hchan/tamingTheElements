@@ -36,7 +36,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(20 * MAX_ENTITIES + 20 * TEAM_COUNT + 37);
+    expect(ARCADE_LENGTH).toBe(22 * MAX_ENTITIES + 21 * TEAM_COUNT + 37 + 4 * 7);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -47,7 +47,7 @@ describe('arcade state block', () => {
     };
     check(ArcadeE, ARCADE_E);
     check(ArcadeT, ARCADE_T);
-    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(7);
+    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(8);
     check(ArcadeW, ARCADE_W);
     expect(ARCADE_TEAM_BASE).toBe(ARCADE_E * MAX_ENTITIES);
     expect(ARCADE_WORLD_BASE).toBe(ARCADE_TEAM_BASE + ARCADE_T * TEAM_COUNT);

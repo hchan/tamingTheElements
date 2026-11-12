@@ -1,6 +1,7 @@
 import {
   CHARGE_TICKS, ChargeEnd, COMBO_STUN_CAP_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS, DASH_TICKS, JUGGLE_LIMIT, JUGGLE_STUN_STEP,
-  MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, WEATHER_COOLDOWN_TICKS, WEATHER_RECOVERY_TICKS,
+  MIN_HIT_STUN_TICKS, RECOVERY_INVULN_TICKS, RecoveredReason, TRAP_CAST_TICKS, TRAP_COOLDOWN_TICKS, TRAP_PUDDLE_SLOW_PM,
+  WEATHER_COOLDOWN_TICKS, WEATHER_RECOVERY_TICKS,
 } from '../../../data/arcade';
 import { inFight, isArcade, now } from '../../clock';
 import { Cmd } from '../../commands';
@@ -61,6 +62,14 @@ export function inSuper(s: SimState, id: number): boolean {
  */
 export const inWeatherRecovery = (s: SimState, id: number): boolean =>
   now(s) < (s.arcade[id * ARCADE_E + ArcadeE.weatherReadyAt] ?? 0) - WEATHER_COOLDOWN_TICKS + WEATHER_RECOVERY_TICKS;
+
+/** True in `id`'s TRAP_CAST_TICKS after it plants a trap (arcade/trap.ts): it may not walk. Read from `trapReadyAt`. */
+export const inTrapRecovery = (s: SimState, id: number): boolean =>
+  now(s) < (s.arcade[id * ARCADE_E + ArcadeE.trapReadyAt] ?? 0) - TRAP_COOLDOWN_TICKS + TRAP_CAST_TICKS;
+
+/** `id`'s walk speed per mille from a Puddle trap: TRAP_PUDDLE_SLOW_PM while its `trapSlowUntil` runs, else 1000. */
+export const trapSlowPm = (s: SimState, id: number): number =>
+  now(s) < (s.arcade[id * ARCADE_E + ArcadeE.trapSlowUntil] ?? 0) ? TRAP_PUDDLE_SLOW_PM : 1000;
 
 /**
  * `canAct` without the cast recovery (the `frozen` flag) and the guard: not stunned nor block-stunned, not casting a

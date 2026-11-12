@@ -12,7 +12,7 @@ import type { SimWorld } from '../world';
 import { controlledId } from './movement';
 import { ABILITY_DEFS, hitHolder } from './projectile';
 import { CAPTURE_SLOT, releaseCount } from './ability-info';
-import { now } from '../clock';
+import { isArcade, now } from '../clock';
 import { canAct } from './arcade/stun';
 
 /** Bit in world[World.flags]: Capture is granted (set by createMatch from chapter 2 on). Bits 0..15 are sim flags. */
@@ -115,5 +115,6 @@ export function captureSystem(world: SimWorld, cmds: readonly [Command, Command]
     despawn(world, id, hitHolder(world, id));
   }
   const charId = controlledId(world, 0);
-  if (charId >= 0 && hasCmd(cmds[0], Cmd.capture)) fire(world, 0, charId, tick);
+  // Arcade reads bit 6 as Cmd.trap (WP 39, arcade/trap.ts), never as a capture.
+  if (charId >= 0 && !isArcade(s) && hasCmd(cmds[0], Cmd.capture)) fire(world, 0, charId, tick);
 }

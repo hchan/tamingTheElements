@@ -119,5 +119,8 @@
  * 32: Arcade only; Classic hashes unchanged. Panning wide arena (WP 38d): the Arcade playfield is ARCADE_ARENA_WIDTH = 1920
  *    wide (was 1280); fighters start on the old 1280 span centred in it (x 480 and 1360, ARCADE_P1/P2_START_X), the round
  *    reset and the terrain spawn keep-clear use the same spots, and terrain layouts are drawn about the new centre (960).
+ * 33: Arcade only; Classic hashes unchanged. Traps (WP 39): command bit 6 is Trap in Arcade (Classic keeps it as capture);
+ *    the `traps` system after `movement`; the Arcade block grows (entity trapReadyAt/trapSlowUntil, a trap press slot per
+ *    team, a 4 x 7 world trap table), so every Arcade hash changes even with no trap cast.
  */
-export const SIM_VERSION = 32;
+export const SIM_VERSION = 33;

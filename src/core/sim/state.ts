@@ -56,26 +56,28 @@ export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE +
  * and `parryLockUntil` the whiff lock, all game ticks (systems/arcade/guard.ts). `weatherReadyAt` is the game tick of
  * the character's next weather cast (a lockout); `chargeUntil` is the game tick a charge ends (start + CHARGE_TICKS, 0 = none) and `chargeReadyAt` the first tick of the next one (systems/arcade/charge.ts); its cast recovery ends WEATHER_COOLDOWN_TICKS - WEATHER_RECOVERY_TICKS before it.
  * `rootUntil` is the game tick a Snag root ends (0 = not rooted) and `rootImmuneUntil` the end of the immunity after it
- * (systems/arcade/snag.ts).
+ * (systems/arcade/snag.ts). `trapReadyAt` is the game tick of the character's next trap cast (its cast recovery ends
+ * TRAP_COOLDOWN_TICKS - TRAP_CAST_TICKS before it) and `trapSlowUntil` the end of a Puddle's linger (systems/arcade/trap.ts).
  */
 export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, blockUntil: 7,
   parryUntil: 8, parryLockUntil: 9, guardDrain: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
   dashDodged: 14, weatherReadyAt: 15, chargeUntil: 16, chargeReadyAt: 17, rootUntil: 18, rootImmuneUntil: 19,
+  trapReadyAt: 20, trapSlowUntil: 21,
 } as const;
-export const ARCADE_E = 20;
+export const ARCADE_E = 22;
 /**
- * Per team; `pressTick` is 7 ints (primary, secondary, dash, guard, super, weather, charge): the game tick of the last rising edge plus
+ * Per team; `pressTick` is 8 ints (primary, secondary, dash, guard, super, weather, charge, trap): the game tick of the last rising edge plus
  * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a
  * chord's super press is pending (see systems/arcade/buffer.ts). `lastDir` is the bit of the last rising direction edge
  * and `lastDirPress` its game tick plus one (the double-tap dash); `confirmTick` is the game tick plus one of the team's
  * last confirmed hit (the dash cancel window). `weatherCharge` is the weather charge, 0..WEATHER_CHARGE_FULL (weather.ts).
  */
 export const ArcadeT = {
-  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 12, lastDir: 13,
-  roundsWon: 14, superState: 15, pressUsed: 16, confirmTick: 17, weatherCharge: 18, inPatch: 19,
+  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 13, lastDir: 14,
+  roundsWon: 15, superState: 16, pressUsed: 17, confirmTick: 18, weatherCharge: 19, inPatch: 20,
 } as const;
-export const ARCADE_T = 20;
+export const ARCADE_T = 21;
 /**
  * World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil`, `phaseUntil` and `slowMoUntil` are in
  * W.tick units, `roundTimer` in game ticks left. `phase` is a RoundPhase (data/arcade.ts); `roundWinner` holds the
@@ -85,6 +87,8 @@ export const ARCADE_T = 20;
  * The terrain slots (FUN-DESIGN 2.15, systems/arcade/terrain.ts): `stage` is the stage element as a weather kind (1 fire,
  * 2 water, 3 earth, 4 air), `swapAt` the game tick a telegraphed swap lands (0 none) towards `swapTo`, `terrainGen` the
  * layouts drawn so far (it seeds the next draw), `patchCount` the live patches and `patches` their rectangles.
+ * The trap table (WP 39, systems/arcade/trap.ts) follows the patches: TRAP_WORLD_MAX entries of TRAP_STRIDE ints from
+ * `TRAP_TABLE` (kind 0 = a free entry; never compacted, scanned in index order).
  */
 export const ArcadeW = {
   gameTick: 0, freezeUntil: 1, freezeKind: 2, round: 3, phase: 4, phaseUntil: 5, roundTimer: 6, slowMoUntil: 7,
@@ -93,7 +97,12 @@ export const ArcadeW = {
 } as const;
 /** Terrain patches (FUN-DESIGN 2.15): at most PATCH_MAX rectangles of 4 ints (x, y, w, h) from `ArcadeW.patches`. */
 export const PATCH_MAX = 5;
-export const ARCADE_W = ArcadeW.patches + PATCH_MAX * 4;
+/** Trap table (WP 39): TRAP_WORLD_MAX entries of TRAP_STRIDE ints, fields at `TrapF` (systems/arcade/trap.ts). */
+export const TRAP_WORLD_MAX = 4;
+export const TRAP_STRIDE = 7;
+export const TrapF = { kind: 0, x: 1, y: 2, team: 3, armAt: 4, endAt: 5, owner: 6 } as const;
+export const TRAP_TABLE = ArcadeW.patches + PATCH_MAX * 4;
+export const ARCADE_W = TRAP_TABLE + TRAP_WORLD_MAX * TRAP_STRIDE;
 export const ARCADE_TEAM_BASE = MAX_ENTITIES * ARCADE_E;
 export const ARCADE_WORLD_BASE = ARCADE_TEAM_BASE + TEAM_COUNT * ARCADE_T;
 export const ARCADE_LENGTH = ARCADE_WORLD_BASE + ARCADE_W;

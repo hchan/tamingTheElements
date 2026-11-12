@@ -59,3 +59,6 @@ export * from './tester/cheats';
 export * from './tester/save-edits';
 export { WEATHER_RANGED_KINDS } from './data/arcade';
 export { ARCADE_ARENA_WIDTH, ARCADE_P1_START_X, ARCADE_P2_START_X } from './data/arcade';
+export {
+  TRAP_ARM_TICKS, TRAP_BLAST_PX, TRAP_BOX_PX, TRAP_COOLDOWN_TICKS, TRAP_LIFE_TICKS, TRAP_TEAM_MAX, TRAP_TRIGGER_PX, TrapKind, TrapReason,
+} from './data/arcade';

@@ -56,3 +56,14 @@ export const ABILITY_NAMES: ReadonlyMap<AbilityId, string> = new Map([
 /** Snag (FUN-DESIGN 2.20): the name and line of the rope throw on a hero's ARCADE_SNAG_SLOT (data/arcade.ts). */
 export const SNAG_NAME = 'Snag';
 export const SNAG_DESCRIPTION = 'Throws a rope that roots the foe for a moment: no walking, Dash or Charge. Fire burns it.';
+
+/** Traps (WP 39): the button word, and the name and line of each kind, indexed by `TrapKind` (data/arcade.ts; 0 = none). */
+export const TRAP_WORD = 'Trap';
+export const TRAP_NAMES: readonly string[] = ['', 'Fire Bomb', 'Puddle', 'Spike', 'Gust'];
+export const TRAP_DESCRIPTIONS: readonly string[] = [
+  '',
+  'Plants a bomb ahead that arms after a moment, then blasts a foe who steps near, or blows up when its fuse runs out.',
+  'Plants a puddle ahead that slows a foe walking through it. Dash through it; fire dries it up.',
+  'Plants a spike ahead that stabs a foe who steps on it, stunning longer than a normal hit.',
+  'Plants a gust ahead that shoves a foe who steps near it far away. Fire burns it.',
+];

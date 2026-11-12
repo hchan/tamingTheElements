@@ -17,6 +17,7 @@ import { chargeSystem } from './systems/arcade/charge';
 import { arcadeClashSystem } from './systems/arcade/clash';
 import { arcadeSuperSystem } from './systems/arcade/super';
 import { arcadeRoundSystem } from './systems/arcade/round';
+import { arcadeTrapSystem } from './systems/arcade/trap';
 import { World as W } from './state';
 import { advanceGameClock, clockHeld } from './clock';
 import type { SimWorld } from './world';
@@ -26,11 +27,15 @@ type System = (world: SimWorld, cmds: readonly [Command, Command], sink: EventSi
 /** Leading SYSTEMS entries that run even while an Arcade freeze or KO slow motion holds the game clock: just `input`. */
 export const UNFROZEN_SYSTEMS = 1;
 
-/** Fixed system order; the Arcade systems fill the `input`, `collision`, `health` and `cleanup` slots and return at once in Classic. */
+/**
+ * Fixed system order; the Arcade systems fill the `input`, `traps`, `collision`, `health` and `cleanup` slots and return
+ * at once in Classic.
+ */
 export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['input', arcadeInputSystem],
   ['swap', swapSystem],
   ['movement', movementSystem],
+  ['traps', arcadeTrapSystem],
   ['abilities', abilitiesSystem],
   ['melee', meleeSystem],
   ['projectiles', projectileSystem],

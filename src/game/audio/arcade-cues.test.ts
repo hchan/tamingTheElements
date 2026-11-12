@@ -31,6 +31,7 @@ describe('Arcade cue coverage', () => {
     const byName: Partial<Record<keyof typeof SimEventKind, CueName>> = {
       guarded: 'guard', parried: 'parry', guardBroken: 'crack', dashed: 'dash', perfectDodge: 'dodge', clash: 'clang',
       superStarted: 'charge', chargeStarted: 'dash', roundStarted: 'round', fight: 'fight', ko: 'ko', roundEnded: 'roundEnd',
+      trapPlaced: 'trapSet', trapArmed: 'trapArm', trapTriggered: 'trapPop',
     };
     const expected = Object.fromEntries(Object.entries(byName).map(([n, c]) => [String(SimEventKind[n as keyof typeof SimEventKind]), c]));
     expect(KIND_CUES).toEqual(expected);

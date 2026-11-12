@@ -7,7 +7,7 @@ import type { SimWorld } from '../world';
 import { isArcade } from '../clock';
 import { stepKnockback } from './arcade/knockback';
 import { endCharge } from './arcade/charge-move';
-import { canAct, chargeTick, dashTick } from './arcade/stun';
+import { canAct, chargeTick, dashTick, inTrapRecovery, trapSlowPm } from './arcade/stun';
 import { dirToward, isDiagonal8, setAim } from './arcade/aim';
 import { isRooted } from './arcade/snag';
 import { chargeWeather } from './arcade/meter';
@@ -106,8 +106,8 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
     if (d >= 0) setAim(s, id, d);
   }
   if (d < 0) return;
-  if (isRooted(s, id)) return; // a Snag root: turn and aim, no step (FUN-DESIGN 2.20)
-  const pm = terrainSpeedPm(s, id);
+  if (isRooted(s, id) || inTrapRecovery(s, id)) return; // a Snag root or a trap cast: turn and aim, no step (FUN-DESIGN 2.20)
+  const pm = (terrainSpeedPm(s, id) * trapSlowPm(s, id)) / 1000; // exact when no Puddle slows `id`
   const speed = pm === 1000 ? (s.speed[id] ?? 0) : ((s.speed[id] ?? 0) * pm) / 1000;
   s.vx[id] = (DIR8_X[d] ?? 0) * speed;
   s.vy[id] = (DIR8_Y[d] ?? 0) * speed;

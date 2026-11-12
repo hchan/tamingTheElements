@@ -1,11 +1,11 @@
 {
   "chunks": {
-    "arcade-audio": 1960,
+    "arcade-audio": 2020,
     "arcade-setup": 1600,
     "arcade-versus": 3250,
     "arena-pan": 900,
     "clash-view": 943,
-    "core": 12200,
+    "core": 12300,
     "defence-view": 3750,
     "index": 28800,
     "index.css": 4180,
@@ -17,7 +17,7 @@
     "pose-layer": 9700,
     "rolldown-runtime": 200,
     "round-view": 2100,
-    "sim": 31000,
+    "sim": 32300,
     "super-view": 1390,
     "tag-view": 2870,
     "terrain-view": 4800,
@@ -26,7 +26,7 @@
     "viewport": 260,
     "weather-view": 3470
   },
-  "totalGzip": 502300,
+  "totalGzip": 503600,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
