@@ -1,12 +1,8 @@
+/// <reference types="vite/client" />
 import { describe, expect, it } from 'vitest';
-import arcadeGolden from '../fixtures/replays/arcade-1v1.replay.json';
-import arcadeElementalGolden from '../fixtures/replays/arcade-elemental.replay.json';
-import arcadeMovesGolden from '../fixtures/replays/arcade-moves.replay.json';
-import arcadeTagGolden from '../fixtures/replays/arcade-tag.replay.json';
-import arcadeTag3Golden from '../fixtures/replays/arcade-tag3.replay.json';
-import arcadeTrapsGolden from '../fixtures/replays/arcade-traps.replay.json';
-import arcadeWeatherGolden from '../fixtures/replays/arcade-weather.replay.json';
-import golden from '../fixtures/replays/random-vs-random.replay.json';
+import { characterId } from '../../src/core/data/ids';
+import { DEFAULT_SIM_FLAGS } from '../../src/core/flags';
+import type { MatchSetup } from '../../src/core/sim/match';
 import { HASH_INTERVAL, parseReplay, serializeReplay } from '../../src/core/replay/format';
 import { playReplay } from '../../src/core/replay/player';
 import { GOLDEN_SETUP, recordBotMatch } from '../../src/core/replay/record-bots';
@@ -15,11 +11,9 @@ import { SIM_VERSION } from '../../src/core/version';
 // Cross-engine determinism gate: the per-50-tick hashes committed from Node must be reproduced
 // bit-for-bit by Chromium, Firefox and WebKit.
 describe('cross-engine determinism', () => {
-  const file = parseReplay(JSON.stringify(golden));
-
-  it('golden replay verifies against the committed Node hashes', () => {
-    expect(playReplay(file, SIM_VERSION)).toEqual({ ok: true, finalHash: file.finalHash });
-  });
+  // Every committed golden is picked up by glob, so a newly recorded replay cannot be left out of the cross-engine gate.
+  const all = import.meta.glob<unknown>('../fixtures/replays/*.replay.json', { eager: true, import: 'default' });
+  const file = parseReplay(JSON.stringify(all['../fixtures/replays/random-vs-random.replay.json']));
 
   it('a fresh recording reproduces the committed hashes at every checkpoint', () => {
     const fresh = recordBotMatch(GOLDEN_SETUP, file.header.tickCount);
@@ -32,25 +26,37 @@ describe('cross-engine determinism', () => {
     expect(serializeReplay(fresh)).toBe(serializeReplay(file));
   });
 
-  it('the Arcade golden verifies against the committed Node hashes', () => {
-    const arcade = parseReplay(JSON.stringify(arcadeGolden));
-    expect(playReplay(arcade, SIM_VERSION)).toEqual({ ok: true, finalHash: arcade.finalHash });
+  const names = Object.keys(all).map((p) => p.replace(/^.*\//, '').replace('.replay.json', ''));
+
+  it('covers the Classic and every Arcade golden', () => {
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'random-vs-random', 'random-2v2-ch3', 'arcade-1v1', 'arcade-moves', 'arcade-weather',
+        'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental',
+      ]),
+    );
   });
 
-  // Hand-scripted inputs (tools/gen/arcade-moves.ts): dash, guard, parry, super, all five weathers, the round flow and
-  // the 2v2 and 3v3 tag teams, each trap kind and each elemental ability.
-  it.each([
-    ['arcade-moves', arcadeMovesGolden],
-    ['arcade-weather', arcadeWeatherGolden],
-    ['arcade-tag', arcadeTagGolden],
-    ['arcade-tag3', arcadeTag3Golden],
-    ['arcade-traps', arcadeTrapsGolden],
-    ['arcade-elemental', arcadeElementalGolden],
-  ])(
-    'the scripted Arcade golden %s verifies against the committed Node hashes',
-    (_name, golden) => {
-      const scripted = parseReplay(JSON.stringify(golden));
-      expect(playReplay(scripted, SIM_VERSION)).toEqual({ ok: true, finalHash: scripted.finalHash });
-    },
-  );
+  it.each(Object.entries(all))('golden %s is at the current SIM_VERSION and verifies against the committed Node hashes', (path, raw) => {
+    const replay = parseReplay(JSON.stringify(raw));
+    expect(replay.header.simVersion, path).toBe(SIM_VERSION);
+    expect(playReplay(replay, SIM_VERSION), path).toEqual({ ok: true, finalHash: replay.finalHash });
+  });
+
+  // Second Classic golden: two-hero rosters, chapter 3 (same setup as tools/gen/record-golden.ts SETUP_2V2).
+  it('a fresh 2v2 chapter-3 recording reproduces the committed replay byte for byte', () => {
+    const setup: MatchSetup = {
+      simVersion: SIM_VERSION,
+      seed: 0xbeef,
+      flags: DEFAULT_SIM_FLAGS,
+      chapter: 3,
+      difficulty: 2,
+      p1: [{ character: characterId('curomo'), xp: 30 }, { character: characterId('fiara'), xp: 10 }],
+      p2: [{ character: characterId('pax'), xp: 30 }, { character: characterId('cyclonius'), xp: 10 }],
+    };
+    const committed = parseReplay(JSON.stringify(all['../fixtures/replays/random-2v2-ch3.replay.json']));
+    const fresh = recordBotMatch(setup, committed.header.tickCount);
+    expect(fresh.finalHash).toBe(committed.finalHash);
+    expect(serializeReplay(fresh)).toBe(serializeReplay(committed));
+  });
 });
