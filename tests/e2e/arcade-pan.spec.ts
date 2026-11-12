@@ -32,7 +32,7 @@ async function placeAndSettle(page: Page, x1: number, x2: number): Promise<Cam> 
   await expect
     .poll(async () => {
       const c = await camera(page);
-      return Math.abs(c.centerX - centerX) < 1 && Math.abs(c.zoom - zoom) < 0.01;
+      return Math.abs(c.centerX - centerX) < 1 && Math.abs(c.zoom - zoom) < 0.004 && Math.abs(c.camZoom - zoom) < 0.004; // tighter than the callers' toBeCloseTo(.., 2) (0.005); 0.01 flaked 1 in 5
     }, { timeout: 10_000 })
     .toBe(true);
   return camera(page);

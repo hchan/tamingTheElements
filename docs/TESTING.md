@@ -156,6 +156,22 @@ save-backed screens show "Loading...") still need their own wait (`loaded()` in 
 - Known limitation (product): in a real match the first ticks are the 90-tick intro, so a view mounting a few frames late never
   misses a visible event; mounted views do not replay events from before their mount.
 
+### Keeping e2e stable and finding flakes
+
+- **Config** (`playwright.config.ts`, `playwright.pages.config.ts`): `expect` timeout 10 s, `actionTimeout` 15 s (an unclickable element
+  fails fast with a call log instead of eating the 60 s test timeout), `retries: 1` and `trace: 'on-first-retry'` only when `CI` is set.
+  Locally retries stay 0. A pass-after-retry is reported as "flaky" by Playwright: treat it as a bug, not as green.
+  `E2E_PORT` (main) and `E2E_PAGES_PORT` / `E2E_PORT` (pages, default 4174) let worktrees run side by side.
+- **Boot readiness**: main suite `waitForReady` / `gotoReady(page, url)` (`tests/e2e/parity/helpers.ts`) = `__TTE__.ready`; then `waitForRoute`
+  (`mountedRoute`) after navigation and `ARENA_READY` for battles. Pages suite (production build, no hook): `gotoMenu` in
+  `tests/e2e-pages/helpers.ts` waits for the first menu button to be visible and enabled.
+- **Never** `waitForTimeout` in `tests/e2e*` (teardown: `__TTE__.settled()`; async saves: wait for `#main`; Settings/other save-backed
+  screens: wait for their own content). Assert on what the player sees; do not click a selector the menu does not have. The menu is
+  Play, Versus, Online, Settings, Help; About, Wiki, Key Bindings and Story live on Help (`li[data-route=...] a`).
+- **Finding flakes**: `E2E_PORT=4841 pnpm e2e:flake --repeat 5 tests/e2e/tour.spec.ts tests/e2e/arcade-` (`tools/ci/e2e-flake.ts`) runs the
+  specs with `--repeat-each`, retries off, and prints pass counts per test (exit 1 if any test failed once). Extra args pass through
+  to Playwright, e.g. `--config playwright.pages.config.ts`. Check a suspect on a slow machine with CDP CPU throttling (see above).
+
 ## Writing a new ability or character test
 
 Abilities and characters are data in `src/core/data/` (`abilities-a.ts`, `abilities-b.ts`, `characters.ts`). Follow the pattern

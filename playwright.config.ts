@@ -7,10 +7,15 @@ export default defineConfig({
   testDir: 'tests/e2e',
   workers: 1,
   timeout: 60_000, // software-rendered CI runners are slower than a local GPU
-  retries: process.env.CI ? 1 : 0, // a pass-after-retry is reported as flaky by Playwright; never hide it
+  // CI only: one retry, with a trace. A pass-after-retry is reported as flaky by Playwright; never hide it (docs/TESTING.md).
+  retries: process.env.CI ? 1 : 0,
+  expect: { timeout: 10_000 }, // default 5 s is tight for SwiftShader first paint; assertions poll, so passes stay fast
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: `http://localhost:${PORT}`,
+    actionTimeout: 15_000, // fail an unclickable element in 15 s with a clear message, not at the 60 s test timeout
+    navigationTimeout: 30_000,
+    trace: 'on-first-retry',
     launchOptions: {
       // SwiftShader software WebGL; never --disable-gpu.
       args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],

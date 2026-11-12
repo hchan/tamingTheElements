@@ -60,6 +60,17 @@ export async function waitForRoute(page: Page, hash: string): Promise<void> {
   await page.waitForFunction(`window.__TTE__.state().mountedRoute === ${JSON.stringify(hash)}`);
 }
 
+/** Waits for the test hook and a mounted route (the app booted, not merely the document loaded). */
+export async function waitForReady(page: Page): Promise<void> {
+  await page.waitForFunction(`window.__TTE__ && window.__TTE__.ready === true`);
+}
+
+/** `page.goto` + `waitForReady`: use instead of a bare goto so the first click never races the boot. */
+export async function gotoReady(page: Page, url: string): Promise<void> {
+  await page.goto(url);
+  await waitForReady(page);
+}
+
 export async function goToHash(page: Page, hash: string): Promise<void> {
   await page.evaluate(`window.location.hash = ${JSON.stringify(hash)}`);
   await waitForRoute(page, hash);
