@@ -25,7 +25,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [arcade-stalemate-lavax-ishimi](../done/arcade-stalemate-lavax-ishimi.md)
 - [classic-sindarosa-ishimi-gap](../brainstorm/classic-sindarosa-ishimi-gap.md)
 - [super-damage-share](../brainstorm/super-damage-share.md)
-- [ability-audit](../brainstorm/ability-audit.md)
+- [ability-audit](../in-progress/ability-audit.md)
 - [ability-usage-metrics](../brainstorm/ability-usage-metrics.md)
 - [dead-ability-cleanup](../brainstorm/dead-ability-cleanup.md)
 - [ice-blast-rework](../brainstorm/ice-blast-rework.md)

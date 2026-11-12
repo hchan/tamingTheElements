@@ -1,6 +1,6 @@
 # Ability audit: inventory and balance (2026-11-12)
 
-Steps 1 and 3 of [ideas/brainstorm/ability-audit.md](../ideas/brainstorm/ability-audit.md). Read-only: no data, AI or baseline was changed. The graphics column is `TBD` until the screenshot pass (step 2).
+Steps 1 and 3 of [ideas/in-progress/ability-audit.md](../ideas/in-progress/ability-audit.md), plus a static graphics pass (step 2, see the section after the balance summary). Read-only: no data, AI or baseline was changed. The per-row graphics column stays `TBD`: the static pass covers every sprite at once, and the live-screenshot pass (frame strips on each arena floor) is still open.
 
 Sources: `src/core/data/abilities-a.ts`, `abilities-b.ts`, `characters.ts`, `arcade.ts`, `arcade-supers.ts`, `src/core/sim/arcade-numbers.ts`; runs `pnpm sim:match --tournament --json` (Classic, 2 seeds per pairing, scripted vs scripted), the same with `--seeds 6` (identical result, so the Classic scripted sim is deterministic per pairing and more seeds add nothing), `--ruleset arcade --seeds 4`, and `pnpm balance:compare` (all deltas +0.0 pp, 0 stalemates; `balance:record` not run).
 
@@ -59,6 +59,27 @@ Damage share (Arcade): Super 15.9, Snag 11.6, Ground Shock 7.3, Rock Pellet 7.2,
 Damage share (Classic): melee/status 23.7 (not split), Fire Blast 13.1, Wind Cone 10.5, Rock Pellet 10.5, Sonar Blast 10.3, Crimson Fire 7.8, Fireball 7.5, Icicles 6.1, Shards 3.8, Slime Blast 3.4, Ice Blast 1.8, Circus 1.4, Tornado 0.0 (note: the sim emits no events for melee hits, heals or buffs, so Classic shares are approximate).
 
 Arcade per-race numbers (`ARCADE_RACE_NUMBERS`, `[hpPm, damagePm]`, effective HP = max health x hpPm / 1000, so Curomo 630 HP, Pax 795, Rokcore 296, Sindarosa 262): curomo 6300/1560, cyclonius 4490/1010, echo 5300/1530, fiara 5140/1450, ishimi 6400/1550, lavax 3500/870, morblass 3370/930, pax 5300/1580, rokcore 2470/690, sindarosa 2620/650, treenoc 6500/1270, wispera 7900/1400. The "hp to damage" ratio is about 4 for all; the effective lives differ by 3x, so a hero's glass-cannon level, not its abilities, now carries most of the balance.
+
+## Graphics pass (static, from the sprite files)
+
+Measured with `tools/assets/ability-sprite-stats.py` (Pillow) over `public/assets/img` (opaque = alpha above 32; lum = mean luminance 0 to 255 of the opaque pixels). This scores what a file can tell: size against the damage box, how much of the box is filled, and brightness. It cannot judge contrast with a given floor, telegraphs or hit feedback; that needs the screenshot pass.
+
+| Sprite (ability) | File px | Damage box px | Opaque | Lum | Finding |
+|---|---|---|---|---|---|
+| iceShock (Ice Shock) | 240x72 | 240x40 | 47% | 150 | Right width, but under half opaque: reads as a faint streak (curomo-ability-visibility) |
+| shardsOfIce (Shards) | 80x11 | 40x10 | 56% | 120 | Thinnest projectile (11 px); hard to see at game size |
+| windCone (Wind Cone) | 27x14 | 25x10 | 65% | 150 | Smallest sprite, but it matches its box and is bright |
+| rockPellet (Rock Pellet) | 80x19 | 40x10 | 38% | 128 | Thin and sparse |
+| crimsonFire (Crimson Fire) | 80x64 | 80x40 | 34% | 56 | Widest projectile in the game, but the darkest and most see-through fire sprite: danger zone is bigger than what is drawn |
+| chaosBolt, chaosOrb (Eternal Void) | 80x41, 80x80 | 75x15, 75x75 | 53% | 46, 60 | Darkest sprites; the boss orb (140 damage) is dark on dark floors |
+| adrenaline (Adrenaline) | 52x53 | none (buff) | 80% | 52 | Dark aura, low contrast |
+| stranglingBranches, stealHealth, stick | 80x44, 80x59, 40x19 | 120x40, 240x40, 25x10 | 50%, 51%, 79% | 67, 69, 84 | Dark; Steal Health is a 240 px reach drawn in an 80 px sprite (sprite is a third of the danger zone unless the renderer stretches it) |
+| entanglingVines, entanglingVinesLong | 80x61, 80x18 | 360x40 | 35%, 57% | 89, 87 | A 360 px reach from 80 px art: must be tiled or stretched; check in game |
+| groundShock (Ground Shock) | 77x80 | 240x240 | 38% | 137 | Hit zone is 3x the drawn art; a large unseen danger zone |
+| hurricane (Hurricane) | 80x80 | 240x240 | 59% | 143 | Same 3x gap |
+| fade, tornado, translucentFlame, fireCone | 78x80 to 320x80 | n/a | 44% to 100% | 185 to 211 | Brightest; fine |
+
+Readable by data: bright (lum above 120) and at least 50% opaque: fireCone, hurricane, translucentFlame, icicles, rockArmour, hurlRock. Weak: dark (lum below 70) or sparse (opaque below 40%): crimsonFire, chaosBolt, chaosOrb, adrenaline, stranglingBranches, stealHealth, rockPellet, groundShock, entanglingVines. Fixes belong in effect-sprite-style-pass, curomo-ability-visibility and ability-telegraphs; each needs a screenshot to check.
 
 ## Prioritised findings
 
