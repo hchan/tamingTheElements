@@ -124,7 +124,7 @@ describe('numbered action row', () => {
     const b = touchButton('Super', 0);
     setTouchText(b, 'Super', '40%');
     expect(b.textContent).toBe('9 Super\n40%');
-    expect((b as unknown as { attrs: Record<string, string> }).attrs['aria-label']).toBe('Super, 40%');
+    expect((b as unknown as { attrs: Record<string, string> }).attrs['aria-label']).toBe('9 Super, 40%');
     setTouchText(b, 'Super');
     expect(b.textContent).toBe('9 Super');
   });

@@ -193,6 +193,7 @@ html[data-high-contrast='true'] :focus-visible {
   #menu input[type='button'],
   #menu select,
   #menu .back,
+  #menu a.menuLink,
   #menu .clickable,
   #menu .settingsOption,
   #menu .garrisonRow {
@@ -202,6 +203,7 @@ html[data-high-contrast='true'] :focus-visible {
   }
   #menu .clickable,
   #menu .back,
+  #menu a.menuLink,
   #menu .notClickableYet {
     display: inline-flex;
     align-items: center;
