@@ -145,5 +145,8 @@
  *    the team block a ninth press tick (CHORD_FLAG moves to bit 9); `elementalCast`/`elementalEnded`; the scripted Arcade AI uses it.
  * 40: Arcade only (data); Classic hashes unchanged. Team life table: ARCADE_2V2_LIFE_PM lavax 537 -> 900, wispera 1050 -> 700 (2v2/3v3 balance probe:
  *    Lavax was the weakest team hero, Wispera the strongest; against the Normal AI 2v2 Lavax 55.9% / Wispera 55.7%) (WP 44).
+ * 41: Arcade only; Classic hashes unchanged, and so is every 1x hero. Giant heroes (ideas/in-progress/giant-heroes-size-for-speed.md, data/size.ts):
+ *    a per-character integer size in percent; Rokcore is 200 (2x): a 160 x 160 box spawned on the 1x centre, +45% life, +12% damage,
+ *    knockback taken / 1.6 and walk and dash speed x0.72 (Classic ignores size).
  */
-export const SIM_VERSION = 40;
+export const SIM_VERSION = 41;

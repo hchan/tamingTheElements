@@ -155,16 +155,16 @@ const WEATHER_RECOVERY = 20;
 const TELEGRAPH_WAIT = 40;
 const ROCK_WALK = 80;
 const ROCK_SHOTS = 3;
-/** WP 38d (1920 px arena): Curomo's walk onto the right-hand water patch, and Rokcore's walk before the charge. */
+/** WP 38d (1920 px arena): Curomo's walk onto the right-hand water patch, and Pax's walk before the charge. */
 const WATER_VISIT = 40;
-const CHARGE_CLOSE_IN = 140;
+const CHARGE_CLOSE_IN = 220;
 
 function weatherScript(): ArcadeScript {
   const setup: MatchSetup = {
     simVersion: SIM_VERSION, seed: 0x5ea7e6, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
     p1: [
       { character: characterId('fiara'), xp: 1 }, // fire
-      { character: characterId('rokcore'), xp: 1 }, // earth
+      { character: characterId('pax'), xp: 1 }, // earth
       { character: characterId('eternal-void'), xp: 1 }, // void
     ],
     p2: [
@@ -213,7 +213,7 @@ function weatherScript(): ArcadeScript {
   p1.step('walk over the rock', right, ROCK_WALK).step('walk back', left, ROCK_WALK);
   for (let i = 0; i < ROCK_SHOTS; i++) p2.until(p1.tick - ROCK_WALK * 2 + 10 + i * 25).tap('cone at the rock', secondary);
   p1.until(p1.tick + 60);
-  // Charge (WP-arcade-charge): Rokcore (melee) charges east along the row at Cyclonius, who stands on the right.
+  // Charge (WP-arcade-charge): Pax (melee) charges east along the row at Cyclonius, who stands on the right.
   p1.step('close in', right, CHARGE_CLOSE_IN).tap('charge', right | charge, 1, 1).wait(60);
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
@@ -229,7 +229,7 @@ const TAG_BLASTS = 10;
 const TAG_ROUND_2 = 1400;
 
 /**
- * Tag team (WP-arcade-tag), 2v2; p1 deals 4x (difficulty 0.25) so the KOs come quickly. Round 1: Cyclonius' Tornado
+ * Tag team (WP-arcade-tag), 2v2; p1 deals 5x (difficulty 0.2: Rokcore is a 1.45x-life giant) so the KOs come quickly. Round 1: Cyclonius' Tornado
  * stuns Rokcore, and the tag brings Sindarosa in at Cyclonius' spot with an entrance Fire Blast that lands inside the
  * stun (the tag combo); then blasts KO Rokcore, so Fiara enters (the KO entrance, with her entrance Fire Heal), and more
  * KO her: the round ends only then. Round 2 resets both heroes of each side; Rokcore's pellets hurt Cyclonius, who tags
@@ -237,7 +237,7 @@ const TAG_ROUND_2 = 1400;
  */
 function tagScript(): ArcadeScript {
   const setup: MatchSetup = {
-    simVersion: SIM_VERSION, seed: 0x7a9, flags: ARCADE_FLAGS, chapter: 1, difficulty: 0.25,
+    simVersion: SIM_VERSION, seed: 0x7a9, flags: ARCADE_FLAGS, chapter: 1, difficulty: 0.2,
     p1: [{ character: characterId('cyclonius'), xp: 1 }, { character: characterId('sindarosa'), xp: 1 }],
     p2: [{ character: characterId('rokcore'), xp: 1 }, { character: characterId('fiara'), xp: 1 }],
   };
@@ -339,7 +339,7 @@ function elementalScript(): ArcadeScript {
   const setup: MatchSetup = {
     simVersion: SIM_VERSION, seed: 0xe1e, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
     p1: [{ character: characterId('sindarosa'), xp: 1 }, { character: characterId('curomo'), xp: 1 }, { character: characterId('cyclonius'), xp: 1 }],
-    p2: [{ character: characterId('rokcore'), xp: 1 }, { character: characterId('morblass'), xp: 1 }, { character: characterId('pax'), xp: 1 }],
+    p2: [{ character: characterId('treenoc'), xp: 1 }, { character: characterId('morblass'), xp: 1 }, { character: characterId('pax'), xp: 1 }],
   };
   const p1 = new Track();
   const p2 = new Track();

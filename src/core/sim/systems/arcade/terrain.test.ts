@@ -628,7 +628,7 @@ describe('rounds and tag (rule: patches redrawn each round; the active hero\'s e
   });
 
   it('the controlled hero\'s element decides: a tag from an earth hero on a rock to a fire hero changes the rule', () => {
-    const w = skipIntro(createMatch(setup(['rokcore', 'sindarosa'], ['pax'])));
+    const w = skipIntro(createMatch(setup(['treenoc', 'sindarosa'], ['pax'])));
     const s = w.state;
     s.x[0] = 450; s.y[0] = 300; s.x[2] = 900; s.y[2] = 300;
     terrain(w, EARTH, [[420, 220, 100, 240]]);

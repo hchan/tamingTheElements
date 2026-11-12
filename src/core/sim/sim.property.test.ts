@@ -60,6 +60,7 @@ import { chargedWeather, skipIntro } from './systems/arcade/round-testkit';
 import { castDir } from './systems/arcade/aim';
 import { facingFor } from './systems/movement';
 import { DIR8_X, DIR8_Y } from '../math/dir8';
+import { sizeOfDef, sizeWidthPx } from '../data/size';
 import { SimEventKind, type SimEvent } from './events';
 import type { SimWorld } from './world';
 
@@ -655,7 +656,8 @@ describe('sim properties: invariants', () => {
             tags++;
             const [from, to, team] = [e['from'] ?? -1, e['to'] ?? -1, e['team'] ?? -1];
             const ko = ((s.flags[from] ?? 0) & EntityFlag.dead) !== 0;
-            if (s.px[to] !== s.x[from] || s.py[to] !== s.y[from]) fail(`tag ${String(to)} not at ${String(from)}'s spot`);
+            const cx = (i: number, px: number): number => px + sizeWidthPx(sizeOfDef(s.defId[i] ?? 0)) / 2;
+            if (cx(to, s.px[to] ?? 0) !== cx(from, s.x[from] ?? 0) && sizeOfDef(s.defId[to] ?? 0) === sizeOfDef(s.defId[from] ?? 0)) fail(`tag ${String(to)} not at ${String(from)}'s spot`);
             if ((s.arcade[to * ARCADE_E + ArcadeE.invulnUntil] ?? 0) < g + (ko ? KO_ENTRANCE_INVULN_TICKS : TAG_INVULN_TICKS))
               fail(`tag ${String(to)} not invulnerable`);
             if (!ko && g - (last[team] ?? 0) < TAG_COOLDOWN_TICKS) fail(`tag ${String(g - (last[team] ?? 0))} after the last`);

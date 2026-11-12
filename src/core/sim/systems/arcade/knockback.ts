@@ -1,4 +1,5 @@
 import { KNOCKBACK_DECAY_Q4, Q4_ONE } from '../../../data/arcade';
+import { SIZE_ONE, sizeOfDef, sizeWeightPm } from '../../../data/size';
 import { DIR8_X, DIR8_Y, dir8FromSigns } from '../../../math/dir8';
 import { ARCADE_E, ArcadeE, EntityKind, type SimState } from '../../state';
 import type { SimWorld } from '../../world';
@@ -19,6 +20,9 @@ export function knockbackDir(s: SimState, source: number, victim: number, dir: n
 /** Sets the victim's knockback to `speedQ4` along dir8 `dir` (replacing any knockback left). */
 export function setKnockback(s: SimState, victim: number, speedQ4: number, dir: number): void {
   const e = victim * ARCADE_E;
+  // Giants weigh more (data/size.ts): the same hit shoves them less (integer, truncated toward 0).
+  const size = sizeOfDef(s.defId[victim] ?? 0);
+  if (size !== SIZE_ONE) speedQ4 = Math.trunc((speedQ4 * 1000) / sizeWeightPm(size));
   s.arcade[e + ArcadeE.kbVx] = (DIR8_X[dir] ?? 0) * speedQ4;
   s.arcade[e + ArcadeE.kbVy] = (DIR8_Y[dir] ?? 0) * speedQ4;
 }

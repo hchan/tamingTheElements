@@ -4,6 +4,7 @@ import { ABILITIES_B } from '../data/abilities-b';
 import { SNAG_ABILITY } from '../data/arcade';
 import { CHARACTERS, getCharacter } from '../data/characters';
 import { characterId } from '../data/ids';
+import { sizeLifePm, sizeOfSlug } from '../data/size';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { compareStrings } from '../math/compare';
 import { combatantStats } from '../rules/progression';
@@ -60,7 +61,7 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
         const legacy = combatantStats(getCharacter(characterId(race)), xp, 'player', 1).maxHealth;
         const classic = createMatch(setup(race, false, xp)).state;
         expect([race, classic.maxHp[0], classic.hp[0], classic.restCap[0]]).toEqual([race, legacy, legacy, legacy]);
-        const want = Math.floor((legacy * arcadeRaceNumbers(race)[0]) / 1000);
+        const want = Math.floor((Math.floor((legacy * arcadeRaceNumbers(race)[0]) / 1000) * sizeLifePm(sizeOfSlug(characterId(race)))) / 1000);
         const arcade = createMatch(setup(race, true, xp)).state;
         expect([race, arcade.maxHp[0], arcade.hp[0], arcade.restCap[0]]).toEqual([race, want, want, want]);
       }
