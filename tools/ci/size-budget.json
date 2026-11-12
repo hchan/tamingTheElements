@@ -12,8 +12,8 @@
     "local-two": 430,
     "online-versus": 3900,
     "phaser": 388700,
-    "phaser-config": 22350,
-    "pose-layer": 9550,
+    "phaser-config": 22370,
+    "pose-layer": 9700,
     "rolldown-runtime": 200,
     "round-view": 2100,
     "sim": 30900,
@@ -24,7 +24,7 @@
     "terrain-view": 4800,
     "weather-view": 3470
   },
-  "totalGzip": 499950,
+  "totalGzip": 500200,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
