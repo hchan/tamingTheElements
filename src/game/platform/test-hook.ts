@@ -99,6 +99,8 @@ export interface ArenaProbe {
   traps(): Promise<readonly { kind: number; x: number; y: number; team: number; label: string; alpha: number }[] | undefined>;
   /** The words beside each side's main HUD bar (name, element, health words, `Life hp/max`). */
   heroLabels(): string[];
+  /** The buff auras and heal pops drawn on the last frame (ability-graphics-audit-defects). */
+  abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string }[] } | undefined>;
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
   dangerZones(): Promise<readonly { id: number; x: number; y: number; w: number; h: number; alpha: number }[] | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */

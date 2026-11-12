@@ -33,6 +33,17 @@ const MELEE_ART_THICKNESS: Readonly<Record<string, number>> = { iceShock: 1.8 };
 
 /** View-only: the shortest long side (px) a flying bolt is drawn at, so small hit boxes (fireball 25x12) still read. */
 export const MIN_BOLT_LONG_SIDE = 44;
+/**
+ * View-only contrast boosts for the sprites the ability audit found weak (docs/ABILITY-AUDIT.md): a larger minimum long side, a
+ * brighter and wider halo, and a halo tint that sets the art off from the arena floor. Hit boxes are untouched.
+ */
+export interface SpriteBoost { readonly minLong: number; readonly glowAlpha: number; readonly glowScale: number; readonly glowTint: number }
+export const SPRITE_BOOST: Readonly<Record<string, SpriteBoost>> = {
+  rockPellet: { minLong: 64, glowAlpha: 0.95, glowScale: 2.2, glowTint: 0xffd36b },
+  stranglingBranches: { minLong: 0, glowAlpha: 0.7, glowScale: 1.5, glowTint: 0xc8ff7a },
+  crimsonFire: { minLong: 0, glowAlpha: 0.8, glowScale: 1.5, glowTint: 0xffe9a0 },
+};
+
 /** View-only: how much thicker than the length-matched scale a thin bolt may be drawn, to reach its box thickness. */
 const MAX_THICKEN = 1.5;
 
@@ -40,9 +51,9 @@ const MAX_THICKEN = 1.5;
  * Display size of a flying bolt: the art keeps its aspect ratio (no squashing into the hit box), is at least as long as the box,
  * at least `MIN_BOLT_LONG_SIDE` on its long side, and thickened up to `MAX_THICKEN` toward the box thickness. Hit boxes are untouched.
  */
-export function boltDisplaySize(boxW: number, boxH: number, artW: number, artH: number): { w: number; h: number } {
+export function boltDisplaySize(boxW: number, boxH: number, artW: number, artH: number, minLong = MIN_BOLT_LONG_SIDE): { w: number; h: number } {
   if (artW <= 0 || artH <= 0) return { w: boxW, h: boxH };
-  const lengthScale = Math.max(boxW / artW, MIN_BOLT_LONG_SIDE / Math.max(artW, artH));
+  const lengthScale = Math.max(boxW / artW, minLong / Math.max(artW, artH));
   const scale = Math.max(lengthScale, Math.min(boxH / artH, lengthScale * MAX_THICKEN));
   return { w: artW * scale, h: artH * scale };
 }
@@ -89,8 +100,9 @@ export class ProjectileView {
     // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
     this.image.setVisible(true).setAlpha(1);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
+    const boost = SPRITE_BOOST[p.sprite];
     if (melee) look.h *= MELEE_ART_THICKNESS[p.sprite] ?? 1;
-    else if (this.artW > 0) Object.assign(look, boltDisplaySize(p.w, p.h, this.artW, this.artH));
+    else if (this.artW > 0) Object.assign(look, boltDisplaySize(p.w, p.h, this.artW, this.artH, Math.max(MIN_BOLT_LONG_SIDE, boost?.minLong ?? 0)));
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);
     // Melee boxes are placed once and never moved, so their previous position (px/py) is unset: do not lerp from it.
     const a = melee ? 1 : alpha;
@@ -99,8 +111,9 @@ export class ProjectileView {
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
       .setVisible(true)
-      .setAlpha(melee ? 0.2 : 0.5)
-      .setDisplaySize(look.w * (melee ? 1 : 1.6) + 6, look.h * (melee ? 1 : 1.6) + 6)
+      .setAlpha(boost?.glowAlpha ?? (melee ? 0.2 : 0.5))
+      .setDisplaySize(look.w * (boost?.glowScale ?? (melee ? 1 : 1.6)) + 6, look.h * (boost?.glowScale ?? (melee ? 1 : 1.6)) + 6)
+      .setTint(boost?.glowTint ?? 0xffffff)
       .setFlipX(look.flip)
       .setAngle(look.angle)
       .setPosition(this.image.x, this.image.y)
