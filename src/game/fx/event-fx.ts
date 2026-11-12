@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type Element, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from './element-colors';
-import { shakeFor } from './motion';
+import { classicShakeFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
 
 /**
@@ -80,9 +80,10 @@ export interface FxSink {
   superCut(caster: number, fromTick: number, untilTick: number, reduced: boolean, superId?: number): void;
 }
 
-/** Classic hits: six particles, an 80 ms shake and a red-ish tint after the white flash. */
+/** Classic hits: six particles, a shake scaled by damage (80 ms at 5) and a red-ish tint after the white flash. */
 export const HIT_PARTICLES = 6;
 export const CLASSIC_HIT_TINT = 0xff3a3a;
+const CLASSIC_SPARK = 0xffddaa;
 /** Arcade sparks by hit strength (light, medium, heavy, super); FUN-DESIGN section 3. */
 export const SPARKS_BY_STRENGTH = [6, 10, 16, 24] as const;
 /** Arcade shake by hit strength: light none, then medium, heavy, super; KO has its own. */
@@ -135,7 +136,7 @@ export class EventFx {
       if (k === SimEventKind.superStarted) this.superId = e['superId'] ?? 0;
       if (k === SimEventKind.damage ? this.opts.arcade === true : k !== SimEventKind.hitConfirmed && k !== SimEventKind.hitStop) continue;
       if (!this.deduper.firstSeen(e)) continue;
-      if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1);
+      if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1, e['amount'] ?? 5);
       else if (k === SimEventKind.hitConfirmed) this.arcadeHit(e);
       else this.hitStop(e);
     }
@@ -146,11 +147,15 @@ export class EventFx {
     return this.offsets;
   }
 
-  private classicHit(target: number): void {
+  private classicHit(target: number, amount: number): void {
     this.sink.flash(target, CLASSIC_HIT_TINT);
-    if (this.opts.reducedMotion()) return;
-    this.sink.burst(target, this.fill(HIT_PARTICLES), HIT_PARTICLES, 0xffddaa);
-    this.sink.shake(80, 0.002);
+    if (this.opts.reducedMotion()) {
+      this.sink.spark(target, CLASSIC_SPARK);
+      return;
+    }
+    this.sink.burst(target, this.fill(HIT_PARTICLES), HIT_PARTICLES, CLASSIC_SPARK);
+    const s = classicShakeFor(amount);
+    this.sink.shake(s.durationMs, s.intensity);
   }
 
   private arcadeHit(e: SimEvent): void {
