@@ -7,7 +7,7 @@
     "core": 12200,
     "defence-view": 3750,
     "index": 28800,
-    "index.css": 4170,
+    "index.css": 4180,
     "lazy-index": 550,
     "local-two": 430,
     "online-versus": 3900,
@@ -24,7 +24,7 @@
     "terrain-view": 4800,
     "weather-view": 3470
   },
-  "totalGzip": 500330,
+  "totalGzip": 500360,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
