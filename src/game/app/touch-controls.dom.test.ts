@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BINDINGS, getBindings, setBindings } from '../platform/input/bindings';
-import { TOUCH, setTouchText, touchButton, touchButtons, watchTouch } from './touch-controls';
+import { TOUCH, releaseTouch, setTouchText, touchButton, touchButtons, watchTouch } from './touch-controls';
 import type { RenderView } from '@core/index';
 
 const events: string[] = [];
@@ -114,12 +114,57 @@ describe('touchButton (real DOM events)', () => {
     expect(events.map((e) => e.split(':')[0])).toEqual(['keydown', 'keyup']);
   });
 
+  it('a second Enter inside the min-hold window continues the hold instead of being dropped', () => {
+    vi.useFakeTimers();
+    try {
+      const b = touchButton('Dash', 0);
+      document.body.append(b);
+      const code = String(getBindings().dash[0]);
+      keyOn(b, 'keydown', 'Enter');
+      keyOn(b, 'keyup', 'Enter');
+      vi.advanceTimersByTime(40);
+      const again = keyOn(b, 'keydown', 'Enter');
+      expect(again.defaultPrevented).toBe(true);
+      vi.advanceTimersByTime(500); // the first timer was cleared: still held
+      expect(events).toEqual([`keydown:${code}`]);
+      keyOn(b, 'keyup', 'Enter');
+      vi.advanceTimersByTime(200);
+      expect(events).toEqual([`keydown:${code}`, `keyup:${code}`]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('releaseTouch lets go of a key held by pointer or keyboard and clears the pending timer', () => {
+    vi.useFakeTimers();
+    try {
+      const b = touchButton('Guard', 0);
+      withCapture(b);
+      document.body.append(b);
+      const code = String(getBindings().guard[0]);
+      pointer(b, 'pointerdown');
+      releaseTouch(b);
+      expect(events).toEqual([`keydown:${code}`, `keyup:${code}`]);
+      events.length = 0;
+      keyOn(b, 'keydown', 'Enter');
+      keyOn(b, 'keyup', 'Enter'); // min-hold timer pending
+      releaseTouch(b);
+      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(300);
+      expect(events).toEqual([`keydown:${code}`, `keyup:${code}`]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('sets id, classes, inline slot, type and the labelled text', () => {
     const b = touchButton('Tag2', 6);
     expect(b.id).toBe('arcadeTag2');
     expect(b.type).toBe('button');
     expect(b.className).toBe('menuButton touchBtn touchBtn-Tag2');
     expect(b.style.getPropertyValue('--touch-row')).toBe('6');
+    expect(b.style.getPropertyValue('--touch-col')).toBe('2');
+    expect(b.style.getPropertyValue('--touch-line')).toBe('1');
     expect(b.textContent).toBe('4\nTag 2');
     expect(b.getAttribute('aria-label')).toBe('4 Tag 2');
   });
@@ -130,6 +175,13 @@ describe('touchButtons / setTouchText (real DOM)', () => {
     expect(touchButtons(1).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeCharge', 'arcadeTrap']);
     expect(touchButtons(2, [false, false]).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeTag', 'arcadeTrap']);
     expect(touchButtons(3).map((b) => b.id)).toEqual(TOUCH.map((l) => `arcade${l}`));
+  });
+
+  it('setTouchText recovers a label something else rewrote', () => {
+    const b = touchButton('Super', 0);
+    b.textContent = 'garbled';
+    setTouchText(b, 'Super');
+    expect(b.textContent).toBe('9\nSuper');
   });
 
   it('setTouchText writes the status and the accessible name, and clears them', () => {
@@ -143,6 +195,22 @@ describe('touchButtons / setTouchText (real DOM)', () => {
 });
 
 describe('watchTouch', () => {
+  it('releases a key held by a button that was removed mid-hold', () => {
+    vi.useFakeTimers();
+    try {
+      const b = touchButton('Dash', 0);
+      document.body.append(b);
+      const code = String(getBindings().dash[0]);
+      watchTouch([b], { arcade: () => undefined, actionBar: () => undefined } as unknown as RenderView);
+      keyOn(b, 'keydown', 'Enter');
+      b.remove();
+      vi.advanceTimersByTime(250);
+      expect(events).toEqual([`keydown:${code}`, `keyup:${code}`]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('refreshes status words on a timer and stops once the buttons leave the page', () => {
     vi.useFakeTimers();
     try {
