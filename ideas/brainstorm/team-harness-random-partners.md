@@ -9,3 +9,5 @@ partners from the seed (excluding the foe's races), aggregate per race over many
 table. Tools only, no sim change.
 
 Source: [snag-trap-and-team-modes-findings.md](snag-trap-and-team-modes-findings.md).
+
+Status note 2026-11-12: done as harness mode `partners`; results in section 3 of the findings file.
