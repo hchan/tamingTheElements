@@ -25,11 +25,12 @@ describe('legacy asset manifest', () => {
 
   it('points the redrawn map strips at the generated img/fx files (320x80, four 80x80 frames)', () => {
     const m = JSON.parse(committed) as LegacyManifest;
-    for (const key of ['tornado', 'fireCone', 'translucentFlame', 'echoFade', 'circusOfSlime']) {
+    for (const key of ['tornado', 'fireCone', 'translucentFlame', 'echoFade', 'circusOfSlime', 'dummyTarget', 'eternalVoid', 'paxAdrenaline', 'rokcoreRockArmour']) {
       expect(m.mapSprites[key]?.url).toBe(`img/fx/${key}.png`);
       const png = readFileSync(resolve(import.meta.dirname, '../../public/assets', `img/fx/${key}.png`));
       expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([320, 80]);
     }
     expect(existsSync(resolve(import.meta.dirname, '../../tools/assets/fx-gen/batch-e-map.py'))).toBe(true);
+    expect(existsSync(resolve(import.meta.dirname, '../../tools/assets/fx-gen/batch-f-map.py'))).toBe(true);
   });
 });

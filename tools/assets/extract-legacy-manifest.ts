@@ -36,7 +36,7 @@ function load(file: string, name: string): unknown {
   return Global[name];
 }
 
-const MAP_REDRAWN = new Set(['tornado', 'fireCone', 'translucentFlame', 'echoFade', 'circusOfSlime']);
+const MAP_REDRAWN = new Set(['tornado', 'fireCone', 'translucentFlame', 'echoFade', 'circusOfSlime', 'dummyTarget', 'eternalVoid', 'paxAdrenaline', 'rokcoreRockArmour']);
 const FRAME_KEYS = ['leftFrames', 'rightFrames', 'upFrames', 'downFrames'] as const;
 
 function sprites(file: string, name: string): Record<string, SpriteEntry> {
