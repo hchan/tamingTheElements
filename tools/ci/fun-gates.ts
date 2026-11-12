@@ -26,7 +26,7 @@ export function tightGates(teamSize: 1 | 2 | 3): readonly Gate[] {
   return [
     { metric: 'round median s', min: tag ? 50 : 30, max: tag ? 85 : 55 },
     { metric: 'time-over rate', min: 0, max: 0.1 },
-    { metric: 'stalemate rate', min: 0, max: 0.01 },
+    { metric: 'stalemate rate', min: 0, max: 0.003 },
     { metric: 'first hit median s', min: 0, max: 3.5 },
     { metric: 'combo median hits', min: 1, max: 4 },
     { metric: 'combo p90 hits', min: 0, max: 7 },

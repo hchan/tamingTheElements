@@ -367,3 +367,21 @@ export function trapToDouse(self: Aabb, opp: Aabb, traps: readonly TrapView[]): 
   }
   return false;
 }
+
+/**
+ * Step-apart for a stale fight whose two boxes overlap (a melee box starts at the edge, so overlapped fighters never hit;
+ * both end up stuck in a wall corner). The movement bit away from `opp` on the axis with the most room to the wall, or
+ * the other axis when that one is walled; 0 when the boxes are not overlapped. Ties (equal centres) go right/down.
+ */
+export function stepApart(self: Aabb, opp: Aabb, pf: Aabb): Command {
+  const dx = self.x + self.w / 2 - (opp.x + opp.w / 2);
+  const dy = self.y + self.h / 2 - (opp.y + opp.h / 2);
+  if (Math.abs(dx) * 2 >= self.w + opp.w || Math.abs(dy) * 2 >= self.h + opp.h) return 0;
+  const room = (bit: Command): number =>
+    bit === Cmd.right ? pf.x + pf.w - (self.x + self.w) : bit === Cmd.left ? self.x - pf.x : bit === Cmd.down ? pf.y + pf.h - (self.y + self.h) : self.y - pf.y;
+  const bx = dx >= 0 ? Cmd.right : Cmd.left;
+  const by = dy >= 0 ? Cmd.down : Cmd.up;
+  // The axis along which the foe is further off (so the gap opens fastest), unless that way is walled.
+  const [first, second] = Math.abs(dx) / (self.w + opp.w) >= Math.abs(dy) / (self.h + opp.h) ? [bx, by] : [by, bx];
+  return room(first) > 0 ? first : room(second) > 0 ? second : first === bx ? (dx >= 0 ? Cmd.left : Cmd.right) : dy >= 0 ? Cmd.up : Cmd.down;
+}
