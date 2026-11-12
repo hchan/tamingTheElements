@@ -126,6 +126,33 @@ export function slotX(i: number): number {
   return SLOT_BORDER / 2 + i * SLOT_SIDE;
 }
 
+const PUNCTUATION: Readonly<Record<string, string>> = { Semicolon: ';', Period: '.', Comma: ',', Slash: '/', Quote: "'", Minus: '-', Equal: '=' };
+
+/** The key labels of a binding set for the small mirror slots: punctuation keys as their symbol (a word would not fit). */
+export function shortLabels(labels: KeyLabels): KeyLabels {
+  return Object.fromEntries(Object.entries(labels).map(([k, v]) => [k, PUNCTUATION[v] ?? v]));
+}
+
+/** Mirror readout (Player 2 in local Versus): small slots, right-aligned just above the main bar's row. */
+export const MIRROR_SIDE = 52;
+const MIRROR_GAP = 3;
+const MIRROR_MARGIN = 6;
+export const MIRROR_Y = BAR_Y - MIRROR_SIDE - 6;
+
+/**
+ * Re-lay the slots of a bar as the small mirrored readout along the bottom-right (read-only: its cooldown sweeps, key labels and
+ * notes stay, clicks do not apply). Pure, for tests.
+ */
+export function mirrorSlots(slots: readonly ActionSlot[]): ActionSlot[] {
+  const n = slots.length;
+  return slots.map((s, i) => ({
+    ...s,
+    x: HUD_WIDTH - MIRROR_MARGIN - (n - i) * MIRROR_SIDE - (n - 1 - i) * MIRROR_GAP,
+    y: MIRROR_Y,
+    size: MIRROR_SIDE,
+  }));
+}
+
 export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY_LABELS): ActionSlot[] {
   const out: ActionSlot[] = [];
   const y = BAR_Y + SLOT_BORDER / 2;
@@ -247,10 +274,12 @@ export class ActionBarView {
     private readonly styled = false,
     /** Arcade pan/zoom camera: keeps the bar fixed on screen by mapping its logical layout onto the visible window every frame. */
     private readonly place?: () => ScreenBox,
+    /** Player 2's mirrored readout: small slots at the bottom-right, no background panel and no clicks (the keyboard drives it). */
+    private readonly mirror = false,
   ) {
     this.back = scene.add.graphics().setDepth(98);
     this.gfx = scene.add.graphics().setDepth(100);
-    scene.input.on('pointerdown', this.onPointer);
+    if (!mirror) scene.input.on('pointerdown', this.onPointer);
   }
 
   /** Logical (screen) x/y to world, through the current screen box. */
@@ -267,11 +296,14 @@ export class ActionBarView {
     this.gfx.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
     this.back.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
     const bar = this.view.actionBar(this.team);
-    this.slots = bar ? buildSlots(bar, this.labels()) : [];
+    const built = bar ? buildSlots(bar, this.labels()) : [];
+    this.slots = this.mirror ? mirrorSlots(built) : built;
     const g = this.gfx;
     g.clear();
     this.back.clear();
-    if (this.slots.length > 0 && this.styled) {
+    if (this.mirror) {
+      // No panel: each slot keeps its own plate.
+    } else if (this.slots.length > 0 && this.styled) {
       this.back.fillStyle(0x070a12, 0.82);
       this.back.fillRect(0, BAR_Y, HUD_WIDTH, ACTION_BAR_HEIGHT);
       this.back.fillStyle(0xffffff, 0.06);
@@ -288,7 +320,8 @@ export class ActionBarView {
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 5);
       }
       this.drawIcon(i, s);
-      if (s.kind === 'trap') this.back.fillStyle(0xffd23f, 1).fillTriangle(s.x + s.size / 2, s.y + 44, s.x + s.size / 2 + 13, s.y + s.size - 8, s.x + s.size / 2 - 13, s.y + s.size - 8);
+      const k = s.size / SLOT_SIDE;
+      if (s.kind === 'trap') this.back.fillStyle(0xffd23f, 1).fillTriangle(s.x + s.size / 2, s.y + 44 * k, s.x + s.size / 2 + 13 * k, s.y + s.size - 8 * k, s.x + s.size / 2 - 13 * k, s.y + s.size - 8 * k);
       if (s.kind === 'elemental') this.drawElementSymbol(s);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
@@ -310,7 +343,7 @@ export class ActionBarView {
       }
       this.text(i, s);
     });
-    this.drawHint(bar?.tick ?? 0);
+    if (!this.mirror) this.drawHint(bar?.tick ?? 0);
     for (let i = this.slots.length; i < this.icons.length; i++) {
       this.icons[i]?.setVisible(false);
       this.texts[i]?.setVisible(false);
@@ -318,7 +351,7 @@ export class ActionBarView {
   }
 
   destroy(): void {
-    this.scene.input.off('pointerdown', this.onPointer);
+    if (!this.mirror) this.scene.input.off('pointerdown', this.onPointer);
     this.gfx.destroy();
     this.back.destroy();
     this.hint?.destroy();
@@ -364,8 +397,9 @@ export class ActionBarView {
 
   /** The slot's icon: the element's alchemical triangle (fire up, water down, air up and earth down with a bar), by shape not colour. */
   private drawElementSymbol(s: ActionSlot): void {
-    const sym = elementSymbol(s.element ?? 0, s.x + s.size / 2, s.y + s.size - 22, 13);
-    this.back.lineStyle(3, ELEMENT_TINT[s.element ?? 0] ?? 0xffffff, 1).strokeTriangle(...sym.tri);
+    const k = s.size / SLOT_SIDE;
+    const sym = elementSymbol(s.element ?? 0, s.x + s.size / 2, s.y + s.size - 22 * k, 13 * k);
+    this.back.lineStyle(this.mirror ? 2 : 3,ELEMENT_TINT[s.element ?? 0] ?? 0xffffff, 1).strokeTriangle(...sym.tri);
     if (sym.bar) this.back.lineBetween(...sym.bar);
   }
 
@@ -384,7 +418,7 @@ export class ActionBarView {
     const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
     if (!tex.has(ICON_FRAME)) tex.add(ICON_FRAME, 0, fx, fy, fw, fh);
     if (icon.texture.key !== found.key || icon.frame.name !== ICON_FRAME) icon.setTexture(found.key, ICON_FRAME);
-    const pad = this.styled ? ICON_PAD : 0;
+    const pad = this.styled ? ICON_PAD * (s.size / SLOT_SIDE) : 0;
     const fit = fitIcon(fw, fh, s.size - pad * 2);
     icon.setVisible(true).setPosition(this.wx(s.x + pad + fit.dx), this.wy(s.y + pad + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
   }
@@ -392,7 +426,7 @@ export class ActionBarView {
   private text(i: number, s: ActionSlot): void {
     let t = this.texts[i];
     if (!t) {
-      const size = `${String(Math.round(16 * Math.min(1.8, phoneBoost(this.scene))))}px`;
+      const size = `${String(Math.round((this.mirror ? 11 : 16) * Math.min(1.8, phoneBoost(this.scene))))}px`;
       t = this.scene.add.text(
         0, 0, '',
         crisp(this.scene, this.styled

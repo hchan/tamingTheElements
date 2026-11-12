@@ -42,7 +42,7 @@ vi.mock('./download', () => ({
   },
 }));
 
-import { arcadeVersusScreen, mountArcade, unmountArcade, type ArcadeVersusDeps } from './arcade-versus';
+import { arcadeVersusScreen, keysHint, mountArcade, unmountArcade, type ArcadeVersusDeps } from './arcade-versus';
 
 const flush = async (): Promise<void> => {
   for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
@@ -179,6 +179,21 @@ describe('arcade versus screen', () => {
     (host.querySelector('#arcadeChange') as HTMLElement).click();
     expect(host.querySelector('#arcadePick')).not.toBeNull();
     expect(host.querySelector('#arcadeResults')).toBeNull();
+  });
+
+  it('the key hint sits above the action bar and fades out after a few seconds', () => {
+    vi.useFakeTimers();
+    try {
+      const p = keysHint(5000);
+      expect(p.style.bottom).toBe('12%');
+      expect(p.style.opacity).toBe('');
+      vi.advanceTimersByTime(4999);
+      expect(p.style.opacity).toBe('');
+      vi.advanceTimersByTime(1);
+      expect(p.style.opacity).toBe('0');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('local two-player: key hint, player headings and summaries', async () => {

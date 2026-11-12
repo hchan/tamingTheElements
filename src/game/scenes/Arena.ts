@@ -66,7 +66,7 @@ import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
 import { SwapNotice, chargeNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
-import { ActionBarView, labelsFromBindings, type KeyLabels } from '../hud/action-bar';
+import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
@@ -126,6 +126,8 @@ export class Arena extends Phaser.Scene {
   private poses: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent | undefined, Agent | undefined] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
+  /** Local two-player: Player 2's small mirrored readout (view only). */
+  private actionBar2: ActionBarView | undefined;
   private backdrop: Backdrop | undefined;
   private clicks: number[] = [];
   /** Arcade: the line shown when a swap press is refused (hud/swap-notice.ts); view only. */
@@ -273,6 +275,10 @@ export class Arena extends Phaser.Scene {
         true,
         arcade ? () => screenBox(this) : undefined,
       );
+      if (second) {
+        const p2Labels = shortLabels(labelsFromBindings(P2_BINDINGS));
+        this.actionBar2 = new ActionBarView(this, this.view, () => undefined, 1, () => p2Labels, true, arcade ? () => screenBox(this) : undefined, true);
+      }
       this.cleanups.push(keyboard.attach(counted(window)));
     }
     if (this.session) {
@@ -704,6 +710,7 @@ export class Arena extends Phaser.Scene {
     const arcade = this.arcadeHud && view.arcade();
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
+    this.actionBar2?.update();
     this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
     this.reportPlayback();
@@ -755,6 +762,8 @@ export class Arena extends Phaser.Scene {
     this.events.off(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
     this.actionBar?.destroy();
     this.actionBar = undefined;
+    this.actionBar2?.destroy();
+    this.actionBar2 = undefined;
     this.lowLife = undefined;
     this.backdrop?.destroy();
     this.backdrop = undefined;

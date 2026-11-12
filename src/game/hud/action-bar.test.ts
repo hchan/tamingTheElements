@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, ELEMENTAL_LABEL, TRAP_LABEL, elementSymbol, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { BAR_Y, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementSymbol, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -84,6 +84,28 @@ describe('cooldownSweep (legacy drawCooldown)', () => {
     expect(cooldownSweep(0, 0, 0, 80)).toEqual([40, 0, 40, 40, 40, 0, 80, 0, 80, 80, 0, 80, 0, 0]);
     expect(cooldownSweep(0.5, 0, 0, 80)).toEqual([40, 0, 40, 40, 40, 80, 0, 80, 0, 0]);
     expect(cooldownSweep(0.9375, 0, 0, 80)).toEqual([40, 0, 40, 40, 20, 0]);
+  });
+});
+
+describe('mirror readout (Player 2 in local Versus)', () => {
+  it('re-lays the slots small, right-aligned, clear of the main bar and inside the screen', () => {
+    const slots = buildSlots(bar());
+    const m = mirrorSlots(slots);
+    expect(m.map((s) => s.cmd)).toEqual(slots.map((s) => s.cmd));
+    expect(m.map((s) => s.progress)).toEqual(slots.map((s) => s.progress));
+    for (const s of m) {
+      expect(s.size).toBe(MIRROR_SIDE);
+      expect(s.y + s.size).toBeLessThanOrEqual(BAR_Y);
+      expect(s.x).toBeGreaterThanOrEqual(0);
+    }
+    const last = m[m.length - 1];
+    expect(last && last.x + last.size).toBeLessThanOrEqual(1280);
+    for (let i = 1; i < m.length; i++) expect((m[i]?.x ?? 0) - ((m[i - 1]?.x ?? 0) + MIRROR_SIDE)).toBeGreaterThan(0);
+    expect(mirrorSlots([])).toEqual([]);
+  });
+
+  it('shortens punctuation key labels so they fit a small slot', () => {
+    expect(shortLabels({ 1: 'Semicolon', 2: 'Period', 3: 'Comma', 4: 'U' })).toEqual({ 1: ';', 2: '.', 3: ',', 4: 'U' });
   });
 });
 
