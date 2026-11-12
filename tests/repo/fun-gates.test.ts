@@ -10,12 +10,13 @@ describe('nightly fun gates (tools/ci/fun-gates.ts)', () => {
     expect(evaluateGates({}, gates).every((x) => !x.ok)).toBe(true);
   });
 
-  it('tight bands: the 2v2 round band is longer, races stricter than report-only', () => {
+  it('tight bands: the 2v2 round band is longer, stalemates near zero, races stricter than report-only', () => {
     const one = tightGates(1);
     const two = tightGates(2);
     const find = (g: typeof one, m: string) => g.find((x) => x.metric === m);
     expect(find(two, 'round median s')?.min).toBeGreaterThan(find(one, 'round median s')?.min ?? 0);
-    expect(find(one, 'stalemate rate')?.max).toBeLessThan(find(two, 'stalemate rate')?.max ?? 0);
+    expect(find(one, 'stalemate rate')?.max).toBeLessThanOrEqual(0.01);
+    expect(find(two, 'stalemate rate')?.max).toBeLessThanOrEqual(0.01);
     expect(find(one, 'worst race win rate')?.min).toBeGreaterThan(0.25);
   });
 

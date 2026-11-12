@@ -237,7 +237,10 @@ export class ArcadeTactics {
     if (a === undefined) return base;
     const cmd = this.avoidTraps(view, a, this.decide(view, a, base, shot));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
-    return this.elemental(view, a) ? out | Cmd.elemental : out;
+    // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
+    // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
+    const released = (out & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? out & ~Cmd.charge : out;
+    return this.elemental(view, a) ? released | Cmd.elemental : released;
   }
 
   /**

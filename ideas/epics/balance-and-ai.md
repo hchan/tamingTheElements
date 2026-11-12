@@ -22,7 +22,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [ai-tuning-more](../brainstorm/ai-tuning-more.md)
 - [tornado-combo-ai](../brainstorm/tornado-combo-ai.md)
 - [arcade-low-races-analysis](../brainstorm/arcade-low-races-analysis.md)
-- [arcade-stalemate-lavax-ishimi](../brainstorm/arcade-stalemate-lavax-ishimi.md)
+- [arcade-stalemate-lavax-ishimi](../done/arcade-stalemate-lavax-ishimi.md)
 - [classic-sindarosa-ishimi-gap](../brainstorm/classic-sindarosa-ishimi-gap.md)
 - [super-damage-share](../brainstorm/super-damage-share.md)
 - [ability-audit](../brainstorm/ability-audit.md)
