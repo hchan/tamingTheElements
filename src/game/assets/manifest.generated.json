@@ -1020,7 +1020,7 @@
       ]
     },
     "dummyTarget": {
-      "url": "img/map/dummyTarget.png",
+      "url": "img/fx/dummyTarget.png",
       "coords": [
         0,
         0,
@@ -1317,7 +1317,7 @@
       ]
     },
     "eternalVoid": {
-      "url": "img/map/eternalVoid.png",
+      "url": "img/fx/eternalVoid.png",
       "coords": [
         0,
         0,
@@ -1957,7 +1957,7 @@
       ]
     },
     "paxAdrenaline": {
-      "url": "img/map/paxAdrenaline.png",
+      "url": "img/fx/paxAdrenaline.png",
       "coords": [
         0,
         0,
@@ -2382,7 +2382,7 @@
       ]
     },
     "rokcoreRockArmour": {
-      "url": "img/map/rokcoreRockArmour.png",
+      "url": "img/fx/rokcoreRockArmour.png",
       "coords": [
         0,
         0,

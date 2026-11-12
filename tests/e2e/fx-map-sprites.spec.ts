@@ -27,3 +27,30 @@ test('Tornado is drawn from the redrawn fx strip, not the legacy map PNG', async
   expect(loaded).toEqual(['200 img/fx/tornado.png']);
   expect(errors).toEqual([]);
 });
+
+// Batch F (tools/assets/fx-gen/batch-f-map.py): the Training Dummy and Eternal Void character sprites are redrawn too;
+// each is loaded from img/fx (never the legacy img/map PNG) and the arena draws it without page errors.
+for (const [slug, key] of [['dummy', 'dummyTarget'], ['eternal-void', 'eternalVoid']] as const) {
+  test(`${slug} is drawn from the redrawn fx strip ${key}`, async ({ page }, info) => {
+    const errors: string[] = [];
+    const loaded: string[] = [];
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('response', (r) => { if (new RegExp(`/img/(fx|map)/${key}\\.png`).test(r.url())) loaded.push(`${String(r.status())} ${r.url().replace(/^.*\/assets\//, '')}`); });
+    await page.goto(`/?ff=arenaDemo&manual=1&seed=7&p1=${slug}`);
+    await page.locator('#game canvas').waitFor();
+    await page.waitForFunction(ARENA_READY);
+    await page.evaluate(`(() => {
+      const a = window.__TTE__.arena;
+      const [me, foe] = a.characters();
+      a.place(me.id, 300, 380, 0);
+      a.place(foe.id, 560, 380, 4);
+    })()`);
+    for (let i = 0; i < 6; i++) await page.evaluate('window.__TTE__.arena.step(1, [0, 0])');
+    await page.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+    const shot = await page.locator('#game canvas').screenshot({ path: info.outputPath(`${slug}-in-arena.png`) });
+    expect(shot.length).toBeGreaterThan(2000);
+    expect(loaded).toEqual([`200 img/fx/${key}.png`]);
+    expect(errors).toEqual([]);
+  });
+}
