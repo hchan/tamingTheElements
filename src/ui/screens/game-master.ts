@@ -96,8 +96,13 @@ export function gameMasterScreen(store: SaveStore = createSaveStore(() => Date.n
       area.setAttribute('aria-label', 'Save JSON');
       area.rows = 24;
       area.cols = 80;
+      /** Set once the editor text is edited or replaced, so a slow first read (IndexedDB) cannot overwrite it. */
+      let touched = false;
+      area.addEventListener('input', () => {
+        touched = true;
+      });
       void readStored(store).then((t) => {
-        area.value = t;
+        if (!touched) area.value = t;
       });
       const status = el('div', 'settingsStatus');
       status.setAttribute('role', 'status');
@@ -135,6 +140,7 @@ export function gameMasterScreen(store: SaveStore = createSaveStore(() => Date.n
           });
         }),
         button('Clear', () => {
+          touched = true;
           area.value = '';
           void write(null, 'Save cleared.');
         }),
@@ -145,6 +151,7 @@ export function gameMasterScreen(store: SaveStore = createSaveStore(() => Date.n
           button(label, () => {
             const now = Date.now();
             const save = buildPreset(p, seedSfc32(now >>> 0, 'meta'), now);
+            touched = true;
             area.value = JSON.stringify(save, undefined, 2);
             void write(save, `${label} preset written.`);
           }),
