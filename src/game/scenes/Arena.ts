@@ -672,7 +672,8 @@ export class Arena extends Phaser.Scene {
   private announce(events: readonly SimEvent[]): void {
     const announcer = this.announcer;
     if (!announcer) return;
-    for (const a of announcementsFor(events)) announcer.say(a);
+    const team = this.world?.state.team;
+    for (const a of announcementsFor(events, (id) => team?.[id] ?? 0)) announcer.say(a);
   }
 
   /** Low-health watch: polled every few frames rather than every 50 Hz tick. */

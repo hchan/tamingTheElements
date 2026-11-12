@@ -72,6 +72,10 @@ export interface RenderArcade {
   rooted(id: number): boolean;
   /** Game ticks until character `id`'s melee Charge is ready (0: now), or -1 for a ranged hero, which has none (FUN-DESIGN 2.17). */
   chargeIn(id: number): number;
+  /** Game ticks until character `id`'s next Dash is ready (0: now); read-out only (touch button words). */
+  dashIn(id: number): number;
+  /** The team's active (controlled) character id, or -1 with none; read-out only. */
+  active(team: number): number;
   /** The weather up (a `Weather` kind, 0 none) and the game ticks it has left (0 with none), FUN-DESIGN 2.14. */
   weather: number;
   weatherLeft: number;
@@ -194,6 +198,8 @@ export function createRenderView(world: SimWorld): RenderView {
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
     rooted: (id) => isRooted(s, id),
+    dashIn: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.dashReadyAt] ?? 0) - now(s)),
+    active: (team) => controlledId(world, team),
     chargeIn: (id) => (RANGED[s.defId[id] ?? 0] ? -1 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) - now(s))),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };

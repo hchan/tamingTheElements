@@ -1,4 +1,5 @@
-import { SimEventKind, type SimEvent } from '@core/index';
+import { SimEventKind, TrapReason, type SimEvent } from '@core/index';
+import { TRAP_WORDS } from '../fx/trap-fx';
 
 /** A line for the screen-reader live region. `important` lines bypass throttling and are assertive. */
 export interface Announcement {
@@ -7,8 +8,8 @@ export interface Announcement {
   readonly important: boolean;
 }
 
-/** Pure: sim events to announcements. Hits are deliberately silent (they would flood a screen reader). */
-export function announcementsFor(events: readonly SimEvent[]): Announcement[] {
+/** Pure: sim events to announcements. Hits are deliberately silent (they would flood a screen reader). `teamOf` maps an entity id to its team (trap armed events carry only the owner). */
+export function announcementsFor(events: readonly SimEvent[], teamOf: (entity: number) => number = () => 0): Announcement[] {
   const out: Announcement[] = [];
   for (const e of events) {
     switch (e.kind) {
@@ -36,11 +37,37 @@ export function announcementsFor(events: readonly SimEvent[]): Announcement[] {
         });
         break;
       }
+      case SimEventKind.trapPlaced:
+      case SimEventKind.trapArmed:
+      case SimEventKind.trapTriggered: {
+        const a = trapAnnouncement(e, teamOf);
+        if (a) out.push(a);
+        break;
+      }
       default:
         break;
     }
   }
   return out;
+}
+
+/**
+ * Word-only trap lines (polite, never important). Your own traps: placed, armed, triggered, expired, doused; the foe's: placed,
+ * triggered and doused, not armed or expired (chatter). Keys carry the side and the step, so the Announcer's repeat window
+ * (6 s per key) and 3-line queue keep a trap spam quiet.
+ */
+function trapAnnouncement(e: SimEvent, teamOf: (entity: number) => number): Announcement | undefined {
+  // trapArmed carries no team: its sourceId is the owner entity.
+  const mine = (e['team'] ?? teamOf(e.sourceId)) === 0;
+  const name = TRAP_WORDS[e['trap'] ?? 0] ?? 'trap';
+  const who = mine ? 'Your' : 'Enemy';
+  const side = mine ? 'trapMine' : 'trapFoe';
+  if (e.kind === SimEventKind.trapPlaced) return { key: `${side}Placed`, text: `${who} ${name} placed.`, important: false };
+  if (e.kind === SimEventKind.trapArmed) return mine ? { key: 'trapMineArmed', text: `Your ${name} is armed.`, important: false } : undefined;
+  const reason = e['reason'] ?? TrapReason.overlap;
+  if (reason === TrapReason.doused) return { key: `${side}Doused`, text: `${who} ${name} doused.`, important: false };
+  if (reason === TrapReason.timeout) return mine ? { key: 'trapMineExpired', text: `Your ${name} expired.`, important: false } : undefined;
+  return { key: `${side}Triggered`, text: `${who} ${name} triggered.`, important: false };
 }
 
 export const MATCH_START: Announcement = {

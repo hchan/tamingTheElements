@@ -1,5 +1,5 @@
 import { el } from '@ui/dom';
-import { ABILITIES_A, ABILITIES_B, CHARACTERS, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, type CharacterId, type RenderView } from '@core/index';
+import { ABILITIES_A, ABILITIES_B, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, type CharacterId, type RenderView } from '@core/index';
 import { codeLabel, getBindings } from '../platform/input/bindings';
 
 /** Shared on-screen touch controls of the Arcade battle (Arcade Versus and the World Tour fight); DOM only, no Phaser. */
@@ -35,7 +35,8 @@ export function isMeleeRace(race: CharacterId): boolean {
 
 /**
  * Ready state in words (never colour alone) for a button, from the render view of team 0; '' when the view does not expose it
- * (Dash, Guard and Charge cooldowns are not read-outs yet). Super and Weather read their fill, Tag its swap cooldown.
+ * (no arcade read-outs, or no active hero). Super and Weather read their fill, Tag its swap cooldown, Dash and Charge their cooldown
+ * in seconds ('ready' when up; Charge reads '' for a ranged hero, which has none), Guard its meter (a guard that is up reads 'guarding').
  */
 export function touchStatus(label: TouchLabel, view: RenderView): string {
   const ar = view.arcade();
@@ -47,13 +48,18 @@ export function touchStatus(label: TouchLabel, view: RenderView): string {
     const left = Math.max(0, bar.swapReadyTick - bar.tick);
     return left === 0 ? 'ready' : `${String(Math.ceil(left / 50))}s`;
   }
-  if (label === 'Trap') {
-    const t = view.actionBar(0)?.trap;
-    if (!t) return '';
-    const left = Math.max(0, t.readyTick - (view.actionBar(0)?.tick ?? 0));
-    return left > 0 ? `${String(Math.ceil(left / 50))}s` : t.count >= t.max ? 'full' : 'ready';
+  if (label === 'Dash' || label === 'Guard' || label === 'Charge') {
+    const id = ar?.active(0) ?? -1;
+    if (ar === undefined || id < 0) return '';
+    if (label === 'Guard') return ar.guarding(id) ? 'guarding' : fill(ar.guard(id), GUARD_MAX);
+    const left = label === 'Dash' ? ar.dashIn(id) : ar.chargeIn(id);
+    return left < 0 ? '' : left === 0 ? 'ready' : `${String(Math.ceil(left / 50))}s`;
   }
-  return '';
+  // Trap
+  const t = view.actionBar(0)?.trap;
+  if (!t) return '';
+  const left = Math.max(0, t.readyTick - (view.actionBar(0)?.tick ?? 0));
+  return left > 0 ? `${String(Math.ceil(left / 50))}s` : t.count >= t.max ? 'full' : 'ready';
 }
 
 function fill(v: number, full: number): string {

@@ -140,7 +140,22 @@ describe('numbered action row', () => {
     expect(touchStatus('Weather', view(0, 1000, 0, 0))).toBe('ready');
     expect(touchStatus('Tag', view(0, 0, 100, 175))).toBe('2s');
     expect(touchStatus('Tag2', view(0, 0, 100, 100))).toBe('ready');
-    expect(touchStatus('Dash', view(0, 0, 0, 0))).toBe('');
+  });
+
+  it('reads the Dash and Charge cooldowns in seconds and the Guard meter in words; blank for a ranged Charge or no hero', () => {
+    const view = (dash: number, charge: number, guard: number, guarding: boolean, id = 2): RenderView => ({
+      arcade: () => ({ active: () => id, dashIn: () => dash, chargeIn: () => charge, guard: () => guard, guarding: () => guarding }),
+    }) as unknown as RenderView;
+    expect(touchStatus('Dash', view(0, 0, 1000, false))).toBe('ready');
+    expect(touchStatus('Dash', view(30, 0, 1000, false))).toBe('1s');
+    expect(touchStatus('Charge', view(0, 120, 1000, false))).toBe('3s');
+    expect(touchStatus('Charge', view(0, 0, 1000, false))).toBe('ready');
+    expect(touchStatus('Charge', view(0, -1, 1000, false))).toBe('');
+    expect(touchStatus('Guard', view(0, 0, 1000, false))).toBe('ready');
+    expect(touchStatus('Guard', view(0, 0, 400, false))).toBe('40%');
+    expect(touchStatus('Guard', view(0, 0, 400, true))).toBe('guarding');
+    expect(touchStatus('Dash', view(0, 0, 1000, false, -1))).toBe('');
+    expect(touchStatus('Dash', { arcade: () => undefined } as unknown as RenderView)).toBe('');
   });
 
   it('classifies a race as melee by its primary ability, like the sim does for Charge (Rokcore melee, Sindarosa ranged)', () => {
