@@ -826,22 +826,35 @@ button.touchBtn {
   color: #fff;
   border: 2px solid #8fa4c8;
 }
-@media (pointer: fine) {
-  button.touchBtn {
-    /* 72 px + 4 px: fits the 80 px band under the playfield at 1280x720 (80 px buttons poked 8 px into the arena). */
-    --touch-size: 72px;
-    --touch-pitch: 78px;
-    right: calc(6px + var(--touch-row) * var(--touch-pitch));
-    bottom: 4px;
-    font-size: 14px;
-    border-radius: 6px;
-  }
+/* Size is `html[data-touch-size]` (large|compact), set from Settings or, on Auto, from `any-pointer: coarse` (src/game/platform/a11y/touch-layout.ts),
+   so touch laptops get the large column and mouse users on tablets can pick the compact row. Side is `html[data-touch-side]` (left-handed play). */
+html[data-touch-size='compact'] button.touchBtn {
+  /* 72 px + 4 px: fits the 80 px band under the playfield at 1280x720 (80 px buttons poked 8 px into the arena). */
+  --touch-size: 72px;
+  --touch-pitch: 78px;
+  right: calc(6px + var(--touch-row) * var(--touch-pitch));
+  bottom: 4px;
+  font-size: 14px;
+  border-radius: 6px;
 }
-/* Narrow windows with a mouse: wrap to two rows of five (slot = column + 5 * row), so up to 10 buttons never reach a third row. */
-@media (pointer: fine) and (max-width: 1100px) {
-  button.touchBtn {
+/* Narrow windows with the compact row: wrap to two rows of five (slot = column + 5 * row), so up to 10 buttons never reach a third row. */
+@media (max-width: 1100px) {
+  html[data-touch-size='compact'] button.touchBtn {
     right: calc(6px + var(--touch-col5) * var(--touch-pitch));
     bottom: calc(4px + var(--touch-line5) * var(--touch-pitch));
+  }
+}
+/* Left-handed: the same slots mirrored to the left edge (declared after every right-side rule so it wins at equal specificity). */
+html[data-touch-side='left'] button.touchBtn {
+  right: auto;
+  left: max(8px, env(safe-area-inset-left));
+}
+html[data-touch-side='left'][data-touch-size='compact'] button.touchBtn {
+  left: calc(6px + var(--touch-row) * var(--touch-pitch));
+}
+@media (max-width: 1100px) {
+  html[data-touch-side='left'][data-touch-size='compact'] button.touchBtn {
+    left: calc(6px + var(--touch-col5) * var(--touch-pitch));
   }
 }
 /* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
@@ -878,10 +891,14 @@ html[data-high-contrast='true'] button.touchBtn {
 .touchBtn-Element { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 15.5H3zM12 22L3 6.5h18z' fill='none' stroke='black' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 /* Short touch screens (a 640x360 phone in landscape): columns of four, slot = row in the column (0 to 3) and column (0, 1 or 2), so up
    to 9 buttons never run off the top. */
-@media (pointer: coarse) and (max-height: 520px) {
-  #menu button.touchBtn {
+@media (max-height: 520px) {
+  html[data-touch-size='large'] #menu button.touchBtn {
     right: calc(max(8px, env(safe-area-inset-right)) + var(--touch-line) * var(--touch-pitch));
     bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-col) * var(--touch-pitch));
+  }
+  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn {
+    right: auto;
+    left: calc(max(8px, env(safe-area-inset-left)) + var(--touch-line) * var(--touch-pitch));
   }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }

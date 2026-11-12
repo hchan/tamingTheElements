@@ -5,6 +5,7 @@ import { bindingsFromSave } from '@ui/screens/key-bindings';
 import { applyA11y, applyUiScale, loadSave } from '@ui/screens/settings';
 import { showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
+import { applyTouchLayout } from '../platform/a11y/touch-layout';
 import { applyPrefsToDocument, getPrefs } from '../platform/a11y/prefs';
 import { getUiFlags } from '../platform/flags';
 import { notify } from '../platform/storage/notices';
@@ -44,11 +45,16 @@ function initAccessibility(): void {
   const save = loadSave();
   applyA11y(save);
   setBindings(bindingsFromSave(save));
+  applyTouchLayout();
   for (const q of ['(prefers-reduced-motion: reduce)', '(prefers-contrast: more)']) {
     window.matchMedia(q).addEventListener('change', () => {
       applyPrefsToDocument(getPrefs());
     });
   }
+  // A touch screen plugged in or folded away while on Auto changes the resolved size.
+  window.matchMedia('(any-pointer: coarse)').addEventListener('change', () => {
+    applyTouchLayout();
+  });
 }
 
 /**
