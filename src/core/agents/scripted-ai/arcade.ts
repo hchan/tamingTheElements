@@ -1,6 +1,6 @@
 import {
   arcadePlayfield, CHARGE_AI_MIN_DIST, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
-  WEATHER_CHARGE_FULL,
+  TrapKind, WEATHER_CHARGE_FULL,
 } from '../../data/arcade';
 import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
@@ -12,8 +12,9 @@ import {
 import { AgentRng } from '../agent-rng';
 import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
-  ARCADE_AI_LOOKAHEAD, ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, chargeSensible, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward, trapDashable, trapNudge,
+  ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
+  ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
+  centreDist, chargeSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -167,8 +168,8 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
   return undefined;
 }
 
-type Memory = [number, number, number, number, number, number, number, number, number, number, number, number, number, number];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1];
+type Memory = [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0];
 
 /** Game ticks without any HP change on the field after which the AI stops retreating and presses (no stalemates). */
 export const ARCADE_AI_STALE_TICKS = 400;
@@ -208,7 +209,7 @@ export class ArcadeTactics {
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
    * drawn for it; [2] the tick the current threat was first seen (-1: none), [3] its reaction, [4] its plan (PARRY,
    * DODGE, GUARD or NO_PLAN) and [5] how many game ticks before the hit it acts; [6] the personality (-1 until the
-   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock); [11] the `W.tick` of the last guard reflex and [12] whether the current threat's reflex is armed; [13] the opponent's distance (`centreDist`) last tick (-1: none; the trap rule's closing test).
+   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock); [11] the `W.tick` of the last guard reflex and [12] whether the current threat's reflex is armed; [13] the opponent's distance (`centreDist`) last tick (-1: none; the trap rule's closing test); [14] the `W.tick` until which it presses a foe its Puddle holds or its Gust shoved (WP 39f); [15] the count of own Gusts seen last tick.
    */
   private mem: Memory = [...FRESH];
   private readonly rng = new AgentRng(ARCADE_AI_STREAM_NAMES);
@@ -299,6 +300,19 @@ export class ArcadeTactics {
     return (cmd & ~MOVE) | trapNudge(self, a.traps, t, cmd, arcadePlayfield());
   }
 
+  /**
+   * Follow-up memory (WP 39f): opens the press window [14] when the foe stands in an own armed Puddle, or when the count
+   * of own Gusts [15] fell since last tick (one fired and shoved the foe, or dried up or was doused: a press that costs
+   * little). Runs every Arcade tick.
+   */
+  private followUp(tick: number, a: ArcadeView, opp: FighterView): void {
+    const m = this.mem;
+    const gusts = a.traps.filter((t) => t.own && t.kind === TrapKind.gust).length;
+    if (gusts < m[15]) m[14] = tick + ARCADE_AI_PRESS_GUST_TICKS;
+    m[15] = gusts;
+    if (foeInOwnPuddle(opp, a.traps)) m[14] = Math.max(m[14], tick + ARCADE_AI_PRESS_PUDDLE_TICKS);
+  }
+
   /** True when a trap press now plants: free (the caller checks), ready, under the team cap, a fresh press, a free spot. */
   private canPlant(self: FighterView, opp: FighterView, a: ArcadeView): boolean {
     return a.trapIn === 0 && a.trapCount < TRAP_TEAM_MAX && (a.prevCmd & Cmd.trap) === 0 && trapSpotFree(self, opp, a.traps, arcadePlayfield());
@@ -325,6 +339,7 @@ export class ArcadeTactics {
     const found = trapReason(this.level, style, self, opp, dist, m[13], a.oppRooted, arcadePlayfield());
     const reason = stale && found !== TRAP_ROOT ? TRAP_NONE : found;
     m[13] = dist;
+    this.followUp(view.tick, a, opp);
     const line = shot === 0 || (base & ATTACK) !== 0 ? 0 : diagonalLine(self, opp);
     const axisShot = (base & ATTACK) !== 0 && (base & (Cmd.left | Cmd.right)) !== 0;
     let cmd = line !== 0 ? (base & ~MOVE) | line | shot : axisShot ? base & ~(Cmd.up | Cmd.down) : base;
@@ -396,6 +411,11 @@ export class ArcadeTactics {
     }
     // A rooted foe cannot walk off a trap planted on it (Hard; no draw).
     if (reason === TRAP_ROOT && this.canPlant(self, opp, a)) return plant(cmd);
+    // Follow-up (WP 39f, Normal and Hard): press a foe held by its Puddle or shoved by its Gust (a Charge, else close in).
+    if (this.level > AI_EASY && view.tick < m[14] && a.oppStun === 0 && a.oppRooted === 0) {
+      if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && !a.oppGuarding) return Cmd.charge;
+      if ((cmd & ATTACK) === 0 && far >= (a.chargeIn === -1 ? ARCADE_AI_PRESS_RANGED_PX : SNAG_CLOSE_PX)) return (cmd & ~MOVE) | toward(self, opp);
+    }
     // Counter (Hard): a fire shot douses a foe Puddle or Gust between the two (the shot auto-faces the foe).
     if (this.level >= AI_HARD && a.fireShot && shot !== 0 && a.snagSlot !== 0 && trapToDouse(self, opp, a.traps)) {
       return (cmd & ~(MOVE | ATTACK)) | shot;

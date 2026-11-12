@@ -116,17 +116,17 @@ describe('ArcadeTactics: confirms, supers and combo caps', () => {
   it('returns the Classic command untouched and never seeds its stream without view.arcade', () => {
     const t = new ArcadeTactics();
     for (const tick of [0, 1, 2]) expect(t.apply(view(undefined, tick), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0], rng: null });
   });
 
   it('leaves the command alone while the opponent is free and nothing threatens (a given Zoner draws nothing)', () => {
     const t = new ArcadeTactics(AI_NORMAL, ZONER);
     expect(t.apply(view({}), cmd)).toBe(cmd);
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0, 500], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0, 500, 0, 0], rng: null });
     // Easy keeps its bar for a confirm: no free super, no draw.
     const easy = new ArcadeTactics(AI_EASY, ZONER);
     expect(easy.apply(view({ meter: SUPER_COST }), cmd)).toBe(cmd);
-    expect(easy.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0, 500], rng: null });
+    expect(easy.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 200, -1000, 0, 500, 0, 0], rng: null });
   });
 
   it('supers on a confirm with a full bar after its drawn reaction delay, facing the opponent', () => {
@@ -585,7 +585,7 @@ describe('the Arcade AI tags (WP-arcade-tag)', () => {
     expect(tags({ partnerPm: -1 }, 1)).toBe(false); // no partner (1v1, or down)
     expect(tags({ partnerPm: 900, tagIn: 1 })).toBe(false); // cooldown
     expect(tags({ partnerPm: 900, selfStun: 5 })).toBe(false); // not free
-    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 130, -1000, 0, 500], rng: null });
+    expect(t.save()).toEqual({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 130, -1000, 0, 500, 0, 0], rng: null });
     expect(tags({ partnerPm: 900, shots: [shotIn(10)] })).toBe(false); // threatened
   });
 

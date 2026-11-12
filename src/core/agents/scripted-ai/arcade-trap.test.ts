@@ -9,7 +9,7 @@ import { createObservationView, type ArcadeView, type FighterView, type Observat
 import { ARCADE_AI_STALE_TICKS, ArcadeTactics } from './arcade';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_TRAP_BAND, RUSHDOWN, TRAP_CORNER, TRAP_NONE, TRAP_ROOT, TRAP_ZONE, TURTLE, ZONER,
-  centreDist, trapDashable, trapNudge, trapOnStep, trapReason, trapSpotFree, trapToDouse,
+  centreDist, foeInOwnPuddle, trapDashable, trapNudge, trapOnStep, trapReason, trapSpotFree, trapToDouse,
 } from './arcade-ai';
 
 const SETUP: MatchSetup = {
@@ -264,5 +264,35 @@ describe('trap counter (WP 39c, Hard)', () => {
     expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ traps, fireShot: true }), Cmd.left, Cmd.primary)).toBe(Cmd.left);
     expect(new ArcadeTactics(AI_HARD, ZONER).apply(view({ traps }), Cmd.left, Cmd.primary)).toBe(Cmd.left);
     expect(new ArcadeTactics(AI_HARD, ZONER).apply(view({ traps, fireShot: true }), Cmd.left, 0)).toBe(Cmd.left);
+  });
+});
+
+describe('Trap follow-up (WP 39f)', () => {
+  const own = (kind: number, x: number, y: number, armIn = 0): TrapView => ({ kind, x, y, own: true, armIn, left: 100 });
+  const far = fighter(450, 300);
+
+  it('a melee hero presses a foe standing in its own armed Puddle, for the slow and its linger', () => {
+    const t = new ArcadeTactics(AI_NORMAL, RUSHDOWN);
+    const puddle = own(TrapKind.puddle, 400, 290);
+    expect(foeInOwnPuddle(far, [puddle])).toBe(true);
+    expect(foeInOwnPuddle(far, [own(TrapKind.puddle, 400, 290, 5)])).toBe(false);
+    const cmd = t.apply(view({ chargeIn: 500, traps: [puddle], prevCmd: Cmd.trap }, 10, ME, far), 0);
+    expect(cmd & Cmd.right).not.toBe(0);
+    // Still pressing after the foe left the puddle (the slow lingers), not after the window ran out.
+    const after = t.apply(view({ chargeIn: 500, traps: [] }, 40, ME, far), 0);
+    expect(after & Cmd.right).not.toBe(0);
+    expect(t.apply(view({ chargeIn: 500, traps: [] }, 100, ME, far), 0) & Cmd.right).toBe(0);
+  });
+
+  it('presses after an own Gust vanished (it shoved the foe, or dried up)', () => {
+    const t = new ArcadeTactics(AI_NORMAL, RUSHDOWN);
+    const gust = own(TrapKind.gust, 400, 290);
+    expect(t.apply(view({ chargeIn: 500, traps: [gust] }, 10, ME, far), 0) & Cmd.right).toBe(0);
+    expect(t.apply(view({ chargeIn: 500, traps: [] }, 11, ME, far), 0) & Cmd.right).not.toBe(0);
+  });
+
+  it('Easy never presses', () => {
+    const t = new ArcadeTactics(AI_EASY, RUSHDOWN);
+    expect(t.apply(view({ chargeIn: 500, traps: [own(TrapKind.puddle, 400, 290)] }, 10, ME, far), 0) & Cmd.right).toBe(0);
   });
 });

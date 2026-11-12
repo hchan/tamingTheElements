@@ -126,5 +126,8 @@
  *    arming bomb 150 -> 120, puddle 300 -> 250, spike 200 -> 160, gust 200 -> 150; Puddle slow 600 -> 500 pm and linger
  *    40 -> 60 ticks; Gust knockback 224 -> 288 Q4; a Fire Bomb or Spike hit is its base times the owner race's damagePm,
  *    floored at TRAP_HIT_FLOOR 20 before the element chart (Sindarosa, Rokcore and Lavax traps hit for 13 to 19 before).
+ * 35: Arcade only; Classic hashes unchanged. AI trap follow-up (WP 39f, ideas/brainstorm/ai-trap-use.md): the Normal plant rate
+ *    80 -> 240 pm per tick, and Normal and Hard press a foe held by their Puddle or just shoved by their Gust (a Charge, else
+ *    close in); the hash definition is unchanged, only scripted-AI commands differ.
  */
-export const SIM_VERSION = 34;
+export const SIM_VERSION = 35;
