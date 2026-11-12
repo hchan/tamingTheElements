@@ -204,7 +204,12 @@ export const ARCADE_AI_TRAP_CORNER_PX = 120;
 /** Hard plants on a foe its own Snag roots within this distance (the trap lands TRAP_PLACE_PX ahead, the foe inside its trigger). */
 export const ARCADE_AI_TRAP_ROOT_PX = 200;
 /** Per level, the plant rate (pm per tick) while a zoning or corner reason holds. */
-export const ARCADE_AI_TRAP_RATE: readonly [number, number, number] = [20, 80, 300];
+export const ARCADE_AI_TRAP_RATE: readonly [number, number, number] = [20, 240, 300];
+/** Follow-up (WP 39f): game ticks a Normal or Hard AI presses a foe held by its own Puddle (the slow lingers 60) or just shoved by its Gust. */
+export const ARCADE_AI_PRESS_PUDDLE_TICKS = 60;
+export const ARCADE_AI_PRESS_GUST_TICKS = 45;
+/** A ranged hero presses a slowed or shoved foe until it is this near (px, `far`); a melee hero until SNAG_CLOSE_PX. */
+export const ARCADE_AI_PRESS_RANGED_PX = 200;
 /** Look-ahead (px) of the avoid rule: a step this long that newly enters a foe trap's trigger square is on the path. */
 export const ARCADE_AI_TRAP_LOOK_PX = 12;
 /** A foe Fire Bomb or Spike arming in more game ticks than this is dashed across (DASH_TICKS: the dash is over first). */
@@ -243,6 +248,12 @@ function inTrigger(self: Aabb, t: TrapView, dx: number, dy: number): boolean {
   const y = self.y + dy;
   return x < t.x + TRAP_BOX_PX + TRAP_TRIGGER_PX && t.x - TRAP_TRIGGER_PX < x + self.w &&
     y < t.y + TRAP_BOX_PX + TRAP_TRIGGER_PX && t.y - TRAP_TRIGGER_PX < y + self.h;
+}
+
+/** True when `foe` stands in the trigger square of one of its own armed Puddles (the sim slows it there, 60 ticks past). */
+export function foeInOwnPuddle(foe: Aabb, traps: readonly TrapView[]): boolean {
+  for (const t of traps) if (t.own && t.kind === TrapKind.puddle && t.armIn === 0 && inTrigger(foe, t, 0, 0)) return true;
+  return false;
 }
 
 /** The x and y of the movement bits of `cmd` as a ARCADE_AI_TRAP_LOOK_PX step (no tuple: this runs every tick). */
