@@ -6,16 +6,17 @@ import { codeLabel, getBindings } from '../platform/input/bindings';
 
 /**
  * Touch buttons, bottom-up on the right edge, 56 px apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
- * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3).
+ * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), and last Trap
+ * (WP 39), always there.
  */
-export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2'] as const;
+export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2', 'Trap'] as const;
 type TouchLabel = (typeof TOUCH)[number];
-const TOUCH_KEY = { Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weather', Charge: 'charge', Tag: 'slot3', Tag2: 'slot4' } as const;
+const TOUCH_KEY = { Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weather', Charge: 'charge', Tag: 'slot3', Tag2: 'slot4', Trap: 'trap' } as const;
 /**
  * The numbered action row (FUN-DESIGN 2.17): each button wears its number key, 3 Tag, 4 Tag 2, 5 Charge, 6 Weather, 7 Dash,
- * 8 Guard, 9 Super. The numbers are fixed, so hiding Charge for a team without a melee hero never renumbers the others.
+ * 8 Guard, 9 Super, 0 Trap. The numbers are fixed, so hiding Charge for a team without a melee hero never renumbers the others.
  */
-export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5, Tag: 3, Tag2: 4 } as const;
+export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5, Tag: 3, Tag2: 4, Trap: 0 } as const;
 
 /** The key shown on a button: its number while that number key is bound to the action, else the action's first key. */
 export function touchKeyLabel(label: TouchLabel): string {
@@ -45,6 +46,12 @@ export function touchStatus(label: TouchLabel, view: RenderView): string {
     if (!bar) return '';
     const left = Math.max(0, bar.swapReadyTick - bar.tick);
     return left === 0 ? 'ready' : `${String(Math.ceil(left / 50))}s`;
+  }
+  if (label === 'Trap') {
+    const t = view.actionBar(0)?.trap;
+    if (!t) return '';
+    const left = Math.max(0, t.readyTick - (view.actionBar(0)?.tick ?? 0));
+    return left > 0 ? `${String(Math.ceil(left / 50))}s` : t.count >= t.max ? 'full' : 'ready';
   }
   return '';
 }
@@ -78,7 +85,7 @@ export function watchTouch(buttons: readonly HTMLButtonElement[], view: RenderVi
 /**
  * Button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
  * listens on window) for as long as the finger is down; an unbound action does nothing. Focusable: Enter or Space
- * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`.
+ * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`.
  */
 export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   const b = el('button', 'menuButton');
@@ -127,11 +134,11 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
 }
 
 /**
- * The buttons of a battle with this many heroes a side: Super, Guard, Dash, Weather, Charge, plus Tag (2 heroes) and Tag 2 (3).
+ * The buttons of a battle with this many heroes a side: Super, Guard, Dash, Weather, Charge, plus Tag (2 heroes) and Tag 2 (3), then Trap.
  * `melee` says whether each of the player's heroes is melee; when given and none is, Charge is left out (it is a melee-only
  * ability) and the rest close the gap, keeping their numbers.
  */
 export function touchButtons(heroes: 1 | 2 | 3, melee?: readonly boolean[]): HTMLButtonElement[] {
   const noCharge = melee !== undefined && !melee.some(Boolean);
-  return TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')).map(touchButton);
+  return [...TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')), 'Trap' as const].map(touchButton);
 }

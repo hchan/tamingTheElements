@@ -44,10 +44,14 @@ export function labelsFromBindings(bindings: Bindings): KeyLabels {
   const out: Record<number, string> = {};
   for (const action of GAME_ACTIONS) {
     const code = bindings[action][0];
-    if (code !== undefined) out[ACTION_COMMAND[action]] = codeLabel(code);
+    // Trap shares Capture's command bit 6, so its label lives under TRAP_LABEL.
+    if (code !== undefined) out[action === 'trap' ? TRAP_LABEL : ACTION_COMMAND[action]] = codeLabel(code);
   }
   return out;
 }
+
+/** Where the Trap key's label sits in a KeyLabels (its command bit is Capture's). */
+export const TRAP_LABEL = 100;
 
 export const DEFAULT_KEY_LABELS: KeyLabels = labelsFromBindings(DEFAULT_BINDINGS);
 
@@ -55,7 +59,7 @@ const SWAP_CMDS = [Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4] as const;
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 
 export interface ActionSlot {
-  readonly kind: 'ability' | 'capture' | 'swap';
+  readonly kind: 'ability' | 'capture' | 'swap' | 'trap';
   readonly x: number;
   readonly y: number;
   readonly size: number;
@@ -69,6 +73,14 @@ export interface ActionSlot {
   readonly highlight: boolean;
   /** Greyed out: capture while not capturable, or a dead teammate. */
   readonly disabled: boolean;
+  /** Second line under the key: the Trap slot's words ("Trap 7s" cooling, "Trap 1/2" ready, "Trap full"), else ''. */
+  readonly note: string;
+}
+
+/** The Trap slot's words (never colour alone): whole seconds left while cooling, else the live count, or "full" at the cap. */
+export function trapNote(tick: number, t: { readyTick: number; count: number; max: number }): string {
+  if (tick < t.readyTick) return `Trap ${String(Math.ceil((t.readyTick - tick) / 50))}s`;
+  return t.count >= t.max ? 'Trap full' : `Trap ${String(t.count)}/${String(t.max)}`;
 }
 
 /** Elapsed fraction of a cooldown that ends (becomes usable) at `readyTick`; 1 once ready. */
@@ -85,8 +97,8 @@ export function slotX(i: number): number {
 export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY_LABELS): ActionSlot[] {
   const out: ActionSlot[] = [];
   const y = BAR_Y + SLOT_BORDER / 2;
-  const add = (s: Omit<ActionSlot, 'x' | 'y' | 'size' | 'label'>): void => {
-    out.push({ ...s, x: slotX(out.length), y, size: SLOT_SIDE, label: labels[s.cmd] ?? '' });
+  const add = (s: Omit<ActionSlot, 'x' | 'y' | 'size' | 'label' | 'note'> & { note?: string }): void => {
+    out.push({ note: '', ...s, x: slotX(out.length), y, size: SLOT_SIDE, label: labels[s.kind === 'trap' ? TRAP_LABEL : s.cmd] ?? '' });
   };
   bar.abilities.forEach((a, i) => {
     const cmd = ABILITY_CMDS[i];
@@ -113,6 +125,13 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
       progress: w.dead ? 1 : swapProgress,
     });
   });
+  if (bar.trap) {
+    const t = bar.trap;
+    add({
+      kind: 'trap', cmd: Cmd.trap, sprite: '', highlight: false, disabled: false,
+      progress: cooldownProgress(bar.tick, t.readyTick, t.cooldownTicks), note: trapNote(bar.tick, t),
+    });
+  }
   return out;
 }
 
@@ -228,6 +247,7 @@ export class ActionBarView {
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 5);
       }
       this.drawIcon(i, s);
+      if (s.kind === 'trap') this.back.fillStyle(0xffd23f, 1).fillTriangle(s.x + s.size / 2, s.y + 44, s.x + s.size / 2 + 13, s.y + s.size - 8, s.x + s.size / 2 - 13, s.y + s.size - 8);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
         g.lineStyle(s.highlight ? 4 : 2, s.highlight ? CAPTURE_READY_COLOR : ready ? 0xdfe8ff : 0x3b4660, 1);
@@ -334,6 +354,7 @@ export class ActionBarView {
       this.texts[i] = t;
     }
     t.setVisible(true).setPosition(this.wx(s.x + (this.styled ? 5 : 2)), this.wy(s.y + (this.styled ? 2 : 0))).setScale(this.box.scale);
-    if (t.text !== s.label) t.setText(s.label);
+    const line = s.note === '' ? s.label : `${s.label}\n${s.note}`;
+    if (t.text !== line) t.setText(line);
   }
 }

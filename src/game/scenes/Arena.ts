@@ -318,6 +318,10 @@ export class Arena extends Phaser.Scene {
       void import('../fx/terrain-view').then((m) => {
         if (this.arcadeHud === hud) this.terrain = m.mountTerrainView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs, setup.seed, import.meta.env.BASE_URL);
       });
+      // The trap markers (WP 39b, its own lazy chunk).
+      void import('../fx/trap-view').then((m) => {
+        if (this.arcadeHud === hud) m.mountTrapView(this, view, () => getPrefs().reduceMotion);
+      });
     }
     // The pose layer (lazy chunk): smooth walking, leans, Arcade poses, projectile easing (docs/ARCHITECTURE.md).
     void import('../views/pose-layer').then((m) => {
@@ -420,6 +424,7 @@ export class Arena extends Phaser.Scene {
       viewsReady: () => (!this.arcadeHud || this.rounds !== undefined) && this.scene.isActive(HUD_SCENE),
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
       terrain: () => import('../fx/terrain-view').then((m) => m.terrainState(this)),
+      traps: () => import('../fx/trap-view').then((m) => m.trapState(this)),
       aim: () => {
         const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
         return g ? { visible: g.visible, x: g.x, y: g.y, angle: Math.round(g.angle) } : undefined;

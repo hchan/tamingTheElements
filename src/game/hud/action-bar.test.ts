@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { BAR_Y, TRAP_LABEL, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -16,7 +16,29 @@ const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
   ],
   swapReadyTick: 100,
   swapCooldownTicks: 250,
+  trap: undefined,
   ...over,
+});
+
+describe('Trap slot', () => {
+  const t = { readyTick: 100, cooldownTicks: 500, count: 1, max: 2 };
+  it('comes after the swaps with its own key label (not Capture\'s)', () => {
+    const slots = buildSlots(bar({ trap: t }));
+    const last = slots[slots.length - 1];
+    expect([last?.kind, last?.cmd, last?.label, last?.note]).toEqual(['trap', Cmd.trap, 'Z', 'Trap 1/2']);
+    expect(slots[2]?.label).toBe('C');
+    expect(labelsFromBindings(DEFAULT_BINDINGS)[TRAP_LABEL]).toBe('Z');
+  });
+  it('says the seconds left while cooling and "full" at the cap', () => {
+    expect(trapNote(100, { ...t, readyTick: 151 })).toBe('Trap 2s');
+    expect(trapNote(100, { ...t, readyTick: 350 })).toBe('Trap 5s');
+    expect(trapNote(100, { ...t, count: 2 })).toBe('Trap full');
+  });
+  it('a click emits the trap command bit', () => {
+    const slots = buildSlots(bar({ trap: t }));
+    const last = slots[slots.length - 1];
+    expect(commandAt(slots, (last?.x ?? 0) + 5, (last?.y ?? 0) + 5)).toBe(Cmd.trap);
+  });
 });
 
 describe('cooldownProgress', () => {

@@ -30,7 +30,9 @@ describe('super key binding: no conflicts', () => {
   });
   it('each action drives its own command bit, the super one bit 13 only', () => {
     const bits = GAME_ACTIONS.map((a) => ACTION_COMMAND[a]);
-    expect(new Set(bits).size).toBe(bits.length);
+    // Trap shares Capture's bit 6 (Capture is Classic-only, Trap Arcade-only); every other action has its own.
+    expect(new Set(bits).size).toBe(bits.length - 1);
+    expect(ACTION_COMMAND.trap).toBe(ACTION_COMMAND.capture);
     expect(ACTION_COMMAND.super).toBe(Cmd.super);
   });
   it('rebinding detects a conflict with the super key both ways', () => {
@@ -250,5 +252,35 @@ describe('numbered action row keys (5 Charge, 6 Weather, 7 Dash, 8 Guard, 9 Supe
     expect(commandFromHeld(b, new Set(['Digit5']), true, true)).toBe(Cmd.charge);
     const c = tryBind(b, 'charge', 1, 'KeyK');
     expect(c.ok && commandFromHeld(c.bindings, new Set(['Digit5']), true, true)).toBe(Cmd.swap3);
+  });
+});
+
+describe('Trap input (WP 39): Z, 0 and pad Y, Arcade only', () => {
+  it('Z and 0 send the Trap bit in Arcade, and Capture\'s C sends nothing there', () => {
+    for (const code of ['KeyZ', 'Digit0']) expect(commandFromHeld(DEFAULT_BINDINGS, new Set([code]), true, true), code).toBe(Cmd.trap);
+    expect(commandFromHeld(DEFAULT_BINDINGS, new Set(['KeyC']), true, true)).toBe(0);
+  });
+  it('Classic: C is Capture as before, Z and 0 send nothing', () => {
+    expect(commandFromHeld(DEFAULT_BINDINGS, new Set(['KeyC']), true, false)).toBe(Cmd.capture);
+    for (const code of ['KeyZ', 'Digit0']) expect(commandFromHeld(DEFAULT_BINDINGS, new Set([code]), true, false), code).toBe(0);
+  });
+  it('is not F (fullscreen), has a label, and conflicts with other keys like any action', () => {
+    expect(DEFAULT_BINDINGS.trap).not.toContain('KeyF');
+    expect(ACTION_LABELS.trap).toBe('Trap');
+    expect(tryBind(DEFAULT_BINDINGS, 'trap', 0, 'KeyX')).toEqual({ ok: false, reason: 'conflict', with: 'super' });
+    expect(tryBind(DEFAULT_BINDINGS, 'trap', 0, 'KeyF')).toMatchObject({ ok: false });
+  });
+  it('pad Y sends Trap with the Arcade pad even when nothing is capturable, and Capture with the Classic pad', () => {
+    expect(ARCADE_PAD.buttons[PadButton.y]).toBe(Cmd.trap);
+    expect(commandFromPad(pad([PadButton.y]), false, ARCADE_PAD)).toBe(Cmd.trap);
+    expect(commandFromPad(pad([PadButton.y]), true, DEFAULT_PAD)).toBe(Cmd.capture);
+    expect(commandFromPad(pad([PadButton.y]), false, DEFAULT_PAD)).toBe(0);
+  });
+  it('the keyboard agent sends Trap in Arcade only', () => {
+    for (const arcade of [true, false]) {
+      const agent = new KeyboardAgent({ capturable: () => false, arcade });
+      agent.handle(key('down', 'KeyZ'));
+      expect(agent.observe(view)).toBe(arcade ? Cmd.trap : 0);
+    }
   });
 });

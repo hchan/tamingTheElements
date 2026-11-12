@@ -17,6 +17,7 @@ export const GAME_ACTIONS = [
   'guard',
   'weather',
   'charge',
+  'trap',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -47,6 +48,9 @@ export const DEFAULT_BINDINGS: Bindings = {
   // Digit5 is also Swap 3 (slot5): the one deliberately shared default code (SHARED_CODE). Swap 3 is the fourth hero, which
   // only a Classic party has; Arcade has at most three heroes, so there key-map reads Digit5 as Charge and Classic as Swap 3.
   charge: ['KeyH', 'Digit5'],
+  // Arcade only (WP 39): the Trap. Z, because F is the fullscreen toggle; Digit0 ends the numbered row (Charge 5 .. Super 9).
+  // Shares the sim's command bit 6 with Capture, which Arcade does not have (key-map reads it as Trap there only).
+  trap: ['KeyZ', 'Digit0'],
 };
 
 /** Digit5 may drive both Swap 3 (Classic) and Charge (Arcade) at once; every other code drives one action. */
@@ -71,6 +75,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   guard: 'Guard',
   weather: 'Weather',
   charge: 'Charge',
+  trap: 'Trap',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */

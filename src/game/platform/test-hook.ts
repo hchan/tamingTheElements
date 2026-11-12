@@ -95,6 +95,8 @@ export interface ArenaProbe {
     stage: number; patches: number; rects: readonly number[]; labels: readonly string[]; alpha: number; glow: number;
     particles: number; sparks: number; backdrop: string; nextBackdrop: number; badge: string;
   } | undefined>;
+  /** Arcade only (async: a lazy chunk): the trap markers drawn on the last frame (WP 39b), or undefined before the view mounts. */
+  traps(): Promise<readonly { kind: number; x: number; y: number; team: number; label: string; alpha: number }[] | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */
   aim(): { visible: boolean; x: number; y: number; angle: number } | undefined;
   /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */

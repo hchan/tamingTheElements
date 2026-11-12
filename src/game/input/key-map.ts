@@ -33,10 +33,14 @@ export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
   guard: Cmd.guard,
   weather: Cmd.weather,
   charge: Cmd.charge,
+  trap: Cmd.trap,
 };
 
 /** The Arcade-only command bits (dash 11, guard 12, super 13, weather 14, charge 15): every bit from the dash up. */
 export const ARCADE_ONLY = Cmd.dash;
+
+/** Trap shares command bit 6 with Capture: Arcade-only, though its bit is below ARCADE_ONLY. */
+const arcadeOnly = (a: GameAction): boolean => a === 'trap' || ACTION_COMMAND[a] >= ARCADE_ONLY;
 
 /**
  * The action a held code drives. In Arcade an Arcade-only action that lists the code wins (so Digit5 is Charge there, while
@@ -44,19 +48,19 @@ export const ARCADE_ONLY = Cmd.dash;
  */
 function resolveAction(bindings: Bindings, code: string, arcade: boolean): GameAction | undefined {
   if (arcade) {
-    const a = GAME_ACTIONS.find((x) => ACTION_COMMAND[x] >= ARCADE_ONLY && bindings[x].includes(code));
+    const a = GAME_ACTIONS.find((x) => arcadeOnly(x) && bindings[x].includes(code));
     if (a !== undefined) return a;
   }
   return actionForCode(bindings, code);
 }
 
-/** Held key codes to a command bitset. Capture is dropped unless `capturable`, the Arcade-only actions outside Arcade. */
+/** Held key codes to a command bitset. Capture is dropped unless `capturable` (and in Arcade, which has Trap on that bit), the Arcade-only actions outside Arcade. */
 export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean, arcade = false): Command {
   let cmd = 0;
   for (const code of held) {
     const a = resolveAction(bindings, code, arcade);
     if (a === undefined) continue;
-    if (a === 'capture' ? !capturable : !arcade && ACTION_COMMAND[a] >= ARCADE_ONLY) continue;
+    if (a === 'capture' ? !capturable || arcade : !arcade && arcadeOnly(a)) continue;
     cmd |= ACTION_COMMAND[a];
   }
   return cmd;

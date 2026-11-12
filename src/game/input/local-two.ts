@@ -14,9 +14,10 @@ export const P2_BINDINGS: Bindings = {
   slot1: ['KeyU'],
   slot2: ['KeyO'],
   slot3: ['KeyV'], // Tag (2v2 and 3v3)
-  slot4: ['Comma'], // Tag 2 (3v3); Comma, because M is the mute key's partner (Ctrl-M)
+  slot4: ['Comma'], // Tag 2 (3v3); Comma, because M is Trap
   slot5: [],
   capture: [],
+  trap: ['KeyM'], // Trap (bit 6); plain M, Ctrl-M stays the mute key (reduceKey checks ctrl first)
   super: ['KeyB'],
   dash: ['KeyY'],
   guard: ['KeyN'],
@@ -25,7 +26,7 @@ export const P2_BINDINGS: Bindings = {
 };
 
 const HINT: readonly (readonly [GameAction, string])[] = [
-  ['slot1', 'attack'], ['slot2', 'second attack'], ['dash', 'dash'], ['guard', 'guard (hold)'], ['super', 'super'], ['weather', 'weather'], ['charge', 'charge'], ['slot3', 'tag'], ['slot4', 'tag 2'],
+  ['slot1', 'attack'], ['slot2', 'second attack'], ['dash', 'dash'], ['guard', 'guard (hold)'], ['super', 'super'], ['weather', 'weather'], ['charge', 'charge'], ['trap', 'trap'], ['slot3', 'tag'], ['slot4', 'tag 2'],
 ];
 
 /** "Player 2: I J K L move, U attack, ...": the keys of one binding set, in words (never colour). */

@@ -82,6 +82,7 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   a 120 ms white disc over the fighter, not a full-screen flash. Reduced motion keeps the shield, bar, words, rings (static,
   not growing), the flash and one static spark per hit, and drops the dash afterimages, projectile trails, flying sparks and
   shards and the rising words (FUN-DESIGN section 3).
+- Arcade trap (WP 39b): Z or 0, pad Y, P2 M, or the touch Trap button (cooldown in seconds). Each trap on the floor carries its words ("P1 Fire Bomb (arming)"), never colour alone; reduced motion stops the end-of-life blink (`tests/e2e/arcade-trap.spec.ts`).
 - Arcade charge (WP-arcade-charge, FUN-DESIGN 2.17): H, pad R3 or the touch Charge button. A charge pops "CHARGE!" over the fighter and says "You charged." or "The enemy charged." in the live region; the arrival hit sparks like any hit. Reduced motion keeps the word and the line and drops the afterimages (`tests/e2e/arcade-charge.spec.ts`).
 - Arcade weather (`src/game/fx/weather-view.ts`, WP-arcade-weather-view): the weather up is a HUD badge with a glyph that
   differs by shape (sun with rays, drops, blown sand, wind lines, an eclipsed sun), a word and the whole seconds left

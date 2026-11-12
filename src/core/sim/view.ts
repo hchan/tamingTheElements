@@ -1,14 +1,15 @@
-import { GUARD_MAX, Q4_ONE, TAG_COOLDOWN_TICKS } from '../data/arcade';
+import { GUARD_MAX, Q4_ONE, TAG_COOLDOWN_TICKS, TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
 import { capturable } from '../rules/progression';
 import {
-  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, PATCH_MAX, TEAM_STRIDE, TeamField, World,
+  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, PATCH_MAX, TEAM_STRIDE, TeamField, TRAP_STRIDE, TRAP_TABLE, TRAP_WORLD_MAX, TrapF, World,
 } from './state';
 import { castDir } from './systems/arcade/aim';
 import { isGuarding, isInvulnerable, isStunned } from './systems/arcade/stun';
 import { isRooted } from './systems/arcade/snag';
+import { trapCount } from './systems/arcade/trap';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { slotAbility } from './systems/ability-info';
 import { controlledId } from './systems/movement';
@@ -83,7 +84,15 @@ export interface RenderArcade {
   swapTo: number;
   patchCount: number;
   readonly patches: number[];
+  /**
+   * The trap table (WP 39): TRAP_WORLD_MAX entries of 6 ints (kind 0 = free else TrapKind, x, y, team, ticks until armed (0 =
+   * armed), ticks of life left). x, y is the box's top-left corner. The array is reused: copy what you keep.
+   */
+  readonly traps: number[];
 }
+
+/** Ints per trap in `RenderArcade.traps`. */
+export const TRAP_VIEW_STRIDE = 6;
 
 /** One active status as the HUD sees it. The object is reused between callbacks. */
 export interface RenderStatus {
@@ -134,6 +143,8 @@ export interface RenderActionBar {
   swaps: RenderSwapSlot[];
   swapReadyTick: number;
   swapCooldownTicks: number;
+  /** Arcade Trap slot (WP 39): the first game tick it can plant again, its cooldown, the team's live traps and the cap. */
+  trap: { readyTick: number; cooldownTicks: number; count: number; max: number } | undefined;
 }
 
 /** Read-only facade over a SimWorld for the renderer. Never exposes the sim arrays. */
@@ -176,6 +187,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const ar: RenderArcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, roundsWon: [0, 0],
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
+    traps: new Array<number>(TRAP_WORLD_MAX * TRAP_VIEW_STRIDE).fill(0),
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
     rooted: (id) => isRooted(s, id),
@@ -222,6 +234,9 @@ export function createRenderView(world: SimWorld): RenderView {
         swaps,
         swapReadyTick: s.teams[base + TeamField.swapCooldownUntil] ?? 0,
         swapCooldownTicks: isArcade(s) ? TAG_COOLDOWN_TICKS : SWAP_COOLDOWN_TICKS,
+        trap: isArcade(s)
+          ? { readyTick: s.arcade[cur * ARCADE_E + ArcadeE.trapReadyAt] ?? 0, cooldownTicks: TRAP_COOLDOWN_TICKS, count: trapCount(s, team), max: TRAP_TEAM_MAX }
+          : undefined,
       };
     },
     forEachProjectile(visit, melee = false): void {
@@ -278,6 +293,17 @@ export function createRenderView(world: SimWorld): RenderView {
       ar.swapTo = s.arcade[w + ArcadeW.swapTo] ?? 0;
       ar.patchCount = s.arcade[w + ArcadeW.patchCount] ?? 0;
       for (let i = 0; i < PATCH_MAX * 4; i++) ar.patches[i] = s.arcade[w + ArcadeW.patches + i] ?? 0;
+      for (let i = 0; i < TRAP_WORLD_MAX; i++) {
+        const b = w + TRAP_TABLE + i * TRAP_STRIDE;
+        const o = i * TRAP_VIEW_STRIDE;
+        const kind = s.arcade[b + TrapF.kind] ?? 0;
+        ar.traps[o] = kind;
+        ar.traps[o + 1] = s.arcade[b + TrapF.x] ?? 0;
+        ar.traps[o + 2] = s.arcade[b + TrapF.y] ?? 0;
+        ar.traps[o + 3] = s.arcade[b + TrapF.team] ?? 0;
+        ar.traps[o + 4] = kind === 0 ? 0 : Math.max(0, (s.arcade[b + TrapF.armAt] ?? 0) - now(s));
+        ar.traps[o + 5] = kind === 0 ? 0 : Math.max(0, (s.arcade[b + TrapF.endAt] ?? 0) - now(s));
+      }
       return ar;
     },
     forEachStatus(id, visit): void {

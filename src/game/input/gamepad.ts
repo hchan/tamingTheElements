@@ -63,7 +63,7 @@ export const DEFAULT_PAD: PadConfig = {
  */
 export const ARCADE_PAD: PadConfig = {
   ...DEFAULT_PAD,
-  buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard, 2: Cmd.weather, 11: Cmd.charge }, // RT, RB, LT, X, R3
+  buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard, 2: Cmd.weather, 11: Cmd.charge, 3: Cmd.trap }, // RT, RB, LT, X, R3, Y (Trap shares Capture's bit 6)
 };
 
 function down(pad: PadSnapshot, i: number): boolean {
@@ -86,7 +86,7 @@ export function commandFromPad(pad: PadSnapshot | null, capturable: boolean, cfg
   if (pad === null || pad.connected === false) return 0;
   let cmd = stickCommand(pad.axes[0] ?? 0, pad.axes[1] ?? 0, cfg.deadzone);
   for (const [i, bit] of Object.entries(cfg.buttons)) {
-    if (bit === Cmd.capture && !capturable) continue;
+    if (bit === Cmd.capture && !capturable && cfg !== ARCADE_PAD) continue; // Arcade's Y is Trap, never gated
     if (down(pad, Number(i))) cmd |= bit;
   }
   return cmd;

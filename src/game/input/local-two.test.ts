@@ -16,7 +16,7 @@ describe('local two-player key sets', () => {
   it('every Player 2 key is bindable (not F, Escape, Tab or a modifier) and not a shell or cheat key', () => {
     for (const c of boundCodes(P2_BINDINGS)) {
       expect(isBindableCode(c), c).toBe(true);
-      expect(['KeyP', 'KeyM']).not.toContain(c);
+      expect(['KeyP']).not.toContain(c); // plain M is Trap: Ctrl-M (mute) is read before the held keys (reduceKey)
     }
   });
   it('every Arcade action but capture and the unused swaps has a Player 2 key, and the key sets map the same bits', () => {
@@ -45,7 +45,7 @@ describe('local two-player key sets', () => {
   });
   it('the hint lists both sets in words', () => {
     expect(controlsHint('Player 2', P2_BINDINGS)).toBe(
-      'Player 2: I J K L move, U attack, O second attack, Y dash, N guard (hold), B super, T weather, G charge, V tag, Comma tag 2',
+      'Player 2: I J K L move, U attack, O second attack, Y dash, N guard (hold), B super, T weather, G charge, M trap, V tag, Comma tag 2',
     );
     expect(controlsHint('Player 1', DEFAULT_BINDINGS)).toMatch(/^Player 1: W A S D move, /);
   });
