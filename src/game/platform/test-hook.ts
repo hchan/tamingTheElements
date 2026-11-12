@@ -106,6 +106,8 @@ export interface ArenaProbe {
    * views its `weatherChanged` event; for weathers no Arcade race can cast (Eclipse: no void race is offered).
    */
   setWeather(kind: number, team: number): void;
+  /** Arcade only: sets both teams' round wins, so one double KO (both at 0 hp) makes the 2-2 draw that starts sudden death. */
+  setRoundsWon(won0: number, won1: number): void;
   /** Arcade only: sets a team's weather charge (0..1000 per mille), so a test can cast at once (WP-arcade-weather-charge). */
   setWeatherCharge(team: number, value: number): void;
   /** Key codes bound per action in the running battle's keyboard agent. */
