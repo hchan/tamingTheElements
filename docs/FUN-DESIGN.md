@@ -1182,6 +1182,17 @@ One more button for every hero, picked by the hero's element and always there: n
   re-recorded because the new button changes every Arcade fight; the 16-seed 1v1 moved Morblass -7.7 and Rokcore +5.7 pp,
   the noisy 8-seed 2v2 (already 23.9 to 77.3 % before) moved Fiara +15.9, Treenoc +10.3 and Curomo -9.1 pp.
 
+### 2.25 Giant heroes (Arcade, sim, SIM_VERSION 41)
+
+Size trades speed for strength (`src/core/data/size.ts`, idea `giant-heroes-size-for-speed`). Each character has an integer
+size in percent (100 = 1x, max 400); only Rokcore is bigger today (200, 2x). Arcade only: Classic ignores size and every 1x
+hero is unchanged, so Classic hashes and 1x behaviour do not move. At 2x the hero is a 160 x 160 box spawned on the 1x
+centre, with +45% life, +12% damage, knockback taken / 1.6 and walk and dash speed x0.72 (integer per-mille curves, linear in
+size - 100). Rokcore's `ARCADE_RACE_NUMBERS` were lowered (hpPm 2600 -> 2100, damagePm 690 -> 650) so the bonus does not stack
+on the strongest kit. A swap-in puts a different-sized partner on the outgoing hero's centre, clamped to the arena; the
+renderer reads the box, so sprites scale with it. Deferred: Snag scaling with target size, the 3v3 team-size budget, sizes
+above 2x, bigger baked art, turn rate and swap-in time.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)
