@@ -43,3 +43,11 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
   (the old `user.properties` is in public history and the tag, never extracted: rotation is the owner's job, see SECURITY.md).
 - **Phaser 4 skills:** `node_modules/phaser/skills/*/SKILL.md` ships AI-oriented docs (v4-new-features, filters-and-postfx, particles, v3-to-v4-migration, ...). Read the matching one before writing Phaser code; unused so far: Lighting, Filters, `SpriteGPULayer` (see the v4-new-features skill).
 - Keep responses and diffs small; `git worktree` + Sonnet agents were used per work package (see `.claude/`).
+- **Agents:** up to 3 at once on independent ideas (owner, 2026-11-12), each in its own `git worktree` with its own `E2E_PORT`/dev port; Sonnet by
+  default, Opus only for risky new sim systems or hard merges. Never two agents on the same shared file (`tools/ci/size-budget.json`,
+  `src/core/index.ts`, `docs/REPO-MAP.md`, the asset manifest). The coordinator reviews and merges each result, gate first.
+- **Autonomy:** the owner pre-approved design, art and balance changes ("autoapprove all changes"); do not pause for approval, report afterwards.
+  Still confirm before irreversible or outward-facing steps (force-push, history rewrite, deleting the legacy tag, credentials, deleting Classic sim code).
+- **Ideas:** every idea or todo, including self-generated ones, is a file in [ideas/](ideas/README.md) (brainstorm/in-progress/done). No cap; never add limits the owner did not ask for.
+- **Player-facing words:** the menu is Play, Versus, Online, Settings, Help; never show the words Classic, Arcade, ruleset or Capture to players (Snag replaces Capture).
+- **Visual work:** check it with real-game screenshots (Playwright, see the play-local skill) before calling it done; art must match Fiara's rigged and baked look.
