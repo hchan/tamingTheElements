@@ -19,7 +19,7 @@
     "pose-layer": 10550,
     "rolldown-runtime": 200,
     "round-view": 2300,
-    "sim": 35350,
+    "sim": 35450,
     "super-view": 1390,
     "tag-view": 2870,
     "terrain-view": 5500,
@@ -31,7 +31,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 524050,
+  "totalGzip": 524150,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
