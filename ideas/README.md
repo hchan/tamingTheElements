@@ -19,4 +19,4 @@ added: YYYY-MM-DD
 
 There is **no cap**: record every idea and todo, however many, including ones the assistant thinks of itself (owner decision 2026-11-12). `tests/repo/ideas-queue.test.ts` only checks that each status matches its folder. Detailed designs still belong in `docs/FUN-DESIGN.md`; an idea file links to its row.
 
-**Working the queue:** up to 3 agents at once (owner decision 2026-11-12), each on an idea that touches different files, each in its own `git worktree`; one agent at a time for anything that edits shared files (size budgets, `src/core/index.ts`, `docs/REPO-MAP.md`, the asset manifest). Finishing an idea may add new idea files: do that yourself, no permission needed.
+**Working the queue:** up to 5 agents at once (owner decision 2026-11-12), each on an idea that touches different files, each in its own `git worktree`; one agent at a time for anything that edits shared files (size budgets, `src/core/index.ts`, `docs/REPO-MAP.md`, the asset manifest). Finishing an idea may add new idea files: do that yourself, no permission needed.

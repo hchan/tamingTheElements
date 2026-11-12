@@ -11,7 +11,7 @@
       "png": "head.png",
       "pivot": [
         6,
-        16
+        26
       ],
       "at": [
         14,
@@ -23,7 +23,7 @@
           "png": "head_se.png",
           "pivot": [
             7,
-            17
+            28
           ],
           "at": [
             9,
@@ -34,7 +34,7 @@
           "png": "head_ne.png",
           "pivot": [
             5,
-            14
+            24
           ],
           "at": [
             11,
@@ -48,8 +48,8 @@
       "parent": "torso",
       "png": "armF.png",
       "pivot": [
-        21,
-        5
+        22,
+        13
       ],
       "at": [
         -12,
@@ -61,7 +61,7 @@
           "png": "armF_se.png",
           "pivot": [
             20,
-            5
+            13
           ],
           "at": [
             -15,
@@ -72,7 +72,7 @@
           "png": "armF_ne.png",
           "pivot": [
             21,
-            5
+            13
           ],
           "at": [
             -8,
@@ -87,7 +87,7 @@
       "png": "torso.png",
       "pivot": [
         27,
-        27
+        34
       ],
       "at": [
         -2,
@@ -99,7 +99,7 @@
           "png": "torso_se.png",
           "pivot": [
             25,
-            27
+            34
           ],
           "at": [
             -3,
@@ -110,7 +110,7 @@
           "png": "torso_ne.png",
           "pivot": [
             27,
-            27
+            34
           ],
           "at": [
             -3,
@@ -125,7 +125,7 @@
       "png": "spikes.png",
       "pivot": [
         26,
-        28
+        27
       ],
       "at": [
         0,
@@ -137,7 +137,7 @@
           "png": "spikes_se.png",
           "pivot": [
             25,
-            30
+            29
           ],
           "at": [
             0,
@@ -148,7 +148,7 @@
           "png": "spikes_ne.png",
           "pivot": [
             26,
-            27
+            26
           ],
           "at": [
             0,
@@ -163,7 +163,7 @@
       "png": "legF.png",
       "pivot": [
         9,
-        5
+        4
       ],
       "at": [
         8,
@@ -175,7 +175,7 @@
           "png": "legF_se.png",
           "pivot": [
             8,
-            5
+            4
           ],
           "at": [
             8,
@@ -186,7 +186,7 @@
           "png": "legF_ne.png",
           "pivot": [
             8,
-            5
+            4
           ],
           "at": [
             8,
@@ -200,7 +200,7 @@
       "png": "hips.png",
       "pivot": [
         19,
-        13
+        12
       ],
       "at": [
         36,
@@ -212,7 +212,7 @@
           "png": "hips_se.png",
           "pivot": [
             17,
-            13
+            12
           ],
           "at": [
             38,
@@ -223,7 +223,7 @@
           "png": "hips_ne.png",
           "pivot": [
             17,
-            13
+            12
           ],
           "at": [
             35,
@@ -238,7 +238,7 @@
       "png": "armB.png",
       "pivot": [
         7,
-        5
+        11
       ],
       "at": [
         12,
@@ -250,7 +250,7 @@
           "png": "armB_se.png",
           "pivot": [
             7,
-            5
+            11
           ],
           "at": [
             14,
@@ -261,7 +261,7 @@
           "png": "armB_ne.png",
           "pivot": [
             7,
-            5
+            11
           ],
           "at": [
             16,
@@ -276,7 +276,7 @@
       "png": "legB.png",
       "pivot": [
         8,
-        5
+        4
       ],
       "at": [
         -8,
@@ -288,7 +288,7 @@
           "png": "legB_se.png",
           "pivot": [
             7,
-            5
+            4
           ],
           "at": [
             -7,
@@ -299,7 +299,7 @@
           "png": "legB_ne.png",
           "pivot": [
             7,
-            5
+            4
           ],
           "at": [
             -7,
