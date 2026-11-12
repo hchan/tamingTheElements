@@ -170,10 +170,17 @@ test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
     await page.getByRole('button', { name: 'Fight' }).tap();
     await page.locator('#tourSplash').tap();
     await page.waitForFunction(ARENA_READY);
-    const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number }[]>(
-      `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom }; })`,
+    const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; over: boolean; left: boolean }[]>(
+      `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight, left: getComputedStyle(n).textAlign === 'left' }; })`,
     );
     expect(boxes).toHaveLength(8);
+    // One square size for every button, left-aligned content, nothing clipped or overflowing.
+    expect(new Set(boxes.map((k) => `${String(Math.round(k.r - k.x))}x${String(Math.round(k.b - k.y))}`)).size).toBe(1);
+    expect(Math.round((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0))).toBe(Math.round((boxes[0]?.b ?? 0) - (boxes[0]?.y ?? 0)));
+    for (const k of boxes) {
+      expect(k.over, `${k.id} overflows`).toBe(false);
+      expect(k.left, `${k.id} text-align`).toBe(true);
+    }
     for (const k of boxes) {
       expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(0);
       expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(0);

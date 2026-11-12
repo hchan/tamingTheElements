@@ -42,8 +42,8 @@ describe('touch controls', () => {
     for (const n of [1, 2, 3] as const) expect(touchButtons(n)).toHaveLength(n + 5);
     const b = touchButtons(3);
     expect(b.map((x) => x.id)).toEqual(TOUCH.map((l) => `arcade${l}`));
-    expect(b[6]?.textContent).toBe('4 Tag 2');
-    expect(b[7]?.textContent).toBe('0 Trap');
+    expect(b[6]?.textContent).toBe('4\nTag 2');
+    expect(b[7]?.textContent).toBe('0\nTrap');
     expect(b.every((x) => x.tabIndex !== -1)).toBe(true);
   });
 
@@ -121,13 +121,13 @@ describe('keyboard activation', () => {
 describe('numbered action row', () => {
   it('labels each button with its key number, Charge 5 to Super 9, Tag 3 and 4', () => {
     stubDom(true);
-    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9 Super', '8 Guard', '7 Dash', '6 Weather', '5 Charge', '3 Tag', '4 Tag 2', '0 Trap']);
+    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '5\nCharge', '3\nTag', '4\nTag 2', '0\nTrap']);
   });
 
   it('leaves Charge out when no hero is melee, keeps the other numbers and closes the gap in the layout', () => {
     stubDom(true);
     const b = touchButtons(2, [false, false]);
-    expect(b.map((x) => x.textContent)).toEqual(['9 Super', '8 Guard', '7 Dash', '6 Weather', '3 Tag', '0 Trap']);
+    expect(b.map((x) => x.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '3\nTag', '0\nTrap']);
     expect(b[4]?.style.cssText).toBe('--touch-row:4');
     expect(touchButtons(2, [false, true])).toHaveLength(7);
     expect(touchButtons(1)).toHaveLength(6);
@@ -144,10 +144,10 @@ describe('numbered action row', () => {
     stubDom(false);
     const b = touchButton('Super', 0);
     setTouchText(b, 'Super', '40%');
-    expect(b.textContent).toBe('9 Super\n40%');
+    expect(b.textContent).toBe('9\nSuper\n40%');
     expect((b as unknown as { attrs: Record<string, string> }).attrs['aria-label']).toBe('9 Super, 40%');
     setTouchText(b, 'Super');
-    expect(b.textContent).toBe('9 Super');
+    expect(b.textContent).toBe('9\nSuper');
   });
 
   it('reads ready or a percentage for Super and Weather and the swap cooldown for Tag', () => {

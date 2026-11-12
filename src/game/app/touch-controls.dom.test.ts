@@ -120,7 +120,7 @@ describe('touchButton (real DOM events)', () => {
     expect(b.type).toBe('button');
     expect(b.className).toBe('menuButton touchBtn touchBtn-Tag2');
     expect(b.style.getPropertyValue('--touch-row')).toBe('6');
-    expect(b.textContent).toBe('4 Tag 2');
+    expect(b.textContent).toBe('4\nTag 2');
     expect(b.getAttribute('aria-label')).toBe('4 Tag 2');
   });
 });
@@ -135,7 +135,7 @@ describe('touchButtons / setTouchText (real DOM)', () => {
   it('setTouchText writes the status and the accessible name, and clears them', () => {
     const b = touchButton('Super', 0);
     setTouchText(b, 'Super', 'ready');
-    expect(b.textContent).toBe('9 Super\nready');
+    expect(b.textContent).toBe('9\nSuper\nready');
     expect(b.getAttribute('aria-label')).toBe('9 Super, ready');
     setTouchText(b, 'Super');
     expect(b.getAttribute('aria-label')).toBe('9 Super');
@@ -152,10 +152,10 @@ describe('watchTouch', () => {
       const view = { arcade: () => ({ meter: [meter, 0] }), actionBar: () => undefined } as unknown as RenderView;
       watchTouch([b], view);
       vi.advanceTimersByTime(250);
-      expect(b.textContent).toBe('9 Super\n25%');
+      expect(b.textContent).toBe('9\nSuper\n25%');
       meter = 1000;
       vi.advanceTimersByTime(250);
-      expect(b.textContent).toBe('9 Super\nready');
+      expect(b.textContent).toBe('9\nSuper\nready');
       b.remove();
       vi.advanceTimersByTime(250);
       expect(vi.getTimerCount()).toBe(0);

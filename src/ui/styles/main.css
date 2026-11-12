@@ -648,7 +648,7 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
   width: 1.4em;
   height: 1.4em;
   margin-right: 0.3em;
-  vertical-align: -0.35em;
+  vertical-align: -0.3em;
   background: center / contain no-repeat;
 }
 .element-fire::before {
@@ -796,14 +796,27 @@ body:has(#game:not(:empty)) {
    The background is solid (opacity 1): a translucent button over a bright arena would lose its text contrast. */
 button.touchBtn {
   --touch-row: 0;
+  --touch-size: 72px;
+  --touch-pitch: 78px;
   position: absolute;
   z-index: 5;
-  white-space: pre-line;
+  display: block;
+  box-sizing: border-box;
+  /* Every button is the same square; content is left-aligned: icon + number key, name, state, one per line, never wrapped. */
+  width: var(--touch-size);
+  height: var(--touch-size);
+  min-width: 48px;
+  min-height: 48px;
+  padding: 4px 5px;
+  overflow: hidden;
+  text-align: left;
+  white-space: pre;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.2;
   touch-action: none;
   right: max(8px, env(safe-area-inset-right));
-  bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-row) * 56px);
-  min-width: 72px;
-  min-height: 48px;
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-row) * var(--touch-pitch));
   opacity: 1;
   background: #2c3d63;
   color: #fff;
@@ -811,31 +824,28 @@ button.touchBtn {
 }
 @media (pointer: fine) {
   button.touchBtn {
-    right: calc(6px + var(--touch-row) * 118px);
+    --touch-size: 80px;
+    --touch-pitch: 86px;
+    right: calc(6px + var(--touch-row) * var(--touch-pitch));
     bottom: 8px;
-    width: 112px;
-    min-width: 84px;
-    height: 58px;
-    min-height: 48px;
-    padding: 0 4px;
-    font-size: 16px;
-    font-weight: bold;
-    line-height: 1.15;
+    font-size: 14px;
     border-radius: 6px;
   }
 }
 /* Narrow windows with a mouse: wrap to two rows of four (slot = column + 4 * row). */
 @media (pointer: fine) and (max-width: 1100px) {
   button.touchBtn {
-    right: calc(6px + mod(var(--touch-row), 4) * 118px);
-    bottom: calc(8px + round(down, var(--touch-row) / 4, 1) * 64px);
+    right: calc(6px + mod(var(--touch-row), 4) * var(--touch-pitch));
+    bottom: calc(8px + round(down, var(--touch-row) / 4, 1) * var(--touch-pitch));
   }
 }
 /* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
 @media (pointer: coarse) {
   #menu button.touchBtn {
     min-height: 48px;
-    min-width: 72px;
+    min-width: 48px;
+    width: var(--touch-size);
+    height: var(--touch-size);
   }
 }
 html[data-high-contrast='true'] button.touchBtn {
@@ -851,7 +861,7 @@ html[data-high-contrast='true'] button.touchBtn {
   width: 1.4em;
   height: 1.4em;
   margin-right: 0.3em;
-  vertical-align: -0.35em;
+  vertical-align: -0.3em;
   background: currentColor;
   -webkit-mask: var(--touch-icon) center / contain no-repeat;
   mask: var(--touch-icon) center / contain no-repeat;
@@ -863,9 +873,8 @@ html[data-high-contrast='true'] button.touchBtn {
    to 8 buttons never run off the top. */
 @media (pointer: coarse) and (max-height: 520px) {
   #menu button.touchBtn {
-    width: 84px;
-    right: calc(max(8px, env(safe-area-inset-right)) + round(down, var(--touch-row) / 4, 1) * 92px);
-    bottom: calc(max(8px, env(safe-area-inset-bottom)) + mod(var(--touch-row), 4) * 56px);
+    right: calc(max(8px, env(safe-area-inset-right)) + round(down, var(--touch-row) / 4, 1) * var(--touch-pitch));
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + mod(var(--touch-row), 4) * var(--touch-pitch));
   }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }
