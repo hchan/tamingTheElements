@@ -72,14 +72,14 @@ async function face(page: Page, id: number, dir: number): Promise<void> {
 }
 const drawnAs = async (page: Page, id: number): Promise<Drawn | undefined> => (await probe(page))?.characters.find((c) => c.id === id);
 
-test('the shipped manifest has two atlases (Fiara, Pax): nothing else is loaded and the other heroes draw the legacy art', async ({ page }) => {
+test('the shipped manifest has three atlases (Fiara, Pax, Treenoc): nothing else is loaded and the other heroes draw the legacy art', async ({ page }) => {
   const { errors, sheetRequests } = collect(page);
   await openDemo(page);
   for (let i = 0; i < 3; i++) await page.evaluate('window.__TTE__.arena.step(10)');
   const p = await probe(page);
-  expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax')).toEqual([]);
-  expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax')).sort()).toEqual(['map:curomo']);
-  expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png'))).toBe(true);
+  expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax' && s !== 'treenoc')).toEqual([]);
+  expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax') && !t.endsWith(':treenoc')).sort()).toEqual(['map:curomo']);
+  expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png') || u.endsWith('img/sheets/treenoc.png'))).toBe(true);
   expect(errors).toEqual([]);
 });
 
