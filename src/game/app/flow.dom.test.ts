@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newGame, seedSfc32, type ReplayFile, type SaveV1 } from '@core/menu-index';
 import type { MatchSetup as UiSetup } from '@ui/screens/garrison-model';
 import type { ArenaLaunch, MatchEnd } from '../scenes/launch';
@@ -112,6 +112,17 @@ async function pendingRig(flags: Partial<UiFlags> = {}, over: Over = {}): Promis
 function launchOf(): ArenaLaunch {
   return m.createGame.mock.calls[0]?.[1] as ArenaLaunch;
 }
+
+// flow.ts lazy-loads these chunks with import(). The first import transforms the module in real time (slow under CPU
+// load), and flush() only yields a fixed number of macrotasks. Warm the module cache once so later imports resolve
+// as microtasks and flush() is enough regardless of load.
+beforeAll(async () => {
+  await Promise.all([
+    import('@core/lazy-index'),
+    import('../replay/playtest-recorder'),
+    import('../boot/phaser-config'),
+  ]);
+}, 60_000);
 
 beforeEach(() => {
   m.webgl = true;

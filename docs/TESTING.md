@@ -207,3 +207,7 @@ The test hook (`window.__TTE__.arena`) gained `bench()`, `swapReadyTick()`, `che
 DOM-only code (menus, settings, key bindings, touch controls, pause dialog) is unit tested with happy-dom. Opt in per file with
 `// @vitest-environment happy-dom` on the first line and name the file `*.dom.test.ts`; every other test stays in the node environment. happy-dom
 differs from browsers in places (no `setPointerCapture`, `FormData` includes disabled controls); keep those checks in e2e.
+
+**Lazy `import()` and fixed-count flushes**: code that lazy-loads chunks (`AppFlow`) makes the first `import()` a real-time module
+transform, which can outlast a "yield N macrotasks" helper under CPU load (this made `src/game/app/flow.dom.test.ts` flaky in the full run).
+Warm those modules in `beforeAll` so later imports resolve as microtasks, or wait on the real condition (`vi.waitFor`), not a tick count.
