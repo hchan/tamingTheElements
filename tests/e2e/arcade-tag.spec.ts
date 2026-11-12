@@ -226,9 +226,17 @@ test('swap press: one tag per press (a held key does not chain), and a press in 
   expect((await tag(page))?.lines[0]?.[0]).toBe('IN Pax');
   await page.keyboard.up('Digit3');
   // A fresh press once ready tags back; the next one, inside the cooldown, is refused with a visible line.
-  await press();
+  // The Arcade AI may stun the hero meanwhile (a swap is refused while stunned), so a press retries until it is not stunned.
+  const pressUntil = async (done: () => Promise<boolean>): Promise<void> => {
+    for (let i = 0; i < 60; i++) {
+      await press();
+      if (await done()) return;
+      await page.evaluate(`window.__TTE__.arena.stepLive(5)`);
+    }
+  };
+  await pressUntil(async () => (await tag(page))?.lines[0]?.[0] === 'IN Sindarosa');
   expect((await tag(page))?.lines[0]?.[0]).toBe('IN Sindarosa');
-  await press();
+  await pressUntil(async () => /^Swap ready/.test(await notice()));
   expect(await notice()).toMatch(/^Swap ready in \d\.\ds$/);
   expect((await tag(page))?.lines[0]?.[0]).toBe('IN Sindarosa');
   expect(errors).toEqual([]);
