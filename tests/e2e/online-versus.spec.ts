@@ -1,4 +1,24 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
+
+/**
+ * Waits for the Rematch button on `page` by sim progress, not wall-clock: a loaded machine runs the two-page match slowly
+ * (SwiftShader, background-tab throttling), so the only failure is a match whose tick stops advancing for `stallMs`.
+ */
+async function waitForMatchEnd(page: Page, stallMs = 20_000): Promise<void> {
+  const again = page.locator('#onlineAgain');
+  let last = -1;
+  let lastMove = Date.now();
+  while (!(await again.isVisible())) {
+    const tick = await page.evaluate<number>('window.__TTE__?.state().tick ?? 0');
+    if (tick !== last) {
+      last = tick;
+      lastMove = Date.now();
+    } else if (Date.now() - lastMove > stallMs) {
+      throw new Error(`match stalled at tick ${String(tick)} for ${String(stallMs)} ms without a Rematch button`);
+    }
+    await again.waitFor({ state: 'visible', timeout: 1_000 }).catch(() => undefined);
+  }
+}
 
 // The #online screen end to end in two real pages: host code -> answer code -> link opens -> setup handshake says "Connected".
 // Once as plain lockstep and once with `?ff=rollback` (input prediction, docs/NETCODE.md): both must run and agree.
@@ -49,7 +69,7 @@ test('a junk code is refused in words, not a crash', async ({ page }) => {
 
 // The Rematch flow: with `?matchticks=` the match ends as a draw quickly; both sides get a Rematch button, pick again and a second match (a new match number) runs.
 test('a finished online match offers a Rematch that starts a second match', async ({ browser }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   const ctx = await browser.newContext();
   const a = await ctx.newPage();
   const b = await ctx.newPage();
@@ -66,7 +86,8 @@ test('a finished online match offers a Rematch that starts a second match', asyn
   await a.locator('#onlineConnect').click();
   for (const round of [1, 2]) {
     for (const page of [a, b]) await page.locator('#onlineReady').click();
-    for (const page of [a, b]) await expect(page.locator('#onlineAgain')).toBeVisible({ timeout: 40_000 });
+    for (const page of [a, b]) await waitForMatchEnd(page);
+    for (const page of [a, b]) await expect(page.locator('#onlineAgain')).toBeVisible();
     for (const page of [a, b]) await expect(page.locator('#onlineStatus')).toContainText('draw');
     if (round === 1) for (const page of [a, b]) await page.locator('#onlineAgain').click();
   }
