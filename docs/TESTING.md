@@ -185,3 +185,9 @@ Tester mode ([TESTER-MODE.md](TESTER-MODE.md)) is exercised at three levels:
 - Guards: `tests/repo/replay-fixtures.test.ts` asserts no golden replay is a cheat replay; `tools/sim/run-match.ts` (balance gates) and `tools/gen/record-golden.ts` call `assertNoTesterFlags`.
 
 The test hook (`window.__TTE__.arena`) gained `bench()`, `swapReadyTick()`, `cheat(c)` and richer `actionSlots()` (kind, label, disabled).
+
+## DOM unit tests (happy-dom)
+
+DOM-only code (menus, settings, key bindings, touch controls, pause dialog) is unit tested with happy-dom. Opt in per file with
+`// @vitest-environment happy-dom` on the first line and name the file `*.dom.test.ts`; every other test stays in the node environment. happy-dom
+differs from browsers in places (no `setPointerCapture`, `FormData` includes disabled controls); keep those checks in e2e.
