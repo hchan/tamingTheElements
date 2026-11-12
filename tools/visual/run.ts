@@ -1,4 +1,4 @@
-// `pnpm visual:capture | visual:pacing | visual:regress | visual:update`: thin wrapper over
+// `pnpm visual:capture | visual:abilities | visual:pacing | visual:regress | visual:update`: thin wrapper over
 // `playwright test --config playwright.visual.config.ts` (see docs/VISUAL-QA.md).
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
@@ -7,6 +7,7 @@ import { join } from 'node:path';
 const MODES: Record<string, readonly string[]> = {
   capture: ['--project=capture', '--project=videos'],
   pacing: ['--project=pacing'],
+  abilities: ['--project=abilities'],
   regress: ['--project=regression'],
   update: ['--project=regression', '--update-snapshots'],
 };

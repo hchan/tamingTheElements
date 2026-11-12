@@ -22,6 +22,7 @@
     "test:browser": "vitest run --project browser",
     "e2e": "playwright test",
     "visual:capture": "tsx tools/visual/run.ts capture",
+    "visual:abilities": "tsx tools/visual/run.ts abilities",
     "visual:pacing": "tsx tools/visual/run.ts pacing",
     "visual:regress": "tsx tools/visual/run.ts regress",
     "visual:update": "tsx tools/visual/run.ts update",
