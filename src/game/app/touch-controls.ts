@@ -87,6 +87,8 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   setTouchText(b, label);
   b.type = 'button';
   b.id = `arcade${label}`;
+  // The icon beside the number is CSS (`.touchBtn-<label>::before` in main.css), so the text stays plain and the state words still update.
+  b.className = `menuButton touchBtn touchBtn-${label}`;
   b.tabIndex = -1;
   // Touch: a column up the right edge (>= 48 px, safe areas). Mouse/keyboard: a compact row in the bottom band under the
   // walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at the arena edge.

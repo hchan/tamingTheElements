@@ -643,10 +643,10 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
 .elementBadge::before {
   content: '';
   display: inline-block;
-  width: 1.1em;
-  height: 1.1em;
+  width: 1.4em;
+  height: 1.4em;
   margin-right: 0.3em;
-  vertical-align: -0.2em;
+  vertical-align: -0.35em;
   background: center / contain no-repeat;
 }
 .element-fire::before {
@@ -787,3 +787,23 @@ body:has(#game:not(:empty)) {
 #menu form > div:has(> .menuButton) {
   margin-top: 0.75em;
 }
+
+/* Touch/action row buttons: an icon beside the number key, same size on every button. */
+.touchBtn::before {
+  content: '';
+  display: inline-block;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: 0.3em;
+  vertical-align: -0.35em;
+  background: currentColor;
+  -webkit-mask: var(--touch-icon) center / contain no-repeat;
+  mask: var(--touch-icon) center / contain no-repeat;
+}
+.touchBtn-Tag { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.touchBtn-Tag2 { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }
+.touchBtn-Weather { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.8 4.8 0 0 1 0 9.5z' fill='black'/%3E%3C/svg%3E"); }
+.touchBtn-Dash { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5l7 7-7 7M12 5l7 7-7 7' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.touchBtn-Guard { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z' fill='black'/%3E%3C/svg%3E"); }
+.touchBtn-Super { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l3 7 7.5.6-5.7 4.9 1.8 7.4L12 17l-6.6 3.9 1.8-7.4L1.5 8.6 9 8z' fill='black'/%3E%3C/svg%3E"); }

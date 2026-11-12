@@ -94,7 +94,9 @@ test('World Tour: reduced motion skips the splash', async ({ page }) => {
   await page.goto(`${START}&ff=arcade#tour`);
   await page.getByRole('button', { name: 'Start tour' }).click();
   await page.getByRole('button', { name: 'Fight' }).click();
-  await page.waitForFunction(ARENA_READY, undefined, { timeout: 1_000 });
+  // The splash never shows under reduced motion; arena load time under SwiftShader varies, so the wait is generous.
+  await expect(page.locator('#tourSplash')).toHaveCount(0);
+  await page.waitForFunction(ARENA_READY, undefined, { timeout: 10_000 });
   await expect(page.locator('#tourSplash')).toHaveCount(0);
 });
 
