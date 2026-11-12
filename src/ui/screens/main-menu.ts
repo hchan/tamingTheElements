@@ -1,8 +1,7 @@
 import { migrate, objectivesMet } from '@core/menu-index';
 import type { SaveV1 } from '@core/menu-index';
 import { el } from '../dom';
-import { activeSaveStorage, tester } from '../../game/platform/tester/session';
-import { requestOpenTesterPanel } from '../tester/install';
+import { activeSaveStorage } from '../../game/platform/tester/session';
 import { versionStamp } from '../version';
 import type { ScreenFactory } from './screen';
 
@@ -33,26 +32,16 @@ export interface MenuItem {
   readonly label: string;
   readonly route: string;
   readonly enabled: (s: MenuState) => boolean;
-  /** A non-interactive group heading (no button, not focusable): "Classic (original rules)". */
-  readonly heading?: boolean;
 }
 
 const always = (): boolean => true;
 
 export const MENU_ITEMS: readonly MenuItem[] = [
-  { label: 'World Tour', route: 'tour', enabled: always },
-  { label: 'Arcade Versus', route: 'arcade', enabled: always },
-  { label: 'Online Versus', route: 'online', enabled: always },
-  { label: 'Classic (original rules)', route: 'classic', enabled: always, heading: true },
-  { label: 'New Game', route: 'newGame', enabled: always },
-  { label: 'Continue', route: 'battleground', enabled: (s) => s.objectives },
-  { label: 'Garrison', route: 'garrison', enabled: (s) => s.garrison },
+  { label: 'Play', route: 'tour', enabled: always },
+  { label: 'Versus', route: 'arcade', enabled: always },
+  { label: 'Online', route: 'online', enabled: always },
   { label: 'Settings', route: 'settings', enabled: (s) => s.settings },
-  { label: 'Current Objectives', route: 'currentObjectives', enabled: (s) => s.objectives },
-  { label: 'Story Mode', route: 'storyMode', enabled: always },
-  { label: 'Wiki', route: 'wiki', enabled: always },
-  { label: 'Key Bindings', route: 'keyBindings', enabled: always },
-  { label: 'About', route: 'about', enabled: always },
+  { label: 'Help', route: 'help', enabled: always },
 ];
 
 export function loadSave(storage: Pick<Storage, 'getItem'>): SaveV1 | null {
@@ -91,11 +80,6 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
         page.append(el('h1', 'heading', 'Taming the Elements'));
         const list = el('ul', 'mainMenuList');
         for (const item of MENU_ITEMS) {
-          if (item.heading) {
-            const h = el('li', 'menuGroup', item.label);
-            list.append(h);
-            continue;
-          }
           const on = item.enabled(state);
           const li = el('li');
           li.dataset.route = item.route;
@@ -109,28 +93,9 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
             });
           }
           li.append(btn);
-          if (item.route === 'currentObjectives' && state.newObjectives) {
-            const badge = el('span', undefined, '- NEW -');
-            badge.id = 'newObjectives';
-            li.append(badge);
-          }
           list.append(li);
         }
         page.append(list);
-        // Visible in every build: the Konami code still works, this is the same switch without it.
-        const t = el('button', 'menuButton', tester.enabled ? 'Tester options' : 'Cheats');
-        t.type = 'button';
-        t.id = tester.enabled ? 'testerOptionsMenu' : 'cheatsMenu';
-        t.addEventListener('click', () => {
-          const first = !tester.enabled;
-          if (first) {
-            tester.enable();
-            t.textContent = 'Tester options';
-            t.id = 'testerOptionsMenu';
-          }
-          requestOpenTesterPanel(first);
-        });
-        page.append(t);
         const footer = el('div', 'versionStamp', versionStamp(import.meta.env));
         footer.id = 'versionStamp';
         page.append(footer);

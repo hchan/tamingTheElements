@@ -44,35 +44,22 @@ test.describe('keyboard-only menu navigation', () => {
   test('tab order follows the visual order and focus is clearly visible', async ({ page }) => {
     await seededMenu(page);
     const seen: string[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab');
       seen.push(await activeText(page));
     }
-    expect(seen).toEqual([
-      'World Tour',
-      'Arcade Versus',
-      'Online Versus',
-      'New Game',
-      'Continue',
-      'Garrison',
-      'Settings',
-      'Current Objectives',
-      'Story Mode',
-      'Wiki',
-      'Key Bindings',
-      'About',
-    ]);
+    expect(seen).toEqual(['Play', 'Versus', 'Online', 'Settings', 'Help']);
     const outline = await page.evaluate<{ style: string; width: number }>(ACTIVE_OUTLINE);
     expect(outline.style).not.toBe('none');
     expect(outline.width).toBeGreaterThanOrEqual(2);
   });
 
-  test('disabled entries are skipped without a save', async ({ page }) => {
+  test('the five menu entries are all enabled without a save', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('heading', { level: 1 }).waitFor();
     await page.keyboard.press('Tab');
-    expect(await activeText(page)).toBe('World Tour');
-    for (const next of ['Arcade Versus', 'Online Versus', 'New Game', 'Settings']) {
+    expect(await activeText(page)).toBe('Play');
+    for (const next of ['Versus', 'Online', 'Settings', 'Help']) {
       await page.keyboard.press('Tab');
       expect(await activeText(page)).toBe(next);
     }
@@ -80,6 +67,9 @@ test.describe('keyboard-only menu navigation', () => {
 
   test('Enter opens a screen, Escape goes back, Space activates a Back link', async ({ page }) => {
     await seededMenu(page);
+    await tabTo(page, 'Help');
+    await page.keyboard.press('Enter');
+    await waitForRoute(page, '#help');
     await tabTo(page, 'Wiki');
     await page.keyboard.press('Enter');
     await waitForRoute(page, '#wiki');
@@ -88,7 +78,8 @@ test.describe('keyboard-only menu navigation', () => {
     expect(await page.evaluate<string>(`document.activeElement.tagName`)).toBe('H1');
     await page.keyboard.press('Escape');
     await expect(page).toHaveTitle('Taming the Elements');
-
+    await page.evaluate(`window.location.hash = '#help'`);
+    await waitForRoute(page, '#help');
     await tabTo(page, 'About');
     await page.keyboard.press('Space');
     await expect(page).toHaveTitle('About - Taming the Elements');
@@ -97,7 +88,7 @@ test.describe('keyboard-only menu navigation', () => {
     await expect(page).toHaveTitle('Taming the Elements');
   });
 
-  for (const route of ['settings', 'keyBindings', 'about', 'wiki', 'garrison', 'race_fiara', 'currentObjectives']) {
+  for (const route of ['settings', 'help', 'keyBindings', 'about', 'wiki', 'garrison', 'race_fiara', 'currentObjectives']) {
     test(`no keyboard trap on #${route}: Tab reaches Back and Enter leaves`, async ({ page }) => {
       await seededMenu(page);
       await page.evaluate(`window.location.hash = '#${route}'`);
@@ -127,9 +118,9 @@ test.describe('keyboard-only menu navigation', () => {
   test('menu to battle to pause dialog and back using only the keyboard', async ({ page }) => {
     const errors = collectErrors(page);
     await seededMenu(page);
-    await tabTo(page, 'Garrison');
-    await page.keyboard.press('Enter');
+    await page.evaluate(`window.location.hash = '#garrison'`);
     await waitForRoute(page, '#garrison');
+    await loaded(page);
 
     await tabTo(page, 'Fiara');
     await page.keyboard.press('Space');

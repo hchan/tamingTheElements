@@ -95,7 +95,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'tourPick';
   page.append(
-    el('h1', 'heading', 'World Tour'),
+    el('h1', 'heading', 'Play'),
     el(
       'p',
       undefined,

@@ -16,10 +16,10 @@ test('production build: Arcade Versus is on the menu by default (no flag, no opt
 
   await page.goto('/tamingTheElements/');
   await expect(page.locator('#menu .mainMenuList')).toBeVisible();
-  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('World Tour');
+  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('Play');
   await arcadeEntry.locator('button').click();
   await expect(page).toHaveURL(/#arcade$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Arcade Versus' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Versus', exact: true })).toBeVisible();
   await expect(page.getByLabel('Your race')).toBeVisible();
   await page.getByRole('link', { name: 'Back' }).click();
   await expect(page.locator('#menu .mainMenuList')).toBeVisible();

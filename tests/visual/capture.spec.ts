@@ -94,7 +94,7 @@ for (const vp of VIEWPORTS) {
     test('new game cinematic frames', async ({ page }) => {
       const errors = collectErrors(page);
       await page.goto(START);
-      await page.getByText('New Game', { exact: true }).click();
+      await page.evaluate(`window.location.hash = '#newGame'`);
       await page.waitForFunction(CINEMATIC_READY);
       for (const [i, ms] of [800, 3000, 6000].entries()) {
         await page.waitForTimeout(ms);
@@ -428,7 +428,7 @@ for (const vp of VIEWPORTS) {
       const errors = collectErrors(page);
       await seed(page, { ...(fixture('v0-ch3') as object), arcadePreview: true });
       await page.goto(`${START}#main`);
-      await page.getByRole('button', { name: 'Arcade Versus' }).waitFor();
+      await page.getByRole('button', { name: 'Versus', exact: true }).waitFor();
       await freeze(page);
       await shoot(page, vp, 'main', 'menu-arcade', 'Main menu with Settings > Arcade Versus (preview) ticked: the extra entry under Continue');
       await menuScreen(page, '#arcade', 'Fight!');
@@ -460,7 +460,7 @@ for (const vp of VIEWPORTS) {
       await page.getByRole('heading', { level: 1, name: 'Victory!' }).waitFor();
       await page.evaluate(`window.__TTE__.settled()`);
       await freeze(page);
-      await shoot(page, vp, 'arcade', 'arcade-results', 'Arcade Versus results: outcome, fighters, "saves nothing", Rematch, Change fighters, Main Menu');
+      await shoot(page, vp, 'arcade', 'arcade-results', 'Arcade Versus results: outcome, fighters, Rematch, Change fighters, Main Menu');
       expect(errors).toEqual([]);
     });
 

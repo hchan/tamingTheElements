@@ -105,7 +105,7 @@ export function onlineVersusScreen(): Screen {
       const say = (s: string): void => {
         status.textContent = s;
       };
-      node.append(el('h1', 'heading', 'Online Versus (preview)'));
+      node.append(el('h1', 'heading', 'Online'));
       node.append(
         el('p', undefined, 'Play a friend over the internet with no server: one of you hosts and sends a code, the other joins and sends a code back.'),
       );

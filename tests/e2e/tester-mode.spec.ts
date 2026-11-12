@@ -77,7 +77,7 @@ test.describe('Capture through normal progression (no cheats)', () => {
     expect((await storedSave(page)).garrison[0]?.experience).toBe(5);
     await expect(page.locator('#objectivesMet')).toContainText('Capture ability is unlocked');
 
-    await page.getByText('Current Objectives', { exact: true }).click();
+    await goToHash(page, '#currentObjectives');
     await expect(page.locator('#captureNotice')).toHaveCount(0);
     await page.getByRole('button', { name: 'Begin next chapter' }).click();
     await expect(page.locator('#captureNotice')).toContainText('Capture unlocked!');
@@ -113,8 +113,8 @@ test.describe('Tester mode', () => {
     const errors = collectErrors(page);
     await page.goto(START);
     await expect(page.locator('#testerBadge')).toBeHidden();
-    await expect(page.locator('#testerOptionsMenu')).toHaveCount(0);
     await goToHash(page, '#settings');
+    await expect(page.locator('#testerOptionsMenu')).toHaveCount(0);
     await page.locator('#unlockGarrison').check();
     await expect(page.locator('#testerBadge')).toContainText('TESTER MODE - progress not saved');
     // Never persisted: a reload turns it off. Turn it on again; the menu then offers the tester options.
@@ -123,6 +123,7 @@ test.describe('Tester mode', () => {
     await goToHash(page, '#settings');
     await page.locator('#unlockGarrison').check();
     await goToHash(page, '#main');
+    await goToHash(page, '#settings');
     await page.locator('#testerOptionsMenu').click();
     await expect(page.locator('#testerPanel')).toBeVisible();
     await page.locator('#testerOff').click();
@@ -141,7 +142,9 @@ test.describe('Tester mode', () => {
     await seedViaGameMaster(page, fixture('v0-new-game'));
     await page.goto(START);
     await enterCode(page);
+    await goToHash(page, '#settings');
     await page.locator('#testerOptionsMenu').waitFor();
+    await goToHash(page, '#main');
 
     // Every race into the (throwaway) garrison; the real save is untouched.
     await openPanel(page);

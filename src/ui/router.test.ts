@@ -40,7 +40,7 @@ describe('resolveRoute', () => {
   });
 
   it('only ever returns a declared route name', () => {
-    for (const h of ['#a', '#__proto__', '#exit', '#race_x', '']) {
+    for (const h of ['#a', '#__proto__', '#exit', '#race_x', '#help', '']) {
       expect(ROUTE_NAMES).toContain(resolveRoute(h).name);
     }
   });

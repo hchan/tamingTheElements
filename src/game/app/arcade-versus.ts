@@ -117,8 +117,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
             : r.heroes
             ? `Your team: ${team(r.heroes, 0)}. The AI's team (${LEVEL_LABELS[r.pick.level]}): ${team(r.heroes, 1)}. `
             : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. `) +
-          (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : '') +
-          'Arcade Versus saves nothing: no XP, no capture, no progress.',
+          (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : ''),
         onRematch: startBattle,
         onChange: showPick,
         ...(replay ? { onDownload: () => { void downloadReplay(replay); } } : {}),

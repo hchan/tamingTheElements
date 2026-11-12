@@ -16,7 +16,7 @@ Eternal Void boss.
 - **12 playable races**, each with its own abilities. Full tables are in [docs/GAME-DESIGN.md](docs/GAME-DESIGN.md).
 - **Capture** unlocks in chapter 2; the Eternal Void cannot be captured.
 - **Four chapters** with XP caps and objectives (chapter 5 is post-game).
-- **World Tour and Arcade Versus**: the main menu leads with them (Classic's New Game and Continue sit under "Classic (original rules)"). Arcade Versus is a faster, flashier ruleset against the Arcade AI, 1v1 or a 2v2 tag team (hit-stop, stun
+- **World Tour and Arcade Versus**: the main menu has five entries: Play, Versus, Online, Settings, Help (the old Classic routes still work as deep links). Arcade Versus is a faster, flashier ruleset against the Arcade AI, 1v1 or a 2v2 tag team (hit-stop, stun
   and knockback, combos, a hyper meter and a super on X, gamepad RT or the on-screen Super button; in 2v2, tag with 3,
   gamepad LB or the Tag button). It is on by default (the old Settings opt-in is gone). It never writes your save (no XP, capture
   or progress). **Two players on one computer**: pick *Opponent: Two players (this computer)* on the picker (1v1; each player picks a race). Player 1 keeps the usual keys (W A S D or arrows, Space/Enter, E dash, Q guard (hold), X super, R weather, H charge, rebindable on Key Bindings); Player 2 uses **I J K L** move, **U** attack, **O** second attack, **Y** dash, **N** guard (hold), **B** super, **T** weather, **G** charge (fixed). A second gamepad drives Player 2 (the first drives Player 1). Pause (Shift-P), mute (Ctrl-M) and fullscreen (F) stay shared. Design and status: [docs/FUN-DESIGN.md](docs/FUN-DESIGN.md).

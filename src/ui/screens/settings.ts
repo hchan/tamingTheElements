@@ -28,6 +28,7 @@ import { parseBindings, setBindings } from '../../game/platform/input/bindings';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import { describeError, prepareExport, runImport } from '../../game/platform/storage/export-import';
 import { tester } from '../../game/platform/tester/session';
+import { requestOpenTesterPanel } from '../tester/install';
 import { canvasFraction } from '../display-scale';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
@@ -290,6 +291,23 @@ function testerControls(store: SaveStore): HTMLElement {
   return box;
 }
 
+/** The old main-menu Cheats / Tester options switch (the Konami code still works): same ids, now on Settings. */
+function cheatsButton(): HTMLElement {
+  const t = el('button', 'menuButton', tester.enabled ? 'Tester options' : 'Cheats');
+  t.type = 'button';
+  t.id = tester.enabled ? 'testerOptionsMenu' : 'cheatsMenu';
+  t.addEventListener('click', () => {
+    const first = !tester.enabled;
+    if (first) {
+      tester.enable();
+      t.textContent = 'Tester options';
+      t.id = 'testerOptionsMenu';
+    }
+    requestOpenTesterPanel(first);
+  });
+  return t;
+}
+
 /** `store` is the app's shared save store, so the battle (which loads from it) sees the same save. */
 export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now())): Screen {
   let node: HTMLElement | null = null;
@@ -347,6 +365,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
       form,
       recordControls(),
       testerControls(store),
+      cheatsButton(),
       transferControls(
         store,
         (imported) => {

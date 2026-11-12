@@ -66,11 +66,11 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   slot4: 'Swap 2',
   slot5: 'Swap 3',
   capture: 'Capture',
-  super: 'Super (Arcade)',
-  dash: 'Dash (Arcade)',
-  guard: 'Guard (Arcade)',
-  weather: 'Weather (Arcade)',
-  charge: 'Charge (Arcade)',
+  super: 'Super',
+  dash: 'Dash',
+  guard: 'Guard',
+  weather: 'Weather',
+  charge: 'Charge',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */

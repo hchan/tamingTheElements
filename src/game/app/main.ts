@@ -102,7 +102,7 @@ if (root) {
                 a.mountArcade(c);
               },
               () => {
-                notify('Arcade Versus could not load. Reload the page.');
+                notify('Versus could not load. Reload the page.');
                 window.location.hash = '#main';
               },
             );
@@ -126,7 +126,7 @@ if (root) {
                 a.mountOnline(c);
               },
               () => {
-                notify('Online Versus could not load. Reload the page.');
+                notify('Online could not load. Reload the page.');
                 window.location.hash = '#main';
               },
             );
@@ -151,7 +151,7 @@ if (root) {
                 a.mountTour(c);
               },
               () => {
-                notify('World Tour could not load. Reload the page.');
+                notify('Play could not load. Reload the page.');
                 window.location.hash = '#main';
               },
             );

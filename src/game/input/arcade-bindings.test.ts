@@ -26,7 +26,7 @@ describe('super key binding: no conflicts', () => {
     const codes = GAME_ACTIONS.flatMap((a) => [...DEFAULT_BINDINGS[a]]).filter((c) => c !== SHARED_CODE);
     expect(new Set(codes).size).toBe(codes.length);
     expect(actionForCode(DEFAULT_BINDINGS, 'KeyX')).toBe('super');
-    expect(ACTION_LABELS.super).toMatch(/Arcade/);
+    expect(ACTION_LABELS.super).toBe('Super');
   });
   it('each action drives its own command bit, the super one bit 13 only', () => {
     const bits = GAME_ACTIONS.map((a) => ACTION_COMMAND[a]);
@@ -107,8 +107,8 @@ describe('dash and guard keys (WP-arcade-defence-view): E and Q, rebindable, Arc
     for (const c of ['KeyE', 'KeyQ']) expect(RESERVED_CODES.has(c)).toBe(false);
     expect(actionForCode(DEFAULT_BINDINGS, 'KeyE')).toBe('dash');
     expect(actionForCode(DEFAULT_BINDINGS, 'KeyQ')).toBe('guard');
-    expect(ACTION_LABELS.dash).toBe('Dash (Arcade)');
-    expect(ACTION_LABELS.guard).toBe('Guard (Arcade)');
+    expect(ACTION_LABELS.dash).toBe('Dash');
+    expect(ACTION_LABELS.guard).toBe('Guard');
     expect(ACTION_COMMAND.dash).toBe(Cmd.dash);
     expect(ACTION_COMMAND.guard).toBe(Cmd.guard);
   });
@@ -161,7 +161,7 @@ describe('weather key and pad button (WP-arcade-weather-view): R and pad X, rebi
     expect(DEFAULT_BINDINGS.weather).toEqual(['KeyR', 'Digit6']);
     expect(RESERVED_CODES.has('KeyR')).toBe(false);
     expect(actionForCode(DEFAULT_BINDINGS, 'KeyR')).toBe('weather');
-    expect(ACTION_LABELS.weather).toBe('Weather (Arcade)');
+    expect(ACTION_LABELS.weather).toBe('Weather');
     expect(ACTION_COMMAND.weather).toBe(Cmd.weather);
   });
   it('rebinding detects conflicts both ways and moves a stolen key', () => {
@@ -206,7 +206,7 @@ describe('charge key and pad button (WP-arcade-charge): H and pad R3, rebindable
   it('defaults to plain H, bindable, labelled as an Arcade action; F stays the reserved fullscreen key', () => {
     expect(DEFAULT_BINDINGS.charge).toEqual(['KeyH', 'Digit5']);
     expect(actionForCode(DEFAULT_BINDINGS, 'KeyH')).toBe('charge');
-    expect(ACTION_LABELS.charge).toBe('Charge (Arcade)');
+    expect(ACTION_LABELS.charge).toBe('Charge');
     expect(ACTION_COMMAND.charge).toBe(Cmd.charge);
     expect(tryBind(DEFAULT_BINDINGS, 'charge', 0, 'KeyF')).toEqual({ ok: false, reason: 'reserved' });
   });

@@ -3,6 +3,7 @@ import { focusHeading, installMenuKeys } from './keyboard';
 import { settingsScreen } from './screens/settings';
 import { mainMenuScreen } from './screens/main-menu';
 import type { Screen, ScreenFactory } from './screens/screen';
+import { helpScreen } from './screens/help';
 import { aboutScreen } from './screens/about';
 import { keyBindingsScreen } from './screens/key-bindings';
 import { raceScreen } from './screens/race';
@@ -34,6 +35,7 @@ export const ROUTE_NAMES = [
   'arcade',
   'online',
   'tour',
+  'help',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -112,9 +114,10 @@ const ROUTE_TITLES: Readonly<Record<RouteName, string>> = {
   gameMaster: 'Game Master',
   character: 'Character Details',
   replay: 'Replay Viewer',
-  arcade: 'Arcade Versus',
-  online: 'Online Versus',
-  tour: 'World Tour',
+  arcade: 'Versus',
+  online: 'Online',
+  tour: 'Play',
+  help: 'Help',
 };
 
 /** Document title for a route, so each screen is named in the tab and to screen readers. */
@@ -147,11 +150,12 @@ export function defaultScreens(): ScreenTable {
     character: characterDetailsScreen(),
     replay: placeholderScreen('Replay viewer'),
     // The app wires the lazy Arcade Versus screen (src/game/app/main.ts); it is opt-in (Settings or `?ff=arcade`).
-    arcade: placeholderScreen('Arcade Versus'),
+    arcade: placeholderScreen('Versus'),
     // The app wires the lazy online screen (src/game/app/online-versus.ts).
-    online: placeholderScreen('Online Versus'),
+    online: placeholderScreen('Online'),
     // The app wires the lazy World Tour screen (src/game/app/tour.ts); opt-in like Arcade.
-    tour: placeholderScreen('World Tour'),
+    tour: placeholderScreen('Play'),
+    help: helpScreen,
   };
 }
 

@@ -41,7 +41,7 @@ test.describe('parity golden paths', () => {
   test('1b. New Game -> intro cinematic -> Skip -> garrison', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(START);
-    await page.getByText('New Game', { exact: true }).click();
+    await page.evaluate(`window.location.hash = '#newGame'`);
     await page.waitForFunction(CINEMATIC_READY);
     expect(await page.evaluate<string>(`window.__TTE__.state().route`)).toBe('#newGame');
     // Legacy writes the save when the story ends, so nothing is stored while it plays.
@@ -63,7 +63,7 @@ test.describe('parity golden paths', () => {
   test('1c. Story Mode plays the story; Skip returns to the main menu and writes no save', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(START);
-    await page.getByText('Story Mode', { exact: true }).click();
+    await page.evaluate(`window.location.hash = '#storyMode'`);
     await skipCinematic(page);
     await waitForRoute(page, '#main');
     await page.evaluate(`window.__TTE__.settled()`);
@@ -127,7 +127,7 @@ test.describe('parity golden paths', () => {
     await expect(page.getByText('Victory!')).toBeVisible();
     await expect(page.getByText(/gained 1 XP/)).toBeVisible();
 
-    await page.getByText('Garrison', { exact: true }).click();
+    await goToHash(page, '#garrison');
     await expect(page.locator('#garrisonTable .garrisonRow')).toContainText('XP 2');
     await page.reload();
     await expect(page.locator('#garrisonTable .garrisonRow')).toContainText('XP 2');
@@ -146,7 +146,7 @@ test.describe('parity golden paths', () => {
     await waitForRoute(page, '#victory');
     await expect(page.getByText(/gained 1 XP.*Level up! 4 to 5/)).toBeVisible();
 
-    await page.getByText('Current Objectives', { exact: true }).click();
+    await goToHash(page, '#currentObjectives');
     await page.getByRole('button', { name: 'Begin next chapter' }).click();
     // Chapter 2 gains Capture: the objectives screen announces it before continuing to the garrison.
     await expect(page.locator('#captureNotice')).toContainText('Capture unlocked!');
@@ -178,7 +178,7 @@ test.describe('parity golden paths', () => {
     );
     await waitForRoute(page, '#victory');
     await expect(page.getByText(/Captured .+!/)).toBeVisible();
-    await page.getByText('Garrison', { exact: true }).click();
+    await goToHash(page, '#garrison');
     await expect(page.locator('#garrisonTable .garrisonRow')).toHaveCount(save.garrison.length + 1);
     expect((await storedSave(page)).garrison).toHaveLength(save.garrison.length + 1);
     expect(errors).toEqual([]);

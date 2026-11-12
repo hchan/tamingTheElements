@@ -31,19 +31,15 @@ describe('menuState', () => {
 });
 
 describe('menu order', () => {
-  const buttons = MENU_ITEMS.filter((i) => i.heading !== true).map((i) => i.label);
-
-  it('leads with World Tour, Arcade Versus and Online Versus, always enabled and on by default', () => {
-    expect(buttons.slice(0, 3)).toEqual(['World Tour', 'Arcade Versus', 'Online Versus']);
-    for (const r of ['tour', 'arcade', 'online']) expect(MENU_ITEMS.find((i) => i.route === r)?.enabled(menuState(null))).toBe(true);
-  });
-
-  it('puts the Classic entries under an honest "Classic (original rules)" heading, routes unchanged', () => {
-    const labels = MENU_ITEMS.map((i) => i.label);
-    expect(labels.slice(3, 6)).toEqual(['Classic (original rules)', 'New Game', 'Continue']);
-    expect(MENU_ITEMS[3]?.heading).toBe(true);
-    expect(MENU_ITEMS.find((i) => i.label === 'New Game')?.route).toBe('newGame');
-    expect(MENU_ITEMS.find((i) => i.label === 'Continue')?.route).toBe('battleground');
+  it('has exactly five always-enabled entries: Play, Versus, Online, Settings, Help', () => {
+    expect(MENU_ITEMS.map((i) => [i.label, i.route])).toEqual([
+      ['Play', 'tour'],
+      ['Versus', 'arcade'],
+      ['Online', 'online'],
+      ['Settings', 'settings'],
+      ['Help', 'help'],
+    ]);
+    for (const i of MENU_ITEMS) expect(i.enabled(menuState(null))).toBe(true);
   });
 });
 

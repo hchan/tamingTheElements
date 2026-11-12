@@ -76,7 +76,7 @@ for (const vp of VIEWPORTS) {
 
     test('menu, settings and garrison have no horizontal overflow', async ({ page }, info) => {
       await page.goto('/');
-      await page.getByText('New Game', { exact: true }).waitFor();
+      await page.getByText('Help', { exact: true }).waitFor();
       for (const route of ['#main', '#settings', '#about']) {
         await page.evaluate(`window.location.hash = '${route}'`);
         await page.waitForFunction(`window.__TTE__.state().mountedRoute === '${route}'`);

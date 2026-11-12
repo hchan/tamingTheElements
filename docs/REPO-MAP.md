@@ -82,7 +82,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `src/game/cinematics/` | Data-driven cinematics: pure `CinematicRunner` step sequencer (header, caption, sprite, tween, wait, waitKey, skip) and the ported intro script; drawn by the `Cinematic` scene (`?ff=cinematicDemo`), which removes all listeners on shutdown or game destroy |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle, settings), `styles/main.css` |
 | `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; info screens wiki, key-bindings, about, race), `styles/main.css` |
-| `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; `main-menu.ts` is the main menu), `keyboard.ts` (Escape back, Space on links, focus on navigation), `styles/main.css` |
+| `src/ui/` | DOM menus in vanilla TS: `router.ts` (allow-list hash router), `dom.ts`, `src/ui/screens/` (screen lifecycle; `main-menu.ts` is the five-entry main menu, `help.ts` the Help page linking key bindings, wiki, story and about), `keyboard.ts` (Escape back, Space on links, focus on navigation), `styles/main.css` |
 | `src/ui/screens/` | One module per DOM screen; `arcade-versus.ts` is the Arcade Versus picker and results DOM (lazy, loaded with the Arcade flow) |
 | `src/ui/tester/` | Tester mode DOM: badge, tester panel, bench health panel, cheat-code matcher and installer |
 | `src/testing/` | Test-only helpers; `src/testing/legacy/` holds the Crafty/jQuery/DOM stubs, fake clock and seeded random used to run the restored legacy sources (`oracle.ts` locates `.oracle`) in `node:vm` |

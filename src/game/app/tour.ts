@@ -97,7 +97,7 @@ export function tourScreen(deps: TourDeps): Screen {
     show(
       tourCardView({
         id: 'tourResume',
-        heading: 'World Tour',
+        heading: 'Play',
         lines: [
           `A tour is in progress: stage ${stage} of ${String(TOUR_STAGES)}, ${String(saved.continues)} continues left, team ${saved.hero.map(raceLabel).join(', ')}.`,
         ],

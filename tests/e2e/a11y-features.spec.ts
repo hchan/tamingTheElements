@@ -125,24 +125,24 @@ test.describe('key rebinding', () => {
     await goToHash(page, '#keyBindings');
     const status = page.getByRole('status');
 
-    // A free key rebinds the Capture action and is saved.
-    await page.locator('#bind-capture-0').click();
-    await expect(page.locator('#bind-capture-0')).toHaveText('Press a key...');
+    // A free key rebinds the Swap 2 action and is saved.
+    await page.locator('#bind-slot4-0').click();
+    await expect(page.locator('#bind-slot4-0')).toHaveText('Press a key...');
     await page.keyboard.press('KeyV');
-    await expect(page.locator('#bind-capture-0')).toHaveText('V');
-    await expect(status).toContainText('Capture is now V');
-    await expect.poll(async () => (await storedSave(page)).keyBindings?.['capture']).toEqual(['KeyV']);
+    await expect(page.locator('#bind-slot4-0')).toHaveText('V');
+    await expect(status).toContainText('Swap 2 is now V');
+    await expect.poll(async () => (await storedSave(page)).keyBindings?.['slot4']).toEqual(['KeyV']);
 
     // A key owned by another action is a conflict: nothing changes until the player confirms.
-    await page.locator('#bind-capture-1').click();
+    await page.locator('#bind-slot4-1').click();
     await page.keyboard.press('KeyW');
     await expect(status).toContainText('W is already used by Move Up');
     expect((await storedSave(page)).keyBindings?.['up']).toEqual(['ArrowUp', 'KeyW']);
-    await page.getByRole('button', { name: 'Move W to Capture' }).click();
-    await expect(page.locator('#bind-capture-1')).toHaveText('W');
+    await page.getByRole('button', { name: 'Move W to Swap 2' }).click();
+    await expect(page.locator('#bind-slot4-1')).toHaveText('W');
     await expect
       .poll(async () => (await storedSave(page)).keyBindings)
-      .toMatchObject({ capture: ['KeyV', 'KeyW'], up: ['ArrowUp'] });
+      .toMatchObject({ slot4: ['KeyV', 'KeyW'], up: ['ArrowUp'] });
 
     // Reserved keys are refused, Escape cancels.
     await page.locator('#bind-slot3-0').click();
@@ -157,14 +157,14 @@ test.describe('key rebinding', () => {
     await page.goto('/?seed=7');
     await startBattleFromMenu(page);
     expect(await page.evaluate<Record<string, string[]>>(`window.__TTE__.arena.boundCodes()`)).toMatchObject({
-      capture: ['KeyV', 'KeyW'],
+      slot4: ['KeyV', 'KeyW'],
       up: ['ArrowUp'],
     });
 
     // Reset to defaults removes the field again.
     await goToHash(page, '#keyBindings');
     await page.locator('#resetBindings').click();
-    await expect(page.locator('#bind-capture-0')).toHaveText('C');
+    await expect(page.locator('#bind-slot4-0')).toHaveText('4');
     await expect.poll(async () => 'keyBindings' in (await storedSave(page))).toBe(false);
   });
 

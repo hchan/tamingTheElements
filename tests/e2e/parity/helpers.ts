@@ -107,7 +107,7 @@ export async function skipCinematic(page: Page): Promise<void> {
 
 /** Main menu -> New Game -> intro cinematic -> Skip -> garrison (the cinematic game is torn down first). */
 export async function newGameToGarrison(page: Page): Promise<void> {
-  await page.getByText('New Game', { exact: true }).click();
+  await page.evaluate(`window.location.hash = '#newGame'`);
   await skipCinematic(page);
   await waitForRoute(page, '#garrison');
   await page.evaluate(`window.__TTE__.settled()`);

@@ -41,7 +41,7 @@ const SUPER = 1 << 13;
  */
 const INTRO = 91;
 const KO_TO_ROUND_END = 30 + 120 + 60;
-const MENU = ['World Tour', 'Arcade Versus', 'Online Versus', 'New Game', 'Continue', 'Garrison', 'Settings', 'Current Objectives', 'Story Mode', 'Wiki', 'Key Bindings', 'About'];
+const MENU = ['Play', 'Versus', 'Online', 'Settings', 'Help'];
 
 async function audit(page: Page, name: string): Promise<void> {
   const result = await new AxeBuilder({ page }).analyze();
@@ -101,13 +101,12 @@ async function finishOnResults(page: Page): Promise<void> {
   await expect(page.locator('#game canvas')).toHaveCount(0);
 }
 
-test('on by default: the menu leads with World Tour, Arcade Versus, Online, then the Classic group; no Settings toggle; #arcade opens', async ({ page }) => {
+test('on by default: the menu has the five entries Play, Versus, Online, Settings, Help; no Settings toggle; #arcade opens', async ({ page }) => {
   const errors = collectErrors(page);
   await seedViaGameMaster(page, fixture('v0-ch3'));
   await goToHash(page, '#main');
   expect(await menuLabels(page)).toEqual(MENU);
-  await expect(page.locator('#menu .mainMenuList li').nth(3)).toHaveText('Classic (original rules)');
-  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('World Tour');
+  await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('Play');
   await page.evaluate(`window.location.hash = '#arcade'`);
   await waitForRoute(page, '#arcade');
   await expect(page.locator('#arcadePick')).toHaveCount(1);
@@ -124,9 +123,9 @@ test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2
   const before = await savedText(page);
   expect(JSON.parse(before ?? '{}')).toMatchObject({ chapter: 3 });
 
-  await page.getByRole('button', { name: 'Arcade Versus' }).click();
+  await page.getByRole('button', { name: 'Versus', exact: true }).click();
   await waitForRoute(page, '#arcade');
-  await expect(page.getByRole('heading', { level: 1, name: 'Arcade Versus' })).toBeFocused();
+  await expect(page.getByRole('heading', { level: 1, name: 'Versus', exact: true })).toBeFocused();
   await audit(page, 'Arcade Versus picker');
   await fight(page, 'sindarosa', 'pax');
 
@@ -144,7 +143,7 @@ test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2
   await page.keyboard.up('KeyX');
   await finishOnResults(page);
   await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toBeFocused();
-  await expect(page.locator('#arcadeResults')).toContainText('saves nothing');
+  await expect(page.locator('#arcadeResults')).toContainText('Rounds 2-0');
   await audit(page, 'Arcade Versus results');
 
   // Rematch starts a fresh arena with the same fighters; the pause dialog leads back to the menu.
@@ -167,12 +166,12 @@ test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2
 test('?ff=arcade (dev and test builds) without a save: Escape leaves the picker, the touch Super button, results Main Menu', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto(`${START}&ff=arcade`);
-  await page.getByRole('button', { name: 'Arcade Versus' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Arcade Versus' })).toBeFocused();
+  await page.getByRole('button', { name: 'Versus', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Versus', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');
   await waitForRoute(page, '#main');
 
-  await page.getByRole('button', { name: 'Arcade Versus' }).click();
+  await page.getByRole('button', { name: 'Versus', exact: true }).click();
   await fight(page, 'fiara', 'curomo', 'easy');
   const [foe] = await characters(page, 1);
   await primeSuper(page, foe?.id ?? -1);

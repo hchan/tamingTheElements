@@ -64,12 +64,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'arcadePick';
   page.append(
-    el('h1', 'heading', 'Arcade Versus'),
-    el(
-      'p',
-      undefined,
-      'Preview: one fight against the Arcade AI, 1v1, or a 2v2 or 3v3 tag team, or a duel between two players on this computer (each brings three heroes). Hits stun and push, quick follow-ups combo, hits fill your meter, and a full bar fires your super (X, gamepad RT, or the Super button). In a tag team, Tag (3, gamepad LB, or the Tag button) brings your partner in with an attack (in 3v3, Tag 2 on 4, gamepad RB, or the Tag 2 button brings the other one), and a benched hero wins back its red life. Nothing is saved: no XP, no capture, no progress.',
-    ),
+    el('h1', 'heading', 'Versus'),
   );
   const races = o.races.map((r) => ({ value: r, label: raceLabel(r) }));
   const form = el('form', 'settingsForm');
@@ -82,7 +77,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const set = el('fieldset', 'settingsGroup');
   set.append(
     el('legend', 'heading', 'Fighters'),
-    select('mode', 'Opponent', [{ value: 'ai', label: 'Arcade AI' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode),
+    select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode),
     select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size),
     select('player', 'Your race', races, o.current.player),
     select('partner', 'Your partner (2v2)', races, o.current.partner),
