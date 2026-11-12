@@ -65,7 +65,8 @@ export function setTouchText(b: HTMLButtonElement, label: TouchLabel, status = '
   const name = label === 'Tag2' ? 'Tag 2' : label;
   const text = `${touchKeyLabel(label)} ${name}`;
   b.textContent = status === '' ? text : `${text}\n${status}`;
-  b.setAttribute('aria-label', status === '' ? name : `${name}, ${status}`);
+  // The visible key stays in the accessible name (WCAG 2.5.3 label in name): "9 Super, 40%".
+  b.setAttribute('aria-label', status === '' ? text : `${text}, ${status}`);
 }
 
 /** Refreshes the state words of `buttons` four times a second off `view`; stops once they leave the page. */

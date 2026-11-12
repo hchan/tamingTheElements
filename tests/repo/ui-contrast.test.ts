@@ -23,3 +23,11 @@ describe('--color-water', () => {
     for (const bg of ['#000000', '#1b1030']) expect(ratio(water ?? '#0000ff', bg)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe('touch target sizes', () => {
+  it('keeps the 44 px coarse floor on Back/Help links and 48 px on touch buttons', () => {
+    const coarse = css.slice(css.indexOf('Touch devices: every tap target'));
+    expect(coarse.slice(0, 500)).toContain('#menu a.menuLink');
+    expect(css).toMatch(/#menu button\.touchBtn \{\s*min-height: 48px;/);
+  });
+});
