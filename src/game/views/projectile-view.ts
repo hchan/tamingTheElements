@@ -28,6 +28,9 @@ export function meleeLook(dir: number, w: number, h: number): { angle: number; w
   return { angle: 0, w, h, flip: dir >= 3 && dir <= 5 };
 }
 
+/** View-only: melee sprites drawn taller than their hit box (the art, not the box, is what the player must read). Ice Shock: 40 -> 72. */
+const MELEE_ART_THICKNESS: Readonly<Record<string, number>> = { iceShock: 1.8 };
+
 /** Texture key and manifest entry for an ability sprite (`sprite:` first, then `map:`). */
 export function lookup(sprite: string): { key: string; entry: Entry } | undefined {
   const a = SPRITES[sprite];
@@ -64,6 +67,7 @@ export class ProjectileView {
     // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
     this.image.setVisible(true).setAlpha(1);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
+    if (melee) look.h *= MELEE_ART_THICKNESS[p.sprite] ?? 1;
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);
     // Melee boxes are placed once and never moved, so their previous position (px/py) is unset: do not lerp from it.
     const a = melee ? 1 : alpha;

@@ -675,8 +675,8 @@ export class Arena extends Phaser.Scene {
     pool.end();
     projPool.begin();
     view.forEachProjectile(this.drawProjectile);
-    // Classic melee boxes (Ice Shock, Ground Shock, ...) were never drawn: show their sprite over the hit box.
-    if (view.arcade() === undefined) view.forEachProjectile(this.drawMelee, true);
+    // Melee boxes (Ice Shock, Ground Shock, ...) were never drawn: show their sprite over the hit box (Classic and Arcade).
+    view.forEachProjectile(this.drawMelee, true);
     projPool.end();
   }
 

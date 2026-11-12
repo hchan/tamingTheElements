@@ -307,12 +307,12 @@
       ]
     },
     "iceShock": {
-      "url": "img/iceShock.png",
+      "url": "img/fx/iceShock.png",
       "coords": [
         0,
         0,
-        80,
-        32
+        240,
+        72
       ]
     },
     "icicles": {
