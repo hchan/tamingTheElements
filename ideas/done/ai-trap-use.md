@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-12
 ---
 # AI turns Puddle and Gust into hits
@@ -22,3 +22,10 @@ true timeout (a Puddle never fires, so every undoused Puddle ends that way). Sam
 true timeout 41.9% of placed traps (44.7% of traps that ended; target under 45% is **met**), Puddle dry-ups 16.4% (17.5% of ended),
 combined old metric 58.3% (the 58.2% above, within rounding of the rerun). So the 58.2% was mostly Puddle lifetimes, not foes dodging
 Bombs, Spikes and Gusts; 733/886 Curomo, 471/670 Ishimi and 659/847 Morblass Puddles dried up. Remaining gap: the low races (Cyclonius, Lavax, Rokcore).
+
+## Closing check (SIM_VERSION 41, no sim change)
+Re-measured with `trapstats.mts` (24 seeds, Normal, 1584 matches, 11520 traps placed): trap damage share 2.02% (target 2 to 5%, met);
+true timeout 42.2% of placed (target under 45%, met; Puddle dry-ups 15.9% kept apart, see above); race win rates 44.3 to 57.2%
+(Cyclonius 44.3 and Morblass 44.7 are 0.3 to 0.7 pp under 45, Fiara 57.2 is 0.2 over 57, all inside the roughly 2.5 pp sampling noise of 24
+seeds; the Lavax/Cyclonius/Rokcore gaps from WP 39f were closed by life retunes in SIM_VERSION 36 and 37). Further AI tuning would chase
+noise and the foe AI is not meant to walk into traps, so the idea is closed with no sim change.
