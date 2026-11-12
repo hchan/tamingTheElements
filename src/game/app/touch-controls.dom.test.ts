@@ -44,7 +44,7 @@ describe('touchButton (real DOM events)', () => {
     expect(pointer(b, 'pointerdown', 5).defaultPrevented).toBe(true);
     pointer(b, 'pointerdown', 5);
     expect(events).toEqual([`keydown:${code}`]);
-    expect(captured).toEqual(['5']);
+    expect(captured).toEqual(['5', '5']); // a second finger on the same button captures too; the key still went down once
     pointer(b, 'pointerup');
     pointer(b, 'pointercancel');
     pointer(b, 'lostpointercapture');
@@ -91,11 +91,18 @@ describe('touchButton (real DOM events)', () => {
     expect(down.defaultPrevented).toBe(true);
     expect(leaked).toEqual([]);
     expect(events).toEqual([`keydown:${code}`]);
-    keyOn(b, 'keyup', 'Enter');
-    expect(events).toEqual([`keydown:${code}`, `keyup:${code}`]);
-    keyOn(b, 'keydown', ' ');
-    keyOn(b, 'keyup', ' ');
-    expect(events).toHaveLength(4);
+    vi.useFakeTimers();
+    try {
+      keyOn(b, 'keyup', 'Enter');
+      vi.advanceTimersByTime(200); // a quick tap is held for a minimum time
+      expect(events).toEqual([`keydown:${code}`, `keyup:${code}`]);
+      keyOn(b, 'keydown', ' ');
+      keyOn(b, 'keyup', ' ');
+      vi.advanceTimersByTime(200);
+      expect(events).toHaveLength(4);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('other keys do nothing; blur releases a held key', () => {

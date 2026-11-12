@@ -22,12 +22,12 @@
     "tag-view": 2870,
     "terrain-view": 4800,
     "trap-view": 1100,
-    "touch-controls": 1380,
+    "touch-controls": 1500,
     "tour": 5600,
     "viewport": 260,
     "weather-view": 3470
   },
-  "totalGzip": 508450,
+  "totalGzip": 508700,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
