@@ -7,6 +7,7 @@ import { heroName } from '../hud/tag-fx';
 import { elementMark } from '../hud/element-mark';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
+import { CHIP_H, CHIP_MAX, CHIP_W, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha,
   meterSegments, meterX, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
@@ -85,6 +86,8 @@ export class Hud extends Phaser.Scene {
   private comboTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private comboKeys: number[] = [];
   private meterTexts: (Phaser.GameObjects.Text | undefined)[] = [];
+  /** Arcade status chip words, pooled per side: index team * CHIP_MAX + slot. */
+  private chipTexts: (Phaser.GameObjects.Text | undefined)[] = [];
 
   constructor() {
     super(HUD_SCENE);
@@ -131,7 +134,7 @@ export class Hud extends Phaser.Scene {
       this.back = undefined;
       for (const im of this.portraits) im.destroy();
       this.portraits = [];
-      for (const t of [...this.labels, ...this.regenTexts, ...this.numberTexts, ...this.comboTexts, ...this.meterTexts]) t?.destroy();
+      for (const t of [...this.labels, ...this.regenTexts, ...this.numberTexts, ...this.comboTexts, ...this.meterTexts, ...this.chipTexts]) t?.destroy();
       this.labels = [];
       this.regenTexts = [];
       this.numberTexts = [];
@@ -139,6 +142,7 @@ export class Hud extends Phaser.Scene {
       this.comboTexts = [];
       this.comboKeys = [];
       this.meterTexts = [];
+      this.chipTexts = [];
       this.view = undefined;
       this.arcade = undefined;
     });
@@ -159,28 +163,11 @@ export class Hud extends Phaser.Scene {
         label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
         if (this.arcade) this.drawArcadeAvatar(gfx, team, side.active);
         else this.drawPortrait(gfx, team, side.active, side.bench);
-        for (const b of collectBuffs(view, side.active.id, x, this.highContrast)) {
-          gfx.lineStyle(this.highContrast ? 2 : 1, this.highContrast ? 0xffffff : 0x111111, 1);
-          gfx.strokeRect(b.x, b.y, BUFF_SLOT, BUFF_SLOT);
-          // Remaining-time fill: the slot drains as the status runs out.
-          const remain = (1 - b.elapsed) * BUFF_SLOT;
-          gfx.fillStyle(b.color, 1);
-          gfx.fillRect(b.x, b.y + BUFF_SLOT - remain, BUFF_SLOT, remain);
-          // Shape cue: a plus for a buff, a cross for a debuff.
-          gfx.lineStyle(2, 0x000000, 1);
-          const cx = b.x + BUFF_SLOT / 2;
-          const cy = b.y + BUFF_SLOT / 2;
-          const r = BUFF_SLOT / 4;
-          if (b.glyph === 'plus') {
-            gfx.lineBetween(cx - r, cy, cx + r, cy);
-            gfx.lineBetween(cx, cy - r, cx, cy + r);
-          } else {
-            gfx.lineBetween(cx - r, cy - r, cx + r, cy + r);
-            gfx.lineBetween(cx - r, cy + r, cx + r, cy - r);
-          }
-        }
+        if (this.arcade) this.drawStatusChips(gfx, team, side.active, x);
+        else this.drawLegacyBuffs(gfx, view, side.active, x);
       } else {
         label?.setText('');
+        this.hideChips(team, 0);
         for (const i of [team, ...[0, 1, 2, 3].map((k) => TEAMS.length + team * 4 + k)]) this.portraits[i]?.setVisible(false);
       }
       side.bench.forEach((c, i) => {
@@ -190,6 +177,65 @@ export class Hud extends Phaser.Scene {
       for (let i = side.bench.length; i < 4; i++) this.regenTexts[team * 4 + i]?.setVisible(false);
     }
     if (this.arcade) this.drawArcade(this.arcade);
+  }
+
+  /** Classic buffs: a row of plus or cross squares in the free column under the health words. */
+  private drawLegacyBuffs(gfx: Phaser.GameObjects.Graphics, view: RenderView, c: HudCharacter, x: number): void {
+    for (const b of collectBuffs(view, c.id, x, this.highContrast)) {
+      gfx.lineStyle(this.highContrast ? 2 : 1, this.highContrast ? 0xffffff : 0x111111, 1);
+      gfx.strokeRect(b.x, b.y, BUFF_SLOT, BUFF_SLOT);
+      // Remaining-time fill: the slot drains as the status runs out.
+      const remain = (1 - b.elapsed) * BUFF_SLOT;
+      gfx.fillStyle(b.color, 1);
+      gfx.fillRect(b.x, b.y + BUFF_SLOT - remain, BUFF_SLOT, remain);
+      // Shape cue: a plus for a buff, a cross for a debuff.
+      gfx.lineStyle(2, 0x000000, 1);
+      const cx = b.x + BUFF_SLOT / 2;
+      const cy = b.y + BUFF_SLOT / 2;
+      const r = BUFF_SLOT / 4;
+      if (b.glyph === 'plus') {
+        gfx.lineBetween(cx - r, cy, cx + r, cy);
+        gfx.lineBetween(cx, cy - r, cx, cy + r);
+      } else {
+        gfx.lineBetween(cx - r, cy - r, cx + r, cy + r);
+        gfx.lineBetween(cx - r, cy + r, cx + r, cy - r);
+      }
+    }
+  }
+
+  /**
+   * Arcade: one chip per active buff or debuff under the bar (shape, word and seconds; the bar under it drains), pooled texts.
+   * The sim already exposes every status, so this only reads the view (`collectStatusChips`).
+   */
+  private drawStatusChips(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, x: number): void {
+    const view = this.view;
+    if (!view) return;
+    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast);
+    chips.forEach((chip, i) => {
+      const slot = team * CHIP_MAX + i;
+      const t = (this.chipTexts[slot] ??= this.add
+        .text(0, 0, '', crisp(this, { fontFamily: HUD_FONT, fontSize: '12px', color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }))
+        .setDepth(102));
+      t.setText(chip.text).setPosition(chip.x + 4, chip.y).setVisible(true);
+      gfx.fillStyle(0x070a12, 0.8).fillRoundedRect(chip.x, chip.y, CHIP_W, CHIP_H, 3);
+      // Time bar along the foot of the chip, draining to the left.
+      gfx.fillStyle(chip.color, 1).fillRect(chip.x + 1, chip.y + CHIP_H - 3, Math.round((CHIP_W - 2) * chip.remaining), 2);
+      // Buffs have a solid frame, debuffs a dashed one (so the two differ without colour).
+      gfx.lineStyle(this.highContrast ? 2 : 1, chip.color, 1);
+      if (chip.hostile) {
+        for (const [a, b] of dashSegments(chip.x, chip.x + CHIP_W, [6, 3])) {
+          gfx.lineBetween(a, chip.y, b, chip.y);
+          gfx.lineBetween(a, chip.y + CHIP_H, b, chip.y + CHIP_H);
+        }
+        gfx.lineBetween(chip.x, chip.y, chip.x, chip.y + CHIP_H);
+        gfx.lineBetween(chip.x + CHIP_W, chip.y, chip.x + CHIP_W, chip.y + CHIP_H);
+      } else gfx.strokeRoundedRect(chip.x, chip.y, CHIP_W, CHIP_H, 3);
+    });
+    this.hideChips(team, chips.length);
+  }
+
+  private hideChips(team: number, from: number): void {
+    for (let i = from; i < CHIP_MAX; i++) this.chipTexts[team * CHIP_MAX + i]?.setVisible(false);
   }
 
   private get classic(): boolean {
