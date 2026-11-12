@@ -129,5 +129,7 @@
  * 35: Arcade only; Classic hashes unchanged. AI trap follow-up (WP 39f, ideas/brainstorm/ai-trap-use.md): the Normal plant rate
  *    80 -> 240 pm per tick, and Normal and Hard press a foe held by their Puddle or just shoved by their Gust (a Charge, else
  *    close in); the hash definition is unchanged, only scripted-AI commands differ.
+ * 36: Arcade only (data); Classic hashes unchanged. Lavax's Arcade life hpPm 3500 -> 3900 (damagePm 870 unchanged): 24-seed Normal win rate
+ *    40.5% -> 44.7%, no other race moves by more than 3.4 pp (ideas/brainstorm/arcade-low-races-analysis.md); Classic data untouched.
  */
-export const SIM_VERSION = 35;
+export const SIM_VERSION = 36;

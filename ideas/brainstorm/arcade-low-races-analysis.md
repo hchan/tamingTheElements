@@ -50,3 +50,7 @@ read or write scratch paths under `~/claudetmp/`.
 - Cyclonius vs Lavax is 0% with neutral elements: also kit.
 - Rokcore vs Echo flips 100% to 0% between flat stats and real stats plus chart: re-fit Rokcore hp/damage with the chart in the loop.
 - Rokcore's extra dashing is in the base `ScriptedAI`, not `arcade.ts`.
+
+## Result: Lavax hpPm 3500 to 3900 (WP 39i, SIM_VERSION 36)
+
+Lavax overall 40.5% to 44.7% (24 seeds, Normal); no race became extreme. Lavax vs Morblass is still 0%, so the clash/kit change for that pairing remains open. Arcade goldens and both Arcade baselines re-recorded (Lavax max HP changes every Arcade hash); Classic goldens changed only in the simVersion header.
