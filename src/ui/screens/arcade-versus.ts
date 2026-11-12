@@ -60,6 +60,107 @@ export function select(name: string, label: string, options: readonly { value: s
   return row;
 }
 
+/** Visible name of a select's current race ("Sindarosa"), for the slot buttons. */
+const shortName = (id: string): string => CHARACTER_TEXT.get(id as CharacterId)?.name ?? id;
+
+/** CSS background for a hero's map sprite (4-frame sheet, 80 px a frame: the first shows). */
+const avatarOf = (id: string): string => `url("${import.meta.env.BASE_URL}assets/img/map/${encodeURIComponent(getCharacter(id as CharacterId).sprite)}.png")`;
+
+/**
+ * The hero roster (replaces the race pulldowns): one button per open slot ("Your race: Sindarosa") and a grid of every
+ * race as a tile (portrait, name, element word). Choosing a tile fills the active slot and moves to the next open one.
+ * The real selects stay in the form, visually hidden and out of the Tab order, so the form data, labels and tests are unchanged.
+ */
+function rosterView(
+  races: readonly CharacterId[],
+  fields: () => Record<string, HTMLSelectElement>,
+  names: readonly string[],
+  changed: () => void,
+): { node: HTMLElement; refresh: () => void } {
+  const node = el('div', 'rosterPick');
+  const slots = el('ol', 'teamSlots rosterSlots');
+  slots.setAttribute('aria-label', 'Hero slots');
+  const grid = el('div', 'rosterGrid');
+  node.append(slots, grid);
+  let active = names[0] ?? 'player';
+  const openSlots = (): string[] => names.filter((n) => fields()[n] && !fields()[n]?.disabled);
+  const slotButtons = new Map<string, HTMLButtonElement>();
+  const tiles = new Map<string, HTMLButtonElement>();
+  const refresh = (): void => {
+    const f = fields();
+    const open = openSlots();
+    if (!open.includes(active)) active = open[0] ?? active;
+    for (const n of names) {
+      const sel = f[n];
+      let b = slotButtons.get(n);
+      if (!b && sel) {
+        b = el('button', 'teamSlot rosterSlot');
+        b.type = 'button';
+        b.id = `roster-${n}`;
+        const slot = n;
+        b.addEventListener('click', () => {
+          active = slot;
+          refresh();
+        });
+        slotButtons.set(n, b);
+        const li = el('li');
+        li.append(b);
+        slots.append(li);
+      }
+      if (!b || !sel) continue;
+      b.closest('li')?.toggleAttribute('hidden', sel.disabled);
+      const label = sel.labels[0]?.textContent ?? n;
+      b.textContent = '';
+      const face = el('span', 'rosterFace');
+      face.style.backgroundImage = avatarOf(sel.value);
+      face.setAttribute('aria-hidden', 'true');
+      b.append(face, el('b', undefined, `Slot ${String(open.indexOf(n) + 1)}: ${label}`), el('span', undefined, shortName(sel.value)));
+      b.setAttribute('aria-pressed', String(n === active));
+      b.classList.toggle('rosterActive', n === active);
+    }
+    const chosen = f[active]?.value;
+    for (const [id, t] of tiles) {
+      t.setAttribute('aria-pressed', String(id === chosen));
+      // Like the Garrison: a gold "Slot N" pill names the slot a hero fills (text, never colour alone).
+      const at = open.filter((n) => f[n]?.value === id).map((n) => `Slot ${String(open.indexOf(n) + 1)}`).join(', ');
+      const pill = t.querySelector<HTMLElement>('.battlegroundOrderContainer');
+      if (pill) {
+        pill.textContent = at;
+        pill.hidden = at === '';
+      }
+      t.classList.toggle('selectedGarrisonRow', at !== '');
+    }
+  };
+  for (const r of races) {
+    const t = el('button', 'menuButton rosterTile');
+    t.type = 'button';
+    const face = el('span', 'rosterFace');
+    face.style.backgroundImage = avatarOf(r);
+    face.setAttribute('aria-hidden', 'true');
+    t.append(face, el('span', 'rosterName', shortName(r)), el('span', 'rosterElement', getCharacter(r).element), el('span', 'battlegroundOrderContainer'));
+    t.addEventListener('click', () => {
+      const sel = fields()[active];
+      if (sel) sel.value = r;
+      changed();
+      const open = openSlots();
+      active = open[(open.indexOf(active) + 1) % Math.max(1, open.length)] ?? active;
+      refresh();
+    });
+    tiles.set(r, t);
+    grid.append(t);
+  }
+  // Hide the pulldowns for heroes (they stay in the DOM for form data, labels and assistive tech lookups).
+  queueMicrotask(() => {
+    for (const n of names) {
+      const sel = fields()[n];
+      if (!sel) continue;
+      sel.tabIndex = -1;
+      sel.closest<HTMLElement>('.settingsOption')?.classList.add('srOnly');
+    }
+  });
+  return { node, refresh };
+}
+
 export function arcadePickView(o: PickViewOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'arcadePick';
@@ -72,6 +173,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     const l = form.querySelector(`label[for="${id}"]`);
     if (l) l.textContent = text;
   };
+  const heroNames = ['player', 'partner', 'partner2', 'enemy', 'enemyPartner', 'enemyPartner2'] as const;
   const hint = el('p', undefined, `Two players share this keyboard. Player 1: ${P1_HELP}. Player 2: ${P2_HELP}. Each player may also use a gamepad (the first one connected is Player 1, the second Player 2).`);
   hint.id = 'arcadeLocalHelp';
   const set = el('fieldset', 'settingsGroup');
@@ -87,6 +189,8 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     select('enemyPartner2', 'Player 2 hero 3', races, o.current.enemyPartner2),
     select('level', 'AI level', o.levels, o.current.level),
   );
+  const roster = rosterView(o.races, () => form.elements as unknown as Record<string, HTMLSelectElement>, heroNames, () => form.dispatchEvent(new Event('change')));
+  set.insertBefore(roster.node, set.querySelector('#arcadeLevel')?.closest('.settingsOption') ?? null);
   const start = el('button', 'menuButton', 'Fight!');
   start.type = 'submit';
   start.id = 'arcadeStart';
@@ -114,6 +218,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     setText('arcadePartner', local ? 'Player 1 hero 2' : 'Your partner (2v2)');
     setText('arcadePartner2', local ? 'Player 1 hero 3' : 'Your third hero (3v3)');
     hint.hidden = !local;
+    roster.refresh();
   };
   sync();
   form.addEventListener('change', (e) => {

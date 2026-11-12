@@ -50,19 +50,22 @@ test('picker: Team first, the partner only in 2v2 (disabled and out of the Tab o
   const partner = page.getByLabel('Your partner (2v2)');
   await expect(page.getByLabel('Team')).toHaveValue('1');
   await expect(partner).toBeDisabled();
+  // Heroes are chosen on the roster (slot buttons and a tile grid); the hero pulldowns stay in the form but are out of the Tab order.
   await page.getByLabel('Team').focus();
   const order: string[] = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 3; i++) {
     order.push(await focusedId(page));
     await page.keyboard.press('Tab');
   }
-  expect(order).toEqual(['arcadeSize', 'arcadePlayer', 'arcadeEnemy', 'arcadeLevel']);
+  expect(order).toEqual(['arcadeSize', 'roster-player', 'roster-enemy']);
+  await expect(page.locator('#roster-partner')).toBeHidden();
   await page.getByLabel('Team').selectOption('2');
   await expect(partner).toBeEnabled();
-  await page.getByLabel('Team').focus();
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
-  expect(await focusedId(page)).toBe('arcadePartner');
+  await expect(page.locator('#roster-partner')).toBeVisible();
+  // Clicking a tile fills the active slot (Your race) and moves on to the next one (Your partner).
+  await page.getByRole('button', { name: /^Pax/ }).click();
+  await expect(page.getByLabel('Your race')).toHaveValue('pax');
+  await expect(page.locator('#roster-partner')).toHaveAttribute('aria-pressed', 'true');
   // A partner equal to the lead is replaced (two distinct races a side).
   await page.getByLabel('Your race').selectOption('pax');
   await page.getByLabel('Your partner (2v2)').selectOption('pax');
