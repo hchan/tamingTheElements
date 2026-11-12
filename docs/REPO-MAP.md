@@ -9,7 +9,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | Path | What it is |
 |---|---|
 | (retired) | The legacy game directory `war` was removed from the tree on 2026-11-10; it lives at git tag `legacy-crafty-1.0` and `pnpm oracle:restore` extracts it to the gitignored `.oracle` directory, see [legacy/ARCHIVE.md](legacy/ARCHIVE.md) |
-| `ideas/` | One markdown file per idea or planned work package with a `status:` front matter; `tests/repo/ideas-queue.test.ts` checks each status (no cap on the queue) |
+| `ideas/` | One markdown file per idea or planned work package, in the folders brainstorm, in-progress and done with a `status:` front matter that the folder must match (`tests/repo/ideas-queue.test.ts`; no cap) |
 | `imgWorkArea/` | Art working files: PNG and GIMP `.xcf` sources |
 | `visio/` | Balance equation diagram (`.vsd` and `.png`) |
 | `tools/` | TypeScript build tooling: `tools/oracle/` (`pnpm oracle:restore`), `tools/assets/` (asset manifest and copy), `tools/gen/` (generated tables, LUTs, golden replays), `tools/sim/` (match CLI), `tools/replay-verify.ts` (`pnpm replay:verify`) |
