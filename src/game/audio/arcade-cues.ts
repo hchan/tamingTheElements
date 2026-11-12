@@ -41,6 +41,8 @@ export const CUES = {
   trapSet: [[0, 180, 90, 90, 0.4]],
   trapArm: [[1, 1320, 1320, 40, 0.15]],
   trapPop: [[NOISE, 1400, 250, 180, 0.5], [0, 110, 40, 140, 0.5]],
+  /** A fire shot or blast putting out an enemy Puddle or Gust: a short hiss, not the blast pop. */
+  trapDouse: [[NOISE, 3200, 900, 140, 0.25]],
   /** A refused action (a swap while stunned or cooling down): two short low buzzes, never a stinger. */
   denied: [[2, 150, 120, 70, 0.3], [2, 150, 120, 70, 0.3, 100]],
   sun: [[1, 523, 523, 140, 0.2], [1, 659, 659, 140, 0.2, 90], [1, 784, 784, 220, 0.2, 180]],
@@ -74,6 +76,11 @@ const MATCH_END: Kinds['matchEnded'] = 30;
 const SNAG: Kinds['snag'] = 69;
 /** `SnagEvent.expired` (data/arcade.ts): a root running out is silent; rooted, guarded and freed whip the rope. */
 const SNAG_EXPIRED = 3;
+const TRAP_TRIGGERED: Kinds['trapTriggered'] = 72;
+/** `TrapReason` (systems/arcade/trap.ts) and `TrapKind.puddle`, as numbers (no core import at run time). */
+const TRAP_TIMEOUT = 1;
+const TRAP_DOUSED = 2;
+const TRAP_PUDDLE = 2;
 
 /** Weather stinger per `Weather` kind (1 Sun .. 5 Eclipse). */
 export const WEATHER_CUES: readonly CueName[] = ['sun', 'rain', 'sand', 'gale', 'eclipse'];
@@ -136,6 +143,10 @@ export function pickCues(e: SimEvent, play: PlayCue): void {
     play('match', e['winner'] === 0 ? 1 : LOSS_PITCH, 1);
   } else if (e.kind === SNAG) {
     if (e['reason'] !== SNAG_EXPIRED) play('snag', 1, 1);
+  } else if (e.kind === TRAP_TRIGGERED && e['reason'] === TRAP_DOUSED) {
+    play('trapDouse', 1, 1);
+  } else if (e.kind === TRAP_TRIGGERED && e['reason'] === TRAP_TIMEOUT && e['trap'] === TRAP_PUDDLE) {
+    // a Puddle drying up is not a blast: silent (its ring fades in the view)
   } else {
     const cue = KIND_CUES[e.kind];
     if (cue) play(cue, 1, 1);

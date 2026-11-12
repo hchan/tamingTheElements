@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SimEventKind, type SimEvent } from '@core/index';
+import { SimEventKind, TrapKind, TrapReason, type SimEvent } from '@core/index';
 import {
   CUES, KIND_CUES, KO, MAX_VOICES, MIN_GAP_MS, NOISE, PITCH_VARY, SILENT, STINGERS, THUMP_GAIN, Voices, WEATHER_CUES,
   comboPitch, pickCues, type CueName,
@@ -53,6 +53,19 @@ describe('Arcade cue coverage', () => {
       }
     }
     for (const s of STINGERS) expect(CUES[s].length).toBeLessThanOrEqual(4);
+  });
+});
+
+describe('trap trigger cue', () => {
+  const trig = (trap: number, reason: number): CueName[] => cues(ev(SimEventKind.trapTriggered, { trap, reason })).map((c) => c[0]);
+
+  it('pops for an overlap or a timed-out bomb, hisses for a doused trap and keeps a dried-up Puddle silent', () => {
+    expect(trig(TrapKind.fireBomb, TrapReason.overlap)).toEqual(['trapPop']);
+    expect(trig(TrapKind.spike, TrapReason.timeout)).toEqual(['trapPop']);
+    expect(trig(TrapKind.gust, TrapReason.timeout)).toEqual(['trapPop']);
+    expect(trig(TrapKind.puddle, TrapReason.timeout)).toEqual([]);
+    expect(trig(TrapKind.puddle, TrapReason.doused)).toEqual(['trapDouse']);
+    expect(trig(TrapKind.gust, TrapReason.doused)).toEqual(['trapDouse']);
   });
 });
 
