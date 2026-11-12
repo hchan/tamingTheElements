@@ -40,3 +40,13 @@ Harness: scratch scripts (12 seeds per pairing, Normal, sides alternate), varian
 - Rokcore (12 seeds, all opponents): 11.0 dashes a match, but the tactics layer adds only about 1.0 (dodge 0.8, trap-avoid 0.1, rush 0.1). The rest come from the base ScriptedAI/kit, not from ArcadeTactics. First hit own 85 of 286 rounds (30%), after 3.2 s vs foe 2.0 s.
 - Lavax: first cast 0.28 s, first own hit 4.4 s; Cyclonius first cast 0.29 s, first hit 4.1 s. They fire immediately, so the slow first hit is projectile travel, spacing and the foe dodge/guard plans, not hesitation in tactics (tactics dashes 1-3 a match).
 - Result: no small, clearly-correct tactics fix found; nothing implemented. Remaining levers are balance (stats/kit), proposals 2 to 4 above, and the Lavax-vs-Morblass clash handling.
+
+Helper scripts for the WP 39g findings are in `tools/sim/low-races/` (`h.mts`, `h2.mts` matchup harnesses, `mat.sh`, `agg.py`); they may still
+read or write scratch paths under `~/claudetmp/`.
+
+## Follow-up ideas
+- Lavax vs Morblass is 0% even with neutral elements and flat stats (Morblass icicles: 58 hits and 31.5 projectile clashes a match): a kit/clash
+  change (projectile clash rules or Lavax shot speed), not stats.
+- Cyclonius vs Lavax is 0% with neutral elements: also kit.
+- Rokcore vs Echo flips 100% to 0% between flat stats and real stats plus chart: re-fit Rokcore hp/damage with the chart in the loop.
+- Rokcore's extra dashing is in the base `ScriptedAI`, not `arcade.ts`.
