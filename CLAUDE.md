@@ -22,6 +22,10 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
 - **Commits/pushes:** the user has explicitly authorised small commits and regular pushes to `origin/main` for this project;
   never force-push, never rewrite history, never push other branches.
 - **Scratch/temp** files go under `~/claudetmp/`, never `/tmp/`.
+- **Save work back to the repo:** `~/claudetmp/` is disposable. Anything that produces or explains a committed artifact (art generator
+  scripts, rig/bake helpers, balance or analysis scripts, merge helpers worth keeping) moves into the repo (`tools/`) in the same
+  commit as its output, with the licence/docs pointing at the in-repo path. Before finishing a work package, check
+  `~/claudetmp/` for scripts the commit depends on.
 - **`src/core` determinism:** no `Date`, `Math.random`, or `sin/cos/tan/atan2/exp/log/pow/hypot/cbrt/**` (differ across engines; ESLint enforces).
   Time = the tick; randomness = seeded sfc32 streams (`src/core/rng`); data via LUTs/integers. Golden replays must match in Node,
   Chromium, Firefox and WebKit.

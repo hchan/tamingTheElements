@@ -1,5 +1,5 @@
 Rig parts for pax: original art generated procedurally by this repository's tooling session (a Python, numpy and Pillow
-scratch script written for WP-rig-pax, 2026-11-11, by Claude; the script is not committed). No pixels are copied from any other artwork.
+scratch script written for WP-rig-pax, 2026-11-11, by Claude; the script is committed as tools/assets/rig-gen/pax.py). No pixels are copied from any other artwork.
 
 Reference: the colours (grey-brown stone, olive-grey belly and legs, tan spikes) and the hunched, spiked silhouette were chosen by eye
 to match the legacy Pax sprite (public/assets/img/map/pax.png, legacy Taming the Elements game art owned by the project owner), so

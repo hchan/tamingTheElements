@@ -64,7 +64,7 @@
     },
     "pax": {
       "inputs": {
-        "pax/license.txt": "7bb12c9a4533d4427107be6f3fc6284c696a764a443d4473c859741e3fe3fe6b",
+        "pax/license.txt": "73e8748d880d367fff2271d015ce95a9ff3e50332f2e6afb11942d9430f7664f",
         "pax/parts/armB.png": "e11b5a260477f25fb9ca37dde78c1668c93f52dd36fa1702c2a4e28c90ba7b12",
         "pax/parts/armB_ne.png": "042eef88d25138d193737e68f820e93cbd0cefb6a8e357aad59d72c6e4b963eb",
         "pax/parts/armB_se.png": "2463b1c8bcceaa6275d6ea031fbc6b23a4b1534e09e4a90d135eb15b5cc34bdd",
@@ -116,7 +116,7 @@
         "pax/idle/SE/01.png": "d9149bd28c97622f659af96746ce89ae6aee2cb9988b1a80454213a11aef55ba",
         "pax/idle/SE/02.png": "299cd667878f6f1c63ad4a07bd425ee504cd74f421c774170beef3a61588b46b",
         "pax/idle/SE/03.png": "afbf828f5e082929454192dd893a2441eb8c7bad7cfd1ed96cfcbc842e78f907",
-        "pax/license.txt": "7bb12c9a4533d4427107be6f3fc6284c696a764a443d4473c859741e3fe3fe6b",
+        "pax/license.txt": "73e8748d880d367fff2271d015ce95a9ff3e50332f2e6afb11942d9430f7664f",
         "pax/walk/E/00.png": "f4a570be1a987235a6d17766dbacb6c731f18d2f54c7f6a23264c8a0a60bfae2",
         "pax/walk/E/01.png": "21db78684cb31a0f718010bd8759a59ebe47cca9e6a05252bde519c88b3b760c",
         "pax/walk/E/02.png": "7a0896b9db1057e2f74837742fe1f1fd608f94fdd2934ff53e56bccb191351e8",
