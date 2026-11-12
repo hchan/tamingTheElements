@@ -16,20 +16,23 @@ export interface MatchEnd {
   readonly rounds?: readonly [number, number];
 }
 
+/** Replay playback rate: 0.5 advances one tick every other frame (slow motion). */
+export type PlaybackSpeed = 0.5 | 1 | 2;
+
 /** Live state of a replay playing in the Arena, for the viewer's status line. */
 export interface PlaybackStatus {
   readonly tick: number;
   readonly total: number;
   readonly state: 'playing' | 'ok' | 'diverged';
   readonly paused: boolean;
-  readonly speed: 1 | 2;
+  readonly speed: PlaybackSpeed;
   /** Checkpoint tick of the first hash mismatch. */
   readonly divergentTick?: number;
 }
 
 /** Controls the Arena hands to the viewer once it is running. */
 export interface PlaybackControls {
-  setSpeed(speed: 1 | 2): void;
+  setSpeed(speed: PlaybackSpeed): void;
   setPaused(paused: boolean): void;
   /** Pauses and advances one tick. */
   step(): void;

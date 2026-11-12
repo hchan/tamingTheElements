@@ -27,4 +27,8 @@ describe('replay viewer announcements', () => {
     ]);
     expect(texts.size).toBe(5);
   });
+
+  it('names slow motion in the announcement', () => {
+    expect(describeAnnouncement(at(1, { speed: 0.5 }))).toBe('Playing 0.5x');
+  });
 });
