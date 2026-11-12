@@ -43,16 +43,17 @@ export class RoundAnnouncer {
   private main = '';
   private from = 0;
 
-  constructor(private readonly sink: RoundSink) {}
+  /** `sudden` reads the sim's sudden-death slot (RenderArcade.sudden); it is set before `roundStarted` is emitted. */
+  constructor(private readonly sink: RoundSink, private readonly sudden: () => boolean = () => false) {}
 
   /**
    * Catch-up when the view loads after the round already started (its code is a lazy chunk): an intro in progress, or
    * the world before its first tick (round 0, which starts round 1), shows its "ROUND n" banner.
    */
-  sync(a: Pick<RenderArcade, 'round' | 'phase' | 'roundsWon'>, tick: number): void {
+  sync(a: Pick<RenderArcade, 'round' | 'phase' | 'roundsWon'> & { sudden?: boolean }, tick: number): void {
     if (a.phase !== RoundPhase.intro) return;
     this.won = [a.roundsWon[0], a.roundsWon[1]];
-    this.intro(Math.max(1, a.round), tick, false);
+    this.intro(Math.max(1, a.round), tick, false, a.sudden === true);
   }
 
   consume(events: readonly SimEvent[]): void {
@@ -71,12 +72,16 @@ export class RoundAnnouncer {
     this.sink.banner(main, sub, this.from, until);
   }
 
-  private intro(round: number, tick: number, say: boolean): void {
+  private intro(round: number, tick: number, say: boolean, sudden: boolean): void {
     this.round = round;
     this.perfect = false;
-    const final = this.won[0] === ROUNDS_TO_WIN - 1 && this.won[1] === ROUNDS_TO_WIN - 1;
-    this.show(final ? 'FINAL ROUND' : `ROUND ${String(round)}`, '', tick, tick + 1 + ROUND_INTRO_TICKS);
-    if (say) this.sink.say({ key: `round${String(round)}`, text: final ? 'Final round.' : `Round ${String(round)}.`, important: false });
+    const final = !sudden && this.won[0] === ROUNDS_TO_WIN - 1 && this.won[1] === ROUNDS_TO_WIN - 1;
+    const main = sudden ? 'SUDDEN DEATH' : final ? 'FINAL ROUND' : `ROUND ${String(round)}`;
+    this.show(main, '', tick, tick + 1 + ROUND_INTRO_TICKS);
+    if (say) {
+      const text = sudden ? 'Sudden death. One hit may decide the match.' : final ? 'Final round.' : `Round ${String(round)}.`;
+      this.sink.say({ key: `round${String(round)}`, text, important: sudden });
+    }
   }
 
   private on(e: SimEvent): void {
@@ -84,7 +89,7 @@ export class RoundAnnouncer {
     const n = String(this.round);
     switch (e.kind) {
       case SimEventKind.roundStarted:
-        this.intro(e['round'] ?? this.round + 1, t, true);
+        this.intro(e['round'] ?? this.round + 1, t, true, this.sudden());
         return;
       case SimEventKind.fight:
         this.show('FIGHT!', '', t, t + FIGHT_BANNER_TICKS);

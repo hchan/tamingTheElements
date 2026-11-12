@@ -62,6 +62,8 @@ export interface RenderArcade {
   round: number;
   phase: number;
   timer: number;
+  /** True in the sudden-death tiebreak round (`ArcadeW.sudden`): one extra round at low life after a draw levels the score. */
+  sudden: boolean;
   /** Rounds won per team (a draw round counts for both). */
   readonly roundsWon: [number, number];
   stunned(id: number): boolean;
@@ -201,7 +203,7 @@ export function createRenderView(world: SimWorld): RenderView {
     }
   };
   const ar: RenderArcade = {
-    frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, roundsWon: [0, 0],
+    frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, sudden: false, roundsWon: [0, 0],
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
     traps: new Array<number>(TRAP_WORLD_MAX * TRAP_VIEW_STRIDE).fill(0),
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
@@ -314,6 +316,7 @@ export function createRenderView(world: SimWorld): RenderView {
       ar.round = s.arcade[ARCADE_WORLD_BASE + ArcadeW.round] ?? 0;
       ar.phase = s.arcade[ARCADE_WORLD_BASE + ArcadeW.phase] ?? 0;
       ar.timer = s.arcade[ARCADE_WORLD_BASE + ArcadeW.roundTimer] ?? 0;
+      ar.sudden = (s.arcade[ARCADE_WORLD_BASE + ArcadeW.sudden] ?? 0) !== 0;
       ar.weather = s.arcade[ARCADE_WORLD_BASE + ArcadeW.weather] ?? 0;
       ar.weatherLeft = ar.weather && Math.max(0, (s.arcade[ARCADE_WORLD_BASE + ArcadeW.weatherUntil] ?? 0) - now(s));
       const w = ARCADE_WORLD_BASE;

@@ -162,4 +162,22 @@ describe('round HUD helpers', () => {
       { x: TIMER_X + PIP_INNER + PIP_STEP, team: 1, won: true },
     ]);
   });
+
+  it('shows a SUDDEN DEATH banner and an assertive line when the sim says the round is sudden death', () => {
+    const f = fake();
+    new RoundAnnouncer(f.sink, () => true).consume([ev(500, SimEventKind.roundStarted, { round: 3 })]);
+    expect(last(f.banners)?.main).toBe('SUDDEN DEATH');
+    expect(last(f.lines)).toMatchObject({ key: 'round3', text: 'Sudden death. One hit may decide the match.', important: true });
+    // Not sudden: the ordinary banners are untouched.
+    const g = fake();
+    new RoundAnnouncer(g.sink, () => false).consume([ev(500, SimEventKind.roundStarted, { round: 2 })]);
+    expect(last(g.banners)?.main).toBe('ROUND 2');
+  });
+
+  it('syncs a late-loading view into a sudden-death intro', () => {
+    const f = fake();
+    new RoundAnnouncer(f.sink).sync({ round: 3, phase: RoundPhase.intro, roundsWon: [2, 2], sudden: true }, 700);
+    expect(last(f.banners)).toMatchObject({ main: 'SUDDEN DEATH', from: 700 });
+    expect(f.lines).toHaveLength(0);
+  });
 });
