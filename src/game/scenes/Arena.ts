@@ -335,6 +335,10 @@ export class Arena extends Phaser.Scene {
         if (this.arcadeHud === hud) m.mountTrapView(this, view, () => getPrefs().reduceMotion);
       });
     }
+    // Melee danger-zone outlines (ability-telegraphs, its own lazy chunk).
+    void import('../fx/danger-view').then((m) => {
+      if (this.view === view) m.mountDangerView(this, view, () => getPrefs().reduceMotion);
+    });
     // The pose layer (lazy chunk): smooth walking, leans, Arcade poses, projectile easing (docs/ARCHITECTURE.md).
     void import('../views/pose-layer').then((m) => {
       if (this.view === view) this.poses = m.mountPoseLayer(this, view, pool, projPool, getPrefs);
@@ -443,6 +447,7 @@ export class Arena extends Phaser.Scene {
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
       terrain: () => import('../fx/terrain-view').then((m) => m.terrainState(this)),
       traps: () => import('../fx/trap-view').then((m) => m.trapState(this)),
+      dangerZones: () => import('../fx/danger-view').then((m) => m.dangerState(this)),
       aim: () => {
         const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
         return g ? { visible: g.visible, x: g.x, y: g.y, angle: Math.round(g.angle) } : undefined;
