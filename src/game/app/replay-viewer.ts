@@ -7,6 +7,7 @@ import type { ReplayStore } from '../platform/storage/replay-store';
 import { teardown } from '../platform/test-hook';
 import type { PlaybackControls, PlaybackStatus } from '../scenes/launch';
 import { destroyGame, type GameHandle } from './game-handle';
+import type { InputDisplay } from './input-display';
 
 export interface ViewerDeps {
   /** Present only when recording is enabled; lists the last saved playtests. */
@@ -66,6 +67,20 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         });
         return b;
       };
+      // The display is its own lazy chunk (created on the first replay) so the menu entry chunk stays small.
+      const inputs: { current: InputDisplay | undefined } = { current: undefined };
+      let showInputs = true;
+      const toggle = el('button', 'menuButton', 'Inputs: on');
+      toggle.type = 'button';
+      toggle.id = 'replayInputs';
+      toggle.setAttribute('aria-pressed', 'true');
+      toggle.setAttribute('aria-controls', 'inputDisplay');
+      toggle.addEventListener('click', () => {
+        showInputs = !showInputs;
+        toggle.setAttribute('aria-pressed', String(showInputs));
+        toggle.textContent = showInputs ? 'Inputs: on' : 'Inputs: off';
+        inputs.current?.setVisible(showInputs);
+      });
       const back = el('a', 'menuButton', 'Back');
       back.href = '#main';
       bar.append(
@@ -76,6 +91,7 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
         button('replay1x', '1x', (c) => { c.setSpeed(1); }),
         button('replay2x', '2x', (c) => { c.setSpeed(2); }),
         button('replayStep', 'Step', (c) => { c.step(); }),
+        toggle,
         status,
         progress,
         back,
@@ -91,6 +107,14 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
           return;
         }
         const replay = checked.value;
+        if (!inputs.current) {
+          const { createInputDisplay } = await import('./input-display');
+          if (life.disposed) return;
+          inputs.current ??= createInputDisplay();
+          inputs.current.setVisible(showInputs);
+          root.prepend(inputs.current.root);
+        }
+        inputs.current.setInputs(Array.isArray(replay.inputs) ? replay.inputs : undefined);
         const mine = ++life.generation;
         const stale = (): boolean => life.disposed || mine !== life.generation;
         controls.current = undefined;
@@ -119,6 +143,7 @@ export function replayViewerScreen(deps: ViewerDeps): Screen {
             replay,
             onStatus: (s) => {
               progress.textContent = describeStatus(s);
+              inputs.current?.update(s.tick);
               const text = describeAnnouncement(s);
               if (status.textContent !== text) status.textContent = text;
               status.dataset['state'] = s.state;
