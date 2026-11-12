@@ -16,7 +16,7 @@
     "online-versus": 3910,
     "phaser": 388700,
     "phaser-config": 26850,
-    "pose-layer": 10000,
+    "pose-layer": 10200,
     "rolldown-runtime": 200,
     "round-view": 2200,
     "sim": 35350,
@@ -31,7 +31,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 523400,
+  "totalGzip": 523550,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
