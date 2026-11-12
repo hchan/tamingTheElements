@@ -9,7 +9,7 @@ Rigged and baked art, effect sprites, stage backgrounds, tilemap hazards, Phaser
 
 Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as one theme, in separate small work packages):
 
-- [art-consistency-batches](../brainstorm/art-consistency-batches.md)
+- [art-consistency-batches](../in-progress/art-consistency-batches.md)
 - [effect-batches-plan](../brainstorm/effect-batches-plan.md)
 - [effect-sprite-style-pass](../brainstorm/effect-sprite-style-pass.md)
 - [hero-rigs](../brainstorm/hero-rigs.md)
