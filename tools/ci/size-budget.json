@@ -6,9 +6,10 @@
     "arena-pan": 950,
     "clash-view": 943,
     "danger-view": 750,
+    "input-display": 1150,
     "core": 12600,
     "defence-view": 3750,
-    "index": 30100,
+    "index": 30300,
     "index.css": 6000,
     "lazy-index": 550,
     "local-two": 455,
@@ -30,7 +31,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 521900,
+  "totalGzip": 523400,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
