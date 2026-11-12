@@ -68,8 +68,9 @@ is `ai.arcade.p1, ai.arcade.p2`. Each stream is seeded by `seedSfc32` (`src/core
   `view.arcade` (Classic) it returns the command unchanged and draws nothing (its stream is never seeded), so Classic
   agent streams and decisions are identical. Its memory (a fixed array of integers) and stream are in the agent's
   `save()`. Threat prediction (`impactIn`) steps the shot's per-tick velocity with plain adds and compares boxes: no
-  transcendentals, no division. AI is not sim state, so it needs no `SIM_VERSION` bump; the Arcade goldens replay
-  recorded commands, so a change of the AI never changes them. Its diagonal shots (`diagonalLine`, 8-way aim) are a pure
+  transcendentals, no division. AI is not sim state, so its goldens replay recorded commands and a change of the AI never changes their hashes;
+  still, a change of AI behaviour bumps `SIM_VERSION` (WP 39f, 35) so recordings and balance baselines made by the old AI
+  are told apart (the replay fixtures then change only their `simVersion` header). Its diagonal shots (`diagonalLine`, 8-way aim) are a pure
   function of the view and the ready slot: no draw, no new memory.
 
 ## LUTs and directions
