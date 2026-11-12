@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HC_COLORS,
   activeHeroText,
+  lifeReadout,
   elementCue,
   barFill,
   benchBar,
@@ -123,8 +124,13 @@ describe('activeHeroText', () => {
     expect(lines[0]).toBe('Pax');
     expect(lines[1]).toBe(healthCue(1).text);
   });
+  it('shows absolute life in words and numbers (Rokcore 365 next to Pax 795), rounding a fractional hp up and never below 0', () => {
+    expect(activeHeroText('Rokcore', { hp: 365, maxHp: 365, restCap: 365 }, false).split('\n').at(-1)).toBe('Life 365/365');
+    expect(activeHeroText('Pax', { hp: 794.2, maxHp: 795, restCap: 795 }, false).split('\n').at(-1)).toBe('Life 795/795');
+    expect(lifeReadout({ hp: -3, maxHp: 365 })).toBe('Life 0/365');
+  });
   it('adds the element as a glyph and word under the name, never colour alone', () => {
-    expect(activeHeroText('Pax', { ...c, element: 'water' }, false).split('\n')).toEqual(['Pax', '● Water', healthCue(1).text]);
+    expect(activeHeroText('Pax', { ...c, element: 'water' }, false).split('\n')).toEqual(['Pax', '● Water', healthCue(1).text, 'Life 150/150']);
     expect(activeHeroText('Pax', { ...c, element: 'fire' }, true).split('\n').slice(0, 2)).toEqual(['Pax', '▲ Fire']);
     expect(new Set(ELEMENTS.map(elementCue)).size).toBe(ELEMENTS.length);
   });

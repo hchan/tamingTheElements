@@ -148,6 +148,11 @@ export class Hud extends Phaser.Scene {
     });
   }
 
+  /** Test hook: the words beside each side's main bar, as drawn. */
+  heroLabels(): string[] {
+    return this.labels.map((t) => t.text);
+  }
+
   override update(): void {
     const { view, gfx } = this;
     if (!view || !gfx) return;
