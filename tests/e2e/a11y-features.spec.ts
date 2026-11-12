@@ -245,7 +245,7 @@ test.describe('screen reader announcements', () => {
           `document.getElementById('liveRegion').textContent + document.getElementById('liveRegionAssertive').textContent`,
         ),
       )
-      .toContain('Captured the opponent');
+      .toContain('Snagged the opponent');
   });
 
   test('defeat is announced', async ({ page }) => {

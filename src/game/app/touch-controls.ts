@@ -66,13 +66,28 @@ function fill(v: number, full: number): string {
   return v >= full ? 'ready' : `${String(Math.floor((Math.min(v, full) * 100) / full))}%`;
 }
 
+/** The last text written to each button (see `setTouchText`). */
+const written = new WeakMap<HTMLButtonElement, string>();
+
 /** Writes a button's text: `5 Charge`, plus a second line with the state when there is one. */
 export function setTouchText(b: HTMLButtonElement, label: TouchLabel, status = ''): void {
   const name = label === 'Tag2' ? 'Tag 2' : label;
   const text = `${touchKeyLabel(label)} ${name}`;
-  b.textContent = status === '' ? text : `${text}\n${status}`;
+  // Only write what changed: rewriting identical text or a label makes screen readers re-announce the control.
+  const shown = status === '' ? text : `${text}\n${status}`;
+  if (written.get(b) === shown) return;
+  written.set(b, shown);
+  b.textContent = shown;
   // The visible key stays in the accessible name (WCAG 2.5.3 label in name): "9 Super, 40%".
   b.setAttribute('aria-label', status === '' ? text : `${text}, ${status}`);
+}
+
+/**
+ * The buttons in DOM order for `append`: Tab must follow the visual left-to-right, top-to-bottom order. Slot 0 (Super) sits lowest and
+ * rightmost, the last slot (Trap) highest and leftmost, so the DOM order is the slot order reversed.
+ */
+export function inVisualOrder(buttons: readonly HTMLButtonElement[]): HTMLButtonElement[] {
+  return [...buttons].reverse();
 }
 
 /** Refreshes the state words of `buttons` four times a second off `view`; stops once they leave the page. */
@@ -89,6 +104,9 @@ export function watchTouch(buttons: readonly HTMLButtonElement[], view: RenderVi
   }, 250);
 }
 
+/** Shortest time a keyboard activation holds the action (about five sim ticks), so a quick tap is never a one-frame press. */
+const MIN_KEY_HOLD_MS = 100;
+
 /**
  * Button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
  * listens on window) for as long as the finger is down; an unbound action does nothing. Focusable: Enter or Space
@@ -104,39 +122,69 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   b.className = `menuButton touchBtn touchBtn-${label}`;
   b.style.cssText = `--touch-row:${String(row)}`;
   let code: string | undefined;
-  const release = (): void => {
-    if (code === undefined) return;
+  // Pointer and keyboard hold the action separately: the key goes up only when neither is still holding it.
+  let byPointer = false;
+  let byKey = false;
+  let keyDownAt = 0;
+  let keyTimer: ReturnType<typeof setTimeout> | undefined;
+  const sync = (): void => {
+    if (code === undefined || byPointer || byKey) return;
     window.dispatchEvent(new KeyboardEvent('keyup', { code }));
     code = undefined;
   };
   const press = (): boolean => {
-    if (code !== undefined) return false;
-    code = getBindings()[TOUCH_KEY[label]][0];
-    if (code === undefined) return false;
-    window.dispatchEvent(new KeyboardEvent('keydown', { code }));
+    if (code === undefined) {
+      code = getBindings()[TOUCH_KEY[label]][0];
+      if (code === undefined) return false;
+      window.dispatchEvent(new KeyboardEvent('keydown', { code }));
+    }
     return true;
+  };
+  const releasePointer = (): void => {
+    byPointer = false;
+    sync();
+  };
+  const releaseKey = (): void => {
+    if (keyTimer !== undefined) clearTimeout(keyTimer);
+    keyTimer = undefined;
+    byKey = false;
+    sync();
   };
   b.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (press()) b.setPointerCapture(e.pointerId);
+    if (press()) {
+      byPointer = true;
+      b.setPointerCapture(e.pointerId);
+    }
   });
-  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, release);
+  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, releasePointer);
   // Keyboard, switch and screen-reader users: Enter or Space holds the action like a finger does (same keydown, then keyup).
-  // The real key event stops here so Enter or Space never reaches the arena's own bindings or fires a click.
+  // The real key event stops here so Enter or Space never reaches the arena's own bindings or fires a click. A quick tap is held at
+  // least MIN_KEY_HOLD_MS, so the 50 Hz sim always sees the key down for a tick or more.
   const activation = (e: KeyboardEvent): boolean => e.key === 'Enter' || e.key === ' ';
   b.addEventListener('keydown', (e) => {
     if (!activation(e)) return;
     e.preventDefault();
     e.stopPropagation();
-    if (!e.repeat) press();
+    if (e.repeat || byKey) return;
+    if (press()) {
+      byKey = true;
+      keyDownAt = Date.now();
+    }
   });
   b.addEventListener('keyup', (e) => {
     if (!activation(e)) return;
     e.preventDefault();
     e.stopPropagation();
-    release();
+    if (!byKey) return;
+    const wait = MIN_KEY_HOLD_MS - (Date.now() - keyDownAt);
+    if (wait > 0) keyTimer = setTimeout(releaseKey, wait);
+    else releaseKey();
   });
-  b.addEventListener('blur', release);
+  b.addEventListener('blur', () => {
+    releasePointer();
+    releaseKey();
+  });
   return b;
 }
 

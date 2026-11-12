@@ -790,9 +790,10 @@ body:has(#game:not(:empty)) {
   margin-top: 0.75em;
 }
 
-/* Touch/action row buttons. Touch: a column up the right edge (>= 48 px, safe areas). Mouse/keyboard: a compact row in the bottom
-   band under the walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at the arena edge.
-   --touch-row is the slot, set inline. */
+/* Touch/action row buttons. Touch: a column up the right edge (>= 48 px, safe areas), two columns of four on short screens. Mouse/keyboard:
+   a compact row in the bottom band under the walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at
+   the arena edge; two rows of four in narrow windows so the row cannot run into the left HUD. --touch-row is the slot, set inline.
+   The background is solid (opacity 1): a translucent button over a bright arena would lose its text contrast. */
 button.touchBtn {
   --touch-row: 0;
   position: absolute;
@@ -803,25 +804,31 @@ button.touchBtn {
   bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-row) * 56px);
   min-width: 72px;
   min-height: 48px;
-  opacity: 0.85;
+  opacity: 1;
+  background: #2c3d63;
+  color: #fff;
+  border: 2px solid #8fa4c8;
 }
 @media (pointer: fine) {
   button.touchBtn {
-    right: calc(6px + var(--touch-row) * 88px);
+    right: calc(6px + var(--touch-row) * 118px);
     bottom: 8px;
-    width: 84px;
+    width: 112px;
+    min-width: 84px;
     height: 58px;
-    min-width: 0;
-    min-height: 0;
-    padding: 0;
-    font-size: 14px;
+    min-height: 48px;
+    padding: 0 4px;
+    font-size: 16px;
     font-weight: bold;
     line-height: 1.15;
-    opacity: 0.95;
-    background: #2c3d63;
-    color: #fff;
-    border: 2px solid #8fa4c8;
     border-radius: 6px;
+  }
+}
+/* Narrow windows with a mouse: wrap to two rows of four (slot = column + 4 * row). */
+@media (pointer: fine) and (max-width: 1100px) {
+  button.touchBtn {
+    right: calc(6px + mod(var(--touch-row), 4) * 118px);
+    bottom: calc(8px + round(down, var(--touch-row) / 4, 1) * 64px);
   }
 }
 /* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
@@ -852,11 +859,13 @@ html[data-high-contrast='true'] button.touchBtn {
 .touchBtn-Tag { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .touchBtn-Tag2 { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .touchBtn-Trap { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l10 18H2z' fill='black'/%3E%3C/svg%3E"); }
-/* Short touch screens: the Trap button (the eighth) sits in a second column on the bottom instead of running off the top. */
+/* Short touch screens (a 640x360 phone in landscape): two columns of four, slot = row in the column (0 to 3) and column (0 or 1), so up
+   to 8 buttons never run off the top. */
 @media (pointer: coarse) and (max-height: 520px) {
-  #menu button.touchBtn-Trap {
-    bottom: max(8px, env(safe-area-inset-bottom));
-    right: calc(max(8px, env(safe-area-inset-right)) + 80px);
+  #menu button.touchBtn {
+    width: 84px;
+    right: calc(max(8px, env(safe-area-inset-right)) + round(down, var(--touch-row) / 4, 1) * 92px);
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + mod(var(--touch-row), 4) * 56px);
   }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }

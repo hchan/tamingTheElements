@@ -14,10 +14,10 @@ export function announcementsFor(events: readonly SimEvent[], teamOf: (entity: n
   for (const e of events) {
     switch (e.kind) {
       case SimEventKind.captured:
-        out.push({ key: 'captured', text: 'Captured the opponent.', important: false });
+        out.push({ key: 'snagged', text: 'Snagged the opponent.', important: false });
         break;
       case SimEventKind.captureFailed:
-        out.push({ key: 'captureFailed', text: 'Capture failed.', important: false });
+        out.push({ key: 'snagFailed', text: 'Snag failed.', important: false });
         break;
       case SimEventKind.died:
         out.push(
@@ -53,7 +53,7 @@ export function announcementsFor(events: readonly SimEvent[], teamOf: (entity: n
 
 /**
  * Word-only trap lines (polite, never important). Your own traps: placed, armed, triggered, expired, doused; the foe's: placed,
- * triggered and doused, not armed or expired (chatter). Keys carry the side and the step, so the Announcer's repeat window
+ * triggered and doused, not armed or expired (chatter). Keys carry the side, the trap kind and the step (two kinds never silence each other), so the Announcer's repeat window
  * (6 s per key) and 3-line queue keep a trap spam quiet.
  */
 function trapAnnouncement(e: SimEvent, teamOf: (entity: number) => number): Announcement | undefined {
@@ -61,12 +61,13 @@ function trapAnnouncement(e: SimEvent, teamOf: (entity: number) => number): Anno
   const mine = (e['team'] ?? teamOf(e.sourceId)) === 0;
   const name = TRAP_WORDS[e['trap'] ?? 0] ?? 'trap';
   const who = mine ? 'Your' : 'Enemy';
-  const side = mine ? 'trapMine' : 'trapFoe';
+  const kind = String(e['trap'] ?? 0);
+  const side = mine ? `trapMine${kind}` : `trapFoe${kind}`;
   if (e.kind === SimEventKind.trapPlaced) return { key: `${side}Placed`, text: `${who} ${name} placed.`, important: false };
-  if (e.kind === SimEventKind.trapArmed) return mine ? { key: 'trapMineArmed', text: `Your ${name} is armed.`, important: false } : undefined;
+  if (e.kind === SimEventKind.trapArmed) return mine ? { key: `${side}Armed`, text: `Your ${name} is armed.`, important: false } : undefined;
   const reason = e['reason'] ?? TrapReason.overlap;
   if (reason === TrapReason.doused) return { key: `${side}Doused`, text: `${who} ${name} doused.`, important: false };
-  if (reason === TrapReason.timeout) return mine ? { key: 'trapMineExpired', text: `Your ${name} expired.`, important: false } : undefined;
+  if (reason === TrapReason.timeout) return mine ? { key: `${side}Expired`, text: `Your ${name} expired.`, important: false } : undefined;
   return { key: `${side}Triggered`, text: `${who} ${name} triggered.`, important: false };
 }
 
@@ -146,7 +147,11 @@ export class Announcer {
       return;
     }
     this.queue.push(a);
-    while (this.queue.length > this.maxQueue) this.queue.shift();
+    // Over the cap: drop trap chatter first (oldest first), then the oldest line, so a death or defeat is never lost to a trap line.
+    while (this.queue.length > this.maxQueue) {
+      const trap = this.queue.findIndex((q) => q.key.startsWith('trap'));
+      this.queue.splice(trap < 0 ? 0 : trap, 1);
+    }
   }
 
   /** Call each frame: releases the next waiting line once the gap has passed. */
@@ -156,6 +161,11 @@ export class Announcer {
     if (next === undefined || t - this.lastSent < this.minGap) return;
     this.queue.shift();
     this.send(next, t);
+  }
+
+  /** The texts still waiting, oldest first. */
+  get queued(): string[] {
+    return this.queue.map((q) => q.text);
   }
 
   get pending(): number {
