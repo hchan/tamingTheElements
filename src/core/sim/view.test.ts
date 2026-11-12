@@ -67,6 +67,15 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(ar?.chargeIn(1)).toBe(120);
   });
 
+  it('reports the ticks until a dash is ready and the active character (read-outs only)', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const ar = createRenderView(world).arcade();
+    expect(ar?.active(0)).toBe(0);
+    expect(ar?.dashIn(0)).toBe(0);
+    world.state.arcade[ArcadeE.dashReadyAt] = (world.state.arcade[ARCADE_WORLD_BASE + ArcadeW.gameTick] ?? 0) + 25;
+    expect(ar?.dashIn(0)).toBe(25);
+  });
+
   it('reports the weather up and the game ticks it has left (read-outs only)', () => {
     const world = chargedWeather(skipIntro(createMatch(match(true))));
     const view = createRenderView(world);

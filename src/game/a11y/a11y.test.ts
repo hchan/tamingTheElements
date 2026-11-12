@@ -1,4 +1,4 @@
-import { SimEventKind, type SimEvent } from '@core/index';
+import { SimEventKind, TrapReason, type SimEvent } from '@core/index';
 import { describe, expect, it } from 'vitest';
 import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor } from './announcer';
 import { nextFocusIndex } from './pause-dialog';
@@ -22,6 +22,35 @@ describe('announcementsFor', () => {
     expect(text(ev(SimEventKind.died, { team: 0 }))).toMatch(/Your elemental/);
     expect(text(ev(SimEventKind.died, { team: 1 }))).toMatch(/Enemy/);
     expect(announcementsFor([ev(SimEventKind.damage), ev(SimEventKind.moved), ev(SimEventKind.swapped)])).toEqual([]);
+  });
+  it('announces traps in words, politely: yours placed, armed, triggered, expired, doused; the foe\'s placed, triggered, doused only', () => {
+    const text = (e: SimEvent): string | undefined => announcementsFor([e])[0]?.text;
+    const placed = (team: number, trap: number): SimEvent => ev(SimEventKind.trapPlaced, { team, trap });
+    expect(text(placed(0, 3))).toBe('Your Spike placed.');
+    expect(text(placed(1, 1))).toBe('Enemy Fire Bomb placed.');
+        // trapArmed has no team in its payload: the owner entity (sourceId) is mapped to a team.
+    expect(announcementsFor([ev(SimEventKind.trapArmed, { trap: 2 })], () => 0)[0]?.text).toBe('Your Puddle is armed.');
+    expect(announcementsFor([ev(SimEventKind.trapArmed, { trap: 2 })], () => 1)).toEqual([]);
+    const ended = (team: number, reason: number): SimEvent => ev(SimEventKind.trapTriggered, { team, trap: 4, reason });
+    expect(text(ended(0, TrapReason.overlap))).toBe('Your Gust triggered.');
+    expect(text(ended(1, TrapReason.overlap))).toBe('Enemy Gust triggered.');
+    expect(text(ended(0, TrapReason.timeout))).toBe('Your Gust expired.');
+    expect(announcementsFor([ended(1, TrapReason.timeout)])).toEqual([]);
+    expect(text(ended(1, TrapReason.doused))).toBe('Enemy Gust doused.');
+    expect(announcementsFor([placed(0, 3), ended(1, TrapReason.doused)]).every((a) => !a.important)).toBe(true);
+  });
+  it('trap lines are rate-limited by the Announcer: the same line is not repeated inside the window, a burst keeps at most 3', () => {
+    let now = 0;
+    const spoken: string[] = [];
+    const a = new Announcer((x) => spoken.push(x), () => now);
+    const placed = announcementsFor([ev(SimEventKind.trapPlaced, { team: 0, trap: 3 })])[0];
+    if (!placed) throw new Error('no line');
+    a.say(placed);
+    now = 2000;
+    a.say(placed);
+    expect(spoken).toEqual(['Your Spike placed.']);
+    for (const t of [1, 2, 3, 4]) a.say({ key: `k${String(t)}`, text: String(t), important: false });
+    expect(a.pending).toBe(3);
   });
   it('the match result is important', () => {
     expect(announcementsFor([ev(SimEventKind.matchEnded, { winner: 0 })])[0]?.important).toBe(true);
