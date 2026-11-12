@@ -62,15 +62,16 @@ describe('resolveFrame: fallback order', () => {
     expect(res.sheetUrl('curomo')).toBe('img/sheets/curomo.png');
   });
 
-  it('the shipped manifest has only the Fiara atlas: every other character resolves to legacy, Fiara has art for idle, walk and cast only', () => {
+  it('the shipped manifest has only the Fiara and Pax atlases: every other character resolves to legacy, Fiara and Pax have art for idle, walk and cast only', () => {
     const shipped = createFrameResolver(generatedSheets);
     for (const s of generatedSheets.sheets) {
-      if (s.sprite === 'fiara') continue;
+      if (s.sprite === 'fiara' || s.sprite === 'pax') continue;
       expect(shipped.hasSheet(s.sprite)).toBe(false);
       for (const [a] of ACTIONS) for (let d = 0; d < 8; d++) expect(shipped.resolveFrame(s.sprite, a, d, 0).source).toBe('legacy');
     }
     expect(shipped.hasSheet('fiara')).toBe(true);
-    for (const d of [0, 1, 7]) expect(shipped.resolveFrame('fiara', 'idle', d, 0).source).not.toBe('legacy');
+    expect(shipped.hasSheet('pax')).toBe(true);
+    for (const sp of ['fiara', 'pax']) for (const d of [0, 1, 7]) expect(shipped.resolveFrame(sp, 'idle', d, 0).source).not.toBe('legacy');
     expect(shipped.resolveFrame('fiara', 'ko', 0, 0).source).toBe('legacy');
 });
 });
