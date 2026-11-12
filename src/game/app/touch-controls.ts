@@ -5,7 +5,7 @@ import { codeLabel, getBindings } from '../platform/input/bindings';
 /** Shared on-screen touch controls of the Arcade battle (Arcade Versus and the World Tour fight); DOM only, no Phaser. */
 
 /**
- * Touch buttons, bottom-up on the right edge, one `--touch-pitch` (78 to 86 px, CSS) apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
+ * Touch buttons, bottom-up on the right edge, one `--touch-pitch` (78 px, CSS) apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
  * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), and last Trap
  * (WP 39), always there.
  */
