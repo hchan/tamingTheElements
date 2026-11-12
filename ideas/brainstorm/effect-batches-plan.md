@@ -1,5 +1,5 @@
 ---
-status: brainstorm
+status: planned
 ---
 
 # Effect sprite batches (A-D)

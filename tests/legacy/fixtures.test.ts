@@ -13,6 +13,7 @@ const FILES = [
   'abilities-effects.json',
   'abilities-range.json',
   'ability-descriptions.json',
+  'ability-sounds.json',
   'ai.json',
   'data.json',
   'rules.json',

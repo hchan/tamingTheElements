@@ -7,12 +7,12 @@
     "core": 12200,
     "defence-view": 3750,
     "index": 28800,
-    "index.css": 4100,
+    "index.css": 4170,
     "lazy-index": 550,
     "local-two": 430,
     "online-versus": 3900,
     "phaser": 388700,
-    "phaser-config": 22370,
+    "phaser-config": 22500,
     "pose-layer": 9700,
     "rolldown-runtime": 200,
     "round-view": 2100,
@@ -24,7 +24,7 @@
     "terrain-view": 4800,
     "weather-view": 3470
   },
-  "totalGzip": 500200,
+  "totalGzip": 500250,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912

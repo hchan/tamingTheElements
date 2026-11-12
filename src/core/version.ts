@@ -111,5 +111,7 @@
  *    sidestep dash, spacing, Hard super on a rooted foe, Rushdown charge, Hard weather and earlier tag; agent memory grows.
  * 29: Arcade only; Classic hashes unchanged. Auto-face (WP-arcade-auto-face, FUN-DESIGN 2.22): with no diagonal held, the Arcade aim and
  *    4-way facing follow the foe, so attacks face the opponent whichever way the hero was moving; a held diagonal still overrides.
+ * 30: Arcade only; Classic hashes unchanged. Curomo's Arcade numbers 6300/1560 -> 6000/1250 hpPm/damagePm (Arcade tournament win rate
+ *    87.5% -> 60%, the outlier of docs/ABILITY-AUDIT.md finding 1); Classic data untouched.
  */
-export const SIM_VERSION = 29;
+export const SIM_VERSION = 30;
