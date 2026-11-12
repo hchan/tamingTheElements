@@ -1,5 +1,6 @@
 import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
 import { el } from '../dom';
+import { ELEMENT_MARKS } from '../element-marks';
 
 /** Key help for the two-player option (the defaults; Player 1's keys can be rebound on Key Bindings). */
 const P1_HELP = 'W A S D or arrows move, Space attack, Enter second attack, E dash, Q guard, X super, R weather, H charge, Z trap, 3 tag, 4 tag 2';
@@ -34,6 +35,11 @@ export interface PickViewOptions {
   readonly levels: readonly { readonly value: string; readonly label: string }[];
   readonly current: PickValues;
   readonly onStart: (v: PickValues) => void;
+}
+
+/** The element glyph plus its word, so the tile never relies on colour. */
+function rosterElement(element: string): HTMLElement {
+  return el('span', 'rosterElement', `${ELEMENT_MARKS[element] ?? ''} ${element}`);
 }
 
 /** "Sindarosa (fire)": the element word, so the choice never depends on colour or art. */
@@ -137,7 +143,7 @@ function rosterView(
     const face = el('span', 'rosterFace');
     face.style.backgroundImage = avatarOf(r);
     face.setAttribute('aria-hidden', 'true');
-    t.append(face, el('span', 'rosterName', shortName(r)), el('span', 'rosterElement', getCharacter(r).element), el('span', 'battlegroundOrderContainer'));
+    t.append(face, el('span', 'rosterName', shortName(r)), rosterElement(getCharacter(r).element), el('span', 'battlegroundOrderContainer'));
     t.addEventListener('click', () => {
       const sel = fields()[active];
       if (sel) sel.value = r;
