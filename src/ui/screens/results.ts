@@ -2,6 +2,8 @@ import { levelFromXp } from '@core/menu-index';
 import type { MatchReport } from '@core/menu-index';
 import { el } from '../dom';
 import type { Screen } from './screen';
+import { lossQuote, winQuote } from './win-quotes';
+import '../styles/win-quotes.css';
 
 export interface ResultsContext {
   readonly report: MatchReport;
@@ -17,6 +19,7 @@ export interface ResultsView {
   readonly xpLines: readonly string[];
   readonly captured: readonly { readonly name: string; readonly text: string }[];
   readonly banner: string | null;
+  readonly quote: string;
   readonly continueHref: string;
 }
 
@@ -26,6 +29,7 @@ const DEFEAT: ResultsView = {
   xpLines: [],
   captured: [],
   banner: null,
+  quote: lossQuote(0),
   continueHref: '#garrison',
 };
 
@@ -62,6 +66,7 @@ export function resultsView(ctx: ResultsContext): ResultsView {
       text: `${c.characterName} Level : ${String(levelFromXp(c.experience))}`,
     })),
     banner,
+    quote: winQuote(xp?.characterName ?? null, xp?.after ?? 0),
     continueHref: ctx.objectivesMet ? '#main' : '#garrison',
   };
 }
@@ -80,6 +85,7 @@ function renderView(page: HTMLElement, view: ResultsView, victory: boolean): voi
     avatar.dataset['character'] = view.avatarName;
     page.append(avatar);
   }
+  if (view.quote !== '') page.append(el('p', 'winQuote', `“${view.quote}”`));
   for (const line of view.xpLines) page.append(el('p', 'resultXp', line));
   if (view.captured.length > 0) {
     page.append(el('p', 'resultCapturedHeading', 'Captured:'));
@@ -99,7 +105,7 @@ function resultsScreen(victory: boolean): Screen {
       node = page;
       const ctx = pending;
       pending = null;
-      const view = !victory ? DEFEAT : ctx !== null ? resultsView(ctx) : { ...DEFEAT, heading: 'Victory!' };
+      const view = !victory ? DEFEAT : ctx !== null ? resultsView(ctx) : { ...DEFEAT, heading: 'Victory!', quote: winQuote(null, 0) };
       renderView(page, view, victory);
       container.append(page);
     },

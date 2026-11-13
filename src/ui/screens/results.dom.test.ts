@@ -33,6 +33,7 @@ describe('results screens in the DOM', () => {
     expect(h.querySelector('h1')?.className).toContain('victory');
     expect(h.querySelector<HTMLElement>('.resultAvatar')?.dataset['character']).toBe('Fiara');
     expect(h.querySelector('.resultXp')?.textContent).toContain('max XP');
+    expect(h.querySelector('.winQuote')?.textContent).toMatch(/^“.+”$/);
     expect(h.querySelector('.resultCaptured')?.textContent).toMatch(/^Aqua Level : \d+$/);
     expect(h.querySelector('.resultBanner')?.textContent).toContain('Capture is unlocked in chapter 2');
     expect(h.querySelector('a.menuLink')?.getAttribute('href')).toBe('#main');
@@ -58,6 +59,7 @@ describe('results screens in the DOM', () => {
     expect(d.querySelector('h1')?.textContent).toBe('You have been defeated...');
     expect(d.querySelector('h1')?.className).toContain('defeat');
     expect(d.querySelector('.resultXp')).toBeNull();
+    expect(d.querySelector('.winQuote')?.textContent).not.toBe('');
     d.remove();
     const v = mount(victoryScreen());
     expect(v.querySelector('.resultXp')).toBeNull();
