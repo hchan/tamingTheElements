@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { MIN_BOLT_LONG_SIDE, ProjectileView, boltDisplaySize, lookup, snagSpriteFor } from './projectile-view';
+import { MIN_BOLT_LONG_SIDE, ProjectileView, SPRITE_BOOST, boltDisplaySize, lookup, snagSpriteFor } from './projectile-view';
 
 /** Chainable fake Image that really stores alpha, so the test sees what the pose layer would multiply. */
 interface FakeImage { alpha: number; [method: string]: unknown }
@@ -93,5 +93,26 @@ describe('Snag rope art by caster element', () => {
     expect(tex).toContain('sprite:entanglingVinesWater');
     view.apply(p, 1, true, 'earth');
     expect(tex.at(-1)).toBe('sprite:entanglingVines');
+  });
+});
+
+describe("SPRITE_BOOST contrast entries (ability audit open defects)", () => {
+  it("keeps Stick readable on bright floors: bigger, dark normal-blend outline; others stay additive", () => {
+    const blends: number[] = [];
+    const scene = {
+      add: { image: () => { const i = fakeImage(); i.setBlendMode = (b: number) => { blends.push(b); return i; }; return i; } },
+      textures: { get: () => ({ has: () => true }) },
+    } as unknown as Phaser.Scene;
+    const view = new ProjectileView(scene);
+    blends.length = 0;
+    view.apply({ id: 1, team: 0, sprite: "stick", dir: 0, x: 0, y: 0, px: 0, py: 0, w: 25, h: 10 }, 1);
+    expect(blends.at(-1)).toBe(0);
+    expect(SPRITE_BOOST["stick"]?.minLong).toBeGreaterThanOrEqual(56);
+    view.apply({ id: 2, team: 0, sprite: "fireball", dir: 0, x: 0, y: 0, px: 0, py: 0, w: 25, h: 12 }, 1);
+    expect(blends.at(-1)).toBe(1);
+  });
+  it("draws Crimson Fire and Strangling Branches with a strong halo and longer or thicker art", () => {
+    for (const k of ["crimsonFire", "stranglingBranches"]) expect(SPRITE_BOOST[k]?.glowAlpha).toBeGreaterThanOrEqual(0.9);
+    expect(SPRITE_BOOST["crimsonFire"]?.minLong).toBeGreaterThan(80);
   });
 });
