@@ -1,0 +1,220 @@
+/* Tour stage select, grim dress (WP tour-select-screen-redesign). Loaded lazily by src/ui/screens/tour-select.ts and scoped to
+   #tourStage.tsGrim, so nothing else is touched. Palette: ash #d8d2c4, shadow #0a0806, slate #15181c, stone #4a4a44, ember #a0402c.
+   Meaning is always in the words too; stamps, pips and silhouettes are extra. */
+#menu #tourStage.tsGrim {
+  max-width: 62em;
+  color: #d8d2c4;
+}
+#tourStage.tsGrim h1.heading {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 1.5em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #d8d2c4;
+  text-shadow: 0 2px 0 #0a0806, 0 0 14px #000;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid #4a4a44;
+}
+
+/* Current stage panel: painted backdrop, opponent roster on the left, the words on the right. */
+#tourStage .tsPanel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1em;
+  align-items: center;
+  margin: 0.6em 0;
+  padding: 0.8em 1em;
+  border: 2px solid #4a4a44;
+  position: relative;
+  isolation: isolate;
+  background: #15181c;
+  box-shadow: inset 0 0 3.5em #000, 0 0 0 1px #0a0806;
+}
+#tourStage .tsPanel::before,
+#tourStage .tsPanel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+#tourStage .tsPanel::before { background: var(--tile, none) center / cover no-repeat; filter: brightness(1.9) contrast(1.05); }
+#tourStage .tsPanel::after { background: linear-gradient(90deg, rgb(10 8 6 / 0.35), rgb(10 8 6 / 0.8)); }
+#tourStage .tsPanel[data-element='fire'] { --tile: url('../img/tour/fire.webp'); }
+#tourStage .tsPanel[data-element='water'] { --tile: url('../img/tour/water.webp'); }
+#tourStage .tsPanel[data-element='earth'] { --tile: url('../img/tour/earth.webp'); }
+#tourStage .tsPanel[data-element='air'] { --tile: url('../img/tour/air.webp'); }
+#tourStage .tsPanel[data-element='void'] { --tile: url('../img/tour/void.webp'); }
+#tourStage .tsRoster {
+  display: flex;
+  gap: 0.6em;
+}
+#tourStage .tsFoe {
+  margin: 0;
+  width: 7em;
+  text-align: center;
+  font-size: 0.8em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+#tourStage .tsFoe img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: radial-gradient(#2a2c2e, #0a0806);
+  border: 2px solid #4a4a44;
+  /* Close to HERO_GRADE (keep 0.6, darken 0.24) in CSS; the sprite files themselves are ungraded. */
+  filter: saturate(0.6) brightness(0.8) contrast(1.08);
+}
+#tourStage .tsFoe figcaption {
+  margin-top: 0.3em;
+}
+#tourStage .tsInfo p {
+  margin: 0.25em 0;
+  text-shadow: 0 1px 0 #0a0806;
+}
+#tourStage .tsPips {
+  display: inline-flex;
+  gap: 0.35em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+#tourStage .tsPips i {
+  width: 0.7em;
+  height: 0.7em;
+  border: 2px solid #8a8678;
+  box-sizing: border-box;
+}
+#tourStage .tsLevel i { transform: rotate(45deg); }
+#tourStage .tsLevel i.on { background: #d8d2c4; border-color: #d8d2c4; }
+#tourStage .tsLives i { border-radius: 50%; }
+#tourStage .tsLives i.on { background: #a0402c; border-color: #a0402c; }
+
+/* The strip of nine stage tiles (the list from tour-map.ts). The SVG map is replaced by it. */
+#tourStage.tsGrim #tourMap > svg { display: none !important; }
+#tourStage #tourPins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5em, 1fr));
+  gap: 0.5em;
+  list-style: none;
+  margin: 0.6em 0;
+  padding: 0;
+}
+#tourStage #tourPins li {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  aspect-ratio: 16 / 9;
+  min-height: 44px;
+  padding: 0.35em 0.5em;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 2px solid #4a4a44;
+  background: #0a0806;
+  font-size: 0.72em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px #000, 0 0 6px #000;
+}
+#tourStage #tourPins li::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--tile) center / cover no-repeat;
+  filter: brightness(1.9) contrast(1.05);
+}
+#tourStage #tourPins li > :first-child { position: relative; }
+#tourStage #tourPins li[data-element='fire'] { --tile: url('../img/tour/fire.webp'); }
+#tourStage #tourPins li[data-element='water'] { --tile: url('../img/tour/water.webp'); }
+#tourStage #tourPins li[data-element='earth'] { --tile: url('../img/tour/earth.webp'); }
+#tourStage #tourPins li[data-element='air'] { --tile: url('../img/tour/air.webp'); }
+#tourStage #tourPins li[data-element='void'] { --tile: url('../img/tour/void.webp'); }
+
+/* Cleared: dimmed, stamped. */
+#tourStage #tourPins li[data-state='cleared']::before { filter: grayscale(0.6) brightness(0.6); }
+#tourStage #tourPins li[data-state='cleared']::after {
+  content: 'Cleared' / '';
+  position: absolute;
+  top: 28%;
+  left: 50%;
+  padding: 0.05em 0.5em;
+  transform: translateX(-50%) rotate(-12deg);
+  border: 3px double #a0402c;
+  color: #a0402c;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  background: rgb(10 8 6 / 0.55);
+  text-shadow: none;
+}
+
+/* Locked: a black silhouette with a padlock. */
+#tourStage #tourPins li[data-state='locked'] { color: #8a8678; }
+#tourStage #tourPins li[data-state='locked']::before { filter: brightness(0.1) grayscale(1) contrast(1.4); }
+#tourStage #tourPins li[data-state='locked']::after {
+  content: '' / '';
+  position: absolute;
+  top: 24%;
+  left: calc(50% - 0.9em);
+  width: 1.8em;
+  height: 1.8em;
+  background:
+    linear-gradient(#8a8678, #8a8678) 50% 100% / 70% 55% no-repeat,
+    radial-gradient(circle at 50% 50%, transparent 36%, #8a8678 40%, #8a8678 62%, transparent 66%) 50% 0 / 56% 80% no-repeat;
+}
+
+/* Current: a thick double frame that pulses. */
+#tourStage #tourPins li[data-state='current'] {
+  font-weight: 700;
+  border: 3px double #d8d2c4;
+  animation: tsFrame 1.8s ease-in-out infinite;
+}
+@keyframes tsFrame {
+  0%, 100% { box-shadow: 0 0 0 1px #0a0806, 0 0 0.4em #a0402c; }
+  50% { box-shadow: 0 0 0 1px #0a0806, 0 0 1.1em 0.15em #d8d2c4; }
+}
+#tourStage #tourPins li:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Grim buttons. */
+#tourStage.tsGrim button.menuButton,
+#tourStage.tsGrim a.menuButton {
+  color: #d8d2c4;
+  background: #15181c;
+  border: 2px solid #4a4a44;
+  border-radius: 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+#tourStage.tsGrim #tourFight { border-color: #d8d2c4; }
+#tourStage.tsGrim .menuButton:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+@media (max-width: 800px), (max-height: 500px) {
+  #tourStage .tsPanel { grid-template-columns: 1fr; padding: 0.5em 0.7em; }
+  #tourStage .tsFoe { width: 4.5em; font-size: 0.62em; overflow-wrap: anywhere; }
+  #tourStage #tourPins { grid-template-columns: repeat(5, 1fr); font-size: 0.6em; }
+}
+@media (pointer: coarse) {
+  #tourStage.tsGrim button.menuButton,
+  #tourStage.tsGrim a.menuButton { min-height: 48px; min-width: 48px; }
+  #tourStage #tourPins li { min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #tourStage #tourPins li[data-state='current'] { animation: none; box-shadow: 0 0 0.9em #d8d2c4; }
+}
+html[data-reduce-motion='true'] #tourStage #tourPins li[data-state='current'] { animation: none; box-shadow: 0 0 0.9em #d8d2c4; }
+
+/* High contrast: no grading, plain black and white, thick borders. */
+html[data-high-contrast='true'] #tourStage .tsFoe img { filter: none; }
+html[data-high-contrast='true'] #tourStage #tourPins li { background: #000; color: #fff; border: 3px solid #fff; text-shadow: none; }
+html[data-high-contrast='true'] #tourStage #tourPins li::before { filter: brightness(0.35); }
+html[data-high-contrast='true'] #tourStage #tourPins li[data-state='locked']::before { filter: brightness(0); }
+html[data-high-contrast='true'] #tourStage #tourPins li[data-state='cleared']::after { color: #fff; border-color: #fff; }
+html[data-high-contrast='true'] #tourStage #tourPins li[data-state='locked'] { color: #fff; }
+html[data-high-contrast='true'] #tourStage .tsPanel { background: #000; border-color: #fff; }
+html[data-high-contrast='true'] #tourStage.tsGrim h1.heading { color: #fff; }

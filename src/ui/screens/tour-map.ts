@@ -60,7 +60,7 @@ const shapePoints = (e: string, x: number, y: number): string | undefined => {
   }
 };
 
-const FILL: Readonly<Record<string, string>> = { fire: '#d33', earth: '#393', water: '#36d', air: '#aae3f6', void: '#a5f' };
+const FILL: Readonly<Record<string, string>> = { fire: '#a0402c', earth: '#5c7a4a', water: '#3e5f8c', air: '#9db4c0', void: '#74509a' };
 const NS = 'http://www.w3.org/2000/svg';
 const svg = (tag: string, attrs: Readonly<Record<string, string>>): SVGElement => {
   const n = document.createElementNS(NS, tag);
@@ -120,15 +120,10 @@ export function tourMapView(pins: readonly MapPin[], reducedMotion: boolean): HT
     const li = el('li', undefined, pinText(p));
     li.dataset.pin = String(p.index + 1);
     li.dataset.state = p.state;
-    li.style.minHeight = '44px';
-    li.style.display = 'flex';
-    li.style.alignItems = 'center';
-    li.style.opacity = p.state === 'locked' ? '0.6' : '1';
+    li.dataset.element = p.element;
     if (p.state === 'current') {
       li.tabIndex = 0;
       li.setAttribute('aria-current', 'step');
-      li.style.fontWeight = 'bold';
-      li.style.outline = '2px solid #ffbf00';
     }
     list.append(li);
   }

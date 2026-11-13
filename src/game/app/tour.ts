@@ -157,22 +157,26 @@ export function tourScreen(deps: TourDeps): Screen {
         }),
       );
     } else {
-      show(
-        tourCardView({
-          id: 'tourStage',
-          heading: n,
-          extra: tourMapView(
-            mapLayout(buildTour(r.hero, r.seed).map((s) => s.location), r.stage, false),
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-          ),
-          lines: [
-            `Location: ${ELEMENT_WORD(stage.location)}.`,
-            `Opponent: ${foe}.`,
-            `Difficulty: ${ELEMENT_WORD(stage.aiLevel)}. ${left}.`,
-          ],
-          actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { showSplash(r); } }],
-        }),
-      );
+      const card = tourCardView({
+        id: 'tourStage',
+        heading: n,
+        extra: tourMapView(
+          mapLayout(buildTour(r.hero, r.seed).map((s) => s.location), r.stage, false),
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        ),
+        lines: [
+          `Location: ${ELEMENT_WORD(stage.location)}.`,
+          `Opponent: ${foe}.`,
+          `Difficulty: ${ELEMENT_WORD(stage.aiLevel)}. ${left}.`,
+        ],
+        actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { showSplash(r); } }],
+      });
+      show(card);
+      const mine = epoch;
+      void import('@ui/screens/tour-select').then((m) => {
+        if (epoch !== mine) return;
+        m.enhanceStage(card, stage, r.continues, TOUR_CONTINUES, raceLabel);
+      });
     }
   }
 
