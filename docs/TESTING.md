@@ -207,7 +207,7 @@ The test hook (`window.__TTE__.arena`) gained `bench()`, `swapReadyTick()`, `che
 
 ## DOM unit tests (happy-dom)
 
-DOM-only code (menus, settings, key bindings, touch controls, pause dialog) is unit tested with happy-dom. Opt in per file with
+DOM-only code (menus, settings, key bindings, touch controls, pause dialog, the `el`/`byId` helpers, the About screen, the tour map SVG) is unit tested with happy-dom (already a devDependency; jsdom is not used). Give each new `src/ui` screen with DOM code a `*.dom.test.ts` next to it. Opt in per file with
 `// @vitest-environment happy-dom` on the first line and name the file `*.dom.test.ts`; every other test stays in the node environment. happy-dom
 differs from browsers in places (no `setPointerCapture`, `FormData` includes disabled controls); keep those checks in e2e.
 
