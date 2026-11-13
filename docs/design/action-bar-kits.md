@@ -35,27 +35,24 @@ Four common slots, identical for every hero (same key, same icon family, same re
 | HERO | 3 | the signature trap or minion (section 4), replacing the global Trap |
 | TEAM | Tag, Snag, Charge, Dash, Super | unchanged boxes, kept apart so the common and hero groups read at a glance |
 
-### Hotkey map
+### Hotkey map (OWNER DECISION 2026-11-13, replaces the earlier "keep every key" recommendation)
 
-Recommended: keep every existing key and only add what is new, so saved custom bindings survive (`SHARED_CODE`, `Digit5`, stays the one
-shared default).
+Owner: hero slot 3 is literally key 3; Tag moves to the end of the number row; "traps, changing weather, special should go before that", "everything down". The exact Tag keys were left loose ("9, 0, maybe 6, 7, you get the idea"); the table below puts Tag at 9 and 0 and is a one-line change if the owner prefers 6 and 7.
 
-| Key | Slot | Change |
-| --- | --- | --- |
-| 1, 2 | hero ability 1, 2 | none |
-| 0 and Z | hero slot 3 (signature trap or minion) | none (it is the old Trap key); a labelled alias `3` is NOT used, Tag owns it |
-| 3, 4 | Tag | none |
-| 5 / H | Charge | none |
-| 6 / R | Weather | none |
-| 7 / E | Dash | none |
-| 8 / Q | Guard | none |
-| 9 / X | Super | none |
-| `-` / V | common elemental | none |
-| `=` / B | Cleanse | new (Equal and KeyB are both unused; Equal follows Minus on the number row) |
+| Key | Slot |
+| --- | --- |
+| 1, 2 | hero ability 1, 2 |
+| 3 | hero slot 3 (signature trap or minion; the old Trap key 0 moves here) |
+| 4 | Weather |
+| 5 | Super (special) |
+| 6 | Guard |
+| 7 | Dash |
+| 8 | Charge (melee only) |
+| 9, 0 | Tag |
+| `-` | common elemental |
+| `=` | Cleanse |
 
-Decision for the owner: the request says hero slots "1, 2, 3". If it must be literally key 3, Tag moves to 4 and 5, Charge to H and `=`,
-and Cleanse to 0: a one-time migration for default bindings only. Not recommended before the common slots ship; the box shows its key,
-and the grouped bar's HERO label already ties 1, 2 and 0 together visually.
+Letter aliases follow the slot, not the digit. Default bindings migrate once (stored custom bindings are kept; add a version flag and show the change in Help and the first-run card). Implementation work package: `bindings.ts`, `key-map.ts`, `bar-groups.ts` order, touch overlay order, Help and first-run hint key lookups, tests and e2e that press keys by number. Do it after the Cleanse sim lands (it adds the Cleanse slot).
 
 ## 3. Constraints for every trap and minion
 

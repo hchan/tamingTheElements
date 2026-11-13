@@ -21,3 +21,6 @@ Owner request (2026-11-13): "your action bars still need rethinking ... like com
 
 ## Status note (2026-11-13)
 WP1 done: design doc [docs/design/action-bar-kits.md](../../docs/design/action-bar-kits.md) (12-hero table, common slots, hotkey map) and a view-only grouped bar behind `?ff=barGroups` (dev/test only; `src/game/hud/bar-groups.ts`). WP2 to WP4 still open.
+
+## Owner decision on hotkeys (2026-11-13)
+Hero slots are 1, 2, 3 (3 = signature trap/minion). Then Weather, Super (special), Guard, Dash, Charge, with Tag at the end of the number row (9, 0; or 6, 7: owner was loose). See the hotkey table in docs/design/action-bar-kits.md. Work package: rebind defaults with a one-time migration, after Cleanse sim merges.
