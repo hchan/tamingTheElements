@@ -112,6 +112,7 @@ export function codeLabel(code: string): string {
   if (code.startsWith('Key')) return code.slice(3);
   if (code.startsWith('Digit')) return code.slice(5);
   if (code.startsWith('Arrow')) return code.slice(5);
+  if (code === 'Minus') return '-';
   if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
   return code;
 }

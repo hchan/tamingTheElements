@@ -1,16 +1,21 @@
 import type Phaser from 'phaser';
-import type { Command, RenderActionBar, RenderView } from '@core/index';
-import { Cmd } from '@core/index';
+import type { Command, RenderActionBar, RenderArcade, RenderView } from '@core/index';
+import { Cmd, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL } from '@core/index';
 import { LOGICAL_WIDTH as LOGICAL_W, crisp, phoneBoost } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { codeLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
 import { lookup } from '../views/projectile-view';
 import { gradeRgba, mute } from '../fx/grim-fx';
+import { getPrefs } from '../platform/a11y/prefs';
+import { syncTouchOverlays } from './touch-overlay';
 
 /**
  * Action bar (legacy `actionbar.js`): primary, secondary, capture (chapter 2+) and swap slots along the
- * bottom edge, with a clockwise cooldown sweep (legacy `HUDHelper.drawCooldown`). Everything except
+ * bottom edge, with a clockwise cooldown sweep (legacy `HUDHelper.drawCooldown`). In Arcade the same bar also carries every other
+ * action (Tag, Charge, Weather, Dash, Guard, Super, Trap, Element): one kind of box, all on the left, each with an icon, its key in the
+ * corner and the one shared cooldown look (`cooldownLook`); the DOM touch buttons are transparent overlays on those boxes
+ * (`touch-overlay.ts`), so there is nothing on the right. Everything except
  * `ActionBarView` is pure. View-only: a mouse click maps to the same Command bit as the matching key
  * and goes to the caller's sink; the bar never touches the sim.
  */
@@ -70,13 +75,20 @@ export type KeyLabels = Readonly<Record<number, string>>;
 export function labelsFromBindings(bindings: Bindings): KeyLabels {
   const out: Record<number, string> = {};
   for (const action of GAME_ACTIONS) {
-    const code = bindings[action][0];
+    const digit = ARCADE_DIGIT[action];
+    const keys = bindings[action];
+    // The numbered action row (3 Tag ... 9 Super, 0 Trap): a box wears its number while that number key is bound to it, else its first key.
+    const numberKey = digit !== undefined ? `Digit${String(digit)}` : action === 'elemental' ? 'Minus' : undefined;
+    const code = numberKey !== undefined && keys.includes(numberKey) ? numberKey : keys[0];
     // Trap shares Capture's command bit 6 and the elemental ability the fourth swap's bit 10, so theirs live apart.
     const at = action === 'trap' ? TRAP_LABEL : action === 'elemental' ? ELEMENTAL_LABEL : ACTION_COMMAND[action];
     if (code !== undefined) out[at] = codeLabel(code);
   }
   return out;
 }
+
+/** The number key each Arcade action wears on its box (FUN-DESIGN 2.17); Element wears the key after 0 (Minus, shown as -) while it is bound, else its first key. */
+const ARCADE_DIGIT: Readonly<Partial<Record<(typeof GAME_ACTIONS)[number], number>>> = { super: 9, guard: 8, dash: 7, weather: 6, charge: 5, trap: 0 };
 
 /** Where the Trap key's label sits in a KeyLabels (its command bit is Capture's). */
 export const TRAP_LABEL = 100;
@@ -88,24 +100,45 @@ export const DEFAULT_KEY_LABELS: KeyLabels = labelsFromBindings(DEFAULT_BINDINGS
 const SWAP_CMDS = [Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4] as const;
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 
+/** Every kind of box on the bar: the one shape, told apart by its icon, key and words. */
+export type SlotKind = 'ability' | 'capture' | 'swap' | 'trap' | 'elemental' | 'super' | 'guard' | 'dash' | 'weather' | 'charge';
+
+/** Cell of each icon on the `hud:actions` sheet (`tools/assets/hud-gen/actions.py` TILES order, 4 per row, 64 px cells). */
+export const ACTION_ICON = { trap: 0, tag: 1, charge: 2, weather: 3, dash: 4, guard: 5, super: 6, fire: 7, water: 8, earth: 9, air: 10, element: 11 } as const;
+export const ACTION_SHEET = 'hud:actions';
+export const SHEET_CELL = 64;
+export const SHEET_COLS = 4;
+
+/** The touch button (id `arcade<touch>`) that sits over a box as a transparent overlay; '' for a box with none. */
+export type TouchName = '' | 'Super' | 'Guard' | 'Dash' | 'Weather' | 'Charge' | 'Tag' | 'Tag2' | 'Trap' | 'Element';
+
+/** The sheet cell an elemental box wears: its element's mark (1 fire, 2 water, 3 earth, 4 air), else the generic one. */
+export function elementIcon(kind: number): number {
+  return [ACTION_ICON.element, ACTION_ICON.fire, ACTION_ICON.water, ACTION_ICON.earth, ACTION_ICON.air][kind] ?? ACTION_ICON.element;
+}
+
 export interface ActionSlot {
-  readonly kind: 'ability' | 'capture' | 'swap' | 'trap' | 'elemental';
-  /** Elemental slot only: the element kind (1 fire, 2 water, 3 earth, 4 air) whose symbol is drawn as its icon, else 0. */
+  readonly kind: SlotKind;
+  /** Elemental slot only: the element kind (1 fire, 2 water, 3 earth, 4 air), else 0 (tints the ready edge). */
   readonly element?: number;
   readonly x: number;
   readonly y: number;
   readonly size: number;
-  /** The Command bit this slot emits when clicked (same bit as its key). */
+  /** The Command bit this slot emits when clicked (same bit as its key); 0 for a box whose transparent touch overlay does the input. */
   readonly cmd: Command;
   readonly label: string;
   readonly sprite: string;
+  /** Cell on the `hud:actions` sheet, drawn when there is no character sprite; -1 for none. */
+  readonly icon: number;
+  /** The DOM touch button laid over this box, '' for none. */
+  readonly touch: TouchName;
   /** Cooldown elapsed 0..1; 1 means ready (no sweep). */
   readonly progress: number;
   /** Capture only: highlighted when the enemy is capturable and the slot is ready. */
   readonly highlight: boolean;
   /** Greyed out: capture while not capturable, or a dead teammate. */
   readonly disabled: boolean;
-  /** Second line under the key: the Trap slot's words ("Trap 7s" cooling, "Trap 1/2" ready, "Trap full"), else ''. */
+  /** Second line under the key: the box's name and state in words ("Trap 7s", "Super 40%", "Dash"), else ''. */
   readonly note: string;
 }
 
@@ -122,40 +155,8 @@ export function elementalNote(tick: number, e: { name: string; readyTick: number
   return e.name;
 }
 
-/** Line colour per element kind (a second cue only: the symbol's shape and the slot's words say which). */
+/** Line colour per element kind (a second cue only: the icon's shape and the slot's words say which). */
 const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
-
-/**
- * The alchemical element symbol centred on (cx, cy) with half-size r: a triangle pointing up (fire, air) or down (water,
- * earth), crossed by a bar for air and earth. Pure, for tests.
- */
-export function elementSymbol(kind: number, cx: number, cy: number, r: number): {
-  tri: [number, number, number, number, number, number]; bar: [number, number, number, number] | undefined;
-} {
-  const up = kind === 1 || kind === 4;
-  const apex = up ? cy - r : cy + r;
-  const base = up ? cy + r : cy - r;
-  const barY = up ? cy - r / 3 : cy + r / 3; // through the apex half, as in the alchemical air and earth signs
-  return {
-    tri: [cx, apex, cx + r, base, cx - r, base],
-    bar: kind === 3 || kind === 4 ? [cx - r, barY, cx + r, barY] : undefined,
-  };
-}
-
-/**
- * The Trap slot's glyph centred on (cx, cy) with half-size r: a ring with four spikes crossing it (a caltrop on a snare), so it is
- * never mistaken for the elemental triangle (fire's is the same up-pointing one). Pure, for tests.
- */
-export function trapGlyph(cx: number, cy: number, r: number): { ring: { x: number; y: number; r: number }; spikes: [number, number, number, number][] } {
-  const d = Math.round(r * 0.72);
-  return {
-    ring: { x: cx, y: cy, r: Math.round(r * 0.62) },
-    spikes: [[cx - d, cy - d, cx + d, cy + d], [cx - d, cy + d, cx + d, cy - d], [cx - r, cy, cx + r, cy], [cx, cy - r, cx, cy + r]],
-  };
-}
-
-/** Dull brass for the Trap glyph (the grim, desaturated look; the shape and the slot's words carry the meaning). */
-export const TRAP_COLOR = 0x8a7a52;
 
 /** A ready tile's edge: the tile's element colour dulled to ash, or bone when it has none (readiness is also the lit text and the missing cooldown shade). */
 function readyEdge(element: number | undefined): number {
@@ -178,6 +179,35 @@ export function slotX(i: number): number {
   return SLOT_BORDER / 2 + i * SLOT_SIDE;
 }
 
+/** The most boxes the bar ever holds (primary, secondary, three swaps, charge, weather, dash, guard, super, trap, elemental): sizes the Player 2 lift. */
+export const MAX_SLOTS = 13;
+/** Smallest a box may be on screen in CSS px (a finger). */
+export const MIN_TOUCH_PX = 48;
+
+/** A box's side in logical px: the legacy side, or larger when the window is so small that it would drop under MIN_TOUCH_PX on screen (`k` = CSS px per logical px). */
+export function slotSide(k?: number): number {
+  return k === undefined || !(k > 0) ? SLOT_SIDE : Math.max(SLOT_SIDE, Math.ceil(MIN_TOUCH_PX / k));
+}
+
+/**
+ * Where box `i` goes: left to right from the left edge, wrapping to a further row ABOVE the first when a row is full (never to the
+ * right). Row 0 sits in the legacy bar position, pushed up only when a big box would run off the bottom.
+ */
+export function slotLayout(i: number, k?: number): { x: number; y: number; size: number; row: number } {
+  const size = slotSide(k);
+  const perRow = Math.max(1, Math.floor(LOGICAL_W / size));
+  const row = Math.floor(i / perRow);
+  const y0 = Math.min(BAR_Y + SLOT_BORDER / 2, LOGICAL_HEIGHT - size - 1);
+  return { x: SLOT_BORDER / 2 + (i % perRow) * size, y: y0 - row * size, size, row };
+}
+
+/** Top edge (logical px) of the bar's panel when it holds `n` boxes. */
+export function barTop(n: number, k?: number): number {
+  const size = slotSide(k);
+  const rows = Math.max(1, Math.ceil((Math.max(1, n) * size) / LOGICAL_W));
+  return Math.min(BAR_Y, LOGICAL_HEIGHT - size - 1) - (rows - 1) * size;
+}
+
 const PUNCTUATION: Readonly<Record<string, string>> = { Semicolon: ';', Period: '.', Comma: ',', Slash: '/', Quote: "'", Minus: '-', Equal: '=' };
 
 /** The key labels of a binding set for the small mirror slots: punctuation keys as their symbol (a word would not fit). */
@@ -185,32 +215,74 @@ export function shortLabels(labels: KeyLabels): KeyLabels {
   return Object.fromEntries(Object.entries(labels).map(([k, v]) => [k, PUNCTUATION[v] ?? v]));
 }
 
-/** Mirror readout (Player 2 in local Versus): small slots, right-aligned just above the main bar's row. */
+/** Mirror readout (Player 2 in local Versus): small slots, left-aligned in a row just above the main bar. */
 export const MIRROR_SIDE = 52;
 const MIRROR_GAP = 3;
 const MIRROR_MARGIN = 6;
 export const MIRROR_Y = BAR_Y - MIRROR_SIDE - 6;
 
 /**
- * Re-lay the slots of a bar as the small mirrored readout along the bottom-right (read-only: its cooldown sweeps, key labels and
- * notes stay, clicks do not apply). Pure, for tests.
+ * Re-lay the slots of a bar as the small mirrored readout, left-aligned from the margin along `y` (default: just above the main bar;
+ * read-only: its cooldown sweeps, key labels and notes stay; clicks and touch overlays do not apply). Pure, for tests.
  */
-export function mirrorSlots(slots: readonly ActionSlot[], right = HUD_WIDTH - MIRROR_MARGIN): ActionSlot[] {
-  const n = slots.length;
-  return slots.map((s, i) => ({
-    ...s,
-    x: right - (n - i) * MIRROR_SIDE - (n - 1 - i) * MIRROR_GAP,
-    y: MIRROR_Y,
-    size: MIRROR_SIDE,
-  }));
+export function mirrorSlots(slots: readonly ActionSlot[], y = MIRROR_Y): ActionSlot[] {
+  return slots.map((s, i) => ({ ...s, x: MIRROR_MARGIN + i * (MIRROR_SIDE + MIRROR_GAP), y, size: MIRROR_SIDE, touch: '' as const, cmd: 0 }));
 }
 
-export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY_LABELS): ActionSlot[] {
+/** Arcade read-outs of one team's bar. */
+export interface ArcadeBar {
+  /** Hyper meter 0..METER_BAR, weather charge 0..WEATHER_CHARGE_FULL, guard meter 0..GUARD_MAX and whether the guard is up. */
+  readonly meter: number;
+  readonly weatherCharge: number;
+  readonly guard: number;
+  readonly guarding: boolean;
+  /** Game ticks until Dash / Charge are ready (0: now); chargeIn -1 for a ranged hero, which has none. */
+  readonly dashIn: number;
+  readonly chargeIn: number;
+  /** Keep the Charge box for a ranged active hero (the team has a melee hero, so its touch button exists): shown disabled. */
+  readonly keepCharge: boolean;
+}
+
+/** Reads one team's `ArcadeBar` off the render view's Arcade read-outs (a team with no active hero reads as full and idle). */
+export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean): ArcadeBar {
+  const id = ar.active(team);
+  return {
+    meter: ar.meter[team],
+    weatherCharge: ar.weatherCharge[team],
+    guard: id < 0 ? GUARD_MAX : ar.guard(id),
+    guarding: id >= 0 && ar.guarding(id),
+    dashIn: id < 0 ? 0 : ar.dashIn(id),
+    chargeIn: id < 0 ? -1 : ar.chargeIn(id),
+    keepCharge,
+  };
+}
+
+/** Ticks a Dash and a melee Charge take to come back (`DASH_COOLDOWN_TICKS`, `CHARGE_COOLDOWN_TICKS` in core data; pinned by a test). */
+export const DASH_COOLDOWN = 30;
+export const CHARGE_COOLDOWN = 300;
+
+const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
+/** Words for a filling meter: the name when full, else the name and its percent. */
+function fillNote(name: string, v: number, full: number): string {
+  return v >= full ? name : `${name} ${String(Math.floor((Math.max(0, v) * 100) / full))}%`;
+}
+/** Words for a cooldown in game ticks: the name when ready, else the name and whole seconds left. */
+function leftNote(name: string, left: number): string {
+  return left > 0 ? `${name} ${String(Math.ceil(left / 50))}s` : name;
+}
+
+type SlotInit = Omit<ActionSlot, 'x' | 'y' | 'size' | 'label' | 'note' | 'icon' | 'touch'> & { note?: string; icon?: number; touch?: TouchName };
+
+/**
+ * Every box of a bar, left to right: primary, secondary, Snag, the other heroes (Tag), then in Arcade (`arcade` given) Charge, Weather,
+ * Dash, Guard and Super, then Trap and Element. `k` (CSS px per logical px) lets small windows grow the boxes to a finger's size.
+ */
+export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY_LABELS, arcade?: ArcadeBar, k?: number): ActionSlot[] {
   const out: ActionSlot[] = [];
-  const y = BAR_Y + SLOT_BORDER / 2;
-  const add = (s: Omit<ActionSlot, 'x' | 'y' | 'size' | 'label' | 'note'> & { note?: string }): void => {
-    const at = s.kind === 'trap' ? TRAP_LABEL : s.kind === 'elemental' ? ELEMENTAL_LABEL : s.cmd;
-    out.push({ note: '', ...s, x: slotX(out.length), y, size: SLOT_SIDE, label: labels[at] ?? '' });
+  const kk = arcade ? k : undefined;
+  const add = (s: SlotInit, at: number = s.cmd): void => {
+    const lay = slotLayout(out.length, kk);
+    out.push({ note: '', icon: -1, touch: '', ...s, x: lay.x, y: lay.y, size: lay.size, label: labels[at] ?? '' });
   };
   bar.abilities.forEach((a, i) => {
     const cmd = ABILITY_CMDS[i];
@@ -235,22 +307,50 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     if (cmd === undefined || (bar.trap !== undefined && cmd === Cmd.swap4)) return;
     add({
       kind: 'swap', cmd, sprite: w.sprite, highlight: false, disabled: w.dead,
-      progress: w.dead ? 1 : swapProgress,
+      progress: w.dead ? 1 : swapProgress, icon: ACTION_ICON.tag, touch: arcade ? (i === 0 ? 'Tag' : i === 1 ? 'Tag2' : '') : '',
+      note: arcade && !w.dead ? leftNote('Tag', Math.max(0, bar.swapReadyTick - bar.tick)) : '',
     });
   });
+  if (arcade) {
+    // Cmd 0: the transparent touch overlay holds the key, so a canvas click does nothing on these boxes.
+    if (arcade.chargeIn >= 0 || arcade.keepCharge) {
+      const none = arcade.chargeIn < 0;
+      add({
+        kind: 'charge', cmd: 0, sprite: '', icon: ACTION_ICON.charge, touch: 'Charge', highlight: false, disabled: none,
+        progress: none || arcade.chargeIn === 0 ? 1 : clamp01(1 - arcade.chargeIn / CHARGE_COOLDOWN),
+        note: none ? '' : leftNote('Charge', arcade.chargeIn),
+      }, ACTION_COMMAND.charge);
+    }
+    add({
+      kind: 'weather', cmd: 0, sprite: '', icon: ACTION_ICON.weather, touch: 'Weather', highlight: false, disabled: false,
+      progress: clamp01(arcade.weatherCharge / WEATHER_CHARGE_FULL), note: fillNote('Weather', arcade.weatherCharge, WEATHER_CHARGE_FULL),
+    }, ACTION_COMMAND.weather);
+    add({
+      kind: 'dash', cmd: 0, sprite: '', icon: ACTION_ICON.dash, touch: 'Dash', highlight: false, disabled: false,
+      progress: arcade.dashIn <= 0 ? 1 : clamp01(1 - arcade.dashIn / DASH_COOLDOWN), note: leftNote('Dash', arcade.dashIn),
+    }, ACTION_COMMAND.dash);
+    add({
+      kind: 'guard', cmd: 0, sprite: '', icon: ACTION_ICON.guard, touch: 'Guard', highlight: arcade.guarding, disabled: false,
+      progress: clamp01(arcade.guard / GUARD_MAX), note: arcade.guarding ? 'Guard on' : fillNote('Guard', arcade.guard, GUARD_MAX),
+    }, ACTION_COMMAND.guard);
+    add({
+      kind: 'super', cmd: 0, sprite: '', icon: ACTION_ICON.super, touch: 'Super', highlight: false, disabled: false,
+      progress: clamp01(arcade.meter / METER_BAR), note: fillNote('Super', arcade.meter, METER_BAR),
+    }, ACTION_COMMAND.super);
+  }
   if (bar.trap) {
     const t = bar.trap;
     add({
-      kind: 'trap', cmd: Cmd.trap, sprite: '', highlight: false, disabled: false,
+      kind: 'trap', cmd: Cmd.trap, sprite: '', icon: ACTION_ICON.trap, touch: arcade ? 'Trap' : '', highlight: false, disabled: false,
       progress: cooldownProgress(bar.tick, t.readyTick, t.cooldownTicks), note: trapNote(bar.tick, t),
-    });
+    }, TRAP_LABEL);
   }
   if (bar.elemental) {
     const e = bar.elemental;
     add({
-      kind: 'elemental', cmd: Cmd.elemental, sprite: '', highlight: bar.tick < e.activeUntil, disabled: false, element: e.kind,
-      progress: cooldownProgress(bar.tick, e.readyTick, e.cooldownTicks), note: elementalNote(bar.tick, e),
-    });
+      kind: 'elemental', cmd: Cmd.elemental, sprite: '', icon: elementIcon(e.kind), touch: arcade ? 'Element' : '', highlight: bar.tick < e.activeUntil,
+      disabled: false, element: e.kind, progress: cooldownProgress(bar.tick, e.readyTick, e.cooldownTicks), note: elementalNote(bar.tick, e),
+    }, ELEMENTAL_LABEL);
   }
   return out;
 }
@@ -298,6 +398,36 @@ export function cooldownSweep(progress: number, x: number, y: number, size: numb
   return pts;
 }
 
+/** How long the ready flash lasts (ms), the colour and the strongest alpha of it: one look for every box. */
+export const READY_FLASH_MS = 350;
+export const READY_FLASH_COLOR = 0xe0d8c6;
+export const READY_FLASH_ALPHA = 0.45;
+
+/** What the one shared cooldown renderer draws for a box. */
+export interface CooldownLook {
+  /** The shaded not-yet-ready region as flat x,y pairs; undefined when the box is ready. */
+  readonly fill: number[] | undefined;
+  readonly fillAlpha: number;
+  /** Ready flash: alpha of the bone wash over the box (0: none), and how strong its frame pulse is (0..1). */
+  readonly flashAlpha: number;
+  readonly pulse: number;
+}
+
+/**
+ * THE cooldown look, the same for every kind of box (abilities, Snag, Tag, Charge, Weather, Dash, Guard, Super, Trap, Element): a clockwise
+ * sweep over the part not yet ready (one fixed shade), then an eased-out bone flash for READY_FLASH_MS when it comes back
+ * (`flashAgeMs` since it did, -1 for none). A disabled box is shaded whole. Reduced motion: a static whole-box shade while cooling and no flash.
+ * Pure; `ActionBarView.drawCooldown` is its only drawer.
+ */
+export function cooldownLook(progress: number, disabled: boolean, x: number, y: number, size: number, flashAgeMs: number, reduced: boolean): CooldownLook {
+  const whole = [x, y, x + size, y, x + size, y + size, x, y + size];
+  const shaded = disabled || progress < 1;
+  const fill = !shaded ? undefined : disabled || reduced ? whole : cooldownSweep(progress, x, y, size);
+  const t = flashAgeMs < 0 ? 1 : flashAgeMs / READY_FLASH_MS;
+  const ease = reduced || disabled || t >= 1 ? 0 : (1 - t) ** 3;
+  return { fill, fillAlpha: COOLDOWN_ALPHA, flashAlpha: READY_FLASH_ALPHA * ease, pulse: ease };
+}
+
 /** Where the 1280x720 screen sits in world px: top-left `x`,`y` and world px per logical px (`scale`). Identity for a fixed camera. */
 export interface ScreenBox {
   readonly x: number;
@@ -315,6 +445,11 @@ export class ActionBarView {
   private readonly icons: Phaser.GameObjects.Image[] = [];
   private slots: ActionSlot[] = [];
   private hint: Phaser.GameObjects.Text | undefined;
+  /** Last progress and ready-flash start (ms) per box, so any kind that comes back ready flashes the same way. */
+  private readonly lastProgress = new Map<string, number>();
+  private readonly flashStart = new Map<string, number>();
+  private reduced = false;
+  private frame = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -326,7 +461,7 @@ export class ActionBarView {
     private readonly styled = false,
     /** Arcade pan/zoom camera: keeps the bar fixed on screen by mapping its logical layout onto the visible window every frame. */
     private readonly place?: () => ScreenBox,
-    /** Player 2's mirrored readout: small slots at the bottom-right, no background panel and no clicks (the keyboard drives it). */
+    /** Player 2's mirrored readout: small slots left-aligned above the main bar, no background panel, no overlays and no clicks (the keyboard drives it). */
     private readonly mirror = false,
   ) {
     this.back = scene.add.graphics().setDepth(98);
@@ -343,13 +478,29 @@ export class ActionBarView {
     return this.box.y + y * this.box.scale;
   }
 
+  /** The Charge touch button exists (a melee hero is on the team): keep its box even while a ranged hero is active. */
+  private hasChargeButton(): boolean {
+    return !this.mirror && typeof document !== 'undefined' && document.getElementById('arcadeCharge') !== null;
+  }
+
   update(): void {
     this.box = this.place?.() ?? IDENTITY;
     this.gfx.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
     this.back.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
+    if (this.frame++ % 30 === 0) {
+      try {
+        this.reduced = getPrefs().reduceMotion;
+      } catch {
+        this.reduced = false;
+      }
+    }
     const bar = this.view.actionBar(this.team);
-    const built = bar ? buildSlots(bar, this.labels()) : [];
-    this.slots = this.mirror ? mirrorSlots(built, this.mirrorRight()) : built;
+    const ar = this.view.arcade();
+    const k = this.scene.scale.displaySize.width / LOGICAL_W;
+    const extras = bar && ar ? arcadeBarOf(ar, this.team === 1 ? 1 : 0, this.hasChargeButton()) : undefined;
+    const built = bar ? buildSlots(bar, this.labels(), extras, k) : [];
+    this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : built;
+    const top = barTop(built.length, extras ? k : undefined);
     const g = this.gfx;
     g.clear();
     this.back.clear();
@@ -357,24 +508,28 @@ export class ActionBarView {
       // No panel: each slot keeps its own plate.
     } else if (this.slots.length > 0 && this.styled) {
       this.back.fillStyle(0x0b0a09, 0.86);
-      this.back.fillRect(0, BAR_Y, HUD_WIDTH, ACTION_BAR_HEIGHT);
+      this.back.fillRect(0, top, HUD_WIDTH, LOGICAL_HEIGHT - top);
       this.back.fillStyle(0xd8cdb8, 0.05);
-      this.back.fillRect(0, BAR_Y, HUD_WIDTH, 3);
+      this.back.fillRect(0, top, HUD_WIDTH, 3);
       g.lineStyle(1, 0x6b6558, 0.8);
-      g.lineBetween(0, BAR_Y + 1, HUD_WIDTH, BAR_Y + 1);
+      g.lineBetween(0, top + 1, HUD_WIDTH, top + 1);
     } else if (this.slots.length > 0) {
       g.lineStyle(TOP_BORDER, 0x111111, 1);
-      g.lineBetween(0, BAR_Y + TOP_BORDER, HUD_WIDTH, BAR_Y + TOP_BORDER);
+      g.lineBetween(0, top + TOP_BORDER, HUD_WIDTH, top + TOP_BORDER);
     }
+    const now = performance.now();
     this.slots.forEach((s, i) => {
       if (this.styled) {
         this.back.fillStyle(s.sprite === '' ? 0x070605 : 0x1d1e1f, 0.95);
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       }
       this.drawIcon(i, s);
-      const k = s.size / SLOT_SIDE;
-      if (s.kind === 'trap') this.drawTrapGlyph(s, k);
-      if (s.kind === 'elemental') this.drawElementSymbol(s);
+      const key = `${s.kind}:${String(s.cmd)}:${String(i)}`;
+      const prev = this.lastProgress.get(key);
+      if (prev !== undefined && prev < 1 && s.progress >= 1 && !s.disabled) this.flashStart.set(key, now);
+      this.lastProgress.set(key, s.progress);
+      const started = this.flashStart.get(key);
+      const look = cooldownLook(s.progress, s.disabled, s.x, s.y, s.size, started === undefined ? -1 : now - started, this.reduced);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
         g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : ready ? readyEdge(s.element) : 0x2e2c29, 1);
@@ -383,47 +538,37 @@ export class ActionBarView {
         g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : 0x000000, 1);
         g.strokeRect(s.x, s.y, s.size, s.size);
       }
-      if (s.disabled || s.progress < 1) {
-        g.fillStyle(COOLDOWN_COLOR, COOLDOWN_ALPHA);
-        const pts = s.disabled ? [s.x, s.y, s.x + s.size, s.y, s.x + s.size, s.y + s.size, s.x, s.y + s.size]
-          : cooldownSweep(s.progress, s.x, s.y, s.size);
-        g.beginPath();
-        g.moveTo(pts[0] ?? 0, pts[1] ?? 0);
-        for (let k = 2; k + 1 < pts.length; k += 2) g.lineTo(pts[k] ?? 0, pts[k + 1] ?? 0);
-        g.closePath();
-        g.fillPath();
-      }
+      this.drawCooldown(look, s);
       this.text(i, s);
     });
-    if (!this.mirror) this.drawHint(bar?.tick ?? 0);
+    if (!this.mirror) {
+      this.drawHint(bar?.tick ?? 0);
+      if (extras && this.frame % 5 === 1) syncTouchOverlays(this.screenSlots().map((r, i) => ({ ...r, touch: this.slots[i]?.touch ?? '' })), this.scene.game.canvas);
+    }
     for (let i = this.slots.length; i < this.icons.length; i++) {
       this.icons[i]?.setVisible(false);
       this.texts[i]?.setVisible(false);
     }
   }
 
-  private mirrorEdge = HUD_WIDTH - MIRROR_MARGIN;
-  private mirrorAge = 0;
-  /**
-   * Right edge (logical px) of the mirror readout: the touch buttons sit on the right edge and wrap to rows or columns that depend on the
-   * window, so the readout stops left of the leftmost one that reaches its row (re-measured every 15 frames; no buttons: the margin).
-   */
-  private mirrorRight(): number {
-    if (this.mirrorAge++ % 15 !== 0) return this.mirrorEdge;
-    let edge = HUD_WIDTH - MIRROR_MARGIN;
-    const canvas = this.scene.game.canvas;
-    if (typeof document !== 'undefined' && canvas.getBoundingClientRect().width > 0) {
-      const c = canvas.getBoundingClientRect();
-      const k = c.width / LOGICAL_W;
-      const top = c.top + MIRROR_Y * k;
-      const bottom = top + MIRROR_SIDE * k;
-      document.querySelectorAll('button.touchBtn').forEach((el) => {
-        const r = el.getBoundingClientRect();
-        if (r.width > 0 && r.top < bottom && r.bottom > top && r.right > c.left) edge = Math.min(edge, (r.left - c.left) / k - MIRROR_GAP * 2);
-      });
+  /** The ONE cooldown drawer: every box, whatever its kind, is shaded and flashed through here from `cooldownLook`. */
+  private drawCooldown(look: CooldownLook, s: ActionSlot): void {
+    const g = this.gfx;
+    const pts = look.fill;
+    if (pts) {
+      g.fillStyle(COOLDOWN_COLOR, look.fillAlpha);
+      g.beginPath();
+      g.moveTo(pts[0] ?? 0, pts[1] ?? 0);
+      for (let n = 2; n + 1 < pts.length; n += 2) g.lineTo(pts[n] ?? 0, pts[n + 1] ?? 0);
+      g.closePath();
+      g.fillPath();
     }
-    this.mirrorEdge = Math.max(edge, 4 * MIRROR_SIDE);
-    return this.mirrorEdge;
+    if (look.flashAlpha > 0) {
+      g.fillStyle(READY_FLASH_COLOR, look.flashAlpha);
+      g.fillRect(s.x, s.y, s.size, s.size);
+      g.lineStyle(1 + Math.round(2 * look.pulse), READY_FLASH_COLOR, look.pulse);
+      g.strokeRect(s.x, s.y, s.size, s.size);
+    }
   }
 
   destroy(): void {
@@ -471,23 +616,7 @@ export class ActionBarView {
     if (this.hint.text !== h.text) this.hint.setText(h.text);
   }
 
-  /** The slot's icon: the element's alchemical triangle (fire up, water down, air up and earth down with a bar), by shape not colour. */
-  private drawElementSymbol(s: ActionSlot): void {
-    const k = s.size / SLOT_SIDE;
-    const sym = elementSymbol(s.element ?? 0, s.x + s.size / 2, s.y + s.size - 22 * k, 13 * k);
-    this.back.lineStyle(this.mirror ? 2 : 3, mute(ELEMENT_TINT[s.element ?? 0] ?? 0xffffff, 0.6, 0.85), 1).strokeTriangle(...sym.tri);
-    if (sym.bar) this.back.lineBetween(...sym.bar);
-  }
-
-  /** The Trap slot's icon: a ring crossed by four spikes in dull brass, with a dark under-stroke so it reads on any plate. */
-  private drawTrapGlyph(s: ActionSlot, k: number): void {
-    const g = trapGlyph(s.x + s.size / 2, s.y + s.size - 22 * k, 13 * k);
-    for (const [w, c] of [[5, 0x070605], [3, TRAP_COLOR]] as const) {
-      this.back.lineStyle(this.mirror ? w - 1 : w, c, 1).strokeCircle(g.ring.x, g.ring.y, g.ring.r);
-      for (const sp of g.spikes) this.back.lineBetween(...sp);
-    }
-  }
-
+  /** The slot's icon: the character's sprite where it has one, else its cell on the generated `hud:actions` sheet (never graded: it is already grim). */
   private drawIcon(i: number, s: ActionSlot): void {
     let icon = this.icons[i];
     if (!icon) {
@@ -495,18 +624,26 @@ export class ActionBarView {
       this.icons[i] = icon;
     }
     const found = lookup(s.sprite);
-    if (!found || !this.scene.textures.exists(found.key)) {
+    if (found && this.scene.textures.exists(found.key)) {
+      const key = this.styled ? gradedTexture(this.scene, found.key) : found.key;
+      const tex = this.scene.textures.get(key);
+      const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
+      if (!tex.has(ICON_FRAME)) tex.add(ICON_FRAME, 0, fx, fy, fw, fh);
+      if (icon.texture.key !== key || icon.frame.name !== ICON_FRAME) icon.setTexture(key, ICON_FRAME);
+      const pad = this.styled ? ICON_PAD * (s.size / SLOT_SIDE) : 0;
+      const fit = fitIcon(fw, fh, s.size - pad * 2);
+      icon.setVisible(true).setPosition(this.wx(s.x + pad + fit.dx), this.wy(s.y + pad + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
+      return;
+    }
+    if (s.icon < 0 || !this.scene.textures.exists(ACTION_SHEET)) {
       icon.setVisible(false);
       return;
     }
-    const key = this.styled ? gradedTexture(this.scene, found.key) : found.key;
-    const tex = this.scene.textures.get(key);
-    const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
-    if (!tex.has(ICON_FRAME)) tex.add(ICON_FRAME, 0, fx, fy, fw, fh);
-    if (icon.texture.key !== key || icon.frame.name !== ICON_FRAME) icon.setTexture(key, ICON_FRAME);
-    const pad = this.styled ? ICON_PAD * (s.size / SLOT_SIDE) : 0;
-    const fit = fitIcon(fw, fh, s.size - pad * 2);
-    icon.setVisible(true).setPosition(this.wx(s.x + pad + fit.dx), this.wy(s.y + pad + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
+    const frame = `a${String(s.icon)}`;
+    const tex = this.scene.textures.get(ACTION_SHEET);
+    if (!tex.has(frame)) tex.add(frame, 0, (s.icon % SHEET_COLS) * SHEET_CELL, Math.floor(s.icon / SHEET_COLS) * SHEET_CELL, SHEET_CELL, SHEET_CELL);
+    if (icon.texture.key !== ACTION_SHEET || icon.frame.name !== frame) icon.setTexture(ACTION_SHEET, frame);
+    icon.setVisible(true).setPosition(this.wx(s.x + 1), this.wy(s.y + 1)).setDisplaySize((s.size - 2) * this.box.scale, (s.size - 2) * this.box.scale);
   }
 
   private text(i: number, s: ActionSlot): void {

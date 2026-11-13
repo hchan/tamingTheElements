@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementSymbol, trapGlyph, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -26,9 +26,9 @@ describe('Trap slot', () => {
   it('comes after the swaps with its own key label (not Capture\'s)', () => {
     const slots = buildSlots(bar({ trap: t }));
     const last = slots[slots.length - 1];
-    expect([last?.kind, last?.cmd, last?.label, last?.note]).toEqual(['trap', Cmd.trap, 'Z', 'Trap 1/2']);
+    expect([last?.kind, last?.cmd, last?.label, last?.note]).toEqual(['trap', Cmd.trap, '0', 'Trap 1/2']);
     expect(slots[2]?.label).toBe('C');
-    expect(labelsFromBindings(DEFAULT_BINDINGS)[TRAP_LABEL]).toBe('Z');
+    expect(labelsFromBindings(DEFAULT_BINDINGS)[TRAP_LABEL]).toBe('0');
   });
   it('says the seconds left while cooling and "full" at the cap', () => {
     expect(trapNote(100, { ...t, readyTick: 151 })).toBe('Trap 2s');
@@ -48,8 +48,8 @@ describe('Element slot (FUN-DESIGN 2.24)', () => {
   it('comes last with its own key label (V, not a swap\'s) and emits the elemental bit', () => {
     const slots = buildSlots(bar({ trap: t, elemental: e }));
     const last = slots[slots.length - 1];
-    expect([last?.kind, last?.cmd, last?.label, last?.note, last?.element]).toEqual(['elemental', Cmd.elemental, 'V', 'Ember', 1]);
-    expect(labelsFromBindings(DEFAULT_BINDINGS)[ELEMENTAL_LABEL]).toBe('V');
+    expect([last?.kind, last?.cmd, last?.label, last?.note, last?.element]).toEqual(['elemental', Cmd.elemental, '-', 'Ember', 1]);
+    expect(labelsFromBindings(DEFAULT_BINDINGS)[ELEMENTAL_LABEL]).toBe('-');
     expect(commandAt(slots, (last?.x ?? 0) + 5, (last?.y ?? 0) + 5)).toBe(Cmd.elemental);
   });
   it('says "on" while the buff runs (highlighted), then the seconds left, then the name', () => {
@@ -63,11 +63,10 @@ describe('Element slot (FUN-DESIGN 2.24)', () => {
     expect(buildSlots(bar({ swaps })).filter((s) => s.cmd === Cmd.swap4)).toHaveLength(1);
     expect(buildSlots(bar({ swaps, trap: t })).filter((s) => s.kind === 'swap')).toHaveLength(3);
   });
-  it('draws the alchemical symbols: fire and air point up, water and earth down, air and earth barred', () => {
-    expect(elementSymbol(1, 0, 0, 10)).toEqual({ tri: [0, -10, 10, 10, -10, 10], bar: undefined });
-    expect(elementSymbol(2, 0, 0, 10).tri[1]).toBe(10);
-    expect(elementSymbol(3, 0, 0, 9).bar).toEqual([-9, 3, 9, 3]);
-    expect(elementSymbol(4, 0, 0, 9).bar).toEqual([-9, -3, 9, -3]);
+  it('wears its element mark from the icon sheet, the generic one for none', () => {
+    expect([1, 2, 3, 4].map(elementIcon)).toEqual([ACTION_ICON.fire, ACTION_ICON.water, ACTION_ICON.earth, ACTION_ICON.air]);
+    expect(elementIcon(0)).toBe(ACTION_ICON.element);
+    expect(buildSlots(bar({ elemental: { name: 'Ember', kind: 1, readyTick: 0, cooldownTicks: 100, activeUntil: 0 } })).at(-1)?.icon).toBe(ACTION_ICON.fire);
   });
 });
 
@@ -88,20 +87,24 @@ describe('cooldownSweep (legacy drawCooldown)', () => {
 });
 
 describe('mirror readout (Player 2 in local Versus)', () => {
-  it('re-lays the slots small, right-aligned, clear of the main bar and inside the screen', () => {
+  it('re-lays the slots small, left-aligned, clear of the main bar and inside the screen', () => {
     const slots = buildSlots(bar());
     const m = mirrorSlots(slots);
-    expect(m.map((s) => s.cmd)).toEqual(slots.map((s) => s.cmd));
     expect(m.map((s) => s.progress)).toEqual(slots.map((s) => s.progress));
+    expect(m.map((s) => s.label)).toEqual(slots.map((s) => s.label));
+    expect(m[0]?.x).toBeLessThan(10);
     for (const s of m) {
       expect(s.size).toBe(MIRROR_SIDE);
+      expect(s.y).toBe(MIRROR_Y);
       expect(s.y + s.size).toBeLessThanOrEqual(BAR_Y);
-      expect(s.x).toBeGreaterThanOrEqual(0);
+      expect(s.cmd).toBe(0);
+      expect(s.touch).toBe('');
     }
     const last = m[m.length - 1];
     expect(last && last.x + last.size).toBeLessThanOrEqual(1280);
     for (let i = 1; i < m.length; i++) expect((m[i]?.x ?? 0) - ((m[i - 1]?.x ?? 0) + MIRROR_SIDE)).toBeGreaterThan(0);
     expect(mirrorSlots([])).toEqual([]);
+    expect(mirrorSlots(slots, 100).every((s) => s.y === 100)).toBe(true);
   });
 
   it('shortens punctuation key labels so they fit a small slot', () => {
@@ -173,13 +176,7 @@ describe('captureHint', () => {
   });
 });
 
-describe('Trap glyph and slot text fit', () => {
-  it('draws a ring with four spikes, not a three-point triangle like the fire symbol', () => {
-    const g = trapGlyph(40, 50, 13);
-    expect(g.spikes).toHaveLength(4);
-    expect(g.ring.r).toBeGreaterThan(0);
-    for (const [x1, y1, x2, y2] of g.spikes) expect(Math.hypot(x2 - x1, y2 - y1)).toBeGreaterThan(g.ring.r);
-  });
+describe('Slot text fit', () => {
   it('squeezes a note wider than its slot and leaves a short one alone', () => {
     expect(fitTextScale(40, SLOT_SIDE)).toBe(1);
     const k = fitTextScale(120, SLOT_SIDE);
@@ -193,5 +190,97 @@ describe('Trap glyph and slot text fit', () => {
     expect(trap?.note).toBe('Trap 0/2');
     expect(el?.note).toBe('Ember');
     expect(el?.x).not.toBe(trap?.x);
+  });
+});
+
+const arc = (over: Partial<Parameters<typeof buildSlots>[2] & object> = {}): NonNullable<Parameters<typeof buildSlots>[2]> => ({
+  meter: 1500, weatherCharge: 0, guard: 0, guarding: false, dashIn: 0, chargeIn: 0, keepCharge: false, ...over,
+});
+
+describe('Arcade boxes (one consistent bar)', () => {
+  const full = buildSlots(bar({ trap: { readyTick: 0, cooldownTicks: 100, count: 0, max: 2 }, elemental: { name: 'Ember', kind: 1, readyTick: 0, cooldownTicks: 100, activeUntil: 0 } }), DEFAULT_KEY_LABELS, arc());
+
+  it('gives every box an icon (a sprite or a sheet cell), a key and a touch overlay in Arcade, all in one left-aligned run', () => {
+    expect(full.length).toBeLessThanOrEqual(MAX_SLOTS);
+    for (const s of full) {
+      expect(s.sprite !== '' || s.icon >= 0).toBe(true);
+      expect(s.size).toBe(SLOT_SIDE);
+    }
+    const kinds = full.map((s) => s.kind);
+    expect(kinds).toEqual(expect.arrayContaining(['charge', 'weather', 'dash', 'guard', 'super', 'trap', 'elemental']));
+    expect(full.filter((s) => s.kind !== 'ability' && s.kind !== 'capture').every((s) => s.touch !== '' || s.kind === 'swap')).toBe(true);
+    const xs = full.map((s) => s.x);
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
+    expect(Math.max(...full.map((s) => s.x + s.size))).toBeLessThanOrEqual(1280);
+  });
+  it('shows no Arcade-only boxes without Arcade read-outs', () => {
+    expect(buildSlots(bar()).map((s) => s.kind)).not.toEqual(expect.arrayContaining(['dash']));
+    expect(buildSlots(bar()).every((s) => s.touch === '')).toBe(true);
+  });
+  it('keeps a disabled Charge box for a ranged hero only when the team has a melee hero', () => {
+    expect(buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ chargeIn: -1 })).some((s) => s.kind === 'charge')).toBe(false);
+    const kept = buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ chargeIn: -1, keepCharge: true })).find((s) => s.kind === 'charge');
+    expect(kept?.disabled).toBe(true);
+  });
+  it('reads cooldowns and meters as progress 0..1 with words', () => {
+    const d = buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ dashIn: 15, chargeIn: 150, weatherCharge: 0, guard: 0 }));
+    expect(d.find((s) => s.kind === 'dash')?.progress).toBeCloseTo(0.5);
+    expect(d.find((s) => s.kind === 'charge')?.progress).toBeCloseTo(0.5);
+    expect(d.find((s) => s.kind === 'dash')?.note).toBe('Dash 1s');
+    expect(d.find((s) => s.kind === 'super')?.note).toMatch(/^Super/);
+    expect(d.every((s) => s.progress >= 0 && s.progress <= 1)).toBe(true);
+  });
+  it('reads a team off the render view read-outs, idle for no active hero', () => {
+    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5 };
+    expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5 });
+    expect(arcadeBarOf(ar as never, 1, true)).toMatchObject({ meter: 20, guarding: false, dashIn: 0, chargeIn: -1, keepCharge: true });
+  });
+});
+
+describe('layout never goes right and keeps a finger-sized box', () => {
+  it('wraps to further rows above the first, left-aligned', () => {
+    const k = 0.4;
+    const side = slotSide(k);
+    expect(side * k).toBeGreaterThanOrEqual(MIN_TOUCH_PX - 1e-9);
+    const a = slotLayout(0, k);
+    const last = slotLayout(MAX_SLOTS - 1, k);
+    expect(a.x).toBeLessThan(10);
+    expect(last.x + last.size).toBeLessThanOrEqual(1280);
+    expect(last.row).toBeGreaterThan(0);
+    expect(last.y).toBeLessThan(a.y);
+    expect(barTop(MAX_SLOTS, k)).toBeLessThanOrEqual(last.y);
+  });
+  it('keeps the legacy size at full size', () => {
+    expect(slotSide(1)).toBe(SLOT_SIDE);
+    expect(slotSide()).toBe(SLOT_SIDE);
+    expect(slotLayout(0).row).toBe(0);
+  });
+});
+
+describe('cooldownLook (the one cooldown look)', () => {
+  const look = (p: number, dis = false, age = -1, reduced = false) => cooldownLook(p, dis, 10, 20, 77, age, reduced);
+  it('shades the not-ready part with one fixed alpha, nothing when ready', () => {
+    expect(look(1).fill).toBeUndefined();
+    expect(look(0.4).fill).toBeDefined();
+    expect(look(0.4).fillAlpha).toBe(look(0.8).fillAlpha);
+  });
+  it('flashes eased out over READY_FLASH_MS then stops', () => {
+    const a = look(1, false, 0).flashAlpha;
+    const b = look(1, false, READY_FLASH_MS / 2).flashAlpha;
+    expect(a).toBeGreaterThan(b);
+    expect(b).toBeGreaterThan(0);
+    expect(look(1, false, READY_FLASH_MS).flashAlpha).toBe(0);
+    expect(look(1, false, -1).pulse).toBe(0);
+  });
+  it('reduced motion: a static whole-box shade and no flash or pulse', () => {
+    const r = look(0.4, false, 0, true);
+    expect(r.fill).toEqual([10, 20, 87, 20, 87, 97, 10, 97]);
+    expect(r.flashAlpha).toBe(0);
+    expect(r.pulse).toBe(0);
+  });
+  it('shades a disabled box whole without a flash', () => {
+    const d = look(1, true, 0);
+    expect(d.fill).toHaveLength(8);
+    expect(d.flashAlpha).toBe(0);
   });
 });

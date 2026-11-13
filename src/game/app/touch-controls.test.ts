@@ -44,19 +44,18 @@ describe('touch controls', () => {
     expect(b.map((x) => x.id)).toEqual(TOUCH.map((l) => `arcade${l}`));
     expect(b[6]?.textContent).toBe('4\nTag 2');
     expect(b[7]?.textContent).toBe('0\nTrap');
-    expect(b[8]?.textContent).toBe('V\nElement');
+    expect(b[8]?.textContent).toBe('-\nElement');
     expect(b.every((x) => x.tabIndex !== -1)).toBe(true);
   });
 
-  it('puts layout in CSS classes and only the slot inline', () => {
+  it('is a transparent overlay: class only, no inline layout', () => {
     stubDom(true);
-    expect(touchButton('Dash', 2).style.cssText).toBe('--touch-row:2;--touch-col:2;--touch-line:0;--touch-col5:2;--touch-line5:0;--touch-col3:2;--touch-line3:0;--touch-col2:0;--touch-line2:1');
-    expect(touchButton('Dash', 2).className).toContain('touchBtn');
+    expect(touchButton('Dash').className).toContain('touchBtn');
   });
 
   it('holds the bound key while the finger is down and releases it once', () => {
     const { sent } = stubDom(true);
-    const b = touchButton('Super', 0) as unknown as { listeners: Map<string, Listener>; setPointerCapture: ReturnType<typeof vi.fn> };
+    const b = touchButton('Super') as unknown as { listeners: Map<string, Listener>; setPointerCapture: ReturnType<typeof vi.fn> };
     const down = b.listeners.get('pointerdown');
     const e = { pointerId: 7, preventDefault: vi.fn() };
     down?.(e);
@@ -82,7 +81,7 @@ describe('keyboard activation', () => {
   it('Enter or Space holds the bound key like a finger and releases it on keyup, ignoring auto-repeat', () => {
     for (const k of ['Enter', ' ']) {
       const { sent } = stubDom(true);
-      const b = touchButton('Dash', 0) as unknown as { listeners: Map<string, Listener> };
+      const b = touchButton('Dash') as unknown as { listeners: Map<string, Listener> };
       const e = key(k);
       b.listeners.get('keydown')?.(e);
       b.listeners.get('keydown')?.(key(k, true));
@@ -98,7 +97,7 @@ describe('keyboard activation', () => {
   });
   it('a finger and a key hold the action separately: letting go of one does not release the other', () => {
     const { sent } = stubDom(true);
-    const b = touchButton('Dash', 0) as unknown as { listeners: Map<string, Listener> };
+    const b = touchButton('Dash') as unknown as { listeners: Map<string, Listener> };
     const code = String(getBindings().dash[0]);
     b.listeners.get('pointerdown')?.({ pointerId: 1, preventDefault: vi.fn() });
     b.listeners.get('keydown')?.(key('Enter'));
@@ -110,7 +109,7 @@ describe('keyboard activation', () => {
   });
   it('ignores other keys and releases on blur', () => {
     const { sent } = stubDom(true);
-    const b = touchButton('Guard', 0) as unknown as { listeners: Map<string, Listener> };
+    const b = touchButton('Guard') as unknown as { listeners: Map<string, Listener> };
     b.listeners.get('keydown')?.(key('a'));
     expect(sent).toEqual([]);
     b.listeners.get('keydown')?.(key('Enter'));
@@ -122,12 +121,12 @@ describe('keyboard activation', () => {
 describe('numbered action row', () => {
   it('labels each button with its key number, Charge 5 to Super 9, Tag 3 and 4', () => {
     stubDom(true);
-    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '5\nCharge', '3\nTag', '4\nTag 2', '0\nTrap', 'V\nElement']);
+    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '5\nCharge', '3\nTag', '4\nTag 2', '0\nTrap', '-\nElement']);
   });
 
-  it('Element wears its letter key (no number is free) and follows a rebinding', () => {
+  it('Element wears the - key (after 0) and follows a rebinding', () => {
     stubDom(true);
-    expect(touchKeyLabel('Element')).toBe('V');
+    expect(touchKeyLabel('Element')).toBe('-');
     setBindings({ ...DEFAULT_BINDINGS, elemental: ['KeyB'] });
     expect(touchKeyLabel('Element')).toBe('B');
     setBindings({ ...DEFAULT_BINDINGS, elemental: [] });
@@ -148,8 +147,7 @@ describe('numbered action row', () => {
   it('leaves Charge out when no hero is melee, keeps the other numbers and closes the gap in the layout', () => {
     stubDom(true);
     const b = touchButtons(2, [false, false]);
-    expect(b.map((x) => x.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '3\nTag', '0\nTrap', 'V\nElement']);
-    expect(b[4]?.style.cssText).toBe('--touch-row:4;--touch-col:0;--touch-line:1;--touch-col5:4;--touch-line5:0;--touch-col3:1;--touch-line3:1;--touch-col2:0;--touch-line2:2');
+    expect(b.map((x) => x.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '3\nTag', '0\nTrap', '-\nElement']);
     expect(touchButtons(2, [false, true])).toHaveLength(8);
     expect(touchButtons(1)).toHaveLength(7);
   });
@@ -163,7 +161,7 @@ describe('numbered action row', () => {
 
   it('puts the state in words on a second line and in the accessible name', () => {
     stubDom(false);
-    const b = touchButton('Super', 0);
+    const b = touchButton('Super');
     setTouchText(b, 'Super', '40%');
     expect(b.textContent).toBe('9\nSuper\n40%');
     expect((b as unknown as { attrs: Record<string, string> }).attrs['aria-label']).toBe('9 Super, 40%');

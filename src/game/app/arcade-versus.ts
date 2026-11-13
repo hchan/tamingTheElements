@@ -48,7 +48,7 @@ export function keysHint(fadeMs = KEYS_HINT_MS): HTMLElement {
   const p = el('p', undefined, `${controlsHint('Player 1', getBindings())}. ${controlsHint('Player 2', P2_BINDINGS)}.`);
   p.id = 'arcadeKeysHint';
   p.style.cssText =
-    'position:absolute;left:4px;bottom:12%;right:40%;margin:0;z-index:4;font-size:11px;line-height:1.2;pointer-events:none;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000;transition:opacity 1s';
+    'position:absolute;left:4px;bottom:34%;right:40%;margin:0;z-index:4;font-size:11px;line-height:1.2;pointer-events:none;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000;transition:opacity 1s';
   // Harmless if the battle view has gone by then (the timer only touches this detached node).
   window.setTimeout(() => {
     p.style.opacity = '0';

@@ -802,178 +802,43 @@ body:has(#game:not(:empty)) {
   margin-top: 0.75em;
 }
 
-/* Touch/action row buttons. Touch: a column up the right edge (>= 48 px, safe areas), columns of four on short screens. Mouse/keyboard:
-   a compact row in the bottom band under the walkable playfield (arcadePlayfield ends at y 640 of 720), so it never hides a fighter at
-   the arena edge; two rows of five in narrow windows so the row cannot run into the left HUD. --touch-row is the slot, with --touch-col (row mod 4) and --touch-line (row div 4), plus --touch-col5 and --touch-line5 (the same by five) beside it, all set inline.
-   The background is solid (opacity 1): a translucent button over a bright arena would lose its text contrast. */
-button.touchBtn {
-  --touch-row: 0;
-  --touch-col: 0;
-  --touch-line: 0;
-  --touch-col5: 0;
-  --touch-line5: 0;
-  --touch-col3: 0;
-  --touch-line3: 0;
-  --touch-col2: 0;
-  --touch-line2: 0;
-  --touch-size: 72px;
-  --touch-pitch: 78px;
+/* Touch/action buttons: transparent overlays laid exactly over their box on the canvas action bar (src/game/hud/touch-overlay.ts sets
+   left/top/width/height/visibility; the bar draws the icon, key and cooldown). They are hidden until placed, never sit on the right, and
+   keep a 48 px floor. `#menu button` (min 44) is more specific than `button.touchBtn`, so both selectors restate it. */
+button.touchBtn,
+#menu button.touchBtn {
   position: absolute;
   z-index: 5;
-  display: block;
-  box-sizing: border-box;
-  /* Every button is the same square; content is left-aligned: icon + number key, name, state, one per line, never wrapped. */
-  width: var(--touch-size);
-  height: var(--touch-size);
+  left: 0;
+  top: 0;
+  width: 77px;
+  height: 77px;
   min-width: 48px;
   min-height: 48px;
-  padding: 4px 5px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 1px;
   overflow: hidden;
-  text-align: left;
-  white-space: pre;
-  font-size: 13px;
-  font-weight: bold;
-  line-height: 1.2;
   touch-action: none;
-  right: max(8px, env(safe-area-inset-right));
-  bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-row) * var(--touch-pitch));
-  opacity: 1;
-  background: #1d1e1f;
-  color: #e0d8c6;
-  border: 1px solid #6b6558;
-  border-radius: 2px;
+  visibility: hidden;
 }
-/* Size is `html[data-touch-size]` (large|compact), set from Settings or, on Auto, from `any-pointer: coarse` (src/game/platform/a11y/touch-layout.ts),
-   so touch laptops get the large column and mouse users on tablets can pick the compact row. Side is `html[data-touch-side]` (left-handed play). */
-html[data-touch-size='compact'] button.touchBtn {
-  /* 72 px + 4 px: fits the 80 px band under the playfield at 1280x720 (80 px buttons poked 8 px into the arena). */
-  --touch-size: 72px;
-  --touch-pitch: 78px;
-  right: calc(6px + var(--touch-row) * var(--touch-pitch));
-  bottom: 4px;
-  font-size: 14px;
-  border-radius: 6px;
+button.touchBtn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: -3px;
 }
-/* Narrow windows with the compact row: wrap to two rows of five (slot = column + 5 * row), so up to 10 buttons never reach a third row. */
-@media (max-width: 1100px) {
-  html[data-touch-size='compact'] button.touchBtn {
-    right: calc(6px + var(--touch-col5) * var(--touch-pitch));
-    bottom: calc(4px + var(--touch-line5) * var(--touch-pitch));
-  }
+html[data-high-contrast='true'] button.touchBtn {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
 }
-/* Left-handed: the same slots mirrored to the left edge (declared after every right-side rule so it wins at equal specificity). */
-html[data-touch-side='left'] button.touchBtn {
-  right: auto;
-  left: max(8px, env(safe-area-inset-left));
-}
-html[data-touch-side='left'][data-touch-size='compact'] button.touchBtn {
-  left: calc(6px + var(--touch-row) * var(--touch-pitch));
-}
-@media (max-width: 1100px) {
-  html[data-touch-side='left'][data-touch-size='compact'] button.touchBtn {
-    left: calc(6px + var(--touch-col5) * var(--touch-pitch));
-  }
-}
-/* Narrow windows: the touch buttons wrap to two rows and would sit on the local two-player key hint, which stays on the Help screen. */
 @media (max-width: 1100px) {
   #arcadeKeysHint {
     display: none;
   }
 }
-/* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
-@media (pointer: coarse) {
-  #menu button.touchBtn {
-    min-height: 48px;
-    min-width: 48px;
-    width: var(--touch-size);
-    height: var(--touch-size);
-  }
-}
-html[data-high-contrast='true'] button.touchBtn {
-  opacity: 1;
-  background: #000;
-  color: #fff;
-  border: 3px solid #fff;
-}
-/* Icon beside the number key, same size on every button. */
-.touchBtn::before {
-  content: '';
-  display: inline-block;
-  width: 1.4em;
-  height: 1.4em;
-  margin-right: 0.3em;
-  vertical-align: -0.3em;
-  background: currentColor;
-  -webkit-mask: var(--touch-icon) center / contain no-repeat;
-  mask: var(--touch-icon) center / contain no-repeat;
-}
-.touchBtn-Tag { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-.touchBtn-Tag2 { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 8h14l-3-3m3 3-3 3M21 16H7l3-3m-3 3 3 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-.touchBtn-Trap { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l10 18H2z' fill='black'/%3E%3C/svg%3E"); }
-/* Element: the up (fire, air) and down (water, earth) alchemical triangles crossed, outlined so it never reads as Trap's filled one. */
-.touchBtn-Element { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 15.5H3zM12 22L3 6.5h18z' fill='none' stroke='black' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-/* Touch layout follows the height of `#game` (a container, see below), not the viewport: at Medium display size a 640x360 phone leaves
-   #game about 281 px tall, so a viewport query would still pile four 78 px buttons into a column that is clipped. The top 52 px of the
-   right edge belong to the fullscreen button (44 px + 4 px inset), so no column may reach it: a column of n buttons needs
-   8 + n * pitch - 6 + 52 px. Tall (>= 762 px, nine in one column) keeps the single column; below that columns of four (3 x 4 for nine);
-   below 366 px columns of three at 68 px (3 x 3 for nine, 224 px tall, clear of the corner down to about 272 px). */
-@container game (max-height: 761px) {
-  html[data-touch-size='large'] #menu button.touchBtn,
-  html[data-touch-size='large'] #game button.touchBtn {
-    right: calc(8px + var(--touch-line) * var(--touch-pitch));
-    bottom: calc(8px + var(--touch-col) * var(--touch-pitch));
-  }
-  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn,
-  html[data-touch-size='large'][data-touch-side='left'] #game button.touchBtn {
-    right: auto;
-    left: calc(8px + var(--touch-line) * var(--touch-pitch));
-  }
-}
-@container game (max-height: 365px) {
-  html[data-touch-size='large'] #menu button.touchBtn,
-  html[data-touch-size='large'] #game button.touchBtn {
-    --touch-size: 68px;
-    --touch-pitch: 72px;
-    font-size: 12px;
-    right: calc(8px + var(--touch-line3) * var(--touch-pitch));
-    bottom: calc(8px + var(--touch-col3) * var(--touch-pitch));
-  }
-  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn,
-  html[data-touch-size='large'][data-touch-side='left'] #game button.touchBtn {
-    right: auto;
-    left: calc(8px + var(--touch-line3) * var(--touch-pitch));
-  }
-}
-/* Very short (a phone in landscape with a large display size, #game under 272 px): the column of three would reach the fullscreen corner, so
-   columns of two at 60 px (up to 5 columns for nine; 8 + 2 * 64 - 4 + 52 = 184 px, clear of the corner down to about 190 px). Text drops to 12 px. */
-@container game (max-height: 271px) {
-  html[data-touch-size='large'] #menu button.touchBtn,
-  html[data-touch-size='large'] #game button.touchBtn {
-    --touch-size: 60px;
-    --touch-pitch: 64px;
-    font-size: 12px;
-    padding: 3px 2px;
-    border-width: 1px;
-    right: calc(8px + var(--touch-line2) * var(--touch-pitch));
-    bottom: calc(8px + var(--touch-col2) * var(--touch-pitch));
-  }
-  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn,
-  html[data-touch-size='large'][data-touch-side='left'] #game button.touchBtn {
-    right: auto;
-    left: calc(8px + var(--touch-line2) * var(--touch-pitch));
-  }
-  /* High contrast keeps a heavy border: 2 px, with the padding trimmed so the content box stays about as wide. */
-  html[data-high-contrast='true'][data-touch-size='large'] #menu button.touchBtn,
-  html[data-high-contrast='true'][data-touch-size='large'] #game button.touchBtn {
-    border-width: 2px;
-    padding: 2px 1px;
-  }
-}
-.touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }
-.touchBtn-Weather { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.8 4.8 0 0 1 0 9.5z' fill='black'/%3E%3C/svg%3E"); }
-.touchBtn-Dash { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5l7 7-7 7M12 5l7 7-7 7' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-.touchBtn-Guard { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z' fill='black'/%3E%3C/svg%3E"); }
-.touchBtn-Super { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l3 7 7.5.6-5.7 4.9 1.8 7.4L12 17l-6.6 3.9 1.8-7.4L1.5 8.6 9 8z' fill='black'/%3E%3C/svg%3E"); }
 /* Versus hero select (Street Fighter / Marvel vs. Capcom style): P1 and P2 sides around a hero grid, P1/P2 cursors, a key cheat sheet.
    Colour is never the only cue: every cursor, pick and element carries a text flag or glyph (docs/VISUAL-QA.md). */
 #menu #arcadePick {

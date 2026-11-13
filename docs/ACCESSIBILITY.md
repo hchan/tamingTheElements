@@ -83,7 +83,7 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
   not growing), the flash and one static spark per hit, and drops the dash afterimages, projectile trails, flying sparks and
   shards and the rising words (FUN-DESIGN section 3).
 - Arcade trap (WP 39b): Z or 0, pad Y, P2 M, or the touch Trap button (cooldown in seconds). Each trap on the floor carries its words ("P1 Fire Bomb (arming)"), never colour alone; reduced motion stops the end-of-life blink (`tests/e2e/arcade-trap.spec.ts`).
-- Arcade elemental ability (FUN-DESIGN 2.24): V or Minus (rebindable), pad L3, P2 Semicolon, or the touch Element button. The action bar slot draws the element's alchemical symbol (its shape, not its colour, tells the element) with the ability's name, "<Name> on" while it runs and whole seconds while it cools; a refused press shows "<Name> ready in N s" or "No element ability for this hero"; the live region says "Your Gale: speed up." or "Enemy Cleanse: 2 debuffs cleared." politely (`src/game/a11y/a11y.test.ts`, `src/game/hud/action-bar.test.ts`).
+- Arcade elemental ability (FUN-DESIGN 2.24): V or Minus, the key after 0, which its box wears as - (rebindable), pad L3, P2 Semicolon, or the touch Element button. The action bar slot draws the element's alchemical symbol (its shape, not its colour, tells the element) with the ability's name, "<Name> on" while it runs and whole seconds while it cools; a refused press shows "<Name> ready in N s" or "No element ability for this hero"; the live region says "Your Gale: speed up." or "Enemy Cleanse: 2 debuffs cleared." politely (`src/game/a11y/a11y.test.ts`, `src/game/hud/action-bar.test.ts`).
 - Arcade charge (WP-arcade-charge, FUN-DESIGN 2.17): H, pad R3 or the touch Charge button. A charge pops "CHARGE!" over the fighter and says "You charged." or "The enemy charged." in the live region; the arrival hit sparks like any hit. Reduced motion keeps the word and the line and drops the afterimages (`tests/e2e/arcade-charge.spec.ts`).
 - Arcade weather (`src/game/fx/weather-view.ts`, WP-arcade-weather-view): the weather up is a HUD badge with a glyph that
   differs by shape (sun with rays, drops, blown sand, wind lines, an eclipsed sun), a word and the whole seconds left
@@ -184,8 +184,8 @@ Arcade dash and guard (FUN-DESIGN 2.7, 2.8; WP-arcade-defence-view): the **Dash 
 guards. Like the super, they send `Cmd.dash` and `Cmd.guard` only in an Arcade match; in Classic the keys send nothing and
 RB and LT stay the second and third swap (an Arcade team has one partner, tagged on LB). Both are rebindable with the
 conflict check, and a save that already uses E or Q leaves the new action unbound rather than resetting the map. A double tap of a direction
-dashes too (the sim reads it from the direction presses). On touch screens, Guard and Dash buttons sit above the Super
-button on the right edge (each a 72 px square, 48 px at least, 6 px apart; the on-screen row is the numbered action row); each holds the action's first bound key while the finger
+dashes too (the sim reads it from the direction presses). On touch screens, Guard and Dash are boxes of the one
+action bar on the left (every box has an icon, a number badge 1-9 then 0, and the same cooldown sweep; 48 px at least; a transparent button sits over each box); each holds the action's first bound key while the finger
 is down (a pointer-only control: keyboards press the key, so they are not in the Tab order); an unbound action's button
 does nothing.
 

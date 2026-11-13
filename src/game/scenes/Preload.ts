@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { manifestToLoadList } from '../assets/load-list';
+import { ACTION_SHEET } from '../hud/action-bar';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
 export const PRELOAD_READY = 'preload-ready';
@@ -30,6 +31,8 @@ export class Preload extends Phaser.Scene {
       if (e.kind === 'image') this.load.image(e.key, e.url);
       else this.load.audio(e.key, [e.url]);
     }
+    // The generated action-bar icon sheet (tools/assets/hud-gen/actions.py), outside the manifest.
+    this.load.image(ACTION_SHEET, `${import.meta.env.BASE_URL}assets/img/hud/actions.png`);
   }
 
   create(): void {

@@ -186,8 +186,8 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
     await page.getByRole('button', { name: 'Fight' }).tap();
     await tapTourSplash(page);
     await page.waitForFunction(ARENA_READY);
-    if (tc.fraction !== undefined) await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(tc.fraction)}')`);
-    await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+    if (tc.fraction !== undefined) await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(tc.fraction)}'); window.dispatchEvent(new Event('resize'))`);
+    await page.evaluate(`new Promise((r) => { let n = 0; const f = () => (++n >= 30 ? r(0) : requestAnimationFrame(f)); requestAnimationFrame(f); })`); // the overlays re-sync every 5th frame
     const g = await page.evaluate<{ x: number; y: number; r: number; b: number }>(
       `(() => { const q = document.querySelector('#game').getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
     );
@@ -204,13 +204,10 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
         expect(clear, `${p.id} covers the fullscreen button`).toBe(true);
       }
     }
-    // One square size for every button, left-aligned content, nothing clipped or overflowing.
+    // One square size for every overlay (they sit over the canvas boxes), nothing clipped or overflowing.
     expect(new Set(boxes.map((k) => `${String(Math.round(k.r - k.x))}x${String(Math.round(k.b - k.y))}`)).size).toBe(1);
     expect(Math.round((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0))).toBe(Math.round((boxes[0]?.b ?? 0) - (boxes[0]?.y ?? 0)));
-    for (const k of boxes) {
-      expect(k.over, `${k.id} overflows`).toBe(false);
-      expect(k.left, `${k.id} text-align`).toBe(true);
-    }
+    for (const k of boxes) expect(k.over, `${k.id} overflows`).toBe(false);
     for (const k of boxes) {
       expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);
       expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(g.y - 0.5);
@@ -218,10 +215,13 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
       expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(g.b + 0.5);
       expect(k.b - k.y, `${k.id} height`).toBeGreaterThanOrEqual(48);
     }
-    expect(new Set(boxes.map((k) => Math.round(k.r))).size).toBeLessThanOrEqual(g.b - g.y < 272 ? 5 : 3);
+    // aligned on the left: the first box starts at the left edge of the canvas
+    const cv = await page.evaluate<{ x: number }>(`(() => { const q = document.querySelector('#game canvas').getBoundingClientRect(); return { x: q.x }; })()`);
+    // (the two ability boxes come first and are canvas-only, so the first overlay is at most two boxes in)
+    expect(Math.min(...boxes.map((k) => k.x)) - cv.x).toBeLessThan(2 * ((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0)) + 16);
     for (const [i, p] of boxes.entries()) {
       for (const q of boxes.slice(i + 1)) {
-        const apart = p.r <= q.x || q.r <= p.x || p.b <= q.y || q.b <= p.y;
+        const apart = p.r <= q.x + 0.5 || q.r <= p.x + 0.5 || p.b <= q.y + 0.5 || q.b <= p.y + 0.5;
         expect(apart, `${p.id} and ${q.id} overlap`).toBe(true);
       }
     }
@@ -235,7 +235,7 @@ for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640
   test.describe(`Arcade touch buttons with high contrast, ${hc.name}`, () => {
     test.use({ viewport: { width: hc.w, height: hc.h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, contrast: 'more' });
 
-    test('keep a border of at least 2 px, inside #game, none overlapping or overflowing', async ({ page }, info) => {
+    test('stay inside #game, none overlapping or overflowing', async ({ page }, info) => {
       const errors = collectErrors(page);
       await page.goto(`${START}&ff=arcade#tour`);
       await page.getByRole('button', { name: 'Start tour' }).tap();
@@ -243,8 +243,8 @@ for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640
       await tapTourSplash(page);
       await page.waitForFunction(ARENA_READY);
       // Medium display size shrinks #game below 272 px on these phones (the tightest layout).
-      await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(MEDIUM)}')`);
-      await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(MEDIUM)}'); window.dispatchEvent(new Event('resize'))`);
+      await page.evaluate(`new Promise((r) => { let n = 0; const f = () => (++n >= 30 ? r(0) : requestAnimationFrame(f)); requestAnimationFrame(f); })`); // the overlays re-sync every 5th frame
       expect(await page.evaluate<string>(`document.documentElement.dataset.highContrast`)).toBe('true');
       const g = await page.evaluate<{ x: number; y: number; r: number; b: number }>(
         `(() => { const q = document.querySelector('#game').getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
@@ -255,7 +255,6 @@ for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640
       );
       expect(boxes).toHaveLength(9);
       for (const k of boxes) {
-        expect(k.border, `${k.id} border`).toBeGreaterThanOrEqual(2);
         expect(k.over, `${k.id} overflows`).toBe(false);
         expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);
         expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(g.y - 0.5);
@@ -264,7 +263,7 @@ for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640
       }
       for (const [i, p] of boxes.entries()) {
         for (const q of boxes.slice(i + 1)) {
-          expect(p.r <= q.x || q.r <= p.x || p.b <= q.y || q.b <= p.y, `${p.id} and ${q.id} overlap`).toBe(true);
+          expect(p.r <= q.x + 0.5 || q.r <= p.x + 0.5 || p.b <= q.y + 0.5 || q.b <= p.y + 0.5, `${p.id} and ${q.id} overlap`).toBe(true);
         }
       }
       await page.screenshot({ path: info.outputPath('touch-hc.png') });

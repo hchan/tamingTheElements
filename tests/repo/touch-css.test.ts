@@ -4,12 +4,14 @@ import { describe, expect, it } from 'vitest';
 
 const css = readFileSync(resolve(import.meta.dirname, '../../src/ui/styles/main.css'), 'utf8');
 
-describe('touch button layout CSS', () => {
-  it('keys layout off the data attributes, not the primary pointer, so hybrids and overrides work', () => {
-    expect(css).toContain("html[data-touch-size='compact'] button.touchBtn");
-    expect(css).toContain("html[data-touch-side='left'] button.touchBtn");
-    expect(css).toContain("html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn");
-    expect(css).not.toMatch(/@media \(pointer: fine\)/);
-    expect(css).not.toMatch(/@media \(pointer: coarse\) and \(max-height/);
+describe('touch button overlay CSS', () => {
+  it('places buttons as transparent absolute overlays over the canvas boxes, never docked to the right', () => {
+    const block = css.slice(css.indexOf('button.touchBtn,'), css.indexOf('button.touchBtn:focus-visible'));
+    expect(block).toContain('position: absolute');
+    expect(block).toContain('visibility: hidden');
+    expect(block).toContain('background: transparent');
+    expect(block).toMatch(/min-width: 48px;\s*min-height: 48px;/);
+    expect(block).not.toMatch(/right:/);
+    expect(css).not.toContain("data-touch-side='right'] button.touchBtn");
   });
 });
