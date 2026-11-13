@@ -153,15 +153,6 @@
         61
       ]
     },
-    "entanglingVinesAir": {
-      "url": "img/fx/entanglingVinesAir.png",
-      "coords": [
-        0,
-        0,
-        80,
-        61
-      ]
-    },
     "entanglingVinesLong": {
       "url": "img/fx/entanglingVinesLong.png",
       "coords": [
@@ -169,15 +160,6 @@
         0,
         80,
         18
-      ]
-    },
-    "entanglingVinesWater": {
-      "url": "img/fx/entanglingVinesWater.png",
-      "coords": [
-        0,
-        0,
-        80,
-        61
       ]
     },
     "evilEyes": {
@@ -502,6 +484,24 @@
         0,
         27,
         14
+      ]
+    },
+    "entanglingVinesAir": {
+      "url": "img/fx/entanglingVinesAir.png",
+      "coords": [
+        0,
+        0,
+        80,
+        61
+      ]
+    },
+    "entanglingVinesWater": {
+      "url": "img/fx/entanglingVinesWater.png",
+      "coords": [
+        0,
+        0,
+        80,
+        61
       ]
     }
   },
