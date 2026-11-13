@@ -731,7 +731,7 @@ export class Arena extends Phaser.Scene {
     if (!announcer || !view) return;
     const hero = collectSide(view, 0).active;
     const fraction = hero === undefined ? undefined : hero.hp / Math.max(1, hero.maxHp);
-    this.lowLife ??= new LowLifeVignette(this.cameras.main);
+    this.lowLife ??= new LowLifeVignette(this.cameras.main, () => getPrefs().reduceMotion);
     this.lowLife.set(fraction);
     if (this.lowHealth.update(fraction)) announcer.say(LOW_HEALTH);
   }
