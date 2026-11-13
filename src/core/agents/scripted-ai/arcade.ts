@@ -15,7 +15,7 @@ import {
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
   centreDist, chargeSensible, elementalSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
-  trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, type ArcadeAiLevel, type Style,
+  trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, zoneStep, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
 /**
@@ -257,10 +257,27 @@ export class ArcadeTactics {
     if (a === undefined) return base;
     const cmd = this.avoidTraps(view, a, this.decide(view, a, base, shot));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
+    const zoned = this.zone(view, a, out);
     // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
     // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
-    const released = (out & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? out & ~Cmd.charge : out;
+    const released = (zoned & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? zoned & ~Cmd.charge : zoned;
     return this.elemental(view, a) ? released | Cmd.elemental : released;
+  }
+
+  /**
+   * Zoning (SIM_VERSION 44; Normal and Hard; ideas/brainstorm/ranged-heroes-fight-at-melee-range): the last word on a ranged
+   * Zoner's or Turtle's walk (Rushdown, and any hero in a stale fight, still closes in). In the fight and free, a command that
+   * is not a dash, guard, super, charge or trap press loses its step towards the foe along the dominant axis inside the zoning
+   * band (`zoneStep`), so a ranged hero fires from range and stays out of arm's reach, whatever rule (a rock slide, a combo
+   * step, a dodge) asked for the step. Shots keep their line: the shot auto-faces the foe.
+   */
+  private zone(view: ObservationView, a: ArcadeView, cmd: Command): Command {
+    const self = view.self;
+    const opp = view.opponent;
+    if (self === undefined || opp === undefined || this.level < AI_NORMAL || a.chargeIn !== -1) return cmd;
+    if (a.phase !== RoundPhase.fight || a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
+    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
+    return zoneStep(self, opp, cmd, arcadePlayfield(), a.oppStun !== 0 || a.oppRooted !== 0);
   }
 
   /**

@@ -198,7 +198,7 @@ describe('trap avoidance (WP 39c)', () => {
     const t = new ArcadeTactics(AI_NORMAL, ZONER);
     const traps = [foe(TrapKind.puddle, AHEAD, 312)];
     expect(t.apply(view({ traps }), Cmd.right | Cmd.primary)).toBe(Cmd.down | Cmd.primary);
-    expect(t.apply(view({ traps: [{ ...traps[0] as TrapView, own: true }] }), Cmd.right)).toBe(Cmd.right);
+    expect(t.apply(view({ traps: [{ ...traps[0] as TrapView, own: true }], chargeIn: 500 }), Cmd.right)).toBe(Cmd.right);
     expect(t.apply(view({ traps }), Cmd.guard)).toBe(Cmd.guard);
   });
 
