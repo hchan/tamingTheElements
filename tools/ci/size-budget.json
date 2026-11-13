@@ -2,7 +2,7 @@
   "chunks": {
     "arcade-audio": 2510,
     "arcade-setup": 1685,
-    "arcade-versus": 8905,
+    "arcade-versus": 8915,
     "arena-pan": 1020,
     "clash-view": 943,
     "danger-view": 750,
@@ -26,7 +26,7 @@
     "terrain-view": 6400,
     "trap-view": 1100,
     "touch-controls": 1670,
-    "tour": 7533,
+    "tour": 7545,
     "viewport": 260,
     "weather-view": 3700,
     "grim-fx": 900,
