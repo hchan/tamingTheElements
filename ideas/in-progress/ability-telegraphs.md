@@ -10,4 +10,5 @@ Follow-up from ability-audit (static graphics pass, docs/ABILITY-AUDIT.md). Grou
 ## Progress
 
 - Slice 1 (done, renderer only): `src/game/fx/danger-view.ts` + `danger-zone.ts` outline every live melee box at its true hit size (dashed black and white pair with corner brackets, so never colour alone; a short pulse at the cast, steady under reduced motion). The sim hits one tick after a cast, so this marks the zone while it is live, not before it. Tests: `danger-zone.test.ts`, `tests/e2e/danger-zone.spec.ts`.
-- Open: a true wind-up before the hit needs a sim delay (SIM_VERSION bump); brighter dark sprites (Chaos Orb, Crimson Fire, Adrenaline, Strangling Branches); projectile-size cues for Crimson Fire; screenshots on each floor.
+- Slice 2 (done, renderer only): Chaos Bolt and Chaos Orb get an ash-violet halo through `SPRITE_BOOST` (`projectile-view.ts`), lifting the darkest sprites off the void floor; headless screenshots of the boss casting both read clearly and stay muted. Crimson Fire and Strangling Branches already had boosts (c63e847f); the Adrenaline aura already exists in `ability-aura.ts`.
+- Open: a true wind-up before the hit needs a sim delay (SIM_VERSION bump); screenshots of the boosted sprites on the other floors (only the void floor was shot).
