@@ -1548,3 +1548,24 @@ html[data-high-contrast='true'] button.touchBtn {
   border-left: 3px solid #ffd54a;
   padding-left: 4px;
 }
+
+/* Unselect (team slots): empty placeholder, the x button under a filled Play slot, and the Start/Fight hint. */
+.heroSlot.heroSlotEmpty,
+.rosterSlot.heroSlotEmpty {
+  border-style: dashed;
+  opacity: 0.85;
+}
+.heroSlotClear {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 4px 0 0;
+  padding: 0.1em 0.4em;
+}
+.heroHint {
+  align-self: center;
+  margin: 0;
+}
+.heroHint[hidden] {
+  display: none;
+}

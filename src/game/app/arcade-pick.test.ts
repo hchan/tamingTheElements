@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CharacterId } from '@core/index';
-import { ARCADE_RACES, DEFAULT_PICK, parsePick, partner2For, partnerFor } from './arcade-pick';
+import { ARCADE_RACES, DEFAULT_PICK, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
 
 const PAX = 'pax' as CharacterId;
 const CUROMO = 'curomo' as CharacterId;
@@ -69,5 +69,13 @@ describe('parsePick', () => {
   it('ignores a size that is not 2 or 3', () => {
     const p = parsePick({ player: 'pax', enemy: 'fiara', level: 'normal', size: '9', partner: 'curomo' });
     expect(p).not.toHaveProperty('partner');
+  });
+});
+
+describe('isCompletePick', () => {
+  it('is false when any hero field is empty, true when all are set or left out', () => {
+    expect(isCompletePick({ player: 'fiara', enemy: 'rokcore', level: 'easy' })).toBe(true);
+    expect(isCompletePick({ player: 'fiara', enemy: 'rokcore', partner: '', partner2: 'lavax', level: 'easy' })).toBe(false);
+    expect(isCompletePick({ player: '', enemy: 'rokcore', level: 'easy' })).toBe(false);
   });
 });

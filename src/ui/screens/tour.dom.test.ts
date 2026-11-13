@@ -95,7 +95,7 @@ describe('tourPickView', () => {
     mount(vi.fn(), ['lavax', 'sindarosa', 'rokcore']);
     expect(['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((id) => sel(id).name)).toEqual(['hero1', 'hero2', 'hero3']);
     expect(document.querySelector('label[for="arcadeHero1"]')?.textContent).toBe('Hero 1 (lead)');
-    expect([...sel('arcadeHero2').options].map((o) => o.value)).toEqual(RACES);
+    expect([...sel('arcadeHero2').options].map((o) => o.value)).toEqual(['', ...RACES]);
   });
 
   it('submitting reports the chosen values and prevents the default navigation', () => {
@@ -120,7 +120,7 @@ describe('tourPickView', () => {
   });
 
   it('a tile click fills the active slot, advances to the next slot and updates the hidden select', () => {
-    mount();
+    mount(vi.fn(), ['', 'rokcore', 'sindarosa']);
     tile('Lavax').click();
     expect(sel('arcadeHero1').value).toBe('lavax');
     expect(document.getElementById('tourSlot2')?.getAttribute('aria-pressed')).toBe('true');
@@ -133,7 +133,8 @@ describe('tourPickView', () => {
     sel('arcadeHero2').value = 'rokcore';
     sel('arcadeHero3').value = 'lavax';
     document.getElementById('tourSlot1')?.click();
-    tile('Lavax').click();
+    tile('Lavax').dispatchEvent(new Event('pointerenter'));
+    (document.querySelector('.heroAdd') as HTMLElement).click();
     expect(sel('arcadeHero1').value).toBe('lavax');
     expect(sel('arcadeHero3').value).toBe('sindarosa');
   });
@@ -159,5 +160,84 @@ describe('tourPickView', () => {
     expect(start.type).toBe('submit');
     expect(start.textContent).toBe('Start tour');
     expect(document.querySelector('a.menuButton')?.getAttribute('href')).toBe('#main');
+  });
+  describe('unselecting', () => {
+    const slotText = (n: number): string => document.getElementById(`tourSlot${String(n)}`)?.textContent ?? '';
+    const live = (): string => document.querySelector('[role=status]')?.textContent ?? '';
+    const startBtn = (): HTMLButtonElement => document.getElementById('tourStart') as HTMLButtonElement;
+    const hint = (): string => document.getElementById('tourHint')?.textContent ?? '';
+
+    it('every filled slot has a labelled x button that empties it, announces it and disables Start with a hint', () => {
+      mount();
+      const x = document.querySelector('button[aria-label="Remove Rokcore from slot 2"]') as HTMLButtonElement;
+      expect(x).not.toBeNull();
+      expect(document.querySelectorAll('.heroSlotClear')).toHaveLength(3);
+      x.click();
+      expect(sel('arcadeHero2').value).toBe('');
+      expect(slotText(2)).toContain('Empty');
+      expect(document.getElementById('tourSlot2')?.classList.contains('heroSlotEmpty')).toBe(true);
+      expect(document.querySelectorAll('.heroSlotClear')).toHaveLength(2);
+      expect(live()).toBe('Rokcore removed from hero 2.');
+      expect(startBtn().disabled).toBe(true);
+      expect(hint()).toBe('Pick 1 more hero');
+    });
+
+    it('Delete and Backspace on a focused slot clear it', () => {
+      mount();
+      for (const [key, n] of [['Delete', 1], ['Backspace', 3]] as const) {
+        const b = document.getElementById(`tourSlot${String(n)}`) as HTMLElement;
+        const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        b.dispatchEvent(ev);
+        expect(ev.defaultPrevented).toBe(true);
+        expect(sel(`arcadeHero${String(n)}`).value).toBe('');
+      }
+      expect(hint()).toBe('Pick 2 more heroes');
+    });
+
+    it('activating a hero already on the team again (Enter or click) takes it off; the next pick refills that slot', () => {
+      mount();
+      tile('Rokcore').click();
+      expect(sel('arcadeHero2').value).toBe('');
+      expect(tile('Rokcore').getAttribute('aria-pressed')).toBe('false');
+      expect(tile('Rokcore').querySelector('.heroFlag')).toBeNull();
+      tile('Rokcore').click();
+      expect(sel('arcadeHero2').value).toBe('rokcore');
+      expect(startBtn().disabled).toBe(false);
+      expect(hint()).toBe('');
+    });
+
+    it('an empty slot reads Empty, has no x button, and Start with all empty says Pick 3 heroes', () => {
+      mount(vi.fn(), ['', '', '']);
+      expect([1, 2, 3].map(slotText).every((t) => t.includes('Empty'))).toBe(true);
+      expect(document.querySelectorAll('.heroSlotClear')).toHaveLength(0);
+      expect(hint()).toBe('Pick 3 heroes');
+      expect(startBtn().disabled).toBe(true);
+    });
+
+    it('submitting an incomplete team never calls onStart', () => {
+      const onStart = vi.fn();
+      mount(onStart);
+      (document.getElementById('tourSlot1') as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+      document.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      expect(onStart).not.toHaveBeenCalled();
+      expect(live()).toBe('Pick all three heroes first.');
+    });
+
+    it('gamepad B steps back a slot and empties it', () => {
+      const frames: FrameRequestCallback[] = [];
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb));
+      let pressed = false;
+      Object.defineProperty(navigator, 'getGamepads', {
+        configurable: true,
+        value: () => [{ axes: [0, 0], buttons: Array.from({ length: 16 }, (_v, k) => ({ pressed: k === 1 && pressed })) }],
+      });
+      mount();
+      pressed = true;
+      frames.shift()?.(0);
+      // The active slot starts at 1, so B steps back to slot 3 (wrapping) and empties it.
+      expect(sel('arcadeHero3').value).toBe('');
+      vi.unstubAllGlobals();
+      Reflect.deleteProperty(navigator, 'getGamepads');
+    });
   });
 });

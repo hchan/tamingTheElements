@@ -14,7 +14,7 @@ import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { destroyGame, type GameHandle } from './game-handle';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
-import { currentStage, matchSeed, parseTeam, stagePick } from './tour-match';
+import { currentStage, matchSeed, parseCompleteTeam, stagePick } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
 import { runSummary } from './tour-summary';
 import { browserTourStorage, clearRun, loadRun, saveRun, type TourStorage } from './tour-store';
@@ -86,7 +86,8 @@ export function tourScreen(deps: TourDeps): Screen {
         races: ARCADE_RACES,
         current: [DEFAULT_PICK.player, partnerFor(DEFAULT_PICK.player), partner2For(DEFAULT_PICK.player, partnerFor(DEFAULT_PICK.player))],
         onStart: (v) => {
-          set(startRun(parseTeam(v), deps.flags.seed ?? deps.randomSeed()));
+          const team = parseCompleteTeam(v);
+          if (team) set(startRun(team, deps.flags.seed ?? deps.randomSeed()));
         },
       }),
     );

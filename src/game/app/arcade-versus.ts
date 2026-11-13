@@ -13,7 +13,7 @@ import { createReplayStore, type ReplayStore } from '../platform/storage/replay-
 import { requestOpenTesterPanel } from '@ui/tester/install';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
-import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
+import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
 import type { ArcadeHero, ArcadeResult } from './arcade-setup';
 import { downloadReplay } from './download';
 import { destroyGame, type GameHandle } from './game-handle';
@@ -96,6 +96,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
           enemyPartner2: partner2For(lastPick.enemy, partnerFor(lastPick.enemy, lastPick.enemyBench?.[0]), lastPick.enemyBench?.[1]),
         },
         onStart: (v) => {
+          if (!isCompletePick(v)) return;
           lastPick = parsePick(v);
           startBattle();
         },

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ARCADE_WORLD_BASE, ArcadeW, createMatch, step, type CharacterId } from '@core/index';
 import { arcadeSetup } from './arcade-setup';
 import { ARCADE_RACES } from './arcade-pick';
-import { matchSeed, parseTeam, stageKindOfSeed, stagePick } from './tour-match';
+import { matchSeed, parseCompleteTeam, parseTeam, stageKindOfSeed, stagePick } from './tour-match';
 import { advance, buildTour, startRun, useContinue, type TourStage } from './tour-model';
 
 const HERO = ['fiara', 'rokcore', 'curomo'] as CharacterId[];
@@ -57,6 +57,15 @@ describe('parseTeam', () => {
     for (const t of [parseTeam({ hero1: 'fiara', hero2: 'fiara', hero3: 'fiara' }), parseTeam({ hero1: '__proto__' }), parseTeam({})]) {
       expect(new Set(t).size).toBe(3);
       for (const h of t) expect(ARCADE_RACES).toContain(h);
+    }
+  });
+});
+
+describe('parseCompleteTeam', () => {
+  it('accepts a full team and rejects any empty, missing or unknown slot', () => {
+    expect(parseCompleteTeam({ hero1: 'fiara', hero2: 'rokcore', hero3: 'curomo' })).toEqual(HERO);
+    for (const raw of [{ hero1: 'fiara', hero2: '', hero3: 'curomo' }, { hero1: 'fiara', hero2: 'rokcore' }, { hero1: '__proto__', hero2: 'rokcore', hero3: 'curomo' }, {}]) {
+      expect(parseCompleteTeam(raw)).toBeUndefined();
     }
   });
 });

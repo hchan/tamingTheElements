@@ -83,6 +83,7 @@ export function select(name: string, label: string, options: readonly { value: s
     opt.selected = o.value === value;
     input.append(opt);
   }
+  if (value !== '') input.value = value;
   row.append(lab, ' ', input);
   return row;
 }
@@ -127,7 +128,7 @@ function rosterView(
   sides: readonly [readonly string[], readonly string[]],
   changed: () => void,
   focusFight: () => void,
-): { node: HTMLElement; refresh: () => void; confirm: (name: string) => void; onKey: (e: KeyboardEvent) => void; act: (s: SideIx, act: string) => void } {
+): { node: HTMLElement; refresh: () => void; confirm: (name: string) => void; onKey: (e: KeyboardEvent) => void; act: (s: SideIx, act: string) => void; empties: () => number } {
   const names = [...sides[0], ...sides[1]];
   const node = el('div', 'rosterPick vsStage');
   const live = el('p', 'srOnly');
@@ -175,6 +176,9 @@ function rosterView(
       swapSlots(a, b);
     },
     slotDraggable: (n) => confirmed.has(n),
+    clearSlot: (n) => {
+      clearSlot(n);
+    },
   });
   const grid = heroes.grid;
   const sideNodes = ([0, 1] as const).map((i) => {
@@ -248,6 +252,13 @@ function rosterView(
           if (armed >= 0) dropHero(armed, n);
           else refresh();
         });
+        // Delete or Backspace on a focused slot empties it.
+        b.addEventListener('keydown', (e) => {
+          if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            clearSlot(n);
+          }
+        });
         slotButtons.set(n, b);
         const item = el('li', 'vsSlotItem');
         item.append(b);
@@ -258,20 +269,18 @@ function rosterView(
       if (!b || !sel || !item) continue;
       item.toggleAttribute('hidden', sel.disabled);
       const open = openOf(s);
-      const done = confirmed.has(n);
-      const element = getCharacter(sel.value as CharacterId).element;
+      const empty = sel.value === '';
+      const done = confirmed.has(n) && !empty;
+      const element = empty ? '' : getCharacter(sel.value as CharacterId).element;
       const isActive = n === sideActive[s] && (local || s === mouseSide);
       b.textContent = '';
       const face = el('span', 'heroFace vsBigFace');
-      face.style.backgroundImage = avatarOf(sel.value);
+      if (!empty) face.style.backgroundImage = avatarOf(sel.value);
       face.setAttribute('aria-hidden', 'true');
       const text = el('span', 'vsSlotText');
-      text.append(
-        el('span', 'vsSlotLabel', slotLabel(n)),
-        el('b', 'vsSlotName', shortName(sel.value)),
-        rosterElement(element),
-        el('span', 'vsStats', done ? statsOf(sel.value) : 'Not picked yet'),
-      );
+      text.append(el('span', 'vsSlotLabel', slotLabel(n)), el('b', 'vsSlotName', empty ? 'Empty' : shortName(sel.value)));
+      if (!empty) text.append(rosterElement(element));
+      text.append(el('span', 'vsStats', empty ? 'Pick a hero' : done ? statsOf(sel.value) : 'Not picked yet'));
       if (done) {
         const abil = el('span', 'vsAbilities');
         // Inside a button, so its text is part of the button's name for screen readers; the title repeats it as a sentence.
@@ -286,7 +295,9 @@ function rosterView(
         text.append(abil);
       }
       b.append(face, text);
-      b.dataset['element'] = element;
+      if (empty) delete b.dataset['element'];
+      else b.dataset['element'] = element;
+      b.classList.toggle('heroSlotEmpty', empty);
       b.setAttribute('aria-pressed', String(isActive));
       b.classList.toggle('rosterActive', isActive);
       b.classList.toggle('vsUnpicked', !done);
@@ -373,6 +384,14 @@ function rosterView(
   };
   /** Mouse and touch fill the active slot, then carry on to the other side once this one is full (one player on the computer, or P1 then P2). */
   function assignMouse(i: number): void {
+    // A second click or Enter on a hero this side already picked takes it off the team again.
+    const held = openOf(mouseSide).find((n) => confirmed.has(n) && fields()[n]?.value === races[i]);
+    if (held) {
+      focus = i;
+      cursor[mouseSide] = i;
+      clearSlot(held);
+      return;
+    }
     focus = i;
     cursor[mouseSide] = i;
     place(mouseSide, i);
@@ -420,12 +439,19 @@ function rosterView(
     announce(`${slotLabel(a)} swapped with ${slotLabel(b)}.`);
     refresh();
   }
+  /** Empties a slot (its select gets the empty option, so the form cannot start until it is refilled) and makes it the active one. */
   function clearSlot(n: string): void {
     const s = sideOf(n);
+    const sel = fields()[n];
+    if (!sel) return;
+    const was = sel.value;
     confirmed.delete(n);
+    sel.value = '';
     sideActive[s] = n;
+    mouseSide = s;
     ready[s] = false;
-    announce(`${slotLabel(n)} cleared.`);
+    changed();
+    announce(was === '' ? `${slotLabel(n)} is already empty.` : `${shortName(was)} removed from ${slotLabel(n)}. ${slotLabel(n)} is empty.`);
     refresh();
   }
   function swap(n: string): void {
@@ -521,7 +547,15 @@ function rosterView(
       return;
     }
   };
-  return { node, refresh, confirm: (n) => { confirmed.add(n); ready[sideOf(n)] = false; }, onKey, act: doAct };
+  const empties = (): number => openSlots().filter((n) => fields()[n]?.value === '').length;
+  return {
+    node, refresh, onKey, act: doAct, empties,
+    confirm: (n) => {
+      if (fields()[n]?.value === '') confirmed.delete(n);
+      else confirmed.add(n);
+      ready[sideOf(n)] = false;
+    },
+  };
 }
 
 export function arcadePickView(o: PickViewOptions): HTMLElement {
@@ -529,6 +563,8 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   page.id = 'arcadePick';
   page.append(el('h1', 'heading', 'Versus'));
   const races = o.races.map((r) => ({ value: r, label: raceLabel(r) }));
+  // Hero selects also offer the empty option: a slot the player cleared. Start waits until none is empty.
+  const heroOptions = [{ value: '', label: 'Empty' }, ...races];
   const form = el('form', 'settingsForm vsForm');
   const setText = (id: string, text: string): void => {
     const l = form.querySelector(`label[for="${id}"]`);
@@ -553,12 +589,12 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     control(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode)),
     control(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size)),
     control(select('level', 'AI level', o.levels, o.current.level)),
-    select('player', 'Your race', races, o.current.player),
-    select('partner', 'Your partner (2v2)', races, o.current.partner),
-    select('partner2', 'Your third hero (3v3)', races, o.current.partner2),
-    select('enemy', 'AI race', races, o.current.enemy),
-    select('enemyPartner', 'Player 2 hero 2', races, o.current.enemyPartner),
-    select('enemyPartner2', 'Player 2 hero 3', races, o.current.enemyPartner2),
+    select('player', 'Your race', heroOptions, o.current.player),
+    select('partner', 'Your partner (2v2)', heroOptions, o.current.partner),
+    select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2),
+    select('enemy', 'AI race', heroOptions, o.current.enemy),
+    select('enemyPartner', 'Player 2 hero 2', heroOptions, o.current.enemyPartner),
+    select('enemyPartner2', 'Player 2 hero 3', heroOptions, o.current.enemyPartner2),
   );
   const start = el('button', 'menuButton vsFight', 'Fight!');
   start.type = 'submit';
@@ -575,8 +611,11 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     },
   );
   set.append(roster.node);
+  const fightHint = el('p', 'heroHint');
+  fightHint.id = 'arcadeFightHint';
+  start.setAttribute('aria-describedby', 'arcadeFightHint');
   const actions = el('div', 'vsActions');
-  actions.append(start, back);
+  actions.append(start, fightHint, back);
   form.append(set, hint, actions);
   // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.
   const f = form.elements as unknown as Record<string, HTMLSelectElement>;
@@ -603,6 +642,10 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     setText('arcadePartner2', local ? 'Player 1 hero 3' : 'Your third hero (3v3)');
     hint.hidden = !local;
     roster.refresh();
+    const empty = roster.empties();
+    start.disabled = empty > 0;
+    fightHint.hidden = empty === 0;
+    fightHint.textContent = empty === 0 ? '' : `Pick ${String(empty)} more hero${empty === 1 ? '' : 'es'}`;
   };
   // Hide the pulldowns for heroes (they stay in the DOM for form data, labels and assistive tech lookups).
   queueMicrotask(() => {
@@ -626,6 +669,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (roster.empties() > 0) return;
     o.onStart(Object.fromEntries(new FormData(form)) as unknown as PickValues);
   });
   // Both players pick at once with their own keys; the listener goes away with the page.

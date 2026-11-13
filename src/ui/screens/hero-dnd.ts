@@ -5,8 +5,9 @@
  * - a pointer click on a tile only PREVIEWS the hero (the screen shows its ability panel); a second click on the same tile, or the
  *   panel's "Add to team" button, assigns it. A keyboard activation (click with `detail === 0`) still assigns straight away,
  *   because the focus cursor has already previewed the hero.
- * - dragging a tile onto a team slot places the hero there; dragging a slot onto another slot swaps them; dropping anywhere else
- *   keeps everything as it was (a slot can never be left empty or doubled).
+ * - dragging a tile onto a team slot places the hero there; dragging a slot onto another slot swaps them; dropping a slot anywhere
+ *   else (empty space or the grid) removes its hero (`clearSlot`); Escape aborts the drag and keeps everything as it was.
+ *   A tile dropped anywhere but on a slot changes nothing.
  * - tap fallback: after a tile is previewed ("armed"), tapping a slot assigns it there (`takeArmed`).
  *
  * The screens own what a pick means (selects, flags, swapping); this module only reports gestures. Slots are any element inside
@@ -25,6 +26,8 @@ export interface HeroDndOptions {
   swapSlots: (from: string, to: string) => void;
   /** Whether a slot may be picked up (Versus: only slots with a chosen hero). Default: all. */
   slotDraggable?: (slot: string) => boolean;
+  /** A picked-up slot was released away from every slot: empty it. Without it that drop is a no-op. */
+  clearSlot?: (slot: string) => void;
 }
 
 export interface HeroDnd {
@@ -110,6 +113,10 @@ export function heroDnd(o: HeroDndOptions): HeroDnd {
       if (!s) return null;
       return src.kind === 'slot' && s === src.el ? null : s;
     };
+    const backOnSelf = (ev: PointerEvent): boolean => {
+      const under = typeof document.elementFromPoint === 'function' ? document.elementFromPoint(ev.clientX, ev.clientY) : null;
+      return src.kind === 'slot' && slotOf(under ?? ev.target) === src.el;
+    };
     const place = (ev: PointerEvent): void => {
       if (ghost) {
         ghost.style.left = `${String(ev.clientX)}px`;
@@ -189,7 +196,11 @@ export function heroDnd(o: HeroDndOptions): HeroDnd {
       }, 0);
       const target = drop ? hitSlot(drop) : null;
       const key = target?.dataset['heroSlot'];
-      if (key === undefined) return;
+      if (key === undefined) {
+        // Released off every slot (not back on its own slot): a slot is removed, a tile changes nothing.
+        if (drop && src.kind === 'slot' && !backOnSelf(drop)) o.clearSlot?.(src.key);
+        return;
+      }
       if (src.kind === 'tile') o.dropTile(src.i, key);
       else if (key !== src.key) o.swapSlots(src.key, key);
     };
