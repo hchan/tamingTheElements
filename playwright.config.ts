@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: `http://localhost:${PORT}`,
-    actionTimeout: 15_000, // fail an unclickable element in 15 s with a clear message, not at the 60 s test timeout
+    actionTimeout: 30_000, // also bounds waitForFunction: a cold Phaser chunk load on a loaded machine can pass 15 s; still fails with a clear message before the 60 s test timeout
     navigationTimeout: 30_000,
     trace: 'on-first-retry',
     launchOptions: {

@@ -1,4 +1,10 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+
+// Contexts the two-page tests open; closed after each test so WebRTC peers and running sims do not load the shared worker browser for later specs (perf).
+const opened: BrowserContext[] = [];
+test.afterEach(async () => {
+  for (const c of opened.splice(0)) await c.close();
+});
 
 /**
  * Waits for the Rematch button on `page` by sim progress, not wall-clock: a loaded machine runs the two-page match slowly
@@ -25,6 +31,7 @@ async function waitForMatchEnd(page: Page, stallMs = 20_000): Promise<void> {
 for (const ff of ['arcade', 'arcade,rollback']) test(`two players connect through the Online Versus screen with pasted codes (${ff})`, async ({ browser }) => {
   test.setTimeout(60_000);
   const ctx = await browser.newContext();
+  opened.push(ctx);
   const a = await ctx.newPage();
   const b = await ctx.newPage();
   await a.goto(`/?ff=${ff}`);
@@ -71,6 +78,7 @@ test('a junk code is refused in words, not a crash', async ({ page }) => {
 test('a finished online match offers a Rematch that starts a second match', async ({ browser }) => {
   test.setTimeout(150_000);
   const ctx = await browser.newContext();
+  opened.push(ctx);
   const a = await ctx.newPage();
   const b = await ctx.newPage();
   const q = '/?ff=arcade&matchticks=120';
