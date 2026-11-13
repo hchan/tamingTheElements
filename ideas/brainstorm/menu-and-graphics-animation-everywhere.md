@@ -15,3 +15,9 @@ Owner idea (2026-11-13): EVERYTHING, everywhere needs more animation in menus an
 - Generated art must be committed with its generator in `tools/assets/`, graded grim (desaturated, textured), seamless where it loops, with the model licence noted in the licence docs.
 - Respect reduced motion (static fallback), high contrast, and the size budgets (lazy chunks; compress loops; prefer CSS/tweens over video).
 - Related: [[effect-sprite-style-pass]], [[sf-stage-backgrounds-crowds]], [[tour-select-screen-redesign]], [[mvc-character-select-with-ability-info]].
+
+## Abilities too (owner, 2026-11-13: "same with abilities")
+
+- Every ability gets richer animation: anticipation (wind-up glow/telegraph), a travelling or impact effect with layered SD-generated textures (embers, ice shards, vortex rings, rock debris) animated by frame cycling, scale/alpha curves and trails, and a lingering aftermath (scorch, frost, dust) that fades.
+- Per element families share a look; supers and Weather get the biggest treatment; ability icons on the action bar pulse on ready and animate on cooldown.
+- Builds on [[ability-telegraphs]] and [[effect-sprite-style-pass]]; keep it view-only (no sim changes) and within the fx chunk budgets.
