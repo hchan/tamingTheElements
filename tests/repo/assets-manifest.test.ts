@@ -33,4 +33,15 @@ describe('legacy asset manifest', () => {
     expect(existsSync(resolve(import.meta.dirname, '../../tools/assets/fx-gen/batch-e-map.py'))).toBe(true);
     expect(existsSync(resolve(import.meta.dirname, '../../tools/assets/fx-gen/batch-f-map.py'))).toBe(true);
   });
+
+  it('points the four element floors at the generated img/floor files (1280x720)', () => {
+    const m = JSON.parse(committed) as LegacyManifest;
+    for (const key of ['fire', 'water', 'earth', 'air']) {
+      expect(m.backgrounds[key]?.url).toBe(`img/floor/${key}.png`);
+      expect(m.backgrounds[key]?.coords).toEqual([0, 0, 1280, 720]);
+      const png = readFileSync(resolve(import.meta.dirname, '../../public/assets', `img/floor/${key}.png`));
+      expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1280, 720]);
+    }
+    expect(existsSync(resolve(import.meta.dirname, '../../tools/assets/stage-gen/batch-h-floors.py'))).toBe(true);
+  });
 });

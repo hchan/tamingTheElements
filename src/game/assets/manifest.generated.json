@@ -2996,30 +2996,30 @@
   },
   "backgrounds": {
     "air": {
-      "url": "img/background/air.png",
+      "url": "img/floor/air.png",
       "coords": [
         0,
         0,
-        634,
-        416
+        1280,
+        720
       ]
     },
     "earth": {
-      "url": "img/background/earth.png",
+      "url": "img/floor/earth.png",
       "coords": [
         0,
         0,
-        1600,
-        1200
+        1280,
+        720
       ]
     },
     "fire": {
-      "url": "img/background/fire.png",
+      "url": "img/floor/fire.png",
       "coords": [
         0,
         0,
-        1404,
-        964
+        1280,
+        720
       ]
     },
     "risingSun": {
@@ -3050,12 +3050,12 @@
       ]
     },
     "water": {
-      "url": "img/background/water.png",
+      "url": "img/floor/water.png",
       "coords": [
         0,
         0,
-        1600,
-        1200
+        1280,
+        720
       ]
     }
   },
