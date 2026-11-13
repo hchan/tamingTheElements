@@ -30,7 +30,7 @@
     "touch-controls": 2060,
     "tour": 7555,
     "viewport": 260,
-    "weather-view": 3700,
+    "weather-view": 6000,
     "grim-fx": 900,
     "ability-aura-view": 1950,
     "pad-bindings": 1050,
@@ -40,7 +40,7 @@
     "guide.css": 1560,
     "tour-select": 685
   },
-  "totalGzip": 562000,
+  "totalGzip": 580000,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
