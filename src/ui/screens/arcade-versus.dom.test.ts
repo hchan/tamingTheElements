@@ -97,23 +97,24 @@ describe('arcadePickView (DOM)', () => {
 
   it('roster: a tile fills the active slot with aria-pressed, then advances to the next open slot', () => {
     mount(vi.fn(), { size: '2' });
-    const tiles = [...document.querySelectorAll<HTMLButtonElement>('.rosterTile')];
+    const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
     expect(tiles).toHaveLength(RACES.length);
     const slots = [...document.querySelectorAll<HTMLButtonElement>('.rosterSlot')];
     expect(slots[0]?.getAttribute('aria-pressed')).toBe('true');
     tiles[2]?.click();
-    expect(sel('arcadePlayer').value).toBe('lavax');
+    // Tiles are grouped by element (fire before earth), so the order is sindarosa, lavax, rokcore.
+    expect(sel('arcadePlayer').value).toBe('rokcore');
     expect(tiles[2]?.getAttribute('aria-pressed')).toBe('true');
     expect(slots[1]?.getAttribute('aria-pressed')).toBe('true');
     tiles[1]?.click();
-    expect(sel('arcadePartner').value).toBe('rokcore');
+    expect(sel('arcadePartner').value).toBe('lavax');
   });
 
   it('a picked hero carries a P1 chip with its slot number, as text', () => {
     mount();
-    const flags = (i: number): HTMLElement | null => document.querySelectorAll<HTMLElement>('.rosterTile')[i]?.querySelector('.vsFlags') ?? null;
+    const flags = (i: number): HTMLElement | null => document.querySelectorAll<HTMLElement>('.heroTile')[i]?.querySelector('.vsFlags') ?? null;
     expect(flags(0)?.hidden).toBe(true);
-    document.querySelectorAll<HTMLButtonElement>('.rosterTile')[2]?.click();
+    document.querySelectorAll<HTMLButtonElement>('.heroTile')[2]?.click();
     expect(flags(2)?.hidden).toBe(false);
     expect(flags(2)?.textContent).toContain('You 1');
   });
@@ -128,10 +129,10 @@ describe('arcadePickView (DOM)', () => {
     // P1 cursor starts on hero 0 and P2's on hero 1.
     key('KeyD');
     key('Space');
-    expect(sel('arcadePlayer').value).toBe('rokcore');
+    expect(sel('arcadePlayer').value).toBe('lavax');
     key('KeyL');
     key('KeyU');
-    expect(sel('arcadeEnemy').value).toBe('lavax');
+    expect(sel('arcadeEnemy').value).toBe('rokcore');
     const ready1 = document.getElementById('ready-p1') as HTMLButtonElement;
     const ready2 = document.getElementById('ready-p2') as HTMLButtonElement;
     ready1.click();
@@ -148,13 +149,13 @@ describe('arcadePickView (DOM)', () => {
   it('3v3: slots fill in order, Swap up reorders and Clear empties a slot', () => {
     mount();
     change(sel('arcadeMode'), 'local');
-    const tiles = [...document.querySelectorAll<HTMLButtonElement>('.rosterTile')];
+    const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
     tiles[0]?.click();
     tiles[1]?.click();
     tiles[2]?.click();
-    expect([sel('arcadePlayer').value, sel('arcadePartner').value, sel('arcadePartner2').value]).toEqual(['sindarosa', 'rokcore', 'lavax']);
+    expect([sel('arcadePlayer').value, sel('arcadePartner').value, sel('arcadePartner2').value]).toEqual(['sindarosa', 'lavax', 'rokcore']);
     (document.querySelector('button[aria-label="Swap Player 1 pick 2 up to position 1"]') as HTMLButtonElement).click();
-    expect([sel('arcadePlayer').value, sel('arcadePartner').value]).toEqual(['rokcore', 'sindarosa']);
+    expect([sel('arcadePlayer').value, sel('arcadePartner').value]).toEqual(['lavax', 'sindarosa']);
     (document.querySelector('button[aria-label="Clear Player 1 pick 3"]') as HTMLButtonElement).click();
     expect(document.querySelector('.vsStatus')?.textContent).toBe('2 of 3 picked');
   });

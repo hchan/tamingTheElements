@@ -2,6 +2,8 @@ import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
 import { el } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
 import { abilitiesSpeech, abilityChips } from './hero-abilities';
+import { HERO_COLUMNS } from './hero-info';
+import { heroGrid, heroPanel } from './hero-panel';
 
 /**
  * Battle keys for the two-player option, as (action word, keys) pairs for the cheat sheet (Player 1's are the defaults and can be
@@ -119,7 +121,7 @@ type SideIx = 0 | 1;
  * stay in the form, visually hidden and out of the Tab order, so the form data, labels and tests are unchanged.
  */
 function rosterView(
-  races: readonly CharacterId[],
+  allRaces: readonly CharacterId[],
   fields: () => Record<string, HTMLSelectElement>,
   sides: readonly [readonly string[], readonly string[]],
   changed: () => void,
@@ -129,9 +131,39 @@ function rosterView(
   const node = el('div', 'rosterPick vsStage');
   const live = el('p', 'srOnly');
   live.setAttribute('role', 'status');
-  const grid = el('div', 'rosterGrid');
-  grid.setAttribute('role', 'group');
-  grid.setAttribute('aria-label', 'Heroes');
+  const panel = heroPanel();
+  /** Index (in cursor order) of the hero the panel shows: the last one a cursor, the mouse or focus landed on. */
+  let focus = 0;
+  const heroes = heroGrid({
+    races: allRaces,
+    onTile: (t, _id, i) => {
+      const flags = el('span', 'vsFlags');
+      flags.hidden = true;
+      const cur = el('span', 'vsCursors');
+      cur.setAttribute('aria-hidden', 'true');
+      t.append(flags, cur);
+      const look = (): void => {
+        if (focus === i) return;
+        focus = i;
+        refresh();
+      };
+      t.addEventListener('pointerenter', look);
+      t.addEventListener('focus', look);
+      t.addEventListener('click', () => {
+        focus = i;
+        cursor[mouseSide] = i;
+        place(mouseSide, i);
+        // Mouse and touch carry on to the other side once this one is full (one player on the computer, or Player 1 then Player 2).
+        const other: SideIx = mouseSide === 0 ? 1 : 0;
+        if (openOf(mouseSide).every((n) => confirmed.has(n)) && openOf(other).some((n) => !confirmed.has(n))) {
+          mouseSide = other;
+          refresh();
+        }
+      });
+    },
+  });
+  const races = heroes.order;
+  const grid = heroes.grid;
   const sideNodes = ([0, 1] as const).map((i) => {
     const section = el('section', `vsSide vsSide${String(i + 1)}`);
     const title = el('h2', 'vsSideTitle');
@@ -143,7 +175,7 @@ function rosterView(
     section.append(title, ol, status, ready);
     return { section, title, ol, status, ready };
   });
-  node.append(sideNodes[0]?.section as HTMLElement, sideNodes[1]?.section as HTMLElement, grid, live);
+  node.append(sideNodes[0]?.section as HTMLElement, sideNodes[1]?.section as HTMLElement, grid, panel.node, live);
   const sideOf = (n: string): SideIx => (sides[0].includes(n) ? 0 : 1);
   const sideActive: [string, string] = [sides[0][0] ?? 'player', sides[1][0] ?? 'enemy'];
   let mouseSide: SideIx = 0;
@@ -156,7 +188,7 @@ function rosterView(
   const openSlots = (): string[] => names.filter((n) => fields()[n] && !fields()[n]?.disabled);
   const slotButtons = new Map<string, HTMLButtonElement>();
   const slotItems = new Map<string, HTMLElement>();
-  const tiles: HTMLButtonElement[] = [];
+  const tiles = heroes.tiles;
   const slotLabel = (n: string): string => fields()[n]?.labels[0]?.textContent ?? n;
   const who = (s: SideIx): string => (isLocal() ? `Player ${String(s + 1)}` : s === 0 ? 'You' : 'The computer');
   const announce = (msg: string): void => {
@@ -213,7 +245,7 @@ function rosterView(
       const element = getCharacter(sel.value as CharacterId).element;
       const isActive = n === sideActive[s] && (local || s === mouseSide);
       b.textContent = '';
-      const face = el('span', 'rosterFace vsBigFace');
+      const face = el('span', 'heroFace vsBigFace');
       face.style.backgroundImage = avatarOf(sel.value);
       face.setAttribute('aria-hidden', 'true');
       const text = el('span', 'vsSlotText');
@@ -300,6 +332,11 @@ function rosterView(
       }
     });
     node.classList.toggle('vsBothReady', local && ready[0] && ready[1]);
+    const shown = races[focus];
+    if (shown && panel.node.dataset['hero'] !== shown) {
+      panel.node.dataset['hero'] = shown;
+      panel.show(shown);
+    }
   };
 
   /** Fills side `s`'s active slot with hero `i`, then moves that side on to its next empty slot. */
@@ -365,44 +402,15 @@ function rosterView(
     });
   }
 
-  races.forEach((r, i) => {
-    const t = el('button', 'menuButton rosterTile');
-    t.type = 'button';
-    t.dataset['element'] = getCharacter(r).element;
-    const face = el('span', 'rosterFace');
-    face.style.backgroundImage = avatarOf(r);
-    face.setAttribute('aria-hidden', 'true');
-    const flags = el('span', 'vsFlags');
-    flags.hidden = true;
-    const cur = el('span', 'vsCursors');
-    cur.setAttribute('aria-hidden', 'true');
-    t.append(face, el('span', 'rosterName', shortName(r)), rosterElement(getCharacter(r).element), flags, cur);
-    t.addEventListener('click', () => {
-      cursor[mouseSide] = i;
-      place(mouseSide, i);
-      // Mouse and touch carry on to the other side once this one is full (one player on the computer, or Player 1 then Player 2).
-      const other: SideIx = mouseSide === 0 ? 1 : 0;
-      if (openOf(mouseSide).every((n) => confirmed.has(n)) && openOf(other).some((n) => !confirmed.has(n))) {
-        mouseSide = other;
-        refresh();
-      }
-    });
-    tiles.push(t);
-    grid.append(t);
-  });
-
-  const columns = (): number => {
-    const n = getComputedStyle(grid).gridTemplateColumns.split(' ').filter((c) => c !== '').length;
-    return n > 1 ? n : 4;
-  };
   const moveCursor = (s: SideIx, dx: number, dy: number): void => {
     const n = races.length;
-    const cols = columns();
+    const cols = HERO_COLUMNS;
     const cur = cursor[s];
     let next = cur + dx + dy * cols;
     if (dx !== 0) next = Math.max(0, Math.min(n - 1, next));
     else if (next < 0 || next >= n) next = cur;
     cursor[s] = next;
+    focus = next;
     refresh();
   };
   const undo = (s: SideIx): void => {

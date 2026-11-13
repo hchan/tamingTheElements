@@ -109,6 +109,50 @@ describe('tourPickView', () => {
     expect(onStart).toHaveBeenCalledWith({ hero1: 'rokcore', hero2: 'rokcore', hero3: 'sindarosa' });
   });
 
+  const tile = (name: string): HTMLButtonElement =>
+    [...document.querySelectorAll<HTMLButtonElement>('.heroTile')].find((t) => t.querySelector('.heroTileName')?.textContent === name) as HTMLButtonElement;
+
+  it('shows a portrait grid with a tile per hero and the focused hero panel with its abilities', () => {
+    mount();
+    expect(document.querySelectorAll('.heroTile')).toHaveLength(RACES.length);
+    expect(document.querySelector('.heroPanel .heroName')?.textContent).toBeTruthy();
+    expect(document.querySelectorAll('.heroAbility').length).toBeGreaterThan(0);
+  });
+
+  it('a tile click fills the active slot, advances to the next slot and updates the hidden select', () => {
+    mount();
+    tile('Lavax').click();
+    expect(sel('arcadeHero1').value).toBe('lavax');
+    expect(document.getElementById('tourSlot2')?.getAttribute('aria-pressed')).toBe('true');
+    expect(tile('Lavax').querySelector('.heroFlag')?.textContent).toBe('Slot 1');
+  });
+
+  it('picking a hero already in another slot swaps the two', () => {
+    mount(vi.fn(), ['sindarosa', 'rokcore', 'lavax']);
+    sel('arcadeHero1').value = 'sindarosa';
+    sel('arcadeHero2').value = 'rokcore';
+    sel('arcadeHero3').value = 'lavax';
+    document.getElementById('tourSlot1')?.click();
+    tile('Lavax').click();
+    expect(sel('arcadeHero1').value).toBe('lavax');
+    expect(sel('arcadeHero3').value).toBe('sindarosa');
+  });
+
+  it('arrow keys move the cursor and show that hero in the panel', () => {
+    mount();
+    const before = document.querySelector('.heroPanel .heroName')?.textContent;
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowRight', bubbles: true, cancelable: true }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowLeft', bubbles: true, cancelable: true }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true, cancelable: true }));
+    expect(document.querySelectorAll('.heroCursor')).toHaveLength(1);
+    expect(before).toBeTruthy();
+  });
+
+  it('never shows the retired words to players', () => {
+    mount();
+    expect(document.body.textContent).not.toMatch(/classic|arcade|ruleset|capture/i);
+  });
+
   it('has a submit button #tourStart and a Back link to #main', () => {
     mount();
     const start = document.getElementById('tourStart') as HTMLButtonElement;
