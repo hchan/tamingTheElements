@@ -7,6 +7,8 @@ Coordinates below are in the 240x40 box space; P() maps them to the taller canva
 Outline and rim keep it readable on every floor (dark outline on the light Earth/Air floors, pale core on the dark Fire/Void floors).
 """
 import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import grim_fx
 from PIL import Image, ImageDraw
 
 OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else "public/assets/img/fx", "iceShock.png")
@@ -68,7 +70,7 @@ shard(154, 226, cy + 2, 5.0, tip_y=31)
 for x, y, r in [(92, 14, 2.4), (130, 25, 2.0), (176, 17, 2.6), (210, 21, 2.2), (118, 8, 1.8), (160, 33, 1.8)]:
     sparkle(x, y, r)
 
-out = img.resize((W, H), Image.LANCZOS)
+out = grim_fx.grade(img.resize((W, H), Image.LANCZOS), 'iceShock')
 os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
 out.save(OUT, optimize=True)
 print(OUT, out.size)

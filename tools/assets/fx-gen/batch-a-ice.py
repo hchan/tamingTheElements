@@ -8,6 +8,8 @@ iceBreath 80x53 (frost cone, origin left, spreading right), shardsOfIce 80x11 an
 import math, os, random, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "rig-gen"))
 import palette
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import grim_fx
 from PIL import Image, ImageDraw, ImageFilter
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "public/assets/img/fx"
@@ -59,7 +61,7 @@ class Canvas:
         self.d = ImageDraw.Draw(self.img)
 
     def save(self, key):
-        out = self.img.resize((self.w, self.h), Image.LANCZOS)
+        out = grim_fx.grade(self.img.resize((self.w, self.h), Image.LANCZOS), key)
         os.makedirs(OUT, exist_ok=True)
         p = os.path.join(OUT, key + ".png")
         out.save(p, optimize=True)
