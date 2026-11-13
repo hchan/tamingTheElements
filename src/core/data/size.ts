@@ -13,6 +13,8 @@ export const SIZE_MAX = 400;
 /** Characters not listed are 1x. */
 export const CHARACTER_SIZE: Readonly<Record<string, number>> = {
   rokcore: 200,
+  // A 1.5x mid-size bruiser: +22% life, +6% damage, knockback / 1.3, walk and dash x0.86.
+  ishimi: 150,
 };
 
 /** Per 1x of extra size (`size - 100` = 100): life +450 pm, damage +120 pm, knockback weight +600 pm, walk and dash speed -280 pm. */
@@ -22,6 +24,10 @@ export const SIZE_WEIGHT_PM_PER_STEP = 600;
 export const SIZE_SPEED_PM_PER_STEP = 280;
 /** The slowest a giant gets, in pm of its base speed. */
 export const SIZE_SPEED_FLOOR_PM = 300;
+
+/** Snag root length multiplier in pm (1000 at 1x): a giant slips the rope sooner (-250 pm per extra 1x, floored at 400). */
+export const SIZE_ROOT_PM_PER_STEP = 250;
+export const SIZE_ROOT_FLOOR_PM = 400;
 
 /** Size of a character slug in percent (100 when not listed), clamped to 100..SIZE_MAX. */
 export function sizeOfSlug(slug: string): number {
@@ -47,6 +53,9 @@ export function sizeWeightPm(size: number): number {
 /** Walk and dash speed multiplier in pm (1000 at 1x), floored at SIZE_SPEED_FLOOR_PM. */
 export function sizeSpeedPm(size: number): number {
   return Math.max(SIZE_SPEED_FLOOR_PM, 1000 - Math.floor((stepsPm(size) * SIZE_SPEED_PM_PER_STEP) / 1000));
+}
+export function sizeRootPm(size: number): number {
+  return Math.max(SIZE_ROOT_FLOOR_PM, 1000 - Math.floor((stepsPm(size) * SIZE_ROOT_PM_PER_STEP) / 1000));
 }
 /** Body box edge in px at `size` (floored). */
 export function sizeWidthPx(size: number): number {

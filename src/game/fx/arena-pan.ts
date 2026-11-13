@@ -66,10 +66,11 @@ export function viewBox(scene: Phaser.Scene, z = 1, px = LOGICAL_WIDTH / 2, py =
 /** Mounts the pan camera in the Arena `scene` (Arcade); it removes itself when the scene shuts down. */
 export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () => number, reducedMotion: () => boolean): void {
   const s = state(scene);
-  const mid = { x1: 0, x2: 0, n1: 0, n2: 0 };
+  const mid = { x1: 0, x2: 0, n1: 0, n2: 0, reach: 40 };
   const visit = (c: RenderCharacter): void => {
     if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
     const x = c.px + (c.x - c.px) * alpha() + c.w / 2;
+    mid.reach = Math.max(mid.reach, c.w / 2);
     if (c.team === 0 && mid.n1++ === 0) mid.x1 = x;
     else if (c.team !== 0 && mid.n2++ === 0) mid.x2 = x;
   };
@@ -79,6 +80,7 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
   const update = (_time: number, delta: number): void => {
     if (s.hold) return;
     mid.n1 = mid.n2 = 0;
+    mid.reach = 40;
     view.forEachCharacter(visit);
     // A fighter missing (KO between rounds): keep the framing where it is.
     if (mid.n1 === 0 || mid.n2 === 0) return;
@@ -88,7 +90,7 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
     lastMid = midpoint;
     lastTick = view.tick;
     const next = cameraTarget(
-      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, viewWidth: LOGICAL_WIDTH, reducedMotion: reducedMotion() },
+      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, reach: mid.reach, viewWidth: LOGICAL_WIDTH, reducedMotion: reducedMotion() },
       s,
       delta / 1000,
       snap,

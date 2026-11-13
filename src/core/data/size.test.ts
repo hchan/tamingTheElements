@@ -5,7 +5,7 @@ import { ARCADE_E, ArcadeE } from '../sim/state';
 import { setKnockback } from '../sim/systems/arcade/knockback';
 import { CHARACTERS } from './characters';
 import { characterId } from './ids';
-import { CHARACTER_SIZE, SIZE_MAX, SIZE_ONE, sizeDamagePm, sizeLifePm, sizeOfDef, sizeOfSlug, sizeSpeedPm, sizeWeightPm, sizeWidthPx } from './size';
+import { CHARACTER_SIZE, SIZE_MAX, SIZE_ONE, sizeDamagePm, sizeLifePm, sizeOfDef, sizeOfSlug, sizeRootPm, sizeSpeedPm, sizeWeightPm, sizeWidthPx } from './size';
 
 function make(p1: string, arcade: boolean) {
   const setup: MatchSetup = {
@@ -24,15 +24,23 @@ describe('giant heroes size curves', () => {
     expect([sizeLifePm(400), sizeWeightPm(400), sizeSpeedPm(400)]).toEqual([2350, 2800, 300]);
   });
 
-  it('only Rokcore is a giant, and sizes stay in 100..SIZE_MAX', () => {
-    expect(Object.keys(CHARACTER_SIZE)).toEqual(['rokcore']);
+  it('Rokcore is 2x, Ishimi is 1.5x, and sizes stay in 100..SIZE_MAX', () => {
+    expect(Object.keys(CHARACTER_SIZE)).toEqual(['rokcore', 'ishimi']);
     expect(sizeOfSlug('rokcore')).toBe(200);
+    expect(sizeOfSlug('ishimi')).toBe(150);
     expect(sizeOfSlug('pax')).toBe(SIZE_ONE);
     expect(sizeOfSlug('nobody')).toBe(SIZE_ONE);
     for (let i = 0; i < CHARACTERS.length; i++) {
       expect(sizeOfDef(i)).toBeGreaterThanOrEqual(SIZE_ONE);
       expect(sizeOfDef(i)).toBeLessThanOrEqual(SIZE_MAX);
     }
+  });
+});
+
+describe('3x and Snag scaling', () => {
+  it('3x curves and the root length', () => {
+    expect([sizeLifePm(300), sizeDamagePm(300), sizeWeightPm(300), sizeSpeedPm(300), sizeWidthPx(300)]).toEqual([1900, 1240, 2200, 440, 240]);
+    expect([sizeRootPm(100), sizeRootPm(200), sizeRootPm(300), sizeRootPm(400)]).toEqual([1000, 750, 500, 400]);
   });
 });
 

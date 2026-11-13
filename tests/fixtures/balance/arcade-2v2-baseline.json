@@ -14,20 +14,20 @@
     "teamSize": 2
   },
   "matches": 528,
-  "stalemates": 11,
+  "stalemates": 0,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.716,
-    "cyclonius": 0.216,
+    "curomo": 0.705,
+    "cyclonius": 0.375,
     "echo": 0.33,
-    "fiara": 0.688,
-    "ishimi": 0.432,
-    "lavax": 0.625,
-    "morblass": 0.733,
-    "pax": 0.21,
-    "rokcore": 0.295,
-    "sindarosa": 0.523,
-    "treenoc": 0.665,
-    "wispera": 0.568
+    "fiara": 0.557,
+    "ishimi": 0.58,
+    "lavax": 0.648,
+    "morblass": 0.591,
+    "pax": 0.295,
+    "rokcore": 0.216,
+    "sindarosa": 0.534,
+    "treenoc": 0.659,
+    "wispera": 0.511
   }
 }
