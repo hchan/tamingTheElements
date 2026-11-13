@@ -49,6 +49,9 @@ export const SPRITE_BOOST: Readonly<Record<string, SpriteBoost>> = {
   entanglingVinesWater: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0x9ad8ff },
   entanglingVinesAir: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0xeaf4ff },
   stick: { minLong: 56, glowAlpha: 0.9, glowScale: 1.45, glowTint: 0x2a1204, dark: true },
+  // Void sprites are the darkest in the game (docs/ABILITY-AUDIT.md): a pale, desaturated ash-violet rim lifts them off dark floors.
+  chaosBolt: { minLong: 56, glowAlpha: 0.85, glowScale: 1.6, glowTint: 0xa99cc4 },
+  chaosOrb: { minLong: 0, glowAlpha: 0.8, glowScale: 1.35, glowTint: 0xa99cc4 },
   crimsonFire: { minLong: 96, glowAlpha: 1, glowScale: 1.8, glowTint: 0xffe9a0 },
 };
 

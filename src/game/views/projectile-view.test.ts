@@ -115,4 +115,7 @@ describe("SPRITE_BOOST contrast entries (ability audit open defects)", () => {
     for (const k of ["crimsonFire", "stranglingBranches"]) expect(SPRITE_BOOST[k]?.glowAlpha).toBeGreaterThanOrEqual(0.9);
     expect(SPRITE_BOOST["crimsonFire"]?.minLong).toBeGreaterThan(80);
   });
+  it("lifts the dark void sprites with a pale halo", () => {
+    for (const k of ["chaosBolt", "chaosOrb"]) expect(SPRITE_BOOST[k]?.glowAlpha).toBeGreaterThanOrEqual(0.8);
+  });
 });
