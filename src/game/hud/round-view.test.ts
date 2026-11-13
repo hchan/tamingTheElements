@@ -54,6 +54,7 @@ function fakeScene(active: boolean): { scene: Phaser.Scene; events: Emitter; mad
       setText: chain((t: string) => { o.text = t; }),
       setVisible: chain((v: boolean) => { o.visible = v; }),
       setScale: chain((s: number) => { o.scale = s; }),
+      setAlpha: chain((a: number) => { o.alpha = a; }),
       setColor: chain((c: string) => { o.color = c; }),
       setFontSize: chain(),
       destroy: () => { o.destroyed = true; },

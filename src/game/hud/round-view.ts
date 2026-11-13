@@ -19,10 +19,13 @@ import {
 /** Over the HUD (100-102) and its damage numbers. */
 const DEPTH = 110;
 const BANNER_Y = 320;
-const MAIN_PX = 96;
-const SUB_PX = 48;
+const MAIN_PX = 64;
+const SUB_PX = 34;
 const SUB_GAP = 64;
-const WON_COLOR = 0xffd23f;
+const WON_COLOR = 0xb8964a;
+/** Banner fade: in over the first 8 ticks, out over the last 12 (none with reduced motion). */
+const FADE_IN_TICKS = 8;
+const FADE_OUT_TICKS = 12;
 
 export interface RoundPrefs {
   readonly reduceMotion: boolean;
@@ -83,7 +86,7 @@ export function mountRoundView(
   const text = (size: number, y: number, stroke: number, grim = false): Phaser.GameObjects.Text =>
     hud.add
       .text(TIMER_X, y, '', {
-        fontFamily: grim ? 'Georgia, "Times New Roman", serif' : 'Arial', fontSize: `${String(size)}px`, fontStyle: 'bold', color: grim ? '#d8cdb8' : '#ffffff', stroke: grim ? '#0a0806' : '#000000', strokeThickness: grim ? Math.round(stroke / 2) : stroke,
+        fontFamily: grim ? 'Georgia, "Times New Roman", serif' : 'Arial', fontSize: `${String(size)}px`, fontStyle: 'bold', color: grim ? '#bdb5a4' : '#ffffff', stroke: grim ? '#0a0806' : '#000000', strokeThickness: grim ? Math.round(stroke / 2) : stroke,
         resolution: hud.scale.width / LOGICAL_WIDTH,
       })
       .setDepth(DEPTH);
@@ -96,8 +99,9 @@ export function mountRoundView(
     scale = bannerScale((tick - banner.from) * TICK_MS, banner.reduced);
     if (parts.main.text !== banner.main) parts.main.setText(banner.main);
     if (parts.sub.text !== banner.sub) parts.sub.setText(banner.sub);
-    parts.main.setVisible(on).setScale(scale);
-    parts.sub.setVisible(on && banner.sub !== '');
+    const fade = banner.reduced ? 1 : Math.min(1, (tick - banner.from + 1) / FADE_IN_TICKS, (banner.until - tick) / FADE_OUT_TICKS);
+    parts.main.setVisible(on).setScale(scale).setAlpha(Math.max(0, fade));
+    parts.sub.setVisible(on && banner.sub !== '').setAlpha(Math.max(0, fade));
     // Before its first tick (round 0) the world has no timer yet: show the full one round 1 starts with.
     const left = ar.round === 0 ? ROUND_TIMER_TICKS : ar.timer;
     const style = timerStyle(left, ar.sudden);
@@ -153,6 +157,6 @@ function drawPips(g: Phaser.GameObjects.Graphics, won: readonly [number, number]
     g.fillStyle(p.won ? (highContrast ? 0xffffff : WON_COLOR) : 0x000000, p.won ? 1 : 0.5);
     g.fillCircle(p.x, PIP_Y, PIP_R);
     g.lineStyle(3, 0x000000, 1).strokeCircle(p.x, PIP_Y, PIP_R);
-    g.lineStyle(highContrast ? 2 : 1.5, 0xffffff, 1).strokeCircle(p.x, PIP_Y, PIP_R - 1);
+    g.lineStyle(highContrast ? 2 : 1.5, highContrast ? 0xffffff : 0xcfc6b0, 1).strokeCircle(p.x, PIP_Y, PIP_R - 1);
   }
 }

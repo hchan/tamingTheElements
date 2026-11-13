@@ -828,9 +828,10 @@ button.touchBtn {
   right: max(8px, env(safe-area-inset-right));
   bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-row) * var(--touch-pitch));
   opacity: 1;
-  background: #2c3d63;
-  color: #fff;
-  border: 2px solid #8fa4c8;
+  background: #1d1e1f;
+  color: #e0d8c6;
+  border: 1px solid #6b6558;
+  border-radius: 2px;
 }
 /* Size is `html[data-touch-size]` (large|compact), set from Settings or, on Auto, from `any-pointer: coarse` (src/game/platform/a11y/touch-layout.ts),
    so touch laptops get the large column and mouse users on tablets can pick the compact row. Side is `html[data-touch-side]` (left-handed play). */

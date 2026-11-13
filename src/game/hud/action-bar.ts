@@ -6,6 +6,7 @@ import { ACTION_COMMAND } from '../input/key-map';
 import { codeLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
 import { lookup } from '../views/projectile-view';
+import { mute } from '../fx/grim-fx';
 
 /**
  * Action bar (legacy `actionbar.js`): primary, secondary, capture (chapter 2+) and swap slots along the
@@ -128,7 +129,12 @@ export function trapGlyph(cx: number, cy: number, r: number): { ring: { x: numbe
 }
 
 /** Dull brass for the Trap glyph (the grim, desaturated look; the shape and the slot's words carry the meaning). */
-export const TRAP_COLOR = 0xb39b5e;
+export const TRAP_COLOR = 0x8a7a52;
+
+/** A ready tile's edge: the tile's element colour dulled to ash, or bone when it has none (readiness is also the lit text and the missing cooldown shade). */
+function readyEdge(element: number | undefined): number {
+  return element ? mute(ELEMENT_TINT[element] ?? 0xffffff, 0.5, 0.75) : 0xa89f88;
+}
 
 /** Horizontal scale (at most 1) that keeps a text `width` wide inside a slot `size` wide, leaving `pad` px each side. */
 export function fitTextScale(width: number, size: number, pad = 4): number {
@@ -324,11 +330,11 @@ export class ActionBarView {
     if (this.mirror) {
       // No panel: each slot keeps its own plate.
     } else if (this.slots.length > 0 && this.styled) {
-      this.back.fillStyle(0x070a12, 0.82);
+      this.back.fillStyle(0x0b0a09, 0.86);
       this.back.fillRect(0, BAR_Y, HUD_WIDTH, ACTION_BAR_HEIGHT);
-      this.back.fillStyle(0xffffff, 0.06);
+      this.back.fillStyle(0xd8cdb8, 0.05);
       this.back.fillRect(0, BAR_Y, HUD_WIDTH, 3);
-      g.lineStyle(2, 0x8fa4c8, 0.9);
+      g.lineStyle(1, 0x6b6558, 0.8);
       g.lineBetween(0, BAR_Y + 1, HUD_WIDTH, BAR_Y + 1);
     } else if (this.slots.length > 0) {
       g.lineStyle(TOP_BORDER, 0x111111, 1);
@@ -336,8 +342,8 @@ export class ActionBarView {
     }
     this.slots.forEach((s, i) => {
       if (this.styled) {
-        this.back.fillStyle(s.sprite === '' ? 0x05070c : 0x2c3d63, 0.95);
-        this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 5);
+        this.back.fillStyle(s.sprite === '' ? 0x070605 : 0x1d1e1f, 0.95);
+        this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       }
       this.drawIcon(i, s);
       const k = s.size / SLOT_SIDE;
@@ -345,8 +351,8 @@ export class ActionBarView {
       if (s.kind === 'elemental') this.drawElementSymbol(s);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
-        g.lineStyle(s.highlight ? 4 : 2, s.highlight ? CAPTURE_READY_COLOR : ready ? 0xdfe8ff : 0x3b4660, 1);
-        g.strokeRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 5);
+        g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : ready ? readyEdge(s.element) : 0x2e2c29, 1);
+        g.strokeRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       } else {
         g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : 0x000000, 1);
         g.strokeRect(s.x, s.y, s.size, s.size);
@@ -419,14 +425,14 @@ export class ActionBarView {
   private drawElementSymbol(s: ActionSlot): void {
     const k = s.size / SLOT_SIDE;
     const sym = elementSymbol(s.element ?? 0, s.x + s.size / 2, s.y + s.size - 22 * k, 13 * k);
-    this.back.lineStyle(this.mirror ? 2 : 3,ELEMENT_TINT[s.element ?? 0] ?? 0xffffff, 1).strokeTriangle(...sym.tri);
+    this.back.lineStyle(this.mirror ? 2 : 3, mute(ELEMENT_TINT[s.element ?? 0] ?? 0xffffff, 0.6, 0.85), 1).strokeTriangle(...sym.tri);
     if (sym.bar) this.back.lineBetween(...sym.bar);
   }
 
   /** The Trap slot's icon: a ring crossed by four spikes in dull brass, with a dark under-stroke so it reads on any plate. */
   private drawTrapGlyph(s: ActionSlot, k: number): void {
     const g = trapGlyph(s.x + s.size / 2, s.y + s.size - 22 * k, 13 * k);
-    for (const [w, c] of [[5, 0x05070c], [3, TRAP_COLOR]] as const) {
+    for (const [w, c] of [[5, 0x070605], [3, TRAP_COLOR]] as const) {
       this.back.lineStyle(this.mirror ? w - 1 : w, c, 1).strokeCircle(g.ring.x, g.ring.y, g.ring.r);
       for (const sp of g.spikes) this.back.lineBetween(...sp);
     }
@@ -459,7 +465,7 @@ export class ActionBarView {
       t = this.scene.add.text(
         0, 0, '',
         crisp(this.scene, this.styled
-          ? { fontFamily: '"Trebuchet MS", Verdana, sans-serif', fontSize: size, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }
+          ? { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: size, fontStyle: 'bold', color: '#e0d8c6', stroke: '#0a0806', strokeThickness: 3 }
           : { fontFamily: 'Arial', fontSize: size, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }),
       );
       t.setDepth(101);
