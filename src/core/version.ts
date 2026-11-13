@@ -153,5 +153,8 @@
  *    the terrain patch table moves up one); the match winner is then the team with more round wins.
  * 43: Arcade only; AI only (Classic hashes unchanged). Combo follow-up: during a hit stun Normal and Hard heroes step onto the stunned foe's
  *    line (ranged) or close in (melee) when a slot is ready, and use Charge as a follow-up from range.
+ * 44: Arcade only; AI only (Classic hashes unchanged). Zoning: a Normal or Hard ranged hero (primary ability ranged) loses its step towards the foe inside
+ * 760 px (larger axis) and backs off inside 500 px when it has no attack press, whatever rule asked for the step (ideas/brainstorm/ranged-heroes-fight-at-melee-range).
+ * Re-recorded: the Arcade goldens (AI-driven commands changed).
  */
-export const SIM_VERSION = 43;
+export const SIM_VERSION = 44;

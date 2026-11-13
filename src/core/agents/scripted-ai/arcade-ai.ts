@@ -105,6 +105,9 @@ export const ARCADE_AI_SIDESTEP_ROOM = 140;
 /** A ranged hero backs off when the opponent is closer than this (centre to centre, per axis max), a melee hero closes in beyond MELEE_PX. */
 export const ARCADE_AI_RANGED_MIN_PX = 200;
 export const ARCADE_AI_MELEE_PX = 320;
+/** Zoning band (px, larger axis offset): a ranged Zoner or Turtle backs off inside the first and stops walking in at the second (ideas/brainstorm/ranged-heroes-fight-at-melee-range). */
+export const ARCADE_AI_ZONE_MIN_PX = 500;
+export const ARCADE_AI_ZONE_HOLD_PX = 760;
 /** Hard tags out one notch earlier. */
 export const ARCADE_AI_HARD_TAG_BELOW_PM = 450;
 
@@ -166,6 +169,30 @@ export function spacingBit(self: Aabb, opp: Aabb, ranged: boolean, pf: Aabb): Co
     ? (d >= 0 ? self.x - pf.x : pf.x + pf.w - self.x - self.w)
     : (d >= 0 ? self.y - pf.y : pf.y + pf.h - self.y - self.h);
   return room >= ARCADE_AI_SIDESTEP_ROOM / 2 ? awayBit : 0;
+}
+
+/**
+ * Zoning (SIM_VERSION 44): `cmd` for a non-Rushdown ranged hero. Closer than ARCADE_AI_ZONE_MIN_PX the step towards the foe along
+ * the dominant axis goes, and with no other step the hero backs off (when `pf` leaves room behind it, never
+ * from a stunned or rooted foe: `press`); out to ARCADE_AI_ZONE_HOLD_PX the step towards goes (the step across the line stays and
+ * lines up a shot); farther out `cmd` is unchanged. 
+ */
+export function zoneStep(self: Aabb, opp: Aabb, cmd: Command, pf: Aabb, press: boolean): Command {
+  if (press || (cmd & (Cmd.primary | Cmd.secondary)) !== 0) return cmd;
+  const dx = opp.x + opp.w / 2 - (self.x + self.w / 2);
+  const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+  const d = horizontal ? dx : dy;
+  const dist = Math.abs(d);
+  if (dist >= ARCADE_AI_ZONE_HOLD_PX) return cmd;
+  const towardBit = horizontal ? (d >= 0 ? Cmd.right : Cmd.left) : d >= 0 ? Cmd.down : Cmd.up;
+  const out = cmd & ~towardBit;
+  if (dist >= ARCADE_AI_ZONE_MIN_PX || (out & (Cmd.up | Cmd.down | Cmd.left | Cmd.right)) !== 0) return out;
+  const awayBit = horizontal ? (d >= 0 ? Cmd.left : Cmd.right) : d >= 0 ? Cmd.up : Cmd.down;
+  const room = horizontal
+    ? (d >= 0 ? self.x - pf.x : pf.x + pf.w - self.x - self.w)
+    : (d >= 0 ? self.y - pf.y : pf.y + pf.h - self.y - self.h);
+  return room >= ARCADE_AI_SIDESTEP_ROOM / 2 ? out | awayBit : out;
 }
 
 /**

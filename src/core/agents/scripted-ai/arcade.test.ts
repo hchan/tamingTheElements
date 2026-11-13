@@ -20,7 +20,7 @@ import { now } from '../../sim/clock';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_EMBER_PX, ARCADE_AI_FAR_PX, ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
-  ZONER, chargeSensible, elementalSensible, guardReflex, impactIn, sidestepBit, soonestShot, spacingBit, tagChoice, toward, weatherSensible,
+  ZONER, chargeSensible, elementalSensible, guardReflex, impactIn, sidestepBit, soonestShot, spacingBit, tagChoice, toward, weatherSensible, zoneStep,
 } from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
 
@@ -688,11 +688,11 @@ describe('ArcadeTactics: rock avoidance (FUN-DESIGN 2.15)', () => {
     const t = (): ArcadeTactics => new ArcadeTactics(AI_NORMAL, ZONER);
     expect(t().apply(near([rock]), Cmd.left)).toBe(Cmd.left);
     expect(t().apply(near([rock]), Cmd.up)).toBe(Cmd.up);
-    expect(t().apply(near([rock], fighter(150, 300)), Cmd.right)).toBe(Cmd.right);
+    expect(t().apply(near([rock], fighter(150, 300), fighter(1300, 300)), Cmd.right)).toBe(Cmd.right);
     expect(t().apply(near([rock]), Cmd.guard)).toBe(Cmd.guard);
     expect(t().apply(near([rock]), Cmd.right | Cmd.dash)).toBe(Cmd.right | Cmd.dash);
-    expect(t().apply(near([rock], fighter(400, 300)), Cmd.right)).toBe(Cmd.right);
-    expect(t().apply(near([]), Cmd.right)).toBe(Cmd.right);
+    expect(t().apply(near([rock], fighter(400, 300), fighter(1500, 300)), Cmd.right)).toBe(Cmd.right);
+    expect(t().apply(near([], fighter(296, 300), fighter(1500, 300)), Cmd.right)).toBe(Cmd.right);
     expect(t().apply(view(undefined), Cmd.right)).toBe(Cmd.right);
   });
 
@@ -840,6 +840,16 @@ describe('smarter Arcade play (WP-arcade-ai-smarter, FUN-DESIGN 2.21)', () => {
     expect(sidestepBit(self, { x: 200, y: 0, w: 20, h: 20, vx: 0, vy: 8 }, pf)).toBe(Cmd.right); // vertical shot: sideways, the centre line is the self box centre or right of it
     expect(sidestepBit(self, { x: 500, y: 320, w: 40, h: 40, vx: 0, vy: 0 }, pf)).toBe(0); // melee box
     expect(sidestepBit(fighter(0, 0), { x: 500, y: 0, w: 20, h: 20, vx: -8, vy: 0 }, { x: 0, y: 0, w: 100, h: 100 })).toBe(0); // no room
+  });
+
+  it('zoneStep: a ranged hero loses its step towards a foe inside the band and backs off when close, shots and far foes pass', () => {
+    const me = fighter(800, 300);
+    expect(zoneStep(me, fighter(1100, 300), Cmd.right, pf, false)).toBe(Cmd.left); // 300 px: no walking in, backs off
+    expect(zoneStep(me, fighter(1100, 300), Cmd.right | Cmd.up, pf, false)).toBe(Cmd.up); // another step stays
+    expect(zoneStep(me, fighter(1400, 300), Cmd.right, pf, false)).toBe(0); // 600 px: holds
+    expect(zoneStep(me, fighter(1700, 300), Cmd.right, pf, false)).toBe(Cmd.right); // beyond the band: unchanged
+    expect(zoneStep(me, fighter(1100, 300), Cmd.right | Cmd.primary, pf, false)).toBe(Cmd.right | Cmd.primary);
+    expect(zoneStep(me, fighter(1100, 300), Cmd.right, pf, true)).toBe(Cmd.right); // a stunned foe is pressed
   });
 
   it('spacingBit: ranged backs off inside 200 px (when there is room), melee closes in beyond 320 px', () => {
