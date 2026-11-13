@@ -1,10 +1,10 @@
-// Nightly fun gates (ideas/in-progress/nightly-fun-gates.md, FUN-DESIGN WP 25 WP-arcade-gates-tight). Headless only.
+// Nightly fun gates (ideas/done/nightly-fun-gates.md, FUN-DESIGN WP 25 WP-arcade-gates-tight). Headless only.
 //   tsx tools/ci/fun-gates.ts [--seeds 8] [--seed 1] [--team-sizes 1,2] [--out out/fun-gates.json] [--no-fail]
 // Plays the Arcade fun report over ALL pairings per team size, judges it against TIGHT bands (stricter than the
 // report-only bands of tools/sim/fun-report.ts) and exits 1 on any miss. Latency marks (wall ms per sim second) are
 // reported and judged against a generous ceiling, as a catch for accidental perf cliffs; the sim itself stays untouched.
 // Visual-state checks stay in the Playwright visual workflow (not headless sim metrics).
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -20,19 +20,19 @@ export interface GateResult extends Gate {
   readonly ok: boolean;
 }
 
-/** Bands per team size, calibrated to the measured Arcade AI (tight enough to catch regressions, loose enough not to flake). Race win rates are judged because the nightly plays every pairing. */
-export function tightGates(teamSize: 1 | 2 | 3): readonly Gate[] {
-  const tag = teamSize === 2;
-  return [
-    { metric: 'round median s', min: tag ? 50 : 30, max: tag ? 85 : 55 },
-    { metric: 'time-over rate', min: 0, max: 0.1 },
-    { metric: 'stalemate rate', min: 0, max: 0.003 },
-    { metric: 'first hit median s', min: 0, max: 3.5 },
-    { metric: 'combo median hits', min: 1, max: 4 },
-    { metric: 'combo p90 hits', min: 0, max: 7 },
-    { metric: 'worst race win rate', min: tag ? 0.15 : 0.3, max: 1 },
-    { metric: 'best race win rate', min: 0, max: tag ? 0.85 : 0.7 },
-  ];
+interface GateConfig {
+  readonly latencyCeilingMsPerSimSecond: number;
+  readonly teamSizes: Readonly<Record<string, Readonly<Record<string, readonly [number, number]>>>>;
+}
+
+const CONFIG_PATH = new URL('./fun-gates.json', import.meta.url);
+export const loadGateConfig = (path: URL | string = CONFIG_PATH): GateConfig => JSON.parse(readFileSync(path, 'utf8')) as GateConfig;
+
+/** Bands per team size from the committed tools/ci/fun-gates.json, calibrated to the measured Arcade AI (tight enough to catch regressions, loose enough not to flake). */
+export function tightGates(teamSize: 1 | 2 | 3, config: GateConfig = loadGateConfig()): readonly Gate[] {
+  const bands = config.teamSizes[String(teamSize)];
+  if (bands === undefined) throw new Error(`no fun-gate bands for team size ${String(teamSize)}`);
+  return Object.entries(bands).map(([metric, [min, max]]) => ({ metric, min, max }));
 }
 
 export function metricValues(r: FunReport): Record<string, number> {
@@ -45,6 +45,9 @@ export function metricValues(r: FunReport): Record<string, number> {
     'first hit median s': o.medianFirstHitSeconds,
     'combo median hits': o.medianComboHits,
     'combo p90 hits': o.p90ComboHits,
+    'hits per minute': o.hitsPerMinute,
+    'comeback rate': o.comebackRate,
+    'multi-hit combo share': o.multiHitComboShare,
     // No rates (no games): NaN fails the gate rather than passing silently.
     'worst race win rate': rates.length > 0 ? Math.min(...rates) : Number.NaN,
     'best race win rate': rates.length > 0 ? Math.max(...rates) : Number.NaN,
@@ -63,7 +66,7 @@ export function latencyMark(wallMs: number, simSeconds: number): number {
   return simSeconds <= 0 ? Number.NaN : wallMs / simSeconds;
 }
 
-export const LATENCY_CEILING_MS_PER_SIM_SECOND = 50;
+export const LATENCY_CEILING_MS_PER_SIM_SECOND = loadGateConfig().latencyCeilingMsPerSimSecond;
 
 export function formatGates(label: string, results: readonly GateResult[]): string {
   return [

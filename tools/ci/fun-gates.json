@@ -1,0 +1,32 @@
+{
+  "_comment": "Nightly fun-gate bands (tools/ci/fun-gates.ts). Inclusive [min, max] per metric. Calibrated to the measured Arcade AI at aiLevel 3, all pairings, 8 seeds (see docs/TESTING.md and ideas/done/nightly-fun-gates.md). Change a band on purpose, with the measured numbers in the commit.",
+  "latencyCeilingMsPerSimSecond": 50,
+  "teamSizes": {
+    "1": {
+      "round median s": [30, 55],
+      "time-over rate": [0, 0.1],
+      "stalemate rate": [0, 0.003],
+      "first hit median s": [0, 3.5],
+      "combo median hits": [1, 4],
+      "combo p90 hits": [0, 7],
+      "hits per minute": [45, 100],
+      "comeback rate": [0.45, 0.9],
+      "multi-hit combo share": [0.3, 0.7],
+      "worst race win rate": [0.3, 1],
+      "best race win rate": [0, 0.7]
+    },
+    "2": {
+      "round median s": [50, 85],
+      "time-over rate": [0, 0.12],
+      "stalemate rate": [0, 0.003],
+      "first hit median s": [0, 3.5],
+      "combo median hits": [1, 4],
+      "combo p90 hits": [0, 7],
+      "hits per minute": [50, 105],
+      "comeback rate": [0.5, 0.95],
+      "multi-hit combo share": [0.35, 0.75],
+      "worst race win rate": [0.15, 1],
+      "best race win rate": [0, 0.85]
+    }
+  }
+}

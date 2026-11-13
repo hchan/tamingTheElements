@@ -1,7 +1,7 @@
 name: Nightly fun gates
 
-# DRAFT (ideas/in-progress/nightly-fun-gates.md): headless sim metrics judged against tight bands; fails the run when a
-# band is missed. Bands live in tools/ci/fun-gates.ts. Not part of PR CI.
+# (ideas/done/nightly-fun-gates.md): headless sim metrics judged against tight bands; fails the run when a
+# band is missed. Bands live in tools/ci/fun-gates.json. Not part of PR CI.
 on:
   schedule:
     - cron: '47 3 * * *'

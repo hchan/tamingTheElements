@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 added: 2026-11-12
 ---
 
@@ -9,7 +9,8 @@ FUN-DESIGN WP 25 `WP-arcade-gates-tight`: nightly fun:compare bands, Arcade bala
 
 ## Status
 
-- Done: `tools/ci/fun-gates.ts` (`pnpm fun:gates`) plays all Arcade pairings for 1v1 and 2v2 (8 seeds) and exits 1 outside the bands, plus a latency mark (wall ms per sim second). Draft workflow `.github/workflows/nightly-fun-gates.yml` (not pushed). Tests: `tests/repo/fun-gates.test.ts`.
+- Done (2026-11-13): bands moved to the committed `tools/ci/fun-gates.json`; new gated metrics hits per minute, comeback rate (share of matches whose damage lead changed hands) and multi-hit combo share (`summarizeFun`); workflow is the scheduled nightly (03:47 UTC, also `workflow_dispatch`). Measured (aiLevel 3, all pairings, 8 seeds): 1v1 hits/min 70.7, comeback 0.68, multi-hit combos 0.47; 2v2 hits/min 76.3, comeback 0.79, multi-hit 0.54, time-over 0.101 (band raised to 0.12).
+- Earlier: `tools/ci/fun-gates.ts` (`pnpm fun:gates`) plays all Arcade pairings for 1v1 and 2v2 (8 seeds) and exits 1 outside the bands, plus a latency mark (wall ms per sim second). Draft workflow `.github/workflows/nightly-fun-gates.yml` (not pushed). Tests: `tests/repo/fun-gates.test.ts`.
 - Bands are calibrated to the measured Arcade AI, not the aspirational FUN-DESIGN targets. Measured at SIM_VERSION of this commit: 1v1 median combo hits 1 (target 2), race win rates 0.36 to 0.64, stalemate rate 2.1% in both team sizes (target 0). Tighten as tuning lands.
 - Open: visual-state checks need Playwright and stay in `visual.yml`; the Arcade balance compare stays report-only in `nightly.yml`.
 
