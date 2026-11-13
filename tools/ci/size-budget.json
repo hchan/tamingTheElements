@@ -1,6 +1,6 @@
 {
   "chunks": {
-    "arcade-audio": 2200,
+    "arcade-audio": 2270,
     "arcade-setup": 1650,
     "arcade-versus": 5700,
     "arena-pan": 950,
@@ -15,10 +15,10 @@
     "local-two": 455,
     "online-versus": 3910,
     "phaser": 388700,
-    "phaser-config": 29330,
+    "phaser-config": 29600,
     "pose-layer": 10550,
     "rolldown-runtime": 200,
-    "round-view": 2385,
+    "round-view": 4275,
     "sim": 35680,
     "super-view": 2330,
     "tag-view": 2970,
@@ -32,7 +32,7 @@
     "pad-bindings": 1050,
     "pad-bindings-section": 1580
   },
-  "totalGzip": 531720,
+  "totalGzip": 533990,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
