@@ -142,7 +142,7 @@ export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
   // Layout, sizes and the high-contrast look are all CSS (`.touchBtn`, coarse and fine pointer rules); only the slot is inline.
   b.className = `menuButton touchBtn touchBtn-${label}`;
   // Plain integers (column and line of the two-wide wrap), so the CSS needs no mod() or round() and old browsers lay out the same.
-  b.style.cssText = `--touch-row:${String(row)};--touch-col:${String(row % 4)};--touch-line:${String(Math.floor(row / 4))};--touch-col5:${String(row % 5)};--touch-line5:${String(Math.floor(row / 5))};--touch-col3:${String(row % 3)};--touch-line3:${String(Math.floor(row / 3))}`;
+  b.style.cssText = `--touch-row:${String(row)};--touch-col:${String(row % 4)};--touch-line:${String(Math.floor(row / 4))};--touch-col5:${String(row % 5)};--touch-line5:${String(Math.floor(row / 5))};--touch-col3:${String(row % 3)};--touch-line3:${String(Math.floor(row / 3))};--touch-col2:${String(row % 2)};--touch-line2:${String(Math.floor(row / 2))}`;
   let code: string | undefined;
   // Pointer and keyboard hold the action separately: the key goes up only when neither is still holding it.
   let byPointer = false;

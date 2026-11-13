@@ -167,13 +167,18 @@ const TOUCH_CASES: readonly { name: string; w: number; h: number; fraction?: num
   { name: '640x360 at Medium display size', w: 640, h: 360, fraction: MEDIUM },
   { name: '390x844 portrait phone', w: 390, h: 844 },
   { name: '360x640 small portrait phone', w: 360, h: 640 },
+  { name: '568x320 short landscape phone', w: 568, h: 320 },
+  { name: '568x320 at Medium display size', w: 568, h: 320, fraction: MEDIUM },
+  { name: '640x300 short landscape phone', w: 640, h: 300 },
+  { name: '640x300 at Medium display size', w: 640, h: 300, fraction: MEDIUM },
+  { name: '667x375 landscape phone', w: 667, h: 375 },
 ];
 
 for (const tc of TOUCH_CASES) {
 test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
   test.use({ viewport: { width: tc.w, height: tc.h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
-  test('every button sits inside #game, at least 48 px tall, in at most three right-edge columns, none overlapping each other or the fullscreen button', async ({ page }) => {
+  test('every button sits inside #game, at least 48 px tall, in at most three right-edge columns (five on a game box under 272 px), none overlapping each other or the fullscreen button', async ({ page }, info) => {
     const errors = collectErrors(page);
     // The World Tour fields a team of three, so all 9 buttons are present.
     await page.goto(`${START}&ff=arcade#tour`);
@@ -213,13 +218,14 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
       expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(g.b + 0.5);
       expect(k.b - k.y, `${k.id} height`).toBeGreaterThanOrEqual(48);
     }
-    expect(new Set(boxes.map((k) => Math.round(k.r))).size).toBeLessThanOrEqual(3);
+    expect(new Set(boxes.map((k) => Math.round(k.r))).size).toBeLessThanOrEqual(g.b - g.y < 272 ? 5 : 3);
     for (const [i, p] of boxes.entries()) {
       for (const q of boxes.slice(i + 1)) {
         const apart = p.r <= q.x || q.r <= p.x || p.b <= q.y || q.b <= p.y;
         expect(apart, `${p.id} and ${q.id} overlap`).toBe(true);
       }
     }
+    await page.screenshot({ path: info.outputPath('touch.png') });
     expect(errors).toEqual([]);
   });
 });

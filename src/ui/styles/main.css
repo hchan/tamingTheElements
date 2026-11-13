@@ -804,6 +804,8 @@ button.touchBtn {
   --touch-line5: 0;
   --touch-col3: 0;
   --touch-line3: 0;
+  --touch-col2: 0;
+  --touch-line2: 0;
   --touch-size: 72px;
   --touch-pitch: 78px;
   position: absolute;
@@ -819,7 +821,7 @@ button.touchBtn {
   overflow: hidden;
   text-align: left;
   white-space: pre;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
   line-height: 1.2;
   touch-action: none;
@@ -915,6 +917,7 @@ html[data-high-contrast='true'] button.touchBtn {
   html[data-touch-size='large'] #game button.touchBtn {
     --touch-size: 68px;
     --touch-pitch: 72px;
+    font-size: 12px;
     right: calc(8px + var(--touch-line3) * var(--touch-pitch));
     bottom: calc(8px + var(--touch-col3) * var(--touch-pitch));
   }
@@ -922,6 +925,25 @@ html[data-high-contrast='true'] button.touchBtn {
   html[data-touch-size='large'][data-touch-side='left'] #game button.touchBtn {
     right: auto;
     left: calc(8px + var(--touch-line3) * var(--touch-pitch));
+  }
+}
+/* Very short (a phone in landscape with a large display size, #game under 272 px): the column of three would reach the fullscreen corner, so
+   columns of two at 60 px (up to 5 columns for nine; 8 + 2 * 64 - 4 + 52 = 184 px, clear of the corner down to about 190 px). Text drops to 12 px. */
+@container game (max-height: 271px) {
+  html[data-touch-size='large'] #menu button.touchBtn,
+  html[data-touch-size='large'] #game button.touchBtn {
+    --touch-size: 60px;
+    --touch-pitch: 64px;
+    font-size: 12px;
+    padding: 3px 2px;
+    border-width: 1px;
+    right: calc(8px + var(--touch-line2) * var(--touch-pitch));
+    bottom: calc(8px + var(--touch-col2) * var(--touch-pitch));
+  }
+  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn,
+  html[data-touch-size='large'][data-touch-side='left'] #game button.touchBtn {
+    right: auto;
+    left: calc(8px + var(--touch-line2) * var(--touch-pitch));
   }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }
