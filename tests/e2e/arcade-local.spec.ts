@@ -123,3 +123,27 @@ test('Two players is a 3v3 duel: three hero selects each, both players tag with 
   expect((await tagLines(page))[1]?.[0]).not.toBe('IN Echo');
   expect(errors).toEqual([]);
 });
+
+test('local Versus HUD: the key hint clears both action bars, Player 2 has a readout, and the hint fades', async ({ page }) => {
+  const errors = collectErrors(page);
+  await start(page);
+  const hint = page.locator('#arcadeKeysHint');
+  await expect(hint).toBeVisible();
+  const box = await hint.boundingBox();
+  const canvas = await page.locator('#game canvas').boundingBox();
+  if (!box || !canvas) throw new Error('hint and canvas must be laid out');
+  const k = canvas.width / 1280; // logical px -> CSS px
+  interface Rect { x: number; y: number; size: number }
+  const p1 = await page.evaluate<Rect[]>(`window.__TTE__.arena.actionBarScreen()`);
+  const p2 = await page.evaluate<Rect[]>(`window.__TTE__.arena.actionBar2Screen()`);
+  expect(p1.length).toBeGreaterThan(0);
+  expect(p2.length).toBeGreaterThan(0); // Player 2 sees their own cooldowns
+  for (const r of [...p1, ...p2]) {
+    const left = canvas.x + r.x * k;
+    const top = canvas.y + r.y * k;
+    const overlaps = box.x < left + r.size * k && box.x + box.width > left && box.y < top + r.size * k && box.y + box.height > top;
+    expect(overlaps, `hint ${JSON.stringify(box)} vs slot ${JSON.stringify(r)}`).toBe(false);
+  }
+  await expect.poll(() => page.evaluate<string>(`getComputedStyle(document.getElementById('arcadeKeysHint')).opacity`), { timeout: 15_000 }).toBe('0');
+  expect(errors).toEqual([]);
+});

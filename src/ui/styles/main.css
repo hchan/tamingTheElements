@@ -874,6 +874,12 @@ html[data-touch-side='left'][data-touch-size='compact'] button.touchBtn {
     left: calc(6px + var(--touch-col5) * var(--touch-pitch));
   }
 }
+/* Narrow windows: the touch buttons wrap to two rows and would sit on the local two-player key hint, which stays on the Help screen. */
+@media (max-width: 1100px) {
+  #arcadeKeysHint {
+    display: none;
+  }
+}
 /* Coarse pointers: `#menu button` (min 44) is more specific than `button.touchBtn`, so restate the 48 px floor. */
 @media (pointer: coarse) {
   #menu button.touchBtn {
