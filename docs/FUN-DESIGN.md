@@ -1188,6 +1188,21 @@ One more button for every hero, picked by the hero's element and always there: n
   re-recorded because the new button changes every Arcade fight; the 16-seed 1v1 moved Morblass -7.7 and Rokcore +5.7 pp,
   the noisy 8-seed 2v2 (already 23.9 to 77.3 % before) moved Fiara +15.9, Treenoc +10.3 and Curomo -9.1 pp.
 
+### 2.26 Cleanse (Arcade, sim, SIM_VERSION 47)
+
+A common button for all 12 heroes, the same whatever the element (idea file `ideas/in-progress/elemental-cleanse.md`):
+`Cmd.cleanse` (bit 9, the third swap's bit, which a 3-hero Arcade team never uses; buffered as Press 9) ends the caster's
+own debuffs at once, on a 500-tick (10 s) cooldown. Cast in `src/core/sim/systems/arcade/cleanse.ts`, number in `data/arcade.ts`.
+
+- **Cleared:** the Snag root (the usual 75-tick post-root immunity follows), the Puddle slow, and Ice Blast and tidal slows. The sim has no
+  burn, silence or freeze debuff to clear; stun is not cleansable.
+- **Rules:** refused outside the fight, while not free (stunned, dashing, charging, in a super), or on cooldown (the press stays buffered); a rooted or
+  guarding hero may cast. A cast with nothing to clear still spends the cooldown. State `ArcadeE.cleanseReadyAt`, per character, reset each round.
+- **Event:** `cleanse {element, team, cleared}` (element: the hero's kind 1 fire, 2 water, 3 earth, 4 air, 5 void) for the later view and audio (`playSfx('cleanse', element)`).
+- **AI:** Normal and Hard press it when rooted or slowed (`cleanseSensible`); water's elemental Cleanse defers to it while it is ready.
+- **Slot:** a common slot beside Trap and Tag, not a hero-kit slot (see `ideas/brainstorm/action-bar-rethink-hero-kits.md`). No key, HUD box or animation yet (view WP).
+- **Overlap:** water's elemental (2.24) is also called Cleanse; a later WP renames it.
+
 ### 2.25 Giant heroes (Arcade, sim, SIM_VERSION 41)
 
 Size trades speed for strength (`src/core/data/size.ts`, idea `giant-heroes-size-for-speed`). Each character has an integer

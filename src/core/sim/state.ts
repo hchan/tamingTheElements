@@ -65,21 +65,21 @@ export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, blockUntil: 7,
   parryUntil: 8, parryLockUntil: 9, guardDrain: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
   dashDodged: 14, weatherReadyAt: 15, chargeUntil: 16, chargeReadyAt: 17, rootUntil: 18, rootImmuneUntil: 19,
-  trapReadyAt: 20, trapSlowUntil: 21, elemReadyAt: 22, elemUntil: 23,
+  trapReadyAt: 20, trapSlowUntil: 21, elemReadyAt: 22, elemUntil: 23, cleanseReadyAt: 24,
 } as const;
-export const ARCADE_E = 24;
+export const ARCADE_E = 25;
 /**
- * Per team; `pressTick` is 9 ints (primary, secondary, dash, guard, super, weather, charge, trap, elemental): the game tick of the last rising edge plus
+ * Per team; `pressTick` is 10 ints (primary, secondary, dash, guard, super, weather, charge, trap, elemental, cleanse): the game tick of the last rising edge plus
  * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a
  * chord's super press is pending (see systems/arcade/buffer.ts). `lastDir` is the bit of the last rising direction edge
  * and `lastDirPress` its game tick plus one (the double-tap dash); `confirmTick` is the game tick plus one of the team's
  * last confirmed hit (the dash cancel window). `weatherCharge` is the weather charge, 0..WEATHER_CHARGE_FULL (weather.ts).
  */
 export const ArcadeT = {
-  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 14, lastDir: 15,
-  roundsWon: 16, superState: 17, pressUsed: 18, confirmTick: 19, weatherCharge: 20, inPatch: 21,
+  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 15, lastDir: 16,
+  roundsWon: 17, superState: 18, pressUsed: 19, confirmTick: 20, weatherCharge: 21, inPatch: 22,
 } as const;
-export const ARCADE_T = 22;
+export const ARCADE_T = 23;
 /**
  * World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil`, `phaseUntil` and `slowMoUntil` are in
  * W.tick units, `roundTimer` in game ticks left. `phase` is a RoundPhase (data/arcade.ts); `roundWinner` holds the

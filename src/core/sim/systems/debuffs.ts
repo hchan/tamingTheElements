@@ -109,12 +109,16 @@ export function hasSlow(status: Int32Array, id: number): boolean {
  * them (an Ice Blast restores as at expiry: below 0.2 snaps to the default speed, otherwise the slow is added back; a
  * tidal slow adds back its stored magnitude). Returns how many slots were cleared.
  */
-export function cleanseSlows(world: SimWorld, id: number): number {
+export function cleanseSlows(world: SimWorld, id: number, countOnly = false): number {
   const s = world.state;
   let n = 0;
   for (let slot = 0; slot < STATUS_SLOTS; slot++) {
     const b = base(id, slot);
     const sid = s.status[b] ?? 0;
+    if (countOnly) {
+      if (sid === StatusId.iceBlast || sid === StatusId.superSlow) n++;
+      continue;
+    }
     if (sid === StatusId.iceBlast) {
       s.speed[id] = (s.speed[id] ?? 0) < 0.2 ? (s.baseSpeed[id] ?? 0) : (s.speed[id] ?? 0) - ICE_BLAST_DELTA;
     } else if (sid === StatusId.superSlow) {

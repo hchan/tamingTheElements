@@ -221,11 +221,19 @@ export function elementalSensible(level: ArcadeAiLevel, a: ArcadeView, pm: numbe
   if (level === AI_EASY || a.elemIn !== 0) return false;
   switch (a.elemKind) {
     case 1: return a.oppStun > 0 || dist <= ARCADE_AI_EMBER_PX;
-    case 2: return a.selfRooted > 0 || a.selfSlowed;
+    case 2: return (a.selfRooted > 0 || a.selfSlowed) && a.cleanseIn !== 0;
     case 3: return a.oppSuperActive || pm < 500;
     case 4: return dist > ARCADE_AI_FAR_PX;
     default: return false;
   }
+}
+
+/**
+ * The common Cleanse (ideas/in-progress/elemental-cleanse.md), Normal and Hard (Easy never): ready and the hero is rooted
+ * or slowed. No draw.
+ */
+export function cleanseSensible(level: ArcadeAiLevel, a: ArcadeView): boolean {
+  return level !== AI_EASY && a.cleanseIn === 0 && (a.selfRooted > 0 || a.selfSlowed);
 }
 
 /**

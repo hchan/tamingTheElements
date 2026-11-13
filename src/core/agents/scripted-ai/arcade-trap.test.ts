@@ -26,7 +26,7 @@ const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
   primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0,
   partnerPm: -1, partner2Pm: -1, rocks: [], snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0,
-  traps: [], trapIn: 0, trapCount: 0, fireShot: false, elemKind: 0, elemIn: -1, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
+  traps: [], trapIn: 0, trapCount: 0, fireShot: false, elemKind: 0, elemIn: -1, cleanseIn: 1, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
 };
 
 function view(arcade: Partial<ArcadeView>, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {

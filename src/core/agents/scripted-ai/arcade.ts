@@ -14,7 +14,7 @@ import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, chargeSensible, elementalSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
+  centreDist, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, zoneStep, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -261,7 +261,8 @@ export class ArcadeTactics {
     // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
     // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
     const released = (zoned & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? zoned & ~Cmd.charge : zoned;
-    return this.elemental(view, a) ? released | Cmd.elemental : released;
+    const withElem = this.elemental(view, a) ? released | Cmd.elemental : released;
+    return this.cleanse(view, a) ? withElem | Cmd.cleanse : withElem;
   }
 
   /**
@@ -290,6 +291,14 @@ export class ArcadeTactics {
     if (self === undefined || opp === undefined || a.phase !== RoundPhase.fight || (a.prevCmd & Cmd.elemental) !== 0) return false;
     if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return false;
     return elementalSensible(this.level, a, (self.hp * 1000) / self.maxHp, centreDist(self, opp));
+  }
+
+  /** The common Cleanse press (`cleanseSensible`): in the fight, free, and a fresh press (the bit was up last tick). */
+  private cleanse(view: ObservationView, a: ArcadeView): boolean {
+    const self = view.self;
+    if (self === undefined || a.phase !== RoundPhase.fight || (a.prevCmd & Cmd.cleanse) !== 0) return false;
+    if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return false;
+    return cleanseSensible(this.level, a);
   }
 
   /**

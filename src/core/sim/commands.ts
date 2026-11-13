@@ -29,6 +29,12 @@ export const Cmd = {
    * reads it as the elemental ability. The mask, packet and replay formats are unchanged.
    */
   elemental: 1 << 10,
+  /**
+   * Arcade's name for bit 9 (ideas/in-progress/elemental-cleanse.md): the common Cleanse slot, the same for every hero. An Arcade
+   * team has at most three heroes, so the third swap never exists there and swapSystem ignores the bit in Arcade; Classic
+   * never reads it as Cleanse. The mask, packet and replay formats are unchanged.
+   */
+  cleanse: 1 << 9,
   /** Arcade only (masked off in Classic by inputMaskFor): dash (FUN-DESIGN 2.7). */
   dash: 1 << 11,
   /** Arcade only (masked off in Classic by inputMaskFor): hold to guard, press to parry (FUN-DESIGN 2.8). */
