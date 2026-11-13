@@ -19,4 +19,4 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [sf-stage-backgrounds-crowds](../brainstorm/sf-stage-backgrounds-crowds.md)
 - [stage-selection-hazards](../brainstorm/stage-selection-hazards.md)
 - [curomo-ability-visibility](../brainstorm/curomo-ability-visibility.md)
-- [audio-and-music](../brainstorm/audio-and-music.md)
+- [audio-and-music](../in-progress/audio-and-music.md)
