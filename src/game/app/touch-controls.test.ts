@@ -50,7 +50,7 @@ describe('touch controls', () => {
 
   it('puts layout in CSS classes and only the slot inline', () => {
     stubDom(true);
-    expect(touchButton('Dash', 2).style.cssText).toBe('--touch-row:2;--touch-col:2;--touch-line:0;--touch-col5:2;--touch-line5:0;--touch-col3:2;--touch-line3:0');
+    expect(touchButton('Dash', 2).style.cssText).toBe('--touch-row:2;--touch-col:2;--touch-line:0;--touch-col5:2;--touch-line5:0;--touch-col3:2;--touch-line3:0;--touch-col2:0;--touch-line2:1');
     expect(touchButton('Dash', 2).className).toContain('touchBtn');
   });
 
@@ -149,7 +149,7 @@ describe('numbered action row', () => {
     stubDom(true);
     const b = touchButtons(2, [false, false]);
     expect(b.map((x) => x.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '3\nTag', '0\nTrap', 'V\nElement']);
-    expect(b[4]?.style.cssText).toBe('--touch-row:4;--touch-col:0;--touch-line:1;--touch-col5:4;--touch-line5:0;--touch-col3:1;--touch-line3:1');
+    expect(b[4]?.style.cssText).toBe('--touch-row:4;--touch-col:0;--touch-line:1;--touch-col5:4;--touch-line5:0;--touch-col3:1;--touch-line3:1;--touch-col2:0;--touch-line2:2');
     expect(touchButtons(2, [false, true])).toHaveLength(8);
     expect(touchButtons(1)).toHaveLength(7);
   });
