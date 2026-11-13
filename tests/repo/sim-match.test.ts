@@ -90,9 +90,15 @@ describe('sim:match runner', () => {
 
 describe('sim:match speed', () => {
   // Measured on a laptop: about 20k ticks/s with random bots (cold, JIT included), 100k+ with scripted bots.
-  // The bound is deliberately generous so slow CI does not flake.
-  it('simulates at least 5000 ticks per second', () => {
-    const t0 = performance.now();
+  // Rate = ticks per second of CPU time this process used (process.cpuUsage), not wall-clock: when the machine is
+  // oversubscribed a worker is descheduled for most of the wall-clock time (2700 vs 5000 ticks/s seen), but the CPU
+  // time it burns for the same ticks stays about the same. Load can still only make a batch slower, so we also take the
+  // best of a few batches; a real order-of-magnitude regression is slow in every batch and still fails. Vitest runs each
+  // file in its own forked process, so the CPU time is this file's.
+  const BOUND = 5000;
+  const BATCHES = 6;
+  const batch = (): { ticks: number; perSecond: number } => {
+    const c0 = process.cpuUsage();
     let ticks = 0;
     for (let i = 0; i < 8; i++) {
       ticks += runMatch({
@@ -107,8 +113,17 @@ describe('sim:match speed', () => {
         stalemateTicks: 100000,
       }).ticks;
     }
-    const perSecond = ticks / ((performance.now() - t0) / 1000);
-    expect(ticks).toBeGreaterThan(1000);
-    expect(perSecond).toBeGreaterThan(5000);
+    const c = process.cpuUsage(c0);
+    return { ticks, perSecond: ticks / (Math.max(1, c.user + c.system) / 1e6) };
+  };
+
+  it(`simulates at least ${String(BOUND)} ticks per second (best of up to ${String(BATCHES)} batches)`, () => {
+    let best = 0;
+    for (let n = 0; n < BATCHES && best <= BOUND; n++) {
+      const r = batch();
+      expect(r.ticks).toBeGreaterThan(1000); // deterministic, load-independent
+      best = Math.max(best, r.perSecond);
+    }
+    expect(best).toBeGreaterThan(BOUND);
   });
 });
