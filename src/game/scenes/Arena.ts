@@ -418,6 +418,7 @@ export class Arena extends Phaser.Scene {
           x: s.x, y: s.y, size: s.size, cmd: s.cmd, kind: s.kind, label: s.label, disabled: s.disabled, highlight: s.highlight,
         })) ?? [],
       actionBarScreen: () => this.actionBar?.screenSlots() ?? [],
+      actionBar2Screen: () => this.actionBar2?.screenSlots() ?? [],
       clicks: () => [...this.clicks],
       captureGranted: () => view.actionBar(0)?.capture !== undefined,
       bench: () => benchRows(world, 0),

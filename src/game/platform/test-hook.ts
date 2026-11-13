@@ -27,6 +27,8 @@ export interface ArenaProbe {
   /** Action bar slots in logical 1280x720 coordinates. */
   /** Action bar slot rects in logical screen px (1280x720) as drawn through the live camera; fixed in Arcade whatever the pan. */
   actionBarScreen(): { x: number; y: number; size: number }[];
+  /** Player 2's mirrored readout slots (local two-player only; empty otherwise), same units as `actionBarScreen`. */
+  actionBar2Screen(): { x: number; y: number; size: number }[];
   actionSlots(): { x: number; y: number; size: number; cmd: number; kind: string; label: string; disabled: boolean; highlight: boolean }[];
   /** Commands emitted by pointer presses on action slots, oldest first. */
   clicks(): number[];
