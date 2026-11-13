@@ -1,6 +1,7 @@
 import type { Element } from '@core/index';
 import { readVolumes } from '../platform/volume-setting';
 import type { SfxContext, SfxKind, Synth } from './element-sfx';
+import type { SampleContext, Sampler } from './sample-sfx';
 
 /**
  * `playSfx(kind, element)`: the one call UI clicks, sim-event views and future abilities (a Cleanse, see
@@ -8,7 +9,8 @@ import type { SfxContext, SfxKind, Synth } from './element-sfx';
  * synth is the lazy `element-sfx` chunk, fetched on the first gesture. Nothing is created before a user gesture
  * (autoplay policy): until then `playSfx` is a silent no-op, and the first pointer, key or touch creates and resumes
  * the AudioContext and loads the synth (that gesture's own cue is skipped). Honours the saved mute flag and the
- * Settings sound-effect volume.
+ * Settings sound-effect volume. A cue with a generated sample (`sample-sfx.ts`, a second lazy chunk, tools/audio-gen) plays
+ * that; every other cue, and any cue whose sample failed to load, falls back to the synth voice.
  */
 export type { SfxKind } from './element-sfx';
 
@@ -25,6 +27,8 @@ export interface SfxDeps {
   /** Creates the AudioContext (undefined where Web Audio is missing). */
   readonly makeContext: () => Ctx | undefined;
   readonly loadSynth: () => Promise<{ createSynth(ctx: SfxContext): Synth }>;
+  /** Optional: loads the sampled cues for the context (absent: synth only). */
+  readonly loadSamples?: (ctx: Ctx) => Promise<Sampler>;
   readonly storage: Pick<Storage, 'getItem'> | undefined;
   readonly target: Target | undefined;
 }
@@ -41,6 +45,7 @@ const GESTURES = ['pointerdown', 'keydown', 'touchstart'];
 
 export function createSfx(deps: SfxDeps): Sfx {
   let synth: Synth | undefined;
+  let sampler: Sampler | undefined;
   let loading = false;
   let disposed = false;
   const detach = (): void => { for (const g of GESTURES) deps.target?.removeEventListener(g, unlock, { capture: true }); };
@@ -52,16 +57,19 @@ export function createSfx(deps: SfxDeps): Sfx {
     detach();
     void Promise.resolve(ctx.resume?.()).catch(() => undefined);
     deps.loadSynth().then((m) => { if (!disposed) synth = m.createSynth(ctx); }).catch(() => undefined);
+    deps.loadSamples?.(ctx).then((s) => { if (!disposed) sampler = s; }).catch(() => undefined);
   }
   for (const g of GESTURES) deps.target?.addEventListener(g, unlock, { capture: true });
   return {
     get ready() { return synth !== undefined; },
     play(kind, element) {
-      if (!synth) return;
+      if (!synth && !sampler) return;
       let muted = false;
       try { muted = deps.storage?.getItem(SFX_MUTE_KEY) === '1'; } catch { /* treat as unmuted */ }
       if (muted) return;
-      synth.play(kind, element, readVolumes(deps.storage).sfx);
+      const volume = readVolumes(deps.storage).sfx;
+      if (sampler?.play(kind, element, volume)) return;
+      synth?.play(kind, element, volume);
     },
     dispose() { disposed = true; detach(); },
   };
@@ -76,6 +84,7 @@ function sharedSfx(): Sfx {
       return C ? new C() : undefined;
     },
     loadSynth: () => import('./element-sfx'),
+    loadSamples: (ctx) => import('./sample-sfx').then((m) => m.createSampler(ctx as unknown as SampleContext, m.fetchAsset)),
     storage: typeof localStorage === 'undefined' ? undefined : localStorage,
     target: typeof window === 'undefined' ? undefined : window,
   });
