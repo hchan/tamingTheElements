@@ -194,10 +194,10 @@ describe('Trap fuse and triggers', () => {
       const evs = run(world, 1, [Cmd.trap, 0]).concat(toArm(world), step(world, [0, 0]));
       return of(evs, SimEventKind.hitConfirmed)[0]?.['amount'] ?? 0;
     };
-    const sindarosa = bombHit('sindarosa'); // 22 x 650 pm = 14.3, floored at 20
+    const sindarosa = bombHit('sindarosa'); // 22 x 693 pm = 15.2, floored at 20
     expect(sindarosa).toBeGreaterThan(0);
     expect(bombHit('lavax')).toBe(sindarosa); // 22 x 870 pm = 19.1, floored at 20
-    expect(bombHit('fiara') / sindarosa).toBeCloseTo((TRAP_FIRE_DAMAGE * 1520) / 1000 / TRAP_HIT_FLOOR, 9); // 33.4, above it
+    expect(bombHit('fiara') / sindarosa).toBeCloseTo((TRAP_FIRE_DAMAGE * 1470) / 1000 / TRAP_HIT_FLOOR, 9); // 32.3, above it
   });
 
   it('a Gust shoves the foe away without damage', () => {
