@@ -507,6 +507,7 @@ describe('projectiles and shake', () => {
     for (let i = 1; i < grow.length; i++) expect(grow[i]).toBeGreaterThanOrEqual(grow[i - 1] ?? 0);
     expect(grow[7]).toBe(1);
     expect(alpha[0]).toBeLessThan(0.9);
+    expect(alpha[0]).toBeGreaterThanOrEqual(0.55);
     expect(alpha[7]).toBe(1);
   });
 

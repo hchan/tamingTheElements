@@ -36,8 +36,11 @@ const DEG = Math.PI / 180;
 const STALL_MS = 80;
 const SPAWN_MS = 60;
 const SPAWN_FROM = 0.6;
-const FADE_MS = 130;
+const FADE_MS = 220;
+/** Spawn ease-in never dims a bolt below this alpha (a fully transparent first frames hid thin sprites such as Strangling Branches). */
+const SPAWN_ALPHA_FLOOR = 0.55;
 const FADE_GROW = 0.35;
+const GHOST_ALPHA = 0.95;
 const ROT_TAU_MS = 45;
 const KO_MS = 700;
 const GHOSTS = 8;
@@ -396,8 +399,9 @@ export class PoseLayer {
     image.setAngle(a).setScale(image.scaleX * grow, image.scaleY * grow);
     glow.setAngle(a).setScale(glow.scaleX * grow, glow.scaleY * grow);
     if (k < 1) {
-      image.setAlpha(image.alpha * k);
-      glow.setAlpha(glow.alpha * k);
+      const ka = SPAWN_ALPHA_FLOOR + (1 - SPAWN_ALPHA_FLOOR) * k;
+      image.setAlpha(image.alpha * ka);
+      glow.setAlpha(glow.alpha * ka);
     }
     const o = i * 5;
     this.snap[o] = image.x;
@@ -487,7 +491,7 @@ export class PoseLayer {
       const img = g.image;
       if (g.kind === 0) {
         const grow = this.reduced ? 1 : 1 + FADE_GROW * easeOutCubic(t);
-        img.setPosition(g.x, g.y).setDisplaySize(g.w * grow, g.h * grow).setAngle(g.rot).setAlpha(0.85 * (1 - t));
+        img.setPosition(g.x, g.y).setDisplaySize(g.w * grow, g.h * grow).setAngle(g.rot).setAlpha(GHOST_ALPHA * (1 - t));
         img.setDepth(1);
       } else {
         const p = resetPose(this.pose);

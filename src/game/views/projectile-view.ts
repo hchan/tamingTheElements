@@ -13,6 +13,8 @@ const MAP_SPRITES = manifest.mapSprites as Readonly<Record<string, Entry>>;
 const FRAME = 'proj';
 /** Phaser.BlendModes.ADD (a type-only Phaser import keeps this module unit-testable without the engine). */
 const BLEND_ADD = 1;
+/** Phaser.BlendModes.NORMAL. */
+const BLEND_NORMAL = 0;
 
 /**
  * Legacy `createBullet` rotation (clockwise degrees): east 0, south-east 45, south 90, ..., north 270, north-east 315.
@@ -29,7 +31,7 @@ export function meleeLook(dir: number, w: number, h: number): { angle: number; w
 }
 
 /** View-only: melee sprites drawn taller than their hit box (the art, not the box, is what the player must read). Ice Shock: 40 -> 72. */
-const MELEE_ART_THICKNESS: Readonly<Record<string, number>> = { iceShock: 1.8 };
+const MELEE_ART_THICKNESS: Readonly<Record<string, number>> = { iceShock: 1.8, stranglingBranches: 1.7 };
 
 /** View-only: the shortest long side (px) a flying bolt is drawn at, so small hit boxes (fireball 25x12) still read. */
 export const MIN_BOLT_LONG_SIDE = 44;
@@ -37,14 +39,17 @@ export const MIN_BOLT_LONG_SIDE = 44;
  * View-only contrast boosts for the sprites the ability audit found weak (docs/ABILITY-AUDIT.md): a larger minimum long side, a
  * brighter and wider halo, and a halo tint that sets the art off from the arena floor. Hit boxes are untouched.
  */
-export interface SpriteBoost { readonly minLong: number; readonly glowAlpha: number; readonly glowScale: number; readonly glowTint: number }
+export interface SpriteBoost { readonly minLong: number; readonly glowAlpha: number; readonly glowScale: number; readonly glowTint: number;
+  /** Draw the halo as a dark normal-blend outline instead of an additive glow (pale sprites on bright floors, e.g. the Stick dart on the fire floor). */
+  readonly dark?: boolean }
 export const SPRITE_BOOST: Readonly<Record<string, SpriteBoost>> = {
   rockPellet: { minLong: 64, glowAlpha: 0.95, glowScale: 2.2, glowTint: 0xffd36b },
-  stranglingBranches: { minLong: 0, glowAlpha: 0.7, glowScale: 1.5, glowTint: 0xc8ff7a },
+  stranglingBranches: { minLong: 0, glowAlpha: 0.95, glowScale: 1.7, glowTint: 0xd4ff6a },
   entanglingVines: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0xe8c27a },
   entanglingVinesWater: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0x9ad8ff },
   entanglingVinesAir: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0xeaf4ff },
-  crimsonFire: { minLong: 0, glowAlpha: 0.8, glowScale: 1.5, glowTint: 0xffe9a0 },
+  stick: { minLong: 56, glowAlpha: 0.9, glowScale: 1.45, glowTint: 0x2a1204, dark: true },
+  crimsonFire: { minLong: 96, glowAlpha: 1, glowScale: 1.8, glowTint: 0xffe9a0 },
 };
 
 /** View-only: how much thicker than the length-matched scale a thin bolt may be drawn, to reach its box thickness. */
@@ -127,6 +132,7 @@ export class ProjectileView {
       .setAlpha(boost?.glowAlpha ?? (melee ? 0.2 : 0.5))
       .setDisplaySize(look.w * (boost?.glowScale ?? (melee ? 1 : 1.6)) + 6, look.h * (boost?.glowScale ?? (melee ? 1 : 1.6)) + 6)
       .setTint(boost?.glowTint ?? 0xffffff)
+      .setBlendMode(boost?.dark === true ? BLEND_NORMAL : BLEND_ADD)
       .setFlipX(look.flip)
       .setAngle(look.angle)
       .setPosition(this.image.x, this.image.y)

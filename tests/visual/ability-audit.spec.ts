@@ -64,6 +64,8 @@ const ARC: Arc[] = [
   { name: 'snag-echo', player: 'echo', enemy: 'pax', cmd: CMD.primary },
   { name: 'snag-treenoc', player: 'treenoc', enemy: 'cyclonius', cmd: CMD.primary },
   { name: 'snag-wispera', player: 'wispera', enemy: 'pax', cmd: CMD.primary },
+  { name: 'crimson-lavax', player: 'lavax', enemy: 'pax', cmd: CMD.primary },
+  { name: 'branches-treenoc', player: 'treenoc', enemy: 'lavax', cmd: CMD.secondary },
   { name: 'charge-pax', player: 'pax', enemy: 'fiara', cmd: CMD.charge, meter: true },
   { name: 'dash-pax', player: 'pax', enemy: 'fiara', cmd: CMD.dash },
   { name: 'guard-pax', player: 'pax', enemy: 'fiara', cmd: CMD.guard, foeCmd: CMD.primary, hold: 20 },
@@ -89,9 +91,10 @@ test.describe('ability audit shots', () => {
   // Classic: the training Dummy fights back with Stick (chapter 1), Capture needs chapter 2 or later (presets via the game master).
   test('stick', async ({ page }) => {
     test.skip(!wanted('stick'));
-    await page.goto(START);
+    // Practice: the hero fights the training Dummy. STICK_SEED picks the arena floor (the fire floor is the hard case for the pale dart).
+    await page.goto(`/?manual=1&seed=${process.env['STICK_SEED'] ?? '7'}`);
     await newGameToGarrison(page);
-    await startBattle(page, 'enterBattlegroundContainer');
+    await startBattle(page, 'enterPracticeContainer');
     await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 300, 360, 0); a.place(foe.id, 480, 360, 4); a.step(1); })()`);
     for (const t of [10, 30, 60, 90]) {
       await page.evaluate(`window.__TTE__.arena.stepLive(${String(t === 10 ? 10 : 20)})`);
