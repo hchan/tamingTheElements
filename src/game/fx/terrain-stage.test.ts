@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type Phaser from 'phaser';
 import { mountStageBackdrop } from './terrain-stage';
 import {
-  ATLAS_H, ATLAS_W, CROWD_FACTOR, CROWD_FRAMES, FAR_FACTOR, FLY_FACTOR, atlasFrames, crowdIndex, flyIndex, flyOffset, layerX,
+  ATLAS_H, ATLAS_W, CROWD_FACTOR, CROWD_FRAMES, FAR_FACTOR, FLY_FACTOR, atlasFrames, crowdHop, crowdIndex, flyIndex, flyOffset, layerX,
 } from './terrain-stage-layout';
 
-interface Img { frame: string; x: number; visible: boolean; destroyed: boolean }
+interface Img { frame: string; x: number; y: number; visible: boolean; destroyed: boolean }
 
 function fakeScene(loaded: boolean): { scene: Phaser.Scene; imgs: Img[]; loads: string[]; frames: string[] } {
   const imgs: Img[] = [];
@@ -16,13 +16,14 @@ function fakeScene(loaded: boolean): { scene: Phaser.Scene; imgs: Img[]; loads: 
     load: { image: (k: string) => { loads.push(k); }, start: () => undefined },
     add: {
       image: (_x: number, _y: number, _k: string, frame: string) => {
-        const img: Img = { frame, x: 0, visible: true, destroyed: false };
+        const img: Img = { frame, x: 0, y: 0, visible: true, destroyed: false };
         imgs.push(img);
         const o = {
           setOrigin: () => o, setDepth: () => o,
           setVisible: (v: boolean) => { img.visible = v; return o; },
           setFrame: (f: string) => { img.frame = f; return o; },
           setX: (x: number) => { img.x = x; return o; },
+          setY: (y: number) => { img.y = y; return o; },
           destroy: () => { img.destroyed = true; },
         };
         return o;
@@ -105,5 +106,25 @@ describe('stage backdrop view (fake scene)', () => {
     expect(b.stage).toBe(0);
     b.destroy();
     expect(f.imgs.every((i) => i.destroyed)).toBe(true);
+  });
+
+  it('the crowd hops and cheers faster after a KO, then settles; reduced motion keeps it still', () => {
+    const f = fakeScene(true);
+    const b = mountStageBackdrop(f.scene, '/');
+    b.update(1, 960, 1000, false);
+    const rest = f.imgs[3]?.y;
+    b.rouse('ko', 1000);
+    b.update(1, 960, 1060, false);
+    expect(f.imgs[3]?.y).toBeLessThan(rest ?? 0);
+    b.rouse('hit', 1070); // a hit does not cut the KO cheer short
+    b.update(1, 960, 1070, false);
+    expect(crowdHop(60, 'ko', false)).toBeGreaterThan(0);
+    b.update(1, 960, 1000 + 2400, false);
+    expect(f.imgs[3]?.y).toBe(rest);
+    b.rouse('super', 5000);
+    b.update(1, 960, 5120, true);
+    expect(f.imgs[3]?.y).toBe(rest);
+    expect(crowdHop(100, 'hit', true)).toBe(0);
+    expect(crowdIndex(110, false, true)).not.toBe(crowdIndex(110, false, false));
   });
 });

@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, SimEventKind, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountStageBackdrop, type StageBackdrop } from './terrain-stage';
@@ -114,6 +114,8 @@ export function mountTerrainView(
   let sub = 0;
   const now = (): number => tick + sub / TICK_MS;
 
+  let crowdTick = -1;
+  let crowdSeq = -1;
   let landedAt = Number.NEGATIVE_INFINITY;
   let healAt = Number.NEGATIVE_INFINITY;
   /** The layout drawn: stage, count and the 20 ints. */
@@ -350,6 +352,14 @@ export function mountTerrainView(
       highContrast = pr.highContrast;
     }
     fx.consume(events);
+    for (const e of events) {
+      if (e.tick < crowdTick || (e.tick === crowdTick && e.seq <= crowdSeq)) continue;
+      const kind = e.kind === SimEventKind.hitConfirmed ? 'hit' : e.kind === SimEventKind.superStarted ? 'super' : e.kind === SimEventKind.ko ? 'ko' : undefined;
+      if (kind === undefined) continue;
+      crowdTick = e.tick;
+      crowdSeq = e.seq;
+      stageArt.rouse(kind, now() * TICK_MS);
+    }
   };
 }
 
