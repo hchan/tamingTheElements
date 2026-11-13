@@ -21,3 +21,20 @@ Keep `pnpm e2e` (169 tests) green several runs in a row; add tests for each new 
   Playwright alone: the binary run by hand (`firefox -no-remote -headless -profile <existing dir>`) prints "Could not find profile folder" and exits 1, with the
   sandbox on or off, so it is a Firefox-159-on-this-OS host problem, not a test-harness or sim one. Nothing to fix in tests/config; the Playwright `e2e`
   config stays Chromium only (the goldens run through the vitest `browser` project, which already lists Firefox). Firefox goldens remain CI-only until a host launches it.
+
+## Coverage audit (2026-11-12)
+
+No coverage provider is installed (`@vitest/coverage-*` is absent), so this audit is by name: every exported symbol of every `src` file with no
+sibling or same-name test was grepped across all `*.test.ts`/`*.spec.ts`. Most of the codebase is already referenced by a test (menus, settings
+persistence, pause dialog, round flow and HUD, input remapping and replays all have unit plus e2e specs); the real holes were small pure units:
+
+- Added unit tests: `src/core/net/packet.test.ts` (wire layout, caps, malformed datagrams never throw), `src/game/input/key-map.test.ts` (`reduceKey`:
+  held set, blur, Shift-P / Ctrl-M once per press, tester cheats gated), `src/game/hud/screen-box.test.ts` (camera zoom and scroll to the screen box),
+  `src/core/save/migrations/v0-to-v1.test.ts` (string numbers, whitelists, member cleanup, savedAt, no mutation) and
+  `src/core/sim/systems/end.test.ts` (Classic `survivorsOf` / `matchWinner` / `endSystem`: bench keeps a team alive, draw, emit once).
+- Remaining, weakest first: `src/game/scenes/Arena.ts` (832 lines) and `Hud.ts` (513) only through e2e, no unit seam; `src/core/agents/scripted-ai/arcade-ai.ts`
+  (414) only through goldens; `src/game/fx/*-view.ts` (`super-view`, `ability-aura-view`, `trap-view`, `danger-view`) and `views/backdrop.ts` have no
+  unit tests (screenshot specs only); `src/game/hud/bars.ts` unreferenced constants (`BAR_LINE`, `REST_COLOR`, `collectSide`) and `fx/terrain-stage-layout.ts`
+  `farFrame`/`crowdFrame`/`flyFrame`; `terrainRound`/`terrainTick` are covered only indirectly by `terrain.test.ts`; `game/boot/phaser-config.ts`.
+- To get numbers: add `@vitest/coverage-v8` and run `vitest run --coverage` (needs an owner decision on a new devDependency).
+- New test files need no REPO-MAP entry if REPO-MAP lists directories only; if it lists files, the five above are new.
