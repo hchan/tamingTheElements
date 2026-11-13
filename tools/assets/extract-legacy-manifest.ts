@@ -42,6 +42,8 @@ const EXTRA_SPRITES: Readonly<Record<string, SpriteEntry>> = {
   entanglingVinesWater: { url: 'img/fx/entanglingVinesWater.png', coords: [0, 0, 80, 61] },
   entanglingVinesAir: { url: 'img/fx/entanglingVinesAir.png', coords: [0, 0, 80, 61] },
 };
+/** Classic arena floors redrawn by stage-gen/batch-h-floors.py (1280x720 in img/floor); they replace the legacy img/background photos. */
+const FLOOR_REDRAWN = new Set(['fire', 'water', 'earth', 'air']);
 const FRAME_KEYS = ['leftFrames', 'rightFrames', 'upFrames', 'downFrames'] as const;
 
 function sprites(file: string, name: string): Record<string, SpriteEntry> {
@@ -62,7 +64,13 @@ function sprites(file: string, name: string): Record<string, SpriteEntry> {
       coords[2] = png.readUInt32BE(16);
       coords[3] = png.readUInt32BE(20);
     }
-    const e: SpriteEntry = { url: redrawn ? fx : (r.url as string), coords };
+    const floor = `img/floor/${key}.png`;
+    const floorRedrawn = file === 'imgBackgroundAssets.js' && FLOOR_REDRAWN.has(key) && existsSync(resolve(root, 'public/assets', floor));
+    if (floorRedrawn) {
+      coords[2] = 1280;
+      coords[3] = 720;
+    }
+    const e: SpriteEntry = { url: floorRedrawn ? floor : redrawn ? fx : (r.url as string), coords };
     if (r.urlLarge !== undefined) e.urlLarge = r.urlLarge as string;
     for (const f of FRAME_KEYS) if (r[f] !== undefined) e[f] = r[f] as Frames;
     out[key] = e;
