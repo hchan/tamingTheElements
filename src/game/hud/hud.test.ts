@@ -159,4 +159,13 @@ describe('grimHealthColor (desaturated ramp)', () => {
       lastRedShare = share;
     }
   });
+  it('the hurt end of the ramp (10% and 25% life) is ember red, labelled LOW, never green', () => {
+    for (const hp of [10, 25]) {
+      const [r = 0, g = 0, b = 0] = rgb(grimHealthColor(hp / 100));
+      expect(r).toBeGreaterThan(g * 1.5);
+      expect(r).toBeGreaterThan(b * 2);
+      expect(r).toBeLessThan(0xc0);
+      expect(healthCue(hp / 100)).toMatchObject({ state: 'critical', label: 'LOW' });
+    }
+  });
 });

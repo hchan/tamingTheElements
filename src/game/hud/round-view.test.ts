@@ -94,13 +94,13 @@ describe('round view (Phaser side, fake scenes)', () => {
     Object.assign(v.arcade, { round: 3, timer: 3000, sudden: true });
     v.setTick(5);
     hud.events.emit('update');
-    expect(roundState(hud.scene)).toMatchObject({ timer: 'SUDDEN 60', timerColor: '#ff5ad2' });
+    expect(roundState(hud.scene)).toMatchObject({ timer: 'SUDDEN 60', timerColor: '#c07ab0' });
     v.arcade.timer = 100;
     hud.events.emit('update');
-    expect(roundState(hud.scene)).toMatchObject({ timer: 'SUDDEN 02', timerColor: '#ff5ad2' });
+    expect(roundState(hud.scene)).toMatchObject({ timer: 'SUDDEN 02', timerColor: '#c07ab0' });
     v.arcade.sudden = false;
     hud.events.emit('update');
-    expect(roundState(hud.scene)).toMatchObject({ timer: '02', timerColor: '#ff8080' });
+    expect(roundState(hud.scene)).toMatchObject({ timer: '02', timerColor: '#d98a78' });
   });
 
   it('waits for the Hud create, draws the timer, pips and banner from pooled objects, and tears down to 0 listeners', () => {
@@ -128,7 +128,7 @@ describe('round view (Phaser side, fake scenes)', () => {
     v.arcade.timer = 450;
     hud.events.emit('update');
     expect(roundState(hud.scene)).toMatchObject({ main: 'FIGHT!', visible: true, timer: '09' });
-    expect(hud.made[2]?.color).toBe('#ff8080');
+    expect(hud.made[2]?.color).toBe('#d98a78');
     v.setTick(91 + 50);
     hud.events.emit('update');
     expect(roundState(hud.scene)?.visible).toBe(false);

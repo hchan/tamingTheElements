@@ -227,14 +227,14 @@ export class Hud extends Phaser.Scene {
     chips.forEach((chip, i) => {
       const slot = team * CHIP_MAX + i;
       const t = (this.chipTexts[slot] ??= this.add
-        .text(0, 0, '', crisp(this, { fontFamily: HUD_FONT, fontSize: `${String(px)}px`, color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }))
+        .text(0, 0, '', crisp(this, { fontFamily: HUD_FONT, fontSize: `${String(px)}px`, color: '#d8d2c4', fontStyle: 'normal', stroke: '#0a0806', strokeThickness: 2 }))
         .setDepth(102));
       t.setFontSize(px).setText(chip.text).setPosition(chip.x + 4, chip.y + Math.round((chip.h - t.height) / 2)).setVisible(true);
-      gfx.fillStyle(0x070a12, 0.8).fillRoundedRect(chip.x, chip.y, chip.w, chip.h, 3);
+      gfx.fillStyle(0x0d0b09, 0.78).fillRect(chip.x, chip.y, chip.w, chip.h);
       // Time bar along the foot of the chip, draining to the left.
-      gfx.fillStyle(chip.color, 1).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
+      gfx.fillStyle(chip.color, 0.85).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
       // Buffs have a solid frame, debuffs a dashed one (so the two differ without colour).
-      gfx.lineStyle(this.highContrast ? 2 : 1, chip.color, 1);
+      gfx.lineStyle(this.highContrast ? 2 : 1, chip.color, this.highContrast ? 1 : 0.75);
       if (chip.hostile) {
         for (const [a, b] of dashSegments(chip.x, chip.x + chip.w, [6, 3])) {
           gfx.lineBetween(a, chip.y, b, chip.y);
@@ -242,7 +242,7 @@ export class Hud extends Phaser.Scene {
         }
         gfx.lineBetween(chip.x, chip.y, chip.x, chip.y + chip.h);
         gfx.lineBetween(chip.x + chip.w, chip.y, chip.x + chip.w, chip.y + chip.h);
-      } else gfx.strokeRoundedRect(chip.x, chip.y, chip.w, chip.h, 3);
+      } else gfx.strokeRect(chip.x, chip.y, chip.w, chip.h);
     });
     this.hideChips(team, chips.length);
   }

@@ -140,15 +140,16 @@ export function timerLabel(ticks: number): string {
 }
 
 /** The sudden-death round's timer: a word (not only a colour) in front of the seconds, a smaller size and its own colour. */
-export const SUDDEN_TIMER_COLOR = '#ff5ad2';
-export const LOW_TIMER_COLOR = '#ff8080';
+export const SUDDEN_TIMER_COLOR = '#c07ab0';
+export const TIMER_COLOR = '#e0dacb';
+export const LOW_TIMER_COLOR = '#d98a78';
 export const SUDDEN_TIMER_PX = 32;
 
 /** Text, colour and font size of the round timer: `SUDDEN 59` in magenta in the sudden-death round, red under 10 s otherwise. */
 export function timerStyle(ticks: number, sudden: boolean): { text: string; color: string; px: number } {
   const label = timerLabel(ticks);
   if (sudden) return { text: `SUDDEN ${label}`, color: SUDDEN_TIMER_COLOR, px: SUDDEN_TIMER_PX };
-  return { text: label, color: ticks <= TIMER_LOW_TICKS ? LOW_TIMER_COLOR : '#ffffff', px: TIMER_PX };
+  return { text: label, color: ticks <= TIMER_LOW_TICKS ? LOW_TIMER_COLOR : TIMER_COLOR, px: TIMER_PX };
 }
 
 /** Round-win pips under the timer: ROUNDS_TO_WIN per team, team 0 left of the centre, team 1 right; filled once won. */
@@ -159,7 +160,7 @@ export const PIP_STEP = 24;
 export const PIP_INNER = 24;
 export const TIMER_X = 640;
 export const TIMER_Y = 4;
-export const TIMER_PX = 44;
+export const TIMER_PX = 38;
 
 export interface Pip {
   readonly x: number;

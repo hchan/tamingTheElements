@@ -45,11 +45,11 @@ const NOTCHES = 5;
  * "WEATHER READY" with a blinking border) always shown, centred under the badge's slot.
  */
 const CHARGE_Y = 200;
-const CHARGE_PX = 22;
+const CHARGE_PX = 18;
 const CHARGE_BAR_W = 200;
 /** The called line: below the charge chip (its bar ends near y 246), clear of the round banners (y 320). */
-const CALL_Y = 296;
-const CALL_PX = 40;
+const CALL_Y = 270;
+const CALL_PX = 30;
 
 export interface WeatherPrefs {
   readonly reduceMotion: boolean;
@@ -122,7 +122,7 @@ export function mountWeatherView(
   const text = (px: number, stroke: number): Phaser.GameObjects.Text =>
     hud.add
       .text(0, 0, '', {
-        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(px)}px`, fontStyle: 'bold', color: '#d8d2c4', stroke: '#0a0806', strokeThickness: stroke,
+        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(px)}px`, fontStyle: 'normal', color: '#cfc8b8', stroke: '#0a0806', strokeThickness: stroke,
         resolution: hud.scale.width / LOGICAL_WIDTH,
       })
       .setDepth(HUD_DEPTH)
@@ -163,6 +163,12 @@ export function mountWeatherView(
     () => prefs().reduceMotion,
   );
 
+  /** A dark ash plate with a thin worn edge (a squared slab, not a rounded pill); opaque in high contrast. */
+  const plate = (g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void => {
+    g.fillStyle(0x0f0d0b, highContrast ? 0.9 : 0.68).fillRect(x, y, w, h);
+    g.lineStyle(1, highContrast ? 0xffffff : 0x4a4235, highContrast ? 1 : 0.7).strokeRect(x, y, w, h);
+  };
+
   /** The badge: a dark plate, the weather's glyph, its word and seconds, and the notched time bar under them. */
   const drawBadge = (p: NonNullable<typeof parts>, kind: number, left: number): void => {
     const label = badgeLabel(kind, left);
@@ -174,10 +180,10 @@ export function mountWeatherView(
     drawn.label = label;
     drawn.fill = fill;
     const h = p.label.height;
-    const color = WEATHER_COLORS[kind - 1] ?? 0xffffff;
+    const color = highContrast ? (WEATHER_COLORS[kind - 1] ?? 0xffffff) : mute(WEATHER_COLORS[kind - 1] ?? 0xffffff, 0.55, 0.85);
     p.label.setPosition(x + GLYPH + 8, BADGE_Y);
     const g = p.badge.clear();
-    g.fillStyle(0x000000, highContrast ? 0.85 : 0.55).fillRoundedRect(x - 8, BADGE_Y - 4, w + 16, h + BAR_H + 12, 6);
+    plate(g, x - 8, BADGE_Y - 4, w + 16, h + BAR_H + 12);
     glyph(g, kind, x + GLYPH / 2, BADGE_Y + h / 2, color);
     const by = BADGE_Y + h + 2;
     g.fillStyle(0x000000, 0.8).fillRect(x, by, w, BAR_H);
@@ -201,9 +207,9 @@ export function mountWeatherView(
     p.chip.setPosition(BADGE_X, CHARGE_Y);
     const by = CHARGE_Y + p.chip.height + 2;
     const g = p.bar.clear();
-    g.fillStyle(0x000000, highContrast ? 0.85 : 0.55).fillRoundedRect(x - 8, CHARGE_Y - 4, CHARGE_BAR_W + 16, p.chip.height + BAR_H + 12, 6);
+    plate(g, x - 8, CHARGE_Y - 4, CHARGE_BAR_W + 16, p.chip.height + BAR_H + 12);
     g.fillStyle(0x000000, 0.8).fillRect(x, by, CHARGE_BAR_W, BAR_H);
-    g.fillStyle(ready ? 0xffe066 : 0x9fd8ff, 1).fillRect(x, by, drawn.chargeFill, BAR_H);
+    g.fillStyle(ready ? 0xb39653 : 0x6f8796, 1).fillRect(x, by, drawn.chargeFill, BAR_H);
     g.lineStyle(highContrast || ready ? 2 : 1, highContrast || ready ? 0xffffff : 0x000000, alpha).strokeRect(x, by, CHARGE_BAR_W, BAR_H);
     for (let q = 1; q < 4; q++) g.lineBetween(x + (q * CHARGE_BAR_W) / 4, by, x + (q * CHARGE_BAR_W) / 4, by + BAR_H);
   };

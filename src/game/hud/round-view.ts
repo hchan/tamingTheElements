@@ -5,7 +5,7 @@ import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
 import { mountWeatherView } from '../fx/weather-view';
 import {
-  PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
+  PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
 
 /**
@@ -18,10 +18,11 @@ import {
 
 /** Over the HUD (100-102) and its damage numbers. */
 const DEPTH = 110;
-const BANNER_Y = 320;
-const MAIN_PX = 64;
-const SUB_PX = 34;
-const SUB_GAP = 64;
+/** Above the centre pad's label (y 330 to 345) and below the weather called line (y 268). */
+const BANNER_Y = 304;
+const MAIN_PX = 44;
+const SUB_PX = 24;
+const SUB_GAP = 42;
 const WON_COLOR = 0xb8964a;
 /** Banner fade: in over the first 8 ticks, out over the last 12 (none with reduced motion). */
 const FADE_IN_TICKS = 8;
@@ -82,11 +83,11 @@ export function mountRoundView(
   let shownColor = '';
   let scale = 1;
 
-  /** `grim`: the banner words (bone serif under a thin dark stroke, not a fat black-outlined white); the timer stays plain white for contrast. */
+  /** The words: bone serif under a thin dark stroke, regular weight (the banner is `grim`, the timer keeps a heavier stroke for contrast). */
   const text = (size: number, y: number, stroke: number, grim = false): Phaser.GameObjects.Text =>
     hud.add
       .text(TIMER_X, y, '', {
-        fontFamily: grim ? 'Georgia, "Times New Roman", serif' : 'Arial', fontSize: `${String(size)}px`, fontStyle: 'bold', color: grim ? '#bdb5a4' : '#ffffff', stroke: grim ? '#0a0806' : '#000000', strokeThickness: grim ? Math.round(stroke / 2) : stroke,
+        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(size)}px`, fontStyle: grim ? 'normal' : 'bold', color: grim ? '#b3ab9a' : TIMER_COLOR, stroke: '#0a0806', strokeThickness: grim ? Math.round(stroke / 2) : stroke,
         resolution: hud.scale.width / LOGICAL_WIDTH,
       })
       .setDepth(DEPTH);
@@ -100,7 +101,7 @@ export function mountRoundView(
     if (parts.main.text !== banner.main) parts.main.setText(banner.main);
     if (parts.sub.text !== banner.sub) parts.sub.setText(banner.sub);
     const fade = banner.reduced ? 1 : Math.min(1, (tick - banner.from + 1) / FADE_IN_TICKS, (banner.until - tick) / FADE_OUT_TICKS);
-    parts.main.setVisible(on).setScale(scale).setAlpha(Math.max(0, fade));
+    parts.main.setVisible(on).setScale(scale).setAlpha(Math.max(0, fade) * 0.9);
     parts.sub.setVisible(on && banner.sub !== '').setAlpha(Math.max(0, fade));
     // Before its first tick (round 0) the world has no timer yet: show the full one round 1 starts with.
     const left = ar.round === 0 ? ROUND_TIMER_TICKS : ar.timer;
@@ -120,9 +121,9 @@ export function mountRoundView(
 
   const build = (): void => {
     parts = {
-      main: text(MAIN_PX, BANNER_Y, 10, true).setOrigin(0.5),
-      sub: text(SUB_PX, BANNER_Y + SUB_GAP, 8, true).setOrigin(0.5, 0),
-      timer: text(TIMER_PX, TIMER_Y, 6).setOrigin(0.5, 0),
+      main: text(MAIN_PX, BANNER_Y, 8, true).setOrigin(0.5),
+      sub: text(SUB_PX, BANNER_Y + SUB_GAP, 6, true).setOrigin(0.5, 0),
+      timer: text(TIMER_PX, TIMER_Y, 5).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
     };
     hud.events.on('update', draw);

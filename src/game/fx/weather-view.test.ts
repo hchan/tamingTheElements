@@ -206,7 +206,7 @@ describe('weather view: objects, badge, tint and particles', () => {
       const [badge] = m.hud.made;
       shapes[kind] = [...new Set(fall?.calls.filter((c) => c.startsWith('fill') && c !== 'fillStyle'))].join() + ' / '
         + [...new Set(fall?.calls.filter((c) => c === 'lineBetween'))].join();
-      expect(badge?.calls).toContain('fillRoundedRect');
+      expect(badge?.calls).toContain('fillRect');
       expect(badge?.calls).toContain('strokeRect');
     }
     expect(shapes).toEqual({

@@ -115,7 +115,7 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
   expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, won: [2, 2] });
   // The sting (one cue) played at the round start, and the timer says it in words and its own colour, not only red.
   expect(await played(page)).toBe(before + 1);
-  expect(await rounds(page)).toMatchObject({ timer: expect.stringMatching(/^SUDDEN \d\d$/), timerColor: '#ff5ad2' });
+  expect(await rounds(page)).toMatchObject({ timer: expect.stringMatching(/^SUDDEN \d\d$/), timerColor: '#c07ab0' });
   await expect.poll(() => page.evaluate<string>(`document.getElementById('liveRegionAssertive')?.textContent ?? ''`))
     .toContain('Sudden death. One hit may decide the match.');
   const hp = await characters(page, 0);

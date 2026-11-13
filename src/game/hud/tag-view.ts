@@ -169,7 +169,7 @@ export function mountTagView(
       g.lineStyle(highContrast ? 2 : 1, 0xffffff, 1).strokeRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
       const prev = lines[team] ?? line;
       line.forEach((l, i) => {
-        if (prev[i] !== l) texts[team]?.[i]?.setText(l).setColor(i === line.length - 1 && tag.fill >= 1 ? '#ffe066' : i ? '#e0e0e0' : '#ffffff');
+        if (prev[i] !== l) texts[team]?.[i]?.setText(l).setColor(i === line.length - 1 && tag.fill >= 1 ? '#c9b27a' : i ? '#e0e0e0' : '#ffffff');
       });
       lines[team] = line;
     });
@@ -241,7 +241,7 @@ export function mountTagView(
       flashes.splice(0, flashes.length - 4);
       callFrom = view.tick;
       callReduced = reduced;
-      parts?.call.setText(callText(to, ko)).setColor(ko ? '#ffe066' : '#ffffff').setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
+      parts?.call.setText(callText(to, ko)).setColor(ko ? '#c9b27a' : '#ffffff').setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
       say(tagLine(team, from, to, ko));
     }
     then?.(events);
