@@ -25,6 +25,18 @@ export function getHealthColor(fraction: number): number {
   return 0xff0000 | (Math.ceil(p * 255 * 2) << 8);
 }
 
+/** Grim ramp (not the legacy neon one): sickly green when whole, tallow ochre at half, ember red near death. Same three stops as the cues. */
+const GRIM_STOPS: readonly (readonly [number, number])[] = [[0, 0x8a2b1c], [0.5, 0x9b8738], [1, 0x66803a]];
+export function grimHealthColor(fraction: number): number {
+  const p = Number.isNaN(fraction) ? 1 : Math.min(1, Math.max(0, fraction));
+  const hi = GRIM_STOPS.findIndex(([at]) => at >= p);
+  const [x1, c1] = GRIM_STOPS[Math.max(1, hi)] ?? [1, 0x66803a];
+  const [x0, c0] = GRIM_STOPS[Math.max(1, hi) - 1] as readonly [number, number];
+  const k = (p - x0) / (x1 - x0);
+  const ch = (shift: number): number => Math.round(((c0 >> shift) & 255) + ((((c1 >> shift) & 255) - ((c0 >> shift) & 255)) * k));
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
+
 export type HealthState = 'healthy' | 'hurt' | 'critical';
 
 /** At or below this fraction a hero is critical (the same 25% line that makes an opponent capturable). */

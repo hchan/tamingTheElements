@@ -43,7 +43,7 @@ const ARENA_H = 720;
 const BADGE_X = 16;
 const BADGE_Y = 146;
 const BADGE_PX = 26;
-const LABEL_PX = 22;
+const LABEL_PX = 16;
 const ICON = 26;
 /** Height of a rock's dark front face, inside its footprint. */
 const ROCK_FACE = 18;
@@ -214,8 +214,8 @@ export function mountTerrainView(
         else if (stage === 2) waves(g, x, y, w, h);
         else swirls(g, x, y, w, h);
         // A dashed-looking inner frame in the element's dark colour plus a bright outer line: visible on any backdrop.
-        g.lineStyle(highContrast ? 5 : 3, dark, 1).strokeRect(x + 1, y + 1, w - 2, h - 2);
-        g.lineStyle(2, highContrast ? 0xffffff : color, 1).strokeRect(x - 1, y - 1, w + 2, h + 2);
+        g.lineStyle(highContrast ? 5 : 2, dark, highContrast ? 1 : 0.6).strokeRect(x + 1, y + 1, w - 2, h - 2);
+        g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : color, highContrast ? 1 : 0.55).strokeRect(x - 1, y - 1, w + 2, h + 2);
       }
     }
   };
@@ -286,7 +286,7 @@ export function mountTerrainView(
     tiles.update(stage, drawn.alpha);
     stageArt.update(stage, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
     p.glow.setAlpha(drawn.glow);
-    for (const t of p.labels) t.setAlpha(drawn.alpha);
+    for (const t of p.labels) t.setAlpha(highContrast ? drawn.alpha : drawn.alpha * 0.8);
     // Particles (motion only) and sparks.
     const f = p.fx.clear();
     const n = reduced || stage === 0 ? 0 : Math.min(MAX_PARTICLES, count * PARTICLES_PER_PATCH);

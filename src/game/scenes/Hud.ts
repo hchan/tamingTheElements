@@ -21,6 +21,7 @@ import {
   BENCH_SPRITE,
   collectSide,
   criticalPulse,
+  grimHealthColor,
   shade,
   dashSegments,
   activeHeroText,
@@ -48,6 +49,9 @@ const COMBO_MARGIN = 24;
 /** Hyper meter fill (high contrast: white) and the gap between the meter and its bar-count label. */
 const METER_COLOR = 0x4fc3ff;
 const METER_LABEL_GAP = 8;
+/** Bar track and thin frame: ash-black, not pure black. */
+const TRACK_COLOR = 0x120f0c;
+const FRAME_COLOR = 0x050403;
 
 const TEAMS = [0, 1] as const;
 /** Classic portrait: the active monster beside its health bar (left of the player's, right of the enemy's). */
@@ -116,10 +120,10 @@ export class Hud extends Phaser.Scene {
           crisp(this, {
             fontFamily: HUD_FONT,
             fontSize: `${String(Math.round(17 * boost))}px`,
-            color: '#ffffff',
+            color: '#e6dfd0',
             fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 3,
+            stroke: '#0a0806',
+            strokeThickness: 2,
             wordWrap: { width: 110 },
           }),
         )
@@ -445,20 +449,42 @@ export class Hud extends Phaser.Scene {
       this.drawClassicBar(gfx, g, c, main);
       return;
     }
-    const stroke = (width: number, color: number, toX: number): void => {
-      gfx.lineStyle(width, color, 1);
+    const stroke = (width: number, color: number, toX: number, alpha = 1): void => {
+      gfx.lineStyle(width, color, alpha);
       gfx.lineBetween(g.minX, g.y, toX, g.y);
     };
-    stroke(g.lineMax, this.highContrast ? 0xffffff : MAX_COLOR, g.maxX);
+    stroke(g.lineMax, this.highContrast ? 0xffffff : TRACK_COLOR, g.maxX);
     if (this.highContrast) stroke(g.lineMax - 2, MAX_COLOR, g.maxX);
+    else this.thinFrame(gfx, g);
     if (c.dead) return;
     const fill = barFill(g, c.hp, c.maxHp, c.restCap, this.highContrast);
-    stroke(g.line, REST_COLOR, fill.restX);
+    const color = this.highContrast ? fill.color : grimHealthColor(c.maxHp > 0 ? c.hp / c.maxHp : 0);
+    stroke(g.line, REST_COLOR, fill.restX, this.highContrast ? 1 : 0.4);
     if (c.hp > 0) {
       // Pattern cue: solid when healthy, long dashes when hurt, short dashes when critical.
       const cue = healthCue(c.hp / Math.max(1, c.maxHp));
-      gfx.lineStyle(g.line, fill.color, 1);
-      for (const [x0, x1] of dashSegments(g.minX, fill.curX, cue.dash)) gfx.lineBetween(x0, g.y, x1, g.y);
+      gfx.lineStyle(g.line, color, 1);
+      const segs = dashSegments(g.minX, fill.curX, cue.dash);
+      for (const [x0, x1] of segs) gfx.lineBetween(x0, g.y, x1, g.y);
+      if (!this.highContrast) this.grain(gfx, g, segs);
+    }
+  }
+
+  /** A thin dark frame round the track (the grim replacement for a bold plate). */
+  private thinFrame(gfx: Phaser.GameObjects.Graphics, g: BarGeometry): void {
+    gfx.lineStyle(1, FRAME_COLOR, 0.9);
+    gfx.strokeRect(g.minX - 0.5, g.y - g.lineMax / 2 - 0.5, g.maxX - g.minX + 1, g.lineMax + 1);
+  }
+
+  /** Speckle over the fill: dark and ash flecks from an integer hash of the x position (a still pattern: nothing flickers, nothing is random). */
+  private grain(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, segs: readonly (readonly [number, number])[]): void {
+    for (const [x0, x1] of segs) {
+      for (let x = Math.ceil(x0); x < x1; x += 3) {
+        const h = Math.imul(x, 2654435761) >>> 28;
+        if (h > 5) continue;
+        const dy = (h % 3) - 1;
+        gfx.fillStyle(h < 4 ? 0x0a0806 : 0xcfc4a8, h < 4 ? 0.35 : 0.14).fillRect(x, g.y + dy * (g.line / 3) - 1, 2, 2);
+      }
     }
   }
 
@@ -476,38 +502,37 @@ export class Hud extends Phaser.Scene {
     const accent = ELEMENT_COLORS[c.element];
     const frac = c.maxHp > 0 ? c.hp / c.maxHp : 0;
     const critical = !c.dead && c.hp > 0 && healthCue(frac).state === 'critical';
-    gfx.fillStyle(0x070a12, c.dead ? 0.45 : 0.78);
-    gfx.fillRoundedRect(px, top - pad, pw, ph, 4);
+    gfx.fillStyle(0x0b0a09, c.dead ? 0.45 : 0.82);
+    gfx.fillRoundedRect(px, top - pad, pw, ph, 2);
     if (critical) {
-      gfx.lineStyle(2, 0xff3b30, criticalPulse(this.time.now, this.reduceMotion));
-      gfx.strokeRoundedRect(px, top - pad, pw, ph, 4);
+      gfx.lineStyle(2, 0xb5301f, criticalPulse(this.time.now, this.reduceMotion));
+      gfx.strokeRoundedRect(px, top - pad, pw, ph, 2);
     } else {
-      gfx.lineStyle(main ? 2 : 1, accent, c.dead ? 0.3 : 0.9);
-      gfx.strokeRoundedRect(px, top - pad, pw, ph, 4);
+      gfx.lineStyle(1, shade(accent, 0.7), c.dead ? 0.25 : 0.7);
+      gfx.strokeRoundedRect(px, top - pad, pw, ph, 2);
     }
     if (c.dead) {
-      gfx.lineStyle(2, 0xff5a4a, 0.85);
+      gfx.lineStyle(2, 0xa8402f, 0.7);
       const cx = g.minX + 7;
       gfx.lineBetween(cx - 4, g.y - 4, cx + 4, g.y + 4);
       gfx.lineBetween(cx - 4, g.y + 4, cx + 4, g.y - 4);
       return;
     }
     const fill = barFill(g, c.hp, c.maxHp, c.restCap, false);
-    gfx.lineStyle(g.line, REST_COLOR, 0.55);
+    gfx.lineStyle(g.line, REST_COLOR, 0.35);
     gfx.lineBetween(g.minX, g.y, fill.restX, g.y);
     // Recovering ghost: the span between health and the rest cap that a benched teammate refills (pulsing light green while healing).
     if (c.benched && fill.restX > fill.curX && c.hp > 0) {
       const pulse = this.reduceMotion ? 0.5 : criticalPulse(this.time.now, false);
-      gfx.lineStyle(g.line, 0xb6ffb0, 0.3 + 0.35 * pulse);
+      gfx.lineStyle(g.line, 0x9fb58a, 0.25 + 0.3 * pulse);
       gfx.lineBetween(fill.curX, g.y, fill.restX, g.y);
     }
     if (c.hp <= 0) return;
     const cue = healthCue(frac);
     const segs = dashSegments(g.minX, fill.curX, cue.dash);
-    gfx.lineStyle(g.line, shade(fill.color, 0.8), 1);
+    const color = grimHealthColor(frac);
+    gfx.lineStyle(g.line, color, 1);
     for (const [x0, x1] of segs) gfx.lineBetween(x0, g.y, x1, g.y);
-    // Lit top edge of the fill.
-    gfx.lineStyle(Math.max(2, Math.round(g.line / 3)), shade(fill.color, 1.35), 0.9);
-    for (const [x0, x1] of segs) gfx.lineBetween(x0, g.y - g.line / 3, x1, g.y - g.line / 3);
+    this.grain(gfx, g, segs);
   }
 }

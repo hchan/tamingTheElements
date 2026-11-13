@@ -9,6 +9,7 @@ import {
   dashSegments,
   fraction,
   getHealthColor,
+  grimHealthColor,
   healthCue,
   healthFill,
   healthState,
@@ -137,5 +138,25 @@ describe('activeHeroText', () => {
   it('the Classic HUD keeps its HP and cap lines under the name', () => {
     const lines = activeHeroText('Curomo', c, true).split('\n');
     expect(lines).toEqual(['Curomo', `HP ${healthCue(1).text}`, 'cap 100%']);
+  });
+});
+
+describe('grimHealthColor (desaturated ramp)', () => {
+  const rgb = (c: number): number[] => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+  it('runs sickly green when whole, ochre at half and ember red when empty', () => {
+    expect(grimHealthColor(1)).toBe(0x66803a);
+    expect(grimHealthColor(0.5)).toBe(0x9b8738);
+    expect(grimHealthColor(0)).toBe(0x8a2b1c);
+    expect(grimHealthColor(Number.NaN)).toBe(0x66803a);
+  });
+  it('is never neon: every sampled channel stays below 0xb0, and red grows as health falls', () => {
+    let lastRedShare = -1;
+    for (const f of [1, 0.75, 0.5, 0.25, 0]) {
+      const [r = 0, g = 0, b = 0] = rgb(grimHealthColor(f));
+      expect(Math.max(r, g, b)).toBeLessThan(0xb0);
+      const share = r / (r + g + b);
+      expect(share).toBeGreaterThan(lastRedShare);
+      lastRedShare = share;
+    }
   });
 });
