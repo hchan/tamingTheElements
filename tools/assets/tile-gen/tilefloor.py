@@ -11,12 +11,12 @@ T = 32
 COLS = 8
 ROWS = 4
 
-# per stage: base, light (bevel top/left), dark (bevel bottom/right), accents a, b, c
+# per stage: base, light (lit edge), dark (shade/joint), accents a, b, c. Grim and desaturated: dark stone, no bright tan.
 STAGES = [
-    dict(base=(58, 44, 46), light=(82, 62, 60), dark=(30, 22, 26), a=(188, 88, 40), b=(214, 150, 84), c=(86, 34, 24), bevel=1),
-    dict(base=(36, 58, 76), light=(58, 86, 104), dark=(22, 36, 52), a=(138, 168, 184), b=(196, 214, 222), c=(18, 32, 50), bevel=0),
-    dict(base=(96, 78, 60), light=(120, 100, 78), dark=(60, 46, 34), a=(76, 96, 56), b=(160, 146, 120), c=(52, 38, 26), bevel=1),
-    dict(base=(52, 60, 70), light=(70, 79, 90), dark=(32, 38, 46), a=(104, 114, 126), b=(84, 94, 106), c=(40, 47, 58), bevel=0),
+    dict(base=(38, 31, 31), light=(52, 43, 41), dark=(16, 12, 13), a=(168, 74, 30), b=(200, 120, 58), c=(44, 18, 12), joint=0),
+    dict(base=(26, 36, 44), light=(44, 58, 68), dark=(11, 17, 24), a=(98, 124, 138), b=(150, 172, 184), c=(10, 18, 28), joint=1),
+    dict(base=(46, 44, 36), light=(62, 60, 50), dark=(20, 19, 15), a=(56, 70, 40), b=(110, 104, 88), c=(26, 24, 18), joint=1),
+    dict(base=(58, 62, 70), light=(78, 83, 92), dark=(30, 33, 40), a=(110, 118, 130), b=(138, 146, 156), c=(36, 40, 48), joint=0),
 ]
 
 
@@ -24,26 +24,40 @@ def mix(p, q):
     return tuple(int((p[i] + q[i]) / 2) for i in range(3))
 
 
+def smooth(rng, cell):
+    """Tileable value noise in [0, 1): a (T/cell)^2 random grid, smoothstep-interpolated with wrap-around."""
+    n = T // cell
+    g = rng.random((n, n))
+    u = (np.arange(T) / cell)
+    i0 = np.floor(u).astype(int)
+    f = u - i0
+    f = f * f * (3 - 2 * f)
+    i1 = (i0 + 1) % n
+    i0 = i0 % n
+    top = g[i0][:, i0] * (1 - f)[None, :] + g[i0][:, i1] * f[None, :]
+    bot = g[i1][:, i0] * (1 - f)[None, :] + g[i1][:, i1] * f[None, :]
+    return top * (1 - f)[:, None] + bot * f[:, None]
+
+
 def plain(s, rng, variant):
-    """A floor tile: blocky 4 px value noise plus fine grain, a 1 px bevel or seam, a few speckles per variant."""
-    coarse = rng.integers(-7, 8, (T // 4, T // 4)).repeat(4, 0).repeat(4, 1)
-    fine = rng.integers(-2, 3, (T, T))
-    shade = (coarse + fine)[:, :, None]
+    """A floor tile: wrap-around (so seamless) multi-scale noise plus grain, an occasional joint or pit. No bevel: no grid look."""
+    n = smooth(rng, 16) * 0.5 + smooth(rng, 8) * 0.3 + smooth(rng, 4) * 0.2
+    shade = ((n - 0.5) * 34 + rng.integers(-3, 4, (T, T)))[:, :, None]
     img = np.clip(np.array(s["base"])[None, None, :] + shade, 0, 255).astype(np.uint8)
     im = Image.fromarray(img, "RGB")
     d = ImageDraw.Draw(im)
-    if s["bevel"]:
-        d.line([(0, 0), (T - 1, 0)], fill=s["light"])
-        d.line([(0, 0), (0, T - 1)], fill=s["light"])
-        d.line([(0, T - 1), (T - 1, T - 1)], fill=s["dark"])
-        d.line([(T - 1, 0), (T - 1, T - 1)], fill=s["dark"])
-    else:
-        seam = mix(s["base"], s["light"])
-        d.line([(0, 0), (T - 1, 0)], fill=seam)
-        d.line([(0, 0), (0, T - 1)], fill=seam)
-    for _ in range(variant * 3):
+    if s["joint"] and variant in (1, 3):
+        # A faint flagstone / slate joint across part of the tile.
+        y = int(rng.integers(8, T - 8))
+        pts = [(0, y)]
+        for x in range(6, T + 6, 6):
+            y += int(rng.integers(-1, 2))
+            pts.append((min(x, T - 1), y))
+        d.line(pts, fill=s["dark"], width=1)
+        d.line([(x, yy + 1) for x, yy in pts], fill=mix(s["base"], s["light"]), width=1)
+    for _ in range(variant * 2):
         x, y = int(rng.integers(3, T - 4)), int(rng.integers(3, T - 4))
-        d.rectangle([x, y, x + int(rng.integers(0, 3)), y + int(rng.integers(0, 2))], fill=s["dark"] if variant % 2 else s["light"])
+        d.point((x, y), fill=s["dark"] if variant % 2 else s["light"])
     return im
 
 
@@ -121,7 +135,7 @@ def main(out):
             im = plain(s, rng, k) if k < 4 else deco(stage, k, s, rng)
             sheet.paste(im, (k * T, stage * T))
     # Palette-limited PNG (small on disk and gzip): 64 colours, median cut, no dither so it is deterministic.
-    sheet.quantize(colors=64, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(out, optimize=True)
+    sheet.quantize(colors=128, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(out, optimize=True)
 
 
 main(sys.argv[1])

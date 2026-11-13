@@ -5,6 +5,8 @@ import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountStageBackdrop, type StageBackdrop } from './terrain-stage';
 import { mute } from './grim-fx';
 import { drawPad } from './terrain-pad';
+import { drawRock } from './terrain-props';
+import { mountAmbient, type Ambient } from './terrain-ambient';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
 import {
   MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
@@ -46,8 +48,8 @@ const BADGE_Y = 146;
 const BADGE_PX = 26;
 const LABEL_PX = 16;
 const ICON = 26;
-/** Height of a rock's dark front face, inside its footprint. */
-const ROCK_FACE = 18;
+/** Ambient motes and mist: over the floor, under the fighters' flash effects. */
+const AMBIENT_DEPTH = 0.5;
 const GLOW_RINGS = 4;
 
 export interface TerrainPrefs {
@@ -104,7 +106,7 @@ export function mountTerrainView(
     | {
       bg: Phaser.GameObjects.Image | undefined; next: Phaser.GameObjects.Image | undefined;
       glow: Phaser.GameObjects.Graphics; floor: Phaser.GameObjects.Graphics; fx: Phaser.GameObjects.Graphics;
-      labels: Phaser.GameObjects.Text[]; plate: Phaser.GameObjects.Graphics; badge: Phaser.GameObjects.Text;
+      labels: Phaser.GameObjects.Text[]; plate: Phaser.GameObjects.Graphics; badge: Phaser.GameObjects.Text; ambient: Ambient;
     }
     | undefined;
 
@@ -159,6 +161,7 @@ export function mountTerrainView(
       labels: Array.from({ length: MAX_PATCHES }, () => text(arena, Math.round(LABEL_PX * boost), 5).setOrigin(0.5, 1).setDepth(FLOOR_DEPTH + 0.05)),
       plate: hud.add.graphics().setDepth(HUD_DEPTH),
       badge: text(hud, Math.round(BADGE_PX * boost), 5).setOrigin(0, 0).setDepth(HUD_DEPTH),
+      ambient: mountAmbient(arena, hud, AMBIENT_DEPTH),
     };
     return parts;
   };
@@ -208,10 +211,8 @@ export function mountTerrainView(
       const w = rects[i * 4 + 2] ?? 0;
       const h = rects[i * 4 + 3] ?? 0;
       for (let k = GLOW_RINGS; k >= 1; k--) glow.fillStyle(color, stage === 3 ? 0.07 : 0.03).fillRoundedRect(x - k * 6, y - k * 6, w + k * 12, h + k * 12, 10 + k * 4);
-      if (stage === 3) rock(g, x, y, w, h);
-      else {
-        drawPad(g, stage, x, y, w, h, i, highContrast);
-      }
+      if (stage === 3) drawRock(g, x, y, w, h, i, highContrast);
+      else drawPad(g, stage, x, y, w, h, i, highContrast);
     }
   };
 
@@ -227,7 +228,7 @@ export function mountTerrainView(
       }
       labels.push(word);
       if (t.text !== word) t.setText(word);
-      t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2, (rects[i * 4 + 1] ?? 0) - 3).setVisible(true);
+      t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2, (rects[i * 4 + 1] ?? 0) - 3).setVisible(stage !== 3);
     }
   };
 
@@ -280,6 +281,7 @@ export function mountTerrainView(
     p.floor.setAlpha(drawn.alpha);
     tiles.update(stage, drawn.alpha);
     stageArt.update(stage, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
+    p.ambient.update(stage, (clock * TICK_MS) / 1000, reduced, drawn.alpha);
     p.glow.setAlpha(drawn.glow);
     for (const t of p.labels) t.setAlpha(highContrast ? drawn.alpha : drawn.alpha * 0.8);
     // Particles (motion only) and sparks.
@@ -332,6 +334,7 @@ export function mountTerrainView(
     tiles.destroy();
     stageArt.destroy();
     if (parts) {
+      parts.ambient.destroy();
       for (const o of [parts.bg, parts.next, parts.glow, parts.floor, parts.fx, parts.plate, parts.badge, ...parts.labels]) o?.destroy();
     }
     parts = undefined;
@@ -368,26 +371,6 @@ const m = (c: number): number => mute(c, 0.5, 0.8);
 /** Words on patches and the badge: bone, not white, under a thin dark stroke. */
 const LABEL_FONT = 'Georgia, "Times New Roman", serif';
 const LABEL_COLOR = '#d8cdb8';
-
-/**
- * Earth: a raised, solid block. A shadow beyond its footprint, a lit top face of staggered bricks and a dark front face
- * along the bottom, so it reads as a wall; the footprint is the sim's collision box.
- */
-function rock(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
-  g.fillStyle(0x000000, 0.4).fillRect(x + 10, y + 12, w, h);
-  const top = h - ROCK_FACE;
-  g.fillStyle(m(0xc89650), 1).fillRect(x, y, w, top);
-  g.fillStyle(m(0x6b4a24), 1).fillRect(x, y + top, w, ROCK_FACE);
-  g.lineStyle(2, 0x4a3016, 1);
-  for (let row = 0, ry = y + 20; ry < y + top; row++, ry += 20) {
-    g.lineBetween(x, ry, x + w, ry);
-    for (let bx = x + 26 + (row % 2) * 26; bx < x + w - 6; bx += 52) g.lineBetween(bx, ry - 20, bx, Math.min(ry, y + top));
-  }
-  g.lineStyle(2, 0x3a2410, 1);
-  for (let bx = x + 26; bx < x + w - 6; bx += 52) g.lineBetween(bx, y + top, bx, y + h);
-  g.lineStyle(2, m(0xfff0c8), 0.5).lineBetween(x + 2, y + 2, x + w - 2, y + 2);
-  g.lineStyle(4, 0x1a0e04, 1).strokeRect(x, y, w, h);
-}
 
 /** The small element icon of the badge in an ICON box centred on (x, y): a flame, a drop, a block, a swirl. */
 function icon(g: Phaser.GameObjects.Graphics, stage: number, x: number, y: number): void {
