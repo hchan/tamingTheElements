@@ -499,7 +499,14 @@ describe('weather properties', () => {
         const s = world.state;
         const lastCast = [-WEATHER_COOLDOWN_TICKS, -WEATHER_COOLDOWN_TICKS];
         const hashes: number[] = [];
+        // Snapshot after k steps on the same run (instead of re-simulating a second world up to k): the restore below
+        // then rewinds the diverged end state, which is the stricter direction.
+        const k = cut % inputs.length;
+        const buf = createSnapshotBuf(s);
+        if (k === 0) snapshot(s, buf);
+        let stepNo = 0;
         for (const [p, q] of inputs) {
+          if (stepNo++ === k && k > 0) snapshot(s, buf);
           const g = now(s);
           const before = slot(world);
           const evs = step(world, [p, q]);
@@ -533,13 +540,8 @@ describe('weather properties', () => {
           }
           expect(kind).toBe(prev);
         }
-        const again = make();
-        const k = cut % inputs.length;
-        for (const [p, q] of inputs.slice(0, k)) step(again, [p, q]);
-        const buf = createSnapshotBuf(again.state);
-        snapshot(again.state, buf);
-        for (const [p, q] of inputs.slice(k)) step(again, [p, q]);
-        restore(again.state, buf);
+        restore(s, buf);
+        const again = world;
         const rest = inputs.slice(k).map(([p, q]) => {
           step(again, [p, q]);
           return hash(again.state);
