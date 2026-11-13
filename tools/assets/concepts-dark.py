@@ -10,23 +10,28 @@ import os, sys, time, torch
 from PIL import Image, ImageDraw
 from diffusers import AutoPipelineForText2Image
 
-OUT = os.path.expanduser("~/claudetmp/concepts-elemental")
+OUT = os.path.expanduser(os.environ.get("CONCEPT_OUT", "~/claudetmp/concepts-elemental"))
 SEEDS = [1, 2, 3, 4]
 # CLIP reads only 77 tokens: the hero description goes FIRST and the style suffix stays short, or the hero is cut off.
 STYLE = ", full body dark fantasy concept art, not a human, smooth painterly, muted desaturated, dramatic dark lighting, misty dark background"
+# Three heroes per element (src/core/data/characters.ts): one palette per element so each trio reads as a family.
+ELEMENT = {"water": "deep teal and glacial blue palette", "air": "dark storm cloud grey and cold white palette",
+           "fire": "charcoal black and ember orange palette", "earth": "dark ochre stone brown and dull olive palette"}
+KIND = {"curomo": "water", "ishimi": "water", "morblass": "water", "cyclonius": "air", "echo": "air", "wispera": "air",
+        "fiara": "fire", "lavax": "fire", "sindarosa": "fire", "pax": "earth", "rokcore": "earth", "treenoc": "earth"}
 HEROES = {
- "curomo": "water elemental, body of living ice and flowing dark water, frozen crystal shards for limbs, glowing cold blue core, sea mist swirling around it",
- "cyclonius": "storm elemental, body of churning thunderclouds and violent wind, crackling violet lightning for veins, a vortex where the legs would be, glowing white eyes",
- "echo": "air elemental, translucent body of shimmering air and rippling sound waves, faint silver outline, a swirl of wind, ghostly and weightless",
- "fiara": "fire elemental, humanoid body of living flame and glowing coals, charred cracked black crust over molten orange fire, embers streaming upward, burning hair of flames",
- "ishimi": "water elemental, body of murky dark teal liquid, gelatinous and dripping, eerie glowing eyes inside a rippling translucent form",
- "lavax": "lava elemental, hulking body of cooling black obsidian with rivers of molten crimson magma in the cracks, smoke rising, towering and heavy",
- "morblass": "ice elemental, towering body of glacial blue ice and jagged icicles, frost mist pouring off it, cold glowing eyes frozen inside the ice",
- "pax": "earth elemental colossus, enormous body of dark purple granite boulders, ember-orange cracks and glowing ember eyes, brooding, terrifying, ancient",
- "rokcore": "earth elemental golem, body of ancient rock plates and moss, glowing amber core in the chest, immovable and massive",
- "sindarosa": "fire elemental, slender body of black charred rock and roaring flame, a crown of fire, embers and ash swirling, menacing and graceful",
- "treenoc": "nature elemental, body of gnarled living bark and twisted roots, thorned vines for arms, hollow glowing green eyes, ancient",
- "wispera": "air elemental, ethereal body of pale mist and cold light, no real legs, trailing wisps of wind and glowing motes, sorrowful and eerie",
+ "curomo": "water elemental, a serpentine torrent of dark water and ice shards, crest of frozen spikes, two cold glowing eyes, no limbs",
+ "ishimi": "water elemental, hunched mass of dripping murky slime and tendrils, many glowing eyes sunk in the liquid",
+ "morblass": "water elemental, towering glacier beast of jagged blue ice and icicles, frost mist, eyes frozen inside the ice",
+ "cyclonius": "air elemental monster, a giant tornado made only of black storm cloud and lightning, a funnel of wind, two blazing white eyes, no person, no body",
+ "echo": "air elemental monster, a hollow spinning cyclone of translucent wind rings and sound ripples, empty inside, faint glowing core, no person, no face",
+ "wispera": "air elemental monster, a drifting cloud of pale mist and glowing motes with tattered vapour tails, one cold glow, no person, no clothes",
+ "fiara": "fire elemental, hulking body of living flame and glowing coals, cracked black crust over molten fire, embers rising",
+ "lavax": "fire elemental, towering beast of black obsidian with rivers of molten magma in the cracks, smoke rising",
+ "sindarosa": "fire elemental, horned creature of charred black rock and roaring flame, crown of fire, ash swirling",
+ "pax": "earth elemental colossus, enormous body of dark granite boulders, ember cracks and glowing ember eyes, terrifying",
+ "rokcore": "earth elemental golem, body of ancient rock plates and moss, glowing amber core in the chest, massive",
+ "treenoc": "earth elemental, gnarled ancient tree beast of living bark and twisted roots, thorned vines, hollow green glow",
 }
 
 def main():
@@ -39,7 +44,7 @@ def main():
         row = []
         for s in SEEDS:
             t = time.time()
-            im = pipe(HEROES[name] + STYLE, num_inference_steps=4, guidance_scale=0.0, height=512, width=512,
+            im = pipe(HEROES[name] + ", " + ELEMENT[KIND[name]] + STYLE, num_inference_steps=4, guidance_scale=0.0, height=512, width=512,
                       generator=torch.Generator("cpu").manual_seed(s)).images[0]
             im = im.resize((1024, 1024), Image.LANCZOS)
             im.save(f"{OUT}/{name}_{s}.png")

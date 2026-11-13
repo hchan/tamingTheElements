@@ -13,10 +13,10 @@
     "index.css": 6000,
     "lazy-index": 550,
     "local-two": 455,
-    "online-versus": 3910,
+    "online-versus": 3930,
     "phaser": 388700,
     "phaser-config": 29600,
-    "pose-layer": 10550,
+    "pose-layer": 10620,
     "rolldown-runtime": 200,
     "round-view": 4275,
     "sim": 35680,
@@ -28,11 +28,12 @@
     "tour": 5650,
     "viewport": 260,
     "weather-view": 3600,
+    "grim-fx": 900,
     "ability-aura-view": 1950,
     "pad-bindings": 1050,
     "pad-bindings-section": 1580
   },
-  "totalGzip": 533990,
+  "totalGzip": 535100,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
