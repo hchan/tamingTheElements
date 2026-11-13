@@ -137,3 +137,45 @@ export function setPadOverrides(o: PadOverrides, persist = false): void {
   current = o;
   if (persist) writePadOverrides(o);
 }
+
+/** Stick deadzone choices (fraction of full deflection). The default is DEFAULT_PAD's 0.4 (gamepad.test.ts pins that). */
+export const PAD_DEADZONE_DEFAULT = 0.4;
+export const PAD_DEADZONE_MIN = 0.1;
+export const PAD_DEADZONE_MAX = 0.8;
+export const PAD_DEADZONE_KEY = 'tte.padDeadzone';
+
+/** Clamps to the allowed range and rounds to hundredths; anything not a finite number is the default. */
+export function clampDeadzone(v: unknown): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return PAD_DEADZONE_DEFAULT;
+  return Math.round(Math.min(PAD_DEADZONE_MAX, Math.max(PAD_DEADZONE_MIN, v)) * 100) / 100;
+}
+
+export function readPadDeadzone(store: Store | undefined = defaultStore()): number {
+  try {
+    const raw = store?.getItem(PAD_DEADZONE_KEY);
+    return raw === null || raw === undefined ? PAD_DEADZONE_DEFAULT : clampDeadzone(JSON.parse(raw));
+  } catch {
+    return PAD_DEADZONE_DEFAULT;
+  }
+}
+
+export function writePadDeadzone(v: number, store: Store | undefined = defaultStore()): void {
+  try {
+    store?.setItem(PAD_DEADZONE_KEY, JSON.stringify(clampDeadzone(v)));
+  } catch {
+    // Private mode or quota: the choice just lasts until reload.
+  }
+}
+
+let currentDeadzone: number | null = null;
+
+/** The active stick deadzone (read from the store once, then cached: the game polls this every frame). */
+export function getPadDeadzone(): number {
+  currentDeadzone ??= readPadDeadzone();
+  return currentDeadzone;
+}
+
+export function setPadDeadzone(v: number, persist = false): void {
+  currentDeadzone = clampDeadzone(v);
+  if (persist) writePadDeadzone(currentDeadzone);
+}

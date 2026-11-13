@@ -1,5 +1,5 @@
 import { Cmd, type Command } from '@core/index';
-import { PAD_ROWS, getPadOverrides, padButtonFor, type PadOverrides } from '../platform/input/pad-bindings';
+import { PAD_ROWS, getPadDeadzone, getPadOverrides, padButtonFor, type PadOverrides } from '../platform/input/pad-bindings';
 
 /** The part of the Gamepad API the mapping needs (`navigator.getGamepads()` entries satisfy it). */
 export interface PadSnapshot {
@@ -100,15 +100,21 @@ export function padButtonsFor(o: PadOverrides, arcade: boolean): Record<number, 
   return out;
 }
 
-let built: { o: PadOverrides; arcade: PadConfig; classic: PadConfig } | null = null;
+let built: { o: PadOverrides; dz: number; arcade: PadConfig; classic: PadConfig } | null = null;
 
-/** The pad mapping for a game kind: the defaults, or those with the player's rebinding (platform/input/pad-bindings). */
+/** The pad mapping for a game kind: the defaults, or those with the player's rebinding and deadzone (platform/input/pad-bindings). */
 export function padConfigFor(arcade: boolean): PadConfig {
   const o = getPadOverrides();
-  if (Object.keys(o).length === 0) return arcade ? ARCADE_PAD : DEFAULT_PAD;
-  if (built?.o !== o) {
-    const mk = (base: PadConfig, a: boolean): PadConfig => ({ ...base, buttons: padButtonsFor(o, a), pauseButton: padButtonFor(o, 'pause') });
-    built = { o, arcade: mk(ARCADE_PAD, true), classic: mk(DEFAULT_PAD, false) };
+  const dz = getPadDeadzone();
+  if (Object.keys(o).length === 0 && dz === DEFAULT_PAD.deadzone) return arcade ? ARCADE_PAD : DEFAULT_PAD;
+  if (built?.o !== o || built.dz !== dz) {
+    const mk = (base: PadConfig, a: boolean): PadConfig => ({
+      ...base,
+      deadzone: dz,
+      buttons: padButtonsFor(o, a),
+      pauseButton: padButtonFor(o, 'pause'),
+    });
+    built = { o, dz, arcade: mk(ARCADE_PAD, true), classic: mk(DEFAULT_PAD, false) };
   }
   return arcade ? built.arcade : built.classic;
 }

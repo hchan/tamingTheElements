@@ -1,5 +1,10 @@
 import {
+  PAD_DEADZONE_DEFAULT,
+  PAD_DEADZONE_MAX,
+  PAD_DEADZONE_MIN,
   PAD_ROWS,
+  getPadDeadzone,
+  setPadDeadzone,
   getPadOverrides,
   padBind,
   padButtonFor,
@@ -150,7 +155,38 @@ export function padBindingsSection(): PadSection {
   });
 
   render();
-  node.append(heading, help, table, reset, status);
+  const dzLabel = el('label', 'settingsOption', 'Stick deadzone: ');
+  const dz = el('input');
+  dz.type = 'range';
+  dz.id = 'padDeadzone';
+  dz.min = String(PAD_DEADZONE_MIN);
+  dz.max = String(PAD_DEADZONE_MAX);
+  dz.step = '0.05';
+  const dzText = el('span');
+  const showDz = (v: number): void => {
+    dz.value = String(v);
+    const pct = `${String(Math.round(v * 100))} percent`;
+    dz.setAttribute('aria-valuetext', pct);
+    dzText.textContent = ` ${pct}`;
+  };
+  showDz(getPadDeadzone());
+  dz.addEventListener('input', () => {
+    setPadDeadzone(Number(dz.value), true);
+    showDz(getPadDeadzone());
+  });
+  const dzHelp = el('p', undefined, 'A higher deadzone ignores small stick movements (drift); a lower one reacts sooner.');
+  const dzReset = el('button', 'menuButton', 'Reset stick deadzone');
+  dzReset.type = 'button';
+  dzReset.id = 'resetPadDeadzone';
+  dzReset.addEventListener('click', () => {
+    setPadDeadzone(PAD_DEADZONE_DEFAULT, true);
+    showDz(getPadDeadzone());
+    status.textContent = 'Stick deadzone reset to 40 percent.';
+  });
+  dzLabel.append(dz, dzText);
+  const dzBox = el('div');
+  dzBox.append(dzLabel, dzHelp, dzReset);
+  node.append(heading, help, table, reset, dzBox, status);
   return {
     node,
     dispose() {

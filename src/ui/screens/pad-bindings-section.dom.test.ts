@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PAD_BINDINGS_KEY, getPadOverrides, setPadOverrides } from '../../game/platform/input/pad-bindings';
+import { PAD_BINDINGS_KEY, getPadDeadzone, getPadOverrides, setPadDeadzone, setPadOverrides } from '../../game/platform/input/pad-bindings';
 import { keyBindingsScreen } from './key-bindings';
 import type { Screen } from './screen';
 
@@ -12,6 +12,7 @@ beforeEach(async () => {
   vi.useFakeTimers();
   localStorage.clear();
   setPadOverrides({});
+  setPadDeadzone(0.4);
   down = [];
   Object.defineProperty(navigator, 'getGamepads', {
     configurable: true,
@@ -109,6 +110,20 @@ describe('gamepad bindings section', () => {
     expect(status()).toBe('Gamepad buttons reset to defaults.');
     expect(btn('pad-primary').textContent).toBe('A');
     expect(getPadOverrides()).toEqual({});
+  });
+
+  it('the deadzone slider updates and stores the value, and reset restores 40 percent', () => {
+    const dz = document.getElementById('padDeadzone') as HTMLInputElement;
+    expect(dz.value).toBe('0.4');
+    dz.value = '0.65';
+    dz.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(getPadDeadzone()).toBe(0.65);
+    expect(localStorage.getItem('tte.padDeadzone')).toBe('0.65');
+    expect(dz.getAttribute('aria-valuetext')).toBe('65 percent');
+    btn('resetPadDeadzone').click();
+    expect(getPadDeadzone()).toBe(0.4);
+    expect(dz.value).toBe('0.4');
+    expect(status()).toBe('Stick deadzone reset to 40 percent.');
   });
 
   it('stops polling on unmount', () => {
