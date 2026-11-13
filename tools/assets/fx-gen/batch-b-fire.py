@@ -7,6 +7,8 @@ yellow and a white-yellow core (hue-shifted: the shadows lean to crimson, the li
 shed embers. The outline keeps them readable on the light Earth/Air floors, the pale core on the red Fire floor.
 """
 import math, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import grim_fx
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "rig-gen"))
@@ -52,7 +54,7 @@ class Canvas:
         self.poly([(x, y - r), (x + r * 0.7, y), (x, y + r), (x - r * 0.7, y)], col, a)
 
     def save(self, name):
-        out = self.img.resize((self.w, self.h), Image.LANCZOS)
+        out = grim_fx.grade(self.img.resize((self.w, self.h), Image.LANCZOS), name)
         os.makedirs(OUTDIR, exist_ok=True)
         path = os.path.join(OUTDIR, name + ".png")
         out.save(path, optimize=True)

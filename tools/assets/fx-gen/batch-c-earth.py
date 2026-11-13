@@ -8,6 +8,8 @@ scored only 56 contrast on the Earth floor (check: rig-gen/contrast-check.py --f
 import math, os, random, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "rig-gen"))
 import palette
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import grim_fx
 from PIL import Image, ImageDraw
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "public/assets/img/fx"
@@ -41,7 +43,7 @@ class Canvas:
     def dot(self, x, y, r, col, a=255):
         self.d.ellipse([(x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS], fill=col + (a,))
     def save(self, name):
-        out = self.im.resize((self.w, self.h), Image.LANCZOS)
+        out = grim_fx.grade(self.im.resize((self.w, self.h), Image.LANCZOS), name)
         os.makedirs(OUT, exist_ok=True)
         out.save(os.path.join(OUT, name + ".png"), optimize=True)
         print(name, out.size)

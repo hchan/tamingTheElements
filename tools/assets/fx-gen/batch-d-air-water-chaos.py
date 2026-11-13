@@ -6,6 +6,8 @@ Every sprite is built from tapered strokes / blobs on a transparent layer, then 
 so it reads on the light Air/Earth floors; pale cores keep it readable on the dark Fire/Void floors. Colours from rig-gen/palette.py.
 """
 import math, os, random, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import grim_fx
 from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "rig-gen"))
@@ -53,7 +55,7 @@ class Canvas:
         self.img = under
 
     def save(self, key):
-        out = self.img.resize((self.w, self.h), Image.LANCZOS)
+        out = grim_fx.grade(self.img.resize((self.w, self.h), Image.LANCZOS), key)
         os.makedirs(OUT, exist_ok=True)
         path = os.path.join(OUT, key + ".png")
         out.save(path, optimize=True)
