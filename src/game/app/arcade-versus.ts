@@ -7,6 +7,7 @@ import { detectWebgl } from '../boot/webgl-check';
 import { getUiFlags, type UiFlags } from '../platform/flags';
 import { controlsHint, P2_BINDINGS } from '../input/local-two';
 import { getBindings } from '../platform/input/bindings';
+import { firstRunHint } from './first-run-hint';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
@@ -170,6 +171,8 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         battle.replaceChildren(host);
         game = createGame(host, launch);
         if (pick.local) host.append(keysHint());
+        const firstRun = firstRunHint();
+        if (firstRun) host.append(firstRun);
         host.append(...inVisualOrder(buttons));
       }))
       .catch((e: unknown) => {

@@ -1,6 +1,7 @@
 import { el } from '../dom';
 import { getBindings, type Bindings } from '../../game/platform/input/bindings';
 import { controlSections } from './help-controls';
+import { LESSONS, PICKER_STEPS, actionBarKeys } from './help-guide';
 import type { Screen } from './screen';
 
 export interface HelpLink {
@@ -33,7 +34,7 @@ export function helpScreen(): Screen {
         list.append(li);
       }
       node.append(list);
-      node.append(controlsSection());
+      node.append(howToFight(), pickerSection(), controlsSection());
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
       node.append(back);
@@ -44,6 +45,45 @@ export function helpScreen(): Screen {
       node = null;
     },
   };
+}
+
+/** First lessons: the fight loop as a numbered list, then the numbered action bar. */
+function howToFight(b: Bindings = getBindings()): HTMLElement {
+  const sec = el('section', 'helpPanel helpLessons');
+  sec.setAttribute('aria-labelledby', 'helpLessonsHeading');
+  const h = el('h2', 'heading', 'How to fight');
+  h.id = 'helpLessonsHeading';
+  sec.append(h, el('p', undefined, 'The arena forgives nothing. Learn the ground before the first blow.'));
+  const ol = el('ol', 'helpSteps');
+  for (const l of LESSONS) {
+    const li = el('li');
+    li.append(el('strong', undefined, `${l.title}. `), l.text);
+    ol.append(li);
+  }
+  sec.append(ol);
+  sec.append(el('h3', undefined, 'The action bar'));
+  sec.append(el('p', undefined, 'The boxes along the bottom of a battle are numbered. Press the key shown on a box to use it.'));
+  const bar = el('ul', 'helpBar');
+  for (const k of actionBarKeys(b)) {
+    const li = el('li');
+    li.append(el('kbd', undefined, k.key), ` ${k.name}`);
+    bar.append(li);
+  }
+  sec.append(bar);
+  return sec;
+}
+
+/** Picking a team, including taking a hero back out. */
+function pickerSection(): HTMLElement {
+  const sec = el('section', 'helpPanel helpPicker');
+  sec.setAttribute('aria-labelledby', 'helpPickerHeading');
+  const h = el('h2', 'heading', 'Choosing your heroes');
+  h.id = 'helpPickerHeading';
+  sec.append(h);
+  const ol = el('ol', 'helpSteps');
+  for (const t of PICKER_STEPS) ol.append(el('li', undefined, t));
+  sec.append(ol);
+  return sec;
 }
 
 /** The Controls section of Help: one captioned table per input method (text only, so no colour-only cues). */
