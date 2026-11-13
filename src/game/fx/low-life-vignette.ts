@@ -1,6 +1,9 @@
 import type Phaser from 'phaser';
 
-/** Red screen-edge warning while the active hero is low (view only; reads the render view, never the sim). */
+/** Dark blood-brown, desaturated screen-edge shading (with a grain layer drawn by the Hud) */
+export const VIGNETTE_COLOR = 0x1f0a07;
+
+/** Screen-edge warning while the active hero is low (view only; reads the render view, never the sim). */
 
 /** Vignette strength 0..1 for a life fraction: none above 30 %, full at 10 % and below. */
 export function lowLifeStrength(fraction: number | undefined): number {
@@ -19,13 +22,17 @@ export class LowLifeVignette {
   constructor(
     private readonly camera: Phaser.Cameras.Scene2D.Camera,
     private readonly reduced?: () => boolean,
+    /** Told the final strength each call (0 when off), so a grain layer can follow the vignette. */
+    private readonly onStrength?: (strength: number) => void,
   ) {}
 
   set(fraction: number | undefined): void {
     const s = lowLifeStrength(fraction);
     if (s === 0 && !this.filter) return;
-    this.filter ??= this.camera.filters.external.addVignette(0.5, 0.5, 0.55, 0, 0xc01010) as { active: boolean; strength: number };
+    // (the filter is created lazily, so a healthy hero never pays for it)
+    this.filter ??= this.camera.filters.external.addVignette(0.5, 0.5, 0.85, 0, VIGNETTE_COLOR) as { active: boolean; strength: number };
     this.filter.active = s > 0;
-    this.filter.strength = s > 0 && this.reduced?.() ? REDUCED_STRENGTH : s * 0.6;
+    this.filter.strength = s > 0 && this.reduced?.() ? REDUCED_STRENGTH : s * 0.45;
+    this.onStrength?.(this.filter.strength);
   }
 }

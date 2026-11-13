@@ -415,7 +415,7 @@ export class ActionBarView {
     }
     this.hint ??= this.scene.add.text(
       0, 0, '',
-      crisp(this.scene, { fontFamily: 'Arial', fontSize: `${String(Math.round(18 * phoneBoost(this.scene, 1.4)))}px`, fontStyle: 'bold', color: '#ffd700', backgroundColor: '#000000', padding: { x: 6, y: 2 } }),
+      crisp(this.scene, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(Math.round(17 * phoneBoost(this.scene, 1.4)))}px`, fontStyle: 'bold', color: '#d8c89a', backgroundColor: '#0b0a09e0', padding: { x: 8, y: 3 } }),
     ).setDepth(102);
     this.hint.setVisible(true).setPosition(this.wx(h.x), this.wy(h.y)).setScale(this.box.scale);
     if (this.hint.text !== h.text) this.hint.setText(h.text);
