@@ -29,7 +29,7 @@ const FIXTURE_MANIFEST = {
   ],
 };
 
-interface Drawn { id: number; texture: string; frame: string; flipX: boolean; rotation: number }
+interface Drawn { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }
 interface SheetProbe { loaded: string[]; characters: Drawn[] }
 
 const probe = (page: Page): Promise<SheetProbe | undefined> => page.evaluate<SheetProbe | undefined>('window.__TTE__.arena.sheets()');
@@ -80,6 +80,8 @@ test('the shipped manifest only loads atlases of characters in the match (the de
   expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax' && s !== 'curomo' && s !== 'cyclonius')).toEqual([]);
   expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax') && !t.endsWith(':curomo') && !t.endsWith(':cyclonius')).sort()).toEqual([]);
   expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png') || u.endsWith('img/sheets/curomo.png') || u.endsWith('img/sheets/cyclonius.png'))).toBe(true);
+  // the load-time grim grade (hero-grade.ts) is what is drawn
+  expect(p?.characters.every((c) => c.graded)).toBe(true);
   expect(errors).toEqual([]);
 });
 

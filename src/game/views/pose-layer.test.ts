@@ -690,7 +690,7 @@ describe('sprite sheets (FUN-DESIGN 2.16 step 3)', () => {
     h.loader.missing.clear();
     h.loader.done.get('filecomplete-image-sheet:circusOfSlime')?.();
     h.step(16);
-    expect(h.img.texture.key).toBe('sheet:circusOfSlime');
+    expect(h.img.texture.key.replace('~grim', '')).toBe('sheet:circusOfSlime');
     expect(h.img.frame.name).toMatch(/^idle\/E#[0-3]$/);
     expect(h.loader.loads).toHaveLength(1);
     expect(h.layer.sheetProbe().loaded).toEqual(['circusOfSlime']);
@@ -728,7 +728,7 @@ describe('sprite sheets (FUN-DESIGN 2.16 step 3)', () => {
     // North has no row and nothing to mirror: back to the legacy texture, strip and lean.
     h.sim.aim = 2;
     h.step(16);
-    expect(h.img.texture.key).toBe('map:circusOfSlime');
+    expect(h.img.texture.key.replace('~grim', '')).toBe('map:circusOfSlime');
     expect(h.img.frame.name).toMatch(/^down\d$/);
     let leaned = false;
     for (let i = 0; i < 30; i++) { h.step(16); leaned ||= h.img.rotation !== 0; }

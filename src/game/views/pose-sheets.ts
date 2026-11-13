@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { sheetKey, type FrameResolver, type SheetFrame } from '../assets/sheet-frames';
 import type { Action } from '../assets/sheet-spec';
+import { gradedHeroTexture } from '../fx/hero-grade';
 
 /**
  * The sprite sheets the pose layer draws from (FUN-DESIGN 2.16 step 3, view side). Loads `sheet:<sprite>` lazily, the
@@ -11,6 +12,8 @@ import type { Action } from '../assets/sheet-spec';
 export class SheetBook {
   private readonly wanted = new Set<string>();
   private readonly ready = new Set<string>();
+  /** Texture each loaded sprite is drawn from: its graded copy (`sheet:<sprite>~grim`) or the plain sheet. */
+  private readonly shown = new Map<string, string>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -31,6 +34,7 @@ export class SheetBook {
       const tex = this.scene.textures.get(key);
       for (const { name, rect } of this.res.frames(sprite)) if (!tex.has(name)) tex.add(name, 0, rect.x, rect.y, rect.w, rect.h);
       this.ready.add(sprite);
+      this.shown.set(sprite, gradedHeroTexture(this.scene, key));
     };
     if (this.scene.textures.exists(key)) {
       register();
@@ -46,6 +50,11 @@ export class SheetBook {
     if (!this.ready.has(sprite)) return undefined;
     const r = this.res.resolveFrame(sprite, action, dir8, t);
     return r.source === 'legacy' ? undefined : r;
+  }
+
+  /** The texture key to draw `sprite` with: the graded copy once made, else `plain` (the frame's own `sheet:<sprite>`). */
+  texture(sprite: string, plain: string): string {
+    return this.shown.get(sprite) ?? plain;
   }
 
   has(sprite: string): boolean {

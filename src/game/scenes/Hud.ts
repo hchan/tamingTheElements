@@ -34,6 +34,7 @@ import {
   type BarGeometry,
   type HudCharacter,
 } from '../hud/bars';
+import { gradedHeroTexture } from '../fx/hero-grade';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
 
 export const HUD_SCENE = 'Hud';
@@ -320,7 +321,13 @@ export class Hud extends Phaser.Scene {
       const tex = this.textures.get(found.key);
       const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
       if (!tex.has(PORTRAIT_FRAME)) tex.add(PORTRAIT_FRAME, 0, fx, fy, fw, fh);
-      if (im.texture.key !== found.key || im.frame.name !== PORTRAIT_FRAME) im.setTexture(found.key, PORTRAIT_FRAME);
+      // Grim grade (fx/hero-grade.ts): the portrait is drawn from the graded copy, which needs the portrait frame too.
+      const shown = gradedHeroTexture(this, found.key);
+      if (shown !== found.key) {
+        const gtex = this.textures.get(shown);
+        if (!gtex.has(PORTRAIT_FRAME)) gtex.add(PORTRAIT_FRAME, 0, fx, fy, fw, fh);
+      }
+      if (im.texture.key !== shown || im.frame.name !== PORTRAIT_FRAME) im.setTexture(shown, PORTRAIT_FRAME);
       im.setPosition(x, y).setDisplaySize(size, size).setFlipX(flip).setAlpha(1).setVisible(true);
     } else im?.setVisible(false);
   }
