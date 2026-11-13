@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, type Element, type RenderCharacter } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
+import { arcadeHeroScale } from './hero-scale';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
@@ -104,6 +105,8 @@ function glowTexture(scene: Phaser.Scene): string | undefined {
 export class CharacterView {
   readonly image: Phaser.GameObjects.Image;
   private glow: Phaser.GameObjects.Image | undefined;
+  /** Soft elliptical ground shadow under the feet (Arcade, `fit`). */
+  private shadow: Phaser.GameObjects.Image | undefined;
   private spriteName = '';
   private sprite: MapSprite | undefined;
   /** Element of the character shown (hit colour of its attacks). */
@@ -118,7 +121,11 @@ export class CharacterView {
   private jitterUntil = 0;
   private jitterSign = 1;
 
-  constructor(private readonly scene: Phaser.Scene, readonly scale = 1) {
+  /**
+   * `scale` is the display scale over the sim box (feet-anchored). With `fit` (Arcade) it is chosen per body from its box
+   * height (`arcadeHeroScale`) so a giant does not fill the screen, and the hero gets a ground shadow.
+   */
+  constructor(private readonly scene: Phaser.Scene, public scale = 1, private readonly fit = false) {
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
   }
 
@@ -140,6 +147,7 @@ export class CharacterView {
     this.image.setVisible(!hidden);
     if (hidden) {
       this.glow?.setVisible(false);
+      this.shadow?.setVisible(false);
       this.flashLeft = 0;
       return;
     }
@@ -160,11 +168,13 @@ export class CharacterView {
       x += JITTER_PX * this.jitterSign;
       y -= JITTER_PX * this.jitterSign;
     }
+    if (this.fit) this.scale = arcadeHeroScale(c.h);
     const k = this.scale;
     this.image.setPosition(x - (c.w * (k - 1)) / 2, y - c.h * (k - 1));
     this.image.setDisplaySize(c.w * k, c.h * k);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
     this.placeGlow(c.sprite, x, y, c.w * k, c.h * k);
+    this.placeShadow(x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
     const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
     if (live && this.flashLeft > 0) this.flashLeft--;
     if (stage === 'none') {
@@ -193,8 +203,29 @@ export class CharacterView {
     this.glow.setPosition(x + w / 2, y + h * 0.66).setDisplaySize(w * 1.15, h * 0.62);
   }
 
+  /**
+   * A soft dark ellipse on the floor under the feet (fx-scale only; the sim box is unchanged). Sits just under the sprite in
+   * depth so it never covers a hero, and keeps its size while the hero bobs or squashes.
+   */
+  private placeShadow(cx: number, feetY: number, w: number, k: number, ghost: boolean): void {
+    if (!this.fit) return;
+    if (!this.shadow) {
+      const key = glowTexture(this.scene);
+      if (!key) return;
+      this.shadow = this.scene.add.image(0, 0, key).setTint(0x000000);
+    }
+    const sw = w * k * 0.95;
+    this.shadow
+      .setVisible(true)
+      .setDepth(this.image.depth - 0.6)
+      .setAlpha(ghost ? 0.25 : 0.55)
+      .setPosition(cx, feetY - 2)
+      .setDisplaySize(sw, sw * 0.26);
+  }
+
   hide(): void {
     this.glow?.setVisible(false);
+    this.shadow?.setVisible(false);
     this.image.setVisible(false);
     this.flashLeft = 0;
     this.jitterUntil = 0;
@@ -202,6 +233,7 @@ export class CharacterView {
 
   destroy(): void {
     this.glow?.destroy();
+    this.shadow?.destroy();
     this.image.destroy();
   }
 }

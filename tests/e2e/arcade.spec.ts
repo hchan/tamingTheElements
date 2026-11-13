@@ -212,8 +212,8 @@ test('8-way aim: the arrow follows the held diagonal, turns back to the foe afte
   const [me] = await page.evaluate<{ x: number; y: number }[]>(`window.__TTE__.arena.characters().filter((c) => c.team === 0)`);
   expect(ne).toMatchObject({ visible: true, angle: -45 });
   const cx = (me?.x ?? 0) + 40;
-  const cy = (me?.y ?? 0) + 40;
-  const d = 64 * Math.SQRT1_2;
+  const cy = (me?.y ?? 0); // 2x hero, feet-anchored: the body centre is at the box top
+  const d = 64 * 2 * Math.SQRT1_2; // the ring scales with the hero
   // The arrow is drawn with the sprite's interpolation (between the last two ticks: 7 px apart).
   expect(Math.abs((ne?.x ?? 0) - (cx + d))).toBeLessThanOrEqual(8);
   expect(Math.abs((ne?.y ?? 0) - (cy - d))).toBeLessThanOrEqual(8);

@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { arcadeHeroScale, visualBox } from '../views/hero-scale';
 import { EntityFlag, GUARD_MAX, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
@@ -275,14 +276,15 @@ export function mountDefenceView(
       if (dashes[o] !== c.id || tick > (dashes[o + 2] ?? 0) || (tick - (dashes[o + 1] ?? 0)) % AFTERIMAGE_GAP !== 0) continue;
       const src = fighters.peek(c.id)?.image;
       if (!src?.visible) continue;
+      const vb = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 });
       const n = AFTERIMAGE_ALPHA.length;
       const oldest = ghost(slot, n - 1);
       for (let k = n - 1; k > 0; k--) ghostImgs[slot * n + k] = ghost(slot, k - 1);
       ghostImgs[slot * n] = oldest;
       oldest
         .setTexture(src.texture.key, src.frame.name)
-        .setPosition(c.x, c.y)
-        .setDisplaySize(c.w, c.h)
+        .setPosition(vb.x, vb.y)
+        .setDisplaySize(vb.w, vb.h)
         .setFlipX(src.flipX)
         .setTint(dashes[o + 3] ?? GUARD_COLOR)
         .setVisible(true);

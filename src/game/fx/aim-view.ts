@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { arcadeHeroScale } from '../views/hero-scale';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 
 /**
@@ -30,10 +31,11 @@ export interface AimPose {
  * Where the arrow sits for character `c` (interpolated by `alpha` like its sprite) aiming along dir8 `dir`: dir8 runs
  * counter-clockwise on screen (DIR8_X/Y: 1 is north-east), so the clockwise angle is (8 - dir) * 45 degrees.
  */
-export function aimPose(c: Pick<RenderCharacter, 'x' | 'y' | 'px' | 'py' | 'w' | 'h'>, dir: number, alpha: number, out: AimPose): AimPose {
+export function aimPose(c: Pick<RenderCharacter, 'x' | 'y' | 'px' | 'py' | 'w' | 'h'>, dir: number, alpha: number, out: AimPose, k = 1): AimPose {
   const rad = (-dir * Math.PI) / 4;
-  out.x = c.px + (c.x - c.px) * alpha + c.w / 2 + Math.cos(rad) * AIM_RADIUS_PX;
-  out.y = c.py + (c.y - c.py) * alpha + c.h / 2 + Math.sin(rad) * AIM_RADIUS_PX;
+  // `k` is the hero display scale (feet-anchored): the body centre rises and the ring widens with it.
+  out.x = c.px + (c.x - c.px) * alpha + c.w / 2 + Math.cos(rad) * AIM_RADIUS_PX * k;
+  out.y = c.py + (c.y - c.py) * alpha + c.h - (c.h * k) / 2 + Math.sin(rad) * AIM_RADIUS_PX * k;
   out.angle = ((8 - dir) & 7) * 45; // as rotationForDir: the arrow turns like the bullet it announces
   return out;
 }
@@ -56,7 +58,7 @@ export function mountAimIndicator(scene: Phaser.Scene, view: RenderView, alpha: 
   const visit = (c: RenderCharacter): void => {
     if (pose.shown || c.team !== 0 || (c.flags & BENCHED_OR_DEAD) !== 0) return;
     pose.shown = true;
-    aimPose(c, view.arcade()?.aim(c.id) ?? c.dir, alpha(), pose);
+    aimPose(c, view.arcade()?.aim(c.id) ?? c.dir, alpha(), pose, arcadeHeroScale(c.h));
   };
   const draw = (): void => {
     pose.shown = false;

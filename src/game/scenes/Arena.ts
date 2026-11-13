@@ -190,7 +190,7 @@ export class Arena extends Phaser.Scene {
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;
-    this.pool = new EntityViewPool(() => new CharacterView(this, arcadeMatch ? 1 : CLASSIC_SPRITE_SCALE), (v) => { v.hide(); });
+    this.pool = new EntityViewPool(() => new CharacterView(this, arcadeMatch ? 1 : CLASSIC_SPRITE_SCALE, arcadeMatch), (v) => { v.hide(); });
     const projPool = new EntityViewPool(() => new ProjectileView(this), (v) => { v.hide(); });
     this.projPool = projPool;
     const pool = this.pool;

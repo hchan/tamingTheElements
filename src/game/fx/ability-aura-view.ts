@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { arcadeHeroScale, visualBox } from '../views/hero-scale';
 import type { RenderCharacter, RenderView } from '@core/index';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
@@ -59,8 +60,9 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     const pair = glowPair(gfx, glow);
     const visit = (c: RenderCharacter): void => {
       if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
-      anchor.set(c.team, { x: c.x + c.w / 2, y: c.y });
-      aim.set(c.team, { x: c.x + c.w / 2, y: c.y + c.h / 2, dir: c.dir });
+      const vb = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 });
+      anchor.set(c.team, { x: vb.x + vb.w / 2, y: vb.y });
+      aim.set(c.team, { x: vb.x + vb.w / 2, y: vb.y + vb.h / 2, dir: c.dir });
       view.forEachStatus(c.id, (st) => {
         const a = AURAS.find((k) => k.status === st.id);
         if (!a) return;
@@ -69,13 +71,13 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         if (!born.has(key)) born.set(key, now);
         drawn.push({ id: c.id, kind: a.kind, shape: a.shape });
         const age = now - (born.get(key) ?? now);
-        for (const poly of auraPolys(a, { x: c.x, y: c.y, w: c.w, h: c.h }, age, reduced)) {
+        for (const poly of auraPolys(a, vb, age, reduced)) {
           // Grim look (grim-fx.ts): faint layered fill, smoky underlay, soft glow edge: the shape still codes the buff.
           softFill(gfx, poly.pts, poly.color, 4);
           softStroke(pair, toPts(poly.pts), true, poly.color, 2.6, 0.7);
         }
         // Ash and embers rise off the body in the buff's colour (frozen, still visible, under reduced motion).
-        paintEmbers(glow, embers(c.x + c.w / 2, c.y + c.h * 0.7, c.w * 0.7, age, reduced, 10, c.id), a.color, 0.8);
+        paintEmbers(glow, embers(vb.x + vb.w / 2, vb.y + vb.h * 0.7, vb.w * 0.7, age, reduced, 10, c.id), a.color, 0.8);
       });
     };
     view.forEachCharacter(visit);

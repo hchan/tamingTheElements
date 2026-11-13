@@ -74,12 +74,12 @@ describe('mountAimIndicator', () => {
   it("follows the player's first character in play after each update, and cleans up on shutdown", () => {
     const { scene, g, emit, count } = fakeScene();
     const benched = { id: 0, flags: EntityFlag.alive | EntityFlag.benched, x: 100 };
-    mountAimIndicator(scene, fakeView([{ id: 2, team: 1, x: 900 }, benched, { id: 3 }], 1), () => 1);
+    mountAimIndicator(scene, fakeView([{ id: 2, team: 1, x: 900 }, benched, { id: 3, y: 400, py: 400 }], 1), () => 1);
     expect([g['name'], g['depth'], g['visible']]).toEqual([AIM_NAME, AIM_DEPTH, false]);
     emit('postupdate');
     expect(g['visible']).toBe(true);
     expect(g['angle']).toBe(315);
-    expect(Math.round(g['x'] as number)).toBe(Math.round(540 + D));
+    expect(Math.round(g['x'] as number)).toBe(Math.round(540 + D * 2)); // hero drawn 2x: the ring widens with it
     expect(count()).toBe(3);
     emit('shutdown');
     expect(count()).toBe(0);
