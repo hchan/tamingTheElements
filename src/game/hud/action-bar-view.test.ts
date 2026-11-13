@@ -22,7 +22,7 @@ function fakeObject(): Fake {
   const o: Fake = { text: '', visible: true, x: 0, y: 0, scaleX: 1, displayW: 0, destroyed: false, calls: [], texture: { key: '__DEFAULT' }, frame: { name: '__BASE' } };
   const log = (n: string) => (): Fake => { o.calls.push(n); return o; };
   for (const n of ['setOrigin', 'setDepth', 'fillStyle', 'lineStyle', 'lineBetween', 'fillRect', 'fillRoundedRect', 'strokeRoundedRect', 'strokeRect',
-    'fillTriangle', 'strokeCircle', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'fillPath']) o[n] = log(n);
+    'fillTriangle', 'strokeCircle', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'fillPath', 'arc', 'strokePath', 'strokeEllipse', 'fillCircle', 'strokeCircle']) o[n] = log(n);
   o['clear'] = (): Fake => { o.calls.length = 0; return o; };
   o['setText'] = (t: string): Fake => { o.text = t; return o; };
   o['setVisible'] = (v: boolean): Fake => { o.visible = v; return o; };

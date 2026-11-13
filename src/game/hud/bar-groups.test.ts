@@ -9,7 +9,7 @@ const bar: RenderActionBar = {
   swapReadyTick: 0, swapCooldownTicks: 50, trap: { readyTick: 0, cooldownTicks: 500, count: 0, max: 2 },
   elemental: { name: 'Ember', kind: 1, readyTick: 0, cooldownTicks: 1750, activeUntil: 0 },
 };
-const arcade = { meter: 0, weatherCharge: 0, guard: 1000, guarding: false, dashIn: 0, chargeIn: -1, keepCharge: false };
+const arcade = { meter: 0, weatherCharge: 0, guard: 1000, guarding: false, dashIn: 0, chargeIn: -1, cleanseIn: 0, keepCharge: false };
 
 describe('grouped action bar prototype', () => {
   it('is only on for ?ff=barGroups in dev/test builds', () => {

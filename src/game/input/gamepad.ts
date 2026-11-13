@@ -62,14 +62,14 @@ export const DEFAULT_PAD: PadConfig = {
 /**
  * Arcade pad: RT starts the super (FUN-DESIGN 2.5), RB dashes (2.7) and LT guards (2.8) instead of the fourth, second
  * and third swap (an Arcade team has one partner, tagged on LB, the first swap), and X (free in Classic) calls the
- * weather (2.14), a press of the right stick (R3) charges (2.17) and of the left stick (L3) casts the elemental ability
+ * weather (2.14), a press of the right stick (R3) charges (2.17) and of the left stick (L3) casts the elemental ability, Back (the view button) the Cleanse
  * (2.24, bit 10, the fourth swap's, which RT no longer sends here); Classic keeps DEFAULT_PAD.
  */
 export const ARCADE_PAD: PadConfig = {
   ...DEFAULT_PAD,
   arcade: true,
   // RT, RB, LT, X, R3, Y (Trap shares Capture's bit 6), L3
-  buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard, 2: Cmd.weather, 11: Cmd.charge, 3: Cmd.trap, 10: Cmd.elemental },
+  buttons: { ...DEFAULT_PAD.buttons, 7: Cmd.super, 5: Cmd.dash, 6: Cmd.guard, 2: Cmd.weather, 11: Cmd.charge, 3: Cmd.trap, 10: Cmd.elemental, 8: Cmd.cleanse },
 };
 
 /** Per rebindable row: the command bit it sends in the one-hero game and in the partner game (undefined: not there). */
@@ -84,6 +84,7 @@ const ROW_CMDS: Readonly<Record<string, readonly [Command | undefined, Command |
   weather: [undefined, Cmd.weather],
   charge: [undefined, Cmd.charge],
   elemental: [undefined, Cmd.elemental],
+  cleanse: [undefined, Cmd.cleanse],
   up: [Cmd.up, Cmd.up],
   down: [Cmd.down, Cmd.down],
   left: [Cmd.left, Cmd.left],

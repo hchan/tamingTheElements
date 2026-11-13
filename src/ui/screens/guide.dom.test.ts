@@ -16,7 +16,7 @@ describe('guide screen (DOM)', () => {
     expect(root.querySelector('h1')?.textContent).toBe('Guide');
     expect(root.querySelectorAll('svg.guideWheel g.guideArrow')).toHaveLength(4);
     expect(root.querySelectorAll('svg.guideWheel g.guideNode')).toHaveLength(4);
-    expect(root.querySelectorAll('.guideCommon')).toHaveLength(8);
+    expect(root.querySelectorAll('.guideCommon')).toHaveLength(9);
     expect(root.querySelectorAll('.guideElemental')).toHaveLength(4);
     expect(root.querySelectorAll('.guideWeather')).toHaveLength(5);
     expect(root.querySelector('a.guideBack')?.getAttribute('href')).toBe('#help');

@@ -33,7 +33,7 @@ describe('helpScreen (DOM)', () => {
     expect(root.querySelector('#helpLessonsHeading')?.textContent).toBe('How to fight');
     expect(root.querySelector('#helpPickerHeading')?.textContent).toBe('Choosing your heroes');
     const keys = [...root.querySelectorAll('.helpBar kbd')].map((k) => k.textContent);
-    expect(keys).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-']);
+    expect(keys).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=']);
     expect(root.querySelector('.helpPicker')?.textContent).toMatch(/x button/);
   });
 

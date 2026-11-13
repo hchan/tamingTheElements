@@ -24,10 +24,11 @@ export const P2_BINDINGS: Bindings = {
   weather: ['KeyT'],
   charge: ['KeyG'],
   elemental: ['Semicolon'], // Element (FUN-DESIGN 2.24), beside L
+  cleanse: ['Quote'], // Cleanse, beside Element
 };
 
 const HINT: readonly (readonly [GameAction, string])[] = [
-  ['slot1', 'attack'], ['slot2', 'second attack'], ['dash', 'dash'], ['guard', 'guard (hold)'], ['super', 'super'], ['weather', 'weather'], ['charge', 'charge'], ['trap', 'trap'], ['elemental', 'element'], ['slot3', 'tag'], ['slot4', 'tag 2'],
+  ['slot1', 'attack'], ['slot2', 'second attack'], ['dash', 'dash'], ['guard', 'guard (hold)'], ['super', 'super'], ['weather', 'weather'], ['charge', 'charge'], ['trap', 'trap'], ['elemental', 'element'], ['cleanse', 'cleanse'], ['slot3', 'tag'], ['slot4', 'tag 2'],
 ];
 
 /** "Player 2: I J K L move, U attack, ...": the keys of one binding set, in words (never colour). */

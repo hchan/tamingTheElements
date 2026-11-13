@@ -100,7 +100,7 @@ export class KeyboardAgent implements Agent {
    * command like any other, whose press edge the sim finds itself.
    */
   private swapMask(): Command {
-    return this.opts.arcade ? SWAP_MASK & ~Cmd.elemental : SWAP_MASK;
+    return this.opts.arcade ? SWAP_MASK & ~(Cmd.elemental | Cmd.cleanse) : SWAP_MASK;
   }
 
   /** Latches a pad swap button's press edge, so a tap shorter than a frame is still sent on the next tick. */
@@ -148,7 +148,7 @@ export class KeyboardAgent implements Agent {
     this.pressed = 0;
     if (swaps !== 0 && clock !== undefined) this.sent = { bits: swaps, clock, retries: was && swaps === was.bits ? was.retries + 1 : 0 };
     if (fresh !== 0) this.opts.onSwap?.(fresh);
-    const actions = arcade ? ACTION_MASK | Cmd.elemental : ACTION_MASK;
+    const actions = arcade ? ACTION_MASK | Cmd.elemental | Cmd.cleanse : ACTION_MASK;
     const edge = cmd & actions & ~this.lastActions;
     this.lastActions = cmd & actions;
     if (edge !== 0) this.opts.onAction?.(edge);

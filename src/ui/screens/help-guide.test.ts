@@ -3,10 +3,10 @@ import { DEFAULT_BINDINGS } from '../../game/platform/input/bindings';
 import { LESSONS, PICKER_STEPS, actionBarKeys } from './help-guide';
 
 describe('help guide data', () => {
-  it('the action bar is 1-9, 0, - in order with the default bindings', () => {
-    expect(actionBarKeys(DEFAULT_BINDINGS).map((k) => k.key)).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-']);
+  it('the action bar is 1-9, 0, -, = in order with the default bindings', () => {
+    expect(actionBarKeys(DEFAULT_BINDINGS).map((k) => k.key)).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=']);
     expect(actionBarKeys(DEFAULT_BINDINGS).map((k) => k.name)).toEqual([
-      'Attack', 'Second attack', 'Tag', 'Tag 2', 'Charge', 'Weather', 'Dash', 'Guard', 'Super', 'Trap', 'Element',
+      'Attack', 'Second attack', 'Tag', 'Tag 2', 'Charge', 'Weather', 'Dash', 'Guard', 'Super', 'Trap', 'Element', 'Cleanse',
     ]);
   });
 

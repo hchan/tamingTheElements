@@ -57,13 +57,13 @@ describe('gamepad bindings section', () => {
     btn('pad-primary').click();
     expect(btn('pad-primary').textContent).toBe('Press a button...');
     expect(status()).toContain('Press the new gamepad button for Primary Ability');
-    down = [8];
+    down = [16];
     tick();
-    expect(status()).toBe('Primary Ability is now Back.');
-    expect(btn('pad-primary').textContent).toBe('Back');
+    expect(status()).toBe('Primary Ability is now Home.');
+    expect(btn('pad-primary').textContent).toBe('Home');
     expect(document.activeElement?.id).toBe('pad-primary');
-    expect(getPadOverrides()).toEqual({ primary: 8 });
-    expect(JSON.parse(localStorage.getItem(PAD_BINDINGS_KEY) ?? '{}')).toEqual({ primary: 8 });
+    expect(getPadOverrides()).toEqual({ primary: 16 });
+    expect(JSON.parse(localStorage.getItem(PAD_BINDINGS_KEY) ?? '{}')).toEqual({ primary: 16 });
   });
 
   it('ignores a button already held when capture starts until it is released', () => {
@@ -90,13 +90,13 @@ describe('gamepad bindings section', () => {
     expect(press('Escape').defaultPrevented).toBe(true);
     expect(status()).toBe('Cancelled.');
     expect(getPadOverrides()).toEqual({});
-    down = [8];
+    down = [16];
     tick();
     expect(getPadOverrides()).toEqual({});
     down = [];
     btn('pad-primary').click();
     expect(press('Tab').defaultPrevented).toBe(false);
-    down = [8];
+    down = [16];
     tick();
     expect(getPadOverrides()).toEqual({});
     expect(btn('pad-primary').textContent).toBe('A');
@@ -104,7 +104,7 @@ describe('gamepad bindings section', () => {
 
   it('resets to the defaults', () => {
     btn('pad-primary').click();
-    down = [8];
+    down = [16];
     tick();
     btn('resetPadBindings').click();
     expect(status()).toBe('Gamepad buttons reset to defaults.');
@@ -130,7 +130,7 @@ describe('gamepad bindings section', () => {
     btn('pad-primary').click();
     screen?.unmount();
     screen = undefined;
-    down = [8];
+    down = [16];
     tick();
     expect(getPadOverrides()).toEqual({});
   });
