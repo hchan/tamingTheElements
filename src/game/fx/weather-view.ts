@@ -3,6 +3,7 @@ import { WEATHER_CHARGE_FULL, arcadePlayfield, type RenderView, type SimEvent } 
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountTagView } from '../hud/tag-view';
+import { mute } from './grim-fx';
 import {
   CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TICK_MS, WEATHER_COLORS, WEATHER_NAMES, WeatherFx,
   badgeFill, badgeLabel, callAlpha, callScale, chargeFill, chargeLabel, particle, progress, readyAlpha, tintAlpha, type Particle,
@@ -121,7 +122,7 @@ export function mountWeatherView(
   const text = (px: number, stroke: number): Phaser.GameObjects.Text =>
     hud.add
       .text(0, 0, '', {
-        fontSize: `${String(px)}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: stroke,
+        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(px)}px`, fontStyle: 'bold', color: '#d8d2c4', stroke: '#0a0806', strokeThickness: stroke,
         resolution: hud.scale.width / LOGICAL_WIDTH,
       })
       .setDepth(HUD_DEPTH)
@@ -135,7 +136,7 @@ export function mountWeatherView(
       badge: hud.add.graphics().setDepth(HUD_DEPTH),
       // Up to 1.4x on a phone (as `phoneBoost` in boot/viewport.ts), so the label stays near 12 CSS px.
       label: text(Math.round(LABEL_PX * Math.min(1.4, Math.max(1, 900 / (hud.scale.displaySize.width || 900)))), 5).setOrigin(0, 0),
-      call: text(CALL_PX, 8).setOrigin(0.5),
+      call: text(CALL_PX, 5).setOrigin(0.5),
       bar: hud.add.graphics().setDepth(HUD_DEPTH),
       chip: text(CHARGE_PX, 4).setOrigin(0.5, 0).setVisible(true),
     };
@@ -150,7 +151,7 @@ export function mountWeatherView(
       },
       call(kind, flat): void {
         const c = made().call;
-        c.setText(`${WEATHER_NAMES[kind - 1] ?? ''}!`).setColor(hex(WEATHER_COLORS[kind - 1] ?? 0xffffff)).setVisible(true);
+        c.setText(`${WEATHER_NAMES[kind - 1] ?? ''}!`).setColor(hex(mute(WEATHER_COLORS[kind - 1] ?? 0xffffff))).setVisible(true);
         callFrom = now();
         callReduced = flat;
       },
@@ -259,11 +260,11 @@ export function mountWeatherView(
         fall.fillStyle(0xfff2b0, pt.a * fade).fillTriangle(pt.x, pt.y, pt.x + pt.dx + nx, pt.y + pt.dy + ny, pt.x + pt.dx - nx, pt.y + pt.dy - ny);
       } else if (pt.r > 0) {
         // A dark rim, then the grain or mote: readable on light and dark arenas alike.
-        fall.fillStyle(0x000000, pt.a * fade * 0.5).fillCircle(pt.x, pt.y, pt.r + 1.5);
-        fall.fillStyle(kind === 5 ? 0x3a1f66 : color, pt.a * fade).fillCircle(pt.x, pt.y, pt.r);
+        fall.fillStyle(0x000000, pt.a * fade * 0.22).fillCircle(pt.x, pt.y, pt.r + 2);
+        fall.fillStyle(kind === 5 ? 0x3a1f66 : mute(color), pt.a * fade * 0.8).fillCircle(pt.x, pt.y, pt.r);
       } else {
-        fall.lineStyle(4, 0x000000, pt.a * fade * 0.3).lineBetween(pt.x, pt.y, pt.x + pt.dx, pt.y + pt.dy);
-        fall.lineStyle(2, color, pt.a * fade).lineBetween(pt.x, pt.y, pt.x + pt.dx, pt.y + pt.dy);
+        fall.lineStyle(4, 0x000000, pt.a * fade * 0.15).lineBetween(pt.x, pt.y, pt.x + pt.dx, pt.y + pt.dy);
+        fall.lineStyle(1.5, mute(color), pt.a * fade * 0.8).lineBetween(pt.x, pt.y, pt.x + pt.dx, pt.y + pt.dy);
       }
     }
     drawn.particles = n;

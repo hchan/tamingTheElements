@@ -8,7 +8,7 @@ import type { Element } from '@core/index';
  */
 export type BurstShape = 'star' | 'rings' | 'swirl' | 'squares' | 'octagon';
 export const BURST_SHAPE: Readonly<Record<Element, BurstShape>> = { fire: 'star', water: 'rings', air: 'swirl', earth: 'squares', void: 'octagon' };
-export const BURST_COLOR: Readonly<Record<Element, number>> = { fire: 0xffb02e, water: 0x4db3ff, air: 0xe6fbff, earth: 0xd9a05a, void: 0xd9a0ff };
+export const BURST_COLOR: Readonly<Record<Element, number>> = { fire: 0xe0761c, water: 0x3f8fd0, air: 0xb4cfd8, earth: 0xb98450, void: 0x9468c0 };
 export const BURST_TICKS = 60;
 export const BURST_REACH = 260;
 

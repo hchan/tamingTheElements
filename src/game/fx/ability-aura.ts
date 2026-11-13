@@ -14,9 +14,9 @@ export interface AuraKind {
 }
 
 export const AURAS: readonly AuraKind[] = [
-  { kind: 'rockArmour', status: StatusId.rockArmour, shape: 'plates', color: 0xc9b38a },
-  { kind: 'adrenaline', status: StatusId.adrenaline, shape: 'chevrons', color: 0xffe14a },
-  { kind: 'fireDance', status: StatusId.fireDance, shape: 'flames', color: 0xff7a1a },
+  { kind: 'rockArmour', status: StatusId.rockArmour, shape: 'plates', color: 0xa89572 },
+  { kind: 'adrenaline', status: StatusId.adrenaline, shape: 'chevrons', color: 0xc9a845 },
+  { kind: 'fireDance', status: StatusId.fireDance, shape: 'flames', color: 0xc8581a },
 ];
 
 export interface AuraPoly {
@@ -78,7 +78,7 @@ export function popLook(age: number, reduced: boolean): { dy: number; alpha: num
 
 /** Snag cast cue (the throw has no sim event until it hits): a rope lash flung along the aim, then fading. */
 export const SNAG_SPRITE = 'entanglingVines';
-export const SNAG_ROPE_COLOR = 0xc8a060;
+export const SNAG_ROPE_COLOR = 0x8f7348;
 export const SNAG_REACH = 240;
 export const LASH_TICKS = 24;
 const LASH_GROW_TICKS = 6;

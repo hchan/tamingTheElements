@@ -2,11 +2,12 @@
 Run: ~/claudetmp/v/bin/python tools/assets/fx-gen/batch-e-map.py [outdir]   (default public/assets/img/fx; needs Pillow)
 Writes tornado, fireCone, translucentFlame, echoFade, circusOfSlime: each a 320x80 strip of four 80x80 animation frames (the layout of
 the legacy img/map strips; the projectile view shows frame 0, so frame 0 is the readable hero pose, frames 1-3 are the loop).
-Look: the same family as the rig-gen heroes and fx-gen batches A-D: dark element-coloured outline (alpha dilation, never black), nested
-element ramp bands, bright core/highlights. The outline keeps them readable on the light Earth/Air floors, the pale cores on Fire/Void.
+Look: the same family as the rig-gen heroes and fx-gen batches A-D: grim pass (owner: too cartoony): a soft shadow rim instead of an outline, nested
+element ramp bands, then grim() desaturates, darkens, mottles and grains the frame so it reads painterly, not flat.
 Hero tie-ins: echoFade uses Echo's graphite and white rings (rig-gen/echo.py), circusOfSlime Ishimi's dark teal gel with cyan sheen.
 """
 import math, os, sys
+import numpy as np
 from PIL import Image, ImageDraw, ImageChops, ImageFilter
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "rig-gen"))
@@ -44,12 +45,44 @@ class Frame:
         """Dark outline: dilate the alpha by `grow` px and put the colour under the art."""
         al = self.img.getchannel("A").filter(ImageFilter.MaxFilter(int(grow * SS) * 2 + 1))
         base = Image.new("RGBA", self.img.size, tuple(col) + (0,))
-        base.putalpha(al)
+        base.putalpha(al.point(lambda v: int(v * 0.62)))  # a soft shadow rim, not a bold outline (grim pass)
         base.alpha_composite(self.img)
         self.img = base
 
     def final(self):
-        return self.img.resize((F, F), Image.LANCZOS)
+        return grim(self.img.resize((F, F), Image.LANCZOS))
+
+
+_RNG = np.random.RandomState(7)  # fixed seed: regenerating gives the same grain every run
+
+
+def _fbm(h, w):
+    """Cheap value noise 0..1: three smooth octaves, for ragged edges and mottled paint."""
+    acc = np.zeros((h, w), np.float32)
+    for cells, amp in ((4, 0.5), (10, 0.3), (24, 0.2)):
+        g = Image.fromarray((_RNG.rand(cells, cells) * 255).astype(np.uint8))
+        acc += np.asarray(g.resize((w, h), Image.BICUBIC), np.float32) / 255 * amp
+    return acc
+
+
+def grim(img):
+    """Grim painterly grade (owner: the new art looked too cartoony): desaturate and darken, mottle and grain the colour, shade
+    the rim darker so the core reads brighter, and soften/erode the silhouette with noise (no hard flat-shape edges)."""
+    a = np.asarray(img, np.float32)
+    h, w = a.shape[:2]
+    rgb, al = a[..., :3], a[..., 3] / 255
+    al_img = Image.fromarray((al * 255).astype(np.uint8))
+    soft = np.asarray(al_img.filter(ImageFilter.GaussianBlur(1.0)), np.float32) / 255
+    core = np.asarray(al_img.filter(ImageFilter.GaussianBlur(3.2)), np.float32) / 255
+    mott = _fbm(h, w)
+    al2 = np.clip((soft - 0.1) / 0.9 * (0.78 + 0.35 * mott), 0, 1)
+    grey = (rgb * np.array([0.3, 0.59, 0.11], np.float32)).sum(-1, keepdims=True)
+    rgb = grey + (rgb - grey) * 0.42
+    rgb = 255 * (rgb / 255) ** 1.25  # compress highlights: no bright cartoon pops
+    rgb = rgb * (0.62 + 0.3 * core[..., None]) * (0.74 + 0.4 * mott[..., None]) * 0.92
+    rgb = rgb + _RNG.normal(0, 9, (h, w, 1)).astype(np.float32)
+    out = np.dstack([np.clip(rgb, 0, 255), al2 * 255]).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
 
 
 def strip(frames, name):

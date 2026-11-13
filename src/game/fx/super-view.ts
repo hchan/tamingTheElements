@@ -4,7 +4,8 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { ELEMENT_COLORS } from './element-colors';
 import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
-import { BURST_COLOR, BURST_SHAPE, superBurst } from './super-burst';
+import { BURST_COLOR, BURST_REACH, BURST_SHAPE, burstRadius, superBurst } from './super-burst';
+import { embers, glowPair, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 
 /**
  * Phaser side of the super cinematic. The Phaser fx sink imports this module on the first super (Arcade only), so
@@ -94,10 +95,12 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   const all = Object.values(parts);
   // The element burst outlives the cinematic: one Graphics redrawn on `postupdate` until its clock runs out.
   let burstG: Phaser.GameObjects.Graphics | undefined;
+  let burstGlow: Phaser.GameObjects.Graphics | undefined;
   let burst: { element: Element; x: number; y: number; from: number; reduced: boolean } | undefined;
   let burstShown: SuperBurstState | undefined;
   const drawBurst = (): void => {
     burstG?.clear();
+    burstGlow?.clear();
     burstShown = undefined;
     if (!burst) return;
     const age = tick() - burst.from;
@@ -108,16 +111,15 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       return;
     }
     const g = (burstG ??= scene.add.graphics().setDepth(BURST_DEPTH));
+    const glow = (burstGlow ??= scene.add.graphics().setDepth(BURST_DEPTH + 0.1));
+    const pair = glowPair(g, glow);
     const color = BURST_COLOR[burst.element];
     for (const p of b.paths) {
-      const pts: Phaser.Math.Vector2[] = [];
-      for (let i = 0; i + 1 < p.pts.length; i += 2) pts.push({ x: p.pts[i] ?? 0, y: p.pts[i + 1] ?? 0 } as Phaser.Math.Vector2);
-      // Dark outline, element colour, white core line: readable on any floor.
-      if (p.fill) g.fillStyle(color, 0.55 * b.alpha).fillPoints(pts, true);
-      g.lineStyle(14, 0x000000, 0.85 * b.alpha).strokePoints(pts, p.closed);
-      g.lineStyle(8, color, b.alpha).strokePoints(pts, p.closed);
-      g.lineStyle(2, 0xffffff, b.alpha).strokePoints(pts, p.closed);
+      // Grim look (grim-fx.ts): a faint layered fill, a smoky underlay and soft additive glow strokes, no bold outline or white line.
+      if (p.fill) softFill(g, p.pts, color, b.alpha);
+      softStroke(pair, toPts(p.pts), p.closed, color, b.alpha);
     }
+    paintEmbers(glow, embers(burst.x, burst.y, BURST_REACH * burstRadius(age, burst.reduced), age, burst.reduced, 36, 11), color, b.alpha);
     burstShown = { element: burst.element, shape: BURST_SHAPE[burst.element], age, paths: b.paths.length };
   };
   bursts.set(scene, () => burstShown);
@@ -186,6 +188,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     bursts.delete(scene);
     burstG?.destroy();
     burstG = undefined;
+    burstGlow?.destroy();
+    burstGlow = undefined;
     burst = undefined;
     runners.delete(scene);
     scene.events.off('shutdown', drop);

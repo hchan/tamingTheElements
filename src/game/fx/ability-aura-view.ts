@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import type { RenderCharacter, RenderView } from '@core/index';
+import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
 /**
@@ -33,14 +34,9 @@ interface Pop {
   text?: Phaser.GameObjects.Text;
 }
 
-function toPoints(pts: readonly number[]): Phaser.Math.Vector2[] {
-  const out: Phaser.Math.Vector2[] = [];
-  for (let i = 0; i + 1 < pts.length; i += 2) out.push({ x: pts[i] ?? 0, y: pts[i + 1] ?? 0 } as Phaser.Math.Vector2);
-  return out;
-}
-
 export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, reduceMotion: () => boolean): void {
   let g: Phaser.GameObjects.Graphics | undefined;
+  let glowG: Phaser.GameObjects.Graphics | undefined;
   const born = new Map<string, number>();
   let drawn: { id: number; kind: string; shape: string }[] = [];
   let pops: Pop[] = [];
@@ -58,6 +54,9 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     const anchor = new Map<number, { x: number; y: number }>();
     const gfx = (g ??= arena.add.graphics().setDepth(DEPTH));
     gfx.clear();
+    const glow = (glowG ??= arena.add.graphics().setDepth(DEPTH + 0.1));
+    glow.clear();
+    const pair = glowPair(gfx, glow);
     const visit = (c: RenderCharacter): void => {
       if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
       anchor.set(c.team, { x: c.x + c.w / 2, y: c.y });
@@ -69,16 +68,14 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         seen.add(key);
         if (!born.has(key)) born.set(key, now);
         drawn.push({ id: c.id, kind: a.kind, shape: a.shape });
-        for (const poly of auraPolys(a, { x: c.x, y: c.y, w: c.w, h: c.h }, now - (born.get(key) ?? now), reduced)) {
-          gfx.fillStyle(poly.color, 0.85).lineStyle(2, 0x000000, 0.9).beginPath();
-          for (let i = 0; i < poly.pts.length; i += 2) {
-            const px = poly.pts[i] ?? 0;
-            const py = poly.pts[i + 1] ?? 0;
-            if (i === 0) gfx.moveTo(px, py);
-            else gfx.lineTo(px, py);
-          }
-          gfx.closePath().fillPath().strokePath();
+        const age = now - (born.get(key) ?? now);
+        for (const poly of auraPolys(a, { x: c.x, y: c.y, w: c.w, h: c.h }, age, reduced)) {
+          // Grim look (grim-fx.ts): faint layered fill, smoky underlay, soft glow edge: the shape still codes the buff.
+          softFill(gfx, poly.pts, poly.color, 4);
+          softStroke(pair, toPts(poly.pts), true, poly.color, 2.6, 0.7);
         }
+        // Ash and embers rise off the body in the buff's colour (frozen, still visible, under reduced motion).
+        paintEmbers(glow, embers(c.x + c.w / 2, c.y + c.h * 0.7, c.w * 0.7, age, reduced, 10, c.id), a.color, 0.8);
       });
     };
     view.forEachCharacter(visit);
@@ -110,10 +107,14 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const lash = snagLash(l.x, l.y, l.dir, age, reduced);
       if (!lash) return false;
       lashDrawn.push({ team: l.team, age });
-      gfx.lineStyle(11, 0x000000, lash.alpha).strokePoints(toPoints(lash.pts), false);
-      gfx.lineStyle(6, SNAG_ROPE_COLOR, lash.alpha).strokePoints(toPoints(lash.pts), false);
-      gfx.lineStyle(5, 0x000000, lash.alpha).strokeCircle(lash.knot.x, lash.knot.y, lash.knot.r + 2);
-      gfx.lineStyle(4, 0xffffff, lash.alpha).strokeCircle(lash.knot.x, lash.knot.y, lash.knot.r);
+      // A frayed, dark rope: smoky underlay, a muted cord, a thin pale fibre line; the knot is a soft ring, not a white circle.
+      const rope = toPts(lash.pts);
+      gfx.lineStyle(10, 0x000000, 0.22 * lash.alpha).strokePoints(rope, false);
+      gfx.lineStyle(5, SNAG_ROPE_COLOR, 0.8 * lash.alpha).strokePoints(rope, false);
+      glow.lineStyle(1.5, mute(SNAG_ROPE_COLOR, 0.5, 1.5), 0.35 * lash.alpha).strokePoints(rope, false);
+      gfx.lineStyle(7, 0x000000, 0.2 * lash.alpha).strokeCircle(lash.knot.x, lash.knot.y, lash.knot.r);
+      gfx.lineStyle(3, SNAG_ROPE_COLOR, 0.7 * lash.alpha).strokeCircle(lash.knot.x, lash.knot.y, lash.knot.r);
+      glow.lineStyle(8, SNAG_ROPE_COLOR, 0.08 * lash.alpha).strokeCircle(lash.knot.x, lash.knot.y, lash.knot.r);
       return age <= LASH_TICKS;
     });
     pops = pops.filter((p) => {
@@ -124,7 +125,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       }
       const look = popLook(age, reduced);
       p.text ??= arena.add
-        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Arial', fontSize: '22px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#7dff9a' : '#e8c27a', stroke: '#000000', strokeThickness: 4 })
+        .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : '#b89a68', stroke: '#0a0806', strokeThickness: 3 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
       p.text.setPosition(p.x, p.y + look.dy).setAlpha(look.alpha);
@@ -137,6 +138,8 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     states.delete(arena);
     g?.destroy();
     g = undefined;
+    glowG?.destroy();
+    glowG = undefined;
     for (const p of pops) p.text?.destroy();
     pops = [];
     lashes = [];
