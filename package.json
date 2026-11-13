@@ -40,6 +40,8 @@
     "sim:match": "tsx tools/sim/run-match.ts",
     "fun:report": "tsx tools/sim/fun-report.ts",
     "fun:gates": "tsx tools/ci/fun-gates.ts",
+    "fun:noise": "tsx tools/ci/fun-noise.ts",
+    "range:probe": "tsx tools/sim/range-probe.ts",
     "sim:net": "tsx tools/sim/run-net.ts",
     "replay:verify": "tsx tools/replay-verify.ts",
     "balance:compare": "tsx tools/sim/balance.ts",
