@@ -31,7 +31,9 @@ export const TAG_SLOT_X = 1 + 2 * 77 + 77 / 2;
 export const TAG_SLOT_Y = 640;
 /** Over the fighters (0) and the aim arrow (4), under the super dim (5). */
 const FLASH_DEPTH = 4.5;
-const GOLD = 0xffd23f;
+/** Muted ochre (was bright 0xffd23f): the active-bar frame, the ready bar and the KO ring. */
+const GOLD = 0xb39653;
+const ASH = 0xcfc4a8;
 const CALL_Y = 210;
 const CALL_PX = 60;
 const LINE_PX = 16;
@@ -145,7 +147,13 @@ export function mountTagView(
       const bench = t.filter((h) => h !== active);
       if (active) {
         red(g, main, active);
-        g.lineStyle(highContrast ? 3 : 2, highContrast ? 0xffffff : GOLD, 1).strokeRect(main.minX - 3, main.y - 8, main.maxX - main.minX + 6, 16);
+        const frame = [main.minX - 3, main.y - 8, main.maxX - main.minX + 6, 16] as const;
+        if (highContrast) g.lineStyle(3, 0xffffff, 1).strokeRect(...frame);
+        else {
+          // A dark rim under a thin ochre line, so the frame reads as an inlaid edge rather than a yellow outline.
+          g.lineStyle(3, 0x0a0806, 0.85).strokeRect(...frame);
+          g.lineStyle(1, GOLD, 0.9).strokeRect(...frame);
+        }
       }
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
@@ -160,13 +168,13 @@ export function mountTagView(
       const [ox, tagY] = layouts[team]?.bar ?? [0, 0];
       const bx = benchBarOf(team, 0).minX + ox;
       // The cooldown bar fills as the tag comes back: dashed while it does, solid gold (white in high contrast) when ready.
-      g.fillStyle(0x000000, 0.6).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
-      if (tag.fill >= 1) g.fillStyle(highContrast ? 0xffffff : GOLD, 1).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
+      g.fillStyle(0x0a0806, 0.75).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
+      if (tag.fill >= 1) g.fillStyle(highContrast ? 0xffffff : GOLD, 0.85).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
       else {
-        g.lineStyle(TAG_BAR_H, 0xffffff, 0.9);
+        g.lineStyle(TAG_BAR_H, highContrast ? 0xffffff : ASH, highContrast ? 0.9 : 0.6);
         for (const [x0, x1] of dashes(bx, bx + tag.fill * TAG_BAR_W, [5, 3])) g.lineBetween(x0, tagY + TAG_BAR_H / 2, x1, tagY + TAG_BAR_H / 2);
       }
-      g.lineStyle(highContrast ? 2 : 1, 0xffffff, 1).strokeRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
+      g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : 0x6b6558, 1).strokeRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
       const prev = lines[team] ?? line;
       line.forEach((l, i) => {
         if (prev[i] !== l) texts[team]?.[i]?.setText(l).setColor(i === line.length - 1 && tag.fill >= 1 ? '#c9b27a' : i ? '#e0e0e0' : '#ffffff');

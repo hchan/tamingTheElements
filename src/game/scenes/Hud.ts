@@ -80,6 +80,7 @@ export class Hud extends Phaser.Scene {
   private portraits: Phaser.GameObjects.Image[] = [];
   /** Regen text per bench row, pooled: index team * 4 + row. */
   private regenTexts: (Phaser.GameObjects.Text | undefined)[] = [];
+  private grainGfx: Phaser.GameObjects.Graphics | undefined;
   private highContrast = false;
   private reduceMotion = false;
   private frame = 0;
@@ -136,6 +137,8 @@ export class Hud extends Phaser.Scene {
       this.gfx = undefined;
       this.back?.destroy();
       this.back = undefined;
+      this.grainGfx?.destroy();
+      this.grainGfx = undefined;
       for (const im of this.portraits) im.destroy();
       this.portraits = [];
       for (const t of [...this.labels, ...this.regenTexts, ...this.numberTexts, ...this.comboTexts, ...this.meterTexts, ...this.chipTexts]) t?.destroy();
@@ -474,6 +477,34 @@ export class Hud extends Phaser.Scene {
   private thinFrame(gfx: Phaser.GameObjects.Graphics, g: BarGeometry): void {
     gfx.lineStyle(1, FRAME_COLOR, 0.9);
     gfx.strokeRect(g.minX - 0.5, g.y - g.lineMax / 2 - 0.5, g.maxX - g.minX + 1, g.lineMax + 1);
+  }
+
+  /**
+   * Low-life edge grain: still dark flecks (integer hash, nothing random or flickering) thickest at the screen edge, shown at an
+   * alpha that follows the vignette strength. Drawn once, on first need, below the HUD.
+   */
+  edgeGrain(strength: number): void {
+    if (strength <= 0) {
+      this.grainGfx?.setVisible(false);
+      return;
+    }
+    if (!this.grainGfx) {
+      const g = this.add.graphics().setDepth(97);
+      const W = 1280;
+      const H = 720;
+      for (let i = 0; i < 2600; i++) {
+        const hx = Math.imul(i + 1, 2654435761) >>> 0;
+        const hy = Math.imul(i + 7, 1597334677) >>> 0;
+        const u = (hx >>> 8) / 16777216;
+        const v = (hy >>> 8) / 16777216;
+        // Push the points toward the edge (a quadratic bias on the distance from the centre).
+        const ex = (u < 0.5 ? -1 : 1) * (1 - Math.pow(1 - Math.abs(u - 0.5) * 2, 2)) * 0.5 + 0.5;
+        const ey = (v < 0.5 ? -1 : 1) * (1 - Math.pow(1 - Math.abs(v - 0.5) * 2, 2)) * 0.5 + 0.5;
+        g.fillStyle(i % 5 === 0 ? 0x4a2a1c : 0x0a0302, 0.5).fillRect(Math.round(ex * W), Math.round(ey * H), 2, 2);
+      }
+      this.grainGfx = g;
+    }
+    this.grainGfx.setVisible(true).setAlpha(Math.min(1, strength / 0.45));
   }
 
   /** Speckle over the fill: dark and ash flecks from an integer hash of the x position (a still pattern: nothing flickers, nothing is random). */

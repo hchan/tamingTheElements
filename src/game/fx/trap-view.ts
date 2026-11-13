@@ -72,8 +72,8 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
         g.fillStyle(n % 3 === 0 ? 0x1a1410 : 0x7a7060, (n % 3 === 0 ? 0.35 : 0.18) * alpha).fillRect(gx, gy, n % 4 === 0 ? 3 : 2, 2);
       }
       // The trigger range: a dark outline under a thin ash one (element-muted), so it reads on any floor; thin while arming, firmer once armed.
-      g.lineStyle(armLeft > 0 ? 1 : 3, 0x000000, 0.55 * alpha).strokeRect(x - margin - 1, y - margin - 1, TRAP_RANGE_PX + 2, TRAP_RANGE_PX + 2);
-      g.lineStyle(armLeft > 0 ? 1 : 2, mute(TRAP_COLORS[kind] ?? 0xffffff, 0.25, 1.1), (armLeft > 0 ? 0.6 : 0.8) * alpha).strokeRect(x - margin, y - margin, TRAP_RANGE_PX, TRAP_RANGE_PX);
+      g.lineStyle(armLeft > 0 ? 1 : 2, 0x000000, 0.4 * alpha).strokeRect(x - margin - 1, y - margin - 1, TRAP_RANGE_PX + 2, TRAP_RANGE_PX + 2);
+      g.lineStyle(1, mute(TRAP_COLORS[kind] ?? 0xffffff, 0.2, 0.95), (armLeft > 0 ? 0.45 : 0.6) * alpha).strokeRect(x - margin, y - margin, TRAP_RANGE_PX, TRAP_RANGE_PX);
       const t = label(i);
       if (t.text !== words) t.setText(words);
       t.setPosition(x + TRAP_BOX_PX / 2, y - margin - 2).setAlpha(alpha).setVisible(true);

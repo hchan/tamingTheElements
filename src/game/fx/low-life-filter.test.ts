@@ -26,7 +26,7 @@ describe('LowLifeVignette', () => {
     vignette.set(0.05);
     expect(add).toHaveBeenCalledTimes(1);
     expect(filter.strength).toBeGreaterThan(mild);
-    expect(filter.strength).toBeCloseTo(0.6);
+    expect(filter.strength).toBeCloseTo(0.45);
   });
 
   it('disables (does not destroy) the filter when life recovers or the hero is gone', () => {
