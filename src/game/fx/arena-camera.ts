@@ -22,6 +22,8 @@ export interface CameraInput {
   readonly x1: number;
   readonly x2: number;
   readonly worldWidth: number;
+  /** Larger half-width (world px) of the two fighters' boxes; a giant (up to 4x = 160) keeps its whole body inside the margin. Default 40 (a 1x hero). */
+  readonly reach?: number;
   /** Logical viewport width at zoom 1 (1280). */
   readonly viewWidth: number;
   /** Reduced motion: no smoothing, no zoom change (zoom fixed at 1, pan snaps). */
@@ -39,7 +41,7 @@ export function clampCenter(centerX: number, zoom: number, worldWidth: number, v
 export function idealFraming(i: CameraInput): CameraFraming {
   // Never zoom out past the world itself (a 1280 world stays at zoom 1: the picture is identical to the fixed camera).
   const floor = Math.min(1, Math.max(CAMERA_ZOOM_MIN, i.viewWidth / i.worldWidth));
-  const zoom = i.reducedMotion ? 1 : Math.min(1, Math.max(floor, i.viewWidth / (Math.abs(i.x1 - i.x2) + 2 * CAMERA_MARGIN)));
+  const zoom = i.reducedMotion ? 1 : Math.min(1, Math.max(floor, i.viewWidth / (Math.abs(i.x1 - i.x2) + 2 * (CAMERA_MARGIN + Math.max(0, (i.reach ?? 40) - 40)))));
   return { centerX: clampCenter((i.x1 + i.x2) / 2, zoom, i.worldWidth, i.viewWidth), zoom };
 }
 

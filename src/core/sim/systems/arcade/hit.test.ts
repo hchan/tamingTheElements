@@ -5,6 +5,7 @@ import {
   PARRY_HIT_STOP_TICKS, hitStrengthFor,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
+import { sizeDamagePm, sizeOfSlug } from '../../../data/size';
 import { arcadeRaceNumbers } from '../../arcade-numbers';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -184,7 +185,7 @@ describe('hit-stop', () => {
       };
       const classic = amount(false);
       expect(classic, race).toBeGreaterThan(0);
-      expect(amount(true), race).toBeCloseTo((classic * arcadeRaceNumbers(race)[1]) / 1000, 9);
+      expect(amount(true), race).toBeCloseTo((classic * arcadeRaceNumbers(race)[1] * sizeDamagePm(sizeOfSlug(race))) / 1_000_000, 9);
     }
   });
 

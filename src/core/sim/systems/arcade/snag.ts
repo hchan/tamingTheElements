@@ -1,4 +1,5 @@
 import { SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, SnagEvent } from '../../../data/arcade';
+import { SIZE_ONE, sizeOfDef, sizeRootPm } from '../../../data/size';
 import { isArcade, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_E, ArcadeE, EntityFlag, EntityKind, MAX_ENTITIES, type SimState } from '../../state';
@@ -18,7 +19,7 @@ export function isRooted(s: SimState, id: number): boolean {
 
 /**
  * A Snag box touched `victim` (once per throw): a guarding victim wastes it (`snag` guarded), a rooted or immune one
- * ignores it (no chaining, no refresh), else it is rooted SNAG_ROOT_TICKS (`snag` rooted).
+ * ignores it (no chaining, no refresh), else it is rooted SNAG_ROOT_TICKS (`snag` rooted), scaled down by the victim's size (data/size.ts).
  */
 export function snagHit(world: SimWorld, sink: EventSink, source: number, victim: number): void {
   const s = world.state;
@@ -29,7 +30,8 @@ export function snagHit(world: SimWorld, sink: EventSink, source: number, victim
     return;
   }
   if ((s.arcade[e + ArcadeE.rootUntil] ?? 0) > g || (s.arcade[e + ArcadeE.rootImmuneUntil] ?? 0) > g) return;
-  s.arcade[e + ArcadeE.rootUntil] = g + SNAG_ROOT_TICKS;
+  const size = sizeOfDef(s.defId[victim] ?? 0);
+  s.arcade[e + ArcadeE.rootUntil] = g + (size === SIZE_ONE ? SNAG_ROOT_TICKS : Math.floor((SNAG_ROOT_TICKS * sizeRootPm(size)) / 1000));
   sink.emit(source, SimEventKind.snag, { id: victim, reason: SnagEvent.rooted });
 }
 

@@ -156,5 +156,9 @@
  * 44: Arcade only; AI only (Classic hashes unchanged). Zoning: a Normal or Hard ranged hero (primary ability ranged) loses its step towards the foe inside
  * 760 px (larger axis) and backs off inside 500 px when it has no attack press, whatever rule asked for the step (ideas/brainstorm/ranged-heroes-fight-at-melee-range).
  * Re-recorded: the Arcade goldens (AI-driven commands changed).
+ * 45: Arcade only; Classic hashes unchanged. Giant heroes slice 2 (ideas/in-progress/giant-heroes-size-for-speed.md): Ishimi is a 1.5x mid-size (150: 120 x 120 box,
+ *    life x1.225, damage x1.06, knockback / 1.3, speed x0.86; hpPm 6400 -> 4800, dmgPm 1550 -> 1420 to compensate), and a Snag root lasts
+ *    less on a bigger hero (-250 pm per extra 1x, floor 400 pm; 2x root 45 ticks). Sizes up to 4x (3x curves) were already supported.
+ *    Re-record reason: Ishimi stats and Snag duration change Arcade outcomes (goldens, Arcade baselines).
  */
-export const SIM_VERSION = 44;
+export const SIM_VERSION = 45;
