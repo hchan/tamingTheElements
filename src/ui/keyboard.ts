@@ -14,6 +14,8 @@ export function backHash(route: string): string | null {
       return null;
     case 'character':
       return '#garrison';
+    case 'guide':
+      return '#help';
     default:
       return '#main';
   }

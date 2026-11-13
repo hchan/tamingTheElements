@@ -11,6 +11,7 @@ export interface HelpLink {
 /** The player-facing help pages; the old menu entries live here now (routes unchanged for deep links). */
 export const HELP_LINKS: readonly HelpLink[] = [
   { label: 'Key Bindings', route: 'keyBindings' },
+  { label: 'Guide', route: 'guide' },
   { label: 'Wiki', route: 'wiki' },
   { label: 'Watch the story', route: 'storyMode' },
   { label: 'About', route: 'about' },

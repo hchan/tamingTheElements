@@ -9,3 +9,9 @@ export { getCharacter } from './data/characters';
 export { RandomBot } from './agents/random-bot';
 export { parseReplayChecked, validateReplay } from './replay/validate';
 export { serializeReplay, setupFromHeader } from './replay/format';
+/** Numbers the Guide screen (a lazy chunk) reads, so its cards cannot drift from the sim data. */
+export {
+  BLOCK_STUN_TICKS, CHARGE_COOLDOWN_TICKS, DASH_COOLDOWN_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, ELEMENTAL_ARMOR_PM,
+  ELEMENTAL_COOLDOWN_TICKS, ELEMENTAL_DAMAGE_PM, ELEMENTAL_NAMES, ELEMENTAL_SPEED_PM, ELEMENTAL_TICKS, GUARD_CHIP_PM,
+  PARRY_TICKS, SNAG_COOLDOWN_TICKS, SNAG_ROOT_TICKS, SUPER_COST, WEATHER_COOLDOWN_TICKS, WEATHER_PM,
+} from './data/arcade';
