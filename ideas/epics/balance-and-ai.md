@@ -26,7 +26,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [classic-sindarosa-ishimi-gap](../brainstorm/classic-sindarosa-ishimi-gap.md)
 - [super-damage-share](../brainstorm/super-damage-share.md)
 - [ability-audit](../in-progress/ability-audit.md)
-- [ability-usage-metrics](../brainstorm/ability-usage-metrics.md)
+- [ability-usage-metrics](../done/ability-usage-metrics.md)
 - [dead-ability-cleanup](../brainstorm/dead-ability-cleanup.md)
 - [ice-blast-rework](../brainstorm/ice-blast-rework.md)
 - [fire-heal-buff](../brainstorm/fire-heal-buff.md)
