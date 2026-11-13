@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SIM_VERSION } from '@core/menu-index';
 import type { ArenaLaunch, PlaybackControls, PlaybackStatus } from '../scenes/launch';
 import type { ReplayStore } from '../platform/storage/replay-store';
@@ -44,6 +44,13 @@ const flush = async (): Promise<void> => {
 const replayOf = (simVersion: number = SIM_VERSION, tickCount = 100): { header: { simVersion: number; tickCount: number } } => ({ header: { simVersion, tickCount } });
 
 let host: HTMLElement;
+
+// The viewer loads these lazily with dynamic import(). A cold first import is real module resolution and transform work, so
+// under CPU load it outlasts a fixed count of setTimeout(0) turns in flush(). Load them once up front so tests only wait on
+// already-resolved promises.
+beforeAll(async () => {
+  await Promise.all([import('@core/lazy-index'), import('./input-display'), import('../boot/phaser-config')]);
+});
 let unmounts: Array<() => void>;
 
 function mount(over: Partial<ViewerDeps> = {}): { unmount: () => void } {
