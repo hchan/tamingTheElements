@@ -32,6 +32,7 @@ import {
   type TouchSide,
   type TouchSize,
 } from '../../game/platform/a11y/touch-layout';
+import { VOLUME_BUSES, readVolumes, writeVolume, type VolumeBus } from '../../game/platform/volume-setting';
 import { parseBindings, setBindings } from '../../game/platform/input/bindings';
 import { createSaveStore } from '../../game/platform/storage/create-save-store';
 import { describeError, prepareExport, runImport } from '../../game/platform/storage/export-import';
@@ -291,6 +292,35 @@ function transferControls(store: SaveStore, onImported: (save: SaveV1) => void, 
   return box;
 }
 
+const VOLUME_LABELS: Readonly<Record<VolumeBus, string>> = { music: 'Music volume', sfx: 'Sound effects volume' };
+
+/** Immediate (not part of Save, device-local) volume sliders; the next battle uses them. */
+export function audioControls(): HTMLElement {
+  const box = el('fieldset', 'settingsGroup');
+  box.append(el('legend', 'heading', 'Audio'));
+  const vols = readVolumes(window.localStorage);
+  for (const bus of VOLUME_BUSES) {
+    const row = el('div', 'settingsOption');
+    const id = `volume-${bus}`;
+    const lab = el('label', undefined, VOLUME_LABELS[bus]);
+    lab.htmlFor = id;
+    const input = el('input');
+    input.type = 'range';
+    input.id = id;
+    input.name = id;
+    input.min = '0';
+    input.max = '100';
+    input.step = '5';
+    input.value = String(Math.round(vols[bus] * 100));
+    input.addEventListener('change', () => {
+      writeVolume(bus, Number(input.value) / 100, window.localStorage);
+    });
+    row.append(lab, ' ', input);
+    box.append(row);
+  }
+  return box;
+}
+
 /** Immediate (not part of Save) checkbox: local-only playtest recording, default off. */
 function recordControls(): HTMLElement {
   const box = el('div', 'settingsGroup');
@@ -416,6 +446,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
     });
     page.append(
       form,
+      audioControls(),
       recordControls(),
       testerControls(store),
       cheatsButton(),

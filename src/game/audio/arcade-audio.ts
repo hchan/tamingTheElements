@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import type { SimEvent } from '@core/index';
 import type { ArenaAudio } from './arena-audio';
 import type { AudioManager } from './audio-manager';
-import { CUES, KO, KO_CUT_MS, KO_DUCK_MS, NOISE, Voices, WAVES, pickCues, type CueName, type Layer } from './arcade-cues';
+import { CUES, KO, KO_CUT_MS, KO_DUCK_MS, NOISE, heartbeatGap, Voices, WAVES, pickCues, type CueName, type Layer } from './arcade-cues';
 
 /**
  * Web Audio side of the Arcade audio layers (WP-arcade-audio-layers, FUN-DESIGN section 3): short synthesised cues
@@ -66,7 +66,7 @@ export function arcadeAudioState(audio: AudioManager | undefined): ArcadeAudioSt
 }
 
 /** Adds the layers to `audio` and returns their teardown. `hidden` reads whether the tab is hidden. */
-export function addArcadeLayer(audio: AudioManager, hidden: () => boolean, sudden: () => boolean = () => false): () => void {
+export function addArcadeLayer(audio: AudioManager, hidden: () => boolean, sudden: () => boolean = () => false, life: () => number = () => 1): () => void {
   const synth = audio.ctx as unknown as SynthContext;
   const out = synth.createGain();
   out.gain.value = LEVEL;
@@ -76,6 +76,7 @@ export function addArcadeLayer(audio: AudioManager, hidden: () => boolean, sudde
   let noise: unknown;
   let played = 0;
   let cutUntil = 0;
+  let nextBeat = 0;
   let now = 0;
 
   const ramp = (p: Param, from: number, to: number, t: number, end: number): void => {
@@ -146,6 +147,12 @@ export function addArcadeLayer(audio: AudioManager, hidden: () => boolean, sudde
       }
       if (on) pickCues(e, play, sudden);
     }
+    // Low-life heartbeat: the gap shortens as the active hero's life runs down (`life` reads 1 outside a fight).
+    const gap = on ? heartbeatGap(life()) : 0;
+    if (gap > 0 && ms >= nextBeat) {
+      play('heartbeat', 1, 1);
+      nextBeat = ms + gap;
+    }
     // After the manager's own duck update: the music stays cut through the KO window.
     if (ms < cutUntil) audio.buses.music.gain.value = 0;
   };
@@ -183,9 +190,9 @@ function whiteNoise(ctx: SynthContext): unknown {
  * Mounts the layers on the Arena's battle audio if `held` (read when the battle mounted its Arcade view) is still the
  * Arena's when the chunk arrives, and takes them off when the Arena shuts down or is destroyed.
  */
-export function mountArcadeAudio(arena: Phaser.Scene & { readonly audio?: ArenaAudio }, held: ArenaAudio | undefined, sudden?: () => boolean): void {
+export function mountArcadeAudio(arena: Phaser.Scene & { readonly audio?: ArenaAudio }, held: ArenaAudio | undefined, sudden?: () => boolean, life?: () => number): void {
   if (!held || arena.audio !== held) return;
-  const dispose = addArcadeLayer(held.audio, () => document.hidden, sudden);
+  const dispose = addArcadeLayer(held.audio, () => document.hidden, sudden, life);
   const off = (): void => {
     arena.events.off('shutdown', off).off('destroy', off);
     dispose();
