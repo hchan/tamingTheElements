@@ -270,12 +270,13 @@ export class ArcadeTactics {
    * Zoner's or Turtle's walk (Rushdown, and any hero in a stale fight, still closes in). In the fight and free, a command that
    * is not a dash, guard, super, charge or trap press loses its step towards the foe along the dominant axis inside the zoning
    * band (`zoneStep`), so a ranged hero fires from range and stays out of arm's reach, whatever rule (a rock slide, a combo
-   * step, a dodge) asked for the step. Shots keep their line: the shot auto-faces the foe.
+   * step, a dodge) asked for the step. Shots keep their line: the shot auto-faces the foe. Off while the hero has a living partner to tag in
+   * (`partnerPm >= 0`, SIM_VERSION 48): two ranged heroes a side kept each other out of range and 2v2 rounds ran to the timer.
    */
   private zone(view: ObservationView, a: ArcadeView, cmd: Command): Command {
     const self = view.self;
     const opp = view.opponent;
-    if (self === undefined || opp === undefined || this.level < AI_NORMAL || a.chargeIn !== -1) return cmd;
+    if (self === undefined || opp === undefined || this.level < AI_NORMAL || a.chargeIn !== -1 || a.partnerPm >= 0) return cmd;
     if (a.phase !== RoundPhase.fight || a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
     if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
     return zoneStep(self, opp, cmd, arcadePlayfield(), a.oppStun !== 0 || a.oppRooted !== 0);

@@ -220,4 +220,4 @@ from the giant-adjusted 2100 / 650 to 2060 / 640; Echo 6200 / 1600 and Treenoc 6
 | lavax, ishimi | unchanged | | 50.0%, 49.4% | 50.0%, 46.6% |
 
 Spread 46.6-52.8% (was 37.5-63.6%). The 2v2 baseline was re-recorded too (it moves with the 1v1 numbers; its spread is unchanged in character, see
-above). 2v2 time-over rate 10.6% (1v1 2.0%): ideas/brainstorm/2v2-time-over-regression.md.
+above). 2v2 time-over rate 10.6% (1v1 2.0%): ideas/in-progress/2v2-time-over-regression.md.
