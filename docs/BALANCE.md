@@ -198,3 +198,26 @@ The two tables above are the history of the first tune and the 2v2 tune; later w
 | wispera | 7300 | 1280 | 53.4% | 59.1% |
 
 The 1v1 spread is 11.9 pp (43.8-55.7%). The 2v2 spread is 53.4 pp (23.9-77.3%): the 2v2 life factors (`ARCADE_2V2_LIFE_PM`) have not been re-fit since the 1v1 numbers moved, and the 2v2 baseline was recorded with those outliers accepted (see the SIM_VERSION 28 commit). The 2v2 and 3v3 tournaments pair each race with a fixed partner (the race half, or a third and two thirds, of the list on); `tools/sim/snag-trap-teams.mts partners` plays random partners instead (the random-partner harness).
+
+### SIM_VERSION 46 retune (after giant heroes slice 2)
+
+Data only (`ARCADE_RACE_NUMBERS`), Arcade 1v1 tournament (`balance:compare --ruleset arcade`, 66 pairings x 16 seeds). Damped power steps (about
+`(0.5 / winRate) ^ 0.6`, split between life and damage), then a few nudges because the win rates are noisy at this size. Rokcore also moved
+from the giant-adjusted 2100 / 650 to 2060 / 640; Echo 6200 / 1600 and Treenoc 6500 / 1270 were fine-tuned.
+
+| Race | hpPm / damagePm before | after | 1v1 win rate before | after |
+|---|---|---|---|---|
+| pax | 5300 / 1580 | 5100 / 1520 | 63.6% | 52.3% |
+| wispera | 7300 / 1280 | 7550 / 1335 | 37.5% | 48.9% |
+| sindarosa | 2620 / 650 | 2720 / 675 | 40.3% | 50.6% |
+| cyclonius | 5000 / 1080 | 5090 / 1100 | 44.3% | 50.6% |
+| fiara | 5400 / 1520 | 5230 / 1470 | 58.0% | 51.1% |
+| curomo | 5800 / 1200 | 5780 / 1195 | 54.5% | 48.9% |
+| echo | 6200 / 1600 | 6330 / 1630 | 48.3% | 46.6% |
+| morblass | 3950 / 1070 | 4100 / 1110 | 49.4% | 51.7% |
+| treenoc | 6500 / 1270 | 6350 / 1240 | 52.3% | 50.0% |
+| rokcore | 2100 / 650 | 2060 / 640 | 52.3% | 52.8% |
+| lavax, ishimi | unchanged | | 50.0%, 49.4% | 50.0%, 46.6% |
+
+Spread 46.6-52.8% (was 37.5-63.6%). The 2v2 baseline was re-recorded too (it moves with the 1v1 numbers; its spread is unchanged in character, see
+above). 2v2 time-over rate 10.6% (1v1 2.0%): ideas/brainstorm/2v2-time-over-regression.md.

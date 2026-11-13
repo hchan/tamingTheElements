@@ -160,5 +160,9 @@
  *    life x1.225, damage x1.06, knockback / 1.3, speed x0.86; hpPm 6400 -> 4800, dmgPm 1550 -> 1420 to compensate), and a Snag root lasts
  *    less on a bigger hero (-250 pm per extra 1x, floor 400 pm; 2x root 45 ticks). Sizes up to 4x (3x curves) were already supported.
  *    Re-record reason: Ishimi stats and Snag duration change Arcade outcomes (goldens, Arcade baselines).
+ * 46: Arcade only; Classic hashes unchanged. Balance retune after giant heroes slice 2 (ideas/brainstorm/balance-outliers.md): data-only
+ *    ARCADE_RACE_NUMBERS changes for pax, wispera, sindarosa, cyclonius, fiara, curomo, echo, morblass, treenoc and rokcore (Arcade 1v1
+ *    tournament, was pax 63.6 percent and wispera 37.5, now every race 46.6-52.8). Re-record reason: Arcade numbers change Arcade
+ *    outcomes (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 45;
+export const SIM_VERSION = 46;
