@@ -42,6 +42,7 @@
     "fun:gates": "tsx tools/ci/fun-gates.ts",
     "fun:noise": "tsx tools/ci/fun-noise.ts",
     "range:probe": "tsx tools/sim/range-probe.ts",
+    "ability:usage": "tsx tools/sim/ability-usage.ts",
     "sim:net": "tsx tools/sim/run-net.ts",
     "replay:verify": "tsx tools/replay-verify.ts",
     "balance:compare": "tsx tools/sim/balance.ts",
