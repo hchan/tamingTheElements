@@ -486,6 +486,33 @@
         14
       ]
     },
+    "chaosBoltLoop": {
+      "url": "img/fx/loop/chaosBoltLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        82
+      ]
+    },
+    "chaosOrbLoop": {
+      "url": "img/fx/loop/chaosOrbLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
+      ]
+    },
+    "crimsonFireLoop": {
+      "url": "img/fx/loop/crimsonFireLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        128
+      ]
+    },
     "entanglingVinesAir": {
       "url": "img/fx/entanglingVinesAir.png",
       "coords": [
@@ -502,6 +529,141 @@
         0,
         80,
         61
+      ]
+    },
+    "fireBlastLoop": {
+      "url": "img/fx/loop/fireBlastLoop.png",
+      "coords": [
+        0,
+        0,
+        148,
+        52
+      ]
+    },
+    "fireballLoop": {
+      "url": "img/fx/loop/fireballLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        100
+      ]
+    },
+    "hurlRockLoop": {
+      "url": "img/fx/loop/hurlRockLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        128
+      ]
+    },
+    "iciclesLoop": {
+      "url": "img/fx/loop/iciclesLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        84
+      ]
+    },
+    "impactAir": {
+      "url": "img/fx/impact/impactAir.png",
+      "coords": [
+        0,
+        0,
+        128,
+        128
+      ]
+    },
+    "impactEarth": {
+      "url": "img/fx/impact/impactEarth.png",
+      "coords": [
+        0,
+        0,
+        128,
+        128
+      ]
+    },
+    "impactFire": {
+      "url": "img/fx/impact/impactFire.png",
+      "coords": [
+        0,
+        0,
+        128,
+        128
+      ]
+    },
+    "impactIce": {
+      "url": "img/fx/impact/impactIce.png",
+      "coords": [
+        0,
+        0,
+        128,
+        128
+      ]
+    },
+    "impactVoid": {
+      "url": "img/fx/impact/impactVoid.png",
+      "coords": [
+        0,
+        0,
+        128,
+        128
+      ]
+    },
+    "impactWater": {
+      "url": "img/fx/impact/impactWater.png",
+      "coords": [
+        0,
+        0,
+        128,
+        128
+      ]
+    },
+    "rockPelletLoop": {
+      "url": "img/fx/loop/rockPelletLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        38
+      ]
+    },
+    "shardsOfIceLoop": {
+      "url": "img/fx/loop/shardsOfIceLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        22
+      ]
+    },
+    "slimeBlastLoop": {
+      "url": "img/fx/loop/slimeBlastLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        90
+      ]
+    },
+    "sonarBlastLoop": {
+      "url": "img/fx/loop/sonarBlastLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        76
+      ]
+    },
+    "windConeLoop": {
+      "url": "img/fx/loop/windConeLoop.png",
+      "coords": [
+        0,
+        0,
+        108,
+        56
       ]
     }
   },

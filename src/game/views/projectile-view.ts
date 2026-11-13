@@ -78,6 +78,13 @@ export function snagSpriteFor(sprite: string, casterElement: string | undefined)
   return sprite === 'entanglingVines' && casterElement !== undefined ? (SNAG_ART[casterElement] ?? sprite) : sprite;
 }
 
+/** Looping projectile strips play at this many frames per second (8 frames: a 0.67 s loop). */
+export const LOOP_FPS = 12;
+/** Frame index of a looping strip at wall-clock `nowMs` (view-only; the sim never sees it). */
+export function loopFrameAt(nowMs: number, frames: number): number {
+  return frames <= 0 ? 0 : Math.floor((nowMs * LOOP_FPS) / 1000) % frames;
+}
+
 /** Texture key and manifest entry for an ability sprite (`sprite:` first, then `map:`). */
 export function lookup(sprite: string): { key: string; entry: Entry } | undefined {
   const a = SPRITES[sprite];
@@ -94,6 +101,7 @@ export class ProjectileView {
   private key = '';
   private artW = 0;
   private artH = 0;
+  private loopFrames = 0;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.glow = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false).setBlendMode(BLEND_ADD).setAlpha(0.5);
@@ -107,6 +115,7 @@ export class ProjectileView {
       this.key = art;
       this.artW = 0;
       this.artH = 0;
+      this.loopFrames = 0;
       const found = lookup(art);
       if (found) {
         const tex = this.scene.textures.get(found.key);
@@ -116,7 +125,26 @@ export class ProjectileView {
         this.artH = fh;
         this.image.setTexture(found.key, FRAME);
         this.glow.setTexture(found.key, FRAME);
+        // Painted looping strip (tools/assets/fx-gen/batch-i-loops-impacts.py), drawn at the static art's size.
+        const loop = SPRITES[`${art}Loop`];
+        const lkey = `sprite:${art}Loop`;
+        if (loop && this.scene.textures.exists(lkey)) {
+          const lt = this.scene.textures.get(lkey);
+          const [, , lw = 0, lh = 0] = loop.coords;
+          const n = lw > 0 ? Math.floor(lt.getSourceImage().width / lw) : 0;
+          if (n > 1) {
+            for (let i = 0; i < n; i++) if (!lt.has(`loop${String(i)}`)) lt.add(`loop${String(i)}`, 0, i * lw, 0, lw, lh);
+            this.loopFrames = n;
+            this.image.setTexture(lkey, 'loop0');
+            this.glow.setTexture(lkey, 'loop0');
+          }
+        }
       }
+    }
+    if (this.loopFrames > 0) {
+      const f = `loop${String(loopFrameAt(this.scene.time.now, this.loopFrames))}`;
+      this.image.setFrame(f);
+      this.glow.setFrame(f);
     }
     // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
     this.image.setVisible(true).setAlpha(1);

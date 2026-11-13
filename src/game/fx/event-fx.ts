@@ -3,6 +3,7 @@ import { SimEventKind, type Element, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from './element-colors';
 import { classicShakeFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
+import { createImpactLayer } from './impact-view';
 
 /**
  * Cosmetic effects driven by sim events. View-only: nothing here touches sim state or the sim RNG
@@ -71,6 +72,8 @@ export interface FxSink {
   shake(durationMs: number, intensity: number): void;
   /** Hit-stop jitter on `target` while the view tick is below `untilTick` (the freeze deadline, W.tick units). */
   jitter(target: number, untilTick: number): void;
+  /** Painted element impact strip played once over `target` (optional; skipped under reduced motion by EventFx). */
+  impact?(target: number, element: Element): void;
   /** Floating damage number over `target`. */
   number(target: number, amount: number, scaled: boolean, counter: boolean): void;
   /**
@@ -139,7 +142,7 @@ export class EventFx {
       if (k === SimEventKind.damage ? this.opts.arcade === true : k !== SimEventKind.hitConfirmed && k !== SimEventKind.hitStop) continue;
       if (!this.deduper.firstSeen(e)) continue;
       if (k === SimEventKind.damage || k === SimEventKind.hitConfirmed) this.opts.sfx?.('hit', this.opts.elementOf?.(e['attacker'] ?? -1) ?? 'void');
-      if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1, e['amount'] ?? 5);
+      if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1, e['amount'] ?? 5, e['attacker'] ?? -1);
       else if (k === SimEventKind.hitConfirmed) this.arcadeHit(e);
       else this.hitStop(e);
     }
@@ -150,12 +153,14 @@ export class EventFx {
     return this.offsets;
   }
 
-  private classicHit(target: number, amount: number): void {
+  private classicHit(target: number, amount: number, attacker: number): void {
     this.sink.flash(target, CLASSIC_HIT_TINT);
     if (this.opts.reducedMotion()) {
       this.sink.spark(target, CLASSIC_SPARK);
       return;
     }
+    const el = this.opts.elementOf?.(attacker);
+    if (el) this.sink.impact?.(target, el);
     this.sink.burst(target, this.fill(HIT_PARTICLES), HIT_PARTICLES, CLASSIC_SPARK);
     const s = classicShakeFor(amount);
     this.sink.shake(s.durationMs, s.intensity);
@@ -175,6 +180,8 @@ export class EventFx {
       this.sink.spark(target, color);
       return;
     }
+    const el = this.opts.elementOf?.(e['attacker'] ?? -1);
+    if (el) this.sink.impact?.(target, el);
     const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
     this.sink.burst(target, this.fill(n), n, color);
   }
@@ -292,6 +299,7 @@ export function createPhaserFxSink(
   };
   const centre = at;
   const gate = new FlashGate();
+  const impacts = createImpactLayer(scene, paused);
   const spawn = (x: number, y: number, dx: number, dy: number, color: number, radius: number, life: number): void => {
     if (live >= SPARK_POOL) return;
     let d = dots[live];
@@ -323,6 +331,10 @@ export function createPhaserFxSink(
     spark(target, color): void {
       const p = centre(target);
       if (p) spawn(p.x, p.y, 0, 0, color, 8, SPARK_MS);
+    },
+    impact(target, element): void {
+      const p = centre(target);
+      if (p) impacts.spawn(p.x, p.y, element);
     },
     shake(durationMs, intensity): void {
       scene.cameras.main.shake(durationMs, intensity);
