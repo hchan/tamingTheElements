@@ -852,6 +852,15 @@ describe('smarter Arcade play (WP-arcade-ai-smarter, FUN-DESIGN 2.21)', () => {
     expect(zoneStep(me, fighter(1100, 300), Cmd.right, pf, true)).toBe(Cmd.right); // a stunned foe is pressed
   });
 
+  it('zoning is off while a living tag partner exists (2v2 rounds ran to the timer at SIM_VERSION 44-47)', () => {
+    const self = fighter(800, 300);
+    const opp = fighter(1100, 300);
+    const solo = new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ partnerPm: -1 }, 0, self, opp), Cmd.right);
+    const duo = new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ partnerPm: 600 }, 0, self, opp), Cmd.right);
+    expect(solo & Cmd.right).toBe(0); // alone: the zoning clamp removes the step in
+    expect(duo & Cmd.right).toBe(Cmd.right); // with a partner to tag in: it keeps closing
+  });
+
   it('spacingBit: ranged backs off inside 200 px (when there is room), melee closes in beyond 320 px', () => {
     expect(spacingBit(fighter(400, 300), fighter(500, 300), true, pf)).toBe(Cmd.left);
     expect(spacingBit(fighter(400, 300), fighter(300, 300), true, pf)).toBe(Cmd.right);

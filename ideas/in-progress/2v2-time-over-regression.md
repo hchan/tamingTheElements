@@ -1,5 +1,5 @@
 ---
-status: idea
+status: in-progress
 added: 2026-11-13
 ---
 
@@ -13,3 +13,13 @@ only) did not fix it; it is still inside the `tools/ci/fun-gates.json` band (0 t
 Suspects, not yet checked: the 2v2 life table `ARCADE_2V2_LIFE_PM` was tuned before the size changes (giants and Ishimi's mid-size add life and
 cut speed, so a team of two slow, tanky heroes out-lasts the round cap), and the 2v2 baseline spread is wide (Rokcore 22.7 percent, Curomo 73.9).
 Next: bisect SIM_VERSION 41..45 with `fun:report --team-size 2`, then re-fit `ARCADE_2V2_LIFE_PM` (data only).
+
+## Findings (SIM_VERSION 48)
+
+Bisected with `fun:report --ruleset arcade --team-size 2 --all`: time over 2.3 percent at v43, 13.4 at v44, 11.8 at v45, 10.6 at v46, 9.3 at v47.
+The jump is v44, not the size changes or the life table (re-fitting `ARCADE_2V2_LIFE_PM` did not help; reverted). Cause: the v44 zoning clamp in
+`ArcadeTactics.zone()` strips a ranged hero's step towards a foe inside its band, so two ranged heroes a side keep each other out of range and the
+round runs to the timer. Fix: zoning is off while a living tag partner exists (`partnerPm >= 0`). 2v2 time over is now 3.5 percent; 1v1 is unchanged
+(no partner). Regression test in `src/core/agents/scripted-ai/arcade.test.ts`.
+
+Still open: the 2v2 race win-rate spread is wide (Cyclonius 13.6 percent, Morblass 86.4), and time-over rounds still cluster in lavax-wispera.

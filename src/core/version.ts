@@ -169,5 +169,9 @@
  *    `cleanse {element, team, cleared}`; Arcade entity block 24 -> 25 ints (`cleanseReadyAt`), team block 22 -> 23 (pressTick 9 -> 10 slots);
  *    Normal and Hard AI press it when rooted or slowed. Re-record reason: the Arcade state layout, the AI commands and the
  *    new press change Arcade hashes and outcomes (Arcade goldens, Arcade baselines).
+ * 48: Arcade only; AI only (Classic hashes unchanged). 2v2 time-over fix (ideas/in-progress/2v2-time-over-regression.md): the SIM_VERSION 44 zoning clamp
+ *    is off while the hero has a living partner to tag in (`partnerPm >= 0`), so team matches close in again. Two ranged heroes per side kept out of range
+ *    and the 2v2 time-over rate went 2.3 percent (43) -> 13.4 (44); it is 3.5 now (Arcade 2v2, `fun:report --team-size 2 --all`). Re-record reason: the AI
+ *    commands of every 2v2 or 3v3 Arcade match change (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 47;
+export const SIM_VERSION = 48;
