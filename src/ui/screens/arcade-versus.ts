@@ -1,4 +1,5 @@
 import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
+import { CHARACTERS } from '@core/menu-index';
 import { el } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
 import { abilitiesSpeech, abilityChips } from './hero-abilities';
@@ -69,7 +70,7 @@ export function raceLabel(id: CharacterId): string {
 }
 
 /** A labelled select with id `arcade<Name>`; `name` is the `PickValues` key it fills. */
-export function select(name: string, label: string, options: readonly { value: string; label: string }[], value = ''): HTMLElement {
+export function select(name: string, label: string, options: readonly { value: string; label: string }[], value = '', heroes = false): HTMLElement {
   const id = `arcade${name[0]?.toUpperCase() ?? ''}${name.slice(1)}`;
   const row = el('div', 'settingsOption');
   const lab = el('label', undefined, label);
@@ -84,6 +85,16 @@ export function select(name: string, label: string, options: readonly { value: s
     input.append(opt);
   }
   if (value !== '') input.value = value;
+  if (heroes) {
+    // A hero picker voices its clicks as the picked hero's element (ui-sfx reads the nearest data-element).
+    const tag = (): void => {
+      const e = CHARACTERS.find((c) => c.id === input.value)?.element;
+      if (e === undefined) delete row.dataset['element'];
+      else row.dataset['element'] = e;
+    };
+    tag();
+    input.addEventListener('change', tag);
+  }
   row.append(lab, ' ', input);
   return row;
 }
@@ -599,12 +610,12 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     control(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode)),
     control(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size)),
     control(select('level', 'AI level', o.levels, o.current.level)),
-    select('player', 'Your race', heroOptions, o.current.player),
-    select('partner', 'Your partner (2v2)', heroOptions, o.current.partner),
-    select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2),
-    select('enemy', 'AI race', heroOptions, o.current.enemy),
-    select('enemyPartner', 'Player 2 hero 2', heroOptions, o.current.enemyPartner),
-    select('enemyPartner2', 'Player 2 hero 3', heroOptions, o.current.enemyPartner2),
+    select('player', 'Your race', heroOptions, o.current.player, true),
+    select('partner', 'Your partner (2v2)', heroOptions, o.current.partner, true),
+    select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2, true),
+    select('enemy', 'AI race', heroOptions, o.current.enemy, true),
+    select('enemyPartner', 'Player 2 hero 2', heroOptions, o.current.enemyPartner, true),
+    select('enemyPartner2', 'Player 2 hero 3', heroOptions, o.current.enemyPartner2, true),
   );
   const start = el('button', 'menuButton vsFight', 'Fight!');
   start.type = 'submit';

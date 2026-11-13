@@ -101,6 +101,7 @@ export function garrisonScreen(deps?: GarrisonDeps): ScreenFactory {
             const n = orderNumber(sel, v.id);
             const row = el('div', n === null ? 'garrisonRow' : 'garrisonRow selectedGarrisonRow');
             row.id = v.id;
+            row.dataset['element'] = v.element;
             // A keyboard-operable toggle: Tab to focus, Enter or Space to select, named by its visible text (name, level, XP, element, battle order).
             row.tabIndex = 0;
             row.setAttribute('role', 'button');
