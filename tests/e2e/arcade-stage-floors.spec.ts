@@ -33,12 +33,19 @@ for (const [element, hero, stage] of CASES) {
     await snap('');
     // Lay a trap (Z) beside the hero so the pad is seen on this floor.
     await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 1500, 360, 4); })()`);
-    await page.keyboard.down('KeyZ');
-    // Held through the steps (not one tick): the press is refused in a refusal window (weather recovery) or if the key event
-    // has not reached the input poll yet. One live trap at a time, so holding cannot plant more than one.
-    await page.evaluate('window.__TTE__.arena.stepLive(41)');
-    await page.keyboard.up('KeyZ');
-    expect((await page.evaluate<readonly unknown[] | undefined>('window.__TTE__.arena.traps()'))?.length).toBe(1);
+    // The sim finds the trap press edge itself, so a press refused on its first tick (the hero still in weather recovery: the
+    // real-time ticks before the first manual step vary run to run) is lost even if the key stays held. Settle with no input, then
+    // tap up to 5 times, releasing between taps, until the trap stands (one live trap at a time, so a retry cannot plant two).
+    await page.evaluate('window.__TTE__.arena.step(150, [0, 0])');
+    let traps = 0;
+    for (let i = 0; i < 5 && traps === 0; i++) {
+      await page.keyboard.down('KeyZ');
+      await page.evaluate('window.__TTE__.arena.stepLive(2)');
+      await page.keyboard.up('KeyZ');
+      await page.evaluate('window.__TTE__.arena.stepLive(40)');
+      traps = (await page.evaluate<readonly unknown[] | undefined>('window.__TTE__.arena.traps()'))?.length ?? 0;
+    }
+    expect(traps).toBe(1);
     await snap('-trap');
     expect(errors).toEqual([]);
   });
