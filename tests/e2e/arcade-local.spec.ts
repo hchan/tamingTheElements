@@ -147,3 +147,38 @@ test('local Versus HUD: the key hint clears both action bars, Player 2 has a rea
   await expect.poll(() => page.evaluate<string>(`getComputedStyle(document.getElementById('arcadeKeysHint')).opacity`), { timeout: 15_000 }).toBe('0');
   expect(errors).toEqual([]);
 });
+
+// Under 1100 px the compact touch row wraps to two rows of five; it must not cover either action bar (P1 bottom-left, P2 readout
+// bottom-right), and every button stays a >= 48 px target.
+const SIZES = [
+  { w: 800, h: 450 },
+  { w: 844, h: 390 },
+  { w: 1024, h: 768 },
+  { w: 1280, h: 720 },
+];
+for (const { w, h } of SIZES) {
+  test(`local Versus HUD at ${String(w)}x${String(h)}: touch buttons cover neither action bar`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await start(page);
+    const canvas = await page.locator('#game canvas').boundingBox();
+    if (!canvas) throw new Error('canvas must be laid out');
+    const k = canvas.width / 1280;
+    interface Box { x: number; y: number; w: number; h: number }
+    interface Slot { x: number; y: number; size: number }
+    const bars = [
+      ...(await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBarScreen()`)),
+      ...(await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBar2Screen()`)),
+    ].map((r) => ({ x: canvas.x + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
+    const btns = await page.evaluate<Box[]>(
+      `[...document.querySelectorAll('button.touchBtn')].map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`,
+    );
+    expect(btns.length).toBeGreaterThan(0);
+    for (const b of btns) {
+      expect(Math.min(b.w, b.h), 'touch target >= 48 px').toBeGreaterThanOrEqual(48);
+      for (const r of bars) {
+        const hit = b.x < r.x + r.w && b.x + b.w > r.x && b.y < r.y + r.h && b.y + b.h > r.y;
+        expect(hit, `touch button ${JSON.stringify(b)} covers bar slot ${JSON.stringify(r)}`).toBe(false);
+      }
+    }
+  });
+}

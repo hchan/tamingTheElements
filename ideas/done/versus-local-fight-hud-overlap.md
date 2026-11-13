@@ -19,3 +19,9 @@ Found 2026-11-12 driving `#arcade` (two players, 3v3) headless at 1280x720; scre
 - Player 2 has a small mirrored readout (bottom-right) via `ActionBarView` mirror mode; hook `actionBar2Screen`.
 - Same hero for both players: intended (mirror matches are fine, as in SF/MvC); no change.
 - Not done: closer start / auto-approach for a quicker first exchange (sim change; see versus-local-closer-start.md), and the P2 readout is covered by wrapped touch buttons in windows under 1100 px wide.
+
+## Follow-up (2026-11-13): P2 readout vs wrapped touch buttons
+
+- Fixed: the Player 2 readout (`ActionBarView` mirror mode) now measures the leftmost `button.touchBtn` that reaches its row (every 15 frames) and right-aligns to the left of it, so the wrapped touch rows (compact, under 1100 px) and the columns (large) never cover it. Wide windows keep the bottom-right margin.
+- e2e `arcade-local.spec.ts`: at 800x450, 844x390, 1024x768 and 1280x720 no touch button box overlaps any P1 or P2 bar slot and each button is at least 48 px. Headless screenshots checked at all four sizes (grim, nothing bright added).
+- Left: large-touch (coarse pointer) layout is not asserted at these sizes; the P2 readout sits mid-screen in narrow windows (small, 52 px slots).
