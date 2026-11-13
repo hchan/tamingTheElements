@@ -169,6 +169,8 @@ export interface TestHook {
   /** Name of the active game scene, set by scenes in test builds. */
   scene?: string;
   arena?: ArenaProbe;
+  /** Every `playSfx` request as `kind:element`, in order (test builds only; asserts wiring without an audio device). */
+  sfxLog?: string[];
   cinematic?: CinematicProbe;
   state(): HookState;
   /** Hash of the running arena's sim state, or 0 outside a battle. */
@@ -227,6 +229,7 @@ export function installTestHook(version: number, loadSave: (json: string) => Pro
     const hook: TestHook = {
       ready: true,
       version,
+      sfxLog: [],
       state: () => ({
         route: window.location.hash,
         mountedRoute: document.getElementById('menu')?.dataset.mountedRoute ?? '',

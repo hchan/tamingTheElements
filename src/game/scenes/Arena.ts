@@ -31,6 +31,7 @@ import {
   createRenderView,
   step,
   type Agent,
+  type Element,
   type MatchSetup,
   type RenderCharacter,
   type RenderArcade,
@@ -40,6 +41,7 @@ import {
   type SimEvent,
   type SimWorld,
 } from '@core/index';
+import { playSfx } from '../audio/sfx';
 import { CastDetector } from '../audio/cast-sounds';
 import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
 import type { AudioContextLike } from '../audio/audio-manager';
@@ -210,7 +212,7 @@ export class Arena extends Phaser.Scene {
         () => view.tick,
         hud && ((x, y, amount, scaled, counter) => { hud.spawn(x, y, amount, scaled, counter); }),
       ),
-      { reducedMotion: () => getPrefs().reduceMotion, arcade, elementOf: (id) => pool.peek(id)?.element },
+      { reducedMotion: () => getPrefs().reduceMotion, arcade, elementOf: (id) => pool.peek(id)?.element, sfx: playSfx },
     );
 
     if (this.launch && !playback) {
@@ -530,8 +532,17 @@ export class Arena extends Phaser.Scene {
   /** Legacy plays a sound when an ability is cast; the sim has no cast event, so the action bars are watched. */
   private playCasts(): void {
     const audio = this.audio?.audio;
-    if (!audio || !this.view) return;
-    for (const id of this.casts.detect(this.view)) audio.playSfx(id);
+    const view = this.view;
+    if (!audio || !view) return;
+    for (const { id, team } of this.casts.detectCasts(view)) {
+      audio.playSfx(id);
+      let element: Element = 'void';
+      let found = false;
+      view.forEachCharacter((c) => {
+        if (!found && c.team === team && (c.flags & (EntityFlag.dead | EntityFlag.benched)) === 0) { element = c.element; found = true; }
+      });
+      playSfx('cast', element);
+    }
   }
 
   /** Arcade: explains a swap press the sim is about to refuse (cooldown, frozen, stunned, no partner, no fight). View only. */
