@@ -3,6 +3,14 @@ import { expect, type Page } from '@playwright/test';
 
 // Page-side code is passed as strings because tsconfig.node has no DOM lib.
 export const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena && window.__TTE__.arena.viewsReady()`;
+/**
+ * Skips the World Tour versus splash by a tap, tolerating that it may already be gone: the splash auto-advances after 1.2 s, and under
+ * CPU load the tap's actionability checks can outlast that, leaving `locator.tap()` waiting 30 s for an element that has left. A failed
+ * tap is fine only if the arena then comes up (the caller waits on ARENA_READY).
+ */
+export async function tapTourSplash(page: Page): Promise<void> {
+  await page.locator('#tourSplash').tap({ timeout: 3_000 }).catch(() => undefined);
+}
 export const SAVE_KEY = 'Taming the Elements';
 export const BACKUP_KEY = 'Taming the Elements.v0.bak';
 /** Manual stepping (battle starts paused) and a fixed seed for the opponent draw and the sim. */

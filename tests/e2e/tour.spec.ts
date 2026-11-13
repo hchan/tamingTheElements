@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY, START, characters, collectErrors } from './parity/helpers';
+import { ARENA_READY, START, characters, collectErrors, tapTourSplash } from './parity/helpers';
 
 // World Tour shell (WP-tour-shell, FUN-DESIGN 2.18): pick three heroes, the "Stage 1 of 9" card, a best-of-3 Arcade fight won by
 // knocking out the foes twice (manual stepping, no waiting), then the Stage 2 card; the run is saved in its own key and offered
@@ -41,9 +41,8 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
 
   await page.getByRole('button', { name: 'Fight' }).click();
   // The versus splash shows first; this run lets it auto-advance (1.2 s) into the match.
-  await expect(page.locator('#tourSplash')).toContainText('Stage 1 of 9');
-  await expect(page.locator('#tourSplash')).toContainText('You: Fiara (fire)');
-  await expect(page.locator('#tourSplash')).toContainText('Opponent:');
+  // One atomic read: the splash is gone after 1.2 s, so separate polling assertions could straddle its removal under load.
+  await page.waitForFunction(`(() => { const t = document.querySelector('#tourSplash')?.textContent ?? ''; return t.includes('Stage 1 of 9') && t.includes('You: Fiara (fire)') && t.includes('Opponent:'); })()`, undefined, { timeout: 1_000 });
   await page.waitForFunction(ARENA_READY);
   await expect(page.locator('#tourSplash')).toHaveCount(0);
   await step(page, INTRO);
@@ -75,7 +74,7 @@ test('World Tour: the versus splash is skipped by Enter and by a click', async (
   await page.getByRole('button', { name: 'Fight' }).click();
   await expect(page.locator('#tourSplash svg')).toHaveCount(2);
   await page.keyboard.press('Enter');
-  await page.waitForFunction(ARENA_READY, undefined, { timeout: 1_000 });
+  await page.waitForFunction(ARENA_READY);
   await expect(page.locator('#tourSplash')).toHaveCount(0);
 
   // Leaving mid-splash never starts a battle; a click skips it.
@@ -84,7 +83,7 @@ test('World Tour: the versus splash is skipped by Enter and by a click', async (
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.getByRole('button', { name: 'Fight' }).click();
   await page.locator('#tourSplash').click();
-  await page.waitForFunction(ARENA_READY, undefined, { timeout: 1_000 });
+  await page.waitForFunction(ARENA_READY);
   await page.evaluate(`window.__TTE__.settled()`);
   expect(errors).toEqual([]);
 });
@@ -128,7 +127,7 @@ test.describe('World Tour on a touch device', () => {
     await page.goto(`${START}&ff=arcade#tour`);
     await page.getByRole('button', { name: 'Start tour' }).tap();
     await page.getByRole('button', { name: 'Fight' }).tap();
-    await page.locator('#tourSplash').tap();
+    await tapTourSplash(page);
     await page.waitForFunction(ARENA_READY);
     const buttons = page.locator('#game button.menuButton');
     await expect(buttons).toHaveCount(9);

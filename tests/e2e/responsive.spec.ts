@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY, START, collectErrors, leaveBattle, newGameToGarrison, startBattle } from './parity/helpers';
+import { ARENA_READY, START, collectErrors, leaveBattle, newGameToGarrison, startBattle, tapTourSplash } from './parity/helpers';
 
 interface Vp {
   readonly name: string;
@@ -184,7 +184,7 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
     await page.goto(`${START}&ff=arcade#tour`);
     await page.getByRole('button', { name: 'Start tour' }).tap();
     await page.getByRole('button', { name: 'Fight' }).tap();
-    await page.locator('#tourSplash').tap();
+    await tapTourSplash(page);
     await page.waitForFunction(ARENA_READY);
     if (tc.fraction !== undefined) await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(tc.fraction)}')`);
     await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
@@ -240,7 +240,7 @@ for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640
       await page.goto(`${START}&ff=arcade#tour`);
       await page.getByRole('button', { name: 'Start tour' }).tap();
       await page.getByRole('button', { name: 'Fight' }).tap();
-      await page.locator('#tourSplash').tap();
+      await tapTourSplash(page);
       await page.waitForFunction(ARENA_READY);
       // Medium display size shrinks #game below 272 px on these phones (the tightest layout).
       await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(MEDIUM)}')`);
