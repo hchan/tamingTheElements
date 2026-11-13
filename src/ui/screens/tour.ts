@@ -2,6 +2,7 @@ import type { CharacterId } from '@core/index';
 import { el } from '../dom';
 import { raceLabel, select } from './arcade-versus';
 import { HERO_COLUMNS, heroProfile } from './hero-info';
+import { heroDnd } from './hero-dnd';
 import { faceUrl, heroGrid, heroPanel } from './hero-panel';
 
 /**
@@ -123,7 +124,10 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   });
   const field = (i: number): HTMLSelectElement => form.elements.namedItem(names[i] ?? '') as HTMLSelectElement;
 
-  const panel = heroPanel();
+  const panel = heroPanel(() => {
+    dnd.disarm();
+    pick(cursor);
+  });
   const live = el('p', 'srOnly');
   live.setAttribute('role', 'status');
   let active = 0;
@@ -134,7 +138,15 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     const b = el('button', 'menuButton heroSlot');
     b.type = 'button';
     b.id = `tourSlot${String(i + 1)}`;
+    b.dataset['heroSlot'] = String(i);
     b.addEventListener('click', () => {
+      const armed = dnd.takeArmed();
+      if (armed >= 0) {
+        // Tap a hero to preview it, then tap a slot: the touch alternative to dragging.
+        active = i;
+        pick(armed);
+        return;
+      }
       active = i;
       refresh();
     });
@@ -151,18 +163,37 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
         refresh();
       });
       t.addEventListener('pointerenter', () => {
-        if (cursor !== i) {
+        // A previewed hero stays in the panel while the pointer travels to "Add to team" or a slot.
+        if (cursor !== i && dnd.armed() < 0) {
           cursor = i;
           refresh();
         }
       });
-      t.addEventListener('click', () => {
-        cursor = i;
-        pick(i);
-      });
     },
   });
   const order = heroes.order;
+  const dnd = heroDnd({
+    root: form,
+    tiles: heroes.tiles,
+    previewTile: (i) => {
+      cursor = i;
+      refresh();
+    },
+    assignTile: (i) => {
+      cursor = i;
+      pick(i);
+    },
+    dropTile: (i, slot) => {
+      const id = order[i];
+      if (id) assign(id, Number(slot));
+    },
+    swapSlots: (a, b) => {
+      const [fa, fb] = [field(Number(a)), field(Number(b))];
+      [fa.value, fb.value] = [fb.value, fa.value];
+      live.textContent = `Hero ${String(Number(a) + 1)} swapped with hero ${String(Number(b) + 1)}.`;
+      refresh();
+    },
+  });
   function refresh(): void {
     slotButtons.forEach((b, i) => {
       const id = field(i).value as CharacterId;
@@ -188,15 +219,20 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
       panel.show(shown);
     }
   }
+  /** Puts `id` in slot `slot`; a hero already in another slot swaps places with this slot's hero, so there is never a duplicate. */
+  function assign(id: CharacterId, slot: number): void {
+    const target = field(slot);
+    const old = target.value;
+    const other = names.findIndex((_n, k) => k !== slot && field(k).value === id);
+    if (other >= 0) field(other).value = old;
+    target.value = id;
+    live.textContent = `${heroProfile(id).name} is hero ${String(slot + 1)}.`;
+    refresh();
+  }
   function pick(i: number): void {
     const id = order[i];
     if (!id) return;
-    const target = field(active);
-    const old = target.value;
-    const other = names.findIndex((_n, k) => k !== active && field(k).value === id);
-    if (other >= 0) field(other).value = old;
-    target.value = id;
-    live.textContent = `${heroProfile(id).name} is hero ${String(active + 1)}.`;
+    assign(id, active);
     active = (active + 1) % names.length;
     refresh();
   }
@@ -207,6 +243,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     if (dx !== 0) next = Math.max(0, Math.min(n - 1, next));
     else if (next < 0 || next >= n) next = cursor;
     cursor = next;
+    dnd.disarm();
     heroes.tiles[next]?.focus();
     refresh();
   };

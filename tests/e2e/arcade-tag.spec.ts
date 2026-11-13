@@ -62,7 +62,9 @@ test('picker: Team first, the partner only in 2v2 (disabled and out of the Tab o
   await page.getByLabel('Team').selectOption('2');
   await expect(partner).toBeEnabled();
   await expect(page.locator('#roster-partner')).toBeVisible();
-  // Clicking a tile fills the active slot (Your race) and moves on to the next one (Your partner).
+  // A first click previews the hero; the second fills the active slot (Your race) and moves on to the next one (Your partner).
+  await page.getByRole('button', { name: /^Pax/ }).click();
+  await expect(page.getByLabel('Your race')).not.toHaveValue('pax');
   await page.getByRole('button', { name: /^Pax/ }).click();
   await expect(page.getByLabel('Your race')).toHaveValue('pax');
   await expect(page.locator('#roster-partner')).toHaveAttribute('aria-pressed', 'true');
