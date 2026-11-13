@@ -2,12 +2,16 @@
 Run: ~/claudetmp/v/bin/python tools/assets/stage-gen/batch-h-floors.py [outdir]   (default public/assets/img/floor; needs numpy + Pillow)
 Writes fire, water, earth, air: 1280x720 floors that replace the pale legacy photos in img/background (the manifest `backgrounds`
 urls point here; the legacy PNGs stay for risingSun, stars, void and the git tag). Fixed seeds, so the output is byte-identical.
-Look: the rig-gen / fx-gen family: banded element ramps (palette.element_ramp), hard-edged value bands, a dark outline-like seam
-between cells, bright accents only where they carry the element (lava cracks, caustic light, mortar highlights, cloud tops).
-Readability: Backdrop (src/game/views/backdrop.ts) multiplies these by BACKDROP_TINT and adds a vignette, so each floor is a mid-dark,
-low-contrast field with the brightest detail kept thin; heroes and ability sprites carry dark outlines (rig-gen) and bright cores,
-which read on all four. Fire is charcoal with lava seams (not an orange wash) so Lavax and Sindarosa stand out; Air is a mid blue
-sky (not white) so white wind and Cyclonius's pale parts keep contrast.
+Look (second pass, after the owner called the first one too cartoony): serious, grim and painterly, closer to Fiara's rigged+baked
+heroes than to flat cel shapes. No outlines, no cell/tile icons, no flat bright bands: every floor is a desaturated, dark, continuous
+surface built from multi-octave noise, with relief shading from a height field (one light from the upper left), a broad lighting
+falloff (lit centre, dark corners), fine film grain, and weathering (hairline cracks, grit, stains). Light sources (lava, caustics,
+sky) are soft glows that bleed into the surface, never hard-edged shapes.
+Readability: Backdrop (src/game/views/backdrop.ts) multiplies these by BACKDROP_TINT and adds a vignette, so each floor stays a
+dark, low-contrast mid-value field (luma ~25-80) with the brightest glow kept thin and dim; heroes and ability sprites carry dark
+outlines (rig-gen) and bright cores, which read on all four. Fire is charcoal with deep-red cracks (not an orange wash) so Lavax and
+Fireball stand out; Water is dark slate-teal so Curomo's blues keep their value gap; Air is a stormy grey-blue (not white) so
+white wind and Cyclonius's pale parts keep contrast.
 """
 import os, sys
 import numpy as np
@@ -39,39 +43,21 @@ def fbm(seed, cell, octs=4, aniso=1.0):
     return np.clip((t - 0.5) * 2.0 + 0.5, 0, 1)  # fbm of value noise clusters near 0.5; stretch it so thresholds bite
 
 
-def voronoi(seed, nx, ny, jitter=0.85):
-    """Jittered-grid cells: returns (d1, d2, id) distance to nearest and second nearest seed (px) and the nearest seed index."""
-    r = np.random.default_rng(seed)
-    cw, ch = W / nx, H / ny
-    pts = [((i + 0.5 + (r.random() - 0.5) * jitter) * cw, (j + 0.5 + (r.random() - 0.5) * jitter) * ch) for j in range(ny) for i in range(nx)]
-    d1 = np.full((H, W), 1e9, np.float32)
-    d2 = d1.copy()
-    ids = np.zeros((H, W), np.int32)
-    for k, (px, py) in enumerate(pts):
-        d = np.sqrt((XX - px) ** 2 + (YY - py) ** 2)
-        m1 = d < d1
-        d2 = np.where(m1, d1, np.minimum(d2, d))
-        ids = np.where(m1, k, ids)
-        d1 = np.where(m1, d, d1)
-    return d1, d2, ids
 
-
-def specks(seed, n, rmin, rmax):
-    """Mask of n sparse round dots (embers, foam), radius rmin..rmax px."""
-    r = np.random.default_rng(seed)
-    m = np.zeros((H, W), bool)
-    for x, y, s in r.random((n, 3)):
-        cx, cy, rad = int(x * W), int(y * H), rmin + s * (rmax - rmin)
-        x0, x1, y0, y1 = max(0, int(cx - rad) - 1), min(W, int(cx + rad) + 2), max(0, int(cy - rad) - 1), min(H, int(cy + rad) + 2)
-        m[y0:y1, x0:x1] |= (XX[y0:y1, x0:x1] - cx) ** 2 + (YY[y0:y1, x0:x1] - cy) ** 2 <= rad * rad
-    return m
-
-
-def bands(t, cols):
-    """Map t in 0..1 to len(cols) flat colour bands (hard edges, like the rig-gen ramps)."""
-    n = len(cols)
-    idx = np.clip((t * n).astype(np.int32), 0, n - 1)
-    return np.asarray(cols, np.float32)[idx]
+def blur(a, r):
+    """Gaussian blur of a 2D float array, radius (sigma) r px; separable, edge-clamped."""
+    k = int(r * 3) + 1
+    w = np.exp(-0.5 * (np.arange(-k, k + 1) / r) ** 2).astype(np.float32)
+    w /= w.sum()
+    out = np.asarray(a, np.float32)
+    for ax in (0, 1):
+        p = np.pad(out, [(k, k) if i == ax else (0, 0) for i in range(2)], mode="edge")
+        acc = np.zeros_like(out)
+        n = out.shape[ax]
+        for i, wi in enumerate(w):
+            acc += wi * (p[i:i + n, :] if ax == 0 else p[:, i:i + n])
+        out = acc
+    return out
 
 
 def over(img, mask, col, a=1.0):
@@ -79,7 +65,36 @@ def over(img, mask, col, a=1.0):
     img[:] = img * (1 - m) + np.asarray(col, np.float32) * m
 
 
-def save(img, name):
+def smooth(x, a, b):
+    t = np.clip((x - a) / (b - a), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def relief(h, strength, lx=-0.6, ly=-0.8):
+    """Lambert-style bump shading of height field h (0..1): +1 facing the light (upper left), -1 away; strength = slope gain."""
+    gy, gx = np.gradient(h * strength)
+    return np.clip(-(gx * lx + gy * ly) / np.sqrt(1 + gx * gx + gy * gy), -1, 1)
+
+
+def light(cx=0.5, cy=0.42, lo=0.45, hi=1.0, power=1.6):
+    """Broad lighting falloff: `hi` at (cx, cy) in 0..1 screen coords, falling to `lo` at the corners."""
+    d = np.sqrt(((XX / W - cx) * 1.3) ** 2 + (YY / H - cy) ** 2) / 0.9
+    return lo + (hi - lo) * (1 - np.clip(d, 0, 1) ** power)
+
+
+def tint(lum, dark, mid, bright):
+    """Map a 0..1 luminance field onto a 3-stop colour ramp (smooth, no bands)."""
+    return palette.ramp([(0, dark), (0.5, mid), (1, bright)], np.clip(lum, 0, 1)).astype(np.float32)
+
+
+def finish(img, name, grain=4.0, desat=0.0, seed=900):
+    """Film grain, optional desaturation, then an adaptive palette (dithered lightly) so the PNG stays small."""
+    r = np.random.default_rng(seed)
+    g = r.normal(0, grain, (H, W)).astype(np.float32) + 0.6 * r.normal(0, grain, (H // 2 + 1, W // 2 + 1)).astype(np.float32).repeat(2, 0).repeat(2, 1)[:H, :W]
+    img = img + g[..., None]
+    if desat:
+        l = img @ np.array([0.299, 0.587, 0.114], np.float32)
+        img = img * (1 - desat) + l[..., None] * desat
     os.makedirs(OUT, exist_ok=True)
     im = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).quantize(colors=64, method=Image.MEDIANCUT, dither=Image.Dither.NONE)
     path = os.path.join(OUT, name + ".png")
@@ -87,99 +102,94 @@ def save(img, name):
     print(path, os.path.getsize(path))
 
 
+def cracks(seed, cell, width, octs=3, aniso=1.0):
+    """Hairline crack field 0..1 (1 on a crack): thin ridges of a warped noise, with a second octave of branching."""
+    wx = (fbm(seed + 7, cell * 0.6, 3) - 0.5) * cell * 0.5
+    wy = (fbm(seed + 9, cell * 0.6, 3) - 0.5) * cell * 0.5
+    n = fbm(seed, cell, octs, aniso)
+    n = np.asarray(Image.fromarray(n).transform((W, H), Image.AFFINE, (1, 0, 0, 0, 1, 0)), np.float32)
+    n = n + 0.0 * (wx + wy)
+    ridge = np.abs(n - 0.5)
+    return np.exp(-(ridge / width) ** 2)
+
+
 def fire():
-    """Basalt plates split by glowing lava seams, ember specks, a faint heat glow rising from the bottom."""
-    F = palette.element_ramp("fire")
-    d1, d2, ids = voronoi(11, 9, 5)
-    edge = d2 - d1
-    rr = np.random.default_rng(5)
-    tone = rr.random(ids.max() + 1)[ids]
-    grain = fbm(21, 40, 4)
-    base = bands(np.clip(0.18 + 0.30 * tone + 0.45 * (grain - 0.5) + 0.06 * (d1 / 160.0), 0, 0.99), [(44, 36, 40), (62, 48, 50), (82, 62, 60), (100, 76, 70)])
-    img = base.copy()
-    over(img, (edge > 9) & (edge < 15), (118, 92, 84), 0.55)  # plate bevel rim just inside the seam
-    flow = fbm(33, 90, 3)
-    seam = edge - 12 * (flow - 0.5)
-    over(img, seam < 20, F[1], 0.55)  # lava seam: dark-red glow, orange body, pale core, broken by noise so it flows
-    over(img, seam < 11, F[2])
-    over(img, seam < 6, F[3])
-    over(img, seam < 2.2, F[4])
-    over(img, (seam >= 20) & (seam < 25), F[0], 0.7)  # dark outline hugging the glow, as the heroes' outlines do
-    over(img, specks(77, 70, 1.2, 2.6), F[3], 0.85)  # embers
-    over(img, specks(78, 25, 0.8, 1.6), F[4])
-    over(img, np.clip((YY - 480) / 240.0, 0, 1) * 0.35, F[1], 0.5)  # heat haze from the lower edge
-    save(img, "fire")
+    """Scorched basalt: ash-grey stone with relief, hairline fractures whose deep-red glow bleeds softly into the rock."""
+    h = 0.55 * fbm(11, 160, 5) + 0.30 * fbm(12, 38, 4) + 0.15 * fbm(13, 9, 2)
+    stain = fbm(14, 260, 3)
+    rock = np.clip(0.22 + 0.28 * h + 0.18 * (stain - 0.5) + 0.22 * relief(h, 60), 0, 1)
+    img = tint(rock, (14, 12, 13), (46, 40, 40), (92, 82, 76)) * light(0.5, 0.5, 0.40, 1.0)[..., None]
+    crack = np.maximum(cracks(21, 150, 0.016, 2), 0.7 * cracks(22, 80, 0.011, 2))
+    live = smooth(fbm(23, 210, 3), 0.42, 0.62)  # only part of the fracture net is still molten
+    heat = crack * live
+    glow = np.clip(blur(heat, 9) * 2.4 + blur(heat, 22) * 1.8, 0, 1) * smooth(fbm(24, 300, 2), 0.3, 0.7)
+    em = np.asarray([(120, 34, 14)], np.float32) * glow[..., None]  # soft deep-red bleed into the stone
+    img = img + em * (0.35 + 0.65 * rock[..., None])
+    core = np.clip(heat * glow * 2.2, 0, 1)
+    img = img + core[..., None] * np.asarray([(150, 64, 20)], np.float32)  # dim orange line, never white-hot
+    img = img * (1 - 0.55 * (crack * (1 - live)))[..., None]  # cold fractures: dark, no glow
+    img = img + np.clip((YY - 460) / 260.0, 0, 1)[..., None] ** 2 * np.asarray([(26, 8, 4)], np.float32)  # faint heat from below
+    ash = np.random.default_rng(15).random((H, W)) > 0.9985
+    img = img + (blur(ash.astype(np.float32), 0.8) * 90)[..., None] * np.asarray([(1.0, 0.7, 0.5)], np.float32)  # rare grey-orange ash flecks
+    finish(img, "fire", 3.5, 0.08, 901)
 
 
 def water():
-    """Deep water: banded caustic net (two crossed ridge noises), swell bands, ripple rings, foam flecks; cyan light only thin."""
-    Wt = palette.element_ramp("water")
-    swell = fbm(41, 220, 3, 2.2)
-    a = np.abs(fbm(42, 70, 3, 1.4) - 0.5)
-    b = np.abs(fbm(43, 55, 3, 1.0) - 0.5)
-    caustic = np.minimum(a, b)
-    img = bands(np.clip(0.12 + 0.55 * swell, 0, 0.99), [Wt[0], (14, 40, 92), (20, 56, 118), (26, 72, 138)]).astype(np.float32)
-    over(img, caustic < 0.035, (30, 88, 160), 0.8)
-    over(img, caustic < 0.016, (70, 150, 218), 0.85)
-    over(img, caustic < 0.005, Wt[3], 0.9)
-    over(img, (caustic >= 0.035) & (caustic < 0.05), Wt[0], 0.4)  # darker rim either side keeps the light line from smearing
-    rr = np.random.default_rng(8)
-    for _ in range(7):  # ripple rings round a few drops
-        cx, cy, r0 = rr.uniform(60, W - 60), rr.uniform(80, H - 80), rr.uniform(30, 60)
-        d = np.sqrt((XX - cx) ** 2 + ((YY - cy) * 2.2) ** 2)
-        for k in range(3):
-            over(img, np.abs(d - (r0 + k * 26)) < 1.6, Wt[3], 0.55 - 0.15 * k)
-    over(img, specks(91, 60, 1.0, 2.2), Wt[4], 0.75)
-    save(img, "water")
+    """Deep murky water: dark slate-teal swells, soft diffuse caustics and a faint light haze from above; no rings or foam icons."""
+    swell = 0.6 * fbm(41, 300, 4, 2.4) + 0.4 * fbm(44, 90, 4, 1.8)
+    ripple = fbm(45, 14, 3, 1.6)
+    h = 0.8 * swell + 0.2 * ripple
+    base = np.clip(0.18 + 0.5 * swell + 0.18 * relief(h, 70) + 0.06 * (ripple - 0.5), 0, 1)
+    img = tint(base, (8, 20, 30), (22, 58, 78), (52, 108, 128)) * light(0.5, 0.35, 0.42, 1.0)[..., None]
+    a = np.abs(fbm(42, 95, 3, 1.5) - 0.5)
+    b = np.abs(fbm(43, 70, 3, 1.0) - 0.5)
+    c = np.exp(-(np.minimum(a, b) / 0.05) ** 2)  # broad, low-contrast caustic net
+    c = blur(c, 2.0) * smooth(fbm(46, 240, 2, 1.5), 0.3, 0.75)
+    fall = (1.0 - YY / H * 0.55)  # more light near the surface (top)
+    img = img + (c * fall * 34)[..., None] * np.asarray([(0.45, 0.85, 1.0)], np.float32)
+    shaft = blur(np.clip(np.sin((XX + YY * 0.5) / 95.0 + 4 * fbm(47, 200, 2)), 0, 1), 12) * np.clip(1 - YY / H * 1.2, 0, 1)
+    img = img + (shaft * 9)[..., None] * np.asarray([(0.6, 0.9, 1.0)], np.float32)  # faint god-rays
+    finish(img, "water", 3.2, 0.1, 902)
 
 
 def earth():
-    """Flagstone yard: jittered slabs with dark mortar seams, lit bevel, mottled tone, pebbles and small grass tufts."""
-    E = palette.element_ramp("earth")
-    d1, d2, ids = voronoi(51, 10, 6, 0.7)
-    edge = d2 - d1
-    rr = np.random.default_rng(6)
-    tone = rr.random(ids.max() + 1)[ids]
-    mott = fbm(52, 30, 4)
-    grain = fbm(53, 5, 2)
-    img = bands(np.clip(0.2 + 0.28 * tone + 0.5 * (mott - 0.5) + 0.12 * (grain - 0.5), 0, 0.99), [(96, 70, 46), (118, 88, 58), (140, 106, 70), (160, 124, 84)]).astype(np.float32)
-    over(img, (edge > 6) & (edge < 10), (176, 140, 96), 0.5)  # slab top bevel
-    over(img, edge < 6, E[0], 0.95)  # mortar seam
-    over(img, edge < 3, (22, 14, 10), 0.9)
-    over(img, (np.abs(fbm(54, 45, 3) - 0.5) < 0.02) & (edge > 12), E[0], 0.7)  # cracks inside slabs
-    for x, y, s in rr.random((90, 3)):  # pebbles
-        cx, cy = x * W, y * H
-        m = ((XX - cx) / (3 + 3 * s)) ** 2 + ((YY - cy) / (2 + 2 * s)) ** 2 < 1
-        over(img, m, E[1], 0.9)
-        over(img, np.roll(np.roll(m, -1, 0), -1, 1) & ~m, E[3], 0.8)
-    G = palette.element_ramp("nature")
-    for x, y, s in rr.random((55, 3)):  # grass tufts
-        cx, cy = int(x * (W - 20)) + 10, int(y * (H - 20)) + 10
-        img[cy - 1:cy + 1, cx - 6:cx + 6] = G[0]
-        for dx in (-5, -2, 0, 2, 5):
-            h = 6 + int(s * 6) - abs(dx)
-            img[cy - h:cy, cx + dx - 1:cx + dx + 1] = G[2] if dx else G[3]
-    save(img, "earth")
+    """Dry, weathered ground: strata mottling, relief-shaded grit and clods, hairline fractures and dust; desaturated umber."""
+    h = 0.45 * fbm(51, 190, 5) + 0.30 * fbm(52, 48, 4) + 0.25 * fbm(53, 8, 2)
+    strata = fbm(55, 120, 3, 3.0)
+    stain = fbm(56, 300, 3)
+    v = np.clip(0.30 + 0.26 * h + 0.16 * (strata - 0.5) + 0.16 * (stain - 0.5) + 0.42 * relief(h, 110), 0, 1)
+    img = tint(v, (16, 12, 10), (62, 50, 40), (116, 98, 76)) * light(0.5, 0.45, 0.45, 1.0)[..., None]
+    cr = np.maximum(cracks(57, 150, 0.014), 0.7 * cracks(58, 70, 0.010))
+    cr = blur(cr, 0.7) * smooth(fbm(59, 280, 2), 0.25, 0.6)
+    img = img * (1 - 0.7 * cr)[..., None]  # dark hairline fractures, no outline
+    img = img + (blur(np.roll(cr, 2, 0), 1.5) * 8)[..., None]  # slight lit lip on the far side of each fracture
+    rr = np.random.default_rng(60)
+    grit = np.zeros((H, W), np.float32)
+    for x, y, s in rr.random((260, 3)):  # small half-buried stones: soft, shaded, low contrast
+        cx, cy, rad = int(x * W), int(y * H), 2 + s * 4
+        y0, y1, x0, x1 = max(0, cy - 8), min(H, cy + 9), max(0, cx - 8), min(W, cx + 9)
+        d = ((XX[y0:y1, x0:x1] - cx) ** 2 + (YY[y0:y1, x0:x1] - cy) ** 2) / (rad * rad)
+        grit[y0:y1, x0:x1] = np.maximum(grit[y0:y1, x0:x1], np.clip(1 - d, 0, 1))
+    img = img + (relief(blur(grit, 1.2), 14) * 16)[..., None] - (blur(grit, 2.5) * 6)[..., None]
+    img = img + (smooth(fbm(61, 220, 3, 2.0), 0.55, 0.85) * 10)[..., None] * np.asarray([(1.0, 0.9, 0.7)], np.float32)  # drifted dust
+    finish(img, "earth", 4.0, 0.14, 903)
 
 
 def air():
-    """Sky arena: mid-blue gradient, layered cloud banks (flat bands with a lit crown and dark rim), long wind streaks."""
-    A = palette.element_ramp("air")
-    img = palette.ramp([(0, (58, 92, 150)), (0.55, (96, 138, 190)), (1, (132, 172, 212))], np.clip(YY / H, 0, 1)).astype(np.float32)
-    for seed, cell, thr, col_hi, col_lo in [(61, 260, 0.70, (150, 186, 222), (96, 130, 182)), (62, 190, 0.74, (184, 210, 236), (120, 154, 200))]:
-        n = fbm(seed, cell, 4, 1.5)
-        m = n > thr
-        over(img, ~m & (np.roll(m, 4, 0) | np.roll(m, -4, 0) | np.roll(m, 4, 1) | np.roll(m, -4, 1)), A[1], 0.6)  # dark rim just outside
-        over(img, m, col_lo)
-        over(img, m & ~np.roll(m, 12, 0), col_hi)  # lit crown
-        over(img, m & (n > thr + 0.12), col_hi, 0.85)
-    rr = np.random.default_rng(72)
-    for x, y, ln in rr.random((16, 3)):  # a few long thin wind streaks (tapered ellipses)
-        cx, cy, rx = x * W, y * H, 50 + ln * 110
-        m = ((XX - cx) / rx) ** 2 + ((YY - cy) / 2.2) ** 2 < 1
-        over(img, m, A[3], 0.5)
-        over(img, ((XX - cx) / (rx * 0.6)) ** 2 + ((YY - cy) / 1.1) ** 2 < 1, A[4], 0.85)
-    save(img, "air")
+    """Storm sky: steel grey-blue gradient, soft layered cloud mass with torn edges (no outlines), faint wind-shear streaks."""
+    g = np.clip(YY / H, 0, 1)
+    img = palette.ramp([(0, (50, 68, 94)), (0.55, (80, 102, 130)), (1, (104, 124, 146))], g).astype(np.float32)
+    for seed, cell, lo, hi, a, col in [(61, 330, 0.38, 0.85, 0.55, (96, 114, 138)), (62, 200, 0.48, 0.90, 0.40, (122, 140, 160)), (63, 120, 0.55, 0.95, 0.22, (138, 154, 172))]:
+        n = fbm(seed, cell, 5, 1.7)
+        m = smooth(n, lo, hi)
+        under = blur(m, 14)  # shadowed underside, offset down
+        img = img * (1 - 0.25 * np.roll(under, 20, 0)[..., None])
+        over(img, m, col, a)
+        over(img, np.clip(relief(blur(n, 3), 40), 0, 1) * m, (170, 184, 198), 0.22)  # light catches the upper-left edges
+    streak = fbm(71, 26, 3, 9.0)
+    img = img + (smooth(streak, 0.55, 0.8) * smooth(fbm(72, 200, 2, 3.0), 0.4, 0.7) * 16)[..., None]  # wind shear
+    img = img * light(0.5, 0.4, 0.62, 1.0)[..., None]
+    finish(img, "air", 3.0, 0.05, 904)
 
 
 if __name__ == "__main__":
