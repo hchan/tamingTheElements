@@ -1,5 +1,5 @@
 ---
-status: brainstorm
+status: idea
 added: 2026-11-13
 ---
 
