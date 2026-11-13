@@ -32,10 +32,10 @@ const drag = (from: Element, to: Element | null, release = true): void => {
 };
 
 describe('Play picker: click previews, second click or Add assigns', () => {
-  const mount = (): void => {
+  const mount = (team: readonly string[] = ['sindarosa', 'rokcore', 'lavax']): void => {
     document.body.append(tourPickView({ races: RACES, current: ['sindarosa', 'rokcore', 'lavax'], onStart: vi.fn() }));
     // happy-dom mis-reports preselected options: set the team explicitly.
-    ['sindarosa', 'rokcore', 'lavax'].forEach((v, i) => {
+    team.forEach((v, i) => {
       sel(`arcadeHero${String(i + 1)}`).value = v;
     });
   };
@@ -50,12 +50,19 @@ describe('Play picker: click previews, second click or Add assigns', () => {
   });
 
   it('a second click on the same tile assigns it to the active slot', () => {
-    mount();
+    mount(['sindarosa', 'rokcore', '']);
     click(tile('Lavax'));
     click(tile('Lavax'));
     expect(sel('arcadeHero1').value).toBe('lavax');
-    expect(sel('arcadeHero3').value).toBe('sindarosa');
     expect(tile('Lavax').classList.contains('heroArmed')).toBe(false);
+  });
+
+  it('a second click on a hero already on the team takes it off', () => {
+    mount();
+    click(tile('Lavax'));
+    click(tile('Lavax'));
+    expect(sel('arcadeHero3').value).toBe('');
+    expect(sel('arcadeHero1').value).toBe('sindarosa');
   });
 
   it('the Add to team button assigns the previewed hero, even after the pointer wandered over other tiles', () => {
@@ -68,10 +75,12 @@ describe('Play picker: click previews, second click or Add assigns', () => {
     expect(new Set(['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((i) => sel(i).value)).size).toBe(3);
   });
 
-  it('keyboard activation (detail 0) still assigns straight away', () => {
-    mount();
+  it('keyboard activation (detail 0) still assigns straight away, and toggles a team hero off', () => {
+    mount(['sindarosa', 'rokcore', '']);
     tile('Lavax').click();
     expect(sel('arcadeHero1').value).toBe('lavax');
+    tile('Lavax').click();
+    expect(sel('arcadeHero1').value).toBe('');
   });
 
   it('tap fallback: preview a hero, then tap a slot', () => {
@@ -84,10 +93,10 @@ describe('Play picker: click previews, second click or Add assigns', () => {
 });
 
 describe('Play picker: drag and drop', () => {
-  const mount = (): void => {
+  const mount = (initial: readonly string[] = ['sindarosa', 'rokcore', 'lavax']): void => {
     document.body.append(tourPickView({ races: RACES, current: ['sindarosa', 'rokcore', 'lavax'], onStart: vi.fn() }));
     // happy-dom mis-reports preselected options: set the team explicitly.
-    ['sindarosa', 'rokcore', 'lavax'].forEach((v, i) => {
+    initial.forEach((v, i) => {
       sel(`arcadeHero${String(i + 1)}`).value = v;
     });
   };
@@ -125,12 +134,24 @@ describe('Play picker: drag and drop', () => {
     expect(team()).toEqual(['lavax', 'rokcore', 'sindarosa']);
   });
 
-  it('dragging a slot back off to the grid or nowhere keeps the team as it was', () => {
+  it('dragging a slot off onto the grid or nowhere removes it from the team', () => {
     mount();
     drag(slotEl('1'), tile('Lavax'));
-    drag(slotEl('1'), null);
-    expect(team()).toEqual(['sindarosa', 'rokcore', 'lavax']);
+    expect(team()).toEqual(['sindarosa', '', 'lavax']);
+    drag(slotEl('0'), null);
+    expect(team()).toEqual(['', '', 'lavax']);
     expect(document.querySelector('.heroGhost')).toBeNull();
+    expect(document.querySelector('#tourStart')?.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('dragging an empty slot does nothing, and Escape keeps a dragged slot', () => {
+    mount(['sindarosa', '', 'lavax']);
+    drag(slotEl('1'), null);
+    expect(team()).toEqual(['sindarosa', '', 'lavax']);
+    drag(slotEl('0'), null, false);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    ptr('pointerup', document.body, 60, 60);
+    expect(team()).toEqual(['sindarosa', '', 'lavax']);
   });
 
   it('a press that never moves is a plain click, not a drag', () => {
@@ -209,5 +230,37 @@ describe('Versus picker', () => {
     click(tile('Rokcore'));
     click(slotEl('partner'));
     expect(sel('arcadePartner').value).toBe('rokcore');
+  });
+  it('dragging a picked slot off onto the grid or nowhere empties it and blocks Fight; an empty slot stays put', () => {
+    mount();
+    drag(tile('Lavax'), slotEl('player'));
+    drag(tile('Rokcore'), slotEl('partner'));
+    drag(slotEl('partner'), null);
+    expect(sel('arcadePartner').value).toBe('');
+    expect(slotEl('partner').classList.contains('heroSlotEmpty')).toBe(true);
+    expect((document.getElementById('arcadeStart') as HTMLButtonElement).disabled).toBe(true);
+    expect(document.getElementById('arcadeFightHint')?.textContent).toMatch(/^Pick \d more hero/);
+    drag(slotEl('player'), tile('Rokcore'));
+    expect(sel('arcadePlayer').value).toBe('');
+    drag(slotEl('partner'), null);
+    expect(sel('arcadePartner').value).toBe('');
+  });
+
+  it('Delete on a focused slot empties it', () => {
+    mount();
+    drag(tile('Lavax'), slotEl('player'));
+    const ev = new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true });
+    slotEl('player').dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(sel('arcadePlayer').value).toBe('');
+  });
+
+  it('activating a hero the side already picked takes it off again', () => {
+    mount();
+    tile('Lavax').click();
+    const slot = ['arcadePlayer', 'arcadePartner', 'arcadePartner2'].find((i) => sel(i).value === 'lavax') as string;
+    expect(slot).toBeDefined();
+    tile('Lavax').click();
+    expect(sel(slot).value).toBe('');
   });
 });

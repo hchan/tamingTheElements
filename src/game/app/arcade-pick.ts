@@ -85,6 +85,13 @@ function bench(enemy: CharacterId, raw: PickForm): CharacterId[] {
   return raw.size === '3' ? [second, partner2For(enemy, second, raw.enemyPartner2)] : [second];
 }
 
+/**
+ * False when a hero the form sent is blank (the player emptied that slot in the picker): `parsePick` would quietly fill it with a
+ * default, so the caller checks this first and does not start. Fields the form left out (a disabled slot) are not required.
+ */
+export const isCompletePick = (raw: PickForm): boolean =>
+  [raw.player, raw.enemy, raw.partner, raw.partner2, raw.enemyPartner, raw.enemyPartner2].every((h) => h !== '');
+
 /** Form values to a pick; anything unknown falls back to the default, and no race is on a tag team twice. */
 export function parsePick(raw: PickForm): ArcadePick {
   const player = race(raw.player, DEFAULT_PICK.player);

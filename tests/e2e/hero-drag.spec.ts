@@ -53,15 +53,13 @@ test('Play picker: preview on click, drag a hero onto a slot, swap slots, never 
   await dragTo(page, slot(1), slot(3));
   expect(await team(page)).toEqual(['fiara', 'pax', 'curomo']);
 
-  // A slot dragged back onto the grid leaves the team untouched.
+  // A slot dragged back onto the grid is removed from the team (and becomes the active slot).
   await dragTo(page, slot(2), tile(/^Rokcore/));
-  expect(await team(page)).toEqual(['fiara', 'pax', 'curomo']);
-  expect(new Set(await team(page)).size).toBe(3);
+  expect(await team(page)).toEqual(['fiara', '', 'curomo']);
 
-  // Preview, then "Add to team" assigns to the active slot.
+  // Preview, then "Add to team" fills the emptied slot.
   await tile(/^Rokcore/).click();
   await page.getByRole('button', { name: 'Add to team' }).click();
-  expect(new Set(await team(page)).size).toBe(3);
-  expect(await team(page)).toContain('rokcore');
+  expect(await team(page)).toEqual(['fiara', 'rokcore', 'curomo']);
   expect(errors).toEqual([]);
 });

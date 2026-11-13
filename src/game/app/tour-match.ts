@@ -43,6 +43,12 @@ export function matchSeed(run: TourRun, stage: TourStage): number {
   return base;
 }
 
+/** `parseTeam` for the Play picker, where a slot can be empty: undefined unless all three slots hold a known hero (an empty slot is never filled in for the player; a repeat is still repaired by `parseTeam`). */
+export function parseCompleteTeam(raw: { readonly hero1?: string; readonly hero2?: string; readonly hero3?: string }): CharacterId[] | undefined {
+  const known = [raw.hero1, raw.hero2, raw.hero3].every((h) => ARCADE_RACES.some((r) => r === h));
+  return known ? parseTeam(raw) : undefined;
+}
+
 /** The picker's three selects to a team: a known lead, then partners that repeat nobody (a repeat is replaced). */
 export function parseTeam(raw: { readonly hero1?: string; readonly hero2?: string; readonly hero3?: string }): CharacterId[] {
   const first = ARCADE_RACES.find((r) => r === raw.hero1) ?? DEFAULT_PICK.player;

@@ -97,7 +97,9 @@ export interface TourPickOptions {
  * The Play team picker (Marvel vs. Capcom style): three team slots, the element-grouped portrait grid and the focused hero's panel
  * (stats and what each ability does). Arrow keys or W A S D move, Enter or Space picks, a gamepad D-pad and A do the same, and the
  * mouse or touch picks by tap. The three real selects stay in the form, visually hidden and out of the Tab order, so the form data,
- * labels and tests are unchanged. Picking a hero already in another slot swaps the two.
+ * labels and tests are unchanged. Picking a hero already in another slot swaps the two. A slot can also be emptied (the x button,
+ * Delete or Backspace on the slot, a second click or Enter on its hero's tile, dragging it off, gamepad B); Start waits until all three
+ * slots hold a hero. An empty slot is a hidden select with the empty option.
  */
 export function tourPickView(o: TourPickOptions): HTMLElement {
   const page = el('div', 'menuPage');
@@ -110,7 +112,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
       'Pick three different heroes, then fight your way through nine stages, each a best-of-3 against an AI team: eight element locations, then the Eternal Void. A lost fight can be replayed up to 3 times. Your run is kept in this browser so you can resume it.',
     ),
   );
-  const races = o.races.map((r) => ({ value: r, label: raceLabel(r) }));
+  const races = [{ value: '', label: 'Empty' }, ...o.races.map((r) => ({ value: r, label: raceLabel(r) }))];
   const form = el('form', 'settingsForm heroSelect');
   const names = ['hero1', 'hero2', 'hero3'] as const;
   const labels = ['Hero 1 (lead)', 'Hero 2', 'Hero 3'] as const;
@@ -124,6 +126,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   });
   const field = (i: number): HTMLSelectElement => form.elements.namedItem(names[i] ?? '') as HTMLSelectElement;
 
+  const idAt = (i: number): CharacterId | '' => field(i).value as CharacterId | '';
   const panel = heroPanel(() => {
     dnd.disarm();
     pick(cursor);
@@ -139,6 +142,12 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     b.type = 'button';
     b.id = `tourSlot${String(i + 1)}`;
     b.dataset['heroSlot'] = String(i);
+    b.addEventListener('keydown', (e) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        clear(i);
+      }
+    });
     b.addEventListener('click', () => {
       const armed = dnd.takeArmed();
       if (armed >= 0) {
@@ -181,11 +190,15 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     },
     assignTile: (i) => {
       cursor = i;
-      pick(i);
+      toggle(i);
     },
     dropTile: (i, slot) => {
       const id = order[i];
       if (id) assign(id, Number(slot));
+    },
+    slotDraggable: (slot) => idAt(Number(slot)) !== '',
+    clearSlot: (slot) => {
+      clear(Number(slot));
     },
     swapSlots: (a, b) => {
       const [fa, fb] = [field(Number(a)), field(Number(b))];
@@ -196,17 +209,38 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   });
   function refresh(): void {
     slotButtons.forEach((b, i) => {
-      const id = field(i).value as CharacterId;
+      const id = idAt(i);
       b.textContent = '';
-      const face = el('span', 'heroFace heroSlotFace');
-      face.style.backgroundImage = faceUrl(id);
-      face.setAttribute('aria-hidden', 'true');
-      b.append(face, el('span', 'heroSlotLabel', labels[i] ?? ''), el('b', 'heroSlotName', heroProfile(id).name));
+      b.classList.toggle('heroSlotEmpty', id === '');
+      if (id === '') {
+        b.append(el('span', 'heroSlotLabel', labels[i] ?? ''), el('b', 'heroSlotName', 'Empty'));
+      } else {
+        const face = el('span', 'heroFace heroSlotFace');
+        face.style.backgroundImage = faceUrl(id);
+        face.setAttribute('aria-hidden', 'true');
+        b.append(face, el('span', 'heroSlotLabel', labels[i] ?? ''), el('b', 'heroSlotName', heroProfile(id).name));
+      }
       b.setAttribute('aria-pressed', String(i === active));
       b.classList.toggle('heroActive', i === active);
+      // The x button sits next to the slot (a button cannot hold a button) and exists only while the slot holds a hero.
+      const li = b.parentElement;
+      li?.querySelector('.heroSlotClear')?.remove();
+      if (li && id !== '') {
+        const x = el('button', 'menuButton heroSlotClear', '\u00d7');
+        x.type = 'button';
+        x.setAttribute('aria-label', `Remove ${heroProfile(id).name} from slot ${String(i + 1)}`);
+        x.addEventListener('click', () => {
+          clear(i);
+        });
+        li.append(x);
+      }
     });
+    const missing = names.filter((_n, k) => idAt(k) === '').length;
+    start.disabled = missing > 0;
+    hint.hidden = missing === 0;
+    hint.textContent = missing === 0 ? '' : missing === names.length ? 'Pick 3 heroes' : `Pick ${String(missing)} more hero${missing === 1 ? '' : 'es'}`;
     heroes.tiles.forEach((t, i) => {
-      const inTeam = names.findIndex((_n, k) => field(k).value === order[i]);
+      const inTeam = names.findIndex((_n, k) => idAt(k) !== '' && idAt(k) === order[i]);
       t.classList.toggle('heroCursor', i === cursor);
       t.classList.toggle('heroPicked', inTeam >= 0);
       t.setAttribute('aria-pressed', String(inTeam >= 0));
@@ -229,11 +263,29 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     live.textContent = `${heroProfile(id).name} is hero ${String(slot + 1)}.`;
     refresh();
   }
+  /** Empties slot `slot` and makes it the active one, so the next pick refills it. */
+  function clear(slot: number): void {
+    const was = idAt(slot);
+    if (was === '') return;
+    field(slot).value = '';
+    active = slot;
+    live.textContent = `${heroProfile(was).name} removed from hero ${String(slot + 1)}.`;
+    refresh();
+  }
+  /** Pick or toggle off: a hero already on the team (tile activated again) leaves it. */
+  function toggle(i: number): void {
+    const id = order[i];
+    const slot = id ? names.findIndex((_n, k) => idAt(k) === id) : -1;
+    if (slot >= 0) clear(slot);
+    else pick(i);
+  }
   function pick(i: number): void {
     const id = order[i];
     if (!id) return;
     assign(id, active);
-    active = (active + 1) % names.length;
+    // On to the next empty slot, else the next one round.
+    const empty = names.map((_n, k) => (active + 1 + k) % names.length).find((k) => idAt(k) === '');
+    active = empty ?? (active + 1) % names.length;
     refresh();
   }
   /** Moves the cursor (and the focus, so the panel and screen readers follow). */
@@ -247,7 +299,10 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     heroes.tiles[next]?.focus();
     refresh();
   };
+  const hint = el('p', 'heroHint');
+  hint.id = 'tourHint';
   const start = el('button', 'menuButton', 'Start tour');
+  start.setAttribute('aria-describedby', 'tourHint');
   start.type = 'submit';
   start.id = 'tourStart';
   const back = el('a', 'menuButton', 'Back');
@@ -255,12 +310,18 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   const stage = el('div', 'heroStage');
   stage.append(heroes.grid, panel.node);
   const actions = el('div', 'heroActions');
-  actions.append(start, back);
+  actions.append(start, hint, back);
   form.append(hidden, slotsBox, stage, live, actions);
   cursor = Math.max(0, order.indexOf(o.current[0] as CharacterId));
   refresh();
+  // A change made straight on a hero select (assistive tech, autofill, tests) shows in the slots too.
+  form.addEventListener('change', refresh);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (names.some((_n, k) => idAt(k) === '')) {
+      live.textContent = 'Pick all three heroes first.';
+      return;
+    }
     o.onStart(Object.fromEntries(new FormData(form)) as { hero1: string; hero2: string; hero3: string });
   });
   const keys: Record<string, [number, number]> = {
@@ -281,7 +342,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     move(d[0], d[1]);
   };
   document.addEventListener('keydown', onKey);
-  // Gamepad: D-pad or left stick moves, A picks, B steps back a slot; polled while the page is up.
+  // Gamepad: D-pad or left stick moves, A picks, B steps back a slot and empties it; polled while the page is up.
   const held = new Map<string, boolean>();
   const poll = (): void => {
     if (!page.isConnected) {
@@ -304,8 +365,10 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
           else if (name === 'right') move(1, 0);
           else if (name === 'pick') pick(cursor);
           else {
+            // Step back a slot and empty it when it holds a hero: B undoes the last pick.
             active = (active + names.length - 1) % names.length;
-            refresh();
+            if (idAt(active) !== '') clear(active);
+            else refresh();
           }
         }
         held.set(name, on);
