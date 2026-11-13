@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { CharacterId } from '@core/index';
+import { getCharacter, type CharacterId } from '@core/index';
 import { arcadePickView } from './arcade-versus';
 import { tourPickView } from './tour';
 
@@ -169,6 +169,26 @@ describe('Play picker: drag and drop', () => {
     ptr('pointerup', slotEl('0'), 60, 60);
     expect(document.querySelector('.heroGhost')).toBeNull();
     expect(team()).toEqual(['sindarosa', 'rokcore', 'lavax']);
+  });
+});
+
+describe('hero pickers voice their clicks as the hero element (ui-sfx reads data-element)', () => {
+  it('race selects carry the picked hero element and follow changes', () => {
+    document.body.append(
+      arcadePickView({
+        races: RACES,
+        levels: [{ value: '1', label: 'Level 1' }],
+        current: { player: 'rokcore', enemy: 'lavax', level: '1', size: '1', mode: 'ai', partner: '', partner2: '', enemyPartner: '', enemyPartner2: '' },
+        onStart: vi.fn(),
+      }),
+    );
+    const voice = (id: string): string | undefined => sel(id).closest<HTMLElement>('[data-element]')?.dataset['element'];
+    expect(voice('arcadePlayer')).toBe(getCharacter('rokcore' as CharacterId).element);
+    expect(voice('arcadeEnemy')).toBe(getCharacter('lavax' as CharacterId).element);
+    expect(voice('arcadePartner')).toBeUndefined();
+    sel('arcadePlayer').value = 'sindarosa';
+    sel('arcadePlayer').dispatchEvent(new Event('change', { bubbles: true }));
+    expect(voice('arcadePlayer')).toBe(getCharacter('sindarosa' as CharacterId).element);
   });
 });
 
