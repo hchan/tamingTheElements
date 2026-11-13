@@ -107,6 +107,8 @@ export interface ArenaProbe {
   abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string }[]; lashes: readonly { team: number; age: number }[] } | undefined>;
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
   dangerZones(): Promise<readonly { id: number; x: number; y: number; w: number; h: number; alpha: number }[] | undefined>;
+  /** Own-element patch effects drawn on the last frame (own-element-tile-effects WP 1); undefined outside Arcade. */
+  ownElement(): Promise<{ active: readonly { id: number; team: number; kind: number; age: number; pulse: boolean }[]; parts: number; reduced: boolean } | undefined>;
   /** Arcade Versus only: the 8-way aim arrow as drawn (logical px, Phaser angle in degrees), or undefined. */
   aim(): { visible: boolean; x: number; y: number; angle: number } | undefined;
   /** Arcade only: sets a team's hyper meter (0..3000), so a test can start a super at once. */

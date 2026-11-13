@@ -331,6 +331,10 @@ export class Arena extends Phaser.Scene {
       void import('../fx/trap-view').then((m) => {
         if (this.arcadeHud === hud) m.mountTrapView(this, view, () => getPrefs().reduceMotion);
       });
+      // Own-element patch effects (own-element-tile-effects WP 1, its own lazy chunk).
+      void import('../fx/own-element-view').then((m) => {
+        if (this.arcadeHud === hud) m.mountOwnElementView(this, view, () => getPrefs().reduceMotion);
+      });
     }
     // Melee danger-zone outlines (ability-telegraphs, its own lazy chunk).
     void import('../fx/danger-view').then((m) => {
@@ -450,6 +454,7 @@ export class Arena extends Phaser.Scene {
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
       terrain: () => import('../fx/terrain-view').then((m) => m.terrainState(this)),
       traps: () => import('../fx/trap-view').then((m) => m.trapState(this)),
+      ownElement: () => import('../fx/own-element-view').then((m) => m.ownElementState(this)),
       heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
       abilityFx: () => import('../fx/ability-aura-view').then((m) => m.abilityFxState(this)),
       dangerZones: () => import('../fx/danger-view').then((m) => m.dangerState(this)),
