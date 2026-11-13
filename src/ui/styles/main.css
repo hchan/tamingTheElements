@@ -998,8 +998,9 @@ html[data-high-contrast='true'] button.touchBtn {
   flex: 0 0 100%;
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(14em, 17em) minmax(0, 1fr) minmax(14em, 17em);
-  grid-template-areas: 'side1 grid side2';
+  grid-template-columns: minmax(12em, 14em) minmax(0, 1fr) minmax(0, 1fr) minmax(12em, 14em);
+  grid-template-areas: 'side1 grid hero side2';
+  font-size: 16px;
   gap: 0.75em;
   align-items: start;
   margin: 0;
@@ -1011,13 +1012,6 @@ html[data-high-contrast='true'] button.touchBtn {
 #arcadePick .vsSide2 {
   grid-area: side2;
   border-color: var(--vs-p2);
-}
-#arcadePick .rosterGrid {
-  grid-area: grid;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6.5em, 1fr));
-  gap: 6px;
-  margin: 0;
 }
 #arcadePick .vsSide {
   min-width: 0;
@@ -1135,44 +1129,308 @@ html[data-high-contrast='true'] button.touchBtn {
 #arcadePick .vsReadyOn .vsReady {
   background: var(--color-ready);
 }
-#arcadePick .rosterTile {
-  position: relative;
-  width: auto;
-  min-width: 0;
-  margin: 0;
-  padding: 6px 4px 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  border-width: 3px;
-  border-top-width: 6px;
-  border-color: #888;
-  overflow: hidden;
-}
-#arcadePick .rosterTile[data-element='fire'] { border-top-color: #ff5a3c; }
-#arcadePick .rosterTile[data-element='water'] { border-top-color: #5aa0ff; }
-#arcadePick .rosterTile[data-element='earth'] { border-top-color: #4fc16a; }
-#arcadePick .rosterTile[data-element='air'] { border-top-color: #aee8ff; }
-#arcadePick .rosterTile .rosterFace {
-  width: 56px;
-  height: 56px;
-}
-#arcadePick .rosterName {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  text-align: center;
-  line-height: 1.1;
-}
 #arcadePick .rosterElement {
   display: inline-flex;
   align-items: center;
   gap: 0.25em;
   font-size: 0.85em;
 }
-#arcadePick .rosterTile[aria-pressed='true'] {
+/* Hero select (Versus and Play): element-grouped portrait grid, focused-hero panel. Faces are graded grim like the in-game heroes. */
+.heroFace {
+  display: inline-block;
+  flex: 0 0 auto;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 400% 100%;
+  image-rendering: pixelated;
+  filter: saturate(0.55) brightness(0.8) contrast(1.1);
+}
+.heroGrid {
+  grid-area: grid;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+.heroGroup {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.2em 0 0;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #555;
+  font-size: 0.85em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  color: #b8b4aa;
+}
+.heroGroup[data-element='water'] { border-bottom-color: #3f6a99; }
+.heroGroup[data-element='air'] { border-bottom-color: #8a9ea8; }
+.heroGroup[data-element='fire'] { border-bottom-color: #99452f; }
+.heroGroup[data-element='earth'] { border-bottom-color: #4d7a4f; }
+.heroTile {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #555;
+  border-left-width: 5px;
+  border-radius: 4px;
+  background: #15151a;
+  color: #d8d4ca;
+  text-align: left;
+  overflow: hidden;
+}
+.heroTile[data-element='water'] { border-left-color: #3f6a99; }
+.heroTile[data-element='air'] { border-left-color: #8a9ea8; }
+.heroTile[data-element='fire'] { border-left-color: #99452f; }
+.heroTile[data-element='earth'] { border-left-color: #4d7a4f; }
+.heroTileFace {
+  width: 48px;
+  height: 48px;
+}
+.heroTileName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.1;
+  font-size: 0.9em;
+}
+.heroTile.heroPicked {
+  background: #2a2819;
+}
+.heroTile.heroCursor,
+.heroTile:focus-visible {
+  border-color: #d9c27a;
+  box-shadow: 0 0 0 2px #d9c27a;
   outline: 0;
-  background: #2b2a12;
+}
+.heroFlag {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  background: #d9c27a;
+  color: #000;
+  font-size: 0.7em;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.heroPanel {
+  grid-area: hero;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.6em;
+  border: 2px solid #555;
+  border-radius: 6px;
+  background: #101014;
+  text-align: left;
+  color: #d8d4ca;
+}
+.heroPanel[data-element='water'] { border-color: #3f6a99; }
+.heroPanel[data-element='air'] { border-color: #8a9ea8; }
+.heroPanel[data-element='fire'] { border-color: #99452f; }
+.heroPanel[data-element='earth'] { border-color: #4d7a4f; }
+.heroTop {
+  display: flex;
+  gap: 0.7em;
+  align-items: flex-start;
+}
+.heroPortrait {
+  width: 96px;
+  height: 96px;
+  border: 2px solid #333;
+  background-color: #08080a;
+}
+.heroName {
+  margin: 0;
+  font-size: 1.3em;
+}
+.heroKind {
+  margin: 0.1em 0;
+  text-transform: capitalize;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+.heroBlurb {
+  margin: 0.2em 0 0;
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+.heroStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em 1em;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+.heroStats > div {
+  display: flex;
+  gap: 0.4em;
+}
+.heroStats dt,
+.heroStats dd {
+  margin: 0;
+}
+.heroStats dt {
+  opacity: 0.75;
+}
+.heroStats dd {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+.heroAbilitiesTitle {
+  margin: 0.4em 0 0.2em;
+  font-size: 0.85em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.heroAbilities {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.heroAbility {
+  display: flex;
+  gap: 0.6em;
+  align-items: flex-start;
+}
+.heroAbilityIcon {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #444;
+  background: #08080a;
+  overflow: hidden;
+}
+.heroAbilityIcon img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: saturate(0.6) brightness(0.9);
+}
+.heroAbilityIcon img.heroIconStrip {
+  object-fit: cover;
+  object-position: left;
+}
+.heroAbilityText {
+  min-width: 0;
+}
+.heroAbilityName,
+.heroAbilityDesc {
+  margin: 0;
+}
+.heroAbilityName {
+  font-size: 0.9em;
+}
+.heroAbilityDesc {
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+.heroKey {
+  display: inline-block;
+  padding: 0 0.4em;
+  border: 1px solid #888;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+.heroSlots {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 0.5em;
+  padding: 0;
+  list-style: none;
+}
+.heroSlots li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.heroSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 0.2em 0.4em;
+  text-align: left;
+  border-width: 2px;
+}
+.heroSlot.heroActive {
+  border-color: #d9c27a;
+  box-shadow: 0 0 0 2px #d9c27a;
+}
+.heroSlotFace {
+  width: 40px;
+  height: 40px;
+}
+.heroSlotLabel {
+  display: block;
+  font-size: 0.7em;
+  opacity: 0.8;
+}
+.heroSlotName {
+  display: block;
+}
+.heroStage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: 'grid hero';
+  gap: 0.75em;
+  align-items: start;
+}
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.75em;
+}
+.heroSelect button:focus-visible,
+.heroSelect a:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .heroTile,
+  .heroSlot,
+  .heroActions .menuButton {
+    min-height: 48px;
+  }
+}
+@media (max-width: 640px) {
+  .heroStage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'grid' 'hero';
+  }
+  .heroTileFace {
+    width: 36px;
+    height: 36px;
+  }
+  .heroPortrait {
+    width: 72px;
+    height: 72px;
+  }
 }
 #arcadePick .vsCursor1 { border-color: var(--vs-p1); box-shadow: 0 0 0 2px var(--vs-p1); }
 #arcadePick .vsCursor2 { border-color: var(--vs-p2); box-shadow: 0 0 0 2px var(--vs-p2); }
@@ -1279,7 +1537,7 @@ html[data-high-contrast='true'] button.touchBtn {
 @media (max-width: 1000px) {
   #arcadePick .vsStage {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: 'side1 side2' 'grid grid';
+    grid-template-areas: 'side1 side2' 'grid hero';
   }
 }
 @media (max-width: 640px) {
@@ -1304,8 +1562,8 @@ html[data-high-contrast='true'] button.touchBtn {
   #arcadePick .vsSlotActions {
     flex-wrap: wrap;
   }
-  #arcadePick .rosterGrid {
-    grid-template-columns: repeat(auto-fill, minmax(5.2em, 1fr));
+  #arcadePick .vsStage {
+    grid-template-areas: 'side1 side2' 'grid grid' 'hero hero';
   }
   #arcadePick .vsKeys {
     grid-template-columns: 1fr;
