@@ -160,7 +160,7 @@ save-backed screens show "Loading...") still need their own wait (`loaded()` in 
 
 ### Keeping e2e stable and finding flakes
 
-- **Config** (`playwright.config.ts`, `playwright.pages.config.ts`): `expect` timeout 10 s, `actionTimeout` 15 s (an unclickable element
+- **Config** (`playwright.config.ts`, `playwright.pages.config.ts`): `expect` timeout 10 s, `actionTimeout` 30 s (main config) (an unclickable element
   fails fast with a call log instead of eating the 60 s test timeout), `retries: 1` and `trace: 'on-first-retry'` only when `CI` is set.
   Locally retries stay 0. A pass-after-retry is reported as "flaky" by Playwright: treat it as a bug, not as green.
   `E2E_PORT` (main) and `E2E_PAGES_PORT` / `E2E_PORT` (pages, default 4174) let worktrees run side by side.

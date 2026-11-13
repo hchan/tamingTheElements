@@ -27,6 +27,9 @@ async function start(page: Page, me: string, foe: string, gap: number): Promise<
   await page.waitForFunction(ARENA_READY);
   await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
   await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 700, 360, 0); a.place(f.id, ${String(700 + gap)}, 360, 4); })()`);
+  // The aura view detects a cast by comparing the cooldown it saw on the previous render with this one. Make sure a render has
+  // sampled the pre-cast state; on a loaded machine the first render could otherwise come after the cast and see no change.
+  await frames(page);
 }
 
 async function shots(page: Page, name: string, command: number): Promise<void> {

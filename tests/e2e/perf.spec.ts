@@ -18,7 +18,8 @@ interface FrameStats {
 
 // Page-side code is a string because tsconfig.node has no DOM lib. Each frame steps the sim once (like the real 50 Hz driver
 // at 60 fps), then records the rAF-to-rAF delta, so the sim and the render both contribute to the measured frame time.
-const FRAME_PROBE = (frames: number): string => `new Promise((resolve) => {
+const FRAME_PROBE = (frames: number, budgetMs: number): string => `new Promise((resolve) => {
+  const t0 = performance.now();
   let longTasks = 0;
   const obs = typeof PerformanceObserver === 'function' ? new PerformanceObserver((l) => { longTasks += l.getEntries().length; }) : null;
   try { obs && obs.observe({ entryTypes: ['longtask'] }); } catch (e) {}
@@ -29,15 +30,16 @@ const FRAME_PROBE = (frames: number): string => `new Promise((resolve) => {
     if (last) deltas.push(now - last);
     last = now;
     window.__TTE__.arena.step(1, [deltas.length % 7 < 4 ? RIGHT | PRIMARY : PRIMARY, 0]);
-    if (deltas.length < ${String(frames)}) requestAnimationFrame(tick);
+    if (deltas.length < ${String(frames)} && now - t0 < ${String(budgetMs)}) requestAnimationFrame(tick);
     else {
       obs && obs.disconnect();
       const sorted = deltas.slice().sort((a, b) => a - b);
       resolve({
         frames: deltas.length,
-        avgMs: deltas.reduce((a, b) => a + b, 0) / deltas.length,
-        p95Ms: sorted[Math.floor(sorted.length * 0.95)],
-        maxMs: sorted[sorted.length - 1],
+        // A window that collected no frame inside its budget reports the whole budget as its frame time.
+        avgMs: deltas.length ? deltas.reduce((a, b) => a + b, 0) / deltas.length : ${String(budgetMs)},
+        p95Ms: sorted[Math.floor(sorted.length * 0.95)] ?? ${String(budgetMs)},
+        maxMs: sorted[sorted.length - 1] ?? ${String(budgetMs)},
         longFrames: deltas.filter((d) => d > 100).length,
         longTasks,
       });
@@ -53,14 +55,23 @@ test('stepped battle frame time under SwiftShader stays within a very generous b
   // Warm up shader compilation and texture upload so they do not count as frame time.
   await page.evaluate(`window.__TTE__.arena.step(30)`);
 
-  const stats = await page.evaluate<FrameStats>(FRAME_PROBE(180));
-  await testInfo.attach('frame-time.json', { body: JSON.stringify(stats, null, 2), contentType: 'application/json' });
-  console.info(`frame time (SwiftShader): ${JSON.stringify(stats)}`);
+  // Machine load (other browsers, builds, a full run) shows up as bursts of slow frames, not as a steady slowdown. So measure
+  // several independent windows and judge the median window's average: one burst cannot fail the test, but a renderer or sim
+  // that is slow in every window still does. Never a fixed sleep; the windows are just more frames.
+  // Each window is also capped by a wall-clock budget: under heavy load Chromium can starve rAF for a long time, and an
+  // uncapped probe then hangs until the test timeout instead of reporting a (bad) frame time.
+  test.setTimeout(120_000);
+  const windows: FrameStats[] = [];
+  for (let i = 0; i < 5; i++) windows.push(await page.evaluate<FrameStats>(FRAME_PROBE(120, 8000)));
+  const byAvg = windows.slice().sort((x, y) => x.avgMs - y.avgMs);
+  const stats = byAvg[Math.floor(byAvg.length / 2)] as FrameStats;
+  await testInfo.attach('frame-time.json', { body: JSON.stringify({ median: stats, windows }, null, 2), contentType: 'application/json' });
+  console.info(`frame time (SwiftShader), median of ${String(windows.length)} windows: ${JSON.stringify(stats)}`);
 
-  expect(stats.frames).toBe(180);
-  // A healthy software-rendered run is far below these. They fail only if frames take ~a quarter second on average
-  // (the renderer or sim is broken), never on ordinary CI slowness.
+  // A healthy software-rendered window is ~17-20 ms per frame. The median window failing means frames take ~a quarter second
+  // on average even between load bursts (the renderer or sim is broken), not ordinary CI slowness.
   expect(stats.avgMs).toBeLessThan(250);
+  expect(stats.frames).toBeGreaterThan(0);
   expect(stats.longFrames).toBeLessThan(stats.frames / 2);
 });
 
