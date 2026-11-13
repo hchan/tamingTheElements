@@ -1,8 +1,9 @@
 import type Phaser from 'phaser';
-import { WEATHER_CHARGE_FULL, arcadePlayfield, type RenderView, type SimEvent } from '@core/index';
+import { SimEventKind, WEATHER_CHARGE_FULL, arcadePlayfield, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountTagView } from '../hud/tag-view';
+import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
 import { mute } from './grim-fx';
 import {
   CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TICK_MS, WEATHER_COLORS, WEATHER_NAMES, WeatherFx,
@@ -116,6 +117,8 @@ export function mountWeatherView(
   let startedAt = Number.NEGATIVE_INFINITY;
   let callFrom = Number.NEGATIVE_INFINITY;
   let callReduced = false;
+  /** The round banners (ROUND n held until FIGHT!, then FIGHT! for a second) own the centre: the called line waits for them. */
+  let bannerUntil = Number.NEGATIVE_INFINITY;
   const drawn = { kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1, charge: -1, chargeText: '', chargeFill: 0, ready: 1 };
   const pt: Particle = { x: 0, y: 0, dx: 0, dy: 0, r: 0, a: 0 };
 
@@ -231,10 +234,11 @@ export function mountWeatherView(
     drawCharge(p, ar?.weatherCharge[0] ?? 0, clock);
     // The called line, timed on the view tick.
     if (p.call.visible) {
-      const c = progress(clock, callFrom, CALL_TICKS);
+      const from = Math.max(callFrom, bannerUntil);
+      const c = progress(clock, from, CALL_TICKS);
       drawn.scale = callScale(c, callReduced);
       if (c >= 1) p.call.setVisible(false);
-      else p.call.setPosition(BADGE_X, CALL_Y).setScale(drawn.scale).setAlpha(a * 0.85 * callAlpha(c));
+      else p.call.setPosition(BADGE_X, CALL_Y).setScale(drawn.scale).setAlpha(clock < from ? 0 : a * 0.85 * callAlpha(c));
     }
     if (kind === 0) {
       if (drawn.kind !== 0) {
@@ -298,6 +302,10 @@ export function mountWeatherView(
       const p = prefs();
       reduced = p.reduceMotion;
       highContrast = p.highContrast;
+    }
+    for (const e of events) {
+      if (e.kind === SimEventKind.roundStarted) bannerUntil = Number.POSITIVE_INFINITY;
+      else if (e.kind === SimEventKind.fight) bannerUntil = view.tick + FIGHT_BANNER_TICKS;
     }
     fx.consume(events);
     then?.(events);
