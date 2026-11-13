@@ -159,10 +159,21 @@ test('a window resize mid-battle keeps the match state and leaks no listeners', 
   expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
 });
 
-test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
-  test.use({ viewport: { width: 640, height: 360 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+/** Medium display size (1.25 of Largest 1.6): #game fills this fraction of the window, so a 640x360 phone leaves ~281 px. */
+const MEDIUM = 1.25 / 1.6;
 
-  test('every button sits inside the viewport, at least 48 px tall, in at most three right-edge columns, none overlapping', async ({ page }) => {
+const TOUCH_CASES: readonly { name: string; w: number; h: number; fraction?: number }[] = [
+  { name: '640x360', w: 640, h: 360 },
+  { name: '640x360 at Medium display size', w: 640, h: 360, fraction: MEDIUM },
+  { name: '390x844 portrait phone', w: 390, h: 844 },
+  { name: '360x640 small portrait phone', w: 360, h: 640 },
+];
+
+for (const tc of TOUCH_CASES) {
+test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
+  test.use({ viewport: { width: tc.w, height: tc.h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+
+  test('every button sits inside #game, at least 48 px tall, in at most three right-edge columns, none overlapping each other or the fullscreen button', async ({ page }) => {
     const errors = collectErrors(page);
     // The World Tour fields a team of three, so all 9 buttons are present.
     await page.goto(`${START}&ff=arcade#tour`);
@@ -170,10 +181,24 @@ test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
     await page.getByRole('button', { name: 'Fight' }).tap();
     await page.locator('#tourSplash').tap();
     await page.waitForFunction(ARENA_READY);
+    if (tc.fraction !== undefined) await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(tc.fraction)}')`);
+    await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+    const g = await page.evaluate<{ x: number; y: number; r: number; b: number }>(
+      `(() => { const q = document.querySelector('#game').getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
+    );
+    const fs = await page.evaluate<{ x: number; y: number; r: number; b: number } | null>(
+      `(() => { const n = document.querySelector('#fullscreenToggle'); if (!n || getComputedStyle(n).display === 'none') return null; const q = n.getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
+    );
     const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; over: boolean; left: boolean }[]>(
       `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight, left: getComputedStyle(n).textAlign === 'left' }; })`,
     );
     expect(boxes).toHaveLength(9);
+    if (fs) {
+      for (const p of boxes) {
+        const clear = p.r <= fs.x || fs.r <= p.x || p.b <= fs.y || fs.b <= p.y;
+        expect(clear, `${p.id} covers the fullscreen button`).toBe(true);
+      }
+    }
     // One square size for every button, left-aligned content, nothing clipped or overflowing.
     expect(new Set(boxes.map((k) => `${String(Math.round(k.r - k.x))}x${String(Math.round(k.b - k.y))}`)).size).toBe(1);
     expect(Math.round((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0))).toBe(Math.round((boxes[0]?.b ?? 0) - (boxes[0]?.y ?? 0)));
@@ -182,10 +207,10 @@ test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
       expect(k.left, `${k.id} text-align`).toBe(true);
     }
     for (const k of boxes) {
-      expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(0);
-      expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(0);
-      expect(k.r, `${k.id} right`).toBeLessThanOrEqual(640);
-      expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(360);
+      expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);
+      expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(g.y - 0.5);
+      expect(k.r, `${k.id} right`).toBeLessThanOrEqual(g.r + 0.5);
+      expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(g.b + 0.5);
       expect(k.b - k.y, `${k.id} height`).toBeGreaterThanOrEqual(48);
     }
     expect(new Set(boxes.map((k) => Math.round(k.r))).size).toBeLessThanOrEqual(3);
@@ -198,6 +223,7 @@ test.describe('Arcade touch buttons on a short coarse screen (640x360)', () => {
     expect(errors).toEqual([]);
   });
 });
+}
 
 test('the F key and the button toggle fullscreen where the browser allows it', async ({ page }) => {
   await page.goto('/?ff=arenaDemo&manual=1');

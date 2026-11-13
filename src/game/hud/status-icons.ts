@@ -20,6 +20,19 @@ export const CHIP_Y = 102;
 /** Chips shown per side; the rest fold into one `+N` chip. */
 export const CHIP_MAX = 6;
 
+/**
+ * Where and how big the chips are drawn. `scale` multiplies the chip box (the scene passes `16 * phoneBoost / 12`, so the word is
+ * 16 px or larger on a phone, never the fixed 12 px); `top` is the y of the first row (below the hero's health words);
+ * chips wrap to a new row at the bar's right end, so a scaled row never runs into the opposite side's block.
+ */
+export interface ChipLayout {
+  readonly scale: number;
+  readonly top: number;
+}
+export const DEFAULT_CHIP_LAYOUT: ChipLayout = { scale: 1, top: CHIP_Y };
+/** Font px of the chip word at layout scale 1 (the chip box is sized for it). */
+export const CHIP_FONT = 12;
+
 export type ChipGlyph = 'plus' | 'cross';
 
 export interface StatusChip {
@@ -35,6 +48,9 @@ export interface StatusChip {
   readonly remaining: number;
   readonly x: number;
   readonly y: number;
+  /** Box size after the layout scale. */
+  readonly w: number;
+  readonly h: number;
   readonly color: number;
   /** Text drawn on the chip: glyph, word and time, e.g. `+ ADREN 12s`. */
   readonly text: string;
@@ -90,7 +106,7 @@ interface Raw {
  * The chips for the active hero `id` of `team` whose element is `element`, left to right from its bar's start, at most
  * CHIP_MAX (the overflow is one `+N` chip). Timed statuses use the game clock (the Arcade clock stops during hit-stop).
  */
-export function collectStatusChips(view: RenderView, team: number, id: number, element: Element, xOffset: number, highContrast = false): StatusChip[] {
+export function collectStatusChips(view: RenderView, team: number, id: number, element: Element, xOffset: number, highContrast = false, layout: ChipLayout = DEFAULT_CHIP_LAYOUT): StatusChip[] {
   const raw: Raw[] = [];
   const bar = view.actionBar(team);
   const clock = bar?.tick ?? view.tick;
@@ -114,7 +130,12 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
   if (elem && elem.activeUntil > clock) {
     raw.push({ key: 'elem', label: elem.name.toUpperCase(), hostile: false, ticksLeft: elem.activeUntil - clock, remaining: 1 });
   }
-  const minX = mainBar(xOffset).minX;
+  const { minX, maxX } = mainBar(xOffset);
+  const w = Math.round(CHIP_W * layout.scale);
+  const h = Math.round(CHIP_H * layout.scale);
+  const gap = Math.round(CHIP_GAP * layout.scale);
+  const perRow = Math.max(1, Math.floor((maxX - minX + gap) / (w + gap)));
+  const place = (i: number): { x: number; y: number } => ({ x: minX + (i % perRow) * (w + gap), y: layout.top + Math.floor(i / perRow) * (h + gap) });
   const shown = raw.length > CHIP_MAX ? raw.slice(0, CHIP_MAX - 1) : raw;
   const out: StatusChip[] = shown.map((r, i) => {
     const secs = r.ticksLeft === null ? null : secsLeft(r.ticksLeft);
@@ -125,14 +146,15 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
       glyph: r.hostile ? 'cross' : 'plus',
       secs,
       remaining: r.remaining,
-      x: minX + i * (CHIP_W + CHIP_GAP),
-      y: CHIP_Y,
+      ...place(i),
+      w,
+      h,
       color: buffColor(r.hostile, highContrast),
       text: chipText(r.label, r.hostile, secs),
     };
   });
   if (raw.length > CHIP_MAX) {
-    out.push({ key: 'more', label: 'MORE', hostile: false, glyph: 'plus', secs: null, remaining: 1, x: minX + out.length * (CHIP_W + CHIP_GAP), y: CHIP_Y, color: buffColor(false, highContrast), text: `+${String(raw.length - shown.length)} more` });
+    out.push({ key: 'more', label: 'MORE', hostile: false, glyph: 'plus', secs: null, remaining: 1, ...place(out.length), w, h, color: buffColor(false, highContrast), text: `+${String(raw.length - shown.length)} more` });
   }
   return out;
 }

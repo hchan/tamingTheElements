@@ -129,6 +129,8 @@ html[data-high-contrast='true'] :focus-visible {
   height: calc(var(--view-h) * var(--canvas-fraction, 1));
   margin: env(safe-area-inset-top, 0px) auto 0;
   overflow: hidden;
+  /* The touch buttons size their layout to this box (`@container game`), see the touch-button rules. */
+  container: game / size;
 }
 
 /* Only a running game (the page's spare empty #game under the menus keeps its place). */
@@ -150,7 +152,7 @@ html[data-high-contrast='true'] :focus-visible {
   position: absolute;
   top: max(4px, env(safe-area-inset-top));
   right: max(4px, env(safe-area-inset-right));
-  z-index: 5;
+  z-index: 6;
   min-width: 44px;
   min-height: 44px;
   font-size: 1.25em;
@@ -800,6 +802,8 @@ button.touchBtn {
   --touch-line: 0;
   --touch-col5: 0;
   --touch-line5: 0;
+  --touch-col3: 0;
+  --touch-line3: 0;
   --touch-size: 72px;
   --touch-pitch: 78px;
   position: absolute;
@@ -889,16 +893,35 @@ html[data-high-contrast='true'] button.touchBtn {
 .touchBtn-Trap { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l10 18H2z' fill='black'/%3E%3C/svg%3E"); }
 /* Element: the up (fire, air) and down (water, earth) alchemical triangles crossed, outlined so it never reads as Trap's filled one. */
 .touchBtn-Element { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 15.5H3zM12 22L3 6.5h18z' fill='none' stroke='black' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-/* Short touch screens (a 640x360 phone in landscape): columns of four, slot = row in the column (0 to 3) and column (0, 1 or 2), so up
-   to 9 buttons never run off the top. */
-@media (max-height: 520px) {
-  html[data-touch-size='large'] #menu button.touchBtn {
+/* Touch layout follows the height of `#game` (a container, see below), not the viewport: at Medium display size a 640x360 phone leaves
+   #game about 281 px tall, so a viewport query would still pile four 78 px buttons into a column that is clipped. The top 52 px of the
+   right edge belong to the fullscreen button (44 px + 4 px inset), so no column may reach it: a column of n buttons needs
+   8 + n * pitch - 6 + 52 px. Tall (>= 762 px, nine in one column) keeps the single column; below that columns of four (3 x 4 for nine);
+   below 366 px columns of three at 68 px (3 x 3 for nine, 224 px tall, clear of the corner down to about 272 px). */
+@container game (max-height: 761px) {
+  html[data-touch-size='large'] #menu button.touchBtn,
+  html[data-touch-size='large'] #game button.touchBtn {
     right: calc(8px + var(--touch-line) * var(--touch-pitch));
     bottom: calc(8px + var(--touch-col) * var(--touch-pitch));
   }
-  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn {
+  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn,
+  html[data-touch-size='large'][data-touch-side='left'] #game button.touchBtn {
     right: auto;
     left: calc(8px + var(--touch-line) * var(--touch-pitch));
+  }
+}
+@container game (max-height: 365px) {
+  html[data-touch-size='large'] #menu button.touchBtn,
+  html[data-touch-size='large'] #game button.touchBtn {
+    --touch-size: 68px;
+    --touch-pitch: 72px;
+    right: calc(8px + var(--touch-line3) * var(--touch-pitch));
+    bottom: calc(8px + var(--touch-col3) * var(--touch-pitch));
+  }
+  html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn,
+  html[data-touch-size='large'][data-touch-side='left'] #game button.touchBtn {
+    right: auto;
+    left: calc(8px + var(--touch-line3) * var(--touch-pitch));
   }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }

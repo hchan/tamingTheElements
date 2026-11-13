@@ -7,7 +7,7 @@ import { heroName } from '../hud/tag-fx';
 import { elementMark } from '../hud/element-mark';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
-import { CHIP_H, CHIP_MAX, CHIP_W, collectStatusChips } from '../hud/status-icons';
+import { CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha,
   meterSegments, meterX, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
@@ -215,26 +215,30 @@ export class Hud extends Phaser.Scene {
   private drawStatusChips(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, x: number): void {
     const view = this.view;
     if (!view) return;
-    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast);
+    // At least 16 px (times the phone boost), and below the hero's health words as measured (they wrap to several lines when boosted).
+    const px = Math.round(16 * phoneBoost(this, 2));
+    const label = this.labels[team];
+    const top = Math.max(CHIP_Y, label && label.text !== '' ? Math.ceil(label.y + label.height) + 2 : 0);
+    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top });
     chips.forEach((chip, i) => {
       const slot = team * CHIP_MAX + i;
       const t = (this.chipTexts[slot] ??= this.add
-        .text(0, 0, '', crisp(this, { fontFamily: HUD_FONT, fontSize: '12px', color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }))
+        .text(0, 0, '', crisp(this, { fontFamily: HUD_FONT, fontSize: `${String(px)}px`, color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }))
         .setDepth(102));
-      t.setText(chip.text).setPosition(chip.x + 4, chip.y).setVisible(true);
-      gfx.fillStyle(0x070a12, 0.8).fillRoundedRect(chip.x, chip.y, CHIP_W, CHIP_H, 3);
+      t.setFontSize(px).setText(chip.text).setPosition(chip.x + 4, chip.y + Math.round((chip.h - t.height) / 2)).setVisible(true);
+      gfx.fillStyle(0x070a12, 0.8).fillRoundedRect(chip.x, chip.y, chip.w, chip.h, 3);
       // Time bar along the foot of the chip, draining to the left.
-      gfx.fillStyle(chip.color, 1).fillRect(chip.x + 1, chip.y + CHIP_H - 3, Math.round((CHIP_W - 2) * chip.remaining), 2);
+      gfx.fillStyle(chip.color, 1).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
       // Buffs have a solid frame, debuffs a dashed one (so the two differ without colour).
       gfx.lineStyle(this.highContrast ? 2 : 1, chip.color, 1);
       if (chip.hostile) {
-        for (const [a, b] of dashSegments(chip.x, chip.x + CHIP_W, [6, 3])) {
+        for (const [a, b] of dashSegments(chip.x, chip.x + chip.w, [6, 3])) {
           gfx.lineBetween(a, chip.y, b, chip.y);
-          gfx.lineBetween(a, chip.y + CHIP_H, b, chip.y + CHIP_H);
+          gfx.lineBetween(a, chip.y + chip.h, b, chip.y + chip.h);
         }
-        gfx.lineBetween(chip.x, chip.y, chip.x, chip.y + CHIP_H);
-        gfx.lineBetween(chip.x + CHIP_W, chip.y, chip.x + CHIP_W, chip.y + CHIP_H);
-      } else gfx.strokeRoundedRect(chip.x, chip.y, CHIP_W, CHIP_H, 3);
+        gfx.lineBetween(chip.x, chip.y, chip.x, chip.y + chip.h);
+        gfx.lineBetween(chip.x + chip.w, chip.y, chip.x + chip.w, chip.y + chip.h);
+      } else gfx.strokeRoundedRect(chip.x, chip.y, chip.w, chip.h, 3);
     });
     this.hideChips(team, chips.length);
   }
