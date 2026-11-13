@@ -79,7 +79,9 @@ function fakeScene(): { scene: Phaser.Scene; events: Emitter; made: Fake[] } {
     registry: { get: (k: string) => reg.get(k) },
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => true },
-    add: { graphics: () => fakeObject('graphics', made), text: () => fakeObject('text', made) },
+    textures: { exists: () => true },
+    // Particle emitters are not counted with the Graphics and Texts (see weather-particles.test.ts for their rules).
+    add: { graphics: () => fakeObject('graphics', made), text: () => fakeObject('text', made), particles: () => fakeObject('particles', []) },
   } as unknown as Phaser.Scene;
   return { scene, events, made };
 }
