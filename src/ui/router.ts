@@ -5,6 +5,7 @@ import { mainMenuScreen } from './screens/main-menu';
 import type { Screen, ScreenFactory } from './screens/screen';
 import { helpScreen } from './screens/help';
 import { aboutScreen } from './screens/about';
+import { guideScreen } from './screens/guide-lazy';
 import { keyBindingsScreen } from './screens/key-bindings';
 import { raceScreen } from './screens/race';
 import { wikiScreen } from './screens/wiki';
@@ -36,6 +37,7 @@ export const ROUTE_NAMES = [
   'online',
   'tour',
   'help',
+  'guide',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -118,6 +120,7 @@ const ROUTE_TITLES: Readonly<Record<RouteName, string>> = {
   online: 'Online',
   tour: 'Play',
   help: 'Help',
+  guide: 'Guide',
 };
 
 /** Document title for a route, so each screen is named in the tab and to screen readers. */
@@ -156,6 +159,7 @@ export function defaultScreens(): ScreenTable {
     // The app wires the lazy World Tour screen (src/game/app/tour.ts); opt-in like Arcade.
     tour: placeholderScreen('Play'),
     help: helpScreen,
+    guide: guideScreen,
   };
 }
 

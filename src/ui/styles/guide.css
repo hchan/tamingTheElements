@@ -1,0 +1,212 @@
+/* Guide screen (src/ui/screens/guide.ts): grim, desaturated slate cards; element hues are muted and every cue also has a glyph and a word. */
+#menu .menuPage.guidePage {
+  max-width: 72em;
+  --g-fire: #9a5a4a;
+  --g-water: #5a7490;
+  --g-earth: #66724f;
+  --g-air: #8d9aa0;
+  --g-void: #7d6e8c;
+  --g-card: #15161a;
+  --g-edge: #3b3d46;
+  --g-text: #c9c9c2;
+  --g-dim: #8e8e88;
+}
+.guideSection {
+  margin: 1.2em 0;
+}
+.guideIntro {
+  margin: 0.2em 0 0.8em;
+  color: var(--g-dim);
+}
+.guideSubheading {
+  margin: 1em 0 0.2em;
+  font-size: 1.1em;
+  color: var(--g-text);
+}
+.guideWheelBody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em 2em;
+  align-items: center;
+}
+.guideWheel {
+  flex: 0 1 22em;
+  width: min(22em, 100%);
+  height: auto;
+}
+.guideWheelList {
+  flex: 1 1 18em;
+  margin: 0;
+  padding-left: 1.2em;
+  line-height: 1.5;
+  color: var(--g-text);
+}
+.guideRing {
+  fill: none;
+  stroke: var(--g-edge);
+  stroke-width: 2;
+  stroke-dasharray: 3 7;
+}
+.guideDisc {
+  fill: #101114;
+  stroke-width: 4;
+}
+.guideNode.el-fire .guideDisc { stroke: var(--g-fire); }
+.guideNode.el-water .guideDisc { stroke: var(--g-water); }
+.guideNode.el-earth .guideDisc { stroke: var(--g-earth); }
+.guideNode.el-air .guideDisc { stroke: var(--g-air); }
+.guideMark {
+  fill: var(--g-text);
+  font-size: 22px;
+}
+.guideNodeName {
+  fill: var(--g-text);
+  font-size: 14px;
+  font-family: var(--default-font);
+}
+.guideArrowLine {
+  fill: none;
+  stroke: #8a8a82;
+  stroke-width: 3;
+}
+.guideArrowFill {
+  fill: #8a8a82;
+}
+.guideArrowTag {
+  fill: #0c0c0e;
+  stroke: var(--g-edge);
+}
+.guideArrowText {
+  fill: #e0e0d8;
+  font-size: 15px;
+  font-family: var(--default-font);
+}
+.guideCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15.5em, 1fr));
+  gap: 0.7em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.guideCard {
+  position: relative;
+  padding: 0.6em 0.8em;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1b20, var(--g-card));
+  border: 1px solid var(--g-edge);
+  border-left-width: 4px;
+  border-radius: 3px;
+  color: var(--g-text);
+}
+.guideCard.el-fire { border-left-color: var(--g-fire); }
+.guideCard.el-water { border-left-color: var(--g-water); }
+.guideCard.el-earth { border-left-color: var(--g-earth); }
+.guideCard.el-air { border-left-color: var(--g-air); }
+.guideCard.el-void { border-left-color: var(--g-void); }
+.guideCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.guideCardName {
+  flex: 1;
+  margin: 0;
+  font-size: 1.05em;
+  color: #e2e2da;
+}
+.guideIcon {
+  flex: none;
+  width: 1.9em;
+  height: 1.9em;
+  padding: 0.2em;
+  fill: none;
+  stroke: #b8b8b0;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  background: #0d0d10;
+  border: 1px solid var(--g-edge);
+  border-radius: 3px;
+}
+.guideKey {
+  padding: 0.1em 0.5em;
+  font-size: 0.85em;
+  color: #d8d8d0;
+  background: #0d0d10;
+  border: 1px solid #5a5c66;
+  border-bottom-width: 3px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.guideCard p {
+  margin: 0.35em 0 0;
+  font-size: 0.92em;
+  line-height: 1.35;
+}
+.guideCooldown,
+.guideLabel {
+  color: var(--g-dim);
+}
+.guideFavour { color: #cfd3bd; }
+.guideCounter { color: #bfa9a3; }
+
+/* Weather previews: a short looped, muted scene (the global reduce-motion rule freezes it). */
+.guidePreview {
+  position: relative;
+  height: 3.2em;
+  margin: -0.6em -0.8em 0.5em;
+  overflow: hidden;
+  background: linear-gradient(180deg, #24262b, #121316);
+}
+.guidePreview i {
+  position: absolute;
+  top: -10%;
+  left: calc(var(--n, 0) * 17%);
+  width: 3px;
+  height: 14px;
+  background: #7d8a9a;
+  opacity: 0.7;
+  animation: guideFall 1.1s linear infinite;
+  animation-delay: calc(var(--n, 0) * -0.2s);
+}
+.guidePreview i:nth-child(1) { --n: 0; }
+.guidePreview i:nth-child(2) { --n: 1; }
+.guidePreview i:nth-child(3) { --n: 2; }
+.guidePreview i:nth-child(4) { --n: 3; }
+.guidePreview i:nth-child(5) { --n: 4; }
+.guidePreview i:nth-child(6) { --n: 5; }
+.preview-sun { background: radial-gradient(circle at 80% 20%, #8a6a3c, #1e1a16 60%); }
+.preview-sun i { width: 2px; height: 2px; background: #c9a56a; top: auto; bottom: 0; animation-name: guideRise; animation-duration: 2.2s; }
+.preview-rain i { background: #6f8296; }
+.preview-sandstorm { background: linear-gradient(180deg, #3a3426, #1a1812); }
+.preview-sandstorm i { top: calc(var(--n, 0) * 15%); left: -10%; width: 22px; height: 2px; background: #a8946a; animation-name: guideDrift; animation-duration: 1.4s; }
+.preview-gale { background: linear-gradient(180deg, #2a2f33, #14171a); }
+.preview-gale i { top: calc(var(--n, 0) * 15%); left: -10%; width: 30px; height: 2px; background: #b5c2c8; animation-name: guideDrift; animation-duration: 0.8s; }
+.preview-eclipse { background: radial-gradient(circle at 50% 50%, #08080a 28%, #3d2f4a 32%, #15111a 70%); }
+.preview-eclipse i { display: none; }
+@keyframes guideFall {
+  to { transform: translateY(4em); }
+}
+@keyframes guideRise {
+  from { transform: translateY(0); opacity: 0.8; }
+  to { transform: translateY(-3em); opacity: 0; }
+}
+@keyframes guideDrift {
+  to { transform: translateX(26em); }
+}
+
+.guideBack {
+  min-height: 48px;
+  min-width: 48px;
+  box-sizing: border-box;
+  line-height: 36px;
+}
+@media (pointer: coarse) {
+  #menu .guideBack { min-height: 48px; line-height: 40px; }
+  .guideKey { padding: 0.25em 0.6em; }
+}
+@media (max-height: 500px) {
+  .guideCards { grid-template-columns: repeat(auto-fill, minmax(13.5em, 1fr)); }
+  .guideWheel { flex-basis: 15em; }
+}
