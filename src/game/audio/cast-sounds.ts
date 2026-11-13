@@ -34,7 +34,12 @@ export class CastDetector {
   private readonly seen = new Map<string, number>();
 
   detect(view: RenderView): SoundId[] {
-    const out: SoundId[] = [];
+    return this.detectCasts(view).map((c) => c.id);
+  }
+
+  /** As `detect`, with the casting team (for the elemental cue). */
+  detectCasts(view: RenderView): { id: SoundId; team: number }[] {
+    const out: { id: SoundId; team: number }[] = [];
     for (const team of [0, 1]) {
       const bar = view.actionBar(team);
       if (!bar) continue;
@@ -44,7 +49,7 @@ export class CastDetector {
         this.seen.set(key, slot.readyTick);
         if (prev === undefined || slot.readyTick <= prev) return;
         const id = castSoundFor(slot.sprite);
-        if (id) out.push(id);
+        if (id) out.push({ id, team });
       });
     }
     return out;

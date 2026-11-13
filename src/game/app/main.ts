@@ -16,6 +16,8 @@ import { createSaveStore } from '../platform/storage/create-save-store';
 import { createTesterStore, tester } from '../platform/tester/session';
 import { installTesterUi } from '@ui/tester/install';
 import { installTestHook } from '../platform/test-hook';
+import { primeSfx, playSfx } from '../audio/sfx';
+import { installUiSfx } from '../audio/ui-sfx';
 import { AppFlow } from './flow';
 import { mountNoticeBanner } from './notice-banner';
 
@@ -177,6 +179,8 @@ if (root) {
     });
   }
   if (!(flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl)) prefetchSimWhenIdle();
+  primeSfx();
+  installUiSfx(document, playSfx);
   installTestHook(SIM_VERSION, async (json) => {
     const r = await store.importJson(json);
     if (r.ok) window.dispatchEvent(new HashChangeEvent('hashchange'));

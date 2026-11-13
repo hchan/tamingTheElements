@@ -69,8 +69,7 @@ export function createSfx(deps: SfxDeps): Sfx {
 
 let shared: Sfx | undefined;
 
-/** Plays the elemental cue; silent before the first gesture, while muted, or without Web Audio. */
-export function playSfx(kind: SfxKind, element: Element): void {
+function sharedSfx(): Sfx {
   shared ??= createSfx({
     makeContext: () => {
       const C = (globalThis as { AudioContext?: new () => Ctx }).AudioContext;
@@ -80,5 +79,20 @@ export function playSfx(kind: SfxKind, element: Element): void {
     storage: typeof localStorage === 'undefined' ? undefined : localStorage,
     target: typeof window === 'undefined' ? undefined : window,
   });
-  shared.play(kind, element);
+  return shared;
+}
+
+/** Arms the first-gesture unlock now, so the very first click of a session already unlocks audio for the next cue. */
+export function primeSfx(): void {
+  sharedSfx();
+}
+
+/** Plays the elemental cue; silent before the first gesture, while muted, or without Web Audio. */
+export function playSfx(kind: SfxKind, element: Element): void {
+  // Test builds only (statically dead in production): e2e asserts what was asked for, whatever the audio device does.
+  if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+    const log = (window as { __TTE__?: { sfxLog?: string[] } }).__TTE__?.sfxLog;
+    log?.push(`${kind}:${element}`);
+  }
+  sharedSfx().play(kind, element);
 }

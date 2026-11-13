@@ -102,6 +102,8 @@ export interface FxOptions {
   readonly arcade?: boolean;
   /** Element of a character (for the hit colour), or undefined when it has no view. */
   readonly elementOf?: (id: number) => Element | undefined;
+  /** Elemental sound cue for a hit (the attacker's element); view-only, called once per hit. */
+  readonly sfx?: (kind: 'hit', element: Element) => void;
   readonly rng?: CosmeticRng;
   readonly deduper?: EventDeduper;
 }
@@ -136,6 +138,7 @@ export class EventFx {
       if (k === SimEventKind.superStarted) this.superId = e['superId'] ?? 0;
       if (k === SimEventKind.damage ? this.opts.arcade === true : k !== SimEventKind.hitConfirmed && k !== SimEventKind.hitStop) continue;
       if (!this.deduper.firstSeen(e)) continue;
+      if (k === SimEventKind.damage || k === SimEventKind.hitConfirmed) this.opts.sfx?.('hit', this.opts.elementOf?.(e['attacker'] ?? -1) ?? 'void');
       if (k === SimEventKind.damage) this.classicHit(e['target'] ?? -1, e['amount'] ?? 5);
       else if (k === SimEventKind.hitConfirmed) this.arcadeHit(e);
       else this.hitStop(e);

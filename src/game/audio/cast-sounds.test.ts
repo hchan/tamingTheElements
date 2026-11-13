@@ -31,6 +31,12 @@ describe('CastDetector', () => {
     expect(d.detect(viewWith(30))).toEqual([]);
     expect(d.detect(viewWith(60))).toEqual(['fireBreath']);
   });
+
+  it('detectCasts reports the casting team with the sound', () => {
+    const d = new CastDetector();
+    d.detectCasts(viewWith(0));
+    expect(d.detectCasts(viewWith(30))).toEqual([{ id: 'fireBreath', team: 0 }]);
+  });
 });
 
 describe('cast sounds per ability vs legacy abilities.js', () => {

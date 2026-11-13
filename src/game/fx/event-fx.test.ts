@@ -42,6 +42,22 @@ function recorder(): { sink: FxSink; log: string[] } {
 const arcadeFx = (sink: FxSink, reduced = false): EventFx =>
   new EventFx(sink, { reducedMotion: () => reduced, arcade: true, elementOf: (id) => (id === 1 ? 'fire' : undefined) });
 
+describe('EventFx hit sound cue', () => {
+  it('asks for the attacker element once per hit, in Classic (damage) and Arcade (hitConfirmed)', () => {
+    const calls: string[] = [];
+    const opts = { reducedMotion: () => false, elementOf: (id: number) => (id === 1 ? ('fire' as const) : undefined), sfx: (k: string, e: string) => calls.push(`${k}:${e}`) };
+    new EventFx(recorder().sink, opts).consume([dmg(1, 0), dmg(1, 0)]);
+    new EventFx(recorder().sink, { ...opts, arcade: true }).consume([dmg(2, 0), confirmed(2, 1), confirmed(2, 1)]);
+    expect(calls).toEqual(['hit:fire', 'hit:fire']);
+  });
+
+  it('falls back to void for an attacker without a view', () => {
+    const calls: string[] = [];
+    new EventFx(recorder().sink, { reducedMotion: () => false, sfx: (k, e) => calls.push(`${k}:${e}`) }).consume([dmg(1, 0)]);
+    expect(calls).toEqual(['hit:void']);
+  });
+});
+
 describe('EventDeduper', () => {
   it('accepts an id once and distinguishes seq, tick, kind and source', () => {
     const d = new EventDeduper();
