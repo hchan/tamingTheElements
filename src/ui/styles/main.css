@@ -158,6 +158,16 @@ html[data-high-contrast='true'] :focus-visible {
   font-size: 1.25em;
   opacity: 0.8;
   cursor: pointer;
+  /* Grim: a dark slate slab with an ash glyph and a thin muted edge, not a bright white button. */
+  color: #b9b09c;
+  background: #15181c;
+  border: 1px solid #4a4a44;
+  border-radius: 3px;
+}
+html[data-high-contrast='true'] #fullscreenToggle {
+  color: #fff;
+  background: #000;
+  border: 2px solid #fff;
 }
 #fullscreenToggle:hover,
 #fullscreenToggle:focus-visible {

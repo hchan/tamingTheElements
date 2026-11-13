@@ -4,9 +4,10 @@ import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountStageBackdrop, type StageBackdrop } from './terrain-stage';
 import { mute } from './grim-fx';
+import { drawPad } from './terrain-pad';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
 import {
-  MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_DARK, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
+  MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
   TerrainFx, badgeText, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
 } from './terrain-fx';
 
@@ -197,7 +198,6 @@ export function mountTerrainView(
   /** The static art of the layout: glow rings, then each patch's fill, pattern and border. */
   const drawFloor = (p: NonNullable<typeof parts>, stage: number, count: number, rects: readonly number[]): void => {
     const color = highContrast ? (PATCH_COLORS[stage - 1] ?? 0xffffff) : m(PATCH_COLORS[stage - 1] ?? 0xffffff);
-    const dark = PATCH_DARK[stage - 1] ?? 0;
     const g = p.floor.clear();
     const glow = p.glow.clear();
     for (let i = 0; i < count; i++) {
@@ -205,17 +205,10 @@ export function mountTerrainView(
       const y = rects[i * 4 + 1] ?? 0;
       const w = rects[i * 4 + 2] ?? 0;
       const h = rects[i * 4 + 3] ?? 0;
-      for (let k = GLOW_RINGS; k >= 1; k--) glow.fillStyle(color, 0.07).fillRoundedRect(x - k * 6, y - k * 6, w + k * 12, h + k * 12, 10 + k * 4);
+      for (let k = GLOW_RINGS; k >= 1; k--) glow.fillStyle(color, stage === 3 ? 0.07 : 0.03).fillRoundedRect(x - k * 6, y - k * 6, w + k * 12, h + k * 12, 10 + k * 4);
       if (stage === 3) rock(g, x, y, w, h);
       else {
-        g.fillStyle(0x000000, 0.18).fillRect(x + 4, y + 4, w, h);
-        g.fillStyle(color, stage === 4 ? 0.26 : 0.34).fillRect(x, y, w, h);
-        if (stage === 1) flames(g, x, y, w, h);
-        else if (stage === 2) waves(g, x, y, w, h);
-        else swirls(g, x, y, w, h);
-        // A dashed-looking inner frame in the element's dark colour plus a bright outer line: visible on any backdrop.
-        g.lineStyle(highContrast ? 5 : 2, dark, highContrast ? 1 : 0.6).strokeRect(x + 1, y + 1, w - 2, h - 2);
-        g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : color, highContrast ? 1 : 0.55).strokeRect(x - 1, y - 1, w + 2, h + 2);
+        drawPad(g, stage, x, y, w, h, i, highContrast);
       }
     }
   };
@@ -297,10 +290,10 @@ export function mountTerrainView(
       const a = pt.a * drawn.alpha;
       if (pt.len > 0) {
         f.lineStyle(4, 0x000000, a * 0.3).lineBetween(pt.x, pt.y, pt.x + pt.len, pt.y);
-        f.lineStyle(2, 0xffffff, a).lineBetween(pt.x, pt.y, pt.x + pt.len, pt.y);
+        f.lineStyle(1, highContrast ? 0xffffff : 0x9aa09a, a * (highContrast ? 1 : 0.55)).lineBetween(pt.x, pt.y, pt.x + pt.len, pt.y);
       } else {
         f.fillStyle(0x000000, a * 0.5).fillCircle(pt.x, pt.y, pt.r + 1.5);
-        f.fillStyle(stage === 3 ? 0xe8d2a0 : stage === 1 && pt.r < 2.2 ? 0xffd23f : color, a).fillCircle(pt.x, pt.y, pt.r);
+        f.fillStyle(stage === 3 ? 0xe8d2a0 : stage === 1 && pt.r < 2.2 ? (highContrast ? 0xffd23f : m(0xffd23f)) : (highContrast ? color : m(color)), highContrast ? a : a * 0.7).fillCircle(pt.x, pt.y, pt.r);
       }
     }
     drawn.particles = n;
@@ -365,42 +358,6 @@ const m = (c: number): number => mute(c, 0.5, 0.8);
 /** Words on patches and the badge: bone, not white, under a thin dark stroke. */
 const LABEL_FONT = 'Georgia, "Times New Roman", serif';
 const LABEL_COLOR = '#d8cdb8';
-
-/** Fire: rows of flame tongues (an orange body, a yellow core, a dark outline), every other row offset. */
-function flames(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
-  const cell = 32;
-  for (let row = 0, cy = y + 20; cy + 14 <= y + h; row++, cy += cell) {
-    for (let cx = x + 16 + (row % 2) * 16; cx + 12 <= x + w; cx += cell) {
-      g.fillStyle(m(0xff7a1a), 0.85).fillTriangle(cx - 10, cy + 12, cx + 10, cy + 12, cx, cy - 14);
-      g.fillStyle(m(0xffd23f), 0.8).fillTriangle(cx - 5, cy + 12, cx + 5, cy + 12, cx, cy - 2);
-      g.lineStyle(2, m(0x8f2a00), 0.8).strokeTriangle(cx - 10, cy + 12, cx + 10, cy + 12, cx, cy - 14);
-    }
-  }
-}
-
-/** Water: rows of wavy lines (a dark underline, then a light crest). */
-function waves(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
-  for (let ly = y + 24; ly < y + h - 6; ly += 22) {
-    for (const [width, color, off] of [[5, m(0x0b3f7a), 2], [3, m(0xdff2ff), 0]] as const) {
-      g.lineStyle(width, color, 0.7).beginPath().moveTo(x + 6, ly + off);
-      for (let px = x + 12; px <= x + w - 6; px += 6) g.lineTo(px, ly + off + Math.sin((px - x) * 0.32) * 5);
-      g.strokePath();
-    }
-  }
-}
-
-/** Air: spiral swirls, one per 80 px cell (a dark underline, then a light stroke). */
-function swirls(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
-  for (let cy = y + 40; cy <= y + h - 30; cy += 80) {
-    for (let cx = x + 40; cx <= x + w - 30; cx += 80) {
-      for (const [width, color] of [[6, m(0x4a7f95)], [3, m(0xe8f4ff)]] as const) {
-        g.lineStyle(width, color, 0.6).beginPath().moveTo(cx, cy);
-        for (let a = 0; a <= 13; a += 0.5) g.lineTo(cx + Math.cos(a) * (2 + a * 2.1), cy + Math.sin(a) * (2 + a * 2.1));
-        g.strokePath();
-      }
-    }
-  }
-}
 
 /**
  * Earth: a raised, solid block. A shadow beyond its footprint, a lit top face of staggered bricks and a dark front face

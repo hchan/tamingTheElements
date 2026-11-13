@@ -24,3 +24,10 @@ Still cartoony: the full-screen saturated red low-life vignette, the yellow acti
 Done: low-life vignette is now dark blood-brown (0x1f0a07), radius 0.85, strength x0.45, with a still hashed grain layer (Hud.edgeGrain, no flicker) that follows it; LOW word cue and reduced-motion steady strength unchanged. Tag view: active-bar frame is a dark rim under a thin ochre line, ready bar muted ochre with ash dashes (high contrast keeps white). Trap range outlines thinner and element-muted. Snag tutorial hint is an ash-ochre serif on a dark slab.
 
 Still cartoony: hero sprite size, "Rain!" call overlapping FIGHT in the first frames, white fullscreen button, bright orange/purple portrait frames, trap pads are still flat rectangles with tile-spike glyphs in a bright tan.
+
+## Pass 4
+
+- Terrain pads redrawn as floor decals (`src/game/fx/terrain-pad.ts`): ragged feathered stain, grain, per-element scorch cracks / ripples / scratches, small muted rune, dim corner ticks; high contrast keeps the hard outline. Glow halo and particles muted.
+- "Rain!" weather call held (transparent) until the FIGHT banner has finished.
+- Fullscreen button and orange/purple portrait frames muted (high-contrast overrides kept).
+- Still cartoony: hero sprite size and outline, bright ability icons, HUD fonts.

@@ -170,7 +170,7 @@ describe('terrain view (fake scenes)', () => {
     expect(m.state()).toMatchObject({ stage: 1, patches: 2, labels: ['FIRE x2', 'FIRE x2'], backdrop: 'fire', badge: 'FIRE x2', alpha: 1 });
     expect(m.state().rects).toEqual(PATCHES);
     const floor = m.arena.made.filter((o) => o.kind === 'graphics')[1];
-    expect(floor?.calls).toContain('fillTriangle'); // the flame pattern
+    expect(floor?.calls).toContain('strokePoints'); // the scorch cracks
     expect(m.arena.made.filter((o) => o.kind === 'image')[0]?.texture.key).toBe('bg:fire');
     // The badge is in the Hud scene.
     expect(m.hud.made.some((o) => o.kind === 'text' && o.text === 'FIRE x2' && o.visible)).toBe(true);
@@ -185,12 +185,14 @@ describe('terrain view (fake scenes)', () => {
       expect(m.state().labels[0]).toBe(['FIRE x2', 'WATER +HP', 'ROCK', 'AIR x2'][stage - 1]);
       expect(m.state().badge).toBe(''); // a void hero gets nothing
     }
-    expect(calls[1]).toContain('fillTriangle');
-    expect(calls[2]).toContain('strokePath');
-    expect(calls[2]).not.toContain('fillTriangle');
+    expect(calls[1]).toContain('strokePoints'); // scorch cracks
+    expect(calls[1]).not.toContain('strokeEllipse');
+    expect(calls[2]).toContain('strokeEllipse'); // ripples
+    expect(calls[2]).not.toContain('strokePoints');
     expect(calls[3]).toContain('lineBetween'); // brick joints
-    expect(calls[4]).toContain('strokePath');
+    expect(calls[4]).toContain('strokePath'); // the swirl rune
     expect(calls[3]).not.toContain('strokePath'); // bricks are rects and joints, not paths
+    expect(calls[3]).not.toContain('fillPoints'); // the earth wall keeps its solid blocks, no stain
   });
 
   it('the badge needs the stage element and the hero centre inside a patch; it follows the hero', () => {

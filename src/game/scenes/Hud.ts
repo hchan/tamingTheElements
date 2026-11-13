@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { RenderView } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
+import { mute } from '../fx/grim-fx';
 import { crisp, fitScene, phoneBoost } from '../boot/viewport';
 import { lookup } from '../views/projectile-view';
 import { heroName } from '../hud/tag-fx';
@@ -263,7 +264,7 @@ export class Hud extends Phaser.Scene {
     const a = arcadeAvatar(team);
     this.back?.fillStyle(0x070a12, 0.78).fillRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
     this.placePortrait(this.portraits[team], c, a.x, a.y, a.size, team === 1);
-    gfx.lineStyle(this.highContrast ? 3 : 2, this.highContrast ? 0xffffff : ELEMENT_COLORS[c.element], 0.95);
+    gfx.lineStyle(this.highContrast ? 3 : 2, this.highContrast ? 0xffffff : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), 0.9);
     gfx.strokeRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
     this.drawMark(gfx, c.element, a.x + 9, a.y + 9, 7);
   }
@@ -293,7 +294,7 @@ export class Hud extends Phaser.Scene {
     back?.fillStyle(0x070a12, 0.78);
     back?.fillRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
     this.placePortrait(this.portraits[team], c, x, PORTRAIT_Y, PORTRAIT, team === 1);
-    gfx.lineStyle(2, ELEMENT_COLORS[c.element], 0.95);
+    gfx.lineStyle(2, this.highContrast ? 0xffffff : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), 0.9);
     gfx.strokeRoundedRect(x - 3, PORTRAIT_Y - 3, PORTRAIT + 6, PORTRAIT + 6, 6);
     this.drawMark(gfx, c.element, x + 10, PORTRAIT_Y + 10, 8);
     // Benched teammates: their picture sits in the slot just left of their own bar.
@@ -313,7 +314,7 @@ export class Hud extends Phaser.Scene {
       back?.fillRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
       this.placePortrait(im, b, bx, by, s, team === 1);
       im?.setAlpha(b.dead ? 0.35 : 1);
-      gfx.lineStyle(2, b.dead ? 0x777777 : ELEMENT_COLORS[b.element], 0.95);
+      gfx.lineStyle(2, b.dead ? 0x777777 : this.highContrast ? ELEMENT_COLORS[b.element] : mute(ELEMENT_COLORS[b.element], 0.55, 0.72), 0.9);
       gfx.strokeRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
       this.drawMark(gfx, b.element, bx + 6, by + s - 6, 5);
       if (b.dead) {
