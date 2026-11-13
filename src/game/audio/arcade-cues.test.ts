@@ -123,6 +123,26 @@ describe('stingers', () => {
   });
 });
 
+describe('round result cues', () => {
+  it('plays a win motif, a lose motif or the neutral chord by the round winner', () => {
+    const played = [0, 1, -1].map((winner) => cues(ev(SimEventKind.roundEnded, { winner, won0: 1, won1: 0 })));
+    expect(played).toEqual([[['youWin', 1, 1]], [['youLose', 1, 1]], [['roundEnd', 1, 1]]]);
+  });
+
+  it('makes the win rise and the loss fall, both stingers within the voice rules', () => {
+    const firstLast = (n: CueName): [number, number] => {
+      const l = CUES[n];
+      return [l[0][1], l.reduce((a, x) => (x[0] === 4 || (x[5] ?? 0) < (a[5] ?? 0) ? a : x))[1]];
+    };
+    const [w0, w1] = firstLast('youWin');
+    const [l0, l1] = firstLast('youLose');
+    expect(w1).toBeGreaterThan(w0);
+    expect(l1).toBeLessThan(l0);
+    expect(STINGERS.has('youWin') && STINGERS.has('youLose')).toBe(true);
+    expect(new Voices().admit('youWin', CUES.youWin.length, 0)).toBe(true);
+  });
+});
+
 describe('Voices', () => {
   it('never lets ordinary cues take the pool past MAX_VOICES, and releases ended voices', () => {
     const v = new Voices();

@@ -58,13 +58,16 @@ export const CUES = {
   fight: [[2, 440, 880, 140, 0.18], [NOISE, 1500, 600, 120, 0.35]],
   ko: [[0, 80, 28, 500, 1], [NOISE, 1800, 120, 380, 0.5]],
   roundEnd: [[1, 392, 392, 320, 0.2], [1, 494, 494, 320, 0.16], [1, 587, 587, 320, 0.16]],
+  /** The round result: a rising major triad with a bright top for a win, a falling minor one with a low rumble for a loss (a draw plays `roundEnd`). */
+  youWin: [[1, 392, 392, 140, 0.22], [1, 494, 494, 140, 0.22, 110], [1, 587, 587, 140, 0.22, 220], [1, 784, 784, 300, 0.22, 330]],
+  youLose: [[3, 294, 277, 200, 0.16], [3, 233, 220, 220, 0.16, 150], [3, 175, 131, 360, 0.18, 300], [0, 70, 40, 300, 0.3, 300]],
   /** Rising arpeggio; a loss or draw plays it lower (the sound map's victory or death sample plays too). */
   match: [[1, 523, 523, 120, 0.22], [1, 659, 659, 120, 0.22, 110], [1, 784, 784, 120, 0.22, 220], [1, 1046, 1046, 360, 0.22, 330]],
 } as const satisfies Record<string, readonly Layer[]>;
 export type CueName = keyof typeof CUES;
 
 /** Round and match stingers always play; any other cue is dropped when the voice pool is full. */
-export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'sudden', 'fight', 'ko', 'roundEnd', 'match']);
+export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'sudden', 'fight', 'ko', 'roundEnd', 'youWin', 'youLose', 'match']);
 
 /**
  * The cue of each `SimEventKind` (numbers, see `KO`; a test checks every key against the names): hitConfirmed (41) plays
@@ -79,6 +82,7 @@ const ROUND_STARTED: Kinds['roundStarted'] = 53;
 const HIT: Kinds['hitConfirmed'] = 41;
 const WEATHER: Kinds['weatherChanged'] = 59;
 const MATCH_END: Kinds['matchEnded'] = 30;
+const ROUND_ENDED: Kinds['roundEnded'] = 57;
 const SNAG: Kinds['snag'] = 69;
 /** `SnagEvent.expired` (data/arcade.ts): a root running out is silent; rooted, guarded and freed whip the rope. */
 const SNAG_EXPIRED = 3;
@@ -150,6 +154,9 @@ export function pickCues(e: SimEvent, play: PlayCue, sudden: () => boolean = () 
     if (cue) play(cue, 1, 1);
   } else if (e.kind === MATCH_END) {
     play('match', e['winner'] === 0 ? 1 : LOSS_PITCH, 1);
+  } else if (e.kind === ROUND_ENDED) {
+    // the result motif of the winner; a draw keeps the neutral round-end chord
+    play(e['winner'] === 0 ? 'youWin' : e['winner'] === 1 ? 'youLose' : 'roundEnd', 1, 1);
   } else if (e.kind === SNAG) {
     if (e['reason'] !== SNAG_EXPIRED) play('snag', 1, 1);
   } else if (e.kind === TRAP_TRIGGERED && e['reason'] === TRAP_DOUSED) {

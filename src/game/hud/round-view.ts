@@ -7,6 +7,7 @@ import { mountWeatherView } from '../fx/weather-view';
 import {
   PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
+import { mountResultView, type ResultState } from './round-result-view';
 
 /**
  * Phaser side of the Arcade round announcer (WP-arcade-announcer-view): the round timer and the round-win pips at the
@@ -42,6 +43,8 @@ export interface RoundState {
   readonly timer: string;
   readonly timerColor: string;
   readonly won: readonly [number, number];
+  /** The result card under the banner ("YOU WIN" and what happened). */
+  readonly result: ResultState;
 }
 
 const states = new WeakMap<Phaser.Scene, () => RoundState>();
@@ -67,13 +70,14 @@ export function mountRoundView(
   // The defence and weather views (WP-arcade-defence-view, WP-arcade-weather-view) come with the round HUD, each in its
   // own chunk (vite.config.ts), so the Arena pays only for one more argument.
   const views = mountWeatherView(arena, hud, view, say, prefs, fighters && mountDefenceView(arena, view, say, prefs, fighters));
+  const results = mountResultView(hud, view, prefs);
   const banner = { main: '', sub: '', from: 0, until: 0, reduced: false };
   const announcer = new RoundAnnouncer({
     banner(main, sub, from, until): void {
       Object.assign(banner, { main, sub, from, until, reduced: prefs().reduceMotion });
     },
     say,
-  }, () => view.arcade()?.sudden === true);
+  }, () => view.arcade()?.sudden === true, () => results.result.detail());
   const a = view.arcade();
   if (a) announcer.sync(a, view.tick);
 
@@ -130,7 +134,7 @@ export function mountRoundView(
     // The probe draws first, so it reads the current tick even between two rendered frames.
     states.set(hud, () => {
       draw();
-      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, timerColor: shownColor, won: [shownWon[0], shownWon[1]] };
+      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, timerColor: shownColor, won: [shownWon[0], shownWon[1]], result: results.result.state() };
     });
     draw();
   };
@@ -139,6 +143,7 @@ export function mountRoundView(
     hud.events.off('create', build).off('update', draw).off('shutdown', off).off('destroy', off);
     arena.events.off('shutdown', off).off('destroy', off);
     states.delete(hud);
+    results.destroy();
     if (parts) for (const o of Object.values(parts)) o.destroy();
     parts = undefined;
   };
@@ -146,6 +151,7 @@ export function mountRoundView(
   else hud.events.once('create', build);
   for (const s of [arena, hud]) s.events.once('shutdown', off).once('destroy', off);
   return (events) => {
+    results.result.consume(events);
     announcer.consume(events);
     views(events);
   };
