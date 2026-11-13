@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { EntityFlag, type Element, type RenderCharacter } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
+import { gradedHeroTexture } from '../fx/hero-grade';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
@@ -121,7 +122,7 @@ export class CharacterView {
       if (this.sprite) {
         ensureFrames(this.scene, key, this.sprite);
         // The standing frame; the pose layer (views/pose-layer.ts) picks the facing (mirror) and walk frame once loaded.
-        this.image.setTexture(key, frameName('right', 0));
+        this.image.setTexture(gradedHeroTexture(this.scene, key), frameName('right', 0));
       }
     }
     let x = lerp(c.px, c.x, alpha);

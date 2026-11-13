@@ -12,6 +12,7 @@ declare global {
   }
 }
 import { SheetBook } from './pose-sheets';
+import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
 import {
@@ -154,12 +155,12 @@ export class PoseLayer {
     return { animMs: this.animMs, posed: this.posed, ghosts, fx: this.vfx.live };
   }
 
-  sheetProbe(): { loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[] } {
-    const characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[] = [];
+  sheetProbe(): { loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[] } {
+    const characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[] = [];
     this.deps.view.forEachCharacter((c) => {
       const img = this.deps.characters.peek(c.id)?.image;
       if (img && (c.flags & DEAD_OR_BENCHED) === 0) {
-        characters.push({ id: c.id, texture: img.texture.key, frame: img.frame.name, flipX: img.flipX, rotation: img.rotation });
+        characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX) });
       }
     });
     return { loaded: this.book.loaded, characters };
@@ -287,8 +288,9 @@ export class PoseLayer {
     const sheet = this.book.has(c.sprite) ? this.sheetFrame(c, i, face, walking || m > 0.05) : undefined;
     const sprite = MAP_SPRITES[c.sprite];
     if (sheet) {
-      if (img.texture.key === sheet.texture) img.setFrame(sheet.frame);
-      else img.setTexture(sheet.texture, sheet.frame);
+      const shown = this.book.texture(c.sprite, sheet.texture);
+      if (img.texture.key === shown) img.setFrame(sheet.frame);
+      else img.setTexture(shown, sheet.frame);
       img.setFlipX(sheet.flipX);
       this.lean[i] = 0;
     } else {
@@ -296,7 +298,7 @@ export class PoseLayer {
         const set = frameSetFor(face);
         const count = framesOf(sprite, set).length;
         const name = frameName(set, m > 0.05 || walking ? walkFrame(this.phase[i] ?? 0, count) : 0);
-        if (img.texture.key.startsWith('sheet:')) img.setTexture(`map:${c.sprite}`, name);
+        if (img.texture.key.startsWith('sheet:')) img.setTexture(gradedHeroTexture(this.deps.scene, `map:${c.sprite}`), name);
         else img.setFrame(name);
       }
       img.setFlipX(flipForDir(face));
@@ -499,7 +501,7 @@ export class PoseLayer {
         // A sheet's own KO row replaces the procedural fall-over (the fade stays).
         const ko = this.book.has(g.sprite) ? this.book.frame(g.sprite, 'ko', g.face, t * KO_MS) : undefined;
         if (ko) {
-          img.setTexture(ko.texture, ko.frame).setFlipX(ko.flipX);
+          img.setTexture(this.book.texture(g.sprite, ko.texture), ko.frame).setFlipX(ko.flipX);
           p.rot = 0;
           p.ox = 0;
           p.oy = 0;
@@ -543,7 +545,7 @@ const layers = new WeakMap<Phaser.Scene, PoseLayer>();
 /** Test probe: the sheets loaded and, per drawn character, the texture, frame, mirror and rotation shown (undefined before the mount). */
 export function sheetState(scene: Phaser.Scene): {
   loaded: string[];
-  characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[];
+  characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[];
 } | undefined {
   const layer = layers.get(scene);
   return layer?.sheetProbe();

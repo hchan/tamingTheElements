@@ -135,7 +135,7 @@ export interface ArenaProbe {
    * character, the texture key, frame name, mirror and rotation shown; undefined before the layer is mounted.
    */
   sheets(): Promise<{
-    loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number }[];
+    loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[];
   } | undefined>;
 }
 
