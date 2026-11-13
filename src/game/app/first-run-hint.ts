@@ -44,6 +44,7 @@ export function firstRunLines(b: Bindings): readonly string[] {
     'Move with the arrows or WASD; your hero faces the enemy on its own.',
     `Strike with ${key(b, 'slot1')}. Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
     `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero.`,
+    `Stuck in a root or slow? Press ${key(b, 'cleanse')} to Cleanse.`,
   ];
 }
 

@@ -2,6 +2,7 @@ import { el } from '@ui/dom';
 import { ABILITIES_A, ABILITIES_B, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, type CharacterId, type RenderView } from '@core/index';
 import { touchHaptic } from '../platform/a11y/touch-layout';
 import { codeLabel, getBindings } from '../platform/input/bindings';
+import { cleanseClockOf } from '../hud/cleanse-clock';
 
 /** Shared on-screen touch controls of the Arcade battle (Arcade Versus and the World Tour fight); DOM only, no Phaser. */
 
@@ -10,11 +11,11 @@ import { codeLabel, getBindings } from '../platform/input/bindings';
  * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), then Trap
  * (WP 39) and Element (2.24, the hero's elemental ability), always there.
  */
-export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2', 'Trap', 'Element'] as const;
+export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2', 'Trap', 'Element', 'Cleanse'] as const;
 type TouchLabel = (typeof TOUCH)[number];
 const TOUCH_KEY = {
   Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weather', Charge: 'charge', Tag: 'slot3', Tag2: 'slot4', Trap: 'trap',
-  Element: 'elemental',
+  Element: 'elemental', Cleanse: 'cleanse',
 } as const;
 /**
  * The numbered action row (FUN-DESIGN 2.17): each button wears its number key, 3 Tag, 4 Tag 2, 5 Charge, 6 Weather, 7 Dash,
@@ -27,7 +28,10 @@ export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5,
 export function touchKeyLabel(label: TouchLabel): string {
   const keys = getBindings()[TOUCH_KEY[label]];
   const first = keys[0];
-  if (label === 'Element') return keys.includes('Minus') ? codeLabel('Minus') : first === undefined ? '' : codeLabel(first);
+  if (label === 'Element' || label === 'Cleanse') {
+    const sym = label === 'Element' ? 'Minus' : 'Equal';
+    return keys.includes(sym) ? codeLabel(sym) : first === undefined ? '' : codeLabel(first);
+  }
   const digit = `Digit${String(TOUCH_DIGIT[label])}`;
   return keys.includes(digit) || first === undefined ? String(TOUCH_DIGIT[label]) : codeLabel(first);
 }
@@ -68,6 +72,13 @@ export function touchStatus(label: TouchLabel, view: RenderView): string {
     if (!bar || !e) return '';
     const left = Math.max(0, e.readyTick - bar.tick);
     return bar.tick < e.activeUntil ? 'on' : left > 0 ? `${String(Math.ceil(left / 50))}s` : 'ready';
+  }
+  if (label === 'Cleanse') {
+    const bar = view.actionBar(0);
+    const id = ar?.active(0) ?? -1;
+    if (!bar || id < 0) return '';
+    const left = cleanseClockOf(view).leftIn(id, bar.tick);
+    return left > 0 ? `${String(Math.ceil(left / 50))}s` : 'ready';
   }
   // Trap
   const t = view.actionBar(0)?.trap;
@@ -131,7 +142,7 @@ const MIN_KEY_HOLD_MS = 100;
 /**
  * Button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
  * listens on window) for as long as the finger is down; an unbound action does nothing. Focusable: Enter or Space
- * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`, `arcadeElement`.
+ * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`, `arcadeElement`, `arcadeCleanse`.
  */
 export function touchButton(label: TouchLabel): HTMLButtonElement {
   const b = el('button', 'menuButton');
@@ -228,5 +239,5 @@ export function touchButton(label: TouchLabel): HTMLButtonElement {
  */
 export function touchButtons(heroes: 1 | 2 | 3, melee?: readonly boolean[]): HTMLButtonElement[] {
   const noCharge = melee !== undefined && !melee.some(Boolean);
-  return [...TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')), 'Trap' as const, 'Element' as const].map(touchButton);
+  return [...TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')), 'Trap' as const, 'Element' as const, 'Cleanse' as const].map(touchButton);
 }

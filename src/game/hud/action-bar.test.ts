@@ -194,7 +194,7 @@ describe('Slot text fit', () => {
 });
 
 const arc = (over: Partial<Parameters<typeof buildSlots>[2] & object> = {}): NonNullable<Parameters<typeof buildSlots>[2]> => ({
-  meter: 1500, weatherCharge: 0, guard: 0, guarding: false, dashIn: 0, chargeIn: 0, keepCharge: false, ...over,
+  meter: 1500, weatherCharge: 0, guard: 0, guarding: false, dashIn: 0, chargeIn: 0, cleanseIn: 0, keepCharge: false, ...over,
 });
 
 describe('Arcade boxes (one consistent bar)', () => {
@@ -203,11 +203,11 @@ describe('Arcade boxes (one consistent bar)', () => {
   it('gives every box an icon (a sprite or a sheet cell), a key and a touch overlay in Arcade, all in one left-aligned run', () => {
     expect(full.length).toBeLessThanOrEqual(MAX_SLOTS);
     for (const s of full) {
-      expect(s.sprite !== '' || s.icon >= 0).toBe(true);
+      expect(s.sprite !== '' || s.icon >= 0 || s.kind === 'cleanse').toBe(true); // Cleanse draws its own glyph
       expect(s.size).toBe(SLOT_SIDE);
     }
     const kinds = full.map((s) => s.kind);
-    expect(kinds).toEqual(expect.arrayContaining(['charge', 'weather', 'dash', 'guard', 'super', 'trap', 'elemental']));
+    expect(kinds).toEqual(expect.arrayContaining(['charge', 'weather', 'dash', 'guard', 'super', 'trap', 'elemental', 'cleanse']));
     expect(full.filter((s) => s.kind !== 'ability' && s.kind !== 'capture').every((s) => s.touch !== '' || s.kind === 'swap')).toBe(true);
     const xs = full.map((s) => s.x);
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
@@ -221,6 +221,14 @@ describe('Arcade boxes (one consistent bar)', () => {
     expect(buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ chargeIn: -1 })).some((s) => s.kind === 'charge')).toBe(false);
     const kept = buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ chargeIn: -1, keepCharge: true })).find((s) => s.kind === 'charge');
     expect(kept?.disabled).toBe(true);
+  });
+  it('has a Cleanse box on the = key that fills over its 10 s cooldown', () => {
+    const ready = buildSlots(bar(), DEFAULT_KEY_LABELS, arc()).find((s) => s.kind === 'cleanse');
+    expect(ready?.progress).toBe(1);
+    expect(ready?.touch).toBe('Cleanse');
+    const half = buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ cleanseIn: 250 })).find((s) => s.kind === 'cleanse');
+    expect(half?.progress).toBeCloseTo(0.5);
+    expect(half?.note).toBe('Cleanse 5s');
   });
   it('reads cooldowns and meters as progress 0..1 with words', () => {
     const d = buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ dashIn: 15, chargeIn: 150, weatherCharge: 0, guard: 0 }));

@@ -19,6 +19,7 @@ export const GAME_ACTIONS = [
   'charge',
   'trap',
   'elemental',
+  'cleanse',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -55,6 +56,9 @@ export const DEFAULT_BINDINGS: Bindings = {
   // Arcade only (FUN-DESIGN 2.24): the elemental ability. V next to Z X C; Minus after Digit0, as the digit row is full.
   // Shares the sim's command bit 10 with the fourth swap, which Arcade (three heroes at most) never has.
   elemental: ['KeyV', 'Minus'],
+  // Arcade only (ideas/in-progress/elemental-cleanse.md): the common Cleanse, clearing your own bad statuses. Equal, next to Minus.
+  // Shares the sim's command bit 9 with the third swap, which Arcade (three heroes at most) never has.
+  cleanse: ['Equal'],
 };
 
 /** Digit5 may drive both Swap 3 (Classic) and Charge (Arcade) at once; every other code drives one action. */
@@ -81,6 +85,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   charge: 'Charge',
   trap: 'Trap',
   elemental: 'Element',
+  cleanse: 'Cleanse',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */
@@ -113,6 +118,7 @@ export function codeLabel(code: string): string {
   if (code.startsWith('Digit')) return code.slice(5);
   if (code.startsWith('Arrow')) return code.slice(5);
   if (code === 'Minus') return '-';
+  if (code === 'Equal') return '=';
   if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
   return code;
 }

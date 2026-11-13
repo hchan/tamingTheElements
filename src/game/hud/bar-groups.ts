@@ -28,6 +28,7 @@ export function groupOf(kind: ActionSlot['kind']): BarGroup {
       return 'hero';
     case 'guard':
     case 'elemental':
+    case 'cleanse':
     case 'weather':
       return 'common';
     default:

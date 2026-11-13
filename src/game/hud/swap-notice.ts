@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { Cmd, type Command } from '@core/index';
+import { elementalShown } from '../platform/cleanse-info';
 
 /**
  * View-only feedback for a swap press the sim will refuse (FUN-DESIGN 2.6): a line of text above the action bar, never
@@ -61,7 +62,7 @@ export function chargeNotice(s: ChargeState): string | undefined {
 export function elementalNotice(fighting: boolean, tick: number, e: { name: string; readyTick: number } | undefined): string | undefined {
   if (!fighting) return undefined;
   if (e === undefined) return 'No element ability for this hero';
-  if (e.readyTick > tick) return `${e.name} ready in ${swapSeconds(e.readyTick - tick)}`;
+  if (e.readyTick > tick) return `${elementalShown(e.name)} ready in ${swapSeconds(e.readyTick - tick)}`;
   return undefined;
 }
 

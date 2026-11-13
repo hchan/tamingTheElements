@@ -18,6 +18,7 @@ export const LESSONS: readonly HelpLesson[] = [
   { title: 'Super', text: 'The meter fills as you land and take hits. At full, one blow turns the fight.' },
   { title: 'Tag', text: 'Swap a wounded hero for a fresh one from your team. The benched hero rests, but tagging has a cooldown.' },
   { title: 'Trap and Element', text: "Lay a trap and let the enemy walk into it. Element fires your hero's own elemental power." },
+  { title: 'Cleanse', text: 'Shake off your own roots and slows. Every hero has it, it plays out in their element, and it takes about ten seconds to be ready again.' },
 ];
 
 export interface BarKey {
@@ -38,6 +39,7 @@ const BAR: readonly (readonly [string, GameAction, string])[] = [
   ['Super', 'super', 'Digit9'],
   ['Trap', 'trap', 'Digit0'],
   ['Element', 'elemental', 'Minus'],
+  ['Cleanse', 'cleanse', 'Equal'],
 ];
 
 /** The action bar, left to right, as the key that fires each box now (so rebinds show). */

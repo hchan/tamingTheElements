@@ -30,9 +30,11 @@ describe('super key binding: no conflicts', () => {
   });
   it('each action drives its own command bit, the super one bit 13 only', () => {
     const bits = GAME_ACTIONS.map((a) => ACTION_COMMAND[a]);
-    // Trap shares Capture's bit 6 (Capture is Classic-only, Trap Arcade-only); every other action has its own.
-    expect(new Set(bits).size).toBe(bits.length - 1);
+    // Trap shares Capture's bit 6 and Cleanse the third swap's bit 9 (the Classic-only action and the Arcade-only one); every other action has its own.
+    expect(new Set(bits).size).toBe(bits.length - 2);
     expect(ACTION_COMMAND.trap).toBe(ACTION_COMMAND.capture);
+    expect(ACTION_COMMAND.cleanse).toBe(Cmd.cleanse);
+    expect(ACTION_COMMAND.cleanse).toBe(ACTION_COMMAND.slot5);
     expect(ACTION_COMMAND.super).toBe(Cmd.super);
   });
   it('rebinding detects a conflict with the super key both ways', () => {

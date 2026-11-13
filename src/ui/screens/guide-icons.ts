@@ -4,6 +4,7 @@ const PATHS: Readonly<Record<string, string>> = {
   guard: 'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z',
   charge: 'M4 12h10M10 6l7 6-7 6M19 5v14',
   super: 'M13 2L5 14h6l-1 8 9-13h-6z',
+  cleanse: 'M12 3a9 9 0 105.5 16M12 7v5l3 2',
   trap: 'M3 18h18M5 18l3-8 4 8 4-8 3 8M12 3v4',
   weather: 'M7 18a4 4 0 010-8 5 5 0 019-1 4 4 0 011 9z',
   tag: 'M4 8h13l-3-3M20 16H7l3 3',

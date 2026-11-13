@@ -31,6 +31,8 @@ import {
 } from '@core/lazy-index';
 import type { Bindings, GameAction } from '../../game/platform/input/bindings';
 import { codeLabel } from '../../game/platform/input/bindings';
+import { CLEANSE_COOLDOWN } from '../../game/platform/cleanse-info';
+import { elementalShown } from '../../game/platform/cleanse-info';
 
 /** Sim ticks per second (50 Hz). */
 const TPS = 50;
@@ -127,6 +129,14 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       icon: 'trap',
     },
     {
+      id: 'cleanse',
+      name: 'Cleanse',
+      key: keyOf(b, 'cleanse'),
+      cooldown: secs(CLEANSE_COOLDOWN),
+      effect: 'Ends your own roots and slows. The same for every hero, and it plays out in your hero\'s element.',
+      icon: 'cleanse',
+    },
+    {
       id: 'weather',
       name: 'Weather',
       key: keyOf(b, 'weather'),
@@ -179,7 +189,7 @@ export function elementalAbilities(b: Bindings): readonly (AbilityCard & { reado
     return {
       element,
       id: `elemental-${element}`,
-      name: ELEMENTAL_NAMES[kind] ?? '',
+      name: elementalShown(ELEMENTAL_NAMES[kind] ?? ''),
       key: keyOf(b, 'elemental'),
       cooldown: secs(ELEMENTAL_COOLDOWN_TICKS[kind] ?? 0),
       effect: elementalEffect(element),

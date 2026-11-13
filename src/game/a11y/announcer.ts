@@ -51,6 +51,13 @@ export function announcementsFor(events: readonly SimEvent[], teamOf: (entity: n
         if (a) out.push(a);
         break;
       }
+      case SimEventKind.cleanse: {
+        const cleared = e['cleared'] ?? 0;
+        const mine = (e['team'] ?? 0) === 0;
+        const what = cleared > 0 ? `${String(cleared)} ${cleared === 1 ? 'debuff' : 'debuffs'} cleared` : 'nothing to clear';
+        out.push({ key: `cleanse${mine ? 'Mine' : 'Foe'}`, text: `${mine ? 'Your' : 'Enemy'} Cleanse: ${what}.`, important: false });
+        break;
+      }
       default:
         break;
     }
@@ -82,7 +89,7 @@ function trapAnnouncement(e: SimEvent, teamOf: (entity: number) => number): Anno
 const ELEMENTAL_LINES: readonly (readonly [string, string])[] = [
   ['', ''],
   ['Ember', 'attack up'],
-  ['Cleanse', 'debuffs cleared'],
+  ['Tidecall', 'debuffs cleared'],
   ['Stoneskin', 'armor up'],
   ['Gale', 'speed up'],
 ];

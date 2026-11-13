@@ -42,6 +42,7 @@ import {
   type SimWorld,
 } from '@core/index';
 import { playSfx } from '../audio/sfx';
+import { cleanseClockOf } from '../hud/cleanse-clock';
 import { CastDetector } from '../audio/cast-sounds';
 import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
 import type { AudioContextLike } from '../audio/audio-manager';
@@ -128,6 +129,7 @@ export class Arena extends Phaser.Scene {
   private rounds: ((events: readonly SimEvent[]) => void) | undefined;
   private terrain: ((events: readonly SimEvent[]) => void) | undefined;
   private poses: ((events: readonly SimEvent[]) => void) | undefined;
+  private cleanseFx: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent | undefined, Agent | undefined] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
   /** Local two-player: Player 2's small mirrored readout (view only). */
@@ -353,6 +355,10 @@ export class Arena extends Phaser.Scene {
     void import('../fx/status-fx-view').then((m) => {
       if (this.view === view) m.mountStatusFxView(this, view, () => getPrefs().reduceMotion);
     });
+    // Cleanse animation on the casting hero (elemental-cleanse presentation, its own lazy chunk).
+    void import('../fx/cleanse-view').then((m) => {
+      if (this.view === view) this.cleanseFx = m.mountCleanseView(this, view, getPrefs);
+    });
     // The pose layer (lazy chunk): smooth walking, leans, Arcade poses, projectile easing (docs/ARCHITECTURE.md).
     void import('../views/pose-layer').then((m) => {
       if (this.view === view) this.poses = m.mountPoseLayer(this, view, pool, projPool, getPrefs);
@@ -510,6 +516,7 @@ export class Arena extends Phaser.Scene {
         }
       },
       statusFx: () => import('../fx/status-fx-view').then((m) => m.statusFxState(this)),
+      cleanse: () => import('../fx/cleanse-view').then((m) => m.cleanseState(this)),
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
       arcadeAudio: () => import('../audio/arcade-audio').then((m) => m.arcadeAudioState(this.audio?.audio)),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
@@ -528,6 +535,23 @@ export class Arena extends Phaser.Scene {
   }
 
   private readonly casts = new CastDetector();
+
+  /** Cleanse presentation: the action-bar cooldown clock, the hero animation and (live play only) the cue. View only. */
+  private feedCleanse(events: readonly SimEvent[], sound: boolean): void {
+    const view = this.view;
+    if (!view || events.length === 0) return;
+    cleanseClockOf(view).consume(events, view.tick);
+    this.cleanseFx?.(events);
+    if (!sound) return;
+    for (const e of events) {
+      if (e.kind !== SimEventKind.cleanse) continue;
+      let element: Element = 'void';
+      view.forEachCharacter((c) => {
+        if (c.id === e.sourceId) element = c.element;
+      });
+      playSfx('cleanse', element);
+    }
+  }
 
   /** Legacy plays a sound when an ability is cast; the sim has no cast event, so the action bars are watched. */
   private playCasts(): void {
@@ -628,6 +652,7 @@ export class Arena extends Phaser.Scene {
       events = step(world, final);
     }
     this.fx?.consume(events);
+    this.feedCleanse(events, true);
     this.audio?.audio.consume(events);
     this.playCasts();
     this.announce(events);
@@ -674,6 +699,7 @@ export class Arena extends Phaser.Scene {
       const events = cursor.next();
       if (!events) break;
       this.fx?.consume(events);
+      this.feedCleanse(events, false);
       this.rounds?.(events);
       this.terrain?.(events);
       this.poses?.(events);

@@ -19,9 +19,9 @@ describe('guide data', () => {
     expect(multText(0.8)).toBe('x0.8');
   });
 
-  it('common abilities cover the eight actions, with icons', () => {
+  it('common abilities cover the nine actions, with icons', () => {
     const cards = commonAbilities(DEFAULT_BINDINGS);
-    expect(cards.map((c) => c.id)).toEqual(['dash', 'guard', 'charge', 'super', 'trap', 'weather', 'tag', 'snag']);
+    expect(cards.map((c) => c.id)).toEqual(['dash', 'guard', 'charge', 'super', 'trap', 'cleanse', 'weather', 'tag', 'snag']);
     for (const c of cards) {
       expect(ICON_NAMES).toContain(c.icon);
       expect(c.key).not.toBe('');

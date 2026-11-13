@@ -9,11 +9,13 @@ import { lookup } from '../views/projectile-view';
 import { gradeRgba, mute } from '../fx/grim-fx';
 import { getPrefs } from '../platform/a11y/prefs';
 import { syncTouchOverlays } from './touch-overlay';
+import { CLEANSE_COOLDOWN, cleanseClockOf } from './cleanse-clock';
+import { elementalShown } from '../platform/cleanse-info';
 
 /**
  * Action bar (legacy `actionbar.js`): primary, secondary, capture (chapter 2+) and swap slots along the
  * bottom edge, with a clockwise cooldown sweep (legacy `HUDHelper.drawCooldown`). In Arcade the same bar also carries every other
- * action (Tag, Charge, Weather, Dash, Guard, Super, Trap, Element): one kind of box, all on the left, each with an icon, its key in the
+ * action (Tag, Charge, Weather, Dash, Guard, Super, Trap, Element, Cleanse): one kind of box, all on the left, each with an icon, its key in the
  * corner and the one shared cooldown look (`cooldownLook`); the DOM touch buttons are transparent overlays on those boxes
  * (`touch-overlay.ts`), so there is nothing on the right. Everything except
  * `ActionBarView` is pure. View-only: a mouse click maps to the same Command bit as the matching key
@@ -78,10 +80,10 @@ export function labelsFromBindings(bindings: Bindings): KeyLabels {
     const digit = ARCADE_DIGIT[action];
     const keys = bindings[action];
     // The numbered action row (3 Tag ... 9 Super, 0 Trap): a box wears its number while that number key is bound to it, else its first key.
-    const numberKey = digit !== undefined ? `Digit${String(digit)}` : action === 'elemental' ? 'Minus' : undefined;
+    const numberKey = digit !== undefined ? `Digit${String(digit)}` : action === 'elemental' ? 'Minus' : action === 'cleanse' ? 'Equal' : undefined;
     const code = numberKey !== undefined && keys.includes(numberKey) ? numberKey : keys[0];
     // Trap shares Capture's command bit 6 and the elemental ability the fourth swap's bit 10, so theirs live apart.
-    const at = action === 'trap' ? TRAP_LABEL : action === 'elemental' ? ELEMENTAL_LABEL : ACTION_COMMAND[action];
+    const at = action === 'trap' ? TRAP_LABEL : action === 'elemental' ? ELEMENTAL_LABEL : action === 'cleanse' ? CLEANSE_LABEL : ACTION_COMMAND[action];
     if (code !== undefined) out[at] = codeLabel(code);
   }
   return out;
@@ -94,6 +96,8 @@ const ARCADE_DIGIT: Readonly<Partial<Record<(typeof GAME_ACTIONS)[number], numbe
 export const TRAP_LABEL = 100;
 /** Where the elemental ability key's label sits in a KeyLabels (its command bit is the fourth swap's). */
 export const ELEMENTAL_LABEL = 101;
+/** Where the common Cleanse key's label sits in a KeyLabels (its command bit is the third swap's). */
+export const CLEANSE_LABEL = 102;
 
 export const DEFAULT_KEY_LABELS: KeyLabels = labelsFromBindings(DEFAULT_BINDINGS);
 
@@ -101,7 +105,7 @@ const SWAP_CMDS = [Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4] as const;
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 
 /** Every kind of box on the bar: the one shape, told apart by its icon, key and words. */
-export type SlotKind = 'ability' | 'capture' | 'swap' | 'trap' | 'elemental' | 'super' | 'guard' | 'dash' | 'weather' | 'charge';
+export type SlotKind = 'ability' | 'capture' | 'swap' | 'trap' | 'elemental' | 'super' | 'guard' | 'dash' | 'weather' | 'charge' | 'cleanse';
 
 /** Cell of each icon on the `hud:actions` sheet (`tools/assets/hud-gen/actions.py` TILES order, 4 per row, 64 px cells). */
 export const ACTION_ICON = { trap: 0, tag: 1, charge: 2, weather: 3, dash: 4, guard: 5, super: 6, fire: 7, water: 8, earth: 9, air: 10, element: 11 } as const;
@@ -110,7 +114,7 @@ export const SHEET_CELL = 64;
 export const SHEET_COLS = 4;
 
 /** The touch button (id `arcade<touch>`) that sits over a box as a transparent overlay; '' for a box with none. */
-export type TouchName = '' | 'Super' | 'Guard' | 'Dash' | 'Weather' | 'Charge' | 'Tag' | 'Tag2' | 'Trap' | 'Element';
+export type TouchName = '' | 'Super' | 'Guard' | 'Dash' | 'Weather' | 'Charge' | 'Tag' | 'Tag2' | 'Trap' | 'Element' | 'Cleanse';
 
 /** The sheet cell an elemental box wears: its element's mark (1 fire, 2 water, 3 earth, 4 air), else the generic one. */
 export function elementIcon(kind: number): number {
@@ -180,7 +184,7 @@ export function slotX(i: number): number {
 }
 
 /** The most boxes the bar ever holds (primary, secondary, three swaps, charge, weather, dash, guard, super, trap, elemental): sizes the Player 2 lift. */
-export const MAX_SLOTS = 13;
+export const MAX_SLOTS = 14;
 /** Smallest a box may be on screen in CSS px (a finger). */
 export const MIN_TOUCH_PX = 48;
 
@@ -256,12 +260,14 @@ export interface ArcadeBar {
   /** Game ticks until Dash / Charge are ready (0: now); chargeIn -1 for a ranged hero, which has none. */
   readonly dashIn: number;
   readonly chargeIn: number;
+  /** Game ticks until the common Cleanse is ready (0: now), counted by the view from `cleanse` events (`cleanse-clock.ts`). */
+  readonly cleanseIn: number;
   /** Keep the Charge box for a ranged active hero (the team has a melee hero, so its touch button exists): shown disabled. */
   readonly keepCharge: boolean;
 }
 
 /** Reads one team's `ArcadeBar` off the render view's Arcade read-outs (a team with no active hero reads as full and idle). */
-export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean): ArcadeBar {
+export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean, cleanseIn: (id: number) => number = () => 0): ArcadeBar {
   const id = ar.active(team);
   return {
     meter: ar.meter[team],
@@ -270,6 +276,7 @@ export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean):
     guarding: id >= 0 && ar.guarding(id),
     dashIn: id < 0 ? 0 : ar.dashIn(id),
     chargeIn: id < 0 ? -1 : ar.chargeIn(id),
+    cleanseIn: id < 0 ? 0 : cleanseIn(id),
     keepCharge,
   };
 }
@@ -366,8 +373,15 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     const e = bar.elemental;
     add({
       kind: 'elemental', cmd: Cmd.elemental, sprite: '', icon: elementIcon(e.kind), touch: arcade ? 'Element' : '', highlight: bar.tick < e.activeUntil,
-      disabled: false, element: e.kind, progress: cooldownProgress(bar.tick, e.readyTick, e.cooldownTicks), note: elementalNote(bar.tick, e),
+      disabled: false, element: e.kind, progress: cooldownProgress(bar.tick, e.readyTick, e.cooldownTicks), note: elementalNote(bar.tick, { ...e, name: elementalShown(e.name) }),
     }, ELEMENTAL_LABEL);
+  }
+  if (arcade) {
+    // The common Cleanse (every hero; cmd 0: the key and the touch overlay do the input, like the other Arcade boxes).
+    add({
+      kind: 'cleanse', cmd: 0, sprite: '', icon: -1, touch: 'Cleanse', highlight: false, disabled: false,
+      progress: arcade.cleanseIn <= 0 ? 1 : clamp01(1 - arcade.cleanseIn / CLEANSE_COOLDOWN), note: leftNote('Cleanse', arcade.cleanseIn),
+    }, CLEANSE_LABEL);
   }
   return out;
 }
@@ -445,6 +459,22 @@ export function cooldownLook(progress: number, disabled: boolean, x: number, y: 
   return { fill, fillAlpha: COOLDOWN_ALPHA, flashAlpha: READY_FLASH_ALPHA * ease, pulse: ease };
 }
 
+/**
+ * The Cleanse box's mark, drawn in code (the generated `hud:actions` sheet has no cell for it): a bone ring with a gap, a chain link
+ * snapped open, over a few ash flecks. Muted bone on the dark plate like the sheet's own icons.
+ */
+export function drawCleanseGlyph(g: Phaser.GameObjects.Graphics, x: number, y: number, size: number): void {
+  const cx = x + size / 2;
+  const cy = y + size * 0.56;
+  const r = size * 0.22;
+  g.lineStyle(Math.max(2, size * 0.06), 0xa89f88, 0.95);
+  g.beginPath();
+  g.arc(cx, cy, r, 0.35, 5.6, false);
+  g.strokePath();
+  g.lineStyle(Math.max(1, size * 0.035), 0x6b6558, 0.9);
+  for (const [dx, dy] of [[0.34, -0.1], [0.4, 0.06], [0.3, 0.2]] as const) g.lineBetween(cx + size * dx, cy + size * dy, cx + size * (dx + 0.08), cy + size * (dy - 0.05));
+}
+
 /** Where the 1280x720 screen sits in world px: top-left `x`,`y` and world px per logical px (`scale`). Identity for a fixed camera. */
 export interface ScreenBox {
   readonly x: number;
@@ -517,7 +547,9 @@ export class ActionBarView {
     const bar = this.view.actionBar(this.team);
     const ar = this.view.arcade();
     const k = this.scene.scale.displaySize.width / LOGICAL_W;
-    const extras = bar && ar ? arcadeBarOf(ar, this.team === 1 ? 1 : 0, this.hasChargeButton()) : undefined;
+    const clock = cleanseClockOf(this.view);
+    if (bar && ar) clock.sync(ar.round, bar.tick);
+    const extras = bar && ar ? arcadeBarOf(ar, this.team === 1 ? 1 : 0, this.hasChargeButton(), (id) => clock.leftIn(id, bar.tick)) : undefined;
     const built = bar ? buildSlots(bar, this.labels(), extras, k) : [];
     const grouped = !this.mirror && extras && this.arrange ? this.arrange(built, k) : undefined;
     this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : built;
@@ -545,6 +577,7 @@ export class ActionBarView {
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       }
       this.drawIcon(i, s);
+      if (s.kind === 'cleanse') drawCleanseGlyph(g, s.x, s.y, s.size);
       const key = `${s.kind}:${String(s.cmd)}:${String(i)}`;
       const prev = this.lastProgress.get(key);
       if (prev !== undefined && prev < 1 && s.progress >= 1 && !s.disabled) this.flashStart.set(key, now);
