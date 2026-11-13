@@ -47,6 +47,17 @@ export function focusHeading(root: ParentNode): void {
   h.focus({ preventScroll: true });
 }
 
+/**
+ * Who handles Escape on a route: the menu keys here (`router`), the route's own screen (`self`: arcade's fighter picker and the
+ * tour go to the main menu themselves, key-binding capture and pad capture swallow it while listening, the pause dialog owns it
+ * in battle), or nobody (`none`: the main menu).
+ */
+export type EscapeOwner = 'router' | 'self' | 'none';
+export function escapeOwner(route: string): EscapeOwner {
+  if (route === 'main' || route === 'loading') return 'none';
+  return backHash(route) === null ? 'self' : 'router';
+}
+
 /** Installs the document-level handlers; returns a function that removes them. */
 export function installMenuKeys(doc: Document, currentRoute: () => string, navigate: (hash: string) => void): () => void {
   const onKey = (e: KeyboardEvent): void => {

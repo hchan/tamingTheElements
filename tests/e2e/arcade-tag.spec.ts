@@ -84,9 +84,9 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   await expect(page.locator('#arcadeTag')).toBeVisible();
   const start = await tag(page);
   expect(start?.caption).toBe('TAG');
-  expect(start?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax 100%', 'TAG READY']);
+  expect(start?.lines[0]).toEqual(['IN Sindarosa', expect.stringMatching(/^BENCH Pax [▲≈■●◆] 100%$/), 'TAG READY']);
   expect(start?.lines[1]?.[0]).toBe('IN Fiara');
-  expect(start?.lines[1]?.[1]).toMatch(/^BENCH \S+ 100%$/);
+  expect(start?.lines[1]?.[1]).toMatch(/^BENCH \S+ [▲≈■●◆] 100%$/);
   // Red life: Sindarosa hurt, then benched by a tag on the 3 key (live ticks: the keyboard agent plays the player).
   const [lead] = await characters(page, 0);
   await page.evaluate(`window.__TTE__.arena.setHp(${String(lead?.id)}, ${String(Math.round((lead?.maxHp ?? 0) * 0.4))})`);
@@ -97,7 +97,7 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   expect(tagged).toMatchObject({ call: 'TAG!', flashes: 1, ko: false });
   expect(tagged?.callScale).toBeGreaterThan(1);
   expect(tagged?.lines[0]?.[0]).toBe('IN Pax');
-  expect(tagged?.lines[0]?.[1]).toMatch(/^BENCH Sindarosa 4\d% \+\d+% red$/);
+  expect(tagged?.lines[0]?.[1]).toMatch(/^BENCH Sindarosa [▲≈■●◆] 4\d% \+\d+% red$/);
   expect(tagged?.lines[0]?.[2]).toMatch(/^TAG \d\.\ds$/);
   await expect.poll(() => live(page), { timeout: 5000 }).toContain('Tag! Pax is in, Sindarosa rests.');
   // The flash and call go; the cooldown (150 game ticks) runs out; the bench heals toward its red life.
@@ -117,7 +117,7 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   await step(page, 1);
   const ko = await tag(page);
   expect(ko).toMatchObject({ call: 'PAX IN!', ko: true });
-  expect(ko?.lines[0]).toEqual(['IN Pax', 'BENCH Sindarosa K.O.', 'NO TAG']);
+  expect(ko?.lines[0]).toEqual(['IN Pax', expect.stringMatching(/^BENCH Sindarosa [▲≈■●◆] K\.O\.$/), 'NO TAG']);
   await expect.poll(() => live(page), { timeout: 5000 }).toContain('Sindarosa is down. Pax steps in.');
   // Both AI heroes down twice: 2-0 and the results name every hero.
   for (let round = 0; round < 2; round++) {
@@ -162,7 +162,7 @@ test('3v3: the third hero only in 3v3, a BENCH line each, Tag 2 on the 4 key, th
   await expect(page.locator('#arcadeTag')).toBeVisible();
   await expect(page.locator('#arcadeTag2')).toBeVisible();
   const start = await tag(page);
-  expect(start?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax 100%', 'BENCH Curomo 100%', 'TAG READY']);
+  expect(start?.lines[0]).toEqual(['IN Sindarosa', expect.stringMatching(/^BENCH Pax [▲≈■●◆] 100%$/), expect.stringMatching(/^BENCH Curomo [▲≈■●◆] 100%$/), 'TAG READY']);
   expect(start?.lines[1]).toHaveLength(4);
   expect(start?.lines[1]?.[0]).toBe('IN Fiara');
   // Tag 2 (the 4 key) brings the third hero in; the bench reads in roster order.
@@ -171,7 +171,7 @@ test('3v3: the third hero only in 3v3, a BENCH line each, Tag 2 on the 4 key, th
   await page.keyboard.up('Digit4');
   const tagged = await tag(page);
   expect(tagged).toMatchObject({ call: 'TAG!', flashes: 1 });
-  expect(tagged?.lines[0]?.slice(0, 3)).toEqual(['IN Curomo', 'BENCH Sindarosa 100%', 'BENCH Pax 100%']);
+  expect(tagged?.lines[0]?.slice(0, 3)).toEqual(['IN Curomo', expect.stringMatching(/^BENCH Sindarosa [▲≈■●◆] 100%$/), expect.stringMatching(/^BENCH Pax [▲≈■●◆] 100%$/)]);
   // All three AI heroes down twice (two KO entrances, then the KO): 2-0, and the results name all six heroes.
   for (let round = 0; round < 2; round++) {
     for (let k = 0; k < 3; k++) {

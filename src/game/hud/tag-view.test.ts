@@ -131,7 +131,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
     s.setSwapReady([175, 100]);
     s.frame();
     expect(s.state()).toMatchObject({
-      lines: [['IN Sindarosa', 'BENCH Pax 100%', 'TAG 1.5s'], ['IN Fiara', 'BENCH Lavax 100%', 'TAG READY']],
+      lines: [['IN Sindarosa', 'BENCH Pax ▲ 100%', 'TAG 1.5s'], ['IN Fiara', 'BENCH Lavax ▲ 100%', 'TAG READY']],
       call: '', flashes: 0, caption: 'TAG',
     });
     // The Hud graphics drew the red life (dashed lines), the active frame and the tag bars.
@@ -167,7 +167,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
     s.consume?.([s.tagIn(1, 0, 0)]);
     s.frame();
     expect(s.state()).toMatchObject({ call: 'SINDAROSA IN!', ko: true, caption: '' });
-    expect(s.state()?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax K.O.', 'NO TAG']);
+    expect(s.state()?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax ▲ K.O.', 'NO TAG']);
     expect(s.said.at(-1)?.text).toBe('Pax is down. Sindarosa steps in.');
   });
 
@@ -177,8 +177,8 @@ describe('tag view (Phaser side, fake scenes)', () => {
     s.frame();
     expect(s.hud.made.filter((m) => m.kind === 'text')).toHaveLength(9); // 4 lines per side, the call
     expect(s.state()?.lines).toEqual([
-      ['IN Sindarosa', 'BENCH Pax 100%', 'BENCH Curomo 100%', 'TAG READY'],
-      ['IN Fiara', 'BENCH Lavax 100%', 'BENCH Echo 100%', 'TAG READY'],
+      ['IN Sindarosa', 'BENCH Pax ▲ 100%', 'BENCH Curomo ▲ 100%', 'TAG READY'],
+      ['IN Fiara', 'BENCH Lavax ▲ 100%', 'BENCH Echo ▲ 100%', 'TAG READY'],
     ]);
     // Red life on both bench heroes: two dashed spans more than with none.
     const g = s.hud.made.find((m) => m.kind === 'graphics');
@@ -188,16 +188,16 @@ describe('tag view (Phaser side, fake scenes)', () => {
     s.setTick(101);
     s.frame();
     expect(dashesNow()).toBeGreaterThan(plain);
-    expect(s.state()?.lines[0]?.slice(1, 3)).toEqual(['BENCH Pax 50% +40% red', 'BENCH Curomo 50% +40% red']);
+    expect(s.state()?.lines[0]?.slice(1, 3)).toEqual(['BENCH Pax ▲ 50% +40% red', 'BENCH Curomo ▲ 50% +40% red']);
     // Pax down: the tag still reaches Curomo; both down: NO TAG.
     Object.assign(pax, { hp: 0, flags: EntityFlag.alive | EntityFlag.benched | EntityFlag.dead });
     s.setTick(102);
     s.frame();
-    expect(s.state()?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax K.O.', 'BENCH Curomo 50% +40% red', 'TAG READY']);
+    expect(s.state()?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax ▲ K.O.', 'BENCH Curomo ▲ 50% +40% red', 'TAG READY']);
     Object.assign(curomo, { hp: 0, flags: EntityFlag.alive | EntityFlag.benched | EntityFlag.dead });
     s.setTick(103);
     s.frame();
-    expect(s.state()).toMatchObject({ caption: '', lines: [['IN Sindarosa', 'BENCH Pax K.O.', 'BENCH Curomo K.O.', 'NO TAG'], expect.anything()] });
+    expect(s.state()).toMatchObject({ caption: '', lines: [['IN Sindarosa', 'BENCH Pax ▲ K.O.', 'BENCH Curomo ▲ K.O.', 'NO TAG'], expect.anything()] });
   });
 
   it('reduced motion keeps the call at full size and the flash', () => {

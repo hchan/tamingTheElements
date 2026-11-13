@@ -174,6 +174,13 @@ describe('arcadePickView (DOM)', () => {
     expect(sel('arcadePlayer').closest('.settingsOption')?.classList.contains('srOnly')).toBe(true);
     expect(sel('arcadeLevel').closest('.settingsOption')?.classList.contains('srOnly')).toBe(false);
   });
+
+  it('the hidden hero pulldowns are aria-hidden (the grid is the control); the level pulldown is not', async () => {
+    mount();
+    await Promise.resolve();
+    expect(sel('arcadePlayer').closest('.settingsOption')?.getAttribute('aria-hidden')).toBe('true');
+    expect(sel('arcadeLevel').closest('.settingsOption')?.hasAttribute('aria-hidden')).toBe(false);
+  });
 });
 
 describe('arcadeResultsView (DOM)', () => {

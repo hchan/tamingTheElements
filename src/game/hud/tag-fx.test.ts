@@ -27,6 +27,11 @@ describe('tag view rules: words', () => {
     expect(redPct(hero({ dead: true }))).toBe(0);
   });
 
+  it('adds the bench hero\'s element as a glyph when known', () => {
+    expect(benchLabel(hero({ element: 'water' }))).toBe('BENCH Pax ● 40% +20% red');
+    expect(benchLabel(hero({ element: 'fire', hp: 0, dead: true }))).toBe('BENCH Pax ▲ K.O.');
+  });
+
   it('reads the tag cooldown as a word and a fill: READY, seconds left, or NO TAG when the partner is down', () => {
     expect(tagReadout(0, false)).toEqual({ label: 'TAG READY', fill: 1 });
     expect(tagReadout(-5, false)).toEqual({ label: 'TAG READY', fill: 1 });
