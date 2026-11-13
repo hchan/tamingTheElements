@@ -18,11 +18,11 @@
     "phaser-config": 27260,
     "pose-layer": 10550,
     "rolldown-runtime": 200,
-    "round-view": 2300,
+    "round-view": 2330,
     "sim": 35680,
     "super-view": 2310,
     "tag-view": 2910,
-    "terrain-view": 5500,
+    "terrain-view": 5570,
     "trap-view": 1100,
     "touch-controls": 1620,
     "tour": 5600,
@@ -33,7 +33,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 528520,
+  "totalGzip": 528800,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
