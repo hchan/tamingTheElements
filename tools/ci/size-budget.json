@@ -15,7 +15,7 @@
     "local-two": 455,
     "online-versus": 3910,
     "phaser": 388700,
-    "phaser-config": 27260,
+    "phaser-config": 27600,
     "pose-layer": 10550,
     "rolldown-runtime": 200,
     "round-view": 2330,
@@ -24,7 +24,7 @@
     "tag-view": 2910,
     "terrain-view": 5570,
     "trap-view": 1100,
-    "touch-controls": 1620,
+    "touch-controls": 1640,
     "tour": 5600,
     "viewport": 260,
     "weather-view": 3490,
@@ -33,7 +33,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 528800,
+  "totalGzip": 529220,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
