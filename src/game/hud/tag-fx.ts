@@ -34,8 +34,12 @@ export interface Bar {
 
 /** A side's block: team 0 on the left half of the 1280 px HUD, team 1 on the right. */
 export const teamX = (team: number): number => team * 640;
-export const mainBarOf = (team: number): Bar => ({ minX: teamX(team) + 120, maxX: teamX(team) + 560, y: 10, line: 10 });
-export const benchBarOf = (team: number, i: number): Bar => ({ minX: teamX(team) + 246, maxX: teamX(team) + 560, y: 26 + i * 40, line: 6 });
+/** The slim HUD's bars (`slim-hud.ts` `slimBar` and `chipBar`; a test pins the numbers). */
+export const mainBarOf = (team: number): Bar => ({ minX: team === 0 ? 120 : 700, maxX: team === 0 ? 580 : 1160, y: 20, line: 16 });
+export const benchBarOf = (team: number, i: number): Bar => {
+  const x = team === 0 ? 346 + i * 30 : 1280 - 346 - 24 - i * 30;
+  return { minX: x, maxX: x + 24, y: 62, line: 4 };
+};
 
 /** The tag-cooldown bar's size. */
 export const TAG_BAR_W = 72;
@@ -48,7 +52,7 @@ export const TAG_BAR_H = 8;
  * and the IN line (the gold frame on the main bar shows who is in as well).
  */
 export function tagLayout(heroes: number, rowH: number, boost: number): { readonly rows: [number, number][]; readonly bar: [number, number] } {
-  const under = (i: number): number => benchBarOf(0, i).y + 6;
+  const under = (i: number): number => 26 + i * 40 + 6;
   const word = TAG_BAR_W + 8;
   const barY = (y: number): number => y + (rowH - 5 - TAG_BAR_H) / 2;
   if (heroes < 3) return { rows: [[0, under(0)], [0, under(0) + rowH], [word, under(0) + 2 * rowH]], bar: [0, barY(under(0) + 2 * rowH)] };

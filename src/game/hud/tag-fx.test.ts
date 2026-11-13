@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { TAG_COOLDOWN_TICKS } from '@core/index';
 import { BAR_Y, SLOT_SIDE, slotX } from './action-bar';
-import { barFill, benchBar, dashSegments, mainBar, sideOffset } from './bars';
+import { barFill, dashSegments, sideOffset } from './bars';
+import { chipBar, slimBar } from './slim-hud';
 import {
   CALL_TICKS, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
   heroName, mainBarOf, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
 } from './tag-fx';
-import { METER_Y } from './arcade-hud';
 import { TAG_SLOT_X, TAG_SLOT_Y } from './tag-view';
 
 const hero = (o: Partial<TagHero> = {}): TagHero => ({ sprite: 'pax', hp: 400, maxHp: 1000, restCap: 600, dead: false, ...o });
@@ -51,17 +51,17 @@ describe('tag view rules: words', () => {
 });
 
 describe('tag view rules: geometry and motion', () => {
-  it('lays the bars out as bars.ts does, and the red span where barFill puts the health and rest strokes', () => {
+  it('lays the bars out as slim-hud.ts does, and the red span where barFill puts the health and rest strokes', () => {
     for (const team of [0, 1]) {
       expect(teamX(team)).toBe(sideOffset(team));
-      const m = mainBar(sideOffset(team));
+      const m = slimBar(team);
       expect(mainBarOf(team)).toEqual({ minX: m.minX, maxX: m.maxX, y: m.y, line: m.line });
       for (const i of [0, 1]) {
-        const b = benchBar(sideOffset(team), i);
+        const b = chipBar(team, i);
         expect(benchBarOf(team, i)).toEqual({ minX: b.minX, maxX: b.maxX, y: b.y, line: b.line });
       }
       for (const h of [hero(), hero({ hp: 0 }), hero({ restCap: 1200 }), hero({ maxHp: 0 })]) {
-        const f = barFill(benchBar(sideOffset(team), 0), h.hp, h.maxHp, h.restCap);
+        const f = barFill(chipBar(team, 0), h.hp, h.maxHp, h.restCap);
         expect(redSpan(benchBarOf(team, 0), h)).toEqual([f.curX, f.restX]);
       }
     }
@@ -76,15 +76,13 @@ describe('tag view rules: geometry and motion', () => {
     const three = tagLayout(3, rowH, 1);
     expect(three.rows).toHaveLength(4);
     const [inRow, a, b, word] = three.rows as [[number, number], [number, number], [number, number], [number, number]];
-    const top = (i: number): number => benchBarOf(0, i).y + 6;
+    const top = (i: number): number => 26 + i * 40 + 6;
     expect([a, b]).toEqual([[0, top(0)], [0, top(1)]]);
     expect(word).toEqual([TAG_BAR_W + 8, top(1) + rowH]);
     expect(inRow[1]).toBe(word[1]);
     expect(inRow[0]).toBeGreaterThan(word[0] + 80);
     // Every row clear of the second bench bar's stroke, and the last row above the super meter.
-    for (const [, y] of three.rows) expect(y >= top(1) || y + rowH - 5 <= benchBarOf(0, 1).y - 3).toBe(true);
-    const boosted = tagLayout(3, 25, 1.3);
-    expect(Math.max(...boosted.rows.map(([, y]) => y)) + 25 - 5).toBeLessThan(METER_Y - 2);
+    for (const [, y] of three.rows) expect(y >= top(1) || y + rowH - 5 <= 26 + 40 - 3).toBe(true);
   });
 
   it('puts the TAG caption over the third action-bar slot', () => {

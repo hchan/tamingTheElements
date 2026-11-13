@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -290,5 +290,21 @@ describe('cooldownLook (the one cooldown look)', () => {
     const d = look(1, true, 0);
     expect(d.fill).toHaveLength(8);
     expect(d.flashAlpha).toBe(0);
+  });
+});
+
+describe('centreRows and the cleanse icon', () => {
+  it('centres each row on the 1280 frame without changing its spacing', () => {
+    const mk = (x: number, y: number) => ({ x, y, size: 77 }) as never;
+    const out = centreRows([mk(1, 640), mk(78, 640), mk(155, 640), mk(1, 560)]) as { x: number; y: number; size: number }[];
+    const row = out.filter((s) => s.y === 640);
+    const left = Math.min(...row.map((s) => s.x));
+    const right = Math.max(...row.map((s) => s.x + s.size));
+    expect(Math.abs(left - (1280 - right))).toBeLessThanOrEqual(1);
+    expect((row[1]?.x ?? 0) - (row[0]?.x ?? 0)).toBe(77);
+    expect(out[3]?.x).toBe(Math.floor((1280 - 77) / 2));
+  });
+  it('gives cleanse its own tile on the sheet', () => {
+    expect(ACTION_ICON['cleanse']).toBe(12);
   });
 });

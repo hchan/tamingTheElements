@@ -10,6 +10,7 @@ import { gradeRgba, mute } from '../fx/grim-fx';
 import { getPrefs } from '../platform/a11y/prefs';
 import { syncTouchOverlays } from './touch-overlay';
 import { CLEANSE_COOLDOWN, cleanseClockOf } from './cleanse-clock';
+import { tagSlot } from './tag-slot';
 import { elementalShown } from '../platform/cleanse-info';
 
 /**
@@ -28,7 +29,7 @@ const SLOT_BORDER = 2;
 /** Legacy `Global.actionBarHeight - slotBorderWidth / 2 - topBorderWidth * 2`. */
 export const SLOT_SIDE = ACTION_BAR_HEIGHT - SLOT_BORDER / 2 - TOP_BORDER * 2;
 export const BAR_Y = LOGICAL_HEIGHT - ACTION_BAR_HEIGHT;
-export const COOLDOWN_ALPHA = 0.33;
+export const COOLDOWN_ALPHA = 0.52;
 export const COOLDOWN_COLOR = 0x090909;
 export const CAPTURE_READY_COLOR = 0xb39653;
 
@@ -108,7 +109,7 @@ const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 export type SlotKind = 'ability' | 'capture' | 'swap' | 'trap' | 'elemental' | 'super' | 'guard' | 'dash' | 'weather' | 'charge' | 'cleanse';
 
 /** Cell of each icon on the `hud:actions` sheet (`tools/assets/hud-gen/actions.py` TILES order, 4 per row, 64 px cells). */
-export const ACTION_ICON = { trap: 0, tag: 1, charge: 2, weather: 3, dash: 4, guard: 5, super: 6, fire: 7, water: 8, earth: 9, air: 10, element: 11 } as const;
+export const ACTION_ICON = { trap: 0, tag: 1, charge: 2, weather: 3, dash: 4, guard: 5, super: 6, fire: 7, water: 8, earth: 9, air: 10, element: 11, cleanse: 12 } as const;
 export const ACTION_SHEET = 'hud:actions';
 export const SHEET_CELL = 64;
 export const SHEET_COLS = 4;
@@ -379,11 +380,25 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
   if (arcade) {
     // The common Cleanse (every hero; cmd 0: the key and the touch overlay do the input, like the other Arcade boxes).
     add({
-      kind: 'cleanse', cmd: 0, sprite: '', icon: -1, touch: 'Cleanse', highlight: false, disabled: false,
+      kind: 'cleanse', cmd: 0, sprite: '', icon: ACTION_ICON.cleanse, touch: 'Cleanse', highlight: false, disabled: false,
       progress: arcade.cleanseIn <= 0 ? 1 : clamp01(1 - arcade.cleanseIn / CLEANSE_COOLDOWN), note: leftNote('Cleanse', arcade.cleanseIn),
     }, CLEANSE_LABEL);
   }
-  return out;
+  return arcade ? centreRows(out) : out;
+}
+
+/** Arcade bar: each row of boxes is centred on the 1280 px screen (the bar is as wide as its boxes, not stuck left). */
+export function centreRows(slots: ActionSlot[]): ActionSlot[] {
+  const rows = new Map<number, ActionSlot[]>();
+  for (const s of slots) rows.set(s.y, [...(rows.get(s.y) ?? []), s]);
+  const shifted = new Map<ActionSlot, number>();
+  for (const row of rows.values()) {
+    const left = Math.min(...row.map((s) => s.x));
+    const right = Math.max(...row.map((s) => s.x + s.size));
+    const dx = Math.floor((LOGICAL_W - (right - left)) / 2) - left;
+    for (const s of row) shifted.set(s, dx);
+  }
+  return slots.map((s) => ({ ...s, x: s.x + (shifted.get(s) ?? 0) }));
 }
 
 /** Ticks (10 s at 50 Hz) after the match starts during which the Capture slot is announced as a new ability. */
@@ -457,22 +472,6 @@ export function cooldownLook(progress: number, disabled: boolean, x: number, y: 
   const t = flashAgeMs < 0 ? 1 : flashAgeMs / READY_FLASH_MS;
   const ease = reduced || disabled || t >= 1 ? 0 : (1 - t) ** 3;
   return { fill, fillAlpha: COOLDOWN_ALPHA, flashAlpha: READY_FLASH_ALPHA * ease, pulse: ease };
-}
-
-/**
- * The Cleanse box's mark, drawn in code (the generated `hud:actions` sheet has no cell for it): a bone ring with a gap, a chain link
- * snapped open, over a few ash flecks. Muted bone on the dark plate like the sheet's own icons.
- */
-export function drawCleanseGlyph(g: Phaser.GameObjects.Graphics, x: number, y: number, size: number): void {
-  const cx = x + size / 2;
-  const cy = y + size * 0.56;
-  const r = size * 0.22;
-  g.lineStyle(Math.max(2, size * 0.06), 0xa89f88, 0.95);
-  g.beginPath();
-  g.arc(cx, cy, r, 0.35, 5.6, false);
-  g.strokePath();
-  g.lineStyle(Math.max(1, size * 0.035), 0x6b6558, 0.9);
-  for (const [dx, dy] of [[0.34, -0.1], [0.4, 0.06], [0.3, 0.2]] as const) g.lineBetween(cx + size * dx, cy + size * dy, cx + size * (dx + 0.08), cy + size * (dy - 0.05));
 }
 
 /** Where the 1280x720 screen sits in world px: top-left `x`,`y` and world px per logical px (`scale`). Identity for a fixed camera. */
@@ -576,8 +575,14 @@ export class ActionBarView {
         this.back.fillStyle(s.sprite === '' ? 0x070605 : 0x1d1e1f, 0.95);
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       }
+      if (s.sprite !== '' && !this.mirror) {
+        // A hero's own attack art is dark: a lit stone plate with a soft pale core keeps it from vanishing (same lift as the sheet's tiles).
+        this.back.fillStyle(0x3a352c, 1);
+        this.back.fillRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2);
+        this.back.fillStyle(0x6b6254, 0.55);
+        this.back.fillRect(s.x + s.size * 0.15, s.y + s.size * 0.25, s.size * 0.7, s.size * 0.6);
+      }
       this.drawIcon(i, s);
-      if (s.kind === 'cleanse') drawCleanseGlyph(g, s.x, s.y, s.size);
       const key = `${s.kind}:${String(s.cmd)}:${String(i)}`;
       const prev = this.lastProgress.get(key);
       if (prev !== undefined && prev < 1 && s.progress >= 1 && !s.disabled) this.flashStart.set(key, now);
@@ -593,8 +598,20 @@ export class ActionBarView {
         g.strokeRect(s.x, s.y, s.size, s.size);
       }
       this.drawCooldown(look, s);
+      if (!this.mirror && s.label !== '') {
+        // A dark badge under the key so the number reads on any icon.
+        g.fillStyle(0x0a0806, 0.82);
+        g.fillRect(s.x + 2, s.y + 2, Math.max(18, s.label.length * 11 + 8), 20);
+      }
       this.text(i, s);
     });
+    if (!this.mirror && this.team === 0) {
+      const tag = this.slots.find((s) => s.kind === 'swap');
+      if (tag) {
+        tagSlot.x = tag.x + tag.size / 2;
+        tagSlot.y = tag.y;
+      }
+    }
     this.drawHeaders(g, grouped?.headers ?? []);
     if (!this.mirror) {
       this.drawHint(bar?.tick ?? 0);
@@ -633,6 +650,11 @@ export class ActionBarView {
       for (let n = 2; n + 1 < pts.length; n += 2) g.lineTo(pts[n] ?? 0, pts[n + 1] ?? 0);
       g.closePath();
       g.fillPath();
+      // The sweep's leading edge: a bone line from the centre to where the shade ends, so progress reads at a glance.
+      if (pts.length >= 6 && !this.reduced) {
+        g.lineStyle(2, READY_FLASH_COLOR, 0.8);
+        g.lineBetween(pts[2] ?? 0, pts[3] ?? 0, pts[4] ?? 0, pts[5] ?? 0);
+      }
     }
     if (look.flashAlpha > 0) {
       g.fillStyle(READY_FLASH_COLOR, look.flashAlpha);

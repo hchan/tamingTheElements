@@ -1,5 +1,5 @@
-"""Action bar icons (unified-action-bar): the boxes that had no art of their own. One 4x3 sheet of 64x64 tiles, original art, no
-third-party sources: trap, tag, charge, weather, dash, guard, super, fire, water, earth, air, element (the generic one).
+"""Action bar icons (unified-action-bar): the boxes that had no art of their own. One 4x4 sheet of 64x64 tiles, original art, no
+third-party sources: trap, tag, charge, weather, dash, guard, super, fire, water, earth, air, element (the generic one), cleanse.
 Run: python3 tools/assets/hud-gen/actions.py [outfile]   (default public/assets/img/hud/actions.png; needs Pillow only)
 Look (owner: art reads too cartoony, wants grim, desaturated, textured): a dark smoky plate with a soft vignette, a muted glyph
 shaded top-lit with a soft gradient (no bold outline, no chevron clip-art), a faint additive glow behind it, deterministic film
@@ -18,6 +18,10 @@ SS = 4
 COLS = 4
 BIG = TILE * SS
 
+# Every glyph is lifted by LIFT toward bone after the table below, so no tile is near-black on the plate (mean luma well above the old 40).
+LIFT = 0.18
+BONE = (226, 218, 198)
+
 # Muted glyph colours (light end, dark end): dull brass, bone, rust, slate, steel, ember, ash blues and so on.
 TILES = [
     ("trap", (178, 160, 112), (86, 74, 50)),
@@ -31,8 +35,12 @@ TILES = [
     ("water", (118, 156, 184), (44, 70, 96)),
     ("earth", (170, 146, 108), (78, 64, 46)),
     ("air", (196, 208, 214), (96, 108, 116)),
-    ("element", (176, 168, 150), (80, 76, 66)),
+    ("element", (196, 188, 168), (104, 98, 86)),
+    ("cleanse", (204, 196, 176), (110, 104, 90)),
 ]
+
+
+TILES = [(n, tuple(int(c + (BONE[i] - c) * LIFT) for i, c in enumerate(l)), tuple(int(c + (BONE[i] - c) * LIFT) for i, c in enumerate(d))) for n, l, d in TILES]
 
 
 def P(x, y):
@@ -156,6 +164,14 @@ def draw_air(d):
             line(d, pts[i], pts[i + 1], 4.2 - 2.2 * i / 19.0)
 
 
+def draw_cleanse(d):
+    # A ring with a gap (a chain link snapped open) over three ash flecks.
+    d.arc([P(14, 18), P(46, 50)], 20, 320, fill=255, width=SS * 4)
+    for x, y in ((52, 22), (55, 32), (50, 42)):
+        ellipse(d, x, y, 2.2, 2.2)
+    line(d, (46, 26), (54, 18), 2)
+
+
 def draw_element(d):
     # The generic element mark: a ring round a point, with a gap (an unlit sigil).
     d.arc([P(14, 14), P(50, 50)], 30, 330, fill=255, width=SS * 4)
@@ -175,6 +191,7 @@ DRAW = {
     "earth": (draw_earth, draw_earth_cut),
     "air": (draw_air, None),
     "element": (draw_element, None),
+    "cleanse": (draw_cleanse, None),
 }
 
 
@@ -186,7 +203,7 @@ def plate():
         for x in range(0, BIG):
             dx, dy = (x - BIG / 2) / (BIG / 2), (y - BIG * 0.46) / (BIG / 2)
             v = max(0.0, 1.0 - (dx * dx + dy * dy) * 0.55)
-            base = 18 + 20 * v
+            base = 26 + 26 * v
             px[x, y] = (int(base * 1.02), int(base), int(base * 0.94))
     return img
 
@@ -202,8 +219,8 @@ def tile(name, light, dark, seed):
     soft = mask.filter(ImageFilter.GaussianBlur(SS * 0.5))
     img = plate()
     # Glow behind the glyph, muted.
-    glow = soft.filter(ImageFilter.GaussianBlur(SS * 5)).point(lambda v: int(v * 0.42))
-    img = Image.composite(Image.new("RGB", (BIG, BIG), tuple(int(c * 0.55) for c in dark)), img, glow)
+    glow = soft.filter(ImageFilter.GaussianBlur(SS * 5)).point(lambda v: int(v * 0.55))
+    img = Image.composite(Image.new("RGB", (BIG, BIG), tuple(int(c * 0.7) for c in dark)), img, glow)
     # Glyph: top-lit vertical gradient, light at the top, dark at the bottom.
     grad = Image.new("RGB", (BIG, BIG))
     gp = grad.load()
