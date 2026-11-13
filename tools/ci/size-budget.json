@@ -22,6 +22,7 @@
     "sim": 35680,
     "super-view": 2330,
     "tag-view": 2970,
+    "own-element-view": 2300,
     "terrain-view": 6400,
     "trap-view": 1100,
     "touch-controls": 1670,
@@ -37,7 +38,7 @@
     "guide.css": 1560,
     "tour-select": 685
   },
-  "totalGzip": 550000,
+  "totalGzip": 556000,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
