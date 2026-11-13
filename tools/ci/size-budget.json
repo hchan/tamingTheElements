@@ -21,7 +21,7 @@
     "round-view": 2300,
     "sim": 35450,
     "super-view": 2310,
-    "tag-view": 2870,
+    "tag-view": 2910,
     "terrain-view": 5500,
     "trap-view": 1100,
     "touch-controls": 1620,
@@ -33,7 +33,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 528250,
+  "totalGzip": 528320,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
