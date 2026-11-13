@@ -15,7 +15,7 @@
     "local-two": 455,
     "online-versus": 3910,
     "phaser": 388700,
-    "phaser-config": 27600,
+    "phaser-config": 27700,
     "pose-layer": 10550,
     "rolldown-runtime": 200,
     "round-view": 2330,
@@ -33,7 +33,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 529220,
+  "totalGzip": 529440,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
