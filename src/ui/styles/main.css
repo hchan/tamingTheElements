@@ -945,6 +945,12 @@ html[data-high-contrast='true'] button.touchBtn {
     right: auto;
     left: calc(8px + var(--touch-line2) * var(--touch-pitch));
   }
+  /* High contrast keeps a heavy border: 2 px, with the padding trimmed so the content box stays about as wide. */
+  html[data-high-contrast='true'][data-touch-size='large'] #menu button.touchBtn,
+  html[data-high-contrast='true'][data-touch-size='large'] #game button.touchBtn {
+    border-width: 2px;
+    padding: 2px 1px;
+  }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }
 .touchBtn-Weather { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.8 4.8 0 0 1 0 9.5z' fill='black'/%3E%3C/svg%3E"); }
