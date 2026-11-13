@@ -17,6 +17,8 @@ export const faceUrl = (id: CharacterId): string => `url("${assetUrl('map', hero
 export interface HeroPanel {
   readonly node: HTMLElement;
   show: (id: CharacterId) => void;
+  /** Relabels the action button ("Add to team" or "Remove from team"), which is only there when `onAdd` was given. */
+  setAction: (label: string) => void;
 }
 
 /** An ability icon: the effect sprite's first frame, or the kind mark when the sprite is missing. */
@@ -84,7 +86,10 @@ export function heroPanel(onAdd?: () => void): HeroPanel {
     top.append(face, head);
     node.append(top, ...(onAdd ? [add] : []), stats, el('h4', 'heroAbilitiesTitle', 'Abilities'), abil);
   };
-  return { node, show };
+  const setAction = (label: string): void => {
+    add.textContent = label;
+  };
+  return { node, show, setAction };
 }
 
 export interface HeroGridOptions {

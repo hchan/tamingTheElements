@@ -139,6 +139,48 @@ describe('tourPickView', () => {
     expect(sel('arcadeHero3').value).toBe('sindarosa');
   });
 
+  it('the x button is inside its slot item with a title, and focus returns to the slot after removing', () => {
+    mount();
+    const x = document.querySelectorAll<HTMLElement>('.heroSlotClear')[1] as HTMLElement;
+    expect(x.parentElement?.contains(document.getElementById('tourSlot2'))).toBe(true);
+    expect(x.title).toBe('Remove Rokcore');
+    x.click();
+    expect(document.activeElement).toBe(document.getElementById('tourSlot2'));
+    expect(document.querySelectorAll('.heroSlotClear')).toHaveLength(2);
+  });
+
+  it('after removing all three heroes the next pick fills the lead slot, then hero 2', () => {
+    mount();
+    for (let n = 0; n < 3; n++) (document.querySelectorAll('.heroSlotClear')[0] as HTMLElement).click();
+    expect(document.querySelectorAll('.heroSlotClear')).toHaveLength(0);
+    expect(document.getElementById('tourSlot1')?.getAttribute('aria-pressed')).toBe('true');
+    tile('Lavax').click();
+    expect(sel('arcadeHero1').value).toBe('lavax');
+    expect(sel('arcadeHero2').value).toBe('');
+    expect(document.getElementById('tourSlot2')?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('removing the lead keeps the lead label on slot 1 and the next pick refills it', () => {
+    mount();
+    (document.querySelectorAll('.heroSlotClear')[0] as HTMLElement).click();
+    expect(document.getElementById('tourSlot1')?.textContent).toContain('Hero 1 (lead)');
+    tile('Sindarosa').click();
+    expect(sel('arcadeHero1').value).toBe('sindarosa');
+  });
+
+  it('the panel button says what it will do: Add, Swap into the active hero, or Remove', () => {
+    mount();
+    const btn = (): string => document.querySelector('.heroAdd')?.textContent ?? '';
+    document.getElementById('tourSlot1')?.click();
+    tile('Sindarosa').dispatchEvent(new Event('pointerenter'));
+    expect(btn()).toBe('Remove from team');
+    tile('Lavax').dispatchEvent(new Event('pointerenter'));
+    expect(btn()).toBe('Swap into hero 1');
+    (document.querySelectorAll('.heroSlotClear')[0] as HTMLElement).click();
+    tile('Sindarosa').dispatchEvent(new Event('pointerenter'));
+    expect(btn()).toBe('Add to team');
+  });
+
   it('arrow keys move the cursor and show that hero in the panel', () => {
     mount();
     const before = document.querySelector('.heroPanel .heroName')?.textContent;

@@ -323,6 +323,7 @@ function rosterView(
         clear.setAttribute('aria-label', `Clear ${title} pick ${String(idx + 1)}`);
         clear.addEventListener('click', () => {
           clearSlot(n);
+          b.focus();
         });
         acts.append(clear);
         item.append(acts);
@@ -361,20 +362,38 @@ function rosterView(
     });
     node.classList.toggle('vsBothReady', local && ready[0] && ready[1]);
     const shown = races[focus];
+    panel.setAction(shown && openOf(mouseSide).some((n) => confirmed.has(n) && f[n]?.value === shown) ? 'Remove from team' : 'Add to team');
     if (shown && panel.node.dataset['hero'] !== shown) {
       panel.node.dataset['hero'] = shown;
       panel.show(shown);
     }
   };
 
+  /**
+   * Puts `id` in `slot`. A hero already picked in another slot of the SAME team moves here and leaves its old slot with this slot's old
+   * hero (or empty when this slot was not picked yet): a team never holds a hero twice. The other side may hold the same hero (a mirror).
+   */
+  function putHero(slot: string, id: string): void {
+    const sel = fields()[slot];
+    if (!sel) return;
+    const dup = openOf(sideOf(slot)).find((k) => k !== slot && confirmed.has(k) && fields()[k]?.value === id);
+    const dupSel = dup ? fields()[dup] : undefined;
+    if (dup && dupSel) {
+      if (confirmed.has(slot)) dupSel.value = sel.value;
+      else {
+        dupSel.value = '';
+        confirmed.delete(dup);
+      }
+    }
+    sel.value = id;
+    confirmed.add(slot);
+  }
   /** Fills side `s`'s active slot with hero `i`, then moves that side on to its next empty slot. */
   const place = (s: SideIx, i: number): void => {
     const slot = sideActive[s];
-    const sel = fields()[slot];
     const id = races[i];
-    if (!sel || !id) return;
-    sel.value = id;
-    confirmed.add(slot);
+    if (!fields()[slot] || !id) return;
+    putHero(slot, id);
     ready[s] = false;
     changed();
     const next = openOf(s).find((n) => !confirmed.has(n));
@@ -407,16 +426,7 @@ function rosterView(
     const id = races[i];
     if (!sel || !id) return;
     const s = sideOf(slot);
-    const dup = openSlots().find((k) => k !== slot && confirmed.has(k) && fields()[k]?.value === id);
-    const dupSel = dup ? fields()[dup] : undefined;
-    if (dup && dupSel) {
-      dupSel.value = sel.value;
-      if (confirmed.has(slot)) confirmed.add(dup);
-      else confirmed.delete(dup);
-      ready[sideOf(dup)] = false;
-    }
-    sel.value = id;
-    confirmed.add(slot);
+    putHero(slot, id);
     ready[s] = false;
     changed();
     mouseSide = s;
@@ -447,7 +457,7 @@ function rosterView(
     const was = sel.value;
     confirmed.delete(n);
     sel.value = '';
-    sideActive[s] = n;
+    sideActive[s] = openOf(s).find((k) => !confirmed.has(k)) ?? n;
     mouseSide = s;
     ready[s] = false;
     changed();
