@@ -101,7 +101,7 @@ describe("SPRITE_BOOST contrast entries (ability audit open defects)", () => {
     const blends: number[] = [];
     const scene = {
       add: { image: () => { const i = fakeImage(); i.setBlendMode = (b: number) => { blends.push(b); return i; }; return i; } },
-      textures: { get: () => ({ has: () => true }) },
+      textures: { get: () => ({ has: () => true }), exists: () => false },
     } as unknown as Phaser.Scene;
     const view = new ProjectileView(scene);
     blends.length = 0;

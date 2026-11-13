@@ -11,7 +11,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 
 - [art-consistency-batches](../in-progress/art-consistency-batches.md)
 - [effect-batches-plan](../brainstorm/effect-batches-plan.md)
-- [effect-sprite-style-pass](../brainstorm/effect-sprite-style-pass.md)
+- [effect-sprite-style-pass](../in-progress/effect-sprite-style-pass.md)
 - [hero-rigs](../brainstorm/hero-rigs.md)
 - [rig-gen-shared-palette](../brainstorm/rig-gen-shared-palette.md)
 - [phaser4-effects](../brainstorm/phaser4-effects.md)
