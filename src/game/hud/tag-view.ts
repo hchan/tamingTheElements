@@ -2,9 +2,11 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
-  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, TAG_BAR_H, TAG_BAR_W, activeLabel, benchBarOf, benchLabel, callPose,
+  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, benchBarOf, benchLabel, callPose,
   callText, dashes, flashPose, mainBarOf, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
+import { tagSlot } from './tag-slot';
+import { PILL_BAR_H, PILL_W, pillWord, tagPill } from './slim-hud';
 
 /**
  * Phaser side of the Arcade tag-team view (WP-arcade-tag-view, FUN-DESIGN 2.6 and section 3). The weather view mounts it
@@ -106,14 +108,22 @@ export function mountTagView(
       })
       .setDepth(HUD_DEPTH);
   const fx = arena.add.graphics().setDepth(FLASH_DEPTH);
-  const caption = teams[0].length < 2 ? undefined : text(arena, 18 * boost, 4).setText('TAG').setOrigin(0.5, 1).setPosition(TAG_SLOT_X, TAG_SLOT_Y - 2);
+  const caption = teams[0].length < 2 ? undefined : text(arena, 18 * boost, 4).setText('TAG').setOrigin(0.5, 1).setPosition(tagSlot.x, tagSlot.y - 2).setScrollFactor(0);
   /** The Hud objects, made once the Hud scene runs (as the round view): its Graphics, per team [lines, tag word], the call. */
   let parts: { g: Phaser.GameObjects.Graphics; texts: Phaser.GameObjects.Text[][]; call: Phaser.GameObjects.Text } | undefined;
   const build = (): void => {
     parts = {
       g: hud.add.graphics().setDepth(HUD_DEPTH),
       texts: teams.map((t, team) =>
-        t.length < 2 ? [] : (layouts[team]?.rows ?? []).map(([x, y]) => text(hud, LINE_PX * boost, 4).setPosition(benchBarOf(team, 0).minX + x, y)),
+        t.length < 2
+          ? []
+          : (layouts[team]?.rows ?? []).map((_, i, all) => {
+              // The slim HUD shows only the tag word (as a compact pill); the IN and BENCH lines stay as hidden texts for the probe.
+              const o = text(hud, LINE_PX * boost, 4);
+              if (i < all.length - 1) return o.setVisible(false);
+              const pill = tagPill(team, t.length - 1);
+              return o.setFontSize(Math.round(12 * boost)).setPosition(pill.x, pill.wordY).setVisible(true);
+            }),
       ),
       call: text(hud, CALL_PX, 8).setOrigin(0.5).setVisible(false),
     };
@@ -147,7 +157,7 @@ export function mountTagView(
       const bench = t.filter((h) => h !== active);
       if (active) {
         red(g, main, active);
-        const frame = [main.minX - 3, main.y - 8, main.maxX - main.minX + 6, 16] as const;
+        const frame = [main.minX - 2, main.y - 11, main.maxX - main.minX + 4, 22] as const;
         if (highContrast) g.lineStyle(3, 0xffffff, 1).strokeRect(...frame);
         else {
           // A dark rim under a thin ochre line, so the frame reads as an inlaid edge rather than a yellow outline.
@@ -158,26 +168,27 @@ export function mountTagView(
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
       const tag = tagReadout(bar ? bar.swapReadyTick - bar.tick : 0, !active || bench.every((h) => h.dead));
-      if (team === 0) caption?.setVisible(tag.label !== 'NO TAG');
+      if (team === 0) caption?.setVisible(tag.label !== 'NO TAG').setPosition(tagSlot.x, tagSlot.y - 2);
       // One line per bench row (an empty one if a hero is missing), so the texts keep their rows.
       const benchLines = Array.from({ length: t.length - 1 }, (_, i) => {
         const h = bench[i];
         return h ? benchLabel(h) : '';
       });
       const line = [active ? activeLabel(active.sprite) : '', ...benchLines, tag.label];
-      const [ox, tagY] = layouts[team]?.bar ?? [0, 0];
-      const bx = benchBarOf(team, 0).minX + ox;
+      const pill = tagPill(team, t.length - 1);
+      const bx = pill.x;
+      const tagY = pill.barY;
       // The cooldown bar fills as the tag comes back: dashed while it does, solid gold (white in high contrast) when ready.
-      g.fillStyle(0x0a0806, 0.75).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
-      if (tag.fill >= 1) g.fillStyle(highContrast ? 0xffffff : GOLD, 0.85).fillRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
+      g.fillStyle(0x0a0806, 0.75).fillRect(bx, tagY, PILL_W, PILL_BAR_H);
+      if (tag.fill >= 1) g.fillStyle(highContrast ? 0xffffff : GOLD, 0.85).fillRect(bx, tagY, PILL_W, PILL_BAR_H);
       else {
-        g.lineStyle(TAG_BAR_H, highContrast ? 0xffffff : ASH, highContrast ? 0.9 : 0.6);
-        for (const [x0, x1] of dashes(bx, bx + tag.fill * TAG_BAR_W, [5, 3])) g.lineBetween(x0, tagY + TAG_BAR_H / 2, x1, tagY + TAG_BAR_H / 2);
+        g.lineStyle(PILL_BAR_H, highContrast ? 0xffffff : ASH, highContrast ? 0.9 : 0.6);
+        for (const [x0, x1] of dashes(bx, bx + tag.fill * PILL_W, [5, 3])) g.lineBetween(x0, tagY + PILL_BAR_H / 2, x1, tagY + PILL_BAR_H / 2);
       }
-      g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : 0x6b6558, 1).strokeRect(bx, tagY, TAG_BAR_W, TAG_BAR_H);
+      g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : 0x6b6558, 1).strokeRect(bx, tagY, PILL_W, PILL_BAR_H);
       const prev = lines[team] ?? line;
       line.forEach((l, i) => {
-        if (prev[i] !== l) texts[team]?.[i]?.setText(l).setColor(i === line.length - 1 && tag.fill >= 1 ? '#c9b27a' : i ? '#e0e0e0' : '#ffffff');
+        if (prev[i] !== l) texts[team]?.[i]?.setText(i === line.length - 1 ? pillWord(l) : l).setColor(i === line.length - 1 && tag.fill >= 1 ? '#c9b27a' : i ? '#e0e0e0' : '#ffffff');
       });
       lines[team] = line;
     });

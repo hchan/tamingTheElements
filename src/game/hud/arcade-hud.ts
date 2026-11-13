@@ -31,16 +31,16 @@ export interface DamageNumber {
 }
 
 /** Hyper meter bar: METER_BARS segments of SEGMENT_W x SEGMENT_H px with SEGMENT_GAP between, under the HUD. */
-export const SEGMENT_W = 56;
+export const SEGMENT_W = 28;
 export const SEGMENT_H = 10;
-export const SEGMENT_GAP = 6;
+export const SEGMENT_GAP = 3;
 export const METER_W = METER_BARS * SEGMENT_W + (METER_BARS - 1) * SEGMENT_GAP;
 /**
  * The meter row sits clear of the HUD block (100 px) and of the health text under the bars (y 24, 16 px), and each meter
  * stops METER_INSET short of its bar's inner end, so the centre column (round timer and pips) has room on both sides.
  */
-export const METER_Y = 124;
-export const METER_INSET = 32;
+export const METER_Y = 40;
+export const METER_INSET = 0;
 /** A full meter pulses its fill once per METER_PULSE_MS (one flash a second: under the WCAG 2.3.1 limit of 3). */
 export const METER_PULSE_MS = 1000;
 /** Dash pattern (on, off px) of the segment that is still filling, so full and charging differ without colour. */

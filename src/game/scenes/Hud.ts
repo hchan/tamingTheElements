@@ -27,7 +27,6 @@ import {
   dashSegments,
   activeHeroText,
   healthCue,
-  arcadeAvatar,
   mainBar,
   regenLabel,
   regenState,
@@ -35,6 +34,9 @@ import {
   type BarGeometry,
   type HudCharacter,
 } from '../hud/bars';
+import {
+  CHIP_SIZE, SLIM_H, chipBar, chipRect, compactLabel, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+} from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
 
@@ -81,6 +83,7 @@ export class Hud extends Phaser.Scene {
   private gfx: Phaser.GameObjects.Graphics | undefined;
   private labels: Phaser.GameObjects.Text[] = [];
   private back: Phaser.GameObjects.Graphics | undefined;
+  private scrim: Phaser.GameObjects.Graphics | undefined;
   private portraits: Phaser.GameObjects.Image[] = [];
   /** Regen text per bench row, pooled: index team * 4 + row. */
   private regenTexts: (Phaser.GameObjects.Text | undefined)[] = [];
@@ -98,6 +101,8 @@ export class Hud extends Phaser.Scene {
   private meterTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   /** Arcade status chip words, pooled per side: index team * CHIP_MAX + slot. */
   private chipTexts: (Phaser.GameObjects.Text | undefined)[] = [];
+  /** Arcade: the white chip-drain trail per hero id. */
+  private trails = new Map<number, Trail>();
 
   constructor() {
     super(HUD_SCENE);
@@ -110,29 +115,31 @@ export class Hud extends Phaser.Scene {
 
   create(): void {
     fitScene(this);
+    if (this.arcade) this.drawScrim();
     this.back = this.add.graphics().setDepth(98);
     this.gfx = this.add.graphics().setDepth(100);
     this.portraits = [...TEAMS, ...TEAMS.flatMap((t) => [t, t, t, t])].map(() => this.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99).setVisible(false));
     // One text per side next to the bar: health state in words, so it never depends on red versus green.
     // Larger on phones (the canvas is drawn about 0.3x there), wrapped to the free column left of the bench bars, and outlined so it
     // reads on bright arenas without touching the bars beside it.
-    const boost = phoneBoost(this, 2);
+    const boost = this.arcade ? Math.min(1.4, phoneBoost(this, 2)) : phoneBoost(this, 2);
     this.labels = TEAMS.map((team) =>
       this.add
         .text(
-          mainBar(sideOffset(team)).minX,
-          22,
+          this.arcade ? (team === 0 ? slimBar(0).minX : slimBar(1).maxX) : mainBar(sideOffset(team)).minX,
+          this.arcade ? SLIM_ROW_B - 1 : 22,
           '',
           crisp(this, {
             fontFamily: HUD_FONT,
-            fontSize: `${String(Math.round(16 * boost))}px`,
+            fontSize: `${String(Math.round((this.arcade ? 14 : 16) * boost))}px`,
             color: '#e6dfd0',
             fontStyle: 'bold',
             stroke: '#0a0806',
             strokeThickness: 2,
-            wordWrap: { width: 150 },
+            ...(this.arcade ? {} : { wordWrap: { width: 150 } }),
           }),
         )
+        .setOrigin(this.arcade && team === 1 ? 1 : 0, 0)
         .setDepth(101),
     );
     this.refreshPrefs();
@@ -142,6 +149,9 @@ export class Hud extends Phaser.Scene {
       this.gfx = undefined;
       this.back?.destroy();
       this.back = undefined;
+      this.scrim?.destroy();
+      this.scrim = undefined;
+      this.trails.clear();
       this.grainGfx?.destroy();
       this.grainGfx = undefined;
       for (const im of this.portraits) im.destroy();
@@ -176,8 +186,14 @@ export class Hud extends Phaser.Scene {
       const x = sideOffset(team);
       const label = this.labels[team];
       if (side.active) {
-        this.drawBar(gfx, mainBar(x), side.active, true);
-        label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
+        if (this.arcade) {
+          this.drawBar(gfx, slimBar(team), side.active, true);
+          this.drawTrail(gfx, slimBar(team), side.active);
+          label?.setText(compactLabel(heroName(side.active.sprite), side.active));
+        } else {
+          this.drawBar(gfx, mainBar(x), side.active, true);
+          label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
+        }
         if (this.arcade) this.drawArcadeAvatar(gfx, team, side.active);
         else this.drawPortrait(gfx, team, side.active, side.bench);
         if (this.arcade) this.drawStatusChips(gfx, team, side.active, x);
@@ -188,12 +204,57 @@ export class Hud extends Phaser.Scene {
         for (const i of [team, ...[0, 1, 2, 3].map((k) => TEAMS.length + team * 4 + k)]) this.portraits[i]?.setVisible(false);
       }
       side.bench.forEach((c, i) => {
+        if (this.arcade) {
+          this.drawChip(gfx, team, i, c);
+          return;
+        }
         this.drawBar(gfx, benchBar(x, i), c, false);
         if (this.classic) this.drawRegenText(team, i, c);
       });
       for (let i = side.bench.length; i < 4; i++) this.regenTexts[team * 4 + i]?.setVisible(false);
     }
     if (this.arcade) this.drawArcade(this.arcade);
+  }
+
+  /** Arcade: a dark top band over the crowd (the terrain owns it), fading out down to the floor. */
+  private drawScrim(): void {
+    const g = this.add.graphics().setDepth(96);
+    g.fillStyle(0x070605, 0.94).fillRect(0, 0, HUD_WIDTH, SLIM_H + 2);
+    // Dense over the crowd band (about y 115-180), a short fade into the floor at about y 182.
+    g.fillStyle(0x070605, 0.86).fillRect(0, SLIM_H + 2, HUD_WIDTH, 112 - SLIM_H);
+    for (let i = 0; i < 9; i++) g.fillStyle(0x070605, 0.8 * (1 - i / 9)).fillRect(0, 112 + i * 8, HUD_WIDTH, 8);
+    g.fillStyle(0x000000, 0.9).fillRect(0, SLIM_H + 1, HUD_WIDTH, 1);
+    this.scrim = g;
+  }
+
+  /** The white chip-drain trail: the life just lost stays as a bright bar that holds, then drains to the current life. */
+  private drawTrail(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter): void {
+    const t = this.trails.get(c.id) ?? { v: c.hp, hold: 0 };
+    this.trails.set(c.id, t);
+    const v = stepTrail(t, c.hp, c.maxHp, this.reduceMotion);
+    if (c.dead || v <= c.hp || c.maxHp <= 0) return;
+    const w = g.maxX - g.minX;
+    const x0 = g.minX + Math.ceil(w * Math.max(0, c.hp) / c.maxHp);
+    const x1 = g.minX + Math.ceil(w * Math.min(1, v / c.maxHp));
+    gfx.lineStyle(g.line, 0xffffff, 0.95).lineBetween(x0, g.y, x1, g.y);
+  }
+
+  /** Arcade bench chip: a small portrait with its element mark and a mini life bar under it (dimmed with a cross when down). */
+  private drawChip(gfx: Phaser.GameObjects.Graphics, team: number, i: number, c: HudCharacter): void {
+    const r = chipRect(team, i);
+    this.back?.fillStyle(0x070a12, 0.85).fillRect(r.x - 1, r.y - 1, r.size + 2, r.size + 2);
+    const im = this.portraits[TEAMS.length + team * 4 + i];
+    this.placePortrait(im, c, r.x, r.y, r.size, team === 1);
+    im?.setAlpha(c.dead ? 0.35 : 1);
+    gfx.lineStyle(this.highContrast ? 2 : 1, c.dead ? 0x777777 : this.highContrast ? 0xffffff : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), 0.95);
+    gfx.strokeRect(r.x - 1, r.y - 1, r.size + 2, r.size + 2);
+    this.drawMark(gfx, c.element, r.x + 5, r.y + CHIP_SIZE - 5, 3);
+    if (c.dead) {
+      gfx.lineStyle(2, 0xff5a4a, 1);
+      gfx.lineBetween(r.x + 3, r.y + 3, r.x + r.size - 3, r.y + r.size - 3);
+      gfx.lineBetween(r.x + 3, r.y + r.size - 3, r.x + r.size - 3, r.y + 3);
+    }
+    this.drawBar(gfx, chipBar(team, i), c, false);
   }
 
   /** Classic buffs: a row of plus or cross squares in the free column under the health words. */
@@ -299,12 +360,12 @@ export class Hud extends Phaser.Scene {
 
   /** Arcade: the active hero's picture at the end of its health bar (`arcadeAvatar`), in an element-coloured frame. */
   private drawArcadeAvatar(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter): void {
-    const a = arcadeAvatar(team);
+    const a = slimPortrait(team);
     this.back?.fillStyle(0x070a12, 0.78).fillRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
     this.placePortrait(this.portraits[team], c, a.x, a.y, a.size, team === 1);
     gfx.lineStyle(this.highContrast ? 3 : 2, this.highContrast ? 0xffffff : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), 0.9);
     gfx.strokeRoundedRect(a.x - 2, a.y - 2, a.size + 4, a.size + 4, 4);
-    this.drawMark(gfx, c.element, a.x + 9, a.y + 9, 7);
+    this.drawMark(gfx, c.element, a.x + 8, a.y + 8, 6);
   }
 
   /** Element silhouette (white on a dark chip) so identity is never the frame colour alone: see `elementMark`. */
@@ -461,7 +522,7 @@ export class Hud extends Phaser.Scene {
     const gfx = this.gfx;
     const m = model.meters[team];
     if (!gfx) return;
-    const inner = team === 0 ? mainBar(0).maxX : mainBar(sideOffset(1)).minX;
+    const inner = team === 0 ? slimBar(0).maxX : slimBar(1).minX;
     const x = meterX(team, inner);
     const color = this.highContrast ? 0xffffff : METER_COLOR;
     const mid = METER_Y + SEGMENT_H / 2;
@@ -482,7 +543,7 @@ export class Hud extends Phaser.Scene {
       gfx.lineStyle(this.highContrast ? 2 : 1, 0xffffff, 1);
       gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
     }
-    const t = (this.meterTexts[team] ??= this.text(16)
+    const t = (this.meterTexts[team] ??= this.text(12)
       .setOrigin(team === 0 ? 1 : 0, 0.5)
       .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
     const label = meterLabel(m.value);
