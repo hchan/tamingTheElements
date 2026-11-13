@@ -234,6 +234,12 @@ export interface FunSummary {
   readonly medianDiversity: number;
   readonly maxTopSourceShare: number;
   readonly medianLeadChanges: number;
+  /** Confirmed hits per minute of simulated match time (fight pace). */
+  readonly hitsPerMinute: number;
+  /** Share of matches whose damage lead changed hands at least once (a comeback proxy: nobody led wire to wire). */
+  readonly comebackRate: number;
+  /** Share of combos with 2+ hits (combo usage). */
+  readonly multiHitComboShare: number;
   readonly counterHitRate: number;
   readonly jugglecapRecoveries: number;
   readonly stuncapRecoveries: number;
@@ -285,6 +291,9 @@ export function summarizeFun(list: readonly FunMetrics[]): FunSummary {
     medianDiversity: percentile(list.map((m) => m.diversity), 0.5),
     maxTopSourceShare: list.reduce((m, x) => Math.max(m, x.topSourceShare), 0),
     medianLeadChanges: percentile(list.map((m) => m.leadChanges), 0.5),
+    hitsPerMinute: sum((m) => m.seconds) === 0 ? 0 : r3((hits * 60) / sum((m) => m.seconds)),
+    comebackRate: rate((m) => m.leadChanges > 0),
+    multiHitComboShare: combos.length === 0 ? 0 : r3(combos.filter((h) => h >= 2).length / combos.length),
     counterHitRate: hits === 0 ? 0 : r3(sum((m) => m.counterHits) / hits),
     jugglecapRecoveries: sum((m) => m.recovered[1]),
     stuncapRecoveries: sum((m) => m.recovered[2]),

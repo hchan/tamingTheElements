@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateGates, gatesPass, latencyMark, metricValues, parseTeamSizes, tightGates } from '../../tools/ci/fun-gates';
+import { evaluateGates, gatesPass, latencyMark, loadGateConfig, metricValues, parseTeamSizes, tightGates } from '../../tools/ci/fun-gates';
+import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
+import { reduceFunMetrics, summarizeFun } from '../../tools/sim/fun-metrics';
 import { funReport } from '../../tools/sim/fun-report';
 
 describe('nightly fun gates (tools/ci/fun-gates.ts)', () => {
@@ -36,5 +38,28 @@ describe('nightly fun gates (tools/ci/fun-gates.ts)', () => {
     expect(gatesPass([{ teamSize: 1, results: [ok], msPerSimSecond: 1, latencyOk: true }])).toBe(true);
     expect(gatesPass([{ teamSize: 1, results: [ok], msPerSimSecond: 99, latencyOk: false }])).toBe(false);
     expect(gatesPass([{ teamSize: 1, results: [{ ...ok, ok: false }], msPerSimSecond: 1, latencyOk: true }])).toBe(false);
+  });
+
+  it('new pace metrics: hits per minute, comeback rate and multi-hit combo share on synthetic matches', () => {
+    let seq = 0;
+    const ev = (tick: number, kind: number, p: Record<string, number> = {}): SimEvent => ({ ...p, tick, sourceId: 0, kind, seq: seq++ }) as SimEvent;
+    const hit = (tick: number, attacker: number, amount: number): SimEvent => ev(tick, SimEventKind.hitConfirmed, { attacker, target: 1 - attacker, ability: 1, amount });
+    const meta = { ticks: 3000, endReason: 'ko', teamOf: (id: number) => id } as const; // 60 s
+    const swing = reduceFunMetrics([hit(10, 0, 10), hit(20, 1, 30), ev(30, SimEventKind.comboEnded, { hits: 2 }), ev(40, SimEventKind.comboEnded, { hits: 1 })], meta);
+    const wire = reduceFunMetrics([hit(10, 0, 10), hit(20, 0, 10), ev(30, SimEventKind.comboEnded, { hits: 2 })], meta);
+    const s = summarizeFun([swing, wire]);
+    expect(s.hitsPerMinute).toBe(2); // 4 hits over 120 s
+    expect(s.comebackRate).toBe(0.5); // only the swing match changed hands
+    expect(s.multiHitComboShare).toBeCloseTo(0.667, 3); // 2 of 3 combos
+    expect(summarizeFun([])).toMatchObject({ hitsPerMinute: 0, comebackRate: 0, multiHitComboShare: 0 });
+  });
+
+  it('the committed fun-gates.json has the same metrics for every team size and sane bands', () => {
+    const cfg = loadGateConfig();
+    const names = (t: 1 | 2) => tightGates(t, cfg).map((g) => g.metric).sort();
+    expect(names(1)).toEqual(names(2));
+    for (const t of [1, 2] as const) for (const g of tightGates(t, cfg)) expect(g.min).toBeLessThanOrEqual(g.max);
+    expect(cfg.latencyCeilingMsPerSimSecond).toBeGreaterThan(0);
+    expect(() => tightGates(3, cfg)).toThrow(/no fun-gate bands/);
   });
 });
