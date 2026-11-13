@@ -1,7 +1,7 @@
 import { StatusId } from '@core/index';
 
 /**
- * Buff auras and the heal pop (ideas/brainstorm/ability-graphics-audit-defects): Rock Armour, Adrenaline and Fire Dance had no
+ * Buff auras and the heal pop (ideas/done/ability-graphics-audit-defects): Rock Armour, Adrenaline and Fire Dance had no
  * body effect, only a HUD chip. Pure geometry (no Phaser): each buff gets its own SHAPE (plates, chevrons, flames) so it never
  * relies on colour, drawn with a dark outline for contrast. Reduced motion: the same shapes, held still.
  */

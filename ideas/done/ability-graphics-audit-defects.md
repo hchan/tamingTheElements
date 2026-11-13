@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 ---
 # Ability graphics defects found by the screenshot pass
 

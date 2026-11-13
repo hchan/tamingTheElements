@@ -1,4 +1,4 @@
-// Ability graphics audit shots (docs/ABILITY-AUDIT.md, "Graphics" column; ideas/brainstorm/ability-graphics-audit-defects.md).
+// Ability graphics audit shots (docs/ABILITY-AUDIT.md, "Graphics" column; ideas/done/ability-graphics-audit-defects.md).
 // Headless, test build, manual stepping: casts one ability at close range and saves frames at fixed tick offsets to
 // ABILITY_OUT (default test-results/visual/abilities/<name>-<ticks>.png), full 1280x720 canvas. Run `pnpm visual:abilities`;
 // ABILITY_ONLY=chaos-bolt,stick limits it to those names. Page-side code is passed as strings (no DOM lib in tsconfig.node).

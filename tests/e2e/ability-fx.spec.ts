@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
-// Presentation of the weak ability visuals the audit found (ideas/brainstorm/ability-graphics-audit-defects.md): Rock Armour,
+// Presentation of the weak ability visuals the audit found (ideas/done/ability-graphics-audit-defects.md): Rock Armour,
 // Adrenaline and Fire Dance get an aura, Fire Heal a pop even at full HP; Rock Pellet, Strangling Branches and Crimson Fire a
 // contrast halo. SHOT_DIR=<dir> also saves screenshots 1, 5 and 10 ticks after each cast (headless; never needed to pass).
 
