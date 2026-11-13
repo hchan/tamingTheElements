@@ -63,6 +63,7 @@ import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
 import { SwapNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
+import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
@@ -276,6 +277,8 @@ export class Arena extends Phaser.Scene {
         labels,
         true,
         arcade ? () => screenBox(this) : undefined,
+        false,
+        wantsGroupedBar(window.location.search, import.meta.env.DEV || import.meta.env.MODE === 'test') ? groupSlots : undefined,
       );
       if (second) {
         const p2Labels = shortLabels(labelsFromBindings(P2_BINDINGS));

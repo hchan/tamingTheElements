@@ -18,3 +18,6 @@ Owner request (2026-11-13): "your action bars still need rethinking ... like com
 2. Sim: slot model (common vs hero slots), then Guard/Cleanse/Elemental/Weather as common slots.
 3. Sim + view + audio per hero: 12 signature traps/minions, 3-4 heroes per batch (one element family at a time), each with animation and sound, AI usage, ability-usage coverage test.
 4. Guide screen, Help, Tour ability info, balance pass.
+
+## Status note (2026-11-13)
+WP1 done: design doc [docs/design/action-bar-kits.md](../../docs/design/action-bar-kits.md) (12-hero table, common slots, hotkey map) and a view-only grouped bar behind `?ff=barGroups` (dev/test only; `src/game/hud/bar-groups.ts`). WP2 to WP4 still open.
