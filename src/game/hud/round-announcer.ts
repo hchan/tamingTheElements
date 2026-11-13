@@ -44,7 +44,12 @@ export class RoundAnnouncer {
   private from = 0;
 
   /** `sudden` reads the sim's sudden-death slot (RenderArcade.sudden); it is set before `roundStarted` is emitted. */
-  constructor(private readonly sink: RoundSink, private readonly sudden: () => boolean = () => false) {}
+  constructor(
+    private readonly sink: RoundSink,
+    private readonly sudden: () => boolean = () => false,
+    /** The round's summary (`round-result.ts`), spoken after the verdict and the score; '' says nothing more. */
+    private readonly detail: (winner: number) => string = () => '',
+  ) {}
 
   /**
    * Catch-up when the view loads after the round already started (its code is a lazy chunk): an intro in progress, or
@@ -115,7 +120,8 @@ export class RoundAnnouncer {
         const result = w < 0 ? `ROUND ${n} DRAW` : `${RESULT[String(w)] ?? ''} ROUND ${n}`;
         this.show(this.perfect ? 'PERFECT' : this.main || 'TIME', result, t, HOLD);
         const said = w < 0 ? `Round ${n} is a draw.` : w === 0 ? `You win round ${n}.` : `You lose round ${n}.`;
-        this.sink.say({ key: `roundEnded${n}`, text: `${said} Rounds ${String(this.won[0])} to ${String(this.won[1])}.`, important: false });
+        const more = this.detail(w);
+        this.sink.say({ key: `roundEnded${n}`, text: `${said} Rounds ${String(this.won[0])} to ${String(this.won[1])}.${more === '' ? '' : ` ${more}`}`, important: false });
         return;
       }
       default: {
