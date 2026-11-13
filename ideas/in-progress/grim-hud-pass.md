@@ -31,3 +31,9 @@ Still cartoony: hero sprite size, "Rain!" call overlapping FIGHT in the first fr
 - "Rain!" weather call held (transparent) until the FIGHT banner has finished.
 - Fullscreen button and orange/purple portrait frames muted (high-contrast overrides kept).
 - Still cartoony: hero sprite size and outline, bright ability icons, HUD fonts.
+
+## Pass 5
+
+- Action-bar ability icons are graded on a canvas copy of the icon sheet (`gradedTexture` in `src/game/hud/action-bar.ts`, `gradeRgba` in `src/game/fx/grim-fx.ts`): desaturated to about half, darkened, deterministic grain; cached as `<key>~grim`, falls back to the original texture where no canvas exists. Only the styled (grim) bar; the plain bar is unchanged.
+- HUD fonts: `HUD_FONT` in `src/game/scenes/Hud.ts` is now the installed serif stack (`Georgia, "Times New Roman", serif`) used by the action bar and banners, replacing Trebuchet/Verdana; health words and status chips use it, and Arcade damage numbers drop white-on-black Arial for the muted parchment colour with a dark stroke. Health words are 16 px with a 150 px wrap so Georgia's wider glyphs stay on two lines. No font files added.
+- Still cartoony: hero sprite size and outline (the bright red/blue heroes against the dull floor), the element tints on portraits, and the Classic (unstyled) bar's Arial text.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { embers, hash01, mute } from './grim-fx';
+import { embers, gradeRgba, hash01, mute } from './grim-fx';
 
 describe('grim fx helpers', () => {
   it('mute desaturates and darkens, keeping the colour channels ordered', () => {
@@ -19,5 +19,18 @@ describe('grim fx helpers', () => {
     expect(embers(0, 0, 100, 3, false, 10)).not.toEqual(embers(0, 0, 100, 30, false, 10));
     expect(embers(0, 0, 100, 3, true, 10)).toEqual(embers(0, 0, 100, 30, true, 10));
     expect(embers(0, 0, 100, 3, true, 10).some((e) => e.a > 0.3)).toBe(true);
+  });
+  it('gradeRgba desaturates and darkens pixels, keeps alpha, and is deterministic', () => {
+    const a = [255, 40, 10, 200, 10, 200, 40, 255];
+    const b = [...a];
+    gradeRgba(a);
+    gradeRgba(b);
+    expect(a).toEqual(b);
+    expect(a[3]).toBe(200);
+    expect(a[7]).toBe(255);
+    const spread = (i: number): number => Math.max(a[i] ?? 0, a[i + 1] ?? 0, a[i + 2] ?? 0) - Math.min(a[i] ?? 0, a[i + 1] ?? 0, a[i + 2] ?? 0);
+    expect(spread(0)).toBeLessThan(255 - 10);
+    expect(spread(0)).toBeLessThan(150);
+    expect(a[0] ?? 0).toBeLessThan(255);
   });
 });

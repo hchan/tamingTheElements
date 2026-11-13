@@ -6,7 +6,7 @@ import { ACTION_COMMAND } from '../input/key-map';
 import { codeLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
 import { lookup } from '../views/projectile-view';
-import { mute } from '../fx/grim-fx';
+import { gradeRgba, mute } from '../fx/grim-fx';
 
 /**
  * Action bar (legacy `actionbar.js`): primary, secondary, capture (chapter 2+) and swap slots along the
@@ -28,6 +28,32 @@ export const CAPTURE_READY_COLOR = 0xb39653;
 /** Icon padding inside a slot frame (Classic dressing). */
 export const ICON_PAD = 8;
 const ICON_FRAME = 'icon';
+
+/**
+ * The grim-graded copy of an icon sheet (desaturated, darker, grained: the baked-sprite grade), made once per texture on a canvas and
+ * cached in the texture manager. Falls back to the original key where there is no canvas (tests, odd sources), so icons always show.
+ */
+export function gradedTexture(scene: Phaser.Scene, key: string): string {
+  const gk = `${key}~grim`;
+  if (scene.textures.exists(gk)) return gk;
+  try {
+    const src = scene.textures.get(key).getSourceImage() as CanvasImageSource & { width: number; height: number };
+    if (typeof document === 'undefined' || !(src.width > 0)) return key;
+    const c = document.createElement('canvas');
+    c.width = src.width;
+    c.height = src.height;
+    const ctx = c.getContext('2d');
+    if (!ctx) return key;
+    ctx.drawImage(src, 0, 0);
+    const data = ctx.getImageData(0, 0, c.width, c.height);
+    gradeRgba(data.data);
+    ctx.putImageData(data, 0, 0);
+    scene.textures.addCanvas(gk, c);
+    return gk;
+  } catch {
+    return key;
+  }
+}
 
 /** Aspect-preserving fit of a `fw` x `fh` frame into a `size` square, centred: the same visual size for every icon. */
 export function fitIcon(fw: number, fh: number, size: number): { w: number; h: number; dx: number; dy: number } {
@@ -449,10 +475,11 @@ export class ActionBarView {
       icon.setVisible(false);
       return;
     }
-    const tex = this.scene.textures.get(found.key);
+    const key = this.styled ? gradedTexture(this.scene, found.key) : found.key;
+    const tex = this.scene.textures.get(key);
     const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
     if (!tex.has(ICON_FRAME)) tex.add(ICON_FRAME, 0, fx, fy, fw, fh);
-    if (icon.texture.key !== found.key || icon.frame.name !== ICON_FRAME) icon.setTexture(found.key, ICON_FRAME);
+    if (icon.texture.key !== key || icon.frame.name !== ICON_FRAME) icon.setTexture(key, ICON_FRAME);
     const pad = this.styled ? ICON_PAD * (s.size / SLOT_SIDE) : 0;
     const fit = fitIcon(fw, fh, s.size - pad * 2);
     icon.setVisible(true).setPosition(this.wx(s.x + pad + fit.dx), this.wy(s.y + pad + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);

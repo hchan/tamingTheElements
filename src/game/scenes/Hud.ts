@@ -65,7 +65,8 @@ const BENCH_TOP = 24;
 function portraitX(team: number): number {
   return team === 0 ? 30 : HUD_WIDTH - 20 - PORTRAIT;
 }
-const HUD_FONT = '"Trebuchet MS", Verdana, "Segoe UI", sans-serif';
+/** The same already-installed engraved serif the action bar, timer and banners use (no new font files). */
+const HUD_FONT = 'Georgia, "Times New Roman", serif';
 /** Frames between re-reads of the accessibility prefs (the OS media queries are not free per frame). */
 const PREFS_REFRESH_FRAMES = 30;
 
@@ -121,12 +122,12 @@ export class Hud extends Phaser.Scene {
           '',
           crisp(this, {
             fontFamily: HUD_FONT,
-            fontSize: `${String(Math.round(17 * boost))}px`,
+            fontSize: `${String(Math.round(16 * boost))}px`,
             color: '#e6dfd0',
             fontStyle: 'bold',
             stroke: '#0a0806',
             strokeThickness: 2,
-            wordWrap: { width: 110 },
+            wordWrap: { width: 150 },
           }),
         )
         .setDepth(101),
@@ -363,7 +364,7 @@ export class Hud extends Phaser.Scene {
   }
 
   private text(size: number): Phaser.GameObjects.Text {
-    const style = { fontSize: `${String(size)}px`, color: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 };
+    const style = { fontFamily: HUD_FONT, fontSize: `${String(size)}px`, color: '#e0d8c6', fontStyle: 'bold', stroke: '#0a0806', strokeThickness: 3 };
     return this.add.text(0, 0, '', crisp(this, style)).setDepth(102);
   }
 
