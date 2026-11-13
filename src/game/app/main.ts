@@ -1,6 +1,7 @@
 import { SIM_VERSION } from '@core/menu-index';
 import { startRouter } from '@ui/router';
 import '@ui/styles/main.css';
+import '@ui/styles/menu-motion.css';
 import { bindingsFromSave } from '@ui/screens/key-bindings';
 import { applyA11y, applyUiScale, loadSave } from '@ui/screens/settings';
 import { showWebglError } from '../boot/error-screen';
