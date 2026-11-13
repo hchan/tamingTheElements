@@ -171,7 +171,7 @@ describe('defence view: dash afterimages and projectile trails', () => {
     const images = m.made.filter((o) => o.kind === 'image');
     expect(images).toHaveLength(3);
     // The newest afterimage sits where the dasher was on the last sampling tick.
-    expect(images.map((o) => o.x)).toContain(200 + 12 * 15);
+    expect(images.map((o) => o.x)).toContain(200 + 12 * 15 - 40); // grown 2x about the feet centre
     m.feed(112 + AFTERIMAGE_FADE);
     m.frame();
     expect(state(m.scene).ghosts).toBe(0);
