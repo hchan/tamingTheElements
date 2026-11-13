@@ -208,9 +208,9 @@ export function tourScreen(deps: TourDeps): Screen {
         go();
       }
     };
-    const timer = window.setTimeout(go, SPLASH_MS);
+    const timer = deps.flags.holdSplash ? undefined : window.setTimeout(go, SPLASH_MS);
     const cleanup = (): void => {
-      window.clearTimeout(timer);
+      if (timer !== undefined) window.clearTimeout(timer);
       document.removeEventListener('keydown', onKey);
       offSplash = undefined;
     };

@@ -69,7 +69,7 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
 
 test('World Tour: the versus splash is skipped by Enter and by a click', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto(`${START}&ff=arcade#tour`);
+  await page.goto(`${START}&ff=arcade,holdSplash#tour`);
   await page.getByRole('button', { name: 'Start tour' }).click();
   await page.getByRole('button', { name: 'Fight' }).click();
   await expect(page.locator('#tourSplash svg')).toHaveCount(2);
@@ -78,8 +78,8 @@ test('World Tour: the versus splash is skipped by Enter and by a click', async (
   await expect(page.locator('#tourSplash')).toHaveCount(0);
 
   // Leaving mid-splash never starts a battle; a click skips it.
-  await page.goto(`${START}&ff=arcade#main`);
-  await page.goto(`${START}&ff=arcade#tour`);
+  await page.goto(`${START}&ff=arcade,holdSplash#main`);
+  await page.goto(`${START}&ff=arcade,holdSplash#tour`);
   await page.getByRole('button', { name: 'Resume' }).click();
   await page.getByRole('button', { name: 'Fight' }).click();
   await page.locator('#tourSplash').click();

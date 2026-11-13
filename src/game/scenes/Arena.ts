@@ -11,9 +11,6 @@ import {
   EntityFlag,
   EntityKind,
   RoundPhase,
-  Cmd,
-  METER_BAR,
-  WEATHER_CHARGE_FULL,
   MAX_ENTITIES,
   applyArenaCheat,
   applyTickCheats,
@@ -65,13 +62,14 @@ import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
-import { SwapNotice, chargeNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
+import { SwapNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import { ReplayCursor } from '../replay/cursor';
+import { actionRefusal, activeHeroOf, buildMatchEnd, chargeLineFor, demoMatch, playbackFrame } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
 
@@ -174,8 +172,7 @@ export class Arena extends Phaser.Scene {
     const dev = import.meta.env.DEV || import.meta.env.MODE === 'test';
     // `?p1=<character slug>` (dev/test only) swaps the demo hero, so visual captures can render any character's abilities.
     const hero = dev ? new URLSearchParams(window.location.search).get('p1') : null;
-    const demoBase = hero ? { ...DEMO_SETUP, p1: [{ character: characterId(hero), xp: 0 }, ...DEMO_SETUP.p1.slice(1)] } : DEMO_SETUP;
-    const demo = ff ? { ...demoBase, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : demoBase;
+    const demo = demoMatch(DEMO_SETUP, hero, ff);
     const setup = this.launch?.setup ?? demo;
     const world = this.cursor?.world ?? createMatch(setup);
     this.world = world;
@@ -521,14 +518,9 @@ export class Arena extends Phaser.Scene {
     if (!view || !notice || !arcade || !bar) return;
     // A hit-stop skips the swap on this tick but the press is sent again, so it is not a refusal.
     if (arcade.frozen) return;
-    let active = -1;
-    let flags = 0;
-    view.forEachCharacter((c) => {
-      if (c.team === 0 && (c.flags & (EntityFlag.dead | EntityFlag.benched)) === 0 && active < 0) {
-        active = c.id;
-        flags = c.flags;
-      }
-    });
+    const hero = activeHeroOf(view);
+    const active = hero?.id ?? -1;
+    const flags = hero?.flags ?? 0;
     const slot = swapSlotOf(swaps);
     const line = swapNotice({
       fighting: arcade.phase === RoundPhase.fight,
@@ -548,14 +540,15 @@ export class Arena extends Phaser.Scene {
     const arcade = this.view?.arcade();
     const notice = this.swapNotice;
     if (!arcade || !notice || arcade.phase !== RoundPhase.fight || arcade.frozen) return;
-    let line: string | undefined;
-    if ((bits & Cmd.super) !== 0 && arcade.meter[0] < METER_BAR) line = 'Super not ready';
-    else if ((bits & Cmd.weather) !== 0 && arcade.weatherCharge[0] < WEATHER_CHARGE_FULL) line = 'Weather not ready';
-    else if ((bits & Cmd.charge) !== 0) line = this.chargeLine(arcade);
-    else if ((bits & Cmd.elemental) !== 0) {
-      const bar = this.view?.actionBar(0);
-      if (bar) line = elementalNotice(true, bar.tick, bar.elemental);
-    }
+    const line = actionRefusal(
+      bits,
+      { phase: arcade.phase, frozen: arcade.frozen, meter0: arcade.meter[0], weatherCharge0: arcade.weatherCharge[0] },
+      () => this.chargeLine(arcade),
+      () => {
+        const bar = this.view?.actionBar(0);
+        return bar ? elementalNotice(true, bar.tick, bar.elemental) : undefined;
+      },
+    );
     if (line === undefined) return;
     notice.show(line, this.time.now);
     this.announcer?.say({ key: 'refusal', text: line, important: false });
@@ -564,18 +557,7 @@ export class Arena extends Phaser.Scene {
 
   /** Arcade: the reason a Charge press does nothing (ranged hero, cooldown, stun, root, guard), or undefined. View only. */
   private chargeLine(arcade: RenderArcade): string | undefined {
-    let active = -1;
-    let flags = 0;
-    this.view?.forEachCharacter((c) => {
-      if (c.team === 0 && (c.flags & (EntityFlag.dead | EntityFlag.benched)) === 0 && active < 0) {
-        active = c.id;
-        flags = c.flags;
-      }
-    });
-    if (active < 0) return undefined;
-    const blocked = (flags & EntityFlag.frozen) !== 0 ? 'frozen' : arcade.stunned(active) ? 'stunned' : arcade.rooted(active) ? 'rooted'
-      : arcade.guarding(active) ? 'guarding' : undefined;
-    return chargeNotice({ fighting: arcade.phase === RoundPhase.fight, chargeIn: arcade.chargeIn(active), blocked });
+    return this.view ? chargeLineFor(this.view, arcade) : undefined;
   }
 
   /** One sim tick: agents (or the given commands) in, events out to the effects and the end check. */
@@ -625,12 +607,7 @@ export class Arena extends Phaser.Scene {
     this.driver?.pause('ended');
     if (this.session) this.lingerSession(this.session);
     const s = world.state;
-    const end = {
-      winner: over ? (over['winner'] ?? -1) : (this.session?.winner ?? -1),
-      activeSlot: s.teams[TeamField.activeSlot] ?? 0,
-      capturedIndices: capturedRosterIndices(s, 1),
-      ...(over?.['won0'] === undefined ? {} : { rounds: [over['won0'], over['won1'] ?? 0] as const }),
-    };
+    const end = buildMatchEnd(over, this.session?.winner, s.teams[TeamField.activeSlot] ?? 0, capturedRosterIndices(s, 1));
     // Wall clock, not `this.time`: Phaser caps a frame's delta at 200 ms, so under a slow (software) renderer the scene
     // clock runs several times slower than real time and the results could take many seconds to arrive.
     const t = setTimeout(() => { this.launch?.onEnd?.(end); }, END_DELAY_MS);
@@ -656,11 +633,9 @@ export class Arena extends Phaser.Scene {
 
   /** Replay mode: one verified tick per call (two at 2x); a finished or diverged replay holds the driver. */
   private advancePlayback(cursor: ReplayCursor): void {
-    if (this.speed === 0.5) {
-      this.slowFrame = !this.slowFrame;
-      if (this.slowFrame) return;
-    }
-    for (let k = 0; k < Math.max(1, this.speed); k++) {
+    const frame = playbackFrame(this.speed, this.slowFrame);
+    this.slowFrame = frame.slowFrame;
+    for (let k = 0; k < frame.ticks; k++) {
       const events = cursor.next();
       if (!events) break;
       this.fx?.consume(events);
