@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
 import { Cmd, type Command, type RenderActionBar, type RenderView } from '@core/index';
-import { ActionBarView, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX, type ScreenBox } from './action-bar';
+import { ActionBarView, gradedTexture, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX, type ScreenBox } from './action-bar';
 
 /** A recording stand-in for a Phaser game object: setters keep state, drawing calls are logged by name. */
 interface Fake {
@@ -202,5 +202,14 @@ describe('ActionBarView', () => {
     r.v.destroy();
     expect(r.offCalled()).toBe(true);
     expect([...r.gfx, ...r.images, ...r.texts].every((o) => o.destroyed)).toBe(true);
+  });
+});
+
+describe('gradedTexture', () => {
+  it('returns the original key when the source has no canvas path, and reuses an existing graded copy', () => {
+    const none = { textures: { exists: () => false, get: () => ({}) } } as unknown as Phaser.Scene;
+    expect(gradedTexture(none, 'abilities')).toBe('abilities');
+    const have = { textures: { exists: (k: string) => k === 'abilities~grim' } } as unknown as Phaser.Scene;
+    expect(gradedTexture(have, 'abilities')).toBe('abilities~grim');
   });
 });

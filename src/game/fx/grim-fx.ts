@@ -18,6 +18,20 @@ export function mute(color: number, keep = 0.62, dark = 0.9): number {
   return (f(r) << 16) | (f(g) << 8) | f(b);
 }
 
+/** Icon grade, in place over RGBA bytes: pulls every pixel toward its grey, darkens it and adds a little deterministic grain (alpha untouched). */
+export function gradeRgba(px: Uint8ClampedArray | number[], keep = 0.5, dark = 0.86, grain = 6): void {
+  for (let i = 0; i + 3 < px.length; i += 4) {
+    const r = px[i] ?? 0;
+    const g = px[i + 1] ?? 0;
+    const b = px[i + 2] ?? 0;
+    const y = r * 0.3 + g * 0.59 + b * 0.11;
+    const n = (hash01(i >> 2, 11) - 0.5) * 2 * grain;
+    px[i] = Math.min(255, Math.max(0, (y + (r - y) * keep) * dark + n));
+    px[i + 1] = Math.min(255, Math.max(0, (y + (g - y) * keep) * dark + n));
+    px[i + 2] = Math.min(255, Math.max(0, (y + (b - y) * keep) * dark + n));
+  }
+}
+
 export interface Ember {
   readonly x: number;
   readonly y: number;
