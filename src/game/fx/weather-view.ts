@@ -49,7 +49,7 @@ const CHARGE_PX = 22;
 const CHARGE_BAR_W = 200;
 /** The called line: below the charge chip (its bar ends near y 246), clear of the round banners (y 320). */
 const CALL_Y = 296;
-const CALL_PX = 52;
+const CALL_PX = 40;
 
 export interface WeatherPrefs {
   readonly reduceMotion: boolean;
@@ -151,7 +151,7 @@ export function mountWeatherView(
       },
       call(kind, flat): void {
         const c = made().call;
-        c.setText(`${WEATHER_NAMES[kind - 1] ?? ''}!`).setColor(hex(mute(WEATHER_COLORS[kind - 1] ?? 0xffffff))).setVisible(true);
+        c.setText(`${WEATHER_NAMES[kind - 1] ?? ''}!`).setColor(hex(mute(WEATHER_COLORS[kind - 1] ?? 0xffffff, 0.4, 0.75))).setVisible(true);
         callFrom = now();
         callReduced = flat;
       },
@@ -228,7 +228,7 @@ export function mountWeatherView(
       const c = progress(clock, callFrom, CALL_TICKS);
       drawn.scale = callScale(c, callReduced);
       if (c >= 1) p.call.setVisible(false);
-      else p.call.setPosition(BADGE_X, CALL_Y).setScale(drawn.scale).setAlpha(a * callAlpha(c));
+      else p.call.setPosition(BADGE_X, CALL_Y).setScale(drawn.scale).setAlpha(a * 0.85 * callAlpha(c));
     }
     if (kind === 0) {
       if (drawn.kind !== 0) {
