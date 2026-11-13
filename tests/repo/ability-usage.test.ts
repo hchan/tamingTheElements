@@ -35,6 +35,7 @@ describe('ability usage verdicts', () => {
   });
 });
 
+// No explicit timeout: vitest.config.ts sets the generous load-proof one (an explicit 120 s here overrode it and failed under load).
 describe('ability usage measurement', () => {
   it('counts casts and hits from a real Arcade run, deterministically, without touching the sim', () => {
     const run = (): ReturnType<typeof report> => report(measure('arcade', 1, 1, 3));
@@ -45,5 +46,5 @@ describe('ability usage measurement', () => {
     expect(a.rows.reduce((n, r) => n + r.casts, 0)).toBeGreaterThan(0);
     expect(a.rows.reduce((n, r) => n + r.hits, 0)).toBeGreaterThan(0);
     expect(run().rows.map((r) => r.casts)).toEqual(a.rows.map((r) => r.casts));
-  }, 120_000);
+  });
 });
