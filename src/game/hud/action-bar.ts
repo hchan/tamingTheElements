@@ -229,6 +229,23 @@ export function mirrorSlots(slots: readonly ActionSlot[], y = MIRROR_Y): ActionS
   return slots.map((s, i) => ({ ...s, x: MIRROR_MARGIN + i * (MIRROR_SIDE + MIRROR_GAP), y, size: MIRROR_SIDE, touch: '' as const, cmd: 0 }));
 }
 
+/** Grouped-bar prototype (`bar-groups.ts`): the group a box belongs to, a group's title strip and the re-laid bar. */
+export type BarGroup = 'hero' | 'common' | 'team';
+export interface GroupHeader {
+  readonly group: BarGroup;
+  readonly text: string;
+  readonly x: number;
+  readonly y: number;
+  /** Width of the group's boxes in this row. */
+  readonly w: number;
+}
+export interface GroupedBar {
+  readonly slots: ActionSlot[];
+  readonly headers: GroupHeader[];
+  /** Top edge of the panel. */
+  readonly top: number;
+}
+
 /** Arcade read-outs of one team's bar. */
 export interface ArcadeBar {
   /** Hyper meter 0..METER_BAR, weather charge 0..WEATHER_CHARGE_FULL, guard meter 0..GUARD_MAX and whether the guard is up. */
@@ -443,6 +460,7 @@ export class ActionBarView {
   private readonly back: Phaser.GameObjects.Graphics;
   private readonly texts: Phaser.GameObjects.Text[] = [];
   private readonly icons: Phaser.GameObjects.Image[] = [];
+  private readonly headerTexts: Phaser.GameObjects.Text[] = [];
   private slots: ActionSlot[] = [];
   private hint: Phaser.GameObjects.Text | undefined;
   /** Last progress and ready-flash start (ms) per box, so any kind that comes back ready flashes the same way. */
@@ -463,6 +481,8 @@ export class ActionBarView {
     private readonly place?: () => ScreenBox,
     /** Player 2's mirrored readout: small slots left-aligned above the main bar, no background panel, no overlays and no clicks (the keyboard drives it). */
     private readonly mirror = false,
+    /** Grouped-bar prototype (`?ff=barGroups`, dev/test builds): re-lays the Arcade boxes into labelled groups; the cooldown renderer is unchanged. */
+    private readonly arrange?: (slots: readonly ActionSlot[], k?: number) => GroupedBar,
   ) {
     this.back = scene.add.graphics().setDepth(98);
     this.gfx = scene.add.graphics().setDepth(100);
@@ -499,8 +519,9 @@ export class ActionBarView {
     const k = this.scene.scale.displaySize.width / LOGICAL_W;
     const extras = bar && ar ? arcadeBarOf(ar, this.team === 1 ? 1 : 0, this.hasChargeButton()) : undefined;
     const built = bar ? buildSlots(bar, this.labels(), extras, k) : [];
-    this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : built;
-    const top = barTop(built.length, extras ? k : undefined);
+    const grouped = !this.mirror && extras && this.arrange ? this.arrange(built, k) : undefined;
+    this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : built;
+    const top = grouped ? grouped.top : barTop(built.length, extras ? k : undefined);
     const g = this.gfx;
     g.clear();
     this.back.clear();
@@ -541,6 +562,7 @@ export class ActionBarView {
       this.drawCooldown(look, s);
       this.text(i, s);
     });
+    this.drawHeaders(g, grouped?.headers ?? []);
     if (!this.mirror) {
       this.drawHint(bar?.tick ?? 0);
       if (extras && this.frame % 5 === 1) syncTouchOverlays(this.screenSlots().map((r, i) => ({ ...r, touch: this.slots[i]?.touch ?? '' })), this.scene.game.canvas);
@@ -549,6 +571,22 @@ export class ActionBarView {
       this.icons[i]?.setVisible(false);
       this.texts[i]?.setVisible(false);
     }
+  }
+
+  /** Group titles and the rule under each (prototype only; nothing is drawn for the flat bar). */
+  private drawHeaders(g: Phaser.GameObjects.Graphics, headers: readonly GroupHeader[]): void {
+    headers.forEach((h, i) => {
+      g.lineStyle(1, 0x6b6558, 0.9);
+      g.lineBetween(h.x, h.y + 14, h.x + h.w, h.y + 14);
+      let t = this.headerTexts[i];
+      if (!t) {
+        t = this.scene.add.text(0, 0, '', crisp(this.scene, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '13px', fontStyle: 'bold', color: '#a89f88' })).setDepth(101);
+        this.headerTexts[i] = t;
+      }
+      if (t.text !== h.text) t.setText(h.text);
+      t.setVisible(true).setPosition(this.wx(h.x + 2), this.wy(h.y)).setScale(this.box.scale);
+    });
+    for (let i = headers.length; i < this.headerTexts.length; i++) this.headerTexts[i]?.setVisible(false);
   }
 
   /** The ONE cooldown drawer: every box, whatever its kind, is shaded and flashed through here from `cooldownLook`. */
@@ -578,6 +616,7 @@ export class ActionBarView {
     this.hint?.destroy();
     this.icons.forEach((o) => { o.destroy(); });
     this.texts.forEach((o) => { o.destroy(); });
+    this.headerTexts.forEach((o) => { o.destroy(); });
   }
 
   /** Slot rects as the player sees them, in logical screen px (world transform of the bar's graphics through the live camera), for tests. */
