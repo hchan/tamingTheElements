@@ -75,12 +75,12 @@ test.describe('Capture through normal progression (no cheats)', () => {
       await expect(page.getByText(/gained 1 XP/)).toBeVisible();
     }
     expect((await storedSave(page)).garrison[0]?.experience).toBe(5);
-    await expect(page.locator('#objectivesMet')).toContainText('Capture ability is unlocked');
+    await expect(page.locator('#objectivesMet')).toContainText('Snag ability is unlocked');
 
     await goToHash(page, '#currentObjectives');
     await expect(page.locator('#captureNotice')).toHaveCount(0);
     await page.getByRole('button', { name: 'Begin next chapter' }).click();
-    await expect(page.locator('#captureNotice')).toContainText('Capture unlocked!');
+    await expect(page.locator('#captureNotice')).toContainText('Snag unlocked!');
     await expect(page.locator('#captureNotice')).toContainText('Press C');
     await expect.poll(async () => (await storedSave(page)).chapter).toBe(2);
     await page.locator('#continueToGarrison').click();

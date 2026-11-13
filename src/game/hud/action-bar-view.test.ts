@@ -171,7 +171,7 @@ describe('ActionBarView', () => {
     r.v.update();
     const hint = r.texts[r.texts.length - 1];
     expect(hint?.visible).toBe(true);
-    expect(hint?.text).toBe('Capture unlocked! Press C when the enemy is at 25% health');
+    expect(hint?.text).toBe('Snag unlocked! Press C when the enemy is at 25% health');
     r.state.bar = bar({ tick: CAPTURE_NOTICE_TICKS, capture: cap });
     r.v.update();
     expect(hint?.visible).toBe(false);

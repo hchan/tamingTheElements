@@ -35,14 +35,14 @@ export interface AbilityNotice {
 
 /**
  * Legacy TODO "show the Capture icon as a new ability on chapter 2 objectives". Capture is granted from chapter 2
- * (`abilitiesFor`); the notice is headed "Capture unlocked!" in chapter 2 and stays as a reminder afterwards.
+ * (`abilitiesFor`); the notice is headed "Snag unlocked!" in chapter 2 and stays as a reminder afterwards.
  * `keyLabel` is the live binding of the Capture slot (default C).
  */
 export function captureNotice(chapter: number, keyLabel: string): AbilityNotice | null {
   if (chapter < 2) return null;
   return {
-    title: chapter === 2 ? 'Capture unlocked!' : 'Capture ability',
-    text: `${chapter === 2 ? 'New ability gained: Capture. ' : ''}Press ${keyLabel} when the enemy is at 25% health or less to add it to your garrison.`,
+    title: chapter === 2 ? 'Snag unlocked!' : 'Snag ability',
+    text: `${chapter === 2 ? 'New ability gained: Snag. ' : ''}Press ${keyLabel} when the enemy is at 25% health or less to add it to your garrison.`,
     sprite: 'capture',
   };
 }

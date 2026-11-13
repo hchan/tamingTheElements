@@ -83,7 +83,7 @@ describe('objectives screen in the DOM', () => {
       expect(h.querySelector('#captureNotice')).not.toBeNull();
     });
     expect(s.saved.map((x) => x.chapter)).toEqual([2]);
-    expect(h.querySelector('#captureNotice')?.textContent).toContain('Capture unlocked!');
+    expect(h.querySelector('#captureNotice')?.textContent).toContain('Snag unlocked!');
     expect(h.querySelector('#captureNotice')?.textContent).toContain('Press Q');
     expect(h.querySelector('#continueToGarrison')?.getAttribute('href')).toBe('#garrison');
     expect(h.querySelector('h1')?.textContent).toBe('Chapter 2 Objectives');

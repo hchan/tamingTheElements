@@ -163,7 +163,7 @@ describe('captureHint', () => {
   it('announces the Capture slot with its live key during the first seconds only', () => {
     const slots = buildSlots(bar(), { [Cmd.capture]: 'V' });
     const h = captureHint(slots, 0);
-    expect(h?.text).toContain('Capture unlocked!');
+    expect(h?.text).toContain('Snag unlocked!');
     expect(h?.text).toContain('Press V');
     expect(h?.x).toBe(slots[2]?.x);
     expect(captureHint(slots, CAPTURE_NOTICE_TICKS)).toBeNull();

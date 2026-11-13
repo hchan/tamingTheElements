@@ -206,12 +206,12 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
 /** Ticks (10 s at 50 Hz) after the match starts during which the Capture slot is announced as a new ability. */
 export const CAPTURE_NOTICE_TICKS = 500;
 
-/** "Capture unlocked!" line above the Capture slot, labelled with its live key; null when there is no Capture slot or the notice has timed out. */
+/** "Snag unlocked!" line above the Capture slot, labelled with its live key; null when there is no Capture slot or the notice has timed out. */
 export function captureHint(slots: readonly ActionSlot[], tick: number): { x: number; y: number; text: string } | null {
   const c = slots.find((s) => s.kind === 'capture');
   if (c === undefined || tick >= CAPTURE_NOTICE_TICKS) return null;
   const key = c.label === '' ? 'its key' : c.label;
-  return { x: c.x, y: c.y - 28, text: `Capture unlocked! Press ${key} when the enemy is at 25% health` };
+  return { x: c.x, y: c.y - 28, text: `Snag unlocked! Press ${key} when the enemy is at 25% health` };
 }
 
 /** The Command a click at (px, py) emits: the slot's key bit, or 0 (no command) if it hits no usable slot. */
@@ -426,7 +426,7 @@ export class ActionBarView {
   private text(i: number, s: ActionSlot): void {
     let t = this.texts[i];
     if (!t) {
-      const size = `${String(Math.round((this.mirror ? 11 : 16) * Math.min(1.8, phoneBoost(this.scene))))}px`;
+      const size = `${String(Math.round((this.mirror ? 14 : 16) * Math.min(1.8, phoneBoost(this.scene))))}px`;
       t = this.scene.add.text(
         0, 0, '',
         crisp(this.scene, this.styled

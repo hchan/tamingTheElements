@@ -34,7 +34,7 @@ const FLASH_DEPTH = 4.5;
 const GOLD = 0xffd23f;
 const CALL_Y = 210;
 const CALL_PX = 60;
-const LINE_PX = 15;
+const LINE_PX = 16;
 
 export interface TagPrefs {
   readonly reduceMotion: boolean;

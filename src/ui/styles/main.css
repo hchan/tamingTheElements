@@ -893,12 +893,12 @@ html[data-high-contrast='true'] button.touchBtn {
    to 9 buttons never run off the top. */
 @media (max-height: 520px) {
   html[data-touch-size='large'] #menu button.touchBtn {
-    right: calc(max(8px, env(safe-area-inset-right)) + var(--touch-line) * var(--touch-pitch));
-    bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--touch-col) * var(--touch-pitch));
+    right: calc(8px + var(--touch-line) * var(--touch-pitch));
+    bottom: calc(8px + var(--touch-col) * var(--touch-pitch));
   }
   html[data-touch-size='large'][data-touch-side='left'] #menu button.touchBtn {
     right: auto;
-    left: calc(max(8px, env(safe-area-inset-left)) + var(--touch-line) * var(--touch-pitch));
+    left: calc(8px + var(--touch-line) * var(--touch-pitch));
   }
 }
 .touchBtn-Charge { --touch-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6l8 6-8 6zM12 6l8 6-8 6z' fill='black'/%3E%3C/svg%3E"); }
