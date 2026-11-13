@@ -24,7 +24,7 @@ HEROES = {
  "ishimi": "water elemental, hunched mass of dripping murky slime and tendrils, many glowing eyes sunk in the liquid",
  "morblass": "water elemental, towering glacier beast of jagged blue ice and icicles, frost mist, eyes frozen inside the ice",
  "cyclonius": "air elemental monster, a giant tornado made only of black storm cloud and lightning, a funnel of wind, two blazing white eyes, no person, no body",
- "echo": "air elemental monster, a hollow spinning cyclone of translucent wind rings and sound ripples, empty inside, faint glowing core, no person, no face",
+ "echo": "air elemental, a towering spiral of swirling wind with concentric sound-wave rings, a weather phenomenon, a tall hollow vortex of pale air, nothing inside, a faint glowing eye of calm at the centre, abstract force of nature",
  "wispera": "air elemental monster, a drifting cloud of pale mist and glowing motes with tattered vapour tails, one cold glow, no person, no clothes",
  "fiara": "fire elemental, hulking body of living flame and glowing coals, cracked black crust over molten fire, embers rising",
  "lavax": "fire elemental, towering beast of black obsidian with rivers of molten magma in the cracks, smoke rising",
