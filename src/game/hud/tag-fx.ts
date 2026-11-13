@@ -1,5 +1,7 @@
+import type { Element } from '@core/index';
 import { CHARACTERS, CHARACTER_TEXT, TAG_COOLDOWN_TICKS } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
+import { elementGlyph } from './bars';
 
 /**
  * Pure rules of the Arcade tag-team view (FUN-DESIGN 2.6 and section 3, WP-arcade-tag-view): the words, timing and shapes
@@ -82,6 +84,8 @@ export interface TagHero {
   readonly maxHp: number;
   readonly restCap: number;
   readonly dead: boolean;
+  /** Shown as a glyph after the name (short, so the line still fits beside the round pips) so a benched hero's element is never colour alone. */
+  readonly element?: Element;
 }
 
 /** Red life in per cent of max HP (0 when none). */
@@ -89,9 +93,10 @@ export const redPct = (h: TagHero): number => (h.dead || h.restCap <= h.hp ? 0 :
 
 /** The benched hero's line: "BENCH Pax 40% +20% red", or "BENCH Pax K.O.". */
 export function benchLabel(h: TagHero): string {
-  if (h.dead || h.hp <= 0) return `BENCH ${heroName(h.sprite)} K.O.`;
+  const name = h.element === undefined ? heroName(h.sprite) : `${heroName(h.sprite)} ${elementGlyph(h.element)}`;
+  if (h.dead || h.hp <= 0) return `BENCH ${name} K.O.`;
   const red = redPct(h);
-  return `BENCH ${heroName(h.sprite)} ${String(pct(h.hp, h.maxHp))}%${red > 0 ? ` +${String(red)}% red` : ''}`;
+  return `BENCH ${name} ${String(pct(h.hp, h.maxHp))}%${red > 0 ? ` +${String(red)}% red` : ''}`;
 }
 
 /** The active hero's line: "IN Sindarosa". */

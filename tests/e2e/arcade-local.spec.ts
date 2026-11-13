@@ -103,8 +103,8 @@ test('Two players is a 3v3 duel: three hero selects each, both players tag with 
   await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
   await expect(page.locator('#arcadeKeysHint')).toContainText('Period tag, Comma tag 2');
   const start = await tagLines(page);
-  expect(start[0]?.slice(0, 3)).toEqual(['IN Sindarosa', 'BENCH Pax 100%', 'BENCH Curomo 100%']);
-  expect(start[1]?.slice(0, 3)).toEqual(['IN Fiara', 'BENCH Echo 100%', 'BENCH Lavax 100%']);
+  expect(start[0]?.slice(0, 3)).toEqual(['IN Sindarosa', expect.stringMatching(/^BENCH Pax [▲≈■●◆] 100%$/), expect.stringMatching(/^BENCH Curomo [▲≈■●◆] 100%$/)]);
+  expect(start[1]?.slice(0, 3)).toEqual(['IN Fiara', expect.stringMatching(/^BENCH Echo [▲≈■●◆] 100%$/), expect.stringMatching(/^BENCH Lavax [▲≈■●◆] 100%$/)]);
   // Player 1 tags with 4 (Tag 2): Curomo in. Player 2 tags with Period (Tag): Echo in.
   await page.keyboard.down('Digit4');
   await stepLive(page, 1);

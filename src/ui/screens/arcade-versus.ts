@@ -535,7 +535,10 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
       const sel = f[n];
       if (!sel) continue;
       sel.tabIndex = -1;
-      sel.closest<HTMLElement>('.settingsOption')?.classList.add('srOnly');
+      // The hero grid is the accessible control; the select is a hidden twin, so screen readers skip it (it is out of the Tab order too).
+      const opt = sel.closest<HTMLElement>('.settingsOption');
+      opt?.classList.add('srOnly');
+      opt?.setAttribute('aria-hidden', 'true');
     }
   });
   sync();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ROUTE_NAMES } from './router';
-import { backHash, shouldClickLinkOnSpace, shouldGoBack } from './keyboard';
+import { backHash, escapeOwner, shouldClickLinkOnSpace, shouldGoBack } from './keyboard';
 
 describe('backHash', () => {
   it('has no back target on the main menu and the battle hosts', () => {
@@ -41,5 +41,13 @@ describe('shouldClickLinkOnSpace', () => {
     expect(shouldClickLinkOnSpace({ ...base, targetTag: 'BUTTON' })).toBe(false);
     expect(shouldClickLinkOnSpace({ ...base, hasHref: false })).toBe(false);
     expect(shouldClickLinkOnSpace({ ...base, key: 'Enter' })).toBe(false);
+  });
+});
+
+describe('escapeOwner', () => {
+  it('pins which routes own Escape: the router, the screen itself (battle hosts), or nobody (main)', () => {
+    expect(ROUTE_NAMES.filter((r) => escapeOwner(r) === 'none').sort()).toEqual(['loading', 'main']);
+    expect(ROUTE_NAMES.filter((r) => escapeOwner(r) === 'self').sort()).toEqual(['arcade', 'tour']);
+    for (const r of ROUTE_NAMES) if (escapeOwner(r) === 'router') expect(backHash(r)).not.toBeNull();
   });
 });

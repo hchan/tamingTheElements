@@ -269,6 +269,7 @@ export function lifeReadout(c: Pick<HudCharacter, 'hp' | 'maxHp'>): string {
 
 /** Element as a glyph plus its name (never the frame colour alone): fire ▲, air ≈, earth ■, water ●, void ◆. */
 const ELEMENT_GLYPH: Readonly<Record<Element, string>> = { fire: '▲', air: '≈', earth: '■', water: '●', void: '◆' };
+export const elementGlyph = (e: Element): string => ELEMENT_GLYPH[e];
 export function elementCue(e: Element): string {
   return `${ELEMENT_GLYPH[e]} ${e.charAt(0).toUpperCase()}${e.slice(1)}`;
 }

@@ -84,7 +84,7 @@ export function mountTagView(
     view.forEachCharacter((c) => {
       const dead = (c.flags & EntityFlag.dead) !== 0;
       teams[c.team]?.push({
-        id: c.id, sprite: c.sprite, hp: c.hp, maxHp: c.maxHp, restCap: c.restCap, dead,
+        id: c.id, sprite: c.sprite, hp: c.hp, maxHp: c.maxHp, restCap: c.restCap, dead, element: c.element,
         active: !dead && (c.flags & EntityFlag.benched) === 0,
       });
     });
