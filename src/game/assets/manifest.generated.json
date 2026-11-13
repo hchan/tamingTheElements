@@ -3220,5 +3220,39 @@
       "id": "whoosh",
       "url": "snd/whoosh.ogg"
     }
+  ],
+  "sfxSamples": [
+    {
+      "id": "sfx_air_cleanse",
+      "url": "audio/sfx_air_cleanse.ogg"
+    },
+    {
+      "id": "sfx_air_hit",
+      "url": "audio/sfx_air_hit.ogg"
+    },
+    {
+      "id": "sfx_earth_cleanse",
+      "url": "audio/sfx_earth_cleanse.ogg"
+    },
+    {
+      "id": "sfx_earth_hit",
+      "url": "audio/sfx_earth_hit.ogg"
+    },
+    {
+      "id": "sfx_fire_cleanse",
+      "url": "audio/sfx_fire_cleanse.ogg"
+    },
+    {
+      "id": "sfx_fire_hit",
+      "url": "audio/sfx_fire_hit.ogg"
+    },
+    {
+      "id": "sfx_water_cleanse",
+      "url": "audio/sfx_water_cleanse.ogg"
+    },
+    {
+      "id": "sfx_water_hit",
+      "url": "audio/sfx_water_hit.ogg"
+    }
   ]
 }

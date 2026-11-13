@@ -24,6 +24,8 @@ export interface LegacyManifest {
   mapSprites: Record<string, SpriteEntry>;
   backgrounds: Record<string, SpriteEntry>;
   sounds: SoundEntry[];
+  /** Repo-only AI-generated effect samples (tools/audio-gen); not loaded by Phaser, played by src/game/audio/sample-sfx.ts. */
+  sfxSamples: SoundEntry[];
 }
 
 const root = resolve(import.meta.dirname, '../..');
@@ -42,6 +44,8 @@ const EXTRA_SPRITES: Readonly<Record<string, SpriteEntry>> = {
   entanglingVinesWater: { url: 'img/fx/entanglingVinesWater.png', coords: [0, 0, 80, 61] },
   entanglingVinesAir: { url: 'img/fx/entanglingVinesAir.png', coords: [0, 0, 80, 61] },
 };
+/** Repo-only sampled cues, `<element>_<kind>` (tools/audio-gen writes public/assets/audio/sfx_<id>.ogg). */
+const SFX_SAMPLE_IDS = ['air_cleanse', 'air_hit', 'earth_cleanse', 'earth_hit', 'fire_cleanse', 'fire_hit', 'water_cleanse', 'water_hit'];
 /** Classic arena floors redrawn by stage-gen/batch-h-floors.py (1280x720 in img/floor); they replace the legacy img/background photos. */
 const FLOOR_REDRAWN = new Set(['fire', 'water', 'earth', 'air']);
 const FRAME_KEYS = ['leftFrames', 'rightFrames', 'upFrames', 'downFrames'] as const;
@@ -91,6 +95,7 @@ export function buildManifest(): LegacyManifest {
     mapSprites: sprites('imgMapAssets.js', 'imgMapAssets'),
     backgrounds: sprites('imgBackgroundAssets.js', 'imgBackgroundAssets'),
     sounds,
+    sfxSamples: SFX_SAMPLE_IDS.map((id) => ({ id: `sfx_${id}`, url: `audio/sfx_${id}.ogg` })),
   };
 }
 
