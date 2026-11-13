@@ -1,7 +1,7 @@
 import type { Element } from '@core/index';
 
 /**
- * Per-element super burst (ideas/brainstorm/ability-graphics-audit-defects): the in-world flourish at the caster when a super
+ * Per-element super burst (ideas/done/ability-graphics-audit-defects): the in-world flourish at the caster when a super
  * starts, beside the cinematic band. Pure geometry (no Phaser). Each element has its own SHAPE so colour is never the only
  * cue: fire a spiked star, water concentric rings, air a swirl, earth nested squares with flung rocks (void an octagon).
  * Reduced motion: the same shape held still at a mid size, fading out on the same clock.
