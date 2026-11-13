@@ -6,12 +6,15 @@ Atlas 2400 x 3000, layout shared with src/game/fx/terrain-stage-layout.ts (a tes
   - rows 2000..2959: the CROWD strip, 3 frames per stage (2400 x 80 each, frame order stage-major): silhouettes of the stage's
     own folk with arms up or down in a rolling wave, so cycling the frames makes the crowd cheer.
   - rows 2960..2999: ambient DRIFTERS, 2 frames per stage (64 x 40 each, wings up and down), left to right in stage order.
-Look: banded sky, blocky 4 px value noise, hard silhouettes with a 1 px rim light, a limited palette (like tilefloor.py).
+Look (second pass, after the owner called the art too cartoony; matches batch-h-floors.py): dark, desaturated, overcast and
+painterly. Smooth multi-octave-noise skies (no hard colour bands), soft dim glows, atmospheric haze, softened silhouettes, film grain,
+no cute clouds or bright suns. Every sky stays a low-value field (luma ~20-95) so the white HUD text over it reads.
+Needs numpy + Pillow (~/claudetmp/v/bin/python).
 """
-import math
 import random
 import sys
-from PIL import Image, ImageDraw
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter
 
 W = 2400
 FAR_H = 500
@@ -24,11 +27,51 @@ H = FLY_Y0 + FLY_H
 
 # per stage: sky top, sky horizon, far silhouette, near silhouette, glow accent, rim light, crowd body, crowd rim
 STAGES = [
-    dict(top=(34, 12, 24), hor=(196, 70, 28), far=(70, 24, 30), near=(36, 14, 20), glow=(255, 160, 40), rim=(255, 200, 90), body=(24, 10, 14), crim=(214, 84, 40)),
-    dict(top=(10, 30, 66), hor=(70, 150, 176), far=(26, 66, 104), near=(14, 36, 66), glow=(220, 245, 255), rim=(190, 232, 252), body=(10, 26, 48), crim=(110, 190, 220)),
-    dict(top=(92, 52, 40), hor=(236, 170, 90), far=(140, 86, 52), near=(84, 50, 30), glow=(255, 236, 170), rim=(250, 214, 140), body=(52, 32, 20), crim=(210, 160, 96)),
-    dict(top=(86, 140, 200), hor=(214, 236, 250), far=(150, 190, 220), near=(104, 146, 188), glow=(255, 255, 255), rim=(255, 255, 255), body=(66, 104, 148), crim=(236, 246, 255)),
+    dict(top=(12, 9, 11), hor=(96, 44, 28), far=(38, 22, 22), near=(20, 12, 14), glow=(176, 96, 44), rim=(104, 62, 40), body=(14, 9, 10), crim=(96, 52, 34)),
+    dict(top=(9, 14, 19), hor=(58, 78, 86), far=(24, 36, 46), near=(13, 20, 27), glow=(150, 170, 176), rim=(84, 110, 122), body=(9, 14, 19), crim=(66, 92, 104)),
+    dict(top=(28, 25, 22), hor=(116, 96, 70), far=(66, 54, 42), near=(34, 28, 23), glow=(168, 150, 114), rim=(112, 94, 68), body=(24, 19, 16), crim=(96, 82, 62)),
+    dict(top=(38, 42, 48), hor=(118, 124, 128), far=(72, 78, 86), near=(42, 46, 52), glow=(156, 160, 162), rim=(128, 132, 136), body=(30, 34, 40), crim=(104, 108, 114)),
 ]
+GRAIN = (3, 3, 3, 2)  # film grain amplitude per stage
+
+
+def fbm(rng, w, h, cell, octs=4, aniso=1.0):
+    """Smooth value noise in 0..1 (bicubic-upsampled random grids, summed over octaves); cell = feature size in px."""
+    t, amp, tot = np.zeros((h, w), np.float32), 1.0, 0.0
+    for o in range(octs):
+        c = max(2.0, cell / (2 ** o))
+        gw, gh = int(w / (c * aniso)) + 3, int(h / c) + 3
+        g = Image.fromarray((rng.random((gh, gw)) * 255).astype(np.uint8)).resize((int(gw * c * aniso), int(gh * c)), Image.BICUBIC)
+        t += amp * np.asarray(g, np.float32)[:h, :w] / 255.0
+        tot += amp
+        amp *= 0.5
+    return t / tot
+
+
+def glow_blob(box, color, blur):
+    """A soft glow: an ellipse drawn on a transparent layer and gaussian-blurred, composited by the caller."""
+    layer = Image.new("RGBA", (W, FAR_H), color + (0,))
+    ImageDraw.Draw(layer).ellipse(box, fill=color + (255,))
+    return layer.filter(ImageFilter.GaussianBlur(blur))
+
+
+def finish(im, s, k, rng):
+    """The painterly pass over a far layer: soften edges, haze toward the horizon, mottle, vignette, desaturate, grain."""
+    a = np.asarray(im.filter(ImageFilter.GaussianBlur(1.1)).convert("RGB"), np.float32)
+    yy = np.linspace(0, 1, FAR_H, dtype=np.float32)[:, None, None]
+    mott = fbm(rng, W, FAR_H, 90, 5, 2.0)[:, :, None]
+    a = a * (0.86 + 0.28 * mott)  # broken-tone mottling
+    haze = np.array(s["hor"], np.float32)[None, None, :]
+    a = a * (1 - 0.18 * yy) + haze * 0.18 * yy  # distance haze lifts the lower sky a touch
+    xx = np.linspace(-1, 1, W, dtype=np.float32)[None, :, None]
+    a = a * (1 - 0.32 * np.abs(xx) ** 2)  # darker toward the left and right edges
+    luma = (a * np.array([0.3, 0.59, 0.11], np.float32)).sum(2, keepdims=True)
+    a = luma + (a - luma) * 0.8  # pull the saturation down
+    # Grain that survives a small palette: horizontal brush-stroke streaks plus sparse 2 px specks (white noise would cost ~4x the PNG).
+    streak = (fbm(rng, W, FAR_H, 7, 2, 4.0) - 0.5) * 2 * GRAIN[k] * 1.6
+    speck = np.repeat(np.repeat((rng.random((FAR_H // 2, W // 2)) < 0.04).astype(np.float32) * rng.choice((-1, 1), (FAR_H // 2, W // 2)), 2, 0), 2, 1)
+    grain = (streak + speck * GRAIN[k] * 1.5)[:, :, None]
+    return Image.fromarray(np.clip(a + grain, 0, 255).astype(np.uint8))
 
 
 def lerp(a, b, t):
@@ -40,18 +83,16 @@ def shade(c, k):
 
 
 def sky(s, rng):
-    """Eight hard colour bands top to horizon with blocky 4 px noise, then a soft glow disc."""
-    im = Image.new("RGB", (W, FAR_H), s["top"])
-    d = ImageDraw.Draw(im)
-    bands = 8
-    for b in range(bands):
-        y0 = b * (FAR_H - 40) // bands
-        d.rectangle([0, y0, W, y0 + (FAR_H - 40) // bands + 1], fill=lerp(s["top"], s["hor"], b / (bands - 1)))
-    for _ in range(900):
-        x, y = rng.randrange(0, W, 4), rng.randrange(0, FAR_H - 40, 4)
-        base = im.getpixel((x, y))
-        d.rectangle([x, y, x + 3, y + 3], fill=shade(base, rng.choice((0.94, 1.06))))
-    return im
+    """A smooth top-to-horizon gradient with large soft tonal drifts (no bands)."""
+    t = np.linspace(0, 1, FAR_H - 40, dtype=np.float32)[:, None] ** 1.3
+    n = fbm(np.random.default_rng(rng.randrange(1 << 30)), W, FAR_H - 40, 160, 4, 2.5)
+    t = np.clip(t + (n - 0.5) * 0.35, 0, 1)[:, :, None]
+    top, hor = np.array(s["top"], np.float32), np.array(s["hor"], np.float32)
+    a = top + (hor - top) * t
+    full = np.zeros((FAR_H, W, 3), np.float32)
+    full[: FAR_H - 40] = a
+    full[FAR_H - 40:] = a[-1]
+    return Image.fromarray(full.astype(np.uint8))
 
 
 def mountains(im, s, rng, base_y, amp, color, step, peak):
@@ -64,66 +105,77 @@ def mountains(im, s, rng, base_y, amp, color, step, peak):
         x += step
     pts.append((W, FAR_H))
     d.polygon(pts, fill=color)
-    d.line(pts[1:-1], fill=shade(color, 1.4), width=1)
+    d.line(pts[1:-1], fill=shade(color, 1.25), width=1)
+
+
+def add_glow(im, box, color, blur, strength):
+    """Composite a soft glow disc at `strength` (0..1) onto an RGB image."""
+    g = glow_blob(box, color, blur)
+    g.putalpha(g.getchannel("A").point(lambda v: int(v * strength)))
+    return Image.alpha_composite(im.convert("RGBA"), g).convert("RGB")
+
+
+def overcast(im, s, rng, lo, hi, strength):
+    """Heavy low cloud banks (no puffs): stretched noise thresholded softly, lit from the horizon, between rows lo..hi."""
+    n = fbm(np.random.default_rng(rng.randrange(1 << 30)), W, FAR_H, 120, 5, 3.5)
+    m = np.clip((n - 0.45) * 3.0, 0, 1)
+    yy = np.arange(FAR_H, dtype=np.float32)
+    band = np.clip(np.minimum((yy - lo) / 60.0, (hi - yy) / 60.0), 0, 1)[:, None]
+    m = (m * band * strength)[:, :, None]
+    base = np.asarray(im, np.float32)
+    ash = np.array(s["glow"], np.float32)[None, None, :] * 0.62
+    return Image.fromarray((base * (1 - m) + ash * m).astype(np.uint8))
 
 
 def far_layer(i, s, rng):
     im = sky(s, rng)
+    if i == 0:  # fire: a dim ember glow low behind dark volcanic ridges with faint lava seams
+        im = add_glow(im, [W // 2 - 420, FAR_H - 330, W // 2 + 420, FAR_H + 80], s["glow"], 90, 0.55)
+        im = overcast(im, s, rng, 60, 330, 0.55)
+    elif i == 1:  # water: a pale smeared moon behind low cloud, a far shoreline
+        im = add_glow(im, [W // 2 + 280, 60, W // 2 + 440, 220], s["glow"], 50, 0.5)
+        im = overcast(im, s, rng, 40, 300, 0.7)
+    elif i == 2:  # earth: a hazy low sun in a dust-choked sky
+        im = add_glow(im, [W // 2 - 360, FAR_H - 340, W // 2 + 360, FAR_H + 40], s["glow"], 80, 0.5)
+        im = overcast(im, s, rng, 40, 320, 0.45)
+    else:  # air: a flat ashen overcast, heavy and layered
+        im = overcast(im, s, rng, 0, 360, 0.95)
     d = ImageDraw.Draw(im)
-    if i == 0:  # fire: a sun-red glow, volcanoes with lava streaks, embers
-        d.ellipse([W // 2 - 180, FAR_H - 300, W // 2 + 180, FAR_H + 60], fill=lerp(s["hor"], s["glow"], 0.35))
+    if i == 0:
         for cx in (300, 900, 1500, 2100):
             h = rng.randint(130, 200)
             d.polygon([(cx - 240, FAR_H - 40), (cx - 40, FAR_H - 40 - h), (cx + 40, FAR_H - 40 - h), (cx + 240, FAR_H - 40)], fill=s["far"])
-            d.polygon([(cx - 40, FAR_H - 40 - h), (cx + 40, FAR_H - 40 - h), (cx + 14, FAR_H - 40 - h + 40), (cx - 14, FAR_H - 40 - h + 40)], fill=s["glow"])
             for k in range(3):
                 x = cx - 14 + rng.randint(-10, 10)
-                d.line([(x, FAR_H - 40 - h + 40), (x + rng.randint(-30, 30), FAR_H - 60)], fill=s["glow"], width=2)
-        for _ in range(60):
-            x, y = rng.randrange(W), rng.randrange(FAR_H - 300, FAR_H - 60)
-            d.rectangle([x, y, x + 2, y + 2], fill=s["rim"])
-    elif i == 1:  # water: moon-like disc, a far shoreline, sailboats and a lighthouse over wave stripes
-        d.ellipse([W // 2 + 300, 80, W // 2 + 420, 200], fill=s["glow"])
+                d.line([(x, FAR_H - 40 - h + 4), (x + rng.randint(-30, 30), FAR_H - 60)], fill=lerp(s["far"], s["glow"], 0.45), width=2)
+    elif i == 1:
         mountains(im, s, rng, FAR_H - 90, 90, s["far"], 160, True)
-        for x in (500, 1300, 1900):
-            d.polygon([(x, FAR_H - 120), (x, FAR_H - 60), (x - 30, FAR_H - 60)], fill=s["near"])
-            d.polygon([(x + 4, FAR_H - 110), (x + 4, FAR_H - 60), (x + 28, FAR_H - 60)], fill=s["near"])
+        for x in (500, 1300, 1900):  # distant hulls, barely there
+            d.polygon([(x, FAR_H - 110), (x, FAR_H - 60), (x - 30, FAR_H - 60)], fill=s["near"])
             d.polygon([(x - 36, FAR_H - 56), (x + 36, FAR_H - 56), (x + 24, FAR_H - 46), (x - 24, FAR_H - 46)], fill=s["near"])
-        lx = 1000
+        lx = 1000  # a dead lighthouse: no lamp
         d.rectangle([lx, FAR_H - 220, lx + 24, FAR_H - 60], fill=s["near"])
         d.polygon([(lx - 6, FAR_H - 220), (lx + 30, FAR_H - 220), (lx + 12, FAR_H - 250)], fill=s["near"])
-        d.rectangle([lx + 6, FAR_H - 238, lx + 18, FAR_H - 226], fill=s["glow"])
-        for y in range(FAR_H - 52, FAR_H - 40, 4):
-            for x in range(0, W, 24):
-                d.line([(x, y), (x + 12, y)], fill=s["rim"], width=1)
-    elif i == 2:  # earth: low sun, mesas and buttes
-        d.ellipse([W // 2 - 90, FAR_H - 260, W // 2 + 90, FAR_H - 80], fill=s["glow"])
+    elif i == 2:
         for cx in range(140, W, 330):
             w, h = rng.randint(120, 220), rng.randint(70, 170)
             d.rectangle([cx - w // 2, FAR_H - 40 - h, cx + w // 2, FAR_H - 40], fill=s["far"])
-            d.rectangle([cx - w // 2, FAR_H - 40 - h, cx + w // 2, FAR_H - 40 - h + 6], fill=s["rim"])
             for k in range(3):
                 y = FAR_H - 40 - h + 20 + k * 18
                 d.line([(cx - w // 2, y), (cx + w // 2, y)], fill=shade(s["far"], 0.8), width=2)
-    else:  # air: clouds and floating isles with a temple
-        for _ in range(26):
-            cx, cy = rng.randrange(W), rng.randrange(50, FAR_H - 120)
-            for k in range(4):
-                r = rng.randint(18, 38)
-                d.ellipse([cx + k * 30 - r, cy - r // 2, cx + k * 30 + r, cy + r // 2], fill=s["glow"])
+    else:  # air: broken, dark floating slabs with ruined pillars, no bright temple
         for cx in (400, 1200, 2000):
             y = FAR_H - 190 + rng.randint(-30, 30)
             d.polygon([(cx - 90, y), (cx + 90, y), (cx + 40, y + 60), (cx, y + 90), (cx - 40, y + 60)], fill=s["far"])
-            d.rectangle([cx - 90, y - 4, cx + 90, y], fill=s["rim"])
-            for k in range(-2, 3):
-                d.rectangle([cx + k * 26 - 4, y - 46, cx + k * 26 + 4, y - 4], fill=s["glow"])
-            d.polygon([(cx - 70, y - 46), (cx + 70, y - 46), (cx, y - 76)], fill=s["glow"])
+            for k in (-2, -1, 1, 2):
+                top = y - rng.randint(14, 46)
+                d.rectangle([cx + k * 26 - 4, top, cx + k * 26 + 4, y], fill=s["far"])
     # the arena wall: a dark band along the bottom edge (the crowd stands on its top)
     d.rectangle([0, FAR_H - 40, W, FAR_H], fill=s["near"])
-    d.line([(0, FAR_H - 40), (W, FAR_H - 40)], fill=s["rim"], width=2)
+    d.line([(0, FAR_H - 40), (W, FAR_H - 40)], fill=s["rim"], width=1)
     for x in range(0, W, 48):
         d.line([(x, FAR_H - 38), (x, FAR_H)], fill=shade(s["near"], 0.7), width=2)
-    return im
+    return finish(im, s, i, np.random.default_rng(900 + i))
 
 
 def person(d, i, s, x, base, size, arms_up, tone):
@@ -219,7 +271,7 @@ def main(out):
         for f in range(2):
             sheet.paste(flyer(i, s, f == 0), ((i * 2 + f) * FLY_W, FLY_Y0))
     # Palette-limited PNG (small on disk and gzip): FASTOCTREE is the deterministic quantiser that keeps alpha; no dither.
-    sheet.quantize(colors=128, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(out, optimize=True)
+    sheet.quantize(colors=64, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(out, optimize=True)
 
 
 main(sys.argv[1])
