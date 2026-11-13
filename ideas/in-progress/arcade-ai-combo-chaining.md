@@ -16,3 +16,14 @@ Leftover ideas:
 - Open with an ability whose cooldown is shorter than the stun.
 - Ranged heroes: a Charge follow-up needs a Charge (`chargeIn === -1` means none); consider a short dash.
 - Raise the Normal combo cap (`combo > level * 2`) only if hits end combos early (p90 is 4, so probably not).
+
+## Hold-back experiments (2026-11-12, not shipped, SIM_VERSION stays 44)
+
+Probe: 15 races x all pairings, 6 seeds, aiLevel 3 (share of combos with 2+ hits; `fun:noise` 4 blocks x 8 seeds for the rest). Baseline: share 2+ 0.470, combo median 1, round median 48.2 s, worst race 0.414, best 0.642.
+- Fire only the primary when both slots are pressed at an upright foe: share 0.465 (no effect; the base AI almost never presses both slots in one tick).
+- Do not fire a slot while the other non-Snag slot is within N ticks of coming off cooldown (so both are ready for open + follow-up):
+  - N 75: share 0.478.
+  - N 250: share 0.487, fewer combos overall (22.7k vs 25.7k).
+  - N 300 (fun:noise): median still 1, round median 52.6 s, worst race 0.053, best 0.761: balance broken (races with long cooldowns stop firing).
+  - N 600 (fun:noise): median 1.5 (blocks 1..2), but round median 56.0 s (out of band), worst race 0.129, best 0.841, time-over 0.055.
+- Conclusion: a global hold-back trades combo length for fire rate and wrecks balance; reaching median 2 needs per-race data (open with the short-cooldown slot, keep the long one) or a gameplay change (shorter stun-window cooldowns, a combo-starter), not an AI wait rule. Idea stays open.
