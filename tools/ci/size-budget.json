@@ -15,7 +15,8 @@
     "local-two": 455,
     "online-versus": 3940,
     "phaser": 388700,
-    "phaser-config": 31500,
+    "phaser-config": 32500,
+    "status-fx-view": 1800,
     "pose-layer": 10620,
     "rolldown-runtime": 200,
     "round-view": 4275,
@@ -38,7 +39,7 @@
     "guide.css": 1560,
     "tour-select": 685
   },
-  "totalGzip": 556000,
+  "totalGzip": 558500,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
