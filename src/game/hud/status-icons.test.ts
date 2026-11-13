@@ -129,3 +129,19 @@ describe('collectStatusChips', () => {
     expect(chips({ statuses: many })[CHIP_MAX - 1]?.key).not.toBe('more');
   });
 });
+
+describe('chip layout at a larger scale', () => {
+  const four = [0, 1, 2, 3].map((i) => ({ id: 1 + i }));
+  const at = (scale: number, top = CHIP_Y) => collectStatusChips(viewWith({ statuses: four }), 0, 1, 'fire', 0, false, { scale, top });
+  it('scales the chip box with the text, starts at the given top, and wraps to a new row instead of leaving the bar', () => {
+    const base = at(1);
+    const big = at(2, 130);
+    expect(big[0]?.w).toBe((base[0]?.w ?? 0) * 2);
+    expect(big[0]?.h).toBe((base[0]?.h ?? 0) * 2);
+    expect(big[0]?.y).toBe(130);
+    const { maxX } = mainBar(0);
+    for (const c of big) expect(c.x + c.w).toBeLessThanOrEqual(maxX);
+    expect(new Set(big.map((c) => c.y)).size).toBeGreaterThan(1);
+    expect(Math.min(...big.map((c) => c.y))).toBe(130);
+  });
+});

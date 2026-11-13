@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { BAR_Y, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementSymbol, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { BAR_Y, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementSymbol, trapGlyph, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -170,5 +170,28 @@ describe('captureHint', () => {
   });
   it('is absent without a Capture slot', () => {
     expect(captureHint(buildSlots(bar({ capture: undefined })), 0)).toBeNull();
+  });
+});
+
+describe('Trap glyph and slot text fit', () => {
+  it('draws a ring with four spikes, not a three-point triangle like the fire symbol', () => {
+    const g = trapGlyph(40, 50, 13);
+    expect(g.spikes).toHaveLength(4);
+    expect(g.ring.r).toBeGreaterThan(0);
+    for (const [x1, y1, x2, y2] of g.spikes) expect(Math.hypot(x2 - x1, y2 - y1)).toBeGreaterThan(g.ring.r);
+  });
+  it('squeezes a note wider than its slot and leaves a short one alone', () => {
+    expect(fitTextScale(40, SLOT_SIDE)).toBe(1);
+    const k = fitTextScale(120, SLOT_SIDE);
+    expect(k).toBeLessThan(1);
+    expect(120 * k).toBeLessThanOrEqual(SLOT_SIDE - 8 + 1e-9);
+  });
+  it('puts the Trap and Element notes in separate slots', () => {
+    const slots = buildSlots(bar({ trap: { readyTick: 0, cooldownTicks: 100, count: 0, max: 2 }, elemental: { name: 'Ember', kind: 1, readyTick: 0, cooldownTicks: 100, activeUntil: 0 } }));
+    const trap = slots.find((s) => s.kind === 'trap');
+    const el = slots.find((s) => s.kind === 'elemental');
+    expect(trap?.note).toBe('Trap 0/2');
+    expect(el?.note).toBe('Ember');
+    expect(el?.x).not.toBe(trap?.x);
   });
 });

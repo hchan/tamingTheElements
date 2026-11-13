@@ -115,6 +115,26 @@ export function elementSymbol(kind: number, cx: number, cy: number, r: number): 
   };
 }
 
+/**
+ * The Trap slot's glyph centred on (cx, cy) with half-size r: a ring with four spikes crossing it (a caltrop on a snare), so it is
+ * never mistaken for the elemental triangle (fire's is the same up-pointing one). Pure, for tests.
+ */
+export function trapGlyph(cx: number, cy: number, r: number): { ring: { x: number; y: number; r: number }; spikes: [number, number, number, number][] } {
+  const d = Math.round(r * 0.72);
+  return {
+    ring: { x: cx, y: cy, r: Math.round(r * 0.62) },
+    spikes: [[cx - d, cy - d, cx + d, cy + d], [cx - d, cy + d, cx + d, cy - d], [cx - r, cy, cx + r, cy], [cx, cy - r, cx, cy + r]],
+  };
+}
+
+/** Dull brass for the Trap glyph (the grim, desaturated look; the shape and the slot's words carry the meaning). */
+export const TRAP_COLOR = 0xb39b5e;
+
+/** Horizontal scale (at most 1) that keeps a text `width` wide inside a slot `size` wide, leaving `pad` px each side. */
+export function fitTextScale(width: number, size: number, pad = 4): number {
+  return width <= 0 ? 1 : Math.min(1, Math.max(0.1, (size - pad * 2) / width));
+}
+
 /** Elapsed fraction of a cooldown that ends (becomes usable) at `readyTick`; 1 once ready. */
 export function cooldownProgress(tick: number, readyTick: number, cooldownTicks: number): number {
   if (tick >= readyTick || cooldownTicks <= 0) return 1;
@@ -321,7 +341,7 @@ export class ActionBarView {
       }
       this.drawIcon(i, s);
       const k = s.size / SLOT_SIDE;
-      if (s.kind === 'trap') this.back.fillStyle(0xffd23f, 1).fillTriangle(s.x + s.size / 2, s.y + 44 * k, s.x + s.size / 2 + 13 * k, s.y + s.size - 8 * k, s.x + s.size / 2 - 13 * k, s.y + s.size - 8 * k);
+      if (s.kind === 'trap') this.drawTrapGlyph(s, k);
       if (s.kind === 'elemental') this.drawElementSymbol(s);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
@@ -403,6 +423,15 @@ export class ActionBarView {
     if (sym.bar) this.back.lineBetween(...sym.bar);
   }
 
+  /** The Trap slot's icon: a ring crossed by four spikes in dull brass, with a dark under-stroke so it reads on any plate. */
+  private drawTrapGlyph(s: ActionSlot, k: number): void {
+    const g = trapGlyph(s.x + s.size / 2, s.y + s.size - 22 * k, 13 * k);
+    for (const [w, c] of [[5, 0x05070c], [3, TRAP_COLOR]] as const) {
+      this.back.lineStyle(this.mirror ? w - 1 : w, c, 1).strokeCircle(g.ring.x, g.ring.y, g.ring.r);
+      for (const sp of g.spikes) this.back.lineBetween(...sp);
+    }
+  }
+
   private drawIcon(i: number, s: ActionSlot): void {
     let icon = this.icons[i];
     if (!icon) {
@@ -431,13 +460,15 @@ export class ActionBarView {
         0, 0, '',
         crisp(this.scene, this.styled
           ? { fontFamily: '"Trebuchet MS", Verdana, sans-serif', fontSize: size, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }
-          : { fontFamily: 'Arial', fontSize: size, fontStyle: 'bold', color: '#000' }),
+          : { fontFamily: 'Arial', fontSize: size, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }),
       );
       t.setDepth(101);
       this.texts[i] = t;
     }
-    t.setVisible(true).setPosition(this.wx(s.x + (this.styled ? 5 : 2)), this.wy(s.y + (this.styled ? 2 : 0))).setScale(this.box.scale);
     const line = s.note === '' ? s.label : `${s.label}\n${s.note}`;
     if (t.text !== line) t.setText(line);
+    // A note wider than its slot ("Trap 0/2", "Ember 12s") is squeezed to fit, so it never runs into the next slot's key or note.
+    const fit = fitTextScale(t.width, s.size);
+    t.setVisible(true).setPosition(this.wx(s.x + (this.styled ? 5 : 2)), this.wy(s.y + (this.styled ? 2 : 0))).setScale(this.box.scale * fit);
   }
 }
