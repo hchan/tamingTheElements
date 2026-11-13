@@ -5,7 +5,7 @@ import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { ELEMENT_COLORS } from './element-colors';
 import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
 import { BURST_COLOR, BURST_REACH, BURST_SHAPE, burstRadius, superBurst } from './super-burst';
-import { embers, glowPair, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
+import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 
 /**
  * Phaser side of the super cinematic. The Phaser fx sink imports this module on the first super (Arcade only), so
@@ -82,7 +82,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   const res = (): number => scene.scale.width / LOGICAL_WIDTH;
   const text = (size: number): Phaser.GameObjects.Text =>
     scene.add
-      .text(0, 0, '', { fontSize: `${String(size)}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 8, resolution: res() })
+      .text(0, 0, '', { fontSize: `${String(size)}px`, fontStyle: 'bold', color: '#d8d2c4', stroke: '#0a0806', strokeThickness: 8, resolution: res() })
       .setOrigin(0.5)
       .setDepth(DIM_DEPTH + 3);
   const parts = {
@@ -113,7 +113,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     const g = (burstG ??= scene.add.graphics().setDepth(BURST_DEPTH));
     const glow = (burstGlow ??= scene.add.graphics().setDepth(BURST_DEPTH + 0.1));
     const pair = glowPair(g, glow);
-    const color = BURST_COLOR[burst.element];
+    const color = mute(BURST_COLOR[burst.element], 0.75, 0.85);
     for (const p of b.paths) {
       // Grim look (grim-fx.ts): a faint layered fill, a smoky underlay and soft additive glow strokes, no bold outline or white line.
       if (p.fill) softFill(g, p.pts, color, b.alpha);
@@ -211,7 +211,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       // The band slides in from the caster's half of the arena, with the portrait (as the caster faces) on that side.
       side = px < LOGICAL_WIDTH / 2 ? -1 : 1;
       bandY = img.y + img.displayHeight <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
-      parts.band.setFillStyle(ELEMENT_COLORS[caster.element]);
+      // Grim grade: the band is a dark, desaturated wash of the element colour (the element word below is the main cue).
+      parts.band.setFillStyle(mute(ELEMENT_COLORS[caster.element], 0.45, 0.5));
       parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX, PORTRAIT_PX).setFlipX(img.flipX);
       parts.name.setText(superName(superId));
       // The element as a word too: the band colour is not the only cue.
