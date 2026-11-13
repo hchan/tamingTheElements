@@ -13,10 +13,10 @@ ROWS = 4
 
 # per stage: base, light (bevel top/left), dark (bevel bottom/right), accents a, b, c
 STAGES = [
-    dict(base=(58, 44, 46), light=(82, 62, 60), dark=(30, 22, 26), a=(255, 122, 30), b=(255, 210, 80), c=(120, 40, 20), bevel=1),
-    dict(base=(28, 78, 128), light=(52, 116, 168), dark=(16, 48, 92), a=(190, 232, 252), b=(255, 255, 255), c=(10, 36, 80), bevel=0),
-    dict(base=(152, 114, 72), light=(180, 144, 98), dark=(98, 70, 42), a=(92, 146, 60), b=(210, 188, 150), c=(70, 48, 28), bevel=1),
-    dict(base=(112, 164, 204), light=(164, 208, 238), dark=(80, 128, 172), a=(255, 255, 255), b=(176, 214, 238), c=(66, 112, 156), bevel=0),
+    dict(base=(58, 44, 46), light=(82, 62, 60), dark=(30, 22, 26), a=(188, 88, 40), b=(214, 150, 84), c=(86, 34, 24), bevel=1),
+    dict(base=(36, 58, 76), light=(58, 86, 104), dark=(22, 36, 52), a=(138, 168, 184), b=(196, 214, 222), c=(18, 32, 50), bevel=0),
+    dict(base=(96, 78, 60), light=(120, 100, 78), dark=(60, 46, 34), a=(76, 96, 56), b=(160, 146, 120), c=(52, 38, 26), bevel=1),
+    dict(base=(104, 118, 134), light=(138, 152, 166), dark=(72, 84, 100), a=(190, 200, 210), b=(150, 166, 182), c=(80, 94, 112), bevel=0),
 ]
 
 
@@ -58,13 +58,13 @@ def deco(stage, k, s, rng):
     if stage == 0:  # fire: basalt with ember cracks
         if k == 4:
             p = [(2, 6), (9, 12), (14, 10), (20, 18), (26, 16), (30, 24)]
-            zig(p, c, 3); zig(p, a, 2); zig(p, b, 1)
+            zig(p, c, 3); zig(p, a, 1)
         elif k == 5:
             p = [(16, 2), (14, 10), (18, 16), (13, 22), (16, 30)]
-            zig(p, c, 3); zig(p, a, 2); zig(p, b, 1)
+            zig(p, c, 3); zig(p, a, 1)
             zig([(18, 16), (26, 18), (30, 14)], a, 1)
         elif k == 6:
-            d.ellipse([8, 9, 24, 23], fill=c); d.ellipse([10, 11, 22, 21], fill=a); d.ellipse([13, 14, 19, 18], fill=b)
+            d.ellipse([11, 12, 21, 20], fill=c); d.ellipse([13, 14, 19, 18], fill=a)
         else:
             for _ in range(9):
                 x, y = int(rng.integers(2, 30)), int(rng.integers(2, 30))
@@ -76,7 +76,7 @@ def deco(stage, k, s, rng):
             for y, x0 in ((8, 2), (16, 9), (24, 4)):
                 zig([(x0, y), (x0 + 5, y - 2), (x0 + 11, y), (x0 + 17, y - 2)], a)
         elif k == 6:
-            d.ellipse([7, 8, 25, 24], fill=s["dark"]); d.ellipse([11, 12, 21, 20], fill=c)
+            d.ellipse([9, 11, 23, 21], fill=s["dark"]); d.ellipse([12, 13, 20, 19], fill=c)
         else:
             for _ in range(7):
                 x, y = int(rng.integers(3, 29)), int(rng.integers(3, 29))
@@ -93,7 +93,7 @@ def deco(stage, k, s, rng):
             zig([(3, 4), (10, 11), (9, 18), (17, 24), (24, 29)], c, 2)
             zig([(10, 11), (18, 9), (27, 13)], c, 1)
         else:
-            d.ellipse([4, 6, 28, 26], fill=a)
+            d.ellipse([7, 9, 25, 23], fill=mix(a, s["base"]))
             for _ in range(12):
                 x, y = int(rng.integers(6, 26)), int(rng.integers(8, 24))
                 d.point((x, y), fill=s["light"])
@@ -102,7 +102,7 @@ def deco(stage, k, s, rng):
             zig([(2, 20), (8, 14), (16, 13), (22, 17), (30, 11)], a, 2); zig([(2, 22), (9, 18), (17, 17)], b, 1)
         elif k == 5:
             for x, y, r in ((10, 18, 6), (18, 14, 7), (24, 19, 5)):
-                d.ellipse([x - r, y - r, x + r, y + r], fill=a)
+                d.ellipse([x - r, y - r, x + r, y + r], fill=mix(a, s["base"]))
             d.line([(6, 25), (28, 25)], fill=s["dark"])
         elif k == 6:
             d.arc([6, 6, 26, 26], 20, 300, fill=a, width=2); d.arc([11, 11, 21, 21], 200, 460, fill=a, width=1)

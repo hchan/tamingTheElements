@@ -96,7 +96,7 @@ def finish(img, name, grain=4.0, desat=0.0, seed=900):
         l = img @ np.array([0.299, 0.587, 0.114], np.float32)
         img = img * (1 - desat) + l[..., None] * desat
     os.makedirs(OUT, exist_ok=True)
-    im = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).quantize(colors=64, method=Image.MEDIANCUT, dither=Image.Dither.NONE)
+    im = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).quantize(colors=40, method=Image.MEDIANCUT, dither=Image.Dither.NONE)
     path = os.path.join(OUT, name + ".png")
     im.save(path, optimize=True)
     print(path, os.path.getsize(path))
@@ -131,7 +131,7 @@ def fire():
     img = img + np.clip((YY - 460) / 260.0, 0, 1)[..., None] ** 2 * np.asarray([(26, 8, 4)], np.float32)  # faint heat from below
     ash = np.random.default_rng(15).random((H, W)) > 0.9985
     img = img + (blur(ash.astype(np.float32), 0.8) * 90)[..., None] * np.asarray([(1.0, 0.7, 0.5)], np.float32)  # rare grey-orange ash flecks
-    finish(img, "fire", 3.5, 0.08, 901)
+    finish(img, "fire", 2.0, 0.12, 901)
 
 
 def water():
@@ -149,7 +149,7 @@ def water():
     img = img + (c * fall * 34)[..., None] * np.asarray([(0.45, 0.85, 1.0)], np.float32)
     shaft = blur(np.clip(np.sin((XX + YY * 0.5) / 95.0 + 4 * fbm(47, 200, 2)), 0, 1), 12) * np.clip(1 - YY / H * 1.2, 0, 1)
     img = img + (shaft * 9)[..., None] * np.asarray([(0.6, 0.9, 1.0)], np.float32)  # faint god-rays
-    finish(img, "water", 3.2, 0.1, 902)
+    finish(img, "water", 1.8, 0.14, 902)
 
 
 def earth():
@@ -172,7 +172,7 @@ def earth():
         grit[y0:y1, x0:x1] = np.maximum(grit[y0:y1, x0:x1], np.clip(1 - d, 0, 1))
     img = img + (relief(blur(grit, 1.2), 14) * 16)[..., None] - (blur(grit, 2.5) * 6)[..., None]
     img = img + (smooth(fbm(61, 220, 3, 2.0), 0.55, 0.85) * 10)[..., None] * np.asarray([(1.0, 0.9, 0.7)], np.float32)  # drifted dust
-    finish(img, "earth", 4.0, 0.14, 903)
+    finish(img, "earth", 2.2, 0.18, 903)
 
 
 def air():
@@ -189,7 +189,7 @@ def air():
     streak = fbm(71, 26, 3, 9.0)
     img = img + (smooth(streak, 0.55, 0.8) * smooth(fbm(72, 200, 2, 3.0), 0.4, 0.7) * 16)[..., None]  # wind shear
     img = img * light(0.5, 0.4, 0.62, 1.0)[..., None]
-    finish(img, "air", 3.0, 0.05, 904)
+    finish(img, "air", 1.8, 0.1, 904)
 
 
 if __name__ == "__main__":
