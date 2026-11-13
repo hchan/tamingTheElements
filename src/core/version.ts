@@ -173,5 +173,8 @@
  *    is off while the hero has a living partner to tag in (`partnerPm >= 0`), so team matches close in again. Two ranged heroes per side kept out of range
  *    and the 2v2 time-over rate went 2.3 percent (43) -> 13.4 (44); it is 3.5 now (Arcade 2v2, `fun:report --team-size 2 --all`). Re-record reason: the AI
  *    commands of every 2v2 or 3v3 Arcade match change (Arcade goldens, Arcade baselines).
+ * 49: Arcade only; Classic hashes unchanged. 2v2 balance retune (ideas/in-progress/arcade-balance-after-cleanse.md): data-only `ARCADE_2V2_LIFE_PM` changes
+ *    (the 2v2 tournament played fixed partner teams, curomo+morblass 70 percent and cyclonius+pax 27, race spread 26.1-70.5; now 42.0-58.0). The 1v1
+ *    Arcade tournament is unchanged (43.8-53.4 percent). Re-record reason: 2v2 life changes Arcade 2v2 outcomes (Arcade 2v2 goldens and baseline).
  */
-export const SIM_VERSION = 48;
+export const SIM_VERSION = 49;

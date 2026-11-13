@@ -60,18 +60,18 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
  */
 export const ARCADE_2V2_LIFE_DEFAULT_PM = 600;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
-  curomo: 760,
-  cyclonius: 740,
-  echo: 560,
-  fiara: 613,
-  ishimi: 600,
-  lavax: 900,
-  morblass: 960,
-  pax: 500,
-  rokcore: 540,
-  sindarosa: 840,
-  treenoc: 690,
-  wispera: 700,
+  curomo: 690,
+  cyclonius: 867,
+  echo: 657,
+  fiara: 575,
+  ishimi: 659,
+  lavax: 804,
+  morblass: 892,
+  pax: 582,
+  rokcore: 629,
+  sindarosa: 773,
+  treenoc: 715,
+  wispera: 637,
 };
 /** Race life `hpPm` of `slug` for a roster of `size` heroes. */
 export function arcadeLifePm(hpPm: number, size: number, slug: string): number {
