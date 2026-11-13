@@ -74,9 +74,36 @@ export function frameName(set: FrameSet, i: number): string {
   return (names[i] ??= `${set}${String(i)}`);
 }
 
+/** Pale air beings that vanish on the dark floors: they get a soft additive ground glow under the sprite (display only). */
+export const GLOW_SPRITES: ReadonlySet<string> = new Set(['wispera', 'echo']);
+const GLOW_KEY = 'hero-glow';
+const GLOW_TINT = 0xb4d2ff;
+const GLOW_ALPHA = 0.65;
+
+/** The shared soft radial glow texture (64x64, white to transparent); undefined where no canvas is available (Node tests). */
+function glowTexture(scene: Phaser.Scene): string | undefined {
+  try {
+    if (scene.textures.exists(GLOW_KEY)) return GLOW_KEY;
+    const t = scene.textures.createCanvas(GLOW_KEY, 64, 64);
+    const ctx = t?.getContext();
+    if (!t || !ctx) return undefined;
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(255,255,255,0.9)');
+    g.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 64);
+    t.refresh();
+    return GLOW_KEY;
+  } catch {
+    return undefined;
+  }
+}
+
 /** One pooled character sprite; `apply` is the only thing that touches Phaser state each frame. */
 export class CharacterView {
   readonly image: Phaser.GameObjects.Image;
+  private glow: Phaser.GameObjects.Image | undefined;
   private spriteName = '';
   private sprite: MapSprite | undefined;
   /** Element of the character shown (hit colour of its attacks). */
@@ -112,6 +139,7 @@ export class CharacterView {
     const hidden = (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0;
     this.image.setVisible(!hidden);
     if (hidden) {
+      this.glow?.setVisible(false);
       this.flashLeft = 0;
       return;
     }
@@ -136,6 +164,7 @@ export class CharacterView {
     this.image.setPosition(x - (c.w * (k - 1)) / 2, y - c.h * (k - 1));
     this.image.setDisplaySize(c.w * k, c.h * k);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
+    this.placeGlow(c.sprite, x, y, c.w * k, c.h * k);
     const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
     if (live && this.flashLeft > 0) this.flashLeft--;
     if (stage === 'none') {
@@ -149,13 +178,30 @@ export class CharacterView {
       .setTintMode(stage === 'fill' ? TINT_FILL : TINT_MULTIPLY);
   }
 
+  /** A soft ellipse of pale light under the feet for `GLOW_SPRITES`, so they read on dark floors. */
+  private placeGlow(sprite: string, x: number, y: number, w: number, h: number): void {
+    if (!GLOW_SPRITES.has(sprite)) {
+      this.glow?.setVisible(false);
+      return;
+    }
+    if (!this.glow) {
+      const key = glowTexture(this.scene);
+      if (!key) return;
+      this.glow = this.scene.add.image(0, 0, key).setTint(GLOW_TINT).setAlpha(GLOW_ALPHA).setBlendMode(1);
+    }
+    this.glow.setVisible(true).setDepth(this.image.depth - 0.5);
+    this.glow.setPosition(x + w / 2, y + h * 0.66).setDisplaySize(w * 1.15, h * 0.62);
+  }
+
   hide(): void {
+    this.glow?.setVisible(false);
     this.image.setVisible(false);
     this.flashLeft = 0;
     this.jitterUntil = 0;
   }
 
   destroy(): void {
+    this.glow?.destroy();
     this.image.destroy();
   }
 }
