@@ -334,7 +334,7 @@ export class Hud extends Phaser.Scene {
       return;
     }
     const g = benchBar(sideOffset(team), row);
-    const t = this.regenTexts[slot] ?? this.text(13).setOrigin(team === 0 ? 0 : 1, 0.5);
+    const t = this.regenTexts[slot] ?? this.text(16).setOrigin(team === 0 ? 0 : 1, 0.5);
     this.regenTexts[slot] = t;
     const healing = regenState(c) === 'healing';
     t.setPosition(team === 0 ? g.maxX + 10 : sideOffset(1) + 120 - 10 - 2, g.y)

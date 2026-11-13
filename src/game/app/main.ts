@@ -44,6 +44,7 @@ async function enterPlay(app: HTMLElement): Promise<void> {
 function initAccessibility(): void {
   const save = loadSave();
   applyA11y(save);
+  applyUiScale(save.displaySettings);
   setBindings(bindingsFromSave(save));
   applyTouchLayout();
   for (const q of ['(prefers-reduced-motion: reduce)', '(prefers-contrast: more)']) {

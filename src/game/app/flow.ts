@@ -434,7 +434,7 @@ export class AppFlow {
             'p',
             undefined,
             this.objectivesChapter === 1
-              ? 'Your objectives for this chapter are met. Open Current Objectives to begin chapter 2, where the Capture ability is unlocked!'
+              ? 'Your objectives for this chapter are met. Open Current Objectives to begin chapter 2, where the Snag ability is unlocked!'
               : 'Your objectives for this chapter are met. Open Current Objectives to begin the next chapter.',
           );
           note.id = 'objectivesMet';
