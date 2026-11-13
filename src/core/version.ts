@@ -164,5 +164,10 @@
  *    ARCADE_RACE_NUMBERS changes for pax, wispera, sindarosa, cyclonius, fiara, curomo, echo, morblass, treenoc and rokcore (Arcade 1v1
  *    tournament, was pax 63.6 percent and wispera 37.5, now every race 46.6-52.8). Re-record reason: Arcade numbers change Arcade
  *    outcomes (Arcade goldens, Arcade baselines).
+ * 47: Arcade only; Classic hashes unchanged. Common Cleanse (ideas/in-progress/elemental-cleanse.md): `Cmd.cleanse` (bit 9, the swap3 bit, buffered as
+ *    Press 9) ends the caster's Snag root, Puddle slow, Ice Blast and tidal slows for all 12 heroes, cooldown 500 ticks, new event
+ *    `cleanse {element, team, cleared}`; Arcade entity block 24 -> 25 ints (`cleanseReadyAt`), team block 22 -> 23 (pressTick 9 -> 10 slots);
+ *    Normal and Hard AI press it when rooted or slowed. Re-record reason: the Arcade state layout, the AI commands and the
+ *    new press change Arcade hashes and outcomes (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 46;
+export const SIM_VERSION = 47;

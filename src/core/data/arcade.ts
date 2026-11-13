@@ -163,6 +163,8 @@ export const TRAP_MIN_GAP_PX = 64;
 export const ELEMENTAL_TICKS = 250;
 /** By element kind (0 none, 1 fire, 2 water, 3 earth, 4 air, 5 void; 0 = no ability): the cooldown in game ticks. */
 export const ELEMENTAL_COOLDOWN_TICKS: readonly number[] = [0, 1750, 1250, 1750, 1750, 0];
+/** The common Cleanse slot (ideas/in-progress/elemental-cleanse.md): every hero, cooldown 10 s in game ticks. */
+export const CLEANSE_COOLDOWN_TICKS = 500;
 export const ELEMENTAL_DAMAGE_PM = 1250;
 export const ELEMENTAL_ARMOR_PM = 800;
 export const ELEMENTAL_SPEED_PM = 1300;

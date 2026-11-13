@@ -124,8 +124,8 @@ export function swapSystem(
   const s = world.state;
   const tick = now(s);
   for (let team = 0; team < TEAM_COUNT; team++) {
-    // Arcade reads bit 10 (swap4) as the elemental ability (Cmd.elemental); a 3-hero team has no fourth swap there.
-    const cmd = (cmds[team] ?? 0) & (isArcade(s) ? ~Cmd.elemental : ~0);
+    // Arcade reads bit 10 (swap4) as the elemental ability (Cmd.elemental) and bit 9 (swap3) as Cleanse (Cmd.cleanse); a 3-hero team has no third or fourth swap there.
+    const cmd = (cmds[team] ?? 0) & (isArcade(s) ? ~(Cmd.elemental | Cmd.cleanse) : ~0);
     const slot = SWAP_BITS.findIndex((bit) => hasCmd(cmd, bit));
     if (slot < 0) continue;
     if (!inFight(s)) continue; // Arcade only: no swaps outside the round's fight phase (always true in Classic)

@@ -64,11 +64,11 @@ function play(seed: number, level: ArcadeAiLevel, styles: readonly [Style, Style
       if ((c & Cmd.weather) !== 0 && a.weatherIn !== 0) bad('weather on cooldown');
       if ((c & Cmd.trap) !== 0 && (a.trapIn !== 0 || a.trapCount >= TRAP_TEAM_MAX)) bad('trap on cooldown or at the team cap');
       if ((c & Cmd.elemental) !== 0 && a.elemIn !== 0) bad('elemental not ready');
+      if ((c & Cmd.cleanse) !== 0 && (a.cleanseIn !== 0 || (a.selfRooted === 0 && !a.selfSlowed))) bad('cleanse not ready or nothing to cleanse');
       if ((c & Cmd.super) !== 0 && (a.meter < SUPER_COST || a.meter > METER_MAX)) bad('super without a bar');
       if ((c & (Cmd.swap1 | Cmd.swap2)) !== 0 && a.tagIn !== 0) bad('tag on cooldown');
       if ((c & Cmd.swap1) !== 0 && a.partnerPm < 0) bad('tag with no partner');
       if ((c & Cmd.swap2) !== 0 && a.partner2Pm < 0) bad('tag 2 with no second bench hero');
-      if ((c & Cmd.swap3) !== 0) bad('swap3 is not an Arcade command');
     });
     cmds.push(out[0], out[1]);
     step(world, [out[0], out[1]]);

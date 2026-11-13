@@ -123,6 +123,7 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   projectileBlocked: 'terrain feedback is the view work package (WP 32)',
   elementalEnded: 'the HUD slot says it (the name, then its cooldown)',
   chargeEnded: 'the arrival hit plays the thump; the charge start plays the dash whoosh',
+  cleanse: 'the cleanse cue is the view work package (ideas/in-progress/elemental-cleanse.md WP2)',
 };
 
 /** Hit thump gain by strength (light, medium, heavy, super). */

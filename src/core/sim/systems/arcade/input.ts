@@ -7,6 +7,7 @@ import { recordPresses } from './buffer';
 import { expireCombos } from './combo';
 import { startCharge } from './charge';
 import { startDash } from './dash';
+import { castCleanse } from './cleanse';
 import { castElemental, expireElementals } from './elemental';
 import { guardTick } from './guard';
 import { controlledId } from '../movement';
@@ -40,6 +41,7 @@ export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Comm
     startCharge(world, sink, team, controlledId(world, team), controlledId(world, 1 - team));
     guardTick(world, team);
     castElemental(world, sink, team);
+    castCleanse(world, sink, team);
   }
   weatherTick(world, sink);
   terrainTick(world, sink);

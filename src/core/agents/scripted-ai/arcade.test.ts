@@ -20,7 +20,7 @@ import { now } from '../../sim/clock';
 import {
   AI_EASY, AI_HARD, AI_NORMAL, ARCADE_AI_COMBO_CAP, ARCADE_AI_DODGE_AT, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_EMBER_PX, ARCADE_AI_FAR_PX, ARCADE_AI_LOOKAHEAD, ARCADE_AI_REACTION_MIN, ARCADE_AI_REACTION_SPREAD, DODGE, GUARD, NO_PLAN, PARRY, RUSHDOWN, TURTLE,
-  ZONER, chargeSensible, elementalSensible, guardReflex, impactIn, sidestepBit, soonestShot, spacingBit, tagChoice, toward, weatherSensible, zoneStep,
+  ZONER, chargeSensible, cleanseSensible, elementalSensible, guardReflex, impactIn, sidestepBit, soonestShot, spacingBit, tagChoice, toward, weatherSensible, zoneStep,
 } from './arcade-ai';
 import { ScriptedAI, scriptedProfileFor } from './index';
 
@@ -41,7 +41,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
   primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 1000, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: false, elemKind: 0, elemIn: -1, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: false, elemKind: 0, elemIn: -1, cleanseIn: 1, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -98,13 +98,13 @@ describe('ObservationView.arcade', () => {
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, superId: 1,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
       shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, cleanseIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, superId: 2,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
       shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: true,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, cleanseIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: true,
     });
     expect(hash(s)).toBe(before);
   });
@@ -921,6 +921,23 @@ describe('the Arcade AI uses its elemental ability (FUN-DESIGN 2.24)', () => {
     expect(elementalSensible(AI_NORMAL, { ...ready(1), elemIn: 3 }, 900, 0)).toBe(false); // cooling down
     expect(elementalSensible(AI_NORMAL, { ...ready(1), elemIn: -1 }, 900, 0)).toBe(false);
     expect(elementalSensible(AI_EASY, ready(1, { oppStun: 5 }), 100, 0)).toBe(false); // Easy never
+  });
+
+  it('cleanseSensible: ready and rooted or slowed, Normal and Hard only', () => {
+    const held = { ...FREE, cleanseIn: 0, selfRooted: 20 };
+    expect(cleanseSensible(AI_NORMAL, held)).toBe(true);
+    expect(cleanseSensible(AI_HARD, { ...held, selfRooted: 0, selfSlowed: true })).toBe(true);
+    expect(cleanseSensible(AI_NORMAL, { ...held, selfRooted: 0 })).toBe(false); // nothing to cleanse
+    expect(cleanseSensible(AI_NORMAL, { ...held, cleanseIn: 4 })).toBe(false); // cooling down
+    expect(cleanseSensible(AI_EASY, held)).toBe(false);
+  });
+
+  it('apply adds Cmd.cleanse on a fresh edge when held, in the fight only', () => {
+    const held = { cleanseIn: 0, selfRooted: 20 };
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view(held), 0) & Cmd.cleanse).toBe(Cmd.cleanse);
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ ...held, prevCmd: Cmd.cleanse }), 0) & Cmd.cleanse).toBe(0);
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ ...held, phase: 0 }), 0) & Cmd.cleanse).toBe(0);
+    expect(new ArcadeTactics(AI_NORMAL, ZONER).apply(view({ ...held, selfStun: 4 }), 0) & Cmd.cleanse).toBe(0);
   });
 
   it('apply adds Cmd.elemental on a fresh edge in the fight only', () => {

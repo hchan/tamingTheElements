@@ -135,6 +135,8 @@ export interface ArcadeView {
    */
   readonly elemKind: number;
   readonly elemIn: number;
+  /** Game ticks until the common Cleanse (Cmd.cleanse) is ready (0: now). */
+  readonly cleanseIn: number;
   readonly selfRooted: number;
   readonly selfSlowed: boolean;
   readonly oppSuperActive: boolean;
@@ -310,6 +312,7 @@ function arcadeViewOf(
     fireShot: self !== undefined && SNAG_FIRE_ABILITIES.includes(CHARACTERS[s.defId[self.id] ?? 0]?.abilities[0] ?? ''),
     elemKind,
     elemIn: (ELEMENTAL_COOLDOWN_TICKS[elemKind] ?? 0) === 0 ? -1 : left(self, ArcadeE.elemReadyAt),
+    cleanseIn: left(self, ArcadeE.cleanseReadyAt),
     selfRooted: left(self, ArcadeE.rootUntil),
     selfSlowed: self !== undefined && (left(self, ArcadeE.trapSlowUntil) > 0 || hasSlow(s.status, self.id)),
     oppSuperActive: team(1 - side, ArcadeT.superState) !== 0,

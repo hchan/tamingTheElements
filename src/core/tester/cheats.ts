@@ -100,6 +100,7 @@ export function applyTickCheats(world: SimWorld, opts: TickCheats): void {
       for (let slot = 0; slot < ABILITY_SLOTS; slot++) s.abil[cooldownIdx(id, slot)] = 0;
       s.arcade[id * ARCADE_E + ArcadeE.dashReadyAt] = 0;
       s.arcade[id * ARCADE_E + ArcadeE.weatherReadyAt] = 0;
+      s.arcade[id * ARCADE_E + ArcadeE.cleanseReadyAt] = 0;
     }
   }
 }

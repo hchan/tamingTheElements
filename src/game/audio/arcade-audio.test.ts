@@ -114,7 +114,7 @@ describe('Classic sound map', () => {
       superEnded: null, tagIn: null, roundStarted: null, fight: null, ko: null, timeOver: null, roundEnded: null, recovered: null,
       weatherChanged: null, weatherEnded: null, terrainChanged: null, terrainSwap: null, patchEntered: null, patchLeft: null,
       patchHeal: null, projectileBlocked: null, chargeStarted: null, chargeEnded: null, snag: null, trapPlaced: null, trapArmed: null, trapTriggered: null,
-      elementalCast: null, elementalEnded: null,
+      elementalCast: null, elementalEnded: null, cleanse: null,
     });
     expect(cueFor({ ...ev(SimEventKind.matchEnded), winner: 1 })?.id).toBe('death');
   });

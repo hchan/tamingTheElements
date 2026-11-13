@@ -8,7 +8,7 @@ export const SimEventKind = {
   chargeStarted: 67, chargeEnded: 68,
   snag: 69,
   trapPlaced: 70, trapArmed: 71, trapTriggered: 72,
-  elementalCast: 73, elementalEnded: 74,
+  elementalCast: 73, elementalEnded: 74, cleanse: 75,
 } as const;
 export type SimEventKindValue = (typeof SimEventKind)[keyof typeof SimEventKind];
 
