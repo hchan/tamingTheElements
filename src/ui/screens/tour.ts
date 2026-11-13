@@ -129,7 +129,10 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   const idAt = (i: number): CharacterId | '' => field(i).value as CharacterId | '';
   const panel = heroPanel(() => {
     dnd.disarm();
-    pick(cursor);
+    const id = order[cursor];
+    // Already in the active slot: take it off. Anywhere else: put it in the active slot (swapping when it is on the team).
+    if (id && idAt(active) === id) clear(active);
+    else pick(cursor);
   });
   const live = el('p', 'srOnly');
   live.setAttribute('role', 'status');
@@ -229,8 +232,10 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
         const x = el('button', 'menuButton heroSlotClear', '\u00d7');
         x.type = 'button';
         x.setAttribute('aria-label', `Remove ${heroProfile(id).name} from slot ${String(i + 1)}`);
+        x.title = `Remove ${heroProfile(id).name}`;
         x.addEventListener('click', () => {
           clear(i);
+          b.focus();
         });
         li.append(x);
       }
@@ -248,6 +253,8 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
       if (inTeam >= 0) t.append(el('span', 'heroFlag', `Slot ${String(inTeam + 1)}`));
     });
     const shown = order[cursor];
+    const at = shown ? names.findIndex((_n, k) => idAt(k) === shown) : -1;
+    panel.setAction(at < 0 ? 'Add to team' : at === active ? 'Remove from team' : `Swap into hero ${String(active + 1)}`);
     if (shown && panel.node.dataset['hero'] !== shown) {
       panel.node.dataset['hero'] = shown;
       panel.show(shown);
@@ -268,7 +275,8 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     const was = idAt(slot);
     if (was === '') return;
     field(slot).value = '';
-    active = slot;
+    // The next pick refills the first empty slot (the lead first), so emptying the team and refilling it starts at hero 1.
+    active = names.findIndex((_n, k) => idAt(k) === '');
     live.textContent = `${heroProfile(was).name} removed from hero ${String(slot + 1)}.`;
     refresh();
   }

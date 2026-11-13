@@ -1080,8 +1080,9 @@ html[data-high-contrast='true'] button.touchBtn {
 }
 .heroFlag {
   position: absolute;
-  right: 3px;
-  bottom: 2px;
+  left: 0;
+  top: 0;
+  border-top-left-radius: 0;
   padding: 0 0.4em;
   border-radius: 999px;
   background: #d9c27a;
@@ -1228,6 +1229,7 @@ html[data-high-contrast='true'] button.touchBtn {
   list-style: none;
 }
 .heroSlots li {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
 }
@@ -1555,12 +1557,26 @@ html[data-high-contrast='true'] button.touchBtn {
   border-style: dashed;
   opacity: 0.85;
 }
-.heroSlotClear {
+button.menuButton.heroSlotClear {
+  position: absolute;
+  top: 3px;
+  right: 3px;
   display: block;
-  width: 100%;
-  min-height: 44px;
-  margin: 4px 0 0;
-  padding: 0.1em 0.4em;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-width: 1px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 1;
+  font-size: 1em;
+}
+/* Room in a filled Play slot for the corner x. */
+.heroSlots li:has(.heroSlotClear) .heroSlot {
+  padding-right: 34px;
 }
 .heroHint {
   align-self: center;

@@ -110,6 +110,34 @@ describe('arcadePickView (DOM)', () => {
     expect(sel('arcadePartner').value).toBe('lavax');
   });
 
+  it('a team never holds a hero twice: the keyboard pick of a hero already in another slot moves it', () => {
+    mount(vi.fn(), { size: '2' });
+    const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
+    tiles[2]?.click(); // rokcore into slot 1
+    tiles[1]?.click(); // lavax into slot 2
+    document.getElementById('roster-player')?.click(); // slot 1 active; the cursor rests on lavax
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD', bubbles: true })); // cursor to rokcore (picked in slot 1)
+    document.getElementById('roster-partner')?.click();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD', bubbles: true }));
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', bubbles: true }));
+    expect(new Set([sel('arcadePlayer').value, sel('arcadePartner').value]).size).toBe(2);
+    expect(sel('arcadePartner').value).toBe('rokcore');
+    expect(sel('arcadePlayer').value).toBe('lavax');
+  });
+
+  it('Clear returns focus to the slot and the next pick refills the first empty slot', () => {
+    mount(vi.fn(), { size: '2' });
+    const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
+    tiles[2]?.click();
+    tiles[1]?.click();
+    const clears = [...document.querySelectorAll<HTMLElement>('.vsSlotActions .vsSmall')].filter((b) => b.textContent === 'Clear');
+    clears[0]?.click();
+    expect(sel('arcadePlayer').value).toBe('');
+    expect(document.activeElement).toBe(document.getElementById('roster-player'));
+    tiles[0]?.click();
+    expect(sel('arcadePlayer').value).toBe('sindarosa');
+  });
+
   it('a picked hero carries a P1 chip with its slot number, as text', () => {
     mount();
     const flags = (i: number): HTMLElement | null => document.querySelectorAll<HTMLElement>('.heroTile')[i]?.querySelector('.vsFlags') ?? null;
