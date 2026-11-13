@@ -9,14 +9,15 @@
     "input-display": 1150,
     "core": 12700,
     "defence-view": 3750,
-    "index": 32830,
+    "index": 33500,
     "index.css": 6900,
     "lazy-index": 550,
     "local-two": 455,
     "online-versus": 3940,
     "phaser": 388700,
-    "phaser-config": 32500,
+    "phaser-config": 32700,
     "status-fx-view": 1800,
+    "element-sfx": 1250,
     "pose-layer": 10620,
     "rolldown-runtime": 200,
     "round-view": 4275,
@@ -39,7 +40,7 @@
     "guide.css": 1560,
     "tour-select": 685
   },
-  "totalGzip": 558500,
+  "totalGzip": 562000,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
