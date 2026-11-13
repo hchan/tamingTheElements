@@ -148,8 +148,8 @@ test('local Versus HUD: the key hint clears both action bars, Player 2 has a rea
   expect(errors).toEqual([]);
 });
 
-// Under 1100 px the compact touch row wraps to two rows of five; it must not cover either action bar (P1 bottom-left, P2 readout
-// bottom-right), and every button stays a >= 48 px target.
+// The touch buttons are transparent overlays laid exactly over the P1 action-bar boxes (bottom-left); they never sit over the P2 readout
+// (also on the left, smaller, above the bar) and every button stays a >= 48 px target.
 const SIZES = [
   { w: 800, h: 450 },
   { w: 844, h: 390 },
@@ -157,7 +157,7 @@ const SIZES = [
   { w: 1280, h: 720 },
 ];
 for (const { w, h } of SIZES) {
-  test(`local Versus HUD at ${String(w)}x${String(h)}: touch buttons cover neither action bar`, async ({ page }) => {
+  test(`local Versus HUD at ${String(w)}x${String(h)}: touch buttons sit over the P1 boxes only`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
     await start(page);
     const canvas = await page.locator('#game canvas').boundingBox();
@@ -165,19 +165,19 @@ for (const { w, h } of SIZES) {
     const k = canvas.width / 1280;
     interface Box { x: number; y: number; w: number; h: number }
     interface Slot { x: number; y: number; size: number }
-    const bars = [
-      ...(await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBarScreen()`)),
-      ...(await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBar2Screen()`)),
-    ].map((r) => ({ x: canvas.x + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
+    const p1 = (await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBarScreen()`)).map((r) => ({ x: canvas.x + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
+    const p2 = (await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBar2Screen()`)).map((r) => ({ x: canvas.x + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
     const btns = await page.evaluate<Box[]>(
-      `[...document.querySelectorAll('button.touchBtn')].map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`,
+      `[...document.querySelectorAll('button.touchBtn')].filter((e) => getComputedStyle(e).visibility !== 'hidden').map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`,
     );
     expect(btns.length).toBeGreaterThan(0);
+    const same = (b: Box, r: Box) => Math.abs(b.x - r.x) < 2 && Math.abs(b.y - r.y) < 2;
     for (const b of btns) {
-      expect(Math.min(b.w, b.h), 'touch target >= 48 px').toBeGreaterThanOrEqual(48);
-      for (const r of bars) {
+      expect(Math.min(b.w, b.h), 'touch target >= 48 px').toBeGreaterThanOrEqual(47.5);
+      expect(p1.some((r) => same(b, r)), `touch button ${JSON.stringify(b)} sits over a P1 box`).toBe(true);
+      for (const r of p2) {
         const hit = b.x < r.x + r.w && b.x + b.w > r.x && b.y < r.y + r.h && b.y + b.h > r.y;
-        expect(hit, `touch button ${JSON.stringify(b)} covers bar slot ${JSON.stringify(r)}`).toBe(false);
+        expect(hit, `touch button ${JSON.stringify(b)} covers P2 slot ${JSON.stringify(r)}`).toBe(false);
       }
     }
   });

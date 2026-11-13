@@ -1168,7 +1168,7 @@ One more button for every hero, picked by the hero's element and always there: n
   and the race `damagePm` (a fire hero in Sunshine gets both). Gale multiplies after the terrain and Puddle factors.
   A tag keeps each hero's own timers: the incoming hero's buff is its own.
 - **Events:** `elementalCast {element, team, cleared}` and `elementalEnded {element}`; one audio cue on a cast (the end is silent: the HUD slot shows it).
-- **Keys:** P1 V or Minus (rebindable; the digit row is full), pad L3, P2 Semicolon (P2 Tag moved from V to Period, Tag 2 is
+- **Keys:** P1 V or Minus (rebindable; the box wears - as the key after 0, since the ten digits are taken), pad L3, P2 Semicolon (P2 Tag moved from V to Period, Tag 2 is
   Comma), touch button Element (a square like the others, its key on it).
 - **HUD:** the action bar slot draws the element's alchemical symbol (triangle up for fire and air, down for water and
   earth, barred for air and earth), the name, "Ember on" while it runs, whole seconds while cooling; a refused press

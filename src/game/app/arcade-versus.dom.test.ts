@@ -185,7 +185,7 @@ describe('arcade versus screen', () => {
     vi.useFakeTimers();
     try {
       const p = keysHint(5000);
-      expect(p.style.bottom).toBe('12%');
+      expect(p.style.bottom).toBe('34%');
       expect(p.style.opacity).toBe('');
       vi.advanceTimersByTime(4999);
       expect(p.style.opacity).toBe('');

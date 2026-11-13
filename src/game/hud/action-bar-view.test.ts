@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
 import { Cmd, type Command, type RenderActionBar, type RenderView } from '@core/index';
-import { ActionBarView, gradedTexture, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX, type ScreenBox } from './action-bar';
+import { ACTION_ICON, ACTION_SHEET, ActionBarView, gradedTexture, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX, type ScreenBox } from './action-bar';
 
 /** A recording stand-in for a Phaser game object: setters keep state, drawing calls are logged by name. */
 interface Fake {
@@ -36,7 +36,7 @@ function fakeObject(): Fake {
 
 type PointerFn = (p: { x: number; y: number; worldX: number; worldY: number }) => void;
 
-function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?: () => ScreenBox; width?: number; haveTexture?: boolean }) {
+function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?: () => ScreenBox; width?: number; haveTexture?: boolean; arcade?: unknown }) {
   const gfx: Fake[] = [];
   const images: Fake[] = [];
   const texts: Fake[] = [];
@@ -44,7 +44,9 @@ function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?:
   let offCalled = false;
   const frames = new Map<string, [number, number, number, number]>();
   const state = { bar: opts.bar };
+  const canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1280 }) };
   const scene = {
+    game: { canvas },
     scale: { width: opts.width ?? 1280, displaySize: { width: 1280 } },
     cameras: { main: { zoom: 1, scrollX: 0, scrollY: 0, width: 1280, height: 720 } },
     add: {
@@ -62,7 +64,7 @@ function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?:
     },
   } as unknown as Phaser.Scene;
   const emitted: Command[] = [];
-  const view = { actionBar: () => state.bar } as unknown as RenderView;
+  const view = { actionBar: () => state.bar, arcade: () => opts.arcade } as unknown as RenderView;
   const v = new ActionBarView(scene, view, (c) => { emitted.push(c); }, 0, undefined, opts.styled ?? false, opts.place);
   return {
     v, gfx, images, texts, emitted, frames, state,
@@ -114,15 +116,17 @@ describe('ActionBarView', () => {
     expect(first?.displayW).toBeLessThanOrEqual(SLOT_SIDE);
   });
 
-  it('hides an icon whose texture is not loaded, or whose sprite is unknown (trap slot)', () => {
+  it('hides an icon whose texture is not loaded; the trap box wears its sheet cell, not a drawn glyph', () => {
     const none = rig({ bar: bar(), haveTexture: false });
     none.v.update();
     expect(none.images.every((i) => !i.visible)).toBe(true);
     const trap = rig({ bar: bar({ trap: { readyTick: 100, cooldownTicks: 500, count: 1, max: 2 } }) });
     trap.v.update();
-    expect(trap.images[3]?.visible).toBe(false);
-    expect(trap.texts[3]?.text).toBe('Z\nTrap 1/2');
-    expect(trap.gfx[0]?.calls).toContain('strokeCircle');
+    expect(trap.images[3]?.visible).toBe(true);
+    expect(trap.images[3]?.texture.key).toBe(ACTION_SHEET);
+    expect(trap.images[3]?.frame.name).toBe(`a${String(ACTION_ICON.trap)}`);
+    expect(trap.texts[3]?.text).toBe('0\nTrap 1/2');
+    expect(trap.gfx[1]?.calls).not.toContain('strokeCircle');
   });
 
   it('styled mode paints a panel, rounded frames and an outline per slot', () => {
@@ -202,6 +206,32 @@ describe('ActionBarView', () => {
     r.v.destroy();
     expect(r.offCalled()).toBe(true);
     expect([...r.gfx, ...r.images, ...r.texts].every((o) => o.destroyed)).toBe(true);
+  });
+});
+
+describe('one cooldown renderer for every kind of box', () => {
+  const ar = (over: Record<string, unknown> = {}) => ({
+    meter: [0, 0], weatherCharge: [0, 0], active: (t: number) => (t === 0 ? 1 : -1), guard: () => 0, guarding: () => false, dashIn: () => 15, chargeIn: () => 150, ...over,
+  });
+  const cooling = bar({
+    abilities: [{ sprite: 'adrenaline', readyTick: 125, cooldownTicks: 50 }, { sprite: 'air', readyTick: 125, cooldownTicks: 50 }],
+    capture: { sprite: 'c', readyTick: 125, cooldownTicks: 50, capturable: true },
+    swaps: [{ sprite: 'x', dead: false }],
+    swapReadyTick: 125, swapCooldownTicks: 50,
+    trap: { readyTick: 125, cooldownTicks: 50, count: 0, max: 2 },
+    elemental: { name: 'Ember', kind: 1, readyTick: 125, cooldownTicks: 50, activeUntil: 0 },
+  });
+
+  it('shades every kind at half progress with the identical path and alpha (only the position differs)', () => {
+    const r = rig({ bar: cooling, arcade: ar({ meter: [750, 0], weatherCharge: [0, 0], dashIn: () => 15, chargeIn: () => 150 }) });
+    r.v.update();
+    const slots = r.v.currentSlots;
+    expect(new Set(slots.map((s) => s.kind)).size).toBeGreaterThanOrEqual(8);
+    const g = r.gfx[1];
+    const fills = (g?.calls ?? []).filter((c) => c === 'fillPath');
+    // every box that is cooling (progress < 1) got exactly one fill through the one drawer
+    expect(fills.length).toBe(slots.filter((s) => s.progress < 1 || s.disabled).length);
+    expect(fills.length).toBeGreaterThan(8);
   });
 });
 

@@ -121,7 +121,7 @@ test('Arcade: the action bar stays fixed on screen and clickable while the camer
   const home = await placeAndSettle(page, 100, 300);
   expect(home.scrollX).toBeCloseTo(0, 1);
   const base = await barRects(page);
-  expect(base).toHaveLength(4); // attack, second attack, the Trap slot (WP 39b) and the Element slot (2.24)
+  expect(base).toHaveLength(8); // the one bar: two attacks, then Charge/Weather/Dash/Guard/Super, Trap and Element boxes as they apply
   const far = await placeAndSettle(page, 100, 1800);
   expect(far.zoom).toBeCloseTo(ZOOM_MIN, 2);
   const zoomed = await barRects(page);

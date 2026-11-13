@@ -6,7 +6,7 @@ import { codeLabel, getBindings } from '../platform/input/bindings';
 /** Shared on-screen touch controls of the Arcade battle (Arcade Versus and the World Tour fight); DOM only, no Phaser. */
 
 /**
- * Touch buttons, bottom-up on the right edge, one `--touch-pitch` (78 px, CSS) apart: Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
+ * Touch buttons, transparent overlays on the matching boxes of the canvas action bar (all on the left, none on the right): Super, Guard (hold), Dash, Weather and Charge (FUN-DESIGN 2.5, 2.7, 2.8,
  * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), then Trap
  * (WP 39) and Element (2.24, the hero's elemental ability), always there.
  */
@@ -19,7 +19,7 @@ const TOUCH_KEY = {
 /**
  * The numbered action row (FUN-DESIGN 2.17): each button wears its number key, 3 Tag, 4 Tag 2, 5 Charge, 6 Weather, 7 Dash,
  * 8 Guard, 9 Super, 0 Trap. The numbers are fixed, so hiding Charge for a team without a melee hero never renumbers the others.
- * Element has no number (all ten are taken): it wears its letter key (V by default).
+ * Element wears the number-row key after 0 (Minus, shown as -) while it is bound, else its first key.
  */
 export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5, Tag: 3, Tag2: 4, Trap: 0 } as const;
 
@@ -27,7 +27,7 @@ export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5,
 export function touchKeyLabel(label: TouchLabel): string {
   const keys = getBindings()[TOUCH_KEY[label]];
   const first = keys[0];
-  if (label === 'Element') return first === undefined ? '' : codeLabel(first);
+  if (label === 'Element') return keys.includes('Minus') ? codeLabel('Minus') : first === undefined ? '' : codeLabel(first);
   const digit = `Digit${String(TOUCH_DIGIT[label])}`;
   return keys.includes(digit) || first === undefined ? String(TOUCH_DIGIT[label]) : codeLabel(first);
 }
@@ -133,16 +133,14 @@ const MIN_KEY_HOLD_MS = 100;
  * listens on window) for as long as the finger is down; an unbound action does nothing. Focusable: Enter or Space
  * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`, `arcadeElement`.
  */
-export function touchButton(label: TouchLabel, row: number): HTMLButtonElement {
+export function touchButton(label: TouchLabel): HTMLButtonElement {
   const b = el('button', 'menuButton');
   setTouchText(b, label);
   b.type = 'button';
   b.id = `arcade${label}`;
-  // The icon beside the number is CSS (`.touchBtn-<label>::before` in main.css), so the text stays plain and the state words still update.
-  // Layout, sizes and the high-contrast look are all CSS (`.touchBtn`, coarse and fine pointer rules); only the slot is inline.
+  // A transparent overlay: it is laid over its box on the canvas action bar (`src/game/hud/touch-overlay.ts`), which draws the icon, key and
+  // cooldown. Only the slot order is kept, as data.
   b.className = `menuButton touchBtn touchBtn-${label}`;
-  // Plain integers (column and line of the two-wide wrap), so the CSS needs no mod() or round() and old browsers lay out the same.
-  b.style.cssText = `--touch-row:${String(row)};--touch-col:${String(row % 4)};--touch-line:${String(Math.floor(row / 4))};--touch-col5:${String(row % 5)};--touch-line5:${String(Math.floor(row / 5))};--touch-col3:${String(row % 3)};--touch-line3:${String(Math.floor(row / 3))};--touch-col2:${String(row % 2)};--touch-line2:${String(Math.floor(row / 2))}`;
   let code: string | undefined;
   // Pointer and keyboard hold the action separately: the key goes up only when neither is still holding it.
   let byPointer = false;

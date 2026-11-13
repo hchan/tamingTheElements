@@ -38,7 +38,7 @@ const keyOn = (b: HTMLElement, type: string, key: string, repeat = false): Keybo
 
 describe('touchButton (real DOM events)', () => {
   it('pointerdown presses the bound key, captures the pointer and prevents default; pointerup releases once', () => {
-    const b = touchButton('Dash', 2);
+    const b = touchButton('Dash');
     const captured = withCapture(b);
     const code = String(getBindings().dash[0]);
     expect(pointer(b, 'pointerdown', 5).defaultPrevented).toBe(true);
@@ -54,7 +54,7 @@ describe('touchButton (real DOM events)', () => {
   it('pointercancel and lostpointercapture each release a held key', () => {
     for (const t of ['pointercancel', 'lostpointercapture']) {
       events.length = 0;
-      const b = touchButton('Super', 0);
+      const b = touchButton('Super');
       withCapture(b);
       pointer(b, 'pointerdown');
       pointer(b, t);
@@ -64,7 +64,7 @@ describe('touchButton (real DOM events)', () => {
 
   it('an unbound action presses nothing and does not capture', () => {
     setBindings({ ...DEFAULT_BINDINGS, trap: [] });
-    const b = touchButton('Trap', 0);
+    const b = touchButton('Trap');
     const captured = withCapture(b);
     pointer(b, 'pointerdown');
     pointer(b, 'pointerup');
@@ -73,7 +73,7 @@ describe('touchButton (real DOM events)', () => {
   });
 
   it('uses the rebound first key, read at press time', () => {
-    const b = touchButton('Guard', 0);
+    const b = touchButton('Guard');
     withCapture(b);
     setBindings({ ...DEFAULT_BINDINGS, guard: ['KeyG'] });
     pointer(b, 'pointerdown');
@@ -81,7 +81,7 @@ describe('touchButton (real DOM events)', () => {
   });
 
   it('Enter and Space hold like a finger, stop propagation, ignore repeat; keyup releases', () => {
-    const b = touchButton('Weather', 0);
+    const b = touchButton('Weather');
     document.body.append(b);
     const leaked: string[] = [];
     document.body.addEventListener('keydown', (e) => leaked.push(e.key));
@@ -106,7 +106,7 @@ describe('touchButton (real DOM events)', () => {
   });
 
   it('other keys do nothing; blur releases a held key', () => {
-    const b = touchButton('Charge', 0);
+    const b = touchButton('Charge');
     expect(keyOn(b, 'keydown', 'a').defaultPrevented).toBe(false);
     expect(events).toEqual([]);
     keyOn(b, 'keydown', 'Enter');
@@ -117,7 +117,7 @@ describe('touchButton (real DOM events)', () => {
   it('a second Enter inside the min-hold window continues the hold instead of being dropped', () => {
     vi.useFakeTimers();
     try {
-      const b = touchButton('Dash', 0);
+      const b = touchButton('Dash');
       document.body.append(b);
       const code = String(getBindings().dash[0]);
       keyOn(b, 'keydown', 'Enter');
@@ -138,7 +138,7 @@ describe('touchButton (real DOM events)', () => {
   it('releaseTouch lets go of a key held by pointer or keyboard and clears the pending timer', () => {
     vi.useFakeTimers();
     try {
-      const b = touchButton('Guard', 0);
+      const b = touchButton('Guard');
       withCapture(b);
       document.body.append(b);
       const code = String(getBindings().guard[0]);
@@ -157,14 +157,11 @@ describe('touchButton (real DOM events)', () => {
     }
   });
 
-  it('sets id, classes, inline slot, type and the labelled text', () => {
-    const b = touchButton('Tag2', 6);
+  it('sets id, classes, type and the labelled text', () => {
+    const b = touchButton('Tag2');
     expect(b.id).toBe('arcadeTag2');
     expect(b.type).toBe('button');
     expect(b.className).toBe('menuButton touchBtn touchBtn-Tag2');
-    expect(b.style.getPropertyValue('--touch-row')).toBe('6');
-    expect(b.style.getPropertyValue('--touch-col')).toBe('2');
-    expect(b.style.getPropertyValue('--touch-line')).toBe('1');
     expect(b.textContent).toBe('4\nTag 2');
     expect(b.getAttribute('aria-label')).toBe('4 Tag 2');
   });
@@ -178,14 +175,14 @@ describe('touchButtons / setTouchText (real DOM)', () => {
   });
 
   it('setTouchText recovers a label something else rewrote', () => {
-    const b = touchButton('Super', 0);
+    const b = touchButton('Super');
     b.textContent = 'garbled';
     setTouchText(b, 'Super');
     expect(b.textContent).toBe('9\nSuper');
   });
 
   it('setTouchText writes the status and the accessible name, and clears them', () => {
-    const b = touchButton('Super', 0);
+    const b = touchButton('Super');
     setTouchText(b, 'Super', 'ready');
     expect(b.textContent).toBe('9\nSuper\nready');
     expect(b.getAttribute('aria-label')).toBe('9 Super, ready');
@@ -198,7 +195,7 @@ describe('watchTouch', () => {
   it('releases a key held by a button that was removed mid-hold', () => {
     vi.useFakeTimers();
     try {
-      const b = touchButton('Dash', 0);
+      const b = touchButton('Dash');
       document.body.append(b);
       const code = String(getBindings().dash[0]);
       watchTouch([b], { arcade: () => undefined, actionBar: () => undefined } as unknown as RenderView);
@@ -214,7 +211,7 @@ describe('watchTouch', () => {
   it('refreshes status words on a timer and stops once the buttons leave the page', () => {
     vi.useFakeTimers();
     try {
-      const b = touchButton('Super', 0);
+      const b = touchButton('Super');
       document.body.append(b);
       let meter = 250;
       const view = { arcade: () => ({ meter: [meter, 0] }), actionBar: () => undefined } as unknown as RenderView;
