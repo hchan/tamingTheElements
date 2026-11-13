@@ -34,9 +34,10 @@ for (const [element, hero, stage] of CASES) {
     // Lay a trap (Z) beside the hero so the pad is seen on this floor.
     await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 1500, 360, 4); })()`);
     await page.keyboard.down('KeyZ');
-    await page.evaluate('window.__TTE__.arena.stepLive(1)');
+    // Held through the steps (not one tick): the press is refused in a refusal window (weather recovery) or if the key event
+    // has not reached the input poll yet. One live trap at a time, so holding cannot plant more than one.
+    await page.evaluate('window.__TTE__.arena.stepLive(41)');
     await page.keyboard.up('KeyZ');
-    await page.evaluate('window.__TTE__.arena.stepLive(40)');
     expect((await page.evaluate<readonly unknown[] | undefined>('window.__TTE__.arena.traps()'))?.length).toBe(1);
     await snap('-trap');
     expect(errors).toEqual([]);
