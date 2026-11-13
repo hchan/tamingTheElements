@@ -119,3 +119,7 @@ and the existing Trap (the future slot 3); COMMON holds Weather, Guard and the e
 2. Sim: slot model (common vs hero slots), Cleanse (shared with the elemental-cleanse agent), `Guard`/`Weather`/`Elemental` as common slots, SIM_VERSION bump.
 3. Sim + view + audio: minion entity once, then one element family per batch (water, air, fire, earth), AI usage rule and a usage coverage test each.
 4. Guide, Help, Tour ability info, balance pass; remove the global Trap from Help.
+
+### Open owner idea (2026-11-13): Charge and Dash as abilities
+
+Owner: "maybe charge, dash should be an ability". Reading: Charge and Dash stop being fixed team/common boxes and become part of each hero's kit (a hero ability, or a choice of ability for one of the hero slots), so each hero's movement option can differ per element (water slide, air blink, fire rush, earth rumble). Not decided: whether every hero keeps both, or picks one per slot. If adopted, the hotkey table above shrinks (keys 6-8 free up for Tag and others) and Charge/Dash get per-hero data, animation and sound like any ability. Revisit when the design table for the 12 heroes is reviewed.

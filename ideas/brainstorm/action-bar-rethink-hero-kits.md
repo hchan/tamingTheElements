@@ -24,3 +24,6 @@ WP1 done: design doc [docs/design/action-bar-kits.md](../../docs/design/action-b
 
 ## Owner decision on hotkeys (2026-11-13)
 Hero slots are 1, 2, 3 (3 = signature trap/minion). Then Weather, Super (special), Guard, Dash, Charge, with Tag at the end of the number row (9, 0; or 6, 7: owner was loose). See the hotkey table in docs/design/action-bar-kits.md. Work package: rebind defaults with a one-time migration, after Cleanse sim merges.
+
+## Owner idea (2026-11-13): Charge and Dash as abilities
+"maybe charge, dash should be an ability": make Charge and Dash per-hero abilities (element-flavoured movement: water slide, air blink, fire rush, earth rumble) instead of fixed boxes. Undecided; see the open-idea note in docs/design/action-bar-kits.md.
