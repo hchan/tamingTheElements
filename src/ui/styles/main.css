@@ -1485,7 +1485,8 @@ html[data-high-contrast='true'] button.touchBtn {
 }
 
 /* Help: Controls tables (text, never colour alone). */
-.helpControls {
+.helpControls,
+.helpPanel {
   text-align: left;
   margin: 1em auto;
   max-width: 40em;
@@ -1505,6 +1506,77 @@ html[data-high-contrast='true'] button.touchBtn {
   text-align: left;
   padding: 0.2em 0.5em;
   border-bottom: 1px solid currentColor;
+}
+
+/* Help: lessons and the numbered action bar; first-run battle card. */
+.helpSteps {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+.helpSteps li {
+  margin: 0.3em 0;
+}
+.helpBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em 1em;
+  list-style: none;
+  margin: 0 0 1em;
+  padding: 0;
+}
+.helpBar kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.3em;
+  text-align: center;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-weight: bold;
+}
+.firstRunHint {
+  position: absolute;
+  bottom: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: min(32em, 80%);
+  padding: 0.5em 0.9em;
+  background: rgba(14, 12, 10, 0.88);
+  color: #e8dfd0;
+  border: 1px solid #6b5a45;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: left;
+  transition: opacity 1.5s;
+}
+.firstRunHint h2 {
+  margin: 0 0 0.2em;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.firstRunHint p {
+  margin: 0.2em 0;
+}
+.firstRunDone {
+  margin-top: 0.3em;
+  padding: 0.3em 0.9em;
+  min-height: 32px;
+  cursor: pointer;
+  background: #2a2420;
+  color: #e8dfd0;
+  border: 1px solid #6b5a45;
+}
+.firstRunFade {
+  opacity: 0;
+  pointer-events: none;
+}
+@media (max-height: 500px) {
+  .firstRunHint {
+    bottom: 15%;
+    font-size: 12px;
+    padding: 0.3em 0.7em;
+  }
 }
 
 /* Replay viewer input display: the last commands of both fighters, in the bottom corners, above the control bar (the top is the HUD). */

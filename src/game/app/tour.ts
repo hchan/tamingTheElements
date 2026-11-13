@@ -13,6 +13,7 @@ import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { destroyGame, type GameHandle } from './game-handle';
+import { firstRunHint } from './first-run-hint';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { currentStage, matchSeed, parseCompleteTeam, stagePick } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
@@ -258,6 +259,8 @@ export function tourScreen(deps: TourDeps): Screen {
         host.id = 'game';
         battle.replaceChildren(host);
         game = createGame(host, launch);
+        const firstRun = firstRunHint();
+        if (firstRun) host.append(firstRun);
         host.append(...inVisualOrder(buttons));
       }))
       .catch((e: unknown) => {

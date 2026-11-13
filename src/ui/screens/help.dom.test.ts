@@ -27,6 +27,16 @@ describe('helpScreen (DOM)', () => {
     expect(document.getElementById('helpControlsHeading')?.textContent).toBe('Controls');
   });
 
+  it('has How to fight, the numbered action bar and the hero picker steps', () => {
+    const root = document.createElement('div');
+    helpScreen().mount(root);
+    expect(root.querySelector('#helpLessonsHeading')?.textContent).toBe('How to fight');
+    expect(root.querySelector('#helpPickerHeading')?.textContent).toBe('Choosing your heroes');
+    const keys = [...root.querySelectorAll('.helpBar kbd')].map((k) => k.textContent);
+    expect(keys).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-']);
+    expect(root.querySelector('.helpPicker')?.textContent).toMatch(/x button/);
+  });
+
   it('every controls table has a caption, column headers with scope and row headers', () => {
     const root = document.createElement('div');
     helpScreen().mount(root);
