@@ -85,6 +85,24 @@ describe('settingsScreen (DOM)', () => {
     expect(document.documentElement.style.getPropertyValue('--ui-scale')).toBe(String(DISPLAY_SCALE.Largest));
   });
 
+  it('has labelled music and sound effect volume sliders that save at once to local storage, not through the async save', async () => {
+    localStorage.setItem('tte.volumes', JSON.stringify({ music: 0.25, sfx: 1 }));
+    const store = fakeStore();
+    await mountWith(store);
+    const music = root.querySelector<HTMLInputElement>('input#volume-music');
+    const sfx = root.querySelector<HTMLInputElement>('input#volume-sfx');
+    expect(music?.type).toBe('range');
+    expect(music?.value).toBe('25');
+    expect(sfx?.value).toBe('100');
+    expect(root.querySelector('label[for="volume-music"]')?.textContent).toBe('Music volume');
+    expect(root.querySelector('label[for="volume-sfx"]')?.textContent).toBe('Sound effects volume');
+    if (!sfx) throw new Error('no slider');
+    sfx.value = '40';
+    sfx.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(JSON.parse(localStorage.getItem('tte.volumes') ?? '{}')).toEqual({ music: 0.25, sfx: 0.4 });
+    expect(store.saved).toHaveLength(0);
+  });
+
   it('every checkbox and radio has an accessible label, and the a11y checkboxes are described by a hint', async () => {
     await mountWith(fakeStore());
     for (const r of radios('difficulty')) expect(r.closest('label')?.textContent.trim()).not.toBe('');

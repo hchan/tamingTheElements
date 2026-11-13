@@ -45,6 +45,13 @@ export const CUES = {
   trapDouse: [[NOISE, 3200, 900, 140, 0.25]],
   /** Elemental ability (FUN-DESIGN 2.24): a short rising chime as the hero calls on its element. */
   elemental: [[1, 440, 880, 160, 0.22], [0, 1320, 1760, 140, 0.12, 80]],
+  /** Elemental ability by element (fire 1, water 2, earth 3, air 4): a roaring ember rush, a falling drop, a low stone knock, a bright gust. `elemental` is the fallback. */
+  elemFire: [[NOISE, 500, 2200, 220, 0.3], [3, 220, 440, 200, 0.12, 40]],
+  elemWater: [[0, 1100, 520, 180, 0.22], [0, 880, 440, 200, 0.16, 90]],
+  elemEarth: [[0, 110, 55, 220, 0.5], [2, 82, 55, 160, 0.14, 30]],
+  elemAir: [[NOISE, 1200, 3400, 200, 0.28], [1, 880, 1320, 140, 0.12, 60]],
+  /** Low-life heartbeat: a soft double thud (lub-dub) while the player's hero is in the red. */
+  heartbeat: [[0, 70, 45, 110, 0.55], [0, 62, 40, 130, 0.4, 150]],
   /** A refused action (a swap while stunned or cooling down): two short low buzzes, never a stinger. */
   denied: [[2, 150, 120, 70, 0.3], [2, 150, 120, 70, 0.3, 100]],
   sun: [[1, 523, 523, 140, 0.2], [1, 659, 659, 140, 0.2, 90], [1, 784, 784, 220, 0.2, 180]],
@@ -83,6 +90,9 @@ const HIT: Kinds['hitConfirmed'] = 41;
 const WEATHER: Kinds['weatherChanged'] = 59;
 const MATCH_END: Kinds['matchEnded'] = 30;
 const ROUND_ENDED: Kinds['roundEnded'] = 57;
+const ELEMENTAL_CAST: Kinds['elementalCast'] = 73;
+/** Elemental cue by `elementalCast.element` (1 fire .. 4 air). */
+export const ELEMENTAL_CUES: readonly CueName[] = ['elemFire', 'elemWater', 'elemEarth', 'elemAir'];
 const SNAG: Kinds['snag'] = 69;
 /** `SnagEvent.expired` (data/arcade.ts): a root running out is silent; rooted, guarded and freed whip the rope. */
 const SNAG_EXPIRED = 3;
@@ -138,6 +148,17 @@ export const MIN_GAP_MS = 30;
 export const KO_CUT_MS = 300;
 export const KO_DUCK_MS = 600;
 
+/** Low life: the active hero's HP fraction at or under this beats the heart; the gap shrinks from `BEAT_SLOW_MS` to `BEAT_FAST_MS` as it nears 0. */
+export const LOW_LIFE = 0.25;
+export const BEAT_SLOW_MS = 1100;
+export const BEAT_FAST_MS = 600;
+
+/** Ms between heartbeats at HP fraction `life`, or 0 for no beat (above `LOW_LIFE`, or none left: a downed hero is silent). */
+export function heartbeatGap(life: number): number {
+  if (!(life > 0) || life > LOW_LIFE) return 0;
+  return Math.round(BEAT_FAST_MS + ((BEAT_SLOW_MS - BEAT_FAST_MS) * life) / LOW_LIFE);
+}
+
 export type PlayCue = (name: CueName, pitch: number, gain: number) => void;
 
 /** Calls `play` for each cue of event `e` (none for a silent or Classic event); `sudden` says a round starting is the sudden-death one. */
@@ -157,6 +178,8 @@ export function pickCues(e: SimEvent, play: PlayCue, sudden: () => boolean = () 
   } else if (e.kind === ROUND_ENDED) {
     // the result motif of the winner; a draw keeps the neutral round-end chord
     play(e['winner'] === 0 ? 'youWin' : e['winner'] === 1 ? 'youLose' : 'roundEnd', 1, 1);
+  } else if (e.kind === ELEMENTAL_CAST) {
+    play(ELEMENTAL_CUES[(e['element'] ?? 0) - 1] ?? KIND_CUES[ELEMENTAL_CAST] ?? 'elemental', 1, 1);
   } else if (e.kind === SNAG) {
     if (e['reason'] !== SNAG_EXPIRED) play('snag', 1, 1);
   } else if (e.kind === TRAP_TRIGGERED && e['reason'] === TRAP_DOUSED) {

@@ -2,6 +2,7 @@ import {
   Cmd,
   DEFAULT_SIM_FLAGS,
   EntityFlag,
+  RoundPhase,
   SIM_VERSION,
   getCharacter,
   type Agent,
@@ -137,6 +138,18 @@ export function heroesOf(view: RenderView, setup: MatchSetup): ArcadeHero[] {
 }
 
 /** Launch data for the Arena: keyboard (team 0) against the Arcade AI; the recorder keeps the Arcade flag in its header. */
+/** The player's active hero's HP fraction during a fight (1 otherwise), for the low-life heartbeat. View-only read. */
+function activeLife(v: RenderView): number {
+  const ar = v.arcade();
+  if (!ar || ar.phase !== RoundPhase.fight) return 1;
+  const id = ar.active(0);
+  let life = 1;
+  v.forEachCharacter((c) => {
+    if (c.id === id && c.maxHp > 0) life = c.hp / c.maxHp;
+  });
+  return life;
+}
+
 export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOptions): ArenaLaunch {
   const setup = arcadeSetup(pick, seed);
   const local = pick.local === true;
@@ -154,7 +167,7 @@ export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOpti
       mountAimIndicator(arena, v, alpha);
       mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion);
       const held = arena.audio;
-      void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held, () => v.arcade()?.sudden === true); });
+      void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held, () => v.arcade()?.sudden === true, () => activeLife(v)); });
     },
     onEnd: (end) => {
       const replay = recorder?.finish();

@@ -1,4 +1,5 @@
 import manifest from '../assets/manifest.generated.json';
+import { readVolumes } from '../platform/volume-setting';
 import { AudioManager, type AudioContextLike } from './audio-manager';
 
 export const MUTE_STORAGE_KEY = 'Taming the Elements.muted';
@@ -79,6 +80,9 @@ export function createArenaAudio(deps: ArenaAudioDeps): ArenaAudio | undefined {
       }
     },
   });
+  const vol = readVolumes(storage);
+  audio.setBusVolume('music', vol.music);
+  audio.setBusVolume('sfx', vol.sfx);
   const off = unlockOnFirstGesture(audio, deps.gestures);
   return { audio, dispose: off };
 }

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SimEventKind, TrapKind, TrapReason, type SimEvent } from '@core/index';
 import {
   CUES, KIND_CUES, KO, MAX_VOICES, MIN_GAP_MS, NOISE, PITCH_VARY, SILENT, STINGERS, THUMP_GAIN, Voices, WEATHER_CUES,
-  comboPitch, pickCues, type CueName,
+  BEAT_FAST_MS, BEAT_SLOW_MS, ELEMENTAL_CUES, LOW_LIFE, comboPitch, heartbeatGap, pickCues, type CueName,
 } from './arcade-cues';
 
 type Kind = SimEvent['kind'];
@@ -186,5 +186,24 @@ describe('Voices', () => {
     v.clear();
     expect(kill).toHaveBeenCalledTimes(2);
     expect(v.active(0)).toBe(0);
+  });
+});
+
+describe('elemental casts and the heartbeat', () => {
+  it('plays a distinct cue per element, and the generic chime for an unknown one', () => {
+    const played = [1, 2, 3, 4].map((element) => cues(ev(SimEventKind.elementalCast, { element }))[0]?.[0]);
+    expect(played).toEqual([...ELEMENTAL_CUES]);
+    expect(new Set(played).size).toBe(4);
+    expect(cues(ev(SimEventKind.elementalCast, { element: 0 }))[0]?.[0]).toBe('elemental');
+  });
+
+  it('beats only in the red and never for a downed hero, faster as life falls', () => {
+    expect(heartbeatGap(1)).toBe(0);
+    expect(heartbeatGap(LOW_LIFE + 0.01)).toBe(0);
+    expect(heartbeatGap(0)).toBe(0);
+    expect(heartbeatGap(Number.NaN)).toBe(0);
+    expect(heartbeatGap(LOW_LIFE)).toBe(BEAT_SLOW_MS);
+    expect(heartbeatGap(0.01)).toBeLessThan(heartbeatGap(0.15));
+    expect(heartbeatGap(0.001)).toBeGreaterThanOrEqual(BEAT_FAST_MS);
   });
 });

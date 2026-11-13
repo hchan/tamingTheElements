@@ -72,7 +72,7 @@ function fakeCtx() {
 const ev = (kind: SimEvent['kind'], extra: Record<string, number> = {}, tick = 100, seq = 0): SimEvent => ({ ...extra, tick, sourceId: 1, kind, seq });
 const SOUNDS = ['damage', 'swap', 'capture', 'evilLaugh', 'whoosh', 'victory', 'death'];
 
-function setup(opts: { muted?: boolean; unlock?: boolean; sudden?: boolean } = {}) {
+function setup(opts: { muted?: boolean; unlock?: boolean; sudden?: boolean; life?: number } = {}) {
   const { ctx, nodes } = fakeCtx();
   const started: unknown[] = [];
   const createBufferSource = ctx.createBufferSource.bind(ctx);
@@ -86,7 +86,7 @@ function setup(opts: { muted?: boolean; unlock?: boolean; sudden?: boolean } = {
   const audio = new AudioManager({ ctx, buffers: new Map(SOUNDS.map((s) => [s, s])), muted: opts.muted ?? false });
   if (opts.unlock ?? true) audio.unlock();
   let hidden = false;
-  const dispose = addArcadeLayer(audio, () => hidden, () => opts.sudden === true);
+  const dispose = addArcadeLayer(audio, () => hidden, () => opts.sudden === true, () => opts.life ?? 1);
   return { ctx, nodes, audio, started, dispose, hide: (h: boolean) => { hidden = h; } };
 }
 
@@ -270,6 +270,47 @@ class Emitter {
     return this.ls.length;
   }
 }
+
+describe('low-life heartbeat', () => {
+  const oscs = (s: ReturnType<typeof setup>): number => s.nodes.filter((n) => n.kind === 'osc').length;
+
+  it('beats (two voices) on a consumed tick while the hero is in the red, at a gap that shrinks with life', () => {
+    const s = setup({ life: 0.2 });
+    s.audio.consume([]);
+    expect(oscs(s)).toBe(2);
+    s.ctx.currentTime = 0.1;
+    s.audio.consume([]);
+    expect(oscs(s)).toBe(2);
+    s.ctx.currentTime = 1;
+    s.audio.consume([]);
+    expect(oscs(s)).toBe(4);
+    s.dispose();
+  });
+
+  it('is silent at healthy life, with no life left, while muted or hidden', () => {
+    for (const o of [{ life: 0.6 }, { life: 0 }, { life: 0.1, muted: true }]) {
+      const s = setup(o);
+      s.audio.consume([]);
+      expect(oscs(s), JSON.stringify(o)).toBe(0);
+      s.dispose();
+    }
+    const h = setup({ life: 0.1 });
+    h.hide(true);
+    h.audio.consume([]);
+    expect(oscs(h)).toBe(0);
+    h.dispose();
+  });
+
+  it('defaults to no heartbeat when no life reader is given', () => {
+    const { ctx } = fakeCtx();
+    const audio = new AudioManager({ ctx, buffers: new Map() });
+    audio.unlock();
+    const dispose = addArcadeLayer(audio, () => false);
+    audio.consume([]);
+    expect(arcadeAudioState(audio).played).toBe(0);
+    dispose();
+  });
+});
 
 describe('mountArcadeAudio', () => {
   const arenaWith = (audio: ArenaAudio | undefined) => {

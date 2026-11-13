@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SimEventKind } from '@core/index';
 import { MUTE_STORAGE_KEY, createArenaAudio, readMuted, unlockOnFirstGesture, type GestureTarget } from './arena-audio';
+import { VOLUME_KEY } from '../platform/volume-setting';
 import type { AudioContextLike } from './audio-manager';
 
 function fakeTarget(): GestureTarget & { fire(type: string): void; count(): number } {
@@ -76,6 +77,16 @@ describe('createArenaAudio', () => {
     audio?.handleInputEffect({ kind: 'toggleMute' });
     expect(audio?.muted).toBe(false);
     expect(storage.m.get(MUTE_STORAGE_KEY)).toBe('0');
+  });
+
+  it('restores the saved bus volumes (music, sfx) and leaves ui alone', () => {
+    const gains: { gain: { value: number } }[] = [];
+    const ctx = { ...fakeCtx(), createGain: () => { const g = { gain: { value: 1 }, connect: vi.fn() }; gains.push(g); return g; } };
+    const storage = store();
+    storage.setItem(VOLUME_KEY, JSON.stringify({ music: 0.3, sfx: 0.6 }));
+    createArenaAudio({ ctx, buffer: () => undefined, gestures: fakeTarget(), storage });
+    // master, music, sfx, ui
+    expect(gains.map((g) => g.gain.value)).toEqual([1, 0.3, 0.6, 1]);
   });
 
   it('restores a saved mute choice', () => {
