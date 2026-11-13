@@ -3,6 +3,7 @@ import { el } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
 import { abilitiesSpeech, abilityChips } from './hero-abilities';
 import { HERO_COLUMNS } from './hero-info';
+import { heroDnd } from './hero-dnd';
 import { heroGrid, heroPanel } from './hero-panel';
 
 /**
@@ -131,7 +132,10 @@ function rosterView(
   const node = el('div', 'rosterPick vsStage');
   const live = el('p', 'srOnly');
   live.setAttribute('role', 'status');
-  const panel = heroPanel();
+  const panel = heroPanel(() => {
+    dnd.disarm();
+    assignMouse(focus);
+  });
   /** Index (in cursor order) of the hero the panel shows: the last one a cursor, the mouse or focus landed on. */
   let focus = 0;
   const heroes = heroGrid({
@@ -143,26 +147,35 @@ function rosterView(
       cur.setAttribute('aria-hidden', 'true');
       t.append(flags, cur);
       const look = (): void => {
-        if (focus === i) return;
+        // A previewed hero stays in the panel while the pointer travels to "Add to team" or a slot.
+        if (focus === i || dnd.armed() >= 0) return;
         focus = i;
         refresh();
       };
       t.addEventListener('pointerenter', look);
       t.addEventListener('focus', look);
-      t.addEventListener('click', () => {
-        focus = i;
-        cursor[mouseSide] = i;
-        place(mouseSide, i);
-        // Mouse and touch carry on to the other side once this one is full (one player on the computer, or Player 1 then Player 2).
-        const other: SideIx = mouseSide === 0 ? 1 : 0;
-        if (openOf(mouseSide).every((n) => confirmed.has(n)) && openOf(other).some((n) => !confirmed.has(n))) {
-          mouseSide = other;
-          refresh();
-        }
-      });
     },
   });
   const races = heroes.order;
+  const dnd = heroDnd({
+    root: node,
+    tiles: heroes.tiles,
+    previewTile: (i) => {
+      focus = i;
+      cursor[mouseSide] = i;
+      refresh();
+    },
+    assignTile: (i) => {
+      assignMouse(i);
+    },
+    dropTile: (i, slot) => {
+      dropHero(i, slot);
+    },
+    swapSlots: (a, b) => {
+      swapSlots(a, b);
+    },
+    slotDraggable: (n) => confirmed.has(n),
+  });
   const grid = heroes.grid;
   const sideNodes = ([0, 1] as const).map((i) => {
     const section = el('section', `vsSide vsSide${String(i + 1)}`);
@@ -226,10 +239,14 @@ function rosterView(
         b = el('button', 'teamSlot rosterSlot');
         b.type = 'button';
         b.id = `roster-${n}`;
+        b.dataset['heroSlot'] = n;
         b.addEventListener('click', () => {
           sideActive[sideOf(n)] = n;
           mouseSide = sideOf(n);
-          refresh();
+          const armed = dnd.takeArmed();
+          // Tap a hero to preview it, then tap a slot: the touch alternative to dragging.
+          if (armed >= 0) dropHero(armed, n);
+          else refresh();
         });
         slotButtons.set(n, b);
         const item = el('li', 'vsSlotItem');
@@ -354,6 +371,55 @@ function rosterView(
     announce(`${who(s)} picked ${shortName(id)} for ${slotLabel(slot)}.`);
     refresh();
   };
+  /** Mouse and touch fill the active slot, then carry on to the other side once this one is full (one player on the computer, or P1 then P2). */
+  function assignMouse(i: number): void {
+    focus = i;
+    cursor[mouseSide] = i;
+    place(mouseSide, i);
+    const other: SideIx = mouseSide === 0 ? 1 : 0;
+    if (openOf(mouseSide).every((n) => confirmed.has(n)) && openOf(other).some((n) => !confirmed.has(n))) {
+      mouseSide = other;
+      refresh();
+    }
+  }
+  /** A tile dropped on a slot: the hero goes there; a hero already in another slot swaps with this slot's old hero (no doubles). */
+  function dropHero(i: number, slot: string): void {
+    const sel = fields()[slot];
+    const id = races[i];
+    if (!sel || !id) return;
+    const s = sideOf(slot);
+    const dup = openSlots().find((k) => k !== slot && confirmed.has(k) && fields()[k]?.value === id);
+    const dupSel = dup ? fields()[dup] : undefined;
+    if (dup && dupSel) {
+      dupSel.value = sel.value;
+      if (confirmed.has(slot)) confirmed.add(dup);
+      else confirmed.delete(dup);
+      ready[sideOf(dup)] = false;
+    }
+    sel.value = id;
+    confirmed.add(slot);
+    ready[s] = false;
+    changed();
+    mouseSide = s;
+    sideActive[s] = openOf(s).find((n) => !confirmed.has(n)) ?? slot;
+    focus = i;
+    cursor[s] = i;
+    announce(`${who(s)} put ${shortName(id)} in ${slotLabel(slot)}.`);
+    refresh();
+  }
+  function swapSlots(a: string, b: string): void {
+    const [x, y] = [fields()[a], fields()[b]];
+    if (!x || !y) return;
+    [x.value, y.value] = [y.value, x.value];
+    const [ca, cb] = [confirmed.has(a), confirmed.has(b)];
+    if (cb) confirmed.add(a); else confirmed.delete(a);
+    if (ca) confirmed.add(b); else confirmed.delete(b);
+    ready[sideOf(a)] = false;
+    ready[sideOf(b)] = false;
+    changed();
+    announce(`${slotLabel(a)} swapped with ${slotLabel(b)}.`);
+    refresh();
+  }
   function clearSlot(n: string): void {
     const s = sideOf(n);
     confirmed.delete(n);
@@ -411,6 +477,7 @@ function rosterView(
     else if (next < 0 || next >= n) next = cur;
     cursor[s] = next;
     focus = next;
+    dnd.disarm();
     refresh();
   };
   const undo = (s: SideIx): void => {

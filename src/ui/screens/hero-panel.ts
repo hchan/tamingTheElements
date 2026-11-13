@@ -40,10 +40,16 @@ function abilityIcon(mark: string, sprite: string | undefined): HTMLElement {
   return box;
 }
 
-/** The focused-hero panel. `show` rebuilds it for a hero (cheap: a handful of nodes). */
-export function heroPanel(): HeroPanel {
+/** The focused-hero panel. `show` rebuilds it for a hero (cheap: a handful of nodes); `onAdd` adds the "Add to team" button. */
+export function heroPanel(onAdd?: () => void): HeroPanel {
   const node = el('section', 'heroPanel');
   node.setAttribute('aria-label', 'Hero details');
+  // "Add to team": assigns the shown hero (the mouse and touch alternative to a second click or a drag).
+  const add = el('button', 'menuButton heroAdd', 'Add to team');
+  add.type = 'button';
+  add.addEventListener('click', () => {
+    onAdd?.();
+  });
   const show = (id: CharacterId): void => {
     const p = heroProfile(id);
     node.textContent = '';
@@ -76,7 +82,7 @@ export function heroPanel(): HeroPanel {
     }
     const top = el('div', 'heroTop');
     top.append(face, head);
-    node.append(top, stats, el('h4', 'heroAbilitiesTitle', 'Abilities'), abil);
+    node.append(top, ...(onAdd ? [add] : []), stats, el('h4', 'heroAbilitiesTitle', 'Abilities'), abil);
   };
   return { node, show };
 }
