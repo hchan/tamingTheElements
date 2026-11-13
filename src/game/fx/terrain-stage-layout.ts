@@ -54,9 +54,21 @@ export function layerX(centerX: number, factor: number): number {
   return (WORLD_W - ATLAS_W) / 2 + (1 - factor) * (centerX - WORLD_W / 2);
 }
 
-/** The crowd's frame at `ms` of view time (about 5 cheers a second); 0 when still. */
-export function crowdIndex(ms: number, still: boolean): number {
-  return still ? 0 : Math.floor(ms / 200) % CROWD_FRAMES;
+/** The crowd's frame at `ms` of view time (about 5 cheers a second, twice that while roused); 0 when still. */
+export function crowdIndex(ms: number, still: boolean, roused = false): number {
+  return still ? 0 : Math.floor(ms / (roused ? 100 : 200)) % CROWD_FRAMES;
+}
+
+/** How long the crowd stays roused by a hit, a super and a KO (view ms), and how far it hops (px, peak). */
+export const ROUSE_MS = { hit: 260, super: 1000, ko: 2400 } as const;
+export const ROUSE_HOP = { hit: 3, super: 6, ko: 10 } as const;
+export type RouseKind = keyof typeof ROUSE_MS;
+
+/** The crowd's hop in px (upwards, 0 at rest) `age` ms after a `kind` event: a decaying bounce; 0 when still or over. */
+export function crowdHop(age: number, kind: RouseKind, still: boolean): number {
+  if (still || age < 0 || age >= ROUSE_MS[kind]) return 0;
+  const k = 1 - age / ROUSE_MS[kind];
+  return Math.round(ROUSE_HOP[kind] * k * Math.abs(((age / 120) % 2) - 1));
 }
 
 /** A drifter's offset along the layer in px (wrapping over the atlas width plus its own size); fixed when still. */

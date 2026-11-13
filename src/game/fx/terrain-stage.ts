@@ -1,7 +1,8 @@
 import type Phaser from 'phaser';
 import {
   CROWD_FACTOR, CROWD_H, FAR_FACTOR, FAR_H, FLY_FACTOR, STAGE_TEXTURE, STAGE_URL, WALL_Y,
-  atlasFrames, crowdFrame, crowdIndex, farFrame, flyFrame, flyIndex, flyOffset, layerX,
+  ROUSE_MS, atlasFrames, crowdFrame, crowdHop, crowdIndex, farFrame, flyFrame, flyIndex, flyOffset, layerX,
+  type RouseKind,
 } from './terrain-stage-layout';
 
 /**
@@ -24,6 +25,8 @@ const CROWD_DEPTH = -0.9;
 export interface StageBackdrop {
   /** Draws stage `stage` (0 none) for a camera centred on world x `centerX`; `ms` is view time, `still` reduced motion. */
   update(stage: number, centerX: number, ms: number, still: boolean): void;
+  /** The crowd reacts (hops, cheers twice as fast) to a hit, a super or a KO at view time `ms`; a smaller one does not cut a bigger one short. */
+  rouse(kind: RouseKind, ms: number): void;
   /** The stage drawn and the crowd frame shown (test probe); stage 0 before the atlas loads. */
   readonly stage: number;
   readonly crowd: number;
@@ -37,6 +40,8 @@ export function mountStageBackdrop(scene: Phaser.Scene, base: string): StageBack
   let framed = false;
   let shown = 0;
   let crowdNow = 0;
+  let rouseKind: RouseKind = 'hit';
+  let rouseAt = Number.NEGATIVE_INFINITY;
   if (!scene.textures.exists(STAGE_TEXTURE)) {
     scene.load.image(STAGE_TEXTURE, `${base.endsWith('/') ? base : `${base}/`}assets/${STAGE_URL}`);
     scene.load.start();
@@ -63,12 +68,18 @@ export function mountStageBackdrop(scene: Phaser.Scene, base: string): StageBack
         return;
       }
       shown = stage;
-      crowdNow = crowdIndex(ms, still);
+      const age = ms - rouseAt;
+      crowdNow = crowdIndex(ms, still, age >= 0 && age < ROUSE_MS[rouseKind]);
       far.setFrame(farFrame(stage)).setX(layerX(centerX, FAR_FACTOR));
-      crowd.setFrame(crowdFrame(stage, crowdNow)).setX(layerX(centerX, CROWD_FACTOR));
+      crowd.setFrame(crowdFrame(stage, crowdNow)).setX(layerX(centerX, CROWD_FACTOR)).setY(WALL_Y - CROWD_H - crowdHop(age, rouseKind, still));
       flyers.forEach((f, i) => {
         f.setFrame(flyFrame(stage, flyIndex(ms, i, still))).setX(layerX(centerX, FLY_FACTOR) + flyOffset(ms, i, still));
       });
+    },
+    rouse(kind, ms): void {
+      if (ROUSE_MS[kind] < ROUSE_MS[rouseKind] - (ms - rouseAt)) return;
+      rouseKind = kind;
+      rouseAt = ms;
     },
     get stage(): number {
       return shown;
