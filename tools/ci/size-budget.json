@@ -15,13 +15,13 @@
     "local-two": 455,
     "online-versus": 3910,
     "phaser": 388700,
-    "phaser-config": 28580,
+    "phaser-config": 28840,
     "pose-layer": 10550,
     "rolldown-runtime": 200,
     "round-view": 2380,
     "sim": 35680,
     "super-view": 2330,
-    "tag-view": 2910,
+    "tag-view": 2970,
     "terrain-view": 5570,
     "trap-view": 1100,
     "touch-controls": 1670,
@@ -32,7 +32,7 @@
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 529780,
+  "totalGzip": 530070,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
