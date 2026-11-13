@@ -42,6 +42,8 @@ export const SPRITE_BOOST: Readonly<Record<string, SpriteBoost>> = {
   rockPellet: { minLong: 64, glowAlpha: 0.95, glowScale: 2.2, glowTint: 0xffd36b },
   stranglingBranches: { minLong: 0, glowAlpha: 0.7, glowScale: 1.5, glowTint: 0xc8ff7a },
   entanglingVines: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0xe8c27a },
+  entanglingVinesWater: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0x9ad8ff },
+  entanglingVinesAir: { minLong: 0, glowAlpha: 0.75, glowScale: 1.3, glowTint: 0xeaf4ff },
   crimsonFire: { minLong: 0, glowAlpha: 0.8, glowScale: 1.5, glowTint: 0xffe9a0 },
 };
 
@@ -57,6 +59,15 @@ export function boltDisplaySize(boxW: number, boxH: number, artW: number, artH: 
   const lengthScale = Math.max(boxW / artW, minLong / Math.max(artW, artH));
   const scale = Math.max(lengthScale, Math.min(boxH / artH, lengthScale * MAX_THICKEN));
   return { w: artW * scale, h: artH * scale };
+}
+
+/**
+ * View-only: the Snag rope is drawn in the caster's element (green vine for nature/earth holders such as Treenoc, a kelp-blue cord for
+ * water, a wind-spun cord for air). Art from tools/assets/fx-gen/batch-g-snag-rope.py; every other sprite or element is unchanged.
+ */
+const SNAG_ART: Readonly<Record<string, string>> = { water: 'entanglingVinesWater', air: 'entanglingVinesAir' };
+export function snagSpriteFor(sprite: string, casterElement: string | undefined): string {
+  return sprite === 'entanglingVines' && casterElement !== undefined ? (SNAG_ART[casterElement] ?? sprite) : sprite;
 }
 
 /** Texture key and manifest entry for an ability sprite (`sprite:` first, then `map:`). */
@@ -82,12 +93,13 @@ export class ProjectileView {
   }
 
   /** `melee`: a melee box (Ice Shock, Ground Shock, ...) drawn stretched over its hit box, mirrored west and turned for north/south. */
-  apply(p: RenderProjectile, alpha: number, melee = false): void {
-    if (p.sprite !== this.key) {
-      this.key = p.sprite;
+  apply(p: RenderProjectile, alpha: number, melee = false, casterElement?: string): void {
+    const art = snagSpriteFor(p.sprite, casterElement);
+    if (art !== this.key) {
+      this.key = art;
       this.artW = 0;
       this.artH = 0;
-      const found = lookup(p.sprite);
+      const found = lookup(art);
       if (found) {
         const tex = this.scene.textures.get(found.key);
         const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
@@ -101,7 +113,7 @@ export class ProjectileView {
     // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
     this.image.setVisible(true).setAlpha(1);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
-    const boost = SPRITE_BOOST[p.sprite];
+    const boost = SPRITE_BOOST[art];
     if (melee) look.h *= MELEE_ART_THICKNESS[p.sprite] ?? 1;
     else if (this.artW > 0) Object.assign(look, boltDisplaySize(p.w, p.h, this.artW, this.artH, Math.max(MIN_BOLT_LONG_SIDE, boost?.minLong ?? 0)));
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);

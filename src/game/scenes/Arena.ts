@@ -772,7 +772,10 @@ export class Arena extends Phaser.Scene {
   private frameLive = true;
   /** Test hook: let view effects (hit flash) age on real frames while the sim stays paused. */
   private fxAges = false;
+  /** Element of each team's character this frame (characters draw before projectiles); picks the Snag rope art. */
+  private readonly teamElement: string[] = [];
   private readonly drawCharacter = (c: RenderCharacter): void => {
+    this.teamElement[c.team] = c.element;
     this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive);
   };
   private readonly drawProjectile = (p: RenderProjectile): void => {
@@ -780,7 +783,7 @@ export class Arena extends Phaser.Scene {
   };
 
   private readonly drawMelee = (p: RenderProjectile): void => {
-    this.projPool?.acquire(p.id).apply(p, this.frameAlpha, true);
+    this.projPool?.acquire(p.id).apply(p, this.frameAlpha, true, this.teamElement[p.team]);
   };
 
   private readonly shutdownHandler = (): void => {

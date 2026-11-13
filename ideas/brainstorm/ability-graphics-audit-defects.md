@@ -11,7 +11,7 @@ Status: partly done. Still open are the items not marked FIXED below.
 - FIXED: Rokcore Rock Armour (orbiting plates) and Pax Adrenaline (rising chevrons): buff auras, shape-coded, reduced-motion static.
 - IMPROVED: Lavax Crimson Fire and Treenoc Strangling Branches: halo boost only; the sprite art and its late fade (pose layer) are untouched, so re-check with a crop.
 - FIXED: Fiara Fire Heal (HEAL pop) and Lavax Fire Dance (flame aura).
-- FIXED: Snag cast cue (rope lash plus SNAG pop). IMPROVED: vine art on water and air heroes still green, now with a neutral rope halo; real per-element tint needs new art.
+- FIXED: Snag cast cue (rope lash plus SNAG pop). FIXED: per-element Snag rope art: water (Curomo) draws a kelp-blue cord, air (Echo, Wispera) a wind-spun cord, Treenoc and other earth/fire holders keep the green vine (tools/assets/fx-gen/batch-g-snag-rope.py; picked by caster element in src/game/views/projectile-view.ts `snagSpriteFor`; unit test in projectile-view.test.ts).
 - FIXED: Supers get a per-element in-world burst (src/game/fx/super-burst.ts), shape-coded, reduced-motion static.
 - FIXED (unshot): Weather call-in banner no longer overlaps the WEATHER bar.
 - Stick (Dummy): grey-white dart goes faint and translucent on the orange fire floor.

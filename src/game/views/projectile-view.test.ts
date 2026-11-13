@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { MIN_BOLT_LONG_SIDE, ProjectileView, boltDisplaySize } from './projectile-view';
+import { MIN_BOLT_LONG_SIDE, ProjectileView, boltDisplaySize, lookup, snagSpriteFor } from './projectile-view';
 
 /** Chainable fake Image that really stores alpha, so the test sees what the pose layer would multiply. */
 interface FakeImage { alpha: number; [method: string]: unknown }
@@ -67,5 +67,31 @@ describe('boltDisplaySize', () => {
   });
   it('falls back to the box when the art size is unknown', () => {
     expect(boltDisplaySize(20, 10, 0, 0)).toEqual({ w: 20, h: 10 });
+  });
+});
+
+describe('Snag rope art by caster element', () => {
+  it('uses the water and air cords for those casters and keeps the green vine for everyone else', () => {
+    expect(snagSpriteFor('entanglingVines', 'water')).toBe('entanglingVinesWater');
+    expect(snagSpriteFor('entanglingVines', 'air')).toBe('entanglingVinesAir');
+    for (const e of ['earth', 'fire', 'nature', 'void', undefined]) expect(snagSpriteFor('entanglingVines', e)).toBe('entanglingVines');
+    expect(snagSpriteFor('iceShock', 'water')).toBe('iceShock');
+  });
+  it('has a manifest entry for each variant, same size as the vine', () => {
+    const vine = lookup('entanglingVines')?.entry.coords;
+    for (const k of ['entanglingVinesWater', 'entanglingVinesAir']) expect(lookup(k)?.entry.coords).toEqual(vine);
+  });
+  it('swaps the pooled view texture when the caster element changes', () => {
+    const tex: string[] = [];
+    const scene = {
+      add: { image: () => { const i = fakeImage(); i.setTexture = (k: string) => { tex.push(k); return i; }; return i; } },
+      textures: { get: () => ({ has: () => true, add: () => undefined }) },
+    } as unknown as Phaser.Scene;
+    const view = new ProjectileView(scene);
+    const p = { id: 1, team: 0, sprite: 'entanglingVines', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 200, h: 40 };
+    view.apply(p, 1, true, 'water');
+    expect(tex).toContain('sprite:entanglingVinesWater');
+    view.apply(p, 1, true, 'earth');
+    expect(tex.at(-1)).toBe('sprite:entanglingVines');
   });
 });

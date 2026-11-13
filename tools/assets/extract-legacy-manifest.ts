@@ -37,6 +37,11 @@ function load(file: string, name: string): unknown {
 }
 
 const MAP_REDRAWN = new Set(['tornado', 'fireCone', 'translucentFlame', 'echoFade', 'circusOfSlime', 'dummyTarget', 'eternalVoid', 'paxAdrenaline', 'rokcoreRockArmour']);
+/** Repo-only sprites with no legacy file (tools/assets/fx-gen/batch-g-snag-rope.py): per-element Snag ropes, 80x61, picked by caster element in projectile-view.ts. */
+const EXTRA_SPRITES: Readonly<Record<string, SpriteEntry>> = {
+  entanglingVinesWater: { url: 'img/fx/entanglingVinesWater.png', coords: [0, 0, 80, 61] },
+  entanglingVinesAir: { url: 'img/fx/entanglingVinesAir.png', coords: [0, 0, 80, 61] },
+};
 const FRAME_KEYS = ['leftFrames', 'rightFrames', 'upFrames', 'downFrames'] as const;
 
 function sprites(file: string, name: string): Record<string, SpriteEntry> {
@@ -61,6 +66,9 @@ function sprites(file: string, name: string): Record<string, SpriteEntry> {
     if (r.urlLarge !== undefined) e.urlLarge = r.urlLarge as string;
     for (const f of FRAME_KEYS) if (r[f] !== undefined) e[f] = r[f] as Frames;
     out[key] = e;
+  }
+  if (file === 'imgAssets.js') {
+    for (const key of Object.keys(EXTRA_SPRITES).sort()) out[key] = structuredClone(EXTRA_SPRITES[key] as SpriteEntry);
   }
   return out;
 }
