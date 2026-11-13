@@ -231,6 +231,48 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
 });
 }
 
+for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640, h: 300 }]) {
+  test.describe(`Arcade touch buttons with high contrast, ${hc.name}`, () => {
+    test.use({ viewport: { width: hc.w, height: hc.h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, contrast: 'more' });
+
+    test('keep a border of at least 2 px, inside #game, none overlapping or overflowing', async ({ page }, info) => {
+      const errors = collectErrors(page);
+      await page.goto(`${START}&ff=arcade#tour`);
+      await page.getByRole('button', { name: 'Start tour' }).tap();
+      await page.getByRole('button', { name: 'Fight' }).tap();
+      await page.locator('#tourSplash').tap();
+      await page.waitForFunction(ARENA_READY);
+      // Medium display size shrinks #game below 272 px on these phones (the tightest layout).
+      await page.evaluate(`document.documentElement.style.setProperty('--canvas-fraction', '${String(MEDIUM)}')`);
+      await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      expect(await page.evaluate<string>(`document.documentElement.dataset.highContrast`)).toBe('true');
+      const g = await page.evaluate<{ x: number; y: number; r: number; b: number }>(
+        `(() => { const q = document.querySelector('#game').getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
+      );
+      expect(g.b - g.y).toBeLessThan(272);
+      const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; border: number; over: boolean }[]>(
+        `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); const c = getComputedStyle(n); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, border: Math.min(parseFloat(c.borderTopWidth), parseFloat(c.borderRightWidth), parseFloat(c.borderBottomWidth), parseFloat(c.borderLeftWidth)), over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight }; })`,
+      );
+      expect(boxes).toHaveLength(9);
+      for (const k of boxes) {
+        expect(k.border, `${k.id} border`).toBeGreaterThanOrEqual(2);
+        expect(k.over, `${k.id} overflows`).toBe(false);
+        expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);
+        expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(g.y - 0.5);
+        expect(k.r, `${k.id} right`).toBeLessThanOrEqual(g.r + 0.5);
+        expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(g.b + 0.5);
+      }
+      for (const [i, p] of boxes.entries()) {
+        for (const q of boxes.slice(i + 1)) {
+          expect(p.r <= q.x || q.r <= p.x || p.b <= q.y || q.b <= p.y, `${p.id} and ${q.id} overlap`).toBe(true);
+        }
+      }
+      await page.screenshot({ path: info.outputPath('touch-hc.png') });
+      expect(errors).toEqual([]);
+    });
+  });
+}
+
 test('the F key and the button toggle fullscreen where the browser allows it', async ({ page }) => {
   await page.goto('/?ff=arenaDemo&manual=1');
   await page.waitForFunction(ARENA_READY);
