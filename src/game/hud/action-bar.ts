@@ -195,11 +195,11 @@ export const MIRROR_Y = BAR_Y - MIRROR_SIDE - 6;
  * Re-lay the slots of a bar as the small mirrored readout along the bottom-right (read-only: its cooldown sweeps, key labels and
  * notes stay, clicks do not apply). Pure, for tests.
  */
-export function mirrorSlots(slots: readonly ActionSlot[]): ActionSlot[] {
+export function mirrorSlots(slots: readonly ActionSlot[], right = HUD_WIDTH - MIRROR_MARGIN): ActionSlot[] {
   const n = slots.length;
   return slots.map((s, i) => ({
     ...s,
-    x: HUD_WIDTH - MIRROR_MARGIN - (n - i) * MIRROR_SIDE - (n - 1 - i) * MIRROR_GAP,
+    x: right - (n - i) * MIRROR_SIDE - (n - 1 - i) * MIRROR_GAP,
     y: MIRROR_Y,
     size: MIRROR_SIDE,
   }));
@@ -349,7 +349,7 @@ export class ActionBarView {
     this.back.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
     const bar = this.view.actionBar(this.team);
     const built = bar ? buildSlots(bar, this.labels()) : [];
-    this.slots = this.mirror ? mirrorSlots(built) : built;
+    this.slots = this.mirror ? mirrorSlots(built, this.mirrorRight()) : built;
     const g = this.gfx;
     g.clear();
     this.back.clear();
@@ -400,6 +400,30 @@ export class ActionBarView {
       this.icons[i]?.setVisible(false);
       this.texts[i]?.setVisible(false);
     }
+  }
+
+  private mirrorEdge = HUD_WIDTH - MIRROR_MARGIN;
+  private mirrorAge = 0;
+  /**
+   * Right edge (logical px) of the mirror readout: the touch buttons sit on the right edge and wrap to rows or columns that depend on the
+   * window, so the readout stops left of the leftmost one that reaches its row (re-measured every 15 frames; no buttons: the margin).
+   */
+  private mirrorRight(): number {
+    if (this.mirrorAge++ % 15 !== 0) return this.mirrorEdge;
+    let edge = HUD_WIDTH - MIRROR_MARGIN;
+    const canvas = this.scene.game.canvas;
+    if (typeof document !== 'undefined' && canvas.getBoundingClientRect().width > 0) {
+      const c = canvas.getBoundingClientRect();
+      const k = c.width / LOGICAL_W;
+      const top = c.top + MIRROR_Y * k;
+      const bottom = top + MIRROR_SIDE * k;
+      document.querySelectorAll('button.touchBtn').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.top < bottom && r.bottom > top && r.right > c.left) edge = Math.min(edge, (r.left - c.left) / k - MIRROR_GAP * 2);
+      });
+    }
+    this.mirrorEdge = Math.max(edge, 4 * MIRROR_SIDE);
+    return this.mirrorEdge;
   }
 
   destroy(): void {
