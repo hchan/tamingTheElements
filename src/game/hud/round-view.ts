@@ -79,10 +79,11 @@ export function mountRoundView(
   let shownColor = '';
   let scale = 1;
 
-  const text = (size: number, y: number, stroke: number): Phaser.GameObjects.Text =>
+  /** `grim`: the banner words (bone serif under a thin dark stroke, not a fat black-outlined white); the timer stays plain white for contrast. */
+  const text = (size: number, y: number, stroke: number, grim = false): Phaser.GameObjects.Text =>
     hud.add
       .text(TIMER_X, y, '', {
-        fontSize: `${String(size)}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: stroke,
+        fontFamily: grim ? 'Georgia, "Times New Roman", serif' : 'Arial', fontSize: `${String(size)}px`, fontStyle: 'bold', color: grim ? '#d8cdb8' : '#ffffff', stroke: grim ? '#0a0806' : '#000000', strokeThickness: grim ? Math.round(stroke / 2) : stroke,
         resolution: hud.scale.width / LOGICAL_WIDTH,
       })
       .setDepth(DEPTH);
@@ -115,8 +116,8 @@ export function mountRoundView(
 
   const build = (): void => {
     parts = {
-      main: text(MAIN_PX, BANNER_Y, 10).setOrigin(0.5),
-      sub: text(SUB_PX, BANNER_Y + SUB_GAP, 8).setOrigin(0.5, 0),
+      main: text(MAIN_PX, BANNER_Y, 10, true).setOrigin(0.5),
+      sub: text(SUB_PX, BANNER_Y + SUB_GAP, 8, true).setOrigin(0.5, 0),
       timer: text(TIMER_PX, TIMER_Y, 6).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
     };

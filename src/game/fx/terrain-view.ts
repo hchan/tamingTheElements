@@ -3,6 +3,7 @@ import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView, typ
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountStageBackdrop, type StageBackdrop } from './terrain-stage';
+import { mute } from './grim-fx';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
 import {
   MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_DARK, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
@@ -137,7 +138,7 @@ export function mountTerrainView(
   const text = (scene: Phaser.Scene, px: number, stroke: number): Phaser.GameObjects.Text =>
     scene.add
       .text(0, 0, '', {
-        fontSize: `${String(px)}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: stroke,
+        fontFamily: LABEL_FONT, fontSize: `${String(px)}px`, fontStyle: 'bold', color: LABEL_COLOR, stroke: '#0a0806', strokeThickness: Math.max(2, stroke - 2),
         resolution: scene.scale.width / LOGICAL_WIDTH,
       })
       .setVisible(false);
@@ -195,7 +196,7 @@ export function mountTerrainView(
 
   /** The static art of the layout: glow rings, then each patch's fill, pattern and border. */
   const drawFloor = (p: NonNullable<typeof parts>, stage: number, count: number, rects: readonly number[]): void => {
-    const color = PATCH_COLORS[stage - 1] ?? 0xffffff;
+    const color = highContrast ? (PATCH_COLORS[stage - 1] ?? 0xffffff) : m(PATCH_COLORS[stage - 1] ?? 0xffffff);
     const dark = PATCH_DARK[stage - 1] ?? 0;
     const g = p.floor.clear();
     const glow = p.glow.clear();
@@ -208,7 +209,7 @@ export function mountTerrainView(
       if (stage === 3) rock(g, x, y, w, h);
       else {
         g.fillStyle(0x000000, 0.18).fillRect(x + 4, y + 4, w, h);
-        g.fillStyle(color, stage === 4 ? 0.3 : 0.38).fillRect(x, y, w, h);
+        g.fillStyle(color, stage === 4 ? 0.26 : 0.34).fillRect(x, y, w, h);
         if (stage === 1) flames(g, x, y, w, h);
         else if (stage === 2) waves(g, x, y, w, h);
         else swirls(g, x, y, w, h);
@@ -231,7 +232,7 @@ export function mountTerrainView(
       }
       labels.push(word);
       if (t.text !== word) t.setText(word);
-      t.setColor(hex(0xffffff)).setPosition((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2, (rects[i * 4 + 1] ?? 0) - 3).setVisible(true);
+      t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2, (rects[i * 4 + 1] ?? 0) - 3).setVisible(true);
     }
   };
 
@@ -359,14 +360,20 @@ export function mountTerrainView(
   };
 }
 
+/** Grim grade for the patch art (owner: too cartoony): the same grey-pulled, darkened colour as the baked sprites. */
+const m = (c: number): number => mute(c, 0.5, 0.8);
+/** Words on patches and the badge: bone, not white, under a thin dark stroke. */
+const LABEL_FONT = 'Georgia, "Times New Roman", serif';
+const LABEL_COLOR = '#d8cdb8';
+
 /** Fire: rows of flame tongues (an orange body, a yellow core, a dark outline), every other row offset. */
 function flames(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
   const cell = 32;
   for (let row = 0, cy = y + 20; cy + 14 <= y + h; row++, cy += cell) {
     for (let cx = x + 16 + (row % 2) * 16; cx + 12 <= x + w; cx += cell) {
-      g.fillStyle(0xff7a1a, 1).fillTriangle(cx - 10, cy + 12, cx + 10, cy + 12, cx, cy - 14);
-      g.fillStyle(0xffd23f, 1).fillTriangle(cx - 5, cy + 12, cx + 5, cy + 12, cx, cy - 2);
-      g.lineStyle(2, 0x8f2a00, 1).strokeTriangle(cx - 10, cy + 12, cx + 10, cy + 12, cx, cy - 14);
+      g.fillStyle(m(0xff7a1a), 0.85).fillTriangle(cx - 10, cy + 12, cx + 10, cy + 12, cx, cy - 14);
+      g.fillStyle(m(0xffd23f), 0.8).fillTriangle(cx - 5, cy + 12, cx + 5, cy + 12, cx, cy - 2);
+      g.lineStyle(2, m(0x8f2a00), 0.8).strokeTriangle(cx - 10, cy + 12, cx + 10, cy + 12, cx, cy - 14);
     }
   }
 }
@@ -374,8 +381,8 @@ function flames(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number,
 /** Water: rows of wavy lines (a dark underline, then a light crest). */
 function waves(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
   for (let ly = y + 24; ly < y + h - 6; ly += 22) {
-    for (const [width, color, off] of [[5, 0x0b3f7a, 2], [3, 0xdff2ff, 0]] as const) {
-      g.lineStyle(width, color, 1).beginPath().moveTo(x + 6, ly + off);
+    for (const [width, color, off] of [[5, m(0x0b3f7a), 2], [3, m(0xdff2ff), 0]] as const) {
+      g.lineStyle(width, color, 0.7).beginPath().moveTo(x + 6, ly + off);
       for (let px = x + 12; px <= x + w - 6; px += 6) g.lineTo(px, ly + off + Math.sin((px - x) * 0.32) * 5);
       g.strokePath();
     }
@@ -386,8 +393,8 @@ function waves(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, 
 function swirls(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
   for (let cy = y + 40; cy <= y + h - 30; cy += 80) {
     for (let cx = x + 40; cx <= x + w - 30; cx += 80) {
-      for (const [width, color] of [[6, 0x4a7f95], [3, 0xffffff]] as const) {
-        g.lineStyle(width, color, 1).beginPath().moveTo(cx, cy);
+      for (const [width, color] of [[6, m(0x4a7f95)], [3, m(0xe8f4ff)]] as const) {
+        g.lineStyle(width, color, 0.6).beginPath().moveTo(cx, cy);
         for (let a = 0; a <= 13; a += 0.5) g.lineTo(cx + Math.cos(a) * (2 + a * 2.1), cy + Math.sin(a) * (2 + a * 2.1));
         g.strokePath();
       }
@@ -402,8 +409,8 @@ function swirls(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number,
 function rock(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
   g.fillStyle(0x000000, 0.4).fillRect(x + 10, y + 12, w, h);
   const top = h - ROCK_FACE;
-  g.fillStyle(0xc89650, 1).fillRect(x, y, w, top);
-  g.fillStyle(0x6b4a24, 1).fillRect(x, y + top, w, ROCK_FACE);
+  g.fillStyle(m(0xc89650), 1).fillRect(x, y, w, top);
+  g.fillStyle(m(0x6b4a24), 1).fillRect(x, y + top, w, ROCK_FACE);
   g.lineStyle(2, 0x4a3016, 1);
   for (let row = 0, ry = y + 20; ry < y + top; row++, ry += 20) {
     g.lineBetween(x, ry, x + w, ry);
@@ -411,7 +418,7 @@ function rock(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h
   }
   g.lineStyle(2, 0x3a2410, 1);
   for (let bx = x + 26; bx < x + w - 6; bx += 52) g.lineBetween(bx, y + top, bx, y + h);
-  g.lineStyle(3, 0xfff0c8, 0.8).lineBetween(x + 2, y + 2, x + w - 2, y + 2);
+  g.lineStyle(2, m(0xfff0c8), 0.5).lineBetween(x + 2, y + 2, x + w - 2, y + 2);
   g.lineStyle(4, 0x1a0e04, 1).strokeRect(x, y, w, h);
 }
 
