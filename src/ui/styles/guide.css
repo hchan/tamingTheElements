@@ -30,8 +30,9 @@
   align-items: center;
 }
 .guideWheel {
-  flex: 0 1 22em;
-  width: min(22em, 100%);
+  flex: 0 1 min(22em, 54vh);
+  /* Fits one 1280x720 screen with the heading: height follows the viewport. */
+  width: min(22em, 100%, 54vh);
   height: auto;
 }
 .guideWheelList {
@@ -208,5 +209,5 @@
 }
 @media (max-height: 500px) {
   .guideCards { grid-template-columns: repeat(auto-fill, minmax(13.5em, 1fr)); }
-  .guideWheel { flex-basis: 15em; }
+  .guideWheel { flex-basis: min(15em, 54vh); }
 }

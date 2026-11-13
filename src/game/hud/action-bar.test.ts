@@ -217,9 +217,8 @@ describe('Arcade boxes (one consistent bar)', () => {
     expect(buildSlots(bar()).map((s) => s.kind)).not.toEqual(expect.arrayContaining(['dash']));
     expect(buildSlots(bar()).every((s) => s.touch === '')).toBe(true);
   });
-  it('keeps a disabled Charge box for a ranged hero only when the team has a melee hero', () => {
-    expect(buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ chargeIn: -1 })).some((s) => s.kind === 'charge')).toBe(false);
-    const kept = buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ chargeIn: -1, keepCharge: true })).find((s) => s.kind === 'charge');
+  it('always keeps a dimmed disabled Charge box for a ranged hero, so slots never shift', () => {
+    const kept = buildSlots(bar(), DEFAULT_KEY_LABELS, arc({ chargeIn: -1 })).find((s) => s.kind === 'charge');
     expect(kept?.disabled).toBe(true);
   });
   it('has a Cleanse box on the = key that fills over its 10 s cooldown', () => {

@@ -1,5 +1,5 @@
 ---
-status: idea
+status: in-progress
 added: 2026-11-13
 ---
 
@@ -8,3 +8,5 @@ added: 2026-11-13
 Severity: medium. QA evaluator pass 2026-11-13 on main 4ddd5ca4. Screenshots: ~/claudetmp/qa/shots/route-arcade.png, route-tour.png
 
 At 1280x720 the Fight! button on Versus is clipped at the bottom edge and the Play roster is long enough that Start is out of view. Make the primary action sticky. Hero tiles have uneven label alignment (Pax, Ishimi, Treenoc pushed right of the icon, others left) and several portraits (Ishimi, Treenoc, Cyclonius) are too dark to read.
+
+Partly done 2026-11-13: Fight! and Start tour are docked to the bottom of the viewport. Open: tile label alignment, dark portraits.

@@ -102,7 +102,7 @@ function section(id: string, title: string, intro: string): HTMLElement {
 }
 
 function wheelSection(): HTMLElement {
-  const s = section('guideWheelHeading', 'Element wheel', 'Each element beats the next one round the wheel. The arrow points at the element that takes more damage.');
+  const s = section('guideWheelHeading', 'Element wheel', 'Each element beats the next. Arrows point at the one that takes more damage.');
   const body = el('div', 'guideWheelBody');
   body.append(wheelSvg());
   const list = el('ul', 'guideWheelList');

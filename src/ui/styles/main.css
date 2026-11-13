@@ -1534,12 +1534,12 @@ html[data-high-contrast='true'] button.touchBtn {
   font-weight: bold;
 }
 .firstRunHint {
+  /* Docked in the top-left corner under the HUD, clear of the fighters; fades on its own. */
   position: absolute;
-  bottom: 16%;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 14%;
+  left: 8px;
   z-index: 5;
-  max-width: min(32em, 80%);
+  max-width: min(22em, 40%);
   padding: 0.5em 0.9em;
   background: rgba(14, 12, 10, 0.88);
   color: #e8dfd0;
@@ -1573,8 +1573,8 @@ html[data-high-contrast='true'] button.touchBtn {
 }
 @media (max-height: 500px) {
   .firstRunHint {
-    bottom: 15%;
-    font-size: 12px;
+    top: 18%;
+    font-size: 11px;
     padding: 0.3em 0.7em;
   }
 }
@@ -1656,4 +1656,23 @@ button.menuButton.heroSlotClear {
 }
 .heroHint[hidden] {
   display: none;
+}
+
+/* Primary action stays on screen: Fight! (Versus) and Start tour (Play) are docked to the bottom of the viewport (sticky does not work here: body is
+   an overflow:auto box as tall as the page). The forms get bottom padding so the last row is never covered. */
+#arcadePick .vsActions,
+.heroSelect .heroActions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  justify-content: center;
+  margin-top: 0;
+  padding: 0.5em 1em;
+  background: linear-gradient(to bottom, rgba(14, 12, 10, 0), rgba(14, 12, 10, 0.94) 35%);
+}
+#arcadePick .vsForm,
+.heroSelect {
+  padding-bottom: 5em;
 }
