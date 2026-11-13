@@ -338,7 +338,8 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
   });
   if (arcade) {
     // Cmd 0: the transparent touch overlay holds the key, so a canvas click does nothing on these boxes.
-    if (arcade.chargeIn >= 0 || arcade.keepCharge) {
+    // Always present, dimmed when this hero has no Charge (ranged), so the other slots never shift between heroes or after a Tag.
+    {
       const none = arcade.chargeIn < 0;
       add({
         kind: 'charge', cmd: 0, sprite: '', icon: ACTION_ICON.charge, touch: 'Charge', highlight: false, disabled: none,

@@ -5,7 +5,7 @@ import { codeLabel, getBindings, type Bindings, type GameAction } from '../platf
 
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
-export const FIRST_RUN_MS = 15000;
+export const FIRST_RUN_MS = 8000;
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
