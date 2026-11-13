@@ -5,6 +5,7 @@ import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountTagView } from '../hud/tag-view';
 import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
 import { mute } from './grim-fx';
+import { createWeatherParticles } from './weather-particles-view';
 import {
   CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TICK_MS, WEATHER_COLORS, WEATHER_NAMES, WeatherFx,
   badgeFill, badgeLabel, callAlpha, callScale, chargeFill, chargeLabel, particle, progress, readyAlpha, tintAlpha, type Particle,
@@ -66,6 +67,8 @@ export interface WeatherState {
   /** Sky tint alpha and the particles drawn on the last frame. */
   readonly tint: number;
   readonly particles: number;
+  /** Emitters of the textured particle layers running (0 with reduced motion or no weather, Eclipse). */
+  readonly emitters: number;
   /** The charge chip: team 0's charge (per mille), its text and the bar fill (px). */
   readonly charge: number;
   readonly chargeText: string;
@@ -121,6 +124,8 @@ export function mountWeatherView(
   let bannerUntil = Number.NEGATIVE_INFINITY;
   const drawn = { kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1, charge: -1, chargeText: '', chargeFill: 0, ready: 1 };
   const pt: Particle = { x: 0, y: 0, dx: 0, dy: 0, r: 0, a: 0 };
+  /** The grim textured particle layers (weather-particles-view.ts), on top of the Graphics streaks and grains below. */
+  const wp = createWeatherParticles(arena);
 
   const text = (px: number, stroke: number): Phaser.GameObjects.Text =>
     hud.add
@@ -246,6 +251,7 @@ export function mountWeatherView(
         p.fall.clear();
         p.badge.clear();
         p.label.setVisible(false);
+        wp.set(0, reduced, 0);
         Object.assign(drawn, { kind: 0, label: '', fill: -1, tint: 0, particles: 0 });
       }
       return;
@@ -260,6 +266,8 @@ export function mountWeatherView(
     const n = reduced ? 0 : Math.min(MAX_PARTICLES, PARTICLE_COUNTS[kind - 1] ?? 0);
     const color = WEATHER_COLORS[kind - 1] ?? 0xffffff;
     const fade = drawn.tint / tint[1];
+    wp.set(kind, reduced, arcadePlayfield().w);
+    wp.setFade(fade);
     for (let i = 0; i < n; i++) {
       particle(kind, i, clock, pt);
       if (kind === 1) {
@@ -284,6 +292,7 @@ export function mountWeatherView(
     arena.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     hud.events.off('shutdown', off).off('destroy', off);
     states.delete(arena);
+    wp.destroy();
     if (parts) for (const o of Object.values(parts)) o.destroy();
     parts = undefined;
   };
@@ -291,7 +300,7 @@ export function mountWeatherView(
   for (const s of [arena, hud]) s.events.once('shutdown', off).once('destroy', off);
   // A weather already up when the view mounts (a replay seeking, or a slow chunk) shows at once, with no called line.
   states.set(arena, () => ({
-    kind: drawn.kind, label: drawn.label, fill: Math.max(0, drawn.fill), tint: drawn.tint, particles: drawn.particles,
+    kind: drawn.kind, label: drawn.label, fill: Math.max(0, drawn.fill), tint: drawn.tint, particles: drawn.particles, emitters: wp.count(),
     charge: Math.max(0, drawn.charge), chargeText: drawn.chargeText, chargeFill: drawn.chargeFill,
     call: parts?.call.visible ? parts.call.text : '', callScale: drawn.scale,
   }));
