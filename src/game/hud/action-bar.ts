@@ -23,7 +23,7 @@ export const SLOT_SIDE = ACTION_BAR_HEIGHT - SLOT_BORDER / 2 - TOP_BORDER * 2;
 export const BAR_Y = LOGICAL_HEIGHT - ACTION_BAR_HEIGHT;
 export const COOLDOWN_ALPHA = 0.33;
 export const COOLDOWN_COLOR = 0x090909;
-export const CAPTURE_READY_COLOR = 0xffd700;
+export const CAPTURE_READY_COLOR = 0xb39653;
 
 /** Icon padding inside a slot frame (Classic dressing). */
 export const ICON_PAD = 8;

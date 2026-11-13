@@ -12,3 +12,9 @@ Owner feedback (2026-11-12): "all of your new changes look too cartoony". Stage 
 - Hero sprites are small next to the arena (see the size idea in hero-rigs.md).
 
 Keep every cue readable without colour (shape/word coded, high-contrast and reduced-motion modes unchanged). Compare with real headless screenshots against Fiara.
+
+## Pass 2 (2026-11-13)
+
+Done: ROUND banner smaller, serif, ash, moved above the centre pad label; SAFE/status chips squared dark slabs with muted tones; weather plaque squared ash slab with muted badge and charge colours; timer ash-white, lighter; trap pads feathered, element-muted, grainy; capture-ready highlight muted ochre; pure test for the red end of the health ramp.
+
+Still cartoony: the full-screen saturated red low-life vignette, the yellow active-bar frame outline, TAG READY text, the "Rain!" call overlapping FIGHT in the first frames, hero sprite size.

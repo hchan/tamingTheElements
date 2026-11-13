@@ -155,9 +155,9 @@ describe('round HUD helpers', () => {
     expect([4500, 4451, 4450, 500, 49, 1, 0, -5].map(timerLabel)).toEqual(['90', '90', '89', '10', '01', '01', '00', '00']);
   });
   it('the timer style adds the word SUDDEN and a magenta colour in sudden death, red only under 10 s otherwise', () => {
-    expect(timerStyle(3000, false)).toMatchObject({ text: '60', color: '#ffffff' });
-    expect(timerStyle(500, false)).toMatchObject({ text: '10', color: '#ff8080' });
-    expect(timerStyle(3000, true)).toMatchObject({ text: 'SUDDEN 60', color: '#ff5ad2', px: 32 });
+    expect(timerStyle(3000, false)).toMatchObject({ text: '60', color: '#e0dacb' });
+    expect(timerStyle(500, false)).toMatchObject({ text: '10', color: '#d98a78' });
+    expect(timerStyle(3000, true)).toMatchObject({ text: 'SUDDEN 60', color: '#c07ab0', px: 32 });
     expect(timerStyle(3000, true).color).not.toBe(timerStyle(500, false).color);
   });
 

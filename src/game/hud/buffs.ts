@@ -4,8 +4,8 @@ import { HUD_HEIGHT, mainBar } from './bars';
 
 export const BUFF_SLOT = 20;
 export const BUFF_PADDING = 5;
-export const FRIENDLY_COLOR = 0x11ff11;
-export const HOSTILE_COLOR = 0xff1111;
+export const FRIENDLY_COLOR = 0x7f9c5a;
+export const HOSTILE_COLOR = 0xb5503c;
 /** High-contrast, colour-blind-safe pair (blue vs vermillion). */
 export const HC_FRIENDLY_COLOR = 0x56b4e9;
 export const HC_HOSTILE_COLOR = 0xd55e00;
