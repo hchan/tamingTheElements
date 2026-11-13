@@ -15,7 +15,7 @@
     "local-two": 455,
     "online-versus": 3910,
     "phaser": 388700,
-    "phaser-config": 28560,
+    "phaser-config": 28580,
     "pose-layer": 10550,
     "rolldown-runtime": 200,
     "round-view": 2380,
@@ -27,12 +27,12 @@
     "touch-controls": 1670,
     "tour": 5600,
     "viewport": 260,
-    "weather-view": 3500,
+    "weather-view": 3540,
     "ability-aura-view": 1950,
     "pad-bindings": 900,
     "pad-bindings-section": 1280
   },
-  "totalGzip": 529670,
+  "totalGzip": 529780,
   "sheets": {
     "perSheetBytes": 614400,
     "totalBytes": 12582912
