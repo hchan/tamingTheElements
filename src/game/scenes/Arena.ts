@@ -347,6 +347,10 @@ export class Arena extends Phaser.Scene {
     void import('../fx/ability-aura-view').then((m) => {
       if (this.view === view) m.mountAbilityAuraView(this, view, () => getPrefs().reduceMotion);
     });
+    // Status apply bursts, expiry fades and the debuff loops (buff-debuff-animation, its own lazy chunk).
+    void import('../fx/status-fx-view').then((m) => {
+      if (this.view === view) m.mountStatusFxView(this, view, () => getPrefs().reduceMotion);
+    });
     // The pose layer (lazy chunk): smooth walking, leans, Arcade poses, projectile easing (docs/ARCHITECTURE.md).
     void import('../views/pose-layer').then((m) => {
       if (this.view === view) this.poses = m.mountPoseLayer(this, view, pool, projPool, getPrefs);
@@ -492,6 +496,18 @@ export class Arena extends Phaser.Scene {
         const tick = world.state.world[World.tick] ?? 0;
         this.rounds?.([{ tick, sourceId: -1, kind: SimEventKind.weatherChanged, seq: 1000, weather: kind, prev, team }]);
       },
+      grantStatus: (id, status, ticks) => {
+        // Dev/test only: writes a timed status as applyTimedStatus would (STATUS_SLOTS 8 x STATUS_STRIDE 5: [id, source, start, expire, mag]).
+        this.launch?.recorder?.invalidate();
+        const now = world.state.world[World.tick] ?? 0;
+        for (let slot = 0; slot < 8; slot++) {
+          const b = (id * 8 + slot) * 5;
+          if ((world.state.status[b] ?? 0) !== 0) continue;
+          world.state.status.set([status, id, now, now + ticks, 0], b);
+          return;
+        }
+      },
+      statusFx: () => import('../fx/status-fx-view').then((m) => m.statusFxState(this)),
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
       arcadeAudio: () => import('../audio/arcade-audio').then((m) => m.arcadeAudioState(this.audio?.audio)),
       boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),

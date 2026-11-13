@@ -12,7 +12,7 @@ import { mainBar } from './bars';
 
 /** Sim ticks per second (docs/DETERMINISM.md: a fixed 50 Hz step). */
 export const TICKS_PER_SEC = 50;
-export const CHIP_W = 80;
+export const CHIP_W = 96;
 export const CHIP_H = 16;
 export const CHIP_GAP = 3;
 /** Under the HUD block (100 px tall), clear of the meter row (y 124) and left of the combo counter. */
