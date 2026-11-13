@@ -1,5 +1,5 @@
 ---
-status: idea
+status: in-progress
 added: 2026-11-13
 ---
 
@@ -21,3 +21,8 @@ Owner idea (2026-11-13): EVERYTHING, everywhere needs more animation in menus an
 - Every ability gets richer animation: anticipation (wind-up glow/telegraph), a travelling or impact effect with layered SD-generated textures (embers, ice shards, vortex rings, rock debris) animated by frame cycling, scale/alpha curves and trails, and a lingering aftermath (scorch, frost, dust) that fades.
 - Per element families share a look; supers and Weather get the biggest treatment; ability icons on the action bar pulse on ready and animate on cooldown.
 - Builds on [[ability-telegraphs]] and [[effect-sprite-style-pass]]; keep it view-only (no sim changes) and within the fx chunk budgets.
+
+## Progress (2026-11-13)
+
+- DOM menus: `src/ui/styles/menu-motion.css` (CSS only, no assets): ambient mist and ember layers behind menu screens, staggered brightness/focus entrances, hero portrait breathing, hover/focus glows. All behind prefers-reduced-motion and the Settings switch. Entrances avoid opacity/movement on purpose (axe contrast audits run mid-entrance); hover glow must not touch background colour (clashes with `.clickable:hover`).
+- Not done: SD-generated tileable layers, screen wipes, in-game HUD and ability animation.

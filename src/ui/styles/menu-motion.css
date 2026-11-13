@@ -1,0 +1,116 @@
+/*
+ * Menu motion (DOM screens only): staggered entrances, hover/focus glows, and slow ambient layers (embers, mist).
+ * Pure CSS, transform/opacity only (no layout shift), pointer-events none on the ambient layers, and everything
+ * is behind prefers-reduced-motion: no-preference. The Settings reduce-motion switch is covered by the global
+ * `html[data-reduce-motion='true']` rule in main.css (animation/transition none). Not shown during matches.
+ * Generator-free on purpose: no image assets, so no bundle growth beyond this file.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  /* Ambient layers sit behind the content (z-index -1 draws above the body background, below everything else). */
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    z-index: -1;
+    pointer-events: none;
+    will-change: transform;
+  }
+  /* Mist: huge soft, desaturated blooms drifting slowly. */
+  body::before {
+    inset: -20%;
+    background:
+      radial-gradient(40% 30% at 25% 35%, rgba(120, 112, 140, 0.16), transparent 70%),
+      radial-gradient(35% 28% at 75% 65%, rgba(96, 110, 120, 0.13), transparent 70%),
+      radial-gradient(30% 22% at 55% 15%, rgba(130, 100, 90, 0.1), transparent 70%);
+    animation: menuMist 38s ease-in-out infinite alternate;
+  }
+  /* Embers: sparse dim specks rising; the layer is 2x viewport height and moves by half of itself. */
+  body::after {
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 200%;
+    opacity: 0.85;
+    background:
+      radial-gradient(1.5px 1.5px at 12% 40%, #c9824a, transparent),
+      radial-gradient(1px 1px at 31% 28%, #b86a3a, transparent),
+      radial-gradient(2px 2px at 47% 45%, #d8955a, transparent),
+      radial-gradient(1px 1px at 63% 31%, #a8582f, transparent),
+      radial-gradient(1.5px 1.5px at 78% 42%, #c9824a, transparent),
+      radial-gradient(1px 1px at 90% 24%, #b86a3a, transparent),
+      radial-gradient(1px 1px at 22% 15%, #a8582f, transparent),
+      radial-gradient(2px 2px at 70% 11%, #d8955a, transparent);
+    animation: menuEmbers 46s linear infinite;
+  }
+  /* No ambient layers over the match canvas or cinematics (perf), only over menu screens. */
+  body:has(#battle, #cinematic, #replayViewer)::before,
+  body:has(#battle, #cinematic, #replayViewer)::after {
+    display: none;
+  }
+
+  @keyframes menuMist {
+    from { transform: translate3d(-3%, -2%, 0) scale(1); }
+    to { transform: translate3d(3%, 2%, 0) scale(1.08); }
+  }
+  @keyframes menuEmbers {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(2%, -50%, 0); }
+  }
+  @keyframes menuRise {
+    from { filter: brightness(0.55) blur(1.5px); }
+    to { filter: none; }
+  }
+  @keyframes menuFade {
+    from { filter: brightness(0.7); }
+    to { filter: none; }
+  }
+  @keyframes menuBreathe {
+    from { transform: scale(1); filter: brightness(0.95); }
+    to { transform: scale(1.025); filter: brightness(1.08); }
+  }
+
+  /* Staggered entrances: a brightness and focus settle, no movement or opacity (moving or translucent items overlapped neighbours mid-entrance and failed axe contrast audits). */
+  #menu h1.heading {
+    animation: menuRise 0.45s ease-out backwards;
+  }
+  .mainMenuList li {
+    animation: menuRise 0.4s ease-out backwards;
+  }
+  .mainMenuList li:nth-child(1) { animation-delay: 0.08s; }
+  .mainMenuList li:nth-child(2) { animation-delay: 0.14s; }
+  .mainMenuList li:nth-child(3) { animation-delay: 0.2s; }
+  .mainMenuList li:nth-child(4) { animation-delay: 0.26s; }
+  .mainMenuList li:nth-child(5) { animation-delay: 0.32s; }
+  .mainMenuList li:nth-child(n + 6) { animation-delay: 0.38s; }
+  #menu fieldset,
+  #menu .heroGroup,
+  #menu .heroStage,
+  #menu details {
+    animation: menuFade 0.5s ease-out 0.12s backwards;
+  }
+  .heroPortrait {
+    animation: menuBreathe 5.5s ease-in-out infinite alternate;
+    transform-origin: 50% 60%;
+  }
+
+  /* Hover and focus glows: a dim warm bloom that never replaces the focus ring. */
+  button.clickable,
+  button.menuButton,
+  a.menuButton,
+  a.menuLink,
+  .heroTile {
+    transition: text-shadow 0.18s ease-out, box-shadow 0.18s ease-out;
+  }
+
+  button.clickable:focus-visible {
+    text-shadow: 0 0 10px rgba(217, 194, 122, 0.75), 0 0 2px rgba(255, 240, 200, 0.6);
+  }
+  button.menuButton:hover:not(:disabled),
+  a.menuButton:hover,
+  a.menuLink:hover {
+    box-shadow: 0 0 12px rgba(217, 194, 122, 0.45);
+  }
+  .heroTile:hover {
+    box-shadow: 0 0 10px rgba(217, 194, 122, 0.3);
+  }
+}
