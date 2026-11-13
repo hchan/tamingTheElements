@@ -19,7 +19,6 @@ import {
   REST_COLOR,
   barFill,
   benchBar,
-  BENCH_SPRITE,
   collectSide,
   criticalPulse,
   grimHealthColor,
@@ -35,6 +34,7 @@ import {
   type BarGeometry,
   type HudCharacter,
 } from '../hud/bars';
+import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
 
 export const HUD_SCENE = 'Hud';
 
@@ -55,16 +55,7 @@ const TRACK_COLOR = 0x120f0c;
 const FRAME_COLOR = 0x050403;
 
 const TEAMS = [0, 1] as const;
-/** Classic portrait: the active monster beside its health bar (left of the player's, right of the enemy's). */
-const PORTRAIT = 52;
-/** Below the fullscreen button in the top-right corner. */
-const PORTRAIT_Y = 44;
 const PORTRAIT_FRAME = 'portrait';
-/** Lowest the top of a bench portrait may sit: just under the main bar. */
-const BENCH_TOP = 24;
-function portraitX(team: number): number {
-  return team === 0 ? 30 : HUD_WIDTH - 20 - PORTRAIT;
-}
 /** The same already-installed engraved serif the action bar, timer and banners use (no new font files). */
 const HUD_FONT = 'Georgia, "Times New Roman", serif';
 /** Frames between re-reads of the accessibility prefs (the OS media queries are not free per frame). */
@@ -227,7 +218,7 @@ export class Hud extends Phaser.Scene {
     // At least 16 px (times the phone boost), and below the hero's health words as measured (they wrap to several lines when boosted).
     const px = Math.round(16 * phoneBoost(this, 2));
     const label = this.labels[team];
-    const top = Math.max(CHIP_Y, label && label.text !== '' ? Math.ceil(label.y + label.height) + 2 : 0);
+    const top = chipRowTop(CHIP_Y, label);
     const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top });
     chips.forEach((chip, i) => {
       const slot = team * CHIP_MAX + i;
@@ -306,11 +297,7 @@ export class Hud extends Phaser.Scene {
         im?.setVisible(false);
         continue;
       }
-      const g = benchBar(sideOffset(team), i);
-      // Small enough to clear the main bar above and the health words to the left.
-      const s = BENCH_SPRITE - 14;
-      const bx = g.minX - 5 - s;
-      const by = Math.max(g.y - s / 2, BENCH_TOP);
+      const { x: bx, y: by, size: s } = benchPortraitRect(team, i);
       back?.fillStyle(0x070a12, 0.78);
       back?.fillRoundedRect(bx - 2, by - 2, s + 4, s + 4, 4);
       this.placePortrait(im, b, bx, by, s, team === 1);
@@ -347,10 +334,11 @@ export class Hud extends Phaser.Scene {
       return;
     }
     const g = benchBar(sideOffset(team), row);
+    const at = regenAnchor(team, g);
     const t = this.regenTexts[slot] ?? this.text(16).setOrigin(team === 0 ? 0 : 1, 0.5);
     this.regenTexts[slot] = t;
     const healing = regenState(c) === 'healing';
-    t.setPosition(team === 0 ? g.maxX + 10 : sideOffset(1) + 120 - 10 - 2, g.y)
+    t.setPosition(at.x, at.y)
       .setColor(healing ? '#9dffa0' : '#c8d0e0')
       .setAlpha(healing && !this.reduceMotion ? criticalPulse(this.time.now, false) * 0.4 + 0.6 : 1)
       .setVisible(true);
@@ -404,7 +392,7 @@ export class Hud extends Phaser.Scene {
         .setOrigin(team === 0 ? 0 : 1, 0)
         .setAlign(team === 0 ? 'left' : 'right')
         .setPosition(team === 0 ? COMBO_MARGIN : HUD_WIDTH - COMBO_MARGIN, COMBO_Y);
-      const key = c.hits * 100_000 + Math.round(c.damage);
+      const key = comboKey(c.hits, c.damage);
       if (this.comboKeys[team] !== key) {
         this.comboKeys[team] = key;
         t.setText(comboLabel(c.hits, c.damage));
@@ -492,18 +480,7 @@ export class Hud extends Phaser.Scene {
     }
     if (!this.grainGfx) {
       const g = this.add.graphics().setDepth(97);
-      const W = 1280;
-      const H = 720;
-      for (let i = 0; i < 2600; i++) {
-        const hx = Math.imul(i + 1, 2654435761) >>> 0;
-        const hy = Math.imul(i + 7, 1597334677) >>> 0;
-        const u = (hx >>> 8) / 16777216;
-        const v = (hy >>> 8) / 16777216;
-        // Push the points toward the edge (a quadratic bias on the distance from the centre).
-        const ex = (u < 0.5 ? -1 : 1) * (1 - Math.pow(1 - Math.abs(u - 0.5) * 2, 2)) * 0.5 + 0.5;
-        const ey = (v < 0.5 ? -1 : 1) * (1 - Math.pow(1 - Math.abs(v - 0.5) * 2, 2)) * 0.5 + 0.5;
-        g.fillStyle(i % 5 === 0 ? 0x4a2a1c : 0x0a0302, 0.5).fillRect(Math.round(ex * W), Math.round(ey * H), 2, 2);
-      }
+      for (const f of edgeGrainFlecks()) g.fillStyle(f.color, f.alpha).fillRect(f.x, f.y, 2, 2);
       this.grainGfx = g;
     }
     this.grainGfx.setVisible(true).setAlpha(Math.min(1, strength / 0.45));
@@ -511,14 +488,7 @@ export class Hud extends Phaser.Scene {
 
   /** Speckle over the fill: dark and ash flecks from an integer hash of the x position (a still pattern: nothing flickers, nothing is random). */
   private grain(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, segs: readonly (readonly [number, number])[]): void {
-    for (const [x0, x1] of segs) {
-      for (let x = Math.ceil(x0); x < x1; x += 3) {
-        const h = Math.imul(x, 2654435761) >>> 28;
-        if (h > 5) continue;
-        const dy = (h % 3) - 1;
-        gfx.fillStyle(h < 4 ? 0x0a0806 : 0xcfc4a8, h < 4 ? 0.35 : 0.14).fillRect(x, g.y + dy * (g.line / 3) - 1, 2, 2);
-      }
-    }
+    for (const f of barGrain(g, segs)) gfx.fillStyle(f.color, f.alpha).fillRect(f.x, f.y, 2, 2);
   }
 
   /**

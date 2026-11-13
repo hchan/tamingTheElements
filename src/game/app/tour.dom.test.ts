@@ -225,6 +225,18 @@ describe('versus splash and battle start', () => {
     expect(r.host.querySelector('#battle')).not.toBeNull();
   });
 
+  it('holdSplash pins the splash (no timer) until a key or click', () => {
+    vi.useFakeTimers();
+    const r = mount(playing, { flags: { ...DEFAULT_UI_FLAGS, forceNoWebgl: true, holdSplash: true } });
+    $('tourResumeRun').click();
+    $('tourFight').click();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(60_000);
+    expect(r.host.querySelector('#tourSplash')).not.toBeNull();
+    press('Enter');
+    expect(r.host.querySelector('#battle')).not.toBeNull();
+  });
+
   it('reduced motion skips the splash entirely', () => {
     reduceMotion = true;
     const r = toStage();

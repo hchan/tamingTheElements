@@ -23,6 +23,8 @@ export interface UiFlags {
   readonly failSave: boolean;
   /** Turns tester mode on at load (`?cheats=1`, dev and test builds only; production uses the cheat code). */
   readonly cheats: boolean;
+  /** The tour's versus splash waits for a key or click instead of its timer (`?ff=holdSplash`, dev and test builds; e2e pins the splash). */
+  readonly holdSplash: boolean;
   /** Fixed seed for the battle and opponent draw (`?seed=N`, dev and test builds only), or null for the clock. */
   readonly seed: number | null;
 }
@@ -42,6 +44,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   failGame: false,
   failSave: false,
   cheats: false,
+  holdSplash: false,
   seed: null,
 };
 
@@ -70,6 +73,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     failSetup: on.has('failSetup'),
     failGame: on.has('failGame'),
     failSave: on.has('failSave'),
+    holdSplash: on.has('holdSplash'),
     cheats: new URLSearchParams(search).get('cheats') === '1',
     seed,
   };

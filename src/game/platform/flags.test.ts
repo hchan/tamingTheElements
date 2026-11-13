@@ -33,4 +33,10 @@ describe('ui flags', () => {
     expect(parseUiFlags('?cheats=0', { DEV: true, MODE: 'development' }).cheats).toBe(false);
     expect(parseUiFlags('?cheats=1', { DEV: false, MODE: 'production' }).cheats).toBe(false);
   });
+
+  it('reads ff=holdSplash in dev and test builds only', () => {
+    expect(parseUiFlags('?ff=holdSplash', { DEV: false, MODE: 'test' }).holdSplash).toBe(true);
+    expect(parseUiFlags('?ff=arcade', { DEV: true, MODE: 'development' }).holdSplash).toBe(false);
+    expect(parseUiFlags('?ff=holdSplash', { DEV: false, MODE: 'production' }).holdSplash).toBe(false);
+  });
 });
