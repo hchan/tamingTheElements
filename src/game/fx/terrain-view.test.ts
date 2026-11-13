@@ -82,7 +82,11 @@ function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emit
     cameras: { main: { midPoint: { x: 960 } } },
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => active },
-    textures: { exists: (k: string) => textures.includes(k) },
+    textures: {
+      exists: (k: string) => textures.includes(k),
+      createCanvas: () => ({ getContext: () => null, refresh: () => undefined }),
+      remove: () => undefined,
+    },
     load: { image: (k: string) => { loads.push(k); }, start: () => undefined },
     make: {
       tilemap: ({ data }: { data: number[][] }) => {
@@ -189,10 +193,10 @@ describe('terrain view (fake scenes)', () => {
     expect(calls[1]).not.toContain('strokeEllipse');
     expect(calls[2]).toContain('strokeEllipse'); // ripples
     expect(calls[2]).not.toContain('strokePoints');
-    expect(calls[3]).toContain('lineBetween'); // brick joints
+    expect(calls[3]).toContain('lineBetween'); // facet edges and crystal glints of the rock props
+    expect(calls[3]).toContain('fillPoints'); // crystal faces
     expect(calls[4]).toContain('strokePath'); // the swirl rune
-    expect(calls[3]).not.toContain('strokePath'); // bricks are rects and joints, not paths
-    expect(calls[3]).not.toContain('fillPoints'); // the earth wall keeps its solid blocks, no stain
+    expect(calls[3]).not.toContain('strokePath'); // props are polygons and lines, not paths
   });
 
   it('the badge needs the stage element and the hero centre inside a patch; it follows the hero', () => {
@@ -256,6 +260,13 @@ describe('terrain view (fake scenes)', () => {
     r.arcade.swapTo = 3;
     r.frame();
     expect(r.state()).toMatchObject({ alpha: 0.5, nextBackdrop: 0 });
+  });
+
+  it('earth rocks draw as props with no on-canvas text, but the labels stay in the state', () => {
+    const m = mount({ stage: 3, element: 'void' });
+    m.frame();
+    expect(m.state().labels).toEqual(['ROCK', 'ROCK']);
+    expect(m.arena.made.filter((o) => o.kind === 'text').every((o) => !o.visible)).toBe(true);
   });
 
   it('a blocked shot sparks (static with reduced motion) for SPARK_TICKS and says "Rock blocks the shot."', () => {
