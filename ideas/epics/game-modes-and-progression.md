@@ -12,7 +12,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [sf-world-map-tour](../brainstorm/sf-world-map-tour.md)
 - [sf-bonus-stages](../brainstorm/sf-bonus-stages.md)
 - [sf-grand-master-bosses](../brainstorm/sf-grand-master-bosses.md)
-- [sf-win-quotes](../brainstorm/sf-win-quotes.md)
+- [sf-win-quotes](../in-progress/sf-win-quotes.md)
 - [arena-panning](../brainstorm/arena-panning.md)
 - [bomb-traps](../brainstorm/bomb-traps.md)
 - [more-heroes-abilities](../brainstorm/more-heroes-abilities.md)
