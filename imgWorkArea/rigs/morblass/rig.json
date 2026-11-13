@@ -6,152 +6,39 @@
   ],
   "parts": [
     {
-      "id": "head",
-      "parent": "torso",
-      "png": "head.png",
-      "pivot": [
-        13,
-        19
-      ],
-      "at": [
-        7,
-        -20
-      ],
-      "z": 7,
-      "views": {
-        "SE": {
-          "png": "head_se.png",
-          "pivot": [
-            15,
-            21
-          ],
-          "at": [
-            2,
-            -19
-          ]
-        },
-        "NE": {
-          "png": "head_ne.png",
-          "pivot": [
-            11,
-            18
-          ],
-          "at": [
-            5,
-            -20
-          ]
-        }
-      }
-    },
-    {
-      "id": "armF",
-      "parent": "torso",
-      "png": "armF.png",
-      "pivot": [
-        11,
-        3
-      ],
-      "at": [
-        -8,
-        -13
-      ],
-      "z": 8,
-      "views": {
-        "SE": {
-          "png": "armF_se.png",
-          "pivot": [
-            11,
-            4
-          ],
-          "at": [
-            -11,
-            -14
-          ]
-        },
-        "NE": {
-          "png": "armF_ne.png",
-          "pivot": [
-            11,
-            4
-          ],
-          "at": [
-            -4,
-            -13
-          ]
-        }
-      }
-    },
-    {
-      "id": "torso",
-      "parent": "tail",
-      "png": "torso.png",
-      "pivot": [
-        18,
-        21
-      ],
-      "at": [
-        1,
-        -12
-      ],
-      "z": 5,
-      "views": {
-        "SE": {
-          "png": "torso_se.png",
-          "pivot": [
-            17,
-            21
-          ],
-          "at": [
-            0,
-            -11
-          ]
-        },
-        "NE": {
-          "png": "torso_ne.png",
-          "pivot": [
-            18,
-            21
-          ],
-          "at": [
-            0,
-            -12
-          ]
-        }
-      }
-    },
-    {
       "id": "tail",
+      "parent": "torso",
       "png": "tail.png",
       "pivot": [
-        27,
-        9
+        34,
+        11
       ],
       "at": [
-        34,
-        56
+        0,
+        16
       ],
       "z": 1,
       "views": {
         "SE": {
           "png": "tail_se.png",
           "pivot": [
-            25,
-            9
+            31,
+            10
           ],
           "at": [
-            36,
-            57
+            1,
+            15
           ]
         },
         "NE": {
           "png": "tail_ne.png",
           "pivot": [
-            25,
-            9
+            33,
+            10
           ],
           "at": [
-            33,
-            55
+            1,
+            16
           ]
         }
       }
@@ -161,11 +48,11 @@
       "parent": "torso",
       "png": "armB.png",
       "pivot": [
-        6,
-        4
+        2,
+        19
       ],
       "at": [
-        8,
+        14,
         -12
       ],
       "z": 2,
@@ -173,22 +60,135 @@
         "SE": {
           "png": "armB_se.png",
           "pivot": [
-            6,
-            4
+            2,
+            19
           ],
           "at": [
-            10,
+            15,
             -13
           ]
         },
         "NE": {
           "png": "armB_ne.png",
           "pivot": [
-            6,
-            4
+            3,
+            18
           ],
           "at": [
-            12,
+            17,
+            -12
+          ]
+        }
+      }
+    },
+    {
+      "id": "torso",
+      "png": "torso.png",
+      "pivot": [
+        28,
+        38
+      ],
+      "at": [
+        40,
+        56
+      ],
+      "z": 5,
+      "views": {
+        "SE": {
+          "png": "torso_se.png",
+          "pivot": [
+            28,
+            38
+          ],
+          "at": [
+            41,
+            58
+          ]
+        },
+        "NE": {
+          "png": "torso_ne.png",
+          "pivot": [
+            28,
+            38
+          ],
+          "at": [
+            38,
+            55
+          ]
+        }
+      }
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "png": "head.png",
+      "pivot": [
+        17,
+        27
+      ],
+      "at": [
+        1,
+        -26
+      ],
+      "z": 7,
+      "views": {
+        "SE": {
+          "png": "head_se.png",
+          "pivot": [
+            18,
+            28
+          ],
+          "at": [
+            -5,
+            -25
+          ]
+        },
+        "NE": {
+          "png": "head_ne.png",
+          "pivot": [
+            14,
+            25
+          ],
+          "at": [
+            -1,
+            -26
+          ]
+        }
+      }
+    },
+    {
+      "id": "armF",
+      "parent": "torso",
+      "png": "armF.png",
+      "pivot": [
+        22,
+        10
+      ],
+      "at": [
+        -14,
+        -12
+      ],
+      "z": 8,
+      "views": {
+        "SE": {
+          "png": "armF_se.png",
+          "pivot": [
+            22,
+            10
+          ],
+          "at": [
+            -17,
+            -13
+          ]
+        },
+        "NE": {
+          "png": "armF_ne.png",
+          "pivot": [
+            22,
+            10
+          ],
+          "at": [
+            -10,
             -12
           ]
         }
@@ -202,7 +202,7 @@
         "tail": {
           "dy": [
             0,
-            1,
+            0,
             1,
             0
           ]
@@ -216,9 +216,9 @@
           ],
           "dy": [
             0,
-            0,
-            1,
-            1
+            -1,
+            -1,
+            0
           ]
         },
         "head": {
@@ -252,9 +252,9 @@
       "curves": {
         "tail": {
           "rot": [
-            -3,
+            -2,
             0,
-            3,
+            2,
             0
           ],
           "dy": [
@@ -267,9 +267,9 @@
         "torso": {
           "rot": [
             2,
-            2,
-            2,
-            2
+            0,
+            -2,
+            0
           ],
           "dy": [
             1,
@@ -282,8 +282,8 @@
           "rot": [
             -2,
             -1,
-            -2,
-            -1
+            2,
+            1
           ]
         },
         "armF": {
