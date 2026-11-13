@@ -105,6 +105,10 @@ export interface ArenaProbe {
   heroLabels(): string[];
   /** The buff auras and heal pops drawn on the last frame (ability-graphics-audit-defects). */
   abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string }[]; lashes: readonly { team: number; age: number }[] } | undefined>;
+  /** Dev/test only: gives an entity a timed status (a StatusId) for `ticks` sim ticks. */
+  grantStatus(id: number, status: number, ticks: number): void;
+  /** Hero status effects drawn on the last frame (buff-debuff-animation). */
+  statusFx(): Promise<{ loops: readonly { id: number; status: number }[]; bursts: readonly { id: number; status: number; age: number }[]; fades: readonly { id: number; status: number; age: number }[] } | undefined>;
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
   dangerZones(): Promise<readonly { id: number; x: number; y: number; w: number; h: number; alpha: number }[] | undefined>;
   /** Own-element patch effects drawn on the last frame (own-element-tile-effects WP 1); undefined outside Arcade. */

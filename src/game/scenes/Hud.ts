@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { RenderView } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
 import { mute } from '../fx/grim-fx';
+import { ROOT_ICON, STATUS_LOOKS, StatusTracker, chipBlink, chipFlash, chipPop } from '../fx/status-fx';
 import { crisp, fitScene, phoneBoost } from '../boot/viewport';
 import { lookup } from '../views/projectile-view';
 import { heroName } from '../hud/tag-fx';
@@ -56,6 +57,15 @@ const TRACK_COLOR = 0x120f0c;
 const FRAME_COLOR = 0x050403;
 
 const TEAMS = [0, 1] as const;
+
+/** Where a status chip was and its colour, kept so the expire flash can outline it after it ends. */
+interface ChipLook {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly color: number;
+}
 const PORTRAIT_FRAME = 'portrait';
 /** The same already-installed engraved serif the action bar, timer and banners use (no new font files). */
 const HUD_FONT = 'Georgia, "Times New Roman", serif';
@@ -77,6 +87,7 @@ export class Hud extends Phaser.Scene {
   private grainGfx: Phaser.GameObjects.Graphics | undefined;
   private highContrast = false;
   private reduceMotion = false;
+  private chipTrackers: StatusTracker<ChipLook>[] = [];
   private frame = 0;
   private arcade: ArcadeHudModel | undefined;
   /** Pooled texts, created on first use: one per damage-number slot and one combo counter per team. */
@@ -221,15 +232,44 @@ export class Hud extends Phaser.Scene {
     const label = this.labels[team];
     const top = chipRowTop(CHIP_Y, label);
     const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top });
+    const now = view.tick;
+    const reduced = this.reduceMotion;
+    const tracker = (this.chipTrackers[team] ??= new StatusTracker<ChipLook>(12));
+    const cur = new Map<string, { payload: ChipLook; start: number; expire: number }>();
+    for (const chip of chips) cur.set(chip.key, { payload: { x: chip.x, y: chip.y, w: chip.w, h: chip.h, color: chip.color }, start: 0, expire: 0 });
+    const born = new Map(tracker.update(now, cur).map((t) => [t.key, t.born]));
     chips.forEach((chip, i) => {
       const slot = team * CHIP_MAX + i;
       const t = (this.chipTexts[slot] ??= this.add
         .text(0, 0, '', crisp(this, { fontFamily: HUD_FONT, fontSize: `${String(px)}px`, color: '#d8d2c4', fontStyle: 'normal', stroke: '#0a0806', strokeThickness: 2 }))
         .setDepth(102));
-      t.setFontSize(px).setText(chip.text).setPosition(chip.x + 4, chip.y + Math.round((chip.h - t.height) / 2)).setVisible(true);
-      gfx.fillStyle(0x0d0b09, 0.78).fillRect(chip.x, chip.y, chip.w, chip.h);
+      const age = now - (born.get(chip.key) ?? Number.NEGATIVE_INFINITY);
+      // Apply pop: the chip swells about its centre and settles; a flash washes over it (no motion under reduced motion).
+      const pop = chipPop(age, reduced);
+      const w = chip.w * pop;
+      const h = chip.h * pop;
+      const x = chip.x - (w - chip.w) / 2;
+      const y = chip.y - (h - chip.h) / 2;
+      const low = chip.secs !== null && chip.secs <= 1;
+      const shown = !low || chipBlink(now % 49, reduced);
+      t.setFontSize(px).setText(chip.text).setPosition(chip.x + 4, chip.y + Math.round((chip.h - t.height) / 2)).setVisible(true).setAlpha(shown ? 1 : 0.45);
+      gfx.fillStyle(0x0d0b09, 0.78).fillRect(x, y, w, h);
+      const flash = chipFlash(age, reduced);
+      if (flash > 0) gfx.fillStyle(mute(chip.color, 0.5, 1.3), flash * 0.5).fillRect(x, y, w, h);
       // Time bar along the foot of the chip, draining to the left.
-      gfx.fillStyle(chip.color, 0.85).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
+      gfx.fillStyle(chip.color, shown ? 0.85 : 0.4).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
+      // Shape icon in a draining timer ring at the chip's right end: the silhouette codes the status without colour.
+      const id = /^s(\d+)$/.exec(chip.key);
+      const icon = id ? STATUS_LOOKS[Number(id[1])]?.icon : chip.key === 'root' ? ROOT_ICON : undefined;
+      if (icon) {
+        const r = Math.max(5, Math.round(chip.h / 2) - 2);
+        const cx = chip.x + chip.w - r - 4;
+        const cy = chip.y + chip.h / 2;
+        gfx.lineStyle(1, chip.color, 0.3).strokeCircle(cx, cy, r);
+        gfx.lineStyle(2, chip.color, shown ? 0.9 : 0.4).beginPath().arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chip.remaining, false).strokePath();
+        gfx.lineStyle(1.5, chip.color, 0.95);
+        for (let k = 0; k + 3 < icon.length; k += 2) gfx.lineBetween(cx + (icon[k] ?? 0) * r * 0.55, cy + (icon[k + 1] ?? 0) * r * 0.55, cx + (icon[k + 2] ?? 0) * r * 0.55, cy + (icon[k + 3] ?? 0) * r * 0.55);
+      }
       // Buffs have a solid frame, debuffs a dashed one (so the two differ without colour).
       gfx.lineStyle(this.highContrast ? 2 : 1, chip.color, this.highContrast ? 1 : 0.75);
       if (chip.hostile) {
@@ -241,6 +281,11 @@ export class Hud extends Phaser.Scene {
         gfx.lineBetween(chip.x + chip.w, chip.y, chip.x + chip.w, chip.y + chip.h);
       } else gfx.strokeRect(chip.x, chip.y, chip.w, chip.h);
     });
+    // Expire flash: a chip that just ended leaves a brief dark-ember outline where it was.
+    for (const gone of tracker.gone()) {
+      const f = chipFlash(now - gone.at, reduced);
+      if (f > 0) gfx.lineStyle(2, gone.payload.color, f).strokeRect(gone.payload.x, gone.payload.y, gone.payload.w, gone.payload.h);
+    }
     this.hideChips(team, chips.length);
   }
 
