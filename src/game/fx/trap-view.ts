@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { TRAP_BOX_PX, TRAP_VIEW_STRIDE, type RenderView } from '@core/index';
 import { LOGICAL_WIDTH } from '../boot/viewport';
-import { mute } from './grim-fx';
+import { hash01, mute } from './grim-fx';
 import { TRAP_COLORS, TRAP_RANGE_PX, trapAlpha, trapLabel } from './trap-fx';
 
 /**
@@ -60,9 +60,15 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
       }
       const words = trapLabel(kind, team, armLeft);
       const alpha = trapAlpha(armLeft, lifeLeft, view.tick, reduced);
-      g.fillStyle(0x000000, 0.25 * alpha).fillRect(x + 3, y + 3, TRAP_BOX_PX, TRAP_BOX_PX);
-      g.fillStyle(mute(TRAP_COLORS[kind] ?? 0xffffff, 0.55, 0.85), 0.78 * alpha).fillRect(x, y, TRAP_BOX_PX, TRAP_BOX_PX);
-      g.lineStyle(2, 0x0a0806, alpha).strokeRect(x, y, TRAP_BOX_PX, TRAP_BOX_PX);
+      g.fillStyle(0x000000, 0.3 * alpha).fillRect(x + 3, y + 3, TRAP_BOX_PX, TRAP_BOX_PX);
+      // Grim pad: a dark, desaturated, grainy slab (no bold outline); the word label and range outline carry the reading.
+      g.fillStyle(mute(TRAP_COLORS[kind] ?? 0xffffff, 0.4, 0.5), 0.8 * alpha).fillRect(x, y, TRAP_BOX_PX, TRAP_BOX_PX);
+      for (let n = 0; n < 14; n++) {
+        const gx = x + 1 + Math.floor(hash01(n, kind * 31) * (TRAP_BOX_PX - 3));
+        const gy = y + 1 + Math.floor(hash01(n, kind * 31 + 1) * (TRAP_BOX_PX - 3));
+        g.fillStyle(n % 3 === 0 ? 0x1a1410 : 0x7a7060, (n % 3 === 0 ? 0.45 : 0.22) * alpha).fillRect(gx, gy, 2, 2);
+      }
+      g.lineStyle(1, 0x0a0806, 0.55 * alpha).strokeRect(x, y, TRAP_BOX_PX, TRAP_BOX_PX);
       // The trigger range: a bright outline over a dark one, so it reads on any floor; thin while arming, solid once armed.
       g.lineStyle(armLeft > 0 ? 1 : 3, 0x000000, 0.7 * alpha).strokeRect(x - margin - 1, y - margin - 1, TRAP_RANGE_PX + 2, TRAP_RANGE_PX + 2);
       g.lineStyle(armLeft > 0 ? 1 : 2, 0xd8cdb8, 0.85 * alpha).strokeRect(x - margin, y - margin, TRAP_RANGE_PX, TRAP_RANGE_PX);

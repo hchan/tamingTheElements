@@ -12,7 +12,7 @@ const W = 1280;
 const H = 720;
 /** Multiply tint per element on the (pale) background art: darkens it and gives each arena its own colour. */
 export const BACKDROP_TINT: Readonly<Record<Element, number>> = {
-  fire: 0xd9906a, air: 0xa8c8e8, earth: 0xb99a66, water: 0x6fa6dc, void: 0x9a7cc8,
+  fire: 0xa8715a, air: 0x7d8ea3, earth: 0x8f7a5a, water: 0x52708f, void: 0x75678f,
 };
 const VIGNETTE_KEY = 'tte:vignette';
 const MOTE_KEY = 'tte:mote';
@@ -84,6 +84,10 @@ function ensureTextures(scene: Phaser.Scene): void {
       v.addColorStop(1, 'rgba(0,0,0,0.4)');
       ctx.fillStyle = v;
       ctx.fillRect(0, 0, 320, 180);
+      // Film grain (seeded hash, not Math.random): scaled up 4x it reads as soft painterly tooth over the pale art.
+      const px = ctx.getImageData(0, 0, 320, 180);
+      for (let i = 3; i < px.data.length; i += 4) px.data[i] = Math.max(px.data[i] ?? 0, unit(i) * 45);
+      ctx.putImageData(px, 0, 0);
       t.refresh();
     }
   }
