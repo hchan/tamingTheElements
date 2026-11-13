@@ -18,8 +18,11 @@ const alias = {
 const oracleDir = process.env['TTE_ORACLE_DIR'] ?? fileURLToPath(new URL('./.oracle', import.meta.url));
 const oracleAvailable = (): boolean => existsSync(resolve(oracleDir, 'war/WEB-INF/private/index.html'));
 
-// Heavy sim, fuzz and balance tests take seconds; a loaded CI or dev machine must not turn that into a false failure.
-const TEST_TIMEOUT_MS = 60_000;
+// Heavy sim, fuzz and balance tests take seconds alone (slowest: fun-gate ~17 s and weather property ~5 s when all 263 files
+// run in parallel). With several agents on the same machine the 13 vitest workers get a small slice of the CPU and those
+// stretch 10x or more past the old 60 s, then fail although they pass alone. The timeout only guards against hangs, so it is
+// generous; it asserts nothing. (Wall-clock assertions in tests/repo/sim-perf.test.ts are separate and use medians/minimums.)
+const TEST_TIMEOUT_MS = 240_000;
 
 export default defineConfig({
   test: {
