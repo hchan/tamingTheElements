@@ -27,6 +27,8 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Fun gates (Arcade 1v1 and 2v2, all pairings)
         run: corepack pnpm fun:gates --seeds 8 --out out/fun-gates.json
+      - name: Ability usage gate (dead slots, top-slot cast share)
+        run: corepack pnpm ability:gates --seeds 8 --out out/ability-usage-gates.json
       - name: Arcade balance compare
         run: corepack pnpm balance:compare --ruleset arcade --out out/arcade-balance-report.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -36,4 +38,5 @@ jobs:
           path: |
             out/fun-gates.json
             out/arcade-balance-report.json
+            out/ability-usage-gates.json
           if-no-files-found: ignore
