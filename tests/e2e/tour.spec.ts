@@ -37,6 +37,8 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   await expect(page.locator('#tourPins li[data-state="current"]')).toContainText('Stage 1:');
   await expect(page.locator('#tourPins li[data-state="locked"]')).toHaveCount(8);
   await expect(page.locator('#tourPins li[data-state="locked"]').first()).toContainText('Locked');
+  // One cue per locked tile: the word, not also a padlock icon (qa-r16). The stylesheet is a lazy chunk, so poll.
+  await expect.poll(() => page.evaluate(`getComputedStyle(document.querySelector('#tourPins li[data-state="locked"]'), '::after').content`)).toMatch(/^(none|normal)$/);
   expect(await page.evaluate<string | null>(`localStorage.getItem('${KEY}')`)).toContain('"stage":0');
 
   await page.getByRole('button', { name: 'Fight' }).click();
