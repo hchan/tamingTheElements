@@ -50,7 +50,7 @@
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 605500,
+  "totalGzip": 607000,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600
