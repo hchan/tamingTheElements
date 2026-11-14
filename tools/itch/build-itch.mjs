@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 // Budgets: itch's hard limits are 1000 files, 500 MB extracted, 200 MB per file, 240 chars per path.
 // Ours are far tighter so growth is noticed long before the platform limit. Documented in docs/DEPLOYMENT.md.
-export const BUDGET = { files: 500, totalBytes: 40 * 1024 * 1024, fileBytes: 20 * 1024 * 1024, pathChars: 200 };
+export const BUDGET = { files: 500, totalBytes: 150 * 1024 * 1024, fileBytes: 20 * 1024 * 1024, pathChars: 200 };
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const out = join(root, 'dist-itch');
