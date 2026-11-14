@@ -50,6 +50,9 @@ export const CUES = {
   elemWater: [[0, 1100, 520, 180, 0.22], [0, 880, 440, 200, 0.16, 90]],
   elemEarth: [[0, 110, 55, 220, 0.5], [2, 82, 55, 160, 0.14, 30]],
   elemAir: [[NOISE, 1200, 3400, 200, 0.28], [1, 880, 1320, 140, 0.12, 60]],
+  /** Stage hazard (systems/arcade/hazard.ts): a low rising rumble on its warning, a dull crash when it strikes. */
+  hazardWarn: [[3, 55, 82, 380, 0.14], [NOISE, 200, 500, 360, 0.12]],
+  hazardStrike: [[NOISE, 900, 150, 260, 0.4], [0, 70, 35, 220, 0.45]],
   /** Low-life heartbeat: a soft double thud (lub-dub) while the player's hero is in the red. */
   heartbeat: [[0, 70, 45, 110, 0.55], [0, 62, 40, 130, 0.4, 150]],
   /** A refused action (a swap while stunned or cooling down): two short low buzzes, never a stinger. */
@@ -83,7 +86,7 @@ export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'sudden
 export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
   43: 'guard', 44: 'parry', 45: 'crack', 46: 'dash', 47: 'dodge', 48: 'clang', 50: 'charge', 53: 'round', 54: 'fight',
   55: 'ko', 57: 'roundEnd', 67: 'dash', 70: 'trapSet', 71: 'trapArm', 72: 'trapPop',
-  73: 'elemental',
+  73: 'elemental', 76: 'hazardWarn', 77: 'hazardStrike',
 };
 const ROUND_STARTED: Kinds['roundStarted'] = 53;
 const HIT: Kinds['hitConfirmed'] = 41;
@@ -124,6 +127,7 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   elementalEnded: 'the HUD slot says it (the name, then its cooldown)',
   chargeEnded: 'the arrival hit plays the thump; the charge start plays the dash whoosh',
   cleanse: 'the view plays playSfx(cleanse, element) from the event (fx/cleanse-view, Arena)',
+  hazardHit: 'the strike crash plays on the same tick',
 };
 
 /** Hit thump gain by strength (light, medium, heavy, super). */

@@ -6,7 +6,8 @@ import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
 import { capturable } from '../rules/progression';
 import {
-  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, MAX_ENTITIES, PATCH_MAX, TEAM_STRIDE, TeamField, TRAP_STRIDE, TRAP_TABLE, TRAP_WORLD_MAX, TrapF, World,
+  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, HAZARD_BASE, HazardF,
+  MAX_ENTITIES, PATCH_MAX, TEAM_STRIDE, TeamField, TRAP_STRIDE, TRAP_TABLE, TRAP_WORLD_MAX, TrapF, World,
 } from './state';
 import { castDir } from './systems/arcade/aim';
 import { RANGED } from './systems/arcade/meter';
@@ -101,10 +102,18 @@ export interface RenderArcade {
    * armed), ticks of life left). x, y is the box's top-left corner. The array is reused: copy what you keep.
    */
   readonly traps: number[];
+  /**
+   * The stage hazard (systems/arcade/hazard.ts), HAZARD_VIEW_STRIDE ints: kind (0 none, else 1 fire .. 4 air), x, y, w, h
+   * (its box), dir (-1 or 1 for a tide or gust, else 0), game ticks until it strikes (0 once active) and game ticks until
+   * it ends. The array is reused: copy what you keep.
+   */
+  readonly hazard: number[];
 }
 
 /** Ints per trap in `RenderArcade.traps`. */
 export const TRAP_VIEW_STRIDE = 6;
+/** Ints in `RenderArcade.hazard`. */
+export const HAZARD_VIEW_STRIDE = 8;
 
 /** One active status as the HUD sees it. The object is reused between callbacks. */
 export interface RenderStatus {
@@ -205,7 +214,7 @@ export function createRenderView(world: SimWorld): RenderView {
   const ar: RenderArcade = {
     frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, sudden: false, roundsWon: [0, 0],
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
-    traps: new Array<number>(TRAP_WORLD_MAX * TRAP_VIEW_STRIDE).fill(0),
+    traps: new Array<number>(TRAP_WORLD_MAX * TRAP_VIEW_STRIDE).fill(0), hazard: new Array<number>(HAZARD_VIEW_STRIDE).fill(0),
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
     rooted: (id) => isRooted(s, id),
@@ -337,6 +346,17 @@ export function createRenderView(world: SimWorld): RenderView {
         ar.traps[o + 4] = kind === 0 ? 0 : Math.max(0, (s.arcade[b + TrapF.armAt] ?? 0) - now(s));
         ar.traps[o + 5] = kind === 0 ? 0 : Math.max(0, (s.arcade[b + TrapF.endAt] ?? 0) - now(s));
       }
+      const hb = w + HAZARD_BASE;
+      const hk = s.arcade[hb + HazardF.kind] ?? 0;
+      const strikeAt = s.arcade[hb + HazardF.strikeAt] ?? 0;
+      ar.hazard[0] = hk;
+      ar.hazard[1] = s.arcade[hb + HazardF.x] ?? 0;
+      ar.hazard[2] = s.arcade[hb + HazardF.y] ?? 0;
+      ar.hazard[3] = s.arcade[hb + HazardF.w] ?? 0;
+      ar.hazard[4] = s.arcade[hb + HazardF.h] ?? 0;
+      ar.hazard[5] = s.arcade[hb + HazardF.dir] ?? 0;
+      ar.hazard[6] = hk === 0 || strikeAt === 0 ? 0 : Math.max(0, strikeAt - now(s));
+      ar.hazard[7] = hk === 0 ? 0 : Math.max(0, (s.arcade[hb + HazardF.endAt] ?? 0) - now(s));
       return ar;
     },
     forEachStatus(id, visit): void {
