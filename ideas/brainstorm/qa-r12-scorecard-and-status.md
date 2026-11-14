@@ -1,5 +1,5 @@
 ---
-status: brainstorm
+status: idea
 added: 2026-11-14
 ---
 # QA r12 scorecard and status (headless Playwright, 1280x720, 844x390, 390x844 touch)

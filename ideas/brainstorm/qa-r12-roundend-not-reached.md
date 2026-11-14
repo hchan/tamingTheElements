@@ -1,5 +1,5 @@
 ---
-status: brainstorm
+status: idea
 added: 2026-11-14
 ---
 # Round-end panel not verified (r12)

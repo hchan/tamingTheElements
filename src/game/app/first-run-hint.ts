@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { PRELOAD_READY } from '../scenes/launch';
 import { el } from '@ui/dom';
+import { ARCADE_SNAG_SLOT } from '@core/index';
 import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction } from '../platform/input/bindings';
 
 /** First-run battle hint: a short, dismissible card shown in the first battle only (flag kept in localStorage, never the save). */
@@ -60,18 +61,23 @@ export function isTouchFirst(): boolean {
   }
 }
 
+/** True when any of these heroes carries the Snag rope (only some do), so the card names Snag only for a side that can throw it. */
+export function anySnag(heroes: readonly string[]): boolean {
+  return heroes.some((h) => ARCADE_SNAG_SLOT[h] !== undefined);
+}
+
 /** The hint text, from the live bindings (keyboard) or the on-screen controls (touch). Words only; the numbered bar is described in Help. */
-export function firstRunLines(b: Bindings, touch = false): readonly string[] {
+export function firstRunLines(b: Bindings, touch = false, snag = true): readonly string[] {
   if (touch) {
     return [
       'Drag the stick to move in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.',
       'Tap the buttons to strike, Dash, Guard (hold) and fire your Super once its meter is full.',
-      'Tap Tag to send in a rested hero, and Cleanse to shake off a root or slow. Snag roots the foe.',
+      `Tap Tag to send in a rested hero, and Cleanse to shake off a root or slow.${snag ? ' Snag roots the foe.' : ''}`,
     ];
   }
   return [
     `Move with ${moveKeys(b)}; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
-    `Strike with ${keyAlso(b, 'slot1')}. Special with ${keyAlso(b, 'slot2')}. Snag with ${key(b, 'capture')} to root the foe. Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
+    `Strike with ${keyAlso(b, 'slot1')}. Special with ${keyAlso(b, 'slot2')}. ${snag ? `Snag with ${key(b, 'capture')} to root the foe. ` : ''}Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
     `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero; press ${key(b, 'cleanse')} to Cleanse a root or slow.`,
   ];
 }
@@ -101,13 +107,15 @@ export function firstRunHint(
   fadeMs = FIRST_RUN_MS,
   /** Calls its argument once the arena exists (the card must not sit over the loading screen); default: now. */
   whenReady: (go: () => void) => void = (go) => { go(); },
+  /** False when none of the player's heroes has Snag: the card then leaves the Snag line out. */
+  snag = true,
 ): HTMLElement | null {
   if (firstRunSeen(store)) return null;
   const card = el('div', 'firstRunHint');
   card.id = 'firstRunHint';
   card.setAttribute('role', 'note');
   card.append(el('h2', undefined, 'First blood'));
-  for (const line of firstRunLines(getBindings(), isTouchFirst())) card.append(el('p', undefined, line));
+  for (const line of firstRunLines(getBindings(), isTouchFirst(), snag)) card.append(el('p', undefined, line));
   // On a short window (1280x720) the card shrinks and drops its footer so it ends above the hero's wings instead of covering them.
   const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
   if (short && window.innerHeight > 500) card.style.fontSize = '11px';
