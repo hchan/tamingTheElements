@@ -524,7 +524,7 @@ export class Hud extends Phaser.Scene {
       if (this.numberSerials[i] !== n.serial) {
         this.numberSerials[i] = n.serial;
         // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
-        styleCombatText(t.setText(numberLabel(n.amount, n.counter)), n.scaled ? 'scaled' : n.counter ? 'counter' : 'number').setFontSize(n.scaled ? 22 : 30);
+        styleCombatText(t.setText(numberLabel(n.amount, n.counter)), n.scaled ? 'scaled' : n.counter ? 'counter' : 'number').setFontSize(n.scaled ? 28 : 38);
       }
       t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
     }

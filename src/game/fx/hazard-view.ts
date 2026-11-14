@@ -103,26 +103,6 @@ function edgeChevron(g: Gfx, view: { x: number; y: number; width: number; height
   }
 }
 
-/** A tapered streak scrolls `dir` across the box in dark and pale pairs (reads on pale air and on blue water); returns how many. */
-function streaks(g: Gfx, x: number, y: number, w: number, h: number, dir: number, shift: number, light: number, alpha: number): number {
-  let n = 0;
-  const gap = 160;
-  const rows = Math.max(3, Math.floor(h / 36));
-  for (let r = 0; r < rows; r++) {
-    const sy = y + ((r + 0.5) * h) / rows;
-    const off = (shift * 2 + r * 53) % gap;
-    for (let sx = x + (dir > 0 ? off : gap - off) - gap; sx < x + w; sx += gap) {
-      const a = Math.max(x, sx);
-      const b = Math.min(x + w, sx + 70);
-      if (b <= a) continue;
-      g.lineStyle(4, 0x0a0e14, 0.4 * alpha).lineBetween(a, sy + 2, b, sy + 2);
-      g.lineStyle(2, light, 0.8 * alpha).lineBetween(a, sy, b, sy);
-      n++;
-    }
-  }
-  return n;
-}
-
 /** Large arrows on both side edges of a lane pointing `dir`: the warning's unmissable direction cue (also reads at phone size). */
 function edgeArrows(g: Gfx, x: number, y: number, w: number, h: number, dir: number, light: number, alpha: number): void {
   const size = Math.min(46, h / 5);
@@ -295,14 +275,13 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       g.lineStyle(6, 0x0a0806, 0.5 * alpha).strokeRect(x, y, w, h);
       g.lineStyle(3, lane ? light : col, alpha).strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
       if (lane) {
-        // Tide and gust (r20): bright edge bars, scrolling dark/pale streaks, big edge arrows and the chevrons, all steady under reduced motion.
+        // Tide and gust (r20): bright edge bars, big edge arrows and the chevrons, all steady under reduced motion.
         g.fillStyle(light, 0.6 * alpha).fillRect(x, y, w, 5).fillRect(x, y + h - 5, w, 5);
         glow.fillStyle(light, 0.08 * alpha).fillRect(x, y, w, h);
         tideCountdown(g, x, y, w, h, dir, warnProgress(warnLeft, warnTotal), light, alpha);
         const shift = chevronShift(tick, dir, 72, reduced);
-        streaks(g, x, y, w, h, dir, shift, light, alpha);
         edgeArrows(g, x, y, w, h, dir, light, alpha);
-        drawn = chevrons(g, x, y, w, h, dir, shift, light, 0.8 * alpha, true);
+        drawn = chevrons(g, x, y, w, h, dir, shift, light, 0.5 * alpha, false);
       } else {
         // r21: a filled warning tint that firms with the countdown (dark red on lava, pale dust on stone), so the box never reads as a thin outline on a busy floor.
         const pr = warnProgress(warnLeft, warnTotal);
@@ -349,6 +328,20 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         glow.fillStyle(0xffe2b0, 0.4 * alpha).fillRect(x + w / 2 - 22, y, 44, h);
         g.lineStyle(3, 0xfff0d8, 0.7 * alpha).strokeRect(x + 2, y + 2, w - 4, h - 4);
         g.lineStyle(5, 0x0a0806, 0.5 * alpha).strokeRect(x - 2, y - 2, w + 4, h + 4);
+        // r30: as strong as the telegraph. Decorative only (outside the sim box): a wide heat bloom, ember tongues up the lane
+        // (still under reduced motion) and a warm screen-edge tint, so the strike reads at a glance on phone too.
+        glow.fillStyle(col, 0.14 * alpha).fillRect(x - 36, y - 10, w + 72, h + 20);
+        const rise = reduced ? 0 : (tick * 3) % 90;
+        for (let ey = y + h - rise; ey > y - 90; ey -= 90) {
+          for (const [ex, er] of [[x + w * 0.25, 7], [x + w * 0.75, 6], [x + w * 0.5, 9]] as const) {
+            const py = ey - ((ex * 7) % 40);
+            if (py < y - 20 || py > y + h) continue;
+            glow.fillStyle(0xffd890, 0.7 * alpha).fillCircle(ex, py, er);
+            g.fillStyle(0x3a0c06, 0.6 * alpha).fillCircle(ex, py, er * 0.5);
+          }
+        }
+        const cv = arena.cameras.main.worldView;
+        glow.fillStyle(col, 0.06 * alpha).fillRect(cv.x, cv.y, cv.width, cv.height);
       } else if (kind === 3) {
         // Fallen rock: a dark slab with a muted face and a crack.
         g.fillStyle(0x0d0a07, 0.6 * alpha).fillRect(x, y, w, h);
@@ -361,8 +354,8 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         g.fillStyle(col, 0.22 * alpha).fillRect(x, y, w, h);
         g.fillStyle(light, 0.7 * alpha).fillRect(x, y, w, 4).fillRect(x, y + h - 4, w, 4);
         glow.fillStyle(light, 0.1 * alpha).fillRect(x, y, w, h);
-        drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, 0.9 * alpha, true);
-        streaks(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, alpha);
+        // r30: fewer, quieter chevrons (no streak lines, no dark halo) so a full-field tide reads as one wash, not noise.
+        drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, 0.55 * alpha, false);
       }
     }
     const flash = warnLeft > 0 ? 0 : impactFlash(tick - strikeTick);
