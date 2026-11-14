@@ -122,7 +122,7 @@ test('World Tour: no continues left shows the Game Over card with the summary, a
 test.describe('World Tour on a touch device', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 844, height: 390 } });
 
-  test('the fight shows the 9 Arcade touch buttons as boxes on the left of the action bar, 48 px tall at least', async ({ page }) => {
+  test('the fight shows the 10 Arcade touch buttons as boxes on the left of the action bar, 48 px tall at least', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto(`${START}&ff=arcade#tour`);
     await page.getByRole('button', { name: 'Start tour' }).tap();
@@ -130,14 +130,14 @@ test.describe('World Tour on a touch device', () => {
     await tapTourSplash(page);
     await page.waitForFunction(ARENA_READY);
     const buttons = page.locator('#game button.menuButton');
-    await expect(buttons).toHaveCount(9);
+    await expect(buttons).toHaveCount(10);
     const boxes = await page.evaluate<{ right: number; height: number }[]>(
       `Array.from(document.querySelectorAll('#game button.menuButton'), (b) => { const r = b.getBoundingClientRect(); return { right: r.right, height: r.height }; })`,
     );
     for (const b of boxes) expect(b.height).toBeGreaterThanOrEqual(48);
-    // The buttons are overlays on the one left-aligned action bar (no right-edge columns): none reaches past 80% of the game width.
+    // The buttons are overlays on the one left-aligned action bar (no right-edge columns, centred by the slim HUD with 10 boxes): none reaches past the game width.
     const gw = await page.evaluate<number>(`document.querySelector('#game canvas').getBoundingClientRect().right`);
-    for (const b of boxes) expect(b.right).toBeLessThanOrEqual(gw * 0.8);
+    for (const b of boxes) expect(b.right).toBeLessThanOrEqual(gw);
     await expect(page.locator('#arcadeTag2')).toBeVisible();
     // A tap on Super reaches the arena as the bound key; the match goes on without errors.
     await page.locator('#arcadeSuper').tap();

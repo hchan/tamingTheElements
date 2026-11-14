@@ -5,7 +5,7 @@ const CINEMATIC_READY = `window.__TTE__ && window.__TTE__.scene === 'Cinematic' 
 function collectErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(m.text());
+    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(e.message));
   return errors;
