@@ -20,3 +20,22 @@ test('first-run hint shows, dismisses and is remembered', async ({ page }) => {
   expect(await page.evaluate(`localStorage.getItem('tte.firstRunHint')`)).toBe('1');
   expect(errors).toEqual([]);
 });
+
+// QA r18: at 720p the card is a slim strip clear of the action bar, and it fades by itself soon.
+test('first-run hint at 1280x720 is a slim strip above the bar and fades on its own', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByRole('button', { name: 'Start tour' }).click();
+  await page.getByRole('button', { name: 'Fight' }).click();
+  await tapTourSplash(page);
+  await page.waitForFunction(ARENA_READY);
+  const card = page.locator('#firstRunHint');
+  await expect(card).toBeVisible();
+  const box = await card.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box?.height ?? 999).toBeLessThan(100);
+  expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThan(720 * 0.92);
+  await expect(card).toHaveClass(/firstRunFade/, { timeout: 8000 });
+  expect(errors).toEqual([]);
+});
