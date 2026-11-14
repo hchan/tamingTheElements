@@ -206,5 +206,12 @@
  *    Re-record reason: earth strike box, timing and AI dodge change every Arcade earth-stage match (Arcade goldens, Arcade baselines).
  * 57: Arcade only (Classic hashes unchanged). Pax balance (Arcade 1v1 Pax 57.4 percent, target <= 54): Titan Slam ring damage 55 (was the quake's 60).
  *    Pax 57.4 to 52.3 percent, every other race within 1.7 pp. Re-record reason: Pax's super hits softer (Arcade goldens, Arcade baselines).
+ * 58: Arcade only (Classic hashes unchanged). Supers land on time (ideas/done/qa-r27-super-no-sfx-and-late-damage.md; first damage was
+ *    frame 41, now 17): SUPER_FREEZE_TICKS 16 (was 40) and a front-loaded opener (the first hit that lands, full super hit-stop) then lighter
+ *    follow-ups with SUPER_FOLLOW_STOP_TICKS 4 of hit-stop: Inferno Beam 90 then 20 every 5 for 25 ticks (was 36 every 6 for 30), Vortex 64
+ *    then 18 for 30 (was 27 for 36), Quake 90 then 32 with rings every 6 (was 60 every 10), Titan Slam 92 then 37; quake rings grow by a giant
+ *    caster's extra width (`quakeRingSide`, so Rokcore's first ring reaches an adjacent foe); Tidal Wave 20 px per tick (was 12). Totals per
+ *    super stay about as before (tools/sim/super-timing.ts). Re-record reason: super timing and damage change every Arcade match with a super
+ *    (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 57;
+export const SIM_VERSION = 58;

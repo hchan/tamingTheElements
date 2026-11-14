@@ -99,8 +99,9 @@ describe('the scripted Arcade AI over whole matches', () => {
   });
 
   // Seed 6 since SIM_VERSION 52 (stronger supers end seed 5 before every button is used).
-  it('uses every Arcade button over a match (so the legality checks above are not vacuous)', () => {
-    const { cmds } = play(6, AI_HARD, [RUSHDOWN, TURTLE], 4000);
+  it('uses every Arcade button over two matches (so the legality checks above are not vacuous)', () => {
+    // Two seeds: one match may end without a tag swap (seed 6 since SIM_VERSION 58's faster supers).
+    const cmds = [6, 7].flatMap((seed) => play(seed, AI_HARD, [RUSHDOWN, TURTLE], 4000).cmds);
     const seen = (bit: number): boolean => cmds.some((c) => (c & bit) !== 0);
     expect(seen(Cmd.guard)).toBe(true);
     expect(seen(Cmd.dash)).toBe(true);

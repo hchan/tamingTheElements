@@ -9,7 +9,8 @@ import {
   CUT_IN_MS, PUNCH_IN_MS, PUNCH_OUT_MS, PUNCH_ZOOM, SUPER_DIM, SUPER_FADE_MS, TICK_MS, superFrame, type SuperFrame,
 } from './super-cinematic';
 
-const TOTAL = 41 * TICK_MS;
+/** The 16-tick super freeze plus its start tick (SIM_VERSION 58; pinned against a real super below). */
+const TOTAL = 17 * TICK_MS;
 const at = (ms: number, reduced: boolean): SuperFrame => superFrame(ms, TOTAL, reduced, { dim: 0, bandAlpha: 0, slide: 0, zoom: 1 });
 const samples = Array.from({ length: TOTAL / 10 + 1 }, (_, i) => i * 10);
 
@@ -27,6 +28,8 @@ describe('super cinematic plan (FUN-DESIGN section 3)', () => {
     expect(at(CUT_IN_MS, false).slide).toBe(0);
     expect(at(PUNCH_IN_MS, false).zoom).toBeCloseTo(1 + PUNCH_ZOOM);
     expect(at(PUNCH_IN_MS + PUNCH_OUT_MS, false).zoom).toBe(1);
+    // The punch is over before the freeze ends (no snap back when the cinematic stops).
+    expect(PUNCH_IN_MS + PUNCH_OUT_MS).toBeLessThanOrEqual(TOTAL);
     expect(Math.max(...samples.map((ms) => at(ms, false).zoom))).toBeCloseTo(1 + PUNCH_ZOOM);
   });
   it('reduced motion drops the motion (no slide, no punch-in) and keeps the information (dim, band, name)', () => {
@@ -84,6 +87,7 @@ describe('super cinematic from the sim events', () => {
     // The cinematic keys on the freeze's source: the caster (src/core/sim/systems/arcade/super.ts).
     expect(freeze.sourceId).toBe(started['caster']);
     expect(freeze.tick).toBe(started.tick);
+    expect(((freeze['ticks'] ?? 0) + 1) * TICK_MS).toBe(TOTAL);
     for (const reduced of [false, true]) {
       const r = recorder();
       const fx = new EventFx(r.sink, { reducedMotion: () => reduced, arcade: true });

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { SUPER_FREEZE_TICKS } from '../../src/core/data/arcade';
 import { Cmd } from '../../src/core/sim/commands';
 import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
 import { createMatch } from '../../src/core/sim/match';
@@ -113,7 +114,7 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['guard break', () => of(K.guardBroken).length],
     ['parry with projectile reflection', () => of(K.parried).filter((e) => e.reflected === 1).length],
     ['8-way diagonal shot landing', () => hits.filter((e) => e.strength !== 3 && e.dir !== undefined && e.dir % 2 === 1).length],
-    ['super cinematic freeze', () => of(K.hitStop).filter((e) => e.cause === 2 && e.ticks === 40).length],
+    ['super cinematic freeze', () => of(K.hitStop).filter((e) => e.cause === 2 && e.ticks === SUPER_FREEZE_TICKS).length],
     ['super hits', () => hits.filter((e) => e.strength === 3).length],
     ['super ended', () => of(K.superEnded).length],
     ['Eye of the Storm (Vortex) super hits', () => superHits(moves, 4)],

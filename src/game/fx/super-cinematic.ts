@@ -9,13 +9,16 @@ export const TICK_MS = 20;
 /** Dim to 80% brightness (was 40%, which hid the foe): a pale overlay at 20% alpha, faded in and out over SUPER_FADE_MS. */
 export const SUPER_DIM = 0.2;
 export const SUPER_FADE_MS = 100;
-/** The cut-in band slides in over CUT_IN_MS (it fades in instead under reduced motion) and fades out over CUT_OUT_MS. */
-export const CUT_IN_MS = 150;
-export const CUT_OUT_MS = 200;
-/** Camera punch-in on the caster: zoom 1 to 1 + PUNCH_ZOOM over PUNCH_IN_MS, back over PUNCH_OUT_MS (off when reduced). */
+/**
+ * The cut-in band slides in over CUT_IN_MS (it fades in instead under reduced motion) and fades out over CUT_OUT_MS.
+ * Sized for the 16-tick freeze (340 ms with its start tick, SIM_VERSION 58): the band is fully shown for over half of it.
+ */
+export const CUT_IN_MS = 80;
+export const CUT_OUT_MS = 80;
+/** Camera punch-in on the caster: zoom 1 to 1 + PUNCH_ZOOM over PUNCH_IN_MS, back over PUNCH_OUT_MS (off when reduced); back at 1 before the freeze ends. */
 export const PUNCH_ZOOM = 0.15;
-export const PUNCH_IN_MS = 150;
-export const PUNCH_OUT_MS = 300;
+export const PUNCH_IN_MS = 100;
+export const PUNCH_OUT_MS = 200;
 
 /** One frame of the cinematic. `slide` is 0 when the band is in place and 1 when it is a full width off screen. */
 export interface SuperFrame {

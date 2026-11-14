@@ -17,17 +17,17 @@
   "stalemates": 0,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.523,
-    "cyclonius": 0.545,
-    "echo": 0.591,
-    "fiara": 0.443,
-    "ishimi": 0.455,
-    "lavax": 0.511,
-    "morblass": 0.511,
-    "pax": 0.443,
-    "rokcore": 0.477,
-    "sindarosa": 0.455,
-    "treenoc": 0.568,
+    "curomo": 0.42,
+    "cyclonius": 0.591,
+    "echo": 0.58,
+    "fiara": 0.466,
+    "ishimi": 0.477,
+    "lavax": 0.477,
+    "morblass": 0.477,
+    "pax": 0.477,
+    "rokcore": 0.534,
+    "sindarosa": 0.5,
+    "treenoc": 0.523,
     "wispera": 0.477
   }
 }

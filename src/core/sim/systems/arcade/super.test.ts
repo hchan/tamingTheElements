@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HitStopCause, HitStrength, KO_HIT_STOP_TICKS, METER_BAR, SUPER_ACTIVE_TICKS, SUPER_BAND_PX, SUPER_COST,
-  SUPER_FREEZE_TICKS, SUPER_HIT_DAMAGE, SUPER_HIT_EVERY, SUPER_ELEMENTAL_BURST, SUPER_INVULN_AFTER_TICKS, arcadePlayfield,
+  SUPER_FOLLOW_STOP_TICKS, SUPER_FREEZE_TICKS, SUPER_HIT_DAMAGE, SUPER_HIT_EVERY, SUPER_OPENER_DAMAGE, SUPER_ELEMENTAL_BURST, SUPER_INVULN_AFTER_TICKS, arcadePlayfield,
   comboScalePm,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
@@ -55,8 +55,8 @@ const of = (ev: readonly SimEvent[], kind: number): SimEvent[] => ev.filter((e) 
 
 describe('super table (FUN-DESIGN 2.5)', () => {
   it('has the design numbers', () => {
-    expect([SUPER_COST, SUPER_FREEZE_TICKS, SUPER_INVULN_AFTER_TICKS]).toEqual([1000, 40, 8]);
-    expect([SUPER_ACTIVE_TICKS, SUPER_HIT_EVERY, SUPER_HIT_DAMAGE, SUPER_BAND_PX]).toEqual([30, 6, 36, 160]);
+    expect([SUPER_COST, SUPER_FREEZE_TICKS, SUPER_INVULN_AFTER_TICKS, SUPER_FOLLOW_STOP_TICKS]).toEqual([1000, 16, 8, 4]);
+    expect([SUPER_ACTIVE_TICKS, SUPER_HIT_EVERY, SUPER_OPENER_DAMAGE, SUPER_HIT_DAMAGE, SUPER_BAND_PX]).toEqual([25, 5, 90, 20, 160]);
   });
 
   it('super hits keep the 600 pm floor inside a combo; other hits fall to 500', () => {
@@ -66,14 +66,14 @@ describe('super table (FUN-DESIGN 2.5)', () => {
 });
 
 describe('super start', () => {
-  it('costs one bar, emits superStarted then a 40-tick super freeze, and the freeze holds exactly 40 ticks', () => {
+  it('costs one bar, emits superStarted then a 16-tick super freeze, and the freeze holds exactly 16 ticks', () => {
     const world = duel('sindarosa', 'pax', 2500);
     const s = world.state;
     const ev = step(world, SUPER);
     expect(ev.map((e) => e.kind)).toEqual([SimEventKind.meterLevel, SimEventKind.superStarted, SimEventKind.hitStop]);
     expect(of(ev, SimEventKind.meterLevel)[0]).toMatchObject({ team: 0, bars: 1 });
     expect(of(ev, SimEventKind.superStarted)[0]).toMatchObject({ caster: 0, superId: 1, sourceId: 0 });
-    expect(of(ev, SimEventKind.hitStop)[0]).toMatchObject({ ticks: 40, cause: HitStopCause.super });
+    expect(of(ev, SimEventKind.hitStop)[0]).toMatchObject({ ticks: 16, cause: HitStopCause.super });
     expect(meterOf(s, 0)).toBe(1500);
     const g = now(s);
     for (let i = 0; i < SUPER_FREEZE_TICKS; i++) {
@@ -165,21 +165,22 @@ describe('Elemental Burst (the Inferno Beam shape)', () => {
     }
   });
 
-  it('hits 5 times, every 6 game ticks, as strength 3 super hits of 36 scaled 1000/1000/900/800/700, then ends', () => {
+  it('hits 5 times, every 5 game ticks, as strength 3 super hits: a 90 opener, then 20s scaled 1000/900/800/700, then ends', () => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;
     s.hp[1] = 10_000;
     const g0 = now(s);
     const ev = [...run(world, 1, SUPER), ...run(world, 200)];
     const hits = of(ev, SimEventKind.hitConfirmed) as (SimEvent & { g: number })[];
-    expect(hits.map((h) => h.g - g0 - 1)).toEqual([0, 6, 12, 18, 24]);
+    expect(hits.map((h) => h.g - g0 - 1)).toEqual([0, 5, 10, 15, 20]);
     expect(hits.map((h) => h['scalePm'])).toEqual([1000, 1000, 900, 800, 700]);
     expect(hits.map((h) => [h['strength'], h['ability'], h['combo'], h['attacker'], h['target']])).toEqual(
       [1, 2, 3, 4, 5].map((c) => [HitStrength.super, SUPER_DEF, c, 0, 1]),
     );
-    const raw = computeDamage({ base: 36, attackerMult: s.dmgMult[0] ?? 1, attEl: 'fire', defEl: 'earth', defReductionPct: 0 });
-    expect(hits[0]?.['amount']).toBe(raw);
-    expect(hits[2]?.['amount']).toBe((raw * 900) / 1000);
+    const dmg = (base: number): number => computeDamage({ base, attackerMult: s.dmgMult[0] ?? 1, attEl: 'fire', defEl: 'earth', defReductionPct: 0 });
+    expect(hits[0]?.['amount']).toBe(dmg(SUPER_OPENER_DAMAGE));
+    expect(hits[1]?.['amount']).toBe(dmg(SUPER_HIT_DAMAGE));
+    expect(hits[2]?.['amount']).toBe((dmg(SUPER_HIT_DAMAGE) * 900) / 1000);
     const ended = of(ev, SimEventKind.superEnded) as (SimEvent & { g: number })[];
     expect(ended.map((e) => [e.g - g0 - 1, e['caster']])).toEqual([[SUPER_ACTIVE_TICKS, 0]]);
     expect(s.arcade[SUPER_STATE(0)]).toBe(0);
@@ -271,7 +272,7 @@ describe('super determinism', () => {
   it('replays to the same hashes, and a snapshot taken mid-super restores to the same future', () => {
     const a = play(setup(), 0, 400);
     expect(play(setup(), 0, 400)).toEqual(a);
-    for (const cut of [1, 20, 60, 90]) {
+    for (const cut of [1, 20, 60, 200]) {
       const world = setup();
       play(world, 0, cut);
       expect(world.state.arcade[SUPER_STATE(0)]).not.toBe(0);

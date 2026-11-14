@@ -1,9 +1,9 @@
 import {
-  HIT_STUN_TICKS, HitStopCause, KNOCKBACK_Q4, SUPER_COST, SUPER_FREEZE_TICKS, SUPER_INVULN_AFTER_TICKS,
+  HIT_STUN_TICKS, HitStopCause, KNOCKBACK_Q4, SUPER_COST, SUPER_FOLLOW_STOP_TICKS, SUPER_FREEZE_TICKS, SUPER_INVULN_AFTER_TICKS,
 } from '../../../data/arcade';
 import {
   SUPER_BURST, SUPER_ICICLE_EVERY, SUPER_ICICLE_FAN, SUPER_QUAKE_RING_PX, SUPER_SPECS, SUPER_TIDE_SLOW_TICKS,
-  SUPER_TIDE_SPEED_PX, SuperShape, superOf, type SuperSpec,
+  SUPER_TIDE_SPEED_PX, SuperShape, quakeRingSide, superOf, type SuperSpec,
 } from '../../../data/arcade-supers';
 import { CHARACTERS } from '../../../data/characters';
 import { aabbOverlap, type Aabb } from '../../../math/aabb';
@@ -100,11 +100,20 @@ function endSuper(world: SimWorld, sink: EventSink, team: number, fx: number, gr
   sink.emit(caster, SimEventKind.superEnded, { caster });
 }
 
-/** One super hit; the caster takes `drainPm` of the health removed. */
+/**
+ * One super hit; the caster takes `drainPm` of the health removed. The super entity's `hp` counts the hits that landed:
+ * the first is the opener (`spec.opener`, the full super hit-stop), the rest `spec.damage` with SUPER_FOLLOW_STOP_TICKS.
+ */
 function strike(world: SimWorld, sink: EventSink, fx: number, victim: number, spec: SuperSpec): void {
   const s = world.state;
   const caster = s.owner[fx] ?? 0;
-  const dealt = applyArcadeHit(world, sink, fx, caster, victim, spec.damage, SUPER_DEF, s.dir[fx] ?? 0);
+  const landed = s.hp[fx] ?? 0;
+  s.hp[fx] = landed + 1;
+  const opener = landed === 0;
+  const dealt = applyArcadeHit(
+    world, sink, fx, caster, victim, opener ? spec.opener : spec.damage, SUPER_DEF, s.dir[fx] ?? 0,
+    opener ? undefined : SUPER_FOLLOW_STOP_TICKS,
+  );
   if (spec.drainPm > 0) s.hp[caster] = Math.min((s.hp[caster] ?? 0) + (dealt * spec.drainPm) / 1000, s.maxHp[caster] ?? 0);
 }
 
@@ -146,7 +155,6 @@ function runTide(world: SimWorld, sink: EventSink, team: number, fx: number, spe
   if ((s.hp[fx] ?? 0) === 0) {
     const victim = targetOf(world, team);
     if (victim >= 0 && aabbOverlap(box(s, fx), box(s, victim))) {
-      s.hp[fx] = 1;
       strike(world, sink, fx, victim, spec);
       if ((s.hp[victim] ?? 0) <= 0) return true;
       applyTimedStatus(world, victim, StatusId.superSlow, caster, SUPER_TIDE_SLOW_TICKS, -(s.speed[victim] ?? 0) / 2);
@@ -163,8 +171,8 @@ function runTide(world: SimWorld, sink: EventSink, team: number, fx: number, spe
 /**
  * Runs `team`'s live super for one game tick (FUN-DESIGN 2.5), per shape: a hit on the opposing controlled character
  * every `spec.every` ticks while its box overlaps (not translucent, not invulnerable): the Inferno Beam band, the
- * Vortex box (pulling the victim toward the caster) or a Quake ring (160/320/480 px, scaled by the race); or the Tidal
- * Wave's single hit. It ends when its time is up, its caster leaves play (KO or bench), or a hit KOs the victim.
+ * Vortex box (pulling the victim toward the caster) or a Quake ring (160/320/480 px, scaled by the race, grown by a
+ * giant caster's extra width); or the Tidal Wave's single hit. The first hit that lands is the opener (`strike`). It ends when its time is up, its caster leaves play (KO or bench), or a hit KOs the victim.
  */
 function runSuper(world: SimWorld, sink: EventSink, team: number): void {
   const s = world.state;
@@ -189,7 +197,7 @@ function runSuper(world: SimWorld, sink: EventSink, team: number): void {
   if (spec.shape === SuperShape.vortex) placeSquare(s, fx, caster, spec.size);
   else if (spec.shape === SuperShape.quake) {
     if (ring > LAST_RING) return;
-    placeSquare(s, fx, caster, Math.floor(((SUPER_QUAKE_RING_PX[ring] ?? 0) * spec.scalePm) / 1000));
+    placeSquare(s, fx, caster, quakeRingSide(ring, spec.scalePm, s.w[caster] ?? 0));
   }
   const victim = targetOf(world, team);
   if (victim < 0 || !aabbOverlap(box(s, fx), box(s, victim))) return;

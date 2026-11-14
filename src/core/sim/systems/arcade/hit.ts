@@ -70,11 +70,12 @@ export function hitStop(world: SimWorld, sink: EventSink, source: number, ticks:
  * (`confirmTick`, the dash cancel window of FUN-DESIGN 2.7). Guard and parry (FUN-DESIGN 2.8, arcade/guard.ts; never a
  * super): a parry window turns the hit into `parried` and the parry hit-stop (no damage, returns 0); a guarding victim
  * takes GUARD_CHIP_PM of the damage with `guarded` instead of `hitConfirmed`, no combo or confirm, the light knockback
- * and block-stun instead of hit-stun. Returns the health removed.
+ * and block-stun instead of hit-stun. `stopTicks` replaces the strength's hit-stop (a super's follow-up hits; a KO keeps
+ * KO_HIT_STOP_TICKS). Returns the health removed.
  */
 export function applyArcadeHit(
   world: SimWorld, sink: EventSink, source: number, attacker: number, victim: number, base: number, defIdx: number,
-  dir: number,
+  dir: number, stopTicks?: number,
 ): number {
   const s = world.state;
   const team = s.team[source] ?? 0;
@@ -124,7 +125,7 @@ export function applyArcadeHit(
     });
   }
   const ko = before > 0 && before - amount <= 0;
-  const ticks = ko ? KO_HIT_STOP_TICKS : HIT_STOP_TICKS[strength];
+  const ticks = ko ? KO_HIT_STOP_TICKS : stopTicks ?? HIT_STOP_TICKS[strength];
   hitStop(world, sink, source, ticks, ko ? HitStopCause.ko : HitStopCause.hit);
   // Charge armour (SIM_VERSION 50): a charging victim takes the damage but is neither knocked back nor stunned, so the rush goes on.
   const armoured = !sup && chargeTick(s, victim) !== 0;
