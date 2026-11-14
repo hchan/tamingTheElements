@@ -27,3 +27,10 @@ Done: dead band and seam (all body gradient layers were tiled to the short body;
 (`public/assets/img/menu/crest.png`); key art behind every DOM screen (`keyart.webp`, generator `tools/assets/menu-gen/menu_art.py`).
 Open: slow parallax and light-mote animation on the key art; Versus footer overlap, lock icon placement, Settings fieldset legends and Display Size default;
 pillarboxed phone canvas (match canvas, not touched); ultrawide check.
+
+## Progress (menu-polish-2, 2026-11-14)
+
+Done: Settings legends now sit inside the box (floated legend); Versus picker cursor and detail pane start on the hero in the first slot (You card and highlight agree);
+Locked pill moved to the tile's top-right; portrait phone gate has a rotate icon and a prominent green "Play anyway" button.
+Not changed: Display Size default "Largest" is deliberate in src/core (new players start at Largest); footer overlap no longer reproduces (e2e hero-picker-layout green).
+Open: parallax on key art (mist and embers already drift via menu-motion.css); a truly usable portrait arena.
