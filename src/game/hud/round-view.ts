@@ -98,6 +98,7 @@ export function mountRoundView(
 
   /** The view tick the last round result card ends: an intro banner's clock (fade, scale-in, name cards) starts then, not under the card. */
   let cardEnd = -1;
+  let fightOverSent = false;
   /** When the banner's clock starts: its own start, or for an intro banner the end of the result card. */
   const clockFrom = (): number => (isIntroBanner(banner.main) ? introClockStart(banner.from, cardEnd) : banner.from);
 
@@ -174,6 +175,11 @@ export function mountRoundView(
     const ar = view.arcade();
     if (!parts || !ar) return;
     const tick = view.tick;
+    // The FIGHT! banner has run out (tick based): the first-run card (app/first-run-hint.ts, FIGHT_OVER_EVENT) may now appear; a literal keeps that card out of this lazy chunk.
+    if (banner.main === 'FIGHT!' && tick >= banner.until && !fightOverSent && typeof window !== 'undefined') {
+      fightOverSent = true;
+      window.dispatchEvent(new Event('tte:fight-over'));
+    }
     // Lanes (banner-lanes.ts): the super cut-in outranks the banner; an intro banner waits out the round result card.
     const on = banner.main !== '' && tick < banner.until && bannerDraws(cutUp(hud.registry), results.result.state().visible, isIntroBanner(banner.main), results.result.state().compact);
     const slow = bannerScale((tick - clockFrom()) * TICK_MS, banner.reduced);

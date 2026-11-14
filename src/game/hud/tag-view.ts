@@ -39,7 +39,7 @@ const FLASH_DEPTH = 4.5;
 const GOLD = 0xb39653;
 const ASH = 0xcfc4a8;
 const CALL_Y = 210;
-const CALL_PX = 60;
+const CALL_PX = 46;
 const LINE_PX = 16;
 
 export interface TagPrefs {
@@ -232,7 +232,7 @@ export function mountTagView(
       const wv = (arena.cameras as Phaser.Cameras.Scene2D.CameraManager | undefined)?.main.worldView;
       if (wv) {
         const sx = Math.max(120, Math.min(1160, ((callAt.x - wv.x) / (wv.width || 1)) * 1280));
-        const sy = Math.max(SLIM_H + 50, ((callAt.y - wv.y) / (wv.height || 1)) * 720 - 70);
+        const sy = Math.max(SLIM_H + 50, ((callAt.y - wv.y) / (wv.height || 1)) * 720 - 120);
         call.setPosition(sx, sy);
       }
       fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);

@@ -23,7 +23,7 @@ async function enterFight(page: Page, team = 1, click = false): Promise<void> {
   if (click) await fight.click();
   else await fight.tap();
   await page.waitForFunction(ARENA_READY);
-  // The card is held back until ROUND 1 / FIGHT! has cleared (INTRO_HOLD_MS, QA r34): wait for it before the layout reads.
+  // The card is held back until ROUND 1 / FIGHT! has cleared (FIGHT_OVER_EVENT, QA r34/r35): wait for it before the layout reads.
   await page.locator('#firstRunHint:not(.firstRunWait)').waitFor({ state: 'attached', timeout: 20000 });
 }
 

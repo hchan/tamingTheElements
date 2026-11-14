@@ -10,6 +10,8 @@ import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction 
 export const ROUND_OVER_EVENT = 'tte:round-over';
 /** Fired on `window` when a super cut-in starts: the card leaves at once (quickly, not on the slow fade) so it never sits on the cut-in band. */
 export const SUPER_CUT_EVENT = 'tte:super-cut';
+/** Fired on `window` once the FIGHT! banner has run out (tick based, from the round view): the card may then appear. */
+export const FIGHT_OVER_EVENT = 'tte:fight-over';
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
 export const FIRST_RUN_MS = 2500;
@@ -111,12 +113,8 @@ function rotateBlocked(): boolean {
   return o !== null && !o.hidden;
 }
 
-/**
- * The round intro (ROUND_INTRO_TICKS 70 plus the 50 tick FIGHT! banner, at 20 ms a tick, plus a little): the card stays
- * hidden this long after the arena is built, so it never sits over ROUND 1 / FIGHT! (QA r34). A literal, as core data
- * stays out of this chunk.
- */
-export const INTRO_HOLD_MS = 2600;
+/** Fallback when no FIGHT_OVER_EVENT arrives (a replay, a round that starts mid-way): the card still shows after this long. */
+export const INTRO_FALLBACK_MS = 7000;
 
 /** `whenReady` for a real game: runs `go` once the Arena scene has built the arena (after the loading screen, never over it). */
 export function afterArenaCreate(game: object): (go: () => void) => void {
@@ -130,7 +128,20 @@ export function afterArenaCreate(game: object): (go: () => void) => void {
     // The Arena starts only after Preload finishes, by which time every scene is registered.
     g.events.once(PRELOAD_READY, () => {
       const scene = g.scene?.getScene('Arena') as Phaser.Scene | null | undefined;
-      const later = (): void => { window.setTimeout(go, INTRO_HOLD_MS); };
+      // The card waits for the sim's FIGHT! banner to end (FIGHT_OVER_EVENT), not a wall-clock guess: a slow machine runs fewer
+      // ticks per second. INTRO_FALLBACK_MS covers a round that never announces FIGHT!.
+      const later = (): void => {
+        let done = false;
+        const once = (): void => {
+          if (done) return;
+          done = true;
+          window.removeEventListener(FIGHT_OVER_EVENT, once);
+          window.clearTimeout(fallback);
+          go();
+        };
+        const fallback = window.setTimeout(once, INTRO_FALLBACK_MS);
+        window.addEventListener(FIGHT_OVER_EVENT, once);
+      };
       // Status 4 = CREATING, 5 = RUNNING: the arena is already being built, so its 'create' event may have fired.
       if (scene && scene.sys.settings.status < 4) scene.events.once('create', later);
       else later();
