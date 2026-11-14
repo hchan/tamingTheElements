@@ -57,6 +57,13 @@ test.describe('phone landscape fight', () => {
     expect(card.y).toBeGreaterThanOrEqual(390 * 0.58); // below the name banners, ROUND 1 and the fighters' feet
     expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.82); // above the action bar
   });
+  test('the first-run card sits between the fighters and is narrow enough to clear both feet (QA r33)', async ({ page }) => {
+    await enterFight(page);
+    const card = await box(page, '#firstRunHint');
+    expect(card.w).toBeLessThanOrEqual(844 * 0.4);
+    const done = await box(page, '#firstRunHint .firstRunDone');
+    expect(done.h).toBeGreaterThanOrEqual(44);
+  });
   test('the arena fills the screen width (no side bars, QA r19)', async ({ page }) => {
     await enterFight(page);
     const game = await box(page, '#game');
@@ -92,6 +99,18 @@ test.describe('phone landscape fight', () => {
     await page.getByRole('button', { name: 'Got it' }).tap();
     await page.evaluate(`window.__TTE__.arena.step(120)`);
     await shot(page, 'land-2v2-hud');
+  });
+});
+
+test.describe('small phone landscape fight', () => {
+  test.use({ viewport: { width: 667, height: 375 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  test('the first-run card is narrow, above the action bar, with a 44 px Got it (QA r33)', async ({ page }) => {
+    await enterFight(page);
+    await shot(page, 'small-land-card');
+    const card = await box(page, '#firstRunHint');
+    expect(card.w).toBeLessThanOrEqual(667 * 0.4);
+    expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.84);
+    expect((await box(page, '#firstRunHint .firstRunDone')).h).toBeGreaterThanOrEqual(44);
   });
 });
 
