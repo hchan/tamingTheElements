@@ -60,8 +60,8 @@ const PHONE_ARCADE_BOOST = 1.7;
 const TRACK_COLOR = 0x120f0c;
 const FRAME_COLOR = 0x050403;
 
-/** The SUPER label's own phone boost cap: between the life bar and the bench portraits there is room for about 21 logical px of text (qa-r12: at 1.7 it sat on the portraits). */
-const SUPER_LABEL_BOOST = 1.45;
+/** The SUPER label's own phone boost cap: between the life bar and the bench portraits there is room for about 21 logical px of text (qa-r12: at 1.7 it sat on the portraits; `meterLabelY` now lifts it clear, so r20 raised it to 1.7 again for ~11 CSS px on a phone). */
+const SUPER_LABEL_BOOST = 1.7;
 
 const TEAMS = [0, 1] as const;
 

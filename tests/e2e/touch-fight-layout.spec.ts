@@ -51,6 +51,12 @@ test.describe('phone landscape fight', () => {
     await page.evaluate(`window.__TTE__.arena.step(120)`);
     await shot(page, 'land-hud');
   });
+  test('the first-run card sits under the HUD bar, above the fighters (QA r20)', async ({ page }) => {
+    await enterFight(page);
+    const card = await box(page, '#firstRunHint');
+    expect(card.y).toBeGreaterThanOrEqual(390 * 0.15); // below the HUD bar
+    expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.4); // the fighters' heads start near 42% of the height
+  });
   test('the arena fills the screen width (no side bars, QA r19)', async ({ page }) => {
     await enterFight(page);
     const game = await box(page, '#game');
