@@ -158,6 +158,12 @@ for (const [w, h] of [[667, 375], [844, 390]] as const) {
       const names = texts.filter((t) => /FIARA|TREEN|SUPER/.test(t.text));
       expect(names.length, JSON.stringify(texts)).toBeGreaterThanOrEqual(4);
       for (const t of names) expect(t.px, t.text).toBeGreaterThanOrEqual(9.5);
+      // The WEATHER charge chip (weather-view.ts) reads at 10 CSS px or more and clears the HUD text.
+      const chip = texts.find((t) => /WEATHER/.test(t.text));
+      if (chip) {
+        expect(chip.px, chip.text).toBeGreaterThanOrEqual(10);
+        for (const t of names) expect(overlap(chip, t), `${chip.text} / ${t.text}`).toBe(false);
+      }
       for (let i = 0; i < names.length; i++) {
         for (let j = i + 1; j < names.length; j++) {
           const a = names[i];

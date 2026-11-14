@@ -14,3 +14,5 @@ Scores 0-5 vs Street Fighter / MvC (r33 was 3 / 3.5 / 3.75).
 Verified (real time, not manual=1): menu, Versus hero select, 1v1 on Fire/Water/Earth/Air, gale warn and active, super, 2v2 tag swap on lava, Tour, Help at 1280x720, 844x390 and 667x375. Gold life-bar rim shows when SUPER is full (real time only; manual=1 does not advance the HUD ms counter). Dark Tour card legible. Gale rails fainter, slightly busy still. Tag-in Pax on lava reads better. e2e: touch-fight-layout (11) and app-flow (2) pass. No console errors.
 
 Screenshots: ~/claudetmp/qa-r34/ (rim5-sheet.png, gale-*.png, tag-1280-*.png, hero-*.png, tour*.png, rt-*.png)
+
+Follow-up (weather-gale-polish): gale lane now draws one edge arrow per side, a fainter dark outline, glow and chevrons; warn stays readable (shots ~/claudetmp/wgp/). Left in brainstorm until the next QA round confirms.
