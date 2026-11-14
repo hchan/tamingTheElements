@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 ---
 
@@ -10,3 +10,5 @@ The painted floors are a big step up: fire (lava cracks) and water (ice blue) re
 Proposal: rim light or outline for pale heroes on air, more saturated earth floor, lower-contrast pads until a hero is near.
 
 Evidence: ~/claudetmp/qa/r5/04-stage-earth.png, ~/claudetmp/qa/r5/04-stage-air.png, ~/claudetmp/qa/r5/04-stage-fire.png
+
+Resolved 2026-11-13: arena-floor.py earth is now warm umber stone with muted moss, amber ore veins and dappled light; air is indigo sky-stone with deep joints, teal drift, glowing rune veins and luminous cloud, so pale heroes read against it. Pads (terrain-pad.ts) are about half as opaque, fewer flecks, air stain tinted indigo. Shots: ~/claudetmp/arena-ae/before-* and after-*.

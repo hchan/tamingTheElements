@@ -192,14 +192,14 @@ def earth():
     ruin = smooth(fbm(1305, 300, 3), 0.30, 0.44)  # where the old paving survives
     soil_h = fbm(1302, 60, 4)
     soil = np.clip(0.3 + 0.3 * (soil_h - 0.5) + 0.2 * (broad - 0.5) + 0.3 * relief(blur(soil_h, 1.5), 40), 0, 1)
-    img = tint(soil, [(0, (16, 13, 9)), (0.45, (58, 48, 34)), (0.8, (98, 84, 60)), (1, (132, 116, 84))])
+    img = tint(soil, [(0, (22, 12, 8)), (0.45, (92, 54, 30)), (0.8, (138, 94, 54)), (1, (182, 134, 80))])  # warm umber, not olive mud
     st = np.clip(0.38 + 0.3 * (sv - 0.5) + 0.15 * (fine - 0.5) + 0.42 * lit, 0, 1)
-    stone = tint(st, [(0, (20, 20, 18)), (0.45, (72, 70, 58)), (0.8, (122, 118, 98)), (1, (168, 160, 132))])
+    stone = tint(st, [(0, (24, 20, 20)), (0.45, (96, 84, 78)), (0.8, (156, 138, 118)), (1, (212, 190, 156))])
     s = slab * ruin
     img = img * (1 - s[..., None]) + stone * s[..., None]
     img = img * (1 - 0.65 * (1 - slab) * ruin)[..., None]
     moss = np.clip(smooth(fbm(1306, 110, 4), 0.56, 0.72) * (1 - 0.7 * s) + (1 - smooth(gap, 0, 6)) * ruin * 0.9, 0, 1)
-    mcol = tint(0.2 + 0.6 * blur(fbm(1307, 14, 3), 1.2) + 0.25 * lit, [(0, (16, 24, 12)), (0.6, (48, 62, 28)), (1, (88, 100, 48))])
+    mcol = tint(0.2 + 0.6 * blur(fbm(1307, 14, 3), 1.2) + 0.25 * lit, [(0, (14, 28, 14)), (0.6, (50, 86, 34)), (1, (112, 144, 62))])
     img = img * (1 - 0.75 * moss[..., None]) + mcol * 0.75 * moss[..., None]
     root = np.exp(-((fbm(1308, 240, 3, 2.5) - 0.5) / 0.02) ** 2) * smooth(fbm(1309, 260, 2), 0.5, 0.7)
     rh = blur(root, 2.0)
@@ -217,29 +217,43 @@ def earth():
     for x, y in r.random((160, 2)):
         spore[int(y * (GH - 1)), int(x * (W - 1))] = 1.0
     spore = np.clip(blur(spore * moss, 1.4) * 9, 0, 1)
-    img = img + spore[..., None] * np.asarray([(110, 150, 70)], np.float32)
+    img = img + spore[..., None] * np.asarray([(150, 220, 90)], np.float32)
+    # Mystic light: a few amber-gold veins of luminous ore running through the soil with a soft bleed, plus broad dappled light
+    # and shade (canopy shafts) so the ground has depth instead of one flat value.
+    ore = np.exp(-((fbm(1312, 200, 4, 2.0) - 0.5) / 0.012) ** 2) * smooth(fbm(1313, 280, 2), 0.42, 0.62) * (1 - 0.8 * s)
+    og = np.clip(blur(ore, 4) * 2.0 + blur(ore, 18) * 1.2, 0, 1)
+    img = img + (og * 70)[..., None] * np.asarray([(1.0, 0.72, 0.25)], np.float32) + (blur(ore, 0.8) * 110)[..., None] * np.asarray([(1.0, 0.9, 0.5)], np.float32)
+    dapple = smooth(fbm(1314, 150, 4, 1.6), 0.38, 0.72)
+    img = img * (0.8 + 0.34 * dapple)[..., None] + (dapple * 18)[..., None] * np.asarray([(1.0, 0.9, 0.5)], np.float32)
     img = persp(img)
-    img = stage_light((170, 160, 80), 1.0, (48, 54, 34), img)
-    return finish(img, 1311, 0.12)
+    img = stage_light((220, 170, 70), 1.0, (84, 60, 36), img)
+    return finish(img, 1311, 0.10)
 
 
 def air():
-    """Pale veined sky-stone in big worn slabs, thin cloud swept across it by the wind, a cool lavender light."""
-    gap, sv, slab, broad, fine, lit = stones(1401, 290, 170, 50, 8.0)
-    v = np.clip(0.42 + 0.26 * (sv - 0.5) + 0.2 * (broad - 0.5) + 0.1 * (fine - 0.5) + 0.36 * lit, 0, 1)
-    img = tint(v, [(0, (26, 26, 40)), (0.4, (78, 78, 104)), (0.75, (130, 130, 156)), (1, (190, 188, 206))])
-    img = img * (0.45 + 0.55 * slab)[..., None]
+    """Sky-stone in worn indigo slabs with deep joints, luminous cloud and wind ribbons swept across them, glowing rune veins,
+    a cool lavender-to-teal light: mid-dark enough that pale heroes stand out, bright mist for the mystic glow."""
+    gap, sv, slab, broad, fine, lit = stones(1401, 290, 170, 50, 12.0)
+    v = np.clip(0.40 + 0.30 * (sv - 0.5) + 0.26 * (broad - 0.5) + 0.12 * (fine - 0.5) + 0.62 * lit, 0, 1)
+    img = tint(v, [(0, (14, 14, 34)), (0.4, (52, 56, 104)), (0.75, (96, 106, 160)), (1, (160, 170, 214))])
+    tealwash = smooth(fbm(1402, 320, 3, 1.6), 0.45, 0.75)  # cool teal drift across the slate for colour variety
+    img = img * (1 - 0.5 * tealwash)[..., None] + tealwash[..., None] * 0.5 * (img * np.asarray([(0.55, 1.1, 1.15)], np.float32))
+    img = img * (0.28 + 0.72 * slab)[..., None]  # deep joints
     for seed, w in ((1405, 0.010), (1415, 0.006)):
         vein = np.exp(-((fbm(seed, 170, 4, 1.4) - 0.5) / w) ** 2) * smooth(fbm(seed + 1, 240, 2), 0.35, 0.7)
         img = img * (1 - 0.35 * blur(vein, 0.7))[..., None]
         img = img + (blur(np.roll(vein, 2, 0), 1.0) * 26)[..., None] * np.asarray([(0.9, 0.85, 1.0)], np.float32)
-    for seed, cell, lo, hi, a in [(1407, 280, 0.58, 0.88, 0.34), (1408, 120, 0.62, 0.9, 0.22)]:
+    # Luminous rune veins: a few thin glowing channels with a soft bleed (the mystic light of the stage).
+    glow = np.exp(-((fbm(1420, 260, 4, 2.2) - 0.5) / 0.011) ** 2) * smooth(fbm(1421, 300, 2), 0.4, 0.62)
+    gl = np.clip(blur(glow, 3) * 2.0 + blur(glow, 16) * 1.4, 0, 1)
+    img = img + (gl * 80)[..., None] * np.asarray([(0.45, 0.8, 1.0)], np.float32) + (blur(glow, 0.8) * 120)[..., None] * np.asarray([(0.8, 0.95, 1.0)], np.float32)
+    for seed, cell, lo, hi, a in [(1407, 280, 0.6, 0.9, 0.22), (1408, 120, 0.64, 0.92, 0.14)]:
         m = smooth(fbm(seed, cell, 5, 4.5), lo, hi)
-        img = img * (1 - 0.25 * np.roll(blur(m, 8), 16, 0))[..., None]  # the cloud's faint shadow
-        img = img * (1 - a * m[..., None]) + np.asarray([(200, 200, 224)], np.float32) * a * m[..., None]
+        img = img * (1 - 0.35 * np.roll(blur(m, 8), 16, 0))[..., None]  # the cloud's shadow, offset: depth under the mist
+        img = img * (1 - a * m[..., None]) + np.asarray([(190, 200, 236)], np.float32) * a * m[..., None]
     img = persp(img)
-    img = stage_light((150, 140, 220), 1.0, (80, 80, 112), img)
-    return finish(img, 1409, 0.14)
+    img = stage_light((120, 130, 230), 1.0, (56, 64, 120), img)
+    return finish(img, 1409, 0.04)
 
 
 def main(out):
