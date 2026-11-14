@@ -28,3 +28,6 @@ Hero slots are 1, 2, 3 (3 = signature trap/minion). Then Weather, Super (special
 ## Owner idea (2026-11-13): Charge and Dash as abilities
 "maybe charge, dash should be an ability": make Charge and Dash per-hero abilities (element-flavoured movement: water slide, air blink, fire rush, earth rumble) instead of fixed boxes. Undecided; see the open-idea note in docs/design/action-bar-kits.md.
 Owner follow-up: Charge and Dash must be useful for melee (gap-close into a hit, combo extender, dodge into counter, charge with contact armour/knockback); give each a melee use case and a usage check. See docs/design/action-bar-kits.md.
+
+## Status note (2026-11-13, signature traps)
+Design table with durations and sim hooks: [docs/design/signature-traps.md](../../docs/design/signature-traps.md). Per-hero follow-ups: `signature-slot3-<hero>.md` in this folder (12 files). The four existing trap kinds have distinct animated visuals (`src/game/fx/trap-paint.ts`).

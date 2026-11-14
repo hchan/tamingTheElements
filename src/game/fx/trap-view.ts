@@ -1,8 +1,9 @@
 import type Phaser from 'phaser';
 import { TRAP_BOX_PX, TRAP_VIEW_STRIDE, type RenderView } from '@core/index';
 import { LOGICAL_WIDTH } from '../boot/viewport';
-import { hash01, mute } from './grim-fx';
-import { TRAP_COLORS, TRAP_RANGE_PX, trapAlpha, trapLabel } from './trap-fx';
+import { mute } from './grim-fx';
+import { paintTrap } from './trap-paint';
+import { TRAP_COLORS, TRAP_RANGE_PX, trapAlpha, trapLabel, trapPhase } from './trap-fx';
 
 /**
  * Phaser side of the Arcade trap marker (WP 39b). The Arena mounts it in every Arcade match (a lazy chunk, so Classic never
@@ -30,7 +31,7 @@ export function trapState(arena: Phaser.Scene): readonly TrapMarker[] | undefine
 }
 
 export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotion: () => boolean): void {
-  let parts: { g: Phaser.GameObjects.Graphics; labels: Phaser.GameObjects.Text[] } | undefined;
+  let parts: { g: Phaser.GameObjects.Graphics; glow: Phaser.GameObjects.Graphics; labels: Phaser.GameObjects.Text[] } | undefined;
   let markers: TrapMarker[] = [];
 
   const label = (i: number): Phaser.GameObjects.Text => {
@@ -47,8 +48,9 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
   const draw = (): void => {
     const ar = view.arcade();
     if (!ar) return;
-    parts ??= { g: arena.add.graphics().setDepth(DEPTH), labels: [] };
+    parts ??= { g: arena.add.graphics().setDepth(DEPTH), glow: arena.add.graphics().setDepth(DEPTH + 0.02).setBlendMode(1), labels: [] };
     const g = parts.g.clear();
+    parts.glow.clear();
     const reduced = reduceMotion();
     markers = [];
     const margin = (TRAP_RANGE_PX - TRAP_BOX_PX) / 2;
@@ -60,17 +62,8 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
       }
       const words = trapLabel(kind, team, armLeft);
       const alpha = trapAlpha(armLeft, lifeLeft, view.tick, reduced);
-      // Grim pad: stained ground, not a slab. A faint dark halo and two feathered, element-muted layers soften the edge (no crisp
-      // rectangle), specks give it grain; the word label and the range outline carry the reading.
-      const tone = mute(TRAP_COLORS[kind] ?? 0xffffff, 0.3, 0.42);
-      g.fillStyle(0x000000, 0.1 * alpha).fillRect(x - 4, y - 4, TRAP_BOX_PX + 8, TRAP_BOX_PX + 8);
-      g.fillStyle(tone, 0.2 * alpha).fillRect(x - 2, y - 2, TRAP_BOX_PX + 4, TRAP_BOX_PX + 4);
-      g.fillStyle(tone, 0.38 * alpha).fillRect(x + 1, y + 1, TRAP_BOX_PX - 2, TRAP_BOX_PX - 2);
-      for (let n = 0; n < 22; n++) {
-        const gx = x + 1 + Math.floor(hash01(n, kind * 31) * (TRAP_BOX_PX - 3));
-        const gy = y + 1 + Math.floor(hash01(n, kind * 31 + 1) * (TRAP_BOX_PX - 3));
-        g.fillStyle(n % 3 === 0 ? 0x1a1410 : 0x7a7060, (n % 3 === 0 ? 0.35 : 0.18) * alpha).fillRect(gx, gy, n % 4 === 0 ? 3 : 2, 2);
-      }
+      // Each kind has its own silhouette and motion (trap-paint.ts); the label and the range outline below carry the reading.
+      paintTrap(g, parts.glow, kind, x, y, trapPhase(armLeft, lifeLeft, view.tick, reduced), alpha, TRAP_COLORS[kind] ?? 0xffffff);
       // The trigger range: a dark outline under a thin ash one (element-muted), so it reads on any floor; thin while arming, firmer once armed.
       g.lineStyle(armLeft > 0 ? 1 : 2, 0x000000, 0.4 * alpha).strokeRect(x - margin - 1, y - margin - 1, TRAP_RANGE_PX + 2, TRAP_RANGE_PX + 2);
       g.lineStyle(1, mute(TRAP_COLORS[kind] ?? 0xffffff, 0.2, 0.95), (armLeft > 0 ? 0.45 : 0.6) * alpha).strokeRect(x - margin, y - margin, TRAP_RANGE_PX, TRAP_RANGE_PX);
@@ -85,6 +78,7 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
     arena.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     states.delete(arena);
     parts?.g.destroy();
+    parts?.glow.destroy();
     for (const t of parts?.labels ?? []) t.destroy();
     parts = undefined;
   };
