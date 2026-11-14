@@ -35,6 +35,8 @@ export const TAG_SLOT_Y = 640;
 const FLASH_DEPTH = 4.5;
 /** The TAG caption floats this far over the slot top, clear of the slot own cooldown words (qa-r3-label-clutter). */
 const CAPTION_LIFT = 26;
+/** The caption is a first-seconds pointer at the Tag box, not a fixture: it goes after this many ticks (7 s), so it is never pinned over the arena for a whole fight. */
+export const CAPTION_TICKS = 350;
 /** Muted ochre (was bright 0xffd23f): the active-bar frame, the ready bar and the KO ring. */
 const GOLD = 0xb39653;
 const ASH = 0xcfc4a8;
@@ -175,7 +177,7 @@ export function mountTagView(
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
       const tag = tagReadout(bar ? bar.swapReadyTick - bar.tick : 0, !active || bench.every((h) => h.dead));
-      if (team === 0) caption?.setVisible(tag.label !== 'NO TAG').setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT);
+      if (team === 0) caption?.setVisible(tag.label !== 'NO TAG' && (bar?.tick ?? 0) < CAPTION_TICKS).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT);
       // One line per bench row (an empty one if a hero is missing), so the texts keep their rows.
       const benchLines = Array.from({ length: t.length - 1 }, (_, i) => {
         const h = bench[i];

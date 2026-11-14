@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FIRST_RUN_KEY, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
-import { DEFAULT_BINDINGS } from '../platform/input/bindings';
+import { labelsFromBindings } from '../hud/action-bar';
+import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
 const memory = (): Pick<Storage, 'getItem' | 'setItem'> & { data: Map<string, string> } => {
   const data = new Map<string, string>();
@@ -63,6 +64,18 @@ describe('firstRunHint', () => {
 
   it('names the live keys', () => {
     expect(firstRunLines({ ...DEFAULT_BINDINGS, dash: ['KeyV'] }).join(' ')).toContain('Dash with V');
+  });
+
+  it('names every key exactly as the action bar labels it (Dash 7, Guard 8, Super 9, Tag 3, Cleanse =)', () => {
+    const text = firstRunLines(DEFAULT_BINDINGS).join(' ');
+    expect(text).toContain('Strike with 1.');
+    expect(text).toContain('Dash with 7;');
+    expect(text).toContain('hold 8 to Guard');
+    expect(text).toContain('press 9.');
+    expect(text).toContain('Tag with 3 ');
+    expect(text).toContain('Press = to Cleanse');
+    for (const a of ['slot1', 'dash', 'guard', 'super', 'slot3', 'cleanse'] as const) expect(actionKeyLabel(DEFAULT_BINDINGS, a)).toBeDefined();
+    expect(Object.values(labelsFromBindings(DEFAULT_BINDINGS))).toEqual(expect.arrayContaining(['7', '8', '9', '=']));
   });
 
   it('describes the touch controls on a touch device and the live keys otherwise', () => {

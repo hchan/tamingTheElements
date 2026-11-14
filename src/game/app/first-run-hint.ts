@@ -1,11 +1,13 @@
 import { el } from '@ui/dom';
-import { codeLabel, getBindings, type Bindings, type GameAction } from '../platform/input/bindings';
+import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction } from '../platform/input/bindings';
 
 /** First-run battle hint: a short, dismissible card shown in the first battle only (flag kept in localStorage, never the save). */
 
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
 export const FIRST_RUN_MS = 6000;
+/** Windows this short or shorter get the compact card (smaller text, no footer line). */
+export const COMPACT_BELOW = 800;
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
@@ -33,10 +35,8 @@ function markSeen(store: Store | undefined): void {
   }
 }
 
-const key = (b: Bindings, a: GameAction): string => {
-  const first = b[a][0];
-  return first === undefined ? 'unbound' : codeLabel(first);
-};
+/** The key as the action bar labels it (one source: `actionKeyLabel`), so the card and the bar agree. */
+const key = (b: Bindings, a: GameAction): string => actionKeyLabel(b, a) ?? 'unbound';
 
 /** The four move keys as bound (every key of an action, so the default reads "W, Up ..."), in up, left, down, right order. */
 const moveKeys = (b: Bindings): string =>
@@ -77,7 +77,10 @@ export function firstRunHint(store: Store | undefined = defaultStore(), fadeMs =
   card.setAttribute('role', 'note');
   card.append(el('h2', undefined, 'First blood'));
   for (const line of firstRunLines(getBindings(), isTouchFirst())) card.append(el('p', undefined, line));
-  card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
+  // On a short window (1280x720) the card shrinks and drops its footer so it ends above the hero's wings instead of covering them.
+  const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
+  if (short && window.innerHeight > 500) card.style.fontSize = '12px';
+  if (!short) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
   done.setAttribute('type', 'button');
   done.addEventListener('click', () => {

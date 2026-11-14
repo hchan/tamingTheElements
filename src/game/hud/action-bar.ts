@@ -3,7 +3,7 @@ import type { Command, RenderActionBar, RenderArcade, RenderView } from '@core/i
 import { Cmd, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL } from '@core/index';
 import { LOGICAL_WIDTH as LOGICAL_W, crisp, phoneBoost } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
-import { codeLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
+import { actionKeyLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
 import { lookup } from '../views/projectile-view';
 import { gradeRgba, mute } from '../fx/grim-fx';
@@ -81,20 +81,13 @@ export type KeyLabels = Readonly<Record<number, string>>;
 export function labelsFromBindings(bindings: Bindings): KeyLabels {
   const out: Record<number, string> = {};
   for (const action of GAME_ACTIONS) {
-    const digit = ARCADE_DIGIT[action];
-    const keys = bindings[action];
-    // The numbered action row (3 Tag ... 9 Super, 0 Trap): a box wears its number while that number key is bound to it, else its first key.
-    const numberKey = digit !== undefined ? `Digit${String(digit)}` : action === 'elemental' ? 'Minus' : action === 'cleanse' ? 'Equal' : undefined;
-    const code = numberKey !== undefined && keys.includes(numberKey) ? numberKey : keys[0];
+    const label = actionKeyLabel(bindings, action);
     // Trap shares Capture's command bit 6 and the elemental ability the fourth swap's bit 10, so theirs live apart.
     const at = action === 'trap' ? TRAP_LABEL : action === 'elemental' ? ELEMENTAL_LABEL : action === 'cleanse' ? CLEANSE_LABEL : ACTION_COMMAND[action];
-    if (code !== undefined) out[at] = codeLabel(code);
+    if (label !== undefined) out[at] = label;
   }
   return out;
 }
-
-/** The number key each Arcade action wears on its box (FUN-DESIGN 2.17); Element wears the key after 0 (Minus, shown as -) while it is bound, else its first key. */
-const ARCADE_DIGIT: Readonly<Partial<Record<(typeof GAME_ACTIONS)[number], number>>> = { super: 9, guard: 8, dash: 7, weather: 6, charge: 5, trap: 0 };
 
 /** Where the Trap key's label sits in a KeyLabels (its command bit is Capture's). */
 export const TRAP_LABEL = 100;
@@ -189,6 +182,13 @@ export function tipPlacement(s: Pick<ActionSlot, 'x' | 'y' | 'size'>, w: number,
 /** How long a held finger waits before a touch tip shows, and how long tips stay hidden after a super starts (its banner owns the screen). */
 export const TIP_LONG_PRESS_MS = 450;
 export const TIP_SUPER_QUIET_MS = 2800;
+/** A tip never stays pinned: it hides this long after it first showed for the current target (a resting mouse or focus is not a request to read it all fight). */
+export const TIP_MAX_MS = 3500;
+
+/** Pure: has a tip that began at `since` (ms) run out at `now`? */
+export function tipExpired(since: number, now: number): boolean {
+  return now - since >= TIP_MAX_MS;
+}
 
 /** Line colour per element kind (a second cue only: the icon's shape and the slot's words say which). */
 const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
@@ -582,6 +582,9 @@ export class ActionBarView {
   private manual: { touch: string } | { idx: number } | null = null;
   /** Tips stay hidden until this time (a super cut-in just started). */
   private superQuietUntil = 0;
+  /** When the current tip target first showed, and its identity, so a tip that is never moved away from still expires. */
+  private tipSince = 0;
+  private tipId = '';
   private pressTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
@@ -869,7 +872,16 @@ export class ActionBarView {
   private tipTarget(now: number): ActionSlot | undefined {
     if (now < this.superQuietUntil) return undefined;
     const m = this.manual;
-    if (m === null) return undefined;
+    if (m === null) {
+      this.tipId = '';
+      return undefined;
+    }
+    const id = 'touch' in m ? `t:${m.touch}` : `i:${String(m.idx)}`;
+    if (id !== this.tipId) {
+      this.tipId = id;
+      this.tipSince = now;
+    }
+    if (tipExpired(this.tipSince, now)) return undefined;
     return 'touch' in m ? this.slots.find((s) => s.touch === m.touch) : this.slots[m.idx];
   }
 

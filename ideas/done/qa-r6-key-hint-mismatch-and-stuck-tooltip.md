@@ -1,7 +1,10 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
+done: 2026-11-13
 ---
+
+Done: the first-run card names keys through `actionKeyLabel` (the action bar's own label function), so it reads Dash 7, Guard 8, Super 9, Tag 3, Cleanse = like the bar (pinned by a test). On windows 800 px tall or less the card is smaller and drops its footer so it ends above the hero. Tooltips expire after `TIP_MAX_MS` (3.5 s) even while the mouse or focus rests on a box. The floating "TAG" caption over the Tag box now goes after 7 s (`CAPTION_TICKS`) instead of being pinned all fight (that was the "stuck TAG" label). Not done: the round intro shortening and input buffering (separate system, see the round-intro ideas).
 
 # QA r6: first-run hint keys disagree with the action bar; stuck "Dash" tooltip
 
