@@ -7,6 +7,7 @@ import {
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
 import { coreDisplayWidth, resolutionOf } from '../boot/viewport';
+import { LaneWait, centreBusy } from './banner-lanes';
 import { styleCombatText } from './combat-text';
 
 /**
@@ -137,6 +138,9 @@ export function mountTagView(
   let callReduced = false;
   let callKo = false;
   let shownTick = -1;
+  /** The entrance call waits (up to LANE_MAX_WAIT_TICKS) while the super cut-in or the round banner holds the centre. */
+  const wait = new LaneWait();
+  let lastNow = -1;
   const lines: string[][] = [['', '', ''], ['', '', '']];
   /** Live entrance flashes: centre, height, team, start tick, KO. */
   /** The view tick each team's incoming-hero bar flash started (-FLASH_TICKS when none). */
@@ -213,9 +217,14 @@ export function mountTagView(
       shownTick = now;
       drawHud(parts.g, parts.texts);
     }
+    // Lanes (banner-lanes.ts): a call that lands under the super cut-in or a banner starts when it clears.
+    const dt = lastNow < 0 ? 0 : now - lastNow;
+    lastNow = now;
+    const held = call?.visible === true && now - callFrom < CALL_TICKS && wait.hold(centreBusy(arena.registry), dt);
+    if (held) callFrom += dt;
     const age = now - callFrom;
     fx.clear();
-    if (call?.visible && callAt) {
+    if (call?.visible && callAt && !held) {
       view.forEachCharacter((c) => {
         if (c.id === callAt?.id) callAt = { id: c.id, x: c.x + c.w / 2, y: c.y };
       });
@@ -229,7 +238,8 @@ export function mountTagView(
       fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);
       fx.fillStyle(callKo ? GOLD : 0xffffff, 1).fillTriangle(callAt.x - 12, callAt.y - 22, callAt.x + 12, callAt.y - 22, callAt.x, callAt.y - 8);
     }
-    if (call?.visible) {
+    if (call?.visible && held) call.setAlpha(0);
+    else if (call?.visible) {
       const pose = callPose(age, callReduced);
       if (age >= CALL_TICKS) call.setVisible(false);
       else call.setScale(pose.scale).setAlpha(pose.alpha);
@@ -286,6 +296,7 @@ export function mountTagView(
       flashes.push(flash);
       flashes.splice(0, flashes.length - 4);
       callFrom = view.tick;
+      wait.reset();
       barFlash[team === 1 ? 1 : 0] = view.tick;
       callReduced = reduced;
       callKo = ko;
