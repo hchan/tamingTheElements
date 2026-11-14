@@ -63,20 +63,25 @@ describe('tourSplashView', () => {
     const glyphs: string[] = [];
     const page = tourSplashView(
       'Stage 1 of 9',
-      { who: 'You', name: 'Fiara (fire)', element: 'fire' },
-      { who: 'Opponent', name: 'Rokcore (earth)', element: 'earth' },
+      { who: 'You', name: 'Fiara (fire)', element: 'fire', id: 'fiara' as CharacterId },
+      { who: 'Opponent', name: 'Rokcore (earth)', element: 'earth', id: 'rokcore' as CharacterId },
       (e) => {
         glyphs.push(e);
         const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         s.dataset['element'] = e;
         return s;
       },
+      'Earth arena',
     );
     expect(page.id).toBe('tourSplash');
     expect(page.querySelector('h1')?.textContent).toBe('Stage 1 of 9');
     expect(glyphs).toEqual(['fire', 'earth']);
     const text = [...page.querySelectorAll('p')].map((p) => p.textContent);
-    expect(text).toEqual(['You: Fiara (fire)', 'Opponent: Rokcore (earth)', 'Press Enter, Space or tap to skip.']);
+    expect(text).toEqual(['Earth arena', 'You: Fiara (fire)', 'Opponent: Rokcore (earth)', 'Press Enter, Space or tap to skip.']);
+    const faces = [...page.querySelectorAll<HTMLElement>('.heroFace')];
+    expect(faces).toHaveLength(2);
+    expect(faces[0]?.style.backgroundImage).toContain('fiara');
+    expect(faces[1]?.style.backgroundImage).toContain('rokcore');
     expect(page.querySelector('strong')?.textContent).toBe('VS');
     expect(page.querySelectorAll('svg')).toHaveLength(2);
   });
