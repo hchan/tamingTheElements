@@ -99,6 +99,57 @@ export function select(name: string, label: string, options: readonly { value: s
   return row;
 }
 
+/**
+ * Styled replacement for a native select (Opponent, Team, AI level): a radio group of buttons over the real select, which stays in
+ * the DOM (same id, name and value, hidden from sight, Tab and assistive tech) so form data, labels and probes are unchanged.
+ * Returns a refresh to call after the select was changed by code.
+ */
+function segmented(row: HTMLElement): () => void {
+  const input = row.querySelector('select');
+  if (!input) return () => undefined;
+  input.tabIndex = -1;
+  input.classList.add('vsNativeTwin');
+  input.setAttribute('aria-hidden', 'true');
+  const group = el('div', 'vsSegmented');
+  group.setAttribute('role', 'radiogroup');
+  const buttons = [...input.options].map((o) => {
+    const b = el('button', 'vsSegment', o.label);
+    b.type = 'button';
+    b.setAttribute('role', 'radio');
+    b.dataset['value'] = o.value;
+    b.addEventListener('click', () => {
+      if (input.disabled || input.value === o.value) return;
+      input.value = o.value;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    return b;
+  });
+  const refresh = (): void => {
+    const any = buttons.some((x) => x.dataset['value'] === input.value);
+    for (const b of buttons) {
+      const on = b.dataset['value'] === input.value;
+      b.setAttribute('aria-checked', String(on));
+      b.classList.toggle('vsSegmentOn', on);
+      b.disabled = input.disabled;
+      b.tabIndex = on || (!any && b === buttons[0]) ? 0 : -1;
+    }
+  };
+  group.addEventListener('keydown', (e) => {
+    const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (d === 0 || input.disabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const i = buttons.findIndex((b) => b.dataset['value'] === input.value);
+    const next = buttons[(i + d + buttons.length) % buttons.length];
+    next?.click();
+    next?.focus();
+  });
+  group.append(...buttons);
+  row.append(group);
+  refresh();
+  return refresh;
+}
+
 /** Visible name of a select's current race ("Sindarosa"), for the slot buttons. */
 const shortName = (id: string): string => CHARACTER_TEXT.get(id as CharacterId)?.name ?? id;
 
@@ -605,11 +656,16 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     row.classList.add('vsControl');
     return row;
   };
+  const refreshers: (() => void)[] = [];
+  const choice = (row: HTMLElement): HTMLElement => {
+    refreshers.push(segmented(row));
+    return control(row);
+  };
   set.append(
     legend,
-    control(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode)),
-    control(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size)),
-    control(select('level', 'AI level', o.levels, o.current.level)),
+    choice(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode)),
+    choice(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size)),
+    choice(select('level', 'AI level', o.levels, o.current.level)),
     select('player', 'Your race', heroOptions, o.current.player, true),
     select('partner', 'Your partner (2v2)', heroOptions, o.current.partner, true),
     select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2, true),
@@ -662,6 +718,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     setText('arcadePartner', local ? 'Player 1 hero 2' : 'Your partner (2v2)');
     setText('arcadePartner2', local ? 'Player 1 hero 3' : 'Your third hero (3v3)');
     hint.hidden = !local;
+    for (const r of refreshers) r();
     roster.refresh();
     const empty = roster.empties();
     start.disabled = empty > 0;

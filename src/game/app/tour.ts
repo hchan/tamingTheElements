@@ -192,12 +192,13 @@ export function tourScreen(deps: TourDeps): Screen {
       return;
     }
     const stage = currentStage(r);
-    const lead = (id: CharacterId, who: string): SplashSide => ({ who, name: raceLabel(id), element: getCharacter(id).element });
+    const lead = (id: CharacterId, who: string): SplashSide => ({ who, name: raceLabel(id), element: getCharacter(id).element, id });
     const view2 = tourSplashView(
       `Stage ${String(stage.index + 1)} of ${String(TOUR_STAGES)}`,
       lead(r.hero[0] as CharacterId, 'You'),
       lead(stage.opponents[0] as CharacterId, 'Opponent'),
-      (e) => elementGlyph(e, 64),
+      (e) => elementGlyph(e, 32),
+      stage.location === 'void' ? 'The Eternal Void' : `${ELEMENT_WORD(stage.location)} arena`,
     );
     show(view2);
     const mine = epoch;

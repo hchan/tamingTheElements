@@ -62,28 +62,41 @@ export interface SplashSide {
   /** "Fiara (fire)". */
   readonly name: string;
   readonly element: string;
+  /** The hero, for the big portrait (omitted: no portrait). */
+  readonly id?: CharacterId;
 }
 
 /**
  * The versus splash shown between Fight and the match (WP-tour-splash-ending): "Stage N of 9", your lead against the opponent lead,
  * each as an element shape plus words. Decorative SVG is hidden from assistive tech; the caller owns the timer and skipping.
  */
-export function tourSplashView(stage: string, you: SplashSide, foe: SplashSide, glyph: (element: string) => SVGElement): HTMLElement {
+export function tourSplashView(
+  stage: string,
+  you: SplashSide,
+  foe: SplashSide,
+  glyph: (element: string) => SVGElement,
+  stageName?: string,
+): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'tourSplash';
   const side = (s: SplashSide): HTMLElement => {
-    const d = el('div');
-    d.style.textAlign = 'center';
-    d.append(glyph(s.element), el('p', undefined, `${s.who}: ${s.name}`));
+    const d = el('div', 'vsFighter');
+    d.dataset['element'] = s.element;
+    // The portrait is decoration: the words below carry the name and element.
+    const face = el('span', 'heroFace');
+    face.setAttribute('aria-hidden', 'true');
+    if (s.id !== undefined) face.style.backgroundImage = faceUrl(s.id);
+    else face.hidden = true;
+    const name = el('p', 'vsName', `${s.who}: ${s.name}`);
+    name.dataset['element'] = s.element;
+    d.append(face, glyph(s.element), name);
     return d;
   };
-  const row = el('div');
-  row.style.display = 'flex';
-  row.style.justifyContent = 'center';
-  row.style.alignItems = 'center';
-  row.style.gap = '24px';
-  row.append(side(you), el('strong', undefined, 'VS'), side(foe));
-  page.append(el('h1', 'heading', stage), row, el('p', undefined, 'Press Enter, Space or tap to skip.'));
+  const row = el('div', 'vsCard');
+  row.append(side(you), el('strong', 'vsVs', 'VS'), side(foe));
+  page.append(el('h1', 'heading', stage));
+  if (stageName !== undefined) page.append(el('p', 'vsStageName', stageName));
+  page.append(row, el('p', undefined, 'Press Enter, Space or tap to skip.'));
   return page;
 }
 
