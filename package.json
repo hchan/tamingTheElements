@@ -30,8 +30,9 @@
     "build:itch": "node tools/itch/build-itch.mjs",
     "ai:duel": "tsx tools/sim/ai-duel.ts",
     "size:check": "tsx tools/ci/size-check.ts",
+    "relay": "tsx tools/signal-relay/server.ts",
     "e2e:flake": "tsx tools/ci/e2e-flake.ts",
-    "ci:local":"tsx tools/ci/local-ci.ts",
+    "ci:local": "tsx tools/ci/local-ci.ts",
     "deploy:pages": "tsx tools/ci/deploy-pages.ts",
     "e2e:itch": "playwright test --config playwright.itch.config.ts",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",
@@ -59,6 +60,7 @@
     "@playwright/test": "^1.65.0",
     "@swc/core": "^1.16.22",
     "@types/node": "^26.6.6",
+    "@types/ws": "8.18.2",
     "@vitest/browser": "5.1.0",
     "@vitest/browser-playwright": "5.1.0",
     "@vitest/coverage-v8": "^5.1.0",
@@ -75,7 +77,8 @@
     "typescript": "^7.0.2",
     "typescript-eslint": "^8.72.2",
     "vite": "^8.3.7",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "ws": "8.22.2"
   },
   "dependencies": {
     "idb": "^8.0.4",

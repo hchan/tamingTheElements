@@ -74,8 +74,8 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 - [x] Results text and Rematch on the same link (match number in every packet drops the old match's late packets)
 - [x] Share, copy, paste, `?join=<code>#online` link (starts Join at once, param stripped) and a QR of the link (`src/game/app/online-share.ts`, `src/game/net/qr.ts`); step-numbered Host and Join layout (WebRTC WP03)
 - [x] ICE config: Google and Cloudflare STUN, optional user TURN from Settings (`turnServer` in the save, `src/game/net/ice.ts`), early gather resolve once a server-reflexive candidate is seen, `Peer.onState` (open, failed, closed) and plain-words failures for strict networks (WebRTC WP04). `onState` is not yet shown as a connection-lost cue in the UI.
-- [ ] Lobby, relay room codes
-- [ ] Relay signalling (short room codes) and TURN
+- [x] Optional relay signalling: 6-character room codes through `tools/signal-relay/` (Node or Cloudflare Worker), shown only when a build sets `VITE_SIGNAL_URL` (WebRTC WP10). Signalling only, never gameplay
+- [ ] Lobby
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
 - [x] Browser e2e: two separate contexts play a whole match to the same winner and identical checkpoint hashes (`tests/e2e/online-match.spec.ts`). Dev/test URL switches: `?ff=netbot` (Arcade scripted AI plays the local side), `?ice=none` (no STUN, loopback candidates), `?ff=lockstep`, `?matchticks=N`; probe `__TTE__.net()`
 - [ ] Clock sync / frame pacing so both peers run the same wall rate (today each peer stalls to the slower one)

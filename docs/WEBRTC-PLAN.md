@@ -180,6 +180,7 @@ Goal: a phone player can join without typing.
 - `src/game/net/relay.ts` (new): client; `#online` shows "Host with a room code" / "Join with a room code" only when the build
   has `VITE_SIGNAL_URL` (dev/test may set it with `?signal=ws://...`).
 - Tests: relay unit tests; e2e starts the local relay and connects two contexts with a room code only.
+- Done: `rooms.ts` (pure rules) is shared by `server.ts` (Node, `ws` dev dependency, `pnpm relay`) and `worker.ts` (one Durable Object); the screen's room-code section sits above Host/Join and appears only with a relay address.
 
 ### WP 11: Soak: loss and latency in the browser proof
 
