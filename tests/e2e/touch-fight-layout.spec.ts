@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY, START } from './parity/helpers';
+import { ARENA_READY, START, characters } from './parity/helpers';
 
 // Touch fight screen: the first-run card, the stick and the arena on phone viewports. Shots go to $SHOT_DIR when set (before/after review).
 const shotDir = process.env['SHOT_DIR'];
@@ -71,6 +71,19 @@ test.describe('phone landscape fight', () => {
       expect(slot.x + slot.w).toBeLessThanOrEqual(canvas.x + canvas.w);
       expect(slot.y + slot.h).toBeLessThanOrEqual(canvas.y + canvas.h + 1);
     }
+  });
+  test('the round card on a phone is the short one, with stat lines (QA r28)', async ({ page }) => {
+    await enterFight(page);
+    await page.getByRole('button', { name: 'Got it' }).tap();
+    await page.evaluate(`window.__TTE__.arena.step(101)`);
+    const [foe] = await characters(page, 1);
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(foe?.id)}, 0); a.step(1); })()`);
+    await page.evaluate(`window.__TTE__.arena.step(150)`);
+    const r = await page.evaluate<{ result: { visible: boolean; compact: boolean; lines: string[] } }>(`window.__TTE__.arena.rounds()`);
+    expect(r.result.visible).toBe(true);
+    expect(r.result.compact).toBe(true);
+    expect(r.result.lines[0]).toMatch(/^HEALTH LEFT/);
+    await shot(page, 'land-result');
   });
   test('2v2 card', async ({ page }) => {
     await enterFight(page, 2);

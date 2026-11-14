@@ -114,6 +114,7 @@ function segmented(row: HTMLElement): () => void {
   input.setAttribute('aria-hidden', 'true');
   const group = el('div', 'vsSegmented');
   group.setAttribute('role', 'radiogroup');
+  // QA r28: the choices are role=radio (not button): getByRole('radio', { name: '2v2 tag team' }). The group stays unnamed so getByLabel('Team') still finds only the select.
   const buttons = [...input.options].map((o) => {
     const b = el('button', 'vsSegment', o.label);
     b.type = 'button';

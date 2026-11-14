@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, scaledBar, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, shortName, scaledBar, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
@@ -485,7 +485,13 @@ export class Hud extends Phaser.Scene {
     const m = this.meterTexts[team];
     if (!m) return;
     const clash = team === 0 ? label.x + label.width + 6 > m.x - m.width : label.x - label.width - 6 < m.x + m.width;
-    if (clash) label.setText(compactLabel(name, c, true));
+    if (!clash) return;
+    // Shrink the name before dropping it (qa-r28: the enemy had no name on a phone): the longest that still clears the SUPER label.
+    for (let max = name.length - 1; max >= 3; max--) {
+      label.setText(compactLabel(shortName(name, max), c));
+      if (team === 0 ? label.x + label.width + 6 <= m.x - m.width : label.x - label.width - 6 >= m.x + m.width) return;
+    }
+    label.setText(compactLabel(name, c, true));
   }
 
   private text(size: number): Phaser.GameObjects.Text {

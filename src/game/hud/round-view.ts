@@ -169,7 +169,7 @@ export function mountRoundView(
     if (!parts || !ar) return;
     const tick = view.tick;
     // Lanes (banner-lanes.ts): the super cut-in outranks the banner; an intro banner waits out the round result card.
-    const on = banner.main !== '' && tick < banner.until && bannerDraws(cutUp(hud.registry), results.result.state().visible, isIntroBanner(banner.main));
+    const on = banner.main !== '' && tick < banner.until && bannerDraws(cutUp(hud.registry), results.result.state().visible, isIntroBanner(banner.main), results.result.state().compact);
     const slow = bannerScale((tick - banner.from) * TICK_MS, banner.reduced);
     // The damage numbers (Hud.drawArcade) thin out under a banner, so the stacked KO numbers never bury its caption.
     if (hud.registry.get('tte.banner') !== on) hud.registry.set('tte.banner', on);

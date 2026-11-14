@@ -15,6 +15,9 @@ describe('banner lanes', () => {
   it('hides the banner under the super cut-in and the intro banner behind the result card', () => {
     expect(bannerDraws(false, false, true)).toBe(true);
     expect(bannerDraws(true, false, false)).toBe(false);
+    expect(bannerDraws(false, true, false, true)).toBe(false); // the phone card hides the K.O. banner
+    expect(bannerDraws(false, true, false, false)).toBe(true);
+    expect(bannerDraws(false, false, false, true)).toBe(true);
     expect(bannerDraws(false, true, true)).toBe(false);
     expect(bannerDraws(false, true, false)).toBe(true);
   });
