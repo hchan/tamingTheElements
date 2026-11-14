@@ -546,7 +546,7 @@ export class Hud extends Phaser.Scene {
     const t = (this.meterTexts[team] ??= this.text(12)
       .setOrigin(team === 0 ? 1 : 0, 0.5)
       .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
-    const label = meterLabel(m.value);
+    const label = `SUPER ${meterLabel(m.value)}`; // named, so the segments are not mistaken for the round pips
     if (t.text !== label) t.setText(label);
   }
 
