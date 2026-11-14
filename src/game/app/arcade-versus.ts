@@ -13,6 +13,7 @@ import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-co
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
 import { requestOpenTesterPanel } from '@ui/tester/install';
+import { ARCADE_SNAG_SLOT } from '@core/index';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
@@ -174,7 +175,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         battle.replaceChildren(host);
         game = createGame(host, launch);
         if (pick.local) host.append(keysHint());
-        const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), anySnag([pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined)));
+        const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), anySnag([pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined)), ARCADE_SNAG_SLOT[pick.player]);
         if (firstRun) host.append(firstRun);
         host.append(...inVisualOrder(buttons), touchStick());
       }))

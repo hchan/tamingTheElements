@@ -66,20 +66,34 @@ export function anySnag(heroes: readonly string[]): boolean {
   return heroes.some((h) => ARCADE_SNAG_SLOT[h] !== undefined);
 }
 
+/** The touch Snag line: its own paragraph so the slim landscape strip can keep it (class firstRunSnag). */
+const SNAG_TOUCH_LINE = 'Tap the Snag box to root the foe.';
+
 /** The hint text, from the live bindings (keyboard) or the on-screen controls (touch). Words only; the numbered bar is described in Help. */
-export function firstRunLines(b: Bindings, touch = false, snag = true): readonly string[] {
+export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?: number): readonly string[] {
   if (touch) {
     return [
       'Drag the stick to move in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.',
       'Tap the buttons to strike, Dash, Guard (hold) and fire your Super once its meter is full.',
-      `Tap Tag to send in a rested hero, and Cleanse to shake off a root or slow.${snag ? ' Snag roots the foe.' : ''}`,
+      'Tap Tag to send in a rested hero, and Cleanse to shake off a root or slow.',
+      ...(snag ? [SNAG_TOUCH_LINE] : []),
     ];
   }
+  // The hero's own Snag box holds the rope: the strike or special key that is Snag is named as Snag (never "Strike"), and C works too.
+  const snagKey = (a: GameAction): string => `${key(b, 'capture')} or ${key(b, a)}`;
+  const rope = snag ? `Snag with ${snagSlot === 0 ? snagKey('slot1') : snagSlot === 1 ? snagKey('slot2') : key(b, 'capture')} to root the foe. ` : '';
+  const strike = snag && snagSlot === 0 ? `Strike with ${keyAlso(b, 'slot2')}. ` : snag && snagSlot === 1 ? `Strike with ${keyAlso(b, 'slot1')}. ` : `Strike with ${keyAlso(b, 'slot1')}. Special with ${keyAlso(b, 'slot2')}. `;
   return [
     `Move with ${moveKeys(b)}; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
-    `Strike with ${keyAlso(b, 'slot1')}. Special with ${keyAlso(b, 'slot2')}. ${snag ? `Snag with ${key(b, 'capture')} to root the foe. ` : ''}Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
+    `${strike}${rope}Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
     `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero; press ${key(b, 'cleanse')} to Cleanse a root or slow.`,
   ];
+}
+
+/** True while the portrait "rotate your device" overlay covers the arena (the card stays hidden and untimed until it is dismissed). */
+function rotateBlocked(): boolean {
+  const o = typeof document === 'undefined' ? null : document.getElementById('rotateOverlay');
+  return o !== null && !o.hidden;
 }
 
 /** `whenReady` for a real game: runs `go` once the Arena scene has built the arena (after the loading screen, never over it). */
@@ -109,13 +123,15 @@ export function firstRunHint(
   whenReady: (go: () => void) => void = (go) => { go(); },
   /** False when none of the player's heroes has Snag: the card then leaves the Snag line out. */
   snag = true,
+  /** Which ability box (0 or 1) of the player's first hero holds Snag, so the card names that key as Snag, not Strike. */
+  snagSlot?: number,
 ): HTMLElement | null {
   if (firstRunSeen(store)) return null;
   const card = el('div', 'firstRunHint');
   card.id = 'firstRunHint';
   card.setAttribute('role', 'note');
   card.append(el('h2', undefined, 'First blood'));
-  for (const line of firstRunLines(getBindings(), isTouchFirst(), snag)) card.append(el('p', undefined, line));
+  for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
   // On a short window (1280x720) the card shrinks and drops its footer so it ends above the hero's wings instead of covering them.
   const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
   if (short && window.innerHeight > 500) card.style.fontSize = '11px';
@@ -144,13 +160,19 @@ export function firstRunHint(
     // Tab, Escape and modifier keys alone are not a move; a click on Got it is handled by the button.
     if (e instanceof KeyboardEvent && (e.key === 'Tab' || e.key === 'Escape' || e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta')) return;
     if (e.target instanceof Node && card.contains(e.target)) return;
+    // A tap on the rotate overlay (Play anyway) is not the player's first move in the arena.
+    if (rotateBlocked()) return;
     fade();
   };
   let timer = 0;
   card.classList.add('firstRunWait');
   whenReady(() => {
     card.classList.remove('firstRunWait');
-    timer = window.setTimeout(fade, fadeMs);
+    // The fade clock starts once the rotate overlay (if any) is gone, so the card is never timed out unseen behind it.
+    const arm = (): void => {
+      timer = window.setTimeout(rotateBlocked() ? arm : fade, rotateBlocked() ? 250 : fadeMs);
+    };
+    arm();
     window.addEventListener('keydown', onInput, true);
     window.addEventListener('pointerdown', onInput, true);
   });

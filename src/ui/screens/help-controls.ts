@@ -29,6 +29,7 @@ export const P2_KEYS: readonly ControlRow[] = [
 const P1_ROWS: readonly (readonly [string, GameAction])[] = [
   ['Attack', 'slot1'],
   ['Second attack', 'slot2'],
+  ['Snag (some heroes)', 'capture'],
   ['Dash', 'dash'],
   ['Guard (hold)', 'guard'],
   ['Weather', 'weather'],
@@ -67,7 +68,7 @@ export const GAMEPAD_ROWS: readonly ControlRow[] = [
 
 export const TOUCH_ROWS: readonly ControlRow[] = [
   { action: 'Move', keys: 'Drag the on-screen pad' },
-  { action: 'Attack, second attack', keys: 'Tap the attack buttons' },
+  { action: 'Attack, second attack, Snag', keys: 'Tap the boxes of the hero (the one marked Snag throws the rope that roots a foe)' },
   { action: 'Dash, Guard, Weather, Charge, Super, Trap, Element, Cleanse, Tag, Tag 2', keys: 'Tap the button of the same name; each shows its key and its state in words' },
 ];
 

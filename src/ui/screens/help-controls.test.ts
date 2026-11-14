@@ -14,6 +14,7 @@ describe('help controls', () => {
     expect(rows['Charge']).toBe('H or 5');
     expect(rows['Super']).toBe('X or 9');
     expect(rows['Tag']).toBe('3');
+    expect(rows['Snag (some heroes)']).toBe('C');
   });
   it('shows rebinds', () => {
     const rows = player1Rows(bindSteal(DEFAULT_BINDINGS, 'trap', 0, 'KeyP'));

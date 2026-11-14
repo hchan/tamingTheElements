@@ -111,4 +111,32 @@ describe('firstRunHint', () => {
     expect(firstRunLines(DEFAULT_BINDINGS, true, false).join(' ')).not.toMatch(/snag/i);
     expect(firstRunLines(DEFAULT_BINDINGS, true, true).join(' ')).toMatch(/snag/i);
   });
+
+  it('names the key of the own Snag box as Snag, so the card and the bar agree (Echo: 1 is Snag)', () => {
+    const echo = firstRunLines(DEFAULT_BINDINGS, false, true, 0).join(' ');
+    expect(echo).toContain('Snag with C or 1');
+    expect(echo).not.toContain('Strike with 1');
+    expect(echo).toContain('Strike with 2 or Enter');
+    const curomo = firstRunLines(DEFAULT_BINDINGS, false, true, 1).join(' ');
+    expect(curomo).toContain('Snag with C or 2');
+    expect(curomo).toContain('Strike with 1 or Space');
+    expect(firstRunLines(DEFAULT_BINDINGS, true, true).join(' ')).toMatch(/Snag box/);
+  });
+
+  it('stays unfaded while the rotate overlay is up', () => {
+    vi.useFakeTimers();
+    const overlay = document.createElement('div');
+    overlay.id = 'rotateOverlay';
+    document.body.append(overlay);
+    const card = firstRunHint(memory(), 100) as HTMLElement;
+    document.body.append(card);
+    vi.advanceTimersByTime(1000);
+    expect(card.classList.contains('firstRunFade')).toBe(false);
+    overlay.hidden = true;
+    vi.advanceTimersByTime(1000);
+    expect(card.classList.contains('firstRunFade')).toBe(true);
+    overlay.remove();
+    card.remove();
+    vi.useRealTimers();
+  });
 });

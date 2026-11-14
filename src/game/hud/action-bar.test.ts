@@ -347,4 +347,14 @@ describe('dressed bar parts (key badge, icon, label strip)', () => {
     expect(slotTip(rope).title).toBe('Snag');
     expect(slotTip(atk).title).toBe('Attack');
   });
+
+  it('in Arcade the Snag box wears its own key and C ("1 C"); Classic and other boxes keep one key', () => {
+    const b = bar({});
+    b.abilities = [{ sprite: 'entanglingVines', readyTick: 0, cooldownTicks: 250 }, { sprite: 'fireball', readyTick: 0, cooldownTicks: 30 }];
+    const arcade = { chargeIn: -1, weatherCharge: 0, dashIn: 0, guard: 0, guarding: false, meter: 0, cleanseIn: 0 } as unknown as Parameters<typeof buildSlots>[2];
+    const withC = buildSlots(b, DEFAULT_KEY_LABELS, arcade);
+    expect(withC[0]?.label).toBe('1 C');
+    expect(withC[1]?.label).toBe('2');
+    expect(buildSlots(b)[0]?.label).toBe('1');
+  });
 });
