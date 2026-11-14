@@ -580,6 +580,8 @@ export class Arena extends Phaser.Scene {
     if (!view || events.length === 0) return;
     cleanseClockOf(view).consume(events, view.tick);
     this.cleanseFx?.(events);
+    // A tag-in landed: the swap-refused line (if one is still up) is stale, and would sit under the arriving hero's banner.
+    if (events.some((e) => e.kind === SimEventKind.tagIn && (e['team'] ?? 0) === 0)) this.swapNotice?.clear();
     if (!sound) return;
     for (const e of events) {
       if (e.kind !== SimEventKind.cleanse) continue;
