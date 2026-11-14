@@ -68,7 +68,7 @@ describe('combo counter', () => {
 
 describe('hyper meter', () => {
   it('says the bar count as a number, and MAX when full', () => {
-    expect([0, 999, 1000, 2999, 3000].map(meterLabel)).toEqual(['0', '0', '1', '2', '3 MAX']);
+    expect([0, 500, 999, 1000, 2999, 3000].map(meterLabel)).toEqual(['0%', '50%', '99%', '1', '2', '3 MAX']);
   });
   it('draws three segments: full ones solid, the filling one dashed (a pattern, not only colour)', () => {
     const segs = meterSegments(1500, 100);

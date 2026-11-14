@@ -176,6 +176,8 @@ describe('keyBindingsScreen (DOM)', () => {
     btn('presetFighting').click();
     expect(getBindings()).toEqual(SF_PRESET_BINDINGS);
     expect(btn('bind-slot1-0').textContent).toBe('J');
+    expect(btn('bind-slot3-0').textContent).toBe('N');
+    expect(btn('bind-trap-0').textContent).toBe('P');
     expect(parseBindings(bindingsToSave(SF_PRESET_BINDINGS))).toEqual(SF_PRESET_BINDINGS);
     expect(status()).toContain('Fighting-game layout applied');
     btn('resetBindings').click();

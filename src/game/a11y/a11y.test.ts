@@ -83,9 +83,9 @@ describe('announcementsFor', () => {
   it('the common Cleanse reads how many debuffs it cleared, per side', () => {
     const say = (team: number, cleared: number): string | undefined =>
       announcementsFor([ev(SimEventKind.cleanse, { team, element: 3, cleared })])[0]?.text;
-    expect(say(0, 2)).toBe('Your Cleanse: 2 debuffs cleared.');
-    expect(say(1, 1)).toBe('Enemy Cleanse: 1 debuff cleared.');
-    expect(say(0, 0)).toBe('Your Cleanse: nothing to clear.');
+    expect(say(0, 2)).toBe('You cleansed 2 debuffs.');
+    expect(say(1, 1)).toBe('Enemy cleansed 1 debuff.');
+    expect(say(0, 0)).toBe('You cleansed, nothing was on you.');
   });
   it('elemental casts read the name and the effect in words, per side, politely', () => {
     const cast = (team: number, element: number, cleared = 0): string | undefined =>
@@ -212,5 +212,20 @@ describe('Tag announcements', () => {
     expect(tagNotReady(0)).toBeUndefined();
     expect(tagNotReady(1)?.text).toBe('Tag ready in 1 second.');
     expect(tagNotReady(101)?.text).toBe('Tag ready in 3 seconds.');
+  });
+});
+
+describe('transient refusals', () => {
+  it('are spoken at once, never queued, and a different refusal is not swallowed by the first', () => {
+    const spoken: string[] = [];
+    let now = 0;
+    const a = new Announcer((t) => spoken.push(t), () => now);
+    a.say({ key: 'hit', text: 'busy', important: false });
+    a.say({ key: 'refusal Weather not ready', text: 'Weather not ready', important: false, transient: true });
+    a.say({ key: 'refusal Super not ready', text: 'Super not ready', important: false, transient: true });
+    now = 100;
+    a.say({ key: 'refusal Super not ready', text: 'Super not ready', important: false, transient: true });
+    expect(spoken).toEqual(['busy', 'Weather not ready', 'Super not ready']);
+    expect(a.pending).toBe(0);
   });
 });

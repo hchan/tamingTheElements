@@ -225,13 +225,13 @@ export function keyBindingsScreen(store?: SaveStore): Screen {
         finish(null);
       });
 
-      const sf = el('button', 'menuButton', 'Fighting-game layout (J K L, U I O)');
+      const sf = el('button', 'menuButton', 'Fighting-game layout (J K L, U I O, N M)');
       sf.type = 'button';
       sf.id = 'presetFighting';
       sf.addEventListener('click', () => {
         bindings = SF_PRESET_BINDINGS;
         save();
-        status.textContent = 'Fighting-game layout applied: attacks on J K L and U I O. Reset to defaults brings the number keys back.';
+        status.textContent = 'Fighting-game layout applied: attacks on J K L and U I O, Tag on N M and Comma, Trap on P, Cleanse on Semicolon. Reset to defaults brings the number keys back.';
         finish(null);
       });
 

@@ -135,10 +135,11 @@ export function meterBarsOf(value: number): number {
   return Math.min(METER_BARS, Math.floor(value / METER_BAR));
 }
 
-/** The bar count in words: the number, and MAX when full (never colour alone). */
+/** The meter in words (never colour alone): MAX when full, the bar count once a bar is full, else the percent of the first bar, the same unit as the action bar's "Super 8%". */
 export function meterLabel(value: number): string {
   const bars = meterBarsOf(value);
-  return bars >= METER_BARS ? `${String(bars)} MAX` : String(bars);
+  if (bars >= METER_BARS) return `${String(bars)} MAX`;
+  return bars === 0 ? `${String(Math.floor((Math.max(0, value) * 100) / METER_BAR))}%` : String(bars);
 }
 
 export interface MeterSegment {

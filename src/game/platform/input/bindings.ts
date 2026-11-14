@@ -134,7 +134,9 @@ export function actionKeyLabel(bindings: Bindings, action: GameAction): string |
   const digit = ARCADE_DIGIT[action];
   const keys = bindings[action];
   const numberKey = digit !== undefined ? `Digit${String(digit)}` : action === 'elemental' ? 'Minus' : action === 'cleanse' ? 'Equal' : undefined;
-  const code = numberKey !== undefined && keys.includes(numberKey) ? numberKey : keys[0];
+  // The number only labels a box on the default letter layout; under a preset whose primary is another letter (J K L ...), that letter is the name.
+  const wearsNumber = numberKey !== undefined && keys.includes(numberKey) && keys[0] === DEFAULT_BINDINGS[action][0];
+  const code = wearsNumber ? numberKey : keys[0];
   return code === undefined ? undefined : codeLabel(code);
 }
 
@@ -195,13 +197,18 @@ export const SF_PRESET_BINDINGS: Bindings = {
   ...DEFAULT_BINDINGS,
   slot1: ['KeyJ', 'Space'],
   slot2: ['KeyK', 'Enter'],
-  dash: ['KeyL'],
-  guard: ['KeyI'],
-  super: ['KeyO'],
-  weather: ['KeyU'],
-  charge: ['KeyH'],
-  trap: ['KeyZ'],
-  elemental: ['KeyV'],
+  // Tag on the row under the attacks (N M ,), Trap beside Super, Element and Cleanse on the right hand too; the number row stays as the alternate.
+  slot3: ['KeyN', 'Digit3'],
+  slot4: ['KeyM', 'Digit4'],
+  slot5: ['Comma', 'Digit5'],
+  dash: ['KeyL', 'Digit7'],
+  guard: ['KeyI', 'Digit8'],
+  super: ['KeyO', 'Digit9'],
+  weather: ['KeyU', 'Digit6'],
+  charge: ['KeyH', 'Digit5'],
+  trap: ['KeyP', 'Digit0'],
+  elemental: ['KeyY', 'Minus'],
+  cleanse: ['Semicolon', 'Equal'],
 };
 
 export function resetBindings(): Bindings {
