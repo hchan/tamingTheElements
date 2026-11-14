@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, type Element, type RenderCharacter } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
+import { RECOIL_TICKS, recoilPose } from '../fx/hit-feel';
 import { arcadeHeroScale } from './hero-scale';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
@@ -188,6 +189,14 @@ export class CharacterView {
   private washSync: (() => void) | undefined;
   private jitterUntil = 0;
   private jitterSign = 1;
+  /** Hit squash-and-recoil (QA r34): the view tick the hit landed at (-1 none), its strength and push direction. */
+  private recoilAt = -1;
+  private recoilStrength = 0;
+  private recoilDir = 1;
+  private lastTick = 0;
+  private lastAlpha = 0;
+  /** True once this frame's recoil has been applied after the pose layer (it must not compound while paused). */
+  private recoilDone = false;
 
   /**
    * `scale` is the display scale over the sim box (feet-anchored). With `fit` (Arcade) it is chosen per body from its box
@@ -207,6 +216,14 @@ export class CharacterView {
   /** Hit-stop jitter while the view tick is below `untilTick`. */
   jitter(untilTick: number): void {
     this.jitterUntil = untilTick;
+  }
+
+  /** Squash and shove away from a hit (`dirX` -1 or 1) that landed at view tick `tick`; drawn after the pose layer, see `applyRecoil`. */
+  recoil(dirX: number, strength: number, tick: number): void {
+    this.recoilAt = tick;
+    this.recoilStrength = strength;
+    this.recoilDir = dirX;
+    this.ensureHook();
   }
 
   /** `live` is false while the sim is paused: the flash and jitter then hold their frame. */
@@ -234,6 +251,9 @@ export class CharacterView {
         this.image.setTexture(gradedHeroTexture(this.scene, key), frameName('right', 0));
       }
     }
+    this.lastTick = tick;
+    this.lastAlpha = alpha;
+    this.recoilDone = false;
     let x = lerp(c.px, c.x, alpha);
     let y = lerp(c.py, c.y, alpha);
     if (tick < this.jitterUntil) {
@@ -268,13 +288,41 @@ export class CharacterView {
   }
 
   private ensureWash(): void {
-    const events = this.scene.events as Phaser.Events.EventEmitter | undefined; // the unit-test fake scene has none
-    if (this.wash || !events) return;
+    if (this.wash || !this.ensureHook()) return;
     this.wash = this.scene.add.image(0, 0, '__DEFAULT').setVisible(false).setBlendMode(1);
-    this.washSync = (): void => {
-      this.syncWash();
-    };
-    events.on('prerender', this.washSync);
+  }
+
+  /** One prerender hook (after the pose layer): the hit recoil, then the flash copy. False in the unit-test fake scene (no events). */
+  private ensureHook(): boolean {
+    const events = this.scene.events as Phaser.Events.EventEmitter | undefined;
+    if (!events) return false;
+    if (!this.washSync) {
+      this.washSync = (): void => {
+        this.applyRecoil();
+        this.syncWash();
+      };
+      events.on('prerender', this.washSync);
+    }
+    return true;
+  }
+
+  /** Squashes and shoves the drawn sprite about its feet for a few ticks after a hit (the pose layer has already placed it). */
+  private applyRecoil(): void {
+    const i = this.image;
+    if (this.recoilAt < 0 || this.recoilDone || !i.visible) return;
+    const age = this.lastTick - this.recoilAt + this.lastAlpha;
+    if (age >= RECOIL_TICKS) {
+      this.recoilAt = -1;
+      return;
+    }
+    this.recoilDone = true;
+    const p = recoilPose(age, this.recoilStrength, this.recoilDir, false);
+    const w = i.displayWidth;
+    const h = i.displayHeight;
+    const nw = w * p.sx;
+    const nh = h * p.sy;
+    const cx = i.x + w * (0.5 - i.originX) + p.dx;
+    i.setPosition(cx - nw * (0.5 - i.originX), i.y + (h - nh) * (1 - i.originY)).setDisplaySize(nw, nh);
   }
 
   /** Copies the sprite's final pose (after the pose layer) onto the flash copy, at `washAlpha`. */
@@ -369,6 +417,7 @@ export class CharacterView {
     this.flashLeft = 0;
     this.holdLeft = 0;
     this.jitterUntil = 0;
+    this.recoilAt = -1;
     this.washAlpha = 0;
     this.wash?.setVisible(false);
   }

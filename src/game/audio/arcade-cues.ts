@@ -23,7 +23,7 @@ export type Layer = readonly [wave: number, f0: number, f1: number, ms: number, 
 /** Every cue as layers, all short (at most 0.7 s with delays). */
 export const CUES = {
   /** The hit thump (light to heavy) and the super-strength impact. */
-  thump: [[0, 120, 45, 70, 1]],
+  thump: [[0, 120, 45, 90, 1], [NOISE, 2600, 600, 40, 0.4], [1, 300, 120, 45, 0.3]],
   impact: [[0, 90, 30, 170, 1], [NOISE, 900, 200, 120, 0.5]],
   /** The combo tick, pitched up per hit. */
   combo: [[1, 660, 660, 45, 0.25]],
@@ -130,8 +130,8 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   hazardHit: 'the strike crash plays on the same tick',
 };
 
-/** Hit thump gain by strength (light, medium, heavy, super). */
-export const THUMP_GAIN = [0.35, 0.5, 0.7, 1] as const;
+/** Hit thump gain by strength (light, medium, heavy, super); a light hit was 0.35 and read as a tap (QA r34). */
+export const THUMP_GAIN = [0.5, 0.65, 0.8, 1] as const;
 
 /**
  * Pitch factors of the hit thump (within 5% either way), indexed by the event's tick and seq: a fixed cycle rather than a

@@ -145,3 +145,64 @@ export function koSplitAmount(ageMs: number, reduced: boolean): number {
   const t = (ageMs - KO_SPLIT_RISE_MS) / (KO_SPLIT_MS - KO_SPLIT_RISE_MS);
   return KO_SPLIT_PEAK * (1 - t) ** 2;
 }
+
+/**
+ * Plain-hit weight (QA r34, view only): a directional spark fan, a victim squash-and-recoil and a small camera nudge on every
+ * hit, scaled by strength 0..3 (light, medium, heavy, super). Presentation only: it reads `hitConfirmed` and never feeds the sim.
+ */
+
+/** Spark streaks thrown by strength (light, medium, heavy, super). */
+export const STREAKS_BY_STRENGTH = [3, 5, 7, 9] as const;
+export const STREAK_MS = 220;
+export const STREAK_POOL = 24;
+
+export interface StreakFrame {
+  /** Distance of the streak's tail and head from the impact point, logical px. */
+  readonly from: number;
+  readonly to: number;
+  /** Line width at the head's base, logical px. */
+  readonly width: number;
+  readonly alpha: number;
+}
+
+/** Head reach of a streak by strength. */
+const STREAK_REACH = [34, 46, 62, 84] as const;
+
+/** One streak `ageMs` in (null once done): a fast dart out whose tail catches up, thinning and fading. `unit` 0..1 varies reach between streaks. */
+export function streakFrame(ageMs: number, strength: number, unit: number): StreakFrame | null {
+  if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= STREAK_MS) return null;
+  const s = Math.min(3, Math.max(0, Math.floor(Number.isFinite(strength) ? strength : 0)));
+  const reach = (STREAK_REACH[s] ?? 34) * (0.7 + 0.3 * Math.min(1, Math.max(0, unit)));
+  const t = ageMs / STREAK_MS;
+  const head = 1 - (1 - Math.min(1, t * 2.2)) ** 3;
+  const tail = t * t;
+  return { from: 6 + reach * Math.min(tail, head * 0.9), to: 6 + reach * head, width: (2.2 + s * 0.6) * (1 - t), alpha: (1 - t) ** 1.4 };
+}
+
+/** Streak directions as angle offsets (radians) from the attack axis, widest last; fixed, so a replay draws the same fan. */
+export const STREAK_FAN: readonly number[] = [0, -0.35, 0.35, -0.7, 0.7, -1.05, 1.05, -1.4, 1.4];
+
+export const RECOIL_TICKS = 10;
+const SQUASH = [0.07, 0.1, 0.14, 0.2] as const;
+const PUSH_PX = [2, 3, 5, 8] as const;
+
+export interface RecoilPose {
+  /** Horizontal push in px along the attack direction. */
+  readonly dx: number;
+  /** Width and height scale (feet-anchored): squashed across the blow, stretched up. */
+  readonly sx: number;
+  readonly sy: number;
+}
+
+/** Neutral pose. */
+export const NO_RECOIL: RecoilPose = { dx: 0, sx: 1, sy: 1 };
+
+/** The victim's pose `ageTicks` after a hit from `dirX` (-1 or 1): a quick squash and shove that springs back. Reduced motion: no change. */
+export function recoilPose(ageTicks: number, strength: number, dirX: number, reduced: boolean): RecoilPose {
+  if (reduced || !Number.isFinite(ageTicks) || ageTicks < 0 || ageTicks >= RECOIL_TICKS) return NO_RECOIL;
+  const s = Math.min(3, Math.max(0, Math.floor(Number.isFinite(strength) ? strength : 0)));
+  const t = ageTicks / RECOIL_TICKS;
+  const env = t < 0.2 ? t / 0.2 : (1 - (t - 0.2) / 0.8) ** 2;
+  const a = (SQUASH[s] ?? 0) * env;
+  return { dx: (dirX < 0 ? -1 : 1) * (PUSH_PX[s] ?? 0) * env, sx: 1 - a, sy: 1 + a * 0.75 };
+}

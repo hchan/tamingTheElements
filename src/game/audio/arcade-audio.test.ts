@@ -144,7 +144,7 @@ describe('Arcade audio layers', () => {
     const s = setup();
     s.audio.consume(ARCADE_MATCH);
     const voices = synthSources(s.nodes);
-    expect(voices).toHaveLength(14);
+    expect(voices).toHaveLength(16);
     // Every voice runs source -> filter -> envelope -> the layers' output gain -> the sfx bus.
     const out = s.nodes[OUT];
     expect(out?.outs.has(s.audio.buses.sfx)).toBe(true);
@@ -154,8 +154,8 @@ describe('Arcade audio layers', () => {
       expect(filter?.kind).toBe('filter');
       expect(env?.outs.has(out)).toBe(true);
     }
-    // Round, fight, thump, super, KO and match stingers: six cues, fourteen layers.
-    expect(arcadeAudioState(s.audio)).toMatchObject({ mounted: true, played: 6, voices: 14 });
+    // Round, fight, thump, super, KO and match stingers: six cues, sixteen layers (the thump has a crack and a body layer, QA r34).
+    expect(arcadeAudioState(s.audio)).toMatchObject({ mounted: true, played: 6, voices: 16 });
     s.dispose();
   });
 

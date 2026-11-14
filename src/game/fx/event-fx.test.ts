@@ -50,6 +50,26 @@ function recorder(): { sink: FxSink; log: string[]; holds: number[]; supers: str
 const arcadeFx = (sink: FxSink, reduced = false): EventFx =>
   new EventFx(sink, { reducedMotion: () => reduced, arcade: true, elementOf: (id) => (id === 1 ? 'fire' : undefined) });
 
+describe('EventFx plain-hit weight (QA r34)', () => {
+  it('fans streaks and recoils the victim on every strength, light included, and drops both under reduced motion', () => {
+    for (const reduced of [false, true]) {
+      const { sink } = recorder();
+      const calls: string[] = [];
+      sink.streaks = (a, t, _c, s) => calls.push(`streaks${String(a)}>${String(t)}:${String(s)}`);
+      sink.recoil = (a, t, s) => calls.push(`recoil${String(a)}>${String(t)}:${String(s)}`);
+      arcadeFx(sink, reduced).consume([confirmed(1, 0), confirmed(2, 2)]);
+      expect(calls).toEqual(reduced ? [] : ['streaks1>3:0', 'recoil1>3:0', 'streaks1>3:2', 'recoil1>3:2']);
+    }
+  });
+  it('light hits get a camera nudge, weaker than a medium one', () => {
+    const [ld = 0, li = 0] = SHAKE_BY_STRENGTH[0] ?? [];
+    const [, mi = 0] = SHAKE_BY_STRENGTH[1] ?? [];
+    expect(li).toBeGreaterThan(0);
+    expect(li).toBeLessThan(mi);
+    expect(ld).toBeGreaterThan(0);
+  });
+});
+
 describe('EventFx water frost', () => {
   it('calls sink.frost on a light water hit, never under reduced motion', () => {
     const calls: string[] = [];
@@ -162,7 +182,7 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
     arcadeFx(sink).consume([confirmed(1, 0, { scalePm: 900, counter: 1, attacker: 7 })]);
     expect(log.slice(0, 2)).toEqual([`flash3:${ELEMENT_COLORS.void.toString(16)}`, 'number3=12sc']);
   });
-  it('the hit-stop jitters the victim until the freeze deadline and shakes by strength (light none, KO strongest)', () => {
+  it('the hit-stop jitters the victim until the freeze deadline and shakes by strength (light a small nudge, KO strongest)', () => {
     const shakes = SHAKE_BY_STRENGTH.map((s) => (s ? [`shake${String(s[0])}@${String(s[1])}`] : []));
     for (const strength of [0, 1, 2, 3]) {
       const { sink, log } = recorder();
