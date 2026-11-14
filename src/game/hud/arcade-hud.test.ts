@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   ArcadeHudModel, CHARGE_DASH, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
-  SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, meterSegments, meterX,
+  SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterLabelY, meterFlashAlpha, meterSegments, meterX,
   numberAlpha, numberLabel, numberRise,
 } from './arcade-hud';
 import { dashSegments } from './bars';
-import { SLIM_H, slimBar } from './slim-hud';
+import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
 
 describe('damage numbers', () => {
@@ -109,5 +109,34 @@ describe('hyper meter', () => {
     expect(m.meters[1]).toMatchObject({ value: 0, full: 0 });
     m.update(16, [0, 0], [0, 0]);
     expect(m.meters.map((x) => x.value)).toEqual([0, 0]);
+  });
+});
+
+describe('SUPER label vs bench portraits (qa-r12, phone landscape)', () => {
+  const overlap = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): boolean =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const floor = SLIM_BAR_Y + SLIM_LINE_MAX / 2;
+  const mid = METER_Y + SEGMENT_H / 2;
+
+  it('keeps the label level with the segments when it is small, lifts it when tall, and never crosses the life bar', () => {
+    expect(meterLabelY(mid, 14, CHIP_Y, floor)).toBe(mid);
+    expect(meterLabelY(mid, 24, CHIP_Y, floor)).toBe(CHIP_Y - 5 - 12);
+    expect(meterLabelY(mid, 60, CHIP_Y, floor)).toBe(floor + 30);
+  });
+
+  it('the phone-sized label (about 21 px tall) clears the bench portraits and their frames, both sides, every chip', () => {
+    const h = 21;
+    for (const team of [0, 1]) {
+      const inner = team === 0 ? slimBar(0).maxX : slimBar(1).minX;
+      const x = meterX(team, inner);
+      const y = meterLabelY(mid, h, CHIP_Y, floor);
+      const w = 120; // "SUPER 100%" at the boosted size, generous
+      const label = { x: team === 0 ? x - 8 - w : x + METER_W + 8, y: y - h / 2, w, h };
+      for (let i = 0; i < 2; i++) {
+        const c = chipRect(team, i);
+        expect(overlap(label, { x: c.x - 2, y: c.y - 2, w: c.size + 4, h: c.size + 4 })).toBe(false);
+      }
+      expect(label.y).toBeGreaterThanOrEqual(floor);
+    }
   });
 });

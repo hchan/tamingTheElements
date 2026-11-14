@@ -12,7 +12,7 @@ import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha,
-  meterSegments, meterX, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
+  meterLabelY, meterSegments, meterX, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, scaledBar, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, scaledBar, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
@@ -59,6 +59,9 @@ const PHONE_ARCADE_BOOST = 1.7;
 /** Bar track and thin frame: ash-black, not pure black. */
 const TRACK_COLOR = 0x120f0c;
 const FRAME_COLOR = 0x050403;
+
+/** The SUPER label's own phone boost cap: between the life bar and the bench portraits there is room for about 21 logical px of text (qa-r12: at 1.7 it sat on the portraits). */
+const SUPER_LABEL_BOOST = 1.45;
 
 const TEAMS = [0, 1] as const;
 
@@ -565,11 +568,13 @@ export class Hud extends Phaser.Scene {
       gfx.lineStyle(this.highContrast ? 2 : 1, 0xffffff, 1);
       gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
     }
-    const t = (this.meterTexts[team] ??= this.text(Math.round(12 * this.arcadeBoost()))
+    const t = (this.meterTexts[team] ??= this.text(Math.round(12 * Math.min(this.arcadeBoost(), SUPER_LABEL_BOOST)))
       .setOrigin(team === 0 ? 1 : 0, 0.5)
       .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
     const label = `SUPER ${meterLabel(m.value)}`; // named, so the segments are not mistaken for the round pips
     if (t.text !== label) t.setText(label);
+    // Phones: the boosted label must not reach the bench portraits under it (qa-r8/r12 open item).
+    t.setY(meterLabelY(mid, t.height, BENCH_CHIP_Y, SLIM_BAR_Y + SLIM_LINE_MAX / 2));
   }
 
   private drawBar(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter, main: boolean): void {
