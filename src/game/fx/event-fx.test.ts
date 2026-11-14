@@ -145,6 +145,16 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
     arcadeFx(sink).consume([confirmed(10, 0), stop(10, 30, 3)]);
     expect(log.slice(3)).toEqual(['jitter3<41', `shake${String(KO_SHAKE[0])}@${String(KO_SHAKE[1])}`]);
   });
+  it('a KO stop punches the camera in, but not under reduced motion and not for an ordinary hit', () => {
+    for (const reduced of [false, true]) {
+      const { sink } = recorder();
+      let punches = 0;
+      sink.koPunch = () => { punches++; };
+      const fx = arcadeFx(sink, reduced);
+      fx.consume([confirmed(10, 0), stop(10, 30, 3), confirmed(60, 3), stop(60, 6)]);
+      expect(punches).toBe(reduced ? 0 : 1);
+    }
+  });
   it('does not jitter on a stop that no hit of the same tick and source explains', () => {
     const { sink, log } = recorder();
     arcadeFx(sink).consume([confirmed(10, 1), { ...stop(11, 6), sourceId: 4 }]);

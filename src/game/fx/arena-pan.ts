@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
 import { cameraTarget, type CameraFraming } from './arena-camera';
+import { koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /**
  * Phaser side of the panning Arcade camera (WP 38b). View only: it reads the render view and moves `cameras.main`; nothing
@@ -18,13 +19,15 @@ interface PanState {
   zoom: number;
   /** True while the super cinematic owns the camera. */
   hold: boolean;
+  /** Age in ms of the KO punch-in, or -1 when none runs. */
+  punchAge: number;
 }
 
 const states = new WeakMap<Phaser.Scene, PanState>();
 const state = (scene: Phaser.Scene): PanState => {
   let s = states.get(scene);
   if (!s) {
-    s = { centerX: LOGICAL_WIDTH / 2, zoom: 1, hold: false };
+    s = { centerX: LOGICAL_WIDTH / 2, zoom: 1, hold: false, punchAge: -1 };
     states.set(scene, s);
   }
   return s;
@@ -34,6 +37,11 @@ const state = (scene: Phaser.Scene): PanState => {
 export function panFraming(scene: Phaser.Scene): CameraFraming {
   const s = state(scene);
   return { centerX: s.centerX, zoom: s.zoom };
+}
+
+/** Starts the renderer-only KO punch-in (camera eases in a little, then back). */
+export function koPunch(scene: Phaser.Scene): void {
+  state(scene).punchAge = 0;
 }
 
 /** The super cinematic takes (true) or gives back (false) the camera. */
@@ -97,7 +105,13 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
     );
     s.centerX = next.centerX;
     s.zoom = next.zoom;
-    applyCamera(scene);
+    let punch = 1;
+    if (s.punchAge >= 0) {
+      s.punchAge += delta;
+      if (s.punchAge >= KO_PUNCH_MS) s.punchAge = -1;
+      else punch = koPunchZoom(s.punchAge, reducedMotion());
+    }
+    applyCamera(scene, punch, midpoint, LOGICAL_HEIGHT / 2);
   };
   scene.events.on('update', update);
   const off = (): void => {

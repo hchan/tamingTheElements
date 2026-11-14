@@ -4,6 +4,8 @@ import { ELEMENT_COLORS } from './element-colors';
 import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
+import { sparkStyleFor } from './hit-feel';
+import { koPunch } from './arena-pan';
 
 /**
  * Cosmetic effects driven by sim events. View-only: nothing here touches sim state or the sim RNG
@@ -66,10 +68,12 @@ export interface FxSink {
   /** Additive wash for 2 render frames, then `tint` (CharacterView owns the tint); `holdFrames` holds the wash (heavy hits, view-only). */
   flash(target: number, tint: number, holdFrames?: number): void;
   /** `count` particles flying out; `offsets[2i], offsets[2i + 1]` are unit-ish directions (reused buffer). */
-  burst(target: number, offsets: Float32Array, count: number, color: number): void;
+  burst(target: number, offsets: Float32Array, count: number, color: number, element?: Element): void;
   /** One static spark for 100 ms: the reduced-motion stand-in for `burst`. */
   spark(target: number, color: number): void;
   shake(durationMs: number, intensity: number): void;
+  /** Renderer-only camera punch-in on a KO (optional; EventFx never calls it under reduced motion). */
+  koPunch?(): void;
   /** Hit-stop jitter on `target` while the view tick is below `untilTick` (the freeze deadline, W.tick units). */
   jitter(target: number, untilTick: number): void;
   /** Painted element impact strip played once over `target` (optional; skipped under reduced motion by EventFx). */
@@ -161,7 +165,7 @@ export class EventFx {
     }
     const el = this.opts.elementOf?.(attacker);
     if (el) this.sink.impact?.(target, el);
-    this.sink.burst(target, this.fill(HIT_PARTICLES), HIT_PARTICLES, CLASSIC_SPARK);
+    this.sink.burst(target, this.fill(HIT_PARTICLES), HIT_PARTICLES, CLASSIC_SPARK, el);
     const s = classicShakeFor(amount);
     this.sink.shake(s.durationMs, s.intensity);
   }
@@ -183,7 +187,7 @@ export class EventFx {
     const el = this.opts.elementOf?.(e['attacker'] ?? -1);
     if (el) this.sink.impact?.(target, el);
     const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
-    this.sink.burst(target, this.fill(n), n, color);
+    this.sink.burst(target, this.fill(n), n, color, el);
   }
 
   /**
@@ -204,11 +208,11 @@ export class EventFx {
     const s = cause === KO_CAUSE ? KO_SHAKE : paired ? SHAKE_BY_STRENGTH[this.hitStrength] : null;
     const shake = s ? shakeFor(s[0], s[1], reduced) : null;
     if (shake) this.sink.shake(shake.durationMs, shake.intensity);
+    if (!reduced && cause === KO_CAUSE) this.sink.koPunch?.();
   }
 }
 
 const BURST_DISTANCE = 24;
-const BURST_MS = 250;
 /** Particles start a quarter of the way out, so a burst reads as a ring even on its first (or a paused) frame. */
 const BURST_START = 0.25;
 const SPARK_MS = 100;
@@ -321,12 +325,16 @@ export function createPhaserFxSink(
     flash(target, tint, holdFrames = 0): void {
       if (gate.allow(target, viewTick())) viewOf(target)?.flash(tint, holdFrames);
     },
-    burst(target, offsets, count, color): void {
+    burst(target, offsets, count, color, element): void {
       const p = centre(target);
       if (!p) return;
+      const st = sparkStyleFor(element);
       for (let i = 0; i < count; i++) {
-        spawn(p.x, p.y, (offsets[2 * i] ?? 0) * BURST_DISTANCE, (offsets[2 * i + 1] ?? 0) * BURST_DISTANCE, color, 4, BURST_MS);
+        spawn(p.x, p.y, (offsets[2 * i] ?? 0) * BURST_DISTANCE * st.reach, (offsets[2 * i + 1] ?? 0) * BURST_DISTANCE * st.reach + st.drift, color, st.radius, st.lifeMs);
       }
+    },
+    koPunch(): void {
+      koPunch(scene);
     },
     spark(target, color): void {
       const p = centre(target);
