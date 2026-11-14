@@ -16,7 +16,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
   [05](../done/webrtc-05-leave-rematch.md), [06](../done/webrtc-06-mobile.md),
   [07](../done/webrtc-07-frame-pacing.md), [08](../done/webrtc-08-rollback-default.md),
   [09](../done/webrtc-09-quality-desync-report.md), [10](../done/webrtc-10-relay-room-codes.md),
-  [11](../brainstorm/webrtc-11-soak.md)
+  [11](../done/webrtc-11-soak.md)
 - [online-rematch-e2e-flake-under-load](../done/online-rematch-e2e-flake-under-load.md)
 - [e2e-coverage-and-browsers](../in-progress/e2e-coverage-and-browsers.md)
 - [e2e-stability-runs](../brainstorm/e2e-stability-runs.md)

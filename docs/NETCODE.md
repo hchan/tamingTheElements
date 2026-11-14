@@ -77,6 +77,6 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 - [x] Optional relay signalling: 6-character room codes through `tools/signal-relay/` (Node or Cloudflare Worker), shown only when a build sets `VITE_SIGNAL_URL` (WebRTC WP10). Signalling only, never gameplay
 - [ ] Lobby
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
-- [x] Browser e2e: two separate contexts play a whole match to the same winner and identical checkpoint hashes (`tests/e2e/online-match.spec.ts`). Dev/test URL switches: `?ff=netbot` (Arcade scripted AI plays the local side), `?ice=none` (no STUN, loopback candidates), `?ff=lockstep`, `?matchticks=N`; probe `__TTE__.net()`
+- [x] Browser e2e: two separate contexts play a whole match to the same winner and identical checkpoint hashes (`tests/e2e/online-match.spec.ts`). Dev/test URL switches: `?ff=netbot` (Arcade scripted AI plays the local side), `?ice=none` (no STUN, loopback candidates), `?ff=lockstep`, `?matchticks=N`, `?netsim=lat:60,jitter:20,loss:10` (WP 11: seeded one-way delay, jitter, loss on each side's input receive path; the proof also runs under it in both modes); probe `__TTE__.net()`
 - [ ] Clock sync / frame pacing so both peers run the same wall rate (today each peer stalls to the slower one)
 - [ ] Spectators and replay upload (the replay format already fits)
