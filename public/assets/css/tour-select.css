@@ -58,15 +58,14 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-#tourStage .tsFoe img {
+#tourStage .tsFoe .tsFace {
   display: block;
   width: 100%;
   aspect-ratio: 1;
-  object-fit: contain;
-  background: radial-gradient(#2a2c2e, #0a0806);
-  border: 2px solid #4a4a44;
-  /* Close to HERO_GRADE (keep 0.6, darken 0.24) in CSS; the sprite files themselves are ungraded. */
-  filter: saturate(0.6) brightness(0.8) contrast(1.08);
+  box-sizing: border-box;
+  background-color: #1c1a2e;
+  border: 2px solid #6a6488;
+  /* The baked strip (first of four 80 px frames) painted over a luminous violet pool, graded like the hero select faces. */
 }
 #tourStage .tsFoe figcaption {
   margin-top: 0.3em;
@@ -107,7 +106,7 @@
   isolation: isolate;
   display: flex;
   align-items: flex-end;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 3 / 1;
   min-height: 44px;
   padding: 0.35em 0.5em;
   overflow: hidden;
@@ -153,12 +152,12 @@
 
 /* Locked: a black silhouette with a padlock. */
 #tourStage #tourPins li[data-state='locked'] { color: #8a8678; }
-#tourStage #tourPins li[data-state='locked']::before { filter: brightness(0.1) grayscale(1) contrast(1.4); }
+#tourStage #tourPins li[data-state='locked']::before { filter: brightness(0.7) grayscale(0.5) contrast(1.1); }
 #tourStage #tourPins li[data-state='locked']::after {
   content: '' / '';
   position: absolute;
-  top: 24%;
-  left: calc(50% - 0.9em);
+  top: 0.4em;
+  right: 0.5em;
   width: 1.8em;
   height: 1.8em;
   background:
@@ -210,7 +209,7 @@
 html[data-reduce-motion='true'] #tourStage #tourPins li[data-state='current'] { animation: none; box-shadow: 0 0 0.9em #d8d2c4; }
 
 /* High contrast: no grading, plain black and white, thick borders. */
-html[data-high-contrast='true'] #tourStage .tsFoe img { filter: none; }
+html[data-high-contrast='true'] #tourStage .tsFoe .tsFace { filter: none; }
 html[data-high-contrast='true'] #tourStage #tourPins li { background: #000; color: #fff; border: 3px solid #fff; text-shadow: none; }
 html[data-high-contrast='true'] #tourStage #tourPins li::before { filter: brightness(0.35); }
 html[data-high-contrast='true'] #tourStage #tourPins li[data-state='locked']::before { filter: brightness(0); }
