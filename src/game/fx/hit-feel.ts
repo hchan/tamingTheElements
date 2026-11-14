@@ -153,7 +153,7 @@ export function koSplitAmount(ageMs: number, reduced: boolean): number {
 
 /** Spark streaks thrown by strength (light, medium, heavy, super). */
 export const STREAKS_BY_STRENGTH = [3, 5, 7, 9] as const;
-export const STREAK_MS = 220;
+export const STREAK_MS = 260;
 export const STREAK_POOL = 24;
 
 export interface StreakFrame {
@@ -166,7 +166,7 @@ export interface StreakFrame {
 }
 
 /** Head reach of a streak by strength. */
-const STREAK_REACH = [34, 46, 62, 84] as const;
+const STREAK_REACH = [42, 56, 76, 100] as const;
 
 /** One streak `ageMs` in (null once done): a fast dart out whose tail catches up, thinning and fading. `unit` 0..1 varies reach between streaks. */
 export function streakFrame(ageMs: number, strength: number, unit: number): StreakFrame | null {
@@ -176,7 +176,7 @@ export function streakFrame(ageMs: number, strength: number, unit: number): Stre
   const t = ageMs / STREAK_MS;
   const head = 1 - (1 - Math.min(1, t * 2.2)) ** 3;
   const tail = t * t;
-  return { from: 6 + reach * Math.min(tail, head * 0.9), to: 6 + reach * head, width: (2.2 + s * 0.6) * (1 - t), alpha: (1 - t) ** 1.4 };
+  return { from: 6 + reach * Math.min(tail, head * 0.9), to: 6 + reach * head, width: (3 + s * 0.8) * (1 - t), alpha: (1 - t) ** 1.4 };
 }
 
 /** Streak directions as angle offsets (radians) from the attack axis, widest last; fixed, so a replay draws the same fan. */
