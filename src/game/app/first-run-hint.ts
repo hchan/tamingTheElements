@@ -1,3 +1,5 @@
+import type Phaser from 'phaser';
+import { PRELOAD_READY } from '../scenes/launch';
 import { el } from '@ui/dom';
 import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction } from '../platform/input/bindings';
 
@@ -38,6 +40,13 @@ function markSeen(store: Store | undefined): void {
 /** The key as the action bar labels it (one source: `actionKeyLabel`), so the card and the bar agree. */
 const key = (b: Bindings, a: GameAction): string => actionKeyLabel(b, a) ?? 'unbound';
 
+/** The action-bar key, plus the other key bound to the same action when there is one ("1 or Space"), so the card and the Versus key list read the same. */
+function keyAlso(b: Bindings, a: GameAction): string {
+  const main = key(b, a);
+  const others = b[a].map(codeLabel).filter((l) => l !== main);
+  return others.length === 0 ? main : `${main} or ${others.join('/')}`;
+}
+
 /** The four move keys as bound (every key of an action, so the default reads "W, Up ..."), in up, left, down, right order. */
 const moveKeys = (b: Bindings): string =>
   (['up', 'left', 'down', 'right'] as const).map((a) => (b[a].length === 0 ? 'unbound' : b[a].map(codeLabel).join('/'))).join(', ');
@@ -63,14 +72,38 @@ export function firstRunLines(b: Bindings, touch = false): readonly string[] {
   }
   return [
     `Move with ${moveKeys(b)}, in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
-    `Strike with ${key(b, 'slot1')}. Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
+    `Strike with ${keyAlso(b, 'slot1')} (${keyAlso(b, 'slot2')}: second attack). Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
     `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero.`,
     `Stuck in a root or slow? Press ${key(b, 'cleanse')} to Cleanse.`,
   ];
 }
 
+/** `whenReady` for a real game: runs `go` once the Arena scene has built the arena (after the loading screen, never over it). */
+export function afterArenaCreate(game: object): (go: () => void) => void {
+  return (go) => {
+    // A stand-in game without scenes (unit tests) shows the card at once.
+    const g = game as Partial<Phaser.Game>;
+    if (!g.scene || !g.events) {
+      go();
+      return;
+    }
+    // The Arena starts only after Preload finishes, by which time every scene is registered.
+    g.events.once(PRELOAD_READY, () => {
+      const scene = g.scene?.getScene('Arena') as Phaser.Scene | null | undefined;
+      // Status 4 = CREATING, 5 = RUNNING: the arena is already being built, so its 'create' event may have fired.
+      if (scene && scene.sys.settings.status < 4) scene.events.once('create', go);
+      else go();
+    });
+  };
+}
+
 /** The card, or null when it was already seen. */
-export function firstRunHint(store: Store | undefined = defaultStore(), fadeMs = FIRST_RUN_MS): HTMLElement | null {
+export function firstRunHint(
+  store: Store | undefined = defaultStore(),
+  fadeMs = FIRST_RUN_MS,
+  /** Calls its argument once the arena exists (the card must not sit over the loading screen); default: now. */
+  whenReady: (go: () => void) => void = (go) => { go(); },
+): HTMLElement | null {
   if (firstRunSeen(store)) return null;
   const card = el('div', 'firstRunHint');
   card.id = 'firstRunHint';
@@ -106,8 +139,13 @@ export function firstRunHint(store: Store | undefined = defaultStore(), fadeMs =
     if (e.target instanceof Node && card.contains(e.target)) return;
     fade();
   };
-  const timer = window.setTimeout(fade, fadeMs);
-  window.addEventListener('keydown', onInput, true);
-  window.addEventListener('pointerdown', onInput, true);
+  let timer = 0;
+  card.classList.add('firstRunWait');
+  whenReady(() => {
+    card.classList.remove('firstRunWait');
+    timer = window.setTimeout(fade, fadeMs);
+    window.addEventListener('keydown', onInput, true);
+    window.addEventListener('pointerdown', onInput, true);
+  });
   return card;
 }

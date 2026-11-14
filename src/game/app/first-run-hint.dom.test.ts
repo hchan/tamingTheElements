@@ -29,6 +29,20 @@ describe('firstRunHint', () => {
     expect(firstRunHint(store)).toBeNull();
   });
 
+  it('stays hidden and does not start its fade timer until the arena is ready', () => {
+    vi.useFakeTimers();
+    const store = memory();
+    let ready = (): void => undefined;
+    const card = firstRunHint(store, 1000, (go) => { ready = go; });
+    vi.advanceTimersByTime(5000);
+    expect(card?.classList.contains('firstRunWait')).toBe(true);
+    expect(firstRunSeen(store)).toBe(false);
+    ready();
+    expect(card?.classList.contains('firstRunWait')).toBe(false);
+    vi.advanceTimersByTime(1000);
+    expect(firstRunSeen(store)).toBe(true);
+  });
+
   it('fades and counts as seen after the timer', () => {
     vi.useFakeTimers();
     const store = memory();
@@ -68,7 +82,7 @@ describe('firstRunHint', () => {
 
   it('names every key exactly as the action bar labels it (Dash 7, Guard 8, Super 9, Tag 3, Cleanse =)', () => {
     const text = firstRunLines(DEFAULT_BINDINGS).join(' ');
-    expect(text).toContain('Strike with 1.');
+    expect(text).toContain('Strike with 1 or Space (2 or Enter: second attack).');
     expect(text).toContain('Dash with 7;');
     expect(text).toContain('hold 8 to Guard');
     expect(text).toContain('press 9.');

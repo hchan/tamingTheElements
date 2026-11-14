@@ -11,8 +11,7 @@ import { seedSfc32 } from '@core/index';
 /** Atlas columns per stage row, tile size in px and the atlas's texture key and URL (relative to `<base>assets/`). */
 export const TILE_COLUMNS = 8;
 export const TILE_SIZE = 32;
-export const TILE_TEXTURE = 'tilefloor';
-export const TILE_URL = 'img/tilefloor.png';
+export { TILE_TEXTURE, TILE_URL } from '../scenes/launch';
 
 /** Pick weights per column, in percent: plain variants 0-3 (92) and the four decorations (2 each). */
 export const TILE_WEIGHTS = [46, 24, 14, 8, 2, 2, 2, 2] as const;

@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { arcadePlayfield } from '@core/index';
-import { WALL_Y } from './terrain-stage-layout';
+import { PAINT_TEXTURE, PAINT_URL, WALL_Y } from './terrain-stage-layout';
 import { TILE_COLUMNS, TILE_SIZE, TILE_TEXTURE, TILE_URL, tileGrid } from './terrain-tiles';
 
 /**
@@ -22,8 +22,7 @@ const ORIGIN_Y = (720 - ROWS * TILE_SIZE) / 2;
 const BAND_ROWS = Math.round((WALL_Y - ORIGIN_Y) / TILE_SIZE);
 /** Opaque: the painted floor carries its own light, so no backdrop bleed-through is needed. */
 const FLOOR_ALPHA = 1;
-export const PAINT_TEXTURE = 'arenafloor';
-const PAINT_URL = 'img/arenafloor.png';
+export { PAINT_TEXTURE };
 /** One painted floor per stage, stacked in stage order: from the wall to the bottom of the arena. */
 const PAINT_H = 720 - WALL_Y;
 const paintFrame = (stage: number): string => `floor${String(stage)}`;

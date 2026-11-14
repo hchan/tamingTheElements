@@ -3,8 +3,7 @@
  * tools/assets/stage-gen/stagebg.py, which keeps the same constants) and the parallax and animation maths. No Phaser here.
  */
 
-export const STAGE_TEXTURE = 'stagebg';
-export const STAGE_URL = 'img/stagebg.png';
+export { PAINT_TEXTURE, PAINT_URL, STAGE_TEXTURE, STAGE_URL } from '../scenes/launch';
 
 export const ATLAS_W = 2400;
 export const FAR_H = 500;

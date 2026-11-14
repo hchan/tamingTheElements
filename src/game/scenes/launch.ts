@@ -4,6 +4,17 @@ import type { TesterSession } from '../platform/tester/session';
 import type { PlaytestRecorder } from '../replay/playtest-recorder';
 import type { ArenaAudio } from '../audio/arena-audio';
 
+/** Game event emitted when Preload has finished (Phaser-free so DOM code can listen for it). */
+export const PRELOAD_READY = 'preload-ready';
+
+/** Texture keys and URLs (relative to `<base>assets/`) of the Arcade stage art, here so Preload can load them without the lazy terrain-view chunk. */
+export const STAGE_TEXTURE = 'stagebg';
+export const STAGE_URL = 'img/stagebg.png';
+export const PAINT_TEXTURE = 'arenafloor';
+export const PAINT_URL = 'img/arenafloor.png';
+export const TILE_TEXTURE = 'tilefloor';
+export const TILE_URL = 'img/tilefloor.png';
+
 /** What Arena reports when the sim emits MatchEnded; the app flow turns it into a save update. */
 export interface MatchEnd {
   /** 0 = player team, 1 = enemy team, -1 = nobody. */

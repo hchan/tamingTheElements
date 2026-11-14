@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
-import { EntityFlag, SimEventKind, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
+import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
+import { EntityFlag, RoundPhase, SimEventKind, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountStageBackdrop, type StageBackdrop } from './terrain-stage';
@@ -124,6 +125,8 @@ export function mountTerrainView(
 
   // View time: the view tick plus the frame time since it changed (capped below one tick, so it holds while paused).
   let tick = view.tick;
+  /** The FIGHT! banner's last tick (the floor words stay hidden until then). */
+  let fightBannerUntil = 0;
   let drawnTick = tick;
   let sub = 0;
   const now = (): number => tick + sub / TICK_MS;
@@ -330,13 +333,15 @@ export function mountTerrainView(
     // time each stage appears, then the glow ring and the pad art carry it alone.
     if (stage > 0 && firstSeen[stage] === undefined) firstSeen[stage] = clock;
     const hint = stage > 0 ? labelHintAlpha(clock - (firstSeen[stage] ?? clock)) : 0;
+    const bannerUp = ar.phase === RoundPhase.intro || tick < fightBannerUntil;
     chipNear.fill(0);
     view.forEachCharacter(near);
     p.labels.forEach((t, i) => {
       // Ease toward faint while a fighter stands on or beside the chip, back up when it leaves.
       chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -0.12 : 0.06)));
       const a = (highContrast ? drawn.alpha : drawn.alpha * 0.9) * hint * (chipFade[i] ?? 1);
-      const on = hint > 0 && stage !== 3 && i < count;
+      // Hidden under the ROUND / FIGHT! banners so the chip words never bleed through their letters.
+      const on = hint > 0 && stage !== 3 && i < count && !bannerUp;
       t.setVisible(on).setAlpha(a);
       p.chips[i]?.setVisible(on).setAlpha(a);
     });
@@ -411,6 +416,7 @@ export function mountTerrainView(
       highContrast = pr.highContrast;
     }
     fx.consume(events);
+    for (const e of events) if (e.kind === SimEventKind.fight) fightBannerUntil = view.tick + FIGHT_BANNER_TICKS;
     for (const e of events) {
       if (e.tick < crowdTick || (e.tick === crowdTick && e.seq <= crowdSeq)) continue;
       const kind = e.kind === SimEventKind.hitConfirmed ? 'hit' : e.kind === SimEventKind.superStarted ? 'super' : e.kind === SimEventKind.ko ? 'ko' : undefined;
