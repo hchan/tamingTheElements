@@ -104,10 +104,12 @@ function edgeChevron(g: Gfx, view: { x: number; y: number; width: number; height
 }
 
 /** Large arrows on both side edges of a lane pointing `dir`: the warning's unmissable direction cue (also reads at phone size). */
-function edgeArrows(g: Gfx, x: number, y: number, w: number, h: number, dir: number, light: number, alpha: number): void {
+function edgeArrows(g: Gfx, x: number, y: number, w: number, h: number, dir: number, light: number, alpha: number, calm = false): void {
   const size = Math.min(46, h / 5);
+  // `calm` (the gale): one arrow per side, not three, so the long lane does not read as a ladder of marks.
+  const rows = calm ? [y + h * 0.5] : [y + h * 0.25, y + h * 0.5, y + h * 0.75];
   for (const ex of [x + 40, x + w - 40]) {
-    for (const cy of [y + h * 0.25, y + h * 0.5, y + h * 0.75]) {
+    for (const cy of rows) {
       for (const [lw, c, a] of [[9, 0x0a0806, 0.5 * alpha], [5, light, 0.9 * alpha]] as const) {
         g.lineStyle(lw, c, a).lineBetween(ex - dir * size, cy - size, ex, cy).lineBetween(ex, cy, ex - dir * size, cy + size);
       }
@@ -272,18 +274,18 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       const light = HAZARD_LIGHTS[kind] ?? col;
       g.fillStyle(lane ? 0x0a0e14 : col, lane ? 0.14 * alpha : 0.12 * alpha).fillRect(x, y, w, h);
       if (lane) g.fillStyle(col, 0.3 * alpha).fillRect(x, y, w, h);
-      g.lineStyle(6, 0x0a0806, 0.5 * alpha).strokeRect(x, y, w, h);
-      // qa-r33: the gale's near-white outline and edge bars are the full-width rails that cut across fighters, so they fade to the chevron alpha.
       const gale = kind === 4;
+      g.lineStyle(6, 0x0a0806, (gale ? 0.25 : 0.5) * alpha).strokeRect(x, y, w, h);
+      // qa-r33: the gale's near-white outline and edge bars are the full-width rails that cut across fighters, so they fade to the chevron alpha.
       g.lineStyle(gale ? 2 : 3, lane ? light : col, (gale ? 0.3 : 1) * alpha).strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
       if (lane) {
         // Tide and gust (r20): bright edge bars, big edge arrows and the chevrons, all steady under reduced motion.
         g.fillStyle(light, (gale ? 0.2 : 0.6) * alpha).fillRect(x, y, w, gale ? 2 : 5).fillRect(x, y + h - (gale ? 2 : 5), w, gale ? 2 : 5);
-        glow.fillStyle(light, 0.08 * alpha).fillRect(x, y, w, h);
+        glow.fillStyle(light, (gale ? 0.04 : 0.08) * alpha).fillRect(x, y, w, h);
         tideCountdown(g, x, y, w, h, dir, warnProgress(warnLeft, warnTotal), light, alpha);
         const shift = chevronShift(tick, dir, 72, reduced);
-        edgeArrows(g, x, y, w, h, dir, light, alpha);
-        drawn = chevrons(g, x, y, w, h, dir, shift, light, 0.5 * alpha, false);
+        edgeArrows(g, x, y, w, h, dir, light, gale ? 0.75 * alpha : alpha, gale);
+        drawn = chevrons(g, x, y, w, h, dir, shift, light, (gale ? 0.32 : 0.5) * alpha, false);
       } else {
         // r21: a filled warning tint that firms with the countdown (dark red on lava, pale dust on stone), so the box never reads as a thin outline on a busy floor.
         const pr = warnProgress(warnLeft, warnTotal);

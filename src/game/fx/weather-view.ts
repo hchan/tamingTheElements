@@ -148,7 +148,8 @@ export function mountWeatherView(
       label: text(Math.round(LABEL_PX * Math.min(1.4, Math.max(1, 900 / (coreDisplayWidth(hud) || 900)))), 5).setOrigin(0, 0),
       call: text(CALL_PX, 5).setOrigin(0.5),
       bar: hud.add.graphics().setDepth(HUD_DEPTH),
-      chip: text(CHARGE_PX, 4).setOrigin(0.5, 0).setVisible(true),
+      // Up to 24 logical px so the chip reads at least 10.5 CSS px on a phone (QA r34: it was 9).
+      chip: text(Math.round(Math.min(24, Math.max(CHARGE_PX, 10.5 / ((coreDisplayWidth(hud) || 1280) / 1280)))), 4).setOrigin(0.5, 0).setVisible(true),
     };
     return parts;
   };
