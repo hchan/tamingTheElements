@@ -610,7 +610,7 @@ export class ActionBarView {
       scene.input.on('pointerdown', this.onPointer);
       scene.input.on('pointermove', this.onMove);
       if (typeof document !== 'undefined') {
-        for (const ev of ['pointerover', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.addEventListener(ev, this.onDom, true);
+        for (const ev of ['pointermove', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.addEventListener(ev, this.onDom, true);
       }
     }
   }
@@ -638,7 +638,8 @@ export class ActionBarView {
       this.manual = { touch };
     };
     switch (e.type) {
-      case 'pointerover':
+      // A mouse that merely rests over a box (it clicked Fight! there, or the box appeared under it) is not a request for the tip: only real movement is.
+      case 'pointermove':
         if (touch !== '' && (e as PointerEvent).pointerType === 'mouse') holdTip();
         break;
       case 'pointerout':
@@ -834,7 +835,7 @@ export class ActionBarView {
       this.scene.input.off('pointerdown', this.onPointer);
       this.scene.input.off('pointermove', this.onMove);
       if (typeof document !== 'undefined') {
-        for (const ev of ['pointerover', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.removeEventListener(ev, this.onDom, true);
+        for (const ev of ['pointermove', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.removeEventListener(ev, this.onDom, true);
       }
       if (this.pressTimer !== undefined) clearTimeout(this.pressTimer);
       this.tipText?.destroy();

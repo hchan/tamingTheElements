@@ -5,7 +5,7 @@ import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction 
 
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
-export const FIRST_RUN_MS = 6000;
+export const FIRST_RUN_MS = 4000;
 /** Windows this short or shorter get the compact card (smaller text, no footer line). */
 export const COMPACT_BELOW = 800;
 
@@ -79,7 +79,7 @@ export function firstRunHint(store: Store | undefined = defaultStore(), fadeMs =
   for (const line of firstRunLines(getBindings(), isTouchFirst())) card.append(el('p', undefined, line));
   // On a short window (1280x720) the card shrinks and drops its footer so it ends above the hero's wings instead of covering them.
   const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
-  if (short && window.innerHeight > 500) card.style.fontSize = '12px';
+  if (short && window.innerHeight > 500) card.style.fontSize = '11px';
   if (!short) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
   done.setAttribute('type', 'button');

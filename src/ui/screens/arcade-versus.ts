@@ -351,7 +351,7 @@ function rosterView(
       const text = el('span', 'vsSlotText');
       text.append(el('span', 'vsSlotLabel', slotLabel(n)), el('b', 'vsSlotName', empty ? 'Empty' : shortName(sel.value)));
       if (!empty) text.append(rosterElement(element));
-      text.append(el('span', 'vsStats', empty ? 'Pick a hero' : done ? statsOf(sel.value) : 'Not picked yet'));
+      text.append(el('span', 'vsStats', empty ? 'Pick a hero' : done ? statsOf(sel.value) : 'Default hero'));
       if (done) {
         const abil = el('span', 'vsAbilities');
         // Inside a button, so its text is part of the button's name for screen readers; the title repeats it as a sentence.
