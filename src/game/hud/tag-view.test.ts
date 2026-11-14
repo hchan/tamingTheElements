@@ -175,7 +175,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
     const s = setup({ size: 3 });
     const [, pax, curomo] = s.chars as [RenderCharacter, RenderCharacter, RenderCharacter];
     s.frame();
-    expect(s.hud.made.filter((m) => m.kind === 'text')).toHaveLength(9); // 4 lines per side, the call
+    expect(s.hud.made.filter((m) => m.kind === 'text')).toHaveLength(10); // 4 lines per side, the call, the TAG caption
     expect(s.state()?.lines).toEqual([
       ['IN Sindarosa', 'BENCH Pax ▲ 100%', 'BENCH Curomo ▲ 100%', 'TAG READY'],
       ['IN Fiara', 'BENCH Lavax ▲ 100%', 'BENCH Echo ▲ 100%', 'TAG READY'],
@@ -215,7 +215,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
       expect(s.hud.made).toEqual([]);
       s.hud.events.emit('create');
       s.frame();
-      expect(s.hud.made.length).toBe(8); // one Graphics, 3 lines per side, the call
+      expect(s.hud.made.length).toBe(9); // one Graphics, 3 lines per side, the call, the TAG caption
       s[who].events.emit(ev);
       expect(s.arena.events.count + s.hud.events.count).toBe(0);
       expect([...s.arena.made, ...s.hud.made].every((m) => m.destroyed)).toBe(true);

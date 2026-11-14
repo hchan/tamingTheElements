@@ -110,7 +110,8 @@ export function mountTagView(
       })
       .setDepth(HUD_DEPTH);
   const fx = arena.add.graphics().setDepth(FLASH_DEPTH);
-  const caption = teams[0].length < 2 ? undefined : text(arena, 18 * boost, 4).setText('TAG').setOrigin(0.5, 1).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT).setScrollFactor(0);
+  /** The swap-slot caption lives in the Hud scene (made in `build`): the Arena camera zooms and pans, which would drag it away from the slot. */
+  let caption: Phaser.GameObjects.Text | undefined;
   /** The Hud objects, made once the Hud scene runs (as the round view): its Graphics, per team [lines, tag word], the call. */
   let parts: { g: Phaser.GameObjects.Graphics; texts: Phaser.GameObjects.Text[][]; call: Phaser.GameObjects.Text } | undefined;
   const build = (): void => {
@@ -129,6 +130,7 @@ export function mountTagView(
       ),
       call: text(hud, CALL_PX, 8).setOrigin(0.5).setVisible(false),
     };
+    caption = teams[0].length < 2 ? undefined : text(hud, 18 * boost, 4).setText('TAG').setOrigin(0.5, 1).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT).setVisible(false);
     shownTick = -1;
   };
 

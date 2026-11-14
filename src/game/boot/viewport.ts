@@ -10,9 +10,12 @@ export const LOGICAL_HEIGHT = 720;
  */
 export const MAX_RESOLUTION = 2;
 
-/** Integer render multiplier for a device pixel ratio: ceil so fractional ratios (1.25, 1.5) stay sharp. */
+/** Default backing store: 1.5 x 1280x720 = 1920x1080 (owner, 2026-11-13), so standard 1x screens render at full HD instead of upscaling 720p. */
+export const DEFAULT_RESOLUTION = 1.5;
+
+/** Render multiplier for a device pixel ratio: never below 1920x1080; ceil above 1.5 so fractional ratios (1.75) stay sharp, capped at 2. */
 export function pickResolution(dpr: number): number {
-  if (!Number.isFinite(dpr) || dpr <= 1) return 1;
+  if (!Number.isFinite(dpr) || dpr <= DEFAULT_RESOLUTION) return DEFAULT_RESOLUTION;
   return Math.min(MAX_RESOLUTION, Math.ceil(dpr));
 }
 

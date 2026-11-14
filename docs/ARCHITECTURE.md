@@ -380,8 +380,8 @@ Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `
 - **Scale.FIT with CENTER_BOTH, not ENVELOP.** FIT letterboxes, so the whole arena, HUD and action bar are always
   visible with 16:9 preserved; ENVELOP would crop the HUD and action bar on any other aspect ratio. Phaser handles
   window resize, orientation change and fullscreen itself.
-- **Resolution.** The backing store is 1280x720 times `pickResolution(devicePixelRatio)` (ceil, capped at 2: 3 costs
-  2.25x more pixels for little visible gain). Each scene calls `fitScene` (camera zoom = resolution, centred on the
+- **Resolution.** The backing store is 1280x720 times `pickResolution(devicePixelRatio)`: never below 1.5 (a 1920x1080 backing store, the default since
+  2026-11-13), above that ceil, capped at 2 (3 costs 2.25x more pixels for little visible gain). Each scene calls `fitScene` (camera zoom = resolution, centred on the
   logical arena) and Phaser text uses `crisp()`, so scene code and pointer coordinates stay logical. The ratio is read
   once at game creation.
 - **HUD placement.** HUD and action bar draw inside the logical canvas, so they are anchored to the letterboxed game

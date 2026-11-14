@@ -63,7 +63,7 @@ for (const vp of VIEWPORTS) {
       await page.locator('#game canvas').waitFor();
       await page.waitForFunction(ARENA_READY);
       const r = await expectCanvasFits(page);
-      const res = Math.min(2, Math.ceil(vp.dsf));
+      const res = vp.dsf <= 1.5 ? 1.5 : Math.min(2, Math.ceil(vp.dsf));
       expect(r.bw).toBe(1280 * res);
       expect(r.bh).toBe(720 * res);
       // Device pixels covered by the canvas never exceed the backing store by more than the capped ratio.

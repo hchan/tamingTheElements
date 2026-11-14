@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { ACTION_BAR_HEIGHT, BAR_Y, SLOT_SIDE, slotX } from '../hud/action-bar';
 import { HUD_HEIGHT, HUD_WIDTH, benchBar, mainBar, sideOffset } from '../hud/bars';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, MAX_RESOLUTION, pickResolution } from './viewport';
+import { DEFAULT_RESOLUTION, LOGICAL_HEIGHT, LOGICAL_WIDTH, MAX_RESOLUTION, pickResolution } from './viewport';
 
 describe('pickResolution', () => {
   it('rounds the device pixel ratio up and caps it', () => {
-    expect(pickResolution(1)).toBe(1);
-    expect(pickResolution(0.75)).toBe(1);
-    expect(pickResolution(1.25)).toBe(2);
+    expect(pickResolution(1)).toBe(DEFAULT_RESOLUTION);
+    expect(LOGICAL_WIDTH * DEFAULT_RESOLUTION).toBe(1920);
+    expect(LOGICAL_HEIGHT * DEFAULT_RESOLUTION).toBe(1080);
+    expect(pickResolution(0.75)).toBe(DEFAULT_RESOLUTION);
+    expect(pickResolution(1.25)).toBe(DEFAULT_RESOLUTION);
+    expect(pickResolution(1.75)).toBe(2);
     expect(pickResolution(2)).toBe(2);
     expect(pickResolution(3)).toBe(MAX_RESOLUTION);
-    expect(pickResolution(Number.NaN)).toBe(1);
+    expect(pickResolution(Number.NaN)).toBe(DEFAULT_RESOLUTION);
   });
 });
 
