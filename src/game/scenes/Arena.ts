@@ -58,7 +58,7 @@ import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
-/** Ticks the online preview may predict ahead with `?ff=rollback` (dev and test builds only). */
+/** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
 const ROLLBACK_WINDOW = 6;
 import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion } from '../a11y/announcer';
 import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
@@ -187,7 +187,7 @@ export class Arena extends Phaser.Scene {
     const view = createRenderView(world);
     this.view = view;
     const net = this.launch?.net;
-    const rollbackWindow = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).rollback ? ROLLBACK_WINDOW : 0;
+    const rollbackWindow = getUiFlags(window.location.search).lockstep ? 0 : ROLLBACK_WINDOW;
     if (rollbackWindow > 0) this.playOnce = new PlayOnce();
     this.pacing = rollbackWindow === 0;
     this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow, ...(net.tickLimit === undefined ? {} : { tickLimit: net.tickLimit }) }) : undefined;

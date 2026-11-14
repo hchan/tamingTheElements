@@ -33,7 +33,7 @@ Each WP is also an idea file `ideas/brainstorm/webrtc-NN-*.md` (moved to `done/`
 
 ## Decisions
 
-- **Lockstep stays the default until WP 08 measures rollback** in a two-context e2e with added latency. Rollback is already built;
+- **Rollback is the default (WP 08 measured it; numbers in NETCODE.md)**; `?ff=lockstep` opts out. Originally: lockstep stayed the default until WP 08 measured rollback in a two-context e2e with added latency. Rollback is already built;
   the question is only whether its re-simulation cost under SwiftShader/phones is acceptable. Both modes must pass the proof test.
 - **Signalling without a paid server**: compact codes (SDP reduced to ufrag, pwd, fingerprint, candidates: about 100-200
   characters) shared by Copy, Share (Web Share API), a join link (`?join=<code>#online`) and a QR code of that link. The optional
