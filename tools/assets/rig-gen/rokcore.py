@@ -1,5 +1,5 @@
-"""Procedural Rokcore rig (grim earth elemental: a massive golem-like mass of ancient cracked rock plates and moss, a glowing amber core in the
-chest, a small craggy head with two amber slits; the "legs" are a heap of rubble and the "arms" are huge floating boulder clusters, no
+"""Procedural Rokcore rig (grim earth elemental: a lopsided cairn of ancient cracked rock plates and moss, a glowing amber core in the
+chest, a lopsided cairn of slabs with two amber slits set into a rock knot, no neck; the base is a heap of rubble and the "arms" are detached orbiting boulder clusters, no
 limbs/clothes/person). Run: python3 tools/assets/rig-gen/rokcore.py <out_rig_dir> (needs Pillow + numpy; helpers in elemental.py).
 Parts keep the ids tail (rubble base), armB, torso, head, armF and the same 80x80 frame; the sim is unaffected.
 """
@@ -17,16 +17,19 @@ AMBER = [(0.0, (130, 50, 8)), (0.5, (240, 150, 24)), (1.0, (255, 226, 130))]
 EYE = (255, 206, 90)
 
 G = {
- "tail": dict(polys=[[(14, 78), (14, 66), (22, 58), (34, 56), (46, 58), (56, 64), (58, 78)], [(20, 62), (26, 54), (32, 60)], [(44, 60), (50, 54), (54, 62)]],
-              joint=(34, 60), z=1, parent=None, dark=-0.08, moss=0.5, chunk=22),
- "armB": dict(polys=[[(44, 24), (56, 22), (64, 32), (66, 46), (58, 54), (48, 50)], [(52, 54), (58, 62), (62, 56), (58, 50)]],
-              joint=(46, 30), z=2, parent="torso", dark=-0.12, moss=0.3, chunk=10),
- "torso": dict(polys=[[(12, 54), (8, 38), (14, 22), (28, 14), (42, 16), (54, 26), (58, 40), (54, 56), (34, 60)]],
-               joint=(34, 46), z=5, parent="tail", dark=0.0, moss=1.0, chunk=24, core=(32, 36)),
- "head": dict(polys=[[(36, 16), (38, 8), (46, 5), (55, 8), (58, 15), (53, 22), (42, 22)], [(40, 8), (38, 2), (45, 6)]],
-              joint=(46, 20), z=7, parent="torso", dark=0.04, moss=0.4, chunk=8),
- "armF": dict(polys=[[(10, 24), (22, 20), (30, 30), (32, 46), (26, 56), (14, 54), (8, 40)], [(14, 56), (22, 66), (30, 62), (28, 54)]],
-              joint=(22, 26), z=8, parent="torso", dark=0.08, moss=0.6, chunk=10),
+ "tail": dict(polys=[[(8, 78), (10, 68), (20, 62), (32, 64), (44, 60), (58, 64), (68, 70), (72, 78)], [(16, 66), (20, 58), (26, 64)], [(50, 62), (56, 55), (62, 64)]],
+              joint=(34, 62), z=1, parent=None, dark=-0.08, moss=0.5, chunk=22),
+ # detached orbiting boulder clusters with a visible gap to the body (no shoulders, no arms)
+ "armB": dict(polys=[[(58, 14), (68, 12), (74, 20), (70, 30), (60, 30)], [(62, 36), (70, 38), (72, 46), (64, 50), (58, 44)]],
+              joint=(52, 30), z=2, parent="torso", dark=-0.12, moss=0.3, chunk=9),
+ # a leaning cairn: slabs stacked wide to narrow, lopsided, no waist and no shoulders
+ "torso": dict(polys=[[(10, 62), (14, 48), (12, 38), (22, 32), (24, 22), (36, 18), (44, 26), (52, 24), (54, 36), (58, 48), (56, 62), (34, 66)]],
+               joint=(34, 48), z=5, parent="tail", dark=0.0, moss=1.0, chunk=24, core=(34, 46)),
+ # the "head" is a rock knot on the slope of the cairn with eye slits set into it, no neck
+ "head": dict(polys=[[(26, 36), (28, 26), (38, 22), (46, 26), (50, 34), (44, 42), (32, 42)], [(30, 26), (28, 16), (36, 24)], [(40, 24), (46, 14), (47, 25)]],
+              joint=(38, 34), z=7, parent="torso", dark=0.04, moss=0.4, chunk=8),
+ "armF": dict(polys=[[(2, 28), (10, 24), (16, 30), (14, 40), (6, 42), (1, 36)], [(4, 48), (12, 50), (14, 58), (8, 64), (2, 58)]],
+              joint=(12, 40), z=8, parent="torso", dark=0.08, moss=0.6, chunk=9),
 }
 
 
@@ -68,7 +71,7 @@ def paint(name, view, polys, g, seed):
 def accents(name, view, im, tf):
     if name != "head" or view == "NE":
         return None
-    pts = [(48, 15), (54, 15.5)] if view == "E" else [(46, 17), (53, 17.5)]
+    pts = [(38, 33), (44, 33.5)] if view == "E" else [(37, 35), (44, 35.5)]
     for (x, y) in pts:
         x, y = E.apply(tf, (x, y))
         im = E.glow_dot(im, x, y, 1.3, 0.7, EYE, (255, 150, 30))
@@ -87,5 +90,5 @@ actions = {
     "head": c(rot=[0, -5, -6, 3]), "armF": c(rot=[-8, -50, -76, 10]), "armB": c(rot=[-6, -44, -66, 8])}),
 }
 E.build(OUT, "rokcore", G, actions, paint,
-        E.license_for("rokcore", "rokcore.py", "grim earth elemental: massive golem-like mass of ancient cracked rock plates and moss, glowing amber chest core, floating boulder fists, rubble base; olive-grey stone and amber palette."),
+        E.license_for("rokcore", "rokcore.py", "grim earth elemental: lopsided cairn of ancient cracked rock plates and moss, glowing amber chest core, floating boulder fists, rubble base; olive-grey stone and amber palette."),
         accents=accents)

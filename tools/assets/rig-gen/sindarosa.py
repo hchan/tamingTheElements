@@ -16,17 +16,19 @@ FLAME = [(0.0, (46, 8, 6)), (0.35, (140, 30, 10)), (0.7, (214, 78, 14)), (1.0, (
 EMBER = [(0.0, (120, 20, 8)), (0.5, (236, 84, 14)), (1.0, (255, 206, 110))]
 EYE = (255, 214, 120)
 
-tailp = E.catmull([(30, 66), (20, 70), (10, 66), (5, 56), (7, 46)], 8)
+tailp = E.catmull([(34, 70), (22, 73), (12, 70), (4, 73), (2, 76)], 8)  # a low smear of burning ground, not a tail
 G = {
- "tail": dict(polys=[E.ribbon(tailp, [5 - 4 * i / (len(tailp) - 1) for i in range(len(tailp))])],
-              joint=(30, 66), z=1, parent="torso", flame_only=True),
- "wingB": dict(polys=[[(40, 38), (42, 28), (46, 18), (50, 12), (54, 20), (52, 30), (54, 38)]], joint=(44, 38), z=2, parent="torso", flame_only=True, tall=1),
- "torso": dict(polys=[[(18, 70), (14, 54), (20, 40), (30, 32), (42, 30), (54, 38), (60, 52), (58, 68), (40, 74)],
-                      [(26, 36), (24, 26), (30, 32)], [(34, 31), (34, 20), (40, 30)]], joint=(38, 54), z=5, parent=None, dark=0.0),
- "head": dict(polys=[[(44, 26), (46, 16), (54, 11), (64, 14), (72, 20), (68, 26), (58, 29), (52, 32)],
-                     [(48, 17), (43, 11), (45, 6), (52, 12)], [(56, 13), (58, 8), (65, 5), (64, 12)],  # horns
-                     [(46, 13), (41, 8), (48, 12)]], joint=(50, 28), z=7, parent="torso", dark=0.03, horns=3, crown=1),
- "wingF": dict(polys=[[(30, 40), (26, 30), (22, 22), (25, 14), (30, 22), (34, 30), (38, 40)]], joint=(32, 40), z=8, parent="torso", flame_only=True, tall=1),
+ "tail": dict(polys=[E.ribbon(tailp, [4 - 2.5 * i / (len(tailp) - 1) for i in range(len(tailp))])],
+              joint=(30, 70), z=1, parent="torso", flame_only=True),
+ "wingB": dict(polys=[[(36, 38), (38, 26), (40, 14), (43, 4), (47, 16), (48, 28), (52, 38)]], joint=(44, 38), z=2, parent="torso", flame_only=True, tall=1),
+ # a collapsed pyre: a wide lopsided heap of charred slag with broken spires, no neck, no limbs
+ "torso": dict(polys=[[(10, 72), (8, 60), (16, 50), (14, 40), (24, 34), (30, 22), (36, 32), (44, 26), (48, 18), (54, 32), (62, 40), (66, 54), (70, 66), (64, 74), (40, 77)]],
+               joint=(38, 54), z=5, parent=None, dark=0.0),
+ # the "head" is a slumped knot of the heap with a vertical molten rift, no snout and no ears
+ "head": dict(polys=[[(40, 36), (40, 26), (47, 20), (55, 24), (62, 32), (62, 42), (54, 46), (45, 44)],
+                     [(44, 22), (42, 10), (49, 18)], [(54, 24), (58, 12), (62, 24)], [(60, 30), (70, 26), (66, 36)]],
+              joint=(50, 40), z=7, parent="torso", dark=0.03, horns=3, crown=1),
+ "wingF": dict(polys=[[(20, 42), (16, 30), (12, 18), (17, 8), (22, 20), (26, 30), (30, 42)]], joint=(24, 42), z=8, parent="torso", flame_only=True, tall=1),
 }
 
 
@@ -41,8 +43,8 @@ def paint(name, view, polys, g, seed):
     if fo:
         core = core * 0.0
     base = ma
-    if g.get("crown"):  # crown of fire rising from between the horns
-        crown = E.poly_mask([[(46, 15), (48, 10), (52, 14), (56, 8), (60, 14), (65, 11), (64, 18)]])
+    if g.get("crown"):  # crown of fire rising from over the spires
+        crown = E.poly_mask([[(42, 26), (44, 16), (49, 22), (53, 12), (57, 22), (62, 16), (62, 28)]])
         base = np.maximum(ma, crown * 0.7)
     fl = E.blur(np.maximum(base, core), SS * (3.0 if g.get("tall") else 2.4))
     lift = 5 + 3 * g.get("tall", 0)
@@ -80,10 +82,10 @@ def paint(name, view, polys, g, seed):
 def accents(name, view, im, tf):
     if name != "head" or view == "NE":
         return None
-    pts = [(60, 20), (66, 21)] if view == "E" else [(56, 23), (63, 23.5)]
+    pts = [(52, 31), (52, 36.5), (58, 32)] if view == "E" else [(50, 33), (50, 38.5), (56, 34)]
     for (x, y) in pts:
         x, y = E.apply(tf, (x, y))
-        im = E.glow_dot(im, x, y, 1.2, 0.8, EYE, (255, 120, 20))
+        im = E.glow_dot(im, x, y, 0.8, 1.7, EYE, (255, 120, 20), 3.2)
     return im
 
 
@@ -102,5 +104,5 @@ actions = {
     "wingF": c(rot=[0, -22, -36, -8]), "wingB": c(rot=[0, 18, 30, 6]), "tail": c(rot=[0, 6, 10, -4])}),
 }
 E.build(OUT, "sindarosa", G, actions, paint,
-        E.license_for("sindarosa", "sindarosa.py", "grim fire elemental beast: hunched charred black rock with ember cracks, two great ember-tipped horns, a crown of fire, flame plumes off the back; charcoal and blood-red ember palette."),
+        E.license_for("sindarosa", "sindarosa.py", "grim fire elemental: collapsed pyre of charred black slag with ember cracks, broken burning spires, a molten rift face, flame plumes rising behind; charcoal and blood-red ember palette."),
         accents=accents)
