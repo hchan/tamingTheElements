@@ -273,11 +273,9 @@ export function mountWeatherView(
     for (let i = 0; i < n; i++) {
       particle(kind, i, clock, pt);
       if (kind === 1) {
-        // A sun ray: a wedge from the corner, widening to `r` at its far end.
-        const len = Math.hypot(pt.dx, pt.dy) || 1;
-        const nx = (-pt.dy / len) * pt.r;
-        const ny = (pt.dx / len) * pt.r;
-        fall.fillStyle(0xfff2b0, pt.a * fade).fillTriangle(pt.x, pt.y, pt.x + pt.dx + nx, pt.y + pt.dy + ny, pt.x + pt.dx - nx, pt.y + pt.dy - ny);
+        // No drawn sun ray: three hard-edged diagonal wedges read as a stray beam across the fire stage (QA r28). The warm sky tint, the
+        // badge and the ember/haze particle layer carry the sun; the ray paths stay in weather-fx for tests.
+        continue;
       } else if (pt.r > 0) {
         // A dark rim, then the grain or mote: readable on light and dark arenas alike.
         fall.fillStyle(0x000000, pt.a * fade * 0.22).fillCircle(pt.x, pt.y, pt.r + 2);

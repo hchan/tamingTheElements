@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { HAZARD_VIEW_STRIDE, type RenderView } from '@core/index';
 import { mute } from './grim-fx';
+import { resolutionOf } from '../boot/viewport';
 
 /**
  * Phaser side of the Arcade stage hazard (systems/arcade/hazard.ts; ideas/brainstorm/stage-selection-hazards.md). The Arena
@@ -10,6 +11,8 @@ import { mute } from './grim-fx';
  * the chevrons' direction). Reduced motion holds the pulse steady and stops the chevrons scrolling. One Graphics pair, one
  * `postupdate` listener, removed with the scene.
  */
+/** The warning chip sits above the fighters so a fighter standing in the box never hides the word. */
+const CHIP_DEPTH = 40;
 const DEPTH = -0.65; // under the trap markers (-0.6) and the fighters
 
 /** A pale, desaturated light of a hazard colour: the luminous core of the tide and gust strike marks (readable on blue and on pale ice). */
@@ -31,6 +34,8 @@ export interface HazardMarker {
   readonly alpha: number;
   /** Chevrons drawn (tide and gust), 0 for the others. */
   readonly chevrons: number;
+  /** The warning chip text this frame (e.g. `LAVA 2s`), '' once it strikes. */
+  readonly label: string;
 }
 
 /** Warning outline alpha: firms from 0.35 to 0.8 as `warnLeft` runs down from `warnTotal`, blinking every 6 ticks unless `reduced`. */
@@ -153,6 +158,15 @@ export function shadowRadius(progress: number, halfW: number): number {
   return halfW * (0.25 + 0.75 * Math.min(1, Math.max(0, progress)));
 }
 
+/** Short on-screen warning word per hazard kind (index 0 unused): fire lava lane, water tide, earth rockfall, air gust. */
+export const HAZARD_WORDS: readonly string[] = ['', 'LAVA', 'TIDE', 'ROCKFALL', 'GUST'];
+
+/** The warning chip text: the hazard word and the whole seconds left (50 ticks a second, rounded up), e.g. `ROCKFALL 2s`. */
+export function hazardLabel(kind: number, warnLeft: number): string {
+  const word = HAZARD_WORDS[kind] ?? '';
+  return word === '' ? '' : `${word} ${String(Math.max(1, Math.ceil(warnLeft / 50)))}s`;
+}
+
 /** Impact flash alpha: white for the first 2 ticks of the active phase (steady, not blinking, so safe with reduced motion), else 0. */
 export function impactFlash(ticksSinceStrike: number): number {
   return ticksSinceStrike >= 0 && ticksSinceStrike < 2 ? 0.55 : 0;
@@ -212,6 +226,23 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     live.textContent = hazardAnnouncement(kind);
   };
 
+  let text: Phaser.GameObjects.Text | undefined;
+  /** The warning chip: the hazard word and seconds left, centred just above the box but kept inside the camera view (empty text hides it). */
+  const chip = (label: string, x: number, y: number, w: number, alpha: number): void => {
+    if (label === '' && !text) return;
+    text ??= arena.add
+      .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '26px', fontStyle: 'bold', color: '#f4ead2', stroke: '#0a0806', strokeThickness: 5, backgroundColor: '#0a0806c0', padding: { x: 10, y: 4 }, resolution: resolutionOf(arena) })
+      .setOrigin(0.5, 0.5)
+      .setDepth(CHIP_DEPTH);
+    text.setVisible(label !== '');
+    if (label === '') return;
+    const v = arena.cameras.main.worldView;
+    text.setText(label).setAlpha(Math.max(0.85, alpha));
+    const cx = Math.min(v.x + v.width - text.width / 2 - 8, Math.max(v.x + text.width / 2 + 8, x + w / 2));
+    const cy = Math.min(v.y + v.height - 24, Math.max(v.y + 24, y - 24));
+    text.setPosition(cx, cy);
+  };
+
   const draw = (): void => {
     const ar = view.arcade();
     if (!ar) return;
@@ -221,6 +252,7 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     markers = [];
     const [kind = 0, x = 0, y = 0, w = 0, h = 0, dir = 0, warnLeft = 0, endLeft = 0] = ar.hazard.slice(0, HAZARD_VIEW_STRIDE);
     if (kind === 0) {
+      chip('', 0, 0, 0, 0);
       announcedKind = 0;
       return;
     }
@@ -264,25 +296,28 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
           g.fillStyle(0x0a0806, 0.5 * alpha).fillRect(x + w / 2 - 6, y + 10, 12, h - 20);
           g.fillStyle(0xf4d4b0, 0.85 * alpha).fillRect(x + w / 2 - 4, y + h - 10 - (h - 20) * pr, 8, (h - 20) * pr);
         } else {
-          g.fillStyle(0xd8c8a8, (0.14 + 0.16 * pr) * alpha).fillRect(x, y, w, h);
+          g.fillStyle(0xe8d8b0, (0.3 + 0.2 * pr) * Math.max(alpha, 0.7)).fillRect(x, y, w, h);
+          g.lineStyle(8, 0x0d0a07, 0.6).strokeRect(x, y, w, h);
+          g.lineStyle(4, 0xf0e4c8, 0.95).strokeRect(x + 4, y + 4, w - 8, h - 8);
           // The falling shadow: a dark disc that grows to fill the square, ringed in pale dust.
           const r = shadowRadius(pr, w / 2);
-          g.fillStyle(0x0d0a07, (0.25 + 0.3 * pr) * alpha).fillCircle(x + w / 2, y + h / 2, r);
+          g.fillStyle(0x0d0a07, 0.4 + 0.3 * pr).fillCircle(x + w / 2, y + h / 2, r);
           g.lineStyle(3, 0xf0e4c8, 0.8 * alpha).strokeCircle(x + w / 2, y + h / 2, r);
           g.lineStyle(4, 0xf0e4c8, 0.75 * alpha);
           for (const [cx, cy, sx, sy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]] as const) {
             g.lineBetween(cx, cy, cx + sx * 26, cy).lineBetween(cx, cy, cx, cy + sy * 26);
           }
         }
-        // Fire and earth: a cross-hatch of warning stripes inside the box (fire's is pale-hot so it reads on the orange floor).
         if (kind === 1) {
           // A lane that runs off the camera edge: chevrons on the border point at the hidden part (steady, so safe under reduced motion).
           const view = arena.cameras.main.worldView;
           for (const cue of edgeCues(view, { x, y, w, h })) edgeChevron(g, view, cue, 0xf4d4b0, Math.max(alpha, 0.8));
         }
-        if (kind === 1) glow.fillStyle(HAZARD_LIGHTS[1] ?? col, 0.12 * alpha).fillRect(x + w * 0.25, y, w * 0.5, h);
-        g.lineStyle(2, kind === 1 ? (HAZARD_LIGHTS[1] ?? col) : col, (kind === 1 ? 0.5 : 0.3) * alpha);
-        for (let d = 0; d < w + h; d += 28) g.lineBetween(x + Math.max(0, d - h), y + Math.min(h, d), x + Math.min(w, d), y + Math.max(0, d - w));
+        // Earth only: a cross-hatch of warning stripes. (Fire's diagonal hatch and glow column read as a stray sun-beam, so fire has neither.)
+        if (kind === 3) {
+          g.lineStyle(2, 0xf0e4c8, 0.5 * alpha);
+          for (let d = 0; d < w + h; d += 28) g.lineBetween(x + Math.max(0, d - h), y + Math.min(h, d), x + Math.min(w, d), y + Math.max(0, d - w));
+        }
       }
     } else {
       warnTotal = 1;
@@ -314,8 +349,13 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       }
     }
     const flash = warnLeft > 0 ? 0 : impactFlash(tick - strikeTick);
-    if (flash > 0) glow.fillStyle(0xffffff, flash).fillRect(x, y, w, h);
-    markers.push({ kind, phase: warnLeft > 0 ? 'warn' : 'active', x, y, w, h, dir, alpha, chevrons: drawn });
+    // The strike flash is an outline plus a soft round burst (never a filled box: a pale rectangle round the fighter read as a render bug).
+    if (flash > 0) {
+      glow.lineStyle(6, 0xffffff, flash).strokeRect(x, y, w, h);
+      if (kind === 3) glow.fillStyle(0xf0e4c8, flash * 0.5).fillCircle(x + w / 2, y + h / 2, Math.min(w, h) * 0.3);
+    }
+    chip(warnLeft > 0 ? hazardLabel(kind, warnLeft) : '', x, y, w, alpha);
+    markers.push({ kind, phase: warnLeft > 0 ? 'warn' : 'active', x, y, w, h, dir, alpha, chevrons: drawn, label: warnLeft > 0 ? hazardLabel(kind, warnLeft) : '' });
   };
 
   const off = (): void => {
@@ -323,6 +363,8 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     states.delete(arena);
     parts?.g.destroy();
     parts?.glow.destroy();
+    text?.destroy();
+    text = undefined;
     parts = undefined;
     live?.remove();
     live = undefined;
