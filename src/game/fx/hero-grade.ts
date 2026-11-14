@@ -59,6 +59,65 @@ export function gradeHeroRgba(px: Uint8ClampedArray | number[], g: HeroGrade = H
   }
 }
 
+/** Rim colour (0..255 RGB) per hero; heroes not listed get the cool default. Lavax is warm ember so it parts from the painted Pax. */
+const RIM_DEFAULT: readonly [number, number, number] = [206, 228, 255];
+const RIM_BY_HERO: Readonly<Record<string, readonly [number, number, number]>> = {
+  lavax: [255, 176, 96],
+  echo: [226, 240, 255],
+  wispera: [226, 240, 255],
+};
+/** Mean luma (0..255) under which a hero counts as dark and gets its body lifted a little as well as a stronger rim. */
+const DARK_MEAN = 96;
+/** Alpha under which a pixel is a faint fringe: no rim, no lift (ghostly heroes such as Echo and Wispera are mostly semi-opaque). */
+const MIN_A = 24;
+/** Share of the missing opacity a dark sprite's semi-transparent pixels regain, so a dark ghost holds its shape on a pale floor. */
+const DARK_ALPHA_LIFT = 0.3;
+
+/**
+ * Rim light for the legacy bitmap heroes (they have no painted light of their own): the one-pixel inner edge of every
+ * sprite shape is lit toward `rim`, harder on the top and left edges (key light from above-left) and harder the darker the
+ * pixel is, so a dark hero (Echo) keeps a bright silhouette on a dark or blue-grey floor. A second inner ring gets a faint
+ * share for a soft, painted falloff. Dark sprites (low mean luma) also get a mild body lift. In place over a `w` x `h` RGBA
+ * sheet; alpha only rises on dark sprites and nothing is drawn outside the shape, so neighbouring frames never bleed. Deterministic.
+ */
+export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: number, rim: readonly [number, number, number] = RIM_DEFAULT): void {
+  const src = Array.from(px);
+  const a = (x: number, y: number): number => (x < 0 || y < 0 || x >= w || y >= h ? 0 : (src[(y * w + x) * 4 + 3] ?? 0));
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i + 3 < src.length; i += 4) {
+    if ((src[i + 3] ?? 0) < MIN_A) continue;
+    sum += (src[i] ?? 0) * 0.3 + (src[i + 1] ?? 0) * 0.59 + (src[i + 2] ?? 0) * 0.11;
+    n++;
+  }
+  const dark = n > 0 && sum / n < DARK_MEAN;
+  const lift = dark ? 0.16 * (1 - sum / n / DARK_MEAN) + 0.06 : 0;
+  let self = 255;
+  const open = (x: number, y: number): boolean => a(x, y) < self * 0.5;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      self = src[i + 3] ?? 0;
+      if (self < MIN_A) continue;
+      let t = 0;
+      const top = open(x, y - 1) || open(x - 1, y - 1);
+      const left = open(x - 1, y);
+      const bottom = open(x, y + 1);
+      const right = open(x + 1, y);
+      if (top || left || bottom || right) t = top || left ? 1 : 0.6;
+      else if (open(x, y - 2) || open(x - 2, y) || open(x, y + 2) || open(x + 2, y)) t = 0.3;
+      const yl = (src[i] ?? 0) * 0.3 + (src[i + 1] ?? 0) * 0.59 + (src[i + 2] ?? 0) * 0.11;
+      const k = t * (dark ? 0.62 : 0.4) * (0.55 + 0.45 * (1 - yl / 255));
+      for (let c = 0; c < 3; c++) {
+        const v = src[i + c] ?? 0;
+        const lifted = v + (255 - v) * lift;
+        px[i + c] = Math.round(Math.min(255, lifted + ((rim[c] ?? 255) - lifted) * k));
+      }
+      if (dark && self < 255) px[i + 3] = Math.round(self + (255 - self) * DARK_ALPHA_LIFT);
+    }
+  }
+}
+
 /** Reads the player's high-contrast preference; the grade is skipped then (flat, strongly separated colours are the point). */
 export function gradeEnabled(): boolean {
   try {
@@ -94,6 +153,8 @@ export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
     ctx.drawImage(src, 0, 0);
     const data = ctx.getImageData(0, 0, c.width, c.height);
     gradeHeroRgba(data.data);
+    const hero = key.replace(/^[a-z]+:/, '');
+    rimLightRgba(data.data, c.width, c.height, RIM_BY_HERO[hero] ?? RIM_DEFAULT);
     ctx.putImageData(data, 0, 0);
     const tex = scene.textures.addCanvas(gk, c);
     if (!tex) return key;
