@@ -1894,10 +1894,22 @@ button.menuButton.heroSlotClear {
     translate: 0 -50%;
   }
 }
-/* Phone portrait: the bar is only Fight and Back and has no free room for the pill, which would cover the hint text above; the roster peeks out above the bar instead. */
+/* Phone portrait: the bar is only Fight and Back and has no free room for the pill, which would cover the hint text above. A slim fade over the
+   rows just above the bar with a small centred chevron says the same thing without words or covering any text; it fades at the end of the scroll. */
 @media (max-width: 640px) {
   #arcadePick .vsActions::before {
-    display: none;
+    content: '\25BE';
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    padding: 1.2em 0 0;
+    font-size: 1em;
+    line-height: 1;
+    text-align: center;
+    color: rgba(255, 214, 120, 0.9);
+    background: linear-gradient(to bottom, rgba(28, 24, 62, 0), rgba(28, 24, 62, 0.85));
+    border: 0;
+    border-radius: 0;
   }
 }
 @supports (animation-timeline: scroll()) {

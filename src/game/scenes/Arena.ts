@@ -74,7 +74,7 @@ import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { createStageAmbient, type StageAmbient } from '../fx/stage-ambient-view';
-import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
+import { CLASSIC_SPRITE_SCALE, CharacterView, setBrightFloor } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import { ReplayCursor } from '../replay/cursor';
@@ -836,6 +836,7 @@ export class Arena extends Phaser.Scene {
     this.frameTick = tick;
     this.frameAlpha = alpha;
     this.frameLive = live;
+    setBrightFloor(arcade ? arcade.stage === 4 : false);
     pool.begin();
     view.forEachCharacter(this.drawCharacter);
     pool.end();
