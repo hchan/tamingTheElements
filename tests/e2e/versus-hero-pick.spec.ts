@@ -46,3 +46,11 @@ test('?hero= and ?foe= start a fight with the chosen heroes (dev/test builds)', 
   expect(l[0]).not.toBe(100);
   expect(errors).toEqual([]);
 });
+
+test('Versus: the Add to team button is hidden in 1v1 and back for tag teams (QA r26)', async ({ page }) => {
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await expect(page.locator('select[name=size]')).toHaveValue('1');
+  await expect(page.locator('.heroAdd')).toBeHidden();
+  await page.selectOption('select[name=size]', '2');
+  await expect(page.locator('.heroAdd')).toBeVisible();
+});

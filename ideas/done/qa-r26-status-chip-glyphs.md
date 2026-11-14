@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -10,3 +10,5 @@ Repro: any 1v1 fight at tick 180 (e.g. `hero=curomo&foe=ishimi`). Chips read "x 
 Evidence: `~/claudetmp/qa26/st-curomo-ishimi-180.png`, `v2-tag-click.png`.
 
 Suggest small debuff/buff icons or arrows in element colour.
+
+Done 2026-11-14: fixed.

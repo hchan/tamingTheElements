@@ -2138,8 +2138,9 @@ button.menuButton.heroSlotClear {
   }
   .mainMenuList {
     width: auto;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.35em 0.6em;
+    /* One row of five (Play, Versus, Online, Settings, Help): a 2-column grid read in a zigzag (QA r26). */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.35em 0.5em;
     margin: 0.2em 0;
   }
   .mainMenuList::before {
@@ -2147,7 +2148,8 @@ button.menuButton.heroSlotClear {
     height: 2.6em;
   }
   .mainMenuList li button {
-    padding: 0.3em 0.8em;
+    padding: 0.3em 0.4em;
+    text-align: center;
   }
   .mainMenuList li.menuGroup,
   .mainMenuList li:has(> .menuGroup) {
@@ -2705,4 +2707,9 @@ body:has(.settingsBar) {
   #menu .settingsBar .menuButton { box-sizing: border-box; min-height: 44px; padding-top: 0.2em; padding-bottom: 0.2em; }
   #menu .settingsSection { margin: 0.3em 0; }
   #menu .settingsSummary { padding: 0.3em 0.9em; }
+}
+
+/* 1v1 has one slot, so a pick is one click on the tile and the Add / Remove button has nothing to add to (QA r26). */
+#arcadePick:has(select[name='size'] option[value='1']:checked) .heroAdd {
+  display: none;
 }

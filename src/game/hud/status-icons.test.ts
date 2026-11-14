@@ -44,9 +44,9 @@ describe('status chip helpers', () => {
   });
 
   it('writes a plus for a buff, an x for a debuff and omits the time for a timerless state', () => {
-    expect(chipText('ADREN', false, 12)).toBe('+ ADREN 12s');
-    expect(chipText('SLOW', true, 3)).toBe('x SLOW 3s');
-    expect(chipText('SNAG', true, null)).toBe('x SNAG');
+    expect(chipText('ADREN', false, 12)).toBe('▲ ADREN 12s');
+    expect(chipText('SLOW', true, 3)).toBe('▼ SLOW 3s');
+    expect(chipText('SNAG', true, null)).toBe('▼ SNAG');
   });
 
   it('weather favours its element, counters the opposite one and Eclipse only favours void', () => {
@@ -77,8 +77,8 @@ describe('collectStatusChips', () => {
     });
     const minX = mainBar(0).minX;
     expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ key: `s${String(StatusId.iceBlast)}`, hostile: true, glyph: 'cross', secs: 3, remaining: 0.75, x: minX, y: CHIP_Y, text: 'x SLOW 3s', color: HOSTILE_COLOR });
-    expect(out[1]).toMatchObject({ hostile: false, glyph: 'plus', secs: 1, remaining: 0.5, x: minX + CHIP_W + CHIP_GAP, text: '+ ADREN 1s', color: FRIENDLY_COLOR });
+    expect(out[0]).toMatchObject({ key: `s${String(StatusId.iceBlast)}`, hostile: true, glyph: 'cross', secs: 3, remaining: 0.75, x: minX, y: CHIP_Y, text: '▼ SLOW 3s', color: HOSTILE_COLOR });
+    expect(out[1]).toMatchObject({ hostile: false, glyph: 'plus', secs: 1, remaining: 0.5, x: minX + CHIP_W + CHIP_GAP, text: '▲ ADREN 1s', color: FRIENDLY_COLOR });
   });
 
   it('uses the high-contrast pair and keeps the shape and word cues', () => {
@@ -102,13 +102,13 @@ describe('collectStatusChips', () => {
     expect(out.map((c) => c.hostile)).toEqual([true, true, false]);
     // Invulnerable while stunned is the stun, not a SAFE buff.
     const safe = chips({ arcade: { invulnerable: true } });
-    expect(safe.map((c) => c.text)).toEqual(['+ SAFE']);
+    expect(safe.map((c) => c.text)).toEqual(['▲ SAFE']);
   });
 
   it('shows weather as a buff for the favoured element, a debuff for the counter and nothing otherwise', () => {
     const arcade = { weather: 1, weatherLeft: 250 };
-    expect(chips({ arcade }, 'fire')[0]).toMatchObject({ label: 'SUN', hostile: false, secs: 5, remaining: 0.5, text: '+ SUN 5s' });
-    expect(chips({ arcade }, 'water')[0]).toMatchObject({ label: 'SUN', hostile: true, glyph: 'cross', text: 'x SUN 5s' });
+    expect(chips({ arcade }, 'fire')[0]).toMatchObject({ label: 'SUN', hostile: false, secs: 5, remaining: 0.5, text: '▲ SUN 5s' });
+    expect(chips({ arcade }, 'water')[0]).toMatchObject({ label: 'SUN', hostile: true, glyph: 'cross', text: '▼ SUN 5s' });
     expect(chips({ arcade }, 'earth')).toEqual([]);
     expect(chips({ arcade: { weather: 1, weatherLeft: 0 } }, 'fire')).toEqual([]);
   });
@@ -116,7 +116,7 @@ describe('collectStatusChips', () => {
   it('shows the elemental buff until it ends, on the action-bar clock', () => {
     const elemental = { name: 'Inferno', activeUntil: 300 };
     const [c] = chips({ tick: 999, barTick: 100, elemental });
-    expect(c).toMatchObject({ key: 'elem', label: 'INFERNO', hostile: false, secs: 4, text: '+ INFERNO 4s' });
+    expect(c).toMatchObject({ key: 'elem', label: 'INFERNO', hostile: false, secs: 4, text: '▲ INFERNO 4s' });
     expect(chips({ barTick: 300, elemental })).toEqual([]);
   });
 

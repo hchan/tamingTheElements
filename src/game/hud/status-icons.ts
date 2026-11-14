@@ -52,7 +52,7 @@ export interface StatusChip {
   readonly w: number;
   readonly h: number;
   readonly color: number;
-  /** Text drawn on the chip: glyph, word and time, e.g. `+ ADREN 12s`. */
+  /** Text drawn on the chip: glyph, word and time, e.g. `▲ ADREN 12s`. */
   readonly text: string;
 }
 
@@ -78,9 +78,9 @@ export function secsLeft(ticks: number): number {
   return Math.max(0, Math.ceil(ticks / TICKS_PER_SEC));
 }
 
-/** The chip text: `+ ADREN 12s` for a buff, `x SLOW 3s` for a debuff, no time for a state without one. */
+/** The chip text: `▲ ADREN 12s` for a buff, `▼ SLOW 3s` for a debuff, no time for a state without one. */
 export function chipText(label: string, hostile: boolean, secs: number | null): string {
-  return `${hostile ? 'x' : '+'} ${label}${secs === null ? '' : ` ${String(secs)}s`}`;
+  return `${hostile ? '▼' : '▲'} ${label}${secs === null ? '' : ` ${String(secs)}s`}`;
 }
 
 /**
