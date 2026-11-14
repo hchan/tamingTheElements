@@ -103,7 +103,8 @@ export class RoundAnnouncer {
       case SimEventKind.ko: {
         // `team` is the KO'd team (-1: both); `perfect` when the winner is still at full HP.
         const team = e['team'] ?? -1;
-        this.perfect = e['perfect'] === 1;
+        // PERFECT is praise: only for the player's own flawless win (the KO'd team is the foe's), never on a round that was lost.
+        this.perfect = e['perfect'] === 1 && team === 1;
         const tail = this.perfect ? ' Perfect.' : '';
         this.show(team < 0 ? 'DOUBLE K.O.' : 'K.O.', this.perfect ? 'PERFECT' : '', t, HOLD);
         const who = team < 0 ? 'Double K.O.' : team === 1 ? 'K.O. You knocked out the enemy.' : 'K.O. You were knocked out.';

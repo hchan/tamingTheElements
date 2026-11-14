@@ -8,6 +8,8 @@ export interface Announcement {
   readonly important: boolean;
   /** Low-priority chatter (trap lines): dropped first when the queue is over its cap. */
   readonly low?: boolean;
+  /** Answers one button press ("Weather not ready"): spoken now or never, and it replaces an older waiting one, so it cannot arrive late and read as the answer to a later key. */
+  readonly transient?: boolean;
 }
 
 /** Pure: sim events to announcements. Hits are deliberately silent (they would flood a screen reader). `teamOf` maps an entity id to its team (trap armed events carry only the owner). */
@@ -67,8 +69,11 @@ export function announcementsFor(
       case SimEventKind.cleanse: {
         const cleared = e['cleared'] ?? 0;
         const mine = (e['team'] ?? 0) === 0;
-        const what = cleared > 0 ? `${String(cleared)} ${cleared === 1 ? 'debuff' : 'debuffs'} cleared` : 'nothing to clear';
-        out.push({ key: `cleanse${mine ? 'Mine' : 'Foe'}`, text: `${mine ? 'Your' : 'Enemy'} Cleanse: ${what}.`, important: false });
+        const what = `${String(cleared)} ${cleared === 1 ? 'debuff' : 'debuffs'}`;
+        const text = mine
+          ? cleared > 0 ? `You cleansed ${what}.` : 'You cleansed, nothing was on you.'
+          : cleared > 0 ? `Enemy cleansed ${what}.` : 'Enemy cleansed, nothing was on them.';
+        out.push({ key: `cleanse${mine ? 'Mine' : 'Foe'}`, text, important: false });
         break;
       }
       default:
@@ -188,6 +193,11 @@ export class Announcer {
   say(a: Announcement): void {
     const t = this.now();
     const prev = this.lastByKey.get(a.key);
+    if (a.transient === true) {
+      // Direct feedback to a key: spoken at once (it may skip the gap), never queued; the same line repeats at most once per window.
+      if (prev === undefined || t - prev >= this.repeat) this.send(a, t);
+      return;
+    }
     if (!a.important && prev !== undefined && t - prev < this.repeat) return;
     if (a.important) {
       // Lines still waiting (e.g. a capture on the same tick as the win) are folded in, so none is lost.

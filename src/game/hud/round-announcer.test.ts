@@ -115,6 +115,16 @@ describe('RoundAnnouncer', () => {
     expect(last(f.banners)).toMatchObject({ main: 'DEFEAT', sub: '0 - 2' });
   });
 
+  it('a flawless foe is not praise: no PERFECT banner or line on a round the player lost', () => {
+    const f = fake();
+    const a = new RoundAnnouncer(f.sink);
+    a.consume([ev(1, SimEventKind.roundStarted, { round: 1 }), ev(300, SimEventKind.ko, { team: 0, perfect: 1 })]);
+    expect(last(f.banners)).toMatchObject({ main: 'K.O.', sub: '' });
+    expect(last(f.lines)?.text).not.toMatch(/perfect/i);
+    a.consume([ev(450, SimEventKind.roundEnded, { winner: 1, won0: 0, won1: 1 })]);
+    expect(last(f.banners)).toMatchObject({ main: 'K.O.', sub: 'YOU LOSE ROUND 1' });
+  });
+
   it('delivers each event once (repeats and older events are skipped)', () => {
     const f = fake();
     const a = new RoundAnnouncer(f.sink);

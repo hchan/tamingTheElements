@@ -81,6 +81,9 @@ describe('resultCard', () => {
 
   it('says perfect, double knockout and the match card', () => {
     expect(resultCard({ ...base, perfect: true }).headline).toBe('PERFECT K.O.');
+    const lost = resultCard({ ...base, perfect: true, winner: 1 });
+    expect(lost.headline).toBe('K.O.');
+    expect(lost.detail).not.toMatch(/perfect/i);
     expect(resultCard({ ...base, how: 'double', winner: -1 }).headline).toBe('DOUBLE K.O.');
     const m = resultCard({ ...base, round: 0, won: [2, 1] });
     expect(m).toMatchObject({ kicker: 'MATCH', title: 'YOU WIN', headline: 'FINAL ROUNDS 2 - 1' });

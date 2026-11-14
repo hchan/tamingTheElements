@@ -138,7 +138,8 @@ export function resultCard(i: ResultInput): ResultCard {
   const tone = toneOf(i.winner);
   const t = i.tally;
   const match = i.round <= 0;
-  const how = match ? '' : i.perfect && i.how === 'ko' ? 'PERFECT K.O.' : HOW[i.how];
+  const perfect = i.perfect && i.winner === 0; // a foe's flawless win is no praise for you
+  const how = match ? '' : perfect && i.how === 'ko' ? 'PERFECT K.O.' : HOW[i.how];
   const score = `${match ? 'FINAL ' : ''}ROUNDS ${String(i.won[0])} - ${String(i.won[1])}`;
   const extras: string[] = [];
   if (t.snags > 0) extras.push(`SNAGS ${String(t.snags)}`);
@@ -152,7 +153,7 @@ export function resultCard(i: ResultInput): ResultCard {
     `LONGEST COMBO ${String(t.combo)}  /  ${String(t.hits)} ${t.hits === 1 ? 'HIT' : 'HITS'}`,
     ...(extras.length > 0 ? [extras.join('  /  ')] : []),
   ];
-  const how_ = match ? '' : i.how === 'ko' ? (i.perfect ? 'Perfect knockout' : 'Knockout') : i.how === 'double' ? 'Double knockout' : i.how === 'time' ? 'Time over' : '';
+  const how_ = match ? '' : i.how === 'ko' ? (perfect ? 'Perfect knockout' : 'Knockout') : i.how === 'double' ? 'Double knockout' : i.how === 'time' ? 'Time over' : '';
   const detail = [
     how_ === '' ? '' : `${how_}.`,
     `Health left ${String(i.healthPct)} percent.`,

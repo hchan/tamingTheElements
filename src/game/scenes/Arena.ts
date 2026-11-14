@@ -624,7 +624,7 @@ export class Arena extends Phaser.Scene {
     );
     if (line === undefined) return;
     notice.show(line, this.time.now);
-    this.announcer?.say({ key: 'refusal', text: line, important: false });
+    this.announcer?.say({ key: `refusal ${line}`, text: line, important: false, transient: true });
     (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
   }
 

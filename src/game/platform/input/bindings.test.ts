@@ -3,6 +3,8 @@ import {
   DEFAULT_BINDINGS,
   GAME_ACTIONS,
   SHARED_CODE,
+  SF_PRESET_BINDINGS,
+  actionKeyLabel,
   actionForCode,
   bindSteal,
   bindingsToSave,
@@ -133,5 +135,22 @@ describe('codeLabel', () => {
     expect(codeLabel('Digit1')).toBe('1');
     expect(codeLabel('ArrowUp')).toBe('Up');
     expect(codeLabel('Space')).toBe('Space');
+  });
+});
+
+describe('the fighting-game preset', () => {
+  it('is a complete layout: every action has a key, no code is shared (but Digit5), and it survives a save', () => {
+    for (const a of GAME_ACTIONS) expect(SF_PRESET_BINDINGS[a].length, a).toBeGreaterThan(0);
+    const codes = allCodes(SF_PRESET_BINDINGS);
+    expect(codes.filter((c, i) => codes.indexOf(c) !== i)).toEqual([SHARED_CODE]);
+    expect(parseBindings(bindingsToSave(SF_PRESET_BINDINGS))).toEqual(SF_PRESET_BINDINGS);
+  });
+  it('moves Tag, Trap and Cleanse off the default keys and the hints name the bound key', () => {
+    const name = (a: Parameters<typeof actionKeyLabel>[1]): string | undefined => actionKeyLabel(SF_PRESET_BINDINGS, a);
+    expect([name('slot3'), name('slot4'), name('slot5')]).toEqual(['N', 'M', 'Comma']);
+    expect([name('trap'), name('cleanse'), name('elemental')]).toEqual(['P', 'Semicolon', 'Y']);
+    expect([name('super'), name('dash'), name('guard'), name('weather')]).toEqual(['O', 'L', 'I', 'U']);
+    expect(actionKeyLabel(DEFAULT_BINDINGS, 'slot3')).toBe('3');
+    expect(actionKeyLabel(DEFAULT_BINDINGS, 'super')).toBe('9');
   });
 });
