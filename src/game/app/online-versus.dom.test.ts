@@ -10,6 +10,7 @@ interface FakePeer {
   input: object;
   accept: (code: string) => Promise<void>;
   close: () => void;
+  onState: (cb: (s: string) => void) => () => void;
 }
 
 const h = vi.hoisted(() => {
@@ -53,7 +54,8 @@ vi.mock('../boot/phaser-config', () => ({
   },
 }));
 
-import { mountOnline, onlineVersusScreen, unmountOnline } from './online-versus';
+import { mountOnline, onlineVersusScreen, REMATCH_WAIT_MS, unmountOnline } from './online-versus';
+import { MSG_BYE } from '../net/control-mux';
 
 /** Two linked in-memory control pipes: what one sends the other receives. */
 function pipes(): { a: ControlPipe; b: ControlPipe } {
@@ -72,6 +74,7 @@ interface Rig {
   failLink: () => void;
   closed: () => number;
   accepted: string[];
+  emitState: (s: string) => void;
 }
 
 function rig(): Rig {
@@ -84,6 +87,7 @@ function rig(): Rig {
   });
   let closed = 0;
   const accepted: string[] = [];
+  const listeners: Array<(s: string) => void> = [];
   return {
     peer: {
       open: opened,
@@ -96,12 +100,17 @@ function rig(): Rig {
       close: () => {
         closed++;
       },
+      onState: (cb) => {
+        listeners.push(cb);
+        return () => undefined;
+      },
     },
     friend: p.b,
     openLink: open,
     failLink: fail,
     closed: () => closed,
     accepted,
+    emitState: (st) => { for (const cb of listeners) cb(st); },
   };
 }
 
@@ -533,5 +542,112 @@ describe('online versus screen', () => {
     await tick(0);
     expect(() => launch?.onEnd?.({ winner: 1, activeSlot: 0, capturedIndices: [] })).not.toThrow();
     expect(host.querySelector('#onlineAgain')).toBeNull();
+  });
+});
+
+describe('online versus leave, friend left and rematch timeout', () => {
+  /** Host path through a started match; returns the launch of the first match. */
+  async function toMatch(r: Rig): Promise<ArenaLaunch> {
+    await hostToPick(r);
+    await click('onlineReady');
+    const hostMsg = r.friend.receive();
+    const hostPick = hostMsg && decodePick(hostMsg);
+    if (!hostPick) throw new Error('no pick');
+    const friendPick: OnlinePick = { race: characterId('pax'), seed: 0 };
+    r.friend.send(encodePick(friendPick));
+    await tick();
+    const hs = new SetupHandshake(r.friend, helloOf(onlineSetup(hostPick, friendPick)));
+    for (let i = 0; i < 4 && h.created.length === 0; i++) {
+      hs.poll();
+      await tick();
+    }
+    const launch = h.created[0]?.launch;
+    if (!launch) throw new Error('no match');
+    return launch;
+  }
+
+  const drain = (r: Rig): number[] => {
+    const sent: number[] = [];
+    for (let m = r.friend.receive(); m !== undefined; m = r.friend.receive()) sent.push(m[0] ?? -1);
+    return sent;
+  };
+
+  it('shows Leave once the link is open; Leave sends BYE, closes the link and goes to #main', async () => {
+    const r = rig();
+    await hostToPick(r);
+    expect(host.querySelector('#onlineLeave')).not.toBeNull();
+    await click('onlineLeave');
+    expect(drain(r)).toContain(MSG_BYE);
+    expect(r.closed()).toBe(1);
+    expect(window.location.hash).toBe('#main');
+    window.location.hash = '';
+  });
+
+  it('friend BYE mid-match: words at once, game torn down, no Rematch, later end/status ignored', async () => {
+    const r = rig();
+    const launch = await toMatch(r);
+    r.friend.send(Uint8Array.of(MSG_BYE));
+    await tick(100);
+    expect(statusText()).toContain('Your friend left the match');
+    expect(statusText()).toContain('you win');
+    expect(h.created[0]?.destroyed).toBe(true);
+    expect(host.querySelector('#onlineLeave')).toBeNull();
+    launch.onEnd?.({ winner: 1, activeSlot: 0, capturedIndices: [] });
+    launch.net?.onStatus?.('forfeit', { forfeitReason: 'timeout' } as never);
+    expect(statusText()).toContain('Your friend left the match');
+    expect(host.querySelector('#onlineAgain')).toBeNull();
+    // The link then closes: the friend-left words stay.
+    r.emitState('closed');
+    expect(statusText()).toContain('Your friend left the match');
+  });
+
+  it('a link that fails or closes mid-match says so and offers Back', async () => {
+    const r = rig();
+    await toMatch(r);
+    r.emitState('disconnected');
+    expect(statusText()).toContain('unstable');
+    r.emitState('failed');
+    expect(statusText()).toContain('The link to your friend was lost');
+    expect(h.created[0]?.destroyed).toBe(true);
+    expect(host.querySelector('a[href="#main"]')).not.toBeNull();
+  });
+
+  it('a friend leaving while we wait for their rematch pick ends the wait', async () => {
+    const r = rig();
+    const launch = await toMatch(r);
+    launch.onEnd?.({ winner: 0, activeSlot: 0, capturedIndices: [] });
+    await click('onlineAgain');
+    await click('onlineReady');
+    r.friend.send(Uint8Array.of(MSG_BYE));
+    await tick(100);
+    expect(statusText()).toContain('Your friend left the match');
+    expect(host.querySelector('#onlineAgain')).toBeNull();
+  });
+
+  it('Rematch gives up after 60 s without the friend pick, in words', async () => {
+    const r = rig();
+    const launch = await toMatch(r);
+    launch.onEnd?.({ winner: 0, activeSlot: 0, capturedIndices: [] });
+    await click('onlineAgain');
+    await click('onlineReady');
+    await tick(REMATCH_WAIT_MS - 1000);
+    expect(statusText()).toBe('Waiting for your friend to pick...');
+    await tick(1500);
+    expect(statusText()).toContain('did not answer the rematch');
+  });
+
+  it('the first pick (no rematch) does not time out', async () => {
+    const r = rig();
+    await hostToPick(r);
+    await click('onlineReady');
+    await tick(REMATCH_WAIT_MS + 5000);
+    expect(statusText()).toBe('Waiting for your friend to pick...');
+  });
+
+  it('unmounting (navigating away) sends BYE', async () => {
+    const r = rig();
+    await hostToPick(r);
+    unmountOnline();
+    expect(drain(r)).toContain(MSG_BYE);
   });
 });
