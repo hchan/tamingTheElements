@@ -19,6 +19,7 @@ import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, isCompletePick, parsePick
 import type { ArcadeHero, ArcadeResult } from './arcade-setup';
 import { downloadReplay } from './download';
 import { destroyGame, type GameHandle } from './game-handle';
+import { seedForStage } from './tour-match';
 
 /**
  * The `#arcade` route (FUN-DESIGN WP 11), loaded as its own chunk: picker -> battle -> results, all inside this one screen,
@@ -91,6 +92,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         current: {
           ...lastPick,
           mode: lastPick.local ? 'local' : 'ai',
+          stage: lastPick.stage ?? '',
           size: lastPick.partner2 ? '3' : lastPick.partner ? '2' : '1',
           partner: partnerFor(lastPick.player, lastPick.partner),
           partner2: partner2For(lastPick.player, partnerFor(lastPick.player, lastPick.partner), lastPick.partner2),
@@ -156,7 +158,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       .then(({ arcadeLaunch }) => import('../boot/phaser-config').then(({ createGame }) => {
         if (epoch !== mine) return;
         const buttons = touchButtons(pick.partner2 ? 3 : pick.partner ? 2 : 1, [pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined).map(isMeleeRace));
-        const base: ArenaLaunch = arcadeLaunch(pick, deps.flags.seed ?? deps.now() >>> 0, {
+        const base: ArenaLaunch = arcadeLaunch(pick, pick.stage ? seedForStage(deps.flags.seed ?? deps.now() >>> 0, pick.stage) : deps.flags.seed ?? deps.now() >>> 0, {
           onView: (v) => { watchTouch(buttons, v); },
           cheats: tester.enabled,
           record: deps.flags.record || getRecordSetting(),

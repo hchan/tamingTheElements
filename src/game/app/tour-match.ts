@@ -13,6 +13,21 @@ const STAGE_KIND: Readonly<Record<string, number>> = { fire: 1, water: 2, earth:
 /** The stage element the sim draws for a match seed (round 1 takes `1 + int(4)` of the `terrain.0` stream, terrain-layout.ts). */
 export const stageKindOfSeed = (seed: number): number => 1 + seedSfc32(seed >>> 0, 'terrain.0').int(4);
 
+/**
+ * The first seed at or after `seed` whose drawn stage element is `stage` (fire, water, earth or air); `seed` itself when it already
+ * draws that stage. Pure and deterministic, so the sim needs no stage setting. Four draws in a row miss with odds 1/256 a try;
+ * 4096 tries always find one in practice.
+ */
+export function seedForStage(seed: number, stage: string): number {
+  const want = STAGE_KIND[stage];
+  if (want === undefined) return seed >>> 0;
+  for (let i = 0; i < 4096; i++) {
+    const s = (seed + i) >>> 0;
+    if (stageKindOfSeed(s) === want) return s;
+  }
+  return seed >>> 0;
+}
+
 /** The stage of the run's current fight. */
 export const currentStage = (run: TourRun): TourStage => buildTour(run.hero, run.seed)[run.stage] as TourStage;
 

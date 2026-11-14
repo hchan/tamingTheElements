@@ -45,6 +45,8 @@ export interface PickValues {
   readonly enemyPartner2?: string;
   /** 'ai' (default) or 'local': two players on this computer. */
   readonly mode?: string;
+  /** 'fire', 'water', 'earth' or 'air'; '' (or absent) for a random arena. */
+  readonly stage?: string;
 }
 
 export interface PickViewOptions {
@@ -679,6 +681,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     choice(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode)),
     choice(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size)),
     choice(select('level', 'AI level', o.levels, o.current.level)),
+    choice(select('stage', 'Arena', [{ value: '', label: 'Random' }, { value: 'fire', label: 'Fire' }, { value: 'water', label: 'Water' }, { value: 'earth', label: 'Earth' }, { value: 'air', label: 'Air' }], o.current.stage ?? '')),
     select('player', 'Your race', heroOptions, o.current.player, true),
     select('partner', 'Your partner (2v2)', heroOptions, o.current.partner, true),
     select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2, true),
@@ -705,7 +708,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   fightHint.id = 'arcadeFightHint';
   start.setAttribute('aria-describedby', 'arcadeFightHint');
   const actions = el('div', 'vsActions');
-  const stageHint = el('p', 'heroHint', 'The arena starts on fire and follows the Weather: call Weather in the fight to change it.');
+  const stageHint = el('p', 'heroHint', 'The arena starts on the element you pick (Random draws one) and follows the Weather: call Weather in the fight to change it.');
   actions.append(start, fightHint, stageHint, back);
   form.append(set, hint, actions);
   // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.

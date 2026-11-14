@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ARCADE_WORLD_BASE, ArcadeW, createMatch, step, type CharacterId } from '@core/index';
 import { arcadeSetup } from './arcade-setup';
 import { ARCADE_RACES } from './arcade-pick';
-import { matchSeed, parseCompleteTeam, parseTeam, stageKindOfSeed, stagePick } from './tour-match';
+import { seedForStage, matchSeed, parseCompleteTeam, parseTeam, stageKindOfSeed, stagePick } from './tour-match';
 import { advance, buildTour, startRun, useContinue, type TourStage } from './tour-model';
 
 const HERO = ['fiara', 'rokcore', 'curomo'] as CharacterId[];
@@ -67,5 +67,25 @@ describe('parseCompleteTeam', () => {
     for (const raw of [{ hero1: 'fiara', hero2: '', hero3: 'curomo' }, { hero1: 'fiara', hero2: 'rokcore' }, { hero1: '__proto__', hero2: 'rokcore', hero3: 'curomo' }, {}]) {
       expect(parseCompleteTeam(raw)).toBeUndefined();
     }
+  });
+});
+
+describe('seedForStage', () => {
+  const KINDS = { fire: 1, water: 2, earth: 3, air: 4 } as const;
+  it('returns a seed whose drawn stage is the chosen element, deterministically', () => {
+    for (const [name, kind] of Object.entries(KINDS)) {
+      for (const base of [0, 1, 12345, 0xffffffff]) {
+        const s = seedForStage(base, name);
+        expect(stageKindOfSeed(s)).toBe(kind);
+        expect(seedForStage(base, name)).toBe(s);
+      }
+    }
+  });
+  it('leaves a seed that already draws the stage untouched, and an unknown stage alone', () => {
+    const s = 777;
+    const name = ['', 'fire', 'water', 'earth', 'air'][stageKindOfSeed(s)] as string;
+    expect(seedForStage(s, name)).toBe(s);
+    expect(seedForStage(s, 'random')).toBe(s);
+    expect(seedForStage(s, '')).toBe(s);
   });
 });
