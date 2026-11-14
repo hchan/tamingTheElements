@@ -46,6 +46,8 @@ test.describe('phone landscape fight', () => {
     await page.getByRole('button', { name: 'Got it' }).tap();
     await expect(page.locator('#firstRunHint')).toHaveCount(0);
     await shot(page, 'land-clear');
+    await page.evaluate(`window.__TTE__.arena.step(120)`);
+    await shot(page, 'land-hud');
   });
   test('2v2 card', async ({ page }) => {
     await enterFight(page, 2);
