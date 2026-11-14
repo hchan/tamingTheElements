@@ -1,5 +1,5 @@
 ---
-status: done (floors and props; Ishimi FX box and dark-hero rim light remain)
+status: done
 added: 2026-11-13
 ---
 
@@ -24,3 +24,5 @@ Evidence: tourfight-1.png (air floor, murky blue-purple), fight-*.png, hero-*.pn
 ## Done (arena-bright, 2026-11-13)
 
 Water and air floors lifted with light shafts (tools/assets/stage-gen/arena-floor.py); earth props repainted warm with tonal edges instead of black outlines and a luminous crystal glow (src/game/fx/terrain-props.ts). Not done: the Ishimi FX rectangle bug and the dark-hero rim light.
+
+Done: floors and props. Remaining: Ishimi FX box and dark-hero rim light (see ideas/brainstorm).
