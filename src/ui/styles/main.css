@@ -1035,7 +1035,7 @@ html[data-high-contrast='true'] button.touchBtn {
   gap: 0.25em;
   font-size: 0.85em;
 }
-/* Hero select (Versus and Play): element-grouped portrait grid, focused-hero panel. Faces are graded grim like the in-game heroes. */
+/* Hero select (Versus and Play): element-grouped portrait grid, focused-hero panel. Faces show the painted colour, lit a touch. */
 .heroFace {
   display: inline-block;
   flex: 0 0 auto;
@@ -1043,7 +1043,12 @@ html[data-high-contrast='true'] button.touchBtn {
   background-position: 0 0;
   background-size: 400% 100%;
   image-rendering: pixelated;
-  filter: saturate(0.55) brightness(0.8) contrast(1.1);
+  filter: saturate(1.08) brightness(1.06) contrast(1.04) drop-shadow(0 0 3px rgba(200, 190, 255, 0.35));
+}
+/* Locked or unavailable tiles stay readable: dimmed and softly desaturated, never murky. */
+.heroTile:disabled .heroFace,
+.heroTile[aria-disabled='true'] .heroFace {
+  filter: saturate(0.6) brightness(0.9);
 }
 .heroGrid {
   grid-area: grid;
@@ -2047,5 +2052,25 @@ button.menuButton.heroSlotClear {
   }
   #touchStick:focus-visible {
     outline: 3px solid #fff;
+  }
+}
+
+/* Play intro: one compact line of small print; on short landscape phones it is smaller still and clamped to three lines. */
+#tourPick .tourIntro {
+  max-width: 62em;
+  margin: 0.2em auto 0.5em;
+  font-size: 0.85em;
+  line-height: 1.35;
+  opacity: 0.85;
+}
+@media (max-height: 500px) {
+  #tourPick .tourIntro {
+    font-size: 0.62em;
+    line-height: 1.25;
+    margin: 0 auto 0.3em;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }

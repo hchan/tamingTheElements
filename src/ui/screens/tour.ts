@@ -121,7 +121,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
     el('h1', 'heading', 'Play'),
     el(
       'p',
-      undefined,
+      'tourIntro',
       'Pick three different heroes, then fight your way through nine stages, each a best-of-3 against an AI team: eight element locations, then the Eternal Void. A lost fight can be replayed up to 3 times. Your run is kept in this browser so you can resume it.',
     ),
   );
