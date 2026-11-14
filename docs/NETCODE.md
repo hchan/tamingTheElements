@@ -65,6 +65,6 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 - [ ] Lobby, relay room codes
 - [ ] Relay signalling (short room codes) and TURN
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect
-- [ ] Browser e2e with two pages
+- [x] Browser e2e: two separate contexts play a whole match to the same winner and identical checkpoint hashes (`tests/e2e/online-match.spec.ts`). Dev/test URL switches: `?ff=netbot` (Arcade scripted AI plays the local side), `?ice=none` (no STUN, loopback candidates), `?ff=rollback`, `?matchticks=N`; probe `__TTE__.net()`
 - [ ] Clock sync / frame pacing so both peers run the same wall rate (today each peer stalls to the slower one)
 - [ ] Spectators and replay upload (the replay format already fits)

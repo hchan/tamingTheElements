@@ -23,6 +23,11 @@ describe('ui flags', () => {
     expect(parseUiFlags('?seed=abc', { DEV: true, MODE: 'development' }).seed).toBeNull();
     expect(parseUiFlags('?seed=42', { DEV: false, MODE: 'production' }).seed).toBeNull();
   });
+  it('reads ff=netbot in dev and test builds only', () => {
+    expect(parseUiFlags('?ff=arcade,netbot', { DEV: false, MODE: 'test' }).netbot).toBe(true);
+    expect(parseUiFlags('?ff=arcade', { DEV: true, MODE: 'development' }).netbot).toBe(false);
+    expect(parseUiFlags('?ff=netbot', { DEV: false, MODE: 'production' }).netbot).toBe(false);
+  });
   it('ignores ?ff in production', () => {
     expect(parseUiFlags('?ff=showFps', { DEV: false, MODE: 'production' })).toEqual(DEFAULT_UI_FLAGS);
   });

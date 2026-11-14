@@ -19,7 +19,7 @@ import { mountArenaPan } from '../fx/arena-pan';
 import { getPrefs } from '../platform/a11y/prefs';
 import { PlaytestRecorder } from '../replay/playtest-recorder';
 import type { ArenaLaunch } from '../scenes/launch';
-import { ARCADE_AI_LEVELS, ARCADE_RACES, type ArcadePick } from './arcade-pick';
+import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, type ArcadePick } from './arcade-pick';
 
 /**
  * Arcade Versus (FUN-DESIGN WP 11, 2v2 in WP 20), the Phaser-free match builder: the sim setup, the Arcade AI and the
@@ -71,11 +71,24 @@ export function arcadeSetup(pick: ArcadePick, seed: number): MatchSetup {
  */
 export function arcadeEnemy(pick: ArcadePick, setup: MatchSetup = arcadeSetup(pick, 0)): Agent {
   const level = ARCADE_AI_LEVELS.indexOf(pick.level) as 0 | 1 | 2;
-  const heroes = setup.p2.map(
-    (m) => new ScriptedAI(scriptedProfileFor(getCharacter(m.character), getCharacter(pick.player)), { id: 'arcade-ai', level }),
-  );
+  return teamAgent(setup.p2.map((m) => m.character), pick.player, setup.p1.length, level);
+}
+
+/**
+ * The same scripted team AI for either side of a finished setup (the online two-context proof, `?ff=netbot`): `side`'s heroes
+ * play against the other side's lead. It only produces that side's commands, so on a peer's own copy it never changes a hash.
+ */
+export function arcadeBot(setup: MatchSetup, side: 0 | 1, level: 0 | 1 | 2 = 1): Agent {
+  const mine = side === 0 ? setup.p1 : setup.p2;
+  const theirs = side === 0 ? setup.p2 : setup.p1;
+  const foe = theirs[0]?.character ?? mine[0]?.character ?? DEFAULT_PICK.player;
+  return teamAgent(mine.map((m) => m.character), foe, side === 0 ? 0 : setup.p1.length, level);
+}
+
+/** One scripted AI per hero (its own kit); `first` is the entity id of the team's first hero. */
+function teamAgent(team: readonly CharacterId[], opponentLead: CharacterId, first: number, level: 0 | 1 | 2): Agent {
+  const heroes = team.map((c) => new ScriptedAI(scriptedProfileFor(getCharacter(c), getCharacter(opponentLead)), { id: 'arcade-ai', level }));
   const lead = heroes[0] as Agent;
-  const first = setup.p1.length;
   if (heroes.length < 2) return lead;
   return {
     id: lead.id,
