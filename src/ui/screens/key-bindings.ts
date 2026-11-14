@@ -121,7 +121,6 @@ export function keyBindingsScreen(store?: SaveStore): Screen {
       const render = (): void => {
         body.replaceChildren();
         for (const action of GAME_ACTIONS) {
-          if (action === 'capture') continue;
           const tr = el('tr');
           const th = el('th', undefined, ACTION_LABELS[action]);
           th.scope = 'row';

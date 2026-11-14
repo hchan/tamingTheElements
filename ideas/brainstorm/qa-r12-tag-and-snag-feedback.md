@@ -1,5 +1,5 @@
 ---
-status: brainstorm
+status: idea
 added: 2026-11-14
 ---
 # Tag and Snag feedback (r12)

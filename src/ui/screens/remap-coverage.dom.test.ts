@@ -7,8 +7,8 @@ import type { Screen } from './screen';
 
 /** Remap-coverage audit, screen side: a binding that exists in the game but not on the Key Bindings screen fails here (pad half: src/game/input/pad-remap-coverage.test.ts). */
 
-/** Actions deliberately absent from the screen: Capture shares its key with Trap (shown as Trap) and is never named to players. */
-const NOT_ON_SCREEN: ReadonlySet<string> = new Set(['capture']);
+/** Actions deliberately absent from the screen: none (Snag is listed). */
+const NOT_ON_SCREEN: ReadonlySet<string> = new Set();
 const BANNED = /classic|arcade|ruleset|capture/i;
 
 let screen: Screen | undefined;

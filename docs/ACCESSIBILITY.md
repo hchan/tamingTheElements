@@ -195,9 +195,9 @@ rebindable with the conflict check, and a save that already uses R leaves it unb
 the Dash button, like the others.
 
 Arcade tag (FUN-DESIGN 2.6; WP-arcade-tag-view): in a 2v2 Arcade Versus match the tag is the first swap, unchanged from
-Classic: the **Swap 1** action (key 3, rebindable) and pad LB (`ARCADE_PAD` keeps it; RB, LT and RT are Arcade's dash,
+Classic: the **Tag 1** action (key 3, rebindable) and pad LB (`ARCADE_PAD` keeps it; RB, LT and RT are Arcade's dash,
 guard and super). In the match it is labelled Tag: the "TAG" caption over the swap slot, the HUD's tag word, the picker's
-text and a touch **Tag** button above Weather (2v2 only) that holds the Swap 1 key. The key-binding screen keeps the
+text and a touch **Tag** button above Weather (2v2 only) that holds the Tag 1 key. The key-binding screen keeps the
 Classic name, so Classic menus are unchanged.
 
 ## Tests

@@ -125,12 +125,12 @@ test.describe('key rebinding', () => {
     await goToHash(page, '#keyBindings');
     const status = page.getByRole('status').filter({ hasText: /\S/ });
 
-    // A free key rebinds the Swap 2 action and is saved.
+    // A free key rebinds the Tag 2 action and is saved.
     await page.locator('#bind-slot4-0').click();
     await expect(page.locator('#bind-slot4-0')).toHaveText('Press a key...');
     await page.keyboard.press('KeyG');
     await expect(page.locator('#bind-slot4-0')).toHaveText('G');
-    await expect(status).toContainText('Swap 2 is now G');
+    await expect(status).toContainText('Tag 2 is now G');
     await expect.poll(async () => (await storedSave(page)).keyBindings?.['slot4']).toEqual(['KeyG']);
 
     // A key owned by another action is a conflict: nothing changes until the player confirms.
@@ -138,7 +138,7 @@ test.describe('key rebinding', () => {
     await page.keyboard.press('KeyW');
     await expect(status).toContainText('W is already used by Move Up');
     expect((await storedSave(page)).keyBindings?.['up']).toEqual(['ArrowUp', 'KeyW']);
-    await page.getByRole('button', { name: 'Move W to Swap 2' }).click();
+    await page.getByRole('button', { name: 'Move W to Tag 2' }).click();
     await expect(page.locator('#bind-slot4-1')).toHaveText('W');
     await expect
       .poll(async () => (await storedSave(page)).keyBindings)
