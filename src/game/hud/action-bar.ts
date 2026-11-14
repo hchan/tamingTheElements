@@ -173,10 +173,12 @@ export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'>): { titl
   }
 }
 
-/** Where a tooltip `w` x `h` goes for a box: centred above it, kept inside the 1280-wide screen, below the top edge. Pure, for tests. */
+/** A tip sits this far above the box's top, clearing the TAG caption that floats over the swap slot (tag-view CAPTION_LIFT 26 + its height). */
+const TIP_LIFT = 44;
+/** Where a tooltip `w` x `h` goes for a box: centred above it (clear of the TAG caption), kept inside the 1280-wide screen, below the top edge. Pure, for tests. */
 export function tipPlacement(s: Pick<ActionSlot, 'x' | 'y' | 'size'>, w: number, h: number): { x: number; y: number } {
   const x = Math.min(LOGICAL_W - w - 4, Math.max(4, s.x + s.size / 2 - w / 2));
-  return { x, y: Math.max(4, s.y - h - 8) };
+  return { x, y: Math.max(4, s.y - h - TIP_LIFT) };
 }
 
 /** How long a held finger waits before a touch tip shows, and how long tips stay hidden after a super starts (its banner owns the screen). */

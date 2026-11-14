@@ -488,7 +488,9 @@ export class Hud extends Phaser.Scene {
         // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
         t.setText(numberLabel(n.amount, n.counter))
           .setColor(n.scaled ? '#b0b0b0' : n.counter ? '#ffd23f' : '#ffffff')
-          .setFontSize(n.scaled ? 18 : 24);
+          .setFontSize(n.scaled ? 22 : 30)
+          .setStroke('#120b08', n.scaled ? 5 : 7)
+          .setShadow(0, 3, '#000000', 4, true, true);
       }
       t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age)).setVisible(true);
     }

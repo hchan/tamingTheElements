@@ -19,7 +19,7 @@ describe('slot tooltips', () => {
     expect(slotTip({ kind: 'elemental', cmd: 0, element: 1 }).title).toBe('Ember');
   });
   it('places the tip above the box and inside the screen', () => {
-    expect(tipPlacement({ x: 0, y: 640, size: 72 }, 300, 80)).toEqual({ x: 4, y: 552 });
+    expect(tipPlacement({ x: 0, y: 640, size: 72 }, 300, 80)).toEqual({ x: 4, y: 516 });
     expect(tipPlacement({ x: 1250, y: 640, size: 72 }, 300, 80).x).toBe(1280 - 300 - 4);
   });
   it('a tip expires after TIP_MAX_MS so it can never stay pinned for a fight', () => {
