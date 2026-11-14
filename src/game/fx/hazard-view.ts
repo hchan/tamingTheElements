@@ -352,10 +352,10 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         const light = HAZARD_LIGHTS[kind] ?? 0xffffff;
         g.fillStyle(0x0a0e14, 0.16 * alpha).fillRect(x, y, w, h);
         g.fillStyle(col, 0.22 * alpha).fillRect(x, y, w, h);
-        g.fillStyle(light, 0.7 * alpha).fillRect(x, y, w, 4).fillRect(x, y + h - 4, w, 4);
+        g.fillStyle(light, 0.4 * alpha).fillRect(x, y, w, 3).fillRect(x, y + h - 3, w, 3);
         glow.fillStyle(light, 0.1 * alpha).fillRect(x, y, w, h);
-        // r30: fewer, quieter chevrons (no streak lines, no dark halo) so a full-field tide reads as one wash, not noise.
-        drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, 0.55 * alpha, false);
+        // r30/r31: quiet chevrons (alpha 0.22, no streaks, no halo) and a thin edge bar, so a full-field tide reads as one wash behind the fighters, not a grid over them.
+        drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, 0.22 * alpha, false);
       }
     }
     const flash = warnLeft > 0 ? 0 : impactFlash(tick - strikeTick);

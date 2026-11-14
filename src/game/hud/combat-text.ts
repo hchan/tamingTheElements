@@ -19,8 +19,8 @@ export const COMBAT_FONT = 'Georgia, "Times New Roman", serif';
 export const COMBAT_OUTLINE = '#0a0806';
 
 export const COMBAT_LOOKS: Readonly<Record<CombatTone, CombatLook>> = {
-  number: { color: '#efe6d2', outline: 3, glow: '#e8c890', glowBlur: 9 },
-  scaled: { color: '#b4b0a4', outline: 3, glow: '#8a8c90', glowBlur: 5 },
+  number: { color: '#f4ecd8', outline: 4, glow: '#000000', glowBlur: 8 },
+  scaled: { color: '#c4c0b4', outline: 4, glow: '#000000', glowBlur: 5 },
   counter: { color: '#e6c577', outline: 3, glow: '#d9a040', glowBlur: 10 },
   combo: { color: '#e9d59c', outline: 3, glow: '#d9a850', glowBlur: 10 },
   call: { color: '#ece4d2', outline: 4, glow: '#cfe0f0', glowBlur: 12 },

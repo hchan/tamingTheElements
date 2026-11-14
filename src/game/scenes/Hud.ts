@@ -11,7 +11,7 @@ import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
-  CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha,
+  CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
   meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
@@ -577,12 +577,13 @@ export class Hud extends Phaser.Scene {
       gfx.lineStyle(this.highContrast ? 2 : 1, 0xffffff, 1);
       gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
     }
-    // Full meter (qa-r30): a steady glow round the segments (no flashing of its own) and a gold label, so "ready" reads from across the screen.
+    // Full meter (qa-r30, r31): a breathing glow round the segments (steady with reduced motion) and a gold label, so "ready" reads from across the screen.
     const ready = m.full > 0;
     if (ready) {
       const glow = this.highContrast ? 0xffffff : 0xffe28a;
-      for (const [grow, a] of [[7, 0.12], [4, 0.2], [2, 0.32]] as const) {
-        gfx.lineStyle(2, glow, a).strokeRect(x - grow, METER_Y - grow, METER_W + grow * 2, SEGMENT_H + grow * 2);
+      const breathe = readyGlow(this.time.now, this.reduceMotion);
+      for (const [grow, a] of [[9, 0.14], [6, 0.22], [3, 0.34], [1, 0.5]] as const) {
+        gfx.lineStyle(2, glow, a * breathe).strokeRect(x - grow, METER_Y - grow, METER_W + grow * 2, SEGMENT_H + grow * 2);
       }
     }
     const t = (this.meterTexts[team] ??= this.text(Math.round(12 * Math.min(this.arcadeBoost(), SUPER_LABEL_BOOST)))

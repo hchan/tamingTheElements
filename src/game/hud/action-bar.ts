@@ -5,6 +5,7 @@ import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolu
 import { ACTION_COMMAND } from '../input/key-map';
 import { actionKeyLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
+import { readyGlow } from './arcade-hud';
 import { lookup } from '../views/projectile-view';
 import { gradeRgba, mute } from '../fx/grim-fx';
 import { getPrefs } from '../platform/a11y/prefs';
@@ -758,6 +759,14 @@ export class ActionBarView {
         g.strokeRect(s.x, s.y, s.size, s.size);
       }
       this.drawCooldown(look, s);
+      // r31: a full Super breathes a gold glow round its box (steady with reduced motion), so ready reads next to Dash and Guard.
+      if (s.kind === 'super' && s.progress >= 1 && !s.disabled) {
+        const br = readyGlow(now, this.reduced);
+        for (const [grow, a] of [[5, 0.16], [3, 0.28], [1, 0.5]] as const) {
+          g.lineStyle(2, 0xffe28a, a * br).strokeRect(s.x - grow, s.y - grow, s.size + grow * 2, s.size + grow * 2);
+        }
+        g.fillStyle(0xffe28a, 0.12 * br).fillRect(s.x, s.y, s.size, s.size);
+      }
       if (this.dressed() && s.label !== '') {
         const b = slotParts(s.x, s.y, s.size, s.label.length).badge;
         g.fillStyle(0x0a0806, 0.9);

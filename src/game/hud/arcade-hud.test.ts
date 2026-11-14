@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   ArcadeHudModel, CHARGE_DASH, NUMBER_BANNER_ALPHA, NUMBER_FAN, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
   SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterLabelY, meterFlashAlpha, meterSegments, meterX,
-  numberAlpha, numberLabel, numberRise,
+  numberAlpha, numberLabel, numberRise, readyGlow,
 } from './arcade-hud';
 import { dashSegments } from './bars';
 import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
+
+describe('readyGlow', () => {
+  it('breathes between 0.55 and 1, steady 1 with reduced motion', () => {
+    expect(readyGlow(0, true)).toBe(1);
+    expect(readyGlow(0, false)).toBeCloseTo(0.55);
+    expect(readyGlow(600, false)).toBeCloseTo(1);
+  });
+});
 
 describe('damage numbers', () => {
   it('fan wide enough that two-digit numbers on one tick do not touch, and dim under a banner (r17 KO stack)', () => {
