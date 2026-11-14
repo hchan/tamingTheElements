@@ -43,6 +43,9 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     live: boolean;
   }
   const nums: Num[] = [];
+  /** Rings and super numbers that landed while the super cut-in ('tte.cut') was up: shown the moment it clears, so the band never hides the first impact. */
+  const held: (() => void)[] = [];
+  const cutUp = (): boolean => scene.registry.get('tte.cut') === true;
   let nextNum = 0;
   let flashRect: Phaser.GameObjects.Rectangle | undefined;
   let flashAge = -1;
@@ -61,6 +64,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
   const drop = (): void => {
     rings.length = 0;
     nums.length = 0;
+    held.length = 0;
     flashRect = undefined;
     flashAge = -1;
     washAge = -1;
@@ -72,6 +76,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     if (!paused()) step(delta);
   }
   function step(delta: number): void {
+    if (held.length > 0 && !cutUp()) for (const f of held.splice(0)) f();
     if (washAge >= 0 && filter) {
       washAge += delta;
       const s = washAge >= KO_WASH_MS ? 0 : koWashStrength(washAge, false);
@@ -118,7 +123,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       numsLive = true;
       n.text.setPosition(n.x, n.y - f.rise).setScale(f.scale).setAlpha(f.alpha);
     }
-    if (washAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive) detach();
+    if (washAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive && held.length === 0) detach();
   }
   const attach = (): void => {
     if (attached) return;
@@ -135,12 +140,22 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       attach();
     },
     ring(x, y, color, weight): void {
+      if (cutUp()) {
+        held.push(() => { layer.ring(x, y, color, weight); });
+        attach();
+        return;
+      }
       gfx ??= scene.add.graphics().setDepth(11);
       if (rings.length >= RING_POOL) rings.shift();
       rings.push({ x, y, color, weight, age: 0 });
       attach();
     },
     superHit(x, y, amount, fraction, flash, reduced): void {
+      if (cutUp()) {
+        held.push(() => { layer.superHit(x, y, amount, fraction, flash, reduced); });
+        attach();
+        return;
+      }
       if (flash && !reduced) {
         flashRect ??= scene.add.rectangle(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2, 8000, 8000, 0xfff0d0).setScrollFactor(0).setDepth(12);
         flashRect.setAlpha(superFlashAlpha(0)).setVisible(true);
@@ -176,7 +191,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       step(0);
     },
     state(): ShockState {
-      return { washAge, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, superNumberSize: nums.find((n) => n.live)?.size ?? 0 };
+      return { washAge, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, held: held.length, superNumberSize: nums.find((n) => n.live)?.size ?? 0 };
     },
   };
   layers.set(scene, layer);
@@ -191,6 +206,8 @@ export interface ShockState {
   readonly rings: number;
   /** Gold super numbers in flight and the font size of the first. */
   readonly superNumbers: number;
+  /** Rings and numbers waiting for the super cut-in to clear. */
+  readonly held: number;
   readonly superNumberSize: number;
 }
 

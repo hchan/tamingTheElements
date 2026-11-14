@@ -75,3 +75,39 @@ test('Arcade: a heavy hit throws a shockwave ring (peak frame captured); none un
   expect((await shock(page))?.rings).toBe(0);
   expect(errors).toEqual([]);
 });
+
+// r17: on a phone landscape the super cut-in band covers the top third; the first gold number and ring wait until it clears.
+test('Arcade 844x390: no super number or ring is live while the cut-in band is up', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7');
+  await page.locator('#game canvas').waitFor();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`(() => {
+    const a = window.__TTE__.arena;
+    a.step(${String(INTRO)});
+    const [me, foe] = a.characters();
+    a.place(me.id, 300, 360, 0);
+    a.place(foe.id, 400, 360, 4);
+    a.setMeter(0, 1000);
+    a.step(1, [${String(SUPER)}, 0]);
+  })()`);
+  let sawBand = false;
+  let landed = false;
+  for (let i = 0; i < 90 && !landed; i++) {
+    await page.evaluate('window.__TTE__.arena.step(1)');
+    await page.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+    const band = (await page.evaluate<{ bandAlpha: number } | undefined>('window.__TTE__.arena.superFx()'))?.bandAlpha ?? 0;
+    const s = await page.evaluate<{ rings: number; superNumbers: number; held: number } | undefined>('window.__TTE__.arena.shockFx()');
+    if (band > 0) {
+      sawBand = true;
+      expect(s?.rings ?? 0).toBe(0);
+      expect(s?.superNumbers ?? 0).toBe(0);
+    }
+    landed = (s?.superNumbers ?? 0) > 0;
+  }
+  expect(sawBand).toBe(true);
+  expect(landed).toBe(true);
+  await page.locator('#game canvas').screenshot({ path: info.outputPath('super-number-after-band.png') });
+  expect(errors).toEqual([]);
+});

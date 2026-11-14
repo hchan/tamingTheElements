@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ArcadeHudModel, CHARGE_DASH, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
+  ArcadeHudModel, CHARGE_DASH, NUMBER_BANNER_ALPHA, NUMBER_FAN, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
   SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterLabelY, meterFlashAlpha, meterSegments, meterX,
   numberAlpha, numberLabel, numberRise,
 } from './arcade-hud';
@@ -9,6 +9,14 @@ import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './
 import { PIP_R, pips } from './round-announcer';
 
 describe('damage numbers', () => {
+  it('fan wide enough that two-digit numbers on one tick do not touch, and dim under a banner (r17 KO stack)', () => {
+    const slots = NUMBER_FAN.slice(0, 3);
+    // a 30 px bold two-digit number is about 36 px wide: neighbours in the fan must sit further apart than that
+    expect(Math.abs((slots[1]?.[0] ?? 0) - (slots[0]?.[0] ?? 0))).toBeGreaterThan(40);
+    expect(Math.abs((slots[2]?.[0] ?? 0) - (slots[0]?.[0] ?? 0))).toBeGreaterThan(40);
+    expect(NUMBER_BANNER_ALPHA).toBeLessThan(0.5);
+    expect(NUMBER_BANNER_ALPHA).toBeGreaterThan(0);
+  });
   it('float up 24 px over 500 ms; reduced motion fades them in place', () => {
     expect([0, NUMBER_MS / 2, NUMBER_MS, NUMBER_MS * 2].map((a) => numberRise(a, false))).toEqual([-0, -12, -24, -24]);
     expect(numberRise(NUMBER_MS, false)).toBe(-NUMBER_RISE_PX);

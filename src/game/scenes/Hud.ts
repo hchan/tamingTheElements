@@ -12,7 +12,7 @@ import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha,
-  meterLabelY, meterSegments, meterX, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
+  meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -498,6 +498,7 @@ export class Hud extends Phaser.Scene {
    */
   private drawArcade(model: ArcadeHudModel): void {
     const reduced = this.reduceMotion;
+    const dim = this.registry.get('tte.banner') === true ? NUMBER_BANNER_ALPHA : 1;
     for (let i = 0; i < model.numbers.length; i++) {
       const n = model.numbers[i];
       let t = this.numberTexts[i];
@@ -505,7 +506,8 @@ export class Hud extends Phaser.Scene {
         t?.setVisible(false);
         continue;
       }
-      t ??= this.numberTexts[i] = this.text(24).setOrigin(0.5, 1);
+      // Under the status chips (102) and the round banner (110).
+      t ??= this.numberTexts[i] = this.text(24).setOrigin(0.5, 1).setDepth(101);
       if (this.numberSerials[i] !== n.serial) {
         this.numberSerials[i] = n.serial;
         // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
@@ -515,7 +517,7 @@ export class Hud extends Phaser.Scene {
           .setStroke('#120b08', n.scaled ? 5 : 7)
           .setShadow(0, 3, '#000000', 4, true, true);
       }
-      t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age)).setVisible(true);
+      t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
     }
     for (const team of TEAMS) {
       this.drawMeter(model, team);

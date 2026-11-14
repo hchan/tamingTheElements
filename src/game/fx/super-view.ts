@@ -158,6 +158,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     running = false;
     scene.events.off('update', update);
     if (scene.registry.get('tte.band') === true) scene.registry.set('tte.band', false);
+    // Releases the rings and numbers the shock layer held back while the band was up (shock-view.ts).
+    scene.registry.set('tte.cut', false);
     if (live) {
       lifted?.setDepth(0);
       for (const o of all) o.setVisible(false);
@@ -250,6 +252,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       scene.events.on('postupdate', drawBurst);
       for (const o of all) o.setVisible(true);
       scene.registry.set('tte.band', bandY === BAND_HIGH_Y);
+      scene.registry.set('tte.cut', true);
       lifted = img.setDepth(DIM_DEPTH + 1);
       running = true;
       holdCamera(scene, true);
