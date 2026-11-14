@@ -2209,6 +2209,9 @@ button.menuButton.heroSlotClear {
   #arcadePick .vsActions .menuButton {
     margin: 0;
     padding-block: 0.2em;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
   #arcadePick .vsForm,
   .heroSelect {
@@ -2446,10 +2449,17 @@ button.menuButton.heroSlotClear {
   width: 100%;
   max-width: 100%;
 }
+/* Labels stack over their textarea at every width (QA r30: beside it on a phone landscape the label wrapped to 3 lines). */
+#menu .menuPage:has(#onlineStatus) .settingsOption {
+  flex-wrap: wrap;
+}
+#menu .menuPage:has(#onlineStatus) .settingsOption > label {
+  flex: 0 0 100%;
+}
+#menu .menuPage:has(#onlineStatus) .settingsOption > br {
+  display: none;
+}
 @media (max-width: 600px) {
-  #menu .menuPage:has(#onlineStatus) .settingsOption {
-    flex-wrap: wrap;
-  }
   #menu .menuPage:has(#onlineStatus) button,
   #menu .menuPage:has(#onlineStatus) select {
     min-height: 44px;
@@ -2574,7 +2584,8 @@ button.menuButton.heroSlotClear {
 }
 #menu .settingsSummary {
   padding: 0.6em 0.9em;
-  min-height: 24px;
+  min-height: 44px;
+  box-sizing: border-box;
   font-weight: bold;
   cursor: pointer;
   color: #ffe600;
@@ -2736,10 +2747,48 @@ body:has(.settingsBar) {
   #menu .settingsBar { padding: 0.25em 0; gap: 0.5em; }
   #menu .settingsBar .menuButton { box-sizing: border-box; min-height: 44px; padding-top: 0.2em; padding-bottom: 0.2em; }
   #menu .settingsSection { margin: 0.3em 0; }
-  #menu .settingsSummary { padding: 0.3em 0.9em; }
+  #menu .settingsSummary { padding: 0.3em 0.9em; min-height: 44px; }
 }
 
 /* 1v1 has one slot, so a pick is one click on the tile and the Add / Remove button has nothing to add to (QA r26). */
 #arcadePick:has(select[name='size'] option[value='1']:checked) .heroAdd {
   display: none;
+}
+
+/* QA r30 phone targets: Versus Back and per-slot selects and the slot clear x reach 44 px; Versus labels stay readable. */
+@media (pointer: coarse) {
+  #arcadePick .vsActions a.menuButton {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  #menu .heroSlots select,
+  #arcadePick select,
+  #menu .settingsOption select {
+    min-height: 44px;
+  }
+  button.menuButton.heroSlotClear {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    top: 0;
+    right: 0;
+  }
+  .heroSlots li:has(.heroSlotClear) .heroSlot {
+    padding-right: 48px;
+  }
+  #arcadePick .vsControl label,
+  #arcadePick .vsHints,
+  #arcadePick .vsAbilities,
+  #arcadePick .vsSlotLabel,
+  #arcadePick .vsStats,
+  #arcadePick .vsSmall {
+    font-size: max(0.85em, 12px);
+  }
+}
+@media (pointer: coarse) {
+  a.menuButton {
+    box-sizing: border-box;
+    min-height: 44px;
+  }
 }
