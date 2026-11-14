@@ -85,7 +85,7 @@ describe('tag view rules: geometry and motion', () => {
     for (const [, y] of three.rows) expect(y >= top(1) || y + rowH - 5 <= 26 + 40 - 3).toBe(true);
   });
 
-  it('puts the TAG caption over the third action-bar slot', () => {
+  it('keeps the Tag slot position on the third action-bar slot', () => {
     expect(TAG_SLOT_X).toBe(slotX(2) + SLOT_SIDE / 2);
     expect(TAG_SLOT_Y).toBe(BAR_Y);
   });

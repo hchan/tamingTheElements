@@ -14,7 +14,6 @@ interface Tag {
   callScale: number;
   flashes: number;
   ko: boolean;
-  caption: string;
 }
 
 /** Round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91. */
@@ -86,7 +85,7 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   await fight2v2(page);
   await expect(page.locator('#arcadeTag')).toBeVisible();
   const start = await tag(page);
-  expect(start?.caption).toBe('TAG');
+  expect(start).not.toHaveProperty('caption');
   expect(start?.lines[0]).toEqual(['IN Sindarosa', expect.stringMatching(/^BENCH Pax [▲≈■●◆] 100%$/), 'TAG READY']);
   expect(start?.lines[1]?.[0]).toBe('IN Fiara');
   expect(start?.lines[1]?.[1]).toMatch(/^BENCH \S+ [▲≈■●◆] 100%$/);

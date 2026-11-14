@@ -192,7 +192,8 @@ export class EventFx {
     this.hitStrength = strength;
     this.hitColor = color;
     this.sink.flash(target, color, this.opts.reducedMotion() ? 0 : holdFramesFor(strength));
-    this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
+    // A super hit shows the big gold number only (the small white one would print over its middle, qa-r18).
+    if (!(strength === 3 && this.sink.superHit)) this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
     const reduced = this.opts.reducedMotion();
     if (strength === 3) this.superHit(e, target, reduced);
     if (reduced) {
