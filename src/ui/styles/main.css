@@ -1788,13 +1788,30 @@ html[data-high-contrast='true'] button.touchBtn {
   }
 }
 
-/* Landscape phone: the card sits on the middle floor between the two fighters (narrow, below the FIGHT! banner and the WEATHER chip), so it covers neither the HUD, a banner, a fighter nor the stick (QA r20, r29). */
+/* Landscape phone: a slim strip (lines left, Got it right) in the band under the WEATHER chip and above the fighters' heads and the ROUND/FIGHT! banner, so it covers neither the HUD, a banner, a fighter nor the stick (QA r20, r29). */
 @media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
   .firstRunHint:not(.firstRunWait) {
-    top: 56vh;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 0.7em;
+    align-items: center;
+    top: 24vh;
     bottom: auto;
-    max-width: 42%;
-    font-size: 12px;
+    max-width: 78%;
+    font-size: 10px;
+    line-height: 1.2;
+    padding: 0.2em 0.5em;
+  }
+  .firstRunHint:not(.firstRunWait) .firstRunDone {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin: 0;
+    padding: 0.1em 0.8em;
+    min-height: 32px;
+  }
+  .firstRunHint:not(.firstRunWait) h2,
+  .firstRunHint:not(.firstRunWait) p {
+    margin: 0;
   }
 }
 
