@@ -23,4 +23,4 @@ Evidence: tourfight-1.png, tourfight-4.png, fight-a-1280.png, fight-a-1920.png (
 
 ## Update 2026-11-14 (hud-r8-clutter)
 
-Floor labels are now small chips (dark plate, element rim) that fade while a fighter stands near; the first-run card moved bottom-right above the action bar; hit numbers are larger with a thick stroke and shadow; tooltips sit above the TAG caption. Shots: ~/claudetmp/hud-r8/{before,after}. The ROUNDS pips remain open.
+Floor labels are now small chips (dark plate, element rim) that fade while a fighter stands near; the first-run card moved bottom-right above the action bar; hit numbers are larger with a thick stroke and shadow; tooltips sit above the TAG caption. Shots: ~/claudetmp/hud-r8/{before,after}. The ROUNDS pips are done (ideas/done/qa-hud-pips-and-bench-crowding.md).

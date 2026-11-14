@@ -33,8 +33,8 @@ const CARD_Y = 200;
 const CARD_MARGIN = 64;
 const WON_COLOR = 0xb8964a;
 /** The word under each side's round pips, so they are not read as super charge. */
-const PIP_LABEL_PX = 11;
-const PIP_LABEL_DX = 36;
+const PIP_LABEL_PX = 13;
+const PIP_LABEL_DX = 38;
 /** Banner fade: in over the first 8 ticks, out over the last 12 (none with reduced motion). */
 const FADE_IN_TICKS = 8;
 const FADE_OUT_TICKS = 12;
@@ -243,7 +243,7 @@ function drawPips(g: Phaser.GameObjects.Graphics, won: readonly [number, number]
   for (const p of pips(won)) {
     g.fillStyle(p.won ? (highContrast ? 0xffffff : WON_COLOR) : 0x000000, p.won ? 1 : 0.5);
     g.fillCircle(p.x, PIP_Y, PIP_R);
-    g.lineStyle(3, 0x000000, 1).strokeCircle(p.x, PIP_Y, PIP_R);
-    g.lineStyle(highContrast ? 2 : 1.5, highContrast ? 0xffffff : 0xcfc6b0, 1).strokeCircle(p.x, PIP_Y, PIP_R - 1);
+    g.lineStyle(4, 0x000000, 1).strokeCircle(p.x, PIP_Y, PIP_R);
+    g.lineStyle(highContrast ? 3 : 2, highContrast ? 0xffffff : 0xcfc6b0, 1).strokeCircle(p.x, PIP_Y, PIP_R - 1);
   }
 }
