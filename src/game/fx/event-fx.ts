@@ -4,6 +4,7 @@ import { ELEMENT_COLORS } from './element-colors';
 import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
+import { createStreakLayer } from './hit-streak-view';
 import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, sparkStyleFor } from './hit-feel';
 import { createFrostLayer } from './frost-view';
 import { createSignatureLayer } from './signature-view';
@@ -83,6 +84,10 @@ export interface FxSink {
   ring?(target: number, color: number, weight: number): void;
   /** Super hit on `target`: oversized gold number sized by `fraction` of its life, a gold spark burst and (when `flash`) one screen pulse; optional, never called under reduced motion except `reduced` true for the still number. */
   superHit?(target: number, amount: number, fraction: number, flash: boolean, reduced: boolean): void;
+  /** Directional spark fan from `target` away from `attacker` in `color`, by strength 0..3 (optional; never called under reduced motion). */
+  streaks?(attacker: number, target: number, color: number, strength: number): void;
+  /** Squash-and-recoil of `target` away from `attacker` over the hit-stop and just after, by strength 0..3 (optional; never called under reduced motion). */
+  recoil?(attacker: number, target: number, strength: number): void;
   /** Hit-stop jitter on `target` while the view tick is below `untilTick` (the freeze deadline, W.tick units). */
   jitter(target: number, untilTick: number): void;
   /** Painted element impact strip played once over `target` (optional; skipped under reduced motion by EventFx). */
@@ -106,8 +111,8 @@ export const CLASSIC_HIT_TINT = 0xff3a3a;
 const CLASSIC_SPARK = 0xffddaa;
 /** Arcade sparks by hit strength (light, medium, heavy, super); FUN-DESIGN section 3. */
 export const SPARKS_BY_STRENGTH = [6, 10, 16, 24] as const;
-/** Arcade shake by hit strength: light none, then medium, heavy, super; KO has its own. */
-export const SHAKE_BY_STRENGTH: readonly ([number, number] | null)[] = [null, [60, 0.002], [100, 0.004], [250, 0.008]];
+/** Arcade shake by hit strength: a small nudge for light (QA r34), then medium, heavy, super; KO has its own. */
+export const SHAKE_BY_STRENGTH: readonly ([number, number] | null)[] = [[45, 0.0012], [70, 0.0026], [110, 0.0045], [250, 0.008]];
 export const KO_SHAKE: readonly [number, number] = [300, 0.01];
 /** `hitStop.cause` of the super freeze and of the KO stop (src/core/data/arcade.ts HitStopCause). */
 const SUPER_CAUSE = 2;
@@ -183,6 +188,9 @@ export class EventFx {
     }
     const el = this.opts.elementOf?.(attacker);
     if (el) this.sink.impact?.(target, el);
+    const weight = Math.min(3, classicWeightFor(amount));
+    this.sink.streaks?.(attacker, target, CLASSIC_SPARK, weight);
+    this.sink.recoil?.(attacker, target, weight);
     this.sink.burst(target, this.fill(HIT_PARTICLES), HIT_PARTICLES, CLASSIC_SPARK, el);
     const s = classicShakeFor(amount);
     this.sink.shake(s.durationMs, s.intensity);
@@ -208,6 +216,8 @@ export class EventFx {
     }
     const el = this.opts.elementOf?.(e['attacker'] ?? -1);
     if (el) this.sink.impact?.(target, el);
+    this.sink.streaks?.(e['attacker'] ?? -1, target, color, strength);
+    this.sink.recoil?.(e['attacker'] ?? -1, target, strength);
     if (strength >= RING_MIN_STRENGTH) this.sink.ring?.(target, color, strength);
     const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
     this.sink.burst(target, this.fill(n), n, color, el);
@@ -258,6 +268,10 @@ export class EventFx {
 }
 
 const BURST_DISTANCE = 24;
+/** Horizontal direction (-1 or 1) from the attacker to the victim (right when the attacker is unknown or level). */
+function awayFrom(attacker: FxPoint | undefined, victim: FxPoint): number {
+  return attacker && attacker.x > victim.x ? -1 : 1;
+}
 /** Frost-white blue of the water hit's crystal burst and ring, and how many crystals it throws. */
 const FROST = 0xdff4ff;
 const FROST_SPARKS = 6;
@@ -274,6 +288,8 @@ export interface FxTarget {
   readonly element: Element;
   flash(tint: number, holdFrames?: number): void;
   jitter(untilTick: number): void;
+  /** Squash-and-recoil from a hit that arrived at view tick `tick`, pushed towards `dirX` (-1 or 1). */
+  recoil?(dirX: number, strength: number, tick: number): void;
 }
 
 /** A character's box centre and height in logical px. */
@@ -353,6 +369,7 @@ export function createPhaserFxSink(
   const centre = at;
   const gate = new FlashGate();
   const impacts = createImpactLayer(scene, paused);
+  const streakLayer = createStreakLayer(scene, paused);
   const shock = createShockLayer(scene, paused);
   const frost = createFrostLayer(scene, paused);
   const signature = createSignatureLayer(scene, paused);
@@ -421,6 +438,14 @@ export function createPhaserFxSink(
     },
     jitter(target, untilTick): void {
       viewOf(target)?.jitter(untilTick);
+    },
+    streaks(attacker, target, color, strength): void {
+      const p = centre(target);
+      if (p) streakLayer.spawn(p.x, p.y, awayFrom(centre(attacker), p), color, strength);
+    },
+    recoil(attacker, target, strength): void {
+      const p = centre(target);
+      if (p) viewOf(target)?.recoil?.(awayFrom(centre(attacker), p), strength, viewTick());
     },
     number(target, amount, scaled, counter): void {
       const p = centre(target);

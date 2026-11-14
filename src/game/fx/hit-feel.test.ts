@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
+import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize, STREAKS_BY_STRENGTH, STREAK_MS, streakFrame, RECOIL_TICKS, NO_RECOIL, recoilPose } from './hit-feel';
 
 describe('sparkStyleFor', () => {
   it('has a distinct style per element and a default', () => {
@@ -97,5 +97,34 @@ describe('koSplitAmount', () => {
     expect(koSplitAmount(100, false)).toBeLessThan(KO_SPLIT_PEAK);
     expect(koSplitAmount(100, false)).toBeGreaterThan(koSplitAmount(200, false));
     expect(KO_SPLIT_MS).toBeLessThanOrEqual(300);
+  });
+});
+
+describe('plain-hit weight (QA r34)', () => {
+  it('throws more and longer streaks as the hit gets heavier, and ends on time', () => {
+    expect([...STREAKS_BY_STRENGTH]).toEqual([...STREAKS_BY_STRENGTH].sort((a, b) => a - b));
+    const reach = (s: number): number => streakFrame(STREAK_MS * 0.5, s, 1)?.to ?? 0;
+    expect(reach(1)).toBeGreaterThan(reach(0));
+    expect(reach(3)).toBeGreaterThan(reach(2));
+    expect(streakFrame(0, 0, 0)?.alpha).toBe(1);
+    expect(streakFrame(STREAK_MS, 0, 0)).toBeNull();
+    expect(streakFrame(-1, 0, 0)).toBeNull();
+    const f = streakFrame(STREAK_MS * 0.7, 2, 0.5);
+    expect(f?.from).toBeLessThanOrEqual(f?.to ?? 0);
+  });
+  it('squashes and shoves the victim along the blow, scaled by strength, then settles', () => {
+    const peak = (s: number): ReturnType<typeof recoilPose> => recoilPose(RECOIL_TICKS * 0.2, s, 1, false);
+    expect(peak(3).sx).toBeLessThan(peak(0).sx);
+    expect(peak(3).dx).toBeGreaterThan(peak(0).dx);
+    expect(peak(0).sx).toBeLessThan(1);
+    expect(peak(0).sy).toBeGreaterThan(1);
+    expect(recoilPose(RECOIL_TICKS * 0.2, 1, -1, false).dx).toBeLessThan(0);
+    expect(recoilPose(RECOIL_TICKS, 3, 1, false)).toBe(NO_RECOIL);
+    expect(recoilPose(RECOIL_TICKS * 0.95, 3, 1, false).sx).toBeGreaterThan(0.99);
+  });
+  it('is still under reduced motion and for bad input', () => {
+    expect(recoilPose(2, 3, 1, true)).toBe(NO_RECOIL);
+    expect(recoilPose(Number.NaN, 3, 1, false)).toBe(NO_RECOIL);
+    expect(recoilPose(-1, 3, 1, false)).toBe(NO_RECOIL);
   });
 });
