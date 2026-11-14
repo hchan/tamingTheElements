@@ -187,5 +187,8 @@
  *    9 -> 27, quake ring 20 -> 60, tidal wave 50 -> 150) and the heal shares of Phoenix Rise 100 -> 35 pm and Siren Gale 150 -> 50 pm, so a full-meter super
  *    at point blank takes about 30 percent of the foe's life (was 10 percent; 144 race pairs, mean 10.2 -> 30.0, min 4 -> 13, max 33 -> 79 on a chart edge).
  *    Re-record reason: super damage changes Arcade outcomes (Arcade goldens, Arcade baselines).
+ * 53: Arcade only; Classic hashes unchanged. Post-super balance retune (ideas/done/balance-post-super.md): data-only `ARCADE_RACE_NUMBERS` life changes (2v2 factors rescaled so 2v2 life is unchanged) after the x3 supers
+ *    moved Arcade win rates (1v1 spread 39.2-58.0 percent; now 44.9-54.0, 16 seeds): hpPm curomo 5780 -> 5450, cyclonius 5090 -> 5600, echo 6330 -> 6500, fiara 5230 -> 4600, ishimi 4800 -> 5000, pax 5100 -> 4850, rokcore 2060 -> 1850, wispera 7550 -> 7850. Re-record reason: life changes
+ *    every Arcade hash and outcome (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 52;
+export const SIM_VERSION = 53;

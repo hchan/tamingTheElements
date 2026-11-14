@@ -62,7 +62,7 @@ function home(p1: Track, p2: Track, at: number, walk: number, rows = 31): number
 
 /**
  * WP-arcade-numbers timings: cones in each beat-down, when round 2 and round 3 start their segments (each after the
- * round before ended), and the round 2 guard (held while GUARD_BLASTS come; about 11 blocked blasts break it).
+ * round before ended), and the round 2 guard (held while GUARD_BLASTS come; about 15 blocked blasts break it).
  */
 const BEAT_ROUND_1 = 10;
 const BEAT_ROUND_3 = 11;
@@ -76,7 +76,7 @@ const CHARGE_BLASTS = 35;
 const ROUND_2 = 3800 + CHARGE_SHIFT;
 const ROUND_3 = 8600 + CHARGE_SHIFT;
 const GUARD_HOLD = 800;
-const GUARD_BLASTS = 14;
+const GUARD_BLASTS = 17;
 /** Cone spacing in a beat-down: past the light hit-stun (32) plus its hit-stop, so each cone is a fresh 1-hit combo. */
 const BEAT_EVERY = 40;
 
