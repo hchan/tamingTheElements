@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 ---
 
@@ -10,3 +10,6 @@ The bright mystic backdrop is a clear improvement, but at 1280x720 the five butt
 Proposal: cap button width (about 420 px), centre the stack, add hero or element art behind it, and keep the footer inside the viewport.
 
 Evidence: ~/claudetmp/qa/r5/01-menu.png, ~/claudetmp/qa/r5/13-phone-menu.png
+Done 2026-11-13: CSS only (main.css): menu stack capped at 24em and centred, 720p compaction; picker scroll-cue pill and 8em padding, wrapped ability text; phone landscape 10px edge bands.
+
+Done 2026-11-13: CSS only (src/ui/styles/main.css): menu stack capped at 24em and centred, 720p compaction; picker scroll-cue pill, 8em padding, wrapped ability text; phone landscape 10px top/bottom edge bands.
