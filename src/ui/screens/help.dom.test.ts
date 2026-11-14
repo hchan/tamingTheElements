@@ -27,6 +27,16 @@ describe('helpScreen (DOM)', () => {
     expect(document.getElementById('helpControlsHeading')?.textContent).toBe('Controls');
   });
 
+  it('puts a Back link to #main right after the title as well as at the foot (QA r30)', () => {
+    const root = document.createElement('div');
+    document.body.append(root);
+    helpScreen().mount(root);
+    const backs = [...root.querySelectorAll<HTMLAnchorElement>('a.menuLink')];
+    expect(backs).toHaveLength(2);
+    expect(backs.every((a) => a.getAttribute('href') === '#main')).toBe(true);
+    expect(root.querySelector('h1')?.nextElementSibling).toBe(backs[0]);
+  });
+
   it('has How to fight, the numbered action bar and the hero picker steps', () => {
     const root = document.createElement('div');
     helpScreen().mount(root);
