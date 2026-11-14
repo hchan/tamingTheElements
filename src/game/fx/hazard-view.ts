@@ -84,6 +84,21 @@ function edgeArrows(g: Gfx, x: number, y: number, w: number, h: number, dir: num
   }
 }
 
+/**
+ * Countdown for the tide and gust warning: a bar along the lane's centre that fills from the upwind edge toward `dir` as the
+ * strike nears (full at the strike), on a dark rim so it reads on blue water and pale ice alike, with a bright head.
+ */
+function tideCountdown(g: Gfx, x: number, y: number, w: number, h: number, dir: number, pr: number, light: number, alpha: number): void {
+  const bh = 16;
+  const by = y + h / 2 - bh / 2;
+  const bx = x + 90;
+  const bw = w - 180;
+  const fill = bw * pr;
+  g.fillStyle(0x0a0e14, 0.55 * alpha).fillRect(bx - 4, by - 4, bw + 8, bh + 8);
+  g.fillStyle(light, 0.9 * alpha).fillRect(dir > 0 ? bx : bx + bw - fill, by, fill, bh);
+  g.fillStyle(0xffffff, 0.95 * alpha).fillRect(dir > 0 ? bx + fill - 4 : bx + bw - fill, by - 3, 4, bh + 6);
+}
+
 /** Warning progress 0..1 as `warnLeft` runs down from `warnTotal` (the countdown the rockfall shadow and the fire fill follow). */
 export function warnProgress(warnLeft: number, warnTotal: number): number {
   return 1 - Math.min(1, Math.max(0, warnLeft / Math.max(1, warnTotal)));
@@ -183,13 +198,14 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       // A dark underlay then the muted element outline: reads on any floor. A full-field tide gets only its chevrons and edge bars.
       const light = HAZARD_LIGHTS[kind] ?? col;
       g.fillStyle(lane ? 0x0a0e14 : col, lane ? 0.14 * alpha : 0.12 * alpha).fillRect(x, y, w, h);
-      if (lane) g.fillStyle(col, 0.2 * alpha).fillRect(x, y, w, h);
+      if (lane) g.fillStyle(col, 0.3 * alpha).fillRect(x, y, w, h);
       g.lineStyle(6, 0x0a0806, 0.5 * alpha).strokeRect(x, y, w, h);
       g.lineStyle(3, lane ? light : col, alpha).strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
       if (lane) {
         // Tide and gust (r20): bright edge bars, scrolling dark/pale streaks, big edge arrows and the chevrons, all steady under reduced motion.
         g.fillStyle(light, 0.6 * alpha).fillRect(x, y, w, 5).fillRect(x, y + h - 5, w, 5);
         glow.fillStyle(light, 0.08 * alpha).fillRect(x, y, w, h);
+        tideCountdown(g, x, y, w, h, dir, warnProgress(warnLeft, warnTotal), light, alpha);
         const shift = chevronShift(tick, dir, 72, reduced);
         streaks(g, x, y, w, h, dir, shift, light, alpha);
         edgeArrows(g, x, y, w, h, dir, light, alpha);

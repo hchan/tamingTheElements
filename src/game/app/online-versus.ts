@@ -19,6 +19,8 @@ import type { ArenaLaunch } from '../scenes/launch';
 import { touchStick } from './touch-stick';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getUiFlags } from '../platform/flags';
+import { getPrefs } from '../platform/a11y/prefs';
+import { mountArenaPan } from '../fx/arena-pan';
 
 /**
  * The `#online` route (preview, shown with Arcade Versus), its own chunk. Two players connect with copy-pasted codes (no
@@ -199,7 +201,11 @@ export function onlineVersusScreen(): Screen {
           const buttons = touchButtons(mine.length >= 3 ? 3 : mine.length === 2 ? 2 : 1, mine.map((m) => isMeleeRace(m.character)));
           const launch: ArenaLaunch = {
             setup,
-            arcadeView: (_arena, v) => { watchTouch(buttons, v); },
+            arcadeView: (arena, v, alpha) => {
+              watchTouch(buttons, v);
+              // The same panning wide view as local Arcade (no side bars on a wide phone); view only, the sim is untouched.
+              mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion);
+            },
             onEnd: (end) => {
               if (gone || ended) return;
               say(endText(end.winner, side, end.rounds));
