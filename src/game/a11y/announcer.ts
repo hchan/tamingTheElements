@@ -27,7 +27,10 @@ export function announcementsFor(
         const to = nameOf(e['to'] ?? -1);
         if (to === undefined) break;
         const mine = (e['team'] ?? 0) === 0;
-        out.push({ key: `swapped${mine ? 'Mine' : 'Foe'}`, text: mine ? `Tagged in ${to}.` : `The enemy tagged in ${to}.`, important: false });
+        // An auto-swap after a death follows "defeated": "Pax steps in." reads better than "Tagged in Pax." (nobody pressed tag).
+        const afterDeath = events.some((o) => o.kind === SimEventKind.died && (o['team'] ?? 0) === (e['team'] ?? 0));
+        const text = afterDeath ? (mine ? `${to} steps in.` : `The enemy sends in ${to}.`) : mine ? `Tagged in ${to}.` : `The enemy tagged in ${to}.`;
+        out.push({ key: `swapped${mine ? 'Mine' : 'Foe'}`, text, important: false });
         break;
       }
       case SimEventKind.captured:
