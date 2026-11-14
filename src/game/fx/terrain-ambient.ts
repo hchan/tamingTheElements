@@ -7,8 +7,9 @@ import { hash01 } from './grim-fx';
  * spores on earth, fast wisps and cloud-banks on air. Motes are a pure function of (stage, index, time), drawn into one pooled
  * Graphics cleared each frame (nothing allocated per frame); reduced motion draws no motes and the mist holds still. The
  * vignette is one canvas texture repainted only when the stage changes, shown in the Hud scene so the camera's shake and pan
- * never move it. A persistent additive "lift" layer (tinted wash plus soft glow pools, repainted on stage change) sits between
- * floor and heroes so the floor reads luminous while heroes stay punchy. No text, no sim state.
+ * never move it. A persistent additive "lift" layer (a faint tinted wash plus soft glow pools, repainted on stage change) sits
+ * between floor and heroes so the floor reads luminous while heroes stay punchy; kept low since the painted floors
+ * (arenafloor.png) carry their own pool of light. No text, no sim state.
  */
 type Gfx = Phaser.GameObjects.Graphics;
 
@@ -28,10 +29,10 @@ const POOLS = 5;
 
 /** Per stage (index 1..4): mote colour, mist colour, mist alpha per layer, vignette edge colour and strength (0..1). */
 const LOOK = [
-  { mote: 0xffa347, ash: 0xc9a58a, mist: 0x6a3420, mistA: 0.05, edge: 0x3a1208, edgeA: 0.5, glow: 0xb8481a, lift: 0x2e1a0e },
-  { mote: 0xa8e2ff, ash: 0x9fc4d6, mist: 0x4a7a96, mistA: 0.06, edge: 0x0a2440, edgeA: 0.52, glow: 0x2f78a8, lift: 0x122a40 },
-  { mote: 0xe6d890, ash: 0xa6bb78, mist: 0x4a5a30, mistA: 0.05, edge: 0x1c2a0e, edgeA: 0.5, glow: 0x6a8a3a, lift: 0x2c3c1e },
-  { mote: 0xe4f0ff, ash: 0xb8c6dc, mist: 0x9cb0cc, mistA: 0.07, edge: 0x1a2840, edgeA: 0.46, glow: 0x7a92c0, lift: 0x1e2a44 },
+  { mote: 0xffa347, ash: 0xc9a58a, mist: 0x6a3420, mistA: 0.05, edge: 0x3a1208, edgeA: 0.5, glow: 0xb8481a, lift: 0x120a06 },
+  { mote: 0xa8e2ff, ash: 0x9fc4d6, mist: 0x4a7a96, mistA: 0.06, edge: 0x0a2440, edgeA: 0.52, glow: 0x2f78a8, lift: 0x081420 },
+  { mote: 0xe6d890, ash: 0xa6bb78, mist: 0x4a5a30, mistA: 0.05, edge: 0x1c2a0e, edgeA: 0.5, glow: 0x6a8a3a, lift: 0x0e1408 },
+  { mote: 0xe4f0ff, ash: 0xb8c6dc, mist: 0x9cb0cc, mistA: 0.07, edge: 0x1a2840, edgeA: 0.46, glow: 0x7a92c0, lift: 0x0a0e1a },
 ] as const;
 
 export interface Mote {
@@ -164,7 +165,7 @@ export function mountAmbient(arena: Phaser.Scene, hud: Phaser.Scene, depth: numb
       const cx = ((k + 0.5) / POOLS) * WORLD_W;
       const cy = 330 + hash01(k, stage * 53) * 240;
       const w = 520 + hash01(k, stage * 53 + 1) * 260;
-      for (let i = 0; i < 5; i++) lift.fillStyle(look.glow, 0.05).fillEllipse(cx, cy, w * (1 - i * 0.17), w * 0.5 * (1 - i * 0.17));
+      for (let i = 0; i < 5; i++) lift.fillStyle(look.glow, 0.03).fillEllipse(cx, cy, w * (1 - i * 0.17), w * 0.5 * (1 - i * 0.17));
     }
   };
 
