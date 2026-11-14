@@ -218,7 +218,7 @@ export class EventFx {
       this.sink.frost?.(target);
     }
     // Fire, earth, air and void get their own mark from a medium hit up (specials), so each element's hit reads apart (QA r24).
-    if (el && el !== 'water' && strength >= 1 && strength < 3) this.sink.signature?.(target, el);
+    if (el && el !== 'water' && strength < 3) this.sink.signature?.(target, el);
     if (strength === 3) this.sink.burst(target, this.fill(SUPER_GOLD_SPARKS), SUPER_GOLD_SPARKS, SUPER_GOLD, el);
   }
 

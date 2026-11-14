@@ -115,6 +115,7 @@ export function mountTerrainView(
   let reduced = prefs().reduceMotion;
   let highContrast = prefs().highContrast;
   const tiles: TileFloor = mountTileFloor(arena, base, seed, TILES_DEPTH);
+  let airShade: Phaser.GameObjects.Rectangle | undefined;
   const stageArt: StageBackdrop = mountStageBackdrop(arena, base);
   const earthLight: EarthLight = mountEarthLight(arena);
   /** True when the Void character is on the field (the Tour's last boss): its arena has no element scenery, only the void backdrop. */
@@ -339,6 +340,9 @@ export function mountTerrainView(
     drawn.glow = glowAlpha(clock, drawn.alpha, reduced);
     p.floor.setAlpha(drawn.alpha);
     tiles.update(scenery, drawn.alpha);
+    // r30: the Air floor is near white, so pale fighters (Echo, Wispera) vanish on it: a soft indigo wash above the floor, below the fighters.
+    if (scenery === 4 && !airShade) airShade = arena.add.rectangle(0, 0, ARENA_W, ARENA_H, 0x2a3a66, 0.2).setOrigin(0, 0).setDepth(TILES_DEPTH + 0.05);
+    airShade?.setVisible(scenery === 4).setAlpha(drawn.alpha);
     earthLight.update(scenery, drawn.alpha, clock * TICK_MS, reduced, highContrast);
     stageArt.update(scenery, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
     p.ambient.update(scenery, (clock * TICK_MS) / 1000, reduced, drawn.alpha);
@@ -407,6 +411,7 @@ export function mountTerrainView(
     hud.events.off('shutdown', off).off('destroy', off);
     states.delete(arena);
     tiles.destroy();
+    airShade?.destroy();
     stageArt.destroy();
     earthLight.destroy();
     if (parts) {

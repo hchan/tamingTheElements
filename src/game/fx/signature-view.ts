@@ -9,7 +9,7 @@ import type { Element } from '@core/index';
  * holds it. Renderer-only: callers skip it under reduced motion. At most `SIGNATURE_POOL` bursts play at once (the oldest is
  * dropped), each ends after `SIGNATURE_MS`.
  */
-export const SIGNATURE_MS = 340;
+export const SIGNATURE_MS = 420;
 export const SIGNATURE_POOL = 5;
 /** Size of every mark (qa-r27: they read small at 1280x720 and on a phone); all radii, lengths and line widths below are scaled by it. */
 export const SIGNATURE_SIZE = 1.5;
@@ -70,7 +70,9 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
   function ringAndShards(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number, light: number, core: number): void {
     const e = easeOut(t);
     const r = (14 + 34 * e) * K;
-    g.lineStyle(3 * K * (1 - 0.6 * t), core, 0.55 * a).strokeCircle(b.x, b.y, r);
+    // A dark rim under the ring so pale marks (air, earth dust) still read on the pale floors (QA r30).
+    g.lineStyle(7 * K * (1 - 0.5 * t), 0x0a0806, 0.5 * a).strokeCircle(b.x, b.y, r);
+    g.lineStyle(3 * K * (1 - 0.6 * t), core, 0.7 * a).strokeCircle(b.x, b.y, r);
     g.lineStyle(1.2 * K, light, 0.9 * a).strokeCircle(b.x, b.y, r - 2 * K);
     for (let i = 0; i < 8; i++) {
       const [dx, dy] = dir(i, 8, b.spin);
@@ -127,6 +129,7 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
       // Three crescent slashes spinning outward at staggered radii.
       const r = (14 + i * 11) * K * (0.5 + e);
       const start = b.spin * 0.6 + i * 2.1 + e * 1.4;
+      g.lineStyle((7 - i) * K, 0x0a0806, 0.45 * a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
       g.lineStyle((5 - i) * K, 0x9adfff, 0.5 * a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
       g.lineStyle(2 * K, 0xffffff, a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
     }
