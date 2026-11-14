@@ -64,6 +64,10 @@ test('Arcade Versus: ROUND 1, FIGHT!, the timer, K.O. PERFECT, the result with a
   expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: false, timer: '90', won: [1, 0] });
   await step(page, 40);
   expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: true, timer: '90', won: [1, 0] });
+  // Its clock started with the card's end, so it is still scaling in; FIGHT! follows about 30 ticks later.
+  expect((await rounds(page))?.scale).toBeGreaterThan(1);
+  await step(page, 32);
+  expect(await rounds(page)).toMatchObject({ main: 'FIGHT!', visible: true });
   expect(errors).toEqual([]);
 });
 
@@ -124,12 +128,15 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
     .toContain('Sudden death. One hit may decide the match.');
   const hp = await characters(page, 0);
   expect(hp[0]?.hp).toBeLessThan((hp[0]?.maxHp ?? 0) / 5);
-  // The banner scales in over 30 view ticks (counted from the round start, so it is at rest once the card is gone); the picture
-  // is taken then (it must fit the 1280 px width).
+  // The banner scales in over 30 view ticks (counted from the end of the card); the picture is taken near the end of the intro (it must fit the 1280 px width).
   await step(page, 40);
-  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, scale: 1 });
+  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true });
+  // The banner's own clock starts when the card ends (tick 100), so it is still scaling in; FIGHT! follows at about tick 130.
+  expect((await rounds(page))?.scale).toBeGreaterThan(1);
+  await step(page, 20);
+  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true });
   await page.screenshot({ path: info.outputPath('sudden-death.png') });
-  await step(page, 60);
+  await step(page, 12);
   expect(await rounds(page)).toMatchObject({ main: 'FIGHT!' });
   expect(errors).toEqual([]);
 });

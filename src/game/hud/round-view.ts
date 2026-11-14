@@ -10,7 +10,8 @@ import { mountWeatherView } from '../fx/weather-view';
 import {
   PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
-import { bannerDraws, cutUp } from './banner-lanes';
+import { bannerDraws, cutUp, introClockStart } from './banner-lanes';
+import { RESULT_TICKS } from './round-result';
 import { mountResultView, type ResultState } from './round-result-view';
 
 /**
@@ -95,6 +96,11 @@ export function mountRoundView(
   const a = view.arcade();
   if (a) announcer.sync(a, view.tick);
 
+  /** The view tick the last round result card ends: an intro banner's clock (fade, scale-in, name cards) starts then, not under the card. */
+  let cardEnd = -1;
+  /** When the banner's clock starts: its own start, or for an intro banner the end of the result card. */
+  const clockFrom = (): number => (isIntroBanner(banner.main) ? introClockStart(banner.from, cardEnd) : banner.from);
+
   let parts: {
     main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics; pipLabels: Phaser.GameObjects.Text[];
     halo: Phaser.GameObjects.Graphics; cards: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
@@ -153,7 +159,7 @@ export function mountRoundView(
       cardsFor = banner.from;
       readCards();
     }
-    cardFrame(tick - banner.from, banner.until - banner.from, banner.reduced, cardState);
+    cardFrame(tick - clockFrom(), banner.until - clockFrom(), banner.reduced, cardState);
     for (const team of [0, 1] as const) {
       const t = parts.cards[team];
       if (t.text !== cardNames[team]) t.setText(cardNames[team]);
@@ -170,12 +176,12 @@ export function mountRoundView(
     const tick = view.tick;
     // Lanes (banner-lanes.ts): the super cut-in outranks the banner; an intro banner waits out the round result card.
     const on = banner.main !== '' && tick < banner.until && bannerDraws(cutUp(hud.registry), results.result.state().visible, isIntroBanner(banner.main), results.result.state().compact);
-    const slow = bannerScale((tick - banner.from) * TICK_MS, banner.reduced);
+    const slow = bannerScale((tick - clockFrom()) * TICK_MS, banner.reduced);
     // The damage numbers (Hud.drawArcade) thin out under a banner, so the stacked KO numbers never bury its caption.
     if (hud.registry.get('tte.banner') !== on) hud.registry.set('tte.banner', on);
     if (parts.main.text !== banner.main) parts.main.setText(banner.main);
     if (parts.sub.text !== banner.sub) parts.sub.setText(banner.sub);
-    const frame = bannerFrame(banner.main, tick - banner.from, banner.until - tick, banner.reduced, slow, FADE_IN_TICKS, FADE_OUT_TICKS);
+    const frame = bannerFrame(banner.main, tick - clockFrom(), banner.until - tick, banner.reduced, slow, FADE_IN_TICKS, FADE_OUT_TICKS);
     const fade = frame.alpha;
     scale = frame.scale;
     const size = bannerSizeFor(banner.main);
@@ -187,7 +193,7 @@ export function mountRoundView(
     if (on) parts.main.setColor(bannerColorFor(banner.main));
     parts.main.setVisible(on).setScale(scale).setAlpha(fade * (size > 1 ? 1 : 0.9));
     parts.sub.setY(BANNER_Y + SUB_GAP + (size > 1 ? Math.round(MAIN_PX * (size - 1) * 0.55) : 0));
-    drawHalo(on ? haloFor(banner.main, tick - banner.from, banner.reduced) : 0);
+    drawHalo(on ? haloFor(banner.main, tick - clockFrom(), banner.reduced) : 0);
     drawCards(on, tick);
     // the result card says who won the round, so its duplicate under the banner is hidden while the card is up
     parts.sub.setVisible(on && banner.sub !== '' && !results.result.state().visible).setAlpha(Math.max(0, fade));
@@ -245,6 +251,7 @@ export function mountRoundView(
   return (events) => {
     // The round-end sequence starts at the K.O. or the time call: DOM overlays (the first-run card, ROUND_OVER_EVENT in app/first-run-hint.ts) get out of its way; a literal here keeps that card out of this lazy chunk.
     if (typeof window !== 'undefined' && events.some((e) => e.kind === SimEventKind.ko || e.kind === SimEventKind.timeOver)) window.dispatchEvent(new Event('tte:round-over'));
+    for (const e of events) if (e.kind === SimEventKind.roundEnded) cardEnd = e.tick + RESULT_TICKS;
     results.result.consume(events);
     announcer.consume(events);
     views(events);
