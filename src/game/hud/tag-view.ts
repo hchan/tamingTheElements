@@ -123,7 +123,7 @@ export function mountTagView(
               // The slim HUD shows only the tag word (as a compact pill); the IN and BENCH lines stay as hidden texts for the probe.
               const o = text(hud, LINE_PX * boost, 4);
               if (i < all.length - 1) return o.setVisible(false);
-              const pill = tagPill(team, t.length - 1);
+              const pill = tagPill(team);
               return o.setFontSize(Math.round(12 * boost)).setPosition(pill.x, pill.wordY).setVisible(true);
             }),
       ),
@@ -180,7 +180,7 @@ export function mountTagView(
         return h ? benchLabel(h) : '';
       });
       const line = [active ? activeLabel(active.sprite) : '', ...benchLines, tag.label];
-      const pill = tagPill(team, t.length - 1);
+      const pill = tagPill(team);
       const bx = pill.x;
       const tagY = pill.barY;
       // The cooldown bar fills as the tag comes back: dashed while it does, solid gold (white in high contrast) when ready.

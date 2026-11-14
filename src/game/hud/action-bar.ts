@@ -186,11 +186,9 @@ export function tipPlacement(s: Pick<ActionSlot, 'x' | 'y' | 'size'>, w: number,
   return { x, y: Math.max(4, s.y - h - 8) };
 }
 
-/** Milliseconds a first-use tip stays, and how long a held finger waits before a touch tip shows. */
-export const TIP_AUTO_MS = 4000;
+/** How long a held finger waits before a touch tip shows, and how long tips stay hidden after a super starts (its banner owns the screen). */
 export const TIP_LONG_PRESS_MS = 450;
-/** Kinds already explained by a first-use tip this session. */
-const tipSeen = new Set<string>();
+export const TIP_SUPER_QUIET_MS = 2800;
 
 /** Line colour per element kind (a second cue only: the icon's shape and the slot's words say which). */
 const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
@@ -579,10 +577,11 @@ export class ActionBarView {
   private readonly flashStart = new Map<string, number>();
   private reduced = false;
   private frame = 0;
-  /** Tooltip: the Text, what the player points at now (mouse, focus or long press), and the first-use tip. */
+  /** Tooltip: the Text and what the player points at now (mouse, focus or long press). */
   private tipText: Phaser.GameObjects.Text | undefined;
   private manual: { touch: string } | { idx: number } | null = null;
-  private auto: { kind: string; until: number } | null = null;
+  /** Tips stay hidden until this time (a super cut-in just started). */
+  private superQuietUntil = 0;
   private pressTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
@@ -732,7 +731,7 @@ export class ActionBarView {
       const key = `${s.kind}:${String(s.cmd)}:${String(i)}`;
       const prev = this.lastProgress.get(key);
       if (prev !== undefined && prev < 1 && s.progress >= 1 && !s.disabled) this.flashStart.set(key, now);
-      if (!this.mirror && prev !== undefined && prev >= 1 && s.progress < 1 && !s.disabled) this.noteFirstUse(s, now);
+      if (!this.mirror && prev !== undefined && prev >= 1 && s.progress < 1 && !s.disabled && s.kind === 'super') this.superQuietUntil = now + TIP_SUPER_QUIET_MS;
       this.lastProgress.set(key, s.progress);
       const started = this.flashStart.get(key);
       const look = cooldownLook(s.progress, s.disabled, s.x, s.y, s.size, started === undefined ? -1 : now - started, this.reduced);
@@ -866,20 +865,12 @@ export class ActionBarView {
     if (cmd !== 0) this.emit(cmd);
   };
 
-  /** First time a kind of box is used this session: explain it for a few seconds (never while the player points at something). */
-  private noteFirstUse(s: ActionSlot, now: number): void {
-    const id = `${s.kind}:${s.cmd === Cmd.secondary ? 's' : ''}`;
-    if (tipSeen.has(id)) return;
-    tipSeen.add(id);
-    this.auto = { kind: id, until: now + TIP_AUTO_MS };
-  }
-
+  /** Tooltips show only for what the player points at or focuses (mouse, keyboard focus, long press), never on their own. */
   private tipTarget(now: number): ActionSlot | undefined {
+    if (now < this.superQuietUntil) return undefined;
     const m = this.manual;
-    if (m !== null) return 'touch' in m ? this.slots.find((s) => s.touch === m.touch) : this.slots[m.idx];
-    const a = this.auto;
-    if (a !== null && now < a.until) return this.slots.find((s) => `${s.kind}:${s.cmd === Cmd.secondary ? 's' : ''}` === a.kind);
-    return undefined;
+    if (m === null) return undefined;
+    return 'touch' in m ? this.slots.find((s) => s.touch === m.touch) : this.slots[m.idx];
   }
 
   /** The tooltip: title and one line of effect in a dark panel above the box, shrunk to fit the screen on a phone. */

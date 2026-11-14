@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_SIZE, SLIM_H, chipBar, chipRect, compactLabel, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, SLIM_H, chipBar, chipRect, compactLabel, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
@@ -196,7 +196,7 @@ export class Hud extends Phaser.Scene {
         }
         if (this.arcade) this.drawArcadeAvatar(gfx, team, side.active);
         else this.drawPortrait(gfx, team, side.active, side.bench);
-        if (this.arcade) this.drawStatusChips(gfx, team, side.active, x);
+        if (this.arcade) this.drawStatusChips(gfx, team, side.active, x, side.bench.length > 0);
         else this.drawLegacyBuffs(gfx, view, side.active, x);
       } else {
         label?.setText('');
@@ -240,20 +240,23 @@ export class Hud extends Phaser.Scene {
     gfx.lineStyle(g.line, 0xffffff, 0.95).lineBetween(x0, g.y, x1, g.y);
   }
 
-  /** Arcade bench chip: a small portrait with its element mark and a mini life bar under it (dimmed with a cross when down). */
+  /** Arcade bench chip: a 56 px portrait with its element mark, a life bar under it, and a gold pulsing frame when a tag would work now (dimmed with a cross when down). */
   private drawChip(gfx: Phaser.GameObjects.Graphics, team: number, i: number, c: HudCharacter): void {
     const r = chipRect(team, i);
-    this.back?.fillStyle(0x070a12, 0.85).fillRect(r.x - 1, r.y - 1, r.size + 2, r.size + 2);
+    this.back?.fillStyle(0x070a12, 0.85).fillRect(r.x - 2, r.y - 2, r.size + 4, r.size + 4);
     const im = this.portraits[TEAMS.length + team * 4 + i];
     this.placePortrait(im, c, r.x, r.y, r.size, team === 1);
     im?.setAlpha(c.dead ? 0.35 : 1);
-    gfx.lineStyle(this.highContrast ? 2 : 1, c.dead ? 0x777777 : this.highContrast ? 0xffffff : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), 0.95);
-    gfx.strokeRect(r.x - 1, r.y - 1, r.size + 2, r.size + 2);
-    this.drawMark(gfx, c.element, r.x + 5, r.y + CHIP_SIZE - 5, 3);
+    const bar = this.view?.actionBar(team);
+    const ready = !c.dead && !!bar && bar.swapReadyTick <= bar.tick;
+    const pulse = ready && !this.reduceMotion ? 0.6 + 0.4 * Math.abs(((this.frame % 60) - 30) / 30) : 1;
+    gfx.lineStyle(this.highContrast || ready ? 3 : 2, c.dead ? 0x777777 : this.highContrast ? 0xffffff : ready ? 0xb39653 : mute(ELEMENT_COLORS[c.element], 0.55, 0.72), ready ? pulse : 0.95);
+    gfx.strokeRect(r.x - 2, r.y - 2, r.size + 4, r.size + 4);
+    this.drawMark(gfx, c.element, r.x + 8, r.y + r.size - 8, 4);
     if (c.dead) {
-      gfx.lineStyle(2, 0xff5a4a, 1);
-      gfx.lineBetween(r.x + 3, r.y + 3, r.x + r.size - 3, r.y + r.size - 3);
-      gfx.lineBetween(r.x + 3, r.y + r.size - 3, r.x + r.size - 3, r.y + 3);
+      gfx.lineStyle(3, 0xff5a4a, 1);
+      gfx.lineBetween(r.x + 4, r.y + 4, r.x + r.size - 4, r.y + r.size - 4);
+      gfx.lineBetween(r.x + 4, r.y + r.size - 4, r.x + r.size - 4, r.y + 4);
     }
     this.drawBar(gfx, chipBar(team, i), c, false);
   }
@@ -286,13 +289,13 @@ export class Hud extends Phaser.Scene {
    * Arcade: one chip per active buff or debuff under the bar (shape, word and seconds; the bar under it drains), pooled texts.
    * The sim already exposes every status, so this only reads the view (`collectStatusChips`).
    */
-  private drawStatusChips(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, x: number): void {
+  private drawStatusChips(gfx: Phaser.GameObjects.Graphics, team: number, c: HudCharacter, x: number, benched: boolean): void {
     const view = this.view;
     if (!view) return;
     // At least 16 px (times the phone boost), and below the hero's health words as measured (they wrap to several lines when boosted).
     const px = Math.round(16 * phoneBoost(this, 2));
     const label = this.labels[team];
-    const top = chipRowTop(Math.max(CHIP_Y, SLIM_H + 2), label);
+    const top = chipRowTop(Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM : 0), label);
     const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top });
     const now = view.tick;
     const reduced = this.reduceMotion;
