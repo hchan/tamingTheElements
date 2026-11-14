@@ -1,5 +1,5 @@
 import {
-  arcadePlayfield, CHARGE_AI_MIN_DIST, HAZARD_WARN_TICKS, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
+  arcadePlayfield, CHARGE_AI_MIN_DIST, hazardWarnTicks, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
   RoundPhase, TrapKind, WEATHER_CHARGE_FULL,
 } from '../../data/arcade';
 import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
@@ -301,7 +301,7 @@ export class ArcadeTactics {
     if (a.selfStun !== 0 || a.superActive || a.selfRooted !== 0 || (self.flags & EntityFlag.frozen) !== 0) return cmd;
     if ((cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
     if (this.level === AI_EASY && (view.tick & 255) >= ARCADE_AI_EASY_TRAP_BLIND) return cmd;
-    if (HAZARD_WARN_TICKS - hz.strikeIn < ARCADE_AI_KNOBS[this.level][0]) return cmd;
+    if (hazardWarnTicks(hz.kind) - hz.strikeIn < ARCADE_AI_KNOBS[this.level][0]) return cmd;
     const exit = hazardExit(self, hz, arcadePlayfield());
     return (cmd & ~MOVE) | (exit !== 0 ? exit : hazardKeepOut(self, hz, cmd & MOVE));
   }

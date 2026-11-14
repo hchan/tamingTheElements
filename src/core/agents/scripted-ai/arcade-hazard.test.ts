@@ -66,12 +66,12 @@ describe('hazardExit (stage hazards)', () => {
   });
 
   it('leaves a rockfall square by the shortest of four ways, never past a wall', () => {
-    expect(hazardExit(fighter(660, 420), rock(650, 360), PF)).toBe(Cmd.left); // left 90, down 116, up 140, right 166
-    expect(hazardExit(fighter(740, 400), rock(650, 360), PF)).toBe(Cmd.right); // right 86, up 120
-    expect(hazardExit(fighter(700, 380), rock(650, 360), PF)).toBe(Cmd.up); // up 100, right 126
-    // Down is nearest (116) but would end past the playfield's bottom (640): right (126) instead.
+    expect(hazardExit(fighter(660, 380), rock(650, 360), PF)).toBe(Cmd.left); // left 90, up 100, down 92 (rock ends at 472, fighter at 380: 92), right 102
+    expect(hazardExit(fighter(720, 400), rock(650, 360), PF)).toBe(Cmd.right); // right 42, down 72
+    expect(hazardExit(fighter(700, 330), rock(650, 360), PF)).toBe(Cmd.up); // up 50, right 62
+    // Down is nearest (52) but would end past the playfield bottom (640): right (62) instead.
     expect(hazardExit(fighter(700, 540), rock(650, 480), PF)).toBe(Cmd.right);
-    // In the top-left corner left and up are past the walls; right and down tie at 176: right.
+    // In the top-left corner left and up are past the walls; right and down tie at 112: right.
     expect(hazardExit(fighter(0, PF.y), rock(0, PF.y), PF)).toBe(Cmd.right);
   });
 

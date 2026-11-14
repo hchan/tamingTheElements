@@ -200,5 +200,9 @@
  *    hazard's box and game ticks to its strike, and the scripted AI walks out of a warned lava lane, rockfall square or gust band by the shortest way
  *    that fits the playfield once its level's reaction time (ARCADE_AI_KNOBS) has passed, and stops a step back in (Easy is blind half the time, as
  *    for traps; a tide has no way out). Re-record reason: the AI commands of every Arcade match with a hazard change (Arcade goldens, Arcade baselines).
+ * 56: Arcade only (Classic hashes unchanged). Fairer earth rockfall (ideas/brainstorm/qa-r20-ai-hazard-dodge-not-observed.md): the rock is
+ *    HAZARD_ROCK_PX 112 (was 176) and the earth warning HAZARD_EARTH_WARN_TICKS 100 (2 s, was 50; other hazards keep 50; `hazardWarnTicks(kind)`,
+ *    the AI reaction counts from the warning's start). Probe, 96 seeds: fighters inside at the strike Normal 41.2 to 21.0 percent, Hard 31.7 to 13.5.
+ *    Re-record reason: earth strike box, timing and AI dodge change every Arcade earth-stage match (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 55;
+export const SIM_VERSION = 56;
