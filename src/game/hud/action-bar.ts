@@ -99,6 +99,8 @@ export const CLEANSE_LABEL = 102;
 export const DEFAULT_KEY_LABELS: KeyLabels = labelsFromBindings(DEFAULT_BINDINGS);
 
 const SWAP_CMDS = [Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4] as const;
+/** Sprite key of the Snag rope throw (Entangling Vines): the hero slot that holds it is labelled Snag. */
+const SNAG_SPRITE = 'entanglingVines';
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 
 /** Every kind of box on the bar: the one shape, told apart by its icon, key and words. */
@@ -157,9 +159,11 @@ export function elementalNote(tick: number, e: { name: string; readyTick: number
 }
 
 /** The tooltip for a box: its plain name and a one-line effect (the Guide's own text, so the two never disagree). */
-export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'>): { title: string; text: string } {
+export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'> & { sprite?: string }): { title: string; text: string } {
   switch (s.kind) {
-    case 'ability': return s.cmd === Cmd.primary ? { title: 'Attack', text: HERO_EFFECT.primary } : { title: 'Special', text: HERO_EFFECT.secondary };
+    case 'ability':
+      if (s.sprite === SNAG_SPRITE) return { title: 'Snag', text: COMMON_EFFECT.snag };
+      return s.cmd === Cmd.primary ? { title: 'Attack', text: HERO_EFFECT.primary } : { title: 'Special', text: HERO_EFFECT.secondary };
     case 'capture': return { title: 'Snag', text: COMMON_EFFECT.snag };
     case 'swap': return { title: 'Tag', text: COMMON_EFFECT.tag };
     case 'trap': return { title: 'Trap', text: COMMON_EFFECT.trap };
@@ -392,6 +396,8 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     if (cmd === undefined) return;
     add({
       kind: 'ability', cmd, sprite: a.sprite, highlight: false, disabled: false,
+      // The rope-throw slot (Treenoc, Wispera, Curomo, Echo) is named in words, never just "Special".
+      ...(a.sprite === SNAG_SPRITE ? { note: 'Snag' } : {}),
       progress: cooldownProgress(bar.tick, a.readyTick, a.cooldownTicks),
     });
   });

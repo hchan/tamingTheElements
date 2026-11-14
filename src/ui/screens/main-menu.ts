@@ -96,6 +96,9 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
           list.append(li);
         }
         page.append(list);
+        // Keyboard-first players: focus the first usable entry, so Enter or Space activates it straight away (arrow keys / Tab move on).
+        const first = list.querySelector<HTMLButtonElement>('button:not(:disabled)');
+        if (first) queueMicrotask(() => { first.focus({ preventScroll: true }); });
         const footer = el('div', 'versionStamp', versionStamp(import.meta.env));
         footer.id = 'versionStamp';
         page.append(footer);

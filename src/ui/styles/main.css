@@ -1172,6 +1172,12 @@ html[data-high-contrast='true'] button.touchBtn {
   text-align: left;
   overflow: hidden;
 }
+/* `button.menuButton` (inline-block) outranks `.heroTile`, so the flex row needs its own specificity: without it the face and name flowed
+   inline and a short name (Ishimi, Echo) sat beside a face that was baseline-shifted into it. */
+/* Play only: the Versus picker lays its own tiles out. */
+.heroSelect button.menuButton.heroTile {
+  display: flex;
+}
 .heroTile[data-element='water'] { border-left-color: #5f94cc; }
 .heroTile[data-element='air'] { border-left-color: #b4c6d4; }
 .heroTile[data-element='fire'] { border-left-color: #d0603f; }
@@ -1182,9 +1188,10 @@ html[data-high-contrast='true'] button.touchBtn {
 }
 .heroTileName {
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* Names wrap only at spaces: breaking mid-word ("Curom o") read as a bug. */
+  overflow-wrap: normal;
   line-height: 1.1;
-  font-size: 0.9em;
+  font-size: 0.85em;
 }
 .heroTile.heroPicked {
   background: #2a2819;
@@ -1457,6 +1464,22 @@ html[data-high-contrast='true'] button.touchBtn {
   .heroTileFace {
     width: 36px;
     height: 36px;
+  }
+  /* Three narrow columns: face above the name, and names break only at spaces ("Curomo", "Cyclonius" stay whole). */
+  .heroSelect button.menuButton.heroTile {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 2px;
+    text-align: center;
+  }
+  .heroTileName {
+    overflow-wrap: normal;
+    font-size: 0.8em;
+  }
+  .heroSlotName {
+    font-size: 0.75em;
+    overflow-wrap: normal;
   }
   .heroPortrait {
     width: 72px;
@@ -1820,8 +1843,8 @@ button.menuButton.heroSlotClear {
   content: 'More heroes below \25BE';
   position: absolute;
   right: 1em;
-  top: 50%;
-  transform: translateY(-50%);
+  /* Floats just above the bar so it never covers Start, Back or the Ready buttons. */
+  bottom: calc(100% + 0.4em);
   padding: 0.15em 0.9em;
   font-size: 0.85em;
   white-space: nowrap;
