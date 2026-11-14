@@ -78,7 +78,7 @@ test('losing a round shows YOU LOSE; reduced motion still shows the card', async
   await knockOut(page, 0);
   const r = await rounds(page);
   expect(r?.won).toEqual([0, 1]);
-  expect(r?.result).toMatchObject({ visible: true, tone: 'lose', kicker: 'ROUNDS 0 - 1', title: 'ROUND 1 LOST', headline: 'PERFECT K.O.' });
+  expect(r?.result).toMatchObject({ visible: true, tone: 'lose', kicker: 'ROUNDS 0 - 1', title: 'ROUND 1 LOST', headline: 'K.O.' });
   expect(r?.result.lines[0]).toMatch(/^HEALTH LEFT \d+%$/);
   await expect.poll(() => live(page), { timeout: 10_000 }).toContain('You lose round 1. Rounds 0 to 1.');
   await shot(page, 'round-lose');

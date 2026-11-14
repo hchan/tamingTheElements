@@ -97,9 +97,9 @@ test('menu loads without Phaser: time to interactive and transferred bytes', asy
 
   expect(urls.filter((u) => /phaser/.test(u))).toEqual([]);
   expect(timing.resources.filter((u) => /phaser/.test(u))).toEqual([]);
-  // Measured ~36 KB (the preview server gzips). The Phaser chunk alone is ~350 KB gzip, so 150 KB means "Phaser leaked into
-  // the first load" long before it means "the menu grew"; a real menu growth is caught by size:check.
-  expect(timing.transferred).toBeLessThan(150_000);
+  // Measured ~620 KB: ~85 KB of JS/CSS plus the menu key art (keyart.webp ~270 KB, crest.png ~245 KB). The Phaser chunk alone is
+  // ~350 KB gzip and is also caught by the explicit /phaser/ URL checks above; a real menu growth is caught by size:check.
+  expect(timing.transferred).toBeLessThan(1_000_000);
   // Menu visible and interactive well inside a very generous bound for a shared machine.
   expect(timing.tti).toBeLessThan(10_000);
 });

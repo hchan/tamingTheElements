@@ -53,12 +53,12 @@ test('picker: Team first, the partner only in 2v2 (disabled and out of the Tab o
   // Heroes are chosen on the roster (slot buttons and a tile grid); the hero pulldowns stay in the form but are out of the Tab order.
   await page.getByLabel('Team').focus();
   const order: string[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     order.push(await focusedId(page));
     await page.keyboard.press('Tab');
   }
-  // The Level pulldown is a segmented control (one unnamed tab stop per group) over the hidden select.
-  expect(order).toEqual(['arcadeSize', '', '', 'roster-player', 'roster-enemy']);
+  // The Level, Arena and next pulldowns are segmented controls (one unnamed tab stop per group) over hidden selects.
+  expect(order).toEqual(['arcadeSize', '', '', '', 'roster-player', 'roster-enemy']);
   await expect(page.locator('#roster-partner')).toBeHidden();
   await page.getByLabel('Team').selectOption('2');
   await expect(partner).toBeEnabled();
