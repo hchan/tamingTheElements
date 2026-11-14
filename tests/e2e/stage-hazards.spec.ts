@@ -10,7 +10,9 @@ const WEATHER = 1 << 14;
 const INTRO = 91;
 const CASES: ReadonlyArray<readonly [string, string, number]> = [['fire', 'sindarosa', 1], ['water', 'curomo', 2], ['earth', 'rokcore', 3], ['air', 'echo', 4]];
 
-interface Marker { kind: number; phase: 'warn' | 'active'; w: number; h: number; dir: number; alpha: number; chevrons: number }
+const LABELS: Readonly<Record<number, string>> = { 1: 'LAVA', 2: 'TIDE', 3: 'ROCKFALL', 4: 'GUST' };
+
+interface Marker { kind: number; phase: 'warn' | 'active'; w: number; h: number; dir: number; alpha: number; chevrons: number; label: string }
 
 const frames = (page: Page): Promise<unknown> => page.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
 const hazard = async (page: Page): Promise<Marker | undefined> => {
@@ -63,6 +65,8 @@ for (const [element, hero, stage] of CASES) {
     const warn = await toWarning(page, hero, stage);
     expect(warn.w).toBeGreaterThan(0);
     expect(warn.h).toBeGreaterThan(0);
+    // Every stage's warning carries a short word and a countdown chip.
+    expect(warn.label).toMatch(new RegExp(`^${LABELS[stage] ?? ''} [1-9]s$`));
     if (stage === 2 || stage === 4) {
       expect([-1, 1]).toContain(warn.dir);
       expect(warn.chevrons).toBeGreaterThan(0);
@@ -75,7 +79,7 @@ for (const [element, hero, stage] of CASES) {
       await page.evaluate('window.__TTE__.arena.step(5, [0, 0])');
       active = await hazard(page);
     }
-    expect(active).toMatchObject({ kind: stage, phase: 'active' });
+    expect(active).toMatchObject({ kind: stage, phase: 'active', label: '' });
     await snap('strike');
     // The screen-reader twin of the warning (r20): a polite status line names the hazard.
     await expect(page.locator('[data-hazard-live]')).toHaveText(/ (warning|shift)$/);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { edgeCues, chevronShift, hazardAnnouncement, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, shadowRadius, warnProgress } from './hazard-view';
+import { edgeCues, chevronShift, hazardAnnouncement, hazardLabel, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, shadowRadius, warnProgress } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -47,8 +47,15 @@ describe('rockfall and fire telegraph helpers (r21)', () => {
     expect(shadowRadius(1, 88)).toBeCloseTo(88);
     expect(shadowRadius(0.5, 88)).toBeGreaterThan(shadowRadius(0.2, 88));
   });
-  it('the impact flashes for exactly the first 2 ticks of the strike', () => {
+  it('the impact flashes (an outline and burst, not a filled box) for exactly the first 2 ticks of the strike', () => {
     expect([-1, 0, 1, 2, 3].map(impactFlash).map((a) => a > 0)).toEqual([false, true, true, false, false]);
+  });
+
+  it('the warning chip names each hazard with whole seconds left, never below 1s', () => {
+    expect([1, 2, 3, 4].map((k) => hazardLabel(k, 150))).toEqual(['LAVA 3s', 'TIDE 3s', 'ROCKFALL 3s', 'GUST 3s']);
+    expect(hazardLabel(3, 51)).toBe('ROCKFALL 2s');
+    expect(hazardLabel(1, 1)).toBe('LAVA 1s');
+    expect(hazardLabel(0, 100)).toBe('');
   });
 
   it('names the hazard in short screen-reader lines', () => {

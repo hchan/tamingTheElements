@@ -198,7 +198,7 @@ describe('weather view: objects, badge, tint and particles', () => {
     expect(sky?.calls).toEqual(['fillStyle', 'fillRect']);
     expect(fall?.calls.filter((c) => c === 'fillCircle')).toHaveLength(2 * PARTICLE_COUNTS[2]);
   });
-  it('draws each weather with its own glyph and particle shape (rays, streaks, grains, motes)', () => {
+  it('draws each weather with its own glyph and particle shape (streaks, grains, motes; no sun wedge)', () => {
     const shapes: Record<number, string> = {};
     for (const kind of [Weather.sun, Weather.rain, Weather.sandstorm, Weather.gale, Weather.eclipse]) {
       const m = mount({ highContrast: kind === Weather.eclipse });
@@ -212,7 +212,8 @@ describe('weather view: objects, badge, tint and particles', () => {
       expect(badge?.calls).toContain('strokeRect');
     }
     expect(shapes).toEqual({
-      1: 'fillTriangle / ', 2: ' / lineBetween', 3: 'fillCircle / ', 4: ' / lineBetween', 5: 'fillCircle / ',
+      1: ' / ', // sun: no drawn ray wedges (QA r28: they read as a stray beam); the sky tint and badge carry it
+       2: ' / lineBetween', 3: 'fillCircle / ', 4: ' / lineBetween', 5: 'fillCircle / ',
     });
   });
   it('the called line scales in, fades and hides after CALL_TICKS; the badge stays', () => {
