@@ -345,7 +345,7 @@ describe('dressed bar parts (key badge, icon, label strip)', () => {
     expect(slotWord(atk)).toBe('Attack');
     expect(slotWord(rope)).toBe('Snag');
     expect(slotTip(rope).title).toBe('Snag');
-    expect(slotTip(atk).title).toBe('Attack');
+    expect(slotTip(atk).title).toBe('Fireball');
   });
 
   it('in Arcade the Snag box wears its own key and C ("1 C"); Classic and other boxes keep one key', () => {
