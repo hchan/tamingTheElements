@@ -10,6 +10,8 @@ import {
   cooldownIdx,
   EntityFlag,
   EntityKind,
+  HAZARD_BASE,
+  HazardF,
   TEAM_STRIDE,
   TeamField,
   TRAP_STRIDE,
@@ -140,6 +142,22 @@ export interface ArcadeView {
   readonly selfRooted: number;
   readonly selfSlowed: boolean;
   readonly oppSuperActive: boolean;
+  /** The live stage hazard (systems/arcade/hazard.ts: its warning shading and its strike are on screen), or undefined. */
+  readonly hazard: HazardView | undefined;
+}
+
+/**
+ * The live stage hazard as `ArcadeView.hazard` shows it: its kind (1 fire lava lane, 2 water tide, 3 earth rockfall,
+ * 4 air gust), its box, its drift direction (-1, 0 or 1) and game ticks until it strikes (0: active now).
+ */
+export interface HazardView {
+  readonly kind: number;
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly dir: number;
+  readonly strikeIn: number;
 }
 
 /**
@@ -316,6 +334,24 @@ function arcadeViewOf(
     selfRooted: left(self, ArcadeE.rootUntil),
     selfSlowed: self !== undefined && (left(self, ArcadeE.trapSlowUntil) > 0 || hasSlow(s.status, self.id)),
     oppSuperActive: team(1 - side, ArcadeT.superState) !== 0,
+    hazard: hazardOf(s, g),
+  };
+}
+
+/** The live hazard of the world block at game tick `g`, or undefined when none is live. */
+function hazardOf(s: SimState, g: number): HazardView | undefined {
+  const at = (f: number): number => s.arcade[ARCADE_WORLD_BASE + HAZARD_BASE + f] ?? 0;
+  const kind = at(HazardF.kind);
+  if (kind === 0) return undefined;
+  const strikeAt = at(HazardF.strikeAt);
+  return {
+    kind,
+    x: at(HazardF.x),
+    y: at(HazardF.y),
+    w: at(HazardF.w),
+    h: at(HazardF.h),
+    dir: at(HazardF.dir),
+    strikeIn: strikeAt === 0 ? 0 : Math.max(1, strikeAt - g),
   };
 }
 
