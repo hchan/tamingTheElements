@@ -7,7 +7,7 @@ import { elementCue, healthCue, lifeReadout, type HudCharacter } from './bars';
  * pins them). The Classic HUD keeps the geometry in `bars.ts`.
  */
 
-export const SLIM_H = 66;
+export const SLIM_H = 78;
 export const SLIM_BAR_Y = 20;
 export const SLIM_LINE = 16;
 export const SLIM_LINE_MAX = 18;
@@ -15,12 +15,12 @@ export const SLIM_PORTRAIT = 48;
 export const SLIM_PORTRAIT_Y = 6;
 /** Top of the second row (name, chips, tag, meter). */
 export const SLIM_ROW_B = 34;
-export const CHIP_SIZE = 24;
-export const CHIP_PITCH = 30;
+export const CHIP_SIZE = 36;
+export const CHIP_PITCH = 42;
 export const CHIP_X0 = 346;
-export const CHIP_BAR_Y = 62;
-export const PILL_W = 34;
-export const PILL_BAR_H = 6;
+export const CHIP_BAR_Y = 73;
+export const PILL_W = 44;
+export const PILL_BAR_H = 8;
 
 export interface SlimBar {
   readonly minX: number;
@@ -57,7 +57,7 @@ export function chipBar(team: number, i: number): SlimBar {
 
 /** The tag pill (word above, cooldown bar under it), after `bench` chips. */
 export function tagPill(team: number, bench: number): { readonly x: number; readonly wordY: number; readonly barY: number; readonly w: number } {
-  return { x: mirrorX(team, CHIP_X0 + bench * CHIP_PITCH + 6, PILL_W), wordY: SLIM_ROW_B - 1, barY: SLIM_ROW_B + 20, w: PILL_W };
+  return { x: mirrorX(team, CHIP_X0 + bench * CHIP_PITCH + 4, PILL_W), wordY: SLIM_ROW_B + 3, barY: SLIM_ROW_B + CHIP_SIZE - PILL_BAR_H, w: PILL_W };
 }
 
 /** The tag word shown in the pill: the full readout ("TAG READY", "TAG 2.4s", "NO TAG") shortened to "TAG", "2.4s", "NO TAG". */
