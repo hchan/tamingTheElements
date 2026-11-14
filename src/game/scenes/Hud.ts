@@ -54,6 +54,8 @@ const COMBO_MARGIN = 24;
 /** Hyper meter fill (high contrast: white) and the gap between the meter and its bar-count label. */
 const METER_COLOR = 0x4fc3ff;
 const METER_LABEL_GAP = 8;
+/** Largest phone boost for the slim Arcade HUD text (life line, SUPER label): about 12 CSS px at 844x390 (qa-r15: was 1.4 and an unboosted SUPER, 6 px), still clear of the bars. */
+const PHONE_ARCADE_BOOST = 1.7;
 /** Bar track and thin frame: ash-black, not pure black. */
 const TRACK_COLOR = 0x120f0c;
 const FRAME_COLOR = 0x050403;
@@ -122,7 +124,7 @@ export class Hud extends Phaser.Scene {
     // One text per side next to the bar: health state in words, so it never depends on red versus green.
     // Larger on phones (the canvas is drawn about 0.3x there), wrapped to the free column left of the bench bars, and outlined so it
     // reads on bright arenas without touching the bars beside it.
-    const boost = this.arcade ? Math.min(1.4, phoneBoost(this, 2)) : phoneBoost(this, 2);
+    const boost = this.arcade ? this.arcadeBoost() : phoneBoost(this, 2);
     this.labels = TEAMS.map((team) =>
       this.add
         .text(
@@ -189,7 +191,7 @@ export class Hud extends Phaser.Scene {
         if (this.arcade) {
           this.drawBar(gfx, slimBar(team), side.active, true);
           this.drawTrail(gfx, slimBar(team), side.active);
-          label?.setText(compactLabel(heroName(side.active.sprite), side.active));
+          if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active);
         } else {
           this.drawBar(gfx, mainBar(x), side.active, true);
           label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
@@ -464,6 +466,21 @@ export class Hud extends Phaser.Scene {
     this.reduceMotion = prefs.reduceMotion;
   }
 
+  /** Text multiplier for the slim Arcade HUD: 1 from 1100 CSS px of canvas width up, to PHONE_ARCADE_BOOST (about 12 CSS px of text) on a phone. */
+  private arcadeBoost(): number {
+    const w = this.scale.displaySize.width;
+    return w > 0 ? Math.min(PHONE_ARCADE_BOOST, Math.max(1, 1100 / w)) : 1;
+  }
+
+  /** The life line under the bar; where the boosted text would run into the SUPER label (phones) it drops the hero name. */
+  private setSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter): void {
+    label.setText(compactLabel(name, c));
+    const m = this.meterTexts[team];
+    if (!m) return;
+    const clash = team === 0 ? label.x + label.width + 6 > m.x - m.width : label.x - label.width - 6 < m.x + m.width;
+    if (clash) label.setText(compactLabel(name, c, true));
+  }
+
   private text(size: number): Phaser.GameObjects.Text {
     const style = { fontFamily: HUD_FONT, fontSize: `${String(size)}px`, color: '#e0d8c6', fontStyle: 'bold', stroke: '#0a0806', strokeThickness: 3 };
     return this.add.text(0, 0, '', crisp(this, style)).setDepth(102);
@@ -545,7 +562,7 @@ export class Hud extends Phaser.Scene {
       gfx.lineStyle(this.highContrast ? 2 : 1, 0xffffff, 1);
       gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
     }
-    const t = (this.meterTexts[team] ??= this.text(12)
+    const t = (this.meterTexts[team] ??= this.text(Math.round(12 * this.arcadeBoost()))
       .setOrigin(team === 0 ? 1 : 0, 0.5)
       .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
     const label = `SUPER ${meterLabel(m.value)}`; // named, so the segments are not mistaken for the round pips
