@@ -34,11 +34,11 @@ for (const ff of ['arcade', 'arcade,rollback']) test(`two players connect throug
   opened.push(ctx);
   const a = await ctx.newPage();
   const b = await ctx.newPage();
-  await a.goto(`/?ff=${ff}`);
-  await b.goto(`/?ff=${ff}`);
+  await a.goto(`/?ff=${ff}&ice=none`);
+  await b.goto(`/?ff=${ff}&ice=none`);
   await expect(a.getByRole('button', { name: 'Online', exact: true })).toBeVisible();
   await a.getByRole('button', { name: 'Online', exact: true }).click();
-  await b.goto(`/?ff=${ff}#online`);
+  await b.goto(`/?ff=${ff}&ice=none#online`);
   await expect(a.locator('#onlineHost')).toBeVisible();
   await expect(b.locator('#onlineJoin')).toBeVisible();
 
@@ -81,7 +81,7 @@ test('a finished online match offers a Rematch that starts a second match', asyn
   opened.push(ctx);
   const a = await ctx.newPage();
   const b = await ctx.newPage();
-  const q = '/?ff=arcade&matchticks=120';
+  const q = '/?ff=arcade&matchticks=120&ice=none';
   await a.goto(q);
   await b.goto(`${q}#online`);
   await a.getByRole('button', { name: 'Online', exact: true }).click();

@@ -113,6 +113,8 @@ const ADAPT_WINDOW = 50;
 const ADAPT_STALLS = 5;
 /** Checkpoint hashes kept for `hashAt` and late comparison (the wire carries only the last MAX_HASHES_PER_PACKET). */
 const HASH_HISTORY = 64;
+/** Most checkpoints `checkpoints()` keeps (the first ones; tests and the browser proof read the whole run). */
+const CHECKPOINT_LOG_CAP = 4096;
 /** A `TickBuf` compacts once this many leading entries are dead. */
 const TRIM_BATCH = 32;
 
@@ -207,6 +209,8 @@ export class LockstepSession {
   private readonly localHashes = new Map<number, number>();
   private readonly remoteHashes = new Map<number, number>();
   private readonly hashTicks: number[] = [];
+  /** Flat (tick, hash) pairs of every confirmed local checkpoint, kept past `HASH_HISTORY` up to the cap; read-only evidence for `checkpoints()`. */
+  private readonly checkpointLog: number[] = [];
   private clock = 0;
   private startClock = -1;
   private lastHeard = 0;
@@ -276,6 +280,13 @@ export class LockstepSession {
   /** Local state hash recorded at a checkpoint tick, if any. */
   hashAt(tick: number): number | undefined {
     return this.localHashes.get(tick);
+  }
+
+  /** Every confirmed local checkpoint `[tick, hash]` in order (the hashes sent for desync checks), the first 4096 at most. Read-only; for tests. */
+  checkpoints(): readonly (readonly [tick: number, hash: number])[] {
+    const out: [number, number][] = [];
+    for (let i = 0; i < this.checkpointLog.length; i += 2) out.push([this.checkpointLog[i] as number, this.checkpointLog[i + 1] as number]);
+    return out;
   }
 
   get inputDelay(): number {
@@ -552,6 +563,7 @@ export class LockstepSession {
     if (this.localHashes.has(tick)) return;
     this.localHashes.set(tick, h);
     this.hashTicks.push(tick);
+    if (this.checkpointLog.length < CHECKPOINT_LOG_CAP * 2) this.checkpointLog.push(tick, h);
     this.compare(tick);
     if (this.hashTicks.length > HASH_HISTORY) this.dropOldHash();
   }
