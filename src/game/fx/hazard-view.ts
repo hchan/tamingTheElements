@@ -12,6 +12,9 @@ import { mute } from './grim-fx';
  */
 const DEPTH = -0.65; // under the trap markers (-0.6) and the fighters
 
+/** A pale, desaturated light of a hazard colour: the luminous core of the tide and gust strike marks (readable on blue and on pale ice). */
+export const HAZARD_LIGHTS: readonly number[] = [0xffffff, 0xf0c8a0, 0xbfe4f2, 0xdcc49a, 0xf2f6f8];
+
 /** Muted element colour per hazard kind (index 0 unused): fire, water, earth, air. */
 export const HAZARD_COLORS: readonly number[] = [0xffffff, 0xc4481c, 0x2f7394, 0x7d5c38, 0xa3bcc2].map((c, i) => (i === 0 ? c : mute(c, 0.7, 0.95)));
 
@@ -53,20 +56,28 @@ export function hazardState(arena: Phaser.Scene): readonly HazardMarker[] | unde
 type Gfx = Phaser.GameObjects.Graphics;
 
 /** Chevrons pointing `dir` (+1 right, -1 left) across the box, rows `row` px apart; returns how many were drawn. */
-function chevrons(g: Gfx, x: number, y: number, w: number, h: number, dir: number, shift: number, color: number, alpha: number): number {
+function chevrons(g: Gfx, x: number, y: number, w: number, h: number, dir: number, shift: number, color: number, alpha: number, halo = false): number {
   const gap = 72;
   const row = Math.min(90, Math.max(40, h / 3));
   const arm = 11;
   let n = 0;
-  g.lineStyle(3, color, alpha);
+  // `halo` strikes: a dark outline pass under a bright core, so the marks read on blue water and on pale ice alike.
+  for (const [width, c, a] of halo ? ([[8, 0x0a0806, 0.55 * alpha], [4, color, alpha]] as const) : ([[3, color, alpha]] as const)) {
+    n = 0;
+    g.lineStyle(width, c, a);
+    chevronPass(g, x, y, w, h, dir, shift, gap, row, arm, () => { n++; });
+  }
+  return n;
+}
+
+function chevronPass(g: Gfx, x: number, y: number, w: number, h: number, dir: number, shift: number, gap: number, row: number, arm: number, count: () => void): void {
   for (let cy = y + row / 2; cy < y + h; cy += row) {
     const stagger = (Math.round((cy - y) / row) % 2) * (gap / 2);
     for (let cx = x + ((shift + stagger) % gap); cx < x + w; cx += gap) {
       g.lineBetween(cx - dir * arm, cy - arm, cx, cy).lineBetween(cx, cy, cx - dir * arm, cy + arm);
-      n++;
+      count();
     }
   }
-  return n;
 }
 
 export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMotion: () => boolean): void {
@@ -96,7 +107,7 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       g.fillStyle(col, (lane ? 0.05 : 0.12) * alpha).fillRect(x, y, w, h);
       g.lineStyle(5, 0x0a0806, 0.45 * alpha).strokeRect(x, y, w, h);
       g.lineStyle(2, col, alpha).strokeRect(x + 1, y + 1, w - 2, h - 2);
-      if (lane) drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), col, 0.35 * alpha);
+      if (lane) drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), HAZARD_LIGHTS[kind] ?? col, 0.55 * alpha, true);
       else {
         // Fire and earth: a cross-hatch of warning stripes inside the box.
         g.lineStyle(2, col, 0.3 * alpha);
@@ -116,8 +127,13 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         g.fillStyle(col, 0.75 * alpha).fillRect(x + 10, y + 10, w - 20, h - 20);
         g.lineStyle(3, 0x0d0a07, 0.7 * alpha).lineBetween(x + w * 0.3, y + 12, x + w * 0.5, y + h * 0.55).lineBetween(x + w * 0.5, y + h * 0.55, x + w * 0.42, y + h - 12);
       } else {
-        g.fillStyle(col, (kind === 2 ? 0.08 : 0.12) * alpha).fillRect(x, y, w, h);
-        drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), col, 0.6 * alpha);
+        // Tide and gust (r19): a darker body, bright edge bars, an additive wash and luminous chevrons with a dark halo.
+        const light = HAZARD_LIGHTS[kind] ?? 0xffffff;
+        g.fillStyle(0x0a0e14, 0.16 * alpha).fillRect(x, y, w, h);
+        g.fillStyle(col, 0.22 * alpha).fillRect(x, y, w, h);
+        g.fillStyle(light, 0.7 * alpha).fillRect(x, y, w, 4).fillRect(x, y + h - 4, w, 4);
+        glow.fillStyle(light, 0.1 * alpha).fillRect(x, y, w, h);
+        drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, 0.9 * alpha, true);
       }
     }
     markers.push({ kind, phase: warnLeft > 0 ? 'warn' : 'active', x, y, w, h, dir, alpha, chevrons: drawn });

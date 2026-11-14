@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chevronShift, HAZARD_COLORS, hazardWarnAlpha } from './hazard-view';
+import { chevronShift, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -20,5 +20,14 @@ describe('hazard view helpers', () => {
 
   it('each element hazard has its own muted colour', () => {
     expect(new Set(HAZARD_COLORS.slice(1)).size).toBe(4);
+  });
+
+  it('tide and gust strikes use a pale light that is far brighter than their muted body (r19 contrast) yet stays desaturated', () => {
+    const lum = (c: number): number => 0.299 * (c >> 16) + 0.587 * ((c >> 8) & 255) + 0.114 * (c & 255);
+    const sat = (c: number): number => { const m = [c >> 16, (c >> 8) & 255, c & 255]; return (Math.max(...m) - Math.min(...m)) / 255; };
+    for (const kind of [2, 4]) {
+      expect(lum(HAZARD_LIGHTS[kind] ?? 0)).toBeGreaterThan(lum(HAZARD_COLORS[kind] ?? 0) + 60);
+      expect(sat(HAZARD_LIGHTS[kind] ?? 0)).toBeLessThan(0.3);
+    }
   });
 });
