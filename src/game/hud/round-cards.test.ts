@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PUNCH_SCALE, PUNCH_TICKS, bannerFrame,
   CARD_CLEAR_TICKS, CARD_IN_TICKS, CARD_SLIDE_PX, bannerColorFor, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame,
 } from './round-cards';
 
@@ -60,5 +61,27 @@ describe('card colour', () => {
       expect(lum(c)).toBeGreaterThan(lum(`#${e.toString(16).padStart(6, '0')}`));
       expect(lum(c)).toBeGreaterThan(0.4);
     }
+  });
+});
+
+describe('banner frame (QA r20: no ghosted KO or FIGHT!)', () => {
+  it('big calls are fully opaque from the first tick and punch in from PUNCH_SCALE', () => {
+    for (const m of ['K.O.', 'FIGHT!', 'DOUBLE K.O.']) {
+      const f0 = bannerFrame(m, 0, 60, false, 2, 8, 12);
+      expect(f0).toEqual({ alpha: 1, scale: PUNCH_SCALE });
+      expect(bannerFrame(m, PUNCH_TICKS, 50, false, 1, 8, 12)).toEqual({ alpha: 1, scale: 1 });
+      expect(bannerFrame(m, 3, 40, false, 1, 8, 12).alpha).toBe(1);
+    }
+  });
+  it('big calls only fade at the end, and show no scale with reduced motion', () => {
+    expect(bannerFrame('K.O.', 40, 6, false, 1, 8, 12).alpha).toBeCloseTo(0.5);
+    expect(bannerFrame('K.O.', 40, 0, false, 1, 8, 12).alpha).toBe(0);
+    expect(bannerFrame('FIGHT!', 0, 60, true, 1, 8, 12)).toEqual({ alpha: 1, scale: 1 });
+  });
+  it('ordinary banners keep the slow scale-in and the fade-in', () => {
+    const f = bannerFrame('ROUND 1', 0, 60, false, 2, 8, 12);
+    expect(f.scale).toBe(2);
+    expect(f.alpha).toBeCloseTo(1 / 8);
+    expect(bannerFrame('ROUND 1', 20, 60, true, 1, 8, 12).alpha).toBe(1);
   });
 });

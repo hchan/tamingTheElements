@@ -1760,6 +1760,15 @@ html[data-high-contrast='true'] button.touchBtn {
   }
 }
 
+/* Landscape phone: the card docks under the HUD bar (over the crowd band) instead of the lower floor, so it never covers a fighter or the stick (QA r20). */
+@media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
+  .firstRunHint:not(.firstRunWait) {
+    top: 17vh;
+    bottom: auto;
+    font-size: 12px;
+  }
+}
+
 /* Portrait phone: the first-run card is a short one (the move line and the footer go; Help has them), and it stays hidden behind the rotate overlay. */
 @media (orientation: portrait) and (pointer: coarse) {
   .firstRunHint p:nth-of-type(1),

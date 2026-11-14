@@ -41,6 +41,25 @@ export function bannerSizeFor(main: string): number {
   return main === 'K.O.' || main === 'DOUBLE K.O.' ? 2.2 : main === 'FIGHT!' ? 1.4 : 1;
 }
 
+/** Ticks of a big call's scale punch (KO, FIGHT!): short, so it lands as a hit rather than a slow fade-in. */
+export const PUNCH_TICKS = 10;
+/** Start scale of the punch (shrinks to 1 over PUNCH_TICKS). */
+export const PUNCH_SCALE = 1.45;
+
+/**
+ * Opacity and scale of a banner `age` ticks old (`left` ticks remain). Big calls (size above 1: KO, FIGHT!) are fully opaque from the
+ * first tick and punch in from PUNCH_SCALE (QA r20: a slow translucent fade-in read as a ghost behind the numbers); they only fade out.
+ * Other banners keep the slow scale-in (`slowScale`) and the fade-in. Reduced motion: no scale, no fade-in. Pure.
+ */
+export function bannerFrame(main: string, age: number, left: number, reduced: boolean, slowScale: number, fadeIn: number, fadeOut: number): { alpha: number; scale: number } {
+  const out = Math.min(1, left / fadeOut);
+  if (bannerSizeFor(main) > 1) {
+    const k = reduced ? 0 : Math.max(0, 1 - age / PUNCH_TICKS);
+    return { alpha: Math.max(0, out), scale: 1 + (PUNCH_SCALE - 1) * k * k };
+  }
+  return { alpha: Math.max(0, reduced ? 1 : Math.min(1, (age + 1) / fadeIn, out)), scale: slowScale };
+}
+
 /** Warm luminous white for the big calls, the usual bone for the rest. */
 export function bannerColorFor(main: string): string {
   return main === 'K.O.' || main === 'DOUBLE K.O.' ? '#fff1c8' : main === 'FIGHT!' ? '#ffe9b0' : '#b3ab9a';

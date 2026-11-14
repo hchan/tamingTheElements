@@ -1,10 +1,10 @@
 import type Phaser from 'phaser';
 import { EntityFlag, ROUND_TIMER_TICKS, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
-import { bannerColorFor, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
+import { bannerColorFor, bannerFrame, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
 import { heroName } from './tag-fx';
 import type { Announcement } from '../a11y/announcer';
-import { LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
+import { LOGICAL_WIDTH, phoneBoost, resolutionOf } from '../boot/viewport';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
 import { mountWeatherView } from '../fx/weather-view';
 import {
@@ -168,19 +168,22 @@ export function mountRoundView(
     if (!parts || !ar) return;
     const tick = view.tick;
     const on = banner.main !== '' && tick < banner.until;
-    scale = bannerScale((tick - banner.from) * TICK_MS, banner.reduced);
+    const slow = bannerScale((tick - banner.from) * TICK_MS, banner.reduced);
     // The damage numbers (Hud.drawArcade) thin out under a banner, so the stacked KO numbers never bury its caption.
     if (hud.registry.get('tte.banner') !== on) hud.registry.set('tte.banner', on);
     if (parts.main.text !== banner.main) parts.main.setText(banner.main);
     if (parts.sub.text !== banner.sub) parts.sub.setText(banner.sub);
-    const fade = banner.reduced ? 1 : Math.min(1, (tick - banner.from + 1) / FADE_IN_TICKS, (banner.until - tick) / FADE_OUT_TICKS);
+    const frame = bannerFrame(banner.main, tick - banner.from, banner.until - tick, banner.reduced, slow, FADE_IN_TICKS, FADE_OUT_TICKS);
+    const fade = frame.alpha;
+    scale = frame.scale;
     const size = bannerSizeFor(banner.main);
     if (on && size !== shownSize) {
       shownSize = size;
-      parts.main.setFontSize(MAIN_PX * size);
+      // Big calls get a hard, thick outline so they stay solid over floor detail and damage numbers.
+      parts.main.setFontSize(MAIN_PX * size).setStroke('#0a0806', size > 1 ? 10 : 4);
     }
     if (on) parts.main.setColor(bannerColorFor(banner.main));
-    parts.main.setVisible(on).setScale(scale).setAlpha(Math.max(0, fade) * (size > 1 ? 1 : 0.9));
+    parts.main.setVisible(on).setScale(scale).setAlpha(fade * (size > 1 ? 1 : 0.9));
     parts.sub.setY(BANNER_Y + SUB_GAP + (size > 1 ? Math.round(MAIN_PX * (size - 1) * 0.55) : 0));
     drawHalo(on ? haloFor(banner.main, tick - banner.from, banner.reduced) : 0);
     drawCards(on, tick);
@@ -209,7 +212,7 @@ export function mountRoundView(
       timer: text(TIMER_PX, TIMER_Y, 5).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
       // One caption centred under both pip groups (it was one per group: the same word twice, qa-hud-clutter).
-      pipLabels: [text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setText('ROUNDS').setPosition(TIMER_X, PIP_Y + PIP_R + 3)],
+      pipLabels: [text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setFontSize(Math.round(PIP_LABEL_PX * phoneBoost(hud, 1.7, 1100))).setText('ROUNDS').setPosition(TIMER_X, PIP_Y + PIP_R + 3)],
       halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
       cards: [
         text(CARD_PX, CARD_Y, 12, true).setOrigin(0, 0.5).setVisible(false),

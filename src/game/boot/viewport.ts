@@ -96,10 +96,10 @@ export function crisp(scene: Phaser.Scene, style: Phaser.Types.GameObjects.Text.
 }
 
 /**
- * Text multiplier for small screens: 1 from about 900 CSS px of canvas width up, growing (to `max`) as the canvas shrinks,
+ * Text multiplier for small screens (`base` CSS px of box width, 900 by default; 1100 for the slim HUD): 1 from about 900 CSS px of canvas width up, growing (to `max`) as the canvas shrinks,
  * so HUD labels stay near 12 CSS px on a phone where the 1280 logical width is drawn about 0.3x.
  */
-export function phoneBoost(scene: Phaser.Scene, max = 2.4): number {
+export function phoneBoost(scene: Phaser.Scene, max = 2.4, base = 900): number {
   const w = coreDisplayWidth(scene);
-  return w > 0 ? Math.min(max, Math.max(1, 900 / w)) : 1;
+  return w > 0 ? Math.min(max, Math.max(1, base / w)) : 1;
 }
