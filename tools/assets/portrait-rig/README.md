@@ -20,6 +20,9 @@ corepack pnpm assets:sheets                                                     
 - `spec/<hero>.anim.json`: the nine actions (idle, walk, cast, hurt, guard, dash, ko, victory, tagIn) as integer curves per
   bone or part, plus optional wave/noise deforms. Motion stays small and weighty; values are integers (see `tools/assets/bake-rig.ts`).
 - `contact.py <hero> <out.png> [scale] [--dirs=E,SE] [actions...]`: a contact sheet of baked frames on a dark floor for review.
+- `bright-check.py <hero> <out.png> [scale] [key:idx ...]`: baked frames over a bright (air-stage) and a dark backdrop, enlarged, to
+  spot see-through holes and ragged mattes. Spec keys: `matte.alphaCut` drops faint detached wisps; `pits` repaints enclosed
+  near-black pits inside `rects` as shaded hollows so they do not read as holes.
 - `map-strips.py`: the 80 px map strips from the packed sheet (manifest rects; area downscale of the visual box). Never touches
   `*Large.png`. `tools/assets/rig-gen/pax-portrait.py` is a shim to it.
 
