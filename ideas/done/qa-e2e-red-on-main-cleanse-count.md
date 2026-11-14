@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 ---
 
@@ -24,3 +24,7 @@ The first background run (E2E_PORT 7940, 1 worker) in fact ran the whole suite: 
 - tour.spec.ts:125 (expects 9 menuButtons on a touch device; the count differs)
 
 Note tour.spec.ts expects 9 where arcade.spec.ts got 9 and expected 8, so the specs disagree about the count: check which is authoritative before editing.
+
+## Resolved
+
+Full e2e on current main (worktree, 1 worker): 288 passed twice in a row (2026-11-13); counts were fixed by later merges.

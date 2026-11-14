@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 ---
 
@@ -8,3 +8,7 @@ added: 2026-11-13
 Severity: high. QA evaluator pass 2026-11-13 on main 622c6619. Log: ~/claudetmp/qa2-e2e.log
 
 Re-report of qa-e2e-red-on-main-cleanse-count. Stable subset of 8 specs: 78 run, 66 passed, 12 failed. All 12 are responsive.spec.ts:181 and :238 (touch buttons, 9 expected, 10 received, the extra id is arcadeCleanse) plus tour.spec.ts:125. arcade-tag, help-controls and keyboard specs pass.
+
+## Resolved
+
+Full e2e on current main (worktree, 1 worker): 288 passed twice in a row (2026-11-13); counts were fixed by later merges.
