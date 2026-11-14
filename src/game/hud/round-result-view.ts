@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type RenderView, type SimEvent } from '@core/index';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
 import {
   RESULT_TICKS, ResultTally, healthPct, resultCard, type ResultCard, type Tone,
 } from './round-result';
@@ -68,7 +68,7 @@ export function mountResultView(
     hud.add
       .text(LOGICAL_WIDTH / 2, SLAB_Y, '', {
         fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(size)}px`, fontStyle: style, color, stroke: '#0a0806',
-        strokeThickness: size > 30 ? 4 : 2, align: 'center', lineSpacing: spacing, resolution: hud.scale.width / LOGICAL_WIDTH,
+        strokeThickness: size > 30 ? 4 : 2, align: 'center', lineSpacing: spacing, resolution: resolutionOf(hud),
       })
       .setOrigin(0.5, 0)
       .setDepth(DEPTH);

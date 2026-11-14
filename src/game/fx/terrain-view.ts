@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
 import { EntityFlag, RoundPhase, SimEventKind, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { coreDisplayWidth, resolutionOf } from '../boot/viewport';
 import { mountStageBackdrop, type StageBackdrop } from './terrain-stage';
 import { mute } from './grim-fx';
 import { drawPad } from './terrain-pad';
@@ -173,14 +173,14 @@ export function mountTerrainView(
     scene.add
       .text(0, 0, '', {
         fontFamily: LABEL_FONT, fontSize: `${String(px)}px`, fontStyle: 'bold', color: LABEL_COLOR, stroke: '#0a0806', strokeThickness: Math.max(2, stroke - 2),
-        resolution: scene.scale.width / LOGICAL_WIDTH,
+        resolution: resolutionOf(scene),
       })
       .setVisible(false);
 
   /** The objects, made on the first frame the Hud runs. */
   const made = (): NonNullable<typeof parts> => {
     // Up to 1.3x on a phone (the weather badge's boost), so the words stay near 8 CSS px.
-    const boost = Math.min(1.3, Math.max(1, 900 / (hud.scale.displaySize.width || 900)));
+    const boost = Math.min(1.3, Math.max(1, 900 / (coreDisplayWidth(hud) || 900)));
     parts ??= {
       bg: undefined,
       next: undefined,

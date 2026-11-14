@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { SUPER_NAMES, type Element } from '@core/index';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
 import { drawnBox } from '../views/hero-scale';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { ELEMENT_COLORS } from './element-colors';
@@ -38,6 +38,9 @@ const LINES = 26;
 const PORTRAIT_X = 120;
 /** Over the characters (0), under the caster (lifted to DIM_DEPTH + 1), the band and the hit sparks (10). */
 const DIM_DEPTH = 5;
+/** Logical px the dim and band reach past each side of the 1280 box, so they cover the wide view (viewport.ts `enableWideView`, at most the 1920 world). */
+const WIDE_SIDE = 320;
+const SPAN = LOGICAL_WIDTH + 2 * WIDE_SIDE;
 /** The element burst: over the dim, under the lifted caster. */
 const BURST_DEPTH = DIM_DEPTH + 0.5;
 
@@ -87,15 +90,15 @@ export function superState(scene: Phaser.Scene): SuperState | undefined {
 }
 
 function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boolean): Runner {
-  const res = (): number => scene.scale.width / LOGICAL_WIDTH;
+  const res = (): number => resolutionOf(scene);
   const text = (size: number): Phaser.GameObjects.Text =>
     scene.add
       .text(0, 0, '', { fontSize: `${String(size)}px`, fontStyle: 'bold', color: '#d8d2c4', stroke: '#0a0806', strokeThickness: 8, resolution: res() })
       .setOrigin(0.5)
       .setDepth(DIM_DEPTH + 3);
   const parts = {
-    dim: scene.add.rectangle(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT, 0).setOrigin(0).setDepth(DIM_DEPTH),
-    band: scene.add.rectangle(0, 0, LOGICAL_WIDTH, BAND_H, 0).setOrigin(0, 0.5).setDepth(DIM_DEPTH + 2),
+    dim: scene.add.rectangle(0, 0, SPAN, LOGICAL_HEIGHT, 0).setOrigin(0).setDepth(DIM_DEPTH),
+    band: scene.add.rectangle(0, 0, SPAN, BAND_H, 0).setOrigin(0, 0.5).setDepth(DIM_DEPTH + 2),
     // Element-colour rules along the band edges and the speed lines through it, in band-relative coordinates (placed like the band).
     edges: scene.add.graphics().setDepth(DIM_DEPTH + 2.5),
     card: scene.add.rectangle(0, 0, CARD_PX, CARD_PX, 0x0a0806).setDepth(DIM_DEPTH + 2.8),
@@ -189,8 +192,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     for (const o of [parts.dim, parts.band, parts.edges, parts.name, parts.sub]) o.setScale(v.scale);
     parts.card.setScale(v.scale);
     parts.portrait.setDisplaySize(PORTRAIT_PX * v.scale, PORTRAIT_PX * v.scale);
-    put(parts.dim, 0, 0, Math.min(1, frame.dim * DIM_GAIN));
-    put(parts.band, dx, bandY, frame.bandAlpha * BAND_OPACITY);
+    put(parts.dim, -WIDE_SIDE, 0, Math.min(1, frame.dim * DIM_GAIN));
+    put(parts.band, dx - WIDE_SIDE, bandY, frame.bandAlpha * BAND_OPACITY);
     put(parts.edges, dx, bandY, frame.bandAlpha);
     put(parts.card, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
@@ -234,7 +237,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       parts.name.setColor(`#${tint.toString(16).padStart(6, '0')}`);
       parts.card.setStrokeStyle(4, tint, 1);
       parts.edges.clear();
-      parts.edges.fillStyle(tint, 0.9).fillRect(0, -BAND_H / 2 - 3, LOGICAL_WIDTH, 6).fillRect(0, BAND_H / 2 - 3, LOGICAL_WIDTH, 6);
+      parts.edges.fillStyle(tint, 0.9).fillRect(-WIDE_SIDE, -BAND_H / 2 - 3, SPAN, 6).fillRect(-WIDE_SIDE, BAND_H / 2 - 3, SPAN, 6);
       // Speed lines: thin streaks of the element colour at fixed (hash-spaced) heights and lengths, no randomness.
       for (let i = 0; i < LINES; i++) {
         const h = (i * 2654435761) >>> 0;

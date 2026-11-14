@@ -3,7 +3,7 @@ import type { RenderView } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
 import { mute } from '../fx/grim-fx';
 import { ROOT_ICON, STATUS_LOOKS, StatusTracker, chipBlink, chipFlash, chipPop } from '../fx/status-fx';
-import { crisp, fitScene, phoneBoost } from '../boot/viewport';
+import { coreDisplayWidth, crisp, fitScene, phoneBoost } from '../boot/viewport';
 import { lookup } from '../views/projectile-view';
 import { heroName } from '../hud/tag-fx';
 import { elementMark } from '../hud/element-mark';
@@ -472,9 +472,9 @@ export class Hud extends Phaser.Scene {
     this.reduceMotion = prefs.reduceMotion;
   }
 
-  /** Text multiplier for the slim Arcade HUD: 1 from 1100 CSS px of canvas width up, to PHONE_ARCADE_BOOST (about 12 CSS px of text) on a phone. */
+  /** Text multiplier for the slim Arcade HUD: 1 from 1100 CSS px of (1280-box) canvas width up, to PHONE_ARCADE_BOOST (about 12 CSS px of text) on a phone. */
   private arcadeBoost(): number {
-    const w = this.scale.displaySize.width;
+    const w = coreDisplayWidth(this);
     return w > 0 ? Math.min(PHONE_ARCADE_BOOST, Math.max(1, 1100 / w)) : 1;
   }
 

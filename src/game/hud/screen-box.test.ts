@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type Phaser from 'phaser';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
 import { screenBox } from './screen-box';
 
 type Cam = { zoom: number; scrollX: number; scrollY: number; width: number; height: number };
-const scene = (cam: Cam, width: number): Phaser.Scene =>
-  ({ cameras: { main: cam }, scale: { width } }) as unknown as Phaser.Scene;
+const scene = (cam: Cam, width: number, height = (width * LOGICAL_HEIGHT) / LOGICAL_WIDTH): Phaser.Scene =>
+  ({ cameras: { main: cam }, scale: { width, height } }) as unknown as Phaser.Scene;
 
 describe('screenBox', () => {
   it('is the identity at the logical size with the default camera', () => {
@@ -32,5 +32,11 @@ describe('screenBox', () => {
     expect(b.scale).toBe(2);
     expect(b.x).toBe(-200 - 640);
     expect(b.y).toBe(-100 - 360);
+  });
+
+  it('with the wide view the 1280 box sits in the middle of the wider canvas', () => {
+    // 1642 logical px wide at resolution 2: the camera is 3284 x 1440 device px, centred on (640, 360) at zoom 2.
+    const b = screenBox(scene({ zoom: 2, scrollX: 640 - 3284 / 2, scrollY: 360 - 1440 / 2, width: 3284, height: 1440 }, 3284, 1440));
+    expect(b).toEqual({ x: 0, y: 0, scale: 1 });
   });
 });

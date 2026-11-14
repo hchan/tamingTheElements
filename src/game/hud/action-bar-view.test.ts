@@ -37,7 +37,7 @@ function fakeObject(): Fake {
 
 type PointerFn = (p: { x: number; y: number; worldX: number; worldY: number }) => void;
 
-function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?: () => ScreenBox; width?: number; haveTexture?: boolean; arcade?: unknown }) {
+function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?: () => ScreenBox; width?: number; haveTexture?: boolean; arcade?: unknown; cam?: { zoom: number; scrollX: number; scrollY: number; width: number; height: number } }) {
   const gfx: Fake[] = [];
   const images: Fake[] = [];
   const texts: Fake[] = [];
@@ -48,8 +48,9 @@ function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?:
   const canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1280 }) };
   const scene = {
     game: { canvas },
-    scale: { width: opts.width ?? 1280, displaySize: { width: 1280 } },
-    cameras: { main: { zoom: 1, scrollX: 0, scrollY: 0, width: 1280, height: 720 } },
+    // Height 720 x the resolution; the canvas is drawn 1:1 in CSS px (1280 wide, or the wide view's width).
+    scale: { width: opts.width ?? 1280, height: opts.cam?.height ?? ((opts.width ?? 1280) * 720) / 1280, displaySize: { width: ((opts.width ?? 1280) * 720) / (opts.cam?.height ?? ((opts.width ?? 1280) * 720) / 1280) } },
+    cameras: { main: opts.cam ?? { zoom: 1, scrollX: 0, scrollY: 0, width: 1280, height: 720 } },
     add: {
       graphics: () => { const g = fakeObject(); gfx.push(g); return g; },
       image: () => { const g = fakeObject(); images.push(g); return g; },
@@ -208,6 +209,15 @@ describe('ActionBarView', () => {
     expect(r.gfx[1]?.calls).toEqual([]);
     r.click(mid(0).x, mid(0).y);
     expect(r.emitted).toEqual([]);
+  });
+
+  it('screenSlots stay relative to the central 1280 box in the wide view', () => {
+    // 1642 logical px wide at resolution 1.5 (an 844x370 phone box): 181 px of extra arena each side of the box.
+    const w = 1642 * 1.5;
+    const r = rig({ bar: bar(), width: w, cam: { zoom: 1.5, scrollX: 640 - w / 2, scrollY: 360 - 540, width: w, height: 1080 } });
+    r.v.update();
+    expect(r.v.screenSlots()[0]).toEqual({ x: slotX(0), y: BAR_Y + 1, size: SLOT_SIDE });
+    r.v.destroy();
   });
 
   it('screenSlots maps slots through the camera and destroy releases everything', () => {

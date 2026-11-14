@@ -6,6 +6,7 @@ import {
   callText, dashes, flashPose, mainBarOf, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
+import { coreDisplayWidth, resolutionOf } from '../boot/viewport';
 
 /**
  * Phaser side of the Arcade tag-team view (WP-arcade-tag-view, FUN-DESIGN 2.6 and section 3). The weather view mounts it
@@ -95,14 +96,14 @@ export function mountTagView(
   if (teams[0].length < 2 && teams[1].length < 2) return then;
 
   // Up to 1.3x on a phone, so the longest bench line still ends left of the round pips.
-  const boost = Math.min(1.3, Math.max(1, 900 / (hud.scale.displaySize.width || 900)));
+  const boost = Math.min(1.3, Math.max(1, 900 / (coreDisplayWidth(hud) || 900)));
   const rowH = Math.round(LINE_PX * boost) + 5;
   const layouts = teams.map((t) => tagLayout(t.length, rowH, boost));
   const text = (scene: Phaser.Scene, px: number, stroke: number): Phaser.GameObjects.Text =>
     scene.add
       .text(0, 0, '', {
         fontSize: `${String(Math.round(px))}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: stroke,
-        resolution: scene.scale.width / 1280,
+        resolution: resolutionOf(scene),
       })
       .setDepth(HUD_DEPTH);
   const fx = arena.add.graphics().setDepth(FLASH_DEPTH);

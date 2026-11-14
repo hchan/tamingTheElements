@@ -1,13 +1,13 @@
 import type Phaser from 'phaser';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, enableWideView, resolutionOf, viewWidth } from '../boot/viewport';
 import { cameraTarget, type CameraFraming } from './arena-camera';
 import { koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /**
  * Phaser side of the panning Arcade camera (WP 38b). View only: it reads the render view and moves `cameras.main`; nothing
- * flows back into the sim. While the playfield is no wider than the view (1280 today) the framing is pinned at the fit
- * camera, so the picture is identical to `fitScene`. The super cinematic composes on top through `applyCamera` and `viewBox`.
+ * flows back into the sim. While the playfield is no wider than the view the framing is pinned at the fit camera, so the
+ * picture is identical to `fitScene`. The view is 1280 logical px wide, or wider on a wide phone (viewport.ts `enableWideView`). The super cinematic composes on top through `applyCamera` and `viewBox`.
  */
 
 /** A frame-to-frame jump of the fighters' midpoint this big is a round reset or a swap, not movement: snap instead of easing. */
@@ -59,7 +59,7 @@ export function holdCamera(scene: Phaser.Scene, hold: boolean): void {
  */
 export function applyCamera(scene: Phaser.Scene, z = 1, px = LOGICAL_WIDTH / 2, py = LOGICAL_HEIGHT / 2): void {
   const s = state(scene);
-  const res = scene.scale.width / LOGICAL_WIDTH;
+  const res = resolutionOf(scene);
   scene.cameras.main.setZoom(res * s.zoom * z).centerOn(px - (px - s.centerX) / z, py - (py - LOGICAL_HEIGHT / 2) / z);
 }
 
@@ -75,9 +75,13 @@ export function viewBox(scene: Phaser.Scene, z = 1, px = LOGICAL_WIDTH / 2, py =
   return { x: cx - LOGICAL_WIDTH / 2 / total, y: cy - LOGICAL_HEIGHT / 2 / total, scale: 1 / total };
 }
 
-/** Mounts the pan camera in the Arena `scene` (Arcade); it removes itself when the scene shuts down. */
+/**
+ * Mounts the pan camera in the Arena `scene` (Arcade); it removes itself when the scene shuts down. It also turns on the wide
+ * view (QA r19): a wide phone shows more of the world instead of side bars, and the pan keeps that wider view inside the walls.
+ */
 export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () => number, reducedMotion: () => boolean): void {
   const s = state(scene);
+  enableWideView(scene, arcadePlayfield().w);
   const mid = { x1: 0, x2: 0, n1: 0, n2: 0, reach: 40 };
   const visit = (c: RenderCharacter): void => {
     if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
@@ -117,7 +121,7 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
     lastMid = midpoint;
     lastTick = view.tick;
     const next = cameraTarget(
-      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, reach: mid.reach, viewWidth: LOGICAL_WIDTH, reducedMotion: reducedMotion() },
+      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, reach: mid.reach, viewWidth: viewWidth(scene), reducedMotion: reducedMotion() },
       s,
       delta / 1000,
       snap,

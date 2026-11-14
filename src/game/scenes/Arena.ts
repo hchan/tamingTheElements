@@ -61,7 +61,7 @@ import { getUiFlags } from '../platform/flags';
 import { ArcadeHudModel, numberLabel } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene, resolutionOf } from '../boot/viewport';
 
 /** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
 const ROLLBACK_WINDOW = 6;
@@ -483,7 +483,7 @@ export class Arena extends Phaser.Scene {
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };
       },
-      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / (this.scale.width / LOGICAL_WIDTH), scrollX: this.cameras.main.worldView.x })),
+      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / resolutionOf(this), scrollX: this.cameras.main.worldView.x })),
       shockFx: () => Promise.resolve(shockState(this)),
       shockSeek: (ms) => {
         shockSeek(this, ms);

@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
 import type { ChromaticSplit } from './chromatic-filter-impl';
 import { KO_SPLIT_MS, KO_WASH_MS, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
@@ -194,7 +194,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       let n = nums[nextNum];
       if (!n && nums.length < SUPER_NUMBER_POOL) {
         const text = scene.add
-          .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'bold', color: SUPER_NUMBER_COLOR, stroke: '#0a0806', strokeThickness: 8, resolution: scene.scale.width / LOGICAL_WIDTH })
+          .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'bold', color: SUPER_NUMBER_COLOR, stroke: '#0a0806', strokeThickness: 8, resolution: resolutionOf(scene) })
           .setOrigin(0.5)
           .setDepth(13);
         n = { text, x: 0, y: 0, size: 0, age: 0, reduced, live: false };

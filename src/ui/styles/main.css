@@ -2257,7 +2257,7 @@ button.menuButton.heroSlotClear {
    thin band top and bottom (the safe-area margin stays) so the slot row floats clear of the edge. */
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
   #game {
-    /* The 16:9 canvas leaves side bars on a wide phone (the stick lives in the left one): tint them like the HUD band instead of dead black. */
+    /* A 16:9 canvas leaves side bars on a wide phone (the Arcade fight fills them with arena, viewport.ts `enableWideView`; other screens keep them): tint them like the HUD band instead of dead black. */
     background: linear-gradient(90deg, #0b0a16, #151330 12%, #151330 88%, #0b0a16);
     --edge-band: 10px;
     height: calc(var(--view-h) * var(--canvas-fraction, 1) - 2 * var(--edge-band));
