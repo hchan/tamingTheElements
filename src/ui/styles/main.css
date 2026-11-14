@@ -2188,3 +2188,51 @@ button.menuButton.heroSlotClear {
     min-width: 44px;
   }
 }
+
+/* Online polish (QA r10): the setup form is one dark card like Settings and collapses once linked; the Link readout is a chip over the arena. */
+#onlineSetup {
+  margin: 0.6em 0;
+  padding: 0.6em 1em;
+  border: 1px solid #666;
+  border-radius: 8px;
+  background: rgba(20, 20, 40, 0.88);
+}
+#onlineSetup[hidden] {
+  display: none;
+}
+#onlineSetup h2 {
+  margin: 0.6em 0 0.2em;
+}
+#onlineSetup h3 {
+  margin: 0.5em 0 0.2em;
+  font-size: 0.95em;
+  font-weight: normal;
+  opacity: 0.85;
+}
+#onlineSetup textarea,
+#onlineSetup input:not([type]),
+#onlineSetup select {
+  background: #1b1b34;
+  color: #eee;
+  border: 1px solid #666;
+  border-radius: 6px;
+  padding: 0.3em 0.5em;
+  font: inherit;
+}
+#onlineSetup textarea {
+  font-size: 0.8em;
+}
+#onlineLink.onlineChip {
+  position: fixed;
+  top: 0.5em;
+  right: 0.5em;
+  z-index: 50;
+  margin: 0;
+  padding: 0.2em 0.7em;
+  border: 1px solid #666;
+  border-radius: 999px;
+  background: rgba(10, 10, 24, 0.82);
+  color: #eee;
+  font-size: 0.8em;
+  pointer-events: none;
+}

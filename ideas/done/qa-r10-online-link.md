@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -11,3 +11,5 @@ Two headless pages on localhost connected through pasted codes (online-*.png). T
 - The readout lives in the setup form, far above the match canvas. While the match runs the player must scroll up to see it (online-bottom.png shows the arena with no Link text). Put a small chip over the arena.
 - The Online page is the least finished screen: white default textareas over busy key art, tiny native selects for heroes, the match canvas placed below a tall form so the page scrolls. A new player cannot tell where the game is. Give it the card styling Settings has and collapse the form once Connected.
 - Copy: joiner still sees "Step 3: send the answer code back to your host" after connecting; hide completed steps.
+
+Done: median of 5 RTT samples, stall grade only after 250 updates, chip over the arena (fixed), setup form is a card that collapses once linked, intro and hero pickers hidden during the match.
