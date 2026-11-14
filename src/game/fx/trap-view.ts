@@ -53,7 +53,6 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
     parts.glow.clear();
     const reduced = reduceMotion();
     markers = [];
-    const margin = (TRAP_RANGE_PX - TRAP_BOX_PX) / 2;
     for (let i = 0; i * TRAP_VIEW_STRIDE < ar.traps.length; i++) {
       const [kind = 0, x = 0, y = 0, team = 0, armLeft = 0, lifeLeft = 0] = ar.traps.slice(i * TRAP_VIEW_STRIDE, (i + 1) * TRAP_VIEW_STRIDE);
       if (kind === 0) {
@@ -65,11 +64,19 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
       // Each kind has its own silhouette and motion (trap-paint.ts); the label and the range outline below carry the reading.
       paintTrap(g, parts.glow, kind, x, y, trapPhase(armLeft, lifeLeft, view.tick, reduced), alpha, TRAP_COLORS[kind] ?? 0xffffff);
       // The trigger range: a dark outline under a thin ash one (element-muted), so it reads on any floor; thin while arming, firmer once armed.
-      g.lineStyle(armLeft > 0 ? 1 : 2, 0x000000, 0.4 * alpha).strokeRect(x - margin - 1, y - margin - 1, TRAP_RANGE_PX + 2, TRAP_RANGE_PX + 2);
-      g.lineStyle(1, mute(TRAP_COLORS[kind] ?? 0xffffff, 0.2, 0.95), (armLeft > 0 ? 0.45 : 0.6) * alpha).strokeRect(x - margin, y - margin, TRAP_RANGE_PX, TRAP_RANGE_PX);
+      // (A faint dotted ground ellipse, not a box: dashes on the floor plane, brighter once armed.)
+      const rx = TRAP_RANGE_PX / 2;
+      const col = mute(TRAP_COLORS[kind] ?? 0xffffff, 0.35, 0.8);
+      for (let d = 0; d < 24; d++) {
+        const a0 = (d / 24) * Math.PI * 2;
+        const a1 = a0 + 0.14;
+        g.lineStyle(1.5, col, (armLeft > 0 ? 0.22 : 0.4) * alpha).lineBetween(
+          x + TRAP_BOX_PX / 2 + Math.cos(a0) * rx, y + TRAP_BOX_PX / 2 + Math.sin(a0) * rx * 0.6,
+          x + TRAP_BOX_PX / 2 + Math.cos(a1) * rx, y + TRAP_BOX_PX / 2 + Math.sin(a1) * rx * 0.6);
+      }
       const t = label(i);
       if (t.text !== words) t.setText(words);
-      t.setPosition(x + TRAP_BOX_PX / 2, y - margin - 2).setAlpha(alpha).setVisible(true);
+      t.setPosition(x + TRAP_BOX_PX / 2, y + TRAP_BOX_PX / 2 - 31 * 0.6 - 8).setAlpha(alpha * 0.85).setVisible(true);
       markers.push({ kind, x, y, team, label: words, alpha });
     }
   };

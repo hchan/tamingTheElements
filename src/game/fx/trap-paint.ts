@@ -4,15 +4,21 @@ import { hash01, mute } from './grim-fx';
 import type { TrapPhase } from './trap-fx';
 
 /**
- * Per-kind trap painters (view only). Each trap kind has its own silhouette and motion, drawn runtime with two Graphics: `under`
- * (normal blend, dark stained ground) and `glow` (additive light). Grim and desaturated: every colour goes through `mute`, no
- * white, no bold outline. Arming shows the thing assembling (`phase.arm`); the last ticks of life quicken it (`phase.urgency`).
- * Reduced motion arrives as a frozen `phase.t`, so a still frame equals the animated one at one instant.
+ * Per-kind trap painters (view only). Every trap is a flat ground decal in the floor's perspective (an ellipse, 0.6 tall): a dark
+ * scorch/stain, a rune ring of 12 segments and a kind glyph, plus a few small animated accents (flame tongues, ripples, tusks,
+ * grit). Two Graphics: `under` (normal blend) and `glow` (additive, element-coloured). Grim and desaturated through `mute`, no
+ * white, no bold outline. Phases: arming lights the ring segment by segment and grows the glyph (`phase.arm`); armed is a full
+ * pulsing ring; the last ticks of life quicken everything (`phase.urgency`). Reduced motion arrives as a frozen `phase.t`.
  */
 type Gfx = Phaser.GameObjects.Graphics;
 
 const HALF = TRAP_BOX_PX / 2;
 const TAU = Math.PI * 2;
+/** Ground perspective: decals are ellipses this much flatter than they are wide. */
+const FLAT = 0.6;
+const SEGMENTS = 12;
+/** Decal radius (px, horizontal). */
+const R = 31;
 /** Mute levels: the tones stay close to the element but ashy. */
 const tone = (c: number, keep: number, dark: number): number => mute(c, keep, dark);
 
@@ -33,111 +39,150 @@ function poly(g: Gfx, pts: readonly number[], fill: number, alpha: number): void
   g.fillStyle(fill, alpha).fillPoints(out as Phaser.Math.Vector2[], true);
 }
 
-/** Fire Bomb: a charred pod, its cracks glowing and pulsing faster as the fuse runs down; cinders drift up. */
-function paintFireBomb(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, base: number): void {
-  const pulse = 0.5 + 0.5 * Math.sin(p.t * (4 + p.urgency * 14));
-  const heat = (0.25 + 0.6 * p.arm) * (0.55 + 0.45 * pulse) * a;
-  under.fillStyle(0x000000, 0.28 * a).fillEllipse(cx, cy + 4, 50, 32);
-  poly(under, blob(cx, cy, 20 * (0.6 + 0.4 * p.arm), 15 * (0.6 + 0.4 * p.arm), 3, 0.015, p.t), tone(0x2a1a12, 0.5, 0.8), 0.9 * a);
-  poly(under, blob(cx - 2, cy - 2, 12 * (0.6 + 0.4 * p.arm), 9, 5, 0.02, p.t), tone(0x4a3020, 0.4, 0.8), 0.6 * a);
-  const seam = tone(base, 0.55, 1.05);
-  for (let i = 0; i < 6; i++) {
-    const ang = hash01(i, 71) * TAU;
-    const r0 = 3 + hash01(i, 72) * 4;
-    const r1 = (11 + hash01(i, 73) * 9) * p.arm;
-    const bend = (hash01(i, 74) - 0.5) * 0.7;
-    const x0 = cx + Math.cos(ang) * r0;
-    const y0 = cy + Math.sin(ang) * r0 * 0.7;
-    const xm = cx + Math.cos(ang + bend) * (r0 + r1) * 0.6;
-    const ym = cy + Math.sin(ang + bend) * (r0 + r1) * 0.6 * 0.7;
-    const x1 = cx + Math.cos(ang + bend * 1.6) * (r0 + r1);
-    const y1 = cy + Math.sin(ang + bend * 1.6) * (r0 + r1) * 0.7;
-    glow.lineStyle(5, seam, 0.07 * heat).lineBetween(x0, y0, xm, ym).lineBetween(xm, ym, x1, y1);
-    glow.lineStyle(1.5, seam, 0.55 * heat).lineBetween(x0, y0, xm, ym).lineBetween(xm, ym, x1, y1);
+/** Points along an ellipse arc. */
+function arcPts(cx: number, cy: number, rx: number, ry: number, a0: number, a1: number, n: number): Phaser.Math.Vector2[] {
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i <= n; i++) {
+    const a = a0 + ((a1 - a0) * i) / n;
+    pts.push({ x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry });
   }
-  glow.fillStyle(seam, 0.1 * heat).fillCircle(cx, cy, 24);
-  glow.fillStyle(seam, 0.16 * heat).fillCircle(cx, cy, 11);
-  // Cinders rising off the pod.
+  return pts as Phaser.Math.Vector2[];
+}
+
+/**
+ * The shared ground decal: soft shadow, dark stain, a dim inlay ring (always there, so the spot reads before it works) and the
+ * 12 rune segments that light one by one while arming, then pulse together once armed. `spin` turns the segments slowly.
+ */
+function runeRing(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, col: number, spin: number): void {
+  const ry = R * FLAT;
+  const lit = p.arm >= 1 ? SEGMENTS : Math.floor(p.arm * SEGMENTS);
+  const pulse = 0.65 + 0.35 * Math.sin(p.t * (3 + p.urgency * 12));
+  under.fillStyle(0x000000, 0.34 * a).fillEllipse(cx, cy + 2, R * 2.2, ry * 2.3);
+  under.fillStyle(0x0c0907, 0.55 * a).fillEllipse(cx, cy, R * 2, ry * 2);
+  under.lineStyle(2, tone(col, 0.35, 0.3), 0.7 * a).strokePoints(arcPts(cx, cy, R, ry, 0, TAU, 28), true);
+  under.lineStyle(1, tone(col, 0.3, 0.22), 0.6 * a).strokePoints(arcPts(cx, cy, R * 0.62, ry * 0.62, 0, TAU, 20), true);
+  const seg = TAU / SEGMENTS;
+  for (let i = 0; i < SEGMENTS; i++) {
+    const a0 = spin + i * seg + seg * 0.12;
+    const pts = arcPts(cx, cy, R, ry, a0, a0 + seg * 0.62, 4);
+    if (i >= lit) {
+      under.lineStyle(2, tone(col, 0.3, 0.4), 0.55 * a).strokePoints(pts, false);
+      continue;
+    }
+    const k = (p.arm >= 1 ? pulse : 1) * a;
+    glow.lineStyle(7, tone(col, 0.8, 1), 0.08 * k).strokePoints(pts, false);
+    glow.lineStyle(2.2, tone(col, 0.7, 1.1), 0.7 * k).strokePoints(pts, false);
+  }
+  if (p.arm >= 1) glow.fillStyle(tone(col, 0.7, 1), 0.07 * pulse * a).fillEllipse(cx, cy, R * 1.9, ry * 1.9);
+}
+
+/** A flame tongue (additive triangle pair) rising from (x, y). */
+function tongue(glow: Gfx, x: number, y: number, h: number, w: number, col: number, alpha: number): void {
+  glow.fillStyle(col, alpha * 0.45).fillTriangle(x - w, y, x + w, y, x, y - h);
+  glow.fillStyle(tone(0xffc060, 0.6, 1.1), alpha * 0.55).fillTriangle(x - w * 0.45, y, x + w * 0.45, y, x, y - h * 0.6);
+}
+
+/** Fire Bomb (flame vent): a scorched ring, glowing cracks and tongues that grow while arming and lick when armed. */
+function paintFireBomb(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, base: number): void {
+  const hot = tone(base, 0.85, 1.05);
+  runeRing(under, glow, cx, cy, p, a, base, p.t * 0.25);
+  poly(under, blob(cx, cy, 14, 9, 3, 0.015, p.t), tone(0x1c100b, 0.5, 0.8), 0.85 * a);
+  const heat = (0.2 + 0.8 * p.arm) * (0.6 + 0.4 * Math.sin(p.t * (4 + p.urgency * 14))) * a;
+  for (let i = 0; i < 7; i++) {
+    const ang = (i / 7) * TAU + hash01(i, 71) * 0.5;
+    const r0 = 4 + hash01(i, 72) * 3;
+    const r1 = (10 + hash01(i, 73) * 11) * (0.3 + 0.7 * p.arm);
+    const mid = ang + (hash01(i, 74) - 0.5) * 0.6;
+    glow
+      .lineStyle(1.6, hot, 0.65 * heat)
+      .lineBetween(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0 * FLAT, cx + Math.cos(mid) * (r0 + r1), cy + Math.sin(mid) * (r0 + r1) * FLAT);
+  }
+  glow.fillStyle(hot, 0.16 * heat).fillEllipse(cx, cy, 24, 14);
+  for (let i = 0; i < 3; i++) {
+    const flick = 0.7 + 0.3 * Math.sin(p.t * (7 + i * 2 + p.urgency * 10) + i * 2);
+    const h = (6 + (i === 1 ? 9 : 5)) * (0.25 + 0.75 * p.arm) * flick;
+    tongue(glow, cx + (i - 1) * 6, cy + 1, h, i === 1 ? 3.4 : 2.6, hot, a);
+  }
   for (let i = 0; i < 6; i++) {
     const life = (p.t * (0.5 + hash01(i, 80) * 0.5) + hash01(i, 81)) % 1;
-    const x = cx + (hash01(i, 82) - 0.5) * 26 + Math.sin(p.t * 2 + i) * 2;
-    const y = cy - 6 - life * 28;
-    glow.fillStyle(seam, Math.sin(life * Math.PI) * 0.55 * a * p.arm).fillCircle(x, y, 1.1);
+    glow.fillStyle(hot, Math.sin(life * Math.PI) * 0.6 * a * p.arm).fillCircle(cx + (hash01(i, 82) - 0.5) * 22 + Math.sin(p.t * 2 + i) * 2, cy - 6 - life * 26, 1.1);
   }
 }
 
-/** Puddle: a murky pool with a wet rim, slow ripples spreading and the odd bubble. */
+/** Puddle (ice and water patch): a dark mere with a frosted rim, ripples spreading and the odd bubble. */
 function paintPuddle(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, base: number): void {
-  const k = 0.55 + 0.45 * p.arm;
-  const water = tone(base, 0.4, 0.5);
-  poly(under, blob(cx, cy, 27 * k, 22 * k, 11, 0.02, p.t), 0x07090a, 0.3 * a);
-  poly(under, blob(cx, cy, 25 * k, 20 * k, 12, 0.03, p.t * 0.8), water, 0.5 * a);
-  poly(under, blob(cx + 2, cy + 2, 16 * k, 12 * k, 13, 0.04, p.t * 0.6), tone(base, 0.3, 0.32), 0.5 * a);
-  for (let i = 0; i < 3; i++) {
-    const ph = (p.t * 0.35 * (1 + p.urgency) + i / 3) % 1;
-    glow.lineStyle(1.2, tone(base, 0.45, 1), (1 - ph) * 0.42 * a * p.arm).strokeEllipse(cx, cy, 40 * ph * k + 4, 30 * ph * k + 3);
-  }
-  for (let i = 0; i < 4; i++) {
-    const life = (p.t * 0.4 + hash01(i, 90)) % 1;
-    const bx = cx + (hash01(i, 91) - 0.5) * 30;
-    const by = cy + (hash01(i, 92) - 0.5) * 18 - life * 4;
-    glow.lineStyle(1, tone(base, 0.4, 1.1), Math.sin(life * Math.PI) * 0.5 * a * p.arm).strokeCircle(bx, by, 1.5 + hash01(i, 93) * 1.5);
-  }
-}
-
-/** Spike: a cracked mound with bone-grey tusks that heave up during arming and stand, jittering, as the end nears. */
-function paintSpike(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, base: number): void {
-  const soil = tone(base, 0.35, 0.4);
-  under.fillStyle(0x000000, 0.25 * a).fillEllipse(cx, cy + 4, 50, 30);
-  poly(under, blob(cx, cy + 2, 25, 17, 21, 0, 0), soil, 0.6 * a);
-  for (let i = 0; i < 7; i++) {
-    const ang = hash01(i, 22) * TAU;
-    const r = 6 + hash01(i, 23) * 14;
-    const x = cx + Math.cos(ang) * r;
-    const y = cy + Math.sin(ang) * r * 0.6;
-    under.lineStyle(1, 0x0a0806, 0.5 * a).lineBetween(x, y, x + (hash01(i, 24) - 0.5) * 14, y + (hash01(i, 25) - 0.5) * 8);
-  }
-  const bone = tone(0xd8d0b8, 0.35, 0.78);
-  const dark = tone(0xd8d0b8, 0.3, 0.42);
-  const spikes = 5;
-  for (let i = 0; i < spikes; i++) {
-    const bx = cx + (i - (spikes - 1) / 2) * 8.5 + (hash01(i, 30) - 0.5) * 4;
-    const by = cy + 4 + (i % 2) * 5 - (hash01(i, 31)) * 4;
-    const h = (10 + hash01(i, 32) * 10) * (0.12 + 0.88 * p.arm);
-    const w = 3.2 + hash01(i, 33) * 1.6;
-    const shake = p.urgency * Math.sin(p.t * 40 + i * 2) * 0.9;
-    const tip = [bx - w + shake, by, bx + w + shake, by, bx + shake * 1.6, by - h];
-    poly(under, tip, dark, 0.95 * a);
-    poly(under, [bx - w * 0.2 + shake, by, bx + w + shake, by, bx + shake * 1.6, by - h], bone, 0.85 * a);
-  }
-  // A cold dust shimmer while it heaves.
-  if (p.arm < 1) glow.fillStyle(bone, 0.08 * a).fillEllipse(cx, cy, 44 * (1.1 - p.arm * 0.2), 24);
-}
-
-/** Gust: a ring of grit spiralling round a hollow eye, two counter-turning arcs, flecks on the wind. */
-function paintGust(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, base: number): void {
   const k = 0.5 + 0.5 * p.arm;
-  const air = tone(base, 0.35, 0.75);
-  under.fillStyle(0x000000, 0.12 * a).fillEllipse(cx, cy + 3, 46 * k, 24 * k);
-  poly(under, blob(cx, cy, 20 * k, 13 * k, 41, 0.03, p.t), tone(base, 0.2, 0.42), 0.3 * a);
+  runeRing(under, glow, cx, cy, p, a, base, -p.t * 0.2);
+  poly(under, blob(cx, cy, 21 * k, 12.5 * k, 12, 0.03, p.t * 0.8), tone(base, 0.5, 0.42), 0.85 * a);
+  poly(under, blob(cx + 2, cy + 1, 13 * k, 7.5 * k, 13, 0.04, p.t * 0.6), tone(base, 0.4, 0.26), 0.85 * a);
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * TAU + hash01(i, 14) * 0.4;
+    const x = cx + Math.cos(ang) * 22 * k;
+    const y = cy + Math.sin(ang) * 13 * k;
+    const h = (3 + hash01(i, 15) * 4) * p.arm;
+    under.fillStyle(tone(0xcfe8f2, 0.4, 0.8), 0.8 * a).fillTriangle(x - 1.4, y, x + 1.4, y, x + (hash01(i, 16) - 0.5) * 2, y - h);
+  }
+  for (let i = 0; i < 3; i++) {
+    const ph = (p.t * 0.4 * (1 + p.urgency) + i / 3) % 1;
+    glow.lineStyle(1.3, tone(base, 0.7, 1.1), (1 - ph) * 0.6 * a * p.arm).strokeEllipse(cx, cy, 36 * ph * k + 4, 22 * ph * k + 3);
+  }
+  for (let i = 0; i < 3; i++) {
+    const life = (p.t * 0.4 + hash01(i, 90)) % 1;
+    glow
+      .lineStyle(1, tone(base, 0.6, 1.2), Math.sin(life * Math.PI) * 0.6 * a * p.arm)
+      .strokeCircle(cx + (hash01(i, 91) - 0.5) * 24, cy + (hash01(i, 92) - 0.5) * 10 - life * 4, 1.5 + hash01(i, 93) * 1.5);
+  }
+}
+
+/** Spike (thorn burst): a cracked ring of earth with bone tusks heaving up round it; they stand and jitter as the end nears. */
+function paintSpike(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, base: number): void {
+  runeRing(under, glow, cx, cy, p, a, base, p.t * 0.15);
+  for (let i = 0; i < 8; i++) {
+    const ang = hash01(i, 22) * TAU;
+    const rr = 5 + hash01(i, 23) * 18;
+    const x = cx + Math.cos(ang) * rr;
+    const y = cy + Math.sin(ang) * rr * FLAT;
+    under.lineStyle(1, 0x080604, 0.7 * a).lineBetween(x, y, x + (hash01(i, 24) - 0.5) * 12, y + (hash01(i, 25) - 0.5) * 6);
+  }
+  const bone = tone(0xd8d0b8, 0.35, 0.8);
+  const dark = tone(0xd8d0b8, 0.3, 0.4);
+  const count = 9;
+  // Back to front so the near tusks overlap the far ones.
+  const order = Array.from({ length: count }, (_, i) => i).sort((m, n) => Math.sin((m / count) * TAU + 0.3) - Math.sin((n / count) * TAU + 0.3));
+  for (const i of order) {
+    const ang = (i / count) * TAU + 0.3;
+    const ring = i % 3 === 2 ? 0.3 : 0.72;
+    const bx = cx + Math.cos(ang) * R * ring;
+    const by = cy + Math.sin(ang) * R * ring * FLAT + 2;
+    const h = (9 + hash01(i, 32) * 8) * (0.1 + 0.9 * p.arm);
+    const w = 2.6 + hash01(i, 33) * 1.2;
+    const shake = p.urgency * Math.sin(p.t * 40 + i * 2) * 0.9;
+    under.fillStyle(0x000000, 0.35 * a).fillEllipse(bx + 1, by + 1, w * 2.4, w);
+    poly(under, [bx - w + shake, by, bx + w + shake, by, bx + shake * 1.6, by - h], dark, 0.95 * a);
+    poly(under, [bx - w * 0.2 + shake, by, bx + w + shake, by, bx + shake * 1.6, by - h], bone, 0.9 * a);
+  }
+  if (p.arm < 1) glow.fillStyle(tone(base, 0.6, 1), 0.1 * a).fillEllipse(cx, cy, 44, 26);
+}
+
+/** Gust (air glyph): a pale ring whose three arms spiral round a hollow eye, grit flecks on the wind. */
+function paintGust(under: Gfx, glow: Gfx, cx: number, cy: number, p: TrapPhase, a: number, base: number): void {
+  runeRing(under, glow, cx, cy, p, a, base, p.t * (0.4 + p.urgency));
+  const k = 0.45 + 0.55 * p.arm;
   const spin = p.t * (1.6 + p.urgency * 3);
   for (let arm = 0; arm < 3; arm++) {
     const pts: { x: number; y: number }[] = [];
     for (let s = 0; s <= 16; s++) {
       const f = s / 16;
       const ang = spin + arm * (TAU / 3) + f * 3.4;
-      const r = (3 + f * 21) * k;
-      pts.push({ x: cx + Math.cos(ang) * r, y: cy + Math.sin(ang) * r * 0.62 });
+      pts.push({ x: cx + Math.cos(ang) * (3 + f * 19) * k, y: cy + Math.sin(ang) * (3 + f * 19) * k * FLAT });
     }
-    glow.lineStyle(4, air, 0.05 * a).strokePoints(pts as Phaser.Math.Vector2[], false);
-    glow.lineStyle(1.2, tone(base, 0.4, 1.05), 0.4 * a * p.arm).strokePoints(pts as Phaser.Math.Vector2[], false);
+    glow.lineStyle(4.5, tone(base, 0.6, 1), 0.08 * a).strokePoints(pts as Phaser.Math.Vector2[], false);
+    glow.lineStyle(1.4, tone(base, 0.55, 1.1), 0.65 * a * (0.4 + 0.6 * p.arm)).strokePoints(pts as Phaser.Math.Vector2[], false);
   }
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 10; i++) {
     const ang = -spin * 0.7 + hash01(i, 50) * TAU;
-    const r = (8 + hash01(i, 51) * 17) * k;
-    const x = cx + Math.cos(ang) * r;
-    const y = cy + Math.sin(ang) * r * 0.62;
-    under.fillStyle(tone(0xb8a890, 0.3, 0.7), 0.5 * a * p.arm).fillRect(x, y, 2, 1.5);
+    const rr = (7 + hash01(i, 51) * 17) * k;
+    under.fillStyle(tone(0xb8a890, 0.3, 0.8), 0.7 * a * p.arm).fillRect(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr * FLAT - 3 * hash01(i, 52), 2, 1.5);
   }
 }
 

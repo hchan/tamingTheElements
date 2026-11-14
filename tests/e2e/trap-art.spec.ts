@@ -9,6 +9,32 @@ const HEROES: readonly [race: string, kind: number][] = [['sindarosa', 1], ['cur
 
 const frames = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 
+// The same decals in a World Tour fight (Arcade ruleset): the lead hero lays two traps, screenshotted armed.
+test('trap art: World Tour fight shows the lead hero traps as ground decals', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByLabel('Hero 1 (lead)').selectOption('fiara');
+  await page.getByLabel('Hero 2').selectOption('rokcore');
+  await page.getByLabel('Hero 3').selectOption('curomo');
+  await page.getByRole('button', { name: 'Start tour' }).click();
+  await page.getByRole('button', { name: 'Fight' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+  await page.getByRole('button', { name: 'Got it' }).click({ timeout: 1000 }).catch(() => undefined);
+  for (const x of [520, 760]) {
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, ${String(x)}, 560, 0); a.place(foe.id, 1700, 360, 4); })()`);
+    await page.keyboard.down('KeyZ');
+    await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+    await page.keyboard.up('KeyZ');
+    await page.evaluate(`window.__TTE__.arena.stepLive(60)`);
+  }
+  await frames(page);
+  const laid = await page.evaluate<readonly { kind: number }[] | undefined>(`window.__TTE__.arena.traps()`);
+  expect(laid?.length).toBeGreaterThan(0);
+  await page.locator('#game canvas').screenshot({ path: info.outputPath('tour-traps.png') });
+  expect(errors).toEqual([]);
+});
+
 for (const [race, kind] of HEROES) {
   test(`trap art: ${race} lays kind ${String(kind)}, arming then armed`, async ({ page }, info) => {
     const errors = collectErrors(page);
