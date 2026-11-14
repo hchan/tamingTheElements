@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { CALL_TICKS, FLASH_TICKS } from './tag-fx';
-import { mountTagView, tagState } from './tag-view';
+import { CAPTION_TICKS, mountTagView, tagState } from './tag-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
 class Emitter {
@@ -121,6 +121,14 @@ describe('tag view (Phaser side, fake scenes)', () => {
     expect(s.hud.made).toEqual([]);
     expect(s.arena.events.count + s.hud.events.count).toBe(0);
     expect(s.state()).toBeUndefined();
+  });
+
+  it('drops the TAG caption after the first seconds so it never stays pinned', () => {
+    const s = setup();
+    s.setSwapReady([0, 0]);
+    s.setTick(CAPTION_TICKS + 1);
+    s.frame();
+    expect(s.state()).toMatchObject({ caption: '' });
   });
 
   it('draws who is in, the bench with its red life, the tag cooldown, and the TAG caption', () => {

@@ -123,6 +123,22 @@ export function codeLabel(code: string): string {
   return code;
 }
 
+/** The number key each Arcade action wears on its box (FUN-DESIGN 2.17); Element wears the key after 0 (Minus, shown as -) while it is bound, else its first key. */
+const ARCADE_DIGIT: Readonly<Partial<Record<GameAction, number>>> = { super: 9, guard: 8, dash: 7, weather: 6, charge: 5, trap: 0 };
+
+/**
+ * The one key name an action wears on its action-bar box, and so in every hint that names it (the first-run card reads this too, so the two cannot drift).
+ * The numbered action row (3 Tag ... 9 Super, 0 Trap): a box wears its number while that number key is bound to it, else its first key.
+ */
+export function actionKeyLabel(bindings: Bindings, action: GameAction): string | undefined {
+  const digit = ARCADE_DIGIT[action];
+  const keys = bindings[action];
+  const numberKey = digit !== undefined ? `Digit${String(digit)}` : action === 'elemental' ? 'Minus' : action === 'cleanse' ? 'Equal' : undefined;
+  const code = numberKey !== undefined && keys.includes(numberKey) ? numberKey : keys[0];
+  return code === undefined ? undefined : codeLabel(code);
+}
+
+
 /** The action a code is bound to, if any. */
 export function actionForCode(bindings: Bindings, code: string): GameAction | undefined {
   return GAME_ACTIONS.find((a) => bindings[a].includes(code));
