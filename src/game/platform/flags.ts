@@ -27,9 +27,9 @@ export interface UiFlags {
   readonly cheats: boolean;
   /** The tour's versus splash waits for a key or click instead of its timer (`?ff=holdSplash`, dev and test builds; e2e pins the splash). */
   readonly holdSplash: boolean;
-  /** Character slug for the local side of a hero-picked fight (`?hero=curomo`, dev and test builds only; implies `arenaDemo`), or null. */
+  /** Character slug for the local side of a hero-picked fight (`?hero=curomo`, dev and test builds only; starts the real Versus fight), or null. */
   readonly hero: string | null;
-  /** Character slug for the opposing side (`?foe=rokcore`, dev and test builds only; implies `arenaDemo`), or null. */
+  /** Character slug for the opposing side (`?foe=rokcore`, dev and test builds only; starts the real Versus fight), or null. */
   readonly foe: string | null;
   /** Fixed seed for the battle and opponent draw (`?seed=N`, dev and test builds only), or null for the clock. */
   readonly seed: number | null;
@@ -82,7 +82,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     showFps: on.has('showFps'),
     play: on.has('play'),
     forceNoWebgl: on.has('forceNoWebgl'),
-    arenaDemo: on.has('arenaDemo') || hero !== null || foe !== null,
+    arenaDemo: on.has('arenaDemo'),
     arcade: on.has('arcade'),
     lockstep: on.has('lockstep'),
     netbot: on.has('netbot'),

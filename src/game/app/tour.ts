@@ -171,10 +171,15 @@ export function tourScreen(deps: TourDeps): Screen {
           `Location: ${ELEMENT_WORD(stage.location)}.`,
           `Opponent: ${foe}.`,
           `Difficulty: ${ELEMENT_WORD(stage.aiLevel)}. ${left}.`,
+          'Press Fight to begin the stage.',
         ],
         actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { showSplash(r); } }],
       });
       show(card);
+      // The primary action is focused and pulses, so the stage card does not read as a loading screen (Enter starts the fight).
+      const fight = card.querySelector<HTMLButtonElement>('#tourFight');
+      fight?.classList.add('tourFightCta');
+      fight?.focus();
       const mine = epoch;
       void import('@ui/screens/tour-select').then((m) => {
         if (epoch !== mine) return;

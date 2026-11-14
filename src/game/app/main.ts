@@ -78,6 +78,9 @@ function prefetchSimWhenIdle(): void {
   else window.addEventListener('load', run, { once: true });
 }
 
+// `?hero=` / `?foe=` (dev and test builds only) go straight into the real Versus arena.
+if ((flags.hero !== null || flags.foe !== null) && !window.location.hash) window.location.hash = '#arcade';
+
 if (root) {
   mountNoticeBanner();
   installTesterUi({ session: tester, store, now: () => Date.now() });

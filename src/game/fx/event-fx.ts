@@ -205,6 +205,11 @@ export class EventFx {
     if (strength >= RING_MIN_STRENGTH) this.sink.ring?.(target, color, strength);
     const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
     this.sink.burst(target, this.fill(n), n, color, el);
+    // Water hits (Ice Shock, Shards of Ice) leave a pale frost ring and a white-blue crystal burst, even on a light hit (QA r22).
+    if (el === 'water' && strength < 3) {
+      if (strength < RING_MIN_STRENGTH) this.sink.ring?.(target, FROST, 1);
+      this.sink.burst(target, this.fill(FROST_SPARKS), FROST_SPARKS, FROST, el);
+    }
     if (strength === 3) this.sink.burst(target, this.fill(SUPER_GOLD_SPARKS), SUPER_GOLD_SPARKS, SUPER_GOLD, el);
   }
 
@@ -244,6 +249,10 @@ export class EventFx {
 }
 
 const BURST_DISTANCE = 24;
+/** Frost-white blue of the water hit's crystal burst and ring, and how many crystals it throws. */
+const FROST = 0xdff4ff;
+const FROST_SPARKS = 6;
+
 /** Particles start a quarter of the way out, so a burst reads as a ring even on its first (or a paused) frame. */
 const BURST_START = 0.25;
 const SPARK_MS = 100;

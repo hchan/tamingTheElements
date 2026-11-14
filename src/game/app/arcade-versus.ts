@@ -13,7 +13,7 @@ import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-co
 import { getRecordSetting } from '../platform/record-setting';
 import { createReplayStore, type ReplayStore } from '../platform/storage/replay-store';
 import { requestOpenTesterPanel } from '@ui/tester/install';
-import { ARCADE_SNAG_SLOT } from '@core/index';
+import { ARCADE_SNAG_SLOT, getCharacter, type CharacterId } from '@core/index';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
@@ -40,6 +40,8 @@ const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { wi
 
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
 let lastPick: ArcadePick = DEFAULT_PICK;
+/** `?hero=` / `?foe=` (dev and test builds) start the real Versus fight once per page load, on the hero's own stage. */
+let flagStarted = false;
 
 /** How long the battle key hint stays before it fades out (the keys stay on the pause screen and Help). */
 export const KEYS_HINT_MS = 8000;
@@ -187,12 +189,27 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       });
   }
 
+  let flagMount = false;
+
   return {
     mount: (c) => {
       container = c;
+      const { hero, foe } = deps.flags;
+      if (!flagStarted && (hero !== null || foe !== null)) {
+        flagStarted = true;
+        flagMount = true;
+        const player = hero ?? DEFAULT_PICK.player;
+        const stage = ARCADE_RACES.includes(player as CharacterId) ? getCharacter(player as CharacterId).element : '';
+        lastPick = parsePick({ player, enemy: foe ?? DEFAULT_PICK.enemy, level: DEFAULT_PICK.level, stage });
+        startBattle();
+        return;
+      }
       showPick();
     },
     unmount: () => {
+      // A flag-started mount torn down before its game exists (the router mounts twice at boot) must not use up the one-shot.
+      if (flagMount && !game) flagStarted = false;
+      flagMount = false;
       epoch++;
       offKeys?.();
       offKeys = undefined;

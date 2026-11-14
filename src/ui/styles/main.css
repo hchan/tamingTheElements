@@ -2445,3 +2445,12 @@ button.menuButton.heroSlotClear {
     height: 32px;
   }
 }
+
+/* Tour stage card: the Fight button pulses so the next step is obvious (QA r22). */
+@media (prefers-reduced-motion: no-preference) {
+  .tourFightCta { animation: tourFightPulse 1.4s ease-in-out infinite; }
+  @keyframes tourFightPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 220, 120, 0.0); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 220, 120, 0.45); }
+  }
+}
