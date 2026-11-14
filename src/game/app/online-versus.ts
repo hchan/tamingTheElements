@@ -1,9 +1,10 @@
-import { SetupHandshake, helloOf, type MatchSetup, type SessionStatus, type SetupPhase } from '@core/index';
+import { SetupHandshake, helloOf, type ControlPipe, type MatchSetup, type SessionStatus, type SetupPhase } from '@core/index';
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import type { Screen } from '@ui/screens/screen';
 import { loadSave } from '@ui/screens/settings';
 import { hostPeer, joinPeer, type Peer } from '../net/peer';
+import { ControlMux } from '../net/control-mux';
 import { iceFromSettings } from '../net/ice';
 import { copyText, joinParam, pasteInto, shareBlock } from './online-share';
 import { destroyGame, type GameHandle } from './game-handle';
@@ -76,6 +77,9 @@ function matchTicksParam(): number | undefined {
   return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
+/** A rematch gives up waiting for the friend's hero pick after this long. */
+export const REMATCH_WAIT_MS = 60_000;
+
 const devBuild = (): boolean => import.meta.env.DEV || import.meta.env.MODE === 'test';
 
 /** `?ice=none` (dev and test builds only): no STUN server, so the offer and answer hold loopback host candidates only (hermetic e2e, no internet). */
@@ -95,9 +99,21 @@ export function onlineVersusScreen(): Screen {
   let matchNo = 0;
   let game: GameHandle | undefined;
   let arenaNode: HTMLElement | undefined;
+  let mux: ControlMux | undefined;
+  /** The control channel as the screen reads it (through the mux once the link is being watched). */
+  const pipeOf = (p: Peer): ControlPipe => mux?.pipe ?? p.control;
+  let muxTimer: ReturnType<typeof setInterval> | undefined;
+  let onPageHide: (() => void) | undefined;
+  /** Set once the friend left or the link died: later status words must not overwrite that. */
+  let ended = false;
 
   const stop = (): void => {
     gone = true;
+    if (onPageHide) window.removeEventListener('pagehide', onPageHide);
+    onPageHide = undefined;
+    mux?.sendBye();
+    if (muxTimer !== undefined) clearInterval(muxTimer);
+    muxTimer = undefined;
     if (timer !== undefined) clearInterval(timer);
     timer = undefined;
     destroyGame(game, arenaNode);
@@ -110,12 +126,25 @@ export function onlineVersusScreen(): Screen {
   const screen: Screen = {
     mount(container) {
       gone = false;
+      ended = false;
       node = el('div', 'menuPage');
       const status = el('p');
       status.id = 'onlineStatus';
       status.setAttribute('role', 'status');
       const say = (s: string): void => {
-        status.textContent = s;
+        if (!ended) status.textContent = s;
+      };
+      /** The match or the link is over for good: say why, stop the pick/handshake waits, drop Leave, Rematch and the hero pickers, take the game down. */
+      const finish = (words: string): void => {
+        if (ended) return;
+        ended = true;
+        status.textContent = words;
+        if (timer !== undefined) clearInterval(timer);
+        timer = undefined;
+        for (const id of ['onlineLeave', 'onlineAgain', 'onlineReady', 'onlineTeam']) node?.querySelector(`#${id}`)?.remove();
+        destroyGame(game, arenaNode);
+        game = undefined;
+        arenaNode = undefined;
       };
       node.append(el('h1', 'heading', 'Online'));
       node.append(
@@ -138,7 +167,7 @@ export function onlineVersusScreen(): Screen {
           const launch: ArenaLaunch = {
             setup,
             onEnd: (end) => {
-              if (gone) return;
+              if (gone || ended) return;
               say(endText(end.winner, side, end.rounds));
               // The finished arena stays up (its sim paused, its session still answering) until the next match starts or the screen
               // closes: the datagram link is lossy, and a side gone silent at its own end can strand a friend who is one input short.
@@ -167,7 +196,7 @@ export function onlineVersusScreen(): Screen {
         });
       };
       const handshake = (p: Peer, setup: MatchSetup): void => {
-        const hs = new SetupHandshake(p.control, helloOf(setup));
+        const hs = new SetupHandshake(pipeOf(p),helloOf(setup));
         timer = setInterval(() => {
           const phase = hs.poll();
           say(phaseText(phase, hs.reason));
@@ -208,11 +237,20 @@ export function onlineVersusScreen(): Screen {
           const second = partnerFor(race, sels[1]?.value);
           const bench = [second, partner2For(race, second, sels[2]?.value)];
           const mine: OnlinePick = { race, bench, seed: side === 0 ? crypto.getRandomValues(new Uint32Array(1))[0] ?? 1 : 0 };
-          p.control.send(encodePick(mine));
+          pipeOf(p).send(encodePick(mine));
           say('Waiting for your friend to pick...');
+          const rematch = matchNo > 0;
+          const since = Date.now();
           timer = setInterval(() => {
-            const m = p.control.receive();
-            if (m === undefined) return;
+            const m = pipeOf(p).receive();
+            if (m === undefined) {
+              if (rematch && Date.now() - since >= REMATCH_WAIT_MS) {
+                if (timer !== undefined) clearInterval(timer);
+                timer = undefined;
+                say('Your friend did not answer the rematch within a minute. Press Back to leave.');
+              }
+              return;
+            }
             if (timer !== undefined) clearInterval(timer);
             timer = undefined;
             const theirs = decodePick(m);
@@ -229,10 +267,28 @@ export function onlineVersusScreen(): Screen {
       };
       const watch = (p: Peer): void => {
         peer = p;
+        const m = new ControlMux(p.control, () => {
+          if (!gone) finish('Your friend left the match. If a match was running, you win. Press Back to leave.');
+        });
+        mux = m;
         say('Waiting for the link to open...');
         p.open.then(
           () => {
             if (gone) return;
+            muxTimer = setInterval(() => { m.pump(); }, 100);
+            onPageHide = () => { m.sendBye(); };
+            window.addEventListener('pagehide', onPageHide);
+            p.onState((s) => {
+              if (gone) return;
+              if (s === 'failed' || s === 'closed') finish('The link to your friend was lost, so the match is over. Press Back to leave.');
+              else if (s === 'disconnected') say('Your connection to your friend is unstable. Waiting for it to come back...');
+            });
+            const leave = button('onlineLeave', 'Leave', () => {
+              finish('You left the match.');
+              stop();
+              window.location.hash = '#main';
+            });
+            node?.insertBefore(leave, status);
             say('Link open. Choose your three heroes, then press Ready.');
             pickPhase(p);
           },

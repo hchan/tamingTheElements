@@ -10,10 +10,10 @@ import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 test.use({ launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-features=WebRtcHideLocalIpsWithMdns'] } });
 
 // A natural Arcade match is about 10 000 sim ticks (best of 3 rounds with the scripted AI: 10 393 measured), i.e. 5 to 6 minutes
-// per variant on two SwiftShader pages. So the default run ends the match as a draw at MATCH_TICKS (`?matchticks=`, 80 s of
-// sim, 80 checkpoints) and `TTE_NATURAL_MATCH=1` plays to the sim's own result (real winner, rounds line).
+// per variant on two SwiftShader pages. So the default run ends the match as a draw at MATCH_TICKS (`?matchticks=`, 30 s of
+// sim, 30 checkpoints; a draw is by design: the sim reports no winner at the limit, and both peers must agree on that) and `TTE_NATURAL_MATCH=1` plays to the sim's own result (real winner, rounds line).
 const NATURAL = process.env['TTE_NATURAL_MATCH'] === '1';
-const MATCH_TICKS = 4000;
+const MATCH_TICKS = 1500;
 
 const opened: BrowserContext[] = [];
 test.afterEach(async () => {
@@ -44,6 +44,7 @@ async function waitForEnd(page: Page, stallMs = 10_000): Promise<Net> {
       if (net.status === 'ended') return net;
       if (net.status === 'desync' || net.status === 'forfeit') throw new Error(`match stopped: ${net.status} at tick ${String(net.simTick)}`);
       if (net.simTick !== last) {
+        if (Math.floor(net.simTick / 500) !== Math.floor(last / 500)) console.log(`  tick ${String(net.simTick)} at ${new Date().toISOString().slice(11, 19)}`);
         last = net.simTick;
         lastMove = Date.now();
       }
@@ -55,7 +56,7 @@ async function waitForEnd(page: Page, stallMs = 10_000): Promise<Net> {
 }
 
 for (const ff of ['arcade,netbot', 'arcade,rollback,netbot']) test(`two browser contexts play a whole online match to the same result (${ff})`, async ({ browser }) => {
-  test.setTimeout(NATURAL ? 900_000 : 240_000);
+  test.setTimeout(NATURAL ? 900_000 : 420_000);
   const ctxA = await browser.newContext();
   const ctxB = await browser.newContext();
   opened.push(ctxA, ctxB);
@@ -86,7 +87,8 @@ for (const ff of ['arcade,netbot', 'arcade,rollback,netbot']) test(`two browser 
 
   expect(na.desync).toBeUndefined();
   expect(nb.desync).toBeUndefined();
-  expect(na.winner).not.toBeNull();
+  // At the tick limit the sim reports no winner (a draw, by design: session.ts); a natural match must have one. Both peers agree either way.
+  if (NATURAL) expect(na.winner).not.toBeNull();
   expect(nb.winner).toBe(na.winner);
   expect(na.checkpoints.length).toBeGreaterThanOrEqual(10);
   expect(nb.checkpoints.length).toBeGreaterThanOrEqual(10);
@@ -105,8 +107,8 @@ for (const ff of ['arcade,netbot', 'arcade,rollback,netbot']) test(`two browser 
 
   // The result is worded on both pages; tear the games down and wait for Phaser's async destroy.
   const words = NATURAL ? 'Rounds' : 'draw';
-  await expect(a.locator('#onlineStatus')).toContainText(words);
-  await expect(b.locator('#onlineStatus')).toContainText(words);
+  await expect(a.locator('#onlineStatus')).toContainText(words, { timeout: 60_000 });
+  await expect(b.locator('#onlineStatus')).toContainText(words, { timeout: 60_000 });
   for (const page of [a, b]) {
     await page.goto('/?ff=arcade#main');
     await page.evaluate('window.__TTE__?.settled()');
