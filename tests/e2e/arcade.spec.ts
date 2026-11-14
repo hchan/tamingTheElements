@@ -108,7 +108,7 @@ test('on by default: the menu has the five entries Play, Versus, Online, Setting
   expect(await menuLabels(page)).toEqual(MENU);
   await expect(page.locator('#menu .mainMenuList li button').first()).toHaveText('Play');
   await page.evaluate(`window.location.hash = '#arcade'`);
-  await waitForRoute(page, '#arcade');
+  await waitForRoute(page, '#versus');
   await expect(page.locator('#arcadePick')).toHaveCount(1);
   await goToHash(page, '#settings');
   await expect(page.getByLabel('Arcade Versus (preview)')).toHaveCount(0);
@@ -124,7 +124,7 @@ test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2
   expect(JSON.parse(before ?? '{}')).toMatchObject({ chapter: 3 });
 
   await page.getByRole('button', { name: 'Versus', exact: true }).click();
-  await waitForRoute(page, '#arcade');
+  await waitForRoute(page, '#versus');
   await expect(page.getByRole('heading', { level: 1, name: 'Versus', exact: true })).toBeFocused();
   await audit(page, 'Arcade Versus picker');
   await fight(page, 'sindarosa', 'pax');
