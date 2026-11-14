@@ -153,15 +153,17 @@
 #tourStage #tourPins li[data-state='cleared']::before { filter: grayscale(0.5) brightness(1.1); }
 #tourStage #tourPins li[data-state='cleared']::after {
   content: 'Cleared' / '';
+  /* Top right corner, small: the stage label sits bottom left and must stay readable (qa-r27). */
   position: absolute;
-  top: 28%;
-  left: 50%;
-  padding: 0.05em 0.5em;
-  transform: translateX(-50%) rotate(-12deg);
-  border: 3px double #ff9a7e;
+  top: 0.3em;
+  right: 0.3em;
+  padding: 0 0.3em;
+  font-size: 0.62em;
+  line-height: 1.3;
+  border: 2px double #ff9a7e;
   color: #ffb49e;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.1em;
   background: rgb(30 26 74 / 0.75);
   text-shadow: none;
 }
@@ -226,6 +228,12 @@
   #tourStage.tsGrim button.menuButton,
   #tourStage.tsGrim a.menuButton { min-height: 48px; min-width: 48px; }
   #tourStage #tourPins li { min-height: 48px; }
+}
+/* Phone landscape on a touch screen: the 48px touch minimum times the 4:1 ratio made each tile 192px wide, so the tiles overlapped and hid
+   the Cleared stamp (qa-r27). Let the column set the width and the height follow it (tiles are not buttons; focus is by the Fight button). */
+@media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
+  #tourStage #tourPins li { aspect-ratio: auto; min-height: 40px; min-width: 0; }
+  #tourStage.tsGrim h1.heading { line-height: 1.25; padding-top: 0.25em; }
 }
 @media (prefers-reduced-motion: reduce) {
   #tourStage #tourPins li[data-state='current'] { animation: none; box-shadow: 0 0 0.9em #ffe48a; }
