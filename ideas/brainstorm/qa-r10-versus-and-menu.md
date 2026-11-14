@@ -11,3 +11,7 @@ added: 2026-11-14
 - Settings: styled with legends, good. Background ends about 580 px down, leaving a flat seam on tall pages.
 - Help: wording clean, key list matches the action bar.
 - First-run hints use number keys (1, 7, 8, 9); an SF player expects a punch/kick style preset. Offer a layout preset in Key Bindings.
+
+## Progress (2026-11-14)
+
+Done: picker card now says "Pick your fighter" for a single-slot unpicked side; a hint under Fight! says the arena follows the Weather; the hidden Dismiss banner is display:none (not tabbable). Still open: Earth row under the footer, Settings background seam, SF-style key preset.
