@@ -58,6 +58,10 @@ describe('slim HUD words', () => {
     expect(compactLabel('Sindarosa', base)).toContain('Life 228/228');
     expect(compactLabel('Sindarosa', base)).not.toMatch(/HURT|LOW/);
     expect(compactLabel('Sindarosa', { ...base, hp: 20 })).toMatch(/LOW/);
+    // The phone's terse form keeps the name and numbers but drops the word "Life".
+    expect(compactLabel('Sindarosa', base, false, true)).toContain('SINDAROSA');
+    expect(compactLabel('Sindarosa', base, false, true)).toContain(' 228/228');
+    expect(compactLabel('Sindarosa', base, false, true)).not.toContain('Life');
   });
 });
 

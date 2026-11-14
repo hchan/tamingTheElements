@@ -62,9 +62,11 @@ const TRACK_COLOR = 0x120f0c;
 const FRAME_COLOR = 0x050403;
 
 /** The SUPER label's own phone boost cap: between the life bar and the bench portraits there is room for about 21 logical px of text (qa-r12: at 1.7 it sat on the portraits; `meterLabelY` now lifts it clear, so r20 raised it to 1.7 again for ~11 CSS px on a phone). */
-const SUPER_LABEL_BOOST = 2.1;
+const SUPER_LABEL_BOOST = 1.95;
 /** The life line's size steps (of its boosted size) tried before the hero name is cut. */
 const LIFE_TEXT_SCALES: readonly number[] = [1, 0.85, 0.72, 0.62];
+/** Smallest effective size (CSS px) the HUD life line and labels shrink to on a phone; the name is cut before the text goes smaller. */
+const MIN_PHONE_PX = 9.8;
 
 const TEAMS = [0, 1] as const;
 
@@ -181,6 +183,17 @@ export class Hud extends Phaser.Scene {
   /** Test hook: the words beside each side's main bar, as drawn. */
   heroLabels(): string[] {
     return this.labels.map((t) => t.text);
+  }
+
+  /** Test hook: every visible HUD text with its effective CSS px size (font px times the canvas scale) and screen box. */
+  textSizes(): { text: string; px: number; x: number; y: number; w: number; h: number }[] {
+    const k = coreDisplayWidth(this) / 1280;
+    const out: { text: string; px: number; x: number; y: number; w: number; h: number }[] = [];
+    for (const o of this.children.list) {
+      if (!(o instanceof Phaser.GameObjects.Text) || !o.visible || o.alpha === 0 || o.text.trim() === '') continue;
+      out.push({ text: o.text, px: parseFloat(String(o.style.fontSize)) * k, x: o.x * k, y: o.y * k, w: o.width * k, h: o.height * k });
+    }
+    return out;
   }
 
   override update(): void {
@@ -491,20 +504,31 @@ export class Hud extends Phaser.Scene {
     return w > 0 ? Math.min(PHONE_ARCADE_BOOST, Math.max(1, 1100 / w)) : 1;
   }
 
+  /** The SUPER label's multiplier: the arcade boost's rule, but allowed past PHONE_ARCADE_BOOST (the label is short, so it can be the bigger text: about 12 CSS px on a 667 px phone). */
+  private superBoost(): number {
+    const w = coreDisplayWidth(this);
+    return w > 0 ? Math.max(1, 1100 / w) : 1;
+  }
+
   /** The life line under the bar; where the boosted text would run into the SUPER label (phones) it drops the hero name. */
   private setSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter): void {
     const base = (label.getData('baseSize') as number | undefined) ?? parseFloat(String(label.style.fontSize));
     label.setData('baseSize', base);
     const clears = (m: Phaser.GameObjects.Text): boolean => (team === 0 ? label.x + label.width + 6 <= m.x - m.width : label.x - label.width - 6 >= m.x + m.width);
     const m = this.meterTexts[team];
-    // Shrink the life text first (qa-r29: names read "FI..." even in 1v1), the whole name kept; only then cut the name, last drop it.
-    for (const k of LIFE_TEXT_SCALES) {
-      label.setFontSize(Math.round(base * k)).setText(compactLabel(name, c));
-      if (!m || clears(m)) return;
+    // Phones: drop the word "Life" before shrinking (qa-r29: names read "FI..."), and never shrink below MIN_PHONE_PX effective CSS px.
+    const k = coreDisplayWidth(this) / 1280;
+    const steps = LIFE_TEXT_SCALES.filter((sc) => base * sc * k >= MIN_PHONE_PX || sc === 1);
+    for (const sc of steps) {
+      for (const terse of [false, true]) {
+        label.setFontSize(Math.round(base * sc)).setText(compactLabel(name, c, false, terse));
+        if (!m || clears(m)) return;
+      }
     }
+    label.setFontSize(Math.round(base * (steps[steps.length - 1] ?? 1)));
     if (!m) return;
     for (let max = name.length - 1; max >= 3; max--) {
-      label.setText(compactLabel(shortName(name, max), c));
+      label.setText(compactLabel(shortName(name, max), c, false, true));
       if (clears(m)) return;
     }
     label.setText(compactLabel(name, c, true));
@@ -597,7 +621,7 @@ export class Hud extends Phaser.Scene {
         gfx.lineStyle(2, glow, a * breathe).strokeRect(x - grow, METER_Y - grow, METER_W + grow * 2, SEGMENT_H + grow * 2);
       }
     }
-    const t = (this.meterTexts[team] ??= this.text(Math.round(12 * Math.min(this.arcadeBoost(), SUPER_LABEL_BOOST)))
+    const t = (this.meterTexts[team] ??= this.text(Math.round(12 * Math.min(this.superBoost(), SUPER_LABEL_BOOST)))
       .setOrigin(team === 0 ? 1 : 0, 0.5)
       .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
     const label = `SUPER ${meterLabel(m.value)}`; // named, so the segments are not mistaken for the round pips

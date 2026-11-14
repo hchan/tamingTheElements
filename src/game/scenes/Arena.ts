@@ -56,7 +56,7 @@ import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { P2_BINDINGS } from '../input/local-two';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
-import { counted, type ProbeCharacter } from '../platform/test-hook';
+import { counted, type ArenaProbe, type ProbeCharacter } from '../platform/test-hook';
 import { getUiFlags } from '../platform/flags';
 import { ArcadeHudModel, numberLabel } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
@@ -508,6 +508,7 @@ export class Arena extends Phaser.Scene {
       traps: () => import('../fx/trap-view').then((m) => m.trapState(this)),
       hazard: () => import('../fx/hazard-view').then((m) => m.hazardState(this)),
       ownElement: () => import('../fx/own-element-view').then((m) => m.ownElementState(this)),
+      hudTextSizes: () => (this.scene.get(HUD_SCENE) as unknown as { textSizes(): ReturnType<ArenaProbe['hudTextSizes']> }).textSizes(),
       heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
       abilityFx: () => import('../fx/ability-aura-view').then((m) => m.abilityFxState(this)),
       dangerZones: () => import('../fx/danger-view').then((m) => m.dangerState(this)),

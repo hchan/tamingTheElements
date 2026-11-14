@@ -143,6 +143,30 @@ test.describe('phone portrait fight', () => {
   });
 });
 
+// Phone HUD text size (QA r3/r21): the fighter names, life numbers and SUPER labels stay readable (about 10 CSS px) and clear of each other.
+for (const [w, h] of [[667, 375], [844, 390]] as const) {
+  test.describe(`phone HUD text ${String(w)}x${String(h)}`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    test('names and life text are at least 9.5 CSS px and do not overlap each other', async ({ page }) => {
+      await page.goto('/?manual=1&seed=7&hero=fiara&foe=treenoc');
+      await page.waitForFunction(ARENA_READY);
+      await page.evaluate(`window.__TTE__.arena.step(150)`);
+      await shot(page, `hudtext-${String(w)}`);
+      const texts = await page.evaluate<Array<Box & { text: string; px: number }>>(`window.__TTE__.arena.hudTextSizes()`);
+      const names = texts.filter((t) => /FIARA|TREEN|SUPER/.test(t.text));
+      expect(names.length, JSON.stringify(texts)).toBeGreaterThanOrEqual(4);
+      for (const t of names) expect(t.px, t.text).toBeGreaterThanOrEqual(9.5);
+      for (let i = 0; i < names.length; i++) {
+        for (let j = i + 1; j < names.length; j++) {
+          const a = names[i];
+          const b = names[j];
+          if (a && b) expect(overlap(a, b), `${a.text} / ${b.text}`).toBe(false);
+        }
+      }
+    });
+  });
+}
+
 test.describe('desktop fight HUD shots', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
   for (const team of [1, 2]) {

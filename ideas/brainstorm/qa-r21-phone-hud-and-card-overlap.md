@@ -11,3 +11,5 @@ where the player hero usually stands, and the 11-slot ability bar leaves little 
 Ideas: stretch the HUD to the full width with bigger name/life text, dock the joystick lower into the letterbox, and
 reduce the ability bar to the used slots on touch. Check that the First Blood card (r20 fix) no longer overlaps names:
 in my run it was not shown after the first fight, so verify on a fresh profile.
+
+Update 2026-11-14: the name/life/SUPER text size part is done, see ideas/done/phone-hud-name-size.md. Joystick placement, full-width HUD and the ability bar are still open.
