@@ -59,13 +59,25 @@ function resolveAction(bindings: Bindings, code: string, arcade: boolean): GameA
   return actionForCode(bindings, code);
 }
 
-/** Held key codes to a command bitset. Capture is dropped unless `capturable` (and in Arcade, which has Trap on that bit), the Arcade-only actions outside Arcade. */
-export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean, arcade = false): Command {
+/** The ability-slot command that throws a hero's Snag (`snagSlot` 0 or 1 from the view; -1 or undefined: the hero has none). */
+export function snagCommand(snagSlot: number | undefined): Command {
+  return snagSlot === 0 ? Cmd.primary : snagSlot === 1 ? Cmd.secondary : 0;
+}
+
+/**
+ * Held key codes to a command bitset. Capture is dropped unless `capturable`; in Arcade (bit 6 is Trap there) the Capture key
+ * (C) instead presses the Snag slot's command `snagCmd` (0: the hero has no Snag, C does nothing); the other Arcade-only actions are dropped outside Arcade.
+ */
+export function commandFromHeld(bindings: Bindings, held: ReadonlySet<string>, capturable: boolean, arcade = false, snagCmd: Command = 0): Command {
   let cmd = 0;
   for (const code of held) {
     const a = resolveAction(bindings, code, arcade);
     if (a === undefined) continue;
-    if (a === 'capture' ? !capturable || arcade : !arcade && arcadeOnly(a)) continue;
+    if (a === 'capture' && arcade) {
+      cmd |= snagCmd;
+      continue;
+    }
+    if (a === 'capture' ? !capturable : !arcade && arcadeOnly(a)) continue;
     cmd |= ACTION_COMMAND[a];
   }
   return cmd;

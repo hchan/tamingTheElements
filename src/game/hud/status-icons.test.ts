@@ -97,7 +97,7 @@ describe('collectStatusChips', () => {
 
   it('shows Snag, stun, guard and safe states without a time', () => {
     const out = chips({ arcade: { rooted: true, stunned: true, guarding: true, invulnerable: true } });
-    expect(out.map((c) => c.label)).toEqual(['SNAG', 'STUN', 'GUARD']);
+    expect(out.map((c) => c.label)).toEqual(['SNAGGED', 'STUN', 'GUARD']);
     expect(out.map((c) => c.secs)).toEqual([null, null, null]);
     expect(out.map((c) => c.hostile)).toEqual([true, true, false]);
     // Invulnerable while stunned is the stun, not a SAFE buff.
