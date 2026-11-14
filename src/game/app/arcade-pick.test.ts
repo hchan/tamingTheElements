@@ -38,6 +38,14 @@ describe('tag-team partner choice', () => {
   });
 });
 
+describe('parsePick stage', () => {
+  it('keeps a known stage and drops blank or unknown ones (random)', () => {
+    expect(parsePick({ player: 'sindarosa', enemy: 'rokcore', level: 'normal', stage: 'water' }).stage).toBe('water');
+    expect(parsePick({ player: 'sindarosa', enemy: 'rokcore', level: 'normal', stage: '' })).not.toHaveProperty('stage');
+    expect(parsePick({ player: 'sindarosa', enemy: 'rokcore', level: 'normal', stage: 'lava' })).not.toHaveProperty('stage');
+  });
+});
+
 describe('parsePick', () => {
   it('unknown races and levels fall back to the defaults and the result is a plain 1v1', () => {
     const p = parsePick({ player: 'zzz', enemy: 'void-thing', level: 'impossible' });

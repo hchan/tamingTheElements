@@ -37,7 +37,13 @@ export interface ArcadePick {
   readonly local?: true;
   /** Player 2's bench in local two-player (no seed draw); absent against the AI, whose bench `enemyPartners` draws. */
   readonly enemyBench?: readonly CharacterId[];
+  /** The arena the player picked in Versus; absent = random (the match seed decides, as before). */
+  readonly stage?: StageChoice;
 }
+
+/** The arena elements Versus can pick (the sim draws the stage from the match seed, so a pick only steers the seed). */
+export const STAGE_CHOICES = ['fire', 'water', 'earth', 'air'] as const;
+export type StageChoice = (typeof STAGE_CHOICES)[number];
 
 /** Form values as the picker sends them; `size` is '2' or '3' for a 2v2 or 3v3 tag team (anything else is 1v1). */
 export interface PickForm {
@@ -52,6 +58,8 @@ export interface PickForm {
   readonly enemyPartner2?: string;
   /** 'local' for two players on this computer (anything else is the AI). */
   readonly mode?: string;
+  /** A stage element, or '' / absent for a random one. */
+  readonly stage?: string;
 }
 
 const race = (raw: string | undefined, fallback: CharacterId): CharacterId => ARCADE_RACES.find((r) => r === raw) ?? fallback;
@@ -96,9 +104,11 @@ export const isCompletePick = (raw: PickForm): boolean =>
 export function parsePick(raw: PickForm): ArcadePick {
   const player = race(raw.player, DEFAULT_PICK.player);
   const enemy = race(raw.enemy, DEFAULT_PICK.enemy);
+  const stage = STAGE_CHOICES.find((x) => x === raw.stage);
   return {
     player,
     enemy,
+    ...(stage ? { stage } : {}),
     level: ARCADE_AI_LEVELS.find((l) => l === raw.level) ?? DEFAULT_PICK.level,
     ...(raw.mode === 'local' ? { local: true as const, ...team(player, raw), enemyBench: bench(enemy, raw) } : team(player, raw)),
   };

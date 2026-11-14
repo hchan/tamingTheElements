@@ -83,6 +83,25 @@ describe('arcadePickView (DOM)', () => {
     expect(onStart.mock.calls[0]?.[0]).toMatchObject({ player: 'sindarosa', enemy: 'rokcore', level: '2', size: '1', mode: 'ai' });
   });
 
+  it('offers an Arena choice (Random first) that submits with the form and is click operable', () => {
+    const onStart = vi.fn();
+    const page = mount(onStart);
+    const group = page.querySelector('label[for="arcadeStage"]')?.closest('.settingsOption');
+    expect(group?.textContent).toMatch(/Random.*Fire.*Water.*Earth.*Air/);
+    expect(sel('arcadeStage').value).toBe('');
+    const water = [...(group?.querySelectorAll<HTMLButtonElement>('.vsSegment') ?? [])].find((b) => b.dataset['value'] === 'water');
+    water?.click();
+    expect(water?.getAttribute('aria-checked')).toBe('true');
+    page.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
+    expect(onStart.mock.calls[0]?.[0]).toMatchObject({ stage: 'water' });
+  });
+
+  it('shows the remembered stage and never uses the banned words', () => {
+    const page = mount(vi.fn(), { stage: 'air' });
+    expect(sel('arcadeStage').value).toBe('air');
+    expect(page.textContent).not.toMatch(/Classic|Arcade|ruleset|Capture/);
+  });
+
   it('submit with 3v3 carries both partners', () => {
     const onStart = vi.fn();
     const page = mount(onStart);
