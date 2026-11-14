@@ -15,9 +15,9 @@ export const SLIM_PORTRAIT = 48;
 export const SLIM_PORTRAIT_Y = 6;
 /** Top of the second row (name, chips, tag, meter). */
 export const SLIM_ROW_B = 34;
-/** Bench portraits (qa-r5-bench-portraits-small): 56 px squares, chip 0 nearest the tag pill, hanging a little under the band. */
-export const CHIP_SIZE = 56;
-export const CHIP_PITCH = 60;
+/** Bench portraits (qa-r5-bench-portraits-small): 68 px squares (qa-r13: was 56, too small to read next to the round pips), chip 0 nearest the tag pill, hanging a little under the band. */
+export const CHIP_SIZE = 68;
+export const CHIP_PITCH = 72;
 /** The bench row sits under the timer strip (super segments end at y 50), so the chips never cover it (qa-r7-hud-2v2). */
 export const CHIP_Y = 58;
 export const CHIP_BAR_Y = CHIP_Y + CHIP_SIZE + 5;

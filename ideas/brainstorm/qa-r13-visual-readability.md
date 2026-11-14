@@ -10,3 +10,7 @@ Play screen: the "More heroes below" pill overlaps the hero stat row at 1280x720
 Fix: add a rim light or outline on air stages, re-bake Rokcore at the same density, enlarge bench portraits, and fit the Tour card to 390 px height.
 
 Progress 2026-11-14 (Rokcore density): Rokcore was an 80 px procedural sprite upscaled ~3x, so it read blurry beside the 240 px Pax/Sindarosa portrait rigs. `tools/assets/rig-gen/rokcore.py` now paints at 8x and bakes a 240 px frame rig (`elemental.build(art=6)`: res 2, ss2, box = whole frame) with finer pitted-stone grain, so the density matches. Shots in ~/claudetmp/rokshots/{before,after2}. Other items in this file (air-stage rim light, bench portraits, Tour card) are still open.
+## Progress (2026-11-14)
+
+Done: "More heroes below" pill sits inside the sticky bar at >=900px; Tour stage card fits phone landscape (844x390); bench chips enlarged 56 to 68 px (slim-hud, tag-fx, tests).
+Open: Echo/Pax air-stage contrast (Echo already has a pale additive glow; a normal-blend rim for the bright Arcade air floor is not done), Rokcore re-bake. Status stays idea.

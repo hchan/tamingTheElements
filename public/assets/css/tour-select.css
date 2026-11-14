@@ -204,6 +204,20 @@
   #tourStage .tsFoe { width: 6.5em; font-size: 0.6em; letter-spacing: 0.02em; }
   #tourStage #tourPins { grid-template-columns: repeat(5, 1fr); font-size: 0.6em; }
 }
+/* Phone landscape (about 844x390): the whole card, title through Fight, fits one screen. The opponent roster sits left of the words, the
+   nine stage tiles take two short rows, and the button row is tight. */
+@media (max-height: 500px) and (orientation: landscape) {
+  #tourStage.tsGrim h1.heading { font-size: 1.1em; padding-bottom: 0.15em; margin: 0.1em 0; }
+  #tourStage .tsPanel { grid-template-columns: auto 1fr; gap: 0.6em; margin: 0.3em 0; padding: 0.35em 0.6em; }
+  #tourStage .tsRoster { gap: 0.9em; }
+  #tourStage .tsFoe { width: 4.6em; font-size: 0.55em; letter-spacing: 0; }
+  #tourStage .tsFoe figcaption { margin-top: 0.1em; }
+  #tourStage .tsInfo p { margin: 0.1em 0; font-size: 0.85em; }
+  #tourStage #tourPins { grid-template-columns: repeat(5, 1fr); gap: 0.3em; font-size: 0.6em; margin: 0.3em 0; }
+  #tourStage #tourPins li { min-height: 0; aspect-ratio: 4 / 1; padding: 0.2em 0.4em; }
+  #tourStage.tsGrim button.menuButton,
+  #tourStage.tsGrim a.menuButton { padding-block: 0.2em; }
+}
 @media (pointer: coarse) {
   #tourStage.tsGrim button.menuButton,
   #tourStage.tsGrim a.menuButton { min-height: 48px; min-width: 48px; }
