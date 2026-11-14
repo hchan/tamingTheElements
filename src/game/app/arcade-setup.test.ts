@@ -29,7 +29,7 @@ describe('Arcade Versus setup', () => {
   it('offers the 12 playable races (no void characters) and defaults to Sindarosa vs Fiara, AI Normal', () => {
     expect(ARCADE_RACES).toHaveLength(12);
     for (const r of ARCADE_RACES) expect(CHARACTERS.find((c) => c.id === r)?.element).not.toBe('void');
-    expect(DEFAULT_PICK).toEqual({ player: 'sindarosa', enemy: 'fiara', level: 'normal' });
+    expect(DEFAULT_PICK).toEqual({ player: 'sindarosa', enemy: 'rokcore', level: 'normal' });
   });
 
   it('builds one race each, Arcade on and every other flag default, difficulty 1, chapter 1 (no Capture), 0 XP', () => {
