@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  POSE_MS, PoseKind, STRIDE_PX, applyPose, breathe, easeOutBack, easeOutCubic, follow, headingOf, koFall, leanFor, lerpAngle,
+  POSE_MS, PoseKind, STRIDE_PX, TAG_IN_MIN_ALPHA, tagInAlpha, applyPose, breathe, easeOutBack, easeOutCubic, follow, headingOf, koFall, leanFor, lerpAngle,
   resetPose, shortestArc, walkFrame, type Pose,
 } from './pose-math';
 
@@ -151,6 +151,25 @@ describe('poses', () => {
     const slide = fresh();
     applyPose(slide, PoseKind.tagIn, 40, 1, 1, false);
     expect(slide.ox).toBeLessThan(0);
+  });
+
+  it('a tag-in starts at the alpha floor, rises monotonically and ends opaque', () => {
+    expect(tagInAlpha(0)).toBeCloseTo(TAG_IN_MIN_ALPHA, 10);
+    expect(tagInAlpha(1)).toBeCloseTo(1, 10);
+    let prev = 0;
+    for (let t = 0; t <= 1.0001; t += 0.05) {
+      const a = tagInAlpha(t);
+      expect(a).toBeGreaterThanOrEqual(prev);
+      prev = a;
+    }
+    for (const reduced of [true, false]) {
+      const p = fresh();
+      applyPose(p, PoseKind.tagIn, 0, 1, 1, reduced);
+      expect(p.alpha).toBeGreaterThanOrEqual(TAG_IN_MIN_ALPHA);
+      const q = fresh();
+      applyPose(q, PoseKind.tagIn, 120, 1, 1, reduced);
+      expect(q.alpha).toBeGreaterThan(0.6);
+    }
   });
 
   it('the KO fall tips over and fades, or only fades when reduced', () => {

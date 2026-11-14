@@ -95,6 +95,14 @@ export type PoseKindValue = (typeof PoseKind)[keyof typeof PoseKind];
 /** Length of each transient pose in ms (indexed by `PoseKind`). */
 export const POSE_MS: readonly number[] = [0, 220, 300, 200, 320, 900];
 
+/** The incoming hero never starts below this alpha: at the start of the fade it read as an empty spot on dark floors. */
+export const TAG_IN_MIN_ALPHA = 0.35;
+
+/** Tag-in opacity at progress `t` (0..1): eases from `TAG_IN_MIN_ALPHA` to 1. */
+export function tagInAlpha(t: number): number {
+  return TAG_IN_MIN_ALPHA + (1 - TAG_IN_MIN_ALPHA) * easeOutCubic(t);
+}
+
 /**
  * Adds transient pose `kind` at age `ageMs` into `p`. `dir` is -1 or 1 (the way the character faces or is pushed),
  * `power` 0..1 scales hurt by hit strength. Reduced motion keeps only what carries information: no movement, scale or
@@ -105,7 +113,7 @@ export function applyPose(p: Pose, kind: number, ageMs: number, dir: number, pow
   if (kind === PoseKind.none || dur <= 0 || ageMs >= dur) return;
   const t = ageMs / dur;
   if (kind === PoseKind.tagIn) {
-    p.alpha *= easeOutCubic(t);
+    p.alpha *= tagInAlpha(t);
     if (!reduced) {
       p.ox += -dir * 48 * (1 - easeOutCubic(t));
       const pop = popScale(t);
