@@ -1,14 +1,19 @@
 """Procedural Rokcore rig (grim earth elemental: a lopsided cairn of ancient cracked rock plates and moss, a glowing amber core in the
 chest, a lopsided cairn of slabs with two amber slits set into a rock knot, no neck; the base is a heap of rubble and the "arms" are detached orbiting boulder clusters, no
 limbs/clothes/person). Run: python3 tools/assets/rig-gen/rokcore.py <out_rig_dir> (needs Pillow + numpy; helpers in elemental.py).
-Parts keep the ids tail (rubble base), armB, torso, head, armF and the same 80x80 frame; the sim is unaffected.
+Parts keep the ids tail (rubble base), armB, torso, head, armF; the sim is unaffected. Hi-res (2026-11-14): painted at 8x and baked as a
+240 px frame rig (ART=6 art px per sim unit, res 2, ss2 sampling, like the Pax/Sindarosa portrait rigs) so Rokcore is as dense as they are
+(before it was an 80 px sprite upscaled ~3x and read blurry). Bake with: pnpm assets:bake && pnpm assets:sheets.
 """
 import os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import elemental as E
-from elemental import SS, W
 from PIL import Image
+
+E.SS, E.W = 8, 640  # paint at 8x (80 units -> 640 px); build() downsamples to ART px per unit
+SS = E.SS
+ART = 6
 
 OUT = sys.argv[1]
 STONE = [(0.0, (22, 23, 20)), (0.35, (58, 60, 52)), (0.7, (104, 106, 92)), (1.0, (158, 156, 136))]
@@ -47,7 +52,9 @@ def paint(name, view, polys, g, seed):
     tilt = np.clip(-(vx + vy) * 5.0, -0.5, 0.5)
     bev = E.bevel_light(np.clip(d1 / 0.1, 0, 1), 26.0)
     grain = E.fbm(rs, 28, 2)
-    lit = np.clip(0.32 + 0.3 * cellv + 0.25 * tilt + 0.3 * bev + 0.25 * (grain - 0.5) + g.get("dark", 0) - 0.18 * yy + 0.1, 0, 1)
+    fine = E.fbm(rs, 110, 2)  # hi-res only: pitted, weathered surface grain and pores
+    pores = np.clip((E.fbm(rs, 160, 1) - 0.72) * 6, 0, 1)
+    lit = np.clip(0.32 + 0.3 * cellv + 0.25 * tilt + 0.3 * bev + 0.25 * (grain - 0.5) + 0.4 * (fine - 0.5) - 0.35 * pores + g.get("dark", 0) - 0.18 * yy + 0.1, 0, 1)
     rgb = E.ramp(STONE, lit)
     crack = np.clip(1 - (d2 - d1) / 0.012, 0, 1)
     rgb = rgb * (1 - 0.7 * crack[..., None])
@@ -91,4 +98,4 @@ actions = {
 }
 E.build(OUT, "rokcore", G, actions, paint,
         E.license_for("rokcore", "rokcore.py", "grim earth elemental: lopsided cairn of ancient cracked rock plates and moss, glowing amber chest core, floating boulder fists, rubble base; olive-grey stone and amber palette."),
-        accents=accents)
+        accents=accents, art=ART)
