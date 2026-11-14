@@ -21,6 +21,7 @@ import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-co
 import { getUiFlags } from '../platform/flags';
 import { getPrefs } from '../platform/a11y/prefs';
 import { mountArenaPan } from '../fx/arena-pan';
+import { mountAimIndicator } from '../fx/aim-view';
 
 /**
  * The `#online` route (preview, shown with Arcade Versus), its own chunk. Two players connect with copy-pasted codes (no
@@ -203,6 +204,7 @@ export function onlineVersusScreen(): Screen {
             setup,
             arcadeView: (arena, v, alpha) => {
               watchTouch(buttons, v);
+              mountAimIndicator(arena, v, alpha);
               // The same panning wide view as local Arcade (no side bars on a wide phone); view only, the sim is untouched.
               mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion);
             },

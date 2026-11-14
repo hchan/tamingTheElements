@@ -14,9 +14,19 @@
 .guideSection {
   margin: 1.2em 0;
 }
+.guideSection > .heading {
+  margin-top: 1.4em;
+  margin-bottom: 0.4em;
+}
 .guideIntro {
   margin: 0.2em 0 0.8em;
-  color: var(--g-dim);
+  /* A dark scrim behind the intro so it holds WCAG AA (about 12:1) over the busy backdrop art. */
+  padding: 0.45em 0.8em;
+  color: #f4f0ff;
+  background: rgba(20, 15, 52, 0.9);
+  border-radius: 6px;
+  width: fit-content;
+  max-width: 100%;
 }
 .guideSubheading {
   margin: 1em 0 0.2em;
