@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -8,3 +8,7 @@ added: 2026-11-14
 At 844x390 names show as "FI...", "RO...", "SI..." even in 1v1 where there is room (shots/pause3-phone.png, tag-phone-3-play.png). The first-run tooltip covers the phone HUD.
 
 Fix: allow more name width, shrink the life text first; dismiss the tooltip on first input.
+
+## Progress
+
+- 2026-11-14: done. Life text shrinks before the name is cut; the phone card sits between the fighters.

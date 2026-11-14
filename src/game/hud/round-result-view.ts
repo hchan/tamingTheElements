@@ -46,8 +46,10 @@ export interface ResultState {
   readonly title: string;
   readonly headline: string;
   readonly lines: readonly string[];
-  /** The short phone card is the one in use (the banner's duplicate K.O. is hidden under it). */
+  /** The card is up and names the result itself, so the round banner's duplicate K.O. steps aside (every size; the short phone card is `short`). */
   readonly compact: boolean;
+  /** The short phone layout is the one in use. */
+  readonly short: boolean;
 }
 
 export interface ResultView {
@@ -184,7 +186,7 @@ export function mountResultView(
     state(): ResultState {
       draw();
       const on = card !== undefined && view.tick >= from && view.tick < until;
-      return { visible: on, tone: card?.tone ?? '', kicker: card?.kicker ?? '', title: card?.title ?? '', headline: card?.headline ?? '', lines: card?.lines ?? [], compact: on && compact };
+      return { visible: on, tone: card?.tone ?? '', kicker: card?.kicker ?? '', title: card?.title ?? '', headline: card?.headline ?? '', lines: card?.lines ?? [], compact: on, short: on && compact };
     },
   };
 

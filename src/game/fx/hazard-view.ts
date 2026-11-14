@@ -13,6 +13,8 @@ import { resolutionOf } from '../boot/viewport';
  */
 /** The warning chip sits above the fighters so a fighter standing in the box never hides the word. */
 const CHIP_DEPTH = 40;
+/** The chip never rides higher than this screen y: the HUD's WEATHER meter and badge strip end near 195, and the HUD draws over the arena. */
+export const CHIP_MIN_SCREEN_Y = 218;
 const DEPTH = -0.65; // under the trap markers (-0.6) and the fighters
 
 /** A pale, desaturated light of a hazard colour: the luminous core of the tide and gust strike marks (readable on blue and on pale ice). */
@@ -239,7 +241,9 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     const v = arena.cameras.main.worldView;
     text.setText(label).setAlpha(Math.max(0.85, alpha));
     const cx = Math.min(v.x + v.width - text.width / 2 - 8, Math.max(v.x + text.width / 2 + 8, x + w / 2));
-    const cy = Math.min(v.y + v.height - 24, Math.max(v.y + 24, y - 24));
+    // Camera zoom includes the render resolution (the arena's own framing zoom is zoom / resolution); the HUD strip is in logical px.
+    const zoom = (arena.cameras.main.zoom || 1) / (resolutionOf(arena) || 1);
+    const cy = Math.min(v.y + v.height - 24, Math.max(v.y + CHIP_MIN_SCREEN_Y / zoom, y - 24));
     text.setPosition(cx, cy);
   };
 
