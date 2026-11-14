@@ -253,17 +253,11 @@ export function mountTagView(
         continue;
       }
       const p = flashPose(t, f.h, reduced);
-      const color = f.ko ? GOLD : 0xffffff;
-      fx.fillStyle(0xffffff, p.core).fillCircle(f.x, f.y, f.h * 0.45);
-      fx.lineStyle(7, 0x000000, p.alpha * 0.5).strokeCircle(f.x, f.y, p.ring);
-      fx.lineStyle(f.ko ? 5 : 4, color, p.alpha).strokeCircle(f.x, f.y, p.ring);
-      if (f.ko) fx.lineStyle(2, 0xffffff, p.alpha).strokeCircle(f.x, f.y, p.ring * 0.75);
-      // The slide: speed lines from the team's own side closing in on the spot.
-      const dir = f.team === 0 ? -1 : 1;
-      for (let k = -1; k <= 1 && p.slide > 0; k++) {
-        const x0 = f.x + dir * (p.slide + f.h * 0.3);
-        fx.lineStyle(4, color, 0.8).lineBetween(x0, f.y + k * f.h * 0.25, x0 + dir * f.h * 0.6, f.y + k * f.h * 0.25);
-      }
+      // One clean burst: a faint wash that never hides the fighter (it enters under it), and a single ring in pale light
+      // (ochre after a KO). No speed lines: the fighter's own tag-in pose already carries the motion.
+      const color = f.ko ? GOLD : 0xf1e8cf;
+      fx.fillStyle(color, p.core * 0.3).fillCircle(f.x, f.y, f.h * 0.5);
+      fx.lineStyle(3, color, p.alpha * 0.9).strokeCircle(f.x, f.y, p.ring);
     }
   }
 
