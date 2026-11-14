@@ -13,7 +13,9 @@ test.use({ launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', 
 // per variant on two SwiftShader pages. So the default run ends the match as a draw at MATCH_TICKS (`?matchticks=`, 30 s of
 // sim, 30 checkpoints; a draw is by design: the sim reports no winner at the limit, and both peers must agree on that) and `TTE_NATURAL_MATCH=1` plays to the sim's own result (real winner, rounds line).
 const NATURAL = process.env['TTE_NATURAL_MATCH'] === '1';
-const MATCH_TICKS = 1500;
+// Soak knobs (tools/ci/webrtc-soak.ts, opt-in, docs/NETCODE.md): `TTE_MATCH_TICKS` lengthens the draw limit, `TTE_NETSIM` replaces the default grid with one harsher `?netsim=` spec.
+const MATCH_TICKS = Number(process.env['TTE_MATCH_TICKS'] ?? '1500');
+const SOAK_NETSIM = process.env['TTE_NETSIM'] ?? '';
 
 const opened: BrowserContext[] = [];
 test.afterEach(async () => {
@@ -58,14 +60,17 @@ async function waitForEnd(page: Page, stallMs = 10_000): Promise<Net> {
 // WP 11 soak: the same proof once more under `?netsim=` (seeded one-way delay 60 ms + 0..20 ms jitter, 10 % loss on each side's input
 // receive path, so about 120 ms round trip), in both modes. Modest length: the usual 1500-tick draw.
 const NETSIM = 'lat:60,jitter:20,loss:10';
-const VARIANTS = [
+const VARIANTS = SOAK_NETSIM !== '' ? [
+  { ff: 'arcade,lockstep,netbot', sim: SOAK_NETSIM },
+  { ff: 'arcade,netbot', sim: SOAK_NETSIM },
+] : [
   { ff: 'arcade,lockstep,netbot', sim: '' },
   { ff: 'arcade,netbot', sim: '' },
   { ff: 'arcade,lockstep,netbot', sim: NETSIM },
   { ff: 'arcade,netbot', sim: NETSIM },
 ];
 for (const { ff, sim } of VARIANTS) test(`two browser contexts play a whole online match to the same result (${ff}${sim === '' ? '' : `, netsim ${sim}`})`, async ({ browser }) => {
-  test.setTimeout(NATURAL ? 900_000 : 420_000);
+  test.setTimeout(NATURAL ? 900_000 : Math.max(420_000, MATCH_TICKS * 600));
   const ctxA = await browser.newContext();
   const ctxB = await browser.newContext();
   opened.push(ctxA, ctxB);
@@ -93,8 +98,10 @@ for (const { ff, sim } of VARIANTS) test(`two browser contexts play a whole onli
   await expect(b.locator('#onlineLink')).toHaveText(/^Link: (good|fair|poor), \d+ ms$/, { timeout: 20_000 });
 
   // Both sims run to the match end (the sim's own result when natural, the tick limit otherwise).
-  const [na, nb] = await Promise.all([waitForEnd(a), waitForEnd(b)]);
-  console.log(`[${ff}] match ended at sim tick ${String(na.simTick)} / ${String(nb.simTick)}, winner ${String(na.winner)}, ${String(na.checkpoints.length)} checkpoints`);
+  const t0 = Date.now();
+  const stallMs = SOAK_NETSIM === '' ? 10_000 : 30_000;
+  const [na, nb] = await Promise.all([waitForEnd(a, stallMs), waitForEnd(b, stallMs)]);
+  console.log(`[${ff}] match ended at sim tick ${String(na.simTick)} / ${String(nb.simTick)}, winner ${String(na.winner)}, ${String(na.checkpoints.length)} checkpoints, ${String(Math.round((Date.now() - t0) / 1000))} s, netsim '${sim}'`);
 
   expect(na.desync).toBeUndefined();
   expect(nb.desync).toBeUndefined();
