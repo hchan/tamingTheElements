@@ -5,7 +5,7 @@ import { hash01, toPts } from './grim-fx';
  * Earth-stage obstacles drawn as props, not boxes (owner: the rocks were brick placeholders). Each rock patch is a boulder,
  * a broken pillar or a crystal cluster, chosen from the patch's shape and index, lit from the upper left, with a contact
  * shadow, cracks and a little moss. Everything stays inside the sim's footprint (the shadow trails off it a few pixels) and
- * is a pure function of (rect, index): static, drawn once per layout, deterministic, no text. Dark, desaturated, textured.
+ * is a pure function of (rect, index): static, drawn once per layout, deterministic, no text. Painterly and luminous (qa-r6: warm lit stone, tonal soft edges instead of black outlines).
  */
 type Gfx = Phaser.GameObjects.Graphics;
 
@@ -24,11 +24,11 @@ export function propKind(w: number, h: number, i: number): PropKind {
   return i % 2 === 0 ? 'crystal' : 'boulder';
 }
 
-const STONE = 0x6a6252;
-const MOSS = 0x3d4a2c;
+const STONE = 0x9a8c72; // qa-r6: warm sunlit sandstone, brighter than the old grey so props sit in the painted floor
+const MOSS = 0x5d7440;
 
 function shadow(g: Gfx, x: number, y: number, w: number, h: number): void {
-  for (const [k, a] of [[1, 0.16], [0.86, 0.2], [0.7, 0.26]] as const) {
+  for (const [k, a] of [[1, 0.1], [0.86, 0.13], [0.7, 0.17]] as const) {
     g.fillStyle(0x000000, a).fillEllipse(x + w * 0.54, y + h * 0.9, w * 1.02 * k, h * 0.34 * k + 4);
   }
 }
@@ -44,7 +44,7 @@ function moss(g: Gfx, cx: number, cy: number, rx: number, seed: number): void {
 function crack(g: Gfx, x0: number, y0: number, x1: number, y1: number, seed: number): void {
   const pts: number[] = [x0, y0];
   for (let s = 1; s <= 4; s++) pts.push(x0 + ((x1 - x0) * s) / 4 + (hash01(s, seed) - 0.5) * 8, y0 + ((y1 - y0) * s) / 4 + (hash01(s, seed + 1) - 0.5) * 8);
-  g.lineStyle(1.5, 0x0c0b0a, 0.75).strokePoints(toPts(pts), false);
+  g.lineStyle(1.5, 0x3a2e22, 0.4).strokePoints(toPts(pts), false);
 }
 
 function boulder(g: Gfx, x: number, y: number, w: number, h: number, seed: number): void {
@@ -72,9 +72,9 @@ function boulder(g: Gfx, x: number, y: number, w: number, h: number, seed: numbe
     const f = 0.62 + 0.5 * (lit * 0.5 + 0.5) + (hash01(k, seed + 7) - 0.5) * 0.14;
     g.fillStyle(ch(STONE, f), 1).fillTriangle(hx, hy, pts[k * 2] ?? 0, pts[k * 2 + 1] ?? 0, pts[k2 * 2] ?? 0, pts[k2 * 2 + 1] ?? 0);
   }
-  g.lineStyle(1, 0x0c0b0a, 0.5);
+  g.lineStyle(1, 0x4a3c2c, 0.18);
   for (let k = 0; k < n; k++) g.lineBetween(hx, hy, pts[k * 2] ?? 0, pts[k * 2 + 1] ?? 0);
-  g.lineStyle(3, 0x0a0908, 0.9).strokePoints(toPts(pts), true);
+  g.lineStyle(2, ch(STONE, 0.5), 0.35).strokePoints(toPts(pts), true); // qa-r6: soft tonal edge, no black outline
   g.lineStyle(1.5, ch(STONE, 1.6), 0.35).lineBetween(pts[22] ?? cx, pts[23] ?? cy, pts[0] ?? cx, pts[1] ?? cy);
   crack(g, cx + w * 0.1, cy - h * 0.3, cx + w * 0.2, cy + h * 0.25, seed + 31);
   crack(g, cx - w * 0.25, cy + h * 0.05, cx - w * 0.05, cy + h * 0.3, seed + 41);
@@ -102,11 +102,11 @@ function pillar(g: Gfx, x: number, y: number, w: number, h: number, seed: number
     const t = (yy - topY) / (bot - topY);
     const xl = peakX - (peakX - x) * t + 3;
     const xr = peakX + (x + w - peakX) * t - 3;
-    g.lineStyle(1.5, 0x0c0b0a, 0.5).lineBetween(xl, yy + 6, ridgeX, yy - 3).lineBetween(ridgeX, yy - 3, xr, yy + 5);
+    g.lineStyle(1.5, 0x4a3c2c, 0.28).lineBetween(xl, yy + 6, ridgeX, yy - 3).lineBetween(ridgeX, yy - 3, xr, yy + 5);
     g.lineStyle(1, ch(STONE, 1.5), 0.25).lineBetween(xl, yy + 8, ridgeX, yy - 1);
   }
-  g.lineStyle(3, 0x0a0908, 0.9).strokePoints(toPts([x, bot, lx, ly, peakX, topY, nx, ny, rx, ry, x + w, bot]), false);
-  g.lineStyle(2, 0x0a0908, 0.7).lineBetween(peakX, topY, ridgeX, bot);
+  g.lineStyle(2, ch(STONE, 0.45), 0.3).strokePoints(toPts([x, bot, lx, ly, peakX, topY, nx, ny, rx, ry, x + w, bot]), false);
+  g.lineStyle(2, ch(STONE, 0.4), 0.3).lineBetween(peakX, topY, ridgeX, bot);
   g.lineStyle(1.5, ch(STONE, 1.8), 0.4).lineBetween(peakX - 1, topY + 2, lx + 1, ly + 1);
   crack(g, ridgeX + w * 0.12, topY + h * 0.3, ridgeX + w * 0.05, bot - 12, seed + 5);
   // A vein of cold crystal shards growing from the lower flank (the same teal as the crystal clusters).
@@ -114,9 +114,9 @@ function pillar(g: Gfx, x: number, y: number, w: number, h: number, seed: number
     const bx = x + w * (0.14 + 0.22 * k) + hash01(k, seed + 20) * 4;
     const by = bot - h * (0.06 + 0.07 * (k % 2) + 0.03 * k);
     const sh = h * (0.24 + 0.1 * hash01(k, seed + 21));
-    g.fillStyle(0x45695f, 1).fillTriangle(bx - 5, by, bx, by - sh, bx + 1, by);
-    g.fillStyle(0x1a2e29, 1).fillTriangle(bx + 1, by, bx, by - sh, bx + 6, by);
-    g.lineStyle(1, 0x9fc0b4, 0.5).lineBetween(bx - 3, by - sh * 0.3, bx - 0.5, by - sh + 2);
+    g.fillStyle(0x6fb5a2, 1).fillTriangle(bx - 5, by, bx, by - sh, bx + 1, by);
+    g.fillStyle(0x3a7a6c, 1).fillTriangle(bx + 1, by, bx, by - sh, bx + 6, by);
+    g.lineStyle(1, 0xd8fff0, 0.6).lineBetween(bx - 3, by - sh * 0.3, bx - 0.5, by - sh + 2);
   }
   moss(g, x + w * 0.5, bot - 3, w * 0.4, seed + 6);
   // Rubble at the foot.
@@ -127,10 +127,10 @@ function crystals(g: Gfx, x: number, y: number, w: number, h: number, seed: numb
   const cx = x + w / 2;
   const base = y + h * 0.9;
   // A faint cold glow around the cluster (the only light on the arena floor besides the stage's own).
-  for (const [k, a] of [[0.55, 0.05], [0.42, 0.06], [0.3, 0.07]] as const) g.fillStyle(0x4f7d70, a).fillEllipse(cx, base - h * 0.35, w * (1 + k), h * k * 1.4);
+  for (const [k, a] of [[0.7, 0.07], [0.5, 0.09], [0.32, 0.11]] as const) g.fillStyle(0x8fe8cc, a).fillEllipse(cx, base - h * 0.35, w * (1 + k), h * k * 1.4);
   // A rocky bed.
   g.fillStyle(ch(STONE, 0.6), 1).fillEllipse(cx, base - 2, w * 0.95, h * 0.24);
-  g.lineStyle(2, 0x0a0908, 0.8).strokeEllipse(cx, base - 2, w * 0.95, h * 0.24);
+  g.lineStyle(2, ch(STONE, 0.4), 0.3).strokeEllipse(cx, base - 2, w * 0.95, h * 0.24);
   const count = 5;
   for (let k = 0; k < count; k++) {
     const t = k / (count - 1);
@@ -142,10 +142,10 @@ function crystals(g: Gfx, x: number, y: number, w: number, h: number, seed: numb
     const by = base - hash01(k, seed + 4) * 8;
     const tip = by - sh;
     // Two faces: left lit, right dark; a shoulder where the point begins.
-    g.fillStyle(0x45695f, 1).fillPoints(toPts([bx - sw, by, bx - sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + lean, tip, bx + lean * 0.5, by]), true);
-    g.fillStyle(0x1a2e29, 1).fillPoints(toPts([bx + lean * 0.5, by, bx + lean, tip, bx + sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + sw, by]), true);
-    g.lineStyle(1.5, 0x07130f, 0.9).strokePoints(toPts([bx - sw, by, bx - sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + lean, tip, bx + sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + sw, by]), false);
-    g.lineStyle(1, 0x9fc0b4, 0.3).lineBetween(bx - sw * 0.6 + lean * 0.3, tip + sh * 0.4, bx + lean - 1, tip + 3);
+    g.fillStyle(0x6fb5a2, 1).fillPoints(toPts([bx - sw, by, bx - sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + lean, tip, bx + lean * 0.5, by]), true);
+    g.fillStyle(0x3a7a6c, 1).fillPoints(toPts([bx + lean * 0.5, by, bx + lean, tip, bx + sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + sw, by]), true);
+    g.lineStyle(1.5, 0x2f6e62, 0.5).strokePoints(toPts([bx - sw, by, bx - sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + lean, tip, bx + sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + sw, by]), false);
+    g.lineStyle(1, 0xd8fff0, 0.45).lineBetween(bx - sw * 0.6 + lean * 0.3, tip + sh * 0.4, bx + lean - 1, tip + 3);
   }
 }
 

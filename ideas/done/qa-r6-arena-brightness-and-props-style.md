@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done (floors and props; Ishimi FX box and dark-hero rim light remain)
 added: 2026-11-13
 ---
 
@@ -20,3 +20,7 @@ Evidence: tourfight-1.png (air floor, murky blue-purple), fight-*.png, hero-*.pn
 - Repaint or re-bake earth props with painted shading and no black outline (match the floor).
 - Find the Ishimi FX texture (premultiply / blend mode / frame padding) and fix; add a screenshot e2e at the attack frame.
 - Add a soft rim light or ground glow behind dark heroes, or a subtle contrasting outline, so they read on any floor.
+
+## Done (arena-bright, 2026-11-13)
+
+Water and air floors lifted with light shafts (tools/assets/stage-gen/arena-floor.py); earth props repainted warm with tonal edges instead of black outlines and a luminous crystal glow (src/game/fx/terrain-props.ts). Not done: the Ishimi FX rectangle bug and the dark-hero rim light.
