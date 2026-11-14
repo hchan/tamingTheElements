@@ -5,6 +5,9 @@ import type { Screen } from '@ui/screens/screen';
 import { loadSave } from '@ui/screens/settings';
 import { hostPeer, joinPeer, type Peer } from '../net/peer';
 import { ControlMux } from '../net/control-mux';
+import { buildDesyncReport } from '../net/desync-report';
+import { downloadReport } from './download';
+import { linkLine } from '../net/link-quality';
 import { iceFromSettings } from '../net/ice';
 import { copyText, joinParam, pasteInto, shareBlock } from './online-share';
 import { destroyGame, type GameHandle } from './game-handle';
@@ -90,6 +93,11 @@ function iceParam(): RTCIceServer[] {
   return iceFromSettings(loadSave().turnServer);
 }
 
+/** Control-channel pump period and the pump count between pings (one ping a second). */
+const PUMP_MS = 25;
+const PINGS_EVERY_PUMPS = 40;
+type SessionStatsSource = { readonly stats: { readonly updates: number; readonly stalls: number } };
+
 export function onlineVersusScreen(): Screen {
   const matchTicks = matchTicksParam();
   let node: HTMLElement | null = null;
@@ -105,6 +113,9 @@ export function onlineVersusScreen(): Screen {
   /** The control channel as the screen reads it (through the mux once the link is being watched). */
   const pipeOf = (p: Peer): ControlPipe => mux?.pipe ?? p.control;
   let muxTimer: ReturnType<typeof setInterval> | undefined;
+  /** The running match's session, for the link line's stall share. */
+  let liveSession: SessionStatsSource | undefined;
+  let linkNode: HTMLElement | undefined;
   let onPageHide: (() => void) | undefined;
   /** Set once the friend left or the link died: later status words must not overwrite that. */
   let ended = false;
@@ -155,6 +166,8 @@ export function onlineVersusScreen(): Screen {
 
       const startMatch = (p: Peer, say: (s: string) => void, setup: MatchSetup): void => {
         // `?ff=netbot` (dev and test builds only): the Arcade scripted AI plays our side, so a two-context e2e needs no keys.
+        liveSession = undefined;
+        node?.querySelector('#onlineReport')?.remove();
         const bot = devBuild() && getUiFlags(window.location.search).netbot ? import('./arcade-setup').then((m) => m.arcadeBot(setup, side)) : Promise.resolve(undefined);
         void Promise.all([import('../boot/phaser-config'), bot]).then(([{ createGame }, agent]) => {
           if (gone || !node) return;
@@ -193,8 +206,13 @@ export function onlineVersusScreen(): Screen {
               input: p.input,
               ...(agent === undefined ? {} : { agent }),
               onStatus: (st, session) => {
+                liveSession = session;
                 const t = netStatusText(st, session.forfeitReason);
                 if (t !== undefined) say(t);
+                if (st === 'desync' && !node?.querySelector('#onlineReport')) {
+                  const save = button('onlineReport', 'Save report', () => { downloadReport(buildDesyncReport(setup, session)); });
+                  node?.insertBefore(save, status);
+                }
               },
             },
           };
@@ -282,7 +300,18 @@ export function onlineVersusScreen(): Screen {
         p.open.then(
           () => {
             if (gone) return;
-            muxTimer = setInterval(() => { m.pump(); }, 100);
+            // Short pump interval: a pong is timed when it is read, so the readout is at most this much too high.
+            let pumps = 0;
+            muxTimer = setInterval(() => {
+              m.pump();
+              if (++pumps % PINGS_EVERY_PUMPS !== 0) return;
+              m.sendPing();
+              if (linkNode) linkNode.textContent = linkLine(m.rttMs, liveSession?.stats);
+            }, PUMP_MS);
+            linkNode = el('p');
+            linkNode.id = 'onlineLink';
+            linkNode.textContent = linkLine(undefined);
+            node?.insertBefore(linkNode, status);
             onPageHide = () => { m.sendBye(); };
             window.addEventListener('pagehide', onPageHide);
             p.onState((s) => {

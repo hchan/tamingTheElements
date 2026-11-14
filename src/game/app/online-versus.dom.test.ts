@@ -353,8 +353,27 @@ describe('online versus screen', () => {
     expect(launch?.net?.input).toBe(r.peer.input);
     expect(host.querySelector('#game')).toBe(h.created[0]?.host);
 
-    launch?.net?.onStatus?.('desync', { forfeitReason: undefined } as never);
+    const evidence = {
+      forfeitReason: undefined,
+      side: 0,
+      simTick: 0,
+      desync: { tick: 50, local: 1, remote: 2 },
+      stats: { updates: 0, stalls: 0 },
+      checkpoints: () => [],
+      commandLog: () => [[], []],
+    };
+    launch?.net?.onStatus?.('desync', evidence as never);
     expect(statusText()).toContain('disagree');
+    expect(host.querySelector('#onlineLink')?.textContent).toMatch(/^Link: /);
+    const report = host.querySelector<HTMLButtonElement>('#onlineReport');
+    expect(report?.textContent).toBe('Save report');
+    const saved: Blob[] = [];
+    URL.createObjectURL = (b: Blob | MediaSource) => (saved.push(b as Blob), 'blob:x');
+    URL.revokeObjectURL = () => undefined;
+    HTMLAnchorElement.prototype.click = () => undefined;
+    report?.click();
+    expect(saved).toHaveLength(1);
+    expect(JSON.parse(await (saved[0] as Blob).text())).toMatchObject({ kind: 'tte-desync-report', side: 0 });
     launch?.net?.onStatus?.('running', { forfeitReason: undefined } as never);
     expect(statusText()).toContain('disagree');
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ControlPipe } from '@core/index';
-import { ControlMux, MSG_BYE } from './control-mux';
+import { ControlMux, MSG_BYE, MSG_PING, MSG_PONG } from './control-mux';
 
 function fakePipe(inbox: Uint8Array[], sent: Uint8Array[]): ControlPipe {
   return { send: (m) => void sent.push(m), receive: () => inbox.shift() };
@@ -33,5 +33,56 @@ describe('ControlMux', () => {
     mux.sendBye();
     mux.sendBye();
     expect(sent.map((m) => [...m])).toEqual([[5], [MSG_BYE]]);
+  });
+});
+
+describe('ControlMux ping/pong', () => {
+  it('answers a ping with a pong of the same id and never queues it', () => {
+    const inbox = [Uint8Array.of(MSG_PING, 0, 0, 1, 2)];
+    const sent: Uint8Array[] = [];
+    const mux = new ControlMux(fakePipe(inbox, sent), () => undefined);
+    expect(mux.pipe.receive()).toBeUndefined();
+    expect(sent.map((m) => [...m])).toEqual([[MSG_PONG, 0, 0, 1, 2]]);
+  });
+
+  it('times a round trip from ping to its pong with the injected clock, averaging the last few', () => {
+    let t = 1000;
+    const inbox: Uint8Array[] = [];
+    const sent: Uint8Array[] = [];
+    const mux = new ControlMux(fakePipe(inbox, sent), () => undefined, () => t);
+    expect(mux.rttMs).toBeUndefined();
+    mux.sendPing();
+    t += 40;
+    inbox.push(Uint8Array.of(MSG_PONG, ...(sent[0] as Uint8Array).subarray(1)));
+    mux.pump();
+    expect(mux.rttMs).toBe(40);
+    mux.sendPing();
+    t += 60;
+    inbox.push(Uint8Array.of(MSG_PONG, ...(sent[1] as Uint8Array).subarray(1)));
+    mux.pump();
+    expect(mux.rttMs).toBe(50);
+  });
+
+  it('ignores a pong nobody asked for, a repeated pong and junk lengths', () => {
+    const inbox: Uint8Array[] = [];
+    const sent: Uint8Array[] = [];
+    const mux = new ControlMux(fakePipe(inbox, sent), () => undefined, () => 5);
+    inbox.push(Uint8Array.of(MSG_PONG, 9, 9, 9, 9), Uint8Array.of(MSG_PONG), Uint8Array.of(MSG_PING, 1));
+    mux.pump();
+    expect(mux.rttMs).toBeUndefined();
+    expect(sent).toEqual([]);
+    mux.sendPing();
+    const pong = Uint8Array.of(MSG_PONG, ...(sent[0] as Uint8Array).subarray(1));
+    inbox.push(pong, pong);
+    mux.pump();
+    expect(mux.rttMs).toBe(0);
+  });
+
+  it('stops pinging after our own BYE', () => {
+    const sent: Uint8Array[] = [];
+    const mux = new ControlMux(fakePipe([], sent), () => undefined);
+    mux.sendBye();
+    mux.sendPing();
+    expect(sent.map((m) => m[0])).toEqual([MSG_BYE]);
   });
 });

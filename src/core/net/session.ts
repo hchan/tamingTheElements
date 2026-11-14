@@ -117,6 +117,8 @@ const ADAPT_STALLS = 5;
 const HASH_HISTORY = 64;
 /** Most checkpoints `checkpoints()` keeps (the first ones; tests and the browser proof read the whole run). */
 const CHECKPOINT_LOG_CAP = 4096;
+/** Most ticks `commandLog()` keeps (about 22 minutes of play; a longer match just stops being logged). */
+const COMMAND_LOG_CAP = 65536;
 /** A `TickBuf` compacts once this many leading entries are dead. */
 const TRIM_BATCH = 32;
 
@@ -213,6 +215,8 @@ export class LockstepSession {
   private readonly hashTicks: number[] = [];
   /** Flat (tick, hash) pairs of every confirmed local checkpoint, kept past `HASH_HISTORY` up to the cap; read-only evidence for `checkpoints()`. */
   private readonly checkpointLog: number[] = [];
+  /** Command pair fed to the sim at each tick, by tick (re-simulation overwrites predicted entries); evidence for a desync report. */
+  private readonly cmdLog: [number[], number[]] = [[], []];
   private clock = 0;
   private startClock = -1;
   private lastHeard = 0;
@@ -283,6 +287,17 @@ export class LockstepSession {
 
   /** Command pair applied by the most recent step, in (side 0, side 1) order. */
   lastCommands: readonly [Command, Command] = [NO_COMMAND, NO_COMMAND];
+
+  /** Commands fed to the sim per tick, `[side 0, side 1]`, in replay order (read-only evidence; the last few may still be predicted under rollback). */
+  commandLog(): readonly [readonly number[], readonly number[]] {
+    return this.cmdLog;
+  }
+
+  private logCommands(t: number): void {
+    if (t >= COMMAND_LOG_CAP) return;
+    this.cmdLog[0][t] = this.lastCommands[0];
+    this.cmdLog[1][t] = this.lastCommands[1];
+  }
 
   /** Local state hash recorded at a checkpoint tick, if any. */
   hashAt(tick: number): number | undefined {
@@ -385,6 +400,7 @@ export class LockstepSession {
         const theirs = this.remote.get(t);
         if (mine !== undefined && theirs !== undefined) {
           this.lastCommands = this.side === 0 ? [mine, theirs] : [theirs, mine];
+          this.logCommands(t);
           events = step(this.world, this.lastCommands);
           stepped = true;
           this.stallRun = 0;
@@ -456,6 +472,7 @@ export class LockstepSession {
     const mine = this.local.get(t) as Command;
     ring.push(this.world.state, t);
     this.lastCommands = this.side === 0 ? [mine, theirs] : [theirs, mine];
+    this.logCommands(t);
     const evs = step(this.world, this.lastCommands);
     this.surface(t, evs, out, retracted);
     const now = this.simTick;
