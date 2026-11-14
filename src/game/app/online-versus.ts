@@ -7,7 +7,7 @@ import { hostPeer, joinPeer, type Peer } from '../net/peer';
 import { ControlMux } from '../net/control-mux';
 import { buildDesyncReport } from '../net/desync-report';
 import { downloadReport } from './download';
-import { linkLine } from '../net/link-quality';
+import { linkLine, medianRtt, RTT_WINDOW } from '../net/link-quality';
 import { iceFromSettings } from '../net/ice';
 import { cleanRoomCode, hostRoom, joinRoom, relayUrl } from '../net/relay';
 import { copyText, joinParam, pasteInto, shareBlock } from './online-share';
@@ -117,6 +117,10 @@ export function onlineVersusScreen(): Screen {
   /** The running match's session, for the link line's stall share. */
   let liveSession: SessionStatsSource | undefined;
   let linkNode: HTMLElement | undefined;
+  /** The setup form (codes, steps): collapsed once the link is open. */
+  let setupNode: HTMLElement | undefined;
+  let introNode: HTMLElement | undefined;
+  const rtts: number[] = [];
   let onPageHide: (() => void) | undefined;
   /** Set once the friend left or the link died: later status words must not overwrite that. */
   let ended = false;
@@ -165,9 +169,9 @@ export function onlineVersusScreen(): Screen {
         arenaNode = undefined;
       };
       node.append(el('h1', 'heading', 'Online'));
-      node.append(
-        el('p', undefined, 'Play a friend over the internet with no server: one of you hosts and sends a code, the other joins and sends a code back.'),
-      );
+      const intro = el('p', undefined, 'Play a friend over the internet with no server: one of you hosts and sends a code, the other joins and sends a code back.');
+      node.append(intro);
+      introNode = intro;
 
       const startMatch = (p: Peer, say: (s: string) => void, setup: MatchSetup): void => {
         // `?ff=netbot` (dev and test builds only): the Arcade scripted AI plays our side, so a two-context e2e needs no keys.
@@ -180,6 +184,9 @@ export function onlineVersusScreen(): Screen {
           destroyGame(game, arenaNode);
           game = undefined;
           arenaNode = undefined;
+          // The match is on: the hero pickers are done with (a rematch builds them again), so the arena sits high on the page.
+          node.querySelector('#onlineTeam')?.remove();
+          node.querySelector('#onlineReady')?.remove();
           const holder = el('div');
           holder.id = 'game';
           arenaNode = holder;
@@ -311,9 +318,16 @@ export function onlineVersusScreen(): Screen {
               m.pump();
               if (++pumps % PINGS_EVERY_PUMPS !== 0) return;
               m.sendPing();
-              if (linkNode) linkNode.textContent = linkLine(m.rttMs, liveSession?.stats);
+              if (m.rttMs !== undefined) {
+                rtts.push(m.rttMs);
+                if (rtts.length > RTT_WINDOW) rtts.shift();
+              }
+              if (linkNode) linkNode.textContent = linkLine(medianRtt(rtts), liveSession?.stats);
             }, PUMP_MS);
-            linkNode = el('p');
+            rtts.length = 0;
+            if (setupNode) setupNode.hidden = true;
+            if (introNode) introNode.hidden = true;
+            linkNode = el('p', 'onlineChip');
             linkNode.id = 'onlineLink';
             linkNode.textContent = linkLine(undefined);
             node?.insertBefore(linkNode, status);
@@ -467,6 +481,12 @@ export function onlineVersusScreen(): Screen {
         copyAnswer,
         status,
       );
+      // One card for the whole setup form, so it can collapse once connected; the status line stays outside it.
+      const setup = el('div', 'onlineSetup');
+      setup.id = 'onlineSetup';
+      setup.append(...Array.from(node.children).filter((c) => c !== status && c.tagName !== 'H1' && c !== intro));
+      node.insertBefore(setup, status);
+      setupNode = setup;
       const linked = joinParam(window.location.search);
       if (linked !== undefined) {
         // Opened from a join link: fill the host's code, drop it from the address bar and start Join at once.
