@@ -15,7 +15,7 @@ export interface AboutModel {
 
 export const ABOUT_LINES: readonly string[] = [
   'Taming the Elements is a top-down elemental arena game.',
-  'Pick an elemental, fight an opponent, win XP and capture weakened opponents into your garrison.',
+  'Pick an elemental, fight an opponent, win XP and snag weakened opponents into your garrison.',
 ];
 
 /** Pure view-model. Contact is the GitHub repository (no personal email address). */

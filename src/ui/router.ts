@@ -62,6 +62,15 @@ const PLAIN_ROUTES: ReadonlySet<string> = new Set<RouteName>(
   ),
 );
 
+/** Neutral address-bar names for routes whose internal names are mode words; the old names still resolve and are rewritten. */
+const CANONICAL_HASH: Readonly<Partial<Record<RouteName, string>>> = { arcade: 'versus', tour: 'play' };
+const HASH_ALIASES: Readonly<Record<string, RouteName>> = { versus: 'arcade', play: 'tour' };
+
+/** The address-bar fragment for a route (neutral name where the internal one is a mode word). */
+export function routeHash(name: string): string {
+  return `#${CANONICAL_HASH[name as RouteName] ?? name}`;
+}
+
 /** Pure hash resolution. Unknown, empty or prototype-ish hashes go to the main menu. */
 export function resolveRoute(hash: string): ResolvedRoute {
   if (hash.startsWith(RACE_PREFIX)) {
@@ -73,6 +82,7 @@ export function resolveRoute(hash: string): ResolvedRoute {
     return RACE_ID.test(id) ? { name: 'character', param: id } : MAIN;
   }
   const name = hash.startsWith('#') ? hash.slice(1) : hash;
+  if (Object.hasOwn(HASH_ALIASES, name)) return { name: HASH_ALIASES[name] as RouteName, param: null };
   if (PLAIN_ROUTES.has(name)) return { name: name as RouteName, param: null };
   return MAIN;
 }
@@ -173,6 +183,10 @@ export function startRouter(
   const show = (): void => {
     const route = resolveRoute(window.location.hash);
     current = route.name;
+    // Old #arcade / #tour links keep working, but the address bar shows the neutral name.
+    if (CANONICAL_HASH[route.name] !== undefined && window.location.hash !== routeHash(route.name)) {
+      window.history.replaceState(null, '', routeHash(route.name));
+    }
     active?.unmount();
     // Test builds only (statically removed from production): the e2e hook waits on this, as `hashchange` fires before the mount.
     if (import.meta.env.DEV || import.meta.env.MODE === 'test') delete container.dataset.mountedRoute;
