@@ -96,6 +96,12 @@ export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' 
   return `${noName ? '' : `${name.toUpperCase()} `}${glyph} ${lifeReadout(c)}${word}`;
 }
 
+/** `name` cut to at most `max` letters with an ellipsis (a phone's narrow life line keeps a short name instead of none); '' when `max` < 3. */
+export function shortName(name: string, max: number): string {
+  if (name.length <= max) return name;
+  return max < 3 ? '' : `${name.slice(0, max - 1)}\u2026`;
+}
+
 /** The yellow chip-trail colour: the life just lost (street-fighter style), instead of plain white. */
 export const TRAIL_COLOR = 0xe8c04a;
 /** Below this fraction the bar flashes red. */

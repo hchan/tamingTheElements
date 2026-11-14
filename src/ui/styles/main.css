@@ -2305,6 +2305,18 @@ button.menuButton.heroSlotClear {
     height: 3.4em;
   }
 }
+/* Phone landscape menu (QA r28): the one row of buttons sat across the middle of the character art; it drops to the bottom, under the
+   hero's feet, and leaves the art and the crest clear. */
+@media (max-height: 500px) and (orientation: landscape) {
+  #mainMenu .mainMenuList,
+  .mainMenuList {
+    margin-top: 50vh;
+  }
+  /* The crest sits above the row, which would put it on the dragon now; the title already names the game. */
+  .mainMenuList::before {
+    display: none;
+  }
+}
 
 /* Virtual move stick (src/game/app/touch-stick.ts): touch screens only (coarse primary pointer), bottom left of the battle
    (the action buttons sit on the right edge), mirrored for left-handed. Sticks hold the move keys, 8-way. */

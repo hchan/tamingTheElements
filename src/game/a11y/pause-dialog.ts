@@ -7,6 +7,19 @@ export function nextFocusIndex(count: number, current: number, backwards: boolea
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/** The pause hint: a keyboard line, or on a touch-first device (coarse primary pointer) the on-screen buttons. */
+export function pauseHint(touch: boolean): string {
+  return touch ? 'Tap Resume to continue.' : 'Press Escape or Shift P to resume.';
+}
+
+function touchFirst(): boolean {
+  try {
+    return typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return false;
+  }
+}
+
 export interface PauseDialogOptions {
   readonly onResume: () => void;
   /** Tester mode only: adds a "Tester options" button that opens the tester panel. */
@@ -51,7 +64,7 @@ export function createPauseDialog(opts: PauseDialogOptions): PauseDialog {
   title.textContent = 'Paused';
   const hint = document.createElement('p');
   hint.id = 'pauseHint';
-  hint.textContent = 'Press Escape or Shift P to resume.';
+  hint.textContent = pauseHint(touchFirst());
   const resume = document.createElement('button');
   resume.type = 'button';
   resume.id = 'pauseResume';

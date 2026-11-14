@@ -23,8 +23,9 @@ export const centreBusy = (r: Registry | undefined): boolean => cutUp(r) || r?.g
  * Whether the round banner `main` draws now. It yields to the super cut-in (a banner that runs out under it is simply
  * missed, a held one comes back) and an intro banner ("ROUND 2") yields to the round result card, so it never ghosts behind it.
  */
-export function bannerDraws(cut: boolean, resultUp: boolean, intro: boolean): boolean {
-  return !cut && !(resultUp && intro);
+export function bannerDraws(cut: boolean, resultUp: boolean, intro: boolean, compactCard = false): boolean {
+  // The short phone card is tall enough to run into the big K.O. call, and it names the result itself: the banner steps aside.
+  return !cut && !(resultUp && (intro || compactCard));
 }
 
 /** A deferred call: counts the ticks it has waited while the centre is busy; it starts at once once `LANE_MAX_WAIT_TICKS` are used up. */

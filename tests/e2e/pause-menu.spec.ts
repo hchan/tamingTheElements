@@ -19,6 +19,7 @@ test('Escape pauses a local fight and shows Resume, Restart and Quit to menu', a
   await page.waitForFunction(`window.__TTE__.state().paused === true`);
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
+  await expect(page.locator('#pauseHint')).toContainText('Escape');
   await expect(page.locator('#pauseResume')).toBeFocused();
   await expect(page.locator('#pauseRestart')).toBeVisible();
   await expect(page.locator('#pauseExit')).toHaveText('Quit to menu');
@@ -58,6 +59,8 @@ test.describe('phone landscape', () => {
     if (shotDir) await page.screenshot({ path: `${shotDir}/fight-phone.png` });
     await page.locator('#pauseButton').tap();
     await page.waitForFunction(`window.__TTE__.state().paused === true`);
+    // QA r28: no keyboard instructions on a touch device
+    await expect(page.locator('#pauseHint')).not.toContainText(/Escape|Shift/);
     await expect(page.locator('#pauseResume')).toBeVisible();
     if (shotDir) await page.screenshot({ path: `${shotDir}/pause-phone.png` });
     await page.locator('#pauseResume').tap();

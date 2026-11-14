@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -8,3 +8,5 @@ added: 2026-11-14
 On 844x390 (res-phone-1-after-20.png) the big K.O. banner overlaps the card header and its small K.O. subtitle while both are visible. The card is now clear of the fighters (r27 fix OK) but shows only a header and no stat lines. The phone HUD shows only "Life 321/321" for the enemy, with no name.
 
 Idea: hide the banner once the card slides in; restore the enemy name on phone.
+
+- 2026-11-14: phone card is 124 px tall with one stats line (health left, damage); the banner steps aside while it is up (banner-lanes `compactCard`); the life line shrinks the hero name to 'SI...' instead of dropping it. Checked at 844x390.

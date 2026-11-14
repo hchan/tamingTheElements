@@ -38,6 +38,13 @@ describe('select / raceLabel', () => {
 });
 
 describe('arcadePickView (DOM)', () => {
+  it('the Team choices are role=radio inside a radiogroup, so getByRole(radio, 2v2 tag team) finds them (QA r28)', () => {
+    mount();
+    // (happy-dom leaves option.label empty, so the visible names are asserted in e2e/menu-phone-row.spec.ts)
+    const team = document.querySelector('[role="radiogroup"] [role="radio"][data-value="2"]');
+    expect(team?.tagName).toBe('BUTTON');
+    expect(team?.closest('[role="radiogroup"]')).not.toBeNull();
+  });
   it('shows the 1v1 form: partners disabled, level enabled, local help hidden', () => {
     mount();
     expect(sel('arcadePartner').disabled).toBe(true);

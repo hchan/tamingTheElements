@@ -23,7 +23,7 @@ const SLAB_H = 228;
  * banner's "K.O." line, with the kicker, the title and the headline only (the detail lines stay in the live region).
  */
 const COMPACT_Y = 184;
-const COMPACT_H = 90;
+const COMPACT_H = 124;
 /** `phoneBoost(hud, 2, 1100)` at or above this is a phone (a drawn width under about 730 CSS px). */
 const COMPACT_BOOST = 1.5;
 const FADE_IN_TICKS = 10;
@@ -46,6 +46,8 @@ export interface ResultState {
   readonly title: string;
   readonly headline: string;
   readonly lines: readonly string[];
+  /** The short phone card is the one in use (the banner's duplicate K.O. is hidden under it). */
+  readonly compact: boolean;
 }
 
 export interface ResultView {
@@ -75,7 +77,7 @@ export function mountResultView(
   /** Slab top and the y offsets of the four texts, for the layout in use. */
   const place = (): { y: number; h: number; kicker: number; title: number; head: number; body: number } =>
     compact
-      ? { y: COMPACT_Y, h: COMPACT_H, kicker: 4, title: 20, head: 68, body: 0 }
+      ? { y: COMPACT_Y, h: COMPACT_H, kicker: 4, title: 20, head: 68, body: 96 }
       : { y: SLAB_Y, h: SLAB_H, kicker: 16, title: 38, head: 98, body: 130 };
 
   const text = (size: number, style: string, color: string, spacing = 0): Phaser.GameObjects.Text =>
@@ -110,7 +112,8 @@ export function mountResultView(
     parts.kicker.setText(c.kicker).setColor(BONE);
     parts.title.setText(c.title).setColor(a.css);
     parts.head.setText(c.headline).setColor(BONE);
-    parts.body.setText(compact ? '' : c.lines.join('\n')).setColor(BONE);
+    // Phone: the two headline stats on one small line (health left, damage), the rest stays in the live region.
+    parts.body.setFontSize(compact ? 14 : 17).setText(compact ? c.lines.slice(0, 2).join('    '): c.lines.join('\n')).setColor(BONE);
   }
 
   function draw(): void {
@@ -181,7 +184,7 @@ export function mountResultView(
     state(): ResultState {
       draw();
       const on = card !== undefined && view.tick >= from && view.tick < until;
-      return { visible: on, tone: card?.tone ?? '', kicker: card?.kicker ?? '', title: card?.title ?? '', headline: card?.headline ?? '', lines: card?.lines ?? [] };
+      return { visible: on, tone: card?.tone ?? '', kicker: card?.kicker ?? '', title: card?.title ?? '', headline: card?.headline ?? '', lines: card?.lines ?? [], compact: on && compact };
     },
   };
 

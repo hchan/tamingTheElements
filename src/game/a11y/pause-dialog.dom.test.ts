@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createPauseDialog, type PauseDialog } from './pause-dialog';
+import { createPauseDialog, pauseHint, type PauseDialog } from './pause-dialog';
 
 let dialog: PauseDialog | undefined;
 afterEach(() => {
@@ -15,6 +15,14 @@ const key = (k: string, shiftKey = false): KeyboardEvent => {
   return e;
 };
 const active = (): string => document.activeElement?.id ?? '';
+
+describe('pause hint', () => {
+  it('names the keys on a keyboard device and the Resume button on a touch one', () => {
+    expect(pauseHint(false)).toContain('Escape');
+    expect(pauseHint(true)).not.toMatch(/Escape|Shift/);
+    expect(pauseHint(true)).toContain('Resume');
+  });
+});
 
 describe('createPauseDialog (DOM)', () => {
   it('mounts hidden with dialog semantics, shows and focuses Resume on open', () => {

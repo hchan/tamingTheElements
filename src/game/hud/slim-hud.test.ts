@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PILL_W, SLIM_H, TRAIL_HOLD, chipBar, lifeFill, chipRect, compactLabel, mirrorX, pillWord, scaledBar, slimBar, slimPortrait, stepTrail, tagPill,
+  PILL_W, SLIM_H, TRAIL_HOLD, chipBar, lifeFill, chipRect, compactLabel, shortName, mirrorX, pillWord, scaledBar, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
 
@@ -69,6 +69,14 @@ describe('slim HUD words', () => {
     expect(compactLabel('Sindarosa', base)).toContain('Life 228/228');
     expect(compactLabel('Sindarosa', base)).not.toMatch(/HURT|LOW/);
     expect(compactLabel('Sindarosa', { ...base, hp: 20 })).toMatch(/LOW/);
+  });
+});
+
+describe('shortName', () => {
+  it('keeps a name that fits, ellipsises one that does not, drops it under 3 letters', () => {
+    expect(shortName('Pax', 8)).toBe('Pax');
+    expect(shortName('Sindarosa', 5)).toBe('Sind\u2026');
+    expect(shortName('Sindarosa', 2)).toBe('');
   });
 });
 
