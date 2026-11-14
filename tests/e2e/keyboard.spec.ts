@@ -44,7 +44,9 @@ test.describe('keyboard-only menu navigation', () => {
   test('tab order follows the visual order and focus is clearly visible', async ({ page }) => {
     await seededMenu(page);
     const seen: string[] = [];
-    for (let i = 0; i < 5; i++) {
+    // The menu focuses its first entry on load, so Play is already active.
+    seen.push(await activeText(page));
+    for (let i = 0; i < 4; i++) {
       await page.keyboard.press('Tab');
       seen.push(await activeText(page));
     }
@@ -57,7 +59,6 @@ test.describe('keyboard-only menu navigation', () => {
   test('the five menu entries are all enabled without a save', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('heading', { level: 1 }).waitFor();
-    await page.keyboard.press('Tab');
     expect(await activeText(page)).toBe('Play');
     for (const next of ['Versus', 'Online', 'Settings', 'Help']) {
       await page.keyboard.press('Tab');
