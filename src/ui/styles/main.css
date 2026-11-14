@@ -938,10 +938,20 @@ html[data-high-contrast='true'] button.touchBtn {
   margin-inline: 0;
 }
 #menu #arcadePick .settingsGroup > div.settingsOption.vsControl {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  max-width: 100%;
   display: flex;
-  gap: 0.5em;
+  flex-wrap: wrap;
+  gap: 0.25em 0.5em;
   align-items: center;
+  min-width: 0;
+}
+#arcadePick .vsHints {
+  flex: 0 0 100%;
+  font-size: 0.85em;
+}
+#arcadePick .vsHints .heroHint {
+  margin: 0.25em 0;
 }
 #arcadePick .vsStage {
   flex: 0 0 100%;
@@ -1875,6 +1885,12 @@ button.menuButton.heroSlotClear {
     translate: 0 -50%;
   }
 }
+/* Phone portrait: the bar is only Fight and Back and has no free room for the pill, which would cover the hint text above; the roster peeks out above the bar instead. */
+@media (max-width: 640px) {
+  #arcadePick .vsActions::before {
+    display: none;
+  }
+}
 @supports (animation-timeline: scroll()) {
   @keyframes scrollCueFade {
     0%,
@@ -1904,6 +1920,8 @@ button.menuButton.heroSlotClear {
   pointer-events: none;
 }
 .vsSegmented {
+  min-width: 0;
+  max-width: 100%;
   display: inline-flex;
   flex-wrap: wrap;
   gap: 4px;
