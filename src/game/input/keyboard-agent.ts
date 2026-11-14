@@ -3,6 +3,7 @@ import { commandFromPad, padConfigFor, pauseEdge, type PadSnapshot } from './gam
 import {
   type Bindings,
   commandFromHeld,
+  snagCommand,
   DEFAULT_BINDINGS,
   INITIAL_KEY_STATE,
   type KeyEffect,
@@ -133,7 +134,8 @@ export class KeyboardAgent implements Agent {
     // Movement and abilities follow the held keys; a swap is an edge: only keys pressed since the last tick (not repeats).
     const held = this.tapped.size === 0 ? this.state.held : new Set([...this.state.held, ...this.tapped]);
     const swapMask = this.swapMask();
-    const taps = commandFromHeld(this.bindings, this.tapped, capturable, arcade) & swapMask;
+    const snagCmd = arcade ? snagCommand(view.arcade?.snagSlot) : 0;
+    const taps = commandFromHeld(this.bindings, this.tapped, capturable, arcade, snagCmd) & swapMask;
     let swaps = this.swapLatched | taps | (this.pressed & swapMask);
     this.swapLatched = 0;
     const fresh = swaps;
@@ -144,7 +146,7 @@ export class KeyboardAgent implements Agent {
       swaps |= was.bits; // the sim held its clock on that tick and never looked at the swap: send it again
     }
     this.tapped = new Set();
-    const cmd = ((commandFromHeld(this.bindings, held, capturable, arcade) | pad | this.pressed) & ~swapMask) | swaps;
+    const cmd = ((commandFromHeld(this.bindings, held, capturable, arcade, snagCmd) | pad | this.pressed) & ~swapMask) | swaps;
     this.pressed = 0;
     if (swaps !== 0 && clock !== undefined) this.sent = { bits: swaps, clock, retries: was && swaps === was.bits ? was.retries + 1 : 0 };
     if (fresh !== 0) this.opts.onSwap?.(fresh);

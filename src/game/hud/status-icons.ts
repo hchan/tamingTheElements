@@ -117,7 +117,7 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
   });
   const ar = view.arcade();
   if (ar) {
-    if (ar.rooted(id)) raw.push({ key: 'root', label: 'SNAG', hostile: true, ticksLeft: null, remaining: 1 });
+    if (ar.rooted(id)) raw.push({ key: 'root', label: 'SNAGGED', hostile: true, ticksLeft: null, remaining: 1 });
     if (ar.stunned(id)) raw.push({ key: 'stun', label: 'STUN', hostile: true, ticksLeft: null, remaining: 1 });
     if (ar.guarding(id)) raw.push({ key: 'guard', label: 'GUARD', hostile: false, ticksLeft: null, remaining: 1 });
     if (ar.invulnerable(id) && !ar.stunned(id)) raw.push({ key: 'safe', label: 'SAFE', hostile: false, ticksLeft: null, remaining: 1 });

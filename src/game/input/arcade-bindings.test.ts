@@ -4,7 +4,7 @@ import {
   ACTION_LABELS, DEFAULT_BINDINGS, GAME_ACTIONS, RESERVED_CODES, SHARED_CODE, actionForCode, bindSteal, parseBindings, tryBind,
 } from '../platform/input/bindings';
 import { ARCADE_PAD, DEFAULT_PAD, PadButton, commandFromPad, type PadSnapshot } from './gamepad';
-import { ACTION_COMMAND, ARCADE_ONLY, commandFromHeld, type KeyInput } from './key-map';
+import { ACTION_COMMAND, ARCADE_ONLY, commandFromHeld, snagCommand, type KeyInput } from './key-map';
 import { KeyboardAgent } from './keyboard-agent';
 
 // Arcade super, dash, guard and weather input (FUN-DESIGN 2.5, 2.7, 2.8, 2.14; WP-arcade-super-view,
@@ -312,5 +312,19 @@ describe('Element input (FUN-DESIGN 2.24): V, minus and pad L3, Arcade only, a h
     swapper.handle(key('down', 'Digit4'));
     expect(swapper.observe(view)).toBe(Cmd.swap2);
     expect(swapper.observe(view)).toBe(0);
+  });
+});
+
+describe('C throws Snag in Arcade (QA r11)', () => {
+  it('snagCommand maps the view slot to its ability command', () => {
+    expect([snagCommand(0), snagCommand(1), snagCommand(-1), snagCommand(undefined)]).toEqual([Cmd.primary, Cmd.secondary, 0, 0]);
+  });
+  it('C presses the hero\'s Snag slot in Arcade, nothing for a hero without Snag, and stays Capture in Classic', () => {
+    const c = new Set(['KeyC']);
+    expect(commandFromHeld(DEFAULT_BINDINGS, c, true, true, Cmd.secondary)).toBe(Cmd.secondary);
+    expect(commandFromHeld(DEFAULT_BINDINGS, c, true, true, Cmd.primary)).toBe(Cmd.primary);
+    expect(commandFromHeld(DEFAULT_BINDINGS, c, true, true, 0)).toBe(0);
+    expect(commandFromHeld(DEFAULT_BINDINGS, c, true, false, Cmd.secondary)).toBe(Cmd.capture);
+    expect(commandFromHeld(DEFAULT_BINDINGS, new Set(['KeyC', 'KeyZ']), true, true, Cmd.secondary)).toBe(Cmd.secondary | Cmd.trap);
   });
 });

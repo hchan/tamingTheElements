@@ -147,3 +147,19 @@ describe('KeyboardAgent', () => {
     expect(agent.observe(view)).toBe(0);
   });
 });
+
+describe('KeyboardAgent: C is Snag in Arcade (QA r11)', () => {
+  const snagView = (slot: number) => ({ arcade: { snagSlot: slot } }) as unknown as ObservationView;
+  const arcadeAgent = () => new KeyboardAgent({ capturable: () => true, cheatsEnabled: false, arcade: true });
+  it('sends the hero\'s Snag slot while C is held', () => {
+    const agent = arcadeAgent();
+    agent.handle(key('down', 'KeyC'));
+    expect(agent.observe(snagView(1))).toBe(Cmd.secondary);
+    expect(agent.observe(snagView(0))).toBe(Cmd.primary);
+  });
+  it('sends nothing for a hero without Snag', () => {
+    const agent = arcadeAgent();
+    agent.handle(key('down', 'KeyC'));
+    expect(agent.observe(snagView(-1))).toBe(0);
+  });
+});
