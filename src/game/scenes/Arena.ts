@@ -28,8 +28,10 @@ import {
   LockstepSession,
   FramePacer,
   collectCommands,
+  Cmd,
   createMatch,
   createRenderView,
+  CHARACTERS,
   step,
   type Agent,
   type Element,
@@ -43,6 +45,7 @@ import {
   type SimWorld,
 } from '@core/index';
 import { playSfx } from '../audio/sfx';
+import { heroName } from '../hud/tag-fx';
 import { cleanseClockOf } from '../hud/cleanse-clock';
 import { CastDetector } from '../audio/cast-sounds';
 import { createArenaAudio, type ArenaAudio } from '../audio/arena-audio';
@@ -60,7 +63,7 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
 /** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
 const ROLLBACK_WINDOW = 6;
-import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion } from '../a11y/announcer';
+import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, createLiveRegion, tagNotReady } from '../a11y/announcer';
 import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
 import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
@@ -114,6 +117,9 @@ const DEMO_SETUP: MatchSetup = {
  * Launched by the app flow with a `KeyboardAgent` vs the enemy agent; without launch data (`?ff=arenaDemo`)
  * it is random bot vs random bot.
  */
+/** Cmd.swap1 and swap2: the Tag press bits (bits 9 and 10 are Cleanse and the elemental in Arcade). */
+const TAG_BITS = Cmd.swap1 | Cmd.swap2;
+
 export class Arena extends Phaser.Scene {
   private launch: ArenaLaunch | undefined;
   private world: SimWorld | undefined;
@@ -661,6 +667,7 @@ export class Arena extends Phaser.Scene {
       const c = f0 === undefined || f1 === undefined ? collectCommands(world, this.agents) : [0, 0];
       const final: [number, number] = [f0 ?? c[0] ?? 0, f1 ?? c[1] ?? 0];
       this.launch?.recorder?.record(world, final);
+      this.announceEarlyTag(final[0]);
       const tester = this.launch?.tester?.session;
       if (tester) applyTickCheats(world, tester.tickCheats());
       events = step(world, final);
@@ -773,7 +780,21 @@ export class Arena extends Phaser.Scene {
     const announcer = this.announcer;
     if (!announcer) return;
     const team = this.world?.state.team;
-    for (const a of announcementsFor(events, (id) => team?.[id] ?? 0)) announcer.say(a);
+    const defId = this.world?.state.defId;
+    const nameOf = (id: number): string | undefined => {
+      const sprite = CHARACTERS[defId?.[id] ?? -1]?.sprite;
+      return sprite === undefined ? undefined : heroName(sprite);
+    };
+    for (const a of announcementsFor(events, (id) => team?.[id] ?? 0, nameOf)) announcer.say(a);
+  }
+
+  /** 2v2: a Tag press while the bench cooldown runs gets a live-region "Tag ready in N seconds." (the sim ignores it). */
+  private announceEarlyTag(cmd: number): void {
+    if ((cmd & TAG_BITS) === 0) return;
+    const bar = this.view?.actionBar(0);
+    if (!bar || bar.swaps.length === 0) return;
+    const line = tagNotReady(bar.swapReadyTick - bar.tick);
+    if (line) this.announcer?.say(line);
   }
 
   /** Low-health watch: polled every few frames rather than every 50 Hz tick. */

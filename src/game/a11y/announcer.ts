@@ -11,10 +11,23 @@ export interface Announcement {
 }
 
 /** Pure: sim events to announcements. Hits are deliberately silent (they would flood a screen reader). `teamOf` maps an entity id to its team (trap armed events carry only the owner). */
-export function announcementsFor(events: readonly SimEvent[], teamOf: (entity: number) => number = () => 0): Announcement[] {
+export function announcementsFor(
+  events: readonly SimEvent[],
+  teamOf: (entity: number) => number = () => 0,
+  nameOf: (entity: number) => string | undefined = () => undefined,
+): Announcement[] {
   const out: Announcement[] = [];
   for (const e of events) {
     switch (e.kind) {
+      case SimEventKind.swapped: {
+        // Classic 2v2 emits only `swapped`; Arcade also emits `tagIn` (announced by the tag view), so skip it there.
+        if (events.some((o) => o.kind === SimEventKind.tagIn && o['to'] === e['to'])) break;
+        const to = nameOf(e['to'] ?? -1);
+        if (to === undefined) break;
+        const mine = (e['team'] ?? 0) === 0;
+        out.push({ key: `swapped${mine ? 'Mine' : 'Foe'}`, text: mine ? `Tagged in ${to}.` : `The enemy tagged in ${to}.`, important: false });
+        break;
+      }
       case SimEventKind.captured:
         out.push({ key: 'snagged', text: 'Snagged the opponent.', important: false });
         break;
@@ -103,6 +116,13 @@ function elementalAnnouncement(e: SimEvent): Announcement | undefined {
   const cleared = e['cleared'] ?? 0;
   const what = kind === 2 ? (cleared > 0 ? `${String(cleared)} ${cleared === 1 ? 'debuff' : 'debuffs'} cleared` : 'nothing to clear') : line[1];
   return { key: `elemental${mine ? 'Mine' : 'Foe'}${String(kind)}`, text: `${mine ? 'Your' : 'Enemy'} ${line[0]}: ${what}.`, important: false };
+}
+
+/** A Tag press during the bench cooldown: "Tag ready in 3 seconds." `ticksLeft` is in 50 Hz ticks; undefined when it is ready. */
+export function tagNotReady(ticksLeft: number): Announcement | undefined {
+  if (ticksLeft <= 0) return undefined;
+  const s = Math.ceil(ticksLeft / 50);
+  return { key: 'tagNotReady', text: `Tag ready in ${String(s)} ${s === 1 ? 'second' : 'seconds'}.`, important: false };
 }
 
 export const MATCH_START: Announcement = {
