@@ -24,7 +24,7 @@ export function helpScreen(): Screen {
     mount(container) {
       node = el('div', 'menuPage');
       node.append(el('h1', 'heading', 'Help'));
-      const list = el('ul', 'mainMenuList');
+      const list = el('ul', 'helpLinks');
       for (const l of HELP_LINKS) {
         const li = el('li');
         li.dataset.route = l.route;

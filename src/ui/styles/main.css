@@ -6,7 +6,7 @@
   --color-water: #69f;
   --color-earth: green;
   --color-air: #aae3f6;
-  --color-heading: #ffe94a;
+  --color-heading: #ffe48a;
   --color-gold: gold;
   --color-hover-bg: #f0f8ff;
   --color-hover-fg: #b00000;
@@ -26,7 +26,12 @@ body {
 
 body {
   font-family: var(--default-font);
-  background: radial-gradient(ellipse at 50% 0, #4a2f8a, #1c1840 45%, #0c0a22 80%) fixed #0c0a22;
+  /* Lit mystic backdrop: a bright violet crown, a warm amber glow low left, a teal one low right, over deep indigo (never flat black). */
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0, #6a45b8, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 12% 100%, rgba(224, 150, 70, 0.32), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 90% 95%, rgba(64, 170, 190, 0.28), transparent 70%),
+    linear-gradient(#352a72, #1e1a4a 60%, #17143a) fixed #1e1a4a;
   color: var(--color-fg);
 }
 
@@ -397,6 +402,25 @@ a.menuLink {
 .heading {
   text-align: center;
 }
+/* Gold-leaf lettering: a light-to-deep gold gradient clipped to the glyphs, with a soft amber glow (colour above is the fallback). */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  h1.heading,
+  h2.heading {
+    background: linear-gradient(180deg, #fff6c8 0%, #ffe074 40%, #e4a62e 78%, #f6cf6a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    filter: drop-shadow(0 1px 6px rgba(255, 170, 60, 0.45));
+  }
+  html[data-high-contrast='true'] h1.heading,
+  html[data-high-contrast='true'] h2.heading {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--color-heading);
+    filter: none;
+  }
+}
 .versionStamp {
   margin-top: 24px;
   text-align: center;
@@ -605,14 +629,15 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
 }
 .mainMenuList::before {
   content: '';
-  height: 5em;
+  height: 7em;
   background: url(/assets/img/elementalSigns.png) center / contain no-repeat;
+  filter: drop-shadow(0 0 14px rgba(255, 214, 120, 0.55)) drop-shadow(0 0 4px rgba(150, 190, 255, 0.6));
 }
 .mainMenuList li button {
   padding: 0.55em 1em;
   min-height: 44px;
-  background: #2c2c4c;
-  border: 2px solid #b4b4dc;
+  background: linear-gradient(180deg, #4a4294, #2f2a68);
+  border: 2px solid #d6cdf6;
   border-radius: 10px;
   text-decoration: none;
 }
@@ -1670,11 +1695,14 @@ button.menuButton.heroSlotClear {
   justify-content: center;
   margin-top: 0;
   padding: 0.5em 1em;
-  background: linear-gradient(to bottom, rgba(20, 18, 44, 0), rgba(20, 18, 44, 0.8) 35%);
+  /* A solid bar (not a fade) so the roster row under it reads as cut off by a bar, not half-faded. */
+  background: rgba(28, 24, 62, 0.97);
+  border-top: 2px solid rgba(255, 214, 120, 0.55);
+  box-shadow: 0 -6px 14px rgba(10, 8, 30, 0.45);
 }
 #arcadePick .vsForm,
 .heroSelect {
-  padding-bottom: 5em;
+  padding-bottom: 6.5em;
 }
 
 /* Versus option pickers (Opponent, Team, AI level): a radio group of buttons over the hidden native select. The selected one is
@@ -1868,5 +1896,50 @@ button.menuButton.heroSlotClear {
   }
   .firstRunHint h2 {
     margin: 0;
+  }
+}
+
+/* Help: the page links as one centred row of buttons, the sections as lit cards (no tall left-hand column, no empty bands). */
+#menu .helpLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5em 0.8em;
+  margin: 0.4em 0 1em;
+}
+#menu .helpLinks::before {
+  content: '';
+  flex: 0 0 100%;
+  height: 7em;
+  background: url(/assets/img/elementalSigns.png) center / contain no-repeat;
+  filter: drop-shadow(0 0 14px rgba(255, 214, 120, 0.55));
+}
+#menu .helpLinks li {
+  display: block;
+}
+#menu .helpLinks a.menuButton {
+  margin: 0;
+  background: #3a3470;
+  border-color: #cfc6f0;
+}
+#menu .helpPanel,
+#menu .helpControls {
+  padding: 0.6em 1.1em 0.8em;
+  background: rgba(34, 30, 82, 0.82);
+  border: 1px solid rgba(207, 198, 240, 0.55);
+  border-radius: 12px;
+}
+#menu .helpPanel > h2.heading,
+#menu .helpControls > h2.heading {
+  text-align: left;
+  font-size: 1.3em;
+  margin: 0 0 0.3em;
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #menu .helpLinks::before {
+    height: 3em;
+  }
+  .mainMenuList::before {
+    height: 3.4em;
   }
 }
