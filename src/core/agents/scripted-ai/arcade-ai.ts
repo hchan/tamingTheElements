@@ -420,3 +420,46 @@ export function stepApart(self: Aabb, opp: Aabb, pf: Aabb): Command {
   const [first, second] = Math.abs(dx) / (self.w + opp.w) >= Math.abs(dy) / (self.h + opp.h) ? [bx, by] : [by, bx];
   return room(first) > 0 ? first : room(second) > 0 ? second : first === bx ? (dx >= 0 ? Cmd.left : Cmd.right) : dy >= 0 ? Cmd.up : Cmd.down;
 }
+
+/** True when box `self` moved by (`dx`, `dy`) overlaps hazard box `hz` (the sim's own overlap test, systems/arcade/hazard.ts). */
+function inHazardBox(self: Aabb, hz: Aabb, dx: number, dy: number): boolean {
+  const x = self.x + dx;
+  const y = self.y + dy;
+  return x < hz.x + hz.w && hz.x < x + self.w && y < hz.y + hz.h && hz.y < y + self.h;
+}
+
+/**
+ * Hazard dodge (stage hazards): the movement bit of the shortest walk out of hazard box `hz` that leaves `self` inside
+ * `pf` (ties: right, left, down, up), or 0 when `self` is not in the box or no way out fits (a tide's box is the whole
+ * field; a lava lane leaves only left and right, a gust band only up and down).
+ */
+export function hazardExit(self: Aabb, hz: Aabb, pf: Aabb): Command {
+  if (!inHazardBox(self, hz, 0, 0)) return 0;
+  let best: Command = 0;
+  let bestDist = Infinity;
+  const consider = (bit: Command, dist: number, fits: boolean): void => {
+    if (fits && dist < bestDist) {
+      best = bit;
+      bestDist = dist;
+    }
+  };
+  consider(Cmd.right, hz.x + hz.w - self.x, hz.x + hz.w + self.w <= pf.x + pf.w);
+  consider(Cmd.left, self.x + self.w - hz.x, hz.x - self.w >= pf.x);
+  consider(Cmd.down, hz.y + hz.h - self.y, hz.y + hz.h + self.h <= pf.y + pf.h);
+  consider(Cmd.up, self.y + self.h - hz.y, hz.y - self.h >= pf.y);
+  return best;
+}
+
+/**
+ * Hazard keep-out: the movement bits `move` without each axis whose ARCADE_AI_TRAP_LOOK_PX step would take `self` from
+ * outside hazard box `hz` into it (the vertical one too when only the diagonal step enters), so a fighter that walked
+ * out of a warning does not walk straight back in. `move` as it is from inside the box.
+ */
+export function hazardKeepOut(self: Aabb, hz: Aabb, move: Command): Command {
+  if (move === 0 || inHazardBox(self, hz, 0, 0)) return move;
+  let out = move;
+  if (inHazardBox(self, hz, stepX(out), 0)) out &= ~(Cmd.left | Cmd.right);
+  if (inHazardBox(self, hz, 0, stepY(out))) out &= ~(Cmd.up | Cmd.down);
+  if (inHazardBox(self, hz, stepX(out), stepY(out))) out &= ~(Cmd.up | Cmd.down);
+  return out;
+}

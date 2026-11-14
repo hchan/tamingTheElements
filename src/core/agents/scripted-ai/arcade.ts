@@ -1,5 +1,5 @@
 import {
-  arcadePlayfield, CHARGE_AI_MIN_DIST, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
+  arcadePlayfield, CHARGE_AI_MIN_DIST, HAZARD_WARN_TICKS, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
   RoundPhase, TrapKind, WEATHER_CHARGE_FULL,
 } from '../../data/arcade';
 import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
@@ -14,7 +14,7 @@ import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
+  centreDist, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, zoneStep, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -58,6 +58,10 @@ import {
  *   the level's rate per tick (not in a stale fight), and at Hard at once on a foe its Snag roots. It steps round a foe trap its next step would
  *   enter (a lateral nudge); Normal and Hard dash across a foe Fire Bomb or Spike that arms after the dash; Easy ignores
  *   foe traps half the time. Hard with a fire shot shoots a foe Puddle or Gust that lies between it and the foe.
+ * - Hazards (stage hazards, `hazard`; helpers in arcade-ai.ts): during a hazard's warning, once the level's reaction
+ *   (ARCADE_AI_KNOBS[0] game ticks into it) has passed, a free fighter in the warned box walks out the shortest way that
+ *   stays in the playfield, and one outside does not step in; guard, dash, super, charge and trap commands go first.
+ *   Easy reads it half the time (as foe traps). No draw and no memory.
  */
 
 const MOVE = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
@@ -257,7 +261,7 @@ export class ArcadeTactics {
     if (a === undefined) return base;
     const cmd = this.avoidTraps(view, a, this.decide(view, a, base, shot));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
-    const zoned = this.zone(view, a, out);
+    const zoned = this.hazard(view, a, this.zone(view, a, out));
     // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
     // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
     const released = (zoned & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? zoned & ~Cmd.charge : zoned;
@@ -280,6 +284,26 @@ export class ArcadeTactics {
     if (a.phase !== RoundPhase.fight || a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
     if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
     return zoneStep(self, opp, cmd, arcadePlayfield(), a.oppStun !== 0 || a.oppRooted !== 0);
+  }
+
+  /**
+   * Hazard dodge (stage hazards, systems/arcade/hazard.ts): while a hazard warns (`strikeIn > 0`) and at least the level's
+   * reaction (ARCADE_AI_KNOBS[0], counted in game ticks from the warning's start) has passed, a free, unrooted fighter in
+   * the fight replaces its movement with the shortest way out of the warned box (`hazardExit`; attacks ride along, the
+   * aim auto-faces the foe), or, outside it, drops a step into it (`hazardKeepOut`). A guard, dash, super, charge or trap
+   * command is left alone, and Easy acts only in the first half of every 256 ticks (ARCADE_AI_EASY_TRAP_BLIND). The tide's
+   * box is the whole field, so it changes nothing there. No draw and no memory, so the other rules draw as before.
+   */
+  private hazard(view: ObservationView, a: ArcadeView, cmd: Command): Command {
+    const self = view.self;
+    const hz = a.hazard;
+    if (self === undefined || hz === undefined || hz.strikeIn === 0 || a.phase !== RoundPhase.fight) return cmd;
+    if (a.selfStun !== 0 || a.superActive || a.selfRooted !== 0 || (self.flags & EntityFlag.frozen) !== 0) return cmd;
+    if ((cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
+    if (this.level === AI_EASY && (view.tick & 255) >= ARCADE_AI_EASY_TRAP_BLIND) return cmd;
+    if (HAZARD_WARN_TICKS - hz.strikeIn < ARCADE_AI_KNOBS[this.level][0]) return cmd;
+    const exit = hazardExit(self, hz, arcadePlayfield());
+    return (cmd & ~MOVE) | (exit !== 0 ? exit : hazardKeepOut(self, hz, cmd & MOVE));
   }
 
   /**

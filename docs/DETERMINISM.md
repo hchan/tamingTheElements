@@ -109,6 +109,9 @@ so no `SimState.rng` word moves. Lava and rockfall damage is an integer per mill
 never KOs and skips invulnerable fighters; tide and gust move a fighter by whole px clamped to the playfield. Classic has
 no block (`SimState.arcade` is empty), so its hashes are unchanged (header only); the Arcade goldens and both Arcade
 balance baselines were re-recorded.
+SIM_VERSION 55 (AI only) lets the scripted AI see the hazard (`ArcadeView.hazard`) and step out of its box during the
+warning, after its level's reaction time; integer box maths only, no RNG. Classic hashes are unchanged; the Arcade goldens
+and baselines were re-recorded because the AI commands change.
 
 ## State, snapshot and hash
 

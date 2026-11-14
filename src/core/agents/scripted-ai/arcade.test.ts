@@ -41,7 +41,7 @@ function fighter(x: number, y: number, flags = 1): FighterView {
 const FREE: ArcadeView = {
   meter: 0, oppMeter: 0, selfStun: 0, oppStun: 0, freeze: 0, combo: 0, oppCombo: 0, superActive: false, superId: 0, prevCmd: 0,
   primaryAge: -1, secondaryAge: -1, phase: 1, shots: [], dashIn: 0, weatherIn: 0, chargeIn: -1, weatherCharge: 1000, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: false, elemKind: 0, elemIn: -1, cleanseIn: 1, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: false, elemKind: 0, elemIn: -1, cleanseIn: 1, selfRooted: 0, selfSlowed: false, oppSuperActive: false, hazard: undefined,
 };
 
 function view(arcade: Partial<ArcadeView> | undefined, tick = 0, self = fighter(200, 300), opp = fighter(700, 300)): ObservationView {
@@ -98,13 +98,13 @@ describe('ObservationView.arcade', () => {
       meter: 1200, oppMeter: 300, selfStun: 0, oppStun: 14, freeze: 6, combo: 2, oppCombo: 0, superActive: true, superId: 1,
       prevCmd: Cmd.primary, primaryAge: 2, secondaryAge: -1, phase: 0,
       shots: [{ x: 600, y: 330, w: 20, h: 20, vx: -8, vy: 0 }], dashIn: 9, weatherIn: 0, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, cleanseIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: false,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, cleanseIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: false, hazard: undefined,
     });
     expect(createObservationView(world, 1).arcade).toEqual({
       meter: 300, oppMeter: 1200, selfStun: 14, oppStun: 0, freeze: 6, combo: 0, oppCombo: 2, superActive: false, superId: 2,
       prevCmd: 0, primaryAge: -1, secondaryAge: -1, phase: 0,
       shots: [{ x: 300, y: 330, w: 20, h: 20, vx: 8, vy: 0 }], dashIn: 0, weatherIn: 700, chargeIn: -1, weatherCharge: 0, tagIn: 0, partnerPm: -1, partner2Pm: -1, rocks: [],
-  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, cleanseIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: true,
+  snagSlot: -1, oppGuarding: false, oppRooted: 0, oppRootImmune: 0, traps: [], trapIn: 0, trapCount: 0, fireShot: true, elemKind: 1, elemIn: 0, cleanseIn: 0, selfRooted: 0, selfSlowed: false, oppSuperActive: true, hazard: undefined,
     });
     expect(hash(s)).toBe(before);
   });

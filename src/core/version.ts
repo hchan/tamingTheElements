@@ -196,5 +196,9 @@
  *    rockfall on a fighter's spot (5 percent) and an air gust band (1 px per tick, 4 while dashing or knocked back). Hazard damage never KOs and skips
  *    invulnerable fighters. Ten new Arcade world ints (`HAZARD_BASE`) and three event kinds (76..78). Re-record reason: stage hazards add hashed
  *    Arcade world state and change Arcade outcomes (Arcade goldens, Arcade baselines).
+ * 55: Arcade only; AI only (Classic hashes unchanged). Hazard dodge (ideas/brainstorm/stage-selection-hazards.md): `ArcadeView.hazard` shows the live
+ *    hazard's box and game ticks to its strike, and the scripted AI walks out of a warned lava lane, rockfall square or gust band by the shortest way
+ *    that fits the playfield once its level's reaction time (ARCADE_AI_KNOBS) has passed, and stops a step back in (Easy is blind half the time, as
+ *    for traps; a tide has no way out). Re-record reason: the AI commands of every Arcade match with a hazard change (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 54;
+export const SIM_VERSION = 55;
