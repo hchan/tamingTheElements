@@ -34,3 +34,6 @@ Design table with durations and sim hooks: [docs/design/signature-traps.md](../.
 
 ## Progress (charge/dash)
 - 2026-11-13: first slice landed (SIM_VERSION 50): Charge is armoured with a medium arrival hit, and a Dash through a melee swing refunds the Dash. Per-hero kits, traps and minions are still open.
+
+## Progress (kit-named bar, presentation slice)
+- 2026-11-14: Arcade bar boxes now carry kit words (view only, no sim change): each hero's two ability boxes show the ability's own short name with whole seconds left while cooling (`Ice Shock`, `Shards 3s`), the Trap box shows the trap its element really plants (Bomb, Puddle, Spike, Gust, with 0/2 count and cooldown seconds) in that element's edge colour, and tooltips use the full names and per-trap lines. `src/game/hud/kit-names.ts` (+ test); headless screenshots via `tests/e2e/action-bar-kits-shot.spec.ts` (`SHOT_DIR`). Still open: the 12 unique slot-3 traps and minions (sim), common-slot model, hotkey rebind, Guide/Help text.

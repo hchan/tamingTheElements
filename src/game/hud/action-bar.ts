@@ -13,6 +13,7 @@ import { syncTouchOverlays } from './touch-overlay';
 import { CLEANSE_COOLDOWN, cleanseClockOf } from './cleanse-clock';
 import { tagSlot } from './tag-slot';
 import { elementalShown } from '../platform/cleanse-info';
+import { abilityNameOfSprite, abilityShortOfSprite, trapNameOfElement, trapShortOfElement, trapTextOfElement } from './kit-names';
 import { COMMON_EFFECT, HERO_EFFECT, elementalEffect, elementalTitle } from '../platform/ability-text';
 
 const ELEMENT_BY_KIND = ['void', 'fire', 'water', 'earth', 'air'] as const;
@@ -147,9 +148,9 @@ export interface ActionSlot {
 }
 
 /** The Trap slot's words (never colour alone): whole seconds left while cooling, else the live count, or "full" at the cap. */
-export function trapNote(tick: number, t: { readyTick: number; count: number; max: number }): string {
-  if (tick < t.readyTick) return `Trap ${String(Math.ceil((t.readyTick - tick) / 50))}s`;
-  return t.count >= t.max ? 'Trap full' : `Trap ${String(t.count)}/${String(t.max)}`;
+export function trapNote(tick: number, t: { readyTick: number; count: number; max: number }, name = 'Trap'): string {
+  if (tick < t.readyTick) return `${name} ${String(Math.ceil((t.readyTick - tick) / 50))}s`;
+  return t.count >= t.max ? `${name} full` : `${name} ${String(t.count)}/${String(t.max)}`;
 }
 
 /** The elemental slot's words (never colour alone): "<Name> on" while its buff runs, whole seconds left while cooling, else the name. */
@@ -164,10 +165,14 @@ export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'> & { spri
   switch (s.kind) {
     case 'ability':
       if (s.sprite === SNAG_SPRITE) return { title: 'Snag', text: COMMON_EFFECT.snag };
+      {
+        const own = abilityNameOfSprite(s.sprite ?? '');
+        if (own !== undefined) return { title: own, text: s.cmd === Cmd.primary ? HERO_EFFECT.primary : HERO_EFFECT.secondary };
+      }
       return s.cmd === Cmd.primary ? { title: 'Attack', text: HERO_EFFECT.primary } : { title: 'Special', text: HERO_EFFECT.secondary };
     case 'capture': return { title: 'Snag', text: COMMON_EFFECT.snag };
     case 'swap': return { title: 'Tag', text: COMMON_EFFECT.tag };
-    case 'trap': return { title: 'Trap', text: COMMON_EFFECT.trap };
+    case 'trap': return { title: trapNameOfElement(s.element), text: trapTextOfElement(s.element) ?? COMMON_EFFECT.trap };
     case 'elemental': return { title: elementalTitle(s.element ?? 0), text: elementalEffect(ELEMENT_BY_KIND[s.element ?? 0] ?? 'void') };
     case 'super': return { title: 'Super', text: COMMON_EFFECT.super };
     case 'guard': return { title: 'Guard', text: COMMON_EFFECT.guard };
@@ -379,6 +384,12 @@ function leftNote(name: string, left: number): string {
   return left > 0 ? `${name} ${String(Math.ceil(left / 50))}s` : name;
 }
 
+/** An ability box's words: its short own name, with whole seconds left while cooling (never colour alone); {} when the sprite is unknown. */
+export function abilityNote(sprite: string, tick: number, readyTick: number): { note?: string } {
+  const n = abilityShortOfSprite(sprite);
+  return n === undefined ? {} : { note: leftNote(n, readyTick - tick) };
+}
+
 type SlotInit = Omit<ActionSlot, 'x' | 'y' | 'size' | 'label' | 'note' | 'icon' | 'touch'> & { note?: string; icon?: number; touch?: TouchName };
 
 /**
@@ -401,7 +412,7 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     add({
       kind: 'ability', cmd, sprite: a.sprite, highlight: false, disabled: false,
       // The rope-throw slot (Treenoc, Wispera, Curomo, Echo) is named in words, never just "Special".
-      ...(a.sprite === SNAG_SPRITE ? { note: 'Snag' } : {}),
+      ...(a.sprite === SNAG_SPRITE ? { note: 'Snag' } : arcade ? abilityNote(a.sprite, bar.tick, a.readyTick) : {}),
       progress: cooldownProgress(bar.tick, a.readyTick, a.cooldownTicks),
     }, cmd, snagC);
   });
@@ -454,9 +465,12 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
   }
   if (bar.trap) {
     const t = bar.trap;
+    // On the Arcade bar the trap wears its own name (Fire Bomb, Puddle, Spike, Gust: the hero's element) and that element's edge colour.
+    const el = arcade ? bar.elemental?.kind : undefined;
     add({
       kind: 'trap', cmd: Cmd.trap, sprite: '', icon: ACTION_ICON.trap, touch: arcade ? 'Trap' : '', highlight: false, disabled: false,
-      progress: cooldownProgress(bar.tick, t.readyTick, t.cooldownTicks), note: trapNote(bar.tick, t),
+      ...(el ? { element: el } : {}),
+      progress: cooldownProgress(bar.tick, t.readyTick, t.cooldownTicks), note: trapNote(bar.tick, t, trapShortOfElement(el)),
     }, TRAP_LABEL);
   }
   if (bar.elemental) {
