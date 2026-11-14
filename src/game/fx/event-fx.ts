@@ -355,6 +355,9 @@ export function createPhaserFxSink(
       if (p && numberAt) numberAt(p.x, p.y - p.h / 2, amount, scaled, counter);
     },
     superCut(caster, fromTick, untilTick, reduced, superId): void {
+      // The first-run card (app/first-run-hint.ts, SUPER_CUT_EVENT) leaves before the cut-in band; a literal keeps it out of this chunk.
+      const host = globalThis as { dispatchEvent?: (e: unknown) => boolean; Event?: new (t: string) => unknown };
+      if (host.dispatchEvent && host.Event) host.dispatchEvent(new host.Event('tte:super-cut'));
       const v = viewOf(caster);
       if (v) void import('./super-view').then((m) => { m.superCut(scene, v, fromTick, untilTick, reduced, viewTick, paused, superId); });
     },

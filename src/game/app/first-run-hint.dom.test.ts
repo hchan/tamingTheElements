@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FIRST_RUN_KEY, ROUND_OVER_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
+import { FIRST_RUN_KEY, ROUND_OVER_EVENT, SUPER_CUT_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
 import { labelsFromBindings } from '../hud/action-bar';
 import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
@@ -62,6 +62,16 @@ describe('firstRunHint', () => {
     expect(firstRunSeen(store)).toBe(true);
     expect(firstRunLines(DEFAULT_BINDINGS, false, true, undefined, true).join(' ')).toContain('Tag with 3');
     expect(firstRunLines(DEFAULT_BINDINGS, true, true, undefined, false).join(' ')).not.toMatch(/Tag/);
+  });
+
+  it('leaves at once when a super cut-in starts', () => {
+    const store = memory();
+    const card = firstRunHint(store, 60000);
+    document.body.append(card as HTMLElement);
+    window.dispatchEvent(new Event(SUPER_CUT_EVENT));
+    expect(card?.classList.contains('firstRunFade')).toBe(true);
+    expect(card?.style.transition).toContain('0.12s');
+    expect(firstRunSeen(store)).toBe(true);
   });
 
   it('fades at the first key or tap outside the card, but not on Tab', () => {

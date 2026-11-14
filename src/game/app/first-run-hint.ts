@@ -8,6 +8,8 @@ import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction 
 
 /** Fired on `window` when a round ends (K.O. or time over): the card leaves at once instead of covering the result. */
 export const ROUND_OVER_EVENT = 'tte:round-over';
+/** Fired on `window` when a super cut-in starts: the card leaves at once (quickly, not on the slow fade) so it never sits on the cut-in band. */
+export const SUPER_CUT_EVENT = 'tte:super-cut';
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
 export const FIRST_RUN_MS = 4000;
@@ -147,6 +149,7 @@ export function firstRunHint(
     window.removeEventListener('keydown', onInput, true);
     window.removeEventListener('pointerdown', onInput, true);
     window.removeEventListener(ROUND_OVER_EVENT, fade);
+    window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
     markSeen(store);
     card.remove();
   });
@@ -159,8 +162,14 @@ export function firstRunHint(
     window.removeEventListener('keydown', onInput, true);
     window.removeEventListener('pointerdown', onInput, true);
     window.removeEventListener(ROUND_OVER_EVENT, fade);
+    window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
     markSeen(store);
     card.classList.add('firstRunFade');
+  };
+  /** A super cut-in covers the arena: the card goes within a blink. */
+  const fadeNow = (): void => {
+    card.style.transition = 'opacity 0.12s';
+    fade();
   };
   const onInput = (e: Event): void => {
     // Tab, Escape and modifier keys alone are not a move; a click on Got it is handled by the button.
@@ -183,6 +192,7 @@ export function firstRunHint(
     window.addEventListener('pointerdown', onInput, true);
     // The round ends before the card has timed out: it leaves at once instead of covering the result.
     window.addEventListener(ROUND_OVER_EVENT, fade);
+    window.addEventListener(SUPER_CUT_EVENT, fadeNow);
   });
   return card;
 }
