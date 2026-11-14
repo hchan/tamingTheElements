@@ -9,6 +9,7 @@ import { buildDesyncReport } from '../net/desync-report';
 import { downloadReport } from './download';
 import { linkLine } from '../net/link-quality';
 import { iceFromSettings } from '../net/ice';
+import { cleanRoomCode, hostRoom, joinRoom, relayUrl } from '../net/relay';
 import { copyText, joinParam, pasteInto, shareBlock } from './online-share';
 import { destroyGame, type GameHandle } from './game-handle';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
@@ -119,9 +120,13 @@ export function onlineVersusScreen(): Screen {
   let onPageHide: (() => void) | undefined;
   /** Set once the friend left or the link died: later status words must not overwrite that. */
   let ended = false;
+  /** The relay room this screen holds open while signalling (WP 10), closed once the link is made or the screen goes. */
+  let room: { close: () => void } | undefined;
 
   const stop = (): void => {
     gone = true;
+    room?.close();
+    room = undefined;
     if (onPageHide) window.removeEventListener('pagehide', onPageHide);
     onPageHide = undefined;
     mux?.sendBye();
@@ -382,6 +387,60 @@ export function onlineVersusScreen(): Screen {
           say('Answer ready: copy it and send it back to your host. Waiting for the link to open...');
         }, fail);
       });
+
+      const signal = relayUrl(window.location.search, devBuild());
+      if (signal !== undefined) {
+        // Optional relay (WP 10): a 6-character room code instead of the long codes. Only the two signalling codes pass through it.
+        const roomCode = el('p');
+        roomCode.id = 'onlineRoomCode';
+        const roomHost = button('onlineRoomHost', 'Host with a room code', () => {
+          say('Making a room...');
+          room?.close();
+          hostPeer(iceParam()).then(({ peer: p, offer }) => {
+            if (gone) { p.close(); return; }
+            return hostRoom(signal, offer).then((r) => {
+              if (gone) { r.close(); p.close(); return; }
+              peer?.close();
+              peer = p;
+              side = 0;
+              room = r;
+              roomCode.textContent = `Room code: ${r.code}`;
+              say(`Room ${r.code} is open for 10 minutes. Tell your friend the code; the match starts when they join.`);
+              return r.answer.then((answer) => { r.close(); room = undefined; return p.accept(answer); }).then(() => { watch(p); });
+            });
+          }).catch(fail);
+        });
+        const roomIn = el('input');
+        roomIn.id = 'onlineRoomIn';
+        roomIn.maxLength = 8;
+        roomIn.autocomplete = 'off';
+        roomIn.spellcheck = false;
+        roomIn.setAttribute('aria-label', 'Room code from your friend');
+        const roomJoinBtn = button('onlineRoomJoin', 'Join with a room code', () => {
+          const code = cleanRoomCode(roomIn.value);
+          if (code === undefined) { say('A room code is 6 letters and digits, for example K7P2QM.'); return; }
+          say('Joining the room...');
+          room?.close();
+          joinRoom(signal, code).then((r) => {
+            if (gone) { r.close(); return; }
+            room = r;
+            return joinPeer(r.offer, iceParam()).then(({ peer: p, answer }) => {
+              if (gone) { p.close(); return; }
+              peer?.close();
+              peer = p;
+              side = 1;
+              r.reply(answer);
+              watch(p);
+              say('Joined the room. Waiting for the link to open...');
+            });
+          }).catch(fail);
+        });
+        const joinRow = el('div', 'settingsOption');
+        const joinLab = el('label', undefined, 'Room code (join)');
+        joinLab.htmlFor = roomIn.id;
+        joinRow.append(joinLab, ' ', roomIn);
+        node.append(el('h2', undefined, 'Room code (no copy and paste)'), roomHost, roomCode, joinRow, roomJoinBtn);
+      }
 
       const step = (n: number, text: string): HTMLElement => el('h3', undefined, `Step ${String(n)}: ${text}`);
       node.append(
