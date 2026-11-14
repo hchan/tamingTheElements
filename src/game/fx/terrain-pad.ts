@@ -13,7 +13,7 @@ type Gfx = Phaser.GameObjects.Graphics;
 const LOOK: Record<number, { stain: number; wear: number; mark: number; rune: number }> = {
   1: { stain: 0x1a0c08, wear: 0x5a2410, mark: mute(0xff8a2a, 0.85, 0.98), rune: 0xd0b48a },
   2: { stain: 0x0c1418, wear: 0x24363f, mark: mute(0x3aa0ff, 0.4, 0.6), rune: 0x8296a0 },
-  4: { stain: 0x1a2024, wear: 0x59676d, mark: mute(0xc8f0ff, 0.35, 0.62), rune: 0xa8b4b8 },
+  4: { stain: 0x2c3252, wear: 0x8a9ad0, mark: mute(0xc8f0ff, 0.35, 0.62), rune: 0xa8b4b8 },
 };
 
 /** The ragged outline: a squircle through the rect, each point pushed in by a seeded amount (never beyond the rect). */
@@ -64,16 +64,16 @@ export function drawPad(g: Gfx, stage: number, x: number, y: number, w: number, 
   const cx = x + w / 2;
   const cy = y + h / 2;
   // Feathered stain: stacked layers, wide and faint to small and dense, with a lighter worn middle.
-  for (const [s, a] of [[1, 0.2], [0.94, 0.22], [0.84, 0.24], [0.7, 0.2]] as const) g.fillStyle(look.stain, a).fillPoints(toPts(outline(x, y, w, h, seed, s)), true);
+  for (const [s, a] of [[1, 0.1], [0.94, 0.12], [0.84, 0.13], [0.7, 0.1]] as const) g.fillStyle(look.stain, a).fillPoints(toPts(outline(x, y, w, h, seed, s)), true);
   // Fire: a banked-coal glow under the cracks, so the pad is a lit hot spot, not a dark hole in the floor.
   if (stage === 1) for (const [s, a] of [[0.7, 0.1], [0.5, 0.12], [0.3, 0.14]] as const) g.fillStyle(0xff7a1a, a).fillEllipse(cx, cy, w * s, h * s);
-  g.fillStyle(look.wear, stage === 4 ? 0.22 : 0.3).fillPoints(toPts(outline(x, y, w, h, seed + 5, 0.62)), true);
+  g.fillStyle(look.wear, stage === 4 ? 0.12 : 0.16).fillPoints(toPts(outline(x, y, w, h, seed + 5, 0.62)), true);
   // Grain: dark and pale flecks inside the stain.
-  for (let n = 0; n < 60; n++) {
+  for (let n = 0; n < 30; n++) {
     const px = x + w * (0.1 + 0.8 * hash01(n, seed + 11));
     const py = y + h * (0.1 + 0.8 * hash01(n, seed + 12));
     const dark = n % 2 === 0;
-    g.fillStyle(dark ? 0x050403 : look.wear, dark ? 0.3 : 0.4).fillRect(px, py, n % 5 === 0 ? 3 : 2, 2);
+    g.fillStyle(dark ? 0x050403 : look.wear, dark ? 0.16 : 0.3).fillRect(px, py, n % 5 === 0 ? 3 : 2, 2);
   }
   // Element marks.
   if (stage === 1) {
@@ -94,7 +94,7 @@ export function drawPad(g: Gfx, stage: number, x: number, y: number, w: number, 
   }
   rune(g, stage, cx, cy, look.rune);
   // Footprint cue: dim corner ticks (the sim's box), so the patch's reach is still readable on any floor.
-  g.lineStyle(1, look.rune, 0.35);
+  g.lineStyle(1, look.rune, 0.25);
   for (const [px, py, dx, dy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]] as const) {
     g.lineBetween(px, py, px + dx * 12, py).lineBetween(px, py, px, py + dy * 12);
   }
