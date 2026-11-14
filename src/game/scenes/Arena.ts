@@ -1,4 +1,5 @@
 import { LowLifeVignette } from '../fx/low-life-vignette';
+import { shockSeek, shockState } from '../fx/shock-view';
 import { PlayOnce } from '../net/play-once';
 import Phaser from 'phaser';
 import {
@@ -477,6 +478,11 @@ export class Arena extends Phaser.Scene {
         };
       },
       camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / (this.scale.width / LOGICAL_WIDTH), scrollX: this.cameras.main.worldView.x })),
+      shockFx: () => Promise.resolve(shockState(this)),
+      shockSeek: (ms) => {
+        shockSeek(this, ms);
+        return Promise.resolve();
+      },
       superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
       superBurst: () => import('../fx/super-view').then((m) => m.superBurstState(this)),
       sheets: () => import('../views/pose-layer').then((m) => m.sheetState(this)),
