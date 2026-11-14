@@ -88,6 +88,10 @@ export const GLOW_SPRITES: ReadonlySet<string> = new Set(['wispera', 'echo', 'la
 /** Lavax is near-black basalt: its light is a warm molten gold, so it reads as lit from within on the fire and earth floors. */
 const GLOW_TINT_BY_SPRITE: Readonly<Record<string, number>> = { lavax: 0xffa850 };
 const GLOW_KEY = 'hero-glow';
+const SOFT_GLOW_KEY = 'hero-glow-soft';
+/** Lavax rim alphas: lower than the pale heroes because additive gold piles up on the bright air floor. */
+const LAVAX_GLOW_ALPHA = 0.5;
+const LAVAX_HALO_ALPHA = 0.5;
 const GLOW_TINT = 0xb4d2ff;
 const GLOW_ALPHA = 0.65;
 const HALO_ALPHA = 0.4;
@@ -107,6 +111,28 @@ function glowTexture(scene: Phaser.Scene): string | undefined {
     ctx.fillRect(0, 0, 64, 64);
     t.refresh();
     return GLOW_KEY;
+  } catch {
+    return undefined;
+  }
+}
+
+/** A gaussian-style falloff (many stops, no visible edge) for the molten rim so it never reads as a blotch on a bright floor. */
+function softGlowTexture(scene: Phaser.Scene): string | undefined {
+  try {
+    if (scene.textures.exists(SOFT_GLOW_KEY)) return SOFT_GLOW_KEY;
+    const t = scene.textures.createCanvas(SOFT_GLOW_KEY, 64, 64);
+    const ctx = t?.getContext();
+    if (!t || !ctx) return undefined;
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    for (let i = 0; i < 8; i++) {
+      const k = 1 - i / 8;
+      g.addColorStop(i / 8, `rgba(255,255,255,${(0.7 * k * k * k).toFixed(3)})`);
+    }
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 64);
+    t.refresh();
+    return SOFT_GLOW_KEY;
   } catch {
     return undefined;
   }
@@ -221,12 +247,14 @@ export class CharacterView {
       this.glow = this.scene.add.image(0, 0, key).setTint(GLOW_TINT).setAlpha(GLOW_ALPHA).setBlendMode(1);
     }
     const tint = GLOW_TINT_BY_SPRITE[sprite] ?? GLOW_TINT;
-    this.glow.setTint(tint);
+    const lavax = sprite === 'lavax';
+    const softKey = lavax ? softGlowTexture(this.scene) : undefined;
+    this.glow.setTexture(softKey ?? GLOW_KEY).setTint(tint).setAlpha(lavax ? LAVAX_GLOW_ALPHA : GLOW_ALPHA);
     this.glow.setVisible(true).setDepth(this.image.depth - 0.5);
     this.glow.setPosition(x + w / 2, y + h * 0.66).setDisplaySize(w * 1.15, h * 0.62);
     // A pale rim of light around the body (a soft halo just behind the sprite) so a dark or translucent hero keeps its outline on a dark floor.
     this.halo ??= this.scene.add.image(0, 0, this.glow.texture.key).setTint(GLOW_TINT).setAlpha(HALO_ALPHA).setBlendMode(1);
-    this.halo.setTint(tint).setAlpha(sprite === 'lavax' ? 0.8 : HALO_ALPHA).setVisible(true).setDepth(this.image.depth - 0.4);
+    this.halo.setTexture(softKey ?? GLOW_KEY).setTint(tint).setAlpha(lavax ? LAVAX_HALO_ALPHA : HALO_ALPHA).setVisible(true).setDepth(this.image.depth - 0.4);
     this.halo.setPosition(x + w / 2, y + h * 0.5).setDisplaySize(w * (sprite === 'lavax' ? 1.75 : 1.5), h * (sprite === 'lavax' ? 1.5 : 1.35));
   }
 
