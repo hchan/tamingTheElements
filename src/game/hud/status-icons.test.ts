@@ -107,8 +107,8 @@ describe('collectStatusChips', () => {
 
   it('shows weather as a buff for the favoured element, a debuff for the counter and nothing otherwise', () => {
     const arcade = { weather: 1, weatherLeft: 250 };
-    expect(chips({ arcade }, 'fire')[0]).toMatchObject({ label: 'SUN', hostile: false, secs: 5, remaining: 0.5, text: '▲ SUN 5s' });
-    expect(chips({ arcade }, 'water')[0]).toMatchObject({ label: 'SUN', hostile: true, glyph: 'cross', text: '▼ SUN 5s' });
+    expect(chips({ arcade }, 'fire')[0]).toMatchObject({ label: 'SUN +20%', hostile: false, secs: null, remaining: 0.5, text: '▲ SUN +20%' });
+    expect(chips({ arcade }, 'water')[0]).toMatchObject({ label: 'SUN -17%', hostile: true, glyph: 'cross', text: '▼ SUN -17%' });
     expect(chips({ arcade }, 'earth')).toEqual([]);
     expect(chips({ arcade: { weather: 1, weatherLeft: 0 } }, 'fire')).toEqual([]);
   });

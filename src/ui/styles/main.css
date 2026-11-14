@@ -1795,9 +1795,10 @@ html[data-high-contrast='true'] button.touchBtn {
     grid-template-columns: 1fr auto;
     column-gap: 0.7em;
     align-items: center;
+    /* QA r30: one slim line (no title) just under the WEATHER chip, so the ROUND/FIGHT!/ROOTED banners below it stay clear (touch-fight-layout pins the band: under the HUD, above the fighters' heads). */
     top: 24vh;
     bottom: auto;
-    max-width: 78%;
+    max-width: 82%;
     font-size: 10px;
     line-height: 1.2;
     padding: 0.2em 0.5em;
@@ -1812,6 +1813,9 @@ html[data-high-contrast='true'] button.touchBtn {
   .firstRunHint:not(.firstRunWait) h2,
   .firstRunHint:not(.firstRunWait) p {
     margin: 0;
+  }
+  .firstRunHint:not(.firstRunWait) h2 {
+    display: none;
   }
 }
 
@@ -2790,5 +2794,17 @@ body:has(.settingsBar) {
   a.menuButton {
     box-sizing: border-box;
     min-height: 44px;
+  }
+}
+
+/* QA r30 settings targets: on touch the whole row is the 44 px target (the label wraps the box) and the slider hit area is 44 px tall; the box itself is bigger. */
+@media (pointer: coarse) {
+  #menu .settingsOption input[type='radio'],
+  #menu .settingsOption input[type='checkbox'] {
+    width: 24px;
+    height: 24px;
+  }
+  #menu .settingsOption input[type='range'] {
+    height: 44px;
   }
 }
