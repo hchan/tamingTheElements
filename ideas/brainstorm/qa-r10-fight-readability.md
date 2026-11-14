@@ -12,3 +12,7 @@ added: 2026-11-14
 - The loading screen with three dragons becomes a pure black bar within 500 ms; keep the key art up.
 - SF feel: combo counter (HITS/DMG) and outlined numbers are good. Heavy-hit hit-stop or flash is not obvious in stills; worth a check.
 - Earth floor crystal prop still flat teal (se2-stage-fight.png).
+
+## Progress (2026-11-14)
+
+Done: floor chip words hidden under ROUND/FIGHT banners; First blood card waits for the Arena `create` and is smaller; key words unified ("1 or Space"); stage atlases preloaded; key art kept on the loading screen. Remaining: the heavy-hit hit-stop/flash check and the flat teal earth crystal prop.
