@@ -31,6 +31,25 @@ for (const vp of [
   });
 }
 
+test('Tour stage 844x390 on a touch phone: stage tiles do not overlap (the Cleared stamp stays visible)', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByLabel('Hero 1 (lead)').selectOption('fiara');
+  await page.getByLabel('Hero 2').selectOption('rokcore');
+  await page.getByLabel('Hero 3').selectOption('curomo');
+  await page.getByRole('button', { name: 'Start tour' }).click();
+  await page.locator('#tourPins li').first().waitFor();
+  const overlaps = await page.evaluate<number>(
+    `(() => { const r = [...document.querySelectorAll('#tourPins li')].map((l) => l.getBoundingClientRect()); let n = 0;
+      for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) { const a = r[i], b = r[j];
+        if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5) n++; }
+      return n; })()`,
+  );
+  expect(overlaps).toBe(0);
+  await ctx.close();
+});
+
 test('Play hero select 1280x720: the stat panel (Life, Speed, Alignment, Abilities) ends above the sticky Start bar', async ({ page }) => {
   const errors = collectErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });

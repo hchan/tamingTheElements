@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type RenderView, type SimEvent } from '@core/index';
-import { LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
+import { LOGICAL_WIDTH, phoneBoost, resolutionOf } from '../boot/viewport';
 import {
   RESULT_TICKS, ResultTally, healthPct, resultCard, type ResultCard, type Tone,
 } from './round-result';
@@ -18,6 +18,14 @@ const DEPTH = 108;
 const SLAB_Y = 392;
 const SLAB_W = 440;
 const SLAB_H = 228;
+/**
+ * Phone card (qa-r27: the full slab covered both fighters at 844x390): a short slab in the free band between the weather label and the
+ * banner's "K.O." line, with the kicker, the title and the headline only (the detail lines stay in the live region).
+ */
+const COMPACT_Y = 184;
+const COMPACT_H = 90;
+/** `phoneBoost(hud, 2, 1100)` at or above this is a phone (a drawn width under about 730 CSS px). */
+const COMPACT_BOOST = 1.5;
 const FADE_IN_TICKS = 10;
 const FADE_OUT_TICKS = 12;
 const SLIDE_PX = 14;
@@ -63,6 +71,12 @@ export function mountResultView(
   let lastDetail = '';
   let parts: { bg: Phaser.GameObjects.Graphics; kicker: Phaser.GameObjects.Text; title: Phaser.GameObjects.Text; head: Phaser.GameObjects.Text; body: Phaser.GameObjects.Text } | undefined;
   let shown: ResultCard | undefined;
+  let compact = false;
+  /** Slab top and the y offsets of the four texts, for the layout in use. */
+  const place = (): { y: number; h: number; kicker: number; title: number; head: number; body: number } =>
+    compact
+      ? { y: COMPACT_Y, h: COMPACT_H, kicker: 4, title: 20, head: 68, body: 0 }
+      : { y: SLAB_Y, h: SLAB_H, kicker: 16, title: 38, head: 98, body: 130 };
 
   const text = (size: number, style: string, color: string, spacing = 0): Phaser.GameObjects.Text =>
     hud.add
@@ -88,13 +102,15 @@ export function mountResultView(
     if (!parts) return;
     const a = ACCENT[c.tone];
     const x = LOGICAL_WIDTH / 2;
-    parts.bg.clear().fillStyle(0x0c0a08, 0.76).fillRect(x - SLAB_W / 2, 0, SLAB_W, SLAB_H)
-      .lineStyle(2, 0x3a352c, 1).strokeRect(x - SLAB_W / 2, 0, SLAB_W, SLAB_H)
+    compact = phoneBoost(hud, 2, 1100) >= COMPACT_BOOST;
+    const p = place();
+    parts.bg.clear().fillStyle(0x0c0a08, 0.76).fillRect(x - SLAB_W / 2, 0, SLAB_W, p.h)
+      .lineStyle(2, 0x3a352c, 1).strokeRect(x - SLAB_W / 2, 0, SLAB_W, p.h)
       .fillStyle(a.hex, 1).fillRect(x - SLAB_W / 2, 0, SLAB_W, 5);
-    parts.kicker.setText(c.kicker).setColor(BONE).setY(SLAB_Y + 16);
-    parts.title.setText(c.title).setColor(a.css).setY(SLAB_Y + 38);
-    parts.head.setText(c.headline).setColor(BONE).setY(SLAB_Y + 98);
-    parts.body.setText(c.lines.join('\n')).setColor(BONE).setY(SLAB_Y + 130);
+    parts.kicker.setText(c.kicker).setColor(BONE);
+    parts.title.setText(c.title).setColor(a.css);
+    parts.head.setText(c.headline).setColor(BONE);
+    parts.body.setText(compact ? '' : c.lines.join('\n')).setColor(BONE);
   }
 
   function draw(): void {
@@ -110,11 +126,12 @@ export function mountResultView(
     const k = reduced ? 1 : Math.max(0, Math.min(1, (tick - from + 1) / FADE_IN_TICKS, (until - tick) / FADE_OUT_TICKS));
     const slide = reduced ? 0 : Math.round((1 - Math.min(1, (tick - from + 1) / FADE_IN_TICKS)) * SLIDE_PX);
     for (const o of Object.values(parts)) o.setAlpha(k);
-    parts.bg.setY(SLAB_Y + slide);
-    parts.kicker.setY(SLAB_Y + 16 + slide);
-    parts.title.setY(SLAB_Y + 38 + slide);
-    parts.head.setY(SLAB_Y + 98 + slide);
-    parts.body.setY(SLAB_Y + 130 + slide);
+    const p = place();
+    parts.bg.setY(p.y + slide);
+    parts.kicker.setY(p.y + p.kicker + slide);
+    parts.title.setY(p.y + p.title + slide);
+    parts.head.setY(p.y + p.head + slide);
+    parts.body.setY(p.y + p.body + slide);
   }
 
   function start(c: ResultCard, tick: number, ticks: number): void {

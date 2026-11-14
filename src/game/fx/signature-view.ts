@@ -11,6 +11,9 @@ import type { Element } from '@core/index';
  */
 export const SIGNATURE_MS = 340;
 export const SIGNATURE_POOL = 5;
+/** Size of every mark (qa-r27: they read small at 1280x720 and on a phone); all radii, lengths and line widths below are scaled by it. */
+export const SIGNATURE_SIZE = 1.5;
+const K = SIGNATURE_SIZE;
 const SIGNATURE_ELEMENTS: ReadonlySet<Element> = new Set<Element>(['fire', 'earth', 'air', 'void']);
 
 /** Elements that have a signature (water has the frost burst instead). */
@@ -65,27 +68,27 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
 
   function drawFire(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number): void {
     const e = easeOut(t);
-    g.fillStyle(0xfff2c0, a).fillCircle(b.x, b.y, 16 * (1 - 0.5 * e));
-    g.fillStyle(0xff7a1a, a * 0.6).fillCircle(b.x, b.y, 24 * (0.5 + 0.5 * e));
+    g.fillStyle(0xfff2c0, a).fillCircle(b.x, b.y, 16 * K * (1 - 0.5 * e));
+    g.fillStyle(0xff7a1a, a * 0.6).fillCircle(b.x, b.y, 24 * K * (0.5 + 0.5 * e));
     for (let i = 0; i < 6; i++) {
-      const ox = (i - 2.5) * 9;
-      const h = (22 + (i % 3) * 10) * e;
-      const base = b.y + 6 - 4 * e;
-      g.fillStyle(0xff4a14, a).fillTriangle(b.x + ox - 6, base, b.x + ox + 6, base, b.x + ox + (i % 2 === 0 ? 2 : -2), base - h * 1.5);
-      g.fillStyle(0xffc040, a).fillTriangle(b.x + ox - 3.5, base, b.x + ox + 3.5, base, b.x + ox, base - h);
+      const ox = (i - 2.5) * 9 * K;
+      const h = (22 + (i % 3) * 10) * K * e;
+      const base = b.y + (6 - 4 * e) * K;
+      g.fillStyle(0xff4a14, a).fillTriangle(b.x + ox - 6 * K, base, b.x + ox + 6 * K, base, b.x + ox + (i % 2 === 0 ? 2 : -2) * K, base - h * 1.5);
+      g.fillStyle(0xffc040, a).fillTriangle(b.x + ox - 3.5 * K, base, b.x + ox + 3.5 * K, base, b.x + ox, base - h);
     }
   }
 
   function drawEarth(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number): void {
     const e = easeOut(t);
-    g.lineStyle(4, 0xc8a870, 0.7 * a).strokeEllipse(b.x, b.footY, 70 * (0.4 + e), 24 * (0.4 + e));
-    g.fillStyle(0xd8c090, 0.25 * a).fillEllipse(b.x, b.footY, 60 * (0.4 + e), 20 * (0.4 + e));
+    g.lineStyle(4, 0xc8a870, 0.7 * a).strokeEllipse(b.x, b.footY, 70 * K * (0.4 + e), 24 * K * (0.4 + e));
+    g.fillStyle(0xd8c090, 0.25 * a).fillEllipse(b.x, b.footY, 60 * K * (0.4 + e), 20 * K * (0.4 + e));
     for (let i = 0; i < 8; i++) {
       const [dx, dy] = dir(i, 8, b.spin);
       // Chunks fly out and up, then gravity pulls them back down.
-      const px = b.x + dx * 34 * e;
-      const py = b.y + dy * 18 * e - 26 * e + 54 * t * t;
-      const s = 6 + (i % 3) * 2;
+      const px = b.x + dx * 34 * K * e;
+      const py = b.y + dy * 18 * K * e - 26 * K * e + 54 * K * t * t;
+      const s = (6 + (i % 3) * 2) * K;
       g.fillStyle(0x4a3a2a, a).fillTriangle(px - s, py + s, px + s, py + s * 0.6, px - s * 0.2, py - s);
       g.fillStyle(0xb08a5a, a).fillTriangle(px - s * 0.6, py + s * 0.6, px + s * 0.5, py + s * 0.3, px - s * 0.1, py - s * 0.7);
     }
@@ -95,31 +98,31 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
     const e = easeOut(t);
     for (let i = 0; i < 3; i++) {
       // Three crescent slashes spinning outward at staggered radii.
-      const r = (14 + i * 11) * (0.5 + e);
+      const r = (14 + i * 11) * K * (0.5 + e);
       const start = b.spin * 0.6 + i * 2.1 + e * 1.4;
-      g.lineStyle(5 - i, 0x9adfff, 0.5 * a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
-      g.lineStyle(2, 0xffffff, a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
+      g.lineStyle((5 - i) * K, 0x9adfff, 0.5 * a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
+      g.lineStyle(2 * K, 0xffffff, a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
     }
   }
 
   function drawVoid(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number): void {
     const e = easeOut(t);
     // The ring collapses inward (the opposite motion of every other burst), leaving a dark core with a violet halo.
-    const r = 36 * (1 - e) + 6;
+    const r = (36 * (1 - e) + 6) * K;
     g.lineStyle(4, 0xb070ff, a).strokeCircle(b.x, b.y, r);
     g.lineStyle(1.5, 0xe8d0ff, a).strokeCircle(b.x, b.y, r + 4);
-    g.fillStyle(0x6a30c0, 0.45 * a).fillCircle(b.x, b.y, 18 * (0.6 + 0.4 * e));
-    g.fillStyle(0x140424, 0.9 * a).fillCircle(b.x, b.y, 9 * (0.6 + 0.4 * e));
+    g.fillStyle(0x6a30c0, 0.45 * a).fillCircle(b.x, b.y, 18 * K * (0.6 + 0.4 * e));
+    g.fillStyle(0x140424, 0.9 * a).fillCircle(b.x, b.y, 9 * K * (0.6 + 0.4 * e));
     for (let i = 0; i < 8; i++) {
       const [dx, dy] = dir(i, 8, b.spin);
-      const o = r + 14;
+      const o = r + 14 * K;
       g.fillStyle(0xd8b0ff, a).fillTriangle(
         b.x + dx * o - dy * 3,
         b.y + dy * o + dx * 3,
         b.x + dx * o + dy * 3,
         b.y + dy * o - dx * 3,
-        b.x + dx * (o - 12),
-        b.y + dy * (o - 12),
+        b.x + dx * (o - 12 * K),
+        b.y + dy * (o - 12 * K),
       );
     }
   }
