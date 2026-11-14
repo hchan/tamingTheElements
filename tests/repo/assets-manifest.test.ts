@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { CHARACTERS } from '../../src/core/data/characters';
+import { ELEMENTS } from '../../src/core/data/elements';
 import { oracleAvailable } from '@testing/legacy/oracle';
 import { MANIFEST_PATH, type LegacyManifest } from '../../tools/assets/extract-legacy-manifest';
 
@@ -32,6 +34,21 @@ describe('legacy asset manifest', () => {
     }
     expect(existsSync(resolve(import.meta.dirname, '../../tools/assets/fx-gen/batch-e-map.py'))).toBe(true);
     expect(existsSync(resolve(import.meta.dirname, '../../tools/assets/fx-gen/batch-f-map.py'))).toBe(true);
+  });
+
+  it('every character has a map sprite sheet and every element a background, all files on disk (parity U12)', () => {
+    const m = JSON.parse(committed) as LegacyManifest;
+    const assets = resolve(import.meta.dirname, '../../public/assets');
+    for (const ch of CHARACTERS) {
+      const entry = m.mapSprites[ch.sprite];
+      expect(entry, `map sprite for ${ch.id}`).toBeDefined();
+      expect(existsSync(resolve(assets, entry?.url ?? 'missing')), `file for ${ch.id}`).toBe(true);
+    }
+    for (const el of ELEMENTS) {
+      const bg = m.backgrounds[el];
+      expect(bg, `background for ${el}`).toBeDefined();
+      expect(existsSync(resolve(assets, bg?.url ?? 'missing')), `file for ${el}`).toBe(true);
+    }
   });
 
   it('points the four element floors at the generated img/floor files (1280x720)', () => {

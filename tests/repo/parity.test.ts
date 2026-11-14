@@ -96,4 +96,10 @@ describe('docs/PARITY.md', () => {
     expect(slugs.length).toBeGreaterThan(10);
     expect(slugs.filter((s) => !doc.includes(`\`${s}\``))).toEqual([]);
   });
+
+  it('end delay: Arena.ts keeps the 1200 ms beat (U15 divergence; legacy waits 3000 ms)', () => {
+    const arena = readFileSync(resolve(root, 'src/game/scenes/Arena.ts'), 'utf8');
+    expect(arena).toMatch(/const END_DELAY_MS = 1200;/);
+    expect(arena).toMatch(/setTimeout\([^\n]*END_DELAY_MS\)/);
+  });
 });
