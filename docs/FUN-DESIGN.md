@@ -378,7 +378,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 
 ### 2.10 Rounds, timer, best of 3, KO and announcer (sim events, view text)
 
-- Phases in `arcadeRound`: `intro` 90 ticks (`roundStarted`, then `fight`; no actions), `fight`, `ko` (120 ticks; game
+- Phases in `arcadeRound`: `intro` 70 ticks (`roundStarted`, then `fight`; no actions), `fight`, `ko` (120 ticks; game
   time at half speed for the first 60, plus a 30-tick KO hit-stop), `roundEnd` 60 ticks, then the next `intro` or the
   match end.
 - Round timer: 4500 ticks (90 s), counted in game ticks, so it pauses during freezes. Time over: the team with the higher
