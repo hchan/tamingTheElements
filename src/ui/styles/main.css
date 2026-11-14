@@ -1211,7 +1211,7 @@ html[data-high-contrast='true'] button.touchBtn {
   border-radius: 999px;
   background: #d9c27a;
   color: #000;
-  font-size: 0.7em;
+  font-size: 0.6em;
   font-weight: bold;
   white-space: nowrap;
 }
