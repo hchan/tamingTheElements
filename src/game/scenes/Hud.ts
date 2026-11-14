@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, shortName, scaledBar, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
@@ -62,7 +62,7 @@ const TRACK_COLOR = 0x120f0c;
 const FRAME_COLOR = 0x050403;
 
 /** The SUPER label's own phone boost cap: between the life bar and the bench portraits there is room for about 21 logical px of text (qa-r12: at 1.7 it sat on the portraits; `meterLabelY` now lifts it clear, so r20 raised it to 1.7 again for ~11 CSS px on a phone). */
-const SUPER_LABEL_BOOST = 1.7;
+const SUPER_LABEL_BOOST = 2.1;
 /** The life line's size steps (of its boosted size) tried before the hero name is cut. */
 const LIFE_TEXT_SCALES: readonly number[] = [1, 0.85, 0.72, 0.62];
 
@@ -189,15 +189,14 @@ export class Hud extends Phaser.Scene {
     gfx.clear();
     this.back?.clear();
     if (++this.frame % PREFS_REFRESH_FRAMES === 0) this.refreshPrefs();
-    // Life bars share one scale: the larger active life total fills a whole bar, the smaller one a proportional part.
-    const refMaxHp = Math.max(0, ...TEAMS.map((t) => collectSide(view, t).active?.maxHp ?? 0));
     for (const team of TEAMS) {
       const side = collectSide(view, team);
       const x = sideOffset(team);
       const label = this.labels[team];
       if (side.active) {
         if (this.arcade) {
-          const bar = scaledBar(slimBar(team), side.active.maxHp, refMaxHp);
+          // Every bar fills to its own hero's max life, so the fill always matches the Life number (qa-r30; a shorter scaled track read as half empty).
+          const bar = slimBar(team);
           this.drawBar(gfx, bar, side.active, true);
           this.drawTrail(gfx, bar, side.active);
           if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active);
@@ -578,11 +577,20 @@ export class Hud extends Phaser.Scene {
       gfx.lineStyle(this.highContrast ? 2 : 1, 0xffffff, 1);
       gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
     }
+    // Full meter (qa-r30): a steady glow round the segments (no flashing of its own) and a gold label, so "ready" reads from across the screen.
+    const ready = m.full > 0;
+    if (ready) {
+      const glow = this.highContrast ? 0xffffff : 0xffe28a;
+      for (const [grow, a] of [[7, 0.12], [4, 0.2], [2, 0.32]] as const) {
+        gfx.lineStyle(2, glow, a).strokeRect(x - grow, METER_Y - grow, METER_W + grow * 2, SEGMENT_H + grow * 2);
+      }
+    }
     const t = (this.meterTexts[team] ??= this.text(Math.round(12 * Math.min(this.arcadeBoost(), SUPER_LABEL_BOOST)))
       .setOrigin(team === 0 ? 1 : 0, 0.5)
       .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
     const label = `SUPER ${meterLabel(m.value)}`; // named, so the segments are not mistaken for the round pips
     if (t.text !== label) t.setText(label);
+    t.setColor(ready ? (this.highContrast ? '#ffffff' : '#ffe28a') : '#e0d8c6');
     // Phones: the boosted label must not reach the bench portraits under it (qa-r8/r12 open item).
     t.setY(meterLabelY(mid, t.height, BENCH_CHIP_Y, SLIM_BAR_Y + SLIM_LINE_MAX / 2));
   }

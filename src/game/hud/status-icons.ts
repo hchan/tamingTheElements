@@ -123,7 +123,9 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
     if (ar.invulnerable(id) && !ar.stunned(id)) raw.push({ key: 'safe', label: 'SAFE', hostile: false, ticksLeft: null, remaining: 1 });
     const effect = ar.weather > 0 ? weatherEffect(ar.weather, element) : undefined;
     if (effect !== undefined && ar.weatherLeft > 0) {
-      raw.push({ key: 'weather', label: WEATHER_WORD[ar.weather - 1] ?? 'WEATHER', hostile: effect === 'countered', ticksLeft: ar.weatherLeft, remaining: Math.min(1, ar.weatherLeft / WEATHER_TICKS) });
+      // The centre badge already counts the seconds, so this chip says only what the weather does to this hero (qa-r30 duplication).
+      const word = ar.weather === 5 ? 'ECLIP' : (WEATHER_WORD[ar.weather - 1] ?? 'WEATHER');
+      raw.push({ key: 'weather', label: `${word} ${effect === 'countered' ? '-17%' : '+20%'}`, hostile: effect === 'countered', ticksLeft: null, remaining: Math.min(1, ar.weatherLeft / WEATHER_TICKS) });
     }
   }
   const elem = bar?.elemental;
