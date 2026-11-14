@@ -2621,3 +2621,88 @@ button.menuButton.heroSlotClear {
 body:has(.settingsBar) {
   overflow: visible;
 }
+
+/* World Tour victory (qa-r25): a mystic luminous title card, the team's portraits and the run summary. Glow only moves when motion is allowed. */
+#tourEnding.tourVictory {
+  text-align: center;
+}
+#tourEnding .tourVictoryKicker {
+  margin: 0;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  color: #b9a9ff;
+}
+#tourEnding h1.heading {
+  color: #ffe600;
+  text-shadow: 0 0 10px rgba(255, 230, 0, 0.55), 0 0 28px rgba(140, 120, 255, 0.55);
+}
+#tourEnding .tourVictorySub {
+  margin: 0.3em auto 0.8em;
+  max-width: 32em;
+}
+#tourEnding .tourVictoryTeam {
+  display: flex;
+  justify-content: center;
+  gap: clamp(10px, 3vw, 32px);
+  margin: 0.4em 0 0.8em;
+  padding: 0;
+  list-style: none;
+}
+#tourEnding .tourVictoryTeam li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 2px solid #8a7fb8;
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 30%, #3a3566, #1c1a36);
+  box-shadow: 0 0 14px rgba(160, 140, 255, 0.45);
+}
+#tourEnding .tourVictoryTeam .heroFace {
+  width: 64px;
+  height: 64px;
+}
+#tourEnding .tourVictoryStats p {
+  margin: 0.2em 0;
+}
+#tourEnding .tourVictoryActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75em;
+  margin-top: 0.8em;
+}
+#tourEnding .tourVictoryActions .menuButton {
+  margin: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  #tourEnding h1.heading { animation: tourVictoryGlow 3s ease-in-out infinite; }
+  @keyframes tourVictoryGlow {
+    0%, 100% { text-shadow: 0 0 8px rgba(255, 230, 0, 0.4), 0 0 20px rgba(140, 120, 255, 0.4); }
+    50% { text-shadow: 0 0 14px rgba(255, 230, 0, 0.8), 0 0 36px rgba(140, 120, 255, 0.8); }
+  }
+}
+@media (max-height: 500px) {
+  #tourEnding .tourVictoryTeam { margin: 0.2em 0 0.4em; }
+  #tourEnding .tourVictoryTeam li { padding: 4px 10px; flex-direction: row; }
+  #tourEnding .tourVictoryTeam .heroFace { width: 40px; height: 40px; }
+  #tourEnding .tourVictorySub { margin-bottom: 0.3em; }
+}
+
+/* Settings on a short viewport (qa-r25): the title is visually hidden (still the page heading for assistive tech), the Save/Back bar and
+   section headers shrink, so the first controls start high on a phone in landscape. */
+@media (max-height: 500px) {
+  body:has(.settingsBar) h1.heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  #menu .settingsBar { padding: 0.25em 0; gap: 0.5em; }
+  #menu .settingsBar .menuButton { box-sizing: border-box; min-height: 44px; padding-top: 0.2em; padding-bottom: 0.2em; }
+  #menu .settingsSection { margin: 0.3em 0; }
+  #menu .settingsSummary { padding: 0.3em 0.9em; }
+}

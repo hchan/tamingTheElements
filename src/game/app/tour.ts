@@ -3,7 +3,7 @@ import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import type { Screen } from '@ui/screens/screen';
-import { tourCardView, tourPickView, tourSplashView, type SplashSide } from '@ui/screens/tour';
+import { tourCardView, tourPickView, tourSplashView, tourVictoryView, type SplashSide } from '@ui/screens/tour';
 import { elementGlyph, mapLayout, tourMapView } from '@ui/screens/tour-map';
 import { requestOpenTesterPanel } from '@ui/tester/install';
 import { showErrorScreen, showWebglError } from '../boot/error-screen';
@@ -124,14 +124,13 @@ export function tourScreen(deps: TourDeps): Screen {
     const foe = stage.opponents.map(raceLabel).join(', ');
     if (r.status === 'won') {
       const sum = runSummary(r, raceLabel);
-      show(
-        tourCardView({
-          id: 'tourEnding',
-          heading: 'The tour is complete!',
-          lines: [`Congratulations! You beat all ${String(TOUR_STAGES)} stages, the Eternal Void included.`, ...sum.lines],
-          actions: [{ id: 'tourAgain', label: 'Play again', onClick: () => { clearRun(deps.storage); showPick(); } }],
-        }),
-      );
+      const victory = tourVictoryView({
+        heroes: r.hero.map((id) => ({ id, name: raceLabel(id) })),
+        lines: sum.lines.slice(0, 2),
+        onAgain: () => { clearRun(deps.storage); showPick(); },
+      });
+      show(victory);
+      victory.querySelector<HTMLElement>('#tourAgain')?.focus();
     } else if (r.status === 'over') {
       const sum = runSummary(r, raceLabel);
       show(
@@ -284,6 +283,11 @@ export function tourScreen(deps: TourDeps): Screen {
       listenEscape();
       const saved = loadRun(deps.storage);
       if (saved && (saved.status === 'playing' || saved.status === 'lost')) showResume(saved);
+      else if (saved?.status === 'won') {
+        // A finished tour reopens its victory screen, not the team picker.
+        run = saved;
+        showRun();
+      }
       else showPick();
     },
     unmount: () => {

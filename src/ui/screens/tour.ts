@@ -57,6 +57,50 @@ export function tourCardView(o: TourCardOptions): HTMLElement {
   return page;
 }
 
+export interface TourVictoryOptions {
+  readonly heroes: readonly { readonly id: CharacterId; readonly name: string }[];
+  /** Words for the run summary, one paragraph each (stages, continues). */
+  readonly lines: readonly string[];
+  readonly onAgain: () => void;
+}
+
+/**
+ * The World Tour victory screen: a title card, the three heroes' portraits, the run summary and Play again / Main Menu. The glow
+ * is CSS and only animates when motion is allowed; the portraits are decoration (the names are in the text).
+ */
+export function tourVictoryView(o: TourVictoryOptions): HTMLElement {
+  const page = el('div', 'menuPage tourVictory');
+  page.id = 'tourEnding';
+  const team = el('ul', 'tourVictoryTeam');
+  for (const h of o.heroes) {
+    const li = el('li');
+    const face = el('span', 'heroFace');
+    face.setAttribute('aria-hidden', 'true');
+    face.style.backgroundImage = faceUrl(h.id);
+    li.append(face, el('b', undefined, h.name));
+    team.append(li);
+  }
+  const stats = el('div', 'tourVictoryStats');
+  stats.append(...o.lines.map((t) => el('p', undefined, t)));
+  const again = el('button', 'menuButton tourFightCta', 'Play again');
+  again.type = 'button';
+  again.id = 'tourAgain';
+  again.addEventListener('click', o.onAgain);
+  const menu = el('a', 'menuButton', 'Main Menu');
+  menu.href = '#main';
+  const actions = el('div', 'tourVictoryActions');
+  actions.append(again, menu);
+  page.append(
+    el('p', 'tourVictoryKicker', 'World Tour'),
+    el('h1', 'heading', 'The tour is complete!'),
+    el('p', 'tourVictorySub', 'You beat all nine stages, the Eternal Void included.'),
+    team,
+    stats,
+    actions,
+  );
+  return page;
+}
+
 export interface SplashSide {
   readonly who: string;
   /** "Fiara (fire)". */
