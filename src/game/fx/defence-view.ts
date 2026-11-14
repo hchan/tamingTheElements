@@ -4,6 +4,7 @@ import { EntityFlag, GUARD_MAX, type RenderArcade, type RenderCharacter, type Re
 import type { Announcement } from '../a11y/announcer';
 import { resolutionOf } from '../boot/viewport';
 import { mountClashView } from './clash-view';
+import { styleCombatText } from '../hud/combat-text';
 import { ELEMENT_COLORS } from './element-colors';
 import {
   AFTERIMAGE_ALPHA, AFTERIMAGE_GAP, BREAK_COLOR, DefenceFx, FLASH_TICKS, GUARD_COLOR, GUARD_LOW_PM,
@@ -207,7 +208,7 @@ export function mountDefenceView(
       let slot = 0;
       for (let i = 1; i < POP_POOL; i++) if ((popData[i * 4 + 2] ?? 0) < (popData[slot * 4 + 2] ?? 0)) slot = i;
       const t = text(slot);
-      t.setText(word).setColor(`#${color.toString(16).padStart(6, '0')}`).setVisible(true);
+      styleCombatText(t.setText(word), 'call', `#${color.toString(16).padStart(6, '0')}`).setVisible(true);
       popData[slot * 4] = pt.x;
       popData[slot * 4 + 1] = pt.y - pt.size - 4;
       popData[slot * 4 + 2] = now();
@@ -255,8 +256,7 @@ export function mountDefenceView(
     if (!t) {
       t = scene.add
         .text(0, 0, '', {
-          fontSize: `${String(POP_PX)}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 6,
-          resolution: resolutionOf(scene),
+          fontSize: `${String(POP_PX)}px`, fontStyle: 'bold', resolution: resolutionOf(scene),
         })
         .setOrigin(0.5, 1)
         .setDepth(POP_DEPTH)

@@ -33,9 +33,17 @@ const PORTRAIT_PX = 140;
 /** The cut-in portrait sits in a dark framed card with an element-colour border, so it reads as a slash-in close-up, not a ghost of the caster. */
 const CARD_PX = PORTRAIT_PX + 16;
 /** The probe's `dim` stays the plan's value; the overlay is drawn this many times darker (a hard darken, SF/MvC style). */
-const DIM_GAIN = 2.25;
+const DIM_GAIN = 1.75;
 const LINES = 26;
 const PORTRAIT_X = 120;
+/** The free width between the two portrait cards (1280 box): the title never reaches past it, so it is not clipped at a phone's edge (QA r21). */
+export const NAME_SAFE_W = LOGICAL_WIDTH - 2 * (PORTRAIT_X + (PORTRAIT_PX + 16) / 2 + 12);
+
+/** Font size that fits a title `width` px wide at `base` px into `safe` px: shrinks, never grows, never below 40% of `base`. */
+export function fitTitlePx(base: number, width: number, safe: number): number {
+  if (width <= safe || width <= 0) return base;
+  return Math.max(Math.round(base * 0.4), Math.floor((base * safe) / width));
+}
 /** Over the characters (0), under the caster (lifted to DIM_DEPTH + 1), the band and the hit sparks (10). */
 const DIM_DEPTH = 5;
 /** Logical px the dim and band reach past each side of the 1280 box, so they cover the wide view (viewport.ts `enableWideView`, at most the 1920 world). */
@@ -93,7 +101,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   const res = (): number => resolutionOf(scene);
   const text = (size: number): Phaser.GameObjects.Text =>
     scene.add
-      .text(0, 0, '', { fontSize: `${String(size)}px`, fontStyle: 'bold', color: '#d8d2c4', stroke: '#0a0806', strokeThickness: 8, resolution: res() })
+      .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(size)}px`, fontStyle: 'bold', color: '#d8d2c4', stroke: '#0a0806', strokeThickness: 5, resolution: res() })
       .setOrigin(0.5)
       .setDepth(DIM_DEPTH + 3);
   const parts = {
@@ -247,7 +255,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
         parts.edges.fillStyle(tint, 0.22).fillRect(x, y, len, 2);
       }
       parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX, PORTRAIT_PX).setFlipX(img.flipX);
-      parts.name.setText(superName(superId));
+      parts.name.setFontSize(NAME_PX).setText(superName(superId));
+      parts.name.setFontSize(fitTitlePx(NAME_PX, parts.name.width, NAME_SAFE_W));
       // The element as a word too: the band colour is not the only cue.
       parts.sub.setText(caster.element.toUpperCase());
       scene.events.off('postupdate', drawBurst);

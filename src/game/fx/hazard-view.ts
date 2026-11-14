@@ -84,6 +84,21 @@ function edgeArrows(g: Gfx, x: number, y: number, w: number, h: number, dir: num
   }
 }
 
+/** Warning progress 0..1 as `warnLeft` runs down from `warnTotal` (the countdown the rockfall shadow and the fire fill follow). */
+export function warnProgress(warnLeft: number, warnTotal: number): number {
+  return 1 - Math.min(1, Math.max(0, warnLeft / Math.max(1, warnTotal)));
+}
+
+/** Radius of the falling-rock shadow: grows from a quarter of the box's half-width to the full square as the strike nears. */
+export function shadowRadius(progress: number, halfW: number): number {
+  return halfW * (0.25 + 0.75 * Math.min(1, Math.max(0, progress)));
+}
+
+/** Impact flash alpha: white for the first 2 ticks of the active phase (steady, not blinking, so safe with reduced motion), else 0. */
+export function impactFlash(ticksSinceStrike: number): number {
+  return ticksSinceStrike >= 0 && ticksSinceStrike < 2 ? 0.55 : 0;
+}
+
 const states = new WeakMap<Phaser.Scene, () => readonly HazardMarker[]>();
 
 /** The hazard drawn on the last frame (test probe: empty with none live), or undefined before the view mounts or after teardown. */
@@ -123,6 +138,8 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
   let markers: HazardMarker[] = [];
   let warnTotal = 1;
   let announcedKind = 0;
+  let strikeTick = -1000;
+  let wasWarn = false;
   let live: HTMLElement | undefined;
   const announce = (kind: number): void => {
     if (typeof document === 'undefined') return;
@@ -158,6 +175,8 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     const lane = kind === 2 || kind === 4;
     let alpha: number;
     let drawn = 0;
+    if (wasWarn && warnLeft <= 0) strikeTick = tick;
+    wasWarn = warnLeft > 0;
     if (warnLeft > 0) {
       warnTotal = Math.max(warnTotal, warnLeft);
       alpha = hazardWarnAlpha(warnLeft, warnTotal, tick, reduced);
@@ -176,6 +195,25 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         edgeArrows(g, x, y, w, h, dir, light, alpha);
         drawn = chevrons(g, x, y, w, h, dir, shift, light, 0.8 * alpha, true);
       } else {
+        // r21: a filled warning tint that firms with the countdown (dark red on lava, pale dust on stone), so the box never reads as a thin outline on a busy floor.
+        const pr = warnProgress(warnLeft, warnTotal);
+        if (kind === 1) {
+          g.fillStyle(0x3a0c06, (0.3 + 0.3 * pr) * alpha).fillRect(x, y, w, h);
+          g.fillStyle(0xf4d4b0, 0.55 * alpha).fillRect(x, y, w, 5).fillRect(x, y + h - 5, w, 5).fillRect(x, y, 5, h).fillRect(x + w - 5, y, 5, h);
+          // A countdown tick: a pale bar filling up the lane's centre.
+          g.fillStyle(0x0a0806, 0.5 * alpha).fillRect(x + w / 2 - 6, y + 10, 12, h - 20);
+          g.fillStyle(0xf4d4b0, 0.85 * alpha).fillRect(x + w / 2 - 4, y + h - 10 - (h - 20) * pr, 8, (h - 20) * pr);
+        } else {
+          g.fillStyle(0xd8c8a8, (0.14 + 0.16 * pr) * alpha).fillRect(x, y, w, h);
+          // The falling shadow: a dark disc that grows to fill the square, ringed in pale dust.
+          const r = shadowRadius(pr, w / 2);
+          g.fillStyle(0x0d0a07, (0.25 + 0.3 * pr) * alpha).fillCircle(x + w / 2, y + h / 2, r);
+          g.lineStyle(3, 0xf0e4c8, 0.8 * alpha).strokeCircle(x + w / 2, y + h / 2, r);
+          g.lineStyle(4, 0xf0e4c8, 0.75 * alpha);
+          for (const [cx, cy, sx, sy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]] as const) {
+            g.lineBetween(cx, cy, cx + sx * 26, cy).lineBetween(cx, cy, cx, cy + sy * 26);
+          }
+        }
         // Fire and earth: a cross-hatch of warning stripes inside the box (fire's is pale-hot so it reads on the orange floor).
         if (kind === 1) glow.fillStyle(HAZARD_LIGHTS[1] ?? col, 0.12 * alpha).fillRect(x + w * 0.25, y, w * 0.5, h);
         g.lineStyle(2, kind === 1 ? (HAZARD_LIGHTS[1] ?? col) : col, (kind === 1 ? 0.5 : 0.3) * alpha);
@@ -210,6 +248,8 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         streaks(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, alpha);
       }
     }
+    const flash = warnLeft > 0 ? 0 : impactFlash(tick - strikeTick);
+    if (flash > 0) glow.fillStyle(0xffffff, flash).fillRect(x, y, w, h);
     markers.push({ kind, phase: warnLeft > 0 ? 'warn' : 'active', x, y, w, h, dir, alpha, chevrons: drawn });
   };
 
