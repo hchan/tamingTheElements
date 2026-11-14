@@ -1,0 +1,6 @@
+public/assets/img/menu/keyart.webp and crest.png (menu key art and element crest): original art generated procedurally by this repository's
+tooling (python3 tools/assets/menu-gen/menu_art.py public/assets/img/menu, numpy + Pillow; WP menu-deadband, 2026-11-13, Claude). No pixels are
+copied from other artwork; the hero line-up is composited from the repository's own baked sheets (public/assets/img/sheets/pax, sindarosa, curomo).
+Method: noise-gradient dawn sky, god rays, layered misty ridges, rim-lit heroes with soft glow, motes, mottle and grain; the crest is a
+4x supersampled prismatic ring with element lights and a star.
+Licence: same as the rest of the repository's original code and art (still "to be decided" in README.md; owner to confirm).
