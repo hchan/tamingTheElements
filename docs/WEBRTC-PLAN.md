@@ -169,6 +169,8 @@ Goal: a phone player can join without typing.
 - On desync: a "Save report" button downloading JSON `{ setup, side, commands (replay format), localCheckpoints, desync }` that
   `pnpm replay` can re-run.
 - Tests: unit tests for the quality words; DOM test for the report; e2e asserts the readout appears.
+- Done: the report is `{ kind, setup, side, desync, stats, localCheckpoints, replay }`; extract `replay` to its own file for `pnpm replay:verify`
+  (it stops at the last consecutive checkpoint). The readout sits above the status line, pinged every second over the mux.
 
 ### WP 10: Optional relay signalling (room codes)
 

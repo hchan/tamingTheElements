@@ -80,6 +80,8 @@ for (const ff of ['arcade,lockstep,netbot', 'arcade,netbot']) test(`two browser 
   await b.locator('#onlineReady').click();
   await expect(a.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
   await expect(b.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
+  await expect(a.locator('#onlineLink')).toHaveText(/^Link: (measuring|good|fair|poor)/);
+  await expect(b.locator('#onlineLink')).toHaveText(/^Link: (good|fair|poor), \d+ ms$/, { timeout: 20_000 });
 
   // Both sims run to the match end (the sim's own result when natural, the tick limit otherwise).
   const [na, nb] = await Promise.all([waitForEnd(a), waitForEnd(b)]);

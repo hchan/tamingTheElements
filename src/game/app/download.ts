@@ -1,4 +1,5 @@
 import type { ReplayFile } from '@core/menu-index';
+import type { DesyncReport } from '../net/desync-report';
 
 /** Revoking right after click() can cancel the download in some browsers; give it time to start. */
 const REVOKE_DELAY_MS = 10_000;
@@ -18,4 +19,14 @@ export async function downloadReplay(r: ReplayFile): Promise<void> {
   setTimeout(() => {
     URL.revokeObjectURL(url);
   }, REVOKE_DELAY_MS);
+}
+
+/** Saves the report as a JSON file through a temporary object URL (local only, nothing is uploaded). */
+export function downloadReport(r: DesyncReport): void {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(r)], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tte-desync-${String(r.setup.seed)}-side${String(r.side)}.json`;
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); }, REVOKE_DELAY_MS);
 }

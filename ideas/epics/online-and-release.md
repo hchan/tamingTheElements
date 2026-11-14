@@ -15,7 +15,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
   [03](../done/webrtc-03-share-link-qr.md), [04](../done/webrtc-04-ice-config.md),
   [05](../done/webrtc-05-leave-rematch.md), [06](../done/webrtc-06-mobile.md),
   [07](../done/webrtc-07-frame-pacing.md), [08](../done/webrtc-08-rollback-default.md),
-  [09](../brainstorm/webrtc-09-quality-desync-report.md), [10](../brainstorm/webrtc-10-relay-room-codes.md),
+  [09](../done/webrtc-09-quality-desync-report.md), [10](../brainstorm/webrtc-10-relay-room-codes.md),
   [11](../brainstorm/webrtc-11-soak.md)
 - [online-rematch-e2e-flake-under-load](../done/online-rematch-e2e-flake-under-load.md)
 - [e2e-coverage-and-browsers](../in-progress/e2e-coverage-and-browsers.md)
