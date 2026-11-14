@@ -176,6 +176,9 @@ save-backed screens show "Loading...") still need their own wait (`loaded()` in 
 - **Finding flakes**: `E2E_PORT=4841 pnpm e2e:flake --repeat 5 tests/e2e/tour.spec.ts tests/e2e/arcade-` (`tools/ci/e2e-flake.ts`) runs the
   specs with `--repeat-each`, retries off, and prints pass counts per test (exit 1 if any test failed once). Extra args pass through
   to Playwright, e.g. `--config playwright.pages.config.ts`. Check a suspect on a slow machine with CDP CPU throttling (see above).
+- **WebRTC soak (opt-in, never in the gate)**: `E2E_PORT=4841 pnpm soak:webrtc [--ticks 5000] [--grid default|harsh] [--natural]` (`tools/ci/webrtc-soak.ts`) runs
+  `tests/e2e/online-match.spec.ts` per harsh `?netsim=` entry in lockstep and rollback (env `TTE_NETSIM`, `TTE_MATCH_TICKS`, `TTE_NATURAL_MATCH`), asserting no desync and
+  identical checkpoint hashes; results in [NETCODE.md](NETCODE.md). Run at night.
 
 ## Writing a new ability or character test
 

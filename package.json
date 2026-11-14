@@ -31,6 +31,7 @@
     "ai:duel": "tsx tools/sim/ai-duel.ts",
     "size:check": "tsx tools/ci/size-check.ts",
     "relay": "tsx tools/signal-relay/server.ts",
+    "soak:webrtc": "tsx tools/ci/webrtc-soak.ts",
     "e2e:flake": "tsx tools/ci/e2e-flake.ts",
     "ci:local": "tsx tools/ci/local-ci.ts",
     "deploy:pages": "tsx tools/ci/deploy-pages.ts",
