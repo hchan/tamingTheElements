@@ -5,6 +5,13 @@ import { ARENA_READY, START, characters } from './parity/helpers';
 const shotDir = process.env['SHOT_DIR'];
 
 async function enterFight(page: Page, team = 1, click = false): Promise<void> {
+  // The first-run card times itself out on a wall-clock setTimeout(2500) from arena create. On a loaded machine the layout reads,
+  // shots and the tap can take longer than that: the card is then already faded (pointer-events none) and the Got it tap never lands.
+  // Stretch only that one timer so these tests see the card until they dismiss it (the timeout itself is covered in first-run-hint.dom.test.ts).
+  await page.addInitScript(`(() => {
+    const real = window.setTimeout.bind(window);
+    window.setTimeout = (fn, ms, ...a) => real(fn, ms === 2500 ? 600000 : ms, ...a);
+  })()`);
   await page.goto(`${START}&ff=arcade#arcade`);
   if (team === 2) {
     await page.getByLabel('Team').selectOption('2');
