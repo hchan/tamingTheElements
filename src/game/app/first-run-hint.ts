@@ -5,7 +5,7 @@ import { codeLabel, getBindings, type Bindings, type GameAction } from '../platf
 
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
-export const FIRST_RUN_MS = 8000;
+export const FIRST_RUN_MS = 6000;
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
@@ -60,14 +60,30 @@ export function firstRunHint(store: Store | undefined = defaultStore(), fadeMs =
   const done = el('button', 'firstRunDone', 'Got it');
   done.setAttribute('type', 'button');
   done.addEventListener('click', () => {
+    window.clearTimeout(timer);
+    window.removeEventListener('keydown', onInput, true);
+    window.removeEventListener('pointerdown', onInput, true);
     markSeen(store);
     card.remove();
   });
   card.append(done);
-  // A detached node is harmless, so the timer needs no cleanup.
-  window.setTimeout(() => {
+  // The card gets out of the way on its own: after the delay, or at the first move or tap (a held key is a move).
+  // A detached node is harmless, so the timer needs no cleanup; the listeners remove themselves.
+  const fade = (): void => {
+    window.clearTimeout(timer);
+    window.removeEventListener('keydown', onInput, true);
+    window.removeEventListener('pointerdown', onInput, true);
     markSeen(store);
     card.classList.add('firstRunFade');
-  }, fadeMs);
+  };
+  const onInput = (e: Event): void => {
+    // Tab, Escape and modifier keys alone are not a move; a click on Got it is handled by the button.
+    if (e instanceof KeyboardEvent && (e.key === 'Tab' || e.key === 'Escape' || e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta')) return;
+    if (e.target instanceof Node && card.contains(e.target)) return;
+    fade();
+  };
+  const timer = window.setTimeout(fade, fadeMs);
+  window.addEventListener('keydown', onInput, true);
+  window.addEventListener('pointerdown', onInput, true);
   return card;
 }
