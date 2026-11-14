@@ -16,7 +16,7 @@
     "element-sfx": 1250,
     "grim-fx": 900,
     "guide": 4300,
-    "hazard-view": 1400,
+    "hazard-view": 2000,
     "guide.css": 1600,
     "tour-match": 3150,
     "launch": 160,
@@ -50,7 +50,7 @@
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 607000,
+  "totalGzip": 608000,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600
