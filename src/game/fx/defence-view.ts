@@ -1,8 +1,9 @@
 import type Phaser from 'phaser';
 import { arcadeHeroScale, drawnBox, fitToBox, visualBox } from '../views/hero-scale';
-import { EntityFlag, GUARD_MAX, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, GUARD_MAX, SimEventKind, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { resolutionOf } from '../boot/viewport';
+import { popLaneLift, type LivePop } from './pop-lanes';
 import { mountClashView } from './clash-view';
 import { styleCombatText } from '../hud/combat-text';
 import { ELEMENT_COLORS } from './element-colors';
@@ -205,12 +206,15 @@ export function mountDefenceView(
     },
     pop(id, word, color, flat): void {
       if (!at(id)) return;
+      const live: LivePop[] = [];
+      for (let i = 0; i < POP_POOL; i++) if (texts[i]?.visible) live.push({ x: popData[i * 4] ?? 0, y: popData[i * 4 + 1] ?? 0 });
+      const lift = popLaneLift(live, pt.x, pt.y - pt.size - 4);
       let slot = 0;
       for (let i = 1; i < POP_POOL; i++) if ((popData[i * 4 + 2] ?? 0) < (popData[slot * 4 + 2] ?? 0)) slot = i;
       const t = text(slot);
       styleCombatText(t.setText(word), 'call', `#${color.toString(16).padStart(6, '0')}`).setVisible(true);
       popData[slot * 4] = pt.x;
-      popData[slot * 4 + 1] = pt.y - pt.size - 4;
+      popData[slot * 4 + 1] = pt.y - pt.size - 4 - lift;
       popData[slot * 4 + 2] = now();
       popData[slot * 4 + 3] = flat ? 1 : 0;
     },
@@ -473,6 +477,8 @@ export function mountDefenceView(
   return (events) => {
     tick = view.tick;
     sub = 0;
+    // A new round starts clean: no pop from the last one rides under the ROUND / FIGHT! banners.
+    if (events.some((e) => e.kind === SimEventKind.roundStarted)) for (let i = 0; i < POP_POOL; i++) { popData[i * 4 + 2] = HIDDEN; texts[i]?.setVisible(false); }
     fx.consume(events);
     clash(events);
     onTick();

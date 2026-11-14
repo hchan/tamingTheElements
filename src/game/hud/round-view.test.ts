@@ -144,7 +144,8 @@ describe('round view (Phaser side, fake scenes)', () => {
     feed([ev(200, SimEventKind.ko, 0, { team: 1, perfect: 0 }), ev(350, SimEventKind.roundEnded, 0, { winner: 0, won0: 1, won1: 0 })]);
     v.setTick(350);
     hud.events.emit('update');
-    expect(roundState(hud.scene)).toMatchObject({ main: 'K.O.', sub: 'YOU WIN ROUND 1', visible: true, won: [1, 0] });
+    // the result card names the result on every size, so the banner steps aside under it (QA r29)
+    expect(roundState(hud.scene)).toMatchObject({ main: 'K.O.', sub: 'YOU WIN ROUND 1', visible: false, won: [1, 0] });
     // the result card carries the verdict, so the banner's duplicate line is hidden while it is up
     expect(hud.made[1]).toMatchObject({ text: 'YOU WIN ROUND 1', visible: false });
     expect(lines.map((l) => l.text)).toEqual(['Round 1.', 'Fight!', 'K.O. You knocked out the enemy.', 'You win round 1. Rounds 1 to 0. Knockout. Health left 0 percent. Dealt 0 damage, took 0. Longest combo 0.']);

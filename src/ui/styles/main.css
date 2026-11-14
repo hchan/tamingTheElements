@@ -1788,11 +1788,12 @@ html[data-high-contrast='true'] button.touchBtn {
   }
 }
 
-/* Landscape phone: the card docks under the HUD bar (over the crowd band) instead of the lower floor, so it never covers a fighter or the stick (QA r20). */
+/* Landscape phone: the card sits on the middle floor between the two fighters (narrow, below the FIGHT! banner and the WEATHER chip), so it covers neither the HUD, a banner, a fighter nor the stick (QA r20, r29). */
 @media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
   .firstRunHint:not(.firstRunWait) {
-    top: 17vh;
+    top: 56vh;
     bottom: auto;
+    max-width: 42%;
     font-size: 12px;
   }
 }

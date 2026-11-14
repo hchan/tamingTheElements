@@ -3,6 +3,7 @@ import { LaneWait, centreBusy } from '../hud/banner-lanes';
 import { arcadeHeroScale, visualBox } from '../views/hero-scale';
 import type { RenderCharacter, RenderView } from '@core/index';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
+import { popLaneLift } from './pop-lanes';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
 /**
@@ -30,8 +31,12 @@ export function abilityFxState(arena: Phaser.Scene): AbilityFxProbe | undefined 
 interface Pop {
   readonly id: number;
   readonly word: string;
-  readonly x: number;
-  readonly y: number;
+  /** The team whose fighter it follows (the pop rides the fighter's head, so it never floats off when they move). */
+  readonly team: number;
+  x: number;
+  y: number;
+  /** Lane lift (px): stacked above other live pops near it. */
+  lift: number;
   born: number;
   text?: Phaser.GameObjects.Text;
   /** Waits for the centre lane (banner-lanes.ts) while the super cut-in or a round banner is up. */
@@ -50,6 +55,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   const lastReady = new Map<number, number>();
   let popId = 0;
+  let lastRound = -1;
 
   const draw = (): void => {
     const reduced = reduceMotion();
@@ -87,13 +93,25 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     view.forEachCharacter(visit);
     for (const k of [...born.keys()]) if (!seen.has(k)) born.delete(k);
 
+    // A new round starts clean: the last round's SNAG / HEAL pops and lashes never ride under the ROUND / FIGHT! banners, and the
+    // cooldown reset that comes with the round is not read as a cast.
+    const round = view.arcade()?.round ?? 0;
+    if (round !== lastRound) {
+      if (lastRound !== -1) {
+        for (const p of pops) p.text?.destroy();
+        pops = [];
+        lashes = [];
+        lastReady.clear();
+      }
+      lastRound = round;
+    }
     for (const team of [0, 1]) {
       const slot = view.actionBar(team)?.abilities.find((s) => s.sprite === 'fireHeal');
       if (!slot) continue;
       const prev = lastReady.get(team);
       lastReady.set(team, slot.readyTick);
       const at = anchor.get(team);
-      if (prev !== undefined && slot.readyTick > prev && at) pops.push({ id: ++popId, word: 'HEAL', x: at.x, y: at.y - 8, born: now, wait: new LaneWait(), seen: now });
+      if (prev !== undefined && slot.readyTick > prev && at) pops.push({ id: ++popId, word: 'HEAL', team, x: at.x, y: at.y - 8, lift: popLaneLift(pops, at.x, at.y - 8), born: now, wait: new LaneWait(), seen: now });
     }
     for (const team of [0, 1]) {
       const slot = view.actionBar(team)?.abilities.find((s) => s.sprite === SNAG_SPRITE);
@@ -104,7 +122,8 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const at = aim.get(team);
       if (prev !== undefined && slot.readyTick > prev && at) {
         lashes.push({ team, ...at, born: now });
-        pops.push({ id: ++popId, word: 'SNAG', x: at.x, y: anchor.get(team)?.y ?? at.y - 8, born: now, wait: new LaneWait(), seen: now });
+        const py = anchor.get(team)?.y ?? at.y - 8;
+        pops.push({ id: ++popId, word: 'SNAG', team, x: at.x, y: py, lift: popLaneLift(pops, at.x, py), born: now, wait: new LaneWait(), seen: now });
       }
     }
     lashDrawn = [];
@@ -141,7 +160,9 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         .text(p.x, p.y, p.word === 'HEAL' ? `+ ${p.word}` : p.word, { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '20px', fontStyle: 'bold', color: p.word === 'HEAL' ? '#8fb892' : '#b89a68', stroke: '#0a0806', strokeThickness: 3 })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH + 1);
-      p.text.setPosition(p.x, p.y + look.dy).setAlpha(look.alpha);
+      const head = anchor.get(p.team);
+      if (head) { p.x = head.x; p.y = head.y - 8; }
+      p.text.setPosition(p.x, p.y - p.lift + look.dy).setAlpha(look.alpha);
       return true;
     });
   };

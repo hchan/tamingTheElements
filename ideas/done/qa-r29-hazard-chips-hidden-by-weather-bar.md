@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -10,3 +10,7 @@ r28 chip fix confirmed for LAVA and ROCKFALL, but the TIDE and GUST chips render
 Evidence: ~/claudetmp/qa29/shots/hazard-desk-water-warn.png, hazard-desk-air-warn.png, hazard-phone-water-warn.png.
 
 Fix: move chips below the meter or raise their depth.
+
+## Progress
+
+- 2026-11-14: done (hazard-view.ts: min screen y 218, divided by zoom/resolution).

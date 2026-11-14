@@ -63,6 +63,8 @@ const FRAME_COLOR = 0x050403;
 
 /** The SUPER label's own phone boost cap: between the life bar and the bench portraits there is room for about 21 logical px of text (qa-r12: at 1.7 it sat on the portraits; `meterLabelY` now lifts it clear, so r20 raised it to 1.7 again for ~11 CSS px on a phone). */
 const SUPER_LABEL_BOOST = 1.7;
+/** The life line's size steps (of its boosted size) tried before the hero name is cut. */
+const LIFE_TEXT_SCALES: readonly number[] = [1, 0.85, 0.72, 0.62];
 
 const TEAMS = [0, 1] as const;
 
@@ -481,15 +483,19 @@ export class Hud extends Phaser.Scene {
 
   /** The life line under the bar; where the boosted text would run into the SUPER label (phones) it drops the hero name. */
   private setSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter): void {
-    label.setText(compactLabel(name, c));
+    const base = (label.getData('baseSize') as number | undefined) ?? parseFloat(String(label.style.fontSize));
+    label.setData('baseSize', base);
+    const clears = (m: Phaser.GameObjects.Text): boolean => (team === 0 ? label.x + label.width + 6 <= m.x - m.width : label.x - label.width - 6 >= m.x + m.width);
     const m = this.meterTexts[team];
+    // Shrink the life text first (qa-r29: names read "FI..." even in 1v1), the whole name kept; only then cut the name, last drop it.
+    for (const k of LIFE_TEXT_SCALES) {
+      label.setFontSize(Math.round(base * k)).setText(compactLabel(name, c));
+      if (!m || clears(m)) return;
+    }
     if (!m) return;
-    const clash = team === 0 ? label.x + label.width + 6 > m.x - m.width : label.x - label.width - 6 < m.x + m.width;
-    if (!clash) return;
-    // Shrink the name before dropping it (qa-r28: the enemy had no name on a phone): the longest that still clears the SUPER label.
     for (let max = name.length - 1; max >= 3; max--) {
       label.setText(compactLabel(shortName(name, max), c));
-      if (team === 0 ? label.x + label.width + 6 <= m.x - m.width : label.x - label.width - 6 >= m.x + m.width) return;
+      if (clears(m)) return;
     }
     label.setText(compactLabel(name, c, true));
   }

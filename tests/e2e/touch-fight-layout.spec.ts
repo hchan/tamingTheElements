@@ -79,9 +79,10 @@ test.describe('phone landscape fight', () => {
     const [foe] = await characters(page, 1);
     await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(foe?.id)}, 0); a.step(1); })()`);
     await page.evaluate(`window.__TTE__.arena.step(150)`);
-    const r = await page.evaluate<{ result: { visible: boolean; compact: boolean; lines: string[] } }>(`window.__TTE__.arena.rounds()`);
+    const r = await page.evaluate<{ result: { visible: boolean; compact: boolean; short: boolean; lines: string[] } }>(`window.__TTE__.arena.rounds()`);
     expect(r.result.visible).toBe(true);
     expect(r.result.compact).toBe(true);
+    expect(r.result.short).toBe(true);
     expect(r.result.lines[0]).toMatch(/^HEALTH LEFT/);
     await shot(page, 'land-result');
   });
