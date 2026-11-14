@@ -139,6 +139,8 @@ export function mountTagView(
   let shownTick = -1;
   const lines: string[][] = [['', '', ''], ['', '', '']];
   /** Live entrance flashes: centre, height, team, start tick, KO. */
+  /** The view tick each team's incoming-hero bar flash started (-FLASH_TICKS when none). */
+  const barFlash: [number, number] = [-FLASH_TICKS, -FLASH_TICKS];
   const flashes: { x: number; y: number; h: number; team: number; from: number; ko: boolean }[] = [];
 
   const red = (g: Phaser.GameObjects.Graphics, b: Bar, h: Hero): void => {
@@ -166,6 +168,15 @@ export function mountTagView(
           g.lineStyle(3, 0x0a0806, 0.85).strokeRect(...frame);
           g.lineStyle(1, GOLD, 0.9).strokeRect(...frame);
         }
+      }
+      // The swap lands on the HUD too: a bright frame round the incoming hero's bar that grows out and fades (steady, then gone, with reduced motion).
+      const bt = view.tick - (barFlash[team] ?? -FLASH_TICKS);
+      if (active && bt >= 0 && bt < FLASH_TICKS) {
+        const k = 1 - bt / FLASH_TICKS;
+        const grow = reduced ? 0 : Math.round(10 * (1 - k));
+        g.lineStyle(5, 0x000000, 0.6 * k).strokeRect(main.minX - 5 - grow, main.y - 14 - grow, main.maxX - main.minX + 10 + 2 * grow, 28 + 2 * grow);
+        g.lineStyle(3, 0xffffff, k).strokeRect(main.minX - 5 - grow, main.y - 14 - grow, main.maxX - main.minX + 10 + 2 * grow, 28 + 2 * grow);
+        g.fillStyle(0xffffff, 0.35 * k).fillRect(main.minX - 2, main.y - 11, main.maxX - main.minX + 4, 22);
       }
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
@@ -275,6 +286,7 @@ export function mountTagView(
       flashes.push(flash);
       flashes.splice(0, flashes.length - 4);
       callFrom = view.tick;
+      barFlash[team === 1 ? 1 : 0] = view.tick;
       callReduced = reduced;
       callKo = ko;
       if (parts) styleCombatText(parts.call.setText(callText(to, ko)), ko ? 'ko' : 'call');
