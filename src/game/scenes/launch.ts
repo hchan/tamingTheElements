@@ -64,6 +64,8 @@ export interface ArenaLaunch {
   /** Local two-player (Arcade Versus): a second KeyboardAgent (Player 2's keys, the second gamepad) drives side 1; no `enemy`. */
   readonly local2?: boolean;
   readonly onEnd?: (end: MatchEnd) => void;
+  /** Local fights: the pause menu's Restart starts the same fight again (absent: no Restart button). */
+  readonly onRestart?: () => void;
   /** Records the final command pair of every tick (only present when recording is enabled). */
   readonly recorder?: PlaytestRecorder;
   readonly playback?: ArenaPlayback;

@@ -145,11 +145,11 @@ test.describe('keyboard-only menu navigation', () => {
     await expect(dialog).toBeVisible();
     expect(await activeText(page)).toBe('Resume');
     await page.keyboard.press('Tab');
-    expect(await activeText(page)).toBe('Exit to menu');
+    expect(await activeText(page)).toBe('Quit to menu');
     await page.keyboard.press('Tab');
     expect(await activeText(page)).toBe('Resume');
     await page.keyboard.press('Shift+Tab');
-    expect(await activeText(page)).toBe('Exit to menu');
+    expect(await activeText(page)).toBe('Quit to menu');
 
     // Escape resumes and the sim runs again.
     await page.keyboard.press('Escape');

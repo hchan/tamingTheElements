@@ -38,7 +38,7 @@ test('laying a trap is spoken politely in words; no listener left behind', async
   await page.keyboard.press('Shift+P');
   await page.waitForFunction(`window.__TTE__.arena.paused === false`);
   await page.keyboard.press('Shift+P');
-  await page.getByRole('link', { name: 'Exit to menu' }).click();
+  await page.getByRole('link', { name: 'Quit to menu' }).click();
   await page.waitForFunction(`window.location.hash === '#main'`);
   await page.evaluate(`window.__TTE__.settled()`);
   await expect(page.locator('#game canvas')).toHaveCount(0);

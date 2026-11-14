@@ -166,6 +166,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
           cheats: tester.enabled,
           record: deps.flags.record || getRecordSetting(),
           replays: deps.replays,
+          onRestart: () => { if (epoch === mine) startBattle(); },
           onResult: (r) => {
             if (epoch === mine) showResults(r);
           },

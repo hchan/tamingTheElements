@@ -132,6 +132,8 @@ export interface ArcadeLaunchOptions {
   /** Only written to when recording; this is the replay store, never the save. */
   readonly replays: Pick<ReplayStore, 'add'>;
   readonly onResult: (r: ArcadeResult) => void;
+  /** The pause menu's Restart: start the same fight again. */
+  readonly onRestart?: () => void;
   /** Tester mode is on: the recorded replay is flagged `cheats` (verifiers refuse it). */
   readonly cheats?: boolean;
   /** Called once with the battle's render view (the touch buttons read their ready state from it). */
@@ -182,6 +184,7 @@ export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOpti
       const held = arena.audio;
       void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held, () => v.arcade()?.sudden === true, () => activeLife(v)); });
     },
+    ...(o.onRestart ? { onRestart: o.onRestart } : {}),
     onEnd: (end) => {
       const replay = recorder?.finish();
       if (replay) void o.replays.add(replay).catch(() => undefined);

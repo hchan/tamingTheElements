@@ -115,12 +115,14 @@ test.describe('Tester mode', () => {
     await expect(page.locator('#testerBadge')).toBeHidden();
     await goToHash(page, '#settings');
     await expect(page.locator('#testerOptionsMenu')).toHaveCount(0);
+    await page.locator('#settingsAdvanced > summary').click();
     await page.locator('#unlockGarrison').check();
     await expect(page.locator('#testerBadge')).toContainText('TESTER MODE - progress not saved');
     // Never persisted: a reload turns it off. Turn it on again; the menu then offers the tester options.
     await page.reload();
     await expect(page.locator('#testerBadge')).toBeHidden();
     await goToHash(page, '#settings');
+    await page.locator('#settingsAdvanced > summary').click();
     await page.locator('#unlockGarrison').check();
     await goToHash(page, '#main');
     await goToHash(page, '#settings');

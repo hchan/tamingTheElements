@@ -202,6 +202,25 @@ describe('settingsScreen (DOM)', () => {
   });
 });
 
+describe('settings sections', () => {
+  it('groups the controls, keeps Advanced collapsed and puts Save and Back first', async () => {
+    await mountWith(fakeStore());
+    const open = (id: string): boolean => (document.getElementById(id) as HTMLDetailsElement).open;
+    expect(open('settingsAudio')).toBe(true);
+    expect(open('settingsControls')).toBe(true);
+    expect(open('settingsDisplay')).toBe(true);
+    expect(open('settingsAdvanced')).toBe(false);
+    const adv = document.getElementById('settingsAdvanced');
+    for (const id of ['cheatsMenu', 'recordPlaytests', 'unlockGarrison', 'setting-turnUrl']) {
+      expect(adv?.querySelector(`#${id}`)).not.toBeNull();
+    }
+    expect(adv?.querySelector('.settingsTransfer')).not.toBeNull();
+    expect(form().firstElementChild?.className).toBe('settingsBar');
+    expect(form().querySelector('.settingsBar button[type="submit"]')?.textContent).toBe('Save');
+    expect(document.getElementById('settingsAudio')?.querySelector('input[type="range"]')).not.toBeNull();
+  });
+});
+
 describe('applyUiScale / loadSave', () => {
   it('applyUiScale sets --ui-scale and --canvas-fraction on the root', () => {
     const el = document.createElement('div');
