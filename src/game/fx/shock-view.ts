@@ -3,6 +3,10 @@ import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
 import type { ChromaticSplit } from './chromatic-filter-impl';
 import { KO_SPLIT_MS, KO_WASH_MS, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
+/** A gold number landing within this many ms and px of a live one merges into it (one number per spot, r19). */
+const SUPER_NUMBER_MERGE_MS = 600;
+const SUPER_NUMBER_MERGE_PX = 140;
+
 /**
  * Renderer-only KO desaturation wash (a camera colour-matrix filter) and hit shockwave rings (one pooled Graphics: a pale
  * halo, a warm core and a bright element line). Both run on one scene update listener that exists only while something
@@ -39,6 +43,8 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     x: number;
     y: number;
     size: number;
+    amount: number;
+    fraction: number;
     age: number;
     reduced: boolean;
     live: boolean;
@@ -191,18 +197,29 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
         flashRect.setAlpha(superFlashAlpha(0)).setVisible(true);
         flashAge = 0;
       }
+      // One number per spot (r19): a multi-hit super or a KO landing on top of a young number merges into it (amounts add) instead of stacking a ghost.
+      const young = nums.find((m) => m.live && m.age < SUPER_NUMBER_MERGE_MS && Math.abs(m.x - x) < SUPER_NUMBER_MERGE_PX && Math.abs(m.y - y) < SUPER_NUMBER_MERGE_PX);
+      if (young) {
+        young.amount += amount;
+        young.fraction += fraction;
+        young.size = superNumberSize(young.fraction);
+        young.text.setText(String(Math.round(young.amount))).setFontSize(young.size);
+        return;
+      }
       let n = nums[nextNum];
       if (!n && nums.length < SUPER_NUMBER_POOL) {
         const text = scene.add
           .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'bold', color: SUPER_NUMBER_COLOR, stroke: '#0a0806', strokeThickness: 8, resolution: scene.scale.width / LOGICAL_WIDTH })
           .setOrigin(0.5)
           .setDepth(13);
-        n = { text, x: 0, y: 0, size: 0, age: 0, reduced, live: false };
+        n = { text, x: 0, y: 0, size: 0, amount: 0, fraction: 0, age: 0, reduced, live: false };
         nums.push(n);
       }
       n ??= nums[nextNum % Math.max(1, nums.length)];
       nextNum = (nextNum + 1) % SUPER_NUMBER_POOL;
       if (!n) return;
+      n.amount = amount;
+      n.fraction = fraction;
       n.size = superNumberSize(fraction);
       n.x = x;
       n.y = y;
@@ -222,7 +239,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       step(0);
     },
     state(): ShockState {
-      return { washAge, split: split?.amount ?? 0, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, held: held.length, superNumberSize: nums.find((n) => n.live)?.size ?? 0 };
+      return { washAge, split: split?.amount ?? 0, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, held: held.length, superNumberSize: nums.find((n) => n.live)?.size ?? 0, superNumberTexts: nums.filter((n) => n.live).map((n) => n.text.text) };
     },
   };
   layers.set(scene, layer);
@@ -242,6 +259,8 @@ export interface ShockState {
   /** Rings and numbers waiting for the super cut-in to clear. */
   readonly held: number;
   readonly superNumberSize: number;
+  /** The text of each live gold number (one per hit; the r19 ghost was two stacked at one spot). */
+  readonly superNumberTexts: readonly string[];
 }
 
 const layers = new WeakMap<Phaser.Scene, ShockLayer>();
