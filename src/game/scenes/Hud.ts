@@ -240,7 +240,7 @@ export class Hud extends Phaser.Scene {
     gfx.lineStyle(g.line, TRAIL_COLOR, 0.95).lineBetween(x0, g.y, x1, g.y);
   }
 
-  /** Arcade bench chip: a 56 px portrait with its element mark, a life bar under it, and a gold pulsing frame when a tag would work now (dimmed with a cross when down). */
+  /** Arcade bench chip: a 68 px portrait with its element mark, a life bar under it, and a gold pulsing frame when a tag would work now (dimmed with a cross when down). */
   private drawChip(gfx: Phaser.GameObjects.Graphics, team: number, i: number, c: HudCharacter): void {
     const r = chipRect(team, i);
     this.back?.fillStyle(0x070a12, 0.85).fillRect(r.x - 2, r.y - 2, r.size + 4, r.size + 4);

@@ -1865,6 +1865,16 @@ button.menuButton.heroSlotClear {
   border-radius: 999px;
   pointer-events: none;
 }
+/* Wide windows (720p and up): the buttons are centred with free room right of them, so the pill sits INSIDE the bar and no longer
+   covers the stat row of the hero panel above it. Narrow windows keep it floating above the bar. */
+@media (min-width: 900px) {
+  #arcadePick .vsActions::before,
+  .heroSelect .heroActions::before {
+    bottom: auto;
+    top: 50%;
+    translate: 0 -50%;
+  }
+}
 @supports (animation-timeline: scroll()) {
   @keyframes scrollCueFade {
     0%,

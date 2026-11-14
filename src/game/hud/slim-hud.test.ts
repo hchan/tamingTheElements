@@ -11,15 +11,15 @@ describe('slim HUD geometry', () => {
       for (const i of [0, 1, 2]) {
         const r = chipRect(team, i);
         expect(r.y + r.size).toBeLessThanOrEqual(chipBar(team, i).y);
-        // The bench portraits are 56 px and hang under the band into the crowd strip (qa-r5-bench-portraits-small).
-        expect(r.size).toBeGreaterThanOrEqual(56);
+        // The bench portraits are 68 px and hang under the band into the crowd strip (qa-r5-bench-portraits-small).
+        expect(r.size).toBeGreaterThanOrEqual(68);
         expect(r.y).toBeGreaterThan(slimBar(team).y + slimBar(team).lineMax / 2);
       }
     }
     expect(slimBar(0).maxX - slimBar(0).minX).toBe(slimBar(1).maxX - slimBar(1).minX);
     expect(slimBar(0).minX + slimBar(1).maxX).toBe(1280);
     expect(mirrorX(1, 346, 36)).toBe(898);
-    expect(chipRect(1, 0).x + 56 + chipRect(0, 0).x).toBe(1280);
+    expect(chipRect(1, 0).x + 68 + chipRect(0, 0).x).toBe(1280);
   });
   it('leaves a gap between the portrait and the bar, and the right portrait clear of the fullscreen corner', () => {
     expect(slimPortrait(0).x + slimPortrait(0).size).toBeLessThan(slimBar(0).minX);
@@ -28,10 +28,10 @@ describe('slim HUD geometry', () => {
   it('lays chips and the tag pill side by side without overlap', () => {
     for (const team of [0, 1]) {
       const xs = [0, 1].map((i) => chipRect(team, i).x);
-      expect(Math.abs((xs[1] ?? 0) - (xs[0] ?? 0))).toBeGreaterThanOrEqual(56);
+      expect(Math.abs((xs[1] ?? 0) - (xs[0] ?? 0))).toBeGreaterThanOrEqual(68);
       const pill = tagPill(team);
       const first = chipRect(team, 0).x;
-      const apart = team === 0 ? pill.x - (first + 56) : first - (pill.x + PILL_W);
+      const apart = team === 0 ? pill.x - (first + 68) : first - (pill.x + PILL_W);
       expect(apart).toBeGreaterThanOrEqual(0);
     }
   });
