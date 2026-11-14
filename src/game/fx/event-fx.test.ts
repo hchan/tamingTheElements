@@ -61,6 +61,19 @@ describe('EventFx water frost', () => {
   });
 });
 
+describe('EventFx element signature', () => {
+  it('calls sink.signature for fire, earth, air and void specials, never for water or light hits or reduced motion', () => {
+    const calls: string[] = [];
+    const mk = (el: 'fire' | 'earth' | 'air' | 'void' | 'water', reduced: boolean): EventFx =>
+      new EventFx({ ...recorder().sink, signature: (t, e) => calls.push(`${e}${String(t)}`) }, { reducedMotion: () => reduced, arcade: true, elementOf: () => el });
+    for (const el of ['fire', 'earth', 'air', 'void'] as const) mk(el, false).consume([confirmed(3, 1)]);
+    mk('water', false).consume([confirmed(3, 1)]);
+    mk('fire', false).consume([confirmed(3, 0)]);
+    mk('fire', true).consume([confirmed(3, 1)]);
+    expect(calls).toEqual(['fire3', 'earth3', 'air3', 'void3']);
+  });
+});
+
 describe('EventFx hit sound cue', () => {
   it('asks for the attacker element once per hit, in Classic (damage) and Arcade (hitConfirmed)', () => {
     const calls: string[] = [];

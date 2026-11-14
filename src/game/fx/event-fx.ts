@@ -6,6 +6,7 @@ import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
 import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, sparkStyleFor } from './hit-feel';
 import { createFrostLayer } from './frost-view';
+import { createSignatureLayer } from './signature-view';
 import { createShockLayer } from './shock-view';
 import { koPunch } from './arena-pan';
 
@@ -88,6 +89,8 @@ export interface FxSink {
   impact?(target: number, element: Element): void;
   /** Pale-blue crystal shards plus a lingering frost ring under `target` for a water hit (optional; never called under reduced motion). */
   frost?(target: number): void;
+  /** Element signature burst on `target` for a fire, earth, air or void hit (flame tongues, rock chunks, air slashes, void implosion); optional, never called under reduced motion. */
+  signature?(target: number, element: Element): void;
   /** Floating damage number over `target`. */
   number(target: number, amount: number, scaled: boolean, counter: boolean): void;
   /**
@@ -214,6 +217,8 @@ export class EventFx {
       this.sink.burst(target, this.fill(FROST_SPARKS), FROST_SPARKS, FROST, el);
       this.sink.frost?.(target);
     }
+    // Fire, earth, air and void get their own mark from a medium hit up (specials), so each element's hit reads apart (QA r24).
+    if (el && el !== 'water' && strength >= 1 && strength < 3) this.sink.signature?.(target, el);
     if (strength === 3) this.sink.burst(target, this.fill(SUPER_GOLD_SPARKS), SUPER_GOLD_SPARKS, SUPER_GOLD, el);
   }
 
@@ -350,6 +355,7 @@ export function createPhaserFxSink(
   const impacts = createImpactLayer(scene, paused);
   const shock = createShockLayer(scene, paused);
   const frost = createFrostLayer(scene, paused);
+  const signature = createSignatureLayer(scene, paused);
   const spawn = (x: number, y: number, dx: number, dy: number, color: number, radius: number, life: number): void => {
     if (live >= SPARK_POOL) return;
     let d = dots[live];
@@ -393,6 +399,10 @@ export function createPhaserFxSink(
     frost(target): void {
       const p = centre(target);
       if (p) frost.burst(p.x, p.y, p.y + p.h / 2 - 6);
+    },
+    signature(target, element): void {
+      const p = centre(target);
+      if (p) signature.burst(p.x, p.y, p.y + p.h / 2 - 6, element);
     },
     superHit(target, amount, fraction, flash, reduced): void {
       const p = centre(target);

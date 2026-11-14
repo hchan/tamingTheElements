@@ -9,6 +9,7 @@ import { drawPad } from './terrain-pad';
 import { drawRock } from './terrain-props';
 import { mountAmbient, type Ambient } from './terrain-ambient';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
+import { mountEarthLight, type EarthLight } from './earth-light';
 import {
   MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
   TerrainFx, badgeText, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
@@ -115,6 +116,7 @@ export function mountTerrainView(
   let highContrast = prefs().highContrast;
   const tiles: TileFloor = mountTileFloor(arena, base, seed, TILES_DEPTH);
   const stageArt: StageBackdrop = mountStageBackdrop(arena, base);
+  const earthLight: EarthLight = mountEarthLight(arena);
   let parts:
     | {
       bg: Phaser.GameObjects.Image | undefined; next: Phaser.GameObjects.Image | undefined;
@@ -326,6 +328,7 @@ export function mountTerrainView(
     drawn.glow = glowAlpha(clock, drawn.alpha, reduced);
     p.floor.setAlpha(drawn.alpha);
     tiles.update(stage, drawn.alpha);
+    earthLight.update(stage, drawn.alpha, clock * TICK_MS, reduced, highContrast);
     stageArt.update(stage, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
     p.ambient.update(stage, (clock * TICK_MS) / 1000, reduced, drawn.alpha);
     p.glow.setAlpha(drawn.glow);
@@ -394,6 +397,7 @@ export function mountTerrainView(
     states.delete(arena);
     tiles.destroy();
     stageArt.destroy();
+    earthLight.destroy();
     if (parts) {
       parts.ambient.destroy();
       for (const o of [parts.bg, parts.next, parts.glow, parts.floor, parts.fx, parts.plate, parts.badge, ...parts.labels, ...parts.chips]) o?.destroy();
