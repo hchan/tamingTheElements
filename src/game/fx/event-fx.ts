@@ -74,7 +74,7 @@ export interface FxSink {
   spark(target: number, color: number): void;
   shake(durationMs: number, intensity: number): void;
   /** Renderer-only camera punch-in on a KO (optional; EventFx never calls it under reduced motion). */
-  koPunch?(): void;
+  koPunch?(target?: number): void;
   /** Renderer-only KO desaturation wash (optional; EventFx never calls it under reduced motion). */
   koWash?(): void;
   /** Shockwave ring at `target` in `color` for a heavy hit (weight 2), super (3) or KO (4); optional, never called under reduced motion. */
@@ -236,7 +236,7 @@ export class EventFx {
     const shake = s ? shakeFor(s[0], s[1], reduced) : null;
     if (shake) this.sink.shake(shake.durationMs, shake.intensity);
     if (!reduced && cause === KO_CAUSE) {
-      this.sink.koPunch?.();
+      this.sink.koPunch?.(paired ? this.hitTarget : undefined);
       this.sink.koWash?.();
       if (paired) this.sink.ring?.(this.hitTarget, this.hitColor, RING_KO_WEIGHT);
     }
@@ -365,8 +365,9 @@ export function createPhaserFxSink(
         spawn(p.x, p.y, (offsets[2 * i] ?? 0) * BURST_DISTANCE * st.reach, (offsets[2 * i + 1] ?? 0) * BURST_DISTANCE * st.reach + st.drift, color, st.radius, st.lifeMs);
       }
     },
-    koPunch(): void {
-      koPunch(scene);
+    koPunch(target): void {
+      const p = target === undefined ? null : centre(target);
+      koPunch(scene, p ? { x: p.x, y: p.y } : undefined);
     },
     koWash(): void {
       shock.wash();

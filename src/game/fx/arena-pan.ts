@@ -21,13 +21,15 @@ interface PanState {
   hold: boolean;
   /** Age in ms of the KO punch-in, or -1 when none runs. */
   punchAge: number;
+  /** World point the KO punch-in pushes toward (the KO'd fighter), or null for the fighters' midpoint. */
+  punchAt: { x: number; y: number } | null;
 }
 
 const states = new WeakMap<Phaser.Scene, PanState>();
 const state = (scene: Phaser.Scene): PanState => {
   let s = states.get(scene);
   if (!s) {
-    s = { centerX: LOGICAL_WIDTH / 2, zoom: 1, hold: false, punchAge: -1 };
+    s = { centerX: LOGICAL_WIDTH / 2, zoom: 1, hold: false, punchAge: -1, punchAt: null };
     states.set(scene, s);
   }
   return s;
@@ -40,8 +42,10 @@ export function panFraming(scene: Phaser.Scene): CameraFraming {
 }
 
 /** Starts the renderer-only KO punch-in (camera eases in a little, then back). */
-export function koPunch(scene: Phaser.Scene): void {
-  state(scene).punchAge = 0;
+export function koPunch(scene: Phaser.Scene, at?: { x: number; y: number }): void {
+  const s = state(scene);
+  s.punchAge = 0;
+  s.punchAt = at ?? null;
 }
 
 /** The super cinematic takes (true) or gives back (false) the camera. */
@@ -82,6 +86,17 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
     if (c.team === 0 && mid.n1++ === 0) mid.x1 = x;
     else if (c.team !== 0 && mid.n2++ === 0) mid.x2 = x;
   };
+  /** Advances the KO punch-in clock and returns its zoom multiplier (1 when none runs). */
+  const punchZoom = (delta: number): number => {
+    if (s.punchAge < 0) return 1;
+    s.punchAge += delta;
+    if (s.punchAge >= KO_PUNCH_MS) {
+      s.punchAge = -1;
+      s.punchAt = null;
+      return 1;
+    }
+    return koPunchZoom(s.punchAge, reducedMotion());
+  };
   let lastMid = Number.NaN;
   let lastTick = -1;
   let first = true;
@@ -90,8 +105,12 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
     mid.n1 = mid.n2 = 0;
     mid.reach = 40;
     view.forEachCharacter(visit);
-    // A fighter missing (KO between rounds): keep the framing where it is.
-    if (mid.n1 === 0 || mid.n2 === 0) return;
+    // A fighter missing (the KO'd one is dead, so the punch-in must still run): keep the framing where it is.
+    if (mid.n1 === 0 || mid.n2 === 0) {
+      const p = punchZoom(delta);
+      if (p !== 1) applyCamera(scene, p, s.punchAt?.x ?? s.centerX, s.punchAt?.y ?? LOGICAL_HEIGHT / 2);
+      return;
+    }
     const midpoint = (mid.x1 + mid.x2) / 2;
     const snap = first || view.tick < lastTick || Math.abs(midpoint - lastMid) > SNAP_JUMP_PX;
     first = false;
@@ -105,13 +124,8 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
     );
     s.centerX = next.centerX;
     s.zoom = next.zoom;
-    let punch = 1;
-    if (s.punchAge >= 0) {
-      s.punchAge += delta;
-      if (s.punchAge >= KO_PUNCH_MS) s.punchAge = -1;
-      else punch = koPunchZoom(s.punchAge, reducedMotion());
-    }
-    applyCamera(scene, punch, midpoint, LOGICAL_HEIGHT / 2);
+    const punch = punchZoom(delta);
+    applyCamera(scene, punch, s.punchAt?.x ?? midpoint, s.punchAt?.y ?? LOGICAL_HEIGHT / 2);
   };
   scene.events.on('update', update);
   const off = (): void => {

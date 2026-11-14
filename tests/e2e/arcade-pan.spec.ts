@@ -163,3 +163,14 @@ test('the ?ff=arenaDemo,arcade hook mounts the pan camera too', async ({ page })
   expect(c.camZoom).toBeCloseTo(ZOOM_MIN, 2);
   expect(errors).toEqual([]);
 });
+
+test('Arcade: the KO punches the camera in past the pan framing, then eases back to it', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openArcade(page);
+  const before = await placeAndSettle(page, 760, 960);
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; const [, foe] = a.characters(); a.setHp(foe.id, 0); a.step(1); })()`);
+  // The punch-in is a ~700 ms bell on real frames (slow under SwiftShader), so poll until it clears the pan zoom by a visible margin.
+  await expect.poll(async () => (await camera(page)).camZoom, { timeout: 15_000 }).toBeGreaterThan(before.camZoom * 1.08);
+  await expect.poll(async () => (await camera(page)).camZoom, { timeout: 15_000 }).toBeCloseTo(before.camZoom, 2);
+  expect(errors).toEqual([]);
+});
