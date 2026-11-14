@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -10,3 +10,5 @@ Repro: Versus screen, Team 1v1, open a hero card (e.g. Sindarosa). The Add to te
 Evidence: `~/claudetmp/qa26/versus.png`.
 
 Suggest hiding it, or showing it disabled with a hint.
+
+Done 2026-11-14: fixed.

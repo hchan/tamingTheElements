@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -10,3 +10,5 @@ Repro: viewport 844x390, open `/?seed=7`. Entries lay out Play/Versus, Online/Se
 Evidence: `~/claudetmp/qa26/menu-phone.png` vs `menu.png`.
 
 Suggest centred labels and a consistent order (or one row of five).
+
+Done 2026-11-14: fixed.
