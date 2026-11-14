@@ -38,10 +38,31 @@ const key = (b: Bindings, a: GameAction): string => {
   return first === undefined ? 'unbound' : codeLabel(first);
 };
 
-/** The hint text, from the live bindings. Words only; the numbered bar is described in Help. */
-export function firstRunLines(b: Bindings): readonly string[] {
+/** The four move keys as bound (every key of an action, so the default reads "W, Up ..."), in up, left, down, right order. */
+const moveKeys = (b: Bindings): string =>
+  (['up', 'left', 'down', 'right'] as const).map((a) => (b[a].length === 0 ? 'unbound' : b[a].map(codeLabel).join('/'))).join(', ');
+
+/** True on a touch-first device (coarse primary pointer), where there is no keyboard to name. */
+export function isTouchFirst(): boolean {
+  try {
+    return typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return false;
+  }
+}
+
+/** The hint text, from the live bindings (keyboard) or the on-screen controls (touch). Words only; the numbered bar is described in Help. */
+export function firstRunLines(b: Bindings, touch = false): readonly string[] {
+  if (touch) {
+    return [
+      'Drag the stick to move in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.',
+      'Tap the buttons to strike, Dash, Guard (hold) and fire your Super once its meter is full.',
+      'Tap Tag to send in a rested hero.',
+      'Stuck in a root or slow? Tap Cleanse.',
+    ];
+  }
   return [
-    'Move with the arrows or WASD; your hero faces the enemy on its own.',
+    `Move with ${moveKeys(b)}, in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
     `Strike with ${key(b, 'slot1')}. Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
     `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero.`,
     `Stuck in a root or slow? Press ${key(b, 'cleanse')} to Cleanse.`,
@@ -55,8 +76,8 @@ export function firstRunHint(store: Store | undefined = defaultStore(), fadeMs =
   card.id = 'firstRunHint';
   card.setAttribute('role', 'note');
   card.append(el('h2', undefined, 'First blood'));
-  for (const line of firstRunLines(getBindings())) card.append(el('p', undefined, line));
-  card.append(el('p', 'firstRunMore', 'Every key is listed under Help, Controls.'));
+  for (const line of firstRunLines(getBindings(), isTouchFirst())) card.append(el('p', undefined, line));
+  card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
   done.setAttribute('type', 'button');
   done.addEventListener('click', () => {

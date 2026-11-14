@@ -64,4 +64,14 @@ describe('firstRunHint', () => {
   it('names the live keys', () => {
     expect(firstRunLines({ ...DEFAULT_BINDINGS, dash: ['KeyV'] }).join(' ')).toContain('Dash with V');
   });
+
+  it('describes the touch controls on a touch device and the live keys otherwise', () => {
+    const touch = firstRunLines(DEFAULT_BINDINGS, true).join(' ');
+    expect(touch).toMatch(/stick/i);
+    expect(touch).not.toMatch(/WASD|arrows|press /i);
+    const keys = firstRunLines(DEFAULT_BINDINGS).join(' ');
+    expect(keys).toContain('Up/W');
+    expect(keys).not.toMatch(/stick|tap/i);
+    expect(keys + touch).not.toMatch(/classic|arcade|ruleset|capture/i);
+  });
 });
