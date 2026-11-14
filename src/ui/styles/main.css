@@ -1805,3 +1805,68 @@ button.menuButton.heroSlotClear {
     font-size: 1.6em;
   }
 }
+
+/* Phone landscape (about 844x390): a compact layout so the menu, the pickers and the fight HUD are not crowded out by tall headings,
+   a fixed dock or the first-run card. Bright mystic look is kept; only spacing, columns and the dock position change. */
+@media (max-height: 500px) and (orientation: landscape) {
+  h1.heading,
+  h2.heading {
+    margin: 0.15em 0;
+  }
+  #menu .menuPage {
+    max-width: 52em;
+  }
+  .mainMenuList {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35em 0.6em;
+    margin: 0.2em 0;
+  }
+  .mainMenuList::before {
+    grid-column: 1 / -1;
+    height: 2.6em;
+  }
+  .mainMenuList li button {
+    padding: 0.3em 0.8em;
+  }
+  .mainMenuList li.menuGroup,
+  .mainMenuList li:has(> .menuGroup) {
+    grid-column: 1 / -1;
+  }
+  /* The dock scrolls with the page instead of covering a third of a 390 px screen; the form keeps no spare bottom padding. */
+  #arcadePick .vsActions,
+  .heroSelect .heroActions {
+    position: static;
+    padding: 0.3em 0;
+    background: none;
+  }
+  #arcadePick .vsForm,
+  .heroSelect {
+    padding-bottom: 0.5em;
+  }
+  #arcadePick,
+  .heroSelect {
+    font-size: 12px;
+  }
+  #arcadePick .vsSegment {
+    font-size: 1em;
+    padding: 2px 10px;
+  }
+  #menu div.settingsGroup {
+    margin: 0.35em 0;
+    padding: 0.35em 0.7em;
+  }
+  /* First-run card: just the title and the first line, anchored low-left and narrow, so the fighters stay visible. */
+  .firstRunHint {
+    top: 14%;
+    max-width: min(18em, 30%);
+    padding: 0.25em 0.6em;
+    font-size: 11px;
+    background: rgba(48, 40, 92, 0.78);
+  }
+  .firstRunHint p:nth-of-type(n + 2) {
+    display: none;
+  }
+  .firstRunHint h2 {
+    margin: 0;
+  }
+}
