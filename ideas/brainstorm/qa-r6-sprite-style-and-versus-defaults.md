@@ -19,3 +19,7 @@ Evidence: hero-*.png, hero2/3-*.png, pick-*.png, tour-*.png (~/claudetmp/qa6/).
 - Default matchup is Sindarosa (272 HP) vs Fiara (679 HP): unfair and unreadable for a first match. Pick defaults with similar HP, or level-match.
 - Left panel says "You: Sindarosa" while the picker highlights Curomo, so it is unclear who will fight. Make the highlighted card and the panel one source of truth and show a clear "Selected" state.
 - AI looks passive in the first seconds; check opening aggression on the default difficulty.
+
+## Progress (hero-contrast agent, 2026-11-14)
+
+Sprites part: shared rim light landed (contact shadow already exists in Arcade) (see qa-r7-hero-contrast-and-sprite-look.md). Remaining legacy heroes still low-res; more portrait rigs (ADR-0020) would finish it. The Versus defaults part is owned elsewhere.

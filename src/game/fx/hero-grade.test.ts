@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { setSavedPrefs } from '../platform/a11y/prefs';
-import { HERO_GRADE, gradeHeroRgba, gradedHeroTexture, grimKey } from './hero-grade';
+import { HERO_GRADE, gradeHeroRgba, rimLightRgba, gradedHeroTexture, grimKey } from './hero-grade';
 
 const sat = (r: number, g: number, b: number): number => Math.max(r, g, b) - Math.min(r, g, b);
 const grade = (rgba: number[]): number[] => {
@@ -71,5 +71,34 @@ describe('gradedHeroTexture', () => {
   it('never grades the painted portrait heroes (strip, sheet or HUD picture)', () => {
     const have = { textures: { exists: () => true } } as unknown as Phaser.Scene;
     for (const k of ['map:pax', 'sheet:sindarosa', 'map:curomo']) expect(gradedHeroTexture(have, k)).toBe(k);
+  });
+});
+
+describe('rimLightRgba', () => {
+  /** 7x7 sheet, a 5x5 opaque block of colour `c` in the middle. */
+  const block = (c: number[]): number[] => {
+    const px: number[] = [];
+    for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) px.push(...(x >= 1 && x <= 5 && y >= 1 && y <= 5 ? [...c, 255] : [0, 0, 0, 0]));
+    return px;
+  };
+  const at = (px: number[], x: number, y: number): number[] => px.slice((y * 7 + x) * 4, (y * 7 + x) * 4 + 4);
+
+  it('lights the edge of a dark shape more than its core, keeps alpha and stays inside the shape', () => {
+    const px = block([30, 30, 40]);
+    rimLightRgba(px, 7, 7);
+    expect(at(px, 1, 1)[2]).toBeGreaterThan((at(px, 3, 3)[2] ?? 0) + 40);
+    expect(at(px, 1, 1)[3]).toBe(255);
+    expect(at(px, 0, 0)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('is deterministic and gives a warm rim a warmer edge than the cool default', () => {
+    const a = block([30, 30, 40]);
+    const b = block([30, 30, 40]);
+    rimLightRgba(a, 7, 7, [255, 176, 96]);
+    rimLightRgba(b, 7, 7);
+    expect((at(a, 1, 1)[0] ?? 0) - (at(a, 1, 1)[2] ?? 0)).toBeGreaterThan((at(b, 1, 1)[0] ?? 0) - (at(b, 1, 1)[2] ?? 0));
+    const c = block([30, 30, 40]);
+    rimLightRgba(c, 7, 7);
+    expect(c).toEqual(b);
   });
 });
