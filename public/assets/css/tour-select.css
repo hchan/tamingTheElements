@@ -91,6 +91,16 @@
   border: 2px solid #d6cdf6;
   box-sizing: border-box;
 }
+/* Short labels for the unlabeled icons (the words are already in the line, so the label is decoration for sighted players). */
+#tourStage .tsPips::before {
+  margin-right: 0.15em;
+  font-size: 0.7em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+#tourStage .tsLevel::before { content: 'Level' / ''; }
+#tourStage .tsLives::before { content: 'Continues' / ''; }
 #tourStage .tsLevel i { transform: rotate(45deg); }
 #tourStage .tsLevel i.on { background: #ffe48a; border-color: #ffe48a; }
 #tourStage .tsLives i { border-radius: 50%; }
@@ -100,7 +110,7 @@
 #tourStage.tsGrim #tourMap > svg { display: none !important; }
 #tourStage #tourPins {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5em, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(8.5em, 100%), 1fr));
   gap: 0.5em;
   list-style: none;
   margin: 0.6em 0;
@@ -132,7 +142,7 @@
   background: var(--tile) center / cover no-repeat;
   filter: brightness(2.1) saturate(1.2);
 }
-#tourStage #tourPins li > :first-child { position: relative; }
+#tourStage #tourPins li > :first-child { position: relative; min-width: 0; overflow-wrap: anywhere; }
 #tourStage #tourPins li[data-element='fire'] { --tile: url('../img/tour/fire.webp'); }
 #tourStage #tourPins li[data-element='water'] { --tile: url('../img/tour/water.webp'); }
 #tourStage #tourPins li[data-element='earth'] { --tile: url('../img/tour/earth.webp'); }
@@ -202,7 +212,12 @@
 @media (max-width: 800px), (max-height: 500px) {
   #tourStage .tsPanel { grid-template-columns: 1fr; padding: 0.5em 0.7em; }
   #tourStage .tsFoe { width: 6.5em; font-size: 0.6em; letter-spacing: 0.02em; }
-  #tourStage #tourPins { grid-template-columns: repeat(5, 1fr); font-size: 0.6em; }
+  #tourStage #tourPins { grid-template-columns: repeat(5, minmax(0, 1fr)); font-size: 0.6em; }
+}
+/* Phone portrait: three columns of three, tiles sized by their words (the 3:1 ratio with the touch minimum height would push a column wider than its share). */
+@media (max-width: 520px) {
+  #tourStage #tourPins { grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: 0.7em; }
+  #tourStage #tourPins li { aspect-ratio: auto; min-height: 48px; }
 }
 /* Phone landscape (about 844x390): the whole card, title through Fight, fits one screen. The opponent roster sits left of the words, the
    nine stage tiles take two short rows, and the button row is tight. */
@@ -213,7 +228,7 @@
   #tourStage .tsFoe { width: 4.6em; font-size: 0.55em; letter-spacing: 0; }
   #tourStage .tsFoe figcaption { margin-top: 0.1em; }
   #tourStage .tsInfo p { margin: 0.1em 0; font-size: 0.85em; }
-  #tourStage #tourPins { grid-template-columns: repeat(5, 1fr); gap: 0.3em; font-size: 0.6em; margin: 0.3em 0; }
+  #tourStage #tourPins { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.3em; font-size: 0.6em; margin: 0.3em 0; }
   #tourStage #tourPins li { min-height: 0; aspect-ratio: 4 / 1; padding: 0.2em 0.4em; }
   #tourStage.tsGrim button.menuButton,
   #tourStage.tsGrim a.menuButton { padding-block: 0.2em; }
