@@ -169,6 +169,8 @@ export function mountRoundView(
     const tick = view.tick;
     const on = banner.main !== '' && tick < banner.until;
     scale = bannerScale((tick - banner.from) * TICK_MS, banner.reduced);
+    // The damage numbers (Hud.drawArcade) thin out under a banner, so the stacked KO numbers never bury its caption.
+    if (hud.registry.get('tte.banner') !== on) hud.registry.set('tte.banner', on);
     if (parts.main.text !== banner.main) parts.main.setText(banner.main);
     if (parts.sub.text !== banner.sub) parts.sub.setText(banner.sub);
     const fade = banner.reduced ? 1 : Math.min(1, (tick - banner.from + 1) / FADE_IN_TICKS, (banner.until - tick) / FADE_OUT_TICKS);
@@ -227,6 +229,7 @@ export function mountRoundView(
     hud.events.off('create', build).off('update', draw).off('shutdown', off).off('destroy', off);
     arena.events.off('shutdown', off).off('destroy', off);
     states.delete(hud);
+    hud.registry.set('tte.banner', false);
     results.destroy();
     if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, ...parts.pipLabels, parts.halo, ...parts.cards]) o.destroy();
     parts = undefined;

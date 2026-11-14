@@ -66,6 +66,7 @@ function fakeScene(active: boolean): { scene: Phaser.Scene; events: Emitter; mad
     events,
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => isActive },
+    registry: { values: new Map<string, unknown>(), get(k: string) { return this.values.get(k); }, set(k: string, v: unknown) { this.values.set(k, v); } },
     add: { text: obj, graphics: obj },
   } as unknown as Phaser.Scene;
   return { scene, events, made, setActive: (a) => { isActive = a; } };

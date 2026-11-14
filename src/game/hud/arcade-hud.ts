@@ -9,7 +9,9 @@ export const NUMBER_SLOTS = 16;
 export const NUMBER_MS = 400;
 export const NUMBER_RISE_PX = 24;
 /** Offsets (px) of consecutive numbers, cycled by slot. */
-export const NUMBER_FAN: readonly (readonly [number, number])[] = [[0, 0], [-30, -12], [30, -12], [0, -24]];
+export const NUMBER_FAN: readonly (readonly [number, number])[] = [[0, 0], [-46, -14], [46, -14], [0, -30]];
+/** Opacity factor of the damage numbers while a round banner (K.O., PERFECT, ...) is up: they stay readable but the caption wins. */
+export const NUMBER_BANNER_ALPHA = 0.4;
 /** Combos show from this many hits; the last count stays up this long after the combo ends. */
 export const COMBO_MIN_HITS = 2;
 export const COMBO_HOLD_MS = 1000;
