@@ -9,7 +9,6 @@ import { detectWebgl } from '../boot/webgl-check';
 import { applyTouchLayout } from '../platform/a11y/touch-layout';
 import { applyPrefsToDocument, getPrefs } from '../platform/a11y/prefs';
 import { getUiFlags } from '../platform/flags';
-import { notify } from '../platform/storage/notices';
 import { createReplayStore } from '../platform/storage/replay-store';
 import { setBindings } from '../platform/input/bindings';
 import { createSaveStore } from '../platform/storage/create-save-store';
@@ -20,6 +19,7 @@ import { primeSfx, playSfx } from '../audio/sfx';
 import { installUiSfx } from '../audio/ui-sfx';
 import { AppFlow } from './flow';
 import { mountNoticeBanner } from './notice-banner';
+import { lazyScreen } from './lazy-screen';
 
 const root = document.getElementById('app');
 const flags = getUiFlags(window.location.search);
@@ -104,81 +104,11 @@ if (root) {
     startRouter(menu, {
       ...flow.screens(),
       // Arcade Versus (preview, FUN-DESIGN WP 11): a separate flow outside the story flow, in its own chunk loaded on first
-      // use. `then` callbacks run in order, so every mount is followed by its unmount. A failed load (offline, or a newer
-      // deploy removed the chunk) says so in the notice banner and returns to the menu.
-      arcade: () => {
-        const chunk = import('./arcade-versus');
-        return {
-          mount: (c) => {
-            chunk.then(
-              (a) => {
-                a.mountArcade(c);
-              },
-              () => {
-                notify('Versus could not load. Reload the page.');
-                window.location.hash = '#main';
-              },
-            );
-          },
-          unmount: () => {
-            chunk.then(
-              (a) => {
-                a.unmountArcade();
-              },
-              () => undefined,
-            );
-          },
-        };
-      },
-      online: () => {
-        const chunk = import('./online-versus');
-        return {
-          mount: (c) => {
-            chunk.then(
-              (a) => {
-                a.mountOnline(c);
-              },
-              () => {
-                notify('Online could not load. Reload the page.');
-                window.location.hash = '#main';
-              },
-            );
-          },
-          unmount: () => {
-            chunk.then(
-              (a) => {
-                a.unmountOnline();
-              },
-              () => undefined,
-            );
-          },
-        };
-      },
+      // use (see `lazyScreen`).
+      arcade: lazyScreen(() => import('./arcade-versus'), 'Versus', (a, c) => { a.mountArcade(c); }, (a) => { a.unmountArcade(); }),
+      online: lazyScreen(() => import('./online-versus'), 'Online', (a, c) => { a.mountOnline(c); }, (a) => { a.unmountOnline(); }),
       // World Tour (preview, FUN-DESIGN 2.18): its own chunk like Arcade; same failed-load handling.
-      tour: () => {
-        const chunk = import('./tour');
-        return {
-          mount: (c) => {
-            chunk.then(
-              (a) => {
-                a.mountTour(c);
-              },
-              () => {
-                notify('Play could not load. Reload the page.');
-                window.location.hash = '#main';
-              },
-            );
-          },
-          unmount: () => {
-            chunk.then(
-              (a) => {
-                a.unmountTour();
-              },
-              () => undefined,
-            );
-          },
-        };
-      },
+      tour: lazyScreen(() => import('./tour'), 'Play', (a, c) => { a.mountTour(c); }, (a) => { a.unmountTour(); }),
     });
   }
   if (!(flags.play || flags.arenaDemo || flags.cinematicDemo || flags.forceNoWebgl)) prefetchSimWhenIdle();
