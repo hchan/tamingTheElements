@@ -131,7 +131,14 @@ describe('resume', () => {
   it('finished runs are not offered for resume', () => {
     expect(mount({ ...mid, status: 'over' }).host.querySelector('#tourPick')).not.toBeNull();
     document.body.replaceChildren();
-    expect(mount({ ...mid, status: 'won' }).host.querySelector('#tourPick')).not.toBeNull();
+  });
+
+  it('a saved won run reopens the victory screen, not the picker (qa-r25)', () => {
+    const host = mount({ ...mid, stage: 8, status: 'won' }).host;
+    expect(host.querySelector('#tourPick')).toBeNull();
+    expect(host.querySelector('#tourEnding h1')?.textContent).toBe('The tour is complete!');
+    expect(host.querySelectorAll('#tourEnding .tourVictoryTeam li')).toHaveLength(3);
+    expect(host.querySelector('#tourAgain')).not.toBeNull();
   });
 
   it('ignores a corrupt save', () => {

@@ -30,4 +30,14 @@ test.describe('phone landscape', () => {
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeInViewport();
     if (shotDir) await page.screenshot({ path: `${shotDir}/settings-phone-scrolled.png` });
   });
+  test('title and bar are compact: first controls start in the top half', async ({ page }) => {
+    await page.goto(START);
+    await goToHash(page, '#settings');
+    const bar = await page.locator('.settingsBar').boundingBox();
+    expect(bar?.height ?? 999).toBeLessThan(70);
+    const first = await page.locator('#settingsPlay .settingsGroup').first().boundingBox();
+    expect(first?.y ?? 999).toBeLessThan(160);
+    await expect(page.getByRole('heading', { name: 'Settings' })).toHaveCount(1);
+    if (shotDir) await page.screenshot({ path: `${shotDir}/settings-phone-top.png` });
+  });
 });
