@@ -2116,3 +2116,20 @@ button.menuButton.heroSlotClear {
     overflow: hidden;
   }
 }
+
+/* Online screen on a phone (WP 06): the code boxes fill the width (no 40-column overflow at 360 px), 44 px targets for its buttons and selects. */
+#menu .menuPage:has(#onlineStatus) textarea {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  #menu .menuPage:has(#onlineStatus) .settingsOption {
+    flex-wrap: wrap;
+  }
+  #menu .menuPage:has(#onlineStatus) button,
+  #menu .menuPage:has(#onlineStatus) select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
