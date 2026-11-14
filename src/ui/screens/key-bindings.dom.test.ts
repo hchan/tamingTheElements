@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { newEmptyState, type SaveV1 } from '@core/menu-index';
-import { DEFAULT_BINDINGS, getBindings, setBindings } from '../../game/platform/input/bindings';
+import { DEFAULT_BINDINGS, SF_PRESET_BINDINGS, bindingsToSave, getBindings, parseBindings, setBindings } from '../../game/platform/input/bindings';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { keyBindingsScreen } from './key-bindings';
 import type { Screen } from './screen';
@@ -168,6 +168,18 @@ describe('keyBindingsScreen (DOM)', () => {
     btn('resetBindings').click();
     expect(getBindings()).toEqual(DEFAULT_BINDINGS);
     expect(status()).toBe('Key bindings reset to defaults.');
+  });
+
+  it('the fighting-game preset binds J K L / U I O, is valid and survives a save round trip', () => {
+    screen = keyBindingsScreen();
+    screen.mount(root);
+    btn('presetFighting').click();
+    expect(getBindings()).toEqual(SF_PRESET_BINDINGS);
+    expect(btn('bind-slot1-0').textContent).toBe('J');
+    expect(parseBindings(bindingsToSave(SF_PRESET_BINDINGS))).toEqual(SF_PRESET_BINDINGS);
+    expect(status()).toContain('Fighting-game layout applied');
+    btn('resetBindings').click();
+    expect(getBindings()).toEqual(DEFAULT_BINDINGS);
   });
 
   it('loads saved bindings on mount, and unmount stops a capture in progress', () => {

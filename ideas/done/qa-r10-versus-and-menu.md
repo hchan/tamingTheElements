@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -15,3 +15,7 @@ added: 2026-11-14
 ## Progress (2026-11-14)
 
 Done: picker card now says "Pick your fighter" for a single-slot unpicked side; a hint under Fight! says the arena follows the Weather; the hidden Dismiss banner is display:none (not tabbable). Still open: Earth row under the footer, Settings background seam, SF-style key preset.
+
+## Done (2026-11-14)
+
+Earth row: the sticky Fight! bar sits at the end of the picker scroll, so Earth ends above it (checked headless at 1280x720). Settings seam: the backdrop is fixed to the viewport, no seam at 1280x1400. SF preset: Key Bindings has a "Fighting-game layout (J K L, U I O)" button (SF_PRESET_BINDINGS in bindings.ts; Reset to defaults undoes it).

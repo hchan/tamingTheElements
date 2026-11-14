@@ -187,6 +187,23 @@ export function clearAlternate(bindings: Bindings, action: GameAction): Bindings
   return rebind(bindings, action, bindings[action].slice(0, 1));
 }
 
+/**
+ * Fighting-game layout (Key Bindings preset): move with the left hand, attack with the right on the home and top rows
+ * (J K L, U I O) instead of the number row. Space and Enter stay as alternates for the two attacks.
+ */
+export const SF_PRESET_BINDINGS: Bindings = {
+  ...DEFAULT_BINDINGS,
+  slot1: ['KeyJ', 'Space'],
+  slot2: ['KeyK', 'Enter'],
+  dash: ['KeyL'],
+  guard: ['KeyI'],
+  super: ['KeyO'],
+  weather: ['KeyU'],
+  charge: ['KeyH'],
+  trap: ['KeyZ'],
+  elemental: ['KeyV'],
+};
+
 export function resetBindings(): Bindings {
   return DEFAULT_BINDINGS;
 }
