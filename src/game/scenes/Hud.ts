@@ -38,6 +38,7 @@ import {
   CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, scaledBar, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
+import { styleCombatText } from '../hud/combat-text';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
 
 export const HUD_SCENE = 'Hud';
@@ -511,11 +512,7 @@ export class Hud extends Phaser.Scene {
       if (this.numberSerials[i] !== n.serial) {
         this.numberSerials[i] = n.serial;
         // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
-        t.setText(numberLabel(n.amount, n.counter))
-          .setColor(n.scaled ? '#b0b0b0' : n.counter ? '#ffd23f' : '#ffffff')
-          .setFontSize(n.scaled ? 22 : 30)
-          .setStroke('#120b08', n.scaled ? 5 : 7)
-          .setShadow(0, 3, '#000000', 4, true, true);
+        styleCombatText(t.setText(numberLabel(n.amount, n.counter)), n.scaled ? 'scaled' : n.counter ? 'counter' : 'number').setFontSize(n.scaled ? 22 : 30);
       }
       t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
     }
@@ -527,8 +524,7 @@ export class Hud extends Phaser.Scene {
         t?.setVisible(false);
         continue;
       }
-      t ??= this.comboTexts[team] = this.text(28)
-        .setColor('#ffe066')
+      t ??= this.comboTexts[team] = styleCombatText(this.text(28), 'combo')
         .setOrigin(team === 0 ? 0 : 1, 0)
         .setAlign(team === 0 ? 'left' : 'right')
         .setPosition(team === 0 ? COMBO_MARGIN : HUD_WIDTH - COMBO_MARGIN, COMBO_Y);

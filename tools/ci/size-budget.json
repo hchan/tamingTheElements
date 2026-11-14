@@ -16,7 +16,7 @@
     "element-sfx": 1250,
     "grim-fx": 900,
     "guide": 4300,
-    "hazard-view": 2000,
+    "hazard-view": 2400,
     "guide.css": 1700,
     "tour-match": 3150,
     "launch": 160,
@@ -32,7 +32,7 @@
     "pad-bindings": 1150,
     "pad-bindings-section": 1580,
     "phaser": 388700,
-    "phaser-config": 42800,
+    "phaser-config": 43000,
     "ability-text": 1100,
     "pose-layer": 11800,
     "rolldown-runtime": 200,
@@ -50,7 +50,7 @@
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 608000,
+  "totalGzip": 609000,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600

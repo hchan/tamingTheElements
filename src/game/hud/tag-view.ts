@@ -7,6 +7,7 @@ import {
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
 import { coreDisplayWidth, resolutionOf } from '../boot/viewport';
+import { styleCombatText } from './combat-text';
 
 /**
  * Phaser side of the Arcade tag-team view (WP-arcade-tag-view, FUN-DESIGN 2.6 and section 3). The weather view mounts it
@@ -123,7 +124,7 @@ export function mountTagView(
               return o.setFontSize(Math.round(12 * boost)).setPosition(pill.x, pill.wordY).setVisible(true);
             }),
       ),
-      call: text(hud, CALL_PX, 8).setOrigin(0.5).setVisible(false),
+      call: styleCombatText(text(hud, CALL_PX, 4), 'call').setOrigin(0.5).setVisible(false),
     };
     shownTick = -1;
   };
@@ -276,7 +277,8 @@ export function mountTagView(
       callFrom = view.tick;
       callReduced = reduced;
       callKo = ko;
-      parts?.call.setText(callText(to, ko)).setColor(ko ? '#c9b27a' : '#ffffff').setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
+      if (parts) styleCombatText(parts.call.setText(callText(to, ko)), ko ? 'ko' : 'call');
+      parts?.call.setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
       say(tagLine(team, from, to, ko));
     }
     then?.(events);

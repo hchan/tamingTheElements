@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chevronShift, hazardAnnouncement, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha } from './hazard-view';
+import { chevronShift, hazardAnnouncement, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, shadowRadius, warnProgress } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -35,5 +35,19 @@ describe('hazard view helpers', () => {
     for (const k of [1, 2, 3, 4]) expect(hazardAnnouncement(k)).toMatch(/^Warning: .+ incoming\.$/);
     expect(hazardAnnouncement(0)).toBe('');
     expect(new Set([1, 2, 3, 4].map(hazardAnnouncement)).size).toBe(4);
+  });
+});
+
+describe('rockfall and fire telegraph helpers (r21)', () => {
+  it('the countdown runs 0 to 1 and the shadow grows with it', () => {
+    expect(warnProgress(50, 50)).toBe(0);
+    expect(warnProgress(0, 50)).toBe(1);
+    expect(warnProgress(99, 50)).toBe(0);
+    expect(shadowRadius(0, 88)).toBeCloseTo(22);
+    expect(shadowRadius(1, 88)).toBeCloseTo(88);
+    expect(shadowRadius(0.5, 88)).toBeGreaterThan(shadowRadius(0.2, 88));
+  });
+  it('the impact flashes for exactly the first 2 ticks of the strike', () => {
+    expect([-1, 0, 1, 2, 3].map(impactFlash).map((a) => a > 0)).toEqual([false, true, true, false, false]);
   });
 });
