@@ -259,6 +259,11 @@ export function mountTagView(
       fx.fillStyle(color, p.core * 0.3).fillCircle(f.x, f.y, f.h * 0.5);
       fx.lineStyle(3, color, p.alpha * 0.9).strokeCircle(f.x, f.y, p.ring);
       // Rim light: a steady pale halo hugging the hero for the first ticks so a dark sprite on lava still reads (QA r32).
+      // qa-r33: for about 0.5 s a soft pale wash also lifts the hero's body off a same-coloured floor (steady, fading, so fine under reduced motion).
+      if (t < 25) {
+        const pulse = 1 - t / 25;
+        fx.fillStyle(0xfff4dc, 0.3 * pulse).fillEllipse(f.x, f.y, f.h * 0.8, f.h * 1.05);
+      }
       if (t < 14) {
         const rim = 1 - t / 14;
         fx.lineStyle(6, color, 0.35 * rim).strokeCircle(f.x, f.y, f.h * 0.52);

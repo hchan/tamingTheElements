@@ -273,10 +273,12 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       g.fillStyle(lane ? 0x0a0e14 : col, lane ? 0.14 * alpha : 0.12 * alpha).fillRect(x, y, w, h);
       if (lane) g.fillStyle(col, 0.3 * alpha).fillRect(x, y, w, h);
       g.lineStyle(6, 0x0a0806, 0.5 * alpha).strokeRect(x, y, w, h);
-      g.lineStyle(3, lane ? light : col, alpha).strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
+      // qa-r33: the gale's near-white outline and edge bars are the full-width rails that cut across fighters, so they fade to the chevron alpha.
+      const gale = kind === 4;
+      g.lineStyle(gale ? 2 : 3, lane ? light : col, (gale ? 0.3 : 1) * alpha).strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
       if (lane) {
         // Tide and gust (r20): bright edge bars, big edge arrows and the chevrons, all steady under reduced motion.
-        g.fillStyle(light, 0.6 * alpha).fillRect(x, y, w, 5).fillRect(x, y + h - 5, w, 5);
+        g.fillStyle(light, (gale ? 0.2 : 0.6) * alpha).fillRect(x, y, w, gale ? 2 : 5).fillRect(x, y + h - (gale ? 2 : 5), w, gale ? 2 : 5);
         glow.fillStyle(light, 0.08 * alpha).fillRect(x, y, w, h);
         tideCountdown(g, x, y, w, h, dir, warnProgress(warnLeft, warnTotal), light, alpha);
         const shift = chevronShift(tick, dir, 72, reduced);
@@ -363,7 +365,7 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     const flash = warnLeft > 0 ? 0 : impactFlash(tick - strikeTick);
     // The strike flash is an outline plus a soft round burst (never a filled box: a pale rectangle round the fighter read as a render bug).
     if (flash > 0) {
-      glow.lineStyle(kind === 4 ? 3 : 6, 0xffffff, kind === 4 ? flash * 0.5 : flash).strokeRect(x, y, w, h);
+      glow.lineStyle(kind === 4 ? 2 : 6, 0xffffff, kind === 4 ? flash * 0.15 : flash).strokeRect(x, y, w, h);
       if (kind === 3) glow.fillStyle(0xf0e4c8, flash * 0.5).fillCircle(x + w / 2, y + h / 2, Math.min(w, h) * 0.3);
     }
     const dust = kind === 3 && warnLeft <= 0 ? dustLook(tick - strikeTick, reduced) : null;
