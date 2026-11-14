@@ -25,6 +25,16 @@ G = {
 }
 
 
+# Frame margin: the slime used to touch the bottom and right frame edges (alpha 250+ there), so the bake clipped it flat and Ishimi read as a
+# hard-edged box. Shrink every part about the foot centre so a clear margin is left even at the widest squash of the idle/walk/cast curves.
+FITX, FITY, FOOT, LIFT = 0.8, 0.86, (36, 66), 12  # the drip fringe hangs up to ~8 px below the polygons and the cast swings the tendrils wide
+def _fit(pt): return (FOOT[0] + (pt[0] - FOOT[0]) * FITX, FOOT[1] + (pt[1] - FOOT[1]) * FITY - LIFT)
+for _g in G.values():
+    _g["polys"] = [[_fit(q) for q in poly] for poly in _g["polys"]]
+    _g["joint"] = _fit(_g["joint"])
+    if "eyes" in _g: _g["eyes"] = [(*_fit((x, y)), s) for (x, y, s) in _g["eyes"]]
+
+
 def paint(name, view, polys, g, seed):
     rs = np.random.RandomState(seed)
     xx, yy = E.grid()
@@ -72,7 +82,7 @@ actions = {
  "walk": dict(frames=4, curves={"torso": c(sy=[100, 94, 100, 94], sx=[100, 106, 100, 106], dy=[0, 2, 0, 2]), "tail": c(sx=[100, 108, 100, 108]),
     "head": c(rot=[-3, 0, 3, 0]), "armF": c(rot=[16, 0, -18, 0]), "armB": c(rot=[-18, 0, 16, 0])}),
  "cast": dict(frames=4, curves={"torso": c(sy=[100, 90, 106, 100], sx=[100, 108, 96, 100], dy=[0, 2, -2, 0]), "tail": c(sx=[100, 110, 98, 100]),
-    "head": c(rot=[0, -4, -6, 2]), "armF": c(rot=[-6, -40, -70, 8]), "armB": c(rot=[-6, -36, -62, 6])}),
+    "head": c(rot=[0, -4, -6, 2]), "armF": c(rot=[-6, -22, -38, 6]), "armB": c(rot=[-6, -20, -34, 4])}),
 }
 E.build(OUT, "ishimi", G, actions, paint,
         E.license_for("ishimi", "ishimi.py", "grim water elemental: hunched mass of dripping murky slime with hanging tendrils, wet specular sheen, many pale-green glowing eyes."),

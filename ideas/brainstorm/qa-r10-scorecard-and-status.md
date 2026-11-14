@@ -22,5 +22,5 @@ Build: worktree of main 63a6b898, dev server, headless Chromium (SwiftShader) 12
 - First-run card: PARTLY. Gone after first input in later shots, but covers Pax and the last action slots at the start and shows over the black loading screen.
 - Floor chips vs ROUND/FIGHT banner overlap: OPEN.
 - Versus picker "0 of 1 picked" while a hero is shown: OPEN (unchanged).
-- Earth crystal prop: OPEN.
+- Earth crystal prop: DONE (faceted, inner glow, painterly dabs; terrain-props.ts).
 - Wording: holds.

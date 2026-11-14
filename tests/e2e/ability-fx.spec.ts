@@ -56,6 +56,8 @@ const CASES = [
   { name: 'snag-treenoc', me: 'treenoc', gap: 500, cmd: PRIMARY },
   { name: 'snag-curomo', me: 'curomo', gap: 500, cmd: SECONDARY },
   { name: 'snag-echo', me: 'echo', gap: 500, cmd: PRIMARY },
+  { name: 'ishimi-circus', me: 'ishimi', gap: 500, cmd: PRIMARY },
+  { name: 'ishimi-blast', me: 'ishimi', gap: 500, cmd: SECONDARY },
   { name: 'crimson-fire', me: 'lavax', gap: 600, cmd: PRIMARY },
 ] as const;
 

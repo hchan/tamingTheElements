@@ -123,29 +123,62 @@ function pillar(g: Gfx, x: number, y: number, w: number, h: number, seed: number
   for (let k = 0; k < 4; k++) g.fillStyle(ch(STONE, 0.7 + hash01(k, seed + 8) * 0.4), 1).fillEllipse(x + w * (0.05 + 0.9 * hash01(k, seed + 12)), y + h - 3, 7 + hash01(k, seed + 13) * 7, 4);
 }
 
+/** Teal crystal ramp, dark to light: deep shade, shadow face, body, lit face, highlight (painterly: faces are banded, not one flat fill). */
+const CRYS = [0x1f4d48, 0x2f6e62, 0x4e9a89, 0x7fd0b8, 0xcffff0] as const;
+
 function crystals(g: Gfx, x: number, y: number, w: number, h: number, seed: number): void {
   const cx = x + w / 2;
   const base = y + h * 0.9;
-  // A faint cold glow around the cluster (the only light on the arena floor besides the stage's own).
-  for (const [k, a] of [[0.7, 0.07], [0.5, 0.09], [0.32, 0.11]] as const) g.fillStyle(0x8fe8cc, a).fillEllipse(cx, base - h * 0.35, w * (1 + k), h * k * 1.4);
-  // A rocky bed.
+  // A cold luminous bloom around and under the cluster (the only light on the arena floor besides the stage's own).
+  for (const [k, a] of [[0.9, 0.05], [0.7, 0.07], [0.5, 0.09], [0.32, 0.12]] as const) g.fillStyle(0x8fe8cc, a).fillEllipse(cx, base - h * 0.35, w * (1 + k), h * k * 1.4);
+  g.fillStyle(0xbffff0, 0.16).fillEllipse(cx, base - 1, w * 0.8, h * 0.14);
+  // A rocky bed with a few cracked chips.
   g.fillStyle(ch(STONE, 0.6), 1).fillEllipse(cx, base - 2, w * 0.95, h * 0.24);
+  g.fillStyle(ch(STONE, 0.85), 0.8).fillEllipse(cx - w * 0.1, base - 4, w * 0.6, h * 0.12);
   g.lineStyle(2, ch(STONE, 0.4), 0.3).strokeEllipse(cx, base - 2, w * 0.95, h * 0.24);
   const count = 5;
-  for (let k = 0; k < count; k++) {
+  const order = [0, 4, 1, 3, 2]; // back to front: the tall middle crystal is drawn last
+  for (const k of order) {
     const t = k / (count - 1);
     const bx = x + w * (0.14 + 0.72 * t) + (hash01(k, seed) - 0.5) * 8;
     const mid = 1 - Math.abs(t - 0.5) * 1.3;
     const sh = h * (0.4 + 0.5 * mid * (0.7 + 0.3 * hash01(k, seed + 1)));
-    const sw = w * (0.12 + 0.05 * hash01(k, seed + 2));
+    const sw = w * (0.13 + 0.05 * hash01(k, seed + 2));
     const lean = (t - 0.5) * w * 0.16 + (hash01(k, seed + 3) - 0.5) * 8;
     const by = base - hash01(k, seed + 4) * 8;
     const tip = by - sh;
-    // Two faces: left lit, right dark; a shoulder where the point begins.
-    g.fillStyle(0x6fb5a2, 1).fillPoints(toPts([bx - sw, by, bx - sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + lean, tip, bx + lean * 0.5, by]), true);
-    g.fillStyle(0x3a7a6c, 1).fillPoints(toPts([bx + lean * 0.5, by, bx + lean, tip, bx + sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + sw, by]), true);
-    g.lineStyle(1.5, 0x2f6e62, 0.5).strokePoints(toPts([bx - sw, by, bx - sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + lean, tip, bx + sw * 0.9 + lean * 0.3, tip + sh * 0.28, bx + sw, by]), false);
-    g.lineStyle(1, 0xd8fff0, 0.45).lineBetween(bx - sw * 0.6 + lean * 0.3, tip + sh * 0.4, bx + lean - 1, tip + 3);
+    const sx = bx + lean * 0.3; // shoulder x
+    const sy = tip + sh * 0.28; // shoulder y: where the point begins
+    const ridge = bx + lean * 0.35 + sw * 0.1; // the centre edge, slightly right of the axis so the lit face is wider
+    // Body: left lit face, right shadow face.
+    g.fillStyle(CRYS[2], 1).fillPoints(toPts([bx - sw, by, sx - sw * 0.9, sy, bx + lean, tip, ridge, by]), true);
+    g.fillStyle(CRYS[1], 1).fillPoints(toPts([ridge, by, bx + lean, tip, sx + sw * 0.9, sy, bx + sw, by]), true);
+    // Facet bands: a lighter upper strip on the lit face, a darker lower strip near the base, a thin mid facet beside the ridge.
+    g.fillStyle(CRYS[3], 0.9).fillPoints(toPts([sx - sw * 0.9, sy, bx + lean, tip, ridge - sw * 0.25, tip + sh * 0.45, sx - sw * 0.45, sy + sh * 0.3]), true);
+    g.fillStyle(CRYS[0], 0.45).fillPoints(toPts([bx - sw, by, bx - sw * 0.95, by - sh * 0.22, ridge, by - sh * 0.3, ridge, by]), true);
+    g.fillStyle(CRYS[3], 0.55).fillPoints(toPts([ridge - sw * 0.25, tip + sh * 0.45, bx + lean, tip, ridge + sw * 0.18, tip + sh * 0.5]), true);
+    g.fillStyle(CRYS[4], 0.5).fillPoints(toPts([bx + lean, tip, bx + lean - sw * 0.28, tip + sh * 0.2, bx + lean + sw * 0.2, tip + sh * 0.22]), true); // the polished tip cap
+    // Inner glow: a soft core of light inside the crystal, strongest low where the stone feeds it, with a bright seam up the ridge.
+    for (const [r, a] of [[1, 0.1], [0.7, 0.14], [0.45, 0.2]] as const) g.fillStyle(0xc8fff0, a).fillEllipse(bx + lean * 0.35, by - sh * 0.38, sw * 1.5 * r, sh * 0.5 * r);
+    g.lineStyle(1.5, CRYS[4], 0.55).lineBetween(ridge, by - 2, bx + lean, tip + 2);
+    // Painterly texture: short dabs of light and shade along the faces, so the planes are not flat fills.
+    for (let d = 0; d < 7; d++) {
+      const f = 0.12 + 0.76 * hash01(d, seed + 60 + k);
+      const side = hash01(d, seed + 70 + k) < 0.55 ? -1 : 1;
+      const px = bx + lean * (1 - f) * 0.7 + side * sw * (0.15 + 0.5 * hash01(d, seed + 80 + k)) * (0.4 + 0.6 * f);
+      const py = by - sh * f;
+      g.lineStyle(1.2, side < 0 ? CRYS[4] : CRYS[0], side < 0 ? 0.28 : 0.3).lineBetween(px, py, px + side * 1.5, py - 4 - 4 * hash01(d, seed + 90 + k));
+    }
+    // Soft tonal edges (no black outline) and a glint on the lit edge.
+    g.lineStyle(1.5, CRYS[0], 0.45).strokePoints(toPts([bx - sw, by, sx - sw * 0.9, sy, bx + lean, tip, sx + sw * 0.9, sy, bx + sw, by]), false);
+    g.lineStyle(1.5, CRYS[4], 0.7).lineBetween(sx - sw * 0.85, sy + 2, bx + lean - 1, tip + 3);
+    g.fillStyle(0xffffff, 0.8).fillCircle(bx + lean - sw * 0.1, tip + sh * 0.22, 1.4);
+  }
+  // Chips of broken crystal on the bed.
+  for (let k = 0; k < 4; k++) {
+    const px = x + w * (0.06 + 0.88 * hash01(k, seed + 100));
+    const py = base - 1 + hash01(k, seed + 101) * 3;
+    g.fillStyle(CRYS[k % 2 === 0 ? 3 : 1], 1).fillTriangle(px - 3, py, px, py - 5 - 3 * hash01(k, seed + 102), px + 3, py);
   }
 }
 

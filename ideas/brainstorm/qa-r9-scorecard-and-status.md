@@ -19,7 +19,7 @@ Build: main 57a6b3cc, headless Chromium (SwiftShader), 1280x720, 390x844, 844x39
 - First-run card: PARTLY fixed. No longer covers the buff chips, but now covers the right 25% of the arena and the last action-bar slots for the whole opening. Needs auto-dismiss on first input, or a smaller strip.
 - Hit numbers: FIXED (outlined, bold).
 - Echo/Lavax contrast: FIXED/improved (rim visible; Echo still dark but readable).
-- Earth crystal prop: OPEN (flat teal vector, hard outline).
+- Earth crystal prop: DONE (faceted, inner glow, painterly dabs; terrain-props.ts).
 - Tooltip over arena: OPEN. In every fight a "Dash" tooltip (1v1) or "Weather" tooltip (2v2, covering the TAG caption) is stuck over the play field at start with no hover; it should not show without pointer hover/focus and never over the field.
 - 2v2 bench portraits: PARTLY fixed (neat under the timer with tag meter) but still crowd the SUPER pips; the TAG caption above the bar is still tiny.
 - Super banner (Glacier Crash): unchanged, good but covers the lower third.
