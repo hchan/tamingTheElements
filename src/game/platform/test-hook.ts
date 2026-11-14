@@ -45,7 +45,7 @@ export interface ArenaProbe {
   /** True while the main camera shake effect is running (reduced motion keeps it false). */
   shaking(): boolean;
   /**
-   * Hit feedback as drawn: per active character its tint and Phaser tint mode (1 = fill: the white hit flash); live
+   * Hit feedback as drawn: per active character its tint and Phaser tint mode (2 = additive: the hit-flash wash); live
    * damage-number labels, the combo hits and the hyper meter shown per team (Arcade only; empty and [0, 0] in Classic).
    */
   /** Let view effects (hit flash) age in real time while the sim stays paused. */

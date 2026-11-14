@@ -55,3 +55,17 @@ export function classicShakeFor(amount: number): { readonly durationMs: number; 
   const a = Math.min(15, Math.max(1, Number.isFinite(amount) ? amount : 5));
   return { durationMs: 60 + 4 * a, intensity: Math.round(a * 4) / 10000 };
 }
+
+/**
+ * View-only hit-stop: rendered frames the victim's flash holds on its bright wash, by hit weight. Never touches the sim (the
+ * Arcade sim has its own `hitStop` ticks; this only lengthens how long the impact frame reads). Light hits hold none.
+ */
+export function holdFramesFor(weight: number): number {
+  if (!Number.isFinite(weight)) return 0;
+  return weight >= 3 ? 4 : weight >= 2 ? 2 : 0;
+}
+
+/** Classic damage mapped onto the same weight scale: 10+ is heavy (2), 15+ is a big hit (3). */
+export function classicWeightFor(amount: number): number {
+  return amount >= 15 ? 3 : amount >= 10 ? 2 : 0;
+}
