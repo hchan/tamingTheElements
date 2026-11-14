@@ -24,8 +24,11 @@ const camera = (page: Page): Promise<Cam> => page.evaluate<Cam>(`window.__TTE__.
 /** Places the first two fighters (left edge x each) and waits until the camera has eased onto the ideal framing for them. */
 async function placeAndSettle(page: Page, x1: number, x2: number): Promise<Cam> {
   await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, ${String(x1)}, 380, 0); a.place(foe.id, ${String(x2)}, 380, 4); })()`);
-  const mid = (x1 + x2 + HERO_W) / 2;
-  const zoom = Math.min(1, Math.max(ZOOM_MIN, VIEW / (Math.abs(x1 - x2) + 2 * MARGIN)));
+  // Fighters can differ in width (giants), so frame on their real centres and widest half-width, as the camera does.
+  const [wMe = HERO_W, wFoe = HERO_W] = await page.evaluate<number[]>(`window.__TTE__.arena.characters().map((c) => c.w)`);
+  const mid = (x1 + wMe / 2 + x2 + wFoe / 2) / 2;
+  const margin = MARGIN + Math.max(0, Math.max(wMe, wFoe) / 2 - 40);
+  const zoom = Math.min(1, Math.max(ZOOM_MIN, VIEW / (Math.abs(x1 + wMe / 2 - x2 - wFoe / 2) + 2 * margin)));
   const half = VIEW / zoom / 2;
   const centerX = Math.min(WORLD - half, Math.max(half, mid));
   // The camera eases on real frames; poll the hook (waitForFunction would treat its promise as truthy at once).
@@ -71,7 +74,8 @@ test('Arcade: close fighters at each wall pin the view to that wall at zoom 1; m
   expect(left.zoom).toBeCloseTo(1, 2);
   expect(span(left)[0]).toBeCloseTo(0, 0);
   const mid = await placeAndSettle(page, 760, 960);
-  expect(mid.centerX).toBeCloseTo(900, 0);
+  const [wMe = HERO_W, wFoe = HERO_W] = await page.evaluate<number[]>(`window.__TTE__.arena.characters().map((c) => c.w)`);
+  expect(mid.centerX).toBeCloseTo((760 + wMe / 2 + 960 + wFoe / 2) / 2, 0); // midpoint of the two box centres (900 when both are 80 wide)
   expect(mid.zoom).toBeCloseTo(1, 2);
   const right = await placeAndSettle(page, 1600, 1800);
   expect(right.zoom).toBeCloseTo(1, 2);

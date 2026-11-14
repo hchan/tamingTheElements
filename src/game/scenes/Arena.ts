@@ -420,7 +420,7 @@ export class Arena extends Phaser.Scene {
         for (let i = 0; i < MAX_ENTITIES; i++) {
           const f = s.flags[i] ?? 0;
           if (s.kind[i] !== EntityKind.character || (f & EntityFlag.alive) === 0 || (f & EntityFlag.benched) !== 0) continue;
-          out.push({ id: i, team: s.team[i] ?? 0, x: s.x[i] ?? 0, y: s.y[i] ?? 0, hp: s.hp[i] ?? 0, maxHp: s.maxHp[i] ?? 0 });
+          out.push({ id: i, team: s.team[i] ?? 0, x: s.x[i] ?? 0, y: s.y[i] ?? 0, w: s.w[i] ?? 0, hp: s.hp[i] ?? 0, maxHp: s.maxHp[i] ?? 0 });
         }
         return out;
       },
@@ -466,7 +466,7 @@ export class Arena extends Phaser.Scene {
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };
       },
-      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / (this.scale.width / LOGICAL_WIDTH), scrollX: this.cameras.main.scrollX })),
+      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / (this.scale.width / LOGICAL_WIDTH), scrollX: this.cameras.main.worldView.x })),
       superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
       superBurst: () => import('../fx/super-view').then((m) => m.superBurstState(this)),
       sheets: () => import('../views/pose-layer').then((m) => m.sheetState(this)),
