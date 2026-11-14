@@ -77,7 +77,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   slot3: 'Swap 1',
   slot4: 'Swap 2',
   slot5: 'Swap 3',
-  capture: 'Capture',
+  capture: 'Snag or Trap',
   super: 'Super',
   dash: 'Dash',
   guard: 'Guard',

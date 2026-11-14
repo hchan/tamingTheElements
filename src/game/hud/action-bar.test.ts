@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotWord } from './action-bar';
+import { centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -334,5 +334,17 @@ describe('dressed bar parts (key badge, icon, label strip)', () => {
     expect(slotWord({ kind: 'ability', cmd: Cmd.secondary, note: '' })).toBe('Special');
     expect(slotWord({ kind: 'charge', cmd: 0, note: '' })).toBe('Charge');
     expect(slotWord({ kind: 'weather', cmd: 0, note: 'Weather 6%' })).toBe('Weather 6%');
+  });
+
+  it('the hero slot that holds the rope throw is named Snag, not Special', () => {
+    const b = bar({});
+    b.abilities = [{ sprite: 'fireball', readyTick: 0, cooldownTicks: 30 }, { sprite: 'entanglingVines', readyTick: 0, cooldownTicks: 250 }];
+    const slots = buildSlots(b);
+    const atk = slots[0] as ActionSlot;
+    const rope = slots[1] as ActionSlot;
+    expect(slotWord(atk)).toBe('Attack');
+    expect(slotWord(rope)).toBe('Snag');
+    expect(slotTip(rope).title).toBe('Snag');
+    expect(slotTip(atk).title).toBe('Attack');
   });
 });

@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 # Menu and picker polish (r11)
@@ -10,3 +10,5 @@ added: 2026-11-14
 - "Play in portrait anyway" button exists in the DOM on desktop; hide it or make it inert off touch.
 - Lavax sprite is too dark on the dark floor; Cyclonius life bar is flat.
 - Hero stats show "Alignment Evil" with no explanation.
+
+Done: Ishimi/Echo tile overlap (Play tiles are a flex row again), Enter on the main menu (first entry focused on mount). "1 of 1 picked" was already fixed in r10; the portrait-anyway button is already hidden off portrait. Left open: Lavax/Cyclonius art, "Alignment Evil" explanation.
