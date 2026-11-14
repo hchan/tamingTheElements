@@ -45,8 +45,13 @@ export function enhanceStage(
   for (const id of stage.opponents) {
     const fig = el('figure', 'tsFoe');
     // The current painted portrait: first frame of the baked-sheet strip (the one the hero select uses), not the legacy Large art.
+    const sprite = getCharacter(id).sprite;
     const img = el('span', 'tsFace heroFace');
-    img.style.backgroundImage = `url("${base()}assets/img/map/${encodeURIComponent(getCharacter(id).sprite)}.png")`;
+    // The Void has no baked sheet (its strip is old flat pixel art): its painted portrait sits on the void swirl instead (tour-select.css `.tsVoid`).
+    if (getCharacter(id).element === 'void') {
+      img.classList.add('tsVoid');
+      img.style.backgroundImage = `url("${base()}assets/img/map/${encodeURIComponent(sprite)}Large.png")`;
+    } else img.style.backgroundImage = `url("${base()}assets/img/map/${encodeURIComponent(sprite)}.png")`;
     fig.append(img, el('figcaption', undefined, label(id)));
     roster.append(fig);
   }

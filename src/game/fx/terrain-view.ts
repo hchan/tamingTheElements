@@ -11,7 +11,7 @@ import { mountAmbient, type Ambient } from './terrain-ambient';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
 import { mountEarthLight, type EarthLight } from './earth-light';
 import {
-  MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS,
+  MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS, VOID_BACKDROP_TINT,
   TerrainFx, badgeText, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
 } from './terrain-fx';
 
@@ -117,6 +117,9 @@ export function mountTerrainView(
   const tiles: TileFloor = mountTileFloor(arena, base, seed, TILES_DEPTH);
   const stageArt: StageBackdrop = mountStageBackdrop(arena, base);
   const earthLight: EarthLight = mountEarthLight(arena);
+  /** True when the Void character is on the field (the Tour's last boss): its arena has no element scenery, only the void backdrop. */
+  let voidFight = false;
+  let voidChecked = false;
   let parts:
     | {
       bg: Phaser.GameObjects.Image | undefined; next: Phaser.GameObjects.Image | undefined;
@@ -225,11 +228,13 @@ export function mountTerrainView(
 
   /** A backdrop image of `stage`'s element: made on first use, then re-textured (the Arena's own backdrop is under it). */
   const backdrop = (cur: Phaser.GameObjects.Image | undefined, stage: number, depth: number): Phaser.GameObjects.Image | undefined => {
-    const key = `bg:${STAGE_ELEMENTS[stage - 1] ?? ''}`;
+    // The Void boss's fight keeps one arena of its own: the void swirl whatever element the stage swaps to (the patches still follow the sim).
+    const key = `bg:${voidFight ? 'void' : (STAGE_ELEMENTS[stage - 1] ?? '')}`;
     if (!arena.textures.exists(key)) return cur;
-    if (!cur) return arena.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(ARENA_W, ARENA_H).setDepth(depth);
-    if (cur.texture.key !== key) cur.setTexture(key).setDisplaySize(ARENA_W, ARENA_H);
-    return cur;
+    const img = cur ?? arena.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(ARENA_W, ARENA_H).setDepth(depth);
+    if (img.texture.key !== key) img.setTexture(key).setDisplaySize(ARENA_W, ARENA_H);
+    if (voidFight) img.setTint(VOID_BACKDROP_TINT);
+    return img;
   };
 
   /** The static art of the layout: glow rings, then each patch's fill, pattern and border. */
@@ -306,6 +311,12 @@ export function mountTerrainView(
     if (!p || !ar) return;
     const clock = now();
     const stage = ar.stage;
+    if (!voidChecked) {
+      voidChecked = true;
+      view.forEachCharacter((c) => { if (c.element === 'void') voidFight = true; });
+    }
+    /** The element scenery's stage: 0 (none) in the Void's arena. */
+    const scenery = voidFight ? 0 : stage;
     const count = Math.min(MAX_PATCHES, ar.patchCount);
     // The static art, only when the layout changed.
     let changed = stage !== drawn.stage || count !== drawn.count;
@@ -319,18 +330,18 @@ export function mountTerrainView(
     }
     // Backdrop of the stage, the next one fading in over a swap's telegraph.
     p.bg = stage > 0 ? backdrop(p.bg, stage, BG_DEPTH) : p.bg;
-    drawn.backdrop = p.bg && stage > 0 ? (STAGE_ELEMENTS[stage - 1] ?? '') : '';
-    drawn.nextBackdrop = nextBackdropAlpha(ar.swapLeft, reduced);
+    drawn.backdrop = p.bg && stage > 0 ? (voidFight ? 'void' : (STAGE_ELEMENTS[stage - 1] ?? '')) : '';
+    drawn.nextBackdrop = voidFight ? 0 : nextBackdropAlpha(ar.swapLeft, reduced);
     if (drawn.nextBackdrop > 0) p.next = backdrop(p.next, ar.swapTo, BG_DEPTH + 0.01)?.setAlpha(drawn.nextBackdrop).setVisible(true);
     else p.next?.setVisible(false);
     // Fades are object alpha; the glow pulses on its own.
     drawn.alpha = patchAlpha(ar.swapLeft, clock - landedAt, reduced);
     drawn.glow = glowAlpha(clock, drawn.alpha, reduced);
     p.floor.setAlpha(drawn.alpha);
-    tiles.update(stage, drawn.alpha);
-    earthLight.update(stage, drawn.alpha, clock * TICK_MS, reduced, highContrast);
-    stageArt.update(stage, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
-    p.ambient.update(stage, (clock * TICK_MS) / 1000, reduced, drawn.alpha);
+    tiles.update(scenery, drawn.alpha);
+    earthLight.update(scenery, drawn.alpha, clock * TICK_MS, reduced, highContrast);
+    stageArt.update(scenery, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
+    p.ambient.update(scenery, (clock * TICK_MS) / 1000, reduced, drawn.alpha);
     p.glow.setAlpha(drawn.glow);
     // The words on the floor are a first-encounter hint (the badge and Help keep naming the buff): shown for a few seconds the first
     // time each stage appears, then the glow ring and the pad art carry it alone.

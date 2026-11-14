@@ -16,7 +16,7 @@ import { requestOpenTesterPanel } from '@ui/tester/install';
 import { ARCADE_SNAG_SLOT, getCharacter, type CharacterId } from '@core/index';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
-import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
+import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, VOID_BOSS, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
 import type { ArcadeHero, ArcadeResult } from './arcade-setup';
 import { downloadReplay } from './download';
 import { destroyGame, type GameHandle } from './game-handle';
@@ -40,6 +40,8 @@ const OUTCOME_HEADINGS: Readonly<Record<ArcadeResult['outcome'], string>> = { wi
 
 /** The last pick, kept for Rematch and the next visit in this tab (memory only, never stored). */
 let lastPick: ArcadePick = DEFAULT_PICK;
+/** Dev and test builds only: `?foe=eternal-void` is allowed. */
+const DEV_BUILD = import.meta.env.DEV || import.meta.env.MODE === 'test';
 /** `?hero=` / `?foe=` (dev and test builds) start the real Versus fight once per page load, on the hero's own stage. */
 let flagStarted = false;
 
@@ -199,9 +201,11 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
       if (!flagStarted && (hero !== null || foe !== null)) {
         flagStarted = true;
         flagMount = true;
+        for (const w of flagFallbackWarnings(hero, foe, DEV_BUILD)) console.warn(w);
         const player = hero ?? DEFAULT_PICK.player;
         const stage = ARCADE_RACES.includes(player as CharacterId) ? getCharacter(player as CharacterId).element : '';
         lastPick = parsePick({ player, enemy: foe ?? DEFAULT_PICK.enemy, level: DEFAULT_PICK.level, stage });
+        if (DEV_BUILD && foe === VOID_BOSS) lastPick = { ...lastPick, enemy: VOID_BOSS };
         startBattle();
         return;
       }
