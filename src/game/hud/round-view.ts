@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { EntityFlag, ROUND_TIMER_TICKS, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
-import { bannerColorFor, bannerSizeFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
+import { bannerColorFor, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
 import { heroName } from './tag-fx';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
@@ -137,7 +137,7 @@ export function mountRoundView(
     view.forEachCharacter((c) => {
       if ((c.flags & (EntityFlag.dead | EntityFlag.benched)) !== 0 || c.team > 1 || cardNames[c.team] !== '') return;
       cardNames[c.team] = heroName(c.sprite).toUpperCase();
-      cardColors[c.team] = `#${ELEMENT_COLORS[c.element].toString(16).padStart(6, '0')}`;
+      cardColors[c.team] = cardColorFor(ELEMENT_COLORS[c.element]);
     });
   }
 
@@ -210,8 +210,8 @@ export function mountRoundView(
       pipLabels: [text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setText('ROUNDS').setPosition(TIMER_X, PIP_Y + PIP_R + 3)],
       halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
       cards: [
-        text(CARD_PX, CARD_Y, 6, true).setOrigin(0, 0.5).setVisible(false),
-        text(CARD_PX, CARD_Y, 6, true).setOrigin(1, 0.5).setVisible(false),
+        text(CARD_PX, CARD_Y, 12, true).setOrigin(0, 0.5).setVisible(false),
+        text(CARD_PX, CARD_Y, 12, true).setOrigin(1, 0.5).setVisible(false),
       ],
     };
     hud.events.on('update', draw);

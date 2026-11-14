@@ -166,20 +166,9 @@
   text-shadow: none;
 }
 
-/* Locked: a black silhouette with a padlock. */
+/* Locked: a pale silhouette; the word Locked is the one cue (no padlock icon as well, qa-r16). */
 #tourStage #tourPins li[data-state='locked'] { color: #d9d4ee; }
 #tourStage #tourPins li[data-state='locked']::before { filter: brightness(1.6) grayscale(0.4) saturate(0.9); }
-#tourStage #tourPins li[data-state='locked']::after {
-  content: '' / '';
-  position: absolute;
-  top: 0.4em;
-  right: 0.5em;
-  width: 1.8em;
-  height: 1.8em;
-  background:
-    linear-gradient(#e6e0fa, #e6e0fa) 50% 100% / 70% 55% no-repeat,
-    radial-gradient(circle at 50% 50%, transparent 36%, #e6e0fa 40%, #e6e0fa 62%, transparent 66%) 50% 0 / 56% 80% no-repeat;
-}
 
 /* Current: a thick double frame that pulses. */
 #tourStage #tourPins li[data-state='current'] {

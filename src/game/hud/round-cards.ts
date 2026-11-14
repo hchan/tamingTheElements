@@ -51,3 +51,18 @@ export function haloFor(main: string, age: number, reduced: boolean): number {
   if (reduced || age < 0 || bannerSizeFor(main) <= 1) return 0;
   return Math.max(0, 1 - age / 40) * 0.55;
 }
+
+/** Bone the element colour is pulled toward, so a name never sits as the same hue as a same-element stage floor (qa-r16). */
+const CARD_BONE = 0xf2ead4;
+const CARD_BONE_MIX = 0.62;
+
+/** The name-card colour for an element colour (0xRRGGBB): mostly bone with a hint of the element, as `#rrggbb`. */
+export function cardColorFor(element: number): string {
+  let out = 0;
+  for (const shift of [16, 8, 0]) {
+    const a = (element >> shift) & 0xff;
+    const b = (CARD_BONE >> shift) & 0xff;
+    out |= Math.round(a + (b - a) * CARD_BONE_MIX) << shift;
+  }
+  return `#${out.toString(16).padStart(6, '0')}`;
+}
