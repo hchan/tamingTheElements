@@ -6,7 +6,7 @@ import { getPrefs } from '../platform/a11y/prefs';
  * Load-time "grim" grade for the hero art (owner: sprites read as bright and cartoony, with hard black outlines). The shipped
  * strips and sheets are NOT re-baked: each sheet texture is copied once to a canvas, graded, and cached as `<key>~grim` in the
  * texture manager (the same approach as the action-bar icons). The grade is milder than the icons' so that element colours stay
- * apart: a partial desaturation, a highlight-weighted darken (bright art drops, already-dark art such as Pax stays readable),
+ * apart: a light desaturation, a barely-there darken (owner: too dark, mystic not murk; heroes pop against the lifted floor),
  * lifted outline blacks (a soft umber instead of hard black) and a little grain. Alpha is untouched.
  */
 
@@ -22,7 +22,7 @@ export interface HeroGrade {
   readonly outlineLift: number;
 }
 
-export const HERO_GRADE: HeroGrade = { keep: 0.6, darken: 0.24, grain: 4, outline: [38, 32, 30], outlineLift: 0.55 };
+export const HERO_GRADE: HeroGrade = { keep: 0.88, darken: 0.04, grain: 3, outline: [52, 44, 46], outlineLift: 0.6 };
 
 /** Suffix of the cached graded copy (`map:fiara` -> `map:fiara~grim`). */
 export const GRIM_SUFFIX = '~grim';
