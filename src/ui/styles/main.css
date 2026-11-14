@@ -6,7 +6,7 @@
   --color-water: #69f;
   --color-earth: green;
   --color-air: #aae3f6;
-  --color-heading: yellow;
+  --color-heading: #ffe94a;
   --color-gold: gold;
   --color-hover-bg: #f0f8ff;
   --color-hover-fg: #b00000;
@@ -26,7 +26,7 @@ body {
 
 body {
   font-family: var(--default-font);
-  background: radial-gradient(ellipse at 50% 0, #1b1030, var(--color-bg) 70%) fixed var(--color-bg);
+  background: radial-gradient(ellipse at 50% 0, #4a2f8a, #1c1840 45%, #0c0a22 80%) fixed #0c0a22;
   color: var(--color-fg);
 }
 
@@ -294,7 +294,7 @@ a.menuLink {
   padding: 0.25em 0.75em;
   font: inherit;
   color: #fff;
-  background: #222;
+  background: #34344f;
   border: 2px solid #fff;
   border-radius: 6px;
   cursor: pointer;
@@ -327,7 +327,7 @@ a.menuLink {
   padding: 1.5em;
   text-align: center;
   color: #fff;
-  background: #111;
+  background: #26263c;
   border: 3px solid #fff;
   border-radius: 12px;
 }
@@ -573,7 +573,7 @@ a.menuLink {
   overflow-y: auto;
   padding: 1em 1.25em;
   color: #fff;
-  background: #111;
+  background: #26263c;
   border: 3px solid #ffd700;
   border-radius: 12px;
 }
@@ -611,15 +611,15 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
 .mainMenuList li button {
   padding: 0.55em 1em;
   min-height: 44px;
-  background: #1c1c2a;
-  border: 2px solid #8a8aa8;
+  background: #2c2c4c;
+  border: 2px solid #b4b4dc;
   border-radius: 10px;
   text-decoration: none;
 }
 .mainMenuList li button.notClickableYet {
   color: #bbb;
   border-style: dashed;
-  background: #111;
+  background: #26263c;
 }
 .mainMenuList li button.clickable:hover,
 .mainMenuList li button.clickable:focus-visible {
@@ -633,8 +633,8 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
   position: relative;
   margin: 0.4em 0;
   padding: 0.5em 0.8em;
-  background: #1c1c2a;
-  border: 2px solid #8a8aa8;
+  background: #2c2c4c;
+  border: 2px solid #b4b4dc;
   border-radius: 10px;
 }
 .garrisonAvatar {
@@ -714,11 +714,11 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
 .characterRelations {
   margin: 0.5em 0;
   padding: 0.3em 0.8em;
-  background: #1c1c2a;
+  background: #2c2c4c;
   border-radius: 10px;
 }
 #menu fieldset {
-  background: #14141f;
+  background: #232340;
   border-radius: 10px;
 }
 .menuStatus {
@@ -750,7 +750,7 @@ body:has(#game:not(:empty)) {
   padding: 0.3em 0.8em;
   border: 1px solid #666;
   border-radius: 999px;
-  background: #1c1c2a;
+  background: #2c2c4c;
   cursor: pointer;
 }
 #menu .settingsGroup > label.settingsOption:has(input:checked) {
@@ -783,7 +783,7 @@ body:has(#game:not(:empty)) {
 #menu div.settingsGroup {
   border: 1px solid #888;
   border-radius: 10px;
-  background: #14141f;
+  background: #232340;
   margin: 0.75em 0;
   padding: 0.7em 0.9em;
   align-items: center;
@@ -883,7 +883,7 @@ html[data-high-contrast='true'] button.touchBtn {
   border: 2px solid;
   border-radius: 10px;
   padding: 0.5em;
-  background: #101020;
+  background: #1f1f3c;
   text-align: left;
 }
 #arcadePick .vsSideTitle {
@@ -920,18 +920,18 @@ html[data-high-contrast='true'] button.touchBtn {
   text-align: left;
   color: inherit;
   font: inherit;
-  background: #1c1c2a;
+  background: #2c2c4c;
   border: 2px solid #888;
   border-radius: 8px;
 }
 #arcadePick .vsSlotP1.rosterActive {
   border-color: var(--vs-p1);
-  background: #0f2440;
+  background: #1a3c70;
   box-shadow: 0 0 0 2px var(--vs-p1);
 }
 #arcadePick .vsSlotP2.rosterActive {
   border-color: var(--vs-p2);
-  background: #40122c;
+  background: #701e4c;
   box-shadow: 0 0 0 2px var(--vs-p2);
 }
 #arcadePick .vsBigFace {
@@ -1032,10 +1032,10 @@ html[data-high-contrast='true'] button.touchBtn {
   text-align: left;
   color: #b8b4aa;
 }
-.heroGroup[data-element='water'] { border-bottom-color: #3f6a99; }
-.heroGroup[data-element='air'] { border-bottom-color: #8a9ea8; }
-.heroGroup[data-element='fire'] { border-bottom-color: #99452f; }
-.heroGroup[data-element='earth'] { border-bottom-color: #4d7a4f; }
+.heroGroup[data-element='water'] { border-bottom-color: #5f94cc; }
+.heroGroup[data-element='air'] { border-bottom-color: #b4c6d4; }
+.heroGroup[data-element='fire'] { border-bottom-color: #d0603f; }
+.heroGroup[data-element='earth'] { border-bottom-color: #6ea872; }
 .heroTile {
   position: relative;
   width: auto;
@@ -1050,15 +1050,15 @@ html[data-high-contrast='true'] button.touchBtn {
   border: 2px solid #555;
   border-left-width: 5px;
   border-radius: 4px;
-  background: #15151a;
+  background: #26263c;
   color: #d8d4ca;
   text-align: left;
   overflow: hidden;
 }
-.heroTile[data-element='water'] { border-left-color: #3f6a99; }
-.heroTile[data-element='air'] { border-left-color: #8a9ea8; }
-.heroTile[data-element='fire'] { border-left-color: #99452f; }
-.heroTile[data-element='earth'] { border-left-color: #4d7a4f; }
+.heroTile[data-element='water'] { border-left-color: #5f94cc; }
+.heroTile[data-element='air'] { border-left-color: #b4c6d4; }
+.heroTile[data-element='fire'] { border-left-color: #d0603f; }
+.heroTile[data-element='earth'] { border-left-color: #6ea872; }
 .heroTileFace {
   width: 48px;
   height: 48px;
@@ -1098,14 +1098,14 @@ html[data-high-contrast='true'] button.touchBtn {
   padding: 0.6em;
   border: 2px solid #555;
   border-radius: 6px;
-  background: #101014;
+  background: #20203a;
   text-align: left;
   color: #d8d4ca;
 }
-.heroPanel[data-element='water'] { border-color: #3f6a99; }
-.heroPanel[data-element='air'] { border-color: #8a9ea8; }
-.heroPanel[data-element='fire'] { border-color: #99452f; }
-.heroPanel[data-element='earth'] { border-color: #4d7a4f; }
+.heroPanel[data-element='water'] { border-color: #5f94cc; }
+.heroPanel[data-element='air'] { border-color: #b4c6d4; }
+.heroPanel[data-element='fire'] { border-color: #d0603f; }
+.heroPanel[data-element='earth'] { border-color: #6ea872; }
 .heroTop {
   display: flex;
   gap: 0.7em;
@@ -1115,7 +1115,7 @@ html[data-high-contrast='true'] button.touchBtn {
   width: 96px;
   height: 96px;
   border: 2px solid #333;
-  background-color: #08080a;
+  background-color: #1a1a2c;
 }
 .heroName {
   margin: 0;
@@ -1183,7 +1183,7 @@ html[data-high-contrast='true'] button.touchBtn {
   width: 40px;
   height: 40px;
   border: 1px solid #444;
-  background: #08080a;
+  background: #1a1a2c;
   overflow: hidden;
 }
 .heroAbilityIcon img {
@@ -1394,7 +1394,7 @@ html[data-high-contrast='true'] button.touchBtn {
   border: 1px solid #888;
   border-radius: 10px;
   padding: 0.4em 0.7em;
-  background: #14141f;
+  background: #232340;
 }
 #arcadePick .vsKeysTitle {
   margin: 0 0 0.3em;
@@ -1541,7 +1541,7 @@ html[data-high-contrast='true'] button.touchBtn {
   z-index: 5;
   max-width: min(22em, 40%);
   padding: 0.5em 0.9em;
-  background: rgba(14, 12, 10, 0.88);
+  background: rgba(24, 22, 48, 0.82);
   color: #e8dfd0;
   border: 1px solid #6b5a45;
   font-size: 14px;
@@ -1670,7 +1670,7 @@ button.menuButton.heroSlotClear {
   justify-content: center;
   margin-top: 0;
   padding: 0.5em 1em;
-  background: linear-gradient(to bottom, rgba(14, 12, 10, 0), rgba(14, 12, 10, 0.94) 35%);
+  background: linear-gradient(to bottom, rgba(20, 18, 44, 0), rgba(20, 18, 44, 0.8) 35%);
 }
 #arcadePick .vsForm,
 .heroSelect {
@@ -1704,7 +1704,7 @@ button.menuButton.heroSlotClear {
   padding: 4px 12px;
   border: 2px solid #555;
   border-radius: 4px;
-  background: #15151a;
+  background: #26263c;
   color: #d8d4ca;
   font: inherit;
   font-size: 0.9em;
@@ -1749,17 +1749,17 @@ button.menuButton.heroSlotClear {
   padding: 10px 16px;
   border: 2px solid #555;
   border-radius: 6px;
-  background: #15151a;
+  background: #26263c;
 }
 #tourSplash .vsFighter .heroFace {
   width: clamp(96px, 22vh, 200px);
   height: clamp(96px, 22vh, 200px);
-  background-color: #0b0b0e;
+  background-color: #1a1a2c;
 }
-#tourSplash .vsFighter[data-element='water'] { border-color: #3f6a99; }
-#tourSplash .vsFighter[data-element='air'] { border-color: #8a9ea8; }
-#tourSplash .vsFighter[data-element='fire'] { border-color: #99452f; }
-#tourSplash .vsFighter[data-element='earth'] { border-color: #4d7a4f; }
+#tourSplash .vsFighter[data-element='water'] { border-color: #5f94cc; }
+#tourSplash .vsFighter[data-element='air'] { border-color: #b4c6d4; }
+#tourSplash .vsFighter[data-element='fire'] { border-color: #d0603f; }
+#tourSplash .vsFighter[data-element='earth'] { border-color: #6ea872; }
 #tourSplash .vsWho {
   margin: 0;
   font-size: 0.8em;

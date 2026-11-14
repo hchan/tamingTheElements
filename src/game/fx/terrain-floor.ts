@@ -17,8 +17,8 @@ const ROWS = Math.ceil(720 / TILE_SIZE);
 const ORIGIN_Y = (720 - ROWS * TILE_SIZE) / 2;
 /** The top rows are left out: the stage backdrop (terrain-stage.ts) shows there, above the wall at WALL_Y. */
 const BAND_ROWS = Math.round((WALL_Y - ORIGIN_Y) / TILE_SIZE);
-/** A little of the stage backdrop shows through, so the floor sits in the scene instead of covering it. */
-const FLOOR_ALPHA = 0.9;
+/** Opaque: the floor is lifted by the additive light layer (terrain-ambient.ts), so no backdrop bleed-through is needed. */
+const FLOOR_ALPHA = 1;
 
 export interface TileFloor {
   /** Draws the floor of `stage` (0 none) at `alpha`; builds it the first frame the atlas is loaded. */
