@@ -6,7 +6,7 @@ import {
   callText, dashes, flashPose, mainBarOf, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
 import { tagSlot } from './tag-slot';
-import { PILL_BAR_H, PILL_W, pillWord, tagPill } from './slim-hud';
+import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
 
 /**
  * Phaser side of the Arcade tag-team view (WP-arcade-tag-view, FUN-DESIGN 2.6 and section 3). The weather view mounts it
@@ -135,7 +135,10 @@ export function mountTagView(
   let reduced = prefs().reduceMotion;
   let highContrast = prefs().highContrast;
   let callFrom = -CALL_TICKS;
+  /** The entering hero's world spot (top centre): the TAG! call hangs over it, a chevron points down at it. */
+  let callAt: { x: number; y: number; id: number } | undefined;
   let callReduced = false;
+  let callKo = false;
   let shownTick = -1;
   const lines: string[][] = [['', '', ''], ['', '', '']];
   /** Live entrance flashes: centre, height, team, start tick, KO. */
@@ -204,12 +207,26 @@ export function mountTagView(
       drawHud(parts.g, parts.texts);
     }
     const age = now - callFrom;
+    fx.clear();
+    if (call?.visible && callAt) {
+      view.forEachCharacter((c) => {
+        if (c.id === callAt?.id) callAt = { id: c.id, x: c.x + c.w / 2, y: c.y };
+      });
+      // World to the Hud's 1280x720 frame, then clamped under the top bar and inside the screen.
+      const wv = (arena.cameras as Phaser.Cameras.Scene2D.CameraManager | undefined)?.main.worldView;
+      if (wv) {
+        const sx = Math.max(120, Math.min(1160, ((callAt.x - wv.x) / (wv.width || 1)) * 1280));
+        const sy = Math.max(SLIM_H + 50, ((callAt.y - wv.y) / (wv.height || 1)) * 720 - 40);
+        call.setPosition(sx, sy);
+      }
+      fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);
+      fx.fillStyle(callKo ? GOLD : 0xffffff, 1).fillTriangle(callAt.x - 12, callAt.y - 22, callAt.x + 12, callAt.y - 22, callAt.x, callAt.y - 8);
+    }
     if (call?.visible) {
       const pose = callPose(age, callReduced);
       if (age >= CALL_TICKS) call.setVisible(false);
       else call.setScale(pose.scale).setAlpha(pose.alpha);
     }
-    fx.clear();
     for (let i = flashes.length - 1; i >= 0; i--) {
       const f = flashes[i];
       if (!f) continue;
@@ -255,6 +272,7 @@ export function mountTagView(
         if (c.id === e['to']) {
           to = c.sprite;
           Object.assign(flash, { x: c.x + c.w / 2, y: c.y + c.h / 2, h: c.h });
+          callAt = { id: c.id, x: c.x + c.w / 2, y: c.y };
         }
       });
       flash.ko = ko;
@@ -262,6 +280,7 @@ export function mountTagView(
       flashes.splice(0, flashes.length - 4);
       callFrom = view.tick;
       callReduced = reduced;
+      callKo = ko;
       parts?.call.setText(callText(to, ko)).setColor(ko ? '#c9b27a' : '#ffffff').setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
       say(tagLine(team, from, to, ko));
     }

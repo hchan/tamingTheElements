@@ -16,8 +16,8 @@ describe('slim HUD geometry', () => {
     }
     expect(slimBar(0).maxX - slimBar(0).minX).toBe(slimBar(1).maxX - slimBar(1).minX);
     expect(slimBar(0).minX + slimBar(1).maxX).toBe(1280);
-    expect(mirrorX(1, 346, 24)).toBe(910);
-    expect(chipRect(1, 0).x + 24 + chipRect(0, 0).x).toBe(1280);
+    expect(mirrorX(1, 346, 36)).toBe(898);
+    expect(chipRect(1, 0).x + 36 + chipRect(0, 0).x).toBe(1280);
   });
   it('leaves a gap between the portrait and the bar, and the right portrait clear of the fullscreen corner', () => {
     expect(slimPortrait(0).x + slimPortrait(0).size).toBeLessThan(slimBar(0).minX);
@@ -26,10 +26,10 @@ describe('slim HUD geometry', () => {
   it('lays chips and the tag pill side by side without overlap', () => {
     for (const team of [0, 1]) {
       const xs = [0, 1].map((i) => chipRect(team, i).x);
-      expect(Math.abs((xs[1] ?? 0) - (xs[0] ?? 0))).toBeGreaterThanOrEqual(24);
+      expect(Math.abs((xs[1] ?? 0) - (xs[0] ?? 0))).toBeGreaterThanOrEqual(36);
       const pill = tagPill(team, 2);
       const last = chipRect(team, 1).x;
-      const apart = team === 0 ? pill.x - (last + 24) : last - (pill.x + PILL_W);
+      const apart = team === 0 ? pill.x - (last + 36) : last - (pill.x + PILL_W);
       expect(apart).toBeGreaterThanOrEqual(0);
     }
   });

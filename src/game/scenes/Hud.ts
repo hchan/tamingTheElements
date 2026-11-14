@@ -292,7 +292,7 @@ export class Hud extends Phaser.Scene {
     // At least 16 px (times the phone boost), and below the hero's health words as measured (they wrap to several lines when boosted).
     const px = Math.round(16 * phoneBoost(this, 2));
     const label = this.labels[team];
-    const top = chipRowTop(CHIP_Y, label);
+    const top = chipRowTop(Math.max(CHIP_Y, SLIM_H + 2), label);
     const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top });
     const now = view.tick;
     const reduced = this.reduceMotion;
