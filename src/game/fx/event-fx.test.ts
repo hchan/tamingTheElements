@@ -129,7 +129,8 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
       const { sink, log } = recorder();
       arcadeFx(sink).consume([dmg(1, 0), confirmed(1, strength)]);
       const fire = ELEMENT_COLORS.fire.toString(16);
-      expect(log).toEqual([`flash3:${fire}`, 'number3=12', `burst3x${String(SPARKS_BY_STRENGTH[strength])}:${fire}`]);
+      // A super hit (3) gets the big gold superHit number only, never the small white one on top (qa-r18).
+      expect(log).toEqual([`flash3:${fire}`, ...(strength === 3 ? [] : ['number3=12']), `burst3x${String(SPARKS_BY_STRENGTH[strength])}:${fire}`]);
     }
   });
   it('tags scaled and counter hits and falls back to the void colour for an unknown attacker', () => {
@@ -142,7 +143,7 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
     for (const strength of [0, 1, 2, 3]) {
       const { sink, log } = recorder();
       arcadeFx(sink).consume([confirmed(10, strength), stop(10, 6)]);
-      expect(log.slice(3)).toEqual(['jitter3<17', ...(shakes[strength] ?? [])]);
+      expect(log.slice(strength === 3 ? 2 : 3)).toEqual(['jitter3<17', ...(shakes[strength] ?? [])]);
     }
     const { sink, log } = recorder();
     arcadeFx(sink).consume([confirmed(10, 0), stop(10, 30, 3)]);
@@ -201,7 +202,7 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
   });
   it('reduced motion drops motion only: one static spark, no particles, shake or jitter; flash and number stay', () => {
     const { sink, log } = recorder();
-    arcadeFx(sink, true).consume([confirmed(10, 3), stop(10, 30, 3)]);
+    arcadeFx(sink, true).consume([confirmed(10, 2), stop(10, 30, 3)]);
     expect(log).toEqual([`flash3:${ELEMENT_COLORS.fire.toString(16)}`, 'number3=12', 'spark3']);
   });
 });
@@ -292,6 +293,13 @@ describe('super hit impact', () => {
     fx.consume([confirmed(10, 3, { amount: 120 }), confirmed(16, 3, { amount: 120 }), confirmed(80, 3, { amount: 100 }), confirmed(90, 2)]);
     expect(supers.filter((l) => l.startsWith('superHit'))).toEqual(['superHit3=120@0.30F', 'superHit3=120@0.30', 'superHit3=100@0.25F']);
     expect(supers.filter((l) => l.includes(':d9b24c'))).toHaveLength(3);
+  });
+
+  it('draws exactly one number per super hit: the gold one, no small white number over it (qa-r18)', () => {
+    const { sink, log, supers } = recorder();
+    superFx(sink).consume([confirmed(10, 3, { amount: 120 }), confirmed(90, 2, { amount: 30 })]);
+    expect(log.filter((l) => l.startsWith('number'))).toEqual(['number3=30']);
+    expect(supers.filter((l) => l.startsWith('superHit'))).toHaveLength(1);
   });
 
   it('keeps the still number but drops the flash and the extra sparks under reduced motion', () => {

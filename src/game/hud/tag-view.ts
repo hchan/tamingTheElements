@@ -5,7 +5,6 @@ import {
   CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, benchBarOf, benchLabel, callPose,
   callText, dashes, flashPose, mainBarOf, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
-import { tagSlot } from './tag-slot';
 import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
 
 /**
@@ -17,7 +16,7 @@ import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
  * a tag-cooldown bar with its word ("TAG 2.4s", "TAG READY") under each side's bars, and the announcer-style "TAG!" ("PAX
  * IN!" after a KO) on the tagging side. In the
  * Arena: the entrance flash at the entrance spot (a white core, a growing ring, gold after a KO, and speed lines sliding
- * in from the team's side) and a "TAG" caption over the player's swap slot. Live-region lines go through `say`. Reduced
+ * in from the team's side). Live-region lines go through `say`. Reduced
  * motion keeps every word, ring and bar and drops the slide, the ring's growth and the scale-in. Per match: one Hud
  * Graphics and up to nine Hud Texts, one Arena Graphics and one Arena Text, made once; one Arena `postupdate` listener;
  * everything goes with the Arena or the Hud (shutdown or destroy).
@@ -33,10 +32,6 @@ export const TAG_SLOT_X = 1 + 2 * 77 + 77 / 2;
 export const TAG_SLOT_Y = 640;
 /** Over the fighters (0) and the aim arrow (4), under the super dim (5). */
 const FLASH_DEPTH = 4.5;
-/** The TAG caption floats this far over the slot top, clear of the slot own cooldown words (qa-r3-label-clutter). */
-const CAPTION_LIFT = 26;
-/** The caption is a first-seconds pointer at the Tag box, not a fixture: it goes after this many ticks (7 s), so it is never pinned over the arena for a whole fight. */
-export const CAPTION_TICKS = 350;
 /** Muted ochre (was bright 0xffd23f): the active-bar frame, the ready bar and the KO ring. */
 const GOLD = 0xb39653;
 const ASH = 0xcfc4a8;
@@ -53,12 +48,11 @@ export interface TagPrefs {
 export interface TagState {
   /** Per team: the active line, a line per bench hero and the tag word (three '' for a one-hero side). */
   readonly lines: readonly (readonly string[])[];
-  /** The call while it shows ('' otherwise) and its scale; the live entrance flashes; the swap-slot caption. */
+  /** The call while it shows ('' otherwise) and its scale; the live entrance flashes. */
   readonly call: string;
   readonly callScale: number;
   readonly flashes: number;
   readonly ko: boolean;
-  readonly caption: string;
 }
 
 const states = new WeakMap<Phaser.Scene, () => TagState>();
@@ -112,9 +106,6 @@ export function mountTagView(
       })
       .setDepth(HUD_DEPTH);
   const fx = arena.add.graphics().setDepth(FLASH_DEPTH);
-  /** The swap-slot caption lives in the Hud scene (made in `build`): the Arena camera zooms and pans, which would drag it away from the slot. */
-  let caption: Phaser.GameObjects.Text | undefined;
-  let captionDone = false;
   /** The Hud objects, made once the Hud scene runs (as the round view): its Graphics, per team [lines, tag word], the call. */
   let parts: { g: Phaser.GameObjects.Graphics; texts: Phaser.GameObjects.Text[][]; call: Phaser.GameObjects.Text } | undefined;
   const build = (): void => {
@@ -133,7 +124,6 @@ export function mountTagView(
       ),
       call: text(hud, CALL_PX, 8).setOrigin(0.5).setVisible(false),
     };
-    caption = teams[0].length < 2 ? undefined : text(hud, 18 * boost, 4).setText('TAG').setOrigin(0.5, 1).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT).setVisible(false);
     shownTick = -1;
   };
 
@@ -178,9 +168,6 @@ export function mountTagView(
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
       const tag = tagReadout(bar ? bar.swapReadyTick - bar.tick : 0, !active || bench.every((h) => h.dead));
-      // Once the player has tagged (the cooldown ran), the pointer has done its job: it never comes back over the slot tooltip.
-      if (team === 0 && tag.label !== 'TAG READY' && tag.label !== 'NO TAG') captionDone = true;
-      if (team === 0) caption?.setVisible(!captionDone && tag.label !== 'NO TAG' && (bar?.tick ?? 0) < CAPTION_TICKS).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT);
       // One line per bench row (an empty one if a hero is missing), so the texts keep their rows.
       const benchLines = Array.from({ length: t.length - 1 }, (_, i) => {
         const h = bench[i];
@@ -298,7 +285,7 @@ export function mountTagView(
     arena.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     hud.events.off('create', build).off('shutdown', off).off('destroy', off);
     states.delete(arena);
-    for (const o of [fx, caption, parts?.g, parts?.call, ...(parts?.texts.flat() ?? [])]) o?.destroy();
+    for (const o of [fx, parts?.g, parts?.call, ...(parts?.texts.flat() ?? [])]) o?.destroy();
     parts = undefined;
   };
   if (hud.sys.isActive()) build();
@@ -309,7 +296,7 @@ export function mountTagView(
     draw();
     return {
       lines: lines.map((l) => [...l]), call: parts?.call.visible ? parts.call.text : '', callScale: parts?.call.scaleX ?? 1,
-      flashes: flashes.length, ko: flashes.some((f) => f.ko), caption: caption?.visible ? caption.text : '',
+      flashes: flashes.length, ko: flashes.some((f) => f.ko),
     };
   });
   return consume;

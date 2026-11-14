@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { CALL_TICKS, FLASH_TICKS } from './tag-fx';
-import { CAPTION_TICKS, mountTagView, tagState } from './tag-view';
+import { mountTagView, tagState } from './tag-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
 class Emitter {
@@ -123,29 +123,15 @@ describe('tag view (Phaser side, fake scenes)', () => {
     expect(s.state()).toBeUndefined();
   });
 
-  it('drops the TAG caption after the first seconds so it never stays pinned', () => {
-    const s = setup();
-    s.setSwapReady([0, 0]);
-    s.setTick(CAPTION_TICKS + 1);
-    s.frame();
-    expect(s.state()).toMatchObject({ caption: '' });
-  });
-
-  it('shows the TAG caption while the swap is ready and never again once a tag ran the cooldown', () => {
+  it('draws no loose TAG word over the arena (the third slot already says Tag; qa-r18)', () => {
     const s = setup();
     s.setSwapReady([0, 0]);
     s.frame();
-    expect(s.state()).toMatchObject({ caption: 'TAG' });
-    s.setTick(1);
-    s.setSwapReady([175, 0]);
-    s.frame();
-    s.setTick(2);
-    s.setSwapReady([0, 0]);
-    s.frame();
-    expect(s.state()).toMatchObject({ caption: '' });
+    expect(s.state()).not.toHaveProperty('caption');
+    expect(s.hud.made.filter((m) => m.kind === 'text')).toHaveLength(7);
   });
 
-  it('draws who is in, the bench with its red life, the tag cooldown, and the TAG caption', () => {
+  it('draws who is in, the bench with its red life, the tag cooldown', () => {
     const s = setup();
     const lead = s.chars[0] as RenderCharacter;
     lead.hp = 400;
@@ -188,7 +174,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
     s.setTick(200);
     s.consume?.([s.tagIn(1, 0, 0)]);
     s.frame();
-    expect(s.state()).toMatchObject({ call: 'SINDAROSA IN!', ko: true, caption: '' });
+    expect(s.state()).toMatchObject({ call: 'SINDAROSA IN!', ko: true });
     expect(s.state()?.lines[0]).toEqual(['IN Sindarosa', 'BENCH Pax ▲ K.O.', 'NO TAG']);
     expect(s.said.at(-1)?.text).toBe('Pax is down. Sindarosa steps in.');
   });
@@ -197,7 +183,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
     const s = setup({ size: 3 });
     const [, pax, curomo] = s.chars as [RenderCharacter, RenderCharacter, RenderCharacter];
     s.frame();
-    expect(s.hud.made.filter((m) => m.kind === 'text')).toHaveLength(10); // 4 lines per side, the call, the TAG caption
+    expect(s.hud.made.filter((m) => m.kind === 'text')).toHaveLength(9); // 4 lines per side, the call
     expect(s.state()?.lines).toEqual([
       ['IN Sindarosa', 'BENCH Pax ▲ 100%', 'BENCH Curomo ▲ 100%', 'TAG READY'],
       ['IN Fiara', 'BENCH Lavax ▲ 100%', 'BENCH Echo ▲ 100%', 'TAG READY'],
@@ -219,7 +205,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
     Object.assign(curomo, { hp: 0, flags: EntityFlag.alive | EntityFlag.benched | EntityFlag.dead });
     s.setTick(103);
     s.frame();
-    expect(s.state()).toMatchObject({ caption: '', lines: [['IN Sindarosa', 'BENCH Pax ▲ K.O.', 'BENCH Curomo ▲ K.O.', 'NO TAG'], expect.anything()] });
+    expect(s.state()).toMatchObject({ lines: [['IN Sindarosa', 'BENCH Pax ▲ K.O.', 'BENCH Curomo ▲ K.O.', 'NO TAG'], expect.anything()] });
   });
 
   it('reduced motion keeps the call at full size and the flash', () => {
@@ -237,7 +223,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
       expect(s.hud.made).toEqual([]);
       s.hud.events.emit('create');
       s.frame();
-      expect(s.hud.made.length).toBe(9); // one Graphics, 3 lines per side, the call, the TAG caption
+      expect(s.hud.made.length).toBe(8); // one Graphics, 3 lines per side, the call
       s[who].events.emit(ev);
       expect(s.arena.events.count + s.hud.events.count).toBe(0);
       expect([...s.arena.made, ...s.hud.made].every((m) => m.destroyed)).toBe(true);

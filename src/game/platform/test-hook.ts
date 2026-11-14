@@ -113,7 +113,7 @@ export interface ArenaProbe {
    * whether one is a KO entrance), and the swap-slot caption; undefined in Classic and 1v1.
    */
   tag(): Promise<{
-    lines: readonly (readonly string[])[]; call: string; callScale: number; flashes: number; ko: boolean; caption: string;
+    lines: readonly (readonly string[])[]; call: string; callScale: number; flashes: number; ko: boolean;
   } | undefined>;
   /**
    * Arcade only (async: a lazy chunk): the terrain view's last frame (WP-arcade-terrain-view): the stage drawn (1 fire ..
