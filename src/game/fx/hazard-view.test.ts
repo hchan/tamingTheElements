@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { edgeCues, chevronShift, hazardAnnouncement, hazardLabel, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, shadowRadius, warnProgress } from './hazard-view';
+import { edgeCues, chevronShift, hazardAnnouncement, hazardLabel, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, dustLook, DUST_TICKS, shadowRadius, warnProgress } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -70,5 +70,16 @@ describe('rockfall and fire telegraph helpers (r21)', () => {
     expect(edgeCues(view, { x: 850, y: 100, w: 200, h: 400 })).toEqual([{ side: 'right', pos: 300 }]);
     expect(edgeCues(view, { x: 400, y: 500, w: 100, h: 300 })).toEqual([{ side: 'bottom', pos: 450 }]);
     expect(edgeCues(view, { x: 0, y: 0, w: 2000, h: 600 }).map((c) => c.side)).toEqual(['left', 'right']);
+  });
+
+  it('rockfall dust grows and fades over DUST_TICKS, holds still when reduced, and is null outside the window', () => {
+    expect(dustLook(-1, false)).toBeNull();
+    expect(dustLook(DUST_TICKS, false)).toBeNull();
+    const a = dustLook(2, false);
+    const b = dustLook(12, false);
+    expect(a && b && b.t > a.t && b.alpha < a.alpha).toBe(true);
+    expect(dustLook(0, false)?.alpha).toBe(1);
+    expect(dustLook(3, true)?.t).toBe(1);
+    expect(dustLook(20, true)?.alpha).toBeLessThan(dustLook(3, true)?.alpha ?? 0);
   });
 });

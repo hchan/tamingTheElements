@@ -66,10 +66,35 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
   let seq = 0;
   const dir = (i: number, n: number, spin: number): readonly [number, number] => COMPASS[(Math.floor((i * 8) / n) + spin) % 8] ?? [1, 0];
 
+  /** Shared accent for every mark: a brief element-coloured ring that expands past the glow, plus radiating shards (no trig: compass steps). */
+  function ringAndShards(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number, light: number, core: number): void {
+    const e = easeOut(t);
+    const r = (14 + 34 * e) * K;
+    g.lineStyle(3 * K * (1 - 0.6 * t), core, 0.55 * a).strokeCircle(b.x, b.y, r);
+    g.lineStyle(1.2 * K, light, 0.9 * a).strokeCircle(b.x, b.y, r - 2 * K);
+    for (let i = 0; i < 8; i++) {
+      const [dx, dy] = dir(i, 8, b.spin);
+      const o = r + 3 * K;
+      const len = (8 + (i % 2) * 5) * K * (1 - 0.4 * t);
+      g.fillStyle(i % 2 === 0 ? light : core, 0.9 * a).fillTriangle(
+        b.x + dx * o - dy * 2 * K,
+        b.y + dy * o + dx * 2 * K,
+        b.x + dx * o + dy * 2 * K,
+        b.y + dy * o - dx * 2 * K,
+        b.x + dx * (o + len),
+        b.y + dy * (o + len),
+      );
+    }
+  }
+
   function drawFire(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number): void {
     const e = easeOut(t);
-    g.fillStyle(0xfff2c0, a).fillCircle(b.x, b.y, 16 * K * (1 - 0.5 * e));
-    g.fillStyle(0xff7a1a, a * 0.6).fillCircle(b.x, b.y, 24 * K * (0.5 + 0.5 * e));
+    // A soft layered glow (many low-alpha discs, no hard edge) instead of two flat discs.
+    for (let i = 0; i < 4; i++) {
+      g.fillStyle(i < 2 ? 0xff7a1a : 0xffd070, 0.14 * a).fillCircle(b.x, b.y, (26 - i * 5) * K * (0.5 + 0.5 * e));
+    }
+    g.fillStyle(0xfff2c0, 0.5 * a).fillCircle(b.x, b.y, 6 * K * (1 - 0.5 * e));
+    ringAndShards(g, b, t, a, 0xffe49a, 0xff7a1a);
     for (let i = 0; i < 6; i++) {
       const ox = (i - 2.5) * 9 * K;
       const h = (22 + (i % 3) * 10) * K * e;
@@ -81,6 +106,7 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
 
   function drawEarth(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number): void {
     const e = easeOut(t);
+    ringAndShards(g, b, t, a, 0xf0dcb0, 0xc89650);
     g.lineStyle(4, 0xc8a870, 0.7 * a).strokeEllipse(b.x, b.footY, 70 * K * (0.4 + e), 24 * K * (0.4 + e));
     g.fillStyle(0xd8c090, 0.25 * a).fillEllipse(b.x, b.footY, 60 * K * (0.4 + e), 20 * K * (0.4 + e));
     for (let i = 0; i < 8; i++) {
@@ -96,6 +122,7 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
 
   function drawAir(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number): void {
     const e = easeOut(t);
+    ringAndShards(g, b, t, a, 0xffffff, 0x9adfff);
     for (let i = 0; i < 3; i++) {
       // Three crescent slashes spinning outward at staggered radii.
       const r = (14 + i * 11) * K * (0.5 + e);
