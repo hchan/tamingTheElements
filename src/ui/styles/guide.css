@@ -24,6 +24,11 @@
   color: var(--g-text);
 }
 .guideWheelBody {
+  /* A dark panel like the ability cards, so the wheel and its list read over the backdrop art. */
+  padding: 0.8em 1em;
+  background: linear-gradient(180deg, rgba(38, 30, 88, 0.94), rgba(28, 22, 68, 0.94));
+  border: 1px solid var(--g-edge);
+  border-radius: 8px;
   display: flex;
   flex-wrap: wrap;
   gap: 1em 2em;
