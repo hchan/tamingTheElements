@@ -56,8 +56,8 @@ export interface PickForm {
 
 const race = (raw: string | undefined, fallback: CharacterId): CharacterId => ARCADE_RACES.find((r) => r === raw) ?? fallback;
 
-/** Default: the owner playtest's Sindarosa (FUN-DESIGN section 7) against a ranged opponent, AI Normal, 1v1. */
-export const DEFAULT_PICK: ArcadePick = { player: 'sindarosa' as CharacterId, enemy: 'fiara' as CharacterId, level: 'normal' };
+/** Default: the owner playtest's Sindarosa (FUN-DESIGN section 7) against Rokcore (a fair first match: similar life, Sindarosa wins 42% of 64 scripted Arcade seeds; against Fiara it was 22%), AI Normal, 1v1. */
+export const DEFAULT_PICK: ArcadePick = { player: 'sindarosa' as CharacterId, enemy: 'rokcore' as CharacterId, level: 'normal' };
 
 const PAX = 'pax' as CharacterId;
 

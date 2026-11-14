@@ -16,6 +16,6 @@ Evidence: hero-*.png, hero2/3-*.png, pick-*.png, tour-*.png (~/claudetmp/qa6/).
 
 ## Versus setup
 
-- Default matchup is Sindarosa (272 HP) vs Fiara (679 HP): unfair and unreadable for a first match. Pick defaults with similar HP, or level-match.
+- DONE 2026-11-14: default matchup is now Sindarosa vs Rokcore (was Fiara: Sindarosa won 22% of 64 scripted Arcade seeds; Rokcore 42%, similar life).
 - Left panel says "You: Sindarosa" while the picker highlights Curomo, so it is unclear who will fight. Make the highlighted card and the panel one source of truth and show a clear "Selected" state.
 - AI looks passive in the first seconds; check opening aggression on the default difficulty.
