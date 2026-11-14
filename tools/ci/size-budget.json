@@ -1,6 +1,6 @@
 {
   "chunks": {
-    "ability-aura-view": 2100,
+    "ability-aura-view": 2400,
     "arcade-audio": 2650,
     "arcade-setup": 1850,
     "arcade-versus": 9600,
@@ -17,7 +17,7 @@
     "grim-fx": 900,
     "guide": 4300,
     "hazard-view": 3650,
-    "banner-lanes": 260,
+    "pop-lanes": 320,
     "guide.css": 1700,
     "tour-match": 3150,
     "launch": 160,
@@ -33,7 +33,7 @@
     "pad-bindings": 1150,
     "pad-bindings-section": 1580,
     "phaser": 388700,
-    "phaser-config": 45700,
+    "phaser-config": 45900,
     "ability-text": 1100,
     "pose-layer": 11800,
     "rolldown-runtime": 200,
