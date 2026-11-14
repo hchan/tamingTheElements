@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
+import { poseHoldMs } from '../fx/hit-feel';
 import { PoseVfx } from './pose-vfx';
 import { FX_ELEMENTS } from './pose-vfx-math';
 import { createFrameResolver, generatedSheets, walkTime, type FrameResolver, type SheetFrame } from '../assets/sheet-frames';
@@ -109,6 +110,8 @@ export class PoseLayer {
   /** The animation clock in ms: advances only while the sim runs (not paused, not in a hit-stop). */
   private animMs = 0;
   private dt = 0;
+  /** Render-side hit-stop (QA r35): wall ms left to hold the animation clock after a landed hit; the sim keeps ticking. */
+  private holdMs = 0;
   private frameNo = 0;
   private lastTick = -1;
   private lastTickAt = 0;
@@ -193,6 +196,7 @@ export class PoseLayer {
         case SimEventKind.hitConfirmed: {
           const t = (e['target'] ?? -1) & (SLOTS - 1);
           const a = (e['attacker'] ?? e.sourceId) & (SLOTS - 1);
+          this.holdMs = Math.max(this.holdMs, poseHoldMs(e['strength'] ?? 0, this.reduced));
           this.start(t, PoseKind.hurt, (this.lx[t] ?? 0) >= (this.lx[a] ?? 0) ? 1 : -1, ((e['strength'] ?? 0) / 3));
           break;
         }
@@ -239,6 +243,11 @@ export class PoseLayer {
     }
     const stalled = nowMs - this.lastTickAt > STALL_MS || ar?.frozen === true;
     this.dt = stalled ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS);
+    if (this.holdMs > 0) {
+      // Wall time burns the hold (also through a sim hit-stop), but a real pause (manual stepping, overlay) keeps it held.
+      if (nowMs - this.lastTickAt <= STALL_MS) this.holdMs = Math.max(0, this.holdMs - Math.min(Math.max(deltaMs, 0), MAX_DT_MS));
+      this.dt = 0;
+    }
     this.animMs += this.dt;
     // The VFX clock keeps running through a hit-stop freeze (a super's charge happens inside it) and stops only on a real pause.
     if (this.arcade) this.vfx.frame(nowMs - this.lastTickAt > STALL_MS && ar?.frozen !== true ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS), this.reduced);

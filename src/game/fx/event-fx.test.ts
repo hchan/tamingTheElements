@@ -8,6 +8,7 @@ import {
   CLASSIC_HIT_TINT, CosmeticRng, ELEMENT_COLORS, EventDeduper, EventFx, HIT_PARTICLES, KO_SHAKE, SHAKE_BY_STRENGTH,
   SPARKS_BY_STRENGTH, type FxSink,
 } from './event-fx';
+import { shakeBoost } from './hit-feel';
 import { rotationForDir } from '../views/projectile-view';
 
 const dmg = (tick: number, seq: number, target = 3): SimEvent =>
@@ -183,7 +184,7 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
     expect(log.slice(0, 2)).toEqual([`flash3:${ELEMENT_COLORS.void.toString(16)}`, 'number3=12sc']);
   });
   it('the hit-stop jitters the victim until the freeze deadline and shakes by strength (light a small nudge, KO strongest)', () => {
-    const shakes = SHAKE_BY_STRENGTH.map((s) => (s ? [`shake${String(s[0])}@${String(s[1])}`] : []));
+    const shakes = SHAKE_BY_STRENGTH.map((s, i) => (s ? [`shake${String(s[0])}@${String(s[1] * shakeBoost(i))}`] : []));
     for (const strength of [0, 1, 2, 3]) {
       const { sink, log } = recorder();
       arcadeFx(sink).consume([confirmed(10, strength), stop(10, 6)]);

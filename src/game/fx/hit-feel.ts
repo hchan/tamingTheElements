@@ -183,8 +183,8 @@ export function streakFrame(ageMs: number, strength: number, unit: number): Stre
 export const STREAK_FAN: readonly number[] = [0, -0.35, 0.35, -0.7, 0.7, -1.05, 1.05, -1.4, 1.4];
 
 export const RECOIL_TICKS = 10;
-const SQUASH = [0.07, 0.1, 0.14, 0.2] as const;
-const PUSH_PX = [2, 3, 5, 8] as const;
+const SQUASH = [0.09, 0.13, 0.18, 0.24] as const;
+const PUSH_PX = [3, 4.5, 7, 10] as const;
 
 export interface RecoilPose {
   /** Horizontal push in px along the attack direction. */
@@ -205,4 +205,25 @@ export function recoilPose(ageTicks: number, strength: number, dirX: number, red
   const env = t < 0.2 ? t / 0.2 : (1 - (t - 0.2) / 0.8) ** 2;
   const a = (SQUASH[s] ?? 0) * env;
   return { dx: (dirX < 0 ? -1 : 1) * (PUSH_PX[s] ?? 0) * env, sx: 1 - a, sy: 1 + a * 0.75 };
+}
+
+/**
+ * Render-side hit-stop (QA r35): on a landed hit the view holds the fighters' pose and animation clocks for this many ms while
+ * the sim keeps ticking, so the blow reads as a beat (about 2-3 frames at 60 Hz). Light, medium, heavy, super. Wall-clock, view
+ * only; never feeds the sim.
+ */
+export const POSE_HOLD_MS = [40, 46, 52, 60] as const;
+/** Extra camera-shake intensity by strength (multiplier on `SHAKE_BY_STRENGTH`, so light hits no longer feel the same as before). */
+export const SHAKE_BOOST = [1.5, 1.4, 1.25, 1] as const;
+
+/** Pose hold in ms for a hit of `strength`; 0 under reduced motion or for a bad strength. */
+export function poseHoldMs(strength: number, reduced: boolean): number {
+  if (reduced || !Number.isFinite(strength)) return 0;
+  return POSE_HOLD_MS[Math.min(3, Math.max(0, Math.floor(strength)))] ?? 0;
+}
+
+/** Shake-intensity multiplier by strength (1 for a bad strength). */
+export function shakeBoost(strength: number): number {
+  if (!Number.isFinite(strength)) return 1;
+  return SHAKE_BOOST[Math.min(3, Math.max(0, Math.floor(strength)))] ?? 1;
 }
