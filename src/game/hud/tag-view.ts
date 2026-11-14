@@ -7,7 +7,7 @@ import {
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
 import { coreDisplayWidth, resolutionOf } from '../boot/viewport';
-import { LaneWait, centreBusy } from './banner-lanes';
+import { BANNER_WAIT_TICKS, LaneWait, centreBusy, cutUp } from './banner-lanes';
 import { styleCombatText } from './combat-text';
 
 /**
@@ -220,7 +220,7 @@ export function mountTagView(
     // Lanes (banner-lanes.ts): a call that lands under the super cut-in or a banner starts when it clears.
     const dt = lastNow < 0 ? 0 : now - lastNow;
     lastNow = now;
-    const held = call?.visible === true && now - callFrom < CALL_TICKS && wait.hold(centreBusy(arena.registry), dt);
+    const held = call?.visible === true && now - callFrom < CALL_TICKS && wait.hold(centreBusy(arena.registry), dt, cutUp(arena.registry) ? undefined : BANNER_WAIT_TICKS);
     if (held) callFrom += dt;
     const age = now - callFrom;
     fx.clear();
@@ -238,7 +238,7 @@ export function mountTagView(
       fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);
       fx.fillStyle(callKo ? GOLD : 0xffffff, 1).fillTriangle(callAt.x - 12, callAt.y - 22, callAt.x + 12, callAt.y - 22, callAt.x, callAt.y - 8);
     }
-    if (call?.visible && held) call.setAlpha(0);
+    if (call?.visible && held) call.setAlpha(0).setScale(callPose(0, callReduced).scale);
     else if (call?.visible) {
       const pose = callPose(age, callReduced);
       if (age >= CALL_TICKS) call.setVisible(false);

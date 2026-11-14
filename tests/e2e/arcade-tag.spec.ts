@@ -88,8 +88,7 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   expect(start?.lines[1]?.[0]).toBe('IN Fiara');
   expect(start?.lines[1]?.[1]).toMatch(/^BENCH \S+ [▲≈■●◆] 100%$/);
   // Red life: Sindarosa hurt, then benched by a tag on the 3 key (live ticks: the keyboard agent plays the player).
-  // The FIGHT! banner holds the centre for its first second: a tag call landing under it waits (banner lanes, QA r27), so let it clear first.
-  await step(page, 60);
+  // A tag pressed during FIGHT! is not swallowed: the call waits for the banner at most BANNER_WAIT_TICKS (15 view ticks), then plays in full.
   const [lead] = await characters(page, 0);
   await page.evaluate(`window.__TTE__.arena.setHp(${String(lead?.id)}, ${String(Math.round((lead?.maxHp ?? 0) * 0.4))})`);
   await page.keyboard.down('Digit3');
@@ -102,6 +101,9 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   expect(tagged?.lines[0]?.[1]).toMatch(/^BENCH Sindarosa [▲≈■●◆] 4\d% \+\d+% red$/);
   expect(tagged?.lines[0]?.[2]).toMatch(/^TAG \d\.\ds$/);
   await expect.poll(() => live(page), { timeout: 5000 }).toContain('Tag! Pax is in, Sindarosa rests.');
+  // Past the short banner wait the call is still up (its 60 ticks start when it is released).
+  await step(page, 20);
+  expect(await tag(page)).toMatchObject({ call: 'TAG!' });
   // The flash and call go; the cooldown (150 game ticks) runs out; the bench heals toward its red life.
   await step(page, 160);
   const later = await tag(page);

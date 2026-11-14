@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BANNER_KEY, CUT_KEY, LANE_MAX_WAIT_TICKS, LaneWait, bannerDraws, centreBusy, cutUp } from './banner-lanes';
+import { BANNER_KEY, CUT_KEY, BANNER_WAIT_TICKS, LANE_MAX_WAIT_TICKS, LaneWait, bannerDraws, centreBusy, cutUp, introClockStart } from './banner-lanes';
 
 const reg = (o: Record<string, unknown>) => ({ get: (k: string) => o[k] });
 
@@ -30,5 +30,19 @@ describe('banner lanes', () => {
     expect(w.hold(true, 1)).toBe(false);
     w.reset();
     expect(w.hold(true, 1)).toBe(true);
+  });
+
+  it('caps a banner-only wait short, so a tag during FIGHT! is not late', () => {
+    const w = new LaneWait();
+    expect(w.hold(true, BANNER_WAIT_TICKS - 1, BANNER_WAIT_TICKS)).toBe(true);
+    expect(w.hold(true, 5, BANNER_WAIT_TICKS)).toBe(true);
+    expect(w.hold(true, 1, BANNER_WAIT_TICKS)).toBe(false);
+    expect(BANNER_WAIT_TICKS).toBeLessThan(LANE_MAX_WAIT_TICKS);
+  });
+
+  it('starts an intro banner clock when the result card ends', () => {
+    expect(introClockStart(60, 100)).toBe(100);
+    expect(introClockStart(60, -1)).toBe(60);
+    expect(introClockStart(130, 100)).toBe(130);
   });
 });

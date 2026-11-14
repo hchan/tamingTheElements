@@ -10,6 +10,9 @@ export const BANNER_KEY = 'tte.banner';
 /** The longest a deferred call waits (view ticks, 2 s): a held banner (K.O. holds until the next one) never swallows it. */
 export const LANE_MAX_WAIT_TICKS = 100;
 
+/** A call that only waits for a banner (not the super cut-in) is held this long at most (view ticks, 0.3 s): a tag during FIGHT! is not late. */
+export const BANNER_WAIT_TICKS = 15;
+
 interface Registry {
   get(key: string): unknown;
 }
@@ -28,13 +31,16 @@ export function bannerDraws(cut: boolean, resultUp: boolean, intro: boolean, com
   return !cut && !(resultUp && (intro || compactCard));
 }
 
+/** The view tick an intro banner's own clock (fade, scale-in, name cards) starts: its start, or the end of the round result card if later, so "ROUND 2" is not spent behind the card. */
+export const introClockStart = (from: number, resultEnd: number): number => Math.max(from, resultEnd);
+
 /** A deferred call: counts the ticks it has waited while the centre is busy; it starts at once once `LANE_MAX_WAIT_TICKS` are used up. */
 export class LaneWait {
   private waited = 0;
 
-  /** True while the call must still wait; `dt` is the view ticks since the last check. */
-  hold(busy: boolean, dt: number): boolean {
-    if (!busy || this.waited >= LANE_MAX_WAIT_TICKS) return false;
+  /** True while the call must still wait; `dt` is the view ticks since the last check, `max` the cap. */
+  hold(busy: boolean, dt: number, max = LANE_MAX_WAIT_TICKS): boolean {
+    if (!busy || this.waited >= max) return false;
     this.waited += Math.max(0, dt);
     return true;
   }
