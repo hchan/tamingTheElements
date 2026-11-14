@@ -8,6 +8,7 @@ import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pi
 import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-pick';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import type { ArenaLaunch } from '../scenes/launch';
+import { getUiFlags } from '../platform/flags';
 
 /**
  * The `#online` route (preview, shown with Arcade Versus), its own chunk. Two players connect with copy-pasted codes (no
@@ -72,6 +73,13 @@ function matchTicksParam(): number | undefined {
   return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
+const devBuild = (): boolean => import.meta.env.DEV || import.meta.env.MODE === 'test';
+
+/** `?ice=none` (dev and test builds only): no STUN server, so the offer and answer hold loopback host candidates only (hermetic e2e, no internet). */
+function iceParam(): RTCIceServer[] | undefined {
+  return devBuild() && new URLSearchParams(window.location.search).get('ice') === 'none' ? [] : undefined;
+}
+
 export function onlineVersusScreen(): Screen {
   const matchTicks = matchTicksParam();
   let node: HTMLElement | null = null;
@@ -111,7 +119,9 @@ export function onlineVersusScreen(): Screen {
       );
 
       const startMatch = (p: Peer, say: (s: string) => void, setup: MatchSetup): void => {
-        void import('../boot/phaser-config').then(({ createGame }) => {
+        // `?ff=netbot` (dev and test builds only): the Arcade scripted AI plays our side, so a two-context e2e needs no keys.
+        const bot = devBuild() && getUiFlags(window.location.search).netbot ? import('./arcade-setup').then((m) => m.arcadeBot(setup, side)) : Promise.resolve(undefined);
+        void Promise.all([import('../boot/phaser-config'), bot]).then(([{ createGame }, agent]) => {
           if (gone || !node) return;
           // The previous match's arena stayed up after its end (it keeps answering the friend's session, see onEnd): its end is now certain.
           destroyGame(game, arenaNode);
@@ -142,6 +152,7 @@ export function onlineVersusScreen(): Screen {
               match: matchNo,
               ...(matchTicks === undefined ? {} : { tickLimit: matchTicks }),
               input: p.input,
+              ...(agent === undefined ? {} : { agent }),
               onStatus: (st, session) => {
                 const t = netStatusText(st, session.forfeitReason);
                 if (t !== undefined) say(t);
@@ -237,7 +248,7 @@ export function onlineVersusScreen(): Screen {
 
       const host = button('onlineHost', 'Host a match', () => {
         say('Making a code...');
-        hostPeer().then(({ peer: p, offer }) => {
+        hostPeer(iceParam()).then(({ peer: p, offer }) => {
           if (gone) { p.close(); return; }
           peer?.close();
           offerOut.box.value = offer;
@@ -253,7 +264,7 @@ export function onlineVersusScreen(): Screen {
       });
       const join = button('onlineJoin', 'Join a match', () => {
         say('Making an answer...');
-        joinPeer(offerIn.box.value).then(({ peer: p, answer }) => {
+        joinPeer(offerIn.box.value, iceParam()).then(({ peer: p, answer }) => {
           if (gone) { p.close(); return; }
           peer?.close();
           answerOut.box.value = answer;

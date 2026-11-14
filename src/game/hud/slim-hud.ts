@@ -7,7 +7,7 @@ import { elementCue, healthCue, lifeReadout, type HudCharacter } from './bars';
  * pins them). The Classic HUD keeps the geometry in `bars.ts`.
  */
 
-export const SLIM_H = 66;
+export const SLIM_H = 78;
 export const SLIM_BAR_Y = 20;
 export const SLIM_LINE = 16;
 export const SLIM_LINE_MAX = 18;
@@ -15,12 +15,18 @@ export const SLIM_PORTRAIT = 48;
 export const SLIM_PORTRAIT_Y = 6;
 /** Top of the second row (name, chips, tag, meter). */
 export const SLIM_ROW_B = 34;
-export const CHIP_SIZE = 24;
-export const CHIP_PITCH = 30;
-export const CHIP_X0 = 346;
-export const CHIP_BAR_Y = 62;
-export const PILL_W = 34;
-export const PILL_BAR_H = 6;
+/** Bench portraits (qa-r5-bench-portraits-small): 56 px squares, chip 0 nearest the tag pill, hanging a little under the band. */
+export const CHIP_SIZE = 56;
+export const CHIP_PITCH = 60;
+export const CHIP_Y = 31;
+export const CHIP_BAR_Y = CHIP_Y + CHIP_SIZE + 5;
+export const CHIP_BAR_LINE = 6;
+/** Left edge of the tag pill for team 0 (right edge 574, just short of the bar end at 580 and the round pips). */
+export const PILL_X0 = 530;
+/** Bottom of the lowest bench life bar: the status-chip row starts under it when a side has a bench. */
+export const CHIP_BOTTOM = CHIP_BAR_Y + CHIP_BAR_LINE / 2 + 2;
+export const PILL_W = 44;
+export const PILL_BAR_H = 8;
 
 export interface SlimBar {
   readonly minX: number;
@@ -46,18 +52,18 @@ export function slimPortrait(team: number): { readonly x: number; readonly y: nu
 
 /** Bench chip `i`: the portrait square. */
 export function chipRect(team: number, i: number): { readonly x: number; readonly y: number; readonly size: number } {
-  return { x: mirrorX(team, CHIP_X0 + i * CHIP_PITCH, CHIP_SIZE), y: SLIM_ROW_B, size: CHIP_SIZE };
+  return { x: mirrorX(team, PILL_X0 - 4 - CHIP_SIZE - i * CHIP_PITCH, CHIP_SIZE), y: CHIP_Y, size: CHIP_SIZE };
 }
 
 /** Bench chip `i`'s mini life bar, under its portrait (the red rest dashes of `tag-view` use it as well). */
 export function chipBar(team: number, i: number): SlimBar {
   const x = chipRect(team, i).x;
-  return { minX: x, maxX: x + CHIP_SIZE, y: CHIP_BAR_Y, line: 4, lineMax: 5 };
+  return { minX: x, maxX: x + CHIP_SIZE, y: CHIP_BAR_Y, line: CHIP_BAR_LINE, lineMax: CHIP_BAR_LINE + 1 };
 }
 
-/** The tag pill (word above, cooldown bar under it), after `bench` chips. */
-export function tagPill(team: number, bench: number): { readonly x: number; readonly wordY: number; readonly barY: number; readonly w: number } {
-  return { x: mirrorX(team, CHIP_X0 + bench * CHIP_PITCH + 6, PILL_W), wordY: SLIM_ROW_B - 1, barY: SLIM_ROW_B + 20, w: PILL_W };
+/** The tag pill (word above, cooldown bar under it), at the inner end of the bar, with the chips outside it. */
+export function tagPill(team: number): { readonly x: number; readonly wordY: number; readonly barY: number; readonly w: number } {
+  return { x: mirrorX(team, PILL_X0, PILL_W), wordY: CHIP_Y + 6, barY: CHIP_Y + CHIP_SIZE - PILL_BAR_H, w: PILL_W };
 }
 
 /** The tag word shown in the pill: the full readout ("TAG READY", "TAG 2.4s", "NO TAG") shortened to "TAG", "2.4s", "NO TAG". */

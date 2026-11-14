@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
 
-// The real WebRTC link (src/game/net/peer.ts) in Chromium: host and joiner in one page over loopback, copy-paste codes,
+// The real WebRTC link (src/game/net/peer.ts) in Chromium: host and joiner in one page over loopback, compact copy-paste codes,
 // then the setup handshake over the control channel and an input packet over the unreliable channel.
 const entry = fileURLToPath(new URL('../../src/game/net/peer-entry.ts', import.meta.url));
 const core = fileURLToPath(new URL('../../src/core', import.meta.url));
@@ -20,11 +20,11 @@ async function bundle(): Promise<string> {
   return chunk.code;
 }
 
-test('two peers connect with copy-paste codes, run the setup handshake and exchange an input packet', async ({ page }) => {
+test('two peers connect with compact copy-paste codes, run the setup handshake and exchange an input packet', async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto('/');
   await page.addScriptTag({ content: await bundle() });
-  const result = await page.evaluate<{ phases: string[]; got: number[] | null; bad: string }>(`(async () => {
+  const result = await page.evaluate<{ phases: string[]; got: number[] | null; bad: string; offer: string; answer: string }>(`(async () => {
     const { hostPeer, joinPeer, SetupHandshake } = window.TTEPeer;
     const host = await hostPeer([]);
     const join = await joinPeer(host.offer, []);
@@ -48,8 +48,13 @@ test('two peers connect with copy-paste codes, run the setup handshake and excha
     let bad = '';
     try { await join.peer.accept('garbage'); } catch (e) { bad = String(e.message); }
     host.peer.close(); join.peer.close();
-    return { phases, got, bad };
+    return { phases, got, bad, offer: host.offer, answer: join.answer };
   })()`);
+  // Compact codes (src/game/net/sdp-codec.ts): versioned, and short enough for a chat message.
+  expect(result.offer.startsWith('T1.')).toBe(true);
+  expect(result.offer.length).toBeLessThan(300);
+  expect(result.answer.startsWith('T1.')).toBe(true);
+  expect(result.answer.length).toBeLessThan(300);
   expect(result.phases).toEqual(['go', 'go']);
   expect(result.got).toEqual([7, 8, 9]);
   expect(result.bad).toMatch(/not a connection code/);

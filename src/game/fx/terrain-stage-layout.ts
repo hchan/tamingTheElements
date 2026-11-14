@@ -8,7 +8,7 @@ export const STAGE_URL = 'img/stagebg.png';
 
 export const ATLAS_W = 2400;
 export const FAR_H = 500;
-export const CROWD_H = 80;
+export const CROWD_H = 128;
 export const CROWD_FRAMES = 3;
 export const FLY_W = 64;
 export const FLY_H = 40;

@@ -11,11 +11,11 @@ const grade = (rgba: number[]): number[] => {
 };
 
 describe('gradeHeroRgba', () => {
-  it('keeps bright painted colour (mystic, not murky), leaves alpha alone and is deterministic', () => {
+  it('desaturates and darkens bright art, leaves alpha alone and is deterministic', () => {
     const px = [250, 60, 40, 255];
     const a = grade(px);
-    expect(sat(a[0] ?? 0, a[1] ?? 0, a[2] ?? 0)).toBeGreaterThanOrEqual(sat(250, 60, 40) - 2);
-    expect((a[0] ?? 0) + (a[1] ?? 0) + (a[2] ?? 0)).toBeGreaterThanOrEqual(250 + 60 + 40 - 3);
+    expect(sat(a[0] ?? 0, a[1] ?? 0, a[2] ?? 0)).toBeLessThan(sat(250, 60, 40));
+    expect((a[0] ?? 0) + (a[1] ?? 0) + (a[2] ?? 0)).toBeLessThan(250 + 60 + 40);
     expect(a[3]).toBe(255);
     expect(grade(px)).toEqual(a);
   });

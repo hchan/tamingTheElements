@@ -263,7 +263,7 @@ export class Arena extends Phaser.Scene {
         this.cleanups.push(second.attach(counted(window)));
       }
       this.second = second;
-      this.agents = [keyboard, second ?? this.launch.enemy ?? (this.session ? undefined : new RandomBot('p2'))];
+      this.agents = [this.launch.net?.agent ?? keyboard, second ?? this.launch.enemy ?? (this.session ? undefined : new RandomBot('p2'))];
       let labelled: { bindings: Bindings; labels: KeyLabels } | undefined;
       const labels = (): KeyLabels => {
         const b = keyboard.currentBindings();
@@ -406,6 +406,10 @@ export class Arena extends Phaser.Scene {
         return driver.isPaused;
       },
       hash: () => hash(world.state),
+      net: () => {
+        const ses = this.session;
+        return ses && { side: ses.side, status: ses.status, simTick: ses.simTick, desync: ses.desync, winner: ses.winner, checkpoints: ses.checkpoints(), stats: ses.stats };
+      },
       characters: () => {
         const s = world.state;
         const out: ProbeCharacter[] = [];

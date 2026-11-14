@@ -12,6 +12,8 @@ export interface UiFlags {
   readonly arcade: boolean;
   /** Online matches predict the missing remote input and roll back (`?ff=rollback`, dev and test builds; docs/NETCODE.md). */
   readonly rollback: boolean;
+  /** An online match's local side is played by the Arcade scripted AI instead of the keyboard (`?ff=netbot`, dev and test builds; the two-context e2e proof). */
+  readonly netbot: boolean;
   /** Play path starts the intro cinematic after Preload. */
   readonly cinematicDemo: boolean;
   /** Record playtests (`?ff=record`, dev and test builds); production uses the Settings checkbox instead. */
@@ -37,6 +39,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   arenaDemo: false,
   arcade: false,
   rollback: false,
+  netbot: false,
   cinematicDemo: false,
   record: false,
   failLoad: false,
@@ -67,6 +70,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     arenaDemo: on.has('arenaDemo'),
     arcade: on.has('arcade'),
     rollback: on.has('rollback'),
+    netbot: on.has('netbot'),
     cinematicDemo: on.has('cinematicDemo'),
     record: on.has('record'),
     failLoad: on.has('failLoad'),

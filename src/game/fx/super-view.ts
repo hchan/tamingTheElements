@@ -24,6 +24,8 @@ export const superName = (superId: number): string => SUPER_NAMES[superId] ?? SU
 const BAND_HIGH_Y = 200;
 const BAND_LOW_Y = 520;
 const BAND_H = 160;
+/** See-through, so a foe standing behind the band stays visible (qa-r3-super-cinematic-hides-action). */
+const BAND_OPACITY = 0.5;
 /** 72 and 52 logical px stay about 17 and 12 CSS px on the 390x844 phone's letterboxed canvas (about 304 px wide). */
 const NAME_PX = 72;
 const SUB_PX = 52;
@@ -177,7 +179,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     for (const o of [parts.dim, parts.band, parts.name, parts.sub]) o.setScale(v.scale);
     parts.portrait.setDisplaySize(PORTRAIT_PX * v.scale, PORTRAIT_PX * v.scale);
     put(parts.dim, 0, 0, frame.dim);
-    put(parts.band, dx, bandY, frame.bandAlpha * 0.9);
+    put(parts.band, dx, bandY, frame.bandAlpha * BAND_OPACITY);
     put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26, frame.bandAlpha);
     put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44, frame.bandAlpha);

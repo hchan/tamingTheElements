@@ -3,11 +3,12 @@ import { hash01 } from './grim-fx';
 import { getPrefs } from '../platform/a11y/prefs';
 
 /**
- * Load-time grade for the hero art. The shipped strips and sheets are NOT re-baked: each sheet texture is copied once to a canvas,
- * graded, and cached as `<key>~grim` in the texture manager (the same approach as the action-bar icons). Owner (2026-11-13):
- * "dark fantasy" means mystic, not dark; the painted portraits are the reference, so the grade keeps their colour and light
- * (no desaturation, no darken, no grain) and only lifts hard black outline ink toward a soft umber, which takes the cartoon edge
- * off the procedural rigs and barely touches painted art. Alpha is untouched.
+ * Load-time "grim" grade for the hero art (owner: sprites read as bright and cartoony, with hard black outlines). The shipped
+ * strips and sheets are NOT re-baked: each sheet texture is copied once to a canvas, graded, and cached as `<key>~grim` in the
+ * texture manager (the same approach as the action-bar icons). The grade is milder than the icons' so that element colours stay
+ * apart: a light desaturation, a barely-there darken (owner: too dark, mystic not murk; heroes pop against the lifted floor),
+ * lifted outline blacks (a soft umber instead of hard black) and a little grain. Alpha is untouched. The painted portrait heroes
+ * (PAINTED_HEROES, ADR-0020) are never graded: their art is the painting itself.
  */
 export interface HeroGrade {
   /** 0..1 share of the original saturation kept. */
@@ -21,7 +22,7 @@ export interface HeroGrade {
   readonly outlineLift: number;
 }
 
-export const HERO_GRADE: HeroGrade = { keep: 1, darken: 0, grain: 0, outline: [38, 32, 30], outlineLift: 0.55 };
+export const HERO_GRADE: HeroGrade = { keep: 0.88, darken: 0.04, grain: 3, outline: [52, 44, 46], outlineLift: 0.6 };
 
 /** Suffix of the cached graded copy (`map:fiara` -> `map:fiara~grim`). */
 export const GRIM_SUFFIX = '~grim';

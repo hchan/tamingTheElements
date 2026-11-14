@@ -14,7 +14,7 @@ const at = (ms: number, reduced: boolean): SuperFrame => superFrame(ms, TOTAL, r
 const samples = Array.from({ length: TOTAL / 10 + 1 }, (_, i) => i * 10);
 
 describe('super cinematic plan (FUN-DESIGN section 3)', () => {
-  it('dims to 40% brightness, fading in and out, and ends with nothing on screen', () => {
+  it('dims lightly, fading in and out, and ends with nothing on screen', () => {
     expect(at(SUPER_FADE_MS, false).dim).toBeCloseTo(SUPER_DIM);
     expect(at(TOTAL / 2, false).dim).toBeCloseTo(SUPER_DIM);
     expect(at(SUPER_FADE_MS / 2, false).dim).toBeCloseTo(SUPER_DIM / 2);

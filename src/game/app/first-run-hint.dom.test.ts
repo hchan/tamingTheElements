@@ -37,6 +37,17 @@ describe('firstRunHint', () => {
     expect(firstRunSeen(store)).toBe(true);
   });
 
+  it('fades at the first key or tap outside the card, but not on Tab', () => {
+    const store = memory();
+    const card = firstRunHint(store);
+    document.body.append(card as HTMLElement);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
+    expect(card?.classList.contains('firstRunFade')).toBe(false);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+    expect(card?.classList.contains('firstRunFade')).toBe(true);
+    expect(firstRunSeen(store)).toBe(true);
+  });
+
   it('survives a throwing store: reads as unseen and never throws', () => {
     const bad = {
       getItem: (): string | null => {

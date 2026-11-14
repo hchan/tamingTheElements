@@ -3,6 +3,7 @@ import { WEATHER_PM } from '@core/lazy-index';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BINDINGS } from '../../game/platform/input/bindings';
 import { commonAbilities, damageFactor, elementalAbilities, multText, weatherCards, wheelArrows } from './guide-data';
+import { COMMON_EFFECT, elementalEffect } from '../../game/platform/ability-text';
 import { ICON_NAMES } from './guide-icons';
 
 describe('guide data', () => {
@@ -48,5 +49,12 @@ describe('guide data', () => {
   it('never uses the banned player-facing words', () => {
     const all = JSON.stringify([commonAbilities(DEFAULT_BINDINGS), elementalAbilities(DEFAULT_BINDINGS), weatherCards()]);
     expect(all).not.toMatch(/classic|arcade|ruleset|capture/i);
+  });
+});
+
+describe('guide text is shared with the action-bar tooltips', () => {
+  it('every card effect is the shared ability-text line', () => {
+    for (const c of commonAbilities(DEFAULT_BINDINGS)) expect(c.effect).toBe(COMMON_EFFECT[c.id as keyof typeof COMMON_EFFECT]);
+    for (const c of elementalAbilities(DEFAULT_BINDINGS)) expect(c.effect).toBe(elementalEffect(c.element));
   });
 });

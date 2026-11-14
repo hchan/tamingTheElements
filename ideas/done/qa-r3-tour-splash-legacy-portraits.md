@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 ---
 
@@ -10,3 +10,5 @@ Severity: medium (graphics). The STAGE 1 OF 9 splash shows legacy portraits: fur
 Fix: bake portraits from the rigged heroes and keep the buttons inside the viewport.
 
 Screenshot: ~/claudetmp/qa/r3/tour-splash.png.
+
+Done 2026-11-13: the stage card roster now paints the baked-sheet portraits (`map/<sprite>.png` first frame) instead of the legacy `*Large.png`; stage tiles are shorter (3:1) with a lighter locked state so Fight and Main menu fit at 1280x720. Screenshot: ~/claudetmp/qa/r3-fix/tour-splash-1280.png.

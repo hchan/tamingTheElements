@@ -15,8 +15,8 @@ import {
  * motion easing.
  */
 
-/** Drifter heights (world y): above the crowd, under the Hud's bars. */
-const FLY_Y = [62, 112] as const;
+/** Drifter heights (world y): in the sky over the back tiers (the crowd strip starts at WALL_Y - CROWD_H = 56, just under the Hud bars). */
+const FLY_Y = [60, 82] as const;
 /** Between the hero's backdrop (-0.95) and the tile floor (-0.8). */
 const FAR_DEPTH = -0.92;
 const FLY_DEPTH = -0.91;

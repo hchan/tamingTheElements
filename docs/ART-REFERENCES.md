@@ -74,3 +74,9 @@ Sources: [Slynyrd Pixelblog 1](https://www.slynyrd.com/blog/2018/1/10/pixelblog-
    reports each sprite's lightest/darkest value against each arena floor (an automated contrast check; see `docs/VISUAL-QA.md`).
 9. **Do not import AI-generated packs** (e.g. the Stable Diffusion golem pack). If real assets are imported, prefer CC0 (Kenney, OGA CC0) and list
    them in the manifest licence notes.
+
+## Art direction: "dark fantasy" means mystic, not dark (owner, 2026-11-13)
+
+The look is mystic: rich, luminous colour, magical glow, readable silhouettes. It is not murk. Do not crush brightness or saturation in stage
+tints, scrims, hero grading or sprite bakes. The painted portraits (hero select, Tour, Versus) are the quality and lighting reference for
+the in-game rigged sprites.

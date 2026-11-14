@@ -6,7 +6,7 @@ import { METER_BAR, METER_BARS } from '@core/index';
  */
 
 export const NUMBER_SLOTS = 16;
-export const NUMBER_MS = 500;
+export const NUMBER_MS = 400;
 export const NUMBER_RISE_PX = 24;
 /** Offsets (px) of consecutive numbers, cycled by slot. */
 export const NUMBER_FAN: readonly (readonly [number, number])[] = [[0, 0], [-30, -12], [30, -12], [0, -24]];

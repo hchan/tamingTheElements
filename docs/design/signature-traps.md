@@ -28,9 +28,10 @@ countdown ring. Ticks are 50 Hz game ticks (500 = 10 s). Numbers are first guess
 
 ## Visuals today (view layer, shipped with this doc)
 
-The four trap kinds that exist in the sim now each have their own painted silhouette and motion (`src/game/fx/trap-paint.ts`, driven by
-`trapPhase` in `trap-fx.ts`, mounted by `trap-view.ts`): Fire Bomb is a charred pod with pulsing ember seams and rising cinders, Puddle a
-murky pool with spreading ripples and bubbles, Spike a cracked mound whose bone tusks heave up while arming and shake near the end,
-Gust a counter-turning grit spiral. Arming shows assembly (`arm` 0 to 1); the last 40 ticks quicken the motion (`urgency`); reduced
-motion freezes the clock at a fixed pose. Headless screenshots: `tests/e2e/trap-art.spec.ts`. The twelve signature things reuse these four
+The four trap kinds that exist in the sim now are flat ground decals (an ellipse 0.6 tall, 62 px wide; `src/game/fx/trap-paint.ts`,
+driven by `trapPhase` in `trap-fx.ts`, mounted by `trap-view.ts`). Every kind shares a dark stain and a 12-segment element-coloured
+rune ring, then adds its own accents: Fire Bomb is a flame vent (glowing cracks, three licking tongues, cinders), Puddle a frosted mere
+with ripples and bubbles, Spike a ring of bone tusks heaving up, Gust a counter-turning grit spiral. Phases: arming lights the ring one
+segment at a time while the accents grow (`arm` 0 to 1, drawn dim); armed is the full ring pulsing; the last 40 ticks quicken the
+motion (`urgency`); reduced motion freezes the clock at a fixed pose. The trigger range is a faint dotted ground ellipse, not a box. Headless screenshots: `tests/e2e/trap-art.spec.ts`. The twelve signature things reuse these four
 painters first (Builds on column), then get their own painters when each is implemented.

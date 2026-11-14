@@ -43,10 +43,9 @@ export function enhanceStage(
   roster.setAttribute('aria-hidden', 'true');
   for (const id of stage.opponents) {
     const fig = el('figure', 'tsFoe');
-    const img = el('img');
-    img.alt = '';
-    img.src = `${base()}assets/img/map/${encodeURIComponent(getCharacter(id).sprite)}Large.png`;
-    img.decoding = 'async';
+    // The current painted portrait: first frame of the baked-sheet strip (the one the hero select uses), not the legacy Large art.
+    const img = el('span', 'tsFace heroFace');
+    img.style.backgroundImage = `url("${base()}assets/img/map/${encodeURIComponent(getCharacter(id).sprite)}.png")`;
     fig.append(img, el('figcaption', undefined, label(id)));
     roster.append(fig);
   }

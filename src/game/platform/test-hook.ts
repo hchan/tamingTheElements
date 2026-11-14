@@ -1,3 +1,4 @@
+import type { DesyncInfo, SessionStats, SessionStatus } from '@core/index';
 import { installFpsOverlay, wantsFpsOverlay } from './fps-overlay';
 
 export interface ProbeCharacter {
@@ -9,11 +10,27 @@ export interface ProbeCharacter {
   readonly maxHp: number;
 }
 
+/** Read-only view of a running online match's lockstep session, for the two-context e2e proof (`__TTE__.net()`). */
+export interface NetProbe {
+  readonly side: 0 | 1;
+  readonly status: SessionStatus;
+  readonly simTick: number;
+  /** First hash mismatch found, if any. */
+  readonly desync: DesyncInfo | undefined;
+  /** Winning team (0 or 1), -1 for a draw, null while undecided. */
+  readonly winner: number | null;
+  /** Every confirmed local checkpoint `[tick, hash]` (the hashes sent for desync checks). */
+  readonly checkpoints: readonly (readonly [number, number])[];
+  readonly stats: SessionStats;
+}
+
 /** Deterministic control of the running Arena for e2e: pauses the real-time driver, then steps by hand. */
 export interface ArenaProbe {
   readonly tick: number;
   readonly paused: boolean;
   hash(): number;
+  /** The online session's state, or undefined outside an online match. */
+  net(): NetProbe | undefined;
   /** Active (alive, not benched) characters. */
   characters(): ProbeCharacter[];
   /** Pauses the real-time driver and runs n sim ticks with the given commands (default: no input). */
@@ -178,6 +195,8 @@ export interface TestHook {
   state(): HookState;
   /** Hash of the running arena's sim state, or 0 outside a battle. */
   hash(): number;
+  /** The running online match's lockstep session (side, status, tick, desync, checkpoints, stats), or undefined when there is none. */
+  net(): NetProbe | undefined;
   /** Pauses the driver and steps the running arena n ticks (manual stepping mode). */
   step(n: number): void;
   /** Imports a save (JSON text) into the save store and refreshes the current screen. */
@@ -241,6 +260,7 @@ export function installTestHook(version: number, loadSave: (json: string) => Pro
         paused: hook.arena?.paused ?? false,
       }),
       hash: () => hook.arena?.hash() ?? 0,
+      net: () => hook.arena?.net(),
       step: (n) => {
         hook.arena?.step(n);
       },

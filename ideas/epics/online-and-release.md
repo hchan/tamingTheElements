@@ -10,6 +10,13 @@ Online play, e2e stability, test infrastructure, release and housekeeping.
 Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as one theme, in separate small work packages):
 
 - [online-play](../brainstorm/online-play.md)
+- WebRTC plan ([docs/WEBRTC-PLAN.md](../../docs/WEBRTC-PLAN.md)):
+  [01](../brainstorm/webrtc-01-proof-harness.md), [02](../brainstorm/webrtc-02-compact-codes.md),
+  [03](../brainstorm/webrtc-03-share-link-qr.md), [04](../brainstorm/webrtc-04-ice-config.md),
+  [05](../brainstorm/webrtc-05-leave-rematch.md), [06](../brainstorm/webrtc-06-mobile.md),
+  [07](../brainstorm/webrtc-07-frame-pacing.md), [08](../brainstorm/webrtc-08-rollback-default.md),
+  [09](../brainstorm/webrtc-09-quality-desync-report.md), [10](../brainstorm/webrtc-10-relay-room-codes.md),
+  [11](../brainstorm/webrtc-11-soak.md)
 - [online-rematch-e2e-flake-under-load](../done/online-rematch-e2e-flake-under-load.md)
 - [e2e-coverage-and-browsers](../in-progress/e2e-coverage-and-browsers.md)
 - [e2e-stability-runs](../brainstorm/e2e-stability-runs.md)

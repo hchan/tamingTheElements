@@ -60,6 +60,8 @@ export interface ArenaLaunch {
   readonly net?: {
     readonly side: 0 | 1;
     readonly input: Transport;
+    /** Dev/test builds only (`?ff=netbot`): drives the local side instead of the keyboard. It only makes this peer's own commands, which go over the wire, so it cannot desync. */
+    readonly agent?: Agent;
     /** Match number on the link (a rematch bumps it); default 0. */
     readonly match?: number;
     /** Dev/test builds only (`?matchticks=N`): the match ends as a draw at this tick, so a rematch can be tested quickly. */

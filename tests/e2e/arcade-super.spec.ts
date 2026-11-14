@@ -60,7 +60,7 @@ test('Arcade: a super dims the arena, slides in the element cut-in and punches t
   await frames(page);
   const f = await superFx(page);
   expect(f?.sub).toBe('WATER');
-  expect(f?.dim).toBeCloseTo(0.6, 2);
+  expect(f?.dim).toBeCloseTo(0.2, 2);
   expect(f?.bandAlpha).toBe(1);
   expect(f?.zoom).toBeGreaterThan(1);
   expect(f?.camZoom).toBeCloseTo(f?.zoom ?? 0, 3);
@@ -87,7 +87,7 @@ test('Arcade with reduced motion: no slide or punch-in, but the dim, band and na
   expect(f?.slide).toBe(0);
   expect(f?.zoom).toBe(1);
   expect(f?.camZoom).toBe(1);
-  expect(f?.dim).toBeCloseTo(0.6, 2);
+  expect(f?.dim).toBeCloseTo(0.2, 2);
   expect(f?.bandAlpha).toBe(1);
   expect(await page.evaluate<boolean>(`window.__TTE__.arena.shaking()`)).toBe(false);
   expect(errors).toEqual([]);

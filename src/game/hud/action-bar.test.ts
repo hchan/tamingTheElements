@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, type RenderActionBar } from '@core/index';
-import { centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings } from './action-bar';
+import { centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotWord } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -305,5 +305,34 @@ describe('centreRows and the cleanse icon', () => {
   });
   it('gives cleanse its own tile on the sheet', () => {
     expect(ACTION_ICON['cleanse']).toBe(12);
+  });
+});
+
+describe('dressed bar parts (key badge, icon, label strip)', () => {
+  const overlap = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): boolean =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+  it('keeps the icon area and the key badge clear of the label strip at every box size', () => {
+    for (const size of [SLOT_SIDE, 60, 73, 96]) {
+      for (const keyLen of [1, 2]) {
+        const p = slotParts(100, 600, size, keyLen);
+        expect(overlap(p.icon, p.strip)).toBe(false);
+        expect(overlap(p.badge, p.strip)).toBe(false);
+        expect(p.strip.y + p.strip.h).toBeLessThanOrEqual(600 + size);
+        expect(p.strip.h).toBeGreaterThanOrEqual(14);
+      }
+    }
+  });
+
+  it('a one-key badge sits left of the centred icon glyph (the sheet cell has about a sixth of margin)', () => {
+    const p = slotParts(0, 0, SLOT_SIDE, 1);
+    expect(p.badge.x + p.badge.w).toBeLessThanOrEqual(p.icon.x + p.icon.w / 6 + 4);
+  });
+
+  it('every kind of box gets a word: its state words, else its name', () => {
+    expect(slotWord({ kind: 'ability', cmd: Cmd.primary, note: '' })).toBe('Attack');
+    expect(slotWord({ kind: 'ability', cmd: Cmd.secondary, note: '' })).toBe('Special');
+    expect(slotWord({ kind: 'charge', cmd: 0, note: '' })).toBe('Charge');
+    expect(slotWord({ kind: 'weather', cmd: 0, note: 'Weather 6%' })).toBe('Weather 6%');
   });
 });

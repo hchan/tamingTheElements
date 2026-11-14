@@ -12,6 +12,9 @@ import { syncTouchOverlays } from './touch-overlay';
 import { CLEANSE_COOLDOWN, cleanseClockOf } from './cleanse-clock';
 import { tagSlot } from './tag-slot';
 import { elementalShown } from '../platform/cleanse-info';
+import { COMMON_EFFECT, HERO_EFFECT, elementalEffect, elementalTitle } from '../platform/ability-text';
+
+const ELEMENT_BY_KIND = ['void', 'fire', 'water', 'earth', 'air'] as const;
 
 /**
  * Action bar (legacy `actionbar.js`): primary, secondary, capture (chapter 2+) and swap slots along the
@@ -160,6 +163,33 @@ export function elementalNote(tick: number, e: { name: string; readyTick: number
   return e.name;
 }
 
+/** The tooltip for a box: its plain name and a one-line effect (the Guide's own text, so the two never disagree). */
+export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'>): { title: string; text: string } {
+  switch (s.kind) {
+    case 'ability': return s.cmd === Cmd.primary ? { title: 'Attack', text: HERO_EFFECT.primary } : { title: 'Special', text: HERO_EFFECT.secondary };
+    case 'capture': return { title: 'Snag', text: COMMON_EFFECT.snag };
+    case 'swap': return { title: 'Tag', text: COMMON_EFFECT.tag };
+    case 'trap': return { title: 'Trap', text: COMMON_EFFECT.trap };
+    case 'elemental': return { title: elementalTitle(s.element ?? 0), text: elementalEffect(ELEMENT_BY_KIND[s.element ?? 0] ?? 'void') };
+    case 'super': return { title: 'Super', text: COMMON_EFFECT.super };
+    case 'guard': return { title: 'Guard', text: COMMON_EFFECT.guard };
+    case 'dash': return { title: 'Dash', text: COMMON_EFFECT.dash };
+    case 'weather': return { title: 'Weather', text: COMMON_EFFECT.weather };
+    case 'charge': return { title: 'Charge', text: COMMON_EFFECT.charge };
+    case 'cleanse': return { title: 'Cleanse', text: COMMON_EFFECT.cleanse };
+  }
+}
+
+/** Where a tooltip `w` x `h` goes for a box: centred above it, kept inside the 1280-wide screen, below the top edge. Pure, for tests. */
+export function tipPlacement(s: Pick<ActionSlot, 'x' | 'y' | 'size'>, w: number, h: number): { x: number; y: number } {
+  const x = Math.min(LOGICAL_W - w - 4, Math.max(4, s.x + s.size / 2 - w / 2));
+  return { x, y: Math.max(4, s.y - h - 8) };
+}
+
+/** How long a held finger waits before a touch tip shows, and how long tips stay hidden after a super starts (its banner owns the screen). */
+export const TIP_LONG_PRESS_MS = 450;
+export const TIP_SUPER_QUIET_MS = 2800;
+
 /** Line colour per element kind (a second cue only: the icon's shape and the slot's words say which). */
 const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
 
@@ -171,6 +201,52 @@ function readyEdge(element: number | undefined): number {
 /** Horizontal scale (at most 1) that keeps a text `width` wide inside a slot `size` wide, leaving `pad` px each side. */
 export function fitTextScale(width: number, size: number, pad = 4): number {
   return width <= 0 ? 1 : Math.min(1, Math.max(0.1, (size - pad * 2) / width));
+}
+
+/** A plain-word name for a box that has no state words of its own, so every box of the dressed bar carries a readable label. */
+export function slotWord(s: Pick<ActionSlot, 'kind' | 'cmd' | 'note'>): string {
+  if (s.note !== '') return s.note;
+  switch (s.kind) {
+    case 'ability': return s.cmd === Cmd.primary ? 'Attack' : 'Special';
+    case 'capture': return 'Snag';
+    case 'swap': return 'Tag';
+    case 'trap': return 'Trap';
+    case 'elemental': return 'Element';
+    case 'super': return 'Super';
+    case 'guard': return 'Guard';
+    case 'dash': return 'Dash';
+    case 'weather': return 'Weather';
+    case 'charge': return 'Charge';
+    case 'cleanse': return 'Cleanse';
+  }
+}
+
+/** Frame colour per kind of box in the dressed bar (the element's own colour for an Element box): ash-dulled, never the only cue. */
+const KIND_TINT: Readonly<Record<SlotKind, number>> = {
+  ability: 0xffffff, capture: 0xc9a26b, swap: 0xffffff, trap: 0xc9a26b, elemental: 0xffffff, super: 0xffd15c,
+  guard: 0xe6f4ff, dash: 0xe6f4ff, weather: 0x5cc8ff, charge: 0xff7a3d, cleanse: 0x9fdc8a,
+};
+
+/**
+ * The dressed bar's parts of one box, in logical px, so nothing overlaps: a corner badge for the key (top-left), the icon centred in the
+ * area above, and a label strip along the bottom. `keyLen` is the key label's length (a longer key widens the badge).
+ */
+export interface SlotParts {
+  readonly badge: { x: number; y: number; w: number; h: number };
+  readonly icon: { x: number; y: number; w: number; h: number };
+  readonly strip: { x: number; y: number; w: number; h: number };
+}
+export function slotParts(x: number, y: number, size: number, keyLen: number): SlotParts {
+  const stripH = Math.round(size * 0.24);
+  const pad = Math.max(2, Math.round(size * 0.04));
+  const badgeH = Math.round(size * 0.2);
+  const iconH = size - stripH - pad * 2 - 1;
+  const iconW = Math.min(size - pad * 2, iconH);
+  return {
+    badge: { x: x + 2, y: y + 2, w: Math.max(badgeH, Math.round(badgeH * 0.55) * Math.max(1, keyLen) + 4), h: badgeH },
+    icon: { x: x + (size - iconW) / 2, y: y + pad, w: iconW, h: iconH },
+    strip: { x: x + 1, y: y + size - 1 - stripH, w: size - 2, h: stripH },
+  };
 }
 
 /** Elapsed fraction of a cooldown that ends (becomes usable) at `readyTick`; 1 once ready. */
@@ -489,6 +565,9 @@ export class ActionBarView {
   /** Slot backgrounds, under the icons (the main graphics sit over them for frames and cooldown shading). */
   private readonly back: Phaser.GameObjects.Graphics;
   private readonly texts: Phaser.GameObjects.Text[] = [];
+  /** Dressed bar only: the label under each icon (the key stays in `texts`). */
+  private readonly notes: Phaser.GameObjects.Text[] = [];
+  private readonly noteColor = new Map<Phaser.GameObjects.Text, string>();
   private readonly icons: Phaser.GameObjects.Image[] = [];
   private readonly headerTexts: Phaser.GameObjects.Text[] = [];
   private slots: ActionSlot[] = [];
@@ -498,6 +577,12 @@ export class ActionBarView {
   private readonly flashStart = new Map<string, number>();
   private reduced = false;
   private frame = 0;
+  /** Tooltip: the Text and what the player points at now (mouse, focus or long press). */
+  private tipText: Phaser.GameObjects.Text | undefined;
+  private manual: { touch: string } | { idx: number } | null = null;
+  /** Tips stay hidden until this time (a super cut-in just started). */
+  private superQuietUntil = 0;
+  private pressTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -516,8 +601,61 @@ export class ActionBarView {
   ) {
     this.back = scene.add.graphics().setDepth(98);
     this.gfx = scene.add.graphics().setDepth(100);
-    if (!mirror) scene.input.on('pointerdown', this.onPointer);
+    if (!mirror) {
+      scene.input.on('pointerdown', this.onPointer);
+      scene.input.on('pointermove', this.onMove);
+      if (typeof document !== 'undefined') {
+        for (const ev of ['pointerover', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.addEventListener(ev, this.onDom, true);
+      }
+    }
   }
+
+  /** Mouse over a box without a DOM overlay (the hero's attacks, Snag): the canvas pointer says which box. */
+  private readonly onMove = (p: Phaser.Input.Pointer): void => {
+    if (p.wasTouch || (this.manual !== null && 'touch' in this.manual)) return;
+    const res = this.scene.scale.width / LOGICAL_W;
+    const x = this.place ? p.x / res : p.worldX;
+    const y = this.place ? p.y / res : p.worldY;
+    const idx = this.slots.findIndex((s) => x >= s.x && x < s.x + s.size && y >= s.y && y < s.y + s.size);
+    this.manual = idx >= 0 ? { idx } : null;
+  };
+
+  /** Touch overlays (`#arcade<Name>`) cover their box: hover, keyboard focus and a long press on them show the tip. */
+  private readonly onDom = (e: Event): void => {
+    const el = e.target instanceof Element ? e.target.closest('[id^="arcade"]') : null;
+    const touch = el && el.id.length > 6 ? el.id.slice(6) : '';
+    const clearPress = (): void => {
+      if (this.pressTimer !== undefined) clearTimeout(this.pressTimer);
+      this.pressTimer = undefined;
+    };
+    const holdTip = (): void => {
+      if (this.manual !== null && 'touch' in this.manual && this.manual.touch === touch) return;
+      this.manual = { touch };
+    };
+    switch (e.type) {
+      case 'pointerover':
+        if (touch !== '' && (e as PointerEvent).pointerType === 'mouse') holdTip();
+        break;
+      case 'pointerout':
+        if (touch !== '' && (e as PointerEvent).pointerType === 'mouse') this.manual = null;
+        break;
+      case 'focusin':
+        if (touch !== '' && el?.matches(':focus-visible')) holdTip();
+        break;
+      case 'focusout':
+        if (touch !== '') this.manual = null;
+        break;
+      case 'pointerdown':
+        if (touch !== '' && (e as PointerEvent).pointerType !== 'mouse') {
+          clearPress();
+          this.pressTimer = setTimeout(holdTip, TIP_LONG_PRESS_MS);
+        }
+        break;
+      default:
+        clearPress();
+        if ((e as PointerEvent).pointerType === 'touch' && this.manual !== null && 'touch' in this.manual) this.manual = null;
+    }
+  };
 
   /** Logical (screen) x/y to world, through the current screen box. */
   private box: ScreenBox = IDENTITY;
@@ -576,6 +714,12 @@ export class ActionBarView {
         this.back.fillStyle(s.sprite === '' ? 0x070605 : 0x1d1e1f, 0.95);
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       }
+      if (this.dressed()) {
+        // Label strip: a darker band under the icon so the words never sit on art.
+        const p = slotParts(s.x, s.y, s.size, s.label.length);
+        this.back.fillStyle(0x090807, 0.92);
+        this.back.fillRect(p.strip.x, p.strip.y, p.strip.w, p.strip.h);
+      }
       if (s.sprite !== '' && !this.mirror) {
         // A hero's own attack art is dark: a lit stone plate with a soft pale core keeps it from vanishing (same lift as the sheet's tiles).
         this.back.fillStyle(0x3a352c, 1);
@@ -587,19 +731,27 @@ export class ActionBarView {
       const key = `${s.kind}:${String(s.cmd)}:${String(i)}`;
       const prev = this.lastProgress.get(key);
       if (prev !== undefined && prev < 1 && s.progress >= 1 && !s.disabled) this.flashStart.set(key, now);
+      if (!this.mirror && prev !== undefined && prev >= 1 && s.progress < 1 && !s.disabled && s.kind === 'super') this.superQuietUntil = now + TIP_SUPER_QUIET_MS;
       this.lastProgress.set(key, s.progress);
       const started = this.flashStart.get(key);
       const look = cooldownLook(s.progress, s.disabled, s.x, s.y, s.size, started === undefined ? -1 : now - started, this.reduced);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
-        g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : ready ? readyEdge(s.element) : 0x2e2c29, 1);
+        const edge = this.dressed() ? mute(s.element ? (ELEMENT_TINT[s.element] ?? 0xffffff) : KIND_TINT[s.kind], 0.5, 0.75) : readyEdge(s.element);
+        g.lineStyle(s.highlight ? 3 : this.dressed() ? 2 : 1, s.highlight ? CAPTURE_READY_COLOR : ready ? edge : 0x2e2c29, 1);
         g.strokeRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       } else {
         g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : 0x000000, 1);
         g.strokeRect(s.x, s.y, s.size, s.size);
       }
       this.drawCooldown(look, s);
-      if (!this.mirror && s.label !== '') {
+      if (this.dressed() && s.label !== '') {
+        const b = slotParts(s.x, s.y, s.size, s.label.length).badge;
+        g.fillStyle(0x0a0806, 0.9);
+        g.fillRoundedRect(b.x, b.y, b.w, b.h, 3);
+        g.lineStyle(1, 0x6b6558, 0.9);
+        g.strokeRoundedRect(b.x, b.y, b.w, b.h, 3);
+      } else if (!this.mirror && s.label !== '') {
         // A dark badge under the key so the number reads on any icon.
         g.fillStyle(0x0a0806, 0.82);
         g.fillRect(s.x + 2, s.y + 2, Math.max(18, s.label.length * 11 + 8), 20);
@@ -616,12 +768,19 @@ export class ActionBarView {
     this.drawHeaders(g, grouped?.headers ?? []);
     if (!this.mirror) {
       this.drawHint(bar?.tick ?? 0);
+      this.drawTip(now);
       if (extras && this.frame % 5 === 1) syncTouchOverlays(this.screenSlots().map((r, i) => ({ ...r, touch: this.slots[i]?.touch ?? '' })), this.scene.game.canvas);
     }
     for (let i = this.slots.length; i < this.icons.length; i++) {
       this.icons[i]?.setVisible(false);
       this.texts[i]?.setVisible(false);
+      this.notes[i]?.setVisible(false);
     }
+  }
+
+  /** The dressed layout (Arcade main bar): key badge, centred icon, label strip. Mirrors and the plain legacy bar keep their own look. */
+  private dressed(): boolean {
+    return this.styled && !this.mirror;
   }
 
   /** Group titles and the rule under each (prototype only; nothing is drawn for the flat bar). */
@@ -666,12 +825,21 @@ export class ActionBarView {
   }
 
   destroy(): void {
-    if (!this.mirror) this.scene.input.off('pointerdown', this.onPointer);
+    if (!this.mirror) {
+      this.scene.input.off('pointerdown', this.onPointer);
+      this.scene.input.off('pointermove', this.onMove);
+      if (typeof document !== 'undefined') {
+        for (const ev of ['pointerover', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.removeEventListener(ev, this.onDom, true);
+      }
+      if (this.pressTimer !== undefined) clearTimeout(this.pressTimer);
+      this.tipText?.destroy();
+    }
     this.gfx.destroy();
     this.back.destroy();
     this.hint?.destroy();
     this.icons.forEach((o) => { o.destroy(); });
     this.texts.forEach((o) => { o.destroy(); });
+    this.notes.forEach((o) => { o.destroy(); });
     this.headerTexts.forEach((o) => { o.destroy(); });
   }
 
@@ -696,6 +864,37 @@ export class ActionBarView {
     const cmd = this.place ? commandAt(this.slots, p.x / res, p.y / res) : commandAt(this.slots, p.worldX, p.worldY);
     if (cmd !== 0) this.emit(cmd);
   };
+
+  /** Tooltips show only for what the player points at or focuses (mouse, keyboard focus, long press), never on their own. */
+  private tipTarget(now: number): ActionSlot | undefined {
+    if (now < this.superQuietUntil) return undefined;
+    const m = this.manual;
+    if (m === null) return undefined;
+    return 'touch' in m ? this.slots.find((s) => s.touch === m.touch) : this.slots[m.idx];
+  }
+
+  /** The tooltip: title and one line of effect in a dark panel above the box, shrunk to fit the screen on a phone. */
+  private drawTip(now: number): void {
+    const s = this.tipTarget(now);
+    if (!s) {
+      this.tipText?.setVisible(false);
+      return;
+    }
+    const tip = slotTip(s);
+    this.tipText ??= this.scene.add.text(
+      0, 0, '',
+      crisp(this.scene, {
+        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(Math.round(16 * Math.min(1.8, phoneBoost(this.scene))))}px`, color: '#e8dfc8',
+        backgroundColor: '#0b0a09f0', padding: { x: 10, y: 6 }, wordWrap: { width: 420 }, lineSpacing: 3,
+      }),
+    ).setDepth(103);
+    const line = `${tip.title}\n${tip.text}`;
+    if (this.tipText.text !== line) this.tipText.setText(line);
+    const sc = this.box.scale;
+    const w = this.tipText.width;
+    const at = tipPlacement(s, w, this.tipText.height);
+    this.tipText.setVisible(true).setPosition(this.wx(at.x), this.wy(at.y)).setScale(sc);
+  }
 
   private drawHint(tick: number): void {
     const h = captureHint(this.slots, tick);
@@ -725,6 +924,12 @@ export class ActionBarView {
       const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
       if (!tex.has(ICON_FRAME)) tex.add(ICON_FRAME, 0, fx, fy, fw, fh);
       if (icon.texture.key !== key || icon.frame.name !== ICON_FRAME) icon.setTexture(key, ICON_FRAME);
+      if (this.dressed()) {
+        const a = slotParts(s.x, s.y, s.size, s.label.length).icon;
+        const fit = fitIcon(fw, fh, Math.min(a.w, a.h));
+        icon.setVisible(true).setPosition(this.wx(a.x + fit.dx), this.wy(a.y + (a.h - Math.min(a.w, a.h)) / 2 + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
+        return;
+      }
       const pad = this.styled ? ICON_PAD * (s.size / SLOT_SIDE) : 0;
       const fit = fitIcon(fw, fh, s.size - pad * 2);
       icon.setVisible(true).setPosition(this.wx(s.x + pad + fit.dx), this.wy(s.y + pad + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
@@ -738,10 +943,50 @@ export class ActionBarView {
     const tex = this.scene.textures.get(ACTION_SHEET);
     if (!tex.has(frame)) tex.add(frame, 0, (s.icon % SHEET_COLS) * SHEET_CELL, Math.floor(s.icon / SHEET_COLS) * SHEET_CELL, SHEET_CELL, SHEET_CELL);
     if (icon.texture.key !== ACTION_SHEET || icon.frame.name !== frame) icon.setTexture(ACTION_SHEET, frame);
+    if (this.dressed()) {
+      const a = slotParts(s.x, s.y, s.size, s.label.length).icon;
+      const side = Math.min(a.w, a.h);
+      icon.setVisible(true).setPosition(this.wx(a.x + (a.w - side) / 2), this.wy(a.y)).setDisplaySize(side * this.box.scale, side * this.box.scale);
+      return;
+    }
     icon.setVisible(true).setPosition(this.wx(s.x + 1), this.wy(s.y + 1)).setDisplaySize((s.size - 2) * this.box.scale, (s.size - 2) * this.box.scale);
   }
 
+  /** Dressed bar: the key centred in its corner badge and the label centred in the strip, each shrunk (never past 1) to fit its own box. */
+  private dressedText(i: number, s: ActionSlot): void {
+    const style = (px: number, color: string): Phaser.Types.GameObjects.Text.TextStyle => crisp(this.scene, {
+      fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(Math.round(px * Math.min(1.8, phoneBoost(this.scene))))}px`, fontStyle: 'bold', color, stroke: '#0a0806', strokeThickness: 2,
+    });
+    let key = this.texts[i];
+    if (!key) {
+      key = this.scene.add.text(0, 0, '', style(13, '#f0e8d4')).setOrigin(0.5, 0.5).setDepth(101);
+      this.texts[i] = key;
+    }
+    let note = this.notes[i];
+    if (!note) {
+      note = this.scene.add.text(0, 0, '', style(12, '#e0d8c6')).setOrigin(0.5, 0.5).setDepth(101);
+      this.notes[i] = note;
+    }
+    const p = slotParts(s.x, s.y, s.size, s.label.length);
+    const fit = (t: Phaser.GameObjects.Text, w: number, h: number): number => Math.min(1, (w - 2) / Math.max(1, t.width), (h - 1) / Math.max(1, t.height));
+    if (key.text !== s.label) key.setText(s.label);
+    key.setVisible(s.label !== '').setPosition(this.wx(p.badge.x + p.badge.w / 2), this.wy(p.badge.y + p.badge.h / 2)).setScale(this.box.scale * fit(key, p.badge.w, p.badge.h));
+    const word = slotWord(s);
+    if (note.text !== word) note.setText(word);
+    const lit = s.progress >= 1 && !s.disabled;
+    const color = lit ? '#e8dfc8' : '#8d867a';
+    if (this.noteColor.get(note) !== color) {
+      note.setColor(color);
+      this.noteColor.set(note, color);
+    }
+    note.setVisible(true).setPosition(this.wx(p.strip.x + p.strip.w / 2), this.wy(p.strip.y + p.strip.h / 2)).setScale(this.box.scale * fit(note, p.strip.w, p.strip.h));
+  }
+
   private text(i: number, s: ActionSlot): void {
+    if (this.dressed()) {
+      this.dressedText(i, s);
+      return;
+    }
     let t = this.texts[i];
     if (!t) {
       const size = `${String(Math.round((this.mirror ? 14 : 16) * Math.min(1.8, phoneBoost(this.scene))))}px`;
