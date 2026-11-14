@@ -37,6 +37,23 @@ describe('helpScreen (DOM)', () => {
     expect(root.querySelector('h1')?.nextElementSibling).toBe(backs[0]);
   });
 
+  it('has a Jump to row whose buttons scroll to each section heading', () => {
+    const root = document.createElement('div');
+    document.body.append(root);
+    helpScreen().mount(root);
+    const btns = [...root.querySelectorAll<HTMLButtonElement>('nav.helpJump button')];
+    expect(btns.map((b) => b.textContent)).toEqual(['How to fight', 'Choosing your heroes', 'Controls']);
+    const target = document.getElementById('helpControlsHeading') as HTMLElement;
+    let scrolled = 0;
+    target.scrollIntoView = () => {
+      scrolled++;
+    };
+    btns[2]?.click();
+    expect(scrolled).toBe(1);
+    expect(document.activeElement).toBe(target);
+    expect(root.querySelector('nav.helpJump a')).toBeNull();
+  });
+
   it('has How to fight, the numbered action bar and the hero picker steps', () => {
     const root = document.createElement('div');
     helpScreen().mount(root);

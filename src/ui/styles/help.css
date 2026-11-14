@@ -1,0 +1,57 @@
+/* Help screen (src/ui/screens/help.ts): jump-to row, button-like link chips, scroll offsets for the jump targets. */
+#menu .helpJump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  margin: 0 0 1em;
+}
+#menu .helpJumpLabel {
+  color: #d0c8f0;
+  font-size: 0.9em;
+}
+#menu .helpJumpBtn {
+  min-height: 44px;
+  padding: 0.4em 1em;
+  color: #f4f0ff;
+  background: #2c2760;
+  border: 1px solid #cfc6f0;
+  border-radius: 999px;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+}
+#menu .helpJumpBtn:hover,
+#menu .helpJumpBtn:focus-visible {
+  background: #4a42a0;
+  outline: 2px solid #ffd678;
+  outline-offset: 2px;
+}
+#menu .helpPanel > h2.heading,
+#menu .helpControls > h2.heading {
+  scroll-margin-top: 1em;
+}
+/* The five page links read as raised buttons, not underlined text (not on short landscape, which has its own compact sticky row). */
+@media not all and (max-height: 500px) and (orientation: landscape) {
+  #menu .helpLinks a.menuButton {
+    display: inline-block;
+    min-height: 44px;
+    padding: 0.5em 1.1em;
+    text-decoration: none;
+    border-width: 2px;
+    border-radius: 10px;
+    box-shadow: 0 3px 0 rgba(10, 8, 30, 0.7);
+  }
+  #menu .helpLinks a.menuButton:hover,
+  #menu .helpLinks a.menuButton:focus-visible {
+    background: #4a42a0;
+    outline: 2px solid #ffd678;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Short phone: the compact sticky tab row and first heading must stay high, so the jump row gives way. */
+  #menu .helpJump {
+    display: none;
+  }
+}
