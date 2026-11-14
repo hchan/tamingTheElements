@@ -1744,6 +1744,15 @@ html[data-high-contrast='true'] button.touchBtn {
     display: none;
   }
 }
+/* Portrait: #game is the full-height box with the 16:9 canvas centred in it, so the card sits just under the canvas (not at the screen bottom, where the stick covered Got it). */
+@media (orientation: portrait) and (pointer: coarse) {
+  .firstRunHint {
+    bottom: auto;
+    top: calc(50% + 28.125vw + 12px);
+    max-width: 94%;
+    font-size: 12px;
+  }
+}
 #rotateOverlay:not([hidden]) ~ .firstRunHint {
   display: none;
 }
@@ -2109,8 +2118,9 @@ button.menuButton.heroSlotClear {
   /* First-run card: a slim strip docked just above the action buttons (title and first line left, Got it right), so the fighters stay visible. */
   .firstRunHint {
     top: auto;
-    bottom: 14%;
-    max-width: min(44em, 78%);
+    /* Above the "TAG" caption that floats over the swap slot (it sat under the card text), and narrow enough to clear both fighters. */
+    bottom: 24%;
+    max-width: min(44em, 50%);
     padding: 0.2em 0.5em;
     font-size: 10px;
     line-height: 1.25;
@@ -2192,6 +2202,8 @@ button.menuButton.heroSlotClear {
    thin band top and bottom (the safe-area margin stays) so the slot row floats clear of the edge. */
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
   #game {
+    /* The 16:9 canvas leaves side bars on a wide phone (the stick lives in the left one): tint them like the HUD band instead of dead black. */
+    background: linear-gradient(90deg, #0b0a16, #151330 12%, #151330 88%, #0b0a16);
     --edge-band: 10px;
     height: calc(var(--view-h) * var(--canvas-fraction, 1) - 2 * var(--edge-band));
     /* Shifted, not margined: a top margin collapses through the #menu parent and the canvas ends up flush with the top again. */
