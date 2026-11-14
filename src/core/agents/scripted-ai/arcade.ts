@@ -2,7 +2,7 @@ import {
   arcadePlayfield, CHARGE_AI_MIN_DIST, hazardWarnTicks, SNAG_RANGE_PX, SNAG_WIDTH_PX, SUPER_CHORD_TICKS, SUPER_COST, TRAP_TEAM_MAX,
   RoundPhase, TrapKind, WEATHER_CHARGE_FULL,
 } from '../../data/arcade';
-import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape } from '../../data/arcade-supers';
+import { SUPER_BURST, SUPER_QUAKE_RING_PX, SUPER_SPECS, SuperShape, quakeRingSide } from '../../data/arcade-supers';
 import { ARCADE_AI_STREAM_NAMES } from '../../rng/streams';
 import { Cmd, type Command } from '../../sim/commands';
 import { EntityFlag } from '../../sim/state';
@@ -86,7 +86,7 @@ export function superFacing(self: FighterView, opp: FighterView, superId = 0): C
   if (spec.shape === SuperShape.tide) return Math.abs(dx) >= Math.abs(dy) ? horizontal : vertical;
   if (spec.shape !== SuperShape.beam) {
     const reach = spec.shape === SuperShape.quake
-      ? Math.floor(((SUPER_QUAKE_RING_PX[SUPER_QUAKE_RING_PX.length - 1] ?? 0) * spec.scalePm) / 1000)
+      ? quakeRingSide(SUPER_QUAKE_RING_PX.length - 1, spec.scalePm, self.w)
       : spec.size;
     const half = reach / 2;
     if (opp.x >= cx + half || opp.x + opp.w <= cx - half || opp.y >= cy + half || opp.y + opp.h <= cy - half) return 0;

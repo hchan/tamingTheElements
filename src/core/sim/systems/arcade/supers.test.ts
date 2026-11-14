@@ -3,8 +3,9 @@ import { JUGGLE_STUN_STEP, METER_BAR, SUPER_FREEZE_TICKS } from '../../../data/a
 import {
   RACE_SUPERS, SUPER_ARMOUR_PCT, SUPER_ICICLE_EVERY, SUPER_QUAKE_DAMAGE, SUPER_QUAKE_RING_EVERY, SUPER_QUAKE_RING_PX,
   SUPER_SPECS, SUPER_TIDE_DAMAGE, SUPER_TIDE_SLOW_TICKS, SUPER_TIDE_SPEED_PX, SUPER_TIDE_WIDTH_PX, SUPER_VORTEX_ACTIVE_TICKS,
-  SUPER_VORTEX_BOX_PX, SUPER_VORTEX_DAMAGE, superOf,
+  SUPER_VORTEX_BOX_PX, SUPER_VORTEX_DAMAGE, SUPER_VORTEX_OPENER, SUPER_QUAKE_OPENER, superOf,
 } from '../../../data/arcade-supers';
+import { CHARACTER_WIDTH } from '../../../data/chapters';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { now } from '../../clock';
@@ -95,9 +96,10 @@ describe('super specs (FUN-DESIGN 2.5)', () => {
   });
 
   it('has the design numbers', () => {
-    expect([SUPER_VORTEX_BOX_PX, SUPER_VORTEX_ACTIVE_TICKS, SUPER_VORTEX_DAMAGE]).toEqual([480, 36, 27]);
-    expect([SUPER_QUAKE_RING_PX, SUPER_QUAKE_RING_EVERY, SUPER_QUAKE_DAMAGE]).toEqual([[160, 320, 480], 10, 60]);
-    expect([SUPER_TIDE_WIDTH_PX, SUPER_TIDE_SPEED_PX, SUPER_TIDE_DAMAGE, SUPER_TIDE_SLOW_TICKS]).toEqual([120, 12, 150, 40]);
+    expect([SUPER_VORTEX_BOX_PX, SUPER_VORTEX_ACTIVE_TICKS, SUPER_VORTEX_OPENER, SUPER_VORTEX_DAMAGE]).toEqual([480, 30, 64, 18]);
+    expect([SUPER_QUAKE_RING_PX, SUPER_QUAKE_RING_EVERY, SUPER_QUAKE_OPENER, SUPER_QUAKE_DAMAGE]).toEqual([[160, 320, 480], 6, 90, 32]);
+    expect([SUPER_TIDE_WIDTH_PX, SUPER_TIDE_SPEED_PX, SUPER_TIDE_DAMAGE, SUPER_TIDE_SLOW_TICKS]).toEqual([120, 20, 150, 40]);
+    expect([RACE_SUPERS['pax']?.opener, RACE_SUPERS['pax']?.damage]).toEqual([92, 37]);
     expect(SUPER_ARMOUR_PCT).toBe(50);
     expect(RACE_SUPERS['sindarosa']?.size).toBe(200);
     expect(RACE_SUPERS['ishimi']?.size).toBe(180);
@@ -163,7 +165,7 @@ describe('Inferno Beam variants', () => {
 });
 
 describe('Vortex variants', () => {
-  it('Eye of the Storm is a 480 px box centred on the caster, hitting every 6 ticks for 36 ticks at 27 damage', () => {
+  it('Eye of the Storm is a 480 px box centred on the caster, hitting every 5 ticks for 30 ticks: a 64 opener, then 18s', () => {
     const world = duel('cyclonius');
     step(world, SUPER);
     const s = world.state;
@@ -173,7 +175,11 @@ describe('Vortex variants', () => {
     const ev = castPinned(duel('cyclonius', 'pax', 150), 550);
     const hits = hitsOf(ev);
     expect(hits).toHaveLength(6);
-    expect(hits.slice(1).map((h, i) => h.g - (hits[i]?.g ?? 0))).toEqual([6, 6, 6, 6, 6]);
+    expect(hits.slice(1).map((h, i) => h.g - (hits[i]?.g ?? 0))).toEqual([5, 5, 5, 5, 5]);
+    // Unscaled by the combo, the opener is to a follow-up as SUPER_VORTEX_OPENER is to SUPER_VORTEX_DAMAGE (the chart is common).
+    const raw = hits.map((h) => (Number(h['amount']) * 1000) / Number(h['scalePm']));
+    expect((raw[0] ?? 0) / (raw[1] ?? 1)).toBeCloseTo(SUPER_VORTEX_OPENER / SUPER_VORTEX_DAMAGE, 6);
+    expect(raw.slice(2).every((r) => Math.abs(r - (raw[1] ?? 0)) < 1e-6)).toBe(true);
     expect(of(ev, SimEventKind.superEnded)).toHaveLength(1);
   });
 
@@ -213,38 +219,41 @@ describe('Vortex variants', () => {
 });
 
 describe('Quake Rings variants', () => {
-  it('rings are 160, 320 and 480 px squares at ticks 0, 10 and 20', () => {
-    const world = duel('rokcore', 'pax', 1200);
+  /** Quake ring sides of `caster`'s super, sampled as each ring is placed (ticks 0, 6 and 12 after the freeze). */
+  function ringSides(caster: string): number[] {
+    const world = duel(caster, 'pax', 1200);
     const s = world.state;
     run(world, 1, SUPER);
     run(world, SUPER_FREEZE_TICKS);
     const fx = fxOf(world);
     const sides: number[] = [];
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < SUPER_QUAKE_RING_EVERY * SUPER_QUAKE_RING_PX.length - 1; i++) {
       run(world, 1);
-      if (i % 10 === 0) sides.push(s.w[fx] ?? 0);
+      if (i % SUPER_QUAKE_RING_EVERY === 0) sides.push(s.w[fx] ?? 0);
     }
-    expect(sides).toEqual([160, 320, 480]);
+    return sides;
+  }
+
+  it('rings are 160, 320 and 480 px squares every 6 ticks, grown by a giant caster\'s extra width (Rokcore 160 px: +80)', () => {
+    expect(duel('treenoc').state.w[0]).toBe(CHARACTER_WIDTH);
+    expect(ringSides('treenoc')).toEqual([160, 320, 480]);
+    expect(duel('rokcore').state.w[0]).toBe(2 * CHARACTER_WIDTH);
+    expect(ringSides('rokcore')).toEqual([240, 400, 560]);
   });
 
-  it('a victim 160 px away (80 px boxes) is missed by the first ring only: hits at +10 and +20', () => {
-    const hits = hitsOf(castPinned(duel('rokcore', 'pax', 160), 560));
-    expect(hits).toHaveLength(2);
-    expect((hits[1]?.g ?? 0) - (hits[0]?.g ?? 0)).toBe(SUPER_QUAKE_RING_EVERY);
+  it('Rokcore\'s first ring hits an adjacent foe (qa-r27); one 80 px clear of its edge is missed by the first ring only', () => {
+    const adjacent = hitsOf(castPinned(duel('rokcore', 'pax', 160), 560));
+    expect(adjacent.map((h) => h.g)).toEqual([0, SUPER_QUAKE_RING_EVERY, 2 * SUPER_QUAKE_RING_EVERY]);
+    const clear = hitsOf(castPinned(duel('rokcore', 'pax', 240), 640));
+    expect(clear).toHaveLength(2);
+    expect((clear[1]?.g ?? 0) - (clear[0]?.g ?? 0)).toBe(SUPER_QUAKE_RING_EVERY);
+    // The first ring that lands is the opener: SUPER_QUAKE_OPENER, the rest SUPER_QUAKE_DAMAGE (before the combo scale).
+    const raw = adjacent.map((h) => (Number(h['amount']) * 1000) / Number(h['scalePm']));
+    expect((raw[0] ?? 0) / (raw[1] ?? 1)).toBeCloseTo(SUPER_QUAKE_OPENER / SUPER_QUAKE_DAMAGE, 6);
   });
 
   it('Titan Slam rings are 25% larger: 200 px, 400 px, 600 px', () => {
-    const world = duel('pax', 'rokcore', 1200);
-    const s = world.state;
-    run(world, 1, SUPER);
-    run(world, SUPER_FREEZE_TICKS);
-    const fx = fxOf(world);
-    const sides: number[] = [];
-    for (let i = 0; i < 25; i++) {
-      run(world, 1);
-      if (i % 10 === 0) sides.push(s.w[fx] ?? 0);
-    }
-    expect(sides).toEqual([200, 400, 600]);
+    expect(ringSides('pax')).toEqual([200, 400, 600]);
   });
 
   it('Mountain Breaker grants 50% armour for 100 ticks', () => {
@@ -268,7 +277,7 @@ describe('Quake Rings variants', () => {
 });
 
 describe('Tidal Wave variants', () => {
-  it('Glacier Crash starts a 120 px wall at the caster edge, full arena height, moving 12 px a tick', () => {
+  it('Glacier Crash starts a 120 px wall at the caster edge, full arena height, moving 20 px a tick', () => {
     const world = duel('curomo', 'pax', 1200);
     const s = world.state;
     const a = world.arena;
@@ -278,7 +287,8 @@ describe('Tidal Wave variants', () => {
     const x0 = s.x[fx] ?? 0;
     run(world, SUPER_FREEZE_TICKS);
     run(world, 5);
-    expect((s.x[fx] ?? 0) - x0).toBe(60);
+    expect((s.x[fx] ?? 0) - x0).toBe(5 * SUPER_TIDE_SPEED_PX);
+    expect(SUPER_TIDE_SPEED_PX).toBe(20);
     expect(s.kind[fx]).toBe(EntityKind.effect);
   });
 

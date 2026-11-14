@@ -1,4 +1,7 @@
-import { SUPER_ACTIVE_TICKS, SUPER_BAND_PX, SUPER_ELEMENTAL_BURST, SUPER_HIT_DAMAGE, SUPER_HIT_EVERY } from './arcade';
+import {
+  SUPER_ACTIVE_TICKS, SUPER_BAND_PX, SUPER_ELEMENTAL_BURST, SUPER_HIT_DAMAGE, SUPER_HIT_EVERY, SUPER_OPENER_DAMAGE,
+} from './arcade';
+import { CHARACTER_WIDTH } from './chapters';
 
 /**
  * The four Arcade super archetypes and their race variants (FUN-DESIGN 2.5, WP-arcade-supers). Pure data: the shapes run
@@ -17,6 +20,9 @@ export interface SuperSpec {
   readonly active: number;
   /** Ticks between hits (beam, vortex) or between rings (quake). */
   readonly every: number;
+  /** Damage of the first hit that connects (the opener, full super hit-stop); the tidal wave's single hit uses it too. */
+  readonly opener: number;
+  /** Damage of every later hit (short SUPER_FOLLOW_STOP_TICKS hit-stop). */
   readonly damage: number;
   /** Beam: band px across. Vortex: box side. Quake: first ring side. Tide: wall width. */
   readonly size: number;
@@ -38,13 +44,15 @@ export interface SuperSpec {
 }
 
 export const SUPER_VORTEX_BOX_PX = 480;
-export const SUPER_VORTEX_ACTIVE_TICKS = 36;
-export const SUPER_VORTEX_DAMAGE = 27;
+export const SUPER_VORTEX_ACTIVE_TICKS = 30;
+export const SUPER_VORTEX_OPENER = 64;
+export const SUPER_VORTEX_DAMAGE = 18;
 export const SUPER_QUAKE_RING_PX: readonly number[] = [160, 320, 480];
-export const SUPER_QUAKE_RING_EVERY = 10;
-export const SUPER_QUAKE_DAMAGE = 60;
+export const SUPER_QUAKE_RING_EVERY = 6;
+export const SUPER_QUAKE_OPENER = 90;
+export const SUPER_QUAKE_DAMAGE = 32;
 export const SUPER_TIDE_WIDTH_PX = 120;
-export const SUPER_TIDE_SPEED_PX = 12;
+export const SUPER_TIDE_SPEED_PX = 20;
 export const SUPER_TIDE_DAMAGE = 150;
 /** The slow after a tidal hit: half the victim's speed for this many game ticks. */
 export const SUPER_TIDE_SLOW_TICKS = 40;
@@ -54,10 +62,19 @@ export const SUPER_ICICLE_FAN: readonly number[] = [0, 1, 7, 2, 6, 0];
 export const SUPER_ARMOUR_PCT = 50;
 
 const NONE = { scalePm: 1000, drainPm: 0, speedBonus: 0, speedTicks: 0, translucentTicks: 0, armourTicks: 0, rootTicks: 0, icicles: 0 };
-const BEAM = { shape: SuperShape.beam, active: SUPER_ACTIVE_TICKS, every: SUPER_HIT_EVERY, damage: SUPER_HIT_DAMAGE, size: SUPER_BAND_PX, ...NONE };
-const VORTEX = { shape: SuperShape.vortex, active: SUPER_VORTEX_ACTIVE_TICKS, every: SUPER_HIT_EVERY, damage: SUPER_VORTEX_DAMAGE, size: SUPER_VORTEX_BOX_PX, ...NONE };
-const QUAKE = { shape: SuperShape.quake, active: 30, every: SUPER_QUAKE_RING_EVERY, damage: SUPER_QUAKE_DAMAGE, size: 160, ...NONE };
-const TIDE = { shape: SuperShape.tide, active: 0, every: 1, damage: SUPER_TIDE_DAMAGE, size: SUPER_TIDE_WIDTH_PX, ...NONE };
+const BEAM = {
+  shape: SuperShape.beam, active: SUPER_ACTIVE_TICKS, every: SUPER_HIT_EVERY, opener: SUPER_OPENER_DAMAGE, damage: SUPER_HIT_DAMAGE,
+  size: SUPER_BAND_PX, ...NONE,
+};
+const VORTEX = {
+  shape: SuperShape.vortex, active: SUPER_VORTEX_ACTIVE_TICKS, every: SUPER_HIT_EVERY, opener: SUPER_VORTEX_OPENER,
+  damage: SUPER_VORTEX_DAMAGE, size: SUPER_VORTEX_BOX_PX, ...NONE,
+};
+const QUAKE = {
+  shape: SuperShape.quake, active: SUPER_QUAKE_RING_EVERY * SUPER_QUAKE_RING_PX.length, every: SUPER_QUAKE_RING_EVERY,
+  opener: SUPER_QUAKE_OPENER, damage: SUPER_QUAKE_DAMAGE, size: 160, ...NONE,
+};
+const TIDE = { shape: SuperShape.tide, active: 0, every: 1, opener: SUPER_TIDE_DAMAGE, damage: SUPER_TIDE_DAMAGE, size: SUPER_TIDE_WIDTH_PX, ...NONE };
 
 /** The generic Elemental Burst (also the fallback). */
 export const SUPER_BURST: SuperSpec = { id: SUPER_ELEMENTAL_BURST, name: 'ELEMENTAL BURST', ...BEAM };
@@ -71,7 +88,7 @@ export const RACE_SUPERS: Readonly<Record<string, SuperSpec>> = {
   wispera: { id: 5, name: 'SIREN GALE', ...VORTEX, drainPm: 50 },
   echo: { id: 6, name: 'PHANTOM SQUALL', ...VORTEX, translucentTicks: 60 },
   rokcore: { id: 7, name: 'MOUNTAIN BREAKER', ...QUAKE, armourTicks: 100 },
-  pax: { id: 8, name: 'TITAN SLAM', ...QUAKE, damage: 55, scalePm: 1250 },
+  pax: { id: 8, name: 'TITAN SLAM', ...QUAKE, opener: 92, damage: 37, scalePm: 1250 },
   treenoc: { id: 9, name: 'OVERGROWTH', ...QUAKE, rootTicks: 40 },
   curomo: { id: 10, name: 'GLACIER CRASH', ...TIDE, rootTicks: 30 },
   morblass: { id: 11, name: 'HAILSTORM', ...TIDE, icicles: 6 },
@@ -83,6 +100,15 @@ export const SUPER_SPECS: readonly SuperSpec[] = [SUPER_BURST, ...Object.values(
 
 /** Super name by `superStarted.superId`, for the view. */
 export const SUPER_NAMES: readonly string[] = SUPER_SPECS.map((d) => d.name);
+
+/**
+ * Side in px of quake ring `ring` for a caster `casterW` px wide: the ring scaled by `scalePm`, grown by the caster's width
+ * past a 1x hero's, so every ring reaches as far past a giant's edge as past a 1x hero's (ring 0 of a 2x Rokcore was its own
+ * box and missed an adjacent foe before SIM_VERSION 58).
+ */
+export function quakeRingSide(ring: number, scalePm: number, casterW: number): number {
+  return Math.floor(((SUPER_QUAKE_RING_PX[ring] ?? 0) * scalePm) / 1000) + Math.max(0, casterW - CHARACTER_WIDTH);
+}
 
 /** The super a race slug casts. */
 export function superOf(slug: string): SuperSpec {

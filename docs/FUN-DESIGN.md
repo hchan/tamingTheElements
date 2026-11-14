@@ -226,6 +226,12 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 | Earth: Quake Rings | Three expanding square rings (Ground Shock geometry, 160/320/480 px) at +0/+10/+20 ticks | 3 x 20 | Rokcore "Mountain Breaker" (+armour 50% for 100 ticks), Pax "Titan Slam" (rings 25% larger), Treenoc "Overgrowth" (the last ring roots for 40 ticks, counts as stun) |
 | Water: Tidal Wave | A full-height, 120 px wide wall projectile from the caster's edge at 12 px per tick; one hit, then a 40-tick slow | 1 x 50 | Curomo "Glacier Crash" (freeze 30 ticks, counts as stun), Morblass "Hailstorm" (plus 6 Icicles), Ishimi "Slime Tsunami" (wall 180 px wide) |
 
+- SIM_VERSION 58 (qa-r27, the super landed late): the freeze is 16 ticks (was 40) and the first super hit is a heavy
+  opener with the full super hit-stop; follow-ups stop 4 ticks (`SUPER_FOLLOW_STOP_TICKS`). Beam: opener 90 then 20s
+  over 25 ticks, every 5. Vortex: opener 64 then 18s over 30 ticks. Quake: opener 90 then 32, rings every 6 ticks, a
+  giant caster's rings grow by its extra width. Tide: 20 px per tick. Titan Slam: opener 92 then 37. The first damage on
+  an adjacent foe lands 17 frames after the press, and a full super removes about 28-36% of its life
+  (`tools/sim/super-timing.ts`). The table above keeps the original design numbers.
 - Damage scales with `dmgMult` (level) like every ability. The Eternal Void (boss) is not an Arcade pick.
 - View only: screen dims to 40% brightness, a portrait cut-in band in the element colour, the super name, camera
   punch-in, a music duck (section 3).
@@ -1230,8 +1236,8 @@ are unchanged by construction. Phaser `timeScale` is never used for gameplay tim
 | Combo UI | `hitConfirmed`, `comboEnded` | "N HITS" plus damage on the attacker's side, pops at 3/5/8 | 60 | No pop; stays 1 s |
 | Hyper meter | `RenderView.arcade().meter` | 3-segment bar under the HUD with the bar count as a number; flashes when full | 60 | Number and pattern, not only colour (as `bars.ts`) |
 | Red life | `restCap` | Existing rest bar recoloured and labelled | 10 | Label plus dash pattern |
-| Super cinematic | `superStarted` | 40-tick dim to 40%, element band cut-in with portrait and name | 120 | Cut-in fades instead of sliding; dim kept |
-| Camera punch-in | `superStarted`, `ko` | Zoom 1.0 to 1.15 on the caster over 150 ms, back over 300 ms | 30 | Off |
+| Super cinematic | `superStarted` | 16-tick (40 before SIM_VERSION 58) dim to 40%, element band cut-in with portrait and name | 120 | Cut-in fades instead of sliding; dim kept |
+| Camera punch-in | `superStarted`, `ko` | Zoom 1.0 to 1.15 on the caster over 100 ms, back over 200 ms | 30 | Off |
 | KO slow-motion | phase `ko` | The sim slows (game time half speed); view adds a white flash and desaturation | 30 | Sim timing kept (same for everyone); no flash or zoom |
 | Trails (fixes V10; built in WP 17) | projectiles, `dashed` | 3 afterimages at alpha 0.5/0.3/0.15 and an additive glow on projectiles | 60 | No afterimages; glow kept for readability |
 | Clash burst | `clash` | Two-colour ring, winner element on top | 30 | Static ring |
@@ -1270,9 +1276,10 @@ hit explains it, so the freeze cannot reuse an earlier hit's strength). The Phas
 on the first super (its own chunk, so Classic and the Arena chunk pay only the import call) and plays the plan of
 `super-cinematic.ts` on the view tick until the freeze deadline: a black overlay to 60% (40% brightness) faded over
 100 ms, the caster lifted above it, a 160 px band in the caster's element colour sliding in from the caster's side over
-150 ms (ease-out) with the caster's portrait, `ELEMENTAL BURST` (72 px) and the element word (52 px; about 17 and 12 px on
-the 390x844 phone canvas), placed under the fighters unless the caster is in that strip, fading out over the last 200 ms,
-and a camera punch-in to 1.15 about the caster over 150 ms and back over 300 ms. Reduced motion: no slide (the band fades
+80 ms (ease-out) with the caster's portrait, `ELEMENTAL BURST` (72 px) and the element word (52 px; about 17 and 12 px on
+the 390x844 phone canvas), placed under the fighters unless the caster is in that strip, fading out over the last 80 ms,
+and a camera punch-in to 1.15 about the caster over 100 ms and back over 200 ms (sized for the 16-tick freeze since
+SIM_VERSION 58). Reduced motion: no slide (the band fades
 in) and no punch-in; dim, band, name and element stay. The `superStarted` sound cue (`whoosh`) ducks the music for
 `DUCK_MS`. Input: the **Super (Arcade)** binding (plain X; Shift-X stays the tester cheat) and pad RT (`ARCADE_PAD`; Classic
 keeps RT as the fourth swap) send `Cmd.super` only when the `KeyboardAgent` runs an Arcade match. The band of the super's
