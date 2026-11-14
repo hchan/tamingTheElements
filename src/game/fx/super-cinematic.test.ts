@@ -59,7 +59,7 @@ function superEvents(arcade = true): SimEvent[] {
   });
   if (arcade) world.state.arcade[ARCADE_TEAM_BASE + ArcadeT.meter] = 1000;
   const events: SimEvent[] = [];
-  // Round 1's intro (FUN-DESIGN 2.10: 90 ticks after the roundStarted tick) holds every action; the fight starts at 91.
+  // Round 1's intro (FUN-DESIGN 2.10: 70 ticks after the roundStarted tick) holds every action; the fight starts at 71.
   for (let t = 0; t < INTRO + 60; t++) events.push(...step(world, [t === INTRO + 5 ? Cmd.super : 0, 0]));
   return events;
 }

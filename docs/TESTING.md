@@ -158,7 +158,7 @@ save-backed screens show "Loading...") still need their own wait (`loaded()` in 
   race shows up; locally it hides. Throttle to check: CDP `Emulation.setCPUThrottlingRate` rate 6 in a scratch copy of the spec.
 - Drive ticks only with the probe: `step(n)` / `stepLive(n)` pause the live driver first, so no real-time tick lands between
   evaluates. Do not rely on wall-clock progress.
-- Known limitation (product): in a real match the first ticks are the 90-tick intro, so a view mounting a few frames late never
+- Known limitation (product): in a real match the first ticks are the 70-tick intro, so a view mounting a few frames late never
   misses a visible event; mounted views do not replay events from before their mount.
 
 ### Keeping e2e stable and finding flakes

@@ -85,7 +85,7 @@ function until(world: SimWorld, kind: number, max = 10_000): SimEvent[] {
 
 describe('round table (FUN-DESIGN 2.10)', () => {
   it('has the design numbers', () => {
-    expect([ROUND_INTRO_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUND_END_TICKS]).toEqual([90, 120, 60, 60]);
+    expect([ROUND_INTRO_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUND_END_TICKS]).toEqual([70, 120, 60, 60]);
     expect([ROUND_TIMER_TICKS, ROUNDS_TO_WIN, KO_HIT_STOP_TICKS]).toEqual([4500, 2, 30]);
     expect(RoundPhase).toEqual({ intro: 0, fight: 1, ko: 2, roundEnd: 3, over: 4 });
     expect([SimEventKind.roundStarted, SimEventKind.fight, SimEventKind.ko, SimEventKind.timeOver, SimEventKind.roundEnded]).toEqual([53, 54, 55, 56, 57]);

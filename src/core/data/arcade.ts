@@ -255,7 +255,7 @@ export const RoundPhase = { intro: 0, fight: 1, ko: 2, roundEnd: 3, over: 4 } as
  * deadline): the intro, the KO phase after the KO hit-stop (its first KO_SLOWMO_TICKS run at half speed: the game clock
  * advances every second tick), and the round end. The round timer is in game ticks, so it pauses during freezes.
  */
-export const ROUND_INTRO_TICKS = 90;
+export const ROUND_INTRO_TICKS = 70;
 export const KO_PHASE_TICKS = 120;
 export const KO_SLOWMO_TICKS = 60;
 export const ROUND_END_TICKS = 60;
