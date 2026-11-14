@@ -190,8 +190,10 @@ export class Arena extends Phaser.Scene {
     const ff = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).arcade;
     const dev = import.meta.env.DEV || import.meta.env.MODE === 'test';
     // `?p1=<character slug>` (dev/test only) swaps the demo hero, so visual captures can render any character's abilities.
-    const hero = dev ? new URLSearchParams(window.location.search).get('p1') : null;
-    const demo = demoMatch(DEMO_SETUP, hero, ff);
+    // `?hero=` and `?foe=` (flags.ts) pick both sides of a demo fight, so QA can test any hero.
+    const uf = dev ? getUiFlags(window.location.search) : undefined;
+    const hero = dev ? (uf?.hero ?? new URLSearchParams(window.location.search).get('p1')) : null;
+    const demo = demoMatch(DEMO_SETUP, hero, ff, uf?.foe ?? null);
     const setup = this.launch?.setup ?? demo;
     const world = this.cursor?.world ?? createMatch(setup);
     this.world = world;

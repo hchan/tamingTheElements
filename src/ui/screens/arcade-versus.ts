@@ -223,6 +223,7 @@ function rosterView(
   });
   const races = heroes.order;
   const dnd = heroDnd({
+    clickAssigns: true,
     root: node,
     tiles: heroes.tiles,
     previewTile: (i) => {

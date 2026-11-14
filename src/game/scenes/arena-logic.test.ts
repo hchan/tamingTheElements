@@ -142,6 +142,12 @@ describe('demoMatch', () => {
     expect(m.p1[1]).toEqual(base.p1[1]);
     expect(m.p2).toBe(base.p2);
   });
+  it('swaps the opponent with foe, keeping the rest of its team', () => {
+    const m = demoMatch(base, 'pax', false, 'rokcore');
+    expect(m.p1[0]).toEqual({ character: characterId('pax'), xp: 0 });
+    expect(m.p2[0]).toEqual({ character: characterId('rokcore'), xp: 0 });
+    expect(demoMatch(base, null, false, 'rokcore').p1).toBe(base.p1);
+  });
   it('turns the Arcade ruleset on', () => {
     expect(demoMatch(base, null, true).flags).toEqual({ ...DEFAULT_SIM_FLAGS, rulesetArcade: true });
     expect(base.flags.rulesetArcade).toBeFalsy();

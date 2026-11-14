@@ -3,7 +3,7 @@
  * touch alike; HTML5 draggable is unreliable on touch) give three things on top of the keyboard and gamepad paths the screens keep:
  *
  * - a pointer click on a tile only PREVIEWS the hero (the screen shows its ability panel); a second click on the same tile, or the
- *   panel's "Add to team" button, assigns it. A keyboard activation (click with `detail === 0`) still assigns straight away,
+ *   panel's "Add to team" button, assigns it. With `clickAssigns` (Versus) a single click assigns straight away. A keyboard activation (click with `detail === 0`) still assigns straight away,
  *   because the focus cursor has already previewed the hero.
  * - dragging a tile onto a team slot places the hero there; dragging a slot onto another slot swaps them; dropping a slot anywhere
  *   else (empty space or the grid) removes its hero (`clearSlot`); Escape aborts the drag and keeps everything as it was.
@@ -24,6 +24,8 @@ export interface HeroDndOptions {
   assignTile: (i: number) => void;
   dropTile: (i: number, slot: string) => void;
   swapSlots: (from: string, to: string) => void;
+  /** A pointer click picks straight away (Versus): no preview step. A double click does not pick twice (that would mirror the hero onto the other side). */
+  readonly clickAssigns?: boolean;
   /** Whether a slot may be picked up (Versus: only slots with a chosen hero). Default: all. */
   slotDraggable?: (slot: string) => boolean;
   /** A picked-up slot was released away from every slot: empty it. Without it that drop is a no-op. */
@@ -59,7 +61,8 @@ export function heroDnd(o: HeroDndOptions): HeroDnd {
 
   o.tiles.forEach((t, i) => {
     t.addEventListener('click', (e) => {
-      if (e.detail === 0 || armed === i) {
+      if (o.clickAssigns === true && e.detail > 1) return;
+      if (e.detail === 0 || armed === i || o.clickAssigns === true) {
         setArmed(-1);
         o.assignTile(i);
         return;

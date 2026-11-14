@@ -79,8 +79,9 @@ export function buildMatchEnd(
   };
 }
 
-/** The launch-less demo match (`?ff=arenaDemo`): `hero` (the `?p1=` slug) replaces the first hero; `arcade` turns the Arcade ruleset on. */
-export function demoMatch(base: MatchSetup, hero: string | null, arcade: boolean): MatchSetup {
-  const withHero = hero ? { ...base, p1: [{ character: characterId(hero), xp: 0 }, ...base.p1.slice(1)] } : base;
+/** The launch-less demo match (`?ff=arenaDemo`): `hero` (`?hero=` or `?p1=`) replaces the first hero and `foe` (`?foe=`) the opponent's; `arcade` turns the Arcade ruleset on. */
+export function demoMatch(base: MatchSetup, hero: string | null, arcade: boolean, foe: string | null = null): MatchSetup {
+  const withLead = hero ? { ...base, p1: [{ character: characterId(hero), xp: 0 }, ...base.p1.slice(1)] } : base;
+  const withHero = foe ? { ...withLead, p2: [{ character: characterId(foe), xp: 0 }, ...base.p2.slice(1)] } : withLead;
   return arcade ? { ...withHero, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : withHero;
 }
