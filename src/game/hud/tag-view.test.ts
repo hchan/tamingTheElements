@@ -131,6 +131,20 @@ describe('tag view (Phaser side, fake scenes)', () => {
     expect(s.state()).toMatchObject({ caption: '' });
   });
 
+  it('shows the TAG caption while the swap is ready and never again once a tag ran the cooldown', () => {
+    const s = setup();
+    s.setSwapReady([0, 0]);
+    s.frame();
+    expect(s.state()).toMatchObject({ caption: 'TAG' });
+    s.setTick(1);
+    s.setSwapReady([175, 0]);
+    s.frame();
+    s.setTick(2);
+    s.setSwapReady([0, 0]);
+    s.frame();
+    expect(s.state()).toMatchObject({ caption: '' });
+  });
+
   it('draws who is in, the bench with its red life, the tag cooldown, and the TAG caption', () => {
     const s = setup();
     const lead = s.chars[0] as RenderCharacter;
@@ -140,7 +154,7 @@ describe('tag view (Phaser side, fake scenes)', () => {
     s.frame();
     expect(s.state()).toMatchObject({
       lines: [['IN Sindarosa', 'BENCH Pax ▲ 100%', 'TAG 1.5s'], ['IN Fiara', 'BENCH Lavax ▲ 100%', 'TAG READY']],
-      call: '', flashes: 0, caption: 'TAG',
+      call: '', flashes: 0,
     });
     // The Hud graphics drew the red life (dashed lines), the active frame and the tag bars.
     const g = s.hud.made.find((m) => m.kind === 'graphics');

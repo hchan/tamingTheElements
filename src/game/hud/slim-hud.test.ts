@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PILL_W, SLIM_H, TRAIL_HOLD, chipBar, chipRect, compactLabel, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
+  PILL_W, SLIM_H, TRAIL_HOLD, chipBar, lifeFill, chipRect, compactLabel, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
 
 describe('slim HUD geometry', () => {
@@ -71,5 +71,15 @@ describe('white damage trail', () => {
     stepTrail(t, 30, 100, true);
     for (let i = 0; i < TRAIL_HOLD; i++) stepTrail(t, 30, 100, true);
     expect(t.v).toBe(30);
+  });
+});
+
+describe('lifeFill', () => {
+  it('keeps the element colour while healthy, goes ember when low, and flashes brighter with the pulse', () => {
+    expect(lifeFill(0x3366cc, 1)).toBe(0x3366cc);
+    expect(lifeFill(0x3366cc, 0.5)).toBe(0x3366cc);
+    expect(lifeFill(0x3366cc, 0.2)).not.toBe(lifeFill(0x3366cc, 0.2, 1));
+    expect(lifeFill(0x3366cc, 0.2, 1)).toBe(0xe0402e);
+    expect(lifeFill(0x3366cc, Number.NaN)).toBe(0x3366cc);
   });
 });
