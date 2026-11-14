@@ -209,11 +209,29 @@ html[data-high-contrast='true'] #fullscreenToggle {
 #rotateOverlay[hidden] {
   display: none;
 }
+#rotateOverlay::before {
+  content: '\21BB';
+  display: block;
+  font-size: 4.5em;
+  line-height: 1;
+  color: #ffd678;
+  text-shadow: 0 0 18px rgba(255, 214, 120, 0.55);
+  transform: rotate(90deg);
+}
+#rotateOverlay p {
+  margin: 0;
+  max-width: 18em;
+}
 #rotateOverlay button {
-  min-height: 44px;
+  min-height: 48px;
   min-width: 44px;
-  padding: 0.4em 1em;
+  padding: 0.5em 1.4em;
   font-size: 1em;
+  font-weight: bold;
+  color: #fff;
+  background: #1f6b2a;
+  border: 2px solid #fff;
+  border-radius: 10px;
 }
 
 /* Touch devices: every tap target is at least 44 px. */
@@ -785,8 +803,12 @@ body:has(#game:not(:empty)) {
   gap: 0.5em 0.75em;
   padding: 0.6em 0.9em 0.9em;
 }
+/* Floated, the legend is a normal first row inside the box instead of straddling the border line. */
 #menu .settingsGroup > legend {
+  float: left;
   flex: 0 0 100%;
+  width: 100%;
+  margin: 0 0 0.1em;
 }
 #menu .settingsGroup > label.settingsOption {
   display: inline-flex;
@@ -1080,7 +1102,7 @@ html[data-high-contrast='true'] button.touchBtn {
   content: 'Locked';
   position: absolute;
   right: 4px;
-  bottom: 3px;
+  top: 3px;
   padding: 0 0.5em;
   border-radius: 999px;
   background: rgba(255, 224, 140, 0.92);

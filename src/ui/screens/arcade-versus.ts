@@ -262,6 +262,7 @@ function rosterView(
   const confirmed = new Set<string>();
   const ready: [boolean, boolean] = [false, false];
   const cursor: [number, number] = [0, Math.min(1, races.length - 1)];
+  let seeded = false;
   const isLocal = (): boolean => fields()['mode']?.value === 'local';
   const openOf = (s: SideIx): string[] => sides[s].filter((n) => fields()[n] && !fields()[n]?.disabled);
   const openSlots = (): string[] => names.filter((n) => fields()[n] && !fields()[n]?.disabled);
@@ -277,6 +278,14 @@ function rosterView(
 
   const refresh = (): void => {
     const f = fields();
+    if (!seeded && f['player']) {
+      // Start each cursor (and the detail pane) on the hero already in that side's first slot, so the "You" card and the highlighted hero agree.
+      seeded = true;
+      const firstHero = (s: SideIx): number => Math.max(0, races.indexOf((f[sides[s][0] ?? '']?.value ?? '') as CharacterId));
+      cursor[0] = firstHero(0);
+      cursor[1] = firstHero(1);
+      focus = cursor[0];
+    }
     const local = isLocal();
     for (const s of [0, 1] as const) {
       const open = openOf(s);
