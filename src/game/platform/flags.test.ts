@@ -46,10 +46,10 @@ describe('ui flags', () => {
     expect(parseUiFlags('?ff=holdSplash', { DEV: false, MODE: 'production' }).holdSplash).toBe(false);
   });
 
-  it('reads ?hero and ?foe slugs in dev and test builds only, and they imply arenaDemo', () => {
+  it('reads ?hero and ?foe slugs in dev and test builds only, and they no longer imply arenaDemo', () => {
     const f = parseUiFlags('?hero=curomo&foe=rokcore', { DEV: false, MODE: 'test' });
-    expect(f).toMatchObject({ hero: 'curomo', foe: 'rokcore', arenaDemo: true });
-    expect(parseUiFlags('?hero=curomo', { DEV: true, MODE: 'development' })).toMatchObject({ hero: 'curomo', foe: null, arenaDemo: true });
+    expect(f).toMatchObject({ hero: 'curomo', foe: 'rokcore', arenaDemo: false });
+    expect(parseUiFlags('?hero=curomo', { DEV: true, MODE: 'development' })).toMatchObject({ hero: 'curomo', foe: null, arenaDemo: false });
     expect(parseUiFlags('?hero=Cu%20mo&foe=', { DEV: true, MODE: 'development' })).toMatchObject({ hero: null, foe: null, arenaDemo: false });
     expect(parseUiFlags('?hero=curomo&foe=rokcore', { DEV: false, MODE: 'production' })).toEqual(DEFAULT_UI_FLAGS);
   });
