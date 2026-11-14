@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FIRST_RUN_KEY, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
+import { FIRST_RUN_KEY, anySnag, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
 import { labelsFromBindings } from '../hud/action-bar';
 import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
@@ -102,5 +102,13 @@ describe('firstRunHint', () => {
     expect(keys).toContain('Up/W');
     expect(keys).not.toMatch(/stick|tap/i);
     expect(keys + touch).not.toMatch(/classic|arcade|ruleset|capture/i);
+  });
+
+  it('names Snag only for a side that has it (Treenoc, Wispera, Curomo, Echo)', () => {
+    expect(anySnag(['sindarosa', 'pax'])).toBe(false);
+    expect(anySnag(['sindarosa', 'treenoc'])).toBe(true);
+    expect(firstRunLines(DEFAULT_BINDINGS, false, false).join(' ')).not.toMatch(/snag/i);
+    expect(firstRunLines(DEFAULT_BINDINGS, true, false).join(' ')).not.toMatch(/snag/i);
+    expect(firstRunLines(DEFAULT_BINDINGS, true, true).join(' ')).toMatch(/snag/i);
   });
 });
