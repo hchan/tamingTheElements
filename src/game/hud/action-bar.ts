@@ -12,6 +12,9 @@ import { syncTouchOverlays } from './touch-overlay';
 import { CLEANSE_COOLDOWN, cleanseClockOf } from './cleanse-clock';
 import { tagSlot } from './tag-slot';
 import { elementalShown } from '../platform/cleanse-info';
+import { COMMON_EFFECT, HERO_EFFECT, elementalEffect, elementalTitle } from '../platform/ability-text';
+
+const ELEMENT_BY_KIND = ['void', 'fire', 'water', 'earth', 'air'] as const;
 
 /**
  * Action bar (legacy `actionbar.js`): primary, secondary, capture (chapter 2+) and swap slots along the
@@ -159,6 +162,35 @@ export function elementalNote(tick: number, e: { name: string; readyTick: number
   if (tick < e.readyTick) return `${e.name} ${String(Math.ceil((e.readyTick - tick) / 50))}s`;
   return e.name;
 }
+
+/** The tooltip for a box: its plain name and a one-line effect (the Guide's own text, so the two never disagree). */
+export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'>): { title: string; text: string } {
+  switch (s.kind) {
+    case 'ability': return s.cmd === Cmd.primary ? { title: 'Attack', text: HERO_EFFECT.primary } : { title: 'Special', text: HERO_EFFECT.secondary };
+    case 'capture': return { title: 'Snag', text: COMMON_EFFECT.snag };
+    case 'swap': return { title: 'Tag', text: COMMON_EFFECT.tag };
+    case 'trap': return { title: 'Trap', text: COMMON_EFFECT.trap };
+    case 'elemental': return { title: elementalTitle(s.element ?? 0), text: elementalEffect(ELEMENT_BY_KIND[s.element ?? 0] ?? 'void') };
+    case 'super': return { title: 'Super', text: COMMON_EFFECT.super };
+    case 'guard': return { title: 'Guard', text: COMMON_EFFECT.guard };
+    case 'dash': return { title: 'Dash', text: COMMON_EFFECT.dash };
+    case 'weather': return { title: 'Weather', text: COMMON_EFFECT.weather };
+    case 'charge': return { title: 'Charge', text: COMMON_EFFECT.charge };
+    case 'cleanse': return { title: 'Cleanse', text: COMMON_EFFECT.cleanse };
+  }
+}
+
+/** Where a tooltip `w` x `h` goes for a box: centred above it, kept inside the 1280-wide screen, below the top edge. Pure, for tests. */
+export function tipPlacement(s: Pick<ActionSlot, 'x' | 'y' | 'size'>, w: number, h: number): { x: number; y: number } {
+  const x = Math.min(LOGICAL_W - w - 4, Math.max(4, s.x + s.size / 2 - w / 2));
+  return { x, y: Math.max(4, s.y - h - 8) };
+}
+
+/** Milliseconds a first-use tip stays, and how long a held finger waits before a touch tip shows. */
+export const TIP_AUTO_MS = 4000;
+export const TIP_LONG_PRESS_MS = 450;
+/** Kinds already explained by a first-use tip this session. */
+const tipSeen = new Set<string>();
 
 /** Line colour per element kind (a second cue only: the icon's shape and the slot's words say which). */
 const ELEMENT_TINT: readonly number[] = [0xffffff, 0xff7a3d, 0x5cc8ff, 0xc9a26b, 0xe6f4ff];
@@ -547,6 +579,11 @@ export class ActionBarView {
   private readonly flashStart = new Map<string, number>();
   private reduced = false;
   private frame = 0;
+  /** Tooltip: the Text, what the player points at now (mouse, focus or long press), and the first-use tip. */
+  private tipText: Phaser.GameObjects.Text | undefined;
+  private manual: { touch: string } | { idx: number } | null = null;
+  private auto: { kind: string; until: number } | null = null;
+  private pressTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -565,8 +602,61 @@ export class ActionBarView {
   ) {
     this.back = scene.add.graphics().setDepth(98);
     this.gfx = scene.add.graphics().setDepth(100);
-    if (!mirror) scene.input.on('pointerdown', this.onPointer);
+    if (!mirror) {
+      scene.input.on('pointerdown', this.onPointer);
+      scene.input.on('pointermove', this.onMove);
+      if (typeof document !== 'undefined') {
+        for (const ev of ['pointerover', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.addEventListener(ev, this.onDom, true);
+      }
+    }
   }
+
+  /** Mouse over a box without a DOM overlay (the hero's attacks, Snag): the canvas pointer says which box. */
+  private readonly onMove = (p: Phaser.Input.Pointer): void => {
+    if (p.wasTouch || (this.manual !== null && 'touch' in this.manual)) return;
+    const res = this.scene.scale.width / LOGICAL_W;
+    const x = this.place ? p.x / res : p.worldX;
+    const y = this.place ? p.y / res : p.worldY;
+    const idx = this.slots.findIndex((s) => x >= s.x && x < s.x + s.size && y >= s.y && y < s.y + s.size);
+    this.manual = idx >= 0 ? { idx } : null;
+  };
+
+  /** Touch overlays (`#arcade<Name>`) cover their box: hover, keyboard focus and a long press on them show the tip. */
+  private readonly onDom = (e: Event): void => {
+    const el = e.target instanceof Element ? e.target.closest('[id^="arcade"]') : null;
+    const touch = el && el.id.length > 6 ? el.id.slice(6) : '';
+    const clearPress = (): void => {
+      if (this.pressTimer !== undefined) clearTimeout(this.pressTimer);
+      this.pressTimer = undefined;
+    };
+    const holdTip = (): void => {
+      if (this.manual !== null && 'touch' in this.manual && this.manual.touch === touch) return;
+      this.manual = { touch };
+    };
+    switch (e.type) {
+      case 'pointerover':
+        if (touch !== '' && (e as PointerEvent).pointerType === 'mouse') holdTip();
+        break;
+      case 'pointerout':
+        if (touch !== '' && (e as PointerEvent).pointerType === 'mouse') this.manual = null;
+        break;
+      case 'focusin':
+        if (touch !== '' && el?.matches(':focus-visible')) holdTip();
+        break;
+      case 'focusout':
+        if (touch !== '') this.manual = null;
+        break;
+      case 'pointerdown':
+        if (touch !== '' && (e as PointerEvent).pointerType !== 'mouse') {
+          clearPress();
+          this.pressTimer = setTimeout(holdTip, TIP_LONG_PRESS_MS);
+        }
+        break;
+      default:
+        clearPress();
+        if ((e as PointerEvent).pointerType === 'touch' && this.manual !== null && 'touch' in this.manual) this.manual = null;
+    }
+  };
 
   /** Logical (screen) x/y to world, through the current screen box. */
   private box: ScreenBox = IDENTITY;
@@ -642,6 +732,7 @@ export class ActionBarView {
       const key = `${s.kind}:${String(s.cmd)}:${String(i)}`;
       const prev = this.lastProgress.get(key);
       if (prev !== undefined && prev < 1 && s.progress >= 1 && !s.disabled) this.flashStart.set(key, now);
+      if (!this.mirror && prev !== undefined && prev >= 1 && s.progress < 1 && !s.disabled) this.noteFirstUse(s, now);
       this.lastProgress.set(key, s.progress);
       const started = this.flashStart.get(key);
       const look = cooldownLook(s.progress, s.disabled, s.x, s.y, s.size, started === undefined ? -1 : now - started, this.reduced);
@@ -678,6 +769,7 @@ export class ActionBarView {
     this.drawHeaders(g, grouped?.headers ?? []);
     if (!this.mirror) {
       this.drawHint(bar?.tick ?? 0);
+      this.drawTip(now);
       if (extras && this.frame % 5 === 1) syncTouchOverlays(this.screenSlots().map((r, i) => ({ ...r, touch: this.slots[i]?.touch ?? '' })), this.scene.game.canvas);
     }
     for (let i = this.slots.length; i < this.icons.length; i++) {
@@ -734,7 +826,15 @@ export class ActionBarView {
   }
 
   destroy(): void {
-    if (!this.mirror) this.scene.input.off('pointerdown', this.onPointer);
+    if (!this.mirror) {
+      this.scene.input.off('pointerdown', this.onPointer);
+      this.scene.input.off('pointermove', this.onMove);
+      if (typeof document !== 'undefined') {
+        for (const ev of ['pointerover', 'pointerout', 'pointerdown', 'pointerup', 'pointercancel', 'focusin', 'focusout']) document.removeEventListener(ev, this.onDom, true);
+      }
+      if (this.pressTimer !== undefined) clearTimeout(this.pressTimer);
+      this.tipText?.destroy();
+    }
     this.gfx.destroy();
     this.back.destroy();
     this.hint?.destroy();
@@ -765,6 +865,45 @@ export class ActionBarView {
     const cmd = this.place ? commandAt(this.slots, p.x / res, p.y / res) : commandAt(this.slots, p.worldX, p.worldY);
     if (cmd !== 0) this.emit(cmd);
   };
+
+  /** First time a kind of box is used this session: explain it for a few seconds (never while the player points at something). */
+  private noteFirstUse(s: ActionSlot, now: number): void {
+    const id = `${s.kind}:${s.cmd === Cmd.secondary ? 's' : ''}`;
+    if (tipSeen.has(id)) return;
+    tipSeen.add(id);
+    this.auto = { kind: id, until: now + TIP_AUTO_MS };
+  }
+
+  private tipTarget(now: number): ActionSlot | undefined {
+    const m = this.manual;
+    if (m !== null) return 'touch' in m ? this.slots.find((s) => s.touch === m.touch) : this.slots[m.idx];
+    const a = this.auto;
+    if (a !== null && now < a.until) return this.slots.find((s) => `${s.kind}:${s.cmd === Cmd.secondary ? 's' : ''}` === a.kind);
+    return undefined;
+  }
+
+  /** The tooltip: title and one line of effect in a dark panel above the box, shrunk to fit the screen on a phone. */
+  private drawTip(now: number): void {
+    const s = this.tipTarget(now);
+    if (!s) {
+      this.tipText?.setVisible(false);
+      return;
+    }
+    const tip = slotTip(s);
+    this.tipText ??= this.scene.add.text(
+      0, 0, '',
+      crisp(this.scene, {
+        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(Math.round(16 * Math.min(1.8, phoneBoost(this.scene))))}px`, color: '#e8dfc8',
+        backgroundColor: '#0b0a09f0', padding: { x: 10, y: 6 }, wordWrap: { width: 420 }, lineSpacing: 3,
+      }),
+    ).setDepth(103);
+    const line = `${tip.title}\n${tip.text}`;
+    if (this.tipText.text !== line) this.tipText.setText(line);
+    const sc = this.box.scale;
+    const w = this.tipText.width;
+    const at = tipPlacement(s, w, this.tipText.height);
+    this.tipText.setVisible(true).setPosition(this.wx(at.x), this.wy(at.y)).setScale(sc);
+  }
 
   private drawHint(tick: number): void {
     const h = captureHint(this.slots, tick);

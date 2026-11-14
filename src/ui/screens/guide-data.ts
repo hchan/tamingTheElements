@@ -3,39 +3,26 @@ import {
   METER_BAR,
   TAG_COOLDOWN_TICKS,
   TRAP_COOLDOWN_TICKS,
-  TRAP_TEAM_MAX,
   WEATHER_ELEMENTS,
   WEATHER_TICKS,
   computeDamage,
   type Element,
 } from '@core/index';
 import {
-  BLOCK_STUN_TICKS,
   CHARGE_COOLDOWN_TICKS,
   DASH_COOLDOWN_TICKS,
-  DASH_INVULN_FROM,
-  DASH_INVULN_TO,
-  ELEMENTAL_ARMOR_PM,
   ELEMENTAL_COOLDOWN_TICKS,
-  ELEMENTAL_DAMAGE_PM,
   ELEMENTAL_NAMES,
-  ELEMENTAL_SPEED_PM,
-  ELEMENTAL_TICKS,
-  GUARD_CHIP_PM,
-  PARRY_TICKS,
   SNAG_COOLDOWN_TICKS,
-  SNAG_ROOT_TICKS,
   SUPER_COST,
   WEATHER_COOLDOWN_TICKS,
   WEATHER_PM,
 } from '@core/lazy-index';
+import { COMMON_EFFECT, elementalEffect, secs } from '../../game/platform/ability-text';
 import type { Bindings, GameAction } from '../../game/platform/input/bindings';
 import { codeLabel } from '../../game/platform/input/bindings';
 import { CLEANSE_COOLDOWN } from '../../game/platform/cleanse-info';
 import { elementalShown } from '../../game/platform/cleanse-info';
-
-/** Sim ticks per second (50 Hz). */
-const TPS = 50;
 
 /** The four wheel elements, clockwise from the top (the order is only the layout; the arrows come from BEATS). */
 export const WHEEL_ORDER: readonly Element[] = ['fire', 'air', 'earth', 'water'];
@@ -81,8 +68,6 @@ export interface AbilityCard {
   readonly icon: string;
 }
 
-const secs = (ticks: number): string => `${String(Math.round((ticks / TPS) * 10) / 10)} s`;
-
 const keyOf = (b: Bindings, a: GameAction): string => b[a].map(codeLabel).join(' / ') || 'unbound';
 
 /** Abilities every fighter has, with numbers read from the data tables. */
@@ -93,7 +78,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Dash',
       key: keyOf(b, 'dash'),
       cooldown: secs(DASH_COOLDOWN_TICKS),
-      effect: `Burst of speed along your aim. Safe from hits on ticks ${String(DASH_INVULN_FROM)} to ${String(DASH_INVULN_TO)}: dodge a shot for meter.`,
+      effect: COMMON_EFFECT.dash,
       icon: 'dash',
     },
     {
@@ -101,7 +86,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Guard',
       key: `${keyOf(b, 'guard')} (hold)`,
       cooldown: 'None',
-      effect: `Blocks hits but ${String(GUARD_CHIP_PM / 10)}% still chips through and drains your guard. Press just before a hit (${String(PARRY_TICKS)} ticks) to parry; block-stun ${String(BLOCK_STUN_TICKS)} ticks.`,
+      effect: COMMON_EFFECT.guard,
       icon: 'guard',
     },
     {
@@ -109,7 +94,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Charge',
       key: keyOf(b, 'charge'),
       cooldown: secs(CHARGE_COOLDOWN_TICKS),
-      effect: 'Rush at the foe and stun them on touch. Not invulnerable: a foe who sees it coming can hit you.',
+      effect: COMMON_EFFECT.charge,
       icon: 'charge',
     },
     {
@@ -117,7 +102,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Super',
       key: keyOf(b, 'super'),
       cooldown: `${String(SUPER_COST / METER_BAR)} meter bar`,
-      effect: 'Spends a bar of hyper meter. The hero unleashes a strike band across the stage. Meter fills as you deal and take damage.',
+      effect: COMMON_EFFECT.super,
       icon: 'super',
     },
     {
@@ -125,7 +110,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Trap',
       key: keyOf(b, 'trap'),
       cooldown: secs(TRAP_COOLDOWN_TICKS),
-      effect: `Plant a trap ahead of you (up to ${String(TRAP_TEAM_MAX)} per team). It fires when a foe steps near, or when it times out.`,
+      effect: COMMON_EFFECT.trap,
       icon: 'trap',
     },
     {
@@ -133,7 +118,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Cleanse',
       key: keyOf(b, 'cleanse'),
       cooldown: secs(CLEANSE_COOLDOWN),
-      effect: 'Ends your own roots and slows. The same for every hero, and it plays out in your hero\'s element.',
+      effect: COMMON_EFFECT.cleanse,
       icon: 'cleanse',
     },
     {
@@ -141,7 +126,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Weather',
       key: keyOf(b, 'weather'),
       cooldown: `${secs(WEATHER_COOLDOWN_TICKS)} lockout`,
-      effect: 'Needs a full weather charge. Calls the weather of your element for the whole stage. See the weather cards below.',
+      effect: COMMON_EFFECT.weather,
       icon: 'weather',
     },
     {
@@ -149,7 +134,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Tag',
       key: `${keyOf(b, 'slot3')} / ${keyOf(b, 'slot4')}`,
       cooldown: secs(TAG_COOLDOWN_TICKS),
-      effect: 'Swap in a team-mate, who strikes on entry. Benched heroes slowly heal.',
+      effect: COMMON_EFFECT.tag,
       icon: 'tag',
     },
     {
@@ -157,7 +142,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
       name: 'Snag',
       key: 'Hero attack',
       cooldown: secs(SNAG_COOLDOWN_TICKS),
-      effect: `Some heroes throw a rope that roots a foe for ${secs(SNAG_ROOT_TICKS)}. A guarding foe wastes it; fire and the Sun burn it away.`,
+      effect: COMMON_EFFECT.snag,
       icon: 'snag',
     },
   ];
@@ -165,22 +150,6 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
 
 /** Element kinds in ELEMENTAL_* tables: 1 fire, 2 water, 3 earth, 4 air. */
 const ELEMENTAL_KIND: Readonly<Partial<Record<Element, number>>> = { fire: 1, water: 2, earth: 3, air: 4 };
-
-const pmPercent = (pm: number): string => `${String(Math.abs(Math.round((pm - 1000) / 10)))}%`;
-
-function elementalEffect(e: Element): string {
-  const t = secs(ELEMENTAL_TICKS);
-  switch (e) {
-    case 'fire':
-      return `${pmPercent(ELEMENTAL_DAMAGE_PM)} more damage dealt for ${t}.`;
-    case 'earth':
-      return `${pmPercent(ELEMENTAL_ARMOR_PM)} less damage taken for ${t}.`;
-    case 'air':
-      return `${pmPercent(ELEMENTAL_SPEED_PM)} faster walking for ${t}.`;
-    default:
-      return 'Instantly ends your roots and slows.';
-  }
-}
 
 /** The one elemental ability per element, from the Arcade tables (void heroes have none). */
 export function elementalAbilities(b: Bindings): readonly (AbilityCard & { readonly element: Element })[] {

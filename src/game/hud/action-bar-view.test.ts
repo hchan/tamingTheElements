@@ -60,8 +60,8 @@ function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?:
       get: () => ({ has: (n: string) => frames.has(n), add: (n: string, _i: number, ...r: [number, number, number, number]) => { frames.set(n, r); } }),
     },
     input: {
-      on: (_e: string, f: PointerFn) => { handler = f; },
-      off: (_e: string, f: PointerFn) => { if (f === handler) { offCalled = true; handler = undefined; } },
+      on: (e: string, f: PointerFn) => { if (e === 'pointerdown') handler = f; },
+      off: (e: string, f: PointerFn) => { if (e === 'pointerdown' && f === handler) { offCalled = true; handler = undefined; } },
     },
   } as unknown as Phaser.Scene;
   const emitted: Command[] = [];
