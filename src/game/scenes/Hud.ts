@@ -343,11 +343,7 @@ export class Hud extends Phaser.Scene {
         gfx.lineBetween(chip.x + chip.w, chip.y, chip.x + chip.w, chip.y + chip.h);
       } else gfx.strokeRect(chip.x, chip.y, chip.w, chip.h);
     });
-    // Expire flash: a chip that just ended leaves a brief dark-ember outline where it was.
-    for (const gone of tracker.gone()) {
-      const f = chipFlash(now - gone.at, reduced);
-      if (f > 0) gfx.lineStyle(2, gone.payload.color, f).strokeRect(gone.payload.x, gone.payload.y, gone.payload.w, gone.payload.h);
-    }
+    // An ended chip leaves nothing behind (an empty outlined box read as clutter: qa-r3-label-clutter).
     this.hideChips(team, chips.length);
   }
 

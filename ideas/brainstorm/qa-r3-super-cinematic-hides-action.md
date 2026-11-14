@@ -1,5 +1,5 @@
 ---
-status: idea
+status: planned
 added: 2026-11-13
 ---
 
@@ -10,3 +10,5 @@ Severity: medium (fun/readability). The banner (HELLFIRE LANCE, EYE OF THE STORM
 Fix: dim less, keep both fighters lit, use the caster's portrait, SF-style freeze and zoom on the pair.
 
 Screenshot: ~/claudetmp/qa/r3/water2-5super0.png.
+
+Done 2026-11-13: dim 0.6 -> 0.2 and the cut-in band at 50% opacity, so the foe stays visible. Still open: the banner uses the caster pooled sprite frame (character-view.ts) rather than a dedicated portrait; SF-style freeze zoom on both fighters.

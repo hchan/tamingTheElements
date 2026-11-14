@@ -6,8 +6,8 @@
 
 /** Sim tick length in ms (50 Hz). */
 export const TICK_MS = 20;
-/** Dim to 40% brightness: a black overlay at 60% alpha, faded in and out over SUPER_FADE_MS. */
-export const SUPER_DIM = 0.6;
+/** Dim to 80% brightness (was 40%, which hid the foe): a pale overlay at 20% alpha, faded in and out over SUPER_FADE_MS. */
+export const SUPER_DIM = 0.2;
 export const SUPER_FADE_MS = 100;
 /** The cut-in band slides in over CUT_IN_MS (it fades in instead under reduced motion) and fades out over CUT_OUT_MS. */
 export const CUT_IN_MS = 150;
