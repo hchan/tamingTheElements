@@ -23,7 +23,7 @@ interface Rounds {
 const INTRO = 91;
 const KO_TO_RESULT = 30 + 120;
 /** The card stays 100 view ticks from `roundEnded`. */
-const CARD_TICKS = 100;
+const CARD_TICKS = 60;
 
 const rounds = (page: Page): Promise<Rounds | undefined> => page.evaluate<Rounds | undefined>(`window.__TTE__.arena.rounds()`);
 const step = (page: Page, n: number): Promise<unknown> => page.evaluate(`window.__TTE__.arena.step(${String(n)})`);
@@ -50,7 +50,7 @@ async function shot(page: Page, name: string): Promise<void> {
   if (dir) await page.screenshot({ path: `${dir}/${name}.png` });
 }
 
-test('winning a round shows YOU WIN with the score and what happened, then goes after about 2 s', async ({ page }) => {
+test('winning a round shows YOU WIN with the score and what happened, then goes after about 1.2 s', async ({ page }) => {
   const errors = collectErrors(page);
   await versus(page);
   expect((await rounds(page))?.result.visible).toBe(false);

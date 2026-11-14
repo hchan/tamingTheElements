@@ -19,8 +19,8 @@ const TRAP_TRIGGERED: Kinds['trapTriggered'] = 72;
 const SNAG_ROOTED = 0;
 const TRAP_OVERLAP = 0;
 
-/** The round card stays 2 s (view ticks); the match card holds until the results screen replaces it. */
-export const RESULT_TICKS = 100;
+/** The round card stays 1.2 s (view ticks, the sim's ROUND_END_TICKS) so "ROUND 2" then has the whole 1.4 s intro; the match card holds until the results screen replaces it. */
+export const RESULT_TICKS = 60;
 
 export type Tone = 'win' | 'lose' | 'draw';
 /** How a round ended. */
