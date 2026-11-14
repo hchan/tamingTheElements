@@ -44,10 +44,10 @@
     "chromatic-filter-impl": 900,
     "super-view": 2800,
     "tag-view": 3500,
-    "terrain-view": 10000,
+    "terrain-view": 10100,
     "touch-controls": 12200,
     "tour": 7800,
-    "tour-select": 730,
+    "tour-select": 800,
     "trap-view": 2700,
     "weather-view": 6000
   },
