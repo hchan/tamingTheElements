@@ -202,6 +202,7 @@ export class PoseLayer {
           break;
         }
         case SimEventKind.tagIn:
+          this.clearKoGhosts();
           this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, (e['team'] ?? 0) === 0 ? 1 : -1, 1);
           break;
         case SimEventKind.superStarted:
@@ -502,7 +503,15 @@ export class PoseLayer {
     g.rot = 0;
     g.sprite = this.spriteOf[id & (SLOTS - 1)] ?? '';
     g.face = this.face[id & (SLOTS - 1)] ?? 0;
-    g.image.setTexture(img.texture.key, img.frame.name).setOrigin(0, 0).setFlipX(img.flipX).setVisible(true).setDepth(img.depth);
+    g.image.setTexture(img.texture.key, img.frame.name).setOrigin(0, 0).setFlipX(img.flipX).setVisible(true).setDepth(img.depth - 0.2);
+  }
+
+  /** A tag-in lands where the fallen hero lay: its KO ghost skips ahead to the fade (qa r34), so the arriving hero reads at once. */
+  private clearKoGhosts(): void {
+    for (const g of this.ghosts) {
+      if (g.kind !== 1 || g.from === Number.NEGATIVE_INFINITY) continue;
+      g.from = Math.min(g.from, this.animMs - g.ms * 0.6);
+    }
   }
 
   private free(): Ghost | undefined {

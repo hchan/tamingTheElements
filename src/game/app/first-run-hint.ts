@@ -111,6 +111,13 @@ function rotateBlocked(): boolean {
   return o !== null && !o.hidden;
 }
 
+/**
+ * The round intro (ROUND_INTRO_TICKS 70 plus the 50 tick FIGHT! banner, at 20 ms a tick, plus a little): the card stays
+ * hidden this long after the arena is built, so it never sits over ROUND 1 / FIGHT! (QA r34). A literal, as core data
+ * stays out of this chunk.
+ */
+export const INTRO_HOLD_MS = 2600;
+
 /** `whenReady` for a real game: runs `go` once the Arena scene has built the arena (after the loading screen, never over it). */
 export function afterArenaCreate(game: object): (go: () => void) => void {
   return (go) => {
@@ -123,9 +130,10 @@ export function afterArenaCreate(game: object): (go: () => void) => void {
     // The Arena starts only after Preload finishes, by which time every scene is registered.
     g.events.once(PRELOAD_READY, () => {
       const scene = g.scene?.getScene('Arena') as Phaser.Scene | null | undefined;
+      const later = (): void => { window.setTimeout(go, INTRO_HOLD_MS); };
       // Status 4 = CREATING, 5 = RUNNING: the arena is already being built, so its 'create' event may have fired.
-      if (scene && scene.sys.settings.status < 4) scene.events.once('create', go);
-      else go();
+      if (scene && scene.sys.settings.status < 4) scene.events.once('create', later);
+      else later();
     });
   };
 }

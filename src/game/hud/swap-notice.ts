@@ -86,7 +86,7 @@ export class SwapNotice {
   constructor(scene: Phaser.Scene, private readonly reduced: () => boolean, private readonly place?: () => { x: number; y: number; scale: number }) {
     this.text = scene.add
       .text(4, 604, '', {
-        fontSize: '22px', fontStyle: 'bold', color: '#ffe066', stroke: '#000000', strokeThickness: 5,
+        fontSize: '22px', fontStyle: 'bold', color: '#fff4b8', stroke: '#000000', strokeThickness: 6,
         resolution: resolutionOf(scene),
       })
       .setOrigin(0, 1)
@@ -97,6 +97,11 @@ export class SwapNotice {
   show(line: string, now: number): void {
     this.shownAt = now;
     this.text.setText(line).setAlpha(1).setVisible(true);
+  }
+
+  /** Drops the line at once (a tag-in made it stale). */
+  clear(): void {
+    this.text.setVisible(false);
   }
 
   update(now: number): void {
