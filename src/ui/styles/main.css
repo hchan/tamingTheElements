@@ -1651,14 +1651,16 @@ html[data-high-contrast='true'] button.touchBtn {
   font-weight: bold;
 }
 .firstRunHint {
-  /* Docked bottom-right just above the action bar: the top-left holds the name card and the buff chips, which it must never cover. Fades on its own. */
+  /* A wide, low strip centred just above the action bar: the top holds the HUD and the fighters start left and right, so none is covered. Fades on its own or at the first input. */
   position: absolute;
   top: auto;
-  bottom: 13%;
-  right: 8px;
-  left: auto;
+  bottom: 12%;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 5;
-  max-width: min(19em, 28%);
+  width: max-content;
+  max-width: min(60em, 88%);
   padding: 0.4em 0.7em;
   background: rgba(24, 22, 48, 0.72);
   color: #e8dfd0;
@@ -2043,7 +2045,7 @@ button.menuButton.heroSlotClear {
   .firstRunHint {
     top: auto;
     bottom: 14%;
-    max-width: min(18em, 30%);
+    max-width: min(24em, 50%);
     padding: 0.25em 0.6em;
     font-size: 11px;
     background: rgba(48, 40, 92, 0.78);

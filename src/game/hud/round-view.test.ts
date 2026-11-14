@@ -137,13 +137,14 @@ describe('round view (Phaser side, fake scenes)', () => {
     v.setTick(350);
     hud.events.emit('update');
     expect(roundState(hud.scene)).toMatchObject({ main: 'K.O.', sub: 'YOU WIN ROUND 1', visible: true, won: [1, 0] });
-    expect(hud.made[1]).toMatchObject({ text: 'YOU WIN ROUND 1', visible: true });
+    // the result card carries the verdict, so the banner's duplicate line is hidden while it is up
+    expect(hud.made[1]).toMatchObject({ text: 'YOU WIN ROUND 1', visible: false });
     expect(lines.map((l) => l.text)).toEqual(['Round 1.', 'Fight!', 'K.O. You knocked out the enemy.', 'You win round 1. Rounds 1 to 0. Knockout. Health left 0 percent. Dealt 0 damage, took 0. Longest combo 0.']);
     // The seven objects (banner, timer, pips, halo, two cards), plus the result card's five made on the first result: nothing is made per frame or per banner.
     expect(hud.made).toHaveLength(14);
     feed([ev(351, SimEventKind.roundStarted, 0, { round: 2 })]);
     expect(hud.made).toHaveLength(14);
-    expect(roundState(hud.scene)?.result).toMatchObject({ visible: true, tone: 'win', title: 'YOU WIN', kicker: 'ROUND 1' });
+    expect(roundState(hud.scene)?.result).toMatchObject({ visible: true, tone: 'win', title: 'ROUND 1 WON', kicker: 'ROUNDS 1 - 0' });
 
     arena.events.emit('shutdown');
     expect(arena.events.count).toBe(0);

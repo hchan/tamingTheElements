@@ -124,7 +124,9 @@ export interface ResultCard {
   readonly detail: string;
 }
 
+/** The match card says the verdict; a round card says which round and how it went (YOU LOSE after round 1 of 3 read as game over). */
 const TITLE: Readonly<Record<Tone, string>> = { win: 'YOU WIN', lose: 'YOU LOSE', draw: 'DRAW' };
+const ROUND_VERDICT: Readonly<Record<Tone, string>> = { win: 'WON', lose: 'LOST', draw: 'DRAW' };
 const HOW: Readonly<Record<How, string>> = { '': '', ko: 'K.O.', double: 'DOUBLE K.O.', time: 'TIME OVER' };
 
 export const toneOf = (winner: number): Tone => (winner === 0 ? 'win' : winner === 1 ? 'lose' : 'draw');
@@ -161,7 +163,10 @@ export function resultCard(i: ResultInput): ResultCard {
     t.supers > 0 ? `${plural(t.supers, 'super')}.` : '',
   ].filter((x) => x !== '').join(' ');
   return {
-    tone, kicker: match ? 'MATCH' : `ROUND ${String(i.round)}`, title: TITLE[tone],
-    headline: [how, score].filter((x) => x !== '').join('  -  '), lines, detail,
+    tone,
+    kicker: match ? 'MATCH' : score,
+    title: match ? TITLE[tone] : `ROUND ${String(i.round)} ${ROUND_VERDICT[tone]}`,
+    headline: match ? score : how,
+    lines, detail,
   };
 }
