@@ -84,7 +84,9 @@ export function frameName(set: FrameSet, i: number): string {
 }
 
 /** Pale air beings that vanish on the dark floors: they get a soft additive ground glow under the sprite (display only). */
-export const GLOW_SPRITES: ReadonlySet<string> = new Set(['wispera', 'echo']);
+export const GLOW_SPRITES: ReadonlySet<string> = new Set(['wispera', 'echo', 'lavax']);
+/** Lavax is near-black basalt: its light is a warm molten gold, so it reads as lit from within on the fire and earth floors. */
+const GLOW_TINT_BY_SPRITE: Readonly<Record<string, number>> = { lavax: 0xffa850 };
 const GLOW_KEY = 'hero-glow';
 const GLOW_TINT = 0xb4d2ff;
 const GLOW_ALPHA = 0.65;
@@ -218,12 +220,14 @@ export class CharacterView {
       if (!key) return;
       this.glow = this.scene.add.image(0, 0, key).setTint(GLOW_TINT).setAlpha(GLOW_ALPHA).setBlendMode(1);
     }
+    const tint = GLOW_TINT_BY_SPRITE[sprite] ?? GLOW_TINT;
+    this.glow.setTint(tint);
     this.glow.setVisible(true).setDepth(this.image.depth - 0.5);
     this.glow.setPosition(x + w / 2, y + h * 0.66).setDisplaySize(w * 1.15, h * 0.62);
     // A pale rim of light around the body (a soft halo just behind the sprite) so a dark or translucent hero keeps its outline on a dark floor.
     this.halo ??= this.scene.add.image(0, 0, this.glow.texture.key).setTint(GLOW_TINT).setAlpha(HALO_ALPHA).setBlendMode(1);
-    this.halo.setVisible(true).setDepth(this.image.depth - 0.4);
-    this.halo.setPosition(x + w / 2, y + h * 0.5).setDisplaySize(w * 1.5, h * 1.35);
+    this.halo.setTint(tint).setAlpha(sprite === 'lavax' ? 0.8 : HALO_ALPHA).setVisible(true).setDepth(this.image.depth - 0.4);
+    this.halo.setPosition(x + w / 2, y + h * 0.5).setDisplaySize(w * (sprite === 'lavax' ? 1.75 : 1.5), h * (sprite === 'lavax' ? 1.5 : 1.35));
   }
 
   /**
