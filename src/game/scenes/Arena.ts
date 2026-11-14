@@ -73,6 +73,7 @@ import { SwapNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap
 import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
+import { createStageAmbient, type StageAmbient } from '../fx/stage-ambient-view';
 import { CLASSIC_SPRITE_SCALE, CharacterView } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
@@ -142,6 +143,8 @@ export class Arena extends Phaser.Scene {
   /** Local two-player: Player 2's small mirrored readout (view only). */
   private actionBar2: ActionBarView | undefined;
   private backdrop: Backdrop | undefined;
+  /** Per-stage ambient particles behind the fighters (view only; none under reduced motion). */
+  private ambient: StageAmbient | undefined;
   private clicks: number[] = [];
   /** Arcade: the line shown when a swap press is refused (hud/swap-notice.ts); view only. */
   private swapNotice: SwapNotice | undefined;
@@ -319,6 +322,7 @@ export class Arena extends Phaser.Scene {
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (!arcade && element) this.backdrop = new Backdrop(this, element, bg && `bg:${bg}`);
     else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1);
+    if (element) this.ambient = createStageAmbient(this, element, arcade ? arcadePlayfield().w : width);
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
     const onBlocked = (blocked: boolean): void => {
@@ -478,6 +482,7 @@ export class Arena extends Phaser.Scene {
       sheets: () => import('../views/pose-layer').then((m) => m.sheetState(this)),
       rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),
       defence: () => import('../fx/defence-view').then((m) => m.defenceState(this)),
+      stageAmbient: () => this.ambient?.state() ?? { emitters: 0, particles: 0 },
       weather: () => import('../fx/weather-view').then((m) => m.weatherState(this)),
       viewsReady: () => (!this.arcadeHud || this.rounds !== undefined) && this.scene.isActive(HUD_SCENE),
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
@@ -826,6 +831,7 @@ export class Arena extends Phaser.Scene {
     this.actionBar2?.update();
     this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
+    this.ambient?.update(getPrefs().reduceMotion);
     this.reportPlayback();
     this.frameTick = tick;
     this.frameAlpha = alpha;
@@ -883,6 +889,8 @@ export class Arena extends Phaser.Scene {
     this.lowLife = undefined;
     this.backdrop?.destroy();
     this.backdrop = undefined;
+    this.ambient?.destroy();
+    this.ambient = undefined;
     this.pool?.forEachView((v) => { v.destroy(); });
     this.pool?.clear();
     this.projPool?.forEachView((v) => { v.destroy(); });
