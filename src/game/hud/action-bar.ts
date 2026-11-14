@@ -387,19 +387,22 @@ type SlotInit = Omit<ActionSlot, 'x' | 'y' | 'size' | 'label' | 'note' | 'icon' 
 export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY_LABELS, arcade?: ArcadeBar, k?: number): ActionSlot[] {
   const out: ActionSlot[] = [];
   const kk = arcade ? k : undefined;
-  const add = (s: SlotInit, at: number = s.cmd): void => {
+  const add = (s: SlotInit, at: number = s.cmd, also?: string): void => {
     const lay = slotLayout(out.length, kk);
-    out.push({ note: '', icon: -1, touch: '', ...s, x: lay.x, y: lay.y, size: lay.size, label: labels[at] ?? '' });
+    const own = labels[at] ?? '';
+    out.push({ note: '', icon: -1, touch: '', ...s, x: lay.x, y: lay.y, size: lay.size, label: also !== undefined && also !== '' && also !== own ? `${own} ${also}`.trim() : own });
   };
   bar.abilities.forEach((a, i) => {
     const cmd = ABILITY_CMDS[i];
     if (cmd === undefined) return;
+    // In Arcade the Snag box also answers to C: its keycap reads "1 C" (own key, then C), so the rope has a visible home on the bar.
+    const snagC = arcade && a.sprite === SNAG_SPRITE ? labels[Cmd.capture] : undefined;
     add({
       kind: 'ability', cmd, sprite: a.sprite, highlight: false, disabled: false,
       // The rope-throw slot (Treenoc, Wispera, Curomo, Echo) is named in words, never just "Special".
       ...(a.sprite === SNAG_SPRITE ? { note: 'Snag' } : {}),
       progress: cooldownProgress(bar.tick, a.readyTick, a.cooldownTicks),
-    });
+    }, cmd, snagC);
   });
   if (bar.capture) {
     const c = bar.capture;

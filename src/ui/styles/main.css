@@ -1727,6 +1727,17 @@ html[data-high-contrast='true'] button.touchBtn {
   }
 }
 
+/* Portrait phone: the first-run card is a short one (the move line and the footer go; Help has them), and it stays hidden behind the rotate overlay. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .firstRunHint p:nth-of-type(1),
+  .firstRunHint .firstRunMore {
+    display: none;
+  }
+}
+#rotateOverlay:not([hidden]) ~ .firstRunHint {
+  display: none;
+}
+
 /* Replay viewer input display: the last commands of both fighters, in the bottom corners, above the control bar (the top is the HUD). */
 #inputDisplay {
   position: fixed;
@@ -2085,13 +2096,13 @@ button.menuButton.heroSlotClear {
   }
   .firstRunHint .firstRunDone {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     margin: 0;
     min-height: 32px;
     padding: 0.2em 0.8em;
     font-size: 11px;
   }
-  .firstRunHint p:nth-of-type(n + 2) {
+  .firstRunHint p:nth-of-type(n + 2):not(.firstRunSnag) {
     display: none;
   }
   .firstRunHint h2 {
