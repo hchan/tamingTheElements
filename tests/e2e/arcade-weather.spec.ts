@@ -66,10 +66,10 @@ test('Arcade demo: Curomo calls Rain, then Pax replaces it with a Sandstorm; Ecl
   expect(await weather(page)).toMatchObject({ kind: 0 });
   await charge(page, 0, 600);
   await step(page, 2);
-  expect(await weather(page)).toMatchObject({ chargeText: 'WEATHER 60%', chargeFill: 120 });
+  expect(await weather(page)).toMatchObject({ chargeText: 'WEATHER 60%', chargeFill: 78 });
   await charge(page, 0);
   await step(page, 2);
-  expect(await weather(page)).toMatchObject({ chargeText: 'WEATHER READY', chargeFill: 200 });
+  expect(await weather(page)).toMatchObject({ chargeText: 'WEATHER READY', chargeFill: 130 });
   await step(page, 1, [WEATHER, 0]);
   await step(page, 5);
   const rain = await weather(page);

@@ -221,8 +221,9 @@ export class Hud extends Phaser.Scene {
     const g = this.add.graphics().setDepth(96);
     g.fillStyle(0x070605, 0.94).fillRect(0, 0, HUD_WIDTH, SLIM_H + 2);
     // Dense over the crowd band (about y 115-180), a short fade into the floor at about y 182.
-    g.fillStyle(0x070605, 0.86).fillRect(0, SLIM_H + 2, HUD_WIDTH, 112 - SLIM_H);
-    for (let i = 0; i < 9; i++) g.fillStyle(0x070605, 0.8 * (1 - i / 9)).fillRect(0, 112 + i * 8, HUD_WIDTH, 8);
+    // Lighter and shorter than before: the crowd shows through under the HUD instead of a dead dark band.
+    g.fillStyle(0x070605, 0.6).fillRect(0, SLIM_H + 2, HUD_WIDTH, 100 - SLIM_H);
+    for (let i = 0; i < 8; i++) g.fillStyle(0x070605, 0.55 * (1 - i / 8)).fillRect(0, 100 + i * 8, HUD_WIDTH, 8);
     g.fillStyle(0x000000, 0.9).fillRect(0, SLIM_H + 1, HUD_WIDTH, 1);
     this.scrim = g;
   }

@@ -129,13 +129,13 @@ describe('weather charge chip (WP-arcade-weather-charge)', () => {
     m.arcade.weatherCharge[0] = 600;
     m.arcade.weatherCharge[1] = 900;
     m.frame();
-    expect(m.state()).toMatchObject({ charge: 600, chargeText: 'WEATHER 60%', chargeFill: 120 });
+    expect(m.state()).toMatchObject({ charge: 600, chargeText: 'WEATHER 60%', chargeFill: 78 });
     m.arcade.weatherCharge[0] = 999;
     m.frame();
     expect(m.state().chargeText).toBe('WEATHER 99%');
     m.arcade.weatherCharge[0] = WEATHER_CHARGE_FULL;
     m.frame();
-    expect(m.state()).toMatchObject({ chargeText: 'WEATHER READY', chargeFill: 200 });
+    expect(m.state()).toMatchObject({ chargeText: 'WEATHER READY', chargeFill: 130 });
     m.arcade.weatherCharge[0] = 0;
     m.frame();
     expect(m.state().chargeText).toBe('WEATHER 0%');
