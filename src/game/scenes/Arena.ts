@@ -647,9 +647,13 @@ export class Arena extends Phaser.Scene {
       this.launch?.net?.onStatus?.(r.status, this.session);
       if (!r.stepped) {
         if (r.status === 'desync' || r.status === 'forfeit') this.driver?.pause('ended');
-        return;
+        // Rollback: the match end is only confirmed once the peer's last inputs arrive, which can happen on an update that steps
+        // nothing (found by the WP 11 soak under `?netsim=`): fall through to the end check below instead of never ending.
+        if (r.status !== 'ended') return;
+        events = [];
+      } else {
+        events = this.playOnce ? this.playOnce.fresh(r.events) : r.events;
       }
-      events = this.playOnce ? this.playOnce.fresh(r.events) : r.events;
     } else {
       // Agents are consulted only when a side has no forced command. Consulting them never changes the sim
       // state (step alone mutates it), so forced and live ticks with the same commands hash the same.

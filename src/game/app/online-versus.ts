@@ -176,9 +176,12 @@ export function onlineVersusScreen(): Screen {
       const startMatch = (p: Peer, say: (s: string) => void, setup: MatchSetup): void => {
         // `?ff=netbot` (dev and test builds only): the Arcade scripted AI plays our side, so a two-context e2e needs no keys.
         liveSession = undefined;
+        // `?netsim=lat:60,jitter:20,loss:10` (dev and test builds only): seeded delay, jitter and loss on what this side receives (src/game/net/netsim.ts).
+        const sim = devBuild() && new URLSearchParams(window.location.search).has('netsim') ? import('../net/netsim') : Promise.resolve(undefined);
         node?.querySelector('#onlineReport')?.remove();
         const bot = devBuild() && getUiFlags(window.location.search).netbot ? import('./arcade-setup').then((m) => m.arcadeBot(setup, side)) : Promise.resolve(undefined);
-        void Promise.all([import('../boot/phaser-config'), bot]).then(([{ createGame }, agent]) => {
+        void Promise.all([import('../boot/phaser-config'), bot, sim]).then(([{ createGame }, agent, netsimMod]) => {
+          const netsim = netsimMod?.netsimFromSearch(window.location.search, true);
           if (gone || !node) return;
           // The previous match's arena stayed up after its end (it keeps answering the friend's session, see onEnd): its end is now certain.
           destroyGame(game, arenaNode);
@@ -215,7 +218,7 @@ export function onlineVersusScreen(): Screen {
               side,
               match: matchNo,
               ...(matchTicks === undefined ? {} : { tickLimit: matchTicks }),
-              input: p.input,
+              input: netsim === undefined || netsimMod === undefined ? p.input : new netsimMod.NetsimTransport(p.input, netsim),
               ...(agent === undefined ? {} : { agent }),
               onStatus: (st, session) => {
                 liveSession = session;

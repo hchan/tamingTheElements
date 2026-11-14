@@ -55,14 +55,23 @@ async function waitForEnd(page: Page, stallMs = 10_000): Promise<Net> {
   }
 }
 
-for (const ff of ['arcade,lockstep,netbot', 'arcade,netbot']) test(`two browser contexts play a whole online match to the same result (${ff})`, async ({ browser }) => {
+// WP 11 soak: the same proof once more under `?netsim=` (seeded one-way delay 60 ms + 0..20 ms jitter, 10 % loss on each side's input
+// receive path, so about 120 ms round trip), in both modes. Modest length: the usual 1500-tick draw.
+const NETSIM = 'lat:60,jitter:20,loss:10';
+const VARIANTS = [
+  { ff: 'arcade,lockstep,netbot', sim: '' },
+  { ff: 'arcade,netbot', sim: '' },
+  { ff: 'arcade,lockstep,netbot', sim: NETSIM },
+  { ff: 'arcade,netbot', sim: NETSIM },
+];
+for (const { ff, sim } of VARIANTS) test(`two browser contexts play a whole online match to the same result (${ff}${sim === '' ? '' : `, netsim ${sim}`})`, async ({ browser }) => {
   test.setTimeout(NATURAL ? 900_000 : 420_000);
   const ctxA = await browser.newContext();
   const ctxB = await browser.newContext();
   opened.push(ctxA, ctxB);
   const a = await ctxA.newPage();
   const b = await ctxB.newPage();
-  const url = `/?ff=${ff}&ice=none${NATURAL ? '' : `&matchticks=${String(MATCH_TICKS)}`}#online`;
+  const url = `/?ff=${ff}&ice=none${sim === '' ? '' : `&netsim=${sim}`}${NATURAL ? '' : `&matchticks=${String(MATCH_TICKS)}`}#online`;
   await a.goto(url);
   await b.goto(url);
   await expect(a.locator('#onlineHost')).toBeVisible();
