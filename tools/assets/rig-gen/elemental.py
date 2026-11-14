@@ -160,9 +160,12 @@ def refuse_portrait_rig(out):
         sys.exit(f"{path} is a portrait rig (tools/assets/portrait-rig/prep.py); refusing to overwrite it")
 
 
-def build(out, name, G, actions, paint, license_text, view_tf=default_view_tf, accents=None):
+def build(out, name, G, actions, paint, license_text, view_tf=default_view_tf, accents=None, art=1):
     """G: part id -> dict(polys=[[pts]], joint=(x,y), z, parent, ...extra for paint). paint(part_id, view, polys, g, seed) -> RGBA WxW.
-    accents(part_id, view, im, tf) -> RGBA (eyes etc, optional). Writes <out>/parts/*.png, rig.json, license.txt."""
+    accents(part_id, view, im, tf) -> RGBA (eyes etc, optional). Writes <out>/parts/*.png, rig.json, license.txt.
+    art: art pixels per sim unit (1 = the classic 80 px rig). art=6 writes a hi-res rig (res 2, ss2 sampling, 240 px frame, box = whole frame,
+    like the portrait rigs): parts are 80*art px, pivots/at/offsets are art px and the curves' dx/dy are scaled by art; paint() must
+    return an image of at least 80*art px (set E.SS/E.W first)."""
     refuse_portrait_rig(out)
     os.makedirs(os.path.join(out, "parts"), exist_ok=True)
     parts = []
@@ -174,14 +177,15 @@ def build(out, name, G, actions, paint, license_text, view_tf=default_view_tf, a
             im = paint(k, view, polys, dict(g, tf=tfs[k], view=view), seed)
             if accents:
                 im = accents(k, view, im, tfs[k]) or im
-            small = im.resize((80, 80), Image.LANCZOS)
+            small = im.resize((80 * art, 80 * art), Image.LANCZOS)
             a = np.asarray(small)
             ys, xs = np.nonzero(a[..., 3] > 8)
             x0, x1, y0, y1 = int(xs.min()), int(xs.max()) + 1, int(ys.min()), int(ys.max()) + 1
             crop = small.crop((x0, y0, x1, y1))
             fname = f"{k}.png" if view == "E" else f"{k}_{view.lower()}.png"
             crop.save(os.path.join(out, "parts", fname))
-            parts.append(dict(view=view, id=k, png=fname, joint=apply(tfs[k], g["joint"]), off=(x0, y0), size=crop.size))
+            jt = apply(tfs[k], g["joint"])
+            parts.append(dict(view=view, id=k, png=fname, joint=(jt[0] * art, jt[1] * art), off=(x0, y0), size=crop.size))
     byv = {v: {e["id"]: e for e in parts if e["view"] == v} for v in ("E", "SE", "NE")}
 
     def pv(e):
@@ -202,7 +206,11 @@ def build(out, name, G, actions, paint, license_text, view_tf=default_view_tf, a
         p["png"] = byv["E"][pid]["png"]; p["pivot"] = pv(byv["E"][pid]); p["at"] = at("E", pid); p["z"] = g["z"]
         p["views"] = {v: {"png": byv[v][pid]["png"], "pivot": pv(byv[v][pid]), "at": at(v, pid)} for v in ("SE", "NE")}
         rig_parts.append(p)
-    json.dump(dict(dirs=["E", "SE", "NE"], parts=rig_parts, actions=actions), open(os.path.join(out, "rig.json"), "w"), indent=2)
+    if art > 1:
+        actions = {a: dict(d, curves={pid: {ch: [v * art if ch in ("dx", "dy") else v for v in vals] for ch, vals in cv.items()}
+                                      for pid, cv in d["curves"].items()}) for a, d in actions.items()}
+    head = dict(frame=40 * art, sample="ss2", res=2, box=[0, 0, 40 * art, 40 * art]) if art > 1 else {}
+    json.dump(dict(**head, dirs=["E", "SE", "NE"], parts=rig_parts, actions=actions), open(os.path.join(out, "rig.json"), "w"), indent=2)
     open(os.path.join(out, "license.txt"), "w").write(license_text)
     print("ok", name)
 
