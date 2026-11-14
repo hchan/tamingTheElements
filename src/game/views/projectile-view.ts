@@ -52,6 +52,9 @@ export const SPRITE_BOOST: Readonly<Record<string, SpriteBoost>> = {
   // Void sprites are the darkest in the game (docs/ABILITY-AUDIT.md): a pale, desaturated ash-violet rim lifts them off dark floors.
   chaosBolt: { minLong: 56, glowAlpha: 0.85, glowScale: 1.6, glowTint: 0xa99cc4 },
   chaosOrb: { minLong: 0, glowAlpha: 0.8, glowScale: 1.35, glowTint: 0xa99cc4 },
+  // Curomo (water): a cold pale-cyan halo lifts the thin Shards of Ice bolts and the Ice Shock lance off warm and dark floors.
+  shardsOfIce: { minLong: 64, glowAlpha: 0.9, glowScale: 2.1, glowTint: 0xa8e4ff },
+  iceShock: { minLong: 0, glowAlpha: 0.55, glowScale: 1.18, glowTint: 0x9fdcff },
   crimsonFire: { minLong: 96, glowAlpha: 1, glowScale: 1.8, glowTint: 0xffe9a0 },
 };
 
