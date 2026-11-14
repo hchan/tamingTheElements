@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 ---
 
@@ -19,3 +19,8 @@ Judged from fights at 1280x720 and 1920x1080 (fight-*.png, ~/claudetmp/qa6/). Co
 ## Constraint
 
 Hit-stop must stay presentation-only (renderer freezes, sim ticks keep determinism) or be a deterministic sim feature with goldens re-recorded and a stated reason.
+
+## Done 2026-11-13 (presentation only)
+
+Existing before this pass: sim hit-stop (cause 2 super, 3 KO), KO slow-mo, strength shake, super cut-in band with hero name, FIGHT!/K.O. banners. Added: round-start hero name cards in element colour that slide in and clear before FIGHT! (`src/game/hud/round-cards.ts`, drawn by `round-view.ts`), a 2.2x warm-white K.O. banner with an additive halo, a larger FIGHT!. Reduced motion: no slide, no halo. The intro length (90 ticks, 1.8 s) is sim data and unchanged; the cards fill it. Not done: Archon board layer visibility, Classic sim hit-stop.
+Shots: tests/e2e/sf-juice-shot.spec.ts.

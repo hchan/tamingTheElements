@@ -1,5 +1,8 @@
 import type Phaser from 'phaser';
-import { ROUND_TIMER_TICKS, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, ROUND_TIMER_TICKS, type RenderView, type SimEvent } from '@core/index';
+import { ELEMENT_COLORS } from '../fx/element-colors';
+import { bannerColorFor, bannerSizeFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
+import { heroName } from './tag-fx';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
@@ -24,6 +27,10 @@ const BANNER_Y = 304;
 const MAIN_PX = 44;
 const SUB_PX = 24;
 const SUB_GAP = 42;
+/** Name cards: big engraved names at each screen edge, above the fighters. */
+const CARD_PX = 54;
+const CARD_Y = 200;
+const CARD_MARGIN = 64;
 const WON_COLOR = 0xb8964a;
 /** Banner fade: in over the first 8 ticks, out over the last 12 (none with reduced motion). */
 const FADE_IN_TICKS = 8;
@@ -42,6 +49,8 @@ export interface RoundState {
   readonly scale: number;
   readonly timer: string;
   readonly timerColor: string;
+  /** The round-start name cards (left, right) while shown, else empty strings. */
+  readonly cards: readonly [string, string];
   readonly won: readonly [number, number];
   /** The result card under the banner ("YOU WIN" and what happened). */
   readonly result: ResultState;
@@ -81,7 +90,16 @@ export function mountRoundView(
   const a = view.arcade();
   if (a) announcer.sync(a, view.tick);
 
-  let parts: { main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics } | undefined;
+  let parts: {
+    main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics;
+    halo: Phaser.GameObjects.Graphics; cards: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
+  } | undefined;
+  const cardState: CardFrame = { alpha: 0, offset: 0 };
+  const cardNames: [string, string] = ['', ''];
+  const cardColors: [string, string] = ['#e8dcc0', '#e8dcc0'];
+  let shownHalo = -1;
+  let shownSize = 1;
+  let cardsFor = -1;
   let shownTimer = '';
   const shownWon: [number, number] = [-1, -1];
   let shownColor = '';
@@ -96,6 +114,49 @@ export function mountRoundView(
       })
       .setDepth(DEPTH);
 
+  /** A soft warm glow behind a KO or FIGHT! call (stacked additive ellipses); redrawn only when its strength changes. */
+  function drawHalo(k: number): void {
+    if (!parts) return;
+    const q = Math.round(k * 50);
+    if (q === shownHalo) return;
+    shownHalo = q;
+    parts.halo.clear().setVisible(q > 0);
+    for (let i = 0; i < 6 && q > 0; i++) {
+      parts.halo.fillStyle(0xffd88a, (q / 50) * 0.1).fillEllipse(TIMER_X, BANNER_Y, 760 - i * 90, 190 - i * 22);
+    }
+  }
+
+  /** The active hero of each side, read once per intro. */
+  function readCards(): void {
+    cardNames[0] = '';
+    cardNames[1] = '';
+    view.forEachCharacter((c) => {
+      if ((c.flags & (EntityFlag.dead | EntityFlag.benched)) !== 0 || c.team > 1 || cardNames[c.team] !== '') return;
+      cardNames[c.team] = heroName(c.sprite).toUpperCase();
+      cardColors[c.team] = `#${ELEMENT_COLORS[c.element].toString(16).padStart(6, '0')}`;
+    });
+  }
+
+  function drawCards(on: boolean, tick: number): void {
+    if (!parts) return;
+    if (!on || !isIntroBanner(banner.main)) {
+      cardsFor = -1;
+      for (const t of parts.cards) t.setVisible(false);
+      return;
+    }
+    if (cardsFor !== banner.from) {
+      cardsFor = banner.from;
+      readCards();
+    }
+    cardFrame(tick - banner.from, banner.until - banner.from, banner.reduced, cardState);
+    for (const team of [0, 1] as const) {
+      const t = parts.cards[team];
+      if (t.text !== cardNames[team]) t.setText(cardNames[team]);
+      const edge = team === 0 ? CARD_MARGIN - cardState.offset : LOGICAL_WIDTH - CARD_MARGIN + cardState.offset;
+      t.setColor(cardColors[team]).setPosition(edge, CARD_Y).setAlpha(cardState.alpha * 0.92).setVisible(cardState.alpha > 0 && cardNames[team] !== '');
+    }
+  }
+
   function draw(): void {
     const ar = view.arcade();
     if (!parts || !ar) return;
@@ -105,7 +166,16 @@ export function mountRoundView(
     if (parts.main.text !== banner.main) parts.main.setText(banner.main);
     if (parts.sub.text !== banner.sub) parts.sub.setText(banner.sub);
     const fade = banner.reduced ? 1 : Math.min(1, (tick - banner.from + 1) / FADE_IN_TICKS, (banner.until - tick) / FADE_OUT_TICKS);
-    parts.main.setVisible(on).setScale(scale).setAlpha(Math.max(0, fade) * 0.9);
+    const size = bannerSizeFor(banner.main);
+    if (on && size !== shownSize) {
+      shownSize = size;
+      parts.main.setFontSize(MAIN_PX * size);
+    }
+    if (on) parts.main.setColor(bannerColorFor(banner.main));
+    parts.main.setVisible(on).setScale(scale).setAlpha(Math.max(0, fade) * (size > 1 ? 1 : 0.9));
+    parts.sub.setY(BANNER_Y + SUB_GAP + (size > 1 ? Math.round(MAIN_PX * (size - 1) * 0.55) : 0));
+    drawHalo(on ? haloFor(banner.main, tick - banner.from, banner.reduced) : 0);
+    drawCards(on, tick);
     parts.sub.setVisible(on && banner.sub !== '').setAlpha(Math.max(0, fade));
     // Before its first tick (round 0) the world has no timer yet: show the full one round 1 starts with.
     const left = ar.round === 0 ? ROUND_TIMER_TICKS : ar.timer;
@@ -129,12 +199,17 @@ export function mountRoundView(
       sub: text(SUB_PX, BANNER_Y + SUB_GAP, 6, true).setOrigin(0.5, 0),
       timer: text(TIMER_PX, TIMER_Y, 5).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
+      halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
+      cards: [
+        text(CARD_PX, CARD_Y, 6, true).setOrigin(0, 0.5).setVisible(false),
+        text(CARD_PX, CARD_Y, 6, true).setOrigin(1, 0.5).setVisible(false),
+      ],
     };
     hud.events.on('update', draw);
     // The probe draws first, so it reads the current tick even between two rendered frames.
     states.set(hud, () => {
       draw();
-      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, timerColor: shownColor, won: [shownWon[0], shownWon[1]], result: results.result.state() };
+      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, timerColor: shownColor, cards: [parts?.cards[0].visible ? cardNames[0] : '', parts?.cards[1].visible ? cardNames[1] : ''], won: [shownWon[0], shownWon[1]], result: results.result.state() };
     });
     draw();
   };
@@ -144,7 +219,7 @@ export function mountRoundView(
     arena.events.off('shutdown', off).off('destroy', off);
     states.delete(hud);
     results.destroy();
-    if (parts) for (const o of Object.values(parts)) o.destroy();
+    if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, parts.halo, ...parts.cards]) o.destroy();
     parts = undefined;
   };
   if (hud.sys.isActive()) build();
