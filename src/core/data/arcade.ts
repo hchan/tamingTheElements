@@ -167,13 +167,17 @@ export const TRAP_MIN_GAP_PX = 64;
  */
 export const HAZARD_FIRST_TICKS = 400;
 export const HAZARD_WARN_TICKS = 50;
+/** The earth rockfall warns longer (a fighter needs ~100 px to clear the square), see hazardWarnTicks. */
+export const HAZARD_EARTH_WARN_TICKS = 100;
+/** The warning length of hazard `kind` (1 fire .. 4 air) in game ticks. */
+export const hazardWarnTicks = (kind: number): number => (kind === 3 ? HAZARD_EARTH_WARN_TICKS : HAZARD_WARN_TICKS);
 export const HAZARD_PERIOD_TICKS = 650;
 export const HAZARD_JITTER_TICKS = 200;
 export const HAZARD_ACTIVE_TICKS: readonly number[] = [0, 20, 150, 20, 100];
 export const HAZARD_DAMAGE_PM: readonly number[] = [0, 40, 0, 50, 0];
 export const HAZARD_LAVA_LANES = 5;
 export const HAZARD_LAVA_W = 96;
-export const HAZARD_ROCK_PX = 176;
+export const HAZARD_ROCK_PX = 112;
 export const HAZARD_TIDE_PX = 1;
 export const HAZARD_GUST_H = 120;
 export const HAZARD_GUST_PX = 1;

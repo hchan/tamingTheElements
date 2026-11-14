@@ -68,10 +68,10 @@ for (const [element, hero, stage] of CASES) {
       expect(warn.chevrons).toBeGreaterThan(0);
     }
     // Half way into the warning, so the outline has firmed up for the shot.
-    await page.evaluate('window.__TTE__.arena.step(25, [0, 0])');
+    await page.evaluate(`window.__TTE__.arena.step(${String(stage === 3 ? 50 : 25)}, [0, 0])`); // the earth warning is 100 ticks, the rest 50
     await snap('warn');
     let active: Marker | undefined;
-    for (let i = 0; i < 6 && active?.phase !== 'active'; i++) {
+    for (let i = 0; i < 12 && active?.phase !== 'active'; i++) {
       await page.evaluate('window.__TTE__.arena.step(5, [0, 0])');
       active = await hazard(page);
     }

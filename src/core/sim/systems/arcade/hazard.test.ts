@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HAZARD_ACTIVE_TICKS, HAZARD_DAMAGE_PM, HAZARD_FIRST_TICKS, HAZARD_GUST_AIR_PX, HAZARD_GUST_H, HAZARD_GUST_PX,
   HAZARD_JITTER_TICKS, HAZARD_LAVA_LANES, HAZARD_LAVA_W, HAZARD_PERIOD_TICKS, HAZARD_ROCK_PX, HAZARD_TIDE_PX,
-  HAZARD_WARN_TICKS, HP_PM, RoundPhase,
+  HAZARD_EARTH_WARN_TICKS, HAZARD_WARN_TICKS, hazardWarnTicks, HP_PM, RoundPhase,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -78,10 +78,11 @@ function standIn(world: SimWorld, id: number): void {
 describe('stage hazard data', () => {
   it('has the design numbers', () => {
     expect([HAZARD_FIRST_TICKS, HAZARD_WARN_TICKS, HAZARD_PERIOD_TICKS, HAZARD_JITTER_TICKS]).toEqual([400, 50, 650, 200]);
+    expect([HAZARD_EARTH_WARN_TICKS, hazardWarnTicks(1), hazardWarnTicks(3)]).toEqual([100, 50, 100]);
     expect([...HAZARD_ACTIVE_TICKS]).toEqual([0, 20, 150, 20, 100]);
     expect([...HAZARD_DAMAGE_PM]).toEqual([0, 40, 0, 50, 0]);
     expect([HAZARD_LAVA_LANES, HAZARD_LAVA_W, HAZARD_ROCK_PX, HAZARD_TIDE_PX, HAZARD_GUST_H, HAZARD_GUST_PX, HAZARD_GUST_AIR_PX])
-      .toEqual([5, 96, 176, 1, 120, 1, 4]);
+      .toEqual([5, 96, 112, 1, 120, 1, 4]);
   });
 
   it('keeps hazard damage small: at most 5% of max life', () => {
@@ -94,9 +95,9 @@ describe('stage hazard timing', () => {
     const world = duel(stage);
     const { steps, warn } = toWarn(world);
     expect(steps).toBe(HAZARD_FIRST_TICKS + 1);
-    expect(warn).toMatchObject({ hazard: stage, ticks: HAZARD_WARN_TICKS });
+    expect(warn).toMatchObject({ hazard: stage, ticks: hazardWarnTicks(stage) });
     expect(hazardOf(world.state)).toEqual({ kind: stage, active: false });
-    expect(of(run(world, HAZARD_WARN_TICKS - 1), K.hazardStrike)).toHaveLength(0);
+    expect(of(run(world, hazardWarnTicks(stage) - 1), K.hazardStrike)).toHaveLength(0);
     expect(of(run(world, 1), K.hazardStrike)).toMatchObject([{ hazard: stage }]);
     expect(hazardOf(world.state)).toEqual({ kind: stage, active: true });
     run(world, HAZARD_ACTIVE_TICKS[stage] ?? 0);
@@ -175,7 +176,7 @@ describe('stage hazard effects', () => {
     const s = world.state;
     const hp0 = s.hp[0] ?? 0;
     const hp1 = s.hp[1] ?? 0;
-    const evs = run(world, HAZARD_WARN_TICKS);
+    const evs = run(world, hazardWarnTicks(stage));
     const amount = Math.floor(((s.maxHp[0] ?? 0) * (HAZARD_DAMAGE_PM[stage] ?? 0)) / HP_PM);
     expect(amount).toBeGreaterThan(0);
     expect(of(evs, K.hazardHit)).toMatchObject([{ sourceId: 0, team: 0, amount, hazard: stage }]);
@@ -201,9 +202,9 @@ describe('stage hazard effects', () => {
     toWarn(world);
     standIn(world, 0);
     const s = world.state;
-    s.arcade[ARCADE_E * 0 + ArcadeE.invulnUntil] = now(s) + HAZARD_WARN_TICKS + 5;
+    s.arcade[ARCADE_E * 0 + ArcadeE.invulnUntil] = now(s) + HAZARD_EARTH_WARN_TICKS + 5;
     const hp = s.hp[0];
-    const evs = run(world, HAZARD_WARN_TICKS);
+    const evs = run(world, HAZARD_EARTH_WARN_TICKS);
     expect(of(evs, K.hazardStrike)).toHaveLength(1);
     expect(of(evs, K.hazardHit)).toHaveLength(0);
     expect(s.hp[0]).toBe(hp);

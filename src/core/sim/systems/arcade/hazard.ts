@@ -1,7 +1,7 @@
 import {
   HAZARD_ACTIVE_TICKS, HAZARD_DAMAGE_PM, HAZARD_FIRST_TICKS, HAZARD_GUST_AIR_PX, HAZARD_GUST_H, HAZARD_GUST_PX,
   HAZARD_JITTER_TICKS, HAZARD_LAVA_LANES, HAZARD_LAVA_W, HAZARD_PERIOD_TICKS, HAZARD_ROCK_PX, HAZARD_TIDE_PX,
-  HAZARD_WARN_TICKS, HP_PM,
+  hazardWarnTicks, HP_PM,
 } from '../../../data/arcade';
 import { seedSfc32 } from '../../../rng/seed';
 import { inFight, now } from '../../clock';
@@ -88,7 +88,8 @@ function warn(world: SimWorld, sink: EventSink, kind: number, g: number): void {
       y = ar.y + rng.int(ar.h - h + 1);
     }
   }
-  const strikeAt = g + HAZARD_WARN_TICKS;
+  const warnTicks = hazardWarnTicks(kind);
+  const strikeAt = g + warnTicks;
   const endAt = strikeAt + (HAZARD_ACTIVE_TICKS[kind] ?? 0);
   a[H(HazardF.kind)] = kind;
   a[H(HazardF.strikeAt)] = strikeAt;
@@ -99,7 +100,7 @@ function warn(world: SimWorld, sink: EventSink, kind: number, g: number): void {
   a[H(HazardF.h)] = h;
   a[H(HazardF.dir)] = dir;
   a[H(HazardF.next)] = endAt + HAZARD_PERIOD_TICKS + rng.int(HAZARD_JITTER_TICKS);
-  sink.emit(0, SimEventKind.hazardWarn, { hazard: kind, x, y, w, h, dir, ticks: HAZARD_WARN_TICKS });
+  sink.emit(0, SimEventKind.hazardWarn, { hazard: kind, x, y, w, h, dir, ticks: warnTicks });
 }
 
 /**
