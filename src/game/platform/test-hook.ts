@@ -130,6 +130,8 @@ export interface ArenaProbe {
   hazard(): Promise<readonly { kind: number; phase: 'warn' | 'active'; x: number; y: number; w: number; h: number; dir: number; alpha: number; chevrons: number }[] | undefined>;
   /** The words beside each side's main HUD bar (name, element, health words, `Life hp/max`). */
   heroLabels(): string[];
+  /** Every visible HUD text with its effective CSS px size and screen box (phone legibility checks). */
+  hudTextSizes(): { text: string; px: number; x: number; y: number; w: number; h: number }[];
   /** The buff auras and heal pops drawn on the last frame (ability-graphics-audit-defects). */
   abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string }[]; lashes: readonly { team: number; age: number }[] } | undefined>;
   /** Dev/test only: gives an entity a timed status (a StatusId) for `ticks` sim ticks. */
