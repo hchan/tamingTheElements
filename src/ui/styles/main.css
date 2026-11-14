@@ -1764,6 +1764,7 @@ html[data-high-contrast='true'] button.touchBtn {
     column-gap: 0.8em;
     align-items: center;
     bottom: 11%;
+    max-width: min(90em, 92%);
     font-size: 10px;
     padding: 0.25em 0.6em;
   }
@@ -1788,16 +1789,16 @@ html[data-high-contrast='true'] button.touchBtn {
   }
 }
 
-/* Landscape phone: a slim strip (lines left, Got it right) in the band under the WEATHER chip and above the fighters' heads and the ROUND/FIGHT! banner, so it covers neither the HUD, a banner, a fighter nor the stick (QA r20, r29). */
+/* Landscape phone: a slim strip (lines left, Got it right) docked in the band between the fighters' feet and the action bar (QA r31: at the top it hid the hero name banners and crowded ROUND 1), clear of the HUD, the banners, the stick and the TAG caption. */
 @media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
   .firstRunHint:not(.firstRunWait) {
     display: grid;
     grid-template-columns: 1fr auto;
     column-gap: 0.7em;
     align-items: center;
-    /* QA r30: one slim line (no title) just under the WEATHER chip, so the ROUND/FIGHT!/ROOTED banners below it stay clear (touch-fight-layout pins the band: under the HUD, above the fighters' heads). */
-    top: 24vh;
-    bottom: auto;
+    /* One slim line (no title); the name banners, ROUND/FIGHT!/ROOTED all sit above this band. */
+    top: auto;
+    bottom: 23vh;
     max-width: 82%;
     font-size: 10px;
     line-height: 1.2;

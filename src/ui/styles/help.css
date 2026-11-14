@@ -50,14 +50,41 @@
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  /* Short phone: the compact sticky tab row and first heading must stay high, so the jump row gives way. */
+  /* Short phone (QA r31): the jump row stays, as one slim line that scrolls sideways, so the sections are reachable and the sticky tab row stays high. */
   #menu .helpJump {
-    display: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    gap: 0.4em;
+    margin: 0 0 0.2em;
+    padding: 0;
+    scrollbar-width: none;
+  }
+  /* The sticky tab row and the title keep their high place; the jump row goes just under the tabs (flex order, the DOM stays as on desktop). */
+  #menu .menuPage:has(.helpJump) {
+    display: flex;
+    flex-direction: column;
+  }
+  #menu .menuPage:has(.helpJump) > h1.heading {
+    order: -2;
+  }
+  #menu .menuPage:has(.helpJump) > .helpLinks {
+    order: -1;
+  }
+  #menu .helpJumpLabel,
+  #menu .helpJumpBtn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  #menu .helpJumpBtn {
+    min-height: 32px;
+    padding: 0 0.8em;
+    font-size: 0.85em;
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   /* The extra top Back link pushes the compact tab row down; the foot Back link remains. */
-  #menu .helpBackTop {
+  #menu a.menuLink.helpBackTop {
     display: none;
   }
 }
