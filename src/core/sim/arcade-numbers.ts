@@ -60,7 +60,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
  */
 export const ARCADE_2V2_LIFE_DEFAULT_PM = 600;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
-  curomo: 732,
+  curomo: 800,
   cyclonius: 788,
   echo: 640,
   fiara: 654,
