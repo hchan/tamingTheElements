@@ -150,6 +150,16 @@ export interface MeterSegment {
   readonly full: boolean;
 }
 
+/**
+ * Centre y of the SUPER label: level with the segments, but lifted when the boosted phone text (height `textH`) would reach the
+ * bench chips, whose top (minus the 2 px frame) is `chipTop`; a 3 px gap is kept, and the label never rises above `floorY`
+ * (the life bar's lower edge). Pure.
+ */
+export function meterLabelY(mid: number, textH: number, chipTop: number, floorY: number): number {
+  const lifted = Math.min(mid, chipTop - 2 - 3 - textH / 2);
+  return Math.max(lifted, floorY + textH / 2);
+}
+
 /** Left edge of a side's meter: team 0 ends METER_INSET before `innerX` (its bar's end toward the centre), team 1 starts as far after it. */
 export function meterX(team: number, innerX: number): number {
   return team === 0 ? innerX - METER_INSET - METER_W : innerX + METER_INSET;

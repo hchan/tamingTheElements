@@ -4,7 +4,7 @@ import { ARENA_READY, START } from './parity/helpers';
 // Touch fight screen: the first-run card, the stick and the arena on phone viewports. Shots go to $SHOT_DIR when set (before/after review).
 const shotDir = process.env['SHOT_DIR'];
 
-async function enterFight(page: Page, team = 1): Promise<void> {
+async function enterFight(page: Page, team = 1, click = false): Promise<void> {
   await page.goto(`${START}&ff=arcade#arcade`);
   if (team === 2) {
     await page.getByLabel('Team').selectOption('2');
@@ -12,7 +12,9 @@ async function enterFight(page: Page, team = 1): Promise<void> {
     await page.getByLabel('Your partner (2v2)').selectOption('pax');
     await page.getByLabel('AI race').selectOption('fiara');
   }
-  await page.getByRole('button', { name: /^Fight/ }).tap();
+  const fight = page.getByRole('button', { name: /^Fight/ });
+  if (click) await fight.click();
+  else await fight.tap();
   await page.waitForFunction(ARENA_READY);
 }
 
@@ -52,6 +54,9 @@ test.describe('phone landscape fight', () => {
   test('2v2 card', async ({ page }) => {
     await enterFight(page, 2);
     await shot(page, 'land-2v2-card');
+    await page.getByRole('button', { name: 'Got it' }).tap();
+    await page.evaluate(`window.__TTE__.arena.step(120)`);
+    await shot(page, 'land-2v2-hud');
   });
 });
 
@@ -75,4 +80,15 @@ test.describe('phone portrait fight', () => {
     await enterFight(page, 2);
     await shot(page, 'port-2v2-rotate');
   });
+});
+
+test.describe('desktop fight HUD shots', () => {
+  test.use({ viewport: { width: 1280, height: 720 } });
+  for (const team of [1, 2]) {
+    test(`${String(team)}v${String(team)} HUD`, async ({ page }) => {
+      await enterFight(page, team, true);
+      await page.evaluate(`window.__TTE__.arena.step(120)`);
+      await shot(page, `desk-${String(team)}v${String(team)}-hud`);
+    });
+  }
 });
