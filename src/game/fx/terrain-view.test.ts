@@ -84,6 +84,7 @@ function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emit
     sys: { isActive: () => active },
     textures: {
       exists: (k: string) => textures.includes(k),
+      get: () => ({ add: () => undefined, has: () => false }),
       createCanvas: () => ({ getContext: () => null, refresh: () => undefined }),
       remove: () => undefined,
     },
@@ -112,6 +113,7 @@ const ev = (kind: number, tick: number, payload: Record<string, number> = {}): S
 
 const BGS = ['bg:fire', 'bg:water', 'bg:earth', 'bg:air'];
 const TILES = 'tilefloor';
+const PAINT = 'arenafloor';
 /** Two patches: a 80x80 at (100, 300) and a 120x100 at (500, 320). */
 const PATCHES = [100, 300, 80, 80, 500, 320, 120, 100];
 
@@ -126,7 +128,7 @@ function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string;
     arcade: () => arcade,
     forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(hero); },
   } as unknown as RenderView;
-  const arena = fakeScene(opts.atlas ? [...BGS, TILES] : BGS);
+  const arena = fakeScene(opts.atlas ? [...BGS, TILES, PAINT] : BGS);
   const hud = fakeScene();
   const lines: Announcement[] = [];
   const prefs = { reduceMotion: opts.reduceMotion ?? false, highContrast: false };
@@ -147,7 +149,7 @@ describe('terrain view (fake scenes)', () => {
   it('tile floor: requests the atlas when missing, builds one layer once it is there, re-fills it on a stage swap', () => {
     const missing = mount();
     missing.frame();
-    expect(missing.arena.loads).toEqual([TILES, 'stagebg']); // the floor atlas and the stage backdrop atlas
+    expect(missing.arena.loads).toEqual([TILES, PAINT, 'stagebg']); // the floor atlases and the stage backdrop atlas
     expect(missing.arena.layers).toHaveLength(0);
 
     const m = mount({ atlas: true });
@@ -155,6 +157,9 @@ describe('terrain view (fake scenes)', () => {
     m.frame();
     m.frame();
     expect(m.arena.layers).toHaveLength(1);
+    const paint = m.arena.made.filter((o) => o.kind === 'image' && o.texture.key === PAINT);
+    expect(paint).toHaveLength(1); // the painted floor under the layer
+    expect(paint[0]?.visible).toBe(true);
     const layer = m.arena.layers[0];
     expect(layer?.data).toHaveLength(17); // 23 rows less the 6 under the stage backdrop band (WALL_Y)
     expect(layer?.data[0]).toHaveLength(60); // 1920 / 32: the wide Arcade arena (WP 38d)
