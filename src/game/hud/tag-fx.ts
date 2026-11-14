@@ -38,7 +38,7 @@ export const teamX = (team: number): number => team * 640;
 export const mainBarOf = (team: number): Bar => ({ minX: team === 0 ? 120 : 700, maxX: team === 0 ? 580 : 1160, y: 20, line: 16 });
 export const benchBarOf = (team: number, i: number): Bar => {
   const x = team === 0 ? 530 - 4 - 56 - i * 60 : 1280 - (530 - 4 - 56 - i * 60) - 56;
-  return { minX: x, maxX: x + 56, y: 115, line: 6 };
+  return { minX: x, maxX: x + 56, y: 119, line: 6 };
 };
 
 /** The tag-cooldown bar's size. */

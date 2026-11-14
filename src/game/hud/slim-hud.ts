@@ -19,7 +19,7 @@ export const SLIM_ROW_B = 34;
 export const CHIP_SIZE = 56;
 export const CHIP_PITCH = 60;
 /** The bench row sits under the timer strip (super segments end at y 50), so the chips never cover it (qa-r7-hud-2v2). */
-export const CHIP_Y = 54;
+export const CHIP_Y = 58;
 export const CHIP_BAR_Y = CHIP_Y + CHIP_SIZE + 5;
 export const CHIP_BAR_LINE = 6;
 /** Left edge of the tag pill for team 0 (right edge 574, just short of the bar end at 580 and the round pips). */

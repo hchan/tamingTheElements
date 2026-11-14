@@ -159,11 +159,11 @@ export function timerStyle(ticks: number, sudden: boolean): { text: string; colo
 }
 
 /** Round-win pips under the timer: ROUNDS_TO_WIN per team, team 0 left of the centre, team 1 right; filled once won. */
-export const PIP_Y = 56;
-export const PIP_R = 8;
-export const PIP_STEP = 24;
+export const PIP_Y = 60;
+export const PIP_R = 11;
+export const PIP_STEP = 27;
 /** Gap from the centre line to the nearest pip's centre. */
-export const PIP_INNER = 24;
+export const PIP_INNER = 18;
 export const TIMER_X = 640;
 export const TIMER_Y = 4;
 export const TIMER_PX = 34;
