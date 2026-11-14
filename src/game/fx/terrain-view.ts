@@ -47,6 +47,11 @@ const BADGE_X = 16;
 const BADGE_Y = 146;
 const BADGE_PX = 26;
 const LABEL_PX = 13;
+/** The playfield's vertical span (the HUD ends at 200, the action bar starts near 640): chips are pushed toward its edges, CHIP_GAP clear of their patch. */
+const FIELD_TOP_Y = 222;
+const FIELD_BOTTOM_Y = 628;
+const FIELD_MID_Y = (FIELD_TOP_Y + FIELD_BOTTOM_Y) / 2;
+const CHIP_GAP = 22;
 const ICON = 26;
 /** Ambient motes and mist: over the floor, under the fighters' flash effects. */
 const AMBIENT_DEPTH = 0.5;
@@ -148,7 +153,7 @@ export function mountTerrainView(
     for (let i = 0; i < MAX_PATCHES; i++) {
       const x = chipBox[i * 4] ?? 0;
       const y = chipBox[i * 4 + 1] ?? 0;
-      if (c.x < x + (chipBox[i * 4 + 2] ?? 0) + 24 && c.x + c.w > x - 24 && c.y < y + (chipBox[i * 4 + 3] ?? 0) + 24 && c.y + c.h > y - 24) chipNear[i] = 1;
+      if (c.x < x + (chipBox[i * 4 + 2] ?? 0) + 72 && c.x + c.w > x - 72 && c.y < y + (chipBox[i * 4 + 3] ?? 0) + 24 && c.y + c.h > y - 24) chipNear[i] = 1;
     }
   };
   const chipFade = new Float64Array(MAX_PATCHES).fill(1);
@@ -251,7 +256,11 @@ export function mountTerrainView(
       labels.push(word);
       if (t.text !== word) t.setText(word);
       const cx = (rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2;
-      const cy = (rects[i * 4 + 1] ?? 0) - 3;
+      // Chips sit out toward the nearer horizontal edge of the field (above the patch in the top half, below it in the bottom half), clear of the fighters' row.
+      const top = rects[i * 4 + 1] ?? 0;
+      const rh = rects[i * 4 + 3] ?? 0;
+      const lower = top + rh / 2 > FIELD_MID_Y;
+      const cy = Math.max(FIELD_TOP_Y, Math.min(FIELD_BOTTOM_Y, lower ? top + rh + t.height + CHIP_GAP : top - CHIP_GAP));
       t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition(cx, cy);
       // A small chip: dark plate with a rim in the stage's colour, so the word reads over any floor and never looks like loose type.
       const w = t.width;
