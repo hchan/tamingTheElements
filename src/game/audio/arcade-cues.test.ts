@@ -30,7 +30,7 @@ describe('Arcade cue coverage', () => {
   it('keys the fixed cues by real event kinds, as the names say', () => {
     const byName: Partial<Record<keyof typeof SimEventKind, CueName>> = {
       guarded: 'guard', parried: 'parry', guardBroken: 'crack', dashed: 'dash', perfectDodge: 'dodge', clash: 'clang',
-      superStarted: 'charge', chargeStarted: 'dash', roundStarted: 'round', fight: 'fight', ko: 'ko', roundEnded: 'roundEnd',
+      superStarted: 'super', chargeStarted: 'dash', roundStarted: 'round', fight: 'fight', ko: 'ko', roundEnded: 'roundEnd',
       trapPlaced: 'trapSet', trapArmed: 'trapArm', trapTriggered: 'trapPop', elementalCast: 'elemental',
       hazardWarn: 'hazardWarn', hazardStrike: 'hazardStrike',
     };
@@ -148,7 +148,7 @@ describe('Voices', () => {
   it('never lets ordinary cues take the pool past MAX_VOICES, and releases ended voices', () => {
     const v = new Voices();
     const kill = vi.fn();
-    const order: CueName[] = ['thump', 'guard', 'parry', 'crack', 'dash', 'dodge', 'clang', 'charge', 'sand', 'gale', 'eclipse'];
+    const order: CueName[] = ['thump', 'guard', 'parry', 'crack', 'dash', 'dodge', 'clang', 'super', 'sand', 'gale', 'eclipse'];
     let held = 0;
     for (const name of order) {
       if (!v.admit(name, CUES[name].length, 0)) continue;

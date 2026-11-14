@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { LaneWait, centreBusy } from '../hud/banner-lanes';
 import { arcadeHeroScale, visualBox } from '../views/hero-scale';
 import type { RenderCharacter, RenderView } from '@core/index';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
@@ -31,8 +32,11 @@ interface Pop {
   readonly word: string;
   readonly x: number;
   readonly y: number;
-  readonly born: number;
+  born: number;
   text?: Phaser.GameObjects.Text;
+  /** Waits for the centre lane (banner-lanes.ts) while the super cut-in or a round banner is up. */
+  wait: LaneWait;
+  seen: number;
 }
 
 export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, reduceMotion: () => boolean): void {
@@ -89,7 +93,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const prev = lastReady.get(team);
       lastReady.set(team, slot.readyTick);
       const at = anchor.get(team);
-      if (prev !== undefined && slot.readyTick > prev && at) pops.push({ id: ++popId, word: 'HEAL', x: at.x, y: at.y - 8, born: now });
+      if (prev !== undefined && slot.readyTick > prev && at) pops.push({ id: ++popId, word: 'HEAL', x: at.x, y: at.y - 8, born: now, wait: new LaneWait(), seen: now });
     }
     for (const team of [0, 1]) {
       const slot = view.actionBar(team)?.abilities.find((s) => s.sprite === SNAG_SPRITE);
@@ -100,7 +104,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       const at = aim.get(team);
       if (prev !== undefined && slot.readyTick > prev && at) {
         lashes.push({ team, ...at, born: now });
-        pops.push({ id: ++popId, word: 'SNAG', x: at.x, y: anchor.get(team)?.y ?? at.y - 8, born: now });
+        pops.push({ id: ++popId, word: 'SNAG', x: at.x, y: anchor.get(team)?.y ?? at.y - 8, born: now, wait: new LaneWait(), seen: now });
       }
     }
     lashDrawn = [];
@@ -120,6 +124,13 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       return age <= LASH_TICKS;
     });
     pops = pops.filter((p) => {
+      // A pop that lands under the cut-in or a banner holds its start (hidden) until the centre clears, at most LANE_MAX_WAIT_TICKS.
+      const dt = now - p.seen;
+      p.seen = now;
+      if (!p.text && p.wait.hold(centreBusy(arena.registry), dt)) {
+        p.born += dt;
+        return true;
+      }
       const age = now - p.born;
       if (age > POP_TICKS) {
         p.text?.destroy();

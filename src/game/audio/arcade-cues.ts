@@ -33,8 +33,8 @@ export const CUES = {
   dash: [[NOISE, 500, 2500, 150, 0.35]],
   dodge: [[0, 1200, 2400, 140, 0.2]],
   clang: [[2, 523, 510, 200, 0.15], [2, 784, 770, 170, 0.1], [NOISE, 2500, 1500, 60, 0.3]],
-  /** The super's charge riser, under the sound map's whoosh. */
-  charge: [[3, 110, 880, 420, 0.16]],
+  /** The super cut-in: a low boom, a rising sweep and a noise crack (0.42 s). */
+  super: [[0, 160, 40, 420, 0.7], [3, 110, 880, 380, 0.22], [NOISE, 2000, 200, 300, 0.35]],
   /** Snag (FUN-DESIGN 2.20): the rope whip and its snap. */
   snag: [[NOISE, 1800, 400, 110, 0.35], [1, 330, 165, 90, 0.2, 60]],
   /** Traps (WP 39): the plant thunk, the arming click and the trigger pop. */
@@ -84,7 +84,7 @@ export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'sudden
  * the thump or impact and the combo tick, weatherChanged (59) its weather's stinger and matchEnded (30) the match one.
  */
 export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
-  43: 'guard', 44: 'parry', 45: 'crack', 46: 'dash', 47: 'dodge', 48: 'clang', 50: 'charge', 53: 'round', 54: 'fight',
+  43: 'guard', 44: 'parry', 45: 'crack', 46: 'dash', 47: 'dodge', 48: 'clang', 50: 'super', 53: 'round', 54: 'fight',
   55: 'ko', 57: 'roundEnd', 67: 'dash', 70: 'trapSet', 71: 'trapArm', 72: 'trapPop',
   73: 'elemental', 76: 'hazardWarn', 77: 'hazardStrike',
 };
@@ -112,7 +112,7 @@ export const WEATHER_CUES: readonly CueName[] = ['sun', 'rain', 'sand', 'gale', 
 export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   hitStop: 'the hit that caused it plays the thump',
   comboEnded: 'the combo ticks already counted it up',
-  meterLevel: 'the meter shows it; the super plays the charge',
+  meterLevel: 'the meter shows it; the super start plays the super cue',
   superEnded: 'the super start and its hits carry it',
   timeOver: 'the round-end stinger plays on the same tick',
   recovered: 'no feedback in the design',

@@ -30,8 +30,8 @@ const BAND_OPACITY = 0.5;
 const NAME_PX = 72;
 const SUB_PX = 52;
 const PORTRAIT_PX = 140;
-/** The cut-in portrait sits in a dark framed card with an element-colour border, so it reads as a slash-in close-up, not a ghost of the caster. */
-const CARD_PX = PORTRAIT_PX + 16;
+/** The cut-in portrait is a cut-out of the caster (no box behind it) with a soft element-colour glow, so it reads as a luminous close-up, not a framed card (qa-r27). */
+const GLOW_RINGS = 7;
 /** The probe's `dim` stays the plan's value; the overlay is drawn this many times darker (a hard darken, SF/MvC style). */
 const DIM_GAIN = 1.75;
 const LINES = 26;
@@ -109,7 +109,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     band: scene.add.rectangle(0, 0, SPAN, BAND_H, 0).setOrigin(0, 0.5).setDepth(DIM_DEPTH + 2),
     // Element-colour rules along the band edges and the speed lines through it, in band-relative coordinates (placed like the band).
     edges: scene.add.graphics().setDepth(DIM_DEPTH + 2.5),
-    card: scene.add.rectangle(0, 0, CARD_PX, CARD_PX, 0x0a0806).setDepth(DIM_DEPTH + 2.8),
+    glow: scene.add.graphics().setDepth(DIM_DEPTH + 2.8).setBlendMode('ADD'),
     portrait: scene.add.image(0, 0, '__DEFAULT').setDepth(DIM_DEPTH + 3),
     name: text(NAME_PX),
     sub: text(SUB_PX),
@@ -198,12 +198,12 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       o.setAlpha(a);
     };
     for (const o of [parts.dim, parts.band, parts.edges, parts.name, parts.sub]) o.setScale(v.scale);
-    parts.card.setScale(v.scale);
+    parts.glow.setScale(v.scale);
     parts.portrait.setDisplaySize(PORTRAIT_PX * v.scale, PORTRAIT_PX * v.scale);
     put(parts.dim, -WIDE_SIDE, 0, Math.min(1, frame.dim * DIM_GAIN));
     put(parts.band, dx - WIDE_SIDE, bandY, frame.bandAlpha * BAND_OPACITY);
     put(parts.edges, dx, bandY, frame.bandAlpha);
-    put(parts.card, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
+    put(parts.glow, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26, frame.bandAlpha);
     put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44, frame.bandAlpha);
@@ -243,7 +243,9 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       parts.band.setFillStyle(mute(ELEMENT_COLORS[caster.element], 0.45, 0.5));
       const tint = mute(ELEMENT_COLORS[caster.element], 0.95, 1.05);
       parts.name.setColor(`#${tint.toString(16).padStart(6, '0')}`);
-      parts.card.setStrokeStyle(4, tint, 1);
+      // A soft pool of the element colour behind the cut-out: stacked translucent discs from wide and faint to tight and bright.
+      parts.glow.clear();
+      for (let i = 0; i < GLOW_RINGS; i++) parts.glow.fillStyle(tint, 0.05 + i * 0.012).fillCircle(0, 0, PORTRAIT_PX * 0.5 + (GLOW_RINGS - i) * 9);
       parts.edges.clear();
       parts.edges.fillStyle(tint, 0.9).fillRect(-WIDE_SIDE, -BAND_H / 2 - 3, SPAN, 6).fillRect(-WIDE_SIDE, BAND_H / 2 - 3, SPAN, 6);
       // Speed lines: thin streaks of the element colour at fixed (hash-spaced) heights and lengths, no randomness.

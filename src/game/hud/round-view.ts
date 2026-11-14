@@ -10,6 +10,7 @@ import { mountWeatherView } from '../fx/weather-view';
 import {
   PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
+import { bannerDraws, cutUp } from './banner-lanes';
 import { mountResultView, type ResultState } from './round-result-view';
 
 /**
@@ -167,7 +168,8 @@ export function mountRoundView(
     const ar = view.arcade();
     if (!parts || !ar) return;
     const tick = view.tick;
-    const on = banner.main !== '' && tick < banner.until;
+    // Lanes (banner-lanes.ts): the super cut-in outranks the banner; an intro banner waits out the round result card.
+    const on = banner.main !== '' && tick < banner.until && bannerDraws(cutUp(hud.registry), results.result.state().visible, isIntroBanner(banner.main));
     const slow = bannerScale((tick - banner.from) * TICK_MS, banner.reduced);
     // The damage numbers (Hud.drawArcade) thin out under a banner, so the stacked KO numbers never bury its caption.
     if (hud.registry.get('tte.banner') !== on) hud.registry.set('tte.banner', on);
