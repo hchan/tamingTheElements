@@ -16,8 +16,8 @@ import {
 const DEPTH = 108;
 /** Under the banner's "K.O." (y 304) and its "YOU WIN ROUND n" line (y 346), clear of the centre pad label above them. */
 const SLAB_Y = 392;
-const SLAB_W = 560;
-const SLAB_H = 236;
+const SLAB_W = 440;
+const SLAB_H = 228;
 const FADE_IN_TICKS = 10;
 const FADE_OUT_TICKS = 12;
 const SLIDE_PX = 14;
@@ -77,9 +77,9 @@ export function mountResultView(
     parts = {
       bg: hud.add.graphics().setDepth(DEPTH),
       kicker: text(18, 'normal', BONE),
-      title: text(56, 'normal', BONE),
-      head: text(20, 'normal', BONE),
-      body: text(20, 'normal', BONE, 6),
+      title: text(46, 'normal', BONE),
+      head: text(18, 'normal', BONE),
+      body: text(17, 'normal', BONE, 6),
     };
   }
 
@@ -88,13 +88,13 @@ export function mountResultView(
     if (!parts) return;
     const a = ACCENT[c.tone];
     const x = LOGICAL_WIDTH / 2;
-    parts.bg.clear().fillStyle(0x0c0a08, 0.88).fillRect(x - SLAB_W / 2, 0, SLAB_W, SLAB_H)
+    parts.bg.clear().fillStyle(0x0c0a08, 0.76).fillRect(x - SLAB_W / 2, 0, SLAB_W, SLAB_H)
       .lineStyle(2, 0x3a352c, 1).strokeRect(x - SLAB_W / 2, 0, SLAB_W, SLAB_H)
       .fillStyle(a.hex, 1).fillRect(x - SLAB_W / 2, 0, SLAB_W, 5);
     parts.kicker.setText(c.kicker).setColor(BONE).setY(SLAB_Y + 16);
     parts.title.setText(c.title).setColor(a.css).setY(SLAB_Y + 38);
-    parts.head.setText(c.headline).setColor(BONE).setY(SLAB_Y + 108);
-    parts.body.setText(c.lines.join('\n')).setColor(BONE).setY(SLAB_Y + 144);
+    parts.head.setText(c.headline).setColor(BONE).setY(SLAB_Y + 98);
+    parts.body.setText(c.lines.join('\n')).setColor(BONE).setY(SLAB_Y + 130);
   }
 
   function draw(): void {
@@ -113,8 +113,8 @@ export function mountResultView(
     parts.bg.setY(SLAB_Y + slide);
     parts.kicker.setY(SLAB_Y + 16 + slide);
     parts.title.setY(SLAB_Y + 38 + slide);
-    parts.head.setY(SLAB_Y + 108 + slide);
-    parts.body.setY(SLAB_Y + 144 + slide);
+    parts.head.setY(SLAB_Y + 98 + slide);
+    parts.body.setY(SLAB_Y + 130 + slide);
   }
 
   function start(c: ResultCard, tick: number, ticks: number): void {

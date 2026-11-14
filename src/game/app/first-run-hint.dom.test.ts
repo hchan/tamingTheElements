@@ -82,12 +82,14 @@ describe('firstRunHint', () => {
 
   it('names every key exactly as the action bar labels it (Dash 7, Guard 8, Super 9, Tag 3, Cleanse =)', () => {
     const text = firstRunLines(DEFAULT_BINDINGS).join(' ');
-    expect(text).toContain('Strike with 1 or Space (2 or Enter: second attack).');
+    expect(text).toContain('Strike with 1 or Space.');
+    expect(text).toContain('Special with 2 or Enter.');
+    expect(text).toContain('Snag with C');
     expect(text).toContain('Dash with 7;');
     expect(text).toContain('hold 8 to Guard');
     expect(text).toContain('press 9.');
     expect(text).toContain('Tag with 3 ');
-    expect(text).toContain('Press = to Cleanse');
+    expect(text).toContain('press = to Cleanse');
     for (const a of ['slot1', 'dash', 'guard', 'super', 'slot3', 'cleanse'] as const) expect(actionKeyLabel(DEFAULT_BINDINGS, a)).toBeDefined();
     expect(Object.values(labelsFromBindings(DEFAULT_BINDINGS))).toEqual(expect.arrayContaining(['7', '8', '9', '=']));
   });

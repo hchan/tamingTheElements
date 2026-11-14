@@ -66,15 +66,13 @@ export function firstRunLines(b: Bindings, touch = false): readonly string[] {
     return [
       'Drag the stick to move in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.',
       'Tap the buttons to strike, Dash, Guard (hold) and fire your Super once its meter is full.',
-      'Tap Tag to send in a rested hero.',
-      'Stuck in a root or slow? Tap Cleanse.',
+      'Tap Tag to send in a rested hero, and Cleanse to shake off a root or slow. Snag roots the foe.',
     ];
   }
   return [
-    `Move with ${moveKeys(b)}, in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
-    `Strike with ${keyAlso(b, 'slot1')} (${keyAlso(b, 'slot2')}: second attack). Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
-    `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero.`,
-    `Stuck in a root or slow? Press ${key(b, 'cleanse')} to Cleanse.`,
+    `Move with ${moveKeys(b)}; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
+    `Strike with ${keyAlso(b, 'slot1')}. Special with ${keyAlso(b, 'slot2')}. Snag with ${key(b, 'capture')} to root the foe. Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
+    `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero; press ${key(b, 'cleanse')} to Cleanse a root or slow.`,
   ];
 }
 
@@ -125,6 +123,7 @@ export function firstRunHint(
   });
   card.append(done);
   // The card gets out of the way on its own: after the delay, or at the first move or tap (a held key is a move).
+  // It is a wide, low strip centred just above the action bar, so it never sits on a fighter at round start.
   // A detached node is harmless, so the timer needs no cleanup; the listeners remove themselves.
   const fade = (): void => {
     window.clearTimeout(timer);

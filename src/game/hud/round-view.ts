@@ -179,7 +179,8 @@ export function mountRoundView(
     parts.sub.setY(BANNER_Y + SUB_GAP + (size > 1 ? Math.round(MAIN_PX * (size - 1) * 0.55) : 0));
     drawHalo(on ? haloFor(banner.main, tick - banner.from, banner.reduced) : 0);
     drawCards(on, tick);
-    parts.sub.setVisible(on && banner.sub !== '').setAlpha(Math.max(0, fade));
+    // the result card says who won the round, so its duplicate under the banner is hidden while the card is up
+    parts.sub.setVisible(on && banner.sub !== '' && !results.result.state().visible).setAlpha(Math.max(0, fade));
     // Before its first tick (round 0) the world has no timer yet: show the full one round 1 starts with.
     const left = ar.round === 0 ? ROUND_TIMER_TICKS : ar.timer;
     const style = timerStyle(left, ar.sudden);

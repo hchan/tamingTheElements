@@ -61,12 +61,13 @@ describe('resultCard', () => {
 
   it('maps the winner to a tone and title', () => {
     expect([0, 1, -1].map(toneOf)).toEqual(['win', 'lose', 'draw']);
-    expect([0, 1, -1].map((winner) => resultCard({ ...base, winner }).title)).toEqual(['YOU WIN', 'YOU LOSE', 'DRAW']);
+    expect([0, 1, -1].map((winner) => resultCard({ ...base, winner }).title)).toEqual(['ROUND 2 WON', 'ROUND 2 LOST', 'ROUND 2 DRAW']);
+    expect([0, 1, -1].map((winner) => resultCard({ ...base, round: 0, winner }).title)).toEqual(['YOU WIN', 'YOU LOSE', 'DRAW']);
   });
 
   it('shows the round, how it ended with the score, and the stat lines', () => {
     const c = resultCard(base);
-    expect(c).toMatchObject({ tone: 'win', kicker: 'ROUND 2', headline: 'K.O.  -  ROUNDS 1 - 1' });
+    expect(c).toMatchObject({ tone: 'win', kicker: 'ROUNDS 1 - 1', title: 'ROUND 2 WON', headline: 'K.O.' });
     expect(c.lines).toEqual(['HEALTH LEFT 62%', 'DAMAGE 140 DEALT  /  38 TAKEN', 'LONGEST COMBO 4  /  6 HITS']);
     expect(c.detail).toBe('Knockout. Health left 62 percent. Dealt 140 damage, took 38. Longest combo 4.');
   });
@@ -74,13 +75,13 @@ describe('resultCard', () => {
   it('adds snags, traps and supers only when there were some', () => {
     const c = resultCard({ ...base, tally: { ...base.tally, snags: 1, traps: 2, supers: 1 }, how: 'time' });
     expect(c.lines[3]).toBe('SNAGS 1  /  TRAPS 2  /  SUPERS 1');
-    expect(c.headline).toBe('TIME OVER  -  ROUNDS 1 - 1');
+    expect(c.headline).toBe('TIME OVER');
     expect(c.detail).toContain('1 snag. 2 traps sprung. 1 super.');
   });
 
   it('says perfect, double knockout and the match card', () => {
-    expect(resultCard({ ...base, perfect: true }).headline).toBe('PERFECT K.O.  -  ROUNDS 1 - 1');
-    expect(resultCard({ ...base, how: 'double', winner: -1 }).headline).toBe('DOUBLE K.O.  -  ROUNDS 1 - 1');
+    expect(resultCard({ ...base, perfect: true }).headline).toBe('PERFECT K.O.');
+    expect(resultCard({ ...base, how: 'double', winner: -1 }).headline).toBe('DOUBLE K.O.');
     const m = resultCard({ ...base, round: 0, won: [2, 1] });
     expect(m).toMatchObject({ kicker: 'MATCH', title: 'YOU WIN', headline: 'FINAL ROUNDS 2 - 1' });
   });

@@ -58,7 +58,7 @@ test('winning a round shows YOU WIN with the score and what happened, then goes 
   const r = await rounds(page);
   expect(r?.won).toEqual([1, 0]);
   expect(r?.result).toMatchObject({
-    visible: true, tone: 'win', kicker: 'ROUND 1', title: 'YOU WIN', headline: 'PERFECT K.O.  -  ROUNDS 1 - 0',
+    visible: true, tone: 'win', kicker: 'ROUNDS 1 - 0', title: 'ROUND 1 WON', headline: 'PERFECT K.O.',
   });
   expect(r?.result.lines[0]).toBe('HEALTH LEFT 100%');
   await expect.poll(() => live(page), { timeout: 10_000 }).toContain('You win round 1. Rounds 1 to 0. Perfect knockout. Health left 100 percent.');
@@ -78,7 +78,7 @@ test('losing a round shows YOU LOSE; reduced motion still shows the card', async
   await knockOut(page, 0);
   const r = await rounds(page);
   expect(r?.won).toEqual([0, 1]);
-  expect(r?.result).toMatchObject({ visible: true, tone: 'lose', kicker: 'ROUND 1', title: 'YOU LOSE', headline: 'PERFECT K.O.  -  ROUNDS 0 - 1' });
+  expect(r?.result).toMatchObject({ visible: true, tone: 'lose', kicker: 'ROUNDS 0 - 1', title: 'ROUND 1 LOST', headline: 'PERFECT K.O.' });
   expect(r?.result.lines[0]).toMatch(/^HEALTH LEFT \d+%$/);
   await expect.poll(() => live(page), { timeout: 10_000 }).toContain('You lose round 1. Rounds 0 to 1.');
   await shot(page, 'round-lose');
