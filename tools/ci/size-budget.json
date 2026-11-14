@@ -4,7 +4,7 @@
     "arcade-audio": 2510,
     "arcade-setup": 1850,
     "arcade-versus": 9600,
-    "arena-pan": 1020,
+    "arena-pan": 1800,
     "clash-view": 943,
     "cleanse-clock": 400,
     "cleanse-info": 150,
@@ -46,7 +46,6 @@
     "tour": 7800,
     "tour-select": 685,
     "trap-view": 2700,
-    "viewport": 750,
     "weather-view": 6000
   },
   "totalGzip": 601000,
