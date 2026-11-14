@@ -16,13 +16,13 @@
  },
  "pax": {
   "inputs": {
-   "prep.py": "e859cb9e3d4fef1c162ed7dc50b355c1bd325086e0c8dfac5448ce2286cb84af",
-   "spec": "01c22897c20b1f4847529d16d55d09c11b42b6b2432c909653cdcc8fae3ab58f",
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "0fcbf4e6841c941d0b849e23cbba47aed4e71ac6563acfdb3ef76ed3f77c9eab",
    "anim": "de76a8b93beab43250c82b9fc7edbbc47e44745d8656ecdad499dfb682f7001a",
    "portrait": "41634c7caf91c282087b180bc49dba52f07b1ab5b2005d9be07259a8a5acff44"
   },
   "outputs": {
-   "parts/body.png": "f5ba92acfab2cbaa21702a35296e2a07ce8f1f54160776c50f9861a9fbd5f24b",
+   "parts/body.png": "5e3c4597fd0ece70be2cff6b9633690ea83c99f3ae275ada79a70b228f58db89",
    "parts/shadow.png": "5152bb3a622a8bd30ae2dc0ae3f68411038ac585ba5b01a3e7777502290cd84a",
    "parts/eye.png": "fa8b323c1d41c616a4a594dba672520918a5f4883716f775d6774a21c34d74fd",
    "parts/gem1.png": "ae46d65cf02c76a972223ecb37900246f1a325752976f8988e78b67ef0d6b13e",

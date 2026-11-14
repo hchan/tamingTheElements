@@ -116,6 +116,70 @@ def drop_islands(solid, min_px):
     return keep
 
 
+def components(mask):
+    """8-connected components of mask, each as a list of (y, x)."""
+    h, w = mask.shape
+    seen = np.zeros_like(mask)
+    out = []
+    for y0, x0 in zip(*np.nonzero(mask)):
+        if seen[y0, x0]:
+            continue
+        comp = [(y0, x0)]
+        seen[y0, x0] = True
+        q = deque(comp)
+        while q:
+            y, x = q.popleft()
+            for dy, dx in NB8:
+                yy, xx = y + dy, x + dx
+                if 0 <= yy < h and 0 <= xx < w and mask[yy, xx] and not seen[yy, xx]:
+                    seen[yy, xx] = True
+                    q.append((yy, xx))
+                    comp.append((yy, xx))
+        out.append(comp)
+    return out
+
+
+def paint_pits(rgb, solid, spec, seed):
+    """Enclosed near-black pits inside the spec rects (portrait artefacts that read as see-through holes on a bright stage) become
+    shaded hollows: the surrounding stone darkened to a warm shadow, a lit lower lip, a little seeded grain. Edge outlines are left."""
+    pits = spec.get("pits")
+    if not pits:
+        return rgb
+    h, w = solid.shape
+    rs = np.random.RandomState(seed)
+    lum = rgb.mean(-1)
+    for x0, y0, x1, y1 in pits["rects"]:
+        box = np.zeros_like(solid)
+        box[y0:y1, x0:x1] = True
+        dark = solid & box & (lum < pits.get("lum", 45))
+        for comp in components(dark):
+            if len(comp) < pits.get("minPx", 10):
+                continue
+            ys = np.array([c[0] for c in comp])
+            xs = np.array([c[1] for c in comp])
+            m = np.zeros_like(solid)
+            m[ys, xs] = True
+            ring = np.zeros_like(solid)
+            for dy, dx in NB8:
+                ring |= shift(m, dy, dx)
+            ring2 = ring.copy()
+            for dy, dx in NB8:
+                ring2 |= shift(ring, dy, dx)
+            if (ring2 & ~solid).any():
+                continue  # touches the silhouette: an outline, not a pit
+            ref = ring2 & ~m & solid & (lum > pits.get("lum", 45))
+            if ref.sum() < 6:
+                continue
+            stone = rgb[ref].mean(0)
+            top, bot = ys.min(), ys.max()
+            t = (ys - top) / max(bot - top, 1)  # 0 at the pit's top, 1 at its lower lip
+            k = pits.get("dark", 0.34) + pits.get("lip", 0.5) * t ** 3
+            grain = 1 + 0.08 * rs.randn(len(ys))
+            warm = np.array(pits.get("tint", [1.0, 0.92, 0.84]), np.float32)
+            rgb[ys, xs] = np.clip(stone * warm * (k * grain)[:, None], 0, 255)
+    return rgb
+
+
 def blur(a, r):
     im = Image.fromarray(np.clip(a * 255, 0, 255).astype(np.uint8))
     return np.asarray(im.filter(ImageFilter.GaussianBlur(r)), np.float32) / 255.0
@@ -126,9 +190,19 @@ def clean(spec, src):
     m = spec.get("matte", {})
     alpha = a[..., 3]
     alpha[alpha < 8] = 0
-    solid = drop_islands(alpha > 0, m.get("minIsland", 40))
+    cut = m.get("alphaCut")
+    if cut:
+        # Stray wisps (faint, detached bits of the paint) are dropped by their solid core only: the antialiased rim of what stays is kept.
+        core = drop_islands(alpha >= cut, m.get("minIsland", 40))
+        near = core.copy()
+        for dy, dx in NB8:
+            near |= shift(core, dy, dx)
+        solid = near & (alpha > 0)
+    else:
+        solid = drop_islands(alpha > 0, m.get("minIsland", 40))
     alpha[~solid] = 0
     rgb = a[..., :3]
+    rgb = paint_pits(rgb, solid, spec, 4242)
     band = m.get("band", 2)
     d = depth(solid, band + 6)
     # Decontaminate the silhouette band: its colour comes from the paint just inside (the band blends 100% at the edge, less inward).

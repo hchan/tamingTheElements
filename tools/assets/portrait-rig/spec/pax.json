@@ -4,7 +4,8 @@
  "box": [20, 24, 200, 200],
  "res": 2,
  "feet": [210, 392],
- "matte": { "minIsland": 40, "band": 2, "fringeLum": 35 },
+ "matte": { "minIsland": 40, "band": 2, "fringeLum": 35, "alphaCut": 110 },
+ "pits": { "rects": [[262, 180, 372, 262]], "lum": 45, "minPx": 8, "dark": 0.36, "lip": 0.55 },
  "rim": { "color": [255, 214, 160], "dir": [-0.55, -0.85], "strength": 0.3, "width": 1.6 },
  "shadow": { "rx": 118, "ry": 13, "alpha": 72, "dy": 2 },
  "bones": [
