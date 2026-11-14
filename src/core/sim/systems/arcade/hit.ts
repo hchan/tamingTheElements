@@ -17,7 +17,7 @@ import { knockbackDir, setKnockback } from './knockback';
 import { meterOnHit } from './meter';
 import { blockHit, parry } from './guard';
 import { elementalDamagePm } from './elemental-buff';
-import { applyStun, isGuarding } from './stun';
+import { applyStun, chargeTick, isGuarding } from './stun';
 import { capDamage, terrainDamagePm } from './terrain';
 import { weatherDamage } from './weather';
 
@@ -31,7 +31,7 @@ export const HIT_STUN: readonly number[] = [...ABILITIES_A, ...ABILITIES_B].map(
 );
 /** Def index of the super's hitbox entity (arcade/super.ts), right after the abilities: strength 3 (super). */
 export const SUPER_DEF = HIT_STRENGTH.length;
-/** Def index of the charge arrival hit (arcade/charge.ts): light strength, CHARGE_STUN_TICKS of hit-stun. */
+/** Def index of the charge arrival hit (arcade/charge.ts): medium strength, CHARGE_STUN_TICKS of hit-stun. */
 export const CHARGE_DEF = SUPER_DEF + 1;
 /** Def indices of the Fire Bomb blast and the Spike (arcade/trap.ts, WP 39): medium strength; the Spike stuns longer. */
 export const TRAP_BOMB_DEF = SUPER_DEF + 2;
@@ -78,7 +78,7 @@ export function applyArcadeHit(
 ): number {
   const s = world.state;
   const team = s.team[source] ?? 0;
-  const strength = defIdx === SUPER_DEF ? HitStrength.super
+  const strength = defIdx === SUPER_DEF ? HitStrength.super : defIdx === CHARGE_DEF ? HitStrength.medium
     : defIdx >= TRAP_BOMB_DEF ? HitStrength.medium : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
   // Supers are unblockable (FUN-DESIGN 2.8).
   const sup = strength === HitStrength.super;
@@ -126,12 +126,14 @@ export function applyArcadeHit(
   const ko = before > 0 && before - amount <= 0;
   const ticks = ko ? KO_HIT_STOP_TICKS : HIT_STOP_TICKS[strength];
   hitStop(world, sink, source, ticks, ko ? HitStopCause.ko : HitStopCause.hit);
-  setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
+  // Charge armour (SIM_VERSION 50): a charging victim takes the damage but is neither knocked back nor stunned, so the rush goes on.
+  const armoured = !sup && chargeTick(s, victim) !== 0;
+  if (!armoured) setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
   const dealt = damageDealt(before, amount);
   const stun = defIdx === CHARGE_DEF ? CHARGE_STUN_TICKS
     : defIdx === TRAP_SPIKE_DEF ? TRAP_SPIKE_STUN_TICKS : (HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength]);
   if (guard) blockHit(world, sink, source, victim, dealt);
-  else applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
+  else if (!armoured) applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
   meterOnHit(s, sink, source, team, victim, dealt);
   return dealt;
 }

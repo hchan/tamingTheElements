@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Charge and Dash in melee (ideas/brainstorm/action-bar-rethink-hero-kits.md, first slice): Arcade only. A charging hero is armoured (takes damage, no stun or knockback), the arrival hit is medium strength (damage 12, victim stun 26), and a Dash through a melee swing is a perfect dodge that refunds the Dash cooldown. `SIM_VERSION` 50.
+  - Re-record reason: Charge and Dash outcomes change Arcade hashes; Arcade goldens and the Arcade 1v1 and 2v2 balance baselines were re-recorded (all heroes stay within 35-65%); the Classic goldens change only the `simVersion` header.
+
 - Common Cleanse, sim slice (FUN-DESIGN 2.26, ideas/in-progress/elemental-cleanse.md): Arcade only. Every hero can end its own Snag root, Puddle slow and Ice Blast or tidal slows with one button (`Cmd.cleanse`, bit 9) on a 10 s cooldown, and the sim emits a `cleanse {element, team, cleared}` event for the view and audio to come. The Normal and Hard AI use it when rooted or slowed. No key binding, HUD or animation yet. `SIM_VERSION` goes from 46 to 47.
   - Re-record reason: the Arcade state block grew (one int per entity, one per team) and the AI now presses a new button, so Arcade hashes and outcomes change. The Arcade goldens (seven) and the two Classic goldens change; the Classic ones only their `simVersion` header; the Classic baseline is unchanged. The Arcade 1v1 baseline was re-recorded (Cyclonius 50.6 to 43.8 percent, every other race within 2.2 pp). The Arcade 2v2 baseline was re-recorded too (Echo -6.8, Rokcore +8.0, Pax -5.7, Wispera -5.7 pp; small samples of 528 matches).
 

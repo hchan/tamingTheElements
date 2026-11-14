@@ -176,5 +176,9 @@
  * 49: Arcade only; Classic hashes unchanged. 2v2 balance retune (ideas/in-progress/arcade-balance-after-cleanse.md): data-only `ARCADE_2V2_LIFE_PM` changes
  *    (the 2v2 tournament played fixed partner teams, curomo+morblass 70 percent and cyclonius+pax 27, race spread 26.1-70.5; now 42.0-58.0). The 1v1
  *    Arcade tournament is unchanged (43.8-53.4 percent). Re-record reason: 2v2 life changes Arcade 2v2 outcomes (Arcade 2v2 goldens and baseline).
+ * 50: Arcade only; Classic hashes unchanged. Melee-useful Charge and Dash (ideas/brainstorm/action-bar-rethink-hero-kits.md): a charging hero is armoured
+ *    (hits deal damage but no knockback or hit-stun), the arrival hit is medium strength (CHARGE_DAMAGE 8 -> 12, CHARGE_STUN_TICKS 20 -> 26), and a
+ *    melee swing through an invulnerable dasher is a perfect dodge (+meter) that readies the dash again at once. Re-record reason: Charge and
+ *    Dash outcomes change Arcade hashes (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 49;
+export const SIM_VERSION = 50;

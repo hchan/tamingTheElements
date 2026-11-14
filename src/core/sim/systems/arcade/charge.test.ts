@@ -12,6 +12,8 @@ import { Cmd, inputMaskFor, type Command } from '../../commands';
 import { SimEventKind, type SimEvent } from '../../events';
 import { hash } from '../../hash';
 import { createMatch, type MatchSetup } from '../../match';
+import { EventSink } from '../../events';
+import { applyArcadeHit } from './hit';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import { ARCADE_E, ArcadeE, EntityFlag } from '../../state';
 import { step } from '../../step';
@@ -42,7 +44,7 @@ const ofKind = (evs: readonly SimEvent[], k: number): SimEvent[] => evs.filter((
 describe('charge numbers (FUN-DESIGN 2.17)', () => {
   it('has the design numbers', () => {
     expect([CHARGE_TICKS, CHARGE_SPEED_MULT, CHARGE_COOLDOWN_TICKS, CHARGE_STUN_TICKS, CHARGE_DAMAGE, METER_CHARGE])
-      .toEqual([12, 5, 300, 20, 8, 40]);
+      .toEqual([12, 5, 300, 26, 12, 40]);
     expect(CHARGE_MAX_STEP_PX).toBe(30);
     expect(CHARGE_AI_MIN_DIST).toBeGreaterThan((CHARGE_MAX_STEP_PX * CHARGE_TICKS) / 2);
   });
@@ -124,6 +126,34 @@ describe('charge arrival', () => {
     step(world, [C, Cmd.dash | Cmd.left]);
     for (let t = 0; t < 14; t++) step(world, [0, 0]);
     expect(s.hp[1]).toBe(hp0);
+  });
+});
+
+describe('charge armour (SIM_VERSION 50)', () => {
+  it('a charging victim takes the damage without knockback or stun; an idle one is stunned and shoved', () => {
+    const run = (charging: boolean): { lost: number; stunned: boolean; moved: boolean } => {
+      const world = duel(400);
+      const s = world.state;
+      if (charging) s.arcade[E(1, ArcadeE.chargeUntil)] = now(s) + CHARGE_TICKS;
+      const hp0 = s.hp[1] ?? 0;
+      const x0 = s.x[1] ?? 0;
+      applyArcadeHit(world, new EventSink(100), 0, 0, 1, 20, 0, 0);
+      return { lost: hp0 - (s.hp[1] ?? 0), stunned: isStunned(s, 1), moved: (s.arcade[E(1, ArcadeE.kbVx)] ?? 0) !== 0 || s.x[1] !== x0 };
+    };
+    const armoured = run(true);
+    const plain = run(false);
+    expect(armoured.lost).toBeGreaterThan(0);
+    expect(armoured.stunned).toBe(false);
+    expect(armoured.moved).toBe(false);
+    expect(plain.stunned).toBe(true);
+    expect(plain.moved).toBe(true);
+  });
+
+  it('a charge into a foe that attacks still arrives (armour keeps the rush going)', () => {
+    const world = duel(560);
+    let evs: readonly SimEvent[] = step(world, [C, Cmd.primary]);
+    for (let t = 0; t < 10; t++) evs = evs.concat(step(world, [0, 0]));
+    expect(ofKind(evs, SimEventKind.chargeEnded).map((e) => e.reason)).toContain(ChargeEnd.arrived);
   });
 });
 

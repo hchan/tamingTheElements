@@ -28,3 +28,6 @@ Hero slots are 1, 2, 3 (3 = signature trap/minion). Then Weather, Super (special
 ## Owner idea (2026-11-13): Charge and Dash as abilities
 "maybe charge, dash should be an ability": make Charge and Dash per-hero abilities (element-flavoured movement: water slide, air blink, fire rush, earth rumble) instead of fixed boxes. Undecided; see the open-idea note in docs/design/action-bar-kits.md.
 Owner follow-up: Charge and Dash must be useful for melee (gap-close into a hit, combo extender, dodge into counter, charge with contact armour/knockback); give each a melee use case and a usage check. See docs/design/action-bar-kits.md.
+
+## Progress
+- 2026-11-13: first slice landed (SIM_VERSION 50): Charge is armoured with a medium arrival hit, and a Dash through a melee swing refunds the Dash. Per-hero kits, traps and minions are still open.

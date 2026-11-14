@@ -276,6 +276,21 @@ describe('dash cancel (rule: a dash within 10 ticks of a confirmed hit cancels m
   });
 });
 
+describe('melee dodge (SIM_VERSION 50)', () => {
+  it('a melee swing through a dasher is one perfectDodge, +meter, and the dash is ready again', () => {
+    const world = duel('sindarosa', 'curomo');
+    const s = world.state;
+    s.x[0] = 700;
+    s.x[1] = 760;
+    const evs: SimEvent[] = [];
+    evs.push(...step(world, [D | Cmd.left, 0]), ...step(world, [0, Cmd.primary]));
+    for (let t = 0; t < 10; t++) evs.push(...step(world, [0, 0]));
+    expect(evs.filter((e) => e.kind === SimEventKind.perfectDodge)).toHaveLength(1);
+    // The swing outlasts the i-frames and may still land later; the dodge itself refunded the dash.
+    expect(s.arcade[E(0, ArcadeE.dashReadyAt)]).toBeLessThanOrEqual(now(s));
+  });
+});
+
 describe('Classic', () => {
   it('ignores the dash bit and double taps', () => {
     const a = duel('sindarosa', 'pax', false);

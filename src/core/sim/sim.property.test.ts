@@ -395,11 +395,11 @@ function checkArcade(
       fail('bad pressUsed');
   }
   // Dash (FUN-DESIGN 2.7): a dash lasts at most DASH_TICKS and its next one is ready no sooner than DASH_COOLDOWN_TICKS
-  // after its start; `dashed` books that on its tick, and a perfect dodge marks its dash.
+  // after its start (a perfect dodge of a melee swing refunds it, SIM_VERSION 50); `dashed` books that on its tick, and a perfect dodge marks its dash.
   for (let i = 0; i < MAX_ENTITIES; i++) {
     const until = s.arcade[i * ARCADE_E + ArcadeE.dashUntil] ?? 0;
     const ready = s.arcade[i * ARCADE_E + ArcadeE.dashReadyAt] ?? 0;
-    if (until - g >= DASH_TICKS || (until > 0 && ready - until < DASH_COOLDOWN_TICKS - DASH_TICKS))
+    if (until - g >= DASH_TICKS || (until > 0 && (s.arcade[i * ARCADE_E + ArcadeE.dashDodged] ?? 0) === 0 && ready - until < DASH_COOLDOWN_TICKS - DASH_TICKS))
       fail(`dash of ${String(i)}`);
   }
   for (const e of events) {
