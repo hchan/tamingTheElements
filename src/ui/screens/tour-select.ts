@@ -22,6 +22,7 @@ function loadCss(): void {
 const pips = (kind: string, on: number, total: number): HTMLElement => {
   const s = el('span', `tsPips ${kind}`);
   s.setAttribute('aria-hidden', 'true');
+  s.title = `${kind === 'tsLevel' ? 'Level' : 'Continues'}: ${String(on)} of ${String(total)}`;
   for (let i = 0; i < total; i++) s.append(el('i', i < on ? 'on' : undefined));
   return s;
 };

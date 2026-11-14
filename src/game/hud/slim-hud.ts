@@ -22,8 +22,8 @@ export const CHIP_PITCH = 72;
 export const CHIP_Y = 58;
 export const CHIP_BAR_Y = CHIP_Y + CHIP_SIZE + 5;
 export const CHIP_BAR_LINE = 6;
-/** Left edge of the tag pill for team 0 (right edge 574, just short of the bar end at 580 and the round pips). */
-export const PILL_X0 = 530;
+/** Left edge of the tag pill for team 0 (right edge 550: a clear gap to the round pips and the timer, qa-r15). */
+export const PILL_X0 = 506;
 /** Bottom of the lowest bench life bar: the status-chip row starts under it when a side has a bench. */
 export const CHIP_BOTTOM = CHIP_BAR_Y + CHIP_BAR_LINE / 2 + 2;
 export const PILL_W = 44;

@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 import {
   PILL_W, SLIM_H, TRAIL_HOLD, chipBar, lifeFill, chipRect, compactLabel, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
+import { PIP_R, pips } from './round-announcer';
+
+describe('2v2 tag pill clears the round pips (QA r15)', () => {
+  it('leaves at least 30 px between the pill and the nearest-out ROUNDS pip, and mirrors for team 1', () => {
+    const p = tagPill(0);
+    const outer = Math.min(...pips([0, 0]).filter((q) => q.team === 0).map((q) => q.x)) - PIP_R - 4;
+    expect(outer - (p.x + p.w)).toBeGreaterThanOrEqual(30);
+    const q = tagPill(1);
+    expect(q.x).toBe(1280 - p.x - p.w);
+  });
+});
 
 describe('slim HUD geometry', () => {
   it('keeps everything inside the top SLIM_H px and mirrors team 1 about the centre', () => {

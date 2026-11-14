@@ -31,6 +31,8 @@ const SUB_GAP = 42;
 const CARD_PX = 54;
 const CARD_Y = 200;
 const CARD_MARGIN = 64;
+/** Closest a sliding name may come to the screen edge. */
+const CARD_EDGE_GAP = 8;
 const WON_COLOR = 0xb8964a;
 /** The word under each side's round pips, so they are not read as super charge. */
 const PIP_LABEL_PX = 13;
@@ -155,7 +157,9 @@ export function mountRoundView(
     for (const team of [0, 1] as const) {
       const t = parts.cards[team];
       if (t.text !== cardNames[team]) t.setText(cardNames[team]);
-      const edge = team === 0 ? CARD_MARGIN - cardState.offset : LOGICAL_WIDTH - CARD_MARGIN + cardState.offset;
+      // The slide never carries the name past the screen edge (qa-r15: a name cut off at the frame mid-slide); it fades in over the shortened travel.
+      const slide = Math.min(cardState.offset, CARD_MARGIN - CARD_EDGE_GAP);
+      const edge = team === 0 ? CARD_MARGIN - slide : LOGICAL_WIDTH - CARD_MARGIN + slide;
       t.setColor(cardColors[team]).setPosition(edge, CARD_Y).setAlpha(cardState.alpha * 0.92).setVisible(cardState.alpha > 0 && cardNames[team] !== '');
     }
   }
