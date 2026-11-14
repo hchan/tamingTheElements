@@ -62,13 +62,22 @@ export function gradeHeroRgba(px: Uint8ClampedArray | number[], g: HeroGrade = H
 /** Rim colour (0..255 RGB) per hero; heroes not listed get the cool default. Lavax is warm ember so it parts from the painted Pax. */
 const RIM_DEFAULT: readonly [number, number, number] = [206, 228, 255];
 const RIM_BY_HERO: Readonly<Record<string, readonly [number, number, number]>> = {
-  lavax: [255, 176, 96],
+  // Lavax, Ishimi and Treenoc sat on their own element's floor (QA r26): a pale rim that is the floor's opposite, not its kin.
+  lavax: [255, 242, 214],
+  ishimi: [214, 255, 176],
+  treenoc: [200, 255, 236],
   echo: [226, 240, 255],
   // Rokcore's slate body vanished into the olive earth floor (QA r24): a warm sunlit gold edge, like the stage's own light.
   rokcore: [255, 214, 140],
   // Wispera is a pale ghost that vanished on the pale air stage (QA r23): a dark navy ink edge instead of a light rim.
   wispera: [18, 28, 66],
 };
+/** Extra body lift (share toward white) for heroes whose body matches their own-element floor, on top of the dark-hero lift. */
+const LIFT_BY_HERO: Readonly<Record<string, number>> = { lavax: 0.05, ishimi: 0.05, treenoc: 0.04 };
+/** Heroes drawn as a faint ghost: their semi-transparent body regains opacity and the ink edge is two pixels deep. */
+const GHOSTS: ReadonlySet<string> = new Set(['wispera']);
+/** Share of the missing opacity a ghost's body regains (more than a dark sprite's lift). */
+const GHOST_ALPHA_LIFT = 0.55;
 /** A rim darker than this mean channel value is an ink outline: it blends harder so a pale sprite keeps its edge on a pale floor. */
 const INK_RIM_MAX = 90;
 /** Mean luma (0..255) under which a hero counts as dark and gets its body lifted a little as well as a stronger rim. */
@@ -85,7 +94,7 @@ const DARK_ALPHA_LIFT = 0.3;
  * share for a soft, painted falloff. Dark sprites (low mean luma) also get a mild body lift. In place over a `w` x `h` RGBA
  * sheet; alpha only rises on dark sprites and nothing is drawn outside the shape, so neighbouring frames never bleed. Deterministic.
  */
-export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: number, rim: readonly [number, number, number] = RIM_DEFAULT): void {
+export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: number, rim: readonly [number, number, number] = RIM_DEFAULT, extraLift = 0, ghost = false): void {
   const src = Array.from(px);
   const a = (x: number, y: number): number => (x < 0 || y < 0 || x >= w || y >= h ? 0 : (src[(y * w + x) * 4 + 3] ?? 0));
   let sum = 0;
@@ -96,7 +105,7 @@ export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: num
     n++;
   }
   const dark = n > 0 && sum / n < DARK_MEAN;
-  const lift = dark ? 0.16 * (1 - sum / n / DARK_MEAN) + 0.06 : 0;
+  const lift = (dark ? 0.16 * (1 - sum / n / DARK_MEAN) + 0.06 : 0) + extraLift;
   const ink = (rim[0] + rim[1] + rim[2]) / 3 < INK_RIM_MAX;
   let self = 255;
   const open = (x: number, y: number): boolean => a(x, y) < self * 0.5;
@@ -111,7 +120,7 @@ export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: num
       const bottom = open(x, y + 1);
       const right = open(x + 1, y);
       if (top || left || bottom || right) t = top || left ? 1 : 0.6;
-      else if (open(x, y - 2) || open(x - 2, y) || open(x, y + 2) || open(x + 2, y)) t = 0.3;
+      else if (open(x, y - 2) || open(x - 2, y) || open(x, y + 2) || open(x + 2, y)) t = ghost && ink ? 0.8 : 0.3;
       const yl = (src[i] ?? 0) * 0.3 + (src[i + 1] ?? 0) * 0.59 + (src[i + 2] ?? 0) * 0.11;
       const k = ink ? Math.min(0.85, t * 0.85) : t * (dark ? 0.62 : 0.4) * (0.55 + 0.45 * (1 - yl / 255));
       for (let c = 0; c < 3; c++) {
@@ -119,7 +128,8 @@ export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: num
         const lifted = v + (255 - v) * lift;
         px[i + c] = Math.round(Math.min(255, lifted + ((rim[c] ?? 255) - lifted) * k));
       }
-      if (dark && self < 255) px[i + 3] = Math.round(self + (255 - self) * DARK_ALPHA_LIFT);
+      if (ghost && self < 255) px[i + 3] = Math.round(self + (255 - self) * GHOST_ALPHA_LIFT);
+      else if (dark && self < 255) px[i + 3] = Math.round(self + (255 - self) * DARK_ALPHA_LIFT);
     }
   }
 }
@@ -160,7 +170,7 @@ export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
     const data = ctx.getImageData(0, 0, c.width, c.height);
     gradeHeroRgba(data.data);
     const hero = key.replace(/^[a-z]+:/, '');
-    rimLightRgba(data.data, c.width, c.height, RIM_BY_HERO[hero] ?? RIM_DEFAULT);
+    rimLightRgba(data.data, c.width, c.height, RIM_BY_HERO[hero] ?? RIM_DEFAULT, LIFT_BY_HERO[hero] ?? 0, GHOSTS.has(hero));
     ctx.putImageData(data, 0, 0);
     const tex = scene.textures.addCanvas(gk, c);
     if (!tex) return key;

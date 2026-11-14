@@ -108,4 +108,18 @@ describe('rimLightRgba', () => {
     rimLightRgba(c, 7, 7);
     expect(c).toEqual(b);
   });
+
+  it('extra lift brightens the body and a ghost regains opacity (own-element contrast, QA r26)', () => {
+    const plain = block([30, 30, 40]);
+    const lifted = block([30, 30, 40]);
+    rimLightRgba(plain, 7, 7);
+    rimLightRgba(lifted, 7, 7, undefined, 0.1);
+    expect(at(lifted, 3, 3)[2]).toBeGreaterThan(at(plain, 3, 3)[2] ?? 0);
+    const half = block([225, 238, 252]).map((v, i) => (i % 4 === 3 && v === 255 ? 120 : v));
+    const ghost = [...half];
+    rimLightRgba(half, 7, 7, [18, 28, 66]);
+    rimLightRgba(ghost, 7, 7, [18, 28, 66], 0, true);
+    expect(at(ghost, 3, 3)[3]).toBeGreaterThan(at(half, 3, 3)[3] ?? 0);
+    expect(at(ghost, 0, 0)).toEqual([0, 0, 0, 0]);
+  });
 });

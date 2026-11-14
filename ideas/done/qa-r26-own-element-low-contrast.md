@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -10,3 +10,7 @@ Repro: `hero=fiara&foe=lavax` (dark on dark), `hero=curomo&foe=ishimi` (dark gre
 Evidence: `~/claudetmp/qa26/st-fiara-lavax-180.png`, `st-curomo-ishimi-180.png`, `st-rokcore-treenoc-180.png`. Related: qa-r25-wispera-faint.
 
 Suggest a rim light, or a darker/lighter floor under fighters.
+
+## Done
+
+Pale per-hero rims (Lavax cream, Ishimi lime, Treenoc mint) plus a small body lift in hero-grade.ts. The effect is subtle; push the rim harder if QA still finds them lost.

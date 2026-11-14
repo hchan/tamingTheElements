@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EntityFlag, type RenderCharacter } from '@core/index';
 import {
   CharacterView, FLASH_FILL_FRAMES, MAX_HOLD_FRAMES, FLASH_TINT_FRAMES, FROZEN_TINT, JITTER_PX, flipForDir, frameSetFor, lerp,
-  tintStage,
+  tintStage, FLASH_WASH_ALPHA, FLASH_TAIL_ALPHA, flashWashAlpha, liftToWhite,
 } from './character-view';
 
 /** Chainable fake of the Phaser Image calls CharacterView makes; records the tint and position. */
@@ -37,25 +37,27 @@ describe('CharacterView hit flash and jitter (V6)', () => {
     const scene = { add: { image: () => img } } as unknown as Phaser.Scene;
     return { view: new CharacterView(scene), img };
   };
-  const shown = (img: FakeImage): string => `${img.tint.toString(16)}/${String(img.mode)}`;
-
-  it('counts rendered frames, holds while paused, beats the frozen tint and restores it after', () => {
+  
+  it('counts rendered frames, holds while paused, beats the frozen tint and clears it after; the sprite is never flash-tinted', () => {
     const { view, img } = make();
     const frozen = char(EntityFlag.alive | EntityFlag.frozen);
     view.apply(frozen, 0, 1);
     expect(img.tint).toBe(FROZEN_TINT);
     view.flash(0x123456);
     view.apply(frozen, 0, 1, false);
-    const seen = [shown(img)];
+    const seen = [view.washAlpha];
     for (let f = 0; f < 11; f++) {
       view.apply(frozen, 0, 1);
-      seen.push(shown(img));
+      seen.push(view.washAlpha);
     }
-    expect(seen).toEqual(['6e6e6e/2', '6e6e6e/2', '6e6e6e/2', ...Array<string>(8).fill('123456/0'), '88ccff/0']);
+    expect(seen.slice(0, 3)).toEqual([FLASH_WASH_ALPHA, FLASH_WASH_ALPHA, FLASH_WASH_ALPHA]);
+    expect(seen[seen.length - 1]).toBe(0);
+    expect(img.tint).toBe(FROZEN_TINT);
+    expect(img.mode).toBe(0);
     expect(view.element).toBe('fire');
     view.flash(0x123456);
     for (let f = 0; f < 11; f++) view.apply(char(EntityFlag.alive), 0, 1);
-    expect(shown(img)).toBe('ffffff/0');
+    expect(img.tint).toBe(0xffffff);
   });
 
   it('jitters by 2 px on alternate frames until the freeze deadline, and a parked view forgets it', () => {
@@ -74,28 +76,37 @@ describe('CharacterView hit flash and jitter (V6)', () => {
     expect(img.x).toBe(100);
   });
 
-  it('a heavy hit holds the additive wash for its hold frames (view-only hit-stop), capped, then runs the normal flash', () => {
-    const { view, img } = make();
+  it('a heavy hit holds the wash for its hold frames (view-only hit-stop), capped, then fades out', () => {
+    const { view } = make();
     const c = char(EntityFlag.alive);
     view.flash(0x123456, 3);
-    const seen: string[] = [];
-    for (let f = 0; f < 6; f++) {
+    const seen: number[] = [];
+    for (let f = 0; f < 14; f++) {
       view.apply(c, 0, 1);
-      seen.push(shown(img));
+      seen.push(view.washAlpha);
     }
-    // 3 held frames + 2 wash frames, then the hit tint.
-    expect(seen).toEqual(['6e6e6e/2', '6e6e6e/2', '6e6e6e/2', '6e6e6e/2', '6e6e6e/2', '123456/0']);
+    expect(seen.slice(0, 5).every((a) => a === FLASH_WASH_ALPHA)).toBe(true);
+    expect(seen[13]).toBe(0);
     view.flash(0x123456, 999);
-    for (let f = 0; f < MAX_HOLD_FRAMES + FLASH_FILL_FRAMES + 1; f++) view.apply(c, 0, 1);
-    expect(shown(img)).toBe('123456/0');
+    for (let f = 0; f < MAX_HOLD_FRAMES + FLASH_FILL_FRAMES + FLASH_TINT_FRAMES + 2; f++) view.apply(c, 0, 1);
+    expect(view.washAlpha).toBe(0);
   });
 
-  it('never fills solid: the wash is additive so the sprite keeps its own shading and alpha', () => {
+  it('the flash is a soft additive overlay: the sprite keeps its own shading and is never tinted', () => {
     const { view, img } = make();
     view.flash(0x123456);
     view.apply(char(EntityFlag.alive), 0, 1);
-    expect(img.mode).toBe(2);
-    expect(img.tint).not.toBe(0xffffff);
+    expect(view.washAlpha).toBeGreaterThan(0);
+    expect(img.tint).toBe(0xffffff);
+  });
+
+  it('flashWashAlpha is full while held, fades linearly to 0, and liftToWhite lightens', () => {
+    expect(flashWashAlpha(FLASH_FILL_FRAMES + FLASH_TINT_FRAMES)).toBe(FLASH_WASH_ALPHA);
+    expect(flashWashAlpha(FLASH_TINT_FRAMES)).toBe(FLASH_TAIL_ALPHA);
+    expect(flashWashAlpha(0)).toBe(0);
+    expect(flashWashAlpha(4)).toBeCloseTo(FLASH_TAIL_ALPHA / 2);
+    expect(liftToWhite(0x000000)).toBeGreaterThan(0x000000);
+    expect(liftToWhite(0xffffff)).toBe(0xffffff);
   });
 });
 

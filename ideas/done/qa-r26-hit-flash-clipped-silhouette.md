@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -12,3 +12,7 @@ Repro: build `--mode test`, open `/?seed=7&manual=1&hero=treenoc&foe=sindarosa` 
 Evidence: `~/claudetmp/qa26/st-treenoc-sindarosa-180.png`, `st-rokcore-treenoc-180.png`, `super-fiara-30.png`.
 
 SF/MvC hit flashes are subtle colour pops, not clipped cut-outs. Suggest a tint or additive pass limited to the sprite alpha, not the frame.
+
+## Done
+
+The flash is now a soft additive overlay copy of the sprite (character-view.ts, synced on prerender) instead of a tint on the sprite, so it follows the silhouette. A probe of the hurt-pose frames showed clean pose state; residual hard cuts seen in SwiftShader captures were not traced to the pose layer and may be a software-GL artefact (unverified on real GPU).
