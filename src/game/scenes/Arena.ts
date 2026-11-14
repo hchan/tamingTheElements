@@ -476,10 +476,11 @@ export class Arena extends Phaser.Scene {
       shaking: () => this.cameras.main.shakeEffect.isRunning,
       fx: () => {
         const hud = this.arcadeHud;
-        const tints: { id: number; tint: number; mode: number }[] = [];
+        const tints: { id: number; tint: number; mode: number; wash: number }[] = [];
         view.forEachCharacter((c) => {
-          const img = this.pool?.peek(c.id)?.image;
-          if (img?.visible) tints.push({ id: c.id, tint: img.tintTopLeft, mode: img.tintMode });
+          const v = this.pool?.peek(c.id);
+          const img = v?.image;
+          if (img?.visible) tints.push({ id: c.id, tint: img.tintTopLeft, mode: img.tintMode, wash: v?.washAlpha ?? 0 });
         });
         return {
           tints,

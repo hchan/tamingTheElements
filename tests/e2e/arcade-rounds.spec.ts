@@ -60,6 +60,9 @@ test('Arcade Versus: ROUND 1, FIGHT!, the timer, K.O. PERFECT, the result with a
   await step(page, KO_TO_RESULT);
   expect(await rounds(page)).toMatchObject({ main: 'PERFECT', sub: 'YOU WIN ROUND 1', visible: true, won: [1, 0] });
   await step(page, 60);
+  // ROUND 2 is announced but yields to the result card (banner lanes, QA r27: no ghosting behind it) until the card's 100 ticks are up.
+  expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: false, timer: '90', won: [1, 0] });
+  await step(page, 40);
   expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: true, timer: '90', won: [1, 0] });
   expect(errors).toEqual([]);
 });
@@ -112,7 +115,8 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
   expect(await rounds(page)).toMatchObject({ sub: 'ROUND 1 DRAW', won: [2, 2] });
   const before = await played(page);
   await step(page, 60);
-  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, won: [2, 2] });
+  // The result card is still up (100 ticks): the intro banner waits for it, but the sting and the timer already run.
+  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: false, won: [2, 2] });
   // The sting (one cue) played at the round start, and the timer says it in words and its own colour, not only red.
   expect(await played(page)).toBe(before + 1);
   expect(await rounds(page)).toMatchObject({ timer: expect.stringMatching(/^SUDDEN \d\d$/), timerColor: '#c07ab0' });
@@ -120,8 +124,9 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
     .toContain('Sudden death. One hit may decide the match.');
   const hp = await characters(page, 0);
   expect(hp[0]?.hp).toBeLessThan((hp[0]?.maxHp ?? 0) / 5);
-  // The banner scales in over 30 view ticks; the picture is taken once it is at rest (it must fit the 1280 px width).
-  await step(page, 30);
+  // The banner scales in over 30 view ticks (counted from the round start, so it is at rest once the card is gone); the picture
+  // is taken then (it must fit the 1280 px width).
+  await step(page, 40);
   expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, scale: 1 });
   await page.screenshot({ path: info.outputPath('sudden-death.png') });
   await step(page, 60);

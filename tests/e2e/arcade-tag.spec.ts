@@ -88,6 +88,8 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   expect(start?.lines[1]?.[0]).toBe('IN Fiara');
   expect(start?.lines[1]?.[1]).toMatch(/^BENCH \S+ [▲≈■●◆] 100%$/);
   // Red life: Sindarosa hurt, then benched by a tag on the 3 key (live ticks: the keyboard agent plays the player).
+  // The FIGHT! banner holds the centre for its first second: a tag call landing under it waits (banner lanes, QA r27), so let it clear first.
+  await step(page, 60);
   const [lead] = await characters(page, 0);
   await page.evaluate(`window.__TTE__.arena.setHp(${String(lead?.id)}, ${String(Math.round((lead?.maxHp ?? 0) * 0.4))})`);
   await page.keyboard.down('Digit3');
