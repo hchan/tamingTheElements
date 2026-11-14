@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -14,3 +14,5 @@ Found by the e2e sweep at main 8c969b3f. Repeated in both `pnpm e2e` runs (2/2),
 A constant -320 offset suggests the camera scroll origin changed (centred/letterboxed world, or a wider arena) and the spec's WORLD/VIEW assumptions are stale, or the camera now over-scrolls past the left wall. Decide which is intended, then fix the code or the spec.
 
 Repro: `E2E_PORT=79xx pnpm e2e tests/e2e/arcade-pan.spec.ts`. Logs: `~/claudetmp/e2e-run1.log`, `e2e-run2.log`.
+
+Fixed 2026-11-14 (4fc81e93): test hook now returns worldView.x; spec uses real fighter widths. Not a game regression.
