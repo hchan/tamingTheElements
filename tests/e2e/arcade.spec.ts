@@ -37,9 +37,9 @@ const PRIMARY = 1 << 4;
 const SUPER = 1 << 13;
 /**
  * Rounds (FUN-DESIGN 2.10, best of 3): round 1's intro holds everyone until tick 91; after a KO the 30-tick KO stop and
- * the 120-tick KO phase, the 60-tick round end, then the next 90-tick intro (or the match end).
+ * the 120-tick KO phase, the 60-tick round end, then the next 70-tick intro (or the match end).
  */
-const INTRO = 91;
+const INTRO = 71;
 const KO_TO_ROUND_END = 30 + 120 + 60;
 const MENU = ['Play', 'Versus', 'Online', 'Settings', 'Help'];
 

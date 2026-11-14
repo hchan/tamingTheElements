@@ -180,5 +180,8 @@
  *    (hits deal damage but no knockback or hit-stun), the arrival hit is medium strength (CHARGE_DAMAGE 8 -> 12, CHARGE_STUN_TICKS 20 -> 26), and a
  *    melee swing through an invulnerable dasher is a perfect dodge (+meter) that readies the dash again at once. Re-record reason: Charge and
  *    Dash outcomes change Arcade hashes (Arcade goldens, Arcade baselines).
+ * 51: Arcade only; Classic hashes unchanged. Shorter round intro (ideas/brainstorm/qa-r8-scorecard-and-status.md, passive first seconds):
+ *    `ROUND_INTRO_TICKS` 90 -> 70 (1.4 s, ROUND n then FIGHT, as Street Fighter). Re-record reason: every Arcade round starts 20 ticks earlier, so Arcade
+ *    hashes and outcomes change (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 50;
+export const SIM_VERSION = 51;
