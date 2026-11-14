@@ -190,6 +190,11 @@ export function readyGlow(timeMs: number, reduced: boolean): number {
   return 0.75 + 0.25 * (t < 0.5 ? t * 2 : 2 - t * 2);
 }
 
+/** Gold rim round the life bar while SUPER is full: a steady solid edge plus breathing halo layers (grow px, alpha), each scaled by `breathe` (readyGlow). */
+export function superRimLayers(breathe: number): { readonly steady: { readonly grow: number; readonly alpha: number }; readonly halo: readonly { readonly grow: number; readonly alpha: number }[] } {
+  return { steady: { grow: 2, alpha: 0.95 }, halo: [[7, 0.14], [5, 0.24], [3, 0.38]].map(([grow, alpha]) => ({ grow: grow ?? 0, alpha: (alpha ?? 0) * breathe })) };
+}
+
 /** Upward offset of a number at `age` ms; reduced motion fades it in place. */
 export function numberRise(age: number, reduced: boolean): number {
   return reduced ? 0 : -NUMBER_RISE_PX * Math.min(1, age / NUMBER_MS);

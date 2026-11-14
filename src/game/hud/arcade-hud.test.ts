@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ArcadeHudModel, CHARGE_DASH, NUMBER_BANNER_ALPHA, NUMBER_FAN, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
   SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterLabelY, meterFlashAlpha, meterSegments, meterX,
-  numberAlpha, numberLabel, numberRise, readyGlow,
+  numberAlpha, numberLabel, numberRise, readyGlow, superRimLayers,
 } from './arcade-hud';
 import { dashSegments } from './bars';
 import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './slim-hud';
@@ -13,6 +13,16 @@ describe('readyGlow', () => {
     expect(readyGlow(0, true)).toBe(1);
     expect(readyGlow(0, false)).toBeCloseTo(0.75);
     expect(readyGlow(600, false)).toBeCloseTo(1);
+  });
+});
+
+describe('superRimLayers', () => {
+  it('keeps a solid steady edge and scales the halo by the breathe factor', () => {
+    expect(superRimLayers(0.75).steady.alpha).toBeGreaterThan(0.9);
+    const lo = superRimLayers(0.75).halo;
+    const hi = superRimLayers(1).halo;
+    expect(lo).toHaveLength(3);
+    lo.forEach((l, i) => { expect(l.alpha).toBeCloseTo(0.75 * (hi[i]?.alpha ?? 0)); });
   });
 });
 

@@ -12,7 +12,7 @@ import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
-  meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, type ArcadeHudModel,
+  meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -199,6 +199,7 @@ export class Hud extends Phaser.Scene {
           const bar = slimBar(team);
           this.drawBar(gfx, bar, side.active, true);
           this.drawTrail(gfx, bar, side.active);
+          if (this.arcade.meters[team].full > 0 && !side.active.dead) this.drawSuperRim(gfx, bar);
           if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active);
         } else {
           this.drawBar(gfx, mainBar(x), side.active, true);
@@ -248,6 +249,16 @@ export class Hud extends Phaser.Scene {
     const x0 = g.minX + Math.ceil(w * Math.max(0, c.hp) / c.maxHp);
     const x1 = g.minX + Math.ceil(w * Math.min(1, v / c.maxHp));
     gfx.lineStyle(g.line, TRAIL_COLOR, 0.95).lineBetween(x0, g.y, x1, g.y);
+  }
+
+  /** A full SUPER rims the life bar in gold (steady edge, breathing halo; steady under reduced motion), matching the action-bar slot. */
+  private drawSuperRim(gfx: Phaser.GameObjects.Graphics, g: BarGeometry): void {
+    const glow = this.highContrast ? 0xffffff : 0xffe28a;
+    const { steady, halo } = superRimLayers(readyGlow(this.time.now, this.reduceMotion));
+    const w = g.maxX - g.minX;
+    const h = g.lineMax;
+    for (const l of halo) gfx.lineStyle(2, glow, l.alpha).strokeRect(g.minX - l.grow, g.y - h / 2 - l.grow, w + l.grow * 2, h + l.grow * 2);
+    gfx.lineStyle(2, this.highContrast ? 0xffffff : 0xffd966, steady.alpha).strokeRect(g.minX - steady.grow, g.y - h / 2 - steady.grow, w + steady.grow * 2, h + steady.grow * 2);
   }
 
   /** Arcade bench chip: a 68 px portrait with its element mark, a life bar under it, and a gold pulsing frame when a tag would work now (dimmed with a cross when down). */
