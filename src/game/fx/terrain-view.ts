@@ -210,7 +210,7 @@ export function mountTerrainView(
       const y = rects[i * 4 + 1] ?? 0;
       const w = rects[i * 4 + 2] ?? 0;
       const h = rects[i * 4 + 3] ?? 0;
-      for (let k = GLOW_RINGS; k >= 1; k--) glow.fillStyle(color, stage === 3 ? 0.07 : 0.03).fillRoundedRect(x - k * 6, y - k * 6, w + k * 12, h + k * 12, 10 + k * 4);
+      for (let k = GLOW_RINGS; k >= 1; k--) glow.fillStyle(color, stage === 3 ? 0.07 : stage === 1 ? 0.05 : 0.03).fillRoundedRect(x - k * 6, y - k * 6, w + k * 12, h + k * 12, 10 + k * 4);
       if (stage === 3) drawRock(g, x, y, w, h, i, highContrast);
       else drawPad(g, stage, x, y, w, h, i, highContrast);
     }

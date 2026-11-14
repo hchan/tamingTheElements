@@ -11,7 +11,7 @@ type Gfx = Phaser.GameObjects.Graphics;
 
 /** Per-stage palette: the stain, a lighter wear colour, the mark colour (cracks, ripples, scratches) and the rune colour. */
 const LOOK: Record<number, { stain: number; wear: number; mark: number; rune: number }> = {
-  1: { stain: 0x140b09, wear: 0x3a1c12, mark: mute(0xff7a1a, 0.55, 0.62), rune: 0x9c8468 },
+  1: { stain: 0x1a0c08, wear: 0x5a2410, mark: mute(0xff8a2a, 0.85, 0.98), rune: 0xd0b48a },
   2: { stain: 0x0c1418, wear: 0x24363f, mark: mute(0x3aa0ff, 0.4, 0.6), rune: 0x8296a0 },
   4: { stain: 0x1a2024, wear: 0x59676d, mark: mute(0xc8f0ff, 0.35, 0.62), rune: 0xa8b4b8 },
 };
@@ -65,6 +65,8 @@ export function drawPad(g: Gfx, stage: number, x: number, y: number, w: number, 
   const cy = y + h / 2;
   // Feathered stain: stacked layers, wide and faint to small and dense, with a lighter worn middle.
   for (const [s, a] of [[1, 0.2], [0.94, 0.22], [0.84, 0.24], [0.7, 0.2]] as const) g.fillStyle(look.stain, a).fillPoints(toPts(outline(x, y, w, h, seed, s)), true);
+  // Fire: a banked-coal glow under the cracks, so the pad is a lit hot spot, not a dark hole in the floor.
+  if (stage === 1) for (const [s, a] of [[0.7, 0.1], [0.5, 0.12], [0.3, 0.14]] as const) g.fillStyle(0xff7a1a, a).fillEllipse(cx, cy, w * s, h * s);
   g.fillStyle(look.wear, stage === 4 ? 0.22 : 0.3).fillPoints(toPts(outline(x, y, w, h, seed + 5, 0.62)), true);
   // Grain: dark and pale flecks inside the stain.
   for (let n = 0; n < 60; n++) {
@@ -77,9 +79,9 @@ export function drawPad(g: Gfx, stage: number, x: number, y: number, w: number, 
   if (stage === 1) {
     for (let k = 0; k < 6; k++) {
       const a = (k / 6) * Math.PI * 2 + hash01(k, seed) * 0.8;
-      crack(g, cx + Math.cos(a) * 14, cy + Math.sin(a) * 14, cx + Math.cos(a) * w * 0.38, cy + Math.sin(a) * h * 0.38, seed + k * 3, look.mark, 0.6);
+      crack(g, cx + Math.cos(a) * 14, cy + Math.sin(a) * 14, cx + Math.cos(a) * w * 0.38, cy + Math.sin(a) * h * 0.38, seed + k * 3, look.mark, 0.95);
     }
-    for (let k = 0; k < 7; k++) g.fillStyle(mute(0xff8a2a, 0.55, 0.7), 0.5).fillRect(x + w * (0.2 + 0.6 * hash01(k, seed + 21)), y + h * (0.2 + 0.6 * hash01(k, seed + 22)), 2, 2);
+    for (let k = 0; k < 7; k++) g.fillStyle(0xffb347, 0.8).fillRect(x + w * (0.2 + 0.6 * hash01(k, seed + 21)), y + h * (0.2 + 0.6 * hash01(k, seed + 22)), 2, 2);
   } else if (stage === 2) {
     for (const [r, a] of [[0.18, 0.4], [0.3, 0.3], [0.42, 0.2]] as const) g.lineStyle(1, look.mark, a).strokeEllipse(cx + 4, cy + 6, w * r * 1.7, h * r * 1.5);
     g.fillStyle(look.rune, 0.07).fillEllipse(cx - w * 0.14, cy - h * 0.12, w * 0.3, h * 0.12);
