@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { ROUTE_NAMES, resolveRoute } from './router';
+import { ROUTE_NAMES, resolveRoute, routeHash } from './router';
+
+describe('neutral hashes', () => {
+  it('resolves #versus/#play and the old #arcade/#tour to the same routes', () => {
+    expect(resolveRoute('#versus')).toEqual({ name: 'arcade', param: null });
+    expect(resolveRoute('#arcade')).toEqual({ name: 'arcade', param: null });
+    expect(resolveRoute('#play')).toEqual({ name: 'tour', param: null });
+    expect(resolveRoute('#tour')).toEqual({ name: 'tour', param: null });
+    expect(routeHash('arcade')).toBe('#versus');
+    expect(routeHash('tour')).toBe('#play');
+    expect(routeHash('help')).toBe('#help');
+  });
+});
 
 describe('resolveRoute', () => {
   it('maps empty hash to main', () => {
