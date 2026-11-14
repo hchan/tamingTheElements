@@ -433,6 +433,15 @@ function cheatsButton(): HTMLElement {
   return t;
 }
 
+/** A collapsible settings section; every section but Advanced starts open. */
+function section(title: string, id: string, open = id !== 'settingsAdvanced'): HTMLDetailsElement {
+  const d = el('details', 'settingsSection');
+  d.id = id;
+  d.open = open;
+  d.append(el('summary', 'settingsSummary', title));
+  return d;
+}
+
 /** `store` is the app's shared save store, so the battle (which loads from it) sees the same save. */
 export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now())): Screen {
   let node: HTMLElement | null = null;
@@ -446,9 +455,38 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
     const form = el('form', 'settingsForm');
     const status = el('div', 'settingsStatus');
     status.setAttribute('role', 'status');
-    form.append(
-      radioGroup('difficulty', 'Difficulty', DIFFICULTY, save.difficulty, DEFAULT_DIFFICULTY),
+    const saveBtn = el('button', 'menuButton', 'Save');
+    saveBtn.type = 'submit';
+    const back = el('a', 'menuButton', 'Back');
+    back.href = '#main';
+    const bar = el('div', 'settingsBar');
+    bar.append(saveBtn, back);
+    const advanced = section('Advanced', 'settingsAdvanced', notice !== '' || tester.enabled);
+    advanced.append(
+      relayGroup(save),
+      recordControls(),
+      testerControls(store),
+      cheatsButton(),
+      transferControls(
+        store,
+        (imported) => {
+          if (alive) renderForm(page, imported, 'Save imported.');
+        },
+        notice,
+      ),
+    );
+    const controls = section('Controls', 'settingsControls');
+    controls.append(touchGroup(readTouchLayout()));
+    const audio = section('Audio', 'settingsAudio');
+    audio.append(audioControls());
+    const display = section('Display', 'settingsDisplay');
+    display.append(
       radioGroup('displaySettings', 'Display Size', DISPLAY_SCALE, save.displaySettings, DEFAULT_DISPLAY_SCALE),
+      accessibilityGroup(save),
+    );
+    const play = section('Play', 'settingsPlay');
+    play.append(
+      radioGroup('difficulty', 'Difficulty', DIFFICULTY, save.difficulty, DEFAULT_DIFFICULTY),
       radioGroup(
         'garrisonSortOrder',
         'Garrison Sort Order',
@@ -456,15 +494,8 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
         save.garrisonSortOrder,
         DEFAULT_GARRISON_SORT_ORDER,
       ),
-      accessibilityGroup(save),
-      touchGroup(readTouchLayout()),
-      relayGroup(save),
     );
-    const saveBtn = el('button', 'menuButton', 'Save');
-    saveBtn.type = 'submit';
-    const back = el('a', 'menuButton', 'Back');
-    back.href = '#main';
-    form.append(saveBtn, back, status);
+    form.append(bar, status, play, audio, controls, display, advanced);
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const values = readForm(form);
@@ -491,20 +522,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
         window.location.hash = '#main';
       });
     });
-    page.append(
-      form,
-      audioControls(),
-      recordControls(),
-      testerControls(store),
-      cheatsButton(),
-      transferControls(
-        store,
-        (imported) => {
-          if (alive) renderForm(page, imported, 'Save imported.');
-        },
-        notice,
-      ),
-    );
+    page.append(form);
   }
 
   return {

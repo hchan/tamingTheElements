@@ -102,4 +102,30 @@ describe('createPauseDialog (DOM)', () => {
     dialog = createPauseDialog({ onResume: vi.fn(), host });
     expect(host.querySelector('#pauseOverlay')).not.toBeNull();
   });
+
+  it('Escape asks for a pause when closed (not in a text field), and Restart and the Pause button are wired', () => {
+    const onPause = vi.fn();
+    const onRestart = vi.fn();
+    dialog = createPauseDialog({ onResume: vi.fn(), onPause, onRestart });
+    key('Escape');
+    expect(onPause).toHaveBeenCalledTimes(1);
+    const input = document.createElement('input');
+    document.body.append(input);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true, bubbles: true }));
+    expect(onPause).toHaveBeenCalledTimes(1);
+    dialog.button?.click();
+    expect(onPause).toHaveBeenCalledTimes(2);
+    document.getElementById('pauseRestart')?.click();
+    expect(onRestart).toHaveBeenCalledTimes(1);
+    dialog.open();
+    key('Escape');
+    expect(onPause).toHaveBeenCalledTimes(2);
+  });
+
+  it('has no Restart or Pause button without the options (Online)', () => {
+    dialog = createPauseDialog({ onResume: vi.fn() });
+    expect(dialog.button).toBeNull();
+    expect(document.getElementById('pauseRestart')).toBeNull();
+    expect(document.getElementById('pauseExit')?.textContent).toBe('Quit to menu');
+  });
 });

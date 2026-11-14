@@ -256,6 +256,9 @@ export class Arena extends Phaser.Scene {
       const tester = this.launch.tester;
       this.pauseDialog = createPauseDialog({
         onResume: () => { this.togglePause(); },
+        // A shared online match cannot be paused by one side: no Escape pause, no button.
+        ...(this.session || this.launch.net ? {} : { onPause: () => { this.togglePause(); } }),
+        ...(this.launch.onRestart ? { onRestart: this.launch.onRestart } : {}),
         ...(tester ? { onTester: tester.openPanel } : {}),
       });
       if (tester) {

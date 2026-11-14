@@ -154,7 +154,7 @@ test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2
   await page.keyboard.press('Shift+P');
   await page.waitForFunction(`window.__TTE__.arena.paused === false`);
   await page.keyboard.press('Shift+P');
-  await page.getByRole('link', { name: 'Exit to menu' }).click();
+  await page.getByRole('link', { name: 'Quit to menu' }).click();
   await waitForRoute(page, '#main');
   await page.evaluate(`window.__TTE__.settled()`);
   await expect(page.locator('#game canvas')).toHaveCount(0);

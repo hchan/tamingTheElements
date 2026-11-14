@@ -11,12 +11,18 @@ export interface PauseDialogOptions {
   readonly onResume: () => void;
   /** Tester mode only: adds a "Tester options" button that opens the tester panel. */
   readonly onTester?: () => void;
+  /** Local fights: Escape (when no dialog is open) and the touch pause button ask for a pause; absent in Online, which cannot pause. */
+  readonly onPause?: () => void;
+  /** Local fights: adds a "Restart" button that starts the same fight again. */
+  readonly onRestart?: () => void;
   /** Where the dialog is mounted; defaults to `document.body`. */
   readonly host?: HTMLElement;
 }
 
 export interface PauseDialog {
   readonly isOpen: boolean;
+  /** The pause button for touch screens (null when the dialog has no `onPause`). */
+  readonly button: HTMLButtonElement | null;
   open(): void;
   close(): void;
   destroy(): void;
@@ -55,8 +61,17 @@ export function createPauseDialog(opts: PauseDialogOptions): PauseDialog {
   exit.id = 'pauseExit';
   exit.className = 'menuButton';
   exit.href = '#main';
-  exit.textContent = 'Exit to menu';
+  exit.textContent = 'Quit to menu';
   box.append(title, hint, resume);
+  if (opts.onRestart) {
+    const restart = document.createElement('button');
+    restart.type = 'button';
+    restart.id = 'pauseRestart';
+    restart.className = 'menuButton';
+    restart.textContent = 'Restart';
+    restart.addEventListener('click', opts.onRestart);
+    box.append(restart);
+  }
   if (opts.onTester) {
     const tester = document.createElement('button');
     tester.type = 'button';
@@ -73,8 +88,28 @@ export function createPauseDialog(opts: PauseDialogOptions): PauseDialog {
   let open = false;
   let returnTo: Element | null = null;
 
+  let button: HTMLButtonElement | null = null;
+  if (opts.onPause) {
+    button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'pauseButton';
+    button.className = 'pauseButton';
+    button.textContent = 'Pause';
+    button.setAttribute('aria-label', 'Pause');
+    button.addEventListener('click', opts.onPause);
+    host.append(button);
+  }
+
   const onKey = (e: KeyboardEvent): void => {
-    if (!open) return;
+    if (!open) {
+      const t = e.target;
+      const typing = t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement;
+      if (e.key === 'Escape' && !e.defaultPrevented && !e.repeat && !typing && opts.onPause) {
+        e.preventDefault();
+        opts.onPause();
+      }
+      return;
+    }
     if (e.key === 'Escape') {
       e.preventDefault();
       opts.onResume();
@@ -96,6 +131,7 @@ export function createPauseDialog(opts: PauseDialogOptions): PauseDialog {
     get isOpen() {
       return open;
     },
+    button,
     open() {
       if (open) return;
       open = true;
@@ -113,6 +149,7 @@ export function createPauseDialog(opts: PauseDialogOptions): PauseDialog {
     destroy() {
       document.removeEventListener('keydown', onKey);
       backdrop.remove();
+      button?.remove();
       open = false;
     },
   };
