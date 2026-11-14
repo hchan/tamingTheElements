@@ -56,7 +56,7 @@ const of = (ev: readonly SimEvent[], kind: number): SimEvent[] => ev.filter((e) 
 describe('super table (FUN-DESIGN 2.5)', () => {
   it('has the design numbers', () => {
     expect([SUPER_COST, SUPER_FREEZE_TICKS, SUPER_INVULN_AFTER_TICKS]).toEqual([1000, 40, 8]);
-    expect([SUPER_ACTIVE_TICKS, SUPER_HIT_EVERY, SUPER_HIT_DAMAGE, SUPER_BAND_PX]).toEqual([30, 6, 12, 160]);
+    expect([SUPER_ACTIVE_TICKS, SUPER_HIT_EVERY, SUPER_HIT_DAMAGE, SUPER_BAND_PX]).toEqual([30, 6, 36, 160]);
   });
 
   it('super hits keep the 600 pm floor inside a combo; other hits fall to 500', () => {
@@ -165,7 +165,7 @@ describe('Elemental Burst (the Inferno Beam shape)', () => {
     }
   });
 
-  it('hits 5 times, every 6 game ticks, as strength 3 super hits of 12 scaled 1000/1000/900/800/700, then ends', () => {
+  it('hits 5 times, every 6 game ticks, as strength 3 super hits of 36 scaled 1000/1000/900/800/700, then ends', () => {
     const world = duel('sindarosa', 'pax');
     const s = world.state;
     s.hp[1] = 10_000;
@@ -177,7 +177,7 @@ describe('Elemental Burst (the Inferno Beam shape)', () => {
     expect(hits.map((h) => [h['strength'], h['ability'], h['combo'], h['attacker'], h['target']])).toEqual(
       [1, 2, 3, 4, 5].map((c) => [HitStrength.super, SUPER_DEF, c, 0, 1]),
     );
-    const raw = computeDamage({ base: 12, attackerMult: s.dmgMult[0] ?? 1, attEl: 'fire', defEl: 'earth', defReductionPct: 0 });
+    const raw = computeDamage({ base: 36, attackerMult: s.dmgMult[0] ?? 1, attEl: 'fire', defEl: 'earth', defReductionPct: 0 });
     expect(hits[0]?.['amount']).toBe(raw);
     expect(hits[2]?.['amount']).toBe((raw * 900) / 1000);
     const ended = of(ev, SimEventKind.superEnded) as (SimEvent & { g: number })[];

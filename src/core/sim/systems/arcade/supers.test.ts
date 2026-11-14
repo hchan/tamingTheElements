@@ -95,9 +95,9 @@ describe('super specs (FUN-DESIGN 2.5)', () => {
   });
 
   it('has the design numbers', () => {
-    expect([SUPER_VORTEX_BOX_PX, SUPER_VORTEX_ACTIVE_TICKS, SUPER_VORTEX_DAMAGE]).toEqual([480, 36, 9]);
-    expect([SUPER_QUAKE_RING_PX, SUPER_QUAKE_RING_EVERY, SUPER_QUAKE_DAMAGE]).toEqual([[160, 320, 480], 10, 20]);
-    expect([SUPER_TIDE_WIDTH_PX, SUPER_TIDE_SPEED_PX, SUPER_TIDE_DAMAGE, SUPER_TIDE_SLOW_TICKS]).toEqual([120, 12, 50, 40]);
+    expect([SUPER_VORTEX_BOX_PX, SUPER_VORTEX_ACTIVE_TICKS, SUPER_VORTEX_DAMAGE]).toEqual([480, 36, 27]);
+    expect([SUPER_QUAKE_RING_PX, SUPER_QUAKE_RING_EVERY, SUPER_QUAKE_DAMAGE]).toEqual([[160, 320, 480], 10, 60]);
+    expect([SUPER_TIDE_WIDTH_PX, SUPER_TIDE_SPEED_PX, SUPER_TIDE_DAMAGE, SUPER_TIDE_SLOW_TICKS]).toEqual([120, 12, 150, 40]);
     expect(SUPER_ARMOUR_PCT).toBe(50);
     expect(RACE_SUPERS['sindarosa']?.size).toBe(200);
     expect(RACE_SUPERS['ishimi']?.size).toBe(180);
@@ -147,7 +147,7 @@ describe('Inferno Beam variants', () => {
     expect(w2.state.speed[0]).toBe(base);
   });
 
-  it('Phoenix Rise heals 10% of the damage dealt, capped at max HP', () => {
+  it('Phoenix Rise heals 3.5% of the damage dealt, capped at max HP', () => {
     const world = duel('fiara');
     const s = world.state;
     s.hp[0] = (s.maxHp[0] ?? 0) - 50;
@@ -155,7 +155,7 @@ describe('Inferno Beam variants', () => {
     const ev = cast(world);
     const dealt = hitsOf(ev).reduce((n, e) => n + Number(e['amount']), 0);
     expect(dealt).toBeGreaterThan(0);
-    expect(s.hp[0]).toBeCloseTo(before + dealt / 10, 6);
+    expect(s.hp[0]).toBeCloseTo(before + (dealt * 35) / 1000, 6);
     const full = duel('fiara');
     cast(full);
     expect(full.state.hp[0]).toBe(full.state.maxHp[0]);
@@ -163,7 +163,7 @@ describe('Inferno Beam variants', () => {
 });
 
 describe('Vortex variants', () => {
-  it('Eye of the Storm is a 480 px box centred on the caster, hitting every 6 ticks for 36 ticks at 9 damage', () => {
+  it('Eye of the Storm is a 480 px box centred on the caster, hitting every 6 ticks for 36 ticks at 27 damage', () => {
     const world = duel('cyclonius');
     step(world, SUPER);
     const s = world.state;
@@ -186,14 +186,14 @@ describe('Vortex variants', () => {
     expect(s.arcade[1 * ARCADE_E + ArcadeE.kbVy] ?? 0).toBe(0);
   });
 
-  it('Siren Gale steals 15% of the damage dealt', () => {
+  it('Siren Gale steals 5% of the damage dealt', () => {
     const world = duel('wispera', 'pax', 150);
     const s = world.state;
     s.hp[0] = (s.maxHp[0] ?? 0) - 90;
     const before = s.hp[0];
     const dealt = hitsOf(castPinned(world, 550)).reduce((n, e) => n + Number(e['amount']), 0);
     expect(dealt).toBeGreaterThan(0);
-    expect(s.hp[0]).toBeCloseTo(Math.min(before + (dealt * 15) / 100, s.maxHp[0] ?? 0), 6);
+    expect(s.hp[0]).toBeCloseTo(Math.min(before + (dealt * 50) / 1000, s.maxHp[0] ?? 0), 6);
   });
 
   it('Phantom Squall leaves the caster translucent for 60 ticks', () => {
@@ -282,7 +282,7 @@ describe('Tidal Wave variants', () => {
     expect(s.kind[fx]).toBe(EntityKind.effect);
   });
 
-  it('hits once for 50, slows the victim to half speed for 40 ticks, then ends', () => {
+  it('hits once for 150, slows the victim to half speed for 40 ticks, then ends', () => {
     const world = duel('curomo', 'pax', 300);
     const s = world.state;
     const speed = s.speed[1] ?? 0;

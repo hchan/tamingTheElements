@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PILL_W, SLIM_H, TRAIL_HOLD, chipBar, lifeFill, chipRect, compactLabel, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
+  PILL_W, SLIM_H, TRAIL_HOLD, chipBar, lifeFill, chipRect, compactLabel, mirrorX, pillWord, scaledBar, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
 
@@ -11,6 +11,17 @@ describe('2v2 tag pill clears the round pips (QA r15)', () => {
     expect(outer - (p.x + p.w)).toBeGreaterThanOrEqual(30);
     const q = tagPill(1);
     expect(q.x).toBe(1280 - p.x - p.w);
+  });
+});
+
+describe('scaledBar (life totals share one bar scale)', () => {
+  it('keeps the larger total full, shortens a smaller one in proportion with a floor, and starts at minX', () => {
+    const b = slimBar(0);
+    expect(scaledBar(b, 765, 765)).toBe(b);
+    expect(scaledBar(b, 400, 765).maxX - b.minX).toBe(Math.round((460 * 52) / 100));
+    expect(scaledBar(b, 272, 765).maxX - b.minX).toBe(230);
+    expect(scaledBar(b, 272, 765).minX).toBe(b.minX);
+    expect(scaledBar(b, 0, 765)).toBe(b);
   });
 });
 

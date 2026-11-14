@@ -230,7 +230,7 @@ export const SUPER_FREEZE_TICKS = 40;
 export const SUPER_INVULN_AFTER_TICKS = 8;
 export const SUPER_ACTIVE_TICKS = 30;
 export const SUPER_HIT_EVERY = 6;
-export const SUPER_HIT_DAMAGE = 12;
+export const SUPER_HIT_DAMAGE = 36;
 export const SUPER_BAND_PX = 160;
 /** `superStarted.superId` of the generic Elemental Burst; the race variants of the archetype WPs get their own ids. */
 export const SUPER_ELEMENTAL_BURST = 0;

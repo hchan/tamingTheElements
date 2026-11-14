@@ -39,13 +39,13 @@ export interface SuperSpec {
 
 export const SUPER_VORTEX_BOX_PX = 480;
 export const SUPER_VORTEX_ACTIVE_TICKS = 36;
-export const SUPER_VORTEX_DAMAGE = 9;
+export const SUPER_VORTEX_DAMAGE = 27;
 export const SUPER_QUAKE_RING_PX: readonly number[] = [160, 320, 480];
 export const SUPER_QUAKE_RING_EVERY = 10;
-export const SUPER_QUAKE_DAMAGE = 20;
+export const SUPER_QUAKE_DAMAGE = 60;
 export const SUPER_TIDE_WIDTH_PX = 120;
 export const SUPER_TIDE_SPEED_PX = 12;
-export const SUPER_TIDE_DAMAGE = 50;
+export const SUPER_TIDE_DAMAGE = 150;
 /** The slow after a tidal hit: half the victim's speed for this many game ticks. */
 export const SUPER_TIDE_SLOW_TICKS = 40;
 /** Hailstorm fires an icicle every this many ticks, fanned around the facing by these dir8 offsets. */
@@ -66,9 +66,9 @@ export const SUPER_BURST: SuperSpec = { id: SUPER_ELEMENTAL_BURST, name: 'ELEMEN
 export const RACE_SUPERS: Readonly<Record<string, SuperSpec>> = {
   sindarosa: { id: 1, name: 'HELLFIRE LANCE', ...BEAM, size: 200 },
   lavax: { id: 2, name: 'CRIMSON TIDE', ...BEAM, speedBonus: 2, speedTicks: 150 },
-  fiara: { id: 3, name: 'PHOENIX RISE', ...BEAM, drainPm: 100 },
+  fiara: { id: 3, name: 'PHOENIX RISE', ...BEAM, drainPm: 35 },
   cyclonius: { id: 4, name: 'EYE OF THE STORM', ...VORTEX },
-  wispera: { id: 5, name: 'SIREN GALE', ...VORTEX, drainPm: 150 },
+  wispera: { id: 5, name: 'SIREN GALE', ...VORTEX, drainPm: 50 },
   echo: { id: 6, name: 'PHANTOM SQUALL', ...VORTEX, translucentTicks: 60 },
   rokcore: { id: 7, name: 'MOUNTAIN BREAKER', ...QUAKE, armourTicks: 100 },
   pax: { id: 8, name: 'TITAN SLAM', ...QUAKE, scalePm: 1250 },
