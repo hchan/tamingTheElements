@@ -132,3 +132,16 @@ export function superFlashAlpha(ageMs: number): number {
   if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= SUPER_FLASH_MS) return 0;
   return SUPER_FLASH_PEAK * (1 - ageMs / SUPER_FLASH_MS);
 }
+
+/** KO chromatic split: red and blue fringe apart for a beat at the KO peak. Subtle: the offset is a fraction of the screen width, growing towards the edges. */
+export const KO_SPLIT_MS = 260;
+export const KO_SPLIT_PEAK = 0.003;
+const KO_SPLIT_RISE_MS = 40;
+
+/** Split offset (fraction of screen width, 0..KO_SPLIT_PEAK) `ageMs` after the KO: a near-instant rise, then a quick ease back; 0 outside the window or when reduced. */
+export function koSplitAmount(ageMs: number, reduced: boolean): number {
+  if (reduced || !Number.isFinite(ageMs) || ageMs <= 0 || ageMs >= KO_SPLIT_MS) return 0;
+  if (ageMs < KO_SPLIT_RISE_MS) return KO_SPLIT_PEAK * (ageMs / KO_SPLIT_RISE_MS);
+  const t = (ageMs - KO_SPLIT_RISE_MS) / (KO_SPLIT_MS - KO_SPLIT_RISE_MS);
+  return KO_SPLIT_PEAK * (1 - t) ** 2;
+}

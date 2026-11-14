@@ -9,6 +9,7 @@ const INTRO = 91;
 interface Shock {
   washAge: number;
   wash: number;
+  split: number;
   rings: number;
 }
 const shock = (page: Page): Promise<Shock | undefined> => page.evaluate<Shock | undefined>(`window.__TTE__.arena.shockFx()`);
@@ -34,12 +35,30 @@ test('Arcade: the KO drains the colour; the peak frame is captured', async ({ pa
   expect(errors).toEqual([]);
 });
 
+test('Arcade: the KO splits red and blue for a beat (before/after frames captured)', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  await ko(page);
+  await expect.poll(async () => (await shock(page))?.washAge).toBe(0);
+  const frame = (): Promise<unknown> => page.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+  // The filter module loads lazily: wait until it exists (the split is not driven while the sim is paused), then jump to the peak.
+  await expect.poll(async () => { await page.evaluate(`window.__TTE__.arena.shockSeek(40)`); return (await shock(page))?.split; }).toBeGreaterThan(0.002);
+  expect((await shock(page))?.split).toBeGreaterThan(0.002);
+  await frame();
+  await page.locator('#game canvas').screenshot({ path: info.outputPath('ko-split-on.png') });
+  await page.evaluate(`window.__TTE__.arena.shockSeek(400)`);
+  expect((await shock(page))?.split).toBe(0);
+  await frame();
+  await page.locator('#game canvas').screenshot({ path: info.outputPath('ko-split-off.png') });
+  expect(errors).toEqual([]);
+});
+
 test('reduced motion: no KO wash and no ring', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const errors = collectErrors(page);
   await ko(page);
   const s = await shock(page);
   expect(s?.washAge ?? -1).toBe(-1);
+  expect(s?.split ?? 0).toBe(0);
   expect(s?.rings ?? 0).toBe(0);
   expect(errors).toEqual([]);
 });
