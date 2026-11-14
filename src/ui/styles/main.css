@@ -1798,7 +1798,7 @@ html[data-high-contrast='true'] button.touchBtn {
     align-items: center;
     /* One slim line (no title); the name banners, ROUND/FIGHT!/ROOTED all sit above this band. */
     top: auto;
-    bottom: 23vh;
+    bottom: 19vh;
     max-width: 82%;
     font-size: 10px;
     line-height: 1.2;

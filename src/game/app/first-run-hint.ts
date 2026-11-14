@@ -100,6 +100,11 @@ export function firstRunShortLine(b: Bindings, snag = true, partner = true): str
   return `Move ${moveKeys(b)}. ${parts.join(', ')}.`;
 }
 
+/** One line for a landscape phone (QA r32): the card is a thin strip over the floor, so it names only the stick and the buttons; Help has the rest. */
+export function firstRunPhoneLine(snag = true): string {
+  return `Drag the stick to move; tap the buttons to strike, Dash, Guard and Super${snag ? '; Snag roots the foe' : ''}.`;
+}
+
 /** True while the portrait "rotate your device" overlay covers the arena (the card stays hidden and untimed until it is dismissed). */
 function rotateBlocked(): boolean {
   const o = typeof document === 'undefined' ? null : document.getElementById('rotateOverlay');
@@ -147,6 +152,7 @@ export function firstRunHint(
   const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
   // A short keyboard window gets one line (QA r31), not three; phones keep their own lines (CSS trims them).
   if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner)));
+  else if (short && window.innerHeight <= 500 && isTouchFirst() && window.matchMedia('(orientation: landscape)').matches) card.append(el('p', 'firstRunOne', firstRunPhoneLine(snag)));
   else for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
   if (short && window.innerHeight > 500) card.style.fontSize = '11px';
   if (!short) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
