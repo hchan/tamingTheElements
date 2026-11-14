@@ -71,7 +71,7 @@ export const RACE_SUPERS: Readonly<Record<string, SuperSpec>> = {
   wispera: { id: 5, name: 'SIREN GALE', ...VORTEX, drainPm: 50 },
   echo: { id: 6, name: 'PHANTOM SQUALL', ...VORTEX, translucentTicks: 60 },
   rokcore: { id: 7, name: 'MOUNTAIN BREAKER', ...QUAKE, armourTicks: 100 },
-  pax: { id: 8, name: 'TITAN SLAM', ...QUAKE, scalePm: 1250 },
+  pax: { id: 8, name: 'TITAN SLAM', ...QUAKE, damage: 55, scalePm: 1250 },
   treenoc: { id: 9, name: 'OVERGROWTH', ...QUAKE, rootTicks: 40 },
   curomo: { id: 10, name: 'GLACIER CRASH', ...TIDE, rootTicks: 30 },
   morblass: { id: 11, name: 'HAILSTORM', ...TIDE, icicles: 6 },

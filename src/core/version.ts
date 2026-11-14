@@ -204,5 +204,7 @@
  *    HAZARD_ROCK_PX 112 (was 176) and the earth warning HAZARD_EARTH_WARN_TICKS 100 (2 s, was 50; other hazards keep 50; `hazardWarnTicks(kind)`,
  *    the AI reaction counts from the warning's start). Probe, 96 seeds: fighters inside at the strike Normal 41.2 to 21.0 percent, Hard 31.7 to 13.5.
  *    Re-record reason: earth strike box, timing and AI dodge change every Arcade earth-stage match (Arcade goldens, Arcade baselines).
+ * 57: Arcade only (Classic hashes unchanged). Pax balance (Arcade 1v1 Pax 57.4 percent, target <= 54): Titan Slam ring damage 55 (was the quake's 60).
+ *    Pax 57.4 to 52.3 percent, every other race within 1.7 pp. Re-record reason: Pax's super hits softer (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 56;
+export const SIM_VERSION = 57;
