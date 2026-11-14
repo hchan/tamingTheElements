@@ -8,8 +8,8 @@ const SECONDARY = 32;
 const PRIMARY = 16;
 /** Arcade Charge (FUN-DESIGN 2.17): its arrival hit stuns, so the Ice Shock pressed after its hit-stop (it lands 6 ticks on) is the combo's second hit. */
 const CHARGE = 1 << 15;
-const WHITE = 0xffffff;
-const FILL = 1;
+const WASH = 0x6e6e6e;
+const ADD = 2;
 /** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91; Classic has none. */
 const INTRO = 91;
 
@@ -58,7 +58,7 @@ async function hit(page: Page, foe: number, cmd = SECONDARY): Promise<void> {
 }
 
 const fx = (page: Page): Promise<Fx> => page.evaluate<Fx>(`window.__TTE__.arena.fx()`);
-const flashed = (f: Fx, id: number): boolean => f.tints.some((t) => t.id === id && t.tint === WHITE && t.mode === FILL);
+const flashed = (f: Fx, id: number): boolean => f.tints.some((t) => t.id === id && t.tint === WASH && t.mode === ADD);
 
 test('Classic: a projectile hit renders the white hit flash (V6) and no Arcade HUD', async ({ page }) => {
   const errors = collectErrors(page);

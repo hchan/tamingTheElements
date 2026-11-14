@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type Element, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from './element-colors';
-import { classicShakeFor, shakeFor } from './motion';
+import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
 
@@ -63,8 +63,8 @@ export class CosmeticRng {
 
 /** Where effects land; the Phaser implementation is `createPhaserFxSink`. */
 export interface FxSink {
-  /** White fill for 2 render frames, then `tint` for 4 (CharacterView owns the tint). */
-  flash(target: number, tint: number): void;
+  /** Additive wash for 2 render frames, then `tint` (CharacterView owns the tint); `holdFrames` holds the wash (heavy hits, view-only). */
+  flash(target: number, tint: number, holdFrames?: number): void;
   /** `count` particles flying out; `offsets[2i], offsets[2i + 1]` are unit-ish directions (reused buffer). */
   burst(target: number, offsets: Float32Array, count: number, color: number): void;
   /** One static spark for 100 ms: the reduced-motion stand-in for `burst`. */
@@ -154,7 +154,7 @@ export class EventFx {
   }
 
   private classicHit(target: number, amount: number, attacker: number): void {
-    this.sink.flash(target, CLASSIC_HIT_TINT);
+    this.sink.flash(target, CLASSIC_HIT_TINT, this.opts.reducedMotion() ? 0 : holdFramesFor(classicWeightFor(amount)));
     if (this.opts.reducedMotion()) {
       this.sink.spark(target, CLASSIC_SPARK);
       return;
@@ -174,7 +174,7 @@ export class EventFx {
     this.hitSource = e.sourceId;
     this.hitTarget = target;
     this.hitStrength = strength;
-    this.sink.flash(target, color);
+    this.sink.flash(target, color, this.opts.reducedMotion() ? 0 : holdFramesFor(strength));
     this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
     if (this.opts.reducedMotion()) {
       this.sink.spark(target, color);
@@ -219,7 +219,7 @@ export const SPARK_POOL = 64;
 export interface FxTarget {
   readonly image: Phaser.GameObjects.Image;
   readonly element: Element;
-  flash(tint: number): void;
+  flash(tint: number, holdFrames?: number): void;
   jitter(untilTick: number): void;
 }
 
@@ -318,8 +318,8 @@ export function createPhaserFxSink(
     attach();
   };
   return {
-    flash(target, tint): void {
-      if (gate.allow(target, viewTick())) viewOf(target)?.flash(tint);
+    flash(target, tint, holdFrames = 0): void {
+      if (gate.allow(target, viewTick())) viewOf(target)?.flash(tint, holdFrames);
     },
     burst(target, offsets, count, color): void {
       const p = centre(target);

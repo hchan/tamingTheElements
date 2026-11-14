@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
 import { EntityFlag, type RenderCharacter } from '@core/index';
 import {
-  CharacterView, FLASH_FILL_FRAMES, FLASH_TINT_FRAMES, FROZEN_TINT, JITTER_PX, flipForDir, frameSetFor, lerp,
+  CharacterView, FLASH_FILL_FRAMES, MAX_HOLD_FRAMES, FLASH_TINT_FRAMES, FROZEN_TINT, JITTER_PX, flipForDir, frameSetFor, lerp,
   tintStage,
 } from './character-view';
 
@@ -51,7 +51,7 @@ describe('CharacterView hit flash and jitter (V6)', () => {
       view.apply(frozen, 0, 1);
       seen.push(shown(img));
     }
-    expect(seen).toEqual(['ffffff/1', 'ffffff/1', 'ffffff/1', ...Array<string>(8).fill('123456/0'), '88ccff/0']);
+    expect(seen).toEqual(['6e6e6e/2', '6e6e6e/2', '6e6e6e/2', ...Array<string>(8).fill('123456/0'), '88ccff/0']);
     expect(view.element).toBe('fire');
     view.flash(0x123456);
     for (let f = 0; f < 11; f++) view.apply(char(EntityFlag.alive), 0, 1);
@@ -73,6 +73,30 @@ describe('CharacterView hit flash and jitter (V6)', () => {
     view.apply(c, 9, 1);
     expect(img.x).toBe(100);
   });
+
+  it('a heavy hit holds the additive wash for its hold frames (view-only hit-stop), capped, then runs the normal flash', () => {
+    const { view, img } = make();
+    const c = char(EntityFlag.alive);
+    view.flash(0x123456, 3);
+    const seen: string[] = [];
+    for (let f = 0; f < 6; f++) {
+      view.apply(c, 0, 1);
+      seen.push(shown(img));
+    }
+    // 3 held frames + 2 wash frames, then the hit tint.
+    expect(seen).toEqual(['6e6e6e/2', '6e6e6e/2', '6e6e6e/2', '6e6e6e/2', '6e6e6e/2', '123456/0']);
+    view.flash(0x123456, 999);
+    for (let f = 0; f < MAX_HOLD_FRAMES + FLASH_FILL_FRAMES + 1; f++) view.apply(c, 0, 1);
+    expect(shown(img)).toBe('123456/0');
+  });
+
+  it('never fills solid: the wash is additive so the sprite keeps its own shading and alpha', () => {
+    const { view, img } = make();
+    view.flash(0x123456);
+    view.apply(char(EntityFlag.alive), 0, 1);
+    expect(img.mode).toBe(2);
+    expect(img.tint).not.toBe(0xffffff);
+  });
 });
 
 describe('character view helpers', () => {
@@ -93,7 +117,7 @@ describe('character view helpers', () => {
       for (let left = FLASH_FILL_FRAMES + FLASH_TINT_FRAMES; left >= 0; left--) out.push(tintStage(left, frozen));
       return out;
     };
-    expect(stages(false)).toEqual(['fill', 'fill', ...Array<string>(8).fill('hit'), 'none']);
-    expect(stages(true)).toEqual(['fill', 'fill', ...Array<string>(8).fill('hit'), 'frozen']);
+    expect(stages(false)).toEqual(['wash', 'wash', ...Array<string>(8).fill('hit'), 'none']);
+    expect(stages(true)).toEqual(['wash', 'wash', ...Array<string>(8).fill('hit'), 'frozen']);
   });
 });

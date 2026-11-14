@@ -7,20 +7,28 @@ import { arcadeHeroScale } from './hero-scale';
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
 export const FROZEN_TINT = 0x88ccff;
-/** Hit flash (FUN-DESIGN section 3, VISUAL-QA V6): white fill for 2 rendered frames, then the hit tint for 8 (red in Classic, so a hit reads as an injury). */
+/**
+ * Hit flash (FUN-DESIGN section 3, VISUAL-QA V6): a bright additive wash for 2 rendered frames, then the hit tint for 8 (red in
+ * Classic, so a hit reads as an injury). Additive, not a solid fill: a fill paints every opaque or soft-edged texel pure white
+ * and reads as a hard rectangle; adding light keeps the baked outline and shading, so the flash follows the silhouette.
+ */
 export const FLASH_FILL_FRAMES = 2;
+/** The additive wash colour (added to each texel; alpha untouched). */
+export const FLASH_WASH = 0x6e6e6e;
+/** Presentation-only hit-stop: at most this many rendered frames the flash holds on a heavy hit (the sim is never paused). */
+export const MAX_HOLD_FRAMES = 6;
 export const FLASH_TINT_FRAMES = 8;
 /** Hit-stop jitter amplitude in px. */
 export const JITTER_PX = 2;
 /** Phaser.TintModes values (a type-only Phaser import keeps this module loadable in Node tests). */
 const TINT_MULTIPLY = 0;
-const TINT_FILL = 1;
+const TINT_ADD = 2;
 
-export type TintStage = 'fill' | 'hit' | 'frozen' | 'none';
+export type TintStage = 'wash' | 'hit' | 'frozen' | 'none';
 
 /** Which tint a character shows this frame, given the flash frames left: the flash wins over the frozen tint. */
 export function tintStage(flashLeft: number, frozen: boolean): TintStage {
-  if (flashLeft > FLASH_TINT_FRAMES) return 'fill';
+  if (flashLeft > FLASH_TINT_FRAMES) return 'wash';
   if (flashLeft > 0) return 'hit';
   return frozen ? 'frozen' : 'none';
 }
@@ -117,6 +125,8 @@ export class CharacterView {
    */
   private flashLeft = 0;
   private flashTint = 0xffffff;
+  /** Rendered frames the flash holds before it starts to age (view-only hit-stop on heavy hits). */
+  private holdLeft = 0;
   private tinted = false;
   private jitterUntil = 0;
   private jitterSign = 1;
@@ -129,10 +139,11 @@ export class CharacterView {
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
   }
 
-  /** Starts the hit flash: white fill, then `tint`. */
-  flash(tint: number): void {
+  /** Starts the hit flash: additive wash, then `tint`; `holdFrames` (heavy hits) freezes it on the wash for a few frames. */
+  flash(tint: number, holdFrames = 0): void {
     this.flashLeft = FLASH_FILL_FRAMES + FLASH_TINT_FRAMES;
     this.flashTint = tint;
+    this.holdLeft = Math.min(MAX_HOLD_FRAMES, Math.max(0, Math.floor(holdFrames)));
   }
 
   /** Hit-stop jitter while the view tick is below `untilTick`. */
@@ -149,6 +160,7 @@ export class CharacterView {
       this.glow?.setVisible(false);
       this.shadow?.setVisible(false);
       this.flashLeft = 0;
+      this.holdLeft = 0;
       return;
     }
     if (c.sprite !== this.spriteName) {
@@ -176,7 +188,10 @@ export class CharacterView {
     this.placeGlow(c.sprite, x, y, c.w * k, c.h * k);
     this.placeShadow(x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
     const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
-    if (live && this.flashLeft > 0) this.flashLeft--;
+    if (live && this.flashLeft > 0) {
+      if (this.holdLeft > 0) this.holdLeft--;
+      else this.flashLeft--;
+    }
     if (stage === 'none') {
       if (this.tinted) this.image.clearTint();
       this.tinted = false;
@@ -184,8 +199,8 @@ export class CharacterView {
     }
     this.tinted = true;
     this.image
-      .setTint(stage === 'fill' ? 0xffffff : stage === 'hit' ? this.flashTint : FROZEN_TINT)
-      .setTintMode(stage === 'fill' ? TINT_FILL : TINT_MULTIPLY);
+      .setTint(stage === 'wash' ? FLASH_WASH : stage === 'hit' ? this.flashTint : FROZEN_TINT)
+      .setTintMode(stage === 'wash' ? TINT_ADD : TINT_MULTIPLY);
   }
 
   /** A soft ellipse of pale light under the feet for `GLOW_SPRITES`, so they read on dark floors. */
@@ -228,6 +243,7 @@ export class CharacterView {
     this.shadow?.setVisible(false);
     this.image.setVisible(false);
     this.flashLeft = 0;
+    this.holdLeft = 0;
     this.jitterUntil = 0;
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REDUCED_FADE_MS, planTween, shakeFor } from './motion';
+import { REDUCED_FADE_MS, classicWeightFor, holdFramesFor, planTween, shakeFor } from './motion';
 
 describe('planTween', () => {
   it('animates everything with normal motion', () => {
@@ -26,5 +26,12 @@ describe('shakeFor', () => {
   it('passes the shake through or drops it', () => {
     expect(shakeFor(80, 0.002, false)).toEqual({ durationMs: 80, intensity: 0.002 });
     expect(shakeFor(80, 0.002, true)).toBeNull();
+  });
+});
+
+describe('holdFramesFor (view-only hit-stop)', () => {
+  it('holds nothing on light hits and longer on heavier ones', () => {
+    expect([0, 1, 2, 3, Number.NaN].map(holdFramesFor)).toEqual([0, 0, 2, 4, 0]);
+    expect([5, 9, 10, 14, 15, 40].map(classicWeightFor)).toEqual([0, 0, 2, 2, 3, 3]);
   });
 });

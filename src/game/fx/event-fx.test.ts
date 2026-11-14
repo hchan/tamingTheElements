@@ -20,12 +20,17 @@ const stop = (tick: number, ticks: number, cause = 0): SimEvent =>
   ({ tick, sourceId: 9, kind: SimEventKind.hitStop, seq: 2, ticks, cause });
 
 /** Fake sink: one log line per call, so tests read like the effect sequence. */
-function recorder(): { sink: FxSink; log: string[] } {
+function recorder(): { sink: FxSink; log: string[]; holds: number[] } {
   const log: string[] = [];
+  const holds: number[] = [];
   return {
     log,
+    holds,
     sink: {
-      flash: (t, tint) => log.push(`flash${String(t)}:${tint.toString(16)}`),
+      flash: (t, tint, hold) => {
+        log.push(`flash${String(t)}:${tint.toString(16)}`);
+        holds.push(hold ?? 0);
+      },
       burst: (t, o, n, c) => {
         for (let i = 0; i < n * 2; i++) expect(Math.abs(o[i] ?? 9)).toBeLessThanOrEqual(1);
         log.push(`burst${String(t)}x${String(n)}:${c.toString(16)}`);
@@ -156,6 +161,15 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
     const reduced = recorder();
     arcadeFx(reduced.sink, true).consume([freeze]);
     expect(reduced.log).toEqual(['super0@20<61r']);
+  });
+  it('heavy hits ask for a view-only wash hold, light hits and reduced motion do not', () => {
+    const holdOf = (strength: number, reduced = false): number[] => {
+      const { sink, holds } = recorder();
+      arcadeFx(sink, reduced).consume([confirmed(10, strength)]);
+      return holds;
+    };
+    expect([0, 1, 2, 3].map((st) => holdOf(st)[0])).toEqual([0, 0, 2, 4]);
+    expect(holdOf(3, true)).toEqual([0]);
   });
   it('an unpaired stop neither jitters nor shakes with an earlier hit strength', () => {
     const { sink, log } = recorder();
