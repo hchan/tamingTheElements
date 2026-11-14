@@ -171,7 +171,7 @@ describe('arcadePickView (DOM)', () => {
     // Undo clears the last pick and the ready state.
     key('KeyQ');
     expect(ready1.getAttribute('aria-pressed')).toBe('false');
-    expect(document.querySelector('.vsStatus')?.textContent).toBe('0 of 1 picked');
+    expect(document.querySelector('.vsStatus')?.textContent).toBe('Pick your fighter');
   });
 
   it('3v3: slots fill in order, Swap up reorders and Clear empties a slot', () => {

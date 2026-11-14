@@ -300,7 +300,11 @@ function rosterView(
       sn.title.append(el('span', `vsChip ${i === 0 ? 'vsP1' : 'vsP2'}`, i === 0 ? 'P1' : local ? 'P2' : 'AI'), ` ${title}`);
       sn.ol.setAttribute('aria-label', `${title} hero slots`);
       sn.status.hidden = !local && i === 1;
-      sn.status.textContent = ready[i] ? 'Ready' : `${String(picked(s).length)} of ${String(open.length)} picked`;
+      sn.status.textContent = ready[i]
+        ? 'Ready'
+        : open.length === 1
+          ? picked(s).length === 1 ? 'Picked' : s === 0 || local ? 'Pick your fighter' : 'Pick a fighter'
+          : `${String(picked(s).length)} of ${String(open.length)} picked`;
       sn.ready.hidden = !local;
       sn.ready.setAttribute('aria-pressed', String(ready[i]));
       sn.ready.textContent = ready[i] ? 'Ready (undo)' : 'Ready';
@@ -701,7 +705,8 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   fightHint.id = 'arcadeFightHint';
   start.setAttribute('aria-describedby', 'arcadeFightHint');
   const actions = el('div', 'vsActions');
-  actions.append(start, fightHint, back);
+  const stageHint = el('p', 'heroHint', 'The arena starts on fire and follows the Weather: call Weather in the fight to change it.');
+  actions.append(start, fightHint, stageHint, back);
   form.append(set, hint, actions);
   // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.
   const f = form.elements as unknown as Record<string, HTMLSelectElement>;
