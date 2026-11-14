@@ -2139,7 +2139,7 @@ button.menuButton.heroSlotClear {
   /* Fight! / Start tour stay on screen (QA r23: Fight sat two screens below the fold): the page scrolls and a slim solid bar sticks to
      the bottom of the viewport, one row with the short hint beside the buttons, so it costs about 50 of the 390 px. */
   /* body is overflow auto too (a scroll box as tall as its content), which the sticky bar would stick to; the page (html) scrolls instead. */
-  body:has(#arcadePick, .heroSelect) {
+  body:has(#arcadePick, .heroSelect):not(:has(#battle, #cinematic, #replayViewer)) {
     overflow: visible;
   }
   #arcadePick .vsActions,
