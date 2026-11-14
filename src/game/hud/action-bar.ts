@@ -762,10 +762,12 @@ export class ActionBarView {
       // r31: a full Super breathes a gold glow round its box (steady with reduced motion), so ready reads next to Dash and Guard.
       if (s.kind === 'super' && s.progress >= 1 && !s.disabled) {
         const br = readyGlow(now, this.reduced);
-        for (const [grow, a] of [[5, 0.16], [3, 0.28], [1, 0.5]] as const) {
+        // qa-r32: a steady, solid gold rim (always on, so it reads in any still) under the breathing halo, plus a stronger wash.
+        for (const [grow, a] of [[8, 0.14], [5, 0.26], [3, 0.4]] as const) {
           g.lineStyle(2, 0xffe28a, a * br).strokeRect(s.x - grow, s.y - grow, s.size + grow * 2, s.size + grow * 2);
         }
-        g.fillStyle(0xffe28a, 0.12 * br).fillRect(s.x, s.y, s.size, s.size);
+        g.lineStyle(3, 0xffd966, 0.95).strokeRect(s.x - 1, s.y - 1, s.size + 2, s.size + 2);
+        g.fillStyle(0xffe28a, 0.2 * br).fillRect(s.x, s.y, s.size, s.size);
       }
       if (this.dressed() && s.label !== '') {
         const b = slotParts(s.x, s.y, s.size, s.label.length).badge;

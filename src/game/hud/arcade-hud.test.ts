@@ -9,9 +9,9 @@ import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './
 import { PIP_R, pips } from './round-announcer';
 
 describe('readyGlow', () => {
-  it('breathes between 0.55 and 1, steady 1 with reduced motion', () => {
+  it('breathes between 0.75 and 1, steady 1 with reduced motion', () => {
     expect(readyGlow(0, true)).toBe(1);
-    expect(readyGlow(0, false)).toBeCloseTo(0.55);
+    expect(readyGlow(0, false)).toBeCloseTo(0.75);
     expect(readyGlow(600, false)).toBeCloseTo(1);
   });
 });

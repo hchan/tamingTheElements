@@ -232,7 +232,7 @@ export function mountTagView(
       const wv = (arena.cameras as Phaser.Cameras.Scene2D.CameraManager | undefined)?.main.worldView;
       if (wv) {
         const sx = Math.max(120, Math.min(1160, ((callAt.x - wv.x) / (wv.width || 1)) * 1280));
-        const sy = Math.max(SLIM_H + 50, ((callAt.y - wv.y) / (wv.height || 1)) * 720 - 40);
+        const sy = Math.max(SLIM_H + 50, ((callAt.y - wv.y) / (wv.height || 1)) * 720 - 70);
         call.setPosition(sx, sy);
       }
       fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);
@@ -258,6 +258,12 @@ export function mountTagView(
       const color = f.ko ? GOLD : 0xf1e8cf;
       fx.fillStyle(color, p.core * 0.3).fillCircle(f.x, f.y, f.h * 0.5);
       fx.lineStyle(3, color, p.alpha * 0.9).strokeCircle(f.x, f.y, p.ring);
+      // Rim light: a steady pale halo hugging the hero for the first ticks so a dark sprite on lava still reads (QA r32).
+      if (t < 14) {
+        const rim = 1 - t / 14;
+        fx.lineStyle(6, color, 0.35 * rim).strokeCircle(f.x, f.y, f.h * 0.52);
+        fx.lineStyle(2, 0xffffff, 0.8 * rim).strokeCircle(f.x, f.y, f.h * 0.5);
+      }
     }
   }
 

@@ -352,8 +352,10 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
         const light = HAZARD_LIGHTS[kind] ?? 0xffffff;
         g.fillStyle(0x0a0e14, 0.16 * alpha).fillRect(x, y, w, h);
         g.fillStyle(col, 0.22 * alpha).fillRect(x, y, w, h);
-        g.fillStyle(light, 0.4 * alpha).fillRect(x, y, w, 3).fillRect(x, y + h - 3, w, 3);
-        glow.fillStyle(light, 0.1 * alpha).fillRect(x, y, w, h);
+        // qa-r32: the gale's light is near-white, so its lane edges are thin and dim (a hard white line crossed the fighters); the tide keeps its brighter bars.
+        const edge = kind === 4 ? 2 : 3;
+        g.fillStyle(light, (kind === 4 ? 0.22 : 0.4) * alpha).fillRect(x, y, w, edge).fillRect(x, y + h - edge, w, edge);
+        glow.fillStyle(light, (kind === 4 ? 0.06 : 0.1) * alpha).fillRect(x, y, w, h);
         // r30/r31: quiet chevrons (alpha 0.22, no streaks, no halo) and a thin edge bar, so a full-field tide reads as one wash behind the fighters, not a grid over them.
         drawn = chevrons(g, x, y, w, h, dir, chevronShift(tick, dir, 72, reduced), light, 0.22 * alpha, false);
       }
@@ -361,7 +363,7 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
     const flash = warnLeft > 0 ? 0 : impactFlash(tick - strikeTick);
     // The strike flash is an outline plus a soft round burst (never a filled box: a pale rectangle round the fighter read as a render bug).
     if (flash > 0) {
-      glow.lineStyle(6, 0xffffff, flash).strokeRect(x, y, w, h);
+      glow.lineStyle(kind === 4 ? 3 : 6, 0xffffff, kind === 4 ? flash * 0.5 : flash).strokeRect(x, y, w, h);
       if (kind === 3) glow.fillStyle(0xf0e4c8, flash * 0.5).fillCircle(x + w / 2, y + h / 2, Math.min(w, h) * 0.3);
     }
     const dust = kind === 3 && warnLeft <= 0 ? dustLook(tick - strikeTick, reduced) : null;

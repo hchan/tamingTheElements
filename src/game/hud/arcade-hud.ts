@@ -183,11 +183,11 @@ export function meterFlashAlpha(m: MeterShown, reduced: boolean): number {
   return m.full % METER_PULSE_MS < METER_PULSE_MS / 2 ? 1 : 0.35;
 }
 
-/** Ready glow strength 0.55..1 for a full Super (bar and action slot): a ~1.2 s breathe; a steady 1 with reduced motion. */
+/** Ready glow strength 0.75..1 for a full Super (bar and action slot): a ~1.2 s breathe; a steady 1 with reduced motion. */
 export function readyGlow(timeMs: number, reduced: boolean): number {
   if (reduced) return 1;
   const t = (timeMs % 1200) / 1200;
-  return 0.55 + 0.45 * (t < 0.5 ? t * 2 : 2 - t * 2);
+  return 0.75 + 0.25 * (t < 0.5 ? t * 2 : 2 - t * 2);
 }
 
 /** Upward offset of a number at `age` ms; reduced motion fades it in place. */
