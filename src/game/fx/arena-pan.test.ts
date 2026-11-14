@@ -8,7 +8,7 @@ function fakeScene(width = 1280): { scene: Phaser.Scene; cam: { zoom: number; cx
     setZoom(z: number) { cam.zoom = z; return main; },
     centerOn(x: number, y: number) { cam.cx = x; cam.cy = y; return main; },
   };
-  return { scene: { scale: { width }, cameras: { main } } as unknown as Phaser.Scene, cam };
+  return { scene: { scale: { width, height: (width * 720) / 1280 }, cameras: { main } } as unknown as Phaser.Scene, cam };
 }
 
 describe('arena pan camera glue', () => {

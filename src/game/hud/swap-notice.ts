@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { Cmd, type Command } from '@core/index';
 import { elementalShown } from '../platform/cleanse-info';
+import { resolutionOf } from '../boot/viewport';
 
 /**
  * View-only feedback for a swap press the sim will refuse (FUN-DESIGN 2.6): a line of text above the action bar, never
@@ -86,7 +87,7 @@ export class SwapNotice {
     this.text = scene.add
       .text(4, 604, '', {
         fontSize: '22px', fontStyle: 'bold', color: '#ffe066', stroke: '#000000', strokeThickness: 5,
-        resolution: scene.scale.width / 1280,
+        resolution: resolutionOf(scene),
       })
       .setOrigin(0, 1)
       .setDepth(103)

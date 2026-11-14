@@ -17,6 +17,7 @@ export { LOGICAL_HEIGHT, LOGICAL_WIDTH } from './viewport';
  *
  * Scale.FIT, not ENVELOP: FIT letterboxes, so the whole arena, HUD and action bar are always visible
  * with the 16:9 aspect preserved; ENVELOP would crop the edges (action bar, HUD) on any non-16:9 window.
+ * The panning Arcade fight widens the game to a wider-than-16:9 screen instead (viewport.ts `enableWideView`).
  */
 export function createGameConfig(parent: string | HTMLElement, resolution: number = pickResolution(window.devicePixelRatio)): Phaser.Types.Core.GameConfig {
   return {

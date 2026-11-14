@@ -51,6 +51,21 @@ test.describe('phone landscape fight', () => {
     await page.evaluate(`window.__TTE__.arena.step(120)`);
     await shot(page, 'land-hud');
   });
+  test('the arena fills the screen width (no side bars, QA r19)', async ({ page }) => {
+    await enterFight(page);
+    const game = await box(page, '#game');
+    const canvas = await box(page, '#game canvas');
+    expect(Math.abs(canvas.w - game.w)).toBeLessThanOrEqual(1);
+    expect(Math.abs(canvas.x - game.x)).toBeLessThanOrEqual(1);
+    // The HUD keeps its 1280x720 size: centred in the wider canvas, so the action bar overlays stay inside the canvas.
+    await expect(page.locator('#arcadeDash')).toBeVisible();
+    for (const id of ['#arcadeDash', '#arcadeSuper']) {
+      const slot = await box(page, id);
+      expect(slot.x).toBeGreaterThanOrEqual(canvas.x);
+      expect(slot.x + slot.w).toBeLessThanOrEqual(canvas.x + canvas.w);
+      expect(slot.y + slot.h).toBeLessThanOrEqual(canvas.y + canvas.h + 1);
+    }
+  });
   test('2v2 card', async ({ page }) => {
     await enterFight(page, 2);
     await shot(page, 'land-2v2-card');

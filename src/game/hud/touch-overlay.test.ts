@@ -12,6 +12,6 @@ describe('overlayRect', () => {
 
 describe('syncTouchOverlays', () => {
   it('does nothing without a document or a laid-out canvas', () => {
-    expect(() => { syncTouchOverlays([], { getBoundingClientRect: () => ({ left: 0, top: 0, width: 0 }) }); }).not.toThrow();
+    expect(() => { syncTouchOverlays([], { getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }) }); }).not.toThrow();
   });
 });

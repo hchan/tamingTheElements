@@ -383,7 +383,8 @@ Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `
 
 - **Scale.FIT with CENTER_BOTH, not ENVELOP.** FIT letterboxes, so the whole arena, HUD and action bar are always
   visible with 16:9 preserved; ENVELOP would crop the HUD and action bar on any other aspect ratio. Phaser handles
-  window resize, orientation change and fullscreen itself.
+  window resize, orientation change and fullscreen itself. The one exception is the panning Arcade fight on a screen wider
+  than 16:9 (a landscape phone): see the wide view below.
 - **Resolution.** The backing store is 1280x720 times `pickResolution(devicePixelRatio)`: never below 1.5 (a 1920x1080 backing store, the default since
   2026-11-13), above that ceil, capped at 2 (3 costs 2.25x more pixels for little visible gain). Each scene calls `fitScene` (camera zoom = resolution, centred on the
   logical arena) and Phaser text uses `crisp()`, so scene code and pointer coordinates stay logical. The ratio is read
@@ -402,3 +403,9 @@ Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `
   to a floor of 0.8 to keep both inside a 160 px margin, clamp to the world. It reads the render view and writes only
   `cameras.main`, so it adds no sim state, no hash input and no netcode work. The `Hud` scene is its own camera and does
   not pan; the super cinematic composes through `applyCamera`/`viewBox`. `__TTE__.arena.camera()` exposes the framing to e2e.
+- **Wide view (QA r19).** `mountArenaPan` also calls `enableWideView`: the game width follows the `#game` box's aspect
+  (`wideViewWidth`: 720 logical px high, 1280 to 1920 wide, even), so an 844x370 phone box shows 1642 logical px of arena
+  instead of 93 px side bars; 16:9 and taller screens stay 1280. View only (no sim, hash or netcode change). Every
+  1280x720 layout keeps its size and sits centred: `fitScene` re-centres on resize, `screenBox` returns the central box,
+  `resolutionOf` is read from the height, and text boosts use `coreDisplayWidth` (the CSS width of that central box).
+  Online Arcade has no pan camera and keeps the plain fit.

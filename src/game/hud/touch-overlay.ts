@@ -1,4 +1,4 @@
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
 
 /**
  * The Arcade touch buttons (`#arcade<Name>`, see `touch-controls.ts`) are transparent DOM overlays that sit exactly over their box on the
@@ -20,11 +20,13 @@ export function overlayRect(item: OverlayItem, canvas: { left: number; top: numb
 const px = (v: number): string => `${String(Math.round(v * 100) / 100)}px`;
 
 /** Lays each `#arcade<touch>` button over its box and hides the buttons that have no box (writes a style only when it changed). */
-export function syncTouchOverlays(items: readonly OverlayItem[], canvas: { getBoundingClientRect(): { left: number; top: number; width: number } }, doc: Document | undefined = typeof document === 'undefined' ? undefined : document): void {
+export function syncTouchOverlays(items: readonly OverlayItem[], canvas: { getBoundingClientRect(): { left: number; top: number; width: number; height: number } }, doc: Document | undefined = typeof document === 'undefined' ? undefined : document): void {
   if (!doc) return;
-  const c = canvas.getBoundingClientRect();
-  if (!(c.width > 0)) return;
-  const k = c.width / LOGICAL_WIDTH;
+  const rect = canvas.getBoundingClientRect();
+  if (!(rect.width > 0 && rect.height > 0)) return;
+  // The canvas is 720 logical px high; with the wide view it is wider than 1280 and the 1280 box sits in its middle.
+  const k = rect.height / LOGICAL_HEIGHT;
+  const c = { left: rect.left + (rect.width - LOGICAL_WIDTH * k) / 2, top: rect.top };
   const placed = new Set<Element>();
   for (const it of items) {
     if (it.touch === '') continue;

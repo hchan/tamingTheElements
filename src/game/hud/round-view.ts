@@ -4,7 +4,7 @@ import { ELEMENT_COLORS } from '../fx/element-colors';
 import { bannerColorFor, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
 import { heroName } from './tag-fx';
 import type { Announcement } from '../a11y/announcer';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
 import { mountWeatherView } from '../fx/weather-view';
 import {
@@ -114,7 +114,7 @@ export function mountRoundView(
     hud.add
       .text(TIMER_X, y, '', {
         fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(size)}px`, fontStyle: grim ? 'normal' : 'bold', color: grim ? '#b3ab9a' : TIMER_COLOR, stroke: '#0a0806', strokeThickness: grim ? Math.round(stroke / 2) : stroke,
-        resolution: hud.scale.width / LOGICAL_WIDTH,
+        resolution: resolutionOf(hud),
       })
       .setDepth(DEPTH);
 

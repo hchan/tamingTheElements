@@ -216,9 +216,11 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
       expect(k.b - k.y, `${k.id} height`).toBeGreaterThanOrEqual(48);
     }
     // aligned on the left: the first box starts at the left edge of the canvas
-    const cv = await page.evaluate<{ x: number }>(`(() => { const q = document.querySelector('#game canvas').getBoundingClientRect(); return { x: q.x }; })()`);
+    const cv = await page.evaluate<{ x: number; w: number; h: number }>(`(() => { const q = document.querySelector('#game canvas').getBoundingClientRect(); return { x: q.x, w: q.width, h: q.height }; })()`);
+    // The wide phone view (QA r19) widens the canvas past 16:9 and keeps the HUD in the central 16:9 box: measure from that box's left edge.
+    const hudLeft = cv.x + Math.max(0, (cv.w - (cv.h * 16) / 9) / 2);
     // (the two ability boxes come first and are canvas-only, so the first overlay is at most three boxes in (the slim HUD bar adds a gap))
-    expect(Math.min(...boxes.map((k) => k.x)) - cv.x).toBeLessThan(3 * ((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0)) + 16);
+    expect(Math.min(...boxes.map((k) => k.x)) - hudLeft).toBeLessThan(3 * ((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0)) + 16);
     for (const [i, p] of boxes.entries()) {
       for (const q of boxes.slice(i + 1)) {
         const apart = p.r <= q.x + 0.5 || q.r <= p.x + 0.5 || p.b <= q.y + 0.5 || q.b <= p.y + 0.5;

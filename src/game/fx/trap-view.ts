@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { TRAP_BOX_PX, TRAP_VIEW_STRIDE, type RenderView } from '@core/index';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { resolutionOf } from '../boot/viewport';
 import { mute } from './grim-fx';
 import { paintTrap } from './trap-paint';
 import { TRAP_COLORS, TRAP_RANGE_PX, trapAlpha, trapLabel, trapPhase } from './trap-fx';
@@ -38,7 +38,7 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
     const made = parts?.labels[i];
     if (made) return made;
     const t = arena.add
-      .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(LABEL_PX)}px`, fontStyle: 'normal', color: '#b9b09c', stroke: '#0a0806', strokeThickness: 2, resolution: arena.scale.width / LOGICAL_WIDTH })
+      .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(LABEL_PX)}px`, fontStyle: 'normal', color: '#b9b09c', stroke: '#0a0806', strokeThickness: 2, resolution: resolutionOf(arena) })
       .setOrigin(0.5, 1)
       .setDepth(DEPTH + 0.05);
     if (parts) parts.labels[i] = t;

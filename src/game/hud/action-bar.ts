@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderArcade, RenderView } from '@core/index';
 import { Cmd, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL } from '@core/index';
-import { LOGICAL_WIDTH as LOGICAL_W, crisp, phoneBoost } from '../boot/viewport';
+import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolutionOf, viewWidth } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { actionKeyLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
@@ -627,9 +627,7 @@ export class ActionBarView {
   /** Mouse over a box without a DOM overlay (the hero's attacks, Snag): the canvas pointer says which box. */
   private readonly onMove = (p: Phaser.Input.Pointer): void => {
     if (p.wasTouch || (this.manual !== null && 'touch' in this.manual)) return;
-    const res = this.scene.scale.width / LOGICAL_W;
-    const x = this.place ? p.x / res : p.worldX;
-    const y = this.place ? p.y / res : p.worldY;
+    const { x, y } = this.boxPoint(p);
     const idx = this.slots.findIndex((s) => x >= s.x && x < s.x + s.size && y >= s.y && y < s.y + s.size);
     this.manual = idx >= 0 ? { idx } : null;
   };
@@ -699,7 +697,7 @@ export class ActionBarView {
     }
     const bar = this.view.actionBar(this.team);
     const ar = this.view.arcade();
-    const k = this.scene.scale.displaySize.width / LOGICAL_W;
+    const k = coreDisplayWidth(this.scene) / LOGICAL_W;
     const clock = cleanseClockOf(this.view);
     if (bar && ar) clock.sync(ar.round, bar.tick);
     const extras = bar && ar ? arcadeBarOf(ar, this.team === 1 ? 1 : 0, this.hasChargeButton(), (id) => clock.leftIn(id, bar.tick)) : undefined;
@@ -861,9 +859,10 @@ export class ActionBarView {
   /** Slot rects as the player sees them, in logical screen px (world transform of the bar's graphics through the live camera), for tests. */
   screenSlots(): { x: number; y: number; size: number }[] {
     const cam = this.scene.cameras.main;
-    const res = this.scene.scale.width / LOGICAL_W;
+    const res = resolutionOf(this.scene);
     const k = this.gfx.scaleX * cam.zoom / res;
-    const sx = (this.gfx.x - (cam.scrollX + cam.width / 2 - cam.width / 2 / cam.zoom)) * cam.zoom / res;
+    // Relative to the central 1280 box: the wide view adds (viewWidth - 1280) / 2 logical px left of it.
+    const sx = (this.gfx.x - (cam.scrollX + cam.width / 2 - cam.width / 2 / cam.zoom)) * cam.zoom / res - (viewWidth(this.scene) - LOGICAL_W) / 2;
     const sy = (this.gfx.y - (cam.scrollY + cam.height / 2 - cam.height / 2 / cam.zoom)) * cam.zoom / res;
     return this.slots.map((s) => ({ x: sx + s.x * k, y: sy + s.y * k, size: s.size * k }));
   }
@@ -873,10 +872,17 @@ export class ActionBarView {
     return this.slots;
   }
 
+  /** The pointer in the bar's logical px: world px on the fixed camera; on the panned one, its screen position in the central 1280 box. */
+  private boxPoint(p: Phaser.Input.Pointer): { x: number; y: number } {
+    if (!this.place) return { x: p.worldX, y: p.worldY };
+    const res = resolutionOf(this.scene);
+    return { x: p.x / res - (viewWidth(this.scene) - LOGICAL_W) / 2, y: p.y / res };
+  }
+
   private readonly onPointer = (p: Phaser.Input.Pointer): void => {
     // Fixed camera: world == logical. Panned camera: the bar is screen-fixed, so use the pointer's screen position in logical px.
-    const res = this.scene.scale.width / LOGICAL_W;
-    const cmd = this.place ? commandAt(this.slots, p.x / res, p.y / res) : commandAt(this.slots, p.worldX, p.worldY);
+    const at = this.boxPoint(p);
+    const cmd = commandAt(this.slots, at.x, at.y);
     if (cmd !== 0) this.emit(cmd);
   };
 

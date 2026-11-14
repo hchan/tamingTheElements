@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { arcadeHeroScale, drawnBox, fitToBox, visualBox } from '../views/hero-scale';
 import { EntityFlag, GUARD_MAX, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { resolutionOf } from '../boot/viewport';
 import { mountClashView } from './clash-view';
 import { ELEMENT_COLORS } from './element-colors';
 import {
@@ -256,7 +256,7 @@ export function mountDefenceView(
       t = scene.add
         .text(0, 0, '', {
           fontSize: `${String(POP_PX)}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 6,
-          resolution: scene.scale.width / LOGICAL_WIDTH,
+          resolution: resolutionOf(scene),
         })
         .setOrigin(0.5, 1)
         .setDepth(POP_DEPTH)

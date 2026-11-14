@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { SimEventKind, WEATHER_CHARGE_FULL, arcadePlayfield, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
-import { LOGICAL_WIDTH } from '../boot/viewport';
+import { LOGICAL_WIDTH, coreDisplayWidth, resolutionOf } from '../boot/viewport';
 import { mountTagView } from '../hud/tag-view';
 import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
 import { mute } from './grim-fx';
@@ -133,7 +133,7 @@ export function mountWeatherView(
     hud.add
       .text(0, 0, '', {
         fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(px)}px`, fontStyle: 'normal', color: '#cfc8b8', stroke: '#0a0806', strokeThickness: stroke,
-        resolution: hud.scale.width / LOGICAL_WIDTH,
+        resolution: resolutionOf(hud),
       })
       .setDepth(HUD_DEPTH)
       .setVisible(false);
@@ -145,7 +145,7 @@ export function mountWeatherView(
       fall: arena.add.graphics().setDepth(FALL_DEPTH),
       badge: hud.add.graphics().setDepth(HUD_DEPTH),
       // Up to 1.4x on a phone (as `phoneBoost` in boot/viewport.ts), so the label stays near 12 CSS px.
-      label: text(Math.round(LABEL_PX * Math.min(1.4, Math.max(1, 900 / (hud.scale.displaySize.width || 900)))), 5).setOrigin(0, 0),
+      label: text(Math.round(LABEL_PX * Math.min(1.4, Math.max(1, 900 / (coreDisplayWidth(hud) || 900)))), 5).setOrigin(0, 0),
       call: text(CALL_PX, 5).setOrigin(0.5),
       bar: hud.add.graphics().setDepth(HUD_DEPTH),
       chip: text(CHARGE_PX, 4).setOrigin(0.5, 0).setVisible(true),

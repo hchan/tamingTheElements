@@ -9,3 +9,7 @@ added: 2026-11-14
 Fix: shrink the card on touch or dock it above the buttons, fill the width on landscape phones, move bench cards clear of the life text.
 
 Done (touch-snag): on 844x390 the card is a slim strip docked above the buttons with Got it beside the text; the bench chips already clear SUPER (hud-pips). Letterbox fill is not changed.
+
+Progress 2026-11-14 (touch-letterbox): first-run card raised on landscape phones and docked under the canvas on portrait; side bars tinted like the HUD band. Progress 2026-11-14 (bench-super): the SUPER label clears the 2v2 bench portraits. (Both notes were on a stale brainstorm copy of this file, now removed.)
+
+Done 2026-11-14 (wide-phone-view): the landscape fight fills the width; see ideas/brainstorm/qa-r19-phone-letterbox-wastes-screen.md.
