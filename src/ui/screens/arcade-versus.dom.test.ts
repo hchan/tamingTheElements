@@ -48,6 +48,15 @@ describe('arcadePickView (DOM)', () => {
     expect(document.querySelector('label[for="arcadeEnemy"]')?.textContent).toBe('AI race');
   });
 
+  it('explains the lower tag-team life only for 2v2 and 3v3', () => {
+    mount();
+    const h = (): HTMLElement | null => document.getElementById('arcadeTeamHint');
+    expect(h()?.hidden).toBe(true);
+    change(sel('arcadeSize'), '2');
+    expect(h()?.hidden).toBe(false);
+    expect(h()?.textContent).toMatch(/less life/);
+  });
+
   it('Team size enables the partner(s): 2v2 the partner only, 3v3 both', () => {
     mount();
     change(sel('arcadeSize'), '2');

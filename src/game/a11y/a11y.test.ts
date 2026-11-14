@@ -204,6 +204,12 @@ describe('Tag announcements', () => {
     expect(announcementsFor([ev(SimEventKind.swapped, { team: 0, to: 5 })], () => 0, names)[0]?.text).toBe('Tagged in Pax.');
     expect(announcementsFor([ev(SimEventKind.swapped, { team: 1, to: 5 })], () => 0, names)[0]?.text).toBe('The enemy tagged in Pax.');
   });
+  it('words an auto-swap after a death as stepping in, after the defeat line', () => {
+    const t = (evs: ReturnType<typeof ev>[]): string[] => announcementsFor(evs, () => 0, names).map((a) => a.text);
+    expect(t([ev(SimEventKind.died, { team: 0 }), ev(SimEventKind.swapped, { team: 0, to: 5 })])).toEqual(['Your elemental was defeated.', 'Pax steps in.']);
+    expect(t([ev(SimEventKind.died, { team: 1 }), ev(SimEventKind.swapped, { team: 1, to: 5 })])).toEqual(['Enemy elemental defeated.', 'The enemy sends in Pax.']);
+    expect(t([ev(SimEventKind.died, { team: 1 }), ev(SimEventKind.swapped, { team: 0, to: 5 })])[1]).toBe('Tagged in Pax.');
+  });
   it('stays silent without a name, and when tagIn already covers the swap (Arcade)', () => {
     expect(announcementsFor([ev(SimEventKind.swapped, { team: 0, to: 9 })], () => 0, names)).toEqual([]);
     expect(announcementsFor([ev(SimEventKind.swapped, { team: 0, to: 5 }), ev(SimEventKind.tagIn, { team: 0, to: 5 })], () => 0, names)).toEqual([]);

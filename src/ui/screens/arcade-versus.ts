@@ -709,7 +709,9 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   start.setAttribute('aria-describedby', 'arcadeFightHint');
   const actions = el('div', 'vsActions');
   const stageHint = el('p', 'heroHint', 'The arena starts on the element you pick (Random draws one) and follows the Weather: call Weather in the fight to change it.');
-  actions.append(start, fightHint, stageHint, back);
+  const teamHint = el('p', 'heroHint', 'Tag teams: each hero has less life than in 1v1 (about 60 to 90 percent), because you share the fight with a partner and the bench heals.');
+  teamHint.id = 'arcadeTeamHint';
+  actions.append(start, fightHint, stageHint, teamHint, back);
   form.append(set, hint, actions);
   // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.
   const f = form.elements as unknown as Record<string, HTMLSelectElement>;
@@ -735,6 +737,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     setText('arcadePartner', local ? 'Player 1 hero 2' : 'Your partner (2v2)');
     setText('arcadePartner2', local ? 'Player 1 hero 3' : 'Your third hero (3v3)');
     hint.hidden = !local;
+    teamHint.hidden = size === '1';
     for (const r of refreshers) r();
     roster.refresh();
     const empty = roster.empties();
