@@ -167,6 +167,13 @@ describe('defeat flow', () => {
     expect(heading(r.host)).toBe('Stage 3 of 9');
   });
 
+  it('the stage card says "No continues left" instead of "0 of 3" (qa-r28)', () => {
+    const r = mount({ ...startRun([A, B, C], 5), stage: 2, continues: 0 });
+    $('tourResumeRun').click();
+    expect(r.host.textContent).toContain('No continues left: a defeat ends the tour.');
+    expect(r.host.textContent).not.toContain('0 of 3 continues left');
+  });
+
   it('disables Continue when none are left and says the tour is over', () => {
     const r = mount(lost(0));
     $('tourResumeRun').click();

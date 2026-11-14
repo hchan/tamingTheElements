@@ -62,6 +62,24 @@ export interface PickForm {
   readonly stage?: string;
 }
 
+/**
+ * Console warnings for `?hero=` / `?foe=` values that are not playable races (a story-only void character or a typo): the picker
+ * falls back to the default race, which is silent otherwise. Empty when both are fine or absent. In dev and test builds
+ * (`devVoidFoe`) `?foe=eternal-void` is allowed, to QA the Tour's last boss arena.
+ */
+/** The Tour's last boss, story-only; dev and test builds may pick it as `?foe=`. */
+export const VOID_BOSS = 'eternal-void' as CharacterId;
+
+export function flagFallbackWarnings(hero: string | null, foe: string | null, devVoidFoe = false): string[] {
+  const out: string[] = [];
+  for (const [flag, raw, fallback] of [['hero', hero, DEFAULT_PICK.player], ['foe', foe, DEFAULT_PICK.enemy]] as const) {
+    if (raw !== null && !ARCADE_RACES.some((r) => r === raw) && !(devVoidFoe && flag === 'foe' && raw === VOID_BOSS)) {
+      out.push(`?${flag}=${raw} is not a playable race (story-only or unknown), using ${fallback} instead`);
+    }
+  }
+  return out;
+}
+
 const race = (raw: string | undefined, fallback: CharacterId): CharacterId => ARCADE_RACES.find((r) => r === raw) ?? fallback;
 
 /** Default: the owner playtest's Sindarosa (FUN-DESIGN section 7) against Rokcore (a fair first match: similar life, Sindarosa wins 42% of 64 scripted Arcade seeds; against Fiara it was 22%), AI Normal, 1v1. */

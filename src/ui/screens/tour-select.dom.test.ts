@@ -48,3 +48,13 @@ describe('enhanceStage', () => {
     expect(c.querySelectorAll('#tourPins li[tabindex="0"][aria-current="step"]')).toHaveLength(1);
   });
 });
+
+describe('enhanceStage for the Void boss (qa-r28)', () => {
+  it('shows the painted portrait on the void plate, not the flat pixel strip', () => {
+    const c = card();
+    enhanceStage(c, { location: 'void', aiLevel: 'hard', opponents: ['eternal-void'] as CharacterId[] }, 0, 3, (id) => id);
+    const face = c.querySelector<HTMLElement>('.tsRoster .tsFace');
+    expect(face?.classList.contains('tsVoid')).toBe(true);
+    expect(face?.style.backgroundImage).toContain('eternalVoidLarge.png');
+  });
+});

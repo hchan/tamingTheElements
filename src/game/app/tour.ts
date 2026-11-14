@@ -121,6 +121,7 @@ export function tourScreen(deps: TourDeps): Screen {
     const stage = currentStage(r);
     const n = `Stage ${String(stage.index + 1)} of ${String(TOUR_STAGES)}`;
     const left = `${String(r.continues)} of ${String(TOUR_CONTINUES)} continues left`;
+    const leftStage = r.continues === 0 ? 'No continues left: a defeat ends the tour' : left;
     const foe = stage.opponents.map(raceLabel).join(', ');
     if (r.status === 'won') {
       const sum = runSummary(r, raceLabel);
@@ -169,7 +170,7 @@ export function tourScreen(deps: TourDeps): Screen {
         lines: [
           `Location: ${ELEMENT_WORD(stage.location)}.`,
           `Opponent: ${foe}.`,
-          `Difficulty: ${ELEMENT_WORD(stage.aiLevel)}. ${left}.`,
+          `Difficulty: ${ELEMENT_WORD(stage.aiLevel)}. ${leftStage}.`,
           'Press Fight to begin the stage.',
         ],
         actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { showSplash(r); } }],

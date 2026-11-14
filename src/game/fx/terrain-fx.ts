@@ -16,6 +16,8 @@ export const TICK_MS = 20;
 /** The stage's element: also the backdrop texture suffix (`bg:fire`). */
 export const STAGE_ELEMENTS = ['fire', 'water', 'earth', 'air'] as const;
 export const STAGE_NAMES = ['fire', 'water', 'earth', 'air'] as const;
+/** The Void boss arena's backdrop tint (BACKDROP_TINT.void, darker): the swirl reads deep violet instead of the pale grey art. */
+export const VOID_BACKDROP_TINT = 0x5a4a78;
 /** The word on a patch (with the pattern, so the cue is never colour alone). */
 export const PATCH_WORDS = ['FIRE x2', 'WATER +HP', 'ROCK', 'AIR x2'] as const;
 /** The HUD buff badge for a hero standing in a patch of its own element. */

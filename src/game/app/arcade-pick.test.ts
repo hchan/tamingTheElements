@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CharacterId } from '@core/index';
-import { ARCADE_RACES, DEFAULT_PICK, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
+import { ARCADE_RACES, DEFAULT_PICK, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
 
 const PAX = 'pax' as CharacterId;
 const CUROMO = 'curomo' as CharacterId;
@@ -85,5 +85,24 @@ describe('isCompletePick', () => {
     expect(isCompletePick({ player: 'fiara', enemy: 'rokcore', level: 'easy' })).toBe(true);
     expect(isCompletePick({ player: 'fiara', enemy: 'rokcore', partner: '', partner2: 'lavax', level: 'easy' })).toBe(false);
     expect(isCompletePick({ player: '', enemy: 'rokcore', level: 'easy' })).toBe(false);
+  });
+});
+
+describe('flagFallbackWarnings (qa-r28)', () => {
+  it('warns for a story-only or unknown ?hero= / ?foe= and names the fallback', () => {
+    const w = flagFallbackWarnings('eternal-void', 'nonsense');
+    expect(w).toHaveLength(2);
+    expect(w[0]).toContain('?hero=eternal-void');
+    expect(w[0]).toContain(DEFAULT_PICK.player);
+    expect(w[1]).toContain('?foe=nonsense');
+  });
+  it('allows ?foe=eternal-void in dev builds only', () => {
+    expect(flagFallbackWarnings(null, 'eternal-void', true)).toEqual([]);
+    expect(flagFallbackWarnings(null, 'eternal-void')).toHaveLength(1);
+    expect(flagFallbackWarnings('eternal-void', null, true)).toHaveLength(1);
+  });
+  it('is silent for playable races and absent flags', () => {
+    expect(flagFallbackWarnings('pax', 'fiara')).toEqual([]);
+    expect(flagFallbackWarnings(null, null)).toEqual([]);
   });
 });
