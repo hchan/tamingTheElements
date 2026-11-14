@@ -43,7 +43,9 @@ export function createGame(
 ): Phaser.Game {
   const game = new Phaser.Game(createGameConfig(parent));
   const host = typeof parent === 'string' ? document.getElementById(parent) : parent;
-  if (host) installPresentation(game, host, { rotateHint: arena !== false && !cinematic });
+  // No rotate hint in an online match: it pauses the local sim, which would stall the friend into a timeout forfeit (WP 06).
+  const online = typeof arena === 'object' && arena.net !== undefined;
+  if (host) installPresentation(game, host, { rotateHint: arena !== false && !cinematic && !online });
   if (arena !== false || cinematic) {
     game.events.once(PRELOAD_READY, () => {
       game.scene.stop('Preload');

@@ -12,6 +12,8 @@ import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pi
 import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-pick';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import type { ArenaLaunch } from '../scenes/launch';
+import { touchStick } from './touch-stick';
+import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getUiFlags } from '../platform/flags';
 
 /**
@@ -164,8 +166,12 @@ export function onlineVersusScreen(): Screen {
           holder.id = 'game';
           arenaNode = holder;
           node.append(holder);
+          // Touch buttons and the stick for our own side (the same overlays as local Versus; CSS shows them on touch devices only).
+          const mine = side === 0 ? setup.p1 : setup.p2;
+          const buttons = touchButtons(mine.length >= 3 ? 3 : mine.length === 2 ? 2 : 1, mine.map((m) => isMeleeRace(m.character)));
           const launch: ArenaLaunch = {
             setup,
+            arcadeView: (_arena, v) => { watchTouch(buttons, v); },
             onEnd: (end) => {
               if (gone || ended) return;
               say(endText(end.winner, side, end.rounds));
@@ -193,6 +199,7 @@ export function onlineVersusScreen(): Screen {
             },
           };
           game = createGame(holder, launch);
+          holder.append(...inVisualOrder(buttons), touchStick());
         });
       };
       const handshake = (p: Peer, setup: MatchSetup): void => {
