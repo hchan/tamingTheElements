@@ -1,3 +1,4 @@
+import { mountShakeScroll } from '../fx/camera-shake';
 import { LowLifeVignette } from '../fx/low-life-vignette';
 import { shockSeek, shockState } from '../fx/shock-view';
 import { PlayOnce } from '../net/play-once';
@@ -378,6 +379,7 @@ export class Arena extends Phaser.Scene {
     void import('../views/pose-layer').then((m) => {
       if (this.view === view) this.poses = m.mountPoseLayer(this, view, pool, projPool, getPrefs);
     });
+    mountShakeScroll(this);
     this.launch?.arcadeView?.(this, view, () => this.frameAlpha);
     // The `?ff=arenaDemo,arcade` hook has no `arcadeView` (Phaser hands the scene `{}` as launch data): mount the pan camera so it shows the real view.
     if (!this.launch?.arcadeView && arcade) {

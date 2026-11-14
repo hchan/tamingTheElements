@@ -1,7 +1,10 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
+
+Outcome: not the rig, bake or scale (sheet cells, UVs and a paused render are clean). Phaser 4.2's camera shake translates the camera matrix after the view is built, and any sprite drawn while that offset is live came out clipped to jagged rectangles and wedges (in-engine snapshot shows it; with the offset off the frames are clean). Fix: `src/game/fx/camera-shake.ts` disables the effect's matrix hook and applies the same offset, rounded to whole pixels, as a camera scroll for the render only (timing, `isRunning` and the decay stay as before). Unit test `camera-shake.test.ts`; verified with before/after headless real-game shots.
+
 
 # Pax hurt/stun frame renders as a flat jagged orange smear
 
