@@ -67,4 +67,9 @@ describe('gradedHeroTexture', () => {
     const have = { textures: { exists: () => true } } as unknown as Phaser.Scene;
     expect(gradedHeroTexture(have, 'map:fiara')).toBe('map:fiara');
   });
+
+  it('never grades the painted portrait heroes (strip, sheet or HUD picture)', () => {
+    const have = { textures: { exists: () => true } } as unknown as Phaser.Scene;
+    for (const k of ['map:pax', 'sheet:sindarosa', 'map:curomo']) expect(gradedHeroTexture(have, k)).toBe(k);
+  });
 });

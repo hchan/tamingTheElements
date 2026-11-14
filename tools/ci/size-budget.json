@@ -11,7 +11,7 @@
     "cleanse-view": 2700,
     "core": 12700,
     "danger-view": 750,
-    "defence-view": 3750,
+    "defence-view": 3850,
     "element-marks": 100,
     "element-sfx": 1250,
     "grim-fx": 900,
@@ -27,9 +27,9 @@
     "pad-bindings": 1150,
     "pad-bindings-section": 1580,
     "phaser": 388700,
-    "phaser-config": 37000,
+    "phaser-config": 37300,
     "ability-text": 1100,
-    "pose-layer": 11200,
+    "pose-layer": 11800,
     "rolldown-runtime": 200,
     "round-view": 4275,
     "sample-sfx": 700,
@@ -42,12 +42,12 @@
     "tour": 7800,
     "tour-select": 685,
     "trap-view": 2700,
-    "viewport": 400,
+    "viewport": 750,
     "weather-view": 6000
   },
   "totalGzip": 600000,
   "sheets": {
-    "perSheetBytes": 614400,
-    "totalBytes": 12582912
+    "perSheetBytes": 16777216,
+    "totalBytes": 104857600
   }
 }

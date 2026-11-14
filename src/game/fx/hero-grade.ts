@@ -7,9 +7,9 @@ import { getPrefs } from '../platform/a11y/prefs';
  * strips and sheets are NOT re-baked: each sheet texture is copied once to a canvas, graded, and cached as `<key>~grim` in the
  * texture manager (the same approach as the action-bar icons). The grade is milder than the icons' so that element colours stay
  * apart: a light desaturation, a barely-there darken (owner: too dark, mystic not murk; heroes pop against the lifted floor),
- * lifted outline blacks (a soft umber instead of hard black) and a little grain. Alpha is untouched.
+ * lifted outline blacks (a soft umber instead of hard black) and a little grain. Alpha is untouched. The painted portrait heroes
+ * (PAINTED_HEROES, ADR-0020) are never graded: their art is the painting itself.
  */
-
 export interface HeroGrade {
   /** 0..1 share of the original saturation kept. */
   readonly keep: number;
@@ -27,6 +27,13 @@ export const HERO_GRADE: HeroGrade = { keep: 0.88, darken: 0.04, grain: 3, outli
 /** Suffix of the cached graded copy (`map:fiara` -> `map:fiara~grim`). */
 export const GRIM_SUFFIX = '~grim';
 export const grimKey = (key: string): string => `${key}${GRIM_SUFFIX}`;
+
+/**
+ * Heroes whose art is the painted portrait itself (tools/assets/portrait-rig, ADR-0020): drawn as baked everywhere (sheet, map
+ * strip, HUD picture), never graded, since the ink lift would flatten their painted shadows.
+ */
+export const PAINTED_HEROES: ReadonlySet<string> = new Set(['pax', 'sindarosa', 'curomo']);
+const painted = (key: string): boolean => PAINTED_HEROES.has(key.replace(/^[a-z]+:/, ''));
 
 /** Luma below which a pixel counts as outline ink. */
 const INK_LUMA = 46;
@@ -62,12 +69,13 @@ export function gradeEnabled(): boolean {
 }
 
 /**
- * The graded copy of texture `key` (made once, frames copied from the source), or `key` itself when grading is off, the source has
+ * The graded copy of texture `key` (made once, frames copied from the source), or `key` itself when grading is off, the hero is
+ * painted (PAINTED_HEROES), the source has
  * no canvas-readable image (tests, odd sources) or anything throws, so the hero always shows. Frames added to the source later must
  * be added to the copy by the caller (`addGradedFrame`).
  */
 export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
-  if (!gradeEnabled()) return key;
+  if (!gradeEnabled() || painted(key)) return key;
   const gk = grimKey(key);
   if (scene.textures.exists(gk)) {
     syncFrames(scene, key, gk);
@@ -98,7 +106,8 @@ export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
 
 /**
  * Copies frames the source gained after the graded copy was made (the HUD can grade a texture before the character view
- * registers `right0`/`left0`, which logged "missing frame map:<hero>~grim right0"). Cheap no-op when the counts match.
+ * registers `right0`/`left0`, which logged "missing frame map:<hero>~grim right0"), with their custom data (the portrait
+ * rigs' visual box). Runs every draw, so it is a cheap no-op when the counts match (frames are only ever added).
  */
 function syncFrames(scene: Phaser.Scene, key: string, gk: string): void {
   if (!scene.textures.exists(key)) return;
@@ -106,7 +115,9 @@ function syncFrames(scene: Phaser.Scene, key: string, gk: string): void {
   const tex = scene.textures.get(gk);
   if (srcTex.frameTotal === tex.frameTotal) return;
   for (const name of srcTex.getFrameNames()) {
+    if (tex.has(name)) continue;
     const f = srcTex.get(name);
-    if (!tex.has(name)) tex.add(name, 0, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+    const added = tex.add(name, 0, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+    if (added) Object.assign(added.customData, f.customData);
   }
 }

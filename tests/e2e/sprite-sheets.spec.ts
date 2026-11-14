@@ -80,8 +80,10 @@ test('the shipped manifest only loads atlases of characters in the match (the de
   expect(p?.loaded.filter((s) => s !== 'fiara' && s !== 'pax' && s !== 'curomo' && s !== 'cyclonius')).toEqual([]);
   expect(p?.characters.map((c) => c.texture).filter((t) => !t.endsWith(':fiara') && !t.endsWith(':pax') && !t.endsWith(':curomo') && !t.endsWith(':cyclonius')).sort()).toEqual([]);
   expect(sheetRequests.every((u) => u.endsWith('img/sheets/fiara.png') || u.endsWith('img/sheets/pax.png') || u.endsWith('img/sheets/curomo.png') || u.endsWith('img/sheets/cyclonius.png'))).toBe(true);
-  // the load-time grim grade (hero-grade.ts) is what is drawn
-  expect(p?.characters.every((c) => c.graded)).toBe(true);
+  // the load-time grim grade (hero-grade.ts) is what is drawn for the procedural rigs; the portrait rigs (Pax, Curomo) are the
+  // painted portraits and are drawn as baked (tools/assets/portrait-rig)
+  const portrait = (c: Drawn): boolean => c.texture.endsWith(':pax') || c.texture.endsWith(':curomo');
+  expect(p?.characters.map((c) => [c.texture, c.graded])).toEqual(p?.characters.map((c) => [c.texture, !portrait(c)]));
   expect(errors).toEqual([]);
 });
 

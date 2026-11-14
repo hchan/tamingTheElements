@@ -21,3 +21,4 @@ Status: all accepted. Format: Context, Decision, Consequences.
 - [0017](0017-dependency-cruiser-eslint-boundaries.md) dependency-cruiser + ESLint for layer boundaries
 - [0018](0018-colocated-unit-tests.md) Colocated unit tests; tests/ for cross-cutting suites
 - [0019](0019-rig-and-bake.md) Cutout rigs baked offline into sheet frames (deterministic, fixed-point, no runtime skinning)
+- [0020](0020-portrait-rigs.md) Portrait rigs: big boxed frames, smooth supersampled bake and bone-weight skins built from the painted portraits

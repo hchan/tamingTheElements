@@ -176,3 +176,123 @@ describe('rig bake (tools/assets/bake-rig.ts)', () => {
     expect(r.code).toBe(0);
   });
 });
+
+describe('smooth rig bake (sample "ss2")', () => {
+  type Img = ReturnType<typeof decodePng>;
+  const lic: [string, Uint8Array] = ['fiara/license.txt', enc('CC0\n')];
+  const bake = (rig: Record<string, unknown>, parts: Record<string, Uint8Array>): ReturnType<typeof bakeRigs> =>
+    bakeRigs(new Map<string, Uint8Array>([['fiara/rig.json', enc(JSON.stringify(rig))], lic, ...Object.entries(parts).map(([n, b]): [string, Uint8Array] => [`fiara/parts/${n}`, b])]));
+  const frameOf = (res: ReturnType<typeof bakeRigs>, rel: string): Img => decodePng(res.outputs.get(`fiara/${rel}.png`) ?? new Uint8Array());
+  const px = (img: Img, x: number, y: number): number[] => [...img.data.subarray((y * img.width + x) * 4, (y * img.width + x) * 4 + 4)];
+  // A 4x4 part with varied colour and alpha.
+  const tex = (i: number): [number, number, number, number] => [(i * 53) % 256, (i * 97 + 40) % 256, (i * 31 + 7) % 256, i % 5 === 0 ? 0 : 60 + ((i * 41) % 196)];
+
+  it('at rest with res 2 is the exact premultiplied 2x2 area downscale of the part', () => {
+    const rig = { sample: 'ss2', res: 2, dirs: ['E'], parts: [{ id: 'p', png: 'p.png', pivot: [0, 0], at: [40, 60] }], actions: { hurt: { frames: 2 } } };
+    const res = bake(rig, { 'p.png': png(4, 4, tex) });
+    expect(res.errors).toEqual([]);
+    const img = frameOf(res, 'hurt/E/00');
+    expect([img.width, img.height]).toEqual([FRAME, FRAME]);
+    for (let j = 0; j < 2; j++)
+      for (let i = 0; i < 2; i++) {
+        const src = [0, 1, 4, 5].map((k) => tex(j * 8 + i * 2 + k));
+        const A = src.reduce((s, c) => s + c[3] * 255, 0);
+        const want = [0, 1, 2].map((ch) => (A === 0 ? 0 : Math.min(255, Math.round((src.reduce((s, c) => s + (c[ch] ?? 0) * c[3], 0) * 255) / A))));
+        const got = px(img, 20 + i, 30 + j);
+        expect(got[3]).toBe(Math.round(A / 1020));
+        if (A > 0) expect(got.slice(0, 3)).toEqual(want);
+      }
+    // Nothing else is drawn (alpha), only colour bled into the transparent border.
+    let opaque = 0;
+    for (let k = 3; k < img.data.length; k += 4) if ((img.data[k] ?? 0) > 0) opaque++;
+    expect(opaque).toBe(4);
+  });
+
+  it('rotates without a dark halo: every soft edge pixel and the bled border keep the part colour', () => {
+    const rig = { sample: 'ss2', dirs: ['E'], parts: [{ id: 'p', png: 'p.png', pivot: [10, 10], at: [40, 40] }], actions: { hurt: { frames: 2, curves: { p: { rot: [30, 63] } } } } };
+    const res = bake(rig, { 'p.png': png(20, 20, () => [230, 120, 20, 255]) });
+    expect(res.errors).toEqual([]);
+    for (const f of ['00', '01']) {
+      const img = frameOf(res, `hurt/E/${f}`);
+      let soft = 0;
+      let bled = 0;
+      for (let k = 0; k < img.data.length; k += 4) {
+        const [r, g, b, a] = [img.data[k] ?? 0, img.data[k + 1] ?? 0, img.data[k + 2] ?? 0, img.data[k + 3] ?? 0];
+        if (a === 0 && r + g + b === 0) continue;
+        if (a > 0 && a < 255) soft++;
+        if (a === 0) bled++;
+        expect([Math.abs(r - 230), Math.abs(g - 120), Math.abs(b - 20)].every((d) => d <= 2)).toBe(true);
+      }
+      expect(soft).toBeGreaterThan(20); // antialiased edges, not hard nearest-neighbour steps
+      expect(bled).toBeGreaterThan(40);
+    }
+  });
+
+  it('skins a part with bone weights: a full-weight bone moves it like the part, a zero pose leaves it alone', () => {
+    // Two transparent rows at the bottom: the bilinear fringe stays inside both meshes (parts from prep.py have a clear margin).
+    const bar = png(8, 40, (i) => [200, (i * 5) % 256, 90, i < 8 * 38 ? 255 : 0]);
+    const base = (bonePose: Record<string, Record<string, number[]>>): Record<string, unknown> => ({
+      sample: 'ss2',
+      dirs: ['E'],
+      bones: [
+        { id: 'root', part: 'p', head: [4, 0] },
+        { id: 'tip', part: 'p', parent: 'root', head: [4, 20] },
+      ],
+      parts: [{ id: 'p', png: 'p.png', pivot: [4, 0], at: [40, 20], skin: { grid: [2, 3], step: 20, bones: ['root', 'tip'], w: [256, 0, 256, 0, 0, 256, 0, 256, 0, 256, 0, 256] } }],
+      actions: { hurt: { frames: 2, curves: bonePose } },
+    });
+    const plain = bake({ sample: 'ss2', dirs: ['E'], parts: [{ id: 'p', png: 'p.png', pivot: [4, 0], at: [40, 20] }], actions: { hurt: { frames: 2 } } }, { 'p.png': bar });
+    const rest = bake(base({}), { 'p.png': bar });
+    expect(rest.errors).toEqual([]);
+    expect(Buffer.from(frameOf(rest, 'hurt/E/00').data).equals(Buffer.from(frameOf(plain, 'hurt/E/00').data))).toBe(true);
+    // Rotating the tip bone 90 degrees swings the lower half sideways (to -x: clockwise, y down) and leaves the top in place.
+    const bent = frameOf(bake(base({ tip: { rot: [90, 90] } }), { 'p.png': bar }), 'hurt/E/00');
+    const at = (x: number, y: number): number => px(bent, x, y)[3] ?? 0;
+    expect(at(40, 25)).toBe(255);
+    expect(at(40, 55)).toBe(0);
+    let left = 0;
+    for (let y = 30; y < 50; y++) for (let x = 0; x < 34; x++) if (at(x, y) > 0) left++;
+    expect(left).toBeGreaterThan(30);
+  });
+
+  it('wave and noise deformers are deterministic and move with the frame', () => {
+    const rig = {
+      sample: 'ss2',
+      dirs: ['E'],
+      parts: [{ id: 'p', png: 'p.png', pivot: [16, 16], at: [40, 40] }],
+      actions: { hurt: { frames: 2, deform: { p: { wave: { axis: 'x', ampPx: 2, wavelengthPx: 16, phasePerFrame: 90 }, noise: { ampPx: 1, cellPx: 8, seed: 7 } } } } },
+    };
+    const part = { 'p.png': png(32, 32, (i) => [i % 256, 80, 160, 255]) };
+    const a = bake(rig, part);
+    const b = bake(rig, part);
+    expect(a.errors).toEqual([]);
+    for (const [p, bytes] of a.outputs) expect(Buffer.from(b.outputs.get(p) ?? []).equals(bytes)).toBe(true);
+    expect(Buffer.from(a.outputs.get('fiara/hurt/E/00.png') ?? []).equals(a.outputs.get('fiara/hurt/E/01.png') ?? new Uint8Array())).toBe(false);
+  });
+
+  it('bakes the frame size and writes box.json for a rig with a box', () => {
+    const rig = { sample: 'ss2', res: 2, frame: 96, box: [8, 10, 80, 80], dirs: ['E'], parts: [{ id: 'p', png: 'p.png', pivot: [0, 0], at: [90, 90] }], actions: { hurt: { frames: 2 } } };
+    const res = bake(rig, { 'p.png': png(4, 4, tex) });
+    expect(res.errors).toEqual([]);
+    expect(new TextDecoder().decode(res.outputs.get('fiara/box.json'))).toBe('[8,10,80,80]\n');
+    expect(frameOf(res, 'hurt/E/00').width).toBe(96);
+    expect(packSheets(res.outputs).errors).toEqual([]);
+  });
+
+  const rest = { dirs: ['E'], parts: [{ id: 'p', png: 'p.png', pivot: [0, 0], at: [10, 10] }], actions: { hurt: { frames: 2 } } };
+  const bad: [string, Record<string, unknown>, RegExp][] = [
+    ['bones without ss2', { ...rest, bones: [{ id: 'b', part: 'p', head: [0, 0] }] }, /bones need sample "ss2"/],
+    ['res 2 without ss2', { ...rest, res: 2 }, /res 2 needs sample "ss2"/],
+    ['light channels without ss2', { ...rest, actions: { hurt: { frames: 2, curves: { p: { alpha: [128, 128] } } } } }, /alpha need sample "ss2"/],
+    [
+      'skin weights that do not sum to 256',
+      { ...rest, sample: 'ss2', bones: [{ id: 'b', part: 'p', head: [0, 0] }], parts: [{ id: 'p', png: 'p.png', pivot: [0, 0], at: [10, 10], skin: { grid: [2, 2], step: 32, bones: ['b'], w: [256, 256, 200, 256] } }] },
+      /skin vertex 2 weights sum to 200/,
+    ],
+    ['a box outside the frame', { ...rest, sample: 'ss2', box: [10, 10, 80, 80] }, /box: \[10, 10, 80, 80\] must be non-empty and inside the 80 px frame/],
+  ];
+  it.each(bad)('rejects %s', (_, rig, re) => {
+    const res = bake(rig, { 'p.png': png(4, 4, tex) });
+    expect(res.errors.join('\n')).toMatch(re);
+  });
+});

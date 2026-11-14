@@ -1,0 +1,36 @@
+{
+ "source": "public/assets/img/map/paxLarge.png",
+ "frame": 240,
+ "box": [20, 24, 200, 200],
+ "res": 2,
+ "feet": [210, 392],
+ "matte": { "minIsland": 40, "band": 2, "fringeLum": 35 },
+ "rim": { "color": [255, 214, 160], "dir": [-0.55, -0.85], "strength": 0.3, "width": 1.6 },
+ "shadow": { "rx": 118, "ry": 13, "alpha": 72, "dy": 2 },
+ "bones": [
+  { "id": "root", "head": [210, 392] },
+  { "id": "torso", "parent": "root", "head": [215, 296], "feather": 18,
+    "poly": [[0, 0], [400, 0], [400, 288], [0, 288]] },
+  { "id": "legB", "parent": "root", "head": [160, 302], "feather": 10,
+    "poly": [[85, 300], [226, 296], [226, 400], [85, 400]] },
+  { "id": "legF", "parent": "root", "head": [276, 302], "feather": 10,
+    "poly": [[226, 296], [345, 300], [345, 400], [226, 400]] },
+  { "id": "head", "parent": "torso", "head": [250, 152], "feather": 10,
+    "poly": [[195, 8], [368, 8], [368, 168], [200, 176], [184, 100]] },
+  { "id": "armB", "parent": "torso", "head": [128, 206], "feather": 12,
+    "poly": [[0, 196], [100, 186], [142, 224], [118, 300], [102, 400], [0, 400]] },
+  { "id": "armF", "parent": "torso", "head": [236, 214], "feather": 12,
+    "poly": [[206, 186], [300, 178], [400, 188], [400, 342], [330, 342], [290, 296], [230, 286]] }
+ ],
+ "glows": [
+  { "id": "eye", "bone": "head", "at": [280, 96], "r": 7, "color": [255, 168, 64], "gain": 1.0, "hot": 0.6 },
+  { "id": "gem1", "bone": "torso", "at": [102, 172], "r": 5, "color": [255, 190, 90], "gain": 0.85, "hot": 0.45 },
+  { "id": "gem2", "bone": "torso", "at": [160, 130], "r": 5, "color": [255, 190, 90], "gain": 0.75, "hot": 0.45 }
+ ],
+ "dirOffsets": {
+  "SE": { "body": { "sx": 94 }, "head": { "dy": 4 } },
+  "S": { "body": { "sx": 88 }, "head": { "dy": 6 } },
+  "N": { "body": { "sx": 88 }, "head": { "dy": -6 } },
+  "NE": { "body": { "sx": 94 }, "head": { "dy": -4 } }
+ }
+}

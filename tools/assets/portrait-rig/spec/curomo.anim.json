@@ -1,0 +1,82 @@
+{
+ "idle": { "frames": 4, "curves": {
+  "torso": { "sy": [100, 101, 102, 101] },
+  "neck": { "rot": [0, -1, -2, -1] },
+  "head": { "rot": [0, 1, 1, 0] },
+  "jaw": { "rot": [0, 2, 3, 1] },
+  "tail": { "rot": [0, 1, 2, 1] },
+  "tailTip": { "rot": [0, 3, 5, 2] },
+  "wing": { "rot": [0, 1, 2, 1] },
+  "eye": { "bright": [256, 330, 290, 360] },
+  "frost": { "bright": [200, 300, 240, 320] }
+ }, "deform": { "body": { "wave": { "axis": "y", "ampPx": 3, "wavelengthPx": 140, "phasePerFrame": 90 } } } },
+ "walk": { "frames": 4, "curves": {
+  "body": { "dy": [0, -2, 0, -2] },
+  "tail": { "rot": [3, -3, 3, -3] },
+  "tailTip": { "rot": [-5, 5, -5, 5] },
+  "neck": { "rot": [2, 0, -2, 0] },
+  "torso": { "rot": [1, 0, -1, 0] },
+  "wing": { "rot": [0, 2, 0, 2] },
+  "eye": { "bright": [300, 270, 320, 280] }
+ }, "deform": { "body": { "wave": { "axis": "y", "ampPx": 3, "wavelengthPx": 140, "phasePerFrame": 90 } } } },
+ "cast": { "frames": 4, "curves": {
+  "body": { "dx": [-3, 5, 4, 0] },
+  "neck": { "rot": [-6, 6, 5, 1] },
+  "head": { "rot": [-3, 4, 3, 0] },
+  "jaw": { "rot": [2, 10, 8, 3] },
+  "wing": { "rot": [3, -2, -1, 0] },
+  "eye": { "bright": [300, 512, 420, 320] },
+  "frost": { "bright": [300, 512, 460, 300] }
+ } },
+ "hurt": { "frames": 2, "curves": {
+  "body": { "dx": [-6, -3] },
+  "neck": { "rot": [-9, -4] },
+  "head": { "rot": [-5, -2] },
+  "jaw": { "rot": [6, 3] },
+  "tail": { "rot": [4, 2] },
+  "eye": { "bright": [160, 220] }
+ } },
+ "guard": { "frames": 2, "curves": {
+  "body": { "sy": [97, 96] },
+  "neck": { "rot": [-6, -7] },
+  "head": { "rot": [3, 4] },
+  "tail": { "rot": [-4, -5] },
+  "tailTip": { "rot": [-4, -5] },
+  "wing": { "rot": [-3, -3] },
+  "eye": { "bright": [300, 330] }
+ } },
+ "dash": { "frames": 3, "curves": {
+  "body": { "dx": [4, 8, 6] },
+  "neck": { "rot": [7, 9, 7] },
+  "tail": { "rot": [-5, -6, -5] },
+  "tailTip": { "rot": [-6, -8, -6] },
+  "wing": { "rot": [-4, -5, -4] },
+  "eye": { "bright": [360, 400, 360] }
+ } },
+ "ko": { "frames": 4, "curves": {
+  "body": { "rot": [-1, -3, -4, -5], "sy": [97, 92, 86, 82], "dy": [0, 1, 2, 2] },
+  "neck": { "rot": [5, 11, 16, 19] },
+  "head": { "rot": [4, 8, 12, 14] },
+  "jaw": { "rot": [2, 5, 7, 8] },
+  "wing": { "rot": [-2, -5, -7, -8] },
+  "tailTip": { "rot": [2, 4, 6, 7] },
+  "eye": { "alpha": [256, 180, 90, 0] },
+  "frost": { "alpha": [200, 100, 30, 0] },
+  "shadow": { "alpha": [256, 240, 220, 200] }
+ } },
+ "victory": { "frames": 4, "curves": {
+  "neck": { "rot": [-3, -6, -7, -6] },
+  "head": { "rot": [-2, -4, -5, -4] },
+  "jaw": { "rot": [3, 10, 12, 9] },
+  "wing": { "rot": [2, 4, 5, 4] },
+  "tailTip": { "rot": [0, 4, 6, 4] },
+  "eye": { "bright": [320, 460, 512, 440] },
+  "frost": { "bright": [300, 480, 512, 420] }
+ }, "deform": { "body": { "wave": { "axis": "y", "ampPx": 3, "wavelengthPx": 140, "phasePerFrame": 90 } } } },
+ "tagIn": { "frames": 4, "curves": {
+  "body": { "dy": [-8, -3, 1, 0], "sy": [101, 101, 97, 100], "alpha": [128, 220, 256, 256] },
+  "shadow": { "alpha": [60, 140, 256, 256], "sx": [70, 85, 100, 100] },
+  "eye": { "alpha": [128, 220, 256, 256] },
+  "frost": { "alpha": [128, 220, 256, 256] }
+ } }
+}

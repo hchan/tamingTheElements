@@ -1,0 +1,40 @@
+{
+ "source": "public/assets/img/map/curomoLarge.png",
+ "frame": 240,
+ "box": [20, 24, 200, 200],
+ "res": 2,
+ "feet": [290, 392],
+ "matte": { "minIsland": 40, "band": 2, "fringeLum": 35 },
+ "rim": { "color": [196, 226, 255], "dir": [-0.5, -0.87], "strength": 0.3, "width": 1.6 },
+ "shadow": { "rx": 128, "ry": 12, "alpha": 66, "dx": -44, "dy": 2 },
+ "bones": [
+  { "id": "root", "head": [290, 392] },
+  { "id": "torso", "parent": "root", "head": [300, 330], "feather": 24,
+    "poly": [[150, 0], [400, 0], [400, 300], [150, 300]] },
+  { "id": "wing", "parent": "torso", "head": [244, 176], "feather": 14,
+    "poly": [[0, 0], [236, 0], [232, 120], [226, 250], [160, 272], [70, 160], [0, 120]] },
+  { "id": "tail", "parent": "root", "head": [226, 336], "feather": 14,
+    "poly": [[60, 250], [150, 250], [234, 268], [244, 400], [60, 400]] },
+  { "id": "tailTip", "parent": "tail", "head": [120, 268], "feather": 12,
+    "poly": [[60, 156], [150, 156], [152, 282], [60, 282]] },
+  { "id": "neck", "parent": "torso", "head": [292, 244], "feather": 18,
+    "poly": [[228, 16], [340, 16], [348, 160], [334, 252], [252, 252], [236, 120]] },
+  { "id": "head", "parent": "neck", "head": [318, 112], "feather": 10,
+    "poly": [[286, 0], [400, 0], [400, 160], [304, 160], [284, 100]] },
+  { "id": "jaw", "parent": "head", "head": [334, 112], "feather": 5,
+    "poly": [[326, 104], [400, 106], [400, 160], [322, 160]] }
+ ],
+ "glows": [
+  { "id": "eye", "bone": "head", "at": [353, 76], "r": 5, "color": [255, 70, 60], "gain": 1.0, "hot": 0.55 },
+  { "id": "frost", "bone": "jaw", "at": [362, 126], "r": 8, "color": [150, 210, 255], "gain": 0.3, "hot": 0.25 }
+ ],
+ "deformMask": { "feather": 18, "polys": [
+  [[0, 20], [230, 10], [226, 240], [160, 260], [80, 160], [0, 130]]
+ ] },
+ "dirOffsets": {
+  "SE": { "body": { "sx": 94 }, "neck": { "dy": 4 } },
+  "S": { "body": { "sx": 88 }, "neck": { "dy": 6 } },
+  "N": { "body": { "sx": 88 }, "neck": { "dy": -6 } },
+  "NE": { "body": { "sx": 94 }, "neck": { "dy": -4 } }
+ }
+}

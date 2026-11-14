@@ -9,6 +9,7 @@ import {
   ACTIONS,
   ALL_ROWS,
   ATLAS_MAX,
+  ATLAS_MAX_HERO,
   DIRS,
   FRAME,
   layoutAtlas,
@@ -37,6 +38,8 @@ export interface PackResult {
 }
 
 const FRAME_RE = /^([A-Za-z0-9]+)\/([A-Za-z]+)\/([A-Z]+)\/(\d{2})\.png$/;
+/** Optional `<sprite>/box.json`: `[x, y, w, h]`, the frame-space rect that maps onto the visual box (the bake writes it for rigs with a `box`). */
+const BOX_RE = /^([A-Za-z0-9]+)\/box\.json$/;
 const sha256 = (b: Uint8Array): string => createHash('sha256').update(b).digest('hex');
 
 export function packSheets(files: SourceFiles): PackResult {
@@ -48,6 +51,7 @@ export function packSheets(files: SourceFiles): PackResult {
   // sprite -> row key -> frame index -> bytes
   const found = new Map<string, Map<string, Map<number, Uint8Array>>>();
   const licenses = new Map<string, string>();
+  const boxes = new Map<string, unknown>();
   for (const [path, bytes] of [...files].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     const lic = /^([A-Za-z0-9]+)\/license\.txt$/.exec(path);
     if (lic) {
@@ -55,6 +59,15 @@ export function packSheets(files: SourceFiles): PackResult {
       continue;
     }
     if (path.endsWith('.gitkeep')) continue;
+    const bx = BOX_RE.exec(path);
+    if (bx) {
+      try {
+        boxes.set(bx[1] as string, JSON.parse(new TextDecoder().decode(bytes)) as unknown);
+      } catch (e) {
+        errors.push(`${path}: ${(e as Error).message}`);
+      }
+      continue;
+    }
     const m = FRAME_RE.exec(path);
     if (!m) {
       errors.push(`${path}: not <sprite>/<action>/<dir>/<NN>.png`);
@@ -78,8 +91,9 @@ export function packSheets(files: SourceFiles): PackResult {
   const sheets: SheetEntry[] = [];
   for (const sprite of characters) {
     const rows = found.get(sprite);
-    // Validated rows in canonical order, frames decoded and checked.
+    // Validated rows in canonical order, frames decoded and checked. Every frame of a sprite has one square size (the first one's).
     const good: { key: string; frames: number; images: Image[] }[] = [];
+    let frame = 0;
     for (const row of ALL_ROWS) {
       const frames = rows?.get(row.key);
       if (!frames) continue;
@@ -99,8 +113,10 @@ export function packSheets(files: SourceFiles): PackResult {
           ok = false;
           continue;
         }
-        if (img.width !== FRAME || img.height !== FRAME) {
-          errors.push(`${sprite}/${row.key}/${i}: ${img.width}x${img.height}, expected ${FRAME}x${FRAME}`);
+        if (frame === 0 && img.width === img.height && img.width >= FRAME) frame = img.width;
+        const want = frame === 0 ? FRAME : frame;
+        if (img.width !== want || img.height !== want) {
+          errors.push(`${sprite}/${row.key}/${i}: ${img.width}x${img.height}, expected ${want}x${want} (one square frame size per sprite)`);
           ok = false;
           continue;
         }
@@ -114,30 +130,60 @@ export function packSheets(files: SourceFiles): PackResult {
     }
     const license = licenses.get(sprite);
     if (!license) errors.push(`${sprite}: art without ${SOURCE_DIR}/${sprite}/license.txt (every new asset needs a licence note)`);
+    const box = boxes.get(sprite);
+    const boxOk = box === undefined || validBox(box, frame);
+    if (!boxOk) errors.push(`${sprite}/box.json: expected [x, y, w, h] non-negative integers inside the ${String(frame)} px frame`);
+    // Byte-identical frames (often whole rows: N bakes NE, S bakes SE) are stored once and rows share their rects. Only the new
+    // frames of each row go through the shelf packer, in canonical row order, so the layout stays deterministic. The 80 px
+    // sheets are not deduped, so their atlases stay byte-identical to the ones packed before frame sizes existed.
+    const dedupe = frame !== FRAME;
+    const seen = new Map<string, { u: number; i: number }>();
+    const uniq: { key: string; frames: number; images: Image[] }[] = [];
+    const refs = good.map((row) =>
+      row.images.map((img, i) => {
+        const h = dedupe ? sha256(img.data) : `${row.key}#${String(i)}`;
+        let at = seen.get(h);
+        if (at === undefined) {
+          let u = uniq[uniq.length - 1];
+          if (u?.key !== row.key) uniq.push((u = { key: row.key, frames: 0, images: [] }));
+          u.images.push(img);
+          at = { u: uniq.length - 1, i: u.frames++ };
+          seen.set(h, at);
+        }
+        return at;
+      }),
+    );
     let layout;
     try {
-      layout = layoutAtlas(good, ATLAS_MAX);
+      layout = layoutAtlas(uniq, frame > FRAME ? ATLAS_MAX_HERO : ATLAS_MAX, frame);
     } catch (e) {
       errors.push(`${sprite}: ${(e as Error).message}`);
       sheets.push({ sprite, rows: [] });
       continue;
     }
-    const { width, height } = layout;
+    const { width, height, placements } = layout;
     const data = new Uint8Array(width * height * 4);
-    const outRows: SheetRow[] = good.map((row, n) => {
-      const at = layout.placements[n] as { x: number; y: number };
-      const frames: [number, number][] = [];
+    uniq.forEach((row, n) => {
+      const at = placements[n] as { x: number; y: number };
       row.images.forEach((img, i) => {
-        const fx = at.x + i * FRAME;
-        frames.push([fx, at.y]);
-        for (let y = 0; y < FRAME; y++) data.set(img.data.subarray(y * FRAME * 4, (y + 1) * FRAME * 4), ((at.y + y) * width + fx) * 4);
+        const fx = at.x + i * frame;
+        for (let y = 0; y < frame; y++) data.set(img.data.subarray(y * frame * 4, (y + 1) * frame * 4), ((at.y + y) * width + fx) * 4);
       });
-      return { key: row.key, frames };
     });
+    const outRows: SheetRow[] = good.map((row, n) => ({
+      key: row.key,
+      frames: (refs[n] ?? []).map(({ u, i }) => {
+        const at = placements[u] as { x: number; y: number };
+        return [at.x + i * frame, at.y] as const;
+      }),
+    }));
     const png = encodePng({ width, height, data });
     if (png.length > SHEET_MAX_BYTES) errors.push(`${sprite}: atlas is ${String(png.length)} B, budget ${String(SHEET_MAX_BYTES)} B per sheet`);
     pngs.set(sprite, png);
-    sheets.push({ sprite, url: `img/sheets/${sprite}.png`, sha256: sha256(png), license: license ?? '', width, height, rows: outRows });
+    // `frame` and `box` only for frames other than the spec's, so the 80 px sheets keep their manifest bytes.
+    const extra =
+      frame === FRAME ? {} : { frame, box: boxOk && box !== undefined ? (box as [number, number, number, number]) : ([0, 0, frame, frame] as const) };
+    sheets.push({ sprite, url: `img/sheets/${sprite}.png`, sha256: sha256(png), license: license ?? '', width, height, ...extra, rows: outRows });
   }
   return {
     manifest: {
@@ -149,7 +195,13 @@ export function packSheets(files: SourceFiles): PackResult {
   };
 }
 
-export const manifestJson = (m: SheetsManifest): string => `${JSON.stringify(m)}\n`;
+function validBox(b: unknown, frame: number): boolean {
+  if (!Array.isArray(b) || b.length !== 4 || !b.every((v) => Number.isInteger(v) && (v as number) >= 0)) return false;
+  const [x, y, w, h] = b as [number, number, number, number];
+  return w > 0 && h > 0 && x + w <= frame && y + h <= frame;
+}
+
+export const manifestJson =(m: SheetsManifest): string => `${JSON.stringify(m)}\n`;
 
 function walk(dir: string, base = ''): string[] {
   if (!existsSync(dir)) return [];

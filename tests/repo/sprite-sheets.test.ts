@@ -7,6 +7,7 @@ import {
   ACTIONS,
   ALL_ROWS,
   ATLAS_MAX,
+  ATLAS_MAX_HERO,
   DIRS,
   FRAME,
   frameRect,
@@ -226,7 +227,9 @@ describe('committed sheet outputs', () => {
       expect(existsSync(p), s.sprite).toBe(true);
       const img = decodePng(new Uint8Array(readFileSync(p)));
       expect([img.width, img.height]).toEqual([s.width, s.height]);
-      expect(Math.max(img.width, img.height)).toBeLessThanOrEqual(m.spec.maxSize);
+      // big-frame portrait rigs (ADR-0020) pack into the larger hero limit
+      const max = (s.frame ?? FRAME) > FRAME ? ATLAS_MAX_HERO : m.spec.maxSize;
+      expect(Math.max(img.width, img.height), s.sprite).toBeLessThanOrEqual(max);
       expect(s.license, s.sprite).toBeTruthy();
     }
     expect(m.spec.maxSize).toBe(ATLAS_MAX);

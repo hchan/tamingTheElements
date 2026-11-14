@@ -1,0 +1,48 @@
+{
+ "curomo": {
+  "inputs": {
+   "prep.py": "e859cb9e3d4fef1c162ed7dc50b355c1bd325086e0c8dfac5448ce2286cb84af",
+   "spec": "4628714201fc6c7931fdd86f9408f01181319962117fe409a15c9ea259a4b4ae",
+   "anim": "8a71926aba25b80dff685baf0a3c6d4e7f3f5bfd185cdb426b8733874c545f22",
+   "portrait": "c1c7afe439f02f8409ec6a315365a12d8d388ecc378c2126afa8655d49c9119d"
+  },
+  "outputs": {
+   "parts/body.png": "776c4e6aa668da3b5cc6d4475e63a2498e9226d1bdaa1dfa67cdb50ef5bcd387",
+   "parts/shadow.png": "76fe1d86f7edcc0bcf6f28699cd14b9dac4ab26032a78bf21e4dc29d43a7535a",
+   "parts/eye.png": "2eed7a9037ef0679b8e6cca0c753e0edb82866f6ecb37d9499c26e3bd1fdda56",
+   "parts/frost.png": "a2a3a871d208f80067b009f2fd0609d9a9bddf97d8f78d607b966741b360d939",
+   "rig.json": "44a5c83ad6b872a2d0a3b70d54593be510c3fbaa73483b179c9db7b069242f64"
+  }
+ },
+ "pax": {
+  "inputs": {
+   "prep.py": "e859cb9e3d4fef1c162ed7dc50b355c1bd325086e0c8dfac5448ce2286cb84af",
+   "spec": "01c22897c20b1f4847529d16d55d09c11b42b6b2432c909653cdcc8fae3ab58f",
+   "anim": "de76a8b93beab43250c82b9fc7edbbc47e44745d8656ecdad499dfb682f7001a",
+   "portrait": "41634c7caf91c282087b180bc49dba52f07b1ab5b2005d9be07259a8a5acff44"
+  },
+  "outputs": {
+   "parts/body.png": "f5ba92acfab2cbaa21702a35296e2a07ce8f1f54160776c50f9861a9fbd5f24b",
+   "parts/shadow.png": "5152bb3a622a8bd30ae2dc0ae3f68411038ac585ba5b01a3e7777502290cd84a",
+   "parts/eye.png": "fa8b323c1d41c616a4a594dba672520918a5f4883716f775d6774a21c34d74fd",
+   "parts/gem1.png": "ae46d65cf02c76a972223ecb37900246f1a325752976f8988e78b67ef0d6b13e",
+   "parts/gem2.png": "21be7f9a630c2c92f64c6c744a41a8e43b69df35bfec1e4200600082f498f421",
+   "rig.json": "28cb13c5d8420f08f0278012bd92a10493f1672b2b21d366b33d9882a1967a0b"
+  }
+ },
+ "sindarosa": {
+  "inputs": {
+   "prep.py": "e859cb9e3d4fef1c162ed7dc50b355c1bd325086e0c8dfac5448ce2286cb84af",
+   "spec": "f94b52486e1a3e5749b778f9ba4cb6655b570a6f6ba85d1af483118bf3ddd9ec",
+   "anim": "fc5a433fe340945e4810605786b6ed7689c1e389ec14b8e5231d701ce6f93b5a",
+   "portrait": "291f54a691dd57b1d9cc69b466e950e1634cf66bfa7c7e377ea1bbac6bb55174"
+  },
+  "outputs": {
+   "parts/body.png": "39f497115e44a8a2ec492027282df7bfa1333492150f7626473cbb5148048ace",
+   "parts/shadow.png": "643a4fadf63c14e446867732f5d4776d6a1c2b44f1a8fdeedc961e21e322b0cd",
+   "parts/eye.png": "0609999a7ff995dc9c6e6dec61fd74b638819c5c0ccdbfca9b196835a4400940",
+   "parts/maw.png": "5d693381aa49fde276810b389952f3e5ab85abb895dc421a851c290e43b2d4ac",
+   "rig.json": "7d69e36aed2b20196b9fe0ad2b1e44a527e5b55a91de2d15f33c421bf29bc03f"
+  }
+ }
+}

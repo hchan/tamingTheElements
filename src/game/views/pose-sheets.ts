@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { sheetKey, type FrameResolver, type SheetFrame } from '../assets/sheet-frames';
 import type { Action } from '../assets/sheet-spec';
 import { gradedHeroTexture } from '../fx/hero-grade';
+import { setFrameBox } from './hero-scale';
 
 /**
  * The sprite sheets the pose layer draws from (FUN-DESIGN 2.16 step 3, view side). Loads `sheet:<sprite>` lazily, the
@@ -12,7 +13,7 @@ import { gradedHeroTexture } from '../fx/hero-grade';
 export class SheetBook {
   private readonly wanted = new Set<string>();
   private readonly ready = new Set<string>();
-  /** Texture each loaded sprite is drawn from: its graded copy (`sheet:<sprite>~grim`) or the plain sheet. */
+  /** Texture each loaded sprite is drawn from: its graded copy (`sheet:<sprite>~grim`) or the plain sheet (portrait rigs). */
   private readonly shown = new Map<string, string>();
 
   constructor(
@@ -32,9 +33,19 @@ export class SheetBook {
     const register = (): void => {
       if (!this.scene.textures.exists(key)) return;
       const tex = this.scene.textures.get(key);
-      for (const { name, rect } of this.res.frames(sprite)) if (!tex.has(name)) tex.add(name, 0, rect.x, rect.y, rect.w, rect.h);
+      let boxed = false;
+      for (const { name, rect, box } of this.res.frames(sprite)) {
+        if (!tex.has(name)) tex.add(name, 0, rect.x, rect.y, rect.w, rect.h);
+        // Big portrait-rig frames carry their visual box (views/hero-scale.ts `fitToBox`).
+        if (box.w !== rect.w || box.h !== rect.h) {
+          setFrameBox(tex.get(name), box);
+          boxed = true;
+        }
+      }
       this.ready.add(sprite);
-      this.shown.set(sprite, gradedHeroTexture(this.scene, key));
+      // Portrait rigs (boxed frames) are the painted portraits themselves: drawn as baked, never graded (the ink lift would
+      // flatten their painted shadows), which also saves a canvas copy of a 4096 px atlas. The procedural rigs keep the grade.
+      this.shown.set(sprite, boxed ? key : gradedHeroTexture(this.scene, key));
     };
     if (this.scene.textures.exists(key)) {
       register();

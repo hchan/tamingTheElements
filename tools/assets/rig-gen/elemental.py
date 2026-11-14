@@ -153,9 +153,17 @@ def apply(tf, p, c=(40, 40)):
     return (c[0] + (p[0] - c[0]) * tf["sx"] * s + tf["dx"], c[1] + (p[1] - c[1]) * s + tf["dy"])
 
 
+def refuse_portrait_rig(out):
+    """Exits if <out>/rig.json is a portrait rig (tools/assets/portrait-rig): this procedural generator would clobber it."""
+    path = os.path.join(out, "rig.json")
+    if os.path.exists(path) and json.load(open(path)).get("source") == "portrait":
+        sys.exit(f"{path} is a portrait rig (tools/assets/portrait-rig/prep.py); refusing to overwrite it")
+
+
 def build(out, name, G, actions, paint, license_text, view_tf=default_view_tf, accents=None):
     """G: part id -> dict(polys=[[pts]], joint=(x,y), z, parent, ...extra for paint). paint(part_id, view, polys, g, seed) -> RGBA WxW.
     accents(part_id, view, im, tf) -> RGBA (eyes etc, optional). Writes <out>/parts/*.png, rig.json, license.txt."""
+    refuse_portrait_rig(out)
     os.makedirs(os.path.join(out, "parts"), exist_ok=True)
     parts = []
     for view in ("E", "SE", "NE"):

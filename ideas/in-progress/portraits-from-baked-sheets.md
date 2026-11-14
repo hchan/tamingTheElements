@@ -13,5 +13,9 @@ The HUD portrait, hero-select grid and panel, Versus pick tiles, garrison avatar
 Wispera and Echo (pale air on dark floors) get a soft additive ground glow from `CharacterView` (`GLOW_SPRITES` in `src/game/views/character-view.ts`),
 display only, no change to the rig parts.
 
+2026-11-13: the strip builder moved to `tools/assets/portrait-rig/map-strips.py`; it reads the frame rects from the sheet manifest and
+handles any frame size, including the 240 px portrait-rig frames of Pax, Sindarosa and Curomo. `rig-gen/pax-portrait.py` is a shim
+for it. See [hero-rig-from-portraits](hero-rig-from-portraits.md) and ADR-0020.
+
 Open: the `<hero>Large.png` 400x400 images are still legacy (nothing in src reads them); jagged cast-frame edges are a rig-generator matter
 (another agent owns the rigs); the action-bar icon atlas (`hud-gen/actions.py`) was already redone and is unchanged.
