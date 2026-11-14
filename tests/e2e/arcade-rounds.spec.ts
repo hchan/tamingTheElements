@@ -58,15 +58,16 @@ test('Arcade Versus: ROUND 1, FIGHT!, the timer, K.O. PERFECT, the result with a
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(foe?.id)}, 0); a.step(1); })()`);
   expect(await rounds(page)).toMatchObject({ main: 'K.O.', sub: 'PERFECT', visible: true });
   await step(page, KO_TO_RESULT);
-  expect(await rounds(page)).toMatchObject({ main: 'PERFECT', sub: 'YOU WIN ROUND 1', visible: true, won: [1, 0] });
-  await step(page, 60);
-  // ROUND 2 is announced but yields to the result card (banner lanes, QA r27: no ghosting behind it) until the card's 100 ticks are up.
-  expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: false, timer: '90', won: [1, 0] });
-  await step(page, 40);
+  expect(await rounds(page)).toMatchObject({ main: 'PERFECT', sub: 'YOU WIN ROUND 1', won: [1, 0] });
+  await step(page, 45);
+  // The result card (60 ticks) is up and holds the round's words; ROUND 2 starts as it ends (banner lanes, QA r27: no ghosting behind it).
+  expect(await rounds(page)).toMatchObject({ main: 'PERFECT', visible: false, won: [1, 0] });
+  await step(page, 20);
   expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: true, timer: '90', won: [1, 0] });
-  // Its clock started with the card's end, so it is still scaling in; FIGHT! follows about 30 ticks later.
-  expect((await rounds(page))?.scale).toBeGreaterThan(1);
-  await step(page, 32);
+  // It has the whole 1.4 s intro to read: still ROUND 2 a second in, then FIGHT!.
+  await step(page, 50);
+  expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: true });
+  await step(page, 20);
   expect(await rounds(page)).toMatchObject({ main: 'FIGHT!', visible: true });
   expect(errors).toEqual([]);
 });
@@ -119,8 +120,8 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
   expect(await rounds(page)).toMatchObject({ sub: 'ROUND 1 DRAW', won: [2, 2] });
   const before = await played(page);
   await step(page, 60);
-  // The result card is still up (100 ticks): the intro banner waits for it, but the sting and the timer already run.
-  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: false, won: [2, 2] });
+  // The result card (60 ticks) ends as the round starts: the intro banner is up at once, with the sting and the timer.
+  expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true, won: [2, 2] });
   // The sting (one cue) played at the round start, and the timer says it in words and its own colour, not only red.
   expect(await played(page)).toBe(before + 1);
   expect(await rounds(page)).toMatchObject({ timer: expect.stringMatching(/^SUDDEN \d\d$/), timerColor: '#c07ab0' });
@@ -131,8 +132,6 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
   // The banner scales in over 30 view ticks (counted from the end of the card); the picture is taken near the end of the intro (it must fit the 1280 px width).
   await step(page, 40);
   expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true });
-  // The banner's own clock starts when the card ends (tick 100), so it is still scaling in; FIGHT! follows at about tick 130.
-  expect((await rounds(page))?.scale).toBeGreaterThan(1);
   await step(page, 20);
   expect(await rounds(page)).toMatchObject({ main: 'SUDDEN DEATH', visible: true });
   await page.screenshot({ path: info.outputPath('sudden-death.png') });
