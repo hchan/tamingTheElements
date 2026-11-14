@@ -98,8 +98,9 @@ describe('the scripted Arcade AI over whole matches', () => {
     for (const seed of [1, 2, 3]) expect(play(seed, level, styles).illegal).toEqual([]);
   });
 
+  // Seed 6 since SIM_VERSION 52 (stronger supers end seed 5 before every button is used).
   it('uses every Arcade button over a match (so the legality checks above are not vacuous)', () => {
-    const { cmds } = play(5, AI_HARD, [RUSHDOWN, TURTLE], 4000);
+    const { cmds } = play(6, AI_HARD, [RUSHDOWN, TURTLE], 4000);
     const seen = (bit: number): boolean => cmds.some((c) => (c & bit) !== 0);
     expect(seen(Cmd.guard)).toBe(true);
     expect(seen(Cmd.dash)).toBe(true);

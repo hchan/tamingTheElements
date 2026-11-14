@@ -46,6 +46,20 @@ export function slimBar(team: number): SlimBar {
   return { minX, maxX: minX + 460, y: SLIM_BAR_Y, line: SLIM_LINE, lineMax: SLIM_LINE_MAX };
 }
 
+/** The shortest a scaled life bar gets, in per cent of the full bar. */
+export const SLIM_BAR_MIN_PCT = 50;
+
+/**
+ * Life bar scaled to the life total (qa-r15-life-totals-vs-bar-length): the hero with the larger total keeps the full bar and a smaller
+ * total shortens its bar in proportion (never below SLIM_BAR_MIN_PCT), so the same fraction of bar means the same life across a matchup.
+ * The bar still starts at `minX`; only `maxX` moves. Pure.
+ */
+export function scaledBar(bar: SlimBar, maxHp: number, refMaxHp: number): SlimBar {
+  if (maxHp <= 0 || refMaxHp <= 0 || maxHp >= refMaxHp) return bar;
+  const pct = Math.max(SLIM_BAR_MIN_PCT, Math.round((maxHp * 100) / refMaxHp));
+  return { ...bar, maxX: bar.minX + Math.round(((bar.maxX - bar.minX) * pct) / 100) };
+}
+
 /** The active hero's portrait square at the outer end of the bar (the right one clears the fullscreen button). */
 export function slimPortrait(team: number): { readonly x: number; readonly y: number; readonly size: number } {
   return { x: team === 0 ? 62 : 1170, y: SLIM_PORTRAIT_Y, size: SLIM_PORTRAIT };

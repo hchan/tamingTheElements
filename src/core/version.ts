@@ -183,5 +183,9 @@
  * 51: Arcade only; Classic hashes unchanged. Shorter round intro (ideas/brainstorm/qa-r8-scorecard-and-status.md, passive first seconds):
  *    `ROUND_INTRO_TICKS` 90 -> 70 (1.4 s, ROUND n then FIGHT, as Street Fighter). Re-record reason: every Arcade round starts 20 ticks earlier, so Arcade
  *    hashes and outcomes change (Arcade goldens, Arcade baselines).
+ * 52: Arcade only; Classic hashes unchanged. Super payoff (ideas/brainstorm/qa-r15-super-payoff-weak.md): every super's damage x3 (beam hit 12 -> 36, vortex
+ *    9 -> 27, quake ring 20 -> 60, tidal wave 50 -> 150) and the heal shares of Phoenix Rise 100 -> 35 pm and Siren Gale 150 -> 50 pm, so a full-meter super
+ *    at point blank takes about 30 percent of the foe's life (was 10 percent; 144 race pairs, mean 10.2 -> 30.0, min 4 -> 13, max 33 -> 79 on a chart edge).
+ *    Re-record reason: super damage changes Arcade outcomes (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 51;
+export const SIM_VERSION = 52;

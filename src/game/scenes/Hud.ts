@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, scaledBar, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
@@ -181,14 +181,17 @@ export class Hud extends Phaser.Scene {
     gfx.clear();
     this.back?.clear();
     if (++this.frame % PREFS_REFRESH_FRAMES === 0) this.refreshPrefs();
+    // Life bars share one scale: the larger active life total fills a whole bar, the smaller one a proportional part.
+    const refMaxHp = Math.max(0, ...TEAMS.map((t) => collectSide(view, t).active?.maxHp ?? 0));
     for (const team of TEAMS) {
       const side = collectSide(view, team);
       const x = sideOffset(team);
       const label = this.labels[team];
       if (side.active) {
         if (this.arcade) {
-          this.drawBar(gfx, slimBar(team), side.active, true);
-          this.drawTrail(gfx, slimBar(team), side.active);
+          const bar = scaledBar(slimBar(team), side.active.maxHp, refMaxHp);
+          this.drawBar(gfx, bar, side.active, true);
+          this.drawTrail(gfx, bar, side.active);
           label?.setText(compactLabel(heroName(side.active.sprite), side.active));
         } else {
           this.drawBar(gfx, mainBar(x), side.active, true);
