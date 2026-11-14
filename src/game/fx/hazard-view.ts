@@ -172,6 +172,19 @@ export function impactFlash(ticksSinceStrike: number): number {
   return ticksSinceStrike >= 0 && ticksSinceStrike < 2 ? 0.55 : 0;
 }
 
+/** Ticks the rockfall dust and debris last after the strike (0.5 s at 50 Hz). */
+export const DUST_TICKS = 25;
+
+/** Dust progress at `age` ticks after the strike: `t` 0..1 (grows), `alpha` 1..0 (fades); null once over or before. Reduced motion holds `t` at 1 (a still ring that only fades). Pure. */
+export function dustLook(age: number, reduced: boolean): { t: number; alpha: number } | null {
+  if (age < 0 || age >= DUST_TICKS) return null;
+  const p = age / DUST_TICKS;
+  return { t: reduced ? 1 : 1 - (1 - p) * (1 - p), alpha: 1 - p };
+}
+
+/** Eight compass steps (no trig) used for the rockfall dust puffs and debris. */
+const DUST_DIRS: readonly (readonly [number, number])[] = [[1, 0], [0.7, 0.7], [0, 1], [-0.7, 0.7], [-1, 0], [-0.7, -0.7], [0, -1], [0.7, -0.7]];
+
 const states = new WeakMap<Phaser.Scene, () => readonly HazardMarker[]>();
 
 /** The hazard drawn on the last frame (test probe: empty with none live), or undefined before the view mounts or after teardown. */
@@ -354,6 +367,32 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
       glow.lineStyle(6, 0xffffff, flash).strokeRect(x, y, w, h);
       if (kind === 3) glow.fillStyle(0xf0e4c8, flash * 0.5).fillCircle(x + w / 2, y + h / 2, Math.min(w, h) * 0.3);
     }
+    const dust = kind === 3 && warnLeft <= 0 ? dustLook(tick - strikeTick, reduced) : null;
+    if (dust) {
+      // Rockfall impact: an expanding dust ring on the ground, soft puffs rolling out and angular debris thrown up (still, only fading, under reduced motion).
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const rx = (w * 0.5 + 40) * (0.35 + 0.65 * dust.t);
+      const ry = (h * 0.28 + 16) * (0.35 + 0.65 * dust.t);
+      g.fillStyle(0x6a5236, 0.3 * dust.alpha).fillEllipse(cx, y + h - 6, rx * 2, ry * 2);
+      g.lineStyle(6, 0x3a2c1e, 0.55 * dust.alpha).strokeEllipse(cx, y + h - 6, rx * 2, ry * 2);
+      g.lineStyle(3, 0xf4e8c8, 0.9 * dust.alpha).strokeEllipse(cx, y + h - 6, rx * 2, ry * 2);
+      for (let i = 0; i < 8; i++) {
+        const [dx = 0, dy = 0] = DUST_DIRS[i] ?? [];
+        const spread = (0.4 + 0.6 * dust.t) * (w * 0.5 + 30);
+        const px = cx + dx * spread;
+        const py = y + h - 10 + dy * 14 * dust.t;
+        g.fillStyle(0x8a7050, 0.38 * dust.alpha).fillCircle(px, py, 18 + 16 * dust.t);
+        const lift = (1 - (2 * dust.t - 1) * (2 * dust.t - 1)) * (48 + (i % 3) * 20);
+        const dxp = cx + dx * (24 + 90 * dust.t) * (1 + (i % 2) * 0.3);
+        const dyp = cy - lift * (i % 2 === 0 ? 1 : 0.6);
+        const sz = 11 + (i % 3) * 5;
+        g.fillStyle(0x3a2c1e, dust.alpha).fillTriangle(dxp - sz, dyp + sz, dxp + sz, dyp + sz * 0.6, dxp - sz * 0.2, dyp - sz);
+        g.fillStyle(0xb08a5a, dust.alpha).fillTriangle(dxp - sz * 0.5, dyp + sz * 0.5, dxp + sz * 0.5, dyp + sz * 0.3, dxp - sz * 0.1, dyp - sz * 0.6);
+      }
+      glow.fillStyle(0xf0e4c8, 0.18 * dust.alpha).fillCircle(cx, cy, Math.min(w, h) * 0.45);
+    }
+    if (kind === 3 && warnLeft <= 0 && tick === strikeTick && !reduced) arena.cameras.main.shake(140, 0.004);
     chip(warnLeft > 0 ? hazardLabel(kind, warnLeft) : '', x, y, w, alpha);
     markers.push({ kind, phase: warnLeft > 0 ? 'warn' : 'active', x, y, w, h, dir, alpha, chevrons: drawn, label: warnLeft > 0 ? hazardLabel(kind, warnLeft) : '' });
   };

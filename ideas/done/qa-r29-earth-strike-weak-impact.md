@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -8,3 +8,7 @@ added: 2026-11-14
 White box and sun-beam are gone (confirmed), but the rockfall impact is a dim brown square with little dust, shake or debris (shots/earth-desk-1-active.png, earth-desk-2-active.png).
 
 Add a debris burst, dust ring and a brief camera kick.
+
+## Progress
+
+- 2026-11-14: done. Rockfall strike now throws a dust ring, puffs and angular debris for 0.5 s with a small camera shake (hazard-view.ts dustLook; still and fade-only under reduced motion).

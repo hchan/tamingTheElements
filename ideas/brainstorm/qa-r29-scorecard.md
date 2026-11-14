@@ -20,3 +20,5 @@ See qa-r29-hazard-chips-hidden-by-weather-bar, snag-text-pileup, phone-hud-names
 
 ## Not verified
 ROUND 2 banner, desktop Help and Settings. Screenshots in ~/claudetmp/qa29/shots/.
+
+- 2026-11-14: hit marks reworked (signature-view.ts): soft layered glow instead of flat discs, plus an expanding element ring and radiating shards on fire, earth and air.
