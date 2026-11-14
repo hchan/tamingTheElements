@@ -110,6 +110,8 @@ export interface SessionSnapshot {
 /** Remote inputs further ahead than this many ticks are ignored (bounds memory against a hostile peer). */
 const MAX_AHEAD = 2 * MAX_INPUTS_PER_PACKET;
 const ADAPT_WINDOW = 50;
+/** Samples (one per update) that `frameAdvantage` averages. */
+const ADV_WINDOW = 16;
 const ADAPT_STALLS = 5;
 /** Checkpoint hashes kept for `hashAt` and late comparison (the wire carries only the last MAX_HASHES_PER_PACKET). */
 const HASH_HISTORY = 64;
@@ -239,6 +241,11 @@ export class LockstepSession {
   private readonly matched: boolean[] = [];
   /** Hash ticks below this were dropped; late remote hashes for them are ignored. */
   private hashFloor = 0;
+  /** Newest remote input tick seen plus one (any arrival order); read-only input to `frameAdvantage`. */
+  private remoteNewest = 0;
+  private readonly advRing = new Int32Array(ADV_WINDOW);
+  private advN = 0;
+  private advSum = 0;
 
   constructor(opts: LockstepOptions) {
     this.world = opts.world;
@@ -289,6 +296,15 @@ export class LockstepSession {
     return out;
   }
 
+  /**
+   * Read-only pacing hint: our sim tick minus the peer's estimated sim tick (newest remote input tick minus the delay),
+   * averaged over the last 16 updates and rounded to an integer. Includes the one-way latency, so a driver compares it
+   * with its own past values (see `FramePacer`). Never affects stepping, inputs or hashes.
+   */
+  frameAdvantage(): number {
+    return this.advN === 0 ? 0 : Math.round(this.advSum / this.advN);
+  }
+
   get inputDelay(): number {
     return this.delay;
   }
@@ -332,6 +348,7 @@ export class LockstepSession {
     this.stats.updates++;
     if (this.startClock < 0) this.startClock = this.clock;
     this.receiveAll();
+    this.sampleAdvantage();
 
     const live = this.forfeitReason === undefined && this.desync === undefined && !this.ended;
     let inputAccepted = false;
@@ -583,6 +600,15 @@ export class LockstepSession {
       this.desync = { tick, local: l, remote: r };
   }
 
+  private sampleAdvantage(): void {
+    const i = this.stats.updates % ADV_WINDOW;
+    const v = this.simTick - (this.remoteNewest - this.delay);
+    if (this.advN === ADV_WINDOW) this.advSum -= this.advRing[i] as number;
+    else this.advN++;
+    this.advRing[i] = v;
+    this.advSum += v;
+  }
+
   private receiveAll(): void {
     for (let raw = this.transport.receive(); raw !== undefined; raw = this.transport.receive()) {
       const p = decodePacket(raw);
@@ -605,6 +631,7 @@ export class LockstepSession {
       const now = this.ring === undefined ? this.simTick : this.confirmed;
       p.inputs.forEach((cmd, i) => {
         const tick = p.firstTick + i;
+        if (tick + 1 > this.remoteNewest && tick < this.remoteNewest + MAX_AHEAD) this.remoteNewest = tick + 1;
         if (tick < now || tick >= now + MAX_AHEAD || this.remote.get(tick) !== undefined) return;
         this.remote.set(tick, cmd & this.inputMask);
       });

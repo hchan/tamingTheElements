@@ -26,6 +26,7 @@ import {
   capturedRosterIndices,
   characterId,
   LockstepSession,
+  FramePacer,
   collectCommands,
   createMatch,
   createRenderView,
@@ -147,6 +148,8 @@ export class Arena extends Phaser.Scene {
   private second: KeyboardAgent | undefined;
   /** Online matches only: the lockstep session that owns stepping (docs/NETCODE.md). */
   private session: LockstepSession | undefined;
+  private readonly pacer = new FramePacer();
+  private pacing = false;
   /** Rollback only: shows each event id once, so a corrected payload does not replay a sound or effect. */
   private playOnce: PlayOnce | undefined;
   /** The battle's sound; public so the Arcade audio layers (`audio/arcade-audio.ts`, a lazy chunk) can find it. */
@@ -186,6 +189,7 @@ export class Arena extends Phaser.Scene {
     const net = this.launch?.net;
     const rollbackWindow = (import.meta.env.DEV || import.meta.env.MODE === 'test') && getUiFlags(window.location.search).rollback ? ROLLBACK_WINDOW : 0;
     if (rollbackWindow > 0) this.playOnce = new PlayOnce();
+    this.pacing = rollbackWindow === 0;
     this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow, ...(net.tickLimit === undefined ? {} : { tickLimit: net.tickLimit }) }) : undefined;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
@@ -637,6 +641,8 @@ export class Arena extends Phaser.Scene {
       // or reports a stall (no step this call) while the peer's command is late.
       const side = this.session.side;
       const mine = collectCommands(world, side === 0 ? [this.agents[0], undefined] : [undefined, this.agents[0]])[side];
+      // Frame-advantage pacing (lockstep only: with rollback the advantage is the prediction lead, not a stall signal): a peer that runs ahead of its own best case skips an update now and then (the sim is unaffected).
+      if (this.pacing && this.pacer.shouldSkip(this.session.frameAdvantage())) return;
       const r = this.session.update(mine);
       this.launch?.net?.onStatus?.(r.status, this.session);
       if (!r.stepped) {
