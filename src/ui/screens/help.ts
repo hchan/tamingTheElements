@@ -3,6 +3,7 @@ import { getBindings, type Bindings } from '../../game/platform/input/bindings';
 import { controlSections } from './help-controls';
 import { LESSONS, PICKER_STEPS, actionBarKeys } from './help-guide';
 import type { Screen } from './screen';
+import '../styles/help.css';
 
 export interface HelpLink {
   readonly label: string;
@@ -37,7 +38,7 @@ export function helpScreen(): Screen {
         li.append(a);
         list.append(li);
       }
-      node.append(list);
+      node.append(jumpNav(), list);
       node.append(howToFight(), pickerSection(), controlsSection());
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
@@ -49,6 +50,34 @@ export function helpScreen(): Screen {
       node = null;
     },
   };
+}
+
+/** In-page jump targets. Buttons, not `#id` anchors: the hash router owns location.hash, so an anchor would leave the page. */
+export const HELP_SECTIONS: readonly { readonly label: string; readonly id: string }[] = [
+  { label: 'How to fight', id: 'helpLessonsHeading' },
+  { label: 'Choosing your heroes', id: 'helpPickerHeading' },
+  { label: 'Controls', id: 'helpControlsHeading' },
+];
+
+function jumpNav(): HTMLElement {
+  const nav = el('nav', 'helpJump');
+  nav.setAttribute('aria-label', 'On this page');
+  nav.append(el('span', 'helpJumpLabel', 'Jump to'));
+  for (const s of HELP_SECTIONS) {
+    const b = el('button', 'helpJumpBtn clickable', s.label);
+    b.setAttribute('type', 'button');
+    b.dataset.target = s.id;
+    b.addEventListener('click', () => {
+      const t = document.getElementById(s.id);
+      if (!t) return;
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      t.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+      t.setAttribute('tabindex', '-1');
+      t.focus({ preventScroll: true });
+    });
+    nav.append(b);
+  }
+  return nav;
 }
 
 /** First lessons: the fight loop as a numbered list, then the numbered action bar. */
