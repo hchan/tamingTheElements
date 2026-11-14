@@ -14,3 +14,5 @@ Progress 2026-11-14 (Rokcore density): Rokcore was an 80 px procedural sprite up
 
 Done: "More heroes below" pill sits inside the sticky bar at >=900px; Tour stage card fits phone landscape (844x390); bench chips enlarged 56 to 68 px (slim-hud, tag-fx, tests).
 Open: Echo/Pax air-stage contrast (Echo already has a pale additive glow; a normal-blend rim for the bright Arcade air floor is not done), Rokcore re-bake. Status stays idea.
+
+Progress 2026-11-14 (air contrast): `CharacterView.placeAura` adds a normal-blend deep-indigo soft aura behind every hero (above the additive glow, below the sprite; presentation only). It gives Echo and Pax a dark edge on the bright air floor and tames Echo's blown-out additive glow; fire, water and earth floors are unchanged to the eye. Before/after shots (echo, pax on all four stages) in ~/claudetmp/aircontrast/{before,after}. Remaining open: Rokcore re-bake verification only; status stays idea.

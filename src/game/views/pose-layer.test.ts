@@ -150,7 +150,9 @@ function harness(
       const before = clock.t;
       clock.t += ms;
       const alpha = driver.frame(clock.t);
+      const n = images.length;
       cv.apply(c, sim.tick, alpha, true);
+      images.splice(n); // the view's own decor (the dark aura) is not a pose-layer ghost
       const baseX = img.x;
       layer.frame(clock.t, clock.t - before);
       return baseX;
