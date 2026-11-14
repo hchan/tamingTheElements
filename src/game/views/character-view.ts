@@ -98,6 +98,14 @@ const HALO_ALPHA = 0.4;
 /** Normal-blend deep-indigo aura behind every hero: a pale or stony body keeps a dark edge on the bright air floor (display only). */
 const AURA_TINT = 0x120c28;
 const AURA_ALPHA = 0.42;
+/** On the bright air floor the pale beings (Echo, Wispera) lose their additive light (it washes out) and get a deeper, wider aura instead. */
+const BRIGHT_AURA_ALPHA = 0.7;
+const BRIGHT_PALE: ReadonlySet<string> = new Set(['wispera', 'echo']);
+let brightFloor = false;
+/** The Arena says whether the floor this frame is the bright air stage (display only; one view per scene, so a module flag is enough). */
+export function setBrightFloor(on: boolean): void {
+  brightFloor = on;
+}
 
 /** The shared soft radial glow texture (64x64, white to transparent); undefined where no canvas is available (Node tests). */
 function glowTexture(scene: Phaser.Scene): string | undefined {
@@ -242,7 +250,7 @@ export class CharacterView {
 
   /** A soft ellipse of pale light under the feet for `GLOW_SPRITES`, so they read on dark floors. */
   private placeGlow(sprite: string, x: number, y: number, w: number, h: number): void {
-    if (!GLOW_SPRITES.has(sprite)) {
+    if (!GLOW_SPRITES.has(sprite) || (brightFloor && BRIGHT_PALE.has(sprite))) {
       this.glow?.setVisible(false);
       this.halo?.setVisible(false);
       return;
@@ -271,12 +279,13 @@ export class CharacterView {
       if (!key) return;
       this.aura = this.scene.add.image(0, 0, key).setTint(AURA_TINT);
     }
+    const pale = brightFloor && BRIGHT_PALE.has(this.spriteName);
     this.aura
       .setVisible(true)
       .setDepth(this.image.depth - 0.3)
-      .setAlpha(ghost ? AURA_ALPHA * 0.5 : AURA_ALPHA)
+      .setAlpha(pale ? BRIGHT_AURA_ALPHA * (ghost ? 0.8 : 1) : ghost ? AURA_ALPHA * 0.5 : AURA_ALPHA)
       .setPosition(x + w / 2, y + h * 0.52)
-      .setDisplaySize(w * 1.3, h * 1.22);
+      .setDisplaySize(w * (pale ? 1.4 : 1.3), h * (pale ? 1.3 : 1.22));
   }
 
   /**
