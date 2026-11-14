@@ -576,7 +576,16 @@ export class Hud extends Phaser.Scene {
       gfx.lineStyle(g.line, color, 1);
       const segs = dashSegments(g.minX, fill.curX, cue.dash);
       for (const [x0, x1] of segs) gfx.lineBetween(x0, g.y, x1, g.y);
-      if (!this.highContrast) this.grain(gfx, g, segs);
+      if (!this.highContrast) {
+        // A lit top edge and a shaded foot give the fill depth, so a pale element (air, Cyclonius) is not one flat stripe.
+        const top = g.y - g.line / 2 + 0.5;
+        const foot = g.y + g.line / 2 - 0.5;
+        for (const [x0, x1] of segs) {
+          gfx.lineStyle(1, shade(color, 1.45), 0.7).lineBetween(x0, top, x1, top);
+          gfx.lineStyle(1, shade(color, 0.55), 0.8).lineBetween(x0, foot, x1, foot);
+        }
+        this.grain(gfx, g, segs);
+      }
     }
   }
 
