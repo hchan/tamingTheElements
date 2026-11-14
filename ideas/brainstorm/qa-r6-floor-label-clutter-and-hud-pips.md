@@ -20,3 +20,7 @@ Evidence: tourfight-1.png, tourfight-4.png, fight-a-1280.png, fight-a-1920.png (
 - Label round pips with "Rounds" tooltip and use filled gems; label super with its key.
 - DONE (hud-lifebars-super): element-tinted life bars with a yellow chip trail and a red flash under 25%.
 - Light the crowd (rim light, a subtle bob) so the arena feels alive.
+
+## Update 2026-11-14 (hud-r8-clutter)
+
+Floor labels are now small chips (dark plate, element rim) that fade while a fighter stands near; the first-run card moved bottom-right above the action bar; hit numbers are larger with a thick stroke and shadow; tooltips sit above the TAG caption. Shots: ~/claudetmp/hud-r8/{before,after}. The ROUNDS pips remain open.

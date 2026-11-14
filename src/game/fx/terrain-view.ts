@@ -46,7 +46,7 @@ const ARENA_H = 720;
 const BADGE_X = 16;
 const BADGE_Y = 146;
 const BADGE_PX = 26;
-const LABEL_PX = 16;
+const LABEL_PX = 13;
 const ICON = 26;
 /** Ambient motes and mist: over the floor, under the fighters' flash effects. */
 const AMBIENT_DEPTH = 0.5;
@@ -113,7 +113,7 @@ export function mountTerrainView(
     | {
       bg: Phaser.GameObjects.Image | undefined; next: Phaser.GameObjects.Image | undefined;
       glow: Phaser.GameObjects.Graphics; floor: Phaser.GameObjects.Graphics; fx: Phaser.GameObjects.Graphics;
-      labels: Phaser.GameObjects.Text[]; plate: Phaser.GameObjects.Graphics; badge: Phaser.GameObjects.Text; ambient: Ambient;
+      labels: Phaser.GameObjects.Text[]; chips: Phaser.GameObjects.Graphics[]; plate: Phaser.GameObjects.Graphics; badge: Phaser.GameObjects.Text; ambient: Ambient;
     }
     | undefined;
 
@@ -140,6 +140,18 @@ export function mountTerrainView(
   let sparkNext = 0;
   let sparks = 0;
   const hero = { stage: 0, x: 0, y: 0, found: false };
+  /** Each floor chip's box (x, y, w, h) and how many fighters stand over it now (the chip fades out of their way). */
+  const chipBox = new Float64Array(MAX_PATCHES * 4);
+  const chipNear = new Uint8Array(MAX_PATCHES);
+  const near = (c: RenderCharacter): void => {
+    if ((c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0) return;
+    for (let i = 0; i < MAX_PATCHES; i++) {
+      const x = chipBox[i * 4] ?? 0;
+      const y = chipBox[i * 4 + 1] ?? 0;
+      if (c.x < x + (chipBox[i * 4 + 2] ?? 0) + 24 && c.x + c.w > x - 24 && c.y < y + (chipBox[i * 4 + 3] ?? 0) + 24 && c.y + c.h > y - 24) chipNear[i] = 1;
+    }
+  };
+  const chipFade = new Float64Array(MAX_PATCHES).fill(1);
 
   const visit = (c: RenderCharacter): void => {
     if (hero.found || c.team !== 0 || (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0) return;
@@ -167,7 +179,8 @@ export function mountTerrainView(
       glow: arena.add.graphics().setDepth(GLOW_DEPTH),
       floor: arena.add.graphics().setDepth(FLOOR_DEPTH),
       fx: arena.add.graphics().setDepth(FX_DEPTH),
-      labels: Array.from({ length: MAX_PATCHES }, () => text(arena, Math.round(LABEL_PX * boost), 5).setOrigin(0.5, 1).setDepth(FLOOR_DEPTH + 0.05)),
+      labels: Array.from({ length: MAX_PATCHES }, () => text(arena, Math.round(LABEL_PX * boost), 5).setOrigin(0.5, 1).setPadding(8, 2, 8, 3).setDepth(FLOOR_DEPTH + 0.05)),
+      chips: Array.from({ length: MAX_PATCHES }, () => arena.add.graphics().setDepth(FLOOR_DEPTH + 0.04).setVisible(false)),
       plate: hud.add.graphics().setDepth(HUD_DEPTH),
       badge: text(hud, Math.round(BADGE_PX * boost), 5).setOrigin(0, 0).setDepth(HUD_DEPTH),
       ambient: mountAmbient(arena, hud, AMBIENT_DEPTH),
@@ -237,7 +250,19 @@ export function mountTerrainView(
       }
       labels.push(word);
       if (t.text !== word) t.setText(word);
-      t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2, (rects[i * 4 + 1] ?? 0) - 3);
+      const cx = (rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2;
+      const cy = (rects[i * 4 + 1] ?? 0) - 3;
+      t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition(cx, cy);
+      // A small chip: dark plate with a rim in the stage's colour, so the word reads over any floor and never looks like loose type.
+      const w = t.width;
+      const h = t.height;
+      const rim = PATCH_COLORS[stage - 1] ?? 0xffffff;
+      p.chips[i]?.clear().fillStyle(0x0e0b14, highContrast ? 0.92 : 0.7).fillRoundedRect(-w / 2, -h, w, h, h / 2)
+        .lineStyle(highContrast ? 2 : 1.5, rim, 0.9).strokeRoundedRect(-w / 2, -h, w, h, h / 2).setPosition(cx, cy);
+      chipBox[i * 4] = cx - w / 2;
+      chipBox[i * 4 + 1] = cy - h;
+      chipBox[i * 4 + 2] = w;
+      chipBox[i * 4 + 3] = h;
     }
   };
 
@@ -296,7 +321,16 @@ export function mountTerrainView(
     // time each stage appears, then the glow ring and the pad art carry it alone.
     if (stage > 0 && firstSeen[stage] === undefined) firstSeen[stage] = clock;
     const hint = stage > 0 ? labelHintAlpha(clock - (firstSeen[stage] ?? clock)) : 0;
-    p.labels.forEach((t, i) => t.setVisible(hint > 0 && stage !== 3 && i < count).setAlpha((highContrast ? drawn.alpha : drawn.alpha * 0.8) * hint));
+    chipNear.fill(0);
+    view.forEachCharacter(near);
+    p.labels.forEach((t, i) => {
+      // Ease toward faint while a fighter stands on or beside the chip, back up when it leaves.
+      chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -0.12 : 0.06)));
+      const a = (highContrast ? drawn.alpha : drawn.alpha * 0.9) * hint * (chipFade[i] ?? 1);
+      const on = hint > 0 && stage !== 3 && i < count;
+      t.setVisible(on).setAlpha(a);
+      p.chips[i]?.setVisible(on).setAlpha(a);
+    });
     // Particles (motion only) and sparks.
     const f = p.fx.clear();
     const n = reduced || stage === 0 ? 0 : Math.min(MAX_PARTICLES, count * PARTICLES_PER_PATCH);
@@ -348,7 +382,7 @@ export function mountTerrainView(
     stageArt.destroy();
     if (parts) {
       parts.ambient.destroy();
-      for (const o of [parts.bg, parts.next, parts.glow, parts.floor, parts.fx, parts.plate, parts.badge, ...parts.labels]) o?.destroy();
+      for (const o of [parts.bg, parts.next, parts.glow, parts.floor, parts.fx, parts.plate, parts.badge, ...parts.labels, ...parts.chips]) o?.destroy();
     }
     parts = undefined;
   };
