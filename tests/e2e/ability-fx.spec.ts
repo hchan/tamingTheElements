@@ -59,6 +59,10 @@ const CASES = [
   { name: 'ishimi-circus', me: 'ishimi', gap: 500, cmd: PRIMARY },
   { name: 'ishimi-blast', me: 'ishimi', gap: 500, cmd: SECONDARY },
   { name: 'crimson-fire', me: 'lavax', gap: 600, cmd: PRIMARY },
+  { name: 'curomo-primary', me: 'curomo', gap: 160, cmd: PRIMARY },
+  { name: 'curomo-secondary', me: 'curomo', gap: 160, cmd: SECONDARY },
+  { name: 'curomo-secondary-far', me: 'curomo', gap: 600, cmd: SECONDARY },
+  { name: 'curomo-primary-far', me: 'curomo', gap: 600, cmd: PRIMARY },
 ] as const;
 
 for (const c of CASES) {

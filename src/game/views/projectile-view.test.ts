@@ -119,3 +119,17 @@ describe("SPRITE_BOOST contrast entries (ability audit open defects)", () => {
     for (const k of ["chaosBolt", "chaosOrb"]) expect(SPRITE_BOOST[k]?.glowAlpha).toBeGreaterThanOrEqual(0.8);
   });
 });
+
+describe('Curomo ability visibility boosts', () => {
+  it('gives Shards of Ice a wider, brighter, icy halo and a longer minimum draw', () => {
+    const b = SPRITE_BOOST['shardsOfIce'];
+    expect(b?.minLong).toBeGreaterThan(MIN_BOLT_LONG_SIDE);
+    expect(b?.glowAlpha).toBeGreaterThanOrEqual(0.8);
+    expect(b?.glowScale).toBeGreaterThanOrEqual(2);
+    expect(boltDisplaySize(40, 10, 80, 11, b?.minLong).w).toBeGreaterThanOrEqual(64);
+  });
+  it('lifts the Ice Shock lance halo above the default melee glow (0.2)', () => {
+    expect(SPRITE_BOOST['iceShock']?.glowAlpha).toBeGreaterThan(0.2);
+    expect(SPRITE_BOOST['iceShock']?.dark).toBeUndefined();
+  });
+});

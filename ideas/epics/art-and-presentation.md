@@ -18,5 +18,5 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [free-sprite-research](../brainstorm/free-sprite-research.md)
 - [sf-stage-backgrounds-crowds](../brainstorm/sf-stage-backgrounds-crowds.md)
 - [stage-selection-hazards](../brainstorm/stage-selection-hazards.md)
-- [curomo-ability-visibility](../brainstorm/curomo-ability-visibility.md)
+- [curomo-ability-visibility](../done/curomo-ability-visibility.md)
 - [audio-and-music](../in-progress/audio-and-music.md)
