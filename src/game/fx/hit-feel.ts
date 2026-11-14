@@ -28,7 +28,7 @@ export function sparkStyleFor(element: Element | undefined): SparkStyle {
 }
 
 /** KO punch-in: the camera eases in by this much over the pan framing, then back out. */
-export const KO_PUNCH_ZOOM = 1.07;
+export const KO_PUNCH_ZOOM = 1.12;
 export const KO_PUNCH_MS = 700;
 
 /** Zoom multiplier `ageMs` after the KO: a smooth bell from 1 up to KO_PUNCH_ZOOM and back to 1; 1 outside the window or when reduced. */
