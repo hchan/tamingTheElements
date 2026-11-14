@@ -166,7 +166,7 @@ def water():
     """Wet slate flags with dark weedy joints, a few standing pools mirroring a cold teal light, a caustic shimmer."""
     gap, sv, slab, broad, fine, lit = stones(1201, 180, 120, 40, 7.0)
     v = np.clip(0.34 + 0.30 * (sv - 0.5) + 0.2 * (broad - 0.5) + 0.12 * (fine - 0.5) + 0.42 * lit, 0, 1)
-    img = tint(v, [(0, (6, 14, 20)), (0.4, (28, 48, 58)), (0.75, (62, 90, 98)), (1, (120, 150, 152))])
+    img = tint(v, [(0, (14, 34, 46)), (0.4, (52, 98, 116)), (0.75, (104, 160, 176)), (1, (176, 222, 226))])  # qa-r6: lifted, luminous aqua
     joint = 1 - slab
     img = img * (1 - 0.65 * joint)[..., None] + (joint * 0.65)[..., None] * np.asarray([(14, 34, 28)], np.float32)
     wet = smooth(fbm(1211, 90, 3), 0.45, 0.7)  # wet sheen: a cool specular lift on the slabs
@@ -181,8 +181,12 @@ def water():
     b = np.abs(fbm(1208, 56, 3, 1.0) - 0.5)
     caus = blur(np.exp(-(np.minimum(a, b) / 0.035) ** 2), 1.2) * smooth(fbm(1209, 260, 2), 0.45, 0.8)
     img = img + (caus * (8 + 26 * pool))[..., None] * np.asarray([(0.5, 0.9, 1.0)], np.float32)
+    # qa-r6: slanting light shafts through the water, a pale caustic net and a brighter lift so the pads read a step above the floor.
+    shaft = smooth(blur(fbm(1230, 140, 3, 0.18), 6), 0.42, 0.72)
+    img = img + (shaft * 38)[..., None] * np.asarray([(0.55, 0.95, 1.0)], np.float32)
+    img = img * 1.12 + 10
     img = persp(img)
-    img = stage_light((60, 160, 180), 1.0, (28, 56, 68), img)
+    img = stage_light((90, 200, 220), 1.0, (44, 92, 112), img)
     return finish(img, 1210, 0.14)
 
 
@@ -235,10 +239,10 @@ def air():
     a cool lavender-to-teal light: mid-dark enough that pale heroes stand out, bright mist for the mystic glow."""
     gap, sv, slab, broad, fine, lit = stones(1401, 290, 170, 50, 12.0)
     v = np.clip(0.40 + 0.30 * (sv - 0.5) + 0.26 * (broad - 0.5) + 0.12 * (fine - 0.5) + 0.62 * lit, 0, 1)
-    img = tint(v, [(0, (14, 14, 34)), (0.4, (52, 56, 104)), (0.75, (96, 106, 160)), (1, (160, 170, 214))])
+    img = tint(v, [(0, (30, 32, 66)), (0.4, (88, 96, 156)), (0.75, (150, 162, 214)), (1, (218, 226, 250))])  # qa-r6: lifted, luminous periwinkle
     tealwash = smooth(fbm(1402, 320, 3, 1.6), 0.45, 0.75)  # cool teal drift across the slate for colour variety
     img = img * (1 - 0.5 * tealwash)[..., None] + tealwash[..., None] * 0.5 * (img * np.asarray([(0.55, 1.1, 1.15)], np.float32))
-    img = img * (0.28 + 0.72 * slab)[..., None]  # deep joints
+    img = img * (0.4 + 0.6 * slab)[..., None]  # joints (softer after qa-r6)
     for seed, w in ((1405, 0.010), (1415, 0.006)):
         vein = np.exp(-((fbm(seed, 170, 4, 1.4) - 0.5) / w) ** 2) * smooth(fbm(seed + 1, 240, 2), 0.35, 0.7)
         img = img * (1 - 0.35 * blur(vein, 0.7))[..., None]
@@ -251,8 +255,12 @@ def air():
         m = smooth(fbm(seed, cell, 5, 4.5), lo, hi)
         img = img * (1 - 0.35 * np.roll(blur(m, 8), 16, 0))[..., None]  # the cloud's shadow, offset: depth under the mist
         img = img * (1 - a * m[..., None]) + np.asarray([(190, 200, 236)], np.float32) * a * m[..., None]
+    # qa-r6: golden-white light shafts breaking through the cloud, and a lift.
+    shaft = smooth(blur(fbm(1430, 150, 3, 0.18), 6), 0.45, 0.75)
+    img = img + (shaft * 34)[..., None] * np.asarray([(1.0, 0.95, 0.8)], np.float32)
+    img = img * 1.1 + 8
     img = persp(img)
-    img = stage_light((120, 130, 230), 1.0, (56, 64, 120), img)
+    img = stage_light((150, 160, 245), 1.0, (92, 100, 168), img)
     return finish(img, 1409, 0.04)
 
 
