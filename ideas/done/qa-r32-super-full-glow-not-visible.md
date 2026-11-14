@@ -10,4 +10,4 @@ At SUPER 3 MAX the label and pips are clear and the Super slot gets a faint gold
 Shots: ~/claudetmp/qa-r32/meter3-full-1280-1.png, super-ready-1280.png.
 
 ## Resolution (2026-11-14)
-Action-bar super slot: wider gold halo, steady solid rim, stronger wash; readyGlow floor 0.55 to 0.75. Verified at 1280. The life-bar rim lives in src/game/scenes/Hud.ts, not touched (out of scope).
+Action-bar super slot: wider gold halo, steady solid rim, stronger wash; readyGlow floor 0.55 to 0.75. Verified at 1280. The life-bar gold rim (steady edge + breathing halo, steady under reduced motion) is now drawn in Hud.ts drawSuperRim; shots ~/claudetmp/super-rim/.
