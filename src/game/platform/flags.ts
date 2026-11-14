@@ -10,8 +10,8 @@ export interface UiFlags {
   readonly arenaDemo: boolean;
   /** The `arenaDemo` match runs the Arcade ruleset (dev and test builds; the menu entry is WP-arcade-entry). */
   readonly arcade: boolean;
-  /** Online matches predict the missing remote input and roll back (`?ff=rollback`, dev and test builds; docs/NETCODE.md). */
-  readonly rollback: boolean;
+  /** Online matches use plain lockstep instead of the rollback default (`?ff=lockstep`, dev and test builds; docs/NETCODE.md). */
+  readonly lockstep: boolean;
   /** An online match's local side is played by the Arcade scripted AI instead of the keyboard (`?ff=netbot`, dev and test builds; the two-context e2e proof). */
   readonly netbot: boolean;
   /** Play path starts the intro cinematic after Preload. */
@@ -38,7 +38,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   forceNoWebgl: false,
   arenaDemo: false,
   arcade: false,
-  rollback: false,
+  lockstep: false,
   netbot: false,
   cinematicDemo: false,
   record: false,
@@ -69,7 +69,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     forceNoWebgl: on.has('forceNoWebgl'),
     arenaDemo: on.has('arenaDemo'),
     arcade: on.has('arcade'),
-    rollback: on.has('rollback'),
+    lockstep: on.has('lockstep'),
     netbot: on.has('netbot'),
     cinematicDemo: on.has('cinematicDemo'),
     record: on.has('record'),

@@ -3,7 +3,7 @@ import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 // The two-context proof (docs/WEBRTC-PLAN.md WP 01): a full online match between two SEPARATE browser contexts (own storage, own
 // network stack, like two machines) over loopback WebRTC. Both sides are played by the Arcade scripted AI (`?ff=netbot`), the
 // link needs no STUN server (`?ice=none`), and the proof is that both pages finish with the same winner and identical
-// checkpoint hash lists. Once in plain lockstep and once with rollback.
+// checkpoint hash lists. Once in plain lockstep (?ff=lockstep) and once in the rollback default.
 
 // Chromium hides host candidates behind mDNS names (.local), which two contexts cannot always resolve on a loopback-only
 // host; this spec only needs the real addresses, so it turns that hiding off (other specs keep the default).
@@ -55,7 +55,7 @@ async function waitForEnd(page: Page, stallMs = 10_000): Promise<Net> {
   }
 }
 
-for (const ff of ['arcade,netbot', 'arcade,rollback,netbot']) test(`two browser contexts play a whole online match to the same result (${ff})`, async ({ browser }) => {
+for (const ff of ['arcade,lockstep,netbot', 'arcade,netbot']) test(`two browser contexts play a whole online match to the same result (${ff})`, async ({ browser }) => {
   test.setTimeout(NATURAL ? 900_000 : 420_000);
   const ctxA = await browser.newContext();
   const ctxB = await browser.newContext();

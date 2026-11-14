@@ -22,6 +22,7 @@ export function main(argv: readonly string[]): number {
         dup: { type: 'string', default: '0' },
         reorder: { type: 'string', default: '0' },
         delay: { type: 'string', default: '2' },
+        rollback: { type: 'string', default: '0' },
         'no-adaptive': { type: 'boolean', default: false },
         json: { type: 'boolean', default: false },
       },
@@ -54,7 +55,7 @@ export function main(argv: readonly string[]): number {
         reorder: num('reorder'),
         reorderDelay: Math.max(2, num('jitter') * 2),
       },
-      session: { inputDelay: num('delay'), adaptive: !values['no-adaptive'] },
+      session: { inputDelay: num('delay'), adaptive: !values['no-adaptive'], rollbackWindow: num('rollback') },
     });
     const [a, b] = r.sessions;
     const out = {
@@ -71,13 +72,16 @@ export function main(argv: readonly string[]): number {
       maxStallRun: Math.max(a.stats.maxStallRun, b.stats.maxStallRun),
       resentInputs: [a.stats.resentInputs, b.stats.resentInputs],
       maxLagTicks: Math.max(a.stats.maxLagTicks, b.stats.maxLagTicks),
+      rollbacks: [a.stats.rollbacks, b.stats.rollbacks],
+      resimTicks: [a.stats.resimTicks, b.stats.resimTicks],
+      maxRollbackDepth: Math.max(a.stats.maxRollbackDepth, b.stats.maxRollbackDepth),
     };
     if (values.json) console.log(JSON.stringify(out, null, 2));
     else for (const [k, v] of Object.entries(out)) console.log(`${k.padEnd(13)} ${JSON.stringify(v)}`);
     return out.hashesEqual && out.desync === null ? 0 : 1;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm sim:net [--ticks N] [--seed S] [--latency T] [--jitter T] [--loss P] [--dup P] [--reorder P] [--delay D] [--no-adaptive] [--json]');
+    console.error('usage: pnpm sim:net [--ticks N] [--seed S] [--latency T] [--jitter T] [--loss P] [--dup P] [--reorder P] [--delay D] [--rollback W] [--no-adaptive] [--json]');
     return 2;
   }
 }
