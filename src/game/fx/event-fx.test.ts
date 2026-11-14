@@ -20,12 +20,14 @@ const stop = (tick: number, ticks: number, cause = 0): SimEvent =>
   ({ tick, sourceId: 9, kind: SimEventKind.hitStop, seq: 2, ticks, cause });
 
 /** Fake sink: one log line per call, so tests read like the effect sequence. */
-function recorder(): { sink: FxSink; log: string[]; holds: number[] } {
+function recorder(): { sink: FxSink; log: string[]; holds: number[]; supers: string[] } {
   const log: string[] = [];
+  const supers: string[] = [];
   const holds: number[] = [];
   return {
     log,
     holds,
+    supers,
     sink: {
       flash: (t, tint, hold) => {
         log.push(`flash${String(t)}:${tint.toString(16)}`);
@@ -33,12 +35,13 @@ function recorder(): { sink: FxSink; log: string[]; holds: number[] } {
       },
       burst: (t, o, n, c) => {
         for (let i = 0; i < n * 2; i++) expect(Math.abs(o[i] ?? 9)).toBeLessThanOrEqual(1);
-        log.push(`burst${String(t)}x${String(n)}:${c.toString(16)}`);
+        (c === 0xd9b24c ? supers : log).push(`burst${String(t)}x${String(n)}:${c.toString(16)}`);
       },
       spark: (t) => log.push(`spark${String(t)}`),
       shake: (ms, i) => log.push(`shake${String(ms)}@${String(i)}`),
       jitter: (t, until) => log.push(`jitter${String(t)}<${String(until)}`),
       number: (t, a, scaled, counter) => log.push(`number${String(t)}=${String(a)}${scaled ? 's' : ''}${counter ? 'c' : ''}`),
+      superHit: (t, a, f, flash, r) => supers.push(`superHit${String(t)}=${String(a)}@${f.toFixed(2)}${flash ? 'F' : ''}${r ? 'r' : ''}`),
       superCut: (c, from, until, reduced) => log.push(`super${String(c)}@${String(from)}<${String(until)}${reduced ? 'r' : ''}`),
     },
   };
@@ -276,5 +279,25 @@ describe('cosmetic helpers', () => {
   it('rotates bullets by dir except Tornado', () => {
     expect([0, 1, 2, 3, 4, 5, 6, 7].map((d) => rotationForDir(d, 'fireball'))).toEqual([0, 315, 270, 225, 180, 135, 90, 45]);
     expect(rotationForDir(2, 'tornado')).toBe(0);
+  });
+});
+
+describe('super hit impact', () => {
+  const superFx = (sink: FxSink, reduced = false): EventFx =>
+    new EventFx(sink, { reducedMotion: () => reduced, arcade: true, elementOf: (id) => (id === 1 ? 'fire' : undefined), maxLifeOf: () => 400 });
+
+  it('sizes the number by the life share, flashes once per super and adds gold sparks; a normal hit gets none', () => {
+    const { sink, supers } = recorder();
+    const fx = superFx(sink);
+    fx.consume([confirmed(10, 3, { amount: 120 }), confirmed(16, 3, { amount: 120 }), confirmed(80, 3, { amount: 100 }), confirmed(90, 2)]);
+    expect(supers.filter((l) => l.startsWith('superHit'))).toEqual(['superHit3=120@0.30F', 'superHit3=120@0.30', 'superHit3=100@0.25F']);
+    expect(supers.filter((l) => l.includes(':d9b24c'))).toHaveLength(3);
+  });
+
+  it('keeps the still number but drops the flash and the extra sparks under reduced motion', () => {
+    const { sink, supers } = recorder();
+    superFx(sink, true).consume([confirmed(10, 3, { amount: 120 })]);
+    expect(supers).toContain('superHit3=120@0.30r');
+    expect(supers.some((l) => l.includes(':d9b24c'))).toBe(false);
   });
 });

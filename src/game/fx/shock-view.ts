@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
-import { KO_WASH_MS, RING_POOL, koWashStrength, ringFrame } from './hit-feel';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
+import { KO_WASH_MS, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koWashStrength, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
 /**
  * Renderer-only KO desaturation wash (a camera colour-matrix filter) and hit shockwave rings (one pooled Graphics: a pale
@@ -17,6 +18,8 @@ export interface ShockLayer {
   wash(): void;
   /** Plays a ring at (x, y) in `color`; `weight` 2 heavy, 3 super, 4 KO. */
   ring(x: number, y: number, color: number, weight: number): void;
+  /** Super hit: a gold number at (x, y) sized by `fraction` of the victim's life, and (when `flash`) one pale screen pulse. Reduced motion: still number, no pulse. */
+  superHit(x: number, y: number, amount: number, fraction: number, flash: boolean, reduced: boolean): void;
   seek(ms: number): void;
   state(): ShockState;
 }
@@ -30,6 +33,19 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     age: number;
   }
   const rings: Ring[] = [];
+  interface Num {
+    text: Phaser.GameObjects.Text;
+    x: number;
+    y: number;
+    size: number;
+    age: number;
+    reduced: boolean;
+    live: boolean;
+  }
+  const nums: Num[] = [];
+  let nextNum = 0;
+  let flashRect: Phaser.GameObjects.Rectangle | undefined;
+  let flashAge = -1;
   let washAge = -1;
   let filter: ColorMatrixFilter | undefined;
   let gfx: Phaser.GameObjects.Graphics | undefined;
@@ -44,6 +60,9 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
   };
   const drop = (): void => {
     rings.length = 0;
+    nums.length = 0;
+    flashRect = undefined;
+    flashAge = -1;
     washAge = -1;
     filter = undefined;
     gfx = undefined;
@@ -80,7 +99,26 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
         gfx.lineStyle(Math.max(1, f.width * 0.7), r.color, f.alpha).strokeCircle(r.x, r.y, f.radius);
       }
     }
-    if (washAge < 0 && rings.length === 0) detach();
+    if (flashAge >= 0) {
+      flashAge += delta;
+      const a = superFlashAlpha(flashAge);
+      flashRect?.setAlpha(a).setVisible(a > 0);
+      if (a <= 0) flashAge = -1;
+    }
+    let numsLive = false;
+    for (const n of nums) {
+      if (!n.live) continue;
+      n.age += delta;
+      const f = superNumberFrame(n.age, n.reduced);
+      if (!f) {
+        n.live = false;
+        n.text.setVisible(false);
+        continue;
+      }
+      numsLive = true;
+      n.text.setPosition(n.x, n.y - f.rise).setScale(f.scale).setAlpha(f.alpha);
+    }
+    if (washAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive) detach();
   }
   const attach = (): void => {
     if (attached) return;
@@ -102,13 +140,43 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       rings.push({ x, y, color, weight, age: 0 });
       attach();
     },
+    superHit(x, y, amount, fraction, flash, reduced): void {
+      if (flash && !reduced) {
+        flashRect ??= scene.add.rectangle(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2, 8000, 8000, 0xfff0d0).setScrollFactor(0).setDepth(12);
+        flashRect.setAlpha(superFlashAlpha(0)).setVisible(true);
+        flashAge = 0;
+      }
+      let n = nums[nextNum];
+      if (!n && nums.length < SUPER_NUMBER_POOL) {
+        const text = scene.add
+          .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'bold', color: SUPER_NUMBER_COLOR, stroke: '#0a0806', strokeThickness: 8, resolution: scene.scale.width / LOGICAL_WIDTH })
+          .setOrigin(0.5)
+          .setDepth(13);
+        n = { text, x: 0, y: 0, size: 0, age: 0, reduced, live: false };
+        nums.push(n);
+      }
+      n ??= nums[nextNum % Math.max(1, nums.length)];
+      nextNum = (nextNum + 1) % SUPER_NUMBER_POOL;
+      if (!n) return;
+      n.size = superNumberSize(fraction);
+      n.x = x;
+      n.y = y;
+      n.age = 0;
+      n.reduced = reduced;
+      n.live = true;
+      n.text.setText(String(Math.round(amount))).setFontSize(n.size).setVisible(true);
+      attach();
+      step(0);
+    },
     seek(ms): void {
       if (washAge >= 0) washAge = ms;
+      if (flashAge >= 0) flashAge = Math.min(ms, SUPER_FLASH_MS - 1);
+      for (const n of nums) if (n.live) n.age = ms;
       for (const r of rings) r.age = ms;
       step(0);
     },
     state(): ShockState {
-      return { washAge, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length };
+      return { washAge, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, superNumberSize: nums.find((n) => n.live)?.size ?? 0 };
     },
   };
   layers.set(scene, layer);
@@ -121,6 +189,9 @@ export interface ShockState {
   /** Desaturation now, 0..KO_WASH_PEAK. */
   readonly wash: number;
   readonly rings: number;
+  /** Gold super numbers in flight and the font size of the first. */
+  readonly superNumbers: number;
+  readonly superNumberSize: number;
 }
 
 const layers = new WeakMap<Phaser.Scene, ShockLayer>();
