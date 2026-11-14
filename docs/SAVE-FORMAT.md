@@ -29,6 +29,12 @@ Absent means the default; a value of the wrong type is ignored on read, never an
 | `reduceMotion` | boolean | follow the OS `prefers-reduced-motion` |
 | `highContrast` | boolean | follow the OS `prefers-contrast: more` |
 | `keyBindings` | `{ [action]: string[] }` of `KeyboardEvent.code` values | the default bindings |
+| `turnServer` | `{ url, username?, credential? }`, a `turn:`/`turns:` relay for online play | public STUN only |
+
+`turnServer` is written by the Settings "Relay server (TURN)" row and read by `src/game/net/ice.ts` (sanitised by `parseTurn` in
+`src/game/platform/turn-setting.ts`: junk is dropped). It is only handed to `RTCPeerConnection`, never logged, and never put in
+a signalling code or join link. Note it is part of the save, so Export save includes the relay password: do not share an export.
+Test: `src/core/save/migrate.test.ts#turnServer (online relay) is optional`.
 
 Settings writes `reduceMotion`/`highContrast` only when the choice differs from the OS value; the Key Bindings screen
 writes `keyBindings` only when it differs from the defaults. `parseBindings` drops unknown actions, reserved or malformed

@@ -2,7 +2,10 @@ import { SetupHandshake, helloOf, type MatchSetup, type SessionStatus, type Setu
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import type { Screen } from '@ui/screens/screen';
+import { loadSave } from '@ui/screens/settings';
 import { hostPeer, joinPeer, type Peer } from '../net/peer';
+import { iceFromSettings } from '../net/ice';
+import { copyText, joinParam, pasteInto, shareBlock } from './online-share';
 import { destroyGame, type GameHandle } from './game-handle';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-pick';
@@ -76,8 +79,9 @@ function matchTicksParam(): number | undefined {
 const devBuild = (): boolean => import.meta.env.DEV || import.meta.env.MODE === 'test';
 
 /** `?ice=none` (dev and test builds only): no STUN server, so the offer and answer hold loopback host candidates only (hermetic e2e, no internet). */
-function iceParam(): RTCIceServer[] | undefined {
-  return devBuild() && new URLSearchParams(window.location.search).get('ice') === 'none' ? [] : undefined;
+function iceParam(): RTCIceServer[] {
+  if (devBuild() && new URLSearchParams(window.location.search).get('ice') === 'none') return [];
+  return iceFromSettings(loadSave().turnServer);
 }
 
 export function onlineVersusScreen(): Screen {
@@ -232,8 +236,8 @@ export function onlineVersusScreen(): Screen {
             say('Link open. Choose your three heroes, then press Ready.');
             pickPhase(p);
           },
-          () => {
-            if (!gone) say('The connection failed. Check both codes and try again (a strict network may need a relay).');
+          (e: unknown) => {
+            if (!gone) say(e instanceof Error && e.message !== '' ? e.message : 'The connection failed. Check both codes and try again.');
           },
         );
       };
@@ -246,16 +250,29 @@ export function onlineVersusScreen(): Screen {
       const offerIn = area('onlineOfferIn', 'Your friend\'s host code (join)', false);
       const answerOut = area('onlineAnswer', 'Your answer code to send back (join)', true);
 
-      const host = button('onlineHost', 'Host a match', () => {
+      const shareSlot = el('div');
+      const host = button('onlineHost', 'Make a code (host)', () => {
         say('Making a code...');
         hostPeer(iceParam()).then(({ peer: p, offer }) => {
           if (gone) { p.close(); return; }
           peer?.close();
           offerOut.box.value = offer;
+          shareSlot.replaceChildren(shareBlock(offer, offerOut.box, say));
           peer = p;
           side = 0;
-          say('Send your code to your friend, then paste their answer below and press Connect.');
+          say('Step 1 done: send your code or link to your friend. Then paste their answer below and press Connect.');
         }, fail);
+      });
+      const pasteAnswer = button('onlinePasteAnswer', 'Paste answer', () => {
+        void pasteInto(answerIn.box).then((ok) => { say(ok ? 'Answer pasted. Now press Connect.' : 'Could not read the clipboard: paste into the box yourself.'); });
+      });
+      const pasteOffer = button('onlinePasteOffer', 'Paste host code', () => {
+        void pasteInto(offerIn.box).then((ok) => { say(ok ? 'Host code pasted. Now press Join a match.' : 'Could not read the clipboard: paste into the box yourself.'); });
+      });
+      const copyAnswer = button('onlineCopyAnswer', 'Copy answer', () => {
+        void copyText(answerOut.box.value, answerOut.box).then((ok) => {
+          say(ok ? 'Answer copied. Send it back to your host.' : 'Could not copy automatically: the answer is selected, press Ctrl+C.');
+        });
       });
       const connect = button('onlineConnect', 'Connect', () => {
         if (!peer) { say('Press Host a match first.'); return; }
@@ -270,11 +287,44 @@ export function onlineVersusScreen(): Screen {
           answerOut.box.value = answer;
           side = 1;
           watch(p);
+          say('Answer ready: copy it and send it back to your host. Waiting for the link to open...');
         }, fail);
       });
 
-      node.append(el('h2', undefined, 'Host'), host, offerOut.row, answerIn.row, connect);
-      node.append(el('h2', undefined, 'Join'), offerIn.row, join, answerOut.row, status);
+      const step = (n: number, text: string): HTMLElement => el('h3', undefined, `Step ${String(n)}: ${text}`);
+      node.append(
+        el('h2', undefined, 'Host: you start the match'),
+        step(1, 'make a code and send it (or the link, or the QR) to your friend'),
+        host,
+        offerOut.row,
+        shareSlot,
+        step(2, 'paste your friend\'s answer code'),
+        answerIn.row,
+        pasteAnswer,
+        step(3, 'connect'),
+        connect,
+      );
+      node.append(
+        el('h2', undefined, 'Join: your friend started the match'),
+        step(1, 'paste the host\'s code (opening the host\'s link does this for you)'),
+        offerIn.row,
+        pasteOffer,
+        step(2, 'join'),
+        join,
+        step(3, 'send the answer code back to your host'),
+        answerOut.row,
+        copyAnswer,
+        status,
+      );
+      const linked = joinParam(window.location.search);
+      if (linked !== undefined) {
+        // Opened from a join link: fill the host's code, drop it from the address bar and start Join at once.
+        offerIn.box.value = linked;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('join');
+        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+        queueMicrotask(() => { if (!gone) join.click(); });
+      }
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
       node.append(back);

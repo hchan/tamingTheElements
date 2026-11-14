@@ -34,6 +34,8 @@ export interface SaveV1 {
   highContrast?: boolean;
   /** Remapped keys (`KeyboardEvent.code` lists per action); absent means the default bindings. Sanitised on read. */
   keyBindings?: Record<string, string[]>;
+  /** Optional TURN relay for online play (`turn:`/`turns:` URL, user name, password); absent means public STUN only. Sanitised on read by `parseTurn`; never logged. */
+  turnServer?: { url: string; username?: string; credential?: string };
   [extra: string]: unknown;
 }
 

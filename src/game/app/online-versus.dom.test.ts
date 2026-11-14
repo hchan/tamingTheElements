@@ -80,7 +80,7 @@ function rig(): Rig {
   let fail!: () => void;
   const opened = new Promise<void>((res, rej) => {
     open = res;
-    fail = () => { rej(new Error('x')); };
+    fail = () => { rej(new Error('The connection failed. No public address was found.')); };
   });
   let closed = 0;
   const accepted: string[] = [];
@@ -148,6 +148,81 @@ async function hostToPick(r: Rig): Promise<void> {
   await tick(0);
 }
 
+describe('online versus share, copy, paste and join link', () => {
+  const clip = (text: string): { written: string[] } => {
+    const written: string[] = [];
+    vi.stubGlobal('navigator', {
+      clipboard: {
+        writeText: (t: string) => { written.push(t); return Promise.resolve(); },
+        readText: () => Promise.resolve(text),
+      },
+    });
+    return { written };
+  };
+
+  it('numbers the steps for host and join', () => {
+    mountOnline(host);
+    const steps = [...host.querySelectorAll('h3')].map((e) => e.textContent);
+    expect(steps.filter((s) => s.startsWith('Step 1'))).toHaveLength(2);
+    expect(steps.filter((s) => s.startsWith('Step 3'))).toHaveLength(2);
+  });
+
+  it('after Make a code: Copy code and Copy link write the code and the join link, and a QR is shown', async () => {
+    const c = clip('');
+    const r = rig();
+    h.hostResult = { peer: r.peer, offer: 'T1.ABC_def-123' };
+    mountOnline(host);
+    await click('onlineHost');
+    await click('onlineCopyCode');
+    await click('onlineCopyLink');
+    expect(c.written[0]).toBe('T1.ABC_def-123');
+    expect(c.written[1]).toMatch(/\?join=T1\.ABC_def-123#online$/);
+    expect(statusText()).toContain('Link copied');
+    expect($('onlineQr').getAttribute('role')).toBe('img');
+    expect($('onlineQr').querySelector('svg')).not.toBeNull();
+  });
+
+  it('Paste fills the answer box from the clipboard; Copy answer copies the joiner answer', async () => {
+    const c = clip('  T1.ANSWER \n');
+    const r = rig();
+    h.joinResult = { peer: r.peer, answer: 'T1.MYANSWER' };
+    mountOnline(host);
+    await click('onlinePasteAnswer');
+    expect($<HTMLTextAreaElement>('onlineAnswerIn').value).toBe('T1.ANSWER');
+    await click('onlinePasteOffer');
+    await click('onlineJoin');
+    await click('onlineCopyAnswer');
+    expect(c.written).toEqual(['T1.MYANSWER']);
+  });
+
+  it('a refused clipboard is explained in words', async () => {
+    vi.stubGlobal('navigator', { clipboard: { readText: () => Promise.reject(new Error('denied')) } });
+    mountOnline(host);
+    await click('onlinePasteAnswer');
+    expect(statusText()).toContain('Could not read the clipboard');
+  });
+
+  it('opening a ?join= link fills the host code, starts Join at once and removes the param', async () => {
+    const r = rig();
+    h.joinResult = { peer: r.peer, answer: 'T1.ANS' };
+    window.history.replaceState(null, '', '/?join=T1.HOSTCODE#online');
+    mountOnline(host);
+    await tick(0);
+    expect(h.joinedOffer).toBe('T1.HOSTCODE');
+    expect($<HTMLTextAreaElement>('onlineAnswer').value).toBe('T1.ANS');
+    expect(window.location.search).toBe('');
+    expect(window.location.hash).toBe('#online');
+  });
+
+  it('ignores a malformed ?join= value', async () => {
+    h.joinedOffer = '';
+    window.history.replaceState(null, '', '/?join=garbage#online');
+    mountOnline(host);
+    await tick(0);
+    expect(h.joinedOffer).toBe('');
+  });
+});
+
 describe('online versus screen', () => {
   it('mounts with the host and join controls and a Back link', () => {
     mountOnline(host);
@@ -172,11 +247,11 @@ describe('online versus screen', () => {
     mountOnline(host);
     await click('onlineHost');
     expect($<HTMLTextAreaElement>('onlineOffer').value).toBe('OFFER-CODE');
-    expect(statusText()).toContain('Send your code to your friend');
+    expect(statusText()).toContain('send your code or link to your friend');
     $<HTMLTextAreaElement>('onlineAnswerIn').value = 'ANSWER';
     await click('onlineConnect');
     expect(r.accepted).toEqual(['ANSWER']);
-    expect(statusText()).toBe('Waiting for the link to open...');
+    expect(statusText()).toContain('Waiting for the link to open...');
     r.openLink();
     await tick(0);
     expect(statusText()).toContain('Link open. Choose your three heroes');
@@ -356,7 +431,7 @@ describe('online versus screen', () => {
     await click('onlineJoin');
     expect(h.joinedOffer).toBe('THE-OFFER');
     expect($<HTMLTextAreaElement>('onlineAnswer').value).toBe('ANSWER-CODE');
-    expect(statusText()).toBe('Waiting for the link to open...');
+    expect(statusText()).toContain('Waiting for the link to open...');
     r.openLink();
     await tick(0);
     await click('onlineReady');
