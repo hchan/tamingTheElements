@@ -58,7 +58,7 @@ describe('keyBindingsScreen (DOM)', () => {
     expect(root.querySelector('h1')?.textContent).toBe('Key Bindings');
     const rows = root.querySelectorAll('table.keyBindingTable')[0]?.querySelectorAll('tbody tr');
     expect(rows?.length).toBeGreaterThan(5);
-    expect(document.getElementById('bind-capture-0')).toBeNull();
+    expect(document.getElementById('bind-capture-0')).not.toBeNull();
     const b = btn('bind-dash-0');
     expect(b.getAttribute('aria-label')).toMatch(/^Dash, key: .+\. Activate to change\.$/);
     expect(btn('bind-dash-1').getAttribute('aria-label')).toContain('alternate key');

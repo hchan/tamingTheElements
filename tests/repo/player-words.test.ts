@@ -33,10 +33,8 @@ describe('words a first-time player must not see', () => {
     expect(strings(titles).filter((l) => FORBIDDEN.test(l))).toEqual([]);
   });
 
-  it('key binding labels (the Capture row is hidden on the key bindings screen)', () => {
+  it('key binding labels', () => {
     const labels = block(read('src/game/platform/input/bindings.ts'), 'export const ACTION_LABELS', '};');
-    const shown = labels.split('\n').filter((l) => !/^\s*capture:/.test(l));
-    expect(strings(shown.join('\n')).filter((l) => FORBIDDEN.test(l))).toEqual([]);
-    expect(read('src/ui/screens/key-bindings.ts')).toContain("if (action === 'capture') continue;");
+    expect(strings(labels).filter((l) => FORBIDDEN.test(l))).toEqual([]);
   });
 });
