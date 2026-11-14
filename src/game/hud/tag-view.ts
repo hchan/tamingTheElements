@@ -33,6 +33,8 @@ export const TAG_SLOT_X = 1 + 2 * 77 + 77 / 2;
 export const TAG_SLOT_Y = 640;
 /** Over the fighters (0) and the aim arrow (4), under the super dim (5). */
 const FLASH_DEPTH = 4.5;
+/** The TAG caption floats this far over the slot top, clear of the slot own cooldown words (qa-r3-label-clutter). */
+const CAPTION_LIFT = 26;
 /** Muted ochre (was bright 0xffd23f): the active-bar frame, the ready bar and the KO ring. */
 const GOLD = 0xb39653;
 const ASH = 0xcfc4a8;
@@ -108,7 +110,7 @@ export function mountTagView(
       })
       .setDepth(HUD_DEPTH);
   const fx = arena.add.graphics().setDepth(FLASH_DEPTH);
-  const caption = teams[0].length < 2 ? undefined : text(arena, 18 * boost, 4).setText('TAG').setOrigin(0.5, 1).setPosition(tagSlot.x, tagSlot.y - 2).setScrollFactor(0);
+  const caption = teams[0].length < 2 ? undefined : text(arena, 18 * boost, 4).setText('TAG').setOrigin(0.5, 1).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT).setScrollFactor(0);
   /** The Hud objects, made once the Hud scene runs (as the round view): its Graphics, per team [lines, tag word], the call. */
   let parts: { g: Phaser.GameObjects.Graphics; texts: Phaser.GameObjects.Text[][]; call: Phaser.GameObjects.Text } | undefined;
   const build = (): void => {
@@ -168,7 +170,7 @@ export function mountTagView(
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
       const tag = tagReadout(bar ? bar.swapReadyTick - bar.tick : 0, !active || bench.every((h) => h.dead));
-      if (team === 0) caption?.setVisible(tag.label !== 'NO TAG').setPosition(tagSlot.x, tagSlot.y - 2);
+      if (team === 0) caption?.setVisible(tag.label !== 'NO TAG').setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT);
       // One line per bench row (an empty one if a hero is missing), so the texts keep their rows.
       const benchLines = Array.from({ length: t.length - 1 }, (_, i) => {
         const h = bench[i];

@@ -13,7 +13,7 @@ describe('damage numbers', () => {
     expect([0, NUMBER_MS / 2, NUMBER_MS, NUMBER_MS * 2].map((a) => numberRise(a, false))).toEqual([-0, -12, -24, -24]);
     expect(numberRise(NUMBER_MS, false)).toBe(-NUMBER_RISE_PX);
     expect(numberRise(NUMBER_MS / 2, true)).toBe(0);
-    expect([0, 250, 375, 500].map(numberAlpha)).toEqual([1, 1, 0.5, 0]);
+    expect([0, NUMBER_MS / 2, NUMBER_MS * 0.75, NUMBER_MS].map(numberAlpha)).toEqual([1, 1, 0.5, 0]);
   });
   it('label whole points (at least 1 for real damage) and say COUNTER in words', () => {
     expect(numberLabel(12.4, false)).toBe('12');
