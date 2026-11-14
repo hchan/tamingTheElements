@@ -1,6 +1,6 @@
 import { SimEventKind, TrapReason, type SimEvent } from '@core/index';
 import { describe, expect, it } from 'vitest';
-import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor } from './announcer';
+import { Announcer, LOW_HEALTH, LowHealthWatch, MATCH_START, announcementsFor, tagNotReady } from './announcer';
 import { nextFocusIndex } from './pause-dialog';
 
 const ev = (kind: SimEvent['kind'], extra: Record<string, number> = {}): SimEvent => ({
@@ -195,5 +195,22 @@ describe('nextFocusIndex (focus trap)', () => {
     expect(nextFocusIndex(0, 0, false)).toBe(-1);
     expect(nextFocusIndex(1, 0, false)).toBe(0);
     expect(nextFocusIndex(1, 0, true)).toBe(0);
+  });
+});
+
+describe('Tag announcements', () => {
+  const names = (id: number): string | undefined => (id === 5 ? 'Pax' : undefined);
+  it('announces a swap by hero name, and the foe\'s as the enemy\'s', () => {
+    expect(announcementsFor([ev(SimEventKind.swapped, { team: 0, to: 5 })], () => 0, names)[0]?.text).toBe('Tagged in Pax.');
+    expect(announcementsFor([ev(SimEventKind.swapped, { team: 1, to: 5 })], () => 0, names)[0]?.text).toBe('The enemy tagged in Pax.');
+  });
+  it('stays silent without a name, and when tagIn already covers the swap (Arcade)', () => {
+    expect(announcementsFor([ev(SimEventKind.swapped, { team: 0, to: 9 })], () => 0, names)).toEqual([]);
+    expect(announcementsFor([ev(SimEventKind.swapped, { team: 0, to: 5 }), ev(SimEventKind.tagIn, { team: 0, to: 5 })], () => 0, names)).toEqual([]);
+  });
+  it('says Tag ready in N seconds during the cooldown, nothing when ready', () => {
+    expect(tagNotReady(0)).toBeUndefined();
+    expect(tagNotReady(1)?.text).toBe('Tag ready in 1 second.');
+    expect(tagNotReady(101)?.text).toBe('Tag ready in 3 seconds.');
   });
 });
