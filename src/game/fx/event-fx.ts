@@ -4,7 +4,8 @@ import { ELEMENT_COLORS } from './element-colors';
 import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
-import { sparkStyleFor } from './hit-feel';
+import { RING_KO_WEIGHT, RING_MIN_STRENGTH, sparkStyleFor } from './hit-feel';
+import { createShockLayer } from './shock-view';
 import { koPunch } from './arena-pan';
 
 /**
@@ -74,6 +75,10 @@ export interface FxSink {
   shake(durationMs: number, intensity: number): void;
   /** Renderer-only camera punch-in on a KO (optional; EventFx never calls it under reduced motion). */
   koPunch?(): void;
+  /** Renderer-only KO desaturation wash (optional; EventFx never calls it under reduced motion). */
+  koWash?(): void;
+  /** Shockwave ring at `target` in `color` for a heavy hit (weight 2), super (3) or KO (4); optional, never called under reduced motion. */
+  ring?(target: number, color: number, weight: number): void;
   /** Hit-stop jitter on `target` while the view tick is below `untilTick` (the freeze deadline, W.tick units). */
   jitter(target: number, untilTick: number): void;
   /** Painted element impact strip played once over `target` (optional; skipped under reduced motion by EventFx). */
@@ -130,6 +135,7 @@ export class EventFx {
   private superId = 0;
   private hitTarget = -1;
   private hitStrength = 0;
+  private hitColor = 0;
 
   constructor(
     private readonly sink: FxSink,
@@ -178,6 +184,7 @@ export class EventFx {
     this.hitSource = e.sourceId;
     this.hitTarget = target;
     this.hitStrength = strength;
+    this.hitColor = color;
     this.sink.flash(target, color, this.opts.reducedMotion() ? 0 : holdFramesFor(strength));
     this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
     if (this.opts.reducedMotion()) {
@@ -186,6 +193,7 @@ export class EventFx {
     }
     const el = this.opts.elementOf?.(e['attacker'] ?? -1);
     if (el) this.sink.impact?.(target, el);
+    if (strength >= RING_MIN_STRENGTH) this.sink.ring?.(target, color, strength);
     const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
     this.sink.burst(target, this.fill(n), n, color, el);
   }
@@ -208,7 +216,11 @@ export class EventFx {
     const s = cause === KO_CAUSE ? KO_SHAKE : paired ? SHAKE_BY_STRENGTH[this.hitStrength] : null;
     const shake = s ? shakeFor(s[0], s[1], reduced) : null;
     if (shake) this.sink.shake(shake.durationMs, shake.intensity);
-    if (!reduced && cause === KO_CAUSE) this.sink.koPunch?.();
+    if (!reduced && cause === KO_CAUSE) {
+      this.sink.koPunch?.();
+      this.sink.koWash?.();
+      if (paired) this.sink.ring?.(this.hitTarget, this.hitColor, RING_KO_WEIGHT);
+    }
   }
 }
 
@@ -304,6 +316,7 @@ export function createPhaserFxSink(
   const centre = at;
   const gate = new FlashGate();
   const impacts = createImpactLayer(scene, paused);
+  const shock = createShockLayer(scene, paused);
   const spawn = (x: number, y: number, dx: number, dy: number, color: number, radius: number, life: number): void => {
     if (live >= SPARK_POOL) return;
     let d = dots[live];
@@ -335,6 +348,13 @@ export function createPhaserFxSink(
     },
     koPunch(): void {
       koPunch(scene);
+    },
+    koWash(): void {
+      shock.wash();
+    },
+    ring(target, color, weight): void {
+      const p = centre(target);
+      if (p) shock.ring(p.x, p.y, color, weight);
     },
     spark(target, color): void {
       const p = centre(target);

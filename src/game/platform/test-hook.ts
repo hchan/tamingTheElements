@@ -76,6 +76,10 @@ export interface ArenaProbe {
    */
   /** Arcade pan camera (WP 38b): framing centre x and zoom, the camera's real zoom over the fit zoom and the world x of the view's left edge (logical units; Phaser's raw scrollX also depends on the render resolution, so it is not used). */
   camera(): Promise<{ centerX: number; zoom: number; camZoom: number; scrollX: number }>;
+  /** The KO wash and hit rings (renderer-only): wash desaturation 0..0.7, ring count; undefined before the first one. */
+  shockFx(): Promise<{ washAge: number; wash: number; rings: number } | undefined>;
+  /** Jumps a running wash and its rings to `ms` in and draws that frame, so a screenshot can catch the peak with the sim paused. */
+  shockSeek(ms: number): Promise<void>;
   superFx(): Promise<{ dim: number; bandAlpha: number; slide: number; zoom: number; name: string; sub: string; camZoom: number } | undefined>;
   /** The per-element super burst drawn on the last frame (ability-graphics-audit-defects), or undefined. */
   superBurst(): Promise<{ element: string; shape: string; age: number; paths: number } | undefined>;

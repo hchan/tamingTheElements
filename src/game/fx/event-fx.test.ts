@@ -155,6 +155,16 @@ describe('EventFx, Arcade (FUN-DESIGN section 3)', () => {
       expect(punches).toBe(reduced ? 0 : 1);
     }
   });
+  it('a KO stop washes the screen and rings the victim; heavy hits ring, light ones and reduced motion do not', () => {
+    for (const reduced of [false, true]) {
+      const { sink } = recorder();
+      const calls: string[] = [];
+      sink.koWash = () => { calls.push('wash'); };
+      sink.ring = (t, _c, w) => { calls.push(`ring${String(t)}w${String(w)}`); };
+      arcadeFx(sink, reduced).consume([confirmed(10, 1), stop(10, 6), confirmed(20, 2), stop(20, 6), confirmed(30, 0), stop(30, 30, 3)]);
+      expect(calls).toEqual(reduced ? [] : ['ring3w2', 'wash', 'ring3w4']);
+    }
+  });
   it('does not jitter on a stop that no hit of the same tick and source explains', () => {
     const { sink, log } = recorder();
     arcadeFx(sink).consume([confirmed(10, 1), { ...stop(11, 6), sourceId: 4 }]);
