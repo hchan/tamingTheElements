@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chevronShift, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha } from './hazard-view';
+import { chevronShift, hazardAnnouncement, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -29,5 +29,11 @@ describe('hazard view helpers', () => {
       expect(lum(HAZARD_LIGHTS[kind] ?? 0)).toBeGreaterThan(lum(HAZARD_COLORS[kind] ?? 0) + 60);
       expect(sat(HAZARD_LIGHTS[kind] ?? 0)).toBeLessThan(0.3);
     }
+  });
+
+  it('each hazard has a screen-reader warning line, none for no hazard', () => {
+    for (const k of [1, 2, 3, 4]) expect(hazardAnnouncement(k)).toMatch(/^Warning: .+ incoming\.$/);
+    expect(hazardAnnouncement(0)).toBe('');
+    expect(new Set([1, 2, 3, 4].map(hazardAnnouncement)).size).toBe(4);
   });
 });
