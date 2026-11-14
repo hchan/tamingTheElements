@@ -93,6 +93,8 @@ export interface ArenaProbe {
     ghosts: number; trails: number; shields: number; bars: readonly number[]; projectiles: number; sparks: number; rings: number; pops: readonly string[];
     roots: number;
   } | undefined>;
+  /** The stage's ambient particles (view only): emitters running and live particles; 0 under reduced motion. */
+  stageAmbient(): { emitters: number; particles: number };
   /**
    * Arcade only (async: a lazy chunk): the weather view's last frame (WP-arcade-weather-view): the weather drawn (0 none),
    * its HUD badge text and time-bar fill (px), the sky tint alpha, the particles drawn, and the called line ('' when
