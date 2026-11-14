@@ -25,7 +25,8 @@ function fakeObject(): Fake {
     'fillTriangle', 'strokeCircle', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'fillPath', 'arc', 'strokePath', 'strokeEllipse', 'fillCircle', 'strokeCircle']) o[n] = log(n);
   o['clear'] = (): Fake => { o.calls.length = 0; return o; };
   o['setText'] = (t: string): Fake => { o.text = t; return o; };
-  o['setVisible'] = (v: boolean): Fake => { o.visible = v; return o; };
+  o['setColor'] = (): Fake => o;
+  o['setVisible'] =(v: boolean): Fake => { o.visible = v; return o; };
   o['setPosition'] = (x: number, y: number): Fake => { o.x = x; o.y = y; return o; };
   o['setScale'] = (s: number): Fake => { o.scaleX = s; return o; };
   o['setDisplaySize'] = (w: number): Fake => { o.displayW = w; return o; };
@@ -135,8 +136,21 @@ describe('ActionBarView', () => {
     const [back, g] = r.gfx;
     expect(back?.calls).toContain('fillRect');
     expect(back?.calls.filter((c) => c === 'fillRoundedRect')).toHaveLength(3);
-    expect(g?.calls.filter((c) => c === 'strokeRoundedRect')).toHaveLength(3);
+    // a frame plus a key-badge outline per slot
+    expect(g?.calls.filter((c) => c === 'strokeRoundedRect')).toHaveLength(6);
     expect(g?.calls).toContain('lineBetween');
+  });
+
+  it('styled mode puts the key in a corner badge and the words in a separate strip, with an element-coloured frame', () => {
+    const r = rig({ bar: bar({ trap: { readyTick: 100, cooldownTicks: 500, count: 1, max: 2 } }), styled: true });
+    r.v.update();
+    const keys = r.texts.filter((t, n) => n % 2 === 0).map((t) => t.text);
+    const words = r.texts.filter((t, n) => n % 2 === 1).map((t) => t.text);
+    expect(keys.slice(0, 3)).toEqual(['1', '2', '3']);
+    expect(words.slice(0, 3)).toEqual(['Attack', 'Special', 'Tag']);
+    expect(words[3]).toBe('Trap 1/2');
+    expect(r.texts.every((t) => !t.text.includes('\n'))).toBe(true);
+    expect(r.gfx[1]?.calls).toContain('fillRoundedRect');
   });
 
   it('a click on a ready slot emits its command; a dead swap and an off-bar click emit nothing', () => {

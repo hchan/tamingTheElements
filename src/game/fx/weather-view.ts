@@ -46,11 +46,13 @@ const NOTCHES = 5;
  * Weather-charge chip (WP-arcade-weather-charge): team 0's charge ("WEATHER 60%" and a bar notched in quarters, or
  * "WEATHER READY" with a blinking border) always shown, centred under the badge's slot.
  */
-const CHARGE_Y = 200;
+const CHARGE_Y = 146;
 const CHARGE_PX = 18;
-const CHARGE_BAR_W = 200;
-/** The called line: below the charge chip (its bar ends near y 246), clear of the round banners (y 320). */
-const CALL_Y = 270;
+const CHARGE_BAR_W = 130;
+/** The weather badge sits on the same row as the chip, to its right, so the two read as one tucked-in strip. */
+const BADGE_SHIFT = 190;
+/** The called line: below the strip (it ends near y 190), clear of the round banners (y 320). */
+const CALL_Y = 230;
 const CALL_PX = 30;
 
 export interface WeatherPrefs {
@@ -182,7 +184,7 @@ export function mountWeatherView(
     const label = badgeLabel(kind, left);
     if (label !== drawn.label) p.label.setText(label).setVisible(true);
     const w = GLYPH + 8 + p.label.width;
-    const x = BADGE_X - w / 2;
+    const x = BADGE_X + BADGE_SHIFT - w / 2;
     const fill = badgeFill(left, w);
     if (label === drawn.label && kind === drawn.kind && fill === drawn.fill) return;
     drawn.label = label;

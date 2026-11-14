@@ -173,6 +173,52 @@ export function fitTextScale(width: number, size: number, pad = 4): number {
   return width <= 0 ? 1 : Math.min(1, Math.max(0.1, (size - pad * 2) / width));
 }
 
+/** A plain-word name for a box that has no state words of its own, so every box of the dressed bar carries a readable label. */
+export function slotWord(s: Pick<ActionSlot, 'kind' | 'cmd' | 'note'>): string {
+  if (s.note !== '') return s.note;
+  switch (s.kind) {
+    case 'ability': return s.cmd === Cmd.primary ? 'Attack' : 'Special';
+    case 'capture': return 'Snag';
+    case 'swap': return 'Tag';
+    case 'trap': return 'Trap';
+    case 'elemental': return 'Element';
+    case 'super': return 'Super';
+    case 'guard': return 'Guard';
+    case 'dash': return 'Dash';
+    case 'weather': return 'Weather';
+    case 'charge': return 'Charge';
+    case 'cleanse': return 'Cleanse';
+  }
+}
+
+/** Frame colour per kind of box in the dressed bar (the element's own colour for an Element box): ash-dulled, never the only cue. */
+const KIND_TINT: Readonly<Record<SlotKind, number>> = {
+  ability: 0xffffff, capture: 0xc9a26b, swap: 0xffffff, trap: 0xc9a26b, elemental: 0xffffff, super: 0xffd15c,
+  guard: 0xe6f4ff, dash: 0xe6f4ff, weather: 0x5cc8ff, charge: 0xff7a3d, cleanse: 0x9fdc8a,
+};
+
+/**
+ * The dressed bar's parts of one box, in logical px, so nothing overlaps: a corner badge for the key (top-left), the icon centred in the
+ * area above, and a label strip along the bottom. `keyLen` is the key label's length (a longer key widens the badge).
+ */
+export interface SlotParts {
+  readonly badge: { x: number; y: number; w: number; h: number };
+  readonly icon: { x: number; y: number; w: number; h: number };
+  readonly strip: { x: number; y: number; w: number; h: number };
+}
+export function slotParts(x: number, y: number, size: number, keyLen: number): SlotParts {
+  const stripH = Math.round(size * 0.24);
+  const pad = Math.max(2, Math.round(size * 0.04));
+  const badgeH = Math.round(size * 0.2);
+  const iconH = size - stripH - pad * 2 - 1;
+  const iconW = Math.min(size - pad * 2, iconH);
+  return {
+    badge: { x: x + 2, y: y + 2, w: Math.max(badgeH, Math.round(badgeH * 0.55) * Math.max(1, keyLen) + 4), h: badgeH },
+    icon: { x: x + (size - iconW) / 2, y: y + pad, w: iconW, h: iconH },
+    strip: { x: x + 1, y: y + size - 1 - stripH, w: size - 2, h: stripH },
+  };
+}
+
 /** Elapsed fraction of a cooldown that ends (becomes usable) at `readyTick`; 1 once ready. */
 export function cooldownProgress(tick: number, readyTick: number, cooldownTicks: number): number {
   if (tick >= readyTick || cooldownTicks <= 0) return 1;
@@ -489,6 +535,9 @@ export class ActionBarView {
   /** Slot backgrounds, under the icons (the main graphics sit over them for frames and cooldown shading). */
   private readonly back: Phaser.GameObjects.Graphics;
   private readonly texts: Phaser.GameObjects.Text[] = [];
+  /** Dressed bar only: the label under each icon (the key stays in `texts`). */
+  private readonly notes: Phaser.GameObjects.Text[] = [];
+  private readonly noteColor = new Map<Phaser.GameObjects.Text, string>();
   private readonly icons: Phaser.GameObjects.Image[] = [];
   private readonly headerTexts: Phaser.GameObjects.Text[] = [];
   private slots: ActionSlot[] = [];
@@ -576,6 +625,12 @@ export class ActionBarView {
         this.back.fillStyle(s.sprite === '' ? 0x070605 : 0x1d1e1f, 0.95);
         this.back.fillRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       }
+      if (this.dressed()) {
+        // Label strip: a darker band under the icon so the words never sit on art.
+        const p = slotParts(s.x, s.y, s.size, s.label.length);
+        this.back.fillStyle(0x090807, 0.92);
+        this.back.fillRect(p.strip.x, p.strip.y, p.strip.w, p.strip.h);
+      }
       if (s.sprite !== '' && !this.mirror) {
         // A hero's own attack art is dark: a lit stone plate with a soft pale core keeps it from vanishing (same lift as the sheet's tiles).
         this.back.fillStyle(0x3a352c, 1);
@@ -592,14 +647,21 @@ export class ActionBarView {
       const look = cooldownLook(s.progress, s.disabled, s.x, s.y, s.size, started === undefined ? -1 : now - started, this.reduced);
       if (this.styled) {
         const ready = s.progress >= 1 && !s.disabled;
-        g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : ready ? readyEdge(s.element) : 0x2e2c29, 1);
+        const edge = this.dressed() ? mute(s.element ? (ELEMENT_TINT[s.element] ?? 0xffffff) : KIND_TINT[s.kind], 0.5, 0.75) : readyEdge(s.element);
+        g.lineStyle(s.highlight ? 3 : this.dressed() ? 2 : 1, s.highlight ? CAPTURE_READY_COLOR : ready ? edge : 0x2e2c29, 1);
         g.strokeRoundedRect(s.x + 1, s.y + 1, s.size - 2, s.size - 2, 2);
       } else {
         g.lineStyle(s.highlight ? 3 : 1, s.highlight ? CAPTURE_READY_COLOR : 0x000000, 1);
         g.strokeRect(s.x, s.y, s.size, s.size);
       }
       this.drawCooldown(look, s);
-      if (!this.mirror && s.label !== '') {
+      if (this.dressed() && s.label !== '') {
+        const b = slotParts(s.x, s.y, s.size, s.label.length).badge;
+        g.fillStyle(0x0a0806, 0.9);
+        g.fillRoundedRect(b.x, b.y, b.w, b.h, 3);
+        g.lineStyle(1, 0x6b6558, 0.9);
+        g.strokeRoundedRect(b.x, b.y, b.w, b.h, 3);
+      } else if (!this.mirror && s.label !== '') {
         // A dark badge under the key so the number reads on any icon.
         g.fillStyle(0x0a0806, 0.82);
         g.fillRect(s.x + 2, s.y + 2, Math.max(18, s.label.length * 11 + 8), 20);
@@ -621,7 +683,13 @@ export class ActionBarView {
     for (let i = this.slots.length; i < this.icons.length; i++) {
       this.icons[i]?.setVisible(false);
       this.texts[i]?.setVisible(false);
+      this.notes[i]?.setVisible(false);
     }
+  }
+
+  /** The dressed layout (Arcade main bar): key badge, centred icon, label strip. Mirrors and the plain legacy bar keep their own look. */
+  private dressed(): boolean {
+    return this.styled && !this.mirror;
   }
 
   /** Group titles and the rule under each (prototype only; nothing is drawn for the flat bar). */
@@ -672,6 +740,7 @@ export class ActionBarView {
     this.hint?.destroy();
     this.icons.forEach((o) => { o.destroy(); });
     this.texts.forEach((o) => { o.destroy(); });
+    this.notes.forEach((o) => { o.destroy(); });
     this.headerTexts.forEach((o) => { o.destroy(); });
   }
 
@@ -725,6 +794,12 @@ export class ActionBarView {
       const [fx = 0, fy = 0, fw = 80, fh = 80] = found.entry.coords;
       if (!tex.has(ICON_FRAME)) tex.add(ICON_FRAME, 0, fx, fy, fw, fh);
       if (icon.texture.key !== key || icon.frame.name !== ICON_FRAME) icon.setTexture(key, ICON_FRAME);
+      if (this.dressed()) {
+        const a = slotParts(s.x, s.y, s.size, s.label.length).icon;
+        const fit = fitIcon(fw, fh, Math.min(a.w, a.h));
+        icon.setVisible(true).setPosition(this.wx(a.x + fit.dx), this.wy(a.y + (a.h - Math.min(a.w, a.h)) / 2 + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
+        return;
+      }
       const pad = this.styled ? ICON_PAD * (s.size / SLOT_SIDE) : 0;
       const fit = fitIcon(fw, fh, s.size - pad * 2);
       icon.setVisible(true).setPosition(this.wx(s.x + pad + fit.dx), this.wy(s.y + pad + fit.dy)).setDisplaySize(fit.w * this.box.scale, fit.h * this.box.scale);
@@ -738,10 +813,50 @@ export class ActionBarView {
     const tex = this.scene.textures.get(ACTION_SHEET);
     if (!tex.has(frame)) tex.add(frame, 0, (s.icon % SHEET_COLS) * SHEET_CELL, Math.floor(s.icon / SHEET_COLS) * SHEET_CELL, SHEET_CELL, SHEET_CELL);
     if (icon.texture.key !== ACTION_SHEET || icon.frame.name !== frame) icon.setTexture(ACTION_SHEET, frame);
+    if (this.dressed()) {
+      const a = slotParts(s.x, s.y, s.size, s.label.length).icon;
+      const side = Math.min(a.w, a.h);
+      icon.setVisible(true).setPosition(this.wx(a.x + (a.w - side) / 2), this.wy(a.y)).setDisplaySize(side * this.box.scale, side * this.box.scale);
+      return;
+    }
     icon.setVisible(true).setPosition(this.wx(s.x + 1), this.wy(s.y + 1)).setDisplaySize((s.size - 2) * this.box.scale, (s.size - 2) * this.box.scale);
   }
 
+  /** Dressed bar: the key centred in its corner badge and the label centred in the strip, each shrunk (never past 1) to fit its own box. */
+  private dressedText(i: number, s: ActionSlot): void {
+    const style = (px: number, color: string): Phaser.Types.GameObjects.Text.TextStyle => crisp(this.scene, {
+      fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(Math.round(px * Math.min(1.8, phoneBoost(this.scene))))}px`, fontStyle: 'bold', color, stroke: '#0a0806', strokeThickness: 2,
+    });
+    let key = this.texts[i];
+    if (!key) {
+      key = this.scene.add.text(0, 0, '', style(13, '#f0e8d4')).setOrigin(0.5, 0.5).setDepth(101);
+      this.texts[i] = key;
+    }
+    let note = this.notes[i];
+    if (!note) {
+      note = this.scene.add.text(0, 0, '', style(12, '#e0d8c6')).setOrigin(0.5, 0.5).setDepth(101);
+      this.notes[i] = note;
+    }
+    const p = slotParts(s.x, s.y, s.size, s.label.length);
+    const fit = (t: Phaser.GameObjects.Text, w: number, h: number): number => Math.min(1, (w - 2) / Math.max(1, t.width), (h - 1) / Math.max(1, t.height));
+    if (key.text !== s.label) key.setText(s.label);
+    key.setVisible(s.label !== '').setPosition(this.wx(p.badge.x + p.badge.w / 2), this.wy(p.badge.y + p.badge.h / 2)).setScale(this.box.scale * fit(key, p.badge.w, p.badge.h));
+    const word = slotWord(s);
+    if (note.text !== word) note.setText(word);
+    const lit = s.progress >= 1 && !s.disabled;
+    const color = lit ? '#e8dfc8' : '#8d867a';
+    if (this.noteColor.get(note) !== color) {
+      note.setColor(color);
+      this.noteColor.set(note, color);
+    }
+    note.setVisible(true).setPosition(this.wx(p.strip.x + p.strip.w / 2), this.wy(p.strip.y + p.strip.h / 2)).setScale(this.box.scale * fit(note, p.strip.w, p.strip.h));
+  }
+
   private text(i: number, s: ActionSlot): void {
+    if (this.dressed()) {
+      this.dressedText(i, s);
+      return;
+    }
     let t = this.texts[i];
     if (!t) {
       const size = `${String(Math.round((this.mirror ? 14 : 16) * Math.min(1.8, phoneBoost(this.scene))))}px`;
