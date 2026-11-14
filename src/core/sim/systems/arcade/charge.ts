@@ -43,7 +43,7 @@ export function startCharge(world: SimWorld, sink: EventSink, team: number, id: 
 
 /**
  * The contact half of a charge tick, run after movement in the `collision` slot for each team's controlled hero:
- * touching a vulnerable `foe` ends the charge as `arrived` with the arrival hit (a light CHARGE_DAMAGE hit with
+ * touching a vulnerable `foe` ends the charge as `arrived` with the arrival hit (a medium CHARGE_DAMAGE hit with
  * CHARGE_STUN_TICKS of hit-stun: guard chips it, a parry stuns the charger), and METER_CHARGE. A foe on invulnerable ticks (a dash) is passed through. The last tick ends it as `expired`.
  */
 export function chargeSystem(world: SimWorld, _cmds: readonly [Command, Command], sink: EventSink): void {

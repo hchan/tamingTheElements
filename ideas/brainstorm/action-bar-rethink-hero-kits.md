@@ -31,3 +31,6 @@ Owner follow-up: Charge and Dash must be useful for melee (gap-close into a hit,
 
 ## Status note (2026-11-13, signature traps)
 Design table with durations and sim hooks: [docs/design/signature-traps.md](../../docs/design/signature-traps.md). Per-hero follow-ups: `signature-slot3-<hero>.md` in this folder (12 files). The four existing trap kinds have distinct animated visuals (`src/game/fx/trap-paint.ts`).
+
+## Progress (charge/dash)
+- 2026-11-13: first slice landed (SIM_VERSION 50): Charge is armoured with a medium arrival hit, and a Dash through a melee swing refunds the Dash. Per-hero kits, traps and minions are still open.

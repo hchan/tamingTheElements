@@ -15,6 +15,7 @@ import type { EventSink } from '../events';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
+import { checkPerfectDodge } from './arcade/dash';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { releaseCount, slotAbility } from './ability-info';
 import { snagHit } from './arcade/snag';
@@ -224,9 +225,13 @@ function updateMelee(world: SimWorld, sink: EventSink, id: number, tick: number)
 
   const victim = controlledId(world, 1 - (s.team[id] ?? 0));
   if (victim < 0) return;
-  if (isInvulnerable(s, victim)) return; // Arcade only
   const box: Aabb = { x: s.x[victim] ?? 0, y: s.y[victim] ?? 0, w: s.w[victim] ?? 0, h: s.h[victim] ?? 0 };
   const mine: Aabb = { x: s.x[id] ?? 0, y: s.y[id] ?? 0, w: s.w[id] ?? 0, h: s.h[id] ?? 0 };
+  if (isInvulnerable(s, victim)) {
+    // Arcade only: a melee swing through an invulnerable dasher is a perfect dodge (dash payoff, SIM_VERSION 50).
+    if (aabbOverlap(mine, box)) checkPerfectDodge(s, sink, id, victim, true);
+    return;
+  }
   if (aabbOverlap(mine, box)) meleeHit(world, sink, id, victim);
 }
 

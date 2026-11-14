@@ -46,11 +46,14 @@ export function startDash(world: SimWorld, sink: EventSink, team: number, raw: C
 /**
  * Called when enemy projectile `id` overlaps invulnerable `target` (and passes through): a perfect dodge when `target`
  * is on its invulnerable dash ticks, once per dash: `perfectDodge {projectile}` and METER_PERFECT_DODGE for the dodger.
+ * A melee swing (`melee`, `id` is the swing) counts too and also readies the dodger's dash again at once.
  */
-export function checkPerfectDodge(s: SimState, sink: EventSink, id: number, target: number): void {
+export function checkPerfectDodge(s: SimState, sink: EventSink, id: number, target: number, melee = false): void {
   const flag = target * ARCADE_E + ArcadeE.dashDodged;
   if (!isDashInvulnerable(s, target) || s.arcade[flag] !== 0) return;
   s.arcade[flag] = 1;
   sink.emit(target, SimEventKind.perfectDodge, { projectile: id });
   gainMeter(s, sink, target, s.team[target] ?? 0, METER_PERFECT_DODGE);
+  // Dodging a melee swing refunds the dash (a dodge into a counter, SIM_VERSION 50).
+  if (melee) s.arcade[target * ARCADE_E + ArcadeE.dashReadyAt] = now(s);
 }
