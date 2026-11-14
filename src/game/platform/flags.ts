@@ -27,6 +27,10 @@ export interface UiFlags {
   readonly cheats: boolean;
   /** The tour's versus splash waits for a key or click instead of its timer (`?ff=holdSplash`, dev and test builds; e2e pins the splash). */
   readonly holdSplash: boolean;
+  /** Character slug for the local side of a hero-picked fight (`?hero=curomo`, dev and test builds only; implies `arenaDemo`), or null. */
+  readonly hero: string | null;
+  /** Character slug for the opposing side (`?foe=rokcore`, dev and test builds only; implies `arenaDemo`), or null. */
+  readonly foe: string | null;
   /** Fixed seed for the battle and opponent draw (`?seed=N`, dev and test builds only), or null for the clock. */
   readonly seed: number | null;
 }
@@ -48,7 +52,15 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   failSave: false,
   cheats: false,
   holdSplash: false,
+  hero: null,
+  foe: null,
   seed: null,
+};
+
+const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const slugParam = (q: URLSearchParams, key: string): string | null => {
+  const v = q.get(key);
+  return v !== null && v.length <= 24 && SLUG.test(v) ? v : null;
 };
 
 export interface FlagEnv {
@@ -61,13 +73,16 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
   const raw = new URLSearchParams(search).get('ff') ?? '';
   const rawSeed = new URLSearchParams(search).get('seed');
   const seed = rawSeed !== null && /^\d{1,10}$/.test(rawSeed) ? Number(rawSeed) >>> 0 : null;
+  const q = new URLSearchParams(search);
+  const hero = slugParam(q, 'hero');
+  const foe = slugParam(q, 'foe');
   const on = new Set(raw.split(',').map((s) => s.trim()));
   return {
     debugOverlay: on.has('debugOverlay'),
     showFps: on.has('showFps'),
     play: on.has('play'),
     forceNoWebgl: on.has('forceNoWebgl'),
-    arenaDemo: on.has('arenaDemo'),
+    arenaDemo: on.has('arenaDemo') || hero !== null || foe !== null,
     arcade: on.has('arcade'),
     lockstep: on.has('lockstep'),
     netbot: on.has('netbot'),
@@ -79,6 +94,8 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     failSave: on.has('failSave'),
     holdSplash: on.has('holdSplash'),
     cheats: new URLSearchParams(search).get('cheats') === '1',
+    hero,
+    foe,
     seed,
   };
 }

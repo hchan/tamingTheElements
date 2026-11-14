@@ -205,19 +205,29 @@ describe('Versus picker', () => {
   };
   const mine = (): string[] => ['arcadePlayer', 'arcadePartner', 'arcadePartner2'].map((i) => sel(i).value);
 
-  it('a pointer click previews without picking; a second click picks', () => {
+  it('a single pointer click picks the hero and shows it picked (aria-pressed, flag chip, status)', () => {
     mount();
     click(tile('Lavax'));
     expect(panelName()).toBe('Lavax');
-    expect(document.querySelector('.vsFlags:not([hidden])')).toBeNull();
-    click(tile('Lavax'));
     expect(sel('arcadePlayer').value).toBe('lavax');
+    expect(tile('Lavax').getAttribute('aria-pressed')).toBe('true');
     expect(document.querySelector('.vsFlags:not([hidden])')).not.toBeNull();
+    expect(document.querySelector('.vsStatus')?.textContent).toMatch(/picked/i);
   });
 
-  it('the Add to team button picks the previewed hero', () => {
+  it('a double click picks once: it does not also mirror the hero onto the computer side', () => {
     mount();
-    click(tile('Rokcore'));
+    const t = tile('Lavax');
+    t.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+    t.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 2 }));
+    expect(sel('arcadePlayer').value).toBe('lavax');
+    expect(sel('arcadeEnemy').value).toBe('rokcore');
+    expect(tile('Lavax').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('the Add to team button picks the hovered hero', () => {
+    mount();
+    tile('Rokcore').dispatchEvent(new Event('pointerenter'));
     click(document.querySelector('.heroAdd') as Element);
     expect(sel('arcadePlayer').value).toBe('rokcore');
   });
@@ -245,12 +255,6 @@ describe('Versus picker', () => {
     expect(mine()).toEqual(before);
   });
 
-  it('tap fallback: preview a hero then tap a slot', () => {
-    mount();
-    click(tile('Rokcore'));
-    click(slotEl('partner'));
-    expect(sel('arcadePartner').value).toBe('rokcore');
-  });
   it('dragging a picked slot off onto the grid or nowhere empties it and blocks Fight; an empty slot stays put', () => {
     mount();
     drag(tile('Lavax'), slotEl('player'));

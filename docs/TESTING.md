@@ -142,7 +142,7 @@ Cheat probes (`setHp`, `place`) change the live world outside the command stream
 and `arena` / `cinematic` probes while those scenes run.
 
 Typical e2e pattern (see `tests/e2e/app-flow.spec.ts`): `page.waitForFunction("window.__TTE__ && window.__TTE__.ready === true")`,
-then drive it with `page.evaluate`. Arena demos start with the `?ff=arenaDemo` flag, cinematics with `?ff=cinematicDemo`.
+then drive it with `page.evaluate`. Arena demos start with the `?ff=arenaDemo` flag, cinematics with `?ff=cinematicDemo`. `?hero=<slug>&foe=<slug>` (dev and test builds; implies `arenaDemo`) starts that demo with the chosen heroes, so a check can start as any hero (`tests/e2e/versus-hero-pick.spec.ts`); `?p1=<slug>` still works for the first hero.
 Do not add game logic that reads the hook.
 
 `state().route` is `location.hash`, which changes synchronously on click, before the router mounts the new screen on the

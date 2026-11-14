@@ -24,6 +24,7 @@ Mode default `dev`, port default `5173`; it refuses the reserved e2e ports. Prev
 | `/` | Normal menu, Classic game (Skip is canvas-drawn at about (1150,46); the starting hero is random) |
 | `/?ff=play` | Straight into play |
 | `/?ff=arenaDemo` | Arena demo |
+| `/?hero=curomo&foe=rokcore` | Starts a demo fight with the chosen heroes (any character slug; each flag alone swaps one side; implies `arenaDemo`; add `&manual=1` and drive it with `__TTE__.arena.step`) |
 | `/?manual=1` | Manual stepping for debugging |
 | `/?seed=123` | Fixed seed for repeatable runs |
 
