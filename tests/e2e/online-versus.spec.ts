@@ -100,3 +100,29 @@ test('a finished online match offers a Rematch that starts a second match', asyn
     if (round === 1) for (const page of [a, b]) await page.locator('#onlineAgain').click();
   }
 });
+
+// WP03: the joiner opens the host's join link (`?join=<code>#online`): Join starts at once, the param is stripped, the match connects.
+test('opening the host join link starts Join at once and the match connects', async ({ browser }) => {
+  test.setTimeout(60_000);
+  const ctx = await browser.newContext();
+  opened.push(ctx);
+  const a = await ctx.newPage();
+  const b = await ctx.newPage();
+  await a.goto('/?ff=arcade&ice=none#online');
+  await a.locator('#onlineHost').click();
+  await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
+  await expect(a.locator('#onlineQr svg')).toBeVisible();
+  const offer = await a.locator('#onlineOffer').inputValue();
+  await b.goto(`/?ff=arcade&ice=none&join=${encodeURIComponent(offer)}#online`);
+  await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });
+  expect(b.url()).not.toContain('join=');
+  await expect(b.locator('#onlineOfferIn')).toHaveValue(offer);
+  await a.locator('#onlineAnswerIn').fill(await b.locator('#onlineAnswer').inputValue());
+  await a.locator('#onlineConnect').click();
+  await a.locator('#onlineReady').click();
+  await b.locator('#onlineReady').click();
+  for (const page of [a, b]) {
+    await expect(page.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
+    await expect.poll(() => page.evaluate<number>('window.__TTE__.state().tick'), { timeout: 30_000 }).toBeGreaterThan(150);
+  }
+});

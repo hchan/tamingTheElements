@@ -62,6 +62,8 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 - [x] Manual copy-paste signalling screen (`#online`, shown with the Arcade preview; connects, runs the setup handshake, then plays a fixed Arcade 1v1 in lockstep: host is side 0, joiner side 1; `ArenaLaunch.net` makes the Arena step through a `LockstepSession`, no pause, hidden tab via `setHidden`)
 - [x] Online hero pick exchange, real MatchSetup in the handshake
 - [x] Results text and Rematch on the same link (match number in every packet drops the old match's late packets)
+- [x] Share, copy, paste, `?join=<code>#online` link (starts Join at once, param stripped) and a QR of the link (`src/game/app/online-share.ts`, `src/game/net/qr.ts`); step-numbered Host and Join layout (WebRTC WP03)
+- [x] ICE config: Google and Cloudflare STUN, optional user TURN from Settings (`turnServer` in the save, `src/game/net/ice.ts`), early gather resolve once a server-reflexive candidate is seen, `Peer.onState` (open, failed, closed) and plain-words failures for strict networks (WebRTC WP04). `onState` is not yet shown as a connection-lost cue in the UI.
 - [ ] Lobby, relay room codes
 - [ ] Relay signalling (short room codes) and TURN
 - [ ] Lobby / rematch UI, connection quality indicator, reconnect

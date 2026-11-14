@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DIFFICULTY, DISPLAY_SCALE, GARRISON_SORT_ORDER, newEmptyState, type SaveV1 } from '@core/menu-index';
 import type { Result, SaveStore } from '../../game/platform/storage/save-store';
 import { setSavedPrefs } from '../../game/platform/a11y/prefs';
@@ -242,5 +242,53 @@ describe('applyUiScale / loadSave', () => {
     localStorage.removeItem('tte.touchLayout');
     delete document.documentElement.dataset['touchSize'];
     delete document.documentElement.dataset['touchSide'];
+  });
+});
+
+describe('settingsScreen relay (TURN) row', () => {
+  const field = (name: string): HTMLInputElement => root.querySelector<HTMLInputElement>(`input[name=${name}]`) as HTMLInputElement;
+
+  it('has three labelled fields, a password input and an explanatory hint', async () => {
+    await mountWith(fakeStore());
+    for (const n of ['turnUrl', 'turnUser', 'turnPass']) {
+      expect(root.querySelector(`label[for="setting-${n}"]`)?.textContent).not.toBe('');
+      expect(field(n).value).toBe('');
+      expect(field(n).getAttribute('aria-describedby')).toBe('setting-turn-hint');
+    }
+    expect(field('turnPass').type).toBe('password');
+    expect(document.getElementById('setting-turn-hint')?.textContent).toMatch(/strict network/);
+  });
+
+  it('shows the saved relay, saves an edited one, and clears it when the address is emptied', async () => {
+    const store = fakeStore({ ...newEmptyState(), turnServer: { url: 'turn:r.example:3478', username: 'u', credential: 'p' } });
+    await mountWith(store);
+    expect(field('turnUrl').value).toBe('turn:r.example:3478');
+    expect(field('turnUser').value).toBe('u');
+    expect(field('turnPass').value).toBe('p');
+    field('turnUrl').value = 'turns:r2.example:5349';
+    field('turnPass').value = 'q';
+    await submit();
+    expect(store.saved[0]?.turnServer).toEqual({ url: 'turns:r2.example:5349', username: 'u', credential: 'q' });
+    screen?.unmount();
+
+    const store2 = fakeStore({ ...newEmptyState(), turnServer: { url: 'turn:r.example:3478' } });
+    await mountWith(store2);
+    field('turnUrl').value = '';
+    await submit();
+    expect(store2.saved[0] && 'turnServer' in store2.saved[0]).toBe(false);
+  });
+
+  it('never stores a junk address, and never logs the password', async () => {
+    const log = vi.spyOn(console, 'log');
+    const warn = vi.spyOn(console, 'warn');
+    const store = fakeStore();
+    await mountWith(store);
+    field('turnUrl').value = 'http://not-a-relay';
+    field('turnPass').value = 'hunter2';
+    await submit();
+    expect(store.saved[0] && 'turnServer' in store.saved[0]).toBe(false);
+    for (const spy of [log, warn]) expect(JSON.stringify(spy.mock.calls)).not.toContain('hunter2');
+    log.mockRestore();
+    warn.mockRestore();
   });
 });

@@ -87,6 +87,19 @@ describe('save migration', () => {
     expect(migrate(r.value)).toEqual(r);
   });
 
+  it('turnServer (online relay) is optional: absent after migration, preserved when present', () => {
+    for (const [path, raw] of Object.entries(files)) {
+      const r = migrate(unwrap(raw));
+      expect(r.ok && 'turnServer' in r.value, path).toBe(false);
+    }
+    const withTurn = { ...(fixture('v0-ch3') as object), turnServer: { url: 'turn:r.example:3478', username: 'u', credential: 'p' } };
+    const r = migrate(withTurn);
+    expect(r.ok && r.value).toMatchObject({ turnServer: { url: 'turn:r.example:3478', username: 'u', credential: 'p' } });
+    if (!r.ok) return;
+    expect(migrate(JSON.parse(JSON.stringify(r.value)))).toEqual(r);
+    expect(migrate(r.value)).toEqual(r);
+  });
+
   it('null and garbage give the empty state', () => {
     for (const g of [null, undefined, 5, 'x', [], true]) {
       expect(migrate(g)).toEqual({ ok: true, value: newEmptyState() });
