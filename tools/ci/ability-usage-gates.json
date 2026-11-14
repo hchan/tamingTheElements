@@ -1,0 +1,18 @@
+{
+  "_comment": "Nightly ability-usage gate bands (tools/ci/ability-usage-gates.ts). Calibrated to `pnpm ability:usage --seeds 8` (Arcade, AI level 3, all 66 pairings; the run is deterministic). maxTopShare = the hero's largest per-slot cast share measured, plus about 0.03 of headroom. A slot under deadBelowCastsPerMinute is dead. Move a band only on purpose, with the ability:usage numbers in the commit.",
+  "deadBelowCastsPerMinute": 0.3,
+  "maxTopShare": {
+    "curomo": 0.81,
+    "cyclonius": 0.93,
+    "echo": 0.59,
+    "fiara": 1,
+    "ishimi": 0.9,
+    "lavax": 0.97,
+    "morblass": 0.92,
+    "pax": 0.8,
+    "rokcore": 0.98,
+    "sindarosa": 0.91,
+    "treenoc": 0.8,
+    "wispera": 0.81
+  }
+}
