@@ -162,11 +162,13 @@ for (const { w, h } of SIZES) {
     await start(page);
     const canvas = await page.locator('#game canvas').boundingBox();
     if (!canvas) throw new Error('canvas must be laid out');
-    const k = canvas.width / 1280;
+    // The wide phone view (673c3569) widens the canvas past 16:9; the 1280x720 HUD box stays centred and scales with the height.
+    const k = canvas.height / 720;
+    const ox = canvas.x + (canvas.width - 1280 * k) / 2;
     interface Box { x: number; y: number; w: number; h: number }
     interface Slot { x: number; y: number; size: number }
-    const p1 = (await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBarScreen()`)).map((r) => ({ x: canvas.x + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
-    const p2 = (await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBar2Screen()`)).map((r) => ({ x: canvas.x + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
+    const p1 = (await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBarScreen()`)).map((r) => ({ x: ox + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
+    const p2 = (await page.evaluate<Slot[]>(`window.__TTE__.arena.actionBar2Screen()`)).map((r) => ({ x: ox + r.x * k, y: canvas.y + r.y * k, w: r.size * k, h: r.size * k }));
     const btns = await page.evaluate<Box[]>(
       `[...document.querySelectorAll('button.touchBtn')].filter((e) => getComputedStyle(e).visibility !== 'hidden').map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`,
     );
