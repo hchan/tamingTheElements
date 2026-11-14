@@ -48,8 +48,52 @@ export function chevronShift(tick: number, dir: number, gap: number, reduced: bo
 
 /** Screen-reader line for a hazard warning (no words on screen; this is the audible twin of the telegraph). */
 export function hazardAnnouncement(kind: number): string {
-  const what = ['', 'Lava strip', 'Tide', 'Falling rock', 'Gale'][kind];
-  return what ? `Warning: ${what} incoming.` : '';
+  return ['', 'Lava lane warning', 'Tide shift', 'Rockfall warning', 'Gust warning'][kind] ?? '';
+}
+
+/** Where an edge chevron sits when part of a warned box is outside the camera's view. */
+export interface EdgeCue {
+  /** The view edge the chevron sits on. */
+  readonly side: 'left' | 'right' | 'top' | 'bottom';
+  /** Along-the-edge position (world px), clamped inside the view and the box's span. */
+  readonly pos: number;
+}
+
+/**
+ * Edge cues for a warned box (pure): one per view edge the box crosses, so a lane that runs off-screen still shows where the
+ * rest of it is. `view` is the camera's world view; none when the box is wholly inside or wholly outside (nothing to point at).
+ */
+export function edgeCues(view: { x: number; y: number; width: number; height: number }, box: { x: number; y: number; w: number; h: number }, inset = 28): EdgeCue[] {
+  const vr = view.x + view.width;
+  const vb = view.y + view.height;
+  const br = box.x + box.w;
+  const bb = box.y + box.h;
+  if (br <= view.x || box.x >= vr || bb <= view.y || box.y >= vb) return [];
+  const midY = Math.min(vb - inset, Math.max(view.y + inset, (Math.max(box.y, view.y) + Math.min(bb, vb)) / 2));
+  const midX = Math.min(vr - inset, Math.max(view.x + inset, (Math.max(box.x, view.x) + Math.min(br, vr)) / 2));
+  const out: EdgeCue[] = [];
+  if (box.x < view.x) out.push({ side: 'left', pos: midY });
+  if (br > vr) out.push({ side: 'right', pos: midY });
+  if (box.y < view.y) out.push({ side: 'top', pos: midX });
+  if (bb > vb) out.push({ side: 'bottom', pos: midX });
+  return out;
+}
+
+/** A bold chevron on the view edge pointing outward at the off-screen part of the hazard (dark rim under a pale core). */
+function edgeChevron(g: Gfx, view: { x: number; y: number; width: number; height: number }, cue: EdgeCue, light: number, alpha: number): void {
+  const s = 22;
+  const [ux, uy] = cue.side === 'left' ? [-1, 0] : cue.side === 'right' ? [1, 0] : cue.side === 'top' ? [0, -1] : [0, 1];
+  const ax = ux === 0 ? cue.pos : ux < 0 ? view.x + 10 : view.x + view.width - 10;
+  const ay = uy === 0 ? cue.pos : uy < 0 ? view.y + 10 : view.y + view.height - 10;
+  for (const off of [0, 1]) {
+    const bx = ax - ux * (off * 16 + s);
+    const by = ay - uy * (off * 16 + s);
+    for (const [lw, c, a] of [[10, 0x0a0806, 0.6 * alpha], [5, light, alpha]] as const) {
+      g.lineStyle(lw, c, a)
+        .lineBetween(bx + uy * s - ux * 0, by + ux * s - uy * 0, ax - ux * off * 16, ay - uy * off * 16)
+        .lineBetween(ax - ux * off * 16, ay - uy * off * 16, bx - uy * s, by - ux * s);
+    }
+  }
 }
 
 /** A tapered streak scrolls `dir` across the box in dark and pale pairs (reads on pale air and on blue water); returns how many. */
@@ -231,6 +275,11 @@ export function mountHazardView(arena: Phaser.Scene, view: RenderView, reduceMot
           }
         }
         // Fire and earth: a cross-hatch of warning stripes inside the box (fire's is pale-hot so it reads on the orange floor).
+        if (kind === 1) {
+          // A lane that runs off the camera edge: chevrons on the border point at the hidden part (steady, so safe under reduced motion).
+          const view = arena.cameras.main.worldView;
+          for (const cue of edgeCues(view, { x, y, w, h })) edgeChevron(g, view, cue, 0xf4d4b0, Math.max(alpha, 0.8));
+        }
         if (kind === 1) glow.fillStyle(HAZARD_LIGHTS[1] ?? col, 0.12 * alpha).fillRect(x + w * 0.25, y, w * 0.5, h);
         g.lineStyle(2, kind === 1 ? (HAZARD_LIGHTS[1] ?? col) : col, (kind === 1 ? 0.5 : 0.3) * alpha);
         for (let d = 0; d < w + h; d += 28) g.lineBetween(x + Math.max(0, d - h), y + Math.min(h, d), x + Math.min(w, d), y + Math.max(0, d - w));

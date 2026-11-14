@@ -78,7 +78,7 @@ for (const [element, hero, stage] of CASES) {
     expect(active).toMatchObject({ kind: stage, phase: 'active' });
     await snap('strike');
     // The screen-reader twin of the warning (r20): a polite status line names the hazard.
-    await expect(page.locator('[data-hazard-live]')).toHaveText(/^Warning: .+ incoming\.$/);
+    await expect(page.locator('[data-hazard-live]')).toHaveText(/ (warning|shift)$/);
     expect(errors).toEqual([]);
   });
 }

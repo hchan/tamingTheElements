@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chevronShift, hazardAnnouncement, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, shadowRadius, warnProgress } from './hazard-view';
+import { edgeCues, chevronShift, hazardAnnouncement, HAZARD_COLORS, HAZARD_LIGHTS, hazardWarnAlpha, impactFlash, shadowRadius, warnProgress } from './hazard-view';
 
 describe('hazard view helpers', () => {
   it('the warning firms up as the strike nears and blinks unless reduced motion is on', () => {
@@ -32,7 +32,7 @@ describe('hazard view helpers', () => {
   });
 
   it('each hazard has a screen-reader warning line, none for no hazard', () => {
-    for (const k of [1, 2, 3, 4]) expect(hazardAnnouncement(k)).toMatch(/^Warning: .+ incoming\.$/);
+    for (const k of [1, 2, 3, 4]) expect(hazardAnnouncement(k)).toMatch(/ (warning|shift)$/);
     expect(hazardAnnouncement(0)).toBe('');
     expect(new Set([1, 2, 3, 4].map(hazardAnnouncement)).size).toBe(4);
   });
@@ -49,5 +49,19 @@ describe('rockfall and fire telegraph helpers (r21)', () => {
   });
   it('the impact flashes for exactly the first 2 ticks of the strike', () => {
     expect([-1, 0, 1, 2, 3].map(impactFlash).map((a) => a > 0)).toEqual([false, true, true, false, false]);
+  });
+
+  it('names the hazard in short screen-reader lines', () => {
+    expect([1, 2, 3, 4].map(hazardAnnouncement)).toEqual(['Lava lane warning', 'Tide shift', 'Rockfall warning', 'Gust warning']);
+  });
+
+  it('edge cues point at the off-screen part of a box and are empty when it is fully visible or fully away', () => {
+    const view = { x: 100, y: 0, width: 800, height: 600 };
+    expect(edgeCues(view, { x: 300, y: 100, w: 100, h: 400 })).toEqual([]);
+    expect(edgeCues(view, { x: 0, y: 100, w: 99, h: 400 })).toEqual([]);
+    expect(edgeCues(view, { x: 40, y: 100, w: 200, h: 400 })).toEqual([{ side: 'left', pos: 300 }]);
+    expect(edgeCues(view, { x: 850, y: 100, w: 200, h: 400 })).toEqual([{ side: 'right', pos: 300 }]);
+    expect(edgeCues(view, { x: 400, y: 500, w: 100, h: 300 })).toEqual([{ side: 'bottom', pos: 450 }]);
+    expect(edgeCues(view, { x: 0, y: 0, w: 2000, h: 600 }).map((c) => c.side)).toEqual(['left', 'right']);
   });
 });
