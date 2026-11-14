@@ -57,12 +57,13 @@ export function endText(winner: number, side: 0 | 1, rounds: readonly [number, n
   return `${verdict} Rounds ${String(mine)}-${String(theirs)}.`;
 }
 
-function area(id: string, label: string, readOnly: boolean): { row: HTMLElement; box: HTMLTextAreaElement } {
+function area(id: string, label: string, readOnly: boolean, ariaLabel = label): { row: HTMLElement; box: HTMLTextAreaElement } {
   const row = el('div', 'settingsOption');
   const lab = el('label', undefined, label);
   lab.htmlFor = id;
   const box = el('textarea');
   box.id = id;
+  if (ariaLabel !== label) box.setAttribute('aria-label', ariaLabel);
   box.rows = 3;
   box.cols = 40;
   box.readOnly = readOnly;
@@ -367,10 +368,10 @@ export function onlineVersusScreen(): Screen {
         say(e instanceof Error ? e.message : 'Something went wrong.');
       };
 
-      const offerOut = area('onlineOffer', 'Your code to send to your friend (host)', true);
-      const answerIn = area('onlineAnswerIn', 'Your friend\'s answer code (host)', false);
-      const offerIn = area('onlineOfferIn', 'Your friend\'s host code (join)', false);
-      const answerOut = area('onlineAnswer', 'Your answer code to send back (join)', true);
+      const offerOut = area('onlineOffer', 'Your code to send to your friend', true, 'Your code to send to your friend (host)');
+      const answerIn = area('onlineAnswerIn', 'Your friend\'s answer code', false, 'Your friend\'s answer code (host)');
+      const offerIn = area('onlineOfferIn', 'Your friend\'s host code', false, 'Your friend\'s host code (join)');
+      const answerOut = area('onlineAnswer', 'Your answer code to send back', true, 'Your answer code to send back (join)');
 
       const shareSlot = el('div');
       const host = button('onlineHost', 'Make a code (host)', () => {
@@ -510,6 +511,12 @@ export function onlineVersusScreen(): Screen {
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
       node.append(back);
+      // A second Back near the top: the setup form scrolls a long way on a phone.
+      const topBack = el('a', 'menuLink onlineTopBack', 'Back');
+      topBack.setAttribute('href', '#main');
+      const h1 = node.querySelector('h1');
+      if (h1) h1.after(topBack);
+      else node.prepend(topBack);
       container.append(node);
       focusHeading(node);
     },
