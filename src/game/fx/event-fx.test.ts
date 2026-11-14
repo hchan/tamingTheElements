@@ -50,6 +50,17 @@ function recorder(): { sink: FxSink; log: string[]; holds: number[]; supers: str
 const arcadeFx = (sink: FxSink, reduced = false): EventFx =>
   new EventFx(sink, { reducedMotion: () => reduced, arcade: true, elementOf: (id) => (id === 1 ? 'fire' : undefined) });
 
+describe('EventFx water frost', () => {
+  it('calls sink.frost on a light water hit, never under reduced motion', () => {
+    const calls: string[] = [];
+    const mk = (reduced: boolean): EventFx =>
+      new EventFx({ ...recorder().sink, frost: (t) => calls.push(`frost${String(t)}`) }, { reducedMotion: () => reduced, arcade: true, elementOf: () => 'water' });
+    mk(false).consume([confirmed(3, 1)]);
+    mk(true).consume([confirmed(4, 1)]);
+    expect(calls).toHaveLength(1);
+  });
+});
+
 describe('EventFx hit sound cue', () => {
   it('asks for the attacker element once per hit, in Classic (damage) and Arcade (hitConfirmed)', () => {
     const calls: string[] = [];

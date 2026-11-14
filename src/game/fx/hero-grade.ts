@@ -64,8 +64,11 @@ const RIM_DEFAULT: readonly [number, number, number] = [206, 228, 255];
 const RIM_BY_HERO: Readonly<Record<string, readonly [number, number, number]>> = {
   lavax: [255, 176, 96],
   echo: [226, 240, 255],
-  wispera: [226, 240, 255],
+  // Wispera is a pale ghost that vanished on the pale air stage (QA r23): a dark navy ink edge instead of a light rim.
+  wispera: [18, 28, 66],
 };
+/** A rim darker than this mean channel value is an ink outline: it blends harder so a pale sprite keeps its edge on a pale floor. */
+const INK_RIM_MAX = 90;
 /** Mean luma (0..255) under which a hero counts as dark and gets its body lifted a little as well as a stronger rim. */
 const DARK_MEAN = 96;
 /** Alpha under which a pixel is a faint fringe: no rim, no lift (ghostly heroes such as Echo and Wispera are mostly semi-opaque). */
@@ -92,6 +95,7 @@ export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: num
   }
   const dark = n > 0 && sum / n < DARK_MEAN;
   const lift = dark ? 0.16 * (1 - sum / n / DARK_MEAN) + 0.06 : 0;
+  const ink = (rim[0] + rim[1] + rim[2]) / 3 < INK_RIM_MAX;
   let self = 255;
   const open = (x: number, y: number): boolean => a(x, y) < self * 0.5;
   for (let y = 0; y < h; y++) {
@@ -107,7 +111,7 @@ export function rimLightRgba(px: Uint8ClampedArray | number[], w: number, h: num
       if (top || left || bottom || right) t = top || left ? 1 : 0.6;
       else if (open(x, y - 2) || open(x - 2, y) || open(x, y + 2) || open(x + 2, y)) t = 0.3;
       const yl = (src[i] ?? 0) * 0.3 + (src[i + 1] ?? 0) * 0.59 + (src[i + 2] ?? 0) * 0.11;
-      const k = t * (dark ? 0.62 : 0.4) * (0.55 + 0.45 * (1 - yl / 255));
+      const k = ink ? Math.min(0.85, t * 0.85) : t * (dark ? 0.62 : 0.4) * (0.55 + 0.45 * (1 - yl / 255));
       for (let c = 0; c < 3; c++) {
         const v = src[i + c] ?? 0;
         const lifted = v + (255 - v) * lift;
