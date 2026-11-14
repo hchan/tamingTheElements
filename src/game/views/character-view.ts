@@ -88,6 +88,7 @@ export const GLOW_SPRITES: ReadonlySet<string> = new Set(['wispera', 'echo']);
 const GLOW_KEY = 'hero-glow';
 const GLOW_TINT = 0xb4d2ff;
 const GLOW_ALPHA = 0.65;
+const HALO_ALPHA = 0.4;
 
 /** The shared soft radial glow texture (64x64, white to transparent); undefined where no canvas is available (Node tests). */
 function glowTexture(scene: Phaser.Scene): string | undefined {
@@ -113,6 +114,7 @@ function glowTexture(scene: Phaser.Scene): string | undefined {
 export class CharacterView {
   readonly image: Phaser.GameObjects.Image;
   private glow: Phaser.GameObjects.Image | undefined;
+  private halo: Phaser.GameObjects.Image | undefined;
   /** Soft elliptical ground shadow under the feet (Arcade, `fit`). */
   private shadow: Phaser.GameObjects.Image | undefined;
   private spriteName = '';
@@ -158,6 +160,7 @@ export class CharacterView {
     this.image.setVisible(!hidden);
     if (hidden) {
       this.glow?.setVisible(false);
+      this.halo?.setVisible(false);
       this.shadow?.setVisible(false);
       this.flashLeft = 0;
       this.holdLeft = 0;
@@ -207,6 +210,7 @@ export class CharacterView {
   private placeGlow(sprite: string, x: number, y: number, w: number, h: number): void {
     if (!GLOW_SPRITES.has(sprite)) {
       this.glow?.setVisible(false);
+      this.halo?.setVisible(false);
       return;
     }
     if (!this.glow) {
@@ -216,6 +220,10 @@ export class CharacterView {
     }
     this.glow.setVisible(true).setDepth(this.image.depth - 0.5);
     this.glow.setPosition(x + w / 2, y + h * 0.66).setDisplaySize(w * 1.15, h * 0.62);
+    // A pale rim of light around the body (a soft halo just behind the sprite) so a dark or translucent hero keeps its outline on a dark floor.
+    this.halo ??= this.scene.add.image(0, 0, this.glow.texture.key).setTint(GLOW_TINT).setAlpha(HALO_ALPHA).setBlendMode(1);
+    this.halo.setVisible(true).setDepth(this.image.depth - 0.4);
+    this.halo.setPosition(x + w / 2, y + h * 0.5).setDisplaySize(w * 1.5, h * 1.35);
   }
 
   /**
@@ -240,6 +248,7 @@ export class CharacterView {
 
   hide(): void {
     this.glow?.setVisible(false);
+    this.halo?.setVisible(false);
     this.shadow?.setVisible(false);
     this.image.setVisible(false);
     this.flashLeft = 0;
@@ -249,6 +258,7 @@ export class CharacterView {
 
   destroy(): void {
     this.glow?.destroy();
+    this.halo?.destroy();
     this.shadow?.destroy();
     this.image.destroy();
   }
