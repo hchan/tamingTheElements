@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { EntityFlag, ROUND_TIMER_TICKS, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, ROUND_TIMER_TICKS, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
 import { bannerColorFor, bannerSizeFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
 import { heroName } from './tag-fx';
@@ -231,6 +231,8 @@ export function mountRoundView(
   else hud.events.once('create', build);
   for (const s of [arena, hud]) s.events.once('shutdown', off).once('destroy', off);
   return (events) => {
+    // The round-end sequence starts at the K.O. or the time call: DOM overlays (the first-run card, ROUND_OVER_EVENT in app/first-run-hint.ts) get out of its way; a literal here keeps that card out of this lazy chunk.
+    if (typeof window !== 'undefined' && events.some((e) => e.kind === SimEventKind.ko || e.kind === SimEventKind.timeOver)) window.dispatchEvent(new Event('tte:round-over'));
     results.result.consume(events);
     announcer.consume(events);
     views(events);

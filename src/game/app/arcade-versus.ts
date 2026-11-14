@@ -175,7 +175,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         battle.replaceChildren(host);
         game = createGame(host, launch);
         if (pick.local) host.append(keysHint());
-        const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), anySnag([pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined)), ARCADE_SNAG_SLOT[pick.player]);
+        const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), anySnag([pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined)), ARCADE_SNAG_SLOT[pick.player], pick.partner !== undefined);
         if (firstRun) host.append(firstRun);
         host.append(...inVisualOrder(buttons), touchStick());
       }))

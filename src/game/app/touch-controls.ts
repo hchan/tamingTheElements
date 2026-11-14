@@ -1,7 +1,7 @@
 import { el } from '@ui/dom';
 import { ABILITIES_A, ABILITIES_B, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, type CharacterId, type RenderView } from '@core/index';
 import { touchHaptic } from '../platform/a11y/touch-layout';
-import { codeLabel, getBindings } from '../platform/input/bindings';
+import { actionKeyLabel, getBindings } from '../platform/input/bindings';
 import { cleanseClockOf } from '../hud/cleanse-clock';
 
 /** Shared on-screen touch controls of the Arcade battle (Arcade Versus and the World Tour fight); DOM only, no Phaser. */
@@ -24,16 +24,11 @@ const TOUCH_KEY = {
  */
 export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5, Tag: 3, Tag2: 4, Trap: 0 } as const;
 
-/** The key shown on a button: its number while that number key is bound to the action, else the action's first key. */
+/** The key shown on a button: the one name the action bar's box wears (`actionKeyLabel`), so a layout preset reads the same on the bar and here. */
 export function touchKeyLabel(label: TouchLabel): string {
-  const keys = getBindings()[TOUCH_KEY[label]];
-  const first = keys[0];
-  if (label === 'Element' || label === 'Cleanse') {
-    const sym = label === 'Element' ? 'Minus' : 'Equal';
-    return keys.includes(sym) ? codeLabel(sym) : first === undefined ? '' : codeLabel(first);
-  }
-  const digit = `Digit${String(TOUCH_DIGIT[label])}`;
-  return keys.includes(digit) || first === undefined ? String(TOUCH_DIGIT[label]) : codeLabel(first);
+  const shown = actionKeyLabel(getBindings(), TOUCH_KEY[label]);
+  if (shown !== undefined) return shown;
+  return label === 'Element' || label === 'Cleanse' ? '' : String(TOUCH_DIGIT[label]);
 }
 
 /** True when the race's primary ability is melee: the rule the sim uses for Charge (not ranged: kind outside WEATHER_RANGED_KINDS). */

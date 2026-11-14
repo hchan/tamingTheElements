@@ -6,6 +6,8 @@ import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction 
 
 /** First-run battle hint: a short, dismissible card shown in the first battle only (flag kept in localStorage, never the save). */
 
+/** Fired on `window` when a round ends (K.O. or time over): the card leaves at once instead of covering the result. */
+export const ROUND_OVER_EVENT = 'tte:round-over';
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
 export const FIRST_RUN_MS = 4000;
@@ -70,12 +72,12 @@ export function anySnag(heroes: readonly string[]): boolean {
 const SNAG_TOUCH_LINE = 'Tap the Snag box to root the foe.';
 
 /** The hint text, from the live bindings (keyboard) or the on-screen controls (touch). Words only; the numbered bar is described in Help. */
-export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?: number): readonly string[] {
+export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?: number, partner = true): readonly string[] {
   if (touch) {
     return [
       'Drag the stick to move in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.',
       'Tap the buttons to strike, Dash, Guard (hold) and fire your Super once its meter is full.',
-      'Tap Tag to send in a rested hero, and Cleanse to shake off a root or slow.',
+      partner ? 'Tap Tag to send in a rested hero, and Cleanse to shake off a root or slow.' : 'Tap Cleanse to shake off a root or slow.',
       ...(snag ? [SNAG_TOUCH_LINE] : []),
     ];
   }
@@ -86,7 +88,7 @@ export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?
   return [
     `Move with ${moveKeys(b)}; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
     `${strike}${rope}Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
-    `Fill the Super meter, then press ${key(b, 'super')}. Tag with ${key(b, 'slot3')} to send in a rested hero; press ${key(b, 'cleanse')} to Cleanse a root or slow.`,
+    `Fill the Super meter, then press ${key(b, 'super')}. ${partner ? `Tag with ${key(b, 'slot3')} to send in a rested hero; p` : 'P'}ress ${key(b, 'cleanse')} to Cleanse a root or slow.`,
   ];
 }
 
@@ -125,13 +127,15 @@ export function firstRunHint(
   snag = true,
   /** Which ability box (0 or 1) of the player's first hero holds Snag, so the card names that key as Snag, not Strike. */
   snagSlot?: number,
+  /** False when the team has one hero: the card then leaves the Tag line out. */
+  partner = true,
 ): HTMLElement | null {
   if (firstRunSeen(store)) return null;
   const card = el('div', 'firstRunHint');
   card.id = 'firstRunHint';
   card.setAttribute('role', 'note');
   card.append(el('h2', undefined, 'First blood'));
-  for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
+  for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
   // On a short window (1280x720) the card shrinks and drops its footer so it ends above the hero's wings instead of covering them.
   const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
   if (short && window.innerHeight > 500) card.style.fontSize = '11px';
@@ -142,6 +146,7 @@ export function firstRunHint(
     window.clearTimeout(timer);
     window.removeEventListener('keydown', onInput, true);
     window.removeEventListener('pointerdown', onInput, true);
+    window.removeEventListener(ROUND_OVER_EVENT, fade);
     markSeen(store);
     card.remove();
   });
@@ -153,6 +158,7 @@ export function firstRunHint(
     window.clearTimeout(timer);
     window.removeEventListener('keydown', onInput, true);
     window.removeEventListener('pointerdown', onInput, true);
+    window.removeEventListener(ROUND_OVER_EVENT, fade);
     markSeen(store);
     card.classList.add('firstRunFade');
   };
@@ -175,6 +181,8 @@ export function firstRunHint(
     arm();
     window.addEventListener('keydown', onInput, true);
     window.addEventListener('pointerdown', onInput, true);
+    // The round ends before the card has timed out: it leaves at once instead of covering the result.
+    window.addEventListener(ROUND_OVER_EVENT, fade);
   });
   return card;
 }

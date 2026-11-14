@@ -45,7 +45,7 @@ describe('local two-player key sets', () => {
   });
   it('the hint lists both sets in words', () => {
     expect(controlsHint('Player 2', P2_BINDINGS)).toBe(
-      'Player 2: I J K L move, U attack, O second attack, Y dash, N guard (hold), B super, T weather, G charge, M trap, Semicolon element, Quote cleanse, Period tag, Comma tag 2',
+      'Player 2: I J K L move, U attack, O second attack, Y dash, N guard (hold), B super, T weather, G charge, M trap, ; element, Quote cleanse, Period tag, Comma tag 2',
     );
     expect(controlsHint('Player 1', DEFAULT_BINDINGS)).toMatch(/^Player 1: W A S D move, /);
   });
