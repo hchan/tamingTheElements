@@ -1045,10 +1045,36 @@ html[data-high-contrast='true'] button.touchBtn {
   image-rendering: pixelated;
   filter: saturate(1.08) brightness(1.06) contrast(1.04) drop-shadow(0 0 3px rgba(200, 190, 255, 0.35));
 }
-/* Locked or unavailable tiles stay readable: dimmed and softly desaturated, never murky. */
+/* Dark art (Cyclonius, Echo, Wispera) and locked or unavailable tiles must read at a glance: every face sits on a soft lit plate. A locked tile
+   keeps a bright, lightly desaturated silhouette with a "Locked" pill and a dashed border, never near-black. */
+.heroTileFace {
+  border-radius: 8px;
+  background-color: rgba(205, 190, 255, 0.22);
+  box-shadow: inset 0 0 10px rgba(235, 225, 255, 0.4);
+}
+.heroTile:disabled,
+.heroTile[aria-disabled='true'] {
+  opacity: 1;
+  border-style: dashed;
+  background: #33335a;
+  color: #e6e2f4;
+}
 .heroTile:disabled .heroFace,
 .heroTile[aria-disabled='true'] .heroFace {
-  filter: saturate(0.6) brightness(0.9);
+  filter: saturate(0.5) brightness(1.5) contrast(0.95) drop-shadow(0 0 6px rgba(215, 205, 255, 0.7));
+}
+.heroTile:disabled::after,
+.heroTile[aria-disabled='true']::after {
+  content: 'Locked';
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  padding: 0 0.5em;
+  border-radius: 999px;
+  background: rgba(255, 224, 140, 0.92);
+  color: #2a2208;
+  font-size: 0.65em;
+  font-weight: bold;
 }
 .heroGrid {
   grid-area: grid;
@@ -1698,28 +1724,37 @@ button.menuButton.heroSlotClear {
   display: none;
 }
 
-/* Primary action stays on screen: Fight! (Versus) and Start tour (Play) are docked to the bottom of the viewport (sticky does not work here: body is
-   an overflow:auto box as tall as the page). The forms get bottom padding so the last row is never covered. */
+/* Primary action stays on screen: Fight! (Versus) and Start tour (Play) sit in a sticky bar at the bottom of the picker page. The page itself is
+   the scroll box (viewport tall, overflow auto), so the bar takes its own space at the end of the scroll: the last roster row (Earth) ends above
+   it instead of under it, and every row is reachable at any viewport. (A fixed bar over the body scroll hid that row.) */
+#arcadePick,
+#menu .menuPage:has(.heroSelect) {
+  box-sizing: border-box;
+  /* Positioned, so the absolutely placed srOnly and Slot badges scroll inside the box instead of stretching the document. */
+  position: relative;
+  max-height: calc(100dvh - 16px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 #arcadePick .vsActions,
 .heroSelect .heroActions {
-  position: fixed;
-  left: 0;
-  right: 0;
+  position: sticky;
   bottom: 0;
   z-index: 3;
   justify-content: center;
-  margin-top: 0;
+  margin-top: 0.5em;
   padding: 0.5em 1em;
-  /* A solid bar (not a fade) so the roster row under it reads as cut off by a bar, not half-faded. */
+  /* A solid bar (not a fade) so rows scrolling under it read as cut off by a bar, not half-faded. */
   background: rgba(28, 24, 62, 0.97);
   border-top: 2px solid rgba(255, 214, 120, 0.55);
   box-shadow: 0 -6px 14px rgba(10, 8, 30, 0.45);
 }
 #arcadePick .vsForm,
 .heroSelect {
-  padding-bottom: 8em;
+  padding-bottom: 0;
 }
-/* Scroll cue: the dock hides the last roster row (Earth) until the page is scrolled, so a pill above the bar says more is below.
+/* Scroll cue: more roster rows lie below the bar until the page is scrolled to its end, so a pill on the bar says so.
    It fades out as the page reaches its end where scroll-driven animations exist (else it simply stays). */
 #arcadePick .vsActions::before,
 .heroSelect .heroActions::before {
@@ -1921,11 +1956,18 @@ button.menuButton.heroSlotClear {
   .heroSelect .heroActions::before {
     display: none;
   }
+  #arcadePick,
+  #menu .menuPage:has(.heroSelect) {
+    max-height: none;
+    overflow-y: visible;
+  }
   #arcadePick .vsActions,
   .heroSelect .heroActions {
     position: static;
     padding: 0.3em 0;
     background: none;
+    border-top: 0;
+    box-shadow: none;
   }
   #arcadePick .vsForm,
   .heroSelect {
