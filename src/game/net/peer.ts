@@ -1,5 +1,6 @@
 import type { ControlPipe, Transport } from '@core/index';
 import { controlPipe, inputTransport } from './rtc-channels';
+import { BAD_CODE, packSdp, unpackSdp } from './sdp-codec';
 
 /** Public STUN to start (docs/NETCODE.md); a TURN relay is a later, optional item. */
 export const DEFAULT_ICE: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
@@ -43,18 +44,27 @@ export class Peer {
   }
 }
 
-/** A signalling code is the session description as base64 JSON: short to copy and paste, and it carries no gameplay. */
+/**
+ * A signalling code is a compact binary code (`T1.` prefix, src/game/net/sdp-codec.ts): short enough for a chat message or a QR
+ * code, and it carries no gameplay. A description the compact form cannot carry falls back to the full SDP as base64 JSON.
+ */
 export function encodeSignal(d: RTCSessionDescriptionInit): string {
-  return btoa(JSON.stringify({ type: d.type, sdp: d.sdp }));
+  return packSdp(d) ?? btoa(JSON.stringify({ type: d.type, sdp: d.sdp }));
 }
 
-/** Untrusted input from a pasted code: anything malformed or of the wrong kind throws a plain Error the UI can show. */
+/** Untrusted input from a pasted code (compact or the older base64 JSON): anything malformed or of the wrong kind throws a plain Error the UI can show. */
 export function decodeSignal(code: string, want: 'offer' | 'answer'): RTCSessionDescriptionInit {
+  const c = code.replace(/\s+/g, '');
+  if (/^T\d+\./.test(c)) {
+    const d = unpackSdp(c);
+    if (d.type !== want) throw new Error(`That is not an ${want} code.`);
+    return d;
+  }
   let v: unknown;
   try {
-    v = JSON.parse(atob(code.trim()));
+    v = JSON.parse(atob(c));
   } catch {
-    throw new Error('That is not a connection code.');
+    throw new Error(BAD_CODE);
   }
   const o = v as { type?: unknown; sdp?: unknown } | null;
   if (typeof o !== 'object' || o === null || o.type !== want || typeof o.sdp !== 'string' || o.sdp.length > 20_000) {
