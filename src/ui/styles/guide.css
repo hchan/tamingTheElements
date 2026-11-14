@@ -217,3 +217,10 @@
   .guideCards { grid-template-columns: repeat(auto-fill, minmax(13.5em, 1fr)); }
   .guideWheel { flex-basis: min(15em, 54vh); }
 }
+
+/* The OS reduced-motion preference freezes the weather previews too (the Settings switch is handled globally). */
+@media (prefers-reduced-motion: reduce) {
+  .guidePreview i {
+    animation: none;
+  }
+}

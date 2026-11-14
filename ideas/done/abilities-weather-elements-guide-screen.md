@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-13
 ---
 
@@ -15,3 +15,7 @@ Owner idea (2026-11-13): a separate menu screen showing the COMMON abilities (an
 - Weather: each element's weather as a card with a small animated preview, what it changes on the stage, and who it favours.
 - Reuses the grim icons from the action bar and the portraits from [[mvc-character-select-with-ability-info]].
 - Works at 1280x720, 800x450 and touch.
+
+## Progress
+
+Shipped as the Guide page linked from Help (src/ui/screens/guide*.ts, styles/guide.css, tests/e2e/guide.spec.ts, unit tests). 2026-11-14: added the OS prefers-reduced-motion guard for the weather previews; removed the stale brainstorm duplicate.
