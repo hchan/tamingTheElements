@@ -103,6 +103,12 @@ describe('round view (Phaser side, fake scenes)', () => {
     expect(roundState(hud.scene)).toMatchObject({ timer: '02', timerColor: '#d98a78' });
   });
 
+  it('writes the ROUNDS caption once, centred under the pips, not once per side', () => {
+    const hud = fakeScene(true);
+    mountRoundView(fakeScene(true).scene, hud.scene, fakeView().view, () => undefined, prefs(false));
+    expect(hud.made.filter((o) => o.text === 'ROUNDS')).toHaveLength(1);
+  });
+
   it('waits for the Hud create, draws the timer, pips and banner from pooled objects, and tears down to 0 listeners', () => {
     const arena = fakeScene(true);
     const hud = fakeScene(false);
@@ -112,7 +118,7 @@ describe('round view (Phaser side, fake scenes)', () => {
     expect(hud.made).toHaveLength(0);
     hud.setActive(true);
     hud.events.emit('create');
-    expect(hud.made).toHaveLength(9);
+    expect(hud.made).toHaveLength(8);
     expect(roundState(hud.scene)).toMatchObject({ main: 'ROUND 1', visible: true, timer: '90', won: [0, 0], scale: 2 });
 
     // Round 0 (before the first tick) has no timer yet: the full one is shown.
@@ -141,9 +147,9 @@ describe('round view (Phaser side, fake scenes)', () => {
     expect(hud.made[1]).toMatchObject({ text: 'YOU WIN ROUND 1', visible: false });
     expect(lines.map((l) => l.text)).toEqual(['Round 1.', 'Fight!', 'K.O. You knocked out the enemy.', 'You win round 1. Rounds 1 to 0. Knockout. Health left 0 percent. Dealt 0 damage, took 0. Longest combo 0.']);
     // The seven objects (banner, timer, pips, halo, two cards), plus the result card's five made on the first result: nothing is made per frame or per banner.
-    expect(hud.made).toHaveLength(14);
+    expect(hud.made).toHaveLength(13);
     feed([ev(351, SimEventKind.roundStarted, 0, { round: 2 })]);
-    expect(hud.made).toHaveLength(14);
+    expect(hud.made).toHaveLength(13);
     expect(roundState(hud.scene)?.result).toMatchObject({ visible: true, tone: 'win', title: 'ROUND 1 WON', kicker: 'ROUNDS 1 - 0' });
 
     arena.events.emit('shutdown');
@@ -158,7 +164,7 @@ describe('round view (Phaser side, fake scenes)', () => {
     const hud = fakeScene(true);
     const v = fakeView();
     mountRoundView(arena.scene, hud.scene, v.view, () => undefined, prefs(true));
-    expect(hud.made).toHaveLength(9);
+    expect(hud.made).toHaveLength(8);
     expect(roundState(hud.scene)).toMatchObject({ main: 'ROUND 1', visible: true, scale: 1 });
     hud.events.emit('destroy');
     expect(arena.events.count + hud.events.count).toBe(0);
