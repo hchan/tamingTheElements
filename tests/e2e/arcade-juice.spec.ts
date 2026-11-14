@@ -8,13 +8,13 @@ const SECONDARY = 32;
 const PRIMARY = 16;
 /** Arcade Charge (FUN-DESIGN 2.17): its arrival hit stuns, so the Ice Shock pressed after its hit-stop (it lands 6 ticks on) is the combo's second hit. */
 const CHARGE = 1 << 15;
-const WASH = 0x6e6e6e;
-const ADD = 2;
+/** Hit flash light (QA r26): an additive copy of the sprite at alpha 0.5 for the first frames, then a soft fade of at most 0.3. */
+const WASH_PEAK = 0.5;
 /** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91; Classic has none. */
 const INTRO = 91;
 
 interface Fx {
-  tints: { id: number; tint: number; mode: number }[];
+  tints: { id: number; tint: number; mode: number; wash: number }[];
   numbers: string[];
   combo: [number, number];
   meter: [number, number];
@@ -58,7 +58,7 @@ async function hit(page: Page, foe: number, cmd = SECONDARY): Promise<void> {
 }
 
 const fx = (page: Page): Promise<Fx> => page.evaluate<Fx>(`window.__TTE__.arena.fx()`);
-const flashed = (f: Fx, id: number): boolean => f.tints.some((t) => t.id === id && t.tint === WASH && t.mode === ADD);
+const flashed = (f: Fx, id: number): boolean => f.tints.some((t) => t.id === id && t.wash >= WASH_PEAK);
 
 test('Classic: a projectile hit renders the white hit flash (V6) and no Arcade HUD', async ({ page }) => {
   const errors = collectErrors(page);
@@ -72,15 +72,15 @@ test('Classic: a projectile hit renders the white hit flash (V6) and no Arcade H
   expect(errors).toEqual([]);
 });
 
-test('Classic: once the white flash ends the hit leaves a red tint, then clears', async ({ page }) => {
+test('Classic: once the peak flash ends the light fades softly, then clears', async ({ page }) => {
   const errors = collectErrors(page);
   const foe = await openDemo(page, 'arenaDemo');
   await hit(page, foe);
   expect(flashed(await fx(page), foe)).toBe(true);
-  // Let the view effects age on real frames (sim stays paused): fill, then red, then nothing.
+  // Let the view effects age on real frames (sim stays paused): peak, then a soft fade below the peak, then nothing.
   await page.evaluate(`window.__TTE__.arena.ageFx(true)`);
-  await page.waitForFunction(`window.__TTE__.arena.fx().tints.some((t) => t.id === ${String(foe)} && t.tint === 0xff3a3a && t.mode === 0)`, undefined, { timeout: 5000 });
-  await page.waitForFunction(`!window.__TTE__.arena.fx().tints.some((t) => t.id === ${String(foe)} && t.tint === 0xff3a3a)`, undefined, { timeout: 5000 });
+  await page.waitForFunction(`window.__TTE__.arena.fx().tints.some((t) => t.id === ${String(foe)} && t.wash > 0 && t.wash < ${String(WASH_PEAK)})`, undefined, { timeout: 5000 });
+  await page.waitForFunction(`!window.__TTE__.arena.fx().tints.some((t) => t.id === ${String(foe)} && t.wash > 0)`, undefined, { timeout: 5000 });
   await page.evaluate(`window.__TTE__.arena.ageFx(false)`);
   expect(errors).toEqual([]);
 });

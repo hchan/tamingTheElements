@@ -69,7 +69,7 @@ export interface ArenaProbe {
    */
   /** Let view effects (hit flash) age in real time while the sim stays paused. */
   ageFx(on: boolean): void;
-  fx(): { tints: { id: number; tint: number; mode: number }[]; numbers: string[]; combo: [number, number]; meter: [number, number] };
+  fx(): { tints: { id: number; tint: number; mode: number; wash: number }[]; numbers: string[]; combo: [number, number]; meter: [number, number] };
   /**
    * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the
    * texts shown and the camera zoom over the fit zoom; undefined otherwise (always in Classic).
