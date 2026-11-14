@@ -4,7 +4,7 @@ import { ELEMENT_COLORS } from './element-colors';
 import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
-import { RING_KO_WEIGHT, RING_MIN_STRENGTH, sparkStyleFor } from './hit-feel';
+import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, sparkStyleFor } from './hit-feel';
 import { createShockLayer } from './shock-view';
 import { koPunch } from './arena-pan';
 
@@ -79,6 +79,8 @@ export interface FxSink {
   koWash?(): void;
   /** Shockwave ring at `target` in `color` for a heavy hit (weight 2), super (3) or KO (4); optional, never called under reduced motion. */
   ring?(target: number, color: number, weight: number): void;
+  /** Super hit on `target`: oversized gold number sized by `fraction` of its life, a gold spark burst and (when `flash`) one screen pulse; optional, never called under reduced motion except `reduced` true for the still number. */
+  superHit?(target: number, amount: number, fraction: number, flash: boolean, reduced: boolean): void;
   /** Hit-stop jitter on `target` while the view tick is below `untilTick` (the freeze deadline, W.tick units). */
   jitter(target: number, untilTick: number): void;
   /** Painted element impact strip played once over `target` (optional; skipped under reduced motion by EventFx). */
@@ -104,6 +106,7 @@ export const KO_SHAKE: readonly [number, number] = [300, 0.01];
 /** `hitStop.cause` of the super freeze and of the KO stop (src/core/data/arcade.ts HitStopCause). */
 const SUPER_CAUSE = 2;
 const KO_CAUSE = 3;
+const SUPER_GOLD = 0xd9b24c;
 const MAX_SPARKS = SPARKS_BY_STRENGTH[3];
 
 export { ELEMENT_COLORS };
@@ -114,6 +117,8 @@ export interface FxOptions {
   readonly arcade?: boolean;
   /** Element of a character (for the hit colour), or undefined when it has no view. */
   readonly elementOf?: (id: number) => Element | undefined;
+  /** Max life of a character (the super number scales by the share of it a hit takes). */
+  readonly maxLifeOf?: (id: number) => number | undefined;
   /** Elemental sound cue for a hit (the attacker's element); view-only, called once per hit. */
   readonly sfx?: (kind: 'hit', element: Element) => void;
   readonly rng?: CosmeticRng;
@@ -136,6 +141,7 @@ export class EventFx {
   private hitTarget = -1;
   private hitStrength = 0;
   private hitColor = 0;
+  private lastSuperFlash = -1e9;
 
   constructor(
     private readonly sink: FxSink,
@@ -187,7 +193,9 @@ export class EventFx {
     this.hitColor = color;
     this.sink.flash(target, color, this.opts.reducedMotion() ? 0 : holdFramesFor(strength));
     this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
-    if (this.opts.reducedMotion()) {
+    const reduced = this.opts.reducedMotion();
+    if (strength === 3) this.superHit(e, target, reduced);
+    if (reduced) {
       this.sink.spark(target, color);
       return;
     }
@@ -196,6 +204,16 @@ export class EventFx {
     if (strength >= RING_MIN_STRENGTH) this.sink.ring?.(target, color, strength);
     const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
     this.sink.burst(target, this.fill(n), n, color, el);
+    if (strength === 3) this.sink.burst(target, this.fill(SUPER_GOLD_SPARKS), SUPER_GOLD_SPARKS, SUPER_GOLD, el);
+  }
+
+  /** The super's own punch beyond the shared hit feedback: a big gold number and (once per super) a screen pulse. */
+  private superHit(e: SimEvent, target: number, reduced: boolean): void {
+    const amount = e['amount'] ?? 0;
+    const due = e.tick - this.lastSuperFlash >= SUPER_FLASH_GAP_TICKS || e.tick < this.lastSuperFlash;
+    if (due) this.lastSuperFlash = e.tick;
+    const flash = due && !reduced;
+    this.sink.superHit?.(target, amount, lifeFraction(amount, this.opts.maxLifeOf?.(target)), flash, reduced);
   }
 
   /**
@@ -355,6 +373,10 @@ export function createPhaserFxSink(
     ring(target, color, weight): void {
       const p = centre(target);
       if (p) shock.ring(p.x, p.y, color, weight);
+    },
+    superHit(target, amount, fraction, flash, reduced): void {
+      const p = centre(target);
+      if (p) shock.superHit(p.x, p.y - p.h / 2 - 34, amount, fraction, flash, reduced);
     },
     spark(target, color): void {
       const p = centre(target);

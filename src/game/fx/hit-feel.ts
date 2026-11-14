@@ -81,3 +81,54 @@ export function ringFrame(ageMs: number, weight: number): RingFrame | null {
   const out = 1 - (1 - t) ** 3;
   return { radius: 12 + (ringReach(weight) - 12) * out, alpha: (1 - t) ** 1.5, width: Math.max(1, (weight >= RING_KO_WEIGHT ? 7 : 5) * (1 - t)) };
 }
+
+/** Super-hit impact (renderer only): an oversized gold damage number scaled by the share of the victim's life, plus one screen flash per super. */
+export const SUPER_NUMBER_COLOR = '#d9b24c';
+export const SUPER_NUMBER_POOL = 3;
+export const SUPER_NUMBER_MS = 900;
+/** Life share assumed when the victim's max life is unknown. */
+export const SUPER_FRACTION_FALLBACK = 0.15;
+/** Extra gold sparks thrown with a super hit. */
+export const SUPER_GOLD_SPARKS = 12;
+
+/** Share of the victim's max life a hit took, 0..1 (SUPER_FRACTION_FALLBACK without a usable max). */
+export function lifeFraction(amount: number, maxLife: number | undefined): number {
+  if (maxLife === undefined || !Number.isFinite(maxLife) || maxLife <= 0 || !Number.isFinite(amount)) return SUPER_FRACTION_FALLBACK;
+  return Math.min(1, Math.max(0, amount / maxLife));
+}
+
+/** Font size in logical px of the super number: 44 up to 92 as the hit takes 0 to 30+ percent of the victim's life. */
+export function superNumberSize(fraction: number): number {
+  const f = Math.min(0.3, Math.max(0, Number.isFinite(fraction) ? fraction : 0));
+  return Math.round(44 + (92 - 44) * (f / 0.3));
+}
+
+export interface SuperNumberFrame {
+  /** Scale on the base size: a fast overshoot pop settling to 1 (always 1 when reduced). */
+  readonly scale: number;
+  /** Upward travel in px (0 when reduced). */
+  readonly rise: number;
+  readonly alpha: number;
+}
+
+/** The super number `ageMs` in (null once done): pops in, holds, then rises and fades. Reduced motion holds still and just fades. */
+export function superNumberFrame(ageMs: number, reduced: boolean): SuperNumberFrame | null {
+  if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= SUPER_NUMBER_MS) return null;
+  const t = ageMs / SUPER_NUMBER_MS;
+  const alpha = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+  if (reduced) return { scale: 1, rise: 0, alpha };
+  const pop = ageMs < 140 ? 1 + 0.45 * Math.sin((Math.PI * ageMs) / 140) : 1;
+  return { scale: pop, rise: 46 * (1 - (1 - t) ** 2), alpha };
+}
+
+/** Peak alpha and length of the super screen flash (a pale pulse well under the 3-flashes-a-second rule: one per super). */
+export const SUPER_FLASH_PEAK = 0.3;
+export const SUPER_FLASH_MS = 150;
+/** Minimum view ticks between two super screen flashes (a super lands five hits 6 ticks apart; only the first flashes). */
+export const SUPER_FLASH_GAP_TICKS = 50;
+
+/** Screen-flash alpha `ageMs` after a super hit: instant peak, linear fall; 0 outside the window. */
+export function superFlashAlpha(ageMs: number): number {
+  if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= SUPER_FLASH_MS) return 0;
+  return SUPER_FLASH_PEAK * (1 - ageMs / SUPER_FLASH_MS);
+}
