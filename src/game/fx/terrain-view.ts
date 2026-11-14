@@ -88,6 +88,13 @@ const hex = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
  * Mounts the terrain view (Arena `arena`, HUD `hud`) for `view` and returns the event consumer the Arena feeds every
  * tick. `say` is the Arena's throttled live region; `prefs` the accessibility prefs (read on events and once a second).
  */
+/** Seconds the floor words show the first time a stage appears, and the fade at the end of it. */
+const HINT_TICKS = Math.round(4000 / TICK_MS);
+const HINT_FADE_TICKS = Math.round(1000 / TICK_MS);
+export function labelHintAlpha(sinceFirstSeen: number): number {
+  return Math.max(0, Math.min(1, (HINT_TICKS - sinceFirstSeen) / HINT_FADE_TICKS));
+}
+
 export function mountTerrainView(
   arena: Phaser.Scene,
   hud: Phaser.Scene,
@@ -120,6 +127,8 @@ export function mountTerrainView(
   let crowdSeq = -1;
   let landedAt = Number.NEGATIVE_INFINITY;
   let healAt = Number.NEGATIVE_INFINITY;
+  /** The view time each stage's floor words first showed (stage index, 1 to 4). */
+  const firstSeen: (number | undefined)[] = [];
   /** The layout drawn: stage, count and the 20 ints. */
   const drawn = { stage: -1, count: -1, rects: new Array<number>(MAX_PATCHES * 4).fill(-1), alpha: 1, glow: 0, particles: 0, badge: '', backdrop: '', nextBackdrop: 0 };
   const labels: string[] = [];
@@ -228,7 +237,7 @@ export function mountTerrainView(
       }
       labels.push(word);
       if (t.text !== word) t.setText(word);
-      t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2, (rects[i * 4 + 1] ?? 0) - 3).setVisible(stage !== 3);
+      t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2, (rects[i * 4 + 1] ?? 0) - 3);
     }
   };
 
@@ -283,7 +292,11 @@ export function mountTerrainView(
     stageArt.update(stage, arena.cameras.main.midPoint.x, clock * TICK_MS, reduced);
     p.ambient.update(stage, (clock * TICK_MS) / 1000, reduced, drawn.alpha);
     p.glow.setAlpha(drawn.glow);
-    for (const t of p.labels) t.setAlpha(highContrast ? drawn.alpha : drawn.alpha * 0.8);
+    // The words on the floor are a first-encounter hint (the badge and Help keep naming the buff): shown for a few seconds the first
+    // time each stage appears, then the glow ring and the pad art carry it alone.
+    if (stage > 0 && firstSeen[stage] === undefined) firstSeen[stage] = clock;
+    const hint = stage > 0 ? labelHintAlpha(clock - (firstSeen[stage] ?? clock)) : 0;
+    p.labels.forEach((t, i) => t.setVisible(hint > 0 && stage !== 3 && i < count).setAlpha((highContrast ? drawn.alpha : drawn.alpha * 0.8) * hint));
     // Particles (motion only) and sparks.
     const f = p.fx.clear();
     const n = reduced || stage === 0 ? 0 : Math.min(MAX_PARTICLES, count * PARTICLES_PER_PATCH);

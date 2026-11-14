@@ -76,7 +76,7 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
       }
       const t = label(i);
       if (t.text !== words) t.setText(words);
-      t.setPosition(x + TRAP_BOX_PX / 2, y + TRAP_BOX_PX / 2 - 31 * 0.6 - 8).setAlpha(alpha * 0.85).setVisible(true);
+      t.setPosition(x + TRAP_BOX_PX / 2, y + TRAP_BOX_PX / 2 - 31 * 0.6 - 8).setAlpha(alpha * 0.85).setVisible(armLeft > 0); // words only while it arms: the armed trap reads by its art and range ring
       markers.push({ kind, x, y, team, label: words, alpha });
     }
   };

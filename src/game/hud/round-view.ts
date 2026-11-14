@@ -32,6 +32,9 @@ const CARD_PX = 54;
 const CARD_Y = 200;
 const CARD_MARGIN = 64;
 const WON_COLOR = 0xb8964a;
+/** The word under each side's round pips, so they are not read as super charge. */
+const PIP_LABEL_PX = 11;
+const PIP_LABEL_DX = 36;
 /** Banner fade: in over the first 8 ticks, out over the last 12 (none with reduced motion). */
 const FADE_IN_TICKS = 8;
 const FADE_OUT_TICKS = 12;
@@ -91,7 +94,7 @@ export function mountRoundView(
   if (a) announcer.sync(a, view.tick);
 
   let parts: {
-    main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics;
+    main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics; pipLabels: Phaser.GameObjects.Text[];
     halo: Phaser.GameObjects.Graphics; cards: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
   } | undefined;
   const cardState: CardFrame = { alpha: 0, offset: 0 };
@@ -199,6 +202,7 @@ export function mountRoundView(
       sub: text(SUB_PX, BANNER_Y + SUB_GAP, 6, true).setOrigin(0.5, 0),
       timer: text(TIMER_PX, TIMER_Y, 5).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
+      pipLabels: [-1, 1].map((side) => text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setText('ROUNDS').setPosition(TIMER_X + side * PIP_LABEL_DX, PIP_Y + PIP_R + 3)),
       halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
       cards: [
         text(CARD_PX, CARD_Y, 6, true).setOrigin(0, 0.5).setVisible(false),
@@ -219,7 +223,7 @@ export function mountRoundView(
     arena.events.off('shutdown', off).off('destroy', off);
     states.delete(hud);
     results.destroy();
-    if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, parts.halo, ...parts.cards]) o.destroy();
+    if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, ...parts.pipLabels, parts.halo, ...parts.cards]) o.destroy();
     parts = undefined;
   };
   if (hud.sys.isActive()) build();
