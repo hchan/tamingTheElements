@@ -39,6 +39,7 @@
     "sample-sfx": 700,
     "sim": 36500,
     "status-fx-view": 1800,
+    "chromatic-filter-impl": 900,
     "super-view": 2800,
     "tag-view": 3300,
     "terrain-view": 10000,

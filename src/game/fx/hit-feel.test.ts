@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
+import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
 describe('sparkStyleFor', () => {
   it('has a distinct style per element and a default', () => {
@@ -81,5 +81,21 @@ describe('super hit impact rules', () => {
     expect(superFlashAlpha(SUPER_FLASH_MS / 2)).toBeCloseTo(SUPER_FLASH_PEAK / 2, 6);
     expect(superFlashAlpha(SUPER_FLASH_MS)).toBe(0);
     expect(superFlashAlpha(-1)).toBe(0);
+  });
+});
+
+describe('koSplitAmount', () => {
+  it('is zero outside the window, for NaN and under reduced motion', () => {
+    expect(koSplitAmount(0, false)).toBe(0);
+    expect(koSplitAmount(KO_SPLIT_MS, false)).toBe(0);
+    expect(koSplitAmount(Number.NaN, false)).toBe(0);
+    expect(koSplitAmount(40, true)).toBe(0);
+  });
+  it('rises fast to a subtle peak, then eases back', () => {
+    expect(koSplitAmount(40, false)).toBeCloseTo(KO_SPLIT_PEAK, 9);
+    expect(KO_SPLIT_PEAK).toBeLessThanOrEqual(0.005);
+    expect(koSplitAmount(100, false)).toBeLessThan(KO_SPLIT_PEAK);
+    expect(koSplitAmount(100, false)).toBeGreaterThan(koSplitAmount(200, false));
+    expect(KO_SPLIT_MS).toBeLessThanOrEqual(300);
   });
 });

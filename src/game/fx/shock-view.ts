@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
-import { KO_WASH_MS, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koWashStrength, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
+import type { ChromaticSplit } from './chromatic-filter-impl';
+import { KO_SPLIT_MS, KO_WASH_MS, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
 /**
  * Renderer-only KO desaturation wash (a camera colour-matrix filter) and hit shockwave rings (one pooled Graphics: a pale
@@ -51,6 +52,8 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
   let flashAge = -1;
   let washAge = -1;
   let filter: ColorMatrixFilter | undefined;
+  let split: ChromaticSplit | undefined;
+  let splitAge = -1;
   let gfx: Phaser.GameObjects.Graphics | undefined;
   let attached = false;
 
@@ -68,7 +71,9 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     flashRect = undefined;
     flashAge = -1;
     washAge = -1;
+    splitAge = -1;
     filter = undefined;
+    split = undefined;
     gfx = undefined;
     detach();
   };
@@ -86,6 +91,15 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       } else {
         filter.colorMatrix.reset();
         filter.colorMatrix.saturate(-s);
+      }
+    }
+    if (splitAge >= 0 && split) {
+      splitAge += delta;
+      const a = splitAge >= KO_SPLIT_MS ? 0 : koSplitAmount(splitAge, false);
+      split.amount = a;
+      if (a <= 0) {
+        splitAge = -1;
+        split.active = false;
       }
     }
     if (gfx) {
@@ -123,7 +137,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       numsLive = true;
       n.text.setPosition(n.x, n.y - f.rise).setScale(f.scale).setAlpha(f.alpha);
     }
-    if (washAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive && held.length === 0) detach();
+    if (washAge < 0 && splitAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive && held.length === 0) detach();
   }
   const attach = (): void => {
     if (attached) return;
@@ -137,6 +151,22 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       filter ??= scene.cameras.main.filters.external.addColorMatrix() as unknown as ColorMatrixFilter;
       filter.active = true;
       washAge = 0;
+      const startSplit = (): void => {
+        if (split) {
+          split.active = true;
+          splitAge = 0;
+          attach();
+        }
+      };
+      if (split) startSplit();
+      else {
+        // Lazy: the filter module pulls in Phaser itself, which unit tests must not evaluate.
+        void import('./chromatic-filter-impl').then((m) => {
+          if (washAge < 0 || !attached) return;
+          split ??= m.addChromaticSplit(scene);
+          startSplit();
+        }, () => undefined);
+      }
       attach();
     },
     ring(x, y, color, weight): void {
@@ -185,13 +215,14 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     },
     seek(ms): void {
       if (washAge >= 0) washAge = ms;
+      if (splitAge >= 0) splitAge = ms;
       if (flashAge >= 0) flashAge = Math.min(ms, SUPER_FLASH_MS - 1);
       for (const n of nums) if (n.live) n.age = ms;
       for (const r of rings) r.age = ms;
       step(0);
     },
     state(): ShockState {
-      return { washAge, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, held: held.length, superNumberSize: nums.find((n) => n.live)?.size ?? 0 };
+      return { washAge, split: split?.amount ?? 0, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, held: held.length, superNumberSize: nums.find((n) => n.live)?.size ?? 0 };
     },
   };
   layers.set(scene, layer);
@@ -201,6 +232,8 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
 /** Test probe: the running wash and rings of `scene`. */
 export interface ShockState {
   readonly washAge: number;
+  /** Chromatic split offset now, 0..KO_SPLIT_PEAK. */
+  readonly split: number;
   /** Desaturation now, 0..KO_WASH_PEAK. */
   readonly wash: number;
   readonly rings: number;
