@@ -95,6 +95,9 @@ const LAVAX_HALO_ALPHA = 0.5;
 const GLOW_TINT = 0xb4d2ff;
 const GLOW_ALPHA = 0.65;
 const HALO_ALPHA = 0.4;
+/** Normal-blend deep-indigo aura behind every hero: a pale or stony body keeps a dark edge on the bright air floor (display only). */
+const AURA_TINT = 0x120c28;
+const AURA_ALPHA = 0.42;
 
 /** The shared soft radial glow texture (64x64, white to transparent); undefined where no canvas is available (Node tests). */
 function glowTexture(scene: Phaser.Scene): string | undefined {
@@ -143,6 +146,7 @@ export class CharacterView {
   readonly image: Phaser.GameObjects.Image;
   private glow: Phaser.GameObjects.Image | undefined;
   private halo: Phaser.GameObjects.Image | undefined;
+  private aura: Phaser.GameObjects.Image | undefined;
   /** Soft elliptical ground shadow under the feet (Arcade, `fit`). */
   private shadow: Phaser.GameObjects.Image | undefined;
   private spriteName = '';
@@ -189,6 +193,7 @@ export class CharacterView {
     if (hidden) {
       this.glow?.setVisible(false);
       this.halo?.setVisible(false);
+      this.aura?.setVisible(false);
       this.shadow?.setVisible(false);
       this.flashLeft = 0;
       this.holdLeft = 0;
@@ -217,6 +222,7 @@ export class CharacterView {
     this.image.setDisplaySize(c.w * k, c.h * k);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
     this.placeGlow(c.sprite, x, y, c.w * k, c.h * k);
+    this.placeAura(x, y, c.w * k, c.h * k, (c.flags & EntityFlag.translucent) !== 0);
     this.placeShadow(x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
     const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
     if (live && this.flashLeft > 0) {
@@ -258,6 +264,21 @@ export class CharacterView {
     this.halo.setPosition(x + w / 2, y + h * 0.5).setDisplaySize(w * (sprite === 'lavax' ? 1.75 : 1.5), h * (sprite === 'lavax' ? 1.5 : 1.35));
   }
 
+  /** A soft dark halo hugging the body (normal blend, above the additive glow) so every hero reads on a bright floor. */
+  private placeAura(x: number, y: number, w: number, h: number, ghost: boolean): void {
+    if (!this.aura) {
+      const key = glowTexture(this.scene);
+      if (!key) return;
+      this.aura = this.scene.add.image(0, 0, key).setTint(AURA_TINT);
+    }
+    this.aura
+      .setVisible(true)
+      .setDepth(this.image.depth - 0.3)
+      .setAlpha(ghost ? AURA_ALPHA * 0.5 : AURA_ALPHA)
+      .setPosition(x + w / 2, y + h * 0.52)
+      .setDisplaySize(w * 1.3, h * 1.22);
+  }
+
   /**
    * A soft dark ellipse on the floor under the feet (fx-scale only; the sim box is unchanged). Sits just under the sprite in
    * depth so it never covers a hero, and keeps its size while the hero bobs or squashes.
@@ -281,6 +302,7 @@ export class CharacterView {
   hide(): void {
     this.glow?.setVisible(false);
     this.halo?.setVisible(false);
+    this.aura?.setVisible(false);
     this.shadow?.setVisible(false);
     this.image.setVisible(false);
     this.flashLeft = 0;
@@ -291,6 +313,7 @@ export class CharacterView {
   destroy(): void {
     this.glow?.destroy();
     this.halo?.destroy();
+    this.aura?.destroy();
     this.shadow?.destroy();
     this.image.destroy();
   }
