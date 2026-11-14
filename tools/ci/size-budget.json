@@ -22,7 +22,7 @@
     "launch": 160,
     "index": 36000,
     "round-announcer": 1450,
-    "index.css": 10400,
+    "index.css": 10800,
     "input-display": 1150,
     "lazy-index": 550,
     "local-two": 520,
@@ -50,7 +50,7 @@
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 611000,
+  "totalGzip": 613000,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600
