@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { SUPER_NAMES, type Element } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../boot/viewport';
+import { drawnBox } from '../views/hero-scale';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { ELEMENT_COLORS } from './element-colors';
 import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
@@ -206,11 +207,12 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       reduced = reducedMotion;
       lastTick = -1;
       const img = caster.image;
-      px = img.x + img.displayWidth / 2;
-      py = img.y + img.displayHeight / 2;
+      const b = drawnBox(img, { x: 0, y: 0, w: 0, h: 0 });
+      px = b.x + b.w / 2;
+      py = b.y + b.h / 2;
       // The band slides in from the caster's half of the arena, with the portrait (as the caster faces) on that side.
       side = px < LOGICAL_WIDTH / 2 ? -1 : 1;
-      bandY = img.y + img.displayHeight <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
+      bandY = b.y + b.h <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
       // Grim grade: the band is a dark, desaturated wash of the element colour (the element word below is the main cue).
       parts.band.setFillStyle(mute(ELEMENT_COLORS[caster.element], 0.45, 0.5));
       parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX, PORTRAIT_PX).setFlipX(img.flipX);

@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { arcadeHeroScale, visualBox } from '../views/hero-scale';
+import { arcadeHeroScale, drawnBox, fitToBox, visualBox } from '../views/hero-scale';
 import { EntityFlag, GUARD_MAX, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH } from '../boot/viewport';
@@ -283,11 +283,11 @@ export function mountDefenceView(
       ghostImgs[slot * n] = oldest;
       oldest
         .setTexture(src.texture.key, src.frame.name)
-        .setPosition(vb.x, vb.y)
-        .setDisplaySize(vb.w, vb.h)
         .setFlipX(src.flipX)
         .setTint(dashes[o + 3] ?? GUARD_COLOR)
         .setVisible(true);
+      // A big-frame (portrait rig) sheet: its box, not the whole frame, lands on the visual box.
+      fitToBox(oldest, vb.x, vb.y, vb.w, vb.h);
     }
   };
 
@@ -325,17 +325,17 @@ export function mountDefenceView(
   };
 
   let ar: RenderArcade | undefined;
+  const fighterBox = { x: 0, y: 0, w: 0, h: 0 };
   const drawFighter = (c: RenderCharacter): void => {
     if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
     if (c.team < 2) teamColor[c.team] = ELEMENT_COLORS[c.element];
     const img = fighters.peek(c.id)?.image;
     if (!ar || !img?.visible) return;
-    const w = img.displayWidth;
-    const h = img.displayHeight;
-    const cx = img.x + w / 2;
+    const { x: bx, y: by, w, h } = drawnBox(img, fighterBox);
+    const cx = bx + w / 2;
     if (ar.rooted(c.id)) {
       // Snag (FUN-DESIGN 2.20): two rope loops round the feet, a dark rim under the rope colour (a shape cue).
-      const fy = img.y + h * 0.88;
+      const fy = by + h * 0.88;
       for (const [k, color, lw] of ROPE_LOOPS) {
         over.lineStyle(highContrast ? lw + 2 : lw, color, 1).strokeEllipse(cx, fy - k * h * 0.12, w * (0.9 - k * 0.15), h * 0.22);
       }
@@ -345,14 +345,14 @@ export function mountDefenceView(
     if (guarding) {
       // A bubble with a white rim: a shape cue, not only a colour.
       const r = Math.max(w, h) * 0.62;
-      over.fillStyle(GUARD_COLOR, 0.22).fillCircle(cx, img.y + h / 2, r);
-      over.lineStyle(highContrast ? 5 : 3, 0xffffff, highContrast ? 1 : 0.85).strokeCircle(cx, img.y + h / 2, r);
+      over.fillStyle(GUARD_COLOR, 0.22).fillCircle(cx, by + h / 2, r);
+      over.lineStyle(highContrast ? 5 : 3, 0xffffff, highContrast ? 1 : 0.85).strokeCircle(cx, by + h / 2, r);
       drawn.shields++;
     }
     const meter = ar.guard(c.id);
     if (!guarding && meter >= GUARD_MAX) return;
     const x = cx - BAR_W / 2;
-    const y = Math.min(img.y + h + 4, ARENA_H - BAR_H - 2);
+    const y = Math.min(by + h + 4, ARENA_H - BAR_H - 2);
     over.fillStyle(0x000000, 0.7).fillRect(x - 2, y - 2, BAR_W + 4, BAR_H + 4);
     over.fillStyle(meter <= (GUARD_MAX * GUARD_LOW_PM) / 1000 ? BREAK_COLOR : GUARD_COLOR, 1).fillRect(x, y, guardFill(meter, GUARD_MAX, BAR_W), BAR_H);
     // Quarter notches: the bar reads by its length and pattern, not only its colour.

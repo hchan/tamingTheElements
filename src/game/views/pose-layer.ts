@@ -12,6 +12,7 @@ declare global {
   }
 }
 import { SheetBook } from './pose-sheets';
+import { fitToBox, frameBox } from './hero-scale';
 import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
@@ -62,6 +63,17 @@ export interface PoseState {
   readonly ghosts: number;
   /** Ability VFX motes and glows showing. */
   readonly fx: number;
+}
+
+/** One drawn character in the sheet probe; `bodyHeight` is the display height of the body (the frame's box when it has one). */
+export interface SheetDrawn {
+  id: number;
+  texture: string;
+  frame: string;
+  flipX: boolean;
+  rotation: number;
+  graded: boolean;
+  bodyHeight: number;
 }
 
 interface Ghost {
@@ -129,6 +141,10 @@ export class PoseLayer {
   private readonly edge = new Uint8Array(SLOTS);
   private readonly edgeAt = new Float64Array(SLOTS);
   private readonly face = new Uint8Array(SLOTS);
+  /** The last horizontal mirror per slot: a big-frame (side-view) sheet keeps it while facing straight up or down (auto-face). */
+  private readonly hflip = new Uint8Array(SLOTS);
+  /** The visual box (x, y, w, h) the character view drew last, before any pose (the KO ghost starts from it). */
+  private readonly base = new Float64Array(SLOTS * 4);
   private readonly spriteOf: string[] = new Array<string>(SLOTS).fill('');
   // Per projectile slot.
   private readonly pid = new Int32Array(SLOTS).fill(-1);
@@ -155,12 +171,15 @@ export class PoseLayer {
     return { animMs: this.animMs, posed: this.posed, ghosts, fx: this.vfx.live };
   }
 
-  sheetProbe(): { loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[] } {
-    const characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[] = [];
+  sheetProbe(): { loaded: string[]; characters: SheetDrawn[] } {
+    const characters: SheetDrawn[] = [];
     this.deps.view.forEachCharacter((c) => {
       const img = this.deps.characters.peek(c.id)?.image;
       if (img && (c.flags & DEAD_OR_BENCHED) === 0) {
-        characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX) });
+        const box = frameBox(img.frame);
+        // the visual-box height actually drawn: the whole display for a frame without a box, the box's share for a boxed one
+        const bodyHeight = box ? (img.displayHeight * box.h) / img.frame.height : img.displayHeight;
+        characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX), bodyHeight });
       }
     });
     return { loaded: this.book.loaded, characters };
@@ -251,6 +270,16 @@ export class PoseLayer {
       return;
     }
     const img = v.image;
+    // The visual box CharacterView just drew (feet-anchored); every frame shown is fitted to it, so a frame swap never pops size.
+    const bx = img.x;
+    const by = img.y;
+    const bw = c.w * v.scale;
+    const bh = c.h * v.scale;
+    const o = i * 4;
+    this.base[o] = bx;
+    this.base[o + 1] = by;
+    this.base[o + 2] = bw;
+    this.base[o + 3] = bh;
     this.team[i] = c.team;
     this.elem[i] = Math.max(FX_ELEMENTS.indexOf(c.element), 0);
     // The drawn position without the hit-stop jitter (which only exists while the character is held still).
@@ -291,7 +320,11 @@ export class PoseLayer {
       const shown = this.book.texture(c.sprite, sheet.texture);
       if (img.texture.key === shown) img.setFrame(sheet.frame);
       else img.setTexture(shown, sheet.frame);
-      img.setFlipX(sheet.flipX);
+      // N and S of a big-frame sheet are side views (baked from NE / SE): keep the last horizontal facing.
+      const vertical = face === 2 || face === 6;
+      const flip = vertical && sheet.box.w !== sheet.rect.w ? this.hflip[i] === 1 : sheet.flipX;
+      if (!vertical) this.hflip[i] = flipForDir(face) ? 1 : 0;
+      img.setFlipX(flip);
       this.lean[i] = 0;
     } else {
       if (sprite) {
@@ -302,7 +335,9 @@ export class PoseLayer {
         else img.setFrame(name);
       }
       img.setFlipX(flipForDir(face));
+      if (face !== 2 && face !== 6) this.hflip[i] = flipForDir(face) ? 1 : 0;
     }
+    fitToBox(img, bx, by, bw, bh);
 
     const p = resetPose(this.pose);
     if (!this.reduced && !sheet) {
@@ -341,7 +376,7 @@ export class PoseLayer {
       }
       if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.animMs - this.victoryAt, 1, 0, this.reduced);
     }
-    this.place(img, c.w * v.scale, c.h * v.scale, p);
+    this.place(img, bx + bw / 2, by + bh, p);
   }
 
   /** The sheet frame to show: a running event pose, the victory, guard, walk (by distance walked) or idle row. */
@@ -356,25 +391,15 @@ export class PoseLayer {
     return this.book.frame(c.sprite, 'idle', face, this.animMs + i * 370);
   }
 
-  /** Applies `p` about the feet centre of the base box (x, y, w, h) the character view just drew. */
-  private place(img: Phaser.GameObjects.Image, w: number, h: number, p: Pose): void {
+  /** Applies `p` about the feet point (fx, fy) of the visual box the image was just fitted to. */
+  private place(img: Phaser.GameObjects.Image, fx: number, fy: number, p: Pose): void {
     const still = Math.abs(p.sx - 1) + Math.abs(p.sy - 1) + Math.abs(p.rot) + Math.abs(p.ox) + Math.abs(p.oy) + Math.abs(1 - p.alpha);
     if (still < 1e-4) {
       if (img.rotation !== 0) img.setRotation(0);
       return;
     }
     this.posed++;
-    const r = p.rot * DEG;
-    const cos = Math.cos(r);
-    const sin = Math.sin(r);
-    const bw = w * p.sx;
-    const bh = h * p.sy;
-    const px = img.x + w / 2 + p.ox;
-    const py = img.y + h + p.oy;
-    img.setScale(img.scaleX * p.sx, img.scaleY * p.sy);
-    img.setRotation(r);
-    img.setPosition(px - ((bw / 2) * cos - bh * sin), py - ((bw / 2) * sin + bh * cos));
-    if (p.alpha !== 1) img.setAlpha(img.alpha * p.alpha);
+    posePivot(img, fx, fy, p);
   }
 
   private projectile(p: RenderProjectile): void {
@@ -462,10 +487,12 @@ export class PoseLayer {
     g.from = this.animMs;
     g.ms = KO_MS;
     g.dir = img.flipX ? 1 : -1;
-    g.w = img.displayWidth;
-    g.h = img.displayHeight;
-    g.x = img.x + g.w / 2;
-    g.y = img.y + g.h;
+    // The visual box (not the drawn frame, which may carry overscan): the fall pivots on the feet.
+    const o = (id & (SLOTS - 1)) * 4;
+    g.w = this.base[o + 2] ?? img.displayWidth;
+    g.h = this.base[o + 3] ?? img.displayHeight;
+    g.x = (this.base[o] ?? img.x) + g.w / 2;
+    g.y = (this.base[o + 1] ?? img.y) + g.h;
     g.rot = 0;
     g.sprite = this.spriteOf[id & (SLOTS - 1)] ?? '';
     g.face = this.face[id & (SLOTS - 1)] ?? 0;
@@ -506,13 +533,9 @@ export class PoseLayer {
           p.ox = 0;
           p.oy = 0;
         }
-        img.setDisplaySize(g.w, g.h);
-        img.setAlpha(p.alpha);
-        const r = p.rot * DEG;
-        const cos = Math.cos(r);
-        const sin = Math.sin(r);
-        img.setRotation(r);
-        img.setPosition(g.x + p.ox - ((g.w / 2) * cos - g.h * sin), g.y + p.oy - ((g.w / 2) * sin + g.h * cos));
+        fitToBox(img, g.x - g.w / 2, g.y - g.h, g.w, g.h);
+        img.setAlpha(1);
+        posePivot(img, g.x, g.y, p);
       }
     }
   }
@@ -543,10 +566,23 @@ export class PoseLayer {
 const layers = new WeakMap<Phaser.Scene, PoseLayer>();
 
 /** Test probe: the sheets loaded and, per drawn character, the texture, frame, mirror and rotation shown (undefined before the mount). */
-export function sheetState(scene: Phaser.Scene): {
-  loaded: string[];
-  characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[];
-} | undefined {
+/**
+ * Scales `img` (top-left origin, already fitted to its visual box) by the pose about the feet point (fx, fy), rotates it about
+ * that point, offsets it, and multiplies its alpha.
+ */
+function posePivot(img: Phaser.GameObjects.Image, fx: number, fy: number, p: Pose): void {
+  const r = p.rot * DEG;
+  const cos = Math.cos(r);
+  const sin = Math.sin(r);
+  const a = (img.x - fx) * p.sx;
+  const b = (img.y - fy) * p.sy;
+  img.setScale(img.scaleX * p.sx, img.scaleY * p.sy);
+  img.setRotation(r);
+  img.setPosition(fx + p.ox + a * cos - b * sin, fy + p.oy + a * sin + b * cos);
+  if (p.alpha !== 1) img.setAlpha(img.alpha * p.alpha);
+}
+
+export function sheetState(scene: Phaser.Scene): { loaded: string[]; characters: SheetDrawn[] } | undefined {
   const layer = layers.get(scene);
   return layer?.sheetProbe();
 }

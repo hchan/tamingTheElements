@@ -3,7 +3,18 @@
 // east-side row, see `resolveRow`) or `legacy`, which tells it to draw exactly what it drew before sheets existed. Results are
 // built once per (sprite, action, direction, frame) and reused, so the per-frame path allocates nothing.
 import generated from './sheets.generated.json' with { type: 'json' };
-import { ACTIONS, framesIn, resolveRow, type Action, type Dir, type LegacyFallback, type Rect, type SheetsManifest } from './sheet-spec';
+import {
+  ACTIONS,
+  entryBox,
+  entryFrame,
+  framesIn,
+  resolveRow,
+  type Action,
+  type Dir,
+  type LegacyFallback,
+  type Rect,
+  type SheetsManifest,
+} from './sheet-spec';
 
 /** Core dir8 (0 east, then counter-clockwise on screen, `src/core/math/dir8.ts`) to the sheet's compass direction. */
 export const DIR_OF_DIR8: readonly Dir[] = ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE'];
@@ -45,6 +56,8 @@ export interface SheetFrame {
   readonly texture: string;
   readonly frame: string;
   readonly rect: Rect;
+  /** The part of the frame (frame px) that maps onto the character's visual box; the whole frame for the 80 px sheets. */
+  readonly box: Rect;
   readonly flipX: boolean;
 }
 export interface LegacyFrame {
@@ -59,8 +72,8 @@ export interface FrameResolver {
   hasSheet(sprite: string): boolean;
   /** Atlas URL relative to `assets/`, or undefined when none. */
   sheetUrl(sprite: string): string | undefined;
-  /** Every frame (name and rectangle) to register on the loaded `sheet:<sprite>` texture. */
-  frames(sprite: string): readonly { readonly name: string; readonly rect: Rect }[];
+  /** Every frame (name, rectangle and visual box) to register on the loaded `sheet:<sprite>` texture. */
+  frames(sprite: string): readonly { readonly name: string; readonly rect: Rect; readonly box: Rect }[];
 }
 
 const ACTION_INDEX = new Map<string, number>(ACTIONS.map(([a], i) => [a, i]));
@@ -79,8 +92,11 @@ export function createFrameResolver(m: SheetsManifest): FrameResolver {
     if (r.source === 'legacy') out = [{ source: 'legacy', legacy: r.legacy }];
     else {
       const texture = sheetKey(sprite);
+      const e = entries.get(sprite);
+      const f = e === undefined ? m.spec.frame : entryFrame(e, m);
+      const box = e === undefined ? { x: 0, y: 0, w: f, h: f } : entryBox(e, m);
       out = r.row.frames.map(([x, y], i) => ({
-        source: r.source, texture, frame: sheetFrameName(r.row.key, i), rect: { x, y, w: m.spec.frame, h: m.spec.frame }, flipX: r.flipX,
+        source: r.source, texture, frame: sheetFrameName(r.row.key, i), rect: { x, y, w: f, h: f }, box, flipX: r.flipX,
       }));
     }
     table[k] = out;
@@ -94,10 +110,13 @@ export function createFrameResolver(m: SheetsManifest): FrameResolver {
     },
     hasSheet: (sprite) => entries.has(sprite),
     sheetUrl: (sprite) => entries.get(sprite)?.url,
-    frames: (sprite) =>
-      entries.get(sprite)?.rows.flatMap((row) =>
-        row.frames.map(([x, y], i) => ({ name: sheetFrameName(row.key, i), rect: { x, y, w: m.spec.frame, h: m.spec.frame } })),
-      ) ?? [],
+    frames: (sprite) => {
+      const e = entries.get(sprite);
+      if (e === undefined) return [];
+      const f = entryFrame(e, m);
+      const box = entryBox(e, m);
+      return e.rows.flatMap((row) => row.frames.map(([x, y], i) => ({ name: sheetFrameName(row.key, i), rect: { x, y, w: f, h: f }, box })));
+    },
   };
 }
 

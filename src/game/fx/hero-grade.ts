@@ -3,13 +3,12 @@ import { hash01 } from './grim-fx';
 import { getPrefs } from '../platform/a11y/prefs';
 
 /**
- * Load-time "grim" grade for the hero art (owner: sprites read as bright and cartoony, with hard black outlines). The shipped
- * strips and sheets are NOT re-baked: each sheet texture is copied once to a canvas, graded, and cached as `<key>~grim` in the
- * texture manager (the same approach as the action-bar icons). The grade is milder than the icons' so that element colours stay
- * apart: a partial desaturation, a highlight-weighted darken (bright art drops, already-dark art such as Pax stays readable),
- * lifted outline blacks (a soft umber instead of hard black) and a little grain. Alpha is untouched.
+ * Load-time grade for the hero art. The shipped strips and sheets are NOT re-baked: each sheet texture is copied once to a canvas,
+ * graded, and cached as `<key>~grim` in the texture manager (the same approach as the action-bar icons). Owner (2026-11-13):
+ * "dark fantasy" means mystic, not dark; the painted portraits are the reference, so the grade keeps their colour and light
+ * (no desaturation, no darken, no grain) and only lifts hard black outline ink toward a soft umber, which takes the cartoon edge
+ * off the procedural rigs and barely touches painted art. Alpha is untouched.
  */
-
 export interface HeroGrade {
   /** 0..1 share of the original saturation kept. */
   readonly keep: number;
@@ -22,11 +21,18 @@ export interface HeroGrade {
   readonly outlineLift: number;
 }
 
-export const HERO_GRADE: HeroGrade = { keep: 0.6, darken: 0.24, grain: 4, outline: [38, 32, 30], outlineLift: 0.55 };
+export const HERO_GRADE: HeroGrade = { keep: 1, darken: 0, grain: 0, outline: [38, 32, 30], outlineLift: 0.55 };
 
 /** Suffix of the cached graded copy (`map:fiara` -> `map:fiara~grim`). */
 export const GRIM_SUFFIX = '~grim';
 export const grimKey = (key: string): string => `${key}${GRIM_SUFFIX}`;
+
+/**
+ * Heroes whose art is the painted portrait itself (tools/assets/portrait-rig, ADR-0020): drawn as baked everywhere (sheet, map
+ * strip, HUD picture), never graded, since the ink lift would flatten their painted shadows.
+ */
+export const PAINTED_HEROES: ReadonlySet<string> = new Set(['pax', 'sindarosa', 'curomo']);
+const painted = (key: string): boolean => PAINTED_HEROES.has(key.replace(/^[a-z]+:/, ''));
 
 /** Luma below which a pixel counts as outline ink. */
 const INK_LUMA = 46;
@@ -62,12 +68,13 @@ export function gradeEnabled(): boolean {
 }
 
 /**
- * The graded copy of texture `key` (made once, frames copied from the source), or `key` itself when grading is off, the source has
+ * The graded copy of texture `key` (made once, frames copied from the source), or `key` itself when grading is off, the hero is
+ * painted (PAINTED_HEROES), the source has
  * no canvas-readable image (tests, odd sources) or anything throws, so the hero always shows. Frames added to the source later must
  * be added to the copy by the caller (`addGradedFrame`).
  */
 export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
-  if (!gradeEnabled()) return key;
+  if (!gradeEnabled() || painted(key)) return key;
   const gk = grimKey(key);
   if (scene.textures.exists(gk)) {
     syncFrames(scene, key, gk);
@@ -98,7 +105,8 @@ export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
 
 /**
  * Copies frames the source gained after the graded copy was made (the HUD can grade a texture before the character view
- * registers `right0`/`left0`, which logged "missing frame map:<hero>~grim right0"). Cheap no-op when the counts match.
+ * registers `right0`/`left0`, which logged "missing frame map:<hero>~grim right0"), with their custom data (the portrait
+ * rigs' visual box). Runs every draw, so it is a cheap no-op when the counts match (frames are only ever added).
  */
 function syncFrames(scene: Phaser.Scene, key: string, gk: string): void {
   if (!scene.textures.exists(key)) return;
@@ -106,7 +114,9 @@ function syncFrames(scene: Phaser.Scene, key: string, gk: string): void {
   const tex = scene.textures.get(gk);
   if (srcTex.frameTotal === tex.frameTotal) return;
   for (const name of srcTex.getFrameNames()) {
+    if (tex.has(name)) continue;
     const f = srcTex.get(name);
-    if (!tex.has(name)) tex.add(name, 0, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+    const added = tex.add(name, 0, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+    if (added) Object.assign(added.customData, f.customData);
   }
 }

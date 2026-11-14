@@ -139,10 +139,12 @@ export interface ArenaProbe {
   arcadeAudio(): Promise<{ mounted: boolean; played: number; voices: number; nodes: number; musicCut: boolean }>;
   /**
    * The pose layer's sprite sheets (async: a lazy chunk; WP-sheet-view): the sprites whose atlas is loaded and, per drawn
-   * character, the texture key, frame name, mirror and rotation shown; undefined before the layer is mounted.
+   * character, the texture key, frame name, mirror, rotation, whether the grim grade is drawn and the body's display height
+   * (the frame's visual box for portrait rigs); undefined before the layer is mounted.
    */
   sheets(): Promise<{
-    loaded: string[]; characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean }[];
+    loaded: string[];
+    characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean; bodyHeight: number }[];
   } | undefined>;
 }
 

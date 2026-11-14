@@ -46,7 +46,7 @@
   },
   "totalGzip": 600000,
   "sheets": {
-    "perSheetBytes": 614400,
-    "totalBytes": 12582912
+    "perSheetBytes": 16777216,
+    "totalBytes": 104857600
   }
 }
