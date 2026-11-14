@@ -91,6 +91,13 @@ describe('rimLightRgba', () => {
     expect(at(px, 0, 0)).toEqual([0, 0, 0, 0]);
   });
 
+  it('an ink (dark) rim darkens the edge of a pale shape so it holds on a pale floor', () => {
+    const px = block([225, 238, 252]);
+    rimLightRgba(px, 7, 7, [18, 28, 66]);
+    expect(at(px, 1, 1)[0]).toBeLessThan(90);
+    expect(at(px, 3, 3)).toEqual([225, 238, 252, 255]);
+  });
+
   it('is deterministic and gives a warm rim a warmer edge than the cool default', () => {
     const a = block([30, 30, 40]);
     const b = block([30, 30, 40]);
