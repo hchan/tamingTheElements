@@ -21,7 +21,7 @@ test('Help lists the controls without banned words', async ({ page }) => {
 });
 
 // QA r18: on a short phone landscape screen the Help header is compact (no crest, one tab row) so the first heading is high up.
-test('Help at 844x390: compact header, one row of tabs, first heading in the top 40 percent', async ({ page }) => {
+test('Help at 844x390: compact header, one row of tabs, first heading in the top half', async ({ page }) => {
   const errors = collectErrors(page);
   await page.setViewportSize({ width: 844, height: 390 });
   await page.goto('/?seed=7#help');
@@ -33,6 +33,12 @@ test('Help at 844x390: compact header, one row of tabs, first heading in the top
   );
   expect(m.rows).toBe(1);
   expect(m.tabsBottom).toBeLessThan(110);
-  expect(m.headingTop).toBeLessThan(390 / 2.5);
+  expect(m.headingTop).toBeLessThan(390 / 2); // was 2.5 before the slim Jump to row came back under the tabs (QA r31)
+  // QA r31: the Jump to row is not hidden on a phone; it is a slim row under the tabs and its buttons scroll to the sections.
+  const jump = await page.locator('nav.helpJump').boundingBox();
+  expect(jump?.height ?? 0).toBeGreaterThan(20);
+  expect(jump?.height ?? 999).toBeLessThan(60);
+  await page.getByRole('button', { name: 'Controls', exact: true }).click();
+  await expect.poll(() => page.evaluate(`document.getElementById('helpControlsHeading').getBoundingClientRect().top`)).toBeLessThan(120);
   expect(errors).toEqual([]);
 });

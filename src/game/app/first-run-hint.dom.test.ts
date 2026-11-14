@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FIRST_RUN_KEY, ROUND_OVER_EVENT, SUPER_CUT_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
+import { FIRST_RUN_KEY, ROUND_OVER_EVENT, SUPER_CUT_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine } from './first-run-hint';
 import { labelsFromBindings } from '../hud/action-bar';
 import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
@@ -96,6 +96,13 @@ describe('firstRunHint', () => {
     };
     expect(firstRunSeen(bad)).toBe(false);
     expect(() => firstRunHint(bad)?.querySelector('button')?.click()).not.toThrow();
+  });
+
+  it('has a one-line short form that keeps the key names and drops Snag or Tag when absent (QA r31)', () => {
+    const line = firstRunShortLine(DEFAULT_BINDINGS);
+    expect(line).toMatch(/Strike 1.*Dash 7.*Guard 8.*Super 9.*Tag 3/);
+    expect(line).toMatch(/Snag C/);
+    expect(firstRunShortLine(DEFAULT_BINDINGS, false, false)).not.toMatch(/Snag|Tag/);
   });
 
   it('names the live keys', () => {

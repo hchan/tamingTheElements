@@ -94,6 +94,12 @@ export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?
   ];
 }
 
+/** One short line for a short desktop window (QA r31): the keys that matter in the first seconds; Help, Controls has the rest. */
+export function firstRunShortLine(b: Bindings, snag = true, partner = true): string {
+  const parts = [`Strike ${key(b, 'slot1')}`, `Special ${key(b, 'slot2')}`, ...(snag ? [`Snag ${key(b, 'capture')}`] : []), `Dash ${key(b, 'dash')}`, `Guard ${key(b, 'guard')} (hold)`, `Super ${key(b, 'super')}`, ...(partner ? [`Tag ${key(b, 'slot3')}`] : [])];
+  return `Move ${moveKeys(b)}. ${parts.join(', ')}.`;
+}
+
 /** True while the portrait "rotate your device" overlay covers the arena (the card stays hidden and untimed until it is dismissed). */
 function rotateBlocked(): boolean {
   const o = typeof document === 'undefined' ? null : document.getElementById('rotateOverlay');
@@ -137,9 +143,11 @@ export function firstRunHint(
   card.id = 'firstRunHint';
   card.setAttribute('role', 'note');
   card.append(el('h2', undefined, 'First blood'));
-  for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
   // On a short window (1280x720) the card shrinks and drops its footer so it ends above the hero's wings instead of covering them.
   const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
+  // A short keyboard window gets one line (QA r31), not three; phones keep their own lines (CSS trims them).
+  if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner)));
+  else for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
   if (short && window.innerHeight > 500) card.style.fontSize = '11px';
   if (!short) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
