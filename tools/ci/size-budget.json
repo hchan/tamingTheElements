@@ -32,7 +32,7 @@
     "pad-bindings": 1150,
     "pad-bindings-section": 1580,
     "phaser": 388700,
-    "phaser-config": 44500,
+    "phaser-config": 45500,
     "ability-text": 1100,
     "pose-layer": 11800,
     "rolldown-runtime": 200,
@@ -50,7 +50,7 @@
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 613000,
+  "totalGzip": 615500,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600

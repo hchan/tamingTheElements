@@ -64,6 +64,8 @@ const RIM_DEFAULT: readonly [number, number, number] = [206, 228, 255];
 const RIM_BY_HERO: Readonly<Record<string, readonly [number, number, number]>> = {
   lavax: [255, 176, 96],
   echo: [226, 240, 255],
+  // Rokcore's slate body vanished into the olive earth floor (QA r24): a warm sunlit gold edge, like the stage's own light.
+  rokcore: [255, 214, 140],
   // Wispera is a pale ghost that vanished on the pale air stage (QA r23): a dark navy ink edge instead of a light rim.
   wispera: [18, 28, 66],
 };
