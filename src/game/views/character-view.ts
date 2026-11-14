@@ -13,18 +13,30 @@ export const FROZEN_TINT = 0x88ccff;
  * and reads as a hard rectangle; adding light keeps the baked outline and shading, so the flash follows the silhouette.
  */
 export const FLASH_FILL_FRAMES = 2;
-/** The additive wash colour (added to each texel; alpha untouched). */
-export const FLASH_WASH = 0x6e6e6e;
 /** Presentation-only hit-stop: at most this many rendered frames the flash holds on a heavy hit (the sim is never paused). */
 export const MAX_HOLD_FRAMES = 6;
 export const FLASH_TINT_FRAMES = 8;
+/** Peak and tail of the flash light, as the alpha of an additive copy of the sprite (so it can only light texels the sprite has). */
+export const FLASH_WASH_ALPHA = 0.5;
+export const FLASH_TAIL_ALPHA = 0.3;
 /** Hit-stop jitter amplitude in px. */
 export const JITTER_PX = 2;
 /** Phaser.TintModes values (a type-only Phaser import keeps this module loadable in Node tests). */
 const TINT_MULTIPLY = 0;
-const TINT_ADD = 2;
 
 export type TintStage = 'wash' | 'hit' | 'frozen' | 'none';
+
+/** Alpha of the additive flash copy for the flash frames left: a short peak, then a soft linear fade (QA r26: no hard tinted cut-outs). */
+export function flashWashAlpha(flashLeft: number): number {
+  if (flashLeft > FLASH_TINT_FRAMES) return FLASH_WASH_ALPHA;
+  return flashLeft > 0 ? (FLASH_TAIL_ALPHA * flashLeft) / FLASH_TINT_FRAMES : 0;
+}
+
+/** `c` moved halfway to white (the flash light is the hit colour, lifted so it reads as light, not a stain). */
+export function liftToWhite(c: number): number {
+  const r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+  return (((r + 255) >> 1) << 16) | (((g + 255) >> 1) << 8) | ((b + 255) >> 1);
+}
 
 /** Which tint a character shows this frame, given the flash frames left: the flash wins over the frozen tint. */
 export function tintStage(flashLeft: number, frozen: boolean): TintStage {
@@ -170,6 +182,10 @@ export class CharacterView {
   /** Rendered frames the flash holds before it starts to age (view-only hit-stop on heavy hits). */
   private holdLeft = 0;
   private tinted = false;
+  /** The additive flash copy of the sprite, and the alpha it shows this frame (0 = off). It is synced to `image` just before render. */
+  private wash: Phaser.GameObjects.Image | undefined;
+  washAlpha = 0;
+  private washSync: (() => void) | undefined;
   private jitterUntil = 0;
   private jitterSign = 1;
 
@@ -205,6 +221,7 @@ export class CharacterView {
       this.shadow?.setVisible(false);
       this.flashLeft = 0;
       this.holdLeft = 0;
+      this.washAlpha = 0;
       return;
     }
     if (c.sprite !== this.spriteName) {
@@ -233,19 +250,52 @@ export class CharacterView {
     this.placeAura(x, y, c.w * k, c.h * k, (c.flags & EntityFlag.translucent) !== 0);
     this.placeShadow(x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
     const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
+    this.washAlpha = flashWashAlpha(this.flashLeft);
     if (live && this.flashLeft > 0) {
       if (this.holdLeft > 0) this.holdLeft--;
       else this.flashLeft--;
     }
-    if (stage === 'none') {
-      if (this.tinted) this.image.clearTint();
+    // The flash is light added by a second copy of the sprite (see `syncWash`), never a tint on the sprite itself: the tint
+    // shader divides by texel alpha, which on transparent texels gave hard-edged clipped cut-outs (QA r26).
+    if (stage === 'frozen') {
+      this.tinted = true;
+      this.image.setTint(FROZEN_TINT).setTintMode(TINT_MULTIPLY);
+    } else if (this.tinted) {
+      this.image.clearTint();
       this.tinted = false;
+    }
+    if (this.washAlpha > 0) this.ensureWash();
+  }
+
+  private ensureWash(): void {
+    const events = this.scene.events as Phaser.Events.EventEmitter | undefined; // the unit-test fake scene has none
+    if (this.wash || !events) return;
+    this.wash = this.scene.add.image(0, 0, '__DEFAULT').setVisible(false).setBlendMode(1);
+    this.washSync = (): void => {
+      this.syncWash();
+    };
+    events.on('prerender', this.washSync);
+  }
+
+  /** Copies the sprite's final pose (after the pose layer) onto the flash copy, at `washAlpha`. */
+  private syncWash(): void {
+    const w = this.wash;
+    if (!w) return;
+    const i = this.image;
+    if (this.washAlpha <= 0 || !i.visible) {
+      w.setVisible(false);
       return;
     }
-    this.tinted = true;
-    this.image
-      .setTint(stage === 'wash' ? FLASH_WASH : stage === 'hit' ? this.flashTint : FROZEN_TINT)
-      .setTintMode(stage === 'wash' ? TINT_ADD : TINT_MULTIPLY);
+    w.setTexture(i.texture.key, i.frame.name)
+      .setOrigin(i.originX, i.originY)
+      .setPosition(i.x, i.y)
+      .setDisplaySize(i.displayWidth, i.displayHeight)
+      .setAngle(i.angle)
+      .setFlipX(i.flipX)
+      .setDepth(i.depth + 0.05)
+      .setTint(liftToWhite(this.flashTint))
+      .setAlpha(this.washAlpha * i.alpha)
+      .setVisible(true);
   }
 
   /** A soft ellipse of pale light under the feet for `GLOW_SPRITES`, so they read on dark floors. */
@@ -319,9 +369,13 @@ export class CharacterView {
     this.flashLeft = 0;
     this.holdLeft = 0;
     this.jitterUntil = 0;
+    this.washAlpha = 0;
+    this.wash?.setVisible(false);
   }
 
   destroy(): void {
+    if (this.washSync) (this.scene.events as Phaser.Events.EventEmitter | undefined)?.off('prerender', this.washSync);
+    this.wash?.destroy();
     this.glow?.destroy();
     this.halo?.destroy();
     this.aura?.destroy();
