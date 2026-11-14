@@ -6,6 +6,8 @@ export interface ProbeCharacter {
   readonly team: number;
   readonly x: number;
   readonly y: number;
+  /** Box width (a giant hero is wider than 80). */
+  readonly w: number;
   readonly hp: number;
   readonly maxHp: number;
 }
@@ -72,7 +74,7 @@ export interface ArenaProbe {
    * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the
    * texts shown and the camera zoom over the fit zoom; undefined otherwise (always in Classic).
    */
-  /** Arcade pan camera (WP 38b): framing centre x and zoom, the camera's real zoom over the fit zoom and its scroll x. */
+  /** Arcade pan camera (WP 38b): framing centre x and zoom, the camera's real zoom over the fit zoom and the world x of the view's left edge (logical units; Phaser's raw scrollX also depends on the render resolution, so it is not used). */
   camera(): Promise<{ centerX: number; zoom: number; camZoom: number; scrollX: number }>;
   superFx(): Promise<{ dim: number; bandAlpha: number; slide: number; zoom: number; name: string; sub: string; camZoom: number } | undefined>;
   /** The per-element super burst drawn on the last frame (ability-graphics-audit-defects), or undefined. */
