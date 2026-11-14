@@ -237,6 +237,8 @@
 @media (pointer: coarse) {
   #tourStage.tsGrim button.menuButton,
   #tourStage.tsGrim a.menuButton { min-height: 48px; min-width: 48px; }
+  /* An anchor stretched to the row height kept its label at the top while the button beside it centred its own (QA r30). */
+  #tourStage.tsGrim a.menuButton { display: inline-flex; align-items: center; justify-content: center; align-self: center; }
   #tourStage #tourPins li { min-height: 48px; }
 }
 /* Phone landscape on a touch screen: the 48px touch minimum times the 4:1 ratio made each tile 192px wide, so the tiles overlapped and hid

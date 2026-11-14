@@ -24,6 +24,10 @@ export function helpScreen(): Screen {
     mount(container) {
       node = el('div', 'menuPage');
       node.append(el('h1', 'heading', 'Help'));
+      // The page runs thousands of pixels; a Back link only at the foot meant a long scroll to leave (QA r30).
+      const backTop = el('a', 'menuLink helpBackTop', 'Back');
+      backTop.setAttribute('href', '#main');
+      node.append(backTop);
       const list = el('ul', 'helpLinks');
       for (const l of HELP_LINKS) {
         const li = el('li');
