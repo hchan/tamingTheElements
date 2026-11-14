@@ -376,6 +376,12 @@ export class PoseLayer {
       }
       if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.animMs - this.victoryAt, 1, 0, this.reduced);
     }
+    // Portrait rigs (boxed frames, ADR-0020) bake their own weighty motion: no runtime squash and stretch on top (owner: no
+    // bouncy squash; it also made the painted body jump ~5% in height). Lean, offsets and fades still apply.
+    if (sheet && sheet.box.w !== sheet.rect.w) {
+      p.sx = 1;
+      p.sy = 1;
+    }
     this.place(img, bx + bw / 2, by + bh, p);
   }
 

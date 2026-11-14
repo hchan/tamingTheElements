@@ -12,7 +12,7 @@ import sys
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
+ROOT = os.path.normpath(os.path.join(HERE, "..", "..", ".."))
 BG = (38, 34, 44, 255)
 
 

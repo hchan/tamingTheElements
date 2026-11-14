@@ -81,7 +81,7 @@ const PAIRS = [
 for (const size of [{ w: 1280, h: 720, dpr: 1 }, { w: 1920, h: 1080, dpr: 2 }]) {
   test.describe(`${String(size.w)}x${String(size.h)}@${String(size.dpr)}`, () => {
     test.use({ viewport: { width: size.w, height: size.h }, deviceScaleFactor: size.dpr });
-    const tag = `${String(size.w)}`;
+    const tag = String(size.w);
 
     for (const p of PAIRS) {
       test(`${p.race} vs ${p.foe}: portrait sheets, steady body height, no missing frames`, async ({ page }) => {
@@ -113,6 +113,8 @@ for (const size of [{ w: 1280, h: 720, dpr: 1 }, { w: 1920, h: 1080, dpr: 2 }]) 
       await tapTourSplash(page);
       await page.waitForFunction(ARENA_READY);
       await page.evaluate(`window.__TTE__.arena.step(91)`);
+      // the lead's atlas loads lazily the first time she is drawn (the legacy strip shows until then)
+      await expect.poll(async () => page.evaluate<string[]>(`window.__TTE__.arena.sheets().then((p) => p ? p.loaded : [])`)).toContain('sindarosa');
       const samples = await fight(page, 200, 4);
       await shot(page, `${tag}-tour-stage1`);
       const actions = checkSamples(samples);
