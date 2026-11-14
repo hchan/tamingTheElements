@@ -55,6 +55,7 @@ export * from './net/packet';
 export * from './net/handshake';
 export * from './net/control';
 export * from './net/session';
+export * from './net/pacing';
 export * from './tester/cheats';
 export * from './tester/save-edits';
 export { WEATHER_RANGED_KINDS } from './data/arcade';
