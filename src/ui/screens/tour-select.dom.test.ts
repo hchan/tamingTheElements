@@ -37,7 +37,8 @@ describe('enhanceStage', () => {
   });
   it('hides the portraits and icons from assistive tech and shows 3 + 3 pips', () => {
     expect(c.querySelector('.tsRoster')?.getAttribute('aria-hidden')).toBe('true');
-    expect(c.querySelectorAll('.tsRoster img')).toHaveLength(2);
+    expect(c.querySelectorAll('.tsRoster .tsFace')).toHaveLength(2);
+    for (const f of Array.from(c.querySelectorAll<HTMLElement>('.tsRoster .tsFace'))) expect(f.style.backgroundImage).not.toContain('Large');
     expect(c.querySelectorAll('.tsLevel i.on')).toHaveLength(2);
     expect(c.querySelectorAll('.tsLives i')).toHaveLength(3);
     expect(c.querySelectorAll('.tsLives i.on')).toHaveLength(2);
