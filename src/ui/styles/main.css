@@ -627,6 +627,14 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
   gap: 0.4em;
   padding: 0;
 }
+.mainMenuList {
+  /* A title-screen stack, not a form: capped and centred on wide screens (QA r5). */
+  width: min(100%, 24em);
+  margin-inline: auto;
+}
+.mainMenuList li button {
+  text-align: center;
+}
 .mainMenuList::before {
   content: '';
   height: 7em;
@@ -986,7 +994,9 @@ html[data-high-contrast='true'] button.touchBtn {
   font-size: 0.75em;
 }
 #arcadePick .vsAbility {
-  white-space: nowrap;
+  /* Wraps inside the card (a long name like "Translucent Flame (Buff)" must not cross the border). */
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 #arcadePick .vsUnpicked .vsSlotName {
   font-weight: normal;
@@ -1702,7 +1712,37 @@ button.menuButton.heroSlotClear {
 }
 #arcadePick .vsForm,
 .heroSelect {
-  padding-bottom: 6.5em;
+  padding-bottom: 8em;
+}
+/* Scroll cue: the dock hides the last roster row (Earth) until the page is scrolled, so a pill above the bar says more is below.
+   It fades out as the page reaches its end where scroll-driven animations exist (else it simply stays). */
+#arcadePick .vsActions::before,
+.heroSelect .heroActions::before {
+  content: 'More heroes below \25BE';
+  position: absolute;
+  right: 1em;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.15em 0.9em;
+  font-size: 0.85em;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(28, 24, 62, 0.92);
+  border: 1px solid rgba(255, 214, 120, 0.7);
+  border-radius: 999px;
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  @keyframes scrollCueFade {
+    0%,
+    88% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  #arcadePick .vsActions::before,
+  .heroSelect .heroActions::before {
+    animation: scrollCueFade linear both;
+    animation-timeline: scroll(nearest block);
+  }
 }
 
 /* Versus option pickers (Opponent, Team, AI level): a radio group of buttons over the hidden native select. The selected one is
@@ -1834,6 +1874,16 @@ button.menuButton.heroSlotClear {
   }
 }
 
+/* Short desktop windows (720p): a smaller crest and tighter buttons keep the whole title screen, version line included, in view. */
+@media (max-height: 800px) and (min-height: 501px) {
+  .mainMenuList::before {
+    height: 5em;
+  }
+  .mainMenuList li button {
+    padding-block: 0.4em;
+  }
+}
+
 /* Phone landscape (about 844x390): a compact layout so the menu, the pickers and the fight HUD are not crowded out by tall headings,
    a fixed dock or the first-run card. Bright mystic look is kept; only spacing, columns and the dock position change. */
 @media (max-height: 500px) and (orientation: landscape) {
@@ -1845,6 +1895,7 @@ button.menuButton.heroSlotClear {
     max-width: 52em;
   }
   .mainMenuList {
+    width: auto;
     grid-template-columns: 1fr 1fr;
     gap: 0.35em 0.6em;
     margin: 0.2em 0;
@@ -1861,6 +1912,10 @@ button.menuButton.heroSlotClear {
     grid-column: 1 / -1;
   }
   /* The dock scrolls with the page instead of covering a third of a 390 px screen; the form keeps no spare bottom padding. */
+  #arcadePick .vsActions::before,
+  .heroSelect .heroActions::before {
+    display: none;
+  }
   #arcadePick .vsActions,
   .heroSelect .heroActions {
     position: static;
@@ -1948,6 +2003,16 @@ button.menuButton.heroSlotClear {
    (the action buttons sit on the right edge), mirrored for left-handed. Sticks hold the move keys, 8-way. */
 #touchStick {
   display: none;
+}
+/* Phone landscape: the canvas is height-bound, so its action bar would touch the bottom edge (notch and home bar). Trim the game box by a
+   thin band top and bottom (the safe-area margin stays) so the slot row floats clear of the edge. */
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  #game {
+    --edge-band: 10px;
+    height: calc(var(--view-h) * var(--canvas-fraction, 1) - 2 * var(--edge-band));
+    /* Shifted, not margined: a top margin collapses through the #menu parent and the canvas ends up flush with the top again. */
+    top: var(--edge-band);
+  }
 }
 @media (pointer: coarse) {
   #touchStick {
