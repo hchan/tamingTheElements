@@ -143,6 +143,12 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     ['Stoneskin is called and hits land on it', () => hitsUnderBuff(3)],
     ['Gale is called and runs out', () => elemCasts(4).length * of(K.elementalEnded, elemRun).filter((e) => e['element'] === 4).length],
     ['Cleanse clears a debuff', () => elemCasts(2).filter((e) => Number(e['cleared']) > 0).length],
+    ...[1, 2, 3, 4].map((h): [string, () => number] => [
+      `a stage hazard of element ${String(h)} is warned and strikes`,
+      () => of(K.hazardWarn).filter((e) => e['hazard'] === h).length * of(K.hazardStrike).filter((e) => e['hazard'] === h).length,
+    ]),
+    ['a lava vent hurts a fighter', () => of(K.hazardHit).filter((e) => e['hazard'] === 1).length],
+    ['a rockfall hurts a fighter', () => of(K.hazardHit).filter((e) => e['hazard'] === 3).length],
   ];
 
   it.each(mechanics)('%s', (_name, count) => {

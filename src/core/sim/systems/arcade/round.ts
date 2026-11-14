@@ -17,6 +17,7 @@ import { survivorsOf } from '../end';
 import { startRestTimer } from '../rest';
 import { teamMembers } from '../swap';
 import { endLiveCombos } from './combo';
+import { clearHazard } from './hazard';
 import { hitStop } from './hit';
 import { endLiveSupers } from './super';
 import { clearTraps } from './trap';
@@ -53,7 +54,7 @@ export function teamHpPm(s: SimState, team: number): { readonly score: number; r
 /**
  * Puts every character back to its match start (FUN-DESIGN 2.10): full HP and rest cap, base speed, start position and
  * facing, the roster's first member active and the rest benched with a fresh rest timer, no statuses, cooldowns,
- * stun, knockback, invulnerability, weather cooldowns or buffered presses. Live combos, supers and the weather end first
+ * stun, knockback, invulnerability, weather cooldowns, buffered presses, traps or stage hazard. Live combos, supers and the weather end first
  * (with their events), then every other entity goes. Meters and round wins carry over.
  */
 function resetRound(world: SimWorld, sink: EventSink): void {
@@ -62,6 +63,7 @@ function resetRound(world: SimWorld, sink: EventSink): void {
   endLiveSupers(world, sink);
   endWeather(s, sink);
   clearTraps(s);
+  clearHazard(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     if (((s.flags[id] ?? 0) & EntityFlag.alive) !== 0 && s.kind[id] !== EntityKind.character) freeEntity(s, id);
   }

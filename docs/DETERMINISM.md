@@ -101,6 +101,15 @@ SIM_VERSION 34 (WP 39e, trap tuning) changes data only: trap lives, the Puddle s
 unchanged (header only); the Arcade goldens were re-recorded because trap hits and timings changed, and a new scripted `arcade-traps` golden
 fires each trap kind.
 
+SIM_VERSION 54 (stage hazards, `src/core/sim/systems/arcade/hazard.ts`, run at the end of the `traps` slot) adds one
+telegraphed hazard per element stage: a 10-Int32 world block (`next`, `kind`, `strikeAt`, `endAt`, box, `dir`, `gen`). Every
+time is a game tick (`now(s)`), so freezes and supers pause it. Each draw (lane, rock target, tide or gust direction, the
+period jitter) seeds its own sfc32 from the match seed and the stored draw counter (`seedSfc32(seed, 'hazard.<gen>')`),
+so no `SimState.rng` word moves. Lava and rockfall damage is an integer per mille of max HP (`Math.floor(maxHp * pm / 1000)`),
+never KOs and skips invulnerable fighters; tide and gust move a fighter by whole px clamped to the playfield. Classic has
+no block (`SimState.arcade` is empty), so its hashes are unchanged (header only); the Arcade goldens and both Arcade
+balance baselines were re-recorded.
+
 ## State, snapshot and hash
 
 - State is structure-of-arrays typed arrays plus scalars in `SimState` (`src/core/sim/state.ts`): per-entity `Float64Array` and

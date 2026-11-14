@@ -354,6 +354,10 @@ export class Arena extends Phaser.Scene {
       void import('../fx/trap-view').then((m) => {
         if (this.arcadeHud === hud) m.mountTrapView(this, view, () => getPrefs().reduceMotion);
       });
+      // The stage hazard telegraph (stage-selection-hazards, its own lazy chunk).
+      void import('../fx/hazard-view').then((m) => {
+        if (this.arcadeHud === hud) m.mountHazardView(this, view, () => getPrefs().reduceMotion);
+      });
       // Own-element patch effects (own-element-tile-effects WP 1, its own lazy chunk).
       void import('../fx/own-element-view').then((m) => {
         if (this.arcadeHud === hud) m.mountOwnElementView(this, view, () => getPrefs().reduceMotion);
@@ -496,6 +500,7 @@ export class Arena extends Phaser.Scene {
       tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
       terrain: () => import('../fx/terrain-view').then((m) => m.terrainState(this)),
       traps: () => import('../fx/trap-view').then((m) => m.trapState(this)),
+      hazard: () => import('../fx/hazard-view').then((m) => m.hazardState(this)),
       ownElement: () => import('../fx/own-element-view').then((m) => m.ownElementState(this)),
       heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
       abilityFx: () => import('../fx/ability-aura-view').then((m) => m.abilityFxState(this)),

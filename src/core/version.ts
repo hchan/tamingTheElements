@@ -190,5 +190,11 @@
  * 53: Arcade only; Classic hashes unchanged. Post-super balance retune (ideas/done/balance-post-super.md): data-only `ARCADE_RACE_NUMBERS` life changes (2v2 factors rescaled so 2v2 life is unchanged) after the x3 supers
  *    moved Arcade win rates (1v1 spread 39.2-58.0 percent; now 44.9-54.0, 16 seeds): hpPm curomo 5780 -> 5450, cyclonius 5090 -> 5600, echo 6330 -> 6500, fiara 5230 -> 4600, ishimi 4800 -> 5000, pax 5100 -> 4850, rokcore 2060 -> 1850, wispera 7550 -> 7850. Re-record reason: life changes
  *    every Arcade hash and outcome (Arcade goldens, Arcade baselines).
+ * 54: Arcade only; Classic hashes unchanged. Stage hazards (ideas/brainstorm/stage-selection-hazards.md, systems/arcade/hazard.ts): one telegraphed hazard
+ *    of the stage's element at a time, HAZARD_FIRST_TICKS into a fight and then every HAZARD_PERIOD_TICKS plus a seeded jitter, each with a
+ *    HAZARD_WARN_TICKS (1 s) warning: a fire lava-vent lane (4 percent of max life), a water tide drifting both fighters 1 px per tick for 3 s, an earth
+ *    rockfall on a fighter's spot (5 percent) and an air gust band (1 px per tick, 4 while dashing or knocked back). Hazard damage never KOs and skips
+ *    invulnerable fighters. Ten new Arcade world ints (`HAZARD_BASE`) and three event kinds (76..78). Re-record reason: stage hazards add hashed
+ *    Arcade world state and change Arcade outcomes (Arcade goldens, Arcade baselines).
  */
-export const SIM_VERSION = 53;
+export const SIM_VERSION = 54;

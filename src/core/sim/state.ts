@@ -91,6 +91,8 @@ export const ARCADE_T = 23;
  * layouts drawn so far (it seeds the next draw), `patchCount` the live patches and `patches` their rectangles.
  * The trap table (WP 39, systems/arcade/trap.ts) follows the patches: TRAP_WORLD_MAX entries of TRAP_STRIDE ints from
  * `TRAP_TABLE` (kind 0 = a free entry; never compacted, scanned in index order).
+ * The stage hazard slot (systems/arcade/hazard.ts) follows the traps: HAZARD_STRIDE ints from `HAZARD_BASE`, fields at
+ * `HazardF` (kind 0 = none live; `next` is the game tick the next warning starts, `gen` the hazards drawn so far).
  */
 export const ArcadeW = {
   gameTick: 0, freezeUntil: 1, freezeKind: 2, round: 3, phase: 4, phaseUntil: 5, roundTimer: 6, slowMoUntil: 7,
@@ -104,7 +106,16 @@ export const TRAP_WORLD_MAX = 4;
 export const TRAP_STRIDE = 7;
 export const TrapF = { kind: 0, x: 1, y: 2, team: 3, armAt: 4, endAt: 5, owner: 6 } as const;
 export const TRAP_TABLE = ArcadeW.patches + PATCH_MAX * 4;
-export const ARCADE_W = TRAP_TABLE + TRAP_WORLD_MAX * TRAP_STRIDE;
+/**
+ * Stage hazard (systems/arcade/hazard.ts): one live hazard at a time. `kind` is the stage element it belongs to (1 fire, 2
+ * water, 3 earth, 4 air; 0 none), `strikeAt` the game tick its warning ends, `endAt` the tick it is over, (x, y, w, h)
+ * its box, `dir` its push direction (-1 or 1; 0 for fire and earth), `next` the game tick of the next warning (0 = not
+ * scheduled yet) and `gen` the hazards drawn so far (it seeds the next draw; kept across rounds).
+ */
+export const HazardF = { next: 0, kind: 1, strikeAt: 2, endAt: 3, x: 4, y: 5, w: 6, h: 7, dir: 8, gen: 9 } as const;
+export const HAZARD_STRIDE = 10;
+export const HAZARD_BASE = TRAP_TABLE + TRAP_WORLD_MAX * TRAP_STRIDE;
+export const ARCADE_W = HAZARD_BASE + HAZARD_STRIDE;
 export const ARCADE_TEAM_BASE = MAX_ENTITIES * ARCADE_E;
 export const ARCADE_WORLD_BASE = ARCADE_TEAM_BASE + TEAM_COUNT * ARCADE_T;
 export const ARCADE_LENGTH = ARCADE_WORLD_BASE + ARCADE_W;

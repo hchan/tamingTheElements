@@ -1,4 +1,4 @@
-/** Classic kinds are 1..30; Arcade-only kinds are 40..74 (docs/FUN-DESIGN.md section 2.1), never emitted in Classic. */
+/** Classic kinds are 1..30; Arcade-only kinds are 40..78 (docs/FUN-DESIGN.md section 2.1), never emitted in Classic. */
 export const SimEventKind = {
   moved: 1, blocked: 2, damage: 22, died: 20, swapped: 21, captured: 23, captureFailed: 24, matchEnded: 30,
   hitStop: 40, hitConfirmed: 41, comboEnded: 42, guarded: 43, parried: 44, guardBroken: 45, dashed: 46, perfectDodge: 47, clash: 48, meterLevel: 49, superStarted: 50,
@@ -9,6 +9,7 @@ export const SimEventKind = {
   snag: 69,
   trapPlaced: 70, trapArmed: 71, trapTriggered: 72,
   elementalCast: 73, elementalEnded: 74, cleanse: 75,
+  hazardWarn: 76, hazardStrike: 77, hazardHit: 78,
 } as const;
 export type SimEventKindValue = (typeof SimEventKind)[keyof typeof SimEventKind];
 

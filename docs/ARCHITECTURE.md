@@ -147,6 +147,10 @@ and a weather swap draw 3 to 5 point-symmetric element patches into the world bl
 swap after its 30-tick telegraph, emits `patchEntered`/`patchLeft` and runs the water heal; `movement.ts` clamps non-earth
 heroes at rocks (`rockStop`) and applies the air speed, `projectile.ts` removes shots at rocks (`shotBlocked`), and
 `applyArcadeHit` applies the fire patch with the capped total (`capDamage`).
+Stage hazards (`arcade/hazard.ts`, end of the `traps` slot; ideas/brainstorm/stage-selection-hazards.md): one telegraphed
+hazard per stage, a 1 s warning (`hazardWarn`) then the strike (`hazardStrike`, `hazardHit` per fighter hit): fire a lava
+lane and earth a rockfall on a fighter (small per-mille damage, never a KO), water a tide and air a gust (a 1 px a tick
+drift, the gust 4 px on dashing or knocked-back fighters). `RenderArcade.hazard` carries it to the lazy `hazard-view` chunk.
 Elemental clash (`arcade/clash.ts`, the `collision` slot): overlapping projectiles of opposing teams clash by their
 owners' elements (pairs `i < j`, one clash per projectile per tick); the advantaged one survives with
 `max(hp - loserHp / 2, hp / 4)` damage, any other relation destroys both, and each side gains 50 meter.

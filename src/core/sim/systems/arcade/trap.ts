@@ -14,6 +14,7 @@ import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
 import { castDir } from './aim';
 import { pending, Press, usePress } from './buffer';
+import { stepHazard } from './hazard';
 import { applyArcadeHit, TRAP_BOMB_DEF, TRAP_SPIKE_DEF } from './hit';
 import { setKnockback } from './knockback';
 import { freeRoot } from './snag';
@@ -215,9 +216,10 @@ export function clearTraps(s: SimState): void {
   s.arcade.fill(0, b, b + TRAP_WORLD_MAX * TRAP_STRIDE);
 }
 
-/** The `traps` slot (after `movement`): each team's trap press, team 0 first, then the trap pass. Returns at once in Classic. */
+/** The `traps` slot (after `movement`): each team's trap press, team 0 first, then the trap pass and the stage hazard pass (hazard.ts). Returns at once in Classic. */
 export function arcadeTrapSystem(world: SimWorld, _cmds: readonly [Command, Command], sink: EventSink): void {
   if (!isArcade(world.state)) return;
   for (let team = 0; team < TEAM_COUNT; team++) castTrap(world, sink, team);
   stepTraps(world, sink);
+  stepHazard(world, sink);
 }

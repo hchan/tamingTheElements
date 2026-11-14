@@ -155,6 +155,31 @@ export const TRAP_TEAM_MAX = 2;
 export const TRAP_MIN_GAP_PX = 64;
 
 /**
+ * Stage hazards (SIM_VERSION 54, ideas/brainstorm/stage-selection-hazards.md, systems/arcade/hazard.ts), game ticks and
+ * px. One telegraphed hazard of the stage's element at a time, the first HAZARD_FIRST_TICKS into each round's fight, then
+ * HAZARD_PERIOD_TICKS plus up to HAZARD_JITTER_TICKS (seeded) after the last one ends. Each warns for HAZARD_WARN_TICKS,
+ * then is active for HAZARD_ACTIVE_TICKS (by kind, 1 fire .. 4 air). Fire: a lava vent flares in one of HAZARD_LAVA_LANES
+ * fixed vertical lanes (HAZARD_LAVA_W wide) and burns whoever stands in it on the strike tick; earth: a rockfall square of
+ * HAZARD_ROCK_PX on a seeded team's fighter (where it stood at the warning) hits whoever is under it on the strike tick;
+ * water: a tide drifts both fighters HAZARD_TIDE_PX per tick; air: a gust band HAZARD_GUST_H tall nudges fighters in it
+ * HAZARD_GUST_PX per tick, HAZARD_GUST_AIR_PX while airborne (dashing or knocked back). Damage is HAZARD_DAMAGE_PM of max
+ * HP (by kind), never below 1 HP left (a hazard never KOs), and skips invulnerable fighters.
+ */
+export const HAZARD_FIRST_TICKS = 400;
+export const HAZARD_WARN_TICKS = 50;
+export const HAZARD_PERIOD_TICKS = 650;
+export const HAZARD_JITTER_TICKS = 200;
+export const HAZARD_ACTIVE_TICKS: readonly number[] = [0, 20, 150, 20, 100];
+export const HAZARD_DAMAGE_PM: readonly number[] = [0, 40, 0, 50, 0];
+export const HAZARD_LAVA_LANES = 5;
+export const HAZARD_LAVA_W = 96;
+export const HAZARD_ROCK_PX = 176;
+export const HAZARD_TIDE_PX = 1;
+export const HAZARD_GUST_H = 120;
+export const HAZARD_GUST_PX = 1;
+export const HAZARD_GUST_AIR_PX = 4;
+
+/**
  * Elemental ability (FUN-DESIGN 2.24, SIM_VERSION 39): one always-ready button per hero, chosen by its element, on its own
  * cooldown (no meter). Fire (Ember) deals ELEMENTAL_DAMAGE_PM per mille damage, earth (Stoneskin) takes ELEMENTAL_ARMOR_PM
  * per mille, air (Gale) walks at ELEMENTAL_SPEED_PM, each for ELEMENTAL_TICKS game ticks; water (Cleanse) is instant and

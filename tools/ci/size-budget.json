@@ -1,7 +1,7 @@
 {
   "chunks": {
     "ability-aura-view": 2100,
-    "arcade-audio": 2510,
+    "arcade-audio": 2650,
     "arcade-setup": 1850,
     "arcade-versus": 9600,
     "arena-pan": 2200,
@@ -16,6 +16,7 @@
     "element-sfx": 1250,
     "grim-fx": 900,
     "guide": 4300,
+    "hazard-view": 1200,
     "guide.css": 1600,
     "tour-match": 3150,
     "launch": 160,
@@ -37,7 +38,7 @@
     "rolldown-runtime": 200,
     "round-view": 5400,
     "sample-sfx": 700,
-    "sim": 36500,
+    "sim": 37600,
     "status-fx-view": 1800,
     "super-view": 2800,
     "tag-view": 3300,
@@ -48,7 +49,7 @@
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 604000,
+  "totalGzip": 605500,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600

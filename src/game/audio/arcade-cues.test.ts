@@ -32,6 +32,7 @@ describe('Arcade cue coverage', () => {
       guarded: 'guard', parried: 'parry', guardBroken: 'crack', dashed: 'dash', perfectDodge: 'dodge', clash: 'clang',
       superStarted: 'charge', chargeStarted: 'dash', roundStarted: 'round', fight: 'fight', ko: 'ko', roundEnded: 'roundEnd',
       trapPlaced: 'trapSet', trapArmed: 'trapArm', trapTriggered: 'trapPop', elementalCast: 'elemental',
+      hazardWarn: 'hazardWarn', hazardStrike: 'hazardStrike',
     };
     const expected = Object.fromEntries(Object.entries(byName).map(([n, c]) => [String(SimEventKind[n as keyof typeof SimEventKind]), c]));
     expect(KIND_CUES).toEqual(expected);
