@@ -18,5 +18,5 @@ Evidence: tourfight-1.png, tourfight-4.png, fight-a-1280.png, fight-a-1920.png (
 
 - Replace text with icons plus a faint glow ring; show the text only on first encounter or hover (Help lists them).
 - Label round pips with "Rounds" tooltip and use filled gems; label super with its key.
-- Element-tinted life bars with a yellow chip trail and a red flash under 25%.
+- DONE (hud-lifebars-super): element-tinted life bars with a yellow chip trail and a red flash under 25%.
 - Light the crowd (rim light, a subtle bob) so the arena feels alive.

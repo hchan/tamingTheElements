@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-14
 ---
 
@@ -11,3 +11,7 @@ Evidence: 2v2-fight.png, tag-swap-a.png, tag-swap-b.png, super-a/b/c.png (~/clau
 - After a tag, a small "TAG" caption stays over the action-bar tooltip, and the big "TAG!" call overlaps an on-screen touch stick and chevrons that are drawn on a desktop (mouse) viewport; check touch-controls detection.
 - Super (Glacier Crash): the banner is a grey outlined title across the lower third; the dim is light, the caster is duplicated as a ghost sprite at lower-left, and the element does not colour the banner. SF/MvC supers get a hard darken, speed lines and a close-up portrait slash-in. Add element colour and a portrait, remove the ghost.
 - The FIGHT! banner stays semi-visible over the 2v2 start under manual stepping; verify live.
+
+## Done (hud-lifebars-super)
+
+Bench row moved below the timer strip; TAG caption latches off after the first tag; Glacier Crash band has an element-coloured name, edge rules, speed lines, a framed portrait card and a darker dim. The touch stick is already CSS-hidden on non-coarse pointers (not reproducible on desktop).

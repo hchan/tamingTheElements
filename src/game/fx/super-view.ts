@@ -30,6 +30,11 @@ const BAND_OPACITY = 0.5;
 const NAME_PX = 72;
 const SUB_PX = 52;
 const PORTRAIT_PX = 140;
+/** The cut-in portrait sits in a dark framed card with an element-colour border, so it reads as a slash-in close-up, not a ghost of the caster. */
+const CARD_PX = PORTRAIT_PX + 16;
+/** The probe's `dim` stays the plan's value; the overlay is drawn this many times darker (a hard darken, SF/MvC style). */
+const DIM_GAIN = 2.25;
+const LINES = 26;
 const PORTRAIT_X = 120;
 /** Over the characters (0), under the caster (lifted to DIM_DEPTH + 1), the band and the hit sparks (10). */
 const DIM_DEPTH = 5;
@@ -91,6 +96,9 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   const parts = {
     dim: scene.add.rectangle(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT, 0).setOrigin(0).setDepth(DIM_DEPTH),
     band: scene.add.rectangle(0, 0, LOGICAL_WIDTH, BAND_H, 0).setOrigin(0, 0.5).setDepth(DIM_DEPTH + 2),
+    // Element-colour rules along the band edges and the speed lines through it, in band-relative coordinates (placed like the band).
+    edges: scene.add.graphics().setDepth(DIM_DEPTH + 2.5),
+    card: scene.add.rectangle(0, 0, CARD_PX, CARD_PX, 0x0a0806).setDepth(DIM_DEPTH + 2.8),
     portrait: scene.add.image(0, 0, '__DEFAULT').setDepth(DIM_DEPTH + 3),
     name: text(NAME_PX),
     sub: text(SUB_PX),
@@ -176,10 +184,13 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       o.setPosition(v.x + sx * v.scale, v.y + sy * v.scale);
       o.setAlpha(a);
     };
-    for (const o of [parts.dim, parts.band, parts.name, parts.sub]) o.setScale(v.scale);
+    for (const o of [parts.dim, parts.band, parts.edges, parts.name, parts.sub]) o.setScale(v.scale);
+    parts.card.setScale(v.scale);
     parts.portrait.setDisplaySize(PORTRAIT_PX * v.scale, PORTRAIT_PX * v.scale);
-    put(parts.dim, 0, 0, frame.dim);
+    put(parts.dim, 0, 0, Math.min(1, frame.dim * DIM_GAIN));
     put(parts.band, dx, bandY, frame.bandAlpha * BAND_OPACITY);
+    put(parts.edges, dx, bandY, frame.bandAlpha);
+    put(parts.card, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26, frame.bandAlpha);
     put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44, frame.bandAlpha);
@@ -217,6 +228,19 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       bandY = b.y + b.h <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
       // Grim grade: the band is a dark, desaturated wash of the element colour (the element word below is the main cue).
       parts.band.setFillStyle(mute(ELEMENT_COLORS[caster.element], 0.45, 0.5));
+      const tint = mute(ELEMENT_COLORS[caster.element], 0.95, 1.05);
+      parts.name.setColor(`#${tint.toString(16).padStart(6, '0')}`);
+      parts.card.setStrokeStyle(4, tint, 1);
+      parts.edges.clear();
+      parts.edges.fillStyle(tint, 0.9).fillRect(0, -BAND_H / 2 - 3, LOGICAL_WIDTH, 6).fillRect(0, BAND_H / 2 - 3, LOGICAL_WIDTH, 6);
+      // Speed lines: thin streaks of the element colour at fixed (hash-spaced) heights and lengths, no randomness.
+      for (let i = 0; i < LINES; i++) {
+        const h = (i * 2654435761) >>> 0;
+        const y = -BAND_H / 2 + 8 + (h % (BAND_H - 16));
+        const len = 160 + ((h >>> 8) % 340);
+        const x = ((h >>> 16) % (LOGICAL_WIDTH - len));
+        parts.edges.fillStyle(tint, 0.22).fillRect(x, y, len, 2);
+      }
       parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX, PORTRAIT_PX).setFlipX(img.flipX);
       parts.name.setText(superName(superId));
       // The element as a word too: the band colour is not the only cue.

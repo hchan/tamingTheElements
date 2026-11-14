@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, SLIM_H, chipBar, chipRect, compactLabel, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
@@ -237,7 +237,7 @@ export class Hud extends Phaser.Scene {
     const w = g.maxX - g.minX;
     const x0 = g.minX + Math.ceil(w * Math.max(0, c.hp) / c.maxHp);
     const x1 = g.minX + Math.ceil(w * Math.min(1, v / c.maxHp));
-    gfx.lineStyle(g.line, 0xffffff, 0.95).lineBetween(x0, g.y, x1, g.y);
+    gfx.lineStyle(g.line, TRAIL_COLOR, 0.95).lineBetween(x0, g.y, x1, g.y);
   }
 
   /** Arcade bench chip: a 56 px portrait with its element mark, a life bar under it, and a gold pulsing frame when a tag would work now (dimmed with a cross when down). */
@@ -564,7 +564,9 @@ export class Hud extends Phaser.Scene {
     else this.thinFrame(gfx, g);
     if (c.dead) return;
     const fill = barFill(g, c.hp, c.maxHp, c.restCap, this.highContrast);
-    const color = this.highContrast ? fill.color : grimHealthColor(c.maxHp > 0 ? c.hp / c.maxHp : 0);
+    const frac = c.maxHp > 0 ? c.hp / c.maxHp : 0;
+    // Slim (Arcade) bars wear the hero's element colour and flash red when critical; the Classic high-contrast bar keeps its ramp.
+    const color = this.highContrast ? fill.color : this.arcade ? lifeFill(mute(ELEMENT_COLORS[c.element], 0.7, 0.8), frac, frac <= LOW_FLASH_AT ? criticalPulse(this.time.now, this.reduceMotion) : 0) : grimHealthColor(frac);
     stroke(g.line, REST_COLOR, fill.restX, this.highContrast ? 1 : 0.4);
     if (c.hp > 0) {
       // Pattern cue: solid when healthy, long dashes when hurt, short dashes when critical.

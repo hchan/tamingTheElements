@@ -18,7 +18,8 @@ export const SLIM_ROW_B = 34;
 /** Bench portraits (qa-r5-bench-portraits-small): 56 px squares, chip 0 nearest the tag pill, hanging a little under the band. */
 export const CHIP_SIZE = 56;
 export const CHIP_PITCH = 60;
-export const CHIP_Y = 31;
+/** The bench row sits under the timer strip (super segments end at y 50), so the chips never cover it (qa-r7-hud-2v2). */
+export const CHIP_Y = 54;
 export const CHIP_BAR_Y = CHIP_Y + CHIP_SIZE + 5;
 export const CHIP_BAR_LINE = 6;
 /** Left edge of the tag pill for team 0 (right edge 574, just short of the bar end at 580 and the round pips). */
@@ -78,6 +79,28 @@ export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' 
   const glyph = elementCue(c.element).charAt(0);
   const word = cue.label === 'OK' ? '' : ` ${cue.label}`;
   return `${name.toUpperCase()} ${glyph} ${lifeReadout(c)}${word}`;
+}
+
+/** The yellow chip-trail colour: the life just lost (street-fighter style), instead of plain white. */
+export const TRAIL_COLOR = 0xe8c04a;
+/** Below this fraction the bar flashes red. */
+export const LOW_FLASH_AT = 0.25;
+const WOUND = 0x9b8738;
+const EMBER = 0x8a2b1c;
+const lerpRgb = (a: number, b: number, k: number): number => {
+  const ch = (shift: number): number => Math.round(((a >> shift) & 255) + ((((b >> shift) & 255) - ((a >> shift) & 255)) * k));
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+};
+
+/**
+ * Life fill for the slim bars: the hero's (already muted) element colour while healthy, going to tallow ochre at half and ember red
+ * by a quarter. `pulse` (0..1) lifts a critical bar toward a bright red, the low-health flash. Pure.
+ */
+export function lifeFill(elementColor: number, fractionValue: number, pulse = 0): number {
+  const p = Number.isNaN(fractionValue) ? 1 : Math.min(1, Math.max(0, fractionValue));
+  if (p <= LOW_FLASH_AT) return lerpRgb(EMBER, 0xe0402e, pulse);
+  if (p >= 0.5) return elementColor;
+  return lerpRgb(EMBER, WOUND, (p - LOW_FLASH_AT) / (0.5 - LOW_FLASH_AT));
 }
 
 /** Frames the white damage trail holds after a hit before it drains, and the fraction of max life it drains per frame. */

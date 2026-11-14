@@ -114,6 +114,7 @@ export function mountTagView(
   const fx = arena.add.graphics().setDepth(FLASH_DEPTH);
   /** The swap-slot caption lives in the Hud scene (made in `build`): the Arena camera zooms and pans, which would drag it away from the slot. */
   let caption: Phaser.GameObjects.Text | undefined;
+  let captionDone = false;
   /** The Hud objects, made once the Hud scene runs (as the round view): its Graphics, per team [lines, tag word], the call. */
   let parts: { g: Phaser.GameObjects.Graphics; texts: Phaser.GameObjects.Text[][]; call: Phaser.GameObjects.Text } | undefined;
   const build = (): void => {
@@ -177,7 +178,9 @@ export function mountTagView(
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
       const tag = tagReadout(bar ? bar.swapReadyTick - bar.tick : 0, !active || bench.every((h) => h.dead));
-      if (team === 0) caption?.setVisible(tag.label !== 'NO TAG' && (bar?.tick ?? 0) < CAPTION_TICKS).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT);
+      // Once the player has tagged (the cooldown ran), the pointer has done its job: it never comes back over the slot tooltip.
+      if (team === 0 && tag.label !== 'TAG READY' && tag.label !== 'NO TAG') captionDone = true;
+      if (team === 0) caption?.setVisible(!captionDone && tag.label !== 'NO TAG' && (bar?.tick ?? 0) < CAPTION_TICKS).setPosition(tagSlot.x, tagSlot.y - CAPTION_LIFT);
       // One line per bench row (an empty one if a hero is missing), so the texts keep their rows.
       const benchLines = Array.from({ length: t.length - 1 }, (_, i) => {
         const h = bench[i];
