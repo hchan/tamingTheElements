@@ -197,7 +197,7 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
     const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; over: boolean; left: boolean }[]>(
       `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight, left: getComputedStyle(n).textAlign === 'left' }; })`,
     );
-    expect(boxes).toHaveLength(9);
+    expect(boxes).toHaveLength(10);
     if (fs) {
       for (const p of boxes) {
         const clear = p.r <= fs.x || fs.r <= p.x || p.b <= fs.y || fs.b <= p.y;
@@ -217,8 +217,8 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
     }
     // aligned on the left: the first box starts at the left edge of the canvas
     const cv = await page.evaluate<{ x: number }>(`(() => { const q = document.querySelector('#game canvas').getBoundingClientRect(); return { x: q.x }; })()`);
-    // (the two ability boxes come first and are canvas-only, so the first overlay is at most two boxes in)
-    expect(Math.min(...boxes.map((k) => k.x)) - cv.x).toBeLessThan(2 * ((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0)) + 16);
+    // (the two ability boxes come first and are canvas-only, so the first overlay is at most three boxes in (the slim HUD bar adds a gap))
+    expect(Math.min(...boxes.map((k) => k.x)) - cv.x).toBeLessThan(3 * ((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0)) + 16);
     for (const [i, p] of boxes.entries()) {
       for (const q of boxes.slice(i + 1)) {
         const apart = p.r <= q.x + 0.5 || q.r <= p.x + 0.5 || p.b <= q.y + 0.5 || q.b <= p.y + 0.5;
@@ -253,7 +253,7 @@ for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640
       const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; border: number; over: boolean }[]>(
         `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); const c = getComputedStyle(n); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, border: Math.min(parseFloat(c.borderTopWidth), parseFloat(c.borderRightWidth), parseFloat(c.borderBottomWidth), parseFloat(c.borderLeftWidth)), over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight }; })`,
       );
-      expect(boxes).toHaveLength(9);
+      expect(boxes).toHaveLength(10);
       for (const k of boxes) {
         expect(k.over, `${k.id} overflows`).toBe(false);
         expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);

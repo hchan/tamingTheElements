@@ -37,7 +37,7 @@ const probe = (page: Page): Promise<SheetProbe | undefined> => page.evaluate<She
 function collect(page: Page): { errors: string[]; sheetRequests: string[] } {
   const errors: string[] = [];
   const sheetRequests: string[] = [];
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('request', (r) => { if (r.url().includes('/img/sheets/')) sheetRequests.push(r.url()); });
   return { errors, sheetRequests };

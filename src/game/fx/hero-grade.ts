@@ -69,7 +69,10 @@ export function gradeEnabled(): boolean {
 export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
   if (!gradeEnabled()) return key;
   const gk = grimKey(key);
-  if (scene.textures.exists(gk)) return gk;
+  if (scene.textures.exists(gk)) {
+    syncFrames(scene, key, gk);
+    return gk;
+  }
   try {
     if (typeof document === 'undefined' || !scene.textures.exists(key)) return key;
     const srcTex = scene.textures.get(key);
@@ -86,12 +89,24 @@ export function gradedHeroTexture(scene: Phaser.Scene, key: string): string {
     ctx.putImageData(data, 0, 0);
     const tex = scene.textures.addCanvas(gk, c);
     if (!tex) return key;
-    for (const name of srcTex.getFrameNames()) {
-      const f = srcTex.get(name);
-      if (!tex.has(name)) tex.add(name, 0, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
-    }
+    syncFrames(scene, key, gk);
     return gk;
   } catch {
     return key;
+  }
+}
+
+/**
+ * Copies frames the source gained after the graded copy was made (the HUD can grade a texture before the character view
+ * registers `right0`/`left0`, which logged "missing frame map:<hero>~grim right0"). Cheap no-op when the counts match.
+ */
+function syncFrames(scene: Phaser.Scene, key: string, gk: string): void {
+  if (!scene.textures.exists(key)) return;
+  const srcTex = scene.textures.get(key);
+  const tex = scene.textures.get(gk);
+  if (srcTex.frameTotal === tex.frameTotal) return;
+  for (const name of srcTex.getFrameNames()) {
+    const f = srcTex.get(name);
+    if (!tex.has(name)) tex.add(name, 0, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
   }
 }

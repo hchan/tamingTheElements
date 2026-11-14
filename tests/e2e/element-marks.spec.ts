@@ -9,7 +9,7 @@ for (const ff of ['arenaDemo', 'arenaDemo,arcade']) {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => {
-      if (m.type() === 'error') errors.push(m.text());
+      if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
     });
     await page.goto(`/?ff=${ff}&manual=1&seed=7`);
     await page.locator('#game canvas').waitFor();

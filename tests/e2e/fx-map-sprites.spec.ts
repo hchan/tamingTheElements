@@ -7,7 +7,7 @@ import { ARENA_READY } from './parity/helpers';
 test('Tornado is drawn from the redrawn fx strip, not the legacy map PNG', async ({ page }, info) => {
   const errors: string[] = [];
   const loaded: string[] = [];
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('response', (r) => { if (/\/img\/(fx|map)\/tornado\.png/.test(r.url())) loaded.push(`${String(r.status())} ${r.url().replace(/^.*\/assets\//, '')}`); });
   await page.goto('/?ff=arenaDemo&manual=1&seed=7&p1=cyclonius');
@@ -34,7 +34,7 @@ for (const [slug, key] of [['dummy', 'dummyTarget'], ['eternal-void', 'eternalVo
   test(`${slug} is drawn from the redrawn fx strip ${key}`, async ({ page }, info) => {
     const errors: string[] = [];
     const loaded: string[] = [];
-    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('console', (m) => { if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text()); });
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('response', (r) => { if (new RegExp(`/img/(fx|map)/${key}\\.png`).test(r.url())) loaded.push(`${String(r.status())} ${r.url().replace(/^.*\/assets\//, '')}`); });
     await page.goto(`/?ff=arenaDemo&manual=1&seed=7&p1=${slug}`);

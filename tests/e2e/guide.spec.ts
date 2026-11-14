@@ -14,7 +14,7 @@ test('Help links to the Guide: wheel, ability cards and weather cards, no banned
   await expect(menu.getByRole('heading', { level: 1, name: 'Guide' })).toBeVisible();
   await expect(menu.getByRole('heading', { level: 2, name: 'Element wheel' })).toBeVisible();
   await expect(menu.locator('svg.guideWheel g.guideArrow')).toHaveCount(4);
-  await expect(menu.locator('.guideCommon')).toHaveCount(8);
+  await expect(menu.locator('.guideCommon')).toHaveCount(9);
   await expect(menu.locator('.guideElemental')).toHaveCount(4);
   await expect(menu.locator('.guideWeather')).toHaveCount(5);
   await expect(menu.locator('g.guideArrow').first()).toContainText('x1.25');
