@@ -12,6 +12,8 @@ export interface StreakLayer {
 }
 
 const ADD = 1;
+/** Paused (manual stepping, hit-stop view hold): a new fan starts this far in, so the held frame shows lines, not zero-length ones. */
+const HELD_START_MS = 50;
 
 export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): StreakLayer {
   interface Streak {
@@ -40,12 +42,13 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
     detach();
   };
   function tick(_time: number, delta: number): void {
-    if (paused() || !gfx) return;
+    if (!gfx) return;
+    const held = paused();
     gfx.clear();
     for (let i = streaks.length - 1; i >= 0; i--) {
       const s = streaks[i];
       if (!s) continue;
-      s.age += delta;
+      if (!held) s.age += delta;
       const f = streakFrame(s.age, s.strength, s.unit);
       if (!f) {
         streaks.splice(i, 1);
@@ -55,8 +58,8 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
       const ay = s.y + s.sin * f.from;
       const bx = s.x + s.cos * f.to;
       const by = s.y + s.sin * f.to;
-      gfx.lineStyle(f.width * 2, s.color, f.alpha * 0.45).lineBetween(ax, ay, bx, by);
-      gfx.lineStyle(Math.max(1, f.width * 0.7), 0xfff4d8, f.alpha).lineBetween(ax, ay, bx, by);
+      gfx.lineStyle(f.width * 2.4, s.color, f.alpha * 0.7).lineBetween(ax, ay, bx, by);
+      gfx.lineStyle(Math.max(1.5, f.width * 0.8), 0xfff4d8, f.alpha).lineBetween(ax, ay, bx, by);
     }
     if (streaks.length === 0) detach();
   }
@@ -68,7 +71,7 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
       gfx ??= scene.add.graphics().setDepth(12).setBlendMode(ADD);
       for (let i = 0; i < n && streaks.length < STREAK_POOL; i++) {
         const a = (dirX < 0 ? Math.PI : 0) + (STREAK_FAN[i] ?? 0) * sign - 0.12 * sign;
-        streaks.push({ x, y, cos: Math.cos(a), sin: Math.sin(a), color, strength: s, unit: ((i * 5) % 7) / 6, age: 0 });
+        streaks.push({ x, y, cos: Math.cos(a), sin: Math.sin(a), color, strength: s, unit: ((i * 5) % 7) / 6, age: paused() ? HELD_START_MS : 0 });
       }
       if (!attached) {
         attached = true;
