@@ -1,14 +1,19 @@
 """Procedural Lavax rig (grim earth/fire elemental: a towering beast of black obsidian, jagged glassy plates with rivers of molten magma running
 in the cracks, a lava-lit slit for a face, smoke rising off the shoulders; no person, no clothes). Run: python3 tools/assets/rig-gen/lavax.py
 <out_rig_dir> (needs Pillow + numpy; helpers in elemental.py). Parts keep the old ids (tail = the broken rubble and lava pool it stands in,
-armB/armF = massive shard slabs that heave, torso, head = the crag with the face slit) and the same 80x80 frame. Concept:
-tools/assets/concepts-dark.py (lavax), studied by eye only."""
+armB/armF = massive shard slabs that heave, torso, head = the crag with the face slit). Hi-res (2026-11-14): painted at 8x and baked as a
+240 px frame rig (ART=6, res 2, ss2 sampling, like Rokcore/Pax) with softer, painterly molten edges (a warm rim glow plus a lighter
+glassy edge so the dark body separates from the lava floor) and finer luminous cracks. Bake with: pnpm assets:bake && pnpm assets:sheets.
+Concept: tools/assets/concepts-dark.py (lavax), studied by eye only."""
 import os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import elemental as E
-from elemental import SS, W
 from PIL import Image
+
+E.SS, E.W = 8, 640  # paint at 8x (80 units -> 640 px); build() downsamples to ART px per unit
+SS, W = E.SS, E.W
+ART = 6
 
 OUT = sys.argv[1]
 OBSID = [(0.0, (6, 6, 9)), (0.4, (18, 18, 26)), (0.75, (40, 42, 56)), (1.0, (96, 100, 118))]  # glassy blue-black with cold sheen
@@ -30,14 +35,16 @@ def paint(name, view, polys, g, seed):
     xx, yy = E.grid()
     ma = E.poly_mask(polys)
     n1, n2, n3 = E.fbm(rs, 5), E.fbm(rs, 12), E.fbm(rs, 8)
-    # jagged silhouette: small hard warp, no soft blob
-    core = E.blur(E.warp(ma, (n2 - 0.5) * SS * 3.5, (n3 - 0.5) * SS * 3.5), SS * 0.45)
+    # molten, painterly silhouette: wavy warp then a soft but not fluffy edge (no hard pixel stair-steps)
+    core = E.blur(E.warp(ma, (n2 - 0.5) * SS * 3.5, (n3 - 0.5) * SS * 3.5), SS * 0.9)
+    core = np.clip((core - 0.35) * 2.2, 0, 1)
+    fine = E.fbm(rs, 120, 2)  # hi-res only: glassy micro-pitting
     # obsidian plates: large angular Voronoi facets with a glassy bevel and bright edge sheen
     d1, d2, nid, vx, vy = E.voronoi(rs, 12, stretch=(1.0, 1.35))
     cellv = np.take(rs.rand(12), nid).astype(np.float32)
     face = 0.5 + 0.5 * np.clip((vx * 0.7 - vy * 0.9) * 4.0, -1, 1)  # per-facet tilt so plates catch light differently
     light = E.bevel_light(np.clip(d1 / 0.13, 0, 1), 26.0)
-    t = np.clip(0.2 + 0.32 * cellv + 0.22 * face + 0.3 * light + 0.15 * (n2 - 0.5) - g.get("dark", 0.0), 0, 1)
+    t = np.clip(0.2 + 0.32 * cellv + 0.22 * face + 0.3 * light + 0.15 * (n2 - 0.5) + 0.22 * (fine - 0.5) - g.get("dark", 0.0), 0, 1)
     stone = E.ramp(OBSID, t)
     # secondary hairline fractures (finer cells) carry thin magma too
     f1, f2, _, _, _ = E.voronoi(rs, 34, stretch=(1.0, 1.2))
@@ -51,8 +58,12 @@ def paint(name, view, polys, g, seed):
     if g.get("pool"):  # molten pool the beast stands in
         pool = np.clip((n1 - 0.45) * 5, 0, 1) * np.clip((yy - 0.84) * 12, 0, 1)
         rgb = rgb * (1 - pool[..., None]) + E.ramp(MAGMA, 0.4 + 0.5 * n2) * pool[..., None]
-    edge = np.clip(1 - E.blur(core, SS * 2.2) * 1.15, 0, 1)
-    rgb = rgb * (1 - 0.5 * edge[..., None])
+    # edge: a lighter, warm-lit glassy rim (replaces the old dark edge) so the dark body reads against the fire floor
+    edge = np.clip(1 - E.blur(core, SS * 2.2) * 1.15, 0, 1) * core
+    rim = np.clip(edge * 1.6, 0, 1) * (0.55 + 0.45 * n1)
+    rgb = rgb * (1 - 0.35 * rim[..., None]) + E.ramp(MAGMA, np.clip(0.45 + 0.5 * n2, 0, 1)) * (0.5 * rim[..., None])
+    sheen = np.clip(edge * 1.2, 0, 1) * np.clip(0.4 + 0.6 * (0.5 - yy), 0, 1)
+    rgb = rgb + np.array([70, 74, 96], np.float32) * (0.5 * sheen[..., None])
     alpha = core * 0.99
     out = np.dstack([rgb, alpha * 255]).astype(np.float32)
     if g.get("smoke"):  # smoke rising off the top, dragged upward and torn
@@ -76,7 +87,7 @@ def accents(name, view, im, tf):
     pts = [(48, 19), (55, 19.5)] if view == "E" else [(44, 22), (52, 22.5)]
     for (x, y) in pts:
         x, y = E.apply(tf, (x, y))
-        im = E.glow_dot(im, x, y, 1.7, 0.7, EYE, (255, 120, 30), 3.4)
+        im = E.glow_dot(im, x, y, 1.5, 0.65, EYE, (255, 120, 30), 3.4)
     return im
 
 
@@ -105,4 +116,4 @@ actions = {
 }
 E.build(OUT, "lavax", G, actions, paint,
         E.license_for("lavax", "lavax.py", "grim magma elemental: black glassy obsidian plates, rivers of molten magma in the cracks, lava-lit face slits, smoke rising; blue-black and ember orange palette."),
-        accents=accents)
+        accents=accents, art=ART)
