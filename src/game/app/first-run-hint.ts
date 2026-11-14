@@ -12,7 +12,7 @@ export const ROUND_OVER_EVENT = 'tte:round-over';
 export const SUPER_CUT_EVENT = 'tte:super-cut';
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
-export const FIRST_RUN_MS = 4000;
+export const FIRST_RUN_MS = 2500;
 /** Windows this short or shorter get the compact card (smaller text, no footer line). */
 export const COMPACT_BELOW = 800;
 

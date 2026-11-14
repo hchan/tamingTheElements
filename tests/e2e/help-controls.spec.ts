@@ -19,3 +19,20 @@ test('Help lists the controls without banned words', async ({ page }) => {
   expect(await menu.innerText()).not.toMatch(/classic|arcade|ruleset|capture/i);
   expect(errors).toEqual([]);
 });
+
+// QA r18: on a short phone landscape screen the Help header is compact (no crest, one tab row) so the first heading is high up.
+test('Help at 844x390: compact header, one row of tabs, first heading in the top 40 percent', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto('/?seed=7#help');
+  await waitForRoute(page, '#help');
+  const m = await page.evaluate<{ tabsBottom: number; rows: number; headingTop: number }>(
+    `(() => { const lis = [...document.querySelectorAll('#menu .helpLinks li')].map((l) => l.getBoundingClientRect());
+      const h = document.getElementById('helpLessonsHeading').getBoundingClientRect();
+      return { tabsBottom: Math.max(...lis.map((r) => r.bottom)), rows: new Set(lis.map((r) => Math.round(r.top))).size, headingTop: h.top }; })()`,
+  );
+  expect(m.rows).toBe(1);
+  expect(m.tabsBottom).toBeLessThan(110);
+  expect(m.headingTop).toBeLessThan(390 / 2.5);
+  expect(errors).toEqual([]);
+});
