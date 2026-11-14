@@ -40,6 +40,8 @@ export function announcementsFor(
         out.push({ key: 'snagFailed', text: 'Snag failed.', important: false });
         break;
       case SimEventKind.died:
+        // Arcade 2v2: the tag view announces "Lavax is down. Rokcore steps in." for the same death, so this line would read it twice.
+        if (events.some((o) => o.kind === SimEventKind.tagIn && o['from'] === e.sourceId)) break;
         out.push(
           e['team'] === 0
             ? { key: 'heroDied', text: 'Your elemental was defeated.', important: false }
@@ -252,7 +254,14 @@ export interface LiveRegion {
 }
 
 /** Visually hidden polite and assertive regions. Text is re-inserted so an identical line is read again. */
-export function createLiveRegion(doc: Document = document, defer: (fn: () => void) => void = (fn) => void setTimeout(fn, 30)): LiveRegion {
+/** How long an assertive line stays in its region before it is cleared (ms), so "Fight!" does not sit there for the whole match. */
+export const ASSERTIVE_CLEAR_MS = 4000;
+
+export function createLiveRegion(
+  doc: Document = document,
+  defer: (fn: () => void) => void = (fn) => void setTimeout(fn, 30),
+  clearLater: (fn: () => void, ms: number) => void = (fn, ms) => void setTimeout(fn, ms),
+): LiveRegion {
   const make = (id: string, role: 'status' | 'alert', live: 'polite' | 'assertive'): HTMLElement => {
     const n = doc.createElement('div');
     n.id = id;
@@ -266,12 +275,17 @@ export function createLiveRegion(doc: Document = document, defer: (fn: () => voi
   const polite = make('liveRegion', 'status', 'polite');
   const assertive = make('liveRegionAssertive', 'alert', 'assertive');
   let alive = true;
+  let spoken = 0;
   return {
     speak(text, isAssertive) {
       const target = isAssertive ? assertive : polite;
       target.textContent = '';
+      const mine = isAssertive ? ++spoken : spoken;
       defer(() => {
-        if (alive) target.textContent = text;
+        if (!alive) return;
+        target.textContent = text;
+        // Read once, then emptied (unless a newer assertive line replaced it meanwhile).
+        if (isAssertive) clearLater(() => { if (alive && spoken === mine) target.textContent = ''; }, ASSERTIVE_CLEAR_MS);
       });
     },
     destroy() {

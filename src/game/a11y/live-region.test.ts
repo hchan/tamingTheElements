@@ -73,4 +73,20 @@ describe('createLiveRegion', () => {
     expect(nodes.every((n) => n.removed)).toBe(true);
     expect(nodes[0]?.textContent).toBe('');
   });
+
+  it('clears the assertive line after it has been read, but not a newer one', () => {
+    const { doc, nodes } = fakeDoc();
+    const later: (() => void)[] = [];
+    const r = createLiveRegion(doc, (fn) => { fn(); }, (fn) => void later.push(fn));
+    r.speak('Fight!', true);
+    expect(nodes[1]?.textContent).toBe('Fight!');
+    r.speak('Match over.', true);
+    later[0]?.();
+    expect(nodes[1]?.textContent).toBe('Match over.');
+    later[1]?.();
+    expect(nodes[1]?.textContent).toBe('');
+    r.speak('polite', false);
+    expect(later).toHaveLength(2);
+    expect(nodes[0]?.textContent).toBe('polite');
+  });
 });

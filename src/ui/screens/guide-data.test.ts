@@ -30,6 +30,12 @@ describe('guide data', () => {
     }
   });
 
+  it('Snag wears the bound key (C by default), not a vague "Hero attack"', () => {
+    const snag = (b: typeof DEFAULT_BINDINGS) => commonAbilities(b).find((c) => c.id === 'snag')?.key;
+    expect(snag(DEFAULT_BINDINGS)).toBe('C');
+    expect(snag({ ...DEFAULT_BINDINGS, capture: ['KeyG'] })).toBe('G');
+  });
+
   it('has one elemental ability per wheel element', () => {
     const cards = elementalAbilities(DEFAULT_BINDINGS);
     expect(cards.map((c) => c.element)).toEqual(['fire', 'air', 'earth', 'water']);

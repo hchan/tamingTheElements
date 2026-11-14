@@ -119,6 +119,7 @@ export function codeLabel(code: string): string {
   if (code.startsWith('Arrow')) return code.slice(5);
   if (code === 'Minus') return '-';
   if (code === 'Equal') return '=';
+  if (code === 'Semicolon') return ';';
   if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
   return code;
 }
@@ -205,7 +206,8 @@ export const SF_PRESET_BINDINGS: Bindings = {
   guard: ['KeyI', 'Digit8'],
   super: ['KeyO', 'Digit9'],
   weather: ['KeyU', 'Digit6'],
-  charge: ['KeyH', 'Digit5'],
+  // Digit5 is Tag 3 here (slot5 keeps it as its alternate), so Charge takes B as its own alternate: no shared key, and its box reads H.
+  charge: ['KeyH', 'KeyB'],
   trap: ['KeyP', 'Digit0'],
   elemental: ['KeyY', 'Minus'],
   cleanse: ['Semicolon', 'Equal'],

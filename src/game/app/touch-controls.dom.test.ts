@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_BINDINGS, getBindings, setBindings } from '../platform/input/bindings';
-import { TOUCH, releaseTouch, setTouchText, touchButton, touchButtons, watchTouch } from './touch-controls';
+import { DEFAULT_BINDINGS, SF_PRESET_BINDINGS, getBindings, setBindings } from '../platform/input/bindings';
+import { TOUCH, releaseTouch, touchKeyLabel, setTouchText, touchButton, touchButtons, watchTouch } from './touch-controls';
 import type { RenderView } from '@core/index';
 
 const events: string[] = [];
@@ -227,5 +227,14 @@ describe('watchTouch', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('key labels follow the fighting-game preset (screen-reader list and bar agree)', () => {
+  it('names the preset primaries, not the default numbers', () => {
+    setBindings(SF_PRESET_BINDINGS);
+    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['O', 'I', 'L', 'U', 'H', 'N', 'M', 'P', 'Y', ';']);
+    setBindings(DEFAULT_BINDINGS);
+    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['9', '8', '7', '6', '5', '3', '4', '0', '-', '=']);
   });
 });

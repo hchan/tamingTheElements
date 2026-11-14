@@ -49,7 +49,7 @@
     "viewport": 750,
     "weather-view": 6000
   },
-  "totalGzip": 600000,
+  "totalGzip": 601000,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600

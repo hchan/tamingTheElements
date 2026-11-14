@@ -140,7 +140,7 @@ export function commonAbilities(b: Bindings): readonly AbilityCard[] {
     {
       id: 'snag',
       name: 'Snag',
-      key: 'Hero attack',
+      key: keyOf(b, 'capture'),
       cooldown: secs(SNAG_COOLDOWN_TICKS),
       effect: COMMON_EFFECT.snag,
       icon: 'snag',

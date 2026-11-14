@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FIRST_RUN_KEY, anySnag, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
+import { FIRST_RUN_KEY, ROUND_OVER_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen } from './first-run-hint';
 import { labelsFromBindings } from '../hud/action-bar';
 import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
@@ -50,6 +50,18 @@ describe('firstRunHint', () => {
     vi.advanceTimersByTime(1000);
     expect(card?.classList.contains('firstRunFade')).toBe(true);
     expect(firstRunSeen(store)).toBe(true);
+  });
+
+  it('fades at once when the round ends, and a lone hero gets no Tag line', () => {
+    const store = memory();
+    const card = firstRunHint(store, 60000, (go) => { go(); }, true, undefined, false);
+    document.body.append(card as HTMLElement);
+    expect(card?.textContent).not.toMatch(/Tag/);
+    window.dispatchEvent(new Event(ROUND_OVER_EVENT));
+    expect(card?.classList.contains('firstRunFade')).toBe(true);
+    expect(firstRunSeen(store)).toBe(true);
+    expect(firstRunLines(DEFAULT_BINDINGS, false, true, undefined, true).join(' ')).toContain('Tag with 3');
+    expect(firstRunLines(DEFAULT_BINDINGS, true, true, undefined, false).join(' ')).not.toMatch(/Tag/);
   });
 
   it('fades at the first key or tap outside the card, but not on Tab', () => {
