@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize, STREAKS_BY_STRENGTH, STREAK_MS, streakFrame, RECOIL_TICKS, NO_RECOIL, recoilPose } from './hit-feel';
+import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize, STREAKS_BY_STRENGTH, STREAK_MS, streakFrame, RECOIL_TICKS, NO_RECOIL, recoilPose, POSE_HOLD_MS, SHAKE_BOOST, poseHoldMs, shakeBoost } from './hit-feel';
 
 describe('sparkStyleFor', () => {
   it('has a distinct style per element and a default', () => {
@@ -126,5 +126,23 @@ describe('plain-hit weight (QA r34)', () => {
     expect(recoilPose(2, 3, 1, true)).toBe(NO_RECOIL);
     expect(recoilPose(Number.NaN, 3, 1, false)).toBe(NO_RECOIL);
     expect(recoilPose(-1, 3, 1, false)).toBe(NO_RECOIL);
+  });
+});
+
+describe('render-side hit-stop (QA r35)', () => {
+  it('holds 40-60 ms, longer for harder hits, and nothing under reduced motion', () => {
+    for (const ms of POSE_HOLD_MS) {
+      expect(ms).toBeGreaterThanOrEqual(40);
+      expect(ms).toBeLessThanOrEqual(60);
+    }
+    expect(poseHoldMs(0, false)).toBeLessThan(poseHoldMs(3, false));
+    expect(poseHoldMs(2, true)).toBe(0);
+    expect(poseHoldMs(Number.NaN, false)).toBe(0);
+    expect(poseHoldMs(9, false)).toBe(POSE_HOLD_MS[3]);
+  });
+  it('boosts light shakes more than heavy ones and never shrinks one', () => {
+    for (const b of SHAKE_BOOST) expect(b).toBeGreaterThanOrEqual(1);
+    expect(shakeBoost(0)).toBeGreaterThan(shakeBoost(2));
+    expect(shakeBoost(Number.NaN)).toBe(1);
   });
 });

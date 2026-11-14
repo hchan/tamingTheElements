@@ -5,7 +5,7 @@ import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './mo
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
 import { createStreakLayer } from './hit-streak-view';
-import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, sparkStyleFor } from './hit-feel';
+import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, shakeBoost, sparkStyleFor } from './hit-feel';
 import { createFrostLayer } from './frost-view';
 import { createSignatureLayer } from './signature-view';
 import { createShockLayer } from './shock-view';
@@ -258,7 +258,7 @@ export class EventFx {
     if (!reduced && paired) this.sink.jitter(this.hitTarget, until);
     const s = cause === KO_CAUSE ? KO_SHAKE : paired ? SHAKE_BY_STRENGTH[this.hitStrength] : null;
     const shake = s ? shakeFor(s[0], s[1], reduced) : null;
-    if (shake) this.sink.shake(shake.durationMs, shake.intensity);
+    if (shake) this.sink.shake(shake.durationMs, cause === KO_CAUSE ? shake.intensity : shake.intensity * shakeBoost(this.hitStrength));
     if (!reduced && cause === KO_CAUSE) {
       this.sink.koPunch?.(paired ? this.hitTarget : undefined);
       this.sink.koWash?.();

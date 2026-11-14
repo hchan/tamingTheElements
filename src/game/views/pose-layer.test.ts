@@ -421,6 +421,23 @@ describe('Arcade poses from events', () => {
     expect(peakRotation(classic, 12)).toBe(0);
   });
 
+  it('a landed hit holds the animation clock 40-60 ms while the sim keeps ticking, but not under reduced motion', () => {
+    for (const reduced of [false, true]) {
+      const h = harness({ arcade: true, vx: 0, reduced });
+      for (let i = 0; i < 30; i++) h.step(16);
+      h.consume([ev(SimEventKind.hitConfirmed, 0, { target: 1, attacker: 0, strength: 2 })]);
+      const before = h.layer.state.animMs;
+      h.step(16);
+      h.step(16);
+      const held = h.layer.state.animMs - before;
+      if (reduced) expect(held).toBeGreaterThan(0);
+      else expect(held).toBe(0);
+      for (let i = 0; i < 6; i++) h.step(16);
+      expect(h.layer.state.animMs - before).toBeGreaterThan(0);
+      if (!reduced) expect(h.layer.state.animMs - before).toBeLessThan(8 * 16 - 40);
+    }
+  });
+
   it('poses hold during a hit-stop and play on after it', () => {
     const h = harness({ arcade: true, vx: 0 });
     for (let i = 0; i < 30; i++) h.step(16);
