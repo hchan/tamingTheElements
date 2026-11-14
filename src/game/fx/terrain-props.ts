@@ -24,7 +24,7 @@ export function propKind(w: number, h: number, i: number): PropKind {
   return i % 2 === 0 ? 'crystal' : 'boulder';
 }
 
-const STONE = 0x4a4a46;
+const STONE = 0x6a6252;
 const MOSS = 0x3d4a2c;
 
 function shadow(g: Gfx, x: number, y: number, w: number, h: number): void {
@@ -82,30 +82,43 @@ function boulder(g: Gfx, x: number, y: number, w: number, h: number, seed: numbe
 }
 
 function pillar(g: Gfx, x: number, y: number, w: number, h: number, seed: number): void {
-  const cx = x + w / 2;
-  const ry = Math.max(6, w * 0.2);
-  const topY = y + ry + hash01(0, seed) * 6;
-  const bot = y + h - ry * 0.6;
-  // Fluted shaft: vertical strips, lit on the left, dark on the right.
-  const strips = 7;
-  for (let k = 0; k < strips; k++) {
-    const t = k / strips;
-    const lit = Math.cos((t - 0.28) * Math.PI * 0.95);
-    g.fillStyle(ch(STONE, 0.52 + 0.5 * lit), 1).fillRect(x + w * t, topY, w / strips + 0.5, bot - topY);
+  // A tapering rock spire (not a drum: round ribbed shafts read as bins): faceted planes meeting on a leaning ridge, strata
+  // cut across them, a jagged broken top and a vein of cold crystal shards, so it reads as rock first.
+  const bot = y + h - 4;
+  const topY = y + 2 + hash01(0, seed) * 6;
+  const peakX = x + w * (0.36 + hash01(1, seed) * 0.16);
+  const ridgeX = x + w * (0.4 + hash01(2, seed) * 0.12);
+  const lx = x + w * 0.3;
+  const rx = x + w * 0.74;
+  const ly = topY + h * 0.2;
+  const ry = topY + h * 0.3;
+  const nx = peakX + w * 0.16;
+  const ny = topY + h * 0.14;
+  g.fillStyle(ch(STONE, 0.95), 1).fillPoints(toPts([x, bot, lx, ly, peakX, topY, ridgeX, bot]), true);
+  g.fillStyle(ch(STONE, 0.5), 1).fillPoints(toPts([ridgeX, bot, peakX, topY, nx, ny, rx, ry, x + w, bot]), true);
+  g.fillStyle(ch(STONE, 1.3), 0.7).fillPoints(toPts([lx, ly, peakX, topY, peakX - w * 0.04, topY + h * 0.2, lx + w * 0.04, ly + h * 0.22]), true);
+  // Strata: slanted bands across both planes.
+  for (let yy = topY + h * 0.22; yy < bot - 10; yy += 16 + hash01(yy | 0, seed) * 12) {
+    const t = (yy - topY) / (bot - topY);
+    const xl = peakX - (peakX - x) * t + 3;
+    const xr = peakX + (x + w - peakX) * t - 3;
+    g.lineStyle(1.5, 0x0c0b0a, 0.5).lineBetween(xl, yy + 6, ridgeX, yy - 3).lineBetween(ridgeX, yy - 3, xr, yy + 5);
+    g.lineStyle(1, ch(STONE, 1.5), 0.25).lineBetween(xl, yy + 8, ridgeX, yy - 1);
   }
-  // Drum seams and chips.
-  g.lineStyle(1.5, 0x0c0b0a, 0.7);
-  for (let yy = topY + 22; yy < bot - 8; yy += 24 + hash01(yy | 0, seed) * 10) g.strokeEllipse(cx, yy, w - 1, ry * 0.5);
-  // Base: a foot ellipse; top: the broken crown, a jagged polygon with a pale fractured face.
-  g.fillStyle(ch(STONE, 0.45), 1).fillEllipse(cx, bot, w, ry * 1.2);
-  const crown: number[] = [];
-  const m = 9;
-  for (let k = 0; k <= m; k++) crown.push(x + (w * k) / m, topY - (k % 2 === 0 ? 0 : 5 + hash01(k, seed + 2) * 8) - (k > m / 2 ? hash01(k, seed + 9) * 6 : 0));
-  g.fillStyle(ch(STONE, 1.05), 1).fillPoints(toPts([...crown, x + w, topY + ry * 0.3, x, topY + ry * 0.3]), true);
-  g.fillStyle(ch(STONE, 1.35), 0.8).fillEllipse(cx - w * 0.08, topY + 1, w * 0.62, ry * 0.9);
-  g.lineStyle(3, 0x0a0908, 0.9).strokePoints(toPts([x, bot, x, topY, ...crown, x + w, bot]), false);
-  crack(g, cx + w * 0.1, topY + 6, cx + w * 0.02, bot - 10, seed + 5);
-  moss(g, cx, bot - 4, w * 0.45, seed + 6);
+  g.lineStyle(3, 0x0a0908, 0.9).strokePoints(toPts([x, bot, lx, ly, peakX, topY, nx, ny, rx, ry, x + w, bot]), false);
+  g.lineStyle(2, 0x0a0908, 0.7).lineBetween(peakX, topY, ridgeX, bot);
+  g.lineStyle(1.5, ch(STONE, 1.8), 0.4).lineBetween(peakX - 1, topY + 2, lx + 1, ly + 1);
+  crack(g, ridgeX + w * 0.12, topY + h * 0.3, ridgeX + w * 0.05, bot - 12, seed + 5);
+  // A vein of cold crystal shards growing from the lower flank (the same teal as the crystal clusters).
+  for (let k = 0; k < 4; k++) {
+    const bx = x + w * (0.14 + 0.22 * k) + hash01(k, seed + 20) * 4;
+    const by = bot - h * (0.06 + 0.07 * (k % 2) + 0.03 * k);
+    const sh = h * (0.24 + 0.1 * hash01(k, seed + 21));
+    g.fillStyle(0x45695f, 1).fillTriangle(bx - 5, by, bx, by - sh, bx + 1, by);
+    g.fillStyle(0x1a2e29, 1).fillTriangle(bx + 1, by, bx, by - sh, bx + 6, by);
+    g.lineStyle(1, 0x9fc0b4, 0.5).lineBetween(bx - 3, by - sh * 0.3, bx - 0.5, by - sh + 2);
+  }
+  moss(g, x + w * 0.5, bot - 3, w * 0.4, seed + 6);
   // Rubble at the foot.
   for (let k = 0; k < 4; k++) g.fillStyle(ch(STONE, 0.7 + hash01(k, seed + 8) * 0.4), 1).fillEllipse(x + w * (0.05 + 0.9 * hash01(k, seed + 12)), y + h - 3, 7 + hash01(k, seed + 13) * 7, 4);
 }
