@@ -18,8 +18,8 @@ export const FLASH_FILL_FRAMES = 2;
 export const MAX_HOLD_FRAMES = 6;
 export const FLASH_TINT_FRAMES = 8;
 /** Peak and tail of the flash light, as the alpha of an additive copy of the sprite (so it can only light texels the sprite has). */
-export const FLASH_WASH_ALPHA = 0.5;
-export const FLASH_TAIL_ALPHA = 0.3;
+export const FLASH_WASH_ALPHA = 0.38;
+export const FLASH_TAIL_ALPHA = 0.12;
 /** Hit-stop jitter amplitude in px. */
 export const JITTER_PX = 2;
 /** Phaser.TintModes values (a type-only Phaser import keeps this module loadable in Node tests). */

@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
 import type { ChromaticSplit } from './chromatic-filter-impl';
-import { KO_SPLIT_MS, KO_WASH_MS, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
+import { KO_SPLIT_MS, KO_WASH_MS, POP_POOL, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, popFrame, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
 /** A gold number landing within this many ms and px of a live one merges into it (one number per spot, r19). */
 const SUPER_NUMBER_MERGE_MS = 600;
@@ -25,6 +25,8 @@ export interface ShockLayer {
   ring(x: number, y: number, color: number, weight: number): void;
   /** Super hit: a gold number at (x, y) sized by `fraction` of the victim's life, and (when `flash`) one pale screen pulse. Reduced motion: still number, no pulse. */
   superHit(x: number, y: number, amount: number, fraction: number, flash: boolean, reduced: boolean): void;
+  /** Plain-hit damage pop: `amount` punched in large at (x, y) at `size` px, settling and fading in a quarter second (reduced motion: callers skip it). */
+  pop(x: number, y: number, amount: number, size: number): void;
   seek(ms: number): void;
   state(): ShockState;
 }
@@ -50,6 +52,15 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     live: boolean;
   }
   const nums: Num[] = [];
+  interface Pop {
+    text: Phaser.GameObjects.Text;
+    x: number;
+    y: number;
+    age: number;
+    live: boolean;
+  }
+  const pops: Pop[] = [];
+  let nextPop = 0;
   /** Rings and super numbers that landed while the super cut-in ('tte.cut') was up: shown the moment it clears, so the band never hides the first impact. */
   const held: (() => void)[] = [];
   const cutUp = (): boolean => scene.registry.get('tte.cut') === true;
@@ -73,6 +84,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
   const drop = (): void => {
     rings.length = 0;
     nums.length = 0;
+    pops.length = 0;
     held.length = 0;
     flashRect = undefined;
     flashAge = -1;
@@ -142,6 +154,18 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       }
       numsLive = true;
       n.text.setPosition(n.x, n.y - f.rise).setScale(f.scale).setAlpha(f.alpha);
+    }
+    for (const p of pops) {
+      if (!p.live) continue;
+      p.age += delta;
+      const f = popFrame(p.age);
+      if (!f) {
+        p.live = false;
+        p.text.setVisible(false);
+        continue;
+      }
+      numsLive = true;
+      p.text.setPosition(p.x, p.y - 14 * Math.min(1, p.age / 120)).setScale(f.scale).setAlpha(f.alpha);
     }
     if (washAge < 0 && splitAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive && held.length === 0) detach();
   }
@@ -230,16 +254,38 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       attach();
       step(0);
     },
+    pop(x, y, amount, size): void {
+      let p = pops[nextPop];
+      if (!p && pops.length < POP_POOL) {
+        const text = scene.add
+          .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'bold', color: '#ffffff', stroke: '#0a0806', strokeThickness: 7, resolution: resolutionOf(scene) })
+          .setOrigin(0.5)
+          .setDepth(13);
+        p = { text, x: 0, y: 0, age: 0, live: false };
+        pops.push(p);
+      }
+      p ??= pops[nextPop % Math.max(1, pops.length)];
+      nextPop = (nextPop + 1) % POP_POOL;
+      if (!p) return;
+      p.x = x;
+      p.y = y;
+      p.age = 0;
+      p.live = true;
+      p.text.setText(String(Math.max(1, Math.round(amount)))).setFontSize(size).setVisible(true);
+      attach();
+      step(0);
+    },
     seek(ms): void {
       if (washAge >= 0) washAge = ms;
       if (splitAge >= 0) splitAge = ms;
       if (flashAge >= 0) flashAge = Math.min(ms, SUPER_FLASH_MS - 1);
       for (const n of nums) if (n.live) n.age = ms;
+      for (const p of pops) if (p.live) p.age = ms;
       for (const r of rings) r.age = ms;
       step(0);
     },
     state(): ShockState {
-      return { washAge, split: split?.amount ?? 0, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, held: held.length, superNumberSize: nums.find((n) => n.live)?.size ?? 0, superNumberTexts: nums.filter((n) => n.live).map((n) => n.text.text) };
+      return { washAge, split: split?.amount ?? 0, wash: washAge >= 0 ? koWashStrength(washAge, false) : 0, rings: rings.length, superNumbers: nums.filter((n) => n.live).length, pops: pops.filter((p) => p.live).length, held: held.length, superNumberSize: nums.find((n) => n.live)?.size ?? 0, superNumberTexts: nums.filter((n) => n.live).map((n) => n.text.text) };
     },
   };
   layers.set(scene, layer);
@@ -256,6 +302,8 @@ export interface ShockState {
   readonly rings: number;
   /** Gold super numbers in flight and the font size of the first. */
   readonly superNumbers: number;
+  /** Plain-hit damage pops in flight. */
+  readonly pops: number;
   /** Rings and numbers waiting for the super cut-in to clear. */
   readonly held: number;
   readonly superNumberSize: number;

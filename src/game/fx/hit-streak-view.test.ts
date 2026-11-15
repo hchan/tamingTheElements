@@ -21,6 +21,8 @@ function fakeScene(): { scene: Phaser.Scene; lines: Line[]; update: (ms: number)
       lines.length = 0;
       return gfx;
     },
+    fillStyle: () => gfx,
+    fillCircle: () => gfx,
     lineStyle: (w: number, _c: number, a: number) => {
       style = { w, a };
       return gfx;

@@ -5,7 +5,7 @@ import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './mo
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
 import { createStreakLayer } from './hit-streak-view';
-import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, shakeBoost, sparkStyleFor } from './hit-feel';
+import { RING_KO_WEIGHT, RING_MIN_STRENGTH, SUPER_FLASH_GAP_TICKS, SUPER_GOLD_SPARKS, lifeFraction, popSize, shakeBoost, sparkStyleFor } from './hit-feel';
 import { createFrostLayer } from './frost-view';
 import { createSignatureLayer } from './signature-view';
 import { createShockLayer } from './shock-view';
@@ -96,6 +96,8 @@ export interface FxSink {
   frost?(target: number): void;
   /** Element signature burst on `target` for a fire, earth, air or void hit (flame tongues, rock chunks, air slashes, void implosion); optional, never called under reduced motion. */
   signature?(target: number, element: Element): void;
+  /** Larger damage pop over `target` at font size `size` (optional; never called under reduced motion or for supers). */
+  pop?(target: number, amount: number, size: number): void;
   /** Floating damage number over `target`. */
   number(target: number, amount: number, scaled: boolean, counter: boolean): void;
   /**
@@ -214,6 +216,7 @@ export class EventFx {
       this.sink.spark(target, color);
       return;
     }
+    if (strength < 3 && (e['scalePm'] ?? 1000) >= 1000) this.sink.pop?.(target, e['amount'] ?? 0, popSize(strength));
     const el = this.opts.elementOf?.(e['attacker'] ?? -1);
     if (el) this.sink.impact?.(target, el);
     this.sink.streaks?.(e['attacker'] ?? -1, target, color, strength);
@@ -446,6 +449,10 @@ export function createPhaserFxSink(
     recoil(attacker, target, strength): void {
       const p = centre(target);
       if (p) viewOf(target)?.recoil?.(awayFrom(centre(attacker), p), strength, viewTick());
+    },
+    pop(target, amount, size): void {
+      const p = centre(target);
+      if (p && size > 0) shock.pop(p.x, p.y - p.h / 2 - 34, amount, size);
     },
     number(target, amount, scaled, counter): void {
       const p = centre(target);

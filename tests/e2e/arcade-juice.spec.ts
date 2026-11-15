@@ -9,7 +9,7 @@ const PRIMARY = 16;
 /** Arcade Charge (FUN-DESIGN 2.17): its arrival hit stuns, so the Ice Shock pressed after its hit-stop (it lands 6 ticks on) is the combo's second hit. */
 const CHARGE = 1 << 15;
 /** Hit flash light (QA r26): an additive copy of the sprite at alpha 0.5 for the first frames, then a soft fade of at most 0.3. */
-const WASH_PEAK = 0.5;
+const WASH_PEAK = 0.38;
 /** Arcade round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91; Classic has none. */
 const INTRO = 91;
 
