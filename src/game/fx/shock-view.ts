@@ -134,7 +134,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
           continue;
         }
         gfx.lineStyle(f.width * 3, r.color, f.alpha * 0.3).strokeCircle(r.x, r.y, f.radius);
-        gfx.lineStyle(f.width * 1.4, 0xfff4dc, f.alpha * 0.45).strokeCircle(r.x, r.y, f.radius);
+        gfx.lineStyle(f.width * 1.4, 0xe8dcc4, f.alpha * 0.45).strokeCircle(r.x, r.y, f.radius);
         gfx.lineStyle(Math.max(1, f.width * 0.7), r.color, f.alpha).strokeCircle(r.x, r.y, f.radius);
       }
     }

@@ -124,14 +124,14 @@ export function createSignatureLayer(scene: Phaser.Scene, paused: () => boolean)
 
   function drawAir(g: Phaser.GameObjects.Graphics, b: Burst, t: number, a: number): void {
     const e = easeOut(t);
-    ringAndShards(g, b, t, a, 0xffffff, 0x9adfff);
+    ringAndShards(g, b, t, a, 0xe4f6ff, 0x9adfff);
     for (let i = 0; i < 3; i++) {
       // Three crescent slashes spinning outward at staggered radii.
       const r = (14 + i * 11) * K * (0.5 + e);
       const start = b.spin * 0.6 + i * 2.1 + e * 1.4;
       g.lineStyle((7 - i) * K, 0x0a0806, 0.45 * a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
       g.lineStyle((5 - i) * K, 0x9adfff, 0.5 * a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
-      g.lineStyle(2 * K, 0xffffff, a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
+      g.lineStyle(2 * K, 0xe4f6ff, a).beginPath().arc(b.x, b.y, r, start, start + 1.7, false).strokePath();
     }
   }
 

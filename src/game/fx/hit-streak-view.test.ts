@@ -57,7 +57,7 @@ describe('hit streak layer visibility', () => {
     const { scene, lines, update } = fakeScene();
     createStreakLayer(scene, () => true).spawn(100, 100, 1, 0x66aaff, 1);
     update(16);
-    expect(lines.length).toBe(STREAKS_BY_STRENGTH[1] * 2); // body + core per streak
+    expect(lines.length).toBe(STREAKS_BY_STRENGTH[1] * 3); // rim + body + core per streak
     for (const l of lines) {
       expect(l.len).toBeGreaterThan(8);
       expect(l.w).toBeGreaterThanOrEqual(1.5);
@@ -69,7 +69,7 @@ describe('hit streak layer visibility', () => {
     const { scene, lines, update } = fakeScene();
     createStreakLayer(scene, () => false).spawn(0, 0, -1, 0xff8844, 3);
     update(40);
-    expect(lines.length).toBe(STREAKS_BY_STRENGTH[3] * 2);
+    expect(lines.length).toBe(STREAKS_BY_STRENGTH[3] * 3);
     update(1000);
     expect(lines.length).toBe(0);
   });
