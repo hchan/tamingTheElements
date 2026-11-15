@@ -88,6 +88,8 @@ export interface FxSink {
   streaks?(attacker: number, target: number, color: number, strength: number): void;
   /** Squash-and-recoil of `target` away from `attacker` over the hit-stop and just after, by strength 0..3 (optional; never called under reduced motion). */
   recoil?(attacker: number, target: number, strength: number): void;
+  /** Attacker steps towards `target` as the blow lands, by strength 0..3 (optional; never called under reduced motion). */
+  lunge?(attacker: number, target: number, strength: number): void;
   /** Hit-stop jitter on `target` while the view tick is below `untilTick` (the freeze deadline, W.tick units). */
   jitter(target: number, untilTick: number): void;
   /** Painted element impact strip played once over `target` (optional; skipped under reduced motion by EventFx). */
@@ -114,7 +116,7 @@ const CLASSIC_SPARK = 0xffddaa;
 /** Arcade sparks by hit strength (light, medium, heavy, super); FUN-DESIGN section 3. */
 export const SPARKS_BY_STRENGTH = [6, 10, 16, 24] as const;
 /** Arcade shake by hit strength: a small nudge for light (QA r34), then medium, heavy, super; KO has its own. */
-export const SHAKE_BY_STRENGTH: readonly ([number, number] | null)[] = [[45, 0.0012], [70, 0.0026], [110, 0.0045], [250, 0.008]];
+export const SHAKE_BY_STRENGTH: readonly ([number, number] | null)[] = [[55, 0.0016], [70, 0.0026], [110, 0.0045], [250, 0.008]];
 export const KO_SHAKE: readonly [number, number] = [300, 0.01];
 /** `hitStop.cause` of the super freeze and of the KO stop (src/core/data/arcade.ts HitStopCause). */
 const SUPER_CAUSE = 2;
@@ -209,7 +211,9 @@ export class EventFx {
     this.hitColor = color;
     this.sink.flash(target, color, this.opts.reducedMotion() ? 0 : holdFramesFor(strength));
     // A super hit shows the big gold number only (the small white one would print over its middle, qa-r18).
-    if (!(strength === 3 && this.sink.superHit)) this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
+    // A plain hit with a damage pop shows that one number (it lingers), so the HUD number would only double it (QA r39).
+    const popped = !this.opts.reducedMotion() && strength < 3 && (e['scalePm'] ?? 1000) >= 1000 && this.sink.pop !== undefined;
+    if (!(strength === 3 && this.sink.superHit) && !popped) this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
     const reduced = this.opts.reducedMotion();
     if (strength === 3) this.superHit(e, target, reduced);
     if (reduced) {
@@ -221,6 +225,7 @@ export class EventFx {
     if (el) this.sink.impact?.(target, el);
     this.sink.streaks?.(e['attacker'] ?? -1, target, color, strength);
     this.sink.recoil?.(e['attacker'] ?? -1, target, strength);
+    this.sink.lunge?.(e['attacker'] ?? -1, target, strength);
     if (strength >= RING_MIN_STRENGTH) this.sink.ring?.(target, color, strength);
     const n = SPARKS_BY_STRENGTH[strength] ?? HIT_PARTICLES;
     this.sink.burst(target, this.fill(n), n, color, el);
@@ -293,6 +298,8 @@ export interface FxTarget {
   jitter(untilTick: number): void;
   /** Squash-and-recoil from a hit that arrived at view tick `tick`, pushed towards `dirX` (-1 or 1). */
   recoil?(dirX: number, strength: number, tick: number): void;
+  /** Forward lunge from a blow that landed at view tick `tick`, towards `dirX` (-1 or 1). */
+  lunge?(dirX: number, strength: number, tick: number): void;
 }
 
 /** A character's box centre and height in logical px. */
@@ -449,6 +456,11 @@ export function createPhaserFxSink(
     recoil(attacker, target, strength): void {
       const p = centre(target);
       if (p) viewOf(target)?.recoil?.(awayFrom(centre(attacker), p), strength, viewTick());
+    },
+    lunge(attacker, target, strength): void {
+      const p = centre(target);
+      const a = centre(attacker);
+      if (p && a) viewOf(attacker)?.lunge?.(awayFrom(a, p), strength, viewTick());
     },
     pop(target, amount, size): void {
       const p = centre(target);

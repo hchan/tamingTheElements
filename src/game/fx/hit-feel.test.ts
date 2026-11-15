@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize, STREAKS_BY_STRENGTH, STREAK_MS, streakFrame, RECOIL_TICKS, NO_RECOIL, CORE_MS, coreFrame, POP_MS, popFrame, popSize, recoilPose, POSE_HOLD_MS, SHAKE_BOOST, poseHoldMs, shakeBoost } from './hit-feel';
+import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize, STREAKS_BY_STRENGTH, STREAK_MS, streakFrame, RECOIL_TICKS, NO_RECOIL, CORE_MS, coreFrame, POP_MS, popFrame, popSize, recoilPose, POSE_HOLD_MS, SHAKE_BOOST, poseHoldMs, shakeBoost, LUNGE_TICKS, lungeOffset, popMerges, tintTowardsWhite } from './hit-feel';
 
 describe('sparkStyleFor', () => {
   it('has a distinct style per element and a default', () => {
@@ -171,5 +171,21 @@ describe('hit weight (QA r38)', () => {
     expect(popSize(0)).toBeGreaterThanOrEqual(38);
     expect(popSize(3)).toBe(0);
     expect(popSize(Number.NaN)).toBe(0);
+  });
+  it('the attacker lunge steps towards the foe, eases back, flips with direction and is off when reduced', () => {
+    expect(lungeOffset(0, 0, 1, false)).toBeGreaterThanOrEqual(4);
+    expect(lungeOffset(0, 0, -1, false)).toBeLessThanOrEqual(-4);
+    expect(lungeOffset(LUNGE_TICKS - 1, 1, 1, false)).toBeLessThan(lungeOffset(0, 1, 1, false));
+    expect(lungeOffset(LUNGE_TICKS, 1, 1, false)).toBe(0);
+    expect(lungeOffset(0, 3, 1, false)).toBeGreaterThan(lungeOffset(0, 0, 1, false));
+    expect(lungeOffset(0, 2, 1, true)).toBe(0);
+  });
+  it('pops merge only when close in time and space; the core tint keeps hue towards white', () => {
+    expect(popMerges(100, 20, 10)).toBe(true);
+    expect(popMerges(600, 20, 10)).toBe(false);
+    expect(popMerges(100, 300, 0)).toBe(false);
+    expect(tintTowardsWhite(0xff0000, 0)).toBe(0xff0000);
+    expect(tintTowardsWhite(0xff0000, 1)).toBe(0xffffff);
+    expect(tintTowardsWhite(0xff0000, 0.5)).toBe(0xff8080);
   });
 });

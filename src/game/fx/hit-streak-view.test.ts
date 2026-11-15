@@ -23,6 +23,7 @@ function fakeScene(): { scene: Phaser.Scene; lines: Line[]; update: (ms: number)
     },
     fillStyle: () => gfx,
     fillCircle: () => gfx,
+    strokeCircle: () => gfx,
     lineStyle: (w: number, _c: number, a: number) => {
       style = { w, a };
       return gfx;

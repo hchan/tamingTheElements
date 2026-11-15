@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { STREAKS_BY_STRENGTH, coreFrame, STREAK_FAN, STREAK_POOL, streakFrame } from './hit-feel';
+import { STREAKS_BY_STRENGTH, coreFrame, STREAK_FAN, STREAK_POOL, streakFrame, tintTowardsWhite } from './hit-feel';
 
 /**
  * Directional hit streaks (QA r34): a fan of tapered light lines flung along the blow, drawn into one additive Graphics
@@ -27,7 +27,7 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
     age: number;
   }
   const streaks: Streak[] = [];
-  const cores: { x: number; y: number; strength: number; age: number }[] = [];
+  const cores: { x: number; y: number; strength: number; age: number; color: number }[] = [];
   let gfx: Phaser.GameObjects.Graphics | undefined;
   let attached = false;
   const detach = (): void => {
@@ -72,8 +72,10 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
         cores.splice(i, 1);
         continue;
       }
-      gfx.fillStyle(0xfff4d8, f.alpha * 0.35).fillCircle(c.x, c.y, f.radius * 1.5);
-      gfx.fillStyle(0xffffff, f.alpha * 0.9).fillCircle(c.x, c.y, f.radius * 0.7);
+      // Element-coloured halo and ring, a pale element-tinted heart (not a flat white disc): the foe's face stays readable.
+      gfx.fillStyle(c.color, f.alpha * 0.4).fillCircle(c.x, c.y, f.radius * 1.5);
+      gfx.lineStyle(3, tintTowardsWhite(c.color, 0.55), f.alpha).strokeCircle(c.x, c.y, f.radius);
+      gfx.fillStyle(tintTowardsWhite(c.color, 0.6), f.alpha * 0.75).fillCircle(c.x, c.y, f.radius * 0.5);
     }
     if (streaks.length === 0 && cores.length === 0) detach();
   }
@@ -83,7 +85,7 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
       const n = STREAKS_BY_STRENGTH[s] ?? 3;
       const sign = dirX < 0 ? -1 : 1;
       gfx ??= scene.add.graphics().setDepth(12).setBlendMode(ADD);
-      cores.push({ x, y, strength: s, age: paused() ? 30 : 0 });
+      cores.push({ x, y, strength: s, color, age: paused() ? 30 : 0 });
       for (let i = 0; i < n && streaks.length < STREAK_POOL; i++) {
         const a = (dirX < 0 ? Math.PI : 0) + (STREAK_FAN[i] ?? 0) * sign - 0.12 * sign;
         streaks.push({ x, y, cos: Math.cos(a), sin: Math.sin(a), color, strength: s, unit: ((i * 5) % 7) / 6, age: paused() ? HELD_START_MS : 0 });

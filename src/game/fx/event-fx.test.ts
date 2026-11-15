@@ -71,6 +71,24 @@ describe('EventFx plain-hit weight (QA r34)', () => {
       expect(calls.length).toBe(reduced ? 0 : 1);
     }
   });
+  it('a popped plain hit shows one floating number: no HUD number beside it; scaled hits, supers and reduced motion keep theirs (QA r39)', () => {
+    for (const reduced of [false, true]) {
+      const { sink, log } = recorder();
+      sink.pop = () => undefined;
+      arcadeFx(sink, reduced).consume([confirmed(1, 0), confirmed(2, 1, { scalePm: 500 })]);
+      const numbers = log.filter((l) => l.startsWith('number'));
+      expect(numbers.length).toBe(reduced ? 2 : 1);
+    }
+  });
+  it('lunges the attacker on plain hits, not under reduced motion', () => {
+    for (const reduced of [false, true]) {
+      const { sink } = recorder();
+      const calls: string[] = [];
+      sink.lunge = (a, t, s) => calls.push(`lunge${String(a)}>${String(t)}:${String(s)}`);
+      arcadeFx(sink, reduced).consume([confirmed(1, 0)]);
+      expect(calls).toEqual(reduced ? [] : ['lunge1>3:0']);
+    }
+  });
   it('light hits get a camera nudge, weaker than a medium one', () => {
     const [ld = 0, li = 0] = SHAKE_BY_STRENGTH[0] ?? [];
     const [, mi = 0] = SHAKE_BY_STRENGTH[1] ?? [];
