@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
 import type { ChromaticSplit } from './chromatic-filter-impl';
-import { KO_SPLIT_MS, KO_WASH_MS, POP_POOL, RING_POOL, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, popFrame, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
+import { KO_SPLIT_MS, KO_WASH_MS, POP_MS, POP_POOL, RING_POOL, popMerges, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, popFrame, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
 /** A gold number landing within this many ms and px of a live one merges into it (one number per spot, r19). */
 const SUPER_NUMBER_MERGE_MS = 600;
@@ -56,6 +56,8 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     text: Phaser.GameObjects.Text;
     x: number;
     y: number;
+    amount: number;
+    size: number;
     age: number;
     live: boolean;
   }
@@ -165,7 +167,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
         continue;
       }
       numsLive = true;
-      p.text.setPosition(p.x, p.y - 14 * Math.min(1, p.age / 120)).setScale(f.scale).setAlpha(f.alpha);
+      p.text.setPosition(p.x, p.y - 14 * Math.min(1, p.age / 120) - 26 * (p.age / POP_MS)).setScale(f.scale).setAlpha(f.alpha);
     }
     if (washAge < 0 && splitAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive && held.length === 0) detach();
   }
@@ -255,13 +257,23 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       step(0);
     },
     pop(x, y, amount, size): void {
+      // A second hit on the same spot a beat later grows the one number instead of printing over it (QA r39).
+      const young = pops.find((m) => m.live && popMerges(m.age, m.x - x, m.y - y));
+      if (young) {
+        young.amount += amount;
+        young.size = Math.min(76, Math.max(young.size, size) + 4);
+        young.age = Math.min(young.age, 40);
+        young.text.setText(String(Math.max(1, Math.round(young.amount)))).setFontSize(young.size);
+        step(0);
+        return;
+      }
       let p = pops[nextPop];
       if (!p && pops.length < POP_POOL) {
         const text = scene.add
           .text(0, 0, '', { fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'bold', color: '#ffffff', stroke: '#0a0806', strokeThickness: 7, resolution: resolutionOf(scene) })
           .setOrigin(0.5)
           .setDepth(13);
-        p = { text, x: 0, y: 0, age: 0, live: false };
+        p = { text, x: 0, y: 0, amount: 0, size: 0, age: 0, live: false };
         pops.push(p);
       }
       p ??= pops[nextPop % Math.max(1, pops.length)];
@@ -269,6 +281,8 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       if (!p) return;
       p.x = x;
       p.y = y;
+      p.amount = amount;
+      p.size = size;
       p.age = 0;
       p.live = true;
       p.text.setText(String(Math.max(1, Math.round(amount)))).setFontSize(size).setVisible(true);

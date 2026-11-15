@@ -20,3 +20,7 @@ Still weak, ordered by value:
 4. The white core is a flat disc with no texture; at lava stage with a bright core it hides the foe's face for ~8 ticks. Smaller core, brighter ring, more shards.
 5. Attacker does not move: no lunge or recoil, only the foe moves (same as r38 note). Even a 4 px forward nudge plus 1-frame stretch on the attacker would add weight.
 6. No screen shake on a plain hit (reserved for supers is fine, but a 1-2 px 3-frame nudge is what MvC light hits have).
+
+## Progress (2026-11-14, hit-impact agent)
+
+Done (presentation only, no src/core): (2) duplicate number removed, a popped plain hit shows only the lingering pop (640 ms, rising), the HUD number stays for scaled hits, supers and reduced motion; (3) pops landing within 420 ms / 110 px merge into one growing total; (4) core is smaller (20-44 px) and element-tinted (halo, pale ring, pale heart) instead of a flat white disc; (5) attacker lunge 4-9 px forward over 8 ticks (`lungeOffset`, `CharacterView.lunge`); (6) light-hit camera nudge 55 ms at 0.0016 (about 2 px with the boost). Lunge and shake are off under reduced motion. Frames: ~/claudetmp/hit-impact/fiara-hit-t*.png. Still open: (1) foe life-bar ghost segment (HUD files, other agent).

@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, type Element, type RenderCharacter } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
-import { RECOIL_TICKS, recoilPose } from '../fx/hit-feel';
+import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-feel';
 import { arcadeHeroScale } from './hero-scale';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
@@ -193,6 +193,10 @@ export class CharacterView {
   private recoilAt = -1;
   private recoilStrength = 0;
   private recoilDir = 1;
+  /** Attacker lunge (QA r39): view tick of the landed blow (-1 none), strength and direction. */
+  private lungeAt = -1;
+  private lungeStrength = 0;
+  private lungeDir = 1;
   private lastTick = 0;
   private lastAlpha = 0;
   /** True once this frame's recoil has been applied after the pose layer (it must not compound while paused). */
@@ -216,6 +220,13 @@ export class CharacterView {
   /** Hit-stop jitter while the view tick is below `untilTick`. */
   jitter(untilTick: number): void {
     this.jitterUntil = untilTick;
+  }
+
+  /** Step towards a foe (`dirX` -1 or 1) for a blow that landed at view tick `tick`; drawn after the pose layer, see `applyRecoil`. */
+  lunge(dirX: number, strength: number, tick: number): void {
+    this.lungeAt = tick;
+    this.lungeStrength = strength;
+    this.lungeDir = dirX;
   }
 
   /** Squash and shove away from a hit (`dirX` -1 or 1) that landed at view tick `tick`; drawn after the pose layer, see `applyRecoil`. */
@@ -309,6 +320,15 @@ export class CharacterView {
   /** Squashes and shoves the drawn sprite about its feet for a few ticks after a hit (the pose layer has already placed it). */
   private applyRecoil(): void {
     const i = this.image;
+    if (this.lungeAt >= 0 && !this.recoilDone && i.visible) {
+      const la = this.lastTick - this.lungeAt + this.lastAlpha;
+      if (la >= LUNGE_TICKS) this.lungeAt = -1;
+      else if (this.recoilAt < 0) {
+        this.recoilDone = true;
+        i.x += lungeOffset(la, this.lungeStrength, this.lungeDir, false);
+        return;
+      } else i.x += lungeOffset(la, this.lungeStrength, this.lungeDir, false);
+    }
     if (this.recoilAt < 0 || this.recoilDone || !i.visible) return;
     const age = this.lastTick - this.recoilAt + this.lastAlpha;
     if (age >= RECOIL_TICKS) {
@@ -418,6 +438,7 @@ export class CharacterView {
     this.holdLeft = 0;
     this.jitterUntil = 0;
     this.recoilAt = -1;
+    this.lungeAt = -1;
     this.washAlpha = 0;
     this.wash?.setVisible(false);
   }

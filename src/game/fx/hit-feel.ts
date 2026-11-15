@@ -229,9 +229,9 @@ export function shakeBoost(strength: number): number {
   return SHAKE_BOOST[Math.min(3, Math.max(0, Math.floor(strength)))] ?? 1;
 }
 
-/** Contact core (QA r38): a white-hot additive flash at the impact point for the first frames of a hit, by strength. */
+/** Contact core (QA r38, r39: smaller and element-tinted, so it no longer hides the foe's face): an additive flash at the impact point for the first frames of a hit, by strength. */
 export const CORE_MS = 130;
-export const CORE_RADIUS = [26, 34, 44, 58] as const;
+export const CORE_RADIUS = [20, 26, 34, 44] as const;
 
 export interface CoreFrame {
   /** Radius in logical px. */
@@ -247,8 +247,33 @@ export function coreFrame(ageMs: number, strength: number): CoreFrame | null {
   return { radius: (CORE_RADIUS[s] ?? 26) * (1 - 0.45 * t), alpha: (1 - t) ** 1.3 };
 }
 
+/** Mixes `color` towards white by `k` 0..1 (the core's pale tint of the element colour). */
+export function tintTowardsWhite(color: number, k: number): number {
+  const m = (c: number): number => Math.round(c + (255 - c) * Math.min(1, Math.max(0, k)));
+  return (m((color >> 16) & 255) << 16) | (m((color >> 8) & 255) << 8) | m(color & 255);
+}
+
+/**
+ * Attacker lunge (QA r39): the attacker steps a few px towards the foe as the blow lands and eases back, by strength. Presentation
+ * only, drawn after the pose layer like the recoil; reduced motion: none.
+ */
+export const LUNGE_TICKS = 8;
+const LUNGE_PX = [4, 5, 7, 9] as const;
+
+/** Forward offset in px (towards `dirX` -1 or 1) of the attacker `ageTicks` after its hit landed: out fast, then back. */
+export function lungeOffset(ageTicks: number, strength: number, dirX: number, reduced: boolean): number {
+  if (reduced || !Number.isFinite(ageTicks) || ageTicks < 0 || ageTicks >= LUNGE_TICKS) return 0;
+  const s = Math.min(3, Math.max(0, Math.floor(Number.isFinite(strength) ? strength : 0)));
+  const t = ageTicks / LUNGE_TICKS;
+  const env = t < 0.25 ? 1 : (1 - (t - 0.25) / 0.75) ** 2;
+  return (dirX < 0 ? -1 : 1) * (LUNGE_PX[s] ?? 0) * env;
+}
+
 /** Damage pop (QA r38): a larger copy of the plain hit number that punches in on contact, then gives way to the HUD number. */
-export const POP_MS = 260;
+export const POP_MS = 640;
+/** A pop landing within this many ms and px of a live one merges into it (one growing total, not a stack of overlapping numbers). */
+export const POP_MERGE_MS = 420;
+export const POP_MERGE_PX = 110;
 export const POP_POOL = 6;
 export const POP_SIZE = [38, 44, 52, 0] as const;
 
@@ -258,12 +283,17 @@ export interface PopFrame {
   readonly alpha: number;
 }
 
-/** The pop `ageMs` in (null once done): a fast shrink from 1.6x to 1x, held, then a fade. */
+/** The pop `ageMs` in (null once done): a fast shrink from 1.6x to 1x, held as the hit's one floating number, then a fade. */
 export function popFrame(ageMs: number): PopFrame | null {
   if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= POP_MS) return null;
   const k = Math.min(1, ageMs / 90);
   const scale = 1.6 - 0.6 * (1 - (1 - k) ** 3);
-  return { scale, alpha: ageMs < 110 ? 1 : 1 - (ageMs - 110) / (POP_MS - 110) };
+  return { scale, alpha: ageMs < 400 ? 1 : 1 - (ageMs - 400) / (POP_MS - 400) };
+}
+
+/** True when a new pop at (`dx`, `dy`) from a live pop of age `ageMs` should merge into it. */
+export function popMerges(ageMs: number, dx: number, dy: number): boolean {
+  return ageMs >= 0 && ageMs < POP_MERGE_MS && Math.abs(dx) < POP_MERGE_PX && Math.abs(dy) < POP_MERGE_PX;
 }
 
 /** Font size of the pop for a hit `strength` 0..2 (0: none, supers have their own gold number). */
