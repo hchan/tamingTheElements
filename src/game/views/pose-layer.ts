@@ -14,6 +14,8 @@ declare global {
 }
 import { SheetBook } from './pose-sheets';
 import { fitToBox, frameBox } from './hero-scale';
+import { idleLookOf } from '../platform/idle-look';
+import { applyIdleMotif } from './idle-motif';
 import { applyBackGait, applyLocomotion, backGaitOf, backingAway, facesToward, locomotionOf, walkFrameBack, walkTimeBack } from './locomotion';
 import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
@@ -78,6 +80,11 @@ export interface SheetDrawn {
   bodyHeight: number;
   /** Eased backward-walk amount, 0..1 (backing away from the foe). */
   back: number;
+  /** Idle body motif of the hero's look and the pose it added last frame (rot degrees, oy px, alpha multiplier). */
+  motif: string;
+  motifRot: number;
+  motifOy: number;
+  motifAlpha: number;
 }
 
 interface Ghost {
@@ -169,6 +176,10 @@ export class PoseLayer {
   private readonly snapKey: string[] = new Array<string>(SLOTS).fill('');
   private readonly snapFrame: string[] = new Array<string>(SLOTS).fill('');
   private readonly ghosts: Ghost[] = [];
+  /** Idle-motif contribution last frame, per slot (test probe). */
+  private readonly mRot = new Float32Array(SLOTS);
+  private readonly mOy = new Float32Array(SLOTS);
+  private readonly mAlpha = new Float32Array(SLOTS).fill(1);
   private readonly eachChar = (c: RenderCharacter): void => { this.character(c); };
   private readonly eachX = (c: RenderCharacter): void => { this.simX[c.id & (SLOTS - 1)] = c.x; };
   private readonly eachProj = (p: RenderProjectile): void => { this.projectile(p); };
@@ -195,6 +206,10 @@ export class PoseLayer {
         const bodyHeight = box ? (img.displayHeight * box.h) / img.frame.height : img.displayHeight;
         characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX), bodyHeight,
           back: Math.round((this.back[c.id & (SLOTS - 1)] ?? 0) * 100) / 100,
+          motif: idleLookOf(c.sprite, c.element).motif,
+          motifRot: Math.round((this.mRot[c.id & (SLOTS - 1)] ?? 0) * 1000) / 1000,
+          motifOy: Math.round((this.mOy[c.id & (SLOTS - 1)] ?? 0) * 1000) / 1000,
+          motifAlpha: Math.round((this.mAlpha[c.id & (SLOTS - 1)] ?? 1) * 1000) / 1000,
         });
       }
     });
@@ -381,6 +396,16 @@ export class PoseLayer {
     // Wings flap and knees bend while moving (per-hero flags, views/locomotion.ts); nothing under reduced motion.
     // While backing away the forward cues fade out and the hero's back gait fades in (no double flap or knee dip).
     applyLocomotion(p, locomotionOf(c.sprite), m * (1 - b), this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
+    // Idle body motif (idle-element-auras): a small per-hero move while standing, sheet heroes included; boxed rigs keep rot/oy/alpha.
+    const boxedRig = sheet !== undefined && sheet.box.w !== sheet.rect.w;
+    const look = idleLookOf(c.sprite, c.element);
+    const r0 = p.rot;
+    const o0 = p.oy;
+    const a0 = p.alpha;
+    applyIdleMotif(p, look.motif, this.animMs + i * 211, (1 - m) * (1 - b), this.reduced, boxedRig, look.amount);
+    this.mRot[i] = p.rot - r0;
+    this.mOy[i] = p.oy - o0;
+    this.mAlpha[i] = a0 === 0 ? 1 : p.alpha / a0;
     applyBackGait(p, gait, m * b, this.backSide[i] ?? 1, this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
     if (!this.reduced) {
       const e = this.edge[i] ?? 0;
