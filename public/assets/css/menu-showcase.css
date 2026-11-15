@@ -1,0 +1,115 @@
+/* Main-menu hero showcase (WP M1). The layer is decorative: no pointer, no focus. Slots are sized by --sc-k (dragon 1.25 ... Wispera 0.4). */
+#menuShowcase {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  user-select: none;
+}
+/* The menu page sits above the layer. */
+body:has(#menuShowcase) #menu .menuPage {
+  position: relative;
+  z-index: 1;
+}
+
+.scSlot {
+  position: absolute;
+  /* Ground line about 92vh; a hero is --sc-k times a 64vh "large" hero tall, square image box. */
+  --sc-h: calc(64vh * var(--sc-k));
+  height: var(--sc-h);
+  width: calc(var(--sc-h) * var(--sc-aspect));
+  /* The feet (--sc-feet down the image) sit on the ground line. */
+  bottom: calc(8vh - (1 - var(--sc-feet)) * var(--sc-h));
+}
+.scFlip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.scFlip img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+}
+.scShadow {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: calc((1 - var(--sc-feet)) * 100% - 3%);
+  height: 8%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5), transparent 70%);
+}
+/* Flanks hug the centre column but never pass under it; anything wider bleeds off the screen edge. */
+.scSlot-left {
+  right: calc(50% + 13em);
+}
+.scSlot-right {
+  left: calc(50% + 13em);
+}
+/* Floaters (Wispera) hang in the upper sky, raised off the ground. */
+.scSlot-sky {
+  --sc-h: calc(70vh * var(--sc-k));
+  top: 14vh;
+  bottom: auto;
+  right: 8vw;
+}
+.sc-float .scShadow {
+  display: none;
+}
+.scSlot-sky .scShadow {
+  display: none;
+}
+
+/* Phone landscape: two heroes in the upper half, above the button row. */
+@media (max-height: 500px) {
+  .scSlot {
+    --sc-h: calc(45vh * var(--sc-k));
+    bottom: auto;
+    top: 2vh;
+  }
+  .scSlot-left {
+    right: auto;
+    left: 1vw;
+  }
+  .scSlot-right {
+    left: auto;
+    right: 1vw;
+  }
+}
+/* Phone portrait: one hero in the bottom band, beside the version stamp's backplate. */
+@media (max-width: 600px) and (orientation: portrait) {
+  .scSlot {
+    --sc-h: min(22vh, 200px);
+    top: auto;
+    bottom: 1vh;
+    left: auto;
+    right: 4vw;
+  }
+  .scSlot-sky {
+    display: none;
+  }
+  body:has(#menuShowcase) #versionStamp {
+    background: rgba(18, 14, 46, 0.78);
+    border-radius: 6px;
+    padding: 0.15em 0.6em;
+    width: fit-content;
+    margin-inline: auto;
+    opacity: 1;
+  }
+}
+
+/* Entrance: brightness and focus only (never movement or opacity), and not at all for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion='true']) .scFlip img {
+    animation: scReveal 0.6s ease-out backwards;
+  }
+  @keyframes scReveal {
+    from { filter: brightness(0) blur(6px); }
+    to { filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45)); }
+  }
+}

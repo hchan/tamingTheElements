@@ -72,6 +72,8 @@ function browserDeps(): MainMenuDeps {
 export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
   return () => {
     let node: HTMLElement | null = null;
+    let removeShowcase: (() => void) | null = null;
+    let alive = false;
     return {
       mount(container) {
         const d = deps ?? browserDeps();
@@ -104,8 +106,18 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
         page.append(footer);
         container.append(page);
         node = page;
+        // Decorative hero layer, its own lazy chunk (aria-hidden, no pointer, no focus; WP M1).
+        alive = true;
+        void import('./menu-showcase')
+          .then((m) => {
+            if (alive) removeShowcase = m.mountShowcase(container);
+          })
+          .catch(() => undefined);
       },
       unmount() {
+        alive = false;
+        removeShowcase?.();
+        removeShowcase = null;
         node?.remove();
         node = null;
       },
