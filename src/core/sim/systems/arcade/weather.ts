@@ -12,6 +12,7 @@ import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
 import { pending, Press, usePress } from './buffer';
 import { isSilenced } from './cc-state';
+import { douseAllBurn } from './over-time';
 import { gainMeter, weatherCharge } from './meter';
 import { canAct } from './stun';
 import { elementKind } from './terrain';
@@ -68,6 +69,7 @@ export function weatherTick(world: SimWorld, sink: EventSink): void {
     usePress(s, team, Press.weather);
     castTerrain(s, sink, kind, g);
     if (kind === Weather.sun) freeAllRoots(s, sink, id); // the Sun burns every Snag rope (FUN-DESIGN 2.20)
+    if (kind === Weather.rain) douseAllBurn(s, sink);
     sink.emit(id, SimEventKind.weatherChanged, { weather: kind, prev, team });
     gainMeter(s, sink, id, team, METER_WEATHER);
   }

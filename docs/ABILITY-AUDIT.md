@@ -25,7 +25,7 @@ Units: damage is base (Classic) damage; DPS = damage / cooldown (a ceiling, not 
 | Nykra (water, melee) | Hoof Crash | melee | roster-24 batch 1: heavy stomp with knockback | New hero, see Ember Bite | Art pending |
 | Nykra | Kelp Lash | melee | roster-24 batch 1: long-reach whip | New hero, see Ember Bite | Art pending |
 | Quarrak (earth, ranged) | Boulder Roll | range | roster-24 batch 1: slow heavy boulder, knockback | New hero, see Ember Bite | Art pending |
-| Hyalia (air, ranged) | Stinging Filament | range | roster-24 batch 1: thin fast filament, short stun | New hero, see Ember Bite | Art pending |
+| Hyalia (air, ranged) | Stinging Filament | range | roster-24 batch 1: thin fast filament, short stun; with flag withOverTime also leaves Venom (venom 19, halves healing) | New hero, see Ember Bite | Art pending |
 | Hyalia | Bell Pulse | range | roster-24 batch 1: slow pulse ring with knockback | New hero, see Ember Bite | Art pending |
 | Brazgor (fire, melee) | Forge Gore | melee | roster-24 batch 2: 25 dmg, 1.5 s cd, slow heavy gore | New hero, fitted in SIM_VERSION 73 | Generated art, see fx batch k |
 | Brazgor | Molten Hide | buff | 3 s, -50% damage taken, thorns 4 per melee hit that lands on the bearer (WP 2.0 thorns) | New hero, see Forge Gore | Generated art |
@@ -44,7 +44,7 @@ Units: damage is base (Classic) damage; DPS = damage / cooldown (a ceiling, not 
 | Umbrel (earth, ranged) | Spore Burst | range | 6 dmg, 1.4 s cd, speed 5, leaves a wound: 4 dmg every 30 ticks for 90 ticks | New hero, see Wyrm Coil | Generated art |
 | Umbrel | Mycelium Mend | heal | heals 8, 30 s cd (flag withOverTime: half now, then Mend, mending 20, breakable) | New hero, see Wyrm Coil | Generated art |
 | Ishimi (water, 100, 7) | Circus of Slime | omni | 16 dmg x up to 4, 10 s cd, speed 5, 40x20; 6.4 DPS | 1.4% Classic, 4.0% Arcade. Slowest projectile in the game | OK: slow large slime blobs, clear |
-| Ishimi | Slime Blast | range | 10 dmg, 1.5 s cd, max 3, speed 8, 40x20; 6.7 DPS | Lowest sustained damage of any hero (BALANCE.md). Ishimi is 0% Classic (0 of 22), 57% Arcade after a 6400/1550 re-fit | OK: clear, water-coloured |
+| Ishimi | Slime Blast | range | 10 dmg, 1.5 s cd, max 3, speed 8, 40x20; 6.7 DPS, with flag withOverTime leaves Venom (venom 19: 2 HP every 1 s for 5 s, halves all healing, never kills) | Lowest sustained damage of any hero (BALANCE.md). Ishimi is 0% Classic (0 of 22), 57% Arcade after a 6400/1550 re-fit | OK: clear, water-coloured |
 | Lavax (fire, 100, 6) | Crimson Fire | range | 13 dmg, 0.4 s cd (Arcade 18 ticks), max 2, speed 10, 80x40; 32.5 DPS, with flag withOverTime leaves Burn (burning 18) | Widest projectile (80x40), 7.8% Classic damage. 45% Classic, 47% Arcade; most stalemates in Arcade (7 of 13) | Fixed: drawn at least 96 px long with a full-strength pale-gold halo; spawn ease-in and end ghost no longer hide it (crops at ticks 1 to 30) |
 | Lavax | Fire Dance | buff | speed +2 for 5 s, 16 s cd | Pure mobility; not measurable by damage | Fixed: orange flame tongues around the feet while the buff runs |
 | Morblass (water, 100, 7) | Ice Blast | debuff proj | 15 dmg, speed 8, 60x60, 6 s cd; slow -2 for 3 s; 2.5 DPS | 1.8% Classic, 0.6% Arcade damage: the weakest damage source of any playable ability; the slow is the only value | OK: reads, element-coloured |

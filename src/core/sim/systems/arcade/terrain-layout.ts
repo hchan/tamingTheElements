@@ -13,6 +13,7 @@ import {
 } from '../../state';
 import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
+import { douseBurn, healFactorPm } from './over-time';
 import { onPatch, stageOf } from './terrain';
 
 /**
@@ -155,9 +156,13 @@ export function terrainTick(world: SimWorld, sink: EventSink): void {
     if (on !== (a[flag] ?? 0)) sink.emit(id, on === 1 ? SimEventKind.patchEntered : SimEventKind.patchLeft, { team, stage: stageOf(s) });
     a[flag] = on;
     const max = s.maxHp[id] ?? 0;
-    if (on === 0 || stageOf(s) !== 2 || !inFight(s) || g % TERRAIN_WATER_EVERY !== 0 || (s.hp[id] ?? 0) >= max || (s.hp[id] ?? 0) <= 0) continue;
+    if (on === 0 || stageOf(s) !== 2 || !inFight(s) || g % TERRAIN_WATER_EVERY !== 0) continue;
+    if ((s.hp[id] ?? 0) > 0) douseBurn(s, sink, id);
+    if ((s.hp[id] ?? 0) >= max || (s.hp[id] ?? 0) <= 0) continue;
     const before = s.hp[id] ?? 0;
-    s.hp[id] = Math.min(max, before + (max * TERRAIN_WATER_HEAL_PM) / 1000);
+    const pm = healFactorPm(s, id);
+    const heal = (max * TERRAIN_WATER_HEAL_PM) / 1000;
+    s.hp[id] = Math.min(max, before + (pm === 1000 ? heal : Math.trunc((heal * pm) / 1000)));
     sink.emit(id, SimEventKind.patchHeal, { amount: (s.hp[id] ?? 0) - before });
   }
 }
