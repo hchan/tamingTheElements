@@ -5,6 +5,7 @@ import {
   CHARGE_TICKS, ChargeEnd, METER_CHARGE,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
+import { heroStyleOf } from '../../../data/hero-style';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { now } from '../../clock';
@@ -59,6 +60,17 @@ describe('charge numbers (FUN-DESIGN 2.17)', () => {
     const idx = (id: string): number => CHARACTERS.findIndex((c) => c.id === id);
     expect([RANGED[idx('pax')], RANGED[idx('sindarosa')]]).toEqual([0, 1]);
   });
+
+  it('RANGED follows HERO_STYLE for every hero (roster WP 0.4: fiara, morblass and rokcore ranged, wispera melee)', () => {
+    CHARACTERS.forEach((c, i) => {
+      const style = heroStyleOf(c.id);
+      if (style !== undefined) expect(RANGED[i], c.id).toBe(style === 'ranged' ? 1 : 0);
+    });
+    const idx = (id: string): number => CHARACTERS.findIndex((c) => c.id === id);
+    expect(['fiara', 'morblass', 'rokcore', 'wispera'].map((id) => RANGED[idx(id)])).toEqual([1, 1, 1, 0]);
+    // No style: the boss and the dummy keep the primary-ability rule (both ranged).
+    expect([RANGED[idx('eternal-void')], RANGED[idx('dummy')]]).toEqual([1, 1]);
+  });
 });
 
 describe('charge movement', () => {
@@ -89,8 +101,15 @@ describe('charge movement', () => {
   });
 
   it('a ranged hero cannot charge', () => {
-    const world = duel(900, 'sindarosa');
-    expect(ofKind(step(world, [C, 0]), SimEventKind.chargeStarted)).toHaveLength(0);
+    for (const hero of ['sindarosa', 'fiara', 'morblass', 'rokcore']) {
+      const world = duel(900, hero);
+      expect(ofKind(step(world, [C, 0]), SimEventKind.chargeStarted), hero).toHaveLength(0);
+    }
+  });
+
+  it('Wispera, melee, can charge (roster WP 0.4)', () => {
+    const world = duel(1200, 'wispera');
+    expect(ofKind(step(world, [C, 0]), SimEventKind.chargeStarted)).toMatchObject([{ sourceId: 0, dir: 0 }]);
   });
 
   it('cannot start again before the 300-tick cooldown ends', () => {

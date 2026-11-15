@@ -261,3 +261,29 @@ The scripted AI retreats and keeps playing: the Arcade 1v1 tournament has no sta
 (echo 41.5%, curomo 58.5%, fiara 57.4%, morblass 54.5%), so `ARCADE_RACE_NUMBERS` life was nudged (echo 6400 -> 6750, curomo 5670 -> 5420, fiara 4295 -> 4210,
 morblass 4150 -> 4080, sindarosa 2917 -> 2860). Arcade 1v1 win rates now 44.3-54.5% (1056 matches); both baselines re-recorded. Arcade 2v2 is noisy (88 matches
 per race): roughly 37.5-60.2%, no stalemates or timeouts; `ARCADE_2V2_LIFE_PM` was left alone (a trial re-fit swung treenoc by 20 points on partner pairing alone).
+
+## Arcade style-align (SIM_VERSION 69)
+
+Roster WP 0.4, owner-approved 2026-11-14 (ideas/brainstorm/roster-24-heroes.md): the Arcade `RANGED` flag (`src/core/sim/systems/arcade/meter.ts`) follows
+`HERO_STYLE` (`src/core/data/hero-style.ts`) instead of the primary ability's kind. Fiara, Morblass and Rokcore became ranged (no Charge, weather charge by
+casting), Wispera melee (Charge, weather charge by walking), and the AI's spacing flips with them, so the HUD's "Ranged heroes have no charge" is now true for
+every hero. Classic is unchanged. Reason for the re-record: the Arcade goldens and both Arcade baselines (Charge, weather charge and AI spacing change for
+four heroes); the Classic goldens changed only in the header `simVersion`.
+
+Arcade 1v1, `corepack pnpm balance:compare --ruleset arcade` (16 seeds per pairing, 1056 matches). With the old numbers the flag alone moved wispera to 57.4% and
+ishimi to 38.6%, so `ARCADE_RACE_NUMBERS` was re-fit for those two (wispera [7950, 1355] -> [7575, 1291], ishimi [5000, 1420] -> [5400, 1535]); fiara, morblass and
+rokcore kept theirs.
+
+| | curomo | cyclonius | echo | fiara | ishimi | lavax | morblass | pax | rokcore | sindarosa | treenoc | wispera |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| win % | 51.7 | 47.7 | 49.4 | 50.0 | 49.4 | 50.6 | 50.0 | 52.3 | 51.7 | 48.3 | 48.9 | 50.0 |
+
+No stalemates or timeouts. Style means: melee 0.505, ranged 0.497 (0.511 / 0.492 before); melee against ranged 0.507 (std err 0.021); no style findings.
+A second 16-seed run from seed 41 gave 45.5-54.5%, melee 0.495 / ranged 0.503, one stalemate.
+
+Arcade 2v2, `corepack pnpm balance:record --ruleset arcade --team-size 2` (8 seeds, 528 matches, fixed partners). The first run flagged an all-ranged team
+(fiara + sindarosa) at 38.1% against the field, so `ARCADE_2V2_LIFE_PM` rose for fiara (700 -> 760), morblass (881 -> 920) and rokcore (670 -> 740). Win rates
+range 40.9-63.6% (fiara 48.9, morblass 51.1, rokcore 47.7, wispera 46.6); style means melee 0.532, ranged 0.477 (0.529 / 0.479 before). The 2v2 tournament is
+noisy (88 matches per race, +-5-8 points): a 16-seed run from seed 41 put the four at 46.6-52.8% but moved others by up to 10 points (lavax 40.9 -> 53.4,
+treenoc 63.6 -> 58.0). Echo and treenoc (about 60%) and pax and lavax (low) were outliers before this change too; as in SIM_VERSION 67 their 2v2 life was left
+alone.

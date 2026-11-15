@@ -37,6 +37,13 @@ const step = (page: Page, n: number, cmds: [number, number] = [0, 0]): Promise<u
   page.evaluate(`window.__TTE__.arena.step(${String(n)}, [${String(cmds[0])}, ${String(cmds[1])}])`);
 const live = (page: Page): Promise<string> =>
   page.evaluate<string>(`[document.getElementById('liveRegion'), document.getElementById('liveRegionAssertive')].map((n) => n ? n.textContent : '').join(' | ')`);
+/**
+ * Every line the live regions have spoken since `listen`. The announcer keeps 1.5 s between polite lines, so a weather
+ * call followed by its "The stage will turn to ..." line shows only for that gap; polling the region itself can miss it.
+ */
+const listen = (page: Page): Promise<unknown> =>
+  page.evaluate(`(() => { const heard = []; window.__heard = heard; const note = () => { for (const id of ['liveRegion', 'liveRegionAssertive']) { const t = document.getElementById(id)?.textContent; if (t) heard.push(t); } }; new MutationObserver(note).observe(document.body, { subtree: true, childList: true, characterData: true }); note(); })()`);
+const heard = (page: Page): Promise<string> => page.evaluate<string>(`(window.__heard || []).join(' | ')`);
 
 async function demo(page: Page, ff: string): Promise<void> {
   await page.goto(`/?ff=${ff}&manual=1&seed=7`);
@@ -57,6 +64,7 @@ async function versus(page: Page, player: string, enemy: string): Promise<void> 
 test('Arcade demo: Curomo calls Rain, then Pax replaces it with a Sandstorm; Eclipse through the probe; all expire', async ({ page }) => {
   const errors = collectErrors(page);
   await demo(page, 'arenaDemo,arcade');
+  await listen(page);
   await expect.poll(async () => weather(page)).toMatchObject({ kind: 0, label: '', particles: 0, call: '' });
   // Not available from the start: the chip says WEATHER 0%, and R does nothing until the charge is full.
   expect(await weather(page)).toMatchObject({ charge: 0, chargeText: 'WEATHER 0%', chargeFill: 0 });
@@ -76,7 +84,7 @@ test('Arcade demo: Curomo calls Rain, then Pax replaces it with a Sandstorm; Ecl
   expect(rain).toMatchObject({ kind: 2, label: 'RAIN 10', call: 'Rain!', particles: 28 });
   expect(rain?.tint).toBeGreaterThan(0);
   expect(rain?.callScale).toBeGreaterThan(1);
-  await expect.poll(() => live(page), { timeout: 5000 }).toContain('You called Rain: water hits harder, fire softer.');
+  await expect.poll(() => heard(page), { timeout: 5000 }).toContain('You called Rain: water hits harder, fire softer.');
   // The called line goes after 1.5 s; the badge counts down and its bar shrinks.
   await step(page, 120);
   const later = await weather(page);
@@ -86,15 +94,15 @@ test('Arcade demo: Curomo calls Rain, then Pax replaces it with a Sandstorm; Ecl
   await step(page, 1, [0, WEATHER]);
   await step(page, 2);
   expect(await weather(page)).toMatchObject({ kind: 3, label: 'SAND 10', call: 'Sandstorm!', particles: 32 });
-  await expect.poll(() => live(page), { timeout: 5000 }).toContain('The enemy called Sandstorm: earth hits harder, air softer.');
+  await expect.poll(() => heard(page), { timeout: 5000 }).toContain('The enemy called Sandstorm: earth hits harder, air softer.');
   await page.evaluate(`window.__TTE__.arena.setWeather(5, 1)`);
   await step(page, 2);
   expect(await weather(page)).toMatchObject({ kind: 5, label: 'ECLIPSE 10', call: 'Eclipse!', particles: 10 });
-  await expect.poll(() => live(page), { timeout: 5000 }).toContain('The enemy called Eclipse: void hits harder.');
+  await expect.poll(() => heard(page), { timeout: 5000 }).toContain('The enemy called Eclipse: void hits harder.');
   // 10 s later the sim ends it: badge, tint and particles go, and the end is spoken.
   await step(page, 500);
   expect(await weather(page)).toMatchObject({ kind: 0, label: '', tint: 0, particles: 0, call: '' });
-  await expect.poll(() => live(page), { timeout: 5000 }).toContain('The Eclipse is over.');
+  await expect.poll(() => heard(page), { timeout: 5000 }).toContain('The Eclipse is over.');
   expect(errors).toEqual([]);
 });
 

@@ -1043,7 +1043,7 @@ Pax and the fire heroes get no Snag. The table is `ARCADE_SNAG_SLOT` in `src/cor
 **Interactions noted in WP-snag:**
 
 - **Tag entrance:** the free tag entrance casts slot 0, so Treenoc, Wispera and Echo throw a free Snag when they tag in.
-- **Wispera:** she keeps the ranged weather-charge flag, although her slot 0 is now a melee Snag.
+- **Wispera:** she kept the ranged weather-charge flag until SIM_VERSION 69 (roster WP 0.4); since then the Arcade flag follows `HERO_STYLE`, so she is melee (Charge, weather charge by walking), and Fiara, Morblass and Rokcore are ranged.
 - **Who can burn a root:** no Snag hero is fire, so in 1v1 only the rooted fighter's own Fire shots or Sun cast can free it. Fire shots reach it in 2v2 and 3v3.
 
 **Balance at landing** (before the tuning pass): Classic +0.0 pp on every race. Arcade moved far past 5 pp:

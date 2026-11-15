@@ -1,5 +1,5 @@
 import { el } from '@ui/dom';
-import { ABILITIES_A, ABILITIES_B, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, type CharacterId, type RenderView } from '@core/index';
+import { ABILITIES_A, ABILITIES_B, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, heroStyleOf, type CharacterId, type RenderView } from '@core/index';
 import { touchHaptic } from '../platform/a11y/touch-layout';
 import { actionKeyLabel, getBindings } from '../platform/input/bindings';
 import { cleanseClockOf } from '../hud/cleanse-clock';
@@ -31,8 +31,13 @@ export function touchKeyLabel(label: TouchLabel): string {
   return label === 'Element' || label === 'Cleanse' ? '' : String(TOUCH_DIGIT[label]);
 }
 
-/** True when the race's primary ability is melee: the rule the sim uses for Charge (not ranged: kind outside WEATHER_RANGED_KINDS). */
+/**
+ * True when the race is melee: the rule the sim uses for Charge (`RANGED`): HERO_STYLE for a hero, else (the boss, the dummy)
+ * a primary ability kind outside WEATHER_RANGED_KINDS.
+ */
 export function isMeleeRace(race: CharacterId): boolean {
+  const style = heroStyleOf(race);
+  if (style !== undefined) return style === 'melee';
   const def = CHARACTERS.find((c) => c.id === race);
   const kind = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === def?.abilities[0])?.kind ?? '';
   return !WEATHER_RANGED_KINDS.includes(kind);

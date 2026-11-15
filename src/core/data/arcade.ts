@@ -368,9 +368,9 @@ export const WEATHER_TICKS = 500;
 /**
  * Weather power (FUN-DESIGN 2.14, WP 35): the cooldown became a lockout of WEATHER_COOLDOWN_TICKS (a held key cannot
  * double-cast). A cast needs the team's weather charge (per mille, 0..WEATHER_CHARGE_FULL) full, spends all of it, and
- * the round reset empties it. Ranged heroes (primary ability kind in WEATHER_RANGED_KINDS) gain WEATHER_CHARGE_CAST per
- * primary or secondary cast; every other hero gains WEATHER_CHARGE_STEP per tick it walks or runs (a moved tick, not a
- * dash, not blocked by a wall).
+ * the round reset empties it. Ranged heroes (HERO_STYLE since SIM_VERSION 69; a character with no style, the boss or the
+ * dummy, by its primary ability kind in WEATHER_RANGED_KINDS) gain WEATHER_CHARGE_CAST per primary or secondary cast;
+ * every other hero gains WEATHER_CHARGE_STEP per tick it walks or runs (a moved tick, not a dash, not blocked by a wall).
  */
 export const WEATHER_COOLDOWN_TICKS = 50;
 export const WEATHER_CHARGE_FULL = 1000;

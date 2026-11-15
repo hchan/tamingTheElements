@@ -30,12 +30,15 @@ const CUT = 400;
 
 type Pair = readonly [Agent, Agent];
 
-/** Arcade: scripted morblass vs wispera supers near tick 1057 and ends near 1163, after CUT. */
+/**
+ * Arcade: scripted wispera vs morblass first supers after CUT near tick 746 and plays to END. (Morblass vs wispera, the
+ * pairing before SIM_VERSION 69, no longer supers after CUT once the two swapped styles in roster WP 0.4.)
+ */
 const ARCADE_SETUP: MatchSetup = {
   ...SETUP,
   flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
-  p1: [{ character: characterId('morblass'), xp: 20 }],
-  p2: [{ character: characterId('wispera'), xp: 20 }],
+  p1: [{ character: characterId('wispera'), xp: 20 }],
+  p2: [{ character: characterId('morblass'), xp: 20 }],
 };
 
 function scripted(world: SimWorld, side: 0 | 1, setup = SETUP): ScriptedAI {

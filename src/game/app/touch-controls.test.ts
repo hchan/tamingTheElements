@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RenderView } from '@core/index';
+import { HERO_STYLE, characterId, type RenderView } from '@core/index';
 import { setBindings, DEFAULT_BINDINGS, getBindings } from '../platform/input/bindings';
 import { TOUCH, isMeleeRace, setTouchText, touchButton, touchButtons, touchKeyLabel, touchStatus } from './touch-controls';
 
@@ -199,8 +199,11 @@ describe('numbered action row', () => {
     expect(touchStatus('Dash', { arcade: () => undefined } as unknown as RenderView)).toBe('');
   });
 
-  it('classifies a race as melee by its primary ability, like the sim does for Charge (Rokcore melee, Sindarosa ranged)', () => {
-    expect(isMeleeRace('rokcore' as never)).toBe(true);
+  it('classifies a race as melee by HERO_STYLE, like the sim does for Charge (roster WP 0.4: Rokcore ranged, Wispera melee)', () => {
+    expect(isMeleeRace('rokcore' as never)).toBe(false);
     expect(isMeleeRace('sindarosa' as never)).toBe(false);
+    expect(isMeleeRace('wispera' as never)).toBe(true);
+    expect(isMeleeRace('pax' as never)).toBe(true);
+    for (const [id, style] of Object.entries(HERO_STYLE)) expect(isMeleeRace(characterId(id)), id).toBe(style === 'melee');
   });
 });

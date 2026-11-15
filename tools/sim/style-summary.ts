@@ -1,6 +1,7 @@
 // Melee-vs-ranged style report (roster-24 plan section 2.5). Report-only until the end of roster batch B3, when the gates in
 // tests/repo/balance-gate.test.ts become hard. Pure data in, plain numbers out: no sim imports, so run-match.ts can use it.
 import { HERO_STYLE, type HeroStyle } from '../../src/core/data/hero-style';
+import type { CharacterId } from '../../src/core/data/ids';
 
 export const STYLES: readonly HeroStyle[] = ['melee', 'ranged'];
 
@@ -54,8 +55,11 @@ const r3 = (n: number): number => Math.round(n * 1000) / 1000;
 const rate = (score: number, games: number): number => (games === 0 ? 0 : r3(score / games));
 const mean = (xs: readonly number[]): number => (xs.length === 0 ? 0 : r3(xs.reduce((a, b) => a + b, 0) / xs.length));
 
+/** Style of a playable race; throws on a race HERO_STYLE does not list (a missing row must not count as melee). */
 export function styleOfRace(race: string): HeroStyle {
-  return HERO_STYLE[race] ?? 'melee';
+  const style = HERO_STYLE[race as CharacterId];
+  if (style === undefined) throw new Error(`styleOfRace: no HERO_STYLE row for race "${race}"`);
+  return style;
 }
 
 /** Composition key of a team of heroes: M and R sorted, e.g. `MR`. */
