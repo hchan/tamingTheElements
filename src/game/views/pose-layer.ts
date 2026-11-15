@@ -14,6 +14,7 @@ declare global {
 }
 import { SheetBook } from './pose-sheets';
 import { fitToBox, frameBox } from './hero-scale';
+import { applyLocomotion, locomotionOf } from './locomotion';
 import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
@@ -358,6 +359,8 @@ export class PoseLayer {
       breathe(p, this.animMs + i * 370, 1 - m);
       p.oy -= 1.5 * Math.abs(Math.sin(((this.phase[i] ?? 0) / STRIDE_PX) * Math.PI)) * m;
     }
+    // Wings flap and knees bend while moving (per-hero flags, views/locomotion.ts); nothing under reduced motion.
+    applyLocomotion(p, locomotionOf(c.sprite), m, this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
     if (!this.reduced) {
       const e = this.edge[i] ?? 0;
       if (e !== 0) {
