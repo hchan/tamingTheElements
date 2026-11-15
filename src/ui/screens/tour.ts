@@ -27,6 +27,8 @@ export interface TourCardOptions {
   readonly actions: readonly TourAction[];
   /** Adds the Main Menu link after the buttons (default true). */
   readonly menu?: boolean;
+  /** Label and value rows (the stage card): each a scannable `Label: value` line, `key` is a stable hook for decoration. */
+  readonly facts?: readonly { readonly key: string; readonly label: string; readonly value: string }[];
   /** Shown between the paragraphs and the buttons (the Tour map). */
   readonly extra?: HTMLElement;
 }
@@ -42,6 +44,12 @@ export function tourCardView(o: TourCardOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = o.id;
   page.append(el('h1', 'heading', o.heading), ...o.lines.map((t) => el('p', undefined, t)));
+  for (const f of o.facts ?? []) {
+    const p = el('p', 'tourFact');
+    p.dataset['fact'] = f.key;
+    p.append(el('span', 'tourFactLabel', `${f.label}:`), ' ', el('span', 'tourFactValue', f.value));
+    page.append(p);
+  }
   if (o.extra) page.append(o.extra);
   const actions = el('div');
   for (const a of o.actions) {

@@ -121,7 +121,7 @@ export function tourScreen(deps: TourDeps): Screen {
     const stage = currentStage(r);
     const n = `Stage ${String(stage.index + 1)} of ${String(TOUR_STAGES)}`;
     const left = `${String(r.continues)} of ${String(TOUR_CONTINUES)} continues left`;
-    const leftStage = r.continues === 0 ? 'No continues left: a defeat ends the tour' : left;
+    const leftStage = r.continues === 0 ? 'None, a defeat ends the tour' : `${String(r.continues)} of ${String(TOUR_CONTINUES)}`;
     const foe = stage.opponents.map(raceLabel).join(', ');
     if (r.status === 'won') {
       const sum = runSummary(r, raceLabel);
@@ -167,11 +167,12 @@ export function tourScreen(deps: TourDeps): Screen {
           mapLayout(buildTour(r.hero, r.seed).map((s) => s.location), r.stage, false),
           window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         ),
-        lines: [
-          `Location: ${ELEMENT_WORD(stage.location)}.`,
-          `Opponent: ${foe}.`,
-          `Difficulty: ${ELEMENT_WORD(stage.aiLevel)}. ${leftStage}.`,
-          'Press Fight to begin the stage.',
+        lines: [],
+        facts: [
+          { key: 'location', label: 'Location', value: ELEMENT_WORD(stage.location) },
+          { key: 'opponent', label: 'Opponent', value: foe.replace(/ \([^)]*\)/g, '') },
+          { key: 'difficulty', label: 'Difficulty', value: ELEMENT_WORD(stage.aiLevel) },
+          { key: 'continues', label: 'Continues', value: leftStage },
         ],
         actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { showSplash(r); } }],
       });
