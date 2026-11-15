@@ -115,30 +115,34 @@ export function lifeFill(elementColor: number, fractionValue: number, pulse = 0)
   return lerpRgb(EMBER, WOUND, (p - LOW_FLASH_AT) / (0.5 - LOW_FLASH_AT));
 }
 
-/** Frames the white damage trail holds after a hit before it drains, and the fraction of max life it drains per frame. */
-export const TRAIL_HOLD = 18;
-export const TRAIL_DRAIN = 0.012;
+/** Ms the ghost (lost-life) segment holds after a hit before it drains, and the fraction of max life it drains per ms. */
+export const TRAIL_HOLD_MS = 500;
+export const TRAIL_DRAIN_PER_MS = 0.0007;
+/** Longest frame step the ghost counts (a stalled tab must not skip the hold). */
+const TRAIL_MAX_DT = 50;
 
 export interface Trail {
   /** The lagging life (>= current life). */
   v: number;
+  /** Ms left of the hold. */
   hold: number;
 }
 
 /**
- * Steps a hero's white chip-drain trail: it jumps to any gain, holds TRAIL_HOLD frames after a loss, then drains. With reduced
- * motion it holds and then vanishes (no gliding). Returns the lagging life to draw up to.
+ * Steps a hero's ghost trail by `dtMs` (frame-rate independent): it jumps to any gain, holds TRAIL_HOLD_MS after a loss, then
+ * drains to the current life. With reduced motion it holds and then vanishes (no gliding). Returns the lagging life to draw up to.
  */
-export function stepTrail(t: Trail, hp: number, maxHp: number, reduced: boolean): number {
+export function stepTrail(t: Trail, hp: number, maxHp: number, reduced: boolean, dtMs = 1000 / 60): number {
   if (hp >= t.v) {
     t.v = hp;
-    t.hold = TRAIL_HOLD;
+    t.hold = TRAIL_HOLD_MS;
     return hp;
   }
+  const dt = Math.min(TRAIL_MAX_DT, Math.max(0, dtMs));
   if (t.hold > 0) {
-    t.hold--;
+    t.hold -= dt;
     return t.v;
   }
-  t.v = reduced ? hp : Math.max(hp, t.v - maxHp * TRAIL_DRAIN);
+  t.v = reduced ? hp : Math.max(hp, t.v - maxHp * TRAIL_DRAIN_PER_MS * dt);
   return t.v;
 }

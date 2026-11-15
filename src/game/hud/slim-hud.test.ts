@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PILL_W, SLIM_H, TRAIL_HOLD, chipBar, lifeFill, chipRect, compactLabel, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
+  PILL_W, SLIM_H, TRAIL_HOLD_MS, chipBar, lifeFill, chipRect, compactLabel, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
 
@@ -77,26 +77,34 @@ describe('shortName', () => {
   });
 });
 
-describe('white damage trail', () => {
-  it('holds after a hit, then drains to the current life', () => {
-    const t = { v: 100, hold: TRAIL_HOLD };
-    expect(stepTrail(t, 60, 100, false)).toBe(100);
-    for (let i = 0; i < TRAIL_HOLD - 1; i++) stepTrail(t, 60, 100, false);
-    expect(t.v).toBe(100);
-    let prev = t.v;
-    for (let i = 0; i < 60; i++) {
-      const v = stepTrail(t, 60, 100, false);
+describe('ghost damage trail', () => {
+  it('holds about half a second after a hit, then drains to the current life', () => {
+    const t = { v: 100, hold: TRAIL_HOLD_MS };
+    for (let ms = 0; ms < TRAIL_HOLD_MS - 20; ms += 10) expect(stepTrail(t, 60, 100, false, 10)).toBe(100);
+    let prev = 100;
+    for (let i = 0; i < 200; i++) {
+      const v = stepTrail(t, 60, 100, false, 16);
       expect(v).toBeLessThanOrEqual(prev);
       expect(v).toBeGreaterThanOrEqual(60);
       prev = v;
     }
     expect(prev).toBe(60);
   });
+  it('is frame-rate independent and ignores a stalled frame', () => {
+    const a = { v: 100, hold: 0 };
+    const b = { v: 100, hold: 0 };
+    for (let i = 0; i < 20; i++) stepTrail(a, 0, 100, false, 10);
+    for (let i = 0; i < 10; i++) stepTrail(b, 0, 100, false, 20);
+    expect(a.v).toBeCloseTo(b.v, 6);
+    const c = { v: 100, hold: TRAIL_HOLD_MS };
+    stepTrail(c, 50, 100, false, 5000);
+    expect(c.hold).toBeGreaterThan(TRAIL_HOLD_MS - 60);
+  });
   it('jumps up with a heal, and vanishes without gliding under reduced motion', () => {
     const t = { v: 50, hold: 0 };
     expect(stepTrail(t, 80, 100, false)).toBe(80);
-    stepTrail(t, 30, 100, true);
-    for (let i = 0; i < TRAIL_HOLD; i++) stepTrail(t, 30, 100, true);
+    stepTrail(t, 30, 100, true, 16);
+    for (let i = 0; i < 40; i++) stepTrail(t, 30, 100, true, 16);
     expect(t.v).toBe(30);
   });
 });
