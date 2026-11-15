@@ -284,5 +284,9 @@
  * 77: Arcade only, 2v2/3v3 only (Classic and Arcade 1v1 hashes unchanged): roster-24 balance batch 3, `ARCADE_2V2_LIFE_PM` retuned for vortigal, quarrak,
  *    durrok, brazgor, hyalia, glimmaw, abyssor, umbrel and (released) sindarosa from a 26-base-seed full-roster 2v2 tournament. Re-record reason:
  *    tag-team goldens move with team life; the Arcade 2v2 baseline is re-recorded.
+ * 78: Arcade only, 2v2 only (Classic, Arcade 1v1 and 3v3 hashes unchanged): `ARCADE_2V2_LIFE_SCALE_PM` = 1300 scales 2v2
+ *    hero life on top of the v77 `ARCADE_2V2_LIFE_PM` table so the 2v2 round median reaches the nightly fun-gate band
+ *    (44.3 s -> 62.2 s, 8 seeds). Re-record reason: 2v2 tag-team goldens move with 2v2 life; the Arcade 2v2 baseline is
+ *    re-recorded; every other replay fixture changes only its simVersion header.
  */
-export const SIM_VERSION = 77;
+export const SIM_VERSION = 78;

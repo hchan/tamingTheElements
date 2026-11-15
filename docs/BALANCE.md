@@ -296,6 +296,16 @@ Arcade 1v1 (1056 matches): win rates 47.2-53.4 percent (sindarosa 48.3 -> 50.0, 
 
 Arcade 2v2 (528 matches): sindarosa 50.0 -> 40.9 (the only race past tolerance; a close-range blast is weaker for long-range pairings), rokcore 47.7 -> 52.3, ishimi 45.5 -> 48.9, others within 3.5 points. Echo and treenoc (64-66 percent) and pax and lavax (low) were outliers before this change and are left alone.
 
+## Arcade 2v2 round length (SIM_VERSION 78)
+
+The nightly fun gate wants a 2v2 round median of 50-85 s; v77 measured 44.32 s. `ARCADE_2V2_LIFE_SCALE_PM` = 1300 (`src/core/sim/arcade-numbers.ts`) multiplies 2v2 hero life on top of the unchanged `ARCADE_2V2_LIFE_PM` table (two-step floor); team size 3 uses the table as is, 1v1 and Classic are untouched. Life only: supers, guard drain, damage and cooldowns are unchanged.
+
+Legacy-12 2v2 (8 seeds, 528 matches): round median 44.32 -> 62.18 s, p90 57.96 -> 83.68 s, time-over 0.2% -> 0%, stalemate 0, first hit 1.68 -> 1.70 s, hits per minute 82.0 -> 87.2, comeback 0.811 -> 0.813, worst/best race 0.398/0.659 -> 0.386/0.591. `fun:noise --team-size 2` (4 blocks): median 61.9-63.3 s. 1v1 stays at 31.96 s (band 30-55, thin margin; a size-1 life scale of 1150 would give 37.12 s and is the ready lever, not applied). 3v3 is not gated and ran a 65 s median at v77; x1.3 would give 100.8 s with 28.7% time-overs, so it was left alone.
+
+Largest legacy-12 2v2 race shifts: echo 62.5 -> 44.3, lavax 42.0 -> 58.0, fiara 45.5 -> 56.8, wispera 48.9 -> 38.6, sindarosa 39.8 -> 50.0, rokcore -8.0pp, treenoc 65.9 -> 59.1 (burst and trap heroes lose relative power because their damage is fixed). The Arcade 2v2 baseline was re-recorded; the 1v1 Arcade and Classic baselines are unchanged (+0.0pp).
+
+Roster-24 full-roster 2v2 check (26 seeds, 7176 matches, win rate by hero): quarrak 55.9, nykra 53.7, umbrel 51.6, zephra 50.6, durrok 50.3, hyalia 50.1, glimmaw 49.3, abyssor 48.2, brazgor 48.1, kindrel 48.0, vortigal 44.6, ouroth 41.4. All inside 0.40-0.60; element melee-ranged gaps air -0.034, earth -0.029, fire -0.030, water +0.007 (limit 0.1). vortigal, ouroth and quarrak are outside the 0.45-0.55 soft band: a follow-up retune of `ARCADE_2V2_LIFE_PM` may nudge them. morblass now has 1.196x its 1v1 life in 2v2, lavax and sindarosa about 1.04x.
+
 ## Arcade crowd control, flag on vs off (CB5, flag stays off)
 
 `pnpm sim:match --tournament --ruleset arcade --ai-level 3 --seeds 16 [--cc] --json`, 176 games per race, 2026-11-15. The AI does not yet read crowd-control
