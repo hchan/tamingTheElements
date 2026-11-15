@@ -140,7 +140,7 @@ test.describe('small phone landscape, QA r38', () => {
     expect(stick.y + stick.h).toBeLessThanOrEqual(canvas.y + canvas.h * 0.84);
     await shot(page, 'small-2v2-stick');
   });
-  test('Versus picker: the You / Computer cards clear the sticky Fight! bar', async ({ page }) => {
+  test('Versus picker: the You / Computer cards clear the Fight! bar', async ({ page }) => {
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByRole('button', { name: /^Fight/ }).waitFor();
     const cards = await page.evaluate<{ b: number; barTop: number }>(
@@ -153,7 +153,7 @@ test.describe('small phone landscape, QA r38', () => {
 
 test.describe('small phone landscape, QA r39', () => {
   test.use({ viewport: { width: 667, height: 375 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  test('2v2 picker: the partner row is above the sticky Fight! bar', async ({ page }) => {
+  test('2v2 picker: the partner row is above the Fight! bar', async ({ page }) => {
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByLabel('Team').selectOption('2');
     await page.getByRole('button', { name: /^Fight/ }).waitFor();

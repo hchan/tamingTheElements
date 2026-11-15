@@ -109,7 +109,8 @@ html[data-high-contrast='true'] :focus-visible {
 
 /* Readable at every width: 15px on a 360 px phone up to 26px on 4K, times the display-size setting. */
 #app {
-  font-size: calc(clamp(15px, 0.5vw + 11px, 26px) * var(--ui-scale));
+  --app-font: calc(clamp(15px, 0.5vw + 11px, 26px) * var(--ui-scale));
+  font-size: var(--app-font);
   max-width: 100%;
 }
 
@@ -1987,93 +1988,90 @@ button.menuButton.heroSlotClear {
   display: none;
 }
 
-/* Primary action stays on screen: Fight! (Versus) and Start tour (Play) sit in a sticky bar at the bottom of the picker page. The page itself is
-   the scroll box (viewport tall, overflow auto), so the bar takes its own space at the end of the scroll: the last roster row (Earth) ends above
-   it instead of under it, and every row is reachable at any viewport. (A fixed bar over the body scroll hid that row.) */
+/* Picker layout (QA r4, r5, r14, r39, r47 #2, r53 #4, r54 #4, r55 #3): the page is a flex column (heading, form), the form a flex column of one scroll
+   region (.pickScroll) and the action bar. The bar takes its own space under the region, so it never covers a slot, a tile or a focused control. */
 #arcadePick,
 #menu .menuPage:has(.heroSelect) {
   box-sizing: border-box;
-  /* Positioned, so the absolutely placed srOnly and Slot badges scroll inside the box instead of stretching the document. */
+  display: flex;
+  flex-direction: column;
   position: relative;
+  max-height: calc(100vh - 16px);
   max-height: calc(100dvh - 16px);
+}
+#arcadePick > .heading,
+#menu .menuPage:has(.heroSelect) > .heading {
+  flex: none;
+}
+#arcadePick .vsForm,
+.heroSelect {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: 0;
+}
+/* Positioned (srOnly selects and Slot badges scroll inside it), isolated (z-indexed tiles cannot paint over the bar or its cue), padded (focus
+   rings 5 px, 7 px in high contrast, are not clipped); scroll-padding keeps a focused control clear of the cue strip. The floor keeps the roster
+   scrollable at extreme zoom (the document scrolls the rest). */
+.pickScroll {
+  flex: 1 1 auto;
+  min-height: min(120px, 50vh);
+  position: relative;
+  isolation: isolate;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding: 8px 8px 12px;
+  scroll-padding-block: 8px 32px;
 }
-#arcadePick .vsActions,
-.heroSelect .heroActions {
-  position: sticky;
-  bottom: 0;
+#menu #arcadePick .vsActions,
+#menu .heroSelect > .heroActions {
+  flex: none;
+  position: relative;
   z-index: 3;
   justify-content: center;
-  margin-top: 0.5em;
-  padding: 0.5em 1em;
-  /* A solid bar (not a fade) so rows scrolling under it read as cut off by a bar, not half-faded. */
+  margin-top: 0;
+  padding: 0.5em 1em max(0.5em, env(safe-area-inset-bottom));
   background: rgba(28, 24, 62, 0.97);
   border-top: 2px solid rgba(255, 214, 120, 0.55);
   box-shadow: 0 -6px 14px rgba(10, 8, 30, 0.45);
 }
-#arcadePick .vsForm,
-.heroSelect {
-  padding-bottom: 0;
-}
-/* Scroll cue: more roster rows lie below the bar until the page is scrolled to its end, so a pill on the bar says so.
-   It fades out as the page reaches its end where scroll-driven animations exist (else it simply stays). */
-#arcadePick .vsActions::before,
-.heroSelect .heroActions::before {
-  content: 'More heroes below \25BE';
+/* "More below" strip over the region's last 24 px while content continues (data-more, set by markMoreBelow in src/ui/dom.ts).
+   Decorative (empty alt text), click-through, gone at the scroll end. Sits above the bar's 2 px top border. */
+.pickScroll[data-more] + .vsActions::before,
+.pickScroll[data-more] + .heroActions::before {
+  content: 'More below \25BE';
+  content: 'More below \25BE' / '';
   position: absolute;
-  right: 1em;
-  /* Floats just above the bar so it never covers Start, Back or the Ready buttons. */
-  bottom: calc(100% + 0.4em);
-  padding: 0.15em 0.9em;
-  font-size: 0.85em;
-  white-space: nowrap;
-  color: #fff;
-  background: rgba(28, 24, 62, 0.92);
-  border: 1px solid rgba(255, 214, 120, 0.7);
-  border-radius: 999px;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 2px);
+  box-sizing: border-box;
+  height: 24px;
+  padding-top: 8px;
+  font-size: max(0.75em, 11px);
+  line-height: 14px;
+  text-align: center;
+  color: rgba(255, 214, 120, 0.95);
+  background: linear-gradient(to bottom, rgba(28, 24, 62, 0), rgba(28, 24, 62, 0.92) 40%);
   pointer-events: none;
 }
-/* Wide windows (720p and up): the buttons are centred with free room right of them, so the pill sits INSIDE the bar and no longer
-   covers the stat row of the hero panel above it. Narrow windows keep it floating above the bar. */
-@media (min-width: 900px) {
-  #arcadePick .vsActions::before,
-  .heroSelect .heroActions::before {
-    bottom: auto;
-    top: 50%;
-    translate: 0 -50%;
+html[data-high-contrast='true'] .pickScroll[data-more] + .vsActions::before,
+html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
+  color: #fff;
+  background: #000;
+}
+/* Compaction: a short window trims the heading margins and the bar's button margins so the partner slot stays above the fold. */
+@media (max-height: 820px) {
+  #menu #arcadePick > .heading,
+  #menu #tourPick > .heading {
+    margin-block: 0.1em 0.3em;
   }
 }
-/* Phone portrait: the bar is only Fight and Back and has no free room for the pill, which would cover the hint text above. A slim fade over the
-   rows just above the bar with a small centred chevron says the same thing without words or covering any text; it fades at the end of the scroll. */
-@media (max-width: 640px) {
-  #arcadePick .vsActions::before {
-    content: '\25BE';
-    left: 0;
-    right: 0;
-    bottom: 100%;
-    padding: 1.2em 0 0;
-    font-size: 1em;
-    line-height: 1;
-    text-align: center;
-    color: rgba(255, 214, 120, 0.9);
-    background: linear-gradient(to bottom, rgba(28, 24, 62, 0), rgba(28, 24, 62, 0.85));
-    border: 0;
-    border-radius: 0;
-  }
-}
-@supports (animation-timeline: scroll()) {
-  @keyframes scrollCueFade {
-    0%,
-    88% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-  #arcadePick .vsActions::before,
-  .heroSelect .heroActions::before {
-    animation: scrollCueFade linear both;
-    animation-timeline: scroll(nearest block);
-  }
+#menu #arcadePick .vsActions .menuButton,
+#menu .heroSelect > .heroActions .menuButton {
+  margin-block: 0;
 }
 
 /* Versus option pickers (Opponent, Team, AI level): a radio group of buttons over the hidden native select. The selected one is
@@ -2246,35 +2244,26 @@ button.menuButton.heroSlotClear {
   .mainMenuList li:has(> .menuGroup) {
     grid-column: 1 / -1;
   }
-  /* The dock scrolls with the page instead of covering a third of a 390 px screen; the form keeps no spare bottom padding. */
-  #arcadePick .vsActions::before,
-  .heroSelect .heroActions::before {
-    display: none;
-  }
-  #arcadePick,
-  #menu .menuPage:has(.heroSelect) {
-    max-height: none;
-    /* Both axes: overflow-x hidden would turn the page into a scroll box (computed overflow-y auto) and the sticky bar would never stick. */
-    overflow: visible;
-  }
-  /* Fight! / Start tour stay on screen (QA r23: Fight sat two screens below the fold): the page scrolls and a slim solid bar sticks to
-     the bottom of the viewport, one row with the short hint beside the buttons, so it costs about 50 of the 390 px. */
-  /* body is overflow auto too (a scroll box as tall as its content), which the sticky bar would stick to; the page (html) scrolls instead. */
-  body:has(#arcadePick, .heroSelect):not(:has(#battle, #cinematic, #replayViewer)) {
-    overflow: visible;
-  }
-  #arcadePick .vsActions,
-  .heroSelect .heroActions {
-    position: sticky;
-    bottom: 0;
+  /* One slim row: the short hint beside the buttons; the bar takes its own space under the scroll region. */
+  #menu #arcadePick .vsActions,
+  #menu .heroSelect > .heroActions {
     flex-wrap: nowrap;
     align-items: center;
     gap: 0.6em;
-    margin-top: 0.3em;
-    padding: 0.25em 0.6em;
-    background: rgba(28, 24, 62, 0.97);
-    border-top: 2px solid rgba(255, 214, 120, 0.55);
+    padding: 0.25em 0.6em max(6px, env(safe-area-inset-bottom));
     box-shadow: 0 -4px 10px rgba(10, 8, 30, 0.45);
+  }
+  #menu:has(#arcadePick, #tourPick) {
+    padding-block: 0;
+  }
+  /* 4 px a side keeps "Your partner (2v2)" whole beside the 30 px face (QA r41); focus rings still show 4 of their 5 px. */
+  .pickScroll {
+    padding-inline: 4px;
+  }
+  #arcadePick,
+  #menu .menuPage:has(.heroSelect) {
+    max-height: 100vh;
+    max-height: 100dvh;
   }
   #arcadePick .vsActions .heroHint {
     margin: 0;
@@ -2285,10 +2274,6 @@ button.menuButton.heroSlotClear {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
-  }
-  #arcadePick .vsForm,
-  .heroSelect {
-    padding-bottom: 0.5em;
   }
   #arcadePick,
   .heroSelect {
@@ -2496,7 +2481,7 @@ button.menuButton.heroSlotClear {
 }
 @media (max-height: 500px) {
   #tourPick .tourIntro {
-    font-size: 0.62em;
+    font-size: calc(0.62 * var(--app-font));
     line-height: 1.25;
     margin: 0 auto 0.3em;
     display: -webkit-box;
@@ -2578,18 +2563,14 @@ button.menuButton.heroSlotClear {
   pointer-events: none;
 }
 
-/* qa-r15: at a short desktop window (720p) the hero panel (Life, Speed, Alignment, Abilities) sat partly under the sticky bar, so a new player could not
+/* qa-r15: at a short desktop window (720p) the hero panel (Life, Speed, Alignment, Abilities) sat partly under the Fight bar, so a new player could not
    see what a hero does before picking. The intro paragraph steps aside, the portrait and bar shrink, and the panel sticks to the top of the scroll box. */
 @media (min-width: 900px) and (max-height: 820px) {
   #tourPick .tourIntro {
     display: none;
   }
-  .heroSelect .heroActions {
-    padding-block: 0.25em;
-  }
-  .heroSelect .heroActions .menuButton {
-    min-height: 0;
-    padding-block: 0.2em;
+  #menu .heroSelect > .heroActions {
+    padding: 0.25em 1em max(0.25em, env(safe-area-inset-bottom));
   }
   .heroPanel {
     position: sticky;
@@ -2607,10 +2588,6 @@ button.menuButton.heroSlotClear {
   .heroPanel .heroTop {
     align-items: center;
   }
-  .heroPanel .menuButton {
-    min-height: 0;
-    padding-block: 0.15em;
-  }
   .heroPanel .heroStats {
     margin: 0.3em 0;
   }
@@ -2626,6 +2603,17 @@ button.menuButton.heroSlotClear {
   .heroPanel .heroAbilityIcon {
     width: 32px;
     height: 32px;
+  }
+}
+/* Mouse windows only: coarse pointers keep the 48 px touch targets (the (0,3,0) rule used to beat them on iPad landscape). */
+@media (min-width: 900px) and (max-height: 820px) and (pointer: fine) {
+  .heroSelect .heroActions .menuButton {
+    min-height: 0;
+    padding-block: 0.2em;
+  }
+  .heroPanel .menuButton {
+    min-height: 0;
+    padding-block: 0.15em;
   }
 }
 
@@ -2917,7 +2905,7 @@ body:has(.settingsBar) {
 }
 
 /* QA r38 (667x375 phone landscape): the Versus picker's three option rows, the title and a two-line hint filled the screen above the hero
-   cards, which ended up under the sticky Fight!/Back bar. The title goes visually hidden (still in the accessibility tree), the arena hint
+   cards, which ended up under the Fight!/Back bar. The title goes visually hidden (still in the accessibility tree), the arena hint
    steps aside and the rows tighten (touch targets stay 44 px), so the You / Computer cards start high enough to be read. */
 @media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
   #arcadePick > .heading {
@@ -2947,9 +2935,9 @@ body:has(.settingsBar) {
   }
 }
 
-/* QA r39 (667x375 phone landscape): the 2v2/3v3 picker stacked each side's hero cards in one column, pushing the partner below the sticky Fight bar. The slots sit in a row (no stats/abilities lines; the preview card below keeps them), and the first-run card is see-through and click-through apart from Got it, so the fight shows behind it. */
+/* QA r39 (667x375 phone landscape): the 2v2/3v3 picker stacked each side's hero cards in one column, pushing the partner below the Fight bar. The slots sit in a row (no stats/abilities lines; the preview card below keeps them), and the first-run card is see-through and click-through apart from Got it, so the fight shows behind it. */
 @media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
-  /* "N of 2 picked" sits beside the side title (it used to fall below the cards, under the sticky Fight bar); names stay on one line. */
+  /* "N of 2 picked" sits beside the side title (it used to fall below the cards, under the Fight bar); names stay on one line. */
   #arcadePick .vsSide {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -2982,9 +2970,9 @@ body:has(.settingsBar) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 0.66em; /* QA r41: "Your partner (2v2)" fits whole beside the 30 px face */
+    font-size: 0.62em; /* QA r41: "Your partner (2v2)" fits whole beside the 30 px face */
   }
-  /* QA r41: Swap up / Clear sat under the sticky Fight bar at 667x375: drop the long tag-team note (the Tag teams line is in Help) and tighten the heading so the buttons clear the bar. */
+  /* QA r41: Swap up / Clear sat under the Fight bar at 667x375: drop the long tag-team note (the Tag teams line is in Help) and tighten the heading so the buttons clear the bar. */
   #arcadePick .heroHint {
     display: none;
   }

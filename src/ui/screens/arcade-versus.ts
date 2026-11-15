@@ -1,6 +1,6 @@
 import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
 import { CHARACTERS } from '@core/menu-index';
-import { el } from '../dom';
+import { el, markMoreBelow } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
 import { abilitiesSpeech, abilityChips } from './hero-abilities';
 import { heroDnd } from './hero-dnd';
@@ -105,7 +105,7 @@ export function select(name: string, label: string, options: readonly { value: s
  * the DOM (same id, name and value, hidden from sight, Tab and assistive tech) so form data, labels and probes are unchanged.
  * Returns a refresh to call after the select was changed by code.
  */
-function segmented(row: HTMLElement): () => void {
+function segmented(row: HTMLElement, describedBy?: string): () => void {
   const input = row.querySelector('select');
   if (!input) return () => undefined;
   input.tabIndex = -1;
@@ -118,6 +118,7 @@ function segmented(row: HTMLElement): () => void {
     const b = el('button', 'vsSegment', o.label);
     b.type = 'button';
     b.setAttribute('role', 'radio');
+    if (describedBy) b.setAttribute('aria-describedby', describedBy);
     b.dataset['value'] = o.value;
     b.addEventListener('click', () => {
       if (input.disabled || input.value === o.value) return;
@@ -639,9 +640,18 @@ function rosterView(
   return {
     node, refresh, onKey, act: doAct, empties,
     confirm: (n) => {
+      const s = sideOf(n);
       if (fields()[n]?.value === '') confirmed.delete(n);
-      else confirmed.add(n);
-      ready[sideOf(n)] = false;
+      else {
+        confirmed.add(n);
+        // A pick through the (hidden) select moves the detail pane to that hero, so it never shows the previous one.
+        const k = races.indexOf(fields()[n]?.value as CharacterId);
+        if (k >= 0) {
+          cursor[s] = k;
+          if (s === mouseSide) focus = k;
+        }
+      }
+      ready[s] = false;
     },
   };
 }
@@ -673,16 +683,16 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     return row;
   };
   const refreshers: (() => void)[] = [];
-  const choice = (row: HTMLElement): HTMLElement => {
-    refreshers.push(segmented(row));
+  const choice = (row: HTMLElement, describedBy?: string): HTMLElement => {
+    refreshers.push(segmented(row, describedBy));
     return control(row);
   };
   set.append(
     legend,
     choice(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode)),
-    choice(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size)),
+    choice(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size), 'arcadeTeamHint'),
     choice(select('level', 'AI level', o.levels, o.current.level)),
-    choice(select('stage', 'Arena', [{ value: '', label: 'Random' }, { value: 'fire', label: 'Fire' }, { value: 'water', label: 'Water' }, { value: 'earth', label: 'Earth' }, { value: 'air', label: 'Air' }], o.current.stage ?? '')),
+    choice(select('stage', 'Arena', [{ value: '', label: 'Random' }, { value: 'fire', label: 'Fire' }, { value: 'water', label: 'Water' }, { value: 'earth', label: 'Earth' }, { value: 'air', label: 'Air' }], o.current.stage ?? ''), 'arcadeStageHint'),
     select('player', 'Your race', heroOptions, o.current.player, true),
     select('partner', 'Your partner (2v2)', heroOptions, o.current.partner, true),
     select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2, true),
@@ -709,14 +719,18 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   start.setAttribute('aria-describedby', 'arcadeFightHint');
   const actions = el('div', 'vsActions');
   const stageHint = el('p', 'heroHint', 'The arena starts on the element you pick (Random draws one) and follows the Weather: call Weather in the fight to change it.');
+  stageHint.id = 'arcadeStageHint';
   const teamHint = el('p', 'heroHint', 'Tag teams: each hero has less life than in 1v1 (about 60 to 90 percent), because you share the fight with a partner and the bench heals.');
   teamHint.id = 'arcadeTeamHint';
-  // The long hints scroll with the picker; only Fight, its short hint and Back stay in the sticky bar.
+  // The roster comes first and the long hints follow it; the region scrolls, and the bar (Fight, its short hint, Back) takes its own row under it.
   const hints = el('div', 'vsHints');
   hints.append(stageHint, teamHint);
-  set.append(hints, roster.node);
+  set.append(roster.node, hints);
   actions.append(start, fightHint, back);
-  form.append(set, hint, actions);
+  const scroll = el('div', 'pickScroll');
+  scroll.append(set, hint);
+  form.append(scroll, actions);
+  const more = markMoreBelow(scroll);
   // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.
   const f = form.elements as unknown as Record<string, HTMLSelectElement>;
   const sync = (): void => {
@@ -748,6 +762,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     start.disabled = empty > 0;
     fightHint.hidden = empty === 0;
     fightHint.textContent = empty === 0 ? '' : `Pick ${String(empty)} more hero${empty === 1 ? '' : 'es'}`;
+    more();
   };
   // Hide the pulldowns for heroes (they stay in the DOM for form data, labels and assistive tech lookups).
   queueMicrotask(() => {

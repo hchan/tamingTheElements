@@ -6,8 +6,14 @@ import type { MatchSetup } from './garrison-model';
 import type { Screen } from './screen';
 
 const heroes = (n: number): SaveV1['garrison'] =>
-  ['Fiara', 'Aqua', 'Terra', 'Zephyr'].slice(0, n).map((characterName, i) => ({ id: `h${String(i)}`, experience: 10 * i, characterName }));
-const save = (chapter: number, n: number): SaveV1 => ({ ...newEmptyState(), chapter, garrison: heroes(n) });
+  ['Fiara', 'Aqua', 'Terra', 'Zephyr']
+    .slice(0, n)
+    .map((characterName, i) => ({ id: `h${String(i)}`, experience: 10 * i, characterName }));
+const save = (chapter: number, n: number): SaveV1 => ({
+  ...newEmptyState(),
+  chapter,
+  garrison: heroes(n),
+});
 
 interface Harness {
   host: HTMLElement;
@@ -49,7 +55,8 @@ const row = (h: Harness, id: string): HTMLElement => {
   if (r === null) throw new Error(`no row ${id}`);
   return r;
 };
-const btn = (h: Harness, id: string): HTMLButtonElement | null => h.host.querySelector<HTMLButtonElement>(`#${id}`);
+const btn = (h: Harness, id: string): HTMLButtonElement | null =>
+  h.host.querySelector<HTMLButtonElement>(`#${id}`);
 
 describe('garrison screen in the DOM', () => {
   it('shows an empty message and a Back link when there is no save or no heroes', () => {
@@ -94,7 +101,9 @@ describe('garrison screen in the DOM', () => {
     expect(ev.defaultPrevented).toBe(true);
     expect(row(h, 'h0').getAttribute('aria-pressed')).toBe('true');
     expect(document.activeElement?.id).toBe('h0');
-    row(h, 'h0').dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    row(h, 'h0').dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }),
+    );
     expect(row(h, 'h0').getAttribute('aria-pressed')).toBe('false');
   });
 
@@ -123,7 +132,9 @@ describe('garrison screen in the DOM', () => {
     const h = mount(save(3, 4));
     row(h, 'h0').click();
     btn(h, 'enterBattlegroundContainer')?.click();
-    expect(h.alert).toHaveBeenCalledWith('You must select 3 heroes.  Only 1 has been selected so far');
+    expect(h.alert).toHaveBeenCalledWith(
+      'You must select 3 heroes.  Only 1 has been selected so far',
+    );
     btn(h, 'enterPracticeContainer')?.click();
     expect(h.onMatch.mock.calls[0]?.[0].mode).toBe('practice');
   });

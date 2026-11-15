@@ -4,8 +4,16 @@ import { levelFromXp, newEmptyState, type SaveV1 } from '@core/menu-index';
 import type { Result, SaveStore } from '../../game/platform/storage/save-store';
 import { objectivesScreen, type ObjectivesDeps } from './objectives';
 
-const member = (xp: number): SaveV1['garrison'][number] => ({ id: 'a', experience: xp, characterName: 'Fiara' });
-const save = (chapter: number, xp: number): SaveV1 => ({ ...newEmptyState(), chapter, garrison: [member(xp)] });
+const member = (xp: number): SaveV1['garrison'][number] => ({
+  id: 'a',
+  experience: xp,
+  characterName: 'Fiara',
+});
+const save = (chapter: number, xp: number): SaveV1 => ({
+  ...newEmptyState(),
+  chapter,
+  garrison: [member(xp)],
+});
 
 /** A chapter-2 save whose three heroes sit at exactly level 10 (the chapter 2 objective). */
 function chapter2Met(): SaveV1 {
@@ -15,7 +23,10 @@ function chapter2Met(): SaveV1 {
   return { ...newEmptyState(), chapter: 2, garrison };
 }
 
-function store(initial: Result<SaveV1>, saveResult: Result<SaveV1> | null = null): SaveStore & { saved: SaveV1[] } {
+function store(
+  initial: Result<SaveV1>,
+  saveResult: Result<SaveV1> | null = null,
+): SaveStore & { saved: SaveV1[] } {
   const saved: SaveV1[] = [];
   return {
     saved,
@@ -51,7 +62,11 @@ const advance = (h: HTMLElement): HTMLButtonElement | null =>
 
 describe('objectives screen in the DOM', () => {
   it('without a started save shows the default title and only a Back link', async () => {
-    const h = await mount({ store: store({ ok: true, value: newEmptyState() }), navigate: () => undefined, captureKey: () => 'C' });
+    const h = await mount({
+      store: store({ ok: true, value: newEmptyState() }),
+      navigate: () => undefined,
+      captureKey: () => 'C',
+    });
     expect(h.querySelector('h1')?.textContent).toBe('Current Objectives');
     expect(h.querySelector('.objectiveLine')).toBeNull();
     expect(advance(h)).toBeNull();
@@ -60,7 +75,10 @@ describe('objectives screen in the DOM', () => {
 
   it('a failed load degrades to the empty view instead of throwing', async () => {
     const h = await mount({
-      store: store({ ok: false, error: { kind: 'storage', message: 'boom' } } as unknown as Result<SaveV1>),
+      store: store({
+        ok: false,
+        error: { kind: 'storage', message: 'boom' },
+      } as unknown as Result<SaveV1>),
       navigate: () => undefined,
       captureKey: () => 'C',
     });
@@ -68,7 +86,11 @@ describe('objectives screen in the DOM', () => {
   });
 
   it('shows progress but no advance button while the objectives are unmet', async () => {
-    const h = await mount({ store: store({ ok: true, value: save(1, 1) }), navigate: () => undefined, captureKey: () => 'C' });
+    const h = await mount({
+      store: store({ ok: true, value: save(1, 1) }),
+      navigate: () => undefined,
+      captureKey: () => 'C',
+    });
     expect(h.querySelector('h1')?.textContent).toBe('Chapter 1 Objectives');
     expect(h.querySelectorAll('.objectiveLine').length).toBeGreaterThan(0);
     expect(advance(h)).toBeNull();
@@ -95,7 +117,8 @@ describe('objectives screen in the DOM', () => {
     const navigate = vi.fn();
     const h = await mount({ store: s, navigate, captureKey: () => 'C' });
     const btn = advance(h);
-    if (btn === null) return expect.unreachable('chapter 2 with huge XP should offer the next chapter');
+    if (btn === null)
+      return expect.unreachable('chapter 2 with huge XP should offer the next chapter');
     btn.click();
     expect(btn.disabled).toBe(true);
     await vi.waitFor(() => {
@@ -105,7 +128,10 @@ describe('objectives screen in the DOM', () => {
   });
 
   it('a failed save re-enables the button and does not navigate', async () => {
-    const s = store({ ok: true, value: chapter2Met() }, { ok: false, error: { kind: 'storage', message: 'full' } } as unknown as Result<SaveV1>);
+    const s = store({ ok: true, value: chapter2Met() }, {
+      ok: false,
+      error: { kind: 'storage', message: 'full' },
+    } as unknown as Result<SaveV1>);
     const navigate = vi.fn();
     const h = await mount({ store: s, navigate, captureKey: () => 'C' });
     const btn = advance(h);
@@ -120,7 +146,11 @@ describe('objectives screen in the DOM', () => {
   it('unmounting before the load resolves renders nothing', async () => {
     host = document.createElement('div');
     document.body.append(host);
-    const screen = objectivesScreen({ store: store({ ok: true, value: save(1, 1) }), navigate: () => undefined, captureKey: () => 'C' });
+    const screen = objectivesScreen({
+      store: store({ ok: true, value: save(1, 1) }),
+      navigate: () => undefined,
+      captureKey: () => 'C',
+    });
     screen.mount(host);
     screen.unmount();
     await Promise.resolve();

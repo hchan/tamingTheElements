@@ -11,7 +11,13 @@ const RACES = ['sindarosa', 'rokcore', 'lavax'] as CharacterId[];
 
 describe('tourCardView', () => {
   const card = (over: Partial<Parameters<typeof tourCardView>[0]> = {}): HTMLElement =>
-    tourCardView({ id: 'tourX', heading: 'Stage 2 of 9', lines: ['one', 'two'], actions: [], ...over });
+    tourCardView({
+      id: 'tourX',
+      heading: 'Stage 2 of 9',
+      lines: ['one', 'two'],
+      actions: [],
+      ...over,
+    });
 
   it('renders the id, one h1, one paragraph per line and a Main Menu link by default', () => {
     const page = card();
@@ -77,7 +83,12 @@ describe('tourSplashView', () => {
     expect(page.querySelector('h1')?.textContent).toBe('Stage 1 of 9');
     expect(glyphs).toEqual(['fire', 'earth']);
     const text = [...page.querySelectorAll('p')].map((p) => p.textContent);
-    expect(text).toEqual(['Earth arena', 'You: Fiara (fire)', 'Opponent: Rokcore (earth)', 'Press Enter, Space or tap to skip.']);
+    expect(text).toEqual([
+      'Earth arena',
+      'You: Fiara (fire)',
+      'Opponent: Rokcore (earth)',
+      'Press Enter, Space or tap to skip.',
+    ]);
     const faces = [...page.querySelectorAll<HTMLElement>('.heroFace')];
     expect(faces).toHaveLength(2);
     expect(faces[0]?.style.backgroundImage).toContain('fiara');
@@ -89,7 +100,10 @@ describe('tourSplashView', () => {
 
 describe('tourPickView', () => {
   const sel = (id: string): HTMLSelectElement => document.getElementById(id) as HTMLSelectElement;
-  const mount = (onStart = vi.fn(), current: [string, string, string] = ['sindarosa', 'rokcore', 'lavax']): HTMLElement => {
+  const mount = (
+    onStart = vi.fn(),
+    current: [string, string, string] = ['sindarosa', 'rokcore', 'lavax'],
+  ): HTMLElement => {
     const page = tourPickView({ races: RACES, current, onStart });
     document.body.append(page);
     return page;
@@ -98,9 +112,21 @@ describe('tourPickView', () => {
   // Preselection is not asserted: happy-dom mis-reports option.selected for options set before they are attached.
   it('has three labelled selects, each listing every race', () => {
     mount(vi.fn(), ['lavax', 'sindarosa', 'rokcore']);
-    expect(['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((id) => sel(id).name)).toEqual(['hero1', 'hero2', 'hero3']);
+    expect(['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((id) => sel(id).name)).toEqual([
+      'hero1',
+      'hero2',
+      'hero3',
+    ]);
     expect(document.querySelector('label[for="arcadeHero1"]')?.textContent).toBe('Hero 1 (lead)');
     expect([...sel('arcadeHero2').options].map((o) => o.value)).toEqual(['', ...RACES]);
+  });
+
+  it('changing a hero select moves the detail pane to that hero (A8)', () => {
+    mount();
+    const s = sel('arcadeHero2');
+    s.value = 'lavax';
+    s.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(document.querySelector('.heroPanel .heroName')?.textContent).toBe('Lavax');
   });
 
   it('submitting reports the chosen values and prevents the default navigation', () => {
@@ -111,11 +137,17 @@ describe('tourPickView', () => {
     const ev = new Event('submit', { cancelable: true, bubbles: true });
     document.querySelector('form')?.dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(true);
-    expect(onStart).toHaveBeenCalledWith({ hero1: 'rokcore', hero2: 'rokcore', hero3: 'sindarosa' });
+    expect(onStart).toHaveBeenCalledWith({
+      hero1: 'rokcore',
+      hero2: 'rokcore',
+      hero3: 'sindarosa',
+    });
   });
 
   const tile = (name: string): HTMLButtonElement =>
-    [...document.querySelectorAll<HTMLButtonElement>('.heroTile')].find((t) => t.querySelector('.heroTileName')?.textContent === name) as HTMLButtonElement;
+    [...document.querySelectorAll<HTMLButtonElement>('.heroTile')].find(
+      (t) => t.querySelector('.heroTileName')?.textContent === name,
+    ) as HTMLButtonElement;
 
   it('shows a portrait grid with a tile per hero and the focused hero panel with its abilities', () => {
     mount();
@@ -156,7 +188,8 @@ describe('tourPickView', () => {
 
   it('after removing all three heroes the next pick fills the lead slot, then hero 2', () => {
     mount();
-    for (let n = 0; n < 3; n++) (document.querySelectorAll('.heroSlotClear')[0] as HTMLElement).click();
+    for (let n = 0; n < 3; n++)
+      (document.querySelectorAll('.heroSlotClear')[0] as HTMLElement).click();
     expect(document.querySelectorAll('.heroSlotClear')).toHaveLength(0);
     expect(document.getElementById('tourSlot1')?.getAttribute('aria-pressed')).toBe('true');
     tile('Lavax').click();
@@ -189,9 +222,15 @@ describe('tourPickView', () => {
   it('arrow keys move the cursor and show that hero in the panel', () => {
     mount();
     const before = document.querySelector('.heroPanel .heroName')?.textContent;
-    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowRight', bubbles: true, cancelable: true }));
-    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowLeft', bubbles: true, cancelable: true }));
-    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true, cancelable: true }));
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { code: 'ArrowRight', bubbles: true, cancelable: true }),
+    );
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { code: 'ArrowLeft', bubbles: true, cancelable: true }),
+    );
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
     expect(document.querySelectorAll('.heroCursor')).toHaveLength(1);
     expect(before).toBeTruthy();
   });
@@ -209,14 +248,18 @@ describe('tourPickView', () => {
     expect(document.querySelector('a.menuButton')?.getAttribute('href')).toBe('#main');
   });
   describe('unselecting', () => {
-    const slotText = (n: number): string => document.getElementById(`tourSlot${String(n)}`)?.textContent ?? '';
+    const slotText = (n: number): string =>
+      document.getElementById(`tourSlot${String(n)}`)?.textContent ?? '';
     const live = (): string => document.querySelector('[role=status]')?.textContent ?? '';
-    const startBtn = (): HTMLButtonElement => document.getElementById('tourStart') as HTMLButtonElement;
+    const startBtn = (): HTMLButtonElement =>
+      document.getElementById('tourStart') as HTMLButtonElement;
     const hint = (): string => document.getElementById('tourHint')?.textContent ?? '';
 
     it('every filled slot has a labelled x button that empties it, announces it and disables Start with a hint', () => {
       mount();
-      const x = document.querySelector('button[aria-label="Remove Rokcore from slot 2"]') as HTMLButtonElement;
+      const x = document.querySelector(
+        'button[aria-label="Remove Rokcore from slot 2"]',
+      ) as HTMLButtonElement;
       expect(x).not.toBeNull();
       expect(document.querySelectorAll('.heroSlotClear')).toHaveLength(3);
       x.click();
@@ -231,7 +274,10 @@ describe('tourPickView', () => {
 
     it('Delete and Backspace on a focused slot clear it', () => {
       mount();
-      for (const [key, n] of [['Delete', 1], ['Backspace', 3]] as const) {
+      for (const [key, n] of [
+        ['Delete', 1],
+        ['Backspace', 3],
+      ] as const) {
         const b = document.getElementById(`tourSlot${String(n)}`) as HTMLElement;
         const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
         b.dispatchEvent(ev);
@@ -264,8 +310,12 @@ describe('tourPickView', () => {
     it('submitting an incomplete team never calls onStart', () => {
       const onStart = vi.fn();
       mount(onStart);
-      (document.getElementById('tourSlot1') as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
-      document.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      (document.getElementById('tourSlot1') as HTMLElement).dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }),
+      );
+      document
+        .querySelector('form')
+        ?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
       expect(onStart).not.toHaveBeenCalled();
       expect(live()).toBe('Pick all three heroes first.');
     });
@@ -276,7 +326,12 @@ describe('tourPickView', () => {
       let pressed = false;
       Object.defineProperty(navigator, 'getGamepads', {
         configurable: true,
-        value: () => [{ axes: [0, 0], buttons: Array.from({ length: 16 }, (_v, k) => ({ pressed: k === 1 && pressed })) }],
+        value: () => [
+          {
+            axes: [0, 0],
+            buttons: Array.from({ length: 16 }, (_v, k) => ({ pressed: k === 1 && pressed })),
+          },
+        ],
       });
       mount();
       pressed = true;

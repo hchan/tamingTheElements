@@ -7,7 +7,8 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-const LINE = /^(\w+) elementals will do 25% more damage and take 25% less damage from (\w+) elementals\. {2}However, they will do 25% less damage and take 25% more damage from (\w+) elementals\.$/;
+const LINE =
+  /^(\w+) elementals will do 25% more damage and take 25% less damage from (\w+) elementals\. {2}However, they will do 25% less damage and take 25% more damage from (\w+) elementals\.$/;
 
 describe('elementDescription / wikiLines', () => {
   it('states strength and weakness with the 25% figure', () => {

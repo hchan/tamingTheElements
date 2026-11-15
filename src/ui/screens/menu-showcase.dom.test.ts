@@ -38,7 +38,13 @@ describe('menu showcase', () => {
     document.body.append(host);
     const s = mainMenuScreen({ load: () => null, navigate: () => undefined })(null);
     s.mount(host);
-    expect([...host.querySelectorAll('li button')].map((b) => b.textContent)).toEqual(['Play', 'Versus', 'Online', 'Settings', 'Help']);
+    expect([...host.querySelectorAll('li button')].map((b) => b.textContent)).toEqual([
+      'Play',
+      'Versus',
+      'Online',
+      'Settings',
+      'Help',
+    ]);
     await expect.poll(() => host.querySelector('#menuShowcase') !== null).toBe(true);
     expect(host.textContent).not.toMatch(/classic|arcade|ruleset|capture/i);
     s.unmount();

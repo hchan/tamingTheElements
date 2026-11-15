@@ -137,14 +137,20 @@ export function heroDnd(o: HeroDndOptions): HeroDnd {
         over = s;
       }
     };
-    // Near the top or bottom edge of the window the page scrolls, so a slot (or a tile) out of view can still be reached.
+    // Near the top or bottom edge of the picker's scroll region (the window when there is none) it scrolls, so a slot or tile out of view can be reached.
+    const box = o.root.closest<HTMLElement>('.pickScroll') ?? o.root.querySelector<HTMLElement>('.pickScroll');
     const edgeScroll = (): void => {
       raf = 0;
       if (!started || !last) return;
-      const edge = 56;
-      const dy = last.clientY < edge ? -14 : last.clientY > window.innerHeight - edge ? 14 : 0;
+      const rr = box?.getBoundingClientRect();
+      const r = rr && rr.height > 0 ? rr : undefined;
+      const top = r ? r.top : 0;
+      const bottom = r ? r.bottom : window.innerHeight;
+      const edge = Math.min(56, (bottom - top) / 5);
+      const dy = last.clientY < top + edge ? -14 : last.clientY > bottom - edge ? 14 : 0;
       if (dy !== 0) {
-        window.scrollBy(0, dy);
+        if (box && r) box.scrollTop += dy;
+        else window.scrollBy(0, dy);
         highlight(last);
       }
       raf = window.requestAnimationFrame(edgeScroll);

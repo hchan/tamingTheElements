@@ -16,3 +16,20 @@ export function byId(id: string): HTMLElement {
   if (!node) throw new Error(`Missing element #${id}`);
   return node;
 }
+
+/** Marks a scroll box `data-more` while content continues below its visible end (CSS draws the "More below" cue). Returns the updater. */
+export function markMoreBelow(box: HTMLElement): () => void {
+  const update = (): void => {
+    box.toggleAttribute('data-more', box.scrollTop + box.clientHeight < box.scrollHeight - 2);
+  };
+  box.addEventListener('scroll', update, { passive: true });
+  if (typeof ResizeObserver === 'function') {
+    const ro = new ResizeObserver(() => {
+      if (!box.isConnected) ro.disconnect();
+      else update();
+    });
+    ro.observe(box);
+    for (const c of box.children) ro.observe(c);
+  }
+  return update;
+}

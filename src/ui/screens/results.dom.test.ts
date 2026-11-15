@@ -6,7 +6,15 @@ import { defeatScreen, setPendingResult, victoryScreen } from './results';
 const win: MatchReport = {
   winner: 0,
   victory: true,
-  xp: { characterName: 'Fiara', gained: 0, before: 5, after: 5, levelBefore: 1, levelAfter: 1, leveledUp: false },
+  xp: {
+    characterName: 'Fiara',
+    gained: 0,
+    before: 5,
+    after: 5,
+    levelBefore: 1,
+    levelAfter: 1,
+    leveledUp: false,
+  },
   captured: [{ characterName: 'Aqua', experience: 0 }],
   gameCompleted: false,
 };
@@ -35,7 +43,9 @@ describe('results screens in the DOM', () => {
     expect(h.querySelector('.resultXp')?.textContent).toContain('max XP');
     expect(h.querySelector('.winQuote')?.textContent).toMatch(/^“.+”$/);
     expect(h.querySelector('.resultCaptured')?.textContent).toMatch(/^Aqua Level : \d+$/);
-    expect(h.querySelector('.resultBanner')?.textContent).toContain('Capture is unlocked in chapter 2');
+    expect(h.querySelector('.resultBanner')?.textContent).toContain(
+      'Capture is unlocked in chapter 2',
+    );
     expect(h.querySelector('a.menuLink')?.getAttribute('href')).toBe('#main');
   });
 

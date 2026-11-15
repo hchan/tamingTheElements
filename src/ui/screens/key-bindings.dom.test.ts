@@ -1,7 +1,14 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { newEmptyState, type SaveV1 } from '@core/menu-index';
-import { DEFAULT_BINDINGS, SF_PRESET_BINDINGS, bindingsToSave, getBindings, parseBindings, setBindings } from '../../game/platform/input/bindings';
+import {
+  DEFAULT_BINDINGS,
+  SF_PRESET_BINDINGS,
+  bindingsToSave,
+  getBindings,
+  parseBindings,
+  setBindings,
+} from '../../game/platform/input/bindings';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { keyBindingsScreen } from './key-bindings';
 import type { Screen } from './screen';
@@ -129,7 +136,10 @@ describe('keyBindingsScreen (DOM)', () => {
 
   it('Backspace clears an alternate key but not a primary one', () => {
     setBindings({ ...DEFAULT_BINDINGS, dash: ['KeyE', 'KeyF'] });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...newEmptyState(), keyBindings: { dash: ['KeyE', 'KeyF'] } }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...newEmptyState(), keyBindings: { dash: ['KeyE', 'KeyF'] } }),
+    );
     screen = keyBindingsScreen();
     screen.mount(root);
     btn('bind-dash-1').click();
@@ -185,7 +195,10 @@ describe('keyBindingsScreen (DOM)', () => {
   });
 
   it('loads saved bindings on mount, and unmount stops a capture in progress', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...newEmptyState(), keyBindings: { dash: ['KeyQ'] } }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...newEmptyState(), keyBindings: { dash: ['KeyQ'] } }),
+    );
     screen = keyBindingsScreen();
     screen.mount(root);
     expect(btn('bind-dash-0').textContent).toBe('Q');
