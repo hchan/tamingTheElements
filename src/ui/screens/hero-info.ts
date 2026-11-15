@@ -7,9 +7,10 @@ import {
   SNAG_DESCRIPTION,
   SNAG_NAME,
   describeAbility,
+  HERO_STYLE,
   getCharacter,
 } from '@core/menu-index';
-import type { AbilityDef, AbilityDefB, CharacterId } from '@core/menu-index';
+import type { AbilityDef, AbilityDefB, CharacterId, HeroStyle } from '@core/menu-index';
 
 /**
  * What the hero select shows about a hero, generated from the character and ability data in `src/core/data` (never typed by hand),
@@ -40,20 +41,14 @@ export function heroColumns(grid: Element, fallback: number): number {
   return n > 0 ? n : fallback;
 }
 
-export type HeroStyle = 'melee' | 'ranged';
-
-/** The fighting style of the 12 released heroes (the sim's `HERO_STYLE` will replace this table, roster-24 WP 0.2). */
-const RELEASED_STYLE: Readonly<Record<string, HeroStyle>> = {
-  curomo: 'melee', pax: 'melee', treenoc: 'melee', echo: 'melee', wispera: 'melee',
-  fiara: 'ranged', lavax: 'ranged', sindarosa: 'ranged', ishimi: 'ranged', morblass: 'ranged', rokcore: 'ranged', cyclonius: 'ranged',
-};
+export type { HeroStyle };
 
 /** Player-facing word for a style (shown next to the badge icon, so the style is never colour or icon alone). */
 export const STYLE_WORDS: Readonly<Record<HeroStyle, string>> = { melee: 'Melee', ranged: 'Ranged' };
 
-/** Melee or ranged: the table for the released heroes, else from the first ability's kind (a projectile means ranged). */
+/** Melee or ranged: `HERO_STYLE` (the one source) for a hero that has a row, else from the first ability's kind (a projectile means ranged). */
 export function heroStyle(id: CharacterId): HeroStyle {
-  const known = RELEASED_STYLE[id as string];
+  const known = HERO_STYLE[id];
   if (known) return known;
   const first = DEFS.get(getCharacter(id).abilities[0] ?? '');
   return first?.kind === 'range' || first?.kind === 'omni' ? 'ranged' : 'melee';
