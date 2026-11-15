@@ -6,7 +6,7 @@ import {
 import { cueFor } from '../audio/sound-map';
 import { EventFx, type FxSink } from './event-fx';
 import {
-  CUT_IN_MS, PUNCH_IN_MS, PUNCH_OUT_MS, PUNCH_ZOOM, SUPER_DIM, SUPER_FADE_MS, TICK_MS, superFrame, type SuperFrame,
+  CUT_IN_MS, CUT_OUT_MS, PUNCH_IN_MS, PUNCH_OUT_MS, PUNCH_ZOOM, SUPER_DIM, SUPER_FADE_MS, TICK_MS, superFrame, type SuperFrame,
 } from './super-cinematic';
 
 /** The 16-tick super freeze plus its start tick (SIM_VERSION 58; pinned against a real super below). */
@@ -45,6 +45,11 @@ describe('super cinematic plan (FUN-DESIGN section 3)', () => {
     // The band fades in instead of sliding, and is fully shown for most of the freeze.
     expect(at(CUT_IN_MS / 2, true).bandAlpha).toBeCloseTo(0.5);
     expect(samples.filter((ms) => at(ms, true).bandAlpha === 1).length / samples.length).toBeGreaterThan(0.5);
+  });
+  it('keeps the name at full opacity until the last two ticks (QA r51: it was half faded 14 ticks in)', () => {
+    expect(CUT_OUT_MS).toBeLessThanOrEqual(2 * TICK_MS);
+    for (const tick of [8, 12, 14, 15]) expect(at(tick * TICK_MS, false).bandAlpha).toBe(1);
+    expect(at(TOTAL - CUT_OUT_MS / 2, false).bandAlpha).toBeCloseTo(0.5);
   });
   it('writes into the given frame (no allocation per rendered frame)', () => {
     const out: SuperFrame = { dim: 0, bandAlpha: 0, slide: 0, zoom: 1 };

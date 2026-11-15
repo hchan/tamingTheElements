@@ -14,7 +14,7 @@ export const SUPER_FADE_MS = 100;
  * Sized for the 16-tick freeze (340 ms with its start tick, SIM_VERSION 58): the band is fully shown for over half of it.
  */
 export const CUT_IN_MS = 80;
-export const CUT_OUT_MS = 80;
+export const CUT_OUT_MS = 40;
 /** Camera punch-in on the caster: zoom 1 to 1 + PUNCH_ZOOM over PUNCH_IN_MS, back over PUNCH_OUT_MS (off when reduced); back at 1 before the freeze ends. */
 export const PUNCH_ZOOM = 0.15;
 export const PUNCH_IN_MS = 100;

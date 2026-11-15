@@ -2335,20 +2335,13 @@ button.menuButton.heroSlotClear {
   }
 }
 
-/* Help: the page links as one centred row of buttons, the sections as lit cards (no tall left-hand column, no empty bands). */
+/* Help: no crest orb over the hero art (QA r51 #11: it cluttered the page); the page links as one centred row of buttons, the sections as lit cards (no tall left-hand column, no empty bands). */
 #menu .helpLinks {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.5em 0.8em;
   margin: 0.4em 0 1em;
-}
-#menu .helpLinks::before {
-  content: '';
-  flex: 0 0 100%;
-  height: 7em;
-  background: url(/assets/img/menu/crest-hires.png) center / contain no-repeat;
-  filter: drop-shadow(0 0 14px rgba(255, 214, 120, 0.55));
 }
 #menu .helpLinks li {
   display: block;
@@ -2373,9 +2366,6 @@ button.menuButton.heroSlotClear {
 }
 @media (max-height: 500px) and (orientation: landscape) {
   /* Short phone: no crest, a small title and one sticky row of tabs, so the body text starts high on the screen. */
-  #menu .helpLinks::before {
-    display: none;
-  }
   .menuPage:has(.helpLinks) > h1.heading {
     font-size: 1.3em;
     margin: 0.1em 0;

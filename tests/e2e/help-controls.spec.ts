@@ -42,3 +42,11 @@ test('Help at 844x390: compact header, one row of tabs, first heading in the top
   await expect.poll(() => page.evaluate(`document.getElementById('helpControlsHeading').getBoundingClientRect().top`)).toBeLessThan(120);
   expect(errors).toEqual([]);
 });
+
+// QA r51 #11: no elemental orb (crest) over the hero art on the Help page.
+test('Help has no crest orb over the hero art', async ({ page }) => {
+  await page.goto('/?seed=7#help');
+  await waitForRoute(page, '#help');
+  const content = await page.evaluate<string>(`getComputedStyle(document.querySelector('#menu .helpLinks'), '::before').content`);
+  expect(content === 'none' || content === 'normal').toBe(true);
+});
