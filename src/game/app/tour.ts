@@ -184,7 +184,7 @@ export function tourScreen(deps: TourDeps): Screen {
       const mine = epoch;
       void import('@ui/screens/tour-select').then((m) => {
         if (epoch !== mine) return;
-        m.enhanceStage(card, stage, r.continues, TOUR_CONTINUES, raceLabel);
+        m.enhanceStage(card, stage, r.continues, TOUR_CONTINUES, raceLabel, r.hero);
       });
     }
   }

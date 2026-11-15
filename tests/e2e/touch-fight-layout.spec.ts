@@ -146,6 +146,48 @@ test.describe('small phone landscape, QA r38', () => {
   });
 });
 
+test.describe('small phone landscape, QA r39', () => {
+  test.use({ viewport: { width: 667, height: 375 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  test('2v2 picker: the partner row is above the sticky Fight! bar', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByLabel('Team').selectOption('2');
+    await page.getByRole('button', { name: /^Fight/ }).waitFor();
+    const m = await page.evaluate<{ partnerBottom: number; barTop: number }>(
+      `(() => { const p = document.querySelector('#arcadePick .vsSide1 .vsSlotItem:nth-child(2)').getBoundingClientRect(); return { partnerBottom: p.bottom, barTop: document.querySelector('#arcadePick .vsActions').getBoundingClientRect().top }; })()`,
+    );
+    await shot(page, 'small-picker-2v2');
+    expect(m.partnerBottom).toBeLessThanOrEqual(m.barTop + 0.5);
+  });
+  test('first-run card is see-through and click-through (only Got it takes taps), and names the bar', async ({ page }) => {
+    await enterFight(page);
+    const m = await page.evaluate<{ pe: string; donePe: string; text: string }>(
+      `(() => { const c = document.querySelector('#firstRunHint'); return { pe: getComputedStyle(c).pointerEvents, donePe: getComputedStyle(c.querySelector('.firstRunDone')).pointerEvents, text: c.textContent }; })()`,
+    );
+    expect(m.pe).toBe('none');
+    expect(m.donePe).not.toBe('none');
+    expect(m.text).toMatch(/Tap the bar/);
+  });
+  test('Tour stage card: "Stage N  Element" tiles, your team strip, Fight in view', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#tour`);
+    await page.getByLabel('Hero 1 (lead)').selectOption('fiara');
+    await page.getByLabel('Hero 2').selectOption('rokcore');
+    await page.getByLabel('Hero 3').selectOption('curomo');
+    await page.getByRole('button', { name: 'Start tour' }).click();
+    await page.locator('#tourPins li').first().waitFor();
+    await page.locator('#tourStage .tsTeam').waitFor();
+    await page.locator('#tourFight').waitFor();
+    await page.waitForFunction("getComputedStyle(document.querySelector('#tourStage')).opacity === '1'");
+    await shot(page, 'small-tour-card');
+    const m = await page.evaluate<{ first: string; label: string | null; team: number; fightBottom: number; ih: number }>(
+      `(() => { const li = document.querySelector('#tourPins li'); return { first: li.textContent, label: li.getAttribute('aria-label'), team: document.querySelectorAll('#tourStage .tsTeam .tsMine').length, fightBottom: document.querySelector('#tourFight').getBoundingClientRect().bottom, ih: innerHeight }; })()`,
+    );
+    expect(m.first).toMatch(/^Stage 1\s+\w+$/);
+    expect(m.label).toMatch(/^Stage 1: /);
+    expect(m.team).toBe(3);
+    expect(m.fightBottom).toBeLessThanOrEqual(m.ih);
+  });
+});
+
 test.describe('phone portrait fight', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   test('portrait: card sits under the canvas, clear of the stick', async ({ page }) => {

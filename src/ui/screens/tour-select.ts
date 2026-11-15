@@ -34,6 +34,8 @@ export function enhanceStage(
   continuesLeft: number,
   continuesMax: number,
   label: (id: CharacterId) => string,
+  /** The player's own heroes, lead first: shown as a small "Your team" strip (omitted: no strip). */
+  team: readonly CharacterId[] = [],
 ): void {
   loadCss();
   card.classList.add('tsGrim');
@@ -55,11 +57,34 @@ export function enhanceStage(
     fig.append(img, el('figcaption', undefined, label(id)));
     roster.append(fig);
   }
+  const mine = team.length > 0 ? el('div', 'tsTeam') : undefined;
+  if (mine) {
+    mine.setAttribute('aria-hidden', 'true');
+    mine.append(el('span', 'tsTeamLabel', 'Your team'));
+    team.forEach((id, i) => {
+      const fig = el('figure', i === 0 ? 'tsFoe tsMine tsLead' : 'tsFoe tsMine');
+      const face = el('span', 'tsFace heroFace');
+      const c = getCharacter(id);
+      const url = `${base()}assets/img/map/${encodeURIComponent(c.sprite)}${c.element === 'void' ? 'Large' : ''}.png`;
+      face.style.backgroundImage = `url("${url}")`;
+      fig.append(face, el('figcaption', undefined, label(id)));
+      mine.append(fig);
+    });
+  }
+  // The stage tiles read "Stage 1  Air" with a state badge from CSS (Cleared / Next / Locked); the full phrase stays as the accessible name.
+  card.querySelectorAll<HTMLElement>('#tourPins li').forEach((li) => {
+    const full = li.textContent;
+    li.setAttribute('aria-label', full);
+    const n = full.match(/^Stage (\d+)/)?.[1] ?? '';
+    const w = li.dataset['element'] as string;
+    li.replaceChildren(el('span', 'tsPinName', `Stage ${n}  ${w.charAt(0).toUpperCase()}${w.slice(1)}`));
+  });
   const at = (key: string, i: number): Element | undefined => lines.find((l) => (l as HTMLElement).dataset['fact'] === key) ?? lines[i];
   at('difficulty', 2)?.append(' ', pips('tsLevel', stage.aiLevel === 'easy' ? 1 : stage.aiLevel === 'normal' ? 2 : 3, 3));
   at('continues', 3)?.append(' ', pips('tsLives', continuesLeft, continuesMax));
   const info = el('div', 'tsInfo');
   info.append(...lines);
+  if (mine) info.append(mine);
   panel.append(roster, info);
   const map = card.querySelector('#tourMap');
   if (map) map.before(panel);

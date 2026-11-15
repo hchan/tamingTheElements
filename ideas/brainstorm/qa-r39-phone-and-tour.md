@@ -21,3 +21,12 @@ Phone 667x375 (touch):
 - Touch fight shows only the stick and the action bar; the hint text mentions "tap the buttons" but I could not see strike buttons right of the arena in this frame (they may be the numbered action bar). Worth a clearer 'attack' button on the right thumb.
 
 e2e subset run 2 result: 36 passed (2.7m), same as run 1.
+
+## Progress (phone-r39 agent, 667x375)
+
+- Done: first-run card is see-through and click-through apart from Got it, and its phone line now says "Stick moves you. Tap the bar: 1 and 2 strike, plus Dash, Guard, Super" (main.css append; first-run-hint.ts).
+- Done: 2v2/3v3 picker slots sit in a row on phone landscape, so the partner is beside the first hero and above the Fight bar (main.css append).
+- Done: Tour tiles read "Stage 1  Air" with Next / Locked badges beside the Cleared stamp; the full phrase moved to aria-label. The stage card has a "Your team" portrait strip, lead highlighted (tour-select.ts/.css, tour.ts).
+- Attack buttons: the strike slots are drawn on the canvas by action-bar.ts (off limits here), so clarity came from the hint text only. A dedicated right-thumb attack button is still open.
+- NOT done: 2v2 HUD bare life numbers. The format lives in Hud.ts/arcade-hud.ts (off limits), not slim-hud.ts/hud-math.ts.
+- Tests: tests/e2e/touch-fight-layout.spec.ts "QA r39" block; tour-select.dom.test.ts updated. Shots: ~/claudetmp/phone-r39/after/.

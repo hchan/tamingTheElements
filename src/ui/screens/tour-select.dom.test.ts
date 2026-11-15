@@ -27,11 +27,12 @@ const card = (): HTMLElement =>
 
 describe('enhanceStage', () => {
   const c = card();
-  enhanceStage(c, { location: 'earth', aiLevel: 'normal', opponents: ['lavax', 'pax'] as CharacterId[] }, 2, 3, (id) => id);
+  enhanceStage(c, { location: 'earth', aiLevel: 'normal', opponents: ['lavax', 'pax'] as CharacterId[] }, 2, 3, (id) => id, ['fiara', 'pax'] as CharacterId[]);
 
   it('keeps every word of the plain card and loads the stylesheet once', () => {
     expect(c.classList.contains('tsGrim')).toBe(true);
-    for (const w of ['Location: Earth', 'Opponent: Lavax, Pax', 'Difficulty: Normal', 'Continues: 2 of 3', 'Fight', 'Stage 2: Earth, Next']) expect(c.textContent).toContain(w);
+    for (const w of ['Location: Earth', 'Opponent: Lavax, Pax', 'Difficulty: Normal', 'Continues: 2 of 3', 'Fight', 'Stage 2  Earth']) expect(c.textContent).toContain(w);
+    expect(c.querySelector('#tourPins li[data-state="current"]')?.getAttribute('aria-label')).toBe('Stage 2: Earth, Next');
     enhanceStage(card(), { location: 'fire', aiLevel: 'easy', opponents: [] }, 3, 3, (id) => id);
     expect(document.querySelectorAll('#tourSelectCss')).toHaveLength(1);
   });
