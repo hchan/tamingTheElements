@@ -3,7 +3,7 @@ import { SimEventKind, WEATHER_TICKS, Weather, type SimEvent } from '@core/index
 import type { Announcement } from '../a11y/announcer';
 import {
   BADGE_WORDS, CALL_IN_SCALE, CALL_IN_TICKS, CALL_OUT_TICKS, CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TINT_RAMP_TICKS,
-  WEATHER_COLORS, WEATHER_NAMES, WeatherFx, badgeFill, badgeLabel, callAlpha, chargeFill, chargeLabel, readyAlpha, callScale, changedLine, endedLine, particle,
+  WEATHER_COLORS, WEATHER_NAMES, WeatherFx, badgeFill, badgeLabel, callAlpha, weatherAlpha, chargeFill, chargeLabel, readyAlpha, callScale, changedLine, endedLine, particle,
   progress, tintAlpha, type Particle, type WeatherSink,
 } from './weather-fx';
 
@@ -204,5 +204,14 @@ describe('weather fx: particles', () => {
       }
       expect(seen.size).toBe(PARTICLE_COUNTS[kind - 1]);
     }
+  });
+});
+
+describe('weatherAlpha', () => {
+  it('hides the weather chrome under the super band or the TAG! call', () => {
+    expect(weatherAlpha(false, false)).toBe(1);
+    expect(weatherAlpha(true, false)).toBe(0);
+    expect(weatherAlpha(false, true)).toBe(0);
+    expect(weatherAlpha(true, true)).toBe(0);
   });
 });

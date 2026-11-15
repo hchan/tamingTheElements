@@ -102,6 +102,11 @@ export class WeatherFx {
 }
 
 /** 0..1 progress of an effect started at view time `from` (ticks, fractional) lasting `ticks`, at time `t`. */
+/** Opacity of the badge, chip and called line: hidden under the super band and under the TAG! call (they overlap it). */
+export function weatherAlpha(band: boolean, callUp: boolean): number {
+  return band || callUp ? 0 : 1;
+}
+
 export function progress(t: number, from: number, ticks: number): number {
   return Math.min(1, Math.max(0, (t - from) / ticks));
 }
