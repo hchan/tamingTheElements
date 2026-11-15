@@ -10,6 +10,7 @@ import { step } from '../sim/step';
 import { SWAP_COOLDOWN_TICKS } from '../sim/systems/swap';
 import { REST_HEAL_INTERVAL } from '../sim/systems/rest';
 import { newEmptyState } from '../save/v1';
+import { checkSave } from '../save/validate';
 import { levelFromXp } from '../rules/progression';
 import { objectivesMet } from '../rules/objectives';
 import { applyArenaCheat, applyTickCheats, benchRows } from './cheats';
@@ -222,6 +223,8 @@ describe('full garrison', () => {
     expect(full.chapter).toBe(1);
     expect(save.garrison[0]?.experience).toBe(1);
     expect(fullGarrison(full, 10, ids).garrison.length).toBe(full.garrison.length);
+    // The result must pass save validation (roster24 heroes are not saveable, so they must not be added).
+    expect(checkSave({ ...full, garrison: full.garrison.filter((g) => g.characterName !== 'Custom') })).toEqual({ ok: true });
   });
 });
 

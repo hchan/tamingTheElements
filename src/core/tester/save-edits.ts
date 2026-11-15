@@ -2,7 +2,7 @@
  * Tester-mode edits of a save (see docs/TESTER-MODE.md): pure functions that return a new save. They bypass the normal
  * progression rules on purpose, so the platform only ever applies them to the throwaway tester slot unless the owner opts in.
  */
-import { CHARACTERS, LEGACY_CHARACTERS } from '../data/characters';
+import { LEGACY_CHARACTERS } from '../data/characters';
 import { CHARACTER_TEXT } from '../data/text-ids';
 import type { IdSource } from '../rules/garrison';
 import { levelFromXp } from '../rules/progression';
@@ -58,12 +58,13 @@ export function fullGarrison(save: SaveV1, now: number, ids: IdSource, level = 1
   const experience = xpForLevel(level);
   const raised = new Set<string>();
   const garrison: GarrisonMemberV1[] = save.garrison.map((g) => {
-    const known = CHARACTERS.some((c) => (CHARACTER_TEXT.get(c.id)?.name ?? c.id) === g.characterName);
+    const known = LEGACY_CHARACTERS.some((c) => (CHARACTER_TEXT.get(c.id)?.name ?? c.id) === g.characterName);
     if (!known || raised.has(g.characterName)) return g;
     raised.add(g.characterName);
     return { ...g, experience, lastModifiedTime: now };
   });
-  for (const c of CHARACTERS) {
+  // Legacy roster only: save validation rejects names outside LEGACY_CHARACTERS (the roster24 heroes are not saveable yet).
+  for (const c of LEGACY_CHARACTERS) {
     const characterName = CHARACTER_TEXT.get(c.id)?.name ?? c.id;
     if (raised.has(characterName)) continue;
     garrison.push({ id: ids.next(), experience, characterName, createdTime: now, lastModifiedTime: now });
