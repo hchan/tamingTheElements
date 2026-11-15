@@ -345,7 +345,13 @@ export class Arena extends Phaser.Scene {
 
     if (playback) this.attachPlayback(playback, driver);
     this.installProbe(world, driver);
-    const hudData: HudData = { view: this.view, ...(hud ? { arcade: hud } : {}) };
+    const arenaView = (): { x: number; y: number; w: number; h: number } => {
+      const c = this.cameras.main;
+      const w = c.width / c.zoom;
+      const h = c.height / c.zoom;
+      return { x: c.scrollX + c.width / 2 - w / 2, y: c.scrollY + c.height / 2 - h / 2, w, h };
+    };
+    const hudData: HudData = { view: this.view, ...(hud ? { arcade: hud, arenaView } : {}) };
     this.scene.launch(HUD_SCENE, hudData);
     if (hud) {
       const hudScene = this.scene.get(HUD_SCENE);

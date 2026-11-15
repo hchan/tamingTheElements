@@ -12,7 +12,7 @@ import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
-  gapLabel, lifeTicks, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
+  clampNumber, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -47,7 +47,12 @@ export interface HudData {
   readonly view: RenderView;
   /** Arcade matches only: damage numbers and combo counters, fed and aged by the Arena. */
   readonly arcade?: ArcadeHudModel;
+  /** Arcade: the Arena camera's world view (from scroll and zoom), so world-space damage numbers can be projected to the screen. */
+  readonly arenaView?: () => HudRect;
 }
+
+/** The HUD's logical frame. */
+const HUD_FRAME: HudRect = { x: 0, y: 0, w: 1280, h: 720 };
 
 /** Combo counter anchor under each side's bars (logical px). */
 const COMBO_Y = 110;
@@ -118,6 +123,8 @@ export class Hud extends Phaser.Scene {
   /** Arcade: the white chip-drain trail per hero id. */
   private trails = new Map<number, Trail>();
   private frameMs = 1000 / 60;
+  private arenaView: (() => HudRect) | undefined;
+  private readonly projected = { x: 0, y: 0 };
   /** Arcade: each side's last active hero (name, max life), kept for the K.O. gap label. */
   private lastActive: ({ name: string; maxHp: number } | undefined)[] = [];
 
@@ -128,6 +135,7 @@ export class Hud extends Phaser.Scene {
   init(data: HudData): void {
     this.view = data.view;
     this.arcade = data.arcade;
+    this.arenaView = data.arenaView;
   }
 
   create(): void {
@@ -608,7 +616,14 @@ export class Hud extends Phaser.Scene {
         // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
         styleCombatText(t.setText(numberLabel(n.amount, n.counter)), n.scaled ? 'scaled' : n.counter ? 'counter' : 'number').setFontSize(n.scaled ? 28 : 38);
       }
-      t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
+      // World to screen (the arena pans and zooms), then keep it on screen and off the combo readout.
+      const from = this.arenaView?.();
+      const p = from ? projectToHud(n.x, n.y, from, HUD_FRAME, this.projected) : this.projected;
+      if (!from) { p.x = n.x; p.y = n.y; }
+      const avoid: HudRect[] = [];
+      for (const c of this.comboTexts) if (c?.visible) avoid.push({ x: c.x - (c.originX * c.displayWidth), y: c.y, w: c.displayWidth, h: c.displayHeight });
+      const at = clampNumber(p.x, p.y + numberRise(n.age, reduced), t.displayWidth / 2, t.displayHeight, HUD_FRAME, avoid);
+      t.setPosition(at.x, at.y).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
     }
     for (const team of TEAMS) {
       this.drawMeter(model, team);
