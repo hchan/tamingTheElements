@@ -486,11 +486,12 @@ export const CcEnd = { expired: 0, broken: 1, shattered: 2, thawed: 3, cleansed:
 export const CcResist = { immune: 0, busy: 1, full: 2 } as const;
 /**
  * Which CC kind a hit rider applies, per ability slug (flag withCrowdControl; systems/arcade/cc.ts builds the def-index
- * table). CB1: a Tornado hit dazes (replacing its 60-tick Arcade stun); CB2 adds the water ice hits (`chilled`: only on a foe already chilled by Ice Blast, TIDE or a Puddle); CB3 adds rows.
+ * table). CB1: a Tornado hit dazes (replacing its 60-tick Arcade stun); CB2 adds the water ice hits (`chilled`: only on a foe already chilled by Ice Blast, TIDE or a Puddle); CB3 adds Pax's Ground Shock (knockdown, the only host).
  */
 export const CC_RIDERS: readonly { readonly slug: string; readonly kind: number; readonly ticks: number; readonly chilled?: boolean }[] = [
   { slug: 'tornado', kind: CcKind.daze, ticks: DAZE_TICKS },
   { slug: 'ice-blast', kind: CcKind.iced, ticks: ICED_TICKS, chilled: true },
   { slug: 'icicles', kind: CcKind.iced, ticks: ICED_TICKS, chilled: true },
   { slug: 'ice-shock', kind: CcKind.iced, ticks: ICED_TICKS, chilled: true },
+  { slug: 'ground-shock', kind: CcKind.downed, ticks: DOWN_TICKS },
 ];
