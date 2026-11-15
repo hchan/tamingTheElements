@@ -1,0 +1,77 @@
+/* Versus picker on a short landscape phone (QA r60/r61: 667x375 and 812x375 showed the option rows and the You / Computer cards, and no hero
+   tile until you scrolled). The four option rows pair up (Opponent + Arena, Team + AI level) so they take two 44 px rows instead of three, and
+   the fighter cards and padding tighten. Touch targets stay 44 px; the Fight bar is untouched. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  #menu #arcadePick .vsFieldset {
+    gap: 0 0.6em;
+    padding-block: 0.1em 0.3em;
+  }
+  #menu #arcadePick .vsFieldset > * {
+    order: 5;
+  }
+  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
+    order: 1;
+  }
+  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeStage) {
+    order: 2;
+  }
+  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeSize) {
+    order: 3;
+  }
+  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeLevel) {
+    order: 4;
+  }
+  /* Opponent and Arena share row one: their labels go visually hidden (still the groups' names); the buttons say it. */
+  #arcadePick .vsControl:has(#arcadeMode) > label,
+  #arcadePick .vsControl:has(#arcadeStage) > label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  #arcadePick .vsSegment {
+    padding: 2px 8px;
+  }
+  /* Each fighter card is one row: the title and status beside the hero slot, not above it. */
+  #arcadePick .vsSide {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.5em;
+  }
+  #arcadePick .vsSide .vsSideTitle {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  #arcadePick .vsSide {
+    position: relative;
+  }
+  #arcadePick .vsSide .vsStatus {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  #arcadePick .vsSide .teamSlots {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  #arcadePick .vsSide .vsReady {
+    grid-column: 1 / -1;
+  }
+  #arcadePick .pickScroll {
+    padding-block: 4px 8px;
+  }
+  #arcadePick .vsStage {
+    gap: 0.4em;
+  }
+  #arcadePick .vsSide {
+    padding: 0.25em 0.4em;
+  }
+  #arcadePick .vsSide .vsSideTitle {
+    margin: 0;
+  }
+}

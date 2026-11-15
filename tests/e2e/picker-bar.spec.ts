@@ -131,3 +131,28 @@ test.describe('touch targets', () => {
     }
   });
 });
+
+// Short landscape phones: the option rows used to fill the screen, so no hero tile showed until you scrolled (QA r60/r61).
+const SHORT_PHONES: ReadonlyArray<readonly [number, number]> = [[667, 375], [812, 375]];
+for (const [w, h] of SHORT_PHONES) {
+  test.describe(`Versus heroes visible at ${String(w)}x${String(h)}`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+
+    test('at least three hero tiles sit fully above the bar at scroll 0, targets stay 44 px', async ({ page }) => {
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await expect(page.locator('#arcadePick .heroTile').first()).toBeAttached();
+      const bar = need(await rectOf(page, BAR));
+      const shown = await page.evaluate<number>(
+        `(() => { const bar = document.querySelector(${JSON.stringify(BAR)}).getBoundingClientRect(); const region = document.querySelector('.pickScroll').getBoundingClientRect(); return [...document.querySelectorAll('#arcadePick .heroTile')].filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.top >= region.top && r.bottom <= bar.top + 1; }).length; })()`,
+      );
+      expect(shown).toBeGreaterThanOrEqual(3);
+      for (const sel of ['#arcadePick .vsSegment', '#arcadePick .vsActions .menuButton']) {
+        const h44 = await page.evaluate<number>(
+          `Math.min(...[...document.querySelectorAll(${JSON.stringify(sel)})].map((e) => e.getBoundingClientRect().height))`,
+        );
+        expect(h44).toBeGreaterThanOrEqual(44);
+      }
+      expect(bar.bottom).toBeLessThanOrEqual(h + 1);
+    });
+  });
+}

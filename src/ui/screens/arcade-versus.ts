@@ -5,6 +5,7 @@ import { ELEMENT_MARKS } from '../element-marks';
 import { abilitiesSpeech, abilityChips } from './hero-abilities';
 import { heroDnd } from './hero-dnd';
 import { heroGrid, heroPanel } from './hero-panel';
+import '../styles/picker-compact.css';
 
 /**
  * Battle keys for the two-player option, as (action word, keys) pairs for the cheat sheet (Player 1's are the defaults and can be
