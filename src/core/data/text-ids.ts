@@ -25,6 +25,10 @@ export const CHARACTER_TEXT: ReadonlyMap<CharacterId, { readonly name: string; r
   [characterId('glimmaw'), { name: "Glimmaw", description: "An abyssal anglerfish that hangs lights in the dark and bites whatever follows them." }],
   [characterId('durrok'), { name: "Durrok", description: "An armoured tusker of the deep tunnels. It lunges, gores and stomps the ground bristling." }],
   [characterId('zephra'), { name: "Zephra", description: "A tiny storm-wisp, quick as a spark, that pelts from afar and skitters out of reach." }],
+  [characterId('ouroth'), { name: "Ouroth", description: "A coiled fire-wyrm of the old forges. It seizes foes in its length and hurls them away, breathing flame down the arena." }],
+  [characterId('abyssor'), { name: "Abyssor", description: "A kraken from the lightless trench. Its long arms lash across the arena and drag foes into its reach." }],
+  [characterId('vortigal'), { name: "Vortigal", description: "A raptor of the high winds that dives from above and rakes wounds that keep on bleeding." }],
+  [characterId('umbrel'), { name: "Umbrel", description: "A walking fungus of the deep caves. It spits festering spores and mends itself from the rot." }],
   [characterId('hyalia'), { name: "Hyalia", description: "A drifting jellyfish of the high winds. Its filaments sting and its bell pushes foes away." }],
 ]);
 
@@ -75,6 +79,14 @@ export const ABILITY_NAMES: ReadonlyMap<AbilityId, string> = new Map([
   [abilityId('bristle-stomp'), "Bristle Stomp"],
   [abilityId('static-mote'), "Static Mote"],
   [abilityId('skitter'), "Skitter"],
+  [abilityId('wyrm-coil'), "Wyrm Coil"],
+  [abilityId('scorch-breath'), "Scorch Breath"],
+  [abilityId('tentacle-lash'), "Tentacle Lash"],
+  [abilityId('abyssal-pull'), "Abyssal Pull"],
+  [abilityId('stoop'), "Stoop"],
+  [abilityId('talon-rake'), "Talon Rake"],
+  [abilityId('spore-burst'), "Spore Burst"],
+  [abilityId('mycelium-mend'), "Mycelium Mend"],
 ]);
 
 /** Snag (FUN-DESIGN 2.20): the name and line of the rope throw on a hero's ARCADE_SNAG_SLOT (data/arcade.ts). */

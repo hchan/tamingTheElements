@@ -12,3 +12,6 @@ original: tools/assets/fx-gen/batch-j-roster24-b1.py (same helpers). Run: python
 
 Roster 24 batch 2 ability sprites (forgeGore, moltenHide, lureOrb, abyssFlash, tuskGore, bristleStomp, staticMote, skitter) are procedural and
 original: tools/assets/fx-gen/batch-k-roster24-b2.py (same helpers). Run: python tools/assets/fx-gen/batch-k-roster24-b2.py [outdir] [--only name,name]
+
+Roster 24 batch 3 ability sprites (wyrmCoil, scorchBreath, tentacleLash, abyssalPull, stoop, talonRake, sporeBurst, myceliumMend) are procedural and
+original: tools/assets/fx-gen/batch-k-roster24-b3.py (same helpers). Run: python tools/assets/fx-gen/batch-k-roster24-b3.py [outdir] [--only name,name]

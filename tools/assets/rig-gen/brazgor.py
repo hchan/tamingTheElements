@@ -10,6 +10,8 @@ OUT = sys.argv[1]
 IRON = [(0.0, (12, 10, 12)), (0.4, (44, 36, 38)), (0.75, (92, 74, 66)), (1.0, (146, 112, 90))]
 SLAG = [(0.0, (150, 30, 8)), (0.5, (240, 104, 20)), (1.0, (255, 220, 130))]
 FLAME = [(0.0, (60, 12, 8)), (0.4, (170, 52, 14)), (0.8, (240, 140, 44)), (1.0, (252, 220, 150))]
+# QA r58: the mane merged with Fiara's flames; a darker coal-red ramp keeps Brazgor reading as iron with a smouldering crest
+MANE = [(0.0, (24, 6, 6)), (0.4, (110, 26, 10)), (0.8, (190, 64, 16)), (1.0, (232, 130, 50))]
 mantle = [[(18, 40), (24, 28), (38, 24), (52, 28), (58, 38), (46, 34), (32, 34)]]
 tail_poly = ribbon_poly([(12, 52), (6, 56), (4, 64)], 4.0, 1.2)
 BONE = [(0.0, (110, 96, 74)), (0.5, (214, 198, 164)), (1.0, (252, 244, 220))]
@@ -22,11 +24,11 @@ G = {
                      [(70, 54), (78, 50), (79, 40), (74, 46)]], joint=(62, 50), z=7, parent="torso"),
  "armF": dict(polys=[ribbon_poly([(54, 58), (56, 68), (58, 77)], 8, 6)], joint=(54, 58), z=8, parent="torso"),
 }
-P = dict(body=IRON, glow=SLAG, cells=9, facet=0.22, rag=2.2, bevel=20.0, edge=(40, 12, 8), vert=1.2,
+P = dict(fringe=0.45, body=IRON, glow=SLAG, cells=9, facet=0.22, rag=2.2, bevel=20.0, edge=(40, 12, 8), vert=1.2,
          sparks=dict(rate=0.9985, color=(255, 190, 90)),
          parts={
-   "tail": dict(cells=0, overlays=[dict(polys=[tail_poly], ramp=FLAME, style="flame")]),
-   "torso": dict(cells=9, overlays=[dict(polys=mantle, ramp=FLAME, style="flame", opacity=0.7)]),
+   "tail": dict(cells=0, overlays=[dict(polys=[tail_poly], ramp=MANE, style="flame")]),
+   "torso": dict(cells=9, overlays=[dict(polys=mantle, ramp=MANE, style="flame", opacity=0.75)]),
    "head": dict(cells=8, overlays=[dict(polys=TUSKS, ramp=BONE, style="soft", opacity=1.0)]), "armF": dict(cells=8), "armB": dict(cells=8, shade=-0.1)})
 paint = make_paint(P)
 

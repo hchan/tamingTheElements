@@ -103,6 +103,11 @@ export const RACE_SUPERS: Readonly<Record<string, SuperSpec>> = {
   glimmaw: { id: 18, name: 'ABYSSAL LURE', ...TIDE, drainPm: 40 },
   durrok: { id: 19, name: 'TUSKQUAKE', ...QUAKE, scalePm: 1150, speedBonus: 2, speedTicks: 120 },
   zephra: { id: 20, name: 'THUNDERHEAD', ...VORTEX, icicles: 6 },
+  // Roster-24 batch 3 (SIM_VERSION 74): ids 21-24.
+  ouroth: { id: 21, name: "WYRM'S COIL", ...BEAM, size: 180, rootTicks: 40 },
+  abyssor: { id: 22, name: 'MAELSTROM', ...TIDE, size: 200, armourTicks: 60 },
+  vortigal: { id: 23, name: 'TEMPEST DIVE', ...VORTEX, speedBonus: 3, speedTicks: 120 },
+  umbrel: { id: 24, name: 'BLOOM OF ROT', ...QUAKE, drainPm: 40 },
 };
 
 /** Every super spec by `superId` (index = id). */

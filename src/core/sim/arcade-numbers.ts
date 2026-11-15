@@ -61,6 +61,11 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   glimmaw: [7531, 2027],
   durrok: [4689, 1058],
   zephra: [6745, 2423],
+  // Roster-24 batch 3 (SIM_VERSION 74), provisional until fitted with tools/sim/low-races/mat.sh.
+  ouroth: [6419, 1264],
+  abyssor: [5707, 1020],
+  vortigal: [6110, 1476],
+  umbrel: [8296, 2032],
 };
 
 /**
@@ -90,6 +95,10 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   glimmaw: 620,
   durrok: 640,
   zephra: 760,
+  ouroth: 590,
+  abyssor: 450,
+  vortigal: 700,
+  umbrel: 620,
 };
 /**
  * Race life `hpPm` of `slug` for a roster of `size` heroes. A hero below 1x (data/size.ts SIZE_MIN..99) then gets

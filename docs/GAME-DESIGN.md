@@ -57,6 +57,10 @@ Speed is px/tick at 50 Hz; HP is at level 0.
 | Glimmaw | water | neutral | 6 | 95 | Lure Orb, Abyss Flash |
 | Durrok | earth | neutral | 7 | 120 | Tusk Gore, Bristle Stomp |
 | Zephra | air | neutral | 8 | 75 | Static Mote, Skitter |
+| Ouroth | fire | neutral | 6 | 130 | Wyrm Coil, Scorch Breath |
+| Abyssor | water | neutral | 4 | 140 | Tentacle Lash, Abyssal Pull |
+| Vortigal | air | neutral | 7 | 115 | Stoop, Talon Rake |
+| Umbrel | earth | neutral | 5 | 100 | Spore Burst, Mycelium Mend |
 <!-- /gen:characters -->
 
 ## Abilities
@@ -113,6 +117,14 @@ legacy data, kept as-is.
 | Bristle Stomp | melee | 15 | 800 | - | 2 | - | Durrok |
 | Static Mote | range | 8 | 400 | - | 3 | 10 | Zephra |
 | Skitter | buff | - | 3000 | - | 1 | - | Zephra |
+| Wyrm Coil | melee | 22 | 2500 | - | 1 | - | Ouroth |
+| Scorch Breath | melee | 14 | 1800 | - | 1 | - | Ouroth |
+| Tentacle Lash | melee | 18 | 1200 | - | 2 | - | Abyssor |
+| Abyssal Pull | range | 8 | 6000 | - | 1 | 14 | Abyssor |
+| Stoop | melee | 22 | 3500 | - | 1 | - | Vortigal |
+| Talon Rake | melee | 12 | 900 | - | 2 | - | Vortigal |
+| Spore Burst | range | 6 | 1400 | - | 2 | 5 | Umbrel |
+| Mycelium Mend | heal | 8 | 30000 | - | 100 | - | Umbrel |
 <!-- /gen:abilities -->
 
 ## Progression

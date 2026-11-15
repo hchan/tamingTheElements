@@ -14,6 +14,7 @@ import { damageDecreasePct, thornsDamageOf } from '../status';
 import { ccOnHit, ccRiders, spendKindled } from './cc';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
 import { knockbackDir, setKnockback } from './knockback';
+import { applyWound, displaceVictim, riderDef } from './wound';
 import { meterOnHit } from './meter';
 import { blockHit, parry } from './guard';
 import { elementalDamagePm } from './elemental-buff';
@@ -88,12 +89,15 @@ export function applyArcadeHit(
     : defIdx === TRAP_BOMB_DEF || defIdx === TRAP_SPIKE_DEF ? HitStrength.medium : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
   // Supers are unblockable (FUN-DESIGN 2.8).
   const sup = strength === HitStrength.super;
-  if (!sup && parry(world, sink, source, attacker, victim)) {
+  // A grab (roster batch 3) beats Guard and Parry like a super.
+  const rdef = riderDef(defIdx);
+  const grab = rdef?.grab === true;
+  if (!sup && !grab && parry(world, sink, source, attacker, victim)) {
     spendKindled(s, attacker);
     hitStop(world, sink, source, PARRY_HIT_STOP_TICKS, HitStopCause.parry);
     return 0;
   }
-  const guard = !sup && isGuarding(s, victim);
+  const guard = !sup && !grab && isGuarding(s, victim);
   if (guard) spendKindled(s, attacker);
   const cc = guard ? null : ccOnHit(world, sink, attacker, victim, base, sup);
   const counter = isCounterHit(s, victim);
@@ -144,10 +148,12 @@ export function applyArcadeHit(
       sink.emit(source, SimEventKind.damage, { target: attacker, attacker: victim, amount: thorns });
     }
   }
+  if (!guard && !sup && rdef !== undefined) applyWound(s, attacker, victim, rdef);
   const rid = guard ? null : ccRiders(world, sink, source, attacker, victim, defIdx, sup);
   // Charge armour (SIM_VERSION 50): a charging victim takes the damage but is neither knocked back nor stunned, so the rush goes on.
   const armoured = !sup && chargeTick(s, victim) !== 0;
   if (!armoured && rid?.noKnockback !== true) setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
+  if (!guard && !armoured && rdef !== undefined) displaceVictim(s, victim, knockbackDir(s, source, victim, dir), rdef, (dir + 4) & 7);
   const dealt = damageDealt(before, amount);
   const stun = defIdx === CHARGE_DEF ? CHARGE_STUN_TICKS
     : defIdx === TRAP_SPIKE_DEF ? TRAP_SPIKE_STUN_TICKS : (HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength]);

@@ -266,10 +266,15 @@
  *    cooldown override for hurl-rock. New defs mean new behaviour for online peers. Re-record reason: new Arcade heroes change the Arcade
  *    round-robin baselines (1v1 and 2v2, which now include 16 heroes) and add an Arcade golden; existing goldens change only in the header
  *    simVersion.
+ * 74: Arcade only (Classic hashes unchanged). Roster-24 batch 3: four new heroes (ouroth, abyssor, vortigal, umbrel; character index 22-25),
+ *    abilities wyrm-coil, scorch-breath, tentacle-lash, abyssal-pull, stoop, talon-rake, spore-burst, mycelium-mend (def indices 45-52),
+ *    supers 21-24, new primitives (grab that beats Guard and Parry and throws, pull via pullPx, wound status id 17 with a pulse system),
+ *    per-hero Arcade numbers, sizes. Re-record reason: new Arcade heroes change the Arcade round-robin baselines (1v1 and 2v2, now 24
+ *    heroes) and add an Arcade golden; the new `wound` system step changes no existing hash, existing goldens change only in the header simVersion.
  * 73: Arcade only (Classic hashes unchanged). Roster-24 batch 2: four new heroes (brazgor, glimmaw, durrok, zephra; character index 18-21),
  *    abilities forge-gore, molten-hide, lure-orb, abyss-flash, tusk-gore, bristle-stomp, static-mote, skitter (def indices 37-44), supers 17-20,
  *    new primitives (cast lunge/hop via lungePx, hovering projectile via hoverStopPx, thorns status, centred melee burst), per-hero Arcade
  *    numbers, sizes. Re-record reason: new Arcade heroes change the Arcade round-robin baselines (1v1 and 2v2, now 20 heroes) and add an
  *    Arcade golden; existing goldens change only in the header simVersion.
  */
-export const SIM_VERSION = 73;
+export const SIM_VERSION = 74;

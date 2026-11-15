@@ -37,6 +37,9 @@ export const HIT_STRENGTH_OVERRIDE: Readonly<Partial<Record<string, HitStrengthV
   'boulder-roll': HitStrength.heavy,
   'bell-pulse': HitStrength.medium,
   'forge-gore': HitStrength.heavy, // roster-24 B2: Brazgor's anvil blow
+  // Roster-24 batch 3: the grab and the dive are heavy blows.
+  'wyrm-coil': HitStrength.heavy,
+  stoop: HitStrength.heavy,
 };
 
 /**
@@ -75,6 +78,8 @@ export const HIT_STUN_OVERRIDE: Readonly<Partial<Record<string, number>>> = {
   'entangling-vines': SNAG_STUN_TICKS,
   'abyss-flash': 20, // roster-24 B2: Glimmaw's stun burst
   'stinging-filament': 15, // roster-24 B1: a short sting, it chains with its own 18-tick cooldown
+  'wyrm-coil': 24, // roster-24 B3: Ouroth's grab holds the victim while it is thrown
+  'abyssal-pull': 12, // roster-24 B3: a short stun after the drag
 };
 
 /** Base hit-stun of an ability's hit: the override, else the strength table. */

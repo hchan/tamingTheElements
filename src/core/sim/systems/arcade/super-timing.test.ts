@@ -62,7 +62,8 @@ describe('super timing (qa-r27)', () => {
     const out = RACES.map((c) => {
       const pcts = RACES.map((v) => timing(c, v).pct);
       return { c, mean: Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) };
-    }).filter((r) => r.mean < 25 || r.mean > 37);
+    }).filter((r) => r.mean < 23 || r.mean > 37);
+    // Floor 23 (was 25) since roster batch 3: the larger victims (Abyssor, Ouroth) shave a point off Zephra's small-wave mean.
     // Hailstorm's icicles add a little to the wave (about 36%), hence the 37 ceiling.
     expect(out).toEqual([]);
   });
