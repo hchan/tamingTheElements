@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { Cmd, type Command, type RenderActionBar, type RenderView } from '@core/index';
+import { Cmd, RoundPhase, type Command, type RenderActionBar, type RenderView } from '@core/index';
 import { ACTION_ICON, ACTION_SHEET, ActionBarView, gradedTexture, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX, type ScreenBox } from './action-bar';
 
 /** A recording stand-in for a Phaser game object: setters keep state, drawing calls are logged by name. */
@@ -235,7 +235,7 @@ describe('ActionBarView', () => {
 
 describe('one cooldown renderer for every kind of box', () => {
   const ar = (over: Record<string, unknown> = {}) => ({
-    meter: [0, 0], weatherCharge: [0, 0], active: (t: number) => (t === 0 ? 1 : -1), guard: () => 0, guarding: () => false, dashIn: () => 15, chargeIn: () => 150, ...over,
+    meter: [0, 0], weatherCharge: [0, 0], active: (t: number) => (t === 0 ? 1 : -1), guard: () => 0, guarding: () => false, dashIn: () => 15, chargeIn: () => 150, phase: RoundPhase.fight, stunned: () => false, ...over,
   });
   const cooling = bar({
     abilities: [{ sprite: 'adrenaline', readyTick: 125, cooldownTicks: 50 }, { sprite: 'air', readyTick: 125, cooldownTicks: 50 }],

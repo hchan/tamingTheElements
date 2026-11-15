@@ -71,7 +71,7 @@ import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
-import { SwapNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
+import { SWAP_BUSY_LINE, SWAP_BUSY_TICKS, SwapNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
 import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
@@ -151,6 +151,8 @@ export class Arena extends Phaser.Scene {
   private clicks: number[] = [];
   /** Arcade: the line shown when a swap press is refused (hud/swap-notice.ts); view only. */
   private swapNotice: SwapNotice | undefined;
+  /** Arcade: the game tick of a swap press nothing visible explained, until a tag-in lands (else the busy line shows); -1 none. */
+  private pendingSwap = -1;
   private pauseText: Phaser.GameObjects.Text | undefined;
   private cursor: ReplayCursor | undefined;
   private speed: PlaybackSpeed = 1;
@@ -605,7 +607,10 @@ export class Arena extends Phaser.Scene {
     cleanseClockOf(view).consume(events, view.tick);
     this.cleanseFx?.(events);
     // A tag-in landed: the swap-refused line (if one is still up) is stale, and would sit under the arriving hero's banner.
-    if (events.some((e) => e.kind === SimEventKind.tagIn && (e['team'] ?? 0) === 0)) this.swapNotice?.clear();
+    if (events.some((e) => e.kind === SimEventKind.tagIn && (e['team'] ?? 0) === 0)) {
+      this.swapNotice?.clear();
+      this.pendingSwap = -1;
+    }
     if (!sound) return;
     for (const e of events) {
       if (e.kind !== SimEventKind.cleanse) continue;
@@ -655,7 +660,18 @@ export class Arena extends Phaser.Scene {
     if (line !== undefined) {
       notice.show(line, this.time.now);
       (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
+    } else if (this.pendingSwap < 0) {
+      // Nothing visible refuses it (block-stun, a dash or charge, a Snag root, a super): if no tag-in follows, say so.
+      this.pendingSwap = bar.tick;
     }
+  }
+
+  /** A swap the sim ignored for more than a few game ticks (hit-stop stands the clock still): say so instead of staying silent. */
+  private checkBusySwap(tick: number): void {
+    if (this.pendingSwap < 0 || tick - this.pendingSwap <= SWAP_BUSY_TICKS) return;
+    this.pendingSwap = -1;
+    this.swapNotice?.show(SWAP_BUSY_LINE, this.time.now);
+    (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
   }
 
   /** Arcade: says why a Super or Weather press does nothing yet (meter or weather charge not full). View only. */
@@ -876,6 +892,7 @@ export class Arena extends Phaser.Scene {
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
     this.actionBar2?.update();
+    this.checkBusySwap(tick);
     this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
     this.ambient?.update(getPrefs().reduceMotion);

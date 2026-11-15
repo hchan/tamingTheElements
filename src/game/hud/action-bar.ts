@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderArcade, RenderView } from '@core/index';
-import { Cmd, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL } from '@core/index';
+import { Cmd, GUARD_MAX, METER_BAR, RoundPhase, WEATHER_CHARGE_FULL } from '@core/index';
+import { swapBlockWord } from './swap-notice';
 import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolutionOf, viewWidth } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { actionKeyLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
@@ -353,12 +354,16 @@ export interface ArcadeBar {
   readonly cleanseIn: number;
   /** Keep the Charge box for a ranged active hero (the team has a melee hero, so its touch button exists): shown disabled. */
   readonly keepCharge: boolean;
+  /** Why the Tag slots cannot be used right now ('WAIT', 'STUN'), when the view can tell (WP-HC1); absent when they can. */
+  readonly swapBlock?: string;
 }
 
 /** Reads one team's `ArcadeBar` off the render view's Arcade read-outs (a team with no active hero reads as full and idle). */
 export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean, cleanseIn: (id: number) => number = () => 0): ArcadeBar {
   const id = ar.active(team);
+  const swapBlock = swapBlockWord({ fighting: ar.phase === RoundPhase.fight, stunned: id >= 0 && ar.stunned(id), frozen: false });
   return {
+    ...(swapBlock !== undefined ? { swapBlock } : {}),
     meter: ar.meter[team],
     weatherCharge: ar.weatherCharge[team],
     guard: id < 0 ? GUARD_MAX : ar.guard(id),
@@ -429,10 +434,11 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
     const cmd = SWAP_CMDS[i];
     // Arcade (it has the Trap slot) has no fourth swap: bit 10 is the elemental ability there.
     if (cmd === undefined || (bar.trap !== undefined && cmd === Cmd.swap4)) return;
+    const block = arcade && !w.dead ? arcade.swapBlock : undefined;
     add({
-      kind: 'swap', cmd, sprite: w.sprite, highlight: false, disabled: w.dead,
+      kind: 'swap', cmd, sprite: w.sprite, highlight: false, disabled: w.dead || block !== undefined,
       progress: w.dead ? 1 : swapProgress, icon: ACTION_ICON.tag, touch: arcade ? (i === 0 ? 'Tag' : i === 1 ? 'Tag2' : '') : '',
-      note: arcade && !w.dead ? leftNote('Tag', Math.max(0, bar.swapReadyTick - bar.tick)) : '',
+      note: block ?? (arcade && !w.dead ? leftNote('Tag', Math.max(0, bar.swapReadyTick - bar.tick)) : ''),
     });
   });
   if (arcade) {

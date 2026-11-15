@@ -1,7 +1,7 @@
 import { Cmd } from '@core/index';
 import { describe, expect, it } from 'vitest';
 import { arcadeAvatar, AVATAR_SIZE, mainBar, sideOffset } from './bars';
-import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapNotice, swapSeconds, swapSlotOf, type SwapState } from './swap-notice';
+import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapNotice, swapSeconds, swapSlotOf, swapBlockWord, SWAP_BUSY_LINE, SWAP_BUSY_TICKS, type SwapState } from './swap-notice';
 
 const ok: SwapState = { fighting: true, frozen: false, stunned: false, noPartner: false, cooldownTicks: 0 };
 
@@ -78,5 +78,18 @@ describe('elementalNotice', () => {
     expect(elementalNotice(true, 220, { name: 'Gale', readyTick: 220 })).toBeUndefined();
     expect(elementalNotice(false, 100, { name: 'Gale', readyTick: 220 })).toBeUndefined();
     expect(elementalNotice(true, 100, undefined)).toBe('No element ability for this hero');
+  });
+});
+
+describe('swapBlockWord', () => {
+  it('names why the Tag slot is dead, and nothing when it is usable', () => {
+    expect(swapBlockWord({ fighting: true, stunned: false, frozen: false })).toBeUndefined();
+    expect(swapBlockWord({ fighting: false, stunned: false, frozen: false })).toBe('WAIT');
+    expect(swapBlockWord({ fighting: true, stunned: true, frozen: false })).toBe('STUN');
+    expect(swapBlockWord({ fighting: true, stunned: false, frozen: true })).toBe('STUN');
+  });
+  it('has a busy line for refusals the view cannot explain', () => {
+    expect(SWAP_BUSY_LINE).toBe("Can't tag right now");
+    expect(SWAP_BUSY_TICKS).toBeGreaterThan(0);
   });
 });

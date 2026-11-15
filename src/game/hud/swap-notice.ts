@@ -40,6 +40,19 @@ export function swapNotice(s: SwapState): string | undefined {
   return undefined;
 }
 
+/** The line for a swap press the view could not explain but the sim ignored (block-stun, dash recovery, a charge, a Snag root, a super). */
+export const SWAP_BUSY_LINE = "Can't tag right now";
+
+/** Ticks a pressed swap may stay without a tag-in before the busy line shows (game ticks, so hit-stop does not count). */
+export const SWAP_BUSY_TICKS = 3;
+
+/** The short word on a disabled Tag slot (never colour alone), or undefined when the slot is usable: WAIT outside the fight, STUN while stunned. */
+export function swapBlockWord(s: Pick<SwapState, 'fighting' | 'stunned' | 'frozen'>): string | undefined {
+  if (!s.fighting) return 'WAIT';
+  if (s.stunned || s.frozen) return 'STUN';
+  return undefined;
+}
+
 /** What the view knows about a pressed Charge (FUN-DESIGN 2.17). `chargeIn` is the view's: ticks left, 0 ready, -1 a ranged hero. */
 export interface ChargeState {
   readonly fighting: boolean;
