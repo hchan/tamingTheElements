@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EntityFlag, SimEventKind, type RenderArcade, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { MAX_SPARKS, SPARK_TICKS, SWAP_FLOOR } from './terrain-fx';
-import { mountTerrainView, terrainState } from './terrain-view';
+import { CHIP_DEPTH, LABEL_DEPTH, mountTerrainView, terrainState } from './terrain-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
 class Emitter {
@@ -41,15 +41,17 @@ interface Fake {
   texture: { key: string };
   destroyed: boolean;
   calls: string[];
+  depth: number;
 }
 
 /** A game object whose every setter chains; graphics record their draw calls (cleared by `clear`). */
 function fakeObject(kind: string, made: Fake[], key = ''): Fake {
-  const o: Fake = { kind, visible: true, text: '', alpha: 1, scale: 1, texture: { key }, destroyed: false, calls: [] };
+  const o: Fake = { kind, visible: true, text: '', alpha: 1, scale: 1, texture: { key }, destroyed: false, calls: [], depth: 0 };
   const record: Record<string, (...a: never[]) => void> = {
     setVisible: (v: boolean) => { o.visible = v; },
     setText: (t: string) => { o.text = t; },
     setAlpha: (a: number) => { o.alpha = a; },
+    setDepth: (d: number) => { o.depth = d; },
     setScale: (s: number) => { o.scale = s; },
     setTexture: (k: string) => { o.texture = { key: k }; },
     clear: () => { o.calls = []; },
@@ -101,6 +103,7 @@ function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emit
     add: {
       graphics: () => fakeObject('graphics', made),
       text: () => fakeObject('text', made),
+      rectangle: () => fakeObject('rectangle', made),
       image: (_x: number, _y: number, key: string) => fakeObject('image', made, key),
     },
   } as unknown as Phaser.Scene;
@@ -183,6 +186,32 @@ describe('terrain view (fake scenes)', () => {
     expect(m.arena.made.filter((o) => o.kind === 'image')[0]?.texture.key).toBe('bg:fire');
     // The badge is in the Hud scene.
     expect(m.hud.made.some((o) => o.kind === 'text' && o.text === 'FIRE x2' && o.visible)).toBe(true);
+  });
+
+  it('chip plates and words draw under every fighter layer (lowest -0.6), word above its plate, on all four stages (qa-r40)', () => {
+    for (const stage of [1, 2, 3, 4]) {
+      const m = mount();
+      m.arcade.stage = stage;
+      m.feed(1);
+      m.frame();
+      const { chipDepth, labelDepth } = m.state();
+      expect([chipDepth, labelDepth]).toEqual([CHIP_DEPTH, LABEL_DEPTH]);
+      expect(labelDepth).toBeLessThan(-0.6);
+      expect(chipDepth).toBeLessThan(labelDepth);
+      // The real objects carry those depths (not just the probe).
+      const objs = m.arena.made.filter((o) => (o.kind === 'text' && o.depth === LABEL_DEPTH) || (o.kind === 'graphics' && o.depth === CHIP_DEPTH));
+      expect(objs.length).toBeGreaterThanOrEqual(2);
+      expect(m.arena.made.filter((o) => (o.kind === 'text' || o.kind === 'graphics') && o.depth > -0.7 && o.depth < -0.6 && o.depth !== LABEL_DEPTH && o.depth !== CHIP_DEPTH)).toEqual([]);
+    }
+  });
+
+  it('a chip that appears with a fighter already on it starts faint (no visible fade-down over the character)', () => {
+    const m = mount({ x: 60, y: 300 });
+    m.feed(1);
+    m.frame();
+    const chips = m.arena.made.filter((o) => o.kind === 'graphics' && o.depth === CHIP_DEPTH && o.visible);
+    expect(chips.length).toBeGreaterThan(0);
+    expect(Math.min(...chips.map((c) => c.alpha))).toBeLessThanOrEqual(0.2);
   });
 
   it('draws a distinct pattern per stage: flames, waves, bricks, swirls', () => {

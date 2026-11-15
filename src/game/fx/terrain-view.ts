@@ -60,6 +60,12 @@ const CHIP_GAP = 22;
 const ICON = 26;
 /** Ambient motes and mist: over the floor, under the fighters' flash effects. */
 const AMBIENT_DEPTH = 0.5;
+/**
+ * Chip plates and their words sit above the floor patches (-0.7) but under every fighter layer (the lowest, a fighter's ground shadow, is at -0.6; fighters are at 0):
+ * a chip can never paint over a character, only fade out of its way. The word is one step above its own plate.
+ */
+export const CHIP_DEPTH = FLOOR_DEPTH + 0.04;
+export const LABEL_DEPTH = CHIP_DEPTH + 0.01;
 const GLOW_RINGS = 4;
 
 export interface TerrainPrefs {
@@ -83,6 +89,9 @@ export interface TerrainState {
   readonly backdrop: string;
   readonly nextBackdrop: number;
   readonly badge: string;
+  /** The depth of the chip plates and of their words (both under every fighter layer, which starts at -0.6). */
+  readonly chipDepth: number;
+  readonly labelDepth: number;
 }
 
 const states = new WeakMap<Phaser.Scene, () => TerrainState>();
@@ -171,6 +180,7 @@ export function mountTerrainView(
     }
   };
   const chipFade = new Float64Array(MAX_PATCHES).fill(1);
+  const chipShown = new Uint8Array(MAX_PATCHES);
 
   const visit = (c: RenderCharacter): void => {
     if (hero.found || c.team !== 0 || (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0) return;
@@ -198,8 +208,8 @@ export function mountTerrainView(
       glow: arena.add.graphics().setDepth(GLOW_DEPTH),
       floor: arena.add.graphics().setDepth(FLOOR_DEPTH),
       fx: arena.add.graphics().setDepth(FX_DEPTH),
-      labels: Array.from({ length: MAX_PATCHES }, () => text(arena, Math.round(LABEL_PX * boost), 5).setOrigin(0.5, 1).setPadding(8, 2, 8, 3).setDepth(FLOOR_DEPTH + 0.05)),
-      chips: Array.from({ length: MAX_PATCHES }, () => arena.add.graphics().setDepth(FLOOR_DEPTH + 0.04).setVisible(false)),
+      labels: Array.from({ length: MAX_PATCHES }, () => text(arena, Math.round(LABEL_PX * boost), 5).setOrigin(0.5, 1).setPadding(8, 2, 8, 3).setDepth(LABEL_DEPTH)),
+      chips: Array.from({ length: MAX_PATCHES }, () => arena.add.graphics().setDepth(CHIP_DEPTH).setVisible(false)),
       plate: hud.add.graphics().setDepth(HUD_DEPTH),
       badge: text(hud, Math.round(BADGE_PX * boost), 5).setOrigin(0, 0).setDepth(HUD_DEPTH),
       ambient: mountAmbient(arena, hud, AMBIENT_DEPTH),
@@ -363,10 +373,13 @@ export function mountTerrainView(
     view.forEachCharacter(near);
     p.labels.forEach((t, i) => {
       // Ease toward faint while a fighter stands on or beside the chip, back up when it leaves.
-      chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -0.12 : 0.06)));
-      const a = drawn.alpha * hint * (chipFade[i] ?? 1);
       // Hidden under the ROUND / FIGHT! banners so the chip words never bleed through their letters.
       const on = hint > 0 && stage !== 3 && i < count && !bannerUp;
+      // A chip that appears (round start, after a banner) with a fighter already on it starts faint instead of fading down in plain view.
+      if (on && !chipShown[i] && chipNear[i]) chipFade[i] = 0.15;
+      chipShown[i] = on ? 1 : 0;
+      chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -0.25 : 0.06)));
+      const a = drawn.alpha * hint * (chipFade[i] ?? 1);
       t.setVisible(on).setAlpha(a);
       p.chips[i]?.setVisible(on).setAlpha(a);
     });
@@ -432,7 +445,7 @@ export function mountTerrainView(
   states.set(arena, () => ({
     stage: Math.max(0, drawn.stage), patches: Math.max(0, drawn.count), rects: drawn.rects.slice(0, Math.max(0, drawn.count) * 4),
     labels: [...labels], alpha: drawn.alpha, glow: drawn.glow, particles: drawn.particles, sparks, backdrop: drawn.backdrop,
-    nextBackdrop: drawn.nextBackdrop, badge: drawn.badge,
+    nextBackdrop: drawn.nextBackdrop, badge: drawn.badge, chipDepth: CHIP_DEPTH, labelDepth: LABEL_DEPTH,
   }));
   return (events) => {
     tick = view.tick;
