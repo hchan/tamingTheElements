@@ -200,6 +200,10 @@ const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000
 
 /** Game ticks without any HP change on the field after which the AI stops retreating and presses (no stalemates). */
 export const ARCADE_AI_STALE_TICKS = 400;
+/** Stage 2 (800 quiet ticks): half the defensive plans, no guard reflex, walk in even under threat, break 1v1 shot clashes. */
+export const ARCADE_AI_STALE2_TICKS = 800;
+/** Stage 3 (1100 quiet ticks, below the 1500-tick stalemate end): no defence, press every ready move. */
+export const ARCADE_AI_STALE3_TICKS = 1100;
 
 /** Within every 256 ticks, the tick from which a tag team's AI fires along a rock-cut line (WP-arcade-2v2-tune). */
 const SHOOT_FROM = 64;
@@ -434,7 +438,10 @@ export class ArcadeTactics {
       m[9] = view.tick;
       m[10] = self.hp + opp.hp;
     }
-    const stale = view.tick - m[9] >= ARCADE_AI_STALE_TICKS;
+    const quiet = view.tick - m[9];
+    const stale = quiet >= ARCADE_AI_STALE_TICKS;
+    const stale2 = quiet >= ARCADE_AI_STALE2_TICKS;
+    const stale3 = quiet >= ARCADE_AI_STALE3_TICKS;
     const style = stale ? RUSHDOWN : (m[6] as Style);
     const dist = centreDist(self, opp);
     // A stale fight presses: no zoning or corner plant then (a planted trap holds the planter and turns the foe away).
@@ -463,11 +470,13 @@ export class ArcadeTactics {
         const rates = ARCADE_AI_STYLES[style];
         let r = draw(1000) * 1000;
         let plan = PARRY;
-        while (plan < NO_PLAN && (r -= (rates[plan] ?? 0) * (k[2 + plan] ?? 0)) >= 0) plan++;
+        const scale = stale2 ? 500 : 1000;
+        while (plan < NO_PLAN && (r -= ((rates[plan] ?? 0) * (k[2 + plan] ?? 0) * scale) / 1000) >= 0) plan++;
+        if (stale3) plan = NO_PLAN;
         m[2] = view.tick;
         m[3] = react();
         m[4] = plan;
-        m[12] = draw(1000) < k[7] ? 1 : 0;
+        m[12] = draw(1000) < k[7] && !stale2 ? 1 : 0;
         m[5] = plan === PARRY ? 2 + draw(k[5]) : plan === DODGE ? ARCADE_AI_DODGE_AT : ARCADE_AI_GUARD_AT;
       }
       if (free && m[4] < NO_PLAN && view.tick - m[2] >= m[3]) {
@@ -510,10 +519,12 @@ export class ArcadeTactics {
       if (facing !== 0) return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
     }
     // Tag team, point blank: both sides firing on the same tick clash their shots (no damage) every time, a lockstep loop
-    // (2v2 stalemates); a drawn one-in-four skip of the press breaks the symmetry. Never in 1v1.
-    if (a.partnerPm >= 0 && (cmd & ATTACK) !== 0 && a.oppStun === 0 && far < CLOSE_PX && draw(4) === 0) {
+    // (2v2 stalemates); a drawn one-in-four skip of the press breaks the symmetry. In 1v1 only once the fight is stale (stage 2).
+    if ((a.partnerPm >= 0 || stale2) && (cmd & ATTACK) !== 0 && a.oppStun === 0 && far < CLOSE_PX && draw(4) === 0) {
       cmd &= ~ATTACK;
     }
+    // Stage 2: a stale fight walks in even with a shot on the way (the defence only ever retreated).
+    if (stale2 && free && threat && (cmd & MOVE) === 0) cmd |= toward(self, opp);
     if (!free || threat) return cmd;
     // A stale fight with the boxes overlapped (typically both stuck in a wall corner): step apart so a hit can land.
     if (stale && a.oppStun === 0 && a.oppRooted === 0) {
@@ -521,6 +532,14 @@ export class ArcadeTactics {
       if (apart !== 0) return (cmd & ~(MOVE | ATTACK)) | apart;
     }
     if (lane !== 0) return (cmd & ~(MOVE | ATTACK)) | lane | snagBit;
+    // Stage 3: nothing is held back any more; super, Charge (whatever the foe's guard), a trap and a dash in.
+    if (stale3 && a.oppStun === 0) {
+      const facing = a.meter >= SUPER_COST ? superFacing(self, opp, a.superId) : 0;
+      if (facing !== 0) return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
+      if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST) return Cmd.charge;
+      if (this.canPlant(self, opp, a)) return plant(cmd);
+      if (a.dashIn === 0 && far > ARCADE_AI_FAR_PX) return (cmd & ~MOVE) | Cmd.dash | toward(self, opp);
+    }
     // Snag ready but the boxes overlap: step away to open a gap for the throw (else two Snag heroes freeze in place).
     if (snagBit !== 0 && (view.cooldowns[a.snagSlot] ?? 1) === 0 && !a.oppGuarding && a.oppRooted === 0 && a.oppRootImmune === 0 && boxesOverlap(self, opp)) {
       return (cmd & ~(MOVE | ATTACK)) | (opp.x + opp.w / 2 >= self.x + self.w / 2 ? Cmd.left : Cmd.right);

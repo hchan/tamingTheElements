@@ -295,7 +295,7 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
     const idle = (level: 0 | 1 | 2, style: 0 | 1 | 2): number => {
       let n = 0;
       const t = new ArcadeTactics(level, style);
-      for (let i = 0; i < 600; i++) {
+      for (let i = 0; i < 390; i++) { // 780 ticks: under the 800-tick stage that halves the plan rates
         t.apply(view({ shots: [shotIn(30)] }, 2 * i), cmd);
         if (mem(t)[4] === NO_PLAN) n++;
         t.apply(view({}, 2 * i + 1), cmd);
@@ -303,9 +303,9 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
       return n;
     };
     for (const style of [RUSHDOWN, ZONER, TURTLE] as const) {
-      expect(idle(AI_HARD, style)).toBeLessThan(60); // under 10%
-      expect(idle(AI_NORMAL, style)).toBeLessThan(250);
-      expect(idle(AI_EASY, style)).toBeGreaterThan(300);
+      expect(idle(AI_HARD, style)).toBeLessThan(39); // under 10%
+      expect(idle(AI_NORMAL, style)).toBeLessThan(163);
+      expect(idle(AI_EASY, style)).toBeGreaterThan(195);
     }
   });
 
