@@ -70,8 +70,8 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   pax: 594,
   rokcore: 700,
   sindarosa: 812,
-  treenoc: 715,
-  wispera: 600,
+  treenoc: 680,
+  wispera: 640,
 };
 /** Race life `hpPm` of `slug` for a roster of `size` heroes. */
 export function arcadeLifePm(hpPm: number, size: number, slug: string): number {
