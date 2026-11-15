@@ -141,6 +141,8 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   cleanse: 'the view plays playSfx(cleanse, element) from the event (fx/cleanse-view, Arena)',
   hazardHit: 'the strike crash plays on the same tick',
   ccEnded: 'a CC running out is silent; only an ice shatter (reason 2) cracks, see pickCues',
+  otPulse: 'over-time feedback is a later work package (HUD, FX, audio)',
+  otEnded: 'over-time feedback is a later work package (HUD, FX, audio)',
 };
 
 /** Hit thump gain by strength (light, medium, heavy, super); a light hit was 0.35 and read as a tap (QA r34). */

@@ -3,6 +3,7 @@ import type { EventSink, SimEvent } from './events';
 import { EventSink as Sink } from './events';
 import { deathSystem } from './systems/death';
 import { ccSystem } from './systems/arcade/cc';
+import { overTimeSystem } from './systems/arcade/over-time';
 import { woundSystem } from './systems/arcade/wound';
 import { debuffSystem } from './systems/debuffs';
 import { movementSystem } from './systems/movement';
@@ -49,6 +50,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['debuffs', debuffSystem],
   ['cc', ccSystem],
   ['wound', woundSystem],
+  ['overTime', overTimeSystem],
   ['status', statusSystem],
   ['rest', restSystem],
   ['cleanup', arcadeRoundSystem],

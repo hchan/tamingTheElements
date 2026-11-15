@@ -506,3 +506,36 @@ export const CC_RIDERS: readonly { readonly slug: string; readonly kind: number;
   { slug: 'ice-shock', kind: CcKind.iced, ticks: ICED_TICKS, chilled: true },
   { slug: 'ground-shock', kind: CcKind.downed, ticks: DOWN_TICKS },
 ];
+
+/** Over-time kinds (flag withOverTime; systems/arcade/over-time.ts maps them to status ids 18-20). */
+export const OtKind = { burning: 0, venom: 1, mending: 2 } as const;
+/** Refresh rule of a re-applied over-time: add a stack (capped) and extend, or only extend. The phase anchor (`start`) is kept either way. */
+export const OtRefresh = { stack: 0, extend: 1 } as const;
+/** `otEnded.reason`. */
+export const OtEnd = { expired: 0, cleansed: 1, broken: 2, died: 3 } as const;
+export interface OtSpec {
+  readonly periodTicks: number;
+  readonly durationTicks: number;
+  /** Per pulse, times stacks. */
+  readonly amount: number;
+  readonly maxStacks: number;
+  readonly refresh: number;
+  readonly heal: boolean;
+}
+/** Indexed by OtKind. */
+export const OT_SPECS: readonly OtSpec[] = [
+  { periodTicks: 25, durationTicks: 100, amount: 2, maxStacks: 3, refresh: OtRefresh.stack, heal: false }, // burning
+  { periodTicks: 50, durationTicks: 250, amount: 2, maxStacks: 1, refresh: OtRefresh.extend, heal: false }, // venom
+  { periodTicks: 50, durationTicks: 250, amount: 2, maxStacks: 1, refresh: OtRefresh.extend, heal: true }, // mending
+];
+/** Which over-time a landed, unguarded, non-super hit of an ability leaves on its victim (flag withOverTime). */
+export const OT_RIDERS: readonly { readonly slug: string; readonly kind: number }[] = [
+  { slug: 'crimson-fire', kind: OtKind.burning },
+  { slug: 'scorch-breath', kind: OtKind.burning },
+];
+/** Heals (mending pulses, heal abilities, the water patch) are scaled by this per mille under venom. */
+export const OT_VENOM_HEAL_PM = 500;
+/** A DoT pulse never takes a hero below this many HP (it cannot KO). */
+export const OT_DOT_FLOOR_HP = 1;
+/** Flag on: a heal ability's instant part is scaled by this per mille, the rest arrives as mending (OT2). */
+export const OT_HEAL_INSTANT_PM = 500;

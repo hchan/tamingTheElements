@@ -276,5 +276,8 @@
  *    new primitives (cast lunge/hop via lungePx, hovering projectile via hoverStopPx, thorns status, centred melee burst), per-hero Arcade
  *    numbers, sizes. Re-record reason: new Arcade heroes change the Arcade round-robin baselines (1v1 and 2v2, now 20 heroes) and add an
  *    Arcade golden; existing goldens change only in the header simVersion.
+ * 75: Arcade only, flag withOverTime (default off; Classic and flag-off Arcade hashes unchanged): over-time statuses burning 18, venom 19,
+ *    mending 20 with a pulse system (overTime slot) and Burn riders on crimson-fire and scorch-breath. Re-record reason: header simVersion only
+ *    (no existing input or checkpoint changes).
  */
-export const SIM_VERSION = 74;
+export const SIM_VERSION = 75;

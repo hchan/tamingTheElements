@@ -7,6 +7,7 @@ import { cleanseSlows } from '../debuffs';
 import { controlledId } from '../movement';
 import { pending, Press, usePress } from './buffer';
 import { cleanseCc, cleansableCc } from './cc';
+import { cleanseOt, cleansableOt } from './over-time';
 import { freeRoot } from './snag';
 import { isFree } from './stun';
 import { kindOf } from './terrain';
@@ -15,7 +16,8 @@ import { kindOf } from './terrain';
  * The common Cleanse (ideas/in-progress/elemental-cleanse.md): `Cmd.cleanse` (bit 9, buffered) ends the controlled hero's
  * debuffs, the same for all 12 heroes, on a CLEANSE_COOLDOWN_TICKS (10 s) cooldown held per character in
  * `ArcadeE.cleanseReadyAt`. Cleansable: the Snag root (the usual post-root immunity follows), the Puddle slow and the Ice
- * Blast and tidal slows. There is no burn or silence in the sim; stun is not a debuff Cleanse can end.
+ * Blast and tidal slows; with the flags on also silence (withCrowdControl) and burning and venom (withOverTime). Stun is
+ * not a debuff Cleanse can end.
  */
 
 /** Number of debuffs on `id` that Cleanse would end now. */
@@ -26,7 +28,7 @@ export function cleansableCount(world: SimWorld, id: number): number {
   let n = 0;
   if ((s.arcade[e + ArcadeE.rootUntil] ?? 0) > g) n++;
   if ((s.arcade[e + ArcadeE.trapSlowUntil] ?? 0) > g) n++;
-  return n + cleanseSlows(world, id, true) + cleansableCc(s, id);
+  return n + cleanseSlows(world, id, true) + cleansableCc(s, id) + cleansableOt(s, id);
 }
 
 /**
@@ -49,6 +51,7 @@ export function castCleanse(world: SimWorld, sink: EventSink, team: number): voi
   s.arcade[e + ArcadeE.trapSlowUntil] = 0;
   cleared += cleanseSlows(world, id);
   cleared += cleanseCc(world, sink, id);
+  cleared += cleanseOt(world, sink, id);
   usePress(s, team, Press.cleanse);
   sink.emit(id, SimEventKind.cleanse, { element: kindOf(s, id), team, cleared });
 }

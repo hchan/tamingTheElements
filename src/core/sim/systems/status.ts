@@ -19,13 +19,15 @@ export const StatusId = {
   /**
    * Crowd control (flag withCrowdControl, SIM_VERSION 70, systems/arcade/cc.ts). Ids 10+ never carry a speed delta:
    * the status system restores speed only for ids up to superSlow. 14 and 15 are hidden (not HUD words).
-   * 16+ is reserved for HoT/DoT/roster statuses.
+   * 16-17 are roster statuses, 18-20 over-time, 21+ reserved.
    */
   dazed: 10, iced: 11, downed: 12, silenced: 13, ccWard: 14, kindled: 15,
   /** Roster batch 2 (SIM_VERSION 73): Brazgor's molten-hide, rock-armour style armour plus thorns on melee attackers. */
   thorns: 16,
   /** Roster batch 3 (SIM_VERSION 74): a damage-over-time wound (Vortigal's talon-rake, Umbrel's spore-burst); see systems/arcade/wound.ts. */
   wound: 17,
+  /** Over-time (flag withOverTime, SIM_VERSION 75, systems/arcade/over-time.ts): burning and venom are DoTs, mending a HoT. 21 is reserved. */
+  burning: 18, venom: 19, mending: 20,
 } as const;
 export type StatusIdValue = (typeof StatusId)[keyof typeof StatusId];
 
