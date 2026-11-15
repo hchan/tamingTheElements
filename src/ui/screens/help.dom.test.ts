@@ -42,7 +42,11 @@ describe('helpScreen (DOM)', () => {
     document.body.append(root);
     helpScreen().mount(root);
     const btns = [...root.querySelectorAll<HTMLButtonElement>('nav.helpJump button')];
-    expect(btns.map((b) => b.textContent)).toEqual(['How to fight', 'Choosing your heroes', 'Controls']);
+    expect(btns.map((b) => b.textContent)).toEqual([
+      'How to fight',
+      'Choosing your heroes',
+      'Controls',
+    ]);
     const target = document.getElementById('helpControlsHeading') as HTMLElement;
     let scrolled = 0;
     target.scrollIntoView = () => {
@@ -71,7 +75,10 @@ describe('helpScreen (DOM)', () => {
     expect(tables.length).toBeGreaterThan(1);
     for (const t of tables) {
       expect(t.querySelector('caption')?.textContent).not.toBe('');
-      expect([...t.querySelectorAll('thead th')].map((th) => th.getAttribute('scope'))).toEqual(['col', 'col']);
+      expect([...t.querySelectorAll('thead th')].map((th) => th.getAttribute('scope'))).toEqual([
+        'col',
+        'col',
+      ]);
       for (const th of t.querySelectorAll('tbody th')) expect(th.getAttribute('scope')).toBe('row');
     }
   });
@@ -80,7 +87,9 @@ describe('helpScreen (DOM)', () => {
     setBindings({ ...DEFAULT_BINDINGS, dash: ['KeyV'] });
     const root = document.createElement('div');
     helpScreen().mount(root);
-    const row = [...root.querySelectorAll('tbody tr')].find((tr) => tr.querySelector('th')?.textContent === 'Dash');
+    const row = [...root.querySelectorAll('tbody tr')].find(
+      (tr) => tr.querySelector('th')?.textContent === 'Dash',
+    );
     expect(row?.querySelector('td')?.textContent).toBe('V');
   });
 

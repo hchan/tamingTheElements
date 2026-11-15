@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_BINDINGS, GAME_ACTIONS, RESERVED_CODES, setBindings } from '../../game/platform/input/bindings';
+import {
+  DEFAULT_BINDINGS,
+  GAME_ACTIONS,
+  RESERVED_CODES,
+  setBindings,
+} from '../../game/platform/input/bindings';
 import { PAD_ROWS, setPadOverrides } from '../../game/platform/input/pad-bindings';
 import { KEY_BINDINGS, keyBindingsScreen } from './key-bindings';
 import type { Screen } from './screen';
@@ -47,7 +52,8 @@ describe('remap coverage', () => {
   });
 
   it('every gamepad row has a button on the screen', () => {
-    for (const r of PAD_ROWS) expect(document.getElementById(`pad-${r.id}`), `pad-${r.id}`).not.toBeNull();
+    for (const r of PAD_ROWS)
+      expect(document.getElementById(`pad-${r.id}`), `pad-${r.id}`).not.toBeNull();
   });
 
   it('fixed menu and shell keys are listed on the screen and cannot be bound to a game action', () => {
@@ -58,7 +64,8 @@ describe('remap coverage', () => {
     }
     expect(RESERVED_CODES.has('Escape')).toBe(true);
     expect(RESERVED_CODES.has('KeyF')).toBe(true);
-    for (const a of GAME_ACTIONS) expect(DEFAULT_BINDINGS[a].filter((c) => RESERVED_CODES.has(c))).toEqual([]);
+    for (const a of GAME_ACTIONS)
+      expect(DEFAULT_BINDINGS[a].filter((c) => RESERVED_CODES.has(c))).toEqual([]);
   });
 
   it('shows no forbidden words', () => {

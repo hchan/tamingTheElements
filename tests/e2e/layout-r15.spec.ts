@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { START, collectErrors } from './parity/helpers';
 
 // QA r15 layout fixes: the Tour stage strip stays inside the screen with its words whole, and at 720p the Play hero panel
-// (stats and abilities) ends above the sticky Start bar. Page-side code is passed as strings (no DOM lib in tsconfig.node).
+// (stats and abilities) ends above the Start bar. Page-side code is passed as strings (no DOM lib in tsconfig.node).
 for (const vp of [
   { w: 1280, h: 720 },
   { w: 844, h: 390 },
@@ -50,7 +50,7 @@ test('Tour stage 844x390 on a touch phone: stage tiles do not overlap (the Clear
   await ctx.close();
 });
 
-test('Play hero select 1280x720: the stat panel (Life, Speed, Alignment, Abilities) ends above the sticky Start bar', async ({ page }) => {
+test('Play hero select 1280x720: the stat panel (Life, Speed, Alignment, Abilities) ends above the Start bar', async ({ page }) => {
   const errors = collectErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${START}&ff=arcade#tour`);

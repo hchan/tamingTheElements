@@ -14,7 +14,9 @@ const SAVE: SaveV1 = {
   garrisonSortOrder: 1,
   difficulty: 1,
   displaySettings: 1,
-  garrison: [{ id: 'g1', experience: 3, characterName: 'Fiara', createdTime: 1, lastModifiedTime: 1 }],
+  garrison: [
+    { id: 'g1', experience: 3, characterName: 'Fiara', createdTime: 1, lastModifiedTime: 1 },
+  ],
 };
 
 let current: { screen: Screen; host: HTMLElement } | null = null;
@@ -25,7 +27,9 @@ afterEach(() => {
 });
 
 function mount(initial: SaveV1 | null, wrap?: (s: SaveStore) => SaveStore) {
-  const storage = createMemoryStorage(initial === null ? {} : { [SAVE_KEY]: JSON.stringify(initial) });
+  const storage = createMemoryStorage(
+    initial === null ? {} : { [SAVE_KEY]: JSON.stringify(initial) },
+  );
   let store = createLocalSaveStore(storage, () => 42);
   if (wrap) store = wrap(store);
   const host = document.createElement('div');
@@ -52,7 +56,9 @@ function mount(initial: SaveV1 | null, wrap?: (s: SaveStore) => SaveStore) {
 describe('game master screen in the DOM', () => {
   it('shows the stored save JSON in an accessible textarea, with a Back link to the menu', async () => {
     const m = mount(SAVE);
-    await vi.waitFor(() => { expect(m.area.value).not.toBe(''); });
+    await vi.waitFor(() => {
+      expect(m.area.value).not.toBe('');
+    });
     expect((JSON.parse(m.area.value) as SaveV1).garrison[0]?.characterName).toBe('Fiara');
     expect(m.area.getAttribute('aria-label')).toBe('Save JSON');
     expect(m.host.querySelector('h1')?.textContent).toBe('Game Master');
@@ -62,20 +68,32 @@ describe('game master screen in the DOM', () => {
 
   it('with no save the editor shows a fresh empty-state save (chapter 0, no heroes)', async () => {
     const m = mount(null);
-    await vi.waitFor(() => { expect(m.area.value).not.toBe(''); });
+    await vi.waitFor(() => {
+      expect(m.area.value).not.toBe('');
+    });
     const shown = JSON.parse(m.area.value) as SaveV1;
     expect([shown.chapter, shown.garrison]).toEqual([0, []]);
   });
 
   it('a slow first read does not overwrite a preset or Clear clicked before it resolves', async () => {
     let release: () => void = () => undefined;
-    const gate = new Promise<void>((r) => { release = r; });
-    const m = mount(SAVE, (s) => ({ ...s, exportJson: async () => { await gate; return s.exportJson(); } }));
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const m = mount(SAVE, (s) => ({
+      ...s,
+      exportJson: async () => {
+        await gate;
+        return s.exportJson();
+      },
+    }));
     m.button('Chapter 3').click();
     const preset = m.area.value;
     expect((JSON.parse(preset) as SaveV1).chapter).toBe(3);
     release();
-    await vi.waitFor(() => { expect(m.status.textContent).toBe('Chapter 3 preset written.'); });
+    await vi.waitFor(() => {
+      expect(m.status.textContent).toBe('Chapter 3 preset written.');
+    });
     await Promise.resolve();
     expect(m.area.value).toBe(preset);
   });
@@ -84,7 +102,9 @@ describe('game master screen in the DOM', () => {
     const m = mount(null);
     m.area.value = JSON.stringify({ ...SAVE, chapter: 3 });
     m.button('Apply JSON').click();
-    await vi.waitFor(() => { expect(m.status.textContent).toBe('Save written.'); });
+    await vi.waitFor(() => {
+      expect(m.status.textContent).toBe('Save written.');
+    });
     expect(m.stored()?.chapter).toBe(3);
   });
 
@@ -107,35 +127,54 @@ describe('game master screen in the DOM', () => {
     const m = mount(SAVE);
     m.area.value = '   ';
     m.button('Apply JSON').click();
-    await vi.waitFor(() => { expect(m.status.textContent).toBe('Save cleared.'); });
+    await vi.waitFor(() => {
+      expect(m.status.textContent).toBe('Save cleared.');
+    });
     expect(m.stored()).toBeNull();
   });
 
   it('Clear empties the textarea and the store', async () => {
     const m = mount(SAVE);
-    await vi.waitFor(() => { expect(m.area.value).not.toBe(''); });
+    await vi.waitFor(() => {
+      expect(m.area.value).not.toBe('');
+    });
     m.button('Clear').click();
     expect(m.area.value).toBe('');
-    await vi.waitFor(() => { expect(m.status.textContent).toBe('Save cleared.'); });
+    await vi.waitFor(() => {
+      expect(m.status.textContent).toBe('Save cleared.');
+    });
     expect(m.stored()).toBeNull();
   });
 
   it('Reload discards unsaved edits and shows the stored text again', async () => {
     const m = mount(SAVE);
-    await vi.waitFor(() => { expect(m.area.value).not.toBe(''); });
+    await vi.waitFor(() => {
+      expect(m.area.value).not.toBe('');
+    });
     const original = m.area.value;
     m.area.value = 'scribble';
     m.button('Reload').click();
-    await vi.waitFor(() => { expect(m.status.textContent).toBe('Reloaded.'); });
+    await vi.waitFor(() => {
+      expect(m.status.textContent).toBe('Reloaded.');
+    });
     expect(m.area.value).toBe(original);
   });
 
   it('each chapter preset fills the editor and writes a migratable save at that chapter', async () => {
     const m = mount(null);
-    await vi.waitFor(() => { expect(m.area.value).not.toBe(''); });
-    for (const [label, chapter] of [['Chapter 2', 2], ['Chapter 3', 3], ['Chapter 4', 4], ['Chapter complete', 4]] as const) {
+    await vi.waitFor(() => {
+      expect(m.area.value).not.toBe('');
+    });
+    for (const [label, chapter] of [
+      ['Chapter 2', 2],
+      ['Chapter 3', 3],
+      ['Chapter 4', 4],
+      ['Chapter complete', 4],
+    ] as const) {
       m.button(label).click();
-      await vi.waitFor(() => { expect(m.status.textContent).toBe(`${label} preset written.`); });
+      await vi.waitFor(() => {
+        expect(m.status.textContent).toBe(`${label} preset written.`);
+      });
       const written = m.stored();
       expect(written?.chapter).toBe(chapter);
       expect(migrate(JSON.parse(m.area.value)).ok).toBe(true);
@@ -146,14 +185,22 @@ describe('game master screen in the DOM', () => {
   });
 
   it('shows the store error when a write fails', async () => {
-    const m = mount(null, (s) => ({ ...s, save: () => Promise.resolve({ ok: false, error: { kind: 'storage', message: 'full' } }) }));
+    const m = mount(null, (s) => ({
+      ...s,
+      save: () => Promise.resolve({ ok: false, error: { kind: 'storage', message: 'full' } }),
+    }));
     m.area.value = JSON.stringify(SAVE);
     m.button('Apply JSON').click();
-    await vi.waitFor(() => { expect(m.status.textContent).toMatch(/^Could not write the save: .*full/); });
+    await vi.waitFor(() => {
+      expect(m.status.textContent).toMatch(/^Could not write the save: .*full/);
+    });
   });
 
   it('shows an empty editor when the export fails, and unmount removes the page', async () => {
-    const m = mount(SAVE, (s) => ({ ...s, exportJson: () => Promise.resolve({ ok: false, error: { kind: 'storage', message: 'x' } }) }));
+    const m = mount(SAVE, (s) => ({
+      ...s,
+      exportJson: () => Promise.resolve({ ok: false, error: { kind: 'storage', message: 'x' } }),
+    }));
     await Promise.resolve();
     expect(m.area.value).toBe('');
     current?.screen.unmount();

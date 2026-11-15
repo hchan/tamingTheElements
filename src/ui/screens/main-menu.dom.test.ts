@@ -14,14 +14,25 @@ function mount(deps: MainMenuDeps): { host: HTMLElement; unmount: () => void } {
   document.body.append(host);
   const s = mainMenuScreen(deps)(null);
   s.mount(host);
-  return { host, unmount: () => { s.unmount(); } };
+  return {
+    host,
+    unmount: () => {
+      s.unmount();
+    },
+  };
 }
 
 describe('main menu in the DOM', () => {
   it('renders the five entries as enabled buttons in order, with the version stamp', () => {
     const { host: h } = mount({ load: () => null, navigate: () => undefined });
     const buttons = [...h.querySelectorAll<HTMLButtonElement>('li button')];
-    expect(buttons.map((b) => b.textContent)).toEqual(['Play', 'Versus', 'Online', 'Settings', 'Help']);
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      'Play',
+      'Versus',
+      'Online',
+      'Settings',
+      'Help',
+    ]);
     expect(buttons.map((b) => b.textContent)).toEqual(MENU_ITEMS.map((m) => m.label));
     expect(buttons.every((b) => !b.disabled)).toBe(true);
     expect(h.querySelector('#versionStamp')?.textContent).not.toBe('');

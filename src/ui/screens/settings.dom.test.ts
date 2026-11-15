@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DIFFICULTY, DISPLAY_SCALE, GARRISON_SORT_ORDER, newEmptyState, type SaveV1 } from '@core/menu-index';
+import {
+  DIFFICULTY,
+  DISPLAY_SCALE,
+  GARRISON_SORT_ORDER,
+  newEmptyState,
+  type SaveV1,
+} from '@core/menu-index';
 import type { Result, SaveStore } from '../../game/platform/storage/save-store';
 import { setSavedPrefs } from '../../game/platform/a11y/prefs';
 import { settingsScreen, applyUiScale, loadSave } from './settings';
@@ -59,7 +65,9 @@ async function mountWith(store: FakeStore): Promise<void> {
   screen.mount(root);
   await flush();
 }
-const radios = (name: string): HTMLInputElement[] => [...root.querySelectorAll<HTMLInputElement>(`input[type=radio][name=${name}]`)];
+const radios = (name: string): HTMLInputElement[] => [
+  ...root.querySelectorAll<HTMLInputElement>(`input[type=radio][name=${name}]`),
+];
 const checked = (name: string): string | undefined => radios(name).find((r) => r.checked)?.value;
 const form = (): HTMLFormElement => root.querySelector('form') as HTMLFormElement;
 const submit = async (): Promise<void> => {
@@ -69,7 +77,12 @@ const submit = async (): Promise<void> => {
 
 describe('settingsScreen (DOM)', () => {
   it('shows Loading, then the form with each radio group at the saved value', async () => {
-    const store = fakeStore({ ...newEmptyState(), difficulty: DIFFICULTY.Hard, displaySettings: DISPLAY_SCALE.Largest, garrisonSortOrder: 3 });
+    const store = fakeStore({
+      ...newEmptyState(),
+      difficulty: DIFFICULTY.Hard,
+      displaySettings: DISPLAY_SCALE.Largest,
+      garrisonSortOrder: 3,
+    });
     screen = settingsScreen(store);
     screen.mount(root);
     expect(root.textContent).toContain('Loading...');
@@ -81,8 +94,11 @@ describe('settingsScreen (DOM)', () => {
     expect(radios('difficulty')).toHaveLength(Object.keys(DIFFICULTY).length);
     expect(radios('garrisonSortOrder')).toHaveLength(Object.keys(GARRISON_SORT_ORDER).length);
     // exactly one choice per group, and applying the saved scale to the document
-    for (const g of ['difficulty', 'displaySettings', 'garrisonSortOrder']) expect(radios(g).filter((r) => r.checked)).toHaveLength(1);
-    expect(document.documentElement.style.getPropertyValue('--ui-scale')).toBe(String(DISPLAY_SCALE.Largest));
+    for (const g of ['difficulty', 'displaySettings', 'garrisonSortOrder'])
+      expect(radios(g).filter((r) => r.checked)).toHaveLength(1);
+    expect(document.documentElement.style.getPropertyValue('--ui-scale')).toBe(
+      String(DISPLAY_SCALE.Largest),
+    );
   });
 
   it('has labelled music and sound effect volume sliders that save at once to local storage, not through the async save', async () => {
@@ -99,13 +115,17 @@ describe('settingsScreen (DOM)', () => {
     if (!sfx) throw new Error('no slider');
     sfx.value = '40';
     sfx.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(JSON.parse(localStorage.getItem('tte.volumes') ?? '{}')).toEqual({ music: 0.25, sfx: 0.4 });
+    expect(JSON.parse(localStorage.getItem('tte.volumes') ?? '{}')).toEqual({
+      music: 0.25,
+      sfx: 0.4,
+    });
     expect(store.saved).toHaveLength(0);
   });
 
   it('every checkbox and radio has an accessible label, and the a11y checkboxes are described by a hint', async () => {
     await mountWith(fakeStore());
-    for (const r of radios('difficulty')) expect(r.closest('label')?.textContent.trim()).not.toBe('');
+    for (const r of radios('difficulty'))
+      expect(r.closest('label')?.textContent.trim()).not.toBe('');
     for (const name of ['reduceMotion', 'highContrast']) {
       const box = root.querySelector<HTMLInputElement>(`input[name=${name}]`);
       expect(box?.id).toBe(`setting-${name}`);
@@ -130,7 +150,10 @@ describe('settingsScreen (DOM)', () => {
     await submit();
     expect(store.loads).toBe(loadsBefore + 1);
     expect(store.saved).toHaveLength(1);
-    expect(store.saved[0]).toMatchObject({ difficulty: DIFFICULTY.Hard, displaySettings: DISPLAY_SCALE.Largest });
+    expect(store.saved[0]).toMatchObject({
+      difficulty: DIFFICULTY.Hard,
+      displaySettings: DISPLAY_SCALE.Largest,
+    });
     expect(store.saved[0]?.keyBindings).toEqual({ dash: ['KeyQ'] });
     expect(window.location.hash).toBe('#main');
   });
@@ -160,7 +183,9 @@ describe('settingsScreen (DOM)', () => {
     await mountWith(store);
     store.saveResult = { ok: false, error: { kind: 'storage', message: 'quota' } };
     await submit();
-    expect(root.querySelector('form [role=status]')?.textContent).toContain('Could not save settings');
+    expect(root.querySelector('form [role=status]')?.textContent).toContain(
+      'Could not save settings',
+    );
     expect(window.location.hash).toBe('');
   });
 
@@ -217,7 +242,9 @@ describe('settings sections', () => {
     expect(adv?.querySelector('.settingsTransfer')).not.toBeNull();
     expect(form().firstElementChild?.className).toBe('settingsBar');
     expect(form().querySelector('.settingsBar button[type="submit"]')?.textContent).toBe('Save');
-    expect(document.getElementById('settingsAudio')?.querySelector('input[type="range"]')).not.toBeNull();
+    expect(
+      document.getElementById('settingsAudio')?.querySelector('input[type="range"]'),
+    ).not.toBeNull();
   });
 });
 
@@ -233,7 +260,10 @@ describe('applyUiScale / loadSave', () => {
     expect(loadSave()).toEqual(newEmptyState());
     localStorage.setItem('Taming the Elements', '{not json');
     expect(loadSave()).toEqual(newEmptyState());
-    localStorage.setItem('Taming the Elements', JSON.stringify({ ...newEmptyState(), difficulty: DIFFICULTY.Hard }));
+    localStorage.setItem(
+      'Taming the Elements',
+      JSON.stringify({ ...newEmptyState(), difficulty: DIFFICULTY.Hard }),
+    );
     expect(loadSave().difficulty).toBe(DIFFICULTY.Hard);
   });
 
@@ -242,7 +272,8 @@ describe('applyUiScale / loadSave', () => {
     await mountWith(fakeStore());
     expect(checked('touchSize')).toBe('auto');
     expect(checked('touchSide')).toBe('right');
-    for (const r of [...radios('touchSize'), ...radios('touchSide')]) expect(r.closest('label')?.textContent.trim()).not.toBe('');
+    for (const r of [...radios('touchSize'), ...radios('touchSide')])
+      expect(r.closest('label')?.textContent.trim()).not.toBe('');
     const set = (name: string, value: string): void => {
       const r = radios(name).find((x) => x.value === value);
       if (!r) throw new Error('no radio');
@@ -254,7 +285,11 @@ describe('applyUiScale / loadSave', () => {
     expect(hap?.checked).toBe(true);
     if (hap) hap.checked = false;
     await submit();
-    expect(JSON.parse(localStorage.getItem('tte.touchLayout') ?? '{}')).toEqual({ size: 'compact', side: 'left', haptics: false });
+    expect(JSON.parse(localStorage.getItem('tte.touchLayout') ?? '{}')).toEqual({
+      size: 'compact',
+      side: 'left',
+      haptics: false,
+    });
     expect(document.documentElement.dataset['touchHaptics']).toBe('false');
     expect(document.documentElement.dataset['touchSize']).toBe('compact');
     expect(document.documentElement.dataset['touchSide']).toBe('left');
@@ -265,7 +300,8 @@ describe('applyUiScale / loadSave', () => {
 });
 
 describe('settingsScreen relay (TURN) row', () => {
-  const field = (name: string): HTMLInputElement => root.querySelector<HTMLInputElement>(`input[name=${name}]`) as HTMLInputElement;
+  const field = (name: string): HTMLInputElement =>
+    root.querySelector<HTMLInputElement>(`input[name=${name}]`) as HTMLInputElement;
 
   it('has three labelled fields, a password input and an explanatory hint', async () => {
     await mountWith(fakeStore());
@@ -279,7 +315,10 @@ describe('settingsScreen relay (TURN) row', () => {
   });
 
   it('shows the saved relay, saves an edited one, and clears it when the address is emptied', async () => {
-    const store = fakeStore({ ...newEmptyState(), turnServer: { url: 'turn:r.example:3478', username: 'u', credential: 'p' } });
+    const store = fakeStore({
+      ...newEmptyState(),
+      turnServer: { url: 'turn:r.example:3478', username: 'u', credential: 'p' },
+    });
     await mountWith(store);
     expect(field('turnUrl').value).toBe('turn:r.example:3478');
     expect(field('turnUser').value).toBe('u');
@@ -287,7 +326,11 @@ describe('settingsScreen relay (TURN) row', () => {
     field('turnUrl').value = 'turns:r2.example:5349';
     field('turnPass').value = 'q';
     await submit();
-    expect(store.saved[0]?.turnServer).toEqual({ url: 'turns:r2.example:5349', username: 'u', credential: 'q' });
+    expect(store.saved[0]?.turnServer).toEqual({
+      url: 'turns:r2.example:5349',
+      username: 'u',
+      credential: 'q',
+    });
     screen?.unmount();
 
     const store2 = fakeStore({ ...newEmptyState(), turnServer: { url: 'turn:r.example:3478' } });

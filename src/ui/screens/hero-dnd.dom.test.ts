@@ -11,9 +11,13 @@ afterEach(() => {
 const RACES = ['sindarosa', 'rokcore', 'lavax'] as CharacterId[];
 const sel = (id: string): HTMLSelectElement => document.getElementById(id) as HTMLSelectElement;
 const tile = (name: string): HTMLElement =>
-  [...document.querySelectorAll<HTMLElement>('.heroTile')].find((t) => t.querySelector('.heroTileName')?.textContent === name) as HTMLElement;
-const slotEl = (key: string): HTMLElement => document.querySelector(`[data-hero-slot="${key}"]`) as HTMLElement;
-const panelName = (): string | null | undefined => document.querySelector('.heroPanel .heroName')?.textContent;
+  [...document.querySelectorAll<HTMLElement>('.heroTile')].find(
+    (t) => t.querySelector('.heroTileName')?.textContent === name,
+  ) as HTMLElement;
+const slotEl = (key: string): HTMLElement =>
+  document.querySelector(`[data-hero-slot="${key}"]`) as HTMLElement;
+const panelName = (): string | null | undefined =>
+  document.querySelector('.heroPanel .heroName')?.textContent;
 
 /** A pointer click: like a real mouse or touch click, `detail` is 1 (a keyboard activation has detail 0). */
 const click = (n: Element): void => {
@@ -21,7 +25,16 @@ const click = (n: Element): void => {
 };
 const ptr = (type: string, target: Element, x: number, y: number): void => {
   target.dispatchEvent(
-    new PointerEvent(type, { bubbles: true, cancelable: true, isPrimary: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: x, clientY: y }),
+    new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: 'mouse',
+      button: 0,
+      clientX: x,
+      clientY: y,
+    }),
   );
 };
 /** Press on `from`, drag over `to` (or nowhere), release; optionally stop mid-drag. */
@@ -33,7 +46,9 @@ const drag = (from: Element, to: Element | null, release = true): void => {
 
 describe('Play picker: click previews, second click or Add assigns', () => {
   const mount = (team: readonly string[] = ['sindarosa', 'rokcore', 'lavax']): void => {
-    document.body.append(tourPickView({ races: RACES, current: ['sindarosa', 'rokcore', 'lavax'], onStart: vi.fn() }));
+    document.body.append(
+      tourPickView({ races: RACES, current: ['sindarosa', 'rokcore', 'lavax'], onStart: vi.fn() }),
+    );
     // happy-dom mis-reports preselected options: set the team explicitly.
     team.forEach((v, i) => {
       sel(`arcadeHero${String(i + 1)}`).value = v;
@@ -72,7 +87,9 @@ describe('Play picker: click previews, second click or Add assigns', () => {
     expect(panelName()).toBe('Rokcore');
     click(document.querySelector('.heroAdd') as Element);
     expect(sel('arcadeHero1').value).toBe('rokcore');
-    expect(new Set(['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((i) => sel(i).value)).size).toBe(3);
+    expect(
+      new Set(['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((i) => sel(i).value)).size,
+    ).toBe(3);
   });
 
   it('keyboard activation (detail 0) still assigns straight away, and toggles a team hero off', () => {
@@ -94,13 +111,16 @@ describe('Play picker: click previews, second click or Add assigns', () => {
 
 describe('Play picker: drag and drop', () => {
   const mount = (initial: readonly string[] = ['sindarosa', 'rokcore', 'lavax']): void => {
-    document.body.append(tourPickView({ races: RACES, current: ['sindarosa', 'rokcore', 'lavax'], onStart: vi.fn() }));
+    document.body.append(
+      tourPickView({ races: RACES, current: ['sindarosa', 'rokcore', 'lavax'], onStart: vi.fn() }),
+    );
     // happy-dom mis-reports preselected options: set the team explicitly.
     initial.forEach((v, i) => {
       sel(`arcadeHero${String(i + 1)}`).value = v;
     });
   };
-  const team = (): string[] => ['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((i) => sel(i).value);
+  const team = (): string[] =>
+    ['arcadeHero1', 'arcadeHero2', 'arcadeHero3'].map((i) => sel(i).value);
 
   it('dropping a tile on a slot that holds another hero swaps, so there is never a duplicate', () => {
     mount();
@@ -172,17 +192,60 @@ describe('Play picker: drag and drop', () => {
   });
 });
 
+describe('edge scroll scrolls the picker region (PB1)', () => {
+  it('a drag held near the bottom of .pickScroll scrolls it, not the window', () => {
+    document.body.append(
+      tourPickView({ races: RACES, current: ['sindarosa', 'rokcore', 'lavax'], onStart: vi.fn() }),
+    );
+    const box = document.querySelector('.pickScroll') as HTMLElement;
+    box.getBoundingClientRect = () => ({
+      top: 100,
+      bottom: 400,
+      left: 0,
+      right: 300,
+      width: 300,
+      height: 300,
+      x: 0,
+      y: 100,
+      toJSON: () => ({}),
+    });
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb));
+    const winScroll = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined);
+    box.scrollTop = 0;
+    ptr('pointerdown', tile('Lavax'), 10, 10);
+    ptr('pointermove', document.body, 60, 395);
+    frames.shift()?.(0);
+    expect(box.scrollTop).toBeGreaterThan(0);
+    expect(winScroll).not.toHaveBeenCalled();
+    ptr('pointerup', document.body, 60, 395);
+    vi.unstubAllGlobals();
+    winScroll.mockRestore();
+  });
+});
+
 describe('hero pickers voice their clicks as the hero element (ui-sfx reads data-element)', () => {
   it('race selects carry the picked hero element and follow changes', () => {
     document.body.append(
       arcadePickView({
         races: RACES,
         levels: [{ value: '1', label: 'Level 1' }],
-        current: { player: 'rokcore', enemy: 'lavax', level: '1', size: '1', mode: 'ai', partner: '', partner2: '', enemyPartner: '', enemyPartner2: '' },
+        current: {
+          player: 'rokcore',
+          enemy: 'lavax',
+          level: '1',
+          size: '1',
+          mode: 'ai',
+          partner: '',
+          partner2: '',
+          enemyPartner: '',
+          enemyPartner2: '',
+        },
         onStart: vi.fn(),
       }),
     );
-    const voice = (id: string): string | undefined => sel(id).closest<HTMLElement>('[data-element]')?.dataset['element'];
+    const voice = (id: string): string | undefined =>
+      sel(id).closest<HTMLElement>('[data-element]')?.dataset['element'];
     expect(voice('arcadePlayer')).toBe(getCharacter('rokcore' as CharacterId).element);
     expect(voice('arcadeEnemy')).toBe(getCharacter('lavax' as CharacterId).element);
     expect(voice('arcadePartner')).toBeUndefined();
@@ -198,12 +261,23 @@ describe('Versus picker', () => {
       arcadePickView({
         races: RACES,
         levels: [{ value: '1', label: 'Level 1' }],
-        current: { player: 'sindarosa', enemy: 'rokcore', level: '1', size: '3', mode: 'ai', partner: 'rokcore', partner2: 'lavax', enemyPartner: 'rokcore', enemyPartner2: 'lavax' },
+        current: {
+          player: 'sindarosa',
+          enemy: 'rokcore',
+          level: '1',
+          size: '3',
+          mode: 'ai',
+          partner: 'rokcore',
+          partner2: 'lavax',
+          enemyPartner: 'rokcore',
+          enemyPartner2: 'lavax',
+        },
         onStart: vi.fn(),
       }),
     );
   };
-  const mine = (): string[] => ['arcadePlayer', 'arcadePartner', 'arcadePartner2'].map((i) => sel(i).value);
+  const mine = (): string[] =>
+    ['arcadePlayer', 'arcadePartner', 'arcadePartner2'].map((i) => sel(i).value);
 
   it('a single pointer click picks the hero and shows it picked (aria-pressed, flag chip, status)', () => {
     mount();
@@ -282,7 +356,9 @@ describe('Versus picker', () => {
   it('activating a hero the side already picked takes it off again', () => {
     mount();
     tile('Lavax').click();
-    const slot = ['arcadePlayer', 'arcadePartner', 'arcadePartner2'].find((i) => sel(i).value === 'lavax') as string;
+    const slot = ['arcadePlayer', 'arcadePartner', 'arcadePartner2'].find(
+      (i) => sel(i).value === 'lavax',
+    ) as string;
     expect(slot).toBeDefined();
     tile('Lavax').click();
     expect(sel(slot).value).toBe('');

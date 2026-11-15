@@ -1,5 +1,5 @@
 import type { CharacterId } from '@core/index';
-import { el } from '../dom';
+import { el, markMoreBelow } from '../dom';
 import { raceLabel, select } from './arcade-versus';
 import { heroProfile } from './hero-info';
 import { heroDnd } from './hero-dnd';
@@ -169,13 +169,11 @@ export interface TourPickOptions {
 export function tourPickView(o: TourPickOptions): HTMLElement {
   const page = el('div', 'menuPage');
   page.id = 'tourPick';
-  page.append(
-    el('h1', 'heading', 'Play'),
-    el(
-      'p',
-      'tourIntro',
-      'Pick three different heroes, then fight your way through nine stages, each a best-of-3 against an AI team: eight element locations, then the Eternal Void. A lost fight can be replayed up to 3 times. Your run is kept in this browser so you can resume it.',
-    ),
+  page.append(el('h1', 'heading', 'Play'));
+  const intro = el(
+    'p',
+    'tourIntro',
+    'Pick three different heroes, then fight your way through nine stages, each a best-of-3 against an AI team: eight element locations, then the Eternal Void. A lost fight can be replayed up to 3 times. Your run is kept in this browser so you can resume it.',
   );
   const races = [{ value: '', label: 'Empty' }, ...o.races.map((r) => ({ value: r, label: raceLabel(r) }))];
   const form = el('form', 'settingsForm heroSelect');
@@ -203,6 +201,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   live.setAttribute('role', 'status');
   let active = 0;
   let cursor = 0;
+  const more: { update?: () => void } = {};
   const slotsBox = el('ol', 'heroSlots');
   slotsBox.setAttribute('aria-label', 'Your team');
   const slotButtons = names.map((_n, i) => {
@@ -324,6 +323,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
       panel.node.dataset['hero'] = shown;
       panel.show(shown);
     }
+    more.update?.();
   }
   /** Puts `id` in slot `slot`; a hero already in another slot swaps places with this slot's hero, so there is never a duplicate. */
   function assign(id: CharacterId, slot: number): void {
@@ -384,11 +384,22 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   stage.append(heroes.grid, panel.node);
   const actions = el('div', 'heroActions');
   actions.append(start, hint, back);
-  form.append(hidden, slotsBox, stage, live, actions);
+  const scroll = el('div', 'pickScroll');
+  scroll.append(intro, hidden, slotsBox, stage, live);
+  form.append(scroll, actions);
+  more.update = markMoreBelow(scroll);
   cursor = Math.max(0, order.indexOf(o.current[0] as CharacterId));
   refresh();
   // A change made straight on a hero select (assistive tech, autofill, tests) shows in the slots too.
-  form.addEventListener('change', refresh);
+  form.addEventListener('change', (e) => {
+    const t = e.target;
+    // The detail pane follows the hero a select now holds (never the stale one).
+    if (t instanceof HTMLSelectElement && t.value !== '') {
+      const k = order.indexOf(t.value as CharacterId);
+      if (k >= 0) cursor = k;
+    }
+    refresh();
+  });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (names.some((_n, k) => idAt(k) === '')) {

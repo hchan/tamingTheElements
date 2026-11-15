@@ -53,7 +53,9 @@ describe('raceScreen', () => {
     const host = document.createElement('div');
     const s = raceScreen(ch.id);
     s.mount(host);
-    const rows = [...host.querySelectorAll('tr')].map((tr) => [...tr.children].map((td) => td.textContent));
+    const rows = [...host.querySelectorAll('tr')].map((tr) =>
+      [...tr.children].map((td) => td.textContent),
+    );
     expect(rows).toEqual(raceRows(ch).map(([k, v]) => [k, v]));
     expect(host.querySelector('h1')?.textContent).not.toBe('Unknown race');
     s.unmount();

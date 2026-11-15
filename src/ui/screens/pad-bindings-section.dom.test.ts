@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PAD_BINDINGS_KEY, getPadDeadzone, getPadOverrides, setPadDeadzone, setPadOverrides } from '../../game/platform/input/pad-bindings';
+import {
+  PAD_BINDINGS_KEY,
+  getPadDeadzone,
+  getPadOverrides,
+  setPadDeadzone,
+  setPadOverrides,
+} from '../../game/platform/input/pad-bindings';
 import { keyBindingsScreen } from './key-bindings';
 import type { Screen } from './screen';
 
@@ -16,7 +22,9 @@ beforeEach(async () => {
   down = [];
   Object.defineProperty(navigator, 'getGamepads', {
     configurable: true,
-    value: () => [{ buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: down.includes(i), value: 0 })) }],
+    value: () => [
+      { buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: down.includes(i), value: 0 })) },
+    ],
   });
   root = document.createElement('div');
   document.body.append(root);
@@ -50,7 +58,9 @@ describe('gamepad bindings section', () => {
     expect(root.querySelector('.padBindings h2')?.textContent).toBe('Gamepad buttons');
     expect(btn('pad-primary').textContent).toBe('A');
     expect(btn('pad-pause').textContent).toBe('Start');
-    expect(btn('pad-up').getAttribute('aria-label')).toBe('Move Up, gamepad button: D-pad Up. Activate to change.');
+    expect(btn('pad-up').getAttribute('aria-label')).toBe(
+      'Move Up, gamepad button: D-pad Up. Activate to change.',
+    );
   });
 
   it('captures the next pad button, announces it, persists and refocuses', () => {

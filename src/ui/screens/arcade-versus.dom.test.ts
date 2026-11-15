@@ -1,20 +1,43 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { arcadePickView, arcadeResultsView, raceLabel, select, type PickValues } from './arcade-versus';
+import {
+  arcadePickView,
+  arcadeResultsView,
+  raceLabel,
+  select,
+  type PickValues,
+} from './arcade-versus';
 import type { CharacterId } from '@core/index';
 
 const RACES = ['sindarosa', 'rokcore', 'lavax'] as CharacterId[];
-const LEVELS = [{ value: '1', label: 'Level 1' }, { value: '2', label: 'Level 2' }];
+const LEVELS = [
+  { value: '1', label: 'Level 1' },
+  { value: '2', label: 'Level 2' },
+];
 
 afterEach(() => {
   document.body.replaceChildren();
 });
 
-function mount(onStart: (v: PickValues) => void = vi.fn(), current: Partial<PickValues> = {}): HTMLElement {
+function mount(
+  onStart: (v: PickValues) => void = vi.fn(),
+  current: Partial<PickValues> = {},
+): HTMLElement {
   const page = arcadePickView({
     races: RACES,
     levels: LEVELS,
-    current: { player: 'sindarosa', enemy: 'rokcore', level: '2', size: '1', mode: 'ai', partner: 'rokcore', partner2: 'lavax', enemyPartner: 'rokcore', enemyPartner2: 'lavax', ...current },
+    current: {
+      player: 'sindarosa',
+      enemy: 'rokcore',
+      level: '2',
+      size: '1',
+      mode: 'ai',
+      partner: 'rokcore',
+      partner2: 'lavax',
+      enemyPartner: 'rokcore',
+      enemyPartner2: 'lavax',
+      ...current,
+    },
     onStart,
   });
   document.body.append(page);
@@ -28,7 +51,17 @@ const change = (s: HTMLSelectElement, v: string): void => {
 
 describe('select / raceLabel', () => {
   it('builds a labelled select with id arcade<Name> and the current value selected', () => {
-    document.body.append(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2' }], '2'));
+    document.body.append(
+      select(
+        'size',
+        'Team',
+        [
+          { value: '1', label: '1v1' },
+          { value: '2', label: '2v2' },
+        ],
+        '2',
+      ),
+    );
     expect(sel('arcadeSize').value).toBe('2');
     expect(document.querySelector('label[for="arcadeSize"]')?.textContent).toBe('Team');
   });
@@ -82,10 +115,16 @@ describe('arcadePickView (DOM)', () => {
     expect(sel('arcadeEnemyPartner2').disabled).toBe(false);
     expect(document.getElementById('arcadeLocalHelp')?.hidden).toBe(false);
     expect(document.querySelector('label[for="arcadeEnemy"]')?.textContent).toBe('Player 2 hero 1');
-    expect(document.querySelector('label[for="arcadePlayer"]')?.textContent).toBe('Player 1 hero 1');
-    expect(sel('arcadeEnemyPartner').closest<HTMLElement>('.settingsOption')?.style.display).toBe('');
+    expect(document.querySelector('label[for="arcadePlayer"]')?.textContent).toBe(
+      'Player 1 hero 1',
+    );
+    expect(sel('arcadeEnemyPartner').closest<HTMLElement>('.settingsOption')?.style.display).toBe(
+      '',
+    );
     change(sel('arcadeMode'), 'ai');
-    expect(sel('arcadeEnemyPartner').closest<HTMLElement>('.settingsOption')?.style.display).toBe('none');
+    expect(sel('arcadeEnemyPartner').closest<HTMLElement>('.settingsOption')?.style.display).toBe(
+      'none',
+    );
   });
 
   // happy-dom's FormData includes disabled controls (browsers omit them), so "left out of the form data" is covered by e2e;
@@ -96,7 +135,13 @@ describe('arcadePickView (DOM)', () => {
     const ev = new Event('submit', { cancelable: true });
     page.querySelector('form')?.dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(true);
-    expect(onStart.mock.calls[0]?.[0]).toMatchObject({ player: 'sindarosa', enemy: 'rokcore', level: '2', size: '1', mode: 'ai' });
+    expect(onStart.mock.calls[0]?.[0]).toMatchObject({
+      player: 'sindarosa',
+      enemy: 'rokcore',
+      level: '2',
+      size: '1',
+      mode: 'ai',
+    });
   });
 
   it('offers an Arena choice (Random first) that submits with the form and is click operable', () => {
@@ -105,7 +150,9 @@ describe('arcadePickView (DOM)', () => {
     const group = page.querySelector('label[for="arcadeStage"]')?.closest('.settingsOption');
     expect(group?.textContent).toMatch(/Random.*Fire.*Water.*Earth.*Air/);
     expect(sel('arcadeStage').value).toBe('');
-    const water = [...(group?.querySelectorAll<HTMLButtonElement>('.vsSegment') ?? [])].find((b) => b.dataset['value'] === 'water');
+    const water = [...(group?.querySelectorAll<HTMLButtonElement>('.vsSegment') ?? [])].find(
+      (b) => b.dataset['value'] === 'water',
+    );
     water?.click();
     expect(water?.getAttribute('aria-checked')).toBe('true');
     page.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
@@ -128,6 +175,36 @@ describe('arcadePickView (DOM)', () => {
     const v = onStart.mock.calls[0]?.[0] as PickValues;
     expect(v.partner).toBe('rokcore');
     expect(v.partner2).toBe('lavax');
+  });
+
+  it('changing a slot select moves the detail pane to that hero (A8)', () => {
+    document.body.append(
+      arcadePickView({
+        races: ['sindarosa', 'rokcore', 'lavax'] as CharacterId[],
+        levels: [{ value: '1', label: 'Level 1' }],
+        current: { player: 'sindarosa', enemy: 'rokcore', level: '1', size: '1', mode: 'ai' },
+        onStart: vi.fn(),
+      }),
+    );
+    const s = document.getElementById('arcadePlayer') as HTMLSelectElement;
+    s.value = 'lavax';
+    s.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(document.querySelector('.heroPanel .heroName')?.textContent).toBe('Lavax');
+  });
+
+  it('the roster sits inside the one scroll region, with the action bar after it (PB1)', () => {
+    document.body.append(
+      arcadePickView({
+        races: ['sindarosa', 'rokcore'] as CharacterId[],
+        levels: [{ value: '1', label: 'Level 1' }],
+        current: { player: 'sindarosa', enemy: 'rokcore', level: '1', size: '1', mode: 'ai' },
+        onStart: vi.fn(),
+      }),
+    );
+    const scroll = document.querySelector('.pickScroll') as HTMLElement;
+    expect(scroll.querySelector('.heroTile')).not.toBeNull();
+    expect(scroll.nextElementSibling?.classList.contains('vsActions')).toBe(true);
+    expect(scroll.contains(document.getElementById('arcadeStart'))).toBe(false);
   });
 
   it('roster: a tile fills the active slot with aria-pressed, then advances to the next open slot', () => {
@@ -165,7 +242,9 @@ describe('arcadePickView (DOM)', () => {
     const tiles = [...document.querySelectorAll<HTMLButtonElement>('.heroTile')];
     tiles[2]?.click();
     tiles[1]?.click();
-    const clears = [...document.querySelectorAll<HTMLElement>('.vsSlotActions .vsSmall')].filter((b) => b.textContent === 'Clear');
+    const clears = [...document.querySelectorAll<HTMLElement>('.vsSlotActions .vsSmall')].filter(
+      (b) => b.textContent === 'Clear',
+    );
     clears[0]?.click();
     expect(sel('arcadePlayer').value).toBe('');
     expect(document.activeElement).toBe(document.getElementById('roster-player'));
@@ -175,7 +254,8 @@ describe('arcadePickView (DOM)', () => {
 
   it('a picked hero carries a P1 chip with its slot number, as text', () => {
     mount();
-    const flags = (i: number): HTMLElement | null => document.querySelectorAll<HTMLElement>('.heroTile')[i]?.querySelector('.vsFlags') ?? null;
+    const flags = (i: number): HTMLElement | null =>
+      document.querySelectorAll<HTMLElement>('.heroTile')[i]?.querySelector('.vsFlags') ?? null;
     expect(flags(0)?.hidden).toBe(true);
     document.querySelectorAll<HTMLButtonElement>('.heroTile')[2]?.click();
     expect(flags(2)?.hidden).toBe(false);
@@ -187,7 +267,9 @@ describe('arcadePickView (DOM)', () => {
     change(sel('arcadeMode'), 'local');
     change(sel('arcadeSize'), '1');
     const key = (code: string): void => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }));
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }),
+      );
     };
     // P1 cursor starts on hero 0 and P2's on hero 1.
     key('KeyD');
@@ -216,10 +298,20 @@ describe('arcadePickView (DOM)', () => {
     tiles[0]?.click();
     tiles[1]?.click();
     tiles[2]?.click();
-    expect([sel('arcadePlayer').value, sel('arcadePartner').value, sel('arcadePartner2').value]).toEqual(['sindarosa', 'lavax', 'rokcore']);
-    (document.querySelector('button[aria-label="Swap Player 1 pick 2 up to position 1"]') as HTMLButtonElement).click();
+    expect([
+      sel('arcadePlayer').value,
+      sel('arcadePartner').value,
+      sel('arcadePartner2').value,
+    ]).toEqual(['sindarosa', 'lavax', 'rokcore']);
+    (
+      document.querySelector(
+        'button[aria-label="Swap Player 1 pick 2 up to position 1"]',
+      ) as HTMLButtonElement
+    ).click();
     expect([sel('arcadePlayer').value, sel('arcadePartner').value]).toEqual(['lavax', 'sindarosa']);
-    (document.querySelector('button[aria-label="Clear Player 1 pick 3"]') as HTMLButtonElement).click();
+    (
+      document.querySelector('button[aria-label="Clear Player 1 pick 3"]') as HTMLButtonElement
+    ).click();
     expect(document.querySelector('.vsStatus')?.textContent).toBe('2 of 3 picked');
   });
 
@@ -242,7 +334,9 @@ describe('arcadePickView (DOM)', () => {
   it('the hidden hero pulldowns are aria-hidden (the grid is the control); the level pulldown is not', async () => {
     mount();
     await Promise.resolve();
-    expect(sel('arcadePlayer').closest('.settingsOption')?.getAttribute('aria-hidden')).toBe('true');
+    expect(sel('arcadePlayer').closest('.settingsOption')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
     expect(sel('arcadeLevel').closest('.settingsOption')?.hasAttribute('aria-hidden')).toBe(false);
   });
 });
@@ -250,7 +344,12 @@ describe('arcadePickView (DOM)', () => {
 describe('arcadeResultsView (DOM)', () => {
   it('renders heading, summary, wired buttons and a Main Menu link; Download only when recorded', () => {
     const calls: string[] = [];
-    const page = arcadeResultsView({ heading: 'You win', summary: 'Won in 30s', onRematch: () => calls.push('r'), onChange: () => calls.push('c') });
+    const page = arcadeResultsView({
+      heading: 'You win',
+      summary: 'Won in 30s',
+      onRematch: () => calls.push('r'),
+      onChange: () => calls.push('c'),
+    });
     document.body.append(page);
     expect(page.querySelector('h1')?.textContent).toBe('You win');
     expect(page.querySelector('p')?.textContent).toBe('Won in 30s');
@@ -259,7 +358,13 @@ describe('arcadeResultsView (DOM)', () => {
     expect(calls).toEqual(['r', 'c']);
     expect(document.getElementById('downloadReplay')).toBeNull();
     expect(page.querySelector('a')?.getAttribute('href')).toBe('#main');
-    const withDl = arcadeResultsView({ heading: 'h', summary: 's', onRematch: vi.fn(), onChange: vi.fn(), onDownload: () => calls.push('d') });
+    const withDl = arcadeResultsView({
+      heading: 'h',
+      summary: 's',
+      onRematch: vi.fn(),
+      onChange: vi.fn(),
+      onDownload: () => calls.push('d'),
+    });
     document.body.append(withDl);
     withDl.querySelector<HTMLElement>('#downloadReplay')?.click();
     expect(calls.at(-1)).toBe('d');

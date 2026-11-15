@@ -19,10 +19,8 @@ for (const [name, width, height] of SIZES) {
       if (!box || box.x < -0.5 || box.x + box.width > width + 0.5) over.push((await seg.textContent()) ?? '');
     }
     expect(over).toEqual([]);
-    // The sticky bar leaves most of the viewport to the picker, and Fight is on screen.
+    // The bar takes its own space and leaves most of the viewport to the picker, and Fight is on screen.
     const bar = await page.locator('#arcadePick .vsActions').boundingBox();
-    // Short landscape screens let the bar scroll with the page; Fight must still be reachable by scrolling.
-    await fight.scrollIntoViewIfNeeded();
     const fb = await fight.boundingBox();
     expect(bar).not.toBeNull();
     expect(bar ? bar.height : 0).toBeLessThanOrEqual(height * 0.2);
@@ -31,7 +29,7 @@ for (const [name, width, height] of SIZES) {
   });
 }
 
-// QA r39: on a touch phone in landscape the 2v2 picker keeps its "N of 2 picked" line clear of the sticky Fight bar and never breaks a hero name mid-word.
+// QA r39: on a touch phone in landscape the 2v2 picker keeps its "N of 2 picked" line clear of the Fight bar and never breaks a hero name mid-word.
 const PHONES: ReadonlyArray<readonly [number, number]> = [[667, 375], [844, 390]];
 for (const [width, height] of PHONES) {
   test.describe(`2v2 picker on touch landscape ${String(width)}x${String(height)}`, () => {

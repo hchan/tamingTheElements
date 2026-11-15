@@ -7,7 +7,11 @@ import type { Screen } from './screen';
 const save = (chapter: number, names: string[]): SaveV1 => ({
   ...newEmptyState(),
   chapter,
-  garrison: names.map((characterName, i) => ({ id: `h${String(i)}`, experience: 10 * (i + 1), characterName })),
+  garrison: names.map((characterName, i) => ({
+    id: `h${String(i)}`,
+    experience: 10 * (i + 1),
+    characterName,
+  })),
 });
 
 let current: { screen: Screen; host: HTMLElement } | null = null;
@@ -26,7 +30,8 @@ function mount(s: SaveV1 | null, param: string | null): HTMLElement {
   return host;
 }
 
-const lines = (root: Element, sel: string): string[] => [...root.querySelectorAll(sel)].map((e) => e.textContent);
+const lines = (root: Element, sel: string): string[] =>
+  [...root.querySelectorAll(sel)].map((e) => e.textContent);
 
 describe('character details screen in the DOM', () => {
   it('renders name, portrait, stats and relations for the chosen hero', () => {
@@ -41,7 +46,10 @@ describe('character details screen in the DOM', () => {
       'Speed: 7',
     ]);
     expect(host.querySelector('.characterStats .element-fire')?.textContent).toBe('Element: fire');
-    expect(lines(host, '.characterRelations div')).toEqual(['Strong against: air', 'Weak against: water']);
+    expect(lines(host, '.characterRelations div')).toEqual([
+      'Strong against: air',
+      'Weak against: water',
+    ]);
     const portrait = host.querySelector<HTMLElement>('.detailAvatar');
     expect(portrait?.getAttribute('aria-hidden')).toBe('true');
     expect(portrait?.style.backgroundImage).toContain('assets/img/map/fiara.png');
@@ -64,7 +72,8 @@ describe('character details screen in the DOM', () => {
   });
 
   it('shows the Capture ability only after chapter 1 (the chapter comes from the save)', () => {
-    const count = (chapter: number): number => mount(save(chapter, ['Fiara']), 'h0').querySelectorAll('.characterAbility').length;
+    const count = (chapter: number): number =>
+      mount(save(chapter, ['Fiara']), 'h0').querySelectorAll('.characterAbility').length;
     const c1 = count(1);
     current?.screen.unmount();
     const c2 = count(2);
