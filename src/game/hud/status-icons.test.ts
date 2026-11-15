@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { StatusId, type Element, type RenderStatus, type RenderView } from '@core/index';
 import { FRIENDLY_COLOR, HC_FRIENDLY_COLOR, HC_HOSTILE_COLOR, HOSTILE_COLOR } from './buffs';
 import { mainBar } from './bars';
-import { CHIP_GAP, CHIP_MAX, CHIP_W, CHIP_Y, chipText, collectStatusChips, secsLeft, weatherEffect } from './status-icons';
+import { SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, TRAP_PUDDLE_LINGER_TICKS } from '@core/index';
+import { CC_ICONS, CHIP_GAP, CHIP_MAX, CHIP_W, CHIP_Y, chipText, collectStatusChips, secsLeft, weatherEffect } from './status-icons';
 
 interface Opts {
   tick?: number;
   barTick?: number;
   statuses?: Partial<RenderStatus>[];
-  arcade?: { rooted?: boolean; stunned?: boolean; guarding?: boolean; invulnerable?: boolean; weather?: number; weatherLeft?: number };
+  arcade?: { rooted?: boolean; rootLeft?: number; rootImmuneLeft?: number; stunLeft?: number; mireLeft?: number; stunned?: boolean; guarding?: boolean; invulnerable?: boolean; weather?: number; weatherLeft?: number };
   elemental?: { name: string; activeUntil: number };
 }
 
@@ -24,6 +25,10 @@ const viewWith = (o: Opts): RenderView =>
         ? {
             rooted: () => o.arcade?.rooted ?? false,
             stunned: () => o.arcade?.stunned ?? false,
+            rootLeft: () => o.arcade?.rootLeft ?? 0,
+            rootImmuneLeft: () => o.arcade?.rootImmuneLeft ?? 0,
+            stunLeft: () => o.arcade?.stunLeft ?? 0,
+            mireLeft: () => o.arcade?.mireLeft ?? 0,
             guarding: () => o.arcade?.guarding ?? false,
             invulnerable: () => o.arcade?.invulnerable ?? false,
             weather: o.arcade.weather ?? 0,
@@ -95,10 +100,10 @@ describe('collectStatusChips', () => {
     expect((chips(o, 'fire', 640)[0]?.x ?? 0) - (chips(o, 'fire', 0)[0]?.x ?? 0)).toBe(mainBar(640).minX - mainBar(0).minX);
   });
 
-  it('shows Snag, stun, guard and safe states without a time', () => {
-    const out = chips({ arcade: { rooted: true, stunned: true, guarding: true, invulnerable: true } });
+  it('shows Snag (timed), stun and guard (untimed) and safe states', () => {
+    const out = chips({ arcade: { rooted: true, rootLeft: SNAG_ROOT_TICKS, stunned: true, guarding: true, invulnerable: true } });
     expect(out.map((c) => c.label)).toEqual(['SNAGGED', 'STUN', 'GUARD']);
-    expect(out.map((c) => c.secs)).toEqual([null, null, null]);
+    expect(out.map((c) => c.secs)).toEqual([2, null, null]);
     expect(out.map((c) => c.hostile)).toEqual([true, true, false]);
     // Invulnerable while stunned is the stun, not a SAFE buff.
     const safe = chips({ arcade: { invulnerable: true } });
@@ -143,5 +148,42 @@ describe('chip layout at a larger scale', () => {
     for (const c of big) expect(c.x + c.w).toBeLessThanOrEqual(maxX);
     expect(new Set(big.map((c) => c.y)).size).toBeGreaterThan(1);
     expect(Math.min(...big.map((c) => c.y))).toBe(130);
+  });
+});
+
+describe('crowd-control chips (CA1)', () => {
+  it('SNAGGED drains over the root, NO SNAG shows while immune (and never while rooted)', () => {
+    const half = chips({ arcade: { rooted: true, rootLeft: SNAG_ROOT_TICKS / 2 } });
+    expect(half).toHaveLength(1);
+    expect(half[0]).toMatchObject({ key: 'root', label: 'SNAGGED', hostile: true, remaining: 0.5, secs: 1 });
+    const immune = chips({ arcade: { rootImmuneLeft: SNAG_IMMUNE_TICKS } });
+    expect(immune[0]).toMatchObject({ key: 'nosnag', label: 'NO SNAG', hostile: false, remaining: 1, glyph: 'plus' });
+    expect(chips({ arcade: { rooted: true, rootLeft: 10, rootImmuneLeft: 10 } }).map((c) => c.key)).toEqual(['root']);
+    expect(chips({ arcade: {} })).toEqual([]);
+  });
+
+  it('MIRED is hostile and drains over the Puddle linger', () => {
+    const c = chips({ arcade: { mireLeft: TRAP_PUDDLE_LINGER_TICKS / 3 } })[0];
+    expect(c).toMatchObject({ key: 'mire', label: 'MIRED', hostile: true, glyph: 'cross' });
+    expect(c?.remaining).toBeCloseTo(1 / 3);
+  });
+
+  it('STUN drains against the latched total and stays full without one', () => {
+    const arcade = { stunned: true, stunLeft: 5 };
+    expect(collectStatusChips(viewWith({ arcade }), 0, 1, 'fire', 0, false, undefined, 20)[0]?.remaining).toBe(0.25);
+    expect(chips({ arcade })[0]?.remaining).toBe(1);
+    expect(collectStatusChips(viewWith({ arcade: { stunned: true, stunLeft: 30 } }), 0, 1, 'fire', 0, false, undefined, 20)[0]?.remaining).toBe(1);
+  });
+
+  it('every remaining is in [0, 1], labels are short and avoid the banned words, icons exist', () => {
+    const out = chips({ arcade: { rooted: true, rootLeft: 9999, stunned: true, stunLeft: 1, mireLeft: 9999, guarding: true } });
+    const immune = chips({ arcade: { rootImmuneLeft: 9999 } });
+    for (const c of [...out, ...immune]) {
+      expect(c.remaining).toBeGreaterThanOrEqual(0);
+      expect(c.remaining).toBeLessThanOrEqual(1);
+      expect(c.label.length).toBeLessThanOrEqual(8);
+      expect(c.label).not.toMatch(/classic|arcade|ruleset|capture/i);
+    }
+    for (const k of ['stun', 'mire', 'nosnag']) expect(CC_ICONS[k]?.length ?? 0).toBeGreaterThanOrEqual(4);
   });
 });

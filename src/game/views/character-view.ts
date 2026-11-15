@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { EntityFlag, type Element, type RenderCharacter } from '@core/index';
+import { EntityFlag, StatusId, type Element, type RenderCharacter, type RenderView } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-feel';
@@ -40,6 +40,20 @@ export function liftToWhite(c: number): number {
 }
 
 /** Which tint a character shows this frame, given the flash frames left: the flash wins over the frozen tint. */
+/**
+ * Whether a character shows the ice-blue freeze tint: only a Classic Tornado victim (status 5 live, legacy `freeze()` with
+ * the colour change). Never in Arcade, where the `frozen` flag is never a victim freeze. The flag alone is not enough: it is
+ * also set during a melee caster's cast recovery (PARITY C08), which legacy did not tint (`freeze(true)`).
+ */
+export function frozenTintOf(view: RenderView, id: number, arcade: boolean): boolean {
+  if (arcade) return false;
+  let tornado = false;
+  view.forEachStatus(id, (st) => {
+    if (st.id === StatusId.tornado) tornado = true;
+  });
+  return tornado;
+}
+
 export function tintStage(flashLeft: number, frozen: boolean): TintStage {
   if (flashLeft > FLASH_TINT_FRAMES) return 'wash';
   if (flashLeft > 0) return 'hit';
@@ -237,8 +251,12 @@ export class CharacterView {
     this.ensureHook();
   }
 
-  /** `live` is false while the sim is paused: the flash and jitter then hold their frame. */
-  apply(c: RenderCharacter, tick: number, alpha: number, live = true): void {
+  /**
+   * `live` is false while the sim is paused: the flash and jitter then hold their frame. `frozenTint` says whether to draw the
+   * ice-blue freeze tint; it defaults to the `frozen` flag, but that flag is also set for a melee caster's ~13 ticks of cast
+   * recovery (systems/melee.ts), so the scene passes `frozenTintOf` instead (legacy skipped the colour change there, abilities.js freeze(true)).
+   */
+  apply(c: RenderCharacter, tick: number, alpha: number, live = true, frozenTint = (c.flags & EntityFlag.frozen) !== 0): void {
     this.element = c.element;
     const hidden = (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0;
     this.image.setVisible(!hidden);
@@ -280,7 +298,7 @@ export class CharacterView {
     this.placeGlow(c.sprite, x, y, c.w * k, c.h * k);
     this.placeAura(x, y, c.w * k, c.h * k, (c.flags & EntityFlag.translucent) !== 0);
     this.placeShadow(x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
-    const stage = tintStage(this.flashLeft, (c.flags & EntityFlag.frozen) !== 0);
+    const stage = tintStage(this.flashLeft, frozenTint);
     this.washAlpha = flashWashAlpha(this.flashLeft);
     if (live && this.flashLeft > 0) {
       if (this.holdLeft > 0) this.holdLeft--;

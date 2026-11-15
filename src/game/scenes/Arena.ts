@@ -76,7 +76,7 @@ import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { createStageAmbient, type StageAmbient } from '../fx/stage-ambient-view';
-import { CLASSIC_SPRITE_SCALE, CharacterView, setBrightFloor } from '../views/character-view';
+import { CLASSIC_SPRITE_SCALE, CharacterView, frozenTintOf, setBrightFloor } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import { ReplayCursor } from '../replay/cursor';
@@ -207,6 +207,7 @@ export class Arena extends Phaser.Scene {
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;
+    this.arcadeMatch = arcadeMatch;
     this.pool = new EntityViewPool(() => new CharacterView(this, arcadeMatch ? 1 : CLASSIC_SPRITE_SCALE, arcadeMatch), (v) => { v.hide(); });
     const projPool = new EntityViewPool(() => new ProjectileView(this), (v) => { v.hide(); });
     this.projPool = projPool;
@@ -879,13 +880,16 @@ export class Arena extends Phaser.Scene {
   private frameTick = 0;
   private frameAlpha = 0;
   private frameLive = true;
+  private arcadeMatch = false;
   /** Test hook: let view effects (hit flash) age on real frames while the sim stays paused. */
   private fxAges = false;
   /** Element of each team's character this frame (characters draw before projectiles); picks the Snag rope art. */
   private readonly teamElement: string[] = [];
   private readonly drawCharacter = (c: RenderCharacter): void => {
     this.teamElement[c.team] = c.element;
-    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive);
+    // The freeze tint is the Classic Tornado status only: the frozen flag also marks a melee caster's recovery (PARITY C08).
+    const tint = this.view ? frozenTintOf(this.view, c.id, this.arcadeMatch) : false;
+    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive, tint);
   };
   private readonly drawProjectile = (p: RenderProjectile): void => {
     this.projPool?.acquire(p.id).apply(p, this.frameAlpha);
