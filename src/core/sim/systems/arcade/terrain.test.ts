@@ -1,6 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
+  BACKWARD_WALK_PM,
   ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y, arcadePlayfield, DASH_SPEED_MULT, WEATHER_TICKS, Weather,
 } from '../../../data/arcade';
 import { ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../../data/chapters';
@@ -449,7 +450,7 @@ describe('air patch (rule: an air hero moves at x2; not stacked with a dash)', (
     expect(base).toBe(6);
     expect(stepDx('echo', air, Cmd.right)).toBe((base * TERRAIN_AIR_PM) / 1000);
     expect(stepDx('curomo', air, Cmd.right)).toBe(6);
-    expect(stepDx('echo', air, Cmd.left)).toBe(-12);
+    expect(stepDx('echo', air, Cmd.left)).toBe(-(base * TERRAIN_AIR_PM * BACKWARD_WALK_PM) / 1e6); // left is away from the foe: backward walk halves it (SIM_VERSION 67)
   });
 
   it('keeps a dash at its own, larger speed (the larger applies, no stacking)', () => {

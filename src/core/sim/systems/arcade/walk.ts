@@ -1,4 +1,4 @@
-import { DASH_CURVE_PM, DASH_TICKS, WALK_ACCEL_PM, WALK_BRAKE_PM, WALK_TURN_PM } from '../../../data/arcade';
+import { BACKWARD_WALK_PM, DASH_CURVE_PM, DASH_TICKS, WALK_ACCEL_PM, WALK_BRAKE_PM, WALK_TURN_PM } from '../../../data/arcade';
 
 /**
  * One tick of walk inertia on one axis (FUN-DESIGN 2.3a): moves `cur` towards `target` by `speed * pm / 1000`, with
@@ -17,4 +17,13 @@ export function approachWalk(cur: number, target: number, speed: number): number
 /** Share (per mille) of the dash step on 1-based dash tick `tick`: DASH_CURVE_PM, 1000 outside 1..DASH_TICKS. */
 export function dashCurvePm(tick: number): number {
   return tick >= 1 && tick <= DASH_TICKS ? (DASH_CURVE_PM[tick - 1] ?? 1000) : 1000;
+}
+
+/**
+ * The x walk target (SIM_VERSION 67): `target` (held x direction times speed) scaled by BACKWARD_WALK_PM when it points
+ * away from the foe's x (`foeX` null = no foe, no scaling; equal x = not backward).
+ */
+export function backwardWalkX(x: number, foeX: number | null, target: number): number {
+  if (foeX === null || target === 0 || foeX === x) return target;
+  return (target > 0) === (foeX > x) ? target : (target * BACKWARD_WALK_PM) / 1000;
 }

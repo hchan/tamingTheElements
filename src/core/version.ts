@@ -238,5 +238,8 @@
  *    distance); a primary or secondary press from dash tick 10 cancels the dash into the attack; walls slide along the free axis. Re-record reason:
  *    every Arcade movement trajectory changes (Arcade goldens, Arcade 1v1 and 2v2 baselines). Same version: ARCADE_RACE_NUMBERS and
  *    ARCADE_2V2_LIFE_PM retuned so the movement change keeps the race win rates in 45-55 (see docs/BALANCE.md).
+ * 67: Arcade only (Classic hashes unchanged). Backward walk (owner request): walking with the held x pointing away from the foe's x runs at
+ *    BACKWARD_WALK_PM = 500 (50 percent) of forward speed (x only; vertical and no-foe unchanged). Re-record reason: every Arcade trajectory
+ *    with a retreating hero changes (Arcade goldens, Arcade 1v1 and 2v2 baselines).
  */
-export const SIM_VERSION = 66;
+export const SIM_VERSION = 67;

@@ -440,6 +440,8 @@ export const ARCADE_P2_START_X = ARCADE_SPAWN_SPAN_X + ARENA_WIDTH - ARCADE_SPAW
 export const WALK_ACCEL_PM = 350;
 export const WALK_BRAKE_PM = 334;
 export const WALK_TURN_PM = 700;
+/** Backward walk (SIM_VERSION 67, Arcade only): the x walk target while the held x points away from the foe, per mille of forward. */
+export const BACKWARD_WALK_PM = 500;
 /**
  * Dash shape (SIM_VERSION 66): per dash tick (1-based, DASH_TICKS entries) the share of the DASH_SPEED_MULT step, per
  * mille. A burst that settles instead of a flat 3x speed: the six invulnerable ticks carry the speed, the end brakes.
