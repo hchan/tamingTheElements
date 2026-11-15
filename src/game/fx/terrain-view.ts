@@ -31,6 +31,9 @@ import {
  * with the Arena or the Hud (shutdown or destroy).
  */
 
+/** Length of the tag call in view ticks (hud/tag-fx.ts CALL_TICKS; copied so this lazy chunk does not pull the tag HUD in). */
+const TAG_CALL_TICKS = 60;
+
 /** Over the hero's backdrop (-1), under the weather tint (-0.75), the trails (-0.5) and the fighters (0). */
 const BG_DEPTH = -0.95;
 /** The tiled floor: over the backdrops, under the glow and the patches (WP-tile-floor). */
@@ -133,6 +136,8 @@ export function mountTerrainView(
   let tick = view.tick;
   /** The FIGHT! banner's last tick (the floor words stay hidden until then). */
   let fightBannerUntil = 0;
+  /** The tag call's last tick (the floor chips hide under "TAG!" / "<NAME> IN!" so the words never overlap). */
+  let tagCallUntil = 0;
   let drawnTick = tick;
   let sub = 0;
   const now = (): number => tick + sub / TICK_MS;
@@ -351,7 +356,7 @@ export function mountTerrainView(
     // time each stage appears, then the glow ring and the pad art carry it alone.
     if (stage > 0 && firstSeen[stage] === undefined) firstSeen[stage] = clock;
     const hint = stage > 0 ? labelHintAlpha(clock - (firstSeen[stage] ?? clock)) : 0;
-    const bannerUp = ar.phase === RoundPhase.intro || tick < fightBannerUntil;
+    const bannerUp = ar.phase === RoundPhase.intro || tick < fightBannerUntil || tick < tagCallUntil;
     chipNear.fill(0);
     view.forEachCharacter(near);
     p.labels.forEach((t, i) => {
@@ -437,6 +442,7 @@ export function mountTerrainView(
     }
     fx.consume(events);
     for (const e of events) if (e.kind === SimEventKind.fight) fightBannerUntil = view.tick + FIGHT_BANNER_TICKS;
+    for (const e of events) if (e.kind === SimEventKind.tagIn) tagCallUntil = view.tick + TAG_CALL_TICKS;
     for (const e of events) {
       if (e.tick < crowdTick || (e.tick === crowdTick && e.seq <= crowdSeq)) continue;
       const kind = e.kind === SimEventKind.hitConfirmed ? 'hit' : e.kind === SimEventKind.superStarted ? 'super' : e.kind === SimEventKind.ko ? 'ko' : undefined;

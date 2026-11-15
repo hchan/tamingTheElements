@@ -183,8 +183,8 @@ export function streakFrame(ageMs: number, strength: number, unit: number): Stre
 export const STREAK_FAN: readonly number[] = [0, -0.35, 0.35, -0.7, 0.7, -1.05, 1.05, -1.4, 1.4];
 
 export const RECOIL_TICKS = 10;
-const SQUASH = [0.09, 0.13, 0.18, 0.24] as const;
-const PUSH_PX = [3, 4.5, 7, 10] as const;
+const SQUASH = [0.12, 0.16, 0.2, 0.26] as const;
+const PUSH_PX = [5, 6.5, 8.5, 11] as const;
 
 export interface RecoilPose {
   /** Horizontal push in px along the attack direction. */

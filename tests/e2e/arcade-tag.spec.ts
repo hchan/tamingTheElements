@@ -245,6 +245,8 @@ test('swap press: one tag per press (a held key does not chain), and a press in 
   expect((await tag(page))?.lines[0]?.[0]).toBe('IN Sindarosa');
   await pressUntil(async () => /^Swap ready/.test(await notice()));
   expect(await notice()).toMatch(/^Swap ready in \d\.\ds$/);
+  // QA r37: the refused-swap line must read as bone on the floor (not dim grey); $SHOT_DIR keeps a real screenshot of it.
+  if (process.env['SHOT_DIR']) await page.screenshot({ path: `${process.env['SHOT_DIR']}/swap-notice.png` });
   expect((await tag(page))?.lines[0]?.[0]).toBe('IN Sindarosa');
   expect(errors).toEqual([]);
 });
