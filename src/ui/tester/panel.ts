@@ -12,6 +12,7 @@ import {
 } from '@core/menu-index';
 import type { TesterAwareStore, TesterOptionKey, TesterSession } from '../../game/platform/tester/session';
 import { el } from '../dom';
+import '../styles/tester-panel.css';
 
 export interface PanelDeps {
   readonly session: TesterSession;
@@ -31,7 +32,7 @@ interface OptionDef {
 }
 
 export const OPTION_DEFS: readonly OptionDef[] = [
-  { key: 'allAbilities', label: 'Unlock all abilities (Capture) in any chapter', hint: 'Applies to the next battle.' },
+  { key: 'allAbilities', label: 'Unlock all abilities (Snag) in any chapter', hint: 'Applies to the next battle.' },
   { key: 'bigTeam', label: '3-hero team in any chapter (Swap available)', hint: 'Garrison lets you pick 1 to 3 heroes.' },
   { key: 'instantSwap', label: 'Instant swap (no swap cooldown)', hint: 'Zeroes the swap cooldown every tick.' },
   { key: 'godMode', label: 'God mode (my team stays at full health)', hint: 'Turn it off to watch benched health recover.' },
@@ -47,10 +48,10 @@ export const ARCADE_OPTION_DEFS: readonly OptionDef[] = [
 
 const CHEATS: readonly { cheat: ArenaCheat; label: string }[] = [
   { cheat: 'myHp25', label: 'My HP to 25%' },
-  { cheat: 'enemyHp25', label: 'Enemy HP to 25% (capture window)' },
+  { cheat: 'enemyHp25', label: 'Enemy HP to 25% (Snag window)' },
   { cheat: 'win', label: 'I win (Shift-Q)' },
   { cheat: 'freezeEnemy', label: 'Freeze enemy (Shift-X)' },
-  { cheat: 'captureWin', label: 'Capture win (Shift-C)' },
+  { cheat: 'captureWin', label: 'Snag win (Shift-C)' },
 ];
 
 const LEVELS: readonly { label: string; edit: LevelEdit }[] = [
@@ -94,11 +95,18 @@ export function openTesterPanel(deps: PanelDeps): void {
   const title = el('h2', undefined, 'Tester options');
   title.id = 'testerPanelTitle';
   const warn = el('p', 'testerWarn', 'TESTER MODE is on. These cheats are for playtesting only.');
+  const godState = el('p', 'testerGodState');
+  godState.id = 'testerGodState';
   const status = el('p', 'settingsStatus');
   status.id = 'testerStatus';
   status.setAttribute('role', 'status');
 
   const inputs = new Map<TesterOptionKey, HTMLInputElement>();
+  const showGod = (): void => {
+    godState.textContent = session.options.godMode
+      ? 'God mode is ON: your team stays at full health. Untick it under Options to turn it off.'
+      : 'God mode is OFF. Tick it under Options for full health, or use Full cheat.';
+  };
   const addRow = (parent: HTMLElement, def: OptionDef): void => {
     const row = el('div', 'settingsOption');
     const input = el('input');
@@ -119,6 +127,7 @@ export function openTesterPanel(deps: PanelDeps): void {
         return;
       }
       session.setOption(def.key, input.checked);
+      showGod();
       status.textContent = `${def.label}: ${input.checked ? 'on' : 'off'}.`;
     });
   };
@@ -230,6 +239,7 @@ export function openTesterPanel(deps: PanelDeps): void {
     if (session.options.keepProgress) session.reseed();
     session.applyFullCheat();
     for (const [key, input] of inputs) input.checked = session.options[key];
+    showGod();
     const now = deps.now();
     void edit('Full cheat', (sv) => fullGarrison(sv, now, metaIdSource(seedSfc32(now >>> 0, 'meta'))));
   });
@@ -239,7 +249,14 @@ export function openTesterPanel(deps: PanelDeps): void {
   const close = button('Close', 'testerClose');
   const turnOff = button('Turn tester mode off', 'testerOff');
 
-  box.append(title, warn, options, arcadeBox, match, saveBox, status, close, turnOff);
+  showGod();
+  const head = el('div', 'testerHead');
+  head.append(title, warn, godState);
+  const body = el('div', 'testerBody');
+  body.append(options, arcadeBox, match, saveBox);
+  const foot = el('div', 'testerFoot');
+  foot.append(status, close, ' ', turnOff);
+  box.append(head, body, foot);
   backdrop.append(box);
   document.body.append(backdrop);
 

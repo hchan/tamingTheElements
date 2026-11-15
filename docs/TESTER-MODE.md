@@ -7,14 +7,17 @@ cheat code, it is never saved anywhere: a reload turns it off, and it is marked 
 
 | How | Where |
 |---|---|
-| Click **Cheats** on the main menu (every build; it turns tester mode on and opens the panel; afterwards it reads **Tester options**) | Main menu |
+| Click **Cheats** (every build; it turns tester mode on, applies the Full cheat preset, and opens the panel; afterwards it reads **Tester options**) | Settings > Advanced |
 | Press **Up Up Down Down Left Right Left Right B A** | on the main menu |
 | Tick **Unlock full garrison** | Settings |
 | Add `?cheats=1` to the URL | dev and test builds only (never production) |
 
 A yellow **TESTER MODE** badge (top right) shows on every screen, including during play. It says whether progress is thrown
 away ("progress not saved") or kept ("keeping progress"). Click it to open **Tester options**. The panel is also reachable from
-the main menu (**Tester options** button) and from the pause dialog during a battle (**Tester options**, pause with Escape or Shift-P).
+Settings > Advanced (**Tester options** button) and from the pause dialog during a battle (**Tester options**, pause with Escape or Shift-P).
+The panel header always says whether **God mode** is ON or OFF. Clicking **Cheats** (or ticking **Unlock full garrison**) applies Full cheat, so God mode starts ON there;
+turning tester mode on any other way (Konami code, `?cheats=1`) leaves it OFF until you tick it. The header and the Close button stay
+in view while the options scroll.
 Turn it off with **Turn tester mode off** in the panel, or reload the page.
 
 ## What each option does
@@ -27,8 +30,8 @@ save), so the real save is never written.
 
 Options (checkboxes, each on its own):
 
-- **Unlock all abilities (Capture) in any chapter**: sets the `testerCapture` sim flag for the next battle, so the Capture slot
-  exists in a chapter-1 save. Every character's own abilities are always usable; Capture is the only one gated by chapter.
+- **Unlock all abilities (Snag) in any chapter**: sets the `testerCapture` sim flag for the next battle, so the Snag slot
+  exists in a chapter-1 save. Every character's own abilities are always usable; Snag is the only one gated by chapter.
 - **3-hero team in any chapter**: the Garrison picker accepts 1 to 3 heroes in any chapter, so Swap is available. Swap uses the
   normal swap system and its normal 5 second cooldown.
 - **Instant swap**: zeroes your swap cooldown every tick.
@@ -46,8 +49,8 @@ Options (checkboxes, each on its own):
 
 In a battle (buttons; the legacy keys still work while tester mode is on):
 
-- **My HP to 25%**, **Enemy HP to 25% (capture window)**: sets the active hero or enemy to exactly 25% health.
-- **I win (Shift-Q)**: kills every enemy. **Freeze enemy (Shift-X)**: freezes every enemy. **Capture win (Shift-C)**: flags every
+- **My HP to 25%**, **Enemy HP to 25% (Snag window)**: sets the active hero or enemy to exactly 25% health.
+- **I win (Shift-Q)**: kills every enemy. **Freeze enemy (Shift-X)**: freezes every enemy. **Snag win (Shift-C)**: flags every
   enemy captured, so they join your garrison.
 
 On the save (applies to the active slot, usually the throwaway one):
@@ -65,7 +68,7 @@ On the save (applies to the active slot, usually the throwaway one):
 
 ## 5-minute playtest checklist
 
-1. Open the site with a chapter-1 save (or press New Game). Enter the code on the main menu; check the TESTER MODE badge.
+1. Open the site with a chapter-1 save (or press New Game). Enter the code on the main menu (or use Settings > Advanced > Cheats); check the TESTER MODE badge.
 2. Open **Tester options**, click **Add every race to the garrison**, **Close**.
 3. Garrison: pick three different heroes, **Enter Battleground**.
 4. **Capture**: the action bar shows Capture with its key (C by default) and "Capture unlocked!" for 10 seconds. Open the panel
