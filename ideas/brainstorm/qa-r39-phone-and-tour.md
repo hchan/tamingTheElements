@@ -37,3 +37,8 @@ e2e subset run 2 result: 36 passed (2.7m), same as run 1.
 - Done: 2v2 phone life line. Hud.ts `setSlimLabel` now cuts the hero name first (down to 5 letters, "SIND...") so the life reads "220/220" instead of the bare "SINDAROSA 220"; the bare forms stay only as the last fallback.
 - Shots: ~/claudetmp/touch-attack/before and after (small-strike-1v1/2v2.png, small-2v2-life.png).
 - Open: strike buttons wear the word Strike, not the hero's ability names (Blast / Flame); the bar still shows those.
+
+## Progress (picker-phone agent, 667x375 and 844x390 touch landscape)
+
+- Done: the 2v2/3v3 Versus picker's "N of 2 picked" line now sits on the side title row (right), above the cards and clear of the sticky Fight bar; hero names stay on one line (0.85em, ellipsis as a last resort) so "Sindarosa" no longer breaks mid-word; slot faces 30 px, all buttons keep 44 px. CSS only, in the touch-landscape block of src/ui/styles/main.css.
+- Test: tests/e2e/versus-layout.spec.ts "2v2 picker on touch landscape" (status above the bar, no wrapped/clipped names). Shots: ~/claudetmp/picker-phone/.
