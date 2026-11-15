@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A, ABILITIES_B, CHARACTERS, getCharacter } from '@core/menu-index';
+import { ABILITIES_A, ABILITIES_B, CHARACTERS, HERO_STYLE, getCharacter } from '@core/menu-index';
 import type { CharacterId } from '@core/menu-index';
-import { ELEMENT_ORDER, HERO_COLUMNS, describeAbilityLine, heroProfile, heroesByElement } from './hero-info';
+import { ELEMENT_ORDER, HERO_COLUMNS, describeAbilityLine, heroProfile, heroStyle, heroesByElement } from './hero-info';
 
 const PLAYABLE = CHARACTERS.filter((c) => ELEMENT_ORDER.includes(c.element)).map((c) => c.id);
 const FORBIDDEN = /classic|arcade|ruleset|capture/i;
@@ -78,5 +78,11 @@ describe('describeAbilityLine', () => {
     const def = ABILITIES_A.find((d) => d.kind === 'range' && (d.damage ?? 0) > 0);
     expect(def).toBeDefined();
     if (def) expect(describeAbilityLine(def)).toContain(`${String(def.damage)} damage`);
+  });
+});
+
+describe('heroStyle', () => {
+  it('reads HERO_STYLE for every styled hero (one source)', () => {
+    for (const id of Object.keys(HERO_STYLE) as CharacterId[]) expect(heroStyle(id)).toBe(HERO_STYLE[id]);
   });
 });
