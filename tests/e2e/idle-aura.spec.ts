@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
@@ -8,6 +8,28 @@ import { ARENA_READY, START, collectErrors } from './parity/helpers';
 // SHOT_DIR=<dir> saves a screenshot per element, reduced motion and high contrast (headless).
 
 // Mirrors IdleAuraProbe in src/game/fx/idle-aura-view.ts (not imported: the e2e project has no DOM lib).
+// Pixel visibility (QA r50/r51: the aura was barely visible at real game scale). The same frame is screenshotted with the aura
+// shown and hidden (arena.idleAuraHide); the arena band (below the HUD, above the hotbar) must differ in enough pixels, with
+// enough luminance, and more than the noise of two hidden shots.
+const diffInPage = `async ([a, b, y0, y1]) => {
+  const load = (u) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = u; });
+  const [ia, ib] = await Promise.all([load(a), load(b)]);
+  const w = ia.width, h = ia.height;
+  const rd = (im) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.drawImage(im, 0, 0); return g.getImageData(0, Math.floor(h * y0), w, Math.floor(h * (y1 - y0))).data; };
+  const da = rd(ia), db = rd(ib);
+  let n = 0, sum = 0;
+  for (let i = 0; i < da.length; i += 4) {
+    const d = Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]);
+    if (d > 24) { n++; sum += d; }
+  }
+  return { n, sum, total: da.length / 4 };
+}`;
+const dataUrl = async (page: Page): Promise<string> => `data:image/png;base64,${(await page.locator('#game canvas').screenshot()).toString('base64')}`;
+async function pixelDiff(page: Page, a: string, b: string): Promise<{ n: number; sum: number; total: number }> {
+  return page.evaluate(`(${diffInPage})(${JSON.stringify([a, b, 0.14, 0.88])})`);
+}
+const hide = (page: Page, on: boolean): Promise<unknown> => page.evaluate(`window.__TTE__.arena.idleAuraHide(${String(on)})`);
+
 interface IdleAuraProbe {
   heroes: { id: number; element: string; parts: number; front: number; dim: number; age: number }[];
   parts: number;
@@ -72,6 +94,29 @@ for (const [race, element] of RACES) {
     expect(b.heroes[0]?.age ?? 0).toBeGreaterThan(a.heroes[0]?.age ?? 0);
     await shot(page, element);
     expect(errors).toEqual([]);
+  });
+}
+
+for (const [race, element] of RACES) {
+  test(`${race}: the ${element} aura is clearly visible in pixels (shown vs hidden, same frame)`, async ({ page }) => {
+    await setup(page, race);
+    await hide(page, true);
+    await frames(page);
+    const off1 = await dataUrl(page);
+    const off2 = await dataUrl(page);
+    await hide(page, false);
+    await frames(page);
+    const on = await dataUrl(page);
+    const noise = await pixelDiff(page, off1, off2);
+    const d = await pixelDiff(page, on, off1);
+    if (SHOT_DIR) {
+      mkdirSync(SHOT_DIR, { recursive: true });
+      writeFileSync(`${SHOT_DIR}/idle-${element}-vis-on.png`, Buffer.from(on.split(',')[1] ?? '', 'base64'));
+      writeFileSync(`${SHOT_DIR}/idle-${element}-vis-off.png`, Buffer.from(off1.split(',')[1] ?? '', 'base64'));
+    }
+    // Two heroes of ~160x160 px: the aura must change at least ~2500 px of the band and add real light, beyond shot noise.
+    expect(d.n, `${element} changed pixels (noise ${String(noise.n)})`).toBeGreaterThan(Math.max(2500, noise.n * 3));
+    expect(d.sum / Math.max(1, d.n), `${element} mean change`).toBeGreaterThan(40);
   });
 }
 

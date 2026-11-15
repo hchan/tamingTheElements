@@ -9,6 +9,7 @@ import {
 } from './idle-aura';
 import { ELEMENT_COLORS } from './element-colors';
 import { hash01, mute } from './grim-fx';
+import { tri } from '../views/pose-anim';
 import { STATUS_LOOKS } from './status-fx';
 
 /**
@@ -30,8 +31,19 @@ const BENCHED_OR_DEAD = 16 | 32;
 const RAMP_TICKS = 16; // tag-in fade, 320 ms
 const STRIKE_LOG_MAX = 64;
 /** The pure parts are sized for a faint accent; at the real 160 px hero they need a lift to read (size x2.8, alpha x3.2). */
-const SIZE_BOOST = 2.8;
-const ALPHA_BOOST = 3.2;
+const SIZE_BOOST = 3.8;
+const ALPHA_BOOST = 5;
+/** Line shapes (licks, arcs, cracks, sheen) get the same lift: alpha x2.4 and a thicker stroke. */
+const LINE_BOOST = 2.4;
+/**
+ * Per-hero luminous halo (a soft additive glow of the element's light behind the body): the one thing that must read at phone
+ * scale. Width/height as box multiples, peak alpha, and a bright element light (not the muted particle tint).
+ */
+const HALO_W = 2.1;
+const HALO_H = 1.6;
+const HALO_ALPHA = 0.9;
+const HALO_COLOR: Readonly<Record<string, number>> = { fire: 0xff8a2c, air: 0xa8d0ff, earth: 0xe0b050, water: 0x3f8cff, void: 0x9a6bff };
+const MAX_HALOS = 4;
 /** Per-tick movement (px) under which a hero counts as standing (pose-math STAND_SPEED 20 px/s at 50 Hz). */
 const STAND_STEP = 0.4;
 /** Parts drawn flatter than tall (ground shapes). */
@@ -60,6 +72,12 @@ export interface IdleAuraProbe {
 }
 
 const states = new WeakMap<Phaser.Scene, () => IdleAuraProbe>();
+const hiders = new WeakMap<Phaser.Scene, (on: boolean) => void>();
+
+/** Test control: hides every idle aura drawable (for before/after pixel comparison). */
+export function idleAuraHide(arena: Phaser.Scene, on: boolean): void {
+  hiders.get(arena)?.(on);
+}
 
 /** What was drawn on the last frame (test probe), or undefined before the view mounts or after teardown. */
 export function idleAuraState(arena: Phaser.Scene): IdleAuraProbe | undefined {
@@ -115,6 +133,7 @@ function paintCell(g: Ctx2D, name: string, cx: number, cy: number): void {
       g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(cx - 8, cy + 3); g.lineTo(cx + 8, cy - 3); g.stroke();
       break;
     case 'drop': poly(g, cx, cy, [0, -11, 5, 1, 0, 3, -5, 1]); g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.arc(cx, cy + 3, 5, 0, 6.2832); g.fill(); break;
+    case 'halo': blob(g, cx, cy, h - 1, 0.25, 1); break;
     case 'puddle': blob(g, cx, cy, h - 1, 0.5, 0.65); break;
     case 'ripple':
       g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, h - 4, 0, 6.2832); g.stroke();
@@ -131,11 +150,12 @@ function paintCell(g: Ctx2D, name: string, cx: number, cy: number): void {
 /** Paints the shared atlas once: white cells with a little deterministic grain, so nothing reads as a flat vector blob. */
 function ensureAtlas(scene: Phaser.Scene): boolean {
   if (scene.textures.exists(ATLAS_KEY)) return true;
-  const rows = Math.ceil(IDLE_FRAMES.length / COLS);
+  const NAMES = [...IDLE_FRAMES, 'halo'];
+  const rows = Math.ceil(NAMES.length / COLS);
   const tex = scene.textures.createCanvas(ATLAS_KEY, COLS * CELL, rows * CELL);
   const g = tex?.getContext();
   if (!tex || !g) return false;
-  IDLE_FRAMES.forEach((name, i) => {
+  NAMES.forEach((name, i) => {
     paintCell(g, name, (i % COLS) * CELL + CELL / 2, Math.floor(i / COLS) * CELL + CELL / 2);
   });
   const img = g.getImageData(0, 0, COLS * CELL, rows * CELL);
@@ -151,7 +171,7 @@ function ensureAtlas(scene: Phaser.Scene): boolean {
     px[i + 2] = Math.min(px[i + 2] ?? 0, l);
   }
   g.putImageData(img, 0, 0);
-  IDLE_FRAMES.forEach((name, i) => {
+  NAMES.forEach((name, i) => {
     tex.add(name, 0, (i % COLS) * CELL, Math.floor(i / COLS) * CELL, CELL, CELL);
   });
   tex.refresh();
@@ -193,6 +213,10 @@ export function mountIdleAuraView(
   let lastTick = -1;
   let total = { parts: 0, front: 0, back: 0, segs: 0 };
   let reducedNow = false;
+  const halos: Phaser.GameObjects.Image[] = [];
+  const shades: Phaser.GameObjects.Image[] = [];
+  let nHalo = 0;
+  let hidden = false;
   let contrastNow = false;
   let ownIds: readonly { id: number }[] = [];
   let ownState: ((a: Phaser.Scene) => { active: readonly { id: number }[] } | undefined) | undefined;
@@ -208,6 +232,8 @@ export function mountIdleAuraView(
   let nPart = 0;
   let nSeg = 0;
   let statusCount = 0;
+  const haloData = new Float32Array(MAX_HALOS * 5); // x, y, w, h, alpha
+  const haloColor: number[] = [0, 0, 0, 0];
   const onStatus = (st: { id: number }): void => {
     if (STATUS_LOOKS[st.id] || AURAS.some((a) => a.status === st.id)) statusCount++;
   };
@@ -268,6 +294,17 @@ export function mountIdleAuraView(
       if (age < 0) s.strikeOn = false;
       else if (s.strikeOn) ctx.strike = age;
     }
+    if (nHalo < MAX_HALOS) {
+      const o = nHalo * 5;
+      const pulse = reducedNow ? 0.85 : 0.8 + 0.2 * tri(fracTick / 70 + hash01(0, s.salt));
+      haloData[o] = box.x + box.w / 2;
+      haloData[o + 1] = box.y + box.h * 0.55;
+      haloData[o + 2] = box.w * HALO_W;
+      haloData[o + 3] = box.h * HALO_H;
+      haloData[o + 4] = HALO_ALPHA * pulse * look.amount * ctx.dim * (contrastNow ? 0.5 : 1);
+      haloColor[nHalo] = HALO_COLOR[look.element] ?? 0xffffff;
+      nHalo++;
+    }
     const p0 = nPart;
     nPart += idleParts(look, box, ctx, PARTS, nPart);
     const l0 = nSeg;
@@ -293,7 +330,7 @@ export function mountIdleAuraView(
     for (let n = 0; n < nSeg; n++) {
       const o = n * LINE_STRIDE;
       const kind = LINES[o + 5] ?? 0;
-      const a = Math.min(1, (LINES[o + 4] ?? 0) * (contrastNow ? 1.6 : 1));
+      const a = Math.min(1, (LINES[o + 4] ?? 0) * (contrastNow ? 1.6 : LINE_BOOST));
       if (a <= 0.01) continue;
       const g = KIND_FRONT[kind] ? front : back;
       const x1 = LINES[o] ?? 0;
@@ -302,8 +339,8 @@ export function mountIdleAuraView(
       const y2 = LINES[o + 3] ?? 0;
       const col = kind === LineKind.crack ? COLOR_OF[2] ?? 0 : COLOR_OF[kind === LineKind.lick ? 0 : kind === LineKind.sheen ? 3 : 1] ?? 0;
       if (contrastNow) g.lineStyle(4, 0x000000, 0.5 * a).lineBetween(x1, y1, x2, y2);
-      else g.lineStyle(kind === LineKind.sheen ? 7 : 4.5, col, a * 0.22).lineBetween(x1, y1, x2, y2);
-      g.lineStyle(kind === LineKind.sheen ? 3 : 1.6, col, Math.min(0.8, a)).lineBetween(x1, y1, x2, y2);
+      else g.lineStyle(kind === LineKind.sheen ? 12 : 9, col, a * 0.3).lineBetween(x1, y1, x2, y2);
+      g.lineStyle(kind === LineKind.sheen ? 5 : 3, col, Math.min(0.95, a)).lineBetween(x1, y1, x2, y2);
     }
   };
 
@@ -327,10 +364,27 @@ export function mountIdleAuraView(
     if (!ensureAtlas(arena)) return;
     nPart = 0;
     nSeg = 0;
+    nHalo = 0;
     heroes = [];
     view.forEachCharacter(visit);
     for (const [id, s] of slots) if (s.seen !== frameTick) slots.delete(id);
     drawLines();
+    for (let i = 0; i < MAX_HALOS; i++) {
+      let im = halos[i];
+      if (i >= nHalo || hidden) {
+        im?.setVisible(false);
+      shades[i]?.setVisible(false);
+        continue;
+      }
+      im ??= halos[i] = arena.add.image(0, 0, ATLAS_KEY, 'halo').setBlendMode(ADD).setDepth(IDLE_BACK_DEPTH - 0.01);
+      // A dark pool under the light, so the glow reads on warm and bright floors too (light on light vanishes).
+      const sh = (shades[i] ??= arena.add.image(0, 0, ATLAS_KEY, 'halo').setTint(0x000000).setDepth(IDLE_BACK_DEPTH - 0.02));
+      const o = i * 5;
+      sh.setVisible(true).setPosition(haloData[o] ?? 0, (haloData[o + 1] ?? 0) + 4).setScale((haloData[o + 2] ?? 0) * 1.1 / CELL, (haloData[o + 3] ?? 0) * 1.1 / CELL)
+        .setAlpha(Math.min(0.6, (haloData[o + 4] ?? 0) * 0.55));
+      im.setVisible(true).setPosition(haloData[o] ?? 0, haloData[o + 1] ?? 0).setScale((haloData[o + 2] ?? 0) / CELL, (haloData[o + 3] ?? 0) / CELL)
+        .setAlpha(haloData[o + 4] ?? 0).setTint(haloColor[i] ?? 0xffffff);
+    }
 
     // Four passes keep the batches few: back normal, back additive, front normal, front additive.
     let used = 0;
@@ -357,22 +411,30 @@ export function mountIdleAuraView(
       }
     }
     for (let i = used; i < imgs.length; i++) imgs[i]?.setVisible(false);
+    if (hidden) for (const im of imgs) im.setVisible(false);
+    if (hidden) { backG?.clear(); frontG?.clear(); }
     total = { parts: used, front, back, segs: nSeg };
   };
 
   const off = (): void => {
     arena.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     states.delete(arena);
+    hiders.delete(arena);
     backG?.destroy();
     frontG?.destroy();
     backG = undefined;
     frontG = undefined;
     for (const im of imgs) im.destroy();
+    for (const im of halos) im.destroy();
+    for (const im of shades) im.destroy();
+    halos.length = 0;
+    shades.length = 0;
     imgs.length = 0;
     slots.clear();
   };
   arena.events.on('postupdate', draw);
   arena.events.once('shutdown', off).once('destroy', off);
+  hiders.set(arena, (on) => { hidden = on; });
   states.set(arena, () => ({
     heroes, ...total, strikes: strikes.slice(), reduced: reducedNow, highContrast: contrastNow, tier, cap: 18,
   }));
