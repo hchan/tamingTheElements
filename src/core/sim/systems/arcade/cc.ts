@@ -3,6 +3,8 @@ import {
   DAZE_MIN_TICKS, ICE_GRACE_TICKS, ICE_SHATTER_PM, QUICK_RISE_TICKS, QUICK_RISE_WINDOW_TICKS, SILENCE_TICKS,
   WAKE_INVULN_TICKS, Weather,
 } from '../../../data/arcade';
+import { ABILITIES_A } from '../../../data/abilities-a';
+import { ABILITIES_B } from '../../../data/abilities-b';
 import { CHARACTERS } from '../../../data/characters';
 import { inFight, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
@@ -22,6 +24,13 @@ import { endCharge } from './charge-move';
  * iced 11, downed 12, silenced 13) plus two hidden ones: the diminishing-returns ward (14) and the Ember prime
  * `kindled` (15). Every function returns first when `!ccOn(s)`, so a match without the flag is unchanged.
  */
+
+/** CC_RIDERS per ability def index (set A then set B, as HIT_STUN), resolved once: [defIdx, kind, ticks] triples. */
+const RIDER_TABLE: readonly (readonly [number, number, number])[] = CC_RIDERS.map((r) => {
+  const def = [...ABILITIES_A, ...ABILITIES_B].findIndex((d) => d.id === r.slug);
+  if (def < 0) throw new Error(`CC_RIDERS: unknown ability ${r.slug}`);
+  return [def, r.kind, r.ticks] as const;
+});
 
 const WEATHER = ARCADE_WORLD_BASE + ArcadeW.weather;
 
@@ -184,7 +193,7 @@ export function ccOnHit(
 
 /**
  * After the damage of a landed hit: spends the attacker's Ember prime (never on a super) and silences the victim, then
- * applies the CC rider of `defIdx` (a CC_RIDERS entry; none in CB0). May set `replaceStun` / `noKnockback` on the shared
+ * applies the CC rider of `defIdx` (a CC_RIDERS entry; Tornado dazes in CB1). May set `replaceStun` / `noKnockback` on the shared
  * result that `ccOnHit` returned, for hit.ts to read.
  */
 export function ccRiders(
@@ -193,11 +202,11 @@ export function ccRiders(
   const s = world.state;
   if (!ccOn(s)) return result;
   if (!sup && spendKindled(s, attacker)) applyCc(world, sink, source, attacker, victim, CcKind.silenced, SILENCE_TICKS);
-  for (const rider of CC_RIDERS) {
-    if (rider.def !== defIdx || sup) continue;
-    if (applyCc(world, sink, source, attacker, victim, rider.kind, rider.ticks)) {
+  for (const [def, kind, ticks] of RIDER_TABLE) {
+    if (def !== defIdx || sup) continue;
+    if (applyCc(world, sink, source, attacker, victim, kind, ticks)) {
       result.replaceStun = true;
-      result.noKnockback = rider.kind === CcKind.iced;
+      result.noKnockback = kind === CcKind.iced;
     }
   }
   return result;

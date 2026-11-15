@@ -1,6 +1,7 @@
 // Headless AI-vs-AI match runner (`pnpm sim:match`). Node only: no Phaser, no DOM.
 // Single pairing:  pnpm sim:match --a fiara --b curomo --agents scripted,random --seeds 20 --level 5 [--json]
 // --no-traps (Arcade): masks the Trap command bit from every agent; trap hits show as trap-bomb / trap-spike in damageByAbility.
+// --cc (Arcade): plays with the withCrowdControl flag on (dev tool; Tornado dazes).
 // Round robin:     pnpm sim:match --tournament --seeds 4 [--agents scripted,scripted] [--json]
 // Every seed is played with the sides swapped on odd seeds (team 0 carries the difficulty handicap), so side bias cancels.
 import { pathToFileURL } from 'node:url';
@@ -304,6 +305,8 @@ export interface MatchOptions {
   readonly frozenV1?: 'a' | 'b';
   /** Mask the Trap command bit from both agents (`--no-traps`); only Arcade reads that bit as a trap. */
   readonly noTraps?: boolean;
+  /** Arcade only (`--cc`): play with the withCrowdControl flag on (default off, so every baseline is unchanged). */
+  readonly cc?: boolean;
   /** Roster the 2v2/3v3 partner offsets run over (default RACES, the legacy 12). */
   readonly races?: readonly string[];
 }
@@ -353,7 +356,7 @@ export function runMatch(o: MatchOptions): MatchResult {
   const setup: MatchSetup = {
     simVersion: SIM_VERSION,
     seed: o.seed,
-    flags: arcade ? { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } : DEFAULT_SIM_FLAGS,
+    flags: arcade ? { ...DEFAULT_SIM_FLAGS, rulesetArcade: true, ...(o.cc === true ? { withCrowdControl: true } : {}) } : DEFAULT_SIM_FLAGS,
     chapter: 1,
     difficulty: arcade ? 1 : o.difficulty, // Arcade ignores difficulty for stats (FUN-DESIGN 2.11)
     p1: o.aIsTeam0 ? rosterA : rosterB,
@@ -530,6 +533,7 @@ export interface PairingOptions {
   readonly teamSize?: 1 | 2 | 3;
   readonly aiLevel?: number;
   readonly noTraps?: boolean;
+  readonly cc?: boolean;
   readonly races?: readonly string[];
 }
 
@@ -552,6 +556,7 @@ export function runPairing(o: PairingOptions): { summary: PairingSummary; result
         ...(o.teamSize === undefined ? {} : { teamSize: o.teamSize }),
         ...(o.aiLevel === undefined ? {} : { aiLevel: o.aiLevel }),
         ...(o.noTraps === true ? { noTraps: true } : {}),
+        ...(o.cc === true ? { cc: true } : {}),
         ...(o.races === undefined ? {} : { races: o.races }),
       }),
     );
@@ -746,6 +751,7 @@ export function main(argv: readonly string[]): number {
         'team-size': { type: 'string' },
         'ai-level': { type: 'string' },
         'no-traps': { type: 'boolean' },
+        cc: { type: 'boolean' },
         tournament: { type: 'boolean' },
         json: { type: 'boolean' },
         roster: { type: 'string' },
@@ -762,6 +768,7 @@ export function main(argv: readonly string[]): number {
       stalemateTicks: num(values['stalemate-ticks'], DEFAULT_STALEMATE_TICKS, 'stalemate-ticks'),
       ...parseRuleOptions(values.ruleset, values['team-size'], values['ai-level']),
       ...(values['no-traps'] === true ? { noTraps: true } : {}),
+      ...(values.cc === true ? { cc: true } : {}),
     };
     if (values.roster !== undefined && values.roster !== 'legacy' && values.roster !== 'full') throw new Error(`--roster must be legacy|full, got "${values.roster}"`);
     const roster = values.roster === 'full' ? FULL_RACES : RACES;
@@ -778,7 +785,7 @@ export function main(argv: readonly string[]): number {
     return 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--no-traps] [--roster legacy|full] [--json]');
+    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--no-traps] [--cc] [--roster legacy|full] [--json]');
     console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--roster legacy|full] [--style] [--json]');
     return 2;
   }
