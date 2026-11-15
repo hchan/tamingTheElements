@@ -80,3 +80,6 @@ Sources: [Slynyrd Pixelblog 1](https://www.slynyrd.com/blog/2018/1/10/pixelblog-
 The look is mystic: rich, luminous colour, magical glow, readable silhouettes. It is not murk. Do not crush brightness or saturation in stage
 tints, scrims, hero grading or sprite bakes. The painted portraits (hero select, Tour, Versus) are the quality and lighting reference for
 the in-game rigged sprites.
+
+SDXL-Turbo (stabilityai/sdxl-turbo) is used offline for hero portrait re-paints (imgWorkArea/portrait-sd) and concept exploration (`tools/assets/portrait-sd/`, `tools/assets/concepts-dark.py`). Its
+licence is non-commercial research unless a Stability membership applies; see `tools/assets/portrait-sd/license.txt` before shipping its outputs commercially.
