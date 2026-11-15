@@ -298,7 +298,10 @@ export class Hud extends Phaser.Scene {
       gfx.lineBetween(r.x + 4, r.y + 4, r.x + r.size - 4, r.y + r.size - 4);
       gfx.lineBetween(r.x + 4, r.y + r.size - 4, r.x + r.size - 4, r.y + 4);
     }
-    this.drawBar(gfx, chipBar(team, i), c, false);
+    const cb = chipBar(team, i);
+    this.drawBar(gfx, cb, c, false);
+    // The same lost-life ghost as the main bar (a hero hit just before it tagged out keeps its trail on the bench chip).
+    this.drawTrail(gfx, cb, c);
   }
 
   /** Classic buffs: a row of plus or cross squares in the free column under the health words. */
