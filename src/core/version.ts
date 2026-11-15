@@ -227,5 +227,8 @@
  * 63: Arcade 2v2 only (Classic and Arcade 1v1 hashes unchanged). Random-partner balance step 4 (ideas/brainstorm/balance-2v2-echo-pax-r37.md): ARCADE_2V2_LIFE_PM
  *    curomo 768 to 736 (-4 percent), ishimi 671 to 720 (+7 percent). Re-record reason: tag-team life of two races changes Arcade 2v2 outcomes
  *    (Arcade 2v2 goldens, Arcade 2v2 baseline).
+ * 64: Arcade 2v2 only (Classic and Arcade 1v1 hashes unchanged). Random-partner balance step 5 (ideas/brainstorm/balance-2v2-echo-pax-r37.md): ARCADE_2V2_LIFE_PM
+ *    cyclonius 788 to 843 (+7 percent), pax 594 to 575 (-3 percent). Re-record reason: tag-team life of two races changes Arcade 2v2 outcomes
+ *    (Arcade 2v2 goldens, Arcade 2v2 baseline).
  */
-export const SIM_VERSION = 63;
+export const SIM_VERSION = 64;
