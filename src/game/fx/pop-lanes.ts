@@ -9,6 +9,12 @@ export const POP_NEAR_Y = 70;
 /** At most this many lanes (a fourth pop reuses the top lane rather than leaving the screen). */
 export const POP_MAX_LANES = 3;
 
+/**
+ * A call-out over the fighter that was hit (ROOTED, FREE, COUNTER) starts this far above the spot of the damage number
+ * (qa-r49: the number sat on the word and hid its middle letters, so "ROOTED" read as "RO..D"). About one number's height.
+ */
+export const POP_NUMBER_CLEAR_PX = 40;
+
 export interface LivePop {
   readonly x: number;
   readonly y: number;

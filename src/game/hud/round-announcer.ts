@@ -13,8 +13,11 @@ export const ROUND_EVENT_KINDS: readonly number[] = [
   SimEventKind.roundStarted, SimEventKind.fight, SimEventKind.ko, SimEventKind.timeOver, SimEventKind.roundEnded,
   SimEventKind.matchEnded,
 ];
-/** "FIGHT!" stays this many ticks (1 s); the others hold until the next banner replaces them. */
-export const FIGHT_BANNER_TICKS = 50;
+/**
+ * "FIGHT!" stays this many ticks (0.6 s, incl. its fade-out); the others hold until the next banner replaces them. qa-r47..r49: at 1 s it
+ * was still up when the first hit landed and its big letters sat under the damage number.
+ */
+export const FIGHT_BANNER_TICKS = 30;
 export const HOLD = Number.MAX_SAFE_INTEGER;
 export const TICK_MS = 20;
 /** Scale-in of a new banner: from 1 + BANNER_IN_SCALE down to 1 over BANNER_IN_MS (ease-out); none with reduced motion. */

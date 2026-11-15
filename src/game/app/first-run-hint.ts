@@ -203,10 +203,10 @@ export function firstRunHint(
     markSeen(store);
     card.classList.add('firstRunFade');
   };
-  /** A super cut-in covers the arena: the card goes within a blink. */
+  /** A super cut-in or tag call covers the arena: the card is removed on the spot, not faded (a 0.12 s fade still showed in qa-r49/r50 screenshots). */
   const fadeNow = (): void => {
-    card.style.transition = 'opacity 0.12s';
     fade();
+    card.remove();
   };
   const onInput = (e: Event): void => {
     // Tab, Escape and modifier keys alone are not a move; a click on Got it is handled by the button.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ROUND_INTRO_TICKS, RoundPhase, SimEventKind, type SimEvent } from '@core/index';
 import { announcementsFor, type Announcement } from '../a11y/announcer';
 import {
-  BANNER_IN_MS, FIGHT_BANNER_TICKS, HOLD, PIP_INNER, PIP_STEP, ROUND_EVENT_KINDS, RoundAnnouncer, TIMER_X, bannerScale, pips,
+  BANNER_IN_MS, FIGHT_BANNER_TICKS, HOLD, PIP_INNER, PIP_STEP, ROUND_EVENT_KINDS, RoundAnnouncer, TICK_MS, TIMER_X, bannerScale, pips,
   timerLabel, timerStyle, type RoundSink,
 } from './round-announcer';
 
@@ -33,6 +33,12 @@ function ev(tick: number, kind: number, payload: Record<string, number> = {}): S
 }
 
 const last = <T>(xs: readonly T[]): T | undefined => xs[xs.length - 1];
+
+describe('FIGHT! banner length', () => {
+  it('is gone within 0.6 s so it never overlaps the first hit', () => {
+    expect(FIGHT_BANNER_TICKS * TICK_MS).toBeLessThanOrEqual(600);
+  });
+});
 
 describe('RoundAnnouncer', () => {
   it('covers every round event: each one gives a banner and a live line (match end: the shared line with the score)', () => {
