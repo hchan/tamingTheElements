@@ -4,6 +4,8 @@ import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE } from '../state'
 import type { SimWorld } from '../world';
 import { StatusId, SUPER_MAG_SCALE } from './status';
 import { isArcade, now } from '../clock';
+import { CcKind } from '../../data/arcade';
+import { heldKind } from './arcade/cc-state';
 
 /**
  * Hostile debuffs applied by projectile hits: Tornado (freeze) and Ice Blast (slow). Timers are
@@ -57,6 +59,7 @@ export function onProjectileHit(world: SimWorld, abilitySlug: string, victim: nu
     return true;
   }
   if (abilitySlug === 'ice-blast') {
+    if (heldKind(s, victim) === CcKind.iced) return false; // no new chill on an iced victim (flag withCrowdControl)
     s.speed[victim] = (s.speed[victim] ?? 0) + ICE_BLAST_DELTA;
     // Legacy clamp: a negative speed becomes half the default speed.
     if ((s.speed[victim] ?? 0) < 0) s.speed[victim] = (s.baseSpeed[victim] ?? 0) / 2;

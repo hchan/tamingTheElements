@@ -453,3 +453,36 @@ export const DASH_CURVE_PM: readonly number[] = [1450, 1450, 1300, 1300, 1150, 1
  * secondary press ends the dash and its recovery at once, so the attack comes out that tick.
  */
 export const DASH_ATTACK_CANCEL_FROM = 10;
+
+/**
+ * Crowd control (flag withCrowdControl, SIM_VERSION 70; systems/arcade/cc.ts). Durations are game ticks (50 Hz).
+ * Dazed: a mash-able stagger (DAZE_MASH_TICKS off per press, never below DAZE_MIN_TICKS left); iced: shatters on a hit
+ * (ICE_SHATTER_PM extra damage per mille); downed: knockdown with WAKE_INVULN_TICKS of wake-up invulnerability and a
+ * QUICK_RISE_TICKS quick rise within QUICK_RISE_WINDOW_TICKS; silenced: no casts. Grace = ticks a hit cannot break it.
+ */
+export const DAZE_TICKS = 70;
+export const DAZE_GRACE_TICKS = 10;
+export const DAZE_MASH_TICKS = 3;
+export const DAZE_MIN_TICKS = 24;
+export const ICED_TICKS = 45;
+export const ICE_GRACE_TICKS = 8;
+export const ICE_SHATTER_PM = 1250;
+export const DOWN_TICKS = 40;
+export const WAKE_INVULN_TICKS = 12;
+export const QUICK_RISE_WINDOW_TICKS = 8;
+export const QUICK_RISE_TICKS = 20;
+export const SILENCE_TICKS = 60;
+/** Ticks after the last CC ends before its diminishing-returns ward expires. */
+export const CC_DR_RESET_TICKS = 200;
+
+/** CC kinds (`ccStarted.kind`); 0 = none. */
+export const CcKind = { none: 0, daze: 1, iced: 2, downed: 3, silenced: 4 } as const;
+export type CcKindValue = (typeof CcKind)[keyof typeof CcKind];
+/** Diminishing-returns buckets, 2 bits each in the ward's magnitude. */
+export const CcBucket = { disorient: 0, incapacitate: 1, stun: 2, silence: 3 } as const;
+/** `ccEnded.reason`. */
+export const CcEnd = { expired: 0, broken: 1, shattered: 2, thawed: 3, cleansed: 4, quickRise: 5, mashed: 6 } as const;
+/** `ccResisted.reason`. */
+export const CcResist = { immune: 0, busy: 1, full: 2 } as const;
+/** Which CC kind a hit rider applies: filled in by later work packages (empty in CB0). */
+export const CC_RIDERS: readonly { readonly def: number; readonly kind: number; readonly ticks: number }[] = [];

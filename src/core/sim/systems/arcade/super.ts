@@ -21,6 +21,7 @@ import { controlledId } from '../movement';
 import { ABILITY_DEFS, SUPER_BULLET, spawnBulletId } from '../projectile';
 import { applyTimedStatus, StatusId } from '../status';
 import { bufferedCmd, Press, usePress } from './buffer';
+import { isSilenced } from './cc-state';
 import { applyArcadeHit, hitStop, SUPER_DEF } from './hit';
 import { setKnockback } from './knockback';
 import { meterOf, spendMeter } from './meter';
@@ -226,7 +227,7 @@ function runSuper(world: SimWorld, sink: EventSink, team: number): void {
 function startSuper(world: SimWorld, sink: EventSink, team: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
-  if (caster < 0 || (s.arcade[stateIndex(team)] ?? 0) !== 0 || meterOf(s, team) < SUPER_COST || !canAct(world, caster)) return;
+  if (caster < 0 || (s.arcade[stateIndex(team)] ?? 0) !== 0 || meterOf(s, team) < SUPER_COST || !canAct(world, caster) || isSilenced(s, caster)) return;
   const fx = allocEntity(s);
   if (fx < 0) return;
   spendMeter(s, sink, caster, team, SUPER_COST);

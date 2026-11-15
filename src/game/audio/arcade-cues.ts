@@ -128,6 +128,9 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   chargeEnded: 'the arrival hit plays the thump; the charge start plays the dash whoosh',
   cleanse: 'the view plays playSfx(cleanse, element) from the event (fx/cleanse-view, Arena)',
   hazardHit: 'the strike crash plays on the same tick',
+  ccStarted: 'CC audio lands with the CC view work package (flag withCrowdControl is off)',
+  ccEnded: 'CC audio lands with the CC view work package',
+  ccResisted: 'CC audio lands with the CC view work package',
 };
 
 /** Hit thump gain by strength (light, medium, heavy, super); a light hit was 0.35 and read as a tap (QA r34). */

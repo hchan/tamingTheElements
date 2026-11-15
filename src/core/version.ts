@@ -251,5 +251,9 @@
  *    re-fit for wispera (was 57.4%) and ishimi (38.6% once the four moved); ARCADE_2V2_LIFE_PM nudged for fiara, morblass and rokcore.
  *    Re-record reason: four heroes change Charge, weather charge and AI spacing (Arcade goldens, Arcade 1v1 and 2v2 baselines; the
  *    Classic goldens change only in the header simVersion).
+ * 70: Arcade only (Classic hashes unchanged). Crowd-control core (CB0, ideas cc-anim plan): new default-off flag `withCrowdControl` (sorts last,
+ *    bit 128), status ids 10-15 (dazed, iced, downed, silenced, hidden ccWard and kindled), diminishing returns, events 79-81. With the flag off
+ *    nothing changes. Re-stamp reason: new default-off CC flag and core; no behaviour change with it off (only the header simVersion of the
+ *    replay fixtures moves; inputs and checkpoints are identical).
  */
-export const SIM_VERSION = 69;
+export const SIM_VERSION = 70;

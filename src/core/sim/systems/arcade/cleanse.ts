@@ -6,6 +6,7 @@ import type { SimWorld } from '../../world';
 import { cleanseSlows } from '../debuffs';
 import { controlledId } from '../movement';
 import { pending, Press, usePress } from './buffer';
+import { cleanseCc, cleansableCc } from './cc';
 import { freeRoot } from './snag';
 import { isFree } from './stun';
 import { kindOf } from './terrain';
@@ -25,7 +26,7 @@ export function cleansableCount(world: SimWorld, id: number): number {
   let n = 0;
   if ((s.arcade[e + ArcadeE.rootUntil] ?? 0) > g) n++;
   if ((s.arcade[e + ArcadeE.trapSlowUntil] ?? 0) > g) n++;
-  return n + cleanseSlows(world, id, true);
+  return n + cleanseSlows(world, id, true) + cleansableCc(s, id);
 }
 
 /**
@@ -47,6 +48,7 @@ export function castCleanse(world: SimWorld, sink: EventSink, team: number): voi
   if ((s.arcade[e + ArcadeE.trapSlowUntil] ?? 0) > g) cleared++;
   s.arcade[e + ArcadeE.trapSlowUntil] = 0;
   cleared += cleanseSlows(world, id);
+  cleared += cleanseCc(world, sink, id);
   usePress(s, team, Press.cleanse);
   sink.emit(id, SimEventKind.cleanse, { element: kindOf(s, id), team, cleared });
 }

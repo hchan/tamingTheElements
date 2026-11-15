@@ -18,7 +18,7 @@ import { trapCount } from './systems/arcade/trap';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
 import { slotAbility } from './systems/ability-info';
 import { controlledId } from './systems/movement';
-import { listStatuses } from './systems/status';
+import { StatusId, listStatuses } from './systems/status';
 import { ABILITY_DEFS } from './systems/projectile';
 import { SWAP_COOLDOWN_TICKS, tagTargets, teamMembers } from './systems/swap';
 
@@ -384,6 +384,7 @@ export function createRenderView(world: SimWorld): RenderView {
     },
     forEachStatus(id, visit): void {
       for (const st of listStatuses(s, id)) {
+        if (st.id === StatusId.ccWard || st.id === StatusId.kindled) continue; // hidden bookkeeping, never a HUD word
         status.id = st.id;
         status.startTick = st.startTick;
         status.expireTick = st.expireTick;

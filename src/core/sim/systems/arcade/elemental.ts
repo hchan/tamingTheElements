@@ -6,6 +6,8 @@ import type { SimWorld } from '../../world';
 import { cleanseSlows } from '../debuffs';
 import { controlledId } from '../movement';
 import { pending, Press, usePress } from './buffer';
+import { cleanseCc, primeKindled } from './cc';
+import { isSilenced } from './cc-state';
 import { freeRoot } from './snag';
 import { isFree } from './stun';
 import { kindOf } from './terrain';
@@ -20,6 +22,7 @@ import { kindOf } from './terrain';
  */
 
 const WATER = 2;
+const FIRE = 1;
 
 /**
  * `team`'s controlled hero casts on a pending elemental press. Refused (the press stays buffered) outside the fight,
@@ -30,7 +33,7 @@ const WATER = 2;
 export function castElemental(world: SimWorld, sink: EventSink, team: number): void {
   const s = world.state;
   const id = controlledId(world, team);
-  if (id < 0 || !pending(s, team, Press.elemental) || !inFight(s) || !isFree(s, id)) return;
+  if (id < 0 || !pending(s, team, Press.elemental) || !inFight(s) || !isFree(s, id) || isSilenced(s, id)) return;
   const kind = kindOf(s, id);
   const cooldown = ELEMENTAL_COOLDOWN_TICKS[kind] ?? 0;
   const e = id * ARCADE_E;
@@ -44,8 +47,10 @@ export function castElemental(world: SimWorld, sink: EventSink, team: number): v
     if ((s.arcade[e + ArcadeE.trapSlowUntil] ?? 0) > g) cleared++;
     s.arcade[e + ArcadeE.trapSlowUntil] = 0;
     cleared += cleanseSlows(world, id);
+    cleared += cleanseCc(world, sink, id);
   } else {
     s.arcade[e + ArcadeE.elemUntil] = g + ELEMENTAL_TICKS;
+    if (kind === FIRE) primeKindled(s, id, g + ELEMENTAL_TICKS);
   }
   usePress(s, team, Press.elemental);
   sink.emit(id, SimEventKind.elementalCast, { element: kind, team, cleared });

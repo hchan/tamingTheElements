@@ -28,6 +28,12 @@ export interface SimFlags {
    * Off in tests/tools (bit-identical legacy); on in real play. Sorts last, so no existing flag bit moves.
    */
   readonly walkSwapInPlace: boolean;
+  /**
+   * Arcade only: crowd control (ideas/brainstorm/crowd-control-animations.md): the dazed, iced, downed and silenced statuses
+   * (ids 10-13) with per-category diminishing returns (ward status 14). Off in real play until CB5; with it off no CC path
+   * touches state, so hashes are unchanged. Sorts last ("wi" after "wa"), so no existing flag bit moves.
+   */
+  readonly withCrowdControl: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -40,6 +46,7 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   rulesetArcade: false,
   walkAboveActionBar: false,
   walkSwapInPlace: false,
+  withCrowdControl: false,
 };
 
 /** Flags that only tester mode may turn on. */
@@ -105,5 +112,6 @@ export function decodeFlags(encoded: string): SimFlags {
     rulesetArcade: on.has('rulesetArcade'),
     walkAboveActionBar: on.has('walkAboveActionBar'),
     walkSwapInPlace: on.has('walkSwapInPlace'),
+    withCrowdControl: on.has('withCrowdControl'),
   };
 }

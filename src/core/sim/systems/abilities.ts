@@ -6,6 +6,7 @@ import { controlledId } from './movement';
 import { applyBuff, applyHeal } from './status';
 import { now } from '../clock';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
+import { isSilenced } from './arcade/cc-state';
 import { canAct } from './arcade/stun';
 import { slotAbility } from './ability-info';
 import type { EventSink } from '../events';
@@ -21,7 +22,7 @@ import type { EventSink } from '../events';
 export function castSelf(world: SimWorld, sink: EventSink, team: number, slot: number, tick: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
-  if (caster < 0 || !canAct(world, caster)) return;
+  if (caster < 0 || !canAct(world, caster) || isSilenced(s, caster)) return;
   const abilityId = slotAbility(s, caster, slot);
   const def = ABILITY_DEFS.find((d) => d.id === abilityId);
   if (def?.kind !== 'buff' && def?.kind !== 'heal') return;

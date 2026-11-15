@@ -2,6 +2,7 @@ import type { Command } from './commands';
 import type { EventSink, SimEvent } from './events';
 import { EventSink as Sink } from './events';
 import { deathSystem } from './systems/death';
+import { ccSystem } from './systems/arcade/cc';
 import { debuffSystem } from './systems/debuffs';
 import { movementSystem } from './systems/movement';
 import { statusSystem } from './systems/status';
@@ -45,6 +46,7 @@ export const SYSTEMS: readonly (readonly [string, System])[] = [
   ['health', arcadeSuperSystem],
   ['death', deathSystem],
   ['debuffs', debuffSystem],
+  ['cc', ccSystem],
   ['status', statusSystem],
   ['rest', restSystem],
   ['cleanup', arcadeRoundSystem],

@@ -12,6 +12,7 @@ import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, World as W } from '../../state';
 import type { SimWorld } from '../../world';
 import { damageDecreasePct } from '../status';
+import { ccOnHit, ccRiders, spendKindled } from './cc';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
 import { knockbackDir, setKnockback } from './knockback';
 import { meterOnHit } from './meter';
@@ -89,10 +90,13 @@ export function applyArcadeHit(
   // Supers are unblockable (FUN-DESIGN 2.8).
   const sup = strength === HitStrength.super;
   if (!sup && parry(world, sink, source, attacker, victim)) {
+    spendKindled(s, attacker);
     hitStop(world, sink, source, PARRY_HIT_STOP_TICKS, HitStopCause.parry);
     return 0;
   }
   const guard = !sup && isGuarding(s, victim);
+  if (guard) spendKindled(s, attacker);
+  const cc = guard ? null : ccOnHit(world, sink, attacker, victim, base, sup);
   const counter = isCounterHit(s, victim);
   const combo = guard ? 1 : comboHit(world, sink, source, team, victim);
   const scalePm = guard ? GUARD_CHIP_PM : comboScalePm(combo, strength);
@@ -113,7 +117,8 @@ export function applyArcadeHit(
   // The race damage pm (a trap hit or a super uses 1000); 1000 keeps the value exact.
   const raced = racePm === 1000 ? charted : (charted * racePm) / 1000;
   // Ember and Stoneskin (FUN-DESIGN 2.24) on every hit, supers and traps too.
-  const epm = elementalDamagePm(s, attacker, victim);
+  const epm0 = elementalDamagePm(s, attacker, victim);
+  const epm = cc === null || cc.bonusPm === 1000 ? epm0 : (epm0 * cc.bonusPm) / 1000; // iced shatter bonus (flag withCrowdControl)
   const raw = epm === 1000 ? raced : (raced * epm) / 1000;
   // Unscaled hits keep the Classic value exactly (x * 1000 / 1000 can round).
   const amount = scalePm === 1000 ? raw : (raw * scalePm) / 1000;
@@ -132,14 +137,15 @@ export function applyArcadeHit(
   const ko = before > 0 && before - amount <= 0;
   const ticks = ko ? KO_HIT_STOP_TICKS : stopTicks ?? HIT_STOP_TICKS[strength];
   hitStop(world, sink, source, ticks, ko ? HitStopCause.ko : HitStopCause.hit);
+  const rid = guard ? null : ccRiders(world, sink, source, attacker, victim, defIdx, sup);
   // Charge armour (SIM_VERSION 50): a charging victim takes the damage but is neither knocked back nor stunned, so the rush goes on.
   const armoured = !sup && chargeTick(s, victim) !== 0;
-  if (!armoured) setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
+  if (!armoured && rid?.noKnockback !== true) setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
   const dealt = damageDealt(before, amount);
   const stun = defIdx === CHARGE_DEF ? CHARGE_STUN_TICKS
     : defIdx === TRAP_SPIKE_DEF ? TRAP_SPIKE_STUN_TICKS : (HIT_STUN[defIdx] ?? HIT_STUN_TICKS[strength]);
   if (guard) blockHit(world, sink, source, victim, dealt);
-  else if (!armoured) applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
+  else if (!armoured && rid?.replaceStun !== true) applyStun(world, sink, source, victim, counter ? Math.max(stun, HIT_STUN_TICKS[Math.min(strength + 1, 3)] ?? stun) : stun);
   meterOnHit(s, sink, source, team, victim, dealt);
   return dealt;
 }
