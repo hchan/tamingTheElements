@@ -55,7 +55,9 @@ export function enhanceStage(
     fig.append(img, el('figcaption', undefined, label(id)));
     roster.append(fig);
   }
-  lines[2]?.append(' ', pips('tsLevel', stage.aiLevel === 'easy' ? 1 : stage.aiLevel === 'normal' ? 2 : 3, 3), pips('tsLives', continuesLeft, continuesMax));
+  const at = (key: string, i: number): Element | undefined => lines.find((l) => (l as HTMLElement).dataset['fact'] === key) ?? lines[i];
+  at('difficulty', 2)?.append(' ', pips('tsLevel', stage.aiLevel === 'easy' ? 1 : stage.aiLevel === 'normal' ? 2 : 3, 3));
+  at('continues', 3)?.append(' ', pips('tsLives', continuesLeft, continuesMax));
   const info = el('div', 'tsInfo');
   info.append(...lines);
   panel.append(roster, info);

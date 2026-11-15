@@ -15,7 +15,13 @@ const card = (): HTMLElement =>
     id: 'tourStage',
     heading: 'Stage 2 of 9',
     extra: tourMapView(mapLayout(LOC, 1, false), false),
-    lines: ['Location: Earth.', 'Opponent: Lavax, Pax.', 'Difficulty: Normal. 2 of 3 continues left.'],
+    lines: [],
+    facts: [
+      { key: 'location', label: 'Location', value: 'Earth' },
+      { key: 'opponent', label: 'Opponent', value: 'Lavax, Pax' },
+      { key: 'difficulty', label: 'Difficulty', value: 'Normal' },
+      { key: 'continues', label: 'Continues', value: '2 of 3' },
+    ],
     actions: [{ id: 'tourFight', label: 'Fight', onClick: () => undefined }],
   });
 
@@ -25,14 +31,17 @@ describe('enhanceStage', () => {
 
   it('keeps every word of the plain card and loads the stylesheet once', () => {
     expect(c.classList.contains('tsGrim')).toBe(true);
-    for (const w of ['Location: Earth.', 'Opponent: Lavax, Pax.', 'Difficulty: Normal.', 'Fight', 'Stage 2: Earth, Next']) expect(c.textContent).toContain(w);
+    for (const w of ['Location: Earth', 'Opponent: Lavax, Pax', 'Difficulty: Normal', 'Continues: 2 of 3', 'Fight', 'Stage 2: Earth, Next']) expect(c.textContent).toContain(w);
     enhanceStage(card(), { location: 'fire', aiLevel: 'easy', opponents: [] }, 3, 3, (id) => id);
     expect(document.querySelectorAll('#tourSelectCss')).toHaveLength(1);
   });
-  it('puts the panel before the map, with the three lines inside it', () => {
+  it('puts the panel before the map, with the four fact rows inside it', () => {
     const panel = c.querySelector('.tsPanel');
     expect(panel?.nextElementSibling?.id).toBe('tourMap');
-    expect(panel?.querySelectorAll('p')).toHaveLength(3);
+    expect(panel?.querySelectorAll('p.tourFact')).toHaveLength(4);
+    expect(c.textContent).not.toMatch(/Press Fight/);
+    expect(panel?.querySelector('[data-fact="difficulty"] .tsLevel')).not.toBeNull();
+    expect(panel?.querySelector('[data-fact="continues"] .tsLives')).not.toBeNull();
     expect(panel?.getAttribute('data-element')).toBe('earth');
   });
   it('hides the portraits and icons from assistive tech and shows 3 + 3 pips', () => {

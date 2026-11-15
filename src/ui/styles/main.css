@@ -2822,3 +2822,40 @@ body:has(.settingsBar) {
     transition: opacity 0.25s;
   }
 }
+
+/* Tour stage card: scannable fact rows (small dim label over a large value), a wide Fight button. Selectors carry #tourStage so they beat the
+   lazy tour-select.css that loads later. */
+#tourStage .tsInfo,
+#tourStage > .tourFact { text-align: left; }
+#tourStage .tsInfo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4em 1.2em;
+}
+#tourStage .tsInfo p.tourFact,
+#tourStage p.tourFact {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 1.15em;
+  line-height: 1.2;
+  font-weight: 700;
+}
+#tourStage .tourFactLabel {
+  font-size: 0.62em;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+#tourStage .tourFact[data-fact='opponent'] { grid-column: 1 / -1; }
+#tourStage .tourFact .tsPips { margin: 0.2em 0 0; }
+#tourStage .tourFact .tsPips::before { content: none; }
+#tourStage .tourFact .tsPips i { width: 0.85em; height: 0.85em; }
+#tourStage #tourFight { min-height: 52px; width: min(100%, 22em); font-size: 1.15em; }
+#tourStage #tourFight + a.menuButton { min-height: 44px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #tourStage .tsInfo { gap: 0.15em 0.9em; }
+  #tourStage .tsInfo p.tourFact { font-size: 0.8em; }
+  #tourStage #tourFight { min-height: 44px; font-size: 1em; width: min(100%, 16em); }
+}

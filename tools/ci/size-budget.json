@@ -23,7 +23,7 @@
     "launch": 160,
     "index": 36000,
     "round-announcer": 1450,
-    "index.css": 11100,
+    "index.css": 11300,
     "input-display": 1150,
     "lazy-index": 550,
     "local-two": 520,
@@ -47,11 +47,11 @@
     "terrain-view": 10200,
     "touch-controls": 12200,
     "tour": 7800,
-    "tour-select": 800,
+    "tour-select": 900,
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 620300,
+  "totalGzip": 620800,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600

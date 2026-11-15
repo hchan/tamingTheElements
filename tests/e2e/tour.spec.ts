@@ -31,7 +31,7 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   await expect(card).toContainText('Location:');
   await expect(card).toContainText('Opponent:');
   await expect(card).toContainText('Difficulty: Easy');
-  await expect(card).toContainText('3 of 3 continues left');
+  await expect(card).toContainText('Continues: 3 of 3');
   await expect(page.locator('#tourMap svg[role="img"]')).toHaveAttribute('aria-label', /0 of 9 stages cleared/);
   await expect(page.locator('#tourMap svg [data-pin]')).toHaveCount(9);
   await expect(page.locator('#tourPins li[data-state="current"]')).toContainText('Stage 1:');
