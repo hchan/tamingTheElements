@@ -29,6 +29,8 @@
     "e2e:pages": "playwright test --config playwright.pages.config.ts",
     "build:itch": "node tools/itch/build-itch.mjs",
     "ai:duel": "tsx tools/sim/ai-duel.ts",
+    "ai:summary": "tsx tools/sim/ai-variety-summary.ts",
+    "ai:stalemates": "tsx tools/sim/stalemate-probe.ts",
     "size:check": "tsx tools/ci/size-check.ts",
     "relay": "tsx tools/signal-relay/server.ts",
     "soak:webrtc": "tsx tools/ci/webrtc-soak.ts",

@@ -1,0 +1,81 @@
+{
+ "cases": [
+  {
+   "a": "lavax",
+   "b": "hyalia",
+   "seed": 3149153258,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "lavax",
+   "b": "hyalia",
+   "seed": 53764570,
+   "aIsTeam0": false,
+   "teamSize": 1
+  },
+  {
+   "a": "sindarosa",
+   "b": "hyalia",
+   "seed": 3149153258,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "sindarosa",
+   "b": "hyalia",
+   "seed": 2864583637,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "hyalia",
+   "b": "glimmaw",
+   "seed": 2864583637,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "hyalia",
+   "b": "zephra",
+   "seed": 3149153258,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "hyalia",
+   "b": "abyssor",
+   "seed": 2864583637,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "hyalia",
+   "b": "umbrel",
+   "seed": 3986495513,
+   "aIsTeam0": false,
+   "teamSize": 1
+  },
+  {
+   "a": "hyalia",
+   "b": "umbrel",
+   "seed": 2864583637,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "hyalia",
+   "b": "umbrel",
+   "seed": 53764570,
+   "aIsTeam0": false,
+   "teamSize": 1
+  },
+  {
+   "a": "brazgor",
+   "b": "ouroth",
+   "seed": 53764570,
+   "aIsTeam0": false,
+   "teamSize": 1
+  }
+ ]
+}

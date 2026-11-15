@@ -309,6 +309,8 @@ export interface MatchOptions {
   readonly cc?: boolean;
   /** Roster the 2v2/3v3 partner offsets run over (default RACES, the legacy 12). */
   readonly races?: readonly string[];
+  /** Called after every step with the world, the two agents (team 0 then team 1) and the tick just run (tools/sim/stalemate-probe.ts traces with it). */
+  readonly onTick?: (world: ReturnType<typeof createMatch>, agents: readonly [Agent, Agent], tick: number) => void;
 }
 
 export interface MatchResult {
@@ -389,6 +391,7 @@ export function runMatch(o: MatchOptions): MatchResult {
     }
     const events = step(world, collectCommands(world, agents));
     ticks++;
+    o.onTick?.(world, agents, ticks);
     const evented = [0, 0];
     for (const e of events) {
       if (arcade) log.push(e);
