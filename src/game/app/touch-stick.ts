@@ -94,6 +94,10 @@ export function touchStick(): HTMLElement {
   window.addEventListener('blur', release);
   // A stick removed mid-drag gets no pointerup: let go of the keys.
   const watch = setInterval(() => {
+    if (typeof window === 'undefined') {
+      clearInterval(watch); // the DOM was torn down (test environment): nothing left to release
+      return;
+    }
     if (!base.isConnected) {
       clearInterval(watch);
       window.removeEventListener('blur', release);
