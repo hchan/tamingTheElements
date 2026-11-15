@@ -1,3 +1,4 @@
+import type { AbilityDefB } from '../../data/abilities-b';
 import { ALL_ABILITIES } from '../../data/abilities-all';
 import { elementRelation } from '../../data/elements';
 import type { CharacterDef, AbilityDef } from '../../data/types';
@@ -10,7 +11,7 @@ import { stateRecord, type Agent, type AgentState, type ObservationView } from '
 import { AgentRng } from '../agent-rng';
 import { AttackAgent, type AttackAbility, type AttackAgentOptions, type AttackProfile, type Facing } from './attack';
 import { ArcadeTactics } from './arcade';
-import type { ArcadeAiLevel, Style } from './arcade-ai';
+import type { ArcadeAiLevel, KitKind, Style } from './arcade-ai';
 import { chooseMovement, MovementState } from './movement';
 
 export * from './arcade';
@@ -25,6 +26,8 @@ export interface ScriptedProfile extends AttackProfile {
   readonly speed: number;
   /** Own element at a disadvantage against the opponent's (the Arcade AI's weather rule); absent: false. */
   readonly unfavourable?: boolean;
+  /** What each ability slot does for the Arcade layer (C1; omni, heal, hop, hide); only ArcadeTactics reads it. */
+  readonly kit?: readonly [KitKind, KitKind];
 }
 
 export interface ScriptedAIOptions extends AttackAgentOptions {
@@ -49,16 +52,29 @@ export function attackAbilityOf(def: AbilityDef): AttackAbility {
     ...(type === 'melee' && {
       w: def.w ?? 0,
       h: def.h ?? 0,
-      reach: EXPLOSION_MELEE.has(def.id) ? ('explosion' as const) : ('directional' as const),
+      reach: (def as AbilityDefB).centred === true || EXPLOSION_MELEE.has(def.id) ? ('explosion' as const) : ('directional' as const),
     }),
   };
 }
 
+/** The Arcade kit role of an ability (C1): which of the omni, heal, hop and hide rules gates its button. */
+export function kitKindOf(def: AbilityDef | undefined): KitKind {
+  if (def === undefined) return 'none';
+  if (def.id === 'bell-pulse' || def.id === 'cinder-spray') return 'omni';
+  if (def.kind === 'heal') return 'heal';
+  if (def.id === 'skitter') return 'hop';
+  if (def.id === 'molten-hide') return 'hide';
+  return 'none';
+}
+
 /** Builds the profile for `self` fighting `opponent`; slot 0 is the primary and slot 1 the secondary, as in the sim. */
 export function scriptedProfileFor(self: CharacterDef, opponent: CharacterDef): ScriptedProfile {
-  const abilityAt = (slot: number): AttackAbility | undefined => {
+  const defAt = (slot: number): AbilityDef | undefined => {
     const id = self.abilities[slot];
-    const def = id === undefined ? undefined : ABILITY_DEFS.find((d) => d.id === id);
+    return id === undefined ? undefined : ABILITY_DEFS.find((d) => d.id === id);
+  };
+  const abilityAt = (slot: number): AttackAbility | undefined => {
+    const def = defAt(slot);
     return def === undefined ? undefined : attackAbilityOf(def);
   };
   const primary = abilityAt(0) ?? { type: 'other', maxActive: 0 };
@@ -70,6 +86,7 @@ export function scriptedProfileFor(self: CharacterDef, opponent: CharacterDef): 
     targetMelee: opponent.id === MELEE_CHARACTER,
     speed: self.speed,
     unfavourable: elementRelation(self.element, opponent.element) === 'dis',
+    kit: [kitKindOf(defAt(0)), kitKindOf(defAt(1))],
   };
 }
 
@@ -110,7 +127,7 @@ export class ScriptedAI implements Agent {
     this.id = options.id ?? 'scripted-ai';
     this.activeCount = options.activeCount ?? (() => 0);
     this.attack = new AttackAgent(profile, { ...options, id: this.id });
-    this.arcade = new ArcadeTactics(options.level, options.personality, profile.unfavourable);
+    this.arcade = new ArcadeTactics(options.level, options.personality, profile.unfavourable, profile.kit);
   }
 
   get state(): MovementState {

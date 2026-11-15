@@ -51,6 +51,37 @@ export const ARCADE_AI_STYLES: readonly [Rates, Rates, Rates] = [
   [400, 100, 400],
 ];
 
+/**
+ * Defence fatigue (SIM_VERSION 80): each defended threat in a row (a plan other than NO_PLAN, at most one per
+ * ARCADE_AI_FATIGUE_WINDOW game ticks so a fast shooter does not stack it) takes 120 pm off every plan scale, down to the
+ * level's floor (Easy none). A hit on the hero, or ARCADE_AI_FATIGUE_RESET_TICKS ticks without a threat, resets it, and the
+ * guard reflex stays off from ARCADE_AI_FATIGUE_REFLEX_MAX defended threats on. Lone shots are still answered, a sustained
+ * volley is not (the Hard AI answered about 99% of shots, which let melee through and ranged heroes starve).
+ */
+export const ARCADE_AI_FATIGUE_WINDOW = 50;
+export const ARCADE_AI_FATIGUE_RESET_TICKS = 150;
+export const ARCADE_AI_FATIGUE_STEP_PM = 120;
+export const ARCADE_AI_FATIGUE_REFLEX_MAX = 3;
+export const ARCADE_AI_FATIGUE_FLOOR_PM: readonly [number, number, number] = [1000, 500, 400];
+
+/** The plan scale (pm of 1000) after `n` consecutive defended threats at `level`. */
+export function fatigueScale(level: ArcadeAiLevel, n: number): number {
+  return Math.max(ARCADE_AI_FATIGUE_FLOOR_PM[level], 1000 - ARCADE_AI_FATIGUE_STEP_PM * n);
+}
+
+/**
+ * Kit use (C1, SIM_VERSION 81): what an ability slot does for the Arcade layer. `omni` rings press only with the foe inside
+ * ARCADE_AI_KIT_OMNI_PX, `heal` only below ARCADE_AI_KIT_HEAL_BELOW_PM and with no shot on the way, a backward `hop` (Skitter)
+ * only to leave a close foe or a wall, a damage-`hide` (Molten Hide) only against a foe inside ARCADE_AI_KIT_HIDE_PX.
+ */
+export type KitKind = 'none' | 'omni' | 'heal' | 'hop' | 'hide';
+export const ARCADE_AI_KIT_OMNI_PX = 160;
+export const ARCADE_AI_KIT_HEAL_BELOW_PM = 550;
+export const ARCADE_AI_KIT_HOP_PX = 140;
+export const ARCADE_AI_KIT_CORNER_PX = 80;
+export const ARCADE_AI_KIT_CORNER_FOE_PX = 240;
+export const ARCADE_AI_KIT_HIDE_PX = 200;
+
 /** Normal's combo cap and confirm reaction (ARCADE_AI_KNOBS row 1). */
 export const ARCADE_AI_COMBO_CAP = 3;
 export const ARCADE_AI_REACTION_MIN = 10;

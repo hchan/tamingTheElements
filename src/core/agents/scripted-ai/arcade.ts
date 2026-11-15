@@ -11,11 +11,11 @@ import {
 } from '../agent';
 import { AgentRng } from '../agent-rng';
 import {
-  AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
+  AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_FATIGUE_REFLEX_MAX, ARCADE_AI_FATIGUE_RESET_TICKS, ARCADE_AI_FATIGUE_WINDOW, ARCADE_AI_GUARD_AT, ARCADE_AI_KIT_CORNER_FOE_PX, ARCADE_AI_KIT_CORNER_PX, ARCADE_AI_KIT_HEAL_BELOW_PM, ARCADE_AI_KIT_HIDE_PX, ARCADE_AI_KIT_HOP_PX, ARCADE_AI_KIT_OMNI_PX, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, ccAvoidImmune, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
-  trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, zoneStep, type ArcadeAiLevel, type Style,
+  centreDist, ccAvoidImmune, fatigueScale, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
+  trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, zoneStep, type ArcadeAiLevel, type KitKind, type Style,
 } from './arcade-ai';
 
 /**
@@ -195,8 +195,11 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
   return undefined;
 }
 
-type Memory = [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0];
+type Memory = [
+  number, number, number, number, number, number, number, number, number, number,
+  number, number, number, number, number, number, number, number, number, number,
+];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0, 0, 0, 0, 0];
 
 /** Game ticks without any HP change on the field after which the AI stops retreating and presses (no stalemates). */
 export const ARCADE_AI_STALE_TICKS = 400;
@@ -240,7 +243,7 @@ export class ArcadeTactics {
    * Memory (`W.tick` based): [0] the tick the current opponent stun was first seen (-1: none) and [1] the reaction
    * drawn for it; [2] the tick the current threat was first seen (-1: none), [3] its reaction, [4] its plan (PARRY,
    * DODGE, GUARD or NO_PLAN) and [5] how many game ticks before the hit it acts; [6] the personality (-1 until the
-   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock); [11] the `W.tick` of the last guard reflex and [12] whether the current threat's reflex is armed; [13] the opponent's distance (`centreDist`) last tick (-1: none; the trap rule's closing test); [14] the `W.tick` until which it presses a foe its Puddle holds or its Gust shoved (WP 39f); [15] the count of own Gusts seen last tick.
+   * first Arcade tick); [7] the movement bits of a slide round a rock and [8] the `W.tick` it is held until; [9] the tick the total HP on the field last changed and [10] that total (the anti-stalemate clock); [11] the `W.tick` of the last guard reflex and [12] whether the current threat's reflex is armed; [13] the opponent's distance (`centreDist`) last tick (-1: none; the trap rule's closing test); [14] the `W.tick` until which it presses a foe its Puddle holds or its Gust shoved (WP 39f); [15] the count of own Gusts seen last tick; [16] the defence fatigue (consecutive defended threats), [17] the tick a threat was last seen, [18] the tick the fatigue last rose and [19] the own HP last tick (a drop resets the fatigue; 0 in all four is fresh).
    */
   private mem: Memory = [...FRESH];
   private readonly rng = new AgentRng(ARCADE_AI_STREAM_NAMES);
@@ -254,6 +257,8 @@ export class ArcadeTactics {
     private readonly level: ArcadeAiLevel = AI_NORMAL,
     private readonly style?: Style,
     private readonly unfavourable = false,
+    /** What the hero's two ability slots do (omni, heal, hop, hide); absent or `none`: left as the Classic AI chose. */
+    private readonly kit: readonly [KitKind, KitKind] = ['none', 'none'],
   ) {}
 
   /**
@@ -263,7 +268,7 @@ export class ArcadeTactics {
   apply(view: ObservationView, base: Command, shot: Command = 0): Command {
     const a = view.arcade;
     if (a === undefined) return base;
-    const cmd = this.avoidTraps(view, a, this.decide(view, a, base, shot));
+    const cmd = this.avoidTraps(view, a, this.kitUse(view, a, this.decide(view, a, base, shot)));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
     const zoned = this.hazard(view, a, this.zone(view, a, out));
     // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
@@ -276,6 +281,41 @@ export class ArcadeTactics {
     const escape = ccEscape(this.level, a);
     if (escape !== -1) return escape;
     return ccAvoidImmune(this.level, a, full, [slotReady(view, 0, a.snagSlot), slotReady(view, 1, a.snagSlot)]);
+  }
+
+  /**
+   * Kit use (C1): the Classic AI presses every ready secondary and never a non-attack primary, so a ring, a heal, a hop or an armour
+   * went off at random. Here each is gated on its moment (see KitKind) and, for the ones that need the foe near, pressed when
+   * it is; no draw, no memory. Dash, guard, super, charge and trap commands, the Snag slot and a stunned or frozen hero are left alone.
+   */
+  private kitUse(view: ObservationView, a: ArcadeView, cmd: Command): Command {
+    const self = view.self;
+    const opp = view.opponent;
+    if (self === undefined || opp === undefined || (this.kit[0] === 'none' && this.kit[1] === 'none')) return cmd;
+    // A stale fight (no HP change for ARCADE_AI_STALE_TICKS) gets the Classic AI's presses back: a gated kit must never hold a stalemate.
+    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS) return cmd;
+    const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
+    const threat = soonestShot(self, a.shots, ARCADE_AI_LOOKAHEAD) !== undefined;
+    const field = arcadePlayfield();
+    const cornered =
+      self.x - field.x < ARCADE_AI_KIT_CORNER_PX || field.x + field.w - (self.x + self.w) < ARCADE_AI_KIT_CORNER_PX ||
+      self.y - field.y < ARCADE_AI_KIT_CORNER_PX || field.y + field.h - (self.y + self.h) < ARCADE_AI_KIT_CORNER_PX;
+    const busy = (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0;
+    const can = a.selfStun === 0 && !a.superActive && (self.flags & EntityFlag.frozen) === 0 && !busy && a.phase === RoundPhase.fight;
+    let out = cmd;
+    for (let slot = 0; slot < 2; slot++) {
+      const kind = this.kit[slot];
+      if (kind === undefined || kind === 'none' || slot === a.snagSlot) continue;
+      const bit = slot === 0 ? Cmd.primary : Cmd.secondary;
+      const want =
+        kind === 'omni' ? far < ARCADE_AI_KIT_OMNI_PX
+        : kind === 'heal' ? self.hp * 1000 < ARCADE_AI_KIT_HEAL_BELOW_PM * self.maxHp && !threat
+        : kind === 'hop' ? far < ARCADE_AI_KIT_HOP_PX || (cornered && far < ARCADE_AI_KIT_CORNER_FOE_PX)
+        : far < ARCADE_AI_KIT_HIDE_PX;
+      if (!want) out &= ~bit;
+      else if (can && kind !== 'heal' && (view.cooldowns[slot] ?? 1) === 0) out |= bit;
+    }
+    return out;
   }
 
   /**
@@ -460,23 +500,35 @@ export class ArcadeTactics {
     cmd &= ~snagBit;
     const lane = snagBit === 0 || (view.cooldowns[a.snagSlot] ?? 1) !== 0 || a.oppGuarding || a.oppRooted > 0 || a.oppRootImmune > 0 ? 0 : snagLane(self, opp);
 
+    // Defence fatigue bookkeeping: a hit on this hero, or a quiet spell without a threat, makes the next defence fresh.
+    if (self.hp < m[19]) m[16] = 0;
+    m[19] = self.hp;
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
     const soon = soonestShot(self, a.shots, ARCADE_AI_LOOKAHEAD);
     const t = soon?.t ?? ARCADE_AI_LOOKAHEAD + 1;
     const threat = soon !== undefined;
-    if (!threat) m[2] = -1;
-    else {
+    if (!threat) {
+      m[2] = -1;
+      if (view.tick - m[17] >= ARCADE_AI_FATIGUE_RESET_TICKS) m[16] = 0;
+    } else {
+      m[17] = view.tick;
       if (m[2] < 0) {
         const rates = ARCADE_AI_STYLES[style];
         let r = draw(1000) * 1000;
         let plan = PARRY;
-        const scale = stale2 ? 500 : 1000;
+        // Defence fatigue (SIM_VERSION 80): every defended threat in a row (at most one per window) blunts the next plan.
+        const fatigue = fatigueScale(this.level, m[16]);
+        const scale = ((stale2 ? 500 : 1000) * fatigue) / 1000;
         while (plan < NO_PLAN && (r -= ((rates[plan] ?? 0) * (k[2 + plan] ?? 0) * scale) / 1000) >= 0) plan++;
         if (stale3) plan = NO_PLAN;
         m[2] = view.tick;
         m[3] = react();
         m[4] = plan;
-        m[12] = draw(1000) < k[7] && !stale2 ? 1 : 0;
+        m[12] = draw(1000) < k[7] && !stale2 && m[16] < ARCADE_AI_FATIGUE_REFLEX_MAX ? 1 : 0;
+        if (plan !== NO_PLAN && this.level > AI_EASY && view.tick - m[18] >= ARCADE_AI_FATIGUE_WINDOW) {
+          m[16] = m[16] + 1;
+          m[18] = view.tick;
+        }
         m[5] = plan === PARRY ? 2 + draw(k[5]) : plan === DODGE ? ARCADE_AI_DODGE_AT : ARCADE_AI_GUARD_AT;
       }
       if (free && m[4] < NO_PLAN && view.tick - m[2] >= m[3]) {
