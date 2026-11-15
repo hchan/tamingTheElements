@@ -3,7 +3,6 @@ import { CHARACTERS } from '@core/menu-index';
 import { el } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
 import { abilitiesSpeech, abilityChips } from './hero-abilities';
-import { HERO_COLUMNS } from './hero-info';
 import { heroDnd } from './hero-dnd';
 import { heroGrid, heroPanel } from './hero-panel';
 
@@ -585,7 +584,7 @@ function rosterView(
 
   const moveCursor = (s: SideIx, dx: number, dy: number): void => {
     const n = races.length;
-    const cols = HERO_COLUMNS;
+    const cols = heroes.columns();
     const cur = cursor[s];
     let next = cur + dx + dy * cols;
     if (dx !== 0) next = Math.max(0, Math.min(n - 1, next));

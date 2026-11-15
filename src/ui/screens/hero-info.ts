@@ -18,8 +18,46 @@ import type { AbilityDef, AbilityDefB, CharacterId } from '@core/menu-index';
 
 /** Element rows of the select, top to bottom. */
 export const ELEMENT_ORDER: readonly string[] = ['water', 'air', 'fire', 'earth'];
-/** Heroes per element (each element has exactly three playable heroes), so the grid is three columns wide. */
+/** Heroes per element in the released roster (three each), so the grid is three columns wide; see `heroColumns` for 24 heroes. */
 export const HERO_COLUMNS = 3;
+/** Columns on a phone, whatever the roster size: an element with six heroes wraps to two rows of three. */
+export const PHONE_COLUMNS = 3;
+
+/** Most heroes any one element has among `races`: the grid's width on desktop (3 for 12 heroes, 6 for 24). */
+export function heroesPerElement(races: readonly CharacterId[]): number {
+  const n = new Map<string, number>();
+  for (const id of races) n.set(getCharacter(id).element, (n.get(getCharacter(id).element) ?? 0) + 1);
+  return Math.max(HERO_COLUMNS, ...n.values());
+}
+
+/**
+ * Columns the grid really has right now: the CSS grid's resolved track count (it is 3 on a phone and `heroesPerElement` on
+ * desktop), or `fallback` where layout is unavailable (jsdom). The cursor's up and down move by this.
+ */
+export function heroColumns(grid: Element, fallback: number): number {
+  const tracks = getComputedStyle(grid).gridTemplateColumns.trim();
+  const n = tracks === '' || tracks === 'none' ? 0 : tracks.split(/\s+/).length;
+  return n > 0 ? n : fallback;
+}
+
+export type HeroStyle = 'melee' | 'ranged';
+
+/** The fighting style of the 12 released heroes (the sim's `HERO_STYLE` will replace this table, roster-24 WP 0.2). */
+const RELEASED_STYLE: Readonly<Record<string, HeroStyle>> = {
+  curomo: 'melee', pax: 'melee', treenoc: 'melee', echo: 'melee', wispera: 'melee',
+  fiara: 'ranged', lavax: 'ranged', sindarosa: 'ranged', ishimi: 'ranged', morblass: 'ranged', rokcore: 'ranged', cyclonius: 'ranged',
+};
+
+/** Player-facing word for a style (shown next to the badge icon, so the style is never colour or icon alone). */
+export const STYLE_WORDS: Readonly<Record<HeroStyle, string>> = { melee: 'Melee', ranged: 'Ranged' };
+
+/** Melee or ranged: the table for the released heroes, else from the first ability's kind (a projectile means ranged). */
+export function heroStyle(id: CharacterId): HeroStyle {
+  const known = RELEASED_STYLE[id as string];
+  if (known) return known;
+  const first = DEFS.get(getCharacter(id).abilities[0] ?? '');
+  return first?.kind === 'range' || first?.kind === 'omni' ? 'ranged' : 'melee';
+}
 
 /** Races sorted into element rows (stable within a row), the order the grid and its cursor use. */
 export function heroesByElement(races: readonly CharacterId[]): CharacterId[] {
@@ -107,6 +145,7 @@ export interface HeroProfile {
   readonly name: string;
   readonly element: string;
   readonly alignment: string;
+  readonly style: HeroStyle;
   readonly blurb: string;
   /** Sprite name under `assets/img/map/` (the portrait's source). */
   readonly sprite: string;
@@ -144,6 +183,7 @@ export function heroProfile(id: CharacterId): HeroProfile {
     name: CHARACTER_TEXT.get(id)?.name ?? (id),
     element: ch.element,
     alignment: ch.alignment,
+    style: heroStyle(id),
     blurb: firstSentence(CHARACTER_TEXT.get(id)?.description ?? ''),
     sprite: ch.sprite,
     stats: [

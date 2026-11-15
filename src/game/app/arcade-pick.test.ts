@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import type { CharacterId } from '@core/index';
-import { ARCADE_RACES, DEFAULT_PICK, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
+import { ARCADE_RACES, DEFAULT_PICK, RELEASED_CHARACTERS, arcadeRacesFor, roster24On, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor } from './arcade-pick';
+
+describe('roster24 gate', () => {
+  it('only the dev flag turns it on', () => {
+    expect(roster24On('')).toBe(false);
+    expect(roster24On('?ff=other')).toBe(false);
+    expect(roster24On('?ff=roster24')).toBe(true);
+    expect(roster24On('?ff=a, roster24')).toBe(true);
+  });
+  it('without the flag the pickers list only the released heroes; the flag adds the appended ones', () => {
+    expect(ARCADE_RACES.length).toBeLessThanOrEqual(RELEASED_CHARACTERS);
+    expect(arcadeRacesFor('')).toEqual(ARCADE_RACES);
+    expect(arcadeRacesFor('?ff=roster24').length).toBeGreaterThanOrEqual(ARCADE_RACES.length);
+  });
+});
 
 const PAX = 'pax' as CharacterId;
 const CUROMO = 'curomo' as CharacterId;
