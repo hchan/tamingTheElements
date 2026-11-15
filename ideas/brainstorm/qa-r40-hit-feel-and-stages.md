@@ -13,3 +13,8 @@ Screenshots: ~/claudetmp/qa-r40/s/hit-{2,4,6,8,13}.png (Pax vs Rokcore on lava),
 - Earth (sand) stage: Rokcore spawn zone is clear of tall props; the crystal prop sits at mid-right, not in a spawn. Sand stage banner pills "SAND +20%" and "SAND 9" read.
 - In the 2v2 start frame the "FIRE x2" chip at x=595 overlaps the Fiara foe silhouette edge (chip over a character): chips should draw below characters.
 - Super frame: "FIGHT!" intro text is drawn under the super effect at tick ~91; harmless but looks like overlapping text.
+
+## Progress
+
+- 2026-11-14 (chip-layer): chips and words stay above the floor patches (-0.7) and below every fighter layer (lowest -0.6); depths are now the exported `CHIP_DEPTH`/`LABEL_DEPTH` and part of the terrain probe, pinned by a unit test on all four stages. The QA overlap was the fade lag: a chip that appeared (round start, after a banner) with a fighter on it showed at full alpha and eased down; it now starts faint and fades 2x faster. Contrast fix from r38 untouched. Screenshots: ~/claudetmp/chip-shots/{fire,earth,air}-2v2.png (water stage could not be forced in the headless script).
+- Not done: attacker-displacement assertion in hit-feel-capture (owned by the hit-feel agent), FIGHT! vs super overlap, ember/shard hit layer.
