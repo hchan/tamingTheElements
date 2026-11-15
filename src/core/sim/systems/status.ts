@@ -22,6 +22,8 @@ export const StatusId = {
    * 16+ is reserved for HoT/DoT/roster statuses.
    */
   dazed: 10, iced: 11, downed: 12, silenced: 13, ccWard: 14, kindled: 15,
+  /** Roster batch 2 (SIM_VERSION 73): Brazgor's molten-hide, rock-armour style armour plus thorns on melee attackers. */
+  thorns: 16,
 } as const;
 export type StatusIdValue = (typeof StatusId)[keyof typeof StatusId];
 
@@ -38,6 +40,7 @@ const BUFF_STATUS: Readonly<Record<string, StatusIdValue>> = {
   'rock-armour': StatusId.rockArmour,
   'translucent-flame': StatusId.translucent,
   fade: StatusId.translucent,
+  'molten-hide': StatusId.thorns,
 };
 
 const DEFS: readonly AbilityDefB[] = ALL_ABILITIES;
@@ -45,6 +48,7 @@ const DEFS: readonly AbilityDefB[] = ALL_ABILITIES;
 const STATUS_ABILITY: Readonly<Record<number, string>> = {
   [StatusId.adrenaline]: 'adrenaline',
   [StatusId.rockArmour]: 'rock-armour',
+  [StatusId.thorns]: 'molten-hide',
 };
 
 function defFor(slug: string): AbilityDefB {
@@ -131,6 +135,15 @@ export function damageDecreasePct(s: SimState, id: number): number {
   let pct = 0;
   for (let slot = 0; slot < STATUS_SLOTS; slot++) pct += damageDecreaseOf(s.status[base(id, slot) + F_ID] ?? 0);
   return pct;
+}
+
+/** Damage a melee attacker takes per hit that lands on `id`: the thorns status (molten-hide), 0 without it. */
+export function thornsDamageOf(s: SimState, id: number): number {
+  let n = 0;
+  for (let slot = 0; slot < STATUS_SLOTS; slot++) {
+    if ((s.status[base(id, slot) + F_ID] ?? 0) === StatusId.thorns) n += defFor('molten-hide').thornsDamage ?? 0;
+  }
+  return n;
 }
 
 /** Legacy applyDamage tail: `damage -= damage * pct / 100`, floored at 0. */

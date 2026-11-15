@@ -53,6 +53,18 @@ const SETUP_ROSTER24: MatchSetup = {
 };
 const OUT_ROSTER24 = new URL('../../tests/fixtures/replays/arcade-roster24-b1.replay.json', import.meta.url);
 
+/** Roster-24 Batch 2 golden: a 2v2 of the four new heroes (Brazgor + Zephra against Glimmaw + Durrok), Arcade, scripted AI. */
+const SETUP_ROSTER24_B2: MatchSetup = {
+  simVersion: SIM_VERSION,
+  seed: 0x24b2,
+  flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+  chapter: 1,
+  difficulty: 1,
+  p1: [{ character: characterId('brazgor'), xp: 1 }, { character: characterId('zephra'), xp: 1 }],
+  p2: [{ character: characterId('glimmaw'), xp: 1 }, { character: characterId('durrok'), xp: 1 }],
+};
+const OUT_ROSTER24_B2 = new URL('../../tests/fixtures/replays/arcade-roster24-b2.replay.json', import.meta.url);
+
 function recordScripted(setup: MatchSetup, ticks: number, raceA: string, raceB: string) {
   const world = createMatch(setup);
   const rec = new ReplayRecorder(setup);
@@ -76,6 +88,9 @@ if (values.ruleset === 'arcade') {
   assertNoTesterFlags(SETUP_ROSTER24.flags);
   writeFileSync(OUT_ROSTER24, serializeReplay(recordScripted(SETUP_ROSTER24, 3000, 'kindrel', 'nykra')));
   console.log(`wrote ${OUT_ROSTER24.pathname} (3000 ticks)`);
+  assertNoTesterFlags(SETUP_ROSTER24_B2.flags);
+  writeFileSync(OUT_ROSTER24_B2, serializeReplay(recordScripted(SETUP_ROSTER24_B2, 3000, 'brazgor', 'glimmaw')));
+  console.log(`wrote ${OUT_ROSTER24_B2.pathname} (3000 ticks)`);
   // The scripted goldens (hand-authored inputs, see arcade-moves.ts) that reach every Arcade mechanic.
   for (const script of arcadeScripts()) {
     assertNoTesterFlags(script.setup.flags);

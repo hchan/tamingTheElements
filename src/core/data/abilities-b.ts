@@ -14,6 +14,18 @@ export interface AbilityEffectParams {
   readonly damageIntervalMs?: number;
   readonly damageIntervalTicks?: number;
   readonly description?: string;
+  /**
+   * Arcade only (roster batch 2): the caster is carried this many px along its aim during the cast (a negative value
+   * hops backward); see `setLunge` in sim/systems/arcade/knockback.ts.
+   */
+  readonly lungePx?: number;
+  /** Arcade only: a projectile stops after travelling `hoverStopPx` px and lingers `hoverLingerTicks` ticks as a hazard. */
+  readonly hoverStopPx?: number;
+  readonly hoverLingerTicks?: number;
+  /** Arcade only: while this buff lasts, a melee attacker takes this much per hit that lands on the wearer. */
+  readonly thornsDamage?: number;
+  /** Melee box is centred on the caster instead of extending along the aim (a burst, like ground-shock). */
+  readonly centred?: boolean;
 }
 
 export type AbilityDefB = AbilityDef & AbilityEffectParams;
@@ -45,6 +57,12 @@ export interface AbilityDefBSrc {
   readonly longSprite?: string;
   readonly damageIntervalMs?: number;
   readonly description?: string;
+  readonly lungePx?: number;
+  readonly hoverStopPx?: number;
+  readonly hoverLingerTicks?: number;
+  readonly thornsDamage?: number;
+  /** Melee box is centred on the caster instead of extending along the aim (a burst, like ground-shock). */
+  readonly centred?: boolean;
 }
 
 export function abilityDefB(s: AbilityDefBSrc): AbilityDefB {

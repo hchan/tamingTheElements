@@ -28,6 +28,11 @@ export const CHARACTER_SIZE: Readonly<Record<string, number>> = {
   nykra: 110,
   quarrak: 170,
   hyalia: 100,
+  // Batch 2: a hulking forge boar, a small anglerfish, a medium armoured boar, a tiny storm-wisp.
+  brazgor: 160,
+  glimmaw: 90,
+  durrok: 120,
+  zephra: 60,
 };
 
 /**

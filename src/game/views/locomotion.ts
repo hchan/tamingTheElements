@@ -122,6 +122,10 @@ export const BACK_GAIT: Readonly<Record<string, BackGait>> = {
   nykra: gait({ style: 'drift', lean: 2, stridePx: 30, periodPx: 36, swayDeg: 2, lagPx: 1.5 }),
   quarrak: gait({ style: 'brace', lean: 3, stridePx: 22, liftPx: 1.4, lagPx: 1 }),
   hyalia: gait({ style: 'arc', stridePx: 30, liftPx: 4, periodPx: 48, swayDeg: 3 }),
+  brazgor: gait({ style: 'brace', lean: 3, stridePx: 24, liftPx: 1.4, lagPx: 1 }),
+  glimmaw: gait({ style: 'drift', lean: 1, stridePx: 30, hoverPx: 2, periodPx: 40, swayDeg: 2, lagPx: 1 }),
+  durrok: gait({ style: 'brace', lean: 3, stridePx: 22, liftPx: 1.2, lagPx: 1 }),
+  zephra: gait({ style: 'arc', stridePx: 34, liftPx: 3, hoverPx: 3, periodPx: 40, swayDeg: 3 }),
   eternalVoid: gait({ style: 'recede', lean: 1, stridePx: 30, alphaDip: 0.12 }),
 };
 

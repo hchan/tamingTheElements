@@ -486,6 +486,15 @@
         14
       ]
     },
+    "abyssFlash": {
+      "url": "img/fx/abyssFlash.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "bellPulse": {
       "url": "img/fx/bellPulse.png",
       "coords": [
@@ -502,6 +511,15 @@
         0,
         80,
         80
+      ]
+    },
+    "bristleStomp": {
+      "url": "img/fx/bristleStomp.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
       ]
     },
     "chaosBoltLoop": {
@@ -583,6 +601,15 @@
         0,
         160,
         100
+      ]
+    },
+    "forgeGore": {
+      "url": "img/fx/forgeGore.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
       ]
     },
     "hoofCrash": {
@@ -675,6 +702,24 @@
         40
       ]
     },
+    "lureOrb": {
+      "url": "img/fx/lureOrb.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "moltenHide": {
+      "url": "img/fx/moltenHide.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "rockPelletLoop": {
       "url": "img/fx/loop/rockPelletLoop.png",
       "coords": [
@@ -691,6 +736,15 @@
         0,
         160,
         22
+      ]
+    },
+    "skitter": {
+      "url": "img/fx/skitter.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
       ]
     },
     "slimeBlastLoop": {
@@ -711,6 +765,15 @@
         76
       ]
     },
+    "staticMote": {
+      "url": "img/fx/staticMote.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "stingingFilament": {
       "url": "img/fx/stingingFilament.png",
       "coords": [
@@ -718,6 +781,15 @@
         0,
         80,
         80
+      ]
+    },
+    "tuskGore": {
+      "url": "img/fx/tuskGore.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
       ]
     },
     "windConeLoop": {
@@ -3218,6 +3290,144 @@
         ]
       ]
     },
+    "brazgor": {
+      "url": "img/map/brazgor.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/brazgorLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "durrok": {
+      "url": "img/map/durrok.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/durrokLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "glimmaw": {
+      "url": "img/map/glimmaw.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/glimmawLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
     "hyalia": {
       "url": "img/map/hyalia.png",
       "coords": [
@@ -3365,6 +3575,52 @@
         80
       ],
       "urlLarge": "img/map/quarrakLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "zephra": {
+      "url": "img/map/zephra.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/zephraLarge.png",
       "leftFrames": [
         [
           0,

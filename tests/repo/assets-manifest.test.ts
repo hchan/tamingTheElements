@@ -18,7 +18,7 @@ describe('legacy asset manifest', () => {
 
   it('has the legacy entry counts and consistent sound ids', () => {
     const m = JSON.parse(committed) as LegacyManifest;
-    expect(Object.keys(m.sprites)).toHaveLength(81); // 54 legacy + 2 repo-only Snag rope variants + 12 loop strips + 6 impact strips + 7 Roster 24 batch 1 sprites (EXTRA_SPRITES)
+    expect(Object.keys(m.sprites)).toHaveLength(89); // 54 legacy + 2 repo-only Snag rope variants + 12 loop strips + 6 impact strips + 7 Roster 24 batch 1 sprites + 8 batch 2 sprites (EXTRA_SPRITES)
     expect(Object.keys(m.mapSprites).length).toBeGreaterThan(0);
     expect(Object.keys(m.backgrounds).length).toBeGreaterThan(0);
     expect(new Set(m.sounds.map((s) => s.id)).size).toBe(m.sounds.length);

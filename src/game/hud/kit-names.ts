@@ -25,6 +25,11 @@ const SHORT: Readonly<Record<string, string>> = {
   'cinder-spray': 'Cinder',
   'boulder-roll': 'Boulder',
   'stinging-filament': 'Filament',
+  'forge-gore': 'Gore',
+  'molten-hide': 'Mol. Hide',
+  'abyss-flash': 'Flash',
+  'bristle-stomp': 'Stomp',
+  'static-mote': 'Mote',
 };
 
 const BY_SPRITE = new Map<string, string>(ALL_ABILITIES.map((d) => [d.sprite, d.id]));

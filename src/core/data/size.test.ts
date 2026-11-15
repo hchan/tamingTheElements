@@ -27,7 +27,7 @@ describe('giant heroes size curves', () => {
   });
 
   it('Rokcore is 2x, Ishimi is 1.5x, and sizes stay in 100..SIZE_MAX', () => {
-    expect(Object.keys(CHARACTER_SIZE)).toEqual(['rokcore', 'ishimi', 'kindrel', 'nykra', 'quarrak', 'hyalia']);
+    expect(Object.keys(CHARACTER_SIZE)).toEqual(['rokcore', 'ishimi', 'kindrel', 'nykra', 'quarrak', 'hyalia', 'brazgor', 'glimmaw', 'durrok', 'zephra']);
     expect(sizeOfSlug('rokcore')).toBe(200);
     expect(sizeOfSlug('ishimi')).toBe(150);
     expect(sizeOfSlug('pax')).toBe(SIZE_ONE);
@@ -94,7 +94,7 @@ describe('small and non-square heroes (roster WP 0.3)', () => {
 
   it('only the roster-24 heroes are below 1x (Kindrel) or non-square (Hyalia), and the clamp floor is SIZE_MIN', () => {
     expect(Object.keys(CHARACTER_BOX)).toEqual(['hyalia']);
-    expect(Math.min(...CHARACTERS.map((c) => sizeOfSlug(c.id)))).toBe(70);
+    expect(Math.min(...CHARACTERS.map((c) => sizeOfSlug(c.id)))).toBe(60);
     withTestHero(10, undefined, () => { expect(sizeOfSlug('pax')).toBe(SIZE_MIN); });
     expect(boxOfSlug('pax')).toEqual([80, 80]);
     expect(boxOfSlug('rokcore')).toEqual([160, 160]);

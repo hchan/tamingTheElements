@@ -8,9 +8,9 @@ import { arcadeRaceNumbers } from '../../arcade-numbers';
 import { computeDamage, damageDealt } from '../../../rules/damage';
 import { now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
-import { ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, World as W } from '../../state';
+import { ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, EntityKind, World as W } from '../../state';
 import type { SimWorld } from '../../world';
-import { damageDecreasePct } from '../status';
+import { damageDecreasePct, thornsDamageOf } from '../status';
 import { ccOnHit, ccRiders, spendKindled } from './cc';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
 import { knockbackDir, setKnockback } from './knockback';
@@ -136,6 +136,14 @@ export function applyArcadeHit(
   const ko = before > 0 && before - amount <= 0;
   const ticks = ko ? KO_HIT_STOP_TICKS : stopTicks ?? HIT_STOP_TICKS[strength];
   hitStop(world, sink, source, ticks, ko ? HitStopCause.ko : HitStopCause.hit);
+  // Thorns (molten-hide): a melee hit that lands (not guarded, not a super) costs the attacker a little.
+  if (!guard && !sup && s.kind[source] === EntityKind.melee) {
+    const thorns = thornsDamageOf(s, victim);
+    if (thorns > 0) {
+      s.hp[attacker] = (s.hp[attacker] ?? 0) - thorns;
+      sink.emit(source, SimEventKind.damage, { target: attacker, attacker: victim, amount: thorns });
+    }
+  }
   const rid = guard ? null : ccRiders(world, sink, source, attacker, victim, defIdx, sup);
   // Charge armour (SIM_VERSION 50): a charging victim takes the damage but is neither knocked back nor stunned, so the rush goes on.
   const armoured = !sup && chargeTick(s, victim) !== 0;

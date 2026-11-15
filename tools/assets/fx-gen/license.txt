@@ -9,3 +9,6 @@ and original too: tools/assets/fx-gen/batch-i-loops-impacts.py with the density-
 
 Roster 24 batch 1 ability sprites (emberBite, cinderSpray, hoofCrash, kelpLash, boulderRoll, stingingFilament, bellPulse) are procedural and
 original: tools/assets/fx-gen/batch-j-roster24-b1.py (same helpers). Run: python tools/assets/fx-gen/batch-j-roster24-b1.py [outdir] [--only name,name]
+
+Roster 24 batch 2 ability sprites (forgeGore, moltenHide, lureOrb, abyssFlash, tuskGore, bristleStomp, staticMote, skitter) are procedural and
+original: tools/assets/fx-gen/batch-k-roster24-b2.py (same helpers). Run: python tools/assets/fx-gen/batch-k-roster24-b2.py [outdir] [--only name,name]

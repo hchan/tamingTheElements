@@ -71,11 +71,20 @@ const EXTRA_SPRITES: Readonly<Record<string, SpriteEntry>> = {
   boulderRoll: { url: 'img/fx/boulderRoll.png', coords: [0, 0, 80, 80] },
   stingingFilament: { url: 'img/fx/stingingFilament.png', coords: [0, 0, 80, 80] },
   bellPulse: { url: 'img/fx/bellPulse.png', coords: [0, 0, 80, 80] },
+  // Roster 24 batch 2 ability sprites: fx-gen/batch-k-roster24-b2.py.
+  forgeGore: { url: 'img/fx/forgeGore.png', coords: [0, 0, 80, 60] },
+  moltenHide: { url: 'img/fx/moltenHide.png', coords: [0, 0, 80, 80] },
+  lureOrb: { url: 'img/fx/lureOrb.png', coords: [0, 0, 80, 80] },
+  abyssFlash: { url: 'img/fx/abyssFlash.png', coords: [0, 0, 80, 80] },
+  tuskGore: { url: 'img/fx/tuskGore.png', coords: [0, 0, 80, 60] },
+  bristleStomp: { url: 'img/fx/bristleStomp.png', coords: [0, 0, 80, 60] },
+  staticMote: { url: 'img/fx/staticMote.png', coords: [0, 0, 80, 80] },
+  skitter: { url: 'img/fx/skitter.png', coords: [0, 0, 80, 80] },
 };
 /** Repo-only hero map sprites (no legacy file): rig-gen/<hero>.py -> bake -> portrait-rig/map-strips.py (320x80 strip) plus a 400x400 Large portrait. */
 const MAP_FRAMES: Frames = [[0, 0], [80, 0], [160, 0], [240, 0]];
 const EXTRA_MAP_SPRITES: Readonly<Record<string, SpriteEntry>> = Object.fromEntries(
-  ['hyalia', 'kindrel', 'nykra', 'quarrak'].map((h) => [
+  ['brazgor', 'durrok', 'glimmaw', 'hyalia', 'kindrel', 'nykra', 'quarrak', 'zephra'].map((h) => [
     h,
     { url: `img/map/${h}.png`, coords: [0, 0, 80, 80], urlLarge: `img/map/${h}Large.png`, leftFrames: MAP_FRAMES, rightFrames: MAP_FRAMES } as SpriteEntry,
   ]),

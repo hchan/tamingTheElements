@@ -36,6 +36,7 @@ export const HIT_STRENGTH_OVERRIDE: Readonly<Partial<Record<string, HitStrengthV
   // Roster-24 batch 1 (SIM_VERSION 72): knockback is strength-driven, so the push abilities are forced up a tier.
   'boulder-roll': HitStrength.heavy,
   'bell-pulse': HitStrength.medium,
+  'forge-gore': HitStrength.heavy, // roster-24 B2: Brazgor's anvil blow
 };
 
 /**
@@ -72,6 +73,7 @@ export const SNAG_STUN_TICKS = 20;
 export const HIT_STUN_OVERRIDE: Readonly<Partial<Record<string, number>>> = {
   tornado: FREEZE_STUN_TICKS,
   'entangling-vines': SNAG_STUN_TICKS,
+  'abyss-flash': 20, // roster-24 B2: Glimmaw's stun burst
   'stinging-filament': 15, // roster-24 B1: a short sting, it chains with its own 18-tick cooldown
 };
 

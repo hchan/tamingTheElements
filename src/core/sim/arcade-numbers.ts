@@ -56,6 +56,11 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   nykra: [5435, 1215],
   quarrak: [3365, 760],
   hyalia: [7600, 2108],
+  // Roster-24 batch 2 (SIM_VERSION 73), provisional until fitted with tools/sim/low-races/mat.sh.
+  brazgor: [4688, 727],
+  glimmaw: [7531, 2027],
+  durrok: [4689, 1058],
+  zephra: [6745, 2423],
 };
 
 /**
@@ -81,6 +86,10 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   quarrak: 580,
   kindrel: 650,
   nykra: 740,
+  brazgor: 520,
+  glimmaw: 620,
+  durrok: 640,
+  zephra: 760,
 };
 /**
  * Race life `hpPm` of `slug` for a roster of `size` heroes. A hero below 1x (data/size.ts SIZE_MIN..99) then gets

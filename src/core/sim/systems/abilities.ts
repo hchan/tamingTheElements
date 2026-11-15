@@ -4,6 +4,10 @@ import type { SimWorld } from '../world';
 import { ABILITY_DEFS } from './projectile';
 import { controlledId } from './movement';
 import { applyBuff, applyHeal } from './status';
+import type { AbilityDefB } from '../../data/abilities-b';
+import { isArcade } from '../clock';
+import { castDir } from './arcade/aim';
+import { setLunge } from './arcade/knockback';
 import { now } from '../clock';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { isSilenced } from './arcade/cc-state';
@@ -28,8 +32,15 @@ export function castSelf(world: SimWorld, sink: EventSink, team: number, slot: n
   if (def?.kind !== 'buff' && def?.kind !== 'heal') return;
   const cd = cooldownIdx(caster, slot);
   if (tick < (s.abil[cd] ?? 0)) return;
+  const lunge = (def as AbilityDefB).lungePx ?? 0;
   if (def.kind === 'heal') applyHeal(world, caster, def.id);
-  else if (!applyBuff(world, caster, def.id)) return;
+  else if (lunge === 0 && !applyBuff(world, caster, def.id)) return;
+  // A lunge-only buff (Zephra's skitter, a backward hop) has no status; Classic never runs it.
+  if (lunge !== 0) {
+    if (!isArcade(s)) return;
+    const aim = castDir(s, caster);
+    setLunge(s, caster, Math.abs(lunge), lunge > 0 ? aim : (aim + 4) & 7);
+  }
   s.abil[cd] = tick + def.cooldownTicks + 1;
   onArcadeCast(s, sink, caster, team, slot);
 }

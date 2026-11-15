@@ -40,6 +40,11 @@ export const ROSTER_24_CHARACTERS: readonly CharacterDef[] = Object.freeze([
   def('nykra', { element: 'water', alignment: 'neutral', maxHealth: 100, speed: 7, sprite: 'nykra' }, ['hoof-crash', 'kelp-lash']),
   def('quarrak', { element: 'earth', alignment: 'neutral', maxHealth: 140, speed: 4, sprite: 'quarrak' }, ['hurl-rock', 'boulder-roll']),
   def('hyalia', { element: 'air', alignment: 'neutral', maxHealth: 95, speed: 5, sprite: 'hyalia' }, ['stinging-filament', 'bell-pulse']),
+  // Batch 2 (SIM_VERSION 73): Brazgor, Glimmaw, Durrok, Zephra.
+  def('brazgor', { element: 'fire', alignment: 'neutral', maxHealth: 150, speed: 5, sprite: 'brazgor' }, ['forge-gore', 'molten-hide']),
+  def('glimmaw', { element: 'water', alignment: 'neutral', maxHealth: 95, speed: 6, sprite: 'glimmaw' }, ['lure-orb', 'abyss-flash']),
+  def('durrok', { element: 'earth', alignment: 'neutral', maxHealth: 120, speed: 7, sprite: 'durrok' }, ['tusk-gore', 'bristle-stomp']),
+  def('zephra', { element: 'air', alignment: 'neutral', maxHealth: 75, speed: 8, sprite: 'zephra' }, ['static-mote', 'skitter']),
 ]);
 
 /** Every character the sim knows: the legacy 14, then the appended Arcade heroes. */
