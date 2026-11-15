@@ -11,3 +11,5 @@ Done: the life line drops the word "Life" on a phone before shrinking (`compactL
 Test hook `__TTE__.arena.hudTextSizes()` and `tests/e2e/touch-fight-layout.spec.ts` (phone HUD text) assert at least 9.5 px and no overlaps at both sizes.
 Follow-up done: the WEATHER charge chip (weather-view.ts, `CHARGE_PX`) now scales up to 24 logical px so it reads at least 10.5 CSS px on a phone; `touch-fight-layout` asserts it.
 Screenshots: ~/claudetmp/phn/before-667.png, after-667.png, after-844.png.
+
+Follow-up (2026-11-14): TREENOC still read 9.9 px at 667x375. The life line now has a third step, "bare" (drops "/max"), tried at full size before any shrink, and MIN_PHONE_PX is 11; names read 11.8 px and uncut at both sizes (touch-fight-layout asserts >= 11 and no ellipsis). Screenshots: ~/claudetmp/phn2/.

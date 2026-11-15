@@ -149,7 +149,7 @@ test.describe('phone portrait fight', () => {
 for (const [w, h] of [[667, 375], [844, 390]] as const) {
   test.describe(`phone HUD text ${String(w)}x${String(h)}`, () => {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-    test('names and life text are at least 9.5 CSS px and do not overlap each other', async ({ page }) => {
+    test('names are at least 11 CSS px, SUPER at least 9.5, and do not overlap each other', async ({ page }) => {
       await page.goto('/?manual=1&seed=7&hero=fiara&foe=treenoc');
       await page.waitForFunction(ARENA_READY);
       await page.evaluate(`window.__TTE__.arena.step(150)`);
@@ -157,7 +157,10 @@ for (const [w, h] of [[667, 375], [844, 390]] as const) {
       const texts = await page.evaluate<Array<Box & { text: string; px: number }>>(`window.__TTE__.arena.hudTextSizes()`);
       const names = texts.filter((t) => /FIARA|TREEN|SUPER/.test(t.text));
       expect(names.length, JSON.stringify(texts)).toBeGreaterThanOrEqual(4);
+      for (const t of names.filter((n) => !/SUPER/.test(n.text))) expect(t.px, t.text).toBeGreaterThanOrEqual(11);
       for (const t of names) expect(t.px, t.text).toBeGreaterThanOrEqual(9.5);
+      // The long name (TREENOC) is whole: not cut with an ellipsis, not dropped to a bare glyph.
+      expect(texts.some((t) => /^TREENOC /.test(t.text) && !t.text.includes('\u2026')), JSON.stringify(texts)).toBe(true);
       // The WEATHER charge chip (weather-view.ts) reads at 10 CSS px or more and clears the HUD text.
       const chip = texts.find((t) => /WEATHER/.test(t.text));
       if (chip) {
