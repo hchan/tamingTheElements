@@ -373,7 +373,7 @@ export class Hud extends Phaser.Scene {
       gfx.fillStyle(chip.color, shown ? 0.85 : 0.4).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
       // Shape icon in a draining timer ring at the chip's right end: the silhouette codes the status without colour.
       const id = /^s(\d+)$/.exec(chip.key);
-      const icon = id ? STATUS_LOOKS[Number(id[1])]?.icon : chip.key === 'root' ? ROOT_ICON : CC_ICONS[chip.key];
+      const icon = id ? (STATUS_LOOKS[Number(id[1])]?.icon ?? CC_ICONS[chip.key]) : chip.key === 'root' ? ROOT_ICON : CC_ICONS[chip.key];
       if (icon) {
         const r = Math.max(5, Math.round(chip.h / 2) - 2);
         const cx = chip.x + chip.w - r - 4;

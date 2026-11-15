@@ -53,6 +53,13 @@ export const CUES = {
   /** Stage hazard (systems/arcade/hazard.ts): a low rising rumble on its warning, a dull crash when it strikes. */
   hazardWarn: [[3, 55, 82, 380, 0.14], [NOISE, 200, 500, 360, 0.12]],
   hazardStrike: [[NOISE, 900, 150, 260, 0.4], [0, 70, 35, 220, 0.45]],
+  /** Crowd control (events 79-81): a dizzy wobble, an icy glint, a low thud, a muffled gulp, a shatter and a short tink for a resisted one. */
+  ccDaze: [[1, 880, 440, 260, 0.2], [1, 660, 330, 260, 0.15, 90]],
+  ccIce: [[NOISE, 4000, 1500, 120, 0.3], [0, 1760, 1320, 200, 0.15, 30]],
+  ccDown: [[0, 100, 40, 200, 0.7], [NOISE, 700, 150, 110, 0.35]],
+  ccSilence: [[2, 300, 100, 180, 0.18], [NOISE, 900, 200, 150, 0.15]],
+  ccShatter: [[NOISE, 5000, 1200, 160, 0.4], [2, 1568, 900, 120, 0.12]],
+  ccResist: [[0, 1200, 1200, 50, 0.15], [0, 900, 900, 60, 0.12, 60]],
   /** Low-life heartbeat: a soft double thud (lub-dub) while the player's hero is in the red. */
   heartbeat: [[0, 70, 45, 110, 0.55], [0, 62, 40, 130, 0.4, 150]],
   /** A refused action (a swap while stunned or cooling down): two short low buzzes, never a stinger. */
@@ -86,7 +93,7 @@ export const STINGERS: ReadonlySet<CueName> = new Set<CueName>(['round', 'sudden
 export const KIND_CUES: Readonly<Partial<Record<number, CueName>>> = {
   43: 'guard', 44: 'parry', 45: 'crack', 46: 'dash', 47: 'dodge', 48: 'clang', 50: 'super', 53: 'round', 54: 'fight',
   55: 'ko', 57: 'roundEnd', 67: 'dash', 70: 'trapSet', 71: 'trapArm', 72: 'trapPop',
-  73: 'elemental', 76: 'hazardWarn', 77: 'hazardStrike',
+  73: 'elemental', 76: 'hazardWarn', 77: 'hazardStrike', 79: 'ccDaze', 81: 'ccResist',
 };
 const ROUND_STARTED: Kinds['roundStarted'] = 53;
 const HIT: Kinds['hitConfirmed'] = 41;
@@ -96,6 +103,11 @@ const ROUND_ENDED: Kinds['roundEnded'] = 57;
 const ELEMENTAL_CAST: Kinds['elementalCast'] = 73;
 /** Elemental cue by `elementalCast.element` (1 fire .. 4 air). */
 export const ELEMENTAL_CUES: readonly CueName[] = ['elemFire', 'elemWater', 'elemEarth', 'elemAir'];
+const CC_STARTED: Kinds['ccStarted'] = 79;
+const CC_ENDED: Kinds['ccEnded'] = 80;
+/** Cue by `ccStarted.cc` (`CcKind` 1 daze .. 4 silenced); `ccEnded.reason` `CcEnd.shattered` (2) is the one end that sounds. */
+export const CC_CUES: readonly CueName[] = ['ccDaze', 'ccIce', 'ccDown', 'ccSilence'];
+const CC_SHATTERED = 2;
 const SNAG: Kinds['snag'] = 69;
 /** `SnagEvent.expired` (data/arcade.ts): a root running out is silent; rooted, guarded and freed whip the rope. */
 const SNAG_EXPIRED = 3;
@@ -128,9 +140,7 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   chargeEnded: 'the arrival hit plays the thump; the charge start plays the dash whoosh',
   cleanse: 'the view plays playSfx(cleanse, element) from the event (fx/cleanse-view, Arena)',
   hazardHit: 'the strike crash plays on the same tick',
-  ccStarted: 'CC audio lands with the CC view work package (flag withCrowdControl is off)',
-  ccEnded: 'CC audio lands with the CC view work package',
-  ccResisted: 'CC audio lands with the CC view work package',
+  ccEnded: 'a CC running out is silent; only an ice shatter (reason 2) cracks, see pickCues',
 };
 
 /** Hit thump gain by strength (light, medium, heavy, super); a light hit was 0.35 and read as a tap (QA r34). */
@@ -188,6 +198,10 @@ export function pickCues(e: SimEvent, play: PlayCue, sudden: () => boolean = () 
     play(e['winner'] === 0 ? 'youWin' : e['winner'] === 1 ? 'youLose' : 'roundEnd', 1, 1);
   } else if (e.kind === ELEMENTAL_CAST) {
     play(ELEMENTAL_CUES[(e['element'] ?? 0) - 1] ?? KIND_CUES[ELEMENTAL_CAST] ?? 'elemental', 1, 1);
+  } else if (e.kind === CC_STARTED) {
+    play(CC_CUES[(e['cc'] ?? 0) - 1] ?? 'ccDaze', 1, 1);
+  } else if (e.kind === CC_ENDED) {
+    if (e['reason'] === CC_SHATTERED) play('ccShatter', 1, 1);
   } else if (e.kind === SNAG) {
     if (e['reason'] !== SNAG_EXPIRED) play('snag', 1, 1);
   } else if (e.kind === TRAP_TRIGGERED && e['reason'] === TRAP_DOUSED) {

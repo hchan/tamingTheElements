@@ -175,6 +175,17 @@ describe('crowd-control chips (CA1)', () => {
     expect(collectStatusChips(viewWith({ arcade: { stunned: true, stunLeft: 30 } }), 0, 1, 'fire', 0, false, undefined, 20)[0]?.remaining).toBe(1);
   });
 
+  it('shows a hostile chip with a time and an icon for each crowd-control status', () => {
+    const out = chips({ tick: 10, statuses: [{ id: StatusId.dazed, startTick: 0, expireTick: 110 }, { id: StatusId.iced, startTick: 0, expireTick: 60 }, { id: StatusId.downed, startTick: 0, expireTick: 60 }, { id: StatusId.silenced, startTick: 0, expireTick: 110 }, { id: StatusId.ccWard, startTick: 0, expireTick: 99 }] });
+    expect(out.map((c) => [c.label, c.hostile, c.secs])).toEqual([['DAZED', true, 2], ['ICED', true, 1], ['DOWN', true, 1], ['SILENCED', true, 2]]);
+    for (const c of out) {
+      expect(c.remaining).toBeGreaterThan(0);
+      expect(c.remaining).toBeLessThanOrEqual(1);
+      expect(CC_ICONS[c.key]?.length ?? 0).toBeGreaterThanOrEqual(4);
+      expect(c.label).not.toMatch(/classic|arcade|ruleset|capture/i);
+    }
+  });
+
   it('every remaining is in [0, 1], labels are short and avoid the banned words, icons exist', () => {
     const out = chips({ arcade: { rooted: true, rootLeft: 9999, stunned: true, stunLeft: 1, mireLeft: 9999, guarding: true } });
     const immune = chips({ arcade: { rootImmuneLeft: 9999 } });

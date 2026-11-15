@@ -32,7 +32,7 @@ describe('Arcade cue coverage', () => {
       guarded: 'guard', parried: 'parry', guardBroken: 'crack', dashed: 'dash', perfectDodge: 'dodge', clash: 'clang',
       superStarted: 'super', chargeStarted: 'dash', roundStarted: 'round', fight: 'fight', ko: 'ko', roundEnded: 'roundEnd',
       trapPlaced: 'trapSet', trapArmed: 'trapArm', trapTriggered: 'trapPop', elementalCast: 'elemental',
-      hazardWarn: 'hazardWarn', hazardStrike: 'hazardStrike',
+      hazardWarn: 'hazardWarn', hazardStrike: 'hazardStrike', ccStarted: 'ccDaze', ccResisted: 'ccResist',
     };
     const expected = Object.fromEntries(Object.entries(byName).map(([n, c]) => [String(SimEventKind[n as keyof typeof SimEventKind]), c]));
     expect(KIND_CUES).toEqual(expected);
@@ -54,6 +54,15 @@ describe('Arcade cue coverage', () => {
       }
     }
     for (const s of STINGERS) expect(CUES[s].length).toBeLessThanOrEqual(4);
+  });
+});
+
+describe('crowd-control cues', () => {
+  it('plays one cue per CC kind, a shatter on ice breaking, and nothing for other ends', () => {
+    expect([1, 2, 3, 4].map((cc) => cues(ev(SimEventKind.ccStarted, { cc }))[0]?.[0])).toEqual(['ccDaze', 'ccIce', 'ccDown', 'ccSilence']);
+    expect(cues(ev(SimEventKind.ccEnded, { cc: 2, reason: 2 })).map((c) => c[0])).toEqual(['ccShatter']);
+    expect(cues(ev(SimEventKind.ccEnded, { cc: 2, reason: 0 }))).toEqual([]);
+    expect(cues(ev(SimEventKind.ccResisted, { cc: 1, reason: 0 })).map((c) => c[0])).toEqual(['ccResist']);
   });
 });
 
