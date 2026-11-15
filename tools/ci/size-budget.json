@@ -52,6 +52,7 @@
     "tour-match": 3400,
     "tour-select": 1200,
     "trap-view": 3000,
+    "void-stage": 3100,
     "weather-view": 6500
   },
   "totalGzip": 695500,
