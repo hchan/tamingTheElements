@@ -1,5 +1,5 @@
 import { GARRISON_MAX_SIZE } from '../data/chapters';
-import { CHARACTERS } from '../data/characters';
+import { CHARACTERS, LEGACY_CHARACTERS } from '../data/characters';
 import { decodeFlags, type SimFlags } from '../flags';
 import { inputMaskFor } from '../sim/commands';
 import { HASH_INTERVAL, isCheatHeader, type ReplayFile } from './format';
@@ -7,7 +7,9 @@ import { HASH_INTERVAL, isCheatHeader, type ReplayFile } from './format';
 /** Two hours of play at 50 Hz: anything longer is not a real match and would cost real memory to decode. */
 export const MAX_REPLAY_TICKS = 50 * 60 * 120;
 
-const KNOWN: ReadonlySet<string> = new Set(CHARACTERS.map((c) => c.id as string));
+/** Classic replays may field the legacy 14 only; Arcade replays use the full roster (roster-24 plan section 8). */
+const KNOWN_LEGACY: ReadonlySet<string> = new Set(LEGACY_CHARACTERS.map((c) => c.id as string));
+const KNOWN_ALL: ReadonlySet<string> = new Set(CHARACTERS.map((c) => c.id as string));
 
 export type ReplayCheck = { ok: true; value: ReplayFile } | { ok: false; message: string };
 
@@ -15,12 +17,12 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 const isInt = (v: unknown, lo: number, hi: number): v is number =>
   typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi;
 
-function checkRoster(name: string, r: unknown): string | undefined {
+function checkRoster(name: string, r: unknown, known: ReadonlySet<string>): string | undefined {
   if (!Array.isArray(r) || r.length < 1 || r.length > GARRISON_MAX_SIZE) {
     return `${name} must list 1 to ${String(GARRISON_MAX_SIZE)} characters`;
   }
   for (const m of r as unknown[]) {
-    if (!isObj(m) || typeof m['character'] !== 'string' || !KNOWN.has(m['character'])) return `${name} has an unknown character`;
+    if (!isObj(m) || typeof m['character'] !== 'string' || !known.has(m['character'])) return `${name} has an unknown character`;
     const xp = m['xp'];
     if (typeof xp !== 'number' || !Number.isFinite(xp) || xp < 0 || xp > 1_000_000_000) return `${name} has an invalid xp value`;
   }
@@ -73,7 +75,8 @@ export function validateReplay(raw: unknown): ReplayCheck {
     if (typeof d !== 'number' || !Number.isFinite(d) || d < 0.1 || d > 3) {
       return { ok: false, message: 'The replay has an invalid difficulty.' };
     }
-    const bad = checkRoster('player team', s['p1']) ?? checkRoster('enemy team', s['p2']);
+    const known = decoded.rulesetArcade ? KNOWN_ALL : KNOWN_LEGACY;
+    const bad = checkRoster('player team', s['p1'], known) ?? checkRoster('enemy team', s['p2'], known);
     if (bad) return { ok: false, message: `The replay is invalid: ${bad}.` };
     const inputs = raw['inputs'];
     if (!Array.isArray(inputs) || inputs.length !== 2) return { ok: false, message: 'The replay inputs are malformed.' };

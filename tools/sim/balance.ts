@@ -5,7 +5,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, runTournament, type TournamentSummary } from './run-match';
+import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, RACES, runTournament, type TournamentSummary } from './run-match';
+import { formatStyleDeltas, type StyleSummary, styleGateFindings } from './style-summary';
 
 /** Parameters of the full tournament recorded in the baseline. Changing them means re-recording the baseline. */
 export const FULL_PARAMS = {
@@ -46,6 +47,8 @@ export interface BalanceReport {
   readonly timeouts: number;
   /** Per-race tournament win rate (draws count half), sorted by race id. */
   readonly winRates: Readonly<Record<string, number>>;
+  /** Melee-vs-ranged summary (report-only gates). Written only by `balance:record`; baselines recorded before WP 0.2 have none. */
+  readonly styleSummary?: StyleSummary;
 }
 
 export function toReport(t: TournamentSummary, params: BalanceParams = FULL_PARAMS): BalanceReport {
@@ -58,6 +61,7 @@ export function toReport(t: TournamentSummary, params: BalanceParams = FULL_PARA
     stalemates: t.pairs.reduce((n, p) => n + p.endReasons.stalemate, 0),
     timeouts: t.pairs.reduce((n, p) => n + p.endReasons.timeout, 0),
     winRates,
+    ...(t.styleMatrix ? { styleSummary: t.styleMatrix } : {}),
   };
 }
 
@@ -118,7 +122,7 @@ export function main(argv: readonly string[]): number {
     const baselinePath = values.baseline ?? (tag ? ARCADE_2V2_BASELINE_PATH : arcade ? ARCADE_BASELINE_PATH : BASELINE_PATH);
     const tolerance = values.tolerance === undefined ? DEFAULT_TOLERANCE : Number(values.tolerance);
     if (!Number.isFinite(tolerance) || tolerance < 0) throw new Error('--tolerance must be a non-negative number');
-    const current = toReport(runTournament(params), params);
+    const current = toReport(runTournament(params, RACES, true), params);
     if (values.record === true) {
       mkdirSync(dirname(baselinePath), { recursive: true });
       writeFileSync(baselinePath, `${JSON.stringify(current, null, 2)}\n`);
@@ -132,6 +136,10 @@ export function main(argv: readonly string[]): number {
     console.log(
       `stalemates ${String(base.stalemates)} -> ${String(current.stalemates)}, timeouts ${String(base.timeouts)} -> ${String(current.timeouts)}`,
     );
+    if (current.styleSummary) {
+      console.log(formatStyleDeltas(base.styleSummary, current.styleSummary));
+      for (const f of styleGateFindings(current.styleSummary)) console.log(`style finding (report only): ${f}`);
+    }
     if (values.out !== undefined) {
       mkdirSync(dirname(values.out), { recursive: true });
       writeFileSync(values.out, `${JSON.stringify({ tolerance, failed, baseline: base, current, deltas: rows }, null, 2)}\n`);

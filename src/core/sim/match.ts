@@ -1,7 +1,7 @@
 import { SIZE_ONE, sizeDamagePm, sizeHeightPx, sizeLifePm, sizeOfSlug, sizeSpeedPm, sizeWidthPx } from '../data/size';
 import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH, GARRISON_MAX_SIZE } from '../data/chapters';
 import type { ChapterNumber } from '../data/chapters';
-import { CHARACTERS, getCharacter } from '../data/characters';
+import { CHARACTERS, getCharacter, isLegacyCharacter } from '../data/characters';
 import { ARCADE_P1_START_X, ARCADE_P2_START_X, ARCADE_START_Y, arcadePlayfield } from '../data/arcade';
 import type { CharacterId } from '../data/ids';
 import type { SimFlags } from '../flags';
@@ -53,6 +53,7 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
   const side: Side = team === 0 ? 'player' : 'enemy';
   roster.forEach((member, i) => {
     const def = getCharacter(member.character);
+    if (!setup.flags.rulesetArcade && !isLegacyCharacter(member.character)) throw new RangeError(`"${member.character}" is not a Classic hero`);
     if (abilitiesFor(def, setup.chapter, side).length > ABILITY_SLOTS) throw new RangeError('too many abilities');
     const stats = combatantStats(def, member.xp, side, setup.difficulty);
     const id = allocEntity(s);

@@ -21,6 +21,7 @@ export * from './data/ids';
 export * from './data/elements';
 export * from './data/types';
 export * from './data/characters';
+export * from './data/hero-style';
 export * from './data/text-ids';
 export * from './rules/new-game';
 export * from './sim/commands';
