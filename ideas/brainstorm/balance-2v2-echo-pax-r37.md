@@ -61,3 +61,10 @@ Goal: bring every race inside 45 to 55.
 
 Caveat: one AI level (3), one difficulty; scripted AI may mis-use some partner kits (for example Echo with Cyclonius), so some pair
 effects can be AI behaviour rather than kit strength.
+
+## Progress
+
+- 2026-11-14, SIM_VERSION 60: step 1 done for Curomo and Sindarosa only (Arcade 2v2 life 800 to 768, 773 to 812). 32-seed random-partner run
+  (`partners 2 32`, 704 matches), team win rate over all rosters, before to after: curomo 59.2 to 57.2, sindarosa 42.6 to 46.4; other races moved
+  at most 3.7 pp (fiara 54.3 to 50.6, cyclonius 43.4 to 45.2, ishimi 37.8 to 39.2, pax 59.8 to 59.4, echo 54.2 to 52.6). Still open: Ishimi (39.2),
+  Cyclonius (45.2), Wispera (41.9), Pax (59.4), Curomo (57.2); steps 2 to 4 not done. Arcade 2v2 baseline and Arcade goldens re-recorded.
