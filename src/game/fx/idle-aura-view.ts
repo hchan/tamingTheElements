@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import type { RenderCharacter, RenderView } from '@core/index';
+import { arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { idleLookOf } from '../platform/idle-look';
 import { arcadeHeroScale, visualBox, type Box } from '../views/hero-scale';
 import { AURAS } from './ability-aura';
@@ -262,7 +262,7 @@ export function mountIdleAuraView(
     const y = c.py + (c.y - c.py) * a;
     const moved = Math.abs(c.x - c.px) + Math.abs(c.y - c.py);
     s.stand += ((moved < STAND_STEP ? 1 : 0) - s.stand) * 0.12;
-    visualBox(x, y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, box);
+    visualBox(x, y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, box, view.arcade() ? arcadePlayfield().w : undefined);
 
     statusCount = 0;
     view.forEachStatus(c.id, onStatus);

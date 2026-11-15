@@ -58,3 +58,18 @@ export function cameraTarget(i: CameraInput, prev: CameraFraming | undefined, dt
   const centerX = clampCenter(prev.centerX + (ideal.centerX - prev.centerX) * a, zoom, i.worldWidth, i.viewWidth);
   return { centerX, zoom };
 }
+
+/**
+ * The screen x to zoom about so a caster's drawn box `[lo, hi]` (screen px) stays inside `[mLo, span - mHi]` after zooming by
+ * `z` (WP-HC1). Zooming about A maps x to A + (x - A) z, so the box fits while (hi z - span + mHi)/(z - 1) <= A <= (lo z - mLo)/(z - 1).
+ * The box centre is clamped into that range, then into [0, span]; an empty range (a box wider than the screen) or no zoom
+ * falls back to the centre.
+ */
+export function punchAnchor(lo: number, hi: number, z: number, span: number, mLo: number, mHi: number): number {
+  const centre = (lo + hi) / 2;
+  if (!(z > 1)) return centre;
+  const min = (hi * z - span + mHi) / (z - 1);
+  const max = (lo * z - mLo) / (z - 1);
+  if (min > max) return centre;
+  return Math.min(span, Math.max(0, Math.min(max, Math.max(min, centre))));
+}

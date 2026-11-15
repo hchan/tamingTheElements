@@ -1,8 +1,9 @@
 import type Phaser from 'phaser';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, enableWideView, resolutionOf, viewWidth } from '../boot/viewport';
-import { cameraTarget, type CameraFraming } from './arena-camera';
-import { koPunchZoom, KO_PUNCH_MS } from './hit-feel';
+import { arcadeHeroScale } from '../views/hero-scale';
+import { cameraTarget, punchAnchor, type CameraFraming } from './arena-camera';
+import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /**
  * Phaser side of the panning Arcade camera (WP 38b). View only: it reads the render view and moves `cameras.main`; nothing
@@ -45,8 +46,19 @@ export function panFraming(scene: Phaser.Scene): CameraFraming {
 export function koPunch(scene: Phaser.Scene, at?: { x: number; y: number }): void {
   const s = state(scene);
   s.punchAge = 0;
-  s.punchAt = at ?? null;
+  if (!at) {
+    s.punchAt = null;
+    return;
+  }
+  // Zoom about a point that keeps the (drawn, ~96 px half-width) victim inside the picture, not about the victim itself.
+  const vb = viewBox(scene, 1);
+  const sx = (at.x - vb.x) / vb.scale;
+  const a = punchAnchor(sx - KO_DRAWN_HALF / vb.scale, sx + KO_DRAWN_HALF / vb.scale, KO_PUNCH_ZOOM, LOGICAL_WIDTH, 40, 40);
+  s.punchAt = { x: vb.x + a * vb.scale, y: at.y };
 }
+
+/** Drawn half-width (world px) of a KO'd hero, for the punch-in anchor. */
+const KO_DRAWN_HALF = 96;
 
 /** The super cinematic takes (true) or gives back (false) the camera. */
 export function holdCamera(scene: Phaser.Scene, hold: boolean): void {
@@ -86,7 +98,7 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
   const visit = (c: RenderCharacter): void => {
     if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
     const x = c.px + (c.x - c.px) * alpha() + c.w / 2;
-    mid.reach = Math.max(mid.reach, c.w / 2);
+    mid.reach = Math.max(mid.reach, (arcadeHeroScale(c.h) * c.w) / 2);
     if (c.team === 0 && mid.n1++ === 0) mid.x1 = x;
     else if (c.team !== 0 && mid.n2++ === 0) mid.x2 = x;
   };

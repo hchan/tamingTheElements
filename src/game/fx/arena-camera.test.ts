@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, type CameraFraming, type CameraInput } from './arena-camera';
+import { CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, punchAnchor, type CameraFraming, type CameraInput } from './arena-camera';
 
 const base: CameraInput = { x1: 800, x2: 1000, worldWidth: 1920, viewWidth: 1280 };
 
@@ -83,5 +83,23 @@ describe('arena camera', () => {
     const prev: CameraFraming = { centerX: 900, zoom: 1 };
     expect(cameraTarget(base, prev, 0.016)).toEqual(cameraTarget(base, prev, 0.016));
     expect(cameraTarget(base, prev, -1)).toEqual(prev);
+  });
+});
+
+describe('punchAnchor', () => {
+  const z = 1.15;
+  const zoomed = (x: number, a: number): number => a + (x - a) * z;
+  it('is the box centre for a centred box', () => {
+    expect(punchAnchor(540, 740, z, 1280, 40, 40)).toBeCloseTo(640, 6);
+  });
+  it('keeps a box at either edge inside the margins after the zoom', () => {
+    const a = punchAnchor(60, 260, z, 1280, 40, 40);
+    expect(zoomed(60, a)).toBeGreaterThanOrEqual(40 - 1e-6);
+    const b = punchAnchor(1020, 1220, z, 1280, 40, 40);
+    expect(zoomed(1220, b)).toBeLessThanOrEqual(1240 + 1e-6);
+  });
+  it('falls back to the centre for an over-wide box or no zoom', () => {
+    expect(punchAnchor(0, 1280, z, 1280, 40, 40)).toBe(640);
+    expect(punchAnchor(100, 300, 1, 1280, 40, 40)).toBe(200);
   });
 });

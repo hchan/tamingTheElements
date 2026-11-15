@@ -1,9 +1,9 @@
 import type Phaser from 'phaser';
-import { EntityFlag, StatusId, type Element, type RenderCharacter, type RenderView } from '@core/index';
+import { EntityFlag, StatusId, arcadePlayfield, type Element, type RenderCharacter, type RenderView } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-feel';
-import { arcadeHeroScale } from './hero-scale';
+import { arcadeHeroScale, wallTuck } from './hero-scale';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
@@ -292,7 +292,8 @@ export class CharacterView {
     }
     if (this.fit) this.scale = arcadeHeroScale(c.h);
     const k = this.scale;
-    this.image.setPosition(x - (c.w * (k - 1)) / 2, y - c.h * (k - 1));
+    const left = x - (c.w * (k - 1)) / 2;
+    this.image.setPosition(this.fit ? wallTuck(left, c.w * k, arcadePlayfield().w) : left, y - c.h * (k - 1));
     this.image.setDisplaySize(c.w * k, c.h * k);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
     this.placeGlow(c.sprite, x, y, c.w * k, c.h * k);

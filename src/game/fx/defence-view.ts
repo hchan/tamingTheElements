@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { arcadeHeroScale, drawnBox, fitToBox, visualBox } from '../views/hero-scale';
-import { EntityFlag, GUARD_MAX, SimEventKind, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, arcadePlayfield, GUARD_MAX, SimEventKind, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { resolutionOf } from '../boot/viewport';
 import { POP_NUMBER_CLEAR_PX, popLaneLift, type LivePop } from './pop-lanes';
@@ -280,7 +280,7 @@ export function mountDefenceView(
       if (dashes[o] !== c.id || tick > (dashes[o + 2] ?? 0) || (tick - (dashes[o + 1] ?? 0)) % AFTERIMAGE_GAP !== 0) continue;
       const src = fighters.peek(c.id)?.image;
       if (!src?.visible) continue;
-      const vb = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 });
+      const vb = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 }, view.arcade() ? arcadePlayfield().w : undefined);
       const n = AFTERIMAGE_ALPHA.length;
       const oldest = ghost(slot, n - 1);
       for (let k = n - 1; k > 0; k--) ghostImgs[slot * n + k] = ghost(slot, k - 1);

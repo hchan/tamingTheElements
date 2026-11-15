@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { EntityFlag, type RenderCharacter, type RenderProjectile, type RenderStatus, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderProjectile, type RenderStatus, type RenderView, type SimEvent } from '@core/index';
 import { arcadeHeroScale, visualBox, type Box } from '../views/hero-scale';
 import {
   CC_FRAMES, CC_GYRE_COLOR, CC_LINE_STRIDE, CC_LOOKS, CC_TIER_CAPS, CcLineKind, CcTracker, MAX_CC_PARTS_TOTAL, MAX_CC_SEGS_TOTAL, ccParts,
@@ -309,7 +309,7 @@ export function mountCcView(
     const x = c.px + (c.x - c.px) * a;
     const y = c.py + (c.y - c.py) * a;
     const ar = view.arcade();
-    visualBox(x, y, c.w, c.h, ar ? arcadeHeroScale(c.h) : 1, box);
+    visualBox(x, y, c.w, c.h, ar ? arcadeHeroScale(c.h) : 1, box, ar ? arcadePlayfield().w : undefined);
 
     frozenSeen = 0;
     slowSeen = 0;
