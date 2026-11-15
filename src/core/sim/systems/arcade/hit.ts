@@ -29,13 +29,18 @@ export const HIT_STRENGTH: readonly HitStrengthValue[] = [...ABILITIES_A, ...ABI
 export const HIT_STUN: readonly number[] = [...ABILITIES_A, ...ABILITIES_B].map((d, i) =>
   hitStunFor(d.id, HIT_STRENGTH[i] ?? HitStrength.light),
 );
-/** Def index of the super's hitbox entity (arcade/super.ts), right after the abilities: strength 3 (super). */
-export const SUPER_DEF = HIT_STRENGTH.length;
-/** Def index of the charge arrival hit (arcade/charge.ts): medium strength, CHARGE_STUN_TICKS of hit-stun. */
-export const CHARGE_DEF = SUPER_DEF + 1;
-/** Def indices of the Fire Bomb blast and the Spike (arcade/trap.ts, WP 39): medium strength; the Spike stuns longer. */
-export const TRAP_BOMB_DEF = SUPER_DEF + 2;
-export const TRAP_SPIKE_DEF = SUPER_DEF + 3;
+/**
+ * Special hit def ids, pinned (SIM_VERSION 68) at 0x100 and up, out of the ability index range (every ability index is
+ * below MAX_ABILITY_DEFS, state.ts), so adding abilities never shifts them. The super's is hashed (its effect entity's
+ * `defId`), so changing any of these values is a sim change. No HIT_STRENGTH / HIT_STUN lookup takes them.
+ * SUPER_DEF: the super's hitbox entity (arcade/super.ts), strength 3 (super).
+ */
+export const SUPER_DEF = 0x100;
+/** Def id of the charge arrival hit (arcade/charge.ts): medium strength, CHARGE_STUN_TICKS of hit-stun. */
+export const CHARGE_DEF = 0x101;
+/** Def ids of the Fire Bomb blast and the Spike (arcade/trap.ts, WP 39): medium strength; the Spike stuns longer. */
+export const TRAP_BOMB_DEF = 0x102;
+export const TRAP_SPIKE_DEF = 0x103;
 
 const FREEZE_UNTIL = ARCADE_WORLD_BASE + ArcadeW.freezeUntil;
 const FREEZE_KIND = ARCADE_WORLD_BASE + ArcadeW.freezeKind;
@@ -80,7 +85,7 @@ export function applyArcadeHit(
   const s = world.state;
   const team = s.team[source] ?? 0;
   const strength = defIdx === SUPER_DEF ? HitStrength.super : defIdx === CHARGE_DEF ? HitStrength.medium
-    : defIdx >= TRAP_BOMB_DEF ? HitStrength.medium : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
+    : defIdx === TRAP_BOMB_DEF || defIdx === TRAP_SPIKE_DEF ? HitStrength.medium : (HIT_STRENGTH[defIdx] ?? HitStrength.light);
   // Supers are unblockable (FUN-DESIGN 2.8).
   const sup = strength === HitStrength.super;
   if (!sup && parry(world, sink, source, attacker, victim)) {
