@@ -10,6 +10,8 @@ export interface UiFlags {
   readonly arenaDemo: boolean;
   /** The `arenaDemo` match runs the Arcade ruleset (dev and test builds; the menu entry is WP-arcade-entry). */
   readonly arcade: boolean;
+  /** Arcade matches play with crowd control on (`?ff=cc`, dev and test builds; sim flag withCrowdControl, default off; solo and Versus fights, never Online, where both peers must agree). */
+  readonly cc: boolean;
   /** Online matches use plain lockstep instead of the rollback default (`?ff=lockstep`, dev and test builds; docs/NETCODE.md). */
   readonly lockstep: boolean;
   /** An online match's local side is played by the Arcade scripted AI instead of the keyboard (`?ff=netbot`, dev and test builds; the two-context e2e proof). */
@@ -42,6 +44,7 @@ export const DEFAULT_UI_FLAGS: UiFlags = {
   forceNoWebgl: false,
   arenaDemo: false,
   arcade: false,
+  cc: false,
   lockstep: false,
   netbot: false,
   cinematicDemo: false,
@@ -84,6 +87,7 @@ export function parseUiFlags(search: string, env: FlagEnv): UiFlags {
     forceNoWebgl: on.has('forceNoWebgl'),
     arenaDemo: on.has('arenaDemo'),
     arcade: on.has('arcade'),
+    cc: on.has('cc'),
     lockstep: on.has('lockstep'),
     netbot: on.has('netbot'),
     cinematicDemo: on.has('cinematicDemo'),

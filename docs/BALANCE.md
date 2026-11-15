@@ -295,3 +295,20 @@ Fire Blast grows and fades with range in Arcade ([FUN-DESIGN 2.27](FUN-DESIGN.md
 Arcade 1v1 (1056 matches): win rates 47.2-53.4 percent (sindarosa 48.3 -> 50.0, curomo 51.7 -> 48.3, pax 52.3 -> 53.4, treenoc 48.9 -> 47.2), no stalemates or timeouts, no race moved past the 5 point tolerance. No `ARCADE_RACE_NUMBERS` re-fit was needed.
 
 Arcade 2v2 (528 matches): sindarosa 50.0 -> 40.9 (the only race past tolerance; a close-range blast is weaker for long-range pairings), rokcore 47.7 -> 52.3, ishimi 45.5 -> 48.9, others within 3.5 points. Echo and treenoc (64-66 percent) and pax and lavax (low) were outliers before this change and are left alone.
+
+## Arcade crowd control, flag on vs off (CB5, flag stays off)
+
+`pnpm sim:match --tournament --ruleset arcade --ai-level 3 --seeds 16 [--cc] --json`, 176 games per race, 2026-11-15. The AI does not yet read crowd-control
+statuses (no selfCc and foeCc observation fields), so this is a lower bound on how the flag plays.
+
+| Race | Off | `--cc` | Race | Off | `--cc` |
+|---|---|---|---|---|---|
+| Pax | 53.4 | 40.3 | Sindarosa | 50.0 | 52.8 |
+| Rokcore | 52.3 | 48.9 | Wispera | 50.0 | 48.3 |
+| Lavax | 51.7 | 58.0 | Echo | 48.9 | 41.5 |
+| Ishimi | 50.6 | 48.3 | Curomo | 48.3 | 41.5 |
+| Fiara | 50.0 | 52.3 | Cyclonius | 47.7 | 55.1 |
+| Morblass | 50.0 | 67.0 | Treenoc | 47.2 | 46.0 |
+
+Decision: the flag stays off by default. With it on, Morblass reaches 67.0 percent (above the 65 limit) and Pax drops to 40.3, so enabling it would
+need a retune and the AI observation fields first. No `SIM_VERSION` bump and no baseline was re-recorded.

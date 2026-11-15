@@ -136,6 +136,10 @@ describe('demoMatch', () => {
   it('returns the base untouched with no hero and no Arcade', () => {
     expect(demoMatch(base, null, false)).toBe(base);
   });
+  it('turns on withCrowdControl only when asked (Arcade demos)', () => {
+    expect(demoMatch(base, null, true).flags.withCrowdControl).toBe(false);
+    expect(demoMatch(base, null, true, null, true).flags).toMatchObject({ rulesetArcade: true, withCrowdControl: true });
+  });
   it('swaps only the first hero', () => {
     const m = demoMatch(base, 'pax', false);
     expect(m.p1[0]).toEqual({ character: characterId('pax'), xp: 0 });

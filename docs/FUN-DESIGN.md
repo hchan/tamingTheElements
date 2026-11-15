@@ -1246,6 +1246,19 @@ and `growPx` on `RenderProjectile`: the sprite fades with the damage and grows w
 [BALANCE](BALANCE.md). The scripted goldens `arcade-moves`, `-tag`, `-tag3` and `-elemental` were re-timed (more blasts, a longer
 guard hold) because guard knockback pushes the guarder out of range, where the blast is weaker.
 
+### 2.28 Crowd control (Arcade, sim, flag `withCrowdControl`, off by default)
+
+Four crowd-control statuses (daze, iced, downed, silenced) with a hidden diminishing-returns ward, behind the sim flag
+`withCrowdControl` (`ccOn = isArcade && flag`; `src/core/sim/systems/arcade/cc.ts`, `cc-state.ts`). The flag is off by default, so no hash,
+golden or baseline moves and `SIM_VERSION` does not bump. Dev and test builds turn it on with `?ff=cc` (Versus, the tour and the arena demo);
+Online is not wired to it (each peer builds its own setup, so a per-peer flag would desync). Events: `ccStarted`, `ccEnded`, `ccResisted`.
+
+- **Daze** (Tornado, Cone): a short stagger. A hit breaks it. **Iced** (Ice Blast, Icicles): frozen until thawed or shattered by a heavy hit.
+- **Downed** (Ground Shock): knocked down. The downed hero's own Dash press within 8 game ticks is a quick rise; mashing shortens it.
+- **Silenced** (Ember): the hero cannot cast its elemental or abilities. The HUD word is SILENCED. Cleanse (2.26) ends it.
+- **Golden:** `arcade-cc` triggers daze broken, downed quickRise, iced shattered and silenced cleansed (`tests/repo/arcade-moves-coverage.test.ts`).
+- **Not yet:** AI observation fields (selfCc and foeCc), so the AI does not read statuses; a DR-resist (`ccResisted`) case in the golden.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)

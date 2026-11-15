@@ -167,6 +167,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         const base: ArenaLaunch = arcadeLaunch(pick, pick.stage ? seedForStage(deps.flags.seed ?? deps.now() >>> 0, pick.stage) : deps.flags.seed ?? deps.now() >>> 0, {
           onView: (v) => { watchTouch(buttons, v); },
           cheats: tester.enabled,
+          cc: deps.flags.cc,
           record: deps.flags.record || getRecordSetting(),
           replays: deps.replays,
           onRestart: () => { if (epoch === mine) startBattle(); },

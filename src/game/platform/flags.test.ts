@@ -46,6 +46,13 @@ describe('ui flags', () => {
     expect(parseUiFlags('?ff=holdSplash', { DEV: false, MODE: 'production' }).holdSplash).toBe(false);
   });
 
+  it('reads ?ff=cc (crowd control) in dev and test builds only', () => {
+    expect(parseUiFlags('?ff=cc', { DEV: true, MODE: 'development' }).cc).toBe(true);
+    expect(parseUiFlags('?ff=cc', { DEV: false, MODE: 'test' }).cc).toBe(true);
+    expect(parseUiFlags('?ff=arcade', { DEV: true, MODE: 'development' }).cc).toBe(false);
+    expect(parseUiFlags('?ff=cc', { DEV: false, MODE: 'production' }).cc).toBe(false);
+  });
+
   it('reads ?hero and ?foe slugs in dev and test builds only, and they no longer imply arenaDemo', () => {
     const f = parseUiFlags('?hero=curomo&foe=rokcore', { DEV: false, MODE: 'test' });
     expect(f).toMatchObject({ hero: 'curomo', foe: 'rokcore', arenaDemo: false });

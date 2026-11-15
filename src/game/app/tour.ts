@@ -257,6 +257,7 @@ export function tourScreen(deps: TourDeps): Screen {
         const base: ArenaLaunch = arcadeLaunch(pick, matchSeed(r, stage), {
           onView: (v) => { watchTouch(buttons, v); },
           cheats: tester.enabled,
+          cc: deps.flags.cc,
           record: false,
           // Never recording, so the store is never written: the Tour keeps only its own run.
           replays: { add: () => Promise.reject(new Error('The Tour does not record replays')) },

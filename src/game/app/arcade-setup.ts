@@ -50,12 +50,12 @@ export function enemyPartners(pick: ArcadePick, seed: number): CharacterId[] {
 }
 
 /** Arcade on, `difficulty: 1` (Arcade never scales stats by difficulty), chapter 1 (no Capture), 0 XP; 1, 2 or 3 heroes a side. */
-export function arcadeSetup(pick: ArcadePick, seed: number): MatchSetup {
+export function arcadeSetup(pick: ArcadePick, seed: number, cc = false): MatchSetup {
   const hero = (character: CharacterId): { character: CharacterId; xp: number } => ({ character, xp: 0 });
   return {
     simVersion: SIM_VERSION,
     seed: seed >>> 0,
-    flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+    flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true, ...(cc ? { withCrowdControl: true } : {}) },
     chapter: 1,
     difficulty: 1,
     p1: [pick.player, ...(pick.partner ? [pick.partner] : []), ...(pick.partner && pick.partner2 ? [pick.partner2] : [])].map(hero),
@@ -136,6 +136,8 @@ export interface ArcadeLaunchOptions {
   readonly onRestart?: () => void;
   /** Tester mode is on: the recorded replay is flagged `cheats` (verifiers refuse it). */
   readonly cheats?: boolean;
+  /** Crowd control on (`?ff=cc`, dev and test builds; sim flag withCrowdControl). */
+  readonly cc?: boolean;
   /** Called once with the battle's render view (the touch buttons read their ready state from it). */
   readonly onView?: (view: RenderView) => void;
 }
@@ -166,7 +168,7 @@ function activeLife(v: RenderView): number {
 }
 
 export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOptions): ArenaLaunch {
-  const setup = arcadeSetup(pick, seed);
+  const setup = arcadeSetup(pick, seed, o.cc === true);
   const local = pick.local === true;
   const recorder = o.record ? new PlaytestRecorder(setup, o.cheats === true) : undefined;
   let view: RenderView | undefined;

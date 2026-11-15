@@ -80,8 +80,8 @@ export function buildMatchEnd(
 }
 
 /** The launch-less demo match (`?ff=arenaDemo`): `hero` (`?hero=` or `?p1=`) replaces the first hero and `foe` (`?foe=`) the opponent's; `arcade` turns the Arcade ruleset on. */
-export function demoMatch(base: MatchSetup, hero: string | null, arcade: boolean, foe: string | null = null): MatchSetup {
+export function demoMatch(base: MatchSetup, hero: string | null, arcade: boolean, foe: string | null = null, cc = false): MatchSetup {
   const withLead = hero ? { ...base, p1: [{ character: characterId(hero), xp: 0 }, ...base.p1.slice(1)] } : base;
   const withHero = foe ? { ...withLead, p2: [{ character: characterId(foe), xp: 0 }, ...base.p2.slice(1)] } : withLead;
-  return arcade ? { ...withHero, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true } } : withHero;
+  return arcade ? { ...withHero, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true, ...(cc ? { withCrowdControl: true } : {}) } } : withHero;
 }
