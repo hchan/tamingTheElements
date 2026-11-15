@@ -125,6 +125,27 @@ test.describe('small phone landscape fight', () => {
   });
 });
 
+test.describe('small phone landscape, QA r38', () => {
+  test.use({ viewport: { width: 667, height: 375 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  test('2v2: the stick sits above the action bar, not over the Blast / Flame / Tag slots', async ({ page }) => {
+    await enterFight(page, 2);
+    const stick = await box(page, '#touchStick');
+    const canvas = await box(page, '#game canvas');
+    // The slot row fills the bottom of the canvas (about 84% down, see the first-run card tests): the stick ends above it.
+    expect(stick.y + stick.h).toBeLessThanOrEqual(canvas.y + canvas.h * 0.84);
+    await shot(page, 'small-2v2-stick');
+  });
+  test('Versus picker: the You / Computer cards clear the sticky Fight! bar', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByRole('button', { name: /^Fight/ }).waitFor();
+    const cards = await page.evaluate<{ b: number; barTop: number }>(
+      `(() => { const c = [...document.querySelectorAll('#arcadePick .vsSide1, #arcadePick .vsSide2')].map((e) => e.getBoundingClientRect().bottom); const bar = document.querySelector('#arcadePick .vsActions').getBoundingClientRect(); return { b: Math.max(...c.slice(0, 2)), barTop: bar.top }; })()`,
+    );
+    await shot(page, 'small-picker');
+    expect(cards.b).toBeLessThanOrEqual(cards.barTop + 0.5);
+  });
+});
+
 test.describe('phone portrait fight', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   test('portrait: card sits under the canvas, clear of the stick', async ({ page }) => {
