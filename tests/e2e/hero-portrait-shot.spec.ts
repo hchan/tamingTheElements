@@ -88,6 +88,8 @@ for (const size of [{ w: 1280, h: 720, dpr: 1 }, { w: 1920, h: 1080, dpr: 2 }]) 
         test.slow();
         const errors = collectErrors(page);
         await arcade(page, p.race, p.foe);
+        // each 4096 px atlas loads lazily the first time its hero is drawn (the legacy `map:` strip shows until then): sample only once both are in
+        await expect.poll(async () => page.evaluate<string[]>(`window.__TTE__.arena.sheets().then((p) => p ? p.loaded : [])`), { timeout: 90_000 }).toEqual(expect.arrayContaining([p.race, p.foe]));
         await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 560, 380, 0); a.place(f.id, 760, 380, 4); })()`);
         const samples = await fight(page, 40, 4);
         await shot(page, `${tag}-${p.race}-vs-${p.foe}-idle`);
