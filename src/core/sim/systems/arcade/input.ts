@@ -6,7 +6,7 @@ import type { SimWorld } from '../../world';
 import { recordPresses } from './buffer';
 import { expireCombos } from './combo';
 import { startCharge } from './charge';
-import { startDash } from './dash';
+import { cancelDashIntoAttack, startDash } from './dash';
 import { castCleanse } from './cleanse';
 import { castElemental, expireElementals } from './elemental';
 import { guardTick } from './guard';
@@ -37,6 +37,7 @@ export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Comm
   expireRoots(world, sink);
   expireElementals(world, sink);
   for (let team = 0; team < TEAM_COUNT; team++) {
+    cancelDashIntoAttack(world, team);
     startDash(world, sink, team, cmds[team] ?? 0);
     startCharge(world, sink, team, controlledId(world, team), controlledId(world, 1 - team));
     guardTick(world, team);

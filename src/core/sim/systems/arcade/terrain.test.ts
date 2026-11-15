@@ -438,6 +438,7 @@ describe('air patch (rule: an air hero moves at x2; not stacked with a dash)', (
   const stepDx = (att: string, rect: Rect, cmd: Command): number => {
     const w = duel(att, 'sindarosa');
     terrain(w, AIR, [rect]);
+    for (let i = 0; i < 4; i++) step(w, [cmd, 0]); // past the walk ramp (FUN-DESIGN 2.3a), then one full-speed step
     const before = w.state.x[0] ?? 0;
     step(w, [cmd, 0]);
     return px(w, 0) - before;

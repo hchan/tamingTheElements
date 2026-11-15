@@ -1,5 +1,6 @@
 import {
-  DASH_CANCEL_TICKS, DASH_COOLDOWN_TICKS, DASH_SPEED_MULT, DASH_TICKS, METER_PERFECT_DODGE,
+  DASH_ATTACK_CANCEL_FROM, DASH_CANCEL_TICKS, DASH_COOLDOWN_TICKS, DASH_RECOVERY_TICKS, DASH_SPEED_MULT, DASH_TICKS,
+  METER_PERFECT_DODGE,
 } from '../../../data/arcade';
 import { DIR8_X, DIR8_Y, dir8FromSigns } from '../../../math/dir8';
 import { now } from '../../clock';
@@ -12,7 +13,7 @@ import { castDir } from './aim';
 import { isRooted } from './snag';
 import { pending, Press, usePress } from './buffer';
 import { gainMeter } from './meter';
-import { isDashInvulnerable, isFree } from './stun';
+import { dashTick, isDashInvulnerable, isFree } from './stun';
 
 /**
  * Starts `team`'s dash (FUN-DESIGN 2.7) on a pending dash press (a `Cmd.dash` edge or a double tap, buffered like the
@@ -56,4 +57,19 @@ export function checkPerfectDodge(s: SimState, sink: EventSink, id: number, targ
   gainMeter(s, sink, target, s.team[target] ?? 0, METER_PERFECT_DODGE);
   // Dodging a melee swing refunds the dash (a dodge into a counter, SIM_VERSION 50).
   if (melee) s.arcade[target * ARCADE_E + ArcadeE.dashReadyAt] = now(s);
+}
+
+/**
+ * The dash-to-attack cancel (FUN-DESIGN 2.7): from dash tick DASH_ATTACK_CANCEL_FROM on, a pending primary or secondary
+ * press (buffered, so one made earlier in the dash counts) ends `team`'s dash and its recovery at once; the cast
+ * systems then see a free hero this same tick. The dash cooldown is unchanged. Called by the `input` slot on unfrozen ticks.
+ */
+export function cancelDashIntoAttack(world: SimWorld, team: number): void {
+  const s = world.state;
+  const id = controlledId(world, team);
+  if (id < 0 || dashTick(s, id) < DASH_ATTACK_CANCEL_FROM) return;
+  if (!pending(s, team, Press.primary) && !pending(s, team, Press.secondary)) return;
+  s.arcade[id * ARCADE_E + ArcadeE.dashUntil] = now(s) - DASH_RECOVERY_TICKS;
+  s.vx[id] = 0;
+  s.vy[id] = 0;
 }

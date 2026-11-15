@@ -233,3 +233,19 @@ from the giant-adjusted 2100 / 650 to 2060 / 640; Echo 6200 / 1600 and Treenoc 6
 
 Spread 46.6-52.8% (was 37.5-63.6%). The 2v2 baseline was re-recorded too (it moves with the 1v1 numbers; its spread is unchanged in character, see
 above). 2v2 time-over rate 10.6% (1v1 2.0%): ideas/in-progress/2v2-time-over-regression.md.
+
+## Arcade movement feel (SIM_VERSION 66)
+
+Reason for the re-record: Arcade heroes now accelerate, brake and turn (walk inertia), the dash follows a front-loaded curve, a press from dash tick 10
+cancels into the attack, and walls slide (FUN-DESIGN 2.3a). Classic is unchanged. Measured with `tools/sim/move-probe.ts` (Fiara):
+
+| | before | after |
+|---|---|---|
+| walk px per tick from standing | 7, 7, 7, 7 | 2.45, 4.9, 7, 7 |
+| stop after release | instant | slides about 3 ticks |
+| dash distance | 252 px | 253 px (fast start, slow tail) |
+| reversal dx over 3 ticks | -21 | -14.35 |
+
+The extra commitment shifted the races, so `ARCADE_RACE_NUMBERS` and `ARCADE_2V2_LIFE_PM` were nudged and the Arcade goldens and both baselines
+re-recorded. Arcade 1v1 win rates 47.2-53.4%, no stalemates, no timeouts. Arcade 2v2 is noisy (88 matches per race, +-5-8 points): roughly 38-69%,
+the old baseline was 43.2-61.4% and cyclonius was already high; follow-up in ideas/. The scripted AI still walks, dashes and dodges.

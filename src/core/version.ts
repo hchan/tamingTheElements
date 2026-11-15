@@ -233,5 +233,10 @@
  * 65: Arcade 2v2 only (Classic and Arcade 1v1 hashes unchanged). Random-partner balance step 6 (ideas/brainstorm/balance-2v2-echo-pax-r37.md): ARCADE_2V2_LIFE_PM
  *    sindarosa 812 to 845 (+4 percent). Re-record reason: tag-team life of one race changes Arcade 2v2 outcomes
  *    (Arcade 2v2 goldens, Arcade 2v2 baseline).
+ * 66: Arcade only (Classic hashes unchanged). Movement feel (ideas/brainstorm/mvc-dash-roll-cancel.md, FUN-DESIGN 2.3a): walk ramps up (WALK_ACCEL_PM), brakes
+ *    (WALK_BRAKE_PM) and turns (WALK_TURN_PM) instead of starting and stopping instantly; the dash follows DASH_CURVE_PM (fast start, slow tail, same
+ *    distance); a primary or secondary press from dash tick 10 cancels the dash into the attack; walls slide along the free axis. Re-record reason:
+ *    every Arcade movement trajectory changes (Arcade goldens, Arcade 1v1 and 2v2 baselines). Same version: ARCADE_RACE_NUMBERS and
+ *    ARCADE_2V2_LIFE_PM retuned so the movement change keeps the race win rates in 45-55 (see docs/BALANCE.md).
  */
-export const SIM_VERSION = 65;
+export const SIM_VERSION = 66;

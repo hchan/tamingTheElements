@@ -186,6 +186,18 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   stuns once per cast without a hit event. Deferred: the Ground Shock recovery cancel arrives with the dash cancel
   (WP 15, done). `recovered` reason 0 came with WP 4.
 
+### 2.3a Walk inertia and the dash curve (sim, SIM_VERSION 66)
+
+- Arcade only. The walk no longer starts and stops instantly: velocity (`vx`/`vy`, per axis) approaches the DIR8 target by
+  `WALK_ACCEL_PM` (350 per mille of `speed` per tick) when speeding up, `WALK_BRAKE_PM` (334) when slowing or releasing and
+  `WALK_TURN_PM` (700) when reversing. Full speed after 3 ticks; a release slides about 3 ticks (`approachWalk` in `walk.ts`).
+- Walls: a blocked diagonal slides along the free axis; the blocked axis loses its velocity.
+- Dash curve: `DASH_CURVE_PM` (sum 12050 per mille, so the dash covers the same distance, 253 px for Fiara) is fast at the
+  start and slow at the tail. Invulnerable ticks are unchanged.
+- Attack cancel: a primary or secondary press from dash tick `DASH_ATTACK_CANCEL_FROM` (10) ends the dash, skips most of the
+  recovery and casts at once; the dash cooldown is unchanged.
+- Classic keeps the instant walk. Probe: `pnpm exec tsx tools/sim/move-probe.ts`.
+
 ### 2.4 Combo counter and damage scaling (sim)
 
 - A hit on a victim with `stunUntil > gameTick` raises the attacker team's `comboHits`; any other hit resets it to 1.
@@ -303,6 +315,8 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   6 ticks of recovery; `dashReadyAt = start + 30`. Emits `dashed`.
 - **Perfect dodge:** an enemy projectile that overlaps the dasher during the invulnerable ticks gives `perfectDodge` and
   +100 meter (at most once per dash).
+- **Dash curve and attack cancel** (SIM_VERSION 66): the 12 ticks follow `DASH_CURVE_PM` (section 2.3a), and a primary or
+  secondary press from dash tick 10 cancels the rest into the attack.
 - **Cancels:** on a confirmed hit, a dash can cancel the attacker's remaining melee recovery within 10 ticks of the
   confirm (the dash-cancel combo route).
 - Built in WP 15 (`systems/arcade/dash.ts`, table in `data/arcade.ts`): `Cmd.dash` is bit 11 (Classic masks it); its
