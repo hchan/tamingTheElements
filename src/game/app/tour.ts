@@ -181,7 +181,8 @@ export function tourScreen(deps: TourDeps): Screen {
       // The primary action is focused and pulses, so the stage card does not read as a loading screen (Enter starts the fight).
       const fight = card.querySelector<HTMLButtonElement>('#tourFight');
       fight?.classList.add('tourFightCta');
-      fight?.focus();
+      // preventScroll (QA r40): the card grows when enhanced, and a scrolling focus() pushed its title above the viewport.
+      fight?.focus({ preventScroll: true });
       const mine = epoch;
       void import('@ui/screens/tour-select').then((m) => {
         if (epoch !== mine) return;

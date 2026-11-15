@@ -18,3 +18,7 @@ Problems:
 - 667x375 and 844x390 Tour card: the foe portrait label "SINDAROSA (FIRE)" runs into the next portrait edge; at 1280x720 the "Your team" labels "ROKCORE (EARTH)" and "CUROMO (WATER)" overlap each other. Ellipsise, wrap, or stack the element under the name.
 - 844x390 Tour card: the page title is cut off at the top (only descenders visible). Phone Tour team strip has no names (fine) but "YOUR TEAM" wraps to two lines at 667.
 - 1v1 phone life line drops the "Life" word and numbers use the large font while 2v2 uses a smaller one; consider one format.
+
+## Progress
+
+- Done (phone-tour-r40): Strike buttons keep a 16 px margin plus the safe-area inset from the screen edge (main.css); the first-run hint docks beside the stick in the bottom band (mirrored when left-handed); Tour card captions no longer overlap (portraits sized by their captions, team strip captions wrap inside the panel), the title is no longer scrolled off (Fight focus uses preventScroll) and the card fits 667x375, 844x390 and 1280x720. Specs: tour-card (three sizes, caption overlap, title, team strip) and touch-fight-layout (strike margin, hint beside stick). Not done: the 1v1 life-line format (last bullet).
