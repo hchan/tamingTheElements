@@ -71,9 +71,17 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
 /**
  * Tag team life (FUN-DESIGN 2.13, WP-arcade-2v2-tune): in a 2v2 roster a hero's life is its 1v1 `hpPm` times
  * ARCADE_2V2_LIFE_PM[race] per mille (ARCADE_2V2_LIFE_DEFAULT_PM for a race not in the table), since a team has two life
- * bars and a bench heal to get through. A 1v1 roster is untouched (exact).
+ * bars and a bench heal to get through. A 1v1 roster is untouched (exact). Team size 2 also multiplies by
+ * `ARCADE_2V2_LIFE_SCALE_PM` (SIM_VERSION 78); 3v3 uses the table as is.
  */
 export const ARCADE_2V2_LIFE_DEFAULT_PM = 600;
+/**
+ * 2v2 round-length scale (SIM_VERSION 78), per mille, on top of `ARCADE_2V2_LIFE_PM` for team size 2 only: the nightly
+ * fun gate wants a 2v2 round median of 50-85 s; v77 measured 44.3 s, 1300 gives 62.2 s (8 seeds, legacy 12).
+ * 3v3 uses the table as is (65 s already; 1300 would give 101 s and 29% time-overs). Life only: supers and guard drain
+ * are unchanged.
+ */
+export const ARCADE_2V2_LIFE_SCALE_PM = 1300;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   curomo: 740,
   cyclonius: 770,
@@ -106,7 +114,9 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
  * hero's `hpPm` must be fitted with that factor in mind.
  */
 export function arcadeLifePm(hpPm: number, size: number, slug: string): number {
-  return size < 2 ? hpPm : Math.floor((hpPm * (ARCADE_2V2_LIFE_PM[slug] ?? ARCADE_2V2_LIFE_DEFAULT_PM)) / 1000);
+  if (size < 2) return hpPm;
+  const team = Math.floor((hpPm * (ARCADE_2V2_LIFE_PM[slug] ?? ARCADE_2V2_LIFE_DEFAULT_PM)) / 1000);
+  return size === 2 ? Math.floor((team * ARCADE_2V2_LIFE_SCALE_PM) / 1000) : team;
 }
 
 /** The Arcade numbers of race `slug`: its ARCADE_RACE_NUMBERS row, else ARCADE_RACE_DEFAULT. */

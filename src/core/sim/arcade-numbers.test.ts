@@ -8,7 +8,7 @@ import { sizeLifePm, sizeOfSlug } from '../data/size';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { compareStrings } from '../math/compare';
 import { combatantStats } from '../rules/progression';
-import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_2V2_LIFE_DEFAULT_PM, ARCADE_2V2_LIFE_PM, ARCADE_RACE_NUMBERS, arcadeLifePm, arcadeRaceNumbers, cooldownTicksFor, FIRE_BLAST_ABILITY, fireBlastAlphaPm, fireBlastFadePm } from './arcade-numbers';
+import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_2V2_LIFE_DEFAULT_PM, ARCADE_2V2_LIFE_PM, ARCADE_2V2_LIFE_SCALE_PM, ARCADE_RACE_NUMBERS, arcadeLifePm, arcadeRaceNumbers, cooldownTicksFor, FIRE_BLAST_ABILITY, fireBlastAlphaPm, fireBlastFadePm } from './arcade-numbers';
 import { createMatch, type MatchSetup } from './match';
 
 /** The 12 playable races (Arcade Versus and the tournaments): every character but the void ones. */
@@ -92,8 +92,18 @@ describe('Arcade 2v2 life (WP-arcade-2v2-tune)', () => {
       const pm = ARCADE_2V2_LIFE_PM[race] ?? ARCADE_2V2_LIFE_DEFAULT_PM;
       expect(pm).toBeGreaterThanOrEqual(300);
       expect(pm).toBeLessThanOrEqual(1200);
-      expect(arcadeLifePm(hp, 2, race)).toBe(Math.floor((hp * pm) / 1000));
+      const team = Math.floor((hp * pm) / 1000);
+      expect(arcadeLifePm(hp, 3, race)).toBe(team);
+      expect(arcadeLifePm(hp, 2, race)).toBe(Math.floor((team * ARCADE_2V2_LIFE_SCALE_PM) / 1000));
+      expect(arcadeLifePm(hp, 2, race)).toBeGreaterThan(arcadeLifePm(hp, 3, race));
     }
+    expect(arcadeLifePm(10000, 3, 'nobody')).toBe(Math.floor((10000 * ARCADE_2V2_LIFE_DEFAULT_PM) / 1000));
+    expect(arcadeLifePm(10000, 2, 'nobody')).toBe(
+      Math.floor((Math.floor((10000 * ARCADE_2V2_LIFE_DEFAULT_PM) / 1000) * ARCADE_2V2_LIFE_SCALE_PM) / 1000),
+    );
+    expect(Number.isInteger(ARCADE_2V2_LIFE_SCALE_PM)).toBe(true);
+    expect(ARCADE_2V2_LIFE_SCALE_PM).toBeGreaterThanOrEqual(1000);
+    expect(ARCADE_2V2_LIFE_SCALE_PM).toBeLessThanOrEqual(1500);
     expect(Object.keys(ARCADE_2V2_LIFE_PM).every((k) => PLAYABLE.includes(k))).toBe(true);
   });
 });

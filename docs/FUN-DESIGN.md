@@ -1700,3 +1700,5 @@ stalemates). Result at Normal AI with personalities (4 fresh seeds of `fun:repor
 3.7-5.1%, round median 75-77 s, stalemates 1.3-1.9% of matches (target 1%, report only), race win rates 36-61%. Numbers and the
 new baseline are in [BALANCE.md](BALANCE.md) "Arcade 2v2 tune". Not verified: a human 2v2 playtest of the feel; the tag cooldown
 and invulnerability were not changed.
+
+Update (SIM_VERSION 78): the 2v2 round median had slipped to 44.3 s at v77 (nightly band 50-85 s); `ARCADE_2V2_LIFE_SCALE_PM` = 1300 brings it to 62.2 s, see [BALANCE.md](BALANCE.md) "Arcade 2v2 round length".
