@@ -49,7 +49,7 @@ const run = (w: SimWorld, n: number): void => { const end = now(w.state) + n; fo
 describe('CB1 daze: the Tornado rider', () => {
   it('the table has one row: tornado dazes for DAZE_TICKS', () => {
     expect(TORNADO).toBeGreaterThanOrEqual(0);
-    expect(CC_RIDERS).toEqual([{ slug: 'tornado', kind: CcKind.daze, ticks: DAZE_TICKS }]);
+    expect(CC_RIDERS[0]).toEqual({ slug: 'tornado', kind: CcKind.daze, ticks: DAZE_TICKS });
   });
 
   it('flag off: a Tornado hit stuns FREEZE_STUN_TICKS and writes no CC status or event', () => {

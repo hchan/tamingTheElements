@@ -16,7 +16,7 @@ import { cleanseSlows } from '../debuffs';
 import { controlledId } from '../movement';
 import { StatusField, StatusId, removeStatus, statusBase, statusSlot } from '../status';
 import { Press, pending, pressAge, usePress } from './buffer';
-import { ccHeld, ccLevel, ccOn } from './cc-state';
+import { ccHeld, ccLevel, ccOn, isChilled } from './cc-state';
 import { endCharge } from './charge-move';
 
 /**
@@ -26,10 +26,10 @@ import { endCharge } from './charge-move';
  */
 
 /** CC_RIDERS per ability def index (set A then set B, as HIT_STUN), resolved once: [defIdx, kind, ticks] triples. */
-const RIDER_TABLE: readonly (readonly [number, number, number])[] = CC_RIDERS.map((r) => {
+const RIDER_TABLE: readonly (readonly [number, number, number, boolean])[] = CC_RIDERS.map((r) => {
   const def = [...ABILITIES_A, ...ABILITIES_B].findIndex((d) => d.id === r.slug);
   if (def < 0) throw new Error(`CC_RIDERS: unknown ability ${r.slug}`);
-  return [def, r.kind, r.ticks] as const;
+  return [def, r.kind, r.ticks, r.chilled === true] as const;
 });
 
 const WEATHER = ARCADE_WORLD_BASE + ArcadeW.weather;
@@ -193,7 +193,7 @@ export function ccOnHit(
 
 /**
  * After the damage of a landed hit: spends the attacker's Ember prime (never on a super) and silences the victim, then
- * applies the CC rider of `defIdx` (a CC_RIDERS entry; Tornado dazes in CB1). May set `replaceStun` / `noKnockback` on the shared
+ * applies the CC rider of `defIdx` (a CC_RIDERS entry: Tornado dazes; an ice hit on a chilled foe ices it). May set `replaceStun` / `noKnockback` on the shared
  * result that `ccOnHit` returned, for hit.ts to read.
  */
 export function ccRiders(
@@ -202,8 +202,10 @@ export function ccRiders(
   const s = world.state;
   if (!ccOn(s)) return result;
   if (!sup && spendKindled(s, attacker)) applyCc(world, sink, source, attacker, victim, CcKind.silenced, SILENCE_TICKS);
-  for (const [def, kind, ticks] of RIDER_TABLE) {
+  for (const [def, kind, ticks, chilled] of RIDER_TABLE) {
     if (def !== defIdx || sup) continue;
+    // An ice hit freezes only a foe already chilled; sampled here, before onProjectileHit adds this hit's own slow.
+    if (chilled && !isChilled(s, victim, s.arcade[victim * ARCADE_E + ArcadeE.trapSlowUntil] ?? 0, now(s))) continue;
     if (applyCc(world, sink, source, attacker, victim, kind, ticks)) {
       result.replaceStun = true;
       result.noKnockback = kind === CcKind.iced;
