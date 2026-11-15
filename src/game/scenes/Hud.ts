@@ -537,6 +537,16 @@ export class Hud extends Phaser.Scene {
     label.setFontSize(Math.round(base * (steps[steps.length - 1] ?? 1)));
     if (!m) return;
     // QA r39: a bare number ("SINDAROSA 220") does not read as life. Keep "220/220" (current over max) and cut the name first, down to 5 letters ("SINDA...").
+    if (twoVTwo) {
+      label.setText(compactLabel(name, c, false, 'nomark'));
+      if (clears(m)) return;
+      // QA r41: still "SIND..." on a 667 px phone: the whole name beats the last half CSS px of size, so try 10 CSS px before cutting letters.
+      if (k > 0) {
+        label.setFontSize(Math.ceil(10 / k));
+        if (clears(m)) return;
+        label.setFontSize(Math.round(base * (steps[steps.length - 1] ?? 1)));
+      }
+    }
     for (let max = twoVTwo ? name.length - 1 : 0; max >= MIN_LIFE_NAME; max--) {
       label.setText(compactLabel(shortName(name, max), c, false, true));
       if (clears(m)) return;

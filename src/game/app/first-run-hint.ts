@@ -11,6 +11,8 @@ export const ROUND_OVER_EVENT = 'tte:round-over';
 /** Fired on `window` when a super cut-in starts: the card leaves at once (quickly, not on the slow fade) so it never sits on the cut-in band. */
 export const SUPER_CUT_EVENT = 'tte:super-cut';
 /** Fired on `window` once the FIGHT! banner has run out (tick based, from the round view): the card may then appear. */
+/** Fired on `window` when a tag call starts (from the tag view): the card leaves at once so it never sits on the action bar mid-swap. */
+export const TAG_CALL_EVENT = 'tte:tag-call';
 export const FIGHT_OVER_EVENT = 'tte:fight-over';
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
@@ -183,6 +185,7 @@ export function firstRunHint(
     window.removeEventListener('pointerdown', onInput, true);
     window.removeEventListener(ROUND_OVER_EVENT, fade);
     window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
+    window.removeEventListener(TAG_CALL_EVENT, fadeNow);
     markSeen(store);
     card.remove();
   });
@@ -196,6 +199,7 @@ export function firstRunHint(
     window.removeEventListener('pointerdown', onInput, true);
     window.removeEventListener(ROUND_OVER_EVENT, fade);
     window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
+    window.removeEventListener(TAG_CALL_EVENT, fadeNow);
     markSeen(store);
     card.classList.add('firstRunFade');
   };
@@ -226,6 +230,7 @@ export function firstRunHint(
     // The round ends before the card has timed out: it leaves at once instead of covering the result.
     window.addEventListener(ROUND_OVER_EVENT, fade);
     window.addEventListener(SUPER_CUT_EVENT, fadeNow);
+    window.addEventListener(TAG_CALL_EVENT, fadeNow);
   });
   return card;
 }

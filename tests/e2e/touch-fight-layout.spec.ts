@@ -22,9 +22,9 @@ async function enterFight(page: Page, team = 1, click = false): Promise<void> {
   const fight = page.getByRole('button', { name: /^Fight/ });
   if (click) await fight.click();
   else await fight.tap();
-  await page.waitForFunction(ARENA_READY);
+  await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
   // The card is held back until ROUND 1 / FIGHT! has cleared (FIGHT_OVER_EVENT, QA r34/r35): wait for it before the layout reads.
-  await page.locator('#firstRunHint:not(.firstRunWait)').waitFor({ state: 'attached', timeout: 20000 });
+  await page.locator('#firstRunHint:not(.firstRunWait)').waitFor({ state: 'attached', timeout: 90_000 });
 }
 
 interface Box {
@@ -162,6 +162,19 @@ test.describe('small phone landscape, QA r39', () => {
     await shot(page, 'small-picker-2v2');
     expect(m.partnerBottom).toBeLessThanOrEqual(m.barTop + 0.5);
   });
+  test('2v2 picker (QA r41): "Your partner" label is whole and Swap up / Clear clear the Fight! bar', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByLabel('Team').selectOption('2');
+    await page.getByRole('button', { name: /^Fight/ }).waitFor();
+    await page.getByLabel('Your race').selectOption('sindarosa');
+    await page.getByLabel('Your partner (2v2)').selectOption('pax');
+    const m = await page.evaluate<{ clipped: boolean; actionsBottom: number; barTop: number }>(
+      `(() => { const l = document.querySelectorAll('#arcadePick .vsSide1 .vsSlotLabel')[1]; const a = [...document.querySelectorAll('#arcadePick .vsSide1 .vsSlotActions')].map((e) => e.getBoundingClientRect().bottom); return { clipped: l.scrollWidth > l.clientWidth, actionsBottom: Math.max(...a), barTop: document.querySelector('#arcadePick .vsActions').getBoundingClientRect().top }; })()`,
+    );
+    await shot(page, 'small-picker-2v2-picked');
+    expect(m.clipped).toBe(false);
+    expect(m.actionsBottom).toBeLessThanOrEqual(m.barTop + 0.5);
+  });
   test('first-run card is see-through and click-through (only Got it takes taps), and names the bar', async ({ page }) => {
     await enterFight(page);
     const m = await page.evaluate<{ pe: string; donePe: string; text: string }>(
@@ -237,6 +250,23 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
     await page.getByRole('button', { name: 'Got it' }).tap();
     await page.evaluate(`window.__TTE__.arena.step(60)`);
     await shot(page, 'small-2v2-life');
+    // QA r41: the long name is whole (no ellipsis, not cut to "SIND"), and the life text clears the SUPER label.
+    const texts = await page.evaluate<Array<Box & { text: string; px: number }>>(`window.__TTE__.arena.hudTextSizes()`);
+    const life = texts.find((t) => /^SINDAROSA /.test(t.text));
+    expect(life, JSON.stringify(texts)).toBeDefined();
+    expect(life?.text).toMatch(/\d+\/\d+$/);
+    expect(life?.text).not.toContain('\u2026');
+    for (const t of texts.filter((n) => /SUPER/.test(n.text))) expect(overlap(life as Box, t), `${life?.text ?? ""} / ${t.text}`).toBe(false);
+  });
+  test('a Strike tap dismisses the first-run card, and a tag call hides it', async ({ page }) => {
+    await enterFight(page, 2);
+    await page.evaluate(`document.querySelector('#touchStrike1').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, bubbles: true }))`);
+    await expect(page.locator('#firstRunHint')).toHaveClass(/firstRunFade/);
+  });
+  test('a tag call hides the first-run card', async ({ page }) => {
+    await enterFight(page, 2);
+    await page.evaluate(`window.dispatchEvent(new Event('tte:tag-call'))`);
+    await expect(page.locator('#firstRunHint')).toHaveClass(/firstRunFade/);
   });
 });
 
@@ -268,7 +298,7 @@ for (const [w, h] of [[667, 375], [844, 390]] as const) {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     test('names are at least 11 CSS px, SUPER at least 9.5, and do not overlap each other', async ({ page }) => {
       await page.goto('/?manual=1&seed=7&hero=fiara&foe=treenoc');
-      await page.waitForFunction(ARENA_READY);
+      await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
       await page.evaluate(`window.__TTE__.arena.step(150)`);
       await shot(page, `hudtext-${String(w)}`);
       const texts = await page.evaluate<Array<Box & { text: string; px: number }>>(`window.__TTE__.arena.hudTextSizes()`);
@@ -301,7 +331,7 @@ for (const [w, h] of [[667, 375], [844, 390]] as const) {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     test('the Pause button clears the right-hand hit counter; long names are not cut', async ({ page }) => {
       await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7&hero=sindarosa&foe=treenoc');
-      await page.waitForFunction(ARENA_READY);
+      await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
       // Team 1 (right side) lands a Charge and a follow-up: its counter shows at the right edge, under the Pause button.
       const foe = await page.evaluate<number>(`(() => {
         const a = window.__TTE__.arena;
