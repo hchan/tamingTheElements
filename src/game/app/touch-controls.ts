@@ -147,6 +147,12 @@ export function touchButton(label: TouchLabel): HTMLButtonElement {
   // A transparent overlay: it is laid over its box on the canvas action bar (`src/game/hud/touch-overlay.ts`), which draws the icon, key and
   // cooldown. Only the slot order is kept, as data.
   b.className = `menuButton touchBtn touchBtn-${label}`;
+  holdAction(b, TOUCH_KEY[label]);
+  return b;
+}
+
+/** Wires `b` to hold the first key bound to `action` while a finger or Enter/Space holds it (shared by the overlays and the strike buttons). */
+export function holdAction(b: HTMLButtonElement, action: Parameters<typeof actionKeyLabel>[1]): void {
   let code: string | undefined;
   // Pointer and keyboard hold the action separately: the key goes up only when neither is still holding it.
   let byPointer = false;
@@ -160,7 +166,7 @@ export function touchButton(label: TouchLabel): HTMLButtonElement {
   };
   const press = (): boolean => {
     if (code === undefined) {
-      code = getBindings()[TOUCH_KEY[label]][0];
+      code = getBindings()[action][0];
       if (code === undefined) return false;
       window.dispatchEvent(new KeyboardEvent('keydown', { code }));
     }
@@ -223,7 +229,6 @@ export function touchButton(label: TouchLabel): HTMLButtonElement {
   };
   b.addEventListener('blur', releaseAll);
   releasers.set(b, releaseAll);
-  return b;
 }
 
 /**
