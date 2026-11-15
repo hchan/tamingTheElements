@@ -69,7 +69,7 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   morblass: 892,
   pax: 575,
   rokcore: 700,
-  sindarosa: 812,
+  sindarosa: 845,
   treenoc: 680,
   wispera: 640,
 };
