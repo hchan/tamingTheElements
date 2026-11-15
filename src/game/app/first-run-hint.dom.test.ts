@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FIRST_RUN_KEY, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine } from './first-run-hint';
+import { FIRST_RUN_KEY, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
 import { labelsFromBindings } from '../hud/action-bar';
 import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
@@ -12,6 +12,15 @@ const memory = (): Pick<Storage, 'getItem' | 'setItem'> & { data: Map<string, st
 afterEach(() => {
   vi.useRealTimers();
   document.body.replaceChildren();
+});
+
+describe('markFirstRunSeen', () => {
+  it('makes firstRunSeen true', () => {
+    const store = memory();
+    expect(firstRunSeen(store)).toBe(false);
+    markFirstRunSeen(store);
+    expect(firstRunSeen(store)).toBe(true);
+  });
 });
 
 describe('firstRunHint', () => {

@@ -3,17 +3,18 @@ import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import type { Screen } from '@ui/screens/screen';
-import { tourCardView, tourPickView, tourSplashView, tourVictoryView, type SplashSide } from '@ui/screens/tour';
+import { tourCardView, tourPickView, tourSplashView, tourStageChip, tourVictoryView, type SplashMember, type SplashSide } from '@ui/screens/tour';
 import { elementGlyph, mapLayout, tourMapView } from '@ui/screens/tour-map';
 import { requestOpenTesterPanel } from '@ui/tester/install';
 import { showErrorScreen, showWebglError } from '../boot/error-screen';
 import { detectWebgl } from '../boot/webgl-check';
+import { getBindings } from '../platform/input/bindings';
 import { getUiFlags, type UiFlags } from '../platform/flags';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { destroyGame, type GameHandle } from './game-handle';
-import { afterArenaCreate, anySnag, firstRunHint } from './first-run-hint';
+import { anySnag, firstRunPhoneLine, firstRunSeen, firstRunShortLine, isTouchFirst, markFirstRunSeen } from './first-run-hint';
 import { touchStick } from './touch-stick';
 import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
@@ -174,8 +175,12 @@ export function tourScreen(deps: TourDeps): Screen {
           { key: 'opponent', label: 'Opponent', value: foe.replace(/ \([^)]*\)/g, '') },
           { key: 'difficulty', label: 'Difficulty', value: ELEMENT_WORD(stage.aiLevel) },
           { key: 'continues', label: 'Continues', value: leftStage },
+          // Last, so enhanceStage's index fallbacks still match. The Tour has no in-fight card: the keys are named here, once.
+          ...(firstRunSeen()
+            ? []
+            : [{ key: 'controls', label: 'Controls', value: isTouchFirst() ? firstRunPhoneLine(anySnag(r.hero)) : firstRunShortLine(getBindings(), anySnag(r.hero), true) }]),
         ],
-        actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { showSplash(r); } }],
+        actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { markFirstRunSeen(); showSplash(r); } }],
       });
       show(card);
       // The primary action is focused and pulses, so the stage card does not read as a loading screen (Enter starts the fight).
@@ -201,11 +206,15 @@ export function tourScreen(deps: TourDeps): Screen {
       return;
     }
     const stage = currentStage(r);
-    const lead = (id: CharacterId, who: string): SplashSide => ({ who, name: raceLabel(id), element: getCharacter(id).element, id });
+    const member = (id: CharacterId): SplashMember => ({ name: raceLabel(id), element: getCharacter(id).element, id });
+    const lead = (ids: readonly CharacterId[], who: string): SplashSide => {
+      const id = ids[0] as CharacterId;
+      return { ...member(id), who, bench: ids.slice(1).map(member) };
+    };
     const view2 = tourSplashView(
       `Stage ${String(stage.index + 1)} of ${String(TOUR_STAGES)}`,
-      lead(r.hero[0] as CharacterId, 'You'),
-      lead(stage.opponents[0] as CharacterId, 'Opponent'),
+      lead(r.hero, 'You'),
+      lead(stage.opponents, 'Opponent'),
       (e) => elementGlyph(e, 32),
       stage.location === 'void' ? 'The Eternal Void' : `${ELEMENT_WORD(stage.location)} arena`,
     );
@@ -270,8 +279,7 @@ export function tourScreen(deps: TourDeps): Screen {
         host.id = 'game';
         battle.replaceChildren(host);
         game = createGame(host, launch);
-        const firstRun = firstRunHint(undefined, undefined, afterArenaCreate(game), anySnag([pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined)), undefined, pick.partner !== undefined);
-        if (firstRun) host.append(firstRun);
+        host.append(tourStageChip(r.stage + 1, TOUR_STAGES, r.continues));
         host.append(...inVisualOrder(buttons), touchStick(), touchStrikes());
       }))
       .catch((e: unknown) => {
