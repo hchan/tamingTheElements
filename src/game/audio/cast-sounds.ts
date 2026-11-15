@@ -15,6 +15,14 @@ const ALIAS: Readonly<Record<string, SoundId>> = {
   shardsOfIce: 'iceShard',
   circusOfSlimeIcon: 'circusOfSlime',
   fade: 'fadeOut',
+  // Roster-24 batch 1 (no legacy sound: borrowed from the nearest existing cue).
+  emberBite: 'stick',
+  cinderSpray: 'fireCone',
+  hoofCrash: 'rockBullet',
+  kelpLash: 'whoosh',
+  boulderRoll: 'rockBullet',
+  stingingFilament: 'laser2',
+  bellPulse: 'hurricane',
 };
 
 const IDS: ReadonlySet<string> = new Set(manifest.sounds.map((s) => s.id));

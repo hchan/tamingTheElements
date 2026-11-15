@@ -3,8 +3,7 @@ import {
   CC_DR_RESET_TICKS, CC_RIDERS, COMBO_STUN_CAP_TICKS, CcBucket, CcEnd, CcKind, CcResist, DOWN_TICKS, QUICK_RISE_TICKS,
   QUICK_RISE_WINDOW_TICKS, RECOVERY_INVULN_TICKS, WAKE_INVULN_TICKS,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { now } from '../../clock';
@@ -21,7 +20,7 @@ import { applyArcadeHit } from './hit';
 import { skipIntro } from './round-testkit';
 import { isInvulnerable } from './stun';
 
-const DEFS = [...ABILITIES_A, ...ABILITIES_B];
+const DEFS = ALL_ABILITIES;
 const def = (slug: string): number => DEFS.findIndex((d) => d.id === slug);
 const SHOCK = def('ground-shock');
 const PLAIN = def('fireball');

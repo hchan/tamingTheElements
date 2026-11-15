@@ -5,7 +5,7 @@ import type { CharacterId } from '@core/menu-index';
 import { ELEMENT_ORDER, heroProfile, heroStyle, heroesPerElement } from './hero-info';
 import { heroGrid, styleBadge } from './hero-panel';
 
-const RACES = CHARACTERS.filter((c) => ELEMENT_ORDER.includes(c.element)).map((c): CharacterId => c.id);
+const RACES = CHARACTERS.slice(0, 14).filter((c) => ELEMENT_ORDER.includes(c.element)).map((c): CharacterId => c.id);
 
 afterEach(() => {
   document.body.replaceChildren();

@@ -31,8 +31,19 @@ export const LEGACY_CHARACTERS: readonly CharacterDef[] = Object.freeze([
   def('wispera', { element: 'air', alignment: 'good', maxHealth: 100, speed: 5, sprite: 'wispera' }, ['sonar-blast', 'steal-health']),
 ]);
 
-/** Every character the sim knows: the legacy 14, then appended Arcade heroes (none yet; roster-24 plan). */
-export const CHARACTERS: readonly CharacterDef[] = [...LEGACY_CHARACTERS];
+/**
+ * Arcade-only heroes (roster-24 plan), appended after the legacy 14 (the index is hashed: append-only, never reorder).
+ * Batch 1 (SIM_VERSION 72): Kindrel, Nykra, Quarrak, Hyalia. Display text lives in text-ids.ts.
+ */
+export const ROSTER_24_CHARACTERS: readonly CharacterDef[] = Object.freeze([
+  def('kindrel', { element: 'fire', alignment: 'neutral', maxHealth: 85, speed: 8, sprite: 'kindrel' }, ['ember-bite', 'cinder-spray']),
+  def('nykra', { element: 'water', alignment: 'neutral', maxHealth: 100, speed: 7, sprite: 'nykra' }, ['hoof-crash', 'kelp-lash']),
+  def('quarrak', { element: 'earth', alignment: 'neutral', maxHealth: 140, speed: 4, sprite: 'quarrak' }, ['hurl-rock', 'boulder-roll']),
+  def('hyalia', { element: 'air', alignment: 'neutral', maxHealth: 95, speed: 5, sprite: 'hyalia' }, ['stinging-filament', 'bell-pulse']),
+]);
+
+/** Every character the sim knows: the legacy 14, then the appended Arcade heroes. */
+export const CHARACTERS: readonly CharacterDef[] = [...LEGACY_CHARACTERS, ...ROSTER_24_CHARACTERS];
 
 /** The 12 playable legacy races (the dummy target and the Eternal Void boss are excluded), in `LEGACY_CHARACTERS` order. */
 export const LEGACY_RACES: readonly CharacterId[] = LEGACY_CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A, ABILITIES_B } from '@core/index';
+import { ALL_ABILITIES } from '@core/index';
 import legacySounds from '../../../tests/fixtures/legacy/ability-sounds.json';
 import type { RenderView } from '@core/index';
 import { CastDetector, castSoundFor } from './cast-sounds';
@@ -39,9 +39,15 @@ describe('CastDetector', () => {
   });
 });
 
+const ROSTER_24_SPRITES = ['emberBite', 'cinderSpray', 'hoofCrash', 'kelpLash', 'boulderRoll', 'stingingFilament', 'bellPulse'];
+
 describe('cast sounds per ability vs legacy abilities.js', () => {
+  it('every roster-24 ability has a cast sound', () => {
+    for (const sprite of ROSTER_24_SPRITES) expect(castSoundFor(sprite), sprite).toBeDefined();
+  });
+
   const legacy = legacySounds.sounds as Record<string, string | null>;
-  const sprites = [...new Set([...ABILITIES_A, ...ABILITIES_B].map((a) => a.sprite))];
+  const sprites = [...new Set(ALL_ABILITIES.map((a) => a.sprite))].filter((s) => !ROSTER_24_SPRITES.includes(s));
 
   it('covers every legacy ability and no more (fixture and data agree on the sprite set)', () => {
     expect(sprites.sort()).toEqual(Object.keys(legacy).sort());

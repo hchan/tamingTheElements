@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ABILITIES_A } from '../../src/core/data/abilities-a';
 import { ABILITIES_B } from '../../src/core/data/abilities-b';
+import { ALL_ABILITIES } from '../../src/core/data/abilities-all';
 import { CHAPTERS } from '../../src/core/data/chapters';
 import type { Objective } from '../../src/core/data/chapters';
 import { CHARACTERS } from '../../src/core/data/characters';
@@ -60,7 +61,7 @@ function characters(): string {
 }
 
 function abilities(): string {
-  const all: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
+  const all: readonly AbilityDef[] = ALL_ABILITIES;
   const rows = all.map((a) => {
     const users = CHARACTERS.filter((c) => c.abilities.includes(a.id)).map(
       (c) => CHARACTER_TEXT.get(c.id)?.name ?? c.id,

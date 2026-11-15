@@ -1,9 +1,11 @@
 ---
-status: idea
+status: in-progress
 added: 2026-11-14
 ---
 
 # Roster of 24: six heroes per element
+
+Progress: batch 1 (Kindrel, Nykra, Quarrak, Hyalia) is implemented behind `?ff=roster24` (dev and test builds); not yet released.
 
 Owner idea (2026-11-14): today there are 12 heroes (three per element, four elements). Grow to 24: six per element, with the 12 new elementals created in the same theme (medieval-ish dark fantasy: a genre, not low brightness; luminous, painterly).
 

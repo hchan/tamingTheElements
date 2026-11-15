@@ -486,6 +486,24 @@
         14
       ]
     },
+    "bellPulse": {
+      "url": "img/fx/bellPulse.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
+    "boulderRoll": {
+      "url": "img/fx/boulderRoll.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "chaosBoltLoop": {
       "url": "img/fx/loop/chaosBoltLoop.png",
       "coords": [
@@ -504,6 +522,15 @@
         160
       ]
     },
+    "cinderSpray": {
+      "url": "img/fx/cinderSpray.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "crimsonFireLoop": {
       "url": "img/fx/loop/crimsonFireLoop.png",
       "coords": [
@@ -511,6 +538,15 @@
         0,
         160,
         128
+      ]
+    },
+    "emberBite": {
+      "url": "img/fx/emberBite.png",
+      "coords": [
+        0,
+        0,
+        80,
+        52
       ]
     },
     "entanglingVinesAir": {
@@ -547,6 +583,15 @@
         0,
         160,
         100
+      ]
+    },
+    "hoofCrash": {
+      "url": "img/fx/hoofCrash.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
       ]
     },
     "hurlRockLoop": {
@@ -621,6 +666,15 @@
         128
       ]
     },
+    "kelpLash": {
+      "url": "img/fx/kelpLash.png",
+      "coords": [
+        0,
+        0,
+        160,
+        40
+      ]
+    },
     "rockPelletLoop": {
       "url": "img/fx/loop/rockPelletLoop.png",
       "coords": [
@@ -655,6 +709,15 @@
         0,
         160,
         76
+      ]
+    },
+    "stingingFilament": {
+      "url": "img/fx/stingingFilament.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
       ]
     },
     "windConeLoop": {
@@ -3151,6 +3214,190 @@
         ],
         [
           320,
+          0
+        ]
+      ]
+    },
+    "hyalia": {
+      "url": "img/map/hyalia.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/hyaliaLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "kindrel": {
+      "url": "img/map/kindrel.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/kindrelLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "nykra": {
+      "url": "img/map/nykra.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/nykraLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "quarrak": {
+      "url": "img/map/quarrak.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/quarrakLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
           0
         ]
       ]

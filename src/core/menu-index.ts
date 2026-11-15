@@ -31,6 +31,8 @@ export * from './rules/progression';
 export * from './rules/results';
 export * from './data/abilities-a';
 export * from './data/abilities-b';
+export * from './data/abilities-c';
+export * from './data/abilities-all';
 export * from './tester/save-edits';
 // Types only (erased at build time, so they do not pull the sim into the menu chunk).
 export type { Agent } from './agents/agent';

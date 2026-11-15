@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A, ABILITIES_B, CHARACTERS, Cmd, type RenderActionBar } from '@core/index';
+import { ALL_ABILITIES, CHARACTERS, Cmd, type RenderActionBar } from '@core/index';
 import { abilityNameOfSprite, abilityShortOfSprite, trapNameOfElement, trapShortOfElement, trapTextOfElement } from './kit-names';
 import { abilityNote, buildSlots, slotTip, trapNote, DEFAULT_KEY_LABELS, type ArcadeBar } from './action-bar';
 
-const SPRITES: Record<string, string> = Object.fromEntries([...ABILITIES_A, ...ABILITIES_B].map((d) => [d.id, d.sprite]));
+const SPRITES: Record<string, string> = Object.fromEntries(ALL_ABILITIES.map((d) => [d.id, d.sprite]));
 const bar = (a: string, b: string, kind: number): RenderActionBar => ({
   tick: 100,
   abilities: [

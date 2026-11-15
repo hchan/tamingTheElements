@@ -49,6 +49,10 @@ Speed is px/tick at 50 Hz; HP is at level 0.
 | Sindarosa | fire | evil | 7 | 100 | Fire Blast, Translucent Flame |
 | Treenoc | earth | neutral | 6 | 90 | Entangling Vines, Strangling Branches |
 | Wispera | air | good | 5 | 100 | Sonar Blast, Steal Health |
+| Kindrel | fire | neutral | 8 | 85 | Ember Bite, Cinder Spray |
+| Nykra | water | neutral | 7 | 100 | Hoof Crash, Kelp Lash |
+| Quarrak | earth | neutral | 4 | 140 | Hurl Rock, Boulder Roll |
+| Hyalia | air | neutral | 5 | 95 | Stinging Filament, Bell Pulse |
 <!-- /gen:characters -->
 
 ## Abilities
@@ -66,7 +70,7 @@ legacy data, kept as-is.
 | Stick | range | 10 | 2000 | - | 1 | 8 | Dummy |
 | Fire Blast | range | 40 | 600 | - | 2 | 8 | Sindarosa |
 | Icicles | range | 10 | 300 | - | 3 | 10 | Morblass |
-| Hurl Rock | range | 40 | 500 | - | 2 | 8 | unused |
+| Hurl Rock | range | 40 | 500 | - | 2 | 8 | Quarrak |
 | Sonar Blast | range | 40 | 600 | - | 2 | 8 | Wispera |
 | Fireball | range | 15 | 600 | - | 2 | 8 | Fiara |
 | Crimson Fire | range | 13 | 400 | - | 2 | 10 | Lavax |
@@ -90,6 +94,13 @@ legacy data, kept as-is.
 | Fire Dance | buff | - | 16000 | 5000 | 100 | - | Lavax |
 | Strangling Branches | melee | 20 | 1000 | - | 2 | - | Treenoc |
 | Entangling Vines | melee | 0 | 5000 | 3000 | 2 | - | Treenoc |
+| Ember Bite | melee | 12 | 500 | - | 2 | - | Kindrel |
+| Cinder Spray | omni | 8 | 4000 | - | 1 | 6 | Kindrel |
+| Hoof Crash | melee | 20 | 1000 | - | 2 | - | Nykra |
+| Kelp Lash | melee | 14 | 2500 | - | 1 | - | Nykra |
+| Boulder Roll | range | 26 | 3500 | - | 1 | 4 | Quarrak |
+| Stinging Filament | range | 10 | 900 | - | 2 | 12 | Hyalia |
+| Bell Pulse | omni | 6 | 5000 | - | 1 | 5 | Hyalia |
 <!-- /gen:abilities -->
 
 ## Progression

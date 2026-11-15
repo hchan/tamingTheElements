@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A } from '../../data/abilities-a';
-import { ABILITIES_B } from '../../data/abilities-b';
+import { ALL_ABILITIES } from '../../data/abilities-all';
 import { allocEntity } from '../alloc';
 import { NO_COMMAND } from '../commands';
 import { EntityFlag, EntityKind, World as W } from '../state';
@@ -107,7 +106,7 @@ describe('status buffs (abilities-effects fixture)', () => {
 
 describe('status data', () => {
   it('every speedDelta is an int32, because it is stored in the Int32Array status magnitude', () => {
-    const deltas = [...ABILITIES_A, ...ABILITIES_B].flatMap((d): [string, number][] => {
+    const deltas = ALL_ABILITIES.flatMap((d): [string, number][] => {
       const delta = (d as { readonly speedDelta?: number }).speedDelta;
       return delta === undefined ? [] : [[d.id, delta]];
     });

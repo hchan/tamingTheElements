@@ -1,6 +1,5 @@
 import {
-  ABILITIES_A,
-  ABILITIES_B,
+  ALL_ABILITIES,
   ABILITY_NAMES,
   BEATS,
   CHARACTERS,
@@ -42,7 +41,7 @@ export interface CharacterDetailsView {
 }
 
 const ABILITY_DEFS: ReadonlyMap<string, AbilityDef | AbilityDefB> = new Map(
-  [...ABILITIES_A, ...ABILITIES_B].map((a) => [a.id as string, a]),
+  ALL_ABILITIES.map((a) => [a.id as string, a]),
 );
 
 /** Plain-text lines from the legacy HTML-ish description (no markup reaches the DOM). */

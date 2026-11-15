@@ -3,8 +3,7 @@ import {
   CC_DR_RESET_TICKS, CC_RIDERS, COMBO_STUN_CAP_TICKS, CcBucket, CcEnd, CcKind, CcResist, DAZE_GRACE_TICKS, DAZE_TICKS,
   FREEZE_STUN_TICKS, RECOVERY_INVULN_TICKS,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { now } from '../../clock';
@@ -19,7 +18,7 @@ import { ccHeld, ccLevel } from './cc-state';
 import { applyArcadeHit } from './hit';
 import { skipIntro } from './round-testkit';
 
-const TORNADO = [...ABILITIES_A, ...ABILITIES_B].findIndex((d) => d.id === 'tornado');
+const TORNADO = ALL_ABILITIES.findIndex((d) => d.id === 'tornado');
 const PLAIN = TORNADO === 0 ? 1 : 0;
 const E = (id: number, f: number): number => id * ARCADE_E + f;
 

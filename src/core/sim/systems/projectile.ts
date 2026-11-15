@@ -1,5 +1,4 @@
-import { ABILITIES_A } from '../../data/abilities-a';
-import { ABILITIES_B } from '../../data/abilities-b';
+import { ALL_ABILITIES } from '../../data/abilities-all';
 import { cooldownTicksFor, FIRE_BLAST_ABILITY, FIRE_BLAST_GROW_PX, FIRE_BLAST_GROW_TICKS, fireBlastFadePm } from '../arcade-numbers';
 import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../data/chapters';
 import { CHARACTERS } from '../../data/characters';
@@ -29,7 +28,7 @@ import { douseTraps } from './arcade/trap';
 import { SNAG_FIRE_ABILITIES } from '../../data/arcade';
 
 /** Ability index used for SimState.defId (set A then set B). */
-export const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
+export const ABILITY_DEFS: readonly AbilityDef[] = ALL_ABILITIES;
 
 /** Dir8 indices of the omni fan, in the legacy order n, s, e, w, nw, ne, sw, se. */
 const OMNI_DIRS: readonly number[] = [2, 6, 0, 4, 3, 1, 5, 7];

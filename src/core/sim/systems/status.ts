@@ -1,5 +1,5 @@
-import { ABILITIES_A } from '../../data/abilities-a';
-import { ABILITIES_B, type AbilityDefB } from '../../data/abilities-b';
+import { ALL_ABILITIES } from '../../data/abilities-all';
+import type { AbilityDefB } from '../../data/abilities-b';
 import { EntityFlag, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE } from '../state';
 import type { SimState } from '../state';
 import type { SimWorld } from '../world';
@@ -40,7 +40,7 @@ const BUFF_STATUS: Readonly<Record<string, StatusIdValue>> = {
   fade: StatusId.translucent,
 };
 
-const DEFS: readonly AbilityDefB[] = [...ABILITIES_A, ...ABILITIES_B];
+const DEFS: readonly AbilityDefB[] = ALL_ABILITIES;
 /** Statuses that reduce incoming damage, and the ability that defines the percentage. */
 const STATUS_ABILITY: Readonly<Record<number, string>> = {
   [StatusId.adrenaline]: 'adrenaline',

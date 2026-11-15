@@ -63,7 +63,23 @@ const EXTRA_SPRITES: Readonly<Record<string, SpriteEntry>> = {
   impactIce: { url: 'img/fx/impact/impactIce.png', coords: [0, 0, 128, 128] },
   impactVoid: { url: 'img/fx/impact/impactVoid.png', coords: [0, 0, 128, 128] },
   impactWater: { url: 'img/fx/impact/impactWater.png', coords: [0, 0, 128, 128] },
+  // Roster 24 batch 1 ability sprites: fx-gen/batch-j-roster24-b1.py.
+  emberBite: { url: 'img/fx/emberBite.png', coords: [0, 0, 80, 52] },
+  cinderSpray: { url: 'img/fx/cinderSpray.png', coords: [0, 0, 80, 80] },
+  hoofCrash: { url: 'img/fx/hoofCrash.png', coords: [0, 0, 80, 60] },
+  kelpLash: { url: 'img/fx/kelpLash.png', coords: [0, 0, 160, 40] },
+  boulderRoll: { url: 'img/fx/boulderRoll.png', coords: [0, 0, 80, 80] },
+  stingingFilament: { url: 'img/fx/stingingFilament.png', coords: [0, 0, 80, 80] },
+  bellPulse: { url: 'img/fx/bellPulse.png', coords: [0, 0, 80, 80] },
 };
+/** Repo-only hero map sprites (no legacy file): rig-gen/<hero>.py -> bake -> portrait-rig/map-strips.py (320x80 strip) plus a 400x400 Large portrait. */
+const MAP_FRAMES: Frames = [[0, 0], [80, 0], [160, 0], [240, 0]];
+const EXTRA_MAP_SPRITES: Readonly<Record<string, SpriteEntry>> = Object.fromEntries(
+  ['hyalia', 'kindrel', 'nykra', 'quarrak'].map((h) => [
+    h,
+    { url: `img/map/${h}.png`, coords: [0, 0, 80, 80], urlLarge: `img/map/${h}Large.png`, leftFrames: MAP_FRAMES, rightFrames: MAP_FRAMES } as SpriteEntry,
+  ]),
+);
 /** Repo-only sampled cues, `<element>_<kind>` (tools/audio-gen writes public/assets/audio/sfx_<id>.ogg). */
 const SFX_SAMPLE_IDS = ['air_cleanse', 'air_hit', 'earth_cleanse', 'earth_hit', 'fire_cleanse', 'fire_hit', 'water_cleanse', 'water_hit'];
 /** Classic arena floors redrawn by stage-gen/batch-h-floors.py (1280x720 in img/floor); they replace the legacy img/background photos. */
@@ -101,6 +117,9 @@ function sprites(file: string, name: string): Record<string, SpriteEntry> {
   }
   if (file === 'imgAssets.js') {
     for (const key of Object.keys(EXTRA_SPRITES).sort()) out[key] = structuredClone(EXTRA_SPRITES[key] as SpriteEntry);
+  }
+  if (file === 'imgMapAssets.js') {
+    for (const key of Object.keys(EXTRA_MAP_SPRITES).sort()) out[key] = structuredClone(EXTRA_MAP_SPRITES[key] as SpriteEntry);
   }
   return out;
 }

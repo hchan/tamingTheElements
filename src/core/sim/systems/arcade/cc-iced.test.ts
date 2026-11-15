@@ -3,8 +3,7 @@ import {
   CC_DR_RESET_TICKS, CC_RIDERS, CcBucket, CcEnd, CcKind, CcResist, COMBO_STUN_CAP_TICKS, ICE_GRACE_TICKS, ICE_SHATTER_PM,
   ICED_TICKS, RECOVERY_INVULN_TICKS, Weather,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { CHARACTERS } from '../../../data/characters';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -22,7 +21,7 @@ import { ccHeld, ccLevel } from './cc-state';
 import { applyArcadeHit } from './hit';
 import { skipIntro } from './round-testkit';
 
-const DEFS = [...ABILITIES_A, ...ABILITIES_B];
+const DEFS = ALL_ABILITIES;
 const def = (slug: string): number => DEFS.findIndex((d) => d.id === slug);
 const ICE_BLAST = def('ice-blast');
 const ICICLES = def('icicles');

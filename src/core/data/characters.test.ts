@@ -55,7 +55,7 @@ describe('text ids', () => {
     for (const k of Object.keys(text.abilities)) {
       expect(ABILITY_NAMES.get(abilityId(slug(k)))).toBe(k);
     }
-    expect(CHARACTER_TEXT.size).toBe(14);
-    expect(ABILITY_NAMES.size).toBe(30);
+    expect(CHARACTER_TEXT.size).toBe(18);
+    expect(ABILITY_NAMES.size).toBe(37);
   });
 });

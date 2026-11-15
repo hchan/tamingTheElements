@@ -1,5 +1,4 @@
-import { ABILITIES_A } from '../../data/abilities-a';
-import { ABILITIES_B } from '../../data/abilities-b';
+import { ALL_ABILITIES } from '../../data/abilities-all';
 import { ARCADE_SNAG_SLOT, SNAG_ABILITY } from '../../data/arcade';
 import { CHARACTERS } from '../../data/characters';
 import { isArcade } from '../clock';
@@ -11,7 +10,7 @@ import { countIdx, type SimState } from '../state';
  * `countIdx` in state.ts).
  */
 
-const DEFS = [...ABILITIES_A, ...ABILITIES_B];
+const DEFS = ALL_ABILITIES;
 const CAPTURE_IDX = DEFS.findIndex((d) => d.id === 'capture');
 
 /** Capture sits after the character's own ability slots (legacy appends it to the player's abilitiesInfo). */

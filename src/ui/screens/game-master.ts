@@ -4,7 +4,7 @@
  */
 import {
   CHAPTERS,
-  CHARACTERS,
+  LEGACY_CHARACTERS,
   CHARACTER_TEXT,
   type CharacterId,
   DEFAULT_DIFFICULTY,
@@ -45,9 +45,9 @@ export function buildPreset(preset: Preset, meta: Sfc32, now: number): SaveV1 {
   });
   const garrison: SaveV1['garrison'] = [];
   if (preset === 'complete') {
-    for (const c of CHARACTERS) garrison.push(entry(nameOf(c.id), maxXp(4)));
+    for (const c of LEGACY_CHARACTERS) garrison.push(entry(nameOf(c.id), maxXp(4)));
   } else {
-    for (let i = 0; i < 5; i++) garrison.push(entry(nameOf(meta.pick(CHARACTERS).id), maxXp(chapter) - 1));
+    for (let i = 0; i < 5; i++) garrison.push(entry(nameOf(meta.pick(LEGACY_CHARACTERS).id), maxXp(chapter) - 1));
   }
   return {
     schemaVersion: 1,

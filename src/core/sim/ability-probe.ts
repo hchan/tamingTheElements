@@ -1,4 +1,4 @@
-import { CHARACTERS } from '../data/characters';
+import { CHARACTERS, isLegacyCharacter } from '../data/characters';
 import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { Cmd, NO_COMMAND, type Command } from './commands';
@@ -31,7 +31,7 @@ function setup(race: string, gap: number): SimWorld {
     { character: characterId(r), xp: 0 },
   ];
   const world = createMatch({
-    simVersion: 0, seed: 1, flags: DEFAULT_SIM_FLAGS, chapter: 1, difficulty: 1, p1: roster(race), p2: roster('dummy'),
+    simVersion: 0, seed: 1, flags: isLegacyCharacter(characterId(race)) ? DEFAULT_SIM_FLAGS : { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1, p1: roster(race), p2: roster('dummy'),
   });
   const s = world.state;
   s.x[1] = (s.x[0] ?? 0) + gap;

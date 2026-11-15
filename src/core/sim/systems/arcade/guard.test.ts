@@ -5,7 +5,7 @@ import {
   HIT_STOP_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, METER_BAR, METER_PARRY, PARRY_HIT_STOP_TICKS,
   PARRY_LOCK_TICKS, PARRY_STUN_TICKS, PARRY_TICKS,
 } from '../../../data/arcade';
-import { CHARACTERS } from '../../../data/characters';
+import { LEGACY_CHARACTERS } from '../../../data/characters';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { isFrozen, now } from '../../clock';
@@ -367,7 +367,7 @@ describe('Classic', () => {
 });
 
 describe('guard properties', () => {
-  const race = fc.constantFrom(...CHARACTERS.filter((c) => c.id !== 'eternal-void').map((c) => c.id));
+  const race = fc.constantFrom(...LEGACY_CHARACTERS.filter((c) => c.id !== 'eternal-void').map((c) => c.id));
   /** Guard taps and holds are frequent, so guards, breaks, parries and whiffs all happen. */
   const cmd = fc.tuple(fc.integer({ min: 0, max: 0x3f }), fc.boolean()).map(([c, g]) => c | (g ? G : 0));
   const runs = fc

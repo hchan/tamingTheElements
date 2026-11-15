@@ -51,6 +51,11 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   treenoc: [6050, 1180],
   // Snag replaced Sonar Blast (67/s), leaving Steal Health: life 3490 -> 7900, damage 800 -> 1400 in SIM_VERSION 27. Re-fit in SIM_VERSION 31 (was [7900, 1400]). Melee since SIM_VERSION 69 (roster WP 0.4: Charge, weather charge by walking): re-fit (was [7950, 1355], 57.4%).
   wispera: [7575, 1291],
+  // Roster-24 batch 1 (SIM_VERSION 72), fitted with tools/sim/low-races/mat.sh.
+  kindrel: [6120, 1537],
+  nykra: [5435, 1215],
+  quarrak: [3365, 760],
+  hyalia: [7600, 2108],
 };
 
 /**
@@ -72,6 +77,10 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   sindarosa: 745,
   treenoc: 714,
   wispera: 632,
+  hyalia: 595,
+  quarrak: 580,
+  kindrel: 650,
+  nykra: 740,
 };
 /**
  * Race life `hpPm` of `slug` for a roster of `size` heroes. A hero below 1x (data/size.ts SIZE_MIN..99) then gets
@@ -96,6 +105,7 @@ export function arcadeRaceNumbers(slug: string): ArcadeRaceNumbers {
  */
 export const ARCADE_COOLDOWN_TICKS: Readonly<Partial<Record<string, number>>> = {
   fireball: 26, // 30 in Classic: off Fire Blast's 30
+  'hurl-rock': 90, // 25 in Classic: Quarrak's sustained zoning, 500 ms is a pellet stream (roster-24 B1)
   'crimson-fire': 18, // 20 in Classic: off Rock Pellet's 20
   [SNAG_ABILITY]: SNAG_COOLDOWN_TICKS, // Snag (WP-snag)
 };

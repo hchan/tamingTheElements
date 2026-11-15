@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A } from '../data/abilities-a';
-import { ABILITIES_B } from '../data/abilities-b';
+import { ALL_ABILITIES } from '../data/abilities-all';
 import { SNAG_ABILITY } from '../data/arcade';
 import { CHARACTER_HEIGHT } from '../data/chapters';
-import { CHARACTERS, getCharacter } from '../data/characters';
+import { CHARACTERS, getCharacter, isLegacyCharacter } from '../data/characters';
 import { characterId } from '../data/ids';
 import { sizeLifePm, sizeOfSlug } from '../data/size';
 import { DEFAULT_SIM_FLAGS } from '../flags';
@@ -60,8 +59,10 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
     for (const race of [...PLAYABLE, BOSS]) {
       for (const xp of [1, 37]) {
         const legacy = combatantStats(getCharacter(characterId(race)), xp, 'player', 1).maxHealth;
-        const classic = createMatch(setup(race, false, xp)).state;
-        expect([race, classic.maxHp[0], classic.hp[0], classic.restCap[0]]).toEqual([race, legacy, legacy, legacy]);
+        if (isLegacyCharacter(characterId(race))) {
+          const classic = createMatch(setup(race, false, xp)).state;
+          expect([race, classic.maxHp[0], classic.hp[0], classic.restCap[0]]).toEqual([race, legacy, legacy, legacy]);
+        }
         const want = Math.floor((Math.floor((legacy * arcadeRaceNumbers(race)[0]) / 1000) * sizeLifePm(sizeOfSlug(characterId(race)))) / 1000);
         const arcade = createMatch(setup(race, true, xp)).state;
         expect([race, arcade.maxHp[0], arcade.hp[0], arcade.restCap[0]]).toEqual([race, want, want, want]);
@@ -70,7 +71,7 @@ describe('Arcade numbers table (FUN-DESIGN 2.13, WP-arcade-numbers)', () => {
   });
 
   it('cooldown overrides: Classic always gets the legacy cooldown; Arcade only changes the listed projectile slots and Snag', () => {
-    const defs = [...ABILITIES_A, ...ABILITIES_B];
+    const defs = ALL_ABILITIES;
     for (const def of defs) {
       expect([def.id, cooldownTicksFor(def, false)]).toEqual([def.id, def.cooldownTicks]);
       expect([def.id, cooldownTicksFor(def, true)]).toEqual([def.id, ARCADE_COOLDOWN_TICKS[def.id] ?? def.cooldownTicks]);
@@ -115,7 +116,7 @@ describe('Fire Blast falloff numbers (FUN-DESIGN 2.27)', () => {
     expect(mid).toBeLessThan(1000);
   });
   it('the Fire Blast slug exists and its box grows to under a character height', () => {
-    const def = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === FIRE_BLAST_ABILITY);
+    const def = ALL_ABILITIES.find((d) => d.id === FIRE_BLAST_ABILITY);
     expect(def).toBeDefined();
     expect(((def?.h ?? 0) * CHARACTER_HEIGHT) + 40).toBeLessThan(CHARACTER_HEIGHT);
   });

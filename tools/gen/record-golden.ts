@@ -41,6 +41,18 @@ const SETUP_ARCADE: MatchSetup = {
 };
 const OUT_ARCADE = new URL('../../tests/fixtures/replays/arcade-1v1.replay.json', import.meta.url);
 
+/** Roster-24 Batch 1 golden: a 2v2 of the four new heroes (Kindrel + Quarrak against Nykra + Hyalia), Arcade, scripted AI. */
+const SETUP_ROSTER24: MatchSetup = {
+  simVersion: SIM_VERSION,
+  seed: 0x24b1,
+  flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+  chapter: 1,
+  difficulty: 1,
+  p1: [{ character: characterId('kindrel'), xp: 1 }, { character: characterId('quarrak'), xp: 1 }],
+  p2: [{ character: characterId('nykra'), xp: 1 }, { character: characterId('hyalia'), xp: 1 }],
+};
+const OUT_ROSTER24 = new URL('../../tests/fixtures/replays/arcade-roster24-b1.replay.json', import.meta.url);
+
 function recordScripted(setup: MatchSetup, ticks: number, raceA: string, raceB: string) {
   const world = createMatch(setup);
   const rec = new ReplayRecorder(setup);
@@ -61,6 +73,9 @@ if (values.ruleset === 'arcade') {
   assertNoTesterFlags(SETUP_ARCADE.flags);
   writeFileSync(OUT_ARCADE, serializeReplay(recordScripted(SETUP_ARCADE, TICKS, 'lavax', 'pax')));
   console.log(`wrote ${OUT_ARCADE.pathname} (${TICKS} ticks)`);
+  assertNoTesterFlags(SETUP_ROSTER24.flags);
+  writeFileSync(OUT_ROSTER24, serializeReplay(recordScripted(SETUP_ROSTER24, 3000, 'kindrel', 'nykra')));
+  console.log(`wrote ${OUT_ROSTER24.pathname} (3000 ticks)`);
   // The scripted goldens (hand-authored inputs, see arcade-moves.ts) that reach every Arcade mechanic.
   for (const script of arcadeScripts()) {
     assertNoTesterFlags(script.setup.flags);

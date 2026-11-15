@@ -3,8 +3,7 @@ import {
   DAZE_MIN_TICKS, ICE_GRACE_TICKS, ICE_SHATTER_PM, QUICK_RISE_TICKS, QUICK_RISE_WINDOW_TICKS, SILENCE_TICKS,
   WAKE_INVULN_TICKS, Weather,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { CHARACTERS } from '../../../data/characters';
 import { inFight, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
@@ -27,7 +26,7 @@ import { endCharge } from './charge-move';
 
 /** CC_RIDERS per ability def index (set A then set B, as HIT_STUN), resolved once: [defIdx, kind, ticks] triples. */
 const RIDER_TABLE: readonly (readonly [number, number, number, boolean])[] = CC_RIDERS.map((r) => {
-  const def = [...ABILITIES_A, ...ABILITIES_B].findIndex((d) => d.id === r.slug);
+  const def = ALL_ABILITIES.findIndex((d) => d.id === r.slug);
   if (def < 0) throw new Error(`CC_RIDERS: unknown ability ${r.slug}`);
   return [def, r.kind, r.ticks, r.chilled === true] as const;
 });

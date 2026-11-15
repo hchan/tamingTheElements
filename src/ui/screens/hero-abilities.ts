@@ -1,4 +1,4 @@
-import { ABILITIES_A, ABILITIES_B, ABILITY_NAMES, getCharacter, type AbilityDef, type CharacterId } from '@core/index';
+import { ALL_ABILITIES, ABILITY_NAMES, getCharacter, type AbilityDef, type CharacterId } from '@core/index';
 
 /** Player-facing word for each ability kind (text, so the summary never leans on colour or an icon alone). */
 const KIND_WORDS: Readonly<Record<AbilityDef['kind'], string>> = {
@@ -21,7 +21,7 @@ export interface AbilityChip {
   readonly mark: string;
 }
 
-const DEFS: ReadonlyMap<string, AbilityDef> = new Map([...ABILITIES_A, ...ABILITIES_B].map((a) => [a.id, a]));
+const DEFS: ReadonlyMap<string, AbilityDef> = new Map(ALL_ABILITIES.map((a) => [a.id, a]));
 
 /** The hero's abilities as name + kind word, from the shared data (display names in ABILITY_NAMES). */
 export function abilityChips(id: CharacterId): AbilityChip[] {
