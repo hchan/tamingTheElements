@@ -58,6 +58,8 @@ async function hit(page: Page, foe: number, cmd = SECONDARY): Promise<void> {
 }
 
 const fx = (page: Page): Promise<Fx> => page.evaluate<Fx>(`window.__TTE__.arena.fx()`);
+/** Plain hits show a damage pop instead of a HUD number (QA r38/r39); HUD numbers stay for scaled, counter and reduced-motion hits. */
+const pops = (page: Page): Promise<number> => page.evaluate<number>(`window.__TTE__.arena.shockFx().then((s) => (s ? s.pops : 0))`);
 const flashed = (f: Fx, id: number): boolean => f.tints.some((t) => t.id === id && t.wash >= WASH_PEAK);
 
 test('Classic: a projectile hit renders the white hit flash (V6) and no Arcade HUD', async ({ page }) => {
@@ -93,7 +95,8 @@ test('Arcade: flash, damage numbers and combo counter; they hold while paused', 
   await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
   const f = await fx(page);
   expect(flashed(f, foe)).toBe(true);
-  expect(f.numbers.length).toBeGreaterThanOrEqual(2);
+  // Pops of near-simultaneous hits merge (popMerges), so one is enough; the combo counter below proves both hits landed.
+  expect(f.numbers.length + (await pops(page))).toBeGreaterThanOrEqual(1);
   expect(f.numbers.every((n) => /^\d+( COUNTER)?$/.test(n))).toBe(true);
   expect(f.combo[0]).toBeGreaterThanOrEqual(2);
   // Hyper meter (WP-arcade-meter): the attacker gains more than the victim, both from the hits.
@@ -104,6 +107,7 @@ test('Arcade: flash, damage numbers and combo counter; they hold while paused', 
   const later = await fx(page);
   expect(flashed(later, foe)).toBe(true);
   expect(later.numbers).toEqual(f.numbers);
+  expect(later.numbers.length + (await pops(page))).toBeGreaterThanOrEqual(1);
   expect(errors).toEqual([]);
 });
 
