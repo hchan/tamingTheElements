@@ -8,6 +8,7 @@
     "arcade-versus": 2800,
     "arena-pan": 3400,
     "chromatic-filter-impl": 600,
+    "cc-view": 6500,
     "clash-view": 1100,
     "cleanse-clock": 400,
     "cleanse-info": 100,
@@ -38,7 +39,7 @@
     "phaser": 388700,
     "phaser-config": 53100,
     "pop-lanes": 400,
-    "pose-layer": 12900,
+    "pose-layer": 15400,
     "rolldown-runtime": 200,
     "round-announcer": 1500,
     "round-view": 5200,
@@ -56,7 +57,7 @@
     "void-stage": 3100,
     "weather-view": 6500
   },
-  "totalGzip": 695500,
+  "totalGzip": 702000,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600
