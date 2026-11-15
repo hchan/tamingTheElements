@@ -328,7 +328,7 @@ export class ArcadeTactics {
     const self = view.self;
     if (self === undefined || a.phase !== RoundPhase.fight || (a.prevCmd & Cmd.cleanse) !== 0) return false;
     if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return false;
-    return cleanseSensible(this.level, a);
+    return cleanseSensible(this.level, a, (self.hp * 1000) / self.maxHp);
   }
 
   /**

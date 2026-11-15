@@ -279,5 +279,7 @@
  * 75: Arcade only, flag withOverTime (default off; Classic and flag-off Arcade hashes unchanged): over-time statuses burning 18, venom 19,
  *    mending 20 with a pulse system (overTime slot) and Burn riders on crimson-fire and scorch-breath. Re-record reason: header simVersion only
  *    (no existing input or checkpoint changes).
+ * 76: Arcade only, AI only behind withOverTime (flag-off hashes unchanged): the scripted AI cleanses burning (2+ stacks) and venom while hurt.
+ *    Re-record reason: new flag-on golden arcade-ot; existing goldens change only in the header simVersion.
  */
-export const SIM_VERSION = 75;
+export const SIM_VERSION = 76;

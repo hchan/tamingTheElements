@@ -230,10 +230,15 @@ export function elementalSensible(level: ArcadeAiLevel, a: ArcadeView, pm: numbe
 
 /**
  * The common Cleanse (ideas/in-progress/elemental-cleanse.md), Normal and Hard (Easy never): ready and the hero is rooted
- * or slowed. No draw.
+ * or slowed. With the over-time flag (the optional OT fields are set) also: burning on 2 or more stacks, or venom while own
+ * HP (`hpPm`) is under AI_OT_HURT_PM. No draw.
  */
-export function cleanseSensible(level: ArcadeAiLevel, a: ArcadeView): boolean {
-  return level !== AI_EASY && a.cleanseIn === 0 && (a.selfRooted > 0 || a.selfSlowed || a.selfCc?.kind === CcKind.silenced);
+export const AI_OT_HURT_PM = 600;
+export const AI_OT_BURN_STACKS = 2;
+export function cleanseSensible(level: ArcadeAiLevel, a: ArcadeView, hpPm = 1000): boolean {
+  if (level === AI_EASY || a.cleanseIn !== 0) return false;
+  if (a.selfRooted > 0 || a.selfSlowed || a.selfCc?.kind === CcKind.silenced) return true;
+  return (a.selfBurn ?? 0) >= AI_OT_BURN_STACKS || (a.selfVenom === true && hpPm < AI_OT_HURT_PM);
 }
 
 /**
