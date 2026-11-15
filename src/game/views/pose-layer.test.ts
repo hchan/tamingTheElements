@@ -87,7 +87,7 @@ interface Harness {
   readonly cv: CharacterView;
   readonly img: FakeImage;
   readonly c: RenderCharacter;
-  readonly sim: { tick: number; frozen: boolean; aim: number; vx: number; vy: number };
+  readonly sim: { tick: number; frozen: boolean; aim: number; vx: number; vy: number; stunned: boolean };
   readonly projs: RenderProjectile[];
   readonly shake: Rig['shake'];
   readonly images: FakeImage[];
@@ -102,19 +102,25 @@ interface Harness {
 }
 
 function harness(
-  opts: { arcade?: boolean; reduced?: boolean; vx?: number; vy?: number; sheets?: SheetsManifest; missing?: string[] } = {},
+  opts: {
+    arcade?: boolean; reduced?: boolean; vx?: number; vy?: number; sheets?: SheetsManifest; missing?: string[]; sprite?: string; foeX?: number;
+  } = {},
 ): Harness {
   const { scene, images, shake, missing, loads, done } = rig();
   for (const k of opts.missing ?? []) missing.add(k);
-  const c = char();
+  const c = char(opts.sprite === undefined ? {} : { sprite: opts.sprite });
+  const foe = opts.foeX === undefined ? undefined : char({ id: 2, team: 1, x: opts.foeX, px: opts.foeX });
   const projs: RenderProjectile[] = [];
   const projView = new Map<number, { image: FakeImage; glow: FakeImage }>();
   const clock = { t: 0 };
-  const sim = { tick: 0, frozen: false, aim: 0, vx: opts.vx ?? SPEED, vy: opts.vy ?? 0 };
+  const sim = { tick: 0, frozen: false, aim: 0, vx: opts.vx ?? SPEED, vy: opts.vy ?? 0, stunned: false };
   const view = {
     get tick() { return sim.tick; },
-    arcade: () => (opts.arcade === true ? { frozen: sim.frozen, aim: () => sim.aim, guarding: () => false } : undefined),
-    forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(c); },
+    arcade: () => (opts.arcade === true ? {
+      frozen: sim.frozen, aim: () => sim.aim, guarding: () => false, stunned: () => sim.stunned, rooted: () => false,
+      active: (team: number) => (foe !== undefined && team === 1 ? 2 : -1),
+    } : undefined),
+    forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(c); if (foe) visit(foe); },
     forEachProjectile: (visit: (p: RenderProjectile) => void) => { projs.forEach(visit); },
   } as unknown as RenderView;
   const cv = new CharacterView(scene);
@@ -122,7 +128,7 @@ function harness(
   const layer = new PoseLayer({
     scene,
     view,
-    characters: { peek: () => cv },
+    characters: { peek: (id) => (id === c.id ? cv : undefined) },
     projectiles: {
       peek: (id) => {
         let v = projView.get(id);
@@ -790,5 +796,92 @@ describe('wing flap and knee bend while moving', () => {
     expect(yRange('pax')).toBeGreaterThan(plain + 1);
     expect(yRange('sindarosa', true)).toBe(0);
     expect(yRange('pax', true)).toBe(0);
+  });
+});
+
+describe('backward walk (idea backward-walk-animation, Phase 1)', () => {
+  const rows = sheetsWith([['idle', 'E'], ['walk', 'E']], 'pax');
+  const run = (h: Harness, n: number, from = 0): string[] => {
+    const out: string[] = [];
+    for (let i = 0; i < n; i++) {
+      h.step(1000 / 60);
+      if (i >= from) out.push(h.img.frame.name);
+    }
+    return out;
+  };
+  const order = (names: string[]): number[] => {
+    const seq: number[] = [];
+    for (const n of names) {
+      const k = Number(n.slice(n.lastIndexOf('#') + 1));
+      if (seq[seq.length - 1] !== k) seq.push(k);
+    }
+    return seq;
+  };
+  const descending = (seq: number[]): boolean => seq.length >= 4 && seq.slice(1).every((k, i) => k === ((seq[i] ?? 0) + 3) % 4);
+  const ascending = (seq: number[]): boolean => seq.length >= 4 && seq.slice(1).every((k, i) => k === ((seq[i] ?? 0) + 1) % 4);
+  const backOf = (h: Harness): number => h.layer.sheetProbe().characters[0]?.back ?? 0;
+
+  it('backing away plays the walk frames reversed', () => {
+    const h = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'pax', sheets: rows });
+    expect(descending(order(run(h, 150, 20)))).toBe(true);
+  });
+
+  it('walking toward the foe is unchanged: forward order, no back lean', () => {
+    const h = harness({ arcade: true, foeX: 600, vx: 2, sprite: 'pax', sheets: rows });
+    expect(ascending(order(run(h, 150, 20)))).toBe(true);
+    expect(backOf(h)).toBe(0);
+  });
+
+  it('Classic (no arcade) never reverses or leans', () => {
+    const h = harness({ arcade: false, foeX: 600, vx: -2, sprite: 'pax', sheets: rows });
+    expect(descending(order(run(h, 150, 20)))).toBe(false);
+    expect(h.img.rotation).toBe(0);
+  });
+
+  it('reduced motion still reverses the frames but adds no rotation', () => {
+    const h = harness({ arcade: true, reduced: true, foeX: 600, vx: -2, sprite: 'pax', sheets: rows });
+    expect(descending(order(run(h, 150, 20)))).toBe(true);
+    expect(h.img.rotation).toBe(0);
+  });
+
+  it('a held diagonal (facing changed) plays forward', () => {
+    const h = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'pax', sheets: rows });
+    h.sim.aim = 5;
+    expect(descending(order(run(h, 150, 20)))).toBe(false);
+  });
+
+  it('stunned while sliding back gives forward order and no back lean', () => {
+    const h = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'pax', sheets: rows });
+    h.sim.stunned = true;
+    expect(descending(order(run(h, 150, 20)))).toBe(false);
+    expect(backOf(h)).toBe(0);
+  });
+
+  it('the lean eases in rather than snapping', () => {
+    const h = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'pax', sheets: sheetsWith([['idle', 'E']], 'pax') });
+    h.step(16);
+    const first = Math.abs(h.img.rotation);
+    for (let i = 0; i < 30; i++) h.step(16);
+    expect(backOf(h)).toBeGreaterThan(0.9);
+    expect(first).toBeLessThanOrEqual(Math.abs(h.img.rotation));
+  });
+
+  it('the lean leans away from the foe: east foe negative rotation, west foe positive', () => {
+    const east = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'pax', sheets: sheetsWith([['idle', 'E']], 'pax') });
+    for (let i = 0; i < 40; i++) east.step(16);
+    expect(backOf(east)).toBeGreaterThan(0.9);
+    expect(east.img.rotation).toBeLessThan(0);
+    const west = harness({ arcade: true, foeX: 0, vx: 2, sprite: 'pax', sheets: sheetsWith([['idle', 'E']], 'pax') });
+    west.sim.aim = 4;
+    for (let i = 0; i < 40; i++) west.step(16);
+    expect(backOf(west)).toBeGreaterThan(0.9);
+    expect(west.img.rotation).toBeGreaterThan(0);
+  });
+
+  it('a backing winged hero stays finite (no double flap blow-up)', () => {
+    const h = harness({ arcade: true, foeX: 600, vx: -2, sprite: 'sindarosa', sheets: sheetsWith([['idle', 'E'], ['walk', 'E']], 'sindarosa') });
+    for (let i = 0; i < 150; i++) h.step(16);
+    expect(Number.isFinite(h.img.y)).toBe(true);
+    expect(Number.isFinite(h.img.rotation)).toBe(true);
   });
 });

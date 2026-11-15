@@ -1,5 +1,5 @@
 ---
-status: idea
+status: in-progress
 added: 2026-11-14
 ---
 
@@ -19,3 +19,11 @@ Owner idea (2026-11-14): heroes need a real animation for walking backwards. Mov
 
 - Whether the cue is a pose-layer transform (cheap) or new baked frames per hero.
 - Per-hero tuning table, with a unit test per hero and a headless screenshot strip.
+
+## Landed (Phase 1, view-only)
+
+- `src/game/views/locomotion.ts`: `BACK_GAIT` table by sprite id (styles brace, backflap, drift, arc, recede, none), `backingAway(x, px, foeX)` mirrors the sim `backwardWalkX` rule from the actual step, `facesToward`, `walkTimeBack`/`walkFrameBack` (the walk row played reversed), `applyBackGait`.
+- `src/game/views/pose-layer.ts`: eased `back` amount (0..1) per character; forward cues fade out as it rises; no reversal while stunned, guarding, rooted, in an event pose, in victory, or on a held diagonal; Classic never reverses; reduced motion keeps the reversed frames with no rotation.
+- Tests: `locomotion.test.ts`, `pose-layer.test.ts`, `tests/e2e/move-backward.spec.ts` (probe `arena.sheets()` now reports `back`).
+- Screenshot strips in `~/claudetmp/shots/backward-walk/strip-*.png` were not informative (the crop caught a crystal effect over the hero); the e2e probe asserts the frame order instead. Gait constants were not tuned by eye.
+- Phase 2: see `ideas/brainstorm/backward-walk-baked-rows.md`.

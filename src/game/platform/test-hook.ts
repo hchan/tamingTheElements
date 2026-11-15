@@ -174,7 +174,7 @@ export interface ArenaProbe {
    */
   sheets(): Promise<{
     loaded: string[];
-    characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean; bodyHeight: number }[];
+    characters: { id: number; texture: string; frame: string; flipX: boolean; rotation: number; graded: boolean; bodyHeight: number; back: number }[];
   } | undefined>;
 }
 
