@@ -255,5 +255,10 @@
  *    bit 128), status ids 10-15 (dazed, iced, downed, silenced, hidden ccWard and kindled), diminishing returns, events 79-81. With the flag off
  *    nothing changes. Re-stamp reason: new default-off CC flag and core; no behaviour change with it off (only the header simVersion of the
  *    replay fixtures moves; inputs and checkpoints are identical).
+ * 71: Arcade only (Classic hashes unchanged). Fire Blast falloff (ideas/done/dragon-fading-fireball.md, FUN-DESIGN 2.27): the blast grows 2 px
+ *    per axis per tick for its first 20 ticks (75x15 to 115x55, centred, clamped at the left and top walls) and, after 20 ticks at full damage,
+ *    loses 10 pm of its spawn damage per tick down to 450 pm (fireBlastFadePm, src/core/sim/arcade-numbers.ts); hit strength stays heavy.
+ *    Re-record reason: every Arcade Fire Blast hit, clash and miss changes (Arcade goldens, Arcade 1v1 and 2v2 baselines; the Classic goldens
+ *    change only in the header simVersion).
  */
-export const SIM_VERSION = 70;
+export const SIM_VERSION = 71;

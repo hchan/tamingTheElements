@@ -57,11 +57,12 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
       // Auto-face (FUN-DESIGN 2.22): a held diagonal overrides; a held cardinal still faces the foe (east in this duel).
       const e = d % 2 === 1 ? d : 0;
       expect([s.dir[id], s.vx[id], s.vy[id]]).toEqual([e, (DIR8_X[e] ?? 0) * FIRE_BLAST_SPEED, (DIR8_Y[e] ?? 0) * FIRE_BLAST_SPEED]);
-      const [x, y] = [s.x[id] ?? 0, s.y[id] ?? 0];
+      // Compare centres: the Fire Blast grows centred (FUN-DESIGN 2.27), so the top-left corner moves by the growth too.
+      const [x, y] = [(s.x[id] ?? 0) + (s.w[id] ?? 0) / 2, (s.y[id] ?? 0) + (s.h[id] ?? 0) / 2];
       const faced = s.dir[0];
       step(world, [0, 0]);
-      expect((s.x[id] ?? 0) - x).toBeCloseTo((DIR8_X[e] ?? 0) * 8, 6);
-      expect((s.y[id] ?? 0) - y).toBeCloseTo((DIR8_Y[e] ?? 0) * 8, 6);
+      expect((s.x[id] ?? 0) + (s.w[id] ?? 0) / 2 - x).toBeCloseTo((DIR8_X[e] ?? 0) * 8, 6);
+      expect((s.y[id] ?? 0) + (s.h[id] ?? 0) / 2 - y).toBeCloseTo((DIR8_Y[e] ?? 0) * 8, 6);
       // The reel facing stays 4-way: x wins, as in Classic.
       expect(faced).toBe(facingFor(DIR8_X[e] ?? 0, DIR8_Y[e] ?? 0, -1));
     });
@@ -110,8 +111,8 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
     const id = b ?? 0;
     expect(s.y[0]).toBe(203);
     expect(s.abil[countIdx(0, 0)]).toBe(1);
-    // Top-left y starts at 203 + (80 - 15) / 2 = 235.5 and drops 8 a tick: out (< playfield y 200) on the 5th move.
-    for (let t = 0; t < 4; t++) step(world, [0, 0]);
+    // Top-left y starts at 203 + (80 - 15) / 2 = 235.5 and drops 9 a tick in Arcade (8 speed + 1 of the centred Fire Blast growth, FUN-DESIGN 2.27): 226.5, 217.5, 208.5, then 199.5 (< playfield y 200) on the 4th move.
+    for (let t = 0; t < 3; t++) step(world, [0, 0]);
     expect(bullets(world)).toEqual([id]);
     expect(s.x[id] ?? 0).toBeLessThan(world.arena.x + world.arena.w);
     step(world, [0, 0]);

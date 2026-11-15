@@ -1,6 +1,7 @@
 import {
   ELEMENTAL_COOLDOWN_TICKS, ELEMENTAL_NAMES, GUARD_MAX, Q4_ONE, TAG_COOLDOWN_TICKS, TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX,
 } from '../data/arcade';
+import { CHARACTER_HEIGHT } from '../data/chapters';
 import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
@@ -25,7 +26,7 @@ import { SWAP_COOLDOWN_TICKS, tagTargets, teamMembers } from './systems/swap';
 /** Capture sits after the character's own two ability slots (see systems/capture.ts). */
 const CAPTURE_SLOT = 2;
 import type { SimWorld } from './world';
-import { cooldownTicksFor } from './arcade-numbers';
+import { cooldownTicksFor, FIRE_BLAST_ABILITY, fireBlastAlphaPm } from './arcade-numbers';
 import { isArcade, isFrozen, now } from './clock';
 
 /** One character as the renderer sees it. The object is reused between callbacks: copy what you keep. */
@@ -154,6 +155,10 @@ export interface RenderProjectile {
   py: number;
   w: number;
   h: number;
+  /** View only (Arcade Fire Blast falloff, FUN-DESIGN 2.27): opacity in pm, 350..1000; absent means 1000. */
+  alphaPm?: number;
+  /** View only: px the box has grown per axis since spawn (Arcade Fire Blast, 0..40); absent means 0. */
+  growPx?: number;
 }
 
 /** One ability slot of the action bar. `readyTick` is the first tick the slot can fire again. */
@@ -211,13 +216,14 @@ export interface RenderView {
 export function createRenderView(world: SimWorld): RenderView {
   const s = world.state;
   const scratch: RenderCharacter = { id: 0, team: 0, sprite: '', dir: 0, flags: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, hp: 0, maxHp: 0, restCap: 0, element: 'void' };
-  const pScratch: RenderProjectile = { id: 0, team: 0, sprite: '', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0 };
+  const pScratch: RenderProjectile = { id: 0, team: 0, sprite: '', dir: 0, x: 0, y: 0, px: 0, py: 0, w: 0, h: 0, alphaPm: 1000, growPx: 0 };
   const eachBox = (kind: number, visit: (p: RenderProjectile) => void): void => {
     for (let i = 0; i < MAX_ENTITIES; i++) {
       if (s.kind[i] !== kind || ((s.flags[i] ?? 0) & EntityFlag.alive) === 0) continue;
       pScratch.id = i;
       pScratch.team = s.team[i] ?? 0;
-      pScratch.sprite = ABILITY_DEFS[s.defId[i] ?? 0]?.sprite ?? '';
+      const def = ABILITY_DEFS[s.defId[i] ?? 0];
+      pScratch.sprite = def?.sprite ?? '';
       pScratch.dir = s.dir[i] ?? 0;
       pScratch.x = s.x[i] ?? 0;
       pScratch.y = s.y[i] ?? 0;
@@ -225,6 +231,9 @@ export function createRenderView(world: SimWorld): RenderView {
       pScratch.py = s.py[i] ?? 0;
       pScratch.w = s.w[i] ?? 0;
       pScratch.h = s.h[i] ?? 0;
+      const fb = kind === EntityKind.projectile && isArcade(s) && def?.id === FIRE_BLAST_ABILITY;
+      pScratch.alphaPm = fb ? fireBlastAlphaPm(s.hp[i] ?? 0, def.damage ?? 0) : 1000;
+      pScratch.growPx = fb ? Math.max(0, (s.h[i] ?? 0) - (def.h ?? 0) * CHARACTER_HEIGHT) : 0;
       visit(pScratch);
     }
   };

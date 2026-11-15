@@ -83,8 +83,8 @@ const CHARGE_SHIFT = 1300;
 const CHARGE_BLASTS = 35;
 const ROUND_2 = 3800 + CHARGE_SHIFT;
 const ROUND_3 = 8600 + CHARGE_SHIFT;
-const GUARD_HOLD = 800;
-const GUARD_BLASTS = 17;
+const GUARD_HOLD = 1700; // SIM_VERSION 71 (Fire Blast falloff): was 800
+const GUARD_BLASTS = 40; // SIM_VERSION 71 (Fire Blast falloff): was 17
 /** Cone spacing in a beat-down: past the light hit-stun (32) plus its hit-stop, so each cone is a fresh 1-hit combo. */
 const BEAT_EVERY = 40;
 
@@ -121,9 +121,12 @@ function movesScript(): ArcadeScript {
   // Segment D: dash with a perfect dodge (p2's fire blast passes through p1's invulnerable dash ticks).
   h = home(p1, p2, 1130 + CHARGE_SHIFT, 100);
   p2.until(h + 10).tap('fire blast', primary);
-  // h + 57: p1 dashes toward the blast; the dash curve (SIM_VERSION 66) front-loads the distance, so the dasher only
-  // overlaps the blast during its invulnerable ticks for presses in a narrow window (h + 56..58).
-  p1.until(h + 57).tap('dash right', right | dash);
+  // h + 50: p1 dashes toward the blast; the dash curve (SIM_VERSION 66) front-loads the distance, so the dasher only
+  // overlaps the blast during its invulnerable ticks for presses in a narrow window (SIM_VERSION 71, Fire Blast
+  // falloff: the growing box moves that window to about h + 40..55).
+  p1.until(h + 50).tap('dash right', right | dash);
+  // SIM_VERSION 71 (Fire Blast falloff): the blast now lands the tick after the dash ends and stuns p1, so let the stun end before the next home().
+  p1.until(h + 130);
   // Beat-down (WP-arcade-numbers: Arcade lives are about 4x the hits now): single cones a stun apart, so p2 is low
   // enough for the parry's reflection to KO it.
   h = beatDown(p1, p2, 1700 + CHARGE_SHIFT, BEAT_ROUND_1);
@@ -235,7 +238,7 @@ function weatherScript(): ArcadeScript {
  */
 const BLAST_EVERY = 50;
 const TAG_AFTER_TORNADO = 30;
-const TAG_BLASTS = 10;
+const TAG_BLASTS = 30; // SIM_VERSION 71 (Fire Blast falloff): was 10
 const TAG_ROUND_2 = 1400;
 
 /**
@@ -269,7 +272,7 @@ function tagScript(): ArcadeScript {
 
 /** 3v3 script timings: ticks between tags (past TAG_COOLDOWN_TICKS) and the Fire Blasts that KO the three p2 heroes. */
 const TAG3_EVERY = 160;
-const TAG3_BLASTS = 18;
+const TAG3_BLASTS = 55; // SIM_VERSION 71 (Fire Blast falloff): was 18
 
 /**
  * Tag team 3v3 (WP-arcade-3v3); p1 deals 4x. Tag 2 brings the third hero (Curomo) in, Tag 1 then brings the first

@@ -45,7 +45,7 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   pax: [4600, 1442],
   // Rock Armour takes 75% off and Rock Pellet fires every 20 ticks: the strongest kit (87% before). Life 2470 -> 2600 in SIM_VERSION 37. Ranged since SIM_VERSION 69 (roster WP 0.4): 51.7%, numbers kept.
   rokcore: [1850, 640], // a 2x giant (data/size.ts) adds x1.45 life and x1.12 damage on top: 2600 / 690 before giants
-  // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong.
+  // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong. Arcade falloff since SIM_VERSION 71 (FUN-DESIGN 2.27): full damage to about 257 px, 45% past about 600 px.
   sindarosa: [2860, 724],
   // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]).
   treenoc: [6050, 1180],
@@ -103,6 +103,33 @@ export const ARCADE_COOLDOWN_TICKS: Readonly<Partial<Record<string, number>>> = 
 /** The cooldown `def` books: its Arcade override in Arcade, else (and always in Classic) the legacy `cooldownTicks`. */
 export function cooldownTicksFor(def: AbilityDef, arcade: boolean): number {
   return arcade ? (ARCADE_COOLDOWN_TICKS[def.id] ?? def.cooldownTicks) : def.cooldownTicks;
+}
+
+/**
+ * Fire Blast falloff (FUN-DESIGN 2.27, Arcade only): the blast grows FIRE_BLAST_GROW_PX per axis per tick (centred) for
+ * its first FIRE_BLAST_GROW_TICKS steps, keeps full damage for FIRE_BLAST_FULL_TICKS steps, then loses
+ * FIRE_BLAST_DECAY_PM per tick down to FIRE_BLAST_FLOOR_PM. Integers only (DETERMINISM.md).
+ */
+export const FIRE_BLAST_ABILITY = 'fire-blast';
+export const FIRE_BLAST_FULL_TICKS = 20;
+export const FIRE_BLAST_DECAY_PM = 10;
+export const FIRE_BLAST_FLOOR_PM = 450;
+export const FIRE_BLAST_GROW_TICKS = 20;
+export const FIRE_BLAST_GROW_PX = 2;
+/** View only: the sprite alpha at the damage floor (1000 at full damage). */
+export const FIRE_BLAST_ALPHA_FLOOR_PM = 350;
+
+/** Fire Blast damage in pm of its spawn damage after `age` projectile steps (1000 up to FIRE_BLAST_FULL_TICKS). */
+export function fireBlastFadePm(age: number): number {
+  if (age <= FIRE_BLAST_FULL_TICKS) return 1000;
+  return Math.max(FIRE_BLAST_FLOOR_PM, 1000 - FIRE_BLAST_DECAY_PM * (age - FIRE_BLAST_FULL_TICKS));
+}
+
+/** View only: sprite alpha in pm for a Fire Blast holding `hp` of its `base` damage (clash cuts fade it too). */
+export function fireBlastAlphaPm(hp: number, base: number): number {
+  const ratio = base > 0 ? Math.min(1000, Math.floor((hp * 1000) / base)) : 1000;
+  const t = Math.max(0, ratio - FIRE_BLAST_FLOOR_PM);
+  return FIRE_BLAST_ALPHA_FLOOR_PM + Math.floor(((1000 - FIRE_BLAST_ALPHA_FLOOR_PM) * t) / (1000 - FIRE_BLAST_FLOOR_PM));
 }
 
 /**
