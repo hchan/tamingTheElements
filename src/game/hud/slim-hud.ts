@@ -74,13 +74,15 @@ export function pillWord(label: string): string {
 }
 
 /** One line under the bar: `SINDAROSA ▲ Life 228/228`, plus the health word only when it is not OK (never colour alone). */
-export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap' | 'element'>, noName = false, terse = false): string {
+export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap' | 'element'>, noName = false, terse: boolean | 'bare' = false): string {
   const cue = healthCue(c.hp / Math.max(1, c.maxHp));
   const glyph = elementCue(c.element).charAt(0);
   const word = cue.label === 'OK' ? '' : ` ${cue.label}`;
   // `noName`: the phone fallback when the big text would run into the SUPER label (the portrait and the glyph still say who).
   // `terse`: drops the word "Life" (phones: keeps the text at full size instead of shrinking it to fit beside the SUPER label).
-  const life = terse ? lifeReadout(c).replace(/^Life /, '') : lifeReadout(c);
+  // `'bare'`: also drops "/max" (a long name like TREENOC then keeps the 11 px phone size instead of shrinking or losing letters).
+  const terseLife = lifeReadout(c).replace(/^Life /, '');
+  const life = terse === 'bare' ? terseLife.replace(/\/\d+$/, '') : terse ? terseLife : lifeReadout(c);
   return `${noName ? '' : `${name.toUpperCase()} `}${glyph} ${life}${word}`;
 }
 

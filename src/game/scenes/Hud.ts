@@ -66,7 +66,7 @@ const SUPER_LABEL_BOOST = 1.95;
 /** The life line's size steps (of its boosted size) tried before the hero name is cut. */
 const LIFE_TEXT_SCALES: readonly number[] = [1, 0.85, 0.72, 0.62];
 /** Smallest effective size (CSS px) the HUD life line and labels shrink to on a phone; the name is cut before the text goes smaller. */
-const MIN_PHONE_PX = 9.8;
+const MIN_PHONE_PX = 11;
 
 const TEAMS = [0, 1] as const;
 
@@ -520,7 +520,7 @@ export class Hud extends Phaser.Scene {
     const k = coreDisplayWidth(this) / 1280;
     const steps = LIFE_TEXT_SCALES.filter((sc) => base * sc * k >= MIN_PHONE_PX || sc === 1);
     for (const sc of steps) {
-      for (const terse of [false, true]) {
+      for (const terse of [false, true, 'bare'] as const) {
         label.setFontSize(Math.round(base * sc)).setText(compactLabel(name, c, false, terse));
         if (!m || clears(m)) return;
       }
@@ -528,7 +528,7 @@ export class Hud extends Phaser.Scene {
     label.setFontSize(Math.round(base * (steps[steps.length - 1] ?? 1)));
     if (!m) return;
     for (let max = name.length - 1; max >= 3; max--) {
-      label.setText(compactLabel(shortName(name, max), c, false, true));
+      label.setText(compactLabel(shortName(name, max), c, false, 'bare'));
       if (clears(m)) return;
     }
     label.setText(compactLabel(name, c, true));
