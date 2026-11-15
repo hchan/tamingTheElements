@@ -291,5 +291,8 @@
  * 79: Arcade only, AI only (Classic and every stored hash unchanged): the scripted AI escalates after a quiet spell (800 ticks: more plans, no guard
  *    reflex, walks in under threat, the 2v2 clash breaker also in 1v1; 1100 ticks: charge, trap, super, dash). Re-record reason: every
  *    replay fixture changes only its simVersion header.
+ * 80: Arcade only, AI only (Classic and every stored hash unchanged): defence fatigue. Each defended threat in a row (at most one per 50 ticks)
+ *    takes 120 pm off the plan scales (floor 50% Normal, 40% Hard, none on Easy), the guard reflex stops after 3, a hit or 150 quiet ticks
+ *    resets it. Re-record reason: every replay fixture changes only its simVersion header.
  */
-export const SIM_VERSION = 79;
+export const SIM_VERSION = 80;
