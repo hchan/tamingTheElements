@@ -5,7 +5,7 @@ added: 2026-11-14
 
 # Roster of 24: six heroes per element
 
-Owner idea (2026-11-14): today there are 12 heroes (three per element, four elements). Grow to 24: six per element, with the 12 new elementals created in the same theme (medieval-ish dark fantasy, see [feedback-dark-fantasy-meaning] in memory; luminous, painterly).
+Owner idea (2026-11-14): today there are 12 heroes (three per element, four elements). Grow to 24: six per element, with the 12 new elementals created in the same theme (medieval-ish dark fantasy: a genre, not low brightness; luminous, painterly).
 
 ## Scope (all of it)
 
