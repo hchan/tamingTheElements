@@ -517,6 +517,7 @@ export class Arena extends Phaser.Scene {
       hudTextSizes: () => (this.scene.get(HUD_SCENE) as unknown as { textSizes(): ReturnType<ArenaProbe['hudTextSizes']> }).textSizes(),
       heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
       idleAura: () => import('../fx/idle-aura-view').then((m) => m.idleAuraState(this)),
+      idleAuraHide: (on: boolean) => import('../fx/idle-aura-view').then((m) => { m.idleAuraHide(this, on); }),
       abilityFx: () => import('../fx/ability-aura-view').then((m) => m.abilityFxState(this)),
       dangerZones: () => import('../fx/danger-view').then((m) => m.dangerState(this)),
       aim: () => {

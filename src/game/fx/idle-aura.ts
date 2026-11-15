@@ -354,9 +354,9 @@ export function idleLines(look: IdleLook, b: Box, c: IdleCtx, lines: Float32Arra
       const crown = k >= 2;
       const bx = b.x + (crown ? (k === 2 ? 0.4 : 0.6) : k === 0 ? 0.15 : 0.85) * b.w;
       const base = b.y + (crown ? 0.12 : 0.32) * b.h;
-      const bw = b.w * 0.14;
+      const bw = b.w * 0.2;
       const flick = c.reduced ? 0.5 : tri(t / (18 + 7 * k) + hash01(k, s + 100));
-      const th = (0.14 + 0.08 * flick) * b.h;
+      const th = (0.22 + 0.12 * flick) * b.h;
       const tx = bx + (c.reduced ? 0 : (tri(t / (30 + 5 * k) + hash01(k, s + 101)) - 0.5) * bw * 0.8);
       const a = (crown ? 0.28 : 0.4) * (0.7 + 0.3 * flick) * inten;
       n = seg(lines, n, cap, bx - bw / 2, base, tx, base - th, a, LineKind.lick);
