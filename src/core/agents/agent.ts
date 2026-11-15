@@ -22,10 +22,12 @@ import {
   type SimState,
 } from '../sim/state';
 import type { SimWorld } from '../sim/world';
-import { ARCADE_SNAG_SLOT, ELEMENTAL_COOLDOWN_TICKS, SNAG_FIRE_ABILITIES } from '../data/arcade';
+import { ARCADE_SNAG_SLOT, CC_RIDERS, CcKind, ELEMENTAL_COOLDOWN_TICKS, SNAG_FIRE_ABILITIES } from '../data/arcade';
 import { CHARACTERS } from '../data/characters';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
+import { ccLevel, ccOn } from '../sim/systems/arcade/cc-state';
+import { StatusField, StatusId, statusBase, statusSlot } from '../sim/systems/status';
 import { RANGED } from '../sim/systems/arcade/meter';
 import { isGuarding } from '../sim/systems/arcade/stun';
 import { superSpecOf } from '../sim/systems/arcade/super';
@@ -142,8 +144,51 @@ export interface ArcadeView {
   readonly selfRooted: number;
   readonly selfSlowed: boolean;
   readonly oppSuperActive: boolean;
+  /**
+   * Crowd control (flag withCrowdControl; all three are absent unless the flag is on, so the AI input of a flag-off match is
+   * unchanged): the CC on this side's fighter and on the opponent, `foeCcImmune` the bits `1 << CcKind` of the CC kinds the
+   * opponent is diminishing-returns immune to now, and `slotCc` the CcKind (0: none) the rider of this side's ability slots
+   * 0 and 1 would apply.
+   */
+  readonly selfCc?: CcView;
+  readonly foeCc?: CcView;
+  readonly foeCcImmune?: number;
+  readonly slotCc?: readonly [number, number];
   /** The live stage hazard (systems/arcade/hazard.ts: its warning shading and its strike are on screen), or undefined. */
   readonly hazard: HazardView | undefined;
+}
+
+/**
+ * One fighter's crowd control as `ArcadeView.selfCc` and `foeCc` show it: the CcKind (0: none; a hard CC, else a silence),
+ * game ticks left and game ticks since it started. Only the statuses the screen shows.
+ */
+export interface CcView {
+  readonly kind: number;
+  readonly left: number;
+  readonly age: number;
+}
+
+const CC_NONE: CcView = { kind: 0, left: 0, age: 0 };
+/** CC status id per CcKind (index = kind); the hard CCs come before the silence in the read order. */
+const CC_STATUS = [0, StatusId.dazed, StatusId.iced, StatusId.downed, StatusId.silenced] as const;
+
+function ccOf(s: SimState, f: FighterView | undefined, g: number): CcView {
+  if (f === undefined) return CC_NONE;
+  for (const kind of [CcKind.daze, CcKind.iced, CcKind.downed, CcKind.silenced]) {
+    const slot = statusSlot(s, f.id, CC_STATUS[kind]);
+    if (slot < 0) continue;
+    const b = statusBase(f.id, slot);
+    return { kind, left: Math.max(0, (s.status[b + StatusField.expire] ?? 0) - g), age: g - (s.status[b + StatusField.start] ?? 0) };
+  }
+  return CC_NONE;
+}
+
+/** The CcKind each ability slug's hit rider applies. */
+const RIDER_KIND = new Map<string, number>(CC_RIDERS.map((r) => [r.slug, r.kind]));
+
+function slotKinds(s: SimState, self: FighterView | undefined): readonly [number, number] {
+  const abil = self === undefined ? undefined : CHARACTERS[s.defId[self.id] ?? 0]?.abilities;
+  return [RIDER_KIND.get(abil?.[0] ?? '') ?? 0, RIDER_KIND.get(abil?.[1] ?? '') ?? 0];
 }
 
 /**
@@ -335,6 +380,12 @@ function arcadeViewOf(
     selfSlowed: self !== undefined && (left(self, ArcadeE.trapSlowUntil) > 0 || hasSlow(s.status, self.id)),
     oppSuperActive: team(1 - side, ArcadeT.superState) !== 0,
     hazard: hazardOf(s, g),
+    ...(ccOn(s) && {
+      selfCc: ccOf(s, self, g),
+      foeCc: ccOf(s, opp, g),
+      foeCcImmune: opp === undefined ? 0 : [CcKind.daze, CcKind.iced, CcKind.downed, CcKind.silenced].reduce((m, kind) => (ccLevel(s, opp.id, kind - 1) >= 2 ? m | (1 << kind) : m), 0),
+      slotCc: slotKinds(s, self),
+    }),
   };
 }
 
