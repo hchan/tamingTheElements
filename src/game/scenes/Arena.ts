@@ -376,6 +376,10 @@ export class Arena extends Phaser.Scene {
     void import('../fx/ability-aura-view').then((m) => {
       if (this.view === view) m.mountAbilityAuraView(this, view, () => getPrefs().reduceMotion);
     });
+    // Idle element auras around every active hero (idle-element-auras, its own lazy chunk).
+    void import('../fx/idle-aura-view').then((m) => {
+      if (this.view === view) m.mountIdleAuraView(this, view, () => this.frameAlpha, () => getPrefs().reduceMotion, () => getPrefs().highContrast);
+    });
     // Status apply bursts, expiry fades and the debuff loops (buff-debuff-animation, its own lazy chunk).
     void import('../fx/status-fx-view').then((m) => {
       if (this.view === view) m.mountStatusFxView(this, view, () => getPrefs().reduceMotion);
@@ -510,6 +514,7 @@ export class Arena extends Phaser.Scene {
       ownElement: () => import('../fx/own-element-view').then((m) => m.ownElementState(this)),
       hudTextSizes: () => (this.scene.get(HUD_SCENE) as unknown as { textSizes(): ReturnType<ArenaProbe['hudTextSizes']> }).textSizes(),
       heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
+      idleAura: () => import('../fx/idle-aura-view').then((m) => m.idleAuraState(this)),
       abilityFx: () => import('../fx/ability-aura-view').then((m) => m.abilityFxState(this)),
       dangerZones: () => import('../fx/danger-view').then((m) => m.dangerState(this)),
       aim: () => {

@@ -1,5 +1,6 @@
 {
   "chunks": {
+    "ability-aura": 900,
     "ability-aura-view": 2400,
     "ability-text": 1200,
     "arcade-audio": 2900,
@@ -22,6 +23,7 @@
     "hazard-view": 4100,
     "index": 39300,
     "index.css": 13100,
+    "idle-aura-view": 7700,
     "input-display": 1300,
     "launch": 200,
     "lazy-index": 600,
@@ -51,7 +53,7 @@
     "trap-view": 3000,
     "weather-view": 6500
   },
-  "totalGzip": 684700,
+  "totalGzip": 695500,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600
