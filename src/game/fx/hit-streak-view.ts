@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { STREAKS_BY_STRENGTH, STREAK_FAN, STREAK_POOL, streakFrame } from './hit-feel';
+import { STREAKS_BY_STRENGTH, coreFrame, STREAK_FAN, STREAK_POOL, streakFrame } from './hit-feel';
 
 /**
  * Directional hit streaks (QA r34): a fan of tapered light lines flung along the blow, drawn into one additive Graphics
@@ -27,6 +27,7 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
     age: number;
   }
   const streaks: Streak[] = [];
+  const cores: { x: number; y: number; strength: number; age: number }[] = [];
   let gfx: Phaser.GameObjects.Graphics | undefined;
   let attached = false;
   const detach = (): void => {
@@ -38,6 +39,7 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
   };
   const drop = (): void => {
     streaks.length = 0;
+    cores.length = 0;
     gfx = undefined;
     detach();
   };
@@ -61,7 +63,19 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
       gfx.lineStyle(f.width * 2.4, s.color, f.alpha * 0.7).lineBetween(ax, ay, bx, by);
       gfx.lineStyle(Math.max(1.5, f.width * 0.8), 0xfff4d8, f.alpha).lineBetween(ax, ay, bx, by);
     }
-    if (streaks.length === 0) detach();
+    for (let i = cores.length - 1; i >= 0; i--) {
+      const c = cores[i];
+      if (!c) continue;
+      if (!held) c.age += delta;
+      const f = coreFrame(c.age, c.strength);
+      if (!f) {
+        cores.splice(i, 1);
+        continue;
+      }
+      gfx.fillStyle(0xfff4d8, f.alpha * 0.35).fillCircle(c.x, c.y, f.radius * 1.5);
+      gfx.fillStyle(0xffffff, f.alpha * 0.9).fillCircle(c.x, c.y, f.radius * 0.7);
+    }
+    if (streaks.length === 0 && cores.length === 0) detach();
   }
   return {
     spawn(x, y, dirX, color, strength): void {
@@ -69,6 +83,7 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean): S
       const n = STREAKS_BY_STRENGTH[s] ?? 3;
       const sign = dirX < 0 ? -1 : 1;
       gfx ??= scene.add.graphics().setDepth(12).setBlendMode(ADD);
+      cores.push({ x, y, strength: s, age: paused() ? 30 : 0 });
       for (let i = 0; i < n && streaks.length < STREAK_POOL; i++) {
         const a = (dirX < 0 ? Math.PI : 0) + (STREAK_FAN[i] ?? 0) * sign - 0.12 * sign;
         streaks.push({ x, y, cos: Math.cos(a), sin: Math.sin(a), color, strength: s, unit: ((i * 5) % 7) / 6, age: paused() ? HELD_START_MS : 0 });

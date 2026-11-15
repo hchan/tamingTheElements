@@ -24,15 +24,23 @@ test(`plain hit frame sequence (${hero} vs ${foeName})`, async ({ page }, info) 
   const me = chars.find((c) => c.team === 0);
   const foe = chars.find((c) => c.team === 1);
   expect(me && foe).toBeTruthy();
-  // 160 px apart: inside melee reach, clear of overlap.
-  await page.evaluate(`window.__TTE__.arena.place(${String(me?.id)}, 500, 300, 0); window.__TTE__.arena.place(${String(foe?.id)}, 660, 300, 0); window.__TTE__.arena.step(1)`);
+  // Start $GAP px apart (default 160: inside melee reach, clear of overlap); when no hit lands within 20 steps, close in (some
+  // heroes are shorter or have less reach, e.g. pax vs lavax) and try again.
   const hp = async (): Promise<number> => (await page.evaluate<{ id: number; hp: number }[]>('window.__TTE__.arena.characters()')).find((c) => c.id === foe?.id)?.hp ?? 0;
-  const start = await hp();
   const out = (n: string): string => (shotDir ? `${shotDir}/${hero}-${n}.png` : info.outputPath(`${n}.png`));
+  const gaps = [Number(process.env['GAP'] ?? 160), 120, 90, 70, 55].filter((g, i, all) => Number.isFinite(g) && all.indexOf(g) === i);
   let landed = false;
-  for (let i = 0; i < 40 && !landed; i++) {
-    await page.evaluate('window.__TTE__.arena.step(1, [32, 0])');
-    landed = (await hp()) < start;
+  for (const gap of gaps) {
+    await page.evaluate(`window.__TTE__.arena.place(${String(me?.id)}, 500, 300, 0); window.__TTE__.arena.place(${String(foe?.id)}, ${String(500 + gap)}, 300, 0); window.__TTE__.arena.step(1)`);
+    const start = await hp();
+    for (const cmd of [32, 16]) {
+      for (let i = 0; i < 30 && !landed; i++) {
+        await page.evaluate(`window.__TTE__.arena.step(1, [${String(cmd)}, 0])`);
+        landed = (await hp()) < start;
+      }
+      if (landed) break;
+    }
+    if (landed) break;
   }
   expect(landed).toBe(true);
   let t = 0;

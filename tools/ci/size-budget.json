@@ -4,7 +4,7 @@
     "arcade-audio": 2650,
     "arcade-setup": 1850,
     "arcade-versus": 9600,
-    "arena-pan": 2800,
+    "arena-pan": 2950,
     "clash-view": 943,
     "cleanse-clock": 400,
     "cleanse-info": 150,
@@ -33,7 +33,7 @@
     "pad-bindings": 1150,
     "pad-bindings-section": 1580,
     "phaser": 388700,
-    "phaser-config": 47700,
+    "phaser-config": 48100,
     "ability-text": 1100,
     "pose-layer": 11800,
     "rolldown-runtime": 200,
@@ -51,7 +51,7 @@
     "trap-view": 2700,
     "weather-view": 6000
   },
-  "totalGzip": 620800,
+  "totalGzip": 621500,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600

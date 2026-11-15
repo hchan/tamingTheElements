@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize, STREAKS_BY_STRENGTH, STREAK_MS, streakFrame, RECOIL_TICKS, NO_RECOIL, recoilPose, POSE_HOLD_MS, SHAKE_BOOST, poseHoldMs, shakeBoost } from './hit-feel';
+import { DEFAULT_SPARK_STYLE, KO_PUNCH_MS, KO_PUNCH_ZOOM, SPARK_STYLE, koPunchZoom, sparkStyleFor, KO_WASH_MS, KO_WASH_PEAK, koWashStrength, KO_SPLIT_MS, KO_SPLIT_PEAK, koSplitAmount, RING_MS, ringFrame, ringReach, SUPER_FLASH_MS, SUPER_FLASH_PEAK, SUPER_FRACTION_FALLBACK, SUPER_NUMBER_MS, lifeFraction, superFlashAlpha, superNumberFrame, superNumberSize, STREAKS_BY_STRENGTH, STREAK_MS, streakFrame, RECOIL_TICKS, NO_RECOIL, CORE_MS, coreFrame, POP_MS, popFrame, popSize, recoilPose, POSE_HOLD_MS, SHAKE_BOOST, poseHoldMs, shakeBoost } from './hit-feel';
 
 describe('sparkStyleFor', () => {
   it('has a distinct style per element and a default', () => {
@@ -130,10 +130,10 @@ describe('plain-hit weight (QA r34)', () => {
 });
 
 describe('render-side hit-stop (QA r35)', () => {
-  it('holds 40-60 ms, longer for harder hits, and nothing under reduced motion', () => {
+  it('holds a visible 70-120 ms (QA r38), longer for harder hits, and nothing under reduced motion', () => {
     for (const ms of POSE_HOLD_MS) {
-      expect(ms).toBeGreaterThanOrEqual(40);
-      expect(ms).toBeLessThanOrEqual(60);
+      expect(ms).toBeGreaterThanOrEqual(70);
+      expect(ms).toBeLessThanOrEqual(120);
     }
     expect(poseHoldMs(0, false)).toBeLessThan(poseHoldMs(3, false));
     expect(poseHoldMs(2, true)).toBe(0);
@@ -144,5 +144,32 @@ describe('render-side hit-stop (QA r35)', () => {
     for (const b of SHAKE_BOOST) expect(b).toBeGreaterThanOrEqual(1);
     expect(shakeBoost(0)).toBeGreaterThan(shakeBoost(2));
     expect(shakeBoost(Number.NaN)).toBe(1);
+  });
+});
+
+describe('hit weight (QA r38)', () => {
+  it('recoil snaps to full on the first tick', () => {
+    const p = recoilPose(0, 2, 1, false);
+    expect(p.dx).toBeGreaterThan(10);
+    expect(p.sx).toBeLessThan(0.75);
+    expect(recoilPose(0, 2, 1, true)).toBe(NO_RECOIL);
+  });
+  it('the contact core starts full, shrinks and ends, bigger for harder hits', () => {
+    const a = coreFrame(0, 0);
+    const b = coreFrame(0, 3);
+    expect(a?.alpha).toBe(1);
+    expect(b?.radius ?? 0).toBeGreaterThan(a?.radius ?? 0);
+    expect(coreFrame(CORE_MS / 2, 1)?.radius ?? 0).toBeLessThan(coreFrame(0, 1)?.radius ?? 0);
+    expect(coreFrame(CORE_MS, 1)).toBeNull();
+    expect(coreFrame(-1, 1)).toBeNull();
+  });
+  it('the damage pop starts large, settles to 1x, fades and ends', () => {
+    expect(popFrame(0)?.scale).toBeCloseTo(1.6);
+    expect(popFrame(120)?.scale).toBeCloseTo(1, 1);
+    expect(popFrame(POP_MS - 1)?.alpha ?? 1).toBeLessThan(0.1);
+    expect(popFrame(POP_MS)).toBeNull();
+    expect(popSize(0)).toBeGreaterThanOrEqual(38);
+    expect(popSize(3)).toBe(0);
+    expect(popSize(Number.NaN)).toBe(0);
   });
 });

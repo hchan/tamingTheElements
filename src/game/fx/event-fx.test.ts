@@ -62,6 +62,15 @@ describe('EventFx plain-hit weight (QA r34)', () => {
       expect(calls).toEqual(reduced ? [] : ['streaks1>3:0', 'recoil1>3:0', 'streaks1>3:2', 'recoil1>3:2']);
     }
   });
+  it('pops a larger damage number on plain hits, not on supers, scaled hits or under reduced motion (QA r38)', () => {
+    for (const reduced of [false, true]) {
+      const { sink } = recorder();
+      const calls: string[] = [];
+      sink.pop = (t, a, size) => calls.push(`pop${String(t)}=${String(a)}@${String(size)}`);
+      arcadeFx(sink, reduced).consume([confirmed(1, 0), confirmed(2, 3), confirmed(3, 1, { scalePm: 500 })]);
+      expect(calls.length).toBe(reduced ? 0 : 1);
+    }
+  });
   it('light hits get a camera nudge, weaker than a medium one', () => {
     const [ld = 0, li = 0] = SHAKE_BY_STRENGTH[0] ?? [];
     const [, mi = 0] = SHAKE_BY_STRENGTH[1] ?? [];

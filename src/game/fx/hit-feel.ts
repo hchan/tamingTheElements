@@ -152,7 +152,7 @@ export function koSplitAmount(ageMs: number, reduced: boolean): number {
  */
 
 /** Spark streaks thrown by strength (light, medium, heavy, super). */
-export const STREAKS_BY_STRENGTH = [3, 5, 7, 9] as const;
+export const STREAKS_BY_STRENGTH = [4, 6, 8, 9] as const;
 export const STREAK_MS = 260;
 export const STREAK_POOL = 24;
 
@@ -166,7 +166,7 @@ export interface StreakFrame {
 }
 
 /** Head reach of a streak by strength. */
-const STREAK_REACH = [42, 56, 76, 100] as const;
+const STREAK_REACH = [58, 78, 104, 136] as const;
 
 /** One streak `ageMs` in (null once done): a fast dart out whose tail catches up, thinning and fading. `unit` 0..1 varies reach between streaks. */
 export function streakFrame(ageMs: number, strength: number, unit: number): StreakFrame | null {
@@ -176,15 +176,15 @@ export function streakFrame(ageMs: number, strength: number, unit: number): Stre
   const t = ageMs / STREAK_MS;
   const head = 1 - (1 - Math.min(1, t * 2.2)) ** 3;
   const tail = t * t;
-  return { from: 6 + reach * Math.min(tail, head * 0.9), to: 6 + reach * head, width: (3 + s * 0.8) * (1 - t), alpha: (1 - t) ** 1.4 };
+  return { from: 6 + reach * Math.min(tail, head * 0.9), to: 6 + reach * head, width: (4.5 + s * 1.2) * (1 - t), alpha: (1 - t) ** 1.4 };
 }
 
 /** Streak directions as angle offsets (radians) from the attack axis, widest last; fixed, so a replay draws the same fan. */
 export const STREAK_FAN: readonly number[] = [0, -0.35, 0.35, -0.7, 0.7, -1.05, 1.05, -1.4, 1.4];
 
 export const RECOIL_TICKS = 10;
-const SQUASH = [0.12, 0.16, 0.2, 0.26] as const;
-const PUSH_PX = [5, 6.5, 8.5, 11] as const;
+const SQUASH = [0.18, 0.23, 0.29, 0.36] as const;
+const PUSH_PX = [9, 11, 14, 18] as const;
 
 export interface RecoilPose {
   /** Horizontal push in px along the attack direction. */
@@ -202,17 +202,18 @@ export function recoilPose(ageTicks: number, strength: number, dirX: number, red
   if (reduced || !Number.isFinite(ageTicks) || ageTicks < 0 || ageTicks >= RECOIL_TICKS) return NO_RECOIL;
   const s = Math.min(3, Math.max(0, Math.floor(Number.isFinite(strength) ? strength : 0)));
   const t = ageTicks / RECOIL_TICKS;
-  const env = t < 0.2 ? t / 0.2 : (1 - (t - 0.2) / 0.8) ** 2;
+  // Snaps to full on the first frame and holds a beat (the blow lands, it does not ease in), then springs back.
+  const env = t < 0.2 ? 1 : (1 - (t - 0.2) / 0.8) ** 2;
   const a = (SQUASH[s] ?? 0) * env;
   return { dx: (dirX < 0 ? -1 : 1) * (PUSH_PX[s] ?? 0) * env, sx: 1 - a, sy: 1 + a * 0.75 };
 }
 
 /**
  * Render-side hit-stop (QA r35): on a landed hit the view holds the fighters' pose and animation clocks for this many ms while
- * the sim keeps ticking, so the blow reads as a beat (about 2-3 frames at 60 Hz). Light, medium, heavy, super. Wall-clock, view
+ * the sim keeps ticking, so the blow reads as a beat (about 4-7 frames at 60 Hz, QA r38: visible freeze frames). Light, medium, heavy, super. Wall-clock, view
  * only; never feeds the sim.
  */
-export const POSE_HOLD_MS = [40, 46, 52, 60] as const;
+export const POSE_HOLD_MS = [70, 85, 100, 120] as const;
 /** Extra camera-shake intensity by strength (multiplier on `SHAKE_BY_STRENGTH`, so light hits no longer feel the same as before). */
 export const SHAKE_BOOST = [1.5, 1.4, 1.25, 1] as const;
 
@@ -226,4 +227,47 @@ export function poseHoldMs(strength: number, reduced: boolean): number {
 export function shakeBoost(strength: number): number {
   if (!Number.isFinite(strength)) return 1;
   return SHAKE_BOOST[Math.min(3, Math.max(0, Math.floor(strength)))] ?? 1;
+}
+
+/** Contact core (QA r38): a white-hot additive flash at the impact point for the first frames of a hit, by strength. */
+export const CORE_MS = 130;
+export const CORE_RADIUS = [26, 34, 44, 58] as const;
+
+export interface CoreFrame {
+  /** Radius in logical px. */
+  readonly radius: number;
+  readonly alpha: number;
+}
+
+/** The contact core `ageMs` in (null once done): full size and brightness at once, then shrinking and fading. */
+export function coreFrame(ageMs: number, strength: number): CoreFrame | null {
+  if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= CORE_MS) return null;
+  const s = Math.min(3, Math.max(0, Math.floor(Number.isFinite(strength) ? strength : 0)));
+  const t = ageMs / CORE_MS;
+  return { radius: (CORE_RADIUS[s] ?? 26) * (1 - 0.45 * t), alpha: (1 - t) ** 1.3 };
+}
+
+/** Damage pop (QA r38): a larger copy of the plain hit number that punches in on contact, then gives way to the HUD number. */
+export const POP_MS = 260;
+export const POP_POOL = 6;
+export const POP_SIZE = [38, 44, 52, 0] as const;
+
+export interface PopFrame {
+  /** Scale on the base size: starts big and settles to 1. */
+  readonly scale: number;
+  readonly alpha: number;
+}
+
+/** The pop `ageMs` in (null once done): a fast shrink from 1.6x to 1x, held, then a fade. */
+export function popFrame(ageMs: number): PopFrame | null {
+  if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs >= POP_MS) return null;
+  const k = Math.min(1, ageMs / 90);
+  const scale = 1.6 - 0.6 * (1 - (1 - k) ** 3);
+  return { scale, alpha: ageMs < 110 ? 1 : 1 - (ageMs - 110) / (POP_MS - 110) };
+}
+
+/** Font size of the pop for a hit `strength` 0..2 (0: none, supers have their own gold number). */
+export function popSize(strength: number): number {
+  if (!Number.isFinite(strength)) return 0;
+  return POP_SIZE[Math.min(3, Math.max(0, Math.floor(strength)))] ?? 0;
 }
