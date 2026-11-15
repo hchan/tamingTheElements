@@ -11,3 +11,6 @@ added: 2026-11-14
 - Versus picker at 1280 is dense: the 2v2 explanatory paragraph and the ability text push hero cards partly off-screen; "More heroes below" is needed even on desktop.
 - Super: the GLACIER CRASH cut-in is strong (dimmed arena, banner, element portrait). The impact burst after it is a thin white fan; make it larger for the payoff.
 - In 2v2 after a tag, the incoming hero spawns overlapping the foe in my scripted frames (may be my place() artefact); worth a check that tag-in position is not on top of the opponent.
+
+## Progress
+- 2026-11-14: earth crystal at spawn and pale-stage chip contrast fixed (presentation only). `src/game/fx/terrain-props.ts`: a patch whose footprint lies within 200 px of either Arcade start column (fighters' row) draws flat scree instead of a crystal/spire/boulder (`overlapsSpawn`, test `terrain-props.test.ts`). `src/game/fx/terrain-view.ts`: chip plate 0.9 to 0.96 plus a thin dark halo outside the rim so the pill edge stays crisp on water and air. Shots: ~/claudetmp/stage-polish/{before,after}/ (all four stages, `rokcore-earth-seed2.png` shows Rokcore on earth with scree at the spawn side).

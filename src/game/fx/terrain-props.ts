@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { ARCADE_P1_START_X, ARCADE_P2_START_X } from '@core/index';
 import { hash01, toPts } from './grim-fx';
 
 /**
@@ -182,9 +183,42 @@ function crystals(g: Gfx, x: number, y: number, w: number, h: number, seed: numb
   }
 }
 
+/** Spawn zones (qa-r38: the crystal sat on Rokcore at the start): each fighter's start column plus a margin for big sprites, over the fighters' row. */
+const SPAWN_MARGIN_X = 200; // the sim keeps patches only TERRAIN_GAP off the start box; wide sprites (Rokcore) and the first steps need more
+const SPAWN_BAND_Y: readonly [number, number] = [300, 520];
+const SPAWN_WIDTH = 80;
+
+/** True when the footprint (x, y, w, h) touches a start zone, so a tall prop there would stand on a fighter. */
+export function overlapsSpawn(x: number, y: number, w: number, h: number): boolean {
+  if (y + h < SPAWN_BAND_Y[0] || y > SPAWN_BAND_Y[1]) return false;
+  for (const sx of [ARCADE_P1_START_X, ARCADE_P2_START_X]) {
+    if (x < sx + SPAWN_WIDTH + SPAWN_MARGIN_X && x + w > sx - SPAWN_MARGIN_X) return true;
+  }
+  return false;
+}
+
+/** The flat stand-in for a prop in a spawn zone: a scatter of low pebbles and a faint dust ring, nothing tall to hide a fighter behind. */
+function scree(g: Gfx, x: number, y: number, w: number, h: number, seed: number): void {
+  const cx = x + w / 2;
+  const cy = y + h * 0.6;
+  g.fillStyle(ch(STONE, 0.7), 0.35).fillEllipse(cx, cy, w * 0.95, h * 0.4);
+  for (let k = 0; k < 9; k++) {
+    const px = x + w * (0.08 + 0.84 * hash01(k, seed + 200));
+    const py = y + h * (0.35 + 0.5 * hash01(k, seed + 201));
+    const r = 2.5 + hash01(k, seed + 202) * 3.5;
+    g.fillStyle(ch(STONE, 0.6 + hash01(k, seed + 203) * 0.5), 0.9).fillEllipse(px, py, r * 2.2, r * 1.3);
+  }
+  moss(g, cx, cy, w * 0.3, seed + 210);
+}
+
 /** Draws the prop of patch `i` in its footprint (x, y, w, h). */
 export function drawRock(g: Gfx, x: number, y: number, w: number, h: number, i: number, highContrast: boolean): void {
   const seed = i * 29 + 7;
+  if (overlapsSpawn(x, y, w, h)) {
+    scree(g, x, y, w, h, seed);
+    if (highContrast) g.lineStyle(3, 0xffffff, 1).strokeRect(x - 1, y - 1, w + 2, h + 2);
+    return;
+  }
   shadow(g, x, y, w, h);
   const kind = propKind(w, h, i);
   if (kind === 'pillar') pillar(g, x, y, w, h, seed);
