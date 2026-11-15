@@ -484,5 +484,10 @@ export const CcBucket = { disorient: 0, incapacitate: 1, stun: 2, silence: 3 } a
 export const CcEnd = { expired: 0, broken: 1, shattered: 2, thawed: 3, cleansed: 4, quickRise: 5, mashed: 6 } as const;
 /** `ccResisted.reason`. */
 export const CcResist = { immune: 0, busy: 1, full: 2 } as const;
-/** Which CC kind a hit rider applies: filled in by later work packages (empty in CB0). */
-export const CC_RIDERS: readonly { readonly def: number; readonly kind: number; readonly ticks: number }[] = [];
+/**
+ * Which CC kind a hit rider applies, per ability slug (flag withCrowdControl; systems/arcade/cc.ts builds the def-index
+ * table). CB1: a Tornado hit dazes (replacing its 60-tick Arcade stun); CB2-CB3 add rows.
+ */
+export const CC_RIDERS: readonly { readonly slug: string; readonly kind: number; readonly ticks: number }[] = [
+  { slug: 'tornado', kind: CcKind.daze, ticks: DAZE_TICKS },
+];
