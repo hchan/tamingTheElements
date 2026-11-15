@@ -25,9 +25,9 @@ export interface MarkStyle {
 
 export const MARK_STYLE: Readonly<Record<Element, MarkStyle>> = {
   fire: { shape: 'flare', body: 0xff6a14, core: 0xffc060, rim: 0x3a0e04, gravity: -18, reach: 1 },
-  water: { shape: 'droplets', body: 0x3a9cf0, core: 0xbfe4ff, rim: 0x06203a, gravity: 46, reach: 0.9 },
-  earth: { shape: 'chips', body: 0xb08a5a, core: 0xe0c48a, rim: 0x2c1e12, gravity: 54, reach: 0.65 },
-  air: { shape: 'slashes', body: 0x7cc4e6, core: 0xe4f6ff, rim: 0x10303f, gravity: 0, reach: 1.45 },
+  water: { shape: 'droplets', body: 0x1f64e0, core: 0x78b8ff, rim: 0x041a44, gravity: 46, reach: 0.9 },
+  earth: { shape: 'chips', body: 0x9a6428, core: 0xdc9a3c, rim: 0x2a1406, gravity: 54, reach: 0.65 },
+  air: { shape: 'slashes', body: 0x7ee0a0, core: 0xf0ffe6, rim: 0x0a3a1e, gravity: 0, reach: 1.45 },
   void: { shape: 'shards', body: 0xa060f0, core: 0xe0c8ff, rim: 0x14042a, gravity: -6, reach: 0.85 },
 };
 
@@ -59,3 +59,14 @@ export function markAlpha(alpha: number, highContrast: boolean): number {
   return Math.min(1, Math.max(0, highContrast ? alpha * 1.35 : alpha));
 }
 export const markRimWidth = (base: number, highContrast: boolean): number => (highContrast ? base * 2 : base);
+
+/** Dust puff tone of the earth mark (amber-brown, not the pale cream it was). Exported so the palette test can see it. */
+export const EARTH_DUST = 0x8a6030;
+
+/** Squared RGB distance between two 0xRRGGBB colours (palette distinctness checks). */
+export function colorDistSq(a: number, b: number): number {
+  const dr = ((a >> 16) & 255) - ((b >> 16) & 255);
+  const dg = ((a >> 8) & 255) - ((b >> 8) & 255);
+  const db = (a & 255) - (b & 255);
+  return dr * dr + dg * dg + db * db;
+}
