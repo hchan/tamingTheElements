@@ -97,7 +97,9 @@ test('a fixture sheet: own row, mirrored row, legacy fallback, and only the char
   await expect.poll(async () => (await probe(page))?.loaded).toEqual(['curomo']);
   // Facing east: the own idle row, upright (the sheet replaces the procedural lean and breathing).
   await face(page, id, 0);
-  await expect.poll(() => drawnAs(page, id)).toMatchObject({ texture: 'sheet:curomo', frame: expect.stringMatching(/^idle\/E#[0-3]$/), flipX: false, rotation: 0 });
+  await expect.poll(() => drawnAs(page, id)).toMatchObject({ texture: 'sheet:curomo', frame: expect.stringMatching(/^idle\/E#[0-3]$/), flipX: false });
+  // only the idle body motif (at most 1.5 degrees) may tilt it
+  expect(Math.abs((await drawnAs(page, id))?.rotation ?? 9)).toBeLessThanOrEqual(0.03);
   // Facing west: no idle/W row, so the east row mirrored.
   await face(page, id, 4);
   await expect.poll(() => drawnAs(page, id)).toMatchObject({ texture: 'sheet:curomo', frame: expect.stringMatching(/^idle\/E#[0-3]$/), flipX: true });
