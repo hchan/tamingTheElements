@@ -2893,6 +2893,40 @@ body:has(.settingsBar) {
 
 /* QA r39 (667x375 phone landscape): the 2v2/3v3 picker stacked each side's hero cards in one column, pushing the partner below the sticky Fight bar. The slots sit in a row (no stats/abilities lines; the preview card below keeps them), and the first-run card is see-through and click-through apart from Got it, so the fight shows behind it. */
 @media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  /* "N of 2 picked" sits beside the side title (it used to fall below the cards, under the sticky Fight bar); names stay on one line. */
+  #arcadePick .vsSide {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  #arcadePick .vsSide .vsSideTitle {
+    margin: 0 0 0.2em;
+  }
+  #arcadePick .vsSide .vsStatus {
+    grid-row: 1;
+    grid-column: 2;
+    margin: 0 0 0.2em;
+    text-align: right;
+  }
+  #arcadePick .vsSide .vsSideTitle {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  #arcadePick .vsSide .teamSlots,
+  #arcadePick .vsSide .vsReady {
+    grid-column: 1 / -1;
+  }
+  #arcadePick .vsSide .vsSlotName {
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #arcadePick .vsSide .vsSlotLabel {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   #arcadePick .vsSide .teamSlots {
     flex-direction: row;
     flex-wrap: wrap;
@@ -2906,8 +2940,8 @@ body:has(.settingsBar) {
     gap: 0.35em;
   }
   #arcadePick .vsSide .vsBigFace {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
   }
   #arcadePick .vsSide .vsStats,
   #arcadePick .vsSide .vsAbilities {
