@@ -102,9 +102,9 @@ export function firstRunShortLine(b: Bindings, snag = true, partner = true): str
   return `Move ${moveKeys(b)}. ${parts.join(', ')}.`;
 }
 
-/** One line for a landscape phone (QA r32): the card is a thin strip over the floor, so it names only the stick and the buttons; Help has the rest. */
+/** One line for a landscape phone (QA r32): the card is a thin strip over the floor, so it names only the stick and the bar buttons; Help has the rest. */
 export function firstRunPhoneLine(snag = true): string {
-  return `Drag the stick to move; tap the buttons to strike, Dash, Guard and Super${snag ? '; Snag roots the foe' : ''}.`;
+  return `Stick moves you. Tap the bar: 1 and 2 strike, plus Dash, Guard, Super${snag ? ', Snag' : ''}.`;
 }
 
 /** True while the portrait "rotate your device" overlay covers the arena (the card stays hidden and untimed until it is dismissed). */

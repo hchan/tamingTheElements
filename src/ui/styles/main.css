@@ -2890,3 +2890,35 @@ body:has(.settingsBar) {
     bottom: max(8px, calc(env(safe-area-inset-bottom) + 18vh));
   }
 }
+
+/* QA r39 (667x375 phone landscape): the 2v2/3v3 picker stacked each side's hero cards in one column, pushing the partner below the sticky Fight bar. The slots sit in a row (no stats/abilities lines; the preview card below keeps them), and the first-run card is see-through and click-through apart from Got it, so the fight shows behind it. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  #arcadePick .vsSide .teamSlots {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  #arcadePick .vsSide .vsSlotItem {
+    flex: 1 1 5.5em;
+  }
+  #arcadePick .vsSide .rosterSlot {
+    padding: 0.15em 0.35em;
+    gap: 0.35em;
+  }
+  #arcadePick .vsSide .vsBigFace {
+    width: 36px;
+    height: 36px;
+  }
+  #arcadePick .vsSide .vsStats,
+  #arcadePick .vsSide .vsAbilities {
+    display: none;
+  }
+  #firstRunHint.firstRunHint:not(.firstRunWait) {
+    background: rgba(14, 12, 32, 0.62);
+    pointer-events: none;
+  }
+  #firstRunHint.firstRunHint .firstRunDone {
+    pointer-events: auto;
+    min-height: 44px;
+  }
+}

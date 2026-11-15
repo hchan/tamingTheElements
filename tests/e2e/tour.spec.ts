@@ -34,11 +34,11 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   await expect(card).toContainText('Continues: 3 of 3');
   await expect(page.locator('#tourMap svg[role="img"]')).toHaveAttribute('aria-label', /0 of 9 stages cleared/);
   await expect(page.locator('#tourMap svg [data-pin]')).toHaveCount(9);
-  await expect(page.locator('#tourPins li[data-state="current"]')).toContainText('Stage 1:');
+  await expect(page.locator('#tourPins li[data-state="current"]')).toHaveAttribute('aria-label', /^Stage 1: /);
   await expect(page.locator('#tourPins li[data-state="locked"]')).toHaveCount(8);
-  await expect(page.locator('#tourPins li[data-state="locked"]').first()).toContainText('Locked');
-  // One cue per locked tile: the word, not also a padlock icon (qa-r16). The stylesheet is a lazy chunk, so poll.
-  await expect.poll(() => page.evaluate(`getComputedStyle(document.querySelector('#tourPins li[data-state="locked"]'), '::after').content`)).toMatch(/^(none|normal)$/);
+  await expect(page.locator('#tourPins li[data-state="locked"]').first()).toHaveAttribute('aria-label', /Locked/);
+  // One cue per locked tile: the word (a CSS badge since QA r39), not also a padlock icon (qa-r16). The stylesheet is a lazy chunk, so poll.
+  await expect.poll(() => page.evaluate(`getComputedStyle(document.querySelector('#tourPins li[data-state="locked"]'), '::after').content`)).toMatch(/^"Locked"/);
   expect(await page.evaluate<string | null>(`localStorage.getItem('${KEY}')`)).toContain('"stage":0');
 
   await page.getByRole('button', { name: 'Fight' }).click();
@@ -57,7 +57,7 @@ test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card,
   await page.evaluate(`window.__TTE__.settled()`);
   await expect(page.locator('#game canvas')).toHaveCount(0);
   await expect(page.locator('#tourPins li[data-state="cleared"]')).toHaveCount(1);
-  await expect(page.locator('#tourPins li[data-state="cleared"]')).toContainText('Cleared');
+  await expect(page.locator('#tourPins li[data-state="cleared"]')).toHaveAttribute('aria-label', /Cleared/); // the stamp itself is CSS (QA r39)
   expect(await page.evaluate<string | null>(`localStorage.getItem('${KEY}')`)).toContain('"stage":1');
 
   // Reload: the run is offered, and Resume lands on the same card.

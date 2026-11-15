@@ -261,3 +261,31 @@ html[data-high-contrast='true'] #tourStage #tourPins li[data-state='cleared']::a
 html[data-high-contrast='true'] #tourStage #tourPins li[data-state='locked'] { color: #fff; }
 html[data-high-contrast='true'] #tourStage .tsPanel { background: #000; border-color: #fff; }
 html[data-high-contrast='true'] #tourStage.tsGrim h1.heading { color: #fff; }
+
+/* QA r39: tiles read "Stage 1  Air" with a small state badge (Next / Locked, like the Cleared stamp), and the card shows your own team. */
+#tourStage #tourPins li[data-state='current']::after,
+#tourStage #tourPins li[data-state='locked']::after {
+  position: absolute;
+  top: 0.3em;
+  right: 0.3em;
+  padding: 0 0.3em;
+  font-size: 0.62em;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background: rgb(30 26 74 / 0.75);
+  text-shadow: none;
+}
+#tourStage #tourPins li[data-state='current']::after { content: 'Next' / ''; border: 2px double #ffe48a; color: #ffe48a; }
+#tourStage #tourPins li[data-state='locked']::after { content: 'Locked' / ''; border: 2px solid #a79ce0; color: #d9d4ee; }
+#tourStage #tourPins li[data-state='locked'] .tsPinName { opacity: 0.8; }
+#tourStage .tsTeam { display: flex; align-items: center; gap: 0.5em; margin-top: 0.4em; }
+#tourStage .tsTeamLabel { font-size: 0.7em; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
+#tourStage .tsMine { width: 3.2em; font-size: 0.6em; }
+#tourStage .tsMine .tsFace { border-color: #8fd0ff; box-shadow: 0 0 0.6em rgba(120, 190, 255, 0.45); }
+#tourStage .tsMine.tsLead .tsFace { border-color: #ffe48a; box-shadow: 0 0 0.8em rgba(255, 228, 138, 0.7); }
+@media (max-height: 500px) and (orientation: landscape) {
+  #tourStage .tsTeam { margin-top: 0.15em; gap: 0.4em; }
+  #tourStage .tsMine { width: 2.6em; }
+  #tourStage .tsMine figcaption { display: none; }
+}
