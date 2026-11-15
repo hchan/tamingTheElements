@@ -4,6 +4,7 @@ import { RoundPhase, SimEventKind, type RenderArcade, type RenderView, type SimE
 import type { Announcement } from '../a11y/announcer';
 import { defenceState } from '../fx/defence-view';
 import { weatherState } from '../fx/weather-view';
+import { FIGHT_BANNER_TICKS } from './round-announcer';
 import { mountRoundView, roundState } from './round-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
@@ -137,7 +138,10 @@ describe('round view (Phaser side, fake scenes)', () => {
     hud.events.emit('update');
     expect(roundState(hud.scene)).toMatchObject({ main: 'FIGHT!', visible: true, timer: '09' });
     expect(hud.made[2]?.color).toBe('#d98a78');
-    v.setTick(91 + 50);
+    v.setTick(91 + FIGHT_BANNER_TICKS - 1);
+    hud.events.emit('update');
+    expect(roundState(hud.scene)?.visible).toBe(true);
+    v.setTick(91 + FIGHT_BANNER_TICKS);
     hud.events.emit('update');
     expect(roundState(hud.scene)?.visible).toBe(false);
     v.arcade.roundsWon[0] = 1;

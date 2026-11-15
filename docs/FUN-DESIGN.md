@@ -1329,7 +1329,7 @@ Built in WP 14 (`WP-arcade-announcer-view`, view only): `RenderView.arcade()` ad
 lazy chunk `round-view`, so Classic never downloads it; the Arena pays only the import call) in every Arcade match,
 replays included, and feeds it each tick's events; it draws into the Hud scene, so the Arena camera's shake and super
 punch-in never move it. The rules are pure (`round-announcer.ts`, `RoundAnnouncer`): `roundStarted` shows "ROUND n"
-("FINAL ROUND" at 1-1) for the intro, `fight` "FIGHT!" for 50 ticks, `ko` "K.O." ("DOUBLE K.O." for both, "PERFECT"
+("FINAL ROUND" at 1-1) for the intro, `fight` "FIGHT!" for 30 ticks (0.6 s, `FIGHT_BANNER_TICKS`), `ko` "K.O." ("DOUBLE K.O." for both, "PERFECT"
 under it), `timeOver` "TIME", `roundEnded` the result under it ("YOU WIN ROUND 1", "YOU LOSE ROUND 2", "ROUND 3 DRAW";
 the main line becomes "PERFECT" after a perfect KO) and `matchEnded` "VICTORY", "DEFEAT" or "DRAW" with the score
 ("2 - 1"). Banners are 96 px (48 px sub line) at the centre, timed on the view tick (they hold while paused), and scale in
