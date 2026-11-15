@@ -50,6 +50,14 @@ export interface RenderCharacter {
   element: Element;
 }
 
+/**
+ * The ability slug of a `hitConfirmed.ability` def index, or '' for the special defs (SUPER_DEF, CHARGE_DEF and the trap hits,
+ * all at 0x100 and above) and an unknown index. Read-only helper for the views.
+ */
+export function abilitySlugAt(defIdx: number): string {
+  return ABILITY_DEFS[defIdx]?.id ?? '';
+}
+
 /** Arcade read-outs for the view (docs/FUN-DESIGN.md section 3). The object is reused between calls. */
 export interface RenderArcade {
   /** True while a hit-stop (or another game-clock freeze) holds the game. */
@@ -76,6 +84,15 @@ export interface RenderArcade {
   guarding(id: number): boolean;
   /** True while a Snag root holds character `id` (FUN-DESIGN 2.20). */
   rooted(id: number): boolean;
+  /** Game ticks of hit-stun / Snag root / Snag immunity (0 while rooted) / Puddle slow left on character `id`; read-outs for the CC chips and looks. */
+  stunLeft(id: number): number;
+  rootLeft(id: number): number;
+  rootImmuneLeft(id: number): number;
+  mireLeft(id: number): number;
+  /** Knockback speed of character `id` in px per tick, `(|kbVx| + |kbVy|) / Q4_ONE` (0 at rest). */
+  kbSpeed(id: number): number;
+  /** True once character `id` bounced off a wall in this combo. */
+  wallBounced(id: number): boolean;
   /** Game ticks until character `id`'s melee Charge is ready (0: now), or -1 for a ranged hero, which has none (FUN-DESIGN 2.17). */
   chargeIn(id: number): number;
   /** Game ticks until character `id`'s next Dash is ready (0: now); read-out only (touch button words). */
@@ -218,6 +235,12 @@ export function createRenderView(world: SimWorld): RenderView {
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
     rooted: (id) => isRooted(s, id),
+    stunLeft: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) - now(s)),
+    rootLeft: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.rootUntil] ?? 0) - now(s)),
+    rootImmuneLeft: (id) => (isRooted(s, id) ? 0 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.rootImmuneUntil] ?? 0) - now(s))),
+    mireLeft: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.trapSlowUntil] ?? 0) - now(s)),
+    kbSpeed: (id) => (Math.abs(s.arcade[id * ARCADE_E + ArcadeE.kbVx] ?? 0) + Math.abs(s.arcade[id * ARCADE_E + ArcadeE.kbVy] ?? 0)) / Q4_ONE,
+    wallBounced: (id) => (s.arcade[id * ARCADE_E + ArcadeE.wallBounced] ?? 0) !== 0,
     dashIn: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.dashReadyAt] ?? 0) - now(s)),
     active: (team) => controlledId(world, team),
     chargeIn: (id) => (RANGED[s.defId[id] ?? 0] ? -1 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) - now(s))),

@@ -1,9 +1,9 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { EntityFlag, type RenderCharacter } from '@core/index';
+import { EntityFlag, StatusId, type RenderCharacter, type RenderView } from '@core/index';
 import {
   CharacterView, FLASH_FILL_FRAMES, MAX_HOLD_FRAMES, FLASH_TINT_FRAMES, FROZEN_TINT, JITTER_PX, flipForDir, frameSetFor, lerp,
-  tintStage, FLASH_WASH_ALPHA, FLASH_TAIL_ALPHA, flashWashAlpha, liftToWhite,
+  tintStage, frozenTintOf, FLASH_WASH_ALPHA, FLASH_TAIL_ALPHA, flashWashAlpha, liftToWhite,
 } from './character-view';
 
 /** Chainable fake of the Phaser Image calls CharacterView makes; records the tint and position. */
@@ -132,3 +132,32 @@ describe('character view helpers', () => {
     expect(stages(true)).toEqual(['wash', 'wash', ...Array<string>(8).fill('hit'), 'frozen']);
   });
 });
+
+describe('frozen tint (CA1): only a Classic Tornado victim, never a casting melee hero', () => {
+  const viewWith = (ids: number[]): RenderView => ({ forEachStatus: (_id: number, v: (s: { id: number }) => void) => { for (const id of ids) v({ id }); } }) as unknown as RenderView;
+  const img = (): { view: CharacterView; img: FakeImage } => {
+    const i = fakeImage();
+    return { view: new CharacterView({ add: { image: () => i } } as unknown as Phaser.Scene), img: i };
+  };
+  const caster: RenderCharacter = { id: 1, team: 1, sprite: 'no-such-sprite', dir: 0, flags: EntityFlag.alive | EntityFlag.frozen, x: 0, y: 0, px: 0, py: 0, w: 80, h: 80, hp: 1, maxHp: 1, restCap: 1, element: 'fire' };
+
+  it('frozenTintOf: Classic Tornado status yes; frozen flag alone (cast recovery) no; Arcade never', () => {
+    expect(frozenTintOf(viewWith([StatusId.tornado]), 1, false)).toBe(true);
+    expect(frozenTintOf(viewWith([StatusId.iceBlast]), 1, false)).toBe(false);
+    expect(frozenTintOf(viewWith([]), 1, false)).toBe(false);
+    expect(frozenTintOf(viewWith([StatusId.tornado]), 1, true)).toBe(false);
+  });
+
+  it('a melee caster in cast recovery (frozen flag, no Tornado status) is not tinted; a Tornado victim is', () => {
+    const { view, img: im } = img();
+    view.apply(caster, 0, 1, true, frozenTintOf(viewWith([]), 1, true));
+    expect(im.tint).toBe(0xffffff);
+    view.apply(caster, 1, 1, true, frozenTintOf(viewWith([]), 1, false));
+    expect(im.tint).toBe(0xffffff);
+    view.apply(caster, 2, 1, true, frozenTintOf(viewWith([StatusId.tornado]), 1, false));
+    expect(im.tint).toBe(FROZEN_TINT);
+    view.apply(caster, 3, 1, true, false);
+    expect(im.tint).toBe(0xffffff);
+  });
+});
+

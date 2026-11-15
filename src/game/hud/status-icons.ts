@@ -1,5 +1,5 @@
 import type { Element, RenderView } from '@core/index';
-import { StatusId, WEATHER_ELEMENTS, WEATHER_TICKS } from '@core/index';
+import { SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, StatusId, TRAP_PUDDLE_LINGER_TICKS, WEATHER_ELEMENTS, WEATHER_TICKS } from '@core/index';
 import { buffColor, elapsedFraction } from './buffs';
 import { mainBar } from './bars';
 
@@ -56,6 +56,16 @@ export interface StatusChip {
   readonly text: string;
 }
 
+/** Line-segment icons (x0, y0, x1, y1, ... in -1..1) for the crowd-control chips, drawn like `ROOT_ICON` in status-fx.ts. */
+/** Stun: a broken ring (two arcs with a gap, as four chords). */
+export const STUN_ICON: readonly number[] = [-0.9, 0.2, -0.6, -0.6, -0.6, -0.6, 0.1, -0.9, 0.9, -0.2, 0.6, 0.6, 0.6, 0.6, -0.1, 0.9];
+/** Mire: three blobs (short ticks) over a line. */
+export const MIRE_ICON: readonly number[] = [-0.8, 0.5, 0.8, 0.5, -0.7, -0.1, -0.5, -0.1, -0.1, -0.5, 0.1, -0.5, 0.5, -0.1, 0.7, -0.1];
+/** Snag-safe: an open root cross (the Snag cross with its middle missing). */
+export const SNAG_SAFE_ICON: readonly number[] = [-0.9, -0.5, -0.3, -0.15, 0.3, 0.15, 0.9, 0.5, 0.9, -0.5, 0.3, -0.15, -0.3, 0.15, -0.9, 0.5];
+/** Icon per chip key for the states above. */
+export const CC_ICONS: Readonly<Record<string, readonly number[]>> = { stun: STUN_ICON, mire: MIRE_ICON, nosnag: SNAG_SAFE_ICON };
+
 /** Short word per timed status; the debuffs (Tornado, Ice Blast, tidal slow) match `isHostile` in buffs.ts. */
 const STATUS_WORD: Readonly<Record<number, string>> = {
   [StatusId.adrenaline]: 'ADREN',
@@ -104,9 +114,9 @@ interface Raw {
 
 /**
  * The chips for the active hero `id` of `team` whose element is `element`, left to right from its bar's start, at most
- * CHIP_MAX (the overflow is one `+N` chip). Timed statuses use the game clock (the Arcade clock stops during hit-stop).
+ * CHIP_MAX (the overflow is one `+N` chip). `stunTotal` is the game ticks the current hit-stun started with (the Hud latches it; 0: unknown, the stun bar then stays full). Timed statuses use the game clock (the Arcade clock stops during hit-stop).
  */
-export function collectStatusChips(view: RenderView, team: number, id: number, element: Element, xOffset: number, highContrast = false, layout: ChipLayout = DEFAULT_CHIP_LAYOUT): StatusChip[] {
+export function collectStatusChips(view: RenderView, team: number, id: number, element: Element, xOffset: number, highContrast = false, layout: ChipLayout = DEFAULT_CHIP_LAYOUT, stunTotal = 0): StatusChip[] {
   const raw: Raw[] = [];
   const bar = view.actionBar(team);
   const clock = bar?.tick ?? view.tick;
@@ -117,8 +127,16 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
   });
   const ar = view.arcade();
   if (ar) {
-    if (ar.rooted(id)) raw.push({ key: 'root', label: 'SNAGGED', hostile: true, ticksLeft: null, remaining: 1 });
-    if (ar.stunned(id)) raw.push({ key: 'stun', label: 'STUN', hostile: true, ticksLeft: null, remaining: 1 });
+    const unit = (left: number, total: number): number => Math.min(1, Math.max(0, left / total));
+    if (ar.rooted(id)) {
+      const left = ar.rootLeft(id);
+      raw.push({ key: 'root', label: 'SNAGGED', hostile: true, ticksLeft: left, remaining: unit(left, SNAG_ROOT_TICKS) });
+    } else if (ar.rootImmuneLeft(id) > 0) {
+      const left = ar.rootImmuneLeft(id);
+      raw.push({ key: 'nosnag', label: 'NO SNAG', hostile: false, ticksLeft: left, remaining: unit(left, SNAG_IMMUNE_TICKS) });
+    }
+    if (ar.stunned(id)) raw.push({ key: 'stun', label: 'STUN', hostile: true, ticksLeft: null, remaining: stunTotal > 0 ? unit(ar.stunLeft(id), stunTotal) : 1 });
+    if (ar.mireLeft(id) > 0) raw.push({ key: 'mire', label: 'MIRED', hostile: true, ticksLeft: ar.mireLeft(id), remaining: unit(ar.mireLeft(id), TRAP_PUDDLE_LINGER_TICKS) });
     if (ar.guarding(id)) raw.push({ key: 'guard', label: 'GUARD', hostile: false, ticksLeft: null, remaining: 1 });
     if (ar.invulnerable(id) && !ar.stunned(id)) raw.push({ key: 'safe', label: 'SAFE', hostile: false, ticksLeft: null, remaining: 1 });
     const effect = ar.weather > 0 ? weatherEffect(ar.weather, element) : undefined;

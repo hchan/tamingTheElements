@@ -9,7 +9,7 @@ import { heroName } from '../hud/tag-fx';
 import { elementMark } from '../hud/element-mark';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
-import { CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
+import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
   meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
@@ -105,6 +105,8 @@ export class Hud extends Phaser.Scene {
   private chipTrackers: StatusTracker<ChipLook>[] = [];
   private frame = 0;
   private arcade: ArcadeHudModel | undefined;
+  /** Per team: the longest hit-stun left seen since it began (the STUN chip's bar total). */
+  private readonly stunTotals: number[] = [0, 0];
   /** Pooled texts, created on first use: one per damage-number slot and one combo counter per team. */
   private numberTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private numberSerials: number[] = [];
@@ -339,7 +341,10 @@ export class Hud extends Phaser.Scene {
     const px = Math.round(16 * phoneBoost(this, 2));
     const label = this.labels[team];
     const top = chipRowTop(Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM : 0), label);
-    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top });
+    // The first stunLeft seen after a calm tick is the stun's length (it drains from there); a re-stun that outlasts it raises it.
+    const stunLeft = view.arcade()?.stunLeft(c.id) ?? 0;
+    this.stunTotals[team] = stunLeft > 0 ? Math.max(this.stunTotals[team] ?? 0, stunLeft) : 0;
+    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top }, this.stunTotals[team]);
     const now = view.tick;
     const reduced = this.reduceMotion;
     const tracker = (this.chipTrackers[team] ??= new StatusTracker<ChipLook>(12));
@@ -368,7 +373,7 @@ export class Hud extends Phaser.Scene {
       gfx.fillStyle(chip.color, shown ? 0.85 : 0.4).fillRect(chip.x + 1, chip.y + chip.h - 3, Math.round((chip.w - 2) * chip.remaining), 2);
       // Shape icon in a draining timer ring at the chip's right end: the silhouette codes the status without colour.
       const id = /^s(\d+)$/.exec(chip.key);
-      const icon = id ? STATUS_LOOKS[Number(id[1])]?.icon : chip.key === 'root' ? ROOT_ICON : undefined;
+      const icon = id ? STATUS_LOOKS[Number(id[1])]?.icon : chip.key === 'root' ? ROOT_ICON : CC_ICONS[chip.key];
       if (icon) {
         const r = Math.max(5, Math.round(chip.h / 2) - 2);
         const cx = chip.x + chip.w - r - 4;

@@ -5,12 +5,14 @@ import { DEFAULT_SIM_FLAGS } from '../flags';
 import { ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from './state';
 import { Cmd } from './commands';
 import { EventSink } from './events';
+import { now } from './clock';
+import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { ABILITY_DEFS } from './systems/projectile';
 import { applyArcadeHit } from './systems/arcade/hit';
 import { chargedWeather, skipIntro } from './systems/arcade/round-testkit';
 import { step } from './step';
-import { createRenderView, type RenderCharacter } from './view';
+import { abilitySlugAt, createRenderView, type RenderCharacter } from './view';
 import { SIM_VERSION } from '../version';
 
 function match(arcade: boolean): MatchSetup {
@@ -112,3 +114,53 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(createRenderView(createMatch(match(false))).actionBar(0)?.swapCooldownTicks).toBe(250);
   });
 });
+
+describe('RenderArcade crowd-control read-outs (CA1)', () => {
+  it('match their ArcadeE fields in a scripted state and leave the state untouched', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const s = world.state;
+    const view = createRenderView(world);
+    const ar = view.arcade();
+    const g = now(s);
+    const e = 1 * ARCADE_E;
+    expect([ar?.stunLeft(1), ar?.rootLeft(1), ar?.rootImmuneLeft(1), ar?.mireLeft(1), ar?.kbSpeed(1), ar?.wallBounced(1)]).toEqual([0, 0, 0, 0, 0, false]);
+    s.arcade[e + ArcadeE.stunUntil] = g + 12;
+    s.arcade[e + ArcadeE.rootUntil] = g + 40;
+    s.arcade[e + ArcadeE.rootImmuneUntil] = g + 90;
+    s.arcade[e + ArcadeE.trapSlowUntil] = g + 33;
+    s.arcade[e + ArcadeE.kbVx] = -48;
+    s.arcade[e + ArcadeE.kbVy] = 16;
+    s.arcade[e + ArcadeE.wallBounced] = 1;
+    const before = hash(s);
+    expect(ar?.stunLeft(1)).toBe(12);
+    expect(ar?.rootLeft(1)).toBe(40);
+    expect(ar?.rootImmuneLeft(1)).toBe(0); // while rooted
+    expect(ar?.mireLeft(1)).toBe(33);
+    expect(ar?.kbSpeed(1)).toBe(4);
+    expect(ar?.wallBounced(1)).toBe(true);
+    s.arcade[e + ArcadeE.rootUntil] = 0;
+    expect(ar?.rootLeft(1)).toBe(0);
+    expect(ar?.rootImmuneLeft(1)).toBe(90);
+    s.arcade[e + ArcadeE.rootUntil] = g + 40;
+    expect(hash(s)).toBe(before);
+  });
+
+  it('shows the stun and knockback of a real hit through the accessors', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const view = createRenderView(world);
+    world.state.hp[1] = 10_000;
+    applyArcadeHit(world, new EventSink(0), 0, 0, 1, 16, ABILITY_DEFS.findIndex((d) => d.id === 'fire-blast'), 0);
+    const ar = view.arcade();
+    expect(ar?.stunLeft(1)).toBeGreaterThan(0);
+    expect(ar?.kbSpeed(1)).toBeGreaterThan(0);
+  });
+
+  it('abilitySlugAt names an ability and returns an empty string for the special defs', () => {
+    const i = ABILITY_DEFS.findIndex((d) => d.id === 'fire-blast');
+    expect(abilitySlugAt(i)).toBe('fire-blast');
+    expect(abilitySlugAt(0x100)).toBe('');
+    expect(abilitySlugAt(0x103)).toBe('');
+    expect(abilitySlugAt(-1)).toBe('');
+  });
+});
+
