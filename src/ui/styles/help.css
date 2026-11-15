@@ -28,9 +28,118 @@
   outline: 2px solid #ffd678;
   outline-offset: 2px;
 }
-#menu .helpPanel > h2.heading,
-#menu .helpControls > h2.heading {
+/* Collapsible sections: the h2 sits inside the summary (it replaces main.css `.helpPanel > h2.heading`, whose child combinator no longer matches). */
+#menu .helpIntro {
+  margin: 0 0 0.4em;
+  font-size: 0.9em;
+}
+/* Tighter bodies keep the default page short (target: about 2000 px desktop, 3200 px phone). */
+#menu .helpPanel p,
+#menu .helpControls p {
+  margin: 0.3em 0;
+}
+#menu .helpPanel .helpSteps li {
+  margin: 0.15em 0;
+}
+#menu .helpPanel h3 {
+  margin: 0.5em 0 0.2em;
+}
+#menu .helpPanel .helpSteps,
+#menu .helpPanel .helpBar {
+  margin-bottom: 0.4em;
+}
+#menu .helpPanel,
+#menu .helpControls {
+  margin: 0.6em auto;
+}
+#menu .helpSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+}
+#menu .helpSummary::-webkit-details-marker {
+  display: none;
+}
+#menu .helpSummary::before {
+  content: '\25B8';
+  flex: 0 0 auto;
+  color: #ffd678;
+}
+#menu details[open] > .helpSummary::before {
+  content: '\25BE';
+}
+#menu .helpSummary:focus-visible {
+  outline: 2px solid #ffd678;
+  outline-offset: 2px;
+}
+#menu .helpSummary > h2.heading {
+  display: inline;
+  text-align: left;
+  font-size: 1.3em;
+  margin: 0;
   scroll-margin-top: 1em;
+}
+#menu .helpTop {
+  display: block;
+  min-height: 44px;
+  margin: 0.4em 0 0 auto;
+  padding: 0.3em 0.9em;
+  font: inherit;
+  font-size: 0.85em;
+  color: #f4f0ff;
+  background: transparent;
+  border: 1px solid #cfc6f0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+#menu .helpTop:hover,
+#menu .helpTop:focus-visible {
+  background: #4a42a0;
+  outline: 2px solid #ffd678;
+  outline-offset: 2px;
+}
+.helpControlsTable kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 0.3em;
+  text-align: center;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-weight: bold;
+}
+@media (max-width: 520px) {
+  .helpBar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.1em 0.5em;
+  }
+  #menu .helpJump {
+    gap: 0.25em 0.4em;
+    margin-bottom: 0.4em;
+  }
+  #menu .helpPanel,
+  #menu .helpControls {
+    margin: 0.4em auto;
+  }
+  /* The arrows on the section headers already say they open. */
+  #menu .helpIntro {
+    display: none;
+  }
+  #menu .helpLinks {
+    gap: 0.3em;
+    margin: 0.4em 0;
+  }
+  #menu .helpLinks li {
+    margin: 0.1em 0;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #menu .helpIntro {
+    display: none;
+  }
 }
 /* The five page links read as raised buttons, not underlined text (not on short landscape, which has its own compact sticky row). */
 @media not all and (max-height: 500px) and (orientation: landscape) {

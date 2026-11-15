@@ -9,6 +9,8 @@ test('Help lists the controls without banned words', async ({ page }) => {
   await page.evaluate(`window.location.hash = '#help'`);
   await waitForRoute(page, '#help');
   const menu = page.locator('#menu');
+  // Controls is closed by default; it is both a Jump button and a section summary, so scope the button to the nav.
+  await page.locator('nav.helpJump').getByRole('button', { name: 'Controls', exact: true }).click();
   await expect(menu.getByRole('heading', { level: 2, name: 'Controls' })).toBeVisible();
   const p1 = menu.getByRole('table', { name: 'Keyboard, Player 1' });
   await expect(p1).toBeVisible();
@@ -16,6 +18,8 @@ test('Help lists the controls without banned words', async ({ page }) => {
   await expect(menu.getByRole('table', { name: 'Gamepad' })).toBeVisible();
   await expect(menu.getByRole('table', { name: 'Touch' })).toBeVisible();
   await expect(p1.getByRole('row', { name: /^Trap Z or 0$/ })).toBeVisible();
+  // innerText skips closed details: open them all first.
+  await page.evaluate(`document.querySelectorAll('#menu details').forEach((d) => { d.open = true; })`);
   expect(await menu.innerText()).not.toMatch(/classic|arcade|ruleset|capture/i);
   expect(errors).toEqual([]);
 });
@@ -38,7 +42,7 @@ test('Help at 844x390: compact header, one row of tabs, first heading in the top
   const jump = await page.locator('nav.helpJump').boundingBox();
   expect(jump?.height ?? 0).toBeGreaterThan(20);
   expect(jump?.height ?? 999).toBeLessThan(60);
-  await page.getByRole('button', { name: 'Controls', exact: true }).click();
+  await page.locator('nav.helpJump').getByRole('button', { name: 'Controls', exact: true }).click();
   await expect.poll(() => page.evaluate(`document.getElementById('helpControlsHeading').getBoundingClientRect().top`)).toBeLessThan(120);
   expect(errors).toEqual([]);
 });
@@ -49,4 +53,27 @@ test('Help has no crest orb over the hero art', async ({ page }) => {
   await waitForRoute(page, '#help');
   const content = await page.evaluate<string>(`getComputedStyle(document.querySelector('#menu .helpLinks'), '::before').content`);
   expect(content === 'none' || content === 'normal').toBe(true);
+});
+
+// QA r63 #3: the Help page was 4863 px tall at desktop and 6674 px on a phone; sections now collapse.
+for (const [w, h, max] of [
+  [1280, 720, 2000],
+  [390, 844, 3200],
+] as const) {
+  test(`Help page height at ${String(w)}x${String(h)} stays within ${String(max)}px with the default sections`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto('/?seed=7#help');
+    await waitForRoute(page, '#help');
+    const height = await page.evaluate<number>('document.documentElement.scrollHeight');
+    expect(height).toBeLessThanOrEqual(max);
+  });
+}
+
+test('Help: Back to top from the Controls section focuses the title, which is in view', async ({ page }) => {
+  await page.goto('/?seed=7#help');
+  await waitForRoute(page, '#help');
+  await page.locator('nav.helpJump').getByRole('button', { name: 'Controls', exact: true }).click();
+  await page.locator('section.helpControls button.helpTop').click();
+  await expect.poll(() => page.evaluate(`document.activeElement && document.activeElement.id`)).toBe('helpTitle');
+  await expect.poll(() => page.evaluate(`document.getElementById('helpTitle').getBoundingClientRect().top`)).toBeGreaterThanOrEqual(0);
 });

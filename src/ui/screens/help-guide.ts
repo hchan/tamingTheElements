@@ -58,3 +58,41 @@ export const PICKER_STEPS: readonly string[] = [
   'Drag a slot off the team to remove it, or press B on a gamepad.',
   'Fight starts once every slot holds a hero; the page says how many more you need.',
 ];
+
+/** Symbol keys get a word next to their chip, so "-" never reads as a dash or a typo. */
+export const KEY_WORDS: Readonly<Record<string, string>> = {
+  '-': 'minus',
+  '=': 'equals',
+  ';': 'semicolon',
+  "'": 'apostrophe',
+  '.': 'full stop',
+  ',': 'comma',
+  '/': 'slash',
+  '[': 'left bracket',
+  ']': 'right bracket',
+};
+
+/** The "Ways to play" section: one short paragraph per menu entry (player-facing words only). */
+export const MODES_COPY: readonly string[] = [
+  'Play: the World Tour. Pick three heroes and fight through nine stages, each a best of three against a computer team: eight element arenas, then the Eternal Void. A lost fight can be replayed up to 3 times, and the run is saved in this browser.',
+  "Versus: one fight set up your way: your hero, a partner for 2v2 or two for 3v3, the opponent, the computer's level and the arena.",
+  'Online: play a friend on another device over the internet. One of you hosts and sends a code, the other joins and sends a code back; then each of you picks three heroes.',
+  'Teams: in 2v2 and 3v3 one hero per side fights at a time. Tag swaps in a rested teammate; benched heroes show under the life bars.',
+];
+
+/** The "Reading the arena" section: shapes, floor patches, badges, weather and meters. */
+export const ARENA_SHAPES =
+  'Each element has a shape as well as a colour: fire is a triangle, water a circle, earth a square, air a diamond, and the Eternal Void a star. Hero names always say the element in words too.';
+export const ARENA_PATCH_INTRO = 'Some floor tiles carry an element. They help only a hero of the same element:';
+export const ARENA_PATCHES: readonly string[] = [
+  'FIRE x2: double damage.',
+  'WATER +HP: slow healing.',
+  'ROCK: solid rock. Only an earth hero can cross it, and it stops shots.',
+  'AIR x2: double speed (not on top of a Dash).',
+];
+export const ARENA_NOTES: readonly string[] = [
+  "While you stand in your element's patch a badge shows its effect (FIRE x2, HEAL, ROCK PASS or AIR x2) next to the weather badge.",
+  "Weather (SUN, RAIN, SAND, GALE or ECLIPSE) shows how long it lasts, and turns the floor to the caster's element.",
+  'The SUPER meter fills as you fight; when it is full your Super is ready.',
+  'Life totals differ by hero: read the number, not just the bar.',
+];

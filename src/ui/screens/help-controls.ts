@@ -3,6 +3,8 @@ import { codeLabel, type Bindings, type GameAction } from '../../game/platform/i
 export interface ControlRow {
   readonly action: string;
   readonly keys: string;
+  /** Single keys shown as chips in the table (the text in `keys` stays the plain-words form). */
+  readonly chips?: readonly string[];
 }
 export interface ControlSection {
   readonly title: string;
@@ -12,18 +14,18 @@ export interface ControlSection {
 /** Player 2's fixed keys (local two-player; not rebindable). Mirrors P2_BINDINGS in src/game/input/local-two.ts (a test pins it). */
 export const P2_KEYS: readonly ControlRow[] = [
   { action: 'Move', keys: 'I J K L' },
-  { action: 'Attack', keys: 'U' },
-  { action: 'Second attack', keys: 'O' },
-  { action: 'Dash', keys: 'Y' },
-  { action: 'Guard (hold)', keys: 'N' },
-  { action: 'Weather', keys: 'T' },
-  { action: 'Charge', keys: 'G' },
-  { action: 'Super', keys: 'B' },
-  { action: 'Trap', keys: 'M' },
-  { action: 'Element', keys: ';' },
-  { action: 'Cleanse', keys: "'" },
-  { action: 'Tag', keys: '.' },
-  { action: 'Tag 2', keys: ',' },
+  { action: 'Attack', keys: 'U', chips: ['U'] },
+  { action: 'Second attack', keys: 'O', chips: ['O'] },
+  { action: 'Dash', keys: 'Y', chips: ['Y'] },
+  { action: 'Guard (hold)', keys: 'N', chips: ['N'] },
+  { action: 'Weather', keys: 'T', chips: ['T'] },
+  { action: 'Charge', keys: 'G', chips: ['G'] },
+  { action: 'Super', keys: 'B', chips: ['B'] },
+  { action: 'Trap', keys: 'M', chips: ['M'] },
+  { action: 'Element', keys: ';', chips: [';'] },
+  { action: 'Cleanse', keys: "'", chips: ["'"] },
+  { action: 'Tag', keys: '.', chips: ['.'] },
+  { action: 'Tag 2', keys: ',', chips: [','] },
 ];
 
 const P1_ROWS: readonly (readonly [string, GameAction])[] = [
@@ -47,7 +49,7 @@ const keysOf = (b: Bindings, a: GameAction): string => b[a].map(codeLabel).join(
 /** Player 1's keyboard controls, read from the live bindings so rebinds show. */
 export function player1Rows(b: Bindings): readonly ControlRow[] {
   const move = (['up', 'left', 'down', 'right'] as const).map((a) => keysOf(b, a)).join(', ');
-  return [{ action: 'Move (up, left, down, right)', keys: move }, ...P1_ROWS.map(([action, a]) => ({ action, keys: keysOf(b, a) || 'unbound' }))];
+  return [{ action: 'Move (up, left, down, right)', keys: move }, ...P1_ROWS.map(([action, a]) => ({ action, keys: keysOf(b, a) || 'unbound', chips: b[a].map(codeLabel) }))];
 }
 
 export const GAMEPAD_ROWS: readonly ControlRow[] = [

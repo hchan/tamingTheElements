@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { setBindings, DEFAULT_BINDINGS } from '../../game/platform/input/bindings';
+import { SNAG_DESCRIPTION, SNAG_NAME } from '@core/menu-index';
 import { HELP_LINKS, helpScreen } from './help';
 
 afterEach(() => {
@@ -44,6 +45,8 @@ describe('helpScreen (DOM)', () => {
     const btns = [...root.querySelectorAll<HTMLButtonElement>('nav.helpJump button')];
     expect(btns.map((b) => b.textContent)).toEqual([
       'How to fight',
+      'Ways to play',
+      'Reading the arena',
       'Choosing your heroes',
       'Controls',
     ]);
@@ -52,8 +55,11 @@ describe('helpScreen (DOM)', () => {
     target.scrollIntoView = () => {
       scrolled++;
     };
-    btns[2]?.click();
+    const det = target.closest('details') as HTMLDetailsElement;
+    expect(det.hasAttribute('open')).toBe(false);
+    btns[4]?.click();
     expect(scrolled).toBe(1);
+    expect(det.hasAttribute('open')).toBe(true);
     expect(document.activeElement).toBe(target);
     expect(root.querySelector('nav.helpJump a')).toBeNull();
   });
@@ -91,6 +97,45 @@ describe('helpScreen (DOM)', () => {
       (tr) => tr.querySelector('th')?.textContent === 'Dash',
     );
     expect(row?.querySelector('td')?.textContent).toBe('V');
+  });
+
+  it('has five collapsible sections with the planned defaults, ids and Back to top buttons', () => {
+    const root = document.createElement('div');
+    document.body.append(root);
+    helpScreen().mount(root);
+    const secs = [...root.querySelectorAll('section')];
+    expect(secs.map((s) => s.querySelector('details')?.hasAttribute('open'))).toEqual([true, false, false, false, false]);
+    for (const id of ['helpLessonsHeading', 'helpModesHeading', 'helpArenaHeading', 'helpPickerHeading', 'helpControlsHeading']) {
+      const h = document.getElementById(id);
+      expect(h?.tagName).toBe('H2');
+      expect(h?.closest('section')?.getAttribute('aria-labelledby')).toBe(id);
+      expect(h?.parentElement?.tagName).toBe('SUMMARY');
+    }
+    expect(root.querySelectorAll('button.helpTop')).toHaveLength(5);
+    expect(root.querySelectorAll('a.menuLink')).toHaveLength(2);
+  });
+
+  it('names symbol keys: the - chip is minus, the Element row says (minus), 0 and V stay plain', () => {
+    const root = document.createElement('div');
+    helpScreen().mount(root);
+    const bar = [...root.querySelectorAll<HTMLElement>('.helpBar kbd')];
+    expect(bar.find((k) => k.textContent === '-')?.title).toBe('minus');
+    expect(bar.find((k) => k.textContent === '=')?.title).toBe('equals');
+    const row = [...root.querySelectorAll('tbody tr')].find((tr) => tr.querySelector('th')?.textContent === 'Element');
+    expect(row?.querySelector('td')?.textContent).toBe('V or - (minus)');
+    const trap = [...root.querySelectorAll('tbody tr')].find((tr) => tr.querySelector('th')?.textContent === 'Trap');
+    expect(trap?.querySelector('td')?.textContent).toBe('Z or 0');
+  });
+
+  it('explains the ways to play and the arena in words, without banned words, in open or closed sections', () => {
+    const root = document.createElement('div');
+    document.body.append(root);
+    helpScreen().mount(root);
+    const text = document.body.textContent;
+    expect(text).not.toMatch(/classic|arcade|ruleset|capture/i);
+    for (const w of ['World Tour', 'Versus', 'Online', '2v2', '3v3', SNAG_NAME, SNAG_DESCRIPTION, 'FIRE x2', 'WATER +HP', 'ROCK', 'AIR x2', 'HEAL', 'ROCK PASS']) {
+      expect(text).toContain(w);
+    }
   });
 
   it('unmount removes the page', () => {
