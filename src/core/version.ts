@@ -215,5 +215,8 @@
  *    (Arcade goldens, Arcade baselines).
  * 59: Arcade 2v2 only (Classic and Arcade 1v1 hashes unchanged). Curomo balance (2v2 win rate 42.0 percent, target >= 45): ARCADE_2V2_LIFE_PM curomo 732 to 800.
  *    Curomo 2v2 42.0 to 48.9 percent. Re-record reason: Curomo's tag-team life changes Arcade 2v2 outcomes (Arcade 2v2 goldens, Arcade 2v2 baseline).
+ * 60: Arcade 2v2 only (Classic and Arcade 1v1 hashes unchanged). Random-partner balance (ideas/brainstorm/balance-2v2-echo-pax-r37.md step 1): ARCADE_2V2_LIFE_PM
+ *    curomo 800 to 768 (-4 percent), sindarosa 773 to 812 (+5 percent). Re-record reason: tag-team life of two races changes Arcade 2v2 outcomes
+ *    (Arcade 2v2 goldens, Arcade 2v2 baseline).
  */
-export const SIM_VERSION = 59;
+export const SIM_VERSION = 60;
