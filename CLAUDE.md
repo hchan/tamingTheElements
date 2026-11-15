@@ -48,6 +48,7 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
   `src/core/index.ts`, `docs/REPO-MAP.md`, the asset manifest). The coordinator reviews and merges each result, gate first.
 - **Autonomy:** the owner pre-approved design, art and balance changes ("autoapprove all changes"); do not pause for approval, report afterwards.
   Still confirm before irreversible or outward-facing steps (force-push, history rewrite, deleting the legacy tag, credentials, deleting Classic sim code).
+- **Plan then build (owner, 2026-11-14):** before EACH idea, plan it with an Opus agent at max effort (`model: opus`, `effort: max`; a written plan: files, tests, risks, sim/golden impact), then implement it with a Sonnet agent from that plan. Applies to every idea, including self-generated ones; the Opus planner only plans, it does not edit.
 - **Ideas:** every idea or todo, including self-generated ones, is a file in [ideas/](ideas/README.md) (brainstorm/in-progress/done). No cap; never add limits the owner did not ask for.
 - **Player-facing words:** the menu is Play, Versus, Online, Settings, Help; never show the words Classic, Arcade, ruleset or Capture to players (Snag replaces Capture).
 - **Visual work:** check it with real-game screenshots (Playwright, see the play-local skill) before calling it done; art must match Fiara's rigged and baked look.
