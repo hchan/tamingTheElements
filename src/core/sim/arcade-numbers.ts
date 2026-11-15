@@ -84,21 +84,21 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   morblass: 920, // 881 before SIM_VERSION 69 (roster WP 0.4)
   pax: 660,
   rokcore: 740, // 670 before SIM_VERSION 69 (roster WP 0.4)
-  sindarosa: 745,
+  sindarosa: 800,
   treenoc: 714,
   wispera: 632,
-  hyalia: 595,
-  quarrak: 580,
+  hyalia: 650,
+  quarrak: 725,
   kindrel: 650,
   nykra: 740,
-  brazgor: 520,
-  glimmaw: 620,
-  durrok: 640,
+  brazgor: 460,
+  glimmaw: 670,
+  durrok: 590,
   zephra: 760,
   ouroth: 590,
-  abyssor: 450,
-  vortigal: 700,
-  umbrel: 620,
+  abyssor: 430,
+  vortigal: 665,
+  umbrel: 660,
 };
 /**
  * Race life `hpPm` of `slug` for a roster of `size` heroes. A hero below 1x (data/size.ts SIZE_MIN..99) then gets

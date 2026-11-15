@@ -281,5 +281,8 @@
  *    (no existing input or checkpoint changes).
  * 76: Arcade only, AI only behind withOverTime (flag-off hashes unchanged): the scripted AI cleanses burning (2+ stacks) and venom while hurt.
  *    Re-record reason: new flag-on golden arcade-ot; existing goldens change only in the header simVersion.
+ * 77: Arcade only, 2v2/3v3 only (Classic and Arcade 1v1 hashes unchanged): roster-24 balance batch 3, `ARCADE_2V2_LIFE_PM` retuned for vortigal, quarrak,
+ *    durrok, brazgor, hyalia, glimmaw, abyssor, umbrel and (released) sindarosa from a 26-base-seed full-roster 2v2 tournament. Re-record reason:
+ *    tag-team goldens move with team life; the Arcade 2v2 baseline is re-recorded.
  */
-export const SIM_VERSION = 76;
+export const SIM_VERSION = 77;
