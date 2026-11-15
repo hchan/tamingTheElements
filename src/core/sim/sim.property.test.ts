@@ -98,6 +98,7 @@ const setupArb: fc.Arbitrary<MatchSetup> = fc.record({
     walkAboveActionBar: fc.constant(false),
     walkSwapInPlace: fc.boolean(),
     withCrowdControl: fc.boolean(),
+    withOverTime: fc.boolean(),
   }),
   chapter: fc.constantFrom<ChapterNumber>(1, 2, 3, 4, 5),
   difficulty: fc.constantFrom(0.25, 0.66, 0.85, 1, 1.12, 1.5),

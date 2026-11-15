@@ -34,6 +34,12 @@ export interface SimFlags {
    * touches state, so hashes are unchanged. Sorts last ("wi" after "wa"), so no existing flag bit moves.
    */
   readonly withCrowdControl: boolean;
+  /**
+   * Arcade only (ideas/brainstorm/hot-dot-abilities.md): over-time statuses burning 18, venom 19 and mending 20 with a pulse
+   * system (systems/arcade/over-time.ts). Off in real play; with it off no over-time path touches state, so hashes are
+   * unchanged. Sorts after withCrowdControl ("wiO" > "wiC"), so no existing flag bit moves.
+   */
+  readonly withOverTime: boolean;
 }
 
 export type SimFlagName = keyof SimFlags;
@@ -47,6 +53,7 @@ export const DEFAULT_SIM_FLAGS: SimFlags = {
   walkAboveActionBar: false,
   walkSwapInPlace: false,
   withCrowdControl: false,
+  withOverTime: false,
 };
 
 /** Flags that only tester mode may turn on. */
@@ -113,5 +120,6 @@ export function decodeFlags(encoded: string): SimFlags {
     walkAboveActionBar: on.has('walkAboveActionBar'),
     walkSwapInPlace: on.has('walkSwapInPlace'),
     withCrowdControl: on.has('withCrowdControl'),
+    withOverTime: on.has('withOverTime'),
   };
 }

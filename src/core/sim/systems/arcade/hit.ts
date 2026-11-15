@@ -14,7 +14,8 @@ import { damageDecreasePct, thornsDamageOf } from '../status';
 import { ccOnHit, ccRiders, spendKindled } from './cc';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
 import { knockbackDir, setKnockback } from './knockback';
-import { applyWound, displaceVictim, riderDef } from './wound';
+import { otRiders } from './over-time';
+import { applyWound,displaceVictim, riderDef } from './wound';
 import { meterOnHit } from './meter';
 import { blockHit, parry } from './guard';
 import { elementalDamagePm } from './elemental-buff';
@@ -149,6 +150,7 @@ export function applyArcadeHit(
     }
   }
   if (!guard && !sup && rdef !== undefined) applyWound(s, attacker, victim, rdef);
+  if (!guard && !sup && rdef !== undefined) otRiders(world, sink, attacker, victim, defIdx);
   const rid = guard ? null : ccRiders(world, sink, source, attacker, victim, defIdx, sup);
   // Charge armour (SIM_VERSION 50): a charging victim takes the damage but is neither knocked back nor stunned, so the rush goes on.
   const armoured = !sup && chargeTick(s, victim) !== 0;

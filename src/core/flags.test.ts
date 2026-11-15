@@ -36,8 +36,10 @@ describe('sim flags', () => {
       'walkAboveActionBar',
       'walkSwapInPlace',
       'withCrowdControl',
+      'withOverTime',
     ]);
-    expect(FLAG_NAMES.at(-1)).toBe('withCrowdControl');
+    expect(FLAG_NAMES.at(-1)).toBe('withOverTime');
+    expect(flagBit('withOverTime')).toBe(256);
     expect(flagBit('withCrowdControl')).toBe(128);
     expect(flagBit('walkSwapInPlace')).toBe(64);
     expect(flagBit('walkAboveActionBar')).toBe(32);
