@@ -119,6 +119,10 @@ test.describe('small phone landscape fight', () => {
     await shot(page, 'small-land-card');
     const card = await box(page, '#firstRunHint');
     expect(card.w).toBeLessThanOrEqual(667 * 0.4);
+    // QA r40: docked beside the stick (right of it), clear of the stick and both Strike buttons, not centred over the fight.
+    const stick = await box(page, '#touchStick');
+    expect(card.x).toBeGreaterThanOrEqual(stick.x + stick.w);
+    for (const id of ['#touchStrike1', '#touchStrike2']) expect(overlap(card, await box(page, id)), id).toBe(false);
     expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.84);
     expect(card.y).toBeGreaterThanOrEqual(375 * 0.66); // QA r36: below the fighters' feet, flush above the bar
     expect((await box(page, '#firstRunHint .firstRunDone')).h).toBeGreaterThanOrEqual(44);
@@ -204,6 +208,7 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
         expect(b.w).toBeGreaterThanOrEqual(44);
         expect(b.h).toBeGreaterThanOrEqual(44);
         expect(b.x + b.w).toBeLessThanOrEqual(canvas.x + canvas.w);
+        expect(b.x + b.w).toBeLessThanOrEqual(667 - 8); // QA r40: a margin from the right edge (plus the safe-area inset), never clipped
         expect(b.x).toBeGreaterThan(667 / 2); // the right thumb's half
         expect(overlap(b, stick)).toBe(false);
         // The slot row fills the bottom of the canvas (about 84% down): the buttons end above it.

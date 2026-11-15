@@ -1821,6 +1821,17 @@ html[data-high-contrast='true'] button.touchBtn {
   .firstRunHint:not(.firstRunWait) h2 {
     display: none;
   }
+  /* QA r40: not mid-floor (where the fighters meet) but docked beside the stick, in the low corner band the thumb already owns (104 px stick + gap). */
+  #firstRunHint.firstRunHint:not(.firstRunWait) {
+    left: calc(max(6px, env(safe-area-inset-left)) + 112px);
+    right: auto;
+    transform: none;
+    max-width: min(38%, 300px);
+  }
+  html[data-touch-side='left'] #firstRunHint.firstRunHint:not(.firstRunWait) {
+    left: auto;
+    right: calc(max(6px, env(safe-area-inset-right)) + 112px);
+  }
 }
 
 /* Portrait phone: the first-run card is a short one (the move line and the footer go; Help has them), and it stays hidden behind the rotate overlay. */
@@ -3016,13 +3027,14 @@ body:has(.settingsBar) {
 }
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
   #touchStrikes {
-    right: max(8px, env(safe-area-inset-right));
+    /* QA r40: Strike 1 was clipped by the right edge on a 667 px phone; the inset plus a real margin keeps the whole ring on screen. */
+    right: calc(env(safe-area-inset-right, 0px) + 16px);
     bottom: max(8px, env(safe-area-inset-bottom));
     gap: 8px;
   }
   html[data-touch-side='left'] #touchStrikes {
     right: auto;
-    left: max(8px, env(safe-area-inset-left));
+    left: calc(env(safe-area-inset-left, 0px) + 16px);
   }
   #touchStrikes .touchStrike {
     width: 56px;
