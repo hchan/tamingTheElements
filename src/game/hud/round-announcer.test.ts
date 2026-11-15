@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ROUND_INTRO_TICKS, RoundPhase, SimEventKind, type SimEvent } from '@core/index';
 import { announcementsFor, type Announcement } from '../a11y/announcer';
 import {
-  BANNER_IN_MS, FIGHT_BANNER_TICKS, HOLD, PIP_INNER, PIP_STEP, ROUND_EVENT_KINDS, RoundAnnouncer, TICK_MS, TIMER_X, bannerScale, pips,
+  BANNER_IN_MS, FIGHT_BANNER_TICKS, HOLD, PIP_INNER, PIP_STEP, ROUND_EVENT_KINDS, RoundAnnouncer, TICK_MS, TIMER_X, bannerScale, pipPairCentre, PIP_R, pips,
   timerLabel, timerStyle, type RoundSink,
 } from './round-announcer';
 
@@ -202,5 +202,15 @@ describe('round HUD helpers', () => {
     new RoundAnnouncer(f.sink).sync({ round: 3, phase: RoundPhase.intro, roundsWon: [2, 2], sudden: true }, 700);
     expect(last(f.banners)).toMatchObject({ main: 'SUDDEN DEATH', from: 700 });
     expect(f.lines).toHaveLength(0);
+  });
+});
+
+describe('pip size and captions', () => {
+  it('draws 24 px pips that do not touch and pair-centres each side', () => {
+    expect(PIP_R).toBeGreaterThanOrEqual(12);
+    expect(PIP_STEP).toBeGreaterThan(2 * PIP_R);
+    expect(pipPairCentre(0) + pipPairCentre(1)).toBe(2 * TIMER_X);
+    const left = pips([0, 0]).filter((p) => p.team === 0).map((p) => p.x);
+    expect(pipPairCentre(0)).toBe((Math.min(...left) + Math.max(...left)) / 2);
   });
 });

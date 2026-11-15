@@ -8,7 +8,7 @@ import { LOGICAL_WIDTH, phoneBoost, resolutionOf } from '../boot/viewport';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
 import { mountWeatherView } from '../fx/weather-view';
 import {
-  PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
+  PIP_R, PIP_Y, RoundAnnouncer, pipPairCentre, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
 import { bannerDraws, cutUp, fightYields, introClockStart } from './banner-lanes';
 import { RESULT_TICKS } from './round-result';
@@ -229,7 +229,8 @@ export function mountRoundView(
       timer: text(TIMER_PX, TIMER_Y, 5).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
       // One caption centred under both pip groups (it was one per group: the same word twice, qa-hud-clutter).
-      pipLabels: [text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setFontSize(Math.round(PIP_LABEL_PX * phoneBoost(hud, 1.7, 1100))).setText('ROUNDS').setPosition(TIMER_X, PIP_Y + PIP_R + 3)],
+      // One WINS caption centred under each side's pair, so a count is never read as super charge.
+      pipLabels: ([0, 1] as const).map((team) => text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setFontSize(Math.round(PIP_LABEL_PX * phoneBoost(hud, 1.7, 1100))).setText('WINS').setPosition(pipPairCentre(team), PIP_Y + PIP_R + 3)),
       halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
       cards: [
         text(CARD_PX, CARD_Y, 12, true).setOrigin(0, 0.5).setVisible(false),
@@ -275,5 +276,7 @@ function drawPips(g: Phaser.GameObjects.Graphics, won: readonly [number, number]
     g.fillCircle(p.x, PIP_Y, PIP_R);
     g.lineStyle(4, 0x000000, 1).strokeCircle(p.x, PIP_Y, PIP_R);
     g.lineStyle(highContrast ? 3 : 2, highContrast ? 0xffffff : 0xcfc6b0, 1).strokeCircle(p.x, PIP_Y, PIP_R - 1);
+    // A won pip carries a dark check as well as its fill, so it never reads on colour alone.
+    if (p.won) g.lineStyle(3, 0x000000, 1).lineBetween(p.x - 6, PIP_Y, p.x - 2, PIP_Y + 5).lineBetween(p.x - 2, PIP_Y + 5, p.x + 6, PIP_Y - 5);
   }
 }
