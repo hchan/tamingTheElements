@@ -258,7 +258,7 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   character can act, its team has no super running and has 1000 meter. It spends the bar (`meterLevel`), emits
   `superStarted {caster, superId 0}` and then `hitStop {40, cause 2}` (the freeze), and sets `invulnUntil` to 8 game ticks
   past the freeze. Every race gets the generic Elemental Burst (the view tints it by the caster's element): an
-  `effect` entity with def `SUPER_DEF` (the index after the abilities), a 160 px band from the caster's centre to the
+  `effect` entity with def `SUPER_DEF` (pinned at 0x100, out of the ability index range), a 160 px band from the caster's centre to the
   wall on its facing side (vertical when facing north or south), active for the 30 game ticks after the freeze, with a
   strength-3 hit of base 12 on every sixth (5 hits, through `applyArcadeHit`; translucent and invulnerable victims are
   missed). The team's `superState` holds the entity id + 1. The caster cannot act until `superEnded {caster}`, and a hit

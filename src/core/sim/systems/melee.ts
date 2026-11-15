@@ -22,7 +22,7 @@ import { snagHit } from './arcade/snag';
 import { cooldownTicksFor } from '../arcade-numbers';
 import { castDir } from './arcade/aim';
 
-/** Every ability def in a stable order; an ability's defId is its index here (A then B, 30 < MAX_ABILITY_DEFS). */
+/** Every ability def in a stable order; an ability's defId is its index here (A then B, append-only: new abilities go at the end; every index < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
 const DEF_INDEX = new Map<string, number>(ABILITY_DEFS.map((d, i) => [d.id, i]));
 

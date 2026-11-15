@@ -241,5 +241,9 @@
  * 67: Arcade only (Classic hashes unchanged). Backward walk (owner request): walking with the held x pointing away from the foe's x runs at
  *    BACKWARD_WALK_PM = 500 (50 percent) of forward speed (x only; vertical and no-foe unchanged). Re-record reason: every Arcade trajectory
  *    with a retreating hero changes (Arcade goldens, Arcade 1v1 and 2v2 baselines).
+ * 68: Arcade only (Classic hashes unchanged). Roster WP 0.1: the special hit def ids are pinned out of the ability index range
+ *    (SUPER_DEF 0x100, CHARGE_DEF 0x101, TRAP_BOMB_DEF 0x102, TRAP_SPIKE_DEF 0x103; they were 30..33, right after the abilities) so the
+ *    roster can grow without shifting them; no behaviour change. Re-record reason: the super effect entity's hashed `defId` changes
+ *    (Arcade goldens with a super); outcomes are identical.
  */
-export const SIM_VERSION = 67;
+export const SIM_VERSION = 68;

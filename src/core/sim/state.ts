@@ -4,7 +4,8 @@ import { STREAM_NAMES } from '../rng/streams';
 export const MAX_ENTITIES = 64;
 export const TEAM_COUNT = 2;
 export const ABILITY_SLOTS = 4;
-export const MAX_ABILITY_DEFS = 32;
+/** Ability def indices are below this; the special hit defs (arcade/hit.ts SUPER_DEF..) are pinned at 0x100 and up. */
+export const MAX_ABILITY_DEFS = 0x100;
 /** Status slots per entity, each STATUS_STRIDE ints: [id, sourceId, startTick, expireTick, magnitude]; id 0 = empty. */
 export const STATUS_SLOTS = 8;
 export const STATUS_STRIDE = 5;
