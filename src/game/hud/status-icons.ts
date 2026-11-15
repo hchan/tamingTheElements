@@ -63,8 +63,20 @@ export const STUN_ICON: readonly number[] = [-0.9, 0.2, -0.6, -0.6, -0.6, -0.6, 
 export const MIRE_ICON: readonly number[] = [-0.8, 0.5, 0.8, 0.5, -0.7, -0.1, -0.5, -0.1, -0.1, -0.5, 0.1, -0.5, 0.5, -0.1, 0.7, -0.1];
 /** Snag-safe: an open root cross (the Snag cross with its middle missing). */
 export const SNAG_SAFE_ICON: readonly number[] = [-0.9, -0.5, -0.3, -0.15, 0.3, 0.15, 0.9, 0.5, 0.9, -0.5, 0.3, -0.15, -0.3, 0.15, -0.9, 0.5];
-/** Icon per chip key for the states above. */
-export const CC_ICONS: Readonly<Record<string, readonly number[]>> = { stun: STUN_ICON, mire: MIRE_ICON, nosnag: SNAG_SAFE_ICON };
+/** Dazed: a spiral of three turning chords. */
+export const DAZE_ICON: readonly number[] = [0, 0, 0.5, 0, 0.5, 0, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.8, -0.5, 0.8, 0.9, 0.8];
+/** Iced: a snowflake (three crossing lines). */
+export const ICED_ICON: readonly number[] = [0, -0.9, 0, 0.9, -0.8, -0.45, 0.8, 0.45, -0.8, 0.45, 0.8, -0.45];
+/** Downed: a figure lying down (a long body line and a head tick) over the ground. */
+export const DOWN_ICON: readonly number[] = [-0.9, 0.3, 0.5, 0.3, 0.5, 0.3, 0.8, -0.2, -0.9, 0.7, 0.9, 0.7];
+/** Silenced: a bar struck through a speaker's mouth (a box with a slash). */
+export const SILENCE_ICON: readonly number[] = [-0.7, -0.3, -0.7, 0.3, -0.7, 0.3, -0.2, 0.3, -0.2, 0.3, 0.3, 0.7, 0.3, 0.7, 0.3, -0.7, 0.3, -0.7, -0.2, -0.3, -0.2, -0.3, -0.7, -0.3, -0.9, 0.9, 0.9, -0.9];
+/** Icon per chip key for the states above (`s<StatusId>` for the crowd-control statuses). */
+export const CC_ICONS: Readonly<Record<string, readonly number[]>> = {
+  stun: STUN_ICON, mire: MIRE_ICON, nosnag: SNAG_SAFE_ICON,
+  [`s${String(StatusId.dazed)}`]: DAZE_ICON, [`s${String(StatusId.iced)}`]: ICED_ICON,
+  [`s${String(StatusId.downed)}`]: DOWN_ICON, [`s${String(StatusId.silenced)}`]: SILENCE_ICON,
+};
 
 /** Short word per timed status; the debuffs (Tornado, Ice Blast, tidal slow) match `isHostile` in buffs.ts. */
 const STATUS_WORD: Readonly<Record<number, string>> = {
@@ -77,8 +89,13 @@ const STATUS_WORD: Readonly<Record<number, string>> = {
   [StatusId.superSpeed]: 'SPEED',
   [StatusId.superArmour]: 'ARMOR',
   [StatusId.superSlow]: 'TIDE',
+  // Crowd control (flag withCrowdControl; these statuses never exist with it off).
+  [StatusId.dazed]: 'DAZED',
+  [StatusId.iced]: 'ICED',
+  [StatusId.downed]: 'DOWN',
+  [StatusId.silenced]: 'SILENCED',
 };
-const HOSTILE_STATUS: ReadonlySet<number> = new Set([StatusId.tornado, StatusId.iceBlast, StatusId.superSlow]);
+const HOSTILE_STATUS: ReadonlySet<number> = new Set([StatusId.tornado, StatusId.iceBlast, StatusId.superSlow, StatusId.dazed, StatusId.iced, StatusId.downed, StatusId.silenced]);
 
 /** By `Weather` kind - 1: the word on the chip. */
 const WEATHER_WORD: readonly string[] = ['SUN', 'RAIN', 'SAND', 'GALE', 'ECLIPSE'];
