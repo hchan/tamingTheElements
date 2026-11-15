@@ -3060,3 +3060,22 @@ body:has(.settingsBar) {
     bottom: max(8px, calc(env(safe-area-inset-bottom) + 18vh));
   }
 }
+
+/* QA r44 leftover (667x375 phone): the first-run hint was a wide strip over the top of the play field. It is now a small corner chip in the top-left, under the HUD and clear of the centred portraits, weather chip and fighters; it still fades on the first input. */
+@media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
+  #firstRunHint.firstRunHint:not(.firstRunWait) {
+    top: 23vh;
+    left: 6px;
+    right: auto;
+    transform: none;
+    max-width: min(36%, 250px);
+    font-size: 9px;
+    line-height: 1.15;
+    padding: 0.15em 0.4em;
+  }
+  #firstRunHint.firstRunHint:not(.firstRunWait) .firstRunDone {
+    min-height: 44px;
+    padding: 0.1em 0.6em;
+    font-size: 10px;
+  }
+}

@@ -333,3 +333,12 @@ html[data-high-contrast='true'] #tourStage.tsGrim h1.heading { color: #fff; }
 }
 #tourStage #tourPins li { padding-bottom: 0.25em; line-height: 1; }
 #tourStage #tourPins li > .tsPinName { margin-top: 1.1em; }
+
+/* QA r44 (phone card): the Locked / Next badges sat tight against the stage names. The badge stays on the top edge, the name drops further and the tile grows a little, so a clear gap separates them. */
+#tourStage #tourPins li > .tsPinName { margin-top: 1.5em; }
+#tourStage #tourPins li[data-state='current']::after,
+#tourStage #tourPins li[data-state='locked']::after,
+#tourStage #tourPins li[data-state='cleared']::after { top: 0.2em; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #tourStage #tourPins li { min-height: 33px; padding-bottom: 0.3em; }
+}

@@ -118,10 +118,13 @@ test.describe('small phone landscape fight', () => {
     await enterFight(page);
     await shot(page, 'small-land-card');
     const card = await box(page, '#firstRunHint');
-    expect(card.w).toBeLessThanOrEqual(667 * 0.6);
+    // QA r44 leftover: a small corner chip in the top-left, so it covers neither the fighters' band nor the centred portraits and weather chip.
+    expect(card.w).toBeLessThanOrEqual(667 * 0.4);
+    expect(card.x + card.w).toBeLessThan(667 * 0.42);
+    expect(card.h).toBeLessThanOrEqual(375 * 0.16);
     // QA r43/r44: docked in the top band (clear of the stick, both Strike buttons and the lower-left fighting area).
     for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2']) expect(overlap(card, await box(page, id)), id).toBe(false);
-    expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.5);
+    expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.4);
     expect(card.y).toBeGreaterThanOrEqual(375 * 0.2);
     expect((await box(page, '#firstRunHint .firstRunDone')).h).toBeGreaterThanOrEqual(44);
   });
