@@ -63,14 +63,14 @@ test.describe('phone landscape fight', () => {
   test('the first-run card is docked under the fighters, so the name banners and ROUND stay clear (QA r31)', async ({ page }) => {
     await enterFight(page);
     const card = await box(page, '#firstRunHint');
-    expect(card.y).toBeGreaterThanOrEqual(390 * 0.58); // below the name banners, ROUND 1 and the fighters' feet
-    expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.85); // above the action bar, low enough to clear the fighters (QA r36)
-    expect(card.y).toBeGreaterThanOrEqual(390 * 0.66);
+    // QA r43/r44: docked in the top band of the floor, under the HUD, so it never covers the lower fighting area.
+    expect(card.y).toBeGreaterThanOrEqual(390 * 0.2);
+    expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.5);
   });
   test('the first-run card sits between the fighters and is narrow enough to clear both feet (QA r33)', async ({ page }) => {
     await enterFight(page);
     const card = await box(page, '#firstRunHint');
-    expect(card.w).toBeLessThanOrEqual(844 * 0.4);
+    expect(card.w).toBeLessThanOrEqual(844 * 0.6); // top band (QA r44): no feet to clear, still compact
     const done = await box(page, '#firstRunHint .firstRunDone');
     expect(done.h).toBeGreaterThanOrEqual(44);
   });
@@ -118,13 +118,11 @@ test.describe('small phone landscape fight', () => {
     await enterFight(page);
     await shot(page, 'small-land-card');
     const card = await box(page, '#firstRunHint');
-    expect(card.w).toBeLessThanOrEqual(667 * 0.4);
-    // QA r40: docked beside the stick (right of it), clear of the stick and both Strike buttons, not centred over the fight.
-    const stick = await box(page, '#touchStick');
-    expect(card.x).toBeGreaterThanOrEqual(stick.x + stick.w);
-    for (const id of ['#touchStrike1', '#touchStrike2']) expect(overlap(card, await box(page, id)), id).toBe(false);
-    expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.84);
-    expect(card.y).toBeGreaterThanOrEqual(375 * 0.66); // QA r36: below the fighters' feet, flush above the bar
+    expect(card.w).toBeLessThanOrEqual(667 * 0.6);
+    // QA r43/r44: docked in the top band (clear of the stick, both Strike buttons and the lower-left fighting area).
+    for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2']) expect(overlap(card, await box(page, id)), id).toBe(false);
+    expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.5);
+    expect(card.y).toBeGreaterThanOrEqual(375 * 0.2);
     expect((await box(page, '#firstRunHint .firstRunDone')).h).toBeGreaterThanOrEqual(44);
   });
 });

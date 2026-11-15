@@ -1821,16 +1821,14 @@ html[data-high-contrast='true'] button.touchBtn {
   .firstRunHint:not(.firstRunWait) h2 {
     display: none;
   }
-  /* QA r40: not mid-floor (where the fighters meet) but docked beside the stick, in the low corner band the thumb already owns (104 px stick + gap). */
+  /* QA r44: docked in the top band of the floor, just under the HUD and the weather label (the fighters stand mid and low, and the thumbs own the lower corners), so it never covers the lower fighting area. */
   #firstRunHint.firstRunHint:not(.firstRunWait) {
-    left: calc(max(6px, env(safe-area-inset-left)) + 112px);
+    top: 29vh;
+    bottom: auto;
+    left: 50%;
     right: auto;
-    transform: none;
-    max-width: min(38%, 300px);
-  }
-  html[data-touch-side='left'] #firstRunHint.firstRunHint:not(.firstRunWait) {
-    left: auto;
-    right: calc(max(6px, env(safe-area-inset-right)) + 112px);
+    transform: translateX(-50%);
+    max-width: min(56%, 380px);
   }
 }
 
@@ -2827,7 +2825,8 @@ body:has(.settingsBar) {
 /* QA r36: on a landscape phone the first-run card hugs the action bar (the fighters meet mid-floor in the first exchange, so the band above the bar is the only clear one) and leaves quickly at the first tap. */
 @media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
   #firstRunHint.firstRunHint:not(.firstRunWait) {
-    bottom: 16.5vh;
+    top: 29vh;
+    bottom: auto;
   }
   #firstRunHint.firstRunHint.firstRunFade {
     transition: opacity 0.25s;

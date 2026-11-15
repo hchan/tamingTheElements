@@ -82,10 +82,10 @@ export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' 
   // `terse`: drops the word "Life" (phones: keeps the text at full size instead of shrinking it to fit beside the SUPER label).
   // `'bare'`: also drops "/max" (a long name like TREENOC then keeps the 11 px phone size instead of shrinking or losing letters).
   const terseLife = lifeReadout(c).replace(/^Life /, '');
-  // `'min'`: also drops the element glyph (the portrait corner and the bar colour carry it): `SINDAROSA 158`, the last whole-name form.
+  // `'min'`: bare life like `'bare'` but whole name: `SINDAROSA ▲ 158`. It keeps the glyph (QA r44: one side lost its mark while the other kept it).
   // `'nomark'`: drops only the glyph and keeps "217/217" (2v2 phones: the whole name beats the mark, which the portrait corner repeats).
   const life = terse === 'bare' || terse === 'min' ? terseLife.replace(/\/\d+$/, '') : terse ? terseLife : lifeReadout(c);
-  return `${noName ? '' : `${name.toUpperCase()} `}${terse === 'min' || terse === 'nomark' ? '' : `${glyph} `}${life}${word}`;
+  return `${noName ? '' : `${name.toUpperCase()} `}${terse === 'nomark' ? '' : `${glyph} `}${life}${word}`;
 }
 
 /** `name` cut to at most `max` letters with an ellipsis (a phone's narrow life line keeps a short name instead of none); '' when `max` < 3. */
