@@ -226,3 +226,26 @@ export function comboScale(c: ComboShown, reduced: boolean): number {
 export function comboAlpha(c: ComboShown): number {
   return Math.min(1, c.hold / 300);
 }
+
+/**
+ * Tick positions (px) for a life bar of `maxHp`: one notch per `step` HP from the zero end `x0` towards the full end `x1`
+ * (`x0 > x1` allowed), none at the full end. The step doubles while there would be more than `maxTicks` notches or they would
+ * sit closer than `minGapPx`, so the size of the pool reads without clutter (297 HP gets 2 ticks, 591 gets 5).
+ */
+export function lifeTicks(maxHp: number, x0: number, x1: number, step = 100, maxTicks = 12, minGapPx = 8): number[] {
+  if (!(maxHp > 0) || step <= 0) return [];
+  const perHp = (x1 - x0) / maxHp;
+  let st = step;
+  while (Math.ceil(maxHp / st) - 1 > maxTicks || Math.abs(perHp * st) < minGapPx) {
+    st *= 2;
+    if (st > maxHp) return [];
+  }
+  const out: number[] = [];
+  for (let hp = st; hp < maxHp; hp += st) out.push(x0 + hp * perHp);
+  return out;
+}
+
+/** The words beside a bar with no active hero (the K.O. gap between rounds or before a tag-in): the last hero's name and K.O., else nothing. */
+export function gapLabel(last: { readonly name: string } | undefined, hasActive: boolean): string {
+  return !hasActive && last ? `${last.name}  K.O.` : '';
+}
