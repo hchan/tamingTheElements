@@ -13,6 +13,7 @@ import { isRooted } from './arcade/snag';
 import { chargeWeather } from './arcade/meter';
 import { rockStop, terrainSpeedPm } from './arcade/terrain';
 import { elementalSpeedPm } from './arcade/elemental-buff';
+import { approachWalk, dashCurvePm } from './arcade/walk';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
 const EAST = 0;
@@ -81,17 +82,23 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   const x0 = s.x[id] ?? 0;
   const y0 = s.y[id] ?? 0;
   const charging = chargeTick(s, id) > 0;
-  if (charging || dashTick(s, id) > 0) {
+  const dt = dashTick(s, id);
+  if (charging || dt > 0) {
     const a = world.arena;
-    const tx = (s.x[id] ?? 0) + (s.vx[id] ?? 0);
-    const ty = (s.y[id] ?? 0) + (s.vy[id] ?? 0);
+    const pm = charging ? 1000 : dashCurvePm(dt);
+    const tx = (s.x[id] ?? 0) + (pm === 1000 ? (s.vx[id] ?? 0) : ((s.vx[id] ?? 0) * pm) / 1000);
+    const ty = (s.y[id] ?? 0) + (pm === 1000 ? (s.vy[id] ?? 0) : ((s.vy[id] ?? 0) * pm) / 1000);
     s.x[id] = Math.min(Math.max(tx, a.x), a.x + a.w - (s.w[id] ?? 0));
     s.y[id] = Math.min(Math.max(ty, a.y), a.y + a.h - (s.h[id] ?? 0));
     const blocked = rockStop(s, id, x0, y0) || s.x[id] !== tx || s.y[id] !== ty;
     if (charging && blocked) endCharge(s, sink, id, ChargeEnd.blocked);
     return;
   }
-  if (!canAct(world, id)) return;
+  if (!canAct(world, id)) {
+    s.vx[id] = 0; // momentum is lost in stun, guard and dash recovery (FUN-DESIGN 2.3a)
+    s.vy[id] = 0;
+    return;
+  }
   const ax = cmdAxisX(cmd);
   const ay = cmdAxisY(cmd);
   const d = dir8FromSigns(ax, ay);
@@ -106,25 +113,45 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
     s.dir[id] = facingFor(ax, ay, s.dir[id] ?? EAST);
     if (d >= 0) setAim(s, id, d);
   }
-  if (d < 0) return;
-  if (isRooted(s, id) || inTrapRecovery(s, id)) return; // a Snag root or a trap cast: turn and aim, no step (FUN-DESIGN 2.20)
+  if (isRooted(s, id) || inTrapRecovery(s, id)) { // a Snag root or a trap cast: turn and aim, no step (FUN-DESIGN 2.20)
+    s.vx[id] = 0;
+    s.vy[id] = 0;
+    return;
+  }
   // Exact when no Puddle slows `id`; Gale (FUN-DESIGN 2.24) multiplies in after.
   const tpm = (terrainSpeedPm(s, id) * trapSlowPm(s, id)) / 1000;
   const gale = elementalSpeedPm(s, id);
   const pm = gale === 1000 ? tpm : (tpm * gale) / 1000;
   const speed = pm === 1000 ? (s.speed[id] ?? 0) : ((s.speed[id] ?? 0) * pm) / 1000;
-  s.vx[id] = (DIR8_X[d] ?? 0) * speed;
-  s.vy[id] = (DIR8_Y[d] ?? 0) * speed;
-  s.x[id] = x0 + (s.vx[id] ?? 0);
-  s.y[id] = y0 + (s.vy[id] ?? 0);
-  const walled = outOfArena(world, id);
-  if (walled) {
-    s.x[id] = x0;
+  // Walk inertia (FUN-DESIGN 2.3a): velocity ramps towards the held direction (stale dash or charge speed is capped first).
+  const vx = approachWalk(Math.min(Math.max(s.vx[id] ?? 0, -speed), speed), d < 0 ? 0 : (DIR8_X[d] ?? 0) * speed, speed);
+  const vy = approachWalk(Math.min(Math.max(s.vy[id] ?? 0, -speed), speed), d < 0 ? 0 : (DIR8_Y[d] ?? 0) * speed, speed);
+  s.vx[id] = vx;
+  s.vy[id] = vy;
+  if (vx === 0 && vy === 0) return;
+  const nx = x0 + vx;
+  const ny = y0 + vy;
+  s.x[id] = nx;
+  s.y[id] = ny;
+  // Walls slide: a blocked axis stops, the free one keeps going.
+  if (outOfArena(world, id)) {
     s.y[id] = y0;
+    if (outOfArena(world, id)) {
+      s.x[id] = x0;
+      s.y[id] = ny;
+      if (outOfArena(world, id)) s.y[id] = y0;
+    }
   }
-  const blocked = walled || rockStop(s, id, x0, y0);
-  if (!blocked) chargeWeather(s, id, team, false);
-  sink.emit(id, blocked ? SimEventKind.blocked : SimEventKind.moved, { x: s.x[id] ?? 0, y: s.y[id] ?? 0 });
+  if (s.x[id] !== nx) s.vx[id] = 0;
+  if (s.y[id] !== ny) s.vy[id] = 0;
+  const stuck = rockStop(s, id, x0, y0) || (s.x[id] === x0 && s.y[id] === y0);
+  if (stuck) {
+    s.vx[id] = 0;
+    s.vy[id] = 0;
+  }
+  if (d < 0) return; // a release slide: no `moved` event (like knockback)
+  if (!stuck) chargeWeather(s, id, team, false);
+  sink.emit(id, stuck ? SimEventKind.blocked : SimEventKind.moved, { x: s.x[id] ?? 0, y: s.y[id] ?? 0 });
 }
 
 export function movementSystem(world: SimWorld, cmds: readonly [Command, Command], sink: EventSink): void {

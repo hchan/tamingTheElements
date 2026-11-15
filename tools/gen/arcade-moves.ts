@@ -113,9 +113,9 @@ function movesScript(): ArcadeScript {
   // Segment D: dash with a perfect dodge (p2's fire blast passes through p1's invulnerable dash ticks).
   h = home(p1, p2, 1130 + CHARGE_SHIFT, 100);
   p2.until(h + 10).tap('fire blast', primary);
-  // h + 62 (was 61): the stage tide before this segment leaves p1 4 px further left after `home` (walls stop on the
-  // 7 px walk grid), so p2's blast comes one tick later (SIM_VERSION 54).
-  p1.until(h + 62).tap('dash up', up | dash);
+  // h + 57: p1 dashes toward the blast; the dash curve (SIM_VERSION 66) front-loads the distance, so the dasher only
+  // overlaps the blast during its invulnerable ticks for presses in a narrow window (h + 56..58).
+  p1.until(h + 57).tap('dash right', right | dash);
   // Beat-down (WP-arcade-numbers: Arcade lives are about 4x the hits now): single cones a stun apart, so p2 is low
   // enough for the parry's reflection to KO it.
   h = beatDown(p1, p2, 1700 + CHARGE_SHIFT, BEAT_ROUND_1);

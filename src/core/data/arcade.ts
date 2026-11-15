@@ -430,3 +430,24 @@ export const ARCADE_SPAWN_SPAN_X = (ARCADE_ARENA_WIDTH - ARENA_WIDTH) / 2;
 export const ARCADE_SPAWN_INSET = 160;
 export const ARCADE_P1_START_X = ARCADE_SPAWN_SPAN_X + ARCADE_SPAWN_INSET;
 export const ARCADE_P2_START_X = ARCADE_SPAWN_SPAN_X + ARENA_WIDTH - ARCADE_SPAWN_INSET - CHARACTER_WIDTH;
+
+/**
+ * Movement feel (FUN-DESIGN 2.3a, SIM_VERSION 66, Arcade only). A walking hero's velocity (`vx`/`vy`) ramps instead of
+ * jumping: each tick it moves WALK_ACCEL_PM of `speed` (per mille) towards the held direction, WALK_BRAKE_PM when it
+ * releases (a short slide the hero still travels) or slows, WALK_TURN_PM when it reverses (a quick turn-around).
+ * Integer per mille; the step is `speed * pm / 1000`. Walls slide: a blocked diagonal keeps its free axis.
+ */
+export const WALK_ACCEL_PM = 350;
+export const WALK_BRAKE_PM = 334;
+export const WALK_TURN_PM = 700;
+/**
+ * Dash shape (SIM_VERSION 66): per dash tick (1-based, DASH_TICKS entries) the share of the DASH_SPEED_MULT step, per
+ * mille. A burst that settles instead of a flat 3x speed: the six invulnerable ticks carry the speed, the end brakes.
+ * It sums to 12050 (the flat dash was 12000), so the distance is the same to 0.5 percent.
+ */
+export const DASH_CURVE_PM: readonly number[] = [1450, 1450, 1300, 1300, 1150, 1150, 1000, 950, 800, 650, 500, 350];
+/**
+ * Dash cancel into an attack (SIM_VERSION 66): from dash tick DASH_ATTACK_CANCEL_FROM (1-based) a pending primary or
+ * secondary press ends the dash and its recovery at once, so the attack comes out that tick.
+ */
+export const DASH_ATTACK_CANCEL_FROM = 10;

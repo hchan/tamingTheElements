@@ -2,7 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   BUFFER_TICKS, DASH_CANCEL_TICKS, DASH_COOLDOWN_TICKS, DASH_INVULN_FROM, DASH_INVULN_TO, DASH_RECOVERY_TICKS,
-  DASH_SPEED_MULT, DASH_TICKS, DOUBLE_TAP_TICKS, METER_PERFECT_DODGE,
+  DASH_CURVE_PM, DASH_SPEED_MULT, DASH_TICKS, DOUBLE_TAP_TICKS, METER_PERFECT_DODGE,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
 import { characterId } from '../../../data/ids';
@@ -72,6 +72,8 @@ describe('dash table (FUN-DESIGN 2.7, 2.12)', () => {
 
 describe('dash movement (rule: 12 ticks at 3x speed along the held direction, else the aim)', () => {
   const speed = (CHARACTERS.find((c) => c.id === 'sindarosa')?.speed ?? 0) * DASH_SPEED_MULT;
+  /** Distance after `k` dash ticks along one axis: the DASH_CURVE_PM shares of the 3x step (SIM_VERSION 66). */
+  const dist = (k: number): number => (DASH_CURVE_PM.slice(0, k).reduce((a, b) => a + b, 0) * speed) / 1000;
 
   it('moves 3x speed per tick for exactly 12 ticks along the held direction, ignoring input meanwhile', () => {
     const world = duel();
@@ -79,15 +81,15 @@ describe('dash movement (rule: 12 ticks at 3x speed along the held direction, el
     const g0 = now(s);
     const evs = step(world, [D | R, 0]);
     expect(evs.filter((e) => e.kind === SimEventKind.dashed)).toMatchObject([{ sourceId: 0, dir: 0 }]);
-    expect(s.x[0]).toBe(300 + speed);
+    expect(s.x[0]).toBeCloseTo(300 + dist(1), 6);
     const xs = [s.x[0]];
     for (let t = 1; t < 16; t++) {
       step(world, [Cmd.left, 0]);
       xs.push(s.x[0]);
     }
-    expect(xs.slice(0, DASH_TICKS)).toEqual(Array.from({ length: DASH_TICKS }, (_, k) => 300 + (k + 1) * speed));
+    xs.slice(0, DASH_TICKS).forEach((x, k) => { expect(x).toBeCloseTo(300 + dist(k + 1), 6); });
     // Ticks 13..16 are recovery (6 ticks): the held left does not move it yet.
-    expect(xs.slice(DASH_TICKS)).toEqual(idle(4).map(() => 300 + DASH_TICKS * speed));
+    xs.slice(DASH_TICKS).forEach((x) => { expect(x).toBeCloseTo(300 + dist(DASH_TICKS), 6); });
     expect(s.y[0]).toBe(300);
     expect(s.arcade[E(0, ArcadeE.dashUntil)]).toBe(g0 + DASH_TICKS);
     expect(s.arcade[E(0, ArcadeE.dashReadyAt)]).toBe(g0 + DASH_COOLDOWN_TICKS);
@@ -97,13 +99,15 @@ describe('dash movement (rule: 12 ticks at 3x speed along the held direction, el
     const world = duel();
     const s = world.state;
     step(world, [D | Cmd.down | R, 0]);
-    expect([s.x[0], s.y[0]]).toEqual([300 + speed, 300 + speed]);
+    expect(s.x[0]).toBeCloseTo(300 + dist(1), 6);
+    expect(s.y[0]).toBeCloseTo(300 + dist(1), 6);
     const fresh = duel();
     step(fresh, [Cmd.up | Cmd.left, 0]); // aim north-west, one walking step
     const [x, y] = [fresh.state.x[0] ?? 0, fresh.state.y[0] ?? 0];
     const evs = step(fresh, [D, 0]);
     expect(evs.find((e) => e.kind === SimEventKind.dashed)?.['dir']).toBe(3);
-    expect([fresh.state.x[0], fresh.state.y[0]]).toEqual([x - speed, y - speed]);
+    expect(fresh.state.x[0]).toBeCloseTo(x - dist(1), 6);
+    expect(fresh.state.y[0]).toBeCloseTo(y - dist(1), 6);
   });
 
   it('stops at the arena wall', () => {
@@ -119,7 +123,7 @@ describe('dash movement (rule: 12 ticks at 3x speed along the held direction, el
     step(world, [D | R, 0]);
     s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] = (s.world[World.tick] ?? 0) + 20;
     for (let t = 0; t < 40; t++) step(world, [0, 0]);
-    expect(s.x[0]).toBe(300 + DASH_TICKS * speed);
+    expect(s.x[0]).toBeCloseTo(300 + dist(DASH_TICKS), 6);
   });
 });
 

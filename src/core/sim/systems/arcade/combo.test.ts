@@ -77,7 +77,7 @@ describe('combo counter', () => {
 
     const again = hit(world, sink);
     const ended = sink.events.filter((e) => e.kind === SimEventKind.comboEnded);
-    const total = seen.reduce((sum, e) => sum + (e['amount'] ?? 0), 0);
+    const total = seen.reduce((sum, e) => sum + Math.round((e['amount'] ?? 0) * Q4_ONE) / Q4_ONE, 0); // the combo total adds each hit rounded to Q4
     expect(ended).toHaveLength(1);
     expect(ended[0]).toMatchObject({ team: 0, hits: 7, damage: Math.round(total * Q4_ONE) / Q4_ONE });
     expect(sink.events.indexOf(ended[0] as SimEvent)).toBeLessThan(sink.events.indexOf(again));

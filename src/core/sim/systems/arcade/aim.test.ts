@@ -60,7 +60,8 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
       const [x, y] = [s.x[id] ?? 0, s.y[id] ?? 0];
       const faced = s.dir[0];
       step(world, [0, 0]);
-      expect([(s.x[id] ?? 0) - x, (s.y[id] ?? 0) - y]).toEqual([(DIR8_X[e] ?? 0) * 8, (DIR8_Y[e] ?? 0) * 8]);
+      expect((s.x[id] ?? 0) - x).toBeCloseTo((DIR8_X[e] ?? 0) * 8, 6);
+      expect((s.y[id] ?? 0) - y).toBeCloseTo((DIR8_Y[e] ?? 0) * 8, 6);
       // The reel facing stays 4-way: x wins, as in Classic.
       expect(faced).toBe(facingFor(DIR8_X[e] ?? 0, DIR8_Y[e] ?? 0, -1));
     });
@@ -102,6 +103,8 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
     const world = duel();
     const s = world.state;
     s.y[0] = 210;
+    s.vx[0] = s.speed[0] ?? 0; // already at walking speed (no ramp-up tick)
+    s.vy[0] = -(s.speed[0] ?? 0);
     step(world, [right | up | primary, 0]);
     const [b] = bullets(world);
     const id = b ?? 0;
@@ -145,8 +148,11 @@ describe('Arcade 8-way aim (FUN-DESIGN 2.12)', () => {
   it('an aimed diagonal melee spawns that box, hits a victim on the diagonal and knocks it back along it', () => {
     const world = duel('curomo');
     const s = world.state;
+    s.vx[0] = s.speed[0] ?? 0; // already at walking speed (no ramp-up tick)
+    s.vy[0] = -(s.speed[0] ?? 0);
     step(world, [right | up, 0]);
     const [cx, cy] = [s.x[0] ?? 0, s.y[0] ?? 0];
+    s.vx[0] = 0; s.vy[0] = 0; // no brake slide under the swing
     s.x[1] = cx + 120; s.y[1] = cy - 120;
     const ev = step(world, [primary, 0]);
     let melee = -1;
