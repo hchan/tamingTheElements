@@ -287,3 +287,11 @@ range 40.9-63.6% (fiara 48.9, morblass 51.1, rokcore 47.7, wispera 46.6); style 
 noisy (88 matches per race, +-5-8 points): a 16-seed run from seed 41 put the four at 46.6-52.8% but moved others by up to 10 points (lavax 40.9 -> 53.4,
 treenoc 63.6 -> 58.0). Echo and treenoc (about 60%) and pax and lavax (low) were outliers before this change too; as in SIM_VERSION 67 their 2v2 life was left
 alone.
+
+## Arcade Fire Blast falloff (SIM_VERSION 71)
+
+Fire Blast grows and fades with range in Arcade ([FUN-DESIGN 2.27](FUN-DESIGN.md)). Baselines re-recorded with `balance:record --ruleset arcade` and `--team-size 2` (reason: the falloff changes every Arcade Fire Blast hit, clash and miss).
+
+Arcade 1v1 (1056 matches): win rates 47.2-53.4 percent (sindarosa 48.3 -> 50.0, curomo 51.7 -> 48.3, pax 52.3 -> 53.4, treenoc 48.9 -> 47.2), no stalemates or timeouts, no race moved past the 5 point tolerance. No `ARCADE_RACE_NUMBERS` re-fit was needed.
+
+Arcade 2v2 (528 matches): sindarosa 50.0 -> 40.9 (the only race past tolerance; a close-range blast is weaker for long-range pairings), rokcore 47.7 -> 52.3, ishimi 45.5 -> 48.9, others within 3.5 points. Echo and treenoc (64-66 percent) and pax and lavax (low) were outliers before this change and are left alone.

@@ -92,3 +92,5 @@ Readable by data: bright (lum above 120) and at least 50% opaque: fireCone, hurr
 7. **Unmeasurable abilities: Fire Heal, Rock Armour, Adrenaline, Fire Dance, Translucent Flame, Fade, Dash, Parry, Weather.** The sim emits no use or uptime events for them and the scripted AI barely uses Dash, Parry or Weather, so their value cannot be tested. Idea: ability-usage-metrics.
 8. **Dead or weak data.** Hurl Rock (80 DPS, no owner), Elemental Advantage Fire Cone, Capture, Stick, Charge (0.8%), Weather secondary effects (off), Fire Heal (10 HP per 40 s). Idea: dead-ability-cleanup and fire-heal-buff.
 9. **Seeds are not independent in Classic.** The scripted sim gives the same result at 2 and 6 seeds; use `--agents` variants or Arcade (which varies the AI personality) for statistics. Idea: ability-usage-metrics (include it).
+
+Note (SIM_VERSION 71): Arcade Fire Blast now grows 75 x 15 to 115 x 55 over 20 ticks and loses damage to 45% by age 75 ([FUN-DESIGN 2.27](FUN-DESIGN.md)); the Sindarosa rows above predate this.

@@ -11,6 +11,9 @@ import { createMatch } from '../match';
 import { characterId } from '../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../flags';
 import { ABILITY_DEFS } from './projectile';
+import { skipIntro } from './arcade/round-testkit';
+import { fireBlastFadePm, FIRE_BLAST_FLOOR_PM } from '../arcade-numbers';
+import { ARCADE_WORLD_BASE, ArcadeW } from '../state';
 
 interface Num { v: number }
 interface Bullet { direction: string; x: number; y: number; w: Num; h: Num }
@@ -205,6 +208,109 @@ describe('Sonar Blast and Fireball shrink', () => {
       }
     });
   }
+});
+
+describe('Arcade Fire Blast falloff (FUN-DESIGN 2.27)', () => {
+  const BASE_DAMAGE = 40;
+  function blastMatch(arcade: boolean, victimX = 5000): { world: SimWorld; id: number } {
+    const world = createMatch({
+      simVersion: 71, seed: 5, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: arcade }, chapter: 1, difficulty: 1,
+      p1: [{ character: characterId('sindarosa'), xp: 1 }], p2: [{ character: characterId('pax'), xp: 1 }],
+    });
+    if (arcade) skipIntro(world);
+    const s = world.state;
+    s.x[0] = 100; s.y[0] = 400; s.x[1] = victimX; s.y[1] = 400;
+    s.hp[1] = 100_000; s.maxHp[1] = 100_000;
+    step(world, [Cmd.primary, 0]);
+    return { world, id: bulletIds(world)[0] as number };
+  }
+  const centre = (s: SimWorld['state'], id: number): [number, number] => [(s.x[id] ?? 0) + (s.w[id] ?? 0) / 2, (s.y[id] ?? 0) + (s.h[id] ?? 0) / 2];
+
+  it('grows 2 px per axis per tick for 20 ticks, centred, then stops', () => {
+    const { world, id } = blastMatch(true);
+    const s = world.state;
+    const w0 = s.w[id] ?? 0;
+    const h0 = s.h[id] ?? 0;
+    let prev = centre(s, id);
+    for (let age = 1; age <= 30; age++) {
+      step(world, [0, 0]);
+      const grown = Math.min(age, 20) * 2;
+      expect(s.w[id]).toBe(w0 + grown);
+      expect(s.h[id]).toBe(h0 + grown);
+      const c = centre(s, id);
+      expect(c[0]).toBeCloseTo(prev[0] + 8, 9);
+      expect(c[1]).toBeCloseTo(prev[1], 9);
+      prev = c;
+    }
+  });
+
+  it('damage follows the closed form: full to age 20, then -10 pm a tick to the 450 pm floor', () => {
+    const { world, id } = blastMatch(true);
+    const s = world.state;
+    for (let age = 1; age <= 90; age++) {
+      step(world, [0, 0]);
+      if (!bulletIds(world).includes(id)) break;
+      expect(s.hp[id]).toBeCloseTo((BASE_DAMAGE * fireBlastFadePm(age)) / 1000, 6);
+    }
+    expect(s.hp[id]).toBeCloseTo((BASE_DAMAGE * FIRE_BLAST_FLOOR_PM) / 1000, 6);
+  });
+
+  it('the growth shift is clamped at the top wall', () => {
+    const { world, id } = blastMatch(true);
+    const s = world.state;
+    const top = world.arena.y;
+    s.y[id] = top + 0.5;
+    s.vy[id] = 0;
+    const h0 = s.h[id] ?? 0;
+    step(world, [0, 0]);
+    expect(s.y[id]).toBe(top);
+    expect(s.h[id]).toBe(h0 + 2);
+  });
+
+  it('Classic is untouched: box and damage stay as spawned', () => {
+    const { world, id } = blastMatch(false);
+    const s = world.state;
+    const before = [s.w[id], s.h[id], s.hp[id]];
+    for (let i = 0; i < 40; i++) step(world, [0, 0]);
+    expect([s.w[id], s.h[id], s.hp[id]]).toEqual(before);
+  });
+
+  it('a clash cut composes with the fade (hp is scaled, not overwritten)', () => {
+    const { world, id } = blastMatch(true);
+    const s = world.state;
+    for (let age = 1; age <= 22; age++) step(world, [0, 0]);
+    const cut = (s.hp[id] ?? 0) / 2;
+    s.hp[id] = cut;
+    step(world, [0, 0]); // age 23: 980 / 990
+    expect(s.hp[id]).toBeCloseTo((cut * fireBlastFadePm(23)) / fireBlastFadePm(22), 9);
+  });
+
+  it('a hit past 600 px deals about 45% of a close hit (same victim, same element chart)', () => {
+    const hitDamage = (victimX: number): { dealt: number; age: number } => {
+      const { world, id } = blastMatch(true, victimX);
+      const s = world.state;
+      const hp0 = s.hp[1] ?? 0;
+      let age = 0;
+      while (bulletIds(world).includes(id) && age < 200) { step(world, [0, 0]); age++; }
+      return { dealt: hp0 - (s.hp[1] ?? 0), age };
+    };
+    const near = hitDamage(190);
+    const far = hitDamage(1100);
+    expect(near.age).toBeLessThanOrEqual(20);
+    expect(far.age).toBeGreaterThan(75);
+    expect(near.dealt).toBeGreaterThan(0);
+    expect(far.dealt / near.dealt).toBeCloseTo(FIRE_BLAST_FLOOR_PM / 1000, 2);
+  });
+
+  it('a freeze holds the shot: no growth, no fade', () => {
+    const { world, id } = blastMatch(true);
+    const s = world.state;
+    for (let i = 0; i < 5; i++) step(world, [0, 0]);
+    s.arcade[ARCADE_WORLD_BASE + ArcadeW.freezeUntil] = (s.world[W.tick] ?? 0) + 6;
+    const before = [s.x[id], s.w[id], s.h[id], s.hp[id]];
+    for (let i = 0; i < 5; i++) step(world, [0, 0]);
+    expect([s.x[id], s.w[id], s.h[id], s.hp[id]]).toEqual(before);
+  });
 });
 
 describe('per-character ability info (legacy abilitiesInfo is deep-copied per character)', () => {

@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { ABILITIES_A } from '../data/abilities-a';
 import { ABILITIES_B } from '../data/abilities-b';
 import { SNAG_ABILITY } from '../data/arcade';
+import { CHARACTER_HEIGHT } from '../data/chapters';
 import { CHARACTERS, getCharacter } from '../data/characters';
 import { characterId } from '../data/ids';
 import { sizeLifePm, sizeOfSlug } from '../data/size';
 import { DEFAULT_SIM_FLAGS } from '../flags';
 import { compareStrings } from '../math/compare';
 import { combatantStats } from '../rules/progression';
-import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_2V2_LIFE_DEFAULT_PM, ARCADE_2V2_LIFE_PM, ARCADE_RACE_NUMBERS, arcadeLifePm, arcadeRaceNumbers, cooldownTicksFor } from './arcade-numbers';
+import { ARCADE_COOLDOWN_TICKS, ARCADE_RACE_DEFAULT, ARCADE_2V2_LIFE_DEFAULT_PM, ARCADE_2V2_LIFE_PM, ARCADE_RACE_NUMBERS, arcadeLifePm, arcadeRaceNumbers, cooldownTicksFor, FIRE_BLAST_ABILITY, fireBlastAlphaPm, fireBlastFadePm } from './arcade-numbers';
 import { createMatch, type MatchSetup } from './match';
 
 /** The 12 playable races (Arcade Versus and the tournaments): every character but the void ones. */
@@ -93,5 +94,29 @@ describe('Arcade 2v2 life (WP-arcade-2v2-tune)', () => {
       expect(arcadeLifePm(hp, 2, race)).toBe(Math.floor((hp * pm) / 1000));
     }
     expect(Object.keys(ARCADE_2V2_LIFE_PM).every((k) => PLAYABLE.includes(k))).toBe(true);
+  });
+});
+
+describe('Fire Blast falloff numbers (FUN-DESIGN 2.27)', () => {
+  it('fadePm: full damage to age 20, -10 pm a tick, floor 450 from age 75', () => {
+    const at = (age: number): number => fireBlastFadePm(age);
+    expect([0, 1, 20].map(at)).toEqual([1000, 1000, 1000]);
+    expect([21, 28, 38, 48, 63, 74].map(at)).toEqual([990, 920, 820, 720, 570, 450 + 10]);
+    expect([75, 76, 200].map(at)).toEqual([450, 450, 450]);
+  });
+  it('alphaPm: 1000 at full damage, 350 at the floor, in between linear and clamped', () => {
+    expect(fireBlastAlphaPm(100, 100)).toBe(1000);
+    expect(fireBlastAlphaPm(45, 100)).toBe(350);
+    expect(fireBlastAlphaPm(10, 100)).toBe(350);
+    expect(fireBlastAlphaPm(300, 100)).toBe(1000);
+    expect(fireBlastAlphaPm(0, 0)).toBe(1000);
+    const mid = fireBlastAlphaPm(72.5, 100);
+    expect(mid).toBeGreaterThan(350);
+    expect(mid).toBeLessThan(1000);
+  });
+  it('the Fire Blast slug exists and its box grows to under a character height', () => {
+    const def = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === FIRE_BLAST_ABILITY);
+    expect(def).toBeDefined();
+    expect(((def?.h ?? 0) * CHARACTER_HEIGHT) + 40).toBeLessThan(CHARACTER_HEIGHT);
   });
 });

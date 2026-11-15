@@ -90,6 +90,8 @@ interface Ghost {
   w: number;
   h: number;
   rot: number;
+  /** Opacity the fading projectile had when it left (Fire Blast falloff); 1 otherwise. */
+  alpha: number;
   /** 0 projectile fade (centre origin), 1 KO fall (feet pivot, top-left origin). */
   kind: number;
   dir: number;
@@ -163,6 +165,7 @@ export class PoseLayer {
   private readonly seen = new Int32Array(SLOTS);
   private readonly pel = new Uint8Array(SLOTS);
   private readonly snap = new Float64Array(SLOTS * 5);
+  private readonly snapAlpha = new Float64Array(SLOTS).fill(1);
   private readonly snapKey: string[] = new Array<string>(SLOTS).fill('');
   private readonly snapFrame: string[] = new Array<string>(SLOTS).fill('');
   private readonly ghosts: Ghost[] = [];
@@ -498,6 +501,7 @@ export class PoseLayer {
     this.snap[o + 2] = image.displayWidth;
     this.snap[o + 3] = image.displayHeight;
     this.snap[o + 4] = a;
+    this.snapAlpha[i] = (p.alphaPm ?? 1000) / 1000;
     this.snapKey[i] = image.texture.key;
     this.snapFrame[i] = image.frame.name;
   }
@@ -535,6 +539,7 @@ export class PoseLayer {
     g.w = this.snap[o + 2] ?? 0;
     g.h = this.snap[o + 3] ?? 0;
     g.rot = this.snap[o + 4] ?? 0;
+    g.alpha = this.snapAlpha[i] ?? 1;
     g.image.setTexture(this.snapKey[i] ?? '__DEFAULT', this.snapFrame[i] ?? '').setOrigin(0.5, 0.5).setVisible(true);
   }
 
@@ -570,10 +575,14 @@ export class PoseLayer {
   }
 
   private free(): Ghost | undefined {
-    for (const g of this.ghosts) if (g.from === Number.NEGATIVE_INFINITY) return g;
+    for (const g of this.ghosts) {
+      if (g.from !== Number.NEGATIVE_INFINITY) continue;
+      g.alpha = 1;
+      return g;
+    }
     if (this.ghosts.length >= GHOSTS) return undefined;
     const image = this.deps.scene.add.image(0, 0, '__DEFAULT').setVisible(false);
-    const g: Ghost = { image, from: Number.NEGATIVE_INFINITY, ms: 0, x: 0, y: 0, w: 0, h: 0, rot: 0, kind: 0, dir: 1, sprite: '', face: 0 };
+    const g: Ghost = { image, from: Number.NEGATIVE_INFINITY, ms: 0, x: 0, y: 0, w: 0, h: 0, rot: 0, alpha: 1, kind: 0, dir: 1, sprite: '', face: 0 };
     this.ghosts.push(g);
     return g;
   }
@@ -590,7 +599,7 @@ export class PoseLayer {
       const img = g.image;
       if (g.kind === 0) {
         const grow = this.reduced ? 1 : 1 + FADE_GROW * easeOutCubic(t);
-        img.setPosition(g.x, g.y).setDisplaySize(g.w * grow, g.h * grow).setAngle(g.rot).setAlpha(GHOST_ALPHA * (1 - t));
+        img.setPosition(g.x, g.y).setDisplaySize(g.w * grow, g.h * grow).setAngle(g.rot).setAlpha(GHOST_ALPHA * g.alpha * (1 - t));
         img.setDepth(1);
       } else {
         const p = resetPose(this.pose);

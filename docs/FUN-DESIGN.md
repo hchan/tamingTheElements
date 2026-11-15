@@ -1234,6 +1234,18 @@ on the strongest kit. A swap-in puts a different-sized partner on the outgoing h
 renderer reads the box, so sprites scale with it. Deferred: Snag scaling with target size, the 3v3 team-size budget, sizes
 above 2x, bigger baked art, turn rate and swap-in time.
 
+### 2.27 Fire Blast falloff (Arcade, sim, SIM_VERSION 71)
+
+Sindarosa's Fire Blast now plays as a close-range shotgun (idea `dragon-fading-fireball`). Arcade only; Classic keeps the flat blast, so
+Classic hashes do not move. For its first 20 ticks the box grows 2 px per axis per tick, centred on its path (the shift is clamped at the
+left and top walls, which the despawn test reads), from 75 x 15 to 115 x 55. Damage is full for those 20 ticks, then loses 10 pm per tick
+down to a floor of 450 pm at age 75 (`fireBlastFadePm`, integer per-mille; the bullet's hp is rescaled by the ratio of the new to the
+previous step). Hit strength stays heavy at every range, so a late hit still knocks back and stuns. The view gets `alphaPm` (350 to 1000)
+and `growPx` on `RenderProjectile`: the sprite fades with the damage and grows with the box. Knobs: `FIRE_BLAST_GROW_TICKS`,
+`FIRE_BLAST_FULL_TICKS`, `FIRE_BLAST_DECAY_PM`, `FIRE_BLAST_FLOOR_PM` in `src/core/sim/arcade-numbers.ts`. Balance in
+[BALANCE](BALANCE.md). The scripted goldens `arcade-moves`, `-tag`, `-tag3` and `-elemental` were re-timed (more blasts, a longer
+guard hold) because guard knockback pushes the guarder out of range, where the blast is weaker.
+
 ## 3. Presentation juice (view only)
 
 Every item below reads `RenderView` (extended with `arcade()`: meter, combo, round, timer, phase, stun, invulnerable)

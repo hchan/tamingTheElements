@@ -16,17 +16,17 @@
   "stalemates": 0,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.517,
+    "curomo": 0.483,
     "cyclonius": 0.477,
-    "echo": 0.494,
+    "echo": 0.489,
     "fiara": 0.5,
-    "ishimi": 0.494,
-    "lavax": 0.506,
+    "ishimi": 0.506,
+    "lavax": 0.517,
     "morblass": 0.5,
-    "pax": 0.523,
-    "rokcore": 0.517,
-    "sindarosa": 0.483,
-    "treenoc": 0.489,
+    "pax": 0.534,
+    "rokcore": 0.523,
+    "sindarosa": 0.5,
+    "treenoc": 0.472,
     "wispera": 0.5
   },
   "styleSummary": {
@@ -42,13 +42,13 @@
         },
         {
           "games": 560,
-          "winRate": 0.507
+          "winRate": 0.493
         }
       ],
       [
         {
           "games": 560,
-          "winRate": 0.493
+          "winRate": 0.507
         },
         {
           "games": 672,
@@ -58,12 +58,12 @@
     ],
     "crossMeleeVsRanged": {
       "games": 560,
-      "winRate": 0.507,
+      "winRate": 0.493,
       "stdErr": 0.021
     },
     "meanWinRate": {
-      "melee": 0.505,
-      "ranged": 0.497
+      "melee": 0.496,
+      "ranged": 0.503
     },
     "heroCount": {
       "melee": 5,
@@ -71,31 +71,31 @@
     },
     "byElement": {
       "air": {
-        "melee": 0.497,
+        "melee": 0.495,
         "ranged": 0.477,
-        "gap": 0.02
+        "gap": 0.018
       },
       "earth": {
-        "melee": 0.506,
-        "ranged": 0.517,
-        "gap": -0.011
+        "melee": 0.503,
+        "ranged": 0.523,
+        "gap": -0.02
       },
       "fire": {
-        "ranged": 0.496
+        "ranged": 0.506
       },
       "water": {
-        "melee": 0.517,
-        "ranged": 0.497,
-        "gap": 0.02
+        "melee": 0.483,
+        "ranged": 0.503,
+        "gap": -0.02
       }
     },
     "top6": {
-      "melee": 2,
-      "ranged": 4
+      "melee": 1,
+      "ranged": 5
     },
     "bottom6": {
-      "melee": 3,
-      "ranged": 3
+      "melee": 4,
+      "ranged": 2
     }
   }
 }

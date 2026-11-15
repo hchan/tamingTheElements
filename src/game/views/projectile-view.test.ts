@@ -49,6 +49,40 @@ describe('ProjectileView alpha', () => {
   });
 });
 
+describe('ProjectileView Fire Blast falloff (FUN-DESIGN 2.27)', () => {
+  const base = { id: 1, team: 0, sprite: 'fireBlast', dir: 0, x: 100, y: 100, px: 100, py: 100, w: 115, h: 55 };
+  function setup(): { view: ProjectileView; sizes: number[][] } {
+    const sizes: number[][] = [];
+    const scene = {
+      add: { image: () => { const i = fakeImage(); i.setDisplaySize = (w: number, h: number) => { sizes.push([w, h]); return i; }; return i; } },
+      textures: { get: () => ({ has: () => true, add: () => undefined }), exists: () => false },
+      time: { now: 0 },
+    } as unknown as Phaser.Scene;
+    return { view: new ProjectileView(scene), sizes };
+  }
+  it('fades image and glow with alphaPm, and an absent alphaPm leaves them at full', () => {
+    const { view } = setup();
+    view.apply({ ...base, alphaPm: 500 }, 1);
+    expect(view.image.alpha).toBe(0.5);
+    expect(view.glow.alpha).toBeCloseTo(0.25, 9);
+    view.apply(base, 1);
+    expect(view.image.alpha).toBe(1);
+  });
+  it('draws the art from the box minus growPx, then adds it back, so the art grows with the box', () => {
+    const { view, sizes } = setup();
+    view.apply({ ...base, w: 75, h: 15 }, 1);
+    view.apply({ ...base, growPx: 40 }, 1);
+    const [fresh, grown] = [sizes[0] ?? [0, 0], sizes[2] ?? [0, 0]];
+    expect(grown[0]).toBeCloseTo((fresh[0] ?? 0) + 40, 9);
+    expect(grown[1]).toBeCloseTo((fresh[1] ?? 0) + 40, 9);
+  });
+  it('a melee box ignores both fields', () => {
+    const { view } = setup();
+    view.apply({ ...base, alphaPm: 400, growPx: 30 }, 1, true);
+    expect(view.image.alpha).toBe(1);
+  });
+});
+
 describe('boltDisplaySize', () => {
   it('enlarges a tiny fireball (25x12 box, 80x50 art) keeping the art aspect', () => {
     const s = boltDisplaySize(25, 12, 80, 50);

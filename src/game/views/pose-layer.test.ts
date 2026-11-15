@@ -568,6 +568,22 @@ describe('projectiles and shake', () => {
     expect(h.layer.state.ghosts).toBe(0);
   });
 
+  it('a faded Fire Blast leaves a ghost that starts at its own opacity, not at full', () => {
+    const ghostAlpha = (alphaPm: number): number => {
+      const h = harness({ vx: 0 });
+      h.projs.push(proj({ alphaPm }));
+      for (let i = 0; i < 5; i++) h.step(16);
+      h.projs.length = 0;
+      h.step(16);
+      expect(h.layer.state.ghosts).toBe(1);
+      return h.images[h.images.length - 1]?.alpha ?? NaN;
+    };
+    const full = ghostAlpha(1000);
+    const faded = ghostAlpha(400);
+    expect(full).toBeGreaterThan(0);
+    expect(faded / full).toBeCloseTo(0.4, 6);
+  });
+
   it('camera shake decays smoothly and the base strength is restored for the next shake', () => {
     const h = harness({ vx: 0 });
     h.shake.isRunning = true;

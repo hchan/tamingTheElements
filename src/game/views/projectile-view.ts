@@ -150,11 +150,15 @@ export class ProjectileView {
       this.glow.setFrame(f);
     }
     // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
-    this.image.setVisible(true).setAlpha(1);
+    // Arcade Fire Blast falloff (FUN-DESIGN 2.27): the sim says how faded (alphaPm) and how much the box grew (growPx).
+    const fade = melee ? 1 : (p.alphaPm ?? 1000) / 1000;
+    const grown = melee ? 0 : (p.growPx ?? 0);
+    this.image.setVisible(true).setAlpha(fade);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
     const boost = SPRITE_BOOST[art];
     if (melee) look.h *= MELEE_ART_THICKNESS[p.sprite] ?? 1;
-    else if (this.artW > 0) Object.assign(look, boltDisplaySize(p.w, p.h, this.artW, this.artH, Math.max(MIN_BOLT_LONG_SIDE, boost?.minLong ?? 0)));
+    else if (this.artW > 0) Object.assign(look, boltDisplaySize(p.w - grown, p.h - grown, this.artW, this.artH, Math.max(MIN_BOLT_LONG_SIDE, boost?.minLong ?? 0)));
+    if (grown > 0) { look.w += grown; look.h += grown; }
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);
     // Melee boxes are placed once and never moved, so their previous position (px/py) is unset: do not lerp from it.
     const a = melee ? 1 : alpha;
@@ -163,7 +167,7 @@ export class ProjectileView {
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
       .setVisible(true)
-      .setAlpha(boost?.glowAlpha ?? (melee ? 0.2 : 0.5))
+      .setAlpha((boost?.glowAlpha ?? (melee ? 0.2 : 0.5)) * fade)
       .setDisplaySize(look.w * (boost?.glowScale ?? (melee ? 1 : 1.6)) + 6, look.h * (boost?.glowScale ?? (melee ? 1 : 1.6)) + 6)
       .setTint(boost?.glowTint ?? 0xffffff)
       .setBlendMode(boost?.dark === true ? BLEND_NORMAL : BLEND_ADD)

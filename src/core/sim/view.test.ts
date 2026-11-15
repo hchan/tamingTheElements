@@ -164,3 +164,27 @@ describe('RenderArcade crowd-control read-outs (CA1)', () => {
   });
 });
 
+
+describe('RenderProjectile Fire Blast falloff fields (FUN-DESIGN 2.27)', () => {
+  function fly(arcade: boolean, ticks: number): { alphaPm: number | undefined; growPx: number | undefined } {
+    const world = arcade ? skipIntro(createMatch(match(true))) : createMatch(match(false));
+    const s = world.state;
+    s.x[0] = 100; s.y[0] = 400; s.x[1] = 5000; s.y[1] = 100;
+    const view = createRenderView(world);
+    step(world, [Cmd.primary, 0]);
+    for (let i = 0; i < ticks; i++) step(world, [0, 0]);
+    let out: { alphaPm: number | undefined; growPx: number | undefined } = { alphaPm: undefined, growPx: undefined };
+    view.forEachProjectile((p) => { out = { alphaPm: p.alphaPm, growPx: p.growPx }; });
+    return out;
+  }
+  it('Arcade: full opacity while young, the box growth reported, alpha down to 350 pm at the damage floor', () => {
+    expect(fly(true, 0)).toEqual({ alphaPm: 1000, growPx: 0 });
+    expect(fly(true, 20)).toEqual({ alphaPm: 1000, growPx: 40 });
+    expect(fly(true, 40)).toMatchObject({ growPx: 40 });
+    expect(fly(true, 40).alphaPm).toBeLessThan(1000);
+    expect(fly(true, 75).alphaPm).toBe(350);
+  });
+  it('Classic: neutral values', () => {
+    expect(fly(false, 30)).toEqual({ alphaPm: 1000, growPx: 0 });
+  });
+});

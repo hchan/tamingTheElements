@@ -1,6 +1,6 @@
 import { ABILITIES_A } from '../../data/abilities-a';
 import { ABILITIES_B } from '../../data/abilities-b';
-import { cooldownTicksFor } from '../arcade-numbers';
+import { cooldownTicksFor, FIRE_BLAST_ABILITY, FIRE_BLAST_GROW_PX, FIRE_BLAST_GROW_TICKS, fireBlastFadePm } from '../arcade-numbers';
 import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../data/chapters';
 import { CHARACTERS } from '../../data/characters';
 import type { AbilityDef } from '../../data/types';
@@ -133,10 +133,34 @@ export function hitHolder(world: SimWorld, id: number): number {
   return active >= 0 ? active : (world.state.owner[id] ?? 0);
 }
 
-/** One Delay step of Sonar Blast (decays) or Fireball (grows). Alpha is cosmetic and not simulated. */
-function shrinkStep(world: SimWorld, id: number): void {
+/**
+ * Arcade Fire Blast falloff (FUN-DESIGN 2.27): grows centred for FIRE_BLAST_GROW_TICKS steps (the shift is clamped at
+ * the left/top walls, the corner the despawn test reads), then loses damage by fireBlastFadePm of its age.
+ */
+function fireBlastStep(world: SimWorld, id: number, tick: number): void {
+  const s = world.state;
+  const a = world.arena;
+  const age = tick - (s.spawnTick[id] ?? 0);
+  if (age >= 1 && age <= FIRE_BLAST_GROW_TICKS) {
+    const half = FIRE_BLAST_GROW_PX / 2;
+    s.x[id] = Math.max(a.x, (s.x[id] ?? 0) - half);
+    s.y[id] = Math.max(a.y, (s.y[id] ?? 0) - half);
+    s.w[id] = (s.w[id] ?? 0) + FIRE_BLAST_GROW_PX;
+    s.h[id] = (s.h[id] ?? 0) + FIRE_BLAST_GROW_PX;
+  }
+  const pmNow = fireBlastFadePm(age);
+  const pmPrev = fireBlastFadePm(age - 1);
+  if (pmNow !== pmPrev) s.hp[id] = ((s.hp[id] ?? 0) * pmNow) / pmPrev;
+}
+
+/** One Delay step of Sonar Blast (decays) or Fireball (grows), and the Arcade Fire Blast falloff. Alpha is cosmetic. */
+function shrinkStep(world: SimWorld, id: number, tick: number): void {
   const s = world.state;
   const slug = ABILITY_DEFS[s.defId[id] ?? 0]?.id;
+  if (slug === FIRE_BLAST_ABILITY) {
+    if (isArcade(s)) fireBlastStep(world, id, tick);
+    return;
+  }
   if (slug !== SONAR && slug !== FIREBALL) return;
   const newH = (s.h[id] ?? 0) * 1.015;
   if (newH < GROW_H_LIMIT) s.h[id] = newH;
@@ -152,7 +176,7 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
   const tick = now(s);
   for (let id = 0; id < MAX_ENTITIES; id++) {
     if (s.kind[id] !== EntityKind.projectile || ((s.flags[id] ?? 0) & EntityFlag.alive) === 0) continue;
-    shrinkStep(world, id);
+    shrinkStep(world, id, tick);
     s.px[id] = s.x[id] ?? 0;
     s.py[id] = s.y[id] ?? 0;
     s.x[id] = (s.x[id] ?? 0) + (s.vx[id] ?? 0);
