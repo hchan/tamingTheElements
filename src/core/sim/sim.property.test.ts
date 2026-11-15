@@ -97,6 +97,7 @@ const setupArb: fc.Arbitrary<MatchSetup> = fc.record({
     rulesetArcade: fc.boolean(),
     walkAboveActionBar: fc.constant(false),
     walkSwapInPlace: fc.boolean(),
+    withCrowdControl: fc.boolean(),
   }),
   chapter: fc.constantFrom<ChapterNumber>(1, 2, 3, 4, 5),
   difficulty: fc.constantFrom(0.25, 0.66, 0.85, 1, 1.12, 1.5),

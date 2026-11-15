@@ -35,7 +35,10 @@ describe('sim flags', () => {
       'testerCapture',
       'walkAboveActionBar',
       'walkSwapInPlace',
+      'withCrowdControl',
     ]);
+    expect(FLAG_NAMES.at(-1)).toBe('withCrowdControl');
+    expect(flagBit('withCrowdControl')).toBe(128);
     expect(flagBit('walkSwapInPlace')).toBe(64);
     expect(flagBit('walkAboveActionBar')).toBe(32);
     expect(flagBit('elementalAdvantage')).toBe(1);

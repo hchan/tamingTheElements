@@ -11,6 +11,7 @@ import {
 import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
 import { pending, Press, usePress } from './buffer';
+import { isSilenced } from './cc-state';
 import { gainMeter, weatherCharge } from './meter';
 import { canAct } from './stun';
 import { elementKind } from './terrain';
@@ -55,7 +56,7 @@ export function weatherTick(world: SimWorld, sink: EventSink): void {
   for (let team = 0; team < TEAM_COUNT; team++) {
     const id = controlledId(world, team);
     const e = id * ARCADE_E + ArcadeE.weatherReadyAt;
-    if (id < 0 || !pending(s, team, Press.weather) || g < (a[e] ?? 0) || weatherCharge(s, team) < WEATHER_CHARGE_FULL || !canAct(world, id)) continue;
+    if (id < 0 || !pending(s, team, Press.weather) || g < (a[e] ?? 0) || weatherCharge(s, team) < WEATHER_CHARGE_FULL || !canAct(world, id) || isSilenced(s, id)) continue;
     const el = CHARACTERS[s.defId[id] ?? 0]?.element;
     const kind = elementKind(el);
     const prev = a[KIND] ?? 0;

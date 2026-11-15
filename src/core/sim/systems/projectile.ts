@@ -18,6 +18,7 @@ import { controlledId } from './movement';
 import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
+import { isSilenced } from './arcade/cc-state';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { checkPerfectDodge } from './arcade/dash';
 import { releaseCount, slotAbility, SUPER_BULLET } from './ability-info';
@@ -43,7 +44,7 @@ const GROW_H_LIMIT = CHARACTER_HEIGHT * 0.5;
  */
 function canFire(world: SimWorld, charId: number, slot: number, def: AbilityDef): boolean {
   const s = world.state;
-  if (!canAct(world, charId)) return false;
+  if (!canAct(world, charId) || isSilenced(s, charId)) return false;
   if (def.maxActive <= (s.abil[countIdx(charId, slot)] ?? 0)) return false;
   return now(s) >= (s.abil[cooldownIdx(charId, slot)] ?? 0);
 }

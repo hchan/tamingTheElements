@@ -16,6 +16,7 @@ import { isArcade, now } from '../clock';
 import { applyArcadeHit } from './arcade/hit';
 import { bufferedCmd, onArcadeCast } from './arcade/buffer';
 import { checkPerfectDodge } from './arcade/dash';
+import { isSilenced } from './arcade/cc-state';
 import { canAct, isInvulnerable } from './arcade/stun';
 import { releaseCount, slotAbility } from './ability-info';
 import { snagHit } from './arcade/snag';
@@ -247,7 +248,7 @@ function updateEffect(world: SimWorld, id: number, tick: number): void {
 export function castMelee(world: SimWorld, sink: EventSink, team: number, slot: number, tick: number): void {
   const s = world.state;
   const caster = controlledId(world, team);
-  if (caster < 0 || !canAct(world, caster)) return;
+  if (caster < 0 || !canAct(world, caster) || isSilenced(s, caster)) return;
   const abilityId = slotAbility(s, caster, slot);
   const defId = abilityId === undefined ? undefined : DEF_INDEX.get(abilityId);
   const def = defId === undefined ? undefined : ABILITY_DEFS[defId];

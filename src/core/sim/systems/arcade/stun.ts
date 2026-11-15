@@ -10,6 +10,7 @@ import {
   ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ArcadeE, ArcadeT, EntityFlag, MAX_ENTITIES, type SimState,
 } from '../../state';
 import type { SimWorld } from '../../world';
+import { ccHeld } from './cc-state';
 import { endCharge } from './charge-move';
 
 /** True while an Arcade hit-stun holds `id` (`stunUntil` is in game ticks). Never true in Classic. */
@@ -80,7 +81,7 @@ export function isFree(s: SimState, id: number): boolean {
   const e = id * ARCADE_E;
   const dash = s.arcade[e + ArcadeE.dashUntil] ?? 0;
   const g = now(s);
-  return !isStunned(s, id) && !inSuper(s, id) && inFight(s) && !(dash > 0 && g < dash + DASH_RECOVERY_TICKS) &&
+  return !isStunned(s, id) && !ccHeld(s, id) && !inSuper(s, id) && inFight(s) && !(dash > 0 && g < dash + DASH_RECOVERY_TICKS) &&
     (s.arcade[e + ArcadeE.chargeUntil] ?? 0) <= g &&
     (s.arcade[e + ArcadeE.blockUntil] ?? 0) <= g && !inWeatherRecovery(s, id);
 }

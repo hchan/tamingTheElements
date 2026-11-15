@@ -16,6 +16,12 @@ export const StatusId = {
   none: 0, adrenaline: 1, fireDance: 2, rockArmour: 3, translucent: 4, tornado: 5, iceBlast: 6,
   /** Arcade supers only (WP-arcade-supers): a speed bonus, 50% armour and the tidal slow. */
   superSpeed: 7, superArmour: 8, superSlow: 9,
+  /**
+   * Crowd control (flag withCrowdControl, SIM_VERSION 70, systems/arcade/cc.ts). Ids 10+ never carry a speed delta:
+   * the status system restores speed only for ids up to superSlow. 14 and 15 are hidden (not HUD words).
+   * 16+ is reserved for HoT/DoT/roster statuses.
+   */
+  dazed: 10, iced: 11, downed: 12, silenced: 13, ccWard: 14, kindled: 15,
 } as const;
 export type StatusIdValue = (typeof StatusId)[keyof typeof StatusId];
 
@@ -182,11 +188,39 @@ export function statusSystem(world: SimWorld): void {
       const b = base(id, slot);
       const sid = s.status[b + F_ID] ?? 0;
       if (sid === StatusId.none || (s.status[b + F_EXPIRE] ?? 0) > tick) continue;
-      s.speed[id] = (s.speed[id] ?? 0) - (s.status[b + F_MAG] ?? 0) / (sid >= StatusId.superSpeed ? SUPER_MAG_SCALE : 1);
+      if (sid <= StatusId.superSlow) {
+        s.speed[id] = (s.speed[id] ?? 0) - (s.status[b + F_MAG] ?? 0) / (sid >= StatusId.superSpeed ? SUPER_MAG_SCALE : 1);
+      }
       if (sid === StatusId.translucent && ((s.flags[id] ?? 0) & EntityFlag.alive) !== 0) {
         s.flags[id] = (s.flags[id] ?? 0) & ~EntityFlag.translucent;
       }
       s.status.fill(0, b, b + STATUS_STRIDE);
     }
   }
+}
+
+/** Slot index of the first status `sid` on `id`, or -1. Non-allocating (hot path). */
+export function statusSlot(s: SimState, id: number, sid: number): number {
+  for (let slot = 0; slot < STATUS_SLOTS; slot++) if ((s.status[base(id, slot) + F_ID] ?? 0) === sid) return slot;
+  return -1;
+}
+
+/** True when `id` holds status `sid`. */
+export function hasStatus(s: SimState, id: number, sid: number): boolean {
+  return statusSlot(s, id, sid) >= 0;
+}
+
+/** Offset of a status field in `state.status` for (`id`, `slot`): `statusBase(id, slot) + StatusField.x`. */
+export function statusBase(id: number, slot: number): number {
+  return base(id, slot);
+}
+export const StatusField = { id: F_ID, source: F_SOURCE, start: F_START, expire: F_EXPIRE, mag: F_MAG } as const;
+
+/** Removes the first status `sid` from `id` without any speed restore (ids 10+ carry none). True when one was removed. */
+export function removeStatus(s: SimState, id: number, sid: number): boolean {
+  const slot = statusSlot(s, id, sid);
+  if (slot < 0) return false;
+  const b = base(id, slot);
+  s.status.fill(0, b, b + STATUS_STRIDE);
+  return true;
 }
