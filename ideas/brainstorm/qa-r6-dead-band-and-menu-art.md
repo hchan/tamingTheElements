@@ -34,3 +34,8 @@ Done: Settings legends now sit inside the box (floated legend); Versus picker cu
 Locked pill moved to the tile's top-right; portrait phone gate has a rotate icon and a prominent green "Play anyway" button.
 Not changed: Display Size default "Largest" is deliberate in src/core (new players start at Largest); footer overlap no longer reproduces (e2e hero-picker-layout green).
 Open: parallax on key art (mist and embers already drift via menu-motion.css); a truly usable portrait arena.
+
+## Progress (menu-art, 2026-11-14)
+
+Done: grim hi-res re-master of the menu pictures: `keyart-hires.webp` (4800x2000, CSS background), `keyart-hires-lo.webp` (2400x1000, Phaser loader), `crest-hires.png` (1024 px),
+generator `tools/assets/menu-gen/menu_art_hires.py` (no ML model was available offline; Lanczos plus procedural paint detail from the 400 px legacy portraits). Originals kept.
