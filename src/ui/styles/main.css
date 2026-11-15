@@ -2859,3 +2859,34 @@ body:has(.settingsBar) {
   #tourStage .tsInfo p.tourFact { font-size: 0.8em; }
   #tourStage #tourFight { min-height: 44px; font-size: 1em; width: min(100%, 16em); }
 }
+
+/* QA r38 (667x375 phone landscape): the Versus picker's three option rows, the title and a two-line hint filled the screen above the hero
+   cards, which ended up under the sticky Fight!/Back bar. The title goes visually hidden (still in the accessibility tree), the arena hint
+   steps aside and the rows tighten (touch targets stay 44 px), so the You / Computer cards start high enough to be read. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  #arcadePick > .heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  #arcadePick .vsHints .heroHint:not(#arcadeTeamHint) {
+    display: none;
+  }
+  #arcadePick .vsHints {
+    font-size: 0.8em;
+  }
+  #menu #arcadePick .settingsGroup > div.settingsOption.vsControl {
+    gap: 0 0.4em;
+  }
+  #arcadePick .vsSegmented {
+    gap: 3px;
+  }
+  /* The virtual stick sits just above the action bar (QA r38: in 2v2 and 3v3 the bar's first slots Blast / Flame / Tag were under it). */
+  #touchStick {
+    bottom: max(8px, calc(env(safe-area-inset-bottom) + 18vh));
+  }
+}
