@@ -46,7 +46,7 @@ const NOTCHES = 5;
  * Weather-charge chip (WP-arcade-weather-charge): team 0's charge ("WEATHER 60%" and a bar notched in quarters, or
  * "WEATHER READY" with a blinking border) always shown, centred under the badge's slot.
  */
-const CHARGE_Y = 146;
+const CHARGE_Y = 160;
 const CHARGE_PX = 18;
 const CHARGE_BAR_W = 130;
 /** The weather badge sits on the same row as the chip, to its right, so the two read as one tucked-in strip. */
