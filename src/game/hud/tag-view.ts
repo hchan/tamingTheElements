@@ -313,6 +313,8 @@ export function mountTagView(
       flashes.push(flash);
       flashes.splice(0, flashes.length - 4);
       callFrom = view.tick;
+      // QA r41: the first-run card leaves the action bar clear while a tag call plays.
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('tte:tag-call'));
       wait.reset();
       barFlash[team === 1 ? 1 : 0] = view.tick;
       callReduced = reduced;
