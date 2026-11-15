@@ -12,7 +12,7 @@ import { ArcadeTactics as ArcadeTacticsV1 } from './arcade-ai-v1/arcade';
 import { AI_EASY, AI_HARD, AI_NORMAL, type ArcadeAiLevel, type Style } from '../../src/core/agents/scripted-ai/arcade-ai';
 import { type AttackAbility, AttackAgent } from '../../src/core/agents/scripted-ai/attack';
 import { arcadePlayfield } from '../../src/core/data/arcade';
-import { CHARACTERS, getCharacter } from '../../src/core/data/characters';
+import { CHARACTERS, getCharacter, LEGACY_RACES } from '../../src/core/data/characters';
 import { ELEMENTS, type Element, elementRelation } from '../../src/core/data/elements';
 import { characterId } from '../../src/core/data/ids';
 import type { AbilityDef } from '../../src/core/data/types';
@@ -29,9 +29,13 @@ import { RANGED } from '../../src/core/sim/systems/arcade/meter';
 import { CHARGE_DEF, SUPER_DEF, TRAP_BOMB_DEF, TRAP_SPIKE_DEF } from '../../src/core/sim/systems/arcade/hit';
 import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
 import { type FunMetrics, reduceFunMetrics } from './fun-metrics';
+import { formatStyleSummary, type StyleSummary, styleSummary } from './style-summary';
 
 /** The 12 playable races (the dummy target and the Eternal Void boss are excluded). */
-export const RACES: readonly string[] = CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
+/** The roster the tournament and the partner offsets run over by default: the legacy 12 (`--roster legacy`), so Classic numbers never move. */
+export const RACES: readonly string[] = LEGACY_RACES.map((id) => id as string);
+/** Every non-void hero of the full roster (`--roster full`); equal to RACES until the roster grows. */
+export const FULL_RACES: readonly string[] = CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
 /** Elements of the 12 races, in the order of the matrix rows and columns. */
 export const MATRIX_ELEMENTS: readonly Element[] = ELEMENTS.filter((e) => e !== 'void');
 
@@ -300,6 +304,8 @@ export interface MatchOptions {
   readonly frozenV1?: 'a' | 'b';
   /** Mask the Trap command bit from both agents (`--no-traps`); only Arcade reads that bit as a trap. */
   readonly noTraps?: boolean;
+  /** Roster the 2v2/3v3 partner offsets run over (default RACES, the legacy 12). */
+  readonly races?: readonly string[];
 }
 
 export interface MatchResult {
@@ -335,9 +341,10 @@ export function runMatch(o: MatchOptions): MatchResult {
   // A 2v2 partner is the race half the list on: the pairings play neighbours (a against a + 1), so the partners never
   // repeat a race of the other side (a mirror of identical bots stands on one spot and its shots cancel forever).
   // 3v3 (WP-arcade-3v3): the two partners are a third and two thirds of the list on, on the same reasoning.
-  const offsets = o.teamSize === 3 ? [RACES.length / 3, (2 * RACES.length) / 3] : o.teamSize === 2 ? [RACES.length / 2] : [];
+  const list = o.races ?? RACES;
+  const offsets = o.teamSize === 3 ? [list.length / 3, (2 * list.length) / 3] : o.teamSize === 2 ? [list.length / 2] : [];
   const roster = (race: string): { character: ReturnType<typeof characterId>; xp: number }[] =>
-    [race, ...offsets.map((k) => RACES[(RACES.indexOf(race) + k) % RACES.length] ?? race)].map((r) => ({
+    [race, ...offsets.map((k) => list[(list.indexOf(race) + k) % list.length] ?? race)].map((r) => ({
       character: characterId(r),
       xp,
     }));
@@ -523,6 +530,7 @@ export interface PairingOptions {
   readonly teamSize?: 1 | 2 | 3;
   readonly aiLevel?: number;
   readonly noTraps?: boolean;
+  readonly races?: readonly string[];
 }
 
 export function runPairing(o: PairingOptions): { summary: PairingSummary; results: MatchResult[] } {
@@ -544,6 +552,7 @@ export function runPairing(o: PairingOptions): { summary: PairingSummary; result
         ...(o.teamSize === undefined ? {} : { teamSize: o.teamSize }),
         ...(o.aiLevel === undefined ? {} : { aiLevel: o.aiLevel }),
         ...(o.noTraps === true ? { noTraps: true } : {}),
+        ...(o.races === undefined ? {} : { races: o.races }),
       }),
     );
   }
@@ -573,16 +582,19 @@ export interface TournamentSummary {
   }[];
   readonly pairs: readonly PairingSummary[];
   readonly matrix: { readonly elements: readonly Element[]; readonly cells: readonly (readonly MatrixCell[])[] };
+  /** Melee-vs-ranged report; only present when asked for (`withStyle`), so the default JSON stays byte-identical. */
+  readonly styleMatrix?: StyleSummary;
 }
 
 export function runTournament(
   o: Omit<PairingOptions, 'a' | 'b'>,
   races: readonly string[] = RACES,
+  withStyle = false,
 ): TournamentSummary {
   const pairs: PairingSummary[] = [];
   for (let i = 0; i < races.length; i++) {
     for (let j = i + 1; j < races.length; j++) {
-      pairs.push(runPairing({ ...o, a: races[i] ?? '', b: races[j] ?? '' }).summary);
+      pairs.push(runPairing({ ...o, races, a: races[i] ?? '', b: races[j] ?? '' }).summary);
     }
   }
   const score = new Map<string, { games: number; score: number }>(races.map((r) => [r, { games: 0, score: 0 }]));
@@ -624,6 +636,12 @@ export function runTournament(
       };
     })
     .sort((x, y) => y.winRate - x.winRate || x.race.localeCompare(y.race));
+  const teamSize = o.teamSize ?? 1;
+  const teamOf = (race: string): readonly string[] => {
+    const n = teamSize;
+    const offs = n === 3 ? [races.length / 3, (2 * races.length) / 3] : n === 2 ? [races.length / 2] : [];
+    return [race, ...offs.map((k) => races[(races.indexOf(race) + k) % races.length] ?? race)];
+  };
   return {
     races,
     seedsPerPairing: o.seeds,
@@ -634,6 +652,7 @@ export function runTournament(
       elements: els,
       cells: acc.map((row) => row.map((c) => ({ games: c.games, winRate: c.games === 0 ? 0 : r3(c.score / c.games) }))),
     },
+    ...(withStyle ? { styleMatrix: styleSummary(pairs, ranking, teamSize > 1 ? teamOf : undefined) } : {}),
   };
 }
 
@@ -677,6 +696,7 @@ export function formatTournament(t: TournamentSummary): string {
     '',
     'Race ranking:',
     ...rank,
+    ...(t.styleMatrix ? ['', formatStyleSummary(t.styleMatrix)] : []),
   ].join('\n');
 }
 
@@ -728,6 +748,8 @@ export function main(argv: readonly string[]): number {
         'no-traps': { type: 'boolean' },
         tournament: { type: 'boolean' },
         json: { type: 'boolean' },
+        roster: { type: 'string' },
+        style: { type: 'boolean' },
       },
     });
     const base = {
@@ -741,21 +763,23 @@ export function main(argv: readonly string[]): number {
       ...parseRuleOptions(values.ruleset, values['team-size'], values['ai-level']),
       ...(values['no-traps'] === true ? { noTraps: true } : {}),
     };
+    if (values.roster !== undefined && values.roster !== 'legacy' && values.roster !== 'full') throw new Error(`--roster must be legacy|full, got "${values.roster}"`);
+    const roster = values.roster === 'full' ? FULL_RACES : RACES;
     if (values.tournament === true) {
-      const t = runTournament(base);
+      const t = runTournament(base, roster, values.style === true);
       console.log(values.json === true ? JSON.stringify(t, null, 2) : formatTournament(t));
       return 0;
     }
     for (const race of [values.a, values.b]) {
-      if (race === undefined || !RACES.includes(race)) throw new Error(`--a and --b must each be one of: ${RACES.join(', ')}`);
+      if (race === undefined || !roster.includes(race)) throw new Error(`--a and --b must each be one of: ${roster.join(', ')}`);
     }
-    const { summary } = runPairing({ ...base, a: values.a ?? '', b: values.b ?? '' });
+    const { summary } = runPairing({ ...base, races: roster, a: values.a ?? '', b: values.b ?? '' });
     console.log(values.json === true ? JSON.stringify(summary, null, 2) : formatPairing(summary));
     return 0;
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
-    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--no-traps] [--json]');
-    console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--json]');
+    console.error('usage: pnpm sim:match --a <race> --b <race> [--agents scripted,random] [--seeds N] [--seed S] [--level L] [--difficulty D] [--ruleset classic|arcade] [--team-size 1|2|3] [--ai-level 1..5] [--no-traps] [--roster legacy|full] [--json]');
+    console.error('       pnpm sim:match --tournament [--seeds N] [--agents ...] [--roster legacy|full] [--style] [--json]');
     return 2;
   }
 }

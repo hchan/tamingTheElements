@@ -1,5 +1,5 @@
 /** New-game save (legacy GamePersist.saveStart): a random race at XP 1, chapter 1, default settings. */
-import { CHARACTERS } from '../data/characters';
+import { LEGACY_CHARACTERS } from '../data/characters';
 import {
   DEFAULT_DIFFICULTY,
   DISPLAY_SCALE,
@@ -12,7 +12,7 @@ import { metaIdSource } from './garrison';
 import type { Clock } from './garrison';
 
 export function newGame(meta: Sfc32, clock: Clock): SaveV1 {
-  const character = meta.pick(CHARACTERS);
+  const character = meta.pick(LEGACY_CHARACTERS);
   const characterName = CHARACTER_TEXT.get(character.id)?.name ?? character.id;
   const id = metaIdSource(meta).next();
   const now = clock.now();

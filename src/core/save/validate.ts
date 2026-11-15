@@ -1,4 +1,4 @@
-import { CHARACTERS } from '../data/characters';
+import { LEGACY_CHARACTERS } from '../data/characters';
 import { GARRISON_MAX_SIZE } from '../data/chapters';
 import type { SaveV1 } from './v1';
 
@@ -18,7 +18,7 @@ export const SAVE_LIMITS = {
   keyBindingCodesMax: 8,
 } as const;
 
-const KNOWN_NAMES: ReadonlySet<string> = new Set(CHARACTERS.map((c) => c.id as string));
+const KNOWN_NAMES: ReadonlySet<string> = new Set(LEGACY_CHARACTERS.map((c) => c.id as string));
 
 /** Legacy character names map to ids by lower-casing and dashing spaces. */
 export function nameToSlug(name: string): string {

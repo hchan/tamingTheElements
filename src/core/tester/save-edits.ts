@@ -2,7 +2,7 @@
  * Tester-mode edits of a save (see docs/TESTER-MODE.md): pure functions that return a new save. They bypass the normal
  * progression rules on purpose, so the platform only ever applies them to the throwaway tester slot unless the owner opts in.
  */
-import { CHARACTERS } from '../data/characters';
+import { CHARACTERS, LEGACY_CHARACTERS } from '../data/characters';
 import { CHARACTER_TEXT } from '../data/text-ids';
 import type { IdSource } from '../rules/garrison';
 import { levelFromXp } from '../rules/progression';
@@ -41,7 +41,7 @@ export function advanceChapterCheat(save: SaveV1): SaveV1 {
 export function addEveryRace(save: SaveV1, now: number, ids: IdSource): SaveV1 {
   const have = new Set(save.garrison.map((g) => g.characterName));
   const added: GarrisonMemberV1[] = [];
-  for (const c of CHARACTERS) {
+  for (const c of LEGACY_CHARACTERS) {
     if (c.id === 'eternal-void') continue;
     const characterName = CHARACTER_TEXT.get(c.id)?.name ?? c.id;
     if (have.has(characterName)) continue;

@@ -11,6 +11,7 @@ import { cooldownIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
 import { ARCADE_2V2_BASELINE_PATH, ARCADE_2V2_PARAMS, ARCADE_BASELINE_PATH, ARCADE_PARAMS, BASELINE_PATH, FULL_PARAMS, compareReports, type BalanceReport } from '../../tools/sim/balance';
 import { DEFAULT_MAX_TICKS, RACES, makeAgent, runPairing, runTournament } from '../../tools/sim/run-match';
+import { styleGateFindings } from '../../tools/sim/style-summary';
 
 /** PR sample: every pairing, 2 seeds (one per side assignment), level 1, scripted vs scripted. */
 const SAMPLE = { agents: ['scripted', 'scripted'], seeds: 2, seed: 1, level: 1, difficulty: 1, maxTicks: DEFAULT_MAX_TICKS } as const;
@@ -129,5 +130,14 @@ describe('Arcade 2v2 balance baseline (WP-arcade-2v2-tune; compared nightly, rep
     expect(tag.params).toEqual(ARCADE_2V2_PARAMS);
     expect(Object.keys(tag.winRates).sort()).toEqual([...RACES].sort());
     expect(tag.matches).toBe((RACES.length * (RACES.length - 1) * ARCADE_2V2_PARAMS.seeds) / 2);
+  });
+});
+
+describe('style report (roster WP 0.2; report only, never fails on a number)', () => {
+  it('reports the melee/ranged matrix of a small 1v1 round robin', () => {
+    const s = runTournament({ ...SAMPLE, seeds: 1 }, RACES, true).styleMatrix;
+    expect(s?.heroCount).toEqual({ melee: 5, ranged: 7 });
+    // Report only: the findings are printed; the hard gates arrive after roster batch B3.
+    console.log('style findings (report only):', s ? styleGateFindings(s) : []);
   });
 });

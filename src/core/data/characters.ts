@@ -10,8 +10,11 @@ function def(
   return { id: characterId(slug), ...d, abilities: abilities.map(abilityId) };
 }
 
-/** The 14 legacy characters (data.json). Display text lives in text-ids.ts. */
-export const CHARACTERS: readonly CharacterDef[] = [
+/**
+ * The 14 legacy characters (data.json), frozen: Classic (new games, saves, replays, the Classic balance tools) is pinned to
+ * this list. Display text lives in text-ids.ts. New heroes are appended to `CHARACTERS` after `wispera`, never here.
+ */
+export const LEGACY_CHARACTERS: readonly CharacterDef[] = Object.freeze([
   def('curomo', { element: 'water', alignment: 'good', maxHealth: 100, speed: 6, sprite: 'curomo' }, ['ice-shock', 'shards-of-ice']),
   def('cyclonius', { element: 'air', alignment: 'evil', maxHealth: 100, speed: 7, sprite: 'cyclonius' }, ['tornado', 'wind-cone']),
   def('dummy', { element: 'void', alignment: 'neutral', maxHealth: 100, speed: 0.2, sprite: 'dummyTarget' }, ['stick']),
@@ -26,7 +29,18 @@ export const CHARACTERS: readonly CharacterDef[] = [
   def('sindarosa', { element: 'fire', alignment: 'evil', maxHealth: 100, speed: 7, sprite: 'sindarosa' }, ['fire-blast', 'translucent-flame']),
   def('treenoc', { element: 'earth', alignment: 'neutral', maxHealth: 90, speed: 6, sprite: 'treenoc' }, ['entangling-vines', 'strangling-branches']),
   def('wispera', { element: 'air', alignment: 'good', maxHealth: 100, speed: 5, sprite: 'wispera' }, ['sonar-blast', 'steal-health']),
-];
+]);
+
+/** Every character the sim knows: the legacy 14, then appended Arcade heroes (none yet; roster-24 plan). */
+export const CHARACTERS: readonly CharacterDef[] = [...LEGACY_CHARACTERS];
+
+/** The 12 playable legacy races (the dummy target and the Eternal Void boss are excluded), in `LEGACY_CHARACTERS` order. */
+export const LEGACY_RACES: readonly CharacterId[] = LEGACY_CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
+
+/** True when `id` is one of the legacy 14 (the only heroes the Classic ruleset may field). */
+export function isLegacyCharacter(id: CharacterId): boolean {
+  return LEGACY_CHARACTERS.some((c) => c.id === id);
+}
 
 const BY_ID = new Map<CharacterId, CharacterDef>(CHARACTERS.map((ch) => [ch.id, ch]));
 
