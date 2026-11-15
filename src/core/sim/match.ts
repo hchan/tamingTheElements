@@ -1,4 +1,4 @@
-import { SIZE_ONE, sizeDamagePm, sizeHeightPx, sizeLifePm, sizeOfSlug, sizeSpeedPm, sizeWidthPx } from '../data/size';
+import { SIZE_ONE, boxOfSlug, sizeDamagePm, sizeLifePm, sizeOfSlug, sizeSpeedPm } from '../data/size';
 import { ARENA_HEIGHT, ARENA_WIDTH, CHARACTER_HEIGHT, CHARACTER_WIDTH, GARRISON_MAX_SIZE } from '../data/chapters';
 import type { ChapterNumber } from '../data/chapters';
 import { CHARACTERS, getCharacter, isLegacyCharacter } from '../data/characters';
@@ -72,11 +72,10 @@ function spawnTeam(world: SimWorld, team: number, roster: Roster, setup: MatchSe
     s.py[id] = y;
     // Giants (data/size.ts) are Arcade only: a bigger box on the same centre, more life and damage, less speed.
     const size = setup.flags.rulesetArcade ? sizeOfSlug(def.id) : SIZE_ONE;
-    const w = size === SIZE_ONE ? CHARACTER_WIDTH : sizeWidthPx(size);
-    const h = size === SIZE_ONE ? CHARACTER_HEIGHT : sizeHeightPx(size);
+    const [w, h] = setup.flags.rulesetArcade ? boxOfSlug(def.id) : [CHARACTER_WIDTH, CHARACTER_HEIGHT];
     s.w[id] = w;
     s.h[id] = h;
-    if (size !== SIZE_ONE) {
+    if (w !== CHARACTER_WIDTH || h !== CHARACTER_HEIGHT) {
       s.x[id] = x - (w - CHARACTER_WIDTH) / 2;
       s.px[id] = s.x[id] ?? 0;
       s.y[id] = y - (h - CHARACTER_HEIGHT) / 2;

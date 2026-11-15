@@ -1,4 +1,5 @@
-import { SIZE_ONE, sizeHeightPx, sizeOfDef, sizeWidthPx } from '../../data/size';
+import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../data/chapters';
+import { boxOfDef } from '../../data/size';
 import { Cmd, hasCmd, type Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
 import {
@@ -84,14 +85,12 @@ export function performSwap(
     s.x[to] = s.x[from] ?? 0;
     s.y[to] = s.y[from] ?? 0;
     // A partner of another size enters on the outgoing hero's centre, kept inside the arena (giants, data/size.ts).
-    const sizeTo = arcade ? sizeOfDef(s.defId[to] ?? 0) : SIZE_ONE;
-    const sizeFrom = arcade ? sizeOfDef(s.defId[from] ?? 0) : SIZE_ONE;
-    if (sizeTo !== sizeFrom) {
+    const [wTo, hTo] = arcade ? boxOfDef(s.defId[to] ?? 0) : [CHARACTER_WIDTH, CHARACTER_HEIGHT];
+    const [wFrom, hFrom] = arcade ? boxOfDef(s.defId[from] ?? 0) : [CHARACTER_WIDTH, CHARACTER_HEIGHT];
+    if (wTo !== wFrom || hTo !== hFrom) {
       const a = world.arena;
-      const wTo = sizeWidthPx(sizeTo);
-      const hTo = sizeHeightPx(sizeTo);
-      const nx = (s.x[from] ?? 0) + (sizeWidthPx(sizeFrom) - wTo) / 2;
-      const ny = (s.y[from] ?? 0) + (sizeHeightPx(sizeFrom) - hTo) / 2;
+      const nx = (s.x[from] ?? 0) + (wFrom - wTo) / 2;
+      const ny = (s.y[from] ?? 0) + (hFrom - hTo) / 2;
       s.x[to] = Math.min(Math.max(nx, a.x), a.x + a.w - wTo);
       s.y[to] = Math.min(Math.max(ny, a.y), a.y + a.h - hTo);
     }

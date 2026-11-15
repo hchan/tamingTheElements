@@ -3,7 +3,7 @@ import {
   HP_PM, HitStopCause, KO_HIT_STOP_TICKS, KO_PHASE_TICKS, KO_SLOWMO_TICKS, ROUNDS_TO_WIN, ROUND_END_TICKS, SUDDEN_HP_PM, SUDDEN_TIMER_TICKS,
   ROUND_INTRO_TICKS, ROUND_TIMER_TICKS, RoundPhase, ARCADE_START_Y, ARCADE_P1_START_X, ARCADE_P2_START_X,
 } from '../../../data/arcade';
-import { SIZE_ONE, sizeHeightPx, sizeOfDef, sizeWidthPx } from '../../../data/size';
+import { boxOfDef } from '../../../data/size';
 import { freeEntity } from '../../alloc';
 import { isArcade, now } from '../../clock';
 import type { Command } from '../../commands';
@@ -83,12 +83,10 @@ function resetRound(world: SimWorld, sink: EventSink): void {
     const x = team === 0 ? ARCADE_P1_START_X : ARCADE_P2_START_X;
     teamMembers(world, team).forEach((id, k) => {
       s.flags[id] = EntityFlag.alive | (k === 0 ? 0 : EntityFlag.benched);
-      const size = sizeOfDef(s.defId[id] ?? 0);
-      const w = size === SIZE_ONE ? CHARACTER_WIDTH : sizeWidthPx(size);
-      const h = size === SIZE_ONE ? CHARACTER_HEIGHT : sizeHeightPx(size);
-      // A giant spawns on the same centre as a 1x hero.
-      const sx = size === SIZE_ONE ? x : x - (w - CHARACTER_WIDTH) / 2;
-      const sy = size === SIZE_ONE ? ARCADE_START_Y : ARCADE_START_Y - (h - CHARACTER_HEIGHT) / 2;
+      const [w, h] = boxOfDef(s.defId[id] ?? 0);
+      // A giant (or a small or non-square hero) spawns on the same centre as a 1x hero.
+      const sx = x - (w - CHARACTER_WIDTH) / 2;
+      const sy = ARCADE_START_Y - (h - CHARACTER_HEIGHT) / 2;
       s.x[id] = sx;
       s.px[id] = sx;
       s.y[id] = sy;

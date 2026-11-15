@@ -73,7 +73,11 @@ export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   treenoc: 714,
   wispera: 632,
 };
-/** Race life `hpPm` of `slug` for a roster of `size` heroes. */
+/**
+ * Race life `hpPm` of `slug` for a roster of `size` heroes. A hero below 1x (data/size.ts SIZE_MIN..99) then gets
+ * `sizeLifePm(size)` on top of this at spawn: linear below 1000 pm (x0.82 at size 60, x0.775 at SIZE_MIN), so a small
+ * hero's `hpPm` must be fitted with that factor in mind.
+ */
 export function arcadeLifePm(hpPm: number, size: number, slug: string): number {
   return size < 2 ? hpPm : Math.floor((hpPm * (ARCADE_2V2_LIFE_PM[slug] ?? ARCADE_2V2_LIFE_DEFAULT_PM)) / 1000);
 }
