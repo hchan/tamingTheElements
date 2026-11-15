@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import type { Element } from '@core/index';
 import { STREAKS_BY_STRENGTH, STREAK_FAN, STREAK_MS, STREAK_POOL, coreFrame, streakFrame, tintTowardsWhite } from './hit-feel';
-import { MARK_CAP, STILL_POSE, gravityDrop, markAlpha, markRimWidth, markStyleFor, stillAlpha, type MarkStyle } from './hit-mark';
+import { EARTH_DUST, MARK_CAP, STILL_POSE, gravityDrop, markAlpha, markRimWidth, markStyleFor, stillAlpha, type MarkStyle } from './hit-mark';
 
 /**
  * Directional hit streaks (QA r34) and the element contact mark (QA r47-r49: it was one white asterisk for every element). A fan
@@ -86,8 +86,10 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean, hi
     const a = markAlpha(f.alpha, hc);
     const w = st.shape === 'slashes' ? Math.max(1.5, f.width * 0.55) : f.width;
     r.lineStyle(markRimWidth(w * 2.8, hc), st.rim, 0.45 * f.alpha).lineBetween(ax, ay, bx, by);
-    g.lineStyle(w * 2.2, st.body, a * 0.6).lineBetween(ax, ay, bx, by);
-    g.lineStyle(Math.max(1.2, w * 0.6), st.core, a).lineBetween(ax, ay, bx, by);
+    // Earth is drawn in normal blend (solid amber-brown): additive light would wash it to the same yellow-white as fire on the pale floors.
+    const lg = st.shape === 'chips' ? r : g;
+    lg.lineStyle(w * 2.2, st.body, st.shape === 'chips' ? Math.min(1, a) : a * 0.6).lineBetween(ax, ay, bx, by);
+    lg.lineStyle(Math.max(1.2, w * 0.6), st.core, a).lineBetween(ax, ay, bx, by);
     const tip = Math.max(2.5, f.width * 0.9);
     if (st.shape === 'flare') {
       g.fillStyle(st.core, a * 0.9).fillCircle(bx, by, tip * 0.8);
@@ -97,7 +99,7 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean, hi
       g.fillStyle(st.core, a).fillCircle(bx - tip * 0.3, by - tip * 0.3, tip * 0.35);
     } else if (st.shape === 'chips') {
       r.fillStyle(st.rim, 0.6 * f.alpha).fillTriangle(bx - tip * 1.4, by + tip, bx + tip * 1.4, by + tip * 0.5, bx - tip * 0.2, by - tip * 1.3);
-      g.fillStyle(st.body, a).fillTriangle(bx - tip, by + tip * 0.7, bx + tip, by + tip * 0.3, bx - tip * 0.1, by - tip);
+      r.fillStyle(st.body, a).fillTriangle(bx - tip, by + tip * 0.7, bx + tip, by + tip * 0.3, bx - tip * 0.1, by - tip);
     } else if (st.shape === 'shards') {
       g.fillStyle(st.core, a).fillTriangle(bx, by - tip * 1.4, bx + tip * 0.7, by, bx, by + tip * 1.4);
     }
@@ -108,16 +110,22 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean, hi
   function core(g: Phaser.GameObjects.Graphics, r: Phaser.GameObjects.Graphics, c: Core, radius: number, alpha: number, hc: boolean): void {
     const st = c.style;
     const a = markAlpha(alpha, hc);
-    g.fillStyle(st.body, a * 0.35).fillCircle(c.x, c.y, radius * 1.5);
+    (st.shape === 'chips' ? r : g).fillStyle(st.body, a * (st.shape === 'chips' ? 0.5 : 0.35)).fillCircle(c.x, c.y, radius * 1.5);
     if (st.shape === 'droplets') {
       // A splash: a squashed ring on the floor-ward side and a small crown of three droplets.
       r.lineStyle(markRimWidth(5, hc), st.rim, 0.4 * alpha).strokeEllipse(c.x, c.y + radius * 0.3, radius * 2.2, radius * 1.2);
       g.lineStyle(2.5, st.core, a).strokeEllipse(c.x, c.y + radius * 0.3, radius * 2.2, radius * 1.2);
+      g.lineStyle(2, st.body, a * 0.8).strokeEllipse(c.x, c.y + radius * 0.3, radius * 3.2, radius * 1.7);
+      g.lineStyle(1.5, st.body, a * 0.5).strokeEllipse(c.x, c.y + radius * 0.3, radius * 4.2, radius * 2.2);
       for (let i = -1; i <= 1; i++) g.fillStyle(st.core, a * 0.9).fillCircle(c.x + i * radius * 0.7, c.y - radius * (0.5 + 0.2 * (1 - Math.abs(i))), 2.6);
     } else if (st.shape === 'chips') {
       // A dust puff: soft low-alpha earth discs, no hard ring.
-      for (let i = 0; i < 3; i++) g.fillStyle(0xc8a870, a * 0.22).fillCircle(c.x + (i - 1) * radius * 0.6, c.y + radius * 0.2, radius * (0.75 - i * 0.1));
-      g.fillStyle(st.core, a * 0.6).fillCircle(c.x, c.y, radius * 0.3);
+      for (let i = 0; i < 3; i++) r.fillStyle(EARTH_DUST, a * 0.5).fillCircle(c.x + (i - 1) * radius * 0.6, c.y + radius * 0.2, radius * (0.75 - i * 0.1));
+      // Three jagged amber shards burst out of the dust, a hard-edged angular mark against the soft water rings.
+      for (let i = 0; i < 3; i++) {
+        const dx = (i - 1) * radius * 0.9;
+        r.fillStyle(st.core, a * 0.95).fillTriangle(c.x + dx - radius * 0.3, c.y + radius * 0.5, c.x + dx + radius * 0.3, c.y + radius * 0.5, c.x + dx + (i - 1) * radius * 0.2, c.y - radius * (0.9 + 0.3 * (i % 2)));
+      }
     } else if (st.shape === 'slashes') {
       // Two crossing hairlines instead of a ring.
       const l = radius * 1.1;
