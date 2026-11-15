@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { EntityFlag, SimEventKind, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
+import { EntityFlag, SimEventKind, type RenderCharacter, type RenderArcade, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import { poseHoldMs } from '../fx/hit-feel';
 import { PoseVfx } from './pose-vfx';
 import { FX_ELEMENTS } from './pose-vfx-math';
@@ -14,7 +14,7 @@ declare global {
 }
 import { SheetBook } from './pose-sheets';
 import { fitToBox, frameBox } from './hero-scale';
-import { applyLocomotion, locomotionOf } from './locomotion';
+import { applyBackGait, applyLocomotion, backGaitOf, backingAway, facesToward, locomotionOf, walkFrameBack, walkTimeBack } from './locomotion';
 import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
@@ -76,6 +76,8 @@ export interface SheetDrawn {
   rotation: number;
   graded: boolean;
   bodyHeight: number;
+  /** Eased backward-walk amount, 0..1 (backing away from the foe). */
+  back: number;
 }
 
 interface Ghost {
@@ -150,6 +152,10 @@ export class PoseLayer {
   /** The visual box (x, y, w, h) the character view drew last, before any pose (the KO ghost starts from it). */
   private readonly base = new Float64Array(SLOTS * 4);
   private readonly spriteOf: string[] = new Array<string>(SLOTS).fill('');
+  /** Backward walk (Arcade): the eased amount, the foe's side while backing (+1 east, -1 west) and each character's sim x this frame. */
+  private readonly back = new Float64Array(SLOTS);
+  private readonly backSide = new Int8Array(SLOTS).fill(1);
+  private readonly simX = new Float64Array(SLOTS);
   // Per projectile slot.
   private readonly pid = new Int32Array(SLOTS).fill(-1);
   private readonly born = new Float64Array(SLOTS);
@@ -161,6 +167,7 @@ export class PoseLayer {
   private readonly snapFrame: string[] = new Array<string>(SLOTS).fill('');
   private readonly ghosts: Ghost[] = [];
   private readonly eachChar = (c: RenderCharacter): void => { this.character(c); };
+  private readonly eachX = (c: RenderCharacter): void => { this.simX[c.id & (SLOTS - 1)] = c.x; };
   private readonly eachProj = (p: RenderProjectile): void => { this.projectile(p); };
 
   constructor(private readonly deps: PoseLayerDeps) {
@@ -183,7 +190,9 @@ export class PoseLayer {
         const box = frameBox(img.frame);
         // the visual-box height actually drawn: the whole display for a frame without a box, the box's share for a boxed one
         const bodyHeight = box ? (img.displayHeight * box.h) / img.frame.height : img.displayHeight;
-        characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX), bodyHeight });
+        characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX), bodyHeight,
+          back: Math.round((this.back[c.id & (SLOTS - 1)] ?? 0) * 100) / 100,
+        });
       }
     });
     return { loaded: this.book.loaded, characters };
@@ -254,6 +263,8 @@ export class PoseLayer {
     if (this.arcade) this.vfx.frame(nowMs - this.lastTickAt > STALL_MS && ar?.frozen !== true ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS), this.reduced);
     this.frameNo++;
     this.posed = 0;
+    // The foe may have a higher id than the hero: every sim x is read before any character is posed.
+    if (this.arcade) view.forEachCharacter(this.eachX);
     view.forEachCharacter(this.eachChar);
     view.forEachProjectile(this.eachProj);
     for (let i = 0; i < SLOTS; i++) {
@@ -278,6 +289,7 @@ export class PoseLayer {
     if (!v || (c.flags & DEAD_OR_BENCHED) !== 0) {
       this.have[i] = 0;
       this.moving[i] = 0;
+      this.back[i] = 0;
       return;
     }
     const img = v.image;
@@ -322,6 +334,10 @@ export class PoseLayer {
     const face = ar ? ar.aim(c.id) : c.dir;
     this.face[i] = face;
     this.spriteOf[i] = c.sprite;
+    const backing = ar !== undefined && this.backingNow(c, i, ar, face);
+    const b = (this.back[i] ?? 0) + ((backing ? 1 : 0) - (this.back[i] ?? 0)) * follow(dt, 80);
+    this.back[i] = b;
+    const gait = backGaitOf(c.sprite);
 
     // A sheet row when the character has one (its own art carries the walk, idle and lean), else the legacy art: the walk
     // cycle by distance walked (all views), the facing, and the procedural lean and bob for 8-way movement and aim.
@@ -341,7 +357,7 @@ export class PoseLayer {
       if (sprite) {
         const set = frameSetFor(face);
         const count = framesOf(sprite, set).length;
-        const name = frameName(set, m > 0.05 || walking ? walkFrame(this.phase[i] ?? 0, count) : 0);
+        const name = frameName(set, m > 0.05 || walking ? (b > 0.5 && gait.reverse ? walkFrameBack(this.phase[i] ?? 0, count, gait.stridePx) : walkFrame(this.phase[i] ?? 0, count)) : 0);
         if (img.texture.key.startsWith('sheet:')) img.setTexture(gradedHeroTexture(this.deps.scene, `map:${c.sprite}`), name);
         else img.setFrame(name);
       }
@@ -353,14 +369,16 @@ export class PoseLayer {
     const p = resetPose(this.pose);
     if (!this.reduced && !sheet) {
       const heading = walking ? headingOf(ddx, ddy) : -1;
-      const target = (heading >= 0 ? leanFor(heading) * m : 0) + (walking || (face & 1) === 0 ? 0 : leanFor(face) * 0.4);
+      const target = (heading >= 0 ? leanFor(heading) * m * (1 - b) : 0) + (walking || (face & 1) === 0 ? 0 : leanFor(face) * 0.4);
       this.lean[i] = (this.lean[i] ?? 0) + (target - (this.lean[i] ?? 0)) * follow(dt, 90);
       p.rot = this.lean[i] ?? 0;
       breathe(p, this.animMs + i * 370, 1 - m);
       p.oy -= 1.5 * Math.abs(Math.sin(((this.phase[i] ?? 0) / STRIDE_PX) * Math.PI)) * m;
     }
     // Wings flap and knees bend while moving (per-hero flags, views/locomotion.ts); nothing under reduced motion.
-    applyLocomotion(p, locomotionOf(c.sprite), m, this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
+    // While backing away the forward cues fade out and the hero's back gait fades in (no double flap or knee dip).
+    applyLocomotion(p, locomotionOf(c.sprite), m * (1 - b), this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
+    applyBackGait(p, gait, m * b, this.backSide[i] ?? 1, this.phase[i] ?? 0, this.animMs + i * 131, this.reduced);
     if (!this.reduced) {
       const e = this.edge[i] ?? 0;
       if (e !== 0) {
@@ -406,8 +424,33 @@ export class PoseLayer {
     if (k !== 0 && age < (POSE_MS[k] ?? 0)) return this.book.frame(c.sprite, KIND_ACTION[k] ?? 'idle', face, age);
     if (this.victoryTeam === c.team) return this.book.frame(c.sprite, 'victory', face, this.animMs - this.victoryAt);
     if (g > 0.05) return this.book.frame(c.sprite, 'guard', face, g * GUARD_ROW_MS);
-    if (walking) return this.book.frame(c.sprite, 'walk', face, walkTime(this.phase[i] ?? 0, STRIDE_PX));
+    if (walking) return this.book.frame(c.sprite, 'walk', face, this.walkT(c.sprite, i));
     return this.book.frame(c.sprite, 'idle', face, this.animMs + i * 370);
+  }
+
+  /** Walk-row time: forward by distance, or the gait's reversed (or slowed) cycle while backing away. */
+  private walkT(sprite: string, i: number): number {
+    const ph = this.phase[i] ?? 0;
+    if ((this.back[i] ?? 0) <= 0.5) return walkTime(ph, STRIDE_PX);
+    const g = backGaitOf(sprite);
+    return g.reverse ? walkTimeBack(ph, g.stridePx) : walkTime(ph, g.stridePx);
+  }
+
+  /**
+   * True while `c` is really stepping away from its foe (mirrors the sim's backwardWalkX from the actual step, so an inertia
+   * turn shows the forward walk until the velocity reverses) and nothing else owns its body: no foe, stun, guard, root, a live
+   * event pose, victory, or a facing that is not toward the foe (a held diagonal is the player's override).
+   */
+  private backingNow(c: RenderCharacter, i: number, ar: RenderArcade, face: number): boolean {
+    const foe = ar.active(1 - c.team);
+    if (foe < 0 || foe === c.id) return false;
+    const foeX = this.simX[foe & (SLOTS - 1)] ?? c.x;
+    if (!backingAway(c.x, c.px, foeX) || !facesToward(face, c.px, foeX)) return false;
+    if (ar.stunned(c.id) || ar.guarding(c.id) || ar.rooted(c.id) || this.victoryTeam === c.team) return false;
+    const k = this.kind[i] ?? 0;
+    if (k !== 0 && this.animMs - (this.kindAt[i] ?? 0) < (POSE_MS[k] ?? 0)) return false;
+    this.backSide[i] = foeX > c.px ? 1 : -1;
+    return true;
   }
 
   /** Applies `p` about the feet point (fx, fy) of the visual box the image was just fitted to. */
