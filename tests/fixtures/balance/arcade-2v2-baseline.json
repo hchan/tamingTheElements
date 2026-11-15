@@ -19,15 +19,15 @@
   "winRates": {
     "curomo": 0.466,
     "cyclonius": 0.58,
-    "echo": 0.534,
-    "fiara": 0.409,
-    "ishimi": 0.511,
-    "lavax": 0.557,
-    "morblass": 0.466,
-    "pax": 0.443,
-    "rokcore": 0.523,
-    "sindarosa": 0.455,
-    "treenoc": 0.557,
+    "echo": 0.523,
+    "fiara": 0.42,
+    "ishimi": 0.5,
+    "lavax": 0.568,
+    "morblass": 0.443,
+    "pax": 0.466,
+    "rokcore": 0.477,
+    "sindarosa": 0.466,
+    "treenoc": 0.591,
     "wispera": 0.5
   }
 }

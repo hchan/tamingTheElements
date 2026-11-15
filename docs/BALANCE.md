@@ -185,6 +185,8 @@ SIM_VERSION 62 (step 3) retuned two more: `ARCADE_2V2_LIFE_PM` treenoc 680 (was 
 
 SIM_VERSION 63 (step 4) retuned two more: `ARCADE_2V2_LIFE_PM` curomo 736 (was 768), ishimi 720 (was 671); `partners 2 32` team win rate over every roster curomo 57.8 to 53.2, ishimi 40.6 to 48.6 (cyclonius 40.9, sindarosa 45.4, pax 55.7 still outside 45-55).
 
+SIM_VERSION 64 (step 5) retuned two more: `ARCADE_2V2_LIFE_PM` cyclonius 843 (was 788), pax 575 (was 594); `partners 2 32` team win rate over every roster cyclonius 40.9 to 50.7, pax 55.7 to 53.3 (only sindarosa 44.1 is now outside 45-55).
+
 Later versions: 39 added the elemental ability (baselines re-recorded), 40 changed the 2v2/3v3 life table (`ARCADE_2V2_LIFE_PM` lavax 900, wispera 700) and 41 added giant heroes (Rokcore at 2x, hpPm 2100 / damagePm 650 plus the size bonus; see FUN-DESIGN 2.25). The rows below are the SIM_VERSION 38 snapshot; `pnpm balance:compare` against `tests/fixtures/balance` is the current truth.
 
 
