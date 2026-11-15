@@ -357,6 +357,10 @@ export class Arena extends Phaser.Scene {
       void import('../fx/terrain-view').then((m) => {
         if (this.arcadeHud === hud) this.terrain = m.mountTerrainView(this, hudScene, view, (a) => { this.announcer?.say(a); }, getPrefs, setup.seed, import.meta.env.BASE_URL);
       });
+      // The Eternal Void's horizon band and turning rings (stage 9 presentation; mounts only when a void fighter is in the match).
+      void import('../views/void-stage').then((m) => {
+        if (this.arcadeHud === hud) m.mountVoidStage(this, view, () => this.frameAlpha, () => getPrefs().reduceMotion);
+      });
       // The trap markers (WP 39b, its own lazy chunk).
       void import('../fx/trap-view').then((m) => {
         if (this.arcadeHud === hud) m.mountTrapView(this, view, () => getPrefs().reduceMotion);
