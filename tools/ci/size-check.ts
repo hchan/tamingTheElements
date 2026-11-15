@@ -172,7 +172,10 @@ function main(argv: readonly string[]): number {
     return 0;
   }
   const budget = JSON.parse(readFileSync(DEFAULT_BUDGET, 'utf8')) as Budget;
-  const failures = [...checkSizes(measured, budget), ...checkSheetWeight(measureSheets(dist), budget), ...checkMenuIsPhaserFree(dist), ...checkNoTestHook(dist)];
+  // Owner (2026-11-14): there is no size limit. Overruns only warn; the structural guards below still fail.
+  const sizeWarnings = [...checkSizes(measured, budget), ...checkSheetWeight(measureSheets(dist), budget)];
+  if (sizeWarnings.length > 0) console.warn(`\nsize:check warnings (not failing, size is not a limit):\n${sizeWarnings.map((f) => `  - ${f}`).join('\n')}`);
+  const failures = [...checkMenuIsPhaserFree(dist), ...checkNoTestHook(dist)];
   if (failures.length > 0) {
     console.error(`\nsize:check FAILED:\n${failures.map((f) => `  - ${f}`).join('\n')}\n\n${HOW_TO_RAISE}`);
     return 1;
