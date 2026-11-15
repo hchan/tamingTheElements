@@ -249,3 +249,15 @@ cancels into the attack, and walls slide (FUN-DESIGN 2.3a). Classic is unchanged
 The extra commitment shifted the races, so `ARCADE_RACE_NUMBERS` and `ARCADE_2V2_LIFE_PM` were nudged and the Arcade goldens and both baselines
 re-recorded. Arcade 1v1 win rates 47.2-53.4%, no stalemates, no timeouts. Arcade 2v2 is noisy (88 matches per race, +-5-8 points): roughly 38-69%,
 the old baseline was 43.2-61.4% and cyclonius was already high; follow-up in ideas/. The scripted AI still walks, dashes and dodges.
+
+## Arcade backward walk (SIM_VERSION 67)
+
+Owner request: in Arcade, moving backwards (the held direction's x points away from the opponent's x) runs at 50% of forward speed
+(`BACKWARD_WALK_PM` 500 in `src/core/data/arcade.ts`, applied to the x walk target in `arcadeMove`; vertical movement, a lone hero with no foe and Classic are
+unchanged). Reason for the re-record: every Arcade golden shifted (the scripted choreographies walk away from the foe to the wall, so `tools/gen/arcade-moves.ts`
+gives those legs twice the ticks), and the Classic goldens changed only in the header `simVersion`.
+
+The scripted AI retreats and keeps playing: the Arcade 1v1 tournament has no stalemates and no timeouts. The first run without a retune moved five races
+(echo 41.5%, curomo 58.5%, fiara 57.4%, morblass 54.5%), so `ARCADE_RACE_NUMBERS` life was nudged (echo 6400 -> 6750, curomo 5670 -> 5420, fiara 4295 -> 4210,
+morblass 4150 -> 4080, sindarosa 2917 -> 2860). Arcade 1v1 win rates now 44.3-54.5% (1056 matches); both baselines re-recorded. Arcade 2v2 is noisy (88 matches
+per race): roughly 37.5-60.2%, no stalemates or timeouts; `ARCADE_2V2_LIFE_PM` was left alone (a trial re-fit swung treenoc by 20 points on partner pairing alone).

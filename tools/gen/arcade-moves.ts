@@ -52,11 +52,19 @@ const WIDE_STEP_IN = Math.ceil((ARCADE_ARENA_WIDTH - ARENA_WIDTH) / 7);
  * (so p2 stands where the old 1280 arena's right wall was, in the same number of ticks). Nobody needs to turn: with no
  * diagonal held, a hero's aim and facing follow the foe (FUN-DESIGN 2.22). Returns the tick at which both are in place.
  */
-function home(p1: Track, p2: Track, at: number, walk: number, rows = 31): number {
-  p1.until(at).step('p1 to the top wall', up, 50).step('p1 back down', down, rows);
-  p2.until(at).step('p2 to the top wall', up, 50).step('p2 back down', down, 31);
-  p1.step('p1 to the left wall', left, 140).step('p1 walks in', right, walk);
-  p2.step('p2 to the right wall', right, 140 + walk - WIDE_STEP_IN).step('p2 steps in', left, WIDE_STEP_IN);
+const BACKWARD_WALL_EXTRA = 140;
+function home(p1: Track, p2: Track, at: number, walk: number, rows = 31, gap = 25): number {
+  // Walking away from the foe runs at half speed (SIM_VERSION 67), so the wall legs take BACKWARD_WALL_EXTRA more ticks: start
+  // that much earlier (`at` stays the tick the segment used to be in place) but at least 60 ticks after the tracks' last input (a cast's recovery must be over before the wall legs).
+  const from = Math.max(at - BACKWARD_WALL_EXTRA, Math.max(p1.tick, p2.tick) + gap);
+  p1.until(from);
+  p2.until(from);
+  if (rows >= 0) { // rows -1: both are already on the start row, so skip the up-and-down legs
+    p1.step('p1 to the top wall', up, 50).step('p1 back down', down, rows);
+    p2.step('p2 to the top wall', up, 50).step('p2 back down', down, 31);
+  }
+  p1.step('p1 to the left wall', left, 280).step('p1 walks in', right, walk);
+  p2.step('p2 to the right wall', right, 280 + walk - WIDE_STEP_IN).step('p2 steps in', left, WIDE_STEP_IN);
   return Math.max(p1.tick, p2.tick);
 }
 
@@ -64,7 +72,7 @@ function home(p1: Track, p2: Track, at: number, walk: number, rows = 31): number
  * WP-arcade-numbers timings: cones in each beat-down, when round 2 and round 3 start their segments (each after the
  * round before ended), and the round 2 guard (held while GUARD_BLASTS come; about 15 blocked blasts break it).
  */
-const BEAT_ROUND_1 = 10;
+const BEAT_ROUND_1 = 12;
 const BEAT_ROUND_3 = 11;
 /**
  * Weather power (WP-arcade-weather-charge): the weather needs a full charge, and a Fire Blast adds WEATHER_CHARGE_CAST,
@@ -120,7 +128,7 @@ function movesScript(): ArcadeScript {
   // enough for the parry's reflection to KO it.
   h = beatDown(p1, p2, 1700 + CHARGE_SHIFT, BEAT_ROUND_1);
   // Segment E: parry (p1 taps guard as the blast arrives: it is reflected, and the reflection KOs p2, who is low by now).
-  h = home(p1, p2, h + 60, 100);
+  h = home(p1, p2, h + 60, 100, -1, 90);
   p2.until(h + 10).tap('fire blast', primary);
   p1.until(h + 55).tap('parry', guard);
   // Round 2: p1 holds guard while p2 shoots: chip damage, then the guard breaks. p2 then wins on time over.
@@ -180,7 +188,7 @@ function weatherScript(): ArcadeScript {
   // of WALK_RUN ticks returns to the start spot), and the cast follows once it is full.
   const lap = (p: Track, at: number, out: number, back: number, runs = 4): void => {
     p.until(at);
-    for (let i = 0; i < runs; i++) p.step('walk', i % 2 === 0 ? out : back, WALK_RUN);
+    for (let i = 0; i < runs; i++) p.step('walk', i % 2 === 0 ? out : back, i % 2 === 0 ? WALK_RUN : WALK_RUN * 2); // `out` is toward the foe; the way back runs at half speed (SIM_VERSION 67)
   };
   lap(p1, 100, right, left);
   p1.tap('sun (fire)', weather).wait(WEATHER_RECOVERY).tap('swap to earth', swap1);
@@ -208,7 +216,7 @@ function weatherScript(): ArcadeScript {
   // charges up again and calls the sandstorm: the stage turns to earth after the telegraph (the patches become rocks).
   // Rokcore walks over a rock (`patchEntered`) while Cyclonius' cones, fired along the row, stop at the centre rock.
   p1.tap('swap to earth', swap1);
-  p1.step('to the left wall', left, 140); // out of the middle band, so the new layout has room for rocks
+  p1.step('to the left wall', left, 280); // out of the middle band, so the new layout has room for rocks
   p1.step('back in to the old wall spot', right, WIDE_STEP_IN / 2); // WP 38d: as far from the centre as on the 1280 arena
   lap(p1, p1.tick, right, left);
   p1.tap('sandstorm again', weather).wait(TELEGRAPH_WAIT);
@@ -216,7 +224,7 @@ function weatherScript(): ArcadeScript {
   for (let i = 0; i < ROCK_SHOTS; i++) p2.until(p1.tick - ROCK_WALK * 2 + 10 + i * 25).tap('cone at the rock', secondary);
   p1.until(p1.tick + 60);
   // Charge (WP-arcade-charge): Pax (melee) charges east along the row at Cyclonius, who stands on the right.
-  p1.step('close in', right, CHARGE_CLOSE_IN).tap('charge', right | charge, 1, 1).wait(60);
+  p1.step('close in', right, CHARGE_CLOSE_IN).tap('charge', right | charge, 1, 1).wait(300);
   return { file: 'arcade-weather', setup, inputs: buildScript(p1, p2) };
 }
 

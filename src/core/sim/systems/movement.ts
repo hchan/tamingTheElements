@@ -13,7 +13,7 @@ import { isRooted } from './arcade/snag';
 import { chargeWeather } from './arcade/meter';
 import { rockStop, terrainSpeedPm } from './arcade/terrain';
 import { elementalSpeedPm } from './arcade/elemental-buff';
-import { approachWalk, dashCurvePm } from './arcade/walk';
+import { approachWalk, backwardWalkX, dashCurvePm } from './arcade/walk';
 
 /** Dir8 indices for the four-way facing legacy uses: e, n, w, s. */
 const EAST = 0;
@@ -124,7 +124,7 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   const pm = gale === 1000 ? tpm : (tpm * gale) / 1000;
   const speed = pm === 1000 ? (s.speed[id] ?? 0) : ((s.speed[id] ?? 0) * pm) / 1000;
   // Walk inertia (FUN-DESIGN 2.3a): velocity ramps towards the held direction (stale dash or charge speed is capped first).
-  const vx = approachWalk(Math.min(Math.max(s.vx[id] ?? 0, -speed), speed), d < 0 ? 0 : (DIR8_X[d] ?? 0) * speed, speed);
+  const vx = approachWalk(Math.min(Math.max(s.vx[id] ?? 0, -speed), speed), d < 0 ? 0 : backwardWalkX(s.x[id] ?? 0, foe >= 0 ? (s.x[foe] ?? 0) : null, (DIR8_X[d] ?? 0) * speed), speed);
   const vy = approachWalk(Math.min(Math.max(s.vy[id] ?? 0, -speed), speed), d < 0 ? 0 : (DIR8_Y[d] ?? 0) * speed, speed);
   s.vx[id] = vx;
   s.vy[id] = vy;

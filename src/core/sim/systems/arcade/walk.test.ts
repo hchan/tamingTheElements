@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DASH_ATTACK_CANCEL_FROM, DASH_COOLDOWN_TICKS, DASH_CURVE_PM, DASH_RECOVERY_TICKS, DASH_SPEED_MULT, DASH_TICKS,
+  BACKWARD_WALK_PM, DASH_ATTACK_CANCEL_FROM, DASH_COOLDOWN_TICKS, DASH_CURVE_PM, DASH_RECOVERY_TICKS, DASH_SPEED_MULT, DASH_TICKS,
   WALK_ACCEL_PM, WALK_BRAKE_PM, WALK_TURN_PM,
 } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
@@ -13,14 +13,14 @@ import { step } from '../../step';
 import type { SimWorld } from '../../world';
 import { skipIntro } from './round-testkit';
 import { dashTick } from './stun';
-import { approachWalk, dashCurvePm } from './walk';
+import { approachWalk, backwardWalkX, dashCurvePm } from './walk';
 
 // Arcade movement feel (SIM_VERSION 66, FUN-DESIGN 2.3a): walk ramp, brake, turn, the dash curve, the dash-attack cancel
 // and the wall slide. Classic movement is untouched (aim.test.ts and dash.test.ts pin it).
 
 function duel(race = 'fiara', arcade = true): SimWorld {
   const w = skipIntro(createMatch({
-    simVersion: 66, seed: 9, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: arcade }, chapter: 1, difficulty: 1,
+    simVersion: 67, seed: 9, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: arcade }, chapter: 1, difficulty: 1,
     p1: [{ character: characterId(race), xp: 1 }], p2: [{ character: characterId('pax'), xp: 1 }],
   }));
   w.state.x[0] = 300; w.state.y[0] = 300; w.state.dir[0] = 0;
@@ -146,5 +146,50 @@ describe('dash into attack cancel', () => {
     step(w, [Cmd.primary, 0]);
     expect(dashTick(w.state, 0)).toBeGreaterThan(0);
     expect(DASH_RECOVERY_TICKS).toBeGreaterThan(0);
+  });
+});
+
+describe('backward walk (SIM_VERSION 67)', () => {
+  const run = (cmd: number, arcade = true, mut?: (w: SimWorld) => void): number => {
+    const w = duel('fiara', arcade);
+    mut?.(w);
+    const x0 = w.state.x[0] ?? 0;
+    for (let i = 0; i < 12; i++) step(w, [cmd, 0]);
+    return Math.abs((w.state.x[0] ?? 0) - x0);
+  };
+
+  it('walking away from the foe covers about BACKWARD_WALK_PM of the forward distance', () => {
+    const fwd = run(Cmd.right);
+    const back = run(Cmd.left);
+    expect(back).toBeGreaterThan(0);
+    expect(back).toBeLessThan(fwd);
+    expect(Math.abs(back - (fwd * BACKWARD_WALK_PM) / 1000)).toBeLessThan(fwd * 0.1);
+  });
+
+  it('backwardWalkX halves only away-from-foe targets; no foe or equal x keeps full speed', () => {
+    expect(backwardWalkX(300, 1700, 7)).toBe(7);
+    expect(backwardWalkX(300, 1700, -7)).toBe((-7 * BACKWARD_WALK_PM) / 1000);
+    expect(backwardWalkX(1700, 300, 7)).toBe((7 * BACKWARD_WALK_PM) / 1000);
+    expect(backwardWalkX(300, null, -7)).toBe(-7);
+    expect(backwardWalkX(300, 300, -7)).toBe(-7);
+  });
+
+  it('vertical movement is not halved', () => {
+    const w = duel();
+    const y0 = w.state.y[0] ?? 0;
+    for (let i = 0; i < 12; i++) step(w, [Cmd.up, 0]);
+    const w2 = duel();
+    for (let i = 0; i < 12; i++) step(w2, [Cmd.down, 0]);
+    expect(Math.abs((w.state.y[0] ?? 0) - y0)).toBeGreaterThan(0);
+    expect(Math.abs((w.state.y[0] ?? 0) - y0)).toBe(Math.abs((w2.state.y[0] ?? 0) - y0));
+  });
+
+  it('Classic is unchanged: back and forward cover the same distance', () => {
+    expect(run(Cmd.left, false)).toBe(run(Cmd.right, false));
+  });
+
+  it('the foe on the left flips which way is backward', () => {
+    const swap = (w: SimWorld): void => { w.state.x[0] = 1700; w.state.x[1] = 300; };
+    expect(run(Cmd.right, true, swap)).toBeLessThan(run(Cmd.left, true, swap));
   });
 });
