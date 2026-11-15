@@ -70,7 +70,7 @@ describe('firstRunHint', () => {
     document.body.append(card as HTMLElement);
     window.dispatchEvent(new Event(SUPER_CUT_EVENT));
     expect(card?.classList.contains('firstRunFade')).toBe(true);
-    expect(card?.style.transition).toContain('0.12s');
+    expect(card?.isConnected).toBe(false);
     expect(firstRunSeen(store)).toBe(true);
   });
 
@@ -80,6 +80,7 @@ describe('firstRunHint', () => {
     document.body.append(card as HTMLElement);
     window.dispatchEvent(new Event(TAG_CALL_EVENT));
     expect(card?.classList.contains('firstRunFade')).toBe(true);
+    expect(card?.isConnected).toBe(false);
     const store2 = memory();
     const card2 = firstRunHint(store2, 60000);
     const strike = document.createElement('button');

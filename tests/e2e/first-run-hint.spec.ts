@@ -2,6 +2,21 @@ import { expect, test } from '@playwright/test';
 import { ARENA_READY, START, collectErrors, tapTourSplash } from './parity/helpers';
 
 // The first battle shows a short "First blood" card; Got it removes it and the choice is remembered.
+// QA r49/r50: a super cut-in removes the card on the spot, so it never sits over the cut-in band.
+test('first-run hint is gone the moment a super cut-in starts', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade#tour`);
+  await page.getByRole('button', { name: 'Start tour' }).click();
+  await page.getByRole('button', { name: 'Fight' }).click();
+  await tapTourSplash(page);
+  await page.waitForFunction(ARENA_READY);
+  const card = page.locator('#firstRunHint');
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await page.evaluate(`window.dispatchEvent(new Event('tte:super-cut'))`);
+  await expect(card).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('first-run hint shows, dismisses and is remembered', async ({ page }) => {
   const errors = collectErrors(page);
   const fight = async (): Promise<void> => {

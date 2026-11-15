@@ -47,8 +47,10 @@ test('Arcade Versus: ROUND 1, FIGHT!, the timer, K.O. PERFECT, the result with a
   expect(await rounds(page)).toMatchObject({ visible: true, timer: '90', won: [0, 0] });
   await step(page, INTRO);
   expect(await rounds(page)).toMatchObject({ main: 'FIGHT!', visible: true, timer: '90' });
-  // FIGHT! goes after 1 s; the timer counts the fight (no input: no hits, so no freeze holds it).
-  await step(page, 550);
+  // FIGHT! is gone by 0.6 s (qa-r47..r49: it overlapped the first hit); the timer counts the fight (no input: no hits, so no freeze holds it).
+  await step(page, 31);
+  expect((await rounds(page))?.visible).toBe(false);
+  await step(page, 519);
   const fighting = await rounds(page);
   expect(fighting?.visible).toBe(false);
   expect(Number(fighting?.timer)).toBeGreaterThanOrEqual(78);
