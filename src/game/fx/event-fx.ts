@@ -74,7 +74,7 @@ export interface FxSink {
   /** `count` particles flying out; `offsets[2i], offsets[2i + 1]` are unit-ish directions (reused buffer). */
   burst(target: number, offsets: Float32Array, count: number, color: number, element?: Element): void;
   /** One static spark for 100 ms: the reduced-motion stand-in for `burst`. */
-  spark(target: number, color: number): void;
+  spark(target: number, color: number, element?: Element, attacker?: number): void;
   shake(durationMs: number, intensity: number): void;
   /** Renderer-only camera punch-in on a KO (optional; EventFx never calls it under reduced motion). */
   koPunch?(target?: number): void;
@@ -85,7 +85,7 @@ export interface FxSink {
   /** Super hit on `target`: oversized gold number sized by `fraction` of its life, a gold spark burst and (when `flash`) one screen pulse; optional, never called under reduced motion except `reduced` true for the still number. */
   superHit?(target: number, amount: number, fraction: number, flash: boolean, reduced: boolean): void;
   /** Directional spark fan from `target` away from `attacker` in `color`, by strength 0..3 (optional; never called under reduced motion). */
-  streaks?(attacker: number, target: number, color: number, strength: number): void;
+  streaks?(attacker: number, target: number, color: number, strength: number, element?: Element): void;
   /** Squash-and-recoil of `target` away from `attacker` over the hit-stop and just after, by strength 0..3 (optional; never called under reduced motion). */
   recoil?(attacker: number, target: number, strength: number): void;
   /** Attacker steps towards `target` as the blow lands, by strength 0..3 (optional; never called under reduced motion). */
@@ -217,13 +217,13 @@ export class EventFx {
     const reduced = this.opts.reducedMotion();
     if (strength === 3) this.superHit(e, target, reduced);
     if (reduced) {
-      this.sink.spark(target, color);
+      this.sink.spark(target, color, this.opts.elementOf?.(e['attacker'] ?? -1), e['attacker'] ?? -1);
       return;
     }
     if (strength < 3 && (e['scalePm'] ?? 1000) >= 1000) this.sink.pop?.(target, e['amount'] ?? 0, popSize(strength));
     const el = this.opts.elementOf?.(e['attacker'] ?? -1);
     if (el) this.sink.impact?.(target, el);
-    this.sink.streaks?.(e['attacker'] ?? -1, target, color, strength);
+    this.sink.streaks?.(e['attacker'] ?? -1, target, color, strength, el);
     this.sink.recoil?.(e['attacker'] ?? -1, target, strength);
     this.sink.lunge?.(e['attacker'] ?? -1, target, strength);
     if (strength >= RING_MIN_STRENGTH) this.sink.ring?.(target, color, strength);
@@ -322,6 +322,7 @@ export function createPhaserFxSink(
   paused: () => boolean,
   viewTick: () => number,
   numberAt?: (x: number, y: number, amount: number, scaled: boolean, counter: boolean) => void,
+  highContrast: () => boolean = () => false,
 ): FxSink {
   // Pooled dots (at most SPARK_POOL): dots[0..live) are in flight, advanced by one scene update listener that only
   // exists while dots are in flight. Finished dots are swapped behind `live`, so nothing allocates after warm-up.
@@ -379,7 +380,7 @@ export function createPhaserFxSink(
   const centre = at;
   const gate = new FlashGate();
   const impacts = createImpactLayer(scene, paused);
-  const streakLayer = createStreakLayer(scene, paused);
+  const streakLayer = createStreakLayer(scene, paused, highContrast);
   const shock = createShockLayer(scene, paused);
   const frost = createFrostLayer(scene, paused);
   const signature = createSignatureLayer(scene, paused);
@@ -435,9 +436,11 @@ export function createPhaserFxSink(
       const p = centre(target);
       if (p) shock.superHit(p.x, p.y - p.h / 2 - 34, amount, fraction, flash, reduced);
     },
-    spark(target, color): void {
+    spark(target, color, element, attacker): void {
       const p = centre(target);
-      if (p) spawn(p.x, p.y, 0, 0, color, 8, SPARK_MS);
+      if (!p) return;
+      spawn(p.x, p.y, 0, 0, color, 8, SPARK_MS);
+      if (element) streakLayer.still(p.x, p.y, awayFrom(attacker === undefined ? undefined : centre(attacker), p), color, element);
     },
     impact(target, element): void {
       const p = centre(target);
@@ -449,9 +452,9 @@ export function createPhaserFxSink(
     jitter(target, untilTick): void {
       viewOf(target)?.jitter(untilTick);
     },
-    streaks(attacker, target, color, strength): void {
+    streaks(attacker, target, color, strength, element): void {
       const p = centre(target);
-      if (p) streakLayer.spawn(p.x, p.y, awayFrom(centre(attacker), p), color, strength);
+      if (p) streakLayer.spawn(p.x, p.y, awayFrom(centre(attacker), p), color, strength, element);
     },
     recoil(attacker, target, strength): void {
       const p = centre(target);
