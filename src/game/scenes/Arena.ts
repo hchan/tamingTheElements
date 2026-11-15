@@ -139,6 +139,7 @@ export class Arena extends Phaser.Scene {
   private rounds: ((events: readonly SimEvent[]) => void) | undefined;
   private terrain: ((events: readonly SimEvent[]) => void) | undefined;
   private poses: ((events: readonly SimEvent[]) => void) | undefined;
+  private ccFeed: ((events: readonly SimEvent[]) => void) | undefined;
   private cleanseFx: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent | undefined, Agent | undefined] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
@@ -390,6 +391,9 @@ export class Arena extends Phaser.Scene {
     void import('../fx/status-fx-view').then((m) => {
       if (this.view === view) m.mountStatusFxView(this, view, () => getPrefs().reduceMotion);
     });
+    void import('../fx/cc-view').then((m) => {
+      if (this.view === view) this.ccFeed = m.mountCcView(this, view, () => this.frameAlpha, () => getPrefs().reduceMotion, () => getPrefs().highContrast);
+    });
     // Cleanse animation on the casting hero (elemental-cleanse presentation, its own lazy chunk).
     void import('../fx/cleanse-view').then((m) => {
       if (this.view === view) this.cleanseFx = m.mountCleanseView(this, view, getPrefs);
@@ -566,6 +570,7 @@ export class Arena extends Phaser.Scene {
           return;
         }
       },
+      ccFx: () => import('../fx/cc-view').then((m) => m.ccFxState(this)),
       statusFx: () => import('../fx/status-fx-view').then((m) => m.statusFxState(this)),
       cleanse: () => import('../fx/cleanse-view').then((m) => m.cleanseState(this)),
       audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
@@ -719,6 +724,7 @@ export class Arena extends Phaser.Scene {
     this.rounds?.(events);
     this.terrain?.(events);
     this.poses?.(events);
+    this.ccFeed?.(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     // Online only: the session's tick limit stops the match without a sim `matchEnded` (a draw, or the session's winner).
     const timedOut = !over && this.session !== undefined && this.session.status === 'ended';
@@ -763,6 +769,7 @@ export class Arena extends Phaser.Scene {
       this.rounds?.(events);
       this.terrain?.(events);
       this.poses?.(events);
+      this.ccFeed?.(events);
     }
     if (cursor.state !== 'playing') this.driver?.pause('ended');
   }
@@ -940,6 +947,7 @@ export class Arena extends Phaser.Scene {
     this.rounds = undefined;
     this.terrain = undefined;
     this.poses = undefined;
+    this.ccFeed = undefined;
     this.cursor = undefined;
     this.driver = undefined;
     this.keyboard = undefined;

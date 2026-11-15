@@ -138,6 +138,7 @@ export interface ArenaProbe {
   /** Dev/test only: gives an entity a timed status (a StatusId) for `ticks` sim ticks. */
   grantStatus(id: number, status: number, ticks: number): void;
   /** Hero status effects drawn on the last frame (buff-debuff-animation). */
+  ccFx(): Promise<{ heroes: readonly { id: number; kind: string; release: string; parts: number; segs: number; age: number }[]; parts: number; segs: number; rings: number; cracks: number; puffs: number; started: { ring: number; crack: number; puff: number; denied: number }; reduced: boolean; highContrast: boolean; tier: string } | undefined>;
   statusFx(): Promise<{ loops: readonly { id: number; status: number }[]; bursts: readonly { id: number; status: number; age: number }[]; fades: readonly { id: number; status: number; age: number }[] } | undefined>;
   cleanse(): Promise<{ active: readonly { id: number; element: string; age: number }[]; parts: number; reduced: boolean; started: number } | undefined>;
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
