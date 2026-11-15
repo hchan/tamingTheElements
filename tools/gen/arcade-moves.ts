@@ -37,7 +37,7 @@ export function recordArcadeScript(script: ArcadeScript): ReplayFile {
 }
 
 const ARCADE_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true };
-const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge, trap, elemental } = Cmd;
+const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge, trap, elemental, cleanse } = Cmd;
 
 /**
  * Ticks p2 walks back in from the right wall of the wide Arcade arena (WP 38d, 1920 px) so the pair stands as it did
@@ -369,6 +369,44 @@ function elementalScript(): ArcadeScript {
   return { file: 'arcade-elemental', setup, inputs: buildScript(p1, p2) };
 }
 
+/** Crowd-control script flags: Arcade with `withCrowdControl` on (every other golden keeps it off). */
+const CC_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true, withCrowdControl: true };
+
+/**
+ * Crowd control (FUN-DESIGN 2.27, flag withCrowdControl): p1 tags through Cyclonius, Pax and Morblass against Sindarosa.
+ * Cyclonius' Tornado dazes and a cone breaks it; Pax's Ground Shock knocks down and Sindarosa quick-rises; Morblass' Ice
+ * Blast chills and an Icicles hit ices, then a hit shatters it. Sindarosa calls Ember and a Fire Blast silences Morblass,
+ * who Cleanses it. Each segment starts at `home`, so the offsets were measured with a trace of the sim.
+ */
+function ccScript(): ArcadeScript {
+  const setup: MatchSetup = {
+    simVersion: SIM_VERSION, seed: 0xcc5, flags: CC_FLAGS, chapter: 1, difficulty: 1,
+    p1: [{ character: characterId('cyclonius'), xp: 1 }, { character: characterId('pax'), xp: 1 }, { character: characterId('morblass'), xp: 1 }],
+    p2: [{ character: characterId('sindarosa'), xp: 1 }],
+  };
+  const p1 = new Track();
+  const p2 = new Track();
+  // Daze: Tornado, then a cone after the grace breaks it.
+  let h = home(p1, p2, 100, 100);
+  p1.until(h).tap('tornado', primary, 1, 20).tap('cone', secondary, 1, 40);
+  // Knockdown: tag in Pax (his entrance attack lands first); Ground Shock; the foe dashes in the quick-rise window.
+  p1.until(Math.max(p1.tick, p2.tick) + 40).tap('tag 1: pax', swap1).wait(120);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 40, 140);
+  p1.until(h).step('pax closes in', right, 78);
+  const shock = p1.tick;
+  p1.tap('ground shock', secondary, 1, 40);
+  p2.until(shock + 5).tap('quick rise', dash, 1, 40);
+  // Ice: tag in Morblass; Ice Blast chills, Icicles ice, a second Icicles shatters.
+  p1.until(Math.max(p1.tick, p2.tick) + 40).tap('tag 2: morblass', swap2).wait(120);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 40, 100);
+  p1.until(h).tap('ice blast', primary, 1, 40).tap('icicles', secondary, 1, 30).tap('icicles', secondary, 1, 30).tap('icicles', secondary, 1, 40);
+  // Silence: Ember, then a Fire Blast on Morblass; Morblass Cleanses.
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 150, 100);
+  p2.until(h).tap('ember', elemental, 1, 9).tap('fire blast', primary, 1, 40);
+  p1.until(p2.tick + 55).tap('cleanse', cleanse).wait(100);
+  return { file: 'arcade-cc', setup, inputs: buildScript(p1, p2) };
+}
+
 export function arcadeScripts(): ArcadeScript[] {
-  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript(), elementalScript()];
+  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript(), elementalScript(), ccScript()];
 }

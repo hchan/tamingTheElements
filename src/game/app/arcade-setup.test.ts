@@ -25,6 +25,13 @@ import { arcadeEnemy, arcadeLaunch, arcadeSetup, enemyPartner, enemyPartners, he
 
 const pick: ArcadePick = { player: characterId('sindarosa'), enemy: characterId('pax'), level: 'normal' };
 
+describe('Arcade setup crowd-control flag', () => {
+  it('is off by default and on when asked, always Arcade', () => {
+    expect(arcadeSetup(pick, 1).flags).toMatchObject({ rulesetArcade: true, withCrowdControl: false });
+    expect(arcadeSetup(pick, 1, true).flags).toMatchObject({ rulesetArcade: true, withCrowdControl: true });
+  });
+});
+
 describe('Arcade Versus setup', () => {
   it('offers the 12 playable races (no void characters) and defaults to Sindarosa vs Fiara, AI Normal', () => {
     expect(ARCADE_RACES).toHaveLength(12);

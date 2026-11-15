@@ -32,7 +32,7 @@ describe('cross-engine determinism', () => {
     expect(names).toEqual(
       expect.arrayContaining([
         'random-vs-random', 'random-2v2-ch3', 'arcade-1v1', 'arcade-moves', 'arcade-weather',
-        'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental',
+        'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental', 'arcade-cc',
       ]),
     );
   });

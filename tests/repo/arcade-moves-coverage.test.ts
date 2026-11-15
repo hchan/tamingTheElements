@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { SUPER_FREEZE_TICKS } from '../../src/core/data/arcade';
+import { CcEnd, CcKind, SUPER_FREEZE_TICKS } from '../../src/core/data/arcade';
 import { Cmd } from '../../src/core/sim/commands';
 import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
 import { createMatch } from '../../src/core/sim/match';
@@ -18,7 +18,7 @@ import { arcadeScripts, recordArcadeScript } from '../../tools/gen/arcade-moves'
 // of leaving a golden that quietly stopped covering it.
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
-const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental'] as const;
+const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental', 'arcade-cc'] as const;
 const K = SimEventKind;
 
 interface Run {
@@ -81,6 +81,10 @@ const tagRun = runs[2]?.events ?? [];
 const tag3Run = runs[3]?.events ?? [];
 const trapsRun = runs[4];
 const elemRun = runs[5]?.events ?? [];
+const ccRun = runs[6]?.events ?? [];
+/** Crowd-control starts of `cc` (a CcKind) and ends of `cc` for `reason` (a CcEnd) in the arcade-cc golden. */
+const ccStart = (cc: number): number => of(K.ccStarted, ccRun).filter((e) => e['cc'] === cc).length;
+const ccEnd = (cc: number, reason: number): number => of(K.ccEnded, ccRun).filter((e) => e['cc'] === cc && e['reason'] === reason).length;
 /** Elemental casts (FUN-DESIGN 2.24) of `element` in the elemental golden. */
 const elemCasts = (element: number): SimEvent[] => of(K.elementalCast, elemRun).filter((e) => e['element'] === element);
 /** Hits dealt or taken by the caster of the first `element` cast while that timed buff ran (cast to `elementalEnded`). */
@@ -148,6 +152,10 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
       `a stage hazard of element ${String(h)} is warned and strikes`,
       () => of(K.hazardWarn).filter((e) => e['hazard'] === h).length * of(K.hazardStrike).filter((e) => e['hazard'] === h).length,
     ]),
+    ['a Tornado dazes and a hit breaks it', () => ccStart(CcKind.daze) * ccEnd(CcKind.daze, CcEnd.broken)],
+    ['Ground Shock knocks down and a Dash quick-rises', () => ccStart(CcKind.downed) * ccEnd(CcKind.downed, CcEnd.quickRise)],
+    ['an Icicles hit ices a chilled foe and a hit shatters it', () => ccStart(CcKind.iced) * ccEnd(CcKind.iced, CcEnd.shattered)],
+    ['Ember silences and Cleanse ends it', () => ccStart(CcKind.silenced) * ccEnd(CcKind.silenced, CcEnd.cleansed)],
     ['a lava vent hurts a fighter', () => of(K.hazardHit).filter((e) => e['hazard'] === 1).length],
     ['a rockfall hurts a fighter', () => of(K.hazardHit).filter((e) => e['hazard'] === 3).length],
   ];
