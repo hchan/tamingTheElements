@@ -18,7 +18,7 @@ import { arcadeScripts, recordArcadeScript } from '../../tools/gen/arcade-moves'
 // of leaving a golden that quietly stopped covering it.
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
-const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental', 'arcade-cc'] as const;
+const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental', 'arcade-cc', 'arcade-ot'] as const;
 const K = SimEventKind;
 
 interface Run {
@@ -82,6 +82,9 @@ const tag3Run = runs[3]?.events ?? [];
 const trapsRun = runs[4];
 const elemRun = runs[5]?.events ?? [];
 const ccRun = runs[6]?.events ?? [];
+const otRun = runs[7]?.events ?? [];
+/** Over-time pulses of status `sid` (18 burning, 19 venom, 20 mending) in the arcade-ot golden. */
+const otPulses = (sid: number): SimEvent[] => of(K.otPulse, otRun).filter((e) => e['status'] === sid);
 /** Crowd-control starts of `cc` (a CcKind) and ends of `cc` for `reason` (a CcEnd) in the arcade-cc golden. */
 const ccStart = (cc: number): number => of(K.ccStarted, ccRun).filter((e) => e['cc'] === cc).length;
 const ccEnd = (cc: number, reason: number): number => of(K.ccEnded, ccRun).filter((e) => e['cc'] === cc && e['reason'] === reason).length;
@@ -152,6 +155,10 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
       `a stage hazard of element ${String(h)} is warned and strikes`,
       () => of(K.hazardWarn).filter((e) => e['hazard'] === h).length * of(K.hazardStrike).filter((e) => e['hazard'] === h).length,
     ]),
+    ['a stacked burn pulse (amount above one stack)', () => otPulses(18).filter((e) => Number(e['amount']) > 2).length],
+    ['a venom pulse', () => otPulses(19).length],
+    ['a mending pulse halved by venom', () => { const m = otPulses(20); return m.some((e) => e['amount'] === 1) && m.some((e) => Number(e['amount']) > 1) ? 1 : 0; }],
+    ['Cleanse ends burning (otEnded cleansed)', () => of(K.otEnded, otRun).filter((e) => e['status'] === 18 && e['reason'] === 1).length],
     ['a Tornado dazes and a hit breaks it', () => ccStart(CcKind.daze) * ccEnd(CcKind.daze, CcEnd.broken)],
     ['Ground Shock knocks down and a Dash quick-rises', () => ccStart(CcKind.downed) * ccEnd(CcKind.downed, CcEnd.quickRise)],
     ['an Icicles hit ices a chilled foe and a hit shatters it', () => ccStart(CcKind.iced) * ccEnd(CcKind.iced, CcEnd.shattered)],

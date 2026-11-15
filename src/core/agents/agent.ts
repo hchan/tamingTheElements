@@ -27,6 +27,7 @@ import { CHARACTERS } from '../data/characters';
 import { isArcade, now, roundPhase } from '../sim/clock';
 import { Press, pressAge } from '../sim/systems/arcade/buffer';
 import { ccLevel, ccOn } from '../sim/systems/arcade/cc-state';
+import { otOn } from '../sim/systems/arcade/over-time';
 import { StatusField, StatusId, statusBase, statusSlot } from '../sim/systems/status';
 import { RANGED } from '../sim/systems/arcade/meter';
 import { isGuarding } from '../sim/systems/arcade/stun';
@@ -154,8 +155,23 @@ export interface ArcadeView {
   readonly foeCc?: CcView;
   readonly foeCcImmune?: number;
   readonly slotCc?: readonly [number, number];
+  /**
+   * Over time (flag withOverTime; absent unless the flag is on, so the AI input of a flag-off match is unchanged): burning
+   * stacks (0: none) and whether venom is on this side's fighter, and the foe's burning stacks and whether it has mending.
+   */
+  readonly selfBurn?: number;
+  readonly selfVenom?: boolean;
+  readonly foeBurn?: number;
+  readonly foeMending?: boolean;
   /** The live stage hazard (systems/arcade/hazard.ts: its warning shading and its strike are on screen), or undefined. */
   readonly hazard: HazardView | undefined;
+}
+
+/** Burning stacks on `f` (0: none). */
+function burnOf(s: SimState, f: FighterView | undefined): number {
+  if (f === undefined) return 0;
+  const slot = statusSlot(s, f.id, StatusId.burning);
+  return slot < 0 ? 0 : (s.status[statusBase(f.id, slot) + StatusField.mag] ?? 1);
 }
 
 /**
@@ -385,6 +401,12 @@ function arcadeViewOf(
       foeCc: ccOf(s, opp, g),
       foeCcImmune: opp === undefined ? 0 : [CcKind.daze, CcKind.iced, CcKind.downed, CcKind.silenced].reduce((m, kind) => (ccLevel(s, opp.id, kind - 1) >= 2 ? m | (1 << kind) : m), 0),
       slotCc: slotKinds(s, self),
+    }),
+    ...(otOn(s) && {
+      selfBurn: burnOf(s, self),
+      selfVenom: self !== undefined && statusSlot(s, self.id, StatusId.venom) >= 0,
+      foeBurn: burnOf(s, opp),
+      foeMending: opp !== undefined && statusSlot(s, opp.id, StatusId.mending) >= 0,
     }),
   };
 }

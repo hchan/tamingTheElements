@@ -407,6 +407,34 @@ function ccScript(): ArcadeScript {
   return { file: 'arcade-cc', setup, inputs: buildScript(p1, p2) };
 }
 
+const OT_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true, withOverTime: true };
+
+/**
+ * Over-time statuses (flag withOverTime, OT5): Ishimi's Slime Blast venoms Fiara, whose Fire Heal then mends at half strength;
+ * p1 then tags in Lavax, whose Crimson Fire stacks burning (pulses), and Fiara Cleanses it.
+ * Each segment starts at `home`; the offsets were measured with a trace of the sim.
+ */
+function otScript(): ArcadeScript {
+  const setup: MatchSetup = {
+    simVersion: SIM_VERSION, seed: 0x07a, flags: OT_FLAGS, chapter: 1, difficulty: 1,
+    p1: [{ character: characterId('ishimi'), xp: 1 }, { character: characterId('lavax'), xp: 1 }],
+    p2: [{ character: characterId('fiara'), xp: 1 }],
+  };
+  const p1 = new Track();
+  const p2 = new Track();
+  // Venom and mending: Slime Blast venoms Fiara, whose Fire Heal then mends at half strength (once her hit-stun is over).
+  let h = home(p1, p2, 100, 100);
+  p1.until(h).tap('slime blast', secondary, 1, 40);
+  p2.until(p1.tick + 60).tap('fire heal', primary, 1, 40).wait(280);
+  // Burn: tag in Lavax; three Crimson Fires stack burning, the pulses tick, then Fiara Cleanses.
+  p1.until(Math.max(p1.tick, p2.tick) + 40).tap('tag 1: lavax', swap1).wait(120);
+  h = home(p1, p2, Math.max(p1.tick, p2.tick) + 40, 100);
+  p1.until(h).tap('crimson fire', primary, 1, 25).tap('crimson fire', primary, 1, 25).tap('crimson fire', primary, 1, 25);
+  p2.until(p1.tick + 91).tap('cleanse', cleanse).wait(60);
+  p1.until(p2.tick + 150);
+  return { file: 'arcade-ot', setup, inputs: buildScript(p1, p2) };
+}
+
 export function arcadeScripts(): ArcadeScript[] {
-  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript(), elementalScript(), ccScript()];
+  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript(), elementalScript(), ccScript(), otScript()];
 }
