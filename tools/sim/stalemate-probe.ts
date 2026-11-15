@@ -69,7 +69,7 @@ for (const c of cases) {
       const pos: { team: number; cx: number; cy: number }[] = [];
       let hp = 0;
       for (let id = 0; id < MAX_ENTITIES; id++) {
-        if (s.kind[id] !== EntityKind.character) continue;
+        if (s.kind[id] !== EntityKind.character || (s.hp[id] ?? 0) <= 0) continue;
         hp += s.hp[id] ?? 0;
         pos.push({ team: s.team[id] ?? 0, cx: (s.x[id] ?? 0) + (s.w[id] ?? 0) / 2, cy: (s.y[id] ?? 0) + (s.h[id] ?? 0) / 2 });
       }

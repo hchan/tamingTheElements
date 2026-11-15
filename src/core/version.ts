@@ -288,5 +288,8 @@
  *    hero life on top of the v77 `ARCADE_2V2_LIFE_PM` table so the 2v2 round median reaches the nightly fun-gate band
  *    (44.3 s -> 62.2 s, 8 seeds). Re-record reason: 2v2 tag-team goldens move with 2v2 life; the Arcade 2v2 baseline is
  *    re-recorded; every other replay fixture changes only its simVersion header.
+ * 79: Arcade only, AI only (Classic and every stored hash unchanged): the scripted AI escalates after a quiet spell (800 ticks: more plans, no guard
+ *    reflex, walks in under threat, the 2v2 clash breaker also in 1v1; 1100 ticks: charge, trap, super, dash). Re-record reason: every
+ *    replay fixture changes only its simVersion header.
  */
-export const SIM_VERSION = 78;
+export const SIM_VERSION = 79;
