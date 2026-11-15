@@ -13,7 +13,7 @@
     "cleanse-clock": 400,
     "cleanse-info": 100,
     "cleanse-view": 2700,
-    "core": 14300,
+    "core": 15300,
     "danger-view": 800,
     "defence-view": 4300,
     "guide-icons": 1000,
@@ -39,7 +39,7 @@
     "phaser": 388700,
     "phaser-config": 53100,
     "pop-lanes": 400,
-    "pose-layer": 15400,
+    "pose-layer": 16200,
     "rolldown-runtime": 200,
     "round-announcer": 1500,
     "round-view": 5200,
@@ -57,7 +57,7 @@
     "void-stage": 3100,
     "weather-view": 6500
   },
-  "totalGzip": 702000,
+  "totalGzip": 704000,
   "sheets": {
     "perSheetBytes": 16777216,
     "totalBytes": 104857600
