@@ -39,3 +39,22 @@ test('first-run hint at 1280x720 is a slim strip above the bar and fades on its 
   await expect(card).toHaveClass(/firstRunFade/, { timeout: 15_000 });
   expect(errors).toEqual([]);
 });
+
+// QA r43: on a 667x375 phone the card sits in the top band, clear of the lower-left fighting area and the thumb pads.
+test.describe('phone', () => {
+  test.use({ viewport: { width: 667, height: 375 }, hasTouch: true, isMobile: true });
+  test('first-run hint at 667x375 stays out of the lower fighting area', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto(`${START}&ff=arcade#tour`);
+    await page.getByRole('button', { name: 'Start tour' }).click();
+    await page.getByRole('button', { name: 'Fight' }).click();
+    await tapTourSplash(page);
+    await page.waitForFunction(ARENA_READY);
+    const card = page.locator('#firstRunHint');
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    const box = await card.boundingBox();
+    expect(box).not.toBeNull();
+    expect((box?.y ?? 999) + (box?.height ?? 999)).toBeLessThan(375 * 0.5);
+    expect(errors).toEqual([]);
+  });
+});

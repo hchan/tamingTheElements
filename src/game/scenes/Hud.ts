@@ -551,9 +551,13 @@ export class Hud extends Phaser.Scene {
       label.setText(compactLabel(shortName(name, max), c, false, true));
       if (clears(m)) return;
     }
-    for (const terse of ['bare', 'min'] as const) {
-      label.setText(compactLabel(name, c, false, terse));
+    label.setText(compactLabel(name, c, false, 'bare'));
+    if (clears(m)) return;
+    // QA r44: keep the element glyph on both sides: the whole name at 10 CSS px beats a cut name ("SINDARO...") or a dropped mark.
+    if (k > 0) {
+      label.setFontSize(Math.ceil(10 / k));
       if (clears(m)) return;
+      label.setFontSize(Math.round(base * (steps[steps.length - 1] ?? 1)));
     }
     for (let max = name.length - 1; max >= 3; max--) {
       label.setText(compactLabel(shortName(name, max), c, false, 'bare'));

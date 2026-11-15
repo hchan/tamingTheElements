@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BANNER_KEY, CUT_KEY, BANNER_WAIT_TICKS, LANE_MAX_WAIT_TICKS, LaneWait, bannerDraws, centreBusy, cutUp, introClockStart } from './banner-lanes';
+import { BANNER_KEY, CUT_KEY, BANNER_WAIT_TICKS, LANE_MAX_WAIT_TICKS, LaneWait, bannerDraws, centreBusy, cutUp, fightYields, introClockStart } from './banner-lanes';
 
 const reg = (o: Record<string, unknown>) => ({ get: (k: string) => o[k] });
 
@@ -44,5 +44,14 @@ describe('banner lanes', () => {
     expect(introClockStart(60, 100)).toBe(100);
     expect(introClockStart(60, -1)).toBe(60);
     expect(introClockStart(130, 100)).toBe(130);
+  });
+});
+
+describe('FIGHT! yields to a super (qa-r43)', () => {
+  it('drops only the FIGHT! banner a super cut in on', () => {
+    expect(fightYields('FIGHT!', 100, 100)).toBe(true);
+    expect(fightYields('FIGHT!', 300, 100)).toBe(false);
+    expect(fightYields('K.O.', 100, 100)).toBe(false);
+    expect(fightYields('FIGHT!', 100, -1)).toBe(false);
   });
 });

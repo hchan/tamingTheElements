@@ -31,6 +31,9 @@ export function bannerDraws(cut: boolean, resultUp: boolean, intro: boolean, com
   return !cut && !(resultUp && (intro || compactCard));
 }
 
+/** Whether the FIGHT! banner that started at `from` is dropped because a super cut in during it (`droppedFrom` = its start tick, or -1): the burst outlives the cut-in and FIGHT! must not come back over it. */
+export const fightYields = (main: string, from: number, droppedFrom: number): boolean => main === 'FIGHT!' && from === droppedFrom;
+
 /** The view tick an intro banner's own clock (fade, scale-in, name cards) starts: its start, or the end of the round result card if later, so "ROUND 2" is not spent behind the card. */
 export const introClockStart = (from: number, resultEnd: number): number => Math.max(from, resultEnd);
 

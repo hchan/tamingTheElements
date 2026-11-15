@@ -10,7 +10,7 @@ import { mountWeatherView } from '../fx/weather-view';
 import {
   PIP_R, PIP_Y, RoundAnnouncer, TICK_MS, TIMER_COLOR, TIMER_PX, TIMER_X, TIMER_Y, bannerScale, pips, timerStyle,
 } from './round-announcer';
-import { bannerDraws, cutUp, introClockStart } from './banner-lanes';
+import { bannerDraws, cutUp, fightYields, introClockStart } from './banner-lanes';
 import { RESULT_TICKS } from './round-result';
 import { mountResultView, type ResultState } from './round-result-view';
 
@@ -99,6 +99,8 @@ export function mountRoundView(
   /** The view tick the last round result card ends: an intro banner's clock (fade, scale-in, name cards) starts then, not under the card. */
   let cardEnd = -1;
   let fightOverSent = false;
+  /** The start tick of the FIGHT! banner a super cut in on (qa-r43): it is dropped for good, not redrawn over the burst that outlives the cut-in. */
+  let fightDropped = -1;
   /** When the banner's clock starts: its own start, or for an intro banner the end of the result card. */
   const clockFrom = (): number => (isIntroBanner(banner.main) ? introClockStart(banner.from, cardEnd) : banner.from);
 
@@ -181,7 +183,8 @@ export function mountRoundView(
       window.dispatchEvent(new Event('tte:fight-over'));
     }
     // Lanes (banner-lanes.ts): the super cut-in outranks the banner; an intro banner waits out the round result card.
-    const on = banner.main !== '' && tick < banner.until && bannerDraws(cutUp(hud.registry), results.result.state().visible, isIntroBanner(banner.main), results.result.state().compact);
+    if (banner.main === 'FIGHT!' && cutUp(hud.registry)) fightDropped = banner.from;
+    const on = banner.main !== '' && tick < banner.until && !fightYields(banner.main, banner.from, fightDropped) && bannerDraws(cutUp(hud.registry), results.result.state().visible, isIntroBanner(banner.main), results.result.state().compact);
     const slow = bannerScale((tick - clockFrom()) * TICK_MS, banner.reduced);
     // The damage numbers (Hud.drawArcade) thin out under a banner, so the stacked KO numbers never bury its caption.
     if (hud.registry.get('tte.banner') !== on) hud.registry.set('tte.banner', on);
