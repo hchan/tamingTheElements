@@ -74,7 +74,7 @@ export function pillWord(label: string): string {
 }
 
 /** One line under the bar: `SINDAROSA ▲ Life 228/228`, plus the health word only when it is not OK (never colour alone). */
-export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap' | 'element'>, noName = false, terse: boolean | 'bare' = false): string {
+export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap' | 'element'>, noName = false, terse: boolean | 'bare' | 'min' = false): string {
   const cue = healthCue(c.hp / Math.max(1, c.maxHp));
   const glyph = elementCue(c.element).charAt(0);
   const word = cue.label === 'OK' ? '' : ` ${cue.label}`;
@@ -82,8 +82,9 @@ export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' 
   // `terse`: drops the word "Life" (phones: keeps the text at full size instead of shrinking it to fit beside the SUPER label).
   // `'bare'`: also drops "/max" (a long name like TREENOC then keeps the 11 px phone size instead of shrinking or losing letters).
   const terseLife = lifeReadout(c).replace(/^Life /, '');
-  const life = terse === 'bare' ? terseLife.replace(/\/\d+$/, '') : terse ? terseLife : lifeReadout(c);
-  return `${noName ? '' : `${name.toUpperCase()} `}${glyph} ${life}${word}`;
+  // `'min'`: also drops the element glyph (the portrait corner and the bar colour carry it): `SINDAROSA 158`, the last whole-name form.
+  const life = terse === 'bare' || terse === 'min' ? terseLife.replace(/\/\d+$/, '') : terse ? terseLife : lifeReadout(c);
+  return `${noName ? '' : `${name.toUpperCase()} `}${terse === 'min' ? '' : `${glyph} `}${life}${word}`;
 }
 
 /** `name` cut to at most `max` letters with an ellipsis (a phone's narrow life line keeps a short name instead of none); '' when `max` < 3. */

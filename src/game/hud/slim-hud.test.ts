@@ -64,6 +64,7 @@ describe('slim HUD words', () => {
     expect(compactLabel('Sindarosa', base, false, true)).not.toContain('Life');
     // The bare form also drops "/max" so a long name fits at full size.
     expect(compactLabel('Treenoc', base, false, 'bare')).toBe('TREENOC \u25B2 228');
+    expect(compactLabel('Treenoc', base, false, 'min')).toBe('TREENOC 228');
     expect(compactLabel('Treenoc', { ...base, hp: 20 }, false, 'bare')).toMatch(/^TREENOC .+ 20 LOW$/);
   });
 });

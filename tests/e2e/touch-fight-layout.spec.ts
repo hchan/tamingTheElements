@@ -178,6 +178,42 @@ for (const [w, h] of [[667, 375], [844, 390]] as const) {
   });
 }
 
+// QA r36: the touch Pause button (top right) must not sit on the right-hand "N HITS / N DMG" counter, and the longest hero name stays whole.
+for (const [w, h] of [[667, 375], [844, 390]] as const) {
+  test.describe(`pause button and hit counter ${String(w)}x${String(h)}`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    test('the Pause button clears the right-hand hit counter; long names are not cut', async ({ page }) => {
+      await page.goto('/?ff=arenaDemo,arcade&manual=1&seed=7&hero=sindarosa&foe=treenoc');
+      await page.waitForFunction(ARENA_READY);
+      // Team 1 (right side) lands a Charge and a follow-up: its counter shows at the right edge, under the Pause button.
+      const foe = await page.evaluate<number>(`(() => {
+        const a = window.__TTE__.arena;
+        a.step(91);
+        const [me, foe] = a.characters();
+        a.place(me.id, 700, 380, 4);
+        a.place(foe.id, 780, 380, 4);
+        return me.id;
+      })()`);
+      const hp = (): Promise<number> => page.evaluate<number>(`window.__TTE__.arena.characters().find((c) => c.id === ${String(foe)}).hp`);
+      const start = await hp();
+      for (let i = 0; i < 20 && (await hp()) === start; i++) await page.evaluate(`window.__TTE__.arena.step(1, [0, ${String(1 << 15)}])`);
+      await page.evaluate(`window.__TTE__.arena.step(8, [0, 16])`);
+      await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      await shot(page, `pause-counter-${String(w)}`);
+      const texts = await page.evaluate<Array<Box & { text: string; px: number }>>(`window.__TTE__.arena.hudTextSizes()`);
+      const counter = texts.find((t) => /HITS/.test(t.text));
+      expect(counter, JSON.stringify(texts)).toBeDefined();
+      const canvas = await box(page, '#game canvas');
+      const pause = await box(page, '#pauseButton');
+      // hudTextSizes boxes are canvas-relative with the origin at the text's anchor (right-aligned counter: x is its right edge).
+      const c = counter as Box;
+      const rect: Box = { x: canvas.x + c.x - c.w, y: canvas.y + c.y, w: c.w, h: c.h };
+      expect(overlap(rect, pause), `${JSON.stringify(rect)} / ${JSON.stringify(pause)}`).toBe(false);
+      for (const t of texts.filter((n) => /SINDAROSA|TREENOC/.test(n.text))) expect(t.text, t.text).not.toContain('\u2026');
+    });
+  });
+}
+
 test.describe('desktop fight HUD shots', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
   for (const team of [1, 2]) {
