@@ -277,7 +277,7 @@ export function mountTerrainView(
       const w = t.width;
       const h = t.height;
       const rim = PATCH_COLORS[stage - 1] ?? 0xffffff;
-      p.chips[i]?.clear().fillStyle(0x0e0b14, highContrast ? 0.92 : 0.7).fillRoundedRect(-w / 2, -h, w, h, h / 2)
+      p.chips[i]?.clear().fillStyle(0x0e0b14, CHIP_PLATE_ALPHA).fillRoundedRect(-w / 2, -h, w, h, h / 2)
         .lineStyle(highContrast ? 2 : 1.5, rim, 0.9).strokeRoundedRect(-w / 2, -h, w, h, h / 2).setPosition(cx, cy);
       chipBox[i * 4] = cx - w / 2;
       chipBox[i * 4 + 1] = cy - h;
@@ -357,7 +357,7 @@ export function mountTerrainView(
     p.labels.forEach((t, i) => {
       // Ease toward faint while a fighter stands on or beside the chip, back up when it leaves.
       chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -0.12 : 0.06)));
-      const a = (highContrast ? drawn.alpha : drawn.alpha * 0.9) * hint * (chipFade[i] ?? 1);
+      const a = drawn.alpha * hint * (chipFade[i] ?? 1);
       // Hidden under the ROUND / FIGHT! banners so the chip words never bleed through their letters.
       const on = hint > 0 && stage !== 3 && i < count && !bannerUp;
       t.setVisible(on).setAlpha(a);
@@ -452,7 +452,9 @@ export function mountTerrainView(
 const m = (c: number): number => mute(c, 0.5, 0.8);
 /** Words on patches and the badge: bone, not white, under a thin dark stroke. */
 const LABEL_FONT = 'Georgia, "Times New Roman", serif';
-const LABEL_COLOR = '#d8cdb8';
+const LABEL_COLOR = '#f2e8d2';
+/** Chip plate opacity: over even a white floor the plate blends to about L 0.03, so the word keeps >= 4.5:1 on every stage. */
+const CHIP_PLATE_ALPHA = 0.9;
 
 /** The small element icon of the badge in an ICON box centred on (x, y): a flame, a drop, a block, a swirl. */
 function icon(g: Phaser.GameObjects.Graphics, stage: number, x: number, y: number): void {
