@@ -22,6 +22,7 @@ import { releaseCount, slotAbility } from './ability-info';
 import { snagHit } from './arcade/snag';
 import { cooldownTicksFor } from '../arcade-numbers';
 import { castDir } from './arcade/aim';
+import { setLunge } from './arcade/knockback';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, append-only: new abilities go at the end; every index < MAX_ABILITY_DEFS). */
 export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = ALL_ABILITIES;
@@ -224,6 +225,13 @@ function updateMelee(world: SimWorld, sink: EventSink, id: number, tick: number)
     return;
   }
 
+  const d = ABILITY_DEFS[defId] as AbilityDefB;
+  if (isArcade(s) && d.lungePx && !casterDead) {
+    // A lunging melee (Durrok's tusk-gore) rides in front of the caster for the whole lunge.
+    const b = directionalBox(s.dir[id] ?? 0, s.x[caster] ?? 0, s.y[caster] ?? 0, s.w[caster] ?? 0, s.h[caster] ?? 0, d.w ?? 0, d.h ?? 0);
+    s.x[id] = b.x;
+    s.y[id] = b.y;
+  }
   const victim = controlledId(world, 1 - (s.team[id] ?? 0));
   if (victim < 0) return;
   const box: Aabb = { x: s.x[victim] ?? 0, y: s.y[victim] ?? 0, w: s.w[victim] ?? 0, h: s.h[victim] ?? 0 };
@@ -275,7 +283,7 @@ export function castMelee(world: SimWorld, sink: EventSink, team: number, slot: 
   const ch = s.h[caster] ?? 0;
   const aim = castDir(s, caster);
   const box =
-    defId === GROUND_SHOCK || defId === HURRICANE
+    defId === GROUND_SHOCK || defId === HURRICANE || (def as AbilityDefB).centred === true
       ? { x: cx - (w - cw) / 2, y: cy - (h - ch) / 2, w, h }
       : directionalBox(aim, cx, cy, cw, ch, w, h);
   s.kind[id] = EntityKind.melee;
@@ -291,6 +299,8 @@ export function castMelee(world: SimWorld, sink: EventSink, team: number, slot: 
   const delay = def.delayAfterAttackTicks ?? 0;
   s.expireTick[id] = tick + (defId === HURRICANE ? (def.durationTicks ?? 0) : delay);
   if (delay !== 0) setFlag(world, caster, EntityFlag.frozen, true);
+  const lunge = (def as AbilityDefB).lungePx ?? 0;
+  if (lunge !== 0 && isArcade(s)) setLunge(s, caster, Math.abs(lunge), lunge > 0 ? aim : (aim + 4) & 7);
 }
 
 /**

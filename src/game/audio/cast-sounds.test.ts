@@ -39,7 +39,7 @@ describe('CastDetector', () => {
   });
 });
 
-const ROSTER_24_SPRITES = ['emberBite', 'cinderSpray', 'hoofCrash', 'kelpLash', 'boulderRoll', 'stingingFilament', 'bellPulse'];
+const ROSTER_24_SPRITES = ['emberBite', 'cinderSpray', 'hoofCrash', 'kelpLash', 'boulderRoll', 'stingingFilament', 'bellPulse', 'forgeGore', 'moltenHide', 'lureOrb', 'abyssFlash', 'tuskGore', 'bristleStomp', 'staticMote', 'skitter'];
 
 describe('cast sounds per ability vs legacy abilities.js', () => {
   it('every roster-24 ability has a cast sound', () => {

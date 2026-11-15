@@ -27,6 +27,20 @@ export function setKnockback(s: SimState, victim: number, speedQ4: number, dir: 
   s.arcade[e + ArcadeE.kbVy] = (DIR8_Y[dir] ?? 0) * speedQ4;
 }
 
+/**
+ * Carries `caster` about `px` px along dir8 `dir` (a lunge or a hop, roster batch 2). Knockback decays 16 Q4 per tick, so a
+ * start speed of 16n covers n(n+1)/2 px; n is the smallest integer reaching `px`. Size weight is not applied (it is the
+ * caster's own move) and the first wall contact stops it (`wallBounced` set, so no bounce).
+ */
+export function setLunge(s: SimState, caster: number, px: number, dir: number): void {
+  let n = 1;
+  while ((n * (n + 1)) / 2 < px) n++;
+  const e = caster * ARCADE_E;
+  s.arcade[e + ArcadeE.kbVx] = (DIR8_X[dir] ?? 0) * 16 * n;
+  s.arcade[e + ArcadeE.kbVy] = (DIR8_Y[dir] ?? 0) * 16 * n;
+  s.arcade[e + ArcadeE.wallBounced] = 1;
+}
+
 /** One knockback decay step: 1 px per tick toward 0. */
 function decay(v: number): number {
   if (v > KNOCKBACK_DECAY_Q4) return v - KNOCKBACK_DECAY_Q4;

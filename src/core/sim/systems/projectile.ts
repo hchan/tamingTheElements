@@ -3,6 +3,7 @@ import { cooldownTicksFor, FIRE_BLAST_ABILITY, FIRE_BLAST_GROW_PX, FIRE_BLAST_GR
 import { CHARACTER_HEIGHT, CHARACTER_WIDTH } from '../../data/chapters';
 import { CHARACTERS } from '../../data/characters';
 import type { AbilityDef } from '../../data/types';
+import type { AbilityDefB } from '../../data/abilities-b';
 import { aabbOverlap } from '../../math/aabb';
 import { DIR8_X, DIR8_Y } from '../../math/dir8';
 import { computeDamage } from '../../rules/damage';
@@ -195,6 +196,20 @@ export function projectileSystem(world: SimWorld, cmds: readonly [Command, Comma
     // Arcade only: fire douses enemy Puddle and Gust traps (arcade/trap.ts) and flies on.
     if (isArcade(s) && SNAG_FIRE_ABILITIES.includes(ABILITY_DEFS[s.defId[id] ?? 0]?.id ?? '')) {
       douseTraps(s, sink, s.team[id] ?? 0, x, y, s.w[id] ?? 0, s.h[id] ?? 0);
+    }
+    // Arcade only: a hover shot (Glimmaw's lure-orb) stops after its travel and lingers as a hazard, then fades.
+    const hov: AbilityDefB | undefined = isArcade(s) ? ALL_ABILITIES[s.defId[id] ?? 0] : undefined;
+    if (hov?.hoverStopPx !== undefined) {
+      if ((s.vx[id] ?? 0) !== 0 || (s.vy[id] ?? 0) !== 0) {
+        if ((tick - (s.spawnTick[id] ?? 0) + 1) * (hov.speed ?? 1) >= hov.hoverStopPx) {
+          s.vx[id] = 0;
+          s.vy[id] = 0;
+          s.expireTick[id] = tick + (hov.hoverLingerTicks ?? 0);
+        }
+      } else if (tick >= (s.expireTick[id] ?? 0)) {
+        despawn(world, id, s.owner[id] ?? 0);
+        continue;
+      }
     }
     const target = controlledId(world, 1 - (s.team[id] ?? 0));
     if (target < 0 || ((s.flags[target] ?? 0) & EntityFlag.translucent) !== 0) continue;

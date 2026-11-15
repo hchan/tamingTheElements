@@ -1,0 +1,341 @@
+{
+  "dirs": [
+    "E",
+    "SE",
+    "NE"
+  ],
+  "parts": [
+    {
+      "id": "tail",
+      "parent": "torso",
+      "png": "tail.png",
+      "pivot": [
+        13,
+        10
+      ],
+      "at": [
+        -24,
+        2
+      ],
+      "z": 1,
+      "views": {
+        "SE": {
+          "png": "tail_se.png",
+          "pivot": [
+            15,
+            11
+          ],
+          "at": [
+            -21,
+            1
+          ]
+        },
+        "NE": {
+          "png": "tail_ne.png",
+          "pivot": [
+            15,
+            10
+          ],
+          "at": [
+            -21,
+            2
+          ]
+        }
+      }
+    },
+    {
+      "id": "armB",
+      "parent": "torso",
+      "png": "armB.png",
+      "pivot": [
+        12,
+        5
+      ],
+      "at": [
+        -6,
+        10
+      ],
+      "z": 2,
+      "views": {
+        "SE": {
+          "png": "armB_se.png",
+          "pivot": [
+            10,
+            1
+          ],
+          "at": [
+            -4,
+            9
+          ]
+        },
+        "NE": {
+          "png": "armB_ne.png",
+          "pivot": [
+            10,
+            3
+          ],
+          "at": [
+            -2,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "torso",
+      "png": "torso.png",
+      "pivot": [
+        33,
+        23
+      ],
+      "at": [
+        38,
+        50
+      ],
+      "z": 5,
+      "views": {
+        "SE": {
+          "png": "torso_se.png",
+          "pivot": [
+            32,
+            27
+          ],
+          "at": [
+            39,
+            52
+          ]
+        },
+        "NE": {
+          "png": "torso_ne.png",
+          "pivot": [
+            33,
+            27
+          ],
+          "at": [
+            36,
+            49
+          ]
+        }
+      }
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "png": "head.png",
+      "pivot": [
+        10,
+        18
+      ],
+      "at": [
+        15,
+        0
+      ],
+      "z": 7,
+      "views": {
+        "SE": {
+          "png": "head_se.png",
+          "pivot": [
+            9,
+            16
+          ],
+          "at": [
+            11,
+            3
+          ]
+        },
+        "NE": {
+          "png": "head_ne.png",
+          "pivot": [
+            9,
+            16
+          ],
+          "at": [
+            12,
+            -2
+          ]
+        }
+      }
+    },
+    {
+      "id": "armF",
+      "parent": "torso",
+      "png": "armF.png",
+      "pivot": [
+        6,
+        29
+      ],
+      "at": [
+        12,
+        -14
+      ],
+      "z": 8,
+      "views": {
+        "SE": {
+          "png": "armF_se.png",
+          "pivot": [
+            5,
+            29
+          ],
+          "at": [
+            7,
+            -15
+          ]
+        },
+        "NE": {
+          "png": "armF_ne.png",
+          "pivot": [
+            5,
+            28
+          ],
+          "at": [
+            14,
+            -14
+          ]
+        }
+      }
+    }
+  ],
+  "actions": {
+    "idle": {
+      "frames": 4,
+      "curves": {
+        "torso": {
+          "dy": [
+            0,
+            -1,
+            -1,
+            0
+          ]
+        },
+        "head": {
+          "rot": [
+            0,
+            1,
+            2,
+            1
+          ]
+        },
+        "armF": {
+          "rot": [
+            0,
+            4,
+            7,
+            3
+          ]
+        },
+        "armB": {
+          "rot": [
+            0,
+            -4,
+            -7,
+            -3
+          ]
+        },
+        "tail": {
+          "rot": [
+            0,
+            5,
+            9,
+            3
+          ]
+        }
+      }
+    },
+    "walk": {
+      "frames": 4,
+      "curves": {
+        "torso": {
+          "dy": [
+            0,
+            -1,
+            0,
+            -1
+          ],
+          "rot": [
+            1,
+            0,
+            -1,
+            0
+          ]
+        },
+        "head": {
+          "rot": [
+            -1,
+            0,
+            1,
+            0
+          ]
+        },
+        "armF": {
+          "rot": [
+            6,
+            0,
+            -6,
+            0
+          ]
+        },
+        "armB": {
+          "rot": [
+            -14,
+            0,
+            14,
+            0
+          ]
+        },
+        "tail": {
+          "rot": [
+            14,
+            0,
+            -14,
+            0
+          ]
+        }
+      }
+    },
+    "cast": {
+      "frames": 4,
+      "curves": {
+        "torso": {
+          "rot": [
+            0,
+            -3,
+            3,
+            0
+          ]
+        },
+        "head": {
+          "rot": [
+            0,
+            -4,
+            6,
+            0
+          ]
+        },
+        "armF": {
+          "rot": [
+            0,
+            -22,
+            30,
+            6
+          ]
+        },
+        "armB": {
+          "rot": [
+            0,
+            10,
+            -10,
+            0
+          ]
+        },
+        "tail": {
+          "rot": [
+            0,
+            8,
+            14,
+            2
+          ]
+        }
+      }
+    }
+  }
+}

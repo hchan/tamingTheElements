@@ -21,6 +21,10 @@ export const CHARACTER_TEXT: ReadonlyMap<CharacterId, { readonly name: string; r
   [characterId('kindrel'), { name: "Kindrel", description: "A small ember-fox that darts through a fight, biting fast and leaving a ring of cinders behind." }],
   [characterId('nykra'), { name: "Nykra", description: "A water-horse of the dark tarns. It crashes in with its hooves and lashes from afar with kelp." }],
   [characterId('quarrak'), { name: "Quarrak", description: "A slow stone quadruped, huge and patient, that rolls boulders across the arena." }],
+  [characterId('brazgor'), { name: "Brazgor", description: "A hulking forge-boar, slag-skinned and slow. It gores like a hammer and wears armour that burns whatever strikes it." }],
+  [characterId('glimmaw'), { name: "Glimmaw", description: "An abyssal anglerfish that hangs lights in the dark and bites whatever follows them." }],
+  [characterId('durrok'), { name: "Durrok", description: "An armoured tusker of the deep tunnels. It lunges, gores and stomps the ground bristling." }],
+  [characterId('zephra'), { name: "Zephra", description: "A tiny storm-wisp, quick as a spark, that pelts from afar and skitters out of reach." }],
   [characterId('hyalia'), { name: "Hyalia", description: "A drifting jellyfish of the high winds. Its filaments sting and its bell pushes foes away." }],
 ]);
 
@@ -63,6 +67,14 @@ export const ABILITY_NAMES: ReadonlyMap<AbilityId, string> = new Map([
   [abilityId('boulder-roll'), "Boulder Roll"],
   [abilityId('stinging-filament'), "Stinging Filament"],
   [abilityId('bell-pulse'), "Bell Pulse"],
+  [abilityId('forge-gore'), "Forge Gore"],
+  [abilityId('molten-hide'), "Molten Hide"],
+  [abilityId('lure-orb'), "Lure Orb"],
+  [abilityId('abyss-flash'), "Abyss Flash"],
+  [abilityId('tusk-gore'), "Tusk Gore"],
+  [abilityId('bristle-stomp'), "Bristle Stomp"],
+  [abilityId('static-mote'), "Static Mote"],
+  [abilityId('skitter'), "Skitter"],
 ]);
 
 /** Snag (FUN-DESIGN 2.20): the name and line of the rope throw on a hero's ARCADE_SNAG_SLOT (data/arcade.ts). */

@@ -53,6 +53,10 @@ Speed is px/tick at 50 Hz; HP is at level 0.
 | Nykra | water | neutral | 7 | 100 | Hoof Crash, Kelp Lash |
 | Quarrak | earth | neutral | 4 | 140 | Hurl Rock, Boulder Roll |
 | Hyalia | air | neutral | 5 | 95 | Stinging Filament, Bell Pulse |
+| Brazgor | fire | neutral | 5 | 150 | Forge Gore, Molten Hide |
+| Glimmaw | water | neutral | 6 | 95 | Lure Orb, Abyss Flash |
+| Durrok | earth | neutral | 7 | 120 | Tusk Gore, Bristle Stomp |
+| Zephra | air | neutral | 8 | 75 | Static Mote, Skitter |
 <!-- /gen:characters -->
 
 ## Abilities
@@ -101,6 +105,14 @@ legacy data, kept as-is.
 | Boulder Roll | range | 26 | 3500 | - | 1 | 4 | Quarrak |
 | Stinging Filament | range | 10 | 900 | - | 2 | 12 | Hyalia |
 | Bell Pulse | omni | 6 | 5000 | - | 1 | 5 | Hyalia |
+| Forge Gore | melee | 25 | 1500 | - | 1 | - | Brazgor |
+| Molten Hide | buff | - | 12000 | 3000 | 100 | - | Brazgor |
+| Lure Orb | range | 14 | 1200 | - | 2 | 6 | Glimmaw |
+| Abyss Flash | melee | 6 | 6000 | - | 1 | - | Glimmaw |
+| Tusk Gore | melee | 22 | 3000 | - | 1 | - | Durrok |
+| Bristle Stomp | melee | 15 | 800 | - | 2 | - | Durrok |
+| Static Mote | range | 8 | 400 | - | 3 | 10 | Zephra |
+| Skitter | buff | - | 3000 | - | 1 | - | Zephra |
 <!-- /gen:abilities -->
 
 ## Progression
