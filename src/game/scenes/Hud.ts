@@ -115,6 +115,7 @@ export class Hud extends Phaser.Scene {
   private chipTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   /** Arcade: the white chip-drain trail per hero id. */
   private trails = new Map<number, Trail>();
+  private frameMs = 1000 / 60;
 
   constructor() {
     super(HUD_SCENE);
@@ -198,7 +199,8 @@ export class Hud extends Phaser.Scene {
     return out;
   }
 
-  override update(): void {
+  override update(_time?: number, delta = 1000 / 60): void {
+    this.frameMs = delta;
     const { view, gfx } = this;
     if (!view || !gfx) return;
     gfx.clear();
@@ -258,12 +260,14 @@ export class Hud extends Phaser.Scene {
   private drawTrail(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter): void {
     const t = this.trails.get(c.id) ?? { v: c.hp, hold: 0 };
     this.trails.set(c.id, t);
-    const v = stepTrail(t, c.hp, c.maxHp, this.reduceMotion);
+    const v = stepTrail(t, c.hp, c.maxHp, this.reduceMotion, this.frameMs);
     if (c.dead || v <= c.hp || c.maxHp <= 0) return;
     const w = g.maxX - g.minX;
     const x0 = g.minX + Math.ceil(w * Math.max(0, c.hp) / c.maxHp);
-    const x1 = g.minX + Math.ceil(w * Math.min(1, v / c.maxHp));
+    // At least 3 px, so a light chip (7 on a 571 bar) still reads.
+    const x1 = Math.max(x0 + 3, g.minX + Math.ceil(w * Math.min(1, v / c.maxHp)));
     gfx.lineStyle(g.line, TRAIL_COLOR, 0.95).lineBetween(x0, g.y, x1, g.y);
+    gfx.lineStyle(Math.max(2, Math.round(g.line / 3)), 0xfff3c4, 0.9).lineBetween(x0, g.y - g.line / 4, x1, g.y - g.line / 4);
   }
 
   /** A full SUPER rims the life bar in gold (steady edge, breathing halo; steady under reduced motion), matching the action-bar slot. */

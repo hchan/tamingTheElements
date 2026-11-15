@@ -24,3 +24,7 @@ Still weak, ordered by value:
 ## Progress (2026-11-14, hit-impact agent)
 
 Done (presentation only, no src/core): (2) duplicate number removed, a popped plain hit shows only the lingering pop (640 ms, rising), the HUD number stays for scaled hits, supers and reduced motion; (3) pops landing within 420 ms / 110 px merge into one growing total; (4) core is smaller (20-44 px) and element-tinted (halo, pale ring, pale heart) instead of a flat white disc; (5) attacker lunge 4-9 px forward over 8 ticks (`lungeOffset`, `CharacterView.lunge`); (6) light-hit camera nudge 55 ms at 0.0016 (about 2 px with the boost). Lunge and shake are off under reduced motion. Frames: ~/claudetmp/hit-impact/fiara-hit-t*.png. Still open: (1) foe life-bar ghost segment (HUD files, other agent).
+
+## Progress (2026-11-14, ghost-bar agent)
+
+(1) done: the active hero bars (both sides, 1v1 and 2v2) already had a yellow lost-life trail; it is now time-based (`stepTrail` with the frame delta): holds 500 ms, drains at 0.07% of max life per ms (about 1.4 s for a full bar), at least 3 px wide with a pale highlight line so a light chip still reads. Reduced motion: holds, then vanishes (no glide). Unit test in slim-hud.test.ts; shots via tests/e2e/ghost-bar-shot.spec.ts (SHOT_DIR), frames in ~/claudetmp/ghost/. Bench chips have no ghost.
