@@ -68,3 +68,7 @@ effects can be AI behaviour rather than kit strength.
   (`partners 2 32`, 704 matches), team win rate over all rosters, before to after: curomo 59.2 to 57.2, sindarosa 42.6 to 46.4; other races moved
   at most 3.7 pp (fiara 54.3 to 50.6, cyclonius 43.4 to 45.2, ishimi 37.8 to 39.2, pax 59.8 to 59.4, echo 54.2 to 52.6). Still open: Ishimi (39.2),
   Cyclonius (45.2), Wispera (41.9), Pax (59.4), Curomo (57.2); steps 2 to 4 not done. Arcade 2v2 baseline and Arcade goldens re-recorded.
+- 2026-11-14, SIM_VERSION 61: step 2 done for Pax and Ishimi only (Arcade 2v2 life 612 to 594, 633 to 671). 32-seed random-partner run (`partners 2 32`,
+  2112 matches), team win rate over all rosters, before to after: pax 59.4 to 54.7, ishimi 39.2 to 41.6; others: curomo 57.2 to 56.9, cyclonius 45.2 to 44.3,
+  echo 52.6 to 52.8, fiara 50.6 to 49.7, lavax 50.6 to 52.0, morblass 50.1 to 51.3, rokcore 51.5 to 51.4, sindarosa 46.4 to 44.8, treenoc 54.9 to 57.6,
+  wispera 41.9 to 42.6. Still open: Wispera (42.6), Ishimi (41.6), Cyclonius (44.3), Sindarosa (44.8), Treenoc (57.6), Curomo (56.9). Arcade 2v2 baseline and Arcade goldens re-recorded.

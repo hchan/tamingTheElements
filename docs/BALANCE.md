@@ -179,6 +179,8 @@ Classic baseline are unchanged (+0.0pp every race); the Arcade goldens were re-r
 
 SIM_VERSION 60 retuned two 2v2 life factors from the 32-seed random-partner run (`partners 2 32`): `ARCADE_2V2_LIFE_PM` curomo 768 (was 800), sindarosa 812 (was 773); team win rate over every roster curomo 59.2 to 57.2, sindarosa 42.6 to 46.4 (ideas/brainstorm/balance-2v2-echo-pax-r37.md).
 
+SIM_VERSION 61 (step 2) retuned two more: `ARCADE_2V2_LIFE_PM` pax 594 (was 612), ishimi 671 (was 633); `partners 2 32` team win rate over every roster pax 59.4 to 54.7, ishimi 39.2 to 41.6 (others moved at most 2.7 pp).
+
 Later versions: 39 added the elemental ability (baselines re-recorded), 40 changed the 2v2/3v3 life table (`ARCADE_2V2_LIFE_PM` lavax 900, wispera 700) and 41 added giant heroes (Rokcore at 2x, hpPm 2100 / damagePm 650 plus the size bonus; see FUN-DESIGN 2.25). The rows below are the SIM_VERSION 38 snapshot; `pnpm balance:compare` against `tests/fixtures/balance` is the current truth.
 
 
