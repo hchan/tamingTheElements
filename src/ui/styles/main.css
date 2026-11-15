@@ -2922,3 +2922,87 @@ body:has(.settingsBar) {
     min-height: 44px;
   }
 }
+
+/* Right-thumb attack control (src/game/app/touch-strike.ts, QA r39 "no visible strike buttons"): two round labelled buttons, Strike 1 and Strike 2, mirroring the stick on the other
+   edge (the left-handed setting swaps them) and sitting at the stick's height, above the canvas action bar. Touch screens only. 56 px targets, see-through while idle like the stick. */
+#touchStrikes {
+  display: none;
+}
+@media (pointer: coarse) {
+  #touchStrikes {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 10px;
+    position: absolute;
+    z-index: 5;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  html[data-touch-side='left'] #touchStrikes {
+    right: auto;
+    left: max(16px, env(safe-area-inset-left));
+    flex-direction: row-reverse;
+  }
+  #touchStrikes .touchStrike {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 64px;
+    height: 64px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    border: 3px solid rgb(255 255 255 / 0.8);
+    background: rgb(150 50 30 / 0.55);
+    color: #fff;
+    font: bold 12px/1.1 Georgia, 'Times New Roman', serif;
+    text-shadow: 0 1px 2px #000;
+    touch-action: none;
+    user-select: none;
+  }
+  #touchStrikes .touchStrike:first-child {
+    margin-bottom: 38px;
+  }
+  #touchStrikes .touchStrikeKey {
+    font-size: 17px;
+  }
+  #touchStrikes .touchStrike:active {
+    background: rgb(200 70 40 / 0.85);
+    border-color: #fff;
+  }
+  #touchStrikes .touchStrike:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+}
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  #touchStrikes {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  html[data-touch-side='left'] #touchStrikes {
+    right: auto;
+    left: max(8px, env(safe-area-inset-left));
+  }
+  #touchStrikes .touchStrike {
+    width: 56px;
+    height: 56px;
+    border-width: 2px;
+    background: rgb(150 50 30 / 0.42);
+  }
+  #touchStrikes .touchStrike:first-child {
+    margin-bottom: 30px;
+  }
+}
+/* Same lift as the stick on the small phone: above the action bar slots, never over them. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  #touchStrikes {
+    bottom: max(8px, calc(env(safe-area-inset-bottom) + 18vh));
+  }
+}

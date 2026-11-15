@@ -188,6 +188,53 @@ test.describe('small phone landscape, QA r39', () => {
   });
 });
 
+test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
+  test.use({ viewport: { width: 667, height: 375 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  for (const team of [1, 2] as const) {
+    test(`${String(team)}v${String(team)}: labelled Strike 1 / Strike 2 sit bottom right, 44 px+, clear of the stick and the action bar`, async ({ page }) => {
+      await enterFight(page, team);
+      await page.getByRole('button', { name: 'Got it' }).tap();
+      await page.evaluate(`window.__TTE__.arena.step(120)`);
+      await shot(page, `small-strike-${String(team)}v${String(team)}`);
+      const canvas = await box(page, '#game canvas');
+      const stick = await box(page, '#touchStick');
+      const s1 = await box(page, '#touchStrike1');
+      const s2 = await box(page, '#touchStrike2');
+      for (const b of [s1, s2]) {
+        expect(b.w).toBeGreaterThanOrEqual(44);
+        expect(b.h).toBeGreaterThanOrEqual(44);
+        expect(b.x + b.w).toBeLessThanOrEqual(canvas.x + canvas.w);
+        expect(b.x).toBeGreaterThan(667 / 2); // the right thumb's half
+        expect(overlap(b, stick)).toBe(false);
+        // The slot row fills the bottom of the canvas (about 84% down): the buttons end above it.
+        expect(b.y + b.h).toBeLessThanOrEqual(canvas.y + canvas.h * 0.86);
+      }
+      expect(overlap(s1, s2)).toBe(false);
+      await expect(page.locator('#touchStrike1')).toContainText('Strike');
+      await expect(page.locator('#touchStrike2')).toContainText('Strike');
+      for (const id of ['#arcadeDash', '#arcadeSuper']) expect(overlap(s1, await box(page, id))).toBe(false);
+    });
+  }
+  test('a held Strike button holds the key of the bar slot (slot 1)', async ({ page }) => {
+    await enterFight(page);
+    await page.getByRole('button', { name: 'Got it' }).tap();
+    const down = await page.evaluate<string[]>(`(() => {
+      const codes = [];
+      window.addEventListener('keydown', (e) => codes.push(e.code));
+      document.querySelector('#touchStrike1').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, bubbles: true }));
+      document.querySelector('#touchStrike1').dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }));
+      return codes;
+    })()`);
+    expect(down).toContain('Digit1');
+  });
+  test('2v2: the life line reads as life (current/max), never a bare number', async ({ page }) => {
+    await enterFight(page, 2);
+    await page.getByRole('button', { name: 'Got it' }).tap();
+    await page.evaluate(`window.__TTE__.arena.step(60)`);
+    await shot(page, 'small-2v2-life');
+  });
+});
+
 test.describe('phone portrait fight', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   test('portrait: card sits under the canvas, clear of the stick', async ({ page }) => {

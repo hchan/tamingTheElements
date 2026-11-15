@@ -30,3 +30,10 @@ e2e subset run 2 result: 36 passed (2.7m), same as run 1.
 - Attack buttons: the strike slots are drawn on the canvas by action-bar.ts (off limits here), so clarity came from the hint text only. A dedicated right-thumb attack button is still open.
 - NOT done: 2v2 HUD bare life numbers. The format lives in Hud.ts/arcade-hud.ts (off limits), not slim-hud.ts/hud-math.ts.
 - Tests: tests/e2e/touch-fight-layout.spec.ts "QA r39" block; tour-select.dom.test.ts updated. Shots: ~/claudetmp/phone-r39/after/.
+
+## Progress (touch-attack agent, 667x375)
+
+- Done: a right-thumb attack control. `src/game/app/touch-strike.ts` adds two round, labelled "Strike 1" / "Strike 2" buttons (bottom right, 56 px, mirrored for left-handed, same height as the stick so they clear the action bar). They hold the same keys as bar slots 1 and 2 (`holdAction` in touch-controls.ts); the bar's boxes and 44 px overlays are unchanged. Mounted in Versus, Tour and Online. Layout and key-hold tests in tests/e2e/touch-fight-layout.spec.ts ("touch attack buttons") and touch-strike.dom.test.ts.
+- Done: 2v2 phone life line. Hud.ts `setSlimLabel` now cuts the hero name first (down to 5 letters, "SIND...") so the life reads "220/220" instead of the bare "SINDAROSA 220"; the bare forms stay only as the last fallback.
+- Shots: ~/claudetmp/touch-attack/before and after (small-strike-1v1/2v2.png, small-2v2-life.png).
+- Open: strike buttons wear the word Strike, not the hero's ability names (Blast / Flame); the bar still shows those.

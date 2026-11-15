@@ -17,6 +17,7 @@ import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-p
 import { raceLabel } from '@ui/screens/arcade-versus';
 import type { ArenaLaunch } from '../scenes/launch';
 import { touchStick } from './touch-stick';
+import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
 import { getUiFlags } from '../platform/flags';
 import { getPrefs } from '../platform/a11y/prefs';
@@ -241,7 +242,7 @@ export function onlineVersusScreen(): Screen {
             },
           };
           game = createGame(holder, launch);
-          holder.append(...inVisualOrder(buttons), touchStick());
+          holder.append(...inVisualOrder(buttons), touchStick(), touchStrikes());
         });
       };
       const handshake = (p: Peer, setup: MatchSetup): void => {

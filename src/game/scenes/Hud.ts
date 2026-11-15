@@ -67,6 +67,8 @@ const SUPER_LABEL_BOOST = 1.95;
 const LIFE_TEXT_SCALES: readonly number[] = [1, 0.85, 0.72, 0.62];
 /** Smallest effective size (CSS px) the HUD life line and labels shrink to on a phone; the name is cut before the text goes smaller. */
 const MIN_PHONE_PX = 11;
+/** Fewest hero-name letters the phone life line keeps (with the ellipsis) before it falls back to a bare number. */
+const MIN_LIFE_NAME = 5;
 
 const TEAMS = [0, 1] as const;
 
@@ -213,7 +215,7 @@ export class Hud extends Phaser.Scene {
           this.drawBar(gfx, bar, side.active, true);
           this.drawTrail(gfx, bar, side.active);
           if (this.arcade.meters[team].full > 0 && !side.active.dead) this.drawSuperRim(gfx, bar);
-          if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active);
+          if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active, side.bench.length > 0);
         } else {
           this.drawBar(gfx, mainBar(x), side.active, true);
           label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
@@ -511,7 +513,7 @@ export class Hud extends Phaser.Scene {
   }
 
   /** The life line under the bar; where the boosted text would run into the SUPER label (phones) it drops the hero name. */
-  private setSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter): void {
+  private setSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter, twoVTwo = false): void {
     const base = (label.getData('baseSize') as number | undefined) ?? parseFloat(String(label.style.fontSize));
     label.setData('baseSize', base);
     const clears = (m: Phaser.GameObjects.Text): boolean => (team === 0 ? label.x + label.width + 6 <= m.x - m.width : label.x - label.width - 6 >= m.x + m.width);
@@ -520,13 +522,22 @@ export class Hud extends Phaser.Scene {
     const k = coreDisplayWidth(this) / 1280;
     const steps = LIFE_TEXT_SCALES.filter((sc) => base * sc * k >= MIN_PHONE_PX || sc === 1);
     for (const sc of steps) {
-      for (const terse of [false, true, 'bare', 'min'] as const) {
+      for (const terse of [false, true] as const) {
         label.setFontSize(Math.round(base * sc)).setText(compactLabel(name, c, false, terse));
         if (!m || clears(m)) return;
       }
     }
     label.setFontSize(Math.round(base * (steps[steps.length - 1] ?? 1)));
     if (!m) return;
+    // QA r39: a bare number ("SINDAROSA 220") does not read as life. Keep "220/220" (current over max) and cut the name first, down to 5 letters ("SINDA...").
+    for (let max = twoVTwo ? name.length - 1 : 0; max >= MIN_LIFE_NAME; max--) {
+      label.setText(compactLabel(shortName(name, max), c, false, true));
+      if (clears(m)) return;
+    }
+    for (const terse of ['bare', 'min'] as const) {
+      label.setText(compactLabel(name, c, false, terse));
+      if (clears(m)) return;
+    }
     for (let max = name.length - 1; max >= 3; max--) {
       label.setText(compactLabel(shortName(name, max), c, false, 'bare'));
       if (clears(m)) return;
