@@ -1,0 +1,193 @@
+{
+ "device": "mps",
+ "diffusers": "0.42.1",
+ "heroes": {
+  "curomo": {
+   "checks": {
+    "hue_diff": 4.8,
+    "hue_new": 215.0,
+    "hue_orig": 219.7,
+    "luma_ratio": 0.938,
+    "ok": true,
+    "sat_ratio": 1.04
+   },
+   "chroma_weight": 0.7,
+   "prompt": "a pale blue-white water serpent dragon with a lavender belly, vivid sapphire, aquamarine and frost white palette, cool light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261144,
+   "strength": 0.38
+  },
+  "cyclonius": {
+   "checks": {
+    "hue_diff": 4.6,
+    "hue_new": 211.2,
+    "hue_orig": 215.8,
+    "luma_ratio": 1.043,
+    "ok": true,
+    "sat_ratio": 0.951
+   },
+   "chroma_weight": 0.7,
+   "prompt": "a swirling blue tornado of sky-blue wind and cyan lightning, two glowing red eyes, pale sky blue, silver-cyan and white glow palette, bright airy light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261205,
+   "strength": 0.38
+  },
+  "echo": {
+   "checks": {
+    "hue_diff": 2.2,
+    "hue_new": 210.9,
+    "hue_orig": 213.1,
+    "luma_ratio": 0.933,
+    "ok": true,
+    "sat_ratio": 1.04
+   },
+   "chroma_weight": 0.7,
+   "prompt": "a pale blue wind spiral with sound-wave rings, two glowing blue eyes, pale sky blue, silver-cyan and white glow palette, bright airy light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261214,
+   "strength": 0.35
+  },
+  "eternalVoid": {
+   "checks": {
+    "hue_diff": 9.7,
+    "hue_new": 258.5,
+    "hue_orig": 248.9,
+    "luma_ratio": 0.977,
+    "ok": true,
+    "sat_ratio": 0.979
+   },
+   "chroma_weight": 0.5,
+   "prompt": "a void entity, a rift of violet energy with magenta tendrils and stars, deep violet, magenta and starlight palette, glowing rim light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261235,
+   "strength": 0.42
+  },
+  "fiara": {
+   "checks": {
+    "hue_diff": 0.4,
+    "hue_new": 24.7,
+    "hue_orig": 24.2,
+    "luma_ratio": 0.876,
+    "ok": true,
+    "sat_ratio": 0.964
+   },
+   "chroma_weight": 0.5,
+   "prompt": "a phoenix of bright gold and orange flame, glowing coals, embers rising, crimson, ember orange and molten gold palette, warm firelight, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261114,
+   "strength": 0.42
+  },
+  "ishimi": {
+   "checks": {
+    "hue_diff": 5.1,
+    "hue_new": 192.0,
+    "hue_orig": 197.1,
+    "luma_ratio": 1.078,
+    "ok": true,
+    "sat_ratio": 0.975
+   },
+   "chroma_weight": 0.5,
+   "prompt": "a turquoise slime creature with two yellow-green glowing eyes, vivid sapphire, aquamarine and frost white palette, cool light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261156,
+   "strength": 0.4
+  },
+  "lavax": {
+   "checks": {
+    "hue_diff": 3.5,
+    "hue_new": 15.2,
+    "hue_orig": 11.7,
+    "luma_ratio": 1.031,
+    "ok": true,
+    "sat_ratio": 0.914
+   },
+   "chroma_weight": 0.5,
+   "prompt": "a beast of obsidian with bright molten gold-orange magma rivers, crimson, ember orange and molten gold palette, warm firelight, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261125,
+   "strength": 0.42
+  },
+  "morblass": {
+   "checks": {
+    "hue_diff": 2.9,
+    "hue_new": 207.2,
+    "hue_orig": 210.1,
+    "luma_ratio": 0.989,
+    "ok": true,
+    "sat_ratio": 0.996
+   },
+   "chroma_weight": 0.5,
+   "prompt": "an ice beast with a clear face, blue ice and icicles, vivid sapphire, aquamarine and frost white palette, cool light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261165,
+   "strength": 0.3
+  },
+  "pax": {
+   "checks": {
+    "hue_diff": 10.9,
+    "hue_new": 43.3,
+    "hue_orig": 32.4,
+    "luma_ratio": 0.942,
+    "ok": true,
+    "sat_ratio": 1.16
+   },
+   "chroma_weight": 0.5,
+   "prompt": "an earth colossus of mossy granite boulders with glowing ember cracks, warm ochre, moss green and amber glow palette, golden light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261176,
+   "strength": 0.42
+  },
+  "rokcore": {
+   "checks": {
+    "hue_diff": 6.1,
+    "hue_new": 38.8,
+    "hue_orig": 32.7,
+    "luma_ratio": 0.984,
+    "ok": true,
+    "sat_ratio": 1.139
+   },
+   "chroma_weight": 0.5,
+   "prompt": "an earth golem of ancient rock plates and moss, amber core, warm ochre, moss green and amber glow palette, golden light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261186,
+   "strength": 0.42
+  },
+  "sindarosa": {
+   "checks": {
+    "hue_diff": 0.8,
+    "hue_new": 7.2,
+    "hue_orig": 6.4,
+    "luma_ratio": 0.967,
+    "ok": true,
+    "sat_ratio": 1.024
+   },
+   "chroma_weight": 0.6,
+   "prompt": "a crimson and ember-red fire dragon, crimson, ember orange and molten gold palette, warm firelight, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261134,
+   "strength": 0.4
+  },
+  "treenoc": {
+   "checks": {
+    "hue_diff": 2.9,
+    "hue_new": 43.4,
+    "hue_orig": 40.5,
+    "luma_ratio": 0.887,
+    "ok": true,
+    "sat_ratio": 1.434
+   },
+   "chroma_weight": 0.5,
+   "prompt": "a gnarled tree beast of living bark, twisted roots and thorned vines, warm ochre, moss green and amber glow palette, golden light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261196,
+   "strength": 0.42
+  },
+  "wispera": {
+   "checks": {
+    "hue_diff": 4.8,
+    "hue_new": 215.4,
+    "hue_orig": 220.3,
+    "luma_ratio": 1.286,
+    "ok": true,
+    "sat_ratio": 0.841
+   },
+   "chroma_weight": 0.7,
+   "prompt": "a small glowing blue wisp of light and mist, pale sky blue, silver-cyan and white glow palette, bright airy light, medieval fantasy oil painting, gothic, weathered, painterly brushwork, luminous, rich saturated colour, soft bright light",
+   "seed": 20261225,
+   "strength": 0.28
+  }
+ },
+ "model": "stabilityai/sdxl-turbo",
+ "steps": 8,
+ "style": "a",
+ "torch": "2.15.0",
+ "transformers": "5.22.2"
+}
