@@ -40,6 +40,8 @@ const GOLD = 0xb39653;
 const ASH = 0xcfc4a8;
 const CALL_Y = 210;
 const CALL_PX = 46;
+/** Least gap between the call's text and the left or right screen edge, in Hud px. */
+export const CALL_MARGIN = 16;
 const LINE_PX = 16;
 
 export interface TagPrefs {
@@ -54,6 +56,8 @@ export interface TagState {
   /** The call while it shows ('' otherwise) and its scale; the live entrance flashes. */
   readonly call: string;
   readonly callScale: number;
+  /** The call's left and right edges in Hud px at its current scale (0, 0 when it is hidden): always inside 0..1280. */
+  readonly callSpan: readonly [number, number];
   readonly flashes: number;
   readonly ko: boolean;
 }
@@ -224,25 +228,33 @@ export function mountTagView(
     if (held) callFrom += dt;
     const age = now - callFrom;
     fx.clear();
-    if (call?.visible && callAt && !held) {
+    if (call?.visible && callAt) {
       view.forEachCharacter((c) => {
         if (c.id === callAt?.id) callAt = { id: c.id, x: c.x + c.w / 2, y: c.y };
       });
       // World to the Hud's 1280x720 frame, then clamped under the top bar and inside the screen.
       const wv = (arena.cameras as Phaser.Cameras.Scene2D.CameraManager | undefined)?.main.worldView;
       if (wv) {
-        const sx = Math.max(120, Math.min(1160, ((callAt.x - wv.x) / (wv.width || 1)) * 1280));
+        const sx = ((callAt.x - wv.x) / (wv.width || 1)) * 1280;
         const sy = Math.max(SLIM_H + 50, ((callAt.y - wv.y) / (wv.height || 1)) * 720 - 120);
-        call.setPosition(sx, sy);
+        call.setPosition(Math.max(120, Math.min(1160, sx)), sy);
       }
-      fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);
-      fx.fillStyle(callKo ? GOLD : 0xffffff, 1).fillTriangle(callAt.x - 12, callAt.y - 22, callAt.x + 12, callAt.y - 22, callAt.x, callAt.y - 8);
+      // The chevron waits with the call (held under a banner); the text is placed (and clamped) every frame, held or not.
+      if (!held) fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);
+      if (!held) fx.fillStyle(callKo ? GOLD : 0xffffff, 1).fillTriangle(callAt.x - 12, callAt.y - 22, callAt.x + 12, callAt.y - 22, callAt.x, callAt.y - 8);
     }
     if (call?.visible && held) call.setAlpha(0).setScale(callPose(0, callReduced).scale);
     else if (call?.visible) {
       const pose = callPose(age, callReduced);
       if (age >= CALL_TICKS) call.setVisible(false);
       else call.setScale(pose.scale).setAlpha(pose.alpha);
+    }
+    // Keep the whole text on screen (at its live scale, so the entrance pop-in is covered too): a long name near either edge slides in.
+    if (call?.visible) {
+      const room = 1280 - 2 * CALL_MARGIN;
+      if (call.displayWidth > room) call.setScale(call.scaleX * (room / call.displayWidth));
+      const half = call.displayWidth / 2;
+      call.x = Math.max(CALL_MARGIN + half, Math.min(1280 - CALL_MARGIN - half, call.x));
     }
     for (let i = flashes.length - 1; i >= 0; i--) {
       const f = flashes[i];
@@ -327,6 +339,7 @@ export function mountTagView(
     draw();
     return {
       lines: lines.map((l) => [...l]), call: parts?.call.visible ? parts.call.text : '', callScale: parts?.call.scaleX ?? 1,
+      callSpan: parts?.call.visible ? [parts.call.x - parts.call.displayWidth / 2, parts.call.x + parts.call.displayWidth / 2] : [0, 0],
       flashes: flashes.length, ko: flashes.some((f) => f.ko),
     };
   });

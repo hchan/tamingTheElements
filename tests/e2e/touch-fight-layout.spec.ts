@@ -53,7 +53,7 @@ test.describe('phone landscape fight', () => {
     const card = await box(page, '#firstRunHint');
     const stick = await box(page, '#touchStick');
     expect(overlap(card, stick)).toBe(false);
-    expect(card.y + card.h).toBeLessThan(390 * 0.8); // above the TAG caption and the action bar
+    expect(card.y + card.h).toBeLessThan(390 * 0.85); // hugs the action bar (QA r36), never over it
     await page.getByRole('button', { name: 'Got it' }).tap();
     await expect(page.locator('#firstRunHint')).toHaveCount(0);
     await shot(page, 'land-clear');
@@ -64,7 +64,8 @@ test.describe('phone landscape fight', () => {
     await enterFight(page);
     const card = await box(page, '#firstRunHint');
     expect(card.y).toBeGreaterThanOrEqual(390 * 0.58); // below the name banners, ROUND 1 and the fighters' feet
-    expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.82); // above the action bar
+    expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.85); // above the action bar, low enough to clear the fighters (QA r36)
+    expect(card.y).toBeGreaterThanOrEqual(390 * 0.66);
   });
   test('the first-run card sits between the fighters and is narrow enough to clear both feet (QA r33)', async ({ page }) => {
     await enterFight(page);
@@ -119,6 +120,7 @@ test.describe('small phone landscape fight', () => {
     const card = await box(page, '#firstRunHint');
     expect(card.w).toBeLessThanOrEqual(667 * 0.4);
     expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.84);
+    expect(card.y).toBeGreaterThanOrEqual(375 * 0.66); // QA r36: below the fighters' feet, flush above the bar
     expect((await box(page, '#firstRunHint .firstRunDone')).h).toBeGreaterThanOrEqual(44);
   });
 });
