@@ -1,4 +1,4 @@
-import { TRAP_BOX_PX, TRAP_MIN_GAP_PX, TRAP_PLACE_PX, TRAP_TRIGGER_PX, TrapKind } from '../../data/arcade';
+import { CcKind, QUICK_RISE_WINDOW_TICKS, TRAP_BOX_PX, TRAP_MIN_GAP_PX, TRAP_PLACE_PX, TRAP_TRIGGER_PX, TrapKind } from '../../data/arcade';
 import type { Aabb } from '../../math/aabb';
 import { Cmd, type Command } from '../../sim/commands';
 import type { ArcadeView, ShotView, TrapView } from '../agent';
@@ -233,7 +233,7 @@ export function elementalSensible(level: ArcadeAiLevel, a: ArcadeView, pm: numbe
  * or slowed. No draw.
  */
 export function cleanseSensible(level: ArcadeAiLevel, a: ArcadeView): boolean {
-  return level !== AI_EASY && a.cleanseIn === 0 && (a.selfRooted > 0 || a.selfSlowed);
+  return level !== AI_EASY && a.cleanseIn === 0 && (a.selfRooted > 0 || a.selfSlowed || a.selfCc?.kind === CcKind.silenced);
 }
 
 /**
@@ -461,5 +461,51 @@ export function hazardKeepOut(self: Aabb, hz: Aabb, move: Command): Command {
   if (inHazardBox(self, hz, stepX(out), 0)) out &= ~(Cmd.left | Cmd.right);
   if (inHazardBox(self, hz, 0, stepY(out))) out &= ~(Cmd.up | Cmd.down);
   if (inHazardBox(self, hz, stepX(out), stepY(out))) out &= ~(Cmd.up | Cmd.down);
+  return out;
+}
+
+/**
+ * Crowd control (flag withCrowdControl; every helper is a no-op while `a.selfCc` / `a.foeCc` are absent, so a flag-off
+ * match decides as before). No draw, no memory: they read the observation and the last command only.
+ *
+ * `ccEscape`: the command that gets the hero out of a daze or knockdown, or -1 for none. A dazed hero mashes (Normal one
+ * button, Hard two alternating so every tick is a new press; Easy never): each fresh press takes ticks off. A downed hero
+ * presses Dash inside the quick-rise window (Hard at once, Normal from the 2nd tick; Easy never). Primary with Guard
+ * alternate, never primary with secondary (that pair is a super chord).
+ */
+export function ccEscape(level: ArcadeAiLevel, a: ArcadeView): number {
+  const cc = a.selfCc;
+  if (cc === undefined || level === AI_EASY) return -1;
+  if (cc.kind === CcKind.daze) {
+    const hard = level >= AI_HARD;
+    if ((a.prevCmd & Cmd.primary) === 0) return Cmd.primary;
+    return hard ? Cmd.guard : 0;
+  }
+  if (cc.kind === CcKind.downed && cc.age <= QUICK_RISE_WINDOW_TICKS && (a.prevCmd & Cmd.dash) === 0) {
+    return cc.age >= (level >= AI_HARD ? 0 : 2) ? Cmd.dash : -1;
+  }
+  return -1;
+}
+
+/**
+ * `cmd` without a press of an ability whose CC rider is wasted on the foe (diminishing returns: it is immune to that kind).
+ * A pure-CC slot (a Tornado: no damage) is dropped; a damaging one swaps to the other slot when that is ready and not
+ * wasted too (the ability still fires, the aim is the foe either way); else it stays. Normal and Hard only.
+ */
+export function ccAvoidImmune(level: ArcadeAiLevel, a: ArcadeView, cmd: Command, ready: readonly [boolean, boolean]): Command {
+  const kinds = a.slotCc;
+  const immune = a.foeCcImmune ?? 0;
+  if (kinds === undefined || immune === 0 || level === AI_EASY) return cmd;
+  const wasted = (k: 0 | 1): boolean => kinds[k] !== 0 && (immune & (1 << kinds[k])) !== 0;
+  const bits = [Cmd.primary, Cmd.secondary] as const;
+  let out = cmd;
+  for (const k of [0, 1] as const) {
+    if ((cmd & bits[k]) === 0 || !wasted(k)) continue;
+    const o = k === 0 ? 1 : 0;
+    out &= ~bits[k];
+    if (kinds[k] === CcKind.daze) continue;
+    if (ready[o] && !wasted(o)) out |= bits[o];
+    else out |= bits[k];
+  }
   return out;
 }

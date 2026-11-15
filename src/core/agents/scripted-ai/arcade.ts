@@ -14,7 +14,7 @@ import {
   AI_EASY, AI_NORMAL, ARCADE_AI_DODGE_AT, ARCADE_AI_EASY_TRAP_BLIND, ARCADE_AI_FAR_PX, ARCADE_AI_GUARD_AT, ARCADE_AI_KNOBS,
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
-  centreDist, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
+  centreDist, ccAvoidImmune, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
   trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, zoneStep, type ArcadeAiLevel, type Style,
 } from './arcade-ai';
 
@@ -266,7 +266,12 @@ export class ArcadeTactics {
     // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
     const released = (zoned & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? zoned & ~Cmd.charge : zoned;
     const withElem = this.elemental(view, a) ? released | Cmd.elemental : released;
-    return this.cleanse(view, a) ? withElem | Cmd.cleanse : withElem;
+    const full = this.cleanse(view, a) ? withElem | Cmd.cleanse : withElem;
+    // Crowd control (flag withCrowdControl; a no-op without `selfCc` / `slotCc`): mash out of a daze, quick-rise from a knockdown,
+    // and never press an ability whose CC rider the foe is immune to.
+    const escape = ccEscape(this.level, a);
+    if (escape !== -1) return escape;
+    return ccAvoidImmune(this.level, a, full, [slotReady(view, 0, a.snagSlot), slotReady(view, 1, a.snagSlot)]);
   }
 
   /**
