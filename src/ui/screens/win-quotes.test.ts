@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LOSS_QUOTES, WIN_QUOTES, lossQuote, quoteIndex, winQuote } from './win-quotes';
 
-const HEROES = ['Curomo', 'Cyclonius', 'Echo', 'Fiara', 'Hyalia', 'Brazgor', 'Glimmaw', 'Durrok', 'Zephra', 'Ishimi', 'Kindrel', 'Lavax', 'Morblass', 'Nykra', 'Pax', 'Quarrak', 'Rokcore', 'Sindarosa', 'Treenoc', 'Wispera'];
+const HEROES = ['Curomo', 'Cyclonius', 'Echo', 'Fiara', 'Hyalia', 'Brazgor', 'Glimmaw', 'Durrok', 'Zephra', 'Ouroth', 'Abyssor', 'Vortigal', 'Umbrel', 'Ishimi', 'Kindrel', 'Lavax', 'Morblass', 'Nykra', 'Pax', 'Quarrak', 'Rokcore', 'Sindarosa', 'Treenoc', 'Wispera'];
 
 describe('win quotes', () => {
   it('every hero in the text table has 2-3 short quotes', () => {

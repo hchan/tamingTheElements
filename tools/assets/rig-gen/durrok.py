@@ -22,7 +22,7 @@ G = {
                      [(72, 58), (79, 52), (79, 44), (74, 50)]], joint=(62, 52), z=7, parent="torso"),
  "armF": dict(polys=[ribbon_poly([(54, 60), (56, 69), (58, 77)], 8, 6.4)], joint=(54, 60), z=8, parent="torso"),
 }
-P = dict(body=PLATE, cells=8, mode="plates", facet=0.3, rag=1.8, bevel=22.0, edge=(18, 14, 10), vert=1.2,
+P = dict(fringe=0.45, body=PLATE, cells=8, mode="plates", facet=0.3, rag=1.8, bevel=22.0, edge=(18, 14, 10), vert=1.2,
          sparks=None,
          parts={
    "tail": dict(cells=0, shade=-0.1),

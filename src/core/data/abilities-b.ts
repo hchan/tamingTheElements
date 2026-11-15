@@ -26,6 +26,14 @@ export interface AbilityEffectParams {
   readonly thornsDamage?: number;
   /** Melee box is centred on the caster instead of extending along the aim (a burst, like ground-shock). */
   readonly centred?: boolean;
+  /** Arcade only (roster batch 3): the hit beats Guard and Parry (like a super), holds the victim and throws it `grabThrowPx` px away. */
+  readonly grab?: boolean;
+  readonly grabThrowPx?: number;
+  /** Arcade only: a hit drags the victim this many px back toward the caster (Abyssor's abyssal-pull). */
+  readonly pullPx?: number;
+  /** Arcade only: a hit leaves a wound: `woundDamage` every WOUND_PULSE_TICKS for `woundTicks` ticks (systems/arcade/wound.ts). */
+  readonly woundDamage?: number;
+  readonly woundTicks?: number;
 }
 
 export type AbilityDefB = AbilityDef & AbilityEffectParams;
@@ -63,6 +71,11 @@ export interface AbilityDefBSrc {
   readonly thornsDamage?: number;
   /** Melee box is centred on the caster instead of extending along the aim (a burst, like ground-shock). */
   readonly centred?: boolean;
+  readonly grab?: boolean;
+  readonly grabThrowPx?: number;
+  readonly pullPx?: number;
+  readonly woundDamage?: number;
+  readonly woundTicks?: number;
 }
 
 export function abilityDefB(s: AbilityDefBSrc): AbilityDefB {

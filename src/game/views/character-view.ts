@@ -111,7 +111,7 @@ export function frameName(set: FrameSet, i: number): string {
 }
 
 /** Pale air beings that vanish on the dark floors: they get a soft additive ground glow under the sprite (display only). */
-export const GLOW_SPRITES: ReadonlySet<string> = new Set(['wispera', 'echo', 'lavax', 'hyalia', 'zephra']);
+export const GLOW_SPRITES: ReadonlySet<string> = new Set(['wispera', 'echo', 'lavax', 'hyalia', 'zephra', 'umbrel']);
 /** Lavax is near-black basalt: its light is a warm molten gold, so it reads as lit from within on the fire and earth floors. */
 const GLOW_TINT_BY_SPRITE: Readonly<Record<string, number>> = { lavax: 0xffa850 };
 const GLOW_KEY = 'hero-glow';

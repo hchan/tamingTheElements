@@ -6,6 +6,7 @@ const STYLE_ROWS: Readonly<Record<string, HeroStyle>> = {
   curomo: 'melee', pax: 'melee', treenoc: 'melee', echo: 'melee', wispera: 'melee',
   kindrel: 'melee', nykra: 'melee', quarrak: 'ranged', hyalia: 'ranged',
   brazgor: 'melee', glimmaw: 'ranged', durrok: 'melee', zephra: 'ranged',
+  ouroth: 'melee', abyssor: 'melee', vortigal: 'melee', umbrel: 'ranged',
   fiara: 'ranged', lavax: 'ranged', sindarosa: 'ranged', ishimi: 'ranged', morblass: 'ranged', rokcore: 'ranged', cyclonius: 'ranged',
 };
 

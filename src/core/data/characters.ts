@@ -45,6 +45,11 @@ export const ROSTER_24_CHARACTERS: readonly CharacterDef[] = Object.freeze([
   def('glimmaw', { element: 'water', alignment: 'neutral', maxHealth: 95, speed: 6, sprite: 'glimmaw' }, ['lure-orb', 'abyss-flash']),
   def('durrok', { element: 'earth', alignment: 'neutral', maxHealth: 120, speed: 7, sprite: 'durrok' }, ['tusk-gore', 'bristle-stomp']),
   def('zephra', { element: 'air', alignment: 'neutral', maxHealth: 75, speed: 8, sprite: 'zephra' }, ['static-mote', 'skitter']),
+  // Batch 3 (SIM_VERSION 74): Ouroth, Abyssor, Vortigal, Umbrel.
+  def('ouroth', { element: 'fire', alignment: 'neutral', maxHealth: 130, speed: 6, sprite: 'ouroth' }, ['wyrm-coil', 'scorch-breath']),
+  def('abyssor', { element: 'water', alignment: 'neutral', maxHealth: 140, speed: 4, sprite: 'abyssor' }, ['tentacle-lash', 'abyssal-pull']),
+  def('vortigal', { element: 'air', alignment: 'neutral', maxHealth: 115, speed: 7, sprite: 'vortigal' }, ['stoop', 'talon-rake']),
+  def('umbrel', { element: 'earth', alignment: 'neutral', maxHealth: 100, speed: 5, sprite: 'umbrel' }, ['spore-burst', 'mycelium-mend']),
 ]);
 
 /** Every character the sim knows: the legacy 14, then the appended Arcade heroes. */

@@ -24,6 +24,8 @@ export const StatusId = {
   dazed: 10, iced: 11, downed: 12, silenced: 13, ccWard: 14, kindled: 15,
   /** Roster batch 2 (SIM_VERSION 73): Brazgor's molten-hide, rock-armour style armour plus thorns on melee attackers. */
   thorns: 16,
+  /** Roster batch 3 (SIM_VERSION 74): a damage-over-time wound (Vortigal's talon-rake, Umbrel's spore-burst); see systems/arcade/wound.ts. */
+  wound: 17,
 } as const;
 export type StatusIdValue = (typeof StatusId)[keyof typeof StatusId];
 

@@ -32,6 +32,15 @@ const ALIAS: Readonly<Record<string, SoundId>> = {
   bristleStomp: 'rockPellet',
   staticMote: 'laser2',
   skitter: 'whoosh',
+  // Batch 3.
+  wyrmCoil: 'rockBullet',
+  scorchBreath: 'fireBreath',
+  tentacleLash: 'whoosh',
+  abyssalPull: 'sonarBlast',
+  stoop: 'whoosh',
+  talonRake: 'stick',
+  sporeBurst: 'slimeBlast',
+  myceliumMend: 'fireHeal',
 };
 
 const IDS: ReadonlySet<string> = new Set(manifest.sounds.map((s) => s.id));

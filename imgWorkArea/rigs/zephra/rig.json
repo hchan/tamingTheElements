@@ -10,35 +10,35 @@
       "parent": "torso",
       "png": "tail.png",
       "pivot": [
-        15,
-        6
+        18,
+        8
       ],
       "at": [
-        -6,
-        10
+        -9,
+        11
       ],
       "z": 1,
       "views": {
         "SE": {
           "png": "tail_se.png",
           "pivot": [
-            12,
-            4
+            19,
+            8
           ],
           "at": [
-            -5,
-            9
+            -7,
+            10
           ]
         },
         "NE": {
           "png": "tail_ne.png",
           "pivot": [
-            14,
+            17,
             6
           ],
           "at": [
-            -5,
-            10
+            -7,
+            11
           ]
         }
       }
@@ -48,35 +48,35 @@
       "parent": "torso",
       "png": "armB.png",
       "pivot": [
-        9,
-        7
+        11,
+        5
       ],
       "at": [
-        6,
-        10
+        9,
+        11
       ],
       "z": 2,
       "views": {
         "SE": {
           "png": "armB_se.png",
           "pivot": [
-            8,
-            5
+            11,
+            7
           ],
           "at": [
-            8,
-            9
+            11,
+            10
           ]
         },
         "NE": {
           "png": "armB_ne.png",
           "pivot": [
-            8,
+            11,
             7
           ],
           "at": [
-            10,
-            10
+            13,
+            11
           ]
         }
       }
@@ -85,35 +85,35 @@
       "id": "torso",
       "png": "torso.png",
       "pivot": [
-        18,
+        26,
         19
       ],
       "at": [
         40,
-        42
+        38
       ],
       "z": 5,
       "views": {
         "SE": {
           "png": "torso_se.png",
           "pivot": [
-            20,
-            19
+            25,
+            20
           ],
           "at": [
             41,
-            44
+            40
           ]
         },
         "NE": {
           "png": "torso_ne.png",
           "pivot": [
-            19,
-            18
+            26,
+            19
           ],
           "at": [
             38,
-            41
+            37
           ]
         }
       }
@@ -123,8 +123,8 @@
       "parent": "torso",
       "png": "head.png",
       "pivot": [
-        13,
-        14
+        19,
+        19
       ],
       "at": [
         -2,
@@ -135,19 +135,19 @@
         "SE": {
           "png": "head_se.png",
           "pivot": [
-            13,
-            11
+            21,
+            19
           ],
           "at": [
-            -8,
+            -7,
             0
           ]
         },
         "NE": {
           "png": "head_ne.png",
           "pivot": [
-            13,
-            13
+            14,
+            14
           ],
           "at": [
             -3,
@@ -161,35 +161,35 @@
       "parent": "torso",
       "png": "armF.png",
       "pivot": [
-        11,
-        1
+        13,
+        8
       ],
       "at": [
         0,
-        12
+        14
       ],
       "z": 8,
       "views": {
         "SE": {
           "png": "armF_se.png",
           "pivot": [
-            11,
-            5
+            13,
+            6
           ],
           "at": [
             -4,
-            11
+            12
           ]
         },
         "NE": {
           "png": "armF_ne.png",
           "pivot": [
-            8,
-            6
+            14,
+            5
           ],
           "at": [
             3,
-            12
+            13
           ]
         }
       }

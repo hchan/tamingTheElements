@@ -33,6 +33,11 @@ export const CHARACTER_SIZE: Readonly<Record<string, number>> = {
   glimmaw: 90,
   durrok: 120,
   zephra: 60,
+  // Batch 3: a long fire wyrm (box below), a huge kraken, a medium raptor, a medium fungus.
+  ouroth: 100,
+  abyssor: 170,
+  vortigal: 150,
+  umbrel: 110,
 };
 
 /**
@@ -42,6 +47,7 @@ export const CHARACTER_SIZE: Readonly<Record<string, number>> = {
  */
 export const CHARACTER_BOX: Readonly<Record<string, readonly [number, number]>> = {
   hyalia: [100, 160],
+  ouroth: [200, 90],
 };
 
 /** Per 1x of extra size (`size - 100` = 100): life +450 pm, damage +120 pm, knockback weight +600 pm, walk and dash speed -280 pm. */

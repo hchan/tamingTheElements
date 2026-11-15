@@ -65,7 +65,7 @@ describe('resolveFrame: fallback order', () => {
   it('the shipped manifest has only the Fiara, Pax, Treenoc, Morblass, Rokcore, Curomo, Lavax, Sindarosa, Wispera, Cyclonius, Ishimi, Echo, Kindrel, Nykra, Quarrak, Hyalia, Brazgor, Glimmaw, Durrok and Zephra atlases: every other character resolves to legacy, they have art for idle, walk and cast only', () => {
     const shipped = createFrameResolver(generatedSheets);
     for (const s of generatedSheets.sheets) {
-      if (s.sprite === 'fiara' || s.sprite === 'pax' || s.sprite === 'treenoc' || s.sprite === 'morblass' || s.sprite === 'rokcore' || s.sprite === 'curomo' || s.sprite === 'lavax' || s.sprite === 'sindarosa' || s.sprite === 'wispera' || s.sprite === 'cyclonius' || s.sprite === 'ishimi' || s.sprite === 'echo' || s.sprite === 'kindrel' || s.sprite === 'nykra' || s.sprite === 'quarrak' || s.sprite === 'hyalia' || s.sprite === 'brazgor' || s.sprite === 'glimmaw' || s.sprite === 'durrok' || s.sprite === 'zephra') continue;
+      if (s.sprite === 'fiara' || s.sprite === 'pax' || s.sprite === 'treenoc' || s.sprite === 'morblass' || s.sprite === 'rokcore' || s.sprite === 'curomo' || s.sprite === 'lavax' || s.sprite === 'sindarosa' || s.sprite === 'wispera' || s.sprite === 'cyclonius' || s.sprite === 'ishimi' || s.sprite === 'echo' || s.sprite === 'kindrel' || s.sprite === 'nykra' || s.sprite === 'quarrak' || s.sprite === 'hyalia' || s.sprite === 'brazgor' || s.sprite === 'glimmaw' || s.sprite === 'durrok' || s.sprite === 'zephra' || s.sprite === 'ouroth' || s.sprite === 'abyssor' || s.sprite === 'vortigal' || s.sprite === 'umbrel') continue;
       expect(shipped.hasSheet(s.sprite)).toBe(false);
       for (const [a] of ACTIONS) for (let d = 0; d < 8; d++) expect(shipped.resolveFrame(s.sprite, a, d, 0).source).toBe('legacy');
     }
@@ -81,8 +81,8 @@ describe('resolveFrame: fallback order', () => {
     expect(shipped.hasSheet('cyclonius')).toBe(true);
     expect(shipped.hasSheet('ishimi')).toBe(true);
     expect(shipped.hasSheet('echo')).toBe(true);
-    for (const sp of ['kindrel', 'nykra', 'quarrak', 'hyalia', 'brazgor', 'glimmaw', 'durrok', 'zephra']) expect(shipped.hasSheet(sp)).toBe(true);
-    for (const sp of ['fiara', 'pax', 'treenoc', 'morblass', 'rokcore', 'curomo', 'lavax', 'sindarosa', 'wispera', 'cyclonius', 'ishimi', 'echo', 'kindrel', 'nykra', 'quarrak', 'hyalia', 'brazgor', 'glimmaw', 'durrok', 'zephra']) for (const d of [0, 1, 7]) expect(shipped.resolveFrame(sp, 'idle', d, 0).source).not.toBe('legacy');
+    for (const sp of ['kindrel', 'nykra', 'quarrak', 'hyalia', 'brazgor', 'glimmaw', 'durrok', 'zephra', 'ouroth', 'abyssor', 'vortigal', 'umbrel']) expect(shipped.hasSheet(sp)).toBe(true);
+    for (const sp of ['fiara', 'pax', 'treenoc', 'morblass', 'rokcore', 'curomo', 'lavax', 'sindarosa', 'wispera', 'cyclonius', 'ishimi', 'echo', 'kindrel', 'nykra', 'quarrak', 'hyalia', 'brazgor', 'glimmaw', 'durrok', 'zephra', 'ouroth', 'abyssor', 'vortigal', 'umbrel']) for (const d of [0, 1, 7]) expect(shipped.resolveFrame(sp, 'idle', d, 0).source).not.toBe('legacy');
     expect(shipped.resolveFrame('fiara', 'ko', 0, 0).source).toBe('legacy');
 });
 });

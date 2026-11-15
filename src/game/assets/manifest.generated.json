@@ -495,6 +495,15 @@
         80
       ]
     },
+    "abyssalPull": {
+      "url": "img/fx/abyssalPull.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "bellPulse": {
       "url": "img/fx/bellPulse.png",
       "coords": [
@@ -720,6 +729,15 @@
         80
       ]
     },
+    "myceliumMend": {
+      "url": "img/fx/myceliumMend.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "rockPelletLoop": {
       "url": "img/fx/loop/rockPelletLoop.png",
       "coords": [
@@ -727,6 +745,15 @@
         0,
         160,
         38
+      ]
+    },
+    "scorchBreath": {
+      "url": "img/fx/scorchBreath.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
       ]
     },
     "shardsOfIceLoop": {
@@ -765,6 +792,15 @@
         76
       ]
     },
+    "sporeBurst": {
+      "url": "img/fx/sporeBurst.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ]
+    },
     "staticMote": {
       "url": "img/fx/staticMote.png",
       "coords": [
@@ -783,6 +819,33 @@
         80
       ]
     },
+    "stoop": {
+      "url": "img/fx/stoop.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
+      ]
+    },
+    "talonRake": {
+      "url": "img/fx/talonRake.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
+      ]
+    },
+    "tentacleLash": {
+      "url": "img/fx/tentacleLash.png",
+      "coords": [
+        0,
+        0,
+        80,
+        60
+      ]
+    },
     "tuskGore": {
       "url": "img/fx/tuskGore.png",
       "coords": [
@@ -799,6 +862,15 @@
         0,
         108,
         56
+      ]
+    },
+    "wyrmCoil": {
+      "url": "img/fx/wyrmCoil.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
       ]
     }
   },
@@ -3290,6 +3362,52 @@
         ]
       ]
     },
+    "abyssor": {
+      "url": "img/map/abyssor.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/abyssorLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
     "brazgor": {
       "url": "img/map/brazgor.png",
       "coords": [
@@ -3566,6 +3684,52 @@
         ]
       ]
     },
+    "ouroth": {
+      "url": "img/map/ouroth.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/ourothLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
     "quarrak": {
       "url": "img/map/quarrak.png",
       "coords": [
@@ -3575,6 +3739,98 @@
         80
       ],
       "urlLarge": "img/map/quarrakLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "umbrel": {
+      "url": "img/map/umbrel.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/umbrelLarge.png",
+      "leftFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ],
+      "rightFrames": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          160,
+          0
+        ],
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    "vortigal": {
+      "url": "img/map/vortigal.png",
+      "coords": [
+        0,
+        0,
+        80,
+        80
+      ],
+      "urlLarge": "img/map/vortigalLarge.png",
       "leftFrames": [
         [
           0,

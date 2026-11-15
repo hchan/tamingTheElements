@@ -39,7 +39,7 @@ describe('CastDetector', () => {
   });
 });
 
-const ROSTER_24_SPRITES = ['emberBite', 'cinderSpray', 'hoofCrash', 'kelpLash', 'boulderRoll', 'stingingFilament', 'bellPulse', 'forgeGore', 'moltenHide', 'lureOrb', 'abyssFlash', 'tuskGore', 'bristleStomp', 'staticMote', 'skitter'];
+const ROSTER_24_SPRITES = ['emberBite', 'cinderSpray', 'hoofCrash', 'kelpLash', 'boulderRoll', 'stingingFilament', 'bellPulse', 'forgeGore', 'moltenHide', 'lureOrb', 'abyssFlash', 'tuskGore', 'bristleStomp', 'staticMote', 'skitter', 'wyrmCoil', 'scorchBreath', 'tentacleLash', 'abyssalPull', 'stoop', 'talonRake', 'sporeBurst', 'myceliumMend'];
 
 describe('cast sounds per ability vs legacy abilities.js', () => {
   it('every roster-24 ability has a cast sound', () => {

@@ -35,6 +35,14 @@ Units: damage is base (Classic) damage; DPS = damage / cooldown (a ceiling, not 
 | Durrok | Bristle Stomp | melee | 15 dmg, 0.8 s cd, short stomp | New hero, see Forge Gore | Generated art |
 | Zephra (air, ranged) | Static Mote | range | 8 dmg, 0.4 s cd, speed 10, max 3 | New hero, see Forge Gore | Generated art |
 | Zephra | Skitter | buff | no damage, hops 140 px backward (lunge-only cast) | New hero, see Forge Gore | Generated art |
+| Ouroth (fire, melee) | Wyrm Coil | melee | roster-24 batch 3: 22 dmg, 2.5 s cd, a grab: beats Guard and Parry, holds then throws the foe 160 px | New hero, fitted in SIM_VERSION 74 | Generated art, see fx batch k (b3) |
+| Ouroth | Scorch Breath | melee | 14 dmg, 1.8 s cd, a long 130 px jet | New hero, see Wyrm Coil | Generated art |
+| Abyssor (water, melee) | Tentacle Lash | melee | 18 dmg, 1.2 s cd, 160 px reach | New hero, see Wyrm Coil | Generated art |
+| Abyssor | Abyssal Pull | range | 8 dmg, 6 s cd, speed 14, stops at 280 px and drags the foe 120 px toward Abyssor | New hero, see Wyrm Coil | Generated art |
+| Vortigal (air, melee) | Stoop | melee | 22 dmg, 3.5 s cd, a 200 px diving lunge | New hero, see Wyrm Coil | Generated art |
+| Vortigal | Talon Rake | melee | 12 dmg, 0.9 s cd, leaves a wound: 3 dmg every 30 ticks for 90 ticks (new status id 17) | New hero, see Wyrm Coil | Generated art |
+| Umbrel (earth, ranged) | Spore Burst | range | 6 dmg, 1.4 s cd, speed 5, leaves a wound: 4 dmg every 30 ticks for 90 ticks | New hero, see Wyrm Coil | Generated art |
+| Umbrel | Mycelium Mend | heal | heals 8, 30 s cd | New hero, see Wyrm Coil | Generated art |
 | Ishimi (water, 100, 7) | Circus of Slime | omni | 16 dmg x up to 4, 10 s cd, speed 5, 40x20; 6.4 DPS | 1.4% Classic, 4.0% Arcade. Slowest projectile in the game | OK: slow large slime blobs, clear |
 | Ishimi | Slime Blast | range | 10 dmg, 1.5 s cd, max 3, speed 8, 40x20; 6.7 DPS | Lowest sustained damage of any hero (BALANCE.md). Ishimi is 0% Classic (0 of 22), 57% Arcade after a 6400/1550 re-fit | OK: clear, water-coloured |
 | Lavax (fire, 100, 6) | Crimson Fire | range | 13 dmg, 0.4 s cd (Arcade 18 ticks), max 2, speed 10, 80x40; 32.5 DPS | Widest projectile (80x40), 7.8% Classic damage. 45% Classic, 47% Arcade; most stalemates in Arcade (7 of 13) | Fixed: drawn at least 96 px long with a full-strength pale-gold halo; spawn ease-in and end ghost no longer hide it (crops at ticks 1 to 30) |

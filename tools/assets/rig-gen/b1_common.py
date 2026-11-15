@@ -71,6 +71,9 @@ def make_paint(P):
         else:  # soft dark edge instead of an outline
             edge = np.clip(1 - inner * 1.3, 0, 1)
             rgb = rgb * (1 - 0.4 * edge[..., None]) + np.array(P.get("edge", (20, 16, 16)), np.float32) * 0.4 * edge[..., None]
+        if P.get("fringe"):  # QA r58: dark the semi-transparent rim so a pale halo does not show against lava or fire
+            k = np.clip(alpha, 0, 1) ** 2
+            rgb = rgb * (P["fringe"] + (1 - P["fringe"]) * k[..., None])
         # overlays
         for ov in spec.get("overlays", []):
             opolys = [[E.apply(g["tf"], q) for q in poly] for poly in ov["polys"]]

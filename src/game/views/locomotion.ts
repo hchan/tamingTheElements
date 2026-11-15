@@ -24,6 +24,7 @@ export const LOCOMOTION: Readonly<Record<string, LocomotionFlags>> = {
   sindarosa: { wings: true, legs: false },
   pax: { wings: false, legs: true },
   treenoc: { wings: false, legs: true },
+  vortigal: { wings: true, legs: false },
 };
 
 export function locomotionOf(sprite: string): LocomotionFlags {
@@ -126,6 +127,10 @@ export const BACK_GAIT: Readonly<Record<string, BackGait>> = {
   glimmaw: gait({ style: 'drift', lean: 1, stridePx: 30, hoverPx: 2, periodPx: 40, swayDeg: 2, lagPx: 1 }),
   durrok: gait({ style: 'brace', lean: 3, stridePx: 22, liftPx: 1.2, lagPx: 1 }),
   zephra: gait({ style: 'arc', stridePx: 34, liftPx: 3, hoverPx: 3, periodPx: 40, swayDeg: 3 }),
+  ouroth: gait({ style: 'drift', lean: 2, stridePx: 34, periodPx: 56, swayDeg: 3, lagPx: 1 }),
+  abyssor: gait({ style: 'drift', lean: 1, stridePx: 28, hoverPx: 2, periodPx: 44, swayDeg: 2, lagPx: 1 }),
+  vortigal: gait({ style: 'backflap', lean: 1.5, stridePx: 30, hoverPx: 3, liftPx: 2, periodMs: 400 }),
+  umbrel: gait({ style: 'brace', lean: 2, stridePx: 22, liftPx: 1.2, lagPx: 1 }),
   eternalVoid: gait({ style: 'recede', lean: 1, stridePx: 30, alphaDip: 0.12 }),
 };
 
