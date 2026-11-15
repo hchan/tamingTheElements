@@ -1,5 +1,5 @@
 import { ALL_ABILITIES } from '../../../data/abilities-all';
-import { OT_DOT_FLOOR_HP, OT_RIDERS, OT_SPECS, OT_VENOM_HEAL_PM, OtEnd, OtRefresh } from '../../../data/arcade';
+import { HitStrength, OT_DOT_FLOOR_HP, OT_HEAL_INSTANT_PM, OT_RIDERS, OT_SPECS, OT_VENOM_HEAL_PM, OtEnd, OtKind, OtRefresh } from '../../../data/arcade';
 import { flagBit } from '../../../flags';
 import { inFight, isArcade, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
@@ -136,4 +136,24 @@ export function cleansableOt(s: SimState, id: number): number {
   let n = 0;
   for (const sid of CLEANSABLE) if (statusSlot(s, id, sid) >= 0) n++;
   return n;
+}
+
+/**
+ * Heal ability with the flag on (fire-heal, mycelium-mend): the instant part is `heal * healMult * OT_HEAL_INSTANT_PM / 1000`
+ * (scaled by `healFactorPm`), the rest arrives as the caster's mending. Returns false when the flag is off (caller heals as before).
+ */
+export function healWithMending(world: SimWorld, sink: EventSink, id: number, heal: number): boolean {
+  const s = world.state;
+  if (!otOn(s)) return false;
+  const instant = Math.trunc((heal * (s.healMult[id] ?? 0) * OT_HEAL_INSTANT_PM * healFactorPm(s, id)) / 1_000_000);
+  s.hp[id] = Math.min((s.hp[id] ?? 0) + instant, s.maxHp[id] ?? 0);
+  applyOt(world, sink, id, id, OtKind.mending);
+  return true;
+}
+
+/** A landed heavy or super hit that is not guarded ends the victim's mending (`otEnded {reason: broken}`). */
+export function breakMending(world: SimWorld, sink: EventSink, victim: number, strength: number): void {
+  const s = world.state;
+  if (!otOn(s) || strength < HitStrength.heavy) return;
+  if (removeStatus(s, victim, StatusId.mending)) sink.emit(victim, SimEventKind.otEnded, { id: victim, status: StatusId.mending, reason: OtEnd.broken });
 }
