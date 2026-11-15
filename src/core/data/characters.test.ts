@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compareStrings } from '../math/compare';
-import { CHARACTERS, getCharacter } from './characters';
+import { LEGACY_CHARACTERS, getCharacter } from './characters';
 import { ELEMENTS } from './elements';
 import { abilityId, characterId } from './ids';
 import { ABILITY_NAMES, CHARACTER_TEXT } from './text-ids';
@@ -25,9 +25,10 @@ const text = textJson as unknown as {
 const slug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 describe('character defs vs legacy data.json', () => {
-  it('has all 14 characters', () => {
-    expect(CHARACTERS).toHaveLength(14);
-    expect(CHARACTERS.map((c) => c.id).sort(compareStrings)).toEqual(Object.keys(legacy).map(slug).sort(compareStrings));
+  // LEGACY_CHARACTERS, not CHARACTERS: the roster grows past the legacy 14 by appending (roster-24), the legacy set never does.
+  it('LEGACY_CHARACTERS has all 14 legacy characters', () => {
+    expect(LEGACY_CHARACTERS).toHaveLength(14);
+    expect(LEGACY_CHARACTERS.map((c) => c.id).sort(compareStrings)).toEqual(Object.keys(legacy).map(slug).sort(compareStrings));
   });
 
   it.each(Object.entries(legacy))('%s maps field by field', (name, { defaults: d }) => {

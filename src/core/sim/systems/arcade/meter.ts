@@ -5,6 +5,7 @@ import {
 import { ABILITIES_A } from '../../../data/abilities-a';
 import { ABILITIES_B } from '../../../data/abilities-b';
 import { CHARACTERS } from '../../../data/characters';
+import { heroStyleOf } from '../../../data/hero-style';
 import { isArcade } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, type SimState } from '../../state';
@@ -66,8 +67,15 @@ export function meterOnCast(s: SimState, sink: EventSink, caster: number, team: 
   if (isArcade(s)) gainMeter(s, sink, caster, team, METER_CAST);
 }
 
-/** By character def index: 1 when its primary ability is ranged (WEATHER_RANGED_KINDS): it charges weather by casting. */
+/**
+ * By character def index: 1 for a ranged character (it charges weather by casting and cannot Charge), 0 for a melee one
+ * (it charges weather by walking and can Charge). A hero follows HERO_STYLE (roster WP 0.4, SIM_VERSION 69: fiara,
+ * morblass and rokcore became ranged, wispera melee); a character with no style (the boss, the dummy) keeps the rule
+ * from before: ranged when its primary ability's kind is in WEATHER_RANGED_KINDS.
+ */
 export const RANGED: readonly number[] = CHARACTERS.map((c) => {
+  const style = heroStyleOf(c.id);
+  if (style !== undefined) return style === 'ranged' ? 1 : 0;
   const kind = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === c.abilities[0])?.kind ?? '';
   return WEATHER_RANGED_KINDS.includes(kind) ? 1 : 0;
 });

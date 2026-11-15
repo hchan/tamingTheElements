@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CHARACTERS, LEGACY_CHARACTERS, LEGACY_RACES, isLegacyCharacter } from '../../src/core/data/characters';
 import { HERO_STYLE } from '../../src/core/data/hero-style';
 import { characterId } from '../../src/core/data/ids';
-import { styleSummary } from '../../tools/sim/style-summary';
+import { RANGED } from '../../src/core/sim/systems/arcade/meter';
+import { styleOfRace, styleSummary } from '../../tools/sim/style-summary';
 
 describe('roster split and hero style (roster WP 0.2)', () => {
   it('pins the legacy 14 (never grows) and keeps CHARACTERS a superset', () => {
@@ -17,6 +18,20 @@ describe('roster split and hero style (roster WP 0.2)', () => {
     expect(styles.every((x) => x === 'melee' || x === 'ranged')).toBe(true);
     expect(styles.filter((x) => x === 'melee')).toHaveLength(5);
     expect(styles.filter((x) => x === 'ranged')).toHaveLength(7);
+  });
+
+  it('the Arcade RANGED flag equals HERO_STYLE for every styled hero (roster WP 0.4)', () => {
+    for (const [i, c] of CHARACTERS.entries()) {
+      const style = HERO_STYLE[c.id];
+      if (style !== undefined) expect([c.id, RANGED[i]]).toEqual([c.id, style === 'ranged' ? 1 : 0]);
+    }
+  });
+
+  it('styleOfRace throws on a race with no HERO_STYLE row', () => {
+    expect(styleOfRace('fiara')).toBe('ranged');
+    expect(styleOfRace('wispera')).toBe('melee');
+    expect(() => styleOfRace('eternal-void')).toThrow(/no HERO_STYLE row/);
+    expect(() => styleOfRace('nobody')).toThrow(/no HERO_STYLE row/);
   });
 
   it('summarises a toy matrix', () => {

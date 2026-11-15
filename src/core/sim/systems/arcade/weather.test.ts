@@ -9,6 +9,7 @@ import { ABILITIES_B } from '../../../data/abilities-b';
 import { CHARACTERS } from '../../../data/characters';
 import { arcadeRaceNumbers } from '../../arcade-numbers';
 import type { Element } from '../../../data/elements';
+import { heroStyleOf } from '../../../data/hero-style';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { computeDamage } from '../../../rules/damage';
@@ -348,14 +349,15 @@ describe('weather charge (owner rule 2026-11-10, WP-arcade-weather-charge)', () 
     expect(WEATHER_RANGED_KINDS).toEqual(['range', 'omni']);
   });
 
-  it('a hero is ranged exactly when its primary ability is a range or omni projectile', () => {
+  it('a hero is ranged exactly when HERO_STYLE says so; a character with no style by its primary ability kind', () => {
     const kinds = [...ABILITIES_A, ...ABILITIES_B];
     CHARACTERS.forEach((c, i) => {
+      const style = heroStyleOf(c.id);
       const kind = kinds.find((d) => d.id === c.abilities[0])?.kind ?? '';
-      expect(RANGED[i] === 1, c.id).toBe(WEATHER_RANGED_KINDS.includes(kind));
+      expect(RANGED[i] === 1, c.id).toBe(style === undefined ? WEATHER_RANGED_KINDS.includes(kind) : style === 'ranged');
     });
     const byId = (id: string): number => RANGED[CHARACTERS.findIndex((c) => c.id === id)] ?? -1;
-    expect([byId('sindarosa'), byId('cyclonius'), byId('curomo'), byId('treenoc'), byId('pax'), byId('fiara')]).toEqual([1, 1, 0, 0, 0, 0]);
+    expect([byId('sindarosa'), byId('cyclonius'), byId('fiara'), byId('curomo'), byId('treenoc'), byId('pax'), byId('wispera')]).toEqual([1, 1, 1, 0, 0, 0, 0]);
   });
 
   it('starts empty, and weather does nothing until the charge is full', () => {

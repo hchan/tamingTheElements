@@ -42,3 +42,7 @@ PASS, no regressions. Classic is pinned to LEGACY_CHARACTERS (14); fixtures, gol
 - Type `HERO_STYLE` as `Record<CharacterId, HeroStyle>` (now `Record<string, ...>`), and make `styleOfRace` throw on an unknown race instead of defaulting to melee.
 - The style means 0.511/0.492 are right when measured with `balance:compare --ruleset arcade` (16 seeds). The 0.436/0.546 figure came from a Classic or small-sample run (about ±0.12 noise); quote the command and seed count when reporting style means.
 - The first `balance:record` will add `styleSummary` to the baselines and needs a stated reason.
+
+## WP 0.4 done (2026-11-15, SIM_VERSION 69)
+
+The Arcade `RANGED` flag (`systems/arcade/meter.ts`) now follows `HERO_STYLE`: fiara, morblass and rokcore are ranged (no Charge, weather charge by casting), wispera is melee (Charge, weather charge by walking). The parity follow-ups above (D01, `Record<CharacterId, HeroStyle>`, `styleOfRace` throws) landed in the same commit. Numbers and the 2v2 noise note: docs/BALANCE.md "Arcade style-align (SIM_VERSION 69)". Open: `src/ui/screens/hero-info.ts` still has its own style table (`RELEASED_STYLE`, same values); point it at `HERO_STYLE`.

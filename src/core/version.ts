@@ -245,5 +245,11 @@
  *    (SUPER_DEF 0x100, CHARGE_DEF 0x101, TRAP_BOMB_DEF 0x102, TRAP_SPIKE_DEF 0x103; they were 30..33, right after the abilities) so the
  *    roster can grow without shifting them; no behaviour change. Re-record reason: the super effect entity's hashed `defId` changes
  *    (Arcade goldens with a super); outcomes are identical.
+ * 69: Arcade only (Classic hashes unchanged). Roster WP 0.4 style-align (owner-approved 2026-11-14, ideas/brainstorm/roster-24-heroes.md): the
+ *    Arcade RANGED flag follows HERO_STYLE instead of the primary ability's kind. Fiara, Morblass and Rokcore become ranged (no Charge; weather
+ *    charge by casting), Wispera melee (Charge; weather charge by walking); the AI's spacing for the four flips with them. ARCADE_RACE_NUMBERS
+ *    re-fit for wispera (was 57.4%) and ishimi (38.6% once the four moved); ARCADE_2V2_LIFE_PM nudged for fiara, morblass and rokcore.
+ *    Re-record reason: four heroes change Charge, weather charge and AI spacing (Arcade goldens, Arcade 1v1 and 2v2 baselines; the
+ *    Classic goldens change only in the header simVersion).
  */
-export const SIM_VERSION = 68;
+export const SIM_VERSION = 69;
