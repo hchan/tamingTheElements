@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CharacterId } from '@core/index';
-import { tourCardView, tourPickView, tourSplashView } from './tour';
+import { tourCardView, tourPickView, tourSplashView, tourStageChip } from './tour';
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -95,6 +95,42 @@ describe('tourSplashView', () => {
     expect(faces[1]?.style.backgroundImage).toContain('rokcore');
     expect(page.querySelector('strong')?.textContent).toBe('VS');
     expect(page.querySelectorAll('svg')).toHaveLength(2);
+  });
+});
+
+describe('tourSplashView bench and tourStageChip', () => {
+  const glyph = (e: string): SVGElement => {
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.dataset['element'] = e;
+    return s;
+  };
+  it('the splash names every hero on both teams', () => {
+    const m = (id: string, name: string, element: string): { id: CharacterId; name: string; element: string } => ({ id: id as CharacterId, name, element });
+    const page = tourSplashView(
+      'Stage 1 of 9',
+      { who: 'You', ...m('fiara', 'Fiara (fire)', 'fire'), bench: [m('rokcore', 'Rokcore (earth)', 'earth'), m('curomo', 'Curomo (water)', 'water')] },
+      { who: 'Opponent', ...m('cyclonius', 'Cyclonius (air)', 'air'), bench: [m('pax', 'Pax (earth)', 'earth'), m('lavax', 'Lavax (fire)', 'fire')] },
+      glyph,
+    );
+    expect(page.querySelectorAll('.vsName')).toHaveLength(2);
+    expect(page.querySelectorAll('.vsBenchName')).toHaveLength(4);
+    expect(page.querySelectorAll('svg')).toHaveLength(2);
+    expect(page.querySelectorAll('.heroFace')).toHaveLength(6);
+    const faces = [...page.querySelectorAll<HTMLElement>('.vsBenchFace')];
+    expect(faces.map((f) => /rokcore|curomo|pax|lavax/.exec(f.style.backgroundImage)?.[0])).toEqual(['rokcore', 'curomo', 'pax', 'lavax']);
+    expect([...page.querySelectorAll('ul.vsBench')].map((u) => u.getAttribute('aria-label'))).toEqual(['Your teammates', "Opponent's teammates"]);
+    expect(page.textContent).not.toMatch(/classic|arcade|ruleset|capture/i);
+  });
+
+  it('the stage chip states stage and continues in words, pinned bottom-left and click-through', () => {
+    const chip = (n: number): HTMLElement => tourStageChip(3, 9, n);
+    expect(chip(3).textContent).toBe('Stage 3 of 9 3 continues left');
+    expect(chip(1).textContent).toContain('1 continue left');
+    expect(chip(0).textContent).toContain('No continues left');
+    const c = chip(2);
+    expect(c.id).toBe('tourHudStage');
+    expect(c.style.position).toBe('absolute');
+    expect(c.style.pointerEvents).toBe('none');
   });
 });
 

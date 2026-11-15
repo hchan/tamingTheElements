@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_UI_FLAGS } from '../platform/flags';
+import { FIRST_RUN_KEY } from './first-run-hint';
 import { ARCADE_RACES } from './arcade-pick';
 import { TOUR_KEY, loadRun } from './tour-store';
 import { serializeRun, startRun, type TourRun } from './tour-model';
@@ -22,12 +23,14 @@ function fakeStorage(initial?: TourRun): { getItem: (k: string) => string | null
 
 let reduceMotion = false;
 beforeEach(() => {
+  localStorage.removeItem(FIRST_RUN_KEY);
   reduceMotion = false;
   vi.spyOn(window, 'matchMedia').mockImplementation(
     (q: string) => ({ matches: q.includes('reduce') && reduceMotion, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }) as unknown as MediaQueryList,
   );
 });
 afterEach(() => {
+  localStorage.removeItem(FIRST_RUN_KEY);
   for (const s of rigs.splice(0)) s.unmount();
   vi.useRealTimers();
   vi.restoreAllMocks();
@@ -196,6 +199,25 @@ describe('defeat flow', () => {
   });
 });
 
+describe('stage card controls fact', () => {
+  const playing: TourRun = { ...startRun([A, B, C], 5), stage: 1 };
+  it('names the controls once, until Fight is pressed', () => {
+    vi.useFakeTimers();
+    const r = mount(playing);
+    $('tourResumeRun').click();
+    const fact = r.host.querySelector('[data-fact="controls"]');
+    expect(fact?.textContent).toMatch(/^Controls:/);
+    expect(fact?.textContent).not.toMatch(/classic|arcade|ruleset|capture/i);
+    expect(localStorage.getItem(FIRST_RUN_KEY)).toBeNull();
+    $('tourFight').click();
+    expect(localStorage.getItem(FIRST_RUN_KEY)).toBe('1');
+    r.screen.unmount();
+    const again = mount(playing);
+    $('tourResumeRun').click();
+    expect(again.host.querySelector('[data-fact="controls"]')).toBeNull();
+  });
+});
+
 describe('versus splash and battle start', () => {
   const playing: TourRun = { ...startRun([A, B, C], 5), stage: 1 };
 
@@ -212,6 +234,7 @@ describe('versus splash and battle start', () => {
     expect(r.host.querySelector('#tourSplash')).not.toBeNull();
     expect(r.host.textContent).toContain('You:');
     expect(r.host.textContent).toContain('Opponent:');
+    expect(r.host.querySelectorAll('.vsBenchName')).toHaveLength(4);
     vi.advanceTimersByTime(1199);
     expect(r.host.querySelector('#tourSplash')).not.toBeNull();
     vi.advanceTimersByTime(1);

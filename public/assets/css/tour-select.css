@@ -342,3 +342,21 @@ html[data-high-contrast='true'] #tourStage.tsGrim h1.heading { color: #fff; }
 @media (max-height: 500px) and (orientation: landscape) {
   #tourStage #tourPins li { min-height: 33px; padding-bottom: 0.3em; }
 }
+
+/* Tour splash: the rest of each team, small under the lead (QA r63). Sizes are also inline, so a late stylesheet never shows them huge. */
+#tourSplash .vsBenchLabel { margin: 0.4em 0 0.15em; font-size: 0.8em; opacity: 0.85; }
+#tourSplash .vsBench { display: flex; flex-flow: row wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
+#tourSplash .vsBench li { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.75em; }
+#tourSplash .vsBench .vsBenchFace { flex: none; }
+@media (max-height: 460px) {
+  #tourSplash .vsBenchLabel { display: none; }
+  #tourSplash .vsBench .vsBenchFace { width: 28px !important; height: 28px !important; }
+  #tourStage [data-fact='controls'] { margin: 0.05em 0; }
+  #tourStage [data-fact='controls'] .tourFactLabel { display: none; }
+  #tourStage [data-fact='controls'] .tourFactValue { display: block; font-size: 0.54em; font-weight: 600; line-height: 1.15; max-height: 3.5em; overflow: hidden; }
+}
+
+/* Portrait phone: the stick owns the bottom-left, so the stage chip moves under the top bar. */
+@media (pointer: coarse) and (orientation: portrait) {
+  #game .tourHudStage { bottom: auto !important; top: 64px !important; }
+}

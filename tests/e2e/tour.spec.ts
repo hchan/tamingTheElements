@@ -90,6 +90,29 @@ test('World Tour: the versus splash is skipped by Enter and by a click', async (
   expect(errors).toEqual([]);
 });
 
+test('World Tour: Controls on the stage card once, a team splash, no first-run card and a stage chip in the fight', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`${START}&ff=arcade,holdSplash#tour`);
+  await page.getByRole('button', { name: 'Start tour' }).click();
+  await expect(page.locator('#tourStage [data-fact="controls"]')).toContainText('Controls:');
+  await page.getByRole('button', { name: 'Fight' }).click();
+  await expect(page.locator('#tourSplash .vsBench li')).toHaveCount(4);
+  await expect(page.locator('#tourSplash svg')).toHaveCount(2);
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(ARENA_READY);
+  await expect(page.locator('#tourHudStage')).toHaveText(/Stage 1 of 9\s*3 continues left/);
+  await step(page, 400);
+  await expect(page.locator('#firstRunHint')).toHaveCount(0);
+  await page.evaluate(`window.__TTE__.settled()`);
+  // The keys were shown once: the stage card no longer carries the line.
+  await page.goto(`${START}&ff=arcade,holdSplash#main`);
+  await page.goto(`${START}&ff=arcade,holdSplash#tour`);
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await expect(page.locator('#tourStage')).toBeVisible();
+  await expect(page.locator('#tourStage [data-fact="controls"]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('World Tour: reduced motion skips the splash', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${START}&ff=arcade#tour`);

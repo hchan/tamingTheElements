@@ -109,6 +109,12 @@ export function tourVictoryView(o: TourVictoryOptions): HTMLElement {
   return page;
 }
 
+export interface SplashMember {
+  readonly name: string;
+  readonly element: string;
+  readonly id?: CharacterId;
+}
+
 export interface SplashSide {
   readonly who: string;
   /** "Fiara (fire)". */
@@ -116,6 +122,34 @@ export interface SplashSide {
   readonly element: string;
   /** The hero, for the big portrait (omitted: no portrait). */
   readonly id?: CharacterId;
+  /** The rest of the team (partners or enemy bench), shown small under the lead. */
+  readonly bench?: readonly SplashMember[];
+}
+
+/** The stage and continues chip in the fight corner (plain text, never a live region); inline style so it sits right before any stylesheet loads. */
+export function tourStageChip(stage: number, total: number, continues: number): HTMLElement {
+  const chip = el('p', 'tourHudStage');
+  chip.id = 'tourHudStage';
+  const left = continues === 0 ? 'No continues left' : `${String(continues)} ${continues === 1 ? 'continue' : 'continues'} left`;
+  const a = el('span', undefined, `Stage ${String(stage)} of ${String(total)}`);
+  const b = el('span', undefined, left);
+  a.style.display = b.style.display = 'block'; // two short lines: narrow enough to clear the action bar at phone-landscape size
+  chip.append(a, ' ', b);
+  Object.assign(chip.style, {
+    position: 'absolute',
+    left: '8px',
+    bottom: '8px',
+    margin: '0',
+    zIndex: '4',
+    pointerEvents: 'none',
+    font: '600 clamp(12px, 1.7vh, 15px)/1.25 system-ui, sans-serif',
+    color: '#ece6d6',
+    background: 'rgb(10 10 16 / 0.72)',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    whiteSpace: 'nowrap',
+  });
+  return chip;
 }
 
 /**
@@ -142,6 +176,22 @@ export function tourSplashView(
     const name = el('p', 'vsName', `${s.who}: ${s.name}`);
     name.dataset['element'] = s.element;
     d.append(face, glyph(s.element), name);
+    if (s.bench && s.bench.length > 0) {
+      d.append(el('p', 'vsBenchLabel', 'Teammates'));
+      const ul = el('ul', 'vsBench');
+      ul.setAttribute('aria-label', s.who === 'You' ? 'Your teammates' : "Opponent's teammates");
+      for (const m of s.bench) {
+        const li = el('li');
+        li.dataset['element'] = m.element;
+        const f = el('span', 'heroFace vsBenchFace');
+        f.setAttribute('aria-hidden', 'true');
+        f.style.width = f.style.height = 'clamp(32px, 7vh, 56px)';
+        if (m.id !== undefined) f.style.backgroundImage = faceUrl(m.id);
+        li.append(f, el('span', 'vsBenchName', m.name));
+        ul.append(li);
+      }
+      d.append(ul);
+    }
     return d;
   };
   const row = el('div', 'vsCard');

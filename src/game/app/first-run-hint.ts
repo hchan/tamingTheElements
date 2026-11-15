@@ -46,6 +46,11 @@ function markSeen(store: Store | undefined): void {
   }
 }
 
+/** Marks the first-run hint as seen (the Tour shows the controls on its stage card instead of the in-fight card). */
+export function markFirstRunSeen(store: Store | undefined = defaultStore()): void {
+  markSeen(store);
+}
+
 /** The key as the action bar labels it (one source: `actionKeyLabel`), so the card and the bar agree. */
 const key = (b: Bindings, a: GameAction): string => actionKeyLabel(b, a) ?? 'unbound';
 
