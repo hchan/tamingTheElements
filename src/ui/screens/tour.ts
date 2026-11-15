@@ -1,7 +1,7 @@
 import type { CharacterId } from '@core/index';
 import { el } from '../dom';
 import { raceLabel, select } from './arcade-versus';
-import { HERO_COLUMNS, heroProfile } from './hero-info';
+import { heroProfile } from './hero-info';
 import { heroDnd } from './hero-dnd';
 import { faceUrl, heroGrid, heroPanel } from './hero-panel';
 
@@ -364,7 +364,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   /** Moves the cursor (and the focus, so the panel and screen readers follow). */
   const move = (dx: number, dy: number): void => {
     const n = order.length;
-    let next = cursor + dx + dy * HERO_COLUMNS;
+    let next = cursor + dx + dy * heroes.columns();
     if (dx !== 0) next = Math.max(0, Math.min(n - 1, next));
     else if (next < 0 || next >= n) next = cursor;
     cursor = next;

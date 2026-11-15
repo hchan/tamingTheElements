@@ -7,6 +7,8 @@ const PATHS: Readonly<Record<string, string>> = {
   cleanse: 'M12 3a9 9 0 105.5 16M12 7v5l3 2',
   trap: 'M3 18h18M5 18l3-8 4 8 4-8 3 8M12 3v4',
   weather: 'M7 18a4 4 0 010-8 5 5 0 019-1 4 4 0 011 9z',
+  'style-melee': 'M4 4l12 12M13 19l6-6M16 16l4 4M20 4L8 16M11 19l-6-6M8 16l-4 4',
+  'style-ranged': 'M8 3c9 4 9 14 0 18M8 3v18M3 12h18M17 8l4 4-4 4',
   tag: 'M4 8h13l-3-3M20 16H7l3 3',
   snag: 'M4 20c3-8 6 0 8-8s5-4 8-8M17 4h3v3',
   'elemental-fire': 'M12 3c1 4 5 6 5 11a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z',

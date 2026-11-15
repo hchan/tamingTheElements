@@ -17,7 +17,7 @@ import { requestOpenTesterPanel } from '@ui/tester/install';
 import { ARCADE_SNAG_SLOT, getCharacter, type CharacterId } from '@core/index';
 import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
-import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, VOID_BOSS, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
+import { ARCADE_AI_LEVELS, ARCADE_RACES, DEFAULT_PICK, arcadeRacesFor, VOID_BOSS, flagFallbackWarnings, isCompletePick, parsePick, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
 import type { ArcadeHero, ArcadeResult } from './arcade-setup';
 import { downloadReplay } from './download';
 import { destroyGame, type GameHandle } from './game-handle';
@@ -93,7 +93,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
   const showPick = (): void => {
     show(
       arcadePickView({
-        races: ARCADE_RACES,
+        races: arcadeRacesFor(window.location.search),
         levels: ARCADE_AI_LEVELS.map((value) => ({ value, label: LEVEL_LABELS[value] })),
         current: {
           ...lastPick,

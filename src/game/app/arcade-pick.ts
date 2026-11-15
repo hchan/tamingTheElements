@@ -6,8 +6,19 @@ import { CHARACTERS, type CharacterId } from '@core/index';
  * loaded with the battle.
  */
 
-/** The 12 playable races (the two void characters are story-only). */
-export const ARCADE_RACES: readonly CharacterId[] = CHARACTERS.filter((c) => c.element !== 'void').map((c) => c.id);
+/** `CHARACTERS` entries before this index are released; later (appended) heroes stay hidden until their art passes review (roster-24 plan). */
+export const RELEASED_CHARACTERS = 14;
+
+/** Dev and test builds only: `?ff=roster24` shows the unreleased heroes in the pickers (production never reads the URL). */
+export const roster24On = (search: string): boolean =>
+  (import.meta.env.DEV || import.meta.env.MODE === 'test') && (new URLSearchParams(search).get('ff') ?? '').split(',').map((f) => f.trim()).includes('roster24');
+
+/** The races offered by the pickers for a URL query: the released heroes (the void characters are story-only), plus the unreleased ones behind `?ff=roster24`. */
+export const arcadeRacesFor = (search: string): readonly CharacterId[] =>
+  CHARACTERS.filter((c, i) => c.element !== 'void' && (i < RELEASED_CHARACTERS || roster24On(search))).map((c) => c.id);
+
+/** The released playable races (the two void characters are story-only). */
+export const ARCADE_RACES: readonly CharacterId[] = arcadeRacesFor('');
 
 /**
  * AI levels offered (FUN-DESIGN 2.11, WP-arcade-ai-personalities): the index is the core AI level (`ARCADE_AI_KNOBS`

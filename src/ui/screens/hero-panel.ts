@@ -1,7 +1,8 @@
 import type { CharacterId } from '@core/menu-index';
 import { el } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
-import { ELEMENT_ORDER, HERO_COLUMNS, heroProfile, heroesByElement } from './hero-info';
+import { iconSvg } from './guide-icons';
+import { ELEMENT_ORDER, STYLE_WORDS, heroColumns, heroProfile, heroesByElement, heroesPerElement, type HeroStyle } from './hero-info';
 
 /**
  * DOM of the hero select (Marvel vs. Capcom style): the element-grouped portrait grid and the focused-hero panel (large portrait,
@@ -13,6 +14,21 @@ const assetUrl = (kind: string, name: string): string => `${import.meta.env.BASE
 
 /** The portrait source: the hero's map sprite, first frame of the 4-frame strip. */
 export const faceUrl = (id: CharacterId): string => `url("${assetUrl('map', heroProfile(id).sprite)}")`;
+
+/**
+ * The melee / ranged badge: a static SVG icon (crossed blades or a bow) that stands for the style, with the word beside it when
+ * `withWord` (the panel) or as screen-reader text only (a tile, where the corner is small). Never colour alone: the icon shape and the
+ * word carry the meaning, and the strokes use the text colour so it holds in high contrast.
+ */
+export function styleBadge(style: HeroStyle, withWord: boolean): HTMLElement {
+  const badge = el('span', `heroStyle heroStyle-${style}`);
+  const icon = iconSvg(`style-${style}`);
+  icon.setAttribute('class', 'heroStyleIcon');
+  badge.append(icon);
+  if (withWord) badge.append(el('span', 'heroStyleWord', STYLE_WORDS[style]));
+  else badge.title = STYLE_WORDS[style];
+  return badge;
+}
 
 export interface HeroPanel {
   readonly node: HTMLElement;
@@ -63,7 +79,7 @@ export function heroPanel(onAdd?: () => void): HeroPanel {
     const mark = el('span', 'heroMark', ELEMENT_MARKS[p.element] ?? '');
     mark.setAttribute('aria-hidden', 'true');
     head.append(el('h3', 'heroName', p.name), el('p', 'heroKind'), el('p', 'heroBlurb', p.blurb));
-    head.querySelector('.heroKind')?.append(mark, ` ${p.element}`);
+    head.querySelector('.heroKind')?.append(mark, ` ${p.element} `, styleBadge(p.style, true));
     const stats = el('dl', 'heroStats');
     for (const [label, value] of p.stats) {
       const row = el('div');
@@ -99,12 +115,15 @@ export interface HeroGridOptions {
 }
 
 /**
- * The portrait grid: a heading per element, three heroes under it. Returns the grid, the heroes in cursor order (rows of
- * `HERO_COLUMNS`, so index +/- 1 moves sideways and +/- 3 moves a row) and the tile of each.
+ * The portrait grid: a heading per element, its heroes (three or six) under it. Returns the grid, the heroes in cursor order (rows of
+ * `columns()`, so index +/- 1 moves sideways and +/- columns moves a row) and the tile of each.
  */
-export function heroGrid(o: HeroGridOptions): { grid: HTMLElement; order: CharacterId[]; tiles: HTMLButtonElement[] } {
+export function heroGrid(o: HeroGridOptions): { grid: HTMLElement; order: CharacterId[]; tiles: HTMLButtonElement[]; columns: () => number } {
   const order = heroesByElement(o.races);
   const grid = el('div', 'heroGrid');
+  // Desktop columns = heroes per element (3 for 12 heroes, 6 for 24); a phone is always 3 (CSS, `PHONE_COLUMNS`).
+  const perElement = heroesPerElement(o.races);
+  grid.dataset['cols'] = String(perElement);
   grid.setAttribute('role', 'group');
   grid.setAttribute('aria-label', 'Heroes');
   const tiles: HTMLButtonElement[] = [];
@@ -126,12 +145,13 @@ export function heroGrid(o: HeroGridOptions): { grid: HTMLElement; order: Charac
     const face = el('span', 'heroFace heroTileFace');
     face.style.backgroundImage = faceUrl(id);
     face.setAttribute('aria-hidden', 'true');
-    t.append(face, el('span', 'heroTileName', p.name), el('span', 'srOnly', ` (${p.element})`));
+    const badge = styleBadge(p.style, false);
+    badge.setAttribute('aria-hidden', 'true');
+    t.append(face, el('span', 'heroTileName', p.name), badge, el('span', 'srOnly', ` (${p.element}, ${STYLE_WORDS[p.style]})`));
     o.onTile?.(t, id, i);
     tiles.push(t);
     grid.append(t);
   });
-  return { grid, order, tiles };
+  return { grid, order, tiles, columns: () => heroColumns(grid, perElement) };
 }
 
-export { HERO_COLUMNS };
