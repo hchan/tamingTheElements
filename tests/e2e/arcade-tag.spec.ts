@@ -12,6 +12,7 @@ interface Tag {
   lines: string[][];
   call: string;
   callScale: number;
+  callSpan: [number, number];
   flashes: number;
   ko: boolean;
 }
@@ -121,6 +122,8 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   await step(page, 1);
   const ko = await tag(page);
   expect(ko).toMatchObject({ call: 'PAX IN!', ko: true });
+  expect(ko?.callSpan[0]).toBeGreaterThanOrEqual(0);
+  expect(ko?.callSpan[1]).toBeLessThanOrEqual(1280);
   expect(ko?.lines[0]).toEqual(['IN Pax', expect.stringMatching(/^BENCH Sindarosa [▲≈■●◆] K\.O\.$/), 'NO TAG']);
   await expect.poll(() => live(page), { timeout: 5000 }).toContain('Sindarosa is down. Pax steps in.');
   // Both AI heroes down twice: 2-0 and the results name every hero.
@@ -245,3 +248,31 @@ test('swap press: one tag per press (a held key does not chain), and a press in 
   expect((await tag(page))?.lines[0]?.[0]).toBe('IN Sindarosa');
   expect(errors).toEqual([]);
 });
+
+// QA r36: a long hero name ("SINDAROSA IN!") entering near the left edge stays whole inside the screen at 1280x720 and on phones.
+for (const [w, h] of [[1280, 720], [844, 390], [667, 375]] as const) {
+  test(`KO entrance call is not clipped at the edges at ${String(w)}x${String(h)}`, async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByLabel('Team').selectOption('2');
+    await page.getByLabel('Your race').selectOption('pax');
+    await page.getByLabel('Your partner (2v2)').selectOption('sindarosa');
+    await page.getByLabel('AI race').selectOption('fiara');
+    await page.getByRole('button', { name: 'Fight!' }).click();
+    await page.waitForFunction(ARENA_READY);
+    await step(page, INTRO);
+    const [active] = await characters(page, 0);
+    await page.evaluate(`window.__TTE__.arena.setHp(${String(active?.id)}, 0)`);
+    await step(page, 1);
+    for (let i = 0; i < 5; i++) {
+      const t = await tag(page);
+      expect(t?.call).toBe('SINDAROSA IN!');
+      expect(t?.callSpan[0]).toBeGreaterThanOrEqual(0);
+      expect(t?.callSpan[1]).toBeLessThanOrEqual(1280);
+      if (process.env['SHOT_DIR']) await page.screenshot({ path: `${process.env['SHOT_DIR']}/tag-call-${String(w)}-${String(i)}.png` });
+      await step(page, 10);
+    }
+    expect(errors).toEqual([]);
+  });
+}

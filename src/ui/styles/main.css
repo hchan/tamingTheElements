@@ -2812,3 +2812,13 @@ body:has(.settingsBar) {
     height: 44px;
   }
 }
+
+/* QA r36: on a landscape phone the first-run card hugs the action bar (the fighters meet mid-floor in the first exchange, so the band above the bar is the only clear one) and leaves quickly at the first tap. */
+@media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
+  #firstRunHint.firstRunHint:not(.firstRunWait) {
+    bottom: 16.5vh;
+  }
+  #firstRunHint.firstRunHint.firstRunFade {
+    transition: opacity 0.25s;
+  }
+}
