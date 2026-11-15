@@ -39,7 +39,7 @@ import {
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
-import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
+import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, comboRightX, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
 
 export const HUD_SCENE = 'Hud';
 
@@ -520,7 +520,7 @@ export class Hud extends Phaser.Scene {
     const k = coreDisplayWidth(this) / 1280;
     const steps = LIFE_TEXT_SCALES.filter((sc) => base * sc * k >= MIN_PHONE_PX || sc === 1);
     for (const sc of steps) {
-      for (const terse of [false, true, 'bare'] as const) {
+      for (const terse of [false, true, 'bare', 'min'] as const) {
         label.setFontSize(Math.round(base * sc)).setText(compactLabel(name, c, false, terse));
         if (!m || clears(m)) return;
       }
@@ -574,6 +574,7 @@ export class Hud extends Phaser.Scene {
         .setOrigin(team === 0 ? 0 : 1, 0)
         .setAlign(team === 0 ? 'left' : 'right')
         .setPosition(team === 0 ? COMBO_MARGIN : HUD_WIDTH - COMBO_MARGIN, COMBO_Y);
+      if (team === 1) t.setX(comboRightX(HUD_WIDTH, COMBO_MARGIN, this.pauseLeft()));
       const key = comboKey(c.hits, c.damage);
       if (this.comboKeys[team] !== key) {
         this.comboKeys[team] = key;
@@ -581,6 +582,17 @@ export class Hud extends Phaser.Scene {
       }
       t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
     }
+  }
+
+  /** Left edge of the touch Pause button in HUD logical px (undefined when it is hidden), so the right combo counter stays clear of it. */
+  private pauseLeft(): number | undefined {
+    const b = document.getElementById('pauseButton');
+    const canvas = this.game.canvas;
+    if (!b || getComputedStyle(b).display === 'none') return undefined;
+    const k = coreDisplayWidth(this) / 1280;
+    const c = canvas.getBoundingClientRect();
+    const hudLeft = c.left + (c.width - 1280 * k) / 2;
+    return (b.getBoundingClientRect().left - hudLeft) / k;
   }
 
   /**

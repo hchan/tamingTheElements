@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { Cmd, type Command } from '@core/index';
 import { elementalShown } from '../platform/cleanse-info';
 import { resolutionOf } from '../boot/viewport';
+import { styleCombatText } from './combat-text';
 
 /**
  * View-only feedback for a swap press the sim will refuse (FUN-DESIGN 2.6): a line of text above the action bar, never
@@ -84,11 +85,8 @@ export class SwapNotice {
   private shownAt = -Infinity;
 
   constructor(scene: Phaser.Scene, private readonly reduced: () => boolean, private readonly place?: () => { x: number; y: number; scale: number }) {
-    this.text = scene.add
-      .text(4, 604, '', {
-        fontSize: '22px', fontStyle: 'bold', color: '#fff4b8', stroke: '#000000', strokeThickness: 6,
-        resolution: resolutionOf(scene),
-      })
+    // The same engraved bone serif and thin dark outline as the other HUD call-outs (QA r36: it was a plain yellow sans).
+    this.text = styleCombatText(scene.add.text(4, 604, '', { fontSize: '24px', fontStyle: 'bold', resolution: resolutionOf(scene) }), 'number')
       .setOrigin(0, 1)
       .setDepth(103)
       .setVisible(false);

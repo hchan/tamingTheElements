@@ -77,3 +77,12 @@ export function edgeGrainFlecks(count = 2600): Fleck[] {
   }
   return out;
 }
+
+/**
+ * Right edge (logical px) of the right-hand combo counter: the plain margin, pulled left of the touch Pause button when that
+ * button (its left edge `pauseLeft` in logical px, undefined when hidden) would cover it (QA r36). Pure.
+ */
+export function comboRightX(hudWidth: number, margin: number, pauseLeft: number | undefined): number {
+  const plain = hudWidth - margin;
+  return pauseLeft === undefined ? plain : Math.min(plain, Math.floor(pauseLeft - 8));
+}
