@@ -260,5 +260,11 @@
  *    loses 10 pm of its spawn damage per tick down to 450 pm (fireBlastFadePm, src/core/sim/arcade-numbers.ts); hit strength stays heavy.
  *    Re-record reason: every Arcade Fire Blast hit, clash and miss changes (Arcade goldens, Arcade 1v1 and 2v2 baselines; the Classic goldens
  *    change only in the header simVersion).
+ * 72: Arcade only (Classic hashes unchanged). Roster-24 batch 1: four new heroes appended after wispera (kindrel, nykra, quarrak, hyalia;
+ *    character index 14-17), ability set C appended after set B (ember-bite, cinder-spray, hoof-crash, kelp-lash, boulder-roll,
+ *    stinging-filament, bell-pulse; def indices 30-36; hurl-rock reused), supers 13-16, per-hero Arcade numbers, sizes and boxes, and an Arcade
+ *    cooldown override for hurl-rock. New defs mean new behaviour for online peers. Re-record reason: new Arcade heroes change the Arcade
+ *    round-robin baselines (1v1 and 2v2, which now include 16 heroes) and add an Arcade golden; existing goldens change only in the header
+ *    simVersion.
  */
-export const SIM_VERSION = 71;
+export const SIM_VERSION = 72;

@@ -2,7 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { ABILITIES_B } from '../data/abilities-b';
 import { HitStrength } from '../data/arcade';
-import { CHARACTERS } from '../data/characters';
+import { LEGACY_CHARACTERS } from '../data/characters';
 import { characterId } from '../data/ids';
 import { DEFAULT_SIM_FLAGS, flagBit } from '../flags';
 import { recordBotMatch } from '../replay/record-bots';
@@ -237,7 +237,7 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
   it('property: random setups, all 16 command bits, one freeze anywhere', () => {
     let hits = 0;
     const cmd = fc.integer({ min: 0, max: 0xffff });
-    const race = fc.constantFrom(...CHARACTERS.map((c) => c.id));
+    const race = fc.constantFrom(...LEGACY_CHARACTERS.map((c) => c.id));
     /** Held-key runs, like a player, so buffs, freezes and swaps play out over several hundred ticks. */
     const sticky = fc
       .array(fc.tuple(fc.integer({ min: 1, max: 60 }), cmd, cmd), { minLength: 1, maxLength: 20 })

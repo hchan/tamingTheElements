@@ -1,5 +1,4 @@
-import { ABILITIES_A } from '../../data/abilities-a';
-import { ABILITIES_B } from '../../data/abilities-b';
+import { ALL_ABILITIES } from '../../data/abilities-all';
 import { elementRelation } from '../../data/elements';
 import type { CharacterDef, AbilityDef } from '../../data/types';
 import type { Aabb } from '../../math/aabb';
@@ -36,7 +35,7 @@ export interface ScriptedAIOptions extends AttackAgentOptions {
   readonly personality?: Style;
 }
 
-const ABILITY_DEFS: readonly AbilityDef[] = [...ABILITIES_A, ...ABILITIES_B];
+const ABILITY_DEFS: readonly AbilityDef[] = ALL_ABILITIES;
 const EXPLOSION_MELEE = new Set(['ground-shock', 'hurricane']);
 /** Only Pax requires the legacy MeleeCharacter component (characters.js). */
 const MELEE_CHARACTER = 'pax';

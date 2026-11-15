@@ -118,6 +118,10 @@ export const BACK_GAIT: Readonly<Record<string, BackGait>> = {
   cyclonius: gait({ style: 'drift', lean: 2, stridePx: 30, periodPx: 36, swayDeg: 2, lagPx: 1.5 }),
   fiara: gait({ style: 'drift', lean: 3, stridePx: 30, periodMs: 160, swayDeg: 1.5, lagPx: 1 }),
   wispera: gait({ style: 'arc', stridePx: 30, liftPx: 4, periodPx: 48, swayDeg: 3 }),
+  kindrel: gait({ style: 'drift', lean: 3, stridePx: 30, periodMs: 160, swayDeg: 1.5, lagPx: 1 }),
+  nykra: gait({ style: 'drift', lean: 2, stridePx: 30, periodPx: 36, swayDeg: 2, lagPx: 1.5 }),
+  quarrak: gait({ style: 'brace', lean: 3, stridePx: 22, liftPx: 1.4, lagPx: 1 }),
+  hyalia: gait({ style: 'arc', stridePx: 30, liftPx: 4, periodPx: 48, swayDeg: 3 }),
   eternalVoid: gait({ style: 'recede', lean: 1, stridePx: 30, alphaDip: 0.12 }),
 };
 

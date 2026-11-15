@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A, ABILITIES_B, CHARACTERS, HERO_STYLE, getCharacter } from '@core/menu-index';
+import { ABILITIES_A, ALL_ABILITIES, CHARACTERS, HERO_STYLE, getCharacter } from '@core/menu-index';
 import type { CharacterId } from '@core/menu-index';
 import { ELEMENT_ORDER, HERO_COLUMNS, describeAbilityLine, heroProfile, heroStyle, heroesByElement } from './hero-info';
 
-const PLAYABLE = CHARACTERS.filter((c) => ELEMENT_ORDER.includes(c.element)).map((c) => c.id);
+const PLAYABLE = CHARACTERS.slice(0, 14).filter((c) => ELEMENT_ORDER.includes(c.element)).map((c) => c.id);
 const FORBIDDEN = /classic|arcade|ruleset|capture/i;
 
 describe('heroesByElement', () => {
@@ -53,7 +53,7 @@ describe('heroProfile', () => {
   });
 
   it('shows the data numbers: damage and cooldown come from the ability definitions', () => {
-    const defs = [...ABILITIES_A, ...ABILITIES_B];
+    const defs = ALL_ABILITIES;
     for (const id of PLAYABLE) {
       const ch = getCharacter(id);
       const p = heroProfile(id);

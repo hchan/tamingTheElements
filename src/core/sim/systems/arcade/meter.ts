@@ -2,8 +2,7 @@ import {
   METER_BAR, METER_CAST, METER_DEAL_PM, METER_MAX,
   METER_TAKE_PM, WEATHER_CHARGE_CAST, WEATHER_CHARGE_FULL, WEATHER_CHARGE_STEP, WEATHER_RANGED_KINDS,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { CHARACTERS } from '../../../data/characters';
 import { heroStyleOf } from '../../../data/hero-style';
 import { isArcade } from '../../clock';
@@ -76,7 +75,7 @@ export function meterOnCast(s: SimState, sink: EventSink, caster: number, team: 
 export const RANGED: readonly number[] = CHARACTERS.map((c) => {
   const style = heroStyleOf(c.id);
   if (style !== undefined) return style === 'ranged' ? 1 : 0;
-  const kind = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === c.abilities[0])?.kind ?? '';
+  const kind = ALL_ABILITIES.find((d) => d.id === c.abilities[0])?.kind ?? '';
   return WEATHER_RANGED_KINDS.includes(kind) ? 1 : 0;
 });
 

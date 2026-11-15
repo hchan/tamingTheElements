@@ -1,4 +1,4 @@
-import { ABILITIES_A, ABILITIES_B, ABILITY_NAMES, TRAP_DESCRIPTIONS, TRAP_NAMES } from '@core/index';
+import { ALL_ABILITIES, ABILITY_NAMES, TRAP_DESCRIPTIONS, TRAP_NAMES } from '@core/index';
 
 /**
  * Kit-specific words for the action bar (ideas/brainstorm/action-bar-rethink-hero-kits.md, presentation slice): each hero's two ability
@@ -22,9 +22,12 @@ const SHORT: Readonly<Record<string, string>> = {
   'slime-blast': 'Slime',
   'fire-dance': 'Dance',
   'fire-blast': 'Blast',
+  'cinder-spray': 'Cinder',
+  'boulder-roll': 'Boulder',
+  'stinging-filament': 'Filament',
 };
 
-const BY_SPRITE = new Map<string, string>([...ABILITIES_A, ...ABILITIES_B].map((d) => [d.sprite, d.id]));
+const BY_SPRITE = new Map<string, string>(ALL_ABILITIES.map((d) => [d.sprite, d.id]));
 
 /** The ability id behind a bar sprite key, or undefined (empty, unknown). */
 export function abilityIdOfSprite(sprite: string): string | undefined {

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CHARACTERS, migrate, type SaveV1 } from '@core/menu-index';
+import { LEGACY_CHARACTERS, migrate, type SaveV1 } from '@core/menu-index';
 import { SAVE_KEY, createMemoryStorage } from '../../game/platform/storage/save-store';
 import { createLocalSaveStore } from '../../game/platform/storage/local-save-store';
 import type { SaveStore } from '../../game/platform/storage/save-store';
@@ -142,7 +142,7 @@ describe('game master screen in the DOM', () => {
       expect((JSON.parse(m.area.value) as SaveV1).chapter).toBe(chapter);
       m.status.textContent = '';
     }
-    expect(m.stored()?.garrison).toHaveLength(CHARACTERS.length);
+    expect(m.stored()?.garrison).toHaveLength(LEGACY_CHARACTERS.length);
   });
 
   it('shows the store error when a write fails', async () => {

@@ -33,6 +33,9 @@ export const HEAVY_MIN_DAMAGE = 30;
  */
 export const HIT_STRENGTH_OVERRIDE: Readonly<Partial<Record<string, HitStrengthValue>>> = {
   hurricane: HitStrength.light,
+  // Roster-24 batch 1 (SIM_VERSION 72): knockback is strength-driven, so the push abilities are forced up a tier.
+  'boulder-roll': HitStrength.heavy,
+  'bell-pulse': HitStrength.medium,
 };
 
 /**
@@ -69,6 +72,7 @@ export const SNAG_STUN_TICKS = 20;
 export const HIT_STUN_OVERRIDE: Readonly<Partial<Record<string, number>>> = {
   tornado: FREEZE_STUN_TICKS,
   'entangling-vines': SNAG_STUN_TICKS,
+  'stinging-filament': 15, // roster-24 B1: a short sting, it chains with its own 18-tick cooldown
 };
 
 /** Base hit-stun of an ability's hit: the override, else the strength table. */

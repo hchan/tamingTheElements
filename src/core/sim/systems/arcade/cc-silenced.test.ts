@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CC_DR_RESET_TICKS, CC_RIDERS, CcEnd, CcKind, CcResist, ELEMENTAL_TICKS, SILENCE_TICKS, WEATHER_CHARGE_FULL,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
 import { now } from '../../clock';
@@ -22,7 +21,7 @@ import { gainMeter } from './meter';
 import { skipIntro } from './round-testkit';
 import { isFree } from './stun';
 
-const DEFS = [...ABILITIES_A, ...ABILITIES_B];
+const DEFS = ALL_ABILITIES;
 const PLAIN = DEFS.findIndex((d) => d.id === 'fireball');
 const E = (id: number, f: number): number => id * ARCADE_E + f;
 const ATT = 0;

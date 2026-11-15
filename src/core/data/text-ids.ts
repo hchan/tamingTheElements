@@ -17,6 +17,11 @@ export const CHARACTER_TEXT: ReadonlyMap<CharacterId, { readonly name: string; r
   [characterId('sindarosa'), { name: "Sindarosa", description: "A race of red dragons born in the depths of molten lava.  They have little respect for mankind and are one of the first races born in Pria" }],
   [characterId('treenoc'), { name: "Treenoc", description: "An ancient race in Pria.  These tree-like creatures hardly move, but when the unbalance first unfolded they were amongst the first races to notice it." }],
   [characterId('wispera'), { name: "Wispera", description: "Air creatures that neither sleep or rest" }],
+  // Roster-24 batch 1 (not in legacy text.json).
+  [characterId('kindrel'), { name: "Kindrel", description: "A small ember-fox that darts through a fight, biting fast and leaving a ring of cinders behind." }],
+  [characterId('nykra'), { name: "Nykra", description: "A water-horse of the dark tarns. It crashes in with its hooves and lashes from afar with kelp." }],
+  [characterId('quarrak'), { name: "Quarrak", description: "A slow stone quadruped, huge and patient, that rolls boulders across the arena." }],
+  [characterId('hyalia'), { name: "Hyalia", description: "A drifting jellyfish of the high winds. Its filaments sting and its bell pushes foes away." }],
 ]);
 
 /** Ability display names; legacy text.json has no ability descriptions (all null). */
@@ -51,6 +56,13 @@ export const ABILITY_NAMES: ReadonlyMap<AbilityId, string> = new Map([
   [abilityId('tornado'), "Tornado"],
   [abilityId('translucent-flame'), "Translucent Flame"],
   [abilityId('wind-cone'), "Wind Cone"],
+  [abilityId('ember-bite'), "Ember Bite"],
+  [abilityId('cinder-spray'), "Cinder Spray"],
+  [abilityId('hoof-crash'), "Hoof Crash"],
+  [abilityId('kelp-lash'), "Kelp Lash"],
+  [abilityId('boulder-roll'), "Boulder Roll"],
+  [abilityId('stinging-filament'), "Stinging Filament"],
+  [abilityId('bell-pulse'), "Bell Pulse"],
 ]);
 
 /** Snag (FUN-DESIGN 2.20): the name and line of the rope throw on a hero's ARCADE_SNAG_SLOT (data/arcade.ts). */

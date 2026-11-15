@@ -1,6 +1,6 @@
 import { aabbOverlap, type Aabb } from '../../math/aabb';
-import { ABILITIES_A } from '../../data/abilities-a';
-import { ABILITIES_B, type AbilityDefB } from '../../data/abilities-b';
+import { ALL_ABILITIES } from '../../data/abilities-all';
+import type { AbilityDefB } from '../../data/abilities-b';
 import { CHARACTERS } from '../../data/characters';
 import { SNAG_DAMAGE, SNAG_RANGE_PX, SNAG_WIDTH_PX } from '../../data/arcade';
 import type { AbilityDef } from '../../data/types';
@@ -24,7 +24,7 @@ import { cooldownTicksFor } from '../arcade-numbers';
 import { castDir } from './arcade/aim';
 
 /** Every ability def in a stable order; an ability's defId is its index here (A then B, append-only: new abilities go at the end; every index < MAX_ABILITY_DEFS). */
-export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = [...ABILITIES_A, ...ABILITIES_B];
+export const ABILITY_DEFS: readonly (AbilityDef | AbilityDefB)[] = ALL_ABILITIES;
 const DEF_INDEX = new Map<string, number>(ABILITY_DEFS.map((d, i) => [d.id, i]));
 
 const VINES = DEF_INDEX.get('entangling-vines') ?? -1;

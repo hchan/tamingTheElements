@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHARACTERS, migrate, seedSfc32 } from '@core/index';
+import { LEGACY_CHARACTERS, migrate, seedSfc32 } from '@core/index';
 import { buildPreset, parseEditorText, PRESETS } from './game-master';
 
 describe('game master presets', () => {
@@ -22,7 +22,7 @@ describe('game master presets', () => {
   it('complete preset has every character at chapter 4 cap', () => {
     const s = buildPreset('complete', seedSfc32(1, 'meta'), 5);
     expect(s.chapter).toBe(4);
-    expect(s.garrison).toHaveLength(CHARACTERS.length);
+    expect(s.garrison).toHaveLength(LEGACY_CHARACTERS.length);
     expect(s.garrison.every((g) => g.experience === 100)).toBe(true);
   });
 

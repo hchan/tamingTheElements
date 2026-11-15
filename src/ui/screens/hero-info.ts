@@ -1,6 +1,5 @@
 import {
-  ABILITIES_A,
-  ABILITIES_B,
+  ALL_ABILITIES,
   ABILITY_NAMES,
   ARCADE_SNAG_SLOT,
   CHARACTER_TEXT,
@@ -78,7 +77,7 @@ const KIND_MARKS: Readonly<Record<AbilityDef['kind'], string>> = {
 /** Keys of the two ability slots on the keyboard (Player 1's defaults, Player 2's fixed keys; `src/game/input`). */
 const SLOT_KEYS: readonly (readonly [p1: string, p2: string])[] = [['Space', 'U'], ['Enter', 'O']];
 
-const DEFS: ReadonlyMap<string, AbilityDef | AbilityDefB> = new Map([...ABILITIES_A, ...ABILITIES_B].map((a) => [a.id as string, a]));
+const DEFS: ReadonlyMap<string, AbilityDef | AbilityDefB> = new Map(ALL_ABILITIES.map((a) => [a.id as string, a]));
 
 /** Milliseconds as a short word: 0.6 s, 15 s. */
 const secs = (ms: number): string => `${String(Math.round(ms / 100) / 10)} s`;

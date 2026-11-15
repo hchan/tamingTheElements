@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { collectCommands, type Agent } from '../agents/agent';
 import { RandomBot } from '../agents/random-bot';
 import type { ChapterNumber } from '../data/chapters';
-import { CHARACTERS } from '../data/characters';
+import { LEGACY_CHARACTERS } from '../data/characters';
 import { ARCADE_CMD_BITS, Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
@@ -80,7 +80,7 @@ const CAPTURE_DEF_INDEX = ABILITY_DEFS.findIndex((d) => d.id === 'capture');
 
 const rosterArb = fc.array(
   fc.record({
-    character: fc.constantFrom(...CHARACTERS.map((c) => c.id)),
+    character: fc.constantFrom(...LEGACY_CHARACTERS.map((c) => c.id)),
     xp: fc.integer({ min: 0, max: 400 }),
   }),
   { minLength: 1, maxLength: 4 },

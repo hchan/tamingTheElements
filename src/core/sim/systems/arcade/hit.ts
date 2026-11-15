@@ -1,5 +1,4 @@
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import {
   CHARGE_STUN_TICKS, GUARD_CHIP_PM, HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, KO_HIT_STOP_TICKS,
   PARRY_HIT_STOP_TICKS, TRAP_HIT_FLOOR, TRAP_SPIKE_STUN_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
@@ -23,11 +22,11 @@ import { capDamage, terrainDamagePm } from './terrain';
 import { weatherDamage } from './weather';
 
 /** Strength tier per ability def index (set A then set B: the ABILITY_DEFS order of projectile.ts and melee.ts). */
-export const HIT_STRENGTH: readonly HitStrengthValue[] = [...ABILITIES_A, ...ABILITIES_B].map((d) =>
+export const HIT_STRENGTH: readonly HitStrengthValue[] = ALL_ABILITIES.map((d) =>
   hitStrengthFor(d.id, d.damage ?? 0, d.kind === 'melee'),
 );
 /** Base hit-stun per ability def index (FUN-DESIGN 2.3; Tornado and Entangling Vines stun 60). */
-export const HIT_STUN: readonly number[] = [...ABILITIES_A, ...ABILITIES_B].map((d, i) =>
+export const HIT_STUN: readonly number[] = ALL_ABILITIES.map((d, i) =>
   hitStunFor(d.id, HIT_STRENGTH[i] ?? HitStrength.light),
 );
 /**

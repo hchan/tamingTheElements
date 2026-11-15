@@ -93,6 +93,11 @@ export const RACE_SUPERS: Readonly<Record<string, SuperSpec>> = {
   curomo: { id: 10, name: 'GLACIER CRASH', ...TIDE, rootTicks: 30 },
   morblass: { id: 11, name: 'HAILSTORM', ...TIDE, icicles: 6 },
   ishimi: { id: 12, name: 'SLIME TSUNAMI', ...TIDE, size: 180 },
+  // Roster-24 batch 1 (SIM_VERSION 72): ids 13-16 stay contiguous (SUPER_SPECS is indexed by id).
+  kindrel: { id: 13, name: 'WILDFIRE', ...BEAM, size: 140, speedBonus: 3, speedTicks: 150 },
+  nykra: { id: 14, name: 'KELPIE SURGE', ...TIDE, speedBonus: 2, speedTicks: 100 },
+  quarrak: { id: 15, name: 'ROCKFALL', ...QUAKE, icicles: 5 },
+  hyalia: { id: 16, name: 'STORM BLOOM', ...VORTEX, rootTicks: 25 },
 };
 
 /** Every super spec by `superId` (index = id). */

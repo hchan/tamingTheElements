@@ -6,3 +6,6 @@ Run: python tools/assets/fx-gen/<script>.py [outdir, default public/assets/img/f
 Looping projectile strips (public/assets/img/fx/loop/) and 12-frame element impact strips (public/assets/img/fx/impact/) are procedural
 and original too: tools/assets/fx-gen/batch-i-loops-impacts.py with the density-field helpers in tools/assets/fx-gen/paint.py
 (numpy + Pillow, plus grim_fx.py for the grade). Run: python tools/assets/fx-gen/batch-i-loops-impacts.py [outdir] [--only name,name]
+
+Roster 24 batch 1 ability sprites (emberBite, cinderSpray, hoofCrash, kelpLash, boulderRoll, stingingFilament, bellPulse) are procedural and
+original: tools/assets/fx-gen/batch-j-roster24-b1.py (same helpers). Run: python tools/assets/fx-gen/batch-j-roster24-b1.py [outdir] [--only name,name]

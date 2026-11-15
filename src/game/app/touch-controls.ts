@@ -1,5 +1,5 @@
 import { el } from '@ui/dom';
-import { ABILITIES_A, ABILITIES_B, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, heroStyleOf, type CharacterId, type RenderView } from '@core/index';
+import { ALL_ABILITIES, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, heroStyleOf, type CharacterId, type RenderView } from '@core/index';
 import { touchHaptic } from '../platform/a11y/touch-layout';
 import { actionKeyLabel, getBindings } from '../platform/input/bindings';
 import { cleanseClockOf } from '../hud/cleanse-clock';
@@ -39,7 +39,7 @@ export function isMeleeRace(race: CharacterId): boolean {
   const style = heroStyleOf(race);
   if (style !== undefined) return style === 'melee';
   const def = CHARACTERS.find((c) => c.id === race);
-  const kind = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === def?.abilities[0])?.kind ?? '';
+  const kind = ALL_ABILITIES.find((d) => d.id === def?.abilities[0])?.kind ?? '';
   return !WEATHER_RANGED_KINDS.includes(kind);
 }
 

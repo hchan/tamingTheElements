@@ -88,9 +88,9 @@ function stunLeftAtHit(world: SimWorld, x: number, n: number): number {
 }
 
 describe('super specs (FUN-DESIGN 2.5)', () => {
-  it('has 12 race variants with ids 1..12, plus the generic burst at 0', () => {
-    expect(SUPER_SPECS.map((d) => d.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-    expect(Object.keys(RACE_SUPERS)).toHaveLength(12);
+  it('has 16 race variants with ids 1..16, plus the generic burst at 0', () => {
+    expect(SUPER_SPECS.map((d) => d.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+    expect(Object.keys(RACE_SUPERS)).toHaveLength(16);
     expect(superOf('dummy').id).toBe(0);
     expect(superOf('eternal-void').id).toBe(0);
   });

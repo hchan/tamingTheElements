@@ -23,6 +23,11 @@ export const CHARACTER_SIZE: Readonly<Record<string, number>> = {
   rokcore: 200,
   // A 1.5x mid-size bruiser: +22% life, +6% damage, knockback / 1.3, walk and dash x0.86.
   ishimi: 150,
+  // Roster-24 batch 1: a small cinder salamander, a medium kelpie, a large siege crab, a medium tall jelly (box below).
+  kindrel: 70,
+  nykra: 110,
+  quarrak: 170,
+  hyalia: 100,
 };
 
 /**
@@ -30,7 +35,9 @@ export const CHARACTER_SIZE: Readonly<Record<string, number>> = {
  * CHARACTER_WIDTH x CHARACTER_HEIGHT square (a long wyrm 200x90, a tall jelly 100x160). The `size` percent scales both edges
  * on top of it. Not listed = the square. Arcade only, like size. The box keeps the same centre as a 1x hero at spawn and tag.
  */
-export const CHARACTER_BOX: Readonly<Record<string, readonly [number, number]>> = {};
+export const CHARACTER_BOX: Readonly<Record<string, readonly [number, number]>> = {
+  hyalia: [100, 160],
+};
 
 /** Per 1x of extra size (`size - 100` = 100): life +450 pm, damage +120 pm, knockback weight +600 pm, walk and dash speed -280 pm. */
 export const SIZE_LIFE_PM_PER_STEP = 450;

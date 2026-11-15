@@ -4,8 +4,7 @@ import {
   BUFFER_TICKS, COMBO_SCALE_PM, METER_CAST, METER_WEATHER, WEATHER_CHARGE_CAST, WEATHER_CHARGE_FULL, WEATHER_CHARGE_STEP, WEATHER_COOLDOWN_TICKS, WEATHER_EFFECTS, WEATHER_EFFECTS_ON,
   WEATHER_ELEMENTS, WEATHER_PM, WEATHER_RANGED_KINDS, WEATHER_RECOVERY_TICKS, WEATHER_TICKS, Weather,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { CHARACTERS } from '../../../data/characters';
 import { arcadeRaceNumbers } from '../../arcade-numbers';
 import type { Element } from '../../../data/elements';
@@ -350,7 +349,7 @@ describe('weather charge (owner rule 2026-11-10, WP-arcade-weather-charge)', () 
   });
 
   it('a hero is ranged exactly when HERO_STYLE says so; a character with no style by its primary ability kind', () => {
-    const kinds = [...ABILITIES_A, ...ABILITIES_B];
+    const kinds = ALL_ABILITIES;
     CHARACTERS.forEach((c, i) => {
       const style = heroStyleOf(c.id);
       const kind = kinds.find((d) => d.id === c.abilities[0])?.kind ?? '';

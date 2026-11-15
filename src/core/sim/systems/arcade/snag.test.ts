@@ -3,8 +3,7 @@ import {
   ARCADE_SNAG_SLOT, SNAG_ABILITY, SNAG_COOLDOWN_TICKS, SNAG_DAMAGE, SNAG_FIRE_ABILITIES, SNAG_STUN_TICKS, SNAG_IMMUNE_TICKS, SNAG_RANGE_PX,
   SNAG_ROOT_TICKS, SNAG_WIDTH_PX, SnagEvent, Weather, WEATHER_CHARGE_FULL,
 } from '../../../data/arcade';
-import { ABILITIES_A } from '../../../data/abilities-a';
-import { ABILITIES_B } from '../../../data/abilities-b';
+import { ALL_ABILITIES } from '../../../data/abilities-all';
 import { CHARACTERS } from '../../../data/characters';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
@@ -61,7 +60,7 @@ describe('Snag data (FUN-DESIGN 2.20)', () => {
     expect([SNAG_DAMAGE, SNAG_STUN_TICKS]).toEqual([30, 20]);
     expect(ARCADE_SNAG_SLOT).toEqual({ treenoc: 0, wispera: 0, curomo: 1, echo: 0 });
     expect(SNAG_ABILITY).toBe('entangling-vines');
-    const ids = [...ABILITIES_A, ...ABILITIES_B].map((d) => d.id);
+    const ids = ALL_ABILITIES.map((d) => d.id);
     for (const a of SNAG_FIRE_ABILITIES) expect(ids).toContain(a);
   });
 
@@ -113,7 +112,7 @@ describe('Snag root', () => {
     const g0 = now(s);
     throwSnag(world);
     expect(s.abil[cooldownIdx(0, 0)]).toBe(g0 + SNAG_COOLDOWN_TICKS + 1);
-    const vines = [...ABILITIES_A, ...ABILITIES_B].find((d) => d.id === SNAG_ABILITY);
+    const vines = ALL_ABILITIES.find((d) => d.id === SNAG_ABILITY);
     expect(vines && cooldownTicksFor(vines, false)).toBe(250); // Classic keeps its 5 s
     // A rooted target ignores a second throw (no refresh), and so does an immune one (no chain).
     const until = s.arcade[E(1, ArcadeE.rootUntil)];

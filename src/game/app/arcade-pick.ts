@@ -20,6 +20,12 @@ export const arcadeRacesFor = (search: string): readonly CharacterId[] =>
 /** The released playable races (the two void characters are story-only). */
 export const ARCADE_RACES: readonly CharacterId[] = arcadeRacesFor('');
 
+/** The races in play for this page: `ARCADE_RACES`, plus the unreleased ones behind `?ff=roster24` (dev and test builds). Read per call, never cached. */
+const activeRaces = (): readonly CharacterId[] => {
+  const search = (globalThis as { location?: { search?: string } }).location?.search;
+  return search === undefined ? ARCADE_RACES : arcadeRacesFor(search);
+};
+
 /**
  * AI levels offered (FUN-DESIGN 2.11, WP-arcade-ai-personalities): the index is the core AI level (`ARCADE_AI_KNOBS`
  * row: Easy never supers, combo caps 1, 3 and 5, slower or faster reactions, parries and dodges).
@@ -84,14 +90,14 @@ export const VOID_BOSS = 'eternal-void' as CharacterId;
 export function flagFallbackWarnings(hero: string | null, foe: string | null, devVoidFoe = false): string[] {
   const out: string[] = [];
   for (const [flag, raw, fallback] of [['hero', hero, DEFAULT_PICK.player], ['foe', foe, DEFAULT_PICK.enemy]] as const) {
-    if (raw !== null && !ARCADE_RACES.some((r) => r === raw) && !(devVoidFoe && flag === 'foe' && raw === VOID_BOSS)) {
+    if (raw !== null && !activeRaces().some((r) => r === raw) && !(devVoidFoe && flag === 'foe' && raw === VOID_BOSS)) {
       out.push(`?${flag}=${raw} is not a playable race (story-only or unknown), using ${fallback} instead`);
     }
   }
   return out;
 }
 
-const race = (raw: string | undefined, fallback: CharacterId): CharacterId => ARCADE_RACES.find((r) => r === raw) ?? fallback;
+const race = (raw: string | undefined, fallback: CharacterId): CharacterId => activeRaces().find((r) => r === raw) ?? fallback;
 
 /** Default: the owner playtest's Sindarosa (FUN-DESIGN section 7) against Rokcore (a fair first match: similar life, Sindarosa wins 42% of 64 scripted Arcade seeds; against Fiara it was 22%), AI Normal, 1v1. */
 export const DEFAULT_PICK: ArcadePick = { player: 'sindarosa' as CharacterId, enemy: 'rokcore' as CharacterId, level: 'normal' };
