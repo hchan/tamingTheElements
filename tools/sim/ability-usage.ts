@@ -1,5 +1,5 @@
 // Ability usage metrics (headless, docs/TESTING.md "Ability usage metrics"): per hero and slot, how often is each ability cast?
-//   tsx tools/sim/ability-usage.ts [--ruleset arcade|classic] [--seeds 4] [--seed 1] [--ai-level 3] [--out out/ability-usage.json]
+//   tsx tools/sim/ability-usage.ts [--ruleset arcade|classic] [--seeds 4] [--seed 1] [--ai-level 3] [--roster legacy|full] [--out out/ability-usage.json]
 // Plays every 1v1 pairing with the scripted AI. A cast is a rise of the slot's cooldown deadline (`SimState.abil`), which
 // covers buffs, heals and Dash-like slots that raise no projectile or hit event. Uptime is the share of ticks the slot's
 // active count is above zero (a projectile or melee box in flight) or, for a buff, its status is on the hero. Hits and damage come from Arcade `hitConfirmed` events
@@ -19,7 +19,7 @@ import { ABILITY_DEFS } from '../../src/core/sim/systems/projectile';
 import { StatusId } from '../../src/core/sim/systems/status';
 import { EntityFlag, EntityKind, MAX_ENTITIES, STATUS_SLOTS, STATUS_STRIDE, cooldownIdx, countIdx } from '../../src/core/sim/state';
 import { step } from '../../src/core/sim/step';
-import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, RACES, makeTeamAgent, xpForLevel } from './run-match';
+import { ARCADE_MAX_TICKS, DEFAULT_MAX_TICKS, FULL_RACES, RACES, makeTeamAgent, xpForLevel } from './run-match';
 
 export type UsageRuleset = 'arcade' | 'classic';
 /** Slots measured: the two ability slots of a hero (slot 2 is Capture/Snag, scored elsewhere). */
@@ -68,9 +68,9 @@ export const DEAD_PER_MIN = 0.3;
 export const RARE_PER_MIN = 2;
 export const OVERUSED_SHARE = 0.85;
 
-export function emptyUsage(): Map<string, SlotUsage[]> {
+export function emptyUsage(races: readonly string[] = RACES): Map<string, SlotUsage[]> {
   const out = new Map<string, SlotUsage[]>();
-  for (const r of RACES) {
+  for (const r of races) {
     out.set(
       r,
       getCharacter(characterId(r))
@@ -100,12 +100,12 @@ export function judge(rows: readonly SlotUsage[]): UsageRow[] {
 
 const CHARACTER_IDS: readonly string[] = CHARACTERS.map((c) => c.id);
 
-export function measure(ruleset: UsageRuleset, seeds: number, seed: number, aiLevel: number): Map<string, SlotUsage[]> {
-  const out = emptyUsage();
+export function measure(ruleset: UsageRuleset, seeds: number, seed: number, aiLevel: number, races: readonly string[] = RACES): Map<string, SlotUsage[]> {
+  const out = emptyUsage(races);
   const arcade = ruleset === 'arcade';
   const maxTicks = arcade ? ARCADE_MAX_TICKS : DEFAULT_MAX_TICKS;
-  RACES.forEach((a, i) => {
-    for (const b of RACES.slice(i + 1)) {
+  races.forEach((a, i) => {
+    for (const b of races.slice(i + 1)) {
       for (let k = 0; k < seeds; k++) {
         const xp = xpForLevel(arcade ? 1 : 5);
         const aFirst = k % 2 === 0;
@@ -166,10 +166,10 @@ export function report(res: Map<string, SlotUsage[]>): { rows: UsageRow[]; dead:
 }
 
 function main(): void {
-  const { values } = parseArgs({ options: { ruleset: { type: 'string' }, seeds: { type: 'string' }, seed: { type: 'string' }, 'ai-level': { type: 'string' }, out: { type: 'string' } } });
+  const { values } = parseArgs({ options: { ruleset: { type: 'string' }, seeds: { type: 'string' }, seed: { type: 'string' }, 'ai-level': { type: 'string' }, roster: { type: 'string' }, out: { type: 'string' } } });
   const ruleset: UsageRuleset = values.ruleset === 'classic' ? 'classic' : 'arcade';
   const seeds = Number(values.seeds ?? 4);
-  const res = measure(ruleset, seeds, Number(values.seed ?? 1), Number(values['ai-level'] ?? 3));
+  const res = measure(ruleset, seeds, Number(values.seed ?? 1), Number(values['ai-level'] ?? 3), values.roster === 'full' ? FULL_RACES : RACES);
   const { rows, dead, overused } = report(res);
   console.log(`Ability usage (${ruleset}, ${String(seeds)} seeds x 66 pairings, scripted AI). casts/min = rises of the cooldown deadline per fighter-minute.`);
   console.log('race            slot ability            kind    casts  /min  uptime  hits  hit/cast  dmg    share  verdict');

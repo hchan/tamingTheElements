@@ -12,6 +12,8 @@ import { ArcadeTactics } from '../../src/core/agents/scripted-ai/arcade';
 import { ArcadeTactics as ArcadeTacticsV1 } from './arcade-ai-v1/arcade';
 import { AI_EASY, AI_HARD, AI_NORMAL, type ArcadeAiLevel, type Style } from '../../src/core/agents/scripted-ai/arcade-ai';
 import { type AttackAbility, AttackAgent } from '../../src/core/agents/scripted-ai/attack';
+import { kitKindOf } from '../../src/core/agents/scripted-ai/index';
+import type { AbilityDefB } from '../../src/core/data/abilities-b';
 import { arcadePlayfield } from '../../src/core/data/arcade';
 import { CHARACTERS, getCharacter, LEGACY_RACES } from '../../src/core/data/characters';
 import { ELEMENTS, type Element, elementRelation } from '../../src/core/data/elements';
@@ -103,7 +105,7 @@ function toAttack(def: AbilityDef | undefined): AttackAbility {
         type: 'melee',
         w: def.w ?? 0,
         h: def.h ?? 0,
-        reach: EXPLOSION.has(def.id) ? 'explosion' : 'directional',
+        reach: (def as AbilityDefB).centred === true || EXPLOSION.has(def.id) ? 'explosion' : 'directional',
         maxActive,
       };
     case 'heal':
@@ -175,7 +177,7 @@ export class ScriptedAI implements Agent {
     );
     this.melee = this.defs.some((d) => d?.kind === 'melee');
     const unfavourable = elementRelation(me.element, getCharacter(characterId(opponent)).element) === 'dis';
-    this.arcade = frozenV1 ? new ArcadeTacticsV1(arcadeLevel(aiLevel), personality, unfavourable) : new ArcadeTactics(arcadeLevel(aiLevel), personality, unfavourable);
+    this.arcade = frozenV1 ? new ArcadeTacticsV1(arcadeLevel(aiLevel), personality, unfavourable) : new ArcadeTactics(arcadeLevel(aiLevel), personality, unfavourable, [kitKindOf(this.defs[0]), kitKindOf(this.defs[1])]);
   }
 
   /**
