@@ -23,3 +23,7 @@ Ship in batches (for example 4, then 4, then 4) so `main` stays green and balanc
 
 - Does the void element count as a fifth type (Eternal Void exists)? The owner said 4 types x 6.
 - Which of the existing heroes seed the archetype gaps (tank, rushdown, zoner, grappler, summoner, trapper)?
+
+## Melee / ranged split (owner, 2026-11-14)
+
+Split the 24 roughly half melee, half ranged (12 and 12; ideally 3 melee and 3 ranged per element, so every element offers both play styles). Melee heroes win by pressure, short reach and strong close-range moves; ranged heroes by spacing, projectiles and zoning. Each needs a distinct design so they do not just reskin each other, and the balance runs must show neither style dominating. Open: audit how many of the current 12 are melee vs ranged and fill the gaps with the new 12; UI should mark the style with an icon, not colour alone.
