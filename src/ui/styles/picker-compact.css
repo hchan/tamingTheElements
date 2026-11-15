@@ -74,4 +74,11 @@
   #arcadePick .vsSide .vsSideTitle {
     margin: 0;
   }
+  /* The fighter cards share a row with the title, so a slot is too narrow for "Your partner (2v2)" on one line (QA r41): let the label wrap whole instead of ellipsising. */
+  #menu #arcadePick .vsSide .vsSlotLabel {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.1;
+  }
 }
