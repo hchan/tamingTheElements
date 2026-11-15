@@ -532,6 +532,8 @@ export const OT_SPECS: readonly OtSpec[] = [
 export const OT_RIDERS: readonly { readonly slug: string; readonly kind: number }[] = [
   { slug: 'crimson-fire', kind: OtKind.burning },
   { slug: 'scorch-breath', kind: OtKind.burning },
+  { slug: 'slime-blast', kind: OtKind.venom },
+  { slug: 'stinging-filament', kind: OtKind.venom },
 ];
 /** Heals (mending pulses, heal abilities, the water patch) are scaled by this per mille under venom. */
 export const OT_VENOM_HEAL_PM = 500;

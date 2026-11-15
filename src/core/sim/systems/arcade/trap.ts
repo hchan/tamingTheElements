@@ -16,6 +16,7 @@ import { castDir } from './aim';
 import { pending, Press, usePress } from './buffer';
 import { stepHazard } from './hazard';
 import { applyArcadeHit, TRAP_BOMB_DEF, TRAP_SPIKE_DEF } from './hit';
+import { douseBurn } from './over-time';
 import { setKnockback } from './knockback';
 import { freeRoot } from './snag';
 import { isFree, isInvulnerable } from './stun';
@@ -184,7 +185,10 @@ export function stepTraps(world: SimWorld, sink: EventSink): void {
     const reach = foe >= 0 && !isInvulnerable(s, foe) && inSquare(s, foe, cx, cy, TRAP_BOX_PX + 2 * TRAP_TRIGGER_PX);
     const timeout = g >= (a[b + TrapF.endAt] ?? 0);
     if (kind === TrapKind.puddle) {
-      if (reach) a[foe * ARCADE_E + ArcadeE.trapSlowUntil] = g + TRAP_PUDDLE_LINGER_TICKS;
+      if (reach) {
+        a[foe * ARCADE_E + ArcadeE.trapSlowUntil] = g + TRAP_PUDDLE_LINGER_TICKS;
+        douseBurn(s, sink, foe);
+      }
       if (timeout) endTrap(s, sink, slot, TrapReason.timeout);
     } else if (reach || timeout) {
       fireTrap(world, sink, slot, foe >= 0 && !isInvulnerable(s, foe) ? foe : -1, reach ? TrapReason.overlap : TrapReason.timeout);

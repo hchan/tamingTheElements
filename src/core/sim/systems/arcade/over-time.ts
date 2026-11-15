@@ -130,6 +130,19 @@ export function cleanseOt(world: SimWorld, sink: EventSink, id: number): number 
   return n;
 }
 
+/** Water douse (Puddle trap, water patch tick, Rain): removes `id`'s burning with `otEnded {reason: cleansed}`. Returns true when it did. */
+export function douseBurn(s: SimState, sink: EventSink, id: number): boolean {
+  if (!otOn(s) || id < 0 || !removeStatus(s, id, StatusId.burning)) return false;
+  sink.emit(id, SimEventKind.otEnded, { id, status: StatusId.burning, reason: OtEnd.cleansed });
+  return true;
+}
+
+/** Rain starting douses every burning hero. */
+export function douseAllBurn(s: SimState, sink: EventSink): void {
+  if (!otOn(s)) return;
+  for (let id = 0; id < MAX_ENTITIES; id++) douseBurn(s, sink, id);
+}
+
 /** Read-only twin of `cleanseOt`: how many over-time debuffs Cleanse would end on `id` now. */
 export function cleansableOt(s: SimState, id: number): number {
   if (!otOn(s)) return 0;

@@ -36,8 +36,9 @@ const hit = (w: SimWorld, d: number): SimEvent[] => {
 
 describe('OT1 burn rider', () => {
   it('the table names two fire abilities, both burning, and both exist', () => {
-    expect(OT_RIDERS.map((r) => r.slug)).toEqual(['crimson-fire', 'scorch-breath']);
-    for (const r of OT_RIDERS) {
+    const burners = OT_RIDERS.filter((r) => r.kind === OtKind.burning);
+    expect(burners.map((r) => r.slug)).toEqual(['crimson-fire', 'scorch-breath']);
+    for (const r of burners) {
       expect(r.kind).toBe(OtKind.burning);
       expect(def(r.slug)).toBeGreaterThanOrEqual(0);
     }
