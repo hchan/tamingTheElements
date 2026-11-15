@@ -27,3 +27,9 @@ Ship in batches (for example 4, then 4, then 4) so `main` stays green and balanc
 ## Melee / ranged split (owner, 2026-11-14)
 
 Split the 24 roughly half melee, half ranged (12 and 12; ideally 3 melee and 3 ranged per element, so every element offers both play styles). Melee heroes win by pressure, short reach and strong close-range moves; ranged heroes by spacing, projectiles and zoning. Each needs a distinct design so they do not just reskin each other, and the balance runs must show neither style dominating. Open: audit how many of the current 12 are melee vs ranged and fill the gaps with the new 12; UI should mark the style with an icon, not colour alone.
+
+## Decisions (2026-11-14, coordinator under the owner's "you decide, be autonomous")
+
+- Ranged-flag fix (WP 0.4) is approved: fiara, morblass and rokcore are ranged but can Charge, wispera is melee but cannot; the flag follows what the hero actually does. It changes the sim, so it runs alone (Opus, one sim-changing agent at a time) with a stated reason for any golden or baseline re-record.
+- The provisional names (Kindrel, Brazgor, Ouroth, Nykra, Abyssor, Glimmaw, Durrok, Quarrak, Umbrel, Vortigal, Hyalia, Zephra) are now the working names. Renaming stays cheap until a hero ships past `?ff=roster24`.
+- Next builder: WP 0.2 (roster split and HERO_STYLE table), then 0.3, then 0.4, then Batch 1.
