@@ -123,6 +123,7 @@ export interface ArenaProbe {
   terrain(): Promise<{
     stage: number; patches: number; rects: readonly number[]; labels: readonly string[]; alpha: number; glow: number;
     particles: number; sparks: number; backdrop: string; nextBackdrop: number; badge: string;
+    chips: readonly { x: number; y: number; w: number; h: number; alpha: number }[];
   } | undefined>;
   /** Arcade only (async: a lazy chunk): the trap markers drawn on the last frame (WP 39b), or undefined before the view mounts. */
   traps(): Promise<readonly { kind: number; x: number; y: number; team: number; label: string; alpha: number }[] | undefined>;

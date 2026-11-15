@@ -92,6 +92,8 @@ export interface TerrainState {
   /** The depth of the chip plates and of their words (both under every fighter layer, which starts at -0.6). */
   readonly chipDepth: number;
   readonly labelDepth: number;
+  /** Each chip's plate box in world px and the alpha it is drawn with now (0 when hidden; it eases down while a fighter stands near). */
+  readonly chips: readonly { x: number; y: number; w: number; h: number; alpha: number }[];
 }
 
 const states = new WeakMap<Phaser.Scene, () => TerrainState>();
@@ -180,6 +182,7 @@ export function mountTerrainView(
     }
   };
   const chipFade = new Float64Array(MAX_PATCHES).fill(1);
+  const chipAlpha = new Float64Array(MAX_PATCHES);
   const chipShown = new Uint8Array(MAX_PATCHES);
 
   const visit = (c: RenderCharacter): void => {
@@ -380,6 +383,7 @@ export function mountTerrainView(
       chipShown[i] = on ? 1 : 0;
       chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -0.25 : 0.06)));
       const a = drawn.alpha * hint * (chipFade[i] ?? 1);
+      chipAlpha[i] = on ? a : 0;
       t.setVisible(on).setAlpha(a);
       p.chips[i]?.setVisible(on).setAlpha(a);
     });
@@ -446,6 +450,7 @@ export function mountTerrainView(
     stage: Math.max(0, drawn.stage), patches: Math.max(0, drawn.count), rects: drawn.rects.slice(0, Math.max(0, drawn.count) * 4),
     labels: [...labels], alpha: drawn.alpha, glow: drawn.glow, particles: drawn.particles, sparks, backdrop: drawn.backdrop,
     nextBackdrop: drawn.nextBackdrop, badge: drawn.badge, chipDepth: CHIP_DEPTH, labelDepth: LABEL_DEPTH,
+    chips: Array.from({ length: Math.max(0, drawn.count) }, (_, i) => ({ x: chipBox[i * 4] ?? 0, y: chipBox[i * 4 + 1] ?? 0, w: chipBox[i * 4 + 2] ?? 0, h: chipBox[i * 4 + 3] ?? 0, alpha: chipAlpha[i] ?? 0 })),
   }));
   return (events) => {
     tick = view.tick;
