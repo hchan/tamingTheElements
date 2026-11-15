@@ -283,7 +283,9 @@ export function mountTerrainView(
       const h = t.height;
       const rim = PATCH_COLORS[stage - 1] ?? 0xffffff;
       p.chips[i]?.clear().fillStyle(0x0e0b14, CHIP_PLATE_ALPHA).fillRoundedRect(-w / 2, -h, w, h, h / 2)
-        .lineStyle(highContrast ? 2 : 1.5, rim, 0.9).strokeRoundedRect(-w / 2, -h, w, h, h / 2).setPosition(cx, cy);
+        .lineStyle(highContrast ? 2 : 1.5, rim, 0.9).strokeRoundedRect(-w / 2, -h, w, h, h / 2)
+        // qa-r38: a thin dark halo outside the rim keeps the pill's edge crisp over pale floors (water, air).
+        .lineStyle(1.5, 0x0e0b14, 0.85).strokeRoundedRect(-w / 2 - 1.5, -h - 1.5, w + 3, h + 3, h / 2 + 1.5).setPosition(cx, cy);
       chipBox[i * 4] = cx - w / 2;
       chipBox[i * 4 + 1] = cy - h;
       chipBox[i * 4 + 2] = w;
@@ -460,7 +462,7 @@ const m = (c: number): number => mute(c, 0.5, 0.8);
 const LABEL_FONT = 'Georgia, "Times New Roman", serif';
 const LABEL_COLOR = '#f2e8d2';
 /** Chip plate opacity: over even a white floor the plate blends to about L 0.03, so the word keeps >= 4.5:1 on every stage. */
-const CHIP_PLATE_ALPHA = 0.9;
+const CHIP_PLATE_ALPHA = 0.96;
 
 /** The small element icon of the badge in an ICON box centred on (x, y): a flame, a drop, a block, a swirl. */
 function icon(g: Phaser.GameObjects.Graphics, stage: number, x: number, y: number): void {
