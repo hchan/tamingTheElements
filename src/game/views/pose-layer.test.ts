@@ -771,3 +771,24 @@ describe('sprite sheets (FUN-DESIGN 2.16 step 3)', () => {
     expect([...seen].sort()).toEqual(['ko/E#0', 'ko/E#1', 'ko/E#2', 'ko/E#3']);
   });
 });
+
+describe('wing flap and knee bend while moving', () => {
+  const yRange = (sprite: string, reduced = false): number => {
+    const h = harness({ reduced, sheets: sheetsWith([], 'none') });
+    h.c.sprite = sprite;
+    const ys: number[] = [];
+    for (let i = 0; i < 120; i++) {
+      h.step(1000 / 60);
+      if (i > 30) ys.push(h.img.y);
+    }
+    return Math.max(...ys) - Math.min(...ys);
+  };
+
+  it('winged and legged heroes bob more than a limbless one while walking, and stay steady under reduced motion', () => {
+    const plain = yRange('circusOfSlime');
+    expect(yRange('sindarosa')).toBeGreaterThan(plain + 1);
+    expect(yRange('pax')).toBeGreaterThan(plain + 1);
+    expect(yRange('sindarosa', true)).toBe(0);
+    expect(yRange('pax', true)).toBe(0);
+  });
+});
