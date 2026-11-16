@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
 // The Tour has no in-fight card (its stage card names the controls); the card is shown in Versus. The first battle shows a short "First blood" card; Got it removes it and the choice is remembered.
@@ -65,3 +65,97 @@ test.describe('phone', () => {
     expect(errors).toEqual([]);
   });
 });
+
+// HINT-CUT-1: a super cut that starts before the card is revealed (round 1, the QA step harness, a build with a live meter at the
+// reveal) keeps the card waiting: it never sits on the band or the portrait, and it appears once the band is gone.
+// Timers of exactly 7000 and 2500 ms are stretched so the intro fallback and the card's fade cannot fire on a slow SwiftShader run.
+const SUPER = 1 << 13;
+const shotDir = process.env['SHOT_DIR'];
+interface CssRect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+interface BandProbe {
+  alpha: number;
+  band: CssRect | null;
+  portrait: CssRect | null;
+  card: CssRect | null;
+  cls: string;
+}
+const probe = (page: Page): Promise<BandProbe> =>
+  page.evaluate<BandProbe>(`(async () => {
+    const fx = await window.__TTE__.arena.superFx();
+    const c = document.querySelector('#game canvas').getBoundingClientRect();
+    const k = Math.min(c.width / 1280, c.height / 720);
+    const left = c.left + (c.width - 1280 * k) / 2;
+    const css = (r) => ({ x0: left + r.x0 * k, y0: c.top + r.y0 * k, x1: left + r.x1 * k, y1: c.top + r.y1 * k });
+    const card = document.getElementById('firstRunHint');
+    const cr = card ? card.getBoundingClientRect() : null;
+    return {
+      alpha: fx ? fx.bandAlpha : 0,
+      band: fx && fx.band ? { x0: c.left, y0: c.top + (fx.band.y - fx.band.ext) * k, x1: c.right, y1: c.top + (fx.band.y + fx.band.ext) * k } : null,
+      portrait: fx && fx.band && fx.band.portrait ? css(fx.band.portrait) : null,
+      card: cr ? { x0: cr.left, y0: cr.top, x1: cr.right, y1: cr.bottom } : null,
+      cls: card ? card.className : '',
+    };
+  })()`);
+const meets = (a: CssRect | null, b: CssRect | null): boolean => !!a && !!b && a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+
+for (const vp of [
+  { name: '1280x720', width: 1280, height: 720, touch: false },
+  { name: '844x390', width: 844, height: 390, touch: true },
+  { name: '667x375', width: 667, height: 375, touch: true },
+]) {
+  test.describe(`card waits for a live super band, ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height }, hasTouch: vp.touch, isMobile: vp.touch });
+    test('the card stays hidden during the band and appears after it', async ({ page }, testInfo) => {
+      const errors = collectErrors(page);
+      await page.addInitScript(`(() => {
+        const real = window.setTimeout.bind(window);
+        window.setTimeout = (fn, ms, ...a) => real(fn, ms === 7000 || ms === 2500 ? 600000 : ms, ...a);
+      })()`);
+      await page.goto(`${START}&ff=arcade#versus`);
+      await page.getByLabel('Your race').selectOption('morblass');
+      await page.getByLabel('AI race').selectOption('fiara');
+      const fight = page.getByRole('button', { name: 'Fight!' });
+      if (vp.touch) await fight.tap();
+      else await fight.click();
+      await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+      const shot = async (label: string): Promise<void> => {
+        await page.screenshot({ path: testInfo.outputPath(`${vp.name}-${label}.png`) });
+        if (shotDir) await page.screenshot({ path: `${shotDir}/hint-cut-${vp.name}-${label}.png` });
+      };
+      // t103: FIGHT! has just cleared (the card's reveal) and the super is already on screen.
+      await page.evaluate(`(() => {
+        const a = window.__TTE__.arena;
+        a.step(95);
+        const [me, foe] = a.characters();
+        a.place(me.id, 560, 360, 0);
+        a.place(foe.id, 680, 360, 4);
+        a.setMeter(0, 1000);
+        a.step(2);
+        a.step(1, [${String(SUPER)}, 0]);
+        a.step(5);
+      })()`);
+      const card = page.locator('#firstRunHint');
+      await expect.poll(async () => (await probe(page)).alpha).toBeGreaterThan(0.05);
+      let s = await probe(page);
+      expect(s.cls).toContain('firstRunWait');
+      expect(meets(s.card, s.band)).toBe(false);
+      await shot('band');
+      await page.evaluate(`window.__TTE__.arena.step(10)`);
+      s = await probe(page);
+      expect(s.cls).toContain('firstRunWait');
+      // The band is gone: the gate polls every 100 ms and then reveals the card.
+      await page.evaluate(`window.__TTE__.arena.step(20)`);
+      await expect(card).not.toHaveClass(/firstRunWait/);
+      await expect(card).toBeVisible();
+      s = await probe(page);
+      expect(s.alpha).toBeLessThanOrEqual(0.05);
+      await shot('card-after');
+      expect(errors).toEqual([]);
+    });
+  });
+}
