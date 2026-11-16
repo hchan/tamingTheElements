@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
 import { EntityFlag, SimEventKind, type RenderArcade, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
-import { MAX_SPARKS, SPARK_TICKS, SWAP_FLOOR } from './terrain-fx';
+import { CHIP_MARGIN, MAX_SPARKS, SPARK_TICKS, SLOT_HOLD, SWAP_FLOOR } from './terrain-fx';
 import { CHIP_DEPTH, LABEL_DEPTH, mountTerrainView, terrainState } from './terrain-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
@@ -73,7 +73,7 @@ function fakeObject(kind: string, made: Fake[], key = ''): Fake {
   return proxy;
 }
 
-function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emitter; made: Fake[]; setActive: (a: boolean) => void; loads: string[]; layers: { data: number[][]; puts: number[][][] }[] } {
+function fakeScene(textures: string[] = [], camera: Record<string, unknown> = { midPoint: { x: 960 } }): { scene: Phaser.Scene; events: Emitter; made: Fake[]; setActive: (a: boolean) => void; loads: string[]; layers: { data: number[][]; puts: number[][][] }[] } {
   const events = new Emitter();
   const made: Fake[] = [];
   const loads: string[] = [];
@@ -81,7 +81,7 @@ function fakeScene(textures: string[] = []): { scene: Phaser.Scene; events: Emit
   let active = true;
   const scene = {
     events,
-    cameras: { main: { midPoint: { x: 960 } } },
+    cameras: { main: camera },
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => active },
     textures: {
@@ -120,18 +120,18 @@ const PAINT = 'arenafloor';
 /** Two patches: a 80x80 at (100, 300) and a 120x100 at (500, 320). */
 const PATCHES = [100, 300, 80, 80, 500, 320, 120, 100];
 
-function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string; x?: number; y?: number; atlas?: boolean } = {}) {
+function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string; x?: number; y?: number; atlas?: boolean; camera?: Record<string, unknown>; patches?: number[]; count?: number } = {}) {
   let tick = 100;
   const patches = new Array<number>(20).fill(0);
-  PATCHES.forEach((v, i) => { patches[i] = v; });
-  const arcade = { stage: opts.stage ?? 1, swapLeft: 0, swapTo: 0, patchCount: 2, patches } as unknown as RenderArcade;
+  (opts.patches ?? PATCHES).forEach((v, i) => { patches[i] = v; });
+  const arcade = { stage: opts.stage ?? 1, swapLeft: 0, swapTo: 0, patchCount: opts.count ?? 2, patches } as unknown as RenderArcade;
   const hero = { id: 0, team: 0, flags: EntityFlag.alive, x: opts.x ?? 120 - 40, y: opts.y ?? 340 - 40, w: 80, h: 80, element: opts.element ?? 'fire' } as RenderCharacter;
   const view = {
     get tick() { return tick; },
     arcade: () => arcade,
     forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(hero); },
   } as unknown as RenderView;
-  const arena = fakeScene(opts.atlas ? [...BGS, TILES, PAINT] : BGS);
+  const arena = fakeScene(opts.atlas ? [...BGS, TILES, PAINT] : BGS, opts.camera);
   const hud = fakeScene();
   const lines: Announcement[] = [];
   const prefs = { reduceMotion: opts.reduceMotion ?? false, highContrast: false };
@@ -212,6 +212,99 @@ describe('terrain view (fake scenes)', () => {
     const chips = m.arena.made.filter((o) => o.kind === 'graphics' && o.depth === CHIP_DEPTH && o.visible);
     expect(chips.length).toBeGreaterThan(0);
     expect(Math.min(...chips.map((c) => c.alpha))).toBeLessThanOrEqual(0.2);
+  });
+
+  describe('floor chips stay whole and off heads (FLOOR-TAGS-1)', () => {
+    const cam = (scrollX: number, zoom: number): Record<string, unknown> => ({ midPoint: { x: scrollX + 640 }, scrollX, scrollY: 0, width: 1280, height: 720, zoom });
+    /** The chip rect of chip `i` and whether it meets a box. */
+    const meets = (c: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): boolean =>
+      c.x < b.x + b.w && c.x + c.w > b.x && c.y < b.y + b.h && c.y + c.h > b.y;
+    // Upper patch (top 300) at the left wall, lower patch (top 500) at the right wall of a 1920 arena.
+    const WALLS = [0, 300, 80, 80, 1700, 500, 80, 80];
+
+    it('at the left wall the chip stays at least CHIP_MARGIN inside the view; far chips and a fake camera without zoom keep today\'s spot', () => {
+      const m = mount({ camera: cam(0, 1), patches: WALLS, y: 600, x: 900 });
+      m.frame();
+      const c = m.state().chips[0];
+      expect(c?.x).toBeGreaterThanOrEqual(CHIP_MARGIN);
+      // The right patch is outside the 1280 view: it keeps its own centre.
+      expect((m.state().chips[1]?.x ?? 0) + (m.state().chips[1]?.w ?? 0) / 2).toBe(1740);
+      const plain = mount({ patches: WALLS, y: 600, x: 900 });
+      plain.frame();
+      expect((plain.state().chips[1]?.x ?? 0) + 50).toBe(1740);
+      expect(plain.state().view).toMatchObject({ x: 0, w: 1920 });
+    });
+
+    it('in the punch zoom (1.15) every shown chip is inside the narrower view', () => {
+      const m = mount({ camera: cam(500, 1.15), patches: [640, 300, 80, 80, 1000, 500, 80, 80], y: 600, x: 900 });
+      m.frame();
+      const v = m.state().view;
+      expect(v.w).toBeCloseTo(1280 / 1.15, 5);
+      for (const c of m.state().chips) {
+        expect(c.x).toBeGreaterThanOrEqual(v.x + CHIP_MARGIN - 1e-6);
+        expect(c.x + c.w).toBeLessThanOrEqual(v.x + v.w - CHIP_MARGIN + 1e-6);
+      }
+    });
+
+    it('a drawn head over the base slot (sim box outside the old window) flips the chip, which then misses every body', () => {
+      // Chip of patch 0: above it. Head of an 80 px hero at 2x reaches 80 px above its sim top: stand 50 px below the chip's old window.
+      const m = mount({ patches: [400, 400, 80, 80], count: 1 });
+      m.frame();
+      const base = m.state().chips[0];
+      if (!base) throw new Error('no chip');
+      m.hero.x = base.x + base.w / 2 - 40;
+      m.hero.y = base.y + base.h + 24 + 40;
+      for (let i = 0; i < 4; i++) m.frame();
+      const s = m.state();
+      expect(s.chips[0]?.slot).toBe(1);
+      for (const b of s.bodies) expect(meets(s.chips[0] ?? base, b)).toBe(false);
+      expect(s.chips[0]?.y).not.toBe(base.y);
+    });
+
+    it('both slots covered: the chip stays put and fades out of the way', () => {
+      const m = mount({ patches: [400, 400, 80, 80], count: 1 });
+      m.frame();
+      const base = m.state().chips[0];
+      if (!base) throw new Error('no chip');
+      // A tall box spanning both sides of the patch.
+      m.hero.h = 400;
+      m.hero.w = 80;
+      m.hero.x = 400;
+      m.hero.y = 250;
+      for (let i = 0; i < 6; i++) m.frame();
+      expect(m.state().chips[0]?.slot).toBe(0);
+      expect(m.state().chips[0]?.alpha).toBeLessThanOrEqual(0.2);
+    });
+
+    it('returns to the base slot only after SLOT_HOLD clear frames, and a fighter on the boundary does not flip-flop', () => {
+      const m = mount({ patches: [400, 400, 80, 80], count: 1 });
+      m.frame();
+      const base = m.state().chips[0];
+      if (!base) throw new Error('no chip');
+      const onHead = { x: base.x + base.w / 2 - 40, y: base.y + base.h + 24 + 40 };
+      m.hero.x = onHead.x;
+      m.hero.y = onHead.y;
+      m.frame();
+      expect(m.state().chips[0]?.slot).toBe(1);
+      m.hero.x = 20;
+      m.hero.y = 600;
+      for (let i = 1; i < SLOT_HOLD; i++) {
+        m.frame();
+        expect(m.state().chips[0]?.slot).toBe(1);
+      }
+      m.frame();
+      expect(m.state().chips[0]?.slot).toBe(0);
+      // Boundary: toggle the head every frame; the chip flips once and never comes back.
+      m.hero.x = onHead.x;
+      m.hero.y = onHead.y;
+      m.frame();
+      expect(m.state().chips[0]?.slot).toBe(1);
+      for (let i = 0; i < 40; i++) {
+        if (i % 2 === 0) { m.hero.x = 20; m.hero.y = 600; } else { m.hero.x = onHead.x; m.hero.y = onHead.y; }
+        m.frame();
+        expect(m.state().chips[0]?.slot).toBe(1);
+      }
+    });
   });
 
   it('draws a distinct pattern per stage: flames, waves, bricks, swirls', () => {

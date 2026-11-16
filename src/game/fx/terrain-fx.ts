@@ -233,3 +233,22 @@ export function particle(stage: number, k: number, i: number, t: number, px: num
   }
   return out;
 }
+
+/** World px a floor chip keeps clear of the view's left and right edge (FLOOR-TAGS-1). */
+export const CHIP_MARGIN = 16;
+/** Draw frames a chip's base slot must stay clear before the chip returns to it (no flip-flop at the boundary). */
+export const SLOT_HOLD = 20;
+
+/**
+ * Centre x of a floor chip of width `w` whose base centre is `cx` on a patch spanning [patchL, patchR], seen through the view
+ * [viewL, viewR]: any chip that would show any part of itself is moved fully inside the view (`margin` clear of each edge); a
+ * chip wholly off-screen, or a view narrower than the chip, keeps `cx`.
+ */
+export function chipCentreX(cx: number, w: number, patchL: number, patchR: number, viewL: number, viewR: number, margin: number): number {
+  const seen = (patchR > viewL && patchL < viewR) || (cx + w / 2 > viewL && cx - w / 2 < viewR);
+  if (!seen) return cx;
+  const lo = viewL + margin + w / 2;
+  const hi = viewR - margin - w / 2;
+  if (lo > hi) return cx;
+  return Math.max(lo, Math.min(hi, cx));
+}
