@@ -497,6 +497,25 @@ describe('Arcade poses from events', () => {
     for (let i = 0; i < 20; i++) { l.step(16); expect(l.img.y).toBeGreaterThan(l.c.y - 3); }
   });
 
+  it('KO ghost: the same-team tag-in removes it at once; the other team\'s ghost stays (KOGHOST-1)', () => {
+    const h = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 10; i++) h.step(16);
+    h.consume([ev(SimEventKind.died, 0, { team: 0 }), ev(SimEventKind.tagIn, 0, { to: 1, team: 0 })]);
+    h.c.flags = EntityFlag.dead;
+    for (let i = 0; i < 30; i++) {
+      h.step(16);
+      expect(h.layer.state.ghosts).toBe(0);
+      expect(h.images[1]?.visible).not.toBe(true);
+    }
+    const o = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 10; i++) o.step(16);
+    o.consume([ev(SimEventKind.died, 0, { team: 0 }), ev(SimEventKind.tagIn, 0, { to: 1, team: 1 })]);
+    o.c.flags = EntityFlag.dead;
+    o.step(16);
+    expect(o.layer.state.ghosts).toBe(1);
+    expect(o.images[1]?.visible).toBe(true);
+  });
+
   it('reduced motion: poses move nothing; the tag-in still fades in', () => {
     const h = harness({ arcade: true, vx: 0, reduced: true });
     for (let i = 0; i < 30; i++) h.step(16);

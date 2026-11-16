@@ -112,6 +112,8 @@ interface Ghost {
   /** KO fall: the sprite and facing, to play its sheet's `ko` row when it has one. */
   sprite: string;
   face: number;
+  /** KO fall: the fallen hero's team (-1 otherwise), so only that team's tag-in clears it. */
+  team: number;
 }
 
 export interface PoseLayerDeps {
@@ -259,7 +261,7 @@ export class PoseLayer {
           break;
         }
         case SimEventKind.tagIn:
-          this.clearKoGhosts();
+          this.clearKoGhosts(e['team'] ?? 0);
           this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, (e['team'] ?? 0) === 0 ? 1 : -1, 1);
           break;
         case SimEventKind.superStarted: {
@@ -279,7 +281,7 @@ export class PoseLayer {
           break;
         case SimEventKind.died:
           this.resetDepth(e.sourceId & (SLOTS - 1));
-          this.knockOut(e.sourceId);
+          this.knockOut(e.sourceId, e['team'] ?? -1);
           break;
         case SimEventKind.roundEnded:
           this.victoryTeam = e['winner'] ?? -1;
@@ -647,13 +649,14 @@ export class PoseLayer {
   }
 
   /** The KO fall of character `id`: a ghost copy of its last drawn image falls over and fades while the real one is hidden. */
-  private knockOut(id: number): void {
+  private knockOut(id: number, team: number): void {
     const v = this.deps.characters.peek(id);
     if (!v) return;
     const img = v.image;
     const g = this.free();
     if (!g) return;
     g.kind = 1;
+    g.team = team;
     g.from = this.animMs;
     g.ms = KO_MS;
     g.dir = img.flipX ? 1 : -1;
@@ -669,11 +672,12 @@ export class PoseLayer {
     g.image.setTexture(img.texture.key, img.frame.name).setOrigin(0, 0).setFlipX(img.flipX).setVisible(true).setDepth(img.depth - 0.2);
   }
 
-  /** A tag-in lands where the fallen hero lay: its KO ghost skips ahead to the fade (qa r34), so the arriving hero reads at once. */
-  private clearKoGhosts(): void {
+  /** A KO'd hero's partner tags in where it fell (QA r34, r74, r75): that team's KO ghost goes at once ("opaque or gone"), so only the arriving hero shows. */
+  private clearKoGhosts(team: number): void {
     for (const g of this.ghosts) {
-      if (g.kind !== 1 || g.from === Number.NEGATIVE_INFINITY) continue;
-      g.from = Math.min(g.from, this.animMs - g.ms * 0.6);
+      if (g.kind !== 1 || g.from === Number.NEGATIVE_INFINITY || g.team !== team) continue;
+      g.from = Number.NEGATIVE_INFINITY;
+      g.image.setVisible(false);
     }
   }
 
@@ -681,11 +685,12 @@ export class PoseLayer {
     for (const g of this.ghosts) {
       if (g.from !== Number.NEGATIVE_INFINITY) continue;
       g.alpha = 1;
+      g.team = -1;
       return g;
     }
     if (this.ghosts.length >= GHOSTS) return undefined;
     const image = this.deps.scene.add.image(0, 0, '__DEFAULT').setVisible(false);
-    const g: Ghost = { image, from: Number.NEGATIVE_INFINITY, ms: 0, x: 0, y: 0, w: 0, h: 0, rot: 0, alpha: 1, kind: 0, dir: 1, sprite: '', face: 0 };
+    const g: Ghost = { image, from: Number.NEGATIVE_INFINITY, ms: 0, x: 0, y: 0, w: 0, h: 0, rot: 0, alpha: 1, kind: 0, dir: 1, sprite: '', face: 0, team: -1 };
     this.ghosts.push(g);
     return g;
   }
