@@ -127,8 +127,45 @@ function rotateBlocked(): boolean {
 /** Fallback when no FIGHT_OVER_EVENT arrives (a replay, a round that starts mid-way): the card still shows after this long. */
 export const INTRO_FALLBACK_MS = 7000;
 
-/** `whenReady` for a real game: runs `go` once the Arena scene has built the arena (after the loading screen, never over it). */
-export function afterArenaCreate(game: object): (go: () => void) => void {
+/** Registry keys of a live super cut and a live tag call. Literals keep banner-lanes and arcade-hud out of this chunk (as event-fx does); a test pins them to CUT_KEY / TAG_CALL_KEY. */
+export const CARD_WAIT_KEYS = { cut: 'tte.cut', tagCall: 'tte.tagCall' } as const;
+/** While the arena is busy the reveal re-checks this often (not 2500 or 7000: the e2e harness stretches those timers). */
+export const IDLE_POLL_MS = 100;
+/** From a super-cut or tag-call event until its registry key is set (the cut view loads lazily): 3 s of polls. */
+export const CUT_PENDING_POLLS = 30;
+/** Never wait for ever on a leaked key: the card shows after 12 s of polls. */
+export const CARD_WAIT_CAP_POLLS = 120;
+
+/** True while a super cut-in or a tag call is on screen, so the card must neither appear nor stay. */
+export function arenaBusy(reg: { get(key: string): unknown } | undefined): boolean {
+  if (!reg) return false;
+  if (reg.get(CARD_WAIT_KEYS.cut) === true) return true;
+  const tag = reg.get(CARD_WAIT_KEYS.tagCall) as { w?: number } | null | undefined;
+  return (tag?.w ?? 0) > 0;
+}
+
+/** Calls `go` now when `blocked()` is false; otherwise re-checks every `pollMs` and calls it on the first idle check (or after `capPolls` checks). Returns cancel. */
+export function whenIdle(blocked: () => boolean, go: () => void, pollMs = IDLE_POLL_MS, capPolls = CARD_WAIT_CAP_POLLS): () => void {
+  if (!blocked()) {
+    go();
+    return () => undefined;
+  }
+  let polls = 0;
+  let timer = 0;
+  const check = (): void => {
+    polls += 1;
+    if (polls >= capPolls || !blocked()) {
+      go();
+      return;
+    }
+    timer = window.setTimeout(check, pollMs);
+  };
+  timer = window.setTimeout(check, pollMs);
+  return () => { window.clearTimeout(timer); };
+}
+
+/** `whenReady` for a real game: runs `go` once the Arena scene has built the arena (after the loading screen, never over it). `go` gets a busy probe (a cut or tag call is live). */
+export function afterArenaCreate(game: object): (go: (busy?: () => boolean) => void) => void {
   return (go) => {
     // A stand-in game without scenes (unit tests) shows the card at once.
     const g = game as Partial<Phaser.Game>;
@@ -136,27 +173,81 @@ export function afterArenaCreate(game: object): (go: () => void) => void {
       go();
       return;
     }
-    // The Arena starts only after Preload finishes, by which time every scene is registered.
-    g.events.once(PRELOAD_READY, () => {
-      const scene = g.scene?.getScene('Arena') as Phaser.Scene | null | undefined;
+    const sceneManager = g.scene;
+    const events = g.events;
+    const busy = (): boolean => arenaBusy(g.registry);
+    // A cut or tag call that has started but whose registry key is not set yet (lazy chunk) also holds the card back.
+    let pending = 0;
+    const onCue = (): void => {
+      pending = CUT_PENDING_POLLS;
+    };
+    const blocked = (): boolean => {
+      if (busy()) {
+        pending = 0;
+        return true;
+      }
+      if (pending > 0) {
+        pending -= 1;
+        return true;
+      }
+      return false;
+    };
+    let dead = false;
+    let cancelWait = (): void => undefined;
+    let cancelIntro = (): void => undefined;
+    // The round ended while the card was held back: no card this battle (it shows in the next one).
+    const drop = (): void => { cleanup(); };
+    const onPreload = (): void => {
+      if (dead) return;
+      const scene = sceneManager.getScene('Arena') as Phaser.Scene | null | undefined;
       // The card waits for the sim's FIGHT! banner to end (FIGHT_OVER_EVENT), not a wall-clock guess: a slow machine runs fewer
       // ticks per second. INTRO_FALLBACK_MS covers a round that never announces FIGHT!.
       const later = (): void => {
+        if (dead) return;
         let done = false;
-        const once = (): void => {
-          if (done) return;
-          done = true;
-          window.removeEventListener(FIGHT_OVER_EVENT, once);
+        const stop = (): void => {
+          window.removeEventListener(FIGHT_OVER_EVENT, reveal);
           window.clearTimeout(fallback);
-          go();
         };
-        const fallback = window.setTimeout(once, INTRO_FALLBACK_MS);
-        window.addEventListener(FIGHT_OVER_EVENT, once);
+        const reveal = (): void => {
+          if (done || dead) return;
+          done = true;
+          stop();
+          // A live super cut or tag call holds the reveal until it is over.
+          cancelWait = whenIdle(blocked, () => {
+            cleanup();
+            go(busy);
+          });
+        };
+        const fallback = window.setTimeout(reveal, INTRO_FALLBACK_MS);
+        cancelIntro = stop;
+        window.addEventListener(FIGHT_OVER_EVENT, reveal);
       };
       // Status 4 = CREATING, 5 = RUNNING: the arena is already being built, so its 'create' event may have fired.
-      if (scene && scene.sys.settings.status < 4) scene.events.once('create', later);
-      else later();
-    });
+      if (scene && scene.sys.settings.status < 4) {
+        const sceneEvents = scene.events;
+        sceneEvents.once('create', later);
+        cancelIntro = () => sceneEvents.off('create', later);
+      } else later();
+    };
+    /** Safe to call twice: clears every timer and listener this setup holds (also on game destroy, so a quit never reveals a detached card). */
+    function cleanup(): void {
+      if (dead) return;
+      dead = true;
+      cancelWait();
+      cancelIntro();
+      window.removeEventListener(SUPER_CUT_EVENT, onCue);
+      window.removeEventListener(TAG_CALL_EVENT, onCue);
+      window.removeEventListener(ROUND_OVER_EVENT, drop);
+      events.off(PRELOAD_READY, onPreload);
+      events.off('destroy', cleanup);
+    }
+    window.addEventListener(SUPER_CUT_EVENT, onCue);
+    window.addEventListener(TAG_CALL_EVENT, onCue);
+    window.addEventListener(ROUND_OVER_EVENT, drop);
+    events.once('destroy', cleanup);
+    // The Arena starts only after Preload finishes, by which time every scene is registered.
+    events.once(PRELOAD_READY, onPreload);
   };
 }
 
@@ -165,7 +256,7 @@ export function firstRunHint(
   store: Store | undefined = defaultStore(),
   fadeMs = FIRST_RUN_MS,
   /** Calls its argument once the arena exists (the card must not sit over the loading screen); default: now. */
-  whenReady: (go: () => void) => void = (go) => { go(); },
+  whenReady: (go: (busy?: () => boolean) => void) => void = (go) => { go(); },
   /** False when none of the player's heroes has Snag: the card then leaves the Snag line out. */
   snag = true,
   /** Which ability box (0 or 1) of the player's first hero holds Snag, so the card names that key as Snag, not Strike. */
@@ -196,6 +287,7 @@ export function firstRunHint(
     window.removeEventListener(FIGHT_SETTLED_EVENT, onSettled);
     window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
     window.removeEventListener(TAG_CALL_EVENT, fadeNow);
+    ended = true;
     markSeen(store);
     card.remove();
   });
@@ -211,6 +303,7 @@ export function firstRunHint(
     window.removeEventListener(FIGHT_SETTLED_EVENT, onSettled);
     window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
     window.removeEventListener(TAG_CALL_EVENT, fadeNow);
+    ended = true;
     markSeen(store);
     card.classList.add('firstRunFade');
     const gone = window.setTimeout(() => {
@@ -241,9 +334,19 @@ export function firstRunHint(
     fade();
   };
   let timer = 0;
+  let ended = false;
   card.classList.add('firstRunWait');
-  whenReady(() => {
+  whenReady((busy) => {
     card.classList.remove('firstRunWait');
+    // A super cut or tag call that begins after the reveal (its event can lag the registry key) removes the card on the spot.
+    if (busy) {
+      const watch = (): void => {
+        if (ended) return;
+        if (busy()) fadeNow();
+        else window.setTimeout(watch, IDLE_POLL_MS);
+      };
+      window.setTimeout(watch, IDLE_POLL_MS);
+    }
     // The fade clock starts once the rotate overlay (if any) is gone, so the card is never timed out unseen behind it.
     const arm = (): void => {
       timer = window.setTimeout(rotateBlocked() ? arm : fade, rotateBlocked() ? 250 : fadeMs);

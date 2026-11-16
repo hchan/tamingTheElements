@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FIGHT_SETTLED_EVENT, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
+import { CARD_WAIT_CAP_POLLS, CARD_WAIT_KEYS, CUT_PENDING_POLLS, FIGHT_OVER_EVENT, FIGHT_SETTLED_EVENT, IDLE_POLL_MS, afterArenaCreate, arenaBusy, whenIdle, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
+import { CUT_KEY } from '../hud/banner-lanes';
+import { TAG_CALL_KEY } from '../hud/arcade-hud';
+import { PRELOAD_READY } from '../scenes/launch';
 import { labelsFromBindings } from '../hud/action-bar';
 import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
@@ -261,5 +264,207 @@ describe('firstRunHint, PHONE-2 settle and removal', () => {
     card.querySelector('button')?.click();
     expect(() => window.dispatchEvent(new Event(FIGHT_SETTLED_EVENT))).not.toThrow();
     expect(card.classList.contains('firstRunFade')).toBe(false);
+  });
+});
+
+/** The slice of Phaser's EventEmitter the gate uses (once, off, emit). */
+class EventEmitter {
+  private readonly subs = new Map<string, Set<() => void>>();
+  once(name: string, fn: () => void): this {
+    const wrap = (): void => {
+      this.off(name, wrap);
+      fn();
+    };
+    return this.on(name, wrap, fn);
+  }
+  private on(name: string, wrap: () => void, orig: () => void): this {
+    const set = this.subs.get(name) ?? new Set();
+    (wrap as { orig?: () => void }).orig = orig;
+    set.add(wrap);
+    this.subs.set(name, set);
+    return this;
+  }
+  off(name: string, fn: () => void): this {
+    const set = this.subs.get(name);
+    if (!set) return this;
+    for (const w of [...set]) if (w === fn || (w as { orig?: () => void }).orig === fn) set.delete(w);
+    return this;
+  }
+  emit(name: string): void {
+    for (const w of [...(this.subs.get(name) ?? [])]) w();
+  }
+}
+
+describe('HINT-CUT-1: the card waits for a live super cut or tag call', () => {
+  const fakeGame = (): { game: object; events: EventEmitter; reg: Map<string, unknown> } => {
+    const events = new EventEmitter();
+    const reg = new Map<string, unknown>();
+    const scene = { sys: { settings: { status: 5 } }, events: new EventEmitter() };
+    return { game: { scene: { getScene: () => scene }, events, registry: reg }, events, reg };
+  };
+  /** Starts the card's gate on a fake game whose Arena is already running; fight-over is sent by the caller. */
+  const arm = (): { go: ReturnType<typeof vi.fn>; events: EventEmitter; reg: Map<string, unknown> } => {
+    const f = fakeGame();
+    const go = vi.fn();
+    afterArenaCreate(f.game)(go);
+    f.events.emit(PRELOAD_READY);
+    return { go, events: f.events, reg: f.reg };
+  };
+  const fightOver = (): void => {
+    window.dispatchEvent(new Event(FIGHT_OVER_EVENT));
+  };
+
+  it('pins the registry literals to the real keys', () => {
+    expect(CARD_WAIT_KEYS.cut).toBe(CUT_KEY);
+    expect(CARD_WAIT_KEYS.tagCall).toBe(TAG_CALL_KEY);
+  });
+
+  it('arenaBusy: a live cut or a tag call with width is busy, nothing else', () => {
+    const reg = new Map<string, unknown>();
+    expect(arenaBusy(undefined)).toBe(false);
+    expect(arenaBusy(reg)).toBe(false);
+    reg.set(CARD_WAIT_KEYS.cut, false);
+    expect(arenaBusy(reg)).toBe(false);
+    reg.set(CARD_WAIT_KEYS.cut, true);
+    expect(arenaBusy(reg)).toBe(true);
+    reg.set(CARD_WAIT_KEYS.cut, undefined);
+    reg.set(CARD_WAIT_KEYS.tagCall, { w: 0 });
+    expect(arenaBusy(reg)).toBe(false);
+    reg.set(CARD_WAIT_KEYS.tagCall, { w: 12 });
+    expect(arenaBusy(reg)).toBe(true);
+  });
+
+  it('whenIdle: idle runs at once with no timer, blocked then idle runs once, cap and cancel', () => {
+    vi.useFakeTimers();
+    const go = vi.fn();
+    whenIdle(() => false, go);
+    expect(go).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    let blocked = true;
+    const go2 = vi.fn();
+    whenIdle(() => blocked, go2);
+    vi.advanceTimersByTime(IDLE_POLL_MS * 3);
+    expect(go2).not.toHaveBeenCalled();
+    blocked = false;
+    vi.advanceTimersByTime(IDLE_POLL_MS);
+    expect(go2).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(IDLE_POLL_MS * 10);
+    expect(go2).toHaveBeenCalledTimes(1);
+    const go3 = vi.fn();
+    whenIdle(() => true, go3, 100, 5);
+    vi.advanceTimersByTime(400);
+    expect(go3).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(100);
+    expect(go3).toHaveBeenCalledTimes(1);
+    const go4 = vi.fn();
+    const cancel = whenIdle(() => true, go4);
+    cancel();
+    vi.advanceTimersByTime(60000);
+    expect(go4).not.toHaveBeenCalled();
+  });
+
+  it('idle: the reveal runs on fight-over', () => {
+    vi.useFakeTimers();
+    const { go } = arm();
+    expect(go).not.toHaveBeenCalled();
+    fightOver();
+    expect(go).toHaveBeenCalledTimes(1);
+  });
+
+  it('a live cut at fight-over holds the reveal until the key clears (next 100 ms check)', () => {
+    vi.useFakeTimers();
+    const { go, reg } = arm();
+    reg.set(CARD_WAIT_KEYS.cut, true);
+    fightOver();
+    vi.advanceTimersByTime(IDLE_POLL_MS * 5);
+    expect(go).not.toHaveBeenCalled();
+    reg.set(CARD_WAIT_KEYS.cut, false);
+    vi.advanceTimersByTime(IDLE_POLL_MS);
+    expect(go).toHaveBeenCalledTimes(1);
+  });
+
+  it('a super-cut event whose key never appears holds the reveal for about 3 s, then lets it through', () => {
+    vi.useFakeTimers();
+    const { go } = arm();
+    window.dispatchEvent(new Event(SUPER_CUT_EVENT));
+    fightOver();
+    vi.advanceTimersByTime(IDLE_POLL_MS * (CUT_PENDING_POLLS - 2));
+    expect(go).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(IDLE_POLL_MS * 3);
+    expect(go).toHaveBeenCalledTimes(1);
+  });
+
+  it('a cut key that is set and cleared drops the pending hold: the next check reveals', () => {
+    vi.useFakeTimers();
+    const { go, reg } = arm();
+    window.dispatchEvent(new Event(SUPER_CUT_EVENT));
+    fightOver();
+    reg.set(CARD_WAIT_KEYS.cut, true);
+    vi.advanceTimersByTime(IDLE_POLL_MS * 4);
+    expect(go).not.toHaveBeenCalled();
+    reg.set(CARD_WAIT_KEYS.cut, false);
+    vi.advanceTimersByTime(IDLE_POLL_MS);
+    expect(go).toHaveBeenCalledTimes(1);
+  });
+
+  it('the round ending while the card waits drops it for this battle', () => {
+    vi.useFakeTimers();
+    const { go, reg } = arm();
+    reg.set(CARD_WAIT_KEYS.cut, true);
+    fightOver();
+    window.dispatchEvent(new Event(ROUND_OVER_EVENT));
+    reg.set(CARD_WAIT_KEYS.cut, false);
+    vi.advanceTimersByTime(20000);
+    expect(go).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('destroying the game during the intro cancels the 7 s fallback (a quit never reveals a detached card)', () => {
+    vi.useFakeTimers();
+    const { go, events } = arm();
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    events.emit('destroy');
+    vi.advanceTimersByTime(20000);
+    expect(go).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    events.emit('destroy');
+    fightOver();
+    expect(go).not.toHaveBeenCalled();
+  });
+
+  it('a leaked cut key cannot hold the card for ever: it shows after the cap', () => {
+    vi.useFakeTimers();
+    const { go, reg } = arm();
+    reg.set(CARD_WAIT_KEYS.cut, true);
+    fightOver();
+    vi.advanceTimersByTime(IDLE_POLL_MS * (CARD_WAIT_CAP_POLLS - 1));
+    expect(go).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(IDLE_POLL_MS);
+    expect(go).toHaveBeenCalledTimes(1);
+  });
+
+  it('the 7 s fallback path goes through the same gate', () => {
+    vi.useFakeTimers();
+    const { go, reg } = arm();
+    reg.set(CARD_WAIT_KEYS.cut, true);
+    vi.advanceTimersByTime(7000);
+    expect(go).not.toHaveBeenCalled();
+    reg.set(CARD_WAIT_KEYS.cut, false);
+    vi.advanceTimersByTime(IDLE_POLL_MS);
+    expect(go).toHaveBeenCalledTimes(1);
+  });
+
+  it('once shown, a cut that starts removes the card on the spot (slow cut chunk)', () => {
+    vi.useFakeTimers();
+    const f = fakeGame();
+    const store = memory();
+    const card = firstRunHint(store, 60000, afterArenaCreate(f.game));
+    document.body.append(card as HTMLElement);
+    f.events.emit(PRELOAD_READY);
+    fightOver();
+    expect(card?.classList.contains('firstRunWait')).toBe(false);
+    f.reg.set(CARD_WAIT_KEYS.cut, true);
+    vi.advanceTimersByTime(IDLE_POLL_MS);
+    expect(card?.isConnected).toBe(false);
   });
 });
