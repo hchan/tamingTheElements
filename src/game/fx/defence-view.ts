@@ -7,6 +7,7 @@ import { POP_NUMBER_CLEAR_PX, popLaneLift, type LivePop } from './pop-lanes';
 import { mountClashView } from './clash-view';
 import { styleCombatText } from '../hud/combat-text';
 import { ELEMENT_COLORS } from './element-colors';
+import { halfPoint, revealSegs, ropeGrow } from './rope-arcs';
 import {
   AFTERIMAGE_ALPHA, AFTERIMAGE_GAP, BREAK_COLOR, DefenceFx, FLASH_TICKS, GUARD_COLOR, GUARD_LOW_PM,
   POP_TICKS, RING_TICKS, ROPE_COLOR, SPARK_TICKS, TICK_MS, ghostAlpha, guardFill, popAlpha, popRise, progress, ringRadius, type DefenceSink,
@@ -28,6 +29,8 @@ const TRAIL_DEPTH = -0.5;
 const GHOST_DEPTH = -0.25;
 /** Shields, bars, sparks and rings over the fighters (0), under the aim arrow (4) and the super dim (5). */
 const OVER_DEPTH = 3;
+/** Far half of a Snag wrap: behind the fighter (0), over the trails and afterimages. */
+const ROPE_BACK_DEPTH = -0.2;
 /** Pops over the super dim (5), like the hit sparks (10). */
 const POP_DEPTH = 9;
 /** LOGICAL_HEIGHT (boot/viewport.ts), kept here so the phaser-config chunk need not export it. */
@@ -68,6 +71,9 @@ export interface DefenceState {
   readonly trails: number;
   readonly shields: number;
   readonly roots: number;
+  /** Rope segments drawn behind the fighter (far half) and over it (near half) on the last frame. */
+  readonly rootBack: number;
+  readonly rootFront: number;
   readonly bars: readonly number[];
   /** Projectiles seen on the last tick (trailed unless motion is reduced). */
   readonly projectiles: number;
@@ -100,6 +106,7 @@ export function mountDefenceView(
   let highContrast = prefs().highContrast;
   const under = scene.add.graphics().setDepth(TRAIL_DEPTH);
   const over = scene.add.graphics().setDepth(OVER_DEPTH);
+  const ropeBack = scene.add.graphics().setDepth(ROPE_BACK_DEPTH);
   const ghostImgs: Phaser.GameObjects.Image[] = [];
   const texts: Phaser.GameObjects.Text[] = [];
 
@@ -128,7 +135,7 @@ export function mountDefenceView(
   const trailN = new Uint8Array(SLOTS);
   const trailTick = new Int32Array(SLOTS).fill(-2);
   const teamColor = [GUARD_COLOR, GUARD_COLOR];
-  const drawn = { ghosts: 0, trails: 0, shields: 0, roots: 0, bars: [0, 0], nBars: 0, projectiles: 0 };
+  const drawn = { ghosts: 0, trails: 0, shields: 0, roots: 0, bars: [0, 0], nBars: 0, projectiles: 0, rootBack: 0, rootFront: 0 };
   const pt = { x: 0, y: 0, size: 0 };
 
   /**
@@ -328,23 +335,52 @@ export function mountDefenceView(
     }
   };
 
+  const rootSince = new Float64Array(SLOTS).fill(-1);
+  const ropePt: [number, number] = [0, 0];
   let ar: RenderArcade | undefined;
   const fighterBox = { x: 0, y: 0, w: 0, h: 0 };
   const drawFighter = (c: RenderCharacter): void => {
-    if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
+    if ((c.flags & BENCHED_OR_DEAD) !== 0) {
+      rootSince[c.id & (SLOTS - 1)] = -1;
+      return;
+    }
     if (c.team < 2) teamColor[c.team] = ELEMENT_COLORS[c.element];
     const img = fighters.peek(c.id)?.image;
     if (!ar || !img?.visible) return;
     const { x: bx, y: by, w, h } = drawnBox(img, fighterBox);
     const cx = bx + w / 2;
+    const slot = c.id & (SLOTS - 1);
     if (ar.rooted(c.id)) {
-      // Snag (FUN-DESIGN 2.20): two rope loops round the feet, a dark rim under the rope colour (a shape cue).
+      // Snag (FUN-DESIGN 2.20): two rope loops round the feet, a dark rim under the rope colour (a shape cue). Pseudo-3D (P3D-3):
+      // the far half of each loop is behind the body, the near half over it, and the loops close in over a few view ticks.
+      if ((rootSince[slot] ?? -1) < 0) rootSince[slot] = tick;
+      const grow = ropeGrow(tick - (rootSince[slot] ?? tick), reduced);
       const fy = by + h * 0.88;
       for (const [k, color, lw] of ROPE_LOOPS) {
-        over.lineStyle(highContrast ? lw + 2 : lw, color, 1).strokeEllipse(cx, fy - k * h * 0.12, w * (0.9 - k * 0.15), h * 0.22);
+        const n = revealSegs(grow, k);
+        if (n <= 0) continue;
+        const rx = (w * (0.9 - k * 0.15)) / 2;
+        const ry = (h * 0.22) / 2;
+        const ey = fy - k * h * 0.12;
+        const lineW = highContrast ? lw + 2 : lw;
+        for (let f = 0; f < 2; f++) {
+          const far = f === 0;
+          const g = far ? ropeBack : over;
+          g.lineStyle(lineW, color, 1).beginPath();
+          for (let i = 0; i <= n; i++) {
+            halfPoint(far, i, ropePt);
+            if (i === 0) g.moveTo(cx + rx * ropePt[0], ey + ry * ropePt[1]);
+            else g.lineTo(cx + rx * ropePt[0], ey + ry * ropePt[1]);
+          }
+          g.strokePath();
+        }
+        if (color === ROPE_COLOR) {
+          drawn.rootBack += n;
+          drawn.rootFront += n;
+        }
       }
       drawn.roots++;
-    }
+    } else rootSince[slot] = -1;
     const guarding = ar.guarding(c.id);
     if (guarding) {
       // A bubble with a white rim: a shape cue, not only a colour.
@@ -384,10 +420,13 @@ export function mountDefenceView(
     drawnTick = tick;
     const clock = now();
     under.clear();
+    ropeBack.clear();
     over.clear();
     drawn.trails = 0;
     drawn.shields = 0;
     drawn.roots = 0;
+    drawn.rootBack = 0;
+    drawn.rootFront = 0;
     drawn.nBars = 0;
     ar = view.arcade();
     view.forEachCharacter(drawFighter);
@@ -458,7 +497,7 @@ export function mountDefenceView(
     const pops: string[] = [];
     for (const t of texts) if (t.visible) pops.push(t.text);
     return {
-      ghosts: drawn.ghosts, trails: drawn.trails, shields: drawn.shields, roots: drawn.roots, bars: drawn.bars.slice(0, Math.min(2, drawn.nBars)),
+      ghosts: drawn.ghosts, trails: drawn.trails, shields: drawn.shields, roots: drawn.roots, rootBack: drawn.rootBack, rootFront: drawn.rootFront, bars: drawn.bars.slice(0, Math.min(2, drawn.nBars)),
       projectiles: drawn.projectiles,
       sparks: liveSparks, rings: liveRings, pops,
     };
@@ -467,7 +506,7 @@ export function mountDefenceView(
   const off = (): void => {
     scene.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     states.delete(scene);
-    for (const o of [under, over, ...ghostImgs, ...texts]) o.destroy();
+    for (const o of [under, over, ropeBack, ...ghostImgs, ...texts]) o.destroy();
     ghostImgs.length = 0;
     texts.length = 0;
   };

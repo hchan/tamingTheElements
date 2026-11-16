@@ -232,7 +232,7 @@ describe('defence view: parry and guard-break effects', () => {
     expect(st.sparks).toBeLessThanOrEqual(64);
     expect(st.rings).toBeLessThanOrEqual(8);
     expect(m.made.filter((o) => o.kind === 'text')).toHaveLength(4);
-    expect(m.made.filter((o) => o.kind === 'graphics')).toHaveLength(2);
+    expect(m.made.filter((o) => o.kind === 'graphics')).toHaveLength(3);
   });
 });
 

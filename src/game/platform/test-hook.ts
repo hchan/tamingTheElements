@@ -97,7 +97,7 @@ export interface ArenaProbe {
    */
   defence(): Promise<{
     ghosts: number; trails: number; shields: number; bars: readonly number[]; projectiles: number; sparks: number; rings: number; pops: readonly string[];
-    roots: number;
+    roots: number; rootBack: number; rootFront: number;
   } | undefined>;
   /** The stage's ambient particles (view only): emitters running and live particles; 0 under reduced motion. */
   stageAmbient(): { emitters: number; particles: number };
