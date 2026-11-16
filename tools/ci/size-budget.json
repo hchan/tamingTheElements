@@ -44,7 +44,7 @@
     "round-announcer": 1500,
     "round-view": 5200,
     "sample-sfx": 600,
-    "sim": 43000,
+    "sim": 44000,
     "status-fx-view": 2000,
     "super-view": 3000,
     "tag-view": 3900,
@@ -53,6 +53,7 @@
     "tour": 7900,
     "tour-match": 3400,
     "tour-select": 1200,
+    "touch-strike.css": 600,
     "trap-view": 3000,
     "void-stage": 3100,
     "weather-view": 6500
