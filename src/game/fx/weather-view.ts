@@ -238,8 +238,12 @@ export function mountWeatherView(
     // The super banner's high band covers the badge, chip and called line: hide them while it runs (alpha, so the draw caches hold).
     const a = weatherAlpha(hud.registry.get('tte.band') === true, (tagState(arena)?.call ?? '') !== '');
     drawn.alpha = a;
-    for (const o of [p.badge, p.label, p.call, p.bar, p.chip]) o.setAlpha(a);
+    for (const o of [p.badge, p.label, p.call]) o.setAlpha(a);
     const ar = view.arcade();
+    // An empty charge draws no chip: "WEATHER 0%" hung over the arena's top edge and read as a debug box (QA r77). It appears once the charge starts to fill.
+    const shown = (ar?.weatherCharge[0] ?? 0) > 0 ? a : 0;
+    p.bar.setAlpha(shown);
+    p.chip.setAlpha(shown);
     const kind = ar?.weather ?? 0;
     const left = ar?.weatherLeft ?? 0;
     drawCharge(p, ar?.weatherCharge[0] ?? 0, clock);

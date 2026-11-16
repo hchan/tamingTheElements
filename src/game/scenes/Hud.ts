@@ -224,13 +224,13 @@ export class Hud extends Phaser.Scene {
     return this.labels.map((t) => t.text);
   }
 
-  /** Test hook: every visible HUD text with its effective CSS px size (font px times the canvas scale) and screen box. */
-  textSizes(): { text: string; px: number; x: number; y: number; w: number; h: number }[] {
+  /** Test hook: every visible HUD text with its effective CSS px size (font px times the canvas scale) and screen box (x, y is the text's origin point; `ox` its horizontal origin 0..1). */
+  textSizes(): { text: string; px: number; x: number; y: number; w: number; h: number; ox: number }[] {
     const k = coreDisplayWidth(this) / 1280;
-    const out: { text: string; px: number; x: number; y: number; w: number; h: number }[] = [];
+    const out: { text: string; px: number; x: number; y: number; w: number; h: number; ox: number }[] = [];
     for (const o of this.children.list) {
       if (!(o instanceof Phaser.GameObjects.Text) || !o.visible || o.alpha === 0 || o.text.trim() === '') continue;
-      out.push({ text: o.text, px: parseFloat(String(o.style.fontSize)) * k, x: o.x * k, y: o.y * k, w: o.width * k, h: o.height * k });
+      out.push({ text: o.text, px: parseFloat(String(o.style.fontSize)) * k, x: o.x * k, y: o.y * k, w: o.width * k, h: o.height * k, ox: o.originX });
     }
     return out;
   }

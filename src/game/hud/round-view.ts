@@ -38,6 +38,17 @@ const CARD_MARGIN = 64;
 const WON_COLOR = 0xb8964a;
 /** The word under each side's round pips, so they are not read as super charge. */
 const PIP_LABEL_PX = 13;
+
+/** Least gap (logical px) the two WINS captions keep between them; wider captions (phones) hug the timer side so they never run together. */
+const PIP_LABEL_GAP = 14;
+/** The WINS caption goes under its pair of pips; when two centred captions would be closer than PIP_LABEL_GAP, each one's inner edge sits PIP_LABEL_GAP / 2 off the timer's centre line instead. */
+export function placePipLabel(t: Phaser.GameObjects.Text, team: 0 | 1): Phaser.GameObjects.Text {
+  const y = PIP_Y + PIP_R + 3;
+  const centre = pipPairCentre(team);
+  if (2 * Math.abs(centre - TIMER_X) - t.width >= PIP_LABEL_GAP) return t.setOrigin(0.5, 0).setPosition(centre, y);
+  return t.setOrigin(team === 0 ? 1 : 0, 0).setPosition(TIMER_X + (team === 0 ? -PIP_LABEL_GAP / 2 : PIP_LABEL_GAP / 2), y);
+}
+
 /** Banner fade: in over the first 8 ticks, out over the last 12 (none with reduced motion). */
 const FADE_IN_TICKS = 8;
 const FADE_OUT_TICKS = 12;
@@ -290,7 +301,7 @@ export function mountRoundView(
       pips: hud.add.graphics().setDepth(DEPTH),
       // One caption centred under both pip groups (it was one per group: the same word twice, qa-hud-clutter).
       // One WINS caption centred under each side's pair, so a count is never read as super charge.
-      pipLabels: ([0, 1] as const).map((team) => text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setFontSize(Math.round(PIP_LABEL_PX * phoneBoost(hud, 1.7, 1100))).setText('WINS').setPosition(pipPairCentre(team), PIP_Y + PIP_R + 3)),
+      pipLabels: ([0, 1] as const).map(() => text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setFontSize(Math.round(PIP_LABEL_PX * phoneBoost(hud, 1.7, 1100))).setText('WINS')).map((t, team) => placePipLabel(t, team === 0 ? 0 : 1)),
       halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
       band: hud.add.graphics().setDepth(DEPTH - 2).setVisible(false),
       cardBands: [hud.add.graphics().setDepth(DEPTH - 2).setVisible(false), hud.add.graphics().setDepth(DEPTH - 2).setVisible(false)],
