@@ -282,7 +282,11 @@ test.describe('phone portrait fight', () => {
     const stick = await box(page, '#touchStick');
     const canvas = await box(page, 'canvas');
     expect(overlap(card, stick)).toBe(false);
-    expect(card.y).toBeGreaterThanOrEqual(canvas.y + canvas.h);
+    expect(card.y).toBeGreaterThanOrEqual(canvas.y + canvas.h + 44); // under the 44 px skirts (P3/P4)
+    expect(card.y + card.h).toBeLessThanOrEqual(stick.y);
+    await expect(page.locator('#firstRunHint p.firstRunOne')).toHaveCount(1);
+    await expect(page.locator('#firstRunHint p.firstRunOne')).toBeVisible();
+    await expect(page.locator('#firstRunHint .firstRunMore')).toHaveCount(0);
     await page.getByRole('button', { name: 'Got it' }).tap();
     await expect(page.locator('#firstRunHint')).toHaveCount(0);
     await shot(page, 'port-clear');

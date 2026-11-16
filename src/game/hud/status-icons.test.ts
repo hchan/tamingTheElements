@@ -3,7 +3,7 @@ import { StatusId, type Element, type RenderStatus, type RenderView } from '@cor
 import { FRIENDLY_COLOR, HC_FRIENDLY_COLOR, HC_HOSTILE_COLOR, HOSTILE_COLOR } from './buffs';
 import { mainBar } from './bars';
 import { SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, TRAP_PUDDLE_LINGER_TICKS } from '@core/index';
-import { CC_ICONS, CHIP_GAP, CHIP_MAX, CHIP_W, CHIP_Y, chipText, collectStatusChips, secsLeft, weatherEffect } from './status-icons';
+import { CC_ICONS, CHIP_GAP, CHIP_MAX, CHIP_W, CHIP_Y, PORTRAIT_CHIP_MAX, chipText, collectStatusChips, secsLeft, weatherEffect } from './status-icons';
 
 interface Opts {
   tick?: number;
@@ -196,5 +196,39 @@ describe('crowd-control chips (CA1)', () => {
       expect(c.label).not.toMatch(/classic|arcade|ruleset|capture/i);
     }
     for (const k of ['stun', 'mire', 'nosnag']) expect(CC_ICONS[k]?.length ?? 0).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('portrait chip cap', () => {
+  const layout = { scale: 1, top: CHIP_Y, max: PORTRAIT_CHIP_MAX };
+  const capped = (o: Opts): ReturnType<typeof collectStatusChips> => collectStatusChips(viewWith(o), 0, 1, 'fire', 0, false, layout);
+  const three = [StatusId.adrenaline, StatusId.fireDance, StatusId.rockArmour].map((id) => ({ id }));
+
+  it('shows one chip plus +N more for three or more', () => {
+    const out = capped({ statuses: three });
+    expect(out).toHaveLength(2);
+    expect(out[1]).toMatchObject({ key: 'more', text: '+2 more' });
+  });
+
+  it('shows both chips when there are exactly two', () => {
+    const out = capped({ statuses: three.slice(0, 2) });
+    expect(out.map((c) => c.key)).toEqual([`s${String(StatusId.adrenaline)}`, `s${String(StatusId.fireDance)}`]);
+  });
+
+  it('orders stun and snag first, then hostile, then friendly, then weather and elemental', () => {
+    const out = capped({
+      statuses: [{ id: StatusId.adrenaline }, { id: StatusId.tornado }],
+      arcade: { rooted: true, rootLeft: 100, stunned: true, guarding: true, weather: 1, weatherLeft: 100 },
+      elemental: { name: 'Blaze', activeUntil: 200 },
+    });
+    expect(out.map((c) => c.key)).toEqual(['root', 'more']);
+    const two = capped({ statuses: [{ id: StatusId.adrenaline }, { id: StatusId.tornado }], arcade: { stunned: true, weather: 1, weatherLeft: 100 } });
+    expect(two.map((c) => c.key)).toEqual(['stun', 'more']);
+    const all = collectStatusChips(viewWith({ statuses: [{ id: StatusId.adrenaline }, { id: StatusId.tornado }], arcade: { stunned: true, weather: 1, weatherLeft: 100 }, elemental: { name: 'Blaze', activeUntil: 200 } }), 0, 1, 'fire', 0, false, { ...layout, max: 9 });
+    expect(all.map((c) => c.key)).toEqual(['stun', `s${String(StatusId.tornado)}`, `s${String(StatusId.adrenaline)}`, 'weather', 'elem']);
+  });
+
+  it('is unchanged without max', () => {
+    expect(chips({ statuses: three })).toHaveLength(3);
   });
 });

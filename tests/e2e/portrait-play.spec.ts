@@ -65,6 +65,11 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       expect(card.y).toBeGreaterThanOrEqual(canvas.y + canvas.h + 44 - 1);
       for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2']) expect(overlap(card, await box(page, id)), id).toBe(false);
       expect(bar.y).toBeLessThan(canvas.y + canvas.h);
+      // P4: the card is one line, above the touch buttons (z 5) and clear of the strike buttons.
+      await expect(page.locator('#firstRunHint p.firstRunOne')).toBeVisible();
+      await expect(page.locator('#firstRunHint p:visible')).toHaveCount(1);
+      expect(await page.evaluate<string>(`getComputedStyle(document.querySelector('#firstRunHint')).zIndex`)).toBe('6');
+      await shot(page, `${String(w)}-card`);
       await page.getByRole('button', { name: 'Got it' }).tap();
       expect(errors).toEqual([]);
     });

@@ -9,7 +9,7 @@ import { heroName } from '../hud/tag-fx';
 import { elementMark } from '../hud/element-mark';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
-import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
+import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, PORTRAIT_CHIP_MAX, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, COMBO_RECTS_KEY, POP_RECTS_KEY, clearOfPops, hudFrame, TAG_CALL_KEY, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
   clampNumber, NUMBER_SLOTS, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
@@ -40,6 +40,7 @@ import {
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
 import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, comboRightX, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
+import { isPortraitPlay } from '../boot/portrait-play';
 
 export const HUD_SCENE = 'Hud';
 
@@ -387,7 +388,7 @@ export class Hud extends Phaser.Scene {
     // The first stunLeft seen after a calm tick is the stun's length (it drains from there); a re-stun that outlasts it raises it.
     const stunLeft = view.arcade()?.stunLeft(c.id) ?? 0;
     this.stunTotals[team] = stunLeft > 0 ? Math.max(this.stunTotals[team] ?? 0, stunLeft) : 0;
-    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top }, this.stunTotals[team]);
+    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top, ...(isPortraitPlay(this.game) ? { max: PORTRAIT_CHIP_MAX } : {}) }, this.stunTotals[team]);
     const now = view.tick;
     const reduced = this.reduceMotion;
     const tracker = (this.chipTrackers[team] ??= new StatusTracker<ChipLook>(12));
