@@ -186,6 +186,16 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   stuns once per cast without a hit event. Deferred: the Ground Shock recovery cancel arrives with the dash cancel
   (WP 15, done). `recovered` reason 0 came with WP 4.
 
+- **Corner pushback (SF rule, SIM_VERSION 84).** Arcade only. When a hit's knockback would carry the victim past a side
+  wall, the shortfall (the knockback travel minus the room to the wall, at least 0) goes to the attacker as a lunge away
+  from the wall (`setLunge`, so it is a slide with the usual wall rules), scaled by `CORNER_PUSH_PM` (1000 = 1:1).
+  The victim is still clamped and keeps its wall bounce. It applies only to a living, non-benched character attacker
+  whose centre is within `CORNER_PUSH_RANGE_PX` (240 px) of the victim's, so zoning hits from across the arena do not
+  push anyone. Supers, traps, armoured hits and no-knockback riders are excluded. The effect: a cornered fighter cannot
+  be pinned by a rushdown character who keeps hitting it from the open side. Hard AI also never stands inside its foe
+  (the boxes overlap: it steps apart with `stepApart`, keeping its attack bits) unless the foe is stunned or rooted.
+  Probe: `pnpm ai:wallpin` (`tools/sim/wall-pin-probe.ts`).
+
 ### 2.3a Walk inertia and the dash curve (sim, SIM_VERSION 66)
 
 - Arcade only. The walk no longer starts and stops instantly: velocity (`vx`/`vy`, per axis) approaches the DIR8 target by

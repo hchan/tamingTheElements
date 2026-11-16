@@ -1,6 +1,6 @@
 import { ALL_ABILITIES } from '../../../data/abilities-all';
 import {
-  CHARGE_STUN_TICKS, GUARD_CHIP_PM, HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, KNOCKBACK_Q4, KO_HIT_STOP_TICKS,
+  CHARGE_STUN_TICKS, GUARD_CHIP_PM, HIT_STOP_TICKS, HIT_STUN_TICKS, HitStopCause, HitStrength, CORNER_PUSH_RANGE_PX, KNOCKBACK_Q4, KO_HIT_STOP_TICKS,
   PARRY_HIT_STOP_TICKS, TRAP_HIT_FLOOR, TRAP_SPIKE_STUN_TICKS, comboScalePm, hitStrengthFor, hitStunFor, type HitStrengthValue,
 } from '../../../data/arcade';
 import { CHARACTERS } from '../../../data/characters';
@@ -8,12 +8,12 @@ import { arcadeRaceNumbers } from '../../arcade-numbers';
 import { computeDamage, damageDealt } from '../../../rules/damage';
 import { now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
-import { ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, EntityKind, World as W } from '../../state';
+import { ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeT, ArcadeW, EntityFlag, EntityKind, World as W } from '../../state';
 import type { SimWorld } from '../../world';
 import { damageDecreasePct, thornsDamageOf } from '../status';
 import { ccOnHit, ccRiders, spendKindled } from './cc';
 import { addComboDamage, comboHit, isCounterHit } from './combo';
-import { knockbackDir, setKnockback } from './knockback';
+import { cornerPushback, knockbackDir, setKnockback } from './knockback';
 import { breakMending, otRiders } from './over-time';
 import { applyWound,displaceVictim, riderDef } from './wound';
 import { meterOnHit } from './meter';
@@ -155,7 +155,15 @@ export function applyArcadeHit(
   const rid = guard ? null : ccRiders(world, sink, source, attacker, victim, defIdx, sup);
   // Charge armour (SIM_VERSION 50): a charging victim takes the damage but is neither knocked back nor stunned, so the rush goes on.
   const armoured = !sup && chargeTick(s, victim) !== 0;
-  if (!armoured && rid?.noKnockback !== true) setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
+  if (!armoured && rid?.noKnockback !== true) {
+    setKnockback(s, victim, KNOCKBACK_Q4[guard ? HitStrength.light : strength], knockbackDir(s, source, victim, dir));
+    // Corner pushback (SIM_VERSION 84): a close, plain hit from the team's fighter gives the wall-swallowed travel to the attacker.
+    const af = s.flags[attacker] ?? 0;
+    if (!sup && !trap && (af & EntityFlag.alive) !== 0 && (af & EntityFlag.benched) === 0 && s.kind[attacker] === EntityKind.character
+      && Math.abs((s.x[attacker] ?? 0) + (s.w[attacker] ?? 0) / 2 - (s.x[victim] ?? 0) - (s.w[victim] ?? 0) / 2) <= CORNER_PUSH_RANGE_PX) {
+      cornerPushback(world, attacker, victim);
+    }
+  }
   if (!guard && !armoured && rdef !== undefined) displaceVictim(s, victim, knockbackDir(s, source, victim, dir), rdef, (dir + 4) & 7);
   const dealt = damageDealt(before, amount);
   const stun = defIdx === CHARGE_DEF ? CHARGE_STUN_TICKS

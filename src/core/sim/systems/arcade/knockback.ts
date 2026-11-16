@@ -1,4 +1,4 @@
-import { KNOCKBACK_DECAY_Q4, Q4_ONE } from '../../../data/arcade';
+import { CORNER_PUSH_PM, KNOCKBACK_DECAY_Q4, Q4_ONE } from '../../../data/arcade';
 import { SIZE_ONE, sizeOfDef, sizeWeightPm } from '../../../data/size';
 import { DIR8_X, DIR8_Y, dir8FromSigns } from '../../../math/dir8';
 import { ARCADE_E, ArcadeE, EntityKind, type SimState } from '../../state';
@@ -80,4 +80,23 @@ export function stepKnockback(world: SimWorld, id: number): void {
   }
   a[e + ArcadeE.kbVx] = decay(vx);
   a[e + ArcadeE.kbVy] = decay(vy);
+}
+
+/**
+ * Corner pushback (SIM_VERSION 84): call right after `setKnockback(victim)`. The knockback travel (the sum of the decaying
+ * per-tick steps, integer Q4 then px) the victim cannot cover before the side wall goes to the attacker as a lunge away from
+ * the wall (`setLunge`: stops at the far wall, no bounce). X axis only.
+ */
+export function cornerPushback(world: SimWorld, attacker: number, victim: number): void {
+  const s = world.state;
+  const ar = world.arena;
+  const vx = s.arcade[victim * ARCADE_E + ArcadeE.kbVx] ?? 0;
+  if (vx === 0) return;
+  let travelQ4 = 0;
+  for (let v = Math.abs(vx); v > 0; v -= KNOCKBACK_DECAY_Q4) travelQ4 += v;
+  const x = s.x[victim] ?? 0;
+  const room = vx < 0 ? x - ar.x : ar.x + ar.w - (s.w[victim] ?? 0) - x;
+  const short = travelQ4 / Q4_ONE - Math.max(0, room);
+  if (short <= 0) return;
+  setLunge(s, attacker, Math.ceil((short * CORNER_PUSH_PM) / 1000), vx < 0 ? 0 : 4);
 }
