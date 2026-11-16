@@ -214,6 +214,58 @@ describe('terrain view (fake scenes)', () => {
     expect(Math.min(...chips.map((c) => c.alpha))).toBeLessThanOrEqual(0.2);
   });
 
+  describe('chip alpha (CHIP-FADE-1)', () => {
+    const shown = (m: ReturnType<typeof mount>): number[] => m.state().chips.filter((c) => c.alpha > 0).map((c) => c.alpha);
+
+    it('the hint clock starts when the words first show, not under the FIGHT banner', () => {
+      const m = mount({ x: 20, y: 600 });
+      m.feed(100, [ev(SimEventKind.fight, 100)]);
+      m.frame();
+      expect(shown(m)).toEqual([]); // hidden under the banner, and nothing stamped
+      m.feed(300);
+      m.frame(); // first shown: the stamp
+      for (let i = 0; i < 4; i++) m.frame();
+      expect(Math.min(...shown(m))).toBe(1);
+      m.feed(300 + 191);
+      m.frame();
+      expect(Math.min(...shown(m))).toBe(1); // opaque to the end, not half faded
+      m.feed(300 + 200);
+      m.frame();
+      expect(shown(m)).toEqual([]);
+    });
+
+    it('a chip that flips to the clear slot lands opaque', () => {
+      const m = mount({ patches: [400, 400, 80, 80], count: 1, x: 20, y: 600 });
+      for (let i = 0; i < 8; i++) m.frame();
+      const base = m.state().chips[0];
+      if (!base) throw new Error('no chip');
+      m.hero.x = base.x + base.w / 2 - 40;
+      m.hero.y = base.y + base.h + 24 + 40;
+      m.frame();
+      const c = m.state().chips[0];
+      expect(c?.slot).toBe(1);
+      expect(c?.alpha).toBeGreaterThanOrEqual(0.9);
+    });
+
+    it('the ease back up depends on elapsed time, not on the frame count', () => {
+      const run = (frames: number, delta: number): number => {
+        const m = mount({ patches: [400, 400, 80, 80], count: 1 });
+        m.hero.h = 400; // spans both slots: the chip stays and fades to the 0.15 floor
+        m.hero.x = 400;
+        m.hero.y = 250;
+        for (let i = 0; i < 8; i++) m.frame();
+        expect(m.state().chips[0]?.alpha).toBeLessThanOrEqual(0.2);
+        m.hero.h = 80;
+        m.hero.x = 20;
+        m.hero.y = 600;
+        for (let i = 0; i < frames; i++) m.frame(delta);
+        return m.state().chips[0]?.alpha ?? 0;
+      };
+      expect(run(1, 16)).toBeCloseTo(run(2, 8), 5);
+      expect(run(6, 16)).toBeGreaterThanOrEqual(0.9);
+    });
+  });
+
   describe('floor chips stay whole and off heads (FLOOR-TAGS-1)', () => {
     const cam = (scrollX: number, zoom: number): Record<string, unknown> => ({ midPoint: { x: scrollX + 640 }, scrollX, scrollY: 0, width: 1280, height: 720, zoom });
     /** The chip rect of chip `i` and whether it meets a box. */

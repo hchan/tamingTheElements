@@ -115,7 +115,7 @@ const hex = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
  */
 /** Seconds the floor words show the first time a stage appears, and the fade at the end of it. */
 const HINT_TICKS = Math.round(4000 / TICK_MS);
-const HINT_FADE_TICKS = Math.round(1000 / TICK_MS);
+const HINT_FADE_TICKS = Math.round(160 / TICK_MS); // CHIP-FADE-1: opaque or gone, a short fade only to avoid a pop
 export function labelHintAlpha(sinceFirstSeen: number): number {
   return Math.max(0, Math.min(1, (HINT_TICKS - sinceFirstSeen) / HINT_FADE_TICKS));
 }
@@ -253,7 +253,7 @@ export function mountTerrainView(
         if (baseCovered && hasAlt && !meetsBody(x - w / 2, yAlt - h, w, h)) {
           slot = 1;
           chipClear[i] = 0;
-          chipFade[i] = 0.15;
+          chipFade[i] = 1; // the new slot is clear of every body by construction: land opaque (CHIP-FADE-1)
         }
       } else if (baseCovered) {
         chipClear[i] = 0;
@@ -262,7 +262,7 @@ export function mountTerrainView(
         chipClear[i] = Math.min(255, (chipClear[i] ?? 0) + 1);
         if ((chipClear[i] ?? 0) >= SLOT_HOLD || meetsBody(x - w / 2, yAlt - h, w, h)) {
           slot = 0;
-          chipFade[i] = 0.15;
+          chipFade[i] = 1;
         }
       }
       chipSlot[i] = slot;
@@ -475,9 +475,11 @@ export function mountTerrainView(
     p.glow.setAlpha(drawn.glow);
     // The words on the floor are a first-encounter hint (the badge and Help keep naming the buff): shown for a few seconds the first
     // time each stage appears, then the glow ring and the pad art carry it alone.
-    if (stage > 0 && firstSeen[stage] === undefined) firstSeen[stage] = clock;
-    const hint = stage > 0 ? labelHintAlpha(clock - (firstSeen[stage] ?? clock)) : 0;
+    // The hint clock starts when the words first show, not under the intro banners (CHIP-FADE-1).
     const bannerUp = ar.phase === RoundPhase.intro || tick < fightBannerUntil || tick < tagCallUntil;
+    if (stage > 0 && !bannerUp && firstSeen[stage] === undefined) firstSeen[stage] = clock;
+    const hint = stage > 0 ? labelHintAlpha(clock - (firstSeen[stage] ?? clock)) : 0;
+    const ease = Math.min(Math.max(delta, 0), 50);
     updateView();
     bodies = 0;
     view.forEachCharacter(collect);
@@ -492,7 +494,7 @@ export function mountTerrainView(
       // A chip that appears (round start, after a banner) with a fighter already on it starts faint instead of fading down in plain view.
       if (on && !chipShown[i] && chipNear[i]) chipFade[i] = 0.15;
       chipShown[i] = on ? 1 : 0;
-      chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -0.25 : 0.06)));
+      chipFade[i] = Math.max(0.15, Math.min(1, (chipFade[i] ?? 1) + (chipNear[i] ? -ease / 64 : ease / 100)));
       const a = drawn.alpha * hint * (chipFade[i] ?? 1);
       chipAlpha[i] = on ? a : 0;
       t.setVisible(on).setAlpha(a);
