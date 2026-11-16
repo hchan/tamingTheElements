@@ -127,3 +127,32 @@ test.describe('portrait play, World Tour', () => {
     await shot(page, 'tour-after');
   });
 });
+
+for (const [w, h] of [[390, 844], [360, 640]] as const) {
+  test.describe(`portrait play one-row bar ${String(w)}x${String(h)}`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+
+    test('the bar is one row; buttons are 24+ wide, 48+ high and reach 44 px below the canvas; a skirt is hittable', async ({ page }) => {
+      await enterFight(page);
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.waitForFunction(ATTR);
+      await page.getByRole('button', { name: 'Got it' }).tap();
+      await page.waitForFunction(`document.querySelectorAll('button.touchBtn.touchSkirt').length > 0`);
+      const canvas = await box(page, '#game canvas');
+      const boxes = await page.evaluate<Box[]>(`[...document.querySelectorAll('button.touchBtn.touchSkirt')].filter((e) => e.style.visibility === 'visible').map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`);
+      expect(boxes.length).toBeGreaterThanOrEqual(5);
+      const top = boxes[0]?.y ?? 0;
+      for (const b of boxes) {
+        expect(Math.abs(b.y - top)).toBeLessThanOrEqual(1);
+        expect(b.w).toBeGreaterThanOrEqual(24);
+        expect(b.h).toBeGreaterThanOrEqual(48);
+        expect(b.y + b.h).toBeLessThanOrEqual(canvas.y + canvas.h + 45);
+        expect(b.y + b.h).toBeGreaterThanOrEqual(canvas.y + canvas.h + 43);
+      }
+      await shot(page, `${String(w)}-onerow`);
+      const dash = await box(page, '#arcadeDash');
+      const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(dash.x + dash.w / 2)}, ${String(canvas.y + canvas.h + 20)}); return e ? e.id : ''; })()`);
+      expect(hit).toBe('arcadeDash');
+    });
+  });
+}

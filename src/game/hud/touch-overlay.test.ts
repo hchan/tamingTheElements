@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { overlayRect, syncTouchOverlays } from './touch-overlay';
+import { overlayHeight, overlayRect, syncTouchOverlays } from './touch-overlay';
 
 describe('overlayRect', () => {
   it('puts a logical box over the canvas, relative to the offset parent, scaled by k', () => {
@@ -13,5 +13,12 @@ describe('overlayRect', () => {
 describe('syncTouchOverlays', () => {
   it('does nothing without a document or a laid-out canvas', () => {
     expect(() => { syncTouchOverlays([], { getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }) }); }).not.toThrow();
+  });
+});
+
+describe('overlayHeight', () => {
+  it('is the square without a skirt and grows by extendPx with one', () => {
+    expect(overlayHeight(128 * 0.3047)).toBeCloseTo(39, 0);
+    expect(overlayHeight(128 * 0.3047, 44)).toBeCloseTo(83, 0);
   });
 });

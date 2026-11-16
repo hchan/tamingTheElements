@@ -47,7 +47,7 @@ function rig(opts: { bar: RenderActionBar | undefined; styled?: boolean; place?:
   const state = { bar: opts.bar };
   const canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1280 }) };
   const scene = {
-    game: { canvas },
+    game: { canvas, registry: { get: () => undefined } },
     // Height 720 x the resolution; the canvas is drawn 1:1 in CSS px (1280 wide, or the wide view's width).
     scale: { width: opts.width ?? 1280, height: opts.cam?.height ?? ((opts.width ?? 1280) * 720) / 1280, displaySize: { width: ((opts.width ?? 1280) * 720) / (opts.cam?.height ?? ((opts.width ?? 1280) * 720) / 1280) } },
     cameras: { main: opts.cam ?? { zoom: 1, scrollX: 0, scrollY: 0, width: 1280, height: 720 } },
