@@ -8,7 +8,7 @@ added: 2026-11-15
 ## r66 items
 
 - Left-wall pin: persists. Hard AI vs an idle player: player x 435 -> 210 -> 2 -> 0, Sindarosa half off the left edge (`vs-idle-8.png`). The new Hard rock look-ahead did not change this. Clamp the player's visible position or have the AI back off at the wall.
-- Equal-length life bars: persists (228 and 455 HP both fill the full bar).
+- Equal-length life bars: persists (228 and 455 HP both fill the full bar). Kept on purpose (WP-HF1): equal tracks; the 100 HP notches show the pool.
 - Round pips: still small (about 16 px) and hard to read at a glance.
 - Tag key text: unchanged.
 - Tour map Controls: still a 7-line bold wall of text; YOUR TEAM is clipped at the right edge and the stage strip is pushed to the bottom. **Fixed (WP T2).**

@@ -175,6 +175,10 @@ describe('lifeTicks', () => {
     expect(lifeTicks(600, 120, 580)).toHaveLength(5);
     expect(lifeTicks(100, 120, 580)).toHaveLength(0);
   });
+  it('shows the pool by notches on equal tracks (WP-HF1: 228 HP is 2, 455 HP is 4)', () => {
+    expect(lifeTicks(228, 120, 580)).toHaveLength(2);
+    expect(lifeTicks(455, 120, 580)).toHaveLength(4);
+  });
   it('places notches proportionally from the zero end', () => {
     const t = lifeTicks(400, 0, 400);
     expect(t).toEqual([100, 200, 300]);

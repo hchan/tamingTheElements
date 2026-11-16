@@ -228,6 +228,7 @@ export class Hud extends Phaser.Scene {
         if (this.arcade) {
           // Every bar fills to its own hero's max life, so the fill always matches the Life number (qa-r30; a shorter scaled track read as half empty).
           // The size of each pool shows as 100 HP notches instead (WP-HC1; `lifeTicks`), so a 297 and a 591 hero are told apart at a glance.
+          // Equal track length is on purpose (WP-HF1, the fighting-game convention: the bar reads as "how close to K.O.", not pool size); do not scale the track per hero.
           const bar = slimBar(team);
           this.lastActive[team] = { name: heroName(side.active.sprite), maxHp: side.active.maxHp };
           label?.setAlpha(1);
