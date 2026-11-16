@@ -353,10 +353,53 @@ html[data-high-contrast='true'] #tourStage.tsGrim h1.heading { color: #fff; }
   #tourSplash .vsBench .vsBenchFace { width: 28px !important; height: 28px !important; }
   #tourStage [data-fact='controls'] { margin: 0.05em 0; }
   #tourStage [data-fact='controls'] .tourFactLabel { display: none; }
-  #tourStage [data-fact='controls'] .tourFactValue { display: block; font-size: 0.54em; font-weight: 600; line-height: 1.15; max-height: 3.5em; overflow: hidden; }
+  #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.62em; }
 }
 
 /* Portrait phone: the stick owns the bottom-left, so the stage chip moves under the top bar. */
 @media (pointer: coarse) and (orientation: portrait) {
   #game .tourHudStage { bottom: auto !important; top: 64px !important; }
+}
+
+/* QA r66: the first-run Controls fact is key chips in two short rows across the whole panel, not a 7-line sentence in one column. */
+#tourStage .tsInfo p.tourFact[data-fact='controls'] { grid-column: 1 / -1; font-size: 0.8em; font-weight: 600; line-height: 1.3; }
+#tourStage .tsInfo p.tourFact[data-fact='controls'] .tourFactLabel { font-size: 0.89em; } /* same size as the other labels (0.62 x 1.15 / 0.8) */
+#tourStage .tourKeyRow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2em 0.9em; }
+#tourStage .tourKey { display: inline-flex; align-items: center; gap: 0.25em; white-space: nowrap; }
+#tourStage .tourKey kbd {
+  display: inline-block; min-width: 1.5em; padding: 0 0.3em; box-sizing: border-box; text-align: center;
+  font: 700 0.9em/1.35 system-ui, sans-serif; color: #fff3c4; text-shadow: none;
+  background: rgb(30 26 74 / 0.75); border: 1px solid #d6cdf6; border-bottom-width: 2px; border-radius: 4px;
+}
+#tourStage .tourKeyNote { opacity: 0.8; font-weight: 400; }
+/* QA r67: the Your team strip was the 6th grid item, beside Controls in the right half-column, and .tsPanel's overflow cut it off. */
+#tourStage .tsInfo .tsTeam { grid-column: 1 / -1; }
+html[data-high-contrast='true'] #tourStage .tourKey kbd { background: #000; color: #fff; border-color: #fff; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.7em; margin: 0.05em 0; }
+  #tourStage .tourKeyRow { gap: 0.1em 0.6em; }
+}
+/* QA r66: the extra Controls and full-width team rows must not push Fight off a 720 px screen, so the middle heights pack the card tighter. */
+@media (min-height: 501px) and (max-height: 800px) {
+  #tourStage .tsInfo { row-gap: 0; }
+  #tourStage .tsInfo p { margin: 0.1em 0; }
+  #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.64em; line-height: 1.25; }
+  #tourStage .tsInfo .tsTeam { margin-top: 0.1em; }
+  #tourStage .tourKeyRow { column-gap: 0.55em; }
+  #tourStage .tourKey kbd { min-width: 1.3em; padding: 0 0.2em; }
+  #tourStage .tsMine figcaption { font-size: 0.7em; line-height: 1.1; }
+  #tourStage .tsPanel { padding: 0.35em 0.8em; }
+}
+/* Phone landscape: label and value share a line, the pips follow the value, and Controls is two rows of small chips, so title through Fight still fits (QA r66). */
+@media (max-height: 500px) and (orientation: landscape) {
+  #tourStage .tsInfo { row-gap: 0; }
+  #tourStage .tsInfo p.tourFact:not([data-fact='controls']) { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 0.4em; margin: 0.02em 0; }
+  #tourStage .tsInfo p.tourFact .tsPips { margin: 0; }
+  #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.58em; line-height: 1.15; margin: 0.05em 0; }
+  #tourStage .tourKeyRow { gap: 0.05em 0.5em; }
+  #tourStage .tourKey kbd { line-height: 1.2; }
+  #tourStage .tsInfo .tsTeam { margin-top: 0.05em; }
+  #tourStage .tsInfo p.tourFact:not([data-fact='controls']) { font-size: 0.7em; }
+  #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.52em; }
+  #tourStage .tsMine .tsFace, #tourStage .tsTeam .tsMine { width: 2.2em; }
 }

@@ -29,6 +29,24 @@ describe('tourCardView', () => {
     expect(link?.getAttribute('href')).toBe('#main');
   });
 
+  it('renders a rows fact as key chips and a value fact as text', () => {
+    const page = card({
+      facts: [
+        { key: 'location', label: 'Location', value: 'Fire' },
+        { key: 'controls', label: 'Controls', rows: [[{ keys: ['W', 'A'], action: 'Move', note: '(or arrows)' }, { keys: ['1'], action: 'Strike' }], [{ keys: ['7'], action: 'Dash' }]] },
+      ],
+    });
+    expect(page.querySelector('[data-fact="location"] .tourFactValue')?.textContent).toBe('Fire');
+    const c = page.querySelector('[data-fact="controls"]');
+    expect(c?.classList.contains('tourKeys')).toBe(true);
+    expect(c?.querySelectorAll('.tourKeyRow')).toHaveLength(2);
+    expect([...(c?.querySelectorAll('.tourKey kbd') ?? [])].map((k) => k.textContent)).toEqual(['W', 'A', '1', '7']);
+    expect(c?.textContent).toMatch(/^Controls:/);
+    expect(c?.textContent).toContain('Move');
+    expect(c?.textContent).toContain('Dash');
+    expect(c?.querySelector('.tourKeyNote')?.textContent).toBe('(or arrows)');
+  });
+
   it('omits the Main Menu link when menu is false', () => {
     expect(card({ menu: false }).querySelector('a')).toBeNull();
   });

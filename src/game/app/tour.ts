@@ -14,7 +14,8 @@ import { tester } from '../platform/tester/session';
 import type { ArenaLaunch } from '../scenes/launch';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { destroyGame, type GameHandle } from './game-handle';
-import { anySnag, firstRunPhoneLine, firstRunSeen, firstRunShortLine, isTouchFirst, markFirstRunSeen } from './first-run-hint';
+import { anySnag, firstRunSeen, isTouchFirst, markFirstRunSeen } from './first-run-hint';
+import { tourKeysDesktop, tourKeysTouch } from './tour-controls';
 import { touchStick } from './touch-stick';
 import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
@@ -178,7 +179,7 @@ export function tourScreen(deps: TourDeps): Screen {
           // Last, so enhanceStage's index fallbacks still match. The Tour has no in-fight card: the keys are named here, once.
           ...(firstRunSeen()
             ? []
-            : [{ key: 'controls', label: 'Controls', value: isTouchFirst() ? firstRunPhoneLine(anySnag(r.hero)) : firstRunShortLine(getBindings(), anySnag(r.hero), true) }]),
+            : [{ key: 'controls', label: 'Controls', rows: isTouchFirst() ? tourKeysTouch(anySnag(r.hero)) : tourKeysDesktop(getBindings(), anySnag(r.hero)) }]),
         ],
         actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { markFirstRunSeen(); showSplash(r); } }],
       });

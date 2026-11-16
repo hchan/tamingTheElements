@@ -95,6 +95,7 @@ test('World Tour: Controls on the stage card once, a team splash, no first-run c
   await page.goto(`${START}&ff=arcade,holdSplash#tour`);
   await page.getByRole('button', { name: 'Start tour' }).click();
   await expect(page.locator('#tourStage [data-fact="controls"]')).toContainText('Controls:');
+  expect(await page.locator('#tourStage [data-fact="controls"] kbd').count()).toBeGreaterThanOrEqual(8);
   await page.getByRole('button', { name: 'Fight' }).click();
   await expect(page.locator('#tourSplash .vsBench li')).toHaveCount(4);
   await expect(page.locator('#tourSplash svg')).toHaveCount(2);
@@ -151,6 +152,10 @@ test.describe('World Tour on a touch device', () => {
     const errors = collectErrors(page);
     await page.goto(`${START}&ff=arcade#tour`);
     await page.getByRole('button', { name: 'Start tour' }).tap();
+    // QA r66: on a touch device the Controls chips name the stick and the bar, not the keyboard.
+    const controls = page.locator('#tourStage [data-fact="controls"]');
+    await expect(controls.locator('kbd', { hasText: 'Stick' })).toHaveCount(1);
+    await expect(controls.locator('kbd', { hasText: /^W$/ })).toHaveCount(0);
     await page.getByRole('button', { name: 'Fight' }).tap();
     await tapTourSplash(page);
     await page.waitForFunction(ARENA_READY);
