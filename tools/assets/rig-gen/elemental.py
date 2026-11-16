@@ -1,4 +1,4 @@
-"""Shared helpers for the "grim elemental being" hero rigs (fiara.py, curomo.py, cyclonius.py).
+"""Shared helpers for the "grim elemental being" hero rigs (curomo.py).
 
 Owner feedback 2026-11-13: heroes must be elemental beings (not humanoid, not cartoony): grim, desaturated, textured, painterly, no hard
 black outlines. The old generators drew flat cel-banded polygons with a dark outline and a bright rim. These helpers instead paint each part at
