@@ -17,6 +17,9 @@ interface Rect {
 }
 interface Fx {
   zoom: number;
+  nameAlpha: number;
+  subAlpha: number;
+  bandAlpha: number;
   band: { y: number; k: number; ext: number; cost: number; side: number; portrait: Rect | null; name: Rect; avoid: Rect[]; spans: unknown[] };
   fighters: { x0: number; x1: number; top: number; bottom: number; caster: boolean }[];
 }
@@ -104,8 +107,11 @@ async function watch(page: Page, testInfo: TestInfo, p: Place, label: string, op
       expect(meets(name, a), `${label} name ${JSON.stringify(name)} vs control ${JSON.stringify(a)}`).toBe(false);
     }
     if (opts.reduced) expect(fx.zoom).toBe(1);
-    if (!shotTaken && (opts.reduced || fx.zoom >= 1.14)) {
+    expect([0, 1], `${label} nameAlpha`).toContain(fx.nameAlpha);
+    expect([0, 1], `${label} subAlpha`).toContain(fx.subAlpha);
+    if (!shotTaken && (opts.reduced ? fx.nameAlpha === 1 : fx.zoom >= 1.14)) {
       shotTaken = true;
+      expect(fx.nameAlpha, `${label} title at the shot`).toBe(1);
       await shot(page, testInfo, `super-band-${label}.png`);
     }
     await page.evaluate(`window.__TTE__.arena.step(1)`);
@@ -142,6 +148,44 @@ test.describe('desktop 1280x720', () => {
   test('the band clears both fighters on every cast', async ({ page }, testInfo) => {
     test.setTimeout(240_000);
     await sequence(page, testInfo, '1280x720', false);
+  });
+
+  test('the Air title keeps its dark rim through the cut-out', async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByLabel('Your race').selectOption('cyclonius');
+    await page.getByLabel('AI race').selectOption('lavax');
+    await page.getByRole('button', { name: /^Fight/ }).click();
+    await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+    await page.evaluate(`window.__TTE__.arena.step(${String(INTRO + 20)})`);
+    const done = page.locator('.firstRunDone');
+    if (await done.isVisible()) await done.click();
+    const stage = (): Promise<number> => page.evaluate<number>(`window.__TTE__.arena.terrain().stage`);
+    if ((await stage()) !== 4) {
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setWeatherCharge(0, 1000); a.step(1, [1 << 14, 0]); a.step(60); })()`);
+    }
+    await cast(page, { name: 'air', me: [560, 360, 0], foe: [680, 360, 4], clear: true }, false);
+    let peak = false;
+    let held = false;
+    for (let i = 0; i < 40; i++) {
+      await frames(page);
+      const fx = await superFx(page);
+      if (!fx) break;
+      if (!peak && fx.zoom >= 1.14) {
+        peak = true;
+        await shot(page, testInfo, 'super-air-peak.png');
+      }
+      if (fx.bandAlpha < 0.4) expect(fx.nameAlpha, 'faded band hides the title').toBe(0);
+      else expect(fx.nameAlpha).toBe(1);
+      if (fx.bandAlpha >= 0.4 && fx.bandAlpha < 1) {
+        held = true;
+        expect(fx.nameAlpha).toBe(1);
+        await shot(page, testInfo, 'super-air-fade.png');
+      }
+      await page.evaluate(`window.__TTE__.arena.step(1)`);
+    }
+    expect(peak, 'peak shot').toBe(true);
+    expect(held, 'held last tick shot').toBe(true);
   });
 
   test.describe('reduced motion', () => {

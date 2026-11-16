@@ -6,7 +6,7 @@ import { DOLLY_MAX, DROP_K } from '../views/pose-depth';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { punchAnchor } from './arena-camera';
 import { ELEMENT_COLORS } from './element-colors';
-import { PUNCH_ZOOM, TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
+import { PUNCH_ZOOM, TICK_MS, superFrame, titleAlpha, type SuperFrame } from './super-cinematic';
 import { BURST_COLOR, BURST_REACH, BURST_SHAPE, burstRadius, superBurst } from './super-burst';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 
@@ -352,8 +352,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     put(parts.edges, dx, bandY, frame.bandAlpha);
     put(parts.glow, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
-    put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26 * bandK, frame.bandAlpha);
-    put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44 * bandK, frame.bandAlpha);
+    put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26 * bandK, titleAlpha(frame.bandAlpha));
+    put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44 * bandK, titleAlpha(frame.bandAlpha));
     aim(frame.zoom);
   }
   const drop = (): void => {
@@ -484,7 +484,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
         const d = drawnBox(img, { x: 0, y: 0, w: 0, h: 0 });
         return { x0: r1((d.x - v.x) / v.scale), x1: r1((d.x + d.w - v.x) / v.scale), top: r1((d.y - v.y) / v.scale), bottom: r1((d.y + d.h - v.y) / v.scale), caster };
       });
-      return { ...frame, name: parts.name.text, sub: parts.sub.text, camZoom: scene.cameras.main.zoom / res(), band: bandInfo, fighters };
+      return { ...frame, name: parts.name.text, sub: parts.sub.text, nameAlpha: parts.name.alpha, subAlpha: parts.sub.alpha, camZoom: scene.cameras.main.zoom / res(), band: bandInfo, fighters };
     },
   };
 }
