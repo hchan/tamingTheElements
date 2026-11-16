@@ -1,3 +1,8 @@
+---
+status: done
+added: 2026-11-16
+---
+
 # HUD follow-ups 2 (WP-HF2)
 
 View-only HUD fixes, no src/core change. Plan: ~/claudetmp/plans/hud-followups2-plan.md.
