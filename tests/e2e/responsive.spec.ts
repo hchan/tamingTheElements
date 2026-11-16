@@ -36,7 +36,8 @@ interface Scroll { sw: number; sh: number; iw: number; ih: number }
 const STRIKE_GUTTER = 72;
 const hasStrikeGutter = (s: Scroll): boolean => s.iw >= 740 && s.ih <= 500 && s.iw > s.ih;
 
-async function expectCanvasFits(page: Page, mobile = false): Promise<Rect> {
+/** `pinnedTop`: the portrait play layout pins the canvas under a 52 px top strip instead of centring it vertically. */
+async function expectCanvasFits(page: Page, mobile = false, pinnedTop = false): Promise<Rect> {
   const r = await page.evaluate<Rect>(RECT);
   const s = await page.evaluate<Scroll>(SCROLL);
   expect(r.x).toBeGreaterThanOrEqual(-0.5);
@@ -51,7 +52,8 @@ async function expectCanvasFits(page: Page, mobile = false): Promise<Rect> {
   } else {
     expect(Math.abs(r.x + r.w / 2 - s.iw / 2)).toBeLessThanOrEqual(1);
   }
-  expect(Math.abs(r.y + r.h / 2 - s.ih / 2)).toBeLessThanOrEqual(1);
+  if (pinnedTop) expect(Math.abs(r.y - 52)).toBeLessThanOrEqual(1);
+  else expect(Math.abs(r.y + r.h / 2 - s.ih / 2)).toBeLessThanOrEqual(1);
   expect(s.sw).toBeLessThanOrEqual(s.iw);
   expect(s.sh).toBeLessThanOrEqual(s.ih);
   return r;
@@ -111,7 +113,7 @@ for (const vp of VIEWPORTS) {
         await expect(page.locator('#rotateOverlay')).toBeHidden();
       }
       await page.waitForFunction(`window.__TTE__.arena.actionSlots().length > 0`);
-      const r = await expectCanvasFits(page, vp.mobile ?? false);
+      const r = await expectCanvasFits(page, vp.mobile ?? false, vp.w < 500);
       const slots = await page.evaluate<{ x: number; y: number; size: number; cmd: number }[]>(
         `window.__TTE__.arena.actionSlots()`,
       );

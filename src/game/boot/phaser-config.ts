@@ -46,7 +46,10 @@ export function createGame(
   const host = typeof parent === 'string' ? document.getElementById(parent) : parent;
   // No rotate hint in an online match: it pauses the local sim, which would stall the friend into a timeout forfeit (WP 06).
   const online = typeof arena === 'object' && arena.net !== undefined;
-  if (host) installPresentation(game, host, { rotateHint: arena !== false && !cinematic && !online });
+  if (host) installPresentation(game, host, {
+      rotateHint: arena !== false && !cinematic && !online,
+      portraitPlay: arena !== false && !cinematic,
+    });
   if (arena !== false || cinematic) {
     game.events.once(PRELOAD_READY, () => {
       game.scene.stop('Preload');

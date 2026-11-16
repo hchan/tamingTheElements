@@ -1,15 +1,21 @@
 import type Phaser from 'phaser';
 import { counted } from '../platform/test-hook';
+import { PORTRAIT_PLAY, PORTRAIT_PLAY_QUERY, PORTRAIT_QUERY } from './portrait-play';
+
+export { PORTRAIT_QUERY };
 
 /** Game event emitted when a full-screen DOM overlay starts or stops blocking the arena (true = blocked). */
 export const BLOCKED_EVENT = 'tte:blocked';
 
-const PORTRAIT_QUERY = '(orientation: portrait) and (max-width: 900px)';
-
 export interface PresentationOptions {
   /** Show the "rotate your device" overlay on portrait phones (battle only). */
   readonly rotateHint: boolean;
+  /** Pin the canvas under a top strip on coarse-pointer portrait phones (never in cinematics). */
+  readonly portraitPlay?: boolean;
 }
+
+/** Game that currently owns `html[data-portrait-play]`: a destroyed game must not clear the flag a newer game set. */
+let attrOwner: unknown;
 
 function button(id: string, label: string, text: string): HTMLButtonElement {
   const b = document.createElement('button');
@@ -45,6 +51,37 @@ export function installPresentation(game: Phaser.Game, host: HTMLElement, opts: 
     cleanups.push(() => { win.removeEventListener('keydown', onKey); });
   }
 
+  let overlayVisible = (): boolean => false;
+  const playMq = opts.portraitPlay ? counted(window.matchMedia(PORTRAIT_PLAY_QUERY)) : undefined;
+  let play = false;
+  const setAttr = (on: boolean): void => {
+    if (on) {
+      attrOwner = game;
+      document.documentElement.setAttribute('data-portrait-play', '');
+    } else if (attrOwner === game) {
+      attrOwner = undefined;
+      document.documentElement.removeAttribute('data-portrait-play');
+    }
+  };
+  const syncPlay = (): void => {
+    const next = !!playMq?.matches && !overlayVisible();
+    if (next === play) return;
+    play = next;
+    setAttr(play);
+    game.registry.set(PORTRAIT_PLAY, play);
+    // The canvas moved: recache its bounds for input.
+    if (game.isBooted) game.scale.refresh();
+  };
+  if (playMq) {
+    playMq.addEventListener('change', syncPlay);
+    cleanups.push(() => {
+      playMq.removeEventListener('change', syncPlay);
+      play = false;
+      setAttr(false);
+      game.registry.set(PORTRAIT_PLAY, false);
+    });
+  }
+
   if (opts.rotateHint) {
     const mq = counted(window.matchMedia(PORTRAIT_QUERY));
     const overlay = document.createElement('div');
@@ -58,6 +95,7 @@ export function installPresentation(game: Phaser.Game, host: HTMLElement, opts: 
     host.append(overlay);
     let dismissed = false;
     let blocked = false;
+    overlayVisible = (): boolean => mq.matches && !dismissed;
     const sync = (): void => {
       const show = mq.matches && !dismissed;
       overlay.hidden = !show;
@@ -66,6 +104,7 @@ export function installPresentation(game: Phaser.Game, host: HTMLElement, opts: 
         game.registry.set(BLOCKED_EVENT, show);
         game.events.emit(BLOCKED_EVENT, show);
       }
+      syncPlay();
     };
     const onDismiss = (): void => { dismissed = true; sync(); };
     dismiss.addEventListener('click', onDismiss);
@@ -76,6 +115,8 @@ export function installPresentation(game: Phaser.Game, host: HTMLElement, opts: 
       overlay.remove();
     });
   }
+
+  syncPlay();
 
   game.events.once('destroy', () => {
     for (const off of cleanups.splice(0)) off();
