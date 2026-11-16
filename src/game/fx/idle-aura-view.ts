@@ -11,6 +11,7 @@ import { ELEMENT_COLORS } from './element-colors';
 import { hash01, mute } from './grim-fx';
 import { tri } from '../views/pose-anim';
 import { STATUS_LOOKS } from './status-fx';
+import { WALL_Y } from './terrain-stage-layout';
 
 /**
  * Phaser side of the idle element auras (see idle-aura.ts and idle-look.ts; idea idle-element-auras). A lazy chunk the Arena
@@ -277,6 +278,7 @@ export function mountIdleAuraView(
     ctx.noGround = ownIds.some((o) => o.id === c.id);
     ctx.highContrast = contrastNow;
     ctx.dim = (statusHit ? 0.4 : 1) * ramp;
+    ctx.wallY = WALL_Y;
     // Air strikes: asked once per scheduled strike; a refused strike simply does not happen. None in reduced motion.
     ctx.strike = -1;
     if (look.element === 'air' && !reducedNow) {
