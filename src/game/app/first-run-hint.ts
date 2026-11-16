@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { PRELOAD_READY } from '../scenes/launch';
 import { el } from '@ui/dom';
+import { PORTRAIT_PLAY_QUERY } from '../boot/portrait-play';
 import { ARCADE_SNAG_SLOT } from '@core/index';
 import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction } from '../platform/input/bindings';
 
@@ -251,6 +252,14 @@ export function afterArenaCreate(game: object): (go: (busy?: () => boolean) => v
   };
 }
 
+function inPortraitPlay(): boolean {
+  try {
+    return window.matchMedia(PORTRAIT_PLAY_QUERY).matches;
+  } catch {
+    return false;
+  }
+}
+
 /** The card, or null when it was already seen. */
 export function firstRunHint(
   store: Store | undefined = defaultStore(),
@@ -272,11 +281,14 @@ export function firstRunHint(
   // On a short window (1280x720) the card shrinks and drops its footer so it ends above the hero's wings instead of covering them.
   const short = typeof window !== 'undefined' && window.innerHeight <= COMPACT_BELOW;
   // A short keyboard window gets one line (QA r31), not three; phones keep their own lines (CSS trims them).
-  if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner)));
+  // Portrait phone play: one line under the action bar (the media query, not the registry: the card is built while the rotate overlay may still be up).
+  const portraitOne = isTouchFirst() && inPortraitPlay();
+  if (portraitOne) card.append(el('p', 'firstRunOne', firstRunPhoneLine(snag)));
+  else if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner)));
   else if (short && window.innerHeight <= 500 && isTouchFirst() && window.matchMedia('(orientation: landscape)').matches) card.append(el('p', 'firstRunOne', firstRunPhoneLine(snag)));
   else for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
-  if (short && window.innerHeight > 500) card.style.fontSize = '11px';
-  if (!short) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
+  if (short && window.innerHeight > 500 && !portraitOne) card.style.fontSize = '11px';
+  if (!short && !portraitOne) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
   done.setAttribute('type', 'button');
   done.addEventListener('click', () => {

@@ -28,6 +28,17 @@ export const CHIP_MAX = 6;
 export interface ChipLayout {
   readonly scale: number;
   readonly top: number;
+  /** Chips shown per side instead of CHIP_MAX (portrait phone play: 2). When set, the chips are also sorted: stun and snag first. */
+  readonly max?: number;
+}
+/** Chips per fighter in portrait play (one chip plus `+N more` when there are more than this). */
+export const PORTRAIT_CHIP_MAX = 2;
+
+/** Sort rank under a cap: stun and snag first, then hostile, then friendly, weather and the elemental buff last. */
+function chipRank(r: { key: string; hostile: boolean }): number {
+  if (r.key === 'stun' || r.key === 'root') return 0;
+  if (r.key === 'weather' || r.key === 'elem') return 3;
+  return r.hostile ? 1 : 2;
 }
 export const DEFAULT_CHIP_LAYOUT: ChipLayout = { scale: 1, top: CHIP_Y };
 /** Font px of the chip word at layout scale 1 (the chip box is sized for it). */
@@ -173,7 +184,12 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
   const gap = Math.round(CHIP_GAP * layout.scale);
   const perRow = Math.max(1, Math.floor((maxX - minX + gap) / (w + gap)));
   const place = (i: number): { x: number; y: number } => ({ x: minX + (i % perRow) * (w + gap), y: layout.top + Math.floor(i / perRow) * (h + gap) });
-  const shown = raw.length > CHIP_MAX ? raw.slice(0, CHIP_MAX - 1) : raw;
+  const cap = layout.max ?? CHIP_MAX;
+  if (layout.max !== undefined) {
+    const ranked = raw.map((r, i) => ({ r, i })).sort((a, b) => chipRank(a.r) - chipRank(b.r) || a.i - b.i);
+    raw.splice(0, raw.length, ...ranked.map((e) => e.r));
+  }
+  const shown = raw.length > cap ? raw.slice(0, cap - 1) : raw;
   const out: StatusChip[] = shown.map((r, i) => {
     const secs = r.ticksLeft === null ? null : secsLeft(r.ticksLeft);
     return {
@@ -190,7 +206,7 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
       text: chipText(r.label, r.hostile, secs),
     };
   });
-  if (raw.length > CHIP_MAX) {
+  if (raw.length > cap) {
     out.push({ key: 'more', label: 'MORE', hostile: false, glyph: 'plus', secs: null, remaining: 1, ...place(out.length), w, h, color: buffColor(false, highContrast), text: `+${String(raw.length - shown.length)} more` });
   }
   return out;

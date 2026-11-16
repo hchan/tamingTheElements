@@ -468,3 +468,35 @@ describe('HINT-CUT-1: the card waits for a live super cut or tag call', () => {
     expect(card?.isConnected).toBe(false);
   });
 });
+
+describe('firstRunHint in portrait play', () => {
+  const stub = (coarse: boolean, portrait: boolean): void => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('pointer: coarse') && !q.includes('orientation') ? coarse : coarse && portrait }));
+  };
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('is one phone line with no footer and no 11 px font', () => {
+    stub(true, true);
+    const card = firstRunHint(memory(), 2500, (go) => { go(); }, true) as HTMLElement;
+    const one = card.querySelectorAll('p.firstRunOne');
+    expect(one).toHaveLength(1);
+    expect(one[0]?.textContent).toMatch(/snag/i);
+    expect(card.querySelectorAll('p')).toHaveLength(1);
+    expect(card.querySelector('.firstRunMore')).toBeNull();
+    expect(card.style.fontSize).toBe('');
+  });
+
+  it('leaves out Snag without it', () => {
+    stub(true, true);
+    const card = firstRunHint(memory(), 2500, (go) => { go(); }, false) as HTMLElement;
+    expect(card.querySelector('p.firstRunOne')?.textContent).not.toMatch(/snag/i);
+  });
+
+  it('is unchanged when not portrait play', () => {
+    stub(true, false);
+    vi.stubGlobal('innerHeight', 900);
+    const card = firstRunHint(memory(), 2500, (go) => { go(); }, true) as HTMLElement;
+    expect(card.querySelector('p.firstRunOne')).toBeNull();
+    expect(card.querySelector('.firstRunMore')).not.toBeNull();
+  });
+});
