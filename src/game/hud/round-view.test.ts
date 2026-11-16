@@ -186,10 +186,10 @@ describe('round view (Phaser side, fake scenes)', () => {
     const feed = mountRoundView(arena.scene, hud.scene, view, (l) => lines.push(l), prefs(false), { peek: () => undefined });
     expect(defenceState(arena.scene)).toMatchObject({ shields: 0, pops: [] });
     expect(weatherState(arena.scene)).toMatchObject({ kind: 0, call: '' });
-    // The defence view's two Graphics in the Arena (the weather view makes its objects on the first weather); the
+    // The defence view's three Graphics (trail, rope back, over) in the Arena (the weather view makes its objects on the first weather); the
     // round view's shutdown and destroy listeners, and the defence, clash and weather views' postupdate, shutdown and
     // destroy (the clash view makes its Graphics on the first clash).
-    expect(arena.made).toHaveLength(2);
+    expect(arena.made).toHaveLength(3);
     expect(arena.events.count).toBe(11);
     feed([ev(1, SimEventKind.roundStarted, 0, { round: 1 }), ev(2, SimEventKind.weatherChanged, 0, { weather: 2, prev: 0, team: 1 })]);
     expect(lines.map((l) => l.text)).toEqual(['Round 1.', 'The enemy called Rain: water hits harder, fire softer.']);

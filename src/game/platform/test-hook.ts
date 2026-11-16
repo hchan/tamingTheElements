@@ -97,7 +97,7 @@ export interface ArenaProbe {
    */
   defence(): Promise<{
     ghosts: number; trails: number; shields: number; bars: readonly number[]; projectiles: number; sparks: number; rings: number; pops: readonly string[];
-    roots: number;
+    roots: number; rootBack: number; rootFront: number;
   } | undefined>;
   /** The stage's ambient particles (view only): emitters running and live particles; 0 under reduced motion. */
   stageAmbient(): { emitters: number; particles: number };
@@ -141,7 +141,7 @@ export interface ArenaProbe {
   /** Dev/test only: gives an entity a timed status (a StatusId) for `ticks` sim ticks. */
   grantStatus(id: number, status: number, ticks: number): void;
   /** Hero status effects drawn on the last frame (buff-debuff-animation). */
-  ccFx(): Promise<{ heroes: readonly { id: number; kind: string; release: string; parts: number; segs: number; age: number }[]; parts: number; segs: number; rings: number; cracks: number; puffs: number; started: { ring: number; crack: number; puff: number; denied: number }; reduced: boolean; highContrast: boolean; tier: string } | undefined>;
+  ccFx(): Promise<{ heroes: readonly { id: number; kind: string; release: string; parts: number; segs: number; age: number; back: number; front: number }[]; parts: number; segs: number; rings: number; cracks: number; puffs: number; started: { ring: number; crack: number; puff: number; denied: number }; reduced: boolean; highContrast: boolean; tier: string } | undefined>;
   statusFx(): Promise<{ loops: readonly { id: number; status: number }[]; bursts: readonly { id: number; status: number; age: number }[]; fades: readonly { id: number; status: number; age: number }[] } | undefined>;
   cleanse(): Promise<{ active: readonly { id: number; element: string; age: number }[]; parts: number; reduced: boolean; started: number } | undefined>;
   /** The melee danger-zone outlines drawn on the last frame (ability-telegraphs). */
