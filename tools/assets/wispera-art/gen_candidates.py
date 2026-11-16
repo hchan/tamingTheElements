@@ -1,10 +1,11 @@
 import os, sys, time, torch
 os.environ["HF_HUB_OFFLINE"]="1"
 from diffusers import AutoPipelineForText2Image
-OUT=os.path.expanduser("~/claudetmp/wispera-redo/cand2")
+OUT=os.path.join(os.environ.get("WISPERA_ART_DIR", ".scratch/wispera-art"), "cand2")
 os.makedirs(OUT,exist_ok=True)
-LOG=open(os.path.expanduser("~/claudetmp/progress/hero-artist-wispera.log"),"a")
-def log(s): LOG.write(s+"\n"); LOG.flush()
+LOG=open(os.environ["WISPERA_LOG"],"a") if os.environ.get("WISPERA_LOG") else None  # optional progress log
+def log(s):
+    if LOG: LOG.write(s+"\n"); LOG.flush()
 STYLE=", creature concept art, grimdark medieval fantasy painting, textured brushwork, luminous glow, isolated on plain flat pure black background, centered, single subject, no landscape, no ground, no text"
 P={
 "d":"a compact storm elemental spirit, a small dense dark thundercloud body with a bright blue-white glowing core in its chest, hollow glowing white eyes, jagged lightning arcing from it, ragged cloud tendrils trailing below like a ghost",

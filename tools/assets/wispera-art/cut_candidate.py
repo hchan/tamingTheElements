@@ -1,7 +1,7 @@
 import os, sys
 import numpy as np
 from PIL import Image, ImageFilter, ImageDraw, ImageFont
-D=os.path.expanduser("~/claudetmp/wispera-redo")
+D=os.environ.get("WISPERA_ART_DIR", ".scratch/wispera-art")  # work dir: cand2/ (text2img), ref/ (img2img), rcut/ (cuts)
 def cut(src, lo, hi, vign=0.47):
     im=Image.open(src).convert("RGB").crop((0,0,1024,960))  # drop signature strip
     a=np.asarray(im).astype(np.float32)

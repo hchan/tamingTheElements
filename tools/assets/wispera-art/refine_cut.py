@@ -23,10 +23,6 @@ def build(src,out,seed=1,cloud=1.0):
     m=(lum>238)&(((xx-a.shape[1]/2)**2+(yy-a.shape[0]/2)**2)<(a.shape[0]*.25)**2)
     cx,cy=xx[m].mean(),yy[m].mean()
     # resample to canvas with core at C
-    sx,sy=np.arange(400),np.arange(400)
-    X=(cx+(sx-C[0])*K); Y=(cy+(sy-C[1])*K)
-    pad=np.pad(a,((0,0),(0,0),(0,0)))
-    xi=np.clip(X,0,a.shape[1]-1); yi=np.clip(Y,0,a.shape[0]-1)
     canvas=np.asarray(Image.fromarray(a.astype(np.uint8)).transform((400,400),Image.AFFINE,(K,0,cx-C[0]*K,0,K,cy-C[1]*K),Image.BICUBIC,fillcolor=(0,0,0))).astype(np.float32)
     bg=np.array([22,22,30],np.float32)
     dist=np.sqrt(((canvas-bg)**2).sum(2))

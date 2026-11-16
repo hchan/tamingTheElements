@@ -29,3 +29,7 @@ corepack pnpm assets:sheets                                                     
 The lock lives next to the script (`prep.lock.json`), not in the rig dir, so the bake's own `bake.lock.json` stays the only lock
 under `imgWorkArea/rigs/`. The old procedural generators in `tools/assets/rig-gen/` refuse to overwrite a rig whose `rig.json`
 has `"source": "portrait"`. Design notes: [ADR-0020](../../../docs/adr/0020-portrait-rigs.md).
+- Wispera (WISPERA-R2, 2026-11-16): her portrait is the owner-picked "Refined 2" redraw made by `tools/assets/wispera-art/` (see its
+  README), not a legacy painting. It is opaque out to its bolt tips, so her idle/walk torso pulse is gentler (100 to 103 %) to
+  keep the 3 px feet test; the map strip is not alpha-lifted; the Halo test allows 0.12 for her (`HALO_MAX`, as for lavax and
+  morblass). Never run `large-portraits.py` for her (build-assets also skips her, see `REDRAWN`).

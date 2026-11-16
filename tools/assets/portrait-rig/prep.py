@@ -387,7 +387,7 @@ def build(hero):
         json.dump(rig, fh, indent=1)
         fh.write("\n")
     with open(os.path.join(out, "license.txt"), "w") as fh:
-        fh.write(LICENSE.format(hero=hero))
+        fh.write(spec.get("license") or LICENSE.format(hero=hero))
     hashes["rig.json"] = sha(rig_path)
     debug(hero, spec, src, padded, masks, q, size)
     print("ok", hero)

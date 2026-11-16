@@ -126,8 +126,18 @@ for act_, c in {"idle": [0, 1, 2, 1], "walk": [-3, 0, 3, 0], "cast": [8, -14, -8
 blobby("wispera", [200, 300], [glow("core", "torso", [190, 225], 14, [120, 170, 255], 1.0, 0.7)], [140, 190, 255], None, None,
        [bone("root", None, [200, 300]), bone("torso", "root", [190, 225], FULL, 24)])
 SPECS["wispera"]["rim"]["strength"] = 0.0
+# The painting is the owner-picked "Refined 2" (tools/assets/wispera-art, WISPERA-R2), no longer the legacy portrait.
+SPECS["wispera"]["license"] = (
+    "Rig parts for wispera: derived from the redrawn portrait `map/wisperaLarge.png` (owner-picked \"Refined 2\", 2026-11-16, WISPERA-R2), which\n"
+    "replaces the legacy portrait (tag legacy-crafty-1.0). Made by tools/assets/wispera-art: SDXL-Turbo img2img (strength 0.6, seed 4511) of\n"
+    "imgWorkArea/portrait-src/wispera/e_8.png -> r60_3.png, then refine_cut.py (cut + procedural cloud, seed 8; numpy/PIL). Cut, matted,\n"
+    "inpainted and animated by tools/assets/portrait-rig (prep.py, spec/wispera.json, spec/wispera.anim.json).\n"
+    "Licence: same as the repository's own art (still to be decided in README.md; owner to confirm, including SDXL-Turbo output terms).\n"
+)
+# The new painting is opaque out to its bolt tips (about 146 portrait px below the core), so the legacy 100->106 % pulse about the core
+# moved the feet-row 4.4 frame px (the test allows 3): a gentler pulse keeps it near 2.2 px.
 for act_ in ("idle", "walk"):
-    ANIMS["wispera"][act_]["curves"]["torso"] = {"sx": [100, 103, 106, 103], "sy": [100, 103, 106, 103]}
+    ANIMS["wispera"][act_]["curves"]["torso"] = {"sx": [100, 102, 103, 102], "sy": [100, 102, 103, 102]}
 
 for h in SPECS:
     for suffix, data in ((".json", SPECS[h]), (".anim.json", ANIMS[h])):

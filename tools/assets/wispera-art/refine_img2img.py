@@ -2,9 +2,9 @@ import os, time, torch
 os.environ["HF_HUB_OFFLINE"]="1"
 from diffusers import AutoPipelineForImage2Image
 from PIL import Image
-D=os.path.expanduser("~/claudetmp/wispera-redo")
+D=os.environ.get("WISPERA_ART_DIR", ".scratch/wispera-art")  # work dir: cand2/ (text2img), ref/ (img2img)
 os.makedirs(f"{D}/ref",exist_ok=True)
-LOG=open(os.path.expanduser("~/claudetmp/progress/hero-artist-wispera.log"),"a")
+LOG=open(os.environ["WISPERA_LOG"],"a") if os.environ.get("WISPERA_LOG") else open(os.devnull,"w")  # optional progress log
 P=("a radiant blue-white glowing glass orb of light at the centre, surrounded by thick dark churning thunderclouds, "
    "sharp jagged forked lightning bolts radiating outward like a starburst, grimdark medieval fantasy painting, textured brushwork, "
    "luminous glow, plain flat pure black background, centered, single subject, no tree, no roots, no branches, no text")

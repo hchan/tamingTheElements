@@ -55,3 +55,7 @@ parts and rotated with nearest neighbour loses the painting, and a 2x upscale of
 - Python prep needs numpy and Pillow (`tools/assets/portrait-rig/requirements.txt`). The TypeScript bake stays
   dependency-free.
 - Other heroes keep the procedural rigs and the grade until they get a portrait rig.
+
+Update (WISPERA-R2, 2026-11-16): Wispera's source painting was replaced by an SDXL-Turbo redraw (`tools/assets/wispera-art/`); her rig,
+bake, sheet and map strip were regenerated. `build-assets.ts` has a `REDRAWN` guard so the legacy painting is not copied back over
+it. Art only: no sim, golden or SIM_VERSION change.
