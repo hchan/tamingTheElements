@@ -3,7 +3,7 @@ import { EntityFlag, StatusId, arcadePlayfield, type Element, type RenderCharact
 import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-feel';
-import { arcadeHeroScale, boxSpanX, clampSpanX, visualBox, type Box, type SpanX } from './hero-scale';
+import { HERO_IMAGE_NAME, arcadeHeroScale, boxSpanX, clampSpanX, visualBox, type Box, type SpanX } from './hero-scale';
 import { SHADOW_ALPHA_CAP } from './pose-depth';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
@@ -231,6 +231,8 @@ export class CharacterView {
    */
   constructor(private readonly scene: Phaser.Scene, public scale = 1, private readonly fit = false) {
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setVisible(false);
+    // Tagged so the super cut can find every fighter's body on the display list (a plain field: view tests stub the image).
+    this.image.name = HERO_IMAGE_NAME;
   }
 
   /** Starts the hit flash: additive wash, then `tint`; `holdFrames` (heavy hits) freezes it on the wash for a few frames. */

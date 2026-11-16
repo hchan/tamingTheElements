@@ -4,6 +4,9 @@
  * Pure: no Phaser, so Node tests and the FX views share it.
  */
 
+/** Phaser object name of a hero's body image, so the super band (fx) can find every fighter on the display list. */
+export const HERO_IMAGE_NAME = 'tteHero';
+
 /** Display scale of a 1x hero (box 80 px high): about 30% of the 460 px arena strip at 1280x720. */
 export const ARCADE_HERO_SCALE = 2;
 /** A big body (giant, up to 4x the box) never grows past this display height (world px). */
