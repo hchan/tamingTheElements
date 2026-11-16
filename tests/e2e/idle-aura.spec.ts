@@ -50,6 +50,10 @@ const RACES: readonly [string, string][] = [
 ];
 
 const frames = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+/** Several frames: a toggle only shows once Phaser has drawn it, and under load (parallel agents) two rAFs can pass before that. */
+const settle = async (page: Page): Promise<void> => {
+  for (let i = 0; i < 4; i++) await frames(page);
+};
 const probe = async (page: Page): Promise<IdleAuraProbe> => {
   await frames(page);
   const p = await page.evaluate<IdleAuraProbe | undefined>(`window.__TTE__.arena.idleAura()`);
@@ -101,11 +105,11 @@ for (const [race, element] of RACES) {
   test(`${race}: the ${element} aura is clearly visible in pixels (shown vs hidden, same frame)`, async ({ page }) => {
     await setup(page, race);
     await hide(page, true);
-    await frames(page);
+    await settle(page);
     const off1 = await dataUrl(page);
     const off2 = await dataUrl(page);
     await hide(page, false);
-    await frames(page);
+    await settle(page);
     const on = await dataUrl(page);
     const noise = await pixelDiff(page, off1, off2);
     const d = await pixelDiff(page, on, off1);
