@@ -267,7 +267,7 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
   test('a tag call hides the first-run card', async ({ page }) => {
     await enterFight(page, 2);
     await page.evaluate(`window.dispatchEvent(new Event('tte:tag-call'))`);
-    await expect(page.locator('#firstRunHint')).toHaveClass(/firstRunFade/);
+    await expect(page.locator('#firstRunHint')).toHaveCount(0); // a tag call removes the card on the spot (fadeNow), it does not fade
   });
 });
 

@@ -8,6 +8,8 @@ export interface ProbeCharacter {
   readonly y: number;
   /** Box width (a giant hero is wider than 80). */
   readonly w: number;
+  /** Box height (drives the Arcade draw scale, WP-HC1). */
+  readonly h: number;
   readonly hp: number;
   readonly maxHp: number;
 }

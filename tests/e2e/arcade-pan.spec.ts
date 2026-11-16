@@ -26,8 +26,11 @@ async function placeAndSettle(page: Page, x1: number, x2: number): Promise<Cam> 
   await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, ${String(x1)}, 380, 0); a.place(foe.id, ${String(x2)}, 380, 4); })()`);
   // Fighters can differ in width (giants), so frame on their real centres and widest half-width, as the camera does.
   const [wMe = HERO_W, wFoe = HERO_W] = await page.evaluate<number[]>(`window.__TTE__.arena.characters().map((c) => c.w)`);
+  const [hMe = HERO_W, hFoe = HERO_W] = await page.evaluate<number[]>(`window.__TTE__.arena.characters().map((c) => c.h)`);
   const mid = (x1 + wMe / 2 + x2 + wFoe / 2) / 2;
-  const margin = MARGIN + Math.max(0, Math.max(wMe, wFoe) / 2 - 40);
+  // The framing reach is the DRAWN half-width (arcadeHeroScale: 2x the sim box, down to 1.25x for a tall body, WP-HC1 E).
+  const drawn = (w: number, h: number): number => (Math.max(1.25, Math.min(2, 200 / h)) * w) / 2;
+  const margin = MARGIN + Math.max(0, Math.max(drawn(wMe, hMe), drawn(wFoe, hFoe)) - 40);
   const zoom = Math.min(1, Math.max(ZOOM_MIN, VIEW / (Math.abs(x1 + wMe / 2 - x2 - wFoe / 2) + 2 * margin)));
   const half = VIEW / zoom / 2;
   const centerX = Math.min(WORLD - half, Math.max(half, mid));
