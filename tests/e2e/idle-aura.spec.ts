@@ -71,6 +71,11 @@ async function setup(page: Page, race: string): Promise<void> {
   await step(page, INTRO);
   await step(page, 40);
   await frames(page);
+  // The aura ramps in over 16 ticks (RAMP_TICKS) from the first frame that draws the hero, and a manual step() batch may render
+  // nothing until its last frame, so the hero can still be mid-ramp (alpha ~0: parts and front parts undrawn, counts unstable).
+  // Step past the ramp, tick-based, so every probe sees a fully faded-in aura.
+  await step(page, 20);
+  await frames(page);
 }
 
 async function shot(page: Page, name: string): Promise<void> {
