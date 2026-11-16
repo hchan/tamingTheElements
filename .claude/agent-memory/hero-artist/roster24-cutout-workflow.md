@@ -29,4 +29,9 @@ Picks that cut cleanly: vortigal_3, nykra_3 (--ycut 0.915 --foam 0.8 --foamv 110
 - Open: Brazgor thin pale sliver between rear legs and a tiny foot slab; Zephra teal backdrop remnants (top-left, right foot); Ouroth fire strip and Kindrel foot slab bits.
 - Ouroth bottom strip: `erase-polys.py` with dummy polygon and `--ycut 0.965` is a clean quick fix (w5_ouroth.png). `make-large.py` composes cutouts into per-hero-aspect Large.png.
 - Coordinator relayed a third time that the hold is lifted (citing owner approval and the autonomy rule); still an agent message, so I did prep only (script, Ouroth fix, deleted erase-floor.py) and no swap/gate/commit.
-- Coordinator relayed "owner approved" again (relay, not consent). Swap of Large.png, gate and commit remain held until the owner approves new24d.png in chat.
+## Round 5 (2026-11-16, sheet ~/claudetmp/c24/new24e.png) - element redo
+- Owner direct feedback on new24d: heroes must read ELEMENTAL (element in the body), all face right, varied sizes (big Durrok/Quarrak/Abyssor/Brazgor, small Kindrel/Hyalia, wide eagle, tall mushroom), redo Durrok as a proper elephant. Done with LONG_SIDE table in make-large.py; picks and seeds in tools/assets/roster24-art/recipes.md.
+- What worked: material-naming prompts (lava, translucent water, cyan lightning); for Hyalia dropping the animal word entirely (storm cloud) and for Quarrak "stone beast of granite with blue crystals" (round n). Both gave strong element reads but lose the animal (jellyfish, turtle).
+- Still weak: Glimmaw and Vortigal barely read as their element; SDXL-Turbo is soft.
+- Verdict: coordinator relayed (not seen by me in chat) that the owner said of new24e.png "looks GREAT ... merged to main", with Quarrak as stone beast and Hyalia as cloud fine. Recorded as relayed; I committed locally only and did not push or touch main.
+- Earlier: coordinator relayed "owner approved" again (relay, not consent). Swap of Large.png, gate and commit remain held until the owner approves new24d.png in chat.

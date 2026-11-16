@@ -28,16 +28,74 @@ if RND == "f":  # third re-roll: kindrel/quarrak with a bare flat floor so the g
      "kindrel": "a slender fox made of black basalt with glowing orange crack veins, standing in profile, exactly four thin legs, one head, one tail, standing on a bare flat empty grey floor, plain grey wall behind, no fire, no embers, no rubble",
      "quarrak": "a granite tortoise standing in profile, exactly four thick legs, one head, one domed shell, bare flat empty grey floor, plain grey wall behind, no pebbles, no sand, no rubble",
     }
+if RND == "h":  # round 5 (owner: must read as ELEMENTAL, face right): element is the body material, flat backdrop
+    # CLIP truncates at 77 tokens, so subject + short style must stay small
+    STYLE = ", facing right, side view, full body, oil painting, plain flat dark grey background, one head"
+    H = {
+     "kindrel": "a fox made of living flame, fur of fire and embers, lava cracks, huge burning flame tail, four legs",
+     "brazgor": "a bull made of molten lava and black volcanic rock, glowing magma cracks, flames on horns, four legs",
+     "ouroth": "a coiled serpent made of fire, body of flame and magma scales, burning eyes, embers",
+     "nykra": "a horse made of translucent flowing water, blue waves and ice crystals, glowing teal, mane of water, four legs",
+     "glimmaw": "an anglerfish made of translucent water and ice, glowing bioluminescent lure, ice teeth",
+     "abyssor": "a giant octopus made of translucent blue water, wave tentacles, bioluminescent glow, foam",
+     "quarrak": "a tortoise made of rock, shell of cracked boulders with moss and green crystals, four thick legs",
+     "durrok": "an elephant made of rocky stone hide, boulder skin, moss on back, crystal tusks, four pillar legs, trunk",
+     "umbrel": "a tall mushroom guardian of earth, stalk of rock and roots with moss, stone cap with glowing crystals, tall narrow",
+     "hyalia": "a jellyfish made of storm cloud and wind, translucent wispy bell, lightning inside, trailing wind tentacles",
+     "zephra": "a spiky beast made of wind and storm cloud, translucent wispy body, swirling air, lightning, four legs",
+     "vortigal": "an eagle made of storm cloud and lightning, wings of swirling wind and electricity, wings spread in a V, small in wide frame",
+    }
+    SIZE_BY = {"vortigal": (1536, 768)}
+if RND == "i":  # round 5b: stronger rock body for the elephant (round h read as a plain grey elephant)
+    STYLE = ", facing right, side view, full body, oil painting, plain flat dark grey background"
+    H = {"durrok": "a living stone elephant golem, body of cracked grey granite boulders and rock plates, glowing green crystals growing from its back, moss, two stone tusks, four thick legs, one head and trunk"}
+    SIZE_BY = {}
+if RND == "j":  # round 5c: stronger element bodies where round h still read as a plain animal
+    STYLE = ", facing right, side view, full body, oil painting, plain flat dark background"
+    H = {
+     "zephra": "a spiky beast made of swirling white wind and blue storm cloud, crackling lightning bolts, glowing cyan eyes, translucent misty body, four legs",
+     "quarrak": "a stone golem tortoise, body of cracked grey granite boulders, glowing amber crystals growing from the shell, moss, four thick stone legs, one head",
+    }
+    SIZE_BY = {}
+if RND == "k":  # round 5d: air heroes that round h drew as plain animals (no wind/lightning)
+    STYLE = ", facing right, side view, oil painting, plain flat dark blue-grey background"
+    H = {
+     "hyalia": "a glowing cyan electric jellyfish made of swirling white wind and storm cloud, lightning bolts crackling inside the bell, wispy translucent wind tentacles",
+     "vortigal": "an eagle made of storm cloud, wings of swirling white wind and bright lightning bolts, glowing cyan eyes, wings spread in a V, small in wide frame",
+    }
+    SIZE_BY = {"vortigal": (1536, 768)}
+if RND == "l":  # round 5e: quarrak with a mountain-of-rock shell (round h/j still read as a real tortoise)
+    STYLE = ", facing right, side view, oil painting, plain flat dark grey background, no grass"
+    H = {
+     "quarrak": "a colossal turtle monster, its shell a jagged mountain of grey rock slabs with a cluster of glowing blue crystals on top, skin of rough cracked stone, rock legs, glowing eyes",
+    }
+    SIZE_BY = {}
+if RND == "m":  # round 5f: hyalia as a literal storm cloud (round k gave a plain cyan jellyfish)
+    STYLE = ", facing right, side view, oil painting, plain flat dark purple-grey background"
+    H = {
+     "hyalia": "a floating storm cloud shaped like a jellyfish, the bell is a billowing grey cumulonimbus cloud with white lightning flashing inside, tentacles are long wisps of wind and rain streaks, no animal skin",
+    }
+    SIZE_BY = {}
+if RND == "n":  # round 5g: no animal word for hyalia (storm cloud only); quarrak as living rock (seeds use the default formula)
+    STYLE = ", facing right, side view, oil painting, plain flat dark grey background"
+    H = {
+     "hyalia": "a drifting cumulonimbus storm cloud with white lightning inside and long hanging wisps of wind and rain, grey and cyan",
+     "quarrak": "a huge stone beast with a boulder shell of grey rock and glowing blue crystals, four thick legs of cracked granite, small head",
+    }
+    SIZE_BY = {}
 SIZE = (1024, 1024)
 if RND == "g":  # wide 1536x768 canvas so a full wingspan fits with margin (Vortigal)
     SIZE = (1536, 768)
     H = {"vortigal": "a majestic bald eagle gliding with wings fully spread, seen from the front and slightly below, wingspan small relative to the wide canvas, large empty sky on the left and right of the wing tips, brown feathers"}
     STYLE = STYLE.replace("centered with wide empty margin on all sides", "centered with very wide empty margin left and right").replace("plain flat dark grey background", "plain flat pale grey sky background, no frame, no border")
 NEG = "cartoon, chibi, cute, anime, 3d render, human, person, text, watermark, signature, border, cropped, cut off, multiple creatures, two heads, extra legs, water splash, fire on ground, rocks, rubble, blurry"
+if RND in ("h", "i", "j", "k", "l", "m"): NEG = NEG.replace(", water splash, fire on ground, rocks, rubble", ", fire on the ground, ground, floor")
 pipe = AutoPipelineForText2Image.from_pretrained("stabilityai/sdxl-turbo", torch_dtype=torch.float16, variant="fp16").to("mps")
-for h, p in H.items():
+ORDER = ["durrok", "quarrak", "brazgor", "zephra", "kindrel", "nykra", "hyalia", "ouroth", "glimmaw", "abyssor", "vortigal", "umbrel"]
+for h, p in sorted(H.items(), key=lambda kv: ORDER.index(kv[0]) if RND in ("h", "i", "j", "k", "l", "m") else 0):
     if args and h not in args: continue
-    for i in range(1, 13):
-        im = pipe(p + STYLE, negative_prompt=NEG, num_inference_steps=4, guidance_scale=0.0, height=SIZE[1], width=SIZE[0],
-                  generator=torch.Generator("cpu").manual_seed(({"e": 9000, "f": 12000}.get(RND, 7000)) + i * ({"e": 37, "f": 41}.get(RND, 31)) + len(h))).images[0]
+    for i in range(1, int(os.environ.get("N", 12)) + 1):
+        if os.path.exists(f"{OUT}/{h}_{i}.png"): continue
+        im = pipe(p + STYLE, negative_prompt=NEG, num_inference_steps=4, guidance_scale=0.0, height=(SIZE_BY.get(h, SIZE)[1] if RND in ("h", "i", "j", "k", "l", "m") else SIZE[1]), width=(SIZE_BY.get(h, SIZE)[0] if RND in ("h", "i", "j", "k", "l", "m") else SIZE[0]),
+                  generator=torch.Generator("cpu").manual_seed(({"e": 9000, "f": 12000, "h": 15000, "i": 21000, "j": 27000, "k": 33000, "l": 39000, "m": 45000}.get(RND, 7000)) + i * ({"e": 37, "f": 41, "h": 43, "i": 47, "j": 53, "k": 59, "l": 61, "m": 67}.get(RND, 31)) + len(h))).images[0]
         im.save(f"{OUT}/{h}_{i}.png"); print(h, i, flush=True)
