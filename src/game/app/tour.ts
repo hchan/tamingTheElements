@@ -19,7 +19,7 @@ import { tourKeysDesktop, tourKeysTouch } from './tour-controls';
 import { touchStick } from './touch-stick';
 import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
-import { currentStage, matchSeed, parseCompleteTeam, stagePick } from './tour-match';
+import { locationName, parseCompleteTeam, tourFight } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
 import { runSummary } from './tour-summary';
 import { browserTourStorage, clearRun, loadRun, saveRun, type TourStorage } from './tour-store';
@@ -121,7 +121,7 @@ export function tourScreen(deps: TourDeps): Screen {
       return;
     }
     const r = run;
-    const stage = currentStage(r);
+    const { stage } = tourFight(r);
     const n = `Stage ${String(stage.index + 1)} of ${String(TOUR_STAGES)}`;
     const left = `${String(r.continues)} of ${String(TOUR_CONTINUES)} continues left`;
     const leftStage = r.continues === 0 ? 'None, a defeat ends the tour' : `${String(r.continues)} of ${String(TOUR_CONTINUES)}`;
@@ -172,7 +172,7 @@ export function tourScreen(deps: TourDeps): Screen {
         ),
         lines: [],
         facts: [
-          { key: 'location', label: 'Location', value: ELEMENT_WORD(stage.location) },
+          { key: 'location', label: 'Location', value: locationName(stage) },
           { key: 'opponent', label: 'Opponent', value: foe.replace(/ \([^)]*\)/g, '') },
           { key: 'difficulty', label: 'Difficulty', value: ELEMENT_WORD(stage.aiLevel) },
           { key: 'continues', label: 'Continues', value: leftStage },
@@ -206,7 +206,7 @@ export function tourScreen(deps: TourDeps): Screen {
       startBattle();
       return;
     }
-    const stage = currentStage(r);
+    const { stage } = tourFight(r);
     const member = (id: CharacterId): SplashMember => ({ name: raceLabel(id), element: getCharacter(id).element, id });
     const lead = (ids: readonly CharacterId[], who: string): SplashSide => {
       const id = ids[0] as CharacterId;
@@ -217,7 +217,7 @@ export function tourScreen(deps: TourDeps): Screen {
       lead(r.hero, 'You'),
       lead(stage.opponents, 'Opponent'),
       (e) => elementGlyph(e, 32),
-      stage.location === 'void' ? 'The Eternal Void' : `${ELEMENT_WORD(stage.location)} arena`,
+      stage.location === 'void' ? locationName(stage) : `${locationName(stage)} arena`,
     );
     show(view2);
     const mine = epoch;
@@ -258,13 +258,13 @@ export function tourScreen(deps: TourDeps): Screen {
     }
     battle.append(el('h1', 'heading', 'Loading...'));
     focusHeading(battle);
-    const stage = currentStage(r);
+    const fight = tourFight(r);
     import('./arcade-setup')
       .then(({ arcadeLaunch }) => import('../boot/phaser-config').then(({ createGame }) => {
         if (epoch !== mine) return;
-        const pick = stagePick(r, stage);
+        const { pick } = fight;
         const buttons = touchButtons(3, [pick.player, pick.partner, pick.partner2].filter((x) => x !== undefined).map(isMeleeRace));
-        const base: ArenaLaunch = arcadeLaunch(pick, matchSeed(r, stage), {
+        const base: ArenaLaunch = arcadeLaunch(pick, fight.seed, {
           onView: (v) => { watchTouch(buttons, v); },
           cheats: tester.enabled,
           cc: deps.flags.cc,
