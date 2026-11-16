@@ -23,6 +23,8 @@ import { mountResultView, type ResultState } from './round-result-view';
  */
 
 /** Over the HUD (100-102) and its damage numbers. */
+/** Fight time the first-run card stays after FIGHT! ends: 2.5 s at 50 Hz (FIRST_RUN_MS). Fight time, not wall clock. */
+export const FIGHT_SETTLED_TICKS = 125;
 const DEPTH = 110;
 /** Above the centre pad's label (y 330 to 345) and below the weather called line (y 268). */
 const BANNER_Y = 304;
@@ -99,6 +101,8 @@ export function mountRoundView(
   /** The view tick the last round result card ends: an intro banner's clock (fade, scale-in, name cards) starts then, not under the card. */
   let cardEnd = -1;
   let fightOverSent = false;
+  let settleAt = -1;
+  let settledSent = false;
   /** The start tick of the FIGHT! banner a super cut in on (qa-r43): it is dropped for good, not redrawn over the burst that outlives the cut-in. */
   let fightDropped = -1;
   /** When the banner's clock starts: its own start, or for an intro banner the end of the result card. */
@@ -226,7 +230,13 @@ export function mountRoundView(
     // The FIGHT! banner has run out (tick based): the first-run card (app/first-run-hint.ts, FIGHT_OVER_EVENT) may now appear; a literal keeps that card out of this lazy chunk.
     if (banner.main === 'FIGHT!' && tick >= banner.until && !fightOverSent && typeof window !== 'undefined') {
       fightOverSent = true;
+      settleAt = tick + FIGHT_SETTLED_TICKS;
       window.dispatchEvent(new Event('tte:fight-over'));
+    }
+    // Fight time, not wall clock: the first-run card (FIGHT_SETTLED_EVENT in app/first-run-hint.ts) fades once, FIGHT_SETTLED_TICKS after FIGHT! ends.
+    if (settleAt >= 0 && !settledSent && tick >= settleAt && typeof window !== 'undefined') {
+      settledSent = true;
+      window.dispatchEvent(new Event('tte:fight-settled'));
     }
     // Lanes (banner-lanes.ts): the super cut-in outranks the banner; an intro banner waits out the round result card.
     if (banner.main === 'FIGHT!' && cutUp(hud.registry)) fightDropped = banner.from;

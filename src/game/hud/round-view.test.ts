@@ -1,11 +1,11 @@
 import type Phaser from 'phaser';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RoundPhase, SimEventKind, type RenderArcade, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { defenceState } from '../fx/defence-view';
 import { weatherState } from '../fx/weather-view';
 import { FIGHT_BANNER_TICKS } from './round-announcer';
-import { mountRoundView, roundState } from './round-view';
+import { FIGHT_SETTLED_TICKS, mountRoundView, roundState } from './round-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
 class Emitter {
@@ -164,6 +164,44 @@ describe('round view (Phaser side, fake scenes)', () => {
     expect(hud.events.count).toBe(0);
     expect(hud.made.every((o) => o.destroyed)).toBe(true);
     expect(roundState(hud.scene)).toBeUndefined();
+  });
+
+  it('sends tte:fight-settled once, FIGHT_SETTLED_TICKS after the FIGHT! banner ends (fight time, PHONE-2)', () => {
+    const seen: string[] = [];
+    const target = new EventTarget();
+    for (const n of ['tte:fight-over', 'tte:fight-settled']) target.addEventListener(n, () => seen.push(n));
+    vi.stubGlobal('window', target);
+    try {
+      const arena = fakeScene(true);
+      const hud = fakeScene(true);
+      const v = fakeView();
+      const feed = mountRoundView(arena.scene, hud.scene, v.view, () => undefined, prefs(false));
+      v.setTick(1);
+      Object.assign(v.arcade, { round: 1, timer: 4500 });
+      feed([ev(1, SimEventKind.roundStarted, 0, { round: 1 })]);
+      v.setTick(91);
+      v.arcade.phase = RoundPhase.fight;
+      feed([ev(91, SimEventKind.fight, 0)]);
+      const over = 91 + FIGHT_BANNER_TICKS;
+      v.setTick(over - 1);
+      hud.events.emit('update');
+      expect(seen).toEqual([]);
+      v.setTick(over);
+      hud.events.emit('update');
+      expect(seen).toEqual(['tte:fight-over']);
+      v.setTick(over + FIGHT_SETTLED_TICKS - 1);
+      hud.events.emit('update');
+      expect(seen).toEqual(['tte:fight-over']);
+      v.setTick(over + FIGHT_SETTLED_TICKS);
+      hud.events.emit('update');
+      expect(seen).toEqual(['tte:fight-over', 'tte:fight-settled']);
+      v.setTick(over + FIGHT_SETTLED_TICKS + 50);
+      hud.events.emit('update');
+      expect(seen).toEqual(['tte:fight-over', 'tte:fight-settled']);
+      expect(FIGHT_SETTLED_TICKS * 20).toBe(2500);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('builds at once in a running Hud; reduced motion drops the scale-in and keeps the text; Hud destroy also tears down', () => {

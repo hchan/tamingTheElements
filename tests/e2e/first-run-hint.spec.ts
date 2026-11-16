@@ -45,7 +45,7 @@ test('first-run hint at 1280x720 is a slim strip above the bar and fades on its 
   expect(box).not.toBeNull();
   expect(box?.height ?? 999).toBeLessThan(100);
   expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThan(720 * 0.92);
-  await expect(card).toHaveClass(/firstRunFade/, { timeout: 15_000 });
+  await expect(page.locator('#firstRunHint:not(.firstRunFade)')).toHaveCount(0, { timeout: 15_000 }); // faded, or already removed (PHONE-2)
   expect(errors).toEqual([]);
 });
 

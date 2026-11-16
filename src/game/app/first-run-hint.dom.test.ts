@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FIRST_RUN_KEY, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
+import { FIGHT_SETTLED_EVENT, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
 import { labelsFromBindings } from '../hud/action-bar';
 import { DEFAULT_BINDINGS, actionKeyLabel } from '../platform/input/bindings';
 
@@ -191,5 +191,75 @@ describe('firstRunHint', () => {
     overlay.remove();
     card.remove();
     vi.useRealTimers();
+  });
+});
+
+describe('firstRunHint, PHONE-2 settle and removal', () => {
+  const transitionEnd = (target: EventTarget, propertyName: string): void => {
+    const e = new Event('transitionend', { bubbles: true });
+    Object.defineProperty(e, 'propertyName', { value: propertyName });
+    target.dispatchEvent(e);
+  };
+
+  it('pins the event name and the removal delay', () => {
+    expect(FIGHT_SETTLED_EVENT).toBe('tte:fight-settled');
+    expect(FIRST_RUN_REMOVE_MS).toBeGreaterThan(1500);
+    expect(FIRST_RUN_REMOVE_MS).not.toBe(2500);
+  });
+
+  it('fades and counts as seen when the fight settles', () => {
+    const store = memory();
+    const card = firstRunHint(store, 60000) as HTMLElement;
+    document.body.append(card);
+    window.dispatchEvent(new Event(FIGHT_SETTLED_EVENT));
+    expect(card.classList.contains('firstRunFade')).toBe(true);
+    expect(firstRunSeen(store)).toBe(true);
+  });
+
+  it('ignores the settle under the rotate overlay, and the timer still fades it later', () => {
+    vi.useFakeTimers();
+    const overlay = document.createElement('div');
+    overlay.id = 'rotateOverlay';
+    document.body.append(overlay);
+    const card = firstRunHint(memory(), 100) as HTMLElement;
+    document.body.append(card);
+    window.dispatchEvent(new Event(FIGHT_SETTLED_EVENT));
+    expect(card.classList.contains('firstRunFade')).toBe(false);
+    overlay.hidden = true;
+    vi.advanceTimersByTime(1000);
+    expect(card.classList.contains('firstRunFade')).toBe(true);
+  });
+
+  it('leaves the DOM 1600 ms after the fade, not before', () => {
+    vi.useFakeTimers();
+    const card = firstRunHint(memory(), 1000) as HTMLElement;
+    document.body.append(card);
+    vi.advanceTimersByTime(1000);
+    expect(card.classList.contains('firstRunFade')).toBe(true);
+    vi.advanceTimersByTime(FIRST_RUN_REMOVE_MS - 1);
+    expect(card.isConnected).toBe(true);
+    vi.advanceTimersByTime(1);
+    expect(card.isConnected).toBe(false);
+  });
+
+  it('is removed by the opacity transitionend, but not by a child target or another property', () => {
+    const card = firstRunHint(memory(), 60000) as HTMLElement;
+    document.body.append(card);
+    window.dispatchEvent(new Event(FIGHT_SETTLED_EVENT));
+    const child = card.querySelector('button') as HTMLElement;
+    transitionEnd(child, 'opacity');
+    transitionEnd(card, 'transform');
+    expect(card.isConnected).toBe(true);
+    transitionEnd(card, 'opacity');
+    expect(card.isConnected).toBe(false);
+  });
+
+  it('Got it removes the settle listener', () => {
+    const store = memory();
+    const card = firstRunHint(store, 60000) as HTMLElement;
+    document.body.append(card);
+    card.querySelector('button')?.click();
+    expect(() => window.dispatchEvent(new Event(FIGHT_SETTLED_EVENT))).not.toThrow();
+    expect(card.classList.contains('firstRunFade')).toBe(false);
   });
 });

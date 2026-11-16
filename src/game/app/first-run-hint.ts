@@ -10,10 +10,14 @@ import { actionKeyLabel, codeLabel, getBindings, type Bindings, type GameAction 
 export const ROUND_OVER_EVENT = 'tte:round-over';
 /** Fired on `window` when a super cut-in starts: the card leaves at once (quickly, not on the slow fade) so it never sits on the cut-in band. */
 export const SUPER_CUT_EVENT = 'tte:super-cut';
-/** Fired on `window` once the FIGHT! banner has run out (tick based, from the round view): the card may then appear. */
 /** Fired on `window` when a tag call starts (from the tag view): the card leaves at once so it never sits on the action bar mid-swap. */
 export const TAG_CALL_EVENT = 'tte:tag-call';
+/** Fired on `window` once the FIGHT! banner has run out (tick based, from the round view): the card may then appear. */
 export const FIGHT_OVER_EVENT = 'tte:fight-over';
+/** Fired on `window` 125 fight ticks (2.5 s) after FIGHT_OVER_EVENT, from the round view: the card fades on fight time, not wall clock. */
+export const FIGHT_SETTLED_EVENT = 'tte:fight-settled';
+/** The faded card is removed from the DOM after this long (past the 1.5 s CSS fade), so no invisible Got it stays tappable. */
+export const FIRST_RUN_REMOVE_MS = 1600;
 export const FIRST_RUN_KEY = 'tte.firstRunHint';
 /** After this long the card fades and counts as seen; Got it marks it seen at once. */
 export const FIRST_RUN_MS = 2500;
@@ -189,6 +193,7 @@ export function firstRunHint(
     window.removeEventListener('keydown', onInput, true);
     window.removeEventListener('pointerdown', onInput, true);
     window.removeEventListener(ROUND_OVER_EVENT, fade);
+    window.removeEventListener(FIGHT_SETTLED_EVENT, onSettled);
     window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
     window.removeEventListener(TAG_CALL_EVENT, fadeNow);
     markSeen(store);
@@ -196,17 +201,31 @@ export function firstRunHint(
   });
   card.append(done);
   // The card gets out of the way on its own: after the delay, or at the first move or tap (a held key is a move).
-  // It is a wide, low strip centred just above the action bar, so it never sits on a fighter at round start.
-  // A detached node is harmless, so the timer needs no cleanup; the listeners remove themselves.
+  // Its position is CSS (a low strip above the action bar on a desktop, the top-left corner on a phone), clear of the fighters at round start.
+  // Once faded it leaves the DOM (a removal timer, or transitionend first), so no invisible Got it stays tappable; the listeners remove themselves.
   const fade = (): void => {
     window.clearTimeout(timer);
     window.removeEventListener('keydown', onInput, true);
     window.removeEventListener('pointerdown', onInput, true);
     window.removeEventListener(ROUND_OVER_EVENT, fade);
+    window.removeEventListener(FIGHT_SETTLED_EVENT, onSettled);
     window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
     window.removeEventListener(TAG_CALL_EVENT, fadeNow);
     markSeen(store);
     card.classList.add('firstRunFade');
+    const gone = window.setTimeout(() => {
+      card.remove();
+    }, FIRST_RUN_REMOVE_MS);
+    card.addEventListener('transitionend', (e) => {
+      if (e.target !== card || e.propertyName !== 'opacity') return;
+      window.clearTimeout(gone);
+      card.remove();
+    });
+  };
+  /** The fight has run FIGHT_SETTLED_TICKS past FIGHT!: fade on fight time. Under the rotate overlay it is ignored; the wall-clock timer stays the fallback. */
+  const onSettled = (): void => {
+    if (rotateBlocked()) return;
+    fade();
   };
   /** A super cut-in or tag call covers the arena: the card is removed on the spot, not faded (a 0.12 s fade still showed in qa-r49/r50 screenshots). */
   const fadeNow = (): void => {
@@ -234,6 +253,7 @@ export function firstRunHint(
     window.addEventListener('pointerdown', onInput, true);
     // The round ends before the card has timed out: it leaves at once instead of covering the result.
     window.addEventListener(ROUND_OVER_EVENT, fade);
+    window.addEventListener(FIGHT_SETTLED_EVENT, onSettled);
     window.addEventListener(SUPER_CUT_EVENT, fadeNow);
     window.addEventListener(TAG_CALL_EVENT, fadeNow);
   });
