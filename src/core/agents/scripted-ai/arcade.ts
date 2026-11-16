@@ -501,7 +501,8 @@ export class ArcadeTactics {
     const lane = snagBit === 0 || (view.cooldowns[a.snagSlot] ?? 1) !== 0 || a.oppGuarding || a.oppRooted > 0 || a.oppRootImmune > 0 ? 0 : snagLane(self, opp);
 
     // Defence fatigue bookkeeping: a hit on this hero, or a quiet spell without a threat, makes the next defence fresh.
-    if (self.hp < m[19]) m[16] = 0;
+    // Hard (SIM_VERSION 82): only a real hit (hit-stun) resets it; guard chip, damage over time and hazards do not.
+    if (this.level >= AI_HARD ? a.selfStun > 0 : self.hp < m[19]) m[16] = 0;
     m[19] = self.hp;
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
     const soon = soonestShot(self, a.shots, ARCADE_AI_LOOKAHEAD);

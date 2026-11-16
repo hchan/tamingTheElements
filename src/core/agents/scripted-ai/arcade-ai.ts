@@ -54,7 +54,7 @@ export const ARCADE_AI_STYLES: readonly [Rates, Rates, Rates] = [
 /**
  * Defence fatigue (SIM_VERSION 80): each defended threat in a row (a plan other than NO_PLAN, at most one per
  * ARCADE_AI_FATIGUE_WINDOW game ticks so a fast shooter does not stack it) takes 120 pm off every plan scale, down to the
- * level's floor (Easy none). A hit on the hero, or ARCADE_AI_FATIGUE_RESET_TICKS ticks without a threat, resets it, and the
+ * level's floor (Easy none). A hit on the hero (Hard: a hit that stuns it, so guard chip and damage over time keep the count; Easy and Normal: any HP drop), or ARCADE_AI_FATIGUE_RESET_TICKS ticks without a threat, resets it, and the
  * guard reflex stays off from ARCADE_AI_FATIGUE_REFLEX_MAX defended threats on. Lone shots are still answered, a sustained
  * volley is not (the Hard AI answered about 99% of shots, which let melee through and ranged heroes starve).
  */

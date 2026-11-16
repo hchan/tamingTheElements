@@ -298,5 +298,6 @@
  *    inside 160 px, a heal only below 55% HP with no shot on the way, Skitter only to leave a close foe or a wall, Molten Hide only against a
  *    foe inside 200 px; centred melee (Abyss Flash) is read with the explosion reach. Re-record reason: every replay fixture changes only its
  *    simVersion header.
+ * 82: AI only (agents outside SimState): Hard defence fatigue no longer resets on chip; no rule or data change; goldens header-only.
  */
-export const SIM_VERSION = 81;
+export const SIM_VERSION = 82;

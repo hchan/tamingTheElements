@@ -5,7 +5,7 @@ import { runMatch } from '../../tools/sim/run-match';
 interface Case { a: string; b: string; seed: number; aIsTeam0?: boolean; teamSize?: 1 | 2 }
 const cases = (fixture as { cases: Case[] }).cases;
 // Hyalia mid-range openings that still stall (docs/FUN-DESIGN.md 2.11); every other pinned case must now end in a KO.
-const RESIDUAL = new Set(['hyalia|glimmaw|2864583637', 'hyalia|abyssor|2864583637']);
+const RESIDUAL = new Set(['hyalia|glimmaw|2864583637']);
 
 describe('pinned Normal-level Arcade stalemates (SIM 78) resolve after the escalating stale stages', () => {
   for (const c of cases) {
