@@ -3,7 +3,9 @@ import { LaneWait, centreBusy } from '../hud/banner-lanes';
 import { arcadeHeroScale, visualBox } from '../views/hero-scale';
 import { arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
-import { popLaneLift } from './pop-lanes';
+import { popCeil, popLaneLift } from './pop-lanes';
+import { CHIP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect } from '../hud/arcade-hud';
+import { viewWidth } from '../boot/viewport';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
 /**
@@ -16,7 +18,8 @@ const BENCHED_OR_DEAD = 16 | 32;
 
 export interface AbilityFxProbe {
   readonly auras: readonly { id: number; kind: string; shape: string }[];
-  readonly pops: readonly { id: number; word: string }[];
+  /** Pops with their on-screen top (world `y`/`top`; HUD px `hudTop`, `hudX0`..`hudX1`) and the HUD y they must stay below (`ceil`). */
+  readonly pops: readonly { id: number; word: string; x: number; y: number; top: number; hudTop: number; hudX0: number; hudX1: number; ceil: number }[];
   /** Snag cast lashes live on the last frame (team, view ticks since the cast). */
   readonly lashes: readonly { team: number; age: number }[];
 }
@@ -55,6 +58,10 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
   const aim = new Map<number, { x: number; y: number; dir: number }>();
   const lastReady = new Map<number, number>();
   let popId = 0;
+  const camView = { x: 0, y: 0, w: 0, h: 0 };
+  const toFrame = { x: 0, y: 0, w: 0, h: 0 };
+  const pt = { x: 0, y: 0 };
+  const ceils = new Map<number, { hudTop: number; hudX0: number; hudX1: number; ceil: number }>();
   let lastRound = -1;
 
   const draw = (): void => {
@@ -152,6 +159,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       }
       const age = now - p.born;
       if (age > POP_TICKS) {
+        ceils.delete(p.id);
         p.text?.destroy();
         return false;
       }
@@ -162,7 +170,18 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
         .setDepth(DEPTH + 1);
       const head = anchor.get(p.team);
       if (head) { p.x = head.x; p.y = head.y - 8; }
-      p.text.setPosition(p.x, p.y - p.lift + look.dy).setAlpha(look.alpha);
+      // Stay below the scrim and the status chips (they draw over the Arena): clamp the word's top to the chips' bottom.
+      let bottom = p.y - p.lift + look.dy;
+      const cam = arena.cameras.main;
+      const from: HudRect = viewOfCamera(cam, camView);
+      const to: HudRect = hudFrame(viewWidth(arena), toFrame);
+      const hw = (p.text.displayWidth / from.w) * to.w;
+      const hx = projectToHud(p.x, bottom, from, to, pt).x;
+      const ceil = popCeil(arena.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined, hx - hw / 2, hx + hw / 2);
+      const ceilWorld = projectToHud(hx, ceil, to, from, pt).y;
+      bottom = Math.max(bottom, ceilWorld + p.text.displayHeight);
+      p.text.setPosition(p.x, bottom).setAlpha(look.alpha);
+      ceils.set(p.id, { hudTop: projectToHud(p.x, bottom - p.text.displayHeight, from, to, pt).y, hudX0: hx - hw / 2, hudX1: hx + hw / 2, ceil });
       return true;
     });
   };
@@ -176,9 +195,10 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     glowG = undefined;
     for (const p of pops) p.text?.destroy();
     pops = [];
+    ceils.clear();
     lashes = [];
   };
   arena.events.on('postupdate', draw);
   arena.events.once('shutdown', off).once('destroy', off);
-  states.set(arena, () => ({ auras: drawn, pops: pops.map((p) => ({ id: p.id, word: p.word })), lashes: lashDrawn }));
+  states.set(arena, () => ({ auras: drawn, pops: pops.map((p) => ({ id: p.id, word: p.word, x: p.text?.x ?? p.x, y: p.text?.y ?? p.y, top: (p.text?.y ?? p.y) - (p.text?.displayHeight ?? 0), hudTop: ceils.get(p.id)?.hudTop ?? 0, hudX0: ceils.get(p.id)?.hudX0 ?? 0, hudX1: ceils.get(p.id)?.hudX1 ?? 0, ceil: ceils.get(p.id)?.ceil ?? 0 })), lashes: lashDrawn }));
 }

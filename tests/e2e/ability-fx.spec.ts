@@ -8,7 +8,7 @@ import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
 interface AuraProbe {
   readonly auras: readonly { id: number; kind: string; shape: string }[];
-  readonly pops: readonly { id: number; word: string }[];
+  readonly pops: readonly { id: number; word: string; hudTop: number; hudX0: number; hudX1: number; ceil: number }[];
   readonly lashes: readonly { team: number; age: number }[];
 }
 const INTRO = 91;
@@ -120,6 +120,55 @@ test('snag: a rope lash and a SNAG word show on the cast, before any hit', async
   expect((await probe(page))?.lashes).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+// SNAG-CEIL-1: the floating SNAG / HEAL word stops under the dark scrim and the status chips (the Hud scene draws over the Arena).
+interface Box { text: string; x: number; y: number; w: number; h: number }
+const SNAG_VIEWS = [
+  { name: '1280x720', size: { width: 1280, height: 720 }, touch: false, left: false },
+  { name: '844x390 touch', size: { width: 844, height: 390 }, touch: true, left: false },
+  { name: '844x390 left-handed', size: { width: 844, height: 390 }, touch: true, left: true },
+] as const;
+
+for (const v of SNAG_VIEWS) {
+  test.describe(`snag pop under the chips, ${v.name}`, () => {
+    test.use({ viewport: v.size, deviceScaleFactor: 1, isMobile: v.touch, hasTouch: v.touch });
+    test('the word stays below the scrim and clear of every status chip it overlaps', async ({ page }) => {
+      if (v.left) await page.addInitScript(`localStorage.setItem('tte.touchLayout', ${JSON.stringify(JSON.stringify({ size: 'auto', side: 'left', haptics: true }))})`);
+      const errors = collectErrors(page);
+      await start(page, 'treenoc', 'sindarosa', 900);
+      // The caster stands near the top of the arena, so the rising word reaches the chip rows; both teams show chips.
+      await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 700, 60, 0); a.place(f.id, 1500, 360, 4); a.grantStatus(m.id, 1, 900); a.grantStatus(m.id, 3, 900); a.grantStatus(f.id, 10, 900); a.grantStatus(f.id, 11, 900); })()`);
+      await page.evaluate(`window.__TTE__.arena.step(2)`);
+      await frames(page);
+      await page.evaluate(`window.__TTE__.arena.step(1, [${String(PRIMARY)}, 0])`);
+      let seen = 0;
+      for (let i = 0; i < 6; i++) {
+        await page.evaluate(`window.__TTE__.arena.step(${i === 0 ? '1' : '8'})`);
+        await frames(page);
+        const pops = (await probe(page))?.pops.filter((p) => p.word === 'SNAG' && p.ceil > 0) ?? []; // ceil 0: still held under a banner, not drawn yet
+        const texts = await page.evaluate<Box[]>(`window.__TTE__.arena.hudTextSizes()`);
+        const canvas = await page.locator('#game canvas').boundingBox();
+        const k = (canvas?.height ?? 720) / 720; // CSS px per HUD px (hudTextSizes is in CSS px from the 1280 box origin)
+        const chips = texts.filter((t) => /SNAG|STUN|ROOT|DAZE|ICED|ARMOUR|ADREN|SPEED|\bTHAW/i.test(t.text) && t.y / k > 70);
+        for (const p of pops) {
+          seen++;
+          expect(p.hudTop, `pop top ${String(p.hudTop)} below its ceiling ${String(p.ceil)}`).toBeGreaterThanOrEqual(p.ceil - 1);
+          expect(p.ceil).toBeGreaterThanOrEqual(102);
+          for (const c of chips) {
+            if (c.x / k >= p.hudX1 || (c.x + c.w) / k <= p.hudX0) continue;
+            expect(p.hudTop, `SNAG top ${String(p.hudTop)} under chip "${c.text}" bottom ${String((c.y + c.h) / k)}`).toBeGreaterThanOrEqual((c.y + c.h) / k - 1);
+          }
+        }
+      }
+      expect(seen).toBeGreaterThan(0);
+      if (SHOT_DIR) {
+        mkdirSync(SHOT_DIR, { recursive: true });
+        await page.locator('#game canvas').screenshot({ path: `${SHOT_DIR}/snag-ceil-${v.name.replace(/\W+/g, '-')}.png` });
+      }
+      expect(errors).toEqual([]);
+    });
+  });
+}
 
 const SUPER = 1 << 13;
 const ELEMENT_SHAPES = [

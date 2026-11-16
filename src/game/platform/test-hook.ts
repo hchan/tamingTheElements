@@ -137,7 +137,7 @@ export interface ArenaProbe {
   /** Every visible HUD text with its effective CSS px size and screen box (phone legibility checks). */
   hudTextSizes(): { text: string; px: number; x: number; y: number; w: number; h: number }[];
   /** The buff auras and heal pops drawn on the last frame (ability-graphics-audit-defects). */
-  abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string }[]; lashes: readonly { team: number; age: number }[] } | undefined>;
+  abilityFx(): Promise<{ auras: readonly { id: number; kind: string; shape: string }[]; pops: readonly { id: number; word: string; x: number; y: number; top: number; hudTop: number; hudX0: number; hudX1: number; ceil: number }[]; lashes: readonly { team: number; age: number }[] } | undefined>;
   /** Dev/test only: gives an entity a timed status (a StatusId) for `ticks` sim ticks. */
   grantStatus(id: number, status: number, ticks: number): void;
   /** Hero status effects drawn on the last frame (buff-debuff-animation). */

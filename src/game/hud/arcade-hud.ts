@@ -304,6 +304,17 @@ export function clampNumber(cx: number, bottomY: number, halfW: number, h: numbe
 export const TAG_CALL_KEY = 'tte.tagCall';
 /** Registry key: the visible combo readouts' rects in HUD px (an array reused every frame). The TAG! call slides clear of them. */
 export const COMBO_RECTS_KEY = 'tte.comboRects';
+/** Registry key: the status chips' un-popped rects in HUD px, `[team 0 rects, team 1 rects]` (arrays reused every frame). Pops stay below them. */
+export const CHIP_RECTS_KEY = 'tte.chipRects';
+
+/** The HUD camera's real visible frame in HUD px for a view `viewW` logical px wide (zoom = res, centred on 640,360). `HUD_FRAME` is right at 1280 only. */
+export function hudFrame(viewW: number, out: { x: number; y: number; w: number; h: number } = { x: 0, y: 0, w: 0, h: 0 }): { x: number; y: number; w: number; h: number } {
+  out.x = 640 - viewW / 2;
+  out.y = 0;
+  out.w = viewW;
+  out.h = 720;
+  return out;
+}
 
 /** The camera's world view built from scroll and zoom (the camera's own `worldView` lags a frame). `out` is filled. */
 export function viewOfCamera(c: { scrollX: number; scrollY: number; width: number; height: number; zoom: number }, out: { x: number; y: number; w: number; h: number }): { x: number; y: number; w: number; h: number } {

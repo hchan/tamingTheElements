@@ -8,6 +8,8 @@ import { elementCue, healthCue, lifeReadout, type HudCharacter } from './bars';
  */
 
 export const SLIM_H = 78;
+/** Bottom (HUD px) of the flat part of the dark scrim: the 0.38 band ends here. Floating call-outs stay below it (SNAG-CEIL-1). */
+export const SCRIM_BOTTOM = 102;
 export const SLIM_BAR_Y = 20;
 export const SLIM_LINE = 16;
 export const SLIM_LINE_MAX = 18;

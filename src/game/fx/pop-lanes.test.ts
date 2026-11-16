@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { POP_LANE_PX, POP_NUMBER_CLEAR_PX, POP_MAX_LANES, popLaneLift } from './pop-lanes';
+import { POP_CEIL_FLOOR, POP_CEIL_PAD, POP_LANE_PX, POP_NUMBER_CLEAR_PX, POP_MAX_LANES, popCeil, popLaneLift } from './pop-lanes';
+import { SCRIM_BOTTOM } from '../hud/slim-hud';
 
 describe('popLaneLift', () => {
   it('does not lift the first pop', () => {
@@ -19,5 +20,27 @@ describe('popLaneLift', () => {
   it('starts a call-out clear of the damage number on the same fighter', () => {
     // The damage number is about 34 px tall at the fighter's top; the call-out clears it.
     expect(POP_NUMBER_CLEAR_PX).toBeGreaterThanOrEqual(38 + 24 + 4);
+  });
+});
+
+describe('popCeil', () => {
+  const chip = (x: number, y: number, w = 100, h = 20): { x: number; y: number; w: number; h: number } => ({ x, y, w, h });
+  it('is the scrim bottom with no rects', () => {
+    expect(popCeil(undefined, 0, 50)).toBe(POP_CEIL_FLOOR);
+    expect(popCeil([[], []], 0, 50)).toBe(POP_CEIL_FLOOR);
+  });
+  it('sits under an overlapping chip by the pad', () => {
+    expect(popCeil([[chip(0, 81)]], 40, 90)).toBe(81 + 20 + POP_CEIL_PAD);
+  });
+  it('ignores a chip it does not overlap, and one it only touches', () => {
+    expect(popCeil([[chip(300, 81)]], 0, 50)).toBe(POP_CEIL_FLOOR);
+    expect(popCeil([[chip(100, 81)]], 0, 100)).toBe(POP_CEIL_FLOOR);
+  });
+  it('takes the lowest of two wrapped rows and reads both teams', () => {
+    expect(popCeil([[chip(0, 81), chip(0, 105)], []], 10, 20)).toBe(105 + 20 + POP_CEIL_PAD);
+    expect(popCeil([[], [chip(0, 90)]], 10, 20)).toBe(90 + 20 + POP_CEIL_PAD);
+  });
+  it('is pinned to the scrim bottom', () => {
+    expect(POP_CEIL_FLOOR).toBe(SCRIM_BOTTOM);
   });
 });

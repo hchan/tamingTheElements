@@ -11,7 +11,7 @@ import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
-  CHARGE_DASH, COMBO_RECTS_KEY, TAG_CALL_KEY, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
+  CHARGE_DASH, CHIP_RECTS_KEY, COMBO_RECTS_KEY, TAG_CALL_KEY, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
   clampNumber, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
@@ -196,6 +196,7 @@ export class Hud extends Phaser.Scene {
       this.numberSerials = [];
       this.comboTexts = [];
       this.registry.remove(COMBO_RECTS_KEY);
+      this.registry.remove(CHIP_RECTS_KEY);
       this.comboKeys = [];
       this.meterTexts = [];
       this.chipTexts = [];
@@ -280,7 +281,7 @@ export class Hud extends Phaser.Scene {
     g.fillStyle(0x14122a, 0.8).fillRect(0, 0, HUD_WIDTH, SLIM_H + 2);
     // Dense over the crowd band (about y 115-180), a short fade into the floor at about y 182.
     // Lighter and shorter than before: the crowd shows through under the HUD instead of a dead dark band.
-    g.fillStyle(0x14122a, 0.38).fillRect(0, SLIM_H + 2, HUD_WIDTH, 100 - SLIM_H);
+    g.fillStyle(0x14122a, 0.38).fillRect(0, SLIM_H + 2, HUD_WIDTH, SCRIM_BOTTOM - SLIM_H - 2);
     for (let i = 0; i < 8; i++) g.fillStyle(0x14122a, 0.34 * (1 - i / 8)).fillRect(0, 100 + i * 8, HUD_WIDTH, 8);
     g.fillStyle(0x0a0818, 0.7).fillRect(0, SLIM_H + 1, HUD_WIDTH, 1);
     this.scrim = g;
@@ -378,6 +379,9 @@ export class Hud extends Phaser.Scene {
     const tracker = (this.chipTrackers[team] ??= new StatusTracker<ChipLook>(12));
     const cur = new Map<string, { payload: ChipLook; start: number; expire: number }>();
     for (const chip of chips) cur.set(chip.key, { payload: { x: chip.x, y: chip.y, w: chip.w, h: chip.h, color: chip.color }, start: 0, expire: 0 });
+    const rects = this.chipRects(team);
+    rects.length = chips.length;
+    chips.forEach((chip, i) => (rects[i] = { x: chip.x, y: chip.y, w: chip.w, h: chip.h }));
     const born = new Map(tracker.update(now, cur).map((t) => [t.key, t.born]));
     chips.forEach((chip, i) => {
       const slot = team * CHIP_MAX + i;
@@ -426,7 +430,15 @@ export class Hud extends Phaser.Scene {
     this.hideChips(team, chips.length);
   }
 
+  /** The team's published chip rects (one array per team under CHIP_RECTS_KEY, reused every frame). */
+  private chipRects(team: number): HudRect[] {
+    let all = this.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined;
+    if (!all) this.registry.set(CHIP_RECTS_KEY, (all = [[], []]));
+    return (all[team] ??= []);
+  }
+
   private hideChips(team: number, from: number): void {
+    if (from === 0) this.chipRects(team).length = 0;
     for (let i = from; i < CHIP_MAX; i++) this.chipTexts[team * CHIP_MAX + i]?.setVisible(false);
   }
 

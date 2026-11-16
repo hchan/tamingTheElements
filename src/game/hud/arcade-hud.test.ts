@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ArcadeHudModel, CHARGE_DASH, NUMBER_BANNER_ALPHA, NUMBER_FAN, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
   SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterLabelY, meterFlashAlpha, meterSegments, meterX,
-  numberAlpha, numberLabel, numberRise, readyGlow, superRimLayers, gapLabel, lifeTicks, projectToHud, clampNumber,
+  numberAlpha, numberLabel, numberRise, readyGlow, superRimLayers, gapLabel, lifeTicks, projectToHud, clampNumber, hudFrame, viewOfCamera,
 } from './arcade-hud';
 import { dashSegments } from './bars';
 import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './slim-hud';
@@ -238,5 +238,28 @@ describe('clampNumber', () => {
     expect(r.y - 40).toBeGreaterThanOrEqual(240);
     expect(r.y).toBeLessThanOrEqual(632);
     expect(r.x).toBe(480);
+  });
+});
+
+describe('hudFrame', () => {
+  it('is the plain frame at 1280 and widens about the centre', () => {
+    expect(hudFrame(1280)).toEqual({ x: 0, y: 0, w: 1280, h: 720 });
+    expect(hudFrame(1462)).toEqual({ x: -91, y: 0, w: 1462, h: 720 });
+  });
+  it('matches the HUD camera (zoom = res, centred on 640,360)', () => {
+    const res = 1.5;
+    const w = 1558;
+    const cam = { scrollX: 640 - (w * res) / 2, scrollY: 360 - (720 * res) / 2, width: w * res, height: 720 * res, zoom: res };
+    const v = viewOfCamera(cam, { x: 0, y: 0, w: 0, h: 0 });
+    const f = hudFrame(w);
+    expect([v.x, v.y, v.w, v.h].map((n) => Math.round(n * 1e6) / 1e6)).toEqual([f.x, f.y, f.w, f.h]);
+  });
+  it('projectToHud inverts by swapping the frames', () => {
+    const a = { x: 100, y: 50, w: 900, h: 506 };
+    const b = hudFrame(1558);
+    const p = projectToHud(321, 77, a, b, { x: 0, y: 0 });
+    const q = projectToHud(p.x, p.y, b, a, { x: 0, y: 0 });
+    expect(q.x).toBeCloseTo(321, 9);
+    expect(q.y).toBeCloseTo(77, 9);
   });
 });
