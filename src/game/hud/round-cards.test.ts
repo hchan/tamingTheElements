@@ -15,6 +15,7 @@ describe('round name cards', () => {
   it('slides in from the edge, holds, fades out and is gone before FIGHT!', () => {
     const total = 91;
     expect(cardFrame(0, total, false, out())).toEqual({ alpha: 0, offset: CARD_SLIDE_PX });
+    expect(CARD_SLIDE_PX).toBeLessThanOrEqual(24);
     expect(cardFrame(CARD_IN_TICKS, total, false, out())).toEqual({ alpha: 1, offset: 0 });
     expect(cardFrame(40, total, false, out())).toEqual({ alpha: 1, offset: 0 });
     const mid = cardFrame(CARD_IN_TICKS / 2, total, false, out());
@@ -22,6 +23,15 @@ describe('round name cards', () => {
     expect(mid.offset).toBeLessThan(CARD_SLIDE_PX / 2);
     expect(cardFrame(total - CARD_CLEAR_TICKS, total, false, out()).alpha).toBe(0);
     expect(cardFrame(total, total, false, out()).alpha).toBe(0);
+  });
+
+  it('is bright by t5 and never nears the edge (HF2-4)', () => {
+    expect(cardFrame(5, 91, false, out()).alpha).toBeGreaterThanOrEqual(0.8);
+    for (let age = 0; age < 91; age++) {
+      const f = cardFrame(age, 91, false, out());
+      expect(f.offset).toBeGreaterThanOrEqual(0);
+      expect(f.offset).toBeLessThanOrEqual(24);
+    }
   });
 
   it('reduced motion keeps the name but never moves it', () => {
