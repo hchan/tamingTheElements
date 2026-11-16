@@ -1,5 +1,5 @@
 ---
-status: idea
+status: in-progress
 added: 2026-11-15
 ---
 
@@ -16,4 +16,4 @@ Goal: heroes feel dimensional when they cast a special or ability and when they 
 
 Open design calls for the planner: which of these stays inside the art budget and Fiara's painterly look, whether any real 3D is worth it, and performance on phones. Presentation only, no `src/core` change. Single-owner shared files: `pose-layer.ts`, `src/game/fx/*`.
 
-Related: [hero-rigs](hero-rigs.md), [move-animation-wings-knees](move-animation-wings-knees.md), [sf-stun-dizzy-bar](sf-stun-dizzy-bar.md).
+Related: [hero-rigs](../brainstorm/hero-rigs.md), [move-animation-wings-knees](../brainstorm/move-animation-wings-knees.md), [sf-stun-dizzy-bar](../brainstorm/sf-stun-dizzy-bar.md).

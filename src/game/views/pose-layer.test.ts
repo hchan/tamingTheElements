@@ -4,6 +4,7 @@ import { EntityFlag, SimEventKind, type RenderCharacter, type RenderProjectile, 
 import { FixedStepDriver, STEP_MS } from '../loop/fixed-step-driver';
 import { CharacterView } from './character-view';
 import { PoseLayer } from './pose-layer';
+import { CAST_Z, DOLLY_MAX, DROP_K, PROJ_CAST_GAP_MS, PROJ_CAST_Z } from './pose-depth';
 import { MAX_DT_MS, STRIDE_PX, shortestArc } from './pose-math';
 import { createFrameResolver } from '../assets/sheet-frames';
 import { ACTIONS, DIRS, FRAME, framesIn, layoutAtlas, rowKey, type Action, type Dir, type SheetsManifest } from '../assets/sheet-spec';
@@ -65,7 +66,7 @@ function rig(): Rig {
   };
   const scene = {
     add: { image: () => { const i = new FakeImage(); images.push(i); return i; } },
-    textures: { exists: (k: string) => !missing.has(k), get: () => ({ has: () => false, add: () => undefined }) },
+    textures: { exists: (k: string) => !missing.has(k), get: () => ({ has: () => false, add: () => undefined, get: () => ({ customData: {} }) }) },
     load: {
       image: (key: string, url: string) => { loads.push(`${key} ${url}`); },
       once: (event: string, fn: () => void) => { done.set(event, fn); },
@@ -688,6 +689,139 @@ describe('ability VFX (Arcade only)', () => {
     expect(h.layer.state.fx).toBeGreaterThan(0);
     for (let i = 0; i < 20; i++) h.step(16);
     expect(h.layer.state.fx).toBe(0);
+  });
+});
+
+describe('depth step (P3D-1)', () => {
+  const superEv = (): SimEvent => ({ tick: 1, sourceId: 1, kind: SimEventKind.superStarted, seq: 0, caster: 1, superId: 1 });
+  const castEv = (): SimEvent => ({ tick: 1, sourceId: 1, kind: SimEventKind.elementalCast, seq: 0 });
+  const depthOf = (h: Harness): number => h.layer.sheetProbe().characters.find((c) => c.id === 1)?.depth ?? 0;
+  /** Replaces the shadow hook of the harness character view with a spy; returns the calls. */
+  const spy = (h: Harness): { dy: number; scaleMul: number }[] => {
+    const calls: { dy: number; scaleMul: number }[] = [];
+    h.cv.shadowPose = (_dx: number, dy: number, scaleMul: number): void => { calls.push({ dy, scaleMul }); };
+    return calls;
+  };
+  const sheeted = (opts: Parameters<typeof harness>[0] = {}): Harness => harness({ vx: 0, arcade: true, sheets: sheetsWith([['idle', 'E']]), ...opts });
+  const run = (h: Harness, n: number): void => { for (let i = 0; i < n; i++) { h.sim.tick++; h.step(16); } };
+
+  it('a super in its freeze steps toward the camera and holds, then returns within the hold plus the ease-out', () => {
+    const h = sheeted();
+    h.step(16);
+    const calls = spy(h);
+    h.sim.frozen = true;
+    h.consume([superEv()]);
+    for (let i = 0; i < 30; i++) h.step(16);
+    expect(depthOf(h)).toBeGreaterThanOrEqual(0.9);
+    const held = calls.at(-1);
+    expect(held?.dy).toBeGreaterThan(0);
+    expect(held?.scaleMul).toBeGreaterThan(1);
+    expect(h.layer.sheetProbe().characters[0]?.dolly).toBeGreaterThan(1.04);
+    h.sim.frozen = false;
+    run(h, 40);
+    expect(depthOf(h)).toBeLessThan(0.05);
+    run(h, 60);
+    expect(depthOf(h)).toBe(0);
+    const n = calls.length;
+    run(h, 5);
+    expect(calls.length).toBe(n);
+    expect(h.img.scaleY).toBe(1);
+  });
+
+  it('reduced motion: depth stays 0, no shadow calls, pose untouched', () => {
+    const h = sheeted({ reduced: true });
+    h.step(16);
+    const calls = spy(h);
+    h.sim.frozen = true;
+    h.consume([superEv(), castEv()]);
+    for (let i = 0; i < 30; i++) h.step(16);
+    expect(depthOf(h)).toBe(0);
+    expect(calls).toEqual([]);
+    expect(h.img.scaleY).toBe(1);
+  });
+
+  it('Classic (no arcade view) has no depth', () => {
+    const h = harness({ vx: 0, sheets: sheetsWith([['idle', 'E']]) });
+    h.step(16);
+    const calls = spy(h);
+    h.consume([superEv(), castEv()]);
+    run(h, 20);
+    expect(depthOf(h)).toBe(0);
+    expect(calls).toEqual([]);
+  });
+
+  it('an elemental cast pulses to the cast level and is gone by 700 ms', () => {
+    const h = sheeted();
+    h.step(16);
+    h.consume([castEv()]);
+    let peak = 0;
+    for (let i = 0; i < 12; i++) { run(h, 1); peak = Math.max(peak, depthOf(h)); }
+    expect(peak).toBeGreaterThanOrEqual(CAST_Z - 0.05);
+    expect(peak).toBeLessThanOrEqual(CAST_Z + 1e-6);
+    run(h, 40);
+    expect(depthOf(h)).toBe(0);
+  });
+
+  it('projectile casts every 100 ms stay small and pulse at most once per gap', () => {
+    const h = sheeted();
+    run(h, 10);
+    const calls = spy(h);
+    let peak = 0;
+    let rises = 0;
+    let last = 0;
+    for (let i = 0; i < 60; i++) {
+      if (i % 6 === 0) h.projs[0] = { id: 10 + i, team: 0, sprite: 'fireball', dir: 0, x: 120, y: 220, px: 120, py: 220, w: 20, h: 20 };
+      run(h, 1);
+      const d = depthOf(h);
+      peak = Math.max(peak, d);
+      if (d > last + 0.05 && last < 0.02) rises++;
+      last = d;
+    }
+    expect(calls.length).toBeGreaterThan(0);
+    expect(peak).toBeLessThanOrEqual(PROJ_CAST_Z + 1e-6);
+    expect(rises).toBeLessThanOrEqual(Math.ceil((60 * 16) / PROJ_CAST_GAP_MS));
+  });
+
+  it('a portrait (boxed) rig keeps its size at z = 1 and only drops', () => {
+    const m = sheetsWith([['idle', 'E']]);
+    const boxed: SheetsManifest = { ...m, sheets: m.sheets.map((s) => ({ ...s, box: [8, 8, FRAME - 16, FRAME - 16] as const })) };
+    const h = sheeted({ sheets: boxed });
+    for (let i = 0; i < 5; i++) h.step(16);
+    const w0 = h.img.displayWidth;
+    const hh0 = h.img.displayHeight;
+    const y0 = h.img.y;
+    h.sim.frozen = true;
+    h.consume([superEv()]);
+    for (let i = 0; i < 30; i++) h.step(16);
+    expect(depthOf(h)).toBeGreaterThanOrEqual(0.9);
+    expect(h.layer.sheetProbe().characters[0]?.dolly).toBe(1);
+    expect(h.img.displayWidth).toBeCloseTo(w0, 6);
+    expect(h.img.displayHeight).toBeCloseTo(hh0, 6);
+    expect(h.img.y - y0).toBeGreaterThan(0.5 * DROP_K * 80);
+  });
+
+  it('an unboxed rig dollies up by about DOLLY_MAX', () => {
+    const h = sheeted();
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.sim.frozen = true;
+    h.consume([superEv()]);
+    for (let i = 0; i < 30; i++) h.step(16);
+    expect(h.img.scaleY).toBeGreaterThan(1 + DOLLY_MAX * 0.8);
+  });
+
+  it('death and a new round reset the slot', () => {
+    for (const kind of [SimEventKind.died, SimEventKind.roundStarted]) {
+      const h = sheeted();
+      h.step(16);
+      h.sim.frozen = true;
+      h.consume([superEv()]);
+      for (let i = 0; i < 20; i++) h.step(16);
+      expect(depthOf(h)).toBeGreaterThan(0.5);
+      h.consume([{ tick: 2, sourceId: 1, kind, seq: 1 }]);
+      h.sim.frozen = false;
+      run(h, 1);
+      expect(depthOf(h)).toBe(0);
+    }
   });
 });
 

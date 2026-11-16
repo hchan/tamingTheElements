@@ -4,6 +4,7 @@ import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-feel';
 import { arcadeHeroScale, boxSpanX, clampSpanX, visualBox, type Box, type SpanX } from './hero-scale';
+import { SHADOW_ALPHA_CAP } from './pose-depth';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
@@ -184,6 +185,11 @@ export class CharacterView {
   private aura: Phaser.GameObjects.Image | undefined;
   /** Soft elliptical ground shadow under the feet (Arcade, `fit`). */
   private shadow: Phaser.GameObjects.Image | undefined;
+  /** The shadow as `placeShadow` last set it (the depth step offsets from these). */
+  private shadowX = 0;
+  private shadowY = 0;
+  private shadowW = 0;
+  private shadowA = 0;
   private spriteName = '';
   private sprite: MapSprite | undefined;
   /** Element of the character shown (hit colour of its attacks). */
@@ -459,12 +465,27 @@ export class CharacterView {
       this.shadow = this.scene.add.image(0, 0, key).setTint(0x000000);
     }
     const sw = w * k * 0.95;
+    this.shadowX = cx;
+    this.shadowY = feetY - 2;
+    this.shadowW = sw;
+    this.shadowA = ghost ? 0.25 : 0.55;
     this.shadow
       .setVisible(true)
       .setDepth(this.image.depth - 0.6)
-      .setAlpha(ghost ? 0.25 : 0.55)
-      .setPosition(cx, feetY - 2)
+      .setAlpha(this.shadowA)
+      .setPosition(this.shadowX, this.shadowY)
       .setDisplaySize(sw, sw * 0.26);
+  }
+
+  /**
+   * Depth step (pose-depth.ts): moves the shadow with the dropped feet, grows and darkens it. Applies on top of the base
+   * placement of this frame, so it is idempotent (apply() re-places the shadow every frame).
+   */
+  shadowPose(dx: number, dy: number, scaleMul: number, alphaMul: number): void {
+    const sh = this.shadow;
+    if (!this.fit || !sh || !sh.visible) return;
+    const sw = this.shadowW * scaleMul;
+    sh.setPosition(this.shadowX + dx, this.shadowY + dy).setDisplaySize(sw, sw * 0.26).setAlpha(Math.min(SHADOW_ALPHA_CAP, this.shadowA * alphaMul));
   }
 
   hide(): void {
