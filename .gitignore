@@ -43,3 +43,6 @@ user.properties
 # Generated reports (balance compare)
 /out/
 __pycache__/
+
+# per-worktree scratch (agents)
+.scratch/

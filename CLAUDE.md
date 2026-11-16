@@ -22,7 +22,7 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
 - **Commits/pushes:** the user has explicitly authorised small commits and regular pushes to `origin/main` for this project;
   never force-push, never rewrite history, never push other branches.
 - **Write in worktrees (owner, 2026-11-16):** every edit or generated file destined for the repo is made in a `git worktree`, never in the main checkout; main is only for merging, pushing and read-only checks.
-- **Scratch/temp** files go under `~/claudetmp/`, never `/tmp/`.
+- **Scratch/temp (owner, 2026-11-16: avoid claudetmp, use worktrees):** work files, plans, progress logs and generated candidates go in the agent's own worktree under the gitignored `.scratch/`; `~/claudetmp/` only for what must outlive a worktree (shared venvs, the merge script); never `/tmp/`.
 - **Save work back to the repo:** `~/claudetmp/` is disposable. Anything that produces or explains a committed artifact (art generator
   scripts, rig/bake helpers, balance or analysis scripts, merge helpers worth keeping) moves into the repo (`tools/`) in the same
   commit as its output, with the licence/docs pointing at the in-repo path. Before finishing a work package, check
