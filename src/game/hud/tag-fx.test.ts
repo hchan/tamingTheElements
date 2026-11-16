@@ -4,9 +4,10 @@ import { BAR_Y, SLOT_SIDE, slotX } from './action-bar';
 import { barFill, dashSegments, sideOffset } from './bars';
 import { chipBar, slimBar } from './slim-hud';
 import {
-  CALL_TICKS, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
-  heroName, mainBarOf, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
+  CALL_HEAD_GAP, CALL_TICKS, CALL_TOP_MIN, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
+  heroName, mainBarOf, placeCall, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
 } from './tag-fx';
+import { viewOfCamera } from './arcade-hud';
 import { TAG_SLOT_X, TAG_SLOT_Y } from './tag-view';
 
 const hero = (o: Partial<TagHero> = {}): TagHero => ({ sprite: 'pax', hp: 400, maxHp: 1000, restCap: 600, dead: false, ...o });
@@ -149,5 +150,30 @@ describe('the swap flash on the life bar (WP-HF1)', () => {
     expect(barFlashPose(0, false, true).color).toBe(0xffffff);
     expect(barFlashPose(0, false, false).color).not.toBe(0xffffff);
     expect(barFlashPose(0, true, false).wash).toBeLessThan(barFlashPose(0, false, false).wash);
+  });
+});
+
+describe('the TAG! call placement (WP-HF1)', () => {
+  const out = { x: 0, y: 0 };
+  it('hangs a fixed gap over the drawn head', () => {
+    expect(placeCall(600, 500, 90, 46, [], out)).toEqual({ x: 600, y: 500 - CALL_HEAD_GAP });
+  });
+  it('never rises under the top bar and chips', () => {
+    expect(placeCall(600, 120, 90, 46, [], out).y).toBe(CALL_TOP_MIN);
+  });
+  it('slides clear of a combo readout toward the centre', () => {
+    const combo = { x: 24, y: 110, w: 200, h: 60 };
+    expect(placeCall(150, 150, 90, 46, [combo], out).x).toBeGreaterThanOrEqual(combo.x + combo.w + 90);
+    const right = { x: 1000, y: 110, w: 256, h: 60 };
+    expect(placeCall(1150, 150, 90, 46, [right], out).x).toBeLessThanOrEqual(right.x - 90);
+  });
+  it('leaves a combo that is not in its way alone', () => {
+    expect(placeCall(600, 500, 90, 46, [{ x: 24, y: 110, w: 200, h: 60 }], out).x).toBe(600);
+  });
+});
+
+describe('viewOfCamera', () => {
+  it('builds the world view from scroll and zoom', () => {
+    expect(viewOfCamera({ scrollX: 100, scrollY: 50, width: 1280, height: 720, zoom: 2 }, { x: 0, y: 0, w: 0, h: 0 })).toEqual({ x: 420, y: 230, w: 640, h: 360 });
   });
 });

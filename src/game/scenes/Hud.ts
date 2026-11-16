@@ -11,7 +11,7 @@ import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
-  CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
+  CHARGE_DASH, COMBO_RECTS_KEY, TAG_CALL_KEY, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
   clampNumber, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
@@ -188,6 +188,7 @@ export class Hud extends Phaser.Scene {
       this.numberTexts = [];
       this.numberSerials = [];
       this.comboTexts = [];
+      this.registry.remove(COMBO_RECTS_KEY);
       this.comboKeys = [];
       this.meterTexts = [];
       this.chipTexts = [];
@@ -622,6 +623,8 @@ export class Hud extends Phaser.Scene {
       if (!from) { p.x = n.x; p.y = n.y; }
       const avoid: HudRect[] = [];
       for (const c of this.comboTexts) if (c?.visible) avoid.push({ x: c.x - (c.originX * c.displayWidth), y: c.y, w: c.displayWidth, h: c.displayHeight });
+      const call = this.registry.get(TAG_CALL_KEY) as HudRect | undefined;
+      if (call && call.w > 0) avoid.push(call);
       const at = clampNumber(p.x, p.y + numberRise(n.age, reduced), t.displayWidth / 2, t.displayHeight, HUD_FRAME, avoid);
       t.setPosition(at.x, at.y).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
     }
@@ -645,6 +648,24 @@ export class Hud extends Phaser.Scene {
       }
       t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
     }
+    this.publishComboRects();
+  }
+
+  /** The visible combo readouts' rects, for the TAG! call to slide clear of (one reused array under COMBO_RECTS_KEY). */
+  private publishComboRects(): void {
+    let rects = this.registry.get(COMBO_RECTS_KEY) as HudRect[] | undefined;
+    if (!rects) this.registry.set(COMBO_RECTS_KEY, (rects = []));
+    let n = 0;
+    for (const c of this.comboTexts) {
+      if (!c?.visible) continue;
+      const r = (rects[n] ??= { x: 0, y: 0, w: 0, h: 0 }) as { x: number; y: number; w: number; h: number };
+      r.x = c.x - c.originX * c.displayWidth;
+      r.y = c.y;
+      r.w = c.displayWidth;
+      r.h = c.displayHeight;
+      n++;
+    }
+    rects.length = n;
   }
 
   /** Left edge of the touch Pause button in HUD logical px (undefined when it is hidden), so the right combo counter stays clear of it. */

@@ -195,3 +195,24 @@ export function barFlashPose(t: number, reduced: boolean, hc: boolean, out: BarF
   out.width = 2;
   return out;
 }
+
+/** Gap (HUD px) between the bottom of the TAG! call and the top of the drawn head it announces. */
+export const CALL_HEAD_GAP = 70;
+/** Highest the call's centre may sit: under the name row and the status chips. */
+export const CALL_TOP_MIN = 144;
+
+/**
+ * Where the call text (centre) goes: over the drawn head (`headX`, `headY` = top of the head in HUD px), never under the top
+ * bar and chips, kept clear of the `avoid` rects (the combo readouts) by sliding towards the screen centre.
+ */
+export function placeCall(headX: number, headY: number, halfW: number, h: number, avoid: readonly { x: number; y: number; w: number; h: number }[], out: { x: number; y: number }): { x: number; y: number } {
+  const y = Math.max(CALL_TOP_MIN, headY - CALL_HEAD_GAP);
+  let x = headX;
+  for (const r of avoid) {
+    if (!(x + halfW > r.x && x - halfW < r.x + r.w && y + h / 2 > r.y && y - h / 2 < r.y + r.h)) continue;
+    x = x < 640 ? r.x + r.w + halfW : r.x - halfW;
+  }
+  out.x = x;
+  out.y = y;
+  return out;
+}
