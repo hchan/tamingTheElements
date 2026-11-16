@@ -53,7 +53,7 @@ export function installPresentation(game: Phaser.Game, host: HTMLElement, opts: 
     overlay.hidden = true;
     const msg = document.createElement('p');
     msg.textContent = 'Rotate your device to landscape for the best view of the arena.';
-    const dismiss = button('rotateDismiss', 'Play in portrait anyway', 'Play anyway');
+    const dismiss = button('rotateDismiss', 'Play anyway in portrait', 'Play anyway');
     overlay.append(msg, dismiss);
     host.append(overlay);
     let dismissed = false;

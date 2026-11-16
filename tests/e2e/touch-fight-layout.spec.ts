@@ -276,7 +276,7 @@ test.describe('phone portrait fight', () => {
   test('portrait: card sits under the canvas, clear of the stick', async ({ page }) => {
     await enterFight(page);
     await shot(page, 'port-rotate');
-    await page.getByRole('button', { name: 'Play in portrait anyway' }).tap();
+    await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
     await shot(page, 'port-play');
     const card = await box(page, '#firstRunHint');
     const stick = await box(page, '#touchStick');
