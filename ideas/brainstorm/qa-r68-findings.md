@@ -27,3 +27,5 @@ added: 2026-11-15
 
 - Use `a.setHp(id, 1)` and attack to K.O.; setting 1 HP alone does not K.O. a hero in the Tour.
 - Run vite from the worktree after `corepack pnpm install --frozen-lockfile --offline`.
+
+WALL-3b note: the Hard-only wallHold (SIM_VERSION 85) addresses the idle-player wall pin for Hard; Normal and Easy are deliberately untouched.

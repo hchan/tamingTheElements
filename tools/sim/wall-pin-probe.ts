@@ -40,7 +40,7 @@ const idle = { id: 'idle', observe: () => NO_COMMAND, save: () => null, load: ()
 
 interface Row {
   p1: string; p2: string; seed: number; ko: number; winner: number; firstWall: number; wallTicks: number;
-  postWallTicks: number; overlapTicks: number; overlapFreeTicks: number; meanGap: number; hits: number; clampedPx: number; maxStuck: number;
+  postWallTicks: number; overlapTicks: number; overlapFreeTicks: number; overlapFree2: number; gaps: number[]; wall48: number; overlapWall48: number; wallGaps: number[]; meanGap: number; hits: number; clampedPx: number; maxStuck: number;
 }
 const rows: Row[] = [];
 for (const p1 of p1Races) for (const p2 of p2Races) for (let seed = 1; seed <= seeds; seed++) {
@@ -60,7 +60,7 @@ for (const p1 of p1Races) for (const p2 of p2Races) for (let seed = 1; seed <= s
   }
   const wA = s.w[a] ?? 0;
   let ko = -1, winner = -1, firstWall = -1, wallTicks = 0, postWallTicks = 0, overlapTicks = 0, overlapFreeTicks = 0, gapSum = 0, hits = 0;
-  let clampedPx = 0, stuck = 0, maxStuck = 0;
+  let clampedPx = 0, stuck = 0, maxStuck = 0, overlapFree2 = 0; const gaps: number[] = []; let wall48 = 0, overlapWall48 = 0; const wallGaps: number[] = [];
   for (let t = 1; t <= 50 * 99; t++) {
     const xBefore = s.x[a] ?? 0;
     const kb = s.arcade[a * ARCADE_E + ArcadeE.kbVx] ?? 0;
@@ -77,11 +77,15 @@ for (const p1 of p1Races) for (const p2 of p2Races) for (let seed = 1; seed <= s
       postWallTicks++;
       const dx = Math.abs((s.x[b] ?? 0) + (s.w[b] ?? 0) / 2 - (x + wA / 2));
       const dy = Math.abs((s.y[b] ?? 0) + (s.h[b] ?? 0) / 2 - ((s.y[a] ?? 0) + (s.h[a] ?? 0) / 2));
-      gapSum += dx;
+      gapSum += dx; gaps.push(dx);
+      const near = x - PF.x <= 48 || PF.x + PF.w - (x + wA) <= 48;
+      const ov = dx < (wA + (s.w[b] ?? 0)) / 2 && dy < ((s.h[a] ?? 0) + (s.h[b] ?? 0)) / 2;
+      if (near) { wall48++; wallGaps.push(dx); if (ov) overlapWall48++; }
       if (dx < (wA + (s.w[b] ?? 0)) / 2 && dy < ((s.h[a] ?? 0) + (s.h[b] ?? 0)) / 2) {
         overlapTicks++;
         // a foe that is stunned or rooted is excluded from the AI's step-apart rule
         if ((s.arcade[a * ARCADE_E + ArcadeE.stunUntil] ?? 0) <= now(s)) overlapFreeTicks++;
+        if ((s.arcade[a * ARCADE_E + ArcadeE.stunUntil] ?? 0) <= now(s) && (s.arcade[a * ARCADE_E + ArcadeE.rootUntil] ?? 0) <= now(s)) overlapFree2++;
       }
     }
     for (const e of ev) {
@@ -93,7 +97,7 @@ for (const p1 of p1Races) for (const p2 of p2Races) for (let seed = 1; seed <= s
     }
     if (ko >= 0) break;
   }
-  rows.push({ p1, p2, seed, ko, winner, firstWall, wallTicks, postWallTicks, overlapTicks, overlapFreeTicks, meanGap: postWallTicks ? gapSum / postWallTicks : -1, hits, clampedPx, maxStuck });
+  rows.push({ p1, p2, seed, ko, winner, firstWall, wallTicks, postWallTicks, overlapTicks, overlapFreeTicks, overlapFree2, gaps, wall48, overlapWall48, wallGaps, meanGap: postWallTicks ? gapSum / postWallTicks : -1, hits, clampedPx, maxStuck });
 }
 const f = (n: number): string => (n / 50).toFixed(1);
 const pct = (n: number, d: number): string => (d ? ((100 * n) / d).toFixed(0) : '-');
@@ -108,3 +112,15 @@ console.log(
   ` atWall=${(mean((r) => r.wallTicks / Math.max(1, r.postWallTicks)) * 100).toFixed(0)}% overlap=${(mean((r) => r.overlapTicks / Math.max(1, r.postWallTicks)) * 100).toFixed(1)}% (foe free ${(mean((r) => r.overlapFreeTicks / Math.max(1, r.postWallTicks)) * 100).toFixed(1)}%)` +
   ` meanGap=${mean((r) => r.meanGap).toFixed(0)}px meanMaxStuck=${f(mean((r) => r.maxStuck))}s meanSwallowedKb=${(rows.reduce((x, r) => x + r.clampedPx, 0) / Math.max(1, rows.length)).toFixed(0)}px`,
 );
+
+const pooled = (label: string, rs: Row[]): void => {
+  const w = rs.filter((r) => r.firstWall >= 0);
+  const sum = (g: (r: Row) => number): number => w.reduce((x, r) => x + g(r), 0);
+  const post = Math.max(1, sum((r) => r.postWallTicks));
+  const g = w.flatMap((r) => r.wallGaps).sort((x, y) => x - y);
+  const q = (p: number): string => (g.length ? (g[Math.floor(p * (g.length - 1))] ?? 0).toFixed(0) : '-');
+  const kos = rs.filter((r) => r.ko > 0).map((r) => r.ko).sort((x, y) => x - y);
+  console.log(`POOLED ${label.padEnd(10)} n=${rs.length} walled=${w.length} ko=${kos.length} medKO=${kos.length ? ((kos[Math.floor(kos.length / 2)] ?? 0) / 50).toFixed(1) : '-'}s atWall=${(100 * sum((r) => r.wallTicks) / post).toFixed(1)}% overlap=${(100 * sum((r) => r.overlapTicks) / post).toFixed(1)}% free(stun)=${(100 * sum((r) => r.overlapFreeTicks) / post).toFixed(1)}% free(stun+root)=${(100 * sum((r) => r.overlapFree2) / post).toFixed(1)}% atWall48=${(100 * sum((r) => r.wall48) / post).toFixed(1)}% overlapAtWall48=${(100 * sum((r) => r.overlapWall48) / Math.max(1, sum((r) => r.wall48))).toFixed(1)}% wallGapP10=${q(0.1)} wallGapP50=${q(0.5)} maxStuck=${(Math.max(0, ...w.map((r) => r.maxStuck)) / 50).toFixed(1)}s swallowed=${(rs.reduce((x, r) => x + r.clampedPx, 0) / Math.max(1, rs.length)).toFixed(0)}px`);
+};
+pooled('ALL', rows);
+for (const p2 of p2Races) pooled(p2, rows.filter((r) => r.p2 === p2));

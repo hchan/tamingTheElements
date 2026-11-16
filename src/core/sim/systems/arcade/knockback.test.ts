@@ -18,7 +18,7 @@ const HEAVY = defOf(HitStrength.heavy);
 
 function duel(victim = 'pax'): SimWorld {
   const setup: MatchSetup = {
-    simVersion: 84, seed: 7, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
+    simVersion: 85, seed: 7, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
     p1: [{ character: characterId('fiara'), xp: 1 }],
     p2: [{ character: characterId(victim), xp: 1 }],
   };

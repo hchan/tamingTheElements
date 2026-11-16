@@ -15,7 +15,7 @@ import {
   ARCADE_AI_LOOKAHEAD, ARCADE_AI_PRESS_GUST_TICKS, ARCADE_AI_PRESS_PUDDLE_TICKS, ARCADE_AI_PRESS_RANGED_PX,
   ARCADE_AI_STYLES, ARCADE_AI_TRAP_RATE, DODGE, AI_HARD, NO_PLAN, PARRY, RUSHDOWN, TRAP_NONE, TRAP_ROOT, TURTLE,
   centreDist, ccAvoidImmune, fatigueScale, ccEscape, chargeSensible, cleanseSensible, elementalSensible, foeInOwnPuddle, guardReflex, hazardExit, hazardKeepOut, sidestepBit, soonestShot, spacingBit, stepApart, tagChoice, toward, trapDashable, trapNudge,
-  trapOnStep, trapReason, trapSpotFree, trapToDouse, weatherSensible, zoneStep, type ArcadeAiLevel, type KitKind, type Style,
+  trapOnStep, trapReason, trapSpotFree, trapToDouse, wallHold, weatherSensible, zoneStep, type ArcadeAiLevel, type KitKind, type Style,
 } from './arcade-ai';
 
 /**
@@ -276,7 +276,7 @@ export class ArcadeTactics {
     if (a === undefined) return base;
     const cmd = this.avoidTraps(view, a, this.kitUse(view, a, this.decide(view, a, base, shot)));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
-    const zoned = this.hazard(view, a, this.zone(view, a, out));
+    const zoned = this.hazard(view, a, this.wallHoldStep(view, a, this.zone(view, a, out)));
     // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
     // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
     const released = (zoned & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? zoned & ~Cmd.charge : zoned;
@@ -339,6 +339,21 @@ export class ArcadeTactics {
     if (a.phase !== RoundPhase.fight || a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
     if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
     return zoneStep(self, opp, cmd, arcadePlayfield(), a.oppStun !== 0 || a.oppRooted !== 0);
+  }
+
+  /**
+   * Wall hold (SIM_VERSION 85, Hard only): the last word on the walk of a free Hard hero whose foe is pinned at a side wall
+   * (`wallHold`): it keeps a gap, steps out of any overlap even while the foe is stunned or rooted, and stops walking in. Off in the
+   * intro, while stunned, frozen or in a super, after ARCADE_AI_STALE_TICKS without damage (the stalemate escape), and for a dash,
+   * guard, super, charge or trap command. No draw and no memory, so the other rules draw as before; Normal and Easy are untouched.
+   */
+  private wallHoldStep(view: ObservationView, a: ArcadeView, cmd: Command): Command {
+    const self = view.self;
+    const opp = view.opponent;
+    if (self === undefined || opp === undefined || this.level < AI_HARD || a.phase !== RoundPhase.fight) return cmd;
+    if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
+    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
+    return wallHold(self, opp, cmd, arcadePlayfield(), a.chargeIn === -1);
   }
 
   /**

@@ -13,7 +13,7 @@ declare global {
   }
 }
 import { SheetBook } from './pose-sheets';
-import { fitToBox, frameBox } from './hero-scale';
+import { boxSpanX, fitToBox, frameBox, type SpanX } from './hero-scale';
 import { idleLookOf } from '../platform/idle-look';
 import { applyIdleMotif } from './idle-motif';
 import { applyBackGait, applyLocomotion, backGaitOf, backingAway, facesToward, locomotionOf, walkFrameBack, walkTimeBack } from './locomotion';
@@ -85,6 +85,9 @@ export interface SheetDrawn {
   motifRot: number;
   motifOy: number;
   motifAlpha: number;
+  /** World x extent of the drawn (rotated) visual box, 0.1 px: the left and right edge the viewer sees. */
+  boxL: number;
+  boxR: number;
 }
 
 interface Ghost {
@@ -196,6 +199,8 @@ export class PoseLayer {
     return { animMs: this.animMs, posed: this.posed, ghosts, fx: this.vfx.live };
   }
 
+  private readonly probeSpan: SpanX = { min: 0, max: 0 };
+
   sheetProbe(): { loaded: string[]; characters: SheetDrawn[] } {
     const characters: SheetDrawn[] = [];
     this.deps.view.forEachCharacter((c) => {
@@ -203,8 +208,10 @@ export class PoseLayer {
       if (img && (c.flags & DEAD_OR_BENCHED) === 0) {
         const box = frameBox(img.frame);
         // the visual-box height actually drawn: the whole display for a frame without a box, the box's share for a boxed one
+        const span = boxSpanX(img, img.rotation, this.probeSpan);
         const bodyHeight = box ? (img.displayHeight * box.h) / img.frame.height : img.displayHeight;
         characters.push({ id: c.id, texture: img.texture.key.replace(GRIM_SUFFIX, ''), frame: img.frame.name, flipX: img.flipX, rotation: img.rotation, graded: img.texture.key.endsWith(GRIM_SUFFIX), bodyHeight,
+          boxL: Math.round(span.min * 10) / 10, boxR: Math.round(span.max * 10) / 10,
           back: Math.round((this.back[c.id & (SLOTS - 1)] ?? 0) * 100) / 100,
           motif: idleLookOf(c.sprite, c.element).motif,
           motifRot: Math.round((this.mRot[c.id & (SLOTS - 1)] ?? 0) * 1000) / 1000,
