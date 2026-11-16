@@ -33,6 +33,26 @@ export function syncTouchOverlays(items: readonly OverlayItem[], canvas: { getBo
   const k = rect.height / LOGICAL_HEIGHT;
   const c = { left: rect.left + (rect.width - LOGICAL_WIDTH * k) / 2, top: rect.top };
   const placed = new Set<Element>();
+  const ref = doc.querySelector<HTMLElement>('button.touchBtn');
+  const decos = new Set<string>();
+  items.forEach((it, i) => {
+    // Boxes without a button (strikes and Snag take the canvas tap; Charge and Tag are absent for some heroes) still get the portrait skirt, as a click-through strip, so the bar's lower edge is even.
+    if ((it.touch !== '' && doc.getElementById(`arcade${it.touch}`) instanceof HTMLElement) || extendPx === undefined || !ref?.parentElement) return;
+    const id = `touchSkirtDeco${String(i)}`;
+    let d = doc.getElementById(id);
+    if (!(d instanceof HTMLElement)) {
+      d = doc.createElement('div');
+      d.id = id;
+      d.className = 'touchSkirt touchSkirtDeco';
+      d.setAttribute('aria-hidden', 'true');
+      ref.parentElement.appendChild(d);
+    }
+    const r = overlayRect(it, c, ref.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 }, k);
+    const vals = { left: px(r.left), top: px(r.top), width: px(r.size), height: px(overlayHeight(r.size, extendPx)) };
+    for (const [name, v] of Object.entries(vals) as ['left' | 'top' | 'width' | 'height', string][]) if (d.style[name] !== v) d.style[name] = v;
+    decos.add(id);
+  });
+  doc.querySelectorAll('.touchSkirtDeco').forEach((d) => { if (!decos.has(d.id)) d.remove(); });
   for (const it of items) {
     if (it.touch === '') continue;
     const el = doc.getElementById(`arcade${it.touch}`);
