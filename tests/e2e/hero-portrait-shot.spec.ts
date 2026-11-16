@@ -2,14 +2,14 @@ import { mkdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors, tapTourSplash } from './parity/helpers';
 
-// The portrait rigs (tools/assets/portrait-rig, ADR-0020: Pax, Sindarosa, Curomo) in real fights. Each is drawn from its own
+// The portrait rigs (tools/assets/portrait-rig, ADR-0020: Pax, Sindarosa, Curomo and the owner's originals Rokcore, Lavax, Ishimi, Morblass, Echo, Wispera, Cyclonius) in real fights. Each is drawn from its own
 // 240 px sheet, ungraded, with frame names the manifest knows, and the body (the frame's visual box) keeps one display height
 // through every action the fight shows, so the hero never jumps in size between rows. SHOT_DIR=<dir> saves headless screenshots
 // at 1280x720 and 1920x1080 (dpr 2) for eyeballing against the portraits (tools/assets/portrait-rig/compare-shots.py).
 // Page-side code is passed as strings because tsconfig.node has no DOM lib.
 
 const SHOT_DIR = process.env['SHOT_DIR'];
-const PORTRAIT = new Set(['pax', 'sindarosa', 'curomo']);
+const PORTRAIT = new Set(['pax', 'sindarosa', 'curomo', 'rokcore', 'lavax', 'ishimi', 'morblass', 'echo', 'wispera', 'cyclonius']);
 const FRAME_NAME = /^(idle|walk|cast|hurt|guard|dash|ko|victory|tagIn)\/(E|SE|S|N|NE)#\d$/;
 
 interface Drawn { id: number; texture: string; frame: string; flipX: boolean; graded: boolean; bodyHeight: number }
@@ -76,6 +76,10 @@ const PAIRS = [
   { race: 'pax', foe: 'sindarosa' },
   { race: 'sindarosa', foe: 'curomo' },
   { race: 'curomo', foe: 'pax' },
+  { race: 'rokcore', foe: 'lavax' },
+  { race: 'ishimi', foe: 'morblass' },
+  { race: 'echo', foe: 'wispera' },
+  { race: 'cyclonius', foe: 'rokcore' },
 ] as const;
 
 for (const size of [{ w: 1280, h: 720, dpr: 1 }, { w: 1920, h: 1080, dpr: 2 }]) {

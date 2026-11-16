@@ -1,6 +1,6 @@
 # ADR-0020: Portrait rigs: big boxed frames, a smooth supersampled bake and skinned painted portraits
 
-Status: accepted (pilot: Pax, Sindarosa, Curomo)
+Status: accepted (Pax, Sindarosa, Curomo; ORIG-2 adds the owner's original paintings of Rokcore, Lavax, Ishimi, Morblass, Echo, Wispera, Cyclonius via tools/assets/portrait-rig/gen-specs.py)
 
 ## Context
 
