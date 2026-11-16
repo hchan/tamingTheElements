@@ -3,7 +3,7 @@ import { SimEventKind, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
   BLOCKED_LINE, BUFF_WORDS, MAX_PARTICLES, PARTICLES_PER_PATCH, REDUCED_TELEGRAPH_ALPHA, STAGE_NAMES, SWAP_FLOOR, SWAP_TICKS, TerrainFx,
-  badgeText, changedLine, enteredLine, glowAlpha, inPatch, nextBackdropAlpha, particle, patchAlpha, progress, swapLine, type Particle, type TerrainSink,
+  badgeText, changedLine, enteredLine, glowAlpha, chipCentreX, inPatch, nextBackdropAlpha, particle, patchAlpha, progress, swapLine, type Particle, type TerrainSink,
 } from './terrain-fx';
 
 let seq = 0;
@@ -198,5 +198,27 @@ describe('terrain particles', () => {
     expect(particle(4, 0, 0, 10, 0, 0, 100, 100, out).len).toBeGreaterThan(0);
     for (const s of [1, 2, 3]) expect(particle(s, 0, 0, 10, 0, 0, 100, 100, out).r).toBeGreaterThan(0);
     expect(particle(9, 0, 0, 10, 0, 0, 100, 100, out).len).toBeGreaterThan(0);
+  });
+});
+
+describe('chipCentreX (FLOOR-TAGS-1)', () => {
+  const M = 16;
+  it('keeps the centre when the chip is inside the view', () => {
+    expect(chipCentreX(600, 100, 560, 640, 0, 1280, M)).toBe(600);
+  });
+  it('a chip clipped on the left or right ends exactly the margin inside the view', () => {
+    expect(chipCentreX(40, 100, 0, 80, 0, 1280, M) - 50).toBe(M);
+    expect(chipCentreX(1260, 100, 1220, 1300, 0, 1280, M) + 50).toBe(1280 - M);
+    expect(chipCentreX(210, 100, 170, 250, 200, 1000, M) - 50).toBe(200 + M);
+  });
+  it('a patch partly visible but the base chip fully outside is clamped in', () => {
+    // Patch [1270, 1530] shows 10 px; its chip (centre 1400, w 100) starts at 1350, past the view edge 1280.
+    expect(chipCentreX(1400, 100, 1270, 1530, 0, 1280, M)).toBe(1280 - M - 50);
+  });
+  it('both off the view: keeps the centre', () => {
+    expect(chipCentreX(1740, 100, 1700, 1780, 0, 1280, M)).toBe(1740);
+  });
+  it('a view narrower than the chip keeps the centre', () => {
+    expect(chipCentreX(50, 100, 0, 100, 0, 110, M)).toBe(50);
   });
 });

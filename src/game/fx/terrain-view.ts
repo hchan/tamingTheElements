@@ -10,9 +10,10 @@ import { drawRock } from './terrain-props';
 import { mountAmbient, type Ambient } from './terrain-ambient';
 import { mountTileFloor, type TileFloor } from './terrain-floor';
 import { mountEarthLight, type EarthLight } from './earth-light';
+import { arcadeHeroScale, visualBox, type Box } from '../views/hero-scale';
 import {
-  MAX_PARTICLES, MAX_PATCHES, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS, VOID_BACKDROP_TINT,
-  TerrainFx, badgeText, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
+  CHIP_MARGIN, MAX_PARTICLES, MAX_PATCHES, SLOT_HOLD, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS, VOID_BACKDROP_TINT,
+  TerrainFx, badgeText, chipCentreX, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
 } from './terrain-fx';
 
 /**
@@ -93,7 +94,10 @@ export interface TerrainState {
   readonly chipDepth: number;
   readonly labelDepth: number;
   /** Each chip's plate box in world px and the alpha it is drawn with now (0 when hidden; it eases down while a fighter stands near). */
-  readonly chips: readonly { x: number; y: number; w: number; h: number; alpha: number }[];
+  readonly chips: readonly { x: number; y: number; w: number; h: number; alpha: number; slot: number }[];
+  /** The world rect of the camera's view the chips were kept inside this frame, and the drawn fighters' boxes (padded) they dodge. */
+  readonly view: { x: number; y: number; w: number; h: number };
+  readonly bodies: readonly { x: number; y: number; w: number; h: number }[];
 }
 
 const states = new WeakMap<Phaser.Scene, () => TerrainState>();
@@ -179,6 +183,98 @@ export function mountTerrainView(
       const x = chipBox[i * 4] ?? 0;
       const y = chipBox[i * 4 + 1] ?? 0;
       if (c.x < x + (chipBox[i * 4 + 2] ?? 0) + 72 && c.x + c.w > x - 72 && c.y < y + (chipBox[i * 4 + 3] ?? 0) + 24 && c.y + c.h > y - 24) chipNear[i] = 1;
+    }
+  };
+  // FLOOR-TAGS-1: each chip has a base slot (today's rule) and an alternate on the patch's other side; per frame it is kept inside the
+  // camera's view and out from under the drawn (2x) fighters. Preallocated, nothing per frame.
+  const chipCx = new Float64Array(MAX_PATCHES);
+  const chipPatchL = new Float64Array(MAX_PATCHES);
+  const chipPatchR = new Float64Array(MAX_PATCHES);
+  const chipYBase = new Float64Array(MAX_PATCHES);
+  const chipYAlt = new Float64Array(MAX_PATCHES);
+  const chipX = new Float64Array(MAX_PATCHES).fill(Number.NaN);
+  const chipY = new Float64Array(MAX_PATCHES).fill(Number.NaN);
+  const chipSlot = new Uint8Array(MAX_PATCHES);
+  const chipClear = new Uint8Array(MAX_PATCHES);
+  const BODY_PAD = 8;
+  const MAX_BODIES = 16;
+  const bodyBox = new Float64Array(MAX_BODIES * 4);
+  let bodies = 0;
+  const scratch: Box = { x: 0, y: 0, w: 0, h: 0 };
+  const viewRect = { x: 0, y: 0, w: ARENA_W, h: ARENA_H };
+  const collect = (c: RenderCharacter): void => {
+    if ((c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0 || bodies >= MAX_BODIES) return;
+    const b = visualBox(c.x, c.y, c.w, c.h, arcadeHeroScale(c.h), scratch, ARENA_W);
+    bodyBox[bodies * 4] = b.x - BODY_PAD;
+    bodyBox[bodies * 4 + 1] = b.y - BODY_PAD;
+    bodyBox[bodies * 4 + 2] = b.w + BODY_PAD * 2;
+    bodyBox[bodies * 4 + 3] = b.h + BODY_PAD * 2;
+    bodies++;
+  };
+  /** True when the chip rect (left, top, w, h) meets any drawn fighter box. */
+  const meetsBody = (l: number, t: number, w: number, h: number): boolean => {
+    for (let b = 0; b < bodies; b++) {
+      const bx = bodyBox[b * 4] ?? 0;
+      const by = bodyBox[b * 4 + 1] ?? 0;
+      if (l < bx + (bodyBox[b * 4 + 2] ?? 0) && l + w > bx && t < by + (bodyBox[b * 4 + 3] ?? 0) && t + h > by) return true;
+    }
+    return false;
+  };
+  /** The camera's view in world px, kept inside the arena; the whole arena when the camera reports no zoom (unit fakes). */
+  const updateView = (): void => {
+    const cam = arena.cameras.main as Partial<Phaser.Cameras.Scene2D.Camera> | undefined;
+    const zoom = cam?.zoom ?? Number.NaN;
+    const width = cam?.width ?? Number.NaN;
+    const scroll = cam?.scrollX ?? Number.NaN;
+    let l = 0;
+    let r = ARENA_W;
+    if (Number.isFinite(zoom) && zoom > 0 && Number.isFinite(width) && Number.isFinite(scroll)) {
+      const w = width / zoom;
+      l = Math.max(0, scroll + width / 2 - w / 2);
+      r = Math.min(ARENA_W, scroll + width / 2 + w / 2);
+    }
+    viewRect.x = l;
+    viewRect.w = r - l;
+  };
+  /** Per frame: the chip's slot (escape a head now, return after SLOT_HOLD clear frames), its x inside the view, and its plate box. */
+  const placeChips = (p: NonNullable<typeof parts>, count: number): void => {
+    for (let i = 0; i < count; i++) {
+      const t = p.labels[i];
+      if (!t) continue;
+      const w = chipBox[i * 4 + 2] ?? 0;
+      const h = chipBox[i * 4 + 3] ?? 0;
+      const x = chipCentreX(chipCx[i] ?? 0, w, chipPatchL[i] ?? 0, chipPatchR[i] ?? 0, viewRect.x, viewRect.x + viewRect.w, CHIP_MARGIN);
+      const yBase = chipYBase[i] ?? 0;
+      const yAlt = chipYAlt[i] ?? 0;
+      const hasAlt = yAlt !== yBase;
+      let slot = chipSlot[i] ?? 0;
+      const baseCovered = meetsBody(x - w / 2, yBase - h, w, h);
+      if (slot === 0) {
+        if (baseCovered && hasAlt && !meetsBody(x - w / 2, yAlt - h, w, h)) {
+          slot = 1;
+          chipClear[i] = 0;
+          chipFade[i] = 0.15;
+        }
+      } else if (baseCovered) {
+        chipClear[i] = 0;
+        // Both slots covered: stay (the fade handles it); only the alternate covered: escape now.
+      } else {
+        chipClear[i] = Math.min(255, (chipClear[i] ?? 0) + 1);
+        if ((chipClear[i] ?? 0) >= SLOT_HOLD || meetsBody(x - w / 2, yAlt - h, w, h)) {
+          slot = 0;
+          chipFade[i] = 0.15;
+        }
+      }
+      chipSlot[i] = slot;
+      const y = slot === 0 ? yBase : yAlt;
+      chipBox[i * 4] = x - w / 2;
+      chipBox[i * 4 + 1] = y - h;
+      if (Math.abs(x - (chipX[i] ?? Number.NaN)) > 0.25 || Math.abs(y - (chipY[i] ?? Number.NaN)) > 0.25 || Number.isNaN(chipX[i] ?? Number.NaN)) {
+        chipX[i] = x;
+        chipY[i] = y;
+        t.setPosition(x, y);
+        p.chips[i]?.setPosition(x, y);
+      }
     }
   };
   const chipFade = new Float64Array(MAX_PATCHES).fill(1);
@@ -289,7 +385,17 @@ export function mountTerrainView(
       const top = rects[i * 4 + 1] ?? 0;
       const rh = rects[i * 4 + 3] ?? 0;
       const lower = top + rh / 2 > FIELD_MID_Y;
-      const cy = Math.max(FIELD_TOP_Y, Math.min(FIELD_BOTTOM_Y, lower ? top + rh + t.height + CHIP_GAP : top - CHIP_GAP));
+      const above = Math.max(FIELD_TOP_Y, Math.min(FIELD_BOTTOM_Y, top - CHIP_GAP));
+      const below = Math.max(FIELD_TOP_Y, Math.min(FIELD_BOTTOM_Y, top + rh + t.height + CHIP_GAP));
+      const cy = lower ? below : above;
+      chipCx[i] = cx;
+      chipPatchL[i] = rects[i * 4] ?? 0;
+      chipPatchR[i] = (rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0);
+      chipYBase[i] = cy;
+      chipYAlt[i] = lower ? above : below;
+      chipSlot[i] = 0;
+      chipClear[i] = 0;
+      chipX[i] = Number.NaN;
       t.setColor(highContrast ? hex(0xffffff) : LABEL_COLOR).setPosition(cx, cy);
       // A small chip: dark plate with a rim in the stage's colour, so the word reads over any floor and never looks like loose type.
       const w = t.width;
@@ -372,8 +478,13 @@ export function mountTerrainView(
     if (stage > 0 && firstSeen[stage] === undefined) firstSeen[stage] = clock;
     const hint = stage > 0 ? labelHintAlpha(clock - (firstSeen[stage] ?? clock)) : 0;
     const bannerUp = ar.phase === RoundPhase.intro || tick < fightBannerUntil || tick < tagCallUntil;
+    updateView();
+    bodies = 0;
+    view.forEachCharacter(collect);
+    placeChips(p, count);
     chipNear.fill(0);
     view.forEachCharacter(near);
+    for (let i = 0; i < count; i++) if (meetsBody(chipBox[i * 4] ?? 0, chipBox[i * 4 + 1] ?? 0, chipBox[i * 4 + 2] ?? 0, chipBox[i * 4 + 3] ?? 0)) chipNear[i] = 1;
     p.labels.forEach((t, i) => {
       // Ease toward faint while a fighter stands on or beside the chip, back up when it leaves.
       // Hidden under the ROUND / FIGHT! banners so the chip words never bleed through their letters.
@@ -450,7 +561,9 @@ export function mountTerrainView(
     stage: Math.max(0, drawn.stage), patches: Math.max(0, drawn.count), rects: drawn.rects.slice(0, Math.max(0, drawn.count) * 4),
     labels: [...labels], alpha: drawn.alpha, glow: drawn.glow, particles: drawn.particles, sparks, backdrop: drawn.backdrop,
     nextBackdrop: drawn.nextBackdrop, badge: drawn.badge, chipDepth: CHIP_DEPTH, labelDepth: LABEL_DEPTH,
-    chips: Array.from({ length: Math.max(0, drawn.count) }, (_, i) => ({ x: chipBox[i * 4] ?? 0, y: chipBox[i * 4 + 1] ?? 0, w: chipBox[i * 4 + 2] ?? 0, h: chipBox[i * 4 + 3] ?? 0, alpha: chipAlpha[i] ?? 0 })),
+    chips: Array.from({ length: Math.max(0, drawn.count) }, (_, i) => ({ x: chipBox[i * 4] ?? 0, y: chipBox[i * 4 + 1] ?? 0, w: chipBox[i * 4 + 2] ?? 0, h: chipBox[i * 4 + 3] ?? 0, alpha: chipAlpha[i] ?? 0, slot: chipSlot[i] ?? 0 })),
+    view: { x: viewRect.x, y: 0, w: viewRect.w, h: ARENA_H },
+    bodies: Array.from({ length: bodies }, (_, b) => ({ x: bodyBox[b * 4] ?? 0, y: bodyBox[b * 4 + 1] ?? 0, w: bodyBox[b * 4 + 2] ?? 0, h: bodyBox[b * 4 + 3] ?? 0 })),
   }));
   return (events) => {
     tick = view.tick;
