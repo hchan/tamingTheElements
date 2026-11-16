@@ -299,5 +299,8 @@
  *    foe inside 200 px; centred melee (Abyss Flash) is read with the explosion reach. Re-record reason: every replay fixture changes only its
  *    simVersion header.
  * 82: AI only (agents outside SimState): Hard defence fatigue no longer resets on chip; no rule or data change; goldens header-only.
+ * 83: AI only (agents outside SimState): rock look-ahead fix, Hard only. A step is tested as the box swept over the whole 8 px look-ahead
+ *    (not just its end box), walls need only a 3 px probe, and a dash into a rock is slid as a walk; no rule or data change. Re-record reason:
+ *    every replay fixture changes only its simVersion header; Normal and Easy are unchanged, so the balance baselines are not re-recorded.
  */
-export const SIM_VERSION = 82;
+export const SIM_VERSION = 83;
