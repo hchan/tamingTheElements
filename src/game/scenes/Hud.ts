@@ -762,6 +762,7 @@ export class Hud extends Phaser.Scene {
       const b = document.getElementById(id);
       if (!b || getComputedStyle(b).display === 'none') continue;
       const r = b.getBoundingClientRect();
+      if (r.bottom <= hudTop + 0.5) continue; // in the strip above the canvas (portrait play)
       if (id === 'fullscreenToggle' && (r.bottom - hudTop) / k <= COMBO_Y) continue;
       const l = (r.left - hudLeft) / k;
       left = left === undefined ? l : Math.min(left, l);
