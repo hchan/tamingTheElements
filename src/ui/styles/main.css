@@ -192,6 +192,12 @@ html[data-high-contrast='true'] #fullscreenToggle {
   opacity: 1;
 }
 
+/* Phones under 640 px wide (568x320): the fullscreen toggle sat on the foe's name, life readout and portrait (top right). It moves to
+   the row of Pause, just left of it (top 62, right 6 + 58 + 6), clear of the HUD band and of the stick on either hand. */
+@media (pointer: coarse) and (max-width: 639.98px) and (max-height: 500px) and (orientation: landscape) {
+  #fullscreenToggle { top: 52px; right: 70px; }
+}
+
 #rotateOverlay {
   position: fixed;
   inset: 0;

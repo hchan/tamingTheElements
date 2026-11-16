@@ -26,7 +26,7 @@ const inside = (b: Box): boolean => b.x >= -0.5 && b.y >= -0.5 && b.x + b.w <= W
 
 /** The touch controls that must stay clear of each other and of the HUD (DOM ids; missing ones are skipped). */
 const CONTROL_IDS = [
-  '#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton', '#firstRunHint',
+  '#fullscreenToggle', '#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton', '#firstRunHint',
   '#arcadeWeather', '#arcadeDash', '#arcadeGuard', '#arcadeSuper', '#arcadeTrap', '#arcadeElement', '#arcadeCleanse',
 ];
 
@@ -61,11 +61,11 @@ async function controls(page: Page): Promise<Named[]> {
   })()`);
 }
 
-/** The top HUD band texts (names, life, super, timer), in viewport px. The probe ignores text origins, so only the band at the top (y < 64) is trusted; centred overhead labels lower down are skipped. */
+/** The top HUD band texts (names, life, super, timer), in viewport px. The probe's x is the origin point (t.ox says where in the box that is); y ignores the vertical origin, so only the band at the top (y < 64) is trusted; centred overhead labels lower down are skipped. */
 async function hudTexts(page: Page): Promise<Named[]> {
   return page.evaluate<Named[]>(`(() => {
     const c = document.querySelector('#game canvas').getBoundingClientRect();
-    return window.__TTE__.arena.hudTextSizes().map((t) => ({ name: 'hud:' + t.text, x: c.x + t.x, y: c.y + t.y, w: t.w, h: t.h })).filter((t) => t.y < 64);
+    return window.__TTE__.arena.hudTextSizes().map((t) => ({ name: 'hud:' + t.text, x: c.x + t.x - t.w * t.ox, y: c.y + t.y, w: t.w, h: t.h })).filter((t) => t.y < 64);
   })()`);
 }
 
@@ -180,7 +180,7 @@ test.describe(`phone landscape ${String(W)}x${String(H)}`, () => {
     await frames(page);
     await shot(page, 'small-568-hint.png');
     const { ctl, hud } = await layout(page);
-    expect(ctl.map((c) => c.name), 'every control is present').toEqual(expect.arrayContaining(['#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton', '#firstRunHint', '#arcadeDash', '#arcadeSuper']));
+    expect(ctl.map((c) => c.name), 'every control is present').toEqual(expect.arrayContaining(['#fullscreenToggle', '#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton', '#firstRunHint', '#arcadeDash', '#arcadeSuper']));
     expect(hud.length, 'the HUD texts are drawn').toBeGreaterThan(4);
     expectNoOverlaps(ctl, hud);
     // The action bar buttons are one row at the bottom: never above the Strikes or the Pause.
@@ -205,9 +205,8 @@ test.describe(`phone landscape ${String(W)}x${String(H)}`, () => {
     expect(errors).toEqual([]);
   });
 
-  // Found by this spec: the fullscreen toggle (phones under 740 px wide) sits over the foe's life readout and portrait at 568x320.
-  // See ideas/brainstorm/fullscreen-toggle-covers-hud-568.md. Drop test.fail once the toggle moves.
-  test.fail('the fullscreen toggle clears the HUD texts', async ({ page }) => {
+  // Found by this spec: the fullscreen toggle sat over the foe's life readout and portrait at 568x320; it now sits below Pause.
+  test('the fullscreen toggle clears the HUD texts', async ({ page }) => {
     await enterFight(page, 'right');
     await page.evaluate(`window.__TTE__.arena.step(10)`);
     const { hud, toggle } = await layout(page);

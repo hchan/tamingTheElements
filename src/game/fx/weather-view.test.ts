@@ -314,6 +314,7 @@ describe('super banner overlap', () => {
   it('hides the badge, chip and called line while the high super band is up, then shows them again', () => {
     const m = mount({ weather: 2 });
     const alphas = (): number[] => m.hud.made.map((f) => f.alpha);
+    m.arcade.weatherCharge[0] = 600; // an empty charge draws no chip (QA r77), so give it some
     m.frame();
     expect(m.hud.made.length).toBeGreaterThan(0);
     reg.set('tte.band', true);
