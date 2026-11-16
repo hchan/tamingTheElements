@@ -13,6 +13,7 @@ interface Tag {
   call: string;
   callScale: number;
   callSpan: [number, number];
+  callBox: { x: number; y: number; w: number; h: number; headX: number; headY: number };
   flashes: number;
   ko: boolean;
 }
