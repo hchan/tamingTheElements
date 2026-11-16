@@ -1,0 +1,66 @@
+import { expect, test, type Page } from '@playwright/test';
+import { ARENA_READY, START } from './parity/helpers';
+
+// QA r70 phone layout: on a phone the arena canvas is never covered by a touch button (Strike 1/2, Pause), and in portrait ("Play anyway")
+// it fills the screen width (a 16:9 fit, so 390 CSS px wide is the most height the fit can give). Shots go to $SHOT_DIR when set.
+const shotDir = process.env['SHOT_DIR'];
+
+interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+const box = (page: Page, sel: string): Promise<Box> =>
+  page.evaluate<Box>(`(() => {
+    const r = document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width, h: r.height };
+  })()`);
+const overlap = (a: Box, b: Box): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+async function fight(page: Page): Promise<void> {
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByRole('button', { name: /^Fight/ }).tap();
+  await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+  await page.locator('#touchStrikes').waitFor();
+  // Both fighters near the right wall: the worst place for the foe to stand under a right-edge button.
+  await page.evaluate(`(() => {
+    const a = window.__TTE__.arena;
+    a.step(91);
+    const [me, foe] = a.characters();
+    a.place(me.id, 1100, 420, 4);
+    a.place(foe.id, 1230, 380, 4);
+    a.step(60);
+  })()`);
+  await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+}
+
+for (const [w, h] of [[844, 390]] as const) {
+  test.describe(`phone landscape ${String(w)}x${String(h)}`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    test('no touch button or Pause covers the arena canvas, so the foe at the wall is never hidden', async ({ page }) => {
+      await fight(page);
+      if (shotDir) await page.screenshot({ path: `${shotDir}/land-${String(w)}-wall.png` });
+      const canvas = await box(page, '#game canvas');
+      expect(canvas.h).toBeGreaterThanOrEqual(h * 0.8); // still a big arena
+      for (const id of ['#touchStrike1', '#touchStrike2', '#pauseButton']) {
+        const b = await box(page, id);
+        expect(overlap(canvas, b), `${id} ${JSON.stringify(b)} vs canvas ${JSON.stringify(canvas)}`).toBe(false);
+        expect(b.x + b.w, id).toBeLessThanOrEqual(w);
+      }
+    });
+  });
+}
+
+test.describe('phone portrait, Play anyway', () => {
+  test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  test('the arena canvas fills the screen width and no touch button covers it', async ({ page }) => {
+    await fight(page);
+    await page.getByRole('button', { name: 'Play in portrait anyway' }).tap();
+    if (shotDir) await page.screenshot({ path: `${shotDir}/port-play.png` });
+    const canvas = await box(page, '#game canvas');
+    expect(canvas.w).toBeGreaterThanOrEqual(388);
+    expect(canvas.h).toBeGreaterThanOrEqual(215); // 16:9 of 390
+    for (const id of ['#touchStrike1', '#touchStrike2', '#pauseButton']) expect(overlap(canvas, await box(page, id)), id).toBe(false);
+  });
+});
