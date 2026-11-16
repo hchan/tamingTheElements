@@ -110,6 +110,39 @@ test.describe('Versus 2v2 at 1280x720', () => {
     await expect(box).not.toHaveAttribute('data-more', '');
   });
 
+  test('the More below tab sits above the bar at the right, small, and covers no card (WP-HF1)', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await expect(page.locator('.pickScroll')).toHaveAttribute('data-more', '');
+    const tab = await page.evaluate<{ top: number; bottom: number; right: number; width: number; barRight: number; content: string; hits: boolean[]; clash: boolean }>(`(() => {
+      const bar = document.querySelector(${JSON.stringify(BAR)});
+      const bb = bar.getBoundingClientRect();
+      const cs = getComputedStyle(bar, '::before');
+      const width = parseFloat(cs.width);
+      const height = parseFloat(cs.height);
+      const right = bb.right - parseFloat(cs.right);
+      const buttons = [...bar.querySelectorAll('button, a')].map((b) => b.getBoundingClientRect());
+      const clash = buttons.some((r) => r.left < right && r.right > right - width && r.top < bb.top && r.bottom > bb.top - height);
+      const styleEl = document.createElement('style');
+      styleEl.textContent = '.pickScroll[data-more] + .vsActions::before, .pickScroll[data-more] + .heroActions::before { pointer-events: auto !important; }';
+      document.head.append(styleEl);
+      const region = document.querySelector('.pickScroll').getBoundingClientRect();
+      const hits = [...document.querySelectorAll('.pickScroll .heroTile')].map((t) => t.getBoundingClientRect())
+        .filter((r) => r.top >= region.top && r.bottom <= region.bottom && r.height > 0)
+        .map((r) => { const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!e && !!e.closest('.heroTile'); });
+      styleEl.remove();
+      return { top: bb.top - 2 - height, bottom: bb.top, right, width, barRight: bb.right, content: cs.content, hits, clash };
+    })()`);
+    expect(tab.content).toContain('More below');
+    expect(tab.width).toBeLessThanOrEqual(160);
+    expect(tab.barRight - tab.right).toBeGreaterThanOrEqual(11);
+    expect(tab.clash).toBe(false);
+    expect(tab.hits.length).toBeGreaterThan(0);
+    expect(tab.hits.every(Boolean)).toBe(true);
+    await page.evaluate(`(() => { const e = document.querySelector('.pickScroll'); e.scrollTop = e.scrollHeight; })()`);
+    await expect(page.locator('.pickScroll')).not.toHaveAttribute('data-more', '');
+    expect(await page.evaluate(`getComputedStyle(document.querySelector(${JSON.stringify(BAR)}), '::before').content`)).toBe('none');
+  });
+
   test('picking from the select moves the detail pane (A8)', async ({ page }) => {
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByLabel('Your race').selectOption('lavax');

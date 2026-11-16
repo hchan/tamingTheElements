@@ -2038,30 +2038,34 @@ button.menuButton.heroSlotClear {
   border-top: 2px solid rgba(255, 214, 120, 0.55);
   box-shadow: 0 -6px 14px rgba(10, 8, 30, 0.45);
 }
-/* "More below" strip over the region's last 24 px while content continues (data-more, set by markMoreBelow in src/ui/dom.ts).
-   Decorative (empty alt text), click-through, gone at the scroll end. Sits above the bar's 2 px top border. */
+/* "More below" tab seated on the bar's top border at the right while content continues (data-more, set by markMoreBelow in src/ui/dom.ts).
+   Small, so it never covers a hero card (the old full-width strip did, WP-HF1); decorative (empty alt text), click-through, gone at the scroll end. */
 .pickScroll[data-more] + .vsActions::before,
 .pickScroll[data-more] + .heroActions::before {
   content: 'More below \25BE';
   content: 'More below \25BE' / '';
   position: absolute;
-  left: 0;
-  right: 0;
+  left: auto;
+  right: max(12px, env(safe-area-inset-right));
   bottom: calc(100% + 2px);
   box-sizing: border-box;
-  height: 24px;
-  padding-top: 8px;
+  height: 18px;
+  padding: 1px 8px 0;
   font-size: max(0.75em, 11px);
-  line-height: 14px;
-  text-align: center;
+  line-height: 15px;
+  white-space: nowrap;
   color: rgba(255, 214, 120, 0.95);
-  background: linear-gradient(to bottom, rgba(28, 24, 62, 0), rgba(28, 24, 62, 0.92) 40%);
+  background: rgba(28, 24, 62, 0.97);
+  border: 1px solid rgba(255, 214, 120, 0.55);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
   pointer-events: none;
 }
 html[data-high-contrast='true'] .pickScroll[data-more] + .vsActions::before,
 html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
   color: #fff;
   background: #000;
+  border-color: #fff;
 }
 /* Compaction: a short window trims the heading margins and the bar's button margins so the partner slot stays above the fold. */
 @media (max-height: 820px) {
