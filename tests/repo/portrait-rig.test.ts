@@ -12,8 +12,8 @@ import { drawnBox, fitToBox, frameBox, setFrameBox, type BoxedImage } from '../.
 
 const root = resolve(import.meta.dirname, '../..');
 const HEROES = ['pax', 'sindarosa', 'curomo', 'rokcore', 'lavax', 'ishimi', 'morblass', 'echo', 'wispera', 'cyclonius'] as const;
-// the owner's originals keep their painted fringes (lavax: blue flame edge; morblass: wet-brush mist)
-const HALO_MAX: Record<string, number> = { lavax: 0.12, morblass: 0.07 };
+// the owner's originals keep their painted fringes (lavax: blue flame edge; morblass: wet-brush mist; wispera: the redrawn cloud has a soft dark vapour edge, WISPERA-R2)
+const HALO_MAX: Record<string, number> = { lavax: 0.12, morblass: 0.07, wispera: 0.12 };
 const BAKED = ['E', 'SE', 'S', 'N', 'NE'] as const;
 const frameFile = (hero: string, action: string, dir: string, i: number): string =>
   resolve(root, 'imgWorkArea/sheets', hero, action, dir, `${String(i).padStart(2, '0')}.png`);

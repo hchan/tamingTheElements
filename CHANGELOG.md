@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Wispera redraw (WISPERA-R2): her portrait, rig, 155 baked frames, sheet atlas and HUD strip are the owner-picked "Refined 2" (md5 fda087d6783593314aa211d79a97ceb0). Art only: no sim, golden or `SIM_VERSION` change. The bake locks and Wispera sheets were regenerated because their source changed; no other hero frames changed. Her Halo test limit is 0.12 (`HALO_MAX`).
+
 - Crowd control wiring (CB5, FUN-DESIGN 2.28): `?ff=cc` (dev and test builds) turns on the `withCrowdControl` sim flag in Versus, the tour and the arena demo, and the new `arcade-cc` golden replay covers daze, quick-rise, shatter and a Cleanse of silence. The flag stays off by default, so `SIM_VERSION` (71) and every other golden and baseline are unchanged. Online is not wired to the flag.
 
 - Charge and Dash in melee (ideas/brainstorm/action-bar-rethink-hero-kits.md, first slice): Arcade only. A charging hero is armoured (takes damage, no stun or knockback), the arrival hit is medium strength (damage 12, victim stun 26), and a Dash through a melee swing is a perfect dodge that refunds the Dash cooldown. `SIM_VERSION` 50.

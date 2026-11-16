@@ -25,6 +25,11 @@ export function manifestUrls(): string[] {
   return [...urls].sort();
 }
 
+/** Manifest URLs whose legacy file was redrawn in the repo; build-assets must never copy the legacy file over them. */
+export const REDRAWN: ReadonlyMap<string, string> = new Map([
+  ['img/map/wisperaLarge.png', 'tools/assets/wispera-art (owner-picked "Refined 2", 2026-11-16)'],
+]);
+
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 if (import.meta.main) {
@@ -35,6 +40,10 @@ if (import.meta.main) {
     // Redrawn effect sprites are generated in the repo by tools/assets/fx-gen, not copied from the legacy tree.
     if (url.startsWith('img/fx/')) {
       if (!existsSync(resolve(outDir, url))) throw new Error(`generated asset missing (run tools/assets/fx-gen): ${url}`);
+      continue;
+    }
+    if (REDRAWN.has(url)) {
+      if (!existsSync(resolve(outDir, url))) throw new Error(`redrawn asset missing: ${url} (${REDRAWN.get(url) ?? ''})`);
       continue;
     }
     const src = resolve(legacyDir, url);

@@ -12,3 +12,5 @@ Wispera's original art (`war/WEB-INF/private/img/map/wisperaLarge.png`, tag `leg
 Gate: show original, restored and modified side by side in chat before shipping. Do not replace the original with a different creature (owner: originals beat my grim redesigns).
 
 Related: [hero-rigs](hero-rigs.md).
+
+Note 2026-11-16: Wispera now uses the Refined 2 redraw (ideas/done/wispera-refined2-swap.md).

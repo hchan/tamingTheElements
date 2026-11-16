@@ -1,3 +1,5 @@
-Rig parts for wispera: derived from the legacy portrait `map/wisperaLarge.png` (tag legacy-crafty-1.0; owner's game art). Cut, matted,
-inpainted and animated by tools/assets/portrait-rig (prep.py, spec/wispera.json, spec/wispera.anim.json); numpy/PIL only.
-Licence: same as the repository's own art (still to be decided in README.md; owner to confirm).
+Rig parts for wispera: derived from the redrawn portrait `map/wisperaLarge.png` (owner-picked "Refined 2", 2026-11-16, WISPERA-R2), which
+replaces the legacy portrait (tag legacy-crafty-1.0). Made by tools/assets/wispera-art: SDXL-Turbo img2img (strength 0.6, seed 4511) of
+imgWorkArea/portrait-src/wispera/e_8.png -> r60_3.png, then refine_cut.py (cut + procedural cloud, seed 8; numpy/PIL). Cut, matted,
+inpainted and animated by tools/assets/portrait-rig (prep.py, spec/wispera.json, spec/wispera.anim.json).
+Licence: same as the repository's own art (still to be decided in README.md; owner to confirm, including SDXL-Turbo output terms).

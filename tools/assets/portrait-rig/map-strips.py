@@ -17,9 +17,9 @@ from PIL import Image
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
 CELL = 80
-# QA r66: Wispera is a translucent haze (mean alpha ~73), so at 80 px it dissolves into the HUD. hero -> (floor, gamma): every visible
-# pixel's alpha becomes 255*(a/255)**gamma, and pixels fainter than floor are dropped (the thin outer haze). Colour is untouched.
-ALPHA_LIFT = {"wispera": (16, 0.5)}
+# QA r66: the legacy Wispera was a translucent haze (mean alpha ~73) that dissolved into the HUD at 80 px, so it was lifted here. The redrawn
+# Wispera (WISPERA-R2) is opaque, so no hero needs a lift now. Format kept: hero -> (floor, gamma): alpha becomes 255*(a/255)**gamma, fainter than floor dropped.
+ALPHA_LIFT = {}
 
 
 def entry_of(manifest, hero):
