@@ -3093,6 +3093,31 @@ body:has(.settingsBar) {
     margin-bottom: 30px;
   }
 }
+/* QA r70 (844x390): the foe stood behind Strike and Pause at the right edge. The right thumb gets its own gutter: #game (and so the canvas) is 72 px
+   narrower and flush left, the Strike buttons stack in the gutter and Pause (fixed, top right) sits above them, so no button covers the arena.
+   Right-handed layout only; the left-handed one (stick on the right) keeps the overlay. Phones under 740 px wide (667x375) keep the overlay: a narrower
+   canvas shrinks the HUD until the 2v2 names truncate (touch-fight-layout QA r41). */
+@media (pointer: coarse) and (min-width: 740px) and (max-height: 500px) and (orientation: landscape) {
+  html:not([data-touch-side='left']) #game {
+    --strike-gutter: 72px;
+    width: calc((100vw - var(--safe-x)) * var(--canvas-fraction, 1) - var(--strike-gutter));
+    margin-left: env(safe-area-inset-left, 0px);
+    margin-right: auto;
+    overflow: visible;
+  }
+  html:not([data-touch-side='left']) #game canvas {
+    margin-left: 0 !important;
+  }
+  html:not([data-touch-side='left']) #touchStrikes {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    right: calc(8px - var(--strike-gutter));
+  }
+  html:not([data-touch-side='left']) #touchStrikes .touchStrike:first-child {
+    margin-bottom: 0;
+  }
+}
 /* Same lift as the stick on the small phone: above the action bar slots, never over them. */
 @media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
   #touchStrikes {
