@@ -13,6 +13,7 @@ interface Tag {
   call: string;
   callScale: number;
   callSpan: [number, number];
+  callBox: { x: number; y: number; w: number; h: number; headX: number; headY: number };
   flashes: number;
   ko: boolean;
 }
@@ -98,6 +99,11 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   const tagged = await tag(page);
   expect(tagged).toMatchObject({ call: 'TAG!', flashes: 1, ko: false });
   expect(tagged?.callScale).toBeGreaterThan(1);
+  // WP-HF1: the call sits over the drawn head (never on it) and under the top bar's chips.
+  const box = tagged?.callBox;
+  expect(box?.w).toBeGreaterThan(0);
+  expect((box?.y ?? 0)).toBeGreaterThanOrEqual(130);
+  expect((box?.y ?? 0) + (box?.h ?? 0)).toBeLessThanOrEqual(Math.max(box?.headY ?? 0, 144 + (box?.h ?? 0)));
   expect(tagged?.lines[0]?.[0]).toBe('IN Pax');
   expect(tagged?.lines[0]?.[1]).toMatch(/^BENCH Sindarosa [▲≈■●◆] 4\d% \+\d+% red$/);
   expect(tagged?.lines[0]?.[2]).toMatch(/^TAG \d\.\ds$/);

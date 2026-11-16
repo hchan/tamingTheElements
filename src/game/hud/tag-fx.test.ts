@@ -4,9 +4,10 @@ import { BAR_Y, SLOT_SIDE, slotX } from './action-bar';
 import { barFill, dashSegments, sideOffset } from './bars';
 import { chipBar, slimBar } from './slim-hud';
 import {
-  CALL_TICKS, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
-  heroName, mainBarOf, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
+  CALL_HEAD_GAP, CALL_TICKS, CALL_TOP_MIN, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
+  heroName, mainBarOf, placeCall, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
 } from './tag-fx';
+import { viewOfCamera } from './arcade-hud';
 import { TAG_SLOT_X, TAG_SLOT_Y } from './tag-view';
 
 const hero = (o: Partial<TagHero> = {}): TagHero => ({ sprite: 'pax', hp: 400, maxHp: 1000, restCap: 600, dead: false, ...o });
@@ -113,5 +114,66 @@ describe('tag view rules: geometry and motion', () => {
     expect(r).toMatchObject({ ring: 80, slide: 0, alpha: 1 });
     expect(r.core).toBe(a.core);
     expect(flashPose(FLASH_TICKS / 2, 80, true).ring).toBe(80);
+  });
+});
+
+describe('the swap flash on the life bar (WP-HF1)', () => {
+  it('hugs the bar frame: exact rects for both teams', () => {
+    expect(barFlashRect(0)).toEqual({ x: 118, y: 9, w: 464, h: 22 });
+    expect(barFlashRect(1)).toEqual({ x: 698, y: 9, w: 464, h: 22 });
+  });
+  it('stays clear of the portraits and under the name row', () => {
+    const a = barFlashRect(0);
+    const b = barFlashRect(1);
+    expect(a.x).toBeGreaterThanOrEqual(112); // the portrait ends at 110
+    expect(b.x + b.w).toBeLessThanOrEqual(1168); // the portrait starts at 1170
+    expect(a.y - 0.5).toBeGreaterThanOrEqual(0);
+    expect(a.y + a.h + 0.5).toBeLessThanOrEqual(34); // SLIM_ROW_B
+  });
+  it('is one rect for the whole flash, and its alphas only fall', () => {
+    let rim = Infinity;
+    let wash = Infinity;
+    for (let t = 0; t < FLASH_TICKS; t++) {
+      const p = barFlashPose(t, false, false);
+      expect(p.on).toBe(true);
+      expect(p.width).toBe(2);
+      expect(p.rim).toBeLessThanOrEqual(rim);
+      expect(p.wash).toBeLessThanOrEqual(wash);
+      rim = p.rim;
+      wash = p.wash;
+    }
+  });
+  it('is off before it starts and after it ends', () => {
+    for (const t of [-1, FLASH_TICKS, 60]) expect(barFlashPose(t, false, false).on).toBe(false);
+  });
+  it('is white in high contrast and washes less with reduced motion', () => {
+    expect(barFlashPose(0, false, true).color).toBe(0xffffff);
+    expect(barFlashPose(0, false, false).color).not.toBe(0xffffff);
+    expect(barFlashPose(0, true, false).wash).toBeLessThan(barFlashPose(0, false, false).wash);
+  });
+});
+
+describe('the TAG! call placement (WP-HF1)', () => {
+  const out = { x: 0, y: 0 };
+  it('hangs a fixed gap over the drawn head', () => {
+    expect(placeCall(600, 500, 90, 46, [], out)).toEqual({ x: 600, y: 500 - CALL_HEAD_GAP });
+  });
+  it('never rises under the top bar and chips', () => {
+    expect(placeCall(600, 120, 90, 46, [], out).y).toBe(CALL_TOP_MIN);
+  });
+  it('slides clear of a combo readout toward the centre', () => {
+    const combo = { x: 24, y: 110, w: 200, h: 60 };
+    expect(placeCall(150, 150, 90, 46, [combo], out).x).toBeGreaterThanOrEqual(combo.x + combo.w + 90);
+    const right = { x: 1000, y: 110, w: 256, h: 60 };
+    expect(placeCall(1150, 150, 90, 46, [right], out).x).toBeLessThanOrEqual(right.x - 90);
+  });
+  it('leaves a combo that is not in its way alone', () => {
+    expect(placeCall(600, 500, 90, 46, [{ x: 24, y: 110, w: 200, h: 60 }], out).x).toBe(600);
+  });
+});
+
+describe('viewOfCamera', () => {
+  it('builds the world view from scroll and zoom', () => {
+    expect(viewOfCamera({ scrollX: 100, scrollY: 50, width: 1280, height: 720, zoom: 2 }, { x: 0, y: 0, w: 0, h: 0 })).toEqual({ x: 420, y: 230, w: 640, h: 360 });
   });
 });

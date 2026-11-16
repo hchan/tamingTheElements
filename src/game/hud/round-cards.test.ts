@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   PUNCH_SCALE, PUNCH_TICKS, bannerFrame,
-  CARD_CLEAR_TICKS, CARD_IN_TICKS, CARD_SLIDE_PX, bannerColorFor, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame,
+  CARD_CLEAR_TICKS, CARD_IN_TICKS, CARD_SLIDE_PX, bannerBandFor, bannerColorFor, bannerSizeFor, blendOver, contrastRatio, type BandStrip, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame,
 } from './round-cards';
 
 const out = (): CardFrame => ({ alpha: 0, offset: 0 });
@@ -83,5 +83,49 @@ describe('banner frame (QA r20: no ghosted KO or FIGHT!)', () => {
     expect(f.scale).toBe(2);
     expect(f.alpha).toBeCloseTo(1 / 8);
     expect(bannerFrame('ROUND 1', 20, 60, true, 1, 8, 12).alpha).toBe(1);
+  });
+});
+
+describe('small banners on a dark band (WP-HF1)', () => {
+  const hex = (s: string): number => parseInt(s.slice(1), 16);
+  const strips: BandStrip[] = [];
+  const at = (i: number): BandStrip => strips[i] as BandStrip;
+  it('measures WCAG contrast', () => {
+    expect(contrastRatio(0x000000, 0xffffff)).toBeCloseTo(21, 5);
+    expect(contrastRatio(0x777777, 0x777777)).toBeCloseTo(1, 5);
+  });
+  it('colours: bone for small banners, white in high contrast, the big calls unchanged', () => {
+    expect(bannerColorFor('ROUND 2')).toBe('#ece2c8');
+    expect(bannerColorFor('TIME', true)).toBe('#ffffff');
+    expect(bannerColorFor('K.O.', true)).toBe('#fff1c8');
+    expect(bannerColorFor('FIGHT!')).toBe('#ffe9b0');
+  });
+  it('draws no band for the big calls or an empty banner, four strips for the rest', () => {
+    for (const m of ['K.O.', 'DOUBLE K.O.', 'FIGHT!', '']) expect(bannerBandFor(m, 1, false, 640, 280, 360, 100, strips)).toBe(0);
+    for (const m of ['ROUND 2', 'TIME']) expect(bannerBandFor(m, 1, false, 640, 280, 360, 100, strips)).toBe(4);
+  });
+  it('nests the strips 8 px apart and stacks them to the core alpha', () => {
+    bannerBandFor('ROUND 2', 1, false, 640, 280, 360, 100, strips);
+    expect(at(0)).toMatchObject({ x: 640 - 100 - 30, y: 280 - 30 });
+    for (let i = 1; i < 4; i++) expect(at(i).w).toBe(at(i - 1).w - 16);
+    expect(at(3)).toMatchObject({ x: 534, y: 274, w: 212, h: 92 });
+    expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.65, 6);
+    bannerBandFor('ROUND 2', 1, true, 640, 280, 360, 100, strips);
+    expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.8, 6);
+    bannerBandFor('ROUND 2', 0.5, false, 640, 280, 360, 100, strips);
+    expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.325, 6);
+  });
+  it('keeps the text above 4.5:1 over the band on white and black, and 7:1 in high contrast', () => {
+    for (const bg of [0xffffff, 0x000000]) {
+      expect(contrastRatio(hex(bannerColorFor('ROUND 2')), blendOver(0x0a0806, 0.65, bg))).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(hex(bannerColorFor('ROUND 2', true)), blendOver(0x0a0806, 0.8, bg))).toBeGreaterThanOrEqual(7);
+    }
+  });
+  it('stays within the play area', () => {
+    const n = bannerBandFor('TIME', 1, false, 640, 285, 380, 140, strips);
+    for (let i = 0; i < n; i++) {
+      expect(at(i).y).toBeGreaterThanOrEqual(100);
+      expect(at(i).y + at(i).h).toBeLessThanOrEqual(632);
+    }
   });
 });

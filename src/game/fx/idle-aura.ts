@@ -91,9 +91,16 @@ export interface IdleCtx {
   dim: number;
   /** Ticks since an air strike granted by the StrikeBudget began, or -1. */
   strike: number;
+  /** Screen y of the crowd wall's foot: parts and lines fade out above it (WP-HF1: no ghost over the crowd). -Infinity = no wall. */
+  wallY: number;
 }
 export function makeCtx(): IdleCtx {
-  return { age: 0, stand: 1, reduced: false, tier: 'full', salt: 0, face: 1, noGround: false, highContrast: false, dim: 1, strike: -1 };
+  return { age: 0, stand: 1, reduced: false, tier: 'full', salt: 0, face: 1, noGround: false, highContrast: false, dim: 1, strike: -1, wallY: Number.NEGATIVE_INFINITY };
+}
+
+/** 1 below the wall's foot, 0 from 24 px above it (a jumping hero's aura must not draw over the crowd). */
+export function wallFade(y: number, wallY: number): number {
+  return Number.isFinite(wallY) ? sstep(wallY - 24, wallY + 8, y) : 1;
 }
 
 const COL: Readonly<Record<IdleElement, number>> = {
@@ -289,11 +296,11 @@ export function idleParts(look: IdleLook, b: Box, c: IdleCtx, out: IdlePart[], s
     }
     i = put(out, i, cap, cx, b.y + 0.15 * b.h, 5 * sc + 2, (c.reduced ? 0.3 : 0.5 * tri(t / 150)) * inten, 0, 'glint', COL.void, true, false);
   }
-  return finish(b, el, out, start, i);
+  return finish(b, el, out, start, i, c.wallY);
 }
 
 /** Final pass: keep parts near the box, soften the head zone and cap the alpha over the inner 70 percent. */
-function finish(b: Box, el: IdleElement, out: IdlePart[], start: number, end: number): number {
+function finish(b: Box, el: IdleElement, out: IdlePart[], start: number, end: number, wallY: number): number {
   const x0 = b.x - BOX_MARGIN * b.w;
   const x1 = b.x + (1 + BOX_MARGIN) * b.w;
   const y0 = b.y - BOX_MARGIN * b.h;
@@ -314,6 +321,12 @@ function finish(b: Box, el: IdleElement, out: IdlePart[], start: number, end: nu
     for (let i = start; i < end; i++) {
       const p = out[i];
       if (p && p.x >= b.x + 0.15 * b.w && p.x <= b.x + 0.85 * b.w && p.y >= b.y + 0.15 * b.h && p.y <= b.y + 0.85 * b.h) p.alpha *= f;
+    }
+  }
+  if (Number.isFinite(wallY)) {
+    for (let i = start; i < end; i++) {
+      const p = out[i];
+      if (p) p.alpha *= wallFade(p.y, wallY);
     }
   }
   return end - start;
@@ -422,6 +435,7 @@ export function idleLines(look: IdleLook, b: Box, c: IdleCtx, lines: Float32Arra
     lines[k + 1] = clamp(lines[k + 1] ?? 0, y0, y1);
     lines[k + 2] = clamp(lines[k + 2] ?? 0, x0, x1);
     lines[k + 3] = clamp(lines[k + 3] ?? 0, y0, y1);
+    if (Number.isFinite(c.wallY)) lines[k + 4] = (lines[k + 4] ?? 0) * wallFade(Math.min(lines[k + 1] ?? 0, lines[k + 3] ?? 0), c.wallY);
   }
   return out;
 }

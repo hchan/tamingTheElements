@@ -2,13 +2,15 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
-  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, benchBarOf, benchLabel, callPose,
-  callText, dashes, flashPose, mainBarOf, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
+  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose,
+  callText, dashes, flashPose, mainBarOf, placeCall, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
-import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
+import { PILL_BAR_H, PILL_W, pillWord, tagPill } from './slim-hud';
 import { coreDisplayWidth, resolutionOf } from '../boot/viewport';
 import { BANNER_WAIT_TICKS, LaneWait, centreBusy, cutUp } from './banner-lanes';
 import { styleCombatText } from './combat-text';
+import { COMBO_RECTS_KEY, TAG_CALL_KEY, viewOfCamera } from './arcade-hud';
+import { arcadeHeroScale } from '../views/hero-scale';
 
 /**
  * Phaser side of the Arcade tag-team view (WP-arcade-tag-view, FUN-DESIGN 2.6 and section 3). The weather view mounts it
@@ -39,6 +41,17 @@ const FLASH_DEPTH = 4.5;
 const GOLD = 0xb39653;
 const ASH = 0xcfc4a8;
 const CALL_Y = 210;
+const camView = { x: 0, y: 0, w: 0, h: 0 };
+const spare: HudBox = { x: 0, y: 0, w: 0, h: 0 };
+/** The shared call rect (created on first use); a scratch rect when the scene has no registry. */
+function callRect(registry: Phaser.Data.DataManager | undefined): HudBox {
+  if (!registry) return spare;
+  let r = registry.get(TAG_CALL_KEY) as HudBox | undefined;
+  if (!r) registry.set(TAG_CALL_KEY, (r = { x: 0, y: 0, w: 0, h: 0 }));
+  return r;
+}
+const callPos = { x: 0, y: 0 };
+interface HudBox { x: number; y: number; w: number; h: number }
 const CALL_PX = 46;
 /** Least gap between the call's text and the left or right screen edge, in Hud px. */
 export const CALL_MARGIN = 16;
@@ -58,6 +71,8 @@ export interface TagState {
   readonly callScale: number;
   /** The call's left and right edges in Hud px at its current scale (0, 0 when it is hidden): always inside 0..1280. */
   readonly callSpan: readonly [number, number];
+  /** The call's box and the drawn head's top centre it hangs over, in Hud px (zeros when hidden). */
+  readonly callBox: { readonly x: number; readonly y: number; readonly w: number; readonly h: number; readonly headX: number; readonly headY: number };
   readonly flashes: number;
   readonly ko: boolean;
 }
@@ -140,6 +155,8 @@ export function mountTagView(
   /** The entering hero's world spot (top centre): the TAG! call hangs over it, a chevron points down at it. */
   let callAt: { x: number; y: number; id: number } | undefined;
   let callReduced = false;
+  let headX = 0;
+  let headY = 0;
   let callKo = false;
   let shownTick = -1;
   /** The entrance call waits (up to LANE_MAX_WAIT_TICKS) while the super cut-in or the round banner holds the centre. */
@@ -149,6 +166,8 @@ export function mountTagView(
   /** Live entrance flashes: centre, height, team, start tick, KO. */
   /** The view tick each team's incoming-hero bar flash started (-FLASH_TICKS when none). */
   const barFlash: [number, number] = [-FLASH_TICKS, -FLASH_TICKS];
+  const flashRect = { x: 0, y: 0, w: 0, h: 0 };
+  const barPose = { on: false, rim: 0, wash: 0, color: 0, width: 2 };
   const flashes: { x: number; y: number; h: number; team: number; from: number; ko: boolean }[] = [];
 
   const red = (g: Phaser.GameObjects.Graphics, b: Bar, h: Hero): void => {
@@ -177,14 +196,12 @@ export function mountTagView(
           g.lineStyle(1, GOLD, 0.9).strokeRect(...frame);
         }
       }
-      // The swap lands on the HUD too: a bright frame round the incoming hero's bar that grows out and fades (steady, then gone, with reduced motion).
+      // The swap lands on the HUD too: a thin rim hugging the incoming hero's bar frame, with a white wash, both fading out (WP-HF1: it never grows).
       const bt = view.tick - (barFlash[team] ?? -FLASH_TICKS);
-      if (active && bt >= 0 && bt < FLASH_TICKS) {
-        const k = 1 - bt / FLASH_TICKS;
-        const grow = reduced ? 0 : Math.round(10 * (1 - k));
-        g.lineStyle(5, 0x000000, 0.6 * k).strokeRect(main.minX - 5 - grow, main.y - 14 - grow, main.maxX - main.minX + 10 + 2 * grow, 28 + 2 * grow);
-        g.lineStyle(3, 0xffffff, k).strokeRect(main.minX - 5 - grow, main.y - 14 - grow, main.maxX - main.minX + 10 + 2 * grow, 28 + 2 * grow);
-        g.fillStyle(0xffffff, 0.35 * k).fillRect(main.minX - 2, main.y - 11, main.maxX - main.minX + 4, 22);
+      if (active && barFlashPose(bt, reduced, highContrast, barPose).on) {
+        const r = barFlashRect(team, flashRect);
+        g.fillStyle(0xffffff, barPose.wash).fillRect(r.x, r.y, r.w, r.h);
+        g.lineStyle(barPose.width, barPose.color, barPose.rim).strokeRect(r.x, r.y, r.w, r.h);
       }
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);
@@ -229,19 +246,30 @@ export function mountTagView(
     const age = now - callFrom;
     fx.clear();
     if (call?.visible && callAt) {
+      let drawn = 1;
       view.forEachCharacter((c) => {
-        if (c.id === callAt?.id) callAt = { id: c.id, x: c.x + c.w / 2, y: c.y };
+        if (c.id !== callAt?.id) return;
+        drawn = arcadeHeroScale(c.h);
+        callAt = { id: c.id, x: c.x + c.w / 2, y: c.y - c.h * (drawn - 1) };
       });
-      // World to the Hud's 1280x720 frame, then clamped under the top bar and inside the screen.
-      const wv = (arena.cameras as Phaser.Cameras.Scene2D.CameraManager | undefined)?.main.worldView;
-      if (wv) {
-        const sx = ((callAt.x - wv.x) / (wv.width || 1)) * 1280;
-        const sy = Math.max(SLIM_H + 50, ((callAt.y - wv.y) / (wv.height || 1)) * 720 - 120);
-        call.setPosition(Math.max(120, Math.min(1160, sx)), sy);
+      // World to the Hud's 1280x720 frame (the camera pans); the call hangs a fixed gap over the DRAWN head (Arcade sprites grow
+      // about the feet), under the chips, and clear of the combo readouts. The chevron points at that head.
+      const cam = (arena.cameras as Phaser.Cameras.Scene2D.CameraManager | undefined)?.main;
+      if (cam) {
+        const v = viewOfCamera(cam, camView);
+        const hx = ((callAt.x - v.x) / (v.w || 1)) * 1280;
+        const hy = ((callAt.y - v.y) / (v.h || 1)) * 720;
+        headX = hx;
+        headY = hy;
+        const avoid = (arena.registry as Phaser.Data.DataManager | undefined)?.get(COMBO_RECTS_KEY) as HudBox[] | undefined;
+        const at = placeCall(hx, hy, call.displayWidth / 2, call.displayHeight, avoid ?? [], callPos);
+        call.setPosition(at.x, at.y);
+        // The chevron waits with the call (held under a banner).
+        if (!held) {
+          fx.fillStyle(0x000000, 0.6).fillTriangle(hx - 16, hy - 24, hx + 16, hy - 24, hx, hy - 4);
+          fx.fillStyle(callKo ? GOLD : 0xffffff, 1).fillTriangle(hx - 12, hy - 22, hx + 12, hy - 22, hx, hy - 8);
+        }
       }
-      // The chevron waits with the call (held under a banner); the text is placed (and clamped) every frame, held or not.
-      if (!held) fx.fillStyle(0x000000, 0.6).fillTriangle(callAt.x - 16, callAt.y - 24, callAt.x + 16, callAt.y - 24, callAt.x, callAt.y - 4);
-      if (!held) fx.fillStyle(callKo ? GOLD : 0xffffff, 1).fillTriangle(callAt.x - 12, callAt.y - 22, callAt.x + 12, callAt.y - 22, callAt.x, callAt.y - 8);
     }
     if (call?.visible && held) call.setAlpha(0).setScale(callPose(0, callReduced).scale);
     else if (call?.visible) {
@@ -256,6 +284,14 @@ export function mountTagView(
       const half = call.displayWidth / 2;
       call.x = Math.max(CALL_MARGIN + half, Math.min(1280 - CALL_MARGIN - half, call.x));
     }
+    // Publish the call's rect (w 0 when gone) so damage numbers keep clear of it.
+    const rect = callRect(arena.registry);
+    if (call?.visible && call.alpha > 0) {
+      rect.x = call.x - call.displayWidth / 2;
+      rect.y = call.y - call.displayHeight / 2;
+      rect.w = call.displayWidth;
+      rect.h = call.displayHeight;
+    } else rect.w = 0;
     for (let i = flashes.length - 1; i >= 0; i--) {
       const f = flashes[i];
       if (!f) continue;
@@ -330,6 +366,7 @@ export function mountTagView(
     arena.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     hud.events.off('create', build).off('shutdown', off).off('destroy', off);
     states.delete(arena);
+    (arena.registry as Phaser.Data.DataManager | undefined)?.remove(TAG_CALL_KEY);
     for (const o of [fx, parts?.g, parts?.call, ...(parts?.texts.flat() ?? [])]) o?.destroy();
     parts = undefined;
   };
@@ -342,6 +379,7 @@ export function mountTagView(
     return {
       lines: lines.map((l) => [...l]), call: parts?.call.visible ? parts.call.text : '', callScale: parts?.call.scaleX ?? 1,
       callSpan: parts?.call.visible ? [parts.call.x - parts.call.displayWidth / 2, parts.call.x + parts.call.displayWidth / 2] : [0, 0],
+      callBox: parts?.call.visible ? { x: parts.call.x - parts.call.displayWidth / 2, y: parts.call.y - parts.call.displayHeight / 2, w: parts.call.displayWidth, h: parts.call.displayHeight, headX, headY } : { x: 0, y: 0, w: 0, h: 0, headX: 0, headY: 0 },
       flashes: flashes.length, ko: flashes.some((f) => f.ko),
     };
   });

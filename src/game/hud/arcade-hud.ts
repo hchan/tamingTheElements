@@ -292,3 +292,17 @@ export function clampNumber(cx: number, bottomY: number, halfW: number, h: numbe
   }
   return { x, y };
 }
+
+/** Registry key: the live TAG!/NAME IN! call rect in HUD px (replaced in place; w 0 when no call is up). Numbers avoid it. */
+export const TAG_CALL_KEY = 'tte.tagCall';
+/** Registry key: the visible combo readouts' rects in HUD px (an array reused every frame). The TAG! call slides clear of them. */
+export const COMBO_RECTS_KEY = 'tte.comboRects';
+
+/** The camera's world view built from scroll and zoom (the camera's own `worldView` lags a frame). `out` is filled. */
+export function viewOfCamera(c: { scrollX: number; scrollY: number; width: number; height: number; zoom: number }, out: { x: number; y: number; w: number; h: number }): { x: number; y: number; w: number; h: number } {
+  out.w = c.width / c.zoom;
+  out.h = c.height / c.zoom;
+  out.x = c.scrollX + c.width / 2 - out.w / 2;
+  out.y = c.scrollY + c.height / 2 - out.h / 2;
+  return out;
+}

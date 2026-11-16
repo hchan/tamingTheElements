@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { EntityFlag, ROUND_TIMER_TICKS, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
-import { bannerColorFor, bannerFrame, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type CardFrame } from './round-cards';
+import { BANNER_BAND_COLOR, BANNER_BAND_ALPHA, BANNER_BAND_ALPHA_HC, bannerBandFor, bannerColorFor, bannerFrame, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type BandStrip, type CardFrame } from './round-cards';
 import { heroName } from './tag-fx';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH, phoneBoost, resolutionOf } from '../boot/viewport';
@@ -57,6 +57,8 @@ export interface RoundState {
   readonly timerColor: string;
   /** The round-start name cards (left, right) while shown, else empty strings. */
   readonly cards: readonly [string, string];
+  /** Core alpha of the dark band behind a small banner drawn now (0 when there is none). */
+  readonly band: number;
   readonly won: readonly [number, number];
   /** The result card under the banner ("YOU WIN" and what happened). */
   readonly result: ResultState;
@@ -86,10 +88,10 @@ export function mountRoundView(
   // own chunk (vite.config.ts), so the Arena pays only for one more argument.
   const views = mountWeatherView(arena, hud, view, say, prefs, fighters && mountDefenceView(arena, view, say, prefs, fighters));
   const results = mountResultView(hud, view, prefs);
-  const banner = { main: '', sub: '', from: 0, until: 0, reduced: false };
+  const banner = { main: '', sub: '', from: 0, until: 0, reduced: false, hc: false };
   const announcer = new RoundAnnouncer({
     banner(main, sub, from, until): void {
-      Object.assign(banner, { main, sub, from, until, reduced: prefs().reduceMotion });
+      Object.assign(banner, { main, sub, from, until, reduced: prefs().reduceMotion, hc: prefs().highContrast });
     },
     say,
   }, () => view.arcade()?.sudden === true, () => results.result.detail());
@@ -106,12 +108,15 @@ export function mountRoundView(
 
   let parts: {
     main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics; pipLabels: Phaser.GameObjects.Text[];
-    halo: Phaser.GameObjects.Graphics; cards: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
+    halo: Phaser.GameObjects.Graphics; band: Phaser.GameObjects.Graphics; cards: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
   } | undefined;
   const cardState: CardFrame = { alpha: 0, offset: 0 };
   const cardNames: [string, string] = ['', ''];
   const cardColors: [string, string] = ['#e8dcc0', '#e8dcc0'];
   let shownHalo = -1;
+  const strips: BandStrip[] = [];
+  let shownBand = '';
+  let bandCore = 0;
   let shownSize = 1;
   let cardsFor = -1;
   let shownTimer = '';
@@ -137,6 +142,27 @@ export function mountRoundView(
     parts.halo.clear().setVisible(q > 0);
     for (let i = 0; i < 6 && q > 0; i++) {
       parts.halo.fillStyle(0xffd88a, (q / 50) * 0.1).fillEllipse(TIMER_X, BANNER_Y, 760 - i * 90, 190 - i * 22);
+    }
+  }
+
+  /** The feathered dark band behind a small banner, redrawn only when its quantised alpha or bounds change. */
+  function drawBand(on: boolean, fade: number): void {
+    if (!parts) return;
+    const m = parts.main;
+    const s = parts.sub;
+    const subOn = s.visible && banner.sub !== '';
+    const halfW = Math.max((m.displayWidth) / 2, subOn ? s.displayWidth / 2 : 0);
+    const top = m.y - m.displayHeight / 2;
+    const bottom = subOn ? s.y + s.displayHeight : m.y + m.displayHeight / 2;
+    const n = on ? bannerBandFor(banner.main, fade, banner.hc, TIMER_X, top, bottom, halfW, strips) : 0;
+    bandCore = n > 0 ? (banner.hc ? BANNER_BAND_ALPHA_HC : BANNER_BAND_ALPHA) * fade : 0;
+    const key = n === 0 ? '' : `${String(Math.round(fade * 50))}|${String(Math.round(top))}|${String(Math.round(bottom))}|${String(Math.round(halfW))}|${banner.hc ? "h" : "n"}`;
+    if (key === shownBand) return;
+    shownBand = key;
+    parts.band.clear().setVisible(n > 0);
+    for (let i = 0; i < n; i++) {
+      const r = strips[i];
+      if (r) parts.band.fillStyle(BANNER_BAND_COLOR, r.a).fillRect(r.x, r.y, r.w, r.h);
     }
   }
 
@@ -197,15 +223,19 @@ export function mountRoundView(
     if (on && size !== shownSize) {
       shownSize = size;
       // Big calls get a hard, thick outline so they stay solid over floor detail and damage numbers.
-      parts.main.setFontSize(MAIN_PX * size).setStroke('#0a0806', size > 1 ? 10 : 4);
+      parts.main.setFontSize(MAIN_PX * size).setStroke('#0a0806', size > 1 ? 10 : 7);
     }
-    if (on) parts.main.setColor(bannerColorFor(banner.main));
-    parts.main.setVisible(on).setScale(scale).setAlpha(fade * (size > 1 ? 1 : 0.9));
+    if (on) {
+      parts.main.setColor(bannerColorFor(banner.main, banner.hc));
+      parts.sub.setColor(banner.hc ? '#ffffff' : '#ece2c8');
+    }
+    parts.main.setVisible(on).setScale(scale).setAlpha(fade);
     parts.sub.setY(BANNER_Y + SUB_GAP + (size > 1 ? Math.round(MAIN_PX * (size - 1) * 0.55) : 0));
     drawHalo(on ? haloFor(banner.main, tick - clockFrom(), banner.reduced) : 0);
     drawCards(on, tick);
     // the result card says who won the round, so its duplicate under the banner is hidden while the card is up
     parts.sub.setVisible(on && banner.sub !== '' && !results.result.state().visible).setAlpha(Math.max(0, fade));
+    drawBand(on, Math.max(0, fade));
     // Before its first tick (round 0) the world has no timer yet: show the full one round 1 starts with.
     const left = ar.round === 0 ? ROUND_TIMER_TICKS : ar.timer;
     const style = timerStyle(left, ar.sudden);
@@ -224,7 +254,7 @@ export function mountRoundView(
 
   const build = (): void => {
     parts = {
-      main: text(MAIN_PX, BANNER_Y, 8, true).setOrigin(0.5),
+      main: text(MAIN_PX, BANNER_Y, 14, true).setOrigin(0.5),
       sub: text(SUB_PX, BANNER_Y + SUB_GAP, 6, true).setOrigin(0.5, 0),
       timer: text(TIMER_PX, TIMER_Y, 5).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
@@ -232,6 +262,7 @@ export function mountRoundView(
       // One WINS caption centred under each side's pair, so a count is never read as super charge.
       pipLabels: ([0, 1] as const).map((team) => text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setFontSize(Math.round(PIP_LABEL_PX * phoneBoost(hud, 1.7, 1100))).setText('WINS').setPosition(pipPairCentre(team), PIP_Y + PIP_R + 3)),
       halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
+      band: hud.add.graphics().setDepth(DEPTH - 2).setVisible(false),
       cards: [
         text(CARD_PX, CARD_Y, 12, true).setOrigin(0, 0.5).setVisible(false),
         text(CARD_PX, CARD_Y, 12, true).setOrigin(1, 0.5).setVisible(false),
@@ -241,7 +272,7 @@ export function mountRoundView(
     // The probe draws first, so it reads the current tick even between two rendered frames.
     states.set(hud, () => {
       draw();
-      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, timerColor: shownColor, cards: [parts?.cards[0].visible ? cardNames[0] : '', parts?.cards[1].visible ? cardNames[1] : ''], won: [shownWon[0], shownWon[1]], result: results.result.state() };
+      return { main: banner.main, sub: banner.sub, visible: parts?.main.visible ?? false, scale, timer: shownTimer, timerColor: shownColor, cards: [parts?.cards[0].visible ? cardNames[0] : '', parts?.cards[1].visible ? cardNames[1] : ''], band: bandCore, won: [shownWon[0], shownWon[1]], result: results.result.state() };
     });
     draw();
   };
@@ -252,7 +283,7 @@ export function mountRoundView(
     states.delete(hud);
     hud.registry.set('tte.banner', false);
     results.destroy();
-    if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, ...parts.pipLabels, parts.halo, ...parts.cards]) o.destroy();
+    if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, ...parts.pipLabels, parts.halo, parts.band, ...parts.cards]) o.destroy();
     parts = undefined;
   };
   if (hud.sys.isActive()) build();

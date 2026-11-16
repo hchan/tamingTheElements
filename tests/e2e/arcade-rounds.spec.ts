@@ -13,6 +13,7 @@ interface Rounds {
   scale: number;
   timer: string;
   timerColor: string;
+  band: number;
   won: [number, number];
 }
 
@@ -59,6 +60,7 @@ test('Arcade Versus: ROUND 1, FIGHT!, the timer, K.O. PERFECT, the result with a
   const [foe] = await characters(page, 1);
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.setHp(${String(foe?.id)}, 0); a.step(1); })()`);
   expect(await rounds(page)).toMatchObject({ main: 'K.O.', sub: 'PERFECT', visible: true });
+  expect((await rounds(page))?.band).toBe(0);
   await step(page, KO_TO_RESULT);
   expect(await rounds(page)).toMatchObject({ main: 'PERFECT', sub: 'YOU WIN ROUND 1', won: [1, 0] });
   await step(page, 45);
@@ -69,6 +71,8 @@ test('Arcade Versus: ROUND 1, FIGHT!, the timer, K.O. PERFECT, the result with a
   // It has the whole 1.4 s intro to read: still ROUND 2 a second in, then FIGHT!.
   await step(page, 50);
   expect(await rounds(page)).toMatchObject({ main: 'ROUND 2', visible: true });
+  // WP-HF1: a small banner sits on the dark band, the big calls do not.
+  expect((await rounds(page))?.band).toBeGreaterThan(0);
   await step(page, 20);
   expect(await rounds(page)).toMatchObject({ main: 'FIGHT!', visible: true });
   expect(errors).toEqual([]);

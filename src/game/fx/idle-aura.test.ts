@@ -5,7 +5,7 @@ import type { Box } from '../views/hero-scale';
 import { AURAS } from './ability-aura';
 import {
   BOX_MARGIN, INNER_ALPHA_MAX, LINES, LINE_STRIDE, MAX_PARTS_TOTAL, PARTS, StrikeBudget, TIER_CAPS, IDLE_SHAPES,
-  fxTier, idleLines, idleParts, makeCtx, makeParts, strikeAge, type IdleCtx, type IdleTier,
+  fxTier, idleLines, idleParts, makeCtx, makeParts, strikeAge, wallFade, type IdleCtx, type IdleTier,
 } from './idle-aura';
 import { STATUS_LOOKS } from './status-fx';
 
@@ -207,6 +207,39 @@ describe('buffers', () => {
     const before = JSON.stringify(out.slice(0, n1));
     idleParts(ELEMENT_IDLE_DEFAULTS.water, BIG, ctx({ age: 5 }), out, n1);
     expect(JSON.stringify(out.slice(0, n1))).toBe(before);
+  });
+});
+
+describe('crowd wall (WP-HF1)', () => {
+  const HIGH: Box = { x: 100, y: 60, w: 60, h: 100 }; // a jumping hero: the whole box is above the wall foot
+  it('wallFade is 0 well above the wall foot, 1 below it, and off without a wall', () => {
+    expect(wallFade(100, 184)).toBe(0);
+    expect(wallFade(160, 184)).toBe(0);
+    expect(wallFade(192, 184)).toBe(1);
+    expect(wallFade(100, Number.NEGATIVE_INFINITY)).toBe(1);
+    expect(wallFade(176, 184)).toBeGreaterThan(0);
+    expect(wallFade(176, 184)).toBeLessThan(1);
+  });
+  it('draws nothing visible over the crowd for any look', () => {
+    for (const look of looks) {
+      const out = makeParts(MAX_PARTS_TOTAL);
+      const n = idleParts(look, HIGH, ctx({ age: 40, wallY: 184 }), out, 0);
+      for (let i = 0; i < n; i++) if (at(out, i).y < 160) expect(at(out, i).alpha).toBe(0);
+      const lines = new Float32Array(160 * LINE_STRIDE);
+      const m = idleLines(look, HIGH, ctx({ age: 40, wallY: 184, strike: 1 }), lines, 0);
+      for (let k = 0; k < m; k++) if (Math.min(at(lines, k * LINE_STRIDE + 1), at(lines, k * LINE_STRIDE + 3)) < 160) expect(at(lines, k * LINE_STRIDE + 4)).toBe(0);
+    }
+  });
+  it('leaves a hero on the floor unchanged', () => {
+    const FLOOR: Box = { x: 100, y: 260, w: 60, h: 100 };
+    for (const look of looks) {
+      const a = makeParts(MAX_PARTS_TOTAL);
+      const b = makeParts(MAX_PARTS_TOTAL);
+      const na = idleParts(look, FLOOR, ctx({ age: 40 }), a, 0);
+      const nb = idleParts(look, FLOOR, ctx({ age: 40, wallY: 184 }), b, 0);
+      expect(nb).toBe(na);
+      expect(JSON.stringify(b.slice(0, nb))).toBe(JSON.stringify(a.slice(0, na)));
+    }
   });
 });
 

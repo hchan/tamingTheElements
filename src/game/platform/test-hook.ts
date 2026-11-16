@@ -89,7 +89,7 @@ export interface ArenaProbe {
    * Arcade only (async: its code is a lazy chunk): the round HUD as drawn, i.e. the banner texts, whether the banner is
    * up and its scale, the timer text and the round wins shown per team; undefined before it is built and in Classic.
    */
-  rounds(): Promise<{ main: string; sub: string; visible: boolean; scale: number; timer: string; won: readonly [number, number] } | undefined>;
+  rounds(): Promise<{ main: string; sub: string; visible: boolean; scale: number; timer: string; band: number; won: readonly [number, number] } | undefined>;
   /**
    * Arcade only (async: a lazy chunk): the defence view's last frame (WP-arcade-defence-view): visible afterimages, trail
    * dots, guard shields, guard bars (their meters), the projectiles of the last tick, live sparks and rings, the words
@@ -115,7 +115,8 @@ export interface ArenaProbe {
    * whether one is a KO entrance), and the swap-slot caption; undefined in Classic and 1v1.
    */
   tag(): Promise<{
-    lines: readonly (readonly string[])[]; call: string; callScale: number; flashes: number; ko: boolean;
+    lines: readonly (readonly string[])[]; call: string; callScale: number; callSpan: readonly [number, number];
+    callBox: { x: number; y: number; w: number; h: number; headX: number; headY: number }; flashes: number; ko: boolean;
   } | undefined>;
   /**
    * Arcade only (async: a lazy chunk): the terrain view's last frame (WP-arcade-terrain-view): the stage drawn (1 fire ..
