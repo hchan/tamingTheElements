@@ -95,9 +95,21 @@ test.describe('phone 667x375 first-run card', () => {
 
 test.describe('phone portrait, Play anyway', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  // QA r78: the control is a real button whose accessible name contains its visible text "Play anyway" (label in name).
+  test('the rotate prompt exposes Play anyway as a keyboard-reachable button', async ({ page }) => {
+    await fight(page);
+    if (shotDir) await page.screenshot({ path: `${shotDir}/port-prompt.png` });
+    const btn = page.getByRole('button', { name: 'Play anyway' });
+    await expect(btn).toHaveCount(1);
+    expect(await page.evaluate(`document.getElementById('rotateDismiss').tagName`)).toBe('BUTTON');
+    await btn.focus();
+    await expect(btn).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#rotateOverlay')).toBeHidden();
+  });
   test('the arena canvas fills the screen width and no touch button covers it', async ({ page }) => {
     await fight(page);
-    await page.getByRole('button', { name: 'Play in portrait anyway' }).tap();
+    await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
     if (shotDir) await page.screenshot({ path: `${shotDir}/port-play.png` });
     const canvas = await box(page, '#game canvas');
     expect(canvas.w).toBeGreaterThanOrEqual(388);

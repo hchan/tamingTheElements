@@ -192,6 +192,27 @@
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {
+  /* Scroll cue (QA r78): the slim jump row scrolls sideways with its scrollbar hidden, so a sticky fade-and-chevron sits at the right edge
+     while chips are still hidden; at the end of the row it rests after the last chip and covers nothing. */
+  #menu .helpJump::after {
+    content: '\203A';
+    flex: 0 0 auto;
+    position: sticky;
+    right: 0;
+    width: 1.8em;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.3em;
+    box-sizing: border-box;
+    color: #ffd678;
+    font-weight: 700;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(20, 16, 48, 0), rgba(20, 16, 48, 0.95) 70%);
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
   /* The extra top Back link pushes the compact tab row down; the foot Back link remains. */
   #menu a.menuLink.helpBackTop {
     display: none;

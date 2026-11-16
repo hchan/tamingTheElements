@@ -47,6 +47,23 @@ test('Help at 844x390: compact header, one row of tabs, first heading in the top
   expect(errors).toEqual([]);
 });
 
+// QA r78: at 568x320 the Jump to row scrolls sideways; when chips are clipped a visible cue (a sticky chevron) sits at its right edge.
+test('Help at 568x320: the clipped Jump to row shows a scroll cue', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 568, height: 320 });
+  await page.goto('/?seed=7#help');
+  await waitForRoute(page, '#help');
+  const m = await page.evaluate<{ clipped: boolean; cue: string; w: string }>(
+    `(() => { const n = document.querySelector('nav.helpJump'); const s = getComputedStyle(n, '::after');
+      return { clipped: n.scrollWidth > n.clientWidth + 1, cue: s.content, w: s.width }; })()`,
+  );
+  expect(m.clipped).toBe(true);
+  expect(m.cue).toContain('›');
+  expect(parseFloat(m.w)).toBeGreaterThan(10);
+  if (process.env['SHOT_DIR']) await page.screenshot({ path: `${process.env['SHOT_DIR']}/help-568.png` });
+  expect(errors).toEqual([]);
+});
+
 // QA r51 #11: no elemental orb (crest) over the hero art on the Help page.
 test('Help has no crest orb over the hero art', async ({ page }) => {
   await page.goto('/?seed=7#help');
