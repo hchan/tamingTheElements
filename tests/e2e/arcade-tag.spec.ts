@@ -285,6 +285,36 @@ for (const [w, h] of [[1280, 720], [844, 390], [667, 375]] as const) {
   });
 }
 
+// WP-HF2 (HF2-1): the KO entrance call is smaller, capped at 360 px, pops from 1.25x at most, stays on screen and off the live damage numbers.
+for (const [w, h] of [[1280, 720], [844, 390]] as const) {
+  test(`KO entrance call stays small and clear of damage numbers at ${String(w)}x${String(h)}`, async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.setViewportSize({ width: w, height: h });
+    await fight2v2(page);
+    const [active] = await characters(page, 0);
+    await page.evaluate(`window.__TTE__.arena.setHp(${String(active?.id)}, 0)`);
+    let done = 0;
+    for (const n of [1, 2, 5, 12]) {
+      await step(page, n);
+      done += n;
+      const t = await tag(page);
+      const b = t?.callBox;
+      expect(t?.call).toBe('PAX IN!');
+      expect(b?.w).toBeLessThanOrEqual(360 + 0.5);
+      expect(b?.x).toBeGreaterThanOrEqual(16);
+      expect((b?.x ?? 0) + (b?.w ?? 0)).toBeLessThanOrEqual(1280 - 16);
+      expect(t?.callScale).toBeLessThanOrEqual(1.26);
+      const boxes = await page.evaluate<{ x: number; y: number; w: number; h: number }[]>(`window.__TTE__.arena.fx().numberBoxes`);
+      for (const nb of boxes) {
+        const hit = b && nb.x < b.x + b.w && nb.x + nb.w > b.x && nb.y < b.y + b.h && nb.y + nb.h > b.y;
+        expect(hit).toBeFalsy();
+      }
+      if (process.env['SHOT_DIR']) await page.screenshot({ path: `${process.env['SHOT_DIR']}/ko-in-${String(w)}-t${String(done)}.png` });
+    }
+    expect(errors).toEqual([]);
+  });
+}
+
 // WP-HF2 (HF2-2): the swap flash on the incoming hero's life bar is a rim and a sweeping glint, never a wash: the bar outside the
 // stripe is as bright as at idle (a wash made a light bar look dimmed, QA r69), and the stripe is clearly brighter than idle.
 test('swap flash: a glint stripe on the bar, the rest of the bar not dimmed', async ({ page }, info) => {

@@ -4,7 +4,7 @@ import { BAR_Y, SLOT_SIDE, slotX } from './action-bar';
 import { barFill, dashSegments, sideOffset } from './bars';
 import { chipBar, slimBar } from './slim-hud';
 import {
-  CALL_HEAD_GAP, CALL_TICKS, GLINT_TICKS, GLINT_W, CALL_TOP_MIN, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
+  CALL_HEAD_GAP, CALL_TICKS, GLINT_TICKS, GLINT_W, CALL_TOP_MIN, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callFit, callPose, callText, CALL_KO_MAX_W, dashes, flashPose,
   heroName, mainBarOf, placeCall, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
 } from './tag-fx';
 import { viewOfCamera } from './arcade-hud';
@@ -95,6 +95,15 @@ describe('tag view rules: geometry and motion', () => {
     expect(callPose(0, false).scale).toBeCloseTo(1.6);
     expect(callPose(8, false).scale).toBe(1);
     expect(callPose(0, true).scale).toBe(1);
+    expect(callPose(0, false, true).scale).toBeCloseTo(1.25);
+    expect(callPose(-5, false, true).scale).toBeCloseTo(1.25);
+    expect(callPose(-5, false).scale).toBeCloseTo(1.6);
+    expect(callPose(8, false, true).scale).toBe(1);
+    expect(callPose(0, true, true).scale).toBe(1);
+    expect(callFit(300, 1.25, true)).toBeCloseTo(1.2);
+    expect(callFit(200, 1.25, true)).toBe(1.25);
+    expect(callFit(500, 1, true) * 500).toBeCloseTo(CALL_KO_MAX_W);
+    expect(callFit(500, 1.6, false)).toBe(1.6);
     expect(callPose(10, false).alpha).toBe(1);
     expect(callPose(CALL_TICKS - 6, false).alpha).toBe(0.5);
     expect(callPose(CALL_TICKS, false).alpha).toBe(0);

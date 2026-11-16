@@ -130,11 +130,20 @@ export function tagLine(team: number, from: string, to: string, ko: boolean): An
   return { key: `${ko ? 'koIn' : 'tag'}${String(team)}`, text, important: false };
 }
 
-/** The call's scale (scales in from 1.6x unless reduced) and alpha (fades out at the end) at view-tick age `t`. */
-export function callPose(t: number, reduced: boolean): { readonly scale: number; readonly alpha: number } {
-  const k = Math.min(1, t / CALL_IN_TICKS);
+/** The KO entrance call ("NAME IN!") is smaller and capped in width, so it pops in without swallowing the screen (WP-HF2). */
+export const CALL_KO_PX = 34;
+export const CALL_KO_MAX_W = 360;
+const CALL_KO_IN_SCALE = 1.25;
+
+/** The scale that keeps a KO call (`width` px at scale 1) within CALL_KO_MAX_W at `scale`; TAG! (not ko) is never capped. */
+export const callFit = (width: number, scale: number, ko: boolean): number => (ko && width * scale > CALL_KO_MAX_W ? CALL_KO_MAX_W / Math.max(1, width) : scale);
+
+/** The call's scale (scales in from 1.6x, a KO entrance from 1.25x, unless reduced) and alpha (fades out at the end) at view-tick age `t`. */
+export function callPose(t: number, reduced: boolean, ko = false): { readonly scale: number; readonly alpha: number } {
+  const k = Math.max(0, Math.min(1, t / CALL_IN_TICKS));
+  const from = ko ? CALL_KO_IN_SCALE : CALL_IN_SCALE;
   return {
-    scale: reduced ? 1 : CALL_IN_SCALE - (CALL_IN_SCALE - 1) * k * (2 - k),
+    scale: reduced ? 1 : from - (from - 1) * k * (2 - k),
     alpha: Math.max(0, Math.min(1, (CALL_TICKS - t) / CALL_OUT_TICKS)),
   };
 }

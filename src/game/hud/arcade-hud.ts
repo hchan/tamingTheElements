@@ -272,6 +272,8 @@ export const NUMBER_MARGIN = 16;
 /** Lowest y of the top HUD band (bars, chips, pips, combo) and highest y of the action bar a number may use. */
 export const NUMBER_TOP = 120;
 export const NUMBER_BOTTOM = 632;
+/** A number slides sideways at most this far to clear a rect; further, it drops under the rect. */
+export const NUMBER_MAX_SLIDE = 120;
 
 /**
  * Keeps a damage number (centre `cx`, bottom `bottomY`, `halfW` x `h`) on screen: inside the frame sides, below the HUD band,
@@ -281,14 +283,19 @@ export function clampNumber(cx: number, bottomY: number, halfW: number, h: numbe
   const lo = frame.x + NUMBER_MARGIN + halfW;
   const hi = frame.x + frame.w - NUMBER_MARGIN - halfW;
   const clampX = (v: number): number => (lo > hi ? frame.x + frame.w / 2 : Math.min(hi, Math.max(lo, v)));
-  const y = Math.min(NUMBER_BOTTOM, Math.max(NUMBER_TOP + h, bottomY));
+  let y = Math.min(NUMBER_BOTTOM, Math.max(NUMBER_TOP + h, bottomY));
   let x = clampX(cx);
   const centre = frame.x + frame.w / 2;
   for (const r of avoid) {
     const hit = (): boolean => x + halfW > r.x && x - halfW < r.x + r.w && y > r.y && y - h < r.y + r.h;
     if (!hit()) continue;
-    x = x < centre ? r.x + r.w + halfW : r.x - halfW;
-    x = clampX(x);
+    const want = x < centre ? r.x + r.w + halfW : r.x - halfW;
+    if (Math.abs(want - x) > NUMBER_MAX_SLIDE) {
+      // Too far to slide: drop the number under the rect instead (still above the action bar).
+      y = Math.min(NUMBER_BOTTOM, r.y + r.h + h);
+      continue;
+    }
+    x = clampX(want);
   }
   return { x, y };
 }

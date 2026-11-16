@@ -228,8 +228,15 @@ describe('clampNumber', () => {
     expect(clampNumber(600, 700, 40, 40, frame, []).y).toBe(632);
   });
   it('slides clear of the combo readout towards the centre', () => {
-    const combo = { x: 24, y: 110, w: 200, h: 40 };
+    const combo = { x: 24, y: 110, w: 100, h: 40 };
     const r = clampNumber(100, 150, 40, 40, frame, [combo]);
-    expect(r.x - 40).toBeGreaterThanOrEqual(224);
+    expect(r.x - 40).toBeGreaterThanOrEqual(124);
+  });
+  it('drops under a wide rect instead of sliding far', () => {
+    const call = { x: 300, y: 200, w: 360, h: 40 };
+    const r = clampNumber(480, 230, 40, 40, frame, [call]);
+    expect(r.y - 40).toBeGreaterThanOrEqual(240);
+    expect(r.y).toBeLessThanOrEqual(632);
+    expect(r.x).toBe(480);
   });
 });

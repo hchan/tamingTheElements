@@ -114,6 +114,13 @@ export class Hud extends Phaser.Scene {
   private readonly stunTotals: number[] = [0, 0];
   /** Pooled texts, created on first use: one per damage-number slot and one combo counter per team. */
   private numberTexts: (Phaser.GameObjects.Text | undefined)[] = [];
+
+  /** Test probe: the visible damage numbers' boxes in Hud px (origin is bottom centre). */
+  numberBoxes(): { x: number; y: number; w: number; h: number }[] {
+    const out: { x: number; y: number; w: number; h: number }[] = [];
+    for (const t of this.numberTexts) if (t?.visible && t.alpha > 0) out.push({ x: t.x - t.displayWidth / 2, y: t.y - t.displayHeight, w: t.displayWidth, h: t.displayHeight });
+    return out;
+  }
   private numberSerials: number[] = [];
   private comboTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private comboKeys: number[] = [];

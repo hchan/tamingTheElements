@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
-  CALL_TICKS, FLASH_TICKS, GLINT_ALPHA, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose,
+  CALL_KO_PX, CALL_TICKS, FLASH_TICKS, GLINT_ALPHA, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callFit, callPose,
   callText, dashes, flashPose, mainBarOf, placeCall, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, pillWord, tagPill } from './slim-hud';
@@ -272,11 +272,11 @@ export function mountTagView(
         }
       }
     }
-    if (call?.visible && held) call.setAlpha(0).setScale(callPose(0, callReduced).scale);
+    if (call?.visible && held) call.setAlpha(0).setScale(callFit(call.width, callPose(0, callReduced, callKo).scale, callKo));
     else if (call?.visible) {
-      const pose = callPose(age, callReduced);
+      const pose = callPose(age, callReduced, callKo);
       if (age >= CALL_TICKS) call.setVisible(false);
-      else call.setScale(pose.scale).setAlpha(pose.alpha);
+      else call.setScale(callFit(call.width, pose.scale, callKo)).setAlpha(pose.alpha);
     }
     // Keep the whole text on screen (at its live scale, so the entrance pop-in is covered too): a long name near either edge slides in.
     if (call?.visible) {
@@ -287,7 +287,7 @@ export function mountTagView(
     }
     // Publish the call's rect (w 0 when gone) so damage numbers keep clear of it.
     const rect = callRect(arena.registry);
-    if (call?.visible && call.alpha > 0) {
+    if (call?.visible) {
       rect.x = call.x - call.displayWidth / 2;
       rect.y = call.y - call.displayHeight / 2;
       rect.w = call.displayWidth;
@@ -357,7 +357,16 @@ export function mountTagView(
       callReduced = reduced;
       callKo = ko;
       if (parts) styleCombatText(parts.call.setText(callText(to, ko)), ko ? 'ko' : 'call');
-      parts?.call.setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
+      if (parts) {
+        const c = parts.call.setFontSize(ko ? CALL_KO_PX : CALL_PX).setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
+        // Publish the call's box now (at its pop scale), so damage numbers dodge it from the very first frame, even while it is held.
+        const r = callRect(arena.registry);
+        const sc = callFit(c.width, callPose(0, reduced, ko).scale, ko);
+        r.w = c.width * sc;
+        r.h = c.height * sc;
+        r.x = c.x - r.w / 2;
+        r.y = c.y - r.h / 2;
+      }
       say(tagLine(team, from, to, ko));
     }
     then?.(events);
