@@ -1,0 +1,25 @@
+{
+ "cases": [
+  {
+   "a": "fiara",
+   "b": "hyalia",
+   "seed": 2864583637,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "lavax",
+   "b": "abyssor",
+   "seed": 2864583637,
+   "aIsTeam0": true,
+   "teamSize": 1
+  },
+  {
+   "a": "hyalia",
+   "b": "glimmaw",
+   "seed": 2864583637,
+   "aIsTeam0": true,
+   "teamSize": 1
+  }
+ ]
+}

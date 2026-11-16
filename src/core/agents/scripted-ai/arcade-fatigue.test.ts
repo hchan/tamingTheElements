@@ -17,10 +17,10 @@ const SHOT: ShotView = { x: 279 + 8 * 30, y: 330, w: 20, h: 20, vx: -8, vy: 0 };
 const cmd = Cmd.primary | Cmd.left;
 const mem = (t: ArcadeTactics): number[] => (t.save() as { mem: number[] }).mem;
 
-function view(tick: number, threat: boolean, selfHp = 100, oppHp = 100): ObservationView {
+function view(tick: number, threat: boolean, selfHp = 100, oppHp = 100, selfStun = 0): ObservationView {
   return {
     side: 0, tick, self: fighter(200, 300, selfHp), opponent: fighter(700, 300, oppHp), cooldowns: [0, 0, 0, 0], matchSeed: 0,
-    arcade: { ...FREE, shots: threat ? [SHOT] : [] },
+    arcade: { ...FREE, selfStun, shots: threat ? [SHOT] : [] },
   };
 }
 
@@ -29,7 +29,7 @@ function run(t: ArcadeTactics, cycles: number, gap: number, hitEvery = 0, start 
   const out: number[] = [];
   for (let i = 0; i < cycles; i++) {
     const hit = hitEvery > 0 && i % hitEvery === 0;
-    t.apply(view(start + gap * i, true, hit ? 100 - i : 100, 1000 - i), cmd);
+    t.apply(view(start + gap * i, true, hit ? 100 - i : 100, 1000 - i, hit ? 5 : 0), cmd);
     out.push(mem(t)[16] ?? 0);
     t.apply(view(start + gap * i + 1, false, hit ? 100 - i : 100, 1000 - i), cmd);
   }
@@ -58,7 +58,7 @@ describe('defence fatigue (SIM_VERSION 80)', () => {
       const t = new ArcadeTactics(AI_HARD, ZONER);
       let n = 0;
       for (let i = 0; i < 300; i++) {
-        t.apply(view(100 + 60 * i, true, hitEvery > 0 ? 1000 - i : 100, 1000 - i), cmd);
+        t.apply(view(100 + 60 * i, true, hitEvery > 0 ? 1000 - i : 100, 1000 - i, hitEvery > 0 ? 5 : 0), cmd);
         if (mem(t)[4] === NO_PLAN) n++;
         t.apply(view(101 + 60 * i, false, hitEvery > 0 ? 1000 - i : 100, 1000 - i), cmd);
       }
@@ -84,7 +84,27 @@ describe('defence fatigue (SIM_VERSION 80)', () => {
     expect(mem(t)[16]).toBe(0);
     run(t, 8, 60, 0, 2000);
     expect(mem(t)[16]).toBeGreaterThan(0);
-    t.apply(view(2500, false, 99, 500), cmd); // the hero took damage
+    t.apply(view(2500, false, 99, 500, 5), cmd); // the hero was hit (hit-stun)
+    expect(mem(t)[16]).toBe(0);
+  });
+
+  it('Hard: chip and damage over time (HP drops, no hit-stun) keep the count; a real hit resets it', () => {
+    const t = new ArcadeTactics(AI_HARD, ZONER);
+    run(t, 8, 60, 0, 2000);
+    const n = mem(t)[16] ?? 0;
+    expect(n).toBeGreaterThan(0);
+    t.apply(view(2490, false, 90, 500, 0), cmd);
+    t.apply(view(2491, false, 80, 500, 0), cmd);
+    expect(mem(t)[16]).toBe(n);
+    t.apply(view(2492, false, 70, 500, 3), cmd);
+    expect(mem(t)[16]).toBe(0);
+  });
+
+  it('Normal: any HP drop still resets it', () => {
+    const t = new ArcadeTactics(AI_NORMAL, ZONER);
+    run(t, 8, 60, 0, 2000);
+    expect(mem(t)[16]).toBeGreaterThan(0);
+    t.apply(view(2500, false, 99, 500, 0), cmd);
     expect(mem(t)[16]).toBe(0);
   });
 

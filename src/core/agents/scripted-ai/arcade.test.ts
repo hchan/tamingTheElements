@@ -296,7 +296,7 @@ describe('ArcadeTactics: defence, spacing, weather and personality (WP-arcade-ai
       let n = 0;
       const t = new ArcadeTactics(level, style);
       for (let i = 0; i < 390; i++) { // 780 ticks: under the 800-tick stage that halves the plan rates
-        t.apply(view({ shots: [shotIn(30)] }, 2 * i, { ...fighter(200, 300), hp: 1000 - i }), cmd); // each hit resets the defence fatigue
+        t.apply(view({ shots: [shotIn(30)], selfStun: 5 }, 2 * i, { ...fighter(200, 300), hp: 1000 - i }), cmd); // each hit (hit-stun) resets the defence fatigue
         if (mem(t)[4] === NO_PLAN) n++;
         t.apply(view({}, 2 * i + 1), cmd);
       }

@@ -169,10 +169,16 @@ export function avoidChord(a: ArcadeView, cmd: Command): Command {
 /** Rock avoidance (FUN-DESIGN 2.15): the look-ahead step in px, how many `W.tick` ticks a chosen slide is held, and the line samples. */
 export const ARCADE_AI_ROCK_STEP = 8;
 export const ARCADE_AI_SLIDE_TICKS = 30;
+/** SIM_VERSION 83: the wall look-ahead, px. A wall only reverts the out-of-arena axis (walls slide), so it needs to cover just the smallest real step. */
+export const ARCADE_AI_WALL_PROBE = 3;
 const LINE_SAMPLES = 16;
 
 const hitsRock = (r: RockView, x: number, y: number, w: number, h: number): boolean =>
   x < r.x + r.w && r.x < x + w && y < r.y + r.h && r.y < y + h;
+
+/** Does the box swept from (x, y) by (dx, dy) touch the rock? Exact for every per-axis step up to (dx, dy), where a rock stops the whole step. */
+const sweptHits = (r: RockView, x: number, y: number, w: number, h: number, dx: number, dy: number): boolean =>
+  hitsRock(r, dx < 0 ? x + dx : x, dy < 0 ? y + dy : y, w + Math.abs(dx), h + Math.abs(dy));
 
 /** The movement bits `cmd` holds, as a step (left/right and up/down cancel). */
 const stepOf = (cmd: Command): readonly [number, number] => [
@@ -380,18 +386,28 @@ export class ArcadeTactics {
    * step would enter a rock, or an attack along a line a rock cuts (the shot would be wasted), starts a slide: the
    * movement along the other axis towards the nearer free side of the rock (up or left on a tie), kept together with
    * the move along the blocked axis and held ARCADE_AI_SLIDE_TICKS ticks (so the base AI's alignment cannot pull it
-   * straight back), ending early when the step is not free. A fighter already inside a rock walks out as it is. Guard,
-   * dash and super commands are left alone.
+   * straight back), ending early when the step is not free. A fighter already inside a rock walks out as it is. Guard
+   * and super commands are left alone; a dash that would run into a rock loses its dash bit and is slid as a walk.
+   * SIM_VERSION 83 (Hard only; Normal and Easy keep the point test): a step is tested as the box swept over the whole look-ahead (a real step of 1-3 px can touch a rock corner
+   * the 8 px end box clears, which wedged fighters), and a wall only needs ARCADE_AI_WALL_PROBE px of room (walls slide).
    */
   private slide(tick: number, self: FighterView, opp: FighterView, rocks: readonly RockView[], cmd: Command, tagTeam: boolean): Command {
-    if ((cmd & (Cmd.guard | Cmd.dash | Cmd.super)) !== 0 || rocks.some((r) => hitsRock(r, self.x, self.y, self.w, self.h))) return cmd;
+    // Normal and Easy keep the SIM 82 point test (the balance numbers are tuned on it); only Hard sweeps.
+    const hard = this.level >= AI_HARD;
+    if ((cmd & (hard ? Cmd.guard | Cmd.super : Cmd.guard | Cmd.dash | Cmd.super)) !== 0 || rocks.some((r) => hitsRock(r, self.x, self.y, self.w, self.h))) return cmd;
+    const [cx, cy] = stepOf(cmd & MOVE);
+    if ((cmd & Cmd.dash) !== 0) {
+      // A dash into a rock is reverted every tick (SIM_VERSION 83): walk it round the rock instead.
+      if (!rocks.some((r) => sweptHits(r, self.x, self.y, self.w, self.h, cx, cy))) return cmd;
+      cmd &= ~Cmd.dash;
+    }
     const m = this.mem;
     const pf = arcadePlayfield();
     const free = (bits: Command): boolean => {
       const [dx, dy] = stepOf(bits);
-      const x = self.x + dx;
-      const y = self.y + dy;
-      return x >= pf.x && y >= pf.y && x + self.w <= pf.x + pf.w && y + self.h <= pf.y + pf.h && !rocks.some((r) => hitsRock(r, x, y, self.w, self.h));
+      const x = self.x + (hard ? Math.sign(dx) * ARCADE_AI_WALL_PROBE : dx);
+      const y = self.y + (hard ? Math.sign(dy) * ARCADE_AI_WALL_PROBE : dy);
+      return x >= pf.x && y >= pf.y && x + self.w <= pf.x + pf.w && y + self.h <= pf.y + pf.h && !rocks.some((r) => (hard ? sweptHits(r, self.x, self.y, self.w, self.h, dx, dy) : hitsRock(r, x, y, self.w, self.h)));
     };
     // A tag team (a living partner) shoots on from SHOOT_FROM of every 256 ticks even along a line a rock cuts: two sides
     // that both refuse a wasted shot and slide about can otherwise never trade a hit (2v2 stalemates).
@@ -400,8 +416,8 @@ export class ArcadeTactics {
     const out = (bits: Command): Command => (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | bits;
     if (m[7] !== 0 && tick < m[8] && free(m[7])) return out(m[7]);
     m[7] = 0;
-    const [sx, sy] = stepOf(cmd & MOVE);
-    const blocker = sx === 0 && sy === 0 ? undefined : rocks.find((r) => hitsRock(r, self.x + sx, self.y + sy, self.w, self.h));
+    const [sx, sy] = [cx, cy];
+    const blocker = sx === 0 && sy === 0 ? undefined : rocks.find((r) => (hard ? sweptHits(r, self.x, self.y, self.w, self.h, sx, sy) : hitsRock(r, self.x + sx, self.y + sy, self.w, self.h)));
     const rock = blocker ?? wasted;
     if (rock === undefined) return cmd;
     // The axis of the move (the opponent's side when standing still) and the other axis to slide along.
@@ -501,7 +517,8 @@ export class ArcadeTactics {
     const lane = snagBit === 0 || (view.cooldowns[a.snagSlot] ?? 1) !== 0 || a.oppGuarding || a.oppRooted > 0 || a.oppRootImmune > 0 ? 0 : snagLane(self, opp);
 
     // Defence fatigue bookkeeping: a hit on this hero, or a quiet spell without a threat, makes the next defence fresh.
-    if (self.hp < m[19]) m[16] = 0;
+    // Hard (SIM_VERSION 82): only a real hit (hit-stun) resets it; guard chip, damage over time and hazards do not.
+    if (this.level >= AI_HARD ? a.selfStun > 0 : self.hp < m[19]) m[16] = 0;
     m[19] = self.hp;
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
     const soon = soonestShot(self, a.shots, ARCADE_AI_LOOKAHEAD);
