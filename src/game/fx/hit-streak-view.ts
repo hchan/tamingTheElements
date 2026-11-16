@@ -185,8 +185,8 @@ export function createStreakLayer(scene: Phaser.Scene, paused: () => boolean, hi
   }
 
   function ensure(): void {
-    gfx ??= scene.add.graphics().setDepth(12).setBlendMode(ADD);
-    rim ??= scene.add.graphics().setDepth(11.9);
+    gfx ??= scene.add.graphics().setName('hit-mark').setDepth(12).setBlendMode(ADD);
+    rim ??= scene.add.graphics().setName('hit-mark-rim').setDepth(11.9);
     if (!attached) {
       attached = true;
       scene.events.on('update', tick);

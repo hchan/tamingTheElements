@@ -544,6 +544,10 @@ export class Arena extends Phaser.Scene {
       ownElement: () => import('../fx/own-element-view').then((m) => m.ownElementState(this)),
       hudTextSizes: () => (this.scene.get(HUD_SCENE) as unknown as { textSizes(): ReturnType<ArenaProbe['hudTextSizes']> }).textSizes(),
       heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
+      hitMarkHide: (on: boolean) => {
+        // Test only: hides the hit-mark layers so a test can diff the same frame with and without the mark.
+        for (const n of ['hit-mark', 'hit-mark-rim']) (this.children.getByName(n) as Phaser.GameObjects.Graphics | null)?.setVisible(!on);
+      },
       idleAura: () => import('../fx/idle-aura-view').then((m) => m.idleAuraState(this)),
       idleAuraHide: (on: boolean) => import('../fx/idle-aura-view').then((m) => { m.idleAuraHide(this, on); }),
       abilityFx: () => import('../fx/ability-aura-view').then((m) => m.abilityFxState(this)),

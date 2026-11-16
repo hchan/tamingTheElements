@@ -149,6 +149,8 @@ export interface ArenaProbe {
   /** The idle element auras drawn on the last frame (idle-element-auras IA2); undefined before the chunk mounts. */
   /** Hides (true) or shows every idle aura drawable, for before/after pixel comparison. */
   idleAuraHide(on: boolean): Promise<void>;
+  /** Hides (true) or shows the hit-mark layers, for same-frame pixel comparison (hit-mark-element). */
+  hitMarkHide(on: boolean): void;
   idleAura(): Promise<{ heroes: readonly { id: number; sprite: string; element: string; signature: string; parts: number; front: number; back: number; segs: number; dim: number; stand: number; age: number }[]; parts: number; front: number; back: number; segs: number; strikes: readonly { id: number; tick: number }[]; reduced: boolean; highContrast: boolean; tier: string; cap: number } | undefined>;
   /** Own-element patch effects drawn on the last frame (own-element-tile-effects WP 1); undefined outside Arcade. */
   ownElement(): Promise<{ active: readonly { id: number; team: number; kind: number; age: number; pulse: boolean }[]; parts: number; reduced: boolean } | undefined>;
