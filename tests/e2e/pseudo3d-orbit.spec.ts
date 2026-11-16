@@ -34,7 +34,7 @@ const place = (page: Page, mx: number, fx: number): Promise<unknown> =>
 async function stunned(page: Page): Promise<void> {
   await page.goto(`${START}&ff=arcade,cc#arcade`);
   await page.getByLabel('Your race').selectOption('pax');
-  await page.getByLabel('AI race').selectOption('curomo');
+  await page.getByLabel('AI race').selectOption(process.env['FOE'] ?? 'curomo');
   await page.getByRole('button', { name: 'Fight!' }).click();
   await page.waitForFunction(ARENA_READY);
   const card = page.getByRole('button', { name: 'Got it' });

@@ -374,7 +374,7 @@ export function makeCcOut(maxParts = CC_TIER_CAPS.full.parts, maxSegs = CC_TIER_
 /** Sine-like (starts at 0) and cosine-like triangle waves in -1..1 for a phase in cycles. */
 const wave = (t: number): number => tri(t + 0.25) * 2 - 1;
 
-const MOTE_COLOR = mute(0xd8c890);
+const MOTE_COLOR = mute(0xf0c850, 0.85, 1);
 const CHIP_COLOR = mute(0xa89a82);
 const MUCK_COLOR = mute(0x4a4638, 0.5, 0.8);
 const GYRE_COLOR = mute(0x9ab0b8);
@@ -437,7 +437,7 @@ export function ccParts(kind: CcKindOrNone, b: Box, ageTicks: number, leftTicks:
   switch (kind) {
     case 'reel':
       if (ageTicks + leftTicks >= 40) {
-        addOrbit(out, caps.parts, cx, headY - b.h * 0.06, b.w * 0.42, b.h * 0.045, b.h * 0.02, 4, t / 60, sz * 0.8, reduced ? 0.7 : 0.8, 'mote', MOTE_COLOR);
+        addOrbit(out, caps.parts, cx, headY - b.h * 0.06, b.w * 0.42, b.h * 0.07, b.h * 0.02, 4, t / 60, sz * 0.95, 0.95, 'mote', MOTE_COLOR);
       }
       break;
     case 'stagger':

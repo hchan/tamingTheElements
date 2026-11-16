@@ -37,7 +37,7 @@ const SIZE_BOOST = 1.7;
 const RING_TICKS = 14;
 const PUFF_TICKS = 14;
 const CRACK_RAYS = 6;
-const GLOW_FRAMES: Readonly<Record<string, boolean>> = { mote: true };
+const GLOW_FRAMES: Readonly<Record<string, boolean>> = {};
 const MUCK_UNDER = 0x1c1a14;
 const STRAND_COLOR = mute(0x8a8060);
 const SCUFF_COLOR = mute(0xb0a48a);
@@ -96,7 +96,7 @@ function poly(g: Ctx2D, ox: number, oy: number, pts: readonly number[], a = 1): 
 function paintCell(g: Ctx2D, name: string, cx: number, cy: number): void {
   const h = CELL / 2;
   switch (name) {
-    case 'mote': blob(g, cx, cy, h - 2, 0.2, 0.9); blob(g, cx, cy, h * 0.3, 0.5, 1); break;
+    case 'mote': blob(g, cx, cy, h - 3, 0.88, 1); break;
     case 'chip': poly(g, cx, cy, [-7, -3, -1, -8, 6, -4, 8, 3, 1, 8, -5, 5]); poly(g, cx, cy, [-3, -4, 4, -4, 5, 1, -2, 2], 0.45); break;
     case 'muck': blob(g, cx - 4, cy + 1, 10, 0.4, 0.9); blob(g, cx + 5, cy, 8, 0.4, 0.85); blob(g, cx, cy - 3, 7, 0.3, 0.8); break;
     case 'glob': blob(g, cx, cy + 2, 9, 0.55, 1); poly(g, cx, cy, [0, -11, 5, -2, -5, -2], 0.9); break;
