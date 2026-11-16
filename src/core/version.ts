@@ -302,5 +302,7 @@
  * 83: AI only (agents outside SimState): rock look-ahead fix, Hard only. A step is tested as the box swept over the whole 8 px look-ahead
  *    (not just its end box), walls need only a 3 px probe, and a dash into a rock is slid as a walk; no rule or data change. Re-record reason:
  *    every replay fixture changes only its simVersion header; Normal and Easy are unchanged, so the balance baselines are not re-recorded.
+ * 84: Arcade corner pushback (a close hit's wall-swallowed knockback pushes the attacker back) plus Hard AI never stands inside its foe;
+ *    Classic unchanged. Re-record reason: rule change, all Arcade replay hashes; Classic replays header-only; both Arcade balance baselines re-recorded.
  */
-export const SIM_VERSION = 83;
+export const SIM_VERSION = 84;

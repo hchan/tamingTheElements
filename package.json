@@ -31,6 +31,7 @@
     "ai:duel": "tsx tools/sim/ai-duel.ts",
     "ai:summary": "tsx tools/sim/ai-variety-summary.ts",
     "ai:stalemates": "tsx tools/sim/stalemate-probe.ts",
+    "ai:wallpin": "tsx tools/sim/wall-pin-probe.ts",
     "size:check": "tsx tools/ci/size-check.ts",
     "relay": "tsx tools/signal-relay/server.ts",
     "soak:webrtc": "tsx tools/ci/webrtc-soak.ts",

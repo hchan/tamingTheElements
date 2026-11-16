@@ -595,7 +595,12 @@ export class ArcadeTactics {
     // Stage 2: a stale fight walks in even with a shot on the way (the defence only ever retreated).
     if (stale2 && free && threat && (cmd & MOVE) === 0) cmd |= toward(self, opp);
     if (!free || threat) return cmd;
-    // A stale fight with the boxes overlapped (typically both stuck in a wall corner): step apart so a hit can land.
+    // Hard never stands inside the foe (no pushbox): overlapped boxes step apart, the attack still goes out (QA r66/r67 wall pin).
+    if (this.level >= AI_HARD && a.oppStun === 0 && a.oppRooted === 0) {
+      const apart = stepApart(self, opp, arcadePlayfield());
+      if (apart !== 0) return (cmd & ~MOVE) | apart;
+    }
+    // Easy and Normal: a stale fight with the boxes overlapped (typically both stuck in a wall corner): step apart so a hit can land.
     if (stale && a.oppStun === 0 && a.oppRooted === 0) {
       const apart = stepApart(self, opp, arcadePlayfield());
       if (apart !== 0) return (cmd & ~(MOVE | ATTACK)) | apart;

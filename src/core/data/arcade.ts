@@ -220,6 +220,15 @@ export const KNOCKBACK_DECAY_Q4 = 16;
 export const Q4_ONE = 16;
 
 /**
+ * Corner pushback (SIM_VERSION 84, FUN-DESIGN 2.3): a hit from an attacker whose centre is within CORNER_PUSH_RANGE_PX of the
+ * victim's, that would carry the victim past a side wall, gives the travel the wall swallowed to the attacker as a lunge away from
+ * the wall (the SF corner rule), so a cornered fighter is not held point blank. Zoning from farther out still corners.
+ * CORNER_PUSH_PM is the share of the swallowed travel handed over, in pm.
+ */
+export const CORNER_PUSH_RANGE_PX = 240;
+export const CORNER_PUSH_PM = 1000;
+
+/**
  * Combo damage scaling in pm by hit index (FUN-DESIGN 2.4): hits 1..6 of a combo take COMBO_SCALE_PM[hit - 1], later
  * hits COMBO_SCALE_FLOOR_PM. A super keeps at least SUPER_COMBO_FLOOR_PM (a super that starts a combo is hit 1: 1000).
  */
