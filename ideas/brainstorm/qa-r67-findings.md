@@ -18,6 +18,7 @@ added: 2026-11-15
 ## New
 
 - Tour map card disagrees with the splash: the map says Opponent Fiara/Echo/Treenoc, Location Fire; the splash and fight show Pax in an Earth arena. Confusing for a new player.
+  - Not a bug: cross-run comparison (b.mjs card vs c.mjs splash; each launch rolls a fresh random Tour seed). In the same run, dbg.png card == splash == fight. Guarded by `src/game/app/tour-fight.test.ts`. QA process: compare Tour card, splash and fight in one page, or pin `?seed=` (dev/test builds).
 - TAG! banner overlaps the damage number and combo text; after a swap the life-bar header shows a stray outline box.
 - Life-bar chip drain is slow (a long yellow chip remained at 1 HP / 321 HP).
 - A faint ghost of the player appears in the crowd area.
