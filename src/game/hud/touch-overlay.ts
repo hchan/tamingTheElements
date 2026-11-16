@@ -19,8 +19,13 @@ export function overlayRect(item: OverlayItem, canvas: { left: number; top: numb
 
 const px = (v: number): string => `${String(Math.round(v * 100) / 100)}px`;
 
-/** Lays each `#arcade<touch>` button over its box and hides the buttons that have no box (writes a style only when it changed). */
-export function syncTouchOverlays(items: readonly OverlayItem[], canvas: { getBoundingClientRect(): { left: number; top: number; width: number; height: number } }, doc: Document | undefined = typeof document === 'undefined' ? undefined : document): void {
+/** Height in CSS px of an overlay: its square, plus `extendPx` (the portrait skirt below the canvas) when given. Pure, for tests. */
+export function overlayHeight(size: number, extendPx?: number): number {
+  return size + (extendPx ?? 0);
+}
+
+/** Lays each `#arcade<touch>` button over its box (taller by `extendPx` CSS px, class `touchSkirt`, when given) and hides the buttons that have no box (writes a style only when it changed). */
+export function syncTouchOverlays(items: readonly OverlayItem[], canvas: { getBoundingClientRect(): { left: number; top: number; width: number; height: number } }, doc: Document | undefined = typeof document === 'undefined' ? undefined : document, extendPx?: number): void {
   if (!doc) return;
   const rect = canvas.getBoundingClientRect();
   if (!(rect.width > 0 && rect.height > 0)) return;
@@ -40,7 +45,8 @@ export function syncTouchOverlays(items: readonly OverlayItem[], canvas: { getBo
     set('left', px(r.left));
     set('top', px(r.top));
     set('width', px(r.size));
-    set('height', px(r.size));
+    set('height', px(overlayHeight(r.size, extendPx)));
+    el.classList.toggle('touchSkirt', extendPx !== undefined);
     set('visibility', 'visible');
     placed.add(el);
   }

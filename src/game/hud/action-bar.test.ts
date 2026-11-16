@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, type RenderActionBar } from '@core/index';
-import { centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
+import { oneRowSide, oneRowSlots, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -358,5 +358,30 @@ describe('dressed bar parts (key badge, icon, label strip)', () => {
     expect(withC[0]?.label).toBe('1 C');
     expect(withC[1]?.label).toBe('2');
     expect(buildSlots(b)[0]?.label).toBe('1');
+  });
+});
+
+describe('one-row bar (portrait phones)', () => {
+  it('sizes 10/12/14 boxes to share one row', () => {
+    expect(oneRowSide(10, 0.3047)).toBe(127);
+    expect(oneRowSide(12, 0.3047)).toBe(106);
+    expect(oneRowSide(14, 0.3047)).toBe(91);
+  });
+  it('falls back (undefined) when a box would be under 24 CSS px', () => {
+    expect(oneRowSide(14, 0.25)).toBeUndefined();
+    expect(oneRowSide(14, 0.28125)).toBe(91);
+  });
+  it('lays every box at one y, left to right, inside the 1280 box', () => {
+    const slots = Array.from({ length: 14 }, () => ({ x: 0, y: 0, size: 158 }));
+    const r = oneRowSlots(slots, 0.3047);
+    expect(r).toBeDefined();
+    const side = 91;
+    r?.slots.forEach((s, i) => {
+      expect(s.y).toBe(720 - side - 1);
+      expect(s.x).toBe(1 + i * side);
+      expect(s.size).toBe(side);
+      expect(s.x + s.size).toBeLessThanOrEqual(1280);
+    });
+    expect(r?.top).toBe(720 - side - 1);
   });
 });
