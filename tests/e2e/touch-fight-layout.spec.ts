@@ -221,7 +221,7 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
       for (const b of [s1, s2]) {
         expect(b.w).toBeGreaterThanOrEqual(44);
         expect(b.h).toBeGreaterThanOrEqual(44);
-        expect(b.x + b.w).toBeLessThanOrEqual(canvas.x + canvas.w);
+        expect(b.x).toBeGreaterThanOrEqual(canvas.x + canvas.w - 0.5); // PHONE-2: the Strikes sit in the right gutter
         expect(b.x + b.w).toBeLessThanOrEqual(667 - 8); // QA r40: a margin from the right edge (plus the safe-area inset), never clipped
         expect(b.x).toBeGreaterThan(667 / 2); // the right thumb's half
         expect(overlap(b, stick)).toBe(false);

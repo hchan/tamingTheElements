@@ -16,7 +16,8 @@ const box = (page: Page, sel: string): Promise<Box> =>
     const r = document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect();
     return { x: r.x, y: r.y, w: r.width, h: r.height };
   })()`);
-const overlap = (a: Box, b: Box): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+// 0.5 px tolerance: the Strikes touch the canvas edge (0 px gap) and layout is subpixel.
+const overlap = (a: Box, b: Box): boolean => a.x < b.x + b.w - 0.5 && b.x < a.x + a.w - 0.5 && a.y < b.y + b.h - 0.5 && b.y < a.y + a.h - 0.5;
 
 async function fight(page: Page): Promise<void> {
   await page.goto(`${START}&ff=arcade#arcade`);
@@ -35,18 +36,31 @@ async function fight(page: Page): Promise<void> {
   await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 }
 
-for (const [w, h] of [[844, 390]] as const) {
+for (const [w, h] of [[844, 390], [667, 375], [640, 360]] as const) {
   test.describe(`phone landscape ${String(w)}x${String(h)}`, () => {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     test('no touch button or Pause covers the arena canvas, so the foe at the wall is never hidden', async ({ page }) => {
       await fight(page);
-      if (shotDir) await page.screenshot({ path: `${shotDir}/land-${String(w)}-wall.png` });
+      await page.screenshot({ path: shotDir ? `${shotDir}/land-${String(w)}-wall.png` : test.info().outputPath(`land-${String(w)}-wall.png`) });
       const canvas = await box(page, '#game canvas');
       expect(canvas.h).toBeGreaterThanOrEqual(h * 0.8); // still a big arena
       for (const id of ['#touchStrike1', '#touchStrike2', '#pauseButton']) {
         const b = await box(page, id);
         expect(overlap(canvas, b), `${id} ${JSON.stringify(b)} vs canvas ${JSON.stringify(canvas)}`).toBe(false);
         expect(b.x + b.w, id).toBeLessThanOrEqual(w);
+      }
+      for (const id of ['#touchStrike1', '#touchStrike2']) {
+        const b = await box(page, id);
+        expect(b.w, id).toBeGreaterThanOrEqual(44);
+        expect(b.h, id).toBeGreaterThanOrEqual(44);
+      }
+      if (w < 740) {
+        const toggle = await box(page, '#fullscreenToggle');
+        expect(overlap(canvas, toggle), `toggle ${JSON.stringify(toggle)}`).toBe(false);
+        for (const id of ['#pauseButton', '#touchStrike1', '#touchStrike2']) expect(overlap(toggle, await box(page, id)), `toggle vs ${id}`).toBe(false);
+        expect(toggle.x).toBeGreaterThanOrEqual(0);
+        expect(toggle.x + toggle.w).toBeLessThanOrEqual(w);
+        expect(toggle.y + toggle.h).toBeLessThanOrEqual(h);
       }
     });
   });

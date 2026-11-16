@@ -1,4 +1,5 @@
 import { el } from '@ui/dom';
+import '@ui/styles/touch-strike-gutter.css';
 import { actionKeyLabel, getBindings } from '../platform/input/bindings';
 import { holdAction, releaseTouch } from './touch-controls';
 
