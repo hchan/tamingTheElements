@@ -747,15 +747,26 @@ export class Hud extends Phaser.Scene {
     rects.length = n;
   }
 
-  /** Left edge of the touch Pause button in HUD logical px (undefined when it is hidden), so the right combo counter stays clear of it. */
+  /**
+   * Left edge in HUD logical px of the DOM chrome that can sit over the right combo counter, so the counter stays clear of it (undefined
+   * when none does): the touch Pause button, and the fullscreen toggle when it reaches down to the counter's row (phones move it under
+   * the HUD band, QA r79).
+   */
   private pauseLeft(): number | undefined {
-    const b = document.getElementById('pauseButton');
-    const canvas = this.game.canvas;
-    if (!b || getComputedStyle(b).display === 'none') return undefined;
+    const c = this.game.canvas.getBoundingClientRect();
     const k = coreDisplayWidth(this) / 1280;
-    const c = canvas.getBoundingClientRect();
     const hudLeft = c.left + (c.width - 1280 * k) / 2;
-    return (b.getBoundingClientRect().left - hudLeft) / k;
+    const hudTop = c.top + (c.height - 720 * k) / 2;
+    let left: number | undefined;
+    for (const id of ['pauseButton', 'fullscreenToggle']) {
+      const b = document.getElementById(id);
+      if (!b || getComputedStyle(b).display === 'none') continue;
+      const r = b.getBoundingClientRect();
+      if (id === 'fullscreenToggle' && (r.bottom - hudTop) / k <= COMBO_Y) continue;
+      const l = (r.left - hudLeft) / k;
+      left = left === undefined ? l : Math.min(left, l);
+    }
+    return left;
   }
 
   /**

@@ -56,5 +56,40 @@ for (const { w, h } of SIZES) {
     // The gap between the boxes (x is the origin point; ox says where in the box it sits).
     const gap = r.x - r.w * r.ox - (l.x + l.w * (1 - l.ox));
     expect(gap, `WINS captions ${JSON.stringify(l)} / ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(4);
+    // QA r79: 6 px at 568x320 still read as "WINS WINS"; the gap holds at a clear 10 px (screen) on every size.
+    expect(gap, 'a clear gap, not just not-touching').toBeGreaterThanOrEqual(10);
   });
 }
+
+// QA r79: on a phone the fullscreen toggle sits under the HUD band (top right), where the foe's hit counter is; "3 HITS / 66 DMG" read as
+// "3 / 66". The counter now keeps clear of the toggle. Needs a coarse pointer (the phone placement) and an AI foe that hits us (Versus).
+test.describe('568x320 touch', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 568, height: 320 } });
+
+  test('the hit counter does not sit under the fullscreen toggle', async ({ page }) => {
+    await page.goto(`/?manual=1&seed=11&ff=arcade#versus`);
+    await page.getByRole('button', { name: 'Fight!' }).tap();
+    await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(95); const [me, foe] = a.characters(); a.place(me.id, 500, 360, 0); a.place(foe.id, 640, 360, 4); })()`);
+    // Hit until a counter shows (the player's lands on the left; the foe's AI counter-hits land on the right).
+    let shown: HudText[] = [];
+    for (let i = 0; i < 80 && shown.length === 0; i++) {
+      await page.evaluate(`window.__TTE__.arena.step(1, [${String(i % 3 ? 16 : 32)}, 0])`);
+      await page.evaluate(`window.__TTE__.arena.stepLive(8)`);
+      await page.screenshot(); // a frame must render before the HUD's texts reflect the sim (rAF does not fire reliably on the mobile profile)
+      shown = (await page.evaluate<HudText[]>(`window.__TTE__.arena.hudTextSizes()`)).filter((t) => /HITS/.test(t.text) && t.ox === 1);
+    }
+    expect(shown.length, 'a right-hand hit counter showed').toBeGreaterThan(0);
+    const toggle = await page.evaluate<{ left: number; top: number; right: number; bottom: number }>(`document.getElementById('fullscreenToggle').getBoundingClientRect().toJSON()`);
+    if (shotDir) {
+      mkdirSync(shotDir, { recursive: true });
+      await page.screenshot({ path: join(shotDir, 'hit-counter-568x320.png') });
+    }
+    for (const c of shown) {
+      const right = c.x; // origin 1: x is the right edge
+      const top = c.y;
+      const overlaps = right > toggle.left && c.x - c.w < toggle.right && top < toggle.bottom && top + c.h > toggle.top;
+      expect(overlaps, `counter ${JSON.stringify(c)} vs toggle ${JSON.stringify(toggle)}`).toBe(false);
+    }
+  });
+});

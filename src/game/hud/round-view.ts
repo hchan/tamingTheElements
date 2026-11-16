@@ -39,8 +39,8 @@ const WON_COLOR = 0xb8964a;
 /** The word under each side's round pips, so they are not read as super charge. */
 const PIP_LABEL_PX = 13;
 
-/** Least gap (logical px) the two WINS captions keep between them; wider captions (phones) hug the timer side so they never run together. */
-const PIP_LABEL_GAP = 14;
+/** Least gap (logical px) the two WINS captions keep between them (30 is about 13 screen px at 568x320, QA r79); wider captions (phones) hug the timer side so they never run together. */
+const PIP_LABEL_GAP = 30;
 /** The WINS caption goes under its pair of pips; when two centred captions would be closer than PIP_LABEL_GAP, each one's inner edge sits PIP_LABEL_GAP / 2 off the timer's centre line instead. */
 export function placePipLabel(t: Phaser.GameObjects.Text, team: 0 | 1): Phaser.GameObjects.Text {
   const y = PIP_Y + PIP_R + 3;
