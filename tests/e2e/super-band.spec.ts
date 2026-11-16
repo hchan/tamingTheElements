@@ -210,21 +210,25 @@ for (const [w, h] of [
       test.setTimeout(240_000);
       await sequence(page, testInfo, `${String(w)}x${String(h)}`, true);
       if (w === 667) {
-        // Independent check of the DOM mapping: Strike 1's own rect, scaled by the k that Strike 1 and 2's spacing implies.
+        // At 667 the PHONE-2 gutter puts Strike 1/2 and Pause beside the canvas, not over it, so only the stick is an avoid rect.
+        // Independent check of the DOM mapping on the stick: its own rect, scaled by the canvas width over the 1280 core units.
         await cast(page, PLACES[0] as Place, false);
         const fx = await superFx(page);
-        const r = await page.evaluate<{ a: { x: number; y: number; w: number }; b: { x: number } }>(`(() => {
+        const r = await page.evaluate<{ k: number; left: number; s: { x: number; y: number; w: number }; strikeOver: boolean }>(`(() => {
           const q = (id) => document.getElementById(id).getBoundingClientRect();
-          const a = q('touchStrike1'); const b = q('touchStrike2');
-          return { a: { x: a.x, y: a.y, w: a.width }, b: { x: b.x } };
+          const c = document.querySelector('#game canvas').getBoundingClientRect();
+          const s = q('touchStick');
+          const over = ['touchStrike1', 'touchStrike2', 'pauseButton'].some((id) => { const e = q(id); return e.left < c.right && e.right > c.left; });
+          return { k: c.width / 1280, left: c.left, s: { x: s.x, y: s.y, w: s.width }, strikeOver: over };
         })()`);
         const av = fx?.band.avoid ?? [];
-        const [a1, a2] = [av[0], av[1]];
-        expect(a1 && a2).toBeTruthy();
-        if (a1 && a2) {
-          const k = (r.b.x - r.a.x) / (a2.x0 - a1.x0);
-          expect(k).toBeGreaterThan(0);
-          expect(a1.x1 - a1.x0 - 16, 'strike 1 width in core units').toBeCloseTo(r.a.w / k, 0);
+        expect(r.strikeOver, 'strikes and pause sit in the gutter, off the canvas').toBe(false);
+        expect(av.length, 'only the stick is over the canvas').toBe(1);
+        const [a1] = av;
+        expect(a1).toBeTruthy();
+        if (a1) {
+          expect(a1.x1 - a1.x0 - 16, 'stick width in core units').toBeCloseTo(r.s.w / r.k, 0);
+          expect(a1.x0 + 8, 'stick left in core units').toBeCloseTo((r.s.x - r.left) / r.k, 0);
         }
       }
     });
