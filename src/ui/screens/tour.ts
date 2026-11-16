@@ -193,6 +193,7 @@ export function tourSplashView(
     // The portrait is decoration: the words below carry the name and element.
     const face = el('span', 'heroFace');
     face.setAttribute('aria-hidden', 'true');
+    face.style.imageRendering = 'auto'; // the 80 px strips are scaled by a non-integer factor: smooth, not nearest-neighbour (QA r66)
     if (s.id !== undefined) face.style.backgroundImage = faceUrl(s.id);
     else face.hidden = true;
     const name = el('p', 'vsName', `${s.who}: ${s.name}`);
@@ -208,6 +209,7 @@ export function tourSplashView(
         const f = el('span', 'heroFace vsBenchFace');
         f.setAttribute('aria-hidden', 'true');
         f.style.width = f.style.height = 'clamp(32px, 7vh, 56px)';
+        f.style.imageRendering = 'auto';
         if (m.id !== undefined) f.style.backgroundImage = faceUrl(m.id);
         li.append(f, el('span', 'vsBenchName', m.name));
         ul.append(li);

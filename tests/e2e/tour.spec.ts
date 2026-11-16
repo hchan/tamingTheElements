@@ -98,6 +98,11 @@ test('World Tour: Controls on the stage card once, a team splash, no first-run c
   expect(await page.locator('#tourStage [data-fact="controls"] kbd').count()).toBeGreaterThanOrEqual(8);
   await page.getByRole('button', { name: 'Fight' }).click();
   await expect(page.locator('#tourSplash .vsBench li')).toHaveCount(4);
+  // QA r66: the portraits scale smoothly (the 80 px strips are shown at about 2x and 0.6x).
+  await expect(page.locator('#tourSplash .vsBench .vsBenchFace')).toHaveCount(4);
+  const rendering = await page.evaluate<string[]>(`Array.from(document.querySelectorAll('#tourSplash .vsFighter .heroFace, #tourSplash .vsBench .vsBenchFace'), (f) => getComputedStyle(f).imageRendering)`);
+  expect(rendering.length).toBeGreaterThanOrEqual(6);
+  expect(new Set(rendering)).toEqual(new Set(['auto']));
   await expect(page.locator('#tourSplash svg')).toHaveCount(2);
   await page.keyboard.press('Enter');
   await page.waitForFunction(ARENA_READY);

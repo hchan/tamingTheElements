@@ -136,6 +136,8 @@ describe('tourSplashView bench and tourStageChip', () => {
     expect(page.querySelectorAll('.heroFace')).toHaveLength(6);
     const faces = [...page.querySelectorAll<HTMLElement>('.vsBenchFace')];
     expect(faces.map((f) => /rokcore|curomo|pax|lavax/.exec(f.style.backgroundImage)?.[0])).toEqual(['rokcore', 'curomo', 'pax', 'lavax']);
+    // QA r66: every portrait scales smoothly (the strips are not an integer multiple of the face size).
+    expect([...page.querySelectorAll<HTMLElement>('.heroFace')].map((f) => f.style.imageRendering)).toEqual(Array<string>(6).fill('auto'));
     expect([...page.querySelectorAll('ul.vsBench')].map((u) => u.getAttribute('aria-label'))).toEqual(['Your teammates', "Opponent's teammates"]);
     expect(page.textContent).not.toMatch(/classic|arcade|ruleset|capture/i);
   });

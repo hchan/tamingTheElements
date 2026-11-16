@@ -403,3 +403,15 @@ html[data-high-contrast='true'] #tourStage .tourKey kbd { background: #000; colo
   #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.52em; }
   #tourStage .tsMine .tsFace, #tourStage .tsTeam .tsMine { width: 2.2em; }
 }
+
+/* QA r66: the splash portraits are 80 px strips drawn at about 2x and 0.6x, so nearest-neighbour left a jagged pale halo. They scale smoothly on a lit plate
+   (as the hero select faces do) with a dark 1 px edge. */
+#tourSplash .vsCard .vsFighter .heroFace {
+  image-rendering: auto;
+  background-color: rgb(205 190 255 / 0.22);
+  box-shadow: inset 0 0 10px rgb(235 225 255 / 0.4);
+  border-radius: 8px;
+  filter: saturate(1.05) brightness(1.1) contrast(1.08) drop-shadow(0 1px 0 rgb(14 10 42 / 0.85));
+}
+#tourStage .tsFoe .tsFace { image-rendering: auto; }
+html[data-high-contrast='true'] #tourSplash .vsCard .vsFighter .heroFace { filter: none; background-color: #000; box-shadow: inset 0 0 0 2px #fff; }
