@@ -195,6 +195,11 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   be pinned by a rushdown character who keeps hitting it from the open side. Hard AI also never stands inside its foe
   (the boxes overlap: it steps apart with `stepApart`, keeping its attack bits) unless the foe is stunned or rooted.
   Probe: `pnpm ai:wallpin` (`tools/sim/wall-pin-probe.ts`).
+  **Wall hold (SIM_VERSION 85, Hard AI only).** When the foe is within 48 px of a side wall and level with it, a free Hard
+  hero keeps a gap (`wallHold`): overlapped boxes get a walk away from the foe even when the foe is stunned or rooted,
+  and inside the hold band (32 px melee, 144 px ranged, minus a 16 px slack) it stops walking in and keeps its attack
+  bits. Off in the intro, while stunned, frozen or in a super, after 400 ticks without damage (the stalemate escape) and
+  for a dash, guard, super, charge or trap command. Normal and Easy are unchanged.
 
 ### 2.3a Walk inertia and the dash curve (sim, SIM_VERSION 66)
 

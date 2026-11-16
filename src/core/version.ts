@@ -304,5 +304,10 @@
  *    every replay fixture changes only its simVersion header; Normal and Easy are unchanged, so the balance baselines are not re-recorded.
  * 84: Arcade corner pushback (a close hit's wall-swallowed knockback pushes the attacker back) plus Hard AI never stands inside its foe;
  *    Classic unchanged. Re-record reason: rule change, all Arcade replay hashes; Classic replays header-only; both Arcade balance baselines re-recorded.
+ * 85: AI only (agents outside SimState): Hard holds off a foe pinned at a wall. When the foe is within 48 px of a wall and Hard is on the
+ *    field side (ties count), Hard keeps a gap (32 px melee, 144 px ranged), steps away from any overlap even while the foe is stunned or
+ *    rooted, and stops walking in; off while Hard is stunned, frozen, in a super, dashing, guarding, charging or trapping, and after 400
+ *    ticks without damage. No rule, data or RNG change. Re-record reason: every replay fixture changes only its simVersion header; Normal
+ *    and Easy are unchanged, so the balance baselines are not re-recorded.
  */
-export const SIM_VERSION = 84;
+export const SIM_VERSION = 85;

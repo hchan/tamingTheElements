@@ -91,6 +91,14 @@ export const ARCADE_AI_REACTION_SPREAD = 9;
  * its draw): the shot then meets the dash's invulnerable ticks, and the guard holds before any parry window could open.
  */
 export const ARCADE_AI_LOOKAHEAD = 40;
+/** Wall hold (SIM_VERSION 85, Hard only): a foe whose box is within this many px of a side wall counts as pinned. */
+export const ARCADE_AI_WALL_NEAR_PX = 48;
+/** Wall hold: the gap (box edge to box edge) a melee Hard hero keeps from a foe at a wall. */
+export const ARCADE_AI_WALL_HOLD_MELEE_PX = 32;
+/** Wall hold: the gap a ranged Hard hero keeps from a foe at a wall. */
+export const ARCADE_AI_WALL_HOLD_RANGED_PX = 144;
+/** Wall hold: hysteresis; inside `hold - slack .. hold` the hero stands still, below it backs off. */
+export const ARCADE_AI_WALL_HOLD_SLACK_PX = 16;
 export const ARCADE_AI_DODGE_AT = 7;
 export const ARCADE_AI_GUARD_AT = 20;
 /**
@@ -455,6 +463,38 @@ export function stepApart(self: Aabb, opp: Aabb, pf: Aabb): Command {
   // The axis along which the foe is further off (so the gap opens fastest), unless that way is walled.
   const [first, second] = Math.abs(dx) / (self.w + opp.w) >= Math.abs(dy) / (self.h + opp.h) ? [bx, by] : [by, bx];
   return room(first) > 0 ? first : room(second) > 0 ? second : first === bx ? (dx >= 0 ? Cmd.left : Cmd.right) : dy >= 0 ? Cmd.up : Cmd.down;
+}
+
+const MOVE_BITS = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
+
+/**
+ * Wall hold (SIM_VERSION 85, Hard only): `cmd` for a hero whose foe is pinned at a side wall (within ARCADE_AI_WALL_NEAR_PX, with
+ * `self` on the field side; equal centres count as "foe at the wall") and level with it. Overlapped boxes get the walking bit
+ * away from the foe (`stepApart` when there is no room that way), whether or not the foe is stunned or rooted; closer than the hold
+ * gap (melee or ranged) minus the slack the hero backs off, and inside the band it stops walking in and keeps its attack bits.
+ * One movement bit at most, never a diagonal. Farther than the hold gap, or with no vertical overlap, `cmd` is unchanged.
+ */
+export function wallHold(self: Aabb, opp: Aabb, cmd: Command, pf: Aabb, ranged: boolean): Command {
+  const sc = self.x + self.w / 2;
+  const oc = opp.x + opp.w / 2;
+  const left = opp.x - pf.x <= ARCADE_AI_WALL_NEAR_PX && oc <= sc;
+  const right = !left && pf.x + pf.w - (opp.x + opp.w) <= ARCADE_AI_WALL_NEAR_PX && oc >= sc;
+  if (!left && !right) return cmd;
+  const dyc = self.y + self.h / 2 - (opp.y + opp.h / 2);
+  if (Math.abs(dyc) * 2 >= self.h + opp.h) return cmd;
+  const gap = left ? self.x - (opp.x + opp.w) : opp.x - (self.x + self.w);
+  const towardBit = left ? Cmd.left : Cmd.right;
+  const awayBit = left ? Cmd.right : Cmd.left;
+  const room = left ? pf.x + pf.w - (self.x + self.w) : self.x - pf.x;
+  if (gap < 0) {
+    if (room > 0) return (cmd & ~MOVE_BITS) | awayBit;
+    const apart = stepApart(self, opp, pf);
+    return apart === 0 ? cmd : (cmd & ~MOVE_BITS) | apart;
+  }
+  const hold = ranged ? ARCADE_AI_WALL_HOLD_RANGED_PX : ARCADE_AI_WALL_HOLD_MELEE_PX;
+  if (gap > hold) return cmd;
+  if (gap < hold - ARCADE_AI_WALL_HOLD_SLACK_PX && room > 0) return (cmd & ~MOVE_BITS) | awayBit;
+  return cmd & ~towardBit;
 }
 
 /** True when box `self` moved by (`dx`, `dy`) overlaps hazard box `hz` (the sim's own overlap test, systems/arcade/hazard.ts). */
