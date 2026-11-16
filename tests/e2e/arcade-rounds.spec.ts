@@ -14,6 +14,7 @@ interface Rounds {
   timer: string;
   timerColor: string;
   band: number;
+  cards: [string, string];
   won: [number, number];
 }
 
@@ -144,4 +145,20 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
   await step(page, 12);
   expect(await rounds(page)).toMatchObject({ main: 'FIGHT!' });
   expect(errors).toEqual([]);
+});
+
+test('Arcade Versus: both hero names show on a backing strip while ROUND slides in (HF2-4)', async ({ page }, info) => {
+  for (const [w, h] of [[1280, 720], [844, 390]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await versus(page);
+    await expect.poll(async () => (await rounds(page))?.main).toBe('ROUND 1');
+    await step(page, 5);
+    const r = await rounds(page);
+    expect(r?.cards[0]).not.toBe('');
+    expect(r?.cards[1]).not.toBe('');
+    await page.screenshot({ path: info.outputPath(`round-names-t5-${String(w)}.png`) });
+    await step(page, 15);
+    expect((await rounds(page))?.cards[0]).not.toBe('');
+    await page.screenshot({ path: info.outputPath(`round-names-t20-${String(w)}.png`) });
+  }
 });

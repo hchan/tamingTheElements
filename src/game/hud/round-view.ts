@@ -33,8 +33,6 @@ const SUB_GAP = 42;
 const CARD_PX = 54;
 const CARD_Y = 200;
 const CARD_MARGIN = 64;
-/** Closest a sliding name may come to the screen edge. */
-const CARD_EDGE_GAP = 8;
 const WON_COLOR = 0xb8964a;
 /** The word under each side's round pips, so they are not read as super charge. */
 const PIP_LABEL_PX = 13;
@@ -108,8 +106,10 @@ export function mountRoundView(
 
   let parts: {
     main: Phaser.GameObjects.Text; sub: Phaser.GameObjects.Text; timer: Phaser.GameObjects.Text; pips: Phaser.GameObjects.Graphics; pipLabels: Phaser.GameObjects.Text[];
-    halo: Phaser.GameObjects.Graphics; band: Phaser.GameObjects.Graphics; cards: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
+    halo: Phaser.GameObjects.Graphics; cardBands: [Phaser.GameObjects.Graphics, Phaser.GameObjects.Graphics]; band: Phaser.GameObjects.Graphics; cards: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
   } | undefined;
+  const cardStrips: BandStrip[] = [];
+  const cardBandKeys: [string, string] = ['', ''];
   const cardState: CardFrame = { alpha: 0, offset: 0 };
   const cardNames: [string, string] = ['', ''];
   const cardColors: [string, string] = ['#e8dcc0', '#e8dcc0'];
@@ -182,6 +182,7 @@ export function mountRoundView(
     if (!on || !isIntroBanner(banner.main)) {
       cardsFor = -1;
       for (const t of parts.cards) t.setVisible(false);
+      for (const team of [0, 1] as const) if (cardBandKeys[team] !== '') { cardBandKeys[team] = ''; parts.cardBands[team].clear().setVisible(false); }
       return;
     }
     if (cardsFor !== banner.from) {
@@ -192,10 +193,29 @@ export function mountRoundView(
     for (const team of [0, 1] as const) {
       const t = parts.cards[team];
       if (t.text !== cardNames[team]) t.setText(cardNames[team]);
-      // The slide never carries the name past the screen edge (qa-r15: a name cut off at the frame mid-slide); it fades in over the shortened travel.
-      const slide = Math.min(cardState.offset, CARD_MARGIN - CARD_EDGE_GAP);
-      const edge = team === 0 ? CARD_MARGIN - slide : LOGICAL_WIDTH - CARD_MARGIN + slide;
-      t.setColor(cardColors[team]).setPosition(edge, CARD_Y).setAlpha(cardState.alpha * 0.92).setVisible(cardState.alpha > 0 && cardNames[team] !== '');
+      // The slide runs inward from the resting place (qa-r15, HF2-4: never nearer the edge than CARD_MARGIN).
+      const edge = team === 0 ? CARD_MARGIN + cardState.offset : LOGICAL_WIDTH - CARD_MARGIN - cardState.offset;
+      const shown = cardState.alpha > 0 && cardNames[team] !== '';
+      t.setColor(cardColors[team]).setPosition(edge, CARD_Y).setAlpha(cardState.alpha).setVisible(shown);
+      if (shown) {
+        // A feathered dark strip behind the name (the banner band's maths), redrawn only when its quantised alpha or place changes.
+        const w = t.displayWidth;
+        const cx = team === 0 ? edge + w / 2 : edge - w / 2;
+        const n = bannerBandFor('ROUND', cardState.alpha, banner.hc, cx, CARD_Y - t.displayHeight / 2, CARD_Y + t.displayHeight / 2, w / 2, cardStrips);
+        const key = `${String(Math.round(cardState.alpha * 50))}|${String(Math.round(cx))}|${String(Math.round(w))}|${banner.hc ? 'h' : 'n'}`;
+        if (key !== cardBandKeys[team]) {
+          cardBandKeys[team] = key;
+          const g = parts.cardBands[team];
+          g.clear().setVisible(true);
+          for (let i = 0; i < n; i++) {
+            const r = cardStrips[i];
+            if (r) g.fillStyle(BANNER_BAND_COLOR, r.a).fillRect(r.x, r.y, r.w, r.h);
+          }
+        }
+      } else if (cardBandKeys[team] !== '') {
+        cardBandKeys[team] = '';
+        parts.cardBands[team].clear().setVisible(false);
+      }
     }
   }
 
@@ -263,6 +283,7 @@ export function mountRoundView(
       pipLabels: ([0, 1] as const).map((team) => text(PIP_LABEL_PX, PIP_Y + PIP_R + 3, 3, true).setOrigin(0.5, 0).setFontSize(Math.round(PIP_LABEL_PX * phoneBoost(hud, 1.7, 1100))).setText('WINS').setPosition(pipPairCentre(team), PIP_Y + PIP_R + 3)),
       halo: hud.add.graphics().setDepth(DEPTH - 1).setBlendMode('ADD').setVisible(false),
       band: hud.add.graphics().setDepth(DEPTH - 2).setVisible(false),
+      cardBands: [hud.add.graphics().setDepth(DEPTH - 2).setVisible(false), hud.add.graphics().setDepth(DEPTH - 2).setVisible(false)],
       cards: [
         text(CARD_PX, CARD_Y, 12, true).setOrigin(0, 0.5).setVisible(false),
         text(CARD_PX, CARD_Y, 12, true).setOrigin(1, 0.5).setVisible(false),
@@ -283,7 +304,7 @@ export function mountRoundView(
     states.delete(hud);
     hud.registry.set('tte.banner', false);
     results.destroy();
-    if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, ...parts.pipLabels, parts.halo, parts.band, ...parts.cards]) o.destroy();
+    if (parts) for (const o of [parts.main, parts.sub, parts.timer, parts.pips, ...parts.pipLabels, parts.halo, parts.band, ...parts.cardBands, ...parts.cards]) o.destroy();
     parts = undefined;
   };
   if (hud.sys.isActive()) build();

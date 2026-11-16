@@ -9,17 +9,17 @@ export function isIntroBanner(main: string): boolean {
   return main.startsWith('ROUND ') || main === 'FINAL ROUND' || main === 'SUDDEN DEATH';
 }
 
-export const CARD_IN_TICKS = 14;
+export const CARD_IN_TICKS = 6;
 export const CARD_OUT_TICKS = 14;
 /** The cards clear this many ticks before the intro banner's end, so the stage is clean when FIGHT! lands. */
 export const CARD_CLEAR_TICKS = 6;
-/** Slide distance in logical px (a card starts this far off its resting place, towards its own edge). */
-export const CARD_SLIDE_PX = 220;
+/** Slide distance in logical px (a card starts this far off its resting place, towards the screen centre, never nearer its edge). */
+export const CARD_SLIDE_PX = 24;
 
 export interface CardFrame {
   /** 0 hidden .. 1 fully shown. */
   alpha: number;
-  /** Horizontal offset in px towards the card's own screen edge (0 when settled). */
+  /** Horizontal offset in px towards the screen centre (0 when settled); the name drifts out to its spot and never nears its edge. */
   offset: number;
 }
 
