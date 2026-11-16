@@ -25,11 +25,22 @@ export interface Box {
 }
 
 /**
+ * Shifts a drawn box's `left` so `[left, left + width]` stays inside `[0, worldW]` (WP-HC1): the 2x sprite of a hero pressed
+ * against a wall would otherwise hang half its body off the picture. The sim box is untouched; the shift is at most
+ * w(k-1)/2 for a sim box inside the world, and zero at k = 1. A box wider than the world is left alone.
+ */
+export function wallTuck(left: number, width: number, worldW: number): number {
+  if (width >= worldW) return left;
+  return Math.min(worldW - width, Math.max(0, left));
+}
+
+/**
  * The box the sprite shows in: the sim box grown by `k` about the feet centre. FX that hug the body (auras, status marks,
  * aim ring, guard bubble) use this so they stay on the bigger sprite. `out` is filled and returned (no allocation).
  */
-export function visualBox(x: number, y: number, w: number, h: number, k: number, out: Box): Box {
+export function visualBox(x: number, y: number, w: number, h: number, k: number, out: Box, worldW?: number): Box {
   out.x = x - (w * (k - 1)) / 2;
+  if (worldW !== undefined) out.x = wallTuck(out.x, w * k, worldW);
   out.y = y - h * (k - 1);
   out.w = w * k;
   out.h = h * k;

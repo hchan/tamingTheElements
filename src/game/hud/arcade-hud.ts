@@ -226,3 +226,69 @@ export function comboScale(c: ComboShown, reduced: boolean): number {
 export function comboAlpha(c: ComboShown): number {
   return Math.min(1, c.hold / 300);
 }
+
+/**
+ * Tick positions (px) for a life bar of `maxHp`: one notch per `step` HP from the zero end `x0` towards the full end `x1`
+ * (`x0 > x1` allowed), none at the full end. The step doubles while there would be more than `maxTicks` notches or they would
+ * sit closer than `minGapPx`, so the size of the pool reads without clutter (297 HP gets 2 ticks, 591 gets 5).
+ */
+export function lifeTicks(maxHp: number, x0: number, x1: number, step = 100, maxTicks = 12, minGapPx = 8): number[] {
+  if (!(maxHp > 0) || step <= 0) return [];
+  const perHp = (x1 - x0) / maxHp;
+  let st = step;
+  while (Math.ceil(maxHp / st) - 1 > maxTicks || Math.abs(perHp * st) < minGapPx) {
+    st *= 2;
+    if (st > maxHp) return [];
+  }
+  const out: number[] = [];
+  for (let hp = st; hp < maxHp; hp += st) out.push(x0 + hp * perHp);
+  return out;
+}
+
+/** The words beside a bar with no active hero (the K.O. gap between rounds or before a tag-in): the last hero's name and K.O., else nothing. */
+export function gapLabel(last: { readonly name: string } | undefined, hasActive: boolean): string {
+  return !hasActive && last ? `${last.name}  K.O.` : '';
+}
+
+export interface HudRect {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
+/**
+ * Maps a world point to HUD (screen) space: both cameras cover the whole canvas, so the map is linear. `from` is the Arena
+ * camera's world view (built from scroll and zoom, not the lagging `worldView`), `to` the HUD frame (1280x720). `out` is filled.
+ */
+export function projectToHud(x: number, y: number, from: HudRect, to: HudRect, out: { x: number; y: number }): { x: number; y: number } {
+  out.x = to.x + ((x - from.x) / from.w) * to.w;
+  out.y = to.y + ((y - from.y) / from.h) * to.h;
+  return out;
+}
+
+/** Margin (px) a damage number keeps from the frame sides. */
+export const NUMBER_MARGIN = 16;
+/** Lowest y of the top HUD band (bars, chips, pips, combo) and highest y of the action bar a number may use. */
+export const NUMBER_TOP = 120;
+export const NUMBER_BOTTOM = 632;
+
+/**
+ * Keeps a damage number (centre `cx`, bottom `bottomY`, `halfW` x `h`) on screen: inside the frame sides, below the HUD band,
+ * above the action bar, and clear of any `avoid` rect (the combo readout) by sliding towards the screen centre.
+ */
+export function clampNumber(cx: number, bottomY: number, halfW: number, h: number, frame: HudRect, avoid: readonly HudRect[]): { x: number; y: number } {
+  const lo = frame.x + NUMBER_MARGIN + halfW;
+  const hi = frame.x + frame.w - NUMBER_MARGIN - halfW;
+  const clampX = (v: number): number => (lo > hi ? frame.x + frame.w / 2 : Math.min(hi, Math.max(lo, v)));
+  const y = Math.min(NUMBER_BOTTOM, Math.max(NUMBER_TOP + h, bottomY));
+  let x = clampX(cx);
+  const centre = frame.x + frame.w / 2;
+  for (const r of avoid) {
+    const hit = (): boolean => x + halfW > r.x && x - halfW < r.x + r.w && y > r.y && y - h < r.y + r.h;
+    if (!hit()) continue;
+    x = x < centre ? r.x + r.w + halfW : r.x - halfW;
+    x = clampX(x);
+  }
+  return { x, y };
+}

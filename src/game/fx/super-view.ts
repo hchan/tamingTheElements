@@ -3,8 +3,9 @@ import { SUPER_NAMES, type Element } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
 import { drawnBox } from '../views/hero-scale';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
+import { punchAnchor } from './arena-camera';
 import { ELEMENT_COLORS } from './element-colors';
-import { TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
+import { PUNCH_ZOOM, TICK_MS, superFrame, type SuperFrame } from './super-cinematic';
 import { BURST_COLOR, BURST_REACH, BURST_SHAPE, burstRadius, superBurst } from './super-burst';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 
@@ -234,11 +235,17 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       lastTick = -1;
       const img = caster.image;
       const b = drawnBox(img, { x: 0, y: 0, w: 0, h: 0 });
-      px = b.x + b.w / 2;
+      // The drawn box in screen px (the pan moves the world under the 1280 screen the band is laid out in).
+      const vb = viewBox(scene, 1);
+      const sx0 = (b.x - vb.x) / vb.scale;
+      const sx1 = (b.x + b.w - vb.x) / vb.scale;
+      const sBottom = (b.y + b.h - vb.y) / vb.scale;
+      // Zoom about a point that keeps the whole caster on screen (the box centre alone pushes a caster at the edge out of it).
+      px = vb.x + punchAnchor(sx0, sx1, 1 + PUNCH_ZOOM, LOGICAL_WIDTH, 40, 40) * vb.scale;
       py = b.y + b.h / 2;
-      // The band slides in from the caster's half of the arena, with the portrait (as the caster faces) on that side.
-      side = px < LOGICAL_WIDTH / 2 ? -1 : 1;
-      bandY = b.y + b.h <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
+      // The band slides in from the caster's half of the screen, with the portrait (as the caster faces) on that side.
+      side = (sx0 + sx1) / 2 < LOGICAL_WIDTH / 2 ? -1 : 1;
+      bandY = sBottom <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
       // Grim grade: the band is a dark, desaturated wash of the element colour (the element word below is the main cue).
       parts.band.setFillStyle(mute(ELEMENT_COLORS[caster.element], 0.45, 0.5));
       const tint = mute(ELEMENT_COLORS[caster.element], 0.95, 1.05);

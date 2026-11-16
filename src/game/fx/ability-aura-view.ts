@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { LaneWait, centreBusy } from '../hud/banner-lanes';
 import { arcadeHeroScale, visualBox } from '../views/hero-scale';
-import type { RenderCharacter, RenderView } from '@core/index';
+import { arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 import { popLaneLift } from './pop-lanes';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
@@ -70,7 +70,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
     const pair = glowPair(gfx, glow);
     const visit = (c: RenderCharacter): void => {
       if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
-      const vb = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 });
+      const vb = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 }, view.arcade() ? arcadePlayfield().w : undefined);
       anchor.set(c.team, { x: vb.x + vb.w / 2, y: vb.y });
       aim.set(c.team, { x: vb.x + vb.w / 2, y: vb.y + vb.h / 2, dir: c.dir });
       view.forEachStatus(c.id, (st) => {

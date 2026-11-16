@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Cmd, type RenderActionBar } from '@core/index';
+import { Cmd, RoundPhase, type RenderActionBar } from '@core/index';
 import { centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
@@ -238,8 +238,10 @@ describe('Arcade boxes (one consistent bar)', () => {
     expect(d.every((s) => s.progress >= 0 && s.progress <= 1)).toBe(true);
   });
   it('reads a team off the render view read-outs, idle for no active hero', () => {
-    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5 };
-    expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5 });
+    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5, phase: RoundPhase.fight, stunned: (id: number) => id === 3 };
+    expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5, swapBlock: 'STUN' });
+    expect(arcadeBarOf({ ...ar, phase: RoundPhase.intro } as never, 1, false).swapBlock).toBe('WAIT');
+    expect(arcadeBarOf(ar as never, 1, false).swapBlock).toBeUndefined();
     expect(arcadeBarOf(ar as never, 1, true)).toMatchObject({ meter: 20, guarding: false, dashIn: 0, chargeIn: -1, keepCharge: true });
   });
 });

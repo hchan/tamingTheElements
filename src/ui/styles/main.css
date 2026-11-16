@@ -1822,7 +1822,8 @@ html[data-high-contrast='true'] button.touchBtn {
     grid-template-columns: 1fr auto;
     column-gap: 0.8em;
     align-items: center;
-    bottom: 11%;
+    /* 80/720 is the action bar's share of the canvas; the 12px keeps the card clear of it (qa-r65). */
+    bottom: calc(11.12% + 12px);
     max-width: min(90em, 92%);
     font-size: 10px;
     padding: 0.25em 0.6em;

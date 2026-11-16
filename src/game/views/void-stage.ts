@@ -310,7 +310,7 @@ export function mountVoidStage(arena: Phaser.Scene, view: RenderView, alpha: () 
   const find = (c: RenderCharacter): void => {
     if (c.element !== 'void' || (c.flags & BENCHED_OR_DEAD) !== 0) return;
     const a = alpha();
-    visualBox(c.px + (c.x - c.px) * a, c.py + (c.y - c.py) * a, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, box);
+    visualBox(c.px + (c.x - c.px) * a, c.py + (c.y - c.py) * a, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, box, view.arcade() ? arcadePlayfield().w : undefined);
     boss.found = true;
     boss.x = box.x + box.w / 2;
     boss.y = box.y + box.h * 0.5;

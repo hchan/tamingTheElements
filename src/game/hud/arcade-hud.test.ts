@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ArcadeHudModel, CHARGE_DASH, NUMBER_BANNER_ALPHA, NUMBER_FAN, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
   SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterLabelY, meterFlashAlpha, meterSegments, meterX,
-  numberAlpha, numberLabel, numberRise, readyGlow, superRimLayers,
+  numberAlpha, numberLabel, numberRise, readyGlow, superRimLayers, gapLabel, lifeTicks, projectToHud, clampNumber,
 } from './arcade-hud';
 import { dashSegments } from './bars';
 import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './slim-hud';
@@ -164,5 +164,68 @@ describe('SUPER label vs bench portraits (qa-r12, phone landscape)', () => {
       }
       expect(label.y).toBeGreaterThanOrEqual(floor);
     }
+  });
+});
+
+describe('lifeTicks', () => {
+  it('draws a notch per 100 HP and none at full', () => {
+    expect(lifeTicks(297, 120, 580)).toHaveLength(2);
+    expect(lifeTicks(540, 120, 580)).toHaveLength(5);
+    expect(lifeTicks(591, 120, 580)).toHaveLength(5);
+    expect(lifeTicks(600, 120, 580)).toHaveLength(5);
+    expect(lifeTicks(100, 120, 580)).toHaveLength(0);
+  });
+  it('places notches proportionally from the zero end', () => {
+    const t = lifeTicks(400, 0, 400);
+    expect(t).toEqual([100, 200, 300]);
+  });
+  it('doubles the step instead of cluttering', () => {
+    const t = lifeTicks(2500, 0, 460);
+    expect(t.length).toBeGreaterThan(0);
+    expect(t.length).toBeLessThanOrEqual(12);
+    const gaps = t.slice(1).map((x, i) => x - (t[i] ?? 0));
+    for (const g of gaps) expect(g).toBeGreaterThanOrEqual(8);
+    // A narrow bar (a phone chip) widens the step on the minimum gap alone.
+    expect(lifeTicks(600, 0, 30)).toEqual([10, 20]);
+  });
+  it('works for a mirrored bar', () => {
+    expect(lifeTicks(300, 300, 0)).toEqual([200, 100]);
+    expect(lifeTicks(0, 0, 100)).toEqual([]);
+  });
+});
+
+describe('gapLabel', () => {
+  it('names the last hero in the K.O. gap and is blank only when there was none', () => {
+    expect(gapLabel({ name: 'Curomo' }, false)).toBe('Curomo  K.O.');
+    expect(gapLabel(undefined, false)).toBe('');
+    expect(gapLabel({ name: 'Curomo' }, true)).toBe('');
+  });
+});
+
+describe('projectToHud', () => {
+  const to = { x: 0, y: 0, w: 1280, h: 720 };
+  it('is the identity for an unpanned, unzoomed view', () => {
+    expect(projectToHud(300, 200, to, to, { x: 0, y: 0 })).toEqual({ x: 300, y: 200 });
+  });
+  it('follows pan and zoom', () => {
+    const from = { x: 640, y: 0, w: 1280, h: 720 };
+    expect(projectToHud(1280, 360, from, to, { x: 0, y: 0 })).toEqual({ x: 640, y: 360 });
+    const wide = { x: 0, y: -180, w: 1920, h: 1080 };
+    expect(projectToHud(960, 360, wide, to, { x: 0, y: 0 })).toEqual({ x: 640, y: 360 });
+  });
+});
+
+describe('clampNumber', () => {
+  const frame = { x: 0, y: 0, w: 1280, h: 720 };
+  it('keeps a number inside the sides, below the HUD band and above the action bar', () => {
+    expect(clampNumber(0, 300, 40, 40, frame, []).x).toBe(56);
+    expect(clampNumber(1300, 300, 40, 40, frame, []).x).toBe(1280 - 56);
+    expect(clampNumber(600, 20, 40, 40, frame, []).y).toBe(160);
+    expect(clampNumber(600, 700, 40, 40, frame, []).y).toBe(632);
+  });
+  it('slides clear of the combo readout towards the centre', () => {
+    const combo = { x: 24, y: 110, w: 200, h: 40 };
+    const r = clampNumber(100, 150, 40, 40, frame, [combo]);
+    expect(r.x - 40).toBeGreaterThanOrEqual(224);
   });
 });

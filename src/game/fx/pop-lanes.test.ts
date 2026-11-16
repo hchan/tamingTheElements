@@ -18,6 +18,6 @@ describe('popLaneLift', () => {
   });
   it('starts a call-out clear of the damage number on the same fighter', () => {
     // The damage number is about 34 px tall at the fighter's top; the call-out clears it.
-    expect(POP_NUMBER_CLEAR_PX).toBeGreaterThanOrEqual(34);
+    expect(POP_NUMBER_CLEAR_PX).toBeGreaterThanOrEqual(38 + 24 + 4);
   });
 });

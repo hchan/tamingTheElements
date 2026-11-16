@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { arcadeHeroScale, visualBox } from '../views/hero-scale';
-import type { RenderCharacter, RenderView } from '@core/index';
+import { arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { embers, glowPair, hash01, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 import { STATUS_LOOKS, StatusTracker, burstLook, expireLook, loopAlpha } from './status-fx';
 
@@ -65,7 +65,7 @@ export function mountStatusFxView(arena: Phaser.Scene, view: RenderView, reduceM
     const pair = glowPair(gfx, glow);
     const current = new Map<string, { payload: Payload; start: number; expire: number }>();
     view.forEachCharacter((c: RenderCharacter) => {
-      const body = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 });
+      const body = visualBox(c.x, c.y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, { x: 0, y: 0, w: 0, h: 0 }, view.arcade() ? arcadePlayfield().w : undefined);
       lastBody.set(c.id, body);
       if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
       view.forEachStatus(c.id, (st) => {

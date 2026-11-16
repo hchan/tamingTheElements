@@ -12,7 +12,7 @@ import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
-  meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
+  clampNumber, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -47,7 +47,12 @@ export interface HudData {
   readonly view: RenderView;
   /** Arcade matches only: damage numbers and combo counters, fed and aged by the Arena. */
   readonly arcade?: ArcadeHudModel;
+  /** Arcade: the Arena camera's world view (from scroll and zoom), so world-space damage numbers can be projected to the screen. */
+  readonly arenaView?: () => HudRect;
 }
+
+/** The HUD's logical frame. */
+const HUD_FRAME: HudRect = { x: 0, y: 0, w: 1280, h: 720 };
 
 /** Combo counter anchor under each side's bars (logical px). */
 const COMBO_Y = 110;
@@ -118,6 +123,10 @@ export class Hud extends Phaser.Scene {
   /** Arcade: the white chip-drain trail per hero id. */
   private trails = new Map<number, Trail>();
   private frameMs = 1000 / 60;
+  private arenaView: (() => HudRect) | undefined;
+  private readonly projected = { x: 0, y: 0 };
+  /** Arcade: each side's last active hero (name, max life), kept for the K.O. gap label. */
+  private lastActive: ({ name: string; maxHp: number } | undefined)[] = [];
 
   constructor() {
     super(HUD_SCENE);
@@ -126,6 +135,7 @@ export class Hud extends Phaser.Scene {
   init(data: HudData): void {
     this.view = data.view;
     this.arcade = data.arcade;
+    this.arenaView = data.arenaView;
   }
 
   create(): void {
@@ -167,6 +177,7 @@ export class Hud extends Phaser.Scene {
       this.scrim?.destroy();
       this.scrim = undefined;
       this.trails.clear();
+      this.lastActive = [];
       this.grainGfx?.destroy();
       this.grainGfx = undefined;
       for (const im of this.portraits) im.destroy();
@@ -215,7 +226,10 @@ export class Hud extends Phaser.Scene {
       if (side.active) {
         if (this.arcade) {
           // Every bar fills to its own hero's max life, so the fill always matches the Life number (qa-r30; a shorter scaled track read as half empty).
+          // The size of each pool shows as 100 HP notches instead (WP-HC1; `lifeTicks`), so a 297 and a 591 hero are told apart at a glance.
           const bar = slimBar(team);
+          this.lastActive[team] = { name: heroName(side.active.sprite), maxHp: side.active.maxHp };
+          label?.setAlpha(1);
           this.drawBar(gfx, bar, side.active, true);
           this.drawTrail(gfx, bar, side.active);
           if (this.arcade.meters[team].full > 0 && !side.active.dead) this.drawSuperRim(gfx, bar);
@@ -229,7 +243,12 @@ export class Hud extends Phaser.Scene {
         if (this.arcade) this.drawStatusChips(gfx, team, side.active, x, side.bench.length > 0);
         else this.drawLegacyBuffs(gfx, view, side.active, x);
       } else {
-        label?.setText('');
+        if (this.arcade) {
+          // K.O. gap: keep the last hero's name greyed over an empty bar, instead of a blank label (qa-r64/r65).
+          const last = this.lastActive[team];
+          label?.setText(gapLabel(last, false)).setAlpha(0.6);
+          if (last) this.drawEmptyBar(gfx, slimBar(team), last.maxHp);
+        } else label?.setText('');
         this.hideChips(team, 0);
         for (const i of [team, ...[0, 1, 2, 3].map((k) => TEAMS.length + team * 4 + k)]) this.portraits[i]?.setVisible(false);
       }
@@ -597,7 +616,14 @@ export class Hud extends Phaser.Scene {
         // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
         styleCombatText(t.setText(numberLabel(n.amount, n.counter)), n.scaled ? 'scaled' : n.counter ? 'counter' : 'number').setFontSize(n.scaled ? 28 : 38);
       }
-      t.setPosition(n.x, n.y + numberRise(n.age, reduced)).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
+      // World to screen (the arena pans and zooms), then keep it on screen and off the combo readout.
+      const from = this.arenaView?.();
+      const p = from ? projectToHud(n.x, n.y, from, HUD_FRAME, this.projected) : this.projected;
+      if (!from) { p.x = n.x; p.y = n.y; }
+      const avoid: HudRect[] = [];
+      for (const c of this.comboTexts) if (c?.visible) avoid.push({ x: c.x - (c.originX * c.displayWidth), y: c.y, w: c.displayWidth, h: c.displayHeight });
+      const at = clampNumber(p.x, p.y + numberRise(n.age, reduced), t.displayWidth / 2, t.displayHeight, HUD_FRAME, avoid);
+      t.setPosition(at.x, at.y).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
     }
     for (const team of TEAMS) {
       this.drawMeter(model, team);
@@ -692,7 +718,10 @@ export class Hud extends Phaser.Scene {
     stroke(g.lineMax, this.highContrast ? 0xffffff : TRACK_COLOR, g.maxX);
     if (this.highContrast) stroke(g.lineMax - 2, MAX_COLOR, g.maxX);
     else this.thinFrame(gfx, g);
-    if (c.dead) return;
+    if (c.dead) {
+      this.drawTicks(gfx, g, c.maxHp, main);
+      return;
+    }
     const fill = barFill(g, c.hp, c.maxHp, c.restCap, this.highContrast);
     const frac = c.maxHp > 0 ? c.hp / c.maxHp : 0;
     // Slim (Arcade) bars wear the hero's element colour and flash red when critical; the Classic high-contrast bar keeps its ramp.
@@ -715,6 +744,22 @@ export class Hud extends Phaser.Scene {
         this.grain(gfx, g, segs);
       }
     }
+    this.drawTicks(gfx, g, c.maxHp, main);
+  }
+
+  /** The Life bar's notches every 100 HP across fill and track (Arcade main bars only; the bench chips are too small). Dark, so they never add colour. */
+  private drawTicks(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, maxHp: number, main: boolean): void {
+    if (!this.arcade || !main) return;
+    const w = g.lineMax < 8 ? 1 : 2;
+    gfx.lineStyle(w, 0x0a0806, this.highContrast ? 0.8 : 0.45);
+    for (const x of lifeTicks(maxHp, g.minX, g.maxX)) gfx.lineBetween(x, g.y - g.lineMax / 2, x, g.y + g.lineMax / 2);
+  }
+
+  /** An empty track with its notches: the main bar of a side with no active hero. */
+  private drawEmptyBar(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, maxHp: number): void {
+    gfx.lineStyle(g.lineMax, this.highContrast ? 0xffffff : TRACK_COLOR, 1).lineBetween(g.minX, g.y, g.maxX, g.y);
+    if (!this.highContrast) this.thinFrame(gfx, g);
+    this.drawTicks(gfx, g, maxHp, true);
   }
 
   /** A thin dark frame round the track (the grim replacement for a bold plate). */

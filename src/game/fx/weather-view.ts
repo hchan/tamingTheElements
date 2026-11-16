@@ -2,13 +2,13 @@ import type Phaser from 'phaser';
 import { SimEventKind, WEATHER_CHARGE_FULL, arcadePlayfield, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH, coreDisplayWidth, resolutionOf } from '../boot/viewport';
-import { mountTagView } from '../hud/tag-view';
+import { mountTagView, tagState } from '../hud/tag-view';
 import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
 import { mute } from './grim-fx';
 import { createWeatherParticles } from './weather-particles-view';
 import {
   CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TICK_MS, WEATHER_COLORS, WEATHER_NAMES, WeatherFx,
-  badgeFill, badgeLabel, callAlpha, callScale, chargeFill, chargeLabel, particle, progress, readyAlpha, tintAlpha, type Particle,
+  badgeFill, badgeLabel, callAlpha, weatherAlpha, callScale, chargeFill, chargeLabel, particle, progress, readyAlpha, tintAlpha, type Particle,
 } from './weather-fx';
 
 /**
@@ -78,6 +78,8 @@ export interface WeatherState {
   /** The called line while it shows ('' otherwise) and its scale. */
   readonly call: string;
   readonly callScale: number;
+  /** Opacity of the badge, chip and called line (0 under the super band or the TAG! call). */
+  readonly alpha: number;
 }
 
 const states = new WeakMap<Phaser.Scene, () => WeatherState>();
@@ -124,7 +126,7 @@ export function mountWeatherView(
   let callReduced = false;
   /** The round banners (ROUND n held until FIGHT!, then FIGHT! for a second) own the centre: the called line waits for them. */
   let bannerUntil = Number.NEGATIVE_INFINITY;
-  const drawn = { kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1, charge: -1, chargeText: '', chargeFill: 0, ready: 1 };
+  const drawn = { kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1, charge: -1, chargeText: '', chargeFill: 0, ready: 1, alpha: 1 };
   const pt: Particle = { x: 0, y: 0, dx: 0, dy: 0, r: 0, a: 0 };
   /** The grim textured particle layers (weather-particles-view.ts), on top of the Graphics streaks and grains below. */
   const wp = createWeatherParticles(arena);
@@ -234,7 +236,8 @@ export function mountWeatherView(
     if (!p) return;
     const clock = now();
     // The super banner's high band covers the badge, chip and called line: hide them while it runs (alpha, so the draw caches hold).
-    const a = hud.registry.get('tte.band') === true ? 0 : 1;
+    const a = weatherAlpha(hud.registry.get('tte.band') === true, (tagState(arena)?.call ?? '') !== '');
+    drawn.alpha = a;
     for (const o of [p.badge, p.label, p.call, p.bar, p.chip]) o.setAlpha(a);
     const ar = view.arcade();
     const kind = ar?.weather ?? 0;
@@ -303,7 +306,7 @@ export function mountWeatherView(
   states.set(arena, () => ({
     kind: drawn.kind, label: drawn.label, fill: Math.max(0, drawn.fill), tint: drawn.tint, particles: drawn.particles, emitters: wp.count(),
     charge: Math.max(0, drawn.charge), chargeText: drawn.chargeText, chargeFill: drawn.chargeFill,
-    call: parts?.call.visible ? parts.call.text : '', callScale: drawn.scale,
+    call: parts?.call.visible ? parts.call.text : '', callScale: drawn.scale, alpha: drawn.alpha,
   }));
   return (events) => {
     tick = view.tick;

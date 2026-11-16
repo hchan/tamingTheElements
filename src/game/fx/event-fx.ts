@@ -10,6 +10,7 @@ import { createFrostLayer } from './frost-view';
 import { createSignatureLayer } from './signature-view';
 import { createShockLayer } from './shock-view';
 import { koPunch } from './arena-pan';
+import { arcadeHeroScale } from '../views/hero-scale';
 
 /**
  * Cosmetic effects driven by sim events. View-only: nothing here touches sim state or the sim RNG
@@ -378,6 +379,8 @@ export function createPhaserFxSink(
     scene.events.once('destroy', drop);
   };
   const centre = at;
+  // Top of the drawn head: Arcade sprites are the sim box grown about the feet, so the sim top is mid-body (WP-HC1).
+  const headTop = (p: { y: number; h: number }): number => p.y - p.h / 2 - (numberAt ? p.h * (arcadeHeroScale(p.h) - 1) : 0);
   const gate = new FlashGate();
   const impacts = createImpactLayer(scene, paused);
   const streakLayer = createStreakLayer(scene, paused, highContrast);
@@ -467,11 +470,11 @@ export function createPhaserFxSink(
     },
     pop(target, amount, size): void {
       const p = centre(target);
-      if (p && size > 0) shock.pop(p.x, p.y - p.h / 2 - 34, amount, size);
+      if (p && size > 0) shock.pop(p.x, headTop(p) - 34, amount, size);
     },
     number(target, amount, scaled, counter): void {
       const p = centre(target);
-      if (p && numberAt) numberAt(p.x, p.y - p.h / 2, amount, scaled, counter);
+      if (p && numberAt) numberAt(p.x, headTop(p), amount, scaled, counter);
     },
     superCut(caster, fromTick, untilTick, reduced, superId): void {
       // The first-run card (app/first-run-hint.ts, SUPER_CUT_EVENT) leaves before the cut-in band; a literal keeps it out of this chunk.

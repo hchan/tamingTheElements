@@ -164,8 +164,9 @@ export function timerStyle(ticks: number, sudden: boolean): { text: string; colo
 
 /** Round-win pips under the timer: ROUNDS_TO_WIN per team, team 0 left of the centre, team 1 right; filled once won. */
 export const PIP_Y = 60;
-export const PIP_R = 9;
-export const PIP_STEP = 24;
+/** 24 px discs (was 18): readable at a glance at 720p and on a phone (WP-HC1). */
+export const PIP_R = 12;
+export const PIP_STEP = 26;
 /** Gap from the centre line to the nearest pip's centre. */
 export const PIP_INNER = 18;
 export const TIMER_X = 640;
@@ -176,6 +177,12 @@ export interface Pip {
   readonly x: number;
   readonly team: 0 | 1;
   readonly won: boolean;
+}
+
+/** The x centre of one team's pair of pips (for its WINS caption). */
+export function pipPairCentre(team: 0 | 1): number {
+  const mid = PIP_INNER + ((ROUNDS_TO_WIN - 1) * PIP_STEP) / 2;
+  return team === 0 ? TIMER_X - mid : TIMER_X + mid;
 }
 
 /** The pips for `won` rounds per team; team 0 fills from the centre outward on its side, team 1 likewise. */
