@@ -14,8 +14,11 @@ for (const [label, stage] of CASES) {
     await page.getByRole('button', { name: 'Fight!' }).click();
     await page.waitForFunction(ARENA_READY);
     await page.evaluate('window.__TTE__.arena.step(95, [0, 0])');
-    const t = await page.evaluate<{ stage: number } | undefined>('window.__TTE__.arena.terrain()');
-    expect(t?.stage).toBe(stage);
+    // The stage is read from the terrain view, which mounts lazily and draws on a Phaser frame: wait for it (0 = not drawn yet).
+    const stageDrawn = (): Promise<number> =>
+      page.evaluate<number>('window.__TTE__.arena.terrain().then((t) => (t ? t.stage : 0))');
+    await expect.poll(stageDrawn, { timeout: 15_000 }).toBeGreaterThan(0);
+    expect(await stageDrawn()).toBe(stage);
     await page.locator('#game canvas').screenshot({ path: info.outputPath(`stage-${label}.png`) });
     expect(errors).toEqual([]);
   });

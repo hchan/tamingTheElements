@@ -32,7 +32,11 @@ const SCROLL = `({ sw: document.documentElement.scrollWidth, sh: document.docume
 interface Rect { x: number; y: number; w: number; h: number; bw: number; bh: number }
 interface Scroll { sw: number; sh: number; iw: number; ih: number }
 
-async function expectCanvasFits(page: Page): Promise<Rect> {
+/** Right-handed landscape phones (pointer: coarse, 740 px wide up, 500 px tall at most) keep a 72 px right gutter for the Strike buttons (PHONE-1): the canvas is flush left, not centred. */
+const STRIKE_GUTTER = 72;
+const hasStrikeGutter = (s: Scroll): boolean => s.iw >= 740 && s.ih <= 500 && s.iw > s.ih;
+
+async function expectCanvasFits(page: Page, mobile = false): Promise<Rect> {
   const r = await page.evaluate<Rect>(RECT);
   const s = await page.evaluate<Scroll>(SCROLL);
   expect(r.x).toBeGreaterThanOrEqual(-0.5);
@@ -41,7 +45,12 @@ async function expectCanvasFits(page: Page): Promise<Rect> {
   expect(r.y + r.h).toBeLessThanOrEqual(s.ih + 0.5);
   expect(Math.abs(r.w / r.h - 16 / 9)).toBeLessThan(0.02);
   // Centred both ways at the default display size: the letterbox bands split evenly (VISUAL-QA V1).
-  expect(Math.abs(r.x + r.w / 2 - s.iw / 2)).toBeLessThanOrEqual(1);
+  if (mobile && hasStrikeGutter(s)) {
+    // PHONE-1: flush left, and the whole right gutter stays free for Strike 1/2 and Pause.
+    expect(r.x + r.w).toBeLessThanOrEqual(s.iw - STRIKE_GUTTER + 0.5);
+  } else {
+    expect(Math.abs(r.x + r.w / 2 - s.iw / 2)).toBeLessThanOrEqual(1);
+  }
   expect(Math.abs(r.y + r.h / 2 - s.ih / 2)).toBeLessThanOrEqual(1);
   expect(s.sw).toBeLessThanOrEqual(s.iw);
   expect(s.sh).toBeLessThanOrEqual(s.ih);
@@ -62,7 +71,7 @@ for (const vp of VIEWPORTS) {
       await page.goto('/?ff=arenaDemo&manual=1');
       await page.locator('#game canvas').waitFor();
       await page.waitForFunction(ARENA_READY);
-      const r = await expectCanvasFits(page);
+      const r = await expectCanvasFits(page, vp.mobile ?? false);
       const res = vp.dsf <= 1.5 ? 1.5 : Math.min(2, Math.ceil(vp.dsf));
       expect(r.bw).toBe(1280 * res);
       expect(r.bh).toBe(720 * res);
@@ -102,7 +111,7 @@ for (const vp of VIEWPORTS) {
         await expect(page.locator('#rotateOverlay')).toBeHidden();
       }
       await page.waitForFunction(`window.__TTE__.arena.actionSlots().length > 0`);
-      const r = await expectCanvasFits(page);
+      const r = await expectCanvasFits(page, vp.mobile ?? false);
       const slots = await page.evaluate<{ x: number; y: number; size: number; cmd: number }[]>(
         `window.__TTE__.arena.actionSlots()`,
       );
