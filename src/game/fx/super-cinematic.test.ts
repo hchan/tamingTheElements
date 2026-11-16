@@ -6,7 +6,7 @@ import {
 import { cueFor } from '../audio/sound-map';
 import { EventFx, type FxSink } from './event-fx';
 import {
-  CUT_IN_MS, CUT_OUT_MS, PUNCH_IN_MS, PUNCH_OUT_MS, PUNCH_ZOOM, SUPER_DIM, SUPER_FADE_MS, TICK_MS, superFrame, type SuperFrame,
+  CUT_IN_MS, CUT_OUT_MS, PUNCH_IN_MS, PUNCH_OUT_MS, PUNCH_ZOOM, SUPER_DIM, SUPER_FADE_MS, TICK_MS, TITLE_CUT, superFrame, titleAlpha, type SuperFrame,
 } from './super-cinematic';
 
 /** The 16-tick super freeze plus its start tick (SIM_VERSION 58; pinned against a real super below). */
@@ -50,6 +50,23 @@ describe('super cinematic plan (FUN-DESIGN section 3)', () => {
     expect(CUT_OUT_MS).toBeLessThanOrEqual(2 * TICK_MS);
     for (const tick of [8, 12, 14, 15]) expect(at(tick * TICK_MS, false).bandAlpha).toBe(1);
     expect(at(TOTAL - CUT_OUT_MS / 2, false).bandAlpha).toBeCloseTo(0.5);
+  });
+  it('the title is fully opaque or gone, never half faded (QA r73: pale Air name lost its rim)', () => {
+    for (const r of [false, true]) {
+      for (const ms of samples) {
+        const b = at(ms, r).bandAlpha;
+        expect([0, 1]).toContain(titleAlpha(b));
+        if (b >= TITLE_CUT) expect(titleAlpha(b)).toBe(1);
+      }
+    }
+    expect([titleAlpha(0.4), titleAlpha(0.39), titleAlpha(0.5)]).toEqual([1, 0, 1]);
+    for (const tick of [8, 12, 14, 15]) expect(titleAlpha(at(tick * TICK_MS, false).bandAlpha)).toBe(1);
+    expect(titleAlpha(at(TOTAL - CUT_OUT_MS / 2, false).bandAlpha)).toBe(1);
+    expect(titleAlpha(at(TOTAL - 10, false).bandAlpha)).toBe(0);
+    expect(titleAlpha(at(TOTAL, false).bandAlpha)).toBe(0);
+    expect(titleAlpha(at(0, true).bandAlpha)).toBe(0);
+    expect(titleAlpha(at(20, true).bandAlpha)).toBe(0);
+    expect(titleAlpha(at(CUT_IN_MS / 2, true).bandAlpha)).toBe(1);
   });
   it('writes into the given frame (no allocation per rendered frame)', () => {
     const out: SuperFrame = { dim: 0, bandAlpha: 0, slide: 0, zoom: 1 };

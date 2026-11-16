@@ -20,6 +20,13 @@ export const PUNCH_ZOOM = 0.15;
 export const PUNCH_IN_MS = 100;
 export const PUNCH_OUT_MS = 200;
 
+/**
+ * The title (name and sub text) is opaque with its full dark rim or gone, never half faded: a faded rim leaves a pale name
+ * unreadable over a pale floor (QA r73, Air). 0.4 keeps the held last tick (bandAlpha 0.5 under manual stepping) clear of the edge.
+ */
+export const TITLE_CUT = 0.4;
+export const titleAlpha = (bandAlpha: number): number => (bandAlpha >= TITLE_CUT ? 1 : 0);
+
 /** One frame of the cinematic. `slide` is 0 when the band is in place and 1 when it is a full width off screen. */
 export interface SuperFrame {
   dim: number;
