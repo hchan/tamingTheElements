@@ -19,6 +19,12 @@ export interface TourAction {
   readonly disabled?: boolean;
 }
 
+/** One chip on the stage card's Controls row: key caps, then the action word ("W A S D" + "Move"). */
+export interface TourKeyChip { readonly keys: readonly string[]; readonly action: string; readonly note?: string }
+export type TourFact =
+  | { readonly key: string; readonly label: string; readonly value: string }
+  | { readonly key: string; readonly label: string; readonly rows: readonly (readonly TourKeyChip[])[] };
+
 export interface TourCardOptions {
   readonly id: string;
   readonly heading: string;
@@ -27,8 +33,8 @@ export interface TourCardOptions {
   readonly actions: readonly TourAction[];
   /** Adds the Main Menu link after the buttons (default true). */
   readonly menu?: boolean;
-  /** Label and value rows (the stage card): each a scannable `Label: value` line, `key` is a stable hook for decoration. */
-  readonly facts?: readonly { readonly key: string; readonly label: string; readonly value: string }[];
+  /** Label and value rows (the stage card): each a scannable `Label: value` line, `key` is a stable hook for decoration. A `rows` fact is key chips (the Controls row). */
+  readonly facts?: readonly TourFact[];
   /** Shown between the paragraphs and the buttons (the Tour map). */
   readonly extra?: HTMLElement;
 }
@@ -47,7 +53,23 @@ export function tourCardView(o: TourCardOptions): HTMLElement {
   for (const f of o.facts ?? []) {
     const p = el('p', 'tourFact');
     p.dataset['fact'] = f.key;
-    p.append(el('span', 'tourFactLabel', `${f.label}:`), ' ', el('span', 'tourFactValue', f.value));
+    const value = el('span', 'tourFactValue');
+    if ('rows' in f) {
+      p.classList.add('tourKeys');
+      for (const row of f.rows) {
+        const r = el('span', 'tourKeyRow');
+        row.forEach((c, i) => {
+          if (i > 0) r.append(' ');
+          const chip = el('span', 'tourKey');
+          chip.append(...c.keys.map((k) => el('kbd', undefined, k)));
+          if (c.action !== '') chip.append(' ', c.action);
+          if (c.note !== undefined) chip.append(' ', el('span', 'tourKeyNote', c.note));
+          r.append(chip);
+        });
+        value.append(r, ' ');
+      }
+    } else value.textContent = f.value;
+    p.append(el('span', 'tourFactLabel', `${f.label}:`), ' ', value);
     page.append(p);
   }
   if (o.extra) page.append(o.extra);
@@ -171,6 +193,7 @@ export function tourSplashView(
     // The portrait is decoration: the words below carry the name and element.
     const face = el('span', 'heroFace');
     face.setAttribute('aria-hidden', 'true');
+    face.style.imageRendering = 'auto'; // the 80 px strips are scaled by a non-integer factor: smooth, not nearest-neighbour (QA r66)
     if (s.id !== undefined) face.style.backgroundImage = faceUrl(s.id);
     else face.hidden = true;
     const name = el('p', 'vsName', `${s.who}: ${s.name}`);
@@ -186,6 +209,7 @@ export function tourSplashView(
         const f = el('span', 'heroFace vsBenchFace');
         f.setAttribute('aria-hidden', 'true');
         f.style.width = f.style.height = 'clamp(32px, 7vh, 56px)';
+        f.style.imageRendering = 'auto';
         if (m.id !== undefined) f.style.backgroundImage = faceUrl(m.id);
         li.append(f, el('span', 'vsBenchName', m.name));
         ul.append(li);

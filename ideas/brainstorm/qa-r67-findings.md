@@ -11,8 +11,8 @@ added: 2026-11-15
 - Equal-length life bars: persists (228 and 455 HP both fill the full bar).
 - Round pips: still small (about 16 px) and hard to read at a glance.
 - Tag key text: unchanged.
-- Tour map Controls: still a 7-line bold wall of text; YOUR TEAM is clipped at the right edge and the stage strip is pushed to the bottom.
-- Wispera portrait blur on the splash: persists.
+- Tour map Controls: still a 7-line bold wall of text; YOUR TEAM is clipped at the right edge and the stage strip is pushed to the bottom. **Fixed (WP T2).**
+- Wispera portrait blur on the splash: persists. **Fixed (WP T2).**
 - Phone picker fade: persists at 390x844 and on desktop; "More below" sits over the hero cards (desktop: over the Fight bar). Landscape 812x375 is fine.
 
 ## New

@@ -29,6 +29,24 @@ describe('tourCardView', () => {
     expect(link?.getAttribute('href')).toBe('#main');
   });
 
+  it('renders a rows fact as key chips and a value fact as text', () => {
+    const page = card({
+      facts: [
+        { key: 'location', label: 'Location', value: 'Fire' },
+        { key: 'controls', label: 'Controls', rows: [[{ keys: ['W', 'A'], action: 'Move', note: '(or arrows)' }, { keys: ['1'], action: 'Strike' }], [{ keys: ['7'], action: 'Dash' }]] },
+      ],
+    });
+    expect(page.querySelector('[data-fact="location"] .tourFactValue')?.textContent).toBe('Fire');
+    const c = page.querySelector('[data-fact="controls"]');
+    expect(c?.classList.contains('tourKeys')).toBe(true);
+    expect(c?.querySelectorAll('.tourKeyRow')).toHaveLength(2);
+    expect([...(c?.querySelectorAll('.tourKey kbd') ?? [])].map((k) => k.textContent)).toEqual(['W', 'A', '1', '7']);
+    expect(c?.textContent).toMatch(/^Controls:/);
+    expect(c?.textContent).toContain('Move');
+    expect(c?.textContent).toContain('Dash');
+    expect(c?.querySelector('.tourKeyNote')?.textContent).toBe('(or arrows)');
+  });
+
   it('omits the Main Menu link when menu is false', () => {
     expect(card({ menu: false }).querySelector('a')).toBeNull();
   });
@@ -118,6 +136,8 @@ describe('tourSplashView bench and tourStageChip', () => {
     expect(page.querySelectorAll('.heroFace')).toHaveLength(6);
     const faces = [...page.querySelectorAll<HTMLElement>('.vsBenchFace')];
     expect(faces.map((f) => /rokcore|curomo|pax|lavax/.exec(f.style.backgroundImage)?.[0])).toEqual(['rokcore', 'curomo', 'pax', 'lavax']);
+    // QA r66: every portrait scales smoothly (the strips are not an integer multiple of the face size).
+    expect([...page.querySelectorAll<HTMLElement>('.heroFace')].map((f) => f.style.imageRendering)).toEqual(Array<string>(6).fill('auto'));
     expect([...page.querySelectorAll('ul.vsBench')].map((u) => u.getAttribute('aria-label'))).toEqual(['Your teammates', "Opponent's teammates"]);
     expect(page.textContent).not.toMatch(/classic|arcade|ruleset|capture/i);
   });

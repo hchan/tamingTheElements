@@ -17,6 +17,9 @@ from PIL import Image
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
 CELL = 80
+# QA r66: Wispera is a translucent haze (mean alpha ~73), so at 80 px it dissolves into the HUD. hero -> (floor, gamma): every visible
+# pixel's alpha becomes 255*(a/255)**gamma, and pixels fainter than floor are dropped (the thin outer haze). Colour is untouched.
+ALPHA_LIFT = {"wispera": (16, 0.5)}
 
 
 def entry_of(manifest, hero):
@@ -43,6 +46,11 @@ def strip(manifest, hero):
         if (bw, bh) != (CELL, CELL):
             cell = cell.resize((CELL, CELL), Image.Resampling.BOX)  # Pillow premultiplies RGBA for this filter
         out.paste(cell, (i * CELL, 0))
+    if hero in ALPHA_LIFT:
+        floor, gamma = ALPHA_LIFT[hero]
+        r, g, b, a = out.split()
+        a = a.point([0 if v == 0 else round(255 * (v / 255) ** gamma) if v >= floor else 0 for v in range(256)])
+        out = Image.merge("RGBA", (r, g, b, a))
     return out
 
 

@@ -201,6 +201,26 @@ describe('defeat flow', () => {
 
 describe('stage card controls fact', () => {
   const playing: TourRun = { ...startRun([A, B, C], 5), stage: 1 };
+  const kbds = (host: HTMLElement): string[] => [...host.querySelectorAll('[data-fact="controls"] kbd')].map((k) => k.textContent);
+  it('is key chips and stays the last fact', () => {
+    vi.useFakeTimers();
+    const r = mount(playing);
+    $('tourResumeRun').click();
+    const facts = [...r.host.querySelectorAll('p.tourFact')];
+    expect(facts.at(-1)?.getAttribute('data-fact')).toBe('controls');
+    expect(facts.at(-1)?.classList.contains('tourKeys')).toBe(true);
+    expect(kbds(r.host)).toEqual(expect.arrayContaining(['W', 'A', 'S', 'D', '1', '2', '7', '8', '9', '3']));
+  });
+  it('names the touch controls on a coarse pointer', () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener: () => undefined, removeEventListener: () => undefined }) as unknown as MediaQueryList,
+    );
+    const r = mount(playing);
+    $('tourResumeRun').click();
+    expect(kbds(r.host)).toContain('Stick');
+    expect(kbds(r.host)).not.toContain('W');
+  });
   it('names the controls once, until Fight is pressed', () => {
     vi.useFakeTimers();
     const r = mount(playing);
