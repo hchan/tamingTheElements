@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderArcade, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import { poseHoldMs } from '../fx/hit-feel';
 import { PoseVfx } from './pose-vfx';
+import { CAST_HOLD_MS, CAST_Z, PROJ_CAST_GAP_MS, PROJ_CAST_Z, SUPER_HOLD_MS, applyDepth, depthTarget, shadowFor, stepDepth, type ShadowPose } from './pose-depth';
 import { FX_ELEMENTS } from './pose-vfx-math';
 import { createFrameResolver, generatedSheets, walkTime, type FrameResolver, type SheetFrame } from '../assets/sheet-frames';
 import type { Action, SheetsManifest } from '../assets/sheet-spec';
@@ -88,6 +89,9 @@ export interface SheetDrawn {
   /** World x extent of the drawn (rotated) visual box, 0.1 px: the left and right edge the viewer sees. */
   boxL: number;
   boxR: number;
+  /** Depth step (pose-depth.ts): eased 0..1 amount (2 dp) and the dolly scale used (3 dp; 1 for portrait rigs). */
+  depth: number;
+  dolly: number;
 }
 
 interface Ghost {
@@ -113,7 +117,7 @@ interface Ghost {
 export interface PoseLayerDeps {
   readonly scene: Phaser.Scene;
   readonly view: RenderView;
-  readonly characters: { peek(id: number): Pick<CharacterView, 'image' | 'scale'> | undefined };
+  readonly characters: { peek(id: number): Pick<CharacterView, 'image' | 'scale' | 'shadowPose'> | undefined };
   readonly projectiles: { peek(id: number): Pick<ProjectileView, 'image' | 'glow'> | undefined };
   readonly reduced: () => boolean;
   /** Sprite sheet lookup (default: the shipped manifest) and the URL base its atlases load from. */
@@ -138,6 +142,11 @@ export class PoseLayer {
   private victoryTeam = -1;
   private victoryAt = 0;
   private posed = 0;
+  /** The VFX clock in ms (runs through a super's hit-stop, stops on a real pause) and its last frame step; the depth step uses both. */
+  private fxMs = 0;
+  private fxDt = 0;
+  private heldCount = 0;
+  private readonly shadowOut: ShadowPose = { dx: 0, dy: 0, scaleMul: 1, alphaMul: 1 };
   private readonly vfx: PoseVfx;
   readonly book: SheetBook;
   private readonly pose: Pose = resetPose({ sx: 1, sy: 1, rot: 0, ox: 0, oy: 0, alpha: 1 });
@@ -183,6 +192,13 @@ export class PoseLayer {
   private readonly mRot = new Float32Array(SLOTS);
   private readonly mOy = new Float32Array(SLOTS);
   private readonly mAlpha = new Float32Array(SLOTS).fill(1);
+  /** Depth step per slot: eased amount, dolly used, super held flag and its end, last cast pulse start and level. */
+  private readonly z = new Float32Array(SLOTS);
+  private readonly dolly = new Float32Array(SLOTS).fill(1);
+  private readonly superHeld = new Uint8Array(SLOTS);
+  private readonly superUntil = new Float64Array(SLOTS);
+  private readonly castAt = new Float64Array(SLOTS).fill(-1e9);
+  private readonly castZ = new Float32Array(SLOTS);
   private readonly eachChar = (c: RenderCharacter): void => { this.character(c); };
   private readonly eachX = (c: RenderCharacter): void => { this.simX[c.id & (SLOTS - 1)] = c.x; };
   private readonly eachProj = (p: RenderProjectile): void => { this.projectile(p); };
@@ -217,6 +233,8 @@ export class PoseLayer {
           motifRot: Math.round((this.mRot[c.id & (SLOTS - 1)] ?? 0) * 1000) / 1000,
           motifOy: Math.round((this.mOy[c.id & (SLOTS - 1)] ?? 0) * 1000) / 1000,
           motifAlpha: Math.round((this.mAlpha[c.id & (SLOTS - 1)] ?? 1) * 1000) / 1000,
+          depth: Math.round((this.z[c.id & (SLOTS - 1)] ?? 0) * 100) / 100,
+          dolly: Math.round((this.dolly[c.id & (SLOTS - 1)] ?? 1) * 1000) / 1000,
         });
       }
     });
@@ -244,13 +262,23 @@ export class PoseLayer {
           this.clearKoGhosts();
           this.start((e['to'] ?? 0) & (SLOTS - 1), PoseKind.tagIn, (e['team'] ?? 0) === 0 ? 1 : -1, 1);
           break;
-        case SimEventKind.superStarted:
-          this.vfx.charge((e['caster'] ?? e.sourceId) & (SLOTS - 1), SUPER_CHARGE_MS, true);
+        case SimEventKind.superStarted: {
+          const s = (e['caster'] ?? e.sourceId) & (SLOTS - 1);
+          this.vfx.charge(s, SUPER_CHARGE_MS, true);
+          if (this.superHeld[s] !== 1) this.heldCount++;
+          this.superHeld[s] = 1;
+          this.superUntil[s] = this.fxMs + SUPER_HOLD_MS;
+          break;
+        }
+        case SimEventKind.elementalCast:
+          this.castPulse(e.sourceId & (SLOTS - 1), CAST_Z);
           break;
         case SimEventKind.chargeStarted:
           this.vfx.charge(e.sourceId & (SLOTS - 1), CHARGE_MS, false);
+          this.castPulse(e.sourceId & (SLOTS - 1), CAST_Z);
           break;
         case SimEventKind.died:
+          this.resetDepth(e.sourceId & (SLOTS - 1));
           this.knockOut(e.sourceId);
           break;
         case SimEventKind.roundEnded:
@@ -259,6 +287,7 @@ export class PoseLayer {
           break;
         case SimEventKind.roundStarted:
           this.victoryTeam = -1;
+          for (let s = 0; s < SLOTS; s++) this.resetDepth(s);
           break;
         default:
       }
@@ -285,7 +314,17 @@ export class PoseLayer {
     }
     this.animMs += this.dt;
     // The VFX clock keeps running through a hit-stop freeze (a super's charge happens inside it) and stops only on a real pause.
-    if (this.arcade) this.vfx.frame(nowMs - this.lastTickAt > STALL_MS && ar?.frozen !== true ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS), this.reduced);
+    this.fxDt = nowMs - this.lastTickAt > STALL_MS && ar?.frozen !== true ? 0 : Math.min(Math.max(deltaMs, 0), MAX_DT_MS);
+    this.fxMs += this.fxDt;
+    if (this.arcade) this.vfx.frame(this.fxDt, this.reduced);
+    if (this.heldCount > 0 && ar?.frozen !== true) {
+      for (let s = 0; s < SLOTS; s++) {
+        if (this.superHeld[s] === 1 && this.fxMs >= (this.superUntil[s] ?? 0)) {
+          this.superHeld[s] = 0;
+          this.heldCount--;
+        }
+      }
+    }
     this.frameNo++;
     this.posed = 0;
     // The foe may have a higher id than the hero: every sim x is read before any character is posed.
@@ -297,6 +336,22 @@ export class PoseLayer {
     }
     this.fadeGhosts();
     this.decayShake();
+  }
+
+  /** A cast pulse of level `z` for the hero in `slot`; never replaces a stronger pulse that is still running. */
+  private castPulse(slot: number, z: number): void {
+    if (this.fxMs - (this.castAt[slot] ?? -1e9) < CAST_HOLD_MS && (this.castZ[slot] ?? 0) > z) return;
+    this.castAt[slot] = this.fxMs;
+    this.castZ[slot] = z;
+  }
+
+  private resetDepth(slot: number): void {
+    if (this.superHeld[slot] === 1) this.heldCount--;
+    this.superHeld[slot] = 0;
+    this.z[slot] = 0;
+    this.dolly[slot] = 1;
+    this.castAt[slot] = -1e9;
+    this.castZ[slot] = 0;
   }
 
   private start(slot: number, kind: number, dir: number, power: number): void {
@@ -315,6 +370,12 @@ export class PoseLayer {
       this.have[i] = 0;
       this.moving[i] = 0;
       this.back[i] = 0;
+      this.z[i] = 0;
+      this.dolly[i] = 1;
+      if (this.superHeld[i] === 1) {
+        this.superHeld[i] = 0;
+        this.heldCount--;
+      }
       return;
     }
     const img = v.image;
@@ -448,7 +509,16 @@ export class PoseLayer {
       p.sx = 1;
       p.sy = 1;
     }
+    // Depth step (Arcade): a super or cast steps the hero toward the camera, last before place() so it sits on every other pose.
+    if (this.arcade) {
+      this.z[i] = stepDepth(this.z[i] ?? 0, depthTarget(this.superHeld[i] === 1, this.fxMs - (this.castAt[i] ?? -1e9), this.castZ[i] ?? 0, this.reduced), this.fxDt);
+      this.dolly[i] = applyDepth(p, this.z[i] ?? 0, bh, boxedRig);
+    }
     this.place(img, bx + bw / 2, by + bh, p);
+    if (this.arcade && (this.z[i] ?? 0) > 0.001) {
+      const o2 = shadowFor(this.z[i] ?? 0, bh, this.shadowOut);
+      v.shadowPose(o2.dx, o2.dy, o2.scaleMul, o2.alphaMul);
+    }
   }
 
   /** The sheet frame to show: a running event pose, the victory, guard, walk (by distance walked) or idle row. */
@@ -551,6 +621,7 @@ export class PoseLayer {
       }
     }
     if (best < 0) return;
+    if (this.fxMs - (this.castAt[best] ?? -1e9) >= PROJ_CAST_GAP_MS) this.castPulse(best, PROJ_CAST_Z);
     this.start(best, PoseKind.cast, p.dir === 0 || p.dir === 1 || p.dir === 7 ? 1 : -1, 1);
     this.pel[slot] = this.elem[best] ?? 0;
     this.vfx.release(best);
