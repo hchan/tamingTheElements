@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ARCADE_WORLD_BASE, ArcadeW, createMatch, step, type CharacterId } from '@core/index';
 import { arcadeSetup } from './arcade-setup';
-import { currentStage, matchSeed, stagePick } from './tour-match';
+import { currentStage, locationName, matchSeed, stagePick, tourFight } from './tour-match';
 import { TOUR_STAGES, advance, buildTour, startRun, useContinue, type TourRun } from './tour-model';
 
 /**
@@ -73,5 +73,18 @@ describe('tour card == fight', () => {
       checkFight(run);
     }
     expect(run.stage).toBe(TOUR_STAGES - 1);
+  });
+});
+
+describe('tourFight', () => {
+  it('is the stage, pick and match seed of the run, and names the Void', () => {
+    for (const stage of [0, 4, TOUR_STAGES - 1]) {
+      const run: TourRun = { ...startRun(TEAMS[0] as CharacterId[], 42), stage, continues: 2 };
+      const s = currentStage(run);
+      expect(tourFight(run)).toEqual({ stage: s, pick: stagePick(run, s), seed: matchSeed(run, s) });
+    }
+    const last = currentStage({ ...startRun(TEAMS[0] as CharacterId[], 42), stage: TOUR_STAGES - 1 });
+    expect(locationName(last)).toBe('The Eternal Void');
+    expect(locationName(currentStage(startRun(TEAMS[0] as CharacterId[], 42)))).toMatch(/^(Fire|Water|Earth|Air)$/);
   });
 });
