@@ -11,7 +11,9 @@ import { drawnBox, fitToBox, frameBox, setFrameBox, type BoxedImage } from '../.
 // checked against the numbers in the plan (coverage, margin, steady feet, no halo, facing, painted detail kept).
 
 const root = resolve(import.meta.dirname, '../..');
-const HEROES = ['pax', 'sindarosa', 'curomo'] as const;
+const HEROES = ['pax', 'sindarosa', 'curomo', 'rokcore', 'lavax', 'ishimi', 'morblass', 'echo', 'wispera', 'cyclonius'] as const;
+// the owner's originals keep their painted fringes (lavax: blue flame edge; morblass: wet-brush mist)
+const HALO_MAX: Record<string, number> = { lavax: 0.12, morblass: 0.07 };
 const BAKED = ['E', 'SE', 'S', 'N', 'NE'] as const;
 const frameFile = (hero: string, action: string, dir: string, i: number): string =>
   resolve(root, 'imgWorkArea/sheets', hero, action, dir, `${String(i).padStart(2, '0')}.png`);
@@ -153,13 +155,14 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
           expect(Math.min(b[0], b[1], img.width - 1 - b[2], img.height - 1 - b[3]), `${at} margin`).toBeGreaterThanOrEqual(2);
           // the body's lowest solid row (the soft contact shadow is under alpha 160)
           feet.push(bbox(img, 160, footX - 40, footX + 40)?.[3] ?? 0);
-          expect(haloShare(img), `${at} halo`).toBeLessThan(0.05);
+          expect(haloShare(img), `${at} halo`).toBeLessThan(HALO_MAX[hero] ?? 0.05);
         }
         if (action === 'idle' || action === 'walk') expect(Math.max(...feet) - Math.min(...feet), `${action}/${dir} feet ${JSON.stringify(feet)}`).toBeLessThanOrEqual(3);
       }
   });
 
-  it.each(HEROES)('%s: faces east in E (head bone ahead of the root)', (hero) => {
+  // front-on paintings (golems, blobs, tornados) have no side view, so only the side-on heroes must face east
+  it.each(['pax', 'sindarosa', 'curomo', 'lavax'] as const)('%s: faces east in E (head bone ahead of the root)', (hero) => {
     const rig = JSON.parse(readFileSync(resolve(root, 'imgWorkArea/rigs', hero, 'rig.json'), 'utf8')) as { bones: { id: string; head: [number, number] }[] };
     const bone = (id: string): [number, number] | undefined => rig.bones.find((b) => b.id === id)?.head;
     expect((bone('head')?.[0] ?? 0) - (bone('root')?.[0] ?? 0)).toBeGreaterThan(0);

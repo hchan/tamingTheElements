@@ -32,7 +32,18 @@ export const grimKey = (key: string): string => `${key}${GRIM_SUFFIX}`;
  * Heroes whose art is the painted portrait itself (tools/assets/portrait-rig, ADR-0020): drawn as baked everywhere (sheet, map
  * strip, HUD picture), never graded, since the ink lift would flatten their painted shadows.
  */
-export const PAINTED_HEROES: ReadonlySet<string> = new Set(['pax', 'sindarosa', 'curomo']);
+export const PAINTED_HEROES: ReadonlySet<string> = new Set([
+  'pax',
+  'sindarosa',
+  'curomo',
+  'rokcore',
+  'lavax',
+  'ishimi',
+  'morblass',
+  'echo',
+  'wispera',
+  'cyclonius',
+]);
 const painted = (key: string): boolean => PAINTED_HEROES.has(key.replace(/^[a-z]+:/, ''));
 
 /** Luma below which a pixel counts as outline ink. */

@@ -14,6 +14,78 @@
    "rig.json": "44a5c83ad6b872a2d0a3b70d54593be510c3fbaa73483b179c9db7b069242f64"
   }
  },
+ "cyclonius": {
+  "inputs": {
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "b0b6f8ca13d2f3453cccb1637cc2e0d9fe11d4bf1af6fe1981dd5c5159682eb4",
+   "anim": "d83f8c91c2569f8962c529b832f7ec0a162ddd93b00c0dba5258210f39bf1444",
+   "portrait": "ff6b91e9ca53a4e93eb8edba09007db3812d9cd5fa6d7bf4d046b0dd67de5265"
+  },
+  "outputs": {
+   "parts/body.png": "ee4bf56a14a3264093c31bf26c33c0623755cc91f9943489034b85ac86b2d3a6",
+   "parts/shadow.png": "383176939c12b83c48bed1a85da6df8ee17cbdea40cea0e3df726366d537139d",
+   "parts/eyeL.png": "104b044c9903f1c31562ebe0e100e62992a54498083cbb48f142ec11c3513445",
+   "parts/eyeR.png": "841decb2d477bbbd33bc400c004f6c252881646feb48d7310c16a20cf54dec14",
+   "rig.json": "76ee44b04417667f33fcc7b6d759046e492aa2a42914f62a92efe562d6a9bcc8"
+  }
+ },
+ "echo": {
+  "inputs": {
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "ee5515d753b599bd393fff1e361f17f0ffbb73be43d6f89827d8cf2bdac444b0",
+   "anim": "83ba56fcc974d9ddad6ce903e25956cf3faaa964ff610d09e8acafccc7fead17",
+   "portrait": "d4dfef6d667cea19cd507691d7939bb843d4f4b8d774cc8838b54b30dbe53149"
+  },
+  "outputs": {
+   "parts/body.png": "6fd9f5cdf4fb428d060f3af24e671a2b41e97e7ab20799e468f347685c76e20d",
+   "parts/shadow.png": "383176939c12b83c48bed1a85da6df8ee17cbdea40cea0e3df726366d537139d",
+   "parts/eyeL.png": "7e8375d479a9027210e553311daac258e8b771a3da3331ac0bbf7f45e10871a0",
+   "parts/eyeR.png": "979138f7051342d141d43ea6a435109c9f432e56a91f926d02de08e2f2c2576c",
+   "rig.json": "9d23f7546a2335804fbd8d008443c16de9d1e1afc05ac564de2fc285f7f28ac4"
+  }
+ },
+ "ishimi": {
+  "inputs": {
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "afa4232dd41e54feadbbcd30650dbb5d02ef73c31822b0755eaf868014717129",
+   "anim": "5f466750e9245cf24ee037b41e5d520f3f9238ad3b8022e5cb33fdede8301c22",
+   "portrait": "ab1bb799b3c1f864d530db102641a3dec01190ff1e0651c4922970c1862ce8c8"
+  },
+  "outputs": {
+   "parts/body.png": "3f60e68df547ae6dcc5ac83ef93637f0144beb199b9a9083f55a4f46a06f2115",
+   "parts/shadow.png": "383176939c12b83c48bed1a85da6df8ee17cbdea40cea0e3df726366d537139d",
+   "parts/eyeL.png": "8e5da8f6cf95997fd398a4dd8cbd2c9748d7ab4ea8732efdaded44d0ab2d2636",
+   "parts/eyeR.png": "ec47ed92de327cf6930b47e97071229eec6432346af7adaabe66f8757cc88428",
+   "rig.json": "7222af41faf94639ecf5ac7d12e06675101835c7f610ac75bc60cfb02aa6e738"
+  }
+ },
+ "lavax": {
+  "inputs": {
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "40c3aa8ab32ea992aeb416a6f6b16bc7d6306a9225426af22322e1b56bb028c8",
+   "anim": "872c38d47a76e7d4165f5542951ffaaebc16c82ea6c838308483ba226f007fb2",
+   "portrait": "ee6315dbfad67d4038f91f1f9883eb2e329f71f39e135b0dd6c920b6abaa0d1e"
+  },
+  "outputs": {
+   "parts/body.png": "18d1b02b106aea3816f674b0039ccf511d6804655a7a13c32519515b9d4bf4e9",
+   "parts/shadow.png": "df33103843d31ee5e273e47b2aaa4a4acea73e7c632c840d6322042dee6e26cf",
+   "parts/eye.png": "8e6f8c53312eaa0e545b03de809c77f96d485f4ac4b47afc2ca7b569e49a227e",
+   "rig.json": "b6e9d50af385753cd4e41deb1dba64fff410524c445ce0dfc2c58008d3469f11"
+  }
+ },
+ "morblass": {
+  "inputs": {
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "18b0875d9ead6f72d4b964692e283bf18989c0c2dcb08787edafea73394c1b92",
+   "anim": "4ec7ecba8f881defac57b8166e50abb9dda13311e7aefc80d33f6bdcaf278236",
+   "portrait": "0b693973c5e23ef38ed7486761fe41f8640ab2062a70ac80d5e70aafa5221136"
+  },
+  "outputs": {
+   "parts/body.png": "0b2c634a3f1654b0f6dad6100cf1c8dc03e3a23053b68bb5e6a50b4f99e0ce72",
+   "parts/shadow.png": "383176939c12b83c48bed1a85da6df8ee17cbdea40cea0e3df726366d537139d",
+   "rig.json": "b413a7f8a15b8ecf566309457f4bd3bba6fed573229dbdf12ad962488e751e7e"
+  }
+ },
  "pax": {
   "inputs": {
    "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
@@ -30,6 +102,20 @@
    "rig.json": "28cb13c5d8420f08f0278012bd92a10493f1672b2b21d366b33d9882a1967a0b"
   }
  },
+ "rokcore": {
+  "inputs": {
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "c0777b1f75dfa3835671688ebc31611a102905905ca1dd8cb9be384146300cb5",
+   "anim": "872c38d47a76e7d4165f5542951ffaaebc16c82ea6c838308483ba226f007fb2",
+   "portrait": "497f770376605d7de008df86eee5fce14487a8842970c848fd9fd20904c91cb0"
+  },
+  "outputs": {
+   "parts/body.png": "e7928ff3c278d5d03acc9709e2e79c27f59d4e2ad10ec2a37b40072d4b797482",
+   "parts/shadow.png": "df33103843d31ee5e273e47b2aaa4a4acea73e7c632c840d6322042dee6e26cf",
+   "parts/eye.png": "adf5acced625cda0f22ee2818530ac8cc23bf9ff7f183e2df6f1f23e07e5cc66",
+   "rig.json": "9ae610e20074c02e489b75694623ae61421e7acf0628c7ad2ecfdb2a60a6c3ed"
+  }
+ },
  "sindarosa": {
   "inputs": {
    "prep.py": "e859cb9e3d4fef1c162ed7dc50b355c1bd325086e0c8dfac5448ce2286cb84af",
@@ -43,6 +129,20 @@
    "parts/eye.png": "0609999a7ff995dc9c6e6dec61fd74b638819c5c0ccdbfca9b196835a4400940",
    "parts/maw.png": "5d693381aa49fde276810b389952f3e5ab85abb895dc421a851c290e43b2d4ac",
    "rig.json": "7d69e36aed2b20196b9fe0ad2b1e44a527e5b55a91de2d15f33c421bf29bc03f"
+  }
+ },
+ "wispera": {
+  "inputs": {
+   "prep.py": "f95e2a546940c6e318561d435bac43affbd91821a16e8ef0bcc6f439ff3c0088",
+   "spec": "ac65dfbd2ec49fa3dbfc309f07a0d10da362bd7522e096d05d17bcc75c3b9483",
+   "anim": "46956e20881ee1705f54c54a038ba72696b07475c155d10edf0f5b3bf3348c28",
+   "portrait": "42feb716874f70c7b9eb427f4186dfb7fedf1bf6148e63c784e3ac628dc001dc"
+  },
+  "outputs": {
+   "parts/body.png": "34bfe50b34989d05ad28a09dad4aec3709a58ad70d2c9ce8c6007517b6b482fb",
+   "parts/shadow.png": "383176939c12b83c48bed1a85da6df8ee17cbdea40cea0e3df726366d537139d",
+   "parts/core.png": "2cb163dc471b9f030e562601eaa7f897effc4a65c637c19d63beae5c2490eeb4",
+   "rig.json": "fa1338ea9fcf68f14e04a17cee730816267404b25188ea5d6e78275e1a570063"
   }
  }
 }
