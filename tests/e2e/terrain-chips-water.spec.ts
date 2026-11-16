@@ -92,3 +92,33 @@ test('water stage: chips are solid plates under the fighters, and fade near a fi
   }
   await page.screenshot({ path: `${shotDir ?? info.outputDir}/water-chips-head.png` });
 });
+
+// QA r74 (CHIP-FADE-1): a chip must be opaque or hidden, never faint. The hint clock starts when the words first show (not under
+// the intro banners), and a chip that flips slot lands opaque. Draws run during the intro, as in live play.
+test('water stage: chips clear of the fighters read at full alpha 140 ticks after they first show', async ({ page }) => {
+  await page.goto(`${START}&ff=arcade#versus`);
+  await page.getByLabel('Your race').selectOption('ishimi');
+  await page.getByLabel('AI race').selectOption('fiara');
+  await page.locator('button.vsSegment', { hasText: 'Water' }).first().click();
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`document.querySelector('.firstRunDone')?.click()`);
+  const chunk = async (): Promise<Terrain> => {
+    await page.evaluate(`window.__TTE__.arena.stepLive(5)`);
+    return terrain(page);
+  };
+  let t = await chunk();
+  let ticks = 5;
+  while (!t.chips.some((c) => c.alpha > 0) && ticks < 400) {
+    t = await chunk();
+    ticks += 5;
+  }
+  expect(t.chips.some((c) => c.alpha > 0), 'chips show after the banners').toBe(true);
+  for (let i = 0; i < 28; i++) t = await chunk(); // 140 ticks after the words first show: still inside the 200-tick hint
+  // Let the per-frame ease settle (frames do not age the hint, only ticks do).
+  for (let i = 0; i < 20 && t.chips.some((c) => c.alpha > 0 && c.alpha < 0.9 && !t.bodies.some((b) => meets(c, b))); i++) t = await terrain(page);
+  const pa = (await page.evaluate<{ alpha: number }>(`window.__TTE__.arena.terrain()`)).alpha;
+  const shown = t.chips.filter((c) => c.alpha > 0);
+  expect(shown.length).toBeGreaterThan(0);
+  for (const c of shown) if (!t.bodies.some((b) => meets(c, b))) expect(c.alpha).toBeGreaterThanOrEqual(0.9 * pa);
+});
