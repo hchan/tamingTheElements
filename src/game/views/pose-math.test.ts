@@ -155,6 +155,8 @@ describe('poses', () => {
 
   it('a tag-in starts at the alpha floor, rises monotonically and ends opaque', () => {
     expect(tagInAlpha(0)).toBeCloseTo(TAG_IN_MIN_ALPHA, 10);
+    // QA r71: a deep fade read as a ghost; the incoming hero stays mostly opaque.
+    expect(TAG_IN_MIN_ALPHA).toBeGreaterThanOrEqual(0.75);
     expect(tagInAlpha(1)).toBeCloseTo(1, 10);
     let prev = 0;
     for (let t = 0; t <= 1.0001; t += 0.05) {

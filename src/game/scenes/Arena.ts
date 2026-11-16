@@ -123,6 +123,17 @@ const DEMO_SETUP: MatchSetup = {
 /** Cmd.swap1 and swap2: the Tag press bits (bits 9 and 10 are Cleanse and the elemental in Arcade). */
 const TAG_BITS = Cmd.swap1 | Cmd.swap2;
 
+/**
+ * Caps the sprite batch at 3 textures. With 4 or more in one batch (floor, hero sheet, ambient glow and grain...) the
+ * multi-texture shader sampled the wrong unit for part of a sprite under SwiftShader (Treenoc drawn as pale water-coloured
+ * triangles, QA r71); the arena has few textures, so the extra flushes are cheap. No-op on the Canvas renderer.
+ */
+export const ARENA_MAX_TEXTURE_UNITS = 3;
+function limitTextureBatch(scene: Phaser.Scene): void {
+  const nodes = (scene.game.renderer as { renderNodes?: { setMaxParallelTextureUnits?: (n: number) => void } }).renderNodes;
+  nodes?.setMaxParallelTextureUnits?.(ARENA_MAX_TEXTURE_UNITS);
+}
+
 export class Arena extends Phaser.Scene {
   private launch: ArenaLaunch | undefined;
   private world: SimWorld | undefined;
@@ -187,6 +198,7 @@ export class Arena extends Phaser.Scene {
 
   create(): void {
     fitScene(this);
+    limitTextureBatch(this);
     const playback = this.launch?.playback;
     this.cursor = playback ? new ReplayCursor(playback.replay) : undefined;
     // `?ff=` flags exist only in dev and test builds; the static test drops this branch from production bundles.
