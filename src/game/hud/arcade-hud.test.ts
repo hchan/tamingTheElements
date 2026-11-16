@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ArcadeHudModel, CHARGE_DASH, NUMBER_BANNER_ALPHA, NUMBER_FAN, COMBO_HOLD_MS, COMBO_POP_MS, METER_INSET, METER_PULSE_MS, METER_W, METER_Y, NUMBER_MS, NUMBER_RISE_PX, NUMBER_SLOTS,
   SEGMENT_GAP, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterLabelY, meterFlashAlpha, meterSegments, meterX,
-  numberAlpha, numberLabel, numberRise, readyGlow, superRimLayers, gapLabel, lifeTicks, projectToHud, clampNumber, hudFrame, viewOfCamera,
+  numberAlpha, numberLabel, numberRise, readyGlow, superRimLayers, gapLabel, lifeTicks, projectToHud, clampNumber, clearOfPops, NUMBER_POP_GAP, hudFrame, viewOfCamera,
 } from './arcade-hud';
 import { dashSegments } from './bars';
 import { CHIP_Y, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, chipRect, slimBar } from './slim-hud';
@@ -216,6 +216,46 @@ describe('projectToHud', () => {
     expect(projectToHud(1280, 360, from, to, { x: 0, y: 0 })).toEqual({ x: 640, y: 360 });
     const wide = { x: 0, y: -180, w: 1920, h: 1080 };
     expect(projectToHud(960, 360, wide, to, { x: 0, y: 0 })).toEqual({ x: 640, y: 360 });
+  });
+});
+
+describe('clearOfPops', () => {
+  const frame = { x: 0, y: 0, w: 1280, h: 720 };
+  const out = { x: 0, y: 0 };
+  const hits = (x: number, y: number, hw: number, h: number, r: { x: number; y: number; w: number; h: number }): boolean =>
+    x + hw > r.x && x - hw < r.x + r.w && y > r.y && y - h < r.y + r.h;
+  it('leaves a number alone when nothing touches it', () => {
+    expect(clearOfPops(300, 300, 30, 30, frame, [{ x: 900, y: 300, w: 80, h: 40 }], 1, out)).toEqual({ x: 300, y: 300 });
+  });
+  it('moves off an overlapping pop to the nearer side, with a gap', () => {
+    const pop = { x: 280, y: 280, w: 100, h: 40 };
+    const r = clearOfPops(300, 310, 30, 30, frame, [pop], 1, out);
+    expect(r.x).toBe(280 - NUMBER_POP_GAP - 30);
+    expect(hits(r.x, r.y, 30, 30, pop)).toBe(false);
+  });
+  it('a tie goes toward the frame centre', () => {
+    const pop = { x: 570, y: 280, w: 100, h: 40 };
+    expect(clearOfPops(620, 310, 30, 30, frame, [pop], 1, out).x).toBeGreaterThan(620);
+  });
+  it('clears two obstacles in turn', () => {
+    const a = { x: 270, y: 280, w: 60, h: 40 };
+    const b = { x: 190, y: 280, w: 70, h: 40 };
+    const r = clearOfPops(300, 310, 30, 30, frame, [a, b], 2, out);
+    expect(hits(r.x, r.y, 30, 30, a)).toBe(false);
+    expect(hits(r.x, r.y, 30, 30, b)).toBe(false);
+  });
+  it('goes above the obstacle when neither side fits in the frame', () => {
+    const wall = { x: 0, y: 280, w: 1280, h: 40 };
+    const r = clearOfPops(600, 310, 30, 30, frame, [wall], 1, out);
+    expect(r.y).toBe(280 - NUMBER_POP_GAP);
+  });
+  it('honours the count, ignoring obstacles past it', () => {
+    expect(clearOfPops(300, 310, 30, 30, frame, [{ x: 280, y: 280, w: 100, h: 40 }], 0, out)).toEqual({ x: 300, y: 310 });
+  });
+  it('respects a wide frame', () => {
+    const wide = { x: -200, y: 0, w: 1680, h: 720 };
+    const pop = { x: -150, y: 280, w: 100, h: 40 };
+    expect(clearOfPops(-120, 310, 30, 30, wide, [pop], 1, out).x).toBeGreaterThanOrEqual(-200);
   });
 });
 

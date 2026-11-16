@@ -3,7 +3,7 @@ import type { RenderView } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
 import { mute } from '../fx/grim-fx';
 import { ROOT_ICON, STATUS_LOOKS, StatusTracker, chipBlink, chipFlash, chipPop } from '../fx/status-fx';
-import { coreDisplayWidth, crisp, fitScene, phoneBoost } from '../boot/viewport';
+import { coreDisplayWidth, crisp, fitScene, phoneBoost, viewWidth } from '../boot/viewport';
 import { lookup } from '../views/projectile-view';
 import { heroName } from '../hud/tag-fx';
 import { elementMark } from '../hud/element-mark';
@@ -11,8 +11,8 @@ import { getPrefs } from '../platform/a11y/prefs';
 import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, collectStatusChips } from '../hud/status-icons';
 import {
-  CHARGE_DASH, CHIP_RECTS_KEY, COMBO_RECTS_KEY, TAG_CALL_KEY, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
-  clampNumber, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
+  CHARGE_DASH, CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, COMBO_RECTS_KEY, POP_RECTS_KEY, clearOfPops, hudFrame, TAG_CALL_KEY, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
+  clampNumber, NUMBER_SLOTS, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -50,9 +50,6 @@ export interface HudData {
   /** Arcade: the Arena camera's world view (from scroll and zoom), so world-space damage numbers can be projected to the screen. */
   readonly arenaView?: () => HudRect;
 }
-
-/** The HUD's logical frame. */
-const HUD_FRAME: HudRect = { x: 0, y: 0, w: 1280, h: 720 };
 
 /** Combo counter anchor under each side's bars (logical px). */
 const COMBO_Y = 110;
@@ -122,6 +119,21 @@ export class Hud extends Phaser.Scene {
     return out;
   }
   private numberSerials: number[] = [];
+  /** Per number slot: how far the pop/call-out solver moved it from its spot (kept while it lives, so it never jumps back). */
+  private readonly numberShift = new Float32Array(NUMBER_SLOTS * 2);
+  /** This frame's obstacles for a damage number (live pops and call-outs in Hud px, then the numbers already placed) and how many are set. */
+  private readonly numberObstacles: { x: number; y: number; w: number; h: number }[] = [];
+  private obstacleCount = 0;
+  private popCount = 0;
+  private readonly viewFrame = { x: 0, y: 0, w: 1280, h: 720 };
+  private readonly corner = { x: 0, y: 0 };
+  private readonly cleared = { x: 0, y: 0 };
+  private readonly numberAvoid: HudRect[] = [];
+
+  /** Test probe: the live white pops' and call-outs' boxes the numbers keep clear of, in Hud px. */
+  popBoxes(): { x: number; y: number; w: number; h: number }[] {
+    return this.numberObstacles.slice(0, this.popCount).map((r) => ({ x: r.x, y: r.y, w: r.w, h: r.h }));
+  }
   private comboTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private comboKeys: number[] = [];
   private meterTexts: (Phaser.GameObjects.Text | undefined)[] = [];
@@ -197,6 +209,8 @@ export class Hud extends Phaser.Scene {
       this.comboTexts = [];
       this.registry.remove(COMBO_RECTS_KEY);
       this.registry.remove(CHIP_RECTS_KEY);
+      this.popCount = 0;
+      this.obstacleCount = 0;
       this.comboKeys = [];
       this.meterTexts = [];
       this.chipTexts = [];
@@ -623,7 +637,20 @@ export class Hud extends Phaser.Scene {
   private drawArcade(model: ArcadeHudModel): void {
     const reduced = this.reduceMotion;
     const dim = this.registry.get('tte.banner') === true ? NUMBER_BANNER_ALPHA : 1;
-    for (let i = 0; i < model.numbers.length; i++) {
+    // World to screen (the arena pans and zooms) in the HUD camera's real frame (wider than 1280 on a wide view), then keep each number
+    // on screen, off the combo readout and TAG! call, and clear of the live pops, call-outs and numbers already placed (DMGNUM-1).
+    const from = this.arenaView?.();
+    const frame = hudFrame(viewWidth(this), this.viewFrame);
+    this.collectObstacles(from, frame);
+    const avoid = this.numberAvoid;
+    avoid.length = 0;
+    for (const c of this.comboTexts) if (c?.visible) avoid.push({ x: c.x - (c.originX * c.displayWidth), y: c.y, w: c.displayWidth, h: c.displayHeight });
+    const call = this.registry.get(TAG_CALL_KEY) as HudRect | undefined;
+    if (call && call.w > 0) avoid.push(call);
+    const total = model.numbers.length;
+    // Oldest first, so a newer number moves clear of an older one and an older number never jumps.
+    for (let k = 0; k < total; k++) {
+      const i = (model.nextSlot + k) % total;
       const n = model.numbers[i];
       let t = this.numberTexts[i];
       if (!n?.live) {
@@ -634,19 +661,27 @@ export class Hud extends Phaser.Scene {
       t ??= this.numberTexts[i] = this.text(24).setOrigin(0.5, 1).setDepth(101);
       if (this.numberSerials[i] !== n.serial) {
         this.numberSerials[i] = n.serial;
+        this.numberShift[i * 2] = 0;
+        this.numberShift[i * 2 + 1] = 0;
         // Scaled hits are grey and smaller, counters gold and labelled: never colour alone.
         styleCombatText(t.setText(numberLabel(n.amount, n.counter)), n.scaled ? 'scaled' : n.counter ? 'counter' : 'number').setFontSize(n.scaled ? 28 : 38);
       }
-      // World to screen (the arena pans and zooms), then keep it on screen and off the combo readout.
-      const from = this.arenaView?.();
-      const p = from ? projectToHud(n.x, n.y, from, HUD_FRAME, this.projected) : this.projected;
+      const p = from ? projectToHud(n.x, n.y, from, frame, this.projected) : this.projected;
       if (!from) { p.x = n.x; p.y = n.y; }
-      const avoid: HudRect[] = [];
-      for (const c of this.comboTexts) if (c?.visible) avoid.push({ x: c.x - (c.originX * c.displayWidth), y: c.y, w: c.displayWidth, h: c.displayHeight });
-      const call = this.registry.get(TAG_CALL_KEY) as HudRect | undefined;
-      if (call && call.w > 0) avoid.push(call);
-      const at = clampNumber(p.x, p.y + numberRise(n.age, reduced), t.displayWidth / 2, t.displayHeight, HUD_FRAME, avoid);
+      const baseY = p.y + numberRise(n.age, reduced);
+      const halfW = t.displayWidth / 2;
+      const h = t.displayHeight;
+      const moved = clearOfPops(p.x + (this.numberShift[i * 2] ?? 0), baseY + (this.numberShift[i * 2 + 1] ?? 0), halfW, h, frame, this.numberObstacles, this.obstacleCount, this.cleared);
+      this.numberShift[i * 2] = moved.x - p.x;
+      this.numberShift[i * 2 + 1] = moved.y - baseY;
+      const at = clampNumber(moved.x, moved.y, halfW, h, frame, avoid);
       t.setPosition(at.x, at.y).setAlpha(numberAlpha(n.age) * dim).setVisible(true);
+      const r = (this.numberObstacles[this.obstacleCount] ??= { x: 0, y: 0, w: 0, h: 0 });
+      r.x = at.x - halfW;
+      r.y = at.y - h;
+      r.w = halfW * 2;
+      r.h = h;
+      this.obstacleCount++;
     }
     for (const team of TEAMS) {
       this.drawMeter(model, team);
@@ -669,6 +704,30 @@ export class Hud extends Phaser.Scene {
       t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
     }
     this.publishComboRects();
+  }
+
+  /** Fills `numberObstacles` with the live white pops' and call-outs' rects (world px under POP_RECTS_KEY / CALLOUT_RECTS_KEY) projected to Hud px. */
+  private collectObstacles(from: HudRect | undefined, frame: HudRect): void {
+    let k = 0;
+    if (from) {
+      const sx = frame.w / from.w;
+      const sy = frame.h / from.h;
+      for (const key of [POP_RECTS_KEY, CALLOUT_RECTS_KEY]) {
+        const rects = this.registry.get(key) as HudRect[] | undefined;
+        if (!rects) continue;
+        for (const w of rects) {
+          const c = projectToHud(w.x, w.y, from, frame, this.corner);
+          const r = (this.numberObstacles[k] ??= { x: 0, y: 0, w: 0, h: 0 });
+          r.x = c.x;
+          r.y = c.y;
+          r.w = w.w * sx;
+          r.h = w.h * sy;
+          k++;
+        }
+      }
+    }
+    this.popCount = k;
+    this.obstacleCount = k;
   }
 
   /** The visible combo readouts' rects, for the TAG! call to slide clear of (one reused array under COMBO_RECTS_KEY). */

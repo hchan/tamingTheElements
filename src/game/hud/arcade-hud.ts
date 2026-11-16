@@ -70,6 +70,11 @@ export class ArcadeHudModel {
   readonly meters: readonly [MeterShown, MeterShown] = [{ value: 0, full: 0 }, { value: 0, full: 0 }];
   private next = 0;
 
+  /** The slot the next number takes, so it is also the oldest live one: walking slots from here goes oldest first. */
+  get nextSlot(): number {
+    return this.next;
+  }
+
   constructor() {
     const numbers: DamageNumber[] = [];
     for (let i = 0; i < NUMBER_SLOTS; i++) {
@@ -298,6 +303,49 @@ export function clampNumber(cx: number, bottomY: number, halfW: number, h: numbe
     x = clampX(want);
   }
   return { x, y };
+}
+
+/** Registry key: the live white damage pops' rects in WORLD px (an array reused every frame, empty when none is up). Grey numbers move clear of them. */
+export const POP_RECTS_KEY = 'tte.popRects';
+/** Registry key: the live defence call-outs' (ROOTED, FREED, PARRY ...) rects in WORLD px (an array reused every frame). Grey numbers move clear of them. */
+export const CALLOUT_RECTS_KEY = 'tte.calloutRects';
+
+/** Gap (px) a damage number keeps from a pop, a call-out or another number. */
+export const NUMBER_POP_GAP = 8;
+
+/**
+ * Moves a damage number (centre x, bottom y, half width, height; HUD px) off every obstacle (a live pop, a call-out, or a number
+ * already placed this frame) to the nearer free side, a tie going toward the frame centre; if neither side fits in the frame,
+ * above the obstacle. At most 3 passes over the first `count` obstacles. Pure; writes and returns `out`.
+ */
+export function clearOfPops(cx: number, bottomY: number, halfW: number, h: number, frame: HudRect, obstacles: readonly HudRect[], count: number, out: { x: number; y: number }): { x: number; y: number } {
+  const lo = frame.x + NUMBER_MARGIN + halfW;
+  const hi = frame.x + frame.w - NUMBER_MARGIN - halfW;
+  const centre = frame.x + frame.w / 2;
+  let x = cx;
+  let y = bottomY;
+  for (let pass = 0; pass < 3; pass++) {
+    let moved = false;
+    for (let i = 0; i < count; i++) {
+      const r = obstacles[i];
+      if (!r || !(x + halfW + NUMBER_POP_GAP > r.x && x - halfW - NUMBER_POP_GAP < r.x + r.w && y + NUMBER_POP_GAP > r.y && y - h - NUMBER_POP_GAP < r.y + r.h)) continue;
+      const left = r.x - NUMBER_POP_GAP - halfW;
+      const right = r.x + r.w + NUMBER_POP_GAP + halfW;
+      const dl = x - left;
+      const dr = right - x;
+      const preferLeft = dl === dr ? x > centre : dl < dr;
+      const first = preferLeft ? left : right;
+      const second = preferLeft ? right : left;
+      if (first >= lo && first <= hi) x = first;
+      else if (second >= lo && second <= hi) x = second;
+      else y = r.y - NUMBER_POP_GAP;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  out.x = x;
+  out.y = y;
+  return out;
 }
 
 /** Registry key: the live TAG!/NAME IN! call rect in HUD px (replaced in place; w 0 when no call is up). Numbers avoid it. */

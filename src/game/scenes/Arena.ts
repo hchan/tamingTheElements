@@ -520,6 +520,7 @@ export class Arena extends Phaser.Scene {
           tints,
           numbers: hud?.numbers.filter((n) => n.live).map((n) => numberLabel(n.amount, n.counter)) ?? [],
           numberBoxes: (this.scene.get(HUD_SCENE) as unknown as { numberBoxes?(): { x: number; y: number; w: number; h: number }[] }).numberBoxes?.() ?? [],
+          popBoxes: (this.scene.get(HUD_SCENE) as unknown as { popBoxes?(): { x: number; y: number; w: number; h: number }[] }).popBoxes?.() ?? [],
           combo: [hud?.combos[0].hits ?? 0, hud?.combos[1].hits ?? 0],
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };

@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
+import { POP_RECTS_KEY } from '../hud/arcade-hud';
 import type { ChromaticSplit } from './chromatic-filter-impl';
 import { KO_SPLIT_MS, KO_WASH_MS, POP_MS, POP_POOL, RING_POOL, popMerges, SUPER_FLASH_MS, SUPER_NUMBER_COLOR, SUPER_NUMBER_POOL, koSplitAmount, koWashStrength, popFrame, ringFrame, superFlashAlpha, superNumberFrame, superNumberSize } from './hit-feel';
 
@@ -76,12 +77,32 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
   let gfx: Phaser.GameObjects.Graphics | undefined;
   let attached = false;
 
+  /** Publishes every visible pop and gold number as a WORLD rect (one reused array), so the HUD's grey numbers move clear of them. */
+  let popRects: { x: number; y: number; w: number; h: number }[] | undefined;
+  const publish = (): void => {
+    const registry = (scene as { registry?: Phaser.Data.DataManager }).registry;
+    if (!registry) return;
+    if (!popRects) registry.set(POP_RECTS_KEY, (popRects = []));
+    let k = 0;
+    const add = (t: Phaser.GameObjects.Text): void => {
+      if (!t.visible || t.alpha <= 0.05) return;
+      const r = (popRects ??= [])[k] ?? { x: 0, y: 0, w: 0, h: 0 };
+      popRects[k++] = r;
+      r.x = t.x - t.displayWidth * t.originX;
+      r.y = t.y - t.displayHeight * t.originY;
+      r.w = t.displayWidth;
+      r.h = t.displayHeight;
+    };
+    for (const p of pops) if (p.live) add(p.text);
+    for (const n of nums) if (n.live) add(n.text);
+    popRects.length = k;
+  };
   const detach = (): void => {
     if (!attached) return;
     attached = false;
     scene.events.off('update', tick);
-    scene.events.off('shutdown', drop);
-    scene.events.off('destroy', drop);
+    scene.events.off('shutdown', shutdown);
+    scene.events.off('destroy', shutdown);
   };
   const drop = (): void => {
     rings.length = 0;
@@ -95,7 +116,13 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
     filter = undefined;
     split = undefined;
     gfx = undefined;
+    if (popRects) popRects.length = 0;
     detach();
+  };
+  const shutdown = (): void => {
+    drop();
+    if (popRects) scene.registry.remove(POP_RECTS_KEY);
+    popRects = undefined;
   };
   function tick(_time: number, delta: number): void {
     if (!paused()) step(delta);
@@ -169,14 +196,15 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
       numsLive = true;
       p.text.setPosition(p.x, p.y - 14 * Math.min(1, p.age / 120) - 26 * (p.age / POP_MS)).setScale(f.scale).setAlpha(f.alpha);
     }
+    publish();
     if (washAge < 0 && splitAge < 0 && rings.length === 0 && flashAge < 0 && !numsLive && held.length === 0) detach();
   }
   const attach = (): void => {
     if (attached) return;
     attached = true;
     scene.events.on('update', tick);
-    scene.events.once('shutdown', drop);
-    scene.events.once('destroy', drop);
+    scene.events.once('shutdown', shutdown);
+    scene.events.once('destroy', shutdown);
   };
   const layer: ShockLayer = {
     wash(): void {
@@ -230,6 +258,7 @@ export function createShockLayer(scene: Phaser.Scene, paused: () => boolean): Sh
         young.fraction += fraction;
         young.size = superNumberSize(young.fraction);
         young.text.setText(String(Math.round(young.amount))).setFontSize(young.size);
+        publish();
         return;
       }
       let n = nums[nextNum];

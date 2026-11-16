@@ -213,15 +213,16 @@ export class EventFx {
     this.sink.flash(target, color, this.opts.reducedMotion() ? 0 : holdFramesFor(strength));
     // A super hit shows the big gold number only (the small white one would print over its middle, qa-r18).
     // A plain hit with a damage pop shows that one number (it lingers), so the HUD number would only double it (QA r39).
-    const popped = !this.opts.reducedMotion() && strength < 3 && (e['scalePm'] ?? 1000) >= 1000 && this.sink.pop !== undefined;
-    if (!(strength === 3 && this.sink.superHit) && !popped) this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
+    const dealt = (e['amount'] ?? 0) > 0;
+    const popped = dealt && !this.opts.reducedMotion() && strength < 3 && (e['scalePm'] ?? 1000) >= 1000 && this.sink.pop !== undefined;
+    if (dealt && !(strength === 3 && this.sink.superHit) && !popped) this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
     const reduced = this.opts.reducedMotion();
     if (strength === 3) this.superHit(e, target, reduced);
     if (reduced) {
       this.sink.spark(target, color, this.opts.elementOf?.(e['attacker'] ?? -1), e['attacker'] ?? -1);
       return;
     }
-    if (strength < 3 && (e['scalePm'] ?? 1000) >= 1000) this.sink.pop?.(target, e['amount'] ?? 0, popSize(strength));
+    if (dealt && strength < 3 && (e['scalePm'] ?? 1000) >= 1000) this.sink.pop?.(target, e['amount'] ?? 0, popSize(strength));
     const el = this.opts.elementOf?.(e['attacker'] ?? -1);
     if (el) this.sink.impact?.(target, el);
     this.sink.streaks?.(e['attacker'] ?? -1, target, color, strength, el);

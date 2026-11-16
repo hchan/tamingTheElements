@@ -126,3 +126,50 @@ test('Arcade with reduced motion: no shake, but the flash, numbers and combo sta
   expect(await page.evaluate<boolean>(`window.__TTE__.arena.shaking()`)).toBe(false);
   expect(errors).toEqual([]);
 });
+
+interface Box { x: number; y: number; w: number; h: number }
+const overlaps = (a: Box, b: Box): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+// 844x390 is a phone landscape whose view is wider than 1280 logical px: the Hud projects into its real frame there (DMGNUM-1).
+for (const [vw, vh] of [[1280, 720], [844, 390]] as const) test(`Arcade ${String(vw)}x${String(vh)}: a grey damage number never prints over a live white pop, call-out or another number (DMGNUM-1)`, async ({ page }) => {
+  await page.setViewportSize({ width: vw, height: vh });
+  const errors = collectErrors(page);
+  const foe = await openDemo(page, 'arenaDemo,arcade');
+  const run = (js: string): Promise<unknown> => page.evaluate(js);
+  const hpOf = (): Promise<number> => page.evaluate<number>(`window.__TTE__.arena.characters().find((c) => c.id === ${String(foe)}).hp`);
+  // Charge first (its arrival hit stuns), then keep attacking with the foe pinned so the combo reaches the scaled (grey) hits.
+  const h0 = await hpOf();
+  for (let i = 0; i < 20 && (await hpOf()) === h0; i++) await run(`window.__TTE__.arena.step(1, [${String(CHARGE)}, 0])`);
+  const cycle = [PRIMARY | SECONDARY, PRIMARY | (1 << 10), PRIMARY | (1 << 6)];
+  let seen = 0;
+  let both = 0;
+  const frame = (): Promise<unknown> => run(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+  const check = async (): Promise<void> => {
+    const f = await page.evaluate<Fx & { numberBoxes: Box[]; popBoxes: Box[] }>(`window.__TTE__.arena.fx()`);
+    const placed: Box[] = [];
+    for (const n of f.numberBoxes) {
+      for (const p of f.popBoxes) expect(overlaps(n, p), `number ${JSON.stringify(n)} over pop/call-out ${JSON.stringify(p)}`).toBe(false);
+      for (const o of placed) expect(overlaps(n, o), `number ${JSON.stringify(n)} over number ${JSON.stringify(o)}`).toBe(false);
+      placed.push(n);
+    }
+    if (f.numberBoxes.length > 0) seen++;
+    if (f.numberBoxes.length > 0 && f.popBoxes.length > 0) both++;
+  };
+  for (let t = 0; t < 240; t++) {
+    await run(`window.__TTE__.arena.place(${String(foe)}, 780, 380, 4)`);
+    await run(`window.__TTE__.arena.step(1, [${String(cycle[t % cycle.length])}, 0])`);
+    await frame();
+    await check();
+    if (both > 0) break;
+  }
+  expect(seen, 'the scene produced a grey number').toBeGreaterThan(0);
+  expect(both, 'a grey number and a live pop were on screen together').toBeGreaterThan(0);
+  // Let the effects age in real time while the sim stays paused: they must stay clear as the pops rise and the numbers float.
+  await run(`window.__TTE__.arena.ageFx(true)`);
+  for (let i = 0; i < 30; i++) {
+    await run(`new Promise((r) => requestAnimationFrame(r))`);
+    await check();
+  }
+  await run(`window.__TTE__.arena.ageFx(false)`);
+  expect(errors).toEqual([]);
+});

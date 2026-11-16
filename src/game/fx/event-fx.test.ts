@@ -71,6 +71,15 @@ describe('EventFx plain-hit weight (QA r34)', () => {
       expect(calls.length).toBe(reduced ? 0 : 1);
     }
   });
+  it('a hit that deals no damage draws no number and no pop, but still flashes and sparks (DMGNUM-1)', () => {
+    for (const reduced of [false, true]) {
+      const { sink, log } = recorder();
+      sink.pop = () => log.push('pop');
+      arcadeFx(sink, reduced).consume([confirmed(1, 0, { amount: 0 })]);
+      expect(log.filter((l) => l.startsWith('number') || l === 'pop')).toEqual([]);
+      expect(log.length).toBeGreaterThan(0);
+    }
+  });
   it('a popped plain hit shows one floating number: no HUD number beside it; scaled hits, supers and reduced motion keep theirs (QA r39)', () => {
     for (const reduced of [false, true]) {
       const { sink, log } = recorder();
