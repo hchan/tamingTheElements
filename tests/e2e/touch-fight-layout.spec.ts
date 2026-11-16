@@ -262,7 +262,7 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
   test('a Strike tap dismisses the first-run card, and a tag call hides it', async ({ page }) => {
     await enterFight(page, 2);
     await page.evaluate(`document.querySelector('#touchStrike1').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, bubbles: true }))`);
-    await expect(page.locator('#firstRunHint')).toHaveClass(/firstRunFade/);
+    await expect(page.locator('#firstRunHint:not(.firstRunFade)')).toHaveCount(0); // faded, or already removed (PHONE-2)
   });
   test('a tag call hides the first-run card', async ({ page }) => {
     await enterFight(page, 2);

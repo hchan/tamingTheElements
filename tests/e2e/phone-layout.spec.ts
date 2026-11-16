@@ -66,6 +66,33 @@ for (const [w, h] of [[844, 390], [667, 375], [640, 360]] as const) {
   });
 }
 
+// PHONE-2: the first-run card fades 125 fight ticks (2.5 s of fight time) after the FIGHT! banner ends, then leaves the DOM.
+test.describe('phone 667x375 first-run card', () => {
+  test.use({ viewport: { width: 667, height: 375 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  test('the first-run card fades 2.5 s of fight time after FIGHT! and leaves the DOM', async ({ page }, info) => {
+    // The wall-clock 2.5 s timer is stretched, so only the tick-based settle event can dismiss the card here.
+    await page.addInitScript(`(() => { const real = window.setTimeout.bind(window);
+      window.setTimeout = (fn, ms, ...a) => real(fn, ms === 2500 ? 600000 : ms, ...a);
+      window.addEventListener('tte:fight-over', () => { window.__foTick = window.__TTE__.arena.tick; }); })()`);
+    const raf = (): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+    const shot = (name: string): Promise<Buffer> => page.screenshot({ path: shotDir ? `${shotDir}/${name}` : info.outputPath(name) });
+    await fight(page);
+    await expect(page.locator('#firstRunHint:not(.firstRunWait)')).toHaveCount(1);
+    await shot('hint-on-667.png');
+    const fo = await page.evaluate<number>(`window.__foTick`);
+    expect(fo).toBeGreaterThan(0);
+    const now = await page.evaluate<number>(`window.__TTE__.arena.tick`);
+    await page.evaluate(`window.__TTE__.arena.step(${String(Math.max(0, fo + 120 - now))})`);
+    await raf();
+    await expect(page.locator('#firstRunHint.firstRunFade')).toHaveCount(0);
+    await page.evaluate(`window.__TTE__.arena.step(10)`);
+    await raf();
+    await expect(page.locator('#firstRunHint')).toHaveCount(0, { timeout: 5_000 });
+    expect(await page.evaluate(`localStorage.getItem('tte.firstRunHint')`)).toBe('1');
+    await shot('hint-off-667.png');
+  });
+});
+
 test.describe('phone portrait, Play anyway', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   test('the arena canvas fills the screen width and no touch button covers it', async ({ page }) => {
