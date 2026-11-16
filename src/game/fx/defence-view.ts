@@ -6,6 +6,7 @@ import { resolutionOf } from '../boot/viewport';
 import { POP_NUMBER_CLEAR_PX, popLaneLift, type LivePop } from './pop-lanes';
 import { mountClashView } from './clash-view';
 import { styleCombatText } from '../hud/combat-text';
+import { CALLOUT_RECTS_KEY } from '../hud/arcade-hud';
 import { ELEMENT_COLORS } from './element-colors';
 import { halfPoint, revealSegs, ropeGrow } from './rope-arcs';
 import {
@@ -124,6 +125,24 @@ export function mountDefenceView(
   const RG = 8;
   const rings = new Float64Array(RING_POOL * RG);
   let liveRings = 0;
+  // Call-out rects in WORLD px (one reused array under CALLOUT_RECTS_KEY), so the HUD's damage numbers move clear of the words.
+  let calloutRects: { x: number; y: number; w: number; h: number }[] | undefined;
+  const publishCallouts = (): void => {
+    const reg = scene.registry as Phaser.Data.DataManager | undefined;
+    if (!reg) return;
+    if (!calloutRects) reg.set(CALLOUT_RECTS_KEY, (calloutRects = []));
+    let k = 0;
+    for (const t of texts) {
+      if (!t.visible || t.alpha <= 0.05) continue;
+      const r = calloutRects[k] ?? { x: 0, y: 0, w: 0, h: 0 };
+      calloutRects[k++] = r;
+      r.x = t.x - t.displayWidth * t.originX;
+      r.y = t.y - t.displayHeight * t.originY;
+      r.w = t.displayWidth;
+      r.h = t.displayHeight;
+    }
+    calloutRects.length = k;
+  };
   // Pops: x, y, from, reduced per text.
   const popData = new Float64Array(POP_POOL * 4).fill(HIDDEN);
   // Dashes: id, from, until, colour per slot, and three afterimages each (newest first).
@@ -491,6 +510,7 @@ export function mountDefenceView(
       }
       t0.setPosition(popData[i * 4] ?? 0, (popData[i * 4 + 1] ?? 0) - popRise(p, popData[i * 4 + 3] === 1)).setAlpha(popAlpha(p));
     }
+    publishCallouts();
   }
 
   const state = (): DefenceState => {
@@ -509,6 +529,8 @@ export function mountDefenceView(
     for (const o of [under, over, ropeBack, ...ghostImgs, ...texts]) o.destroy();
     ghostImgs.length = 0;
     texts.length = 0;
+    if (calloutRects) (scene.registry as Phaser.Data.DataManager | undefined)?.remove(CALLOUT_RECTS_KEY);
+    calloutRects = undefined;
   };
   scene.events.on('postupdate', draw);
   scene.events.once('shutdown', off).once('destroy', off);
@@ -518,6 +540,7 @@ export function mountDefenceView(
     sub = 0;
     // A new round starts clean: no pop from the last one rides under the ROUND / FIGHT! banners.
     if (events.some((e) => e.kind === SimEventKind.roundStarted)) for (let i = 0; i < POP_POOL; i++) { popData[i * 4 + 2] = HIDDEN; texts[i]?.setVisible(false); }
+    if (events.some((e) => e.kind === SimEventKind.roundStarted)) publishCallouts();
     fx.consume(events);
     clash(events);
     onTick();

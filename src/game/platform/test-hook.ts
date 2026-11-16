@@ -71,7 +71,7 @@ export interface ArenaProbe {
    */
   /** Let view effects (hit flash) age in real time while the sim stays paused. */
   ageFx(on: boolean): void;
-  fx(): { tints: { id: number; tint: number; mode: number; wash: number }[]; numbers: string[]; numberBoxes: { x: number; y: number; w: number; h: number }[]; combo: [number, number]; meter: [number, number] };
+  fx(): { tints: { id: number; tint: number; mode: number; wash: number }[]; numbers: string[]; numberBoxes: { x: number; y: number; w: number; h: number }[]; popBoxes: { x: number; y: number; w: number; h: number }[]; combo: [number, number]; meter: [number, number] };
   /**
    * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the
    * texts shown and the camera zoom over the fit zoom; undefined otherwise (always in Classic).
@@ -79,7 +79,7 @@ export interface ArenaProbe {
   /** Arcade pan camera (WP 38b): framing centre x and zoom, the camera's real zoom over the fit zoom and the world x of the view's left edge (logical units; Phaser's raw scrollX also depends on the render resolution, so it is not used). */
   camera(): Promise<{ centerX: number; zoom: number; camZoom: number; scrollX: number }>;
   /** The KO wash and hit rings (renderer-only): wash desaturation 0..0.7, ring count; undefined before the first one. */
-  shockFx(): Promise<{ washAge: number; wash: number; rings: number; superNumbers: number; superNumberSize: number; held: number } | undefined>;
+  shockFx(): Promise<{ washAge: number; wash: number; rings: number; superNumbers: number; pops: number; superNumberSize: number; held: number } | undefined>;
   /** Jumps a running wash and its rings to `ms` in and draws that frame, so a screenshot can catch the peak with the sim paused. */
   shockSeek(ms: number): Promise<void>;
   superFx(): Promise<{ dim: number; bandAlpha: number; slide: number; zoom: number; name: string; sub: string; camZoom: number } | undefined>;

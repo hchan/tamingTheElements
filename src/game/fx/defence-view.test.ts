@@ -4,6 +4,7 @@ import {
   EntityFlag, GUARD_MAX, SimEventKind, SnagEvent, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent,
 } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
+import { CALLOUT_RECTS_KEY } from '../hud/arcade-hud';
 import { AFTERIMAGE_FADE, BREAK_WORD, FREED_WORD, LINES, PARRY_WORD, POP_TICKS, ROOTED_WORD } from './defence-fx';
 import { defenceState, mountDefenceView, type Fighters } from './defence-view';
 
@@ -66,19 +67,22 @@ function fakeObject(kind: string, made: Fake[]): Fake {
       };
     },
   });
+  Object.assign(o, { displayWidth: 120, displayHeight: 30, originX: 0.5, originY: 0.5 });
   made.push(proxy);
   return proxy;
 }
 
-function fakeScene(): { scene: Phaser.Scene; events: Emitter; made: Fake[] } {
+function fakeScene(): { scene: Phaser.Scene; events: Emitter; made: Fake[]; reg: Map<string, unknown> } {
   const events = new Emitter();
+  const reg = new Map<string, unknown>();
   const made: Fake[] = [];
   const scene = {
     events,
+    registry: { get: (k: string) => reg.get(k), set: (k: string, v: unknown) => reg.set(k, v), remove: (k: string) => reg.delete(k) },
     scale: { width: 1280 },
     add: { graphics: () => fakeObject('graphics', made), image: () => fakeObject('image', made), text: () => fakeObject('text', made) },
   } as unknown as Phaser.Scene;
-  return { scene, events, made };
+  return { scene, events, made, reg };
 }
 
 const fighter = (id: number, team: number, x: number): RenderCharacter => ({
@@ -214,6 +218,17 @@ describe('defence view: parry and guard-break effects', () => {
     m.feed(100 + POP_TICKS);
     m.frame();
     expect(state(m.scene)).toMatchObject({ rings: 0, sparks: 0, pops: [] });
+  });
+  it('publishes the live call-out rects for the HUD numbers to avoid, and empties them when the word expires', () => {
+    const m = mount();
+    m.feed(100, [ev(SimEventKind.parried, 100, 7, { target: 0, attacker: 1, reflected: 0 })]);
+    m.frame();
+    const rects = m.reg.get(CALLOUT_RECTS_KEY) as { w: number; h: number }[];
+    expect(rects.length).toBeGreaterThan(0);
+    expect(rects[0]?.w).toBe(120);
+    m.feed(100 + POP_TICKS);
+    m.frame();
+    expect(rects.length).toBe(0);
   });
   it('a guard break shatters into shards, rings and pops GUARD BREAK; a vanished target gets no effect', () => {
     const m = mount();
