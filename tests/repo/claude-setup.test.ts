@@ -11,7 +11,7 @@ const PNPM_BUILTINS = new Set(['install', 'exec', 'run', 'add', 'pkg', 'dlx', 'i
 const MODELS = new Set(['opus', 'sonnet', 'haiku']);
 const READ_ONLY_TOOLS = new Set(['Read', 'Grep', 'Glob', 'Bash']);
 /** Agents that legitimately write files. */
-const WRITERS = new Set(['wp-implementer']);
+const WRITERS = new Set(['wp-implementer', 'hero-artist']);
 const PATH_ROOTS = [
   '.claude/', '.github/', 'src/', 'tests/', 'tools/', 'docs/', 'public/', 'war/', 'imgWorkArea/',
   'playwright.', 'vite.config', 'vitest.config', 'tsconfig', 'package.json', 'CLAUDE.md', 'README.md', 'CHANGELOG.md', 'index.html',
