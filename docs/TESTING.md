@@ -169,6 +169,7 @@ save-backed screens show "Loading...") still need their own wait (`loaded()` in 
   fails fast with a call log instead of eating the 60 s test timeout), `retries: 1` and `trace: 'on-first-retry'` only when `CI` is set.
   Locally retries stay 0. A pass-after-retry is reported as "flaky" by Playwright: treat it as a bug, not as green.
   `E2E_PORT` (main) and `E2E_PAGES_PORT` / `E2E_PORT` (pages, default 4174) let worktrees run side by side.
+  Parallel e2e or QA runs (several agents, several worktrees) must each set their own `E2E_PORT`, or they collide on the same preview server; QA runs use the range 7900-7999.
 - **Boot readiness**: main suite `waitForReady` / `gotoReady(page, url)` (`tests/e2e/parity/helpers.ts`) = `__TTE__.ready`; then `waitForRoute`
   (`mountedRoute`) after navigation and `ARENA_READY` for battles. Pages suite (production build, no hook): `gotoMenu` in
   `tests/e2e-pages/helpers.ts` waits for the first menu button to be visible and enabled.
