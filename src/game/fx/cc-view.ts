@@ -21,6 +21,8 @@ import type { IdleTier } from './idle-aura';
 export const CC_DEPTH = 6.25;
 const BACK_DEPTH = CC_DEPTH - 0.01;
 const FRONT_DEPTH = CC_DEPTH + 0.01;
+/** Far half of an orbit: behind the hero (0), over the hero's shadow and aura. */
+const BEHIND_DEPTH = -0.2;
 const ATLAS_KEY = 'cc-fx';
 const CELL = 32;
 const COLS = 3;
@@ -48,7 +50,7 @@ const RAY_LEN = [0.9, 0.7, 0.8, 0.85, 0.65, 0.75];
 
 export interface CcFxProbe {
   /** One entry per hero with a look on the last frame. */
-  readonly heroes: readonly { id: number; kind: CcKindOrNone; release: CcRelease; parts: number; segs: number; age: number }[];
+  readonly heroes: readonly { id: number; kind: CcKindOrNone; release: CcRelease; parts: number; segs: number; age: number; back: number; front: number }[];
   readonly parts: number;
   readonly segs: number;
   /** Break-out rings, locked cracks and wall puffs drawn on the last frame. */
@@ -131,7 +133,7 @@ function ensureAtlas(scene: Phaser.Scene): boolean {
   return true;
 }
 
-interface Row { id: number; kind: CcKindOrNone; release: CcRelease; parts: number; segs: number; age: number }
+interface Row { id: number; kind: CcKindOrNone; release: CcRelease; parts: number; segs: number; age: number; back: number; front: number }
 
 /**
  * Mounts the overlay. Returns the event feed: the Arena calls it with each step's events (latches and release reasons).
@@ -365,14 +367,18 @@ export function mountCcView(
       out.nSegs = 0;
     }
     if (st.release !== 'none') n = ccReleaseParts(st.release, box, st.releaseAge + (reducedNow ? 0 : a), reducedNow, tier, salt, out);
+    let nBack = 0;
+    let nFront = 0;
     for (let i = 0; i < n && usedParts < MAX_CC_PARTS_TOTAL; i++) {
       const p = out.parts[i];
       if (!p || p.alpha <= 0.01) continue;
+      if (p.behind) nBack++;
+      else if (p.front) nFront++;
       const im = imageAt(usedParts++, p.frame);
       const sc = (p.size * SIZE_BOOST) / CELL;
       im.setVisible(true).setPosition(p.x, p.y).setScale(sc, sc).setRotation(p.rot).setAlpha(Math.min(1, p.alpha)).setTint(p.color)
         .setBlendMode(GLOW_FRAMES[p.frame] && !contrastNow ? ADD : 0);
-      const d = p.front ? FRONT_DEPTH : BACK_DEPTH;
+      const d = p.behind ? BEHIND_DEPTH : p.front ? FRONT_DEPTH : BACK_DEPTH;
       if (im.depth !== d) im.setDepth(d);
     }
     const before = usedSegs;
@@ -393,8 +399,10 @@ export function mountCcView(
     if (pAge >= 0 && pAge < PUFF_TICKS) drawPuff(slot, pAge, FRONT_DEPTH);
 
     if (st.kind !== 'none' || st.release !== 'none') {
-      const row = (rows[nRows] ??= { id: 0, kind: 'none', release: 'none', parts: 0, segs: 0, age: 0 });
+      const row = (rows[nRows] ??= { id: 0, kind: 'none', release: 'none', parts: 0, segs: 0, age: 0, back: 0, front: 0 });
       nRows++;
+      row.back = nBack;
+      row.front = nFront;
       row.id = c.id;
       row.kind = st.kind;
       row.release = releaseTicks(st.release, reducedNow) > st.releaseAge ? st.release : 'none';

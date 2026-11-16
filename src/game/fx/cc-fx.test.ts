@@ -249,8 +249,66 @@ describe('ccParts', () => {
   it('only long stuns show motes', () => {
     const o = makeCcOut();
     expect(ccParts('reel', BOX, 0, 20, false, 'full', 0, o)).toBe(0);
-    expect(ccParts('reel', BOX, 0, 40, false, 'full', 0, o)).toBe(3);
+    expect(ccParts('reel', BOX, 0, 40, false, 'full', 0, o)).toBe(4);
     expect(ccParts('none', BOX, 0, 40, false, 'full', 0, o)).toBe(0);
+  });
+  describe('stun orbit', () => {
+    const count = (o: ReturnType<typeof makeCcOut>, n: number): { back: number; front: number } => {
+      let back = 0;
+      let front = 0;
+      for (let i = 0; i < n; i++) {
+        const p = o.parts[i];
+        if (p?.behind) back++;
+        else if (p?.front) front++;
+      }
+      return { back, front };
+    };
+    it('always has parts behind and in front of the head while it turns', () => {
+      const o = makeCcOut();
+      for (let t = 0; t <= 120; t += 0.5) {
+        const n = ccParts('reel', BOX, t, 60, false, 'full', 0, o);
+        const c = count(o, n);
+        expect(c.back).toBeGreaterThanOrEqual(1);
+        expect(c.front).toBeGreaterThanOrEqual(1);
+        expect(c.back + c.front).toBe(4);
+      }
+    });
+    it('reduced motion is still: 2 behind and 2 in front at mirrored x', () => {
+      const o = makeCcOut();
+      const n = ccParts('reel', BOX, 25, 60, true, 'full', 0, o);
+      expect(count(o, n)).toEqual({ back: 2, front: 2 });
+      const front = o.parts.slice(0, n).filter((p) => p.front).map((p) => p.x - (BOX.x + BOX.w / 2)).sort((a, b) => a - b);
+      expect((front[0] ?? 0) + (front[1] ?? 0)).toBeCloseTo(0, 5);
+      const again = makeCcOut();
+      ccParts('reel', BOX, 99, 60, true, 'full', 0, again);
+      expect(again.parts.slice(0, n).map((p) => p.x)).toEqual(o.parts.slice(0, n).map((p) => p.x));
+    });
+    it('near parts are lower, bigger and brighter than far ones', () => {
+      const o = makeCcOut();
+      const n = ccParts('reel', BOX, 7, 60, false, 'full', 0, o);
+      const ps = o.parts.slice(0, n);
+      const near = ps.filter((p) => !p.behind);
+      const far = ps.filter((p) => p.behind);
+      for (const a of near) {
+        for (const b of far) {
+          expect(a.size).toBeGreaterThan(b.size);
+          expect(a.alpha).toBeGreaterThan(b.alpha);
+        }
+      }
+    });
+    it('respects the phone and min caps', () => {
+      const o = makeCcOut();
+      expect(ccParts('reel', BOX, 3, 60, false, 'phone', 0, o)).toBe(4);
+      expect(ccParts('reel', BOX, 3, 60, false, 'min', 0, o)).toBe(4);
+      const tiny = makeCcOut(2, 0);
+      expect(ccParts('reel', BOX, 3, 60, false, 'full', 0, tiny)).toBe(2);
+    });
+    it('resets the behind flag when a part is reused', () => {
+      const o = makeCcOut();
+      ccParts('reel', BOX, 0, 60, true, 'full', 0, o);
+      const n = ccParts('stagger', BOX, 0, 60, true, 'full', 0, o);
+      expect(o.parts.slice(0, n).every((p) => !p.behind)).toBe(true);
+    });
   });
   it('is deterministic and does not allocate or grow its buffers', () => {
     const o = makeCcOut();

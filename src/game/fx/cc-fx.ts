@@ -356,6 +356,8 @@ export interface CcPart {
   frame: string;
   color: number;
   front: boolean;
+  /** Drawn behind the hero (the far half of an orbit). */
+  behind: boolean;
 }
 export interface CcOut {
   readonly parts: CcPart[];
@@ -365,22 +367,37 @@ export interface CcOut {
 }
 export function makeCcOut(maxParts = CC_TIER_CAPS.full.parts, maxSegs = CC_TIER_CAPS.full.segs): CcOut {
   const parts: CcPart[] = [];
-  for (let i = 0; i < maxParts; i++) parts.push({ x: 0, y: 0, size: 0, alpha: 0, rot: 0, frame: '', color: 0, front: false });
+  for (let i = 0; i < maxParts; i++) parts.push({ x: 0, y: 0, size: 0, alpha: 0, rot: 0, frame: '', color: 0, front: false, behind: false });
   return { parts, lines: new Float32Array(maxSegs * CC_LINE_STRIDE), nParts: 0, nSegs: 0 };
 }
 
 /** Sine-like (starts at 0) and cosine-like triangle waves in -1..1 for a phase in cycles. */
 const wave = (t: number): number => tri(t + 0.25) * 2 - 1;
 
-const MOTE_COLOR = mute(0x9a9a92);
+const MOTE_COLOR = mute(0xd8c890);
 const CHIP_COLOR = mute(0xa89a82);
 const MUCK_COLOR = mute(0x4a4638, 0.5, 0.8);
 const GYRE_COLOR = mute(0x9ab0b8);
 
-function addPart(out: CcOut, cap: number, x: number, y: number, size: number, alpha: number, rot: number, frame: string, color: number, front: boolean): void {
+function addPart(out: CcOut, cap: number, x: number, y: number, size: number, alpha: number, rot: number, frame: string, color: number, front: boolean, behind = false): void {
   if (out.nParts >= cap || out.nParts >= out.parts.length) return;
   const p = out.parts[out.nParts++] as CcPart;
-  p.x = x; p.y = y; p.size = size; p.alpha = alpha; p.rot = rot; p.frame = frame; p.color = color; p.front = front;
+  p.x = x; p.y = y; p.size = size; p.alpha = alpha; p.rot = rot; p.frame = frame; p.color = color; p.front = front; p.behind = behind;
+}
+const soft = (w: number): number => w * (1.5 - 0.5 * w * w);
+/**
+ * `n` parts on a tilted ellipse round (cx, cy), `t` turns in. The near half (lower on screen) is bigger, brighter and in front;
+ * the far half is higher, smaller, dimmer and drawn behind the hero. Wave phases `(i + 0.5) / n` keep both halves populated.
+ */
+export function addOrbit(out: CcOut, cap: number, cx: number, cy: number, rx: number, ry: number, tilt: number, n: number, t: number,
+  size: number, alpha: number, frame: string, color: number): void {
+  for (let i = 0; i < n; i++) {
+    const u = t + (i + 0.5) / n;
+    const s = soft(wave(u));
+    const c = soft(wave(u + 0.25));
+    const near = (s + 1) / 2;
+    addPart(out, cap, cx + rx * c, cy + ry * s + tilt * c, size * (0.85 + 0.25 * near), alpha * (0.65 + 0.35 * near), 0, frame, color, s > 0, s <= 0);
+  }
 }
 function addSeg(out: CcOut, cap: number, x1: number, y1: number, x2: number, y2: number, alpha: number, kind: number): void {
   if (out.nSegs >= cap || (out.nSegs + 1) * CC_LINE_STRIDE > out.lines.length) return;
@@ -420,10 +437,7 @@ export function ccParts(kind: CcKindOrNone, b: Box, ageTicks: number, leftTicks:
   switch (kind) {
     case 'reel':
       if (ageTicks + leftTicks >= 40) {
-        for (let i = 0; i < 3; i++) {
-          const drift = reduced ? 0 : wave(t / 60 + i / 3);
-          addPart(out, caps.parts, cx + (i - 1) * b.w * 0.3 + drift * b.w * 0.08, headY - b.h * 0.04 + (reduced ? 0 : wave(t / 40 + i * 0.4)) * b.h * 0.03, sz * 0.8, reduced ? 0.55 : 0.6, 0, 'mote', MOTE_COLOR, true);
-        }
+        addOrbit(out, caps.parts, cx, headY - b.h * 0.06, b.w * 0.42, b.h * 0.045, b.h * 0.02, 4, t / 60, sz * 0.8, reduced ? 0.7 : 0.8, 'mote', MOTE_COLOR);
       }
       break;
     case 'stagger':
