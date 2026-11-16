@@ -161,3 +161,41 @@ describe('frozen tint (CA1): only a Classic Tornado victim, never a casting mele
   });
 });
 
+
+describe('CharacterView attachments follow the drawn body (WALL-3a)', () => {
+  interface Fake { x: number; y: number; [m: string]: unknown }
+  const make = (fit: boolean): { view: CharacterView; made: Fake[] } => {
+    const made: Fake[] = [];
+    const scene = {
+      textures: { exists: (k: string) => /glow/i.test(k), get: () => ({ has: () => true, add: () => undefined }) },
+      add: {
+        image: (): Fake => {
+          const f: Fake = { x: 0, y: 0, depth: 0, texture: { key: 'glow' } };
+          for (const m of ['setTint', 'setAlpha', 'setBlendMode', 'setTexture', 'setVisible', 'setDepth', 'setDisplaySize', 'setOrigin', 'setTintMode', 'clearTint', 'setFlipX', 'setFrame']) f[m] = () => f;
+          f['setPosition'] = (x: number, y: number): Fake => { f.x = x; f.y = y; return f; };
+          made.push(f);
+          return f;
+        },
+      },
+    } as unknown as Phaser.Scene;
+    return { view: new CharacterView(scene, 1, fit), made };
+  };
+  const at = (x: number): RenderCharacter => ({
+    id: 1, team: 0, sprite: 'echo', dir: 0, flags: 0, x, y: 380, px: x, py: 380, w: 80, h: 80, hp: 1, maxHp: 1, restCap: 1, element: 'air',
+  });
+  for (const [x, centre] of [[0, 80], [1840, 1840], [800, 840]] as const) {
+    it(`glow, halo, aura and shadow centre on the tucked body at x=${String(x)}`, () => {
+      const { view, made } = make(true);
+      view.apply(at(x), 0, 1);
+      const [body, ...rest] = made;
+      expect(body?.x).toBe(centre - 80);
+      expect(rest.length).toBeGreaterThanOrEqual(4);
+      for (const a of rest) expect(a.x).toBe(centre);
+    });
+  }
+  it('Classic (not fit) keeps the sim-x anchors', () => {
+    const { view, made } = make(false);
+    view.apply(at(0), 0, 1);
+    expect(made.slice(1).some((a) => a.x !== 0)).toBe(true);
+  });
+});

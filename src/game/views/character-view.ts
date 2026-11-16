@@ -3,7 +3,7 @@ import { EntityFlag, StatusId, arcadePlayfield, type Element, type RenderCharact
 import manifest from '../assets/manifest.generated.json';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { LUNGE_TICKS, RECOIL_TICKS, lungeOffset, recoilPose } from '../fx/hit-feel';
-import { arcadeHeroScale, wallTuck } from './hero-scale';
+import { arcadeHeroScale, boxSpanX, clampSpanX, visualBox, type Box, type SpanX } from './hero-scale';
 
 /** Classic draws sprites this much larger than their hitbox, anchored at the feet centre (display only; the box is unchanged). */
 export const CLASSIC_SPRITE_SCALE = 1.4;
@@ -215,6 +215,9 @@ export class CharacterView {
   private lastAlpha = 0;
   /** True once this frame's recoil has been applied after the pose layer (it must not compound while paused). */
   private recoilDone = false;
+  /** Scratch for the drawn body box and its rotated x-span (no per-frame allocation). */
+  private readonly vbScratch: Box = { x: 0, y: 0, w: 0, h: 0 };
+  private readonly spanScratch: SpanX = { min: 0, max: 0 };
 
   /**
    * `scale` is the display scale over the sim box (feet-anchored). With `fit` (Arcade) it is chosen per body from its box
@@ -292,13 +295,16 @@ export class CharacterView {
     }
     if (this.fit) this.scale = arcadeHeroScale(c.h);
     const k = this.scale;
-    const left = x - (c.w * (k - 1)) / 2;
-    this.image.setPosition(this.fit ? wallTuck(left, c.w * k, arcadePlayfield().w) : left, y - c.h * (k - 1));
-    this.image.setDisplaySize(c.w * k, c.h * k);
+    // The drawn body box (tucked inside the world in Arcade): the image and every attachment follow it, not the sim x (WALL-3a).
+    const vb = visualBox(x, y, c.w, c.h, k, this.vbScratch, this.fit ? arcadePlayfield().w : undefined);
+    this.image.setPosition(vb.x, vb.y);
+    this.image.setDisplaySize(vb.w, vb.h);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
-    this.placeGlow(c.sprite, x, y, c.w * k, c.h * k);
-    this.placeAura(x, y, c.w * k, c.h * k, (c.flags & EntityFlag.translucent) !== 0);
-    this.placeShadow(x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
+    const ax = this.fit ? vb.x : x;
+    this.placeGlow(c.sprite, ax, y, c.w * k, c.h * k);
+    this.placeAura(ax, y, c.w * k, c.h * k, (c.flags & EntityFlag.translucent) !== 0);
+    this.placeShadow(this.fit ? vb.x + vb.w / 2 : x + c.w / 2, y + c.h, c.w, k, (c.flags & EntityFlag.translucent) !== 0);
+    if (this.fit) this.ensureHook();
     const stage = tintStage(this.flashLeft, frozenTint);
     this.washAlpha = flashWashAlpha(this.flashLeft);
     if (live && this.flashLeft > 0) {
@@ -329,11 +335,25 @@ export class CharacterView {
     if (!this.washSync) {
       this.washSync = (): void => {
         this.applyRecoil();
+        this.clampToWorld();
         this.syncWash();
       };
       events.on('prerender', this.washSync);
     }
     return true;
+  }
+
+  /**
+   * Last step of the frame (Arcade only): slides the drawn body back inside the world when the pose rotation or the
+   * recoil/lunge shove pushed its box past a wall. It moves the body only; the attachments never took the shove.
+   */
+  private clampToWorld(): void {
+    const i = this.image;
+    if (!this.fit || !i.visible) return;
+    const pf = arcadePlayfield();
+    const span = boxSpanX(i, i.rotation, this.spanScratch);
+    const dx = clampSpanX(span.min, span.max, pf.x, pf.x + pf.w);
+    if (dx !== 0) i.x += dx;
   }
 
   /** Squashes and shoves the drawn sprite about its feet for a few ticks after a hit (the pose layer has already placed it). */

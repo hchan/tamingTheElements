@@ -124,3 +124,49 @@ export function drawnBox(img: BoxedImage, out: Box): Box {
   out.h = b.h * sy;
   return out;
 }
+
+/** The horizontal extent of a drawn body, in world px. */
+export interface SpanX {
+  min: number;
+  max: number;
+}
+
+/**
+ * The world-x extent of the drawn visual box of `img` when rotated by `rotation` radians about its top-left corner (the
+ * pose layer's own pivot is applied before this, so the image origin is (0, 0) and there is no parent container: both hold
+ * for the hero images, `character-view.ts`). A boxed frame spans its box, an unboxed one the whole quad. At rotation 0 this
+ * equals `drawnBox`. Fills `out` (no allocation).
+ */
+export function boxSpanX(img: BoxedImage, rotation: number, out: SpanX): SpanX {
+  const f = img.frame;
+  const b = frameBox(f);
+  let u0 = 0;
+  let u1 = img.displayWidth;
+  let v0 = 0;
+  let v1 = img.displayHeight;
+  if (b !== undefined && f.width > 0 && f.height > 0) {
+    const sx = img.displayWidth / f.width;
+    const sy = img.displayHeight / f.height;
+    u0 = (img.flipX ? f.width - b.x - b.w : b.x) * sx;
+    u1 = u0 + b.w * sx;
+    v0 = b.y * sy;
+    v1 = (b.y + b.h) * sy;
+  }
+  const c = Math.cos(rotation);
+  const s = Math.sin(rotation);
+  const x00 = img.x + u0 * c - v0 * s;
+  const x10 = img.x + u1 * c - v0 * s;
+  const x01 = img.x + u0 * c - v1 * s;
+  const x11 = img.x + u1 * c - v1 * s;
+  out.min = Math.min(x00, x10, x01, x11);
+  out.max = Math.max(x00, x10, x01, x11);
+  return out;
+}
+
+/** The shift that puts `[min, max]` inside `[lo, hi]`; 0 when it already is, or when the span is wider than the room. */
+export function clampSpanX(min: number, max: number, lo: number, hi: number): number {
+  if (max - min >= hi - lo) return 0;
+  if (min < lo) return lo - min;
+  if (max > hi) return hi - max;
+  return 0;
+}
