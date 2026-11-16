@@ -60,11 +60,20 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         expect(overlap(f, pause)).toBe(false);
         expect(overlap(f, canvas)).toBe(false);
       }
-      const bar = await box(page, '#arcadeDash');
       const card = await box(page, '#firstRunHint');
       expect(card.y).toBeGreaterThanOrEqual(canvas.y + canvas.h + 44 - 1);
       for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2']) expect(overlap(card, await box(page, id)), id).toBe(false);
-      expect(bar.y).toBeLessThan(canvas.y + canvas.h);
+      // The bar overlays are laid out every few frames after the flag flips, so wait for the settled one-row layout (a skirt 44 px below the
+      // canvas) before measuring. Its top then sits inside the canvas, its lower edge 44 px below, and every slot (button or strip) shares that edge.
+      const canvasBottom = canvas.y + canvas.h;
+      const edges = (): Promise<number[]> => page.evaluate<number[]>(`[...document.querySelectorAll('.touchSkirt')].filter((e) => getComputedStyle(e).visibility !== 'hidden').map((e) => Math.round(e.getBoundingClientRect().bottom))`);
+      await expect.poll(async () => (await box(page, '#arcadeDash')).h, { message: 'one-row layout settles' }).toBeGreaterThan(70);
+      const settled = await box(page, '#arcadeDash');
+      expect(settled.y).toBeLessThan(canvasBottom);
+      expect(Math.abs(settled.y + settled.h - (canvasBottom + 44))).toBeLessThanOrEqual(1);
+      const bottoms = await edges();
+      expect(bottoms.length, 'every bar slot has a skirt').toBeGreaterThanOrEqual(8);
+      expect(new Set(bottoms).size, `one lower edge: ${bottoms.join(',')}`).toBe(1);
       // P4: the card is one line, above the touch buttons (z 5) and clear of the strike buttons.
       await expect(page.locator('#firstRunHint p.firstRunOne')).toBeVisible();
       await expect(page.locator('#firstRunHint p:visible')).toHaveCount(1);

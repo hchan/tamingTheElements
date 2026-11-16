@@ -12,7 +12,8 @@ html[data-portrait-play] #firstRunHint p.firstRunOne { display: block; }
 /* One-row action bar (P3): the boxes are 28-39 px wide, so the 48 px floor is restated for both main.css selectors. Each button grows
    44 px below the canvas (touch-overlay.ts sets the height); the lower 44 px is a text-free groove, the canvas part stays transparent. */
 html[data-portrait-play] button.touchBtn.touchSkirt,
-html[data-portrait-play] #menu button.touchBtn.touchSkirt {
+html[data-portrait-play] #menu button.touchBtn.touchSkirt,
+html[data-portrait-play] .touchSkirtDeco {
   min-width: 24px;
   background: linear-gradient(to top, rgba(18, 16, 14, 0.92) 0, rgba(30, 27, 23, 0.92) var(--pp-bar-ext), transparent var(--pp-bar-ext));
   border-left: 1px solid rgba(107, 101, 88, 0.35);
@@ -24,3 +25,5 @@ html[data-portrait-play] #game {
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
     linear-gradient(to bottom, #14120f 0%, #0c0b09 40%, #070605 100%);
 }
+/* Skirt for boxes with no button (strikes, Snag): a click-through strip, same groove as the buttons. */
+html[data-portrait-play] .touchSkirtDeco { position: absolute; pointer-events: none; z-index: 4; box-sizing: border-box; }
