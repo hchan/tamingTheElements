@@ -1,7 +1,8 @@
 import type Phaser from 'phaser';
 import { SUPER_NAMES, type Element } from '@core/index';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, resolutionOf } from '../boot/viewport';
-import { drawnBox } from '../views/hero-scale';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, coreDisplayWidth, resolutionOf } from '../boot/viewport';
+import { HERO_IMAGE_NAME, drawnBox } from '../views/hero-scale';
+import { DOLLY_MAX, DROP_K } from '../views/pose-depth';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
 import { punchAnchor } from './arena-camera';
 import { ELEMENT_COLORS } from './element-colors';
@@ -18,13 +19,21 @@ import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from
 
 /** The name of super `superId` (WP-arcade-supers: the race supers; 0 and unknown ids are the generic burst). */
 export const superName = (superId: number): string => SUPER_NAMES[superId] ?? SUPER_NAMES[0] ?? 'ELEMENTAL BURST';
-/**
- * Band centre: under the fighters (clear of the HUD and the action bar) unless the caster reaches that strip, then high,
- * under the meters. Either way the caster stays in view.
- */
+/** Preferred band centre (under the meters) when nothing forces it elsewhere; the band is 160 tall plus 6 px rules. */
 const BAND_HIGH_Y = 200;
-const BAND_LOW_Y = 520;
 const BAND_H = 160;
+/** The band stays between these rows (today's high and low slots): it never covers HUD it did not cover before. */
+const BAND_TOP = 117;
+const BAND_BOTTOM = 603;
+/** Band scale steps, tried largest first: a smaller band fits between two fighters. */
+const BAND_K = [1, 0.85, 0.7, 0.6] as const;
+const HEAD_PAD = 12;
+const FEET_PAD = 24;
+/** The caster counts this much against the foe when the band cannot clear both (it then crosses the foe). */
+const CASTER_WEIGHT = 3;
+const AVOID_PAD = 8;
+/** The weather badge row's lower edge: a band reaching above it hides the badge (`tte.band`). */
+const WEATHER_LINE_Y = 240;
 /** See-through, so a foe standing behind the band stays visible (qa-r3-super-cinematic-hides-action). */
 const BAND_OPACITY = 0.5;
 /** 72 and 52 logical px stay about 17 and 12 CSS px on the 390x844 phone's letterboxed canvas (about 304 px wide). */
@@ -37,6 +46,7 @@ const GLOW_RINGS = 7;
 const DIM_GAIN = 1.75;
 const LINES = 26;
 const PORTRAIT_X = 120;
+const GLOW_R0 = 70;
 /** The free width between the two portrait cards (1280 box): the title never reaches past it, so it is not clipped at a phone's edge (QA r21). */
 export const NAME_SAFE_W = LOGICAL_WIDTH - 2 * (PORTRAIT_X + (PORTRAIT_PX + 16) / 2 + 12);
 
@@ -53,6 +63,129 @@ const SPAN = LOGICAL_WIDTH + 2 * WIDE_SIDE;
 /** The element burst: over the dim, under the lifted caster. */
 const BURST_DEPTH = DIM_DEPTH + 0.5;
 
+/** A rectangle in core (1280x720) units. */
+export interface Rect {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+}
+/** A fighter's vertical extent the band must clear, with its weight. */
+export interface Span {
+  readonly top: number;
+  readonly bottom: number;
+  readonly w: number;
+}
+export interface BandSlot {
+  readonly y: number;
+  readonly k: number;
+  readonly ext: number;
+  readonly cost: number;
+  readonly side: -1 | 0 | 1;
+}
+
+/** Half the band plus half a rule at scale `k`. */
+export const bandExt = (k: number): number => (BAND_H / 2) * k + 3;
+
+/**
+ * The rows a fighter can reach during the cut: `top`/`bottom` is its box (core units, with the caster's dip already applied),
+ * `spy` the punch-in anchor row and `zPeak` the peak zoom. A row `r` moves to `spy + (r - spy) z`, linear in z, so z = 1 and z = zPeak bound every frame.
+ */
+export function sweptSpan(top: number, bottom: number, spy: number, zPeak: number, w: number): Span {
+  return {
+    top: Math.floor(Math.min(top, spy + (top - spy) * zPeak) - HEAD_PAD),
+    bottom: Math.ceil(Math.max(bottom, spy + (bottom - spy) * zPeak) + FEET_PAD),
+    w,
+  };
+}
+
+const meets = (a: Rect, b: Rect): boolean => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+
+/** The portrait's glow square (side -1 left, 1 right), centred on the band. */
+export function portraitRect(side: number, y: number, k: number): Rect {
+  const cx = side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X;
+  const r = Math.min(133 * k, bandExt(k) + 8);
+  return { x0: cx - r, y0: y - r, x1: cx + r, y1: y + r };
+}
+
+/** The caster's side if its portrait clears every `avoid` rect, else the other side if that clears, else 0 (no portrait). */
+export function portraitSide(casterSide: -1 | 1, y: number, k: number, avoid: readonly Rect[]): -1 | 0 | 1 {
+  const clear = (s: number): boolean => avoid.every((a) => !meets(portraitRect(s, y, k), a));
+  if (clear(casterSide)) return casterSide;
+  return clear(-casterSide) ? (-casterSide as -1 | 1) : 0;
+}
+
+/** Half the width the title may use at band row `y`: the safe width, narrowed to keep 12 px off an avoid rect the band reaches. */
+export function nameHalfWidth(y: number, ext: number, avoid: readonly Rect[]): number {
+  let d = Infinity;
+  for (const a of avoid) {
+    if (a.y1 <= y - ext || a.y0 >= y + ext) continue;
+    d = Math.min(d, a.x0 > LOGICAL_WIDTH / 2 ? a.x0 - LOGICAL_WIDTH / 2 : a.x1 < LOGICAL_WIDTH / 2 ? LOGICAL_WIDTH / 2 - a.x1 : 0);
+  }
+  return Math.max(0, Math.min(NAME_SAFE_W / 2, d - 12));
+}
+
+/** True when a band at (`y`, `k`) reaches above the weather badge row (the badge, chip and call hide then). */
+export const bandHidesWeather = (y: number, k: number): boolean => y - bandExt(k) < WEATHER_LINE_Y;
+
+function better(a: BandSlot, b: BandSlot): boolean {
+  if (a.cost !== b.cost) return a.cost < b.cost;
+  if ((a.side !== 0) !== (b.side !== 0)) return a.side !== 0;
+  if (a.k !== b.k) return a.k > b.k;
+  const da = Math.abs(a.y - BAND_HIGH_Y);
+  const db = Math.abs(b.y - BAND_HIGH_Y);
+  return da !== db ? da < db : a.y < b.y;
+}
+
+/**
+ * Chooses the band row and scale: the least weighted overlap with the fighters' swept spans (0 = every fighter clear), then a
+ * portrait that fits (not hidden), then the biggest band, then the row nearest the preferred one.
+ */
+export function superBandSlot(spans: readonly Span[], avoid: readonly Rect[], casterSide: -1 | 1): BandSlot {
+  let best: BandSlot | undefined;
+  for (const k of BAND_K) {
+    const ext = bandExt(k);
+    for (let y = BAND_TOP + Math.ceil(ext); y + ext <= BAND_BOTTOM; y++) {
+      let cost = 0;
+      for (const s of spans) cost += s.w * Math.max(0, Math.min(y + ext, s.bottom) - Math.max(y - ext, s.top));
+      if (best && cost > best.cost) continue;
+      const cand: BandSlot = { y, k, ext, cost, side: portraitSide(casterSide, y, k, avoid) };
+      if (!best || better(cand, best)) best = cand;
+    }
+  }
+  return best ?? { y: BAND_HIGH_Y, k: 1, ext: bandExt(1), cost: 0, side: casterSide };
+}
+
+const DOM_AVOID = ['touchStrike1', 'touchStrike2', 'pauseButton', 'touchStick'];
+/** The touch controls over the canvas as core-unit rects (mapped like Hud.pauseLeft), padded; none off a touch screen. */
+function domAvoid(scene: Phaser.Scene): Rect[] {
+  const out: Rect[] = [];
+  const doc = scene.game.canvas.ownerDocument;
+  const canvas = scene.game.canvas.getBoundingClientRect();
+  const k = coreDisplayWidth(scene) / LOGICAL_WIDTH;
+  if (!(k > 0)) return out;
+  const left = canvas.left + (canvas.width - LOGICAL_WIDTH * k) / 2;
+  for (const id of DOM_AVOID) {
+    const el = doc.getElementById(id);
+    if (!el || el.getClientRects().length === 0) continue;
+    const c = el.getBoundingClientRect();
+    if (c.right <= canvas.left || c.left >= canvas.right || c.bottom <= canvas.top || c.top >= canvas.bottom) continue;
+    out.push({
+      x0: (c.left - left) / k - AVOID_PAD,
+      y0: (c.top - canvas.top) / k - AVOID_PAD,
+      x1: (c.right - left) / k + AVOID_PAD,
+      y1: (c.bottom - canvas.top) / k + AVOID_PAD,
+    });
+  }
+  return out;
+}
+
+/** A hero body image on the display list: structural check of the fields `drawnBox` reads. */
+function isHeroImage(o: Phaser.GameObjects.GameObject): o is Phaser.GameObjects.Image {
+  const i = o as Partial<Phaser.GameObjects.Image>;
+  return i.frame !== undefined && typeof i.displayWidth === 'number' && typeof i.displayHeight === 'number' && typeof i.x === 'number' && typeof i.y === 'number';
+}
+
 /** The caster's pooled character view (`FxTarget` in event-fx.ts): portrait texture and frame, lifted over the dim. */
 export interface SuperCaster {
   readonly image: Phaser.GameObjects.Image;
@@ -60,7 +193,15 @@ export interface SuperCaster {
 }
 
 /** Read-out for the test probe: the frame, the texts shown and the camera zoom over the fit zoom. */
-export type SuperState = SuperFrame & { readonly name: string; readonly sub: string; readonly camZoom: number };
+export type SuperState = SuperFrame & {
+  readonly name: string;
+  readonly sub: string;
+  readonly camZoom: number;
+  /** The band slot chosen at the start (core units; the name and portrait rects are at rest). */
+  readonly band: BandSlot & { readonly portrait: Rect | null; readonly name: Rect; readonly avoid: readonly Rect[]; readonly spans: readonly Span[] };
+  /** Every fighter's live drawn box in core units, through the cut's camera. */
+  readonly fighters: readonly { x0: number; x1: number; top: number; bottom: number; caster: boolean }[];
+};
 
 interface Runner {
   start(caster: SuperCaster, from: number, until: number, reduced: boolean, superId: number): void;
@@ -155,6 +296,11 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   let px = 0;
   let py = 0;
   let bandY = BAND_HIGH_Y;
+  let bandK = 1;
+  let portraitOn = true;
+  let bandInfo: SuperState['band'] | undefined;
+  let tracked: { img: Phaser.GameObjects.Image; caster: boolean }[] = [];
+  const scratch = { x: 0, y: 0, w: 0, h: 0 };
   let lastTick = -1;
   let sub = 0;
   let lifted: Phaser.GameObjects.Image | undefined;
@@ -200,14 +346,14 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     };
     for (const o of [parts.dim, parts.band, parts.edges, parts.name, parts.sub]) o.setScale(v.scale);
     parts.glow.setScale(v.scale);
-    parts.portrait.setDisplaySize(PORTRAIT_PX * v.scale, PORTRAIT_PX * v.scale);
+    parts.portrait.setDisplaySize(PORTRAIT_PX * bandK * v.scale, PORTRAIT_PX * bandK * v.scale);
     put(parts.dim, -WIDE_SIDE, 0, Math.min(1, frame.dim * DIM_GAIN));
     put(parts.band, dx - WIDE_SIDE, bandY, frame.bandAlpha * BAND_OPACITY);
     put(parts.edges, dx, bandY, frame.bandAlpha);
     put(parts.glow, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
     put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
-    put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26, frame.bandAlpha);
-    put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44, frame.bandAlpha);
+    put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26 * bandK, frame.bandAlpha);
+    put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44 * bandK, frame.bandAlpha);
     aim(frame.zoom);
   }
   const drop = (): void => {
@@ -239,50 +385,106 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       const vb = viewBox(scene, 1);
       const sx0 = (b.x - vb.x) / vb.scale;
       const sx1 = (b.x + b.w - vb.x) / vb.scale;
-      const sBottom = (b.y + b.h - vb.y) / vb.scale;
       // Zoom about a point that keeps the whole caster on screen (the box centre alone pushes a caster at the edge out of it).
       px = vb.x + punchAnchor(sx0, sx1, 1 + PUNCH_ZOOM, LOGICAL_WIDTH, 40, 40) * vb.scale;
       py = b.y + b.h / 2;
       // The band slides in from the caster's half of the screen, with the portrait (as the caster faces) on that side.
-      side = (sx0 + sx1) / 2 < LOGICAL_WIDTH / 2 ? -1 : 1;
-      bandY = sBottom <= BAND_LOW_Y - BAND_H / 2 ? BAND_LOW_Y : BAND_HIGH_Y;
+      const casterSide = (sx0 + sx1) / 2 < LOGICAL_WIDTH / 2 ? -1 : 1;
+      // The band row: clear of every fighter's reach over the whole cut (zoom about the caster, the caster's depth dip).
+      const zPeak = reducedMotion ? 1 : 1 + PUNCH_ZOOM;
+      const spy = (py - vb.y) / vb.scale;
+      const spans: Span[] = [];
+      tracked = [];
+      const track = (im: Phaser.GameObjects.Image, isCaster: boolean): void => {
+        const d = drawnBox(im, scratch);
+        let top = (d.y - vb.y) / vb.scale;
+        let bottom = (d.y + d.h - vb.y) / vb.scale;
+        if (isCaster && !reducedMotion) {
+          const h = bottom - top;
+          top -= DOLLY_MAX * h;
+          bottom += DROP_K * h;
+        }
+        spans.push(sweptSpan(top, bottom, spy, zPeak, isCaster ? CASTER_WEIGHT : 1));
+        tracked.push({ img: im, caster: isCaster });
+      };
+      track(img, true);
+      for (const o of scene.children.getAll('name', HERO_IMAGE_NAME)) {
+        if (o === img || !isHeroImage(o) || !o.visible || o.alpha <= 0) continue;
+        const d = drawnBox(o, scratch);
+        const x0 = (d.x - vb.x) / vb.scale;
+        if (x0 + d.w / vb.scale < -WIDE_SIDE || x0 > LOGICAL_WIDTH + WIDE_SIDE) continue;
+        track(o, false);
+      }
+      const avoid = domAvoid(scene);
+      const slot = superBandSlot(spans, avoid, casterSide);
+      bandY = slot.y;
+      bandK = slot.k;
+      portraitOn = slot.side !== 0;
+      side = slot.side === 0 ? casterSide : slot.side;
+      const k = bandK;
+      const ext = slot.ext;
       // Grim grade: the band is a dark, desaturated wash of the element colour (the element word below is the main cue).
-      parts.band.setFillStyle(mute(ELEMENT_COLORS[caster.element], 0.45, 0.5));
+      parts.band.setFillStyle(mute(ELEMENT_COLORS[caster.element], 0.45, 0.5)).setSize(SPAN, BAND_H * k);
       const tint = mute(ELEMENT_COLORS[caster.element], 0.95, 1.05);
       parts.name.setColor(`#${tint.toString(16).padStart(6, '0')}`);
       // A soft pool of the element colour behind the cut-out: stacked translucent discs from wide and faint to tight and bright.
       parts.glow.clear();
-      for (let i = 0; i < GLOW_RINGS; i++) parts.glow.fillStyle(tint, 0.05 + i * 0.012).fillCircle(0, 0, PORTRAIT_PX * 0.5 + (GLOW_RINGS - i) * 9);
+      const step = Math.min(9 * k, (ext + 8 - GLOW_R0 * k) / GLOW_RINGS);
+      for (let i = 0; i < GLOW_RINGS; i++) parts.glow.fillStyle(tint, 0.05 + i * 0.012).fillCircle(0, 0, GLOW_R0 * k + (GLOW_RINGS - i) * step);
       parts.edges.clear();
-      parts.edges.fillStyle(tint, 0.9).fillRect(-WIDE_SIDE, -BAND_H / 2 - 3, SPAN, 6).fillRect(-WIDE_SIDE, BAND_H / 2 - 3, SPAN, 6);
+      parts.edges.fillStyle(tint, 0.9).fillRect(-WIDE_SIDE, -ext, SPAN, 6).fillRect(-WIDE_SIDE, ext - 6, SPAN, 6);
       // Speed lines: thin streaks of the element colour at fixed (hash-spaced) heights and lengths, no randomness.
       for (let i = 0; i < LINES; i++) {
         const h = (i * 2654435761) >>> 0;
-        const y = -BAND_H / 2 + 8 + (h % (BAND_H - 16));
+        const y = (-BAND_H * k) / 2 + 8 + (h % Math.max(1, Math.round(BAND_H * k) - 16));
         const len = 160 + ((h >>> 8) % 340);
         const x = ((h >>> 16) % (LOGICAL_WIDTH - len));
         parts.edges.fillStyle(tint, 0.22).fillRect(x, y, len, 2);
       }
-      parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX, PORTRAIT_PX).setFlipX(img.flipX);
-      parts.name.setFontSize(NAME_PX).setText(superName(superId));
-      parts.name.setFontSize(fitTitlePx(NAME_PX, parts.name.width, NAME_SAFE_W));
+      parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX * k, PORTRAIT_PX * k).setFlipX(img.flipX);
+      const safe = Math.min(NAME_SAFE_W, 2 * nameHalfWidth(bandY, ext, avoid));
+      const namePx = Math.round(NAME_PX * k);
+      parts.name.setFontSize(namePx).setText(superName(superId));
+      parts.name.setFontSize(fitTitlePx(namePx, parts.name.width, safe));
       // The element as a word too: the band colour is not the only cue.
-      parts.sub.setText(caster.element.toUpperCase());
+      const subPx = Math.round(SUB_PX * k);
+      parts.sub.setFontSize(subPx).setText(caster.element.toUpperCase());
+      parts.sub.setFontSize(fitTitlePx(subPx, parts.sub.width, safe));
+      const cs = spans[0];
+      const crosses = cs !== undefined && slot.y + ext > cs.top && slot.y - ext < cs.bottom;
+      bandInfo = {
+        ...slot,
+        portrait: portraitOn ? portraitRect(side, bandY, k) : null,
+        name: { x0: LOGICAL_WIDTH / 2 - parts.name.width / 2, y0: bandY - 26 * k - parts.name.height / 2, x1: LOGICAL_WIDTH / 2 + parts.name.width / 2, y1: bandY - 26 * k + parts.name.height / 2 },
+        avoid,
+        spans,
+      };
       scene.events.off('postupdate', drawBurst);
       burst = { element: caster.element, x: px, y: py, from: fromTick, reduced: reducedMotion };
       scene.events.on('postupdate', drawBurst);
       for (const o of all) o.setVisible(true);
-      scene.registry.set('tte.band', bandY === BAND_HIGH_Y);
+      if (!portraitOn) {
+        parts.portrait.setVisible(false);
+        parts.glow.setVisible(false);
+      }
+      scene.registry.set('tte.band', bandHidesWeather(bandY, bandK));
       scene.registry.set('tte.cut', true);
-      lifted = img.setDepth(DIM_DEPTH + 1);
+      // Over the band, rules and glow (under the text) when the band must cross the caster; else just over the dim.
+      lifted = img.setDepth(crosses ? DIM_DEPTH + 2.9 : DIM_DEPTH + 1);
       running = true;
       holdCamera(scene, true);
       scene.events.on('update', update);
       update(0, 0);
     },
     state() {
-      if (!running) return undefined;
-      return { ...frame, name: parts.name.text, sub: parts.sub.text, camZoom: scene.cameras.main.zoom / res() };
+      if (!running || !bandInfo) return undefined;
+      const v = viewBox(scene, frame.zoom, px, py);
+      const r1 = (n: number): number => Math.round(n * 10) / 10;
+      const fighters = tracked.map(({ img, caster }) => {
+        const d = drawnBox(img, { x: 0, y: 0, w: 0, h: 0 });
+        return { x0: r1((d.x - v.x) / v.scale), x1: r1((d.x + d.w - v.x) / v.scale), top: r1((d.y - v.y) / v.scale), bottom: r1((d.y + d.h - v.y) / v.scale), caster };
+      });
+      return { ...frame, name: parts.name.text, sub: parts.sub.text, camZoom: scene.cameras.main.zoom / res(), band: bandInfo, fighters };
     },
   };
 }

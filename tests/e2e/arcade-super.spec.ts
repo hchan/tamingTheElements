@@ -17,6 +17,7 @@ interface SuperFx {
   name: string;
   sub: string;
   camZoom: number;
+  fighters: unknown[];
 }
 
 function collectErrors(page: Page): string[] {
@@ -66,7 +67,8 @@ test('Arcade: a super dims the arena, slides in the element cut-in and punches t
   expect(f?.camZoom).toBeCloseTo(f?.zoom ?? 0, 3);
   // Paused frames hold it; stepping past the 40-tick freeze ends it and restores the camera.
   await frames(page);
-  expect(await superFx(page)).toEqual(f);
+  // (the live `fighters` read-out is left out: it follows the camera)
+  expect({ ...(await superFx(page)), fighters: [] }).toEqual({ ...f, fighters: [] });
   await page.evaluate(`window.__TTE__.arena.step(40)`);
   await frames(page);
   expect(await superFx(page)).toBeUndefined();

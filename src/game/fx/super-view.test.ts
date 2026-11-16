@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SUPER_NAMES } from '@core/index';
-import { NAME_SAFE_W, fitTitlePx, superName } from './super-view';
+import { NAME_SAFE_W, bandExt, bandHidesWeather, fitTitlePx, nameHalfWidth, portraitRect, portraitSide, superBandSlot, superName, sweptSpan, type Rect, type Span } from './super-view';
 
 describe('superName', () => {
   it('names every super id from the data table, each distinct and non-empty', () => {
@@ -28,5 +28,95 @@ describe('fitTitlePx', () => {
   it('leaves room beside both portrait cards', () => {
     expect(NAME_SAFE_W).toBeGreaterThan(700);
     expect(NAME_SAFE_W).toBeLessThan(1000);
+  });
+});
+
+const sp = (top: number, bottom: number, w: number): Span => ({ top, bottom, w });
+const rect = (x0: number, y0: number, x1: number, y1: number): Rect => ({ x0, y0, x1, y1 });
+
+describe('super band slot', () => {
+  it('bandExt is half the band plus half a rule', () => {
+    [1, 0.85, 0.7, 0.6].forEach((k, i) => { expect(bandExt(k)).toBeCloseTo([83, 71, 59, 51][i] as number, 6); });
+  });
+  it('sweptSpan covers the punch-in about the anchor, with head and feet pads', () => {
+    expect(sweptSpan(250 - 10.8, 430 + 6.3, 340, 1.15, 3)).toEqual({ top: 212, bottom: 475, w: 3 });
+    expect(sweptSpan(270, 450, 340, 1.15, 1)).toEqual({ top: 247, bottom: 491, w: 1 });
+    // reduced motion (z 1): just the pads
+    expect(sweptSpan(200, 424, 300, 1, 1)).toEqual({ top: 188, bottom: 448, w: 1 });
+  });
+  it('finds a clear slot between close fighters', () => {
+    const s = superBandSlot([sp(212, 475, 3), sp(247, 491, 1)], [], -1);
+    expect(s).toMatchObject({ k: 0.6, y: 542, cost: 0 });
+  });
+  it('keeps the caster clear when the foe is high and the caster low', () => {
+    const s = superBandSlot([sp(120, 320, 1), sp(400, 640, 3)], [], 1);
+    expect(s).toMatchObject({ k: 0.6, y: 349, cost: 22 });
+  });
+  it('crosses the foe rather than the caster when blocked', () => {
+    const s = superBandSlot([sp(140, 420, 3), sp(380, 600, 1)], [], 1);
+    expect(s).toMatchObject({ k: 0.6, y: 552, cost: 99 });
+  });
+  it('defaults', () => {
+    expect(superBandSlot([sp(235, 478, 3)], [], 1)).toMatchObject({ k: 0.7, y: 176 });
+    expect(superBandSlot([], [], 1)).toMatchObject({ k: 1, y: 200 });
+  });
+  it('bandHidesWeather matches the old two slots', () => {
+    expect([bandHidesWeather(200, 1), bandHidesWeather(520, 1), bandHidesWeather(178, 0.7), bandHidesWeather(540, 0.6)]).toEqual([true, false, true, false]);
+  });
+  it('nameHalfWidth narrows beside a control the band reaches', () => {
+    const y = 300;
+    const e = bandExt(1);
+    expect(nameHalfWidth(y, e, [])).toBe(430);
+    expect(nameHalfWidth(y, e, [rect(1019, 280, 1126, 400)])).toBe(367);
+    expect(nameHalfWidth(y, e, [rect(1019, 500, 1126, 600)])).toBe(430);
+    expect(nameHalfWidth(y, e, [rect(31, 280, 284, 400)])).toBe(344);
+  });
+  it('portraitSide falls back to the other side, then to none', () => {
+    const l = rect(0, 0, 400, 720);
+    const r = rect(900, 0, 1280, 720);
+    expect(portraitSide(-1, 300, 1, [])).toBe(-1);
+    expect(portraitSide(-1, 300, 1, [l])).toBe(1);
+    expect(portraitSide(1, 300, 1, [r])).toBe(-1);
+    expect(portraitSide(-1, 300, 1, [l, r])).toBe(0);
+    expect(portraitRect(-1, 300, 1).x0).toBeLessThan(120);
+  });
+  it('brute force: in range, minimal cost, portrait off every avoid rect', () => {
+    let seed = 12345;
+    const rnd = (n: number): number => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed % n;
+    };
+    for (let c = 0; c < 500; c++) {
+      const spans: Span[] = [];
+      for (let i = 0, n = 1 + rnd(4); i < n; i++) {
+        const top = 100 + rnd(350);
+        spans.push(sp(top, top + 150 + rnd(150), rnd(2) === 0 ? 1 : 3));
+      }
+      const avoid: Rect[] = [];
+      for (let i = 0, n = rnd(5); i < n; i++) {
+        const x = rnd(1100);
+        const y = rnd(600);
+        avoid.push(rect(x, y, x + 60 + rnd(200), y + 60 + rnd(150)));
+      }
+      const side = rnd(2) === 0 ? -1 : 1;
+      const slot = superBandSlot(spans, avoid, side);
+      expect(slot.y - slot.ext).toBeGreaterThanOrEqual(117);
+      expect(slot.y + slot.ext).toBeLessThanOrEqual(603);
+      expect([1, 0.85, 0.7, 0.6]).toContain(slot.k);
+      let min = Infinity;
+      for (const k of [1, 0.85, 0.7, 0.6]) {
+        const ext = bandExt(k);
+        for (let y = 117 + Math.ceil(ext); y + ext <= 603; y++) {
+          let cost = 0;
+          for (const s of spans) cost += s.w * Math.max(0, Math.min(y + ext, s.bottom) - Math.max(y - ext, s.top));
+          min = Math.min(min, cost);
+        }
+      }
+      expect(slot.cost).toBe(min);
+      if (slot.side !== 0) {
+        const p = portraitRect(slot.side, slot.y, slot.k);
+        for (const a of avoid) expect(p.x0 < a.x1 && a.x0 < p.x1 && p.y0 < a.y1 && a.y0 < p.y1).toBe(false);
+      }
+    }
   });
 });
