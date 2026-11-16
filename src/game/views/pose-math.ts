@@ -95,8 +95,8 @@ export type PoseKindValue = (typeof PoseKind)[keyof typeof PoseKind];
 /** Length of each transient pose in ms (indexed by `PoseKind`). */
 export const POSE_MS: readonly number[] = [0, 220, 300, 200, 320, 900];
 
-/** The incoming hero never starts below this alpha: at the start of the fade it read as an empty spot on dark floors. */
-export const TAG_IN_MIN_ALPHA = 0.35;
+/** The incoming hero never starts below this alpha: a see-through fade read as a ghost (QA r71); the slide and pop carry the tag-in cue. */
+export const TAG_IN_MIN_ALPHA = 0.8;
 
 /** Tag-in opacity at progress `t` (0..1): eases from `TAG_IN_MIN_ALPHA` to 1. */
 export function tagInAlpha(t: number): number {
