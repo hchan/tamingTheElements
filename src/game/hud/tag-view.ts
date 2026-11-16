@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
-  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, benchBarOf, benchLabel, callPose,
+  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose,
   callText, dashes, flashPose, mainBarOf, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, SLIM_H, pillWord, tagPill } from './slim-hud';
@@ -149,6 +149,8 @@ export function mountTagView(
   /** Live entrance flashes: centre, height, team, start tick, KO. */
   /** The view tick each team's incoming-hero bar flash started (-FLASH_TICKS when none). */
   const barFlash: [number, number] = [-FLASH_TICKS, -FLASH_TICKS];
+  const flashRect = { x: 0, y: 0, w: 0, h: 0 };
+  const barPose = { on: false, rim: 0, wash: 0, color: 0, width: 2 };
   const flashes: { x: number; y: number; h: number; team: number; from: number; ko: boolean }[] = [];
 
   const red = (g: Phaser.GameObjects.Graphics, b: Bar, h: Hero): void => {
@@ -177,14 +179,12 @@ export function mountTagView(
           g.lineStyle(1, GOLD, 0.9).strokeRect(...frame);
         }
       }
-      // The swap lands on the HUD too: a bright frame round the incoming hero's bar that grows out and fades (steady, then gone, with reduced motion).
+      // The swap lands on the HUD too: a thin rim hugging the incoming hero's bar frame, with a white wash, both fading out (WP-HF1: it never grows).
       const bt = view.tick - (barFlash[team] ?? -FLASH_TICKS);
-      if (active && bt >= 0 && bt < FLASH_TICKS) {
-        const k = 1 - bt / FLASH_TICKS;
-        const grow = reduced ? 0 : Math.round(10 * (1 - k));
-        g.lineStyle(5, 0x000000, 0.6 * k).strokeRect(main.minX - 5 - grow, main.y - 14 - grow, main.maxX - main.minX + 10 + 2 * grow, 28 + 2 * grow);
-        g.lineStyle(3, 0xffffff, k).strokeRect(main.minX - 5 - grow, main.y - 14 - grow, main.maxX - main.minX + 10 + 2 * grow, 28 + 2 * grow);
-        g.fillStyle(0xffffff, 0.35 * k).fillRect(main.minX - 2, main.y - 11, main.maxX - main.minX + 4, 22);
+      if (active && barFlashPose(bt, reduced, highContrast, barPose).on) {
+        const r = barFlashRect(team, flashRect);
+        g.fillStyle(0xffffff, barPose.wash).fillRect(r.x, r.y, r.w, r.h);
+        g.lineStyle(barPose.width, barPose.color, barPose.rim).strokeRect(r.x, r.y, r.w, r.h);
       }
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
       const bar = view.actionBar(team);

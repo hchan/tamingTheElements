@@ -154,3 +154,44 @@ export function flashPose(t: number, h: number, reduced: boolean): { readonly co
     slide: reduced ? 0 : h * 2 * (1 - Math.min(1, t / 10)),
   };
 }
+
+/** A rectangle in Hud px. */
+export interface FlashRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * The swap flash on the life bar: the bar's own frame (the gold active frame is `mainBarOf` plus 2 px) grown by 2 px more on
+ * every side, so it hugs the bar, never reaches the portrait or the name row, and never changes size (WP-HF1: it used to
+ * grow to 10 px out, and a held tick left that black-edged box on screen). Written into `out` so nothing is allocated.
+ */
+export function barFlashRect(team: number, out: FlashRect = { x: 0, y: 0, w: 0, h: 0 }): FlashRect {
+  const b = mainBarOf(team);
+  out.x = b.minX - 2;
+  out.y = b.y - 11;
+  out.w = b.maxX - b.minX + 4;
+  out.h = 22;
+  return out;
+}
+
+/** The swap flash at view-tick age `t`: a thin rim (gold, white in high contrast) and a white wash, both fading out. */
+export interface BarFlash {
+  on: boolean;
+  rim: number;
+  wash: number;
+  color: number;
+  width: number;
+}
+const FLASH_GOLD = 0xb39653;
+export function barFlashPose(t: number, reduced: boolean, hc: boolean, out: BarFlash = { on: false, rim: 0, wash: 0, color: 0, width: 2 }): BarFlash {
+  const k = 1 - t / FLASH_TICKS;
+  out.on = t >= 0 && t < FLASH_TICKS;
+  out.rim = out.on ? k : 0;
+  out.wash = out.on ? (reduced ? 0.15 : 0.25) * k : 0;
+  out.color = hc ? 0xffffff : FLASH_GOLD;
+  out.width = 2;
+  return out;
+}

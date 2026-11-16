@@ -4,7 +4,7 @@ import { BAR_Y, SLOT_SIDE, slotX } from './action-bar';
 import { barFill, dashSegments, sideOffset } from './bars';
 import { chipBar, slimBar } from './slim-hud';
 import {
-  CALL_TICKS, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
+  CALL_TICKS, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
   heroName, mainBarOf, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
 } from './tag-fx';
 import { TAG_SLOT_X, TAG_SLOT_Y } from './tag-view';
@@ -113,5 +113,41 @@ describe('tag view rules: geometry and motion', () => {
     expect(r).toMatchObject({ ring: 80, slide: 0, alpha: 1 });
     expect(r.core).toBe(a.core);
     expect(flashPose(FLASH_TICKS / 2, 80, true).ring).toBe(80);
+  });
+});
+
+describe('the swap flash on the life bar (WP-HF1)', () => {
+  it('hugs the bar frame: exact rects for both teams', () => {
+    expect(barFlashRect(0)).toEqual({ x: 118, y: 9, w: 464, h: 22 });
+    expect(barFlashRect(1)).toEqual({ x: 698, y: 9, w: 464, h: 22 });
+  });
+  it('stays clear of the portraits and under the name row', () => {
+    const a = barFlashRect(0);
+    const b = barFlashRect(1);
+    expect(a.x).toBeGreaterThanOrEqual(112); // the portrait ends at 110
+    expect(b.x + b.w).toBeLessThanOrEqual(1168); // the portrait starts at 1170
+    expect(a.y - 0.5).toBeGreaterThanOrEqual(0);
+    expect(a.y + a.h + 0.5).toBeLessThanOrEqual(34); // SLIM_ROW_B
+  });
+  it('is one rect for the whole flash, and its alphas only fall', () => {
+    let rim = Infinity;
+    let wash = Infinity;
+    for (let t = 0; t < FLASH_TICKS; t++) {
+      const p = barFlashPose(t, false, false);
+      expect(p.on).toBe(true);
+      expect(p.width).toBe(2);
+      expect(p.rim).toBeLessThanOrEqual(rim);
+      expect(p.wash).toBeLessThanOrEqual(wash);
+      rim = p.rim;
+      wash = p.wash;
+    }
+  });
+  it('is off before it starts and after it ends', () => {
+    for (const t of [-1, FLASH_TICKS, 60]) expect(barFlashPose(t, false, false).on).toBe(false);
+  });
+  it('is white in high contrast and washes less with reduced motion', () => {
+    expect(barFlashPose(0, false, true).color).toBe(0xffffff);
+    expect(barFlashPose(0, false, false).color).not.toBe(0xffffff);
+    expect(barFlashPose(0, true, false).wash).toBeLessThan(barFlashPose(0, false, false).wash);
   });
 });
