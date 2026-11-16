@@ -20,8 +20,8 @@ Screenshots in ~/claudetmp/qa-r79/. The worktree had no node_modules; I symlinke
 
 ## New findings
 
-1. 568x320: the fullscreen toggle (top right of the arena) overlaps the hit/damage counter. Suggest moving the counter left or the toggle above the HUD at this size.
-2. 568x320: WINS labels still crowd each other, so the HUD gap fix does not cover the smallest landscape size.
+1. (FIXED, ideas/done/qa-r79-hud-568.md) 568x320: the fullscreen toggle (top right of the arena) overlaps the hit/damage counter. Suggest moving the counter left or the toggle above the HUD at this size.
+2. (FIXED, ideas/done/qa-r79-hud-568.md) 568x320: WINS labels still crowd each other, so the HUD gap fix does not cover the smallest landscape size.
 3. Portrait fallback layout unchanged (see above); single-row bar and a two-chip cap remain the suggested fix.
 
 ## Menu / Help / Settings
