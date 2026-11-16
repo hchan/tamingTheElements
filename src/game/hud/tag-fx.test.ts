@@ -4,7 +4,7 @@ import { BAR_Y, SLOT_SIDE, slotX } from './action-bar';
 import { barFill, dashSegments, sideOffset } from './bars';
 import { chipBar, slimBar } from './slim-hud';
 import {
-  CALL_HEAD_GAP, CALL_TICKS, CALL_TOP_MIN, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose, callText, dashes, flashPose,
+  CALL_HEAD_GAP, CALL_TICKS, GLINT_TICKS, GLINT_W, CALL_TOP_MIN, FLASH_TICKS, TAG_BAR_H, TAG_BAR_W, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callFit, callPose, callText, CALL_KO_MAX_W, dashes, flashPose,
   heroName, mainBarOf, placeCall, redPct, redSpan, tagLayout, tagLine, tagReadout, teamX, type TagHero,
 } from './tag-fx';
 import { viewOfCamera } from './arcade-hud';
@@ -95,6 +95,15 @@ describe('tag view rules: geometry and motion', () => {
     expect(callPose(0, false).scale).toBeCloseTo(1.6);
     expect(callPose(8, false).scale).toBe(1);
     expect(callPose(0, true).scale).toBe(1);
+    expect(callPose(0, false, true).scale).toBeCloseTo(1.25);
+    expect(callPose(-5, false, true).scale).toBeCloseTo(1.25);
+    expect(callPose(-5, false).scale).toBeCloseTo(1.6);
+    expect(callPose(8, false, true).scale).toBe(1);
+    expect(callPose(0, true, true).scale).toBe(1);
+    expect(callFit(300, 1.25, true)).toBeCloseTo(1.2);
+    expect(callFit(200, 1.25, true)).toBe(1.25);
+    expect(callFit(500, 1, true) * 500).toBeCloseTo(CALL_KO_MAX_W);
+    expect(callFit(500, 1.6, false)).toBe(1.6);
     expect(callPose(10, false).alpha).toBe(1);
     expect(callPose(CALL_TICKS - 6, false).alpha).toBe(0.5);
     expect(callPose(CALL_TICKS, false).alpha).toBe(0);
@@ -136,7 +145,7 @@ describe('the swap flash on the life bar (WP-HF1)', () => {
     for (let t = 0; t < FLASH_TICKS; t++) {
       const p = barFlashPose(t, false, false);
       expect(p.on).toBe(true);
-      expect(p.width).toBe(2);
+      expect(p.width).toBe(t < 6 ? 3 : 2);
       expect(p.rim).toBeLessThanOrEqual(rim);
       expect(p.wash).toBeLessThanOrEqual(wash);
       rim = p.rim;
@@ -146,10 +155,32 @@ describe('the swap flash on the life bar (WP-HF1)', () => {
   it('is off before it starts and after it ends', () => {
     for (const t of [-1, FLASH_TICKS, 60]) expect(barFlashPose(t, false, false).on).toBe(false);
   });
-  it('is white in high contrast and washes less with reduced motion', () => {
+  it('is white in high contrast and bone otherwise', () => {
     expect(barFlashPose(0, false, true).color).toBe(0xffffff);
-    expect(barFlashPose(0, false, false).color).not.toBe(0xffffff);
-    expect(barFlashPose(0, true, false).wash).toBeLessThan(barFlashPose(0, false, false).wash);
+    expect(barFlashPose(0, false, false).color).toBe(0xf1e8cf);
+  });
+  it('never washes the bar in full motion (HF2-2: a wash made a light fill look dimmed)', () => {
+    for (let t = -1; t <= FLASH_TICKS; t++) expect(barFlashPose(t, false, false).wash).toBe(0);
+  });
+  it('sweeps a glint stripe inside the rect for the first 12 ticks only, none with reduced motion', () => {
+    const w = barFlashRect(0).w;
+    expect(barFlashRect(1).w).toBe(464);
+    let prev = -1;
+    for (let t = 0; t < GLINT_TICKS; t++) {
+      const p = barFlashPose(t, false, false);
+      if (t > 0) expect(p.glintW).toBeGreaterThan(0);
+      expect(p.glintW).toBeLessThanOrEqual(GLINT_W);
+      expect(p.glintX).toBeGreaterThanOrEqual(0);
+      expect(p.glintX + p.glintW).toBeLessThanOrEqual(w);
+      expect(p.glintX + p.glintW).toBeGreaterThan(prev);
+      prev = p.glintX + p.glintW;
+    }
+    for (let t = GLINT_TICKS; t < FLASH_TICKS; t++) expect(barFlashPose(t, false, false).glintW).toBe(0);
+    for (let t = 0; t < FLASH_TICKS; t++) expect(barFlashPose(t, true, false).glintW).toBe(0);
+  });
+  it('keeps only a tiny 4-tick wash with reduced motion', () => {
+    expect(barFlashPose(0, true, false).wash).toBeCloseTo(0.15);
+    expect(barFlashPose(4, true, false).wash).toBe(0);
   });
 });
 

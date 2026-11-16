@@ -20,7 +20,7 @@ async function open(page: Page, hero: string): Promise<void> {
     a.place(foe.id, 450, 360, 4);
   })()`);
 }
-/** Mean colour of the saturated pixels that changed between two canvas screenshots inside the foe's box (the hit mark, page-side decode). */
+/** Mean colour of the saturated pixels that differ between two same-frame screenshots (mark hidden, mark shown) inside the foe's box: the hit mark alone. */
 async function markColour(page: Page, before: Buffer, after: Buffer): Promise<{ r: number; g: number; b: number; n: number }> {
   return page.evaluate<{ r: number; g: number; b: number; n: number }>(
     `(async () => {
@@ -55,7 +55,6 @@ for (const reduced of [false, true]) {
       test(`${element}: plain hit and super burst render per element`, async ({ page }, info) => {
         const errors = collectErrors(page);
         await open(page, hero);
-        const idle = await page.locator('#game canvas').screenshot();
         const foeHp = (): Promise<number> => page.evaluate<number>(`window.__TTE__.arena.characters()[1].hp`);
         const start = await foeHp();
         // Primary and secondary alternate in bursts: heroes differ in which one connects at this range.
@@ -66,7 +65,12 @@ for (const reduced of [false, true]) {
         const plain = await page.locator('#game canvas').screenshot({ path: shotPath(`hit-${element}-${tag}`, info.outputPath('hit.png')) });
         expect(plain.length).toBeGreaterThan(2000);
         if (!reduced) {
-          const m = await markColour(page, idle, plain);
+          // Same frame with the mark layers hidden: the diff is the mark alone (not the swing, the hit flash or the ambient floor).
+          await page.evaluate('window.__TTE__.arena.hitMarkHide(true)');
+          await frames(page);
+          const settled = await page.locator('#game canvas').screenshot();
+          await page.evaluate('window.__TTE__.arena.hitMarkHide(false)');
+          const m = await markColour(page, settled, plain);
           expect(m.n, `${element} mark has saturated pixels`).toBeGreaterThan(40);
           measured.set(element, m);
         }

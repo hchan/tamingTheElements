@@ -284,3 +284,82 @@ for (const [w, h] of [[1280, 720], [844, 390], [667, 375]] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+// WP-HF2 (HF2-1): the KO entrance call is smaller, capped at 360 px, pops from 1.25x at most, stays on screen and off the live damage numbers.
+for (const [w, h] of [[1280, 720], [844, 390]] as const) {
+  test(`KO entrance call stays small and clear of damage numbers at ${String(w)}x${String(h)}`, async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.setViewportSize({ width: w, height: h });
+    await fight2v2(page);
+    const [active] = await characters(page, 0);
+    await page.evaluate(`window.__TTE__.arena.setHp(${String(active?.id)}, 0)`);
+    let done = 0;
+    for (const n of [1, 2, 5, 12]) {
+      await step(page, n);
+      done += n;
+      const t = await tag(page);
+      const b = t?.callBox;
+      expect(t?.call).toBe('PAX IN!');
+      expect(b?.w).toBeLessThanOrEqual(360 + 0.5);
+      expect(b?.x).toBeGreaterThanOrEqual(16);
+      expect((b?.x ?? 0) + (b?.w ?? 0)).toBeLessThanOrEqual(1280 - 16);
+      expect(t?.callScale).toBeLessThanOrEqual(1.26);
+      const boxes = await page.evaluate<{ x: number; y: number; w: number; h: number }[]>(`window.__TTE__.arena.fx().numberBoxes`);
+      for (const nb of boxes) {
+        const hit = b && nb.x < b.x + b.w && nb.x + nb.w > b.x && nb.y < b.y + b.h && nb.y + nb.h > b.y;
+        expect(hit).toBeFalsy();
+      }
+      if (process.env['SHOT_DIR']) await page.screenshot({ path: `${process.env['SHOT_DIR']}/ko-in-${String(w)}-t${String(done)}.png` });
+    }
+    expect(errors).toEqual([]);
+  });
+}
+
+// WP-HF2 (HF2-2): the swap flash on the incoming hero's life bar is a rim and a sweeping glint, never a wash: the bar outside the
+// stripe is as bright as at idle (a wash made a light bar look dimmed, QA r69), and the stripe is clearly brighter than idle.
+test('swap flash: a glint stripe on the bar, the rest of the bar not dimmed', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  await fight2v2(page);
+  await step(page, 1);
+  const canvas = page.locator('#game canvas');
+  await page.keyboard.down('Digit3');
+  await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+  await page.keyboard.up('Digit3');
+  await frames(page);
+  await step(page, 1);
+  await frames(page);
+  const early = await canvas.screenshot({ path: info.outputPath('swap-flash-t2.png') });
+  await info.attach('swap-flash-t2', { path: info.outputPath('swap-flash-t2.png'), contentType: 'image/png' });
+  await step(page, 4);
+  await frames(page);
+  await canvas.screenshot({ path: info.outputPath('swap-flash-t6.png') });
+  await step(page, 30);
+  await frames(page);
+  const idle = await canvas.screenshot({ path: info.outputPath('swap-flash-t36.png') });
+  // Column luminance (rows over the bar's fill, x 126..574 in Hud px) of the early and idle shots.
+  const cols = await page.evaluate<{ early: number[]; idle: number[] }>(
+    `(async () => {
+      const load = (b64) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = 'data:image/png;base64,' + b64; });
+      const profile = async (b64) => {
+        const i = await load(b64); const c = document.createElement('canvas'); c.width = i.width; c.height = i.height;
+        const x = c.getContext('2d'); x.drawImage(i, 0, 0);
+        const s = i.width / 1280; const out = [];
+        for (let hx = 126; hx < 574; hx++) {
+          let sum = 0, n = 0;
+          for (let hy = 16; hy <= 24; hy++) { const d = x.getImageData(Math.round(hx * s), Math.round(hy * s), 1, 1).data; sum += 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2]; n++; }
+          out.push(sum / n);
+        }
+        return out;
+      };
+      return { early: await profile(${JSON.stringify(early.toString('base64'))}), idle: await profile(${JSON.stringify(idle.toString('base64'))}) };
+    })()`,
+  );
+  const diff = cols.early.map((v, i) => v - (cols.idle[i] ?? 0));
+  let peak = 0;
+  for (let i = 0; i < diff.length; i++) if ((diff[i] ?? 0) > (diff[peak] ?? 0)) peak = i;
+  expect(diff[peak], 'the glint is clearly brighter than the idle bar').toBeGreaterThan(40);
+  const rest = diff.filter((_, i) => Math.abs(i - peak) > 40);
+  const mean = rest.reduce((a, b) => a + b, 0) / rest.length;
+  expect(Math.abs(mean), 'the rest of the bar is not dimmed or washed').toBeLessThan(8);
+  expect(errors).toEqual([]);
+});

@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
-  CALL_TICKS, FLASH_TICKS, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callPose,
+  CALL_KO_PX, CALL_TICKS, FLASH_TICKS, GLINT_ALPHA, RED_COLOR, RED_COLOR_HC, RED_DASH, activeLabel, barFlashPose, barFlashRect, benchBarOf, benchLabel, callFit, callPose,
   callText, dashes, flashPose, mainBarOf, placeCall, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, pillWord, tagPill } from './slim-hud';
@@ -167,7 +167,7 @@ export function mountTagView(
   /** The view tick each team's incoming-hero bar flash started (-FLASH_TICKS when none). */
   const barFlash: [number, number] = [-FLASH_TICKS, -FLASH_TICKS];
   const flashRect = { x: 0, y: 0, w: 0, h: 0 };
-  const barPose = { on: false, rim: 0, wash: 0, color: 0, width: 2 };
+  const barPose = { on: false, rim: 0, wash: 0, color: 0, width: 2, glintX: 0, glintW: 0 };
   const flashes: { x: number; y: number; h: number; team: number; from: number; ko: boolean }[] = [];
 
   const red = (g: Phaser.GameObjects.Graphics, b: Bar, h: Hero): void => {
@@ -196,11 +196,12 @@ export function mountTagView(
           g.lineStyle(1, GOLD, 0.9).strokeRect(...frame);
         }
       }
-      // The swap lands on the HUD too: a thin rim hugging the incoming hero's bar frame, with a white wash, both fading out (WP-HF1: it never grows).
+      // The swap lands on the HUD too: a bone rim hugging the incoming hero's bar frame and a glint stripe sweeping across it (WP-HF2: no wash over the fill; the frame never grows).
       const bt = view.tick - (barFlash[team] ?? -FLASH_TICKS);
       if (active && barFlashPose(bt, reduced, highContrast, barPose).on) {
         const r = barFlashRect(team, flashRect);
-        g.fillStyle(0xffffff, barPose.wash).fillRect(r.x, r.y, r.w, r.h);
+        if (barPose.wash > 0) g.fillStyle(0xffffff, barPose.wash).fillRect(r.x, r.y, r.w, r.h);
+        if (barPose.glintW > 0) g.fillStyle(barPose.color, GLINT_ALPHA).fillRect(r.x + barPose.glintX, r.y, barPose.glintW, r.h);
         g.lineStyle(barPose.width, barPose.color, barPose.rim).strokeRect(r.x, r.y, r.w, r.h);
       }
       bench.forEach((h, i) => { red(g, benchBarOf(team, i), h); });
@@ -271,11 +272,11 @@ export function mountTagView(
         }
       }
     }
-    if (call?.visible && held) call.setAlpha(0).setScale(callPose(0, callReduced).scale);
+    if (call?.visible && held) call.setAlpha(0).setScale(callFit(call.width, callPose(0, callReduced, callKo).scale, callKo));
     else if (call?.visible) {
-      const pose = callPose(age, callReduced);
+      const pose = callPose(age, callReduced, callKo);
       if (age >= CALL_TICKS) call.setVisible(false);
-      else call.setScale(pose.scale).setAlpha(pose.alpha);
+      else call.setScale(callFit(call.width, pose.scale, callKo)).setAlpha(pose.alpha);
     }
     // Keep the whole text on screen (at its live scale, so the entrance pop-in is covered too): a long name near either edge slides in.
     if (call?.visible) {
@@ -286,7 +287,7 @@ export function mountTagView(
     }
     // Publish the call's rect (w 0 when gone) so damage numbers keep clear of it.
     const rect = callRect(arena.registry);
-    if (call?.visible && call.alpha > 0) {
+    if (call?.visible) {
       rect.x = call.x - call.displayWidth / 2;
       rect.y = call.y - call.displayHeight / 2;
       rect.w = call.displayWidth;
@@ -356,7 +357,16 @@ export function mountTagView(
       callReduced = reduced;
       callKo = ko;
       if (parts) styleCombatText(parts.call.setText(callText(to, ko)), ko ? 'ko' : 'call');
-      parts?.call.setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
+      if (parts) {
+        const c = parts.call.setFontSize(ko ? CALL_KO_PX : CALL_PX).setPosition(teamX(team) + 320, CALL_Y).setVisible(true);
+        // Publish the call's box now (at its pop scale), so damage numbers dodge it from the very first frame, even while it is held.
+        const r = callRect(arena.registry);
+        const sc = callFit(c.width, callPose(0, reduced, ko).scale, ko);
+        r.w = c.width * sc;
+        r.h = c.height * sc;
+        r.x = c.x - r.w / 2;
+        r.y = c.y - r.h / 2;
+      }
       say(tagLine(team, from, to, ko));
     }
     then?.(events);

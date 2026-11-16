@@ -130,11 +130,20 @@ export function tagLine(team: number, from: string, to: string, ko: boolean): An
   return { key: `${ko ? 'koIn' : 'tag'}${String(team)}`, text, important: false };
 }
 
-/** The call's scale (scales in from 1.6x unless reduced) and alpha (fades out at the end) at view-tick age `t`. */
-export function callPose(t: number, reduced: boolean): { readonly scale: number; readonly alpha: number } {
-  const k = Math.min(1, t / CALL_IN_TICKS);
+/** The KO entrance call ("NAME IN!") is smaller and capped in width, so it pops in without swallowing the screen (WP-HF2). */
+export const CALL_KO_PX = 34;
+export const CALL_KO_MAX_W = 360;
+const CALL_KO_IN_SCALE = 1.25;
+
+/** The scale that keeps a KO call (`width` px at scale 1) within CALL_KO_MAX_W at `scale`; TAG! (not ko) is never capped. */
+export const callFit = (width: number, scale: number, ko: boolean): number => (ko && width * scale > CALL_KO_MAX_W ? CALL_KO_MAX_W / Math.max(1, width) : scale);
+
+/** The call's scale (scales in from 1.6x, a KO entrance from 1.25x, unless reduced) and alpha (fades out at the end) at view-tick age `t`. */
+export function callPose(t: number, reduced: boolean, ko = false): { readonly scale: number; readonly alpha: number } {
+  const k = Math.max(0, Math.min(1, t / CALL_IN_TICKS));
+  const from = ko ? CALL_KO_IN_SCALE : CALL_IN_SCALE;
   return {
-    scale: reduced ? 1 : CALL_IN_SCALE - (CALL_IN_SCALE - 1) * k * (2 - k),
+    scale: reduced ? 1 : from - (from - 1) * k * (2 - k),
     alpha: Math.max(0, Math.min(1, (CALL_TICKS - t) / CALL_OUT_TICKS)),
   };
 }
@@ -177,22 +186,42 @@ export function barFlashRect(team: number, out: FlashRect = { x: 0, y: 0, w: 0, 
   return out;
 }
 
-/** The swap flash at view-tick age `t`: a thin rim (gold, white in high contrast) and a white wash, both fading out. */
+/**
+ * The swap flash at view-tick age `t` (WP-HF2): a bone rim (white in high contrast) hugging the bar frame, plus one bright glint
+ * stripe that sweeps across the bar. No wash over the bar (it made a light fill look dimmed): the fill is never lighter than
+ * idle except under the stripe. `glintX` is the stripe's left edge as an offset from the rect's x, already clipped to the rect;
+ * `glintW` is 0 when there is none. Reduced motion: no sweep, the rim and a 4-tick faint wash.
+ */
 export interface BarFlash {
   on: boolean;
   rim: number;
   wash: number;
   color: number;
   width: number;
+  glintX: number;
+  glintW: number;
 }
-const FLASH_GOLD = 0xb39653;
-export function barFlashPose(t: number, reduced: boolean, hc: boolean, out: BarFlash = { on: false, rim: 0, wash: 0, color: 0, width: 2 }): BarFlash {
+const FLASH_BONE = 0xf1e8cf;
+/** `barFlashRect(...).w` (both teams; a test pins it), a constant so the pose allocates nothing. */
+const FLASH_RECT_W = 464;
+export const GLINT_W = 28;
+export const GLINT_TICKS = 12;
+export const GLINT_ALPHA = 0.55;
+export function barFlashPose(t: number, reduced: boolean, hc: boolean, out: BarFlash = { on: false, rim: 0, wash: 0, color: 0, width: 2, glintX: 0, glintW: 0 }): BarFlash {
   const k = 1 - t / FLASH_TICKS;
   out.on = t >= 0 && t < FLASH_TICKS;
   out.rim = out.on ? k : 0;
-  out.wash = out.on ? (reduced ? 0.15 : 0.25) * k : 0;
-  out.color = hc ? 0xffffff : FLASH_GOLD;
-  out.width = 2;
+  out.wash = out.on && reduced && t < 4 ? 0.15 * (1 - t / 4) : 0;
+  out.color = hc ? 0xffffff : FLASH_BONE;
+  out.width = t < 6 ? 3 : 2;
+  out.glintX = 0;
+  out.glintW = 0;
+  if (out.on && !reduced && t < GLINT_TICKS) {
+    const w = FLASH_RECT_W;
+    const left = -GLINT_W + (w + GLINT_W) * (t / GLINT_TICKS);
+    out.glintX = Math.max(0, left);
+    out.glintW = Math.max(0, Math.min(w, left + GLINT_W) - out.glintX);
+  }
   return out;
 }
 

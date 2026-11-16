@@ -15,6 +15,7 @@ function fakeScene(): { scene: Phaser.Scene; lines: Line[]; update: (ms: number)
   let style = { w: 0, a: 0 };
   const listeners: Listener[] = [];
   const gfx = {
+    setName: () => gfx,
     setDepth: () => gfx,
     setBlendMode: () => gfx,
     clear: () => {
