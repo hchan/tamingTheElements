@@ -129,7 +129,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       }
       const floor = async (): Promise<Tall> => page.evaluate<Tall>(`window.__TTE__.arena.camera()`);
       const expectFramed = async (): Promise<void> => {
-        await expect.poll(async () => (await floor()).camZoom, { timeout: 5000 }).toBeGreaterThanOrEqual(1.1);
+        await expect.poll(async () => (await floor()).camZoom, { timeout: 5000 }).toBeGreaterThanOrEqual(1.05);
         await expect.poll(async () => {
           const f = await floor();
           const c = await box(page, '#game canvas');
@@ -308,6 +308,10 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         const b = await box(page, id);
         const t = await page.evaluate<{ r: number; l: number; txt: string }>(`(() => { const n = document.querySelector('${id} .touchStrikeAbility').getBoundingClientRect(); const c = document.querySelector('${id}').getBoundingClientRect(); return { r: c.right - n.right, l: n.left - c.left, txt: document.querySelector('${id} .touchStrikeAbility').textContent }; })()`);
         expect(t.txt.length, id).toBeGreaterThan(0);
+        // QA r100 P2: no ellipsis or clipping, even for the longest names (Adrenaline, Wind Cone, Slime Ring, Rock Armr).
+        const fit = await page.evaluate<{ sw: number; cw: number; to: string }>(`(() => { const n = document.querySelector('${id} .touchStrikeAbility'); return { sw: n.scrollWidth, cw: n.clientWidth, to: getComputedStyle(n).textOverflow }; })()`);
+        expect(fit.to, `${id} no ellipsis`).not.toBe('ellipsis');
+        expect(fit.sw, `${id} "${t.txt}" not clipped`).toBeLessThanOrEqual(fit.cw);
         expect(t.l, id).toBeGreaterThanOrEqual(0);
         expect(t.r, id).toBeGreaterThanOrEqual(0);
         expect(b.w).toBeGreaterThanOrEqual(44);

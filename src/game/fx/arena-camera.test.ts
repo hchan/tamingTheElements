@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, punchAnchor, verticalFrame, type CameraFraming, type CameraInput } from './arena-camera';
+import { CAMERA_MARGIN_PORTRAIT, PORTRAIT_DRAWN_OVERSCAN, CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, punchAnchor, verticalFrame, type CameraFraming, type CameraInput } from './arena-camera';
 
 const base: CameraInput = { x1: 800, x2: 1000, worldWidth: 1920, viewWidth: 1280 };
 
@@ -125,5 +125,15 @@ describe('portrait framing options', () => {
       expect(viewH / 2 + (720 - cy) * z).toBeCloseTo(barTop, 8);
     }
     expect(verticalFrame(1944, 1850, 0)).toBe(360);
+  });
+});
+
+describe('portrait framing keeps the drawn art (wider than the sim box) inside the view (QA r100)', () => {
+  it('a 1x hero 480 px from a far one stays at least 1.3x its box half-width inside the left edge', () => {
+    const reach = 80 * PORTRAIT_DRAWN_OVERSCAN;
+    const i: CameraInput = { x1: 520, x2: 1400, worldWidth: 1920, reach, viewWidth: 1280, margin: CAMERA_MARGIN_PORTRAIT, zoomMax: 2 };
+    const f = idealFraming(i);
+    const left = f.centerX - 1280 / f.zoom / 2;
+    expect(520 - left).toBeGreaterThanOrEqual(80 * PORTRAIT_DRAWN_OVERSCAN);
   });
 });
