@@ -1,11 +1,20 @@
 """400x400 Large portraits (public/assets/img/map/<hero>Large.png) for the procedural-rig heroes that have no legacy Large art:
 the baked idle/E frame of imgWorkArea/sheets/<hero>, Lanczos-upscaled 5x onto a transparent 400x400 canvas, bottom-centred.
-Run: ~/claudetmp/venv-rig/bin/python tools/assets/portrait-rig/large-portraits.py [hero...]   (default: kindrel nykra quarrak hyalia brazgor glimmaw durrok zephra ouroth abyssor vortigal umbrel; needs Pillow)
+Run: ~/claudetmp/venv-rig/bin/python -I tools/assets/portrait-rig/large-portraits.py HERO...   (hero names are required; needs Pillow)
+There is no default list, and the roster24 ids are refused: their Large.png is the painted portrait the rig is built FROM
+(tools/assets/roster24-art), so this script must never overwrite it.
 """
 import sys
 from PIL import Image
 
-heroes = sys.argv[1:] or ["kindrel", "nykra", "quarrak", "hyalia", "brazgor", "glimmaw", "durrok", "zephra", "ouroth", "abyssor", "vortigal", "umbrel"]
+ROSTER24 = {"kindrel", "nykra", "quarrak", "hyalia", "brazgor", "glimmaw", "durrok", "zephra", "ouroth", "abyssor", "vortigal", "umbrel"}
+
+heroes = sys.argv[1:]
+if not heroes:
+    sys.exit("usage: large-portraits.py HERO... (no default list)")
+bad = sorted(set(heroes) & ROSTER24)
+if bad:
+    sys.exit("refusing to overwrite the painted Large.png of roster24 heroes: " + ", ".join(bad))
 for h in heroes:
     fr = Image.open(f"imgWorkArea/sheets/{h}/idle/E/00.png").convert("RGBA")
     box = fr.getbbox()

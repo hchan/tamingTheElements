@@ -15,6 +15,7 @@ nothing is cut out or inpainted. The bones move areas of that one mesh by feathe
     other part PNG left by the procedural generator. tools/assets/rig-gen refuses to overwrite a rig with `"source": "portrait"`.
 prep.lock.json (next to this script) records the sha256 of every input and output; `--check` recomputes the input hashes only and
 fails when a spec, animation, portrait or this script changed without a re-run (the bake's own lock covers the outputs).
+A non-square portrait needs a box of the same aspect (box w/h x res = portrait px); the body canvas is max(w, h) + 2 PAD square.
 Deterministic for a given numpy/Pillow (requirements.txt). Debug images go to ~/claudetmp/portrait-rig/<hero>/ when that folder exists.
 """
 import hashlib
@@ -328,8 +329,8 @@ def build(hero):
     src = np.asarray(Image.open(os.path.join(ROOT, spec["source"])).convert("RGBA"))
     ph, pw = src.shape[:2]
     frame, box, res = spec["frame"], spec["box"], spec["res"]
-    if pw != ph or box[2] * res != pw or box[3] * res != ph:
-        sys.exit(f"{hero}: the {pw}x{ph} portrait must fill the box {box} at res {res} exactly (1:1 art px)")
+    if box[2] * res != pw or box[3] * res != ph:
+        sys.exit(f"{hero}: the {pw}x{ph} portrait must fill the box {box} at res {res} exactly (1:1 art px; rectangular boxes are fine)")
     fx, fy = spec["feet"]
     bx, by = box[0] * res, box[1] * res
     out = os.path.join(RIGS, hero)
@@ -339,7 +340,7 @@ def build(hero):
     os.makedirs(os.path.join(out, "parts"), exist_ok=True)
 
     body = clean(spec, src)
-    size = pw + 2 * PAD
+    size = max(pw, ph) + 2 * PAD  # square canvas (the skin grid and masks are square); the portrait sits at its top left PAD
     padded = np.zeros((size, size, 4), np.uint8)
     padded[PAD:PAD + ph, PAD:PAD + pw] = body
     # Bleed the colour on into the pad too (the bake samples bilinearly across the mesh edge).

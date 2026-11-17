@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { decodePng, type Image } from '../../tools/assets/png-lite';
@@ -7,13 +7,26 @@ import { ACTIONS, DIRS, framesIn, HERO_FRAME, resolveRow, type SheetsManifest } 
 import { SHEETS_MANIFEST_PATH } from '../../tools/assets/pack-sheets';
 import { drawnBox, fitToBox, frameBox, setFrameBox, type BoxedImage } from '../../src/game/views/hero-scale';
 
-// QA metrics for the portrait rigs (ADR-0020, tools/assets/portrait-rig): every baked frame of Pax, Sindarosa and Curomo,
+// QA metrics for the portrait rigs (ADR-0020, tools/assets/portrait-rig): every baked frame of every hero with a spec,
 // checked against the numbers in the plan (coverage, margin, steady feet, no halo, facing, painted detail kept).
 
 const root = resolve(import.meta.dirname, '../..');
-const HEROES = ['pax', 'sindarosa', 'curomo', 'rokcore', 'lavax', 'ishimi', 'morblass', 'echo', 'wispera', 'cyclonius'] as const;
-// the owner's originals keep their painted fringes (lavax: blue flame edge; morblass: wet-brush mist; wispera: the redrawn cloud has a soft dark vapour edge, WISPERA-R2)
+const SPEC_DIR = resolve(root, 'tools/assets/portrait-rig/spec');
+interface Spec {
+  source: string;
+  box: [number, number, number, number];
+  haloMax?: number;
+}
+const readSpec = (hero: string): Spec => JSON.parse(readFileSync(resolve(SPEC_DIR, `${hero}.json`), 'utf8')) as Spec;
+// every hero with a portrait-rig spec (the 12 roster24 heroes join automatically when their spec lands)
+const HEROES = readdirSync(SPEC_DIR)
+  .filter((f) => f.endsWith('.json') && !f.endsWith('.anim.json'))
+  .map((f) => f.slice(0, -5))
+  .sort();
+// the owner's originals keep their painted fringes (lavax: blue flame edge; morblass: wet-brush mist; wispera: the redrawn cloud has a soft dark vapour edge, WISPERA-R2);
+// their specs predate `haloMax`, so the numbers stay here: a spec's own `haloMax` wins.
 const HALO_MAX: Record<string, number> = { lavax: 0.12, morblass: 0.07, wispera: 0.12 };
+const haloMax = (hero: string): number => readSpec(hero).haloMax ?? HALO_MAX[hero] ?? 0.05;
 const BAKED = ['E', 'SE', 'S', 'N', 'NE'] as const;
 const frameFile = (hero: string, action: string, dir: string, i: number): string =>
   resolve(root, 'imgWorkArea/sheets', hero, action, dir, `${String(i).padStart(2, '0')}.png`);
@@ -129,7 +142,7 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
         }
     const entry = manifest.sheets.find((s) => s.sprite === hero);
     expect(entry?.frame).toBe(HERO_FRAME);
-    expect(entry?.box).toEqual([20, 24, 200, 200]);
+    expect(entry?.box).toEqual(readSpec(hero).box);
     for (const [action] of ACTIONS)
       for (const dir of DIRS) {
         const r = resolveRow(manifest, hero, action, dir);
@@ -155,7 +168,7 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
           expect(Math.min(b[0], b[1], img.width - 1 - b[2], img.height - 1 - b[3]), `${at} margin`).toBeGreaterThanOrEqual(2);
           // the body's lowest solid row (the soft contact shadow is under alpha 160)
           feet.push(bbox(img, 160, footX - 40, footX + 40)?.[3] ?? 0);
-          expect(haloShare(img), `${at} halo`).toBeLessThan(HALO_MAX[hero] ?? 0.05);
+          expect(haloShare(img), `${at} halo`).toBeLessThan(haloMax(hero));
         }
         if (action === 'idle' || action === 'walk') expect(Math.max(...feet) - Math.min(...feet), `${action}/${dir} feet ${JSON.stringify(feet)}`).toBeLessThanOrEqual(3);
       }
@@ -170,7 +183,7 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
 
   it.each(HEROES)('%s: keeps the painted detail (Laplacian variance >= 0.6x the portrait at the same size)', (hero) => {
     const frame = load(frameFile(hero, 'idle', 'E', 0));
-    const portrait = load(resolve(root, 'public/assets/img/map', `${hero}Large.png`));
+    const portrait = load(resolve(root, readSpec(hero).source));
     const fb = bbox(frame, 160);
     const pb = bbox(portrait, 160);
     expect(fb && pb).toBeTruthy();
@@ -185,7 +198,7 @@ describe('portrait rigs (ADR-0020): baked frame QA', () => {
     const sha = (p: string): string => createHash('sha256').update(readFileSync(p)).digest('hex');
     for (const hero of HEROES) {
       const e = lock[hero];
-      expect(e?.inputs['portrait']).toBe(sha(resolve(root, 'public/assets/img/map', `${hero}Large.png`)));
+      expect(e?.inputs['portrait']).toBe(sha(resolve(root, readSpec(hero).source)));
       expect(e?.inputs['spec']).toBe(sha(resolve(root, 'tools/assets/portrait-rig/spec', `${hero}.json`)));
       expect(e?.inputs['anim']).toBe(sha(resolve(root, 'tools/assets/portrait-rig/spec', `${hero}.anim.json`)));
       for (const [rel, h] of Object.entries(e?.outputs ?? {})) expect(sha(resolve(root, 'imgWorkArea/rigs', hero, rel)), `${hero}/${rel}`).toBe(h);
