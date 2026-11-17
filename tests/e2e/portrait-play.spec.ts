@@ -7,7 +7,7 @@ const shotDir = process.env['SHOT_DIR'];
 const ATTR = `document.documentElement.hasAttribute('data-portrait-play')`;
 const STRIP = 52;
 const HUD_BAND = 70;
-const DECK = 200;
+const DECK = 156;
 interface Tall { camZoom: number; viewHeight: number; floorScreenY: number }
 
 async function enterFight(page: Page): Promise<void> {
@@ -67,14 +67,14 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       const card = await box(page, '#firstRunHint');
       expect(card.y).toBeGreaterThanOrEqual(STRIP + HUD_BAND);
       for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton']) expect(overlap(card, await box(page, id)), id).toBe(false);
-      // The bar overlays are laid out every few frames after the flag flips, so wait for the settled one-row layout (a skirt 44 px below the
-      // canvas) before measuring. Its top then sits inside the canvas, its lower edge 44 px below, and every slot (button or strip) shares that edge.
+      // The bar overlays are laid out every few frames after the flag flips, so wait for the settled one-row layout (a skirt 44 px above the
+      // plate) before measuring. Its lower edge sits on the canvas bottom, its top inside the canvas, and every slot (button or strip) shares that edge.
       const canvasBottom = canvas.y + canvas.h;
       const edges = (): Promise<number[]> => page.evaluate<number[]>(`[...document.querySelectorAll('.touchSkirt')].filter((e) => getComputedStyle(e).visibility !== 'hidden').map((e) => Math.round(e.getBoundingClientRect().bottom))`);
       await expect.poll(async () => (await box(page, '#arcadeDash')).h, { message: 'one-row layout settles' }).toBeGreaterThan(70);
       const settled = await box(page, '#arcadeDash');
       expect(settled.y).toBeLessThan(canvasBottom);
-      expect(Math.abs(settled.y + settled.h - (canvasBottom + 44))).toBeLessThanOrEqual(1);
+      expect(Math.abs(settled.y + settled.h - canvasBottom)).toBeLessThanOrEqual(1);
       await expect.poll(async () => { const c = await box(page, '#firstRunHint'); return c.y + c.h; }, { timeout: 1500 }).toBeLessThanOrEqual(settled.y);
       const bottoms = await edges();
       expect(bottoms.length, 'every bar slot has a skirt').toBeGreaterThanOrEqual(8);
@@ -96,26 +96,27 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
       await page.waitForFunction(ATTR);
       const bottom = h - DECK;
-      // The deck is at least 200 px and grows when the stick starts higher (it is measured from the stick), so allow up to 12 px more.
+      // The deck is at least 156 px and grows when the stick starts higher (it is measured from the stick), so allow up to 12 px more.
       await expect.poll(async () => { const c = await box(page, '#game canvas'); const d = bottom - (c.y + c.h); return d >= -0.5 && d <= 12; }, { timeout: 10000 }).toBe(true);
       const canvas = await box(page, '#game canvas');
       expect(bottom - (canvas.y + canvas.h)).toBeLessThanOrEqual(12);
-      expect(canvas.h).toBeGreaterThanOrEqual(h - 264);
+      expect(canvas.h).toBeGreaterThanOrEqual(h - 220);
       const back = await page.evaluate<{ bw: number; bh: number }>(`(() => { const c = document.querySelector('#game canvas'); return { bw: c.width, bh: c.height }; })()`);
       // Pixel budget: no more than the normal 2560x1440 backing store (the tall canvas trades width for height).
       expect(back.bw * back.bh).toBeLessThanOrEqual(2560 * 1440 * 1.02);
       for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2']) {
         const b = await box(page, id);
-        expect(b.y, id).toBeGreaterThanOrEqual(canvas.y + canvas.h + 44 + 4 - 1);
+        expect(b.y, id).toBeGreaterThanOrEqual(canvas.y + canvas.h + 4 - 1);
       }
       const floor = async (): Promise<Tall> => page.evaluate<Tall>(`window.__TTE__.arena.camera()`);
       const expectFramed = async (): Promise<void> => {
-        await expect.poll(async () => (await floor()).camZoom, { timeout: 5000 }).toBeGreaterThanOrEqual(1.05);
+        await expect.poll(async () => (await floor()).camZoom, { timeout: 5000 }).toBeGreaterThanOrEqual(1.1);
         await expect.poll(async () => {
           const f = await floor();
           const c = await box(page, '#game canvas');
           const bar = await box(page, '#arcadeDash');
-          return Math.abs(c.y + (f.floorScreenY * c.h) / f.viewHeight - bar.y);
+          // The overlay reaches 44 px up over the canvas; the drawn plate (and so the floor's lower edge) starts below that.
+          return Math.abs(c.y + (f.floorScreenY * c.h) / f.viewHeight - (bar.y + 44));
         }, { timeout: 5000 }).toBeLessThanOrEqual(2);
       };
       await expectFramed();
@@ -194,7 +195,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
   test.describe(`portrait play one-row bar ${String(w)}x${String(h)}`, () => {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
-    test('the bar is one row; buttons are 24+ wide, 48+ high and reach 44 px below the canvas; a skirt is hittable', async ({ page }) => {
+    test('the bar is one row; buttons are 24+ wide, 48+ high and reach 44 px up over the canvas; a skirt is hittable', async ({ page }) => {
       await enterFight(page);
       await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
       await page.waitForFunction(ATTR);
@@ -208,12 +209,12 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         expect(Math.abs(b.y - top)).toBeLessThanOrEqual(1);
         expect(b.w).toBeGreaterThanOrEqual(24);
         expect(b.h).toBeGreaterThanOrEqual(48);
-        expect(b.y + b.h).toBeLessThanOrEqual(canvas.y + canvas.h + 45);
-        expect(b.y + b.h).toBeGreaterThanOrEqual(canvas.y + canvas.h + 43);
+        expect(b.y + b.h).toBeLessThanOrEqual(canvas.y + canvas.h + 1);
+        expect(b.y + b.h).toBeGreaterThanOrEqual(canvas.y + canvas.h - 1);
       }
       await shot(page, `${String(w)}-onerow`);
       const dash = await box(page, '#arcadeDash');
-      const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(dash.x + dash.w / 2)}, ${String(canvas.y + canvas.h + 20)}); return e ? e.id : ''; })()`);
+      const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(dash.x + dash.w / 2)}, ${String(canvas.y + canvas.h - 20)}); return e ? e.id : ''; })()`);
       expect(hit).toBe('arcadeDash');
     });
   });

@@ -23,8 +23,8 @@ describe('resolutionOf and viewHeight', () => {
 
 describe('tallViewHeight', () => {
   it('fills the canvas box between the strip and the deck', () => {
-    expect(tallViewHeight(390, 844, PORTRAIT_TOP_STRIP, PORTRAIT_DECK)).toBe(1942);
-    expect(tallViewHeight(360, 640, PORTRAIT_TOP_STRIP, PORTRAIT_DECK)).toBe(1378);
+    expect(tallViewHeight(390, 844, PORTRAIT_TOP_STRIP, PORTRAIT_DECK)).toBe(2086);
+    expect(tallViewHeight(360, 640, PORTRAIT_TOP_STRIP, PORTRAIT_DECK)).toBe(1536);
   });
   it('is even, clamped to 2400, and 720 (no tall view) when the box is not taller than 16:9', () => {
     for (let h = 600; h < 1000; h += 13) expect(tallViewHeight(390, h, 52, 200) % 2).toBe(0);
@@ -51,11 +51,11 @@ describe('tallResolution', () => {
 });
 
 describe('deckFor', () => {
-  it('is 200 with no inset and grows when the stick is lifted by a safe-area inset', () => {
-    expect(deckFor(844, 696, 696)).toBe(200);
-    expect(deckFor(844, 696 - 34, 700)).toBe(200 + 34);
-    expect(deckFor(844, 700, 640)).toBe(844 - 640 + 52);
-    expect(deckFor(844, Number.NaN, 700)).toBe(200);
+  it('is 156 with no inset and grows when the stick is lifted by a safe-area inset', () => {
+    expect(deckFor(844, 696, 696)).toBe(156);
+    expect(deckFor(844, 696 - 34, 700)).toBe(156 + 34);
+    expect(deckFor(844, 700, 640)).toBe(844 - 640 + 8);
+    expect(deckFor(844, Number.NaN, 700)).toBe(156);
   });
 });
 

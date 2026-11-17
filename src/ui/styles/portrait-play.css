@@ -10,14 +10,15 @@ html[data-portrait-play] #firstRunHint.firstRunHint:not(.firstRunWait) { top: ca
 html[data-portrait-play] #firstRunHint p.firstRunOne { display: block; }
 
 /* One-row action bar (P3): the boxes are 28-39 px wide, so the 48 px floor is restated for both main.css selectors. Each button grows
-   44 px below the canvas (touch-overlay.ts sets the height); the lower 44 px is a text-free groove, the canvas part stays transparent. */
+   44 px UPWARD over the arena floor (touch-overlay.ts sets top and height), so its lower edge is the canvas bottom and the deck under it
+   holds only the stick and strikes. The extension is invisible: the plate drawn in the canvas is the bar. */
 html[data-portrait-play] button.touchBtn.touchSkirt,
 html[data-portrait-play] #menu button.touchBtn.touchSkirt,
 html[data-portrait-play] .touchSkirtDeco {
   min-width: 24px;
-  background: linear-gradient(to top, rgba(18, 16, 14, 0.92) 0, rgba(30, 27, 23, 0.92) var(--pp-bar-ext), transparent var(--pp-bar-ext));
-  border-left: 1px solid rgba(107, 101, 88, 0.35);
-  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 /* Control deck under the canvas: dark, desaturated, faintly grained (no bright colour). */
 html[data-portrait-play] #game {

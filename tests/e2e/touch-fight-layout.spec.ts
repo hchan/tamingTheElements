@@ -282,8 +282,8 @@ test.describe('phone portrait fight', () => {
     const stick = await box(page, '#touchStick');
     const canvas = await box(page, 'canvas');
     expect(overlap(card, stick)).toBe(false);
-    expect(card.y).toBeGreaterThanOrEqual(canvas.y + 70); // under the HUD band of the tall canvas (the canvas now fills down to the 200 px deck)
-    expect(card.y + card.h).toBeLessThanOrEqual(canvas.y + canvas.h + 44);
+    expect(card.y).toBeGreaterThanOrEqual(canvas.y + 70); // under the HUD band of the tall canvas (the canvas now fills down to the 156 px deck)
+    expect(card.y + card.h).toBeLessThanOrEqual(canvas.y + canvas.h);
     expect(card.y + card.h).toBeLessThanOrEqual(stick.y);
     await expect(page.locator('#firstRunHint p.firstRunOne')).toHaveCount(1);
     await expect(page.locator('#firstRunHint p.firstRunOne')).toBeVisible();
