@@ -32,10 +32,14 @@ export interface BandWindow {
   readonly bottom: number;
   /** The preferred band centre. */
   readonly high: number;
+  /** Band scale steps to try (largest first); the phone-portrait window adds bigger steps so the cut reads at a phone's 0.3 px per unit. */
+  readonly scales?: readonly number[];
 }
 export const LANDSCAPE_WINDOW: BandWindow = { top: BAND_TOP, bottom: BAND_BOTTOM, high: BAND_HIGH_Y };
 /** Band scale steps, tried largest first: a smaller band fits between two fighters. */
 const BAND_K = [1, 0.85, 0.7, 0.6] as const;
+/** Tall view only: bigger steps (the 1280-wide box shows at about 0.3 CSS px per unit on a 390 px phone, so the 160 unit band is a 50 px strip). */
+const TALL_K = [1.8, 1.5, 1.25] as const;
 const HEAD_PAD = 12;
 const FEET_PAD = 24;
 /** The caster counts this much against the foe when the band cannot clear both (it then crosses the foe). */
@@ -57,7 +61,7 @@ export function bandWindow(viewH: number, hudBottom: number, barTop: number): Ba
   if (!(viewH > LOGICAL_HEIGHT + 0.5)) return LANDSCAPE_WINDOW;
   const top = Math.max(hudBottom, WEATHER_LINE_Y);
   const bottom = Math.max(top + 2 * bandExt(BAND_K[BAND_K.length - 1] ?? 1), barTop - TALL_BAR_GAP);
-  return { top, bottom, high: Math.min(top + TALL_HIGH_DROP, (top + bottom) / 2) };
+  return { top, bottom, high: Math.min(top + TALL_HIGH_DROP, (top + bottom) / 2), scales: [...TALL_K, ...BAND_K] };
 }
 
 /** The band window of the live scene: the tall view's clear window in portrait play, else the 16:9 rows. */
@@ -135,10 +139,25 @@ export function sweptSpan(top: number, bottom: number, spy: number, zPeak: numbe
 
 const meets = (a: Rect, b: Rect): boolean => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
+/** The portrait's centre column: today's inset, or just clear of the screen edge for the big tall-view bands (k above 1). */
+export function portraitCx(side: number, k: number): number {
+  const inset = k > 1 ? Math.max(PORTRAIT_X, Math.min(133 * k, bandExt(k) + 8) + 10) : PORTRAIT_X;
+  return side < 0 ? inset : LOGICAL_WIDTH - inset;
+}
+
+/** The title's centre column and free width: today's for k up to 1, else the span between the portrait's inner edge and the far edge (tall view). */
+export function bigTitleBox(side: number, k: number, portraitOn: boolean): { cx: number; w: number } {
+  const edge = 40;
+  if (!portraitOn) return { cx: LOGICAL_WIDTH / 2, w: LOGICAL_WIDTH - 2 * edge };
+  const inner = side < 0 ? portraitCx(side, k) + Math.min(133 * k, bandExt(k) + 8) + 12 : edge;
+  const outer = side < 0 ? LOGICAL_WIDTH - edge : portraitCx(side, k) - Math.min(133 * k, bandExt(k) + 8) - 12;
+  return { cx: (inner + outer) / 2, w: outer - inner };
+}
+
 /** The portrait's glow square (side -1 left, 1 right), centred on the band. */
 export function portraitRect(side: number, y: number, k: number): Rect {
-  const cx = side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X;
   const r = Math.min(133 * k, bandExt(k) + 8);
+  const cx = portraitCx(side, k);
   return { x0: cx - r, y0: y - r, x1: cx + r, y1: y + r };
 }
 
@@ -177,7 +196,7 @@ function better(a: BandSlot, b: BandSlot, high: number): boolean {
  */
 export function superBandSlot(spans: readonly Span[], avoid: readonly Rect[], casterSide: -1 | 1, win: BandWindow = LANDSCAPE_WINDOW): BandSlot {
   let best: BandSlot | undefined;
-  for (const k of BAND_K) {
+  for (const k of win.scales ?? BAND_K) {
     const ext = bandExt(k);
     for (let y = win.top + Math.ceil(ext); y + ext <= win.bottom; y++) {
       let cost = 0;
@@ -332,6 +351,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   let bandY = BAND_HIGH_Y;
   let bandK = 1;
   let portraitOn = true;
+  let nameCx = LOGICAL_WIDTH / 2;
+  let pcx = PORTRAIT_X;
   let bandInfo: SuperState['band'] | undefined;
   let tracked: { img: Phaser.GameObjects.Image; caster: boolean }[] = [];
   const scratch = { x: 0, y: 0, w: 0, h: 0 };
@@ -384,10 +405,10 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     put(parts.dim, -WIDE_SIDE, 0, Math.min(1, frame.dim * DIM_GAIN));
     put(parts.band, dx - WIDE_SIDE, bandY, frame.bandAlpha * BAND_OPACITY);
     put(parts.edges, dx, bandY, frame.bandAlpha);
-    put(parts.glow, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
-    put(parts.portrait, dx + (side < 0 ? PORTRAIT_X : LOGICAL_WIDTH - PORTRAIT_X), bandY, frame.bandAlpha);
-    put(parts.name, dx + LOGICAL_WIDTH / 2, bandY - 26 * bandK, titleAlpha(frame.bandAlpha));
-    put(parts.sub, dx + LOGICAL_WIDTH / 2, bandY + 44 * bandK, titleAlpha(frame.bandAlpha));
+    put(parts.glow, dx + pcx, bandY, frame.bandAlpha);
+    put(parts.portrait, dx + pcx, bandY, frame.bandAlpha);
+    put(parts.name, dx + nameCx, bandY - 26 * bandK, titleAlpha(frame.bandAlpha));
+    put(parts.sub, dx + nameCx, bandY + 44 * bandK, titleAlpha(frame.bandAlpha));
     aim(frame.zoom);
   }
   const drop = (): void => {
@@ -480,7 +501,14 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
         parts.edges.fillStyle(tint, 0.22).fillRect(x, y, len, 2);
       }
       parts.portrait.setTexture(img.texture.key, img.frame.name).setDisplaySize(PORTRAIT_PX * k, PORTRAIT_PX * k).setFlipX(img.flipX);
-      const safe = Math.min(NAME_SAFE_W, 2 * nameHalfWidth(bandY, ext, avoid));
+      pcx = portraitCx(side, k);
+      let safe = Math.min(NAME_SAFE_W, 2 * nameHalfWidth(bandY, ext, avoid));
+      nameCx = LOGICAL_WIDTH / 2;
+      if (k > 1) {
+        const box = bigTitleBox(side, k, portraitOn);
+        nameCx = box.cx;
+        safe = box.w;
+      }
       const namePx = Math.round(NAME_PX * k);
       parts.name.setFontSize(namePx).setText(superName(superId));
       parts.name.setFontSize(fitTitlePx(namePx, parts.name.width, safe));
@@ -493,7 +521,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       bandInfo = {
         ...slot,
         portrait: portraitOn ? portraitRect(side, bandY, k) : null,
-        name: { x0: LOGICAL_WIDTH / 2 - parts.name.width / 2, y0: bandY - 26 * k - parts.name.height / 2, x1: LOGICAL_WIDTH / 2 + parts.name.width / 2, y1: bandY - 26 * k + parts.name.height / 2 },
+        name: { x0: nameCx - parts.name.width / 2, y0: bandY - 26 * k - parts.name.height / 2, x1: nameCx + parts.name.width / 2, y1: bandY - 26 * k + parts.name.height / 2 },
         avoid,
         spans,
         window: win,

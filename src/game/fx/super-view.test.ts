@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SUPER_NAMES } from '@core/index';
-import { LANDSCAPE_WINDOW, NAME_SAFE_W, bandExt, bandWindow, bandHidesWeather, fitTitlePx, nameHalfWidth, portraitRect, portraitSide, superBandSlot, superName, sweptSpan, type Rect, type Span } from './super-view';
+import { LANDSCAPE_WINDOW, NAME_SAFE_W, bandExt, bandWindow, bigTitleBox, portraitCx,bandHidesWeather, fitTitlePx, nameHalfWidth, portraitRect, portraitSide, superBandSlot, superName, sweptSpan, type Rect, type Span } from './super-view';
 
 describe('superName', () => {
   it('names every super id from the data table, each distinct and non-empty', () => {
@@ -145,5 +145,20 @@ describe('bandWindow (tall view)', () => {
   it('never collapses: a bar too close to the HUD still leaves the smallest band a window', () => {
     const w = bandWindow(900, 230, 260);
     expect(w.bottom - w.top).toBeGreaterThanOrEqual(2 * bandExt(0.6));
+  });
+});
+
+describe('tall-view big band', () => {
+  it('keeps the landscape window and portrait column, and offers bigger scales only on a tall view', () => {
+    expect(LANDSCAPE_WINDOW.scales).toBeUndefined();
+    expect(portraitCx(-1, 1)).toBe(120);
+    expect(bandWindow(1900, 240, 1500).scales?.[0]).toBeGreaterThan(1);
+  });
+  it('lays the big title between the portrait and the far edge', () => {
+    const left = bigTitleBox(-1, 1.8, true);
+    expect(left.cx).toBeGreaterThan(640);
+    expect(left.cx - left.w / 2).toBeGreaterThan(portraitCx(-1, 1.8));
+    expect(bigTitleBox(1, 1.8, true).cx).toBeLessThan(640);
+    expect(bigTitleBox(1, 1.8, false)).toEqual({ cx: 640, w: 1200 });
   });
 });
