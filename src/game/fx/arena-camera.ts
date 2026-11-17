@@ -35,7 +35,7 @@ export interface CameraInput {
 }
 
 /** Narrower margin of the portrait tall view (world px). */
-export const CAMERA_MARGIN_PORTRAIT = 96;
+export const CAMERA_MARGIN_PORTRAIT = 60;
 
 /**
  * World y the camera looks at so world y 720 (the floor's bottom edge) lands on screen y `barTop` (logical px of the view `viewH`

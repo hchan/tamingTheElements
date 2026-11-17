@@ -23,7 +23,7 @@ describe('portrait play layout CSS', () => {
     expect(css).toContain(`--pp-strip: ${String(PORTRAIT_TOP_STRIP)}px`);
     expect(css).toContain(`--pp-bar-ext: ${String(PORTRAIT_BAR_EXT)}px`);
     expect(css).toContain(`--pp-hud: ${String(PORTRAIT_HUD_BAND)}px`);
-    expect(PORTRAIT_DECK).toBe(200);
+    expect(PORTRAIT_DECK).toBe(156);
   });
   it('scopes every rule to the flag', () => {
     const rules = css.split('\n').filter((l) => l.includes('{') && !l.startsWith(':root') && !l.startsWith('/*'));

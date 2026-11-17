@@ -347,7 +347,7 @@ export class Arena extends Phaser.Scene {
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (!arcade && element) this.backdrop = new Backdrop(this, element, bg && `bg:${bg}`);
     else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1);
-    if (element && arcade) this.mountTallFills(element);
+    if (element && arcade) this.mountTallFills(element, bg ? `bg:${bg}` : undefined);
     if (element) this.ambient = createStageAmbient(this, element, arcade ? arcadePlayfield().w : width);
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
@@ -438,13 +438,64 @@ export class Arena extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
   }
 
-  /** Portrait tall view only: dark sky above and ground below the backdrop in the stage's edge colour, so no bare canvas shows. */
-  private mountTallFills(element: string): void {
+  /**
+   * Portrait tall view only: sky above and ground below the backdrop. The sky is a vertical gradient that starts at the backdrop's own
+   * top-row colour (sampled, so there is no seam) and falls off to a much darker tone with a faint haze low down; the ground takes the
+   * backdrop's bottom-row colour. Falls back to the stage's edge colour when the art cannot be sampled.
+   */
+  private mountTallFills(element: string, bgKey?: string): void {
     const colour: Record<string, number> = { fire: 0x3a1208, water: 0x0a2440, earth: 0x1c2a0e, air: 0x1a2840 };
-    const c = colour[element] ?? 0x120a1c;
+    const fallback = colour[element] ?? 0x120a1c;
+    const edge = (fromTop: boolean): number => {
+      try {
+        if (!bgKey || !this.textures.exists(bgKey)) return fallback;
+        const src = this.textures.get(bgKey).getSourceImage() as CanvasImageSource & { width: number; height: number };
+        const probe = document.createElement('canvas');
+        probe.width = 1;
+        probe.height = 1;
+        const cx = probe.getContext('2d', { willReadFrequently: true });
+        if (!cx) return fallback;
+        // A band a little inside the edge (3% to 9%), so a darkened outermost rim does not make the sky darker than the picture.
+        const band = Math.max(2, Math.round(src.height * 0.06));
+        const y0 = Math.round(src.height * 0.03);
+        cx.drawImage(src, 0, fromTop ? y0 : src.height - y0 - band, src.width, band, 0, 0, 1, 1);
+        const d = cx.getImageData(0, 0, 1, 1).data;
+        return ((d[0] ?? 0) << 16) | ((d[1] ?? 0) << 8) | (d[2] ?? 0);
+      } catch {
+        return fallback;
+      }
+    };
+    // The drawn picture is warmer and lighter than its raw edge pixels (the stage tint), so pull the sample toward the stage palette.
+    const mixRgb = (a: number, b: number, t: number): number => {
+      const ch = (sh: number): number => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+      return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+    };
+    const top = mixRgb(edge(true), mixRgb(fallback, 0xffffff, 0.12), 0.5);
     const w = arcadePlayfield().w + 4000;
-    const sky = this.add.rectangle(-2000, -4000, w, 4000, c).setOrigin(0, 0).setDepth(-2);
-    const ground = this.add.rectangle(-2000, LOGICAL_HEIGHT, w, 4000, c).setOrigin(0, 0).setDepth(-2);
+    const SKY_H = 2400;
+    const key = `tall-sky:${String(top)}`;
+    const mix = (a: number, b: number, t: number): number => {
+      const ch = (sh: number): number => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+      return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+    };
+    const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
+    if (!this.textures.exists(key)) {
+      const tex = this.textures.createCanvas(key, 4, 256);
+      const ctx = tex?.getContext();
+      if (tex && ctx) {
+        const deep = mix(top, 0x05060c, 0.72);
+        const g = ctx.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, css(deep));
+        g.addColorStop(0.55, css(mix(top, deep, 0.55)));
+        g.addColorStop(0.9, css(mix(top, 0xffffff, 0.06)));
+        g.addColorStop(1, css(top));
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 4, 256);
+        tex.refresh();
+      }
+    }
+    const sky = this.textures.exists(key) ? this.add.image(-2000, -SKY_H, key).setOrigin(0, 0).setDisplaySize(w, SKY_H).setDepth(-2) : this.add.rectangle(-2000, -SKY_H, w, SKY_H, fallback).setOrigin(0, 0).setDepth(-2);
+    const ground = this.add.rectangle(-2000, LOGICAL_HEIGHT, w, 4000, edge(false)).setOrigin(0, 0).setDepth(-2);
     const sync = (): void => {
       const on = viewHeight(this) > LOGICAL_HEIGHT + 0.5 && isPortraitPlay(this.game);
       sky.setVisible(on);
@@ -452,7 +503,10 @@ export class Arena extends Phaser.Scene {
     };
     sync();
     this.scale.on('resize', sync);
-    this.cleanups.push(() => { this.scale.off('resize', sync); });
+    this.cleanups.push(() => {
+      this.scale.off('resize', sync);
+      if (this.textures.exists(key)) this.textures.remove(key);
+    });
   }
 
   /** Sounds Phaser already decoded, played through the AudioManager (Ctrl-M mute, unlock on the first gesture). */
