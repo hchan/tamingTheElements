@@ -281,10 +281,18 @@ describe('clampNumber', () => {
   });
 });
 
+describe('clampNumber on a tall frame', () => {
+  it('keeps the floor limit 88 px above the frame bottom (632 at 720)', () => {
+    expect(clampNumber(600, 3000, 40, 40, { x: 0, y: 0, w: 1280, h: 1944 }, []).y).toBe(1944 - 88);
+    expect(clampNumber(600, 700, 40, 40, { x: 0, y: 0, w: 1280, h: 720 }, []).y).toBe(632);
+  });
+});
+
 describe('hudFrame', () => {
   it('is the plain frame at 1280 and widens about the centre', () => {
     expect(hudFrame(1280)).toEqual({ x: 0, y: 0, w: 1280, h: 720 });
     expect(hudFrame(1462)).toEqual({ x: -91, y: 0, w: 1462, h: 720 });
+    expect(hudFrame(1280, undefined, 1944)).toEqual({ x: 0, y: 0, w: 1280, h: 1944 });
   });
   it('matches the HUD camera (zoom = res, centred on 640,360)', () => {
     const res = 1.5;

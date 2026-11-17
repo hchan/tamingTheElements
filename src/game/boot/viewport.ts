@@ -20,11 +20,47 @@ export function pickResolution(dpr: number): number {
 }
 
 /**
- * Multiplier a scene is rendering at, derived from the game height (720 times resolution). The height, not the width:
- * the wide view (`enableWideView`) makes the game wider than 1280 logical px, never taller than 720.
+ * Multiplier a scene is rendering at: the smaller of width/1280 and height/720 of the game size. Normally (and in the wide
+ * view, which only widens) that is height/720; the tall view (`enableWideView` in portrait play) is 1280 wide and taller than
+ * 720 logical px, so the width rules. Equal in a plain 1280x720 game.
  */
 export function resolutionOf(scene: Phaser.Scene): number {
-  return scene.scale.height / LOGICAL_HEIGHT;
+  return Math.min(scene.scale.width / LOGICAL_WIDTH, scene.scale.height / LOGICAL_HEIGHT);
+}
+
+/** Visible logical height of the game: 720, or more while the tall view (portrait play) is on. */
+export function viewHeight(scene: Phaser.Scene): number {
+  return scene.scale.height / resolutionOf(scene);
+}
+
+/** Tallest tall view (logical px): keeps a very narrow, very tall window from asking for an absurd canvas. */
+export const MAX_TALL_HEIGHT = 2400;
+
+/**
+ * Logical height of the tall view for a `parentW` x `parentH` CSS box with `strip` px above the canvas and `deck` px below:
+ * the canvas is 1280 logical px wide, drawn at parentW, and fills what is left (`parentH - strip - deck`). Even, clamped to
+ * 720..2400; 720 means "no tall view" (the box is not taller than 16:9, so the normal layout stays). Pure, for tests.
+ */
+export function tallViewHeight(parentW: number, parentH: number, strip: number, deck: number): number {
+  if (!(parentW > 0 && parentH > 0)) return LOGICAL_HEIGHT;
+  const avail = parentH - strip - deck;
+  const h = (LOGICAL_WIDTH * avail) / parentW;
+  if (!(h >= LOGICAL_HEIGHT)) return LOGICAL_HEIGHT;
+  return Math.min(MAX_TALL_HEIGHT, 2 * Math.floor(h / 2));
+}
+
+/**
+ * Render multiplier for a tall view of `height` logical px: res*sqrt(720/height), so the backing store keeps (at most) the
+ * pixel count of the normal 1280x720*res one (never above 2560x1440), but never under 1 (a phone's canvas is only about 400 CSS px wide anyway).
+ */
+export function tallResolution(res: number, height: number): number {
+  return Math.max(1, res * Math.sqrt(LOGICAL_HEIGHT / Math.max(LOGICAL_HEIGHT, height)));
+}
+
+/** Backing-store size (whole pixels) of the tall view of `height` logical px at base resolution `res`. */
+export function tallGameSize(res: number, height: number): { w: number; h: number } {
+  const r = tallResolution(res, height);
+  return { w: Math.floor(LOGICAL_WIDTH * r), h: Math.floor(height * r) };
 }
 
 /** Visible logical width of the game: 1280, or more while the wide view is on. */

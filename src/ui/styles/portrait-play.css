@@ -1,5 +1,5 @@
 /* Portrait phone fight layout (html[data-portrait-play], set by game/boot/presentation.ts): the canvas is pinned under a 52 px top strip. */
-:root { --pp-strip: 52px; --pp-bar-ext: 44px; }
+:root { --pp-strip: 52px; --pp-bar-ext: 44px; --pp-hud: 70px; }
 html[data-portrait-play] #game { --canvas-fraction: 1; }
 html[data-portrait-play] #game canvas { margin-top: var(--pp-strip) !important; }
 html[data-portrait-play] #fullscreenToggle { top: 4px; }
