@@ -35,7 +35,12 @@ export interface CameraInput {
 }
 
 /** Narrower margin of the portrait tall view (world px). */
-export const CAMERA_MARGIN_PORTRAIT = 48;
+export const CAMERA_MARGIN_PORTRAIT = 64;
+/**
+ * The painted rigs draw wider than the sim box (wings, tails, a lean or lunge: QA r100, Pax half off the left edge after a tag), so the
+ * portrait view keeps this multiple of the box half-width clear of the edge, not the box itself.
+ */
+export const PORTRAIT_DRAWN_OVERSCAN = 1.3;
 
 /**
  * World y the camera looks at so world y 720 (the floor's bottom edge) lands on screen y `barTop` (logical px of the view `viewH`
