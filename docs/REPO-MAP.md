@@ -21,7 +21,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `tools/dev/` | `play-local.sh [dev\|preview] [port] [query]`: starts the dev server or production preview detached, waits for it, opens the browser and prints the URL and pid (used by the play-local skill) |
 | `public/` | Runtime assets copied from the legacy tree by `pnpm assets:build`: `public/assets/img/`, `public/assets/snd/` and `favicon.png` (generated, do not edit) |
 | `docs/` | Documentation: `BRANCHING.md`, `TESTING.md` (test commands, layout, fixtures, guards), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
-| `docs/` | Documentation: [PERFORMANCE.md](PERFORMANCE.md) (budgets and how they are measured), `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
+| `docs/` | Documentation: [PERFORMANCE.md](PERFORMANCE.md) (budgets and how they are measured), `BRANCHING.md`, [ARCHITECTURE.md](ARCHITECTURE.md) (layers, tick pipeline, state), [DETERMINISM.md](DETERMINISM.md) (the sim determinism contract), [GPU-ART.md](GPU-ART.md) (how to reach the GPU art box, no secrets), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `docs/` | Documentation: `BRANCHING.md`, `PARITY.md` (legacy parity checklist with test evidence), this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
 | `.github/` | CI workflow (`workflows/ci.yml`), Dependabot config, the PR template and `.github/ISSUE_TEMPLATE/` |
 | `docs/` | Documentation: `BRANCHING.md`, `DEPLOYMENT.md`, this map, `docs/adr/`, `docs/legacy/` (incl. retired home page and to-do list) |
