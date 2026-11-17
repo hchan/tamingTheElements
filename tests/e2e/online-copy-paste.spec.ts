@@ -16,14 +16,14 @@ for (const [w, h] of [[360, 640], [390, 844]] as const) {
       await page.screenshot({ path: `.scratch/online/roles-${String(w)}.png` });
       await page.locator('#onlineRoleHost').tap();
       await expect(page.locator('#onlineJoinPath')).toBeHidden();
-      await page.locator('#onlineHost').click();
       await expect(page.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
       const code = await page.locator('#onlineOffer').inputValue();
-      const hostSizes = await sizes(['onlineHost', 'onlineCopyCode', 'onlineCopyLink', 'onlinePasteAnswer', 'onlineConnect']);
+      const hostSizes = await sizes(['onlineRoleHost', 'onlineCopyCode', 'onlineCopyLink', 'onlinePasteAnswer', 'onlineConnect']);
       // Copy link / Copy code stay on one line (QA r100 P3, lost from 65f9c2ab).
       const lineH = await page.evaluate<number[]>(`['onlineCopyLink', 'onlineCopyCode'].map((id) => { const b = document.getElementById(id); return b.scrollHeight - parseFloat(getComputedStyle(b).paddingTop) - parseFloat(getComputedStyle(b).paddingBottom) - parseFloat(getComputedStyle(b).borderTopWidth) - parseFloat(getComputedStyle(b).borderBottomWidth) <= parseFloat(getComputedStyle(b).lineHeight === 'normal' ? getComputedStyle(b).fontSize : getComputedStyle(b).lineHeight) * 1.6 ? 1 : 2; })`);
       expect(lineH).toEqual([1, 1]);
-      await expect(page.locator('#onlineCopyLink')).toHaveText('Copy link');
+      await expect(page.locator('#onlineCopyLink')).toHaveText('Copy invite link');
+      await page.locator('#onlineManual summary').tap();
       await page.locator('#onlineCopyCode').tap();
       await expect(page.locator('#onlineCopyCode')).toHaveText('Copied');
       expect(await page.evaluate('navigator.clipboard.readText()')).toBe(code);
@@ -32,13 +32,12 @@ for (const [w, h] of [[360, 640], [390, 844]] as const) {
       await page.locator('#onlinePasteOffer').tap();
       await expect(page.locator('#onlinePasteOffer')).toHaveText('Pasted');
       await expect(page.locator('#onlineOfferIn')).toHaveValue(code);
+      await expect(page.locator('#onlineCopyAnswer')).toBeVisible({ timeout: 15_000 });
       await page.evaluate(`new Promise((r) => { document.getElementById('onlinePasteOffer').scrollIntoView({ block: 'center' }); requestAnimationFrame(() => requestAnimationFrame(r)); })`);
       await page.screenshot({ path: `.scratch/online/copy-${String(w)}.png` });
-      const m = await sizes(['onlineRoleHost', 'onlineRoleJoin', 'onlinePasteOffer', 'onlineCopyAnswer', 'onlineJoin']);
+      const m = await sizes(['onlineRoleHost', 'onlineRoleJoin', 'onlinePasteOffer', 'onlineCopyAnswer']);
       expect(m.over).toBeLessThanOrEqual(0);
       await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(1);
-      const hh = await page.evaluate<number>(`(() => { const h = document.querySelector('#onlineSetup h2'); return h.getBoundingClientRect().height / parseFloat(getComputedStyle(h).lineHeight === 'normal' ? parseFloat(getComputedStyle(h).fontSize) * 1.2 : getComputedStyle(h).lineHeight); })()`);
-      expect(hh).toBeLessThan(1.5);
       expect(m.small).toEqual([]);
       expect(hostSizes).toEqual({ over: 0, small: [] });
     } finally {

@@ -22,7 +22,6 @@ test('online match on a phone: touch buttons show and a tap presses the action k
   await b.goto('/?ff=arcade,netbot&ice=none#online');
 
   await a.locator('#onlineRoleHost').click();
-  await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
   await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
@@ -46,7 +45,7 @@ test('online match on a phone: touch buttons show and a tap presses the action k
   expect(fit.small).toEqual([]);
   await a.setViewportSize({ width: 390, height: 844 });
 
-  await a.locator('#onlineConnect').click();
+  await expect(a.locator('#onlineRace')).toBeVisible({ timeout: 15_000 }); // pasting the reply connects by itself
   await expect(a.locator('#onlineReady')).toBeVisible({ timeout: 20_000 });
   await a.locator('#onlineReady').tap();
   await b.locator('#onlineReady').click();

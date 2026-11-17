@@ -10,7 +10,7 @@ import { downloadReport } from './download';
 import { linkLine, medianRtt, RTT_WINDOW } from '../net/link-quality';
 import { iceFromSettings } from '../net/ice';
 import { cleanRoomCode, hostRoom, joinRoom, relayUrl } from '../net/relay';
-import { copyButton, joinParam, pasteButton, shareBlock } from './online-share';
+import { codeFromInput, copyButton, joinParam, looksLikeCode, pasteButton, shareBlock } from './online-share';
 import { destroyGame, type GameHandle } from './game-handle';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-pick';
@@ -126,12 +126,16 @@ export function onlineVersusScreen(): Screen {
   /** The setup form (codes, steps): collapsed once the link is open. */
   let setupNode: HTMLElement | undefined;
   let introNode: HTMLElement | undefined;
+  /** Holds the link chip, the status line and the match buttons; once the arena is up it is one compact strip above it. */
+  let stripNode: HTMLElement | undefined;
   const rtts: number[] = [];
   let onPageHide: (() => void) | undefined;
   /** Set once the friend left or the link died: later status words must not overwrite that. */
   let ended = false;
   /** The relay room this screen holds open while signalling (WP 10), closed once the link is made or the screen goes. */
   let room: { close: () => void } | undefined;
+  /** Set while mounted: shows the retry button of the side that failed to link. */
+  let onLinkFailed: (() => void) | undefined;
 
   const stop = (): void => {
     gone = true;
@@ -173,9 +177,10 @@ export function onlineVersusScreen(): Screen {
         destroyGame(game, arenaNode);
         game = undefined;
         arenaNode = undefined;
+        node?.classList.remove('onlineLive');
       };
       node.append(el('h1', 'heading', 'Online'));
-      const intro = el('p', undefined, 'Play a friend over the internet. Pick your part: you host and send a code, or your friend hosts and you join with their code. Tap the Copy and Paste buttons: no typing.');
+      const intro = el('p', undefined, 'Play a friend over the internet, no account needed. One of you hosts and sends a link in chat; the other opens it. Just tap the buttons.');
       node.append(intro);
       introNode = intro;
 
@@ -200,6 +205,7 @@ export function onlineVersusScreen(): Screen {
           holder.id = 'game';
           arenaNode = holder;
           node.append(holder);
+          node.classList.add('onlineLive');
           // Touch buttons and the stick for our own side (the same overlays as local Versus; CSS shows them on touch devices only).
           const mine = side === 0 ? setup.p1 : setup.p2;
           const buttons = touchButtons(mine.length >= 3 ? 3 : mine.length === 2 ? 2 : 1, mine.map((m) => isMeleeRace(m.character)));
@@ -223,7 +229,7 @@ export function onlineVersusScreen(): Screen {
                 say('Rematch: choose your three heroes, then press Ready.');
                 pickPhase(p);
               });
-              node?.insertBefore(again, status);
+              status.after(again);
               again.focus();
             },
             net: {
@@ -238,7 +244,7 @@ export function onlineVersusScreen(): Screen {
                 if (t !== undefined) say(t);
                 if (st === 'desync' && !node?.querySelector('#onlineReport')) {
                   const save = button('onlineReport', 'Save report', () => { downloadReport(buildDesyncReport(setup, session)); });
-                  node?.insertBefore(save, status);
+                  status.after(save);
                 }
               },
             },
@@ -261,6 +267,7 @@ export function onlineVersusScreen(): Screen {
       };
       /** Hero choice: send ours, wait for theirs (one message only, so the handshake's HELLO stays queued; also the rematch entry), then both derive the setup. */
       const pickPhase = (p: Peer): void => {
+        node?.classList.remove('onlineLive');
         node?.querySelector('#onlineReady')?.remove();
         node?.querySelector('#onlineTeam')?.remove();
         // Three heroes a side (WP-pvp-3heroes): a 1v1 duel of two teams; ids onlineRace (lead), onlineRace2, onlineRace3.
@@ -313,8 +320,7 @@ export function onlineVersusScreen(): Screen {
             handshake(p, side === 0 ? onlineSetup(mine, theirs) : onlineSetup(theirs, mine));
           }, 50);
         });
-        node?.insertBefore(team, status);
-        node?.insertBefore(ready, status);
+        stripNode?.before(team, ready);
         sels[0]?.focus();
       };
       const watch = (p: Peer): void => {
@@ -345,7 +351,8 @@ export function onlineVersusScreen(): Screen {
             linkNode = el('p', 'onlineChip');
             linkNode.id = 'onlineLink';
             linkNode.textContent = linkLine(undefined);
-            node?.insertBefore(linkNode, status);
+            stripNode?.prepend(linkNode);
+            if (stripNode) stripNode.append(status);
             onPageHide = () => { m.sendBye(); };
             window.addEventListener('pagehide', onPageHide);
             p.onState((s) => {
@@ -358,12 +365,14 @@ export function onlineVersusScreen(): Screen {
               stop();
               window.location.hash = '#main';
             });
-            node?.insertBefore(leave, status);
+            status.after(leave);
             say('Link open. Choose your three heroes, then press Ready.');
             pickPhase(p);
           },
           (e: unknown) => {
-            if (!gone) say(e instanceof Error && e.message !== '' ? e.message : 'The connection failed. Check both codes and try again.');
+            if (gone) return;
+            say(e instanceof Error && e.message !== '' ? e.message : 'The connection failed. Check both codes and try again.');
+            onLinkFailed?.();
           },
         );
       };
@@ -371,43 +380,103 @@ export function onlineVersusScreen(): Screen {
         say(e instanceof Error ? e.message : 'Something went wrong.');
       };
 
-      const offerOut = area('onlineOffer', 'My code (send this to my friend)', true, 'Your code to send to your friend (host)');
-      const answerIn = area('onlineAnswerIn', 'Your friend\'s answer code', false, 'Your friend\'s answer code (host)');
-      const offerIn = area('onlineOfferIn', 'Your friend\'s host code', false, 'Your friend\'s host code (join)');
-      const answerOut = area('onlineAnswer', 'Your answer code to send back', true, 'Your answer code to send back (join)');
+      const offerOut = area('onlineOffer', 'Invite code (the link has it already)', true, 'Your invite code (host)');
+      const answerIn = area('onlineAnswerIn', 'Your friend\'s reply', false, 'Your friend\'s reply code (host)');
+      const offerIn = area('onlineOfferIn', 'Paste the link or code from your host', false, 'Link or code from your host (join)');
+      const answerOut = area('onlineAnswer', 'Your reply code', true, 'Your reply code to send back (join)');
 
+      // Everything beyond the two big buttons: the room-code relay, the raw codes and the copy-the-code fallbacks.
+      const manual = el('details', 'onlineManual');
+      manual.id = 'onlineManual';
+      manual.append(el('summary', undefined, 'Having trouble? Manual codes'));
+      const manualBody = el('div');
+      /** The Copy buttons' failure path asks the player to copy from the manual codes, so open them. */
+      const sayCopy = (s: string): void => {
+        if (s.startsWith('Could not copy')) manual.open = true;
+        say(s);
+      };
       const shareSlot = el('div');
-      const host = button('onlineHost', 'Make my code', () => {
-        say('Making a code...');
+      const codeSlot = el('div');
+      let hostMade = false;
+      let connecting = false;
+      let joining = false;
+      const retryHost = button('onlineHost', 'Try again', () => { makeCode(); });
+      retryHost.hidden = true;
+      const makeCode = (): void => {
+        say('Making your invite...');
+        retryHost.hidden = true;
+        connecting = false;
+        answerIn.box.value = '';
+        hostMade = true;
         hostPeer(iceParam()).then(({ peer: p, offer }) => {
           if (gone) { p.close(); return; }
           peer?.close();
           offerOut.box.value = offer;
-          shareSlot.replaceChildren(shareBlock(offer, offerOut.box, say));
+          shareSlot.replaceChildren(shareBlock(offer, sayCopy));
+          codeSlot.replaceChildren(copyButton('onlineCopyCode', 'Copy code', () => offer, offerOut.box, sayCopy, 'Code copied. Send it to your friend.', 'Could not copy automatically. Open "Having trouble? Manual codes" below and copy the code from there.'));
           peer = p;
           side = 0;
-          say('Step 1 done: send your code or link to your friend. Then paste their answer below and press Connect.');
-        }, fail);
-      });
-      const pasteAnswer = pasteButton('onlinePasteAnswer', 'Paste answer', answerIn.box, say, 'Answer pasted. Now press Connect.');
-      const pasteOffer = pasteButton('onlinePasteOffer', 'Paste host code', offerIn.box, say, 'Host code pasted. Now press Join.');
-      const copyAnswer = copyButton('onlineCopyAnswer', 'Copy answer', () => answerOut.box.value, answerOut.box, say, 'Answer copied. Send it back to your host.', 'Could not copy automatically: the answer is selected, press Ctrl+C (or press and hold, then Copy).');
-      const connect = button('onlineConnect', 'Connect', () => {
-        if (!peer) { say('Press Make my code first.'); return; }
+          say('Invite ready. Copy the link and send it to your friend in chat, then paste their reply below.');
+        }, (e: unknown) => {
+          hostMade = false;
+          retryHost.hidden = false;
+          fail(e);
+        });
+      };
+      const tryConnect = (): void => {
+        if (!peer) { say('Your invite is not ready yet. Press Host a game.'); return; }
+        if (connecting) return;
+        connecting = true;
         const p = peer;
-        p.accept(answerIn.box.value).then(() => { watch(p); }, fail);
-      });
-      const join = button('onlineJoin', 'Join', () => {
-        say('Making an answer...');
-        joinPeer(offerIn.box.value, iceParam()).then(({ peer: p, answer }) => {
+        say('Connecting...');
+        p.accept(codeFromInput(answerIn.box.value)).then(() => { watch(p); }, (e: unknown) => {
+          connecting = false;
+          retryHost.hidden = false;
+          fail(e);
+        });
+      };
+      const pasteAnswer = pasteButton('onlinePasteAnswer', 'Paste reply', answerIn.box, say, 'Reply pasted. Connecting...', () => { tryConnect(); });
+      const connect = button('onlineConnect', 'Connect', tryConnect);
+      answerIn.box.addEventListener('input', () => { if (looksLikeCode(codeFromInput(answerIn.box.value))) tryConnect(); });
+
+      const replyBlock = el('div');
+      replyBlock.id = 'onlineReply';
+      replyBlock.hidden = true;
+      const copyAnswer = copyButton('onlineCopyAnswer', 'Copy reply', () => answerOut.box.value, answerOut.box, sayCopy, 'Reply copied. Send it back to your host in chat.', 'Could not copy automatically. Open "Having trouble? Manual codes" below and copy the reply from there.');
+      replyBlock.append(el('p', undefined, 'Send this reply back to your host in chat. The game starts when they paste it.'), copyAnswer);
+      const join = button('onlineJoin', 'Join', () => { joinNow(); });
+      const joinNow = (): void => {
+        if (joining) return;
+        joining = true;
+        join.hidden = true;
+        say('Making your reply...');
+        joinPeer(codeFromInput(offerIn.box.value), iceParam()).then(({ peer: p, answer }) => {
           if (gone) { p.close(); return; }
           peer?.close();
           answerOut.box.value = answer;
+          replyBlock.hidden = false;
           side = 1;
           watch(p);
-          say('Answer ready: copy it and send it back to your host. Waiting for the link to open...');
-        }, fail);
-      });
+          say('Reply ready: copy it and send it back to your host in chat. Waiting for the link to open...');
+        }, (e: unknown) => {
+          joining = false;
+          join.hidden = false;
+          join.textContent = 'Try again';
+          fail(e);
+        });
+      };
+      const pasteOffer = pasteButton('onlinePasteOffer', 'Paste link or code', offerIn.box, say, 'Pasted. Joining...', () => { joinNow(); });
+      offerIn.box.addEventListener('input', () => { if (looksLikeCode(codeFromInput(offerIn.box.value))) joinNow(); });
+      onLinkFailed = () => {
+        if (side === 0) {
+          retryHost.hidden = false;
+          connecting = false;
+        } else {
+          joining = false;
+          join.hidden = false;
+          join.textContent = 'Try again';
+        }
+      };
 
       const signal = relayUrl(window.location.search, devBuild());
       if (signal !== undefined) {
@@ -460,40 +529,44 @@ export function onlineVersusScreen(): Screen {
         const joinLab = el('label', undefined, 'Room code (join)');
         joinLab.htmlFor = roomIn.id;
         joinRow.append(joinLab, ' ', roomIn);
-        node.append(el('h2', undefined, 'Room code (no copy and paste)'), roomHost, roomCode, joinRow, roomJoinBtn);
+        manualBody.append(el('h3', undefined, 'Room code (no copy and paste)'), roomHost, roomCode, joinRow, roomJoinBtn);
       }
+      manualBody.append(offerOut.row, codeSlot, answerOut.row);
+      manual.append(manualBody);
 
-      const step = (n: number, text: string): HTMLElement => el('h3', undefined, `Step ${String(n)}: ${text}`);
+      const stepList = (...items: string[]): HTMLElement => {
+        const ol = el('ol', 'onlineSteps');
+        for (const text of items) ol.append(el('li', undefined, text));
+        return ol;
+      };
       const hostPath = el('div', 'onlinePath');
       hostPath.id = 'onlineHostPath';
       hostPath.hidden = true;
       hostPath.append(
-        step(1, 'make my code, then copy it and send it to your friend'),
-        host,
-        offerOut.row,
+        stepList(
+          'Send this link to your friend in chat.',
+          'When they open it they get a reply code. Ask them to send it back.',
+          'Paste their reply here. It connects by itself, or press Connect.',
+        ),
         shareSlot,
-        step(2, 'paste your friend\'s answer'),
         answerIn.row,
         pasteAnswer,
-        step(3, 'connect'),
         connect,
+        retryHost,
       );
       const joinPath = el('div', 'onlinePath');
       joinPath.id = 'onlineJoinPath';
       joinPath.hidden = true;
-      joinPath.append(
-        step(1, 'paste the host\'s code (a link from the host does this for you)'),
-        offerIn.row,
-        pasteOffer,
-        step(2, 'join'),
-        join,
-        step(3, 'copy my answer and send it back to the host'),
-        answerOut.row,
-        copyAnswer,
-      );
-      // Two big role buttons first: a player sees only the steps of the role they pick.
-      const roleHost = button('onlineRoleHost', 'I am hosting', () => { chooseRole('host'); });
-      const roleJoin = button('onlineRoleJoin', 'My friend is hosting', () => { chooseRole('join'); });
+      joinPath.append(offerIn.row, pasteOffer, join, replyBlock);
+      // Two big buttons, always visible: a player sees only the steps of the one they pick.
+      const roleHost = button('onlineRoleHost', 'Host a game', () => {
+        chooseRole('host');
+        if (!hostMade) makeCode();
+      });
+      const roleJoin = button('onlineRoleJoin', 'Join a game', () => {
+        chooseRole('join');
+        offerIn.box.focus();
+      });
       const chooseRole = (r: 'host' | 'join'): void => {
         hostPath.hidden = r !== 'host';
         joinPath.hidden = r !== 'join';
@@ -506,22 +579,27 @@ export function onlineVersusScreen(): Screen {
       roleJoin.setAttribute('aria-pressed', 'false');
       const roles = el('div', 'onlineRoles');
       roles.append(roleHost, roleJoin);
-      node.append(el('h2', undefined, 'Who is hosting?'), roles, hostPath, joinPath, status);
       // One card for the whole setup form, so it can collapse once connected; the status line stays outside it.
       const setup = el('div', 'onlineSetup');
       setup.id = 'onlineSetup';
-      setup.append(...Array.from(node.children).filter((c) => c !== status && c.tagName !== 'H1' && c !== intro));
-      node.insertBefore(setup, status);
+      setup.append(roles, hostPath, joinPath, manual);
+      const strip = el('div', 'onlineStrip');
+      strip.id = 'onlineStrip';
+      stripNode = strip;
+      node.append(setup, strip);
+      strip.append(status);
       setupNode = setup;
       const linked = joinParam(window.location.search);
       if (linked !== undefined) {
-        // Opened from a join link: fill the host's code, drop it from the address bar and start Join at once.
+        // Opened from an invite link: fill the host's code, drop it from the address bar and join at once.
         offerIn.box.value = linked;
+        offerIn.row.hidden = true;
+        pasteOffer.hidden = true;
         chooseRole('join');
         const url = new URL(window.location.href);
         url.searchParams.delete('join');
         window.history.replaceState(null, '', url.pathname + url.search + url.hash);
-        queueMicrotask(() => { if (!gone) join.click(); });
+        queueMicrotask(() => { if (!gone) joinNow(); });
       }
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');

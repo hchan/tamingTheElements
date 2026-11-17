@@ -83,14 +83,13 @@ for (const { ff, sim } of VARIANTS) test(`two browser contexts play a whole onli
   await expect(b.locator('#onlineRoleJoin')).toBeVisible();
 
   await a.locator('#onlineRoleHost').click();
-  await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
   await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
   await b.locator('#onlineJoin').click();
   await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });
   await a.locator('#onlineAnswerIn').fill(await b.locator('#onlineAnswer').inputValue());
-  await a.locator('#onlineConnect').click();
+  await expect(a.locator('#onlineRace')).toBeVisible({ timeout: 15_000 }); // pasting the reply connects by itself
 
   await a.locator('#onlineReady').click();
   await b.locator('#onlineReady').click();

@@ -151,7 +151,7 @@ afterEach(async () => {
 async function hostToPick(r: Rig): Promise<void> {
   h.hostResult = { peer: r.peer, offer: 'OFFER-CODE' };
   mountOnline(host);
-  await click('onlineHost');
+  await click('onlineRoleHost');
   r.openLink();
   await click('onlineConnect');
   await tick(0);
@@ -169,17 +169,16 @@ describe('online versus share, copy, paste and join link', () => {
     return { written };
   };
 
-  it('numbers the steps for host and join', () => {
+  it('lists three host steps', () => {
     mountOnline(host);
-    const steps = [...host.querySelectorAll('h3')].map((e) => e.textContent);
-    expect(steps.filter((s) => s.startsWith('Step 1'))).toHaveLength(2);
-    expect(steps.filter((s) => s.startsWith('Step 3'))).toHaveLength(2);
+    expect(host.querySelectorAll('ol.onlineSteps li')).toHaveLength(3);
   });
 
   it('shows two role buttons first and only the steps of the role picked', async () => {
+    h.hostResult = { peer: rig().peer, offer: 'T1.X' };
     mountOnline(host);
-    expect($('onlineRoleHost').textContent).toBe('I am hosting');
-    expect($('onlineRoleJoin').textContent).toBe('My friend is hosting');
+    expect($('onlineRoleHost').textContent).toBe('Host a game');
+    expect($('onlineRoleJoin').textContent).toBe('Join a game');
     expect($('onlineHostPath').hidden).toBe(true);
     expect($('onlineJoinPath').hidden).toBe(true);
     await click('onlineRoleHost');
@@ -206,7 +205,7 @@ describe('online versus share, copy, paste and join link', () => {
     const r = rig();
     h.hostResult = { peer: r.peer, offer: 'T1.ABC_def-123' };
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     await click('onlineCopyCode');
     await click('onlineCopyLink');
     expect(c.written[0]).toBe('T1.ABC_def-123');
@@ -238,7 +237,7 @@ describe('online versus share, copy, paste and join link', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect($('onlinePasteAnswer').textContent).toBe('Pasted');
     await vi.advanceTimersByTimeAsync(2100);
-    expect($('onlinePasteAnswer').textContent).toBe('Paste answer');
+    expect($('onlinePasteAnswer').textContent).toBe('Paste reply');
   });
 
   it('when the clipboard cannot write, the code box is selected and the status says to press Ctrl+C', async () => {
@@ -246,9 +245,9 @@ describe('online versus share, copy, paste and join link', () => {
     const r = rig();
     h.hostResult = { peer: r.peer, offer: 'T1.ABC' };
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     await click('onlineCopyCode');
-    expect(statusText()).toContain('Ctrl+C');
+    expect(statusText()).toContain('Manual codes');
     expect($('onlineCopyCode').textContent).toBe('Copy code');
   });
 
@@ -295,16 +294,16 @@ describe('online versus screen', () => {
   it('Connect before Host asks to host first', async () => {
     mountOnline(host);
     await click('onlineConnect');
-    expect(statusText()).toBe('Press Make my code first.');
+    expect(statusText()).toBe('Your invite is not ready yet. Press Host a game.');
   });
 
   it('host: shows the offer code and applies the pasted answer', async () => {
     const r = rig();
     h.hostResult = { peer: r.peer, offer: 'OFFER-CODE' };
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     expect($<HTMLTextAreaElement>('onlineOffer').value).toBe('OFFER-CODE');
-    expect(statusText()).toContain('send your code or link to your friend');
+    expect(statusText()).toContain('send it to your friend in chat');
     $<HTMLTextAreaElement>('onlineAnswerIn').value = 'ANSWER';
     await click('onlineConnect');
     expect(r.accepted).toEqual(['ANSWER']);
@@ -323,7 +322,7 @@ describe('online versus screen', () => {
     const r2 = rig();
     h.hostResult = { peer: r1.peer, offer: 'ONE' };
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     h.hostResult = { peer: r2.peer, offer: 'TWO' };
     await click('onlineHost');
     expect(r1.closed()).toBe(1);
@@ -333,7 +332,7 @@ describe('online versus screen', () => {
   it('shows the error text when hosting fails, and a generic one for non-Errors', async () => {
     mountOnline(host);
     h.hostError = new Error('no rtc');
-    await click('onlineHost');
+    await click('onlineRoleHost');
     expect(statusText()).toBe('no rtc');
     h.hostError = 'weird';
     await click('onlineHost');
@@ -345,7 +344,7 @@ describe('online versus screen', () => {
     r.peer.accept = () => Promise.reject(new Error('That is not an answer code.'));
     h.hostResult = { peer: r.peer, offer: 'O' };
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     await click('onlineConnect');
     expect(statusText()).toBe('That is not an answer code.');
   });
@@ -359,7 +358,7 @@ describe('online versus screen', () => {
     h.hostResult = { peer: r2.peer, offer: 'O' };
     host.replaceChildren();
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     await click('onlineConnect');
     r2.failLink();
     await tick(0);
@@ -542,7 +541,7 @@ describe('online versus screen', () => {
     h.hostResult = { peer: r.peer, offer: 'LATE' };
     const screen = onlineVersusScreen();
     screen.mount(host);
-    $('onlineHost').click();
+    $('onlineRoleHost').click();
     screen.unmount();
     await tick(0);
     expect(r.closed()).toBe(1);
@@ -572,7 +571,7 @@ describe('online versus screen', () => {
     const r = rig();
     h.hostResult = { peer: r.peer, offer: 'O' };
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     await click('onlineConnect');
     unmountOnline();
     r.openLink();
@@ -581,7 +580,7 @@ describe('online versus screen', () => {
     const r2 = rig();
     h.hostResult = { peer: r2.peer, offer: 'O' };
     mountOnline(host);
-    await click('onlineHost');
+    await click('onlineRoleHost');
     await click('onlineConnect');
     unmountOnline();
     r2.failLink();

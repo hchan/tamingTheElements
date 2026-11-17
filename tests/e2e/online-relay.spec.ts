@@ -27,6 +27,8 @@ test('two contexts connect with a room code only', async ({ browser }) => {
   await a.goto(url);
   await b.goto(url);
 
+  await a.locator('#onlineManual summary').click();
+  await b.locator('#onlineManual summary').click();
   await a.locator('#onlineRoomHost').click();
   await expect(a.locator('#onlineRoomCode')).toHaveText(/^Room code: [A-HJ-NP-Z2-9]{6}$/, { timeout: 15_000 });
   const code = ((await a.locator('#onlineRoomCode').textContent()) ?? '').replace('Room code: ', '');
@@ -56,7 +58,8 @@ test('no room-code buttons without a relay address, and a wrong code says so in 
   await expect(page.locator('#onlineRoomHost')).toHaveCount(0);
 
   await page.goto(`/?ff=arcade&ice=none&signal=${encodeURIComponent(`ws://127.0.0.1:${String(relay.port)}`)}#online`);
-  await page.locator('#onlineRoomIn').fill('ZZZZZZ');
+  await page.locator('#onlineManual summary').click();
+  await page.locator('#onlineRoomIn').fill("ZZZZZZ");
   await page.locator('#onlineRoomJoin').click();
   await expect(page.locator('#onlineStatus')).toContainText('not found');
 });
