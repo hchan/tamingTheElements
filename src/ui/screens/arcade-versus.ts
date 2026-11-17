@@ -4,8 +4,9 @@ import { el, markMoreBelow } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
 import { abilitiesSpeech, abilityChips } from './hero-abilities';
 import { heroDnd } from './hero-dnd';
-import { heroGrid, heroPanel } from './hero-panel';
+import { faceUrl, heroGrid, heroPanel } from './hero-panel';
 import '../styles/picker-compact.css';
+import '../styles/match-end.css';
 
 /**
  * Battle keys for the two-player option, as (action word, keys) pairs for the cheat sheet (Player 1's are the defaults and can be
@@ -836,23 +837,36 @@ export interface ResultsViewOptions {
   readonly summary: string;
   readonly onRematch: () => void;
   readonly onChange: () => void;
+  /** The winning hero (portrait and name); absent on a draw. */
+  readonly winner?: { readonly id: CharacterId; readonly name: string };
+  /** Short stat chips such as `Rounds 2-0`. */
+  readonly stats?: readonly string[];
   /** Present when a replay was recorded. */
   readonly onDownload?: () => void;
 }
 
 export function arcadeResultsView(o: ResultsViewOptions): HTMLElement {
-  const page = el('div', 'menuPage');
+  const page = el('div', 'menuPage matchEnd');
   page.id = 'arcadeResults';
-  page.append(el('h1', 'heading', o.heading), el('p', undefined, o.summary));
-  const button = (id: string, label: string, onClick: () => void): HTMLButtonElement => {
-    const b = el('button', 'menuButton', label);
+  const hero = el('div', 'matchEndHero');
+  if (o.winner) {
+    const face = el('span', 'heroFace matchEndFace');
+    face.setAttribute('aria-hidden', 'true');
+    face.style.backgroundImage = faceUrl(o.winner.id);
+    hero.append(face, el('p', 'matchEndName', o.winner.name));
+  }
+  const stats = el('ul', 'matchEndStats');
+  for (const t of o.stats ?? []) stats.append(el('li', undefined, t));
+  page.append(hero, el('h1', 'heading matchEndWord', o.heading), stats, el('p', 'matchEndSummary', o.summary));
+  const button = (id: string, label: string, onClick: () => void, cls = 'menuButton'): HTMLButtonElement => {
+    const b = el('button', cls, label);
     b.type = 'button';
     b.id = id;
     b.addEventListener('click', onClick);
     return b;
   };
-  const actions = el('div');
-  actions.append(button('arcadeRematch', 'Rematch', o.onRematch), button('arcadeChange', 'Change fighters', o.onChange));
+  const actions = el('div', 'matchEndActions');
+  actions.append(button('arcadeRematch', 'Rematch', o.onRematch, 'menuButton matchEndCta'), button('arcadeChange', 'Change fighters', o.onChange));
   if (o.onDownload) actions.append(button('downloadReplay', 'Download replay', o.onDownload));
   const menu = el('a', 'menuButton', 'Main Menu');
   menu.href = '#main';

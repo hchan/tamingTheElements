@@ -69,6 +69,12 @@ export function keysHint(fadeMs = KEYS_HINT_MS): HTMLElement {
 const team = (heroes: readonly ArcadeHero[], t: number): string =>
   heroes.filter((h) => h.team === t).map((h) => `${raceLabel(h.race)} ${h.pct ? `${String(h.pct)}% left` : 'knocked out'}`).join(', ');
 
+/** The hero the victory beat shows: the player's lead on a win, the foe's on a loss (a local match: Player 1 or Player 2). */
+const winnerOf = (r: ArcadeResult): { id: CharacterId; name: string } => {
+  const id = r.outcome === 'win' ? r.pick.player : r.pick.enemy;
+  return { id, name: raceLabel(id) };
+};
+
 export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
   let container: HTMLElement | undefined;
   let view: HTMLElement | undefined;
@@ -140,6 +146,8 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
             ? `Your team: ${team(r.heroes, 0)}. The AI's team (${LEVEL_LABELS[r.pick.level]}): ${team(r.heroes, 1)}. `
             : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. `) +
           (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : ''),
+        ...(r.outcome === 'draw' ? {} : { winner: winnerOf(r) }),
+        stats: r.rounds ? [`Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}`] : [],
         onRematch: startBattle,
         onChange: showPick,
         ...(replay ? { onDownload: () => { void downloadReplay(replay); } } : {}),
