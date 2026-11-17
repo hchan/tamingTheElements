@@ -75,6 +75,9 @@ const MIN_LIFE_NAME = 5;
 
 const TEAMS = [0, 1] as const;
 
+/** Portrait phone: the status chips start this far under the HUD bar's fill (SLIM_H + 2), so they never touch it. */
+const PHONE_CHIP_GAP = 6;
+
 /** Where a status chip was and its colour, kept so the expire flash can outline it after it ends. */
 interface ChipLook {
   readonly x: number;
@@ -390,7 +393,7 @@ export class Hud extends Phaser.Scene {
     const label = this.labels[team];
     // Portrait phone: the chips stack directly under the name line, beside the big portrait (the bench chips sit further in, so they never meet).
     const phone = isPortraitPlay(this.game);
-    const top = chipRowTop(phone ? SLIM_H + 2 : Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM + getChipDrop() : 0), label);
+    const top = chipRowTop(phone ? SLIM_H + PHONE_CHIP_GAP : Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM + getChipDrop() : 0), label);
     // The first stunLeft seen after a calm tick is the stun's length (it drains from there); a re-stun that outlasts it raises it.
     const stunLeft = view.arcade()?.stunLeft(c.id) ?? 0;
     this.stunTotals[team] = stunLeft > 0 ? Math.max(this.stunTotals[team] ?? 0, stunLeft) : 0;
@@ -414,8 +417,9 @@ export class Hud extends Phaser.Scene {
       const pop = chipPop(age, reduced);
       const w = chip.w * pop;
       const h = chip.h * pop;
-      const x = chip.x - (w - chip.w) / 2;
-      const y = chip.y - (h - chip.h) / 2;
+      // Portrait phone: the swell grows down and inward only, so it never climbs into the HUD bar or under the portrait (qa-r98).
+      const x = phone ? (team === 1 ? chip.x + chip.w - w : chip.x) : chip.x - (w - chip.w) / 2;
+      const y = phone ? chip.y : chip.y - (h - chip.h) / 2;
       const low = chip.secs !== null && chip.secs <= 1;
       const shown = !low || chipBlink(now % 49, reduced);
       t.setFontSize(px).setText(chip.text).setPosition(chip.x + 4, chip.y + Math.round((chip.h - t.height) / 2)).setVisible(true).setAlpha(shown ? 1 : 0.45);
