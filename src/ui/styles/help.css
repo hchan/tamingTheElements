@@ -116,17 +116,21 @@
     grid-template-columns: 1fr 1fr;
     gap: 0.1em 0.5em;
   }
+  /* QA r91 P3: the chips used to scroll sideways with no hint and the second one was cut off at 390 px. They wrap now, so all five show. */
   #menu .helpJump {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-start;
-    overflow-x: auto;
     gap: 0.4em;
     margin-bottom: 0.4em;
-    scrollbar-width: none;
   }
-  #menu .helpJumpLabel,
+  #menu .helpJumpLabel {
+    flex: 0 0 100%;
+  }
   #menu .helpJumpBtn {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    max-width: 100%;
+    padding-inline: 0.8em;
+    font-size: 0.8em;
     white-space: nowrap;
   }
   #menu .helpPanel,
