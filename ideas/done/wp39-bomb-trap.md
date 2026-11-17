@@ -5,7 +5,7 @@ added: 2026-11-12
 
 # WP 39: bomb and trap ability (SF2 / Archon II flavour)
 
-A placed hazard with a fuse: the hero drops it, it arms after a short delay, and it fires when the foe walks over it or when its fuse runs out. One button, four element variants, a cooldown and a small cap per team. Design only; nothing is built yet. Replaces the brainstorm stub `ideas/brainstorm/bomb-traps.md`. Related: `ideas/in-progress/wp38-panning-arena.md` (traps live in world coordinates, so they pan for free), FUN-DESIGN 2.7 (dash), 2.8 (guard), 2.15 (terrain), 2.20 (Snag), 2.22 (auto-face), and the `add-ability` skill (gameplay change: the owner pre-approved design, so this is a report-afterwards design).
+A placed hazard with a fuse: the hero drops it, it arms after a short delay, and it fires when the foe walks over it or when its fuse runs out. One button, four element variants, a cooldown and a small cap per team. Shipped; see Status. Replaces the brainstorm stub `ideas/done/bomb-traps.md`. Related: `ideas/done/wp38-panning-arena.md` (traps live in world coordinates, so they pan for free), FUN-DESIGN 2.7 (dash), 2.8 (guard), 2.15 (terrain), 2.20 (Snag), 2.22 (auto-face), and the `add-ability` skill (gameplay change: the owner pre-approved design, so this is a report-afterwards design).
 
 Player-facing names: the button is **Trap**; variants are Fire Bomb, Puddle, Spike, Gust. No mode words on screen.
 
@@ -193,4 +193,4 @@ Screenshots (real game, `?ff=play`): each variant arming and armed, the fuse nea
 
 ## Status
 
-39a-c done (sim, input, view, AI); two full e2e runs green (176/176). 39d/39e (polish, balance) are unbuilt.
+39a-c done (sim, input, view, AI). 39d done: findings and audio (13cd31cd), `sim:match --no-traps` (d94dff3a). 39e done: tuning, `TRAP_HIT_FLOOR`, `arcade-traps` golden, SIM_VERSION 34 (0298135a). 39f done: AI follow-up, SIM_VERSION 35 (85ff66e6). 39k done: Snag-trap and team-mode findings (29bca907). Open follow-ups have their own idea files.

@@ -10,7 +10,7 @@ Owner request (2026-11-13): "your action bars still need rethinking ... like com
 ## Shape
 - **Common slots (same for every hero, same hotkeys, one shared cooldown renderer):** Guard, Cleanse (see [elemental-cleanse](elemental-cleanse.md), 10 s), the element's common elemental ability, and Change Weather (with its animation).
 - **Hero slots 1 and 2:** the hero's two signature abilities (as today).
-- **Hero slot 3:** a signature **trap or minion**, unique per hero: 12 heroes = 12 new traps/minions (water curomo/ishimi/morblass, air cyclonius/echo/wispera, fire fiara/lavax/sindarosa, earth pax/rokcore/treenoc). Trap becomes a normal ability slot instead of a separate global mechanic ([bomb-traps](bomb-traps.md), [summon-temporary-minions](summon-temporary-minions.md)).
+- **Hero slot 3:** a signature **trap or minion**, unique per hero: 12 heroes = 12 new traps/minions (water curomo/ishimi/morblass, air cyclonius/echo/wispera, fire fiara/lavax/sindarosa, earth pax/rokcore/treenoc). Trap becomes a normal ability slot instead of a separate global mechanic ([bomb-traps](../done/bomb-traps.md), [summon-temporary-minions](summon-temporary-minions.md)).
 - Possibly a further new ability slot per hero; design each as elemental, grim, not humanoid.
 
 ## Work packages (one at a time on sim; each re-records goldens/baselines with a stated reason, SIM_VERSION bump)
