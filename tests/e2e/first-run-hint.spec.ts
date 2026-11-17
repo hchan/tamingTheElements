@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
+// The e2e harness is manually stepped (?manual=1: the tick stays 0 until stepped), so the ROUND 1 / FIGHT! banner never runs out by itself and the card, which never shows over a banner, would wait for the 7 s + 12 s fallbacks. Step past the banner first.
+const PAST_BANNER = 'window.__TTE__.arena.step(160)';
+
 // The Tour has no in-fight card (its stage card names the controls); the card is shown in Versus. The first battle shows a short "First blood" card; Got it removes it and the choice is remembered.
 // QA r49/r50: a super cut-in removes the card on the spot, so it never sits over the cut-in band.
 test('first-run hint is gone the moment a super cut-in starts', async ({ page }) => {
@@ -8,6 +11,7 @@ test('first-run hint is gone the moment a super cut-in starts', async ({ page })
   await page.goto(`${START}&ff=arcade#arcade`);
   await page.getByRole('button', { name: /^Fight/ }).click();
   await page.waitForFunction(ARENA_READY);
+  await page.evaluate(PAST_BANNER);
   const card = page.locator('#firstRunHint');
   await expect(card).toBeVisible({ timeout: 15_000 });
   await page.evaluate(`window.dispatchEvent(new Event('tte:super-cut'))`);
@@ -21,6 +25,7 @@ test('first-run hint shows, dismisses and is remembered', async ({ page }) => {
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByRole('button', { name: /^Fight/ }).click();
     await page.waitForFunction(ARENA_READY);
+    await page.evaluate(PAST_BANNER);
   };
   await fight();
   const card = page.locator('#firstRunHint');
@@ -39,6 +44,7 @@ test('first-run hint at 1280x720 is a slim strip above the bar and fades on its 
   await page.goto(`${START}&ff=arcade#arcade`);
   await page.getByRole('button', { name: /^Fight/ }).click();
   await page.waitForFunction(ARENA_READY);
+  await page.evaluate(PAST_BANNER);
   const card = page.locator('#firstRunHint');
   await expect(card).toBeVisible({ timeout: 15_000 });
   const box = await card.boundingBox();
@@ -57,6 +63,7 @@ test.describe('phone', () => {
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByRole('button', { name: /^Fight/ }).tap();
     await page.waitForFunction(ARENA_READY);
+    await page.evaluate(PAST_BANNER);
     const card = page.locator('#firstRunHint');
     await expect(card).toBeVisible({ timeout: 15_000 });
     const box = await card.boundingBox();
@@ -66,8 +73,8 @@ test.describe('phone', () => {
   });
 });
 
-// HINT-CUT-1: a super cut that starts before the card is revealed (round 1, the QA step harness, a build with a live meter at the
-// reveal) keeps the card waiting: it never sits on the band or the portrait, and it appears once the band is gone.
+// HINT-CUT-1 (QA r92): a super cut that starts before the card is revealed (round 1, the QA step harness, a build with a live meter at the
+// reveal) drops the card for this battle: it never sits on the band or the portrait, and it does not appear late.
 // Timers of exactly 7000 and 2500 ms are stretched so the intro fallback and the card's fade cannot fire on a slow SwiftShader run.
 const SUPER = 1 << 13;
 const shotDir = process.env['SHOT_DIR'];
@@ -101,16 +108,15 @@ const probe = (page: Page): Promise<BandProbe> =>
       cls: card ? card.className : '',
     };
   })()`);
-const meets = (a: CssRect | null, b: CssRect | null): boolean => !!a && !!b && a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
 for (const vp of [
   { name: '1280x720', width: 1280, height: 720, touch: false },
   { name: '844x390', width: 844, height: 390, touch: true },
   { name: '667x375', width: 667, height: 375, touch: true },
 ]) {
-  test.describe(`card waits for a live super band, ${vp.name}`, () => {
+  test.describe(`card is dropped for a super band, ${vp.name}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height }, hasTouch: vp.touch, isMobile: vp.touch });
-    test('the card stays hidden during the band and appears after it', async ({ page }, testInfo) => {
+    test('the card never shows over the band or after it', async ({ page }, testInfo) => {
       const errors = collectErrors(page);
       await page.addInitScript(`(() => {
         const real = window.setTimeout.bind(window);
@@ -141,19 +147,14 @@ for (const vp of [
       })()`);
       const card = page.locator('#firstRunHint');
       await expect.poll(async () => (await probe(page)).alpha).toBeGreaterThan(0.05);
-      let s = await probe(page);
-      expect(s.cls).toContain('firstRunWait');
-      expect(meets(s.card, s.band)).toBe(false);
+      // QA r92: a super before the reveal means the fight is under way: the card is dropped, never shown over the band.
+      await expect(card).toHaveCount(0);
       await shot('band');
-      await page.evaluate(`window.__TTE__.arena.step(10)`);
-      s = await probe(page);
-      expect(s.cls).toContain('firstRunWait');
-      // The band is gone: the gate polls every 100 ms and then reveals the card.
-      await page.evaluate(`window.__TTE__.arena.step(20)`);
-      await expect(card).not.toHaveClass(/firstRunWait/);
-      await expect(card).toBeVisible();
-      s = await probe(page);
-      expect(s.alpha).toBeLessThanOrEqual(0.05);
+      // Once the band is gone the card still does not come back.
+      await page.evaluate(`window.__TTE__.arena.step(30)`);
+      await page.waitForTimeout(400);
+      await expect(card).toHaveCount(0);
+      expect((await probe(page)).alpha).toBeLessThanOrEqual(0.05);
       await shot('card-after');
       expect(errors).toEqual([]);
     });
