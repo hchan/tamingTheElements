@@ -9,14 +9,14 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
 
 ## Commands (use `corepack pnpm`; `pnpm` may not be on PATH)
 
-- Gate before every commit: `pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm test:legacy && pnpm build`
+- Gate before every commit (the local gate is the only per-commit check; Actions runs daily and has no e2e job): `pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm exec vitest run --project dom && pnpm test:legacy && pnpm build`, plus `pnpm e2e` before pushing
 - Browser: `pnpm e2e` (Playwright, SwiftShader, 1 worker; must pass several runs in a row), `pnpm e2e:pages`, `pnpm e2e:itch`
 - Sim tools: `pnpm sim:match --tournament --json`, `pnpm balance:compare` / `balance:record`, `pnpm golden:record`
 - Dev: `pnpm dev`; flags in the URL (`?ff=arenaDemo`, `?ff=play`, `?manual=1`, `?seed=`) only work in dev/test builds.
 
 ## Rules
 
-- **Trunk-based** ([docs/BRANCHING.md](docs/BRANCHING.md)): `main` is always green and deployed on push (Pages). Small branches or small commits, one
+- **Trunk-based** ([docs/BRANCHING.md](docs/BRANCHING.md)): `main` is always green by the local gate; Pages is rebuilt and deployed by GitHub Actions once a day (cron) or on manual `workflow_dispatch`, not on push (owner, 2026-11-17, to save minutes). Small branches or small commits, one
   work package each, `git merge --no-ff` with subject `Merge <what> (<WP id>)`. Re-run the gate after every merge (conflict
   markers and silent collateral deletions have slipped through merges before; `git grep -nE '^(<<<<<<<|>>>>>>>) '`).
 - **Commits/pushes:** the user has explicitly authorised small commits and regular pushes to `origin/main` for this project;

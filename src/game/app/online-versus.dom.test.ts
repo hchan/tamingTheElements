@@ -193,6 +193,7 @@ describe('online versus share, copy, paste and join link', () => {
   });
 
   it('a ?join= link opens the friend-is-hosting path', async () => {
+    h.joinResult = { peer: rig().peer, answer: 'T1.ANS' };
     window.history.replaceState(null, '', '/?join=T1.HOSTCODE#online');
     mountOnline(host);
     await tick(0);

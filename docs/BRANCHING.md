@@ -83,6 +83,8 @@ Unfinished work merges dark. A flag is a plain constant or config entry, off on 
 
 Writers commit on their branch; the coordinating session runs the check and the merge. Pushing, if any, is the coordinator's.
 
+GitHub Actions is not the per-commit check: `ci.yml` runs once a day (cron) or on manual dispatch, and its deploy job publishes the current `main` to Pages only if that run passes (owner, 2026-11-17, to save minutes). The local check therefore includes `pnpm e2e` (no e2e job exists in Actions); run it before pushing. See [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Hotfix and revert
 
 `main` is bad when the local check fails on it, or a defect is found that a merge introduced. **Revert first, then fix:**
