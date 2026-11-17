@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, type RenderActionBar } from '@core/index';
-import { oneRowSide, oneRowSlots, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
+import { oneRowSide, oneRowSlots, portraitBarSlots, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -383,5 +383,36 @@ describe('one-row bar (portrait phones)', () => {
       expect(s.x + s.size).toBeLessThanOrEqual(1280);
     });
     expect(r?.top).toBe(720 - side - 1);
+  });
+});
+
+describe('portrait bar touch floor (44 CSS px)', () => {
+  const mk = (n: number) => Array.from({ length: n }, () => ({ x: 0, y: 0, size: 158 }));
+  it.each([[390, 10], [390, 14], [360, 10], [360, 14], [360, 16]])('%i px wide, %i boxes: every box is at least 44 CSS px square', (w, n) => {
+    const k = w / 1280;
+    const r = portraitBarSlots(mk(n), k);
+    expect(r).toBeDefined();
+    for (const s of r?.slots ?? []) {
+      expect(s.size * k).toBeGreaterThanOrEqual(44 - 1e-9);
+      expect(s.x).toBeGreaterThanOrEqual(0);
+      expect(s.x + s.size).toBeLessThanOrEqual(1280);
+      expect(s.y + s.size).toBeLessThanOrEqual(720);
+      expect(s.y).toBeGreaterThanOrEqual(r?.top ?? 0);
+    }
+  });
+  it('keeps the one-row bar (and its 44 px upward skirt) when the row is already wide enough', () => {
+    const r = portraitBarSlots(mk(6), 0.3047);
+    expect(r?.ext).toBe(44);
+    expect(new Set(r?.slots.map((s) => s.y)).size).toBe(1);
+  });
+  it('wraps into rows with no skirt when one row would be under 44 px', () => {
+    const r = portraitBarSlots(mk(14), 360 / 1280);
+    expect(r?.ext).toBe(0);
+    expect(new Set(r?.slots.map((s) => s.y)).size).toBeGreaterThan(1);
+    expect(r?.top).toBe(Math.min(...(r?.slots.map((s) => s.y) ?? [])));
+  });
+  it('is undefined for no scale or no boxes', () => {
+    expect(portraitBarSlots(mk(4), 0)).toBeUndefined();
+    expect(portraitBarSlots([], 0.3)).toBeUndefined();
   });
 });

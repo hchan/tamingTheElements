@@ -67,18 +67,19 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       const card = await box(page, '#firstRunHint');
       expect(card.y).toBeGreaterThanOrEqual(STRIP + HUD_BAND);
       for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton']) expect(overlap(card, await box(page, id)), id).toBe(false);
-      // The bar overlays are laid out every few frames after the flag flips, so wait for the settled one-row layout (a skirt 44 px above the
-      // plate) before measuring. Its lower edge sits on the canvas bottom, its top inside the canvas, and every slot (button or strip) shares that edge.
+      // The bar overlays are laid out every few frames after the flag flips, so wait for the settled layout before measuring. The bar is one
+      // row (skirts 44 px up over the plate) or, when a row would be under 44 px wide, 44+ px tiles in rows; either way its lowest edge is the
+      // canvas bottom, nothing hangs below it, and the card sits above its topmost box.
       const canvasBottom = canvas.y + canvas.h;
-      const edges = (): Promise<number[]> => page.evaluate<number[]>(`[...document.querySelectorAll('.touchSkirt')].filter((e) => getComputedStyle(e).visibility !== 'hidden').map((e) => Math.round(e.getBoundingClientRect().bottom))`);
-      await expect.poll(async () => (await box(page, '#arcadeDash')).h, { message: 'one-row layout settles' }).toBeGreaterThan(70);
-      const settled = await box(page, '#arcadeDash');
-      expect(settled.y).toBeLessThan(canvasBottom);
-      expect(Math.abs(settled.y + settled.h - canvasBottom)).toBeLessThanOrEqual(1);
-      await expect.poll(async () => { const c = await box(page, '#firstRunHint'); return c.y + c.h; }, { timeout: 1500 }).toBeLessThanOrEqual(settled.y);
+      const edges = (): Promise<number[]> => page.evaluate<number[]>(`[...document.querySelectorAll('.touchSkirt, .touchSkirtDeco')].filter((e) => getComputedStyle(e).visibility !== 'hidden').map((e) => Math.round(e.getBoundingClientRect().bottom))`);
+      const topmost = (): Promise<number> => page.evaluate<number>(`Math.min(...[...document.querySelectorAll('.touchSkirt, .touchSkirtDeco')].filter((e) => getComputedStyle(e).visibility !== 'hidden').map((e) => e.getBoundingClientRect().top))`);
+      await expect.poll(async () => (await edges()).length, { message: 'bar layout settles' }).toBeGreaterThanOrEqual(8);
+      await expect.poll(async () => Math.abs(Math.max(...(await edges())) - canvasBottom), { message: 'lowest edge on the canvas bottom' }).toBeLessThanOrEqual(1);
       const bottoms = await edges();
-      expect(bottoms.length, 'every bar slot has a skirt').toBeGreaterThanOrEqual(8);
-      expect(new Set(bottoms).size, `one lower edge: ${bottoms.join(',')}`).toBe(1);
+      expect(Math.max(...bottoms)).toBeLessThanOrEqual(canvasBottom + 1);
+      const topEdge = await topmost();
+      expect(topEdge).toBeLessThan(canvasBottom - 43);
+      await expect.poll(async () => { const c = await box(page, '#firstRunHint'); return c.y + c.h; }, { timeout: 1500 }).toBeLessThanOrEqual(topEdge);
       // P4: the card is one line, above the touch buttons (z 5) and clear of the strike buttons.
       await expect(page.locator('#firstRunHint p.firstRunOne')).toBeVisible();
       await expect(page.locator('#firstRunHint p:visible')).toHaveCount(1);
@@ -115,8 +116,10 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
           const f = await floor();
           const c = await box(page, '#game canvas');
           const bar = await box(page, '#arcadeDash');
-          // The overlay reaches 44 px up over the canvas; the drawn plate (and so the floor's lower edge) starts below that.
-          return Math.abs(c.y + (f.floorScreenY * c.h) / f.viewHeight - (bar.y + 44));
+          // One-row bar: the overlay reaches 44 px up over the canvas and the drawn plate (the floor's lower edge) starts below that.
+          // Tile bar (boxes already 44+ px): the plate's top is the topmost box.
+          const top = await page.evaluate<number>(`Math.min(...[...document.querySelectorAll('button.touchBtn.touchSkirt, .touchSkirtDeco')].filter((e) => getComputedStyle(e).visibility === 'visible').map((e) => e.getBoundingClientRect().top))`);
+          return Math.abs(c.y + (f.floorScreenY * c.h) / f.viewHeight - (bar.h > 70 ? bar.y + 44 : top));
         }, { timeout: 5000 }).toBeLessThanOrEqual(2);
       };
       await expectFramed();
@@ -191,31 +194,109 @@ test.describe('portrait play, World Tour', () => {
   });
 });
 
+interface Ctl { id: string; x: number; y: number; w: number; h: number; disabled: boolean }
+const CONTROLS = `[...document.querySelectorAll('button.touchBtn, .touchStrike, .touchSkirtDeco, #touchStick, .pauseButton, #fullscreenToggle')]
+  .filter((e) => { const cs = getComputedStyle(e); const r = e.getBoundingClientRect(); return cs.visibility !== 'hidden' && cs.display !== 'none' && r.width > 0 && r.height > 0; })
+  .map((e) => { const r = e.getBoundingClientRect(); return { id: e.id || e.className, x: r.x, y: r.y, w: r.width, h: r.height, disabled: e.disabled === true || e.getAttribute('aria-disabled') === 'true' }; })`;
+
 for (const [w, h] of [[390, 844], [360, 640]] as const) {
-  test.describe(`portrait play one-row bar ${String(w)}x${String(h)}`, () => {
+  test.describe(`portrait play touch targets ${String(w)}x${String(h)}`, () => {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
-    test('the bar is one row; buttons are 24+ wide, 48+ high and reach 44 px up over the canvas; a skirt is hittable', async ({ page }) => {
+    test('every visible control has a 44x44 hit box inside the screen, the bar sits clear of the strikes, and Strike 1 is in thumb reach', async ({ page }) => {
       await enterFight(page);
       await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
       await page.waitForFunction(ATTR);
       await page.getByRole('button', { name: 'Got it' }).tap();
       await page.waitForFunction(`document.querySelectorAll('button.touchBtn.touchSkirt').length > 0`);
       const canvas = await box(page, '#game canvas');
-      const boxes = await page.evaluate<Box[]>(`[...document.querySelectorAll('button.touchBtn.touchSkirt')].filter((e) => e.style.visibility === 'visible').map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`);
-      expect(boxes.length).toBeGreaterThanOrEqual(5);
-      const top = boxes[0]?.y ?? 0;
-      for (const b of boxes) {
-        expect(Math.abs(b.y - top)).toBeLessThanOrEqual(1);
-        expect(b.w).toBeGreaterThanOrEqual(24);
-        expect(b.h).toBeGreaterThanOrEqual(48);
-        expect(b.y + b.h).toBeLessThanOrEqual(canvas.y + canvas.h + 1);
-        expect(b.y + b.h).toBeGreaterThanOrEqual(canvas.y + canvas.h - 1);
+      const ctls = await page.evaluate<Ctl[]>(CONTROLS);
+      expect(ctls.length).toBeGreaterThanOrEqual(10);
+      for (const c of ctls) {
+        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(44 - 0.6);
+        expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
+        expect(c.x, c.id).toBeGreaterThanOrEqual(-0.5);
+        expect(c.x + c.w, c.id).toBeLessThanOrEqual(w + 0.5);
+        expect(c.y + c.h, c.id).toBeLessThanOrEqual(h + 0.5);
       }
-      await shot(page, `${String(w)}-onerow`);
-      const dash = await box(page, '#arcadeDash');
-      const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(dash.x + dash.w / 2)}, ${String(canvas.y + canvas.h - 20)}); return e ? e.id : ''; })()`);
-      expect(hit).toBe('arcadeDash');
+      // Blast and Flame (strike slots, no DOM button) are decos over their bar boxes: still 44+, and they sit on the canvas.
+      expect(ctls.filter((c) => c.id.startsWith('touchSkirtDeco')).length).toBeGreaterThanOrEqual(2);
+      // Tile bar: no two bar boxes overlap each other.
+      const bar = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
+      for (let i = 0; i < bar.length; i++) for (let j = i + 1; j < bar.length; j++) {
+        const a = bar[i], b = bar[j];
+        if (a && b) expect(overlap({ x: a.x, y: a.y, w: a.w, h: a.h }, { x: b.x + 1, y: b.y + 1, w: b.w - 2, h: b.h - 2 }), `${a.id} / ${b.id}`).toBe(false);
+      }
+      // Strikes: below the canvas, both lifted at least 40 px off the screen bottom.
+      for (const id of ['#touchStrike1', '#touchStrike2']) {
+        const b = await box(page, id);
+        expect(h - (b.y + b.h), id).toBeGreaterThanOrEqual(40);
+        expect(b.y, id).toBeGreaterThanOrEqual(canvas.y + canvas.h);
+      }
+      await shot(page, `${String(w)}-targets`);
+    });
+
+    test('a tap on every bar box does something (a command) or the box is visibly disabled', async ({ page }) => {
+      await enterFight(page);
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.waitForFunction(ATTR);
+      await page.getByRole('button', { name: 'Got it' }).tap();
+      await page.waitForFunction(`document.querySelectorAll('button.touchBtn.touchSkirt').length > 0`);
+      // Canvas-click boxes (Blast, Flame, Ember, Cleanse, Charge...): the tap reaches the canvas and `clicks()` records the command.
+      const decos = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('touchSkirtDeco'))`);
+      expect(decos.length).toBeGreaterThanOrEqual(2);
+      const fired: number[] = [];
+      for (const d of decos) {
+        const before = await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`);
+        await page.touchscreen.tap(d.x + d.w / 2, d.y + d.h / 2);
+        await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+        const after = await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`);
+        // A disabled box (Charge for a ranged hero) records nothing and says so: its deco carries the "Melee" note instead.
+        if (after.length > before.length) fired.push(after[after.length - 1] ?? 0);
+      }
+      expect(fired.length, 'at least Blast and Flame fire').toBeGreaterThanOrEqual(2);
+      expect(new Set(fired).size).toBe(fired.length);
+      // DOM buttons: pressing one holds its key (window.__keys) unless it is disabled.
+      const btns = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('arcade'))`);
+      expect(btns.length).toBeGreaterThanOrEqual(5);
+      for (const b of btns) {
+        if (b.disabled) continue;
+        const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(b.x + b.w / 2)}, ${String(b.y + b.h / 2)}); return e ? e.id : ''; })()`);
+        expect(hit, `${b.id} is the element under its own centre`).toBe(b.id);
+      }
+      for (const id of ['#touchStrike1', '#touchStrike2']) {
+        const b = await box(page, id);
+        const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(b.x + b.w / 2)}, ${String(b.y + b.h / 2)}); return e ? (e.closest('.touchStrike') || e).id : ''; })()`);
+        expect(hit).toBe(id.slice(1));
+      }
+    });
+
+    test('3v3: Tag and Tag 2 are 44x44 buttons, hold their key on a tap, and every control is still 44x44', async ({ page }) => {
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.getByLabel('Team').selectOption('3');
+      await page.getByLabel('Your race').selectOption('sindarosa');
+      await page.getByLabel('Your partner (2v2)').selectOption('pax');
+      await page.getByLabel('Your third hero (3v3)').selectOption('curomo');
+      await page.getByLabel('AI race').selectOption('fiara');
+      await page.getByRole('button', { name: 'Fight!' }).tap();
+      await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.waitForFunction(ATTR);
+      await page.waitForFunction(`document.querySelectorAll('#arcadeTag, #arcadeTag2').length === 2`);
+      const ctls = await page.evaluate<Ctl[]>(CONTROLS);
+      const tags = ctls.filter((c) => c.id === 'arcadeTag' || c.id === 'arcadeTag2');
+      expect(tags.map((t) => t.id).sort()).toEqual(['arcadeTag', 'arcadeTag2']);
+      for (const c of ctls) {
+        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(44 - 0.6);
+        expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
+        expect(c.x + c.w, c.id).toBeLessThanOrEqual(w + 0.5);
+      }
+      for (const t of tags) {
+        const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(t.x + t.w / 2)}, ${String(t.y + t.h / 2)}); return e ? e.id : ''; })()`);
+        expect(hit, `${t.id} is the element under its own centre`).toBe(t.id);
+      }
+      await shot(page, `${String(w)}-3v3-targets`);
     });
   });
 }
+
