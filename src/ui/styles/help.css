@@ -117,8 +117,17 @@
     gap: 0.1em 0.5em;
   }
   #menu .helpJump {
-    gap: 0.25em 0.4em;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    gap: 0.4em;
     margin-bottom: 0.4em;
+    scrollbar-width: none;
+  }
+  #menu .helpJumpLabel,
+  #menu .helpJumpBtn {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
   #menu .helpPanel,
   #menu .helpControls {
