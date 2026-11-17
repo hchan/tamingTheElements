@@ -8,16 +8,38 @@
 }
 .matchEndHero {
   display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.2em;
+}
+.matchEndCard {
+  min-width: 0;
+  max-width: 48%;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.3em;
+}
+.matchEndSide {
+  opacity: 0.9;
+}
+.matchEndSide .matchEndFace {
+  width: 80px;
+  height: 80px;
+  border-width: 2px;
+  border-color: #8a7fb8;
+  box-shadow: none;
+}
+.matchEndSide .matchEndName {
+  font-size: 0.9em;
 }
 .matchEndHero:empty {
   display: none;
 }
 .matchEndFace {
-  width: 144px;
-  height: 144px;
+  width: 160px;
+  height: 160px;
   border: 3px solid #ffe600;
   border-radius: 14px;
   background-color: rgba(205, 190, 255, 0.22);
@@ -35,8 +57,23 @@
   font-size: clamp(2.2rem, 9vw, 4rem);
   font-style: italic;
   text-transform: uppercase;
+  /* Solid colour on a dark plate: the global gold-gradient heading fill washed out over the backdrop art. */
+  width: auto;
+  max-width: 100%;
+  padding: 0.05em 0.5em;
+  border-radius: 12px;
+  background: rgba(12, 10, 30, 0.82);
+  filter: none;
   color: #ffe600;
-  text-shadow: 0 3px 0 #7a2a00, 0 0 18px rgba(255, 160, 0, 0.6);
+  -webkit-text-fill-color: #ffe600;
+}
+#arcadeResults[data-tone='loss'] h1.matchEndWord {
+  color: #ffd2d2;
+  -webkit-text-fill-color: #ffd2d2;
+}
+#arcadeResults[data-tone='draw'] h1.matchEndWord {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
 }
 .matchEndStats {
   display: flex;
@@ -84,9 +121,21 @@
   font-weight: 700;
 }
 @media (max-width: 480px) {
+  .matchEndName {
+    font-size: 1em;
+    letter-spacing: 0.06em;
+    overflow-wrap: anywhere;
+  }
+  .matchEndHero {
+    gap: 0.6em;
+  }
   .matchEndFace {
-    width: 104px;
-    height: 104px;
+    width: 80px;
+    height: 80px;
+  }
+  .matchEndSide .matchEndFace {
+    width: 80px;
+    height: 80px;
   }
   .matchEndActions .menuButton {
     flex-basis: 100%;
