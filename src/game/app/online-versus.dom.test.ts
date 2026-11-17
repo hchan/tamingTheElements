@@ -288,7 +288,7 @@ describe('online versus screen', () => {
     expect($<HTMLTextAreaElement>('onlineAnswer').readOnly).toBe(true);
     expect($<HTMLTextAreaElement>('onlineAnswerIn').readOnly).toBe(false);
     expect($('onlineStatus').getAttribute('role')).toBe('status');
-    expect(host.querySelector('a[href="#main"]')).not.toBeNull();
+    expect(host.querySelectorAll('a[href="#main"]')).toHaveLength(1);
   });
 
   it('Connect before Host asks to host first', async () => {

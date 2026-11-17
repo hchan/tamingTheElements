@@ -526,12 +526,6 @@ export function onlineVersusScreen(): Screen {
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
       node.append(back);
-      // A second Back near the top: the setup form scrolls a long way on a phone.
-      const topBack = el('a', 'menuLink onlineTopBack', 'Back');
-      topBack.setAttribute('href', '#main');
-      const h1 = node.querySelector('h1');
-      if (h1) h1.after(topBack);
-      else node.prepend(topBack);
       container.append(node);
       focusHeading(node);
     },
