@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { SUPER_NAMES, type Element } from '@core/index';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, coreDisplayWidth, resolutionOf } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, coreDisplayWidth, resolutionOf, viewHeight } from '../boot/viewport';
+import { PORTRAIT_HUD_BAND, panelTopOf } from '../boot/portrait-play';
 import { HERO_IMAGE_NAME, drawnBox } from '../views/hero-scale';
 import { DOLLY_MAX, DROP_K } from '../views/pose-depth';
 import { applyCamera, holdCamera, viewBox } from './arena-pan';
@@ -25,6 +26,14 @@ const BAND_H = 160;
 /** The band stays between these rows (today's high and low slots): it never covers HUD it did not cover before. */
 const BAND_TOP = 117;
 const BAND_BOTTOM = 603;
+/** Without a tall view the band keeps these rows (today's output). */
+export interface BandWindow {
+  readonly top: number;
+  readonly bottom: number;
+  /** The preferred band centre. */
+  readonly high: number;
+}
+export const LANDSCAPE_WINDOW: BandWindow = { top: BAND_TOP, bottom: BAND_BOTTOM, high: BAND_HIGH_Y };
 /** Band scale steps, tried largest first: a smaller band fits between two fighters. */
 const BAND_K = [1, 0.85, 0.7, 0.6] as const;
 const HEAD_PAD = 12;
@@ -34,6 +43,31 @@ const CASTER_WEIGHT = 3;
 const AVOID_PAD = 8;
 /** The weather badge row's lower edge: a band reaching above it hides the badge (`tte.band`). */
 const WEATHER_LINE_Y = 240;
+/** Tall view: the band's preferred centre sits this far under the window's top (the 16:9 preference is 200 under a 117 top). */
+const TALL_HIGH_DROP = 100;
+/** Tall view: gap kept between the band's lower edge and the action bar's top. */
+const TALL_BAR_GAP = 8;
+
+/**
+ * The rows (screen units, 0 at the top of the view) the band may use. A view no taller than 16:9 keeps `LANDSCAPE_WINDOW`; a tall view
+ * (portrait play, `viewH` > 720) uses the clear arena window: under the HUD band (`hudBottom`, which holds the health bars and the SAFE and
+ * status chips, and never above the weather badge row) down to the action bar's top (`barTop`). Pure, for tests.
+ */
+export function bandWindow(viewH: number, hudBottom: number, barTop: number): BandWindow {
+  if (!(viewH > LOGICAL_HEIGHT + 0.5)) return LANDSCAPE_WINDOW;
+  const top = Math.max(hudBottom, WEATHER_LINE_Y);
+  const bottom = Math.max(top + 2 * bandExt(BAND_K[BAND_K.length - 1] ?? 1), barTop - TALL_BAR_GAP);
+  return { top, bottom, high: Math.min(top + TALL_HIGH_DROP, (top + bottom) / 2) };
+}
+
+/** The band window of the live scene: the tall view's clear window in portrait play, else the 16:9 rows. */
+function windowOf(scene: Phaser.Scene): BandWindow {
+  const h = viewHeight(scene);
+  if (!(h > LOGICAL_HEIGHT + 0.5)) return LANDSCAPE_WINDOW;
+  const k = coreDisplayWidth(scene) / LOGICAL_WIDTH;
+  const hud = k > 0 ? PORTRAIT_HUD_BAND / k : 0;
+  return bandWindow(h, hud, h - LOGICAL_HEIGHT + panelTopOf(scene, LOGICAL_HEIGHT - 80));
+}
 /** See-through, so a foe standing behind the band stays visible (qa-r3-super-cinematic-hides-action). */
 const BAND_OPACITY = 0.5;
 /** 72 and 52 logical px stay about 17 and 12 CSS px on the 390x844 phone's letterboxed canvas (about 304 px wide). */
@@ -128,12 +162,12 @@ export function nameHalfWidth(y: number, ext: number, avoid: readonly Rect[]): n
 /** True when a band at (`y`, `k`) reaches above the weather badge row (the badge, chip and call hide then). */
 export const bandHidesWeather = (y: number, k: number): boolean => y - bandExt(k) < WEATHER_LINE_Y;
 
-function better(a: BandSlot, b: BandSlot): boolean {
+function better(a: BandSlot, b: BandSlot, high: number): boolean {
   if (a.cost !== b.cost) return a.cost < b.cost;
   if ((a.side !== 0) !== (b.side !== 0)) return a.side !== 0;
   if (a.k !== b.k) return a.k > b.k;
-  const da = Math.abs(a.y - BAND_HIGH_Y);
-  const db = Math.abs(b.y - BAND_HIGH_Y);
+  const da = Math.abs(a.y - high);
+  const db = Math.abs(b.y - high);
   return da !== db ? da < db : a.y < b.y;
 }
 
@@ -141,19 +175,19 @@ function better(a: BandSlot, b: BandSlot): boolean {
  * Chooses the band row and scale: the least weighted overlap with the fighters' swept spans (0 = every fighter clear), then a
  * portrait that fits (not hidden), then the biggest band, then the row nearest the preferred one.
  */
-export function superBandSlot(spans: readonly Span[], avoid: readonly Rect[], casterSide: -1 | 1): BandSlot {
+export function superBandSlot(spans: readonly Span[], avoid: readonly Rect[], casterSide: -1 | 1, win: BandWindow = LANDSCAPE_WINDOW): BandSlot {
   let best: BandSlot | undefined;
   for (const k of BAND_K) {
     const ext = bandExt(k);
-    for (let y = BAND_TOP + Math.ceil(ext); y + ext <= BAND_BOTTOM; y++) {
+    for (let y = win.top + Math.ceil(ext); y + ext <= win.bottom; y++) {
       let cost = 0;
       for (const s of spans) cost += s.w * Math.max(0, Math.min(y + ext, s.bottom) - Math.max(y - ext, s.top));
       if (best && cost > best.cost) continue;
       const cand: BandSlot = { y, k, ext, cost, side: portraitSide(casterSide, y, k, avoid) };
-      if (!best || better(cand, best)) best = cand;
+      if (!best || better(cand, best, win.high)) best = cand;
     }
   }
-  return best ?? { y: BAND_HIGH_Y, k: 1, ext: bandExt(1), cost: 0, side: casterSide };
+  return best ?? { y: win.high, k: 1, ext: bandExt(1), cost: 0, side: casterSide };
 }
 
 const DOM_AVOID = ['touchStrike1', 'touchStrike2', 'pauseButton', 'touchStick'];
@@ -198,7 +232,7 @@ export type SuperState = SuperFrame & {
   readonly sub: string;
   readonly camZoom: number;
   /** The band slot chosen at the start (core units; the name and portrait rects are at rest). */
-  readonly band: BandSlot & { readonly portrait: Rect | null; readonly name: Rect; readonly avoid: readonly Rect[]; readonly spans: readonly Span[] };
+  readonly band: BandSlot & { readonly portrait: Rect | null; readonly name: Rect; readonly avoid: readonly Rect[]; readonly spans: readonly Span[]; readonly window: BandWindow; readonly viewHeight: number };
   /** Every fighter's live drawn box in core units, through the cut's camera. */
   readonly fighters: readonly { x0: number; x1: number; top: number; bottom: number; caster: boolean }[];
 };
@@ -247,7 +281,7 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       .setOrigin(0.5)
       .setDepth(DIM_DEPTH + 3);
   const parts = {
-    dim: scene.add.rectangle(0, 0, SPAN, LOGICAL_HEIGHT, 0).setOrigin(0).setDepth(DIM_DEPTH),
+    dim: scene.add.rectangle(0, 0, SPAN, Math.max(LOGICAL_HEIGHT, viewHeight(scene)), 0).setOrigin(0).setDepth(DIM_DEPTH),
     band: scene.add.rectangle(0, 0, SPAN, BAND_H, 0).setOrigin(0, 0.5).setDepth(DIM_DEPTH + 2),
     // Element-colour rules along the band edges and the speed lines through it, in band-relative coordinates (placed like the band).
     edges: scene.add.graphics().setDepth(DIM_DEPTH + 2.5),
@@ -416,7 +450,11 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
         track(o, false);
       }
       const avoid = domAvoid(scene);
-      const slot = superBandSlot(spans, avoid, casterSide);
+      const win = windowOf(scene);
+      const vh = Math.max(LOGICAL_HEIGHT, viewHeight(scene));
+      // The dim covers the real view height (it is 720 high only on a 16:9 view).
+      parts.dim.setSize(SPAN, vh);
+      const slot = superBandSlot(spans, avoid, casterSide, win);
       bandY = slot.y;
       bandK = slot.k;
       portraitOn = slot.side !== 0;
@@ -458,6 +496,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
         name: { x0: LOGICAL_WIDTH / 2 - parts.name.width / 2, y0: bandY - 26 * k - parts.name.height / 2, x1: LOGICAL_WIDTH / 2 + parts.name.width / 2, y1: bandY - 26 * k + parts.name.height / 2 },
         avoid,
         spans,
+        window: win,
+        viewHeight: vh,
       };
       scene.events.off('postupdate', drawBurst);
       burst = { element: caster.element, x: px, y: py, from: fromTick, reduced: reducedMotion };
