@@ -343,6 +343,14 @@ export function portraitBarSlots<T extends { x: number; y: number; size: number 
   return { slots: slots.map((s, i) => ({ ...s, x: SLOT_BORDER / 2 + (i % perRow) * side, y: y0 - Math.floor(i / perRow) * side, size: side })), top: y0 - (rows - 1) * side, ext: 0 };
 }
 
+/**
+ * Portrait phones draw Strike 1 and Strike 2 as circles on the deck, so the bar's Blast and Flame tiles (the same two commands) are dropped:
+ * one way to fire each, and the remaining eight tiles fit one row. A Snag rope slot stays (a tile with that note is not a plain strike). Pure, for tests.
+ */
+export function withoutStrikeTiles<T extends Pick<ActionSlot, 'kind' | 'sprite'>>(slots: readonly T[]): T[] {
+  return slots.filter((s) => !(s.kind === 'ability' && s.sprite !== SNAG_SPRITE));
+}
+
 const PUNCTUATION: Readonly<Record<string, string>> = { Semicolon: ';', Period: '.', Comma: ',', Slash: '/', Quote: "'", Minus: '-', Equal: '=' };
 
 /** The key labels of a binding set for the small mirror slots: punctuation keys as their symbol (a word would not fit). */
@@ -769,7 +777,7 @@ export class ActionBarView {
     const built = bar ? buildSlots(bar, this.labels(), extras, k) : [];
     const grouped = !this.mirror && extras && this.arrange ? this.arrange(built, k) : undefined;
     // Portrait phones: one row of narrow boxes (touch buttons grow 44 px below the canvas), so the bar never covers the arena.
-    const one = !this.mirror && extras && !grouped && isPortraitPlay(this.scene.game) ? portraitBarSlots(built, k) : undefined;
+    const one = !this.mirror && extras && !grouped && isPortraitPlay(this.scene.game) ? portraitBarSlots(withoutStrikeTiles(built), k) : undefined;
     this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : one ? one.slots : built;
     const top = grouped ? grouped.top : one ? one.top : barTop(built.length, extras ? k : undefined);
     this.panelTop = top;

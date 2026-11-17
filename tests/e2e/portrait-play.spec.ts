@@ -219,8 +219,13 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         expect(c.x + c.w, c.id).toBeLessThanOrEqual(w + 0.5);
         expect(c.y + c.h, c.id).toBeLessThanOrEqual(h + 0.5);
       }
-      // Blast and Flame (strike slots, no DOM button) are decos over their bar boxes: still 44+, and they sit on the canvas.
-      expect(ctls.filter((c) => c.id.startsWith('touchSkirtDeco')).length).toBeGreaterThanOrEqual(2);
+      // P3: the Strike circles replace the Blast and Flame tiles, so the bar is ONE row (P2): every bar box shares a bottom edge.
+      // Blast and Flame no longer have bar tiles; the only canvas-click deco left is a dimmed Melee (ranged hero), still 44+.
+      expect(ctls.some((c) => c.id.startsWith('touchSkirtDeco'))).toBe(true);
+      expect(await page.evaluate<number>(`document.querySelectorAll('button.touchBtn').length`)).toBeGreaterThanOrEqual(5);
+      const barBoxes = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
+      expect(barBoxes.length, 'Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse: no Blast/Flame tiles').toBe(8);
+      expect(new Set(barBoxes.map((c) => Math.round(c.y + c.h))).size, `one bar row: ${JSON.stringify(barBoxes)}`).toBe(1);
       // Tile bar: no two bar boxes overlap each other.
       const bar = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
       for (let i = 0; i < bar.length; i++) for (let j = i + 1; j < bar.length; j++) {
@@ -242,9 +247,9 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await page.waitForFunction(ATTR);
       await page.getByRole('button', { name: 'Got it' }).tap();
       await page.waitForFunction(`document.querySelectorAll('button.touchBtn.touchSkirt').length > 0`);
-      // Canvas-click boxes (Blast, Flame, Ember, Cleanse, Charge...): the tap reaches the canvas and `clicks()` records the command.
+      // Canvas-click boxes (Ember, Cleanse, Charge...; Blast and Flame are the Strike circles now): the tap reaches the canvas and `clicks()` records the command.
       const decos = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('touchSkirtDeco'))`);
-      expect(decos.length).toBeGreaterThanOrEqual(2);
+      expect(decos.length).toBeGreaterThanOrEqual(1);
       const fired: number[] = [];
       for (const d of decos) {
         const before = await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`);
@@ -254,7 +259,6 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         // A disabled box (Charge for a ranged hero) records nothing and says so: its deco carries the "Melee" note instead.
         if (after.length > before.length) fired.push(after[after.length - 1] ?? 0);
       }
-      expect(fired.length, 'at least Blast and Flame fire').toBeGreaterThanOrEqual(2);
       expect(new Set(fired).size).toBe(fired.length);
       // DOM buttons: pressing one holds its key (window.__keys) unless it is disabled.
       const btns = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('arcade'))`);

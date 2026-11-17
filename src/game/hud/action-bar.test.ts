@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, type RenderActionBar } from '@core/index';
-import { oneRowSide, oneRowSlots, portraitBarSlots, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
+import { oneRowSide, oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -410,6 +410,19 @@ describe('portrait bar touch floor (44 CSS px)', () => {
     expect(r?.ext).toBe(0);
     expect(new Set(r?.slots.map((s) => s.y)).size).toBeGreaterThan(1);
     expect(r?.top).toBe(Math.min(...(r?.slots.map((s) => s.y) ?? [])));
+  });
+  it('drops the Blast and Flame tiles (the Strike circles do them) but keeps a Snag ability tile', () => {
+    const out = withoutStrikeTiles([{ kind: 'ability', sprite: 'a' }, { kind: 'ability', sprite: 'b' }, { kind: 'ability', sprite: 'entanglingVines' }, { kind: 'charge', sprite: '' }] as const);
+    expect(out.map((s) => s.kind)).toEqual(['ability', 'charge']);
+    expect(out[0]?.sprite).toBe('entanglingVines');
+  });
+  it('the 8 remaining tiles (Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse) are ONE row of 44+ px at 390 and 360 wide', () => {
+    for (const w of [390, 360]) {
+      const r = portraitBarSlots(mk(8), w / 1280);
+      expect(r?.ext).toBe(44);
+      expect(new Set(r?.slots.map((s) => s.y)).size).toBe(1);
+      expect((r?.slots[0]?.size ?? 0) * (w / 1280)).toBeGreaterThanOrEqual(44);
+    }
   });
   it('is undefined for no scale or no boxes', () => {
     expect(portraitBarSlots(mk(4), 0)).toBeUndefined();
