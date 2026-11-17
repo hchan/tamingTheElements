@@ -55,7 +55,7 @@ describe('slideClear', () => {
   });
   it('measures maxSlide from the anchor, not cx', () => {
     expect(args(130, { anchor: 130, max: 60 })).toBe(82);
-    expect(args(130, { anchor: 300, max: 100 })).toBe(130); // 82 is 218 from the anchor
+    expect(args(130, { anchor: 300, max: 60 })).toBe(130); // 82 is 218 and 218 is 82 from the anchor
   });
   it('rejects a candidate that hits another rect', () => {
     expect(args(130, { rects: [r, rect(0, 100, 92, 50)] })).toBe(218);
