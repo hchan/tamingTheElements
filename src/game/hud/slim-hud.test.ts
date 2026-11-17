@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PILL_W, SLIM_H, TRAIL_HOLD_MS, chipBar, lifeFill, chipRect, compactLabel, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
+  PILL_W, SLIM_H, TRAIL_HOLD_MS, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
 
@@ -116,5 +116,25 @@ describe('lifeFill', () => {
     expect(lifeFill(0x3366cc, 0.2)).not.toBe(lifeFill(0x3366cc, 0.2, 1));
     expect(lifeFill(0x3366cc, 0.2, 1)).toBe(0xe0402e);
     expect(lifeFill(0x3366cc, Number.NaN)).toBe(0x3366cc);
+  });
+});
+
+describe('portrait life line wording (qa-r88 P3)', () => {
+  const ranged = { hp: 286, maxHp: 286, restCap: 286, element: 'fire' } as Parameters<typeof compactLabel>[1];
+  const melee = { hp: 542, maxHp: 542, restCap: 542, element: 'earth' } as Parameters<typeof compactLabel>[1];
+  it('is current life only for every hero: no "Life", no "/max"', () => {
+    for (const [n, c] of [['Sindarosa', ranged], ['Curomo', melee], ['Rokcore', melee]] as const) {
+      for (const t of portraitLifeCandidates(n, c)) {
+        expect(t).not.toMatch(/Life|\//);
+        expect(t).toMatch(new RegExp(`${String(c.hp)}$`));
+      }
+      expect(portraitLifeCandidates(n, c)[0]).toContain(n.toUpperCase());
+    }
+  });
+  it('shortens only the name, longest first, down to 3 letters', () => {
+    const l = portraitLifeCandidates('Sindarosa', ranged);
+    expect(l.length).toBe(7);
+    expect(l[1]).toContain('SINDARO…');
+    expect(l[l.length - 1]).toContain('SI…');
   });
 });

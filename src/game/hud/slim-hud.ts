@@ -97,6 +97,16 @@ export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' 
   return `${noName ? '' : `${name.toUpperCase()} `}${terse === 'nomark' ? '' : `${glyph} `}${life}${word}`;
 }
 
+/**
+ * Portrait phones: one wording for both sides (qa-r88 P3). Current life only (no "Life", no "/max") beside an always-named
+ * "SUPER n%", so a bare percentage never reads as a life percentage. Longest first: the whole name, then ever shorter names (3+ letters).
+ */
+export function portraitLifeCandidates(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap' | 'element'>): string[] {
+  const out = [compactLabel(name, c, false, 'bare')];
+  for (let max = name.length - 1; max >= 3; max--) out.push(compactLabel(shortName(name, max), c, false, 'bare'));
+  return out;
+}
+
 /** `name` cut to at most `max` letters with an ellipsis (a phone's narrow life line keeps a short name instead of none); '' when `max` < 3. */
 export function shortName(name: string, max: number): string {
   if (name.length <= max) return name;
