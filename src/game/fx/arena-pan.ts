@@ -3,7 +3,7 @@ import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } fr
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, enableWideView, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { isPortraitPlay, panelTopOf } from '../boot/portrait-play';
 import { arcadeHeroScale } from '../views/hero-scale';
-import { CAMERA_MARGIN_PORTRAIT, cameraTarget, portraitZoomMax, punchAnchor, verticalFrame, type CameraFraming } from './arena-camera';
+import { CAMERA_MARGIN_PORTRAIT, PORTRAIT_DRAWN_OVERSCAN, cameraTarget, portraitZoomMax, punchAnchor, verticalFrame, type CameraFraming } from './arena-camera';
 import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /**
@@ -155,7 +155,7 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
     lastMid = midpoint;
     lastTick = view.tick;
     const next = cameraTarget(
-      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, reach: mid.reach, viewWidth: viewWidth(scene), reducedMotion: reducedMotion(), ...(tall ? { zoomMax: portraitZoomMax(h), margin: CAMERA_MARGIN_PORTRAIT } : {}) },
+      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, reach: tall ? mid.reach * PORTRAIT_DRAWN_OVERSCAN : mid.reach, viewWidth: viewWidth(scene), reducedMotion: reducedMotion(), ...(tall ? { zoomMax: portraitZoomMax(h), margin: CAMERA_MARGIN_PORTRAIT } : {}) },
       s,
       delta / 1000,
       snap,
