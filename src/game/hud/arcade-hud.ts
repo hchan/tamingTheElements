@@ -288,7 +288,7 @@ export function clampNumber(cx: number, bottomY: number, halfW: number, h: numbe
   const lo = frame.x + NUMBER_MARGIN + halfW;
   const hi = frame.x + frame.w - NUMBER_MARGIN - halfW;
   const clampX = (v: number): number => (lo > hi ? frame.x + frame.w / 2 : Math.min(hi, Math.max(lo, v)));
-  let y = Math.min(NUMBER_BOTTOM, Math.max(NUMBER_TOP + h, bottomY));
+  let y = Math.min(frame.y + frame.h - 88, Math.max(NUMBER_TOP + h, bottomY));
   let x = clampX(cx);
   const centre = frame.x + frame.w / 2;
   for (const r of avoid) {
@@ -356,11 +356,11 @@ export const COMBO_RECTS_KEY = 'tte.comboRects';
 export const CHIP_RECTS_KEY = 'tte.chipRects';
 
 /** The HUD camera's real visible frame in HUD px for a view `viewW` logical px wide (zoom = res, centred on 640,360). `HUD_FRAME` is right at 1280 only. */
-export function hudFrame(viewW: number, out: { x: number; y: number; w: number; h: number } = { x: 0, y: 0, w: 0, h: 0 }): { x: number; y: number; w: number; h: number } {
+export function hudFrame(viewW: number, out: { x: number; y: number; w: number; h: number } = { x: 0, y: 0, w: 0, h: 0 }, viewH = 720): { x: number; y: number; w: number; h: number } {
   out.x = 640 - viewW / 2;
   out.y = 0;
   out.w = viewW;
-  out.h = 720;
+  out.h = viewH;
   return out;
 }
 

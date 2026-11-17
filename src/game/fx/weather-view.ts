@@ -31,6 +31,8 @@ const FALL_DEPTH = 2;
 const HUD_DEPTH = 110;
 /** LOGICAL_HEIGHT (boot/viewport.ts), kept here so the phaser-config chunk need not export it. */
 const ARENA_H = 720;
+/** The tint also covers this much above and below the arena, so the portrait tall view shows no seam against the sky fills (never on screen in 16:9). */
+const TALL_EXTRA = 2000;
 /**
  * Badge: centred under the hyper meters (y 124 to 134), which leave too narrow a gap between them for a phone-sized
  * label (in 2v2 the meters start 80 px nearer the centre).
@@ -270,7 +272,7 @@ export function mountWeatherView(
     drawn.kind = kind;
     const tint = SKY_TINTS[kind - 1] ?? SKY_TINTS[0];
     drawn.tint = tintAlpha(kind, clock - startedAt, left, reduced);
-    p.sky.clear().fillStyle(tint[0], drawn.tint).fillRect(0, 0, arcadePlayfield().w, ARENA_H);
+    p.sky.clear().fillStyle(tint[0], drawn.tint).fillRect(0, -TALL_EXTRA, arcadePlayfield().w, ARENA_H + 2 * TALL_EXTRA);
     // Particles are motion only: none with reduced motion (the tint, badge and line carry the information).
     const fall = p.fall.clear();
     const n = reduced ? 0 : Math.min(MAX_PARTICLES, PARTICLE_COUNTS[kind - 1] ?? 0);

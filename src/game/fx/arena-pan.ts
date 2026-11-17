@@ -1,8 +1,9 @@
 import type Phaser from 'phaser';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, enableWideView, resolutionOf, viewWidth } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, enableWideView, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
+import { isPortraitPlay, panelTopOf } from '../boot/portrait-play';
 import { arcadeHeroScale } from '../views/hero-scale';
-import { cameraTarget, punchAnchor, type CameraFraming } from './arena-camera';
+import { CAMERA_MARGIN_PORTRAIT, cameraTarget, portraitZoomMax, punchAnchor, verticalFrame, type CameraFraming } from './arena-camera';
 import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /**
@@ -13,6 +14,8 @@ import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /** A frame-to-frame jump of the fighters' midpoint this big is a round reset or a swap, not movement: snap instead of easing. */
 const SNAP_JUMP_PX = 400;
+/** Highest total zoom (pan zoom times KO punch-in) on the tall view. */
+const TALL_TOTAL_ZOOM_CAP = 1.8;
 const BENCHED_OR_DEAD = EntityFlag.benched | EntityFlag.dead;
 
 interface PanState {
@@ -35,6 +38,16 @@ const state = (scene: Phaser.Scene): PanState => {
   }
   return s;
 };
+
+/** Bottom of the arena's floor on screen: the one-row bar's top in the 720 box (720 - side - 1) when it has not drawn yet. */
+const FALLBACK_PANEL_TOP = LOGICAL_HEIGHT - 80;
+
+/** World y the camera looks at for total zoom `total`: 360 on a 16:9 view, else the floor sits on the bar's top edge (tall view). */
+function centerY(scene: Phaser.Scene, total: number): number {
+  const h = viewHeight(scene);
+  if (!(h > LOGICAL_HEIGHT + 0.5)) return LOGICAL_HEIGHT / 2;
+  return verticalFrame(h, h - LOGICAL_HEIGHT + panelTopOf(scene, FALLBACK_PANEL_TOP), total);
+}
 
 /** The pan framing now (centre x in world px; zoom over the fit zoom). */
 export function panFraming(scene: Phaser.Scene): CameraFraming {
@@ -72,7 +85,8 @@ export function holdCamera(scene: Phaser.Scene, hold: boolean): void {
 export function applyCamera(scene: Phaser.Scene, z = 1, px = LOGICAL_WIDTH / 2, py = LOGICAL_HEIGHT / 2): void {
   const s = state(scene);
   const res = resolutionOf(scene);
-  scene.cameras.main.setZoom(res * s.zoom * z).centerOn(px - (px - s.centerX) / z, py - (py - LOGICAL_HEIGHT / 2) / z);
+  const vc = centerY(scene, s.zoom);
+  scene.cameras.main.setZoom(res * s.zoom * z).centerOn(px - (px - s.centerX) / z, py - (py - vc) / z);
 }
 
 /**
@@ -83,8 +97,8 @@ export function viewBox(scene: Phaser.Scene, z = 1, px = LOGICAL_WIDTH / 2, py =
   const s = state(scene);
   const total = s.zoom * z;
   const cx = px - (px - s.centerX) / z;
-  const cy = py - (py - LOGICAL_HEIGHT / 2) / z;
-  return { x: cx - LOGICAL_WIDTH / 2 / total, y: cy - LOGICAL_HEIGHT / 2 / total, scale: 1 / total };
+  const cy = py - (py - centerY(scene, s.zoom)) / z;
+  return { x: cx - LOGICAL_WIDTH / 2 / total, y: cy - viewHeight(scene) / 2 / total, scale: 1 / total };
 }
 
 /**
@@ -111,11 +125,14 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
       s.punchAt = null;
       return 1;
     }
-    return koPunchZoom(s.punchAge, reducedMotion());
+    const p = koPunchZoom(s.punchAge, reducedMotion());
+    // The tall view already runs close: the punch-in never takes the total zoom past 1.8 there.
+    return viewHeight(scene) > LOGICAL_HEIGHT ? Math.min(p, Math.max(1, TALL_TOTAL_ZOOM_CAP / s.zoom)) : p;
   };
   let lastMid = Number.NaN;
   let lastTick = -1;
   let first = true;
+  let lastH = viewHeight(scene);
   const update = (_time: number, delta: number): void => {
     if (s.hold) return;
     mid.n1 = mid.n2 = 0;
@@ -128,12 +145,17 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
       return;
     }
     const midpoint = (mid.x1 + mid.x2) / 2;
-    const snap = first || view.tick < lastTick || Math.abs(midpoint - lastMid) > SNAP_JUMP_PX;
+    // A new view height (rotation, the flag flipping, the deck growing) re-frames at once instead of easing from the old picture.
+    const h = viewHeight(scene);
+    const resized = Math.abs(h - lastH) >= 2;
+    lastH = h;
+    const tall = h > LOGICAL_HEIGHT + 0.5 && isPortraitPlay(scene.game);
+    const snap = first || resized || view.tick < lastTick || Math.abs(midpoint - lastMid) > SNAP_JUMP_PX;
     first = false;
     lastMid = midpoint;
     lastTick = view.tick;
     const next = cameraTarget(
-      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, reach: mid.reach, viewWidth: viewWidth(scene), reducedMotion: reducedMotion() },
+      { x1: mid.x1, x2: mid.x2, worldWidth: arcadePlayfield().w, reach: mid.reach, viewWidth: viewWidth(scene), reducedMotion: reducedMotion(), ...(tall ? { zoomMax: portraitZoomMax(h), margin: CAMERA_MARGIN_PORTRAIT } : {}) },
       s,
       delta / 1000,
       snap,

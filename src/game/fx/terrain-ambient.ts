@@ -135,6 +135,7 @@ export function mountAmbient(arena: Phaser.Scene, hud: Phaser.Scene, depth: numb
   let vig: Phaser.GameObjects.Image | undefined;
   let canvas: Phaser.Textures.CanvasTexture | undefined;
   let drawnVig = 0;
+  let unrefit: (() => void) | undefined;
 
   const showVignette = (stage: number): void => {
     if (stage === drawnVig) return;
@@ -145,6 +146,10 @@ export function mountAmbient(arena: Phaser.Scene, hud: Phaser.Scene, depth: numb
       if (!canvas) return;
       const cam = hud.cameras.main;
       vig = hud.add.image(0, 0, VIGNETTE_KEY).setOrigin(0, 0).setDisplaySize(cam.width, cam.height).setDepth(VIG_DEPTH).setScrollFactor(0);
+      const img = vig;
+      const refit = (): void => { img.setDisplaySize(hud.cameras.main.width, hud.cameras.main.height); };
+      hud.scale.on('resize', refit);
+      unrefit = (): void => { hud.scale.off('resize', refit); };
     }
     const ctx = canvas?.getContext();
     if (ctx) {
@@ -202,6 +207,8 @@ export function mountAmbient(arena: Phaser.Scene, hud: Phaser.Scene, depth: numb
     destroy(): void {
       g.destroy();
       lift.destroy();
+      unrefit?.();
+      unrefit = undefined;
       vig?.destroy();
       vig = undefined;
       if (canvas && hud.textures.exists(VIGNETTE_KEY)) hud.textures.remove(VIGNETTE_KEY);

@@ -29,9 +29,10 @@ export function syncTouchOverlays(items: readonly OverlayItem[], canvas: { getBo
   if (!doc) return;
   const rect = canvas.getBoundingClientRect();
   if (!(rect.width > 0 && rect.height > 0)) return;
-  // The canvas is 720 logical px high; with the wide view it is wider than 1280 and the 1280 box sits in its middle.
-  const k = rect.height / LOGICAL_HEIGHT;
-  const c = { left: rect.left + (rect.width - LOGICAL_WIDTH * k) / 2, top: rect.top };
+  // The canvas is 720 logical px high; with the wide view it is wider than 1280 and the 1280 box sits in its middle; with the tall
+  // view (portrait play) it is taller and the 1280x720 box sits at the bottom (the action bar lives there).
+  const k = Math.min(rect.width / LOGICAL_WIDTH, rect.height / LOGICAL_HEIGHT);
+  const c = { left: rect.left + (rect.width - LOGICAL_WIDTH * k) / 2, top: rect.top + rect.height - LOGICAL_HEIGHT * k };
   const placed = new Set<Element>();
   const ref = doc.querySelector<HTMLElement>('button.touchBtn');
   const decos = new Set<string>();

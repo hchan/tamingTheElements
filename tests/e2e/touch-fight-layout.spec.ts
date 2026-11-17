@@ -273,7 +273,7 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
 
 test.describe('phone portrait fight', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  test('portrait: card sits under the canvas, clear of the stick', async ({ page }) => {
+  test('portrait: card sits on the tall canvas under the HUD band, clear of the stick', async ({ page }) => {
     await enterFight(page);
     await shot(page, 'port-rotate');
     await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
@@ -282,7 +282,8 @@ test.describe('phone portrait fight', () => {
     const stick = await box(page, '#touchStick');
     const canvas = await box(page, 'canvas');
     expect(overlap(card, stick)).toBe(false);
-    expect(card.y).toBeGreaterThanOrEqual(canvas.y + canvas.h + 44); // under the 44 px skirts (P3/P4)
+    expect(card.y).toBeGreaterThanOrEqual(canvas.y + 70); // under the HUD band of the tall canvas (the canvas now fills down to the 200 px deck)
+    expect(card.y + card.h).toBeLessThanOrEqual(canvas.y + canvas.h + 44);
     expect(card.y + card.h).toBeLessThanOrEqual(stick.y);
     await expect(page.locator('#firstRunHint p.firstRunOne')).toHaveCount(1);
     await expect(page.locator('#firstRunHint p.firstRunOne')).toBeVisible();

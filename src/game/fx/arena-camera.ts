@@ -28,6 +28,30 @@ export interface CameraInput {
   readonly viewWidth: number;
   /** Reduced motion: no smoothing, no zoom change (zoom fixed at 1, pan snaps). */
   readonly reducedMotion?: boolean;
+  /** Highest zoom (default 1: never closer than viewWidth world px). Portrait play's tall view allows more, since it has spare height. */
+  readonly zoomMax?: number;
+  /** Keep each fighter this far inside the visible edge (default {@link CAMERA_MARGIN}; smaller in portrait, where the view is narrow). */
+  readonly margin?: number;
+}
+
+/** Narrower margin of the portrait tall view (world px). */
+export const CAMERA_MARGIN_PORTRAIT = 96;
+
+/**
+ * World y the camera looks at so world y 720 (the floor's bottom edge) lands on screen y `barTop` (logical px of the view `viewH`
+ * high) at total zoom `zoom`. A 720-high view (landscape, normal) always looks at 360, whatever the zoom: today's framing.
+ */
+export function verticalFrame(viewH: number, barTop: number, zoom: number): number {
+  if (!(viewH > 720) || !(zoom > 0)) return 360;
+  return 720 - (barTop - viewH / 2) / zoom;
+}
+
+/**
+ * Highest zoom of the portrait tall view: the spare height allows a closer camera, up to 1.6 (and 1 on a view no taller than 16:9).
+ * About 1.37 on 360x640 (view 1380 high), 1.6 on 390x844.
+ */
+export function portraitZoomMax(viewH: number): number {
+  return Math.min(1.6, Math.max(1, viewH / 1008));
 }
 
 /** Keep the view inside [0, worldWidth]; a view wider than the world centres on it. */
@@ -41,7 +65,8 @@ export function clampCenter(centerX: number, zoom: number, worldWidth: number, v
 export function idealFraming(i: CameraInput): CameraFraming {
   // Never zoom out past the world itself (a 1280 world stays at zoom 1: the picture is identical to the fixed camera).
   const floor = Math.min(1, Math.max(CAMERA_ZOOM_MIN, i.viewWidth / i.worldWidth));
-  const zoom = i.reducedMotion ? 1 : Math.min(1, Math.max(floor, i.viewWidth / (Math.abs(i.x1 - i.x2) + 2 * (CAMERA_MARGIN + Math.max(0, (i.reach ?? 40) - 40)))));
+  const top = Math.max(1, i.zoomMax ?? 1);
+  const zoom = i.reducedMotion ? 1 : Math.min(top, Math.max(floor, i.viewWidth / (Math.abs(i.x1 - i.x2) + 2 * ((i.margin ?? CAMERA_MARGIN) + Math.max(0, (i.reach ?? 40) - 40)))));
   return { centerX: clampCenter((i.x1 + i.x2) / 2, zoom, i.worldWidth, i.viewWidth), zoom };
 }
 

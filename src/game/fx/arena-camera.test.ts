@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, punchAnchor, type CameraFraming, type CameraInput } from './arena-camera';
+import { CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, punchAnchor, verticalFrame, type CameraFraming, type CameraInput } from './arena-camera';
 
 const base: CameraInput = { x1: 800, x2: 1000, worldWidth: 1920, viewWidth: 1280 };
 
@@ -101,5 +101,29 @@ describe('punchAnchor', () => {
   it('falls back to the centre for an over-wide box or no zoom', () => {
     expect(punchAnchor(0, 1280, z, 1280, 40, 40)).toBe(640);
     expect(punchAnchor(100, 300, 1, 1280, 40, 40)).toBe(200);
+  });
+});
+
+describe('portrait framing options', () => {
+  it('keeps the landscape outputs when zoomMax and margin are absent', () => {
+    expect(idealFraming({ ...base, x1: 900, x2: 910 })).toEqual({ centerX: 905, zoom: 1 });
+    expect(idealFraming({ ...base, x1: 200, x2: 1700 }).zoom).toBeCloseTo(1280 / (1500 + 2 * CAMERA_MARGIN), 10);
+    expect(idealFraming({ ...base, margin: CAMERA_MARGIN, zoomMax: 1 })).toEqual(idealFraming(base));
+  });
+  it('zooms in up to zoomMax when the fighters are close, and uses the narrower margin', () => {
+    expect(idealFraming({ ...base, x1: 500, x2: 1400, zoomMax: 1.37, margin: 96 }).zoom).toBeCloseTo(1280 / (900 + 192), 10);
+    expect(idealFraming({ ...base, x1: 900, x2: 910, zoomMax: 1.37, margin: 96 }).zoom).toBe(1.37);
+    expect(idealFraming({ ...base, x1: 900, x2: 910, zoomMax: 1.37, reducedMotion: true }).zoom).toBe(1);
+  });
+  it('verticalFrame is 360 at a 720 view, else puts world y 720 on the bar top', () => {
+    expect(verticalFrame(720, 640, 0.7)).toBe(360);
+    expect(verticalFrame(720, 720, 1)).toBe(360);
+    const viewH = 1944;
+    const barTop = 1850;
+    for (const z of [0.7, 1, 1.37]) {
+      const cy = verticalFrame(viewH, barTop, z);
+      expect(viewH / 2 + (720 - cy) * z).toBeCloseTo(barTop, 8);
+    }
+    expect(verticalFrame(1944, 1850, 0)).toBe(360);
   });
 });

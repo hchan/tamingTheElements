@@ -1,12 +1,12 @@
 /* Portrait phone fight layout (html[data-portrait-play], set by game/boot/presentation.ts): the canvas is pinned under a 52 px top strip. */
-:root { --pp-strip: 52px; --pp-bar-ext: 44px; }
+:root { --pp-strip: 52px; --pp-bar-ext: 44px; --pp-hud: 70px; }
 html[data-portrait-play] #game { --canvas-fraction: 1; }
 html[data-portrait-play] #game canvas { margin-top: var(--pp-strip) !important; }
 html[data-portrait-play] #fullscreenToggle { top: 4px; }
 html[data-portrait-play] .pauseButton { top: calc(env(safe-area-inset-top, 0px) + 4px); right: calc(env(safe-area-inset-right, 0px) + 56px); }
 html[data-portrait-play]:not(:has(#fullscreenToggle)) .pauseButton { right: calc(env(safe-area-inset-right, 0px) + 4px); }
 html[data-portrait-play] #tourHudStage { top: 4px !important; bottom: auto !important; }
-html[data-portrait-play] #firstRunHint.firstRunHint:not(.firstRunWait) { top: calc(var(--pp-strip) + 56.25cqw + var(--pp-bar-ext) + 12px); bottom: auto; z-index: 6; }
+html[data-portrait-play] #firstRunHint.firstRunHint:not(.firstRunWait) { top: calc(var(--pp-strip) + var(--pp-hud) + 8px); bottom: auto; z-index: 6; }
 html[data-portrait-play] #firstRunHint p.firstRunOne { display: block; }
 
 /* One-row action bar (P3): the boxes are 28-39 px wide, so the 48 px floor is restated for both main.css selectors. Each button grows

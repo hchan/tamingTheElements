@@ -40,3 +40,15 @@ describe('screenBox', () => {
     expect(b).toEqual({ x: 0, y: 0, scale: 1 });
   });
 });
+
+describe('screenBox on a tall view', () => {
+  it('anchors the 1280x720 box to the bottom edge', () => {
+    // 1280x1944 game at res 1: the camera shows 1944 world px; the box's top is 720 above the bottom.
+    const b = screenBox(scene({ zoom: 1, scrollX: 0, scrollY: 0, width: 1280, height: 1944 }, LOGICAL_WIDTH, 1944));
+    expect(b).toEqual({ x: 0, y: 1944 - 720, scale: 1 });
+  });
+  it('is the same as the centred box at a 720 view', () => {
+    const a = screenBox(scene({ zoom: 1.5, scrollX: 90, scrollY: 30, width: 1920, height: 1080 }, 1920, 1080));
+    expect(a.y).toBeCloseTo(30 + 540 - 360, 9);
+  });
+});

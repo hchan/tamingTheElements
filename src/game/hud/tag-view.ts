@@ -6,7 +6,7 @@ import {
   callText, dashes, flashPose, mainBarOf, placeCall, redSpan, tagLayout, tagLine, tagReadout, teamX, type Bar, type TagHero,
 } from './tag-fx';
 import { PILL_BAR_H, PILL_W, pillWord, tagPill } from './slim-hud';
-import { coreDisplayWidth, resolutionOf, viewWidth } from '../boot/viewport';
+import { coreDisplayWidth, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { BANNER_WAIT_TICKS, LaneWait, centreBusy, cutUp } from './banner-lanes';
 import { styleCombatText } from './combat-text';
 import { COMBO_RECTS_KEY, TAG_CALL_KEY, hudFrame, viewOfCamera } from './arcade-hud';
@@ -259,9 +259,9 @@ export function mountTagView(
       if (cam) {
         const v = viewOfCamera(cam, camView);
         // On a wide view the Hud camera shows more than 1280 across: project into its real frame, not a fixed 1280 (DMGNUM-1).
-        const frame = hudFrame(viewWidth(arena));
+        const frame = hudFrame(viewWidth(arena), undefined, viewHeight(arena));
         const hx = frame.x + ((callAt.x - v.x) / (v.w || 1)) * frame.w;
-        const hy = ((callAt.y - v.y) / (v.h || 1)) * 720;
+        const hy = ((callAt.y - v.y) / (v.h || 1)) * frame.h;
         headX = hx;
         headY = hy;
         const avoid = (arena.registry as Phaser.Data.DataManager | undefined)?.get(COMBO_RECTS_KEY) as HudBox[] | undefined;
