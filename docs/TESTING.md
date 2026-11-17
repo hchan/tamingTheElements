@@ -215,8 +215,10 @@ The test hook (`window.__TTE__.arena`) gained `bench()`, `swapReadyTick()`, `che
 
 ## DOM unit tests (happy-dom)
 
-DOM-only code (menus, settings, key bindings, touch controls, pause dialog, the `el`/`byId` helpers, the About screen, the tour map SVG) is unit tested with happy-dom (already a devDependency; jsdom is not used). Give each new `src/ui` screen with DOM code a `*.dom.test.ts` next to it. Opt in per file with
-`// @vitest-environment happy-dom` on the first line and name the file `*.dom.test.ts`; every other test stays in the node environment. happy-dom
+DOM-only code (menus, settings, key bindings, touch controls, pause dialog, the `el`/`byId` helpers, the About screen, the tour map SVG) is unit tested with happy-dom (already a devDependency; jsdom is not used). Give each new `src/ui` screen with DOM code a `*.dom.test.ts` next to it. Name the file `*.dom.test.ts`: the
+`dom` vitest project (`vitest.config.ts`, environment happy-dom, `src/**/*.dom.test.ts`) runs it and the `core` project excludes it; keep the
+`// @vitest-environment happy-dom` first line too so editors and a single-project run behave the same. Every other test stays in node.
+`pnpm test:coverage` runs `core` + `dom` and checks per-directory floors (`src/core`, `src/ui`, `src/game`) in the vitest config. happy-dom
 differs from browsers in places (no `setPointerCapture`, `FormData` includes disabled controls); keep those checks in e2e.
 
 **Lazy `import()` and fixed-count flushes**: code that lazy-loads chunks (`AppFlow`) makes the first `import()` a real-time module

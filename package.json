@@ -14,7 +14,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run --project core --project repo",
-    "test:coverage": "vitest run --project core --coverage",
+    "test:coverage": "vitest run --project core --project dom --coverage",
     "sbom": "sh tools/sbom/sbom.sh",
     "test:legacy": "vitest run --project legacy",
     "test:oracle": "vitest run --project oracle",
