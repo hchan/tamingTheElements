@@ -402,4 +402,16 @@ describe('arcadeResultsView (DOM)', () => {
     expect(draw.querySelectorAll('.matchEndMain')).toHaveLength(2);
     expect(draw.querySelectorAll('.matchEndSide')).toHaveLength(0);
   });
+
+  it('names the winning player in local play and gives a draw its own neutral ribbon', () => {
+    const base = { heading: 'h', summary: 's', onRematch: vi.fn(), onChange: vi.fn() };
+    const p2 = arcadeResultsView({ ...base, tone: 'win', player: 2 });
+    expect(p2.querySelector('.matchEndRibbon')?.textContent).toBe('◆P2 Winner');
+    expect(p2.dataset['player']).toBe('2');
+    expect(arcadeResultsView({ ...base, tone: 'win', player: 1 }).querySelector('.matchEndRibbon')?.textContent).toBe('★P1 Winner');
+    expect(arcadeResultsView({ ...base, tone: 'win' }).querySelector('.matchEndRibbon')?.textContent).toBe('★Winner');
+    const draw = arcadeResultsView({ ...base, tone: 'draw' });
+    expect(draw.querySelector('.matchEndRibbon')?.textContent).toBe('≡Draw');
+    expect(draw.dataset['player']).toBeUndefined();
+  });
 });

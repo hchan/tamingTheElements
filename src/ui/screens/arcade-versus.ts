@@ -879,6 +879,8 @@ export interface ResultsViewOptions {
   readonly opponent?: { readonly id: CharacterId; readonly name: string };
   /** Styles the result word; defaults to the neutral look. */
   readonly tone?: 'win' | 'loss' | 'draw';
+  /** Local 2-player Versus: which player won (1 or 2); the ribbon names them and Player 2 gets a distinct icon and frame. */
+  readonly player?: 1 | 2;
   /** Short stat chips such as `Rounds 2-0`. */
   readonly stats?: readonly string[];
   /** Present when a replay was recorded. */
@@ -902,10 +904,15 @@ export function arcadeResultsView(o: ResultsViewOptions): HTMLElement {
   if (o.tone) page.dataset['tone'] = o.tone;
   const stats = el('ul', 'matchEndStats');
   for (const t of o.stats ?? []) stats.append(el('li', undefined, t));
-  const ribbon = o.tone === 'win' ? 'Winner' : o.tone === 'loss' ? 'You lost' : null;
+  if (o.tone === 'win' && o.player) page.dataset['player'] = String(o.player);
+  const ribbon =
+    o.tone === 'win' ? (o.player ? `P${String(o.player)} Winner` : 'Winner') : o.tone === 'loss' ? 'You lost' : o.tone === 'draw' ? 'Draw' : null;
   if (ribbon !== null) {
     const r = el('p', 'matchEndRibbon');
-    r.append(el('span', 'matchEndIcon', o.tone === 'win' ? '\u2605' : '\u2716'), ribbon);
+    const icon = o.tone === 'win' ? (o.player === 2 ? '\u25C6' : '\u2605') : o.tone === 'draw' ? '\u2261' : '\u2716';
+    const i = el('span', 'matchEndIcon', icon);
+    i.setAttribute('aria-hidden', 'true');
+    r.append(i, ribbon);
     page.append(r);
   }
   page.append(hero, el('h1', 'heading matchEndWord', o.heading), stats, el('p', 'matchEndSummary', o.summary));

@@ -221,3 +221,24 @@
     letter-spacing: 0.14em;
   }
 }
+
+/* Local Versus: Player 2's win is a diamond icon, a "P2" ribbon and a double frame (shape and text, not only colour). */
+#arcadeResults[data-tone='win'][data-player='2'] h1.matchEndWord {
+  box-shadow: 0 0 0 2px #ffe600, 0 0 0 6px rgba(12, 10, 30, 0.9), 0 0 0 8px #ffe600, 0 0 26px rgba(255, 220, 60, 0.55);
+}
+#arcadeResults[data-tone='win'][data-player='2'] .matchEndRibbon {
+  border-radius: 4px;
+}
+/* A draw: neutral steel ribbon and plate, no gold or red. */
+#arcadeResults[data-tone='draw'] {
+  background: radial-gradient(ellipse at 50% 18%, rgba(160, 175, 195, 0.28), rgba(160, 175, 195, 0) 62%);
+}
+#arcadeResults[data-tone='draw'] .matchEndRibbon {
+  color: #e8edf3;
+  background: #3a4350;
+  box-shadow: inset 0 0 0 2px #9aa7b8;
+}
+#arcadeResults[data-tone='draw'] h1.matchEndWord {
+  background: rgba(40, 46, 56, 0.9);
+  box-shadow: 0 0 0 2px #9aa7b8;
+}
