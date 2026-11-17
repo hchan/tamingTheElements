@@ -47,6 +47,62 @@ for (const size of SIZES) {
   }
 }
 
+// Local two-player Versus: the ribbon names the winning player; Player 2 gets a distinct icon.
+async function fightLocal(page: Page, size: { width: number; height: number }): Promise<void> {
+  await page.setViewportSize(size);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByLabel('Opponent').selectOption('local');
+  await page.getByLabel('Team').selectOption('1');
+  await page.getByLabel('Player 1 hero 1').selectOption('sindarosa');
+  await page.getByLabel('Player 2 hero 1').selectOption('pax');
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+}
+
+for (const size of SIZES) {
+  for (const side of ['win', 'lose'] as const) {
+    test(`local match end ${side} at ${String(size.width)}: names the winning player`, async ({ page }) => {
+      await fightLocal(page, size);
+      await koRound(page, side);
+      await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+      await koRound(page, side);
+      const n = side === 'win' ? '1' : '2';
+      const results = page.locator('#arcadeResults');
+      await expect(page.getByRole('heading', { level: 1, name: `Player ${n} wins!` })).toBeVisible();
+      await expect(results.locator('.matchEndRibbon')).toHaveText(`${side === 'win' ? '★' : '◆'}P${n} Winner`);
+      await expect(results).toHaveAttribute('data-player', n);
+      await expect(results.locator('.matchEndMain .matchEndName').first()).toContainText(side === 'win' ? 'Sindarosa' : 'Pax');
+      const dir = process.env['SHOT_DIR'];
+      if (dir) await page.screenshot({ path: `${dir}/match-end-local-p${n}-${String(size.width)}.png` });
+    });
+  }
+}
+
+/** Both fighters at 0 HP on the same tick: a double KO, so the round is a draw. */
+async function koBoth(page: Page, ids: readonly number[]): Promise<void> {
+  const sets = ids.map((id) => `a.setHp(${String(id)}, 0);`).join(' ');
+  await page.evaluate(`(() => { const a = window.__TTE__.arena; ${sets} a.step(${String(90 + KO_TO_ROUND_END)}); })()`);
+}
+
+for (const size of SIZES) {
+  test(`match end draw at ${String(size.width)}: neutral Draw ribbon`, async ({ page }) => {
+    await fightTo(page, size);
+    const ids = [...(await characters(page, 0)), ...(await characters(page, 1))].map((c) => c.id);
+    for (let i = 0; i < 6 && (await page.locator('#arcadeResults').count()) === 0; i++) {
+      await koBoth(page, ids);
+      await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+    }
+    const results = page.locator('#arcadeResults');
+    await expect(results).toHaveAttribute('data-tone', 'draw');
+    await expect(results.locator('.matchEndRibbon')).toHaveText('≡Draw');
+    await expect(page.getByRole('heading', { level: 1, name: 'Draw' })).toBeVisible();
+    const dir = process.env['SHOT_DIR'];
+    if (dir) await page.screenshot({ path: `${dir}/match-end-draw-${String(size.width)}.png` });
+  });
+}
+
 for (const size of SIZES) {
   test(`match end at ${String(size.width)}x${String(size.height)}: winner, result word, reachable buttons`, async ({ page }) => {
     await page.setViewportSize(size);
