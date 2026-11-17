@@ -31,6 +31,13 @@ export const CHIP_BOTTOM = CHIP_BAR_Y + CHIP_BAR_LINE / 2 + 2;
 export const PILL_W = 44;
 export const PILL_BAR_H = 8;
 
+/** Extra px the bench chips, their life bars and the tag pill hang lower (tall portrait view: boosted names would touch them; the Hud scene sets it each frame, 0 elsewhere). */
+let chipDrop = 0;
+export function setChipDrop(px: number): void {
+  chipDrop = Math.max(0, Math.round(px));
+}
+export const getChipDrop = (): number => chipDrop;
+
 export interface SlimBar {
   readonly minX: number;
   readonly maxX: number;
@@ -55,18 +62,18 @@ export function slimPortrait(team: number): { readonly x: number; readonly y: nu
 
 /** Bench chip `i`: the portrait square. */
 export function chipRect(team: number, i: number): { readonly x: number; readonly y: number; readonly size: number } {
-  return { x: mirrorX(team, PILL_X0 - 4 - CHIP_SIZE - i * CHIP_PITCH, CHIP_SIZE), y: CHIP_Y, size: CHIP_SIZE };
+  return { x: mirrorX(team, PILL_X0 - 4 - CHIP_SIZE - i * CHIP_PITCH, CHIP_SIZE), y: CHIP_Y + chipDrop, size: CHIP_SIZE };
 }
 
 /** Bench chip `i`'s mini life bar, under its portrait (the red rest dashes of `tag-view` use it as well). */
 export function chipBar(team: number, i: number): SlimBar {
   const x = chipRect(team, i).x;
-  return { minX: x, maxX: x + CHIP_SIZE, y: CHIP_BAR_Y, line: CHIP_BAR_LINE, lineMax: CHIP_BAR_LINE + 1 };
+  return { minX: x, maxX: x + CHIP_SIZE, y: CHIP_BAR_Y + chipDrop, line: CHIP_BAR_LINE, lineMax: CHIP_BAR_LINE + 1 };
 }
 
 /** The tag pill (word above, cooldown bar under it), at the inner end of the bar, with the chips outside it. */
 export function tagPill(team: number): { readonly x: number; readonly wordY: number; readonly barY: number; readonly w: number } {
-  return { x: mirrorX(team, PILL_X0, PILL_W), wordY: CHIP_Y + 6, barY: CHIP_Y + CHIP_SIZE - PILL_BAR_H, w: PILL_W };
+  return { x: mirrorX(team, PILL_X0, PILL_W), wordY: CHIP_Y + chipDrop + 6, barY: CHIP_Y + chipDrop + CHIP_SIZE - PILL_BAR_H, w: PILL_W };
 }
 
 /** The tag word shown in the pill: the full readout ("TAG READY", "TAG 2.4s", "NO TAG") shortened to "TAG", "2.4s", "NO TAG". */
