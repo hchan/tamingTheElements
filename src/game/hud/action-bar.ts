@@ -920,7 +920,8 @@ export class ActionBarView {
     const k = this.gfx.scaleX * cam.zoom / res;
     // Relative to the central 1280 box: the wide view adds (viewWidth - 1280) / 2 logical px left of it.
     const sx = (this.gfx.x - (cam.scrollX + cam.width / 2 - cam.width / 2 / cam.zoom)) * cam.zoom / res - (viewWidth(this.scene) - LOGICAL_W) / 2;
-    const sy = (this.gfx.y - (cam.scrollY + cam.height / 2 - cam.height / 2 / cam.zoom)) * cam.zoom / res;
+    // Relative to the bottom-anchored 720 box: the tall view (portrait play) adds (viewHeight - 720) logical px above it.
+    const sy = (this.gfx.y - (cam.scrollY + cam.height / 2 - cam.height / 2 / cam.zoom)) * cam.zoom / res - (viewHeight(this.scene) - LOGICAL_HEIGHT);
     return this.slots.map((s) => ({ x: sx + s.x * k, y: sy + s.y * k, size: s.size * k }));
   }
 

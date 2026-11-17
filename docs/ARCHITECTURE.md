@@ -409,3 +409,11 @@ Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `
   1280x720 layout keeps its size and sits centred: `fitScene` re-centres on resize, `screenBox` returns the central box,
   `resolutionOf` is read from the height, and text boosts use `coreDisplayWidth` (the CSS width of that central box).
   Online Arcade has no pan camera and keeps the plain fit.
+- **Tall view (portrait play).** With `html[data-portrait-play]` set, `enableWideView` (the only code that sets the game size)
+  makes the game 1280 x H logical (`tallViewHeight`, `tallResolution`), so the canvas fills the width and the height from the 52 px
+  top strip down to a 200 px control deck (`deckFor` grows the deck if the stick sits lower). Everything laid out in 1280x720 is
+  bottom-anchored (`screenBox`, `boxPoint`, touch overlays) except the `Hud` scene, which is top-anchored (`fitScene(scene, 'top')`).
+  The camera takes its vertical centre from `verticalFrame` so the floor's bottom edge lands on the action bar's top (the bar
+  records its panel top via `setPanelTop`); zoom may reach `portraitZoomMax` (1.6, about 1.37 on 360x640) with a narrower margin, and the
+  KO punch-in is capped at a total zoom of 1.8. Portrait-only sky and ground fills (and the weather tint's vertical extent) cover the
+  area above and below the 720 px arena. Landscape and normal views are unchanged (tests pin the defaults); the sim is untouched.

@@ -6,6 +6,9 @@ import { ARENA_READY, START, collectErrors, tapTourSplash } from './parity/helpe
 const shotDir = process.env['SHOT_DIR'];
 const ATTR = `document.documentElement.hasAttribute('data-portrait-play')`;
 const STRIP = 52;
+const HUD_BAND = 70;
+const DECK = 200;
+interface Tall { camZoom: number; viewHeight: number; floorScreenY: number }
 
 async function enterFight(page: Page): Promise<void> {
   // Keep the first-run card up for the layout reads (see touch-fight-layout.spec.ts).
@@ -60,9 +63,10 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         expect(overlap(f, pause)).toBe(false);
         expect(overlap(f, canvas)).toBe(false);
       }
+      // The card sits on the (tall) canvas just under the HUD band and above the settled action bar, clear of the touch controls.
       const card = await box(page, '#firstRunHint');
-      expect(card.y).toBeGreaterThanOrEqual(canvas.y + canvas.h + 44 - 1);
-      for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2']) expect(overlap(card, await box(page, id)), id).toBe(false);
+      expect(card.y).toBeGreaterThanOrEqual(STRIP + HUD_BAND);
+      for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton']) expect(overlap(card, await box(page, id)), id).toBe(false);
       // The bar overlays are laid out every few frames after the flag flips, so wait for the settled one-row layout (a skirt 44 px below the
       // canvas) before measuring. Its top then sits inside the canvas, its lower edge 44 px below, and every slot (button or strip) shares that edge.
       const canvasBottom = canvas.y + canvas.h;
@@ -71,6 +75,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       const settled = await box(page, '#arcadeDash');
       expect(settled.y).toBeLessThan(canvasBottom);
       expect(Math.abs(settled.y + settled.h - (canvasBottom + 44))).toBeLessThanOrEqual(1);
+      await expect.poll(async () => { const c = await box(page, '#firstRunHint'); return c.y + c.h; }, { timeout: 1500 }).toBeLessThanOrEqual(settled.y);
       const bottoms = await edges();
       expect(bottoms.length, 'every bar slot has a skirt').toBeGreaterThanOrEqual(8);
       expect(new Set(bottoms).size, `one lower edge: ${bottoms.join(',')}`).toBe(1);
@@ -80,6 +85,49 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       expect(await page.evaluate<string>(`getComputedStyle(document.querySelector('#firstRunHint')).zIndex`)).toBe('6');
       await shot(page, `${String(w)}-card`);
       await page.getByRole('button', { name: 'Got it' }).tap();
+      expect(errors).toEqual([]);
+    });
+
+    test('the canvas is tall: it fills down to the deck, the floor sits on the bar, the sim is unchanged', async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.getByRole('button', { name: /^Fight/ }).tap();
+      await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.waitForFunction(ATTR);
+      const bottom = h - DECK;
+      // The deck is at least 200 px and grows when the stick starts higher (it is measured from the stick), so allow up to 12 px more.
+      await expect.poll(async () => { const c = await box(page, '#game canvas'); const d = bottom - (c.y + c.h); return d >= -0.5 && d <= 12; }, { timeout: 10000 }).toBe(true);
+      const canvas = await box(page, '#game canvas');
+      expect(bottom - (canvas.y + canvas.h)).toBeLessThanOrEqual(12);
+      expect(canvas.h).toBeGreaterThanOrEqual(h - 264);
+      const back = await page.evaluate<{ bw: number; bh: number }>(`(() => { const c = document.querySelector('#game canvas'); return { bw: c.width, bh: c.height }; })()`);
+      // Pixel budget: no more than the normal 2560x1440 backing store (the tall canvas trades width for height).
+      expect(back.bw * back.bh).toBeLessThanOrEqual(2560 * 1440 * 1.02);
+      for (const id of ['#touchStick', '#touchStrike1', '#touchStrike2']) {
+        const b = await box(page, id);
+        expect(b.y, id).toBeGreaterThanOrEqual(canvas.y + canvas.h + 44 + 4 - 1);
+      }
+      const floor = async (): Promise<Tall> => page.evaluate<Tall>(`window.__TTE__.arena.camera()`);
+      const expectFramed = async (): Promise<void> => {
+        await expect.poll(async () => (await floor()).camZoom, { timeout: 5000 }).toBeGreaterThanOrEqual(1.05);
+        await expect.poll(async () => {
+          const f = await floor();
+          const c = await box(page, '#game canvas');
+          const bar = await box(page, '#arcadeDash');
+          return Math.abs(c.y + (f.floorScreenY * c.h) / f.viewHeight - bar.y);
+        }, { timeout: 5000 }).toBeLessThanOrEqual(2);
+      };
+      await expectFramed();
+      await page.evaluate(`window.__TTE__.arena.step(50, [0, 0])`);
+      expect(await page.evaluate<number>(`window.__TTE__.arena.hash()`)).toBe(173923228);
+      // Rotate mid-fight and back: the framing is re-applied.
+      await page.setViewportSize({ width: h, height: w });
+      await page.waitForFunction(`!(${ATTR})`);
+      await expect.poll(async () => (await floor()).viewHeight).toBeCloseTo(720, 0);
+      await page.setViewportSize({ width: w, height: h });
+      await page.waitForFunction(ATTR);
+      await expectFramed();
       expect(errors).toEqual([]);
     });
 
