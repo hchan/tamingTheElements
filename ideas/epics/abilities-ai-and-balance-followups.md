@@ -26,6 +26,8 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [2v2-time-over-regression](../in-progress/2v2-time-over-regression.md) (in progress): 2v2 time-over rate regression. After giant heroes slice 2 (SIM_VERSION 45) the Arcade 2v2 time-over rate was 0.101 against about 0.02 earlier.
 - [arcade-balance-after-cleanse](../in-progress/arcade-balance-after-cleanse.md) (in progress): Arcade balance after Cleanse and the 2v2 time-over fix. Measured at SIM_VERSION 48: Arcade 1v1 tournament (16 seeds) is 43.8-53.4 percent (Cyclonius lowest, inside 40-60), so no 1v1 change.
 - [balance-2v2-echo-pax-r37](../brainstorm/balance-2v2-echo-pax-r37.md): Arcade 2v2: do the Echo / Pax outliers survive random partners? (r37). Follow-up to balance-outliers.md. Analysis only:
+- [pax-treenoc-team-step](../brainstorm/pax-treenoc-team-step.md): Pax and Treenoc team step. After v86 pax is 55.4% in 2v2 and treenoc 44.7%.
+- [void-boss-retune](../brainstorm/void-boss-retune.md): Void boss retune. Hero win rates against the Void on Normal and with partners are too low.
 - [3v3-balance-and-round-length](../brainstorm/3v3-balance-and-round-length.md): 3v3 balance and round length. At SIM_VERSION 77 (measured by the FG-RL planner, legacy 12, 4 seeds, 264 matches, report only) Arcade 3v3 race win rates span 0.114-0.750, the round 
 - [pax-speed-10-vs-5](../brainstorm/pax-speed-10-vs-5.md): Pax speed 10 versus 5. data/characters.ts line 27 gives Pax speed 10 while other docs and the legacy data say 5.
 - [dash-parry-weather-usage](../brainstorm/dash-parry-weather-usage.md): Dash, Parry, Weather and Charge usage metrics. ability:usage covers the two ability slots only.

@@ -16,18 +16,18 @@
   "stalemates": 0,
   "timeouts": 0,
   "winRates": {
-    "curomo": 0.466,
-    "cyclonius": 0.483,
+    "curomo": 0.483,
+    "cyclonius": 0.494,
     "echo": 0.477,
-    "fiara": 0.528,
-    "ishimi": 0.54,
-    "lavax": 0.466,
-    "morblass": 0.534,
-    "pax": 0.528,
-    "rokcore": 0.517,
-    "sindarosa": 0.483,
-    "treenoc": 0.443,
-    "wispera": 0.534
+    "fiara": 0.506,
+    "ishimi": 0.545,
+    "lavax": 0.483,
+    "morblass": 0.528,
+    "pax": 0.523,
+    "rokcore": 0.483,
+    "sindarosa": 0.477,
+    "treenoc": 0.5,
+    "wispera": 0.5
   },
   "styleSummary": {
     "styles": [
@@ -42,13 +42,13 @@
         },
         {
           "games": 560,
-          "winRate": 0.484
+          "winRate": 0.495
         }
       ],
       [
         {
           "games": 560,
-          "winRate": 0.516
+          "winRate": 0.505
         },
         {
           "games": 672,
@@ -58,12 +58,12 @@
     ],
     "crossMeleeVsRanged": {
       "games": 560,
-      "winRate": 0.484,
+      "winRate": 0.495,
       "stdErr": 0.021
     },
     "meanWinRate": {
-      "melee": 0.49,
-      "ranged": 0.507
+      "melee": 0.497,
+      "ranged": 0.502
     },
     "heroCount": {
       "melee": 5,
@@ -71,31 +71,31 @@
     },
     "byElement": {
       "air": {
-        "melee": 0.506,
-        "ranged": 0.483,
-        "gap": 0.023
+        "melee": 0.489,
+        "ranged": 0.494,
+        "gap": -0.005
       },
       "earth": {
-        "melee": 0.486,
-        "ranged": 0.517,
-        "gap": -0.031
+        "melee": 0.512,
+        "ranged": 0.483,
+        "gap": 0.029
       },
       "fire": {
-        "ranged": 0.492
+        "ranged": 0.489
       },
       "water": {
-        "melee": 0.466,
+        "melee": 0.483,
         "ranged": 0.537,
-        "gap": -0.071
+        "gap": -0.054
       }
     },
     "top6": {
-      "melee": 2,
-      "ranged": 4
-    },
-    "bottom6": {
       "melee": 3,
       "ranged": 3
+    },
+    "bottom6": {
+      "melee": 2,
+      "ranged": 4
     }
   }
 }

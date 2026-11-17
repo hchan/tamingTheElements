@@ -47,10 +47,10 @@ export const ARCADE_RACE_NUMBERS: Readonly<Record<string, ArcadeRaceNumbers>> = 
   rokcore: [1850, 640], // a 2x giant (data/size.ts) adds x1.45 life and x1.12 damage on top: 2600 / 690 before giants
   // Fire Blast 40 per 30 ticks (67/s) plus Translucent Flame: strong. Arcade falloff since SIM_VERSION 71 (FUN-DESIGN 2.27): full damage to about 257 px, 45% past about 600 px.
   sindarosa: [2860, 724],
-  // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]).
-  treenoc: [6050, 1180],
-  // Snag replaced Sonar Blast (67/s), leaving Steal Health: life 3490 -> 7900, damage 800 -> 1400 in SIM_VERSION 27. Re-fit in SIM_VERSION 31 (was [7900, 1400]). Melee since SIM_VERSION 69 (roster WP 0.4: Charge, weather charge by walking): re-fit (was [7950, 1355], 57.4%).
-  wispera: [7575, 1291],
+  // Snag (30 damage, 20-tick stun) replaced Entangling Vines and Strangling Branches is melee: weak in the AI's hands. Re-fit in SIM_VERSION 27 (was [8470, 1640]). Life 6050 -> 6215 in SIM_VERSION 86 (2v2 factor 714 -> 695 keeps its 2v2 and 3v3 life bit-identical).
+  treenoc: [6215, 1180],
+  // Snag replaced Sonar Blast (67/s), leaving Steal Health: life 3490 -> 7900, damage 800 -> 1400 in SIM_VERSION 27. Re-fit in SIM_VERSION 31 (was [7900, 1400]). Melee since SIM_VERSION 69 (roster WP 0.4: Charge, weather charge by walking): re-fit (was [7950, 1355], 57.4%). Life 7575 -> 7365 in SIM_VERSION 86 (2v2 factor 632 -> 650 keeps its 2v2 and 3v3 life bit-identical).
+  wispera: [7365, 1291],
   // Roster-24 batch 1 (SIM_VERSION 72), fitted with tools/sim/low-races/mat.sh.
   kindrel: [6120, 1537],
   nykra: [5435, 1215],
@@ -84,17 +84,17 @@ export const ARCADE_2V2_LIFE_DEFAULT_PM = 600;
 export const ARCADE_2V2_LIFE_SCALE_PM = 1300;
 export const ARCADE_2V2_LIFE_PM: Readonly<Record<string, number>> = {
   curomo: 740,
-  cyclonius: 770,
+  cyclonius: 810, // 770 before SIM_VERSION 86
   echo: 650,
-  fiara: 760, // 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged)
-  ishimi: 720,
+  fiara: 730, // 700 before SIM_VERSION 69 (roster WP 0.4: ranged, so a fiara + sindarosa team is all ranged); 760 before SIM_VERSION 86
+  ishimi: 670, // 720 before SIM_VERSION 86
   lavax: 804,
-  morblass: 920, // 881 before SIM_VERSION 69 (roster WP 0.4)
+  morblass: 865, // 881 before SIM_VERSION 69 (roster WP 0.4); 920 before SIM_VERSION 86
   pax: 660,
   rokcore: 740, // 670 before SIM_VERSION 69 (roster WP 0.4)
   sindarosa: 800,
-  treenoc: 714,
-  wispera: 632,
+  treenoc: 695, // 714 before SIM_VERSION 86
+  wispera: 650, // 632 before SIM_VERSION 86
   hyalia: 650,
   quarrak: 725,
   kindrel: 650,

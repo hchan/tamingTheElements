@@ -4,7 +4,7 @@ added: 2026-11-12
 ---
 # Lavax vs Morblass and the Lavax / Wispera team gap: mechanics and a ready fix
 
-Analysis only (no src change). Follow-up to [lavax-team-weakness](lavax-team-weakness.md), [wispera-team-dominance](wispera-team-dominance.md) and
+Analysis only (no src change). Follow-up to [lavax-team-weakness](lavax-team-weakness.md), [wispera-team-dominance](../done/wispera-team-dominance.md) and
 [arcade-low-races-analysis](arcade-low-races-analysis.md). Tools (all in `tools/sim/team-weakness/`):
 `trace.mts` (projectile economy per pairing), `timeline.mts` (tick log of one match), `mods.mts` (a `--import` preload that mutates the runtime
 tables for what-ifs: `TTE_MODS="life:lavax=900,cd:icicles=20,def:icicles.maxActive=2,hp:..,dmg:.." tsx --import ./tools/sim/team-weakness/mods.mts <harness>`).
