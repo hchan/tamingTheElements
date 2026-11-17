@@ -11,7 +11,7 @@ import { lookup } from '../views/projectile-view';
 import { gradeRgba, mute } from '../fx/grim-fx';
 import { getPrefs } from '../platform/a11y/prefs';
 import { syncTouchOverlays } from './touch-overlay';
-import { PORTRAIT_BAR_EXT, isPortraitPlay, setPanelTop } from '../boot/portrait-play';
+import { isPortraitPlay, setPanelTop } from '../boot/portrait-play';
 import { CLEANSE_COOLDOWN, cleanseClockOf } from './cleanse-clock';
 import { tagSlot } from './tag-slot';
 import { elementalShown } from '../platform/cleanse-info';
@@ -321,6 +321,28 @@ export function oneRowSlots<T extends { x: number; y: number; size: number }>(sl
   return { slots: slots.map((s, i) => ({ ...s, x: SLOT_BORDER / 2 + i * side, y, size: side })), top: y };
 }
 
+/** Smallest a touch box may be on screen in CSS px in the portrait bar, both ways (WCAG 2.5.8 target size; the one-row bar's 28-39 px boxes were under it). */
+export const PORTRAIT_MIN_TOUCH_CSS = 44;
+
+/**
+ * The portrait phone bar: ONE row when its boxes are at least PORTRAIT_MIN_TOUCH_CSS wide on screen (`ext` 44: the touch overlays reach 44 CSS px
+ * up over the floor), else tiles of at least that size wrapped into rows (the bottom row full, the rest above it, `ext` 0: every box is already
+ * a 44 px square, so no skirt). Undefined when not even one tile fits across (a tiny window): the caller keeps the plain bar. Pure, for tests.
+ */
+export function portraitBarSlots<T extends { x: number; y: number; size: number }>(slots: readonly T[], k: number): { slots: T[]; top: number; ext: number } | undefined {
+  const row = oneRowSlots(slots, k);
+  if (row !== undefined && (row.slots[0]?.size ?? 0) * k >= PORTRAIT_MIN_TOUCH_CSS) return { ...row, ext: 44 };
+  if (!(k > 0) || slots.length === 0) return undefined;
+  const min = Math.ceil(PORTRAIT_MIN_TOUCH_CSS / k);
+  const perRow = Math.floor((LOGICAL_W - SLOT_BORDER / 2) / min);
+  if (perRow < 1) return undefined;
+  const rows = Math.ceil(slots.length / perRow);
+  // Fill the width with the boxes of a full row (never under the minimum), so no gap is left on the right.
+  const side = Math.floor((LOGICAL_W - SLOT_BORDER / 2) / Math.min(perRow, slots.length));
+  const y0 = LOGICAL_HEIGHT - side - 1;
+  return { slots: slots.map((s, i) => ({ ...s, x: SLOT_BORDER / 2 + (i % perRow) * side, y: y0 - Math.floor(i / perRow) * side, size: side })), top: y0 - (rows - 1) * side, ext: 0 };
+}
+
 const PUNCTUATION: Readonly<Record<string, string>> = { Semicolon: ';', Period: '.', Comma: ',', Slash: '/', Quote: "'", Minus: '-', Equal: '=' };
 
 /** The key labels of a binding set for the small mirror slots: punctuation keys as their symbol (a word would not fit). */
@@ -468,7 +490,7 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
       add({
         kind: 'charge', cmd: 0, sprite: '', icon: ACTION_ICON.charge, touch: 'Charge', highlight: false, disabled: none,
         progress: none || arcade.chargeIn === 0 ? 1 : clamp01(1 - arcade.chargeIn / CHARGE_COOLDOWN),
-        note: none ? '' : leftNote('Charge', arcade.chargeIn),
+        note: none ? 'Melee' : leftNote('Charge', arcade.chargeIn),
       }, ACTION_COMMAND.charge);
     }
     add({
@@ -747,7 +769,7 @@ export class ActionBarView {
     const built = bar ? buildSlots(bar, this.labels(), extras, k) : [];
     const grouped = !this.mirror && extras && this.arrange ? this.arrange(built, k) : undefined;
     // Portrait phones: one row of narrow boxes (touch buttons grow 44 px below the canvas), so the bar never covers the arena.
-    const one = !this.mirror && extras && !grouped && isPortraitPlay(this.scene.game) ? oneRowSlots(built, k) : undefined;
+    const one = !this.mirror && extras && !grouped && isPortraitPlay(this.scene.game) ? portraitBarSlots(built, k) : undefined;
     this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : one ? one.slots : built;
     const top = grouped ? grouped.top : one ? one.top : barTop(built.length, extras ? k : undefined);
     this.panelTop = top;
@@ -839,7 +861,7 @@ export class ActionBarView {
     if (!this.mirror) {
       this.drawHint(bar?.tick ?? 0);
       this.drawTip(now);
-      if (extras && this.frame % 5 === 1) syncTouchOverlays(this.screenSlots().map((r, i) => ({ ...r, touch: this.slots[i]?.touch ?? '' })), this.scene.game.canvas, undefined, one ? PORTRAIT_BAR_EXT : undefined);
+      if (extras && this.frame % 5 === 1) syncTouchOverlays(this.screenSlots().map((r, i) => ({ ...r, touch: this.slots[i]?.touch ?? '' })), this.scene.game.canvas, undefined, one?.ext);
     }
     for (let i = this.slots.length; i < this.icons.length; i++) {
       this.icons[i]?.setVisible(false);

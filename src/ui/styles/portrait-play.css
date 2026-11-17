@@ -16,6 +16,7 @@ html[data-portrait-play] button.touchBtn.touchSkirt,
 html[data-portrait-play] #menu button.touchBtn.touchSkirt,
 html[data-portrait-play] .touchSkirtDeco {
   min-width: 24px;
+  min-height: 44px;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -28,3 +29,7 @@ html[data-portrait-play] #game {
 }
 /* Skirt for boxes with no button (strikes, Snag): a click-through strip, same groove as the buttons. */
 html[data-portrait-play] .touchSkirtDeco { position: absolute; pointer-events: none; z-index: 4; box-sizing: border-box; }
+
+/* Strikes in thumb and safe-area reach (render only): every strike sits at least 40 px above the screen bottom plus the home-indicator
+   inset (main.css leaves Strike 1 flush 16 px from the edge), and both stay 64 px round, so the hit boxes are >= 44 px. */
+html[data-portrait-play] #touchStrikes { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 28px); }
