@@ -312,3 +312,32 @@ test('the F key and the button toggle fullscreen where the browser allows it', a
   await page.keyboard.press('KeyF');
   await expect.poll(() => page.evaluate<boolean>(`document.fullscreenElement === null`)).toBe(true);
 });
+
+// QA r89 P2: on a small portrait phone the Versus Fight/Back bar is one slim row, so the scroll region keeps most of the screen and the
+// option rows (Opponent, Team, AI level, Arena) below the roster are reachable by scrolling it. Page-side code is passed as strings.
+for (const vp of [
+  { w: 360, h: 640 },
+  { w: 390, h: 844 },
+]) {
+  test.describe(`Versus footer ${String(vp.w)}x${String(vp.h)}`, () => {
+    test.use({ viewport: { width: vp.w, height: vp.h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+
+    test('the Fight bar is a slim single row and the options are reachable', async ({ page }) => {
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.locator('.heroTile').first().waitFor();
+      const bar = await page.evaluate<{ h: number; fight: number; back: number }>(
+        `(() => { const b = document.querySelector('#arcadePick .vsActions').getBoundingClientRect(); return { h: b.height, fight: document.querySelector('.vsFight').getBoundingClientRect().top, back: document.querySelector('#arcadePick .vsActions a.menuButton').getBoundingClientRect().top }; })()`,
+      );
+      expect(bar.h / vp.h).toBeLessThan(0.12);
+      expect(Math.abs(bar.fight - bar.back)).toBeLessThan(12); // same row
+      for (const id of ['arcadeMode', 'arcadeLevel', 'arcadeStage']) {
+        const ok = await page.evaluate<boolean>(
+          `(() => { const s = document.querySelector('.pickScroll'); const e = document.querySelector('#${id}'); if (!e) return false; e.scrollIntoView({ block: 'center' }); const r = s.getBoundingClientRect(); const b = e.getBoundingClientRect(); return b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5; })()`,
+        );
+        expect(ok, `${id} reachable inside the scroll region`).toBe(true);
+      }
+      const sw = await page.evaluate<number>(`document.documentElement.scrollWidth`);
+      expect(sw).toBeLessThanOrEqual(vp.w);
+    });
+  });
+}
