@@ -281,7 +281,7 @@ export function voidStageState(scene: Phaser.Scene): VoidStageProbe | undefined 
   return probes.get(scene)?.();
 }
 
-export function mountVoidStage(arena: Phaser.Scene, view: RenderView, alpha: () => number, reduceMotion: () => boolean): void {
+export function mountVoidStage(arena: Phaser.Scene, view: RenderView, alpha: () => number, reduceMotion: () => boolean, pos: () => number = alpha): void {
   const w = arcadePlayfield().w;
   const h = VOID_WALL_Y - VOID_BAND_TOP;
   const decor: Phaser.GameObjects.Image[] = [];
@@ -309,7 +309,7 @@ export function mountVoidStage(arena: Phaser.Scene, view: RenderView, alpha: () 
 
   const find = (c: RenderCharacter): void => {
     if (c.element !== 'void' || (c.flags & BENCHED_OR_DEAD) !== 0) return;
-    const a = alpha();
+    const a = pos();
     visualBox(c.px + (c.x - c.px) * a, c.py + (c.y - c.py) * a, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, box, view.arcade() ? arcadePlayfield().w : undefined);
     boss.found = true;
     boss.x = box.x + box.w / 2;
