@@ -22,8 +22,8 @@ const SLAB_H = 228;
  * Phone card (qa-r27: the full slab covered both fighters at 844x390): a short slab in the free band between the weather label and the
  * banner's "K.O." line, with the kicker, the title and the headline only (the detail lines stay in the live region).
  */
-const COMPACT_Y = 184;
-const COMPACT_H = 124;
+const COMPACT_Y = 214;
+const COMPACT_H = 116;
 /** `phoneBoost(hud, 2, 1100)` at or above this is a phone (a drawn width under about 730 CSS px). */
 const COMPACT_BOOST = 1.5;
 const FADE_IN_TICKS = 10;
@@ -79,7 +79,7 @@ export function mountResultView(
   /** Slab top and the y offsets of the four texts, for the layout in use. */
   const place = (): { y: number; h: number; kicker: number; title: number; head: number; body: number } =>
     compact
-      ? { y: COMPACT_Y, h: COMPACT_H, kicker: 4, title: 20, head: 68, body: 96 }
+      ? { y: COMPACT_Y, h: COMPACT_H, kicker: 4, title: 18, head: 64, body: 90 }
       : { y: SLAB_Y, h: SLAB_H, kicker: 16, title: 38, head: 98, body: 130 };
 
   const text = (size: number, style: string, color: string, spacing = 0): Phaser.GameObjects.Text =>
