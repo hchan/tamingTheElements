@@ -302,6 +302,16 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(b.x + b.w / 2)}, ${String(b.y + b.h / 2)}); return e ? (e.closest('.touchStrike') || e).id : ''; })()`);
         expect(hit).toBe(id.slice(1));
       }
+      // QA r88 P1: the dropped Blast / Flame / Ice Shock tiles are named on the Strike circles (no silent drop).
+      await page.waitForFunction(`[...document.querySelectorAll('.touchStrikeAbility')].filter((n) => n.textContent && n.getBoundingClientRect().width > 0).length === 2`);
+      for (const id of ['#touchStrike1', '#touchStrike2']) {
+        const b = await box(page, id);
+        const t = await page.evaluate<{ r: number; l: number; txt: string }>(`(() => { const n = document.querySelector('${id} .touchStrikeAbility').getBoundingClientRect(); const c = document.querySelector('${id}').getBoundingClientRect(); return { r: c.right - n.right, l: n.left - c.left, txt: document.querySelector('${id} .touchStrikeAbility').textContent }; })()`);
+        expect(t.txt.length, id).toBeGreaterThan(0);
+        expect(t.l, id).toBeGreaterThanOrEqual(0);
+        expect(t.r, id).toBeGreaterThanOrEqual(0);
+        expect(b.w).toBeGreaterThanOrEqual(44);
+      }
     });
 
     test('3v3: Tag and Tag 2 are 44x44 buttons, hold their key on a tap, and every control is still 44x44', async ({ page }) => {

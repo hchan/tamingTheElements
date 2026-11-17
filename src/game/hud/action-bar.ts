@@ -353,6 +353,35 @@ export function withoutStrikeTiles<T extends Pick<ActionSlot, 'kind' | 'sprite'>
   return slots.filter((s) => !(s.kind === 'ability' && s.sprite !== SNAG_SPRITE));
 }
 
+/** The two Strike circles' own ability names for a bar's abilities (index 0 = Strike 1): [short word on the circle, full name for screen readers]. Pure, for tests. */
+export function strikeCues(abilities: readonly { sprite: string }[]): [string, string][] {
+  return [0, 1].map((i): [string, string] => {
+    const sprite = abilities[i]?.sprite ?? '';
+    const short = abilityShortOfSprite(sprite) ?? '';
+    return [short, abilityNameOfSprite(sprite) ?? short];
+  });
+}
+
+/** Portrait phones: name what each Strike circle fires (the bar's Blast / Flame / Ice Shock tiles are dropped), as a small third line on the circle. Idempotent. */
+export function showStrikeCues(cues: readonly (readonly [string, string])[]): void {
+  if (typeof document === 'undefined') return;
+  ['touchStrike1', 'touchStrike2'].forEach((id, i) => {
+    const b = document.getElementById(id);
+    const cue = cues[i];
+    if (!b || !cue) return;
+    let n = b.querySelector<HTMLElement>('.touchStrikeAbility');
+    if (!n) {
+      n = document.createElement('span');
+      n.className = 'touchStrikeAbility';
+      b.append(n);
+    }
+    if (n.textContent !== cue[0]) n.textContent = cue[0];
+    const key = b.querySelector('.touchStrikeKey')?.textContent ?? String(i + 1);
+    const label = cue[1] === '' ? `${key} Strike` : `${key} Strike: ${cue[1]}`;
+    if (b.getAttribute('aria-label') !== label) b.setAttribute('aria-label', label);
+  });
+}
+
 const PUNCTUATION: Readonly<Record<string, string>> = { Semicolon: ';', Period: '.', Comma: ',', Slash: '/', Quote: "'", Minus: '-', Equal: '=' };
 
 /** The key labels of a binding set for the small mirror slots: punctuation keys as their symbol (a word would not fit). */
@@ -783,6 +812,7 @@ export class ActionBarView {
     this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : one ? one.slots : built;
     const top = grouped ? grouped.top : one ? one.top : barTop(built.length, extras ? k : undefined);
     this.panelTop = top;
+    if (one && bar && this.frame % 10 === 1) showStrikeCues(strikeCues(bar.abilities));
     if (!this.mirror) setPanelTop(this.scene, top);
     const g = this.gfx;
     g.clear();

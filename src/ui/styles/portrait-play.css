@@ -65,3 +65,7 @@ html[data-portrait-play] #firstRunHint.firstRunHint .firstRunDone {
   background: rgba(74, 60, 42, 0.8);
   pointer-events: auto;
 }
+
+/* QA r88 P1: the bar drops its Blast / Flame / Ice Shock tiles because the Strike circles fire them; each circle names its ability so nothing is hidden. */
+html[data-portrait-play] #touchStrikes .touchStrikeAbility { display: block; max-width: 54px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 10px; line-height: 1.1; font-weight: 700; text-shadow: 0 1px 2px #000; }
+html[data-portrait-play] #touchStrikes .touchStrikeAbility:empty { display: none; }
