@@ -3,7 +3,7 @@ import type { RenderView } from '@core/index';
 import { ELEMENT_COLORS } from '../fx/element-colors';
 import { mute } from '../fx/grim-fx';
 import { ROOT_ICON, STATUS_LOOKS, StatusTracker, chipBlink, chipFlash, chipPop } from '../fx/status-fx';
-import { coreDisplayWidth, crisp, fitScene, phoneBoost, viewWidth } from '../boot/viewport';
+import { coreDisplayWidth, crisp, fitScene, phoneBoost, viewHeight, viewWidth } from '../boot/viewport';
 import { lookup } from '../views/projectile-view';
 import { heroName } from '../hud/tag-fx';
 import { elementMark } from '../hud/element-mark';
@@ -159,7 +159,7 @@ export class Hud extends Phaser.Scene {
   }
 
   create(): void {
-    fitScene(this);
+    fitScene(this, 'top');
     if (this.arcade) this.drawScrim();
     this.back = this.add.graphics().setDepth(98);
     this.gfx = this.add.graphics().setDepth(100);
@@ -641,7 +641,7 @@ export class Hud extends Phaser.Scene {
     // World to screen (the arena pans and zooms) in the HUD camera's real frame (wider than 1280 on a wide view), then keep each number
     // on screen, off the combo readout and TAG! call, and clear of the live pops, call-outs and numbers already placed (DMGNUM-1).
     const from = this.arenaView?.();
-    const frame = hudFrame(viewWidth(this), this.viewFrame);
+    const frame = hudFrame(viewWidth(this), this.viewFrame, viewHeight(this));
     this.collectObstacles(from, frame);
     const avoid = this.numberAvoid;
     avoid.length = 0;
@@ -757,7 +757,8 @@ export class Hud extends Phaser.Scene {
     const c = this.game.canvas.getBoundingClientRect();
     const k = coreDisplayWidth(this) / 1280;
     const hudLeft = c.left + (c.width - 1280 * k) / 2;
-    const hudTop = c.top + (c.height - 720 * k) / 2;
+    // The HUD camera is top-anchored: on the tall view (portrait play) its top is the canvas top.
+    const hudTop = viewHeight(this) > 720 ? c.top : c.top + (c.height - 720 * k) / 2;
     let left: number | undefined;
     for (const id of ['pauseButton', 'fullscreenToggle']) {
       const b = document.getElementById(id);

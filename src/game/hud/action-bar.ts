@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderArcade, RenderView } from '@core/index';
 import { Cmd, GUARD_MAX, METER_BAR, RoundPhase, WEATHER_CHARGE_FULL } from '@core/index';
 import { swapBlockWord } from './swap-notice';
-import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolutionOf, viewWidth } from '../boot/viewport';
+import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { actionKeyLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
 import { HUD_WIDTH } from './bars';
@@ -724,6 +724,9 @@ export class ActionBarView {
     return !this.mirror && typeof document !== 'undefined' && document.getElementById('arcadeCharge') !== null;
   }
 
+  /** Top edge of the bar's panel in the bar's own 1280x720 box (last update); the camera frames the floor above it. */
+  panelTop = BAR_Y;
+
   update(): void {
     this.box = this.place?.() ?? IDENTITY;
     this.gfx.setPosition(this.box.x, this.box.y).setScale(this.box.scale);
@@ -747,6 +750,7 @@ export class ActionBarView {
     const one = !this.mirror && extras && !grouped && isPortraitPlay(this.scene.game) ? oneRowSlots(built, k) : undefined;
     this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : one ? one.slots : built;
     const top = grouped ? grouped.top : one ? one.top : barTop(built.length, extras ? k : undefined);
+    this.panelTop = top;
     const g = this.gfx;
     g.clear();
     this.back.clear();
@@ -928,7 +932,8 @@ export class ActionBarView {
   private boxPoint(p: Phaser.Input.Pointer): { x: number; y: number } {
     if (!this.place) return { x: p.worldX, y: p.worldY };
     const res = resolutionOf(this.scene);
-    return { x: p.x / res - (viewWidth(this.scene) - LOGICAL_W) / 2, y: p.y / res };
+    // The bar's box sits at the bottom of the view: the tall view (portrait play) adds (viewHeight - 720) logical px above it.
+    return { x: p.x / res - (viewWidth(this.scene) - LOGICAL_W) / 2, y: p.y / res - (viewHeight(this.scene) - LOGICAL_HEIGHT) };
   }
 
   private readonly onPointer = (p: Phaser.Input.Pointer): void => {

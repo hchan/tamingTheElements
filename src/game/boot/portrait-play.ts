@@ -27,6 +27,29 @@ export function deckFor(vh: number, stickTop: number, strikesTop: number): numbe
   return Math.max(PORTRAIT_DECK, Math.ceil(vh - top + PORTRAIT_BAR_EXT + 8));
 }
 
+/** The slice of the canvas parent element the deck measurement reads. */
+interface ParentBox {
+  getBoundingClientRect(): { top: number; bottom: number; height: number };
+  ownerDocument: { getElementById(id: string): { getBoundingClientRect(): { top: number; height: number } } | null };
+}
+
+/**
+ * Measures the deck of the live page: `deckFor` over the parent box's bottom and the tops of the touch stick and strikes (DOM
+ * reads; a missing or hidden control counts as absent, giving the 200 px floor).
+ */
+export function measureDeck(game: Phaser.Game): number {
+  const parent = game.scale.parent as unknown as ParentBox | null | undefined;
+  if (!parent || typeof parent.getBoundingClientRect !== 'function') return PORTRAIT_DECK;
+  const top = (id: string): number => {
+    const r = parent.ownerDocument.getElementById(id)?.getBoundingClientRect();
+    return r && r.height > 0 ? r.top : Number.POSITIVE_INFINITY;
+  };
+  const stick = top('touchStick');
+  const strikes = top('touchStrikes');
+  if (stick === Number.POSITIVE_INFINITY && strikes === Number.POSITIVE_INFINITY) return PORTRAIT_DECK;
+  return deckFor(parent.getBoundingClientRect().bottom, stick, strikes);
+}
+
 export function isPortraitPlay(game: Phaser.Game): boolean {
   return game.registry.get(PORTRAIT_PLAY) === true;
 }

@@ -5,7 +5,7 @@ import { arcadePlayfield, type RenderCharacter, type RenderView } from '@core/in
 import { embers, glowPair, mute, paintEmbers, softFill, softStroke, toPts } from './grim-fx';
 import { popCeil, popLaneLift } from './pop-lanes';
 import { CHIP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect } from '../hud/arcade-hud';
-import { viewWidth } from '../boot/viewport';
+import { viewHeight, viewWidth } from '../boot/viewport';
 import { AURAS, LASH_TICKS, SNAG_ROPE_COLOR, SNAG_SPRITE, auraPolys, POP_TICKS, popLook, snagLash } from './ability-aura';
 
 /**
@@ -175,7 +175,7 @@ export function mountAbilityAuraView(arena: Phaser.Scene, view: RenderView, redu
       let bottom = p.y - p.lift + look.dy;
       const cam = arena.cameras.main;
       const from: HudRect = viewOfCamera(cam, camView);
-      const to: HudRect = hudFrame(viewWidth(arena), toFrame);
+      const to: HudRect = hudFrame(viewWidth(arena), toFrame, viewHeight(arena));
       const hw = (p.text.displayWidth / from.w) * to.w;
       const hx = projectToHud(p.x, bottom, from, to, pt).x;
       const ceil = popCeil(arena.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined, hx - hw / 2, hx + hw / 2);

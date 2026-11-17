@@ -21,3 +21,28 @@ describe('syncTouchOverlays portrait skirts', () => {
     expect(document.querySelectorAll('.touchSkirtDeco')).toHaveLength(0);
   });
 });
+
+describe('syncTouchOverlays box placement', () => {
+  const place = (rect: { left: number; top: number; width: number; height: number }): { left: number; top: number } => {
+    document.body.innerHTML = '<div id="g"><button id="arcadeDash" class="touchBtn"></button></div>';
+    syncTouchOverlays([{ touch: 'Dash', x: 100, y: 600, size: 80 }], { getBoundingClientRect: () => rect }, document);
+    const el = document.getElementById('arcadeDash') as HTMLElement;
+    return { left: parseFloat(el.style.left), top: parseFloat(el.style.top) };
+  };
+  it('normal view: the box origin is the canvas origin', () => {
+    const r = place({ left: 0, top: 0, width: 640, height: 360 });
+    expect(r.left).toBeCloseTo(50, 3);
+    expect(r.top).toBeCloseTo(300, 3);
+  });
+  it('wide view: the 1280 box is centred horizontally', () => {
+    const r = place({ left: 0, top: 0, width: 800, height: 360 });
+    expect(r.left).toBeCloseTo(80 + 50, 3);
+    expect(r.top).toBeCloseTo(300, 3);
+  });
+  it('tall view: the 1280x720 box sits at the bottom of the canvas', () => {
+    const r = place({ left: 0, top: 52, width: 390, height: 592 });
+    const k = 390 / 1280;
+    expect(r.left).toBeCloseTo(100 * k, 1);
+    expect(r.top).toBeCloseTo(52 + 592 - 720 * k + 600 * k, 1);
+  });
+});
