@@ -39,6 +39,11 @@ export interface ArenaProbe {
   characters(): ProbeCharacter[];
   /** Pauses the real-time driver and runs n sim ticks with the given commands (default: no input). */
   step(n: number, cmds?: readonly [number, number]): void;
+  /**
+   * Runs n ticks with `cmds`; after each tick renders `frames` frames at wall-clock alpha 0, 1/frames, ... through the real
+   * draw path and returns character `id`'s drawn x per frame plus whether the clock was frozen then (smooth-movement proof).
+   */
+  sweepDrawn(id: number, n: number, cmds: readonly [number, number], frames: number): { x: number; frozen: boolean }[];
   /** Pauses the real-time driver and runs n ticks with the agents (the real keyboard) deciding the commands. */
   stepLive(n: number): void;
   /** Sets a character's current health (e.g. 0 to win, or <=25% to make it capturable). */

@@ -1,3 +1,4 @@
+import { HoldLerp } from '../loop/hold-lerp';
 import { mountShakeScroll } from '../fx/camera-shake';
 import { LowLifeVignette } from '../fx/low-life-vignette';
 import { shockSeek, shockState } from '../fx/shock-view';
@@ -215,6 +216,7 @@ export class Arena extends Phaser.Scene {
     this.world = world;
     const view = createRenderView(world);
     this.view = view;
+    this.holdLerp.reset();
     const net = this.launch?.net;
     const rollbackWindow = getUiFlags(window.location.search).lockstep ? 0 : ROLLBACK_WINDOW;
     if (rollbackWindow > 0) this.playOnce = new PlayOnce();
@@ -382,7 +384,7 @@ export class Arena extends Phaser.Scene {
       });
       // The Eternal Void's horizon band and turning rings (stage 9 presentation; mounts only when a void fighter is in the match).
       void import('../views/void-stage').then((m) => {
-        if (this.arcadeHud === hud) m.mountVoidStage(this, view, () => this.frameAlpha, () => getPrefs().reduceMotion);
+        if (this.arcadeHud === hud) m.mountVoidStage(this, view, () => this.frameAlpha, () => getPrefs().reduceMotion, () => this.framePos);
       });
       // The trap markers (WP 39b, its own lazy chunk).
       void import('../fx/trap-view').then((m) => {
@@ -425,7 +427,7 @@ export class Arena extends Phaser.Scene {
       if (this.view === view) this.poses = m.mountPoseLayer(this, view, pool, projPool, getPrefs);
     });
     mountShakeScroll(this);
-    this.launch?.arcadeView?.(this, view, () => this.frameAlpha);
+    this.launch?.arcadeView?.(this, view, () => this.framePos);
     // The `?ff=arenaDemo,arcade` hook has no `arcadeView` (Phaser hands the scene `{}` as launch data): mount the pan camera so it shows the real view.
     if (!this.launch?.arcadeView && arcade) {
       void import('../fx/arena-pan').then((m) => {
@@ -761,6 +763,26 @@ export class Arena extends Phaser.Scene {
       ageFx: (on) => {
         this.fxAges = on;
       },
+      sweepDrawn: (id, n, cmds, frames) => {
+        driver.pause();
+        const out: { x: number; frozen: boolean }[] = [];
+        for (let k = 0; k < n; k++) {
+          this.advance(cmds);
+          for (let f = 0; f < frames; f++) {
+            // One render frame at wall-clock alpha f / frames, through the same sampling and draw path as `update`.
+            const alpha = f / frames;
+            this.samplePos(view, alpha);
+            this.frameTick = view.tick;
+            this.frameAlpha = alpha;
+            this.frameLive = false;
+            this.pool?.begin();
+            view.forEachCharacter(this.drawCharacter);
+            this.pool?.end();
+            out.push({ x: this.pool?.acquire(id).drawnX ?? Number.NaN, frozen: view.arcade()?.frozen ?? false });
+          }
+        }
+        return out;
+      },
       stepLive: (n) => {
         driver.pause();
         for (let k = 0; k < n; k++) this.advance([undefined, undefined]);
@@ -1056,6 +1078,7 @@ export class Arena extends Phaser.Scene {
     if (++this.frames % LOW_HEALTH_POLL_FRAMES === 0) this.checkLowHealth();
     const alpha = driver.frame();
     const tick = view.tick;
+    this.samplePos(view, alpha);
     // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them), unless the
     // test hook's ageFx lets them age; the fx sink's pause check above uses the same rule.
     const live = !effectsHeld(driver.isPaused, this.fxAges);
@@ -1082,9 +1105,19 @@ export class Arena extends Phaser.Scene {
     projPool.end();
   }
 
+  /** Position fraction: equals alpha unless the clock is held (hit-stop, super freeze, KO slow-mo); sampled once per frame. */
+  private samplePos(view: RenderView, alpha: number): void {
+    const hold = view.arcade();
+    this.holdLerp.sample(view.tick, hold ? hold.gameTick : view.tick, hold?.frozen ?? false, hold?.slowHold ?? false);
+    this.framePos = this.holdLerp.fraction(alpha);
+  }
+
   /** Per-frame callbacks are fields so `update` allocates no closures. */
   private frameTick = 0;
   private frameAlpha = 0;
+  /** Lerp weight for fighter and projectile positions (HoldLerp); `frameAlpha` stays for timing effects. */
+  private framePos = 0;
+  private readonly holdLerp = new HoldLerp();
   private frameLive = true;
   private arcadeMatch = false;
   /** Test hook: let frame-timed view effects (hit flash, HUD numbers, white pops, rings, sparks, streaks, KO wash) age on real frames while the sim stays paused. */
@@ -1095,14 +1128,14 @@ export class Arena extends Phaser.Scene {
     this.teamElement[c.team] = c.element;
     // The freeze tint is the Classic Tornado status only: the frozen flag also marks a melee caster's recovery (PARITY C08).
     const tint = this.view ? frozenTintOf(this.view, c.id, this.arcadeMatch) : false;
-    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive, tint);
+    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive, tint, this.framePos);
   };
   private readonly drawProjectile = (p: RenderProjectile): void => {
-    this.projPool?.acquire(p.id).apply(p, this.frameAlpha);
+    this.projPool?.acquire(p.id).apply(p, this.framePos);
   };
 
   private readonly drawMelee = (p: RenderProjectile): void => {
-    this.projPool?.acquire(p.id).apply(p, this.frameAlpha, true, this.teamElement[p.team]);
+    this.projPool?.acquire(p.id).apply(p, this.framePos, true, this.teamElement[p.team]);
   };
 
   private readonly shutdownHandler = (): void => {
@@ -1136,6 +1169,7 @@ export class Arena extends Phaser.Scene {
     this.projPool?.clear();
     this.pool = undefined;
     this.projPool = undefined;
+    this.holdLerp.reset();
     this.fx = undefined;
     this.arcadeHud = undefined;
     this.rounds = undefined;

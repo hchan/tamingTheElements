@@ -267,7 +267,12 @@ export class CharacterView {
    * ice-blue freeze tint; it defaults to the `frozen` flag, but that flag is also set for a melee caster's ~13 ticks of cast
    * recovery (systems/melee.ts), so the scene passes `frozenTintOf` instead (legacy skipped the colour change there, abilities.js freeze(true)).
    */
-  apply(c: RenderCharacter, tick: number, alpha: number, live = true, frozenTint = (c.flags & EntityFlag.frozen) !== 0): void {
+  /** Test probe: the body image's drawn x (logical px). */
+  get drawnX(): number {
+    return this.image.x;
+  }
+
+  apply(c: RenderCharacter, tick: number, alpha: number, live = true, frozenTint = (c.flags & EntityFlag.frozen) !== 0, pos = alpha): void {
     this.element = c.element;
     const hidden = (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0;
     this.image.setVisible(!hidden);
@@ -294,8 +299,8 @@ export class CharacterView {
     this.lastTick = tick;
     this.lastAlpha = alpha;
     this.recoilDone = false;
-    let x = lerp(c.px, c.x, alpha);
-    let y = lerp(c.py, c.y, alpha);
+    let x = lerp(c.px, c.x, pos);
+    let y = lerp(c.py, c.y, pos);
     if (tick < this.jitterUntil) {
       if (live) this.jitterSign = -this.jitterSign;
       x += JITTER_PX * this.jitterSign;
