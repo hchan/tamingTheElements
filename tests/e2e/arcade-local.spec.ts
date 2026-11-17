@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, characters, collectErrors } from './parity/helpers';
 
-// Local two-player Arcade Versus: the picker's "Two players (this computer)" option, Player 1 on the usual keys and Player 2 on
+// Local two-player Arcade Versus: the picker's "Two players, same screen" option, Player 1 on the usual keys and Player 2 on
 // I J K L / U / O / Y / N / B (src/game/input/local-two.ts). Both fighters are driven by real key presses (the arena reads the
 // keyboard on each live tick); `manual=1` starts the arena paused, so every tick is stepped. Page-side code is passed as strings.
 const INTRO = 91;

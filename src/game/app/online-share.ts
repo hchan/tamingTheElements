@@ -14,6 +14,25 @@ export function joinParam(search: string): string | undefined {
   return v !== null && /^T1\.\S+$/.test(v.trim()) ? v.trim() : undefined;
 }
 
+/** A link or a raw code, as pasted: a full invite URL gives its `join` code, anything else is trimmed and used as is. */
+export function codeFromInput(text: string): string {
+  const t = text.trim();
+  const m = /[?&]join=([^&#\s]+)/.exec(t);
+  if (m?.[1] !== undefined) {
+    try {
+      return decodeURIComponent(m[1]);
+    } catch {
+      return m[1];
+    }
+  }
+  return t;
+}
+
+/** True when the text has the shape of a signalling code (auto-connect waits for this). */
+export function looksLikeCode(text: string): boolean {
+  return /^T1\.\S{8,}$/.test(text);
+}
+
 /** Copies text; falls back to selecting the box (the player presses Ctrl+C) when the clipboard API is missing or refused. */
 export async function copyText(text: string, box?: HTMLTextAreaElement | HTMLInputElement): Promise<boolean> {
   try {
@@ -71,7 +90,7 @@ export function copyButton(id: string, label: string, getText: () => string, box
 }
 
 /** A big Paste button for a code box: fills it from the clipboard, flashes Pasted, or focuses the box and explains. */
-export function pasteButton(id: string, label: string, box: HTMLTextAreaElement, say: (s: string) => void, okMsg: string): HTMLButtonElement {
+export function pasteButton(id: string, label: string, box: HTMLTextAreaElement, say: (s: string) => void, okMsg: string, after?: () => void): HTMLButtonElement {
   const b = el('button', 'menuButton onlineBig', label);
   b.type = 'button';
   b.id = id;
@@ -79,6 +98,7 @@ export function pasteButton(id: string, label: string, box: HTMLTextAreaElement,
     void pasteInto(box).then((ok) => {
       if (ok) flashLabel(b, 'Pasted');
       say(ok ? okMsg : 'Could not read the clipboard. Press and hold in the box above, choose Paste.');
+      if (ok) after?.();
     });
   });
   return b;
@@ -97,30 +117,22 @@ export function qrNode(link: string): HTMLElement | undefined {
   return box;
 }
 
-/** Share / Copy-link / QR block for the host's code. `say` reports the outcome in words. */
-export function shareBlock(code: string, codeBox: HTMLTextAreaElement, say: (s: string) => void): HTMLElement {
+/** Invite block for the host's code: a big Copy invite link button, Share where the browser has it, and a QR of the link. `say` reports the outcome in words. */
+export function shareBlock(code: string, say: (s: string) => void): HTMLElement {
   const link = joinLink(code);
   const box = el('div');
   box.id = 'onlineShare';
-  const mk = (id: string, label: string, fn: () => void): HTMLButtonElement => {
-    const b = el('button', 'menuButton onlineBig', label);
-    b.type = 'button';
-    b.id = id;
-    b.addEventListener('click', fn);
-    return b;
-  };
-  box.append(
-    copyButton('onlineCopyCode', 'Copy code', () => code, codeBox, say, 'Code copied. Send it to your friend.', 'Could not copy automatically: the code is selected, press Ctrl+C (or press and hold, then Copy).'),
-    copyButton('onlineCopyLink', 'Copy link', () => link, undefined, say, 'Link copied. Your friend opens it to join at once.', 'Could not copy the link. Send the code instead.'),
-  );
+  box.append(copyButton('onlineCopyLink', 'Copy invite link', () => link, undefined, say, 'Link copied. Send it to your friend in chat.', 'Could not copy the link. Open "Having trouble? Manual codes" below and send the code instead.'));
   if (typeof navigator.share === 'function') {
-    box.append(
-      mk('onlineShareLink', 'Share', () => {
-        navigator.share({ title: 'Taming the Elements', text: 'Join my match', url: link }).catch(() => {
-          say('Sharing was cancelled.');
-        });
-      }),
-    );
+    const b = el('button', 'menuButton onlineBig', 'Share');
+    b.type = 'button';
+    b.id = 'onlineShareLink';
+    b.addEventListener('click', () => {
+      navigator.share({ title: 'Taming the Elements', text: 'Join my match', url: link }).catch(() => {
+        say('Sharing was cancelled.');
+      });
+    });
+    box.append(b);
   }
   const qr = qrNode(link);
   if (qr) box.append(qr);

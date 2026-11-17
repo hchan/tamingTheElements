@@ -43,7 +43,6 @@ for (const ff of ['arcade,lockstep', 'arcade']) test(`two players connect throug
   await expect(b.locator('#onlineRoleJoin')).toBeVisible();
 
   await a.locator('#onlineRoleHost').click();
-  await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
   const offer = await a.locator('#onlineOffer').inputValue();
 
@@ -54,7 +53,7 @@ for (const ff of ['arcade,lockstep', 'arcade']) test(`two players connect throug
   const answer = await b.locator('#onlineAnswer').inputValue();
 
   await a.locator('#onlineAnswerIn').fill(answer);
-  await a.locator('#onlineConnect').click();
+  await expect(a.locator('#onlineRace')).toBeVisible({ timeout: 15_000 }); // pasting the reply connects by itself
   await a.locator('#onlineRace').selectOption({ index: 0 });
   await b.locator('#onlineRace').selectOption({ index: 2 });
   await a.locator('#onlineReady').click();
@@ -89,14 +88,13 @@ test('a finished online match offers a Rematch that starts a second match', asyn
   await b.goto(`${q}#online`);
   await a.getByRole('button', { name: 'Online', exact: true }).click();
   await a.locator('#onlineRoleHost').click();
-  await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
   await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
   await b.locator('#onlineJoin').click();
   await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });
   await a.locator('#onlineAnswerIn').fill(await b.locator('#onlineAnswer').inputValue());
-  await a.locator('#onlineConnect').click();
+  await expect(a.locator('#onlineRace')).toBeVisible({ timeout: 15_000 }); // pasting the reply connects by itself
   for (const round of [1, 2]) {
     for (const page of [a, b]) await page.locator('#onlineReady').click();
     for (const page of [a, b]) await waitForMatchEnd(page);
@@ -115,7 +113,6 @@ test('opening the host join link starts Join at once and the match connects', as
   const b = await ctx.newPage();
   await a.goto('/?ff=arcade&ice=none#online');
   await a.locator('#onlineRoleHost').click();
-  await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
   await expect(a.locator('#onlineQr svg')).toBeVisible();
   const offer = await a.locator('#onlineOffer').inputValue();
@@ -124,11 +121,31 @@ test('opening the host join link starts Join at once and the match connects', as
   expect(b.url()).not.toContain('join=');
   await expect(b.locator('#onlineOfferIn')).toHaveValue(offer);
   await a.locator('#onlineAnswerIn').fill(await b.locator('#onlineAnswer').inputValue());
-  await a.locator('#onlineConnect').click();
+  await expect(a.locator('#onlineRace')).toBeVisible({ timeout: 15_000 }); // pasting the reply connects by itself
   await a.locator('#onlineReady').click();
   await b.locator('#onlineReady').click();
   for (const page of [a, b]) {
     await expect(page.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
     await expect.poll(() => page.evaluate<number>('window.__TTE__.state().tick'), { timeout: 30_000 }).toBeGreaterThan(150);
   }
+});
+
+// Online simplified: Host and Join are both visible on first load, and a ?join= link goes straight to Copy reply.
+test('Host a game and Join a game are both visible on first load', async ({ page }) => {
+  await page.goto('/?ff=arcade&ice=none#online');
+  await expect(page.locator('#onlineRoleHost')).toBeVisible();
+  await expect(page.locator('#onlineRoleJoin')).toBeVisible();
+  await expect(page.locator('#onlineManual')).toBeVisible();
+  await page.locator('#onlineRoleHost').click();
+  await expect(page.locator('#onlineCopyLink')).toBeVisible({ timeout: 15_000 });
+});
+
+test('a ?join= link shows Copy reply with no extra choices', async ({ page }) => {
+  await page.goto('/?ff=arcade&ice=none#online');
+  await page.locator('#onlineRoleHost').click();
+  await expect(page.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
+  const offer = await page.locator('#onlineOffer').inputValue();
+  await page.goto(`/?ff=arcade&ice=none&join=${encodeURIComponent(offer)}#online`);
+  await expect(page.locator('#onlineCopyAnswer')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#onlineOfferIn')).toBeHidden();
 });

@@ -89,6 +89,11 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
           const btn = el('button', on ? 'clickable' : 'notClickableYet', item.label);
           btn.type = 'button';
           btn.disabled = !on;
+          // Online is the featured entry: accent styling plus a plain-words subline (CSS ::after). The name stays "Online" for screen readers.
+          if (item.route === 'online') {
+            btn.classList.add('menuFeatured');
+            btn.setAttribute('aria-label', item.label);
+          }
           if (on) {
             btn.addEventListener('click', () => {
               d.navigate(item.route);

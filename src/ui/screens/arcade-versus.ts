@@ -691,7 +691,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   };
   set.append(
     legend,
-    choice(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players (this computer)' }], o.current.mode)),
+    choice(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players, same screen' }], o.current.mode)),
     choice(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size), 'arcadeTeamHint'),
     choice(select('level', 'AI level', o.levels, o.current.level)),
     choice(select('stage', 'Arena', [{ value: '', label: 'Random' }, { value: 'fire', label: 'Fire' }, { value: 'water', label: 'Water' }, { value: 'earth', label: 'Earth' }, { value: 'air', label: 'Air' }], o.current.stage ?? ''), 'arcadeStageHint'),
@@ -707,6 +707,9 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   start.id = 'arcadeStart';
   const back = el('a', 'menuButton', 'Back');
   back.href = '#main';
+  const onlineLink = el('a', 'menuLink onlineMenuLink', 'Play a friend online');
+  onlineLink.href = '#online';
+  onlineLink.id = 'arcadeOnlineLink';
   const roster = rosterView(
     o.races,
     () => form.elements as unknown as Record<string, HTMLSelectElement>,
@@ -728,7 +731,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const hints = el('div', 'vsHints');
   hints.append(stageHint, teamHint);
   set.append(roster.node, hints);
-  actions.append(start, fightHint, back);
+  actions.append(start, fightHint, back, onlineLink);
   const scroll = el('div', 'pickScroll');
   // Phone portrait puts the option rows below the hero grid (see picker-compact.css); this strip stays at the top, says what is set and jumps to them.
   const optsJump = el('button', 'vsOptsJump');
