@@ -30,6 +30,24 @@ async function fightTo(page: Page, size: { width: number; height: number }): Pro
   await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
 }
 
+/** No name wraps mid-word (every line break sits at a space) and, on phones, the hero tiles share one top edge. */
+async function expectNamesAndTilesClean(page: Page): Promise<void> {
+  const res = await page.evaluate<{ text: string; broken: boolean }[]>(`(() => [...document.querySelectorAll('#arcadeResults .matchEndName')].map((p) => {
+    const node = p.firstChild; const text = node.textContent; let pos = 0; let broken = false;
+    for (const w of text.split(' ')) {
+      if (w.length > 0) { const r = document.createRange(); r.setStart(node, pos); r.setEnd(node, pos + w.length); if (r.getClientRects().length > 1) broken = true; }
+      pos += w.length + 1;
+    }
+    return { text, broken };
+  }))()`);
+  expect(res.length).toBeGreaterThan(0);
+  for (const r of res) expect(r.broken, `"${r.text}" wraps mid-word`).toBe(false);
+  // Phone: the two equal-size tiles share a top edge (desktop deliberately pairs a large winner tile with a small foe tile).
+  if ((page.viewportSize()?.width ?? 0) > 480) return;
+  const tops = await page.evaluate<number[]>(`[...document.querySelectorAll('#arcadeResults .matchEndFace')].map((f) => Math.round(f.getBoundingClientRect().top))`);
+  expect(new Set(tops).size, `hero tiles share a top edge: ${tops.join(',')}`).toBe(1);
+}
+
 for (const size of SIZES) {
   for (const [side, heading] of [['lose', 'Defeat']] as const) {
     test(`match end ${side} at ${String(size.width)}: own hero large, foe beside it`, async ({ page }) => {
@@ -41,6 +59,7 @@ for (const size of SIZES) {
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
       await expect(results.locator('.matchEndMain .matchEndName').first()).toContainText('Sindarosa');
       await expect(results.locator('.matchEndName')).toHaveCount(2);
+      await expectNamesAndTilesClean(page);
       const dir = process.env['SHOT_DIR'];
       if (dir) await page.screenshot({ path: `${dir}/match-end-${side}-${String(size.width)}.png` });
     });
@@ -120,6 +139,7 @@ for (const size of SIZES) {
     await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toBeVisible();
     await expect(results.locator('.matchEndName').first()).toContainText('Sindarosa');
     await expect(results.locator('.matchEndStats')).toContainText('Rounds 2-0');
+    await expectNamesAndTilesClean(page);
     const dir = process.env['SHOT_DIR'];
     if (dir) await page.screenshot({ path: `${dir}/match-end-win-${String(size.width)}.png` });
     for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
