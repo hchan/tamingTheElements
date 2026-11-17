@@ -11,7 +11,7 @@ import { lookup } from '../views/projectile-view';
 import { gradeRgba, mute } from '../fx/grim-fx';
 import { getPrefs } from '../platform/a11y/prefs';
 import { syncTouchOverlays } from './touch-overlay';
-import { PORTRAIT_BAR_EXT, isPortraitPlay } from '../boot/portrait-play';
+import { PORTRAIT_BAR_EXT, isPortraitPlay, setPanelTop } from '../boot/portrait-play';
 import { CLEANSE_COOLDOWN, cleanseClockOf } from './cleanse-clock';
 import { tagSlot } from './tag-slot';
 import { elementalShown } from '../platform/cleanse-info';
@@ -751,6 +751,7 @@ export class ActionBarView {
     this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : one ? one.slots : built;
     const top = grouped ? grouped.top : one ? one.top : barTop(built.length, extras ? k : undefined);
     this.panelTop = top;
+    if (!this.mirror) setPanelTop(this.scene, top);
     const g = this.gfx;
     g.clear();
     this.back.clear();

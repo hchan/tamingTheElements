@@ -46,6 +46,14 @@ export function verticalFrame(viewH: number, barTop: number, zoom: number): numb
   return 720 - (barTop - viewH / 2) / zoom;
 }
 
+/**
+ * Highest zoom of the portrait tall view: the spare height allows a closer camera, up to 1.6 (and 1 on a view no taller than 16:9).
+ * About 1.37 on 360x640 (view 1380 high), 1.6 on 390x844.
+ */
+export function portraitZoomMax(viewH: number): number {
+  return Math.min(1.6, Math.max(1, viewH / 1008));
+}
+
 /** Keep the view inside [0, worldWidth]; a view wider than the world centres on it. */
 export function clampCenter(centerX: number, zoom: number, worldWidth: number, viewWidth: number): number {
   const half = viewWidth / zoom / 2;

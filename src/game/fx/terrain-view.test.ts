@@ -82,7 +82,7 @@ function fakeScene(textures: string[] = [], camera: Record<string, unknown> = { 
   const scene = {
     events,
     cameras: { main: camera },
-    scale: { width: 1280, displaySize: { width: 1280 } },
+    scale: { width: 1280, displaySize: { width: 1280 }, on: () => undefined, off: () => undefined },
     sys: { isActive: () => active },
     textures: {
       exists: (k: string) => textures.includes(k),

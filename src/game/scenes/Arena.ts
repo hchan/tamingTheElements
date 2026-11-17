@@ -61,7 +61,8 @@ import { getUiFlags } from '../platform/flags';
 import { ArcadeHudModel, numberLabel } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene, resolutionOf } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene, resolutionOf, viewHeight } from '../boot/viewport';
+import { isPortraitPlay } from '../boot/portrait-play';
 
 /** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
 const ROLLBACK_WINDOW = 6;
@@ -346,6 +347,7 @@ export class Arena extends Phaser.Scene {
     const bg = element && this.textures.exists(`bg:${element}`) ? element : undefined;
     if (!arcade && element) this.backdrop = new Backdrop(this, element, bg && `bg:${bg}`);
     else if (bg) this.add.image(0, 0, `bg:${bg}`).setOrigin(0, 0).setDisplaySize(arcade ? arcadePlayfield().w : width, height).setDepth(-1);
+    if (element && arcade) this.mountTallFills(element);
     if (element) this.ambient = createStageAmbient(this, element, arcade ? arcadePlayfield().w : width);
 
     // A full-screen DOM overlay (rotate hint) blocks play: hold the sim until it is dismissed.
@@ -434,6 +436,23 @@ export class Arena extends Phaser.Scene {
     // Game destroy (exit-to-menu) emits DESTROY rather than SHUTDOWN on a running scene; handle both once.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdownHandler);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdownHandler);
+  }
+
+  /** Portrait tall view only: dark sky above and ground below the backdrop in the stage's edge colour, so no bare canvas shows. */
+  private mountTallFills(element: string): void {
+    const colour: Record<string, number> = { fire: 0x3a1208, water: 0x0a2440, earth: 0x1c2a0e, air: 0x1a2840 };
+    const c = colour[element] ?? 0x120a1c;
+    const w = arcadePlayfield().w + 4000;
+    const sky = this.add.rectangle(-2000, -4000, w, 4000, c).setOrigin(0, 0).setDepth(-2);
+    const ground = this.add.rectangle(-2000, LOGICAL_HEIGHT, w, 4000, c).setOrigin(0, 0).setDepth(-2);
+    const sync = (): void => {
+      const on = viewHeight(this) > LOGICAL_HEIGHT + 0.5 && isPortraitPlay(this.game);
+      sky.setVisible(on);
+      ground.setVisible(on);
+    };
+    sync();
+    this.scale.on('resize', sync);
+    this.cleanups.push(() => { this.scale.off('resize', sync); });
   }
 
   /** Sounds Phaser already decoded, played through the AudioManager (Ctrl-M mute, unlock on the first gesture). */
@@ -525,7 +544,7 @@ export class Arena extends Phaser.Scene {
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };
       },
-      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / resolutionOf(this), scrollX: this.cameras.main.worldView.x })),
+      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / resolutionOf(this), scrollX: this.cameras.main.worldView.x, centerY: this.cameras.main.worldView.centerY, viewHeight: viewHeight(this), floorScreenY: (LOGICAL_HEIGHT - this.cameras.main.worldView.y) * this.cameras.main.zoom / resolutionOf(this) })),
       shockFx: () => Promise.resolve(shockState(this)),
       shockSeek: (ms) => {
         shockSeek(this, ms);

@@ -47,3 +47,18 @@ describe('arena pan camera glue', () => {
     expect(panFraming(scene)).toEqual({ centerX: 640, zoom: 1 });
   });
 });
+
+describe('arena pan camera on the tall view', () => {
+  it('puts the floor (world y 720) on the bar top and viewBox spans the taller window', () => {
+    const cam = { zoom: 0, cx: 0, cy: 0 };
+    const main = {
+      setZoom(z: number) { cam.zoom = z; return main; },
+      centerOn(x: number, y: number) { cam.cx = x; cam.cy = y; return main; },
+    };
+    const scene = { scale: { width: 1280, height: 1944 }, cameras: { main } } as unknown as Phaser.Scene;
+    applyCamera(scene);
+    // Fallback panel top 640 in the 720 box -> view y 1864; centre = 720 - (1864 - 972).
+    expect(cam.cy).toBeCloseTo(720 - (1864 - 972), 6);
+    expect(viewBox(scene).y).toBeCloseTo(cam.cy - 972, 6);
+  });
+});

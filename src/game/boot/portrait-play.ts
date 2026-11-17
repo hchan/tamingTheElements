@@ -50,6 +50,18 @@ export function measureDeck(game: Phaser.Game): number {
   return deckFor(parent.getBoundingClientRect().bottom, stick, strikes);
 }
 
+const barTops = new WeakMap<object, number>();
+
+/** The action bar records its panel's top edge (in its own 1280x720 box) so the arena camera can frame the floor above it. */
+export function setPanelTop(scene: object, top: number): void {
+  barTops.set(scene, top);
+}
+
+/** The recorded panel top, or `fallback` (the one-row bar's) before the bar has drawn. */
+export function panelTopOf(scene: object, fallback: number): number {
+  return barTops.get(scene) ?? fallback;
+}
+
 export function isPortraitPlay(game: Phaser.Game): boolean {
   return game.registry.get(PORTRAIT_PLAY) === true;
 }
