@@ -1076,7 +1076,10 @@ export class Arena extends Phaser.Scene {
     this.keyboard?.pollPad();
     this.announcer?.flush();
     if (++this.frames % LOW_HEALTH_POLL_FRAMES === 0) this.checkLowHealth();
-    const alpha = driver.frame();
+    // Phaser's rAF timestamp for this frame (loop.now, the performance.now clock; `update`'s own argument is game time, not that)
+    // rather than a second wall-clock read per frame; the driver then snaps its jitter to the display period.
+    const raf = this.game.loop.now;
+    const alpha = raf > 0 ? driver.frame(raf) : driver.frame();
     const tick = view.tick;
     this.samplePos(view, alpha);
     // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them), unless the
