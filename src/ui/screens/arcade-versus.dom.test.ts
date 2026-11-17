@@ -369,4 +369,19 @@ describe('arcadeResultsView (DOM)', () => {
     withDl.querySelector<HTMLElement>('#downloadReplay')?.click();
     expect(calls.at(-1)).toBe('d');
   });
+
+  it('shows the winner portrait, name and stat chips, with Rematch as the primary button', () => {
+    const page = arcadeResultsView({
+      heading: 'Victory!',
+      summary: 's',
+      winner: { id: 'sindarosa' as CharacterId, name: 'Sindarosa' },
+      stats: ['Rounds 2-0'],
+      onRematch: vi.fn(),
+      onChange: vi.fn(),
+    });
+    expect(page.querySelector('.matchEndName')?.textContent).toBe('Sindarosa');
+    expect(page.querySelector('.matchEndFace')).not.toBeNull();
+    expect(page.querySelector('.matchEndStats')?.textContent).toBe('Rounds 2-0');
+    expect(page.querySelector('#arcadeRematch')?.className).toContain('matchEndCta');
+  });
 });

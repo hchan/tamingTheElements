@@ -1,0 +1,108 @@
+/* Match-end beat (Versus results): winner portrait and name, a big result word, stat chips, easy-to-reach buttons. */
+#arcadeResults.matchEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4em;
+}
+.matchEndHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3em;
+}
+.matchEndHero:empty {
+  display: none;
+}
+.matchEndFace {
+  width: 144px;
+  height: 144px;
+  border: 3px solid #ffe600;
+  border-radius: 14px;
+  background-color: rgba(205, 190, 255, 0.22);
+  box-shadow: 0 0 22px rgba(255, 230, 0, 0.5), inset 0 0 12px rgba(235, 225, 255, 0.4);
+}
+.matchEndName {
+  margin: 0;
+  font-size: 1.3em;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+#arcadeResults h1.matchEndWord {
+  margin: 0;
+  font-size: clamp(2.2rem, 9vw, 4rem);
+  font-style: italic;
+  text-transform: uppercase;
+  color: #ffe600;
+  text-shadow: 0 3px 0 #7a2a00, 0 0 18px rgba(255, 160, 0, 0.6);
+}
+.matchEndStats {
+  display: flex;
+  gap: 0.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.matchEndStats:empty {
+  display: none;
+}
+.matchEndStats li {
+  padding: 0.2em 0.8em;
+  border: 1px solid #8a7fb8;
+  border-radius: 999px;
+  background: #1c1a36;
+}
+.matchEndSummary {
+  margin: 0.2em 0;
+  max-width: 32em;
+  opacity: 0.85;
+  font-size: 0.9em;
+}
+.matchEndActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6em;
+  width: 100%;
+  max-width: 34em;
+  margin-top: 0.4em;
+}
+.matchEndActions .menuButton {
+  flex: 1 1 9em;
+  min-height: 48px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.matchEndActions .matchEndCta {
+  flex-basis: 100%;
+  min-height: 56px;
+  font-size: 1.2em;
+  font-weight: 700;
+}
+@media (max-width: 480px) {
+  .matchEndFace {
+    width: 104px;
+    height: 104px;
+  }
+  .matchEndActions .menuButton {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .matchEndFace {
+    animation: matchEndPop 0.45s ease-out both;
+  }
+  #arcadeResults h1.matchEndWord {
+    animation: matchEndPop 0.5s 0.1s ease-out both;
+  }
+  @keyframes matchEndPop {
+    from {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+}
