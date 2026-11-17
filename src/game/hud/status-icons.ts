@@ -30,6 +30,10 @@ export interface ChipLayout {
   readonly top: number;
   /** Chips shown per side instead of CHIP_MAX (portrait phone play: 2). When set, the chips are also sorted: stun and snag first. */
   readonly max?: number;
+  /** Chips per row instead of as many as fit the bar (portrait phone play: 1, so a stack under the name never reaches the bench portrait). */
+  readonly perRow?: number;
+  /** Chips end at the bar's right end instead of starting at its left (the right-hand side in portrait phone play, under its name line and clear of the bench chip). */
+  readonly alignRight?: boolean;
 }
 /** Chips per fighter in portrait play (one chip plus `+N more` when there are more than this). */
 export const PORTRAIT_CHIP_MAX = 2;
@@ -182,8 +186,8 @@ export function collectStatusChips(view: RenderView, team: number, id: number, e
   const w = Math.round(CHIP_W * layout.scale);
   const h = Math.round(CHIP_H * layout.scale);
   const gap = Math.round(CHIP_GAP * layout.scale);
-  const perRow = Math.max(1, Math.floor((maxX - minX + gap) / (w + gap)));
-  const place = (i: number): { x: number; y: number } => ({ x: minX + (i % perRow) * (w + gap), y: layout.top + Math.floor(i / perRow) * (h + gap) });
+  const perRow = layout.perRow ?? Math.max(1, Math.floor((maxX - minX + gap) / (w + gap)));
+  const place = (i: number): { x: number; y: number } => ({ x: layout.alignRight ? maxX - w - (i % perRow) * (w + gap) : minX + (i % perRow) * (w + gap), y: layout.top + Math.floor(i / perRow) * (h + gap) });
   const cap = layout.max ?? CHIP_MAX;
   if (layout.max !== undefined) {
     const ranked = raw.map((r, i) => ({ r, i })).sort((a, b) => chipRank(a.r) - chipRank(b.r) || a.i - b.i);

@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, setPhoneHud, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
@@ -199,6 +199,7 @@ export class Hud extends Phaser.Scene {
       this.scrim = undefined;
       this.trails.clear();
       setChipDrop(0);
+      setPhoneHud(false);
       this.lastActive = [];
       this.grainGfx?.destroy();
       this.grainGfx = undefined;
@@ -387,11 +388,13 @@ export class Hud extends Phaser.Scene {
     // At least 16 px (times the phone boost), and below the hero's health words as measured (they wrap to several lines when boosted).
     const px = Math.round(16 * phoneBoost(this, 2));
     const label = this.labels[team];
-    const top = chipRowTop(Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM + getChipDrop() : 0), label);
+    // Portrait phone: the chips stack directly under the name line, beside the big portrait (the bench chips sit further in, so they never meet).
+    const phone = isPortraitPlay(this.game);
+    const top = chipRowTop(phone ? SLIM_H + 2 : Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM + getChipDrop() : 0), label);
     // The first stunLeft seen after a calm tick is the stun's length (it drains from there); a re-stun that outlasts it raises it.
     const stunLeft = view.arcade()?.stunLeft(c.id) ?? 0;
     this.stunTotals[team] = stunLeft > 0 ? Math.max(this.stunTotals[team] ?? 0, stunLeft) : 0;
-    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top, ...(isPortraitPlay(this.game) ? { max: PORTRAIT_CHIP_MAX } : {}) }, this.stunTotals[team]);
+    const chips = collectStatusChips(view, team, c.id, c.element, x, this.highContrast, { scale: px / CHIP_FONT, top, ...(phone ? { max: PORTRAIT_CHIP_MAX, perRow: 1, alignRight: team === 1 } : {}) }, this.stunTotals[team]);
     const now = view.tick;
     const reduced = this.reduceMotion;
     const tracker = (this.chipTrackers[team] ??= new StatusTracker<ChipLook>(12));
@@ -607,6 +610,7 @@ export class Hud extends Phaser.Scene {
    * (top 58), so the chips, their bars and the tag pill hang lower by the overlap plus a 4 px gap. Landscape and wide views: 0.
    */
   private dropChips(): void {
+    setPhoneHud(isPortraitPlay(this.game));
     if (!isPortraitPlay(this.game)) {
       setChipDrop(0);
       return;

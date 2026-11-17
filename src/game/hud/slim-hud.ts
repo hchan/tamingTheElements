@@ -38,6 +38,17 @@ export function setChipDrop(px: number): void {
 }
 export const getChipDrop = (): number => chipDrop;
 
+/** Portrait phone play (render only, set by the Hud scene): the HUD is drawn about 0.3x, so the hero portraits and bench chips are larger. */
+export const PHONE_PORTRAIT = 92;
+export const PHONE_CHIP_SIZE = 96;
+let phoneHud = false;
+export function setPhoneHud(on: boolean): void {
+  phoneHud = on;
+}
+export const isPhoneHud = (): boolean => phoneHud;
+/** Side of a bench chip's portrait now (CHIP_SIZE, or PHONE_CHIP_SIZE on a portrait phone). */
+export const chipSize = (): number => (phoneHud ? PHONE_CHIP_SIZE : CHIP_SIZE);
+
 export interface SlimBar {
   readonly minX: number;
   readonly maxX: number;
@@ -57,23 +68,26 @@ export function slimBar(team: number): SlimBar {
 
 /** The active hero's portrait square at the outer end of the bar (the right one clears the fullscreen button). */
 export function slimPortrait(team: number): { readonly x: number; readonly y: number; readonly size: number } {
+  // Portrait phone: a big square in the left margin (14 px in), top nearly at the edge; it reaches under the band, beside the name line.
+  if (phoneHud) return { x: team === 0 ? 14 : 1280 - 14 - PHONE_PORTRAIT, y: 4, size: PHONE_PORTRAIT };
   return { x: team === 0 ? 62 : 1170, y: SLIM_PORTRAIT_Y, size: SLIM_PORTRAIT };
 }
 
 /** Bench chip `i`: the portrait square. */
 export function chipRect(team: number, i: number): { readonly x: number; readonly y: number; readonly size: number } {
-  return { x: mirrorX(team, PILL_X0 - 4 - CHIP_SIZE - i * CHIP_PITCH, CHIP_SIZE), y: CHIP_Y + chipDrop, size: CHIP_SIZE };
+  const size = chipSize();
+  return { x: mirrorX(team, PILL_X0 - 4 - size - i * (size + CHIP_PITCH - CHIP_SIZE), size), y: CHIP_Y + chipDrop, size };
 }
 
 /** Bench chip `i`'s mini life bar, under its portrait (the red rest dashes of `tag-view` use it as well). */
 export function chipBar(team: number, i: number): SlimBar {
   const x = chipRect(team, i).x;
-  return { minX: x, maxX: x + CHIP_SIZE, y: CHIP_BAR_Y + chipDrop, line: CHIP_BAR_LINE, lineMax: CHIP_BAR_LINE + 1 };
+  return { minX: x, maxX: x + chipSize(), y: CHIP_BAR_Y - CHIP_SIZE + chipSize() + chipDrop, line: CHIP_BAR_LINE, lineMax: CHIP_BAR_LINE + 1 };
 }
 
 /** The tag pill (word above, cooldown bar under it), at the inner end of the bar, with the chips outside it. */
 export function tagPill(team: number): { readonly x: number; readonly wordY: number; readonly barY: number; readonly w: number } {
-  return { x: mirrorX(team, PILL_X0, PILL_W), wordY: CHIP_Y + chipDrop + 6, barY: CHIP_Y + chipDrop + CHIP_SIZE - PILL_BAR_H, w: PILL_W };
+  return { x: mirrorX(team, PILL_X0, PILL_W), wordY: CHIP_Y + chipDrop + 6, barY: CHIP_Y + chipDrop + chipSize() - PILL_BAR_H, w: PILL_W };
 }
 
 /** The tag word shown in the pill: the full readout ("TAG READY", "TAG 2.4s", "NO TAG") shortened to "TAG", "2.4s", "NO TAG". */

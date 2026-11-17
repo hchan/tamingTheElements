@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PILL_W, SLIM_H, TRAIL_HOLD_MS, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
+  PHONE_CHIP_SIZE, PHONE_PORTRAIT, setPhoneHud, PILL_W, SLIM_H, TRAIL_HOLD_MS, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
 
@@ -167,5 +167,27 @@ describe('portrait life line: the whole name beats the status word (qa-r90 P1)',
         expect(l[0]).toMatch(/ (HURT|LOW)$/);
       }
     }
+  });
+});
+
+describe('portrait phone HUD (render only)', () => {
+  it('is larger, keeps the portrait clear of the bar and the bench chip clear of its pill', () => {
+    setPhoneHud(true);
+    try {
+      for (const team of [0, 1]) {
+        const p = slimPortrait(team);
+        expect(p.size).toBe(PHONE_PORTRAIT);
+        if (team === 0) expect(p.x + p.size).toBeLessThan(slimBar(0).minX);
+        else expect(p.x).toBeGreaterThan(slimBar(1).maxX);
+        const c = chipRect(team, 0);
+        expect(c.size).toBe(PHONE_CHIP_SIZE);
+        expect(c.y + c.size).toBeLessThanOrEqual(chipBar(team, 0).y);
+        const pill = tagPill(team);
+        expect(team === 0 ? c.x + c.size < pill.x : c.x > pill.x + pill.w).toBe(true);
+      }
+    } finally {
+      setPhoneHud(false);
+    }
+    expect(slimPortrait(0).size).toBe(48);
   });
 });
