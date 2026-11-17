@@ -93,6 +93,10 @@ export const ABILITY_NAMES: ReadonlyMap<AbilityId, string> = new Map([
 export const SNAG_NAME = 'Snag';
 export const SNAG_DESCRIPTION = 'Throws a rope that roots the foe for a moment: no walking, Dash or Charge. Fire burns it.';
 
+/** Fire Blast close-range falloff (FUN-DESIGN 2.27): full damage for the first 0.4 s, then it fades to under half by 1.5 s. Shown in the hero panel and Help. */
+export const FIRE_BLAST_NAME = 'Fire Blast';
+export const FIRE_BLAST_FALLOFF = 'Hits hardest up close: the flame spreads wider at first, then fades to about half strength.';
+
 /** Traps (WP 39): the button word, and the name and line of each kind, indexed by `TrapKind` (data/arcade.ts; 0 = none). */
 export const TRAP_WORD = 'Trap';
 export const TRAP_NAMES: readonly string[] = ['', 'Fire Bomb', 'Puddle', 'Spike', 'Gust'];

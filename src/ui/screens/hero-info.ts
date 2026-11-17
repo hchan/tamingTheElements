@@ -3,6 +3,7 @@ import {
   ABILITY_NAMES,
   ARCADE_SNAG_SLOT,
   CHARACTER_TEXT,
+  FIRE_BLAST_FALLOFF,
   SNAG_DESCRIPTION,
   SNAG_NAME,
   describeAbility,
@@ -119,7 +120,8 @@ export function describeAbilityLine(def: AbilityDef | AbilityDefB): string {
   const note = d.additional;
   if (note !== undefined && note !== '') line += `. ${note.charAt(0).toUpperCase()}${note.slice(1)}`;
   line = line.replace(/\.?$/, '.');
-  return `${line} Cooldown ${secs(def.cooldownMs)}.`;
+  const falloff = String(def.id) === 'fire-blast' ? ` ${FIRE_BLAST_FALLOFF}` : '';
+  return `${line}${falloff} Cooldown ${secs(def.cooldownMs)}.`;
 }
 
 export interface AbilityInfo {
