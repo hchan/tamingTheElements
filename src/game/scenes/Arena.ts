@@ -445,11 +445,15 @@ export class Arena extends Phaser.Scene {
    */
   private mountTallFills(element: string, bgKey?: string): void {
     const colour: Record<string, number> = { fire: 0x3a1208, water: 0x0a2440, earth: 0x1c2a0e, air: 0x1a2840 };
-    const fallback = colour[element] ?? 0x120a1c;
-    const edge = (fromTop: boolean): number => {
+    const mix = (a: number, b: number, t: number): number => {
+      const ch = (sh: number): number => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+      return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+    };
+    const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
+    const edge = (key: string | undefined, fallback: number, fromTop: boolean): number => {
       try {
-        if (!bgKey || !this.textures.exists(bgKey)) return fallback;
-        const src = this.textures.get(bgKey).getSourceImage() as CanvasImageSource & { width: number; height: number };
+        if (!key || !this.textures.exists(key)) return fallback;
+        const src = this.textures.get(key).getSourceImage() as CanvasImageSource & { width: number; height: number };
         const probe = document.createElement('canvas');
         probe.width = 1;
         probe.height = 1;
@@ -465,74 +469,91 @@ export class Arena extends Phaser.Scene {
         return fallback;
       }
     };
-    // The drawn picture is warmer and lighter than its raw edge pixels (the stage tint), so pull the sample toward the stage palette.
-    const mixRgb = (a: number, b: number, t: number): number => {
-      const ch = (sh: number): number => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
-      return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-    };
-    const top = mixRgb(edge(true), mixRgb(fallback, 0xffffff, 0.12), 0.5);
     const w = arcadePlayfield().w + 4000;
+    const pw = arcadePlayfield().w;
     const SKY_H = 2400;
-    const key = `tall-sky:${String(top)}`;
-    const mix = (a: number, b: number, t: number): number => {
-      const ch = (sh: number): number => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
-      return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-    };
-    const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
-    if (!this.textures.exists(key)) {
+    const made: string[] = [];
+    /** A 4 x 256 vertical gradient texture, made once per key. */
+    const gradient = (key: string, stops: readonly (readonly [number, string])[]): string => {
+      if (this.textures.exists(key)) return key;
       const tex = this.textures.createCanvas(key, 4, 256);
       const ctx = tex?.getContext();
-      if (tex && ctx) {
-        const deep = mix(top, 0x05060c, 0.72);
-        const g = ctx.createLinearGradient(0, 0, 0, 256);
-        g.addColorStop(0, css(deep));
-        g.addColorStop(0.55, css(mix(top, deep, 0.55)));
-        g.addColorStop(0.9, css(mix(top, 0xffffff, 0.06)));
-        g.addColorStop(1, css(top));
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, 4, 256);
-        tex.refresh();
+      if (!tex || !ctx) return '';
+      const g = ctx.createLinearGradient(0, 0, 0, 256);
+      for (const [at, c] of stops) g.addColorStop(at, c);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 4, 256);
+      tex.refresh();
+      made.push(key);
+      return key;
+    };
+    const rgba = (n: number, a: number): string => `rgba(${String((n >> 16) & 255)},${String((n >> 8) & 255)},${String(n & 255)},${String(a)})`;
+    // The stage's own backdrop (the sim's stage, which the Versus pick steers; not the hero's element), as the terrain view draws it.
+    let voidFight = false;
+    this.view?.forEachCharacter((c) => { if (c.element === 'void') voidFight = true; });
+    const stageElement = (): string => {
+      if (voidFight) return 'void';
+      return ['fire', 'water', 'earth', 'air'][(this.view?.arcade()?.stage ?? 0) - 1] ?? element;
+    };
+    const keyFor = (el: string): string | undefined => (this.textures.exists(`bg:${el}`) ? `bg:${el}` : bgKey);
+    const first = stageElement();
+    const firstKey = keyFor(first);
+    const sky = this.add.image(-2000, -SKY_H, '__DEFAULT').setOrigin(0, 0).setDisplaySize(w, SKY_H).setDepth(-2);
+    const ground = this.add.rectangle(-2000, LOGICAL_HEIGHT, w, 4000, 0).setOrigin(0, 0).setDepth(-2);
+    const art = firstKey !== undefined;
+    // Below the backdrop: its floor mirrored about the bottom edge and dimmed downward to the floor tone, so no flat dark band shows
+    // between the arena and the touch area.
+    const groundMirror = this.add.image(0, LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 0).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
+    const groundFade = this.add.image(0, LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 0).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.7);
+    // The backdrop mirrored about its top edge (a seamless join), then an upright tile above it for the tallest phones, dimmed upward.
+    const mirror = this.add.image(0, 0, '__DEFAULT').setOrigin(0, 1).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
+    const upper = this.add.image(0, -LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 1).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
+    const fade = this.add.image(0, -2 * LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 0).setDisplaySize(pw, 2 * LOGICAL_HEIGHT).setDepth(-1.7);
+    let shown = '';
+    const apply = (el: string): void => {
+      const key = keyFor(el);
+      const fallback = colour[el] ?? 0x120a1c;
+      // The drawn picture is warmer and lighter than its raw edge pixels (the stage tint), so pull the sample toward the stage palette.
+      const top = mix(edge(key, fallback, true), mix(fallback, 0xffffff, 0.12), 0.5);
+      const deep = mix(top, 0x05060c, 0.72);
+      const skyKey = gradient(`tall-sky:${String(top)}`, [[0, css(deep)], [1, css(mix(top, deep, 0.7))]]);
+      if (skyKey) sky.setTexture(skyKey).setDisplaySize(w, SKY_H);
+      const floor = edge(key, fallback, false);
+      ground.setFillStyle(mix(floor, 0x05060c, 0.45));
+      if (key) {
+        // Dim the mirrored art upward (strongest at the top, clear at the join with the real backdrop) so it meets the sky gradient.
+        const toneEnd = mix(top, deep, 0.7);
+        const fadeKey = gradient(`tall-fade:${String(top)}`, [[0, rgba(toneEnd, 0.92)], [0.5, rgba(toneEnd, 0.7)], [1, rgba(toneEnd, 0.5)]]);
+        if (fadeKey) fade.setTexture(fadeKey).setDisplaySize(pw, 2 * LOGICAL_HEIGHT);
+        const toneLow = mix(floor, 0x05060c, 0.45);
+        const gKey = gradient(`tall-gfade:${String(floor)}`, [[0, rgba(toneLow, 0)], [1, rgba(toneLow, 0.95)]]);
+        if (gKey) groundFade.setTexture(gKey).setDisplaySize(pw, LOGICAL_HEIGHT);
+        for (const im of [mirror, upper, groundMirror]) im.setTexture(key);
+        mirror.setDisplaySize(pw, LOGICAL_HEIGHT);
+        upper.setDisplaySize(pw, LOGICAL_HEIGHT);
+        groundMirror.setDisplaySize(pw, LOGICAL_HEIGHT);
       }
-    }
-    const sky = this.textures.exists(key) ? this.add.image(-2000, -SKY_H, key).setOrigin(0, 0).setDisplaySize(w, SKY_H).setDepth(-2) : this.add.rectangle(-2000, -SKY_H, w, SKY_H, fallback).setOrigin(0, 0).setDepth(-2);
-    const ground = this.add.rectangle(-2000, LOGICAL_HEIGHT, w, 4000, edge(false)).setOrigin(0, 0).setDepth(-2);
-    // Stage art continues up into the sky band: the backdrop mirrored about its top edge (a seamless join), fading into the sky tone.
-    const fadeKey = `tall-fade:${String(top)}`;
-    const extras: { setVisible(v: boolean): unknown }[] = [];
-    if (bgKey && this.textures.exists(bgKey)) {
-      if (!this.textures.exists(fadeKey)) {
-        const tex = this.textures.createCanvas(fadeKey, 4, 256);
-        const ctx = tex?.getContext();
-        if (tex && ctx) {
-          const toneEnd = mix(top, mix(top, 0x05060c, 0.72), 0.7);
-          const rgb = `${String((toneEnd >> 16) & 255)},${String((toneEnd >> 8) & 255)},${String(toneEnd & 255)}`;
-          const g = ctx.createLinearGradient(0, 0, 0, 256);
-          g.addColorStop(0, `rgba(${rgb},0.9)`);
-          g.addColorStop(1, `rgba(${rgb},0)`);
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, 4, 256);
-          tex.refresh();
-        }
-      }
-      const pw = arcadePlayfield().w;
-      extras.push(this.add.image(0, 0, bgKey).setOrigin(0, 1).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8));
-      // A second, upright tile above it (its bottom row meets the mirror's top row) for the tallest phones.
-      extras.push(this.add.image(0, -LOGICAL_HEIGHT, bgKey).setOrigin(0, 1).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8));
-      // The overlay dims the mirrored floor upward, so it meets the sky gradient without an edge.
-      if (this.textures.exists(fadeKey)) extras.push(this.add.image(0, -2 * LOGICAL_HEIGHT, fadeKey).setOrigin(0, 0).setDisplaySize(pw, 2 * LOGICAL_HEIGHT).setDepth(-1.7));
-    }
+      shown = el;
+    };
+    apply(first);
+    const artLayers = [groundMirror, groundFade, mirror, upper, fade];
     const sync = (): void => {
       const on = viewHeight(this) > LOGICAL_HEIGHT + 0.5 && isPortraitPlay(this.game);
       sky.setVisible(on);
-      for (const e of extras) e.setVisible(on);
       ground.setVisible(on);
+      for (const e of artLayers) e.setVisible(on && art);
+      if (on) {
+        const el = stageElement();
+        if (el !== shown) apply(el);
+      }
     };
     sync();
     this.scale.on('resize', sync);
+    this.events.on(Phaser.Scenes.Events.UPDATE, sync);
     this.cleanups.push(() => {
       this.scale.off('resize', sync);
-      if (this.textures.exists(key)) this.textures.remove(key);
-      if (this.textures.exists(fadeKey)) this.textures.remove(fadeKey);
+      this.events.off(Phaser.Scenes.Events.UPDATE, sync);
+      for (const k of made) if (this.textures.exists(k)) this.textures.remove(k);
     });
   }
 
