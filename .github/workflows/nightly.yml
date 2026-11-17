@@ -1,11 +1,11 @@
 name: Nightly
 
+# Owner decision (2026-11-17): Actions minutes are rationed; manual dispatch only (no schedule). Run from the Actions tab or locally.
+
 # Full balance tournament diffed against the committed baseline, plus a heavier property-test profile. The Arcade
 # balance compare and fun report run too, report only.
 # See docs/BALANCE.md and docs/TESTING.md. Not part of PR CI.
 on:
-  schedule:
-    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:

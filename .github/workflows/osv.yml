@@ -2,13 +2,8 @@ name: Dependency audit
 
 # Non-blocking at first (continue-on-error). Policy in docs/SECURITY-GATES.md.
 on:
-  pull_request:
-    paths: [pnpm-lock.yaml, package.json]
-  push:
-    branches: [main]
-    paths: [pnpm-lock.yaml, package.json]
   schedule:
-    - cron: '7 5 * * *'
+    - cron: '7 5 * * 1'
   workflow_dispatch:
 
 permissions:
