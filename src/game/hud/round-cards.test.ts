@@ -119,11 +119,11 @@ describe('small banners on a dark band (WP-HF1)', () => {
     expect(at(0)).toMatchObject({ x: 640 - 100 - 30, y: 280 - 30 });
     for (let i = 1; i < 4; i++) expect(at(i).w).toBe(at(i - 1).w - 16);
     expect(at(3)).toMatchObject({ x: 534, y: 274, w: 212, h: 92 });
-    expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.65, 6);
+    expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.75, 6);
     bannerBandFor('ROUND 2', 1, true, 640, 280, 360, 100, strips);
     expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.8, 6);
     bannerBandFor('ROUND 2', 0.5, false, 640, 280, 360, 100, strips);
-    expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.325, 6);
+    expect(1 - (1 - at(0).a) ** 4).toBeCloseTo(0.375, 6);
   });
   it('keeps the text above 4.5:1 over the band on white and black, and 7:1 in high contrast', () => {
     for (const bg of [0xffffff, 0x000000]) {

@@ -100,7 +100,7 @@ export interface BandStrip {
 }
 /** Colour of the band behind a small banner (the stroke colour). */
 export const BANNER_BAND_COLOR = 0x0a0806;
-export const BANNER_BAND_ALPHA = 0.65;
+export const BANNER_BAND_ALPHA = 0.75;
 export const BANNER_BAND_ALPHA_HC = 0.8;
 const BAND_STRIPS = 4;
 const BAND_FEATHER = 8;
