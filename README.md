@@ -106,7 +106,7 @@ in [docs/BALANCE.md](docs/BALANCE.md).
 
 ## Deployment
 
-Pushes to `main` that pass CI deploy to GitHub Pages. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+GitHub Pages is rebuilt from `main` once a day (or on manual dispatch) after CI passes; pushes do not trigger it. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Contributing
 

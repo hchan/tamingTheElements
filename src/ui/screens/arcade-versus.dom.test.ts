@@ -411,7 +411,7 @@ describe('arcadeResultsView (DOM)', () => {
     expect(arcadeResultsView({ ...base, tone: 'win', player: 1 }).querySelector('.matchEndRibbon')?.textContent).toBe('★P1 Winner');
     expect(arcadeResultsView({ ...base, tone: 'win' }).querySelector('.matchEndRibbon')?.textContent).toBe('★Winner');
     const draw = arcadeResultsView({ ...base, tone: 'draw' });
-    expect(draw.querySelector('.matchEndRibbon')?.textContent).toBe('≡Draw');
+    expect(draw.querySelector('.matchEndRibbon')?.textContent).toBe('≡No winner');
     expect(draw.dataset['player']).toBeUndefined();
   });
 });

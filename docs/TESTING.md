@@ -25,8 +25,9 @@ How to run, place and write tests. Run everything with `corepack pnpm <script>` 
 | `pnpm docs:gen` | `tools/gen/gen-design-tables.ts`: refreshes the generated tables in `docs/GAME-DESIGN.md` |
 | `pnpm lint`, `pnpm typecheck`, `pnpm depcruise`, `pnpm build` | ESLint (including the `src/core` determinism bans), `tsc -b`, dependency rules, typecheck plus Vite build |
 
-Pre-merge set (CI runs lint, typecheck, depcruise, test and build; `e2e` and `test:browser` are separate CI jobs):
-`pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm test:legacy && pnpm build`.
+Pre-merge set (the local gate is the per-commit check; GitHub Actions runs only once a day, see [DEPLOYMENT.md](DEPLOYMENT.md), and runs `test:coverage` (which includes the `dom` project that `pnpm test` skips) and `test:browser` but NOT e2e):
+`pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm exec vitest run --project dom && pnpm test:legacy && pnpm build && pnpm e2e`.
+Run `pnpm e2e` (and `pnpm e2e:pages` when the base path or build changed) on the Mac before pushing; it is no longer a CI job.
 
 `pnpm size:check` (after `build`) enforces bundle budgets; see [PERFORMANCE.md](PERFORMANCE.md).
 

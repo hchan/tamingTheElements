@@ -1,44 +1,21 @@
 name: CI
 
+# Owner decision (2026-11-17): Actions minutes are rationed. CI runs once a day on a schedule (plus manual dispatch), never per push.
+# The per-commit check is the local gate (CLAUDE.md), which includes the Playwright e2e suites; e2e is deliberately NOT a job here.
 on:
-  pull_request:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '30 7 * * *' # 07:30 UTC daily, builds and deploys the current main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# No cancel-in-progress: a scheduled or manual run is never cut off by another one. Runs queue instead.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  # Superseded PR runs are cancelled; a push to main is never cancelled half way through a deploy.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 jobs:
-  # Docs-only changes skip the slow, docs-independent jobs (coverage, browser). check and e2e always run because
-  # tests/repo checks markdown links and the repo map. A whole-workflow paths-ignore is deliberately NOT used: a skipped
-  # workflow leaves required checks pending and docs edits can break `check`. See docs/DEPLOYMENT.md.
-  changes:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      code: ${{ steps.filter.outputs.code }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - id: filter
-        env:
-          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
-        run: |
-          code=true
-          if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            if ! git diff --name-only "$BASE" "$HEAD_SHA" | grep -qvE '(\.md$|^docs/|^LICENSE$)'; then code=false; fi
-          fi
-          echo "code=$code" >> "$GITHUB_OUTPUT"
-          echo "code changed: $code"
-
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -69,8 +46,6 @@ jobs:
         run: corepack pnpm size:check
 
   coverage:
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -93,40 +68,9 @@ jobs:
           path: coverage/
           if-no-files-found: warn
 
-  e2e:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Enable corepack (pnpm from packageManager field)
-        run: corepack enable
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: corepack pnpm install --frozen-lockfile
-      # Browser downloads and apt installs occasionally stall for minutes; cap each attempt and retry so a stall
-      # costs ~5 minutes of Actions time, not the whole job timeout.
-      - name: Install Playwright browsers (retry)
-        run: |
-          # Wait for the dpkg lock (unattended upgrades / a previous attempt) instead of failing on it.
-          echo 'DPkg::Lock::Timeout "90";' | sudo tee /etc/apt/apt.conf.d/99-lock-timeout >/dev/null
-          for attempt in 1 2 3; do
-            timeout --kill-after=30 240 corepack pnpm exec playwright install --with-deps chromium && exit 0
-            echo "playwright install attempt $attempt failed or timed out"; sleep 10
-          done
-          exit 1
-      - run: corepack pnpm e2e
-      # Production build served under the Pages subpath (VITE_BASE=/tamingTheElements/).
-      - run: corepack pnpm e2e:pages
-
-  # Cross-engine determinism gate. Runs on every PR (not nightly): the replay is ~1500 ticks and the whole job
+  # Cross-engine determinism gate. Runs in the daily run: the replay is ~1500 ticks and the whole job
   # is dominated by the browser download (~1-2 min), cheap enough to catch a divergence before merge.
   browser:
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -153,16 +97,12 @@ jobs:
           exit 1
       - run: corepack pnpm test:browser
 
-  # Deploy to GitHub Pages: push to main only, and only after check and e2e passed. PRs never reach these jobs.
+  # Deploy to GitHub Pages: only on the scheduled or manually dispatched run of main, and only after check, coverage and the
+  # cross-browser determinism job passed. e2e runs locally (CLAUDE.md gate), not here.
   # Pages must be enabled (Source: GitHub Actions) in repo settings first; see docs/DEPLOYMENT.md.
-  # The cross-browser determinism job is a dependency too, but it is skipped on docs-only runs, so the condition accepts
-  # `skipped` and rejects only `failure` and `cancelled` (always() is needed or a skipped need would skip this job).
   pages-build:
-    if: >-
-      always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.check.result == 'success' && needs.e2e.result == 'success' &&
-      (needs.browser.result == 'success' || needs.browser.result == 'skipped')
-    needs: [check, e2e, browser]
+    if: github.ref == 'refs/heads/main'
+    needs: [check, coverage, browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -186,7 +126,7 @@ jobs:
           path: dist
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     needs: pages-build
     runs-on: ubuntu-24.04
     timeout-minutes: 10

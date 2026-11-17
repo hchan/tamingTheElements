@@ -26,8 +26,8 @@ corepack pnpm e2e:pages                # build with VITE_BASE=/tamingTheElements
 
 Workflow: `.github/workflows/ci.yml`.
 
-- Pull requests run `check`, `e2e` (including `e2e:pages`) and `browser` only. They never deploy.
-- A push to `main` additionally runs `pages-build` and `deploy`, which `needs` `check`, `e2e` and the cross-browser `browser` job. `browser` is skipped on docs-only runs, so the job condition accepts `skipped` and blocks only on `failure` or `cancelled`. Pages and itch builds are production builds written to `dist/`, `dist-pages/` and `dist-itch/`; the e2e test build (`--mode test`, contains `window.__TTE__`) goes to `node_modules/.tte-e2e` and `pnpm size:check` fails if `dist/` ever contains `__TTE__`.
+- The workflow runs once a day (cron `30 7 * * *`, 07:30 UTC) and on manual dispatch (`env -u GITHUB_TOKEN gh workflow run CI`). It does NOT run on push or pull request (owner decision 2026-11-17, to save Actions minutes); the local gate is the per-commit check.
+- The run builds `check`, `coverage` and the cross-browser `browser` job; `pages-build` and `deploy` `need` all three, so Pages updates once a day (or on dispatch) with the current `main`, and only if they pass. The Playwright e2e suites (`e2e`, `e2e:pages`) are NOT in Actions any more (the suite outgrew the 15 minute job limit); they are part of the local gate. Pages and itch builds are production builds written to `dist/`, `dist-pages/` and `dist-itch/`; the e2e test build (`--mode test`, contains `window.__TTE__`) goes to `node_modules/.tte-e2e` and `pnpm size:check` fails if `dist/` ever contains `__TTE__`.
 - Only the `deploy` job has `pages: write` and `id-token: write`; the workflow default is `contents: read`.
 - `deploy` uses concurrency group `pages` with `cancel-in-progress: false`, so a deploy is never cut off.
 - Action versions are pinned to commit SHAs (verified with `env -u GITHUB_TOKEN gh api repos/<owner>/<repo>/git/ref/tags/<tag>`).
@@ -70,16 +70,13 @@ Switch back to the workflow source:
 env -u GITHUB_TOKEN gh api -X PUT repos/hchan/tamingTheElements/pages -f build_type=workflow
 ```
 
-While Pages uses the branch source, the `pages-build` and `deploy` jobs still run on pushes to `main` but their deploy
+While Pages uses the branch source, the `pages-build` and `deploy` jobs still run in the daily run but their deploy
 fails harmlessly (or is superseded); disable them if that bothers you.
 
 Actions minutes. Public repositories get free standard-runner minutes, so this is a convenience, not a cost fix. To use
 fewer anyway:
 
-- `ci.yml` has a `changes` job: when a push or PR touches only `**/*.md`, `docs/**` or `LICENSE`, the `coverage` and `browser`
-  jobs are skipped. A workflow-level `paths-ignore` is not used on purpose: `check` includes `tests/repo`, which checks
-  markdown links and the repo map, so a docs edit can break it, and a skipped workflow leaves any required check pending.
-  Trade-off: a docs-only change gets no cross-engine run (it cannot affect determinism).
+- `ci.yml` is scheduled (daily) plus manual dispatch only; there is no per-push run.
 - Put `[skip ci]` in a commit message (GitHub honours it natively for `push` and `pull_request` runs of the head commit).
   Only for changes you have already verified with `ci:local`.
 

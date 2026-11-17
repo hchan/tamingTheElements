@@ -128,7 +128,7 @@ describe('arcade versus screen', () => {
     lastOpts().onResult(result({ rounds: [2, 1] }));
     expect(host.querySelector('#arcadeResults h1')?.textContent).toBe('Victory!');
     expect(host.textContent).toContain('AI Hard');
-    expect(host.textContent).toContain('Rounds 2-1.');
+    expect(host.textContent).toContain('Rounds 2-1');
     expect(host.querySelector('#downloadReplay')).toBeNull();
     await flush();
     expect(h.created[0]?.destroyed).toBe(true);
@@ -208,7 +208,7 @@ describe('arcade versus screen', () => {
     (host.querySelector('#arcadeRematch') as HTMLElement).click();
     await flush();
     lastOpts().onResult(
-      result({ pick: { local: true } as never, outcome: 'win', heroes: [{ race: 'sindarosa', team: 0, pct: 10 }, { race: 'pax', team: 1, pct: 20 }] as never }),
+      result({ pick: { local: true, player: 'sindarosa', enemy: 'pax' } as never, outcome: 'win', heroes: [{ race: 'sindarosa', team: 0, pct: 10 }, { race: 'pax', team: 1, pct: 20 }] as never }),
     );
     expect(host.querySelector('#arcadeResults h1')?.textContent).toBe('Player 1 wins!');
     expect(host.textContent).toContain("Player 1's team: Sindarosa (fire) 10% left. Player 2's team: Pax (earth) 20% left.");
