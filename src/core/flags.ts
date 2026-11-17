@@ -4,7 +4,11 @@ import { compareStrings } from './math/compare';
 export interface SimFlags {
   readonly experimentalSpawnCurve: boolean;
   readonly experimentalPathing: boolean;
-  /** Elemental Advantage abilities: data-only (no character owns them) until this is on. */
+  /**
+   * Reserved, read by no system: the Elemental Advantage Fire Cone has no owner (dead-ability-cleanup). Kept because
+   * FLAG_NAMES is sorted and this is bit 0: removing it would move every other flag's bit in the hashed world flags
+   * (W.flags) and change the hash of every replay that sets a flag (all Arcade goldens, via rulesetArcade).
+   */
   readonly elementalAdvantage: boolean;
   /**
    * TESTER MODE only (see docs/TESTER-MODE.md): grants Capture from chapter 1. Never on in normal play; a match with it

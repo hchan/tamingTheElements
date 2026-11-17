@@ -626,8 +626,10 @@ matchup becomes something to play around instead of a fixed loss.
 - **Effect (data table, one place):** damage of the favoured element x1.2, of its natural counter /1.2, applied after
   the element chart and before combo scaling: Sun fire up / water down; Rain water up / fire down; Sandstorm earth up /
   air down; Gale air up / earth down; Eclipse void up and every other element x1.0 (void stays neutral, it only
-  rewards the void side). Rain also puts out burning, Sun melts freeze 10 ticks faster, Sandstorm slows projectile
-  speed by 10 percent, Gale pushes knockback 10 percent further (each a data row, off in the first slice).
+  rewards the void side). Side effects as built: the Sun cast frees every Snag rope (2.20) and, with flag
+  withCrowdControl, no hero can be Iced under Sun and the Sun thaws Iced (in place of the planned faster melt); the
+  Rain cast puts out burning with flag withOverTime. Sandstorm slowing projectiles by 10 percent and Gale pushing
+  knockback 10 percent further are still unread `WEATHER_EFFECTS` rows (idea weather-secondary-effects).
 - **Fairness:** both teams feel the weather; the favoured side is whoever matches it, so counter-weather is a real
   answer (the weak side can swap weather with its own cast once off cooldown). Weather never changes who wins a
   mirror match.
@@ -651,7 +653,8 @@ matchup becomes something to play around instead of a fixed loss.
   not an 833 pm approximation; anything else untouched), then the combo or chip scale; it covers every Arcade hit
   (projectiles, melee, supers, guarded chip), not damage over time or heals. The round reset ends the weather
   (`weatherEnded` before `roundStarted`) and clears every weather cooldown (the entity block reset). Secondary effects
-  are `WEATHER_EFFECTS` rows with `WEATHER_EFFECTS_ON = false`: no system reads them yet.
+  are `WEATHER_EFFECTS` rows with `WEATHER_EFFECTS_ON = false`: no system reads them yet (2026-11-17: the Sun and
+  Rain extras were built in other systems instead, see the Effect bullet above).
 - Measured (scratch run of `funReport --all`, 8 seeds, 528 Arcade matches, scripted vs scripted, the AI wrapped to
   press weather whenever it can): with no weather the per-race win-rate spread is 82.9 pp (Ishimi 10.2%, Pax 8.0%,
   Sindarosa 90.9%); with both sides casting it is 85.2 pp (4.4 casts per match, median match 29.4 s vs 29.7 s). With

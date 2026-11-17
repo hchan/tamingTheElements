@@ -66,8 +66,8 @@ Speed is px/tick at 50 Hz; HP is at level 0.
 ## Abilities
 
 Times are in ms (ticks = ms/20). `Max` is the number of simultaneous instances; speed is px/tick. Capture damage is
-`Number.MAX_VALUE` (shown as inf) and bypasses multipliers. Hurl Rock and Elemental Advantage: Fire cone are unused
-legacy data, kept as-is.
+`Number.MAX_VALUE` (shown as inf) and bypasses multipliers. Elemental Advantage: Fire cone is unused legacy data, kept
+as-is (its def index is hashed into replays); Hurl Rock was unused until roster 24 gave it to Quarrak.
 
 <!-- gen:abilities -->
 | Ability | Kind | Dmg/Heal | Cooldown ms | Dur ms | Max | Speed | Used by |

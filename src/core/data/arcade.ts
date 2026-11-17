@@ -400,9 +400,11 @@ export const WEATHER_RANGED_KINDS: readonly string[] = ['range', 'omni'];
 export const WEATHER_RECOVERY_TICKS = 16;
 export const METER_WEATHER = 50;
 /**
- * Secondary effects by weather kind - 1 (FUN-DESIGN 2.14). Data only and OFF in this slice (WEATHER_EFFECTS_ON is
- * false and no system reads the rows): Sun melts freeze 10 ticks faster, Rain puts out burning, Sandstorm slows
- * projectiles to 900 pm, Gale pushes knockback to 1100 pm, Eclipse has none.
+ * Secondary effects by weather kind - 1 (FUN-DESIGN 2.14). No system reads these rows (WEATHER_EFFECTS_ON is false);
+ * weather.test.ts pins them. Sun and Rain are covered elsewhere: the Sun cast frees every Snag rope (snag.ts
+ * freeAllRoots) and, with withCrowdControl, blocks and thaws Iced (cc.ts) instead of a faster melt; the Rain cast
+ * douses burning with withOverTime (over-time.ts douseAllBurn). Sandstorm (projectiles 900 pm) and Gale (knockback
+ * 1100 pm) are not wired: idea weather-secondary-effects. Eclipse has none.
  */
 export const WEATHER_EFFECTS_ON = false;
 export const WEATHER_EFFECTS = [
