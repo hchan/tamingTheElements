@@ -12,6 +12,7 @@
   font-size: 0.9em;
 }
 #menu .helpJumpBtn {
+  box-sizing: border-box;
   min-height: 44px;
   padding: 0.4em 1em;
   color: #f4f0ff;
@@ -150,8 +151,14 @@
   }
   /* QA r87 P3: compact buttons so the five links take two rows, not four, and "How to fight" starts higher. */
   #menu .helpLinks li a.menuButton {
-    padding: 0.1em 0.6em;
+    padding: 0.4em 0.8em;
     font-size: 0.8em;
+    white-space: nowrap;
+  }
+  #menu ul.helpLinks {
+    justify-content: flex-start;
+    padding-left: 0;
+    gap: 0.4em;
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {
@@ -161,14 +168,24 @@
 }
 /* The five page links read as raised buttons, not underlined text (not on short landscape, which has its own compact sticky row). */
 @media not all and (max-height: 500px) and (orientation: landscape) {
+  /* QA r92 P3: the page links used to be raised rectangles next to the pill jump chips, with other gaps and sizes. Both rows share one chip look. */
+  #menu ul.helpLinks {
+    gap: 0.5em;
+    align-items: center;
+  }
   #menu .helpLinks a.menuButton {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
     min-height: 44px;
-    padding: 0.5em 1.1em;
+    padding: 0.4em 1em;
+    font: inherit;
     text-decoration: none;
-    border-width: 2px;
-    border-radius: 10px;
-    box-shadow: 0 3px 0 rgba(10, 8, 30, 0.7);
+    background: #2c2760;
+    border: 1px solid #cfc6f0;
+    border-radius: 999px;
+    box-shadow: none;
   }
   #menu .helpLinks a.menuButton:hover,
   #menu .helpLinks a.menuButton:focus-visible {
