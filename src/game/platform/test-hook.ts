@@ -102,6 +102,16 @@ export interface ArenaProbe {
     ghosts: number; trails: number; shields: number; bars: readonly number[]; projectiles: number; sparks: number; rings: number; pops: readonly string[];
     roots: number; rootBack: number; rootFront: number;
   } | undefined>;
+  /**
+   * Arcade only: the white damage pops and the defence call-outs as drawn, `pops` and `callouts` in WORLD px, `hudCallouts`
+   * the call-outs projected to HUD px (the 1280-wide frame, or the real view on phones), `chips` the status chips' rects per
+   * team in HUD px and `frame` the HUD frame in HUD px. Empty arrays before the views mount.
+   */
+  overlays(): {
+    pops: { x: number; y: number; w: number; h: number }[]; callouts: { x: number; y: number; w: number; h: number }[];
+    hudCallouts: { x: number; y: number; w: number; h: number }[]; chips: { x: number; y: number; w: number; h: number }[][];
+    frame: { x: number; y: number; w: number; h: number };
+  };
   /** The stage's ambient particles (view only): emitters running and live particles; 0 under reduced motion. */
   stageAmbient(): { emitters: number; particles: number };
   /**
