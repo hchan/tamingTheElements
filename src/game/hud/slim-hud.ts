@@ -99,14 +99,18 @@ export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' 
 
 /**
  * Portrait phones: one wording for both sides (qa-r88 P3). Current life only (no "Life", no "/max") beside an always-named
- * "SUPER n%", so a bare percentage never reads as a life percentage. Longest first: the whole name, the whole name without the element mark (qa-r89 P1), then ever shorter names (3+ letters).
+ * "SUPER n%", so a bare percentage never reads as a life percentage. Longest first: the whole name, the whole name without the element mark (qa-r89 P1), then without the status word (qa-r90 P1), then ever shorter names (3+ letters, no word).
  */
 export function portraitLifeCandidates(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap' | 'element'>): string[] {
   const whole = compactLabel(name, c, false, 'bare');
   // qa-r89 P1: the whole name beats the element mark when the room is short (the "▲ SAFE" line under it repeats the mark): second candidate.
   const mark = `${elementCue(c.element).charAt(0)} `;
-  const out = [whole, whole.replace(mark, '')];
-  for (let max = name.length - 1; max >= 3; max--) out.push(compactLabel(shortName(name, max), c, false, 'bare'));
+  // qa-r90 P1: the whole name also beats the status word (HURT/LOW; the bar colour and the "▲ SAFE" line still say it): after the mark goes, the word goes, before any letter of the name does.
+  const word = healthCue(c.hp / Math.max(1, c.maxHp)).label;
+  const noWord = (t: string): string => (word === 'OK' ? t : t.slice(0, t.length - word.length - 1));
+  const bare = noWord(whole);
+  const out = [...new Set([whole, whole.replace(mark, ''), bare, bare.replace(mark, '')])];
+  for (let max = name.length - 1; max >= 3; max--) out.push(noWord(compactLabel(shortName(name, max), c, false, 'bare')));
   return out;
 }
 
