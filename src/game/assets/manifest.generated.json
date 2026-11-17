@@ -504,6 +504,15 @@
         80
       ]
     },
+    "abyssalPullLoop": {
+      "url": "img/fx/loop/abyssalPullLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
+      ]
+    },
     "bellPulse": {
       "url": "img/fx/bellPulse.png",
       "coords": [
@@ -513,6 +522,15 @@
         80
       ]
     },
+    "bellPulseLoop": {
+      "url": "img/fx/loop/bellPulseLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
+      ]
+    },
     "boulderRoll": {
       "url": "img/fx/boulderRoll.png",
       "coords": [
@@ -520,6 +538,15 @@
         0,
         80,
         80
+      ]
+    },
+    "boulderRollLoop": {
+      "url": "img/fx/loop/boulderRollLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
       ]
     },
     "bristleStomp": {
@@ -556,6 +583,15 @@
         0,
         80,
         80
+      ]
+    },
+    "cinderSprayLoop": {
+      "url": "img/fx/loop/cinderSprayLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
       ]
     },
     "crimsonFireLoop": {
@@ -720,6 +756,15 @@
         80
       ]
     },
+    "lureOrbLoop": {
+      "url": "img/fx/loop/lureOrbLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
+      ]
+    },
     "moltenHide": {
       "url": "img/fx/moltenHide.png",
       "coords": [
@@ -801,6 +846,15 @@
         80
       ]
     },
+    "sporeBurstLoop": {
+      "url": "img/fx/loop/sporeBurstLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
+      ]
+    },
     "staticMote": {
       "url": "img/fx/staticMote.png",
       "coords": [
@@ -810,6 +864,15 @@
         80
       ]
     },
+    "staticMoteLoop": {
+      "url": "img/fx/loop/staticMoteLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
+      ]
+    },
     "stingingFilament": {
       "url": "img/fx/stingingFilament.png",
       "coords": [
@@ -817,6 +880,15 @@
         0,
         80,
         80
+      ]
+    },
+    "stingingFilamentLoop": {
+      "url": "img/fx/loop/stingingFilamentLoop.png",
+      "coords": [
+        0,
+        0,
+        160,
+        160
       ]
     },
     "stoop": {
