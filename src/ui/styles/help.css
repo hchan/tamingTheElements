@@ -142,7 +142,12 @@
     margin: 0.4em 0;
   }
   #menu .helpLinks li {
-    margin: 0.1em 0;
+    margin: 0;
+  }
+  /* QA r87 P3: compact buttons so the five links take two rows, not four, and "How to fight" starts higher. */
+  #menu .helpLinks li a.menuButton {
+    padding: 0.1em 0.6em;
+    font-size: 0.8em;
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {
