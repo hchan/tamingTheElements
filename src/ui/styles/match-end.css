@@ -131,11 +131,23 @@
 @media (max-width: 480px) {
   .matchEndName {
     font-size: 1em;
-    letter-spacing: 0.06em;
-    overflow-wrap: anywhere;
+    letter-spacing: 0.03em;
+    /* Wrap at spaces only: a long name never splits mid-word ("SINDAROS / A"). */
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+  .matchEndSide .matchEndName {
+    font-size: 0.9em;
+  }
+  .matchEndCard {
+    min-width: min-content;
+    max-width: 50%;
   }
   .matchEndHero {
     gap: 0.6em;
+    /* Tops of both tiles line up even when one name wraps to two lines. */
+    align-items: flex-start;
   }
   .matchEndFace {
     width: 80px;
