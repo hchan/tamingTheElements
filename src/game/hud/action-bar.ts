@@ -337,10 +337,12 @@ export function portraitBarSlots<T extends { x: number; y: number; size: number 
   const perRow = Math.floor((LOGICAL_W - SLOT_BORDER / 2) / min);
   if (perRow < 1) return undefined;
   const rows = Math.ceil(slots.length / perRow);
-  // Fill the width with the boxes of a full row (never under the minimum), so no gap is left on the right.
-  const side = Math.floor((LOGICAL_W - SLOT_BORDER / 2) / Math.min(perRow, slots.length));
+  // Balanced rows (9 -> 5+4, 10 -> 5+5, never one orphan tile above a full row), tiles capped at 64 CSS px, each row centred.
+  const per = Math.ceil(slots.length / rows);
+  const side = Math.max(min, Math.min(Math.floor((LOGICAL_W - SLOT_BORDER / 2) / per), Math.floor(64 / k)));
   const y0 = LOGICAL_HEIGHT - side - 1;
-  return { slots: slots.map((s, i) => ({ ...s, x: SLOT_BORDER / 2 + (i % perRow) * side, y: y0 - Math.floor(i / perRow) * side, size: side })), top: y0 - (rows - 1) * side, ext: 0 };
+  const left = (r: number): number => Math.floor((LOGICAL_W - Math.min(per, slots.length - r * per) * side) / 2);
+  return { slots: slots.map((s, i) => { const r = Math.floor(i / per); return { ...s, x: left(r) + (i % per) * side, y: y0 - (rows - 1 - r) * side, size: side }; }), top: y0 - (rows - 1) * side, ext: 0 };
 }
 
 /**

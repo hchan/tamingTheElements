@@ -199,6 +199,17 @@ const CONTROLS = `[...document.querySelectorAll('button.touchBtn, .touchStrike, 
   .filter((e) => { const cs = getComputedStyle(e); const r = e.getBoundingClientRect(); return cs.visibility !== 'hidden' && cs.display !== 'none' && r.width > 0 && r.height > 0; })
   .map((e) => { const r = e.getBoundingClientRect(); return { id: e.id || e.className, x: r.x, y: r.y, w: r.width, h: r.height, disabled: e.disabled === true || e.getAttribute('aria-disabled') === 'true' }; })`;
 
+/** Bar boxes grouped by row (bottom edge): at most two rows, none a short orphan (some tiles may not be DOM controls). */
+function barRowCounts(ctls: Ctl[]): number[] {
+  const rows = new Map<number, number>();
+  for (const c of ctls.filter((b) => b.id.startsWith('arcade') || b.id.startsWith('touchSkirtDeco'))) rows.set(Math.round(c.y + c.h), (rows.get(Math.round(c.y + c.h)) ?? 0) + 1);
+  return [...rows.values()];
+}
+async function expectBalancedRows(page: Page, label: string): Promise<void> {
+  // The bar re-lays out a frame or two after the touch buttons appear, so poll until it settles.
+  await expect.poll(async () => { const c = barRowCounts(await page.evaluate<Ctl[]>(CONTROLS)); return c.length <= 2 && Math.min(...c) >= 3; }, { message: `${label}: two rows, none a short orphan`, timeout: 10000 }).toBe(true);
+}
+
 for (const [w, h] of [[390, 844], [360, 640]] as const) {
   test.describe(`portrait play touch targets ${String(w)}x${String(h)}`, () => {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
@@ -299,7 +310,25 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(t.x + t.w / 2)}, ${String(t.y + t.h / 2)}); return e ? e.id : ''; })()`);
         expect(hit, `${t.id} is the element under its own centre`).toBe(t.id);
       }
+      await expectBalancedRows(page, '3v3');
       await shot(page, `${String(w)}-3v3-targets`);
+    });
+
+    test('melee hero (Curomo): the nine-tile bar is balanced rows, not an orphan tile', async ({ page }) => {
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.getByLabel('Your race').selectOption('curomo');
+      await page.getByRole('button', { name: /^Fight/ }).tap();
+      await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.waitForFunction(ATTR);
+      await page.waitForFunction(`document.querySelectorAll('button.touchBtn').length >= 5`);
+      const ctls = await page.evaluate<Ctl[]>(CONTROLS);
+      for (const c of ctls) {
+        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(44 - 0.6);
+        expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
+      }
+      await shot(page, `${String(w)}-melee`);
+      await expectBalancedRows(page, 'melee');
     });
   });
 }

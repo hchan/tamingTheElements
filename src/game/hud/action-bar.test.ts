@@ -424,6 +424,17 @@ describe('portrait bar touch floor (44 CSS px)', () => {
       expect((r?.slots[0]?.size ?? 0) * (w / 1280)).toBeGreaterThanOrEqual(44);
     }
   });
+  it.each([[390, 9], [360, 9], [390, 10], [360, 10]])('%i px wide, %i boxes: balanced rows, no orphan, 44+ px, centred', (w, n) => {
+    const k = w / 1280;
+    const r = portraitBarSlots(mk(n), k);
+    const rows = new Map<number, number>();
+    for (const s of r?.slots ?? []) rows.set(s.y, (rows.get(s.y) ?? 0) + 1);
+    const counts = [...rows.values()];
+    expect(counts.length).toBe(2);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+    expect((r?.slots[0]?.size ?? 0) * k).toBeGreaterThanOrEqual(44);
+    expect((r?.slots[0]?.size ?? 0) * k).toBeLessThanOrEqual(64.5);
+  });
   it('is undefined for no scale or no boxes', () => {
     expect(portraitBarSlots(mk(4), 0)).toBeUndefined();
     expect(portraitBarSlots([], 0.3)).toBeUndefined();
