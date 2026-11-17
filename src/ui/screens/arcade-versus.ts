@@ -902,6 +902,12 @@ export function arcadeResultsView(o: ResultsViewOptions): HTMLElement {
   if (o.tone) page.dataset['tone'] = o.tone;
   const stats = el('ul', 'matchEndStats');
   for (const t of o.stats ?? []) stats.append(el('li', undefined, t));
+  const ribbon = o.tone === 'win' ? 'Winner' : o.tone === 'loss' ? 'You lost' : null;
+  if (ribbon !== null) {
+    const r = el('p', 'matchEndRibbon');
+    r.append(el('span', 'matchEndIcon', o.tone === 'win' ? '\u2605' : '\u2716'), ribbon);
+    page.append(r);
+  }
   page.append(hero, el('h1', 'heading matchEndWord', o.heading), stats, el('p', 'matchEndSummary', o.summary));
   const button = (id: string, label: string, onClick: () => void, cls = 'menuButton'): HTMLButtonElement => {
     const b = el('button', cls, label);
