@@ -5,7 +5,7 @@ import { DEFAULT_SIM_FLAGS } from '../flags';
 import { ARCADE_E, ARCADE_WORLD_BASE, ArcadeE, ArcadeW } from './state';
 import { Cmd } from './commands';
 import { EventSink } from './events';
-import { now } from './clock';
+import { isSlowMoHold, now } from './clock';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { ABILITY_DEFS } from './systems/projectile';
@@ -46,6 +46,28 @@ describe('RenderView.arcade (FUN-DESIGN section 3)', () => {
     expect(after?.meter[1]).toBeGreaterThan(0);
     expect(after?.stunned(1)).toBe(true);
     expect(after?.invulnerable(1)).toBe(false);
+  });
+
+  it('exposes the game clock and the slow-motion hold of the next step through a scripted KO', () => {
+    const world = skipIntro(createMatch(match(true)));
+    const view = createRenderView(world);
+    const ar = view.arcade();
+    expect(ar?.gameTick).toBe(now(world.state));
+    expect(ar?.slowHold).toBe(false);
+    world.state.hp[1] = 1;
+    world.state.x[0] = 400; world.state.x[1] = 480; world.state.y[1] = world.state.y[0] ?? 0; world.state.dir[0] = 0;
+    let sawHold = false;
+    let sawFrozen = false;
+    for (let i = 0; i < 400; i++) {
+      step(world, [i < 80 ? Cmd.primary : 0, 0]);
+      view.arcade();
+      expect(ar?.gameTick).toBe(now(world.state));
+      expect(ar?.slowHold).toBe(isSlowMoHold(world.state));
+      sawHold ||= ar?.slowHold === true;
+      sawFrozen ||= ar?.frozen === true;
+    }
+    expect(sawFrozen).toBe(true);
+    expect(sawHold).toBe(true);
   });
 
   it('reports the sudden-death slot (read-out only)', () => {
