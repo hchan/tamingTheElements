@@ -23,8 +23,9 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
-    // `--mode test` compiles in the window.__TTE__ hook; production builds never contain it.
-    command: `corepack pnpm exec vite build --mode test --outDir node_modules/.tte-e2e --emptyOutDir && corepack pnpm exec vite preview --outDir node_modules/.tte-e2e --port ${PORT} --strictPort`,
+    // tools/ci/e2e-server.ts builds with `--mode test` (compiles in window.__TTE__; production builds never contain it), then runs
+    // `vite preview` supervised: a dead server is logged to .scratch/e2e-server.log and restarted (ideas/brainstorm/e2e-webserver-health.md).
+    command: `corepack pnpm exec tsx tools/ci/e2e-server.ts ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
