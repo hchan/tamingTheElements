@@ -790,8 +790,21 @@ export class ActionBarView {
     if (this.mirror) {
       // No panel: each slot keeps its own plate.
     } else if (this.slots.length > 0 && this.styled) {
-      this.back.fillStyle(0x0b0a09, 0.86);
-      this.back.fillRect(0, top, HUD_WIDTH, LOGICAL_HEIGHT - top);
+      if (one) {
+        // Portrait: the panel fades in from the floor edge (QA r96/r97 "dark band under the floor") instead of starting as a hard black strip.
+        const FADE_BANDS = 8;
+        const BAND_H = 6;
+        const BASE = 0.62;
+        for (let i = 0; i < FADE_BANDS; i++) {
+          this.back.fillStyle(0x0b0a09, (BASE * (i + 1)) / (FADE_BANDS + 1));
+          this.back.fillRect(0, top + i * BAND_H, HUD_WIDTH, BAND_H);
+        }
+        this.back.fillStyle(0x0b0a09, BASE);
+        this.back.fillRect(0, top + FADE_BANDS * BAND_H, HUD_WIDTH, LOGICAL_HEIGHT - top - FADE_BANDS * BAND_H);
+      } else {
+        this.back.fillStyle(0x0b0a09, 0.86);
+        this.back.fillRect(0, top, HUD_WIDTH, LOGICAL_HEIGHT - top);
+      }
       this.back.fillStyle(0xd8cdb8, 0.05);
       this.back.fillRect(0, top, HUD_WIDTH, 3);
       g.lineStyle(1, 0x6b6558, 0.8);
