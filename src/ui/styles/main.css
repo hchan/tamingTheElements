@@ -2530,6 +2530,14 @@ html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
   background: #1f5a2e;
   border-color: #6fd08a;
 }
+/* QA r90 P9: two big role buttons first; only the picked role's steps show. */
+#onlineSetup .onlineRoles {
+  display: grid;
+  gap: 0.3em;
+}
+#onlineSetup .onlinePath[hidden] {
+  display: none;
+}
 #onlineShare {
   display: grid;
   grid-template-columns: 1fr 1fr;

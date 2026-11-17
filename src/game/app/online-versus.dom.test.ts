@@ -176,6 +176,30 @@ describe('online versus share, copy, paste and join link', () => {
     expect(steps.filter((s) => s.startsWith('Step 3'))).toHaveLength(2);
   });
 
+  it('shows two role buttons first and only the steps of the role picked', async () => {
+    mountOnline(host);
+    expect($('onlineRoleHost').textContent).toBe('I am hosting');
+    expect($('onlineRoleJoin').textContent).toBe('My friend is hosting');
+    expect($('onlineHostPath').hidden).toBe(true);
+    expect($('onlineJoinPath').hidden).toBe(true);
+    await click('onlineRoleHost');
+    expect($('onlineHostPath').hidden).toBe(false);
+    expect($('onlineJoinPath').hidden).toBe(true);
+    expect($('onlineRoleHost').getAttribute('aria-pressed')).toBe('true');
+    await click('onlineRoleJoin');
+    expect($('onlineHostPath').hidden).toBe(true);
+    expect($('onlineJoinPath').hidden).toBe(false);
+    expect($('onlineRoleHost').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('a ?join= link opens the friend-is-hosting path', async () => {
+    window.history.replaceState(null, '', '/?join=T1.HOSTCODE#online');
+    mountOnline(host);
+    await tick(0);
+    expect($('onlineJoinPath').hidden).toBe(false);
+    expect($('onlineHostPath').hidden).toBe(true);
+  });
+
   it('after Make a code: Copy code and Copy link write the code and the join link, and a QR is shown', async () => {
     const c = clip('');
     const r = rig();

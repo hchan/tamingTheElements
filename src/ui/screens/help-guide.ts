@@ -10,7 +10,7 @@ export interface HelpLesson {
 /** The core loop in the order a new fighter needs it; each lesson is one or two plain sentences. */
 export const LESSONS: readonly HelpLesson[] = [
   { title: 'Move', text: 'Walk the arena in eight directions. Your hero turns to face the enemy by itself; hold a direction to aim by hand.' },
-  { title: 'Attack', text: 'Strike with the first or second attack. Each has its own cooldown, so mix them rather than mash one.' },
+  { title: 'Attack', text: "Strike 1 and Strike 2 fire your hero's two attacks, and each circle on a phone names its ability (Fire Blast, Ice Shock and so on). Each has its own cooldown, so mix them rather than mash one." },
   { title: 'Dash', text: 'A short burst away from danger or through a gap. It needs a moment to recover.' },
   { title: 'Guard', text: 'Hold to take less harm. The guard meter drains while you hold and breaks if it runs dry, so release in time.' },
   { title: 'Charge', text: 'Melee heroes lunge at the foe. Ranged heroes have no charge, so the button is dimmed.' },
