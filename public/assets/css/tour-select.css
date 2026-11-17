@@ -415,3 +415,18 @@ html[data-high-contrast='true'] #tourStage .tourKey kbd { background: #000; colo
 }
 #tourStage .tsFoe .tsFace { image-rendering: auto; }
 html[data-high-contrast='true'] #tourSplash .vsCard .vsFighter .heroFace { filter: none; background-color: #000; box-shadow: inset 0 0 0 2px #fff; }
+
+/* QA r97 (phone portrait, 390x844 and 360x640): the roster, the CONTINUES label and the team strip ran past the panel edge (third opponent and the
+   third hero cut off). Three equal columns that share the panel width; captions wrap inside them. */
+@media (max-width: 520px) and (orientation: portrait) {
+  #tourStage .tsRoster { flex-wrap: nowrap; gap: 0.4em; justify-content: space-between; }
+  #tourStage .tsRoster .tsFoe { flex: 1 1 0; width: auto; min-width: 0; max-width: none; }
+  #tourStage .tsRoster .tsFoe .tsFace { width: min(100%, 5.4em); }
+  #tourStage .tsTeam { gap: 0.3em; }
+  #tourStage .tsTeamLabel { flex: none; font-size: 0.6em; }
+  #tourStage .tsTeam .tsMine { flex: 1 1 0; width: auto; min-width: 0; }
+  #tourStage .tsTeam .tsMine .tsFace { width: min(100%, 3.2em); }
+  #tourStage .tsMine figcaption { overflow-wrap: anywhere; }
+  #tourStage .tsInfo { column-gap: 0.5em; }
+  #tourStage .tsInfo .tourFactLabel { letter-spacing: 0.04em; }
+}
