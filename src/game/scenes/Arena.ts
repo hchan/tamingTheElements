@@ -496,9 +496,35 @@ export class Arena extends Phaser.Scene {
     }
     const sky = this.textures.exists(key) ? this.add.image(-2000, -SKY_H, key).setOrigin(0, 0).setDisplaySize(w, SKY_H).setDepth(-2) : this.add.rectangle(-2000, -SKY_H, w, SKY_H, fallback).setOrigin(0, 0).setDepth(-2);
     const ground = this.add.rectangle(-2000, LOGICAL_HEIGHT, w, 4000, edge(false)).setOrigin(0, 0).setDepth(-2);
+    // Stage art continues up into the sky band: the backdrop mirrored about its top edge (a seamless join), fading into the sky tone.
+    const fadeKey = `tall-fade:${String(top)}`;
+    const extras: { setVisible(v: boolean): unknown }[] = [];
+    if (bgKey && this.textures.exists(bgKey)) {
+      if (!this.textures.exists(fadeKey)) {
+        const tex = this.textures.createCanvas(fadeKey, 4, 256);
+        const ctx = tex?.getContext();
+        if (tex && ctx) {
+          const toneEnd = mix(top, mix(top, 0x05060c, 0.72), 0.7);
+          const rgb = `${String((toneEnd >> 16) & 255)},${String((toneEnd >> 8) & 255)},${String(toneEnd & 255)}`;
+          const g = ctx.createLinearGradient(0, 0, 0, 256);
+          g.addColorStop(0, `rgba(${rgb},0.9)`);
+          g.addColorStop(1, `rgba(${rgb},0)`);
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, 4, 256);
+          tex.refresh();
+        }
+      }
+      const pw = arcadePlayfield().w;
+      extras.push(this.add.image(0, 0, bgKey).setOrigin(0, 1).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8));
+      // A second, upright tile above it (its bottom row meets the mirror's top row) for the tallest phones.
+      extras.push(this.add.image(0, -LOGICAL_HEIGHT, bgKey).setOrigin(0, 1).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8));
+      // The overlay dims the mirrored floor upward, so it meets the sky gradient without an edge.
+      if (this.textures.exists(fadeKey)) extras.push(this.add.image(0, -2 * LOGICAL_HEIGHT, fadeKey).setOrigin(0, 0).setDisplaySize(pw, 2 * LOGICAL_HEIGHT).setDepth(-1.7));
+    }
     const sync = (): void => {
       const on = viewHeight(this) > LOGICAL_HEIGHT + 0.5 && isPortraitPlay(this.game);
       sky.setVisible(on);
+      for (const e of extras) e.setVisible(on);
       ground.setVisible(on);
     };
     sync();
@@ -506,6 +532,7 @@ export class Arena extends Phaser.Scene {
     this.cleanups.push(() => {
       this.scale.off('resize', sync);
       if (this.textures.exists(key)) this.textures.remove(key);
+      if (this.textures.exists(fadeKey)) this.textures.remove(fadeKey);
     });
   }
 
