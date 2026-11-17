@@ -1,7 +1,8 @@
-"""roster24 hero concept re-rolls with SDXL-Turbo (idea exploration; chosen picks are cut out by cut-hero.py).
-Run: ~/claudetmp/sd/.venv/bin/python tools/assets/roster24-art/gen-candidates.py [--round e] [hero ...]
-Round d (default, 2026-11-16) -> ~/claudetmp/concepts-new12d/<hero>_<n>.png; round e (--round e) is the second re-roll for
-quarrak/vortigal/durrok with stricter prompts (no rubble, wings small inside frame, no signature) -> concepts-new12e."""
+"""roster24 hero concept rolls with SDXL-Turbo (idea exploration; chosen picks are cut out by cut-hero.py).
+Run: ~/claudetmp/sd/.venv/bin/python tools/assets/roster24-art/gen-candidates.py [--round R] [hero ...]   (env N = candidates per hero, default 12)
+Rounds: d (default) and e/f re-rolls of early picks, g (wide Vortigal canvas), then h..n (round 5 series: the element is the body
+material, facing right; i-n re-roll single heroes with stronger prompts). Output: ~/claudetmp/concepts-new12<round>/<hero>_<n>.png
+(skips files that exist). See recipes.md. Licence of SDXL-Turbo output: open owner question, docs/ART-REFERENCES.md."""
 import os, sys, torch
 os.environ["HF_HUB_OFFLINE"] = "1"
 from diffusers import AutoPipelineForText2Image

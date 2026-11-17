@@ -85,3 +85,5 @@ SDXL-Turbo (stabilityai/sdxl-turbo) is used offline for hero portrait re-paints 
 licence is non-commercial research unless a Stability membership applies; see `tools/assets/portrait-sd/license.txt` before shipping its outputs commercially.
 
 Exception (WISPERA-R2, 2026-11-16): Wispera's portrait `public/assets/img/map/wisperaLarge.png` IS SDXL-Turbo output (img2img of `imgWorkArea/portrait-src/wispera/e_8.png`, then cut by `tools/assets/wispera-art/refine_cut.py`), the first SD output shipped in `public/`. The owner picked it; the model's output terms are for the owner to confirm before any commercial build.
+
+SDXL-Turbo licence and provenance (OPEN owner question): Wispera's portrait and every roster24 candidate and cut (`tools/assets/roster24-art/`, `public/assets/img/map/<hero>*.png` for the 12 unreleased heroes) are SDXL-Turbo output (stabilityai/sdxl-turbo, 4 steps, guidance 0). Whether those outputs may ship in a commercial build is NOT cleared: the model licence is non-commercial research unless a Stability membership applies, and the owner has not confirmed terms. Treat these assets as provisional until the owner decides.
