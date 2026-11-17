@@ -33,3 +33,35 @@ html[data-portrait-play] .touchSkirtDeco { position: absolute; pointer-events: n
 /* Strikes in thumb and safe-area reach (render only): every strike sits at least 40 px above the screen bottom plus the home-indicator
    inset (main.css leaves Strike 1 flush 16 px from the edge), and both stay 64 px round, so the hit boxes are >= 44 px. */
 html[data-portrait-play] #touchStrikes { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 28px); }
+
+/* Lighter first-run card (qa r94/r95 P3): a slim translucent strip under the HUD (text left, a small Got it right) instead of a heavy box over the sky.
+   The Got it keeps a 44 px tap height; the rest of the card ignores taps so it never blocks the sky or the arena. */
+html[data-portrait-play] #firstRunHint.firstRunHint:not(.firstRunWait) {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 8px;
+  align-items: center;
+  left: 8px;
+  right: 8px;
+  transform: none;
+  width: auto;
+  max-width: none;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1.25;
+  background: rgba(14, 12, 32, 0.5);
+  border-color: rgba(138, 118, 88, 0.55);
+  pointer-events: none;
+}
+html[data-portrait-play] #firstRunHint.firstRunHint:not(.firstRunWait) h2 { display: none; }
+html[data-portrait-play] #firstRunHint.firstRunHint:not(.firstRunWait) p { margin: 0; }
+html[data-portrait-play] #firstRunHint.firstRunHint .firstRunDone {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  padding: 0 10px;
+  min-height: 44px;
+  font-size: 12px;
+  background: rgba(74, 60, 42, 0.8);
+  pointer-events: auto;
+}
