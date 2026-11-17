@@ -1,4 +1,4 @@
-import { SNAG_DESCRIPTION, SNAG_NAME } from '@core/menu-index';
+import { FIRE_BLAST_FALLOFF, FIRE_BLAST_NAME, SNAG_DESCRIPTION, SNAG_NAME } from '@core/menu-index';
 import { el } from '../dom';
 import { getBindings, type Bindings } from '../../game/platform/input/bindings';
 import { controlSections } from './help-controls';
@@ -158,6 +158,7 @@ function howToFight(b: Bindings = getBindings()): HTMLElement {
 function modesSection(): HTMLElement {
   const body: Node[] = MODES_COPY.map((t) => el('p', undefined, t));
   body.push(el('p', undefined, `${SNAG_NAME} (some heroes): ${SNAG_DESCRIPTION}`));
+  body.push(el('p', undefined, `${FIRE_BLAST_NAME} (Sindarosa): ${FIRE_BLAST_FALLOFF}`));
   return collapsible('helpPanel helpModes', 'helpModesHeading', 'Ways to play', false, body);
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES_A, ALL_ABILITIES, CHARACTERS, HERO_STYLE, getCharacter } from '@core/menu-index';
+import { ABILITIES_A, ALL_ABILITIES, CHARACTERS, FIRE_BLAST_FALLOFF, HERO_STYLE, getCharacter } from '@core/menu-index';
 import type { CharacterId } from '@core/menu-index';
 import { ELEMENT_ORDER, HERO_COLUMNS, describeAbilityLine, heroProfile, heroStyle, heroesByElement } from './hero-info';
 
@@ -78,6 +78,15 @@ describe('describeAbilityLine', () => {
     const def = ABILITIES_A.find((d) => d.kind === 'range' && (d.damage ?? 0) > 0);
     expect(def).toBeDefined();
     if (def) expect(describeAbilityLine(def)).toContain(`${String(def.damage)} damage`);
+  });
+});
+
+describe('fire blast falloff text', () => {
+  it('shows on Sindarosa\'s Fire Blast only, and uses no forbidden words', () => {
+    const abilities = heroProfile('sindarosa' as CharacterId).abilities;
+    expect(abilities[0]?.description).toContain(FIRE_BLAST_FALLOFF);
+    expect(abilities[1]?.description).not.toContain(FIRE_BLAST_FALLOFF);
+    expect(FIRE_BLAST_FALLOFF).not.toMatch(FORBIDDEN);
   });
 });
 

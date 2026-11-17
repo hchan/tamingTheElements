@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { setBindings, DEFAULT_BINDINGS } from '../../game/platform/input/bindings';
-import { SNAG_DESCRIPTION, SNAG_NAME } from '@core/menu-index';
+import { FIRE_BLAST_FALLOFF, SNAG_DESCRIPTION, SNAG_NAME } from '@core/menu-index';
 import { HELP_LINKS, helpScreen } from './help';
 
 afterEach(() => {
@@ -133,7 +133,7 @@ describe('helpScreen (DOM)', () => {
     helpScreen().mount(root);
     const text = document.body.textContent;
     expect(text).not.toMatch(/classic|arcade|ruleset|capture/i);
-    for (const w of ['World Tour', 'Versus', 'Online', '2v2', '3v3', SNAG_NAME, SNAG_DESCRIPTION, 'FIRE x2', 'WATER +HP', 'ROCK', 'AIR x2', 'HEAL', 'ROCK PASS']) {
+    for (const w of ['World Tour', 'Versus', 'Online', '2v2', '3v3', SNAG_NAME, SNAG_DESCRIPTION, 'FIRE x2', 'WATER +HP', 'ROCK', 'AIR x2', 'HEAL', 'ROCK PASS', FIRE_BLAST_FALLOFF]) {
       expect(text).toContain(w);
     }
   });
