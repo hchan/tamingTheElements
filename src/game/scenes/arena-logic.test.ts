@@ -1,6 +1,6 @@
 import { Cmd, DEFAULT_SIM_FLAGS, EntityFlag, METER_BAR, RoundPhase, WEATHER_CHARGE_FULL, characterId, type MatchSetup, type RenderArcade } from '@core/index';
 import { describe, expect, it } from 'vitest';
-import { actionRefusal, activeHeroOf, buildMatchEnd, chargeBlockedBy, chargeLineFor, demoMatch, playbackFrame } from './arena-logic';
+import { actionRefusal, activeHeroOf, buildMatchEnd, chargeBlockedBy, chargeLineFor, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
 
 type Row = { id: number; team: number; flags: number };
 const viewOf = (rows: Row[]) => ({ forEachCharacter: (fn: (c: Row) => void) => { rows.forEach(fn); } }) as never;
@@ -155,5 +155,14 @@ describe('demoMatch', () => {
   it('turns the Arcade ruleset on', () => {
     expect(demoMatch(base, null, true).flags).toEqual({ ...DEFAULT_SIM_FLAGS, rulesetArcade: true });
     expect(base.flags.rulesetArcade).toBeFalsy();
+  });
+});
+
+describe('effectsHeld', () => {
+  it('holds frame-timed effects only while paused and not ageing', () => {
+    expect(effectsHeld(true, false)).toBe(true);
+    expect(effectsHeld(true, true)).toBe(false);
+    expect(effectsHeld(false, false)).toBe(false);
+    expect(effectsHeld(false, true)).toBe(false);
   });
 });
