@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { compareStrings } from '../math/compare';
-import { LEGACY_CHARACTERS, getCharacter } from './characters';
+import { ALL_ABILITIES } from './abilities-all';
+import { CHARACTERS, LEGACY_CHARACTERS, getCharacter } from './characters';
 import { ELEMENTS } from './elements';
 import { abilityId, characterId } from './ids';
 import { ABILITY_NAMES, CHARACTER_TEXT } from './text-ids';
@@ -57,5 +58,26 @@ describe('text ids', () => {
     }
     expect(CHARACTER_TEXT.size).toBe(26);
     expect(ABILITY_NAMES.size).toBe(53);
+  });
+});
+
+/**
+ * dead-ability-cleanup (2026-11-17): only Capture (the Classic catch, from chapter 2) and the reserved Elemental
+ * Advantage Fire Cone have no hero. A new unowned ability fails here: give it a hero or add it with a reason.
+ */
+describe('ability ownership', () => {
+  it('every ability has a hero except Capture and the reserved Elemental Advantage Fire Cone', () => {
+    const owned = new Set(CHARACTERS.flatMap((c) => c.abilities));
+    expect(ALL_ABILITIES.map((d) => d.id).filter((id) => !owned.has(id))).toEqual([
+      abilityId('capture'),
+      abilityId('elemental-advantage-fire-cone'),
+    ]);
+  });
+
+  it('Stick belongs to the Dummy and Hurl Rock to Quarrak', () => {
+    const owners = (ability: string): readonly string[] =>
+      CHARACTERS.filter((c) => c.abilities.includes(abilityId(ability))).map((c) => c.id);
+    expect(owners('stick')).toEqual([characterId('dummy')]);
+    expect(owners('hurl-rock')).toEqual([characterId('quarrak')]);
   });
 });
