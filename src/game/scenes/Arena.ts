@@ -501,16 +501,25 @@ export class Arena extends Phaser.Scene {
     const sky = this.add.image(-2000, -SKY_H, '__DEFAULT').setOrigin(0, 0).setDisplaySize(w, SKY_H).setDepth(-2);
     const ground = this.add.rectangle(-2000, LOGICAL_HEIGHT, w, 4000, 0).setOrigin(0, 0).setDepth(-2);
     const art = firstKey !== undefined;
+    // (The mirrors overlap the backdrop by 2 px, behind it, so a fractional camera zoom cannot show a hairline gap at the joins.)
     // Below the backdrop: its floor mirrored about the bottom edge and dimmed downward to the floor tone, so no flat dark band shows
     // between the arena and the touch area.
-    const groundMirror = this.add.image(0, LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 0).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
+    const groundMirror = this.add.image(0, LOGICAL_HEIGHT - 2, '__DEFAULT').setOrigin(0, 0).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
     const groundFade = this.add.image(0, LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 0).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.7);
     // The backdrop mirrored about its top edge (a seamless join), then an upright tile above it for the tallest phones, dimmed upward.
-    const mirror = this.add.image(0, 0, '__DEFAULT').setOrigin(0, 1).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
-    const upper = this.add.image(0, -LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 1).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
-    const fade = this.add.image(0, -2 * LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 0).setDisplaySize(pw, 2 * LOGICAL_HEIGHT).setDepth(-1.7);
+    const mirror = this.add.image(0, 2, '__DEFAULT').setOrigin(0, 1).setFlipY(true).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
+    const upper = this.add.image(0, 2 - LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 1).setDisplaySize(pw, LOGICAL_HEIGHT).setDepth(-1.8);
+    const fade = this.add.image(-2000, -2 * LOGICAL_HEIGHT, '__DEFAULT').setOrigin(0, 0).setDisplaySize(w, 2 * LOGICAL_HEIGHT).setDepth(-0.915);
+    // The terrain view's additive "light lift" wash (fx/terrain-ambient, depth -0.78) starts with a hard edge at world y 0; continue it
+    // upward as a fading ramp so the join with the sky is not a brightness step. Same per-stage colours as that file's LOOK table.
+    const LIFT: Record<string, number> = { fire: 0x120a06, water: 0x081420, earth: 0x0e1408, air: 0x0a0e1a };
+    const LIFT_RAMP = 360;
+    const liftRamp = this.add.image(0, -LIFT_RAMP, '__DEFAULT').setOrigin(0, 0).setDisplaySize(pw, LIFT_RAMP).setDepth(-0.78).setBlendMode('ADD');
     let shown = '';
     const apply = (el: string): void => {
+      const lift = LIFT[el];
+      const liftKey = lift === undefined ? '' : gradient(`tall-lift:${String(lift)}`, [[0, rgba(lift, 0)], [1, rgba(lift, 1)]]);
+      if (liftKey) liftRamp.setTexture(liftKey).setDisplaySize(pw, LIFT_RAMP);
       const key = keyFor(el);
       const fallback = colour[el] ?? 0x120a1c;
       // The drawn picture is warmer and lighter than its raw edge pixels (the stage tint), so pull the sample toward the stage palette.
@@ -521,10 +530,12 @@ export class Arena extends Phaser.Scene {
       const floor = edge(key, fallback, false);
       ground.setFillStyle(mix(floor, 0x05060c, 0.45));
       if (key) {
-        // Dim the mirrored art upward (strongest at the top, clear at the join with the real backdrop) so it meets the sky gradient.
+        // Dim the mirrored art and the stage's far layer (which starts 316 px above the backdrop, its top edge was the hard seam) upward:
+        // strong at the top, still strong where the far layer starts, easing to clear at the join with the real backdrop (no brightness step).
         const toneEnd = mix(top, deep, 0.7);
-        const fadeKey = gradient(`tall-fade:${String(top)}`, [[0, rgba(toneEnd, 0.92)], [0.5, rgba(toneEnd, 0.7)], [1, rgba(toneEnd, 0.5)]]);
-        if (fadeKey) fade.setTexture(fadeKey).setDisplaySize(pw, 2 * LOGICAL_HEIGHT);
+        // (Opaque at its very top in the sky gradient's own colour there, so the overlay's top edge does not show on the tallest phones.)
+        const fadeKey = gradient(`tall-fade2:${String(top)}`, [[0, rgba(mix(deep, toneEnd, 0.4), 1)], [0.6, rgba(toneEnd, 0.96)], [0.78, rgba(toneEnd, 0.95)], [0.86, rgba(toneEnd, 0.6)], [0.93, rgba(toneEnd, 0.25)], [1, rgba(toneEnd, 0)]]);
+        if (fadeKey) fade.setTexture(fadeKey).setDisplaySize(w, 2 * LOGICAL_HEIGHT);
         const toneLow = mix(floor, 0x05060c, 0.45);
         const gKey = gradient(`tall-gfade:${String(floor)}`, [[0, rgba(toneLow, 0)], [1, rgba(toneLow, 0.95)]]);
         if (gKey) groundFade.setTexture(gKey).setDisplaySize(pw, LOGICAL_HEIGHT);
@@ -546,6 +557,7 @@ export class Arena extends Phaser.Scene {
         const el = stageElement();
         if (el !== shown) apply(el);
       }
+      liftRamp.setVisible(on && LIFT[shown] !== undefined);
     };
     sync();
     this.scale.on('resize', sync);
