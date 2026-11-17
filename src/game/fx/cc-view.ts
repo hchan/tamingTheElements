@@ -137,7 +137,7 @@ interface Row { id: number; kind: CcKindOrNone; release: CcRelease; parts: numbe
 
 /**
  * Mounts the overlay. Returns the event feed: the Arena calls it with each step's events (latches and release reasons).
- * `alpha` is the render interpolation fraction.
+ * `alpha` is the render interpolation fraction (timing); `pos` is the position fraction (HoldLerp, still during holds), default `alpha`.
  */
 export function mountCcView(
   arena: Phaser.Scene,
@@ -145,6 +145,7 @@ export function mountCcView(
   alpha: () => number,
   reduceMotion: () => boolean,
   highContrast: () => boolean,
+  pos: () => number = alpha,
 ): (events: readonly SimEvent[]) => void {
   const tracker = new CcTracker(SLOTS);
   const gate = new FlashGate();
@@ -308,8 +309,9 @@ export function mountCcView(
       return;
     }
     const a = alpha();
-    const x = c.px + (c.x - c.px) * a;
-    const y = c.py + (c.y - c.py) * a;
+    const p = pos();
+    const x = c.px + (c.x - c.px) * p;
+    const y = c.py + (c.y - c.py) * p;
     const ar = view.arcade();
     visualBox(x, y, c.w, c.h, ar ? arcadeHeroScale(c.h) : 1, box, ar ? arcadePlayfield().w : undefined);
 
