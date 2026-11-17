@@ -85,3 +85,11 @@ export function demoMatch(base: MatchSetup, hero: string | null, arcade: boolean
   const withHero = foe ? { ...withLead, p2: [{ character: characterId(foe), xp: 0 }, ...base.p2.slice(1)] } : withLead;
   return arcade ? { ...withHero, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true, ...(cc ? { withCrowdControl: true } : {}) } } : withHero;
 }
+
+/**
+ * Whether frame-timed view effects hold their frame: while the sim is paused (pause dialog, hidden tab, overlay, replay
+ * pause, match end, e2e manual stepping), unless the test hook's `ageFx(true)` lets them age on real frames.
+ */
+export function effectsHeld(paused: boolean, ageing: boolean): boolean {
+  return paused && !ageing;
+}

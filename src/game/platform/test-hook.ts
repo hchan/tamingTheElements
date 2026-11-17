@@ -69,7 +69,10 @@ export interface ArenaProbe {
    * Hit feedback as drawn: per active character its tint and Phaser tint mode (2 = additive: the hit-flash wash); live
    * damage-number labels, the combo hits and the hyper meter shown per team (Arcade only; empty and [0, 0] in Classic).
    */
-  /** Let view effects (hit flash) age in real time while the sim stays paused. */
+  /**
+   * Lets every frame-timed view effect (hit flash, HUD numbers, white pops, hit rings, sparks, streaks, KO wash) age on real frames while
+   * the sim stays paused; `false` holds them again. Tick-driven views (call-outs, the super cinematic) still move only with steps.
+   */
   ageFx(on: boolean): void;
   fx(): { tints: { id: number; tint: number; mode: number; wash: number }[]; numbers: string[]; numberBoxes: { x: number; y: number; w: number; h: number }[]; popBoxes: { x: number; y: number; w: number; h: number }[]; combo: [number, number]; meter: [number, number] };
   /**

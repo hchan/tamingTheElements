@@ -81,7 +81,7 @@ import { CLASSIC_SPRITE_SCALE, CharacterView, frozenTintOf, setBrightFloor } fro
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import { ReplayCursor } from '../replay/cursor';
-import { actionRefusal, activeHeroOf, buildMatchEnd, chargeLineFor, demoMatch, playbackFrame } from './arena-logic';
+import { actionRefusal, activeHeroOf, buildMatchEnd, chargeLineFor, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
 
@@ -244,7 +244,7 @@ export class Arena extends Phaser.Scene {
           });
           return p;
         },
-        () => driver.isPaused,
+        () => effectsHeld(driver.isPaused, this.fxAges),
         () => view.tick,
         hud && ((x, y, amount, scaled, counter) => { hud.spawn(x, y, amount, scaled, counter); }),
         () => getPrefs().highContrast,
@@ -977,8 +977,9 @@ export class Arena extends Phaser.Scene {
     if (++this.frames % LOW_HEALTH_POLL_FRAMES === 0) this.checkLowHealth();
     const alpha = driver.frame();
     const tick = view.tick;
-    // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them).
-    const live = !driver.isPaused || this.fxAges;
+    // Effects hold their frame while the sim is paused (and so in e2e manual stepping, where captures need them), unless the
+    // test hook's ageFx lets them age; the fx sink's pause check above uses the same rule.
+    const live = !effectsHeld(driver.isPaused, this.fxAges);
     const arcade = this.arcadeHud && view.arcade();
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
@@ -1007,7 +1008,7 @@ export class Arena extends Phaser.Scene {
   private frameAlpha = 0;
   private frameLive = true;
   private arcadeMatch = false;
-  /** Test hook: let view effects (hit flash) age on real frames while the sim stays paused. */
+  /** Test hook: let frame-timed view effects (hit flash, HUD numbers, white pops, rings, sparks, streaks, KO wash) age on real frames while the sim stays paused. */
   private fxAges = false;
   /** Element of each team's character this frame (characters draw before projectiles); picks the Snag rope art. */
   private readonly teamElement: string[] = [];
