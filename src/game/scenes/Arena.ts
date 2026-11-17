@@ -58,10 +58,10 @@ import { P2_BINDINGS } from '../input/local-two';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
 import { counted, type ArenaProbe, type ProbeCharacter } from '../platform/test-hook';
 import { getUiFlags } from '../platform/flags';
-import { ArcadeHudModel, numberLabel } from '../hud/arcade-hud';
+import { ArcadeHudModel, CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, POP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, numberLabel, type HudRect } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene, resolutionOf, viewHeight } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { isPortraitPlay } from '../boot/portrait-play';
 
 /** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
@@ -657,6 +657,25 @@ export class Arena extends Phaser.Scene {
       sheets: () => import('../views/pose-layer').then((m) => m.sheetState(this)),
       rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),
       defence: () => import('../fx/defence-view').then((m) => m.defenceState(this)),
+      overlays: () => {
+        const box = (r: HudRect): { x: number; y: number; w: number; h: number } => ({ x: r.x, y: r.y, w: r.w, h: r.h });
+        const from = viewOfCamera(this.cameras.main, { x: 0, y: 0, w: 0, h: 0 });
+        const frame = hudFrame(viewWidth(this), undefined, viewHeight(this));
+        const sx = frame.w / from.w;
+        const sy = frame.h / from.h;
+        const corner = { x: 0, y: 0 };
+        const callouts = ((this.registry.get(CALLOUT_RECTS_KEY) as HudRect[] | undefined) ?? []).map(box);
+        return {
+          pops: ((this.registry.get(POP_RECTS_KEY) as HudRect[] | undefined) ?? []).map(box),
+          callouts,
+          hudCallouts: callouts.map((r) => {
+            const c = projectToHud(r.x, r.y, from, frame, corner);
+            return { x: c.x, y: c.y, w: r.w * sx, h: r.h * sy };
+          }),
+          chips: ((this.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined) ?? [[], []]).map((team) => team.map(box)),
+          frame: box(frame),
+        };
+      },
       stageAmbient: () => this.ambient?.state() ?? { emitters: 0, particles: 0 },
       weather: () => import('../fx/weather-view').then((m) => m.weatherState(this)),
       viewsReady: () => (!this.arcadeHud || this.rounds !== undefined) && this.scene.isActive(HUD_SCENE),
