@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SUPER_NAMES } from '@core/index';
-import { NAME_SAFE_W, bandExt, bandHidesWeather, fitTitlePx, nameHalfWidth, portraitRect, portraitSide, superBandSlot, superName, sweptSpan, type Rect, type Span } from './super-view';
+import { LANDSCAPE_WINDOW, NAME_SAFE_W, bandExt, bandWindow, bandHidesWeather, fitTitlePx, nameHalfWidth, portraitRect, portraitSide, superBandSlot, superName, sweptSpan, type Rect, type Span } from './super-view';
 
 describe('superName', () => {
   it('names every super id from the data table, each distinct and non-empty', () => {
@@ -118,5 +118,32 @@ describe('super band slot', () => {
         for (const a of avoid) expect(p.x0 < a.x1 && a.x0 < p.x1 && p.y0 < a.y1 && a.y0 < p.y1).toBe(false);
       }
     }
+  });
+});
+
+describe('bandWindow (tall view)', () => {
+  it('keeps the 16:9 rows (117..603, preferred 200) on a view no taller than 720, whatever the HUD and bar', () => {
+    for (const h of [720, 720.4]) expect(bandWindow(h, 230, 1200)).toEqual({ top: 117, bottom: 603, high: 200 });
+    expect(LANDSCAPE_WINDOW).toEqual({ top: 117, bottom: 603, high: 200 });
+  });
+  it('the default window is the landscape one, and a tall window moves the slot inside it', () => {
+    const spans: Span[] = [{ top: 300, bottom: 560, w: 3 }];
+    expect(superBandSlot(spans, [], 1)).toEqual(superBandSlot(spans, [], 1, LANDSCAPE_WINDOW));
+    const win = bandWindow(1380, 230, 1220);
+    const slot = superBandSlot([{ top: 1000, bottom: 1200, w: 3 }], [], 1, win);
+    expect(slot.y - slot.ext).toBeGreaterThanOrEqual(win.top);
+    expect(slot.y + slot.ext).toBeLessThanOrEqual(win.bottom);
+    expect(slot.cost).toBe(0);
+  });
+  it('runs from under the HUD band (never above the weather row) to just above the bar', () => {
+    const w = bandWindow(1943, 230, 1500);
+    expect(w.top).toBe(240);
+    expect(w.bottom).toBe(1492);
+    expect(w.high).toBe(340);
+    expect(bandWindow(1380, 300, 1200).top).toBe(300);
+  });
+  it('never collapses: a bar too close to the HUD still leaves the smallest band a window', () => {
+    const w = bandWindow(900, 230, 260);
+    expect(w.bottom - w.top).toBeGreaterThanOrEqual(2 * bandExt(0.6));
   });
 });
