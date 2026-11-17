@@ -35,7 +35,7 @@ export interface CameraInput {
 }
 
 /** Narrower margin of the portrait tall view (world px). */
-export const CAMERA_MARGIN_PORTRAIT = 60;
+export const CAMERA_MARGIN_PORTRAIT = 48;
 
 /**
  * World y the camera looks at so world y 720 (the floor's bottom edge) lands on screen y `barTop` (logical px of the view `viewH`
@@ -47,11 +47,11 @@ export function verticalFrame(viewH: number, barTop: number, zoom: number): numb
 }
 
 /**
- * Highest zoom of the portrait tall view: the spare height allows a closer camera, up to 1.6 (and 1 on a view no taller than 16:9).
- * About 1.37 on 360x640 (view 1380 high), 1.6 on 390x844.
+ * Highest zoom of the portrait tall view: the spare height allows a closer camera, up to 2.1 (and 1 on a view no taller than 16:9).
+ * About 1.5 on 360x640 (view 1514 high), 2.05 on 390x844 (view 2066 high). QA r98: closer fights fill the tall view, less dead sky.
  */
 export function portraitZoomMax(viewH: number): number {
-  return Math.min(1.6, Math.max(1, viewH / 1008));
+  return Math.min(2.1, Math.max(1, viewH / 1008));
 }
 
 /** Keep the view inside [0, worldWidth]; a view wider than the world centres on it. */
