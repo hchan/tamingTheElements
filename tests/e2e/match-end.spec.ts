@@ -106,7 +106,7 @@ async function koBoth(page: Page, ids: readonly number[]): Promise<void> {
 }
 
 for (const size of SIZES) {
-  test(`match end draw at ${String(size.width)}: neutral Draw ribbon`, async ({ page }) => {
+  test(`match end draw at ${String(size.width)}: neutral ribbon, one DRAW cue`, async ({ page }) => {
     await fightTo(page, size);
     const ids = [...(await characters(page, 0)), ...(await characters(page, 1))].map((c) => c.id);
     for (let i = 0; i < 6 && (await page.locator('#arcadeResults').count()) === 0; i++) {
@@ -115,7 +115,7 @@ for (const size of SIZES) {
     }
     const results = page.locator('#arcadeResults');
     await expect(results).toHaveAttribute('data-tone', 'draw');
-    await expect(results.locator('.matchEndRibbon')).toHaveText('≡Draw');
+    await expect(results.locator('.matchEndRibbon')).toHaveText('≡No winner');
     await expect(page.getByRole('heading', { level: 1, name: 'Draw' })).toBeVisible();
     const dir = process.env['SHOT_DIR'];
     if (dir) await page.screenshot({ path: `${dir}/match-end-draw-${String(size.width)}.png` });
@@ -150,3 +150,17 @@ for (const size of SIZES) {
     }
   });
 }
+
+test('local P2 winner card at 360x640 keeps every button above the fold', async ({ page }) => {
+  const size = { width: 360, height: 640 };
+  await fightLocal(page, size);
+  await koRound(page, 'lose');
+  await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+  await koRound(page, 'lose');
+  const results = page.locator('#arcadeResults');
+  await expect(results).toHaveAttribute('data-player', '2');
+  for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
+    const box = await results.locator(sel).boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} is on screen`).toBeLessThanOrEqual(size.height);
+  }
+});

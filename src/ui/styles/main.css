@@ -2535,6 +2535,12 @@ html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
   grid-template-columns: 1fr 1fr;
   gap: 0 0.6em;
 }
+/* QA r100 P3: "Copy link" / "Copy code" stay on one line beside each other at 360 px. */
+#onlineShare button.onlineBig {
+  white-space: nowrap;
+  padding-inline: 0.4em;
+  min-width: 0;
+}
 #onlineShare #onlineQr {
   grid-column: 1 / -1;
 }

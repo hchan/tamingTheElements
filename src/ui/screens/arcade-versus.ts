@@ -906,7 +906,7 @@ export function arcadeResultsView(o: ResultsViewOptions): HTMLElement {
   for (const t of o.stats ?? []) stats.append(el('li', undefined, t));
   if (o.tone === 'win' && o.player) page.dataset['player'] = String(o.player);
   const ribbon =
-    o.tone === 'win' ? (o.player ? `P${String(o.player)} Winner` : 'Winner') : o.tone === 'loss' ? 'You lost' : o.tone === 'draw' ? 'Draw' : null;
+    o.tone === 'win' ? (o.player ? `P${String(o.player)} Winner` : 'Winner') : o.tone === 'loss' ? 'You lost' : o.tone === 'draw' ? 'No winner' : null;
   if (ribbon !== null) {
     const r = el('p', 'matchEndRibbon');
     const icon = o.tone === 'win' ? (o.player === 2 ? '\u25C6' : '\u2605') : o.tone === 'draw' ? '\u2261' : '\u2716';
