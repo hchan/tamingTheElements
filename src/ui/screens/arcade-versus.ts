@@ -837,8 +837,12 @@ export interface ResultsViewOptions {
   readonly summary: string;
   readonly onRematch: () => void;
   readonly onChange: () => void;
-  /** The winning hero (portrait and name); absent on a draw. */
+  /** The hero shown large (portrait and name): the winner, or the player's own hero on a loss or draw. */
   readonly winner?: { readonly id: CharacterId; readonly name: string };
+  /** The other side's hero, shown smaller beside the first (equal size on a draw). */
+  readonly opponent?: { readonly id: CharacterId; readonly name: string };
+  /** Styles the result word; defaults to the neutral look. */
+  readonly tone?: 'win' | 'loss' | 'draw';
   /** Short stat chips such as `Rounds 2-0`. */
   readonly stats?: readonly string[];
   /** Present when a replay was recorded. */
@@ -849,12 +853,17 @@ export function arcadeResultsView(o: ResultsViewOptions): HTMLElement {
   const page = el('div', 'menuPage matchEnd');
   page.id = 'arcadeResults';
   const hero = el('div', 'matchEndHero');
-  if (o.winner) {
+  const card = (h: { readonly id: CharacterId; readonly name: string }, cls: string): HTMLElement => {
+    const c = el('div', `matchEndCard ${cls}`);
     const face = el('span', 'heroFace matchEndFace');
     face.setAttribute('aria-hidden', 'true');
-    face.style.backgroundImage = faceUrl(o.winner.id);
-    hero.append(face, el('p', 'matchEndName', o.winner.name));
-  }
+    face.style.backgroundImage = faceUrl(h.id);
+    c.append(face, el('p', 'matchEndName', h.name));
+    return c;
+  };
+  if (o.winner) hero.append(card(o.winner, 'matchEndMain'));
+  if (o.opponent) hero.append(card(o.opponent, o.tone === 'draw' ? 'matchEndMain' : 'matchEndSide'));
+  if (o.tone) page.dataset['tone'] = o.tone;
   const stats = el('ul', 'matchEndStats');
   for (const t of o.stats ?? []) stats.append(el('li', undefined, t));
   page.append(hero, el('h1', 'heading matchEndWord', o.heading), stats, el('p', 'matchEndSummary', o.summary));

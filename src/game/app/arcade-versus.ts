@@ -69,10 +69,14 @@ export function keysHint(fadeMs = KEYS_HINT_MS): HTMLElement {
 const team = (heroes: readonly ArcadeHero[], t: number): string =>
   heroes.filter((h) => h.team === t).map((h) => `${raceLabel(h.race)} ${h.pct ? `${String(h.pct)}% left` : 'knocked out'}`).join(', ');
 
-/** The hero the victory beat shows: the player's lead on a win, the foe's on a loss (a local match: Player 1 or Player 2). */
-const winnerOf = (r: ArcadeResult): { id: CharacterId; name: string } => {
-  const id = r.outcome === 'win' ? r.pick.player : r.pick.enemy;
-  return { id, name: raceLabel(id) };
+/**
+ * The heroes the match-end beat shows. Against the AI the player's own hero is large on every outcome (the foe sits beside it,
+ * smaller; equal on a draw). In a local match the winner is large, so the headline ("Player 2 wins!") matches the portrait.
+ */
+const heroesOf = (r: ArcadeResult): { winner: { id: CharacterId; name: string }; opponent: { id: CharacterId; name: string } } => {
+  const mine = { id: r.pick.player, name: raceLabel(r.pick.player) };
+  const theirs = { id: r.pick.enemy, name: raceLabel(r.pick.enemy) };
+  return r.pick.local && r.outcome === 'lose' ? { winner: theirs, opponent: mine } : { winner: mine, opponent: theirs };
 };
 
 export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
@@ -146,7 +150,8 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
             ? `Your team: ${team(r.heroes, 0)}. The AI's team (${LEVEL_LABELS[r.pick.level]}): ${team(r.heroes, 1)}. `
             : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. `) +
           (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : ''),
-        ...(r.outcome === 'draw' ? {} : { winner: winnerOf(r) }),
+        ...heroesOf(r),
+        tone: r.outcome === 'draw' ? 'draw' : r.outcome === 'win' || r.pick.local ? 'win' : 'loss',
         stats: r.rounds ? [`Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}`] : [],
         onRematch: startBattle,
         onChange: showPick,

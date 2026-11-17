@@ -384,4 +384,22 @@ describe('arcadeResultsView (DOM)', () => {
     expect(page.querySelector('.matchEndStats')?.textContent).toBe('Rounds 2-0');
     expect(page.querySelector('#arcadeRematch')?.className).toContain('matchEndCta');
   });
+
+  it('shows both heroes: the opponent smaller after the main hero, equal on a draw', () => {
+    const base = {
+      heading: 'Defeat',
+      summary: 's',
+      winner: { id: 'sindarosa' as CharacterId, name: 'Sindarosa' },
+      opponent: { id: 'pax' as CharacterId, name: 'Pax' },
+      onRematch: vi.fn(),
+      onChange: vi.fn(),
+    };
+    const loss = arcadeResultsView({ ...base, tone: 'loss' });
+    expect([...loss.querySelectorAll('.matchEndName')].map((n) => n.textContent)).toEqual(['Sindarosa', 'Pax']);
+    expect(loss.querySelectorAll('.matchEndSide')).toHaveLength(1);
+    expect(loss.dataset['tone']).toBe('loss');
+    const draw = arcadeResultsView({ ...base, heading: 'Draw', tone: 'draw' });
+    expect(draw.querySelectorAll('.matchEndMain')).toHaveLength(2);
+    expect(draw.querySelectorAll('.matchEndSide')).toHaveLength(0);
+  });
 });
