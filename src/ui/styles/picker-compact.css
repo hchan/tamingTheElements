@@ -82,3 +82,20 @@
     line-height: 1.1;
   }
 }
+
+/* Portrait phone (QA r83 P6: at 390x844 Opponent, Team, AI level and Arena stacked about 600 px above the hero grid, so the first hero card sat behind
+   a long scroll). The hero pick comes first: the fighter cards and grid lead the scrolling region and the option rows follow it. The fieldset is a
+   wrapping flex row, so `order` moves the stage up without touching the DOM or the Tab order of the cards' own controls (the options stay
+   reachable by scrolling, and "More below" still shows while they are off screen). Touch targets are unchanged (44 px). */
+@media (max-width: 640px) and (orientation: portrait) {
+  #menu #arcadePick .vsFieldset > .vsStage {
+    order: -1;
+  }
+  #menu #arcadePick .pickScroll {
+    padding-block: 4px 8px;
+  }
+  #menu #arcadePick .heading {
+    margin-block: 0.25em;
+    font-size: 1.6em;
+  }
+}
