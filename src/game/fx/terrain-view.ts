@@ -490,7 +490,7 @@ export function mountTerrainView(
     p.labels.forEach((t, i) => {
       // Ease toward faint while a fighter stands on or beside the chip, back up when it leaves.
       // Hidden under the ROUND / FIGHT! banners so the chip words never bleed through their letters.
-      const on = hint > 0 && stage !== 3 && i < count && !bannerUp;
+      const on = hint > 0 && stage !== 3 && i < count && !bannerUp && hud.registry.get('tte.cut') !== true; // not under the super cut-in band (qa-r98)
       // A chip that appears (round start, after a banner) with a fighter already on it starts faint instead of fading down in plain view.
       if (on && !chipShown[i] && chipNear[i]) chipFade[i] = 0.15;
       chipShown[i] = on ? 1 : 0;
