@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, type RenderActionBar } from '@core/index';
-import { oneRowSide, oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, strikeCues, type ActionSlot } from './action-bar';
+import { PORTRAIT_ROW_TILE_MAX_CSS, oneRowSide,oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, strikeCues, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
 const bar = (over: Partial<RenderActionBar> = {}): RenderActionBar => ({
@@ -404,6 +404,12 @@ describe('portrait bar touch floor (44 CSS px)', () => {
     const r = portraitBarSlots(mk(6), 0.3047);
     expect(r?.ext).toBe(44);
     expect(new Set(r?.slots.map((s) => s.y)).size).toBe(1);
+  });
+  it('caps a wrapped tile at PORTRAIT_ROW_TILE_MAX_CSS so two rows do not cover the floor (QA r101)', () => {
+    const k = 360 / 1280;
+    const r = portraitBarSlots(mk(10), k);
+    expect(r?.ext).toBe(0);
+    for (const s of r?.slots ?? []) expect(s.size * k).toBeLessThanOrEqual(PORTRAIT_ROW_TILE_MAX_CSS + 0.5);
   });
   it('wraps into rows with no skirt when one row would be under 44 px', () => {
     const r = portraitBarSlots(mk(14), 360 / 1280);
