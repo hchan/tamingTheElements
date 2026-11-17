@@ -12,3 +12,7 @@ Source of the idea: Street Fighter II / Marvel vs Capcom. SFII stages have crowd
 First slice done: parallax stage backdrop (far skyline, drifters, cheering crowd) per element above the arena wall, src/game/fx/terrain-stage*.ts, art by tools/assets/stage-gen/stagebg.py. Still open: crowd reacting to supers and KOs, stage-specific foreground, fades between stages.
 
 Second slice (2026-11-13): the crowd reacts to hits (short hop), supers (longer) and KOs (long, biggest hop), cheering twice as fast while roused; reduced motion holds it still. View only (terrain-stage*.ts, wired in terrain-view.ts), reuses the existing crowd frames. Still open: stage-specific foreground, fades between stages, per-stage reaction art (arms-up frame).
+
+## Follow-up (2026-11-16)
+
+Add: more parallax layers, ambient props and per-element hazards across stages (see stage-selection-hazards.md; hazards that touch the sim need a SIM_VERSION bump). Size M to L. GPU-suitable: yes for layer art. Owner-gated: no.

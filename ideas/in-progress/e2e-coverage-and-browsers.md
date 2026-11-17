@@ -37,3 +37,7 @@ persistence, pause dialog, round flow and HUD, input remapping and replays all h
 - Remaining, weakest first: the drawing and scene wiring in `Arena.ts` and `Hud.ts` (screenshot and e2e specs only); `ability-aura-view`, `trap-view`, `danger-view` and `views/backdrop.ts` render-only (screenshot specs); `src/game/hud/bars.ts` unreferenced constants (`BAR_LINE`, `REST_COLOR`, `collectSide`); `terrainRound`/`terrainTick` covered only indirectly by `terrain.test.ts`; `game/boot/phaser-config.ts`.
 - To get numbers: add `@vitest/coverage-v8` and run `vitest run --coverage` (needs an owner decision on a new devDependency).
 - New test files need no REPO-MAP entry (REPO-MAP lists directories, not test files).
+
+## Follow-up (2026-11-16)
+
+Add: cross-browser (Firefox and WebKit) e2e coverage and repeated full e2e runs several times in a row, headless only. Size M. GPU-suitable: no. Owner-gated: no.
