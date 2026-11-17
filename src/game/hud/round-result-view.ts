@@ -33,11 +33,11 @@ const HOLD = Number.MAX_SAFE_INTEGER;
 
 /** Desaturated per tone: ash gold, dried blood, plain ash. */
 const ACCENT: Readonly<Record<Tone, { hex: number; css: string }>> = {
-  win: { hex: 0xb8964a, css: '#cdb87e' },
-  lose: { hex: 0x7a3a32, css: '#b0675b' },
-  draw: { hex: 0x8a8578, css: '#b3ab9a' },
+  win: { hex: 0xc9a455, css: '#f2dc93' },
+  lose: { hex: 0x8c4237, css: '#ee9484' },
+  draw: { hex: 0x9a9588, css: '#ece2c8' },
 };
-const BONE = '#b3ab9a';
+const BONE = '#ece2c8';
 
 export interface ResultState {
   readonly visible: boolean;
@@ -86,7 +86,7 @@ export function mountResultView(
     hud.add
       .text(LOGICAL_WIDTH / 2, SLAB_Y, '', {
         fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(size)}px`, fontStyle: style, color, stroke: '#0a0806',
-        strokeThickness: size > 30 ? 4 : 2, align: 'center', lineSpacing: spacing, resolution: resolutionOf(hud),
+        strokeThickness: size > 30 ? 7 : 3, align: 'center', lineSpacing: spacing, resolution: resolutionOf(hud),
       })
       .setOrigin(0.5, 0)
       .setDepth(DEPTH);
@@ -95,7 +95,7 @@ export function mountResultView(
     parts = {
       bg: hud.add.graphics().setDepth(DEPTH),
       kicker: text(18, 'normal', BONE),
-      title: text(46, 'normal', BONE),
+      title: text(46, 'bold', BONE),
       head: text(18, 'normal', BONE),
       body: text(17, 'normal', BONE, 6),
     };
@@ -108,7 +108,7 @@ export function mountResultView(
     const x = LOGICAL_WIDTH / 2;
     compact = phoneBoost(hud, 2, 1100) >= COMPACT_BOOST;
     const p = place();
-    parts.bg.clear().fillStyle(0x0c0a08, 0.76).fillRect(x - SLAB_W / 2, 0, SLAB_W, p.h)
+    parts.bg.clear().fillStyle(0x0c0a08, 0.88).fillRect(x - SLAB_W / 2, 0, SLAB_W, p.h)
       .lineStyle(2, 0x3a352c, 1).strokeRect(x - SLAB_W / 2, 0, SLAB_W, p.h)
       .fillStyle(a.hex, 1).fillRect(x - SLAB_W / 2, 0, SLAB_W, 5);
     parts.kicker.setText(c.kicker).setColor(BONE);

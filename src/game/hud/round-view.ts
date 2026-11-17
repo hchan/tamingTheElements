@@ -28,9 +28,9 @@ export const FIGHT_SETTLED_TICKS = 125;
 const DEPTH = 110;
 /** Above the centre pad's label (y 330 to 345) and below the weather called line (y 268). */
 const BANNER_Y = 304;
-const MAIN_PX = 44;
-const SUB_PX = 24;
-const SUB_GAP = 42;
+const MAIN_PX = 52;
+const SUB_PX = 28;
+const SUB_GAP = 48;
 /** Name cards: big engraved names at each screen edge, above the fighters. */
 const CARD_PX = 54;
 const CARD_Y = 200;
@@ -50,7 +50,7 @@ export function placePipLabel(t: Phaser.GameObjects.Text, team: 0 | 1): Phaser.G
 }
 
 /** Banner fade: in over the first 8 ticks, out over the last 12 (none with reduced motion). */
-const FADE_IN_TICKS = 8;
+const FADE_IN_TICKS = 4;
 const FADE_OUT_TICKS = 12;
 
 export interface RoundPrefs {
@@ -139,11 +139,11 @@ export function mountRoundView(
   let shownColor = '';
   let scale = 1;
 
-  /** The words: bone serif under a thin dark stroke, regular weight (the banner is `grim`, the timer keeps a heavier stroke for contrast). */
+  /** The words: bone serif under a thick dark stroke, bold (QA r98: the banner was faint at phone sizes; the timer keeps its own stroke). */
   const text = (size: number, y: number, stroke: number, grim = false): Phaser.GameObjects.Text =>
     hud.add
       .text(TIMER_X, y, '', {
-        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(size)}px`, fontStyle: grim ? 'normal' : 'bold', color: grim ? '#b3ab9a' : TIMER_COLOR, stroke: '#0a0806', strokeThickness: grim ? Math.round(stroke / 2) : stroke,
+        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: `${String(size)}px`, fontStyle: 'bold', color: grim ? '#ece2c8' : TIMER_COLOR, stroke: '#0a0806', strokeThickness: stroke,
         resolution: resolutionOf(hud),
       })
       .setDepth(DEPTH);
@@ -264,7 +264,7 @@ export function mountRoundView(
     if (on && size !== shownSize) {
       shownSize = size;
       // Big calls get a hard, thick outline so they stay solid over floor detail and damage numbers.
-      parts.main.setFontSize(MAIN_PX * size).setStroke('#0a0806', size > 1 ? 10 : 7);
+      parts.main.setFontSize(MAIN_PX * size).setStroke('#0a0806', size > 1 ? 12 : 10);
     }
     if (on) {
       parts.main.setColor(bannerColorFor(banner.main, banner.hc));
@@ -295,7 +295,7 @@ export function mountRoundView(
 
   const build = (): void => {
     parts = {
-      main: text(MAIN_PX, BANNER_Y, 14, true).setOrigin(0.5),
+      main: text(MAIN_PX, BANNER_Y, 10, true).setOrigin(0.5),
       sub: text(SUB_PX, BANNER_Y + SUB_GAP, 6, true).setOrigin(0.5, 0),
       timer: text(TIMER_PX, TIMER_Y, 5).setOrigin(0.5, 0),
       pips: hud.add.graphics().setDepth(DEPTH),
