@@ -105,13 +105,13 @@ export function viewBox(scene: Phaser.Scene, z = 1, px = LOGICAL_WIDTH / 2, py =
  * Mounts the pan camera in the Arena `scene` (Arcade); it removes itself when the scene shuts down. It also turns on the wide
  * view (QA r19): a wide phone shows more of the world instead of side bars, and the pan keeps that wider view inside the walls.
  */
-export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () => number, reducedMotion: () => boolean): void {
+export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () => number, reducedMotion: () => boolean, pos: () => number = alpha): void {
   const s = state(scene);
   enableWideView(scene, arcadePlayfield().w);
   const mid = { x1: 0, x2: 0, n1: 0, n2: 0, reach: 40 };
   const visit = (c: RenderCharacter): void => {
     if ((c.flags & BENCHED_OR_DEAD) !== 0) return;
-    const x = c.px + (c.x - c.px) * alpha() + c.w / 2;
+    const x = c.px + (c.x - c.px) * pos() + c.w / 2;
     mid.reach = Math.max(mid.reach, (arcadeHeroScale(c.h) * c.w) / 2);
     if (c.team === 0 && mid.n1++ === 0) mid.x1 = x;
     else if (c.team !== 0 && mid.n2++ === 0) mid.x2 = x;

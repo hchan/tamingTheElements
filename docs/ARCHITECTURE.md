@@ -246,6 +246,13 @@ document is hidden. Pause is simply not stepping, so game time never advances wh
 (`user`, `hidden`, `overlay`, `replay`, `ended`): the sim runs only when no reason holds it, so showing the tab again never
 resumes a battle the user paused.
 
+**Render interpolation: `pos` vs `alpha`.** The Arena samples two fractions per frame. `alpha` (wall clock, from the driver) is
+for timing: effect ages, pulses, `view.tick + alpha`. `pos` (`HoldLerp.fraction(alpha)`, `loop/hold-lerp.ts`) is for where
+things are drawn: during hit-stop, super freeze and KO slow-mo the sim skips movement, so `px/py` go stale and lerping them
+with `alpha` would replay the last step every frame (a sawtooth). Anything that lerps a fighter or projectile position
+(`character-view`, `projectile-view`, void stage, `cc-view`, `idle-aura-view`, `arena-pan`, the aim arrow) takes `pos`; a
+mount that has no separate `pos` callback defaults it to `alpha`. Render-only: the sim and its hash never see either.
+
 ```mermaid
 sequenceDiagram
   participant RAF as Phaser frame

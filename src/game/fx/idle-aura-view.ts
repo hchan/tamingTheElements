@@ -199,6 +199,7 @@ export function mountIdleAuraView(
   alpha: () => number,
   reduceMotion: () => boolean,
   highContrast: () => boolean,
+  pos: () => number = alpha,
 ): void {
   let backG: Phaser.GameObjects.Graphics | undefined;
   let frontG: Phaser.GameObjects.Graphics | undefined;
@@ -258,9 +259,9 @@ export function mountIdleAuraView(
     s.salt = c.id * 977 + (h & 0xfff);
     if (c.dir === 0) s.face = 1;
     else if (c.dir === 4) s.face = -1;
-    const a = alpha();
-    const x = c.px + (c.x - c.px) * a;
-    const y = c.py + (c.y - c.py) * a;
+    const p = pos();
+    const x = c.px + (c.x - c.px) * p;
+    const y = c.py + (c.y - c.py) * p;
     const moved = Math.abs(c.x - c.px) + Math.abs(c.y - c.py);
     s.stand += ((moved < STAND_STEP ? 1 : 0) - s.stand) * 0.12;
     visualBox(x, y, c.w, c.h, view.arcade() ? arcadeHeroScale(c.h) : 1, box, view.arcade() ? arcadePlayfield().w : undefined);

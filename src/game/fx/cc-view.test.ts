@@ -77,6 +77,54 @@ describe('cc view frame path', () => {
   });
 });
 
+/** A scene whose Images and Graphics log every coordinate they are given (setPosition, lineBetween). */
+function recordingScene(log: number[]): Phaser.Scene {
+  const rec = (): Record<string, unknown> => {
+    const o: Record<string, unknown> = { frame: { name: '' }, depth: 0 };
+    const self: Record<string, unknown> = new Proxy(o, {
+      get: (t, k: string) => {
+        if (k in t) return t[k];
+        if (k === 'setPosition' || k === 'lineBetween') return (...a: number[]) => { log.push(...a); return self; };
+        return () => self;
+      },
+    });
+    return self;
+  };
+  let draw: () => void = () => undefined;
+  const scene = {
+    add: { image: rec, graphics: rec },
+    textures: { exists: () => true },
+    events: { on: (_n: string, f: () => void) => { draw = f; return scene.events; }, once: () => scene.events, off: () => scene.events },
+    draw: () => { draw(); },
+  };
+  return scene as unknown as Phaser.Scene;
+}
+
+describe('cc view position fraction', () => {
+  const frame = (alpha: number, pos?: number): number[] => {
+    const log: number[] = [];
+    const scene = recordingScene(log);
+    const view = fakeView({ tick: 100 });
+    // A moving fighter: the last step went 40 px to the right.
+    view.forEachCharacter((c) => { c.px = c.x - 40; });
+    if (pos === undefined) mountCcView(scene, view, () => alpha, () => false, () => false);
+    else mountCcView(scene, view, () => alpha, () => false, () => false, () => pos);
+    (scene as unknown as { draw: () => void }).draw();
+    return log;
+  };
+  it('anchors on pos, not alpha, so a held clock keeps the overlay still', () => {
+    const hold0 = frame(0.2, 1);
+    const hold1 = frame(0.7, 1);
+    // Same pos with different timing alpha: the draw is as large; moving pos alone moves the anchors.
+    expect(hold0.length).toBeGreaterThan(0);
+    expect(hold0.length).toBe(hold1.length);
+    expect(frame(0.5, 0)).not.toEqual(frame(0.5, 1));
+  });
+  it('defaults pos to alpha', () => {
+    expect(frame(0.5)).toEqual(frame(0.5, 0.5));
+  });
+});
+
 describe('cc view flash gate', () => {
   it('spaces break-out rings by at least 17 ticks per hero and at most 3 per second overall', () => {
     expect(FLASH_MIN_GAP_TICKS).toBe(17);
