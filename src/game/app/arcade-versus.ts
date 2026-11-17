@@ -148,8 +148,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
               : `Player 1 (${raceLabel(r.pick.player)}) against Player 2 (${raceLabel(r.pick.enemy)}). `
             : r.heroes
             ? `Your team: ${team(r.heroes, 0)}. The AI's team (${LEVEL_LABELS[r.pick.level]}): ${team(r.heroes, 1)}. `
-            : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}. `) +
-          (r.rounds ? `Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}. ` : ''),
+            : `${raceLabel(r.pick.player)} against the AI's ${raceLabel(r.pick.enemy)}, AI ${LEVEL_LABELS[r.pick.level]}.`).trim(),
         ...heroesOf(r),
         tone: r.outcome === 'draw' ? 'draw' : r.outcome === 'win' || r.pick.local ? 'win' : 'loss',
         stats: r.rounds ? [`Rounds ${String(r.rounds[0])}-${String(r.rounds[1])}`] : [],

@@ -222,3 +222,12 @@
     outline-offset: 2px;
   }
 }
+
+/* Play (tour pick) on a phone: the slot label "Hero 1 (lead)" stays on one line (QA r93 P3: it wrapped to "Hero 1 / (lead)"). */
+@media (max-width: 640px) {
+  .heroSlots .heroSlotLabel {
+    white-space: nowrap;
+    font-size: 0.62em;
+    letter-spacing: -0.01em;
+  }
+}

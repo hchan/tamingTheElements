@@ -143,7 +143,7 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   }
   await expect(page.locator('#arcadeResults')).toBeVisible({ timeout: 10_000 });
   const summary = await page.locator('#arcadeResults .matchEndSummary').innerText();
-  expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out\. Rounds 2-0\./);
+  expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out\.$/);
   await page.getByRole('link', { name: 'Main Menu' }).click();
   await page.waitForFunction(`window.location.hash === '#main'`);
   await page.evaluate(`window.__TTE__.settled()`);
@@ -196,7 +196,7 @@ test('3v3: the third hero only in 3v3, a BENCH line each, Tag 2 on the 4 key, th
   }
   await expect(page.locator('#arcadeResults')).toBeVisible({ timeout: 10_000 });
   const summary = await page.locator('#arcadeResults .matchEndSummary').innerText();
-  expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left, Curomo \(\w+\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out, .+ knocked out\. Rounds 2-0\./);
+  expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left, Curomo \(\w+\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out, .+ knocked out\.$/);
   expect(errors).toEqual([]);
 });
 
