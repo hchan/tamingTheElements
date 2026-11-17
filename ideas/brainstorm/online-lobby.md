@@ -1,3 +1,8 @@
+---
+status: idea
+added: 2026-11-17
+---
+
 # Online lobby (AWS backbone later)
 
 Owner idea, 2026-11-17: a LOBBY for Online play, with AWS as the backbone later.
