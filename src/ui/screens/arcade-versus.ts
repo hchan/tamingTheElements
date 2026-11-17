@@ -730,7 +730,11 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   set.append(roster.node, hints);
   actions.append(start, fightHint, back);
   const scroll = el('div', 'pickScroll');
-  scroll.append(set, hint);
+  // Phone portrait puts the option rows below the hero grid (see picker-compact.css); this strip stays at the top, says what is set and jumps to them.
+  const optsJump = el('button', 'vsOptsJump');
+  optsJump.type = 'button';
+  optsJump.id = 'arcadeOptsJump';
+  scroll.append(optsJump, set, hint);
   form.append(scroll, actions);
   const more = markMoreBelow(scroll);
   // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.
@@ -764,8 +768,18 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     start.disabled = empty > 0;
     fightHint.hidden = empty === 0;
     fightHint.textContent = empty === 0 ? '' : `Pick ${String(empty)} more hero${empty === 1 ? '' : 'es'}`;
+    const word = (n: string): string => {
+      const t = f[n]?.selectedOptions[0]?.textContent ?? '';
+      return t.startsWith('Two players') ? 'Two players' : t.replace(/ tag team$/, '');
+    };
+    optsJump.textContent = `Options: ${[word('mode'), word('size'), ...(local ? [] : [word('level')]), word('stage')].join(', ')} \u25BE`;
     more();
   };
+  optsJump.addEventListener('click', () => {
+    const row = f['mode']?.closest<HTMLElement>('.vsControl');
+    row?.scrollIntoView({ block: 'center' });
+    row?.querySelector<HTMLElement>('.vsSegment[aria-checked="true"], .vsSegment')?.focus({ preventScroll: true });
+  });
   // Hide the pulldowns for heroes (they stay in the DOM for form data, labels and assistive tech lookups).
   queueMicrotask(() => {
     for (const n of heroNames) {

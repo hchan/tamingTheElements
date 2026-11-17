@@ -191,3 +191,34 @@
     margin-top: 20px;
   }
 }
+
+/* QA r90 P3: on a portrait phone the option rows sit below the hero grid (about 1000 px down). The Options strip leads the scrolling region, shows what
+   is set (Computer, 1v1, Normal, Random) and jumps to the rows. Hidden everywhere else, where the rows are already on screen. */
+.vsOptsJump {
+  display: none;
+}
+@media (max-width: 640px) and (orientation: portrait) {
+  #menu #arcadePick .vsOptsJump {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin: 0 0 6px;
+    padding: 6px 10px;
+    border: 1px solid #8a7a3a;
+    border-radius: 6px;
+    background: #1d1b3a;
+    color: #f2d98a;
+    font: inherit;
+    font-size: 0.95em;
+    text-align: left;
+    cursor: pointer;
+  }
+  #menu #arcadePick .vsOptsJump:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+}
