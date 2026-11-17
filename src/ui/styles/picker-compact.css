@@ -183,12 +183,12 @@
   }
 }
 
-/* QA r91 P3: on a phone the "More below" tab (main.css, 18 px tall plus its 2 px lift) sat on top of the last visible hero row and touched the bar's
-   border. While the cue shows, the bar keeps a 20 px strip above it, so the tab sits in free space and covers no card. */
-@media (max-width: 520px) {
+/* QA r91 P3: on a phone the "More below" tab (main.css, 18 px tall plus its 6 px lift) sat on top of the last visible hero row and touched the bar's
+   border. While the cue shows, the bar keeps a 28 px strip above it, so the tab sits in free space and covers no card. */
+@media (max-width: 520px), (max-height: 520px) {
   #menu #arcadePick .pickScroll[data-more] + .vsActions,
   #menu .heroSelect > .pickScroll[data-more] + .heroActions {
-    margin-top: 20px;
+    margin-top: 28px;
   }
 }
 
