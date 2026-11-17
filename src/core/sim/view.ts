@@ -27,7 +27,7 @@ import { SWAP_COOLDOWN_TICKS, tagTargets, teamMembers } from './systems/swap';
 const CAPTURE_SLOT = 2;
 import type { SimWorld } from './world';
 import { cooldownTicksFor, FIRE_BLAST_ABILITY, fireBlastAlphaPm } from './arcade-numbers';
-import { isArcade, isFrozen, now } from './clock';
+import { isArcade, isFrozen, isSlowMoHold, now } from './clock';
 
 /** One character as the renderer sees it. The object is reused between callbacks: copy what you keep. */
 export interface RenderCharacter {
@@ -63,6 +63,10 @@ export function abilitySlugAt(defIdx: number): string {
 export interface RenderArcade {
   /** True while a hit-stop (or another game-clock freeze) holds the game. */
   frozen: boolean;
+  /** The game clock (`now(s)`), read-only; describes the next step like `frozen`. */
+  gameTick: number;
+  /** True when the next step is a KO slow-motion hold (`isSlowMoHold`). */
+  slowHold: boolean;
   /** Live combo per team: hits (0 = none) and scaled damage so far. */
   readonly comboHits: [number, number];
   readonly comboDamage: [number, number];
@@ -238,7 +242,7 @@ export function createRenderView(world: SimWorld): RenderView {
     }
   };
   const ar: RenderArcade = {
-    frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, sudden: false, roundsWon: [0, 0],
+    frozen: false, gameTick: 0, slowHold: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, sudden: false, roundsWon: [0, 0],
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
     traps: new Array<number>(TRAP_WORLD_MAX * TRAP_VIEW_STRIDE).fill(0), hazard: new Array<number>(HAZARD_VIEW_STRIDE).fill(0),
     stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
@@ -346,6 +350,8 @@ export function createRenderView(world: SimWorld): RenderView {
     arcade(): RenderArcade | undefined {
       if (!isArcade(s)) return undefined;
       ar.frozen = isFrozen(s);
+      ar.gameTick = now(s);
+      ar.slowHold = isSlowMoHold(s);
       for (let t = 0; t < 2; t++) {
         const b = ARCADE_TEAM_BASE + t * ARCADE_T;
         ar.comboHits[t] = s.arcade[b + ArcadeT.comboHits] ?? 0;

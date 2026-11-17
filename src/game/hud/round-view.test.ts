@@ -77,7 +77,7 @@ function fakeScene(active: boolean): { scene: Phaser.Scene; events: Emitter; mad
 function fakeView(): { view: RenderView; arcade: RenderArcade; setTick: (t: number) => void } {
   let tick = 0;
   const arcade = {
-    frozen: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: RoundPhase.intro, timer: 0, sudden: false,
+    frozen: false, gameTick: 0, slowHold: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: RoundPhase.intro, timer: 0, sudden: false,
     roundsWon: [0, 0], stunned: () => false, invulnerable: () => false, aim: () => 0, guard: () => 1000, guarding: () => false, rooted: () => false, stunLeft: () => 0, rootLeft: () => 0, rootImmuneLeft: () => 0, mireLeft: () => 0, kbSpeed: () => 0, wallBounced: () => false, chargeIn: () => 0, dashIn: () => 0, active: () => 0, weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: [], traps: [], hazard: [],
   } as RenderArcade;
   const view = { get tick() { return tick; }, arcade: () => arcade, forEachCharacter: () => undefined } as unknown as RenderView;
