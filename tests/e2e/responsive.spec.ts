@@ -101,6 +101,24 @@ for (const vp of VIEWPORTS) {
       await page.screenshot({ path: info.outputPath('garrison.png') });
     });
 
+    test('help page links stay compact (QA r87 P3) and inside the viewport', async ({ page }) => {
+      await page.goto('/');
+      await page.getByText('Help', { exact: true }).waitFor();
+      await page.evaluate(`window.location.hash = '#help'`);
+      await page.waitForFunction(`window.__TTE__.state().mountedRoute === '#help'`);
+      const links = await page.evaluate<{ x: number; y: number; w: number; h: number }[]>(
+        `[...document.querySelectorAll('.helpLinks a')].map((a) => { const r = a.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`,
+      );
+      expect(links.length).toBe(5);
+      const rows = new Set(links.map((l) => Math.round(l.y / 10)));
+      if (vp.w < 500) expect(rows.size, 'link rows on a phone').toBeLessThanOrEqual(3);
+      for (const l of links) {
+        expect(l.h).toBeGreaterThanOrEqual(44);
+        expect(l.x).toBeGreaterThanOrEqual(0);
+        expect(l.x + l.w).toBeLessThanOrEqual(vp.w);
+      }
+    });
+
     test('battle: action bar clicks map through the scaling, chrome stays visible', async ({ page }, info) => {
       const errors = collectErrors(page);
       await page.goto(START);
