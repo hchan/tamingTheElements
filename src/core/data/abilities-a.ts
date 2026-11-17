@@ -25,6 +25,7 @@ const ROWS: readonly Row[] = [
   ['stick', 'range', 'stick', 10, 2000, 1, 8, 25, 10],
   ['fire-blast', 'range', 'fireBlast', 40, 600, 2, 8, 75, 15],
   ['icicles', 'range', 'icicles', 10, 300, 3, 10, 10, 25],
+  // Quarrak's since roster 24 (set C reuses this def; Arcade cooldown 90 ticks in sim/arcade-numbers.ts).
   ['hurl-rock', 'range', 'hurlRock', 40, 500, 2, 8, 35, 35],
   ['sonar-blast', 'range', 'sonarBlast', 40, 600, 2, 8, 20, 20],
   ['fireball', 'range', 'fireball', 15, 600, 2, 8, 25, 12],
@@ -35,6 +36,7 @@ const ROWS: readonly Row[] = [
   ['circus-of-slime', 'omni', 'circusOfSlimeIcon', 16, 10000, 4, 5, 40, 20],
   ['chaos-bolt', 'range', 'chaosBolt', 40, 600, 3, 10, 75, 15],
   ['chaos-orb', 'range', 'chaosOrb', 140, 5000, 1, 2, 75, 75],
+  // Reserved legacy data: no hero owns it (dead-ability-cleanup); the row stays, its index 16 is hashed.
   ['elemental-advantage-fire-cone', 'range', 'fireCone', 80, 1000, 3, 8, 100, 80, 3000],
 ];
 
