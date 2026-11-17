@@ -4,7 +4,7 @@ import {
   EntityFlag, GUARD_MAX, SimEventKind, SnagEvent, type RenderArcade, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent,
 } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
-import { CALLOUT_RECTS_KEY } from '../hud/arcade-hud';
+import { CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, POP_RECTS_KEY } from '../hud/arcade-hud';
 import { AFTERIMAGE_FADE, BREAK_WORD, FREED_WORD, LINES, PARRY_WORD, POP_TICKS, ROOTED_WORD } from './defence-fx';
 import { defenceState, mountDefenceView, type Fighters } from './defence-view';
 
@@ -72,14 +72,15 @@ function fakeObject(kind: string, made: Fake[]): Fake {
   return proxy;
 }
 
-function fakeScene(): { scene: Phaser.Scene; events: Emitter; made: Fake[]; reg: Map<string, unknown> } {
+function fakeScene(camera = false): { scene: Phaser.Scene; events: Emitter; made: Fake[]; reg: Map<string, unknown> } {
   const events = new Emitter();
   const reg = new Map<string, unknown>();
   const made: Fake[] = [];
   const scene = {
     events,
     registry: { get: (k: string) => reg.get(k), set: (k: string, v: unknown) => reg.set(k, v), remove: (k: string) => reg.delete(k) },
-    scale: { width: 1280 },
+    scale: { width: 1280, height: 720 },
+    ...(camera ? { cameras: { main: { scrollX: 0, scrollY: 0, width: 1280, height: 720, zoom: 1 } } } : {}),
     add: { graphics: () => fakeObject('graphics', made), image: () => fakeObject('image', made), text: () => fakeObject('text', made) },
   } as unknown as Phaser.Scene;
   return { scene, events, made, reg };
@@ -122,11 +123,11 @@ let seq = 0;
 const ev = (kind: number, tick: number, sourceId: number, payload: Record<string, number> = {}): SimEvent =>
   ({ tick, sourceId, kind: kind as SimEvent['kind'], seq: seq++, ...payload });
 
-function mount(reduceMotion = false): ReturnType<typeof world> & ReturnType<typeof fakeScene> & {
+function mount(reduceMotion = false, camera = false): ReturnType<typeof world> & ReturnType<typeof fakeScene> & {
   feed: (tick: number, events?: SimEvent[]) => void; frame: () => void; lines: Announcement[];
 } {
   const w = world();
-  const s = fakeScene();
+  const s = fakeScene(camera);
   const lines: Announcement[] = [];
   const consume = mountDefenceView(s.scene, w.view, (l) => lines.push(l), () => ({ reduceMotion, highContrast: false }), w.fighters);
   return {
@@ -272,6 +273,81 @@ describe('defence view: Snag root (FUN-DESIGN 2.20)', () => {
     expect(state(m.scene)).toMatchObject({ roots: 0, rings: 0, pops: [] });
     expect(state(m.scene).sparks).toBeGreaterThan(0);
     expect(m.lines).toEqual([]);
+  });
+});
+
+/** The call-out Text for `word` (its y is the bottom edge). */
+const calloutY = (m: ReturnType<typeof mount>, word: string): number => {
+  const t = m.made.find((o) => o.kind === 'text' && o.text === word);
+  if (!t) throw new Error(`no ${word} text`);
+  return t.y;
+};
+
+describe('defence view: call-outs stay clear of the white pops', () => {
+  const parry = (m: ReturnType<typeof mount>): void => {
+    m.feed(100, [ev(SimEventKind.parried, 100, 7, { target: 0, attacker: 1, reflected: 0 })]);
+    m.frame();
+  };
+  it('anchors above the drawn (scaled) head, not the sim box: an 80 px fighter at y 300 gives a bottom of 150', () => {
+    const m = mount();
+    parry(m);
+    expect(calloutY(m, PARRY_WORD)).toBeCloseTo(149.05, 1);
+  });
+  it('a taller fighter never gets a lower call-out than the sim-box anchor gave', () => {
+    const m = mount();
+    const c = m.chars[0];
+    if (c) { c.h = 200; c.y = 300; }
+    parry(m);
+    expect(calloutY(m, PARRY_WORD)).toBeLessThanOrEqual(300 - 66 - 4);
+  });
+  it('lifts to 8 px above a pop it would cover, ignores a far one, and ratchets (never drops back)', () => {
+    const m = mount();
+    m.reg.set(POP_RECTS_KEY, [{ x: 150, y: 100, w: 200, h: 40 }, { x: 900, y: 100, w: 100, h: 40 }]);
+    parry(m);
+    expect(calloutY(m, PARRY_WORD)).toBe(92);
+    m.reg.set(POP_RECTS_KEY, []);
+    m.feed(101);
+    m.frame();
+    expect(calloutY(m, PARRY_WORD)).toBeLessThanOrEqual(92);
+  });
+  it('a pop elsewhere leaves the anchor alone', () => {
+    const m = mount();
+    m.reg.set(POP_RECTS_KEY, [{ x: 900, y: 100, w: 100, h: 40 }]);
+    parry(m);
+    expect(calloutY(m, PARRY_WORD)).toBeCloseTo(149.05, 1);
+  });
+  it('with a camera, stays under the HUD ceiling (132 at the floor) and under a status chip', () => {
+    const m = mount(false, true);
+    const c = m.chars[0];
+    if (c) c.y = 200;
+    parry(m);
+    expect(calloutY(m, PARRY_WORD)).toBeGreaterThanOrEqual(132);
+    const n = mount(false, true);
+    const d = n.chars[0];
+    if (d) d.y = 200;
+    n.reg.set(CHIP_RECTS_KEY, [[{ x: 180, y: 100, w: 120, h: 40 }], []]);
+    parry(n);
+    expect(calloutY(n, PARRY_WORD)).toBeGreaterThanOrEqual(144 + 30);
+  });
+  it('slides sideways within 120 px, keeping the margin, when the ceiling leaves no room above a pop', () => {
+    const m = mount(false, true);
+    const c = m.chars[0];
+    if (c) c.y = 200;
+    m.reg.set(POP_RECTS_KEY, [{ x: 180, y: 110, w: 120, h: 60 }]);
+    parry(m);
+    const t = m.made.find((o) => o.kind === 'text' && o.text === PARRY_WORD);
+    expect(t).toBeDefined();
+    expect(Math.abs((t?.x ?? 0) - 240)).toBeLessThanOrEqual(120);
+    expect(t?.x ?? 0).toBeGreaterThanOrEqual(16 + 60);
+  });
+  it('without cameras placement still works, and a new round clears the lift', () => {
+    const m = mount();
+    m.reg.set(POP_RECTS_KEY, [{ x: 150, y: 100, w: 200, h: 40 }]);
+    parry(m);
+    m.reg.set(POP_RECTS_KEY, []);
+    m.feed(200, [ev(SimEventKind.roundStarted, 200, 0)]);
+    parry(m);
+    expect(calloutY(m, PARRY_WORD)).toBeCloseTo(149.05, 1);
   });
 });
 
