@@ -130,9 +130,11 @@
   }
   #menu .helpJumpBtn {
     min-width: 0;
-    padding-inline: 0.3em;
+    padding-inline: 0.2em;
+    letter-spacing: -0.01em;
+    overflow: hidden;
     /* QA r96 P3: small enough that "Choosing your heroes" and "Reading the arena" stay on one line at 360 px, so every row is 44 px (it was 61 vs 44). */
-    font-size: 0.72em;
+    font-size: 0.68em;
     white-space: nowrap;
     display: flex;
     align-items: center;

@@ -161,6 +161,31 @@
     flex-basis: 100%;
   }
 }
+/* QA r100 P3: short phones (360x640) keep Main Menu above the fold, even for the P2 card with its double frame. */
+@media (max-width: 480px) and (max-height: 700px) {
+  #arcadeResults.matchEnd {
+    padding-top: 12px;
+    gap: 0.3em;
+  }
+  .matchEndFace,
+  .matchEndSide .matchEndFace {
+    width: 64px;
+    height: 64px;
+  }
+  .matchEndActions {
+    gap: 0.4em;
+    margin-top: 0.2em;
+  }
+  .matchEndActions .menuButton {
+    min-height: 44px;
+  }
+  .matchEndActions .matchEndCta {
+    min-height: 48px;
+  }
+  .matchEndSummary {
+    margin: 0;
+  }
+}
 @media (prefers-reduced-motion: no-preference) {
   .matchEndFace {
     animation: matchEndPop 0.45s ease-out both;
