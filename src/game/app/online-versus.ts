@@ -10,7 +10,7 @@ import { downloadReport } from './download';
 import { linkLine, medianRtt, RTT_WINDOW } from '../net/link-quality';
 import { iceFromSettings } from '../net/ice';
 import { cleanRoomCode, hostRoom, joinRoom, relayUrl } from '../net/relay';
-import { copyText, joinParam, pasteInto, shareBlock } from './online-share';
+import { copyButton, joinParam, pasteButton, shareBlock } from './online-share';
 import { destroyGame, type GameHandle } from './game-handle';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { decodePick, encodePick, onlineSetup, type OnlinePick } from './online-pick';
@@ -68,13 +68,14 @@ function area(id: string, label: string, readOnly: boolean, ariaLabel = label): 
   box.rows = 3;
   box.cols = 40;
   box.readOnly = readOnly;
+  if (readOnly) box.addEventListener('focus', () => { box.select(); });
   box.spellcheck = false;
   row.append(lab, el('br'), box);
   return { row, box };
 }
 
 function button(id: string, label: string, onClick: () => void): HTMLButtonElement {
-  const b = el('button', 'menuButton', label);
+  const b = el('button', 'menuButton onlineBig', label);
   b.type = 'button';
   b.id = id;
   b.addEventListener('click', onClick);
@@ -174,7 +175,7 @@ export function onlineVersusScreen(): Screen {
         arenaNode = undefined;
       };
       node.append(el('h1', 'heading', 'Online'));
-      const intro = el('p', undefined, 'Play a friend over the internet with no server: one of you hosts and sends a code, the other joins and sends a code back.');
+      const intro = el('p', undefined, 'Play a friend over the internet. One of you hosts and sends a code. The other joins with that code and sends a code back. Tap the Copy and Paste buttons: no typing.');
       node.append(intro);
       introNode = intro;
 
@@ -370,13 +371,13 @@ export function onlineVersusScreen(): Screen {
         say(e instanceof Error ? e.message : 'Something went wrong.');
       };
 
-      const offerOut = area('onlineOffer', 'Your code to send to your friend', true, 'Your code to send to your friend (host)');
+      const offerOut = area('onlineOffer', 'My code (send this to my friend)', true, 'Your code to send to your friend (host)');
       const answerIn = area('onlineAnswerIn', 'Your friend\'s answer code', false, 'Your friend\'s answer code (host)');
       const offerIn = area('onlineOfferIn', 'Your friend\'s host code', false, 'Your friend\'s host code (join)');
       const answerOut = area('onlineAnswer', 'Your answer code to send back', true, 'Your answer code to send back (join)');
 
       const shareSlot = el('div');
-      const host = button('onlineHost', 'Make a code (host)', () => {
+      const host = button('onlineHost', 'Make my code', () => {
         say('Making a code...');
         hostPeer(iceParam()).then(({ peer: p, offer }) => {
           if (gone) { p.close(); return; }
@@ -388,23 +389,15 @@ export function onlineVersusScreen(): Screen {
           say('Step 1 done: send your code or link to your friend. Then paste their answer below and press Connect.');
         }, fail);
       });
-      const pasteAnswer = button('onlinePasteAnswer', 'Paste answer', () => {
-        void pasteInto(answerIn.box).then((ok) => { say(ok ? 'Answer pasted. Now press Connect.' : 'Could not read the clipboard: paste into the box yourself.'); });
-      });
-      const pasteOffer = button('onlinePasteOffer', 'Paste host code', () => {
-        void pasteInto(offerIn.box).then((ok) => { say(ok ? 'Host code pasted. Now press Join a match.' : 'Could not read the clipboard: paste into the box yourself.'); });
-      });
-      const copyAnswer = button('onlineCopyAnswer', 'Copy answer', () => {
-        void copyText(answerOut.box.value, answerOut.box).then((ok) => {
-          say(ok ? 'Answer copied. Send it back to your host.' : 'Could not copy automatically: the answer is selected, press Ctrl+C.');
-        });
-      });
+      const pasteAnswer = pasteButton('onlinePasteAnswer', 'Paste answer', answerIn.box, say, 'Answer pasted. Now press Connect.');
+      const pasteOffer = pasteButton('onlinePasteOffer', 'Paste host code', offerIn.box, say, 'Host code pasted. Now press Join.');
+      const copyAnswer = copyButton('onlineCopyAnswer', 'Copy answer', () => answerOut.box.value, answerOut.box, say, 'Answer copied. Send it back to your host.', 'Could not copy automatically: the answer is selected, press Ctrl+C (or press and hold, then Copy).');
       const connect = button('onlineConnect', 'Connect', () => {
-        if (!peer) { say('Press Host a match first.'); return; }
+        if (!peer) { say('Press Make my code first.'); return; }
         const p = peer;
         p.accept(answerIn.box.value).then(() => { watch(p); }, fail);
       });
-      const join = button('onlineJoin', 'Join a match', () => {
+      const join = button('onlineJoin', 'Join', () => {
         say('Making an answer...');
         joinPeer(offerIn.box.value, iceParam()).then(({ peer: p, answer }) => {
           if (gone) { p.close(); return; }
@@ -472,25 +465,25 @@ export function onlineVersusScreen(): Screen {
 
       const step = (n: number, text: string): HTMLElement => el('h3', undefined, `Step ${String(n)}: ${text}`);
       node.append(
-        el('h2', undefined, 'Host: you start the match'),
-        step(1, 'make a code and send it (or the link, or the QR) to your friend'),
+        el('h2', undefined, 'I am hosting'),
+        step(1, 'make my code, then copy it and send it to your friend'),
         host,
         offerOut.row,
         shareSlot,
-        step(2, 'paste your friend\'s answer code'),
+        step(2, 'paste your friend\'s answer'),
         answerIn.row,
         pasteAnswer,
         step(3, 'connect'),
         connect,
       );
       node.append(
-        el('h2', undefined, 'Join: your friend started the match'),
-        step(1, 'paste the host\'s code (opening the host\'s link does this for you)'),
+        el('h2', undefined, 'My friend is hosting'),
+        step(1, 'paste the host\'s code (a link from the host does this for you)'),
         offerIn.row,
         pasteOffer,
         step(2, 'join'),
         join,
-        step(3, 'send the answer code back to your host'),
+        step(3, 'copy my answer and send it back to the host'),
         answerOut.row,
         copyAnswer,
         status,

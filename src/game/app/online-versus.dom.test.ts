@@ -187,6 +187,8 @@ describe('online versus share, copy, paste and join link', () => {
     expect(c.written[0]).toBe('T1.ABC_def-123');
     expect(c.written[1]).toMatch(/\?join=T1\.ABC_def-123#online$/);
     expect(statusText()).toContain('Link copied');
+    expect($('onlineCopyLink').textContent).toBe('Copied');
+    expect($('onlineCopyCode').textContent).toBe('Copied');
     expect($('onlineQr').getAttribute('role')).toBe('img');
     expect($('onlineQr').querySelector('svg')).not.toBeNull();
   });
@@ -202,6 +204,27 @@ describe('online versus share, copy, paste and join link', () => {
     await click('onlineJoin');
     await click('onlineCopyAnswer');
     expect(c.written).toEqual(['T1.MYANSWER']);
+  });
+
+  it('Copied and Pasted show on the buttons and the label returns after a moment', async () => {
+    clip('T1.X');
+    mountOnline(host);
+    $('onlinePasteAnswer').click();
+    await vi.advanceTimersByTimeAsync(0);
+    expect($('onlinePasteAnswer').textContent).toBe('Pasted');
+    await vi.advanceTimersByTimeAsync(2100);
+    expect($('onlinePasteAnswer').textContent).toBe('Paste answer');
+  });
+
+  it('when the clipboard cannot write, the code box is selected and the status says to press Ctrl+C', async () => {
+    vi.stubGlobal('navigator', { clipboard: { writeText: () => Promise.reject(new Error('denied')) } });
+    const r = rig();
+    h.hostResult = { peer: r.peer, offer: 'T1.ABC' };
+    mountOnline(host);
+    await click('onlineHost');
+    await click('onlineCopyCode');
+    expect(statusText()).toContain('Ctrl+C');
+    expect($('onlineCopyCode').textContent).toBe('Copy code');
   });
 
   it('a refused clipboard is explained in words', async () => {
@@ -247,7 +270,7 @@ describe('online versus screen', () => {
   it('Connect before Host asks to host first', async () => {
     mountOnline(host);
     await click('onlineConnect');
-    expect(statusText()).toBe('Press Host a match first.');
+    expect(statusText()).toBe('Press Make my code first.');
   });
 
   it('host: shows the offer code and applies the pasted answer', async () => {

@@ -2518,6 +2518,26 @@ html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
 #menu .menuPage:has(#onlineStatus) .settingsOption > br {
   display: none;
 }
+/* Copy / Paste buttons are big full-width targets with a visible Copied / Pasted state (never colour alone: the word changes too). */
+#menu .menuPage:has(#onlineStatus) #onlineSetup button.onlineBig {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px !important;
+  margin: 0.4em 0;
+}
+#onlineSetup button.onlineBig.onlineDone {
+  background: #1f5a2e;
+  border-color: #6fd08a;
+}
+#onlineShare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.6em;
+}
+#onlineShare #onlineQr {
+  grid-column: 1 / -1;
+}
 @media (max-width: 600px) {
   #menu .menuPage:has(#onlineStatus) button,
   #menu .menuPage:has(#onlineStatus) select {
