@@ -165,18 +165,23 @@ characters 1% of max HP every 10 game ticks up to the rest cap (the red life), a
 | 1 | input (`systems/arcade/input.ts`) | Arcade only (returns at once in Classic): press edges for the input buffer on every tick; stun and combo expiry (`recovered`, `comboEnded`), dash starts (`dashed`), guard meter regeneration and parry windows, weather expiry and casts (`weatherEnded`, `weatherChanged`) on unfrozen ticks |
 | 2 | swap (`systems/swap.ts`) | implemented; Arcade: the tag and its entrance (`systems/arcade/tag.ts`, `tagIn`) |
 | 3 | movement (`systems/movement.ts`) | implemented |
-| 4 | abilities | no-op (planned) |
-| 5 | melee (`systems/melee.ts`) | implemented |
-| 6 | projectiles (`systems/projectile.ts`) | implemented |
-| 7 | capture (`systems/capture.ts`) | implemented |
-| 8 | collision (`systems/arcade/clash.ts`) | Arcade only (returns at once in Classic): `arcadeClash`, projectile clash by element (`clash`) |
-| 9 | health (`systems/arcade/super.ts`) | Arcade only (returns at once in Classic): `arcadeSuper`, supers (`superStarted`, `superEnded`) |
-| 10 | death (`systems/death.ts`, hp <= 0 decided at end of tick) | implemented |
-| 11 | debuffs (`systems/debuffs.ts`) | implemented |
-| 12 | status (`systems/status.ts`, timers) | implemented |
-| 13 | rest (`systems/rest.ts`, benched healing) | implemented; Arcade: 1% every 10 game ticks, benched only |
-| 14 | cleanup (`systems/arcade/round.ts`) | Arcade only (returns at once in Classic): `arcadeRound`, round phases, timer, KO, best of 3, reset between rounds (`roundStarted`, `fight`, `ko`, `timeOver`, `roundEnded`) |
-| 15 | end (`systems/end.ts`, match-end check, `matchEnded` event) | implemented; Arcade: after the round that gives a side 2 round wins |
+| 4 | traps (`systems/arcade/trap.ts`) | Arcade only (returns at once in Classic): plant, fuse, overlap and timeout (`trapPlaced`, `trapArmed`, `trapTriggered`); stage hazards (`arcade/hazard.ts`) run at its end |
+| 5 | abilities | no-op (planned) |
+| 6 | melee (`systems/melee.ts`) | implemented |
+| 7 | projectiles (`systems/projectile.ts`) | implemented |
+| 8 | capture (`systems/capture.ts`) | implemented |
+| 9 | collision (`systems/arcade/clash.ts`) | Arcade only (returns at once in Classic): `arcadeClash`, projectile clash by element (`clash`) |
+| 10 | charge (`systems/arcade/charge.ts`) | Arcade only (returns at once in Classic): the charge dash and its hit |
+| 11 | health (`systems/arcade/super.ts`) | Arcade only (returns at once in Classic): `arcadeSuper`, supers (`superStarted`, `superEnded`) |
+| 12 | death (`systems/death.ts`, hp <= 0 decided at end of tick) | implemented |
+| 13 | debuffs (`systems/debuffs.ts`) | implemented |
+| 14 | cc (`systems/arcade/cc.ts`) | Arcade only (returns at once in Classic): crowd-control timers, diminishing returns, daze, ice shatter and wake invulnerability |
+| 15 | wound (`systems/arcade/wound.ts`) | Arcade only (returns at once in Classic): wound pulses every `WOUND_PULSE_TICKS` |
+| 16 | overTime (`systems/arcade/over-time.ts`) | Arcade only, flag `withOverTime`: burning and venom damage over time, mending heal over time |
+| 17 | status (`systems/status.ts`, timers) | implemented |
+| 18 | rest (`systems/rest.ts`, benched healing) | implemented; Arcade: 1% every 10 game ticks, benched only |
+| 19 | cleanup (`systems/arcade/round.ts`) | Arcade only (returns at once in Classic): `arcadeRound`, round phases, timer, KO, best of 3, reset between rounds (`roundStarted`, `fight`, `ko`, `timeOver`, `roundEnded`) |
+| 20 | end (`systems/end.ts`, match-end check, `matchEnded` event) | implemented; Arcade: after the round that gives a side 2 round wins |
 
 Adding or reordering a system changes every hash: bump `SIM_VERSION` and re-record goldens (see DETERMINISM.md).
 

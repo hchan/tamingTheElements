@@ -131,7 +131,7 @@ export const SNAG_FIRE_ABILITIES: readonly string[] = ['fireball', 'crimson-fire
 export const SnagEvent = { rooted: 0, guarded: 1, freed: 2, expired: 3 } as const;
 
 /**
- * Traps (WP 39, ideas/in-progress/wp39-bomb-trap.md), game ticks and px. `Cmd.trap` plants the caster's element trap
+ * Traps (WP 39, ideas/done/wp39-bomb-trap.md), game ticks and px. `Cmd.trap` plants the caster's element trap
  * TRAP_PLACE_PX ahead along its aim; it arms after TRAP_ARM_TICKS, then fires when a foe touches its TRAP_BOX_PX box
  * inflated by TRAP_TRIGGER_PX, or when its life (TRAP_LIFE_TICKS by kind, from arming) runs out. TrapKind: 1 Fire Bomb
  * (a TRAP_BLAST_PX blast), 2 Puddle (TRAP_PUDDLE_SLOW_PM walk speed, TRAP_PUDDLE_LINGER_TICKS after leaving; it stays

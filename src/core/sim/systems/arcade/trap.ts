@@ -23,7 +23,7 @@ import { isFree, isInvulnerable } from './stun';
 import { kindOf, patchOver, stageOf } from './terrain';
 
 /**
- * Traps (WP 39, ideas/in-progress/wp39-bomb-trap.md). A trap is a TRAP_BOX_PX square in the world trap table
+ * Traps (WP 39, ideas/done/wp39-bomb-trap.md). A trap is a TRAP_BOX_PX square in the world trap table
  * (`TRAP_TABLE`, TRAP_WORLD_MAX entries of `TrapF` fields; kind 0 = free, scanned in index order, never compacted).
  * It belongs to its team: it only ever affects the other team's controlled fighter, and only one that is not
  * invulnerable. Times are game ticks, so a freeze or a super pauses the fuse.

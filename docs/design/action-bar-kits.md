@@ -2,7 +2,7 @@
 
 Status: design plus a view-only prototype. No `src/core` change. Source idea:
 [ideas/brainstorm/action-bar-rethink-hero-kits.md](../../ideas/brainstorm/action-bar-rethink-hero-kits.md). Related ideas:
-[bomb-traps](../../ideas/brainstorm/bomb-traps.md), [summon-temporary-minions](../../ideas/brainstorm/summon-temporary-minions.md),
+[bomb-traps](../../ideas/done/bomb-traps.md), [summon-temporary-minions](../../ideas/brainstorm/summon-temporary-minions.md),
 [elemental-cleanse](../../ideas/brainstorm/elemental-cleanse.md). Game code names (Arcade ruleset, `Cmd.trap`) never reach players;
 the player-facing word for the third slot is the hero's own thing name below.
 

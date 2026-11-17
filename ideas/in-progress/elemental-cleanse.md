@@ -26,4 +26,4 @@ Owner request (2026-11-13): all elementals should have a cleanse, one per elemen
 - Open: water's elemental ability is also named Cleanse and now duplicates the common one; rename or replace it in the view WP (suggest Tidecall or a different water self-buff).
 - Remaining: WP2 (view, input binding for `Cmd.cleanse`, HUD box, touch button, four animations, `playSfx('cleanse', element)` on the event) and WP3 docs.
 
-Related: [snag-ability](snag-ability.md), [audio-and-music](audio-and-music.md).
+Related: [snag-ability](../done/snag-ability.md), [audio-and-music](audio-and-music.md).
