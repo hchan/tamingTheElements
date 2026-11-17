@@ -86,6 +86,18 @@ describe('firstRunHint', () => {
     expect(firstRunSeen(store)).toBe(true);
   });
 
+  it('a card already fading from a tap still leaves at once when the super cut-in or tag call starts (QA r91)', () => {
+    for (const ev of [SUPER_CUT_EVENT, TAG_CALL_EVENT]) {
+      const card = firstRunHint(memory(), 60000);
+      document.body.append(card as HTMLElement);
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x' }));
+      expect(card?.classList.contains('firstRunFade')).toBe(true);
+      expect(card?.isConnected).toBe(true);
+      window.dispatchEvent(new Event(ev));
+      expect(card?.isConnected).toBe(false);
+    }
+  });
+
   it('leaves at once when a tag call starts (QA r41), and on the first Strike tap', () => {
     const store = memory();
     const card = firstRunHint(store, 60000);

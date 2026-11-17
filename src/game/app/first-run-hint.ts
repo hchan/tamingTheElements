@@ -307,24 +307,26 @@ export function firstRunHint(
   // The card gets out of the way on its own: after the delay, or at the first move or tap (a held key is a move).
   // Its position is CSS (a low strip above the action bar on a desktop, the top-left corner on a phone), clear of the fighters at round start.
   // Once faded it leaves the DOM (a removal timer, or transitionend first), so no invisible Got it stays tappable; the listeners remove themselves.
+  const removeCard = (): void => {
+    window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
+    window.removeEventListener(TAG_CALL_EVENT, fadeNow);
+    card.remove();
+  };
   const fade = (): void => {
     window.clearTimeout(timer);
     window.removeEventListener('keydown', onInput, true);
     window.removeEventListener('pointerdown', onInput, true);
     window.removeEventListener(ROUND_OVER_EVENT, fade);
     window.removeEventListener(FIGHT_SETTLED_EVENT, onSettled);
-    window.removeEventListener(SUPER_CUT_EVENT, fadeNow);
-    window.removeEventListener(TAG_CALL_EVENT, fadeNow);
     ended = true;
     markSeen(store);
     card.classList.add('firstRunFade');
-    const gone = window.setTimeout(() => {
-      card.remove();
-    }, FIRST_RUN_REMOVE_MS);
+    // The cut and tag listeners stay until the card is gone: a tap on Super starts this fade first, and the card (still on screen for 1.5 s) must leave at once when the cut-in starts (QA r91).
+    const gone = window.setTimeout(removeCard, FIRST_RUN_REMOVE_MS);
     card.addEventListener('transitionend', (e) => {
       if (e.target !== card || e.propertyName !== 'opacity') return;
       window.clearTimeout(gone);
-      card.remove();
+      removeCard();
     });
   };
   /** The fight has run FIGHT_SETTLED_TICKS past FIGHT!: fade on fight time. Under the rotate overlay it is ignored; the wall-clock timer stays the fallback. */
@@ -335,7 +337,7 @@ export function firstRunHint(
   /** A super cut-in or tag call covers the arena: the card is removed on the spot, not faded (a 0.12 s fade still showed in qa-r49/r50 screenshots). */
   const fadeNow = (): void => {
     fade();
-    card.remove();
+    removeCard();
   };
   const onInput = (e: Event): void => {
     // Tab, Escape and modifier keys alone are not a move; a click on Got it is handled by the button.
