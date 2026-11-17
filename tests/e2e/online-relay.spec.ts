@@ -52,7 +52,7 @@ test('no room-code buttons without a relay address, and a wrong code says so in 
   opened.push(ctx);
   const page = await ctx.newPage();
   await page.goto('/?ff=arcade&ice=none#online');
-  await expect(page.locator('#onlineHost')).toBeVisible();
+  await expect(page.locator('#onlineRoleHost')).toBeVisible();
   await expect(page.locator('#onlineRoomHost')).toHaveCount(0);
 
   await page.goto(`/?ff=arcade&ice=none&signal=${encodeURIComponent(`ws://127.0.0.1:${String(relay.port)}`)}#online`);

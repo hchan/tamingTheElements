@@ -39,13 +39,15 @@ for (const ff of ['arcade,lockstep', 'arcade']) test(`two players connect throug
   await expect(a.getByRole('button', { name: 'Online', exact: true })).toBeVisible();
   await a.getByRole('button', { name: 'Online', exact: true }).click();
   await b.goto(`/?ff=${ff}&ice=none#online`);
-  await expect(a.locator('#onlineHost')).toBeVisible();
-  await expect(b.locator('#onlineJoin')).toBeVisible();
+  await expect(a.locator('#onlineRoleHost')).toBeVisible();
+  await expect(b.locator('#onlineRoleJoin')).toBeVisible();
 
+  await a.locator('#onlineRoleHost').click();
   await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
   const offer = await a.locator('#onlineOffer').inputValue();
 
+  await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(offer);
   await b.locator('#onlineJoin').click();
   await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });
@@ -69,6 +71,7 @@ for (const ff of ['arcade,lockstep', 'arcade']) test(`two players connect throug
 
 test('a junk code is refused in words, not a crash', async ({ page }) => {
   await page.goto('/?ff=arcade#online');
+  await page.locator('#onlineRoleJoin').click();
   await page.locator('#onlineOfferIn').fill('not a code');
   await page.locator('#onlineJoin').click();
   await expect(page.locator('#onlineStatus')).toContainText('not a connection code');
@@ -85,8 +88,10 @@ test('a finished online match offers a Rematch that starts a second match', asyn
   await a.goto(q);
   await b.goto(`${q}#online`);
   await a.getByRole('button', { name: 'Online', exact: true }).click();
+  await a.locator('#onlineRoleHost').click();
   await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
+  await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
   await b.locator('#onlineJoin').click();
   await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });
@@ -109,6 +114,7 @@ test('opening the host join link starts Join at once and the match connects', as
   const a = await ctx.newPage();
   const b = await ctx.newPage();
   await a.goto('/?ff=arcade&ice=none#online');
+  await a.locator('#onlineRoleHost').click();
   await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
   await expect(a.locator('#onlineQr svg')).toBeVisible();
