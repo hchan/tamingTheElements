@@ -12,7 +12,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [balance-outliers](../brainstorm/balance-outliers.md)
 - [lavax-morblass-and-team-findings](../brainstorm/lavax-morblass-and-team-findings.md)
 - [lavax-team-weakness](../brainstorm/lavax-team-weakness.md)
-- [wispera-team-dominance](../brainstorm/wispera-team-dominance.md)
+- [wispera-team-dominance](../done/wispera-team-dominance.md)
 - [team-pair-synergy-more-seeds](../brainstorm/team-pair-synergy-more-seeds.md)
 - [team-harness-random-partners](../brainstorm/team-harness-random-partners.md)
 - [trap-balance-findings](../brainstorm/trap-balance-findings.md)

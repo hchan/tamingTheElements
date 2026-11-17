@@ -309,5 +309,6 @@
  *    rooted, and stops walking in; off while Hard is stunned, frozen, in a super, dashing, guarding, charging or trapping, and after 400
  *    ticks without damage. No rule, data or RNG change. Re-record reason: every replay fixture changes only its simVersion header; Normal
  *    and Easy are unchanged, so the balance baselines are not re-recorded.
+ * 86: Arcade only (Classic hashes unchanged). Data-only life retune (owner: work on balance a bit more; docs/BALANCE.md): ARCADE_RACE_NUMBERS life wispera 7575 -> 7365 and treenoc 6050 -> 6215 (1v1 re-fit after the v84 shift), with ARCADE_2V2_LIFE_PM wispera 632 -> 650 and treenoc 714 -> 695 so their 2v2 and 3v3 life is bit-identical; ARCADE_2V2_LIFE_PM ishimi 720 -> 670, morblass 920 -> 865, fiara 760 -> 730, cyclonius 770 -> 810 (32-seed random-partner 2v2). Re-record reason: data change; Arcade replays arcade-cc, -elemental, -ot, -tag, -tag3, -traps and -weather change hashes, the rest only the simVersion header; both Arcade balance baselines re-recorded.
  */
-export const SIM_VERSION = 85;
+export const SIM_VERSION = 86;

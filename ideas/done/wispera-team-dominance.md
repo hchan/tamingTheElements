@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-12
 ---
 # Wispera dominates 2v2 and 3v3
@@ -9,3 +9,5 @@ kit part (Snag, weather, range) carries it in teams, check it against 1v1 (where
 No sim change without balance:compare.
 
 Source: [snag-trap-and-team-modes-findings.md](snag-trap-and-team-modes-findings.md) section 3.
+
+Resolution (2026-11-17, SIM_VERSION 86): no team change needed. After the v62 to v85 retunes wispera is no longer dominant in teams; in the 32-seed random-partner 2v2 it sits at 46.3% before and 45.6% after the v86 life retune.

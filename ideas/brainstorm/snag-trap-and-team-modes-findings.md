@@ -105,6 +105,6 @@ rokcore 41.3, cyclonius 35.2, lavax 22.0.
 - [team-mode-3v3-spread](team-mode-3v3-spread.md): re-measured with random partners: still about 50 pp, from two outlier races.
 - [team-harness-random-partners](team-harness-random-partners.md): done (mode `partners`); the pair-synergy table needs more seeds.
 - [tag-swap-forced-vs-voluntary](tag-swap-forced-vs-voluntary.md): split tag-ins in fun-metrics and judge whether tag is overused.
-- [wispera-team-dominance](wispera-team-dominance.md): wispera is on the winning roster 71 to 77% of the time in teams.
+- [wispera-team-dominance](../done/wispera-team-dominance.md): wispera is on the winning roster 71 to 77% of the time in teams.
 - [lavax-team-weakness](lavax-team-weakness.md): lavax is 21 to 22% in teams and sinks any roster it joins.
 - [team-pair-synergy-more-seeds](team-pair-synergy-more-seeds.md): rerun `partners` at 200+ seeds to make the pair table readable.

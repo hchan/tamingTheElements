@@ -304,7 +304,7 @@ Legacy-12 2v2 (8 seeds, 528 matches): round median 44.32 -> 62.18 s, p90 57.96 -
 
 Largest legacy-12 2v2 race shifts: echo 62.5 -> 44.3, lavax 42.0 -> 58.0, fiara 45.5 -> 56.8, wispera 48.9 -> 38.6, sindarosa 39.8 -> 50.0, rokcore -8.0pp, treenoc 65.9 -> 59.1 (burst and trap heroes lose relative power because their damage is fixed). The Arcade 2v2 baseline was re-recorded; the 1v1 Arcade and Classic baselines are unchanged (+0.0pp).
 
-Roster-24 full-roster 2v2 check (26 seeds, 7176 matches, win rate by hero): quarrak 55.9, nykra 53.7, umbrel 51.6, zephra 50.6, durrok 50.3, hyalia 50.1, glimmaw 49.3, abyssor 48.2, brazgor 48.1, kindrel 48.0, vortigal 44.6, ouroth 41.4. All inside 0.40-0.60; element melee-ranged gaps air -0.034, earth -0.029, fire -0.030, water +0.007 (limit 0.1). vortigal, ouroth and quarrak are outside the 0.45-0.55 soft band: a follow-up retune of `ARCADE_2V2_LIFE_PM` may nudge them. morblass now has 1.196x its 1v1 life in 2v2, lavax and sindarosa about 1.04x.
+Roster-24 full-roster 2v2 check (26 seeds, 7176 matches, win rate by hero): quarrak 55.9, nykra 53.7, umbrel 51.6, zephra 50.6, durrok 50.3, hyalia 50.1, glimmaw 49.3, abyssor 48.2, brazgor 48.1, kindrel 48.0, vortigal 44.6, ouroth 41.4. All inside 0.40-0.60; element melee-ranged gaps air -0.034, earth -0.029, fire -0.030, water +0.007 (limit 0.1). vortigal, ouroth and quarrak are outside the 0.45-0.55 soft band: a follow-up retune of `ARCADE_2V2_LIFE_PM` may nudge them. morblass now has 1.196x its 1v1 life in 2v2 (1.124x since SIM_VERSION 86), lavax and sindarosa about 1.04x.
 
 ## Arcade crowd control, flag on vs off (CB5, flag stays off)
 
@@ -322,3 +322,14 @@ statuses (no selfCc and foeCc observation fields), so this is a lower bound on h
 
 Decision: the flag stays off by default. With it on, Morblass reaches 67.0 percent (above the 65 limit) and Pax drops to 40.3, so enabling it would
 need a retune and the AI observation fields first. No `SIM_VERSION` bump and no baseline was re-recorded.
+
+## Arcade life retune (SIM_VERSION 86)
+
+Owner request 2026-11-17 (work on balance a bit more). Data only, Arcade only (Classic hashes and baseline unchanged): `ARCADE_RACE_NUMBERS` life wispera 7575 -> 7365 and treenoc 6050 -> 6215, with `ARCADE_2V2_LIFE_PM` wispera 632 -> 650 and treenoc 714 -> 695 (their 2v2 and 3v3 life is bit-identical); `ARCADE_2V2_LIFE_PM` ishimi 720 -> 670, morblass 920 -> 865, fiara 760 -> 730, cyclonius 770 -> 810.
+
+- 1v1 (seeds 1+41, 352 games/race): wispera was the only outlier (55.4%, z 3.51), treenoc weakest (46.6%); after: 52.0% and 50.6%, SD 3.0 -> 2.2 pp.
+- 2v2 (random partners, 32 seeds, 2112 matches): ishimi 58.4% (z 4.5), morblass 56.8%, fiara 56.3%, cyclonius weak 45.3%; after the change all races are in 44.7-55.4%, SD 5.2 -> 3.2 pp. pax (55.4%) and treenoc (44.7%) are the next step.
+- 3v3 (report only): SD 7.0 -> 5.9 pp; pax, sindarosa and cyclonius are still outside 45-55%.
+- Fun gates pass before and after (1v1 round median 31.56 s).
+- The 8-seed fixed-partner 2v2 fixture (88 games/race, SE about 5.3) moved more than 5 pp for cyclonius, morblass, pax, treenoc and wispera, so the random-partner run is the measure.
+- Tour boss: AI teams beat the Void 46.2% vs 51.4% (boss-probe 12); the Void numbers are unchanged.
