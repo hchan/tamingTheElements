@@ -2053,7 +2053,7 @@ button.menuButton.heroSlotClear {
   position: absolute;
   left: auto;
   right: max(12px, env(safe-area-inset-right));
-  bottom: calc(100% + 2px);
+  bottom: calc(100% + 6px);
   box-sizing: border-box;
   height: 18px;
   padding: 1px 8px 0;

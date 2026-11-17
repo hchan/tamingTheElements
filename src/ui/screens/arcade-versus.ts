@@ -773,7 +773,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
       const t = f[n]?.selectedOptions[0]?.textContent ?? '';
       return t.startsWith('Two players') ? 'Two players' : t.replace(/ tag team$/, '');
     };
-    optsJump.textContent = `${optsShown ? '\u25B4' : '\u25BE'} Options: ${[word('mode'), word('size'), ...(local ? [] : [word('level')]), word('stage')].join(', ')}`;
+    optsJump.textContent = `${optsShown ? '\u25B4' : '\u25BE'} Options: ${[word('stage'), word('size'), ...(local ? [word('mode')] : [word('level')])].join(', ')}`;
     optsJump.title = optsJump.textContent;
     more();
   };
