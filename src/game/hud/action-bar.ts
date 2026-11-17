@@ -323,6 +323,8 @@ export function oneRowSlots<T extends { x: number; y: number; size: number }>(sl
 
 /** Smallest a touch box may be on screen in CSS px in the portrait bar, both ways (WCAG 2.5.8 target size; the one-row bar's 28-39 px boxes were under it). */
 export const PORTRAIT_MIN_TOUCH_CSS = 44;
+/** Largest a tile of the wrapped (two-row) portrait bar grows on screen, CSS px: 64 px rows covered the floor at 360 wide (QA r101 P2); 48 keeps a comfortable tap and frees about 32 px. */
+export const PORTRAIT_ROW_TILE_MAX_CSS = 48;
 
 /**
  * The portrait phone bar: ONE row when its boxes are at least PORTRAIT_MIN_TOUCH_CSS wide on screen (`ext` 44: the touch overlays reach 44 CSS px
@@ -339,7 +341,7 @@ export function portraitBarSlots<T extends { x: number; y: number; size: number 
   const rows = Math.ceil(slots.length / perRow);
   // Balanced rows (9 -> 5+4, 10 -> 5+5, never one orphan tile above a full row), tiles capped at 64 CSS px, each row centred.
   const per = Math.ceil(slots.length / rows);
-  const side = Math.max(min, Math.min(Math.floor((LOGICAL_W - SLOT_BORDER / 2) / per), Math.floor(64 / k)));
+  const side = Math.max(min, Math.min(Math.floor((LOGICAL_W - SLOT_BORDER / 2) / per), Math.floor(PORTRAIT_ROW_TILE_MAX_CSS / k)));
   const y0 = LOGICAL_HEIGHT - side - 1;
   const left = (r: number): number => Math.floor((LOGICAL_W - Math.min(per, slots.length - r * per) * side) / 2);
   return { slots: slots.map((s, i) => { const r = Math.floor(i / per); return { ...s, x: left(r) + (i % per) * side, y: y0 - (rows - 1 - r) * side, size: side }; }), top: y0 - (rows - 1) * side, ext: 0 };
@@ -376,6 +378,12 @@ export function showStrikeCues(cues: readonly (readonly [string, string])[]): vo
       b.append(n);
     }
     if (n.textContent !== cue[0]) n.textContent = cue[0];
+    // Long names (Adrenaline, Rock Armr) get a smaller face so the whole word fits the circle (QA r101 P2).
+    const len = cue[0].length >= 10 ? 'xl' : cue[0].length >= 8 ? 'long' : '';
+    if ((n.dataset['len'] ?? '') !== len) {
+      if (len) n.dataset['len'] = len;
+      else delete n.dataset['len'];
+    }
     const key = b.querySelector('.touchStrikeKey')?.textContent ?? String(i + 1);
     const label = cue[1] === '' ? `${key} Strike` : `${key} Strike: ${cue[1]}`;
     if (b.getAttribute('aria-label') !== label) b.setAttribute('aria-label', label);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAMERA_MARGIN_PORTRAIT, PORTRAIT_DRAWN_OVERSCAN, CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, punchAnchor, verticalFrame, type CameraFraming, type CameraInput } from './arena-camera';
+import { CAMERA_MARGIN_PORTRAIT, PORTRAIT_DRAWN_OVERSCAN, CAMERA_MARGIN, CAMERA_ZOOM_MIN, cameraTarget, clampCenter, idealFraming, portraitZoomMax, punchAnchor, verticalFrame, type CameraFraming, type CameraInput } from './arena-camera';
 
 const base: CameraInput = { x1: 800, x2: 1000, worldWidth: 1920, viewWidth: 1280 };
 
@@ -135,5 +135,14 @@ describe('portrait framing keeps the drawn art (wider than the sim box) inside t
     const f = idealFraming(i);
     const left = f.centerX - 1280 / f.zoom / 2;
     expect(520 - left).toBeGreaterThanOrEqual(80 * PORTRAIT_DRAWN_OVERSCAN);
+  });
+});
+
+describe('portraitZoomMax', () => {
+  it('fills the tall view: about 1.9 on 360x640 and 2.6 on 390x844, never below 1', () => {
+    expect(portraitZoomMax(1514)).toBeCloseTo(1.89, 1);
+    expect(portraitZoomMax(2066)).toBeCloseTo(2.58, 2);
+    expect(portraitZoomMax(4000)).toBe(2.6);
+    expect(portraitZoomMax(720)).toBe(1);
   });
 });

@@ -14,8 +14,8 @@ import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /** A frame-to-frame jump of the fighters' midpoint this big is a round reset or a swap, not movement: snap instead of easing. */
 const SNAP_JUMP_PX = 400;
-/** Highest total zoom (pan zoom times KO punch-in) on the tall view (above the 2.1 pan zoom cap, so a KO punch-in still has room). */
-const TALL_TOTAL_ZOOM_CAP = 2.3;
+/** Highest total zoom (pan zoom times KO punch-in) on the tall view (above the 2.6 pan zoom cap, so a KO punch-in still has room). */
+const TALL_TOTAL_ZOOM_CAP = 2.9;
 const BENCHED_OR_DEAD = EntityFlag.benched | EntityFlag.dead;
 
 interface PanState {
