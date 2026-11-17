@@ -21,8 +21,10 @@ async function startMatch(browser: import('@playwright/test').Browser): Promise<
   const url = '/?ff=arcade,netbot&ice=none#online';
   await a.goto(url);
   await b.goto(url);
+  await a.locator('#onlineRoleHost').click();
   await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
+  await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
   await b.locator('#onlineJoin').click();
   await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });

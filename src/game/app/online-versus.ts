@@ -175,7 +175,7 @@ export function onlineVersusScreen(): Screen {
         arenaNode = undefined;
       };
       node.append(el('h1', 'heading', 'Online'));
-      const intro = el('p', undefined, 'Play a friend over the internet. One of you hosts and sends a code. The other joins with that code and sends a code back. Tap the Copy and Paste buttons: no typing.');
+      const intro = el('p', undefined, 'Play a friend over the internet. Pick your part: you host and send a code, or your friend hosts and you join with their code. Tap the Copy and Paste buttons: no typing.');
       node.append(intro);
       introNode = intro;
 
@@ -464,8 +464,10 @@ export function onlineVersusScreen(): Screen {
       }
 
       const step = (n: number, text: string): HTMLElement => el('h3', undefined, `Step ${String(n)}: ${text}`);
-      node.append(
-        el('h2', undefined, 'I am hosting'),
+      const hostPath = el('div', 'onlinePath');
+      hostPath.id = 'onlineHostPath';
+      hostPath.hidden = true;
+      hostPath.append(
         step(1, 'make my code, then copy it and send it to your friend'),
         host,
         offerOut.row,
@@ -476,8 +478,10 @@ export function onlineVersusScreen(): Screen {
         step(3, 'connect'),
         connect,
       );
-      node.append(
-        el('h2', undefined, 'My friend is hosting'),
+      const joinPath = el('div', 'onlinePath');
+      joinPath.id = 'onlineJoinPath';
+      joinPath.hidden = true;
+      joinPath.append(
         step(1, 'paste the host\'s code (a link from the host does this for you)'),
         offerIn.row,
         pasteOffer,
@@ -486,8 +490,23 @@ export function onlineVersusScreen(): Screen {
         step(3, 'copy my answer and send it back to the host'),
         answerOut.row,
         copyAnswer,
-        status,
       );
+      // Two big role buttons first: a player sees only the steps of the role they pick.
+      const roleHost = button('onlineRoleHost', 'I am hosting', () => { chooseRole('host'); });
+      const roleJoin = button('onlineRoleJoin', 'My friend is hosting', () => { chooseRole('join'); });
+      const chooseRole = (r: 'host' | 'join'): void => {
+        hostPath.hidden = r !== 'host';
+        joinPath.hidden = r !== 'join';
+        roleHost.setAttribute('aria-pressed', String(r === 'host'));
+        roleJoin.setAttribute('aria-pressed', String(r === 'join'));
+        roleHost.classList.toggle('onlineDone', r === 'host');
+        roleJoin.classList.toggle('onlineDone', r === 'join');
+      };
+      roleHost.setAttribute('aria-pressed', 'false');
+      roleJoin.setAttribute('aria-pressed', 'false');
+      const roles = el('div', 'onlineRoles');
+      roles.append(roleHost, roleJoin);
+      node.append(el('h2', undefined, 'Who is hosting?'), roles, hostPath, joinPath, status);
       // One card for the whole setup form, so it can collapse once connected; the status line stays outside it.
       const setup = el('div', 'onlineSetup');
       setup.id = 'onlineSetup';
@@ -498,6 +517,7 @@ export function onlineVersusScreen(): Screen {
       if (linked !== undefined) {
         // Opened from a join link: fill the host's code, drop it from the address bar and start Join at once.
         offerIn.box.value = linked;
+        chooseRole('join');
         const url = new URL(window.location.href);
         url.searchParams.delete('join');
         window.history.replaceState(null, '', url.pathname + url.search + url.hash);

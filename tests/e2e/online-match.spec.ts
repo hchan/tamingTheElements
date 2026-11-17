@@ -79,11 +79,13 @@ for (const { ff, sim } of VARIANTS) test(`two browser contexts play a whole onli
   const url = `/?ff=${ff}&ice=none${sim === '' ? '' : `&netsim=${sim}`}${NATURAL ? '' : `&matchticks=${String(MATCH_TICKS)}`}#online`;
   await a.goto(url);
   await b.goto(url);
-  await expect(a.locator('#onlineHost')).toBeVisible();
-  await expect(b.locator('#onlineJoin')).toBeVisible();
+  await expect(a.locator('#onlineRoleHost')).toBeVisible();
+  await expect(b.locator('#onlineRoleJoin')).toBeVisible();
 
+  await a.locator('#onlineRoleHost').click();
   await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
+  await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
   await b.locator('#onlineJoin').click();
   await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });

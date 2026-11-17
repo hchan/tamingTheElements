@@ -21,8 +21,10 @@ test('online match on a phone: touch buttons show and a tap presses the action k
   await a.goto('/?ff=arcade&ice=none#online');
   await b.goto('/?ff=arcade,netbot&ice=none#online');
 
+  await a.locator('#onlineRoleHost').click();
   await a.locator('#onlineHost').click();
   await expect(a.locator('#onlineOffer')).not.toHaveValue('', { timeout: 15_000 });
+  await b.locator('#onlineRoleJoin').click();
   await b.locator('#onlineOfferIn').fill(await a.locator('#onlineOffer').inputValue());
   await b.locator('#onlineJoin').click();
   await expect(b.locator('#onlineAnswer')).not.toHaveValue('', { timeout: 15_000 });
