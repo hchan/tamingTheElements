@@ -775,6 +775,12 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     optsJump.textContent = `Options: ${[word('mode'), word('size'), ...(local ? [] : [word('level')]), word('stage')].join(', ')} \u25BE`;
     more();
   };
+  // A jump button, not a disclosure (no aria-expanded): it names what it scrolls to via aria-controls and its visible text stays the accessible name.
+  const optsRow = f['mode']?.closest<HTMLElement>('.vsControl');
+  if (optsRow) {
+    optsRow.id = 'arcadeOptsRow';
+    optsJump.setAttribute('aria-controls', 'arcadeOptsRow');
+  }
   optsJump.addEventListener('click', () => {
     const row = f['mode']?.closest<HTMLElement>('.vsControl');
     row?.scrollIntoView({ block: 'center' });

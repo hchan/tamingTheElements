@@ -231,3 +231,42 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* QA r94 P3: Play pick on a phone. The corner remove (X) sat inside the tile on top of the hero art, and a long lead name ("Sindarosa") ran into the
+   tile's right border. The X now hangs off the tile's top-right corner (clear of the art) and the tile's own padding and name size give the name room. */
+@media (max-width: 640px) {
+  #menu .heroSlots {
+    margin-top: 14px;
+  }
+  #menu .heroSlots li:has(.heroSlotClear) .heroSlot {
+    padding: 4px 6px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  #menu .heroSlots .heroSlotName {
+    font-size: 0.74em;
+    white-space: nowrap;
+  }
+  #menu .heroSlots button.menuButton.heroSlotClear {
+    top: -14px;
+    right: -4px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    z-index: 1;
+  }
+}
+
+/* QA r94 P3: the sticky Options strip stopped 8 px under the region's top edge (its padding), so scrolled fighter-card text showed in the gap above it.
+   It now sticks flush (negative top), and an opaque shadow fills the padding above it and the gap below. */
+@media (max-width: 640px) and (orientation: portrait) {
+  #menu #arcadePick .vsOptsJump {
+    top: -8px;
+    margin-top: -8px;
+    padding-top: 14px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    background: #1d1b3a;
+    box-shadow: 0 6px 0 #14122b, 0 -1px 0 #14122b;
+  }
+}
