@@ -14,3 +14,7 @@ Owner, 2026-11-16, then: `~/claudetmp/concepts-new12/heroes-sheet.png` (painted 
 Redo: distinct silhouette per hero, the originals' painted quality, one element each (3 per element). Gate: a contact sheet in chat with the 12 originals beside the new art before any rigging or release. Stay behind `?ff=roster24`. Alternative the owner may prefer: ship a smaller roster.
 
 Related: [hero-rigs](hero-rigs.md).
+
+## Rigging note (2026-11-16)
+
+Rigging refinement is a standing backlog (see hero-rigs.md); roster24 heroes need rigs before idle life ([idle-element-auras](idle-element-auras.md)) can cover them.
