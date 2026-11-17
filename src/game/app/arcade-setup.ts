@@ -182,7 +182,8 @@ export function arcadeLaunch(pick: ArcadePick, seed: number, o: ArcadeLaunchOpti
       view = v;
       o.onView?.(v);
       mountAimIndicator(arena, v, alpha);
-      mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion);
+      // The hook's fraction is the Arena's hold-aware `pos` (HoldLerp), so the camera does not sawtooth in hit-stop.
+      mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion, alpha);
       const held = arena.audio;
       void import('../audio/arcade-audio').then((m) => { m.mountArcadeAudio(arena, held, () => v.arcade()?.sudden === true, () => activeLife(v)); });
     },

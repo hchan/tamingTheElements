@@ -208,7 +208,8 @@ export function onlineVersusScreen(): Screen {
               watchTouch(buttons, v);
               mountAimIndicator(arena, v, alpha);
               // The same panning wide view as local Arcade (no side bars on a wide phone); view only, the sim is untouched.
-              mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion);
+              // The hook's fraction is the Arena's hold-aware `pos` (HoldLerp), so the camera does not sawtooth in hit-stop.
+              mountArenaPan(arena, v, alpha, () => getPrefs().reduceMotion, alpha);
             },
             onEnd: (end) => {
               if (gone || ended) return;
