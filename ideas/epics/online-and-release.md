@@ -20,7 +20,7 @@ Member ideas (all in [../brainstorm/](../brainstorm/) unless moved; work them as
 - [online-rematch-e2e-flake-under-load](../done/online-rematch-e2e-flake-under-load.md)
 - [e2e-coverage-and-browsers](../in-progress/e2e-coverage-and-browsers.md)
 - [e2e-stability-runs](../done/e2e-stability-runs.md)
-- [test-dom-environment-for-menus](../brainstorm/test-dom-environment-for-menus.md)
+- [test-dom-environment-for-menus](../done/test-dom-environment-for-menus.md)
 - [nightly-fun-gates](../done/nightly-fun-gates.md)
 - [release-itch-pages](../brainstorm/release-itch-pages.md)
 - [repo-housekeeping](../brainstorm/repo-housekeeping.md)

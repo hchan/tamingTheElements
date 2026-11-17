@@ -29,18 +29,36 @@ export default defineConfig({
     passWithNoTests: true,
     coverage: {
       provider: 'v8',
-      include: ['src/core/**'],
+      include: ['src/core/**', 'src/ui/**', 'src/game/**'],
       exclude: ['**/*.test.ts'],
       reporter: ['text-summary', 'json-summary', 'lcov'],
       reportsDirectory: 'coverage',
       // Measured 2026-11: lines 95.5, statements 94.0, functions 94.9, branches 72.9. Floors are measured minus ~3 points.
       // Raise them when coverage improves; never lower without a reason in the PR. See docs/TESTING.md.
-      thresholds: { lines: 92, functions: 91, branches: 69, statements: 91 },
+      thresholds: {
+        'src/core/**': { lines: 92, functions: 91, branches: 69, statements: 91 },
+        // src/ui and src/game (DOM + non-Phaser logic; Phaser scenes count as uncovered, they are e2e territory).
+        // Measured 2026-11-16 with the core + dom projects: ui lines 95.7, functions 89.3, branches 80.2, statements 94.0;
+        // game lines 70.9, functions 71.1, branches 66.1, statements 69.5. Floors are measured minus ~4-5 points.
+        'src/ui/**': { lines: 91, functions: 85, branches: 75, statements: 90 },
+        'src/game/**': { lines: 66, functions: 66, branches: 61, statements: 65 },
+      },
     },
     projects: [
       {
         resolve: { alias },
-        test: { name: 'core', environment: 'node', testTimeout: TEST_TIMEOUT_MS, include: ['src/**/*.test.ts'] },
+        test: {
+          name: 'core',
+          environment: 'node',
+          testTimeout: TEST_TIMEOUT_MS,
+          include: ['src/**/*.test.ts'],
+          exclude: ['src/**/*.dom.test.ts'],
+        },
+      },
+      {
+        // DOM unit tests for src/ui and src/game (menus, pause dialog, touch controls): happy-dom, `*.dom.test.ts` next to the code.
+        resolve: { alias },
+        test: { name: 'dom', environment: 'happy-dom', testTimeout: TEST_TIMEOUT_MS, include: ['src/**/*.dom.test.ts'] },
       },
       {
         resolve: { alias },

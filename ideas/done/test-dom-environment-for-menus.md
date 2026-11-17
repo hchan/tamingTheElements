@@ -1,5 +1,5 @@
 ---
-status: idea
+status: done
 added: 2026-11-12
 ---
 
@@ -12,3 +12,9 @@ Related gaps found in the 2026-11-12 coverage audit:
 - `createPauseDialog` focus trap and Escape behaviour (uses the global `document`, only `nextFocusIndex` is unit tested).
 - `core/sim/view.ts` branches (about 41%), `event-fx.ts` (about 54%), `swap-notice.ts` (about 58%), `net/peer.ts` (about 21%).
 - Phaser scenes hold logic that could be extracted into pure helpers and tested in node.
+
+## Findings (2026-11-16)
+
+- 30+ `*.dom.test.ts` files already existed (happy-dom via per-file docblock), including `createPauseDialog` (focus trap, Escape, restore focus), key bindings and settings. Added a first-class `dom` vitest project (`src/**/*.dom.test.ts`, environment happy-dom); `core` now excludes them.
+- Coverage now includes `src/ui/**` and `src/game/**` with per-glob floors (ui lines 91, game lines 66; see `vitest.config.ts`); `test:coverage` runs `core` + `dom`.
+- Still open (split out if wanted): `core/sim/view.ts` branches, `event-fx.ts`, `swap-notice.ts`, `net/peer.ts`, and extracting pure helpers from Phaser scenes.
