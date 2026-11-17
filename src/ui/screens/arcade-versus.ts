@@ -739,6 +739,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const more = markMoreBelow(scroll);
   // The partner counts in 2v2 and 3v3, the third hero in 3v3 only: disabled otherwise (out of the Tab order and the form data). The AI's comes from the seed.
   const f = form.elements as unknown as Record<string, HTMLSelectElement>;
+  let optsShown = false;
   const sync = (): void => {
     const local = f['mode']?.value === 'local';
     const size = f['size']?.value;
@@ -772,10 +773,18 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
       const t = f[n]?.selectedOptions[0]?.textContent ?? '';
       return t.startsWith('Two players') ? 'Two players' : t.replace(/ tag team$/, '');
     };
-    optsJump.textContent = `Options: ${[word('mode'), word('size'), ...(local ? [] : [word('level')]), word('stage')].join(', ')} \u25BE`;
+    optsJump.textContent = `${optsShown ? '\u25B4' : '\u25BE'} Options: ${[word('mode'), word('size'), ...(local ? [] : [word('level')]), word('stage')].join(', ')}`;
+    optsJump.title = optsJump.textContent;
     more();
   };
-  // A jump button, not a disclosure (no aria-expanded): it names what it scrolls to via aria-controls and its visible text stays the accessible name.
+  // A jump button that also reports state (QA r96): aria-expanded and the arrow say whether the option rows are on screen; the visible text stays the accessible name.
+  optsJump.setAttribute('aria-expanded', 'false');
+  const showOpts = (on: boolean): void => {
+    if (on === optsShown) return;
+    optsShown = on;
+    optsJump.setAttribute('aria-expanded', String(on));
+    optsJump.textContent = optsJump.textContent.replace(/^[\u25B4\u25BE]/, on ? '\u25B4' : '\u25BE');
+  };
   const optsRow = f['mode']?.closest<HTMLElement>('.vsControl');
   if (optsRow) {
     optsRow.id = 'arcadeOptsRow';
@@ -784,8 +793,15 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   optsJump.addEventListener('click', () => {
     const row = f['mode']?.closest<HTMLElement>('.vsControl');
     row?.scrollIntoView({ block: 'center' });
+    showOpts(true);
     row?.querySelector<HTMLElement>('.vsSegment[aria-checked="true"], .vsSegment')?.focus({ preventScroll: true });
   });
+  if (optsRow && typeof IntersectionObserver !== 'undefined') {
+    new IntersectionObserver((es) => {
+      const e = es[es.length - 1];
+      if (e) showOpts(e.isIntersecting);
+    }, { threshold: 0.6 }).observe(optsRow);
+  }
   // Hide the pulldowns for heroes (they stay in the DOM for form data, labels and assistive tech lookups).
   queueMicrotask(() => {
     for (const n of heroNames) {
