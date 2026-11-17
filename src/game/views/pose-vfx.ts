@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { ELEMENT_COLORS } from '../fx/element-colors';
+import { impactFade, trailFade } from '../fx/fire-blast-fade';
 import { ELEMENT_FX, FX_ELEMENTS, GlowMode, fade, glowLook, lcg, spread, unit } from './pose-vfx-math';
 
 /**
@@ -95,7 +96,7 @@ export class PoseVfx {
   }
 
   /** One projectile frame at (x, y): drops a puff each `trailGap` px travelled (`fresh`: first frame of this projectile). */
-  trail(slot: number, x: number, y: number, element: number, fresh: boolean, reduced: boolean): void {
+  trail(slot: number, x: number, y: number, element: number, fresh: boolean, reduced: boolean, strength = 1): void {
     if (fresh) this.carry[slot] = 0;
     else if (!reduced) {
       const fx = ELEMENT_FX[FX_ELEMENTS[element] ?? 'void'];
@@ -103,7 +104,8 @@ export class PoseVfx {
       const c = (this.carry[slot] ?? 0) + d;
       if (c >= fx.trailGap) {
         this.carry[slot] = c - fx.trailGap;
-        this.spawn(x, y, 0, fx.trailVy, 0, fx.trailMs, fx.trailS0, fx.trailS1, 0.55, element);
+        const f = trailFade(strength);
+        this.spawn(x, y, 0, fx.trailVy, 0, fx.trailMs, fx.trailS0 * f.size, fx.trailS1 * f.size, 0.55 * f.alpha, element);
       } else this.carry[slot] = c;
     }
     this.tx[slot] = x;
@@ -111,9 +113,10 @@ export class PoseVfx {
   }
 
   /** The element's impact burst at (x, y); reduced: one static flash. */
-  impact(x: number, y: number, element: number, reduced: boolean): void {
-    if (reduced) this.spawn(x, y, 0, 0, 0, REDUCED_MS, 1.6, 1.6, 0.7, element);
-    else this.burst(x, y, element, 1, 1);
+  impact(x: number, y: number, element: number, reduced: boolean, strength = 1): void {
+    const f = impactFade(strength);
+    if (reduced) this.spawn(x, y, 0, 0, 0, REDUCED_MS, 1.6 * f.size, 1.6 * f.size, 0.7 * f.alpha, element);
+    else this.burst(x, y, element, f.count, f.size, f.alpha);
   }
 
   /** Advances every effect by `dt` ms of wall time. */
@@ -178,7 +181,7 @@ export class PoseVfx {
   }
 
   /** `count x mul` motes in the element's burst shape; `size` scales them. */
-  private burst(x: number, y: number, element: number, mul: number, size: number): void {
+  private burst(x: number, y: number, element: number, mul: number, size: number, alpha = 1): void {
     const fx = ELEMENT_FX[FX_ELEMENTS[element] ?? 'void'];
     const n = Math.round(fx.count * mul);
     for (let k = 0; k < n; k++) {
@@ -187,7 +190,7 @@ export class PoseVfx {
       const sp = fx.speed * (0.7 + 0.6 * this.rand());
       const ox = inward ? this.dir.x * RING_R : 0;
       const oy = inward ? this.dir.y * RING_R : 0;
-      this.spawn(x + ox, y + oy, this.dir.x * sp, this.dir.y * sp + fx.bias, fx.gravity, fx.ms * (0.8 + 0.4 * this.rand()), fx.s0 * size, fx.s1 * size, 0.9, element);
+      this.spawn(x + ox, y + oy, this.dir.x * sp, this.dir.y * sp + fx.bias, fx.gravity, fx.ms * (0.8 + 0.4 * this.rand()), fx.s0 * size, fx.s1 * size, 0.9 * alpha, element);
     }
   }
 

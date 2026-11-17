@@ -19,6 +19,7 @@ import { idleLookOf } from '../platform/idle-look';
 import { applyIdleMotif } from './idle-motif';
 import { applyBackGait, applyLocomotion, backGaitOf, backingAway, facesToward, locomotionOf, walkFrameBack, walkTimeBack } from './locomotion';
 import { GRIM_SUFFIX, gradedHeroTexture } from '../fx/hero-grade';
+import { fireBlastFxStrength } from '../fx/fire-blast-fade';
 import { MAP_SPRITES, flipForDir, frameName, frameSetFor, framesOf, type CharacterView } from './character-view';
 import type { ProjectileView } from './projectile-view';
 import {
@@ -588,7 +589,7 @@ export class PoseLayer {
       this.ang[i] = (this.ang[i] ?? target) + shortestArc(this.ang[i] ?? target, target) * follow(this.dt, ROT_TAU_MS);
     }
     this.seen[i] = this.frameNo;
-    if (this.arcade) this.vfx.trail(i, image.x, image.y, this.pel[i] ?? 0, fresh, this.reduced);
+    if (this.arcade) this.vfx.trail(i, image.x, image.y, this.pel[i] ?? 0, fresh, this.reduced, fireBlastFxStrength(p.alphaPm));
     const a = this.ang[i] ?? target;
     const k = easeOutCubic((this.animMs - (this.born[i] ?? 0)) / SPAWN_MS);
     const grow = this.reduced ? 1 : SPAWN_FROM + (1 - SPAWN_FROM) * k;
@@ -633,7 +634,7 @@ export class PoseLayer {
   private retire(i: number): void {
     this.pid[i] = -1;
     const o = i * 5;
-    if (this.arcade) this.vfx.impact(this.snap[o] ?? 0, this.snap[o + 1] ?? 0, this.pel[i] ?? 0, this.reduced);
+    if (this.arcade) this.vfx.impact(this.snap[o] ?? 0, this.snap[o + 1] ?? 0, this.pel[i] ?? 0, this.reduced, fireBlastFxStrength((this.snapAlpha[i] ?? 1) * 1000));
     const g = this.free();
     if (!g) return;
     g.kind = 0;
