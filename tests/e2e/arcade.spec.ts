@@ -96,7 +96,7 @@ async function finishOnResults(page: Page): Promise<void> {
   await primeSuper(page, reset?.id ?? -1);
   await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(1, [${String(SUPER)}, 0]); a.step(${String(90 + KO_TO_ROUND_END)}); })()`);
   await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toBeVisible();
-  await expect(page.locator('#arcadeResults')).toContainText('Rounds 2-0.');
+  await expect(page.locator('#arcadeResults')).toContainText('Rounds 2-0');
   await page.evaluate(`window.__TTE__.settled()`);
   await expect(page.locator('#game canvas')).toHaveCount(0);
 }
