@@ -89,6 +89,24 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       expect(errors).toEqual([]);
     });
 
+    test('hurt and low heroes still show the whole name on both life lines (qa-r90 P1)', async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`${START}&ff=arcade#arcade`);
+      await page.getByRole('button', { name: /^Fight/ }).tap();
+      await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.waitForFunction(ATTR);
+      for (const frac of [0.4, 0.2]) {
+        await page.evaluate(`(() => { const a = window.__TTE__.arena; for (const c of a.characters()) a.setHp(c.id, Math.round(c.maxHp * ${String(frac)})); })()`);
+        await expect.poll(async () => (await page.evaluate<string[]>(`window.__TTE__.arena.heroLabels()`)).filter((t) => /\d/.test(t)).length, { timeout: 5000 }).toBeGreaterThan(0);
+        await page.waitForTimeout(300);
+        const labels = (await page.evaluate<string[]>(`window.__TTE__.arena.heroLabels()`)).filter((t) => /\d/.test(t));
+        for (const t of labels) expect(t, `life line at ${String(frac)}`).not.toContain('\u2026');
+        await shot(page, `${String(w)}-hurt-${String(frac)}`);
+      }
+      expect(errors).toEqual([]);
+    });
+
     test('the canvas is tall: it fills down to the deck, the floor sits on the bar, the sim is unchanged', async ({ page }) => {
       const errors = collectErrors(page);
       await page.goto(`${START}&ff=arcade#arcade`);

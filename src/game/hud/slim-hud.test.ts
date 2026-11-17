@@ -152,3 +152,20 @@ describe('portrait life line: longest hero names (qa-r89 P1)', () => {
     }
   });
 });
+
+describe('portrait life line: the whole name beats the status word (qa-r90 P1)', () => {
+  it('drops the HURT/LOW word before any letter of the name, for every roster hero', () => {
+    for (const hp of [60, 120, 200]) {
+      const c = { hp, maxHp: 560, restCap: 560, element: 'air' } as Parameters<typeof compactLabel>[1];
+      for (const n of ['Sindarosa', 'Cyclonius', 'Morblass', 'Wispera', 'Rokcore', 'Treenoc']) {
+        const l = portraitLifeCandidates(n, c);
+        const firstCut = l.findIndex((t) => t.includes('…'));
+        expect(firstCut, n).toBeGreaterThan(0);
+        // Every form that keeps the whole name comes before every cut form, and the last whole-name forms carry no word.
+        expect(l[firstCut - 1], n).toBe(`${n.toUpperCase()} ${String(hp)}`);
+        for (const t of l.slice(firstCut)) expect(t).not.toMatch(/HURT|LOW/);
+        expect(l[0]).toMatch(/ (HURT|LOW)$/);
+      }
+    }
+  });
+});
