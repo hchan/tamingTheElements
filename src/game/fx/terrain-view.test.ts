@@ -79,10 +79,12 @@ function fakeScene(textures: string[] = [], camera: Record<string, unknown> = { 
   const loads: string[] = [];
   const layers: { data: number[][]; puts: number[][][] }[] = [];
   let active = true;
+  const reg = new Map<string, unknown>();
   const scene = {
     events,
     cameras: { main: camera },
     scale: { width: 1280, displaySize: { width: 1280 }, on: () => undefined, off: () => undefined },
+    registry: { get: (k: string) => reg.get(k), set: (k: string, v: unknown) => { reg.set(k, v); } },
     sys: { isActive: () => active },
     textures: {
       exists: (k: string) => textures.includes(k),
@@ -149,6 +151,19 @@ function mount(opts: { reduceMotion?: boolean; stage?: number; element?: string;
 }
 
 describe('terrain view (fake scenes)', () => {
+  it('hides the chips while the super cut-in band is up and brings them back after', () => {
+    const m = mount();
+    m.feed(100);
+    for (let i = 0; i < 400; i++) m.frame(16);
+    expect(m.state().chips[0]?.alpha ?? 0).toBeGreaterThan(0);
+    m.hud.scene.registry.set('tte.cut', true);
+    m.frame();
+    expect(m.state().chips[0]?.alpha).toBe(0);
+    m.hud.scene.registry.set('tte.cut', false);
+    m.frame();
+    expect(m.state().chips[0]?.alpha ?? 0).toBeGreaterThan(0);
+  });
+
   it('tile floor: requests the atlas when missing, builds one layer once it is there, re-fills it on a stage swap', () => {
     const missing = mount();
     missing.frame();
