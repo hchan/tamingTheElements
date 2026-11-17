@@ -35,7 +35,7 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
@@ -591,6 +591,10 @@ export class Hud extends Phaser.Scene {
     const full = m ? this.meterText(team, false) : '';
     if (m && m.text !== full) m.setText(full);
     this.meterTight[team] = false;
+    if (isPortraitPlay(this.game)) {
+      this.fitPortraitLabel(label, team, name, c);
+      return;
+    }
     this.fitSlimLabel(label, team, name, c, twoVTwo);
     if (!m || (!label.text.includes('…') && label.text.includes(name.toUpperCase()))) return;
     this.meterTight[team] = true;
@@ -617,6 +621,26 @@ export class Hud extends Phaser.Scene {
   private meterText(team: number, tight: boolean): string {
     const v = this.arcade?.meters[team]?.value ?? 0;
     return `${tight ? '' : 'SUPER '}${meterLabel(v)}`;
+  }
+
+  /** Portrait (qa-r88 P3): "NAME ▲ 286" beside "SUPER 0%" on both sides; the name shrinks in size, then letters, before any word is dropped. */
+  private fitPortraitLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter): void {
+    const base = (label.getData('baseSize') as number | undefined) ?? parseFloat(String(label.style.fontSize));
+    label.setData('baseSize', base);
+    const m = this.meterTexts[team];
+    const clears = (): boolean => !m || (team === 0 ? label.x + label.width + 6 <= m.x - m.width : label.x - label.width - 6 >= m.x + m.width);
+    const k = coreDisplayWidth(this) / 1280;
+    const cands = portraitLifeCandidates(name, c);
+    const sizes = [1, ...LIFE_TEXT_SCALES.slice(1).filter((sc) => base * sc * k >= MIN_PHONE_PX)];
+    for (const sc of sizes) {
+      label.setFontSize(Math.round(base * sc));
+      for (const t of cands) {
+        label.setText(t);
+        if (clears()) return;
+      }
+    }
+    // Nothing fits: the shortest name at the smallest allowed size.
+    label.setFontSize(Math.round(base * (sizes[sizes.length - 1] ?? 1)));
   }
 
   private fitSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter, twoVTwo = false): boolean {
