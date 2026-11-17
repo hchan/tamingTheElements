@@ -18,7 +18,7 @@ async function koRound(page: Page, side: 'win' | 'lose' = 'win'): Promise<void> 
 }
 const koFoe = (page: Page): Promise<void> => koRound(page, 'win');
 
-const SIZES = [{ width: 1280, height: 720 }, { width: 390, height: 844 }];
+const SIZES = [{ width: 1280, height: 720 }, { width: 390, height: 844 }, { width: 360, height: 640 }];
 async function fightTo(page: Page, size: { width: number; height: number }): Promise<void> {
   await page.setViewportSize(size);
   await page.emulateMedia({ reducedMotion: 'reduce' });
