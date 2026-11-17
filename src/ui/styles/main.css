@@ -2271,6 +2271,11 @@ html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
     padding: 0.3em 0.4em;
     text-align: center;
   }
+  /* The featured Online button must not be taller than its four neighbours in the single row. */
+  .mainMenuList li button.menuFeatured {
+    min-height: 0;
+    font-size: inherit;
+  }
   .mainMenuList li.menuGroup,
   .mainMenuList li:has(> .menuGroup) {
     grid-column: 1 / -1;
