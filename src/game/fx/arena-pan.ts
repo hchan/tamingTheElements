@@ -14,8 +14,8 @@ import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
 /** A frame-to-frame jump of the fighters' midpoint this big is a round reset or a swap, not movement: snap instead of easing. */
 const SNAP_JUMP_PX = 400;
-/** Highest total zoom (pan zoom times KO punch-in) on the tall view. */
-const TALL_TOTAL_ZOOM_CAP = 1.8;
+/** Highest total zoom (pan zoom times KO punch-in) on the tall view (above the 2.1 pan zoom cap, so a KO punch-in still has room). */
+const TALL_TOTAL_ZOOM_CAP = 2.3;
 const BENCHED_OR_DEAD = EntityFlag.benched | EntityFlag.dead;
 
 interface PanState {
@@ -126,7 +126,7 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
       return 1;
     }
     const p = koPunchZoom(s.punchAge, reducedMotion());
-    // The tall view already runs close: the punch-in never takes the total zoom past 1.8 there.
+    // The tall view already runs close: the punch-in never takes the total zoom past 2.3 there.
     return viewHeight(scene) > LOGICAL_HEIGHT ? Math.min(p, Math.max(1, TALL_TOTAL_ZOOM_CAP / s.zoom)) : p;
   };
   let lastMid = Number.NaN;
