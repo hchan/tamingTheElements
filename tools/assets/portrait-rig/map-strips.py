@@ -7,7 +7,7 @@ Run after `pnpm assets:bake && pnpm assets:sheets`:
 
 Frame rects come from src/game/assets/sheets.generated.json, never from fixed offsets. An 80 px sheet without a box is copied pixel for
 pixel (no resampling, as the old rig-gen/pax-portrait.py did). A sheet with a visual box (the portrait rigs, 240 px frames) has the box
-cut out and area-downscaled once to 80 (premultiplied box filter), so the strip shows the body at the same framing as the legacy art.
+cut out and area-downscaled once to fit 80 (premultiplied box filter; letterboxed: scale 80/max(w,h), bottom-centred, never squashed), so the strip shows the body at the same framing as the legacy art.
 Never writes the 400x400 `<hero>Large.png` portraits."""
 import json
 import os
@@ -44,8 +44,13 @@ def strip(manifest, hero):
         fx, fy = row["frames"][i % len(row["frames"])]
         cell = sheet.crop((fx + bx, fy + by, fx + bx + bw, fy + by + bh))
         if (bw, bh) != (CELL, CELL):
-            cell = cell.resize((CELL, CELL), Image.Resampling.BOX)  # Pillow premultiplies RGBA for this filter
-        out.paste(cell, (i * CELL, 0))
+            # letterbox, never squash: scale by CELL / max(bw, bh), centred horizontally and sitting on the cell's bottom
+            k = CELL / max(bw, bh)
+            nw, nh = max(1, round(bw * k)), max(1, round(bh * k))
+            cell = cell.resize((nw, nh), Image.Resampling.BOX)  # Pillow premultiplies RGBA for this filter
+            out.paste(cell, (i * CELL + (CELL - nw) // 2, CELL - nh))
+        else:
+            out.paste(cell, (i * CELL, 0))
     if hero in ALPHA_LIFT:
         floor, gamma = ALPHA_LIFT[hero]
         r, g, b, a = out.split()
