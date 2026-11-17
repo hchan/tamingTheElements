@@ -129,11 +129,9 @@ function rotateBlocked(): boolean {
 export const INTRO_FALLBACK_MS = 7000;
 
 /** Registry keys of a live super cut and a live tag call. Literals keep banner-lanes and arcade-hud out of this chunk (as event-fx does); a test pins them to CUT_KEY / TAG_CALL_KEY. */
-export const CARD_WAIT_KEYS = { cut: 'tte.cut', tagCall: 'tte.tagCall' } as const;
+export const CARD_WAIT_KEYS = { cut: 'tte.cut', tagCall: 'tte.tagCall', banner: 'tte.banner' } as const;
 /** While the arena is busy the reveal re-checks this often (not 2500 or 7000: the e2e harness stretches those timers). */
 export const IDLE_POLL_MS = 100;
-/** From a super-cut or tag-call event until its registry key is set (the cut view loads lazily): 3 s of polls. */
-export const CUT_PENDING_POLLS = 30;
 /** Never wait for ever on a leaked key: the card shows after 12 s of polls. */
 export const CARD_WAIT_CAP_POLLS = 120;
 
@@ -143,6 +141,11 @@ export function arenaBusy(reg: { get(key: string): unknown } | undefined): boole
   if (reg.get(CARD_WAIT_KEYS.cut) === true) return true;
   const tag = reg.get(CARD_WAIT_KEYS.tagCall) as { w?: number } | null | undefined;
   return (tag?.w ?? 0) > 0;
+}
+
+/** True while a round banner (ROUND 1, FIGHT!) is drawn: the card never appears over it. */
+export function bannerUp(reg: { get(key: string): unknown } | undefined): boolean {
+  return reg?.get(CARD_WAIT_KEYS.banner) === true;
 }
 
 /** Calls `go` now when `blocked()` is false; otherwise re-checks every `pollMs` and calls it on the first idle check (or after `capPolls` checks). Returns cancel. */
@@ -166,8 +169,8 @@ export function whenIdle(blocked: () => boolean, go: () => void, pollMs = IDLE_P
 }
 
 /** `whenReady` for a real game: runs `go` once the Arena scene has built the arena (after the loading screen, never over it). `go` gets a busy probe (a cut or tag call is live). */
-export function afterArenaCreate(game: object): (go: (busy?: () => boolean) => void) => void {
-  return (go) => {
+export function afterArenaCreate(game: object): (go: (busy?: () => boolean) => void, dropped?: () => void) => void {
+  return (go, dropped) => {
     // A stand-in game without scenes (unit tests) shows the card at once.
     const g = game as Partial<Phaser.Game>;
     if (!g.scene || !g.events) {
@@ -177,27 +180,21 @@ export function afterArenaCreate(game: object): (go: (busy?: () => boolean) => v
     const sceneManager = g.scene;
     const events = g.events;
     const busy = (): boolean => arenaBusy(g.registry);
-    // A cut or tag call that has started but whose registry key is not set yet (lazy chunk) also holds the card back.
-    let pending = 0;
+    // A super cut or tag call before the reveal means the fight is under way: no card this session (it never shows late, over a fight, after a super).
+    let cued = false;
     const onCue = (): void => {
-      pending = CUT_PENDING_POLLS;
+      cued = true;
     };
-    const blocked = (): boolean => {
-      if (busy()) {
-        pending = 0;
-        return true;
-      }
-      if (pending > 0) {
-        pending -= 1;
-        return true;
-      }
-      return false;
-    };
+    // Only a round banner holds the reveal back (a short wait); the cut and tag call drop the card instead.
+    const blocked = (): boolean => bannerUp(g.registry);
     let dead = false;
     let cancelWait = (): void => undefined;
     let cancelIntro = (): void => undefined;
     // The round ended while the card was held back: no card this battle (it shows in the next one).
-    const drop = (): void => { cleanup(); };
+    const drop = (): void => {
+      cleanup();
+      dropped?.();
+    };
     const onPreload = (): void => {
       if (dead) return;
       const scene = sceneManager.getScene('Arena') as Phaser.Scene | null | undefined;
@@ -215,7 +212,15 @@ export function afterArenaCreate(game: object): (go: (busy?: () => boolean) => v
           done = true;
           stop();
           // A live super cut or tag call holds the reveal until it is over.
+          if (cued || busy()) {
+            drop();
+            return;
+          }
           cancelWait = whenIdle(blocked, () => {
+            if (cued || busy()) {
+              drop();
+              return;
+            }
             cleanup();
             go(busy);
           });
@@ -265,7 +270,7 @@ export function firstRunHint(
   store: Store | undefined = defaultStore(),
   fadeMs = FIRST_RUN_MS,
   /** Calls its argument once the arena exists (the card must not sit over the loading screen); default: now. */
-  whenReady: (go: (busy?: () => boolean) => void) => void = (go) => { go(); },
+  whenReady: (go: (busy?: () => boolean) => void, dropped?: () => void) => void = (go) => { go(); },
   /** False when none of the player's heroes has Snag: the card then leaves the Snag line out. */
   snag = true,
   /** Which ability box (0 or 1) of the player's first hero holds Snag, so the card names that key as Snag, not Strike. */
@@ -373,6 +378,6 @@ export function firstRunHint(
     window.addEventListener(FIGHT_SETTLED_EVENT, onSettled);
     window.addEventListener(SUPER_CUT_EVENT, fadeNow);
     window.addEventListener(TAG_CALL_EVENT, fadeNow);
-  });
+  }, () => { card.remove(); });
   return card;
 }
