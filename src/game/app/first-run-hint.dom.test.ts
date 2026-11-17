@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CARD_WAIT_CAP_POLLS, CARD_WAIT_KEYS, CUT_PENDING_POLLS, FIGHT_OVER_EVENT, FIGHT_SETTLED_EVENT, IDLE_POLL_MS, afterArenaCreate, arenaBusy, whenIdle, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
+import { CARD_WAIT_CAP_POLLS, CARD_WAIT_KEYS, FIGHT_OVER_EVENT, FIGHT_SETTLED_EVENT, IDLE_POLL_MS, afterArenaCreate, arenaBusy, bannerUp, whenIdle, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
 import { CUT_KEY } from '../hud/banner-lanes';
 import { TAG_CALL_KEY } from '../hud/arcade-hud';
 import { PRELOAD_READY } from '../scenes/launch';
@@ -383,49 +383,83 @@ describe('HINT-CUT-1: the card waits for a live super cut or tag call', () => {
     expect(go).toHaveBeenCalledTimes(1);
   });
 
-  it('a live cut at fight-over holds the reveal until the key clears (next 100 ms check)', () => {
+  it('a live round banner at fight-over holds the reveal until it clears (next 100 ms check)', () => {
     vi.useFakeTimers();
     const { go, reg } = arm();
-    reg.set(CARD_WAIT_KEYS.cut, true);
+    reg.set(CARD_WAIT_KEYS.banner, true);
     fightOver();
     vi.advanceTimersByTime(IDLE_POLL_MS * 5);
     expect(go).not.toHaveBeenCalled();
-    reg.set(CARD_WAIT_KEYS.cut, false);
+    reg.set(CARD_WAIT_KEYS.banner, false);
     vi.advanceTimersByTime(IDLE_POLL_MS);
     expect(go).toHaveBeenCalledTimes(1);
   });
 
-  it('a super-cut event whose key never appears holds the reveal for about 3 s, then lets it through', () => {
+  it('bannerUp reads the tte.banner key', () => {
+    expect(CARD_WAIT_KEYS.banner).toBe('tte.banner');
+    expect(bannerUp(undefined)).toBe(false);
+    expect(bannerUp(new Map([['tte.banner', true]]))).toBe(true);
+    expect(bannerUp(new Map([['tte.banner', false]]))).toBe(false);
+  });
+
+  it('a super cut before the reveal drops the card for this session: it never shows after the super', () => {
     vi.useFakeTimers();
     const { go } = arm();
     window.dispatchEvent(new Event(SUPER_CUT_EVENT));
     fightOver();
-    vi.advanceTimersByTime(IDLE_POLL_MS * (CUT_PENDING_POLLS - 2));
+    vi.advanceTimersByTime(20000);
     expect(go).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(IDLE_POLL_MS * 3);
-    expect(go).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('a cut key that is set and cleared drops the pending hold: the next check reveals', () => {
+  it('a dropped card is removed from the DOM, not left hidden', () => {
     vi.useFakeTimers();
-    const { go, reg } = arm();
+    const f = fakeGame();
+    const card = firstRunHint({ getItem: () => null, setItem: () => undefined }, 2500, afterArenaCreate(f.game));
+    document.body.append(card as HTMLElement);
+    f.events.emit(PRELOAD_READY);
     window.dispatchEvent(new Event(SUPER_CUT_EVENT));
     fightOver();
-    reg.set(CARD_WAIT_KEYS.cut, true);
-    vi.advanceTimersByTime(IDLE_POLL_MS * 4);
+    expect(document.getElementById('firstRunHint')).toBeNull();
+  });
+
+  it('a tag call before the reveal drops the card too', () => {
+    vi.useFakeTimers();
+    const { go } = arm();
+    window.dispatchEvent(new Event(TAG_CALL_EVENT));
+    fightOver();
+    vi.advanceTimersByTime(20000);
     expect(go).not.toHaveBeenCalled();
+  });
+
+  it('a live cut key at the reveal (no event seen) drops the card', () => {
+    vi.useFakeTimers();
+    const { go, reg } = arm();
+    reg.set(CARD_WAIT_KEYS.cut, true);
+    fightOver();
     reg.set(CARD_WAIT_KEYS.cut, false);
-    vi.advanceTimersByTime(IDLE_POLL_MS);
-    expect(go).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(20000);
+    expect(go).not.toHaveBeenCalled();
+  });
+
+  it('a super cut while the card waits on a banner drops it', () => {
+    vi.useFakeTimers();
+    const { go, reg } = arm();
+    reg.set(CARD_WAIT_KEYS.banner, true);
+    fightOver();
+    window.dispatchEvent(new Event(SUPER_CUT_EVENT));
+    reg.set(CARD_WAIT_KEYS.banner, false);
+    vi.advanceTimersByTime(20000);
+    expect(go).not.toHaveBeenCalled();
   });
 
   it('the round ending while the card waits drops it for this battle', () => {
     vi.useFakeTimers();
     const { go, reg } = arm();
-    reg.set(CARD_WAIT_KEYS.cut, true);
+    reg.set(CARD_WAIT_KEYS.banner, true);
     fightOver();
     window.dispatchEvent(new Event(ROUND_OVER_EVENT));
-    reg.set(CARD_WAIT_KEYS.cut, false);
+    reg.set(CARD_WAIT_KEYS.banner, false);
     vi.advanceTimersByTime(20000);
     expect(go).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(0);
@@ -444,10 +478,10 @@ describe('HINT-CUT-1: the card waits for a live super cut or tag call', () => {
     expect(go).not.toHaveBeenCalled();
   });
 
-  it('a leaked cut key cannot hold the card for ever: it shows after the cap', () => {
+  it('a leaked banner key cannot hold the card for ever: it shows after the cap', () => {
     vi.useFakeTimers();
     const { go, reg } = arm();
-    reg.set(CARD_WAIT_KEYS.cut, true);
+    reg.set(CARD_WAIT_KEYS.banner, true);
     fightOver();
     vi.advanceTimersByTime(IDLE_POLL_MS * (CARD_WAIT_CAP_POLLS - 1));
     expect(go).not.toHaveBeenCalled();
@@ -458,10 +492,10 @@ describe('HINT-CUT-1: the card waits for a live super cut or tag call', () => {
   it('the 7 s fallback path goes through the same gate', () => {
     vi.useFakeTimers();
     const { go, reg } = arm();
-    reg.set(CARD_WAIT_KEYS.cut, true);
+    reg.set(CARD_WAIT_KEYS.banner, true);
     vi.advanceTimersByTime(7000);
     expect(go).not.toHaveBeenCalled();
-    reg.set(CARD_WAIT_KEYS.cut, false);
+    reg.set(CARD_WAIT_KEYS.banner, false);
     vi.advanceTimersByTime(IDLE_POLL_MS);
     expect(go).toHaveBeenCalledTimes(1);
   });

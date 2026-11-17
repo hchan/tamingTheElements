@@ -46,7 +46,12 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         // The super starts right as FIGHT! clears, before the card is revealed.
         await page.evaluate(`(() => { const a = window.__TTE__.arena; a.step(95); a.setMeter(0, 1000); a.step(2); a.step(1, [${String(SUPER)}, 0]); a.step(5); })()`);
       } else {
+        // The card never shows over a banner: while FIGHT! is still up (tick 95) it stays hidden, then appears once the banner has run out.
         await page.evaluate(`window.__TTE__.arena.step(95)`);
+        expect((await page.evaluate<{ main: string }>(`window.__TTE__.arena.rounds()`)).main).toBe('FIGHT!');
+        await page.waitForTimeout(600);
+        await expect(card).toBeHidden();
+        await page.evaluate(`window.__TTE__.arena.step(60)`);
         await expect(card).toBeVisible({ timeout: 15_000 });
         if (shotDir) await page.screenshot({ path: `${shotDir}/card-${String(w)}.png` });
         await page.keyboard.press('x');
@@ -61,6 +66,11 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         if (i === 8 && shotDir) await page.screenshot({ path: `${shotDir}/super-${early ? 'early-' : ''}${String(w)}.png` });
         await page.evaluate(`window.__TTE__.arena.step(1)`);
       }
+      // QA r92: the card never comes back after a super (early: it was never shown; late: it was seen and is gone).
+      await page.evaluate(`window.__TTE__.arena.step(150)`);
+      await page.waitForTimeout(400);
+      await expect(card).toHaveCount(0);
+      if (shotDir) await page.screenshot({ path: `${shotDir}/after-super-${early ? 'early-' : ''}${String(w)}.png` });
       expect(errors).toEqual([]);
     });
   });
