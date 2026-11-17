@@ -30,6 +30,10 @@ export const REDRAWN: ReadonlyMap<string, string> = new Map([
   ['img/map/wisperaLarge.png', 'tools/assets/wispera-art (owner-picked "Refined 2", 2026-11-16)'],
 ]);
 
+/** The 12 unreleased Roster 24 heroes (behind `?ff=roster24`). Their map art is repo-owned (tools/assets/roster24-art, SDXL-Turbo, licence terms an open owner question): never copied from the legacy tree, and a missing file fails the build. */
+export const ROSTER24_HEROES: readonly string[] = ['kindrel', 'nykra', 'quarrak', 'hyalia', 'brazgor', 'glimmaw', 'durrok', 'zephra', 'ouroth', 'abyssor', 'vortigal', 'umbrel'];
+export const isRoster24Url = (url: string): boolean => ROSTER24_HEROES.some((h) => url === `img/map/${h}.png` || url === `img/map/${h}Large.png`);
+
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 if (import.meta.main) {
@@ -40,6 +44,10 @@ if (import.meta.main) {
     // Redrawn effect sprites are generated in the repo by tools/assets/fx-gen, not copied from the legacy tree.
     if (url.startsWith('img/fx/')) {
       if (!existsSync(resolve(outDir, url))) throw new Error(`generated asset missing (run tools/assets/fx-gen): ${url}`);
+      continue;
+    }
+    if (isRoster24Url(url)) {
+      if (!existsSync(resolve(outDir, url))) throw new Error(`roster24 asset missing (tools/assets/roster24-art): ${url}`);
       continue;
     }
     if (REDRAWN.has(url)) {
