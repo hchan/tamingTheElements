@@ -270,3 +270,19 @@
     box-shadow: 0 6px 0 #14122b, 0 -1px 0 #14122b;
   }
 }
+
+/* QA r96 P3: the strip is one line at phone widths (long text is cut with an ellipsis, the full text stays in the accessible name and tooltip), and it
+   shows its state: the arrow turns up and the border brightens while the option rows are on screen (aria-expanded mirrors it). */
+@media (max-width: 640px) and (orientation: portrait) {
+  #menu #arcadePick .vsOptsJump {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.74em;
+    padding-inline: 8px;
+  }
+  #menu #arcadePick .vsOptsJump[aria-expanded='true'] {
+    border-color: #f2d98a;
+    background: #2a2754;
+  }
+}
