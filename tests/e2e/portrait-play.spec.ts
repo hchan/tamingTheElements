@@ -330,6 +330,22 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await shot(page, `${String(w)}-melee`);
       await expectBalancedRows(page, 'melee');
     });
+
+    for (const hero of ['sindarosa', 'rokcore']) {
+      test(`HUD hero name fits whole (${hero}, qa-r89 P1)`, async ({ page }) => {
+        await page.goto(`${START}&ff=arcade#arcade`);
+        await page.getByLabel('Your race').selectOption(hero);
+        await page.getByRole('button', { name: /^Fight/ }).tap();
+        await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+        await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+        await page.waitForFunction(ATTR);
+        await page.evaluate(`window.__TTE__.arena.step(60)`);
+        const texts = await page.evaluate<{ text: string; px: number }[]>(`window.__TTE__.arena.hudTextSizes()`);
+        const label = texts.find((t) => t.text.startsWith(hero.toUpperCase().slice(0, 3)));
+        expect(label?.text, JSON.stringify(texts)).toContain(hero.toUpperCase());
+        await shot(page, `${String(w)}-name-${hero}`);
+      });
+    }
   });
 }
 

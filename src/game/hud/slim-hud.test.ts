@@ -133,8 +133,22 @@ describe('portrait life line wording (qa-r88 P3)', () => {
   });
   it('shortens only the name, longest first, down to 3 letters', () => {
     const l = portraitLifeCandidates('Sindarosa', ranged);
-    expect(l.length).toBe(7);
-    expect(l[1]).toContain('SINDARO…');
+    expect(l.length).toBe(8);
+    expect(l[1]).toBe('SINDAROSA 286');
+    expect(l[2]).toContain('SINDARO…');
     expect(l[l.length - 1]).toContain('SI…');
+  });
+});
+
+describe('portrait life line: longest hero names (qa-r89 P1)', () => {
+  const c = { hp: 1234, maxHp: 1234, restCap: 1234, element: 'air' } as Parameters<typeof compactLabel>[1];
+  it('lists the whole name first for every roster hero, and the cut forms only after it', () => {
+    for (const n of ['Sindarosa', 'Cyclonius', 'Morblass', 'Wispera', 'Rokcore', 'Treenoc']) {
+      const l = portraitLifeCandidates(n, c);
+      expect(l[0], n).toMatch(new RegExp(`^${n.toUpperCase()} \\S \\d+$`));
+      expect(l[0]).not.toContain('…');
+      expect(l[1], n).toBe(`${n.toUpperCase()} 1234`);
+      for (const t of l.slice(2)) expect(t).toContain('…');
+    }
   });
 });

@@ -99,10 +99,13 @@ export function compactLabel(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' 
 
 /**
  * Portrait phones: one wording for both sides (qa-r88 P3). Current life only (no "Life", no "/max") beside an always-named
- * "SUPER n%", so a bare percentage never reads as a life percentage. Longest first: the whole name, then ever shorter names (3+ letters).
+ * "SUPER n%", so a bare percentage never reads as a life percentage. Longest first: the whole name, the whole name without the element mark (qa-r89 P1), then ever shorter names (3+ letters).
  */
 export function portraitLifeCandidates(name: string, c: Pick<HudCharacter, 'hp' | 'maxHp' | 'restCap' | 'element'>): string[] {
-  const out = [compactLabel(name, c, false, 'bare')];
+  const whole = compactLabel(name, c, false, 'bare');
+  // qa-r89 P1: the whole name beats the element mark when the room is short (the "▲ SAFE" line under it repeats the mark): second candidate.
+  const mark = `${elementCue(c.element).charAt(0)} `;
+  const out = [whole, whole.replace(mark, '')];
   for (let max = name.length - 1; max >= 3; max--) out.push(compactLabel(shortName(name, max), c, false, 'bare'));
   return out;
 }
