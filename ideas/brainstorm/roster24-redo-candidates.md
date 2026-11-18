@@ -84,3 +84,26 @@ Sheets: `sheet3-water.png` (Nykra, Glimmaw, Abyssor), `sheet3-air.png` (Vortigal
 New picks (mine, not an owner verdict): nykra r3_1 (rearing, right-facing, glassy teal; mane wisps and ground mist need cleaning), glimmaw r3_2 (right-facing, blue-teal translucent, fangs; the lure is missing and it reads as a fish, not an anglerfish), abyssor r3_4 (symmetric teal octopus, clean silhouette, no orange; looks skin-like more than water), vortigal r3_4 (solid right-facing eagle with feet and talons, cuts cleanly, but reads as a white eagle rather than cloud).
 
 Honest read: colour naming worked, since orange and pink are gone for all three. It did not fix the material: Abyssor and Glimmaw are blue animals, not bodies of water, and Vortigal is a normal eagle with a cyan and yellow accent. Naming the animal and naming the material pull against each other; a real elemental look probably needs img2img from a pick or a LoRA. Glimmaw never produced a lure. Still no owner approval: G0 is open.
+
+## Round 4 (2026-11-17, water and storm heroes, img2img; concept art only, G0 still open)
+
+Method: SDXL base img2img (`StableDiffusionXLImg2ImgPipeline`), 28 steps, CFG 6.5, 1024x1024, model CPU offload, from the round-3 best12 pick of each hero. Preflight was clean (no sd-bench or e2e, WSL free RAM 20 GB, GPU 35 C, 0 MiB used). 24 images: per hero 4 seeds (7000 + n*37 + len(hero)), each with its own strength 0.45 / 0.52 / 0.58 / 0.65 for n = 1..4. Style tail: grim textured fantasy concept art, painted, bold clean silhouette, full body, side view facing right, plain pale grey background. Subjects name the material, not just the animal (WATER = flowing water body with foam and currents, see-through rippling water, white foam crests, bubbles; STORM = wisps of storm cloud and lightning forming the body, churning grey cloud, crackling lightning bolts). Extra negatives after the semicolon. Sources: nykra redo4 nykra_1, glimmaw redo4 glimmaw_2, abyssor redo4 abyssor_4, hyalia redo3 hyalia_3, zephra redo2 zephra_2, vortigal redo4 vortigal_4 (PC `~/tte-gpu`; directories are numbered one above the round: redo4 = round 3).
+
+Subjects:
+- nykra: a horse shaped from a rushing wave, WATER, flowing water mane; fur, skin, opaque, solid, glossy, plastic
+- glimmaw: an anglerfish made of churning sea water, WATER, fangs of foam, glowing lure on a stalk; fish scales, opaque skin, solid, plastic
+- abyssor: a giant octopus whose body and tentacles are swirling ocean water, WATER; skin, suckers, opaque, solid, plastic
+- hyalia: a jellyfish formed of dark storm cloud, STORM, cloud tentacles trailing rain; glossy, solid, plastic, smooth dome
+- zephra: a spiky wolf beast formed of storm cloud and wind, STORM; fur, solid, opaque, realistic wolf, skin
+- vortigal: an eagle formed of storm cloud, STORM, cloud feathers, lightning talons; feathers, realistic bird, bald eagle, solid, white eagle
+
+Timing and memory (bake-off numbers): load 12.9 s, 24 images in 338 s total, 10.6 to 21.4 s per image (first image 21.4 s, most 11 to 15 s; img2img runs only strength x 28 steps), peak torch allocated 5495 MB, GPU at most 49 C. No gen process left running, GPU back to 0 MiB. Script `.scratch/gen5.py` (PC copy `~/tte-gpu/gen5.py`), sheet `~/claudetmp/roster24-redo-gpu/sheet4-water-storm.png` (round-3 best beside the four round-4 images per hero).
+
+Verdict (mine, not an owner verdict): strength up to 0.65 keeps the init image's composition and surface almost unchanged, so the material words do not take over. Same finding as rounds 2 and 3: the animal in the init image wins.
+- nykra: no real change; a hint of water spray and a looser foam mane at 0.58/0.65, body still glossy teal horse. No better than r3_1.
+- glimmaw: no change; still a blue fish with a scale-less skin, no lure, no water body. Only a few drips at 0.65.
+- abyssor: no change; still a skinned octopus with suckers, slightly more translucent at 0.65. No better than r3_4.
+- hyalia: no change; the glossy teal dome stays, ground mist slightly more cloud-like. Reads as a jellyfish, not a storm cloud.
+- zephra: slightly more cloud-like fur and a bit more lightning at 0.58/0.65, still a grey wolf with blue spines. Marginal gain.
+- vortigal: no change; still a white eagle with cyan feather tips, a few yellow streaks at 0.65. Not cloud.
+Next ideas if the owner wants this pursued: strength 0.75 to 0.9 (composition will drift, so pick for silhouette), a masked or ControlNet-edge img2img to keep only the outline, a LoRA or IP-Adapter from a water/cloud reference, or accept stylised, simplified designs painted by hand/vector over the pick instead of photographic diffusion.
