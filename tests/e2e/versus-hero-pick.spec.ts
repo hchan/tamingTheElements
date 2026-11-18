@@ -40,9 +40,9 @@ test('?hero= and ?foe= start a fight with the chosen heroes (dev/test builds)', 
   await page.waitForFunction(ARENA_READY);
   await page.evaluate('window.__TTE__.arena.step(1)');
   await expect.poll(async () => (await lives(page)).length).toBe(2);
-  // The real Versus arena scales life up; Fiara (hero) still has more than Treenoc (foe).
+  // The real Versus arena scales life up per race (SIM_VERSION 86 retune: Fiara 547, Treenoc 559), so the two chosen heroes differ and neither is the plain 100.
   const l = await lives(page);
-  expect(l[0], l.join()).toBeGreaterThan(l[1] ?? 0);
+  expect(l[0], l.join()).not.toBe(l[1]);
   expect(l[0]).not.toBe(100);
   expect(errors).toEqual([]);
 });
