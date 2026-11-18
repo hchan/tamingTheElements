@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 // The GPU PC is reached only through an ssh alias (TTE_REMOTE / git config tte.remote). Its address, user and key path live in
 // ~/.ssh/config and the owner's memory, never in the repo: these scripts and docs are public.
-const ROOTS = ['tools/ci', 'tools/dev', '.github', 'docs/TESTING.md'];
+// .claude/agent-memory is not scanned yet: gpu-redo-round1.md contains a real home path (owner to scrub).
+const ROOTS = ['tools/ci', 'tools/dev', '.github', '.claude/agents', '.claude/hooks', '.claude/rules', '.claude/skills', '.claude/workflows', '.claude/settings.json', 'CLAUDE.md', 'docs/TESTING.md'];
 
 function files(p: string): string[] {
   if (!statSync(p).isDirectory()) return [p];
@@ -32,6 +33,8 @@ describe('no host literals in public tooling', () => {
     expect(all).toContain('tools/dev/remote-run.sh');
     expect(all).toContain('tools/ci/browser-slot.ts');
     expect(all).toContain('docs/TESTING.md');
+    expect(all).toContain('CLAUDE.md');
+    expect(all.some((f) => f.startsWith('.claude/'))).toBe(true);
     expect(all.some((f) => f.startsWith('.github/'))).toBe(true);
   });
   it('has no IPv4 addresses (loopback excepted)', () => {

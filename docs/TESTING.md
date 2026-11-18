@@ -252,4 +252,6 @@ force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a rem
 - **Jobs:** the source is bundled from git, uploaded, and run detached under `~/tte-offload/jobs/<id>/`; results are fetched to
   `.scratch/remote-e2e/<id>/`. Ctrl-C cancels the PC job (exit 130) unless `--pc-detach`; use `--pc-attach` / `--pc-status` later.
 - **Exit codes:** 92 bundle verify, 93 lost/reboot, 94 unreachable, 95 lock busy, 96 frames stall, 3 upload/fetch failure, 2 usage.
-- **Agents:** run only `@smoke` plus the specs you touched (`pnpm e2e:smoke`), never the full suite.
+- **PC first, Mac fallback:** a cached probe (`pnpm pc:probe`, 60 s TTL) and a pure decision function choose run, wait or fall back. Only short runs (<= 150 tests; run, smoke, pages, itch; not `--pc`, `--pc-detach`, `--full`) may fall back to the Mac, in a browser slot with a load guard (`TTE_MAC_LOAD_MAX`, default 14), and never after a PC exit 0 or 1. Policy: `--pc-fallback <mac|wait|fail>` or `TTE_E2E_FALLBACK`. Exit 89 means no runner (PC unavailable and the Mac too loaded), 97 PC needs setup. The last stderr line is `e2e ran on: PC (...)` or `e2e ran on: Mac (fallback: <reason>)`.
+- **Where heavy jobs run:** `tools/ci/offload-routes.json` (validated by `tests/repo/offload-routes.test.ts`).
+- **Agents:** run only `@smoke` plus the specs you touched (`pnpm e2e:smoke`), never the full suite; never force a Mac run or rerun a red result on the other machine; copy the `e2e ran on:` line into the report and report exits 89/94/95/96.
