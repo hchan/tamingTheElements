@@ -138,7 +138,7 @@ Details:
 | `0x0008` | full-house | Server at its room cap (`full-house` in `rooms.ts` [fact]). Retry later. |
 | `0x0009` | rate-limited | Too many connects or frames; `retryAfterSec` set. |
 | `0x000A` | sim-mismatch | The two clients run different `SIM_VERSION`. |
-| `0x000B` | resting | **Kill switch.** The game's online service is switched off ("the game is resting"). `retryAfterSec` is when to look again (0 = unknown, use 1 hour). The client shows a friendly message, hides Quick match and Rooms until then, and never retries sooner. It is returned as HTTP 503 from `/session` and `/ticket` (so no socket is opened) and as a frame if the switch flips while connected (the server then closes with 4011 after the current match ends or after 60 s [choice]). |
+| `0x000B` | resting | **Kill switch.** The game's online service is switched off ("the game is resting"). `retryAfterSec` is when to look again (0 = unknown, use 1 hour). The client shows a friendly message, hides Quick match and Rooms until then, and never retries sooner. It is returned as HTTP 503 from `/session` and `/ticket` (so no socket is opened) and as a frame if the switch flips while connected (the server then closes with 4011 after the current match ends or after 60 s [choice]; on that close the client stops and does not reconnect). |
 | `0x000C` | internal | Server fault. Retry with backoff (1 s, 2 s, 4 s, max 30 s [choice]). |
 
 WebSocket close codes use 4000 + the low byte of the error code (for example 4003, 4011). Normal end: 1000.
@@ -170,6 +170,10 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
 - The client fetches a **new ticket** (`POST /ticket`, session token still valid) and reconnects with HELLO `resumeSession = sessionId` from WELCOME. If the slot is still held,
   WELCOME has `resumed = 1`, the server re-sends MATCH_START (same `matchId`, seed, slot) and tells the peer PEER_STATUS `1`. `seq` counters continue (not reset), so frames in flight
   from before the drop are still correctly de-duplicated. The sessions' redundant batches refill the gap; no replay of the old frames is needed.
+- WELCOME carries no matchId, so after a WELCOME with `resumed = 1` the server always re-sends MATCH_START and the client may see it twice. A HELLO with an unknown `resumeSession` gets WELCOME with `resumed = 0` and the client re-queues.
+- The relay does not buffer or renumber frames for a player who has dropped: frames sent to them during the grace window are dropped, and after PEER_STATUS `1` (back) each client resends its state (the next BATCH covers it).
+- Outside a match (idle or queued) the client keeps reconnecting for 60 s [choice] before giving up; HELLO gets a 10 s timeout for WELCOME [choice].
+- The relay does not re-simulate matches: it only compares the RESULT fields (winner, ticks, finalHash). Re-simulation (`verifyReplayLog`) is a later option for the backend.
 - After the grace the server sends PEER_STATUS `2` to the peer: the session forfeits the absentee (`forfeitReason 'timeout'` [fact]) and RESULT proceeds.
 - Reconnect attempts: immediately, then 1 s, 2 s, 4 s with jitter, until the grace ends [choice]. A ticket-invalid answer gets one fresh ticket, then counts as a failed attempt.
 
