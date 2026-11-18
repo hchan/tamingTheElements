@@ -1807,7 +1807,7 @@ html[data-high-contrast='true'] button.touchBtn {
   max-width: min(60em, 88%);
   padding: 0.4em 0.7em;
   /* qa-r33: a near-opaque dark panel and bright text, so the card reads on the blue floor (it was 0.72). */
-  background: rgba(14, 12, 32, 0.92);
+  background: rgba(14, 12, 32, 0.62);
   color: #f6efe2;
   border: 1px solid #8a7658;
   font-size: 11px;
@@ -1826,6 +1826,13 @@ html[data-high-contrast='true'] button.touchBtn {
 }
 .firstRunHint p {
   margin: 0.2em 0;
+}
+/* QA r104: the card is a light note, not a wall: taps and clicks pass through to the arena; only Got it takes input. */
+.firstRunHint:not(.firstRunWait) {
+  pointer-events: none;
+}
+.firstRunHint .firstRunDone {
+  pointer-events: auto;
 }
 .firstRunDone {
   margin-top: 0.3em;
@@ -2332,7 +2339,7 @@ html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
     padding: 0.2em 0.5em;
     font-size: 10px;
     line-height: 1.25;
-    background: rgba(14, 12, 32, 0.92);
+    background: rgba(14, 12, 32, 0.62);
   }
   .firstRunHint:not(.firstRunWait) {
     display: grid;
