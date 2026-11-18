@@ -226,3 +226,18 @@ differs from browsers in places (no `setPointerCapture`, `FormData` includes dis
 **Lazy `import()` and fixed-count flushes**: code that lazy-loads chunks (`AppFlow`) makes the first `import()` a real-time module
 transform, which can outlast a "yield N macrotasks" helper under CPU load (this made `src/game/app/flow.dom.test.ts` flaky in the full run).
 Warm those modules in `beforeAll` so later imports resolve as microtasks, or wait on the real condition (`vi.waitFor`), not a tick count.
+
+## The GPU PC (browser e2e over ssh)
+
+`tools/dev/remote-run.sh` runs a command in the offload clone on the Windows 4060 PC (WSL Ubuntu). Headless Chromium there used to
+get no animation frames (`requestAnimationFrame` never fired, `page.screenshot` timed out, Playwright "element is stable" hung),
+which made every e2e run red for no game reason. Cause, measured with a blank-page frame count: WSLg exports `DISPLAY=:0` and
+`WAYLAND_DISPLAY=wayland-0` into the ssh session, and with them set the project's SwiftShader launch got frames in about 1 of 8
+launches; with both unset it got 60 frames per second (WebGL still on) in 20 of 20 fresh ssh sessions. The script now unsets both
+for every job. `--disable-features=Vulkan` also worked in a 5-launch trial (kept as a backup, not applied). Do not use
+`--use-gl=disabled`: it gives frames but removes WebGL. Not tested: Windows locked or display off.
+
+For commands that mention `e2e` or `playwright` (or with `--preflight`) the script first runs `tools/dev/pc-frame-check.cjs`: a blank
+page must get at least 10 frames in 1 s and a screenshot within 5 s. A stall is reported as `status: error` (exit 96), not as a test
+failure, and the command is not run. `--no-preflight` skips it. To probe by hand: `node tools/dev/pc-frame-check.cjs` in the clone
+with `unset DISPLAY WAYLAND_DISPLAY`.
