@@ -45,10 +45,10 @@ describe('helpScreen (DOM)', () => {
     const btns = [...root.querySelectorAll<HTMLButtonElement>('nav.helpJump button')];
     expect(btns.map((b) => b.textContent)).toEqual([
       'How to fight',
+      'Controls',
+      'Choosing your heroes',
       'Ways to play',
       'Reading the arena',
-      'Choosing your heroes',
-      'Controls',
     ]);
     const target = document.getElementById('helpControlsHeading') as HTMLElement;
     let scrolled = 0;
@@ -57,7 +57,7 @@ describe('helpScreen (DOM)', () => {
     };
     const det = target.closest('details') as HTMLDetailsElement;
     expect(det.hasAttribute('open')).toBe(false);
-    btns[4]?.click();
+    btns[1]?.click();
     expect(scrolled).toBe(1);
     expect(det.hasAttribute('open')).toBe(true);
     expect(document.activeElement).toBe(target);

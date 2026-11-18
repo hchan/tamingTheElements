@@ -1,0 +1,26 @@
+/* Play (tour) team picker: one clear Start tour button and a one-line intro (WP MENU-D). */
+#menu #tourPick .tourIntro {
+  display: block;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#menu #tourPick .tourStartCta:not(:disabled) {
+  font-weight: 700;
+  font-size: 1.15em;
+  color: #1c1400;
+  background: #ffd678;
+  border-color: #fff2c4;
+}
+#menu #tourPick .tourStartCta:not(:disabled):hover,
+#menu #tourPick .tourStartCta:not(:disabled):focus-visible {
+  background: #ffe6a6;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+@media (max-width: 520px) {
+  #menu #tourPick .tourIntro {
+    white-space: normal;
+  }
+}
