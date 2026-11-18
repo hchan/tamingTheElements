@@ -9,8 +9,8 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
 
 ## Commands (use `corepack pnpm`; `pnpm` may not be on PATH)
 
-- Gate before every commit (the local gate is the only per-commit check; Actions runs daily and has no e2e job): `pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm exec vitest run --project dom && pnpm test:legacy && pnpm build`, plus `pnpm e2e` before pushing
-- Browser: `pnpm e2e` (Playwright, SwiftShader, 1 worker; must pass several runs in a row), `pnpm e2e:pages`, `pnpm e2e:itch`
+- Gate before every commit (the local gate is the only per-commit check; Actions runs daily and has no e2e job): `pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm exec vitest run --project dom && pnpm test:legacy && pnpm build`, plus `pnpm e2e` before pushing (it runs on the GPU PC, next line)
+- Browser: `pnpm e2e` (Playwright, SwiftShader, 1 worker; must pass several runs in a row), `pnpm e2e:pages`, `pnpm e2e:itch`. **e2e runs on the 4060 PC by default** (owner, 2026-11-18, Mac load): `tools/ci/e2e-route.ts` routes it there when `git config tte.remote <ssh-alias>` is set (run it once in each new clone or worktree that does not inherit it; never write the host, IP, user or key into the repo). A Mac browser run is refused unless `TTE_ALLOW_MAC_E2E=1` (coordinator only). Over about 8 min: Bash `run_in_background`. See docs/TESTING.md "Routing e2e to the PC"
 - Sim tools: `pnpm sim:match --tournament --json`, `pnpm balance:compare` / `balance:record`, `pnpm golden:record`
 - Dev: `pnpm dev`; flags in the URL (`?ff=arenaDemo`, `?ff=play`, `?manual=1`, `?seed=`) only work in dev/test builds.
 
@@ -44,7 +44,7 @@ Start with [README.md](README.md), then [docs/REPO-MAP.md](docs/REPO-MAP.md) (a 
   (the old `user.properties` is in public history and the tag, never extracted: rotation is the owner's job, see SECURITY.md).
 - **Phaser 4 skills:** `node_modules/phaser/skills/*/SKILL.md` ships AI-oriented docs (v4-new-features, filters-and-postfx, particles, v3-to-v4-migration, ...). Read the matching one before writing Phaser code; unused so far: Lighting, Filters, `SpriteGPULayer` (see the v4-new-features skill).
 - Keep responses and diffs small; `git worktree` + Sonnet agents were used per work package (see `.claude/`).
-- **Agents:** keep 2-5 running continuously (refill the pool as each finishes) on independent ideas (owner, 2026-11-12: more parallel agents; reviewer agents do first-pass review), each in its own `git worktree` with its own `E2E_PORT`/dev port; Sonnet by
+- **Agents:** keep 2-5 running continuously (refill the pool as each finishes) on independent ideas (owner, 2026-11-12: more parallel agents; reviewer agents do first-pass review), each in its own `git worktree` with its own `E2E_PORT`/dev port; Sonnet by Agents never run e2e browsers on the Mac (only `@smoke` plus touched specs via `pnpm e2e`, which goes to the PC); PC infra exits (94 unreachable, 95 busy, 96 frames) are reported, not worked around.
   default, Opus only for risky new sim systems or hard merges. Never two agents on the same shared file (`tools/ci/size-budget.json`,
   `src/core/index.ts`, `docs/REPO-MAP.md`, the asset manifest). The coordinator reviews and merges each result, gate first.
 - **Autonomy:** the owner pre-approved design, art and balance changes ("autoapprove all changes"); do not pause for approval, report afterwards.

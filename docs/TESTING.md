@@ -27,7 +27,7 @@ How to run, place and write tests. Run everything with `corepack pnpm <script>` 
 
 Pre-merge set (the local gate is the per-commit check; GitHub Actions runs only once a day, see [DEPLOYMENT.md](DEPLOYMENT.md), and runs `test:coverage` (which includes the `dom` project that `pnpm test` skips) and `test:browser` but NOT e2e):
 `pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test && pnpm exec vitest run --project dom && pnpm test:legacy && pnpm build && pnpm e2e`.
-Run `pnpm e2e` (and `pnpm e2e:pages` when the base path or build changed) on the Mac before pushing; it is no longer a CI job.
+Run `pnpm e2e` (and `pnpm e2e:pages` when the base path or build changed) before pushing (it routes to the GPU PC by default, see "Routing e2e to the PC"); it is no longer a CI job.
 
 `pnpm size:check` (after `build`) enforces bundle budgets; see [PERFORMANCE.md](PERFORMANCE.md).
 
@@ -244,8 +244,7 @@ with `unset DISPLAY WAYLAND_DISPLAY`.
 
 ### Routing e2e to the PC
 
-`tools/ci/e2e-route.ts <run|smoke|pages|itch|flake>` (the `pnpm e2e*` scripts) sends Playwright to the PC when `TTE_REMOTE` is set
-or `git config tte.remote <ssh-alias>` is set, and otherwise runs locally in a browser slot. `CI`, `TTE_E2E_LOCAL=1` and `--list`
+`tools/ci/e2e-route.ts <run|smoke|pages|itch|flake>` (the `pnpm e2e*` scripts) sends Playwright to the PC **by default** (owner, 2026-11-18): whenever `TTE_REMOTE` or `git config tte.remote <ssh-alias>` is set (the main checkout has it; set it in a new clone or worktree that does not inherit it; never commit the host, IP, user or key), and otherwise runs locally in a browser slot. `CI`, `TTE_E2E_LOCAL=1` and `--list`
 force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a remote is configured unless `TTE_ALLOW_MAC_E2E=1`.
 
 - **Lanes:** a short lane (port 7970) and a full lane (port 7960); more than 150 tests times the repeat count picks full

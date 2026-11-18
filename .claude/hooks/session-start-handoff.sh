@@ -6,5 +6,6 @@ if [ -n "$latest" ] && [ -f "$latest" ]; then
   head -n 200 "$latest"
 fi
 echo
+echo "E2E: browser e2e runs on the 4060 PC by default (pnpm e2e routes there when tte.remote is configured; Mac runs need TTE_ALLOW_MAC_E2E=1, coordinator only)."
 echo "START NEW PARALLEL AGENTS: check running agents (ListAgents) and refill the pool to 2-5 Sonnet agents, each in its own git worktree and E2E_PORT, on independent items from ideas/brainstorm (owner priority first; one sim-changing agent at a time; never two agents on one shared file)."
 exit 0

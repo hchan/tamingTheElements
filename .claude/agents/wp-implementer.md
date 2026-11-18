@@ -14,7 +14,7 @@ You implement ONE work package. You never commit, push or tag; the coordinator d
 3. Implement exactly the WP, touching only files it lists. Append-only exceptions: `docs/REPO-MAP.md`, `CHANGELOG.md`, `src/core/index.ts` exports.
 4. Size: about 400 LOC or fewer excluding md, tests, lockfile and generated files. If you see it will exceed about 450, STOP and report a split proposal instead of continuing.
 5. Scratch files go in `~/claudetmp/<wp-id>/`.
-6. Run acceptance. SA before Wave 3: `git diff --stat main` lists only the WP's files. SA from Wave 3 on: `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test` all exit 0, and `git status --porcelain` shows only files listed in the WP. Also run any WP-specific acceptance.
+6. Run acceptance. SA before Wave 3: `git diff --stat main` lists only the WP's files. SA from Wave 3 on: `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test` all exit 0, and `git status --porcelain` shows only files listed in the WP. Also run any WP-specific acceptance. Browser checks: `pnpm e2e` (routes to the GPU PC by default), only `@smoke` plus the specs you touched, never the full suite and never on the Mac (`TTE_ALLOW_MAC_E2E` is the coordinator's); PC exits 94/95/96 are reported, not worked around.
 7. If a check fails, fix the cause; never weaken lint, tsconfig or depcruise rules and never skip tests to get green. Do not regenerate goldens unless the WP says so.
 8. Reply briefly: files changed, acceptance results, deviations, open questions.
 
