@@ -1,6 +1,6 @@
 # Online protocol (WebSocket relay)
 
-Wire spec for online play through a relay server over one WebSocket per player. Status: **design, nothing here is implemented yet**. It replaces
+Wire spec for online play through a relay server over one WebSocket per player. Status: **implemented** by `src/core/relay` (relay) and `src/game/net/ws` (client); this document is the contract both follow. It replaces
 the WebRTC path later; until then the WebRTC path described in [WEBRTC-PLAN.md](WEBRTC-PLAN.md) and [NETCODE.md](NETCODE.md) (data channels, SDP codes,
 STUN/TURN, the optional signalling relay in `tools/signal-relay/`) stays as it is. Only the transport changes: the lockstep/rollback session, the
 `Packet` codec, the handshake and the determinism rules ([DETERMINISM.md](DETERMINISM.md)) are reused unchanged. Hosts and URLs below are placeholders
@@ -111,7 +111,7 @@ Details:
 - **HASH.** A checkpoint every `HASH_INTERVAL = 50` ticks (1 s) [fact: `format.ts`] and at match end. The hash also travels inside BATCH for the peer; the
   separate HASH frame is for the server only (it compares both players' values per tick and flags the first divergence). It is sent once per checkpoint;
   the final hash in RESULT is the authority.
-- **DESYNC.** Sent by a client whose session set `desync` [fact: `LockstepSession.desync`]. The server records it and ends the match as a draw with `reason 3`; no ranked effect is ever derived from it (there is no cheating arbiter, see Trust).
+- **DESYNC.** Sent by a client whose session set `desync` [fact: `LockstepSession.desync`]. The relay records it, marks the match not live and emits a host event (it sends no frame back; the clients decide what to show); no ranked effect is ever derived from it (there is no cheating arbiter, see Trust).
 - **PAUSE.** Same meaning as the `paused`/`forfeit` bits in `Packet.flags`; sent as its own frame so it works when no batch is flowing (hidden tab throttles timers).
 - **Result submission.** Both clients send RESULT after the sim reports the end. Agreement (same `winner`, `ticks`, `finalHash`) gives RESULT_ACK `0`;
   a disagreement gives `2`, and the server stores neither as a win. A hash divergence found by the relay arrives as an **unsolicited** RESULT_ACK `2` with the real `matchId` and no preceding RESULT; a RESULT whose peer is gone or swept also gets RESULT_ACK `2`. The client treats every RESULT_ACK of the current match alike: it stops the RESULT retry, leaves the in-match state and emits it, so the app reads `status 2` as the end of the match. The server does no simulation; a replay upload for verification with
