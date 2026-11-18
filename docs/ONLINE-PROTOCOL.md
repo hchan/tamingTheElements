@@ -157,6 +157,9 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
   the next BATCH's `flags`. When both carry the pause state, either one sets it and the BATCH bit wins on conflict. So the reorder buffer trades a few ms of delay against fewer rollbacks, and its worst case is a late input.
 - **SETUP is a reliable, ordered control stream** (the setup handshake needs HELLO before READY and never skip-ahead): each side numbers its control messages with `ctlSeq` (u8, from 0),
   resends the oldest unacknowledged one every 200 ms [choice], puts the highest `ctlSeq` it has delivered in `ackCtl`, delivers only in `ctlSeq` order and drops duplicates. The reorder and skip-ahead rules above do not apply to it.
+- SETUP details (implemented in `src/game/net/ws/`): the `seq u32` field in SETUP is reserved and sent as 0; `ackCtl = 0xFF` means "nothing delivered yet"; a SETUP with `n = 0` is a pure acknowledgement; a sender holds at most 32 unacknowledged control messages [choice].
+- The reorder buffer does not guard against a seq far ahead of `nextSeq` (a buggy relay could make later frames stale); the relay must never skip numbers [open].
+- Relay rules: in a queue match slot 0 goes to the player who waited longer, in a room match to the host [choice]; a RESULT retry that arrives after the match record closed (for example by DESYNC) is answered with the current status; HELLO with a resume session is refused while the service is resting [choice].
 - Only match-phase frames are numbered. Control frames (`0x01`-`0x30`) are request/answer and carry no seq; the client tolerates a duplicate answer.
 
 ## 7. Reconnect
