@@ -49,6 +49,7 @@ export * from './replay/validate';
 export * from './replay/rle';
 export * from './replay/recorder';
 export * from './replay/player';
+export * from './replay/verify-log';
 export * from './data/abilities-a';
 export * from './data/abilities-b';
 export * from './data/abilities-c';
