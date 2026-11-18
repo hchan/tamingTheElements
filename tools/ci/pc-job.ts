@@ -90,7 +90,7 @@ LOCK=$BASE/${lane.lock}
 OUT=$JOB/out
 PGID=$$
 mkdir -p "$OUT/test-results" "$OUT/fetch" "$BASE/locks"
-echo $$ > "$JOB/pgid"
+echo $$ > "$JOB/pgid"; cp "$JOB/pgid" "$JOB/pid"
 T0=$SECONDS; TQ=0; TS=0; TR=0; SAMPLER=0
 export TTE_E2E_LOCAL=1
 export TMPDIR=$BASE/${lane.tmp}
@@ -191,10 +191,10 @@ finish "$RC"
 cd "$(dirname "$0")" || exit 3
 mkdir -p out
 if [ "\${1:-}" = fg ]; then
-  bash job.sh 2>&1 | tee output.log
+  bash job.sh 2>&1 | tee out/output.log
   exit "\${PIPESTATUS[0]}"
 fi
-setsid -f bash job.sh > output.log 2>&1 < /dev/null
+setsid -f bash job.sh > out/output.log 2>&1 < /dev/null
 echo started
 `;
   return { jobSh, startSh };

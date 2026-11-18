@@ -98,7 +98,7 @@ case "$cmd" in
       fi
       sleep 0.3; idle=$((idle + 1))
       if [ $((idle * 3)) -ge $((hb * 10)) ]; then
-        echo "[pc] $id still running; $(tail -n 1 "$d/out/health.csv" 2>/dev/null)" >&2; idle=0
+        echo "[pc] $id still running; $(tail -n 1 "$d/health.csv" 2>/dev/null)" >&2; idle=0
       fi
     done ;;
   cancel)
