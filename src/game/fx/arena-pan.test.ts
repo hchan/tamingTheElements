@@ -57,8 +57,9 @@ describe('arena pan camera on the tall view', () => {
     };
     const scene = { scale: { width: 1280, height: 1944 }, cameras: { main } } as unknown as Phaser.Scene;
     applyCamera(scene);
-    // Fallback panel top 640 in the 720 box -> view y 1864; centre = 720 - (1864 - 972).
-    expect(cam.cy).toBeCloseTo(720 - (1864 - 972), 6);
+    // Fallback panel top 640 in the 720 box -> view y 1864; the floor is lifted 30% of the free height (1944 - 80 - 70 = 1794 -> 538)
+    // above it (portrait sky crop), so the floor's bottom lands at 1326 and the centre = 720 - (1326 - 972).
+    expect(cam.cy).toBeCloseTo(720 - (1864 - 538 - 972), 6);
     expect(viewBox(scene).y).toBeCloseTo(cam.cy - 972, 6);
   });
 });

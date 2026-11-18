@@ -62,6 +62,19 @@ export function panelTopOf(scene: object, fallback: number): number {
   return barTops.get(scene) ?? fallback;
 }
 
+/** Share of the free height (HUD band to bar top, in view px) the floor's bottom edge is lifted above the bar: crops the empty sky (QA r103 P2). */
+export const PORTRAIT_FLOOR_LIFT = 0.3;
+
+/**
+ * Where the arena floor's bottom edge (world y 720) lands, in the 720-box coordinates of `panelTopOf`: above the bar by a share of
+ * the free height, the ground mirror filling the gap, so the camera looks lower and the sky above is cropped. Camera framing only.
+ */
+export function floorBottomOf(scene: object, fallback: number, viewH: number): number {
+  const top = panelTopOf(scene, fallback);
+  const free = viewH - 720 + top - PORTRAIT_HUD_BAND; // the free height in view px (the 720 box sits at the view's bottom)
+  return top - Math.round(PORTRAIT_FLOOR_LIFT * Math.max(0, free));
+}
+
 export function isPortraitPlay(game: Phaser.Game): boolean {
   return game.registry.get(PORTRAIT_PLAY) === true;
 }
