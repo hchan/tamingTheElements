@@ -45,3 +45,24 @@ Seeds (n=1..4): kindrel 4030/4053/4076/4099, brazgor 4030/... same formula with 
 - Better than the scrapped set: bright, painted, distinct silhouettes (fox, boar, dragon, horse, fish, octopus, tortoise, elephant, mushroom, jellyfish, wolf-beast, eagle), clean flat backgrounds that should cut out easily, mostly one head and correct limbs.
 - Weak: water heroes (Nykra, Glimmaw, Abyssor) read as coloured animals, not made of water; Quarrak is a real tortoise with orange shell; Kindrel_3 is a pattern sheet of several foxes; Vortigal is a plain feathered eagle, not storm; Hyalia_2/4 drift to octopus/beast. Originals are more elemental and more stylised.
 - Follow-ups if the owner wants more: stronger material prompts for water/air, a second round on the weak heroes, img2img from the owner's pick, then cut-out and rig only after G0.
+
+## Round 2 (2026-11-17, weak heroes only; coordinator relayed the owner's delegation)
+
+Method: same pipeline (SDXL base, 28 steps, CFG 6.5, 1024x1024, model CPU offload, same style tail and base negative plus `, collage, pattern, several`), stronger material prompts and a per-hero extra negative. Seeds = 5000 + n*29 + len(hero). 40 images: 8 each for Nykra, Glimmaw, Abyssor, 4 each for Quarrak, Vortigal, Hyalia, Kindrel.
+
+Timing and memory (for the 4060 vs Mac bake-off): load 6.5 s, 40 images in 773 s, median 18.5 s per image (range 18.1 to 24.5), per-image peak torch allocated 5334 MB, peak reserved 7482 MB (8 GB card, offload on). The nvidia-smi sample taken after each image reads 195 MB because offload has parked the weights on the CPU, so use the torch peaks. Round 1 had the same 18.3 s median. No GPU process was left running afterwards.
+
+Subjects (tail as round 1; extra negative after the semicolon):
+- nykra: a horse sculpted entirely of flowing transparent water, see-through glass-like body, bubbles and refraction inside, foam mane, glowing teal eyes, four legs; fur, skin, opaque, solid white horse, muscles
+- glimmaw: a translucent water anglerfish, see-through jelly body full of bubbles, refracting light, big fanged jaws, glowing blue lure; scales, opaque, orange, red, solid fish skin
+- abyssor: a giant octopus made entirely of flowing transparent water, see-through body, bubbles inside, tentacles of curling waves, glowing eyes; skin, suckers, opaque, orange, red, purple
+- quarrak: a four-legged rock beast, body of stacked grey boulders and granite slabs, jagged stone back with glowing blue crystals, boulder head, glowing eyes; tortoise, turtle, shell, scales, skin, grass
+- vortigal: a bird made of dark storm cloud, body of swirling grey cloud, wings of wind swirls and crackling lightning bolts, glowing cyan eyes, wings spread; feathers, bald eagle, white head, realistic bird
+- hyalia: one single jellyfish of billowing storm cloud, dome bell of grey cloud with lightning inside, long wispy wind tentacles hanging down, glowing cyan; octopus, beast, legs, animal, eyes, face
+- kindrel: one single fox made entirely of fire, body of orange flame, burning fur, glowing ember eyes, flaming tail, four legs; fur texture, realistic fox, grey, white
+
+Sheets: `sheet2-fire.png`, `sheet2-water.png`, `sheet2-earth.png`, `sheet2-air.png`, `sheet2-best12.png` (best of round 1 and 2 per hero), in the worktree `.scratch/` and copied to `~/claudetmp/roster24-redo-gpu/`.
+
+Best-12 picks and reasons (my pick, not an owner verdict): kindrel r2_3 (one fox, flame fur, no pattern sheet); brazgor r1_3 (lava seams, flaming back); ouroth r1_4 (bold dragon silhouette); nykra r2_8 (glass body, faces right); glimmaw r2_1 (translucent, faces right, but lost the fangs and lure); abyssor r2_1 (translucent teal bell, tentacles still partly orange); quarrak r2_4 (rock beast with crystals, no shell); durrok r1_1 (stone-plated elephant, green crystals); umbrel r1_1 (tall mushroom on roots); hyalia r2_3 (one clean cloud-teal jellyfish, puff at the base to cut off); zephra r1_2 (spiky wind wolf, faces left); vortigal r2_2 (storm-wisp bird, most elemental, faces left, no feet).
+
+Honest read: Nykra, Quarrak, Kindrel and Hyalia are real improvements. Glimmaw and Abyssor are translucent now but colourful (orange, pink) and the anglerfish read is weaker; the negatives for orange were ignored, so a round 3 should name the colour ("deep blue and teal") and use img2img or a LoRA-free colour cue. Vortigal is now storm-bodied but airy and ragged, which will be hard to cut cleanly. Several picks face left (zephra, vortigal, glimmaw tail) and would be flipped at cut time. Still no owner approval: G0 is open.
