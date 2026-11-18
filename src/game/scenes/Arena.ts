@@ -83,7 +83,7 @@ import { CLASSIC_SPRITE_SCALE, CharacterView, frozenTintOf, setBrightFloor } fro
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import { ReplayCursor } from '../replay/cursor';
-import { actionRefusal, activeHeroOf, buildMatchEnd, chargeLineFor, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
+import { actionRefusal, activeHeroOf, buildMatchEnd, chargeLineFor, demoMatch, runLineFor, effectsHeld, playbackFrame } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
 
@@ -917,6 +917,7 @@ export class Arena extends Phaser.Scene {
         const bar = this.view?.actionBar(0);
         return bar ? elementalNotice(true, bar.tick, bar.elemental) : undefined;
       },
+      () => (this.view ? runLineFor(this.view, arcade) : undefined),
     );
     if (line === undefined) return;
     notice.show(line, this.time.now);

@@ -1,4 +1,4 @@
-import { Cmd, DEFAULT_SIM_FLAGS, EntityFlag, METER_BAR, RoundPhase, WEATHER_CHARGE_FULL, characterId, type MatchSetup, type RenderArcade, type RenderView } from '@core/index';
+import { Cmd, DEFAULT_SIM_FLAGS, EntityFlag, METER_BAR, RUN_AWAY_NAME, RUN_TOWARDS_NAME, RoundPhase, WEATHER_CHARGE_FULL, characterId, type MatchSetup, type RenderArcade, type RenderView } from '@core/index';
 import { chargeNotice } from '../hud/swap-notice';
 import type { MatchEnd } from './launch';
 
@@ -34,8 +34,18 @@ export function chargeLineFor(view: Pick<RenderView, 'forEachCharacter'>, arcade
   return chargeNotice({ fighting: arcade.phase === RoundPhase.fight, chargeIn: arcade.chargeIn(hero.id), blocked });
 }
 
+/** The refusal line for a Run press: nothing while a run is on (a second press stops it), else rooted, else the seconds left ("Run Away in 3 s"). */
+export function runLineFor(view: Pick<RenderView, 'forEachCharacter' | 'actionBar'>, arcade: RenderArcade): string | undefined {
+  const hero = activeHeroOf(view);
+  const run = view.actionBar(0)?.run;
+  if (!hero || !run || arcade.running(hero.id)) return undefined;
+  if (arcade.rooted(hero.id)) return "Can't run while rooted";
+  const left = arcade.runIn(hero.id);
+  return left > 0 ? `${run.away ? RUN_AWAY_NAME : RUN_TOWARDS_NAME} in ${String(Math.ceil(left / 50))} s` : undefined;
+}
+
 /**
- * The line for a Super, Weather, Charge or Elemental press that does nothing yet, or undefined (no refusal). Only during the
+ * The line for a Super, Weather, Charge, Elemental or Run press that does nothing yet, or undefined (no refusal). Only during the
  * fight and not in a hit-stop; the first set bit of that priority order wins. `charge` and `elemental` are read lazily.
  */
 export function actionRefusal(
@@ -43,12 +53,14 @@ export function actionRefusal(
   a: { phase: number; frozen: boolean; meter0: number; weatherCharge0: number },
   charge: () => string | undefined,
   elemental: () => string | undefined,
+  run: () => string | undefined = () => undefined,
 ): string | undefined {
   if (a.phase !== RoundPhase.fight || a.frozen) return undefined;
   if ((bits & Cmd.super) !== 0 && a.meter0 < METER_BAR) return 'Super not ready';
   if ((bits & Cmd.weather) !== 0 && a.weatherCharge0 < WEATHER_CHARGE_FULL) return 'Weather not ready';
   if ((bits & Cmd.charge) !== 0) return charge();
   if ((bits & Cmd.elemental) !== 0) return elemental();
+  if ((bits & Cmd.run) !== 0) return run();
   return undefined;
 }
 
