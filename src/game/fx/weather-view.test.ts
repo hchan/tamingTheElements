@@ -76,7 +76,7 @@ function fakeScene(): { scene: Phaser.Scene; events: Emitter; made: Fake[] } {
   const made: Fake[] = [];
   const scene = {
     events,
-    registry: { get: (k: string) => reg.get(k) },
+    registry: { get: (k: string) => reg.get(k), set: (k: string, v: unknown) => void reg.set(k, v) },
     scale: { width: 1280, displaySize: { width: 1280 } },
     sys: { isActive: () => true },
     textures: { exists: () => true },
@@ -122,6 +122,19 @@ function mount(opts: { reduceMotion?: boolean; highContrast?: boolean; weather?:
 }
 
 describe('weather charge chip (WP-arcade-weather-charge)', () => {
+  it('publishes the chip box so PARRY and other call-outs stay under it (QA r109)', () => {
+    const m = mount();
+    m.frame();
+    expect((reg.get('tte.chipRects') as unknown[][])[2]).toEqual([]);
+    m.arcade.weatherCharge[0] = 600;
+    m.frame();
+    const boxes = (reg.get('tte.chipRects') as { x: number; y: number; w: number; h: number }[][])[2] ?? [];
+    expect(boxes).toHaveLength(1);
+    expect(boxes[0]?.x).toBeLessThan(640);
+    expect((boxes[0]?.x ?? 0) + (boxes[0]?.w ?? 0)).toBeGreaterThan(640);
+    expect(boxes[0]?.y).toBeGreaterThan(102);
+  });
+
   it('shows team 0 charge as "WEATHER n%" with a proportional bar, and "WEATHER READY" when full', () => {
     const m = mount();
     m.frame();

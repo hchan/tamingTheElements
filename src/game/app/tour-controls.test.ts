@@ -10,8 +10,8 @@ describe('tourKeysDesktop', () => {
   it('default bindings: two rows, the numbered action keys, arrows noted', () => {
     const rows = tourKeysDesktop(DEFAULT_BINDINGS, true);
     expect(rows).toHaveLength(2);
-    expect(caps(rows)).toEqual(['W', 'A', 'S', 'D', '1', '2', 'C', '7', '8', '9', '3', '4']);
-    expect(actions(rows)).toEqual(['Move', 'Strike', 'Special', 'Snag', 'Dash', 'Guard (hold)', 'Super', 'Tag']);
+    expect(caps(rows)).toEqual(['W', 'A', 'S', 'D', '1', '2', 'C', '7', '8', '9', '`', 'Tab', '3', '4']);
+    expect(actions(rows)).toEqual(['Move', 'Strike', 'Special', 'Snag', 'Dash', 'Guard (hold)', 'Super', 'Run', 'Tag']);
     expect(rows[0]?.[0]?.note).toBe('(or arrows)');
   });
 
@@ -42,11 +42,11 @@ describe('tourKeysTouch', () => {
     const rows = tourKeysTouch(true);
     expect(rows).toHaveLength(2);
     expect(rows[0]).toEqual([{ keys: ['Stick'], action: 'Move' }, { keys: ['1', '2'], action: 'Strike' }]);
-    expect(rows[1]?.flatMap((c) => c.keys)).toEqual(['Dash', 'Guard', 'Super', 'Tag', 'Snag']);
+    expect(rows[1]?.flatMap((c) => c.keys)).toEqual(['Dash', 'Guard', 'Super', 'Run', 'Tag', 'Snag']);
   });
 
   it('leaves Snag out without a Snag hero, and uses no banned word', () => {
-    expect(tourKeysTouch(false)[1]?.flatMap((c) => c.keys)).toEqual(['Dash', 'Guard', 'Super', 'Tag']);
+    expect(tourKeysTouch(false)[1]?.flatMap((c) => c.keys)).toEqual(['Dash', 'Guard', 'Super', 'Run', 'Tag']);
     const text = tourKeysTouch(true).flat().map((c) => [...c.keys, c.action].join(' ')).join(' ');
     expect(text).not.toMatch(BANNED);
   });

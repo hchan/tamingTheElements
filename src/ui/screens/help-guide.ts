@@ -14,6 +14,7 @@ export const LESSONS: readonly HelpLesson[] = [
   { title: 'Dash', text: 'A short burst away from danger or through a gap. It needs a moment to recover.' },
   { title: 'Guard', text: 'Hold to take less harm. The guard meter drains while you hold and breaks if it runs dry, so release in time.' },
   { title: 'Charge', text: 'Melee heroes lunge at the foe. Ranged heroes have no charge, so the button is dimmed.' },
+  { title: 'Run', text: 'Ranged heroes Run Away and melee heroes Run Towards the foe, on their own for a few seconds. Press a new direction or Run again to stop; it needs a rest before the next.' },
   { title: 'Weather', text: 'Fills as you fight. Spend it to turn the sky against your enemy.' },
   { title: 'Super', text: 'The meter fills as you land and take hits. At full, one blow turns the fight.' },
   { title: 'Tag', text: 'Swap a wounded hero for a fresh one from your team. The benched hero rests, but tagging has a cooldown.' },
@@ -40,6 +41,7 @@ const BAR: readonly (readonly [string, GameAction, string])[] = [
   ['Trap', 'trap', 'Digit0'],
   ['Element', 'elemental', 'Minus'],
   ['Cleanse', 'cleanse', 'Equal'],
+  ['Run', 'run', 'Backquote'],
 ];
 
 /** The action bar, left to right, as the key that fires each box now (so rebinds show). */
