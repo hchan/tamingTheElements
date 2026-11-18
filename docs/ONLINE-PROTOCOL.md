@@ -207,7 +207,7 @@ burst-after-stall behaviour of TCP; a WebSocket-style netsim mode that holds all
 | Input delay needed at 120 ms one way | about 6 ticks at 50 Hz would hide it in plain lockstep; rollback window 6 covers it | estimate; NETCODE.md measured only up to 120 ms with its fake network |
 | Match length | about 90 s | estimate |
 
-Using `batchEvery > 1` needs a session option (not present today: the session sends every update [fact]) and a decision on the input delay floor (open question 2).
+Using `batchEvery > 1` needs a decision on the input delay floor (open question 2). The session option `LockstepOptions.batchEvery` now exists (default 1); measured costs are in [ONLINE-MEASURE.md](ONLINE-MEASURE.md).
 Input is 2 bytes per tick, so `batchEvery = 3` still fits 64 inputs with large margin.
 
 ## 10. Open questions / what the backend may not satisfy
