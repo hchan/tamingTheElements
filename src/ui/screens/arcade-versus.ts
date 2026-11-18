@@ -671,13 +671,16 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     if (l) l.textContent = text;
   };
   const heroNames = ['player', 'partner', 'partner2', 'enemy', 'enemyPartner', 'enemyPartner2'] as const;
-  const hint = el('div', 'vsKeys');
+  // The key sheet is folded away: a collapsed <details> that only exists for two players on one screen.
+  const hint = el('details', 'vsKeysFold');
   hint.id = 'arcadeLocalHelp';
-  hint.append(
+  const keys = el('div', 'vsKeys');
+  keys.append(
     keyList('Player 1 keys', 'vsP1', P1_PICK, P1_KEYS),
     keyList('Player 2 keys', 'vsP2', P2_PICK, P2_KEYS),
     el('p', 'vsPads', 'Gamepads work too: the first one connected is Player 1, the second Player 2.'),
   );
+  hint.append(el('summary', 'vsKeysSummary', 'Keys for two players'), keys);
   const set = el('fieldset', 'settingsGroup vsFieldset');
   const legend = el('legend', 'srOnly', 'Fighters');
   const control = (row: HTMLElement): HTMLElement => {
@@ -689,12 +692,20 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     refreshers.push(segmented(row, describedBy));
     return control(row);
   };
-  set.append(
-    legend,
-    choice(select('mode', 'Opponent', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players, same screen' }], o.current.mode)),
+  // "Who plays" is its own full-width choice; Team, AI level and Arena share ONE compact options row (picker-compact.css).
+  const options = el('div', 'vsOptions');
+  options.id = 'arcadeOptsRow';
+  options.setAttribute('role', 'group');
+  options.setAttribute('aria-label', 'Options');
+  options.append(
     choice(select('size', 'Team', [{ value: '1', label: '1v1' }, { value: '2', label: '2v2 tag team' }, { value: '3', label: '3v3 tag team' }], o.current.size), 'arcadeTeamHint'),
     choice(select('level', 'AI level', o.levels, o.current.level)),
     choice(select('stage', 'Arena', [{ value: '', label: 'Random' }, { value: 'fire', label: 'Fire' }, { value: 'water', label: 'Water' }, { value: 'earth', label: 'Earth' }, { value: 'air', label: 'Air' }], o.current.stage ?? ''), 'arcadeStageHint'),
+  );
+  set.append(
+    legend,
+    choice(select('mode', 'Who plays', [{ value: 'ai', label: 'Computer' }, { value: 'local', label: 'Two players, same screen' }], o.current.mode)),
+    options,
     select('player', 'Your race', heroOptions, o.current.player, true),
     select('partner', 'Your partner (2v2)', heroOptions, o.current.partner, true),
     select('partner2', 'Your third hero (3v3)', heroOptions, o.current.partner2, true),
@@ -707,9 +718,6 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   start.id = 'arcadeStart';
   const back = el('a', 'menuButton', 'Back');
   back.href = '#main';
-  const onlineLink = el('a', 'menuLink onlineMenuLink', 'Play online');
-  onlineLink.href = '#online';
-  onlineLink.id = 'arcadeOnlineLink';
   const roster = rosterView(
     o.races,
     () => form.elements as unknown as Record<string, HTMLSelectElement>,
@@ -731,7 +739,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const hints = el('div', 'vsHints');
   hints.append(stageHint, teamHint);
   set.append(roster.node, hints);
-  actions.append(start, fightHint, back, onlineLink);
+  actions.append(start, fightHint, back);
   const scroll = el('div', 'pickScroll');
   // Phone portrait puts the option rows below the hero grid (see picker-compact.css); this strip stays at the top, says what is set and jumps to them.
   const optsJump = el('button', 'vsOptsJump');
@@ -788,18 +796,15 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
     optsJump.setAttribute('aria-expanded', String(on));
     optsJump.textContent = optsJump.textContent.replace(/^[\u25B4\u25BE]/, on ? '\u25B4' : '\u25BE');
   };
-  const optsRow = f['mode']?.closest<HTMLElement>('.vsControl');
-  if (optsRow) {
-    optsRow.id = 'arcadeOptsRow';
-    optsJump.setAttribute('aria-controls', 'arcadeOptsRow');
-  }
+  const optsRow = options;
+  optsJump.setAttribute('aria-controls', 'arcadeOptsRow');
   optsJump.addEventListener('click', () => {
-    const row = f['mode']?.closest<HTMLElement>('.vsControl');
-    row?.scrollIntoView({ block: 'center' });
+    const row = options;
+    row.scrollIntoView({ block: 'center' });
     showOpts(true);
-    row?.querySelector<HTMLElement>('.vsSegment[aria-checked="true"], .vsSegment')?.focus({ preventScroll: true });
+    row.querySelector<HTMLElement>('.vsSegment[aria-checked="true"], .vsSegment')?.focus({ preventScroll: true });
   });
-  if (optsRow && typeof IntersectionObserver !== 'undefined') {
+  if (typeof IntersectionObserver !== 'undefined') {
     new IntersectionObserver((es) => {
       const e = es[es.length - 1];
       if (e) showOpts(e.isIntersecting);

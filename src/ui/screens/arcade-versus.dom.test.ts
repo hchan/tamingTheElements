@@ -88,6 +88,22 @@ describe('arcadePickView (DOM)', () => {
     expect(document.querySelector('label[for="arcadeEnemy"]')?.textContent).toBe('AI race');
   });
 
+  it('has a Who plays choice before the roster, one options row, a collapsed key sheet and no Online link', () => {
+    mount();
+    expect(document.querySelector('label[for="arcadeMode"]')?.textContent).toBe('Who plays');
+    const mode = sel('arcadeMode').closest('.vsControl') as HTMLElement;
+    const opts = document.getElementById('arcadeOptsRow') as HTMLElement;
+    const roster = document.querySelector('.rosterPick') as HTMLElement;
+    expect(mode.compareDocumentPosition(roster) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect([...opts.querySelectorAll('select')].map((s) => s.id)).toEqual(['arcadeSize', 'arcadeLevel', 'arcadeStage']);
+    expect(opts.contains(mode)).toBe(false);
+    const help = document.getElementById('arcadeLocalHelp') as HTMLDetailsElement;
+    expect(help.tagName).toBe('DETAILS');
+    expect(help.open).toBe(false);
+    expect(document.getElementById('arcadeOnlineLink')).toBeNull();
+    expect(document.getElementById('arcadePick')?.textContent).not.toMatch(/Classic|Arcade|ruleset|Capture/);
+  });
+
   it('explains the lower tag-team life only for 2v2 and 3v3', () => {
     mount();
     const h = (): HTMLElement | null => document.getElementById('arcadeTeamHint');

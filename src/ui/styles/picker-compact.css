@@ -286,3 +286,52 @@
     background: #2a2754;
   }
 }
+
+/* Versus (MENU-B): "Who plays" is one full-width choice above everything else; Team, AI level and Arena share ONE compact options row (the
+   .vsOptions wrapper); the key sheet is a collapsed <details>. These come last so they win over the per-viewport order rules above. */
+#menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
+  order: -3;
+  flex: 0 0 100%;
+}
+#menu #arcadePick .vsFieldset > .vsOptions {
+  order: 2;
+  flex: 0 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 1.2em;
+  min-width: 0;
+}
+@media (max-width: 640px) and (orientation: portrait) {
+  /* The hero pick still leads on a phone; the options row follows it (the Options strip jumps there). */
+  #menu #arcadePick .vsFieldset > .vsOptions {
+    order: 0;
+  }
+}
+#menu #arcadePick .vsOptions > .vsControl {
+  flex: 0 1 auto;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25em 0.5em;
+  align-items: center;
+  min-width: 0;
+}
+#arcadePick .vsKeysFold {
+  margin: 0.5em 0 0;
+}
+#arcadePick .vsKeysSummary {
+  display: list-item;
+  min-height: 44px;
+  line-height: 44px;
+  cursor: pointer;
+  font-weight: bold;
+}
+#arcadePick .vsKeysFold > .vsKeys {
+  margin-top: 0.25em;
+}
+@media (max-width: 640px) {
+  #menu #arcadePick .vsOptions > .vsControl {
+    gap: 0 0.4em;
+  }
+}
