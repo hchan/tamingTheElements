@@ -170,6 +170,12 @@ describe('browser-slot', () => {
     expect(readdirSync(join(root, 'tte-locks'))).toHaveLength(1);
     child.kill('SIGTERM');
     await new Promise<void>((res) => child.on('close', () => { res(); }));
+    // The spawned process is the tsx launcher, which relays SIGTERM to the real browser-slot process and may exit before that
+    // process has released its locks (the flake at low load). Wait for the release instead of reading the directory at once.
+    const deadline = Date.now() + 10_000;
+    while ((readdirSync(join(root, 'tte-locks')).length > 0 || existsSync(join(root, 'tte-e2e.lock'))) && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
     expect(readdirSync(join(root, 'tte-locks'))).toEqual([]);
     expect(existsSync(join(root, 'tte-e2e.lock'))).toBe(false);
   }, 30_000);

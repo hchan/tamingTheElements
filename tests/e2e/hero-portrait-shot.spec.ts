@@ -15,18 +15,17 @@ const FRAME_NAME = /^(idle|walk|cast|hurt|guard|dash|ko|victory|tagIn)\/(E|SE|S|
 interface Drawn { id: number; texture: string; frame: string; flipX: boolean; graded: boolean; bodyHeight: number }
 interface Sample { tick: number; drawn: Drawn[] }
 
-/** Runs `ticks` sim ticks one per rendered frame, sampling the sheet probe every `every` ticks. */
+/** Runs `ticks` sim ticks, `every` per rendered frame, sampling the sheet probe every `every` ticks. */
 async function fight(page: Page, ticks: number, every: number): Promise<Sample[]> {
   return page.evaluate<Sample[]>(`(async () => {
     const a = window.__TTE__.arena;
     const out = [];
-    for (let k = 0; k < ${String(ticks)}; k++) {
-      a.step(1);
+    // one rendered frame per sampling group (not per tick): the sheet probe is read once per group either way, so the samples are the same ticks
+    for (let k = 0; k < ${String(ticks)}; k += ${String(every)}) {
+      a.step(${String(every)});
       await new Promise((r) => requestAnimationFrame(r));
-      if (k % ${String(every)} === 0) {
-        const p = await a.sheets();
-        out.push({ tick: k, drawn: (p ? p.characters : []).map((c) => ({ id: c.id, texture: c.texture, frame: c.frame, flipX: c.flipX, graded: c.graded, bodyHeight: c.bodyHeight })) });
-      }
+      const p = await a.sheets();
+      out.push({ tick: k, drawn: (p ? p.characters : []).map((c) => ({ id: c.id, texture: c.texture, frame: c.frame, flipX: c.flipX, graded: c.graded, bodyHeight: c.bodyHeight })) });
     }
     return out;
   })()`);
