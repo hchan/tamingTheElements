@@ -26,6 +26,15 @@ export class ControlLink implements ControlPipe {
     return (this.nextIn - 1) & 0xff;
   }
 
+  /** A new match on the same connection starts a fresh stream (spec section 7, reset rule). */
+  reset(): void {
+    this.nextOut = 0;
+    this.nextIn = 0;
+    this.unacked = [];
+    this.lastSend = 0;
+    this.inbox.length = 0;
+  }
+
   send(message: Uint8Array): void {
     if (message.length === 0 || this.unacked.length >= CTL_MAX_UNACKED) return;
     const ctlSeq = this.nextOut++ & 0xff;

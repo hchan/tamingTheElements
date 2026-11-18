@@ -33,7 +33,7 @@ export type OnlineEvent =
   | { readonly t: 'room-created'; readonly code: string; readonly ttlSec: number }
   | { readonly t: 'room-peer'; readonly joined: boolean }
   | { readonly t: 'match'; readonly matchId: number; readonly slot: number; readonly seed: number; readonly inputDelay: number; readonly simVersion: number; readonly batchEvery: number; readonly resumed: boolean }
-  | { readonly t: 'peer'; readonly status: 'disconnected' | 'back' | 'gone'; readonly graceMs: number }
+  | { readonly t: 'peer'; readonly matchId: number; readonly status: 'disconnected' | 'back' | 'gone'; readonly graceMs: number }
   | { readonly t: 'result-ack'; readonly matchId: number; readonly status: number }
   | { readonly t: 'reconnecting'; readonly attempt: number }
   | { readonly t: 'reconnected'; readonly resumed: boolean }
@@ -116,7 +116,7 @@ type Lobby =
   | { t: 'room-created'; code: string; ttlSec: number }
   | { t: 'room-peer'; joined: boolean }
   | { t: 'match'; matchId: number; slot: number; seed: number; inputDelay: number; simVersion: number; batchEvery: number }
-  | { t: 'peer'; status: 'disconnected' | 'back' | 'gone'; graceMs: number }
+  | { t: 'peer'; matchId: number; status: 'disconnected' | 'back' | 'gone'; graceMs: number }
   | { t: 'result-ack'; matchId: number; status: number };
 const LOBBY_SIZE: Readonly<Record<number, number>> = { 0x02: 9, 0x12: 3, 0x21: 9, 0x23: 2, 0x30: 11, 0x44: 5, 0x51: 3 };
 const PEER = ['disconnected', 'back', 'gone'] as const;
@@ -137,7 +137,7 @@ export function decodeLobby(b: Uint8Array): Lobby | undefined {
     case 0x30: return { t: 'match', matchId: d.getUint8(1), slot: d.getUint8(2), seed: d.getUint32(3), inputDelay: d.getUint8(7), simVersion: d.getUint16(8), batchEvery: d.getUint8(10) };
     case 0x44: {
       const status = PEER[d.getUint8(2)];
-      return status === undefined ? undefined : { t: 'peer', status, graceMs: d.getUint16(3) };
+      return status === undefined ? undefined : { t: 'peer', matchId: d.getUint8(1), status, graceMs: d.getUint16(3) };
     }
     default: return { t: 'result-ack', matchId: d.getUint8(1), status: d.getUint8(2) };
   }
@@ -182,7 +182,8 @@ export class OnlineClient {
   private restUntil = 0;
   private resting: OnlineFailure | undefined;
   private sessionId = 0;
-  private resumedNow = false;
+  /** The last WELCOME said resumed: a MATCH_START with the running matchId is then the same match again (spec section 7). */
+  private resumePending = false;
   private inMatch = false;
   private stopped = false;
   private reconnecting = false;
@@ -204,13 +205,13 @@ export class OnlineClient {
     return ok(this.transport);
   }
 
-  joinQueue(): boolean { return this.sendLobby([0x10, 0]); }
+  joinQueue(): boolean { return this.lobbyAction([0x10, 0]); }
   leaveQueue(): boolean { return this.sendLobby([0x11]); }
-  createRoom(): boolean { return this.sendLobby([0x20]); }
+  createRoom(): boolean { return this.lobbyAction([0x20]); }
   /** False when the text cannot be a room code (spaces and case are forgiven) or the socket is down. */
   joinRoom(text: string): boolean {
     const code = cleanRoomCode(text);
-    return code !== undefined && this.sendLobby([0x22, ...Array.from({ length: code.length }, (_, i) => code.charCodeAt(i))]);
+    return code !== undefined && this.lobbyAction([0x22, ...Array.from({ length: code.length }, (_, i) => code.charCodeAt(i))]);
   }
 
   /** Median round trip of the latest pings, and its grade (spec section 4, Heartbeat). */
@@ -316,7 +317,7 @@ export class OnlineClient {
         cancel();
         if (r.ok) {
           this.hub.cur = ws;
-          this.resumedNow = r.value.resumed;
+          this.resumePending = r.value.resumed;
         } else {
           try { ws.close(); } catch { /* already closed */ }
         }
@@ -347,6 +348,18 @@ export class OnlineClient {
     return { kind: 'server', code, retryAfterSec, status: 0 };
   }
 
+  /** Asking for a queue or a room means the last match is over: the idle reconnect budget applies again. */
+  private lobbyAction(bytes: number[]): boolean {
+    const sent = this.sendLobby(bytes);
+    if (sent) this.leaveMatch();
+    return sent;
+  }
+
+  private leaveMatch(): void {
+    this.inMatch = false;
+    this.resumePending = false;
+  }
+
   private sendLobby(bytes: number[]): boolean {
     if (this.hub.readyState !== 1) return false;
     try {
@@ -373,13 +386,22 @@ export class OnlineClient {
   private lobby(w: Lobby): void {
     switch (w.t) {
       case 'welcome': break; // A duplicate answer is tolerated (spec section 6).
-      case 'match':
+      case 'match': {
+        // Same match again only after a resumed WELCOME and with the running matchId (a duplicate MATCH_START is tolerated); anything else is a new match.
+        const resumed = this.resumePending && this.inMatch && w.matchId === this.transport.matchId;
+        this.transport.startMatch(w.matchId, resumed);
         this.inMatch = true;
-        this.onEvent({ ...w, resumed: this.resumedNow });
+        this.onEvent({ ...w, resumed });
         break;
+      }
       case 'result-ack':
+        if (this.transport.matchId !== undefined && w.matchId !== this.transport.matchId) break; // Answer for an earlier match.
         this.transport.stopRetry();
+        this.leaveMatch();
         this.onEvent(w);
+        break;
+      case 'peer':
+        if (this.transport.matchId === undefined || w.matchId === this.transport.matchId) this.onEvent(w);
         break;
       default:
         this.onEvent(w);

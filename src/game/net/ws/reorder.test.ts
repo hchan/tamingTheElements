@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REORDER_MAX_HELD, REORDER_SKIP_MS, ReorderBuffer } from './reorder';
+import { REORDER_LEAD_MAX, REORDER_MAX_HELD, REORDER_SKIP_MS, ReorderBuffer } from './reorder';
 
 describe('ReorderBuffer', () => {
   it('delivers in order frames straight away', () => {
@@ -52,5 +52,28 @@ describe('ReorderBuffer', () => {
     expect([1, 0, 3, 2].flatMap((i) => r.push((0xfffffffe + i) >>> 0, i, 0))).toEqual([0, 1, 2, 3]);
     expect(r.nextSeq).toBe(2);
     expect(r.push(0xfffffffe, 9, 0)).toEqual([]);
+  });
+
+  it('drops a seq more than REORDER_LEAD_MAX ahead and keeps working', () => {
+    const r = new ReorderBuffer<number>();
+    expect(r.push(REORDER_LEAD_MAX + 1, 1, 0)).toEqual([]);
+    expect(r.pending).toBe(0);
+    expect(r.dropped).toBe(1);
+    expect(r.push(0, 0, 0)).toEqual([0]); // Real frames are not made stale.
+    expect(r.push(1 + REORDER_LEAD_MAX, 2, 0)).toEqual([]); // Exactly at the cap from next = 1: held.
+    expect(r.pending).toBe(1);
+    expect(r.poll(1000)).toEqual([2]);
+  });
+
+  it('applies the cap and the order across the u32 wrap', () => {
+    const r = new ReorderBuffer<number>(0xffffff00);
+    expect(r.push((0xffffff00 + REORDER_LEAD_MAX + 1) >>> 0, 9, 0)).toEqual([]);
+    expect(r.dropped).toBe(1);
+    expect([0xffffff01, 0xffffffff, 0, 0xffffff00].flatMap((s, i) => r.push(s, i, 0))).toEqual([3, 0]);
+    expect(r.nextSeq).toBe(0xffffff02);
+    expect(r.pending).toBe(2);
+    expect(r.poll(1000)).toEqual([1, 2]); // The gap is skipped; order holds across the wrap.
+    expect(r.nextSeq).toBe(1);
+    expect(r.push(0xfffffffe, 7, 0)).toEqual([]);
   });
 });

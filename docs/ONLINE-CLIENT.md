@@ -55,14 +55,23 @@ that time. An in-frame `resting` is an event (the socket closes later, 4011) and
    re-sent by the server and arrives as a `match` event with `resumed: true`). Attempts at 0, 1, 2, 4 s then 4 s again, +0..25 % jitter, capped at 30 s, each with a
    new ticket. The window is 10 s in a match (the server's grace [choice]) and 60 s otherwise [choice]; then `closed` with `network`. A reconnect that is not
    `resumed` (for example while only queued) means the caller must join the queue again.
-7. The transport is created once with a hub socket that survives reconnects, so its `seq` counter and reorder buffer continue (section 7); frames sent while the
-   socket is down are dropped, which the session's redundancy repairs.
+7. The transport is created once with a hub socket that survives reconnects. Within a match its `seq` counter, reorder buffer and ControlLink continue across a
+   reconnect (`startMatch(matchId, true)`); frames sent while the socket is down are dropped, which the session's redundancy repairs.
+8. **Per match.** MATCH_START carries the relay-assigned `matchId` (from 1 per pair). The client calls `transport.startMatch(matchId, resumed)`: for a new match
+   (`resumed = 0`) it resets the BATCH/PAUSE seq, the reorder buffer and ControlLink; for a resume it keeps them. `resumed` is true only when a `resumed = 1` WELCOME
+   preceded it, a match was in progress and the matchId is unchanged, so a duplicate MATCH_START after a resume is harmless and a new pair with matchId 1 is still new.
+   Match-phase frames (BATCH, PAUSE) with another matchId are dropped (`staleMatch`); PEER_STATUS and RESULT_ACK with another matchId are not emitted. The session's
+   `match` option must equal the MATCH_START matchId (it is the packet `match` byte). HASH, DESYNC and RESULT go out with seq 0 and do not use BATCH/PAUSE numbers.
+9. An unsolicited RESULT_ACK `2` (relay-detected hash divergence, or a RESULT whose peer is gone) is handled like any RESULT_ACK of the current match. ERROR `0x0005`
+   (busy, including the queue cap) is an `error` event. A close with code 1000 of an old socket (takeover resume) is ignored because only the current socket's close counts.
+10. `inMatch` (which picks the 10 s versus 60 s reconnect budget) is cleared by RESULT_ACK for the current match and by joining a queue or room again.
 
 ## Tests
 
 `src/testing/net/online-client.test.ts` (fake fetch, fake WebSocket, fake backend, `FakeRelay` for match frames): happy path with two clients, ping and
 grade, rooms, refused and expired tickets, reconnect with backoff and continuing `seq`, giving up, kill switch (HTTP and in frame), version mismatch,
-not configured, malformed frames, network errors and a silent server, Steam plumbing.
+not configured, malformed frames, network errors and a silent server, Steam plumbing, two consecutive matches on one client (rematch and requeue), stale
+PEER_STATUS, the 60 s idle budget after a match, unsolicited RESULT_ACK 2, matchId wrap 255 to 1, busy 0x0005 and a takeover close 1000. `ws-transport.test.ts` covers `startMatch`, the matchId filter and seq 0 for HASH/DESYNC/RESULT.
 
 ## Open points for the spec
 

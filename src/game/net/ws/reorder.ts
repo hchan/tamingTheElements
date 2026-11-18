@@ -1,11 +1,13 @@
 /** Hold at most this many out-of-order frames (docs/ONLINE-PROTOCOL.md section 6, [choice]). */
 export const REORDER_MAX_HELD = 8;
+/** A seq further ahead of `next` than this is dropped, so a bad relay cannot make every real frame stale (spec section 6) [choice]. */
+export const REORDER_LEAD_MAX = 512;
 /** Wait this long (2 ticks) for a gap to fill before skipping ahead [choice]. */
 export const REORDER_SKIP_MS = 40;
 
 /**
  * Per-sender reorder buffer. `push` and `poll` return the items now deliverable, in seq order. Duplicates and stale
- * frames are dropped; a gap that does not fill within `REORDER_SKIP_MS`, or a full buffer, skips ahead (late frames
+ * frames are dropped, as is a seq more than `REORDER_LEAD_MAX` ahead; a gap that does not fill within `REORDER_SKIP_MS`, or a full buffer, skips ahead (late frames
  * are then stale). Time is passed in (no clock reads here). Seq compare is wrap-safe (u32).
  */
 export class ReorderBuffer<T> {
@@ -32,6 +34,10 @@ export class ReorderBuffer<T> {
   push(seq: number, item: T, now: number): T[] {
     const d = (seq - this.next) | 0;
     if (d < 0 || this.held.some((h) => h.seq === seq)) {
+      this.dropped++;
+      return [];
+    }
+    if (d > REORDER_LEAD_MAX) {
       this.dropped++;
       return [];
     }

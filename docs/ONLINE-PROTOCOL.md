@@ -29,7 +29,7 @@ proposes). Estimates must be verified before anything depends on them.
   is the only expected case.
 - `simVersion` (u16, `SIM_VERSION`) rides in HELLO and in MATCH_START. A different sim version in the same room is ERROR `0x000A sim-mismatch`
   (the two clients could never share a hash). Flags/cheats are checked by the existing handshake (`handshake.ts`, `cheats` refused) [fact].
-- The `match` byte inside the reused `Packet` (0..255) is the rematch counter [fact]; `matchId` in the frames below is the same value.
+- `matchId` (u8) is assigned **by the relay**, is 1..255, changes with every match and wraps from 255 back to 1 [choice]; it is never 0, and is sent in MATCH_START; a resumed connection gets the same MATCH_START again, unchanged (section 7). The client passes it as the `match` byte of the reused `Packet` (0..255, the session's rematch counter [fact]), so `matchId` in the frames below and `Packet.match` are the same value. A client drops every match-phase frame (BATCH by its `Packet.match`, PAUSE by its `matchId`) and PEER_STATUS/RESULT_ACK that carry another `matchId` than the one of its latest MATCH_START.
 
 ## 3. Session flow (HTTPS, then WebSocket)
 
@@ -76,7 +76,7 @@ does not know which identity was used. A guest session may be upgraded to a Stea
 
 All frames: `type u8`, then fields. Lengths are in bytes. "Dir": C to S client to server, S to C server to client, both = the server relays the frame
 to the other player unchanged except that it validates size and the sender's slot. **Max** is the encoded size cap; a longer frame is ERROR `0x0002 too-big`
-and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right after the type.
+and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right after the type; only BATCH and PAUSE use it (section 6), HASH, DESYNC and RESULT send `seq 0`.
 
 | Type | Name | Dir | Fields after `type` | Bytes (max) |
 | --- | --- | --- | --- | --- |
@@ -89,14 +89,14 @@ and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right a
 | `0x21` | ROOM_CREATED | S to C | `code 6 x ASCII`, `ttlSec u16` | 9 |
 | `0x22` | ROOM_JOIN | C to S | `code 6 x ASCII` (case-insensitive, server upper-cases) | 7 |
 | `0x23` | ROOM_PEER | S to C | `event u8` (0 = peer joined, 1 = peer left) | 2 |
-| `0x30` | MATCH_START | S to C | `matchId u8`, `slot u8` (0 or 1), `seed u32`, `inputDelay u8`, `simVersion u16`, `batchEvery u8` (ticks between batches) | 11 |
+| `0x30` | MATCH_START | S to C | `matchId u8` (relay-assigned, from 1, see section 2), `slot u8` (0 or 1), `seed u32`, `inputDelay u8`, `simVersion u16`, `batchEvery u8` (ticks between batches) | 11 |
 | `0x31` | SETUP | both | `seq u32`, `ctlSeq u8`, `ackCtl u8`, `n u16`, `n` bytes: ONE control message of the existing setup handshake (a type byte for HELLO, READY, REJECT or REMATCH, then its blob; HELLO carries the `encodeHello` rosters and flags) | 5 + 2 + 2 + 401 = 410 |
 | `0x40` | BATCH | both | `seq u32`, then **exactly one `Packet`** as `encodePacket` writes it | 1 + 4 + 172 = 177 |
-| `0x41` | HASH | C to S | `seq u32`, `matchId u8`, `tick u32`, `hash u32` | 14 |
-| `0x42` | DESYNC | C to S | `seq u32`, `matchId u8`, `tick u32` (first divergent), `localHash u32`, `remoteHash u32` | 18 |
+| `0x41` | HASH | C to S | `seq u32` (always 0), `matchId u8`, `tick u32`, `hash u32` | 14 |
+| `0x42` | DESYNC | C to S | `seq u32` (always 0), `matchId u8`, `tick u32` (first divergent), `localHash u32`, `remoteHash u32` | 18 |
 | `0x43` | PAUSE | both | `seq u32`, `matchId u8`, `flags u8` (bit0 paused, bit1 forfeit: same bits as `PacketFlag` [fact]) | 7 |
-| `0x44` | PEER_STATUS | S to C | `matchId u8`, `event u8` (0 = peer disconnected, 1 = peer back, 2 = peer gone for good), `graceMs u16` | 5 |
-| `0x50` | RESULT | C to S | `seq u32`, `matchId u8`, `winner u8` (0, 1 = slot, 2 = draw), `reason u8` (0 natural, 1 forfeit, 2 timeout, 3 desync), `ticks u32`, `finalHash u32` | 16 |
+| `0x44` | PEER_STATUS | S to C | `matchId u8` (the match the event is about; echoed from MATCH_START), `event u8` (0 = peer disconnected, 1 = peer back, 2 = peer gone for good), `graceMs u16` | 5 |
+| `0x50` | RESULT | C to S | `seq u32` (always 0), `matchId u8`, `winner u8` (0, 1 = slot, 2 = draw), `reason u8` (0 natural, 1 forfeit, 2 timeout, 3 desync), `ticks u32`, `finalHash u32` | 16 |
 | `0x51` | RESULT_ACK | S to C | `matchId u8`, `status u8` (0 agreed, 1 waiting for peer, 2 disagreed) | 3 |
 | `0x60` | PING | C to S | `nonce u32` | 5 |
 | `0x61` | PONG | S to C | `nonce u32` (echoed) | 5 |
@@ -114,7 +114,7 @@ Details:
 - **DESYNC.** Sent by a client whose session set `desync` [fact: `LockstepSession.desync`]. The server records it and ends the match as a draw with `reason 3`; no ranked effect is ever derived from it (there is no cheating arbiter, see Trust).
 - **PAUSE.** Same meaning as the `paused`/`forfeit` bits in `Packet.flags`; sent as its own frame so it works when no batch is flowing (hidden tab throttles timers).
 - **Result submission.** Both clients send RESULT after the sim reports the end. Agreement (same `winner`, `ticks`, `finalHash`) gives RESULT_ACK `0`;
-  a disagreement gives `2`, and the server stores neither as a win. The server does no simulation; a replay upload for verification with
+  a disagreement gives `2`, and the server stores neither as a win. A hash divergence found by the relay arrives as an **unsolicited** RESULT_ACK `2` with the real `matchId` and no preceding RESULT; a RESULT whose peer is gone or swept also gets RESULT_ACK `2`. The client treats every RESULT_ACK of the current match alike: it stops the RESULT retry, leaves the in-match state and emits it, so the app reads `status 2` as the end of the match. The server does no simulation; a replay upload for verification with
   `tools/replay-verify.ts` logic (`parseReplay` + `playReplay`, hash per 50 ticks plus `finalHash`) is a later option [fact for the verifier, design for the upload].
 - **Room code.** 6 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0, O, 1, I) [fact: `rooms.ts` `CODE_ALPHABET`, `CODE_LENGTH`]. Room life 10 min
   [fact: `ROOM_TTL_MS`], a room holds host and one guest, at most 2000 rooms [fact: `MAX_ROOMS`; the hosted backend sets its own cap, estimate]. The pure
@@ -132,7 +132,7 @@ Details:
 | `0x0002` | too-big | Over the frame's max. Close. |
 | `0x0003` | version-mismatch | Protocol version differs; `detail` = server version. "Reload to update", no retry. |
 | `0x0004` | ticket-invalid | Ticket unknown, used or older than 60 s. Fetch a new ticket and reconnect once. |
-| `0x0005` | busy | Already queued or in a room (as `rooms.ts` `busy` [fact]). |
+| `0x0005` | busy | Already queued or in a room (as `rooms.ts` `busy` [fact]), or the queue is full (cap 2000 [choice]). The client emits an `error` event and the link stays up. |
 | `0x0006` | no-room | Code unknown or expired. |
 | `0x0007` | full | Room already has two players. |
 | `0x0008` | full-house | Server at its room cap (`full-house` in `rooms.ts` [fact]). Retry later. |
@@ -145,12 +145,16 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
 
 ## 6. Sequence numbers, reorder and duplicates
 
-- Each sender keeps one `seq` counter **per match**, starting at 0 on MATCH_START, +1 per match-phase frame it sends (BATCH, HASH, DESYNC, PAUSE, RESULT; SETUP is excluded, it has its own `ctlSeq`, see below),
-  wrapping at 2^32 (not reachable: 50 frames/s for a 90 s match [estimate]). The server never renumbers; a relayed frame keeps the sender's `seq`.
+- Only **BATCH and PAUSE are seq-numbered**. Each sender keeps one `seq` counter **per match** shared by those two frame types, starting at 0 at MATCH_START and +1 per BATCH or PAUSE it sends,
+  wrapping at 2^32 (not reachable: 50 frames/s for a 90 s match [estimate]). HASH, DESYNC and RESULT carry `seq 0` (reserved) and are **not part of the seq or reorder rules**: the relay does not
+  forward them, so numbering them would leave gaps in the peer's sequence and make its reorder buffer hold BATCHes for 40 ms about once a second [measurement of the old scheme, reviewer]. They are
+  matched by `matchId`, `tick` and their retry rules below. SETUP is excluded too (it has its own `ctlSeq`, see below). The server never renumbers; a relayed frame keeps the sender's `seq`.
+- A new match on the same connection starts counting again (section 7 for the rule on resume).
 - The receiver keeps `nextSeq` (first not yet delivered) and a small hold buffer (at most 8 frames [choice]):
   - `seq < nextSeq` or already held: **duplicate or stale, dropped**.
+  - `seq` more than `REORDER_LEAD_MAX = 512` ahead of `nextSeq` [choice]: **dropped** (a buggy or hostile relay could otherwise push `nextSeq` far ahead and make every real frame stale).
   - `seq == nextSeq`: delivered, `nextSeq++`, then any consecutive held frames are delivered.
-  - `seq > nextSeq`: held. If the gap does not fill within 40 ms (2 ticks) [choice] or the buffer is full, the receiver **skips ahead**: delivers the held frames in order and
+  - `seq > nextSeq` (within the cap): held. If the gap does not fill within 40 ms (2 ticks) [choice] or the buffer is full, the receiver **skips ahead**: delivers the held frames in order and
     sets `nextSeq` past them. A frame that arrives after being skipped is dropped as stale.
 - Skipping is safe because BATCH is redundant: the next batch re-sends every input the peer has not acked, and `ack` tells the sender what is still needed. Frames
   that are not redundant are **retried by the sender**: DESYNC is resent every 500 ms [choice] until the match ends, RESULT every 500 ms [choice] until RESULT_ACK, and PAUSE is repeated in
@@ -158,7 +162,7 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
 - **SETUP is a reliable, ordered control stream** (the setup handshake needs HELLO before READY and never skip-ahead): each side numbers its control messages with `ctlSeq` (u8, from 0),
   resends the oldest unacknowledged one every 200 ms [choice], puts the highest `ctlSeq` it has delivered in `ackCtl`, delivers only in `ctlSeq` order and drops duplicates. The reorder and skip-ahead rules above do not apply to it.
 - SETUP details (implemented in `src/game/net/ws/`): the `seq u32` field in SETUP is reserved and sent as 0; `ackCtl = 0xFF` means "nothing delivered yet"; a SETUP with `n = 0` is a pure acknowledgement; a sender holds at most 32 unacknowledged control messages [choice].
-- The reorder buffer does not guard against a seq far ahead of `nextSeq` (a buggy relay could make later frames stale); the relay must never skip numbers [open].
+- The relay must never skip BATCH/PAUSE numbers of a sender; the far-ahead cap above is the client's guard if it does.
 - Relay rules: in a queue match slot 0 goes to the player who waited longer, in a room match to the host [choice]; a RESULT retry that arrives after the match record closed (for example by DESYNC) is answered with the current status; HELLO with a resume session is refused while the service is resting [choice].
 - Only match-phase frames are numbered. Control frames (`0x01`-`0x30`) are request/answer and carry no seq; the client tolerates a duplicate answer.
 
@@ -170,6 +174,9 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
 - The client fetches a **new ticket** (`POST /ticket`, session token still valid) and reconnects with HELLO `resumeSession = sessionId` from WELCOME. If the slot is still held,
   WELCOME has `resumed = 1`, the server re-sends MATCH_START (same `matchId`, seed, slot) and tells the peer PEER_STATUS `1`. `seq` counters continue (not reset), so frames in flight
   from before the drop are still correctly de-duplicated. The sessions' redundant batches refill the gap; no replay of the old frames is needed.
+- **Reset rule.** On MATCH_START with `resumed = 0` (a new match, including a rematch, on the same connection) the client resets its BATCH/PAUSE `seq` to 0, its reorder buffer, and the SETUP control link
+  (`nextIn`, `nextOut`, unacked) and drops queued inbound packets. On `resumed = 1` (the same match again) it resets nothing. The client treats a MATCH_START as resumed only when the last WELCOME had `resumed = 1`
+  and it carries the `matchId` already running. A peer's SETUP that arrives before our MATCH_START is lost to the reset; the peer's 200 ms resend repairs it.
 - WELCOME carries no matchId, so after a WELCOME with `resumed = 1` the server always re-sends MATCH_START and the client may see it twice. A HELLO with an unknown `resumeSession` gets WELCOME with `resumed = 0` and the client re-queues.
 - The relay does not buffer or renumber frames for a player who has dropped: frames sent to them during the grace window are dropped, and after PEER_STATUS `1` (back) each client resends its state (the next BATCH covers it).
 - Outside a match (idle or queued) the client keeps reconnecting for 60 s [choice] before giving up; HELLO gets a 10 s timeout for WELCOME [choice].
@@ -207,7 +214,7 @@ burst-after-stall behaviour of TCP; a WebSocket-style netsim mode that holds all
 | Input delay needed at 120 ms one way | about 6 ticks at 50 Hz would hide it in plain lockstep; rollback window 6 covers it | estimate; NETCODE.md measured only up to 120 ms with its fake network |
 | Match length | about 90 s | estimate |
 
-Using `batchEvery > 1` needs a decision on the input delay floor (open question 2). The session option `LockstepOptions.batchEvery` now exists (default 1); measured costs are in [ONLINE-MEASURE.md](ONLINE-MEASURE.md).
+**`batchEvery` stays 1 by default.** `batchEvery = 3` needs `inputDelay >= 4` or a bigger rollback window: a harness run (3000 ticks, window 6) gave, typical link: 6 stalls at `batchEvery 1`/delay 2, 10 at 3/2, 10 at 3/4; bad profile: 770 at 1/2, 1530 at 3/2, 447 at 3/4 [measurement, local harness, virtual clock, my run of the current code; the reviewer's earlier figures differed, so treat all as indicative; see ONLINE-MEASURE.md]. Using `batchEvery > 1` needs a decision on the input delay floor (open question 2). The session option `LockstepOptions.batchEvery` now exists (default 1); measured costs are in [ONLINE-MEASURE.md](ONLINE-MEASURE.md).
 Input is 2 bytes per tick, so `batchEvery = 3` still fits 64 inputs with large margin.
 
 ## 10. Open questions / what the backend may not satisfy
@@ -228,3 +235,10 @@ Input is 2 bytes per tick, so `batchEvery = 3` still fits 64 inputs with large m
 10. **Region and CORS.** Cross-origin HTTPS from the Pages origin and the itch.io origin; both origins must be allowed, and the itch build needs the same base URL baked in.
 11. **WebRTC removal.** Until it is removed, the two transports must coexist: the `Transport` seam (`send`/`receive`) is the only join point, so a `WebSocketTransport` adapter that wraps and unwraps the
     `0x40` frame (adding and checking `seq`) is the natural, small change; the control side (`SETUP`, rematch) replaces the `control` data channel.
+
+
+## Relay decisions the client follows (WP-ONLINE-FIX-CLIENT)
+
+- After a match ends the same socket may QUEUE_JOIN or use rooms again; BATCH/PAUSE seq restart at 0 per match; HASH, DESYNC and RESULT carry seq 0 and the relay never checks it.
+- A takeover resume (a new socket for the same session) closes the **old** socket with close code 1000. The client only reacts to the close of its current socket, so that close is neither an error nor a reconnect trigger.
+- A resume with another identity (ticket subject) than the session's gets WELCOME `resumed = 0`; the relay host passes `ctx.identity`.
