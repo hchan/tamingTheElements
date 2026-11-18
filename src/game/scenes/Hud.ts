@@ -87,6 +87,8 @@ interface ChipLook {
   readonly color: number;
 }
 const PORTRAIT_FRAME = 'portrait';
+/** Portrait phone: gap (logical px) between the name/SUPER text and the bench chips under it. */
+const PORTRAIT_CHIP_GAP = 12;
 /** The same already-installed engraved serif the action bar, timer and banners use (no new font files). */
 const HUD_FONT = 'Georgia, "Times New Roman", serif';
 /** Frames between re-reads of the accessibility prefs (the OS media queries are not free per frame). */
@@ -626,7 +628,7 @@ export class Hud extends Phaser.Scene {
    * Tall portrait view (qa-r84 P5): the boosted names and SUPER labels are about 35 logical px high and would sit on the bench chips
    * (top 58), so the chips, their bars and the tag pill hang lower by the overlap plus a 4 px gap. Landscape and wide views: 0.
    */
-  private dropChips(): void {
+  private dropChips(): void { // QA r105/r106 P2: a 12 px gap (was 4) under the names so the bench chips and TAG word stop crowding the HUD band
     setPhoneHud(isPortraitPlay(this.game));
     if (!isPortraitPlay(this.game)) {
       setChipDrop(0);
@@ -635,7 +637,7 @@ export class Hud extends Phaser.Scene {
     let bottom = 0;
     for (const l of this.labels) if (l.text !== '') bottom = Math.max(bottom, l.y + l.height);
     for (const t of this.meterTexts) if (t) bottom = Math.max(bottom, METER_Y + SEGMENT_H / 2 + t.height / 2);
-    setChipDrop(Math.ceil(bottom + 4 - BENCH_CHIP_Y));
+    setChipDrop(Math.ceil(bottom + PORTRAIT_CHIP_GAP - BENCH_CHIP_Y));
   }
 
   /** The SUPER label's words: `SUPER 33%`, or just `33%` when the life line needs the room. */

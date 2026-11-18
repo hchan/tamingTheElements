@@ -327,6 +327,19 @@ test.describe('phone portrait fight', () => {
   test('portrait 2v2', async ({ page }) => {
     await enterFight(page, 2);
     await shot(page, 'port-2v2-rotate');
+    await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+    await shot(page, 'port-2v2-play');
+    // QA r105/r106 P2 (long gate, untagged: visual layout, boots a 2v2 arena): the nine 2v2 boxes (Tag included) share ONE row, none under 39 CSS px.
+    await page.evaluate(`window.__TTE__.arena.step(120)`);
+    const read = () => page.evaluate<Array<{ y: number; w: number; text: string }>>(`[...document.querySelectorAll('button.touchBtn')].map((e) => { const r = e.getBoundingClientRect(); return { y: Math.round(r.y), w: r.width, text: e.textContent || e.getAttribute('aria-label') || '' }; }).filter((t) => t.w > 0)`);
+    const barOf = (t: Array<{ y: number; w: number; text: string }>) => t.filter((x) => x.w < 60 && x.y > 500); // the bar's boxes; the Strike circles are bigger or higher
+    // The bar re-lays out once the rotate card is gone (a frame or two): poll until it settles instead of a fixed sleep.
+    await expect.poll(async () => new Set(barOf(await read()).map((x) => x.y)).size, { timeout: 10_000 }).toBe(1);
+    const tiles = await read();
+    const bar = barOf(tiles);
+    expect(bar.length, JSON.stringify(tiles)).toBe(9);
+    expect(new Set(bar.map((t) => t.y)).size, JSON.stringify(bar)).toBe(1);
+    for (const t of bar) expect(t.w, t.text).toBeGreaterThanOrEqual(39);
   });
 });
 

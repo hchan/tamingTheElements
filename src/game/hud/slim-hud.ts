@@ -40,7 +40,7 @@ export const getChipDrop = (): number => chipDrop;
 
 /** Portrait phone play (render only, set by the Hud scene): the HUD is drawn about 0.3x, so the hero portraits and bench chips are larger. */
 export const PHONE_PORTRAIT = 92;
-export const PHONE_CHIP_SIZE = 96;
+export const PHONE_CHIP_SIZE = 84;
 let phoneHud = false;
 export function setPhoneHud(on: boolean): void {
   phoneHud = on;
