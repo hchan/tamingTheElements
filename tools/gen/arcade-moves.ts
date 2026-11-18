@@ -37,7 +37,7 @@ export function recordArcadeScript(script: ArcadeScript): ReplayFile {
 }
 
 const ARCADE_FLAGS = { ...DEFAULT_SIM_FLAGS, rulesetArcade: true };
-const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge, trap, elemental, cleanse } = Cmd;
+const { up, down, left, right, primary, secondary, dash, guard, super: sup, weather, swap1, swap2, charge, trap, elemental, cleanse, run } = Cmd;
 
 /**
  * Ticks p2 walks back in from the right wall of the wide Arcade arena (WP 38d, 1920 px) so the pair stands as it did
@@ -435,6 +435,27 @@ function otScript(): ArcadeScript {
   return { file: 'arcade-ot', setup, inputs: buildScript(p1, p2) };
 }
 
+/**
+ * Run Away / Run Towards (FUN-DESIGN 2.29, RUN-2): Fiara (ranged) runs away and Pax (melee) runs towards, each run is
+ * stopped by a second press, a direction press and the 250-tick end, with the cooldown counted from the end.
+ */
+function runScript(): ArcadeScript {
+  const setup: MatchSetup = {
+    simVersion: SIM_VERSION, seed: 0x2a9, flags: ARCADE_FLAGS, chapter: 1, difficulty: 1,
+    p1: [{ character: characterId('fiara'), xp: 1 }],
+    p2: [{ character: characterId('pax'), xp: 1 }],
+  };
+  const p1 = new Track();
+  const p2 = new Track();
+  const h = home(p1, p2, 100, 100);
+  p1.until(h).tap('p1 run away', run, 1, 100).tap('p1 run stops (second press)', run, 1, 1);
+  p2.until(h).tap('p2 run towards', run, 1, 30).step('p2 direction press breaks it', up, 6).wait(1);
+  p1.until(h + 480).tap('p1 run away again (cooldown over)', run, 1, 260); // the full 250 ticks
+  p2.until(h + 480).tap('p2 run towards again', run, 1, 260);
+  p1.until(p2.tick + 20);
+  return { file: 'arcade-run', setup, inputs: buildScript(p1, p2) };
+}
+
 export function arcadeScripts(): ArcadeScript[] {
-  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript(), elementalScript(), ccScript(), otScript()];
+  return [movesScript(), weatherScript(), tagScript(), tag3Script(), trapsScript(), elementalScript(), ccScript(), otScript(), runScript()];
 }

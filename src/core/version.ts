@@ -314,5 +314,9 @@
  *    (commands are 17-bit, CMD_MAX 0x1ffff), Press.run, ArcadeT.dirRise (the last rising direction edge), CHORD_FLAG moves 1 << 10 -> 1 << 15,
  *    ArcadeE gains runUntil and runReadyAt (ARCADE_E 25 -> 27, ARCADE_T 23 -> 25). No behaviour yet; nothing sets bit 16 and the AI never presses it.
  *    Re-record reason: Arcade replay hashes change with the block size, Classic replays change only the simVersion header; balance unchanged.
+ * 88: Arcade only (Classic hashes unchanged). Run Away / Run Towards behaviour on Cmd.run (FUN-DESIGN 2.29; arcade/run.ts, run-move.ts):
+ *    a 250 tick run along the foe line (ranged heroes away, melee towards), cooldown 350 ticks from its end, `runStarted`/`runEnded`
+ *    events (84, 85), view.run and runIn/running, the dash takes the run direction, tag-out ends it. No real input or agent sets bit 16 yet.
+ *    Re-record reason: new arcade-run golden; every other golden changes only the simVersion header.
  */
-export const SIM_VERSION = 87;
+export const SIM_VERSION = 88;

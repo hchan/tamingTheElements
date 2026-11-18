@@ -1,4 +1,4 @@
-import { ChargeEnd } from '../../data/arcade';
+import { ChargeEnd, RUN_AWAY_SPEED_PM, RUN_TOWARDS_SPEED_PM } from '../../data/arcade';
 import { DIR8_X, DIR8_Y, dir8FromSigns } from '../../math/dir8';
 import { cmdAxisX, cmdAxisY, type Command } from '../commands';
 import { SimEventKind, type EventSink } from '../events';
@@ -10,6 +10,7 @@ import { endCharge } from './arcade/charge-move';
 import { canAct, chargeTick, dashTick, inTrapRecovery, trapSlowPm } from './arcade/stun';
 import { dirToward, isDiagonal8, setAim } from './arcade/aim';
 import { isRooted } from './arcade/snag';
+import { isRunning, runDirection, runsAway, runTick } from './arcade/run-move';
 import { chargeWeather } from './arcade/meter';
 import { rockStop, terrainSpeedPm } from './arcade/terrain';
 import { elementalSpeedPm } from './arcade/elemental-buff';
@@ -78,6 +79,7 @@ function restoreAtWall(world: SimWorld, id: number, team: number): void {
 function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sink: EventSink): void {
   const s = world.state;
   stepKnockback(world, id);
+  runTick(s, sink, id);
   rockStop(s, id, s.px[id] ?? 0, s.py[id] ?? 0);
   const x0 = s.x[id] ?? 0;
   const y0 = s.y[id] ?? 0;
@@ -101,11 +103,13 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   }
   const ax = cmdAxisX(cmd);
   const ay = cmdAxisY(cmd);
-  const d = dir8FromSigns(ax, ay);
+  // A run (FUN-DESIGN 2.29) picks the direction itself: a held direction is ignored, and it always faces the foe.
+  const foe = controlledId(world, 1 - team);
+  const running = foe >= 0 && isRunning(s, id);
+  const d = running ? runDirection(world, id, foe) : dir8FromSigns(ax, ay);
   // Auto-face (FUN-DESIGN 2.22): the aim, and the reel facing that follows it, is the foe's direction unless a diagonal is
   // held (the player's override); with no foe the held input decides, as before.
-  const foe = controlledId(world, 1 - team);
-  if (foe >= 0 && !isDiagonal8(d)) {
+  if (foe >= 0 && (running || !isDiagonal8(d))) {
     const toward = dirToward(s, id, foe);
     setAim(s, id, toward);
     s.dir[id] = facingFor(DIR8_X[toward] ?? 0, DIR8_Y[toward] ?? 0, s.dir[id] ?? EAST);
@@ -121,10 +125,12 @@ function arcadeMove(world: SimWorld, id: number, team: number, cmd: Command, sin
   // Exact when no Puddle slows `id`; Gale (FUN-DESIGN 2.24) multiplies in after.
   const tpm = (terrainSpeedPm(s, id) * trapSlowPm(s, id)) / 1000;
   const gale = elementalSpeedPm(s, id);
-  const pm = gale === 1000 ? tpm : (tpm * gale) / 1000;
+  const pm0 = gale === 1000 ? tpm : (tpm * gale) / 1000;
+  const rpm: number = !running ? 1000 : runsAway(s, id) ? RUN_AWAY_SPEED_PM : RUN_TOWARDS_SPEED_PM;
+  const pm = rpm === 1000 ? pm0 : (pm0 * rpm) / 1000;
   const speed = pm === 1000 ? (s.speed[id] ?? 0) : ((s.speed[id] ?? 0) * pm) / 1000;
   // Walk inertia (FUN-DESIGN 2.3a): velocity ramps towards the held direction (stale dash or charge speed is capped first).
-  const vx = approachWalk(Math.min(Math.max(s.vx[id] ?? 0, -speed), speed), d < 0 ? 0 : backwardWalkX(s.x[id] ?? 0, foe >= 0 ? (s.x[foe] ?? 0) : null, (DIR8_X[d] ?? 0) * speed), speed);
+  const vx = approachWalk(Math.min(Math.max(s.vx[id] ?? 0, -speed), speed), d < 0 ? 0 : running ? (DIR8_X[d] ?? 0) * speed : backwardWalkX(s.x[id] ?? 0, foe >= 0 ? (s.x[foe] ?? 0) : null, (DIR8_X[d] ?? 0) * speed), speed);
   const vy = approachWalk(Math.min(Math.max(s.vy[id] ?? 0, -speed), speed), d < 0 ? 0 : (DIR8_Y[d] ?? 0) * speed, speed);
   s.vx[id] = vx;
   s.vy[id] = vy;

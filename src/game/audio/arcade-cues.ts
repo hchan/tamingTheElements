@@ -137,6 +137,8 @@ export const SILENT: Readonly<Partial<Record<keyof Kinds, string>>> = {
   patchHeal: 'terrain feedback is the view work package (WP 32)',
   projectileBlocked: 'terrain feedback is the view work package (WP 32)',
   elementalEnded: 'the HUD slot says it (the name, then its cooldown)',
+  runStarted: 'the HUD slot and the hero moving say it',
+  runEnded: 'the HUD slot says it',
   chargeEnded: 'the arrival hit plays the thump; the charge start plays the dash whoosh',
   cleanse: 'the view plays playSfx(cleanse, element) from the event (fx/cleanse-view, Arena)',
   hazardHit: 'the strike crash plays on the same tick',

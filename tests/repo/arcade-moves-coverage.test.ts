@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CcEnd, CcKind, SUPER_FREEZE_TICKS } from '../../src/core/data/arcade';
+import { CcEnd, CcKind, RunEnd, SUPER_FREEZE_TICKS } from '../../src/core/data/arcade';
 import { Cmd } from '../../src/core/sim/commands';
 import { SimEventKind, type SimEvent } from '../../src/core/sim/events';
 import { createMatch } from '../../src/core/sim/match';
@@ -18,7 +18,7 @@ import { arcadeScripts, recordArcadeScript } from '../../tools/gen/arcade-moves'
 // of leaving a golden that quietly stopped covering it.
 
 const DIR = new URL('../fixtures/replays/', import.meta.url);
-const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental', 'arcade-cc', 'arcade-ot'] as const;
+const FILES = ['arcade-moves', 'arcade-weather', 'arcade-tag', 'arcade-tag3', 'arcade-traps', 'arcade-elemental', 'arcade-cc', 'arcade-ot', 'arcade-run'] as const;
 const K = SimEventKind;
 
 interface Run {
@@ -83,6 +83,7 @@ const trapsRun = runs[4];
 const elemRun = runs[5]?.events ?? [];
 const ccRun = runs[6]?.events ?? [];
 const otRun = runs[7]?.events ?? [];
+const runRun = runs[8]?.events ?? [];
 /** Over-time pulses of status `sid` (18 burning, 19 venom, 20 mending) in the arcade-ot golden. */
 const otPulses = (sid: number): SimEvent[] => of(K.otPulse, otRun).filter((e) => e['status'] === sid);
 /** Crowd-control starts of `cc` (a CcKind) and ends of `cc` for `reason` (a CcEnd) in the arcade-cc golden. */
@@ -252,6 +253,14 @@ describe('scripted Arcade goldens: every mechanic fires', () => {
     expect(ko).toHaveLength(1);
     expect(ko[0]).toMatchObject({ team: 1, tick: deaths[2]?.tick });
     expect(of(K.roundEnded, tag3Run)[0]).toMatchObject({ winner: 0 });
+  });
+
+  it('Run Away and Run Towards: both heroes run, a second press, a direction press and the end all stop a run', () => {
+    const starts = of(K.runStarted, runRun);
+    expect(starts.map((e) => [e.sourceId, e['away']])).toEqual([[0, 1], [1, 0], [0, 1], [1, 0]]);
+    const reasons = (id: number): unknown[] => of(K.runEnded, runRun).filter((e) => e.sourceId === id).map((e) => e['reason']);
+    expect(reasons(0)).toEqual([RunEnd.broken, RunEnd.expired]);
+    expect(reasons(1)).toEqual([RunEnd.broken, RunEnd.expired]);
   });
 
   it('the committed goldens are what the scripts record today', () => {

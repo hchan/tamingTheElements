@@ -11,6 +11,7 @@ import type { SimWorld } from '../../world';
 import { controlledId } from '../movement';
 import { castDir } from './aim';
 import { isRooted } from './snag';
+import { isRunning, runDirection } from './run-move';
 import { pending, Press, usePress } from './buffer';
 import { gainMeter } from './meter';
 import { dashTick, isDashInvulnerable, isFree } from './stun';
@@ -33,7 +34,9 @@ export function startDash(world: SimWorld, sink: EventSink, team: number, raw: C
   if (cancel && (confirm === 0 || g + 1 - confirm > DASH_CANCEL_TICKS)) return;
   s.flags[id] = (s.flags[id] ?? 0) & ~EntityFlag.frozen;
   const held = dir8FromSigns(cmdAxisX(raw), cmdAxisY(raw));
-  const dir = held >= 0 ? held : castDir(s, id);
+  const foe = controlledId(world, 1 - team);
+  const run = foe >= 0 && isRunning(s, id) ? runDirection(world, id, foe) : -1; // a dash in a run goes the run's way (FUN-DESIGN 2.29)
+  const dir = run >= 0 ? run : held >= 0 ? held : castDir(s, id);
   const speed = (s.speed[id] ?? 0) * DASH_SPEED_MULT;
   s.vx[id] = (DIR8_X[dir] ?? 0) * speed;
   s.vy[id] = (DIR8_Y[dir] ?? 0) * speed;

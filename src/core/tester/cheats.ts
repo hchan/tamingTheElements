@@ -101,6 +101,7 @@ export function applyTickCheats(world: SimWorld, opts: TickCheats): void {
       s.arcade[id * ARCADE_E + ArcadeE.dashReadyAt] = 0;
       s.arcade[id * ARCADE_E + ArcadeE.weatherReadyAt] = 0;
       s.arcade[id * ARCADE_E + ArcadeE.cleanseReadyAt] = 0;
+      s.arcade[id * ARCADE_E + ArcadeE.runReadyAt] = 0;
     }
   }
 }
