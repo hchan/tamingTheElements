@@ -263,3 +263,14 @@
     display: none;
   }
 }
+/* Two columns of sections on wide screens (WP MENU-D); a single column on phones and short landscape. */
+@media (min-width: 900px) and (min-height: 501px) {
+  #menu .helpColumns {
+    column-count: 2;
+    column-gap: 1.5em;
+  }
+  #menu .helpColumns > section {
+    break-inside: avoid;
+    margin-top: 0;
+  }
+}

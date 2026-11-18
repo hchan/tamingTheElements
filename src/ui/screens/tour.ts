@@ -4,6 +4,7 @@ import { raceLabel, select } from './arcade-versus';
 import { heroProfile } from './hero-info';
 import { heroDnd } from './hero-dnd';
 import { faceUrl, heroGrid, heroPanel } from './hero-panel';
+import '../styles/tour-pick.css';
 
 /**
  * DOM of the World Tour screens (FUN-DESIGN 2.18, WP-tour-shell): the team picker and plain cards (resume, stage, defeat, game
@@ -247,7 +248,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   const intro = el(
     'p',
     'tourIntro',
-    'Pick three different heroes, then fight your way through nine stages, each a best-of-3 against an AI team: eight element locations, then the Eternal Void. A lost fight can be replayed up to 3 times. Your run is kept in this browser so you can resume it.',
+    'Pick three heroes, then fight through nine stages. Your run is saved in this browser.',
   );
   const races = [{ value: '', label: 'Empty' }, ...o.races.map((r) => ({ value: r, label: raceLabel(r) }))];
   const form = el('form', 'settingsForm heroSelect');
@@ -448,7 +449,7 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   };
   const hint = el('p', 'heroHint');
   hint.id = 'tourHint';
-  const start = el('button', 'menuButton', 'Start tour');
+  const start = el('button', 'menuButton tourStartCta', 'Start tour');
   start.setAttribute('aria-describedby', 'tourHint');
   start.type = 'submit';
   start.id = 'tourStart';

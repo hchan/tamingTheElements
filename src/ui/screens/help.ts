@@ -52,7 +52,10 @@ export function helpScreen(): Screen {
         list.append(li);
       }
       node.append(el('p', 'helpIntro', 'Open a section to read it.'), jumpNav(), list);
-      node.append(howToFight(), modesSection(), arenaSection(), pickerSection(), controlsSection());
+      // Order: fight first, then the keys, then the team, then the extras. Two columns on wide screens (CSS), one on phones.
+      const cols = el('div', 'helpColumns');
+      cols.append(howToFight(), controlsSection(), pickerSection(), modesSection(), arenaSection());
+      node.append(cols);
       const back = el('a', 'menuLink', 'Back');
       back.setAttribute('href', '#main');
       node.append(back);
@@ -68,10 +71,10 @@ export function helpScreen(): Screen {
 /** In-page jump targets. Buttons, not `#id` anchors: the hash router owns location.hash, so an anchor would leave the page. */
 export const HELP_SECTIONS: readonly { readonly label: string; readonly id: string }[] = [
   { label: 'How to fight', id: 'helpLessonsHeading' },
+  { label: 'Controls', id: 'helpControlsHeading' },
+  { label: 'Choosing your heroes', id: 'helpPickerHeading' },
   { label: 'Ways to play', id: 'helpModesHeading' },
   { label: 'Reading the arena', id: 'helpArenaHeading' },
-  { label: 'Choosing your heroes', id: 'helpPickerHeading' },
-  { label: 'Controls', id: 'helpControlsHeading' },
 ];
 
 function focusHeading(t: HTMLElement): void {
