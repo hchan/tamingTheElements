@@ -38,7 +38,7 @@ Mac: weights downloaded (about 14 GB, outside the repo); official timed runs don
 
 | job | Mac median | PC median | ratio | memory (PC) | winner |
 |---|---|---|---|---|---|
-| SDXL base 1024, 28 steps, no offload | 56.1 s (55.7 to 56.2) | 41.3 s (3 runs; spills over 8 GB) | - | 10.7 GB alloc, 14.5 GB reserved (Mac 18.0 GB) | PC offload (see next row) |
+| SDXL base 1024, 28 steps, no offload | 56.1 s (55.7 to 56.2) | 41.3 s (3 runs; spills over 8 GB) | - | 10.7 GB alloc, 14.5 GB reserved (Mac 18.0 GB) | PC with offload, 2.9x (next row) |
 | SDXL base 1024, 28 steps, offload | n/a (Mac runs without offload) | 19.3 s (19.1 to 24.0) | PC 2.9x faster (vs Mac 56.1 s) | 5.3 GB alloc, 7.5 GB reserved | - |
 | SDXL base offload + expandable_segments + empty_cache | n/a | 20.0 s | - | 5.2 GB alloc, 5.4 GB reserved | - |
 | sdxl-turbo 512, 4 steps, batch 1, no offload | 1.49 s | 3.97 s | - | 7.9 GB alloc (Mac 9.5 GB) | Mac, 2.7x |
@@ -49,7 +49,7 @@ Mac: weights downloaded (about 14 GB, outside the repo); official timed runs don
 | img2img sdxl-turbo 512, strength 0.5, no offload | 1.16 s | 2.85 s | - | 7.9 GB (Mac 9.5 GB) | Mac, 2.5x |
 | img2img, offload | n/a | 3.89 s | - | 5.3 GB | - |
 
-Findings so far (PC only):
+Findings (PC, plus Mac comparison in the routing rule):
 
 - 8 GB is the binding constraint. Anything whose peak allocation exceeds about 8 GB (SDXL base without offload, turbo batch 4 without offload) spills into Windows shared memory and runs 2 to 4 times slower. Use `--offload` for SDXL base and for batches.
 - `expandable_segments:True` plus `empty_cache` on sdxl-offload costs about 0.7 s per image (20.0 against 19.3 s, within spread) but cuts reserved memory from 7.5 GB to 5.4 GB, almost equal to the allocated peak (5.2 GB). That is the setting to use if anything else needs the GPU.
