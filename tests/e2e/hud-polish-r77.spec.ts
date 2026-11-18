@@ -67,6 +67,7 @@ test.describe('568x320 touch', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 568, height: 320 } });
 
   test('the hit counter does not sit under the fullscreen toggle', async ({ page }) => {
+    test.setTimeout(180_000); // up to 80 step + screenshot rounds on the mobile profile
     await page.goto(`/?manual=1&seed=11&ff=arcade#versus`);
     await page.getByRole('button', { name: 'Fight!' }).tap();
     await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
