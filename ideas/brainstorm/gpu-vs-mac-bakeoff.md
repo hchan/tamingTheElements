@@ -55,9 +55,16 @@ Findings so far (PC only):
 - `expandable_segments:True` plus `empty_cache` on sdxl-offload costs about 0.7 s per image (20.0 against 19.3 s, within spread) but cuts reserved memory from 7.5 GB to 5.4 GB, almost equal to the allocated peak (5.2 GB). That is the setting to use if anything else needs the GPU.
 - Peak allocated for sdxl-offload is about 5.3 GB and for turbo1 offload about 5.1 GB, so the two do NOT fit together in 8 GB (about 10.4 GB). A turbo1 without offload (7.9 GB) cannot share the card with anything.
 
-Two-at-once test (two turbo1 processes at once): INVALID, not a result. It ran while another agent's Playwright e2e was using the PC (CPU load about 13), so figures are contaminated: two non-offload turbo1 took 41 s and 60 s per image (they spill, 9 GB reserved each), two offload turbo1 took 21 and 22 s median per image with a 174 s first run. The sdxl-offload plus turbo1 pair was not run validly. Re-run on an idle PC is pending, along with the Mac official runs.
+Two-at-once tests. The first attempt overlapped another agent's e2e and is discarded. Re-run after the e2e finished (load was falling, about 2 at the start; the PC was otherwise idle, free RAM stayed above 13 GB):
+
+| pair | per-process median | wall | peak VRAM (nvidia-smi) | verdict |
+|---|---|---|---|---|
+| 2x turbo1, no offload | 41.6 s and 40.8 s per image (alone: 4.0 s) | 315 s | 7.9 GB; each process reserved 9.0 GB | about 10x slower per image, total about 3 images/min against 15 alone: do not |
+| sdxl offload + turbo1 offload, expandable_segments + empty_cache | sdxl 49.7 s (runs 221, 308, 50, 21, 20 s; alone 20 s); turbo1 49.9 s (215, 50, 219, 39, 6 s; alone 3.5 s) | 811 s | 7.9 GB (allocated peaks 5.2 + 5.0 GB, over 8 GB combined) | fits only by thrashing; each job only reaches full speed once the other finishes |
+
+Conclusion: the 8 GB card is one job at a time. Do not run two generation processes together. Total throughput with two at once is worse than running them back to back. (Small caveat: the two-at-once runs overlapped other load only at the start; the 2x turbo1 result matches the earlier contaminated one, so VRAM spill, not CPU, is the cause.)
 
 ### Routing rule (provisional, PC half only)
 
-- On the PC always use offload for SDXL base and for batches; do not run two generation jobs at once (memory and contention).
+- On the PC always use offload for SDXL base and for batches; never run two generation jobs at once (measured: 10x slower per image for 2x turbo1, 2.5x to 60x for sdxl+turbo; queue them).
 - Use the PC for SDXL base 1024 (about 19 s per image) and batched Turbo (1.8 s per image at batch 4 with offload). Single-image turbo is about 3.5 to 4 s on the PC against an informal 1.5 s on the Mac, so small interactive turbo jobs may belong on the Mac. Final rule after the official Mac runs on 2026-11-18.
