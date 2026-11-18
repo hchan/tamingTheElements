@@ -90,7 +90,7 @@ and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right a
 | `0x22` | ROOM_JOIN | C to S | `code 6 x ASCII` (case-insensitive, server upper-cases) | 7 |
 | `0x23` | ROOM_PEER | S to C | `event u8` (0 = peer joined, 1 = peer left) | 2 |
 | `0x30` | MATCH_START | S to C | `matchId u8`, `slot u8` (0 or 1), `seed u32`, `inputDelay u8`, `simVersion u16`, `batchEvery u8` (ticks between batches) | 11 |
-| `0x31` | SETUP | both | `seq u32`, `n u16`, `n` bytes: the existing `encodeHello` blob (rosters, flags) | 5 + 2 + 400 = 407 |
+| `0x31` | SETUP | both | `seq u32`, `ctlSeq u8`, `ackCtl u8`, `n u16`, `n` bytes: ONE control message of the existing setup handshake (a type byte for HELLO, READY, REJECT or REMATCH, then its blob; HELLO carries the `encodeHello` rosters and flags) | 5 + 2 + 2 + 401 = 410 |
 | `0x40` | BATCH | both | `seq u32`, then **exactly one `Packet`** as `encodePacket` writes it | 1 + 4 + 172 = 177 |
 | `0x41` | HASH | C to S | `seq u32`, `matchId u8`, `tick u32`, `hash u32` | 14 |
 | `0x42` | DESYNC | C to S | `seq u32`, `matchId u8`, `tick u32` (first divergent), `localHash u32`, `remoteHash u32` | 18 |
@@ -145,7 +145,7 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
 
 ## 6. Sequence numbers, reorder and duplicates
 
-- Each sender keeps one `seq` counter **per match**, starting at 0 on MATCH_START, +1 per match-phase frame it sends (BATCH, HASH, DESYNC, PAUSE, RESULT, SETUP),
+- Each sender keeps one `seq` counter **per match**, starting at 0 on MATCH_START, +1 per match-phase frame it sends (BATCH, HASH, DESYNC, PAUSE, RESULT; SETUP is excluded, it has its own `ctlSeq`, see below),
   wrapping at 2^32 (not reachable: 50 frames/s for a 90 s match [estimate]). The server never renumbers; a relayed frame keeps the sender's `seq`.
 - The receiver keeps `nextSeq` (first not yet delivered) and a small hold buffer (at most 8 frames [choice]):
   - `seq < nextSeq` or already held: **duplicate or stale, dropped**.
@@ -153,8 +153,10 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
   - `seq > nextSeq`: held. If the gap does not fill within 40 ms (2 ticks) [choice] or the buffer is full, the receiver **skips ahead**: delivers the held frames in order and
     sets `nextSeq` past them. A frame that arrives after being skipped is dropped as stale.
 - Skipping is safe because BATCH is redundant: the next batch re-sends every input the peer has not acked, and `ack` tells the sender what is still needed. Frames
-  that are not redundant (SETUP, DESYNC, PAUSE, RESULT) are **retried by the sender until echoed or answered** (SETUP by the handshake, RESULT by RESULT_ACK) or, for PAUSE, repeated in
-  the next BATCH's `flags`. So the reorder buffer trades a few ms of delay against fewer rollbacks, and its worst case is a late input.
+  that are not redundant are **retried by the sender**: DESYNC is resent every 500 ms [choice] until the match ends, RESULT every 500 ms [choice] until RESULT_ACK, and PAUSE is repeated in
+  the next BATCH's `flags`. When both carry the pause state, either one sets it and the BATCH bit wins on conflict. So the reorder buffer trades a few ms of delay against fewer rollbacks, and its worst case is a late input.
+- **SETUP is a reliable, ordered control stream** (the setup handshake needs HELLO before READY and never skip-ahead): each side numbers its control messages with `ctlSeq` (u8, from 0),
+  resends the oldest unacknowledged one every 200 ms [choice], puts the highest `ctlSeq` it has delivered in `ackCtl`, delivers only in `ctlSeq` order and drops duplicates. The reorder and skip-ahead rules above do not apply to it.
 - Only match-phase frames are numbered. Control frames (`0x01`-`0x30`) are request/answer and carry no seq; the client tolerates a duplicate answer.
 
 ## 7. Reconnect
