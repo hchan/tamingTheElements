@@ -1,8 +1,8 @@
 # Online client (WebSocket relay)
 
 The browser side of [ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md) (the contract; section numbers below refer to it). Code: `src/game/net/ws/config.ts` and
-`online-client.ts`, over the 4a transport (`transport.ts`, `wire.ts`, `control-link.ts`). Status: client and tests only; **no menu entry and no UI**
-use it yet, and the WebRTC path is untouched. Numbers marked **[estimate]** or **[choice]** are not measured.
+`online-client.ts`, over the 4a transport (`transport.ts`, `wire.ts`, `control-link.ts`). Status: the Online menu entry uses it as a guest-first quick match **only when `VITE_ONLINE_URL` is set** (see "Screen" below); builds without it keep
+the WebRTC screen unchanged. Numbers marked **[estimate]** or **[choice]** are not measured.
 
 ## Configuration
 
@@ -65,6 +65,29 @@ that time. An in-frame `resting` is an event (the socket closes later, 4011) and
 9. An unsolicited RESULT_ACK `2` (relay-detected hash divergence, or a RESULT whose peer is gone) is handled like any RESULT_ACK of the current match. ERROR `0x0005`
    (busy, including the queue cap) is an `error` event. A close with code 1000 of an old socket (takeover resume) is ignored because only the current socket's close counts.
 10. `inMatch` (which picks the 10 s versus 60 s reconnect budget) is cleared by RESULT_ACK for the current match and by joining a queue or room again.
+
+## Screen
+
+`src/game/app/online-route.ts` picks the `#online` screen: `onlineConfig().configured` (the only reader of `VITE_ONLINE_URL`) gives `online-quick.ts` (own lazy
+chunk), otherwise the unchanged WebRTC `online-versus.ts`. Old WebRTC `?join=` links in a configured build land on quick match (the link is not read there).
+The screen is a state machine (`online-quick-model.ts`); every async continuation checks a `gen` counter, so a left screen or replaced client never touches the page.
+
+| State | Player sees | Controls |
+|---|---|---|
+| idle | "Find an opponent online. No account needed." | Find, Back |
+| connecting, queued | Connecting, then waiting time | Cancel (sends the queue-leave frame) |
+| matched | Opponent found, hero pick (three heroes) | Ready, Leave |
+| waiting-pick, checking | Waiting for the opponent's pick, then the setup check | Leave |
+| playing | The arena, link line (round trip and loss) | Leave |
+| ended | Winner and rounds, or opponent left | Play again, Back |
+| resting | The service is resting (deadline kept in storage across reload) | Back |
+| update | Another protocol or sim version | Reload, Back |
+| busy, failed | Plain-words message | Try again, Back |
+
+Flow: Find connects (guests only), joins the queue, and on MATCH_START (checked: sim version, slot, input delay 0..8, batch 1..8 **[choice]**) both sides swap
+hero picks and run the setup handshake on the control pipe with the server seed, then the arena starts with the announced timing. A dropped socket that was only
+queued re-queues after `reconnected` with `resumed = 0`. A resting notice during a match is shown when the match ends. The words Classic, Arcade, ruleset, Capture,
+room and friend never appear. Tests: `online-quick.dom.test.ts`, `online-route.dom.test.ts`, `online-quick-model.test.ts`, `online-quick-setup.test.ts`.
 
 ## Tests
 
