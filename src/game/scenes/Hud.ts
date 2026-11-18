@@ -294,7 +294,20 @@ export class Hud extends Phaser.Scene {
       });
       for (let i = side.bench.length; i < 4; i++) this.regenTexts[team * 4 + i]?.setVisible(false);
     }
-    if (this.arcade) this.drawArcade(this.arcade);
+    if (this.arcade) {
+      this.matchLifeFormat();
+      this.drawArcade(this.arcade);
+    }
+  }
+
+  /** One life format on both sides: when one label had to drop "/max" to keep its whole name, the other drops it too (r103 P2: "286" beside "547/547"). */
+  private matchLifeFormat(): void {
+    const [a, b] = this.labels;
+    if (!a || !b || a.text === '' || b.text === '' || a.alpha < 1 || b.alpha < 1) return;
+    const has = (t: string): boolean => /\d+\/\d+/.test(t);
+    if (has(a.text) === has(b.text)) return;
+    const l = has(a.text) ? a : b;
+    l.setText(l.text.replace(/(\d+)\/\d+/, '$1'));
   }
 
   /** Arcade: a dark top band over the crowd (the terrain owns it), fading out down to the floor. */
