@@ -26,8 +26,10 @@ describe('online measurement harness (virtual clock; figures are local, not esti
 
   it('batchEvery 3 cuts messages to about a third and still agrees', async () => {
     const one = await measureMatch({ ticks: 300, batchEvery: 1 });
-    const three = await measureMatch({ ticks: 300, batchEvery: 3 });
+    const three = await measureMatch({ ticks: 300, batchEvery: 3, inputDelay: 4 });
     expect(three.finalHashEqual).toBe(true);
+    // batchEvery 3 needs inputDelay >= 4: at delay 2 the 3-tick batch wait causes stalls (docs/ONLINE-MEASURE.md).
+    expect(three.stalls).toBeLessThanOrEqual(one.stalls + 5);
     expect(three.relayAgreed).toBe(true);
     expect(three.messages.total.perSec).toBeLessThan(one.messages.total.perSec / 2);
   });

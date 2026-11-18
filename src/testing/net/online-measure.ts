@@ -161,6 +161,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
 
   const sockets = [new FakeSocket(), new FakeSocket()] as const;
   const transports = sockets.map((s) => new WebSocketTransport(s, () => clock.ms)) as [WebSocketTransport, WebSocketTransport];
+  for (const t of transports) t.startMatch(matchId, false);
   const sentAt = new Map<string, number>();
   const seen = new Set<string>();
   const latencies: number[] = [];

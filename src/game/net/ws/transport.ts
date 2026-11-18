@@ -37,8 +37,12 @@ export class WebSocketTransport implements Transport {
   lastError: Extract<Frame, { t: 'error' }> | undefined;
   closed = false;
   malformed = 0;
+  /** Match-phase frames dropped for carrying another matchId than the current one. */
+  staleMatch = 0;
+  /** matchId of the latest MATCH_START (`startMatch`); `undefined` before the first (everything is accepted then). */
+  matchId: number | undefined;
   private readonly link: ControlLink;
-  private readonly reorder = new ReorderBuffer<Frame>();
+  private reorder = new ReorderBuffer<Frame>();
   private readonly queue: Uint8Array[] = [];
   private readonly pings = new Map<number, number>();
   private readonly retries = new Map<number, { frame: Resendable; at: number }>();
@@ -56,14 +60,29 @@ export class WebSocketTransport implements Transport {
     socket.addEventListener('close', () => { this.closed = true; });
   }
 
+  /**
+   * MATCH_START arrived (docs/ONLINE-PROTOCOL.md sections 6 and 7). `resumed` false: a new match, so the BATCH/PAUSE seq, the reorder buffer,
+   * the control link, queued packets and retries start again; true: the same match on a new socket, nothing is reset.
+   */
+  startMatch(matchId: number, resumed: boolean): void {
+    this.matchId = matchId;
+    if (resumed) return;
+    this.seq = 0;
+    this.reorder = new ReorderBuffer<Frame>();
+    this.link.reset();
+    this.queue.length = 0;
+    this.retries.clear();
+    this.peerPause = undefined;
+  }
+
   send(packet: Uint8Array): void {
     if (packet.length + 5 > MAX_BATCH_BYTES) return;
     this.raw({ t: 'batch', seq: this.nextSeq(), packet });
   }
 
-  /** Server-bound checkpoint frames. DESYNC and RESULT are repeated until `stopRetry`. */
+  /** Server-bound checkpoint frames (seq 0: only BATCH and PAUSE are numbered). DESYNC and RESULT are repeated until `stopRetry`. */
   sendHash(matchId: number, tick: number, hash: number): void {
-    this.raw({ t: 'hash', seq: this.nextSeq(), matchId, tick, hash });
+    this.raw({ t: 'hash', seq: 0, matchId, tick, hash });
   }
 
   sendPause(matchId: number, flags: number): void {
@@ -71,11 +90,11 @@ export class WebSocketTransport implements Transport {
   }
 
   sendDesync(matchId: number, tick: number, localHash: number, remoteHash: number): void {
-    this.retry({ t: 'desync', seq: this.nextSeq(), matchId, tick, localHash, remoteHash });
+    this.retry({ t: 'desync', seq: 0, matchId, tick, localHash, remoteHash });
   }
 
   sendResult(matchId: number, winner: number, reason: number, ticks: number, finalHash: number): void {
-    this.retry({ t: 'result', seq: this.nextSeq(), matchId, winner, reason, ticks, finalHash });
+    this.retry({ t: 'result', seq: 0, matchId, winner, reason, ticks, finalHash });
   }
 
   /** Stops resending DESYNC and RESULT (on RESULT_ACK or match end). */
@@ -139,6 +158,10 @@ export class WebSocketTransport implements Transport {
     switch (f.t) {
       case 'batch':
       case 'pause':
+        if (this.matchId !== undefined && (f.t === 'batch' ? f.packet[0] : f.matchId) !== this.matchId) {
+          this.staleMatch++;
+          break;
+        }
         for (const d of this.reorder.push((f as Match).seq, f, this.now())) this.deliver(d);
         break;
       case 'setup':

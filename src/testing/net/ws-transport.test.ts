@@ -100,7 +100,7 @@ describe('WebSocketTransport unit behaviour', () => {
     const relay = new FakeRelay(clock, 1);
     return { clock, relay, a: new WebSocketTransport(relay.a, () => clock.ms), b: new WebSocketTransport(relay.b, () => clock.ms) };
   };
-  const pkt = (firstTick: number) => encodePacket({ match: 0, flags: 0, ack: 0, firstTick, inputs: [1], hashes: [] });
+  const pkt = (firstTick: number, match = 0) => encodePacket({ match, flags: 0, ack: 0, firstTick, inputs: [1], hashes: [] });
 
   it('numbers BATCH frames and sets binaryType', () => {
     const { relay, a } = mk();
@@ -123,6 +123,59 @@ describe('WebSocketTransport unit behaviour', () => {
     relay.b.readyState = 1;
     relay.b.send = () => { throw new Error('boom'); };
     expect(() => { b.send(pkt(0)); }).not.toThrow();
+  });
+
+  it('numbers only BATCH and PAUSE: HASH, DESYNC and RESULT carry seq 0 and leave no gap', () => {
+    const { relay, clock, a, b } = mk();
+    a.send(pkt(0));
+    a.sendHash(0, 50, 1);
+    a.send(pkt(1));
+    a.sendDesync(0, 50, 1, 2);
+    a.sendPause(0, 1);
+    a.sendResult(0, 1, 0, 100, 5);
+    a.send(pkt(2));
+    const seqs = relay.a.sent.map((m) => decodeFrame(m)).map((f) => [f?.t, (f as { seq?: number }).seq]);
+    expect(seqs).toEqual([['batch', 0], ['hash', 0], ['batch', 1], ['desync', 0], ['pause', 2], ['result', 0], ['batch', 3]]);
+    relay.advance();
+    expect(b.receive()).toBeDefined();
+    expect(b.receive()).toBeDefined();
+    expect(b.receive()).toBeDefined(); // The batches arrive without waiting 40 ms for a missing number.
+    expect(b.peerPause).toEqual({ matchId: 0, flags: 1 });
+    clock.ms = 0;
+    expect(b.receive()).toBeUndefined();
+  });
+
+  it('startMatch: a new match resets seq, reorder and control; a resume keeps them; other matchIds are dropped', () => {
+    const { relay, a, b } = mk();
+    a.startMatch(1, false);
+    b.startMatch(1, false);
+    a.send(pkt(0, 1));
+    a.send(pkt(1, 1));
+    a.control.send(Uint8Array.of(1));
+    relay.advance();
+    expect([b.receive(), b.receive()].every((p) => p !== undefined)).toBe(true);
+    // Resume: nothing resets.
+    a.startMatch(1, true);
+    a.send(pkt(2, 1));
+    expect(relay.a.sent.filter((m) => m[0] === 0x40).map((m) => (decodeFrame(m) as { seq: number }).seq)).toEqual([0, 1, 2]);
+    // New match: the sender and the receiver start over.
+    a.startMatch(2, false);
+    b.startMatch(2, false);
+    relay.advance();
+    a.send(encodePacket({ match: 2, flags: 0, ack: 0, firstTick: 0, inputs: [1], hashes: [] }));
+    relay.advance();
+    expect(relay.a.sent.filter((m) => m[0] === 0x40).map((m) => (decodeFrame(m) as { seq: number }).seq).at(-1)).toBe(0);
+    expect(b.receive()).toBeDefined();
+    a.control.send(Uint8Array.of(5));
+    relay.advance();
+    b.tick();
+    expect(b.control.receive()).toEqual(Uint8Array.of(5));
+    // Frames of the old match are dropped.
+    relay.b.deliver(encodeFrame({ t: 'batch', seq: 1, packet: pkt(9, 1) }).buffer.slice(0));
+    relay.b.deliver(encodeFrame({ t: 'pause', seq: 2, matchId: 1, flags: 1 }).buffer.slice(0));
+    expect(b.receive()).toBeUndefined();
+    expect(b.staleMatch).toBe(3); // Includes the old-match batch still in flight at the switch.
+    expect(b.peerPause).toBeUndefined();
   });
 
   it('delivers a gap after 40 ms and drops a duplicate', () => {

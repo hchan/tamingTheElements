@@ -52,3 +52,20 @@ nothing is lost, only delayed by up to N-1 updates. `setHidden`, `forfeit` and t
 `batchEvery 3` lands at 70.6 msgs/s against the estimate of about 67: the estimate counts only BATCH frames (2 x 16.7 x 2); PING/PONG, HASH and RESULT add about 3.6
 msgs/s. Stalls rise with `batchEvery` because the input arrives up to 2 updates later on top of 100 ms of link; the stall rate at 3 (250 of 6000 updates, about 4%) is
 near the "poor" threshold in `link-quality.ts`, which supports open question 2 in the protocol spec (input delay floor).
+
+## Stalls by `batchEvery` and input delay (re-measured after WP-ONLINE-FIX-CLIENT)
+
+3000 ticks, rollback window 6, summed over both sessions; measurement, local harness, virtual clock, matchId reset per match. The stall column of the sample table
+above predates the per-match transport reset and is not comparable.
+
+| profile | batchEvery | inputDelay | stalls | hashes equal |
+| --- | --- | --- | --- | --- |
+| typical | 1 | 2 | 6 | yes |
+| typical | 3 | 2 | 10 | yes |
+| typical | 3 | 4 | 10 | yes |
+| bad | 1 | 2 | 770 | yes |
+| bad | 3 | 2 | 1530 | yes |
+| bad | 3 | 4 | 447 | yes |
+
+Guidance: `batchEvery` stays 1 by default. `batchEvery 3` doubles stalls on the bad profile at input delay 2 and only beats `batchEvery 1` there at input delay 4 or with a
+larger rollback window. The unit test for `batchEvery 3` therefore runs at input delay 4 and asserts a stall budget.

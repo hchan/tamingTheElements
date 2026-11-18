@@ -11,12 +11,15 @@ import {
   type OnlineEvent,
   type WsLike,
 } from '../../game/net/ws/online-client';
+import { WebSocketTransport } from '../../game/net/ws/transport';
 import { decodeFrame, encodeFrame } from '../../game/net/ws/wire';
+import { encodePacket } from '../../core/net/packet';
 
 const BASE = 'https://relay.example.invalid';
 const SESSION_ID = 77;
 /** An empty `Packet` (12 bytes, no inputs or hashes). */
 const BATCH = new Uint8Array(12);
+
 
 const ascii = (t: string): number[] => Array.from({ length: t.length }, (_, i) => t.charCodeAt(i));
 /** A constructor that hands back what `make` builds (a function constructor may return an object). */
@@ -63,12 +66,16 @@ const welcome = (ver: number, resumed: number): Uint8Array => {
   b[0] = 0x02; b[1] = ver; d.setUint32(2, SESSION_ID); b[6] = resumed; d.setUint16(7, 64);
   return b;
 };
-const matchStart = (slot: number): Uint8Array => {
+const matchStart = (slot: number, matchId = 1): Uint8Array => {
   const b = new Uint8Array(11);
   const d = new DataView(b.buffer);
-  b[0] = 0x30; b[1] = 3; b[2] = slot; d.setUint32(3, 0xabcdef01); b[7] = 2; d.setUint16(8, 86); b[10] = 1;
+  b[0] = 0x30; b[1] = matchId; b[2] = slot; d.setUint32(3, 0xabcdef01); b[7] = 2; d.setUint16(8, 86); b[10] = 1;
   return b;
 };
+const resultAck = (matchId: number): Uint8Array => Uint8Array.of(0x51, matchId, 0);
+const peerStatus = (matchId: number, event: number): Uint8Array => Uint8Array.of(0x44, matchId, event, 0x27, 0x10);
+/** A BATCH payload whose `Packet.match` byte is `match` and whose `firstTick` is `tick`. */
+const pkt = (match: number, tick = 0): Uint8Array => encodePacket({ match, flags: 0, ack: 0, firstTick: tick, inputs: [], hashes: [] });
 const errorFrame = (code: number, retryAfterSec = 0): Uint8Array => encodeFrame({ t: 'error', code, retryAfterSec, detail: 0 });
 
 /** The backend: HTTP endpoints, tickets (single use, 60 s), HELLO/WELCOME, a queue and a pass-through to a FakeRelay for match frames. */
@@ -79,6 +86,8 @@ class FakeService {
   readonly issued = new Map<string, number>();
   readonly used = new Set<string>();
   sessions = 0;
+  /** The relay assigns matchIds counting up from 1 per pair. */
+  matchNo = 0;
   httpStatus = 200;
   httpRetry = 0;
   refuseSockets = 0;
@@ -131,13 +140,16 @@ class FakeService {
         }
         const resumed = hello.resume === SESSION_ID;
         ws.serve(welcome(this.welcomeVer ?? this.serverVer, resumed ? 1 : 0));
-        if (resumed) ws.serve(matchStart(this.slots.get(ws) ?? 0));
+        if (resumed) ws.serve(matchStart(this.slots.get(ws) ?? 0, this.matchNo));
         break;
       }
       case 0x10:
         ws.serve(Uint8Array.of(0x12, 0, 3));
         this.queue.push(ws);
-        if (this.queue.length === 2) this.queue.splice(0, 2).forEach((q, i) => { this.slots.set(q, i); q.serve(matchStart(i)); });
+        if (this.queue.length === 2) {
+          const [p, q] = this.queue.splice(0, 2) as [TestWs, TestWs];
+          this.startMatch(p, q);
+        }
         break;
       case 0x20:
         ws.serve(Uint8Array.of(0x21, ...ascii('AB23CD'), 2, 88));
@@ -148,6 +160,15 @@ class FakeService {
       default:
         this.pass(ws, b);
     }
+  }
+
+  /** A new match for the pair (queue match or rematch): next matchId, slots 0 and 1. */
+  startMatch(p: TestWs, q: TestWs): void {
+    this.matchNo++;
+    this.slots.set(p, 0);
+    this.slots.set(q, 1);
+    p.serve(matchStart(0, this.matchNo));
+    q.serve(matchStart(1, this.matchNo));
   }
 
   /** Match frames go through the FakeRelay: first socket is side a, second side b. */
@@ -258,9 +279,9 @@ describe('OnlineClient', () => {
 
     const ta = okA.ok ? okA.value : undefined;
     const tb = okB.ok ? okB.value : undefined;
-    ta?.send(BATCH);
+    ta?.send(pkt(1));
     h.svc.relay.advance();
-    expect(tb?.receive()).toEqual(BATCH);
+    expect(tb?.receive()).toEqual(pkt(1));
     await h.step(2000);
     h.svc.relay.advance();
     expect(ta?.rtts.length).toBe(1); // The FakeRelay answers the PING at once (0 ms on the virtual clock).
@@ -336,6 +357,7 @@ describe('OnlineClient', () => {
     const t = r.ok ? r.value : undefined;
     c.joinQueue();
     c.createRoom();
+    h.svc.matchNo = 1;
     (h.svc.sockets[0] as TestWs).serve(matchStart(1));
     t?.send(BATCH);
     t?.send(BATCH);
@@ -354,9 +376,171 @@ describe('OnlineClient', () => {
     expect(h.clock.ms - start).toBe(3000);
     expect(h.svc.hellos.at(-1)).toEqual({ ver: PROTOCOL_VERSION, resume: SESSION_ID });
     expect(h.svc.fetched.filter((p) => p === '/ticket').length).toBe(6);
+    (h.svc.sockets.at(-1) as TestWs).serve(matchStart(1)); // A duplicate MATCH_START after a resume resets nothing.
     t?.send(BATCH);
     const batches = h.svc.sockets.flatMap((s) => s.sent).filter((m) => m[0] === 0x40).map((m) => new DataView(m.buffer).getUint32(1));
     expect(batches).toEqual([0, 1, 2]);
+    expect(events.filter((e) => e.t === 'match').map((e) => (e as { resumed: boolean }).resumed)).toEqual([false, true, true]);
+  });
+
+  /** Two clients connected, wired through the FakeRelay and matched through the queue (match 1). */
+  async function pair(): Promise<{ h: Harness; a: ReturnType<Harness['client']>; b: ReturnType<Harness['client']>; ta: WebSocketTransport; tb: WebSocketTransport; wa: TestWs; wb: TestWs }> {
+    const h = new Harness();
+    h.svc.relay = new FakeRelay(h.clock, 1);
+    const a = h.client();
+    const b = h.client();
+    const ra = a.c.connect();
+    await h.flush();
+    const rb = b.c.connect();
+    await h.flush();
+    const [okA, okB] = [await ra, await rb];
+    if (!okA.ok || !okB.ok) throw new Error('connect failed');
+    const [wa, wb] = [h.svc.sockets[0] as TestWs, h.svc.sockets[1] as TestWs];
+    h.svc.wire(wa, wb);
+    a.c.joinQueue();
+    b.c.joinQueue();
+    await h.flush();
+    return { h, a, b, ta: okA.value, tb: okB.value, wa, wb };
+  }
+  const drain = (t: WebSocketTransport): Uint8Array[] => {
+    const out: Uint8Array[] = [];
+    for (let p = t.receive(); p; p = t.receive()) out.push(p);
+    return out;
+  };
+  const batchSeqs = (w: TestWs): number[] => w.sent.filter((m) => m[0] === 0x40).map((m) => new DataView(m.buffer).getUint32(1));
+
+  it.each([['a rematch (new MATCH_START from the relay)', false], ['a new queue match on the same connections', true]])('plays a second match on the same clients: %s', async (_name, requeue) => {
+    const { h, a, b, ta, tb, wa, wb } = await pair();
+    const relay = h.svc.relay as FakeRelay;
+    // Match 1: BATCH, PAUSE, HASH and RESULT frames use seq numbers on the wire (HASH/RESULT as 0), and a setup message goes through.
+    ta.send(pkt(1, 0));
+    ta.sendHash(1, 50, 7);
+    ta.sendPause(1, 1);
+    ta.send(pkt(1, 1));
+    tb.send(pkt(1, 0));
+    ta.control.send(Uint8Array.of(9, 9));
+    relay.advance();
+    tb.tick();
+    expect(drain(tb)).toEqual([pkt(1, 0), pkt(1, 1)]);
+    expect(tb.control.receive()).toEqual(Uint8Array.of(9, 9));
+    expect(drain(ta)).toEqual([pkt(1, 0)]);
+    expect(batchSeqs(wa)).toEqual([0, 2]); // PAUSE took seq 1, the HASH none.
+    ta.sendResult(1, 0, 0, 100, 5);
+    wa.serve(resultAck(1));
+    wb.serve(resultAck(1));
+    expect(a.events.filter((e) => e.t === 'result-ack')).toHaveLength(1);
+
+    // Match 2.
+    if (requeue) {
+      a.c.joinQueue();
+      b.c.joinQueue();
+      await h.flush();
+    } else h.svc.startMatch(wa, wb);
+    const starts = a.events.filter((e) => e.t === 'match');
+    expect(starts.map((e) => (e as { matchId: number }).matchId)).toEqual([1, 2]);
+    expect(starts.map((e) => (e as { resumed: boolean }).resumed)).toEqual([false, false]);
+    ta.send(pkt(2, 0));
+    tb.send(pkt(2, 0));
+    ta.send(pkt(2, 1));
+    ta.control.send(Uint8Array.of(7));
+    tb.control.send(Uint8Array.of(8));
+    relay.advance();
+    tb.tick();
+    ta.tick();
+    expect(batchSeqs(wa).slice(2)).toEqual([0, 1]); // The counter started again.
+    expect(drain(tb)).toEqual([pkt(2, 0), pkt(2, 1)]);
+    expect(drain(ta)).toEqual([pkt(2, 0)]);
+    expect(tb.control.receive()).toEqual(Uint8Array.of(7));
+    expect(ta.control.receive()).toEqual(Uint8Array.of(8));
+    // A straggler of match 1 is dropped, not delivered.
+    wb.serve(encodeFrame({ t: 'batch', seq: 2, packet: pkt(1, 9) }));
+    wb.serve(encodeFrame({ t: 'pause', seq: 3, matchId: 1, flags: 1 }));
+    expect(drain(tb)).toEqual([]);
+    expect(tb.peerPause).toBeUndefined();
+    expect(tb.staleMatch).toBe(2);
+    // A result acknowledgement of the old match does not stop the current one's retry.
+    ta.sendResult(2, 0, 0, 100, 5);
+    wa.serve(resultAck(1));
+    expect(a.events.filter((e) => e.t === 'result-ack')).toHaveLength(1);
+    wa.serve(resultAck(2));
+    expect(a.events.filter((e) => e.t === 'result-ack')).toHaveLength(2);
+  });
+
+  it('PEER_STATUS of another match is ignored', async () => {
+    const { a, wa, h } = await pair();
+    wa.serve(peerStatus(1, 0));
+    wa.serve(peerStatus(7, 1));
+    expect(a.events.filter((e) => e.t === 'peer')).toEqual([{ t: 'peer', matchId: 1, status: 'disconnected', graceMs: 10_000 }]);
+    expect(h.svc.matchNo).toBe(1);
+  });
+
+  it('after a match the idle reconnect budget (60 s) applies again, not the in-match one (10 s)', async () => {
+    const h = new Harness();
+    const { c, events } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    const w = h.svc.sockets[0] as TestWs;
+    w.serve(matchStart(0, 1));
+    w.serve(resultAck(1));
+    h.svc.refuseSockets = 999;
+    w.drop(1006);
+    await h.step(30_000);
+    expect(events.some((e) => e.t === 'closed')).toBe(false);
+    await h.step(40_000);
+    expect(events.at(-1)).toEqual({ t: 'closed', failure: { kind: 'network' } });
+  });
+
+  it('an unsolicited RESULT_ACK 2 (hash divergence, no RESULT sent) ends the match and is emitted', async () => {
+    const { a, wa } = await pair();
+    wa.serve(Uint8Array.of(0x51, 1, 2));
+    expect(a.events.at(-1)).toEqual({ t: 'result-ack', matchId: 1, status: 2 });
+    wa.serve(Uint8Array.of(0x51, 9, 2)); // Another match: ignored.
+    expect(a.events.filter((e) => e.t === 'result-ack').length).toBe(1);
+  });
+
+  it('wraps the matchId 255 to 1: the next match plays', async () => {
+    const h = new Harness();
+    const { c, events } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    const w = h.svc.sockets[0] as TestWs;
+    w.serve(matchStart(0, 255));
+    w.serve(resultAck(255));
+    w.serve(matchStart(0, 1));
+    expect(events.flatMap((e) => (e.t === 'match' ? [[e.matchId, e.resumed]] : []))).toEqual([[255, false], [1, false]]);
+  });
+
+  it('ERROR busy 0x0005 (queue cap) is an event and the link stays up', async () => {
+    const h = new Harness();
+    const { c, events } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    (h.svc.sockets[0] as TestWs).serve(errorFrame(0x0005));
+    expect(events.at(-1)).toMatchObject({ t: 'error', failure: { kind: 'server', code: 5 } });
+    expect(events.some((e) => e.t === 'closed')).toBe(false);
+  });
+
+  it('a takeover closes the old socket with 1000: not an error and no reconnect or end', async () => {
+    const h = new Harness();
+    const { c, events } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    (h.svc.sockets[0] as TestWs).drop(1006);
+    await h.step(0);
+    await h.step(1000);
+    const n = h.svc.sockets.length;
+    (h.svc.sockets[0] as TestWs).emit('close', { code: 1000 });
+    await h.step(5000);
+    expect(h.svc.sockets.length).toBe(n);
+    expect(events.some((e) => e.t === 'closed' || e.t === 'error')).toBe(false);
+  });
+
+  it('joining the queue again also ends the in-match state', async () => {
+    const h = new Harness();
+    const { c, events } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    (h.svc.sockets[0] as TestWs).serve(matchStart(0, 1));
+    c.createRoom();
+    h.svc.refuseSockets = 999;
+    (h.svc.sockets[0] as TestWs).drop(1006);
+    await h.step(30_000);
+    expect(events.some((e) => e.t === 'closed')).toBe(false);
   });
 
   it('gives up after the grace and tells the transport', async () => {
