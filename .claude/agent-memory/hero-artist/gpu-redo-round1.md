@@ -35,3 +35,10 @@ Round GPU-1 (2026-11-17): 48 candidates (4 per hero) with SDXL base 28 steps CFG
 - Timings: 84 imgs in 1460 s, img2img median 16.7 s, text2img 18.2 s, temp max 50 C, peak alloc 5.5 GB. gen6.py in the worktree .scratch/ and PC ~/tte-gpu.
 - scp to the PC works with `scp file hchan@HOST:C:/Users/hchan/x` then `wsl ... cp /mnt/c/Users/hchan/x ~/tte-gpu/` (base64 on the command line is too long for scripts). Fetch results with `tar | base64 -w0` over ssh, decode on the Mac. Backgrounded foreground ssh job + polling loop (each tool call auto-backgrounds after 180 s) worked.
 - Owner verdict: still none; G0 open.
+
+## Round 6 (2026-11-17)
+- Text2img with "a transparent glass water sculpture of <animal>" x6 seeds/hero, CFG 6-8 (36 imgs, ~19-25 s each, <=45 C): nykra, abyssor, hyalia (cloud jelly) are real wins; glimmaw still has no lure (0 of 30+); zephra and vortigal stay realistic animals (cloud wording ignored; "solid cloud sculpture" = bird statue).
+- Word "sculpture" adds plinths/bowls/desk (photo look). Next time use "creature/spirit", add "no base, no pedestal, floating". CFG 6.0 sometimes tiles repeats; CFG showed no consistent effect otherwise.
+- ControlNet skipped: no controlnet weights cached on the PC, no opencv; needs a go-ahead before downloading (canny SDXL ~2.5 GB fp16, Apache-2.0).
+- Tool quirks: in zsh keep ssh opts inline (a $K variable word-splits wrongly); put WSL commands with pipes in a script scp'd to C:/Users/hchan and run with `wsl -d Ubuntu -- bash /mnt/c/Users/hchan/x.sh` (cmd parses `|`). Worktree had no node_modules: symlink the main checkout's for vitest.
+- Owner verdict: still none; G0 open.
