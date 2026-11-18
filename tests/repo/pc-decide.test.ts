@@ -31,9 +31,9 @@ describe('probe-state table', () => {
     ['down, allowMac lifts limit -> mac', ask({ kind: 'flake', allowMac: true }), down, 1, 0, 'mac'],
     ['busy under 10 min -> wait', ask(), busy, 1, 599, 'wait'],
     ['busy over 10 min, short -> mac', ask(), busy, 1, 600, 'mac'],
-    ['busy, full suite waits past 10 min', ask({ kind: 'run', lane: 'full', tests: 300 }), busy, 1, 900, 'wait'],
-    ['busy, full suite gives up at 30 min -> fail 95', ask({ kind: 'run', lane: 'full', tests: 300 }), busy, 1, 1800, 'fail 95'],
-    ['busy, policy fail -> fail 95', ask({ policy: 'fail' }), busy, 1, 0, 'fail 95'],
+    ['busy, full suite queues on the PC', ask({ kind: 'run', lane: 'full', tests: 300 }), busy, 1, 900, 'pc full'],
+    ['busy, full suite at 30 min still queues on the PC', ask({ kind: 'run', lane: 'full', tests: 300 }), busy, 1, 1800, 'pc full'],
+    ['busy, policy fail -> pc queue', ask({ policy: 'fail' }), busy, 1, 0, 'pc short'],
     ['frames stall, short -> mac', ask(), frames, 1, 0, 'mac'],
     ['frames stall, full -> fail 96', ask({ kind: 'run', tests: 300, lane: 'full' }), frames, 1, 0, 'fail 96'],
     ['disk -> mac for short', ask(), disk, 1, 0, 'mac'],
@@ -88,8 +88,7 @@ describe('after-PC-exit table', () => {
     ['255 -> attach', pcExit(255), live(), 'attach'],
     ['94 -> mac', pcExit(94), down, 'mac'],
     ['95 -> mac', pcExit(95), busy, 'mac'],
-    ['96 fresh stall -> mac', pcExit(96, { stallSec: 60 }), frames, 'mac'],
-    ['96 old stall -> retry pc', pcExit(96, { stallSec: 700 }), live(), 'pc short'],
+    ['96 -> mac', pcExit(96), frames, 'mac'],
     ['92 -> retry pc', pcExit(92), live(), 'pc short'],
     ['92 PC down -> mac', pcExit(92), down, 'mac'],
     ['3 upload -> retry pc', pcExit(3, { stage: 'upload' }), live(), 'pc short'],
@@ -113,7 +112,7 @@ describe('after-PC-exit table', () => {
   it('full suite never falls back after a PC failure', () => {
     for (const x of [94, 95, 96, 97, 98, 99, 255]) {
       const a = ask({ kind: 'run', tests: 400, lane: 'full' });
-      const s = decide(a, down, after(pcExit(x, { stallSec: 1 }), { reattached: true }), 1, 0);
+      const s = decide(a, down, after(pcExit(x), { reattached: true }), 1, 0);
       expect(s).toMatchObject({ do: 'fail', code: x });
     }
   });
@@ -136,7 +135,7 @@ describe('invariants', () => {
 
   it('never Mac after PC exit 0 or 1, never a second Mac attempt, never a third PC attempt', () => {
     for (const a of asks) for (const v of views) for (const x of exits) for (const st of stages) for (const pcA of [1, 2]) for (const macA of [0, 1]) for (const re of [false, true]) {
-      const h: History = { pcAttempts: pcA, macAttempts: macA, reattached: re, last: pcExit(x, { ...(st ? { stage: st } : {}), stallSec: 5 }) };
+      const h: History = { pcAttempts: pcA, macAttempts: macA, reattached: re, last: pcExit(x, { ...(st ? { stage: st } : {}) }) };
       for (const [load, waited] of [[1, 0], [30, 0], [30, 1000]] as const) {
         const s = decide(a, v, h, load, waited);
         if (x === 0 || x === 1) expect(s).toMatchObject({ do: 'fail', code: x });
@@ -149,7 +148,7 @@ describe('invariants', () => {
   it('--pc and --pc-detach never reach the Mac, with or without a policy', () => {
     for (const a of [ask({ pc: true }), ask({ detach: true }), ask({ pc: true, policy: 'mac' })]) {
       for (const v of views) {
-        for (const h of [none, after(pcExit(94)), after(pcExit(96, { stallSec: 1 }))]) expect(decide(a, v, h, 1, 5000).do).not.toBe('mac');
+        for (const h of [none, after(pcExit(94)), after(pcExit(96))]) expect(decide(a, v, h, 1, 5000).do).not.toBe('mac');
       }
     }
   });

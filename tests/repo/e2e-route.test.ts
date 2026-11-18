@@ -1,7 +1,8 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { buildSpec, newId, parseArgs, pickLane, redact, repeatOf, route, runPc, summarize, UsageError, type Deps, type Parsed } from '../../tools/ci/e2e-route';
+import { buildSpec, limitsOf, newId, parseArgs, pickLane, policyOf, redact, repeatOf, route, runPc, runRouted, summarize, UsageError, type Deps, type Io, type Parsed } from '../../tools/ci/e2e-route';
+import type { PcView } from '../../tools/ci/pc-decide';
 import { renderJob } from '../../tools/ci/pc-job';
 import type { Remote } from '../../tools/ci/pc-remote';
 
@@ -29,6 +30,21 @@ describe('parseArgs', () => {
   });
 });
 
+describe('fallback policy and limits', () => {
+  it('parses --pc-fallback; the flag beats TTE_E2E_FALLBACK; bad values throw', () => {
+    expect(P('run', '--pc-fallback', 'wait').fallback).toBe('wait');
+    expect(() => P('run', '--pc-fallback', 'x')).toThrow(UsageError);
+    expect(policyOf(P('run'), {})).toBe('mac');
+    expect(policyOf(P('run'), { TTE_E2E_FALLBACK: 'fail' })).toBe('fail');
+    expect(policyOf(P('run', '--pc-fallback', 'wait'), { TTE_E2E_FALLBACK: 'fail' })).toBe('wait');
+    expect(() => policyOf(P('run'), { TTE_E2E_FALLBACK: 'bogus' })).toThrow(UsageError);
+  });
+  it('reads the limit env vars', () => {
+    expect(limitsOf({})).toMatchObject({ macLoadMax: 14, macLoadWaitSec: 900, pcBusyWaitSec: 600, pcWaitMaxSec: 1800 });
+    expect(limitsOf({ TTE_MAC_LOAD_MAX: '8', TTE_PC_BUSY_WAIT_SEC: 'x' })).toMatchObject({ macLoadMax: 8, pcBusyWaitSec: 600 });
+  });
+});
+
 describe('route table', () => {
   const ALIAS = 'box';
   it('goes remote only with a configured alias', () => {
@@ -41,13 +57,17 @@ describe('route table', () => {
   });
   it('CI, TTE_E2E_LOCAL and --list stay local', () => {
     expect(route(P('run'), { CI: 'true' }, ALIAS)).toEqual({ where: 'local' });
-    expect(route(P('run'), { TTE_E2E_LOCAL: '1' }, ALIAS)).toEqual({ where: 'local' });
+    expect(route(P('run'), { TTE_E2E_LOCAL: '1' }, undefined)).toEqual({ where: 'local' });
     expect(route(P('run', '--', '--list'), {}, ALIAS)).toEqual({ where: 'local' });
   });
   it('--local is refused with a remote unless TTE_ALLOW_MAC_E2E=1; free without one', () => {
     expect(route(P('run', '--local'), {}, ALIAS).where).toBe('refuse');
     expect(route(P('run', '--local'), { TTE_ALLOW_MAC_E2E: '1' }, ALIAS)).toEqual({ where: 'local' });
     expect(route(P('run', '--local'), {}, undefined)).toEqual({ where: 'local' });
+  });
+  it('TTE_E2E_LOCAL=1 counts as --local when a remote is set', () => {
+    expect(route(P('run'), { TTE_E2E_LOCAL: '1' }, ALIAS).where).toBe('refuse');
+    expect(route(P('run'), { TTE_E2E_LOCAL: '1', TTE_ALLOW_MAC_E2E: '1' }, ALIAS)).toEqual({ where: 'local' });
   });
   it('attach, cancel, jobs and status need a remote', () => {
     expect(route(P('run', '--pc-status'), {}, ALIAS)).toEqual({ where: 'remote' });
@@ -213,6 +233,228 @@ describe('runPc against the fake ssh', () => {
     writeFileSync(join(root, 'x'), '');
     expect(await runPc(P('run', '--pc-status'), {}, root, deps('', out))).toBe(0);
     expect(out.text()).toContain('lane short');
+  });
+
+  describe('runRouted (decide loop)', () => {
+    const UP: PcView = { state: 'up', lanes: { short: 'idle', full: 'idle' }, gpuJobs: 0, young: false };
+    const BUSY: PcView = { state: 'busy', why: 'load', lanes: { short: 'busy', full: 'busy' }, gpuJobs: 0, young: false };
+    const DOWN: PcView = { state: 'down', why: 'unreachable' };
+    interface Fake extends Io {
+      views: PcView[];
+      noted: number[];
+      macRuns: string[];
+      slept: number[];
+      load: number;
+      macExit: number[];
+    }
+    const fakeIo = (views: PcView[], macExit: number[] = [0]): Fake => {
+      const f: Fake = {
+        views: [...views],
+        noted: [],
+        macRuns: [],
+        slept: [],
+        load: 1,
+        macExit: [...macExit],
+        probe: () => Promise.resolve(f.views.length > 1 ? (f.views.shift() as PcView) : (f.views[0] as PcView)),
+        noteExit: (c) => void f.noted.push(c),
+        macLoad: () => f.load,
+        sleep: (sec) => {
+          f.slept.push(sec);
+          return Promise.resolve();
+        },
+        local: (_p, reason) => {
+          f.macRuns.push(reason);
+          return Promise.resolve(f.macExit.shift() ?? 0);
+        },
+      };
+      return f;
+    };
+    const failBody = (rc: number): string => `echo x > out/output.log\necho '{"state":"done","rc":${String(rc)},"result":"fail"}' > status.json\nexit ${String(rc)}`;
+    const ranOn = (e: ReturnType<typeof sink>): string => /e2e ran on: (.*)/.exec(e.text())?.[1] ?? '';
+
+    it('PC up and green: runs on the PC, never the Mac, final line names the job', async () => {
+      const io = fakeIo([UP]);
+      const err = sink();
+      expect(await runRouted(P('smoke'), {}, root, deps(okBody, sink(), err), io)).toBe(0);
+      expect(io.macRuns).toEqual([]);
+      expect(io.noted).toEqual([0]);
+      expect(ranOn(err)).toMatch(/^PC \(job \d{8}-\d{6}-short-[0-9a-f]{6}, short lane\) -> exit 0$/);
+    });
+
+    it('never the Mac after PC exit 1 (failing tests are a result)', async () => {
+      const io = fakeIo([UP]);
+      expect(await runRouted(P('run'), {}, root, deps(failBody(1)), io)).toBe(1);
+      expect(io.macRuns).toEqual([]);
+    });
+
+    it('PC down: a short run falls back to the Mac without touching ssh', async () => {
+      const calls = join(root, 'calls');
+      process.env['FAKE_SSH_CALLS'] = calls;
+      const io = fakeIo([DOWN], [0]);
+      const err = sink();
+      expect(await runRouted(P('smoke'), {}, root, deps(okBody, sink(), err), io)).toBe(0);
+      expect(io.macRuns).toHaveLength(1);
+      expect(io.macRuns[0]).toContain('PC down');
+      expect(existsSync(calls)).toBe(false);
+      expect(ranOn(err)).toMatch(/^Mac \(fallback: PC down/);
+    });
+
+    it('PC down: --pc, --pc-detach, --full and fallback=fail never reach the Mac (exit 94)', async () => {
+      for (const args of [['run', '--pc'], ['run', '--pc', '--pc-detach'], ['run', '--full'], ['run', '--pc-fallback', 'fail']]) {
+        const io = fakeIo([DOWN]);
+        expect(await runRouted(P(...args), {}, root, deps(okBody), io)).toBe(94);
+        expect(io.macRuns).toEqual([]);
+      }
+      const io = fakeIo([DOWN]);
+      expect(await runRouted(P('run'), { TTE_E2E_FALLBACK: 'fail' }, root, deps(okBody), io)).toBe(94);
+      expect(io.macRuns).toEqual([]);
+    });
+
+    it('TTE_ALLOW_MAC_E2E=1 lifts the short-only limit', async () => {
+      const io = fakeIo([DOWN]);
+      expect(await runRouted(P('run', '--full'), { TTE_ALLOW_MAC_E2E: '1' }, root, deps(okBody), io)).toBe(0);
+      expect(io.macRuns).toHaveLength(1);
+    });
+
+    const busyDeps = (waits: (number | undefined)[]): Deps => {
+      const d = deps(`echo busy > out/output.log\necho '{"state":"done","rc":95,"result":"error"}' > status.json\nexit 95`);
+      const render = d.render;
+      d.render = (spec) => {
+        waits.push(spec.waitSec);
+        return render(spec);
+      };
+      return d;
+    };
+
+    it('PC lock busy (exit 95): falls back to the Mac; the job waited only the busy cap for the lock', async () => {
+      const waits: (number | undefined)[] = [];
+      const io = fakeIo([UP], [0]);
+      expect(await runRouted(P('run'), {}, root, busyDeps(waits), io)).toBe(0);
+      expect(waits).toEqual([600]);
+      expect(io.noted).toEqual([95]);
+      expect(io.macRuns[0]).toContain('exit 95');
+    });
+
+    it('a run that cannot fall back keeps the lane wait and reports 95', async () => {
+      const waits: (number | undefined)[] = [];
+      const io = fakeIo([UP]);
+      expect(await runRouted(P('run', '--pc'), {}, root, busyDeps(waits), io)).toBe(95);
+      expect(waits).toEqual([undefined]);
+      expect(io.macRuns).toEqual([]);
+    });
+
+    it('unreachable at submit (exit 94 after an up probe) falls back to the Mac', async () => {
+      process.env['FAKE_SSH_DOWN'] = '1';
+      const io = fakeIo([UP, DOWN], [0]);
+      expect(await runRouted(P('run'), {}, root, deps(okBody), io)).toBe(0);
+      expect(io.noted).toEqual([94]);
+      expect(io.macRuns).toHaveLength(1);
+    });
+
+    it('a lost job (93) is retried once on the PC, then goes to the Mac', async () => {
+      const io = fakeIo([UP], [0]);
+      expect(await runRouted(P('run'), {}, root, deps('exit 0'), io)).toBe(0);
+      expect(io.noted).toEqual([93, 93]);
+      expect(io.macRuns).toHaveLength(1);
+    });
+
+    it('busy PC: waits, then runs on the PC once it is up', async () => {
+      const io = fakeIo([BUSY, UP]);
+      expect(await runRouted(P('run'), {}, root, deps(okBody), io)).toBe(0);
+      expect(io.slept).toEqual([30]);
+      expect(io.macRuns).toEqual([]);
+    });
+
+    const rcBody = (rc: number): string => `echo x > out/output.log\necho '{"state":"done","rc":${String(rc)}}' > status.json\nexit ${String(rc)}`;
+
+    it('a job that died of memory (rc 93, state done) is final: exit 93, no Mac run', async () => {
+      const io = fakeIo([UP], [0]);
+      expect(await runRouted(P('run'), {}, root, deps(rcBody(93)), io)).toBe(93);
+      expect(io.noted).toEqual([93]);
+      expect(io.macRuns).toEqual([]);
+    });
+
+    it('frames stall (96) goes to the Mac', async () => {
+      const io = fakeIo([UP], [0]);
+      expect(await runRouted(P('run'), {}, root, deps(rcBody(96)), io)).toBe(0);
+      expect(io.noted).toEqual([96]);
+      expect(io.macRuns[0]).toContain('frames');
+    });
+
+    it('a failed result fetch (exit 3) is final', async () => {
+      const io = fakeIo([UP], [0]);
+      const body = `${okBody}\nrm -rf out\necho x > out`;
+      expect(await runRouted(P('run'), {}, root, deps(body), io)).toBe(3);
+      expect(io.noted).toEqual([3]);
+      expect(io.macRuns).toEqual([]);
+    });
+
+    it('ssh given up (255) reattaches once to the same job and submits nothing new', async () => {
+      // Wrapper: the first two follow calls fail with 255 (budget 0 then gives up), later ones pass through.
+      const count = join(root, 'follows');
+      const wrap = join(root, 'ssh-wrap.sh');
+      writeFileSync(wrap, `#!/bin/bash\nif [[ " $* " == *" follow "* ]]; then echo f >> '${count}'; if [ "$(wc -l < '${count}')" -le 2 ]; then exit 255; fi; fi\nexec '${FAKE}' "$@"\n`, { mode: 0o755 });
+      remote.ssh = wrap;
+      const waits: (number | undefined)[] = [];
+      const d = busyDeps(waits);
+      d.render = ((r) => (waits.push(0), deps(okBody).render(r)));
+      d.follow = { caffeinate: false, backoffMs: 20, budgetMs: 0 };
+      const io = fakeIo([UP], [0]);
+      const err = sink();
+      d.err = err;
+      expect(await runRouted(P('run'), {}, root, d, io)).toBe(0);
+      expect(waits).toHaveLength(1);
+      expect(io.noted).toEqual([255, 0]);
+      expect(io.macRuns).toEqual([]);
+      const ids = [...err.text().matchAll(/PC job (\S+) /g)].map((m) => m[1]);
+      expect(ids).toHaveLength(1);
+      expect(readdirIds(root)).toEqual(ids);
+    });
+
+    it('--pc with a busy probe submits at once (no lane wait override)', async () => {
+      const waits: (number | undefined)[] = [];
+      const io = fakeIo([BUSY]);
+      expect(await runRouted(P('run', '--pc'), {}, root, busyDeps(waits), io)).toBe(95);
+      expect(waits).toEqual([undefined]);
+      expect(io.slept).toEqual([]);
+    });
+
+    it('Ctrl-C while waiting returns 130 with no job and no Mac run', async () => {
+      const io = fakeIo([BUSY]);
+      const ctl = new AbortController();
+      io.sleep = (sec) => {
+        io.slept.push(sec);
+        ctl.abort();
+        return Promise.resolve();
+      };
+      expect(await runRouted(P('run'), {}, root, deps(okBody), io, ctl.signal)).toBe(130);
+      expect(io.slept).toEqual([30]);
+      expect(io.macRuns).toEqual([]);
+      expect(io.noted).toEqual([]);
+    });
+
+    it('PC down and the Mac overloaded: waits, then gives up with exit 89', async () => {
+      const io = fakeIo([DOWN]);
+      io.load = 30;
+      const err = sink();
+      expect(await runRouted(P('run'), { TTE_MAC_LOAD_WAIT_SEC: '240' }, root, deps(okBody, sink(), err), io)).toBe(89);
+      expect(io.slept.reduce((a, b) => a + b, 0)).toBe(240);
+      expect(io.macRuns).toEqual([]);
+      expect(err.text()).toMatch(/no runner/);
+    });
+
+    it('Mac exit 75 (no browser slot) goes back to the PC when it is up', async () => {
+      const io = fakeIo([DOWN, UP], [75]);
+      expect(await runRouted(P('run'), {}, root, deps(okBody), io)).toBe(0);
+      expect(io.macRuns).toHaveLength(1);
+      expect(io.noted).toEqual([0]);
+    });
+
+    it('the Mac result is final (a red Mac run is not rerun on the PC)', async () => {
+      const io = fakeIo([DOWN, UP], [1]);
+      expect(await runRouted(P('run'), {}, root, deps(okBody), io)).toBe(1);
+      expect(io.noted).toEqual([]);
+    });
   });
 });
 

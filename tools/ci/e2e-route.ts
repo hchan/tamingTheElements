@@ -1,22 +1,32 @@
 /**
  * The e2e router behind `pnpm e2e`, `e2e:smoke`, `e2e:pages`, `e2e:itch`, `e2e:flake`, `e2e:remote` and `e2e:local`:
  *   tsx tools/ci/e2e-route.ts <run|smoke|pages|itch|flake> [router flags] [-- playwright args]
- * With a remote configured (TTE_REMOTE, else `git config tte.remote`: an ssh alias) the run goes to the GPU PC: the worktree is
- * snapshotted (tools/ci/pc-snapshot.ts), a job is rendered (pc-job.ts), uploaded and followed (pc-remote.ts), and the report and
- * failures are copied to .scratch/remote-e2e/<id>/. Without a remote, or with CI, TTE_E2E_LOCAL=1, `--list` or `--local`, the old
- * local behaviour (tools/ci/browser-slot.ts) runs unchanged. Router flags are exact tokens: --pc --local --smoke --full
- * --workers N --pc-lane <short|full> --pc-include <p> --pc-fetch <p> --pc-detach --pc-attach <id> --pc-cancel <id> --pc-jobs --pc-status.
- * Exit codes: Playwright's 0/1, 2 usage, 3 upload, 92 bundle, 93 job lost, 94 PC unreachable, 95 PC busy, 96 frames, 124 hard
- * timeout, 255 ssh given up. Output is redacted (addresses, user@host, home paths). Plan: ~/claudetmp/plans/e2e-on-4060-plan.md (R3).
+ * With a remote configured (TTE_REMOTE, else `git config tte.remote`: an ssh alias) the PC is the first choice: a cached probe
+ * (pc-probe.ts) and the pure decision function (pc-decide.ts) pick the next step in a loop: run on the PC (snapshot via
+ * pc-snapshot.ts, job via pc-job.ts, upload and follow via pc-remote.ts, results copied to .scratch/remote-e2e/<id>/), wait, or
+ * fall back to the Mac. Only SHORT runs (<= 150 tests incl. repeats; run/smoke/pages/itch; not --pc, --pc-detach, --full or a full
+ * lane) may fall back, through the browser slot (tools/ci/browser-slot.ts) with a FALLBACK banner and a Mac load guard. Never the
+ * Mac after a PC exit 0 or 1. Policy: `--pc-fallback <mac|wait|fail>` or TTE_E2E_FALLBACK (default mac; --pc/--pc-detach force fail).
+ * Without a remote, or with CI or `--list`, the old local behaviour runs unchanged. `--local` and TTE_E2E_LOCAL=1 are refused while
+ * a remote is configured unless TTE_ALLOW_MAC_E2E=1. Env: TTE_MAC_LOAD_MAX (14), TTE_MAC_LOAD_WAIT_SEC (900), TTE_PC_BUSY_WAIT_SEC
+ * (600), TTE_PC_WAIT_MAX_SEC (1800), TTE_PC_PROBE_TTL_SEC (60). Router flags are exact tokens: --pc --local --smoke --full
+ * --workers N --pc-lane <short|full> --pc-include <p> --pc-fetch <p> --pc-detach --pc-attach <id> --pc-cancel <id> --pc-jobs
+ * --pc-status --pc-fallback <p>.
+ * Exit codes: Playwright's 0/1, 2 usage, 3 upload, 89 no runner (PC unavailable and the Mac too loaded), 92 bundle, 93 job lost,
+ * 94 PC unreachable, 95 PC busy, 96 frames, 97 PC needs setup, 124 hard timeout, 255 ssh given up. Last line on stderr (remote
+ * configured): `e2e ran on: PC (job <id>, <lane> lane) -> exit N` or `e2e ran on: Mac (fallback: <reason>) -> exit N`.
+ * Output is redacted (addresses, user@host, home paths). Plan: ~/claudetmp/plans/pc-first-fallback-plan.md (F3).
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
+import { decide, DEFAULT_LIMITS, macEligible, type Ask, type History, type Limits, type PcView, type Policy, type Step } from './pc-decide';
 import { LANES, renderJob, type JobSpec, type LaneName } from './pc-job';
 import * as pc from './pc-remote';
 import { PcError, type JobStatus, type Remote } from './pc-remote';
+import { cacheFile, probe as realProbe, keyOf, noteExit, readCache, writeCache } from './pc-probe';
 import { planSource, type SourcePlan } from './pc-snapshot';
 
 export type Kind = 'run' | 'smoke' | 'pages' | 'itch' | 'flake';
@@ -33,6 +43,7 @@ export interface Parsed {
   cancel?: string;
   jobs: boolean;
   status: boolean;
+  fallback?: Policy;
   rest: string[];
 }
 type Env = Readonly<Record<string, string | undefined>>;
@@ -72,7 +83,11 @@ export function parseArgs(argv: readonly string[]): Parsed {
       p.lane = v;
     } else if (a === '--pc-include') p.include.push(val(i++, a));
     else if (a === '--pc-fetch') p.fetch.push(val(i++, a));
-    else if (a === '--pc-attach') p.attach = val(i++, a);
+    else if (a === '--pc-fallback') {
+      const v = val(i++, a);
+      if (v !== 'mac' && v !== 'wait' && v !== 'fail') throw new UsageError('--pc-fallback is mac, wait or fail');
+      p.fallback = v;
+    } else if (a === '--pc-attach') p.attach = val(i++, a);
     else if (a === '--pc-cancel') p.cancel = val(i++, a);
     else if (a === '--workers' && p.kind !== 'flake') {
       const n = Number.parseInt(val(i++, a), 10);
@@ -97,8 +112,8 @@ export type Route = { where: 'local' } | { where: 'remote' } | { where: 'refuse'
 export function route(p: Parsed, env: Env, alias: string | undefined): Route {
   const admin = p.attach !== undefined || p.cancel !== undefined || p.jobs || p.status;
   if (admin) return alias ? { where: 'remote' } : { where: 'refuse', why: 'no PC configured (git config tte.remote <ssh alias> or TTE_REMOTE)' };
-  if (env['CI'] || env['TTE_E2E_LOCAL'] === '1' || p.rest.includes('--list')) return { where: 'local' };
-  if (p.mode === 'local') {
+  if (env['CI'] || p.rest.includes('--list')) return { where: 'local' };
+  if (p.mode === 'local' || env['TTE_E2E_LOCAL'] === '1') {
     if (alias && env['TTE_ALLOW_MAC_E2E'] !== '1') return { where: 'refuse', why: 'browser e2e runs on the GPU PC (pnpm e2e); a Mac run needs the coordinator: TTE_ALLOW_MAC_E2E=1' };
     return { where: 'local' };
   }
@@ -139,13 +154,17 @@ function dropFlags(args: readonly string[], names: readonly string[]): string[] 
   }
   return out;
 }
+/** Tests the filters select times the repeat count; undefined when Playwright cannot say. */
+export function testsOf(p: Parsed, count: Counter): number | undefined {
+  const base = kindArgs(p);
+  const n = count(p.kind === 'flake' ? dropFlags(base, ['--repeat', '--summary-json']) : dropFlags(base, ['--repeat-each']));
+  return n === undefined ? undefined : n * repeatOf(base);
+}
 export function pickLane(p: Parsed, count: Counter): LaneName {
   if (p.lane) return p.lane;
   if (p.full) return 'full';
-  const base = kindArgs(p);
-  const n = count(p.kind === 'flake' ? dropFlags(base, ['--repeat', '--summary-json']) : dropFlags(base, ['--repeat-each']));
-  const reps = repeatOf(base);
-  return n === undefined || n * reps > LANE_TEST_LIMIT ? 'full' : 'short';
+  const n = testsOf(p, count);
+  return n === undefined || n > LANE_TEST_LIMIT ? 'full' : 'short';
 }
 
 /** Hide addresses, user@host and home paths: output gets pasted into ideas and commits. */
@@ -243,11 +262,27 @@ function report(id: string, sha: string, lane: LaneName, workers: number, st: Jo
 }
 
 /** Run one job on the PC end to end; returns the process exit code. `signal` aborts (and cancels the job). */
-export async function runRemote(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal): Promise<number> {
+export interface Note {
+  id?: string;
+  lane?: LaneName;
+  stage?: 'upload' | 'fetch' | 'memory';
+}
+export interface RemoteOpts {
+  /** Lane chosen by the router (default: pickLane). */
+  lane?: LaneName;
+  /** Seconds to wait for the lane lock before exit 95 (default: the lane's own wait). */
+  lockWaitSec?: number;
+  /** Filled in: what happened, for the router's decision. */
+  note?: Note;
+}
+export async function runRemote(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal, o: RemoteOpts = {}): Promise<number> {
   for (const bad of ['--headed', '--ui', '--debug']) if (p.rest.includes(bad)) throw new UsageError(`${bad} is not possible on the PC (headless only)`);
   if (!(await pc.ping(d.remote))) throw new PcError('PC unreachable (ssh failed)', pc.EXIT.unreachable);
-  const lane = pickLane(p, d.count);
+  const lane = o.lane ?? pickLane(p, d.count);
   const id = newId(lane);
+  const note = o.note ?? {};
+  note.id = id;
+  note.lane = lane;
   const dir = resolve(cwd, '.scratch', 'remote-e2e', id);
   const jobDir = join(dir, 'job');
   mkdirSync(jobDir, { recursive: true });
@@ -258,22 +293,25 @@ export async function runRemote(p: Parsed, env: Env, cwd: string, d: Deps, signa
     throw new UsageError(`snapshot failed: ${(e as Error).message}`);
   }
   const spec = buildSpec(p, id, lane, source);
+  if (o.lockWaitSec !== undefined) spec.waitSec = o.lockWaitSec;
   const workers = p.workers ?? LANES[lane].workers;
   const { jobSh, startSh } = d.render(spec);
   writeFileSync(join(jobDir, 'job.sh'), jobSh, { mode: 0o755 });
   writeFileSync(join(jobDir, 'start.sh'), startSh, { mode: 0o755 });
   writeFileSync(join(jobDir, 'meta.json'), `${JSON.stringify({ id, lane, sha: source.sha, bytes: source.bytes, kind: p.kind })}\n`);
+  note.stage = 'upload';
   const sub = await pc.submit(d.remote, id, jobDir);
+  delete note.stage;
   rmSync(jobDir, { recursive: true, force: true });
   d.err.write(`PC job ${id} (${lane}, ${source.ref ? 'snapshot' : 'sha'} ${source.sha.slice(0, 7)}${sub.detached ? '' : ', foreground'})\n`);
   if (p.detach) {
     d.out.write(`detached: pnpm e2e:remote -- --pc-attach ${id} | --pc-cancel ${id}\n`);
     return 0;
   }
-  return await followAndReport(d, id, source.sha, lane, workers, dir, env, signal, sub.detached);
+  return await followAndReport(d, id, source.sha, lane, workers, dir, env, signal, sub.detached, note);
 }
 
-async function followAndReport(d: Deps, id: string, sha: string, lane: LaneName, workers: number, dir: string, env: Env, signal: AbortSignal | undefined, detached?: boolean): Promise<number> {
+async function followAndReport(d: Deps, id: string, sha: string, lane: LaneName, workers: number, dir: string, env: Env, signal: AbortSignal | undefined, detached?: boolean, note: Note = {}): Promise<number> {
   const out = { write: (c: Buffer | string): unknown => d.out.write(redact(c.toString())) };
   const err = { write: (c: Buffer | string): unknown => d.err.write(redact(c.toString())) };
   const st = await pc.follow(d.remote, id, out, { err, ...(detached === undefined ? {} : { detached }), ...(signal ? { signal } : {}), ...d.follow });
@@ -283,13 +321,17 @@ async function followAndReport(d: Deps, id: string, sha: string, lane: LaneName,
     return 130;
   }
   let code = pc.exitCodeOf(st);
+  if (st.state !== 'lost' && code === 93) note.stage = 'memory';
   if (st.state !== 'unreachable') {
     mkdirSync(dir, { recursive: true });
     try {
       await pc.fetchResults(d.remote, id, dir);
     } catch (e) {
       d.err.write(`${redact((e as Error).message)}\n`);
-      if (code === 0) code = pc.EXIT.upload;
+      if (code === 0) {
+        code = pc.EXIT.upload;
+        note.stage = 'fetch';
+      }
     }
     report(id, sha, lane, workers, st, dir, d, env);
   }
@@ -297,23 +339,34 @@ async function followAndReport(d: Deps, id: string, sha: string, lane: LaneName,
 }
 
 /** Router entry; returns the exit code. */
-export async function runPc(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal): Promise<number> {
+export async function runPc(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal, o: RemoteOpts = {}): Promise<number> {
   if (p.status) d.out.write(redact(`${await pc.status(d.remote)}`));
   else if (p.jobs) for (const j of await pc.jobs(d.remote)) d.out.write(redact(`${j.id}\t${j.state}\t${String(j.rc ?? '')}\n`));
   else if (p.cancel) d.out.write(`${(await pc.cancel(d.remote, p.cancel)) ? 'cancelled' : 'cancel failed'} ${p.cancel}\n`);
   else if (p.attach) {
     const id = p.attach;
     const lane = (/^\d{8}-\d{6}-(short|full)-/.exec(id)?.[1] ?? 'full') as LaneName;
-    return await followAndReport(d, id, '0000000', lane, LANES[lane].workers, resolve(cwd, '.scratch', 'remote-e2e', id), env, signal);
-  } else return await runRemote(p, env, cwd, d, signal);
+    return await followAndReport(d, id, '0000000', lane, LANES[lane].workers, resolve(cwd, '.scratch', 'remote-e2e', id), env, signal, undefined, o.note);
+  } else return await runRemote(p, env, cwd, d, signal, o);
   return 0;
 }
 
-function runLocal(p: Parsed): Promise<number> {
-  const cmd = p.kind === 'flake' ? ['tsx', 'tools/ci/e2e-flake.ts', ...p.rest] : ['playwright', 'test', ...kindArgs(p), ...(p.workers ? [`--workers=${String(p.workers)}`] : [])];
+let signalsHooked = false;
+/** The Mac run through the browser slot. With a `reason` this is a fallback: a banner says so. */
+export function runLocal(p: Parsed, env: Env = process.env, reason?: string, macLoad?: number): Promise<number> {
+  const json = env['PLAYWRIGHT_JSON_OUTPUT_FILE'] && p.kind !== 'flake' && !p.rest.some((a) => a.startsWith('--reporter'));
+  const base = p.kind === 'flake' ? ['tsx', 'tools/ci/e2e-flake.ts', ...p.rest] : ['playwright', 'test', ...kindArgs(p), ...(p.workers ? [`--workers=${String(p.workers)}`] : [])];
+  const cmd = json ? [...base, '--reporter=list,html,json'] : base;
+  if (reason) {
+    const lim = env['TTE_MAC_LOAD_MAX'] ?? String(DEFAULT_LIMITS.macLoadMax);
+    process.stderr.write(`!!! E2E FALLBACK -> MAC: ${redact(reason)}. Mac load ${macLoad === undefined ? '?' : macLoad.toFixed(1)}/${lim}. Short run only. Say so in your report.\n`);
+  }
   return new Promise((res) => {
     const c = spawn('tsx', ['tools/ci/browser-slot.ts', '--', ...cmd], { stdio: 'inherit' });
-    for (const s of ['SIGINT', 'SIGTERM'] as const) process.on(s, () => c.kill(s));
+    if (!signalsHooked) {
+      signalsHooked = true;
+      for (const s of ['SIGINT', 'SIGTERM'] as const) process.on(s, () => c.kill(s));
+    }
     c.on('close', (code, sig) => res(code ?? (sig ? 128 : 1)));
     c.on('error', () => res(1));
   });
@@ -326,6 +379,122 @@ function noteLocal(cwd: string): void {
   if (g.status === 0) appendFileSync(resolve(cwd, g.stdout.trim(), 'tte-e2e-local.log'), `${new Date().toISOString()} load ${load} ${cwd.split('/').pop() ?? ''}\n`);
 }
 
+/** Everything the decide loop touches outside the PC transport; tests replace it. */
+export interface Io {
+  /** `fresh` skips the cache. */
+  probe(fresh: boolean): Promise<PcView>;
+  noteExit(code: number): void;
+  macLoad(): number | undefined;
+  sleep(sec: number, signal?: AbortSignal): Promise<void>;
+  local(p: Parsed, reason: string, macLoad: number | undefined): Promise<number>;
+}
+
+const num = (v: string | undefined, dflt: number): number => (v !== undefined && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : dflt);
+export function limitsOf(env: Env): Limits {
+  const d = DEFAULT_LIMITS;
+  return {
+    ...d,
+    macLoadMax: num(env['TTE_MAC_LOAD_MAX'], d.macLoadMax),
+    macLoadWaitSec: num(env['TTE_MAC_LOAD_WAIT_SEC'], d.macLoadWaitSec),
+    pcBusyWaitSec: num(env['TTE_PC_BUSY_WAIT_SEC'], d.pcBusyWaitSec),
+    pcWaitMaxSec: num(env['TTE_PC_WAIT_MAX_SEC'], d.pcWaitMaxSec),
+  };
+}
+export function policyOf(p: Parsed, env: Env): Policy {
+  if (p.fallback) return p.fallback;
+  const v = env['TTE_E2E_FALLBACK']?.trim();
+  if (!v) return 'mac';
+  if (v !== 'mac' && v !== 'wait' && v !== 'fail') throw new UsageError('TTE_E2E_FALLBACK is mac, wait or fail');
+  return v;
+}
+
+/** After these PC exits the call is over; no fresh probe is needed. */
+const FINAL_EXITS = [0, 1, 2, 124, 130];
+
+/** The decide loop for a run (not admin): probe, decide, then run on the PC, run on the Mac or wait, until a final exit. */
+export async function runRouted(p: Parsed, env: Env, cwd: string, d: Deps, io: Io, signal?: AbortSignal): Promise<number> {
+  const limits = limitsOf(env);
+  const policy = policyOf(p, env);
+  const forced = p.lane !== undefined || p.full;
+  const memo = new Map<string, number | undefined>();
+  const count: Counter = (a) => {
+    const k = a.join('\u0000');
+    if (!memo.has(k)) memo.set(k, d.count(a));
+    return memo.get(k);
+  };
+  const tests = p.lane === 'full' || p.full ? undefined : testsOf(p, count);
+  const lane = pickLane(p, count);
+  const ask: Ask = { kind: p.kind, tests, lane, laneForced: forced, pc: p.mode === 'pc', detach: p.detach, policy, allowMac: env['TTE_ALLOW_MAC_E2E'] === '1' };
+  const macOk = policy === 'mac' && macEligible(ask, limits);
+  const h: History = { pcAttempts: 0, macAttempts: 0 };
+  let waited = 0;
+  let fresh = false;
+  let view: PcView | undefined;
+  let lastId: string | undefined;
+  let ranOn = 'nowhere';
+  let code = 2;
+  for (;;) {
+    if (signal?.aborted) {
+      code = 130;
+      break;
+    }
+    const last = h.last;
+    const reprobe = last?.where === 'pc' ? !FINAL_EXITS.includes(last.exit) : last?.where === 'mac' && last.exit === 75;
+    if (!view || reprobe || fresh) view = await io.probe(fresh || reprobe);
+    fresh = false;
+    const load = io.macLoad();
+    const step: Step = decide(ask, view, h, load, waited, limits);
+    if (step.do === 'fail') {
+      code = step.code;
+      if (step.reason !== 'final' && step.reason !== 'Mac run finished') d.err.write(`${redact(step.reason)}\n`);
+      break;
+    }
+    if (step.do === 'wait') {
+      if (waited === 0 || waited % 300 < step.sec) d.err.write(`waiting ${String(step.sec)} s: ${redact(step.why)} (waited ${String(waited)} s)\n`);
+      await io.sleep(step.sec, signal);
+      if (signal?.aborted) {
+        code = 130;
+        break;
+      }
+      waited += step.sec;
+      fresh = true;
+      continue;
+    }
+    if (step.do === 'mac') {
+      h.macAttempts++;
+      ranOn = `Mac (fallback: ${redact(step.reason)})`;
+      code = await io.local(p, step.reason, load);
+      h.last = { where: 'mac', exit: code };
+      continue;
+    }
+    const note: Note = {};
+    h.pcAttempts++;
+    if (step.attach) h.reattached = true;
+    if (step.attach && !lastId) {
+      d.err.write('cannot reattach: no job id\n');
+      code = 255;
+      break;
+    }
+    const target = step.attach && lastId ? { ...p, attach: lastId } : p;
+    let x: number;
+    try {
+      x = await runPc(target, env, cwd, d, signal, { lane: step.lane, note, ...(macOk ? { lockWaitSec: Math.max(0, limits.pcBusyWaitSec - waited) } : {}) });
+    } catch (e) {
+      if (!(e instanceof PcError)) throw e;
+      d.err.write(`${redact(e.message)}\n`);
+      x = e.code;
+    }
+    if (note.id) lastId = note.id;
+    ranOn = `PC (job ${lastId ?? '?'}, ${note.lane ?? step.lane} lane)`;
+    io.noteExit(x);
+    code = x;
+    h.last = { where: 'pc', exit: x, ...(note.stage ? { stage: note.stage } : {}) };
+    fresh = true;
+  }
+  d.err.write(`e2e ran on: ${ranOn} -> exit ${String(code)}\n`);
+  return code;
+}
+
 export async function main(argv: readonly string[], env: Env = process.env, cwd = process.cwd()): Promise<number> {
   try {
     const p = parseArgs(argv);
@@ -333,14 +502,41 @@ export async function main(argv: readonly string[], env: Env = process.env, cwd 
     const r = route(p, env, alias);
     if (r.where === 'refuse') throw new UsageError(r.why);
     if (r.where === 'local') {
-      if (p.mode === 'local' && alias) noteLocal(cwd);
-      return await runLocal(p);
+      if (alias && (p.mode === 'local' || env['TTE_E2E_LOCAL'] === '1')) noteLocal(cwd);
+      return await runLocal(p, env);
     }
-    const d: Deps = { remote: defaultRemote(alias as string, env), plan: (c, id, o) => planSource(c, id, o), render: renderJob, count: realCount, out: process.stdout, err: process.stderr };
+    const remote = defaultRemote(alias as string, env);
+    const d: Deps = { remote, plan: (c, id, o) => planSource(c, id, o), render: renderJob, count: realCount, out: process.stdout, err: process.stderr };
     const ctl = new AbortController();
     const stop = (): void => ctl.abort();
     if (!p.detach) for (const s of ['SIGINT', 'SIGTERM'] as const) process.on(s, stop);
-    return await runPc(p, env, cwd, d, ctl.signal);
+    if (p.attach !== undefined || p.cancel !== undefined || p.jobs || p.status) return await runPc(p, env, cwd, d, ctl.signal);
+    const file = cacheFile(cwd);
+    const ttl = num(env['TTE_PC_PROBE_TTL_SEC'], 60);
+    const io: Io = {
+      probe: async (fresh) => {
+        const hit = fresh ? undefined : readCache(file, Date.now(), ttl, keyOf(alias as string));
+        if (hit) return hit;
+        const pr = await realProbe(remote);
+        writeCache(file, pr);
+        return pr;
+      },
+      noteExit: (c) => {
+        noteExit(file, c, Date.now());
+      },
+      macLoad: () => loadavg()[0],
+      sleep: (sec, sg) =>
+        new Promise((res) => {
+          if (sg?.aborted) return res();
+          const t = setTimeout(res, sec * 1000);
+          sg?.addEventListener('abort', () => {
+            clearTimeout(t);
+            res();
+          }, { once: true });
+        }),
+      local: (pp, reason, load) => runLocal(pp, env, reason, load),
+    };
+    return await runRouted(p, env, cwd, d, io, ctl.signal);
   } catch (e) {
     process.stderr.write(`${redact((e as Error).message)}\n`);
     return e instanceof PcError ? e.code : 2;

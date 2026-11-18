@@ -38,8 +38,6 @@ export interface LastRun {
   exit: number;
   /** Where in the PC pipeline a 3 or 93 happened. */
   stage?: 'upload' | 'fetch' | 'memory';
-  /** Seconds since the last frame stall (exit 96). */
-  stallSec?: number;
 }
 export interface History {
   pcAttempts: number;
@@ -60,7 +58,6 @@ export interface Limits {
 export const DEFAULT_LIMITS: Limits = { testLimit: 150, macLoadMax: 14, macLoadWaitSec: 900, pcBusyWaitSec: 600, pcWaitMaxSec: 1800, pollSec: 120 };
 export const EXIT_NO_RUNNER = 89;
 export const EXIT_MAC_RETRY = 75;
-export const STALL_WINDOW_SEC = 600;
 
 export type Step =
   | { do: 'pc'; lane: LaneName; attach?: true }
@@ -112,10 +109,10 @@ function byProbe(ask: Ask, view: PcView, h: History, macLoad: number | undefined
   const code = viewCode(view);
   const canMac = h.macAttempts < 1 && policy === 'mac' && macEligible(ask, limits);
   if (view.state === 'busy') {
-    if (policy === 'fail') return failStep(code, why);
-    const cap = canMac ? limits.pcBusyWaitSec : limits.pcWaitMaxSec;
-    if (waitedSec < cap) return { do: 'wait', sec: Math.min(BUSY_POLL_SEC, cap - waitedSec), why };
-    return canMac ? macStep(why, macLoad, waitedSec - cap, limits) : failStep(code, `${why} for ${String(waitedSec)} s`);
+    // No Mac fallback: the PC's own lane queue handles the wait (no polling).
+    if (!canMac) return { do: 'pc', lane: pcLane(ask, view) };
+    if (waitedSec < limits.pcBusyWaitSec) return { do: 'wait', sec: Math.min(BUSY_POLL_SEC, limits.pcBusyWaitSec - waitedSec), why };
+    return macStep(why, macLoad, waitedSec - limits.pcBusyWaitSec, limits);
   }
   if (canMac) return macStep(why, macLoad, waitedSec, limits);
   if (policy === 'wait' && view.state === 'down' && waitedSec < limits.pcWaitMaxSec) {
@@ -142,7 +139,7 @@ function afterPc(ask: Ask, view: PcView, h: History, last: LastRun, macLoad: num
     case 95:
       return toMac(`PC exit ${String(x)}`);
     case 96:
-      return (last.stallSec ?? 0) < STALL_WINDOW_SEC ? toMac('PC frames stall') : again();
+      return toMac('PC frames stall');
     case 92:
       return again();
     case 3:
