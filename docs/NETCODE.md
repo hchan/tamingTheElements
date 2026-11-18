@@ -83,3 +83,5 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 - [ ] Spectators and replay upload (the replay format already fits)
 
 WebSocket-only online play (relay server, message table, sequence numbers, session flow) is specified in [ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md); the WebRTC path above stays until it is removed.
+
+An overview of the whole multiplayer design, with diagrams, is in [MULTIPLAYER-DESIGN.md](MULTIPLAYER-DESIGN.md).

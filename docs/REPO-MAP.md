@@ -33,6 +33,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `docs/FUN-DESIGN.md` | Design (not built) of the opt-in Arcade ruleset behind the `rulesetArcade` sim flag: fun diagnosis, features in ticks, juice, fun metrics and the work-package plan, see [FUN-DESIGN.md](FUN-DESIGN.md) |
 | `docs/adr/` | Architecture decision records, see the [ADR index](adr/README.md) |
 | `docs/legacy/` | Legacy module inventory and known-bug table |
+| `docs/MULTIPLAYER-DESIGN.md` | Multiplayer design overview with Mermaid diagrams: layers, lockstep and rollback, transports, session flow, relay ports and adapters, reconnect, kill switch, security, open questions; links the protocol, client, relay-package and measurement docs |
 | `.claude/` | Claude Code project config: `settings.json`, `.claude/agents/` (reviewers, analysts), `.claude/skills/` (slash commands), `.claude/hooks/`, `.claude/workflows/full-review.js`; see [CLAUDE-SETUP.md](CLAUDE-SETUP.md), pinned by `tests/repo/claude-setup.test.ts` |
 | `src/` | New TypeScript port (see below) |
 | `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.config.ts`, `playwright.config.ts`, `playwright.pages.config.ts` | pnpm, TypeScript, Vite, Vitest and Playwright project config |
