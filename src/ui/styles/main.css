@@ -341,6 +341,12 @@ a.menuLink {
   border-radius: 6px;
   cursor: pointer;
 }
+/* display above beats the UA [hidden] rule, so hidden menu buttons (quick match Ready etc.) must say so. */
+button.menuButton[hidden],
+a.menuButton[hidden],
+a.menuLink[hidden] {
+  display: none;
+}
 a.menuLink {
   background: none;
   border: 0;
