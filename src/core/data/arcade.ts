@@ -106,6 +106,20 @@ export const METER_CHARGE = 40;
 export const CHARGE_AI_MIN_DIST = 200;
 export const ChargeEnd = { expired: 0, arrived: 1, blocked: 2, interrupted: 3 } as const;
 
+/**
+ * Run Away / Run Towards (FUN-DESIGN 2.29), in game ticks. A run lasts RUN_TICKS (5 s) and its cooldown counts from the run's
+ * end, RUN_COOLDOWN_TICKS (7 s). The speed per mille multiplies the walk speed (1000 = as walking). Towards holds when the gap to
+ * the foe is at most RUN_CONTACT_GAP_PX on an axis; Away stops on an axis with less than RUN_EDGE_PX of room to the arena edge.
+ * `RunEnd` is the `runEnded` reason.
+ */
+export const RUN_TICKS = 250;
+export const RUN_COOLDOWN_TICKS = 350;
+export const RUN_AWAY_SPEED_PM = 1000;
+export const RUN_TOWARDS_SPEED_PM = 1000;
+export const RUN_CONTACT_GAP_PX = 8;
+export const RUN_EDGE_PX = 8;
+export const RunEnd = { expired: 0, broken: 1, interrupted: 2, tagged: 3 } as const;
+
 export const RecoveredReason = { stunEnded: 0, juggleCap: 1, stunCap: 2 } as const;
 
 /**

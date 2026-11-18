@@ -1,10 +1,11 @@
-import { KO_ENTRANCE_INVULN_TICKS, TAG_INVULN_TICKS } from '../../../data/arcade';
+import { KO_ENTRANCE_INVULN_TICKS, RunEnd, TAG_INVULN_TICKS } from '../../../data/arcade';
 import { isArcade, now } from '../../clock';
 import { SimEventKind, type EventSink } from '../../events';
 import { ARCADE_E, ArcadeE, cooldownIdx, EntityFlag } from '../../state';
 import type { SimWorld } from '../../world';
 import { castSelf } from '../abilities';
 import { castMelee } from '../melee';
+import { endRun } from './run-move';
 import { fire } from '../projectile';
 
 /**
@@ -18,6 +19,7 @@ import { fire } from '../projectile';
 export function tagEntrance(world: SimWorld, sink: EventSink, team: number, from: number, to: number): void {
   const s = world.state;
   if (!isArcade(s)) return;
+  endRun(s, sink, from, (s.flags[from] ?? 0) & EntityFlag.dead ? RunEnd.interrupted : RunEnd.tagged);
   const a = s.arcade;
   const g = now(s);
   const e = to * ARCADE_E;

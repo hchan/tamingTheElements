@@ -11,6 +11,7 @@ import { castCleanse } from './cleanse';
 import { castElemental, expireElementals } from './elemental';
 import { guardTick } from './guard';
 import { controlledId } from '../movement';
+import { startRun } from './run';
 import { expireRoots } from './snag';
 import { expireStuns } from './stun';
 import { terrainTick } from './terrain-layout';
@@ -40,6 +41,7 @@ export function arcadeInputSystem(world: SimWorld, cmds: readonly [Command, Comm
     cancelDashIntoAttack(world, team);
     startDash(world, sink, team, cmds[team] ?? 0);
     startCharge(world, sink, team, controlledId(world, team), controlledId(world, 1 - team));
+    startRun(world, sink, team);
     guardTick(world, team);
     castElemental(world, sink, team);
     castCleanse(world, sink, team);

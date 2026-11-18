@@ -1,5 +1,5 @@
 import {
-  ELEMENTAL_COOLDOWN_TICKS, ELEMENTAL_NAMES, GUARD_MAX, Q4_ONE, TAG_COOLDOWN_TICKS, TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX,
+  ELEMENTAL_COOLDOWN_TICKS, ELEMENTAL_NAMES, GUARD_MAX, Q4_ONE, RUN_COOLDOWN_TICKS, TAG_COOLDOWN_TICKS, TRAP_COOLDOWN_TICKS, TRAP_TEAM_MAX,
 } from '../data/arcade';
 import { CHARACTER_HEIGHT } from '../data/chapters';
 import { CHARACTERS } from '../data/characters';
@@ -14,6 +14,7 @@ import { castDir } from './systems/arcade/aim';
 import { RANGED } from './systems/arcade/meter';
 import { isGuarding, isInvulnerable, isStunned } from './systems/arcade/stun';
 import { isRooted } from './systems/arcade/snag';
+import { isRunning, runsAway } from './systems/arcade/run-move';
 import { kindOf } from './systems/arcade/terrain';
 import { trapCount } from './systems/arcade/trap';
 import { CAPTURE_GRANTED_BIT } from './systems/capture';
@@ -102,6 +103,10 @@ export interface RenderArcade {
   chargeIn(id: number): number;
   /** Game ticks until character `id`'s next Dash is ready (0: now); read-out only (touch button words). */
   dashIn(id: number): number;
+  /** Game ticks until character `id`'s next Run is ready (0: now); read-out only (FUN-DESIGN 2.29). */
+  runIn(id: number): number;
+  /** True while character `id` is in a Run Away / Run Towards. */
+  running(id: number): boolean;
   /** The team's active (controlled) character id, or -1 with none; read-out only. */
   active(team: number): number;
   /** The weather up (a `Weather` kind, 0 none) and the game ticks it has left (0 with none), FUN-DESIGN 2.14. */
@@ -192,6 +197,8 @@ export interface RenderActionBar {
   swapCooldownTicks: number;
   /** Arcade Trap slot (WP 39): the first game tick it can plant again, its cooldown, the team's live traps and the cap. */
   trap: { readyTick: number; cooldownTicks: number; count: number; max: number } | undefined;
+  /** Arcade Run slot (FUN-DESIGN 2.29): Run Away (ranged hero) or Run Towards, the first game tick it can start again, its cooldown, and the tick a running run ends (0 = not running). */
+  run?: { away: boolean; readyTick: number; cooldownTicks: number; activeUntil: number } | undefined;
   /**
    * Arcade elemental ability (FUN-DESIGN 2.24) of the active hero, undefined in Classic and for a void hero: its name
    * (Ember, Cleanse, Stoneskin, Gale), element kind (1 fire, 2 water, 3 earth, 4 air), the first game tick it can cast
@@ -255,6 +262,8 @@ export function createRenderView(world: SimWorld): RenderView {
     kbSpeed: (id) => (Math.abs(s.arcade[id * ARCADE_E + ArcadeE.kbVx] ?? 0) + Math.abs(s.arcade[id * ARCADE_E + ArcadeE.kbVy] ?? 0)) / Q4_ONE,
     wallBounced: (id) => (s.arcade[id * ARCADE_E + ArcadeE.wallBounced] ?? 0) !== 0,
     dashIn: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.dashReadyAt] ?? 0) - now(s)),
+    runIn: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.runReadyAt] ?? 0) - now(s)),
+    running: (id) => isRunning(s, id),
     active: (team) => controlledId(world, team),
     chargeIn: (id) => (RANGED[s.defId[id] ?? 0] ? -1 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) - now(s))),
   };
@@ -312,6 +321,12 @@ export function createRenderView(world: SimWorld): RenderView {
         swapCooldownTicks: isArcade(s) ? TAG_COOLDOWN_TICKS : SWAP_COOLDOWN_TICKS,
         trap: isArcade(s)
           ? { readyTick: s.arcade[cur * ARCADE_E + ArcadeE.trapReadyAt] ?? 0, cooldownTicks: TRAP_COOLDOWN_TICKS, count: trapCount(s, team), max: TRAP_TEAM_MAX }
+          : undefined,
+        run: isArcade(s)
+          ? {
+            away: runsAway(s, cur), readyTick: s.arcade[cur * ARCADE_E + ArcadeE.runReadyAt] ?? 0, cooldownTicks: RUN_COOLDOWN_TICKS,
+            activeUntil: s.arcade[cur * ARCADE_E + ArcadeE.runUntil] ?? 0,
+          }
           : undefined,
         elemental: elementalSlot(cur),
       };
