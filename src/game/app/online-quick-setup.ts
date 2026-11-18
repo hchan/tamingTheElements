@@ -38,6 +38,11 @@ export class QuickSetup {
     return this.mine !== undefined;
   }
 
+  /** The opponent's pick has arrived (known after a `poll()`). */
+  get opponentPicked(): boolean {
+    return this.theirs !== undefined;
+  }
+
   poll(): QuickSetupResult {
     if (this.bad) return { t: 'rejected', reason: 'malformed' };
     if (this.theirs === undefined) {

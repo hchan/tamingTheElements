@@ -22,6 +22,7 @@ import { installUiSfx } from '../audio/ui-sfx';
 import { AppFlow } from './flow';
 import { mountNoticeBanner } from './notice-banner';
 import { lazyScreen } from './lazy-screen';
+import { onlineRoute } from './online-route';
 
 const root = document.getElementById('app');
 const flags = getUiFlags(window.location.search);
@@ -108,7 +109,7 @@ if (root) {
       // Arcade Versus (preview, FUN-DESIGN WP 11): a separate flow outside the story flow, in its own chunk loaded on first
       // use (see `lazyScreen`).
       arcade: lazyScreen(() => import('./arcade-versus'), 'Versus', (a, c) => { a.mountArcade(c); }, (a) => { a.unmountArcade(); }),
-      online: lazyScreen(() => import('./online-versus'), 'Online', (a, c) => { a.mountOnline(c); }, (a) => { a.unmountOnline(); }),
+      online: onlineRoute(),
       // World Tour (preview, FUN-DESIGN 2.18): its own chunk like Arcade; same failed-load handling.
       tour: lazyScreen(() => import('./tour'), 'Play', (a, c) => { a.mountTour(c); }, (a) => { a.unmountTour(); }),
     });

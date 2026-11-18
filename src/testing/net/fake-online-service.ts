@@ -83,6 +83,8 @@ export class FakeService {
   httpStatus = 200;
   httpRetry = 0;
   refuseSockets = 0;
+  /** false: every HELLO is a fresh session (a client that was only queued has nothing to resume). */
+  resumeSessions = true;
   serverVer = PROTOCOL_VERSION;
   welcomeVer: number | undefined;
   /** What MATCH_START announces (tests change them to exercise the screen). */
@@ -134,13 +136,14 @@ export class FakeService {
           ws.drop(4003);
           return;
         }
-        const resumed = hello.resume === SESSION_ID;
+        const resumed = this.resumeSessions && hello.resume === SESSION_ID;
         ws.serve(welcome(this.welcomeVer ?? this.serverVer, resumed ? 1 : 0));
         if (resumed) ws.serve(matchStart(this.slots.get(ws) ?? 0, this.matchNo, this));
         break;
       }
       case 0x10:
         ws.serve(Uint8Array.of(0x12, 0, 3));
+        for (let i = this.queue.length - 1; i >= 0; i--) if (this.queue[i]?.readyState !== 1) this.queue.splice(i, 1);
         this.queue.push(ws);
         if (this.queue.length === 2) {
           const [p, q] = this.queue.splice(0, 2) as [TestWs, TestWs];
