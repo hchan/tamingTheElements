@@ -1,9 +1,7 @@
 // Headless replay verifier (`pnpm replay:verify <file...>`): re-simulates each replay and fails on a hash mismatch.
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { SIM_VERSION } from '../src/core/index';
-import { parseReplay } from '../src/core/replay/format';
-import { playReplay } from '../src/core/replay/player';
+import { SIM_VERSION, verifyReplayLog } from '../src/core/index';
 
 export interface Verification {
   readonly ok: boolean;
@@ -11,14 +9,15 @@ export interface Verification {
 }
 
 export function verifyReplayText(json: string): Verification {
+  let raw: unknown;
   try {
-    const replay = parseReplay(json);
-    const v = playReplay(replay, SIM_VERSION);
-    if (v.ok) return { ok: true, message: `OK (${String(replay.header.tickCount)} ticks)` };
-    return { ok: false, message: `DIVERGED at tick ${String(v.firstDivergentTick)} (expected ${String(v.expected)}, got ${String(v.actual)})` };
+    raw = JSON.parse(json);
   } catch (e) {
     return { ok: false, message: `ERROR ${e instanceof Error ? e.message : String(e)}` };
   }
+  const v = verifyReplayLog(raw, { simVersion: SIM_VERSION });
+  if (v.ok) return { ok: true, message: `OK (${String(v.tickCount)} ticks)` };
+  return { ok: false, message: v.kind === 'invalid' ? `ERROR ${v.message}` : v.message };
 }
 
 export function main(files: readonly string[]): number {
