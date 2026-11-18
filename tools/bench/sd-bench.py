@@ -10,7 +10,7 @@ nvidia-smi power.draw samples. Models are official stabilityai repos (safetensor
 No host/IP/credentials here; the caller runs this on each machine however it reaches it.
 Mac power needs `powermetrics` (sudo), so it is not sampled.
 """
-import argparse, json, statistics, subprocess, threading, time
+import argparse, json, os, statistics, subprocess, threading, time
 
 PROMPT = ("a fierce fire elemental beast, hand painted, dark fantasy, detailed fur and ember scales, "
           "centered full body, plain background")
@@ -111,6 +111,7 @@ def main():
 
     pw = Power()
     th = None
+    empty = os.environ.get("BENCH_EMPTY_CACHE") == "1"  # torch.cuda.empty_cache() between runs
     if a.device == "cuda":
         th = threading.Thread(target=pw.run, daemon=True)
         th.start()
@@ -129,6 +130,8 @@ def main():
         sync(torch, a.device)
         times.append(time.perf_counter() - t)
         peaks.append(mem_mb(torch, a.device))
+        if empty and a.device == "cuda":
+            torch.cuda.empty_cache()
     pw.stop = True
     if th:
         th.join()
@@ -141,6 +144,10 @@ def main():
                s_per_image=round(statistics.median(times) / batch, 3) if times else None,
                peak_mem_mb=round(max(peaks), 0) if peaks else None,
                torch=torch.__version__)
+    if a.device == "cuda":
+        res["peak_reserved_mb"] = round(torch.cuda.max_memory_reserved() / 2**20, 0)
+        res["alloc_conf"] = os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "")
+        res["empty_cache"] = empty
     if pw.s:
         res["power_w_mean"] = round(statistics.mean(x[0] for x in pw.s), 1)
         res["power_w_max"] = round(max(x[0] for x in pw.s), 1)

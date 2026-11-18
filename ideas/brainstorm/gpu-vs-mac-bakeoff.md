@@ -28,22 +28,36 @@ Owner, 2026-11-17: "don't forget the bake-off of 4060 speed vs this mac". Decide
 - Is the power cost a factor (PC draw vs Mac) for the night window?
 - Does the PC's WSL2 overhead change file-heavy jobs (bake) versus the Mac's native disk?
 
-## Status 2026-11-17 (SD benchmark, round 1): script ready, nothing timed yet
+## Status 2026-11-17 (SD benchmark, round 2): PC timed, Mac official runs pending
 
-Script: `tools/bench/sd-bench.py` (`--device cuda|mps --job sdxl|turbo1|turbo4|sd15|img2img [--offload] [--slicing] [--init png]`). Cold load, 1 discarded warm-up, 5 timed runs with device sync, median/min/max, peak memory, cuda power/temperature via nvidia-smi (aborts above 83 C). Mac power needs `powermetrics` (sudo), so it is not measured.
+Script: `tools/bench/sd-bench.py` (`--device cuda|mps --job sdxl|turbo1|turbo4|sd15|img2img [--offload] [--slicing] [--init png]`; env `BENCH_EMPTY_CACHE=1` calls `empty_cache` after each timed run; set `PYTORCH_CUDA_ALLOC_CONF` for allocator tests). Cold load, 1 discarded warm-up, 5 timed runs (3 for sdxl without offload) with device sync, median/min/max, peak allocated and (cuda) peak reserved memory, cuda temperature (aborts above 83 C). sd15 is sd-turbo (20 steps, cfg 7). Mac power is not measured (needs sudo `powermetrics`).
 
-Why no numbers:
+Mac: weights downloaded (about 14 GB, outside the repo) and a smoke test done. Official Mac timed runs are deliberately postponed to 09:30 on 2026-11-18 (Mac load was too high today). The informal smoke figures below are NOT official (loaded machine): turbo1 1.49 s, sd15 5.09 s.
 
-- Mac: load average was 19 to 30 (limit 12) and the Mac venvs have no torch/diffusers. Official fp16 weights: SDXL base about 7.1 GB, SDXL-Turbo about 6.9 GB (components), sd-turbo about 2.6 GB. Base plus Turbo is about 14 GB, over the 10 GB stop rule, so no download was started. Owner decision needed: allow ~14 GB, or restrict to SDXL-Turbo + sd-turbo (about 9.5 GB).
-- PC: GPU busy with the round-3 generation (`gen4.py`, 22 % util, 1.8 GB used, 33 C), so it was not touched. The PC's SDXL-Turbo and SDXL base are already cached in WSL (per earlier bake-off); only the bench script must be copied over.
+### Results (PC = RTX 4060 8 GB, WSL2, fp16; seconds per image, median of 5 unless noted)
 
-Remaining to run (PC, when idle): `sdxl` with and without `--offload`, `turbo1`, `turbo4`, `sd15`, `img2img --init <concept.png>`. Mac: the same jobs with `--device mps` (also try `--slicing`), after the downloads are approved and load is under 12. Only the PC figure known so far: SDXL base 1024x1024, 28 steps, offload on, median 18.5 s per image (18.1 to 24.5), load 6.5 s, peak allocated 5.3 GB.
-
-### Results
-
-| job | Mac median | PC median | ratio | memory | winner |
+| job | Mac median | PC median | ratio | memory (PC) | winner |
 |---|---|---|---|---|---|
-| SDXL base 28 steps 1024 | not measured | 18.5 s (offload) | - | PC 5.3 GB | - |
-| others | not measured | not measured | - | - | - |
+| SDXL base 1024, 28 steps, no offload | pending | 41.3 s (3 runs; spills over 8 GB) | - | 10.7 GB alloc, 14.5 GB reserved | - |
+| SDXL base 1024, 28 steps, offload | pending | 19.3 s (19.1 to 24.0) | - | 5.3 GB alloc, 7.5 GB reserved | - |
+| SDXL base offload + expandable_segments + empty_cache | pending | 20.0 s | - | 5.2 GB alloc, 5.4 GB reserved | - |
+| sdxl-turbo 512, 4 steps, batch 1, no offload | pending (smoke 1.49 s, not official) | 3.97 s | - | 7.9 GB alloc (at the limit) | - |
+| sdxl-turbo 512, batch 1, offload | pending | 3.51 s (first run 13 s) | - | 5.1 GB | - |
+| sdxl-turbo 512, batch 4, no offload | pending | 7.28 s/img (29.1 s per batch; spills) | - | 10.7 GB alloc | - |
+| sdxl-turbo 512, batch 4, offload | pending | 1.78 s/img (7.1 s per batch) | - | 5.2 GB | - |
+| sd-turbo ("sd15") 512, 20 steps | pending (smoke 5.09 s, not official) | 1.83 s | - | 3.1 GB | - |
+| img2img sdxl-turbo 512, strength 0.5, no offload | pending | 2.85 s | - | 7.9 GB | - |
+| img2img, offload | pending | 3.89 s | - | 5.3 GB | - |
 
-Routing rule: none yet; no honest comparison exists. Prior expectation only (unmeasured): a discrete 8 GB CUDA card beats M4 Pro MPS for SDXL generation.
+Findings so far (PC only):
+
+- 8 GB is the binding constraint. Anything whose peak allocation exceeds about 8 GB (SDXL base without offload, turbo batch 4 without offload) spills into Windows shared memory and runs 2 to 4 times slower. Use `--offload` for SDXL base and for batches.
+- `expandable_segments:True` plus `empty_cache` on sdxl-offload costs about 0.7 s per image (20.0 against 19.3 s, within spread) but cuts reserved memory from 7.5 GB to 5.4 GB, almost equal to the allocated peak (5.2 GB). That is the setting to use if anything else needs the GPU.
+- Peak allocated for sdxl-offload is about 5.3 GB and for turbo1 offload about 5.1 GB, so the two do NOT fit together in 8 GB (about 10.4 GB). A turbo1 without offload (7.9 GB) cannot share the card with anything.
+
+Two-at-once test (two turbo1 processes at once): INVALID, not a result. It ran while another agent's Playwright e2e was using the PC (CPU load about 13), so figures are contaminated: two non-offload turbo1 took 41 s and 60 s per image (they spill, 9 GB reserved each), two offload turbo1 took 21 and 22 s median per image with a 174 s first run. The sdxl-offload plus turbo1 pair was not run validly. Re-run on an idle PC is pending, along with the Mac official runs.
+
+### Routing rule (provisional, PC half only)
+
+- On the PC always use offload for SDXL base and for batches; do not run two generation jobs at once (memory and contention).
+- Use the PC for SDXL base 1024 (about 19 s per image) and batched Turbo (1.8 s per image at batch 4 with offload). Single-image turbo is about 3.5 to 4 s on the PC against an informal 1.5 s on the Mac, so small interactive turbo jobs may belong on the Mac. Final rule after the official Mac runs on 2026-11-18.
