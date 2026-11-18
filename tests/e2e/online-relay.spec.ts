@@ -61,5 +61,16 @@ test('no room-code buttons without a relay address, and a wrong code says so in 
   await page.locator('#onlineManual summary').click();
   await page.locator('#onlineRoomIn').fill("ZZZZZZ");
   await page.locator('#onlineRoomJoin').click();
-  await expect(page.locator('#onlineStatus')).toContainText('not found');
+  await expect(page.locator('#onlineFailure')).toContainText('not found');
+  await expect(page.locator('#onlineStatus')).toHaveText('');
+  // The room-code controls stay, so the wrong code can be retried.
+  await expect(page.locator('#onlineRoomIn')).toBeVisible();
+  await expect(page.locator('#onlineRoomJoin')).toBeVisible();
+  await page.locator('#onlineRoomIn').fill('abc');
+  await page.locator('#onlineRoomJoin').click();
+  await expect(page.locator('#onlineFailure')).toBeHidden();
+  await expect(page.locator('#onlineStatus')).toContainText('6 letters and digits');
+  await page.locator('#onlineRoomIn').fill('ZZZZZZ');
+  await page.locator('#onlineRoomJoin').click();
+  await expect(page.locator('#onlineFailure')).toContainText('not found');
 });
