@@ -232,6 +232,16 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
       await expect(page.locator('#touchStrike1')).toContainText('Strike');
       await expect(page.locator('#touchStrike2')).toContainText('Strike');
       for (const id of ['#arcadeDash', '#arcadeSuper']) expect(overlap(s1, await box(page, id))).toBe(false);
+      // QA r104: the "Strike" word sits inside the circle's border (it ran edge to edge at 12 px) and stays at least 9 px.
+      for (const id of ['#touchStrike1', '#touchStrike2']) {
+        const fit = await page.evaluate<{ ok: boolean; px: number }>(`(() => {
+          const b = document.querySelector('${id}'), w = b.querySelector('.touchStrikeWord');
+          const br = b.getBoundingClientRect(), wr = w.getBoundingClientRect();
+          return { ok: wr.left >= br.left + 4 && wr.right <= br.right - 4, px: parseFloat(getComputedStyle(w).fontSize) };
+        })()`);
+        expect(fit.ok).toBe(true);
+        expect(fit.px).toBeGreaterThanOrEqual(9);
+      }
     });
   }
   test('a held Strike button holds the key of the bar slot (slot 1)', async ({ page }) => {
