@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { JOB_ID_RE } from './pc-job';
 
 export const DEFAULT_MAX_BYTES = 200 * 1024 * 1024;
 
@@ -66,7 +67,7 @@ export function biggestUntracked(cwd: string, n = 5): { path: string; bytes: num
 }
 
 export function planSource(cwdIn: string, id: string, opts: PlanOptions = {}): SourcePlan {
-  if (!/^[A-Za-z0-9._-]+$/.test(id)) throw new Error(`bad job id: ${id}`);
+  if (!JOB_ID_RE.test(id)) throw new Error(`bad job id: ${id}`);
   const cwd = resolve(cwdIn);
   const include = opts.include ?? [];
   const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
