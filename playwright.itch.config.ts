@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test';
+import { assertBrowserSlot } from './tools/ci/e2e-port';
+
+assertBrowserSlot();
 
 // Smoke for the itch.io artifact: run `pnpm build:itch` first; the spec unzips dist-itch/*.zip and serves it at the root.
 export default defineConfig({

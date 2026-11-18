@@ -1,7 +1,10 @@
 import { defineConfig } from '@playwright/test';
+import { assertBrowserSlot, e2ePort, reuseServer } from './tools/ci/e2e-port';
 
-// E2E_PORT lets parallel worktrees run the suite side by side.
-const PORT = process.env['E2E_PORT'] ?? '4173';
+assertBrowserSlot();
+
+// E2E_PORT overrides the per-checkout default port (tools/ci/e2e-port.ts), so worktrees run side by side.
+const PORT = e2ePort(process.cwd());
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -27,7 +30,7 @@ export default defineConfig({
     // `vite preview` supervised: a dead server is logged to .scratch/e2e-server.log and restarted (ideas/brainstorm/e2e-webserver-health.md).
     command: `corepack pnpm exec tsx tools/ci/e2e-server.ts ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: reuseServer(), // opt-in (E2E_REUSE=1): silent reuse caused cross-run contamination
     timeout: 120_000,
   },
 });
