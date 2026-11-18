@@ -63,3 +63,39 @@ Remaining to run (PC, when idle): `sdxl` with and without `--offload`, `turbo1`,
 | others | not measured | not measured | - | - | - |
 
 Routing rule: none yet; no honest comparison exists. Prior expectation only (unmeasured): a discrete 8 GB CUDA card beats M4 Pro MPS for SDXL generation.
+
+## Results: CPU and e2e offload (2026-11-17, sonnet agent)
+
+Scope: only the non-art jobs (4 to 6 above). Run with `tools/dev/remote-run.sh` (committed on branch `remote-run-offload`; host details live in the Mac's `~/.ssh/config`, not in the repo). Image-generation jobs (1 to 3) were not timed here.
+
+PC: AMD Ryzen 5 7600X (6 cores, 12 threads), 23 GB RAM visible inside WSL2 Ubuntu, Node 22 via nvm, Playwright chromium/firefox/webkit installed without system deps. The PC was NOT idle: another agent's image-generation job was running (load 6 to 11 during these runs), and the Mac load was 11 to 50 (see caveat). Neither side is a clean idle number.
+
+| Job | PC (3 runs) | Mac (3 runs) |
+|---|---|---|
+| `pnpm test` | 88 / 83 / 79 s | 63 / 61 / 63 s |
+| `vitest --project dom` | 5.1 / 4.2 / 3.8 s | 3 / 4 / 3 s |
+| `sim:match --tournament --json` | 1.3 / 1.4 / 1.0 s | about 1 s |
+| 12-spec e2e subset, 1 worker (152 tests) | 19.5 and 20.2 min, 1 failure each | 17.6 min at Mac load about 50, 0 failures (1 run) |
+| FULL `pnpm e2e` (675 tests) | 1.93 h: 659 passed, 16 failed | not run |
+
+Mac caveat: Mac load was 11 to 20 for the unit runs and about 50 for the subset, so the Mac e2e figure is inflated and the unit figures are slightly inflated. The Mac still won the CPU-bound unit runs, so a 7600X under a concurrent GPU job is not faster than the Mac for `pnpm test`.
+
+### Full e2e on the PC: 16 failures
+
+Under SwiftShader with 1 worker the PC is not faster and fails more. A rerun of the failing specs in isolation still failed 13 of 78 tests, so most of these are NOT just load:
+
+- hud-polish-r77 (568x320 hit counter), hud-text-clear (390x844 and 360x640, two tests), manual-fx-age (white damage pop), picker-bar (three Versus 2v2 tests), playtest-replay (record/verify; tampered-replay also failed on rerun), portrait-play (3v3 Tag buttons, melee nine-tile bar): fail in isolation or with `waiting for element to be visible, enabled and stable` / `page.screenshot` timeouts. Treat as real PC-environment differences (font metrics, SwiftShader on WSL, slower layout) until shown otherwise. Likely candidates for a PC-specific tolerance or a real bug on the Mac that its faster layout hides.
+- online-match (three variants), online-relay (two tests), online-leave: two-context relay specs; timeouts under load, partly reproduced on rerun.
+
+Passed on the Mac subset but 1 test failed on the PC in both subset runs, consistent with the above.
+
+### Routing recommendation
+
+- Unit, dom, sim: stay on the Mac (equal or faster, no transfer cost).
+- Full e2e: usable on the PC to take a 2-hour job off the Mac, but results are not gate-equivalent yet. Use it as a background second opinion, and judge the 16 failures against a Mac run of the same specs before trusting or fixing them.
+- Mac e2e is not slower per test than the PC; the benefit is freeing the Mac CPU, not speed. Best use is the night window or when the Mac load is high.
+- Image generation: still to measure (jobs 1 to 3).
+- Do not run PC e2e while the other agent's GPU job runs; both share 12 threads.
+
+Long gate on the PC (the commit must be on origin):
+`TTE_REMOTE=<alias> tools/dev/remote-run.sh -c <commit> -e E2E_PORT=7960 -- 'corepack pnpm lint && corepack pnpm typecheck && corepack pnpm depcruise && corepack pnpm test && corepack pnpm exec vitest run --project dom && corepack pnpm test:legacy && corepack pnpm build && corepack pnpm e2e'`
