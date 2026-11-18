@@ -2576,6 +2576,21 @@ a.onlineMenuLink {
   display: inline-block;
   min-height: 44px;
   line-height: 44px;
+  white-space: nowrap;
+}
+/* Versus bar: the Online link is one short line that never makes the slim bar taller. */
+#arcadePick .vsActions .vsFight {
+  flex: none;
+}
+#arcadePick .vsActions a.onlineMenuLink {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline: 0;
+  padding-inline: 0.2em;
+  font-size: 0.9em;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
 }
 /* QA r90 P9: two big role buttons first; only the picked role's steps show. */
 #onlineSetup .onlineRoles {

@@ -707,7 +707,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   start.id = 'arcadeStart';
   const back = el('a', 'menuButton', 'Back');
   back.href = '#main';
-  const onlineLink = el('a', 'menuLink onlineMenuLink', 'Play a friend online');
+  const onlineLink = el('a', 'menuLink onlineMenuLink', 'Play online');
   onlineLink.href = '#online';
   onlineLink.id = 'arcadeOnlineLink';
   const roster = rosterView(
