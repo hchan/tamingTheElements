@@ -820,7 +820,8 @@ export class ActionBarView {
     this.slots = this.mirror ? mirrorSlots(built, barTop(MAX_SLOTS, extras ? k : undefined) - MIRROR_SIDE - 6) : grouped ? grouped.slots : one ? one.slots : built;
     const top = grouped ? grouped.top : one ? one.top : barTop(built.length, extras ? k : undefined);
     this.panelTop = top;
-    if (one && bar && this.frame % 10 === 1) showStrikeCues(strikeCues(bar.abilities));
+    // QA r105 P3: landscape phones name the ability on the Strike circles too (CSS shows the third line only on coarse pointers).
+    if (!this.mirror && extras && bar && this.frame % 10 === 1) showStrikeCues(strikeCues(bar.abilities));
     if (!this.mirror) setPanelTop(this.scene, top);
     const g = this.gfx;
     g.clear();

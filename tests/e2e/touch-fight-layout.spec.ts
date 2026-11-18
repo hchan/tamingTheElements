@@ -59,6 +59,11 @@ test.describe('phone landscape fight', () => {
     await shot(page, 'land-clear');
     await page.evaluate(`window.__TTE__.arena.step(120)`);
     await shot(page, 'land-hud');
+    // QA r105 P2 (long gate): the 1v1 life line reads current/max on landscape too, and Strike names the ability.
+    const texts = await page.evaluate<Array<{ text: string }>>(`window.__TTE__.arena.hudTextSizes()`);
+    expect(texts.find((t) => /^SINDAROSA /.test(t.text))?.text).toMatch(/\d+\/\d+$/);
+    await expect(page.locator('#touchStrike1 .touchStrikeAbility')).toHaveText('Blast');
+    await expect(page.locator('#touchStrike2 .touchStrikeAbility')).toHaveText('Flame');
   });
   test('the first-run card is docked under the fighters, so the name banners and ROUND stay clear (QA r31)', async ({ page }) => {
     await enterFight(page);
@@ -214,6 +219,8 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
       await page.getByRole('button', { name: 'Got it' }).tap();
       await page.evaluate(`window.__TTE__.arena.step(120)`);
       await shot(page, `small-strike-${String(team)}v${String(team)}`);
+      const lifeTexts = await page.evaluate<Array<{ text: string }>>(`window.__TTE__.arena.hudTextSizes()`); // QA r105 P2 (long gate): current/max at 667 too
+      expect(lifeTexts.find((t) => /^SINDAROSA /.test(t.text))?.text).toMatch(/\d+\/\d+$/);
       const canvas = await box(page, '#game canvas');
       const stick = await box(page, '#touchStick');
       const s1 = await box(page, '#touchStrike1');
@@ -242,6 +249,21 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
         expect(fit.ok).toBe(true);
         expect(fit.px).toBeGreaterThanOrEqual(9);
       }
+      // QA r105 P3 (long gate): each circle also names its ability (Blast / Flame for Sindarosa), whole and inside the border.
+      const names: string[] = [];
+      for (const id of ['#touchStrike1', '#touchStrike2']) {
+        const fit = await page.evaluate<{ ok: boolean; text: string }>(`(() => {
+          const b = document.querySelector('${id}'), a = b.querySelector('.touchStrikeAbility');
+          if (!a) return { ok: false, text: '' };
+          const br = b.getBoundingClientRect(), ar = a.getBoundingClientRect();
+          const cx = (br.left + br.right) / 2, cy = (br.top + br.bottom) / 2, r = br.width / 2 - 2;
+          const corners = [[ar.left, ar.top], [ar.right, ar.top], [ar.left, ar.bottom], [ar.right, ar.bottom]];
+          return { ok: a.scrollWidth <= a.clientWidth && corners.every(([x, y]) => Math.hypot(x - cx, y - cy) <= r), text: a.textContent };
+        })()`);
+        expect(fit.ok, id).toBe(true);
+        names.push(fit.text);
+      }
+      expect(names).toEqual(['Blast', 'Flame']);
     });
   }
   test('a held Strike button holds the key of the bar slot (slot 1)', async ({ page }) => {

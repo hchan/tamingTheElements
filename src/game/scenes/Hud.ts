@@ -265,7 +265,7 @@ export class Hud extends Phaser.Scene {
           this.drawBar(gfx, bar, side.active, true);
           this.drawTrail(gfx, bar, side.active);
           if (this.arcade.meters[team].full > 0 && !side.active.dead) this.drawSuperRim(gfx, bar);
-          if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active, side.bench.length > 0);
+          if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active, true); // QA r105 P2: every fight keeps "cur/max" on a tight phone (was 2v2 only: 1v1 fell to a bare number)
         } else {
           this.drawBar(gfx, mainBar(x), side.active, true);
           label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
