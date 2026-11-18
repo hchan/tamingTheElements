@@ -66,3 +66,21 @@ Sheets: `sheet2-fire.png`, `sheet2-water.png`, `sheet2-earth.png`, `sheet2-air.p
 Best-12 picks and reasons (my pick, not an owner verdict): kindrel r2_3 (one fox, flame fur, no pattern sheet); brazgor r1_3 (lava seams, flaming back); ouroth r1_4 (bold dragon silhouette); nykra r2_8 (glass body, faces right); glimmaw r2_1 (translucent, faces right, but lost the fangs and lure); abyssor r2_1 (translucent teal bell, tentacles still partly orange); quarrak r2_4 (rock beast with crystals, no shell); durrok r1_1 (stone-plated elephant, green crystals); umbrel r1_1 (tall mushroom on roots); hyalia r2_3 (one clean cloud-teal jellyfish, puff at the base to cut off); zephra r1_2 (spiky wind wolf, faces left); vortigal r2_2 (storm-wisp bird, most elemental, faces left, no feet).
 
 Honest read: Nykra, Quarrak, Kindrel and Hyalia are real improvements. Glimmaw and Abyssor are translucent now but colourful (orange, pink) and the anglerfish read is weaker; the negatives for orange were ignored, so a round 3 should name the colour ("deep blue and teal") and use img2img or a LoRA-free colour cue. Vortigal is now storm-bodied but airy and ragged, which will be hard to cut cleanly. Several picks face left (zephra, vortigal, glimmaw tail) and would be flipped at cut time. Still no owner approval: G0 is open.
+
+## Round 3 (2026-11-17, Glimmaw, Abyssor, Vortigal, plus 4 Nykra; coordinator relayed the owner's delegation)
+
+Method: same pipeline (SDXL base, 28 steps, CFG 6.5, 1024x1024, model CPU offload, same style tail and base negative). Colours are now named in the subject, not excluded by negative, and "facing right" is in the subject as well as the tail. Seeds = 6000 + n*31 + len(hero). 28 images: 8 each for Glimmaw, Abyssor, Vortigal, 4 for Nykra. A GPU temperature check ran before each image with a stop at 83C.
+
+Timing and memory (bake-off numbers): load 4.6 s, 28 images in 611 s, median 18.95 s per image (min 18.3, one outlier 59.4 s, probably a stall), peak torch allocated 5334 MB, reserved 7482 MB, GPU temperature at most 50C. No gen process left running (checked with ps).
+
+Subjects (extra negative after the semicolon):
+- glimmaw: a deep blue and teal translucent water anglerfish facing right, see-through glassy blue body with bubbles, open mouth with sharp white fangs, a glowing yellow lure on a stalk, fins; orange, red, pink, scales, opaque fish skin, facing left
+- abyssor: a giant octopus facing right, body of deep blue and teal translucent flowing water, see-through glassy head with bubbles inside, eight thick curling tentacles of water waves, glowing white eyes; orange, red, pink, purple, skin, suckers, opaque, facing left
+- vortigal: a solid grey and white storm-cloud eagle facing right, body of puffy cumulus cloud with feather-shaped cloud wings, yellow lightning along the wings, strong yellow talons and feet, sharp beak, glowing cyan eyes; wispy, ragged, transparent, no feet, facing left, realistic bird, bald eagle
+- nykra: a horse facing right in profile, entire body of deep blue and teal flowing transparent water, glass-like see-through, bubbles inside, white foam mane, glowing teal eyes, four legs; fur, skin, opaque, white horse, muscles, facing left
+
+Sheets: `sheet3-water.png` (Nykra, Glimmaw, Abyssor), `sheet3-air.png` (Vortigal), `sheet3-best12.png` (best of all rounds), in `.scratch/` and copied to `~/claudetmp/roster24-redo-gpu/`.
+
+New picks (mine, not an owner verdict): nykra r3_1 (rearing, right-facing, glassy teal; mane wisps and ground mist need cleaning), glimmaw r3_2 (right-facing, blue-teal translucent, fangs; the lure is missing and it reads as a fish, not an anglerfish), abyssor r3_4 (symmetric teal octopus, clean silhouette, no orange; looks skin-like more than water), vortigal r3_4 (solid right-facing eagle with feet and talons, cuts cleanly, but reads as a white eagle rather than cloud).
+
+Honest read: colour naming worked, since orange and pink are gone for all three. It did not fix the material: Abyssor and Glimmaw are blue animals, not bodies of water, and Vortigal is a normal eagle with a cyan and yellow accent. Naming the animal and naming the material pull against each other; a real elemental look probably needs img2img from a pick or a LoRA. Glimmaw never produced a lure. Still no owner approval: G0 is open.

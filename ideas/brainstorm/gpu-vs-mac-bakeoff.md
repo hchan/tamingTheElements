@@ -23,6 +23,22 @@ Owner, 2026-11-17: "don't forget the bake-off of 4060 speed vs this mac". Decide
 - Output a table: job, Mac median, PC median, ratio, and a one-line routing rule ("generation -> PC, e2e -> Mac" or similar).
 - Needs the owner's per-session OK for the GPU PC (roster24 plan gate).
 
+## Results
+
+### 4060 side, job 1 variant (SDXL base 1.0, not Turbo), measured during the roster24 redo (2026-11-17)
+
+Not a like-for-like bake-off yet (no Mac numbers; the Mac was under heavy load). fp16, `enable_model_cpu_offload` (8 GB card), 28 steps, CFG 6.5, 1024x1024, batch 1, CUDA.
+
+| Run | Images | Median s/image | Range | Total | Model load |
+|---|---|---|---|---|---|
+| roster24 round 1 | 48 | 18.3 | - | 908 s | 6.3 s |
+| roster24 round 2 | 40 | 18.5 | 18.1 to 24.5 | 773 s | 6.5 s |
+| roster24 round 3 | 28 | 18.95 | 18.3 to 59.4 (one stall) | 611 s | 4.6 s |
+
+- Peak VRAM (torch): 5334 MB allocated, 7482 MB reserved. `nvidia-smi` reads only ~195 MB after a step with offload, so use torch peaks, not smi.
+- GPU temperature stayed at or below 50C during round 3 (stop limit 83C). Prompts and seeds: [roster24-redo-candidates](roster24-redo-candidates.md).
+- Still to do: the same seeds on the Mac (MPS), and the other five jobs above.
+
 ## Open questions
 
 - Is the power cost a factor (PC draw vs Mac) for the night window?
