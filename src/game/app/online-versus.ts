@@ -382,6 +382,8 @@ export function onlineVersusScreen(): Screen {
       failBox.setAttribute('role', 'alert');
       failBox.style.fontWeight = 'bold';
       failBox.hidden = true;
+      /** The last attempt used a room code: its controls (inside #onlineManual) are the retry, so a failure hides nothing. */
+      let viaRoom = false;
       const stale: { node: HTMLElement; hidden: boolean }[] = [];
       const failed = (words: string): void => {
         if (ended) return;
@@ -424,6 +426,7 @@ export function onlineVersusScreen(): Screen {
       retryHost.hidden = true;
       const makeCode = (): void => {
         clearFailure();
+        viaRoom = false;
         say('Making your invite...');
         retryHost.hidden = true;
         connecting = false;
@@ -471,6 +474,7 @@ export function onlineVersusScreen(): Screen {
         if (joining) return;
         joining = true;
         clearFailure();
+        viaRoom = false;
         join.hidden = true;
         say('Making your reply...');
         joinPeer(codeFromInput(offerIn.box.value), iceParam()).then(({ peer: p, answer }) => {
@@ -507,6 +511,8 @@ export function onlineVersusScreen(): Screen {
         const roomCode = el('p');
         roomCode.id = 'onlineRoomCode';
         const roomHost = button('onlineRoomHost', 'Host with a room code', () => {
+          clearFailure();
+          viaRoom = true;
           say('Making a room...');
           room?.close();
           hostPeer(iceParam()).then(({ peer: p, offer }) => {
@@ -530,6 +536,8 @@ export function onlineVersusScreen(): Screen {
         roomIn.spellcheck = false;
         roomIn.setAttribute('aria-label', 'Room code from your friend');
         const roomJoinBtn = button('onlineRoomJoin', 'Join with a room code', () => {
+          clearFailure();
+          viaRoom = true;
           const code = cleanRoomCode(roomIn.value);
           if (code === undefined) { say('A room code is 6 letters and digits, for example K7P2QM.'); return; }
           say('Joining the room...');
@@ -579,6 +587,7 @@ export function onlineVersusScreen(): Screen {
         retryHost,
       );
       const staleNodes = (): HTMLElement[] => {
+        if (viaRoom) return [];
         const hostSide = !hostPath.hidden;
         return hostSide
           ? [hostSteps, shareSlot, answerIn.row, pasteAnswer, connect, manual]

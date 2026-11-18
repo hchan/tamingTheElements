@@ -25,7 +25,13 @@ const h = vi.hoisted(() => {
   return state;
 });
 
+const rl = vi.hoisted(() => ({ joinRoom: vi.fn(), hostRoom: vi.fn() }));
 
+vi.mock('../net/relay', async (orig) => ({
+  ...(await orig<typeof import('../net/relay')>()),
+  joinRoom: rl.joinRoom,
+  hostRoom: rl.hostRoom,
+}));
 vi.mock('../net/peer', () => ({
   hostPeer: () =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
@@ -136,6 +142,8 @@ beforeEach(() => {
   h.hostError = undefined;
   h.joinError = undefined;
   h.created.length = 0;
+  rl.joinRoom.mockReset();
+  rl.hostRoom.mockReset();
   host = document.createElement('div');
   document.body.append(host);
 });
@@ -338,6 +346,38 @@ describe('online versus screen', () => {
     h.hostError = 'weird';
     await click('onlineHost');
     expect(failText()).toContain('Something went wrong.');
+  });
+
+  it('a wrong room code keeps the room-code controls and a retry clears the alert', async () => {
+    window.history.replaceState(null, '', '/?signal=ws://127.0.0.1:1#online');
+    rl.joinRoom.mockRejectedValueOnce(new Error('Room not found.'));
+    mountOnline(host);
+    $<HTMLInputElement>('onlineRoomIn').value = 'ZZZZZZ';
+    await click('onlineRoomJoin');
+    expect(failText()).toContain('not found');
+    expect(statusText()).toBe('');
+    const manual = $('onlineManual');
+    expect(manual.hidden).toBe(false);
+    expect(manual.style.display).toBe('');
+    rl.joinRoom.mockReturnValueOnce(new Promise(() => undefined));
+    await click('onlineRoomJoin');
+    expect($('onlineFailure').hidden).toBe(true);
+    expect(statusText()).toBe('Joining the room...');
+  });
+
+  it('a failed room host keeps the Host with a room code button and a retry clears the alert', async () => {
+    window.history.replaceState(null, '', '/?signal=ws://127.0.0.1:1#online');
+    h.hostResult = { peer: rig().peer, offer: 'O' };
+    rl.hostRoom.mockRejectedValueOnce(new Error('relay down'));
+    mountOnline(host);
+    await click('onlineRoomHost');
+    expect(failText()).toContain('relay down');
+    expect($('onlineRoomHost').hidden).toBe(false);
+    expect($('onlineManual').style.display).toBe('');
+    rl.hostRoom.mockReturnValueOnce(new Promise(() => undefined));
+    await click('onlineRoomHost');
+    expect($('onlineFailure').hidden).toBe(true);
+    expect(statusText()).toBe('Making a room...');
   });
 
   it('shows the error when the answer code is bad', async () => {
