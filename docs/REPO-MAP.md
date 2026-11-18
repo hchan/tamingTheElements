@@ -69,6 +69,7 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `packages/relay/` | Metadata for the `@tamingtheelements/relay` npm package (`package.json`, `tsconfig.json`; build with `tools/relay-package/build.mjs` into a gitignored dist folder) |
 | `tools/relay-package/` | `build.mjs`: tsc plus `.js` specifier rewrite for the relay package |
 | `tools/signal-relay/` | The relay itself (WP 10, `pnpm relay`): `rooms.ts` (pure room rules: two members, 10 min, size-capped code characters; its own copy of the room-code rules, kept equal to `src/core/relay/rooms-rules.ts` by `tests/repo/room-code-rules-drift.test.ts`), `server.ts` (Node, `ws`), `worker.ts` + `wrangler.toml` (Cloudflare Worker variant, the owner deploys it), README |
+| `src/testing/net/fake-online-service.ts` | `FakeService`, `Harness` (virtual clock) and frame builders shared by the OnlineClient tests and the online quick-match tests |
 | `src/game/net/desync-report.ts` | `buildDesyncReport` (WP 09): the Save report JSON with a replay-format member `pnpm replay:verify` can re-run; test `src/testing/net/desync-report.test.ts` |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags, test-only `window.__TTE__` hook); imports only core via its index; `cleanse-info.ts` (cooldown constant and Tidecall display name) |
 | `src/game/platform/storage/` | Save persistence: `SaveStore`, `StorageAdapter` (localStorage / in-memory), raw v0 backup, export/import |
