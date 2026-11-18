@@ -13,7 +13,7 @@ published from this repo so a backend (serverless or a Node process) can host it
 | `@tamingtheelements/relay/conformance` | the wire-spec conformance suite: `runAll` / `runConformance`, `conformanceCases`, `goldenFrames`, adapter and hook types |
 
 The host supplies a `Store` (async get/put/delete/keys; `put` takes `ifVersion: 'absent' | number` for conditional writes and an
-optional TTL), a `Sender` (send, close) and a `RelayCtx` per call (`now`, `randomInt`, optional `resting` kill switch). The core
+optional TTL), a `Sender` (send, close) and a `RelayCtx` per call (`now`, `randomInt`, optional `resting` kill switch, optional `identity`). The core
 reads no clock or randomness of its own and keeps no state between calls. It relays and compares; it never simulates.
 
 ## Semver policy
@@ -65,3 +65,22 @@ has no dependencies.
 - `src/core/relay` is exempt from the "no async/await" lint rule only (`eslint.config.js`); every determinism ban stays on, and
   `tests/repo/relay-package.test.ts` fails if the rest of `src/core` imports it.
 - `tools/signal-relay/rooms.ts` (WebRTC signalling) imports the room-code rules from `src/core/relay/rooms-rules.ts`: one copy.
+
+## Behaviour of the 0.1.0 fix round (WP-ONLINE-FIX-RELAY)
+
+This round changes wire behaviour (matchId values, seq rules, PEER_STATUS contents), which the policy above calls MAJOR. The package is
+unpublished, so it stays at 0.1.0; the first publish is the baseline.
+
+- **Compare-and-set.** Every write of a `conn:*` record goes through `ifVersion` (retry on conflict), so QUEUE_LEAVE, a double
+  QUEUE_JOIN, a close during pairing and the resting notice cannot overwrite each other. A pairing re-checks that the partner is still
+  queued and still has a record; if not, nothing is started and the survivor stays queued.
+- **matchId** counts up from 1 per pair on the relay (key `matchctr`, wraps inside 1..255). It is in MATCH_START (re-sent unchanged on
+  resume) and in every PEER_STATUS. Match-phase frames with another matchId are dropped.
+- **seq.** Only BATCH and PAUSE are numbered. HASH, DESYNC and RESULT carry seq 0 and the relay never checks it. `ReorderBuffer` drops a
+  seq more than `REORDER_LEAD_MAX` (512) ahead [choice].
+- **Rematch.** When a match is over (both RESULTs, hash divergence, DESYNC, or peer gone) the same sockets may QUEUE_JOIN or use rooms again.
+- **Divergence.** A HASH mismatch sends an unsolicited RESULT_ACK `disagreed` (with the matchId) to both slots. A RESULT whose peer is gone,
+  or whose peer the sweep declares gone, is answered RESULT_ACK `disagreed` at once instead of waiting for the TTL.
+- **Resume.** A HELLO with a valid session takes over a slot that still looks connected and closes the old socket with 1000. The session is
+  bound to `RelayCtx.identity` (the host's ticket subject); a different identity gets `resumed 0`. Omit `identity` if the host has none.
+- **Queue cap.** `MAX_QUEUE` (2000) [choice]; a join beyond it is ERROR `busy`.

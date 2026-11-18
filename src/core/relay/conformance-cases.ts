@@ -437,6 +437,55 @@ const match: ConformanceCase[] = [
     eq((await b.take('resultAck')).frame.status, ResultStatus.disagreed, 'b');
     eq((await a.take('resultAck')).frame.status, ResultStatus.disagreed, 'a');
   }),
+  testCase('match.two-in-a-row', '3,4,6', 'after RESULT agreed the same two connections queue again: a new matchId, seq restarts at 0, old-match frames are dropped', async (c) => {
+    const [a, b, ma] = await matched(c);
+    const id1 = ma.frame.matchId;
+    const r = (id: number): Frame => ({ t: 'result', seq: 0, matchId: id, winner: 1, reason: 0, ticks: 4000, finalHash: 0xabcdef });
+    await a.send(r(id1));
+    await b.send(r(id1));
+    await a.take('resultAck', (x) => x.status === ResultStatus.agreed);
+    await b.take('resultAck', (x) => x.status === ResultStatus.agreed);
+    await b.send({ t: 'queueJoin', mode: 0 });
+    await b.take('queueState');
+    await a.send({ t: 'queueJoin', mode: 0 });
+    const [ma2, mb2] = [await a.take('matchStart'), await b.take('matchStart')];
+    check(ma2.frame.matchId !== id1, 'matchId must change for the next match');
+    eq(ma2.frame.matchId, mb2.frame.matchId, 'both sides get the same matchId');
+    await a.send(batchFrame(0, id1));
+    await a.none('batch');
+    await b.none('batch');
+    const f = encodeFrame(batchFrame(0, ma2.frame.matchId));
+    const sender = ma2.frame.slot === 0 ? a : b;
+    const receiver = ma2.frame.slot === 0 ? b : a;
+    await sender.raw(f);
+    check(same((await receiver.take('batch')).raw, f), 'seq 0 of the new match relayed unchanged');
+  }),
+  testCase('batch.far-ahead-seq', '6', 'a BATCH far ahead of the stream is relayed unchanged; the receiver drops it and keeps the stream', async (c) => {
+    const [a, b, ma] = await matched(c);
+    const id = ma.frame.matchId;
+    await a.send(batchFrame(0, id));
+    await a.send(batchFrame(0x7fffffff, id));
+    await a.send(batchFrame(1, id));
+    const got: number[] = [];
+    for (let i = 0; i < 3; i++) got.push((await b.take('batch')).frame.seq);
+    eq(got, [0, 0x7fffffff, 1], 'relayed unchanged and in order');
+    const rb = new ReorderBuffer<number>();
+    eq(got.flatMap((s) => rb.push(s, s, 0)), [0, 1], 'the far-ahead seq is dropped, the stream continues');
+  }),
+  testCase('hash-result.seq-ignored', '4,6', 'HASH and RESULT carry seq 0 and the relay ignores whatever seq they have', async (c) => {
+    const [a, b, ma] = await matched(c);
+    const id = ma.frame.matchId;
+    for (const seq of [0, 9, 0xffffffff]) {
+      await a.send({ t: 'hash', seq, matchId: id, tick: 50, hash: 5 });
+      await b.send({ t: 'hash', seq, matchId: id, tick: 50, hash: 5 });
+    }
+    await a.none('resultAck');
+    const r = (seq: number): Frame => ({ t: 'result', seq, matchId: id, winner: 1, reason: 0, ticks: 4000, finalHash: 1 });
+    await a.send(r(777));
+    eq((await a.take('resultAck')).frame.status, ResultStatus.waiting, 'a waits');
+    await b.send(r(0));
+    eq((await b.take('resultAck')).frame.status, ResultStatus.agreed, 'b agreed despite different seqs');
+  }),
 ];
 
 const resume: ConformanceCase[] = [

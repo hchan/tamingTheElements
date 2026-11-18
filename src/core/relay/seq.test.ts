@@ -10,6 +10,15 @@ describe('ReorderBuffer', () => {
     expect(b.push(1, 'b', 2)).toEqual(['b']);
     expect(b.nextSeq).toBe(2);
   });
+  it('drops a seq more than REORDER_LEAD_MAX ahead and holds exactly that far', () => {
+    const b = new ReorderBuffer<string>(8, 40);
+    expect(b.push(513, 'far', 0)).toEqual([]);
+    expect(b.holding).toBe(0);
+    expect(b.push(512, 'edge', 0)).toEqual([]);
+    expect(b.holding).toBe(1);
+    expect(b.push(0x7fffffff, 'huge', 0)).toEqual([]);
+    expect(b.holding).toBe(1);
+  });
   it('holds a gap then releases when it fills', () => {
     const b = new ReorderBuffer<string>(8, 40);
     expect(b.push(2, 'c', 0)).toEqual([]);

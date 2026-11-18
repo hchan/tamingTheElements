@@ -1,9 +1,9 @@
-import { REORDER_HOLD_MAX, REORDER_SKIP_MS } from './constants';
+import { REORDER_HOLD_MAX, REORDER_LEAD_MAX, REORDER_SKIP_MS } from './constants';
 
 /**
- * Receiver side of spec section 6 for the numbered match-phase frames (BATCH, HASH, DESYNC, PAUSE, RESULT; not SETUP).
+ * Receiver side of spec section 6 for the numbered match-phase frames (BATCH and PAUSE; HASH, DESYNC and RESULT carry seq 0, SETUP has its own ctlSeq).
  * `seq` is a wrapping u32. Duplicates and stale frames are dropped, a gap is held up to `REORDER_HOLD_MAX` frames and
- * `REORDER_SKIP_MS`, then the receiver skips ahead and delivers what it holds. Time is injected.
+ * `REORDER_SKIP_MS`, then the receiver skips ahead and delivers what it holds. A seq more than `REORDER_LEAD_MAX` ahead is dropped. Time is injected.
  */
 export class ReorderBuffer<T> {
   private next = 0;
@@ -26,7 +26,7 @@ export class ReorderBuffer<T> {
   /** Offers one frame; returns the frames now deliverable, in order. */
   push(seq: number, item: T, nowMs: number): T[] {
     const ahead = (seq - this.next) >>> 0;
-    if (ahead >= 0x80000000) return [];
+    if (ahead >= 0x80000000 || ahead > REORDER_LEAD_MAX) return [];
     const out: T[] = [];
     if (ahead === 0) {
       out.push(item);
