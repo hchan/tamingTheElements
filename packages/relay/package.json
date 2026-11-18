@@ -1,7 +1,7 @@
 {
   "name": "@tamingtheelements/relay",
   "version": "0.1.0",
-  "description": "Transport-agnostic relay core for the Taming the Elements online protocol (wire codec, RelayCore, store and sender seams).",
+  "description": "Transport-agnostic relay core for the Taming the Elements online protocol (wire codec, RelayCore, store and sender seams) and a framework-agnostic wire-spec conformance suite.",
   "type": "module",
   "sideEffects": false,
   "license": "UNLICENSED",
@@ -12,6 +12,7 @@
   "exports": {
     ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
     "./testing": { "types": "./dist/testing.d.ts", "default": "./dist/testing.js" },
+    "./conformance": { "types": "./dist/conformance.d.ts", "default": "./dist/conformance.js" },
     "./package.json": "./package.json"
   },
   "engines": { "node": ">=20" }
