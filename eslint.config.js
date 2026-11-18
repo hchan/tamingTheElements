@@ -140,7 +140,7 @@ export default tseslint.config(
   {
     ignores: [
       '.claude/**',
-      'dist/**',
+      '**/dist/**',
       'dist-pages/**',
       'dist-itch/**',
       'coverage/**',
@@ -188,6 +188,19 @@ export default tseslint.config(
       'no-restricted-properties': ['error', ...bannedProperties],
       'no-restricted-syntax': ['error', ...bannedSyntax],
       'no-restricted-imports': ['error', bannedImports],
+    },
+  },
+  {
+    // The relay never simulates: the sync-step ban (no async/await) protects the sim, so it is lifted here only. Every determinism
+    // ban (Date, Math.random, trig, globals, imports) stays on.
+    files: ['src/core/relay/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...bannedSyntax.filter(
+          (r) => !['AwaitExpression', 'ForOfStatement[await=true]', ':function[async=true]'].includes(r.selector),
+        ),
+      ],
     },
   },
   prettier,
