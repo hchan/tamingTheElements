@@ -361,6 +361,8 @@ export function withoutStrikeTiles<T extends Pick<ActionSlot, 'kind' | 'sprite'>
 export function strikeCues(abilities: readonly { sprite: string }[]): [string, string][] {
   return [0, 1].map((i): [string, string] => {
     const sprite = abilities[i]?.sprite ?? '';
+    // The rope-throw ability is "Snag" on the bar box (buildSlots, slotTip), so the circle says the same (QA r107 P2).
+    if (sprite === SNAG_SPRITE) return ['Snag', 'Snag'];
     const short = abilityShortOfSprite(sprite) ?? '';
     return [short, abilityNameOfSprite(sprite) ?? short];
   });
