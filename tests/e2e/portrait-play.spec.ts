@@ -351,7 +351,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await shot(page, `${String(w)}-3v3-targets`);
     });
 
-    test('melee hero (Curomo): the nine-tile bar is balanced rows, not an orphan tile', async ({ page }) => {
+    test('melee hero (Curomo): the nine-tile bar is one row, boxes at least 39 CSS px wide and 44 tall (QA r105/r106)', async ({ page }) => {
       await page.goto(`${START}&ff=arcade#arcade`);
       await page.getByLabel('Your race').selectOption('curomo');
       await page.getByRole('button', { name: /^Fight/ }).tap();
@@ -359,9 +359,17 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
       await page.waitForFunction(ATTR);
       await page.waitForFunction(`document.querySelectorAll('button.touchBtn').length >= 5`);
-      await expectMinHitSize(page, 'melee');
+      const isBar = (c: Ctl): boolean => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco');
+      await expect.poll(async () => barRowCounts(await page.evaluate<Ctl[]>(CONTROLS)), { message: 'melee: nine tiles, one row', timeout: 10_000 }).toEqual([9]);
+      const ctls = await page.evaluate<Ctl[]>(CONTROLS);
+      for (const c of ctls) {
+        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(isBar(c) ? 39 : 44 - 0.6);
+        expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
+      }
+      const bar = ctls.filter(isBar);
+      const inset = (b: Box): Box => ({ x: b.x + 0.5, y: b.y + 0.5, w: b.w - 1, h: b.h - 1 }); // ignore sub-pixel rounding between flush tiles
+      for (const [i, p] of bar.entries()) for (const q of bar.slice(i + 1)) expect(overlap(inset(p), inset(q)), `${p.id} vs ${q.id}`).toBe(false);
       await shot(page, `${String(w)}-melee`);
-      await expectBalancedRows(page, 'melee');
     });
 
     for (const hero of ['sindarosa', 'rokcore']) {
