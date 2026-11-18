@@ -116,7 +116,7 @@ test.describe('keyboard-only menu navigation', () => {
     expect(await page.evaluate<string>(`document.documentElement.dataset.reduceMotion`)).toBe('true');
   });
 
-  test('menu to battle to pause dialog and back using only the keyboard', async ({ page }) => {
+  test('menu to battle to pause dialog and back using only the keyboard', { tag: '@smoke' }, async ({ page }) => {
     const errors = collectErrors(page);
     await seededMenu(page);
     await page.evaluate(`window.location.hash = '#garrison'`);

@@ -54,7 +54,7 @@ test('Quit to menu leaves the fight', async ({ page }) => {
 
 test.describe('phone landscape', () => {
   test.use({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  test('the Pause button pauses and Resume continues', async ({ page }) => {
+  test('the Pause button pauses and Resume continues', { tag: '@smoke' }, async ({ page }) => {
     await enterFight(page, true);
     if (shotDir) await page.screenshot({ path: `${shotDir}/fight-phone.png` });
     await page.locator('#pauseButton').tap();

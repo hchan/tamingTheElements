@@ -36,7 +36,7 @@ async function runOnce(page: Page, cmds: [number, number]): Promise<[number, num
   return [before, after];
 }
 
-test('arena renders two finite-positioned characters and steps deterministically', async ({ page }) => {
+test('arena renders two finite-positioned characters and steps deterministically', { tag: '@smoke' }, async ({ page }) => {
   const errors = collectErrors(page);
   await openArena(page);
 

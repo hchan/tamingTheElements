@@ -115,7 +115,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       expect(errors).toEqual([]);
     });
 
-    test('the canvas is tall: it fills down to the deck, the floor sits on the bar, the sim is unchanged', async ({ page }) => {
+    test('the canvas is tall: it fills down to the deck, the floor sits on the bar, the sim is unchanged', { tag: w === 360 ? '@smoke' : [] }, async ({ page }) => {
       const errors = collectErrors(page);
       await page.goto(`${START}&ff=arcade#arcade`);
       await page.getByRole('button', { name: /^Fight/ }).tap();

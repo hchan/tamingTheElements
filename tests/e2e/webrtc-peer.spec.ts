@@ -20,7 +20,7 @@ async function bundle(): Promise<string> {
   return chunk.code;
 }
 
-test('two peers connect with compact copy-paste codes, run the setup handshake and exchange an input packet', async ({ page }) => {
+test('two peers connect with compact copy-paste codes, run the setup handshake and exchange an input packet', { tag: '@smoke' }, async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto('/');
   await page.addScriptTag({ content: await bundle() });
