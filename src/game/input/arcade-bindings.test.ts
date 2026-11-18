@@ -154,7 +154,7 @@ describe('dash and guard keys (WP-arcade-defence-view): E and Q, rebindable, Arc
   });
   it('every Arcade-only action sends a bit from the dash up, every Classic one a bit below it', () => {
     for (const a of GAME_ACTIONS) {
-      const arcadeOnly = a === 'super' || a === 'dash' || a === 'guard' || a === 'weather' || a === 'charge';
+      const arcadeOnly = a === 'super' || a === 'dash' || a === 'guard' || a === 'weather' || a === 'charge' || a === 'run';
       expect(ACTION_COMMAND[a] >= ARCADE_ONLY, a).toBe(arcadeOnly);
     }
   });

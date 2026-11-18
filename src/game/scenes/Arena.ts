@@ -263,6 +263,7 @@ export class Arena extends Phaser.Scene {
         // Legacy Shift-Q / X / C cheats exist only in tester mode (docs/TESTER-MODE.md).
         cheatsEnabled: this.launch.tester !== undefined,
         arcade,
+        tabRun: true, // bare Tab on the page or canvas is Run (Player 1 only; docs/ACCESSIBILITY.md)
         // A swap sent on a tick where the game clock stood still (hit-stop, KO slow motion) is sent again on the next one.
         clock: () => view.actionBar(0)?.tick ?? 0,
         onSwap: (swaps) => { this.noteSwap(swaps); },

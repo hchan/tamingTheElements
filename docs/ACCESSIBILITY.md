@@ -28,6 +28,7 @@ and a per-screen `document.title` (`routeTitle` in `src/ui/router.ts`).
 - After each navigation the new screen's `h1` takes focus, so the screen is announced and Tab starts at the top.
 - `:focus-visible` draws a 3 px outline on every control (4 px white and amber in high contrast).
 - No keyboard traps: Tab leaves key capture, and the only modal (pause) cycles Tab inside it and closes on Escape.
+- Run Away / Run Towards (RUN-4): in a live match Player 1's bare Tab is Run (the Run key is also rebindable, default `` ` ``; Player 2 uses `/`). Tab is captured (`preventDefault`) only when focus is on the page, the body or the game canvas, and only without Shift, Ctrl, Alt or Meta. Tab inside an overlay or dialog (pause, first-run card), and Shift-Tab, keep their normal focus order, so there is no keyboard trap (WCAG 2.1.2): Escape or pause opens a dialog with ordinary Tab navigation. Tab stays in `RESERVED_CODES` and cannot be bound (`src/game/input/keyboard-agent-tab.dom.test.ts`).
 - Arcade Versus (`#arcade`, on for everyone): the picker is five labelled native selects in Tab order (Team:
   1v1 or 2v2 tag team; your race; your partner, disabled and out of the Tab order and the form data in 1v1; AI race;
   AI level; each race named with its element word, never by colour or art alone), a Fight! button and a Back link,

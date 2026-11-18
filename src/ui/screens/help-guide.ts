@@ -68,6 +68,7 @@ export const KEY_WORDS: Readonly<Record<string, string>> = {
   '.': 'full stop',
   ',': 'comma',
   '/': 'slash',
+  '`': 'backquote',
   '[': 'left bracket',
   ']': 'right bracket',
 };
