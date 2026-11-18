@@ -1,12 +1,14 @@
 import { decodeFrame, encodeFrame, type Frame, type FrameFields } from './codec';
 import {
   closeCodeFor,
+  CLOSE_NORMAL,
   DEFAULT_BATCH_EVERY,
   DEFAULT_INPUT_DELAY,
   DISCONNECT_GRACE_MS,
   ErrorCode,
   MATCH_RECORD_TTL_MS,
   MAX_INPUTS_PER_BATCH,
+  MAX_QUEUE,
   PeerStatusEvent,
   PROTOCOL_VERSION,
   RESTING_CLOSE_MS,
@@ -42,7 +44,8 @@ export interface RelayOptions {
   readonly onEvent?: (e: RelayEvent) => void;
 }
 
-type ConnState = 'idle' | 'queued' | 'room' | 'match';
+/** 'closed': the socket is gone and the record is being torn down; no compare-and-set expecting another state can succeed on it. */
+type ConnState = 'idle' | 'queued' | 'room' | 'match' | 'closed';
 interface ConnRec {
   sid: number;
   sim: number;
@@ -54,11 +57,14 @@ interface ConnRec {
   qAt: number;
   /** When the kill switch was first seen on this connection (ms), -1 = not yet. */
   restAt: number;
+  /** Identity the host authenticated this connection as (`RelayCtx.identity`), '' = none. A resume must present the same one. */
+  idn: string;
 }
 interface SessRec {
   conn: string;
   match: string | null;
   slot: number;
+  idn: string;
 }
 interface RoomRec {
   host: string;
@@ -81,13 +87,15 @@ interface MatchRec {
   results: [Res | null, Res | null];
   live: boolean;
 }
+type QueueEntry = [conn: string, sim: number, at: number];
 interface QueueRec {
-  w: [string, number, number][];
+  w: QueueEntry[];
 }
 
 const KEEP = Symbol('keep');
 const CONN_TTL_MS = MATCH_RECORD_TTL_MS;
 const MAX_PENDING_HASHES = 64;
+const MATCH_COUNTER_KEY = 'matchctr';
 const sessKey = (sid: number): string => `sess:${String(sid)}`;
 const asJson = (v: unknown): Json => v as Json;
 
@@ -118,45 +126,52 @@ export class RelayCore {
 
   /** The socket of `conn` closed. */
   async handleClose(conn: string, ctx: RelayCtx): Promise<void> {
-    const rec = await this.getConn(conn);
+    // Flip the record to 'closed' first (compare-and-set): a racing pairing can no longer claim it, and `rec` is the authoritative old state.
+    const rec = await this.claim(
+      conn,
+      ctx,
+      (r) => r.st !== 'closed',
+      (r) => {
+        r.st = 'closed';
+      },
+    );
     if (rec === undefined) return;
-    await this.store.delete(`conn:${conn}`);
-    if (rec.st === 'queued')
-      await this.mutate<QueueRec, null>('queue', undefined, (q) => [
-        { w: (q?.w ?? []).filter((e) => e[0] !== conn) },
-        null,
-      ]);
+    if (rec.st === 'queued') await this.unqueue(conn);
     else if (rec.st === 'room' && rec.room !== null) await this.store.delete(`room:${rec.room}`);
     else if (rec.st === 'match' && rec.match !== null) {
-      const peer = await this.mutate<MatchRec, string | undefined>(
+      const r = await this.mutate<MatchRec, { peer: string; matchId: number } | undefined>(
         `match:${rec.match}`,
         ctx.now() + MATCH_RECORD_TTL_MS,
         (m) => {
           if (m === undefined || !m.live || m.conns[rec.slot] !== conn || m.disc[rec.slot] !== -1)
             return [KEEP, undefined];
           m.disc[rec.slot] = ctx.now();
-          return [m, m.conns[1 - rec.slot]];
+          return [m, { peer: m.conns[1 - rec.slot] as string, matchId: m.matchId }];
         },
       );
-      if (peer !== undefined)
-        await this.tx(peer, {
+      if (r !== undefined)
+        await this.tx(r.peer, {
           t: 'peerStatus',
-          matchId: 0,
+          matchId: r.matchId,
           event: PeerStatusEvent.disconnected,
           graceMs: DISCONNECT_GRACE_MS,
         });
     }
+    await this.store.delete(`conn:${conn}`);
   }
 
   /** Housekeeping, call every few seconds: ends the grace of dropped players (PEER_STATUS gone to the peer). */
   async sweep(ctx: RelayCtx): Promise<void> {
     for (const key of await this.store.keys('match:')) {
-      const r = await this.mutate<MatchRec, { slot: number; peer: string; matchId: number }[]>(
+      const r = await this.mutate<
+        MatchRec,
+        { slot: number; peer: string; matchId: number; resolve: boolean }[]
+      >(
         key,
         ctx.now() + MATCH_RECORD_TTL_MS,
         (m) => {
           if (m === undefined || !m.live) return [KEEP, []];
-          const out: { slot: number; peer: string; matchId: number }[] = [];
+          const out: { slot: number; peer: string; matchId: number; resolve: boolean }[] = [];
           for (const s of [0, 1]) {
             if (
               m.disc[s] === -1 ||
@@ -165,7 +180,10 @@ export class RelayCore {
             )
               continue;
             m.gone[s] = 1;
-            out.push({ slot: s, peer: m.conns[1 - s] as string, matchId: m.matchId });
+            // The peer already submitted a RESULT that can now never be matched: resolve it instead of leaving it at 'waiting'.
+            const resolve = m.results[s] === null && m.results[1 - s] !== null;
+            if (resolve) m.live = false;
+            out.push({ slot: s, peer: m.conns[1 - s] as string, matchId: m.matchId, resolve });
           }
           if (m.gone[0] === 1 && m.gone[1] === 1) m.live = false;
           return out.length === 0 ? [KEEP, out] : [m, out];
@@ -180,6 +198,12 @@ export class RelayCore {
           event: PeerStatusEvent.gone,
           graceMs: 0,
         });
+        if (g.resolve)
+          await this.tx(g.peer, {
+            t: 'resultAck',
+            matchId: g.matchId,
+            status: ResultStatus.disagreed,
+          });
       }
     }
   }
@@ -190,6 +214,7 @@ export class RelayCore {
     if (f.t === 'hello') return this.onHello(conn, f, ctx);
     const rec = await this.getConn(conn);
     if (rec === undefined) return this.fail(conn, ErrorCode.badFrame, true);
+    if (rec.st === 'closed') return;
     if (ctx.resting !== undefined && (await this.restingTick(conn, rec, ctx))) return;
     switch (f.t) {
       case 'ping':
@@ -201,13 +226,13 @@ export class RelayCore {
           });
         return;
       case 'queueJoin':
-        return this.onQueueJoin(conn, rec, ctx);
+        return this.onQueueJoin(conn, ctx);
       case 'queueLeave':
-        return this.onQueueLeave(conn, rec, ctx);
+        return this.onQueueLeave(conn, ctx);
       case 'roomCreate':
-        return this.onRoomCreate(conn, rec, ctx);
+        return this.onRoomCreate(conn, ctx);
       case 'roomJoin':
-        return this.onRoomJoin(conn, rec, f.code, ctx);
+        return this.onRoomJoin(conn, f.code, ctx);
       case 'setup':
       case 'batch':
       case 'pause':
@@ -228,9 +253,16 @@ export class RelayCore {
     const resting = ctx.resting as NonNullable<RelayCtx['resting']>;
     const now = ctx.now();
     if (rec.restAt === -1) {
-      rec.restAt = now;
-      await this.putConn(conn, rec, ctx);
-      await this.sendError(conn, ErrorCode.resting, resting.retryAfterSec);
+      const first = await this.claim(
+        conn,
+        ctx,
+        (r) => r.restAt === -1,
+        (r) => {
+          r.restAt = now;
+        },
+      );
+      rec.restAt = first === undefined ? ((await this.getConn(conn))?.restAt ?? now) : now;
+      if (first !== undefined) await this.sendError(conn, ErrorCode.resting, resting.retryAfterSec);
     }
     const m = rec.st === 'match' && rec.match !== null ? await this.getMatch(rec.match) : undefined;
     if (m !== undefined && m.live && now - rec.restAt < RESTING_CLOSE_MS) return false;
@@ -259,13 +291,14 @@ export class RelayCore {
       slot: 0,
       qAt: 0,
       restAt: -1,
+      idn: ctx.identity ?? '',
     };
     const resumed =
       f.resumeSession === 0 ? undefined : await this.tryResume(conn, f.resumeSession, rec, ctx);
     if (resumed === undefined) {
       for (let i = 0; i < 8 && rec.sid === 0; i++) {
         const sid = ctx.randomInt(0xfffffffe) + 1;
-        const sess: SessRec = { conn, match: null, slot: 0 };
+        const sess: SessRec = { conn, match: null, slot: 0, idn: rec.idn };
         if (
           await this.store.put(sessKey(sid), asJson(sess), {
             ifVersion: 'absent',
@@ -276,7 +309,7 @@ export class RelayCore {
       }
       if (rec.sid === 0) throw new Error('no session id');
     }
-    await this.putConn(conn, rec, ctx);
+    if (!(await this.putConn(conn, rec, ctx, true))) return this.fail(conn, ErrorCode.badFrame, true);
     await this.tx(conn, {
       t: 'welcome',
       ver: PROTOCOL_VERSION,
@@ -286,46 +319,51 @@ export class RelayCore {
     });
     if (resumed !== undefined) {
       await this.tx(conn, this.matchStart(resumed.m, rec.slot));
-      await this.tx(resumed.peer, {
-        t: 'peerStatus',
-        matchId: resumed.m.matchId,
-        event: PeerStatusEvent.back,
-        graceMs: 0,
-      });
+      if (resumed.wasDown)
+        await this.tx(resumed.peer, {
+          t: 'peerStatus',
+          matchId: resumed.m.matchId,
+          event: PeerStatusEvent.back,
+          graceMs: 0,
+        });
     }
   }
 
-  /** Reclaim a held slot (spec section 7). Fills `rec`; undefined when there is nothing to resume (a new session is made instead). */
+  /**
+   * Reclaim a held slot (spec section 7). Fills `rec`; undefined when there is nothing to resume (a new session is made instead).
+   * The session must belong to the same authenticated identity (`ctx.identity`, the ticket's subject), so knowing a session id is not
+   * enough. A slot whose socket still looks connected is taken over: the old socket is closed.
+   */
   private async tryResume(
     conn: string,
     sid: number,
     rec: ConnRec,
     ctx: RelayCtx,
-  ): Promise<{ m: MatchRec; peer: string } | undefined> {
+  ): Promise<{ m: MatchRec; peer: string; wasDown: boolean } | undefined> {
     const sess = await this.getJson<SessRec>(sessKey(sid));
-    if (sess === undefined || sess.match === null) return undefined;
+    if (sess === undefined || sess.match === null || sess.idn !== rec.idn) return undefined;
     const slot = sess.slot;
-    const r = await this.mutate<MatchRec, { m: MatchRec; old: string } | undefined>(
-      `match:${sess.match}`,
-      ctx.now() + MATCH_RECORD_TTL_MS,
-      (m) => {
-        const at = m?.disc[slot] ?? -1;
-        if (
-          m === undefined ||
-          !m.live ||
-          at === -1 ||
-          m.gone[slot] === 1 ||
-          ctx.now() - at >= DISCONNECT_GRACE_MS
-        )
-          return [KEEP, undefined];
-        const old = m.conns[slot] as string;
-        m.conns[slot] = conn;
-        m.disc[slot] = -1;
-        return [m, { m: structuredCopy(m), old }];
-      },
-    );
+    const r = await this.mutate<
+      MatchRec,
+      { m: MatchRec; old: string; wasDown: boolean } | undefined
+    >(`match:${sess.match}`, ctx.now() + MATCH_RECORD_TTL_MS, (m) => {
+      const at = m?.disc[slot] ?? -1;
+      if (
+        m === undefined ||
+        !m.live ||
+        m.sids[slot] !== sid ||
+        m.gone[slot] === 1 ||
+        (at !== -1 && ctx.now() - at >= DISCONNECT_GRACE_MS)
+      )
+        return [KEEP, undefined];
+      const old = m.conns[slot] as string;
+      m.conns[slot] = conn;
+      m.disc[slot] = -1;
+      return [m, { m: structuredCopy(m), old, wasDown: at !== -1 }];
+    });
     if (r === undefined) return undefined;
     await this.store.delete(`conn:${r.old}`);
+    if (!r.wasDown) await this.closeRaw(r.old, CLOSE_NORMAL);
     await this.store.put(sessKey(sid), asJson({ ...sess, conn }), {
       expiresAtMs: ctx.now() + CONN_TTL_MS,
     });
@@ -334,61 +372,117 @@ export class RelayCore {
     rec.st = 'match';
     rec.match = sess.match;
     rec.slot = slot;
-    return { m: r.m, peer: r.m.conns[1 - slot] as string };
+    return { m: r.m, peer: r.m.conns[1 - slot] as string, wasDown: r.wasDown };
   }
 
   // ---- queue and rooms --------------------------------------------------------------------------------------------------------
 
-  /** A connection whose room vanished (expired) is idle again. */
-  private async effective(conn: string, rec: ConnRec, ctx: RelayCtx): Promise<ConnState> {
-    if (
-      rec.st === 'room' &&
-      rec.room !== null &&
-      (await this.getJson<RoomRec>(`room:${rec.room}`))?.host !== conn
-    ) {
-      rec.st = 'idle';
-      rec.room = null;
-      await this.putConn(conn, rec, ctx);
+  /**
+   * True when `conn` may start looking for a match. A room whose record vanished (expired) and a match that is over (not live, or its
+   * peer gone for good) both count as idle again, so the same socket can play the next match.
+   */
+  private async idleRec(conn: string, ctx: RelayCtx): Promise<boolean> {
+    const rec = await this.getConn(conn);
+    if (rec === undefined) return false;
+    if (rec.st === 'idle') return true;
+    let stale = false;
+    if (rec.st === 'room' && rec.room !== null)
+      stale = (await this.getJson<RoomRec>(`room:${rec.room}`))?.host !== conn;
+    else if (rec.st === 'match' && rec.match !== null) {
+      const m = await this.getMatch(rec.match);
+      stale = m === undefined || !m.live || m.gone[1 - rec.slot] === 1 || m.conns[rec.slot] !== conn;
     }
-    return rec.st;
+    if (!stale) return false;
+    return (
+      (await this.claim(
+        conn,
+        ctx,
+        (r) => r.st === rec.st && r.room === rec.room && r.match === rec.match,
+        (r) => Object.assign(r, { st: 'idle', room: null, match: null }),
+      )) !== undefined || (await this.getConn(conn))?.st === 'idle'
+    );
   }
 
-  private async onQueueJoin(conn: string, rec: ConnRec, ctx: RelayCtx): Promise<void> {
-    if ((await this.effective(conn, rec, ctx)) !== 'idle')
-      return this.sendError(conn, ErrorCode.busy);
-    const partner = await this.mutate<QueueRec, string | undefined>('queue', undefined, (q) => {
-      const w = q?.w ?? [];
-      const i = w.findIndex((e) => e[0] !== conn && e[1] === rec.sim);
-      if (i >= 0)
-        return [{ w: w.filter((_, j) => j !== i) }, (w[i] as [string, number, number])[0]];
-      return [{ w: [...w, [conn, rec.sim, ctx.now()]] }, undefined];
-    });
-    if (partner === undefined) {
-      rec.st = 'queued';
-      rec.qAt = ctx.now();
-      await this.putConn(conn, rec, ctx);
-      return this.tx(conn, { t: 'queueState', waitingSec: 0 });
+  private async onQueueJoin(conn: string, ctx: RelayCtx): Promise<void> {
+    if (!(await this.idleRec(conn, ctx))) return this.sendError(conn, ErrorCode.busy);
+    // Claim the connection first (idle to queued) so two QUEUE_JOINs in flight cannot both queue it.
+    const me = await this.claim(
+      conn,
+      ctx,
+      (r) => r.st === 'idle',
+      (r) => Object.assign(r, { st: 'queued', qAt: ctx.now() }),
+    );
+    if (me === undefined) return this.sendError(conn, ErrorCode.busy);
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const r = await this.mutate<QueueRec, QueueEntry | 'queued' | 'full'>('queue', undefined, (q) => {
+        const w = q?.w ?? [];
+        const i = w.findIndex((e) => e[0] !== conn && e[1] === me.sim);
+        if (i >= 0) return [{ w: w.filter((_, j) => j !== i) }, w[i] as QueueEntry];
+        if (w.some((e) => e[0] === conn)) return [KEEP, 'queued'];
+        if (w.length >= MAX_QUEUE) return [KEEP, 'full'];
+        return [{ w: [...w, [conn, me.sim, ctx.now()]] }, 'queued'];
+      });
+      if (r === 'full') {
+        await this.claim(
+          conn,
+          ctx,
+          (x) => x.st === 'queued',
+          (x) => {
+            x.st = 'idle';
+          },
+        );
+        return this.sendError(conn, ErrorCode.busy);
+      }
+      if (r === 'queued') return this.tx(conn, { t: 'queueState', waitingSec: 0 });
+      const started = await this.commitMatch(
+        r[0],
+        conn,
+        (x) => x.st === 'queued',
+        (x) => x.st === 'queued',
+        ctx,
+      );
+      if (typeof started === 'object') return this.announce(started.m, started.id);
+      if (started === 'b') {
+        // This connection vanished or left; the partner is queued again.
+        await this.mutate<QueueRec, null>('queue', undefined, (q) => [
+          { w: [r, ...(q?.w ?? []).filter((e) => e[0] !== r[0])] },
+          null,
+        ]);
+        return;
+      }
+      // 'a': the partner was stale (left or closed); look for the next one.
     }
-    await this.startMatch(partner, conn, ctx);
+    throw new Error('queue contention');
   }
 
-  private async onQueueLeave(conn: string, rec: ConnRec, ctx: RelayCtx): Promise<void> {
-    if (rec.st !== 'queued') return;
-    await this.mutate<QueueRec, null>('queue', undefined, (q) => [
-      { w: (q?.w ?? []).filter((e) => e[0] !== conn) },
-      null,
-    ]);
-    rec.st = 'idle';
-    await this.putConn(conn, rec, ctx);
+  private async onQueueLeave(conn: string, ctx: RelayCtx): Promise<void> {
+    const prev = await this.claim(
+      conn,
+      ctx,
+      (r) => r.st === 'queued',
+      (r) => {
+        r.st = 'idle';
+      },
+    );
+    if (prev !== undefined) await this.unqueue(conn);
   }
 
-  private async onRoomCreate(conn: string, rec: ConnRec, ctx: RelayCtx): Promise<void> {
-    if ((await this.effective(conn, rec, ctx)) !== 'idle')
-      return this.sendError(conn, ErrorCode.busy);
+  private async unqueue(conn: string): Promise<void> {
+    await this.mutate<QueueRec, null>('queue', undefined, (q) =>
+      q === undefined || !q.w.some((e) => e[0] === conn)
+        ? [KEEP, null]
+        : [{ w: q.w.filter((e) => e[0] !== conn) }, null],
+    );
+  }
+
+  private async onRoomCreate(conn: string, ctx: RelayCtx): Promise<void> {
+    if (!(await this.idleRec(conn, ctx))) return this.sendError(conn, ErrorCode.busy);
     if ((await this.store.keys('room:')).length >= MAX_ROOMS)
       return this.sendError(conn, ErrorCode.fullHouse, 30);
+    const me = await this.getConn(conn);
+    if (me === undefined) return;
     const exp = ctx.now() + ROOM_TTL_MS;
-    const room: RoomRec = { host: conn, sim: rec.sim, guest: null, exp };
+    const room: RoomRec = { host: conn, sim: me.sim, guest: null, exp };
     for (let i = 0; i < 8; i++) {
       const code = generateRoomCode((n) => ctx.randomInt(n));
       if (
@@ -398,17 +492,25 @@ export class RelayCore {
         }))
       )
         continue;
-      rec.st = 'room';
-      rec.room = code;
-      await this.putConn(conn, rec, ctx);
+      const prev = await this.claim(
+        conn,
+        ctx,
+        (r) => r.st === 'idle',
+        (r) => Object.assign(r, { st: 'room', room: code }),
+      );
+      if (prev === undefined) {
+        await this.store.delete(`room:${code}`);
+        return this.sendError(conn, ErrorCode.busy);
+      }
       return this.tx(conn, { t: 'roomCreated', code, ttlSec: ROOM_TTL_MS / 1000 });
     }
     throw new Error('no free room code');
   }
 
-  private async onRoomJoin(conn: string, rec: ConnRec, code: string, ctx: RelayCtx): Promise<void> {
-    if ((await this.effective(conn, rec, ctx)) !== 'idle')
-      return this.sendError(conn, ErrorCode.busy);
+  private async onRoomJoin(conn: string, code: string, ctx: RelayCtx): Promise<void> {
+    if (!(await this.idleRec(conn, ctx))) return this.sendError(conn, ErrorCode.busy);
+    const me = await this.getConn(conn);
+    if (me === undefined) return;
     const key = `room:${code}`;
     const r = await this.mutate<RoomRec, ErrorCodeOrHost>(
       key,
@@ -417,28 +519,54 @@ export class RelayCore {
         if (room === undefined || room.exp <= ctx.now() || !isRoomCode(code))
           return [KEEP, { err: ErrorCode.noRoom }];
         if (room.guest !== null) return [KEEP, { err: ErrorCode.full }];
-        if (room.sim !== rec.sim) return [KEEP, { err: ErrorCode.simMismatch }];
+        if (room.sim !== me.sim) return [KEEP, { err: ErrorCode.simMismatch }];
         room.guest = conn;
         return [room, { host: room.host }];
       },
       true,
     );
     if ('err' in r) return this.sendError(conn, r.err);
+    const started = await this.commitMatch(
+      r.host,
+      conn,
+      (x) => x.st === 'room' && x.room === code,
+      (x) => x.st === 'idle',
+      ctx,
+    );
+    if (typeof started !== 'object') {
+      // Host gone or this connection no longer idle: the room stays open for another guest if the host is still there.
+      await this.mutate<RoomRec, null>(key, undefined, (room) =>
+        room === undefined || room.guest !== conn ? [KEEP, null] : [{ ...room, guest: null }, null],
+      );
+      return this.sendError(conn, started === 'a' ? ErrorCode.noRoom : ErrorCode.busy);
+    }
     await this.store.delete(key);
     await this.tx(r.host, { t: 'roomPeer', event: RoomPeerEvent.joined });
-    await this.startMatch(r.host, conn, ctx);
+    await this.announce(started.m, started.id);
   }
 
-  /** Creates the match record, moves both connections into it and sends MATCH_START. `a` gets slot 0. */
-  private async startMatch(a: string, b: string, ctx: RelayCtx): Promise<void> {
-    const recs = [await this.getConn(a), await this.getConn(b)];
-    if (recs[0] === undefined || recs[1] === undefined) throw new Error('peer vanished');
+  /**
+   * Creates the match record and moves both connections into it, each by compare-and-set (`okA`/`okB` say which state may be claimed),
+   * so a racing leave, close or second join cannot be overwritten. `a` gets slot 0. Returns 'a' or 'b' when that side was no longer
+   * claimable (nothing is changed then).
+   */
+  private async commitMatch(
+    a: string,
+    b: string,
+    okA: (r: ConnRec) => boolean,
+    okB: (r: ConnRec) => boolean,
+    ctx: RelayCtx,
+  ): Promise<{ m: MatchRec; id: string } | 'a' | 'b'> {
+    const ra = await this.getConn(a);
+    if (ra === undefined || !okA(ra)) return 'a';
+    const rb = await this.getConn(b);
+    if (rb === undefined || !okB(rb)) return 'b';
     const m: MatchRec = {
-      matchId: 0,
+      matchId: await this.nextMatchId(),
       seed: ctx.randomInt(0x100000000),
-      sim: recs[0].sim,
+      sim: ra.sim,
       conns: [a, b],
-      sids: [recs[0].sid, recs[1].sid],
+      sids: [ra.sid, rb.sid],
       disc: [-1, -1],
       gone: [0, 0],
       hashes: [],
@@ -453,16 +581,42 @@ export class RelayCore {
         expiresAtMs: ctx.now() + MATCH_RECORD_TTL_MS,
       }))
     );
-    for (const slot of [0, 1]) {
-      const rec = recs[slot] as ConnRec;
-      Object.assign(rec, { st: 'match', room: null, match: id, slot });
-      await this.putConn(m.conns[slot] as string, rec, ctx);
-      await this.store.put(sessKey(rec.sid), asJson({ conn: m.conns[slot], match: id, slot }), {
-        expiresAtMs: ctx.now() + CONN_TTL_MS,
-      });
-      await this.tx(m.conns[slot] as string, this.matchStart(m, slot));
+    const toMatch =
+      (slot: number) =>
+      (r: ConnRec): void => {
+        Object.assign(r, { st: 'match', room: null, match: id, slot });
+      };
+    const pa = await this.claim(a, ctx, okA, toMatch(0));
+    if (pa === undefined) {
+      await this.store.delete(`match:${id}`);
+      return 'a';
     }
+    const pb = await this.claim(b, ctx, okB, toMatch(1));
+    if (pb === undefined) {
+      await this.claim(a, ctx, (r) => r.st === 'match' && r.match === id, (r) => Object.assign(r, pa));
+      await this.store.delete(`match:${id}`);
+      return 'b';
+    }
+    for (const slot of [0, 1])
+      await this.store.put(
+        sessKey(m.sids[slot] as number),
+        asJson({ conn: m.conns[slot], match: id, slot, idn: (slot === 0 ? pa : pb).idn }),
+        { expiresAtMs: ctx.now() + CONN_TTL_MS },
+      );
+    return { m, id };
+  }
+
+  private async announce(m: MatchRec, id: string): Promise<void> {
+    for (const slot of [0, 1]) await this.tx(m.conns[slot] as string, this.matchStart(m, slot));
     this.options.onEvent?.({ kind: 'match-start', match: id });
+  }
+
+  /** Per-store match counter, 1..255 (the wire `matchId` is a u8; 0 is never used), +1 per match. */
+  private nextMatchId(): Promise<number> {
+    return this.mutate<number, number>(MATCH_COUNTER_KEY, undefined, (cur) => {
+      const n = ((cur ?? 0) % 255) + 1;
+      return [n, n];
+    });
   }
 
   private matchStart(m: MatchRec, slot: number): Frame {
@@ -504,7 +658,7 @@ export class RelayCore {
     const m0 = await this.matchFor(conn, rec);
     if (m0 === undefined) return this.fail(conn, ErrorCode.badFrame, true);
     if (f.matchId !== m0.matchId) return;
-    const bad = await this.mutate<MatchRec, [number, number] | undefined>(
+    const bad = await this.mutate<MatchRec, { conns: [string, string]; matchId: number } | undefined>(
       `match:${rec.match ?? ''}`,
       ctx.now() + MATCH_RECORD_TTL_MS,
       (m) => {
@@ -515,23 +669,26 @@ export class RelayCore {
           m.hashes.push(e);
         }
         e[1 + rec.slot] = f.hash;
-        let diverged: [number, number] | undefined;
+        let diverged = false;
         if (e[1] !== -1 && e[2] !== -1) {
           m.hashes = m.hashes.filter((x) => x !== e);
-          if (e[1] !== e[2]) diverged = [e[1], e[2]];
+          if (e[1] !== e[2]) diverged = true;
         }
         if (m.hashes.length > MAX_PENDING_HASHES) m.hashes = m.hashes.slice(-MAX_PENDING_HASHES);
-        if (diverged !== undefined) m.live = false;
-        return [m, diverged];
+        if (diverged) m.live = false;
+        return [m, diverged ? { conns: m.conns, matchId: m.matchId } : undefined];
       },
     );
-    if (bad !== undefined)
-      this.options.onEvent?.({
-        kind: 'desync',
-        match: rec.match as string,
-        tick: f.tick,
-        by: 'server',
-      });
+    if (bad === undefined) return;
+    this.options.onEvent?.({
+      kind: 'desync',
+      match: rec.match as string,
+      tick: f.tick,
+      by: 'server',
+    });
+    // The spec has no frame for "the server saw your hashes differ"; RESULT_ACK disagreed (status 2) is the closest, sent to both slots.
+    for (const c of bad.conns)
+      await this.tx(c, { t: 'resultAck', matchId: bad.matchId, status: ResultStatus.disagreed });
   }
 
   private async onDesync(
@@ -582,15 +739,23 @@ export class RelayCore {
         const a = cur.results[0];
         const b = cur.results[1];
         const both = a !== null && b !== null;
+        // A peer that is gone for good can never submit: resolve as disagreed at once instead of waiting for the record TTL.
+        const peerGone = cur.gone[1 - rec.slot] === 1;
         const status = !both
-          ? ResultStatus.waiting
+          ? peerGone
+            ? ResultStatus.disagreed
+            : ResultStatus.waiting
           : a[0] === b[0] && a[2] === b[2] && a[3] === b[3]
             ? ResultStatus.agreed
             : ResultStatus.disagreed;
-        if (both) cur.live = false;
+        if (both || peerGone) cur.live = false;
         return [
           had ? KEEP : cur,
-          { status, peer: cur.conns[1 - rec.slot] as string, completed: both && !had },
+          {
+            status,
+            peer: cur.conns[1 - rec.slot] as string,
+            completed: (both || peerGone) && !had,
+          },
         ];
       },
     );
@@ -618,8 +783,33 @@ export class RelayCore {
   private getMatch(id: string): Promise<MatchRec | undefined> {
     return this.getJson<MatchRec>(`match:${id}`);
   }
-  private putConn(conn: string, rec: ConnRec, ctx: RelayCtx): Promise<boolean> {
-    return this.store.put(`conn:${conn}`, asJson(rec), { expiresAtMs: ctx.now() + CONN_TTL_MS });
+  private putConn(conn: string, rec: ConnRec, ctx: RelayCtx, absentOnly = false): Promise<boolean> {
+    return this.store.put(`conn:${conn}`, asJson(rec), {
+      expiresAtMs: ctx.now() + CONN_TTL_MS,
+      ...(absentOnly ? { ifVersion: 'absent' as const } : {}),
+    });
+  }
+  /**
+   * Compare-and-set on a connection record: when it exists and `expect` holds, `apply` edits it and it is written under the version
+   * that was read (retried on conflict). Returns a copy of the record as it was BEFORE the edit, undefined when nothing was changed.
+   * Connection records are never written any other way after HELLO, so a racing leave, close or pairing cannot be overwritten.
+   */
+  private claim(
+    conn: string,
+    ctx: RelayCtx,
+    expect: (r: ConnRec) => boolean,
+    apply: (r: ConnRec) => void,
+  ): Promise<ConnRec | undefined> {
+    return this.mutate<ConnRec, ConnRec | undefined>(
+      `conn:${conn}`,
+      ctx.now() + CONN_TTL_MS,
+      (cur) => {
+        if (cur === undefined || !expect(cur)) return [KEEP, undefined];
+        const prev = structuredCopy(cur);
+        apply(cur);
+        return [cur, prev];
+      },
+    );
   }
   private async sidOf(matchKey: string, slot: number): Promise<number> {
     return (await this.getJson<MatchRec>(matchKey))?.sids[slot] ?? 0;
@@ -665,6 +855,13 @@ export class RelayCore {
   }
   private sendError(conn: string, code: number, retryAfterSec = 0, detail = 0): Promise<void> {
     return this.tx(conn, { t: 'error', code, retryAfterSec, detail });
+  }
+  private async closeRaw(conn: string, wsCode: number): Promise<void> {
+    try {
+      await this.sender.close(conn, wsCode);
+    } catch {
+      /* already closed */
+    }
   }
   private async closeConn(conn: string, code: number): Promise<void> {
     try {

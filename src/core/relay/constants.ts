@@ -76,3 +76,7 @@ export const REORDER_HOLD_MAX = 8;
 export const REORDER_SKIP_MS = 40;
 /** A finished or abandoned match record lives this long in the store [estimate]. */
 export const MATCH_RECORD_TTL_MS = 2 * 60 * 60_000;
+/** A frame whose seq is more than this far ahead of the next expected one is dropped, so one hostile frame cannot poison the stream [choice]. */
+export const REORDER_LEAD_MAX = 512;
+/** Max players waiting in the quick-match queue; a join beyond it is ERROR busy [choice]. */
+export const MAX_QUEUE = 2000;

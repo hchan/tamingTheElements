@@ -41,5 +41,7 @@ export interface RelayCtx {
   /** Uniform integer in [0, n), n up to 2^32. */
   randomInt(n: number): number;
   /** Kill switch (spec section 5, `resting`). Present = the game is resting; the value is when to look again (0 = unknown). */
+  /** Who the host authenticated this connection as (the ticket's subject). A resume must come from the same identity; omit if the host has none. */
+  readonly identity?: string;
   readonly resting?: { readonly retryAfterSec: number };
 }
