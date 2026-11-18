@@ -9,11 +9,13 @@ const stepLive = (page: Page, n: number): Promise<unknown> => page.evaluate(`win
 
 async function start(page: Page): Promise<{ p1: number; p2: number }> {
   await page.goto(`${START}&ff=arcade#arcade`);
-  await page.getByLabel('Opponent').selectOption('local');
+  await page.getByLabel('Who plays').selectOption('local');
   await expect(page.getByLabel('Player 1 hero 1')).toBeVisible();
   await expect(page.getByLabel('Player 2 hero 1')).toBeVisible();
   await expect(page.getByLabel('AI level')).toBeDisabled();
-  await expect(page.locator('#arcadeLocalHelp')).toBeVisible();
+  // The key sheet is a collapsed <details> under the picker (MENU-B): the summary shows, the keys open on click.
+  await expect(page.locator('#arcadeLocalHelp > summary')).toBeVisible();
+  await expect(page.locator('#arcadeOnlineLink')).toHaveCount(0);
   // The first two tests duel one hero each: the Team select keeps the 1v1 option.
   await page.getByLabel('Team').selectOption('1');
   await expect(page.getByLabel('Player 1 hero 2')).toBeDisabled();
@@ -83,7 +85,7 @@ test('Two players is a 3v3 duel: three hero selects each, both players tag with 
   const errors = collectErrors(page);
   await page.goto(`${START}&ff=arcade#arcade`);
   await expect(page.getByLabel('Player 2 hero 2')).toBeHidden();
-  await page.getByLabel('Opponent').selectOption('local');
+  await page.getByLabel('Who plays').selectOption('local');
   await expect(page.getByLabel('Team')).toHaveValue('3');
   for (const l of ['Player 1 hero 1', 'Player 1 hero 2', 'Player 1 hero 3', 'Player 2 hero 1', 'Player 2 hero 2', 'Player 2 hero 3']) {
     await expect(page.getByLabel(l)).toBeEnabled();

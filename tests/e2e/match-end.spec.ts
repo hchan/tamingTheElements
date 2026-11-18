@@ -71,7 +71,7 @@ async function fightLocal(page: Page, size: { width: number; height: number }): 
   await page.setViewportSize(size);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${START}&ff=arcade#arcade`);
-  await page.getByLabel('Opponent').selectOption('local');
+  await page.getByLabel('Who plays').selectOption('local');
   await page.getByLabel('Team').selectOption('1');
   await page.getByLabel('Player 1 hero 1').selectOption('sindarosa');
   await page.getByLabel('Player 2 hero 1').selectOption('pax');
