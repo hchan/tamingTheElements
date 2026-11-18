@@ -125,6 +125,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T => {
   return e;
 };
 const statusText = (): string => $('onlineStatus').textContent;
+const failText = (): string => $('onlineFailure').textContent;
 const click = async (id: string): Promise<void> => {
   $(id).click();
   await tick(0);
@@ -333,10 +334,10 @@ describe('online versus screen', () => {
     mountOnline(host);
     h.hostError = new Error('no rtc');
     await click('onlineRoleHost');
-    expect(statusText()).toBe('no rtc');
+    expect(failText()).toContain('no rtc');
     h.hostError = 'weird';
     await click('onlineHost');
-    expect(statusText()).toBe('Something went wrong.');
+    expect(failText()).toContain('Something went wrong.');
   });
 
   it('shows the error when the answer code is bad', async () => {
@@ -346,7 +347,7 @@ describe('online versus screen', () => {
     mountOnline(host);
     await click('onlineRoleHost');
     await click('onlineConnect');
-    expect(statusText()).toBe('That is not an answer code.');
+    expect(failText()).toContain('That is not an answer code.');
   });
 
   it('says so when the link fails to open', async () => {
@@ -362,7 +363,7 @@ describe('online versus screen', () => {
     await click('onlineConnect');
     r2.failLink();
     await tick(0);
-    expect(statusText()).toContain('The connection failed');
+    expect(failText()).toContain('The connection failed');
   });
 
   it('host: picks, exchanges picks, passes the handshake and starts the match', async () => {
@@ -533,7 +534,7 @@ describe('online versus screen', () => {
     h.joinError = new Error('That is not an offer code.');
     mountOnline(host);
     await click('onlineJoin');
-    expect(statusText()).toBe('That is not an offer code.');
+    expect(failText()).toContain('That is not an offer code.');
   });
 
   it('closes a peer that arrives after the screen was unmounted', async () => {
