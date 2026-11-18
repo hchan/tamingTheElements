@@ -2797,7 +2797,16 @@ a.onlineMenuLink {
   background: #121022;
   border-bottom: 1px solid #5a5190;
 }
-#menu .settingsBar .menuButton {
+#menu .settingsSubheading {
+  margin: 0.75em 0.6em 0.25em;
+  font-size: 1.05em;
+  color: #ffe600;
+}
+#menu .settingsSection > a.menuLink {
+  margin: 0.5em 0.9em;
+}
+#menu .settingsBar .menuButton,
+#menu .settingsBar .menuLink {
   margin: 0;
 }
 #menu #settingsAudio .settingsGroup > legend {
@@ -2933,7 +2942,15 @@ body:has(.settingsBar) {
     clip-path: inset(50%);
   }
   #menu .settingsBar { padding: 0.25em 0; gap: 0.5em; }
-  #menu .settingsBar .menuButton { box-sizing: border-box; min-height: 44px; padding-top: 0.2em; padding-bottom: 0.2em; }
+  #menu .settingsSubheading {
+  margin: 0.75em 0.6em 0.25em;
+  font-size: 1.05em;
+  color: #ffe600;
+}
+#menu .settingsSection > a.menuLink {
+  margin: 0.5em 0.9em;
+}
+#menu .settingsBar .menuButton { box-sizing: border-box; min-height: 44px; padding-top: 0.2em; padding-bottom: 0.2em; }
   #menu .settingsSection { margin: 0.3em 0; }
   #menu .settingsSummary { padding: 0.3em 0.9em; min-height: 44px; }
 }

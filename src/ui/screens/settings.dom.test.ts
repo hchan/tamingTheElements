@@ -240,6 +240,12 @@ describe('settings sections', () => {
       expect(adv?.querySelector(`#${id}`)).not.toBeNull();
     }
     expect(adv?.querySelector('.settingsTransfer')).not.toBeNull();
+    expect(document.getElementById('settingsPlay')).toBeNull();
+    expect(adv?.querySelector('input[name="difficulty"]')).not.toBeNull();
+    expect(adv?.querySelector('input[name="garrisonSortOrder"]')).not.toBeNull();
+    expect(adv?.textContent).toContain('Story mode');
+    expect(document.getElementById('settingsControls')?.querySelector('a.menuLink[href="#keyBindings"]')).not.toBeNull();
+    expect(form().querySelector('.settingsBar a.menuLink')?.textContent).toBe('Back');
     expect(form().firstElementChild?.className).toBe('settingsBar');
     expect(form().querySelector('.settingsBar button[type="submit"]')?.textContent).toBe('Save');
     expect(
