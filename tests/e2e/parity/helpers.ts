@@ -121,7 +121,7 @@ export const CINEMATIC_READY = `window.__TTE__ && window.__TTE__.scene === 'Cine
 
 /** Waits for the running Cinematic scene and presses Skip. */
 export async function skipCinematic(page: Page): Promise<void> {
-  await page.waitForFunction(CINEMATIC_READY);
+  await page.waitForFunction(CINEMATIC_READY, undefined, { timeout: 60_000 });
   await page.evaluate(`window.__TTE__.cinematic.skip()`);
 }
 
