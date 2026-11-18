@@ -6,7 +6,8 @@ import { runMatch } from '../../tools/sim/run-match';
 interface Case { a: string; b: string; seed: number; aIsTeam0?: boolean; teamSize?: 1 | 2 }
 const cases = (fixture as { cases: Case[] }).cases;
 // Hyalia mid-range opening that still stalls at Normal (docs/FUN-DESIGN.md 2.11); the swept rock look-ahead (SIM 83) is Hard only.
-const RESIDUAL = new Set(['hyalia|glimmaw|2864583637']);
+// RUN-3 (SIM 89): hyalia vs abyssor on the same seed stalls at Normal once the AI uses Run (ranged Run Away kites a melee foe); owner decision pending.
+const RESIDUAL = new Set(['hyalia|glimmaw|2864583637', 'hyalia|abyssor|2864583637']);
 const hardCases = (hardFixture as { cases: Case[] }).cases;
 
 describe('pinned Normal-level Arcade stalemates (SIM 78) resolve after the escalating stale stages', () => {

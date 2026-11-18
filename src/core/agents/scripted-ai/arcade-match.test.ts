@@ -65,6 +65,7 @@ function play(seed: number, level: ArcadeAiLevel, styles: readonly [Style, Style
       if ((c & Cmd.trap) !== 0 && (a.trapIn !== 0 || a.trapCount >= TRAP_TEAM_MAX)) bad('trap on cooldown or at the team cap');
       if ((c & Cmd.elemental) !== 0 && a.elemIn !== 0) bad('elemental not ready');
       if ((c & Cmd.cleanse) !== 0 && (a.cleanseIn !== 0 || (a.selfRooted === 0 && !a.selfSlowed))) bad('cleanse not ready or nothing to cleanse');
+      if ((c & Cmd.run) !== 0 && (a.runIn !== 0 || a.running === true)) bad('run on cooldown or while running');
       if ((c & Cmd.super) !== 0 && (a.meter < SUPER_COST || a.meter > METER_MAX)) bad('super without a bar');
       if ((c & (Cmd.swap1 | Cmd.swap2)) !== 0 && a.tagIn !== 0) bad('tag on cooldown');
       if ((c & Cmd.swap1) !== 0 && a.partnerPm < 0) bad('tag with no partner');
@@ -106,7 +107,7 @@ describe('the scripted Arcade AI over whole matches', () => {
     expect(seen(Cmd.guard)).toBe(true);
     expect(seen(Cmd.dash)).toBe(true);
     expect(seen(Cmd.primary) || seen(Cmd.secondary)).toBe(true);
-    for (const bit of [Cmd.trap, Cmd.super, Cmd.weather, Cmd.swap1, Cmd.elemental, Cmd.charge]) expect(seen(bit)).toBe(true);
+    for (const bit of [Cmd.trap, Cmd.super, Cmd.weather, Cmd.swap1, Cmd.elemental, Cmd.charge, Cmd.run]) expect(seen(bit)).toBe(true);
   });
 
   it('a mid-match save, fresh agents and load resume the identical command stream', () => {

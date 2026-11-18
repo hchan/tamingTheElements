@@ -115,10 +115,10 @@ describe('defence fatigue (SIM_VERSION 80)', () => {
     const u = new ArcadeTactics(AI_HARD, ZONER);
     u.load(saved);
     expect(u.save()).toEqual(saved);
-    expect(mem(u)).toHaveLength(20);
+    expect(mem(u)).toHaveLength(23);
     const old = new ArcadeTactics(AI_HARD, ZONER);
     old.load({ mem: [-1, 0, -1, 0, NO_PLAN, 0, ZONER, 0, 0, 0, 0, -1000, 0, -1, 0, 0], rng: null });
-    expect(mem(old).slice(16)).toEqual([0, 0, 0, 0]);
+    expect(mem(old).slice(16)).toEqual([0, 0, 0, 0, 0, 0, 0]);
     expect(old.apply(view(5, true), cmd)).toBeDefined();
   });
 

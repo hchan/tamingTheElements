@@ -30,6 +30,7 @@ import { ccLevel, ccOn } from '../sim/systems/arcade/cc-state';
 import { otOn } from '../sim/systems/arcade/over-time';
 import { StatusField, StatusId, statusBase, statusSlot } from '../sim/systems/status';
 import { RANGED } from '../sim/systems/arcade/meter';
+import { isRunning, runsAway } from '../sim/systems/arcade/run-move';
 import { isGuarding } from '../sim/systems/arcade/stun';
 import { superSpecOf } from '../sim/systems/arcade/super';
 import { kindOf, patchRects, stageOf } from '../sim/systems/arcade/terrain';
@@ -101,6 +102,14 @@ export interface ArcadeView {
   readonly weatherIn: number;
   /** Game ticks until this side's melee Charge is ready (0: now), or -1 for a ranged hero, which has none (FUN-DESIGN 2.17). */
   readonly chargeIn: number;
+  /**
+   * Run Away / Run Towards (FUN-DESIGN 2.29; absent in a hand-built view, which means the agent never runs): game ticks until Run is
+   * ready (0: now; its cooldown counts from the end of a run), whether a run is on now, and whether this hero's run is a Run Away
+   * (a ranged hero) rather than a Run Towards.
+   */
+  readonly runIn?: number;
+  readonly running?: boolean;
+  readonly runAway?: boolean;
   /** This side's weather charge, 0..WEATHER_CHARGE_FULL; weather needs it full (FUN-DESIGN 2.14). */
   readonly weatherCharge: number;
   /**
@@ -377,6 +386,9 @@ function arcadeViewOf(
     dashIn: left(self, ArcadeE.dashReadyAt),
     weatherIn: left(self, ArcadeE.weatherReadyAt),
     chargeIn: RANGED[s.defId[self?.id ?? 0] ?? 0] ? -1 : left(self, ArcadeE.chargeReadyAt),
+    runIn: left(self, ArcadeE.runReadyAt),
+    running: self !== undefined && isRunning(s, self.id),
+    runAway: self !== undefined && runsAway(s, self.id),
     weatherCharge: team(side, ArcadeT.weatherCharge),
     tagIn: Math.max(0, (s.teams[side * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0) - g),
     ...partnersPm(s, members, self),

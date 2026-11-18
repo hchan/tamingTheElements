@@ -318,5 +318,9 @@
  *    a 250 tick run along the foe line (ranged heroes away, melee towards), cooldown 350 ticks from its end, `runStarted`/`runEnded`
  *    events (84, 85), view.run and runIn/running, the dash takes the run direction, tag-out ends it. No real input or agent sets bit 16 yet.
  *    Re-record reason: new arcade-run golden; every other golden changes only the simVersion header.
+ * 89: Arcade only (Classic hashes unchanged). The scripted AI uses Run Away / Run Towards on Normal and Hard, never on Easy (FUN-DESIGN 2.29;
+ *    scripted-ai/arcade.ts `runStep`; ArcadeView gains runIn, running, runAway; AI memory 20 -> 23 slots): a ranged hero runs away from a foe within 260 px
+ *    and breaks the run past 520 px, cornered or stuck, a melee hero runs in from 200 px while its Charge is on cooldown. Win rates move by design.
+ *    Re-record reason: AI behaviour change; goldens change only the simVersion header unless a recorded Arcade AI match uses Run; the Arcade balance baselines are re-recorded.
  */
-export const SIM_VERSION = 88;
+export const SIM_VERSION = 89;

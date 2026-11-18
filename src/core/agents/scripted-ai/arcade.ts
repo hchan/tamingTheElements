@@ -204,8 +204,34 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
 type Memory = [
   number, number, number, number, number, number, number, number, number, number,
   number, number, number, number, number, number, number, number, number, number,
+  number, number, number,
 ];
-const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0, 0, 0, 0, 0];
+const FRESH: Readonly<Memory> = [-1, 0, -1, 0, NO_PLAN, 0, -1, 0, 0, 0, 0, -1000, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+/**
+ * Run Away / Run Towards (SIM_VERSION 89, Normal and Hard; FUN-DESIGN 2.29). A ranged hero runs away once the foe is within
+ * ARCADE_AI_RUN_NEAR_PX (centre Chebyshev distance) and breaks the run past ARCADE_AI_RUN_FAR_PX, when cornered, or after
+ * ARCADE_AI_RUN_STILL_TICKS free ticks without moving; a melee hero runs in from CHARGE_AI_MIN_DIST while its Charge is on cooldown.
+ */
+export const ARCADE_AI_RUN_NEAR_PX = 260;
+export const ARCADE_AI_RUN_FAR_PX = 520;
+export const ARCADE_AI_RUN_STILL_TICKS = 10;
+
+/** The 8 px of room a Run Away needs (RUN_EDGE_PX) to keep a component. */
+const RUN_ROOM_PX = 8;
+
+/** True when a Run Away from `opp` has nowhere to go: both components of the away step are blocked by the playfield edge (the sim's `runDirection` rule, without the perpendicular escape). */
+export function runCornered(self: FighterView, opp: FighterView, pf: { x: number; y: number; w: number; h: number }): boolean {
+  const dx = opp.x + opp.w / 2 - (self.x + self.w / 2);
+  const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
+  const ax = Math.abs(dx);
+  const ay = Math.abs(dy);
+  const sx = ax * 2 <= ay ? 0 : dx > 0 ? -1 : dx < 0 ? 1 : 0;
+  const sy = ay * 2 <= ax ? 0 : dy > 0 ? -1 : dy < 0 ? 1 : 0;
+  const roomX = sx < 0 ? self.x - pf.x : pf.x + pf.w - self.x - self.w;
+  const roomY = sy < 0 ? self.y - pf.y : pf.y + pf.h - self.y - self.h;
+  return (sx === 0 || roomX < RUN_ROOM_PX) && (sy === 0 || roomY < RUN_ROOM_PX);
+}
 
 /** Game ticks without any HP change on the field after which the AI stops retreating and presses (no stalemates). */
 export const ARCADE_AI_STALE_TICKS = 400;
@@ -276,7 +302,7 @@ export class ArcadeTactics {
     if (a === undefined) return base;
     const cmd = this.avoidTraps(view, a, this.kitUse(view, a, this.decide(view, a, base, shot)));
     const out = avoidChord(a, a.rocks.length === 0 || view.self === undefined || view.opponent === undefined ? cmd : this.slide(view.tick, view.self, view.opponent, a.rocks, cmd, a.partnerPm >= 0));
-    const zoned = this.hazard(view, a, this.wallHoldStep(view, a, this.zone(view, a, out)));
+    const zoned = this.hazard(view, a, this.runStep(view, a, this.wallHoldStep(view, a, this.zone(view, a, out))));
     // A held charge bit never makes a new press: one pressed in the intro (no action then) is dropped, and holding it on makes both
     // melee heroes stand forever (1v1 Arcade stalemates from tick 0). Release for a tick after a press so the next one is an edge.
     const released = (zoned & Cmd.charge) !== 0 && (a.prevCmd & Cmd.charge) !== 0 ? zoned & ~Cmd.charge : zoned;
@@ -337,7 +363,7 @@ export class ArcadeTactics {
     const opp = view.opponent;
     if (self === undefined || opp === undefined || this.level < AI_NORMAL || a.chargeIn !== -1 || a.partnerPm >= 0) return cmd;
     if (a.phase !== RoundPhase.fight || a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
-    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
+    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap | Cmd.run)) !== 0) return cmd;
     return zoneStep(self, opp, cmd, arcadePlayfield(), a.oppStun !== 0 || a.oppRooted !== 0);
   }
 
@@ -357,6 +383,45 @@ export class ArcadeTactics {
   }
 
   /**
+   * Run Away / Run Towards (SIM_VERSION 89, FUN-DESIGN 2.29; Normal and Hard, never Easy; no draw, so no other rule's draw moves). Not
+   * running: a free hero with Run ready presses it (a ranged hero when the foe is within ARCADE_AI_RUN_NEAR_PX and it is not cornered, never
+   * Rushdown and never in a stale fight; a melee hero from CHARGE_AI_MIN_DIST while its Charge is on cooldown), never onto a stunned foe or
+   * on a command that is a dash, guard, super, charge, trap, tag or weather press. The press carries no direction (a rising direction on
+   * the same tick would win over the run). Running: no direction bits (they would break it), attacks go on; a ranged run ends with
+   * one direction press (the base AI's own, else one towards the foe) when the foe is past ARCADE_AI_RUN_FAR_PX, the hero is cornered or has not
+   * moved for ARCADE_AI_RUN_STILL_TICKS free ticks, and any run ends so when the foe is stunned (the combo rules take over).
+   */
+  private runStep(view: ObservationView, a: ArcadeView, cmd: Command): Command {
+    const self = view.self;
+    const opp = view.opponent;
+    const m = this.mem;
+    if (self === undefined || opp === undefined || a.runIn === undefined) return cmd;
+    const running = a.running === true;
+    const free = a.selfStun === 0 && !a.superActive && (self.flags & EntityFlag.frozen) === 0 && a.selfRooted === 0;
+    if (running && free && a.freeze === 0) m[22] = self.x === m[20] && self.y === m[21] ? m[22] + 1 : 0;
+    else if (!running) m[22] = 0;
+    m[20] = self.x;
+    m[21] = self.y;
+    if (this.level < AI_NORMAL) return cmd;
+    const busy = (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap | Cmd.swap1 | Cmd.swap2 | Cmd.weather)) !== 0;
+    const dist = centreDist(self, opp);
+    const away = a.runAway === true;
+    if (running) {
+      if (busy) return cmd;
+      const stop = a.oppStun !== 0 || (away && (dist > ARCADE_AI_RUN_FAR_PX || m[22] >= ARCADE_AI_RUN_STILL_TICKS || runCornered(self, opp, arcadePlayfield())));
+      if (!stop) return cmd & ~MOVE;
+      m[22] = 0;
+      return (cmd & MOVE) !== 0 ? cmd : cmd | (toward(self, opp) || Cmd.left);
+    }
+    if (busy || a.runIn !== 0 || (a.prevCmd & Cmd.run) !== 0 || a.phase !== RoundPhase.fight || !free || a.oppStun !== 0) return cmd;
+    if (view.tick - m[9] >= ARCADE_AI_STALE_TICKS) return cmd;
+    const want = away
+      ? dist <= ARCADE_AI_RUN_NEAR_PX && m[6] !== RUSHDOWN && !runCornered(self, opp, arcadePlayfield())
+      : a.chargeIn > 0 && dist >= CHARGE_AI_MIN_DIST;
+    return want ? (cmd & ~MOVE) | Cmd.run : cmd;
+  }
+
+  /**
    * Hazard dodge (stage hazards, systems/arcade/hazard.ts): while a hazard warns (`strikeIn > 0`) and at least the level's
    * reaction (ARCADE_AI_KNOBS[0], counted in game ticks from the warning's start) has passed, a free, unrooted fighter in
    * the fight replaces its movement with the shortest way out of the warned box (`hazardExit`; attacks ride along, the
@@ -369,7 +434,7 @@ export class ArcadeTactics {
     const hz = a.hazard;
     if (self === undefined || hz === undefined || hz.strikeIn === 0 || a.phase !== RoundPhase.fight) return cmd;
     if (a.selfStun !== 0 || a.superActive || a.selfRooted !== 0 || (self.flags & EntityFlag.frozen) !== 0) return cmd;
-    if ((cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
+    if ((cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap | Cmd.run)) !== 0) return cmd;
     if (this.level === AI_EASY && (view.tick & 255) >= ARCADE_AI_EASY_TRAP_BLIND) return cmd;
     if (hazardWarnTicks(hz.kind) - hz.strikeIn < ARCADE_AI_KNOBS[this.level][0]) return cmd;
     const exit = hazardExit(self, hz, arcadePlayfield());
