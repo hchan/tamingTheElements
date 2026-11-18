@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, enableWideView, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
-import { floorBottomOf, isPortraitPlay } from '../boot/portrait-play';
+import { isPortraitPlay, panelTopOf } from '../boot/portrait-play';
 import { arcadeHeroScale } from '../views/hero-scale';
 import { CAMERA_MARGIN_PORTRAIT, PORTRAIT_DRAWN_OVERSCAN, cameraTarget, portraitZoomMax, punchAnchor, verticalFrame, type CameraFraming } from './arena-camera';
 import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
@@ -46,7 +46,7 @@ const FALLBACK_PANEL_TOP = LOGICAL_HEIGHT - 80;
 function centerY(scene: Phaser.Scene, total: number): number {
   const h = viewHeight(scene);
   if (!(h > LOGICAL_HEIGHT + 0.5)) return LOGICAL_HEIGHT / 2;
-  return verticalFrame(h, h - LOGICAL_HEIGHT + floorBottomOf(scene, FALLBACK_PANEL_TOP, h), total);
+  return verticalFrame(h, h - LOGICAL_HEIGHT + panelTopOf(scene, FALLBACK_PANEL_TOP), total);
 }
 
 /** The pan framing now (centre x in world px; zoom over the fit zoom). */
