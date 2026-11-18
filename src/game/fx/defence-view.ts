@@ -4,11 +4,11 @@ import { EntityFlag, arcadePlayfield, GUARD_MAX, SimEventKind, type RenderArcade
 import type { Announcement } from '../a11y/announcer';
 import { resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { POP_NEAR_X, POP_NEAR_Y, POP_NUMBER_CLEAR_PX, popCeil, popLaneLift, type LivePop } from './pop-lanes';
-import { clearAbove, overlapsAny, slideClear } from './defence-callouts';
+import { type Box, clearAbove, dropBelow, easeTo, easeUp, overlapsAny, slideClear } from './defence-callouts';
 import { mountClashView } from './clash-view';
 import { styleCombatText } from '../hud/combat-text';
 import {
-  CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, NUMBER_MARGIN, NUMBER_MAX_SLIDE, NUMBER_POP_GAP, POP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect,
+  CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, NUMBER_BANNER_ALPHA, NUMBER_MARGIN, NUMBER_MAX_SLIDE, NUMBER_POP_GAP, POP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, type HudRect,
 } from '../hud/arcade-hud';
 import { ELEMENT_COLORS } from './element-colors';
 import { halfPoint, revealSegs, ropeGrow } from './rope-arcs';
@@ -150,10 +150,28 @@ export function mountDefenceView(
   };
   // Pops: x, y, from, reduced per text.
   const popData = new Float64Array(POP_POOL * 4).fill(HIDDEN);
-  // Per text: the lift (px) it was pushed up to clear a white pop (a ratchet, it never drops while the call-out lives) and the x it
-  // slid to (NaN = not slid), plus scratch for the camera / HUD maps so placement allocates nothing.
+  // Per text: the TARGET lift (px) it must be pushed up to clear a white pop or an earlier call-out (a ratchet, it never drops while
+  // the call-out lives) and the target x it slides to (NaN = not slid); `shownLift` / `shownX` are what is drawn, eased toward them
+  // (easeUp / easeTo). `dropY` is the bottom (NaN = none) it was dropped to under an obstacle when no room was left above (a ratchet
+  // too, so nothing bobs), `headTop` the drawn head top (a drop never goes lower) and `held` is 0 until its first visible frame.
+  // Scratch for the camera / HUD maps and the obstacle list is reused so placement allocates nothing.
   const lift = new Float64Array(POP_POOL);
+  const shownLift = new Float64Array(POP_POOL);
   const slideX = new Float64Array(POP_POOL).fill(Number.NaN);
+  const shownX = new Float64Array(POP_POOL).fill(Number.NaN);
+  const dropY = new Float64Array(POP_POOL).fill(Number.NaN);
+  const headTop = new Float64Array(POP_POOL);
+  const held = new Uint8Array(POP_POOL);
+  const obst: Box[] = [];
+  const coBox: Box[] = Array.from({ length: POP_POOL }, () => ({ x: 0, y: 0, w: 0, h: 0 }));
+  const resetEased = (i: number): void => {
+    lift[i] = 0;
+    shownLift[i] = 0;
+    slideX[i] = Number.NaN;
+    shownX[i] = Number.NaN;
+    dropY[i] = Number.NaN;
+    held[i] = 0;
+  };
   const camView = { x: 0, y: 0, w: 1, h: 1 };
   const hudView = { x: 0, y: 0, w: 1, h: 1 };
   const hudPt = { x: 0, y: 0 };
@@ -258,8 +276,8 @@ export function mountDefenceView(
       styleCombatText(t.setText(word), 'call', `#${color.toString(16).padStart(6, '0')}`).setVisible(true);
       popData[slot * 4] = pt.x;
       popData[slot * 4 + 1] = base - popLaneLift(live, pt.x, base);
-      lift[slot] = 0;
-      slideX[slot] = Number.NaN;
+      resetEased(slot);
+      headTop[slot] = pt.top;
       popData[slot * 4 + 2] = now();
       popData[slot * 4 + 3] = flat ? 1 : 0;
     },
@@ -460,10 +478,15 @@ export function mountDefenceView(
   };
 
   /**
-   * Places the visible call-outs, oldest first: up the stored lane, lifted clear of the white pops (never dropping back while one
-   * lives), under the scrim and the status chips, and slid sideways where the ceiling leaves no room above a pop.
+   * Places the visible call-outs, oldest first. Each placed call-out joins the obstacles (the white pops plus the call-outs before it),
+   * so pinned ones avoid each other. Target position: up the stored lane, lifted clear of the obstacles (never dropping back while
+   * one lives), under the scrim and the status chips, slid sideways where the ceiling leaves no room, else dropped under the obstacle
+   * (never lower than the head top), else dimmed while it still overlaps. The drawn position eases to the target over about 105 ms
+   * (`delta` is the frame time, so it keeps moving in hit-stop); the hard ceiling applies after the ease. A spawn frame snaps, and with
+   * reduced motion the placement is made once on the first visible frame and then held: only the ceiling can move it (camera pan),
+   * a later gold number never does, it dims the call-out while they overlap.
    */
-  function placePops(clock: number): void {
+  function placePops(clock: number, delta: number): void {
     const reg = scene.registry as Phaser.Data.DataManager | undefined;
     const pops = (reg?.get(POP_RECTS_KEY) as readonly HudRect[] | undefined) ?? NO_RECTS;
     const cam = (scene.cameras as Phaser.Cameras.Scene2D.CameraManager | undefined)?.main;
@@ -481,6 +504,9 @@ export function mountDefenceView(
       xHi = camView.x + camView.w - NUMBER_MARGIN * s;
       chips = reg?.get(CHIP_RECTS_KEY) as (readonly (readonly HudRect[])[]) | undefined;
     }
+    const clampX = (x: number, hw: number): number => (proj ? Math.min(Math.max(x, xLo + hw), xHi - hw) : x);
+    let nObst = pops.length;
+    for (let k = 0; k < nObst; k++) obst[k] = pops[k] as Box;
     placed = 0;
     for (let n = 0; n < POP_POOL; n++) {
       let i = -1;
@@ -500,33 +526,75 @@ export function mountDefenceView(
         t0.setVisible(false);
         continue;
       }
+      obst.length = nObst;
       const storedX = popData[i * 4] ?? 0;
       const storedY = popData[i * 4 + 1] ?? 0;
       const natural = storedY - popRise(p, popData[i * 4 + 3] === 1);
-      // A younger call-out stays a lane above an older one that was lifted.
-      let lf = lift[i] ?? 0;
-      for (let j = 0; j < POP_POOL; j++) {
-        if (j === i || (placed & (1 << j)) === 0 || !texts[j]?.visible) continue;
-        if (Math.abs((popData[j * 4] ?? 0) - storedX) < POP_NEAR_X && Math.abs((popData[j * 4 + 1] ?? 0) - storedY) < POP_NEAR_Y) lf = Math.max(lf, lift[j] ?? 0);
-      }
       const halfW = t0.displayWidth / 2;
       const h = t0.displayHeight;
-      let cx = storedX;
+      const first = held[i] === 0;
+      const hold = reduced && !first;
+      const snap = reduced || first;
       const slid = slideX[i] ?? Number.NaN;
-      if (proj && Number.isFinite(slid)) cx = Math.min(Math.max(slid, xLo + halfW), xHi - halfW);
-      let bottom = clearAbove(cx, natural - lf, halfW, h, pops, NUMBER_POP_GAP);
-      lift[i] = natural - bottom;
-      if (proj) {
-        bottom = Math.max(bottom, ceilAt(cx, halfW) + h);
-        if (overlapsAny(cx, bottom, halfW, h, pops, NUMBER_POP_GAP)) {
-          const nx = slideClear(cx, bottom, halfW, h, pops, NUMBER_POP_GAP, xLo, xHi, NUMBER_MAX_SLIDE * s, camView.x + camView.w / 2, storedX);
-          if (nx !== cx) {
-            slideX[i] = cx = nx;
-            bottom = Math.max(clearAbove(cx, natural - lf, halfW, h, pops, NUMBER_POP_GAP), ceilAt(cx, halfW) + h);
+      const dropped = dropY[i] ?? Number.NaN;
+      let cx = storedX; // the drawn x
+      let bottom: number; // the drawn bottom
+      let tx = storedX; // the target x and bottom: what the others avoid and what is judged for overlap
+      let tb: number;
+      if (hold) {
+        const sx = shownX[i] ?? Number.NaN;
+        cx = Number.isFinite(sx) ? clampX(sx, halfW) : storedX;
+        bottom = Number.isFinite(dropped) ? dropped : natural - (shownLift[i] ?? 0);
+        if (proj) bottom = Math.max(bottom, ceilAt(cx, halfW) + h);
+        tx = cx;
+        tb = bottom;
+      } else {
+        // A younger call-out stays a lane above an older one that was lifted.
+        let lf = lift[i] ?? 0;
+        for (let j = 0; j < POP_POOL; j++) {
+          if (j === i || (placed & (1 << j)) === 0 || !texts[j]?.visible) continue;
+          if (Math.abs((popData[j * 4] ?? 0) - storedX) < POP_NEAR_X && Math.abs((popData[j * 4 + 1] ?? 0) - storedY) < POP_NEAR_Y) lf = Math.max(lf, lift[j] ?? 0);
+        }
+        if (proj && Number.isFinite(slid)) tx = clampX(slid, halfW);
+        if (Number.isFinite(dropped)) tb = dropped;
+        else {
+          tb = clearAbove(tx, natural - lf, halfW, h, obst, NUMBER_POP_GAP);
+          lift[i] = natural - tb;
+          if (proj) {
+            tb = Math.max(tb, ceilAt(tx, halfW) + h);
+            if (overlapsAny(tx, tb, halfW, h, obst, NUMBER_POP_GAP)) {
+              const nx = slideClear(tx, tb, halfW, h, obst, NUMBER_POP_GAP, xLo, xHi, NUMBER_MAX_SLIDE * s, camView.x + camView.w / 2, storedX);
+              if (nx !== tx) {
+                slideX[i] = tx = nx;
+                tb = Math.max(clearAbove(tx, natural - lf, halfW, h, obst, NUMBER_POP_GAP), ceilAt(tx, halfW) + h);
+              }
+            }
+            if (overlapsAny(tx, tb, halfW, h, obst, NUMBER_POP_GAP)) {
+              const nb = dropBelow(tx, tb, halfW, h, obst, NUMBER_POP_GAP, headTop[i] ?? tb);
+              if (nb !== tb) dropY[i] = tb = nb;
+            }
           }
         }
+        // Drawn: the lift and the slide ease toward their targets; a drop is instant (down moves do not ease).
+        const sl = easeUp(shownLift[i] ?? 0, lift[i] ?? 0, delta, snap);
+        shownLift[i] = sl;
+        bottom = Number.isFinite(dropY[i]) ? tb : natural - sl;
+        if (proj && Number.isFinite(slideX[i])) {
+          const sx = shownX[i] ?? Number.NaN;
+          shownX[i] = easeTo(Number.isFinite(sx) ? sx : storedX, tx, delta, snap);
+          cx = clampX(shownX[i] ?? tx, halfW);
+        }
+        if (proj) bottom = Math.max(bottom, ceilAt(cx, halfW) + h);
       }
-      t0.setPosition(cx, bottom).setAlpha(popAlpha(p));
+      held[i] = 1;
+      const dim = overlapsAny(tx, tb, halfW, h, obst, NUMBER_POP_GAP);
+      const box = coBox[i] as Box;
+      box.x = tx - halfW;
+      box.y = tb - h;
+      box.w = 2 * halfW;
+      box.h = h;
+      obst[nObst++] = box;
+      t0.setPosition(cx, bottom).setAlpha(dim ? Math.min(popAlpha(p), NUMBER_BANNER_ALPHA) : popAlpha(p));
     }
   }
 
@@ -597,7 +665,7 @@ export function mountDefenceView(
         over.lineStyle(flat ? 4 : 5, color, flat ? 1 : 1 - p).strokeCircle(x, y, ringRadius(p, size, flat));
       }
     }
-    placePops(clock);
+    placePops(clock, delta);
     publishCallouts();
   }
 
@@ -627,7 +695,7 @@ export function mountDefenceView(
     tick = view.tick;
     sub = 0;
     // A new round starts clean: no pop from the last one rides under the ROUND / FIGHT! banners.
-    if (events.some((e) => e.kind === SimEventKind.roundStarted)) for (let i = 0; i < POP_POOL; i++) { popData[i * 4 + 2] = HIDDEN; lift[i] = 0; slideX[i] = Number.NaN; texts[i]?.setVisible(false); }
+    if (events.some((e) => e.kind === SimEventKind.roundStarted)) for (let i = 0; i < POP_POOL; i++) { popData[i * 4 + 2] = HIDDEN; resetEased(i); texts[i]?.setVisible(false); }
     if (events.some((e) => e.kind === SimEventKind.roundStarted)) publishCallouts();
     fx.consume(events);
     clash(events);

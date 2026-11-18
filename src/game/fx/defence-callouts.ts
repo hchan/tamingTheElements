@@ -63,3 +63,45 @@ export function slideClear(
   }
   return best;
 }
+
+/**
+ * Time constant (ms) of the call-out ease: `shown` closes 1 - e^(-dt/35) of the gap each frame, so about 95% of a lift is done in
+ * about 105 ms (an estimate by design, not a measured number). `exp` is fine here: the view is outside `src/core`.
+ */
+export const EASE_TAU_MS = 35;
+
+/**
+ * One frame of the ease from `shown` to `target` over `dtMs`: never overshoots, never moves away from the target, and snaps when
+ * `snap` is set or the gap is under half a pixel. The same result at any frame rate for a given total time.
+ */
+export function easeTo(shown: number, target: number, dtMs: number, snap: boolean): number {
+  const d = target - shown;
+  if (snap || Math.abs(d) < 0.5) return target;
+  return shown + d * (1 - Math.exp(-Math.max(0, dtMs) / EASE_TAU_MS));
+}
+
+/** A lift (px, up is positive): rises ease, anything else (a reset, a drop) is instant. `reduced` or a first frame snaps. */
+export function easeUp(shown: number, target: number, dtMs: number, reduced: boolean): number {
+  return target <= shown ? target : easeTo(shown, target, dtMs, reduced);
+}
+
+/**
+ * Moves `bottom` down until the call-out sits under every rect it overlaps (top at `r.y + r.h + gap`), but never lower than
+ * `maxBottom` (the drawn head top): a step that would pass it is skipped, so the call-out may still overlap. Bottom only ever
+ * grows, so `rects.length + 1` passes settle it.
+ */
+export function dropBelow(cx: number, bottom: number, halfW: number, h: number, rects: readonly Box[], gap: number, maxBottom: number): number {
+  for (let pass = 0; pass <= rects.length; pass++) {
+    let moved = false;
+    for (let i = 0; i < rects.length; i++) {
+      const r = (rects[i] as Box);
+      if (!calloutOverlaps(cx, bottom, halfW, h, r, gap)) continue;
+      const nb = r.y + r.h + gap + h;
+      if (nb > maxBottom) continue;
+      bottom = nb;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return bottom;
+}
