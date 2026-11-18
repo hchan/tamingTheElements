@@ -452,7 +452,14 @@ export interface ArcadeBar {
   readonly keepCharge: boolean;
   /** Why the Tag slots cannot be used right now ('WAIT', 'STUN'), when the view can tell (WP-HC1); absent when they can. */
   readonly swapBlock?: string;
+  /** Why Run is refused right now ('rooted', 'stunned'), when the view can tell (QA r110); absent when nothing blocks it. */
+  readonly runBlock?: RunBlock;
 }
+
+/** Why a Run press does nothing besides its cooldown: a Snag root or a stun. */
+export type RunBlock = 'rooted' | 'stunned';
+/** The short word the Run tile shows while a block holds (never colour alone: the tile is also shaded). */
+export const RUN_BLOCK_NOTE: Readonly<Record<RunBlock, string>> = { rooted: "Can't run: rooted", stunned: "Can't run: stunned" };
 
 /** Reads one team's `ArcadeBar` off the render view's Arcade read-outs (a team with no active hero reads as full and idle). */
 export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean, cleanseIn: (id: number) => number = () => 0): ArcadeBar {
@@ -460,6 +467,7 @@ export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean, 
   const swapBlock = swapBlockWord({ fighting: ar.phase === RoundPhase.fight, stunned: id >= 0 && ar.stunned(id), frozen: false });
   return {
     ...(swapBlock !== undefined ? { swapBlock } : {}),
+    ...(id >= 0 && ar.stunned(id) ? { runBlock: 'stunned' as const } : id >= 0 && ar.rooted(id) ? { runBlock: 'rooted' as const } : {}),
     meter: ar.meter[team],
     weatherCharge: ar.weatherCharge[team],
     guard: id < 0 ? GUARD_MAX : ar.guard(id),
@@ -593,10 +601,11 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
       const r = bar.run;
       const running = bar.tick < r.activeUntil;
       const name = r.away ? RUN_AWAY_NAME : RUN_TOWARDS_NAME;
+      const block = running ? undefined : arcade.runBlock;
       add({
-        kind: 'run', cmd: 0, sprite: '', icon: ACTION_ICON.dash, touch: 'Run', highlight: running, disabled: false, runAway: r.away,
+        kind: 'run', cmd: 0, sprite: '', icon: ACTION_ICON.dash, touch: 'Run', highlight: running, disabled: block !== undefined, runAway: r.away,
         progress: running ? clamp01((r.activeUntil - bar.tick) / RUN_TICKS) : cooldownProgress(bar.tick, r.readyTick, r.cooldownTicks),
-        note: running ? `${name} on` : leftNote(name, r.readyTick - bar.tick),
+        note: running ? `${name} on` : block !== undefined ? RUN_BLOCK_NOTE[block] : leftNote(name, r.readyTick - bar.tick),
       }, ACTION_COMMAND.run);
     }
   }
