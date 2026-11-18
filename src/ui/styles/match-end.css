@@ -186,6 +186,88 @@
     margin: 0;
   }
 }
+/* QA r106 P2: landscape phones (844x390, 667x375) are too short for the stacked card. Two columns: heroes left, result and buttons right. */
+@media (orientation: landscape) and (max-height: 480px) {
+  #arcadeResults.matchEnd {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
+    width: 100%;
+    column-gap: 1.2em;
+    row-gap: 0.25em;
+    align-content: center;
+    justify-items: center;
+    padding: 8px 12px;
+    max-width: 100%;
+    min-height: 0;
+  }
+  #arcadeResults.matchEnd > * {
+    min-width: 0;
+  }
+  .matchEndName,
+  .matchEndSide .matchEndName {
+    font-size: 0.8em;
+    letter-spacing: 0.04em;
+  }
+  .matchEndHero {
+    max-width: 100%;
+  }
+  .matchEndCard {
+    max-width: 50%;
+  }
+  #arcadeResults.matchEnd > * {
+    grid-column: 2;
+  }
+  #arcadeResults.matchEnd > .matchEndHero {
+    grid-column: 1;
+    grid-row: 1 / span 5;
+    align-self: center;
+    gap: 0.6em;
+    align-items: flex-start;
+  }
+  .matchEndFace {
+    width: 96px;
+    height: 96px;
+  }
+  .matchEndSide .matchEndFace {
+    width: 64px;
+    height: 64px;
+  }
+  #arcadeResults h1.matchEndWord {
+    font-size: 1.8rem;
+  }
+  .matchEndRibbon {
+    font-size: 0.8em;
+    letter-spacing: 0.1em;
+    padding: 0.15em 0.9em;
+  }
+  .matchEndSummary {
+    margin: 0;
+  }
+  .matchEndRibbon {
+    white-space: nowrap;
+  }
+  .matchEndSummary {
+    font-size: 0.8em;
+  }
+  /* Rematch full width, the other buttons side by side: three rows become two. */
+  .matchEndActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4em;
+    margin-top: 0.2em;
+  }
+  .matchEndActions .menuButton {
+    width: auto;
+    min-height: 44px;
+    padding-inline: 0.4em;
+    font-size: 0.9em;
+  }
+  .matchEndActions .matchEndCta {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    font-size: 1.1em;
+  }
+}
 @media (prefers-reduced-motion: no-preference) {
   .matchEndFace {
     animation: matchEndPop 0.45s ease-out both;

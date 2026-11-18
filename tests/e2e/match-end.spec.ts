@@ -164,3 +164,26 @@ test('local P2 winner card at 360x640 keeps every button above the fold', async 
     expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} is on screen`).toBeLessThanOrEqual(size.height);
   }
 });
+
+// Landscape phones (QA r106 P2): the Defeat card was ~660 px tall at 844x390 and 667x375, buttons below the fold. Untagged on purpose (long
+// gate, not the quick smoke subset): it plays two forced KO rounds in a real arena, like the other match-end specs.
+for (const size of [{ width: 844, height: 390 }, { width: 667, height: 375 }]) {
+  test(`match end at landscape phone ${String(size.width)}x${String(size.height)}: card and all three buttons inside the viewport`, async ({ page }) => {
+    await fightTo(page, size);
+    await koRound(page, 'lose');
+    await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+    await koRound(page, 'lose');
+    const results = page.locator('#arcadeResults');
+    await expect(page.getByRole('heading', { level: 1, name: 'Defeat' })).toBeVisible();
+    await expectNamesAndTilesClean(page);
+    const dir = process.env['SHOT_DIR'];
+    if (dir) await page.screenshot({ path: `${dir}/match-end-lose-land-${String(size.width)}.png` });
+    for (const sel of ['', '.matchEndWord', '#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
+      const box = await (sel ? results.locator(sel) : results).boundingBox();
+      expect(box, sel).not.toBeNull();
+      expect(box?.y ?? -1, `${sel || 'card'} top is on screen`).toBeGreaterThanOrEqual(0);
+      expect((box?.y ?? 0) + (box?.height ?? 0), `${sel || 'card'} bottom is on screen`).toBeLessThanOrEqual(size.height);
+      expect((box?.x ?? 0) + (box?.width ?? 0), `${sel || 'card'} right edge is on screen`).toBeLessThanOrEqual(size.width);
+    }
+  });
+}
