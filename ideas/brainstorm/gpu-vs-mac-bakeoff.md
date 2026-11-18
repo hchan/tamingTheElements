@@ -32,22 +32,22 @@ Owner, 2026-11-17: "don't forget the bake-off of 4060 speed vs this mac". Decide
 
 Script: `tools/bench/sd-bench.py` (`--device cuda|mps --job sdxl|turbo1|turbo4|sd15|img2img [--offload] [--slicing] [--init png]`; env `BENCH_EMPTY_CACHE=1` calls `empty_cache` after each timed run; set `PYTORCH_CUDA_ALLOC_CONF` for allocator tests). Cold load, 1 discarded warm-up, 5 timed runs (3 for sdxl without offload) with device sync, median/min/max, peak allocated and (cuda) peak reserved memory, cuda temperature (aborts above 83 C). sd15 is sd-turbo (20 steps, cfg 7). Mac power is not measured (needs sudo `powermetrics`).
 
-Mac: weights downloaded (about 14 GB, outside the repo) and a smoke test done. Official Mac timed runs are deliberately postponed to 09:30 on 2026-11-18 (Mac load was too high today). The informal smoke figures below are NOT official (loaded machine): turbo1 1.49 s, sd15 5.09 s.
+Mac: weights downloaded (about 14 GB, outside the repo); official timed runs done 2026-11-18 09:30 at load about 4 (Mac `--slicing` and offload not tried; Mac power not measured).
 
-### Results (PC = RTX 4060 8 GB, WSL2, fp16; seconds per image, median of 5 unless noted)
+### Results (Mac M4 Pro MPS fp16, official runs 2026-11-18 at load about 4, all jobs completed with no failures or out-of-memory errors, walls 21, 43, 37, 16 and 345 s including load; PC = RTX 4060 8 GB, WSL2, fp16; seconds per image, median of 5 unless noted)
 
 | job | Mac median | PC median | ratio | memory (PC) | winner |
 |---|---|---|---|---|---|
-| SDXL base 1024, 28 steps, no offload | pending | 41.3 s (3 runs; spills over 8 GB) | - | 10.7 GB alloc, 14.5 GB reserved | - |
-| SDXL base 1024, 28 steps, offload | pending | 19.3 s (19.1 to 24.0) | - | 5.3 GB alloc, 7.5 GB reserved | - |
-| SDXL base offload + expandable_segments + empty_cache | pending | 20.0 s | - | 5.2 GB alloc, 5.4 GB reserved | - |
-| sdxl-turbo 512, 4 steps, batch 1, no offload | pending (smoke 1.49 s, not official) | 3.97 s | - | 7.9 GB alloc (at the limit) | - |
-| sdxl-turbo 512, batch 1, offload | pending | 3.51 s (first run 13 s) | - | 5.1 GB | - |
-| sdxl-turbo 512, batch 4, no offload | pending | 7.28 s/img (29.1 s per batch; spills) | - | 10.7 GB alloc | - |
-| sdxl-turbo 512, batch 4, offload | pending | 1.78 s/img (7.1 s per batch) | - | 5.2 GB | - |
-| sd-turbo ("sd15") 512, 20 steps | pending (smoke 5.09 s, not official) | 1.83 s | - | 3.1 GB | - |
-| img2img sdxl-turbo 512, strength 0.5, no offload | pending | 2.85 s | - | 7.9 GB | - |
-| img2img, offload | pending | 3.89 s | - | 5.3 GB | - |
+| SDXL base 1024, 28 steps, no offload | 56.1 s (55.7 to 56.2) | 41.3 s (3 runs; spills over 8 GB) | - | 10.7 GB alloc, 14.5 GB reserved (Mac 18.0 GB) | PC offload (see next row) |
+| SDXL base 1024, 28 steps, offload | n/a (Mac runs without offload) | 19.3 s (19.1 to 24.0) | PC 2.9x faster (vs Mac 56.1 s) | 5.3 GB alloc, 7.5 GB reserved | - |
+| SDXL base offload + expandable_segments + empty_cache | n/a | 20.0 s | - | 5.2 GB alloc, 5.4 GB reserved | - |
+| sdxl-turbo 512, 4 steps, batch 1, no offload | 1.49 s | 3.97 s | - | 7.9 GB alloc (Mac 9.5 GB) | Mac, 2.7x |
+| sdxl-turbo 512, batch 1, offload | n/a | 3.51 s (first run 13 s) | - | 5.1 GB | - |
+| sdxl-turbo 512, batch 4, no offload | 1.38 s/img (5.53 s per batch) | 7.28 s/img (29.1 s per batch; spills) | - | 10.7 GB alloc (Mac 15.7 GB) | Mac, 5.3x vs PC without offload |
+| sdxl-turbo 512, batch 4, offload | n/a | 1.78 s/img (7.1 s per batch) | - | 5.2 GB | Mac 1.3x (1.38 vs 1.78 s/img) |
+| sd-turbo ("sd15") 512, 20 steps | 5.20 s | 1.83 s | - | 3.1 GB (Mac 4.5 GB) | PC, 2.8x |
+| img2img sdxl-turbo 512, strength 0.5, no offload | 1.16 s | 2.85 s | - | 7.9 GB (Mac 9.5 GB) | Mac, 2.5x |
+| img2img, offload | n/a | 3.89 s | - | 5.3 GB | - |
 
 Findings so far (PC only):
 
@@ -64,7 +64,10 @@ Two-at-once tests. The first attempt overlapped another agent's e2e and is disca
 
 Conclusion: the 8 GB card is one job at a time. Do not run two generation processes together. Total throughput with two at once is worse than running them back to back. (Small caveat: the two-at-once runs overlapped other load only at the start; the 2x turbo1 result matches the earlier contaminated one, so VRAM spill, not CPU, is the cause.)
 
-### Routing rule (provisional, PC half only)
+### Routing rule
 
-- On the PC always use offload for SDXL base and for batches; never run two generation jobs at once (measured: 10x slower per image for 2x turbo1, 2.5x to 60x for sdxl+turbo; queue them).
-- Use the PC for SDXL base 1024 (about 19 s per image) and batched Turbo (1.8 s per image at batch 4 with offload). Single-image turbo is about 3.5 to 4 s on the PC against an informal 1.5 s on the Mac, so small interactive turbo jobs may belong on the Mac. Final rule after the official Mac runs on 2026-11-18.
+- SDXL base 1024 (and any model whose peak is over about 7 GB, or that needs a big batch footprint) -> PC with `--offload` (19 s against 56 s on the Mac).
+- SDXL-Turbo and img2img at 512, single or batched, and sd-turbo-style small jobs: Turbo is faster on the Mac (1.2 to 1.5 s against 2.8 to 4 s, and no VRAM limit; batch 4 1.38 s/img against 1.78 s offloaded). The exception is sd-turbo 20 steps, where the PC is 2.8x faster (1.83 against 5.20 s).
+- Rule of thumb: many-step UNet work (SDXL base, sd-turbo 20 steps) -> PC; few-step SDXL-Turbo (4 steps) -> Mac, because the 8 GB card must offload or spill.
+- On the PC run one job at a time (measured: 2x turbo1 about 10x slower per image; sdxl + turbo1 offload thrash); queue instead.
+- Memory: Mac peaks 9.5 GB (turbo), 15.7 GB (turbo batch 4), 18.0 GB (SDXL base); fine with unified memory but it competes with agents/e2e, so avoid running those at once on the Mac.
