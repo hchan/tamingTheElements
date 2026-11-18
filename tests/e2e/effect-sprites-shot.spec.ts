@@ -25,7 +25,8 @@ test('effect sprites: projectile in flight and impact render without page errors
   expect(flight.length).toBeGreaterThan(2000);
   for (let i = 0; i < 60 && (await hp()) === start; i++) await page.evaluate('window.__TTE__.arena.step(1, [0, 0])');
   expect(await hp()).toBeLessThan(start);
-  await page.waitForTimeout(160); // wall-clock: the impact strip plays on scene time (about 360 ms)
+  // the impact strip plays on scene time (about 360 ms): let a few real frames pass instead of a fixed wait
+  for (let i = 0; i < 4; i++) await page.evaluate('new Promise((r) => requestAnimationFrame(r))');
   const hit = await page.locator('#game canvas').screenshot({ path: info.outputPath('impact.png') });
   expect(hit.length).toBeGreaterThan(2000);
   expect(errors).toEqual([]);

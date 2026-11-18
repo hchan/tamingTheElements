@@ -107,7 +107,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       for (const frac of [0.4, 0.2]) {
         await page.evaluate(`(() => { const a = window.__TTE__.arena; for (const c of a.characters()) a.setHp(c.id, Math.round(c.maxHp * ${String(frac)})); })()`);
         await expect.poll(async () => (await page.evaluate<string[]>(`window.__TTE__.arena.heroLabels()`)).filter((t) => /\d/.test(t)).length, { timeout: 5000 }).toBeGreaterThan(0);
-        await page.waitForTimeout(300);
+        await page.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))'); // let the labels redraw (state-based, no fixed wait)
         const labels = (await page.evaluate<string[]>(`window.__TTE__.arena.heroLabels()`)).filter((t) => /\d/.test(t));
         for (const t of labels) expect(t, `life line at ${String(frac)}`).not.toContain('\u2026');
         await shot(page, `${String(w)}-hurt-${String(frac)}`);
