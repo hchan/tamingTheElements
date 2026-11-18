@@ -24,6 +24,7 @@ export const P2_KEYS: readonly ControlRow[] = [
   { action: 'Trap', keys: 'M', chips: ['M'] },
   { action: 'Element', keys: ';', chips: [';'] },
   { action: 'Cleanse', keys: "'", chips: ["'"] },
+  { action: 'Run Away / Run Towards', keys: '/', chips: ['/'] },
   { action: 'Tag', keys: '.', chips: ['.'] },
   { action: 'Tag 2', keys: ',', chips: [','] },
 ];
@@ -40,6 +41,7 @@ const P1_ROWS: readonly (readonly [string, GameAction])[] = [
   ['Trap', 'trap'],
   ['Element', 'elemental'],
   ['Cleanse', 'cleanse'],
+  ['Run Away / Run Towards', 'run'],
   ['Tag', 'slot3'],
   ['Tag 2', 'slot4'],
 ];
@@ -49,7 +51,12 @@ const keysOf = (b: Bindings, a: GameAction): string => b[a].map(codeLabel).join(
 /** Player 1's keyboard controls, read from the live bindings so rebinds show. */
 export function player1Rows(b: Bindings): readonly ControlRow[] {
   const move = (['up', 'left', 'down', 'right'] as const).map((a) => keysOf(b, a)).join(', ');
-  return [{ action: 'Move (up, left, down, right)', keys: move }, ...P1_ROWS.map(([action, a]) => ({ action, keys: keysOf(b, a) || 'unbound', chips: b[a].map(codeLabel) }))];
+  const rows = P1_ROWS.map(([action, a]) => {
+    // Tab also runs in a match (hard-wired, not a binding), so it is named beside the Run key.
+    const keys = a === 'run' ? [...b[a].map(codeLabel), 'Tab'] : b[a].map(codeLabel);
+    return { action, keys: keys.length > 0 ? keys.join(' or ') : 'unbound', chips: keys };
+  });
+  return [{ action: 'Move (up, left, down, right)', keys: move }, ...rows];
 }
 
 export const GAMEPAD_ROWS: readonly ControlRow[] = [

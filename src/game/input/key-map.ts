@@ -36,9 +36,10 @@ export const ACTION_COMMAND: Readonly<Record<GameAction, Command>> = {
   trap: Cmd.trap,
   elemental: Cmd.elemental,
   cleanse: Cmd.cleanse,
+  run: Cmd.run,
 };
 
-/** The Arcade-only command bits (dash 11, guard 12, super 13, weather 14, charge 15): every bit from the dash up. */
+/** The Arcade-only command bits (dash 11, guard 12, super 13, weather 14, charge 15, run 16): every bit from the dash up. */
 export const ARCADE_ONLY = Cmd.dash;
 
 /**

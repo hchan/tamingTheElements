@@ -20,6 +20,7 @@ export const GAME_ACTIONS = [
   'trap',
   'elemental',
   'cleanse',
+  'run',
 ] as const;
 export type GameAction = (typeof GAME_ACTIONS)[number];
 
@@ -59,6 +60,8 @@ export const DEFAULT_BINDINGS: Bindings = {
   // Arcade only (ideas/in-progress/elemental-cleanse.md): the common Cleanse, clearing your own bad statuses. Equal, next to Minus.
   // Shares the sim's command bit 9 with the third swap, which Arcade (three heroes at most) never has.
   cleanse: ['Equal'],
+  // Arcade only (ideas/in-progress/run-away-towards.md): Run Away (ranged) / Run Towards (melee). Backquote; Tab also runs in a live match (keyboard-agent `tabRun`, not a binding: Tab stays reserved).
+  run: ['Backquote'],
 };
 
 /** Digit5 may drive both Swap 3 (Classic) and Charge (Arcade) at once; every other code drives one action. */
@@ -86,6 +89,7 @@ export const ACTION_LABELS: Readonly<Record<GameAction, string>> = {
   trap: 'Trap',
   elemental: 'Element',
   cleanse: 'Cleanse',
+  run: 'Run Away / Run Towards',
 };
 
 /** Keys that can never be bound: they drive the browser or the app shell. */
@@ -119,6 +123,8 @@ export function codeLabel(code: string): string {
   if (code.startsWith('Arrow')) return code.slice(5);
   if (code === 'Minus') return '-';
   if (code === 'Equal') return '=';
+  if (code === 'Backquote') return '`';
+  if (code === 'Slash') return '/';
   if (code === 'Semicolon') return ';';
   if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
   return code;

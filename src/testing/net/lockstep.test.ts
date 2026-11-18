@@ -4,6 +4,7 @@ import { characterId } from '../../core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../core/flags';
 import { RandomBot } from '../../core/agents/random-bot';
 import { LockstepSession } from '../../core/net/session';
+import { CMD_MAX } from '../../core/sim/commands';
 import { hash } from '../../core/sim/hash';
 import { createMatch } from '../../core/sim/match';
 import { decodePacket, encodePacket, PacketFlag } from '../../core/net/packet';
@@ -228,7 +229,7 @@ describe('timeout, forfeit and hidden-tab policy', () => {
 });
 
 describe('input mask per ruleset', () => {
-  /** Both peers press every bit 0..15 each tick; returns what the shared sim was fed. */
+  /** Both peers press every bit 0..16 each tick; returns what the shared sim was fed. */
   const applied = (rulesetArcade: boolean): number => {
     const setup = { ...SETUP, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade } };
     const worlds = [createMatch(setup), createMatch(setup)] as const;
@@ -240,14 +241,14 @@ describe('input mask per ruleset', () => {
     let seen = 0;
     for (let i = 0; i < 10; i++) {
       net.advance();
-      for (const s of ss) if (s.update(0xffff).stepped) seen |= s.lastCommands[0] | s.lastCommands[1];
+      for (const s of ss) if (s.update(CMD_MAX).stepped) seen |= s.lastCommands[0] | s.lastCommands[1];
     }
     return seen;
   };
 
-  it('Classic drops bits 11..15; Arcade keeps dash, guard, super, weather and charge (11..15)', () => {
+  it('Classic drops bits 11..15; Arcade keeps dash, guard, super, weather, charge and run (11..16)', () => {
     expect(applied(false)).toBe(0x7ff);
-    expect(applied(true)).toBe(0xffff);
+    expect(applied(true)).toBe(0x1ffff);
   });
 });
 

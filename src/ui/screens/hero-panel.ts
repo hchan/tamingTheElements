@@ -30,6 +30,9 @@ export function styleBadge(style: HeroStyle, withWord: boolean): HTMLElement {
   return badge;
 }
 
+/** What the Run key does for each style (a ranged hero runs away from the foe, a melee hero runs towards it). */
+const RUN_WORDS: Readonly<Record<HeroStyle, string>> = { melee: '(Run Towards)', ranged: '(Run Away)' };
+
 export interface HeroPanel {
   readonly node: HTMLElement;
   show: (id: CharacterId) => void;
@@ -79,7 +82,7 @@ export function heroPanel(onAdd?: () => void): HeroPanel {
     const mark = el('span', 'heroMark', ELEMENT_MARKS[p.element] ?? '');
     mark.setAttribute('aria-hidden', 'true');
     head.append(el('h3', 'heroName', p.name), el('p', 'heroKind'), el('p', 'heroBlurb', p.blurb));
-    head.querySelector('.heroKind')?.append(mark, ` ${p.element} `, styleBadge(p.style, true));
+    head.querySelector('.heroKind')?.append(mark, ` ${p.element} `, styleBadge(p.style, true), ` ${RUN_WORDS[p.style]}`);
     const stats = el('dl', 'heroStats');
     for (const [label, value] of p.stats) {
       const row = el('div');

@@ -68,6 +68,13 @@ describe('remap coverage', () => {
       expect(DEFAULT_BINDINGS[a].filter((c) => RESERVED_CODES.has(c))).toEqual([]);
   });
 
+  it('Run has a key and an alternate button on the screen, and Tab stays reserved', () => {
+    expect(document.getElementById('bind-run-0')).not.toBeNull();
+    expect(document.getElementById('bind-run-1')).not.toBeNull();
+    expect(RESERVED_CODES.has('Tab')).toBe(true);
+    expect(DEFAULT_BINDINGS.run).toEqual(['Backquote']);
+  });
+
   it('shows no forbidden words', () => {
     expect(root.textContent).not.toMatch(BANNED);
   });

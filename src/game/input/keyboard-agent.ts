@@ -23,7 +23,7 @@ export interface KeyboardAgentOptions {
   /** Current gamepad (e.g. `() => firstPad(navigator.getGamepads())`); mapped to the same Commands as the keys. */
   readonly gamepad?: () => PadSnapshot | null;
   /**
-   * Arcade match: the super (X, pad RT), dash (E, RB), guard (Q, LT) weather (R, pad X) and charge (H, pad R3) send their Arcade bits;
+   * Arcade match: the super (X, pad RT), dash (E, RB), guard (Q, LT) weather (R, pad X) and charge (H, pad R3) send their Arcade bits (and run, on the Backquote key or Tab with `tabRun`);
    * Classic never sends them (RB, LT and RT stay the second, third and fourth swap; pad X does nothing).
    */
   readonly arcade?: boolean;
@@ -36,10 +36,28 @@ export interface KeyboardAgentOptions {
   readonly onSwap?: (swaps: Command) => void;
   /** Called with the Super, Weather, Charge (and in Arcade elemental) bits that went from up to down on this observation (view-only refusal feedback). */
   readonly onAction?: (bits: Command) => void;
+  /**
+   * Arcade, Player 1 in a live match only: a bare Tab (no Shift, Ctrl, Alt or Meta) pressed while focus is on the page or the canvas
+   * sends Run and is `preventDefault`-ed. Any other Tab (an overlay or dialog, Shift-Tab) keeps its normal focus move, so there is no
+   * keyboard trap (WCAG 2.1.2). Tab is not a binding (it stays reserved); the rebindable Run key is `run`.
+   */
+  readonly tabRun?: boolean;
+}
+
+/** True when a Tab keydown aimed at `t` is the Run key: the window, the document, the body or a canvas (never a control or dialog). */
+export function isTabRunTarget(t: EventTarget | null): boolean {
+  if (t === null) return true;
+  const n = t as { nodeType?: number; tagName?: string };
+  if (n.nodeType === undefined) return true; // window
+  if (n.nodeType === 9) return true; // document
+  return n.tagName === 'BODY' || n.tagName === 'CANVAS';
 }
 
 /** The Super, Weather and Charge bits, whose press edge feeds `onAction`. */
 const ACTION_MASK: Command = Cmd.super | Cmd.weather | Cmd.charge;
+
+/** The Tab pseudo-code `attach` feeds in for a Run Tab (see `tabRun`); never bindable. */
+const TAB = 'Tab';
 
 /** The four swap bits: sent once per press (a key, pad button or slot click), never while held. */
 export const SWAP_MASK: Command = Cmd.swap1 | Cmd.swap2 | Cmd.swap3 | Cmd.swap4;
@@ -146,7 +164,8 @@ export class KeyboardAgent implements Agent {
       swaps |= was.bits; // the sim held its clock on that tick and never looked at the swap: send it again
     }
     this.tapped = new Set();
-    const cmd = ((commandFromHeld(this.bindings, held, capturable, arcade, snagCmd) | pad | this.pressed) & ~swapMask) | swaps;
+    const tabRun = arcade && this.opts.tabRun && held.has(TAB) ? Cmd.run : 0;
+    const cmd = ((commandFromHeld(this.bindings, held, capturable, arcade, snagCmd) | pad | this.pressed | tabRun) & ~swapMask) | swaps;
     this.pressed = 0;
     if (swaps !== 0 && clock !== undefined) this.sent = { bits: swaps, clock, retries: was && swaps === was.bits ? was.retries + 1 : 0 };
     if (fresh !== 0) this.opts.onSwap?.(fresh);
@@ -173,6 +192,12 @@ export class KeyboardAgent implements Agent {
   attach(source: KeyEventSource): () => void {
     const onKey = (type: 'down' | 'up') => (e: Event) => {
       const k = e as KeyboardEvent;
+      if (k.code === TAB) {
+        // Only a bare Tab on the page or canvas is Run; every other Tab is left alone so focus can always leave.
+        const bare = !k.shiftKey && !k.ctrlKey && !k.altKey && !k.metaKey;
+        if (type === 'down' && !(this.opts.tabRun === true && bare && isTabRunTarget(k.target))) return;
+        if (type === 'down') k.preventDefault();
+      }
       this.handle({ type, code: k.code, shiftKey: k.shiftKey, ctrlKey: k.ctrlKey, repeat: k.repeat });
     };
     const down = onKey('down');
