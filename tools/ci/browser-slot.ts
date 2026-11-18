@@ -6,6 +6,7 @@
  * Exit codes: the child's, 75 slot wait timed out, 2 usage error. See docs/TESTING.md.
  */
 import { spawn, spawnSync } from 'node:child_process';
+import { setPriority } from 'node:os';
 import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
@@ -155,6 +156,12 @@ function gitDir(cwd: string, flag: '--git-dir' | '--git-common-dir'): string {
 
 function runChild(cmd: readonly string[], env: NodeJS.ProcessEnv): Promise<number> {
   return new Promise((res) => {
+    // Lowest CPU priority (nice 19): browser jobs must never starve the owner's interactive work; children inherit it.
+    try {
+      setPriority(0, 19);
+    } catch {
+      // best effort
+    }
     const child = spawn(cmd[0] as string, cmd.slice(1), { stdio: 'inherit', env });
     const fwd = (sig: NodeJS.Signals) => () => child.kill(sig);
     const handlers = (['SIGINT', 'SIGTERM', 'SIGHUP'] as const).map((s) => [s, fwd(s)] as const);
