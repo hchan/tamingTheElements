@@ -436,7 +436,15 @@ describe('portrait bar touch floor (44 CSS px)', () => {
       expect((r?.slots[0]?.size ?? 0) * (w / 1280)).toBeGreaterThanOrEqual(44);
     }
   });
-  it.each([[390, 9], [360, 9], [390, 10], [360, 10]])('%i px wide, %i boxes: balanced rows, no orphan, 44+ px, centred', (w, n) => {
+  it.each([[390, 9], [360, 9]])('%i px wide, %i boxes (2v2 with Tag): ONE row on the tight-fit rung, none under 39 CSS px, touch skirt kept (QA r105 P2)', (w, n) => {
+    const k = w / 1280;
+    const r = portraitBarSlots(mk(n), k);
+    expect(r?.ext).toBe(44);
+    expect(new Set(r?.slots.map((s) => s.y)).size).toBe(1);
+    expect((r?.slots[0]?.size ?? 0) * k).toBeGreaterThanOrEqual(39);
+    for (const s of r?.slots ?? []) expect(s.x + s.size).toBeLessThanOrEqual(1280);
+  });
+  it.each([[390, 10], [360, 10]])('%i px wide, %i boxes: balanced rows, no orphan, 44+ px, centred', (w, n) => {
     const k = w / 1280;
     const r = portraitBarSlots(mk(n), k);
     const rows = new Map<number, number>();

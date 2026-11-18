@@ -323,6 +323,8 @@ export function oneRowSlots<T extends { x: number; y: number; size: number }>(sl
 
 /** Smallest a touch box may be on screen in CSS px in the portrait bar, both ways (WCAG 2.5.8 target size; the one-row bar's 28-39 px boxes were under it). */
 export const PORTRAIT_MIN_TOUCH_CSS = 44;
+/** Tight-fit rung (QA r105/r106 P2): a box a hair under 44 wide (the 2v2 bar's nine boxes are 43 at 390, 39.4 at 360; the touch skirt keeps each 44 tall) still beats a second row. Never below this. */
+export const PORTRAIT_TIGHT_TOUCH_CSS = 39;
 /** Largest a tile of the wrapped (two-row) portrait bar grows on screen, CSS px: 64 px rows covered the floor at 360 wide (QA r101 P2); 48 keeps a comfortable tap and frees about 32 px. */
 export const PORTRAIT_ROW_TILE_MAX_CSS = 48;
 
@@ -333,7 +335,7 @@ export const PORTRAIT_ROW_TILE_MAX_CSS = 48;
  */
 export function portraitBarSlots<T extends { x: number; y: number; size: number }>(slots: readonly T[], k: number): { slots: T[]; top: number; ext: number } | undefined {
   const row = oneRowSlots(slots, k);
-  if (row !== undefined && (row.slots[0]?.size ?? 0) * k >= PORTRAIT_MIN_TOUCH_CSS) return { ...row, ext: 44 };
+  if (row !== undefined && (row.slots[0]?.size ?? 0) * k >= PORTRAIT_TIGHT_TOUCH_CSS - 1e-9) return { ...row, ext: 44 };
   if (!(k > 0) || slots.length === 0) return undefined;
   const min = Math.ceil(PORTRAIT_MIN_TOUCH_CSS / k);
   const perRow = Math.floor((LOGICAL_W - SLOT_BORDER / 2) / min);
