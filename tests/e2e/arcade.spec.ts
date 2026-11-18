@@ -101,7 +101,7 @@ async function finishOnResults(page: Page): Promise<void> {
   await expect(page.locator('#game canvas')).toHaveCount(0);
 }
 
-test('on by default: the menu has the five entries Play, Versus, Online, Settings, Help; no Settings toggle; #arcade opens', async ({ page }) => {
+test('on by default: the menu has the five entries Play, Versus, Online, Settings, Help; no Settings toggle; #arcade opens', { tag: '@smoke' }, async ({ page }) => {
   const errors = collectErrors(page);
   await seedViaGameMaster(page, fixture('v0-ch3'));
   await goToHash(page, '#main');
@@ -115,7 +115,7 @@ test('on by default: the menu has the five entries Play, Versus, Online, Setting
   expect(errors).toEqual([]);
 });
 
-test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2-0, rematch, back to the menu; the save is untouched', async ({ page }) => {
+test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2-0, rematch, back to the menu; the save is untouched', { tag: '@smoke' }, async ({ page }) => {
   const errors = collectErrors(page);
   await seedViaGameMaster(page, fixture('v0-ch3'));
   await goToHash(page, '#main');

@@ -8,7 +8,7 @@ import { ARENA_READY, START, collectErrors } from './parity/helpers';
 const lives = (page: Page): Promise<number[]> =>
   page.evaluate<number[]>(`window.__TTE__.arena.characters().sort((a, b) => a.team - b.team).map((c) => c.maxHp)`);
 
-test('Versus: a single click picks the hero, shows it selected, and Fight starts with it', async ({ page }) => {
+test('Versus: a single click picks the hero, shows it selected, and Fight starts with it', { tag: '@smoke' }, async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto(`${START}&ff=arcade#arcade`);
   const tile = page.locator('.heroTile', { hasText: 'Fiara' });

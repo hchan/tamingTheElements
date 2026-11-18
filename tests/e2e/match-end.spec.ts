@@ -123,7 +123,7 @@ for (const size of SIZES) {
 }
 
 for (const size of SIZES) {
-  test(`match end at ${String(size.width)}x${String(size.height)}: winner, result word, reachable buttons`, async ({ page }) => {
+  test(`match end at ${String(size.width)}x${String(size.height)}: winner, result word, reachable buttons`, { tag: size.width === 360 ? '@smoke' : [] }, async ({ page }) => {
     await page.setViewportSize(size);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(`${START}&ff=arcade#arcade`);

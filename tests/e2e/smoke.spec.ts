@@ -10,7 +10,7 @@ const RENDERER = `(() => {
   return gl && info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
 })()`;
 
-test('loads without console errors and shows the menu', async ({ page }) => {
+test('loads without console errors and shows the menu', { tag: '@smoke' }, async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (m) => {
     if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
@@ -23,7 +23,7 @@ test('loads without console errors and shows the menu', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('WebGL renderer is SwiftShader when a game canvas exists', async ({ page }) => {
+test('WebGL renderer is SwiftShader when a game canvas exists', { tag: '@smoke' }, async ({ page }) => {
   await page.goto('/?ff=play');
   await page.waitForFunction(READY);
   const hasCanvas = await page

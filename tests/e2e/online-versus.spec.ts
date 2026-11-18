@@ -28,7 +28,7 @@ async function waitForMatchEnd(page: Page, stallMs = 20_000): Promise<void> {
 
 // The #online screen end to end in two real pages: host code -> answer code -> link opens -> setup handshake says "Connected".
 // Once as plain lockstep (`?ff=lockstep`) and once in the rollback default (input prediction, docs/NETCODE.md): both must run and agree.
-for (const ff of ['arcade,lockstep', 'arcade']) test(`two players connect through the Online Versus screen with pasted codes (${ff})`, async ({ browser }) => {
+for (const ff of ['arcade,lockstep', 'arcade']) test(`two players connect through the Online Versus screen with pasted codes (${ff})`, { tag: ff === 'arcade' ? '@smoke' : [] }, async ({ browser }) => {
   test.setTimeout(60_000);
   const ctx = await browser.newContext();
   opened.push(ctx);

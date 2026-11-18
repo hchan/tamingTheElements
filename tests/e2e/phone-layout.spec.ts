@@ -39,7 +39,7 @@ async function fight(page: Page): Promise<void> {
 for (const [w, h] of [[844, 390], [667, 375], [640, 360]] as const) {
   test.describe(`phone landscape ${String(w)}x${String(h)}`, () => {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-    test('no touch button or Pause covers the arena canvas, so the foe at the wall is never hidden', async ({ page }) => {
+    test('no touch button or Pause covers the arena canvas, so the foe at the wall is never hidden', { tag: w === 640 ? '@smoke' : [] }, async ({ page }) => {
       await fight(page);
       await page.screenshot({ path: shotDir ? `${shotDir}/land-${String(w)}-wall.png` : test.info().outputPath(`land-${String(w)}-wall.png`) });
       const canvas = await box(page, '#game canvas');

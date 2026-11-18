@@ -18,7 +18,7 @@ async function winRound(page: Page): Promise<void> {
   await step(page, KO_TO_RESULT);
 }
 
-test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card, then resume after a reload', async ({ page }) => {
+test('World Tour: pick a team, fight stage 1 to a win, land on the stage 2 card, then resume after a reload', { tag: '@smoke' }, async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto(`${START}&ff=arcade#tour`);
   await page.getByLabel('Hero 1 (lead)').selectOption('fiara');
