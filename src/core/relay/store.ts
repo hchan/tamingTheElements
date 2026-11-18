@@ -1,6 +1,6 @@
 /**
  * The two seams the relay needs from its host (a serverless backend, a Node process, a test). Both are async and small so a key-value
- * store with conditional writes (for example DynamoDB `ConditionExpression`) and a "post to connection" API fit without changes.
+ * store with conditional writes (a conditional-put database primitive) and a "post to connection" API fit without changes.
  */
 
 export type Json =
