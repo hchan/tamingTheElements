@@ -7,6 +7,15 @@ added: 2026-11-17
 
 Follow-up to [gpu-vs-mac-bakeoff](gpu-vs-mac-bakeoff.md) ("Full e2e on the PC"). Method: `tools/dev/remote-run.sh` on origin/main `53608d0b`, 1 worker, nothing else on the PC (load 0.3). Run 1: the nine failing specs once (18 failed, 55 passed, 22.7 min). Run 2: the failing tests with `--repeat-each=2`. Runs 3 to 6: diagnostic specs (scratch, not committed). No Mac browser run (Mac load was 25 to 70 throughout, over the limit of 12), so nothing below is Mac-verified.
 
+## Update 2026-11-17: cause found and fixed (WP pc-frames)
+
+With `DISPLAY` and `WAYLAND_DISPLAY` set (WSLg), Chromium with the project's SwiftShader args got frames in about 1 of 8 launches
+(0 frames otherwise, for 15 s and more); with both unset: 60 fps, WebGL on, 20 of 20 fresh ssh sessions. `--disable-features=Vulkan`
+also worked (5 of 5). `--use-gl=disabled` worked but has no WebGL. `--disable-gpu-compositing`, `--no-sandbox`, `--disable-gpu-vsync`,
+`--single-process` did not help. `remote-run.sh` now unsets both variables and runs `tools/dev/pc-frame-check.cjs` as a preflight
+(status `error`, exit 96, on a stall); see docs/TESTING.md "The GPU PC". The failure table below was measured before the fix: re-run
+the nine specs on the PC to see which of them were only this. Untested: Windows locked or display off.
+
 ## Root cause (found)
 
 On the PC, `requestAnimationFrame` never fires and `page.screenshot` times out, even on a blank `page.setContent('<p>hi</p>')` page. Measured: 0 rAF callbacks in 1.5 to 3 s, `document.visibilityState === 'visible'`, `hasFocus() === true`. It holds for every launch variant tried (the project's SwiftShader args, no args, `--disable-gpu`, `--disable-renderer-backgrounding` and friends, `--run-all-compositor-stages-before-draw`, `channel: 'chromium'` new headless, `--no-sandbox`); `--in-process-gpu` made it worse (31 s). Chromium 158.0.8127.18, WSL Ubuntu, fresh WSL VM per ssh session (`up` about 2 minutes at each start).
