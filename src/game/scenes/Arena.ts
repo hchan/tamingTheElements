@@ -222,7 +222,7 @@ export class Arena extends Phaser.Scene {
     const rollbackWindow = getUiFlags(window.location.search).lockstep ? 0 : ROLLBACK_WINDOW;
     if (rollbackWindow > 0) this.playOnce = new PlayOnce();
     this.pacing = rollbackWindow === 0;
-    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow, ...(net.tickLimit === undefined ? {} : { tickLimit: net.tickLimit }) }) : undefined;
+    this.session = net && !playback ? new LockstepSession({ world, side: net.side, transport: net.input, match: net.match, rollbackWindow, ...(net.tickLimit === undefined ? {} : { tickLimit: net.tickLimit }), ...(net.inputDelay === undefined ? {} : { inputDelay: net.inputDelay }), ...(net.batchEvery === undefined ? {} : { batchEvery: net.batchEvery }) }) : undefined;
     this.driver = new FixedStepDriver({ tick: () => { this.advance([undefined, undefined]); }, now: () => performance.now() });
     const driver = this.driver;
     const arcadeMatch = this.view.arcade() !== undefined;
