@@ -164,7 +164,7 @@ export function tourStageChip(stage: number, total: number, continues: number): 
     margin: '0',
     zIndex: '4',
     pointerEvents: 'none',
-    font: '600 clamp(12px, 1.7vh, 15px)/1.25 system-ui, sans-serif',
+    font: '600 clamp(12px, 1.7vh, 15px)/1.25 georgia, serif',
     color: '#ece6d6',
     background: 'rgb(10 10 16 / 0.72)',
     padding: '4px 8px',
