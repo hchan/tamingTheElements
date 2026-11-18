@@ -250,7 +250,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       const ctls = await page.evaluate<Ctl[]>(CONTROLS);
       expect(ctls.length).toBeGreaterThanOrEqual(10);
       for (const c of ctls) {
-        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(44 - 0.6);
+        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(c.id.startsWith("arcade") || c.id.startsWith("touchSkirtDeco") ? 39 : 44 - 0.6);
         expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
         expect(c.x, c.id).toBeGreaterThanOrEqual(-0.5);
         expect(c.x + c.w, c.id).toBeLessThanOrEqual(w + 0.5);
@@ -261,7 +261,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       expect(ctls.some((c) => c.id.startsWith('touchSkirtDeco'))).toBe(true);
       expect(await page.evaluate<number>(`document.querySelectorAll('button.touchBtn').length`)).toBeGreaterThanOrEqual(5);
       const barBoxes = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
-      expect(barBoxes.length, 'Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse: no Blast/Flame tiles').toBe(8);
+      expect(barBoxes.length, 'Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse, Run: no Blast/Flame tiles').toBe(9);
       expect(new Set(barBoxes.map((c) => Math.round(c.y + c.h))).size, `one bar row: ${JSON.stringify(barBoxes)}`).toBe(1);
       // Tile bar: no two bar boxes overlap each other.
       const bar = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
@@ -351,7 +351,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await shot(page, `${String(w)}-3v3-targets`);
     });
 
-    test('melee hero (Curomo): the nine-tile bar is one row, boxes at least 39 CSS px wide and 44 tall (QA r105/r106)', async ({ page }) => {
+    test('melee hero (Curomo): the ten-tile bar wraps to two balanced rows of 44 px boxes (QA r105/r106)', async ({ page }) => {
       await page.goto(`${START}&ff=arcade#arcade`);
       await page.getByLabel('Your race').selectOption('curomo');
       await page.getByRole('button', { name: /^Fight/ }).tap();
@@ -360,10 +360,10 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await page.waitForFunction(ATTR);
       await page.waitForFunction(`document.querySelectorAll('button.touchBtn').length >= 5`);
       const isBar = (c: Ctl): boolean => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco');
-      await expect.poll(async () => barRowCounts(await page.evaluate<Ctl[]>(CONTROLS)), { message: 'melee: nine tiles, one row', timeout: 10_000 }).toEqual([9]);
+      await expect.poll(async () => barRowCounts(await page.evaluate<Ctl[]>(CONTROLS)), { message: 'melee: ten tiles, two balanced rows', timeout: 10_000 }).toEqual([5, 5]);
       const ctls = await page.evaluate<Ctl[]>(CONTROLS);
       for (const c of ctls) {
-        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(isBar(c) ? 39 : 44 - 0.6);
+        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(44 - 0.6);
         expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
       }
       const bar = ctls.filter(isBar);

@@ -461,3 +461,30 @@ describe('portrait bar touch floor (44 CSS px)', () => {
     expect(portraitBarSlots([], 0.3)).toBeUndefined();
   });
 });
+
+describe('Run slot', () => {
+  const ab = { meter: 0, weatherCharge: 0, guard: 0, guarding: false, dashIn: 0, chargeIn: 0, cleanseIn: 0, keepCharge: false } as const;
+  const run = (over: Partial<NonNullable<RenderActionBar['run']>> = {}) => ({ away: true, readyTick: 0, cooldownTicks: 350, activeUntil: 0, ...over });
+  const last = (b: RenderActionBar) => buildSlots(b, DEFAULT_KEY_LABELS, ab).find((s) => s.kind === 'run');
+  it('is the last Arcade box, with the Run touch overlay and no canvas click', () => {
+    const slots = buildSlots(bar({ run: run() }), DEFAULT_KEY_LABELS, ab);
+    expect(slots.at(-1)).toMatchObject({ kind: 'run', touch: 'Run', cmd: 0, runAway: true, note: 'Run Away', progress: 1 });
+    expect(slots.length).toBeLessThanOrEqual(MAX_SLOTS);
+  });
+  it('is absent without a run read-out and on the flat bar', () => {
+    expect(last(bar())).toBeUndefined();
+    expect(buildSlots(bar({ run: run() })).find((s) => s.kind === 'run')).toBeUndefined();
+  });
+  it('drains while running, then fills over the cooldown, in words', () => {
+    const on = last(bar({ run: run({ activeUntil: 225, readyTick: 575 }) }));
+    expect(on).toMatchObject({ note: 'Run Away on', highlight: true, progress: 0.5 });
+    const cool = last(bar({ run: run({ away: false, readyTick: 250 }) }));
+    expect(cool?.note).toBe('Run Towards 3s');
+    expect(cool?.progress).toBeCloseTo(1 - 150 / 351);
+  });
+  it('has its own tip and Run Away / Run Towards titles', () => {
+    expect(slotTip({ kind: 'run', cmd: 0, runAway: true }).title).toBe('Run Away');
+    expect(slotTip({ kind: 'run', cmd: 0, runAway: false }).title).toBe('Run Towards');
+    expect(slotTip({ kind: 'run', cmd: 0, runAway: false }).text).toMatch(/sticks to it/);
+  });
+});

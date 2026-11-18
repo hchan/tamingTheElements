@@ -27,7 +27,7 @@ const inside = (b: Box): boolean => b.x >= -0.5 && b.y >= -0.5 && b.x + b.w <= W
 /** The touch controls that must stay clear of each other and of the HUD (DOM ids; missing ones are skipped). */
 const CONTROL_IDS = [
   '#fullscreenToggle', '#touchStick', '#touchStrike1', '#touchStrike2', '#pauseButton', '#firstRunHint',
-  '#arcadeWeather', '#arcadeDash', '#arcadeGuard', '#arcadeSuper', '#arcadeTrap', '#arcadeElement', '#arcadeCleanse',
+  '#arcadeWeather', '#arcadeDash', '#arcadeGuard', '#arcadeSuper', '#arcadeTrap', '#arcadeElement', '#arcadeCleanse', '#arcadeRun',
 ];
 
 async function enterFight(page: Page, side: 'right' | 'left'): Promise<void> {

@@ -169,8 +169,8 @@ describe('touchButton (real DOM events)', () => {
 
 describe('touchButtons / setTouchText (real DOM)', () => {
   it('builds the right ids in order, with Trap then Element last and Charge dropped for an all-ranged team', () => {
-    expect(touchButtons(1).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeCharge', 'arcadeTrap', 'arcadeElement', 'arcadeCleanse']);
-    expect(touchButtons(2, [false, false]).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeTag', 'arcadeTrap', 'arcadeElement', 'arcadeCleanse']);
+    expect(touchButtons(1).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeCharge', 'arcadeTrap', 'arcadeElement', 'arcadeCleanse', 'arcadeRun']);
+    expect(touchButtons(2, [false, false]).map((b) => b.id)).toEqual(['arcadeSuper', 'arcadeGuard', 'arcadeDash', 'arcadeWeather', 'arcadeTag', 'arcadeTrap', 'arcadeElement', 'arcadeCleanse', 'arcadeRun']);
     expect(touchButtons(3).map((b) => b.id)).toEqual(TOUCH.map((l) => `arcade${l}`));
   });
 
@@ -233,8 +233,8 @@ describe('watchTouch', () => {
 describe('key labels follow the fighting-game preset (screen-reader list and bar agree)', () => {
   it('names the preset primaries, not the default numbers', () => {
     setBindings(SF_PRESET_BINDINGS);
-    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['O', 'I', 'L', 'U', 'H', 'N', 'M', 'P', 'Y', ';']);
+    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['O', 'I', 'L', 'U', 'H', 'N', 'M', 'P', 'Y', ';', '`']);
     setBindings(DEFAULT_BINDINGS);
-    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['9', '8', '7', '6', '5', '3', '4', '0', '-', '=']);
+    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['9', '8', '7', '6', '5', '3', '4', '0', '-', '=', '`']);
   });
 });
