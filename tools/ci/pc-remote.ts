@@ -14,6 +14,7 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { Readable } from 'node:stream';
+import { JOB_ID_RE } from './pc-job';
 
 export type Remote = { alias: string; distro: string; ssh: string };
 export type JobStatus = {
@@ -40,7 +41,7 @@ export type FollowOpts = {
   signal?: AbortSignal;
 };
 
-export const ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+export const ID_RE = JOB_ID_RE;
 export const PID1_MIN_AGE_SEC = 600;
 export const EXIT = { usage: 2, upload: 3, bundle: 92, lost: 93, unreachable: 94, busy: 95, frames: 96, ssh: 255 } as const;
 
@@ -79,7 +80,7 @@ jget() { [ -f "$1" ] && sed -n 's/.*"'"$2"'" *: *"\{0,1\}\([A-Za-z0-9._-]*\)"\{0
 is_final() { s=$(jget "$d/status.json" state); case "$s" in ''|queued|running|syncing) return 1 ;; esac; return 0; }
 case "$cmd" in
   age) ps -o etimes= -p 1 | tr -d ' ' ;;
-  fg) need_id; cd "$d" && exec bash job.sh ;;
+  fg) need_id; cd "$d" && mkdir -p out && set -o pipefail && bash job.sh 2>&1 | tee out/output.log; exit $? ;;
   status) need_id; if [ -f "$d/status.json" ]; then cat "$d/status.json"; else echo '{"state":"unknown","rc":1}'; fi ;;
   follow)
     need_id; off=$3; hb=$4; [ -n "$hb" ] || hb=60; log=$d/out/output.log; idle=0; dead=0; nopid=0

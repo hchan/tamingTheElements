@@ -49,12 +49,13 @@ export function shellQuote(s: string): string {
   return `'${s.replace(/'/g, `'\\''`)}'`;
 }
 
-const ID_RE = /^[A-Za-z0-9._-]+$/;
+/** The one job-id shape every PC tool accepts (pc-job, pc-snapshot, pc-remote; also what ctl.sh's case pattern allows). */
+export const JOB_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 const OUT_FLAG = '--output=$OUT/test-results';
 
 export function renderJob(spec: JobSpec): { jobSh: string; startSh: string } {
   const { id, lane: laneName, source } = spec;
-  if (!ID_RE.test(id)) throw new Error(`bad job id: ${id}`);
+  if (!JOB_ID_RE.test(id)) throw new Error(`bad job id: ${id}`);
   for (const k of Object.keys(spec.env)) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k)) throw new Error(`bad env key: ${k}`);
   const lane = LANES[laneName];
   const workers = spec.workers ?? lane.workers;
