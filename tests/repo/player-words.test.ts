@@ -21,6 +21,10 @@ describe('words a first-time player must not see', () => {
     const labels = [...items.matchAll(/label: '([^']*)'/g)].map((m) => m[1] as string);
     expect(labels).toEqual(['Play', 'Versus', 'Online', 'Settings', 'Help']);
     expect(labels.filter((l) => FORBIDDEN.test(l))).toEqual([]);
+    // Only the player-facing `sub:` lines: the route name 'arcade' is internal.
+    const subs = [...items.matchAll(/sub: '([^']*)'/g)].map((m) => m[1] as string);
+    expect(subs).toHaveLength(5);
+    expect(subs.filter((l) => FORBIDDEN.test(l))).toEqual([]);
   });
 
   it('help links', () => {
