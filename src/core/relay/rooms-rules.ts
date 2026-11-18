@@ -1,6 +1,7 @@
 /**
- * Room-code rules shared by every relay (the WebSocket relay core and the WebRTC signalling relay in tools/signal-relay).
- * Pure: randomness is injected. One copy of the alphabet, length, life span and cap.
+ * The package's own copy of the room-code rules. The WebRTC signalling relay (tools/signal-relay/rooms.ts) keeps its own copy
+ * and never imports this package; tests/repo/room-code-rules-drift.test.ts fails if the two differ.
+ * Pure: randomness is injected.
  */
 
 export const ROOM_TTL_MS = 10 * 60_000;
