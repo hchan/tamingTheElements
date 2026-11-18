@@ -27,3 +27,11 @@ Round GPU-1 (2026-11-17): 48 candidates (4 per hero) with SDXL base 28 steps CFG
 - Seeds 6000+n*31+len(hero); 28 imgs, median 18.95 s, one 59 s stall, temp max 50C. gen4.py includes a temp check (stop above 83C).
 - Tool quirk: the Bash tool refuses compound commands (heredoc python + base64 + ssh in one) in a worktree-isolated agent; write the file with Write, base64 in one call, ssh in another.
 - Owner verdict: still none; G0 open.
+
+## Round 5 (2026-11-17)
+- img2img strength 0.75/0.82/0.9 (4 seeds each, 72 imgs) from the round-3 picks: composition drifts a bit, surface/animal identity still wins (horse becomes grey-white, octopus keeps suckers, eagle stays an eagle). Gains are only splash/foam/mist/lightning around the creature.
+- Plain text2img with "transparent liquid water sculpture in the silhouette of X, only water, see-through" and negatives against glossy/plastic/skin: best water result so far for abyssor and glimmaw (glassy translucent octopus/fish) and nykra (see-through horse). Storm heroes as "storm cloud shaped like X" still gave solid grey animals (wolf, eagle, jellyfish).
+- Glimmaw lure never appears (0 of 24+ tries). Next: ControlNet edge / LoRA / IP-Adapter, or composite a water/cloud texture over a cut silhouette.
+- Timings: 84 imgs in 1460 s, img2img median 16.7 s, text2img 18.2 s, temp max 50 C, peak alloc 5.5 GB. gen6.py in the worktree .scratch/ and PC ~/tte-gpu.
+- scp to the PC works with `scp file hchan@HOST:C:/Users/hchan/x` then `wsl ... cp /mnt/c/Users/hchan/x ~/tte-gpu/` (base64 on the command line is too long for scripts). Fetch results with `tar | base64 -w0` over ssh, decode on the Mac. Backgrounded foreground ssh job + polling loop (each tool call auto-backgrounds after 180 s) worked.
+- Owner verdict: still none; G0 open.
