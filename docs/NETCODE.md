@@ -81,3 +81,5 @@ Bookkeeping is bounded: per-tick inputs below `confirmed` (and local inputs belo
 - [x] Harsh soak (opt-in, `pnpm soak:webrtc`, `tools/ci/webrtc-soak.ts`; 2026-11-14, 3000-tick draws, two SwiftShader contexts, 60 checkpoints each): no desync, same winner (draw) and identical checkpoint hashes in every run. Wall time per match, lockstep / rollback: `lat:120,jitter:40,loss:20` 253 s / 112 s; `lat:200,jitter:60,loss:20,dup:10` 257 s / 156 s; `lat:200,jitter:80,loss:30,dup:10` 296 s / 119 s. Lockstep stalls to the slowest packet so it takes about 2 to 2.5 times as long as rollback, which stays near its unimpaired pace. Natural-match and multi-hour idle-link runs remain a night job (`--natural`; the idle run is not automated).
 - [ ] Clock sync / frame pacing so both peers run the same wall rate (today each peer stalls to the slower one)
 - [ ] Spectators and replay upload (the replay format already fits)
+
+WebSocket-only online play (relay server, message table, sequence numbers, session flow) is specified in [ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md); the WebRTC path above stays until it is removed.
