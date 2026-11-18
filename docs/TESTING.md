@@ -241,3 +241,16 @@ For commands that mention `e2e` or `playwright` (or with `--preflight`) the scri
 page must get at least 10 frames in 1 s and a screenshot within 5 s. A stall is reported as `status: error` (exit 96), not as a test
 failure, and the command is not run. `--no-preflight` skips it. To probe by hand: `node tools/dev/pc-frame-check.cjs` in the clone
 with `unset DISPLAY WAYLAND_DISPLAY`.
+
+### Routing e2e to the PC
+
+`tools/ci/e2e-route.ts <run|smoke|pages|itch|flake>` (the `pnpm e2e*` scripts) sends Playwright to the PC when `TTE_REMOTE` is set
+or `git config tte.remote <ssh-alias>` is set, and otherwise runs locally in a browser slot. `CI`, `TTE_E2E_LOCAL=1` and `--list`
+force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a remote is configured unless `TTE_ALLOW_MAC_E2E=1`.
+
+- **Lanes:** a short lane (port 7970) and a full lane (port 7960); more than 150 tests times the repeat count picks full
+  (`--pc-lane`, `--full` override). A busy lock exits 95.
+- **Jobs:** the source is bundled from git, uploaded, and run detached under `~/tte-offload/jobs/<id>/`; results are fetched to
+  `.scratch/remote-e2e/<id>/`. Ctrl-C cancels the PC job (exit 130) unless `--pc-detach`; use `--pc-attach` / `--pc-status` later.
+- **Exit codes:** 92 bundle verify, 93 lost/reboot, 94 unreachable, 95 lock busy, 96 frames stall, 3 upload/fetch failure, 2 usage.
+- **Agents:** run only `@smoke` plus the specs you touched (`pnpm e2e:smoke`), never the full suite.
