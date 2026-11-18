@@ -4,6 +4,8 @@
 # It runs <cmd...> locally in $HOME (the test points HOME at a temp dir). Knobs (env):
 #   FAKE_SSH_DOWN=1          every call exits 255 (host unreachable)
 #   FAKE_SSH_STATE=<dir>     if <dir>/drop-follow holds N, the next `ctl.sh follow` call delivers N bytes, then exits 255
+#   FAKE_SSH_SLEEP=<seconds> sleep this long before doing anything (simulates a hung link; callers time out)
+#   FAKE_SSH_CALLS=<file>    appends one line per call, even when down
 #   FAKE_SSH_LOG=<file>      appends each remote command line
 #   FAKE_PID1_AGE=<seconds>  answer for `ps -o etimes= -p 1` (macOS ps has no etimes; default 99999)
 args=("$@")
@@ -11,6 +13,8 @@ i=0
 while [ $i -lt ${#args[@]} ] && [ "${args[$i]}" != "--" ]; do i=$((i + 1)); done
 [ $i -lt ${#args[@]} ] || { echo "fake-ssh: no -- in args" >&2; exit 2; }
 cmd=("${args[@]:$((i + 1))}")
+[ -z "$FAKE_SSH_CALLS" ] || echo call >> "$FAKE_SSH_CALLS"
+[ -z "$FAKE_SSH_SLEEP" ] || sleep "$FAKE_SSH_SLEEP"
 [ -z "$FAKE_SSH_DOWN" ] || exit 255
 [ -z "$FAKE_SSH_LOG" ] || echo "${cmd[*]}" >> "$FAKE_SSH_LOG"
 cd "$HOME" || exit 255

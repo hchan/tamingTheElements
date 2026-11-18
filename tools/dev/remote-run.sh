@@ -17,7 +17,8 @@
 # Browser commands: the job unsets DISPLAY and WAYLAND_DISPLAY (with WSLg's they set, headless Chromium on the PC mostly gets
 # 0 animation frames; see docs/TESTING.md "The GPU PC"), and a command that mentions e2e or playwright (or --preflight) first
 # runs tools/dev/pc-frame-check.cjs (a blank page must get >= 10 frames in 1 s). On a stall the run is an ERROR, not a test
-# failure: exit 96, `status: error` in summary.txt, nothing else is run. --no-preflight skips the check.
+# failure: exit 96, `status: error` in summary.txt, nothing else is run. --no-preflight skips the check. The result is also recorded
+# as ~/tte-offload/state/frames-{ok,stall} (read by tools/ci/pc-probe.ts).
 # One run at a time per clone: it shares one git checkout and node_modules. The job takes flock on ~/tte-offload/locks/full.lock
 # (GPU art jobs take it too) and waits up to -w seconds (default 600; 0 = fail at once). Lock still busy: exit 95 (PC busy),
 # nothing run. Exit codes: 2 usage, 3 upload, 95 busy, 96 frame preflight, 97/98/99 clone/commit/install. Every ssh call
@@ -64,7 +65,7 @@ job=$(mktemp "${TMPDIR:-/tmp}/tte-job.XXXXXX")
   echo "t0=\$(date +%s.%N)"
   echo 'status=""'
   if [ "$pre" = 1 ] || { [ "$pre" = auto ] && printf '%s' "$cmd" | grep -Eqi 'e2e|playwright'; }; then
-    echo 'if [ -f tools/dev/pc-frame-check.cjs ]; then node tools/dev/pc-frame-check.cjs 2>&1 | tee "$R/output.log"; [ ${PIPESTATUS[0]} -eq 0 ] || { echo "ERROR: PC compositor is not producing frames (preflight); not running the command. Retry, or pass --no-preflight." | tee -a "$R/output.log" >&2; status=error; }; fi'
+    echo 'if [ -f tools/dev/pc-frame-check.cjs ]; then node tools/dev/pc-frame-check.cjs 2>&1 | tee "$R/output.log"; fc=${PIPESTATUS[0]}; mkdir -p ~/tte-offload/state; if [ $fc -eq 0 ]; then touch ~/tte-offload/state/frames-ok; else touch ~/tte-offload/state/frames-stall; echo "ERROR: PC compositor is not producing frames (preflight); not running the command. Retry, or pass --no-preflight." | tee -a "$R/output.log" >&2; status=error; fi; fi'
   fi
   printf 'if [ -z "$status" ]; then ( %s ) 2>&1 | tee -a "$R/output.log"; rc=${PIPESTATUS[0]}; else rc=96; fi; t1=$(date +%%s.%%N)\n' "$cmd"
   echo '{ echo "commit: '"$sha"'"; echo "command: '"$(printf '%s' "$cmd" | sed 's/[\\"$`]/\\&/g')"'"; echo "exit: $rc"; echo "status: $([ -n "$status" ] && echo error || { [ $rc -eq 0 ] && echo ok || echo fail; })"; printf "wall_seconds: %.1f\n" "$(echo "$t1 - $t0" | bc)";'

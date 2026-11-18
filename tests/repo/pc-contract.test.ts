@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { JOB_ID_RE, renderJob, type JobSpec } from '../../tools/ci/pc-job';
+import { JOB_ID_RE, LANES, renderJob, type JobSpec } from '../../tools/ci/pc-job';
+import { probeScript } from '../../tools/ci/pc-probe';
 import { fetchResults, follow, ID_RE, jobStatus, submit, type Remote } from '../../tools/ci/pc-remote';
 import { planSource } from '../../tools/ci/pc-snapshot';
 
@@ -67,6 +68,22 @@ function expectLayout(id: string): void {
   expect(existsSync(join(d, 'out/test-results'))).toBe(true);
   expect(existsSync(join(d, 'out/fetch'))).toBe(true);
 }
+
+describe('pc-job / pc-probe contract', () => {
+  it('job.sh, remote-run.sh and the probe agree on the frame-evidence files, lanes and locks', () => {
+    const probeSh = probeScript();
+    const job = renderJob({ id: 'ct-0', lane: 'short', source: { sha: 'a'.repeat(40) }, command: ['true'], env: {}, fetch: [], preflight: true }).jobSh;
+    for (const f of ['state/frames-ok', 'state/frames-stall']) {
+      expect(job).toContain(f);
+      expect(probeSh).toContain(f);
+      expect(readFileSync('tools/dev/remote-run.sh', 'utf8')).toContain(f.replace('state', '~/tte-offload/state'));
+    }
+    for (const l of Object.values(LANES)) {
+      expect(probeSh).toContain(`${l.clone} ${l.lock}`);
+      expect(renderJob({ id: 'ct-0', lane: l === LANES.short ? 'short' : 'full', source: { sha: 'a'.repeat(40) }, command: ['true'], env: {}, fetch: [], preflight: false }).jobSh).toContain(`$BASE/${l.lock}`);
+    }
+  });
+});
 
 describe('pc-job / pc-remote contract', () => {
   it('shares one job-id rule across renderer, snapshot and transport', () => {

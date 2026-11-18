@@ -84,6 +84,28 @@ describe('renderJob', () => {
     expect(renderJob(base({ lane: 'full', direct: true })).jobSh).toContain("'--reporter=dot,json,html'");
   });
 
+  it('waitSec caps the lock wait (default: the lane waitSec)', () => {
+    const dflt = renderJob(base()).jobSh;
+    expect(dflt).toContain('flock -w 60 9');
+    expect(dflt).toContain(`-ge ${String(LANES.short.waitSec)} ]`);
+    const capped = renderJob(base({ waitSec: 120 })).jobSh;
+    expect(capped).toContain('flock -w 60 9');
+    expect(capped).toContain('-ge 120 ]');
+    const none = renderJob(base({ waitSec: 0 })).jobSh;
+    expect(none).toContain('flock -w 0 9');
+    expect(none).toContain('-ge 0 ]');
+    bashN(none);
+    for (const bad of [-1, 1.5, Number.NaN]) expect(() => renderJob(base({ waitSec: bad }))).toThrow(/bad waitSec/);
+  });
+
+  it('records the frame preflight as state/frames-ok or frames-stall', () => {
+    const { jobSh } = renderJob(base());
+    expect(jobSh).toContain('touch "$BASE/state/frames-ok"');
+    expect(jobSh).toContain('touch "$BASE/state/frames-stall"');
+    expect(jobSh).toMatch(/frames-stall"; echo "ERROR[^\n]*fail 96/);
+    expect(renderJob(base({ preflight: false })).jobSh).not.toContain('state/frames');
+  });
+
   it('rejects unsafe ids and env keys', () => {
     expect(() => renderJob(base({ id: 'a b' }))).toThrow();
     expect(() => renderJob(base({ env: { 'A;B': '1' } }))).toThrow();

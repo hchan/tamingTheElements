@@ -40,6 +40,8 @@ export interface JobSpec {
   preflight: boolean;
   /** Worker count for the lane guards and, with `direct`, the --workers flag (default: the lane's). */
   workers?: number;
+  /** Seconds to wait for the lane lock before exit 95 (default: the lane's waitSec). */
+  waitSec?: number;
   /** The command is a direct `playwright test`: append reporter, trace, output and worker flags. */
   direct?: boolean;
 }
@@ -66,6 +68,8 @@ export function renderJob(spec: JobSpec): { jobSh: string; startSh: string } {
   const cmdLine = words.join(' ');
   const envLines = Object.entries(spec.env).map(([k, v]) => `export ${k}=${shellQuote(v)}`);
   const fetchLines = spec.fetch.map((p) => `  [ -e ${shellQuote(p)} ] && cp -R --parents ${shellQuote(p)} "$OUT/fetch/" 2>/dev/null`);
+  const waitSec = spec.waitSec ?? lane.waitSec;
+  if (!Number.isInteger(waitSec) || waitSec < 0) throw new Error(`bad waitSec: ${String(waitSec)}`);
   const minMemKb = `$(( (2048 + 1536 * ${workers}) * 1024 ))`;
 
   const fetchSource = source.ref
@@ -121,9 +125,9 @@ status queued 0 pending
 # 1. Queue: the lane lock, then the load, RAM and disk guards.
 mkdir -p "$(dirname "$LOCK")" "$TMPDIR"
 exec 9>"$LOCK"
-until flock -w 60 9; do
+until flock -w ${Math.min(60, waitSec)} 9; do
   echo "queued behind $(cat "$LOCK.holder" 2>/dev/null || echo unknown)"
-  [ $((SECONDS - T0)) -gt ${lane.waitSec} ] && { echo "PC busy: lock wait timed out"; fail 95; }
+  [ $((SECONDS - T0)) -ge ${waitSec} ] && { echo "PC busy: lock wait timed out"; fail 95; }
 done
 echo ${id} > "$LOCK.holder"
 GW=$SECONDS
@@ -159,7 +163,10 @@ export PLAYWRIGHT_HTML_OUTPUT_DIR=$OUT/report PLAYWRIGHT_HTML_REPORT=$OUT/report
 ${envLines.join('\n')}
 
 # 4. Frame preflight: a compositor stall is an error, not a test failure.
-${spec.preflight ? `if [ -f tools/dev/pc-frame-check.cjs ]; then node tools/dev/pc-frame-check.cjs || { echo "ERROR: PC compositor is not producing frames (preflight)"; fail 96; }; fi` : ':'}
+${spec.preflight ? `if [ -f tools/dev/pc-frame-check.cjs ]; then
+  mkdir -p "$BASE/state"
+  if node tools/dev/pc-frame-check.cjs; then touch "$BASE/state/frames-ok"; else touch "$BASE/state/frames-stall"; echo "ERROR: PC compositor is not producing frames (preflight)"; fail 96; fi
+fi` : ':'}
 
 # 5. Health sampler: every 30 s; kills the job group when MemAvailable stays under 1 GB twice.
 echo "ts,load1,memavail_mb,gpu_temp,gpu_util" > "$JOB/health.csv"
