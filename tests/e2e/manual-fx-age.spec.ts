@@ -43,6 +43,7 @@ const shock = (page: Page): Promise<{ pops: number; rings: number } | undefined>
   page.evaluate<{ pops: number; rings: number } | undefined>(`window.__TTE__.arena.shockFx()`);
 
 test('manual stepping: a white damage pop holds its frame until ageFx(true) ages it out', async ({ page }, info) => {
+  test.slow(); // SwiftShader under load can render ~3 fps; see the ageing poll below
   await page.emulateMedia({ reducedMotion: 'no-preference' }); // reduced motion shows a HUD number instead of a pop
   const errors = collectErrors(page);
   const foe = await openDemo(page, 'arenaDemo,arcade');
@@ -52,11 +53,13 @@ test('manual stepping: a white damage pop holds its frame until ageFx(true) ages
   for (let i = 0; i < 10; i++) await page.evaluate(`new Promise((r) => requestAnimationFrame(r))`);
   expect((await shock(page))?.pops ?? 0).toBeGreaterThanOrEqual(1); // still held
   await page.evaluate(`window.__TTE__.arena.ageFx(true)`);
+  // Phaser caps each frame's delta at 16.7 ms, so the 640 ms pop needs ~40 frames however slow they are: about 12 s at the ~3 fps
+  // a loaded PC's SwiftShader renders (measured on the PC), hence the long poll.
   await expect
     .poll(async () => {
       const s = await shock(page);
       return s ? s.pops + s.rings : 0;
-    }, { timeout: 5000 })
+    }, { timeout: 40_000 })
     .toBe(0);
   const shot = await page.locator('#game canvas').screenshot({ path: info.outputPath('pop-aged-out.png') });
   expect(shot.length).toBeGreaterThan(2000);
