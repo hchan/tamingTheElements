@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run a command in the offload clone on the Windows GPU PC (inside WSL Ubuntu), at a given commit.
 #
-#   TTE_REMOTE=<ssh-alias> tools/dev/remote-run.sh [-c <commit>] [-o <outdir>] [-e KEY=VAL]... [--preflight|--no-preflight] -- <command...>
+#   TTE_REMOTE=<ssh-alias> tools/dev/remote-run.sh [-c <commit>] [-o <outdir>] [-e KEY=VAL]... [-w <lock-wait-seconds>] [--preflight|--no-preflight] -- <command...>
 #
 # TTE_REMOTE is a Host alias from ~/.ssh/config (HostName/User/IdentityFile live there; nothing about the
 # machine is stored in this repo). The clone lives in ~/tte-offload/tamingTheElements inside WSL, Node 22 via nvm.
@@ -18,15 +18,19 @@
 # 0 animation frames; see docs/TESTING.md "The GPU PC"), and a command that mentions e2e or playwright (or --preflight) first
 # runs tools/dev/pc-frame-check.cjs (a blank page must get >= 10 frames in 1 s). On a stall the run is an ERROR, not a test
 # failure: exit 96, `status: error` in summary.txt, nothing else is run. --no-preflight skips the check.
-# One run at a time per clone: it shares one git checkout and node_modules (use a second clone for parallel jobs).
+# One run at a time per clone: it shares one git checkout and node_modules. The job takes flock on ~/tte-offload/locks/full.lock
+# (GPU art jobs take it too) and waits up to -w seconds (default 600; 0 = fail at once). Lock still busy: exit 95 (PC busy),
+# nothing run. Exit codes: 2 usage, 3 upload, 95 busy, 96 frame preflight, 97/98/99 clone/commit/install. Every ssh call
+# sends keepalives (ServerAliveInterval=15, ServerAliveCountMax=8) so a dead link fails in about 2 minutes instead of hanging.
 set -uo pipefail
 
-commit="" outdir="" envs=() pre=auto
+commit="" outdir="" envs=() pre=auto wait=600
 while [ $# -gt 0 ]; do
   case "$1" in
     -c) commit="$2"; shift 2 ;;
     -o) outdir="$2"; shift 2 ;;
     -e) envs+=("$2"); shift 2 ;;
+    -w) wait="${2:-}"; shift 2 ;;
     --preflight) pre=1; shift ;;
     --no-preflight) pre=0; shift ;;
     --) shift; break ;;
@@ -34,6 +38,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ $# -gt 0 ] || { echo "no command given" >&2; exit 2; }
+case "$wait" in ''|*[!0-9]*) echo "-w needs whole seconds" >&2; exit 2 ;; esac
 : "${TTE_REMOTE:?set TTE_REMOTE to the ssh Host alias of the GPU PC}"
 
 sha=$(git rev-parse "${commit:-HEAD}") || exit 2
@@ -42,12 +47,14 @@ outdir=${outdir:-.scratch/remote-results/$stamp}
 mkdir -p "$outdir"
 cmd="$*"
 wsl=(wsl -d Ubuntu --cd '~' --)
+sshopts=(-o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=8)
 
 # Build the job script locally; it is uploaded to the PC and executed there (avoids Windows shell quoting).
 job=$(mktemp "${TMPDIR:-/tmp}/tte-job.XXXXXX")
 {
   echo '#!/bin/bash'
   echo 'export NVM_DIR=$HOME/.nvm; . "$NVM_DIR/nvm.sh" >/dev/null'
+  echo "mkdir -p ~/tte-offload/locks; exec 9>>~/tte-offload/locks/full.lock; flock -w $wait 9 || { echo 'PC busy: full-lane lock held (waited ${wait}s)' >&2; exit 95; }"
   echo "cd ~/tte-offload/tamingTheElements || exit 97"
   echo "R=~/tte-offload/results/$stamp; rm -rf \"\$R\"; mkdir -p \"\$R\"; export TTE_RESULTS=\"\$R\""
   for e in ${envs[@]+"${envs[@]}"}; do printf 'export %q\n' "$e"; done
@@ -65,11 +72,11 @@ job=$(mktemp "${TMPDIR:-/tmp}/tte-job.XXXXXX")
   echo 'exit $rc'
 } > "$job"
 
-ssh "$TTE_REMOTE" "${wsl[@]}" tee tte-offload/.job-$stamp.sh < "$job" >/dev/null || { echo "upload failed" >&2; rm -f "$job"; exit 3; }
+ssh "${sshopts[@]}" "$TTE_REMOTE" "${wsl[@]}" tee tte-offload/.job-$stamp.sh < "$job" >/dev/null || { echo "upload failed" >&2; rm -f "$job"; exit 3; }
 rm -f "$job"
-ssh "$TTE_REMOTE" "${wsl[@]}" bash tte-offload/.job-$stamp.sh < /dev/null
+ssh "${sshopts[@]}" "$TTE_REMOTE" "${wsl[@]}" bash tte-offload/.job-$stamp.sh < /dev/null
 rc=$?
-ssh "$TTE_REMOTE" "${wsl[@]}" tar -C "tte-offload/results/$stamp" -cf - . < /dev/null | tar -C "$outdir" -xf - 2>/dev/null
+ssh "${sshopts[@]}" "$TTE_REMOTE" "${wsl[@]}" tar -C "tte-offload/results/$stamp" -cf - . < /dev/null | tar -C "$outdir" -xf - 2>/dev/null
 echo "--- remote exit $rc; results in $outdir" >&2
 [ -f "$outdir/summary.txt" ] && cat "$outdir/summary.txt" >&2
 exit $rc
