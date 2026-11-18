@@ -37,3 +37,61 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [elemental-ability](../in-progress/elemental-ability.md) (in progress): Always-available elemental ability (a WoW-racial style button). Every hero gets one extra button, chosen by the hero's element, on its own cooldown.
 - [elemental-cleanse](../in-progress/elemental-cleanse.md) (in progress): Cleanse for every elemental (HIGH PRIORITY). Owner request (2026-11-13): all elementals should have a cleanse, one per element, each with its own animation, a sound when it is activated, and a co
 - [hot-dot-abilities](../in-progress/hot-dot-abilities.md) (in progress): New abilities: heal over time (HoT) and damage over time (DoT). Owner idea (2026-11-14): create new abilities, including HoT (heal over time) and DoT (damage over time).
+
+## Filed 2026-11-17 (round-note filing and cross-listing)
+
+Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
+
+- [run-away-run-towards](../brainstorm/run-away-run-towards.md): Run Away / Run Towards (auto-run ability, Tab)
+
+## Bundles (2026-11-17)
+
+Groups of ideas that touch the same files, so one agent can take the whole bundle. Flags: SIM = sim-changing (needs an Opus plan, a SIM_VERSION bump and a golden re-record with a stated reason, one sim bundle at a time); OWNER-GATED = wait for the owner; PC = heavy generation, balance or e2e work can run on the GPU PC; needs browser/e2e = run Playwright (headless) before calling it done.
+
+### AB-1 AI overlap and stand-off fixes
+
+- Members: [ai-stunned-overlap-open-field](../brainstorm/ai-stunned-overlap-open-field.md), [ai-step-apart-normal](../brainstorm/ai-step-apart-normal.md), [ai-toward-half-sum](../brainstorm/ai-toward-half-sum.md), [ai-phantom-double-tap-dash](../brainstorm/ai-phantom-double-tap-dash.md), [qa-r20-ai-hazard-dodge-not-observed](../brainstorm/qa-r20-ai-hazard-dodge-not-observed.md)
+- Size: M
+- Shared files: src/core/agents/*, AI tests
+- Flags: SIM, PC (tournament balance runs)
+- Parallel: Serial with AB-2, BA-2 (same agent files) and any other SIM bundle; parallel with HUD, FX, art and tools bundles.
+
+### AB-2 AI observation and personality
+
+- Members: [ai-fire-blast-growth-prediction](../brainstorm/ai-fire-blast-growth-prediction.md), [cc-ai-observation-and-retune](../brainstorm/cc-ai-observation-and-retune.md), [classic-ai-personality-axis](../in-progress/classic-ai-personality-axis.md), [arcade-ai-combo-chaining](../in-progress/arcade-ai-combo-chaining.md)
+- Size: M
+- Shared files: src/core/agents/*
+- Flags: SIM, PC. Check in-progress members first
+- Parallel: Serial after AB-1.
+
+### AB-3 Team and speed balance outliers
+
+- Members: [balance-2v2-echo-pax-r37](../brainstorm/balance-2v2-echo-pax-r37.md), [pax-treenoc-team-step](../brainstorm/pax-treenoc-team-step.md), [pax-speed-10-vs-5](../brainstorm/pax-speed-10-vs-5.md), [2v2-time-over-regression](../in-progress/2v2-time-over-regression.md)
+- Size: M
+- Shared files: src/core/sim/*, src/core/data/*, goldens, tests/fixtures/balance/baseline.json
+- Flags: SIM, PC (balance:compare)
+- Parallel: Serial with every SIM bundle.
+
+### AB-4 Round length and boss retune
+
+- Members: [3v3-balance-and-round-length](../brainstorm/3v3-balance-and-round-length.md), [void-boss-retune](../brainstorm/void-boss-retune.md), [arcade-balance-after-cleanse](../in-progress/arcade-balance-after-cleanse.md)
+- Size: M
+- Shared files: src/core/sim/*, src/core/data/*, goldens, tests/fixtures/balance/baseline.json
+- Flags: SIM, PC
+- Parallel: Serial with every SIM bundle; run after AB-3 (same baseline).
+
+### AB-5 Weather, parry and support abilities
+
+- Members: [dash-parry-weather-usage](../brainstorm/dash-parry-weather-usage.md), [weather-secondary-effects](../brainstorm/weather-secondary-effects.md), [wispera-fearful-lightning](../brainstorm/wispera-fearful-lightning.md), [backline-support-abilities](../brainstorm/backline-support-abilities.md), [run-away-run-towards](../brainstorm/run-away-run-towards.md)
+- Size: L
+- Shared files: src/core/data/abilities*, src/core/sim/*, ability docs
+- Flags: SIM, PC
+- Parallel: Serial with every SIM bundle.
+
+### AB-6 Finish in-progress ability work
+
+- Members: [elemental-ability](../in-progress/elemental-ability.md), [elemental-cleanse](../in-progress/elemental-cleanse.md), [hot-dot-abilities](../in-progress/hot-dot-abilities.md)
+- Size: S
+- Shared files: src/core/data/*
+- Flags: Check status first; may already be shipped and only need moving to done/. SIM if code remains
+- Parallel: Serial with SIM bundles.

@@ -30,3 +30,31 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [tag-in-opacity-frozen-through-hit-stop](../brainstorm/tag-in-opacity-frozen-through-hit-stop.md): The 0.8 tag-in opacity stays frozen through hit-stop. A hero that tags in is drawn at 0.8 opacity for its entrance;
 - [manual-mode-pops-never-age](../done/manual-mode-pops-never-age.md): In ?manual=1 the white damage pops never age. With the driver paused (manual stepping) the shock layer's pops only advance when ageFx(true) is on, so a pop from a hit stays on screen at full alpha
 - [round-transition-pacing](../brainstorm/round-transition-pacing.md): Round transition pacing. The gap between rounds runs about 20 s in play.
+
+## Bundles (2026-11-17)
+
+Groups of ideas that touch the same files, so one agent can take the whole bundle. Flags: SIM = sim-changing (needs an Opus plan, a SIM_VERSION bump and a golden re-record with a stated reason, one sim bundle at a time); OWNER-GATED = wait for the owner; PC = heavy generation, balance or e2e work can run on the GPU PC; needs browser/e2e = run Playwright (headless) before calling it done.
+
+### GF-1 Smoother movement and hit feel
+
+- Members: [smoother-fighter-movement](../brainstorm/smoother-fighter-movement.md), [qa-hit-feel-r34-r40](../brainstorm/qa-hit-feel-r34-r40.md), [fading-hit-strength](../brainstorm/fading-hit-strength.md), [tag-in-opacity-frozen-through-hit-stop](../brainstorm/tag-in-opacity-frozen-through-hit-stop.md), [round-transition-pacing](../brainstorm/round-transition-pacing.md)
+- Size: L
+- Shared files: src/game/loop/*, src/game/fx/hit-feel.ts, motion.ts, pose-layer.ts, Arena.ts
+- Flags: needs browser/e2e; presentation only (no SIM bump); smoother-movement agents may already be working: check first
+- Parallel: FX lane: serial with bundles touching fx/*, pose-layer.ts or Arena.ts.
+
+### GF-2 Corner and wall behaviour
+
+- Members: [walk-cancels-lunge](../brainstorm/walk-cancels-lunge.md), [stepapart-tie-axis](../brainstorm/stepapart-tie-axis.md), [corner-pushback-y-walls](../brainstorm/corner-pushback-y-walls.md), [hard-corner-release](../brainstorm/hard-corner-release.md), [mvc-pushblock-corner-escape](../brainstorm/mvc-pushblock-corner-escape.md), [melee-wall-hold-drawn-overlap](../brainstorm/melee-wall-hold-drawn-overlap.md)
+- Size: L
+- Shared files: src/core/sim/* (movement, collision), src/core/index.ts
+- Flags: SIM, PC
+- Parallel: Serial with every SIM bundle.
+
+### GF-3 Ranged range keeping and local start
+
+- Members: [hard-skew-rocks-big-heroes](../brainstorm/hard-skew-rocks-big-heroes.md), [ranged-heroes-fight-at-melee-range](../brainstorm/ranged-heroes-fight-at-melee-range.md), [ranged-primary-spam](../brainstorm/ranged-primary-spam.md), [versus-local-closer-start](../brainstorm/versus-local-closer-start.md)
+- Size: M
+- Shared files: src/core/agents/*, src/core/sim/*, src/core/data/*
+- Flags: SIM, PC
+- Parallel: Serial with every SIM bundle; after GF-2.

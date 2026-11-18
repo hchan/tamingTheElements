@@ -34,3 +34,47 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [element-gems-powerups](../brainstorm/element-gems-powerups.md): Element gems and random power-ups. Owner idea (2026-11-14). Each element stage holds 3 gems, scattered at random on the map.
 - [idle-element-auras](../brainstorm/idle-element-auras.md): Idle animation and element auras for every hero. Owner idea (2026-11-14): even when standing still, every elemental should animate, and each hero should have its own animation.
 - [idle-echo-afterimage](../brainstorm/idle-echo-afterimage.md): Echo idle afterimage (IA3 remainder). IA3 (idle motifs in the pose layer) merged without Echo's afterimage.
+
+## Bundles (2026-11-17)
+
+Groups of ideas that touch the same files, so one agent can take the whole bundle. Flags: SIM = sim-changing (needs an Opus plan, a SIM_VERSION bump and a golden re-record with a stated reason, one sim bundle at a time); OWNER-GATED = wait for the owner; PC = heavy generation, balance or e2e work can run on the GPU PC; needs browser/e2e = run Playwright (headless) before calling it done.
+
+### AE-1 Telegraphs and hit marks
+
+- Members: [ability-telegraphs](../in-progress/ability-telegraphs.md), [qa-r22-fire-earth-telegraph-still-weak](../brainstorm/qa-r22-fire-earth-telegraph-still-weak.md), [shards-of-ice-no-hits](../brainstorm/shards-of-ice-no-hits.md), [trap-decal-edge-cut](../brainstorm/trap-decal-edge-cut.md)
+- Size: M
+- Shared files: src/game/fx/* (ability-aura*, hit-mark.ts, terrain-pad.ts), asset manifest
+- Flags: needs browser/e2e, owner art review (screenshots first)
+- Parallel: FX lane: serial with every bundle touching src/game/fx/*; parallel with SIM, tools and art-generation bundles.
+
+### AE-2 Status animations and anchors
+
+- Members: [buff-debuff-animation](../in-progress/buff-debuff-animation.md), [crowd-control-animations](../in-progress/crowd-control-animations.md), [pseudo-3d-ability-and-status-animations](../in-progress/pseudo-3d-ability-and-status-animations.md), [glow-aura-y-anchor](../brainstorm/glow-aura-y-anchor.md), [pose-vfx-anchor-k2](../brainstorm/pose-vfx-anchor-k2.md)
+- Size: L
+- Shared files: src/game/fx/* (status-fx*, cc-fx*), pose-layer.ts
+- Flags: needs browser/e2e, owner art review
+- Parallel: FX lane: serial after AE-1; never with another pose-layer.ts bundle (GF-1).
+
+### AE-3 Terrain and arena art
+
+- Members: [floor-tags-1](../in-progress/floor-tags-1.md), [own-element-tile-effects](../in-progress/own-element-tile-effects.md), [grim-arena-environments](../in-progress/grim-arena-environments.md), [tilemap-environments](../in-progress/tilemap-environments.md), [qa-arena-art-and-stage-choice](../brainstorm/qa-arena-art-and-stage-choice.md)
+- Size: L
+- Shared files: src/game/fx/terrain-*, Arena.ts, asset manifest, main.css (stage chips)
+- Flags: needs browser/e2e, owner art review; PC for image generation
+- Parallel: FX lane and Arena.ts lock: serial with AE-1, AE-2, GF-1, AP-2.
+
+### AE-4 Weather art and idle auras
+
+- Members: [weather-particle-art](../in-progress/weather-particle-art.md), [idle-element-auras](../brainstorm/idle-element-auras.md), [idle-echo-afterimage](../brainstorm/idle-echo-afterimage.md)
+- Size: M
+- Shared files: src/game/fx/* (idle-aura*, stage-ambient*), asset manifest
+- Flags: needs browser/e2e, owner art review
+- Parallel: FX lane: serial with other fx bundles.
+
+### AE-5 Dynamic weather and pickups (sim side)
+
+- Members: [dynamic-weather-during-match](../brainstorm/dynamic-weather-during-match.md), [weather-secondary-effects](../brainstorm/weather-secondary-effects.md), [element-gems-powerups](../brainstorm/element-gems-powerups.md)
+- Size: L
+- Shared files: src/core/sim/*, src/core/data/*, plus a small fx view
+- Flags: SIM, needs browser/e2e for the view
+- Parallel: Serial with every SIM bundle; shares weather-secondary-effects with AB-5 (do it in one of them only).
