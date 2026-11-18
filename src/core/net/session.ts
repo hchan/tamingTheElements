@@ -48,6 +48,12 @@ export interface LockstepOptions {
    * plain lockstep (default). Beyond the window the session stalls as lockstep does.
    */
   readonly rollbackWindow?: number;
+  /**
+   * Send a packet every N updates instead of every update (default 1, as today). Fewer, fuller packets cut billed relay messages
+   * (docs/ONLINE-PROTOCOL.md section 9); each packet still carries every unacked input, so nothing is lost, only up to N-1
+   * updates later. `setHidden` and `forfeit` send at once, and so does the update that ends the match or the link.
+   */
+  readonly batchEvery?: number;
 }
 
 export interface UpdateResult {
@@ -229,6 +235,8 @@ export class LockstepSession {
 
   // Rollback bookkeeping (unused when rollbackWindow is 0).
   private readonly rbWindow: number;
+  private readonly batchEvery: number;
+  private sinceSend = 0;
   private readonly ring: SnapshotRing | undefined;
   /** Remote command actually fed to the sim at each tick (real or predicted); overwritten by re-simulation. */
   private readonly used = new TickBuf<Command>();
@@ -265,6 +273,9 @@ export class LockstepSession {
     this.pauseTimeoutTicks = opts.pauseTimeoutTicks ?? 1500;
     this.tickLimit = opts.tickLimit ?? Number.POSITIVE_INFINITY;
     this.rbWindow = opts.rollbackWindow ?? 0;
+    this.batchEvery = opts.batchEvery ?? 1;
+    if (!Number.isInteger(this.batchEvery) || this.batchEvery < 1)
+      throw new RangeError('batchEvery must be an integer >= 1');
     if (!Number.isInteger(this.rbWindow) || this.rbWindow < 0)
       throw new RangeError('rollbackWindow must be an integer >= 0');
     this.ring =
@@ -423,7 +434,8 @@ export class LockstepSession {
       }
     }
     this.trim();
-    this.sendPacket();
+    const over = this.ended || this.forfeitReason !== undefined || this.desync !== undefined;
+    if (++this.sinceSend >= this.batchEvery || over) this.sendPacket();
     return { status: this.status, stepped, inputAccepted, events, retracted };
   }
 
@@ -662,6 +674,7 @@ export class LockstepSession {
   }
 
   private sendPacket(): void {
+    this.sinceSend = 0;
     const first = Math.min(this.remoteAck, this.local.length);
     const inputs = this.local.slice(first, first + MAX_INPUTS_PER_PACKET);
     this.stats.resentInputs += Math.max(0, Math.min(this.sentUpTo, first + inputs.length) - first);
