@@ -607,5 +607,6 @@ flowchart TD
 | Relay core, codec, store seams, reorder buffer, conformance | `src/core/relay/` |
 | WebSocket transport, control link, client, config | `src/game/net/ws/` |
 | WebRTC adapters and signalling | `src/game/net/`, `tools/signal-relay/` |
+| Online quick match screen (`VITE_ONLINE_URL` builds), route switch | `src/game/app/online-quick*.ts`, `online-route.ts`, `online-arena.ts` (see [ONLINE-CLIENT.md](ONLINE-CLIENT.md) "Screen") |
 | Measurement harness | `src/testing/net/online-measure.ts`, `tools/online-measure.ts` |
 | Package build | `packages/relay/`, `tools/relay-package/` |

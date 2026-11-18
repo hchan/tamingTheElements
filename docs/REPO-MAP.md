@@ -69,6 +69,13 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | `packages/relay/` | Metadata for the `@tamingtheelements/relay` npm package (`package.json`, `tsconfig.json`; build with `tools/relay-package/build.mjs` into a gitignored dist folder) |
 | `tools/relay-package/` | `build.mjs`: tsc plus `.js` specifier rewrite for the relay package |
 | `tools/signal-relay/` | The relay itself (WP 10, `pnpm relay`): `rooms.ts` (pure room rules: two members, 10 min, size-capped code characters; its own copy of the room-code rules, kept equal to `src/core/relay/rooms-rules.ts` by `tests/repo/room-code-rules-drift.test.ts`), `server.ts` (Node, `ws`), `worker.ts` + `wrangler.toml` (Cloudflare Worker variant, the owner deploys it), README |
+| `src/testing/net/fake-online-service.ts` | `FakeService`, `Harness` (virtual clock) and frame builders shared by the OnlineClient tests and the online quick-match tests |
+| `src/game/app/online-quick-model.ts` | Online quick match, pure part (WP ONLINE-QM): state table, player words, failure mapping, MATCH_START check, rest-deadline store; test `online-quick-model.test.ts` |
+| `src/game/app/online-quick-setup.ts` | `QuickSetup`: hero-pick swap then `SetupHandshake` on the transport control pipe, with the server seed; test `online-quick-setup.test.ts` |
+| `src/game/app/online-arena.ts` | `launchOnlineArena`: the Phaser arena of an online match (a copy of the `online-versus` launch block, which stays untouched); returns the game and its holder |
+| `src/game/app/online-quick-view.ts` | `createQuickView`: DOM of the quick match screen (status, hero pick, buttons shown per state, link line, report button) |
+| `src/game/app/online-quick.ts` | `quickMatchScreen` (`#online` when `VITE_ONLINE_URL` is set, own lazy chunk): guest quick match over `OnlineClient`; one `gen` counter guards every async continuation; test `online-quick.dom.test.ts` |
+| `src/game/app/online-route.ts` | `onlineRoute`: the quick match chunk when `onlineConfig().configured`, else the peer-to-peer `online-versus`; test `online-route.dom.test.ts` |
 | `src/game/net/desync-report.ts` | `buildDesyncReport` (WP 09): the Save report JSON with a replay-format member `pnpm replay:verify` can re-run; test `src/testing/net/desync-report.test.ts` |
 | `src/game/platform/` | Leaf module for browser-platform glue (UI feature flags, test-only `window.__TTE__` hook); imports only core via its index; `cleanse-info.ts` (cooldown constant and Tidecall display name) |
 | `src/game/platform/storage/` | Save persistence: `SaveStore`, `StorageAdapter` (localStorage / in-memory), raw v0 backup, export/import |

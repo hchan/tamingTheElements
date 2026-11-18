@@ -79,6 +79,10 @@ export interface ArenaLaunch {
     readonly match?: number;
     /** Dev/test builds only (`?matchticks=N`): the match ends as a draw at this tick, so a rematch can be tested quickly. */
     readonly tickLimit?: number;
+    /** Input delay in ticks; unset = the session default (as over WebRTC). The online service sends it in MATCH_START. */
+    readonly inputDelay?: number;
+    /** Commands per packet batch; unset = the session default of 1. The online service sends it in MATCH_START. */
+    readonly batchEvery?: number;
     readonly onStatus?: (status: SessionStatus, session: LockstepSession) => void;
   };
   /** Present only in tester mode (docs/TESTER-MODE.md): the session the Arena registers its cheat bridge with. */
