@@ -73,7 +73,7 @@ test('a junk code is refused in words, not a crash', async ({ page }) => {
   await page.locator('#onlineRoleJoin').click();
   await page.locator('#onlineOfferIn').fill('not a code');
   await page.locator('#onlineJoin').click();
-  await expect(page.locator('#onlineStatus')).toContainText('not a connection code');
+  await expect(page.locator('#onlineFailure')).toContainText('not a connection code');
 });
 
 // The Rematch flow: with `?matchticks=` the match ends as a draw quickly; both sides get a Rematch button, pick again and a second match (a new match number) runs.
@@ -148,4 +148,25 @@ test('a ?join= link shows Copy reply with no extra choices', async ({ page }) =>
   await page.goto(`/?ff=arcade&ice=none&join=${encodeURIComponent(offer)}#online`);
   await expect(page.locator('#onlineCopyAnswer')).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('#onlineOfferIn')).toBeHidden();
+});
+
+// A failed link shows ONE message and ONE Try again; the stale paste/copy controls stay hidden until the retry.
+test('a failed connection shows one message and one Try again', { tag: '@smoke' }, async ({ page }) => {
+  await page.goto('/?ff=arcade&ice=none#online');
+  await page.locator('#onlineRoleHost').click();
+  await expect(page.locator('#onlineCopyLink')).toBeVisible({ timeout: 15_000 });
+  await page.locator('#onlineAnswerIn').fill('not a real reply code');
+  await page.locator('#onlineConnect').click();
+  await expect(page.locator('#onlineFailure')).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('#onlineFailure')).toContainText('keeps this tab open on the Host screen');
+  await expect(page.locator('#onlineHost')).toBeVisible();
+  await expect(page.locator('#onlineHost')).toHaveText('Try again');
+  for (const id of ['onlineConnect', 'onlinePasteAnswer', 'onlineCopyLink', 'onlineAnswerIn']) await expect(page.locator(`#${id}`)).toBeHidden();
+  await expect(page.locator('#onlineStatus')).toHaveText('');
+  await page.screenshot({ path: '.scratch/online-fail-1280x720.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: '.scratch/online-fail-390x844.png' });
+  await page.locator('#onlineHost').click();
+  await expect(page.locator('#onlineFailure')).toBeHidden();
+  await expect(page.locator('#onlineCopyLink')).toBeVisible({ timeout: 15_000 });
 });

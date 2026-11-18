@@ -371,13 +371,33 @@ export function onlineVersusScreen(): Screen {
           },
           (e: unknown) => {
             if (gone) return;
-            say(e instanceof Error && e.message !== '' ? e.message : 'The connection failed. Check both codes and try again.');
+            failed(e instanceof Error && e.message !== '' ? e.message : 'The connection failed. Check both codes and try again.');
             onLinkFailed?.();
           },
         );
       };
+      // Failure state: one message at the top of the panel and one Try again button; the stale controls stay hidden until a retry starts.
+      const failBox = el('p', 'onlineFail', '');
+      failBox.id = 'onlineFailure';
+      failBox.setAttribute('role', 'alert');
+      failBox.style.fontWeight = 'bold';
+      failBox.hidden = true;
+      const stale: { node: HTMLElement; hidden: boolean }[] = [];
+      const failed = (words: string): void => {
+        if (ended) return;
+        if (stale.length === 0) for (const n of staleNodes()) { stale.push({ node: n, hidden: n.hidden === true }); n.hidden = true; n.style.display = 'none'; }
+        failBox.textContent = `${words} The invite only works while the host keeps this tab open on the Host screen.`;
+        failBox.hidden = false;
+        status.textContent = '';
+      };
+      const clearFailure = (): void => {
+        failBox.hidden = true;
+        failBox.textContent = '';
+        for (const { node: n, hidden } of stale) { n.hidden = hidden; n.style.display = ''; }
+        stale.length = 0;
+      };
       const fail = (e: unknown): void => {
-        say(e instanceof Error ? e.message : 'Something went wrong.');
+        failed(e instanceof Error && e.message !== '' ? e.message : 'Something went wrong.');
       };
 
       const offerOut = area('onlineOffer', 'Invite code (the link has it already)', true, 'Your invite code (host)');
@@ -403,6 +423,7 @@ export function onlineVersusScreen(): Screen {
       const retryHost = button('onlineHost', 'Try again', () => { makeCode(); });
       retryHost.hidden = true;
       const makeCode = (): void => {
+        clearFailure();
         say('Making your invite...');
         retryHost.hidden = true;
         connecting = false;
@@ -427,6 +448,7 @@ export function onlineVersusScreen(): Screen {
         if (!peer) { say('Your invite is not ready yet. Press Host a game.'); return; }
         if (connecting) return;
         connecting = true;
+        clearFailure();
         const p = peer;
         say('Connecting...');
         p.accept(codeFromInput(answerIn.box.value)).then(() => { watch(p); }, (e: unknown) => {
@@ -448,6 +470,7 @@ export function onlineVersusScreen(): Screen {
       const joinNow = (): void => {
         if (joining) return;
         joining = true;
+        clearFailure();
         join.hidden = true;
         say('Making your reply...');
         joinPeer(codeFromInput(offerIn.box.value), iceParam()).then(({ peer: p, answer }) => {
@@ -542,18 +565,25 @@ export function onlineVersusScreen(): Screen {
       const hostPath = el('div', 'onlinePath');
       hostPath.id = 'onlineHostPath';
       hostPath.hidden = true;
-      hostPath.append(
-        stepList(
+      const hostSteps = stepList(
           'Send this link to your friend in chat.',
           'When they open it they get a reply code. Ask them to send it back.',
           'Paste their reply here. It connects by itself, or press Connect.',
-        ),
+        );
+      hostPath.append(
+        hostSteps,
         shareSlot,
         answerIn.row,
         pasteAnswer,
         connect,
         retryHost,
       );
+      const staleNodes = (): HTMLElement[] => {
+        const hostSide = !hostPath.hidden;
+        return hostSide
+          ? [hostSteps, shareSlot, answerIn.row, pasteAnswer, connect, manual]
+          : [offerIn.row, pasteOffer, replyBlock, manual];
+      };
       const joinPath = el('div', 'onlinePath');
       joinPath.id = 'onlineJoinPath';
       joinPath.hidden = true;
@@ -582,7 +612,7 @@ export function onlineVersusScreen(): Screen {
       // One card for the whole setup form, so it can collapse once connected; the status line stays outside it.
       const setup = el('div', 'onlineSetup');
       setup.id = 'onlineSetup';
-      setup.append(roles, hostPath, joinPath, manual);
+      setup.append(failBox, roles, hostPath, joinPath, manual);
       const strip = el('div', 'onlineStrip');
       strip.id = 'onlineStrip';
       stripNode = strip;
