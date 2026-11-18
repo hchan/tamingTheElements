@@ -60,27 +60,28 @@ export const countIdx = (id: number, slot: number): number => id * ABIL_STRIDE +
  * (systems/arcade/snag.ts). `trapReadyAt` is the game tick of the character's next trap cast (its cast recovery ends
  * TRAP_COOLDOWN_TICKS - TRAP_CAST_TICKS before it) and `trapSlowUntil` the end of a Puddle's linger (systems/arcade/trap.ts).
  * `elemReadyAt` is the game tick of the character's next elemental ability and `elemUntil` the end of its timed buff (0 =
- * none; Ember, Gale or Stoneskin by the caster's element, systems/arcade/elemental.ts).
+ * none; Ember, Gale or Stoneskin by the caster's element, systems/arcade/elemental.ts). `runUntil` is the game tick a Run
+ * (Run Away / Run Towards, FUN-DESIGN 2.29) ends (0 = not running) and `runReadyAt` the first tick of the next one.
  */
 export const ArcadeE = {
   stunUntil: 0, kbVx: 1, kbVy: 2, juggle: 3, invulnUntil: 4, dashUntil: 5, dashReadyAt: 6, blockUntil: 7,
   parryUntil: 8, parryLockUntil: 9, guardDrain: 10, comboStunTotal: 11, wallBounced: 12, aim: 13,
   dashDodged: 14, weatherReadyAt: 15, chargeUntil: 16, chargeReadyAt: 17, rootUntil: 18, rootImmuneUntil: 19,
-  trapReadyAt: 20, trapSlowUntil: 21, elemReadyAt: 22, elemUntil: 23, cleanseReadyAt: 24,
+  trapReadyAt: 20, trapSlowUntil: 21, elemReadyAt: 22, elemUntil: 23, cleanseReadyAt: 24, runUntil: 25, runReadyAt: 26,
 } as const;
-export const ARCADE_E = 25;
+export const ARCADE_E = 27;
 /**
- * Per team; `pressTick` is 10 ints (primary, secondary, dash, guard, super, weather, charge, trap, elemental, cleanse): the game tick of the last rising edge plus
+ * Per team; `pressTick` is 11 ints (primary, secondary, dash, guard, super, weather, charge, trap, elemental, cleanse, run): the game tick of the last rising edge plus
  * one (0 = none). `prevCmd` is the last raw command; `pressUsed` has bit k set once press k ran, and CHORD_FLAG while a
  * chord's super press is pending (see systems/arcade/buffer.ts). `lastDir` is the bit of the last rising direction edge
  * and `lastDirPress` its game tick plus one (the double-tap dash); `confirmTick` is the game tick plus one of the team's
- * last confirmed hit (the dash cancel window). `weatherCharge` is the weather charge, 0..WEATHER_CHARGE_FULL (weather.ts).
+ * last confirmed hit (the dash cancel window). `dirRise` is the game tick plus one of the last rising direction edge (any direction, 0 = none; Run reads it). `weatherCharge` is the weather charge, 0..WEATHER_CHARGE_FULL (weather.ts).
  */
 export const ArcadeT = {
-  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 15, lastDir: 16,
-  roundsWon: 17, superState: 18, pressUsed: 19, confirmTick: 20, weatherCharge: 21, inPatch: 22,
+  meter: 0, comboHits: 1, comboDamageQ4: 2, comboStart: 3, prevCmd: 4, pressTick: 5, lastDirPress: 16, lastDir: 17,
+  dirRise: 18, roundsWon: 19, superState: 20, pressUsed: 21, confirmTick: 22, weatherCharge: 23, inPatch: 24,
 } as const;
-export const ARCADE_T = 23;
+export const ARCADE_T = 25;
 /**
  * World ints. `gameTick` is the game clock (see sim/clock.ts); `freezeUntil`, `phaseUntil` and `slowMoUntil` are in
  * W.tick units, `roundTimer` in game ticks left. `phase` is a RoundPhase (data/arcade.ts); `roundWinner` holds the

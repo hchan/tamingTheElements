@@ -6,7 +6,7 @@ const sample: Packet = {
   flags: PacketFlag.paused | PacketFlag.forfeit,
   ack: 0x01020304,
   firstTick: 0xfffffffe,
-  inputs: [0, 1, 0xffff, 0x0420],
+  inputs: [0, 1, 0xffff, 0x0420, 0x10000, 0x1ffff],
   hashes: [
     { tick: 50, hash: 0xdeadbeef },
     { tick: 100, hash: 0 },
@@ -20,9 +20,10 @@ describe('packet wire format', () => {
 
   it('encodes to the documented size and big-endian layout', () => {
     const buf = encodePacket(sample);
-    expect(buf.length).toBe(12 + 2 * 4 + 8 * 2);
+    expect(buf.length).toBe(12 + 4 * 6 + 8 * 2);
     expect([...buf.slice(0, 10)]).toEqual([7, 3, 1, 2, 3, 4, 0xff, 0xff, 0xff, 0xfe]);
-    expect(buf[10]).toBe(4);
+    expect(buf[10]).toBe(6);
+    expect([...buf.slice(11 + 16, 11 + 24)]).toEqual([0, 1, 0, 0, 0, 1, 0xff, 0xff]); // 0x10000 then 0x1ffff, u32 big-endian
   });
 
   it('an empty packet is the 12 byte header', () => {
@@ -56,7 +57,7 @@ describe('packet wire format', () => {
     tooManyInputs[10] = MAX_INPUTS_PER_PACKET + 1;
     expect(decodePacket(tooManyInputs)).toBeUndefined();
     const tooManyHashes = good.slice();
-    tooManyHashes[10 + 1 + 2 * 4] = MAX_HASHES_PER_PACKET + 1;
+    tooManyHashes[10 + 1 + 4 * 6] = MAX_HASHES_PER_PACKET + 1;
     expect(decodePacket(tooManyHashes)).toBeUndefined();
   });
 

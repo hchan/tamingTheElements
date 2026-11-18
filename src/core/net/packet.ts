@@ -31,11 +31,11 @@ export interface Packet {
   readonly hashes: readonly HashEntry[];
 }
 
-/** Wire size: 1 match, 1 flags, 4 ack, 4 firstTick, 1 nInputs, 2*n inputs, 1 nHashes, 8*m hashes. */
+/** Wire size: 1 match, 1 flags, 4 ack, 4 firstTick, 1 nInputs, 4*n inputs (u32: commands are 17 bits), 1 nHashes, 8*m hashes. */
 export function encodePacket(p: Packet): Uint8Array {
   const n = Math.min(p.inputs.length, MAX_INPUTS_PER_PACKET);
   const m = Math.min(p.hashes.length, MAX_HASHES_PER_PACKET);
-  const buf = new Uint8Array(12 + 2 * n + 8 * m);
+  const buf = new Uint8Array(12 + 4 * n + 8 * m);
   const dv = new DataView(buf.buffer);
   let o = 0;
   dv.setUint8(o++, p.match);
@@ -45,7 +45,7 @@ export function encodePacket(p: Packet): Uint8Array {
   dv.setUint32(o, p.firstTick);
   o += 4;
   dv.setUint8(o++, n);
-  for (let i = 0; i < n; i++, o += 2) dv.setUint16(o, p.inputs[i] as number);
+  for (let i = 0; i < n; i++, o += 4) dv.setUint32(o, p.inputs[i] as number);
   dv.setUint8(o++, m);
   for (let i = 0; i < m; i++, o += 8) {
     const h = p.hashes[i] as HashEntry;
@@ -67,9 +67,9 @@ export function decodePacket(buf: Uint8Array): Packet | undefined {
   const firstTick = dv.getUint32(o);
   o += 4;
   const n = dv.getUint8(o++);
-  if (n > MAX_INPUTS_PER_PACKET || buf.length < o + 2 * n + 1) return undefined;
+  if (n > MAX_INPUTS_PER_PACKET || buf.length < o + 4 * n + 1) return undefined;
   const inputs: Command[] = [];
-  for (let i = 0; i < n; i++, o += 2) inputs.push(dv.getUint16(o));
+  for (let i = 0; i < n; i++, o += 4) inputs.push(dv.getUint32(o));
   const m = dv.getUint8(o++);
   if (m > MAX_HASHES_PER_PACKET || buf.length !== o + 8 * m) return undefined;
   const hashes: HashEntry[] = [];

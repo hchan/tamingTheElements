@@ -6,13 +6,15 @@ import { ARCADE_T, ARCADE_TEAM_BASE, ArcadeT, TEAM_COUNT, type SimState } from '
 import { chargeWeather, meterOf, meterOnCast } from './meter';
 
 /** Presses in `ArcadeT.pressTick` order (FUN-DESIGN 2.12); primary and secondary are also the ability slots 0 and 1. */
-export const Press = { primary: 0, secondary: 1, dash: 2, guard: 3, super: 4, weather: 5, charge: 6, trap: 7, elemental: 8, cleanse: 9 } as const;
+export const Press = { primary: 0, secondary: 1, dash: 2, guard: 3, super: 4, weather: 5, charge: 6, trap: 7, elemental: 8, cleanse: 9, run: 10 } as const;
+/** Number of presses (the length of `ArcadeT.pressTick` and `PRESS_BITS`). */
+export const PRESS_COUNT = 11;
 /**
  * Command bit of each press: dash, guard, weather and charge are the Arcade bits 11, 12, 14 and 15, trap is bit 6,
- * elemental bit 10 and cleanse bit 9 (swap3 in Classic).
+ * elemental bit 10, cleanse bit 9 (swap3 in Classic) and run bit 16.
  */
 export const PRESS_BITS = [
-  Cmd.primary, Cmd.secondary, Cmd.dash, Cmd.guard, Cmd.super, Cmd.weather, Cmd.charge, Cmd.trap, Cmd.elemental, Cmd.cleanse,
+  Cmd.primary, Cmd.secondary, Cmd.dash, Cmd.guard, Cmd.super, Cmd.weather, Cmd.charge, Cmd.trap, Cmd.elemental, Cmd.cleanse, Cmd.run,
 ] as const;
 /**
  * Presses `bufferedCmd` replays; the dash press is read by arcade/dash.ts, the guard press by arcade/guard.ts the
@@ -20,7 +22,7 @@ export const PRESS_BITS = [
  */
 const REPLAYED = [Press.primary, Press.secondary, Press.super] as const;
 /** `pressUsed` flag: the pending super press came from a chord, so held primary and secondary are masked meanwhile. */
-export const CHORD_FLAG = 1 << 10;
+export const CHORD_FLAG = 1 << 15;
 const ATTACK = Cmd.primary | Cmd.secondary;
 /** Bits an Arcade match accepts: `prevCmd` keeps only these, so reserved bits never reach the hash. */
 const ARCADE_MASK = inputMaskFor({ rulesetArcade: true });
@@ -64,6 +66,7 @@ function recordTeam(s: SimState, team: number, cmd: Command, g: number): void {
     used &= ~(1 << k);
   });
   if ((rise & Cmd.super) !== 0) used &= ~CHORD_FLAG;
+  if ((rise & DIRS) !== 0) a[b + ArcadeT.dirRise] = g + 1;
   const dir = rise & DIRS & -(rise & DIRS);
   if (dir !== 0) {
     const last = a[b + ArcadeT.lastDirPress] ?? 0;

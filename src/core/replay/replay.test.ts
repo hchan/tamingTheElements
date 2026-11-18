@@ -16,7 +16,7 @@ describe('rle', () => {
 
   it('rejects malformed input', () => {
     expect(() => rleDecode([1])).toThrow();
-    expect(() => rleDecode([0x10000, 1])).toThrow();
+    expect(() => rleDecode([0x20000, 1])).toThrow();
     expect(() => rleDecode([1, 0])).toThrow();
   });
 });

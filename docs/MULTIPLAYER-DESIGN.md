@@ -18,7 +18,7 @@ target design of the in-flight client and relay fix wave; everything else descri
 
 Goals:
 
-- Two players, one match, the same result on both screens. Only inputs travel (a `Command` is 2 bytes [fact]); state never does.
+- Two players, one match, the same result on both screens. Only inputs travel (a `Command` is 4 bytes on the wire (17 bits) [fact]); state never does.
 - The sim stays pure: the network is an input source, so a lost or late packet costs a stall or a rollback, never a divergence.
 - The transport is replaceable behind one small interface, so WebRTC and WebSocket share the session, codec and handshake.
 - The relay is a transport-agnostic state machine over two seams (`Store`, `Sender`), so any host can run it and the repo never knows which.
@@ -383,7 +383,7 @@ sequenceDiagram
     Note over C: show 'Update needed, reload the page', no retry
 ```
 
-Two separate checks (spec 2): `PROTOCOL_VERSION` (one byte, exact match, checked at HELLO) and `SIM_VERSION` (u16; the queue pairs only equal values,
+Two separate checks (spec 2): `PROTOCOL_VERSION` (one byte, now 2, exact match, checked at HELLO) and `SIM_VERSION` (u16; the queue pairs only equal values,
 a room join with another one is ERROR `sim-mismatch`). A wire-format change bumps the protocol byte and the package MAJOR version
 ([RELAY-PACKAGE.md](RELAY-PACKAGE.md)). Cheats and flags are refused by the setup handshake before tick 0.
 

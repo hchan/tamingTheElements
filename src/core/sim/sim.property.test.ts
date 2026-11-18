@@ -4,7 +4,7 @@ import { collectCommands, type Agent } from '../agents/agent';
 import { RandomBot } from '../agents/random-bot';
 import type { ChapterNumber } from '../data/chapters';
 import { LEGACY_CHARACTERS } from '../data/characters';
-import { ARCADE_CMD_BITS, Cmd, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
+import { ARCADE_CMD_BITS, Cmd, CMD_MAX, CMD_RESERVED_MASK, inputMaskFor, type Command } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { restore, snapshot, createSnapshotBuf } from './snapshot';
@@ -106,7 +106,7 @@ const setupArb: fc.Arbitrary<MatchSetup> = fc.record({
   p2: rosterArb,
 });
 
-const cmdArb = fc.integer({ min: 0, max: 0xffff });
+const cmdArb = fc.integer({ min: 0, max: CMD_MAX });
 const cmdsArb = fc.array(fc.tuple(cmdArb, cmdArb), { minLength: 1, maxLength: MAX_TICKS });
 /** Held-key style input: long runs of the same command, like a real player. */
 const stickyArb = fc
@@ -941,10 +941,10 @@ describe('sim properties: determinism', () => {
 
 describe('sim properties: command constants', () => {
   it('Classic command bits do not overlap the reserved mask; Arcade bits are Arcade-only', () => {
-    const { super: superBit, dash, guard, weather, charge, ...classic } = Cmd;
+    const { super: superBit, dash, guard, weather, charge, run, ...classic } = Cmd;
     const all = Object.values(classic).reduce<Command>((m, b) => m | b, 0);
     expect(all & CMD_RESERVED_MASK).toBe(0);
-    for (const bit of [superBit, dash, guard, weather, charge]) {
+    for (const bit of [superBit, dash, guard, weather, charge, run]) {
       expect(bit & ARCADE_CMD_BITS).toBe(bit);
       expect(bit & inputMaskFor({ rulesetArcade: false })).toBe(0);
       expect(bit & inputMaskFor({ rulesetArcade: true })).toBe(bit);

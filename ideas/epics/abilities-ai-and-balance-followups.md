@@ -42,7 +42,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
-- [run-away-run-towards](../brainstorm/run-away-run-towards.md): Run Away / Run Towards (auto-run ability, Tab)
+- [run-away-run-towards](../in-progress/run-away-run-towards.md): Run Away / Run Towards (auto-run ability, Tab)
 
 ## Bundles (2026-11-17)
 
@@ -82,7 +82,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### AB-5 Weather, parry and support abilities
 
-- Members: [dash-parry-weather-usage](../brainstorm/dash-parry-weather-usage.md), [weather-secondary-effects](../brainstorm/weather-secondary-effects.md), [wispera-fearful-lightning](../brainstorm/wispera-fearful-lightning.md), [backline-support-abilities](../brainstorm/backline-support-abilities.md), [run-away-run-towards](../brainstorm/run-away-run-towards.md)
+- Members: [dash-parry-weather-usage](../brainstorm/dash-parry-weather-usage.md), [weather-secondary-effects](../brainstorm/weather-secondary-effects.md), [wispera-fearful-lightning](../brainstorm/wispera-fearful-lightning.md), [backline-support-abilities](../brainstorm/backline-support-abilities.md), [run-away-run-towards](../in-progress/run-away-run-towards.md)
 - Size: L
 - Shared files: src/core/data/abilities*, src/core/sim/*, ability docs
 - Flags: SIM, PC

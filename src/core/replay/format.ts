@@ -25,7 +25,7 @@ export interface ReplayHeader {
 
 export interface ReplayFile {
   readonly header: ReplayHeader;
-  /** One RLE-coded u16 stream per side, each decoding to `tickCount` entries. */
+  /** One RLE-coded 17-bit command stream per side, each decoding to `tickCount` entries. */
   readonly inputs: readonly [Rle, Rle];
   /** `hashes[i]` is the state hash at the start of tick `i * HASH_INTERVAL`. */
   readonly hashes: readonly number[];

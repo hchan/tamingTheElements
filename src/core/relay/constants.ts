@@ -1,7 +1,7 @@
 /** Wire constants of docs/ONLINE-PROTOCOL.md. A change to any frame layout or value here is a MAJOR package bump (docs/RELAY-PACKAGE.md). */
 
 /** First byte of HELLO and WELCOME. Exact match required (spec section 2). */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 export const FrameType = {
   hello: 0x01,
@@ -55,7 +55,7 @@ export const MAX_HASHES_PER_BATCH = 4;
 /** Max control blob bytes in SETUP (a type byte plus the handshake blob). */
 export const MAX_SETUP_BYTES = 401;
 
-export const MAX_BATCH_FRAME = 177;
+export const MAX_BATCH_FRAME = 305;
 export const MAX_SETUP_FRAME = 410;
 
 export const RoomPeerEvent = { joined: 0, left: 1 } as const;

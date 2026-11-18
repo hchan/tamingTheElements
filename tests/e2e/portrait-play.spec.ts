@@ -150,7 +150,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       };
       await expectFramed();
       await page.evaluate(`window.__TTE__.arena.step(50, [0, 0])`);
-      expect(await page.evaluate<number>(`window.__TTE__.arena.hash()`)).toBe(173923228);
+      expect(await page.evaluate<number>(`window.__TTE__.arena.hash()`)).toBe(65601436);
       // Rotate mid-fight and back: the framing is re-applied.
       await page.setViewportSize({ width: h, height: w });
       await page.waitForFunction(`!(${ATTR})`);

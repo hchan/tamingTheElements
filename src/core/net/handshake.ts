@@ -2,7 +2,7 @@ import { flagBits, hasTesterFlags } from '../flags';
 import type { MatchSetup } from '../sim/match';
 
 /** Magic prefix of a handshake message ("TTE" + 1), so a stray datagram is never taken for one. */
-const MAGIC = 0x54544501;
+const MAGIC = 0x54544502;
 const MAX_ROSTER = 4;
 
 export type HandshakeMismatch = 'simVersion' | 'flags' | 'cheats' | 'seed' | 'chapter' | 'difficulty' | 'roster';

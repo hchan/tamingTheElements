@@ -84,3 +84,9 @@ unpublished, so it stays at 0.1.0; the first publish is the baseline.
 - **Resume.** A HELLO with a valid session takes over a slot that still looks connected and closes the old socket with 1000. The session is
   bound to `RelayCtx.identity` (the host's ticket subject); a different identity gets `resumed 0`. Omit `identity` if the host has none.
 - **Queue cap.** `MAX_QUEUE` (2000) [choice]; a join beyond it is ERROR `busy`.
+
+## Behaviour of the RUN-W wire round
+
+The command bitset grew to 17 bits (Run, bit 16), so BATCH inputs are `u32` instead of `u16`: packet size `12 + 4n + 8m`, `MAX_BATCH_FRAME`
+305. `PROTOCOL_VERSION` is 2 and the handshake `MAGIC` changed, so an old client or peer is refused cleanly (`version-mismatch`). The conformance
+golden frames use 4-byte inputs. The package version stays 0.1.0 (nothing is published yet).

@@ -22,7 +22,7 @@ proposes). Estimates must be verified before anything depends on them.
 
 ## 2. Versioning
 
-- `PROTOCOL_VERSION` is one byte, first field of HELLO and echoed in WELCOME. Start at 1 [choice].
+- `PROTOCOL_VERSION` is one byte, first field of HELLO and echoed in WELCOME. Start at 1 [choice]; **2 since the 17-bit command (Run, RUN-W)**.
 - **Mismatch rule (exact match).** The server compares the HELLO version with its own. If they differ it sends ERROR `0x0003 version-mismatch`
   (carrying the server's version in `detail`) and closes with code 4003. The client shows "Update needed, reload the page" and does not retry. No
   negotiation and no down-conversion: a breaking wire change bumps the byte; the static web app and the relay deploy together, a stale cached client
@@ -91,7 +91,7 @@ and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right a
 | `0x23` | ROOM_PEER | S to C | `event u8` (0 = peer joined, 1 = peer left) | 2 |
 | `0x30` | MATCH_START | S to C | `matchId u8` (relay-assigned, from 1, see section 2), `slot u8` (0 or 1), `seed u32`, `inputDelay u8`, `simVersion u16`, `batchEvery u8` (ticks between batches) | 11 |
 | `0x31` | SETUP | both | `seq u32`, `ctlSeq u8`, `ackCtl u8`, `n u16`, `n` bytes: ONE control message of the existing setup handshake (a type byte for HELLO, READY, REJECT or REMATCH, then its blob; HELLO carries the `encodeHello` rosters and flags) | 5 + 2 + 2 + 401 = 410 |
-| `0x40` | BATCH | both | `seq u32`, then **exactly one `Packet`** as `encodePacket` writes it | 1 + 4 + 172 = 177 |
+| `0x40` | BATCH | both | `seq u32`, then **exactly one `Packet`** as `encodePacket` writes it | 1 + 4 + 300 = 305 |
 | `0x41` | HASH | C to S | `seq u32` (always 0), `matchId u8`, `tick u32`, `hash u32` | 14 |
 | `0x42` | DESYNC | C to S | `seq u32` (always 0), `matchId u8`, `tick u32` (first divergent), `localHash u32`, `remoteHash u32` | 18 |
 | `0x43` | PAUSE | both | `seq u32`, `matchId u8`, `flags u8` (bit0 paused, bit1 forfeit: same bits as `PacketFlag` [fact]) | 7 |
@@ -105,8 +105,8 @@ and the socket is closed. Match-phase frames (`0x40`-`0x5F`) carry `seq` right a
 Details:
 
 - **BATCH layout.** The payload after `type` and `seq` is byte-for-byte `encodePacket`: `match u8, flags u8, ack u32, firstTick u32, nInputs u8,
-  2 x n input u16, nHashes u8, 8 x m (tick u32, hash u32)`. **Verified against `src/core/net/packet.ts` 2026-11-17: the size is `12 + 2n + 8m` bytes**
-  with `n <= 64` and `m <= 4`, so at most 172 bytes [fact]. The relay validates `n`/`m` and the exact length (as `decodePacket` does) but does not
+  4 x n input u32, nHashes u8, 8 x m (tick u32, hash u32)`. **Verified against `src/core/net/packet.ts` 2026-11-17: the size is `12 + 4n + 8m` bytes**
+  with `n <= 64` and `m <= 4`, so at most 300 bytes [fact]; an input is a u32 holding a 17-bit command (0x1ffff max). The relay validates `n`/`m` and the exact length (as `decodePacket` does) but does not
   interpret inputs. The batch already redundantly carries every unacked input and the last 4 hashes, so a lost or late BATCH is repaired by the next one.
 - **HASH.** A checkpoint every `HASH_INTERVAL = 50` ticks (1 s) [fact: `format.ts`] and at match end. The hash also travels inside BATCH for the peer; the
   separate HASH frame is for the server only (it compares both players' values per tick and flags the first divergence). It is sent once per checkpoint;

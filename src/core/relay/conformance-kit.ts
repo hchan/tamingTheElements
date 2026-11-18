@@ -76,7 +76,7 @@ export interface GoldenFrame {
   readonly frame: Frame;
 }
 
-const packetHex = '01 00 00000002 00000003 01 0102 01 00000004 00000005'.replace(/ /g, '');
+const packetHex = '01 00 00000002 00000003 01 00000102 01 00000004 00000005'.replace(/ /g, '');
 export const fromHex = (hex: string): Uint8Array =>
   Uint8Array.from((hex.replace(/\s+/g, '').match(/../g) ?? []).map((h) => parseInt(h, 16)));
 export const toHex = (b: Uint8Array): string => [...b].map((x) => x.toString(16).padStart(2, '0')).join('');

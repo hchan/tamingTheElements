@@ -1,7 +1,7 @@
 import { GARRISON_MAX_SIZE } from '../data/chapters';
 import { CHARACTERS, LEGACY_CHARACTERS } from '../data/characters';
 import { decodeFlags, type SimFlags } from '../flags';
-import { inputMaskFor } from '../sim/commands';
+import { CMD_MAX, inputMaskFor } from '../sim/commands';
 import { HASH_INTERVAL, isCheatHeader, type ReplayFile } from './format';
 
 /** Two hours of play at 50 Hz: anything longer is not a real match and would cost real memory to decode. */
@@ -36,7 +36,7 @@ function rleLength(rle: unknown): number | undefined {
   for (let i = 0; i < rle.length; i += 2) {
     const v: unknown = rle[i];
     const n: unknown = rle[i + 1];
-    if (!isInt(v, 0, 0xffff) || !isInt(n, 1, MAX_REPLAY_TICKS)) return undefined;
+    if (!isInt(v, 0, CMD_MAX) || !isInt(n, 1, MAX_REPLAY_TICKS)) return undefined;
     total += n;
     if (total > MAX_REPLAY_TICKS) return undefined;
   }

@@ -58,6 +58,6 @@ describe('relay package', () => {
   });
   it('exposes the protocol version the spec pins', () => {
     const c = readFileSync(resolve(relayDir, 'constants.ts'), 'utf8');
-    expect(c).toMatch(/PROTOCOL_VERSION = 1;/);
+    expect(c).toMatch(/PROTOCOL_VERSION = 2;/);
   });
 });
