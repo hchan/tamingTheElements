@@ -7,6 +7,9 @@
   html:not([data-touch-side='left']) #touchStrikes { flex-direction: column; align-items: flex-end; gap: 8px; right: calc(8px - var(--strike-gutter)); }
   html:not([data-touch-side='left']) #touchStrikes .touchStrike { width: 44px; height: 44px; }
   html:not([data-touch-side='left']) #touchStrikes .touchStrike:first-child { margin-bottom: 0; }
+  /* QA r104: "Strike" at 12 px bold ran edge to edge in the 44 px circle and clipped on its border; a smaller word and key (still 9 px+ bold) sit inside it. */
+  html:not([data-touch-side='left']) #touchStrikes .touchStrike { border-width: 2px; font-size: 9px; letter-spacing: -0.02em; line-height: 1; }
+  html:not([data-touch-side='left']) #touchStrikes .touchStrikeKey { font-size: 15px; }
   html:not([data-touch-side='left']) .pauseButton { padding: 0 4px; font-size: 12px; }
   html:not([data-touch-side='left']) #fullscreenToggle { right: calc(6px - var(--strike-gutter)); }
 }
