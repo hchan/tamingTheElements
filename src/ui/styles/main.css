@@ -3028,11 +3028,8 @@ body:has(.settingsBar) {
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  #arcadePick .vsHints .heroHint:not(#arcadeTeamHint) {
-    display: none;
-  }
   #arcadePick .vsHints {
-    font-size: 0.8em;
+    font-size: 12px; /* the 12 px floor of the other picker labels (it was 0.8em, about 10 px, while hidden) */
   }
   #menu #arcadePick .settingsGroup > div.settingsOption.vsControl {
     gap: 0 0.4em;
@@ -3083,8 +3080,9 @@ body:has(.settingsBar) {
     text-overflow: ellipsis;
     font-size: 0.62em; /* QA r41: "Your partner (2v2)" fits whole beside the 30 px face */
   }
-  /* QA r41: Swap up / Clear sat under the Fight bar at 667x375: drop the long tag-team note (the Tag teams line is in Help) and tighten the heading so the buttons clear the bar. */
-  #arcadePick .heroHint {
+  /* QA r41: the bar's own short hint stays dropped so Swap up / Clear clear the Fight bar. QA r103 P3: the arena and tag-team notes live in .vsHints, after the
+     roster at the end of the scroll region, so they cost no room above the cards and stay readable here (they were hidden outright, which read as cut off). */
+  #arcadePick .vsActions .heroHint {
     display: none;
   }
   #arcadePick .vsSide .vsSlotActions .vsSmall {
