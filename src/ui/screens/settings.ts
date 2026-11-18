@@ -457,12 +457,22 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
     status.setAttribute('role', 'status');
     const saveBtn = el('button', 'menuButton', 'Save');
     saveBtn.type = 'submit';
-    const back = el('a', 'menuButton', 'Back');
+    const back = el('a', 'menuLink', 'Back');
     back.href = '#main';
     const bar = el('div', 'settingsBar');
     bar.append(saveBtn, back);
     const advanced = section('Advanced', 'settingsAdvanced', notice !== '' || tester.enabled);
     advanced.append(
+      el('h2', 'heading settingsSubheading', 'Story mode'),
+      radioGroup('difficulty', 'Difficulty', DIFFICULTY, save.difficulty, DEFAULT_DIFFICULTY),
+      radioGroup(
+        'garrisonSortOrder',
+        'Garrison Sort Order',
+        GARRISON_SORT_ORDER,
+        save.garrisonSortOrder,
+        DEFAULT_GARRISON_SORT_ORDER,
+      ),
+      el('h2', 'heading settingsSubheading', 'Other'),
       relayGroup(save),
       recordControls(),
       testerControls(store),
@@ -476,7 +486,10 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
       ),
     );
     const controls = section('Controls', 'settingsControls');
-    controls.append(touchGroup(readTouchLayout()));
+    const keys = el('a', 'menuLink', 'Key bindings');
+    keys.href = '#keyBindings';
+    keys.id = 'keyBindingsLink';
+    controls.append(touchGroup(readTouchLayout()), keys);
     const audio = section('Audio', 'settingsAudio');
     audio.append(audioControls());
     const display = section('Display', 'settingsDisplay');
@@ -484,18 +497,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
       radioGroup('displaySettings', 'Display Size', DISPLAY_SCALE, save.displaySettings, DEFAULT_DISPLAY_SCALE),
       accessibilityGroup(save),
     );
-    const play = section('Play', 'settingsPlay');
-    play.append(
-      radioGroup('difficulty', 'Difficulty', DIFFICULTY, save.difficulty, DEFAULT_DIFFICULTY),
-      radioGroup(
-        'garrisonSortOrder',
-        'Garrison Sort Order',
-        GARRISON_SORT_ORDER,
-        save.garrisonSortOrder,
-        DEFAULT_GARRISON_SORT_ORDER,
-      ),
-    );
-    form.append(bar, status, play, audio, controls, display, advanced);
+    form.append(bar, status, audio, controls, display, advanced);
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const values = readForm(form);
@@ -540,7 +542,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
         }
         const msg = el('div', 'settingsStatus', `Could not load your save. ${describeError(r.error)}`);
         msg.setAttribute('role', 'alert');
-        const back = el('a', 'menuButton', 'Back');
+        const back = el('a', 'menuLink', 'Back');
         back.href = '#main';
         page.replaceChildren(el('h1', 'heading', 'Settings'), msg, back);
       });

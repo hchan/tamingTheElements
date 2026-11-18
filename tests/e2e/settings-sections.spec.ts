@@ -35,7 +35,7 @@ test.describe('phone landscape', () => {
     await goToHash(page, '#settings');
     const bar = await page.locator('.settingsBar').boundingBox();
     expect(bar?.height ?? 999).toBeLessThan(70);
-    const first = await page.locator('#settingsPlay .settingsGroup').first().boundingBox();
+    const first = await page.locator('#settingsAudio .settingsGroup').first().boundingBox();
     expect(first?.y ?? 999).toBeLessThan(160);
     await expect(page.getByRole('heading', { name: 'Settings' })).toHaveCount(1);
     if (shotDir) await page.screenshot({ path: `${shotDir}/settings-phone-top.png` });
