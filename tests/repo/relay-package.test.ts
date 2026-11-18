@@ -41,11 +41,20 @@ describe('relay package', () => {
     };
     expect(pkg.name).toBe('@tamingtheelements/relay');
     expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(Object.keys(pkg.exports)).toEqual(['.', './testing', './package.json']);
+    expect(Object.keys(pkg.exports)).toEqual(['.', './testing', './conformance', './package.json']);
     expect(pkg.files).toEqual(['dist']);
     const doc = readFileSync(resolve(root, 'docs/RELAY-PACKAGE.md'), 'utf8');
     expect(doc).toContain(pkg.name);
     expect(doc).toContain('@tamingtheelements/relay/testing');
+    expect(doc).toContain('@tamingtheelements/relay/conformance');
+  });
+  it('keeps the exported conformance suite framework-agnostic (no test-runner imports)', () => {
+    const files = readdirSync(relayDir).filter((f) => f.startsWith('conformance') && f.endsWith('.ts') && !f.endsWith('.test.ts'));
+    expect(files).toEqual(expect.arrayContaining(['conformance.ts', 'conformance-kit.ts', 'conformance-cases.ts', 'conformance-loopback.ts']));
+    for (const f of files) {
+      const imports = importsOf(readFileSync(resolve(relayDir, f), 'utf8'));
+      expect(imports.filter((s) => !s.startsWith('./')), f).toEqual([]);
+    }
   });
   it('exposes the protocol version the spec pins', () => {
     const c = readFileSync(resolve(relayDir, 'constants.ts'), 'utf8');
