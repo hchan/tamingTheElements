@@ -38,6 +38,18 @@ describe('main menu in the DOM', () => {
     expect(h.querySelector('#versionStamp')?.textContent).not.toBe('');
   });
 
+  it('every button has a subline (data-sub + aria-describedby) and exactly one is featured', () => {
+    const { host: h } = mount({ load: () => null, navigate: () => undefined });
+    const buttons = [...h.querySelectorAll<HTMLButtonElement>('li button')];
+    for (const b of buttons) {
+      expect(b.dataset.sub).toBeTruthy();
+      expect(b.getAttribute('aria-label')).toBe(b.textContent);
+      const id = b.getAttribute('aria-describedby') ?? '';
+      expect(h.querySelector(`#${id}`)?.textContent).toBe(b.dataset.sub);
+    }
+    expect(buttons.filter((b) => b.classList.contains('menuFeatured')).map((b) => b.textContent)).toEqual(['Online']);
+  });
+
   it('clicking an entry navigates to its route', () => {
     const navigate = vi.fn();
     const { host: h } = mount({ load: () => newEmptyState(), navigate });

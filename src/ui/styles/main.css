@@ -732,15 +732,31 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
   border-color: var(--color-gold);
   box-shadow: 0 0 10px rgba(255, 214, 120, 0.5);
 }
-.mainMenuList li button.menuFeatured::after {
-  content: 'Play a friend online';
+.mainMenuList li button::after {
+  content: attr(data-sub);
   display: block;
-  font-size: 0.7em;
+  font-size: 0.72em;
   font-weight: normal;
+  opacity: 0.85;
+}
+.mainMenuList li button.menuFeatured::after {
+  font-size: 0.7em;
   opacity: 0.9;
 }
+/* Settings and Help: a smaller two-up row under the three main entries. */
+.mainMenuList {
+  grid-template-columns: 1fr 1fr;
+}
+.mainMenuList::before,
+.mainMenuList li:not(.menuMinor) {
+  grid-column: 1 / -1;
+}
+.mainMenuList li.menuMinor button {
+  min-height: 44px;
+  font-size: 0.9em;
+}
 @media (orientation: landscape) and (max-height: 500px) {
-  .mainMenuList li button.menuFeatured::after {
+  .mainMenuList li button::after {
     display: none;
   }
 }
@@ -2273,6 +2289,9 @@ html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
   .mainMenuList::before {
     grid-column: 1 / -1;
     height: 2.6em;
+  }
+  .mainMenuList li:not(.menuMinor) {
+    grid-column: auto;
   }
   .mainMenuList li button {
     padding: 0.3em 0.4em;

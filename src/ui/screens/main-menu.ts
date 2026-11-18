@@ -31,17 +31,19 @@ export function menuState(save: SaveV1 | null): MenuState {
 export interface MenuItem {
   readonly label: string;
   readonly route: string;
+  /** One plain-words line under the label (CSS ::after from data-sub; read by screen readers via aria-describedby). */
+  readonly sub: string;
   readonly enabled: (s: MenuState) => boolean;
 }
 
 const always = (): boolean => true;
 
 export const MENU_ITEMS: readonly MenuItem[] = [
-  { label: 'Play', route: 'tour', enabled: always },
-  { label: 'Versus', route: 'arcade', enabled: always },
-  { label: 'Online', route: 'online', enabled: always },
-  { label: 'Settings', route: 'settings', enabled: (s) => s.settings },
-  { label: 'Help', route: 'help', enabled: always },
+  { label: 'Play', route: 'tour', sub: 'A tour of nine fights', enabled: always },
+  { label: 'Versus', route: 'arcade', sub: 'The computer, or two players, same screen', enabled: always },
+  { label: 'Online', route: 'online', sub: 'Play a friend over the internet', enabled: always },
+  { label: 'Settings', route: 'settings', sub: 'Sound, controls and display', enabled: (s) => s.settings },
+  { label: 'Help', route: 'help', sub: 'How to play', enabled: always },
 ];
 
 export function loadSave(storage: Pick<Storage, 'getItem'>): SaveV1 | null {
@@ -89,17 +91,22 @@ export function mainMenuScreen(deps?: MainMenuDeps): ScreenFactory {
           const btn = el('button', on ? 'clickable' : 'notClickableYet', item.label);
           btn.type = 'button';
           btn.disabled = !on;
-          // Online is the featured entry: accent styling plus a plain-words subline (CSS ::after). The name stays "Online" for screen readers.
-          if (item.route === 'online') {
-            btn.classList.add('menuFeatured');
-            btn.setAttribute('aria-label', item.label);
-          }
+          // Every entry carries a plain-words subline: drawn by CSS from data-sub, announced via aria-describedby. The name stays the bare label.
+          btn.dataset.sub = item.sub;
+          btn.setAttribute('aria-label', item.label);
+          const subId = `menuSub-${item.route}`;
+          const subEl = el('span', 'srOnly', item.sub);
+          subEl.id = subId;
+          btn.setAttribute('aria-describedby', subId);
+          // Online is the one featured (gold) entry; Play keeps first focus; Settings and Help are the quiet two-up row.
+          if (item.route === 'online') btn.classList.add('menuFeatured');
+          if (item.route === 'settings' || item.route === 'help') li.classList.add('menuMinor');
           if (on) {
             btn.addEventListener('click', () => {
               d.navigate(item.route);
             });
           }
-          li.append(btn);
+          li.append(btn, subEl);
           list.append(li);
         }
         page.append(list);
