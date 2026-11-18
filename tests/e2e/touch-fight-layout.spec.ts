@@ -423,3 +423,39 @@ test.describe('desktop fight HUD shots', () => {
     });
   }
 });
+
+// QA r110 #1: on a landscape phone the "Stage N of 9" chip used to sit on the first action-bar tile (Blast, key 1).
+test.describe('phone landscape Tour fight, QA r110', () => {
+  test.use({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  test('the Tour stage chip clears every touch control and the bottom action bar', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#tour`);
+    await page.getByRole('button', { name: 'Start tour' }).tap();
+    await page.getByRole('button', { name: 'Fight' }).tap();
+    await page.locator('#tourSplash').tap({ timeout: 3_000 }).catch(() => undefined);
+    await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+    await page.evaluate(`window.__TTE__.arena.step(200)`);
+    const chip = await box(page, '#tourHudStage');
+    await shot(page, 'land-tour-chip');
+    await page.screenshot({ path: test.info().outputPath('land-tour-chip.png') });
+    const ctls = await page.evaluate<Box[]>(`[...document.querySelectorAll('button.touchBtn, .touchSkirtDeco, #touchStick, .touchStrike')]
+      .map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; }).filter((r) => r.w > 0 && r.h > 0)`);
+    for (const c of ctls) expect(overlap(chip, c), JSON.stringify(c)).toBe(false);
+    // The bar lives in the bottom third, so the chip must sit above it.
+    expect(chip.y + chip.h).toBeLessThanOrEqual(390 * 0.68);
+  });
+  test('the touch Run tile shows a gold outline while a run is on', async ({ page }) => {
+    await page.goto(`${START}&ff=arcade#tour`);
+    await page.getByRole('button', { name: 'Start tour' }).tap();
+    await page.getByRole('button', { name: 'Fight' }).tap();
+    await page.locator('#tourSplash').tap({ timeout: 3_000 }).catch(() => undefined);
+    await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+    await page.evaluate(`window.__TTE__.arena.step(200)`);
+    await page.keyboard.down('Backquote'); // the key the Run tile holds (a manual-step tap is too short for the sim)
+    await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+    await page.keyboard.up('Backquote');
+    await page.evaluate(`window.__TTE__.arena.stepLive(4)`);
+    await expect(page.locator('#arcadeRun')).toHaveAttribute('aria-label', /, on$/, { timeout: 5_000 });
+    expect(await page.evaluate<string>(`getComputedStyle(document.getElementById('arcadeRun')).outlineStyle`)).toBe('solid');
+    await page.screenshot({ path: test.info().outputPath('land-tour-run-on.png') });
+  });
+});

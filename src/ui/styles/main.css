@@ -3375,3 +3375,18 @@ body:has(.settingsBar) {
     -webkit-line-clamp: 3;
   }
 }
+
+/* QA r110: the touch Run tile shows a gold outline while a run is on (the status word 'on' is in the accessible name), like the canvas highlight. */
+button.touchBtn#arcadeRun[aria-label$=', on'] {
+  outline: 3px solid #b39653;
+  outline-offset: -3px;
+}
+
+/* QA r110: on a landscape phone the Tour stage chip (inline: bottom-left) sat on the first action-bar tile. It moves into the free band
+   under the life bars, left of the tag portraits, where nothing else is drawn. The inline style needs !important to be beaten. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  #tourHudStage {
+    top: 14vh !important;
+    bottom: auto !important;
+  }
+}

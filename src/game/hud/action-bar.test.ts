@@ -482,6 +482,20 @@ describe('Run slot', () => {
     expect(cool?.note).toBe('Run Towards 3s');
     expect(cool?.progress).toBeCloseTo(1 - 150 / 351);
   });
+  it('says why it is refused while rooted or stunned (disabled tile, words), and not while a run is on (QA r110)', () => {
+    const rooted = buildSlots(bar({ run: run() }), DEFAULT_KEY_LABELS, { ...ab, runBlock: 'rooted' }).find((s) => s.kind === 'run');
+    expect(rooted).toMatchObject({ disabled: true, note: "Can't run: rooted", highlight: false });
+    const stunned = buildSlots(bar({ run: run() }), DEFAULT_KEY_LABELS, { ...ab, runBlock: 'stunned' }).find((s) => s.kind === 'run');
+    expect(stunned).toMatchObject({ disabled: true, note: "Can't run: stunned" });
+    const on = buildSlots(bar({ run: run({ activeUntil: 225, readyTick: 575 }) }), DEFAULT_KEY_LABELS, { ...ab, runBlock: 'stunned' }).find((s) => s.kind === 'run');
+    expect(on).toMatchObject({ disabled: false, note: 'Run Away on', highlight: true });
+  });
+  it('reads the Run block off the view: stun first, then root, else none', () => {
+    const base = { meter: [0, 0], weatherCharge: [0, 0], active: () => 3, guard: () => 0, guarding: () => false, dashIn: () => 0, chargeIn: () => 0, phase: RoundPhase.fight };
+    expect(arcadeBarOf({ ...base, stunned: () => true, rooted: () => true } as never, 0, false).runBlock).toBe('stunned');
+    expect(arcadeBarOf({ ...base, stunned: () => false, rooted: () => true } as never, 0, false).runBlock).toBe('rooted');
+    expect(arcadeBarOf({ ...base, stunned: () => false, rooted: () => false } as never, 0, false).runBlock).toBeUndefined();
+  });
   it('has its own tip and Run Away / Run Towards titles', () => {
     expect(slotTip({ kind: 'run', cmd: 0, runAway: true }).title).toBe('Run Away');
     expect(slotTip({ kind: 'run', cmd: 0, runAway: false }).title).toBe('Run Towards');
