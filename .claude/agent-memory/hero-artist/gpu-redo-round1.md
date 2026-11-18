@@ -42,3 +42,8 @@ Round GPU-1 (2026-11-17): 48 candidates (4 per hero) with SDXL base 28 steps CFG
 - ControlNet skipped: no controlnet weights cached on the PC, no opencv; needs a go-ahead before downloading (canny SDXL ~2.5 GB fp16, Apache-2.0).
 - Tool quirks: in zsh keep ssh opts inline (a $K variable word-splits wrongly); put WSL commands with pipes in a script scp'd to C:/Users/hchan and run with `wsl -d Ubuntu -- bash /mnt/c/Users/hchan/x.sh` (cmd parses `|`). Worktree had no node_modules: symlink the main checkout's for vitest.
 - Owner verdict: still none; G0 open.
+
+## Round 7 (2026-11-17)
+- "creature/spirit" wording plus "floating, no base, no plinth" and sculpture/pedestal/desk in the negative removed all plinths (18 of 18). "storm spirit in the shape of a wolf, body of dark storm cloud with glowing blue lightning veins" gave the first usable Zephra (dark wolf with lightning veins; still fur, not cloud). Vortigal still a plain eagle in all 6 (wind/cloud wording ignored); Glimmaw got a stalk with a small pinkish lure in 1 of 6 (glimmaw_1), no real glow. Remaining fix for Vortigal and the lure: overlay/composite or ControlNet/LoRA (needs owner go-ahead to download).
+- Quirk: the tte-gpu ssh shell is cmd; use `ssh tte-gpu 'wsl -d Ubuntu -- bash -c "..."'` with one command line (no `;` outside the quotes). scp to C:/Users/hchan/ then cp from /mnt/c. 18 images ~7 min, peak 50 C.
+- Owner verdict: still none; G0 open.
