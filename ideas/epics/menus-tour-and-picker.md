@@ -28,3 +28,48 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [splash-and-montage-art](../brainstorm/splash-and-montage-art.md): Splash and montage art (menu, title, Help, hero select, team select, vs, win/loss). Goal: a set of originals-style (Fiara/Treenoc look, not the scrapped grim redesigns) key-art stills and short montage sequences:
 - [menu-and-graphics-animation-everywhere](../in-progress/menu-and-graphics-animation-everywhere.md) (in progress): More animation everywhere: menus and graphics, with Stable Diffusion art. Owner idea (2026-11-13): EVERYTHING, everywhere needs more animation in menus and graphics;
 - [game-modes-survival-daily-ladder](../brainstorm/game-modes-survival-daily-ladder.md): More game modes: survival, daily challenge, ladder. Goal: add Survival (endless run with carried-over health), a Daily Challenge (fixed seed and modifiers per date, shareable result) and a ladder, along
+
+## Filed 2026-11-17 (round-note filing and cross-listing)
+
+Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
+
+- [menu-cleanup](../brainstorm/menu-cleanup.md): Menu cleanup (big)
+- [qa-r100-findings](../brainstorm/qa-r100-findings.md): QA round 100 findings
+- [qa-r106-findings](../brainstorm/qa-r106-findings.md): QA r106 findings
+- [qa-r107-findings](../brainstorm/qa-r107-findings.md): QA r107 findings
+
+## Bundles (2026-11-17)
+
+Groups of ideas that touch the same files, so one agent can take the whole bundle. Flags: SIM = sim-changing (needs an Opus plan, a SIM_VERSION bump and a golden re-record with a stated reason, one sim bundle at a time); OWNER-GATED = wait for the owner; PC = heavy generation, balance or e2e work can run on the GPU PC; needs browser/e2e = run Playwright (headless) before calling it done.
+
+### MT-1 Picker and menu cleanup
+
+- Members: [picker-followups](../brainstorm/picker-followups.md), [picker-bar-reserved-space](../in-progress/picker-bar-reserved-space.md), [mvc-character-select-with-ability-info](../in-progress/mvc-character-select-with-ability-info.md), [qa-menu-fold-and-tiles](../in-progress/qa-menu-fold-and-tiles.md), [menu-cleanup](../brainstorm/menu-cleanup.md)
+- Size: M
+- Shared files: src/ui/* (menu, versus picker), main.css
+- Flags: needs browser/e2e; menu stays five entries (menu-cleanup comes after the online flow per the owner)
+- Parallel: HUD/UI lane: serial with other main.css bundles.
+
+### MT-2 Tour screens and HUD
+
+- Members: [tour-select-screen-redesign](../in-progress/tour-select-screen-redesign.md), [tour-hud-stage-number-and-continues](../brainstorm/tour-hud-stage-number-and-continues.md), [tour-ladder-roster-pin](../brainstorm/tour-ladder-roster-pin.md), [tour-void-floor](../brainstorm/tour-void-floor.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
+- Size: M
+- Shared files: src/ui/* (tour), src/core/rules/*, main.css
+- Flags: needs browser/e2e; tour-void-floor and roster pin may need SIM (check the file)
+- Parallel: Serial with GM-1 and other main.css bundles.
+
+### MT-3 Menu art and animation
+
+- Members: [qa-menu-bland](../brainstorm/qa-menu-bland.md), [qa-r6-dead-band-and-menu-art](../brainstorm/qa-r6-dead-band-and-menu-art.md), [splash-and-montage-art](../brainstorm/splash-and-montage-art.md), [menu-and-graphics-animation-everywhere](../in-progress/menu-and-graphics-animation-everywhere.md), [one-game-menu](../in-progress/one-game-menu.md)
+- Size: L
+- Shared files: src/ui/*, main.css, asset manifest
+- Flags: needs browser/e2e, owner art review, PC-offloadable for art generation
+- Parallel: Serial with MT-1 (main.css) and manifest bundles.
+
+### MT-4 Match-end card fixes
+
+- Members: [qa-r100-findings](../brainstorm/qa-r100-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
+- Size: S
+- Shared files: src/ui/* (match end card), main.css
+- Flags: needs browser/e2e (match-end specs); match-end agents may already be working: check first
+- Parallel: Serial with other main.css bundles.

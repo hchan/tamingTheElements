@@ -143,3 +143,84 @@ QA evaluator rounds (kept unchanged; newest first, the latest rounds hold the op
 - [qa-r9-scorecard-and-status](../brainstorm/qa-r9-scorecard-and-status.md)
 - [qa-r8-scorecard-and-status](../brainstorm/qa-r8-scorecard-and-status.md)
 - [qa-r7-scorecard-and-open-regressions](../brainstorm/qa-r7-scorecard-and-open-regressions.md)
+
+## Filed 2026-11-17 (round-note filing and cross-listing)
+
+Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
+
+- [e2e-webserver-health](../brainstorm/e2e-webserver-health.md): E2E webServer health: a dead preview must not cascade into hundreds of failures
+- [short-and-long-gate](../brainstorm/short-and-long-gate.md): Short gate on every merge, long gate once a day
+- [qa-r86-findings](../brainstorm/qa-r86-findings.md): QA r86 findings
+- [qa-r86-scorecard](../brainstorm/qa-r86-scorecard.md): QA r86 scorecard
+- [qa-r87-findings](../brainstorm/qa-r87-findings.md): QA r87 findings
+- [qa-r87-scorecard](../brainstorm/qa-r87-scorecard.md): QA r87 scorecard
+- [qa-r88-findings](../brainstorm/qa-r88-findings.md): QA r88 findings
+- [qa-r88-scorecard](../brainstorm/qa-r88-scorecard.md): QA r88 scorecard
+- [qa-r89-findings](../brainstorm/qa-r89-findings.md): QA r89 findings
+- [qa-r89-scorecard](../brainstorm/qa-r89-scorecard.md): QA r89 scorecard
+- [qa-r90-findings](../brainstorm/qa-r90-findings.md): QA r90 findings (main 53099fee)
+- [qa-r90-scorecard](../brainstorm/qa-r90-scorecard.md): QA r90 scorecard (main 53099fee)
+- [qa-r91-findings](../brainstorm/qa-r91-findings.md): QA r91 findings (main fbc2085d)
+- [qa-r91-scorecard](../brainstorm/qa-r91-scorecard.md): QA r91 scorecard (main fbc2085d)
+- [qa-r92-findings](../brainstorm/qa-r92-findings.md): QA r92 findings (main ea6fe5b7)
+- [qa-r92-scorecard](../brainstorm/qa-r92-scorecard.md): QA r92 scorecard (main ea6fe5b7)
+- [qa-r93-findings](../brainstorm/qa-r93-findings.md): QA r93 findings (main 2eca0a0e)
+- [qa-r93-scorecard](../brainstorm/qa-r93-scorecard.md): QA r93 scorecard (main 2eca0a0e)
+- [qa-r94-findings](../brainstorm/qa-r94-findings.md): QA r94 findings (main b36370b2)
+- [qa-r94-scorecard](../brainstorm/qa-r94-scorecard.md): QA r94 scorecard (main b36370b2)
+- [qa-r95-findings](../brainstorm/qa-r95-findings.md): QA r95 findings (main 5d3b0227)
+- [qa-r95-scorecard](../brainstorm/qa-r95-scorecard.md): QA r95 scorecard (main 5d3b0227)
+- [qa-r96-findings](../brainstorm/qa-r96-findings.md): QA r96 findings (main f0828a8a)
+- [qa-r96-scorecard](../brainstorm/qa-r96-scorecard.md): QA r96 scorecard (main f0828a8a)
+- [qa-r97-findings](../brainstorm/qa-r97-findings.md): QA r97 findings (main 7c500bc5)
+- [qa-r97-scorecard](../brainstorm/qa-r97-scorecard.md): QA r97 scorecard (main 7c500bc5)
+- [qa-r98-findings](../brainstorm/qa-r98-findings.md): QA r98 findings
+- [qa-r98-scorecard](../brainstorm/qa-r98-scorecard.md): QA r98 scorecard
+- [qa-r99-findings](../brainstorm/qa-r99-findings.md): QA round 99 findings
+- [qa-r99-scorecard](../brainstorm/qa-r99-scorecard.md): QA round 99 scorecard
+- [qa-r100-findings](../brainstorm/qa-r100-findings.md): QA round 100 findings
+- [qa-r100-scorecard](../brainstorm/qa-r100-scorecard.md): QA round 100 scorecard
+- [qa-r101-findings](../brainstorm/qa-r101-findings.md): QA r101 findings
+- [qa-r101-scorecard](../brainstorm/qa-r101-scorecard.md): QA r101 scorecard (headless Chromium, SwiftShader, 1280x720, 390x844, 360x640)
+- [qa-r102-findings](../brainstorm/qa-r102-findings.md): QA r102 findings
+- [qa-r102-scorecard](../brainstorm/qa-r102-scorecard.md): QA r102 scorecard (headless Chromium, SwiftShader, 1280x720, 390x844, 844x390, 360x640)
+- [qa-r103-findings](../brainstorm/qa-r103-findings.md): QA r103 findings
+- [qa-r103-scorecard](../brainstorm/qa-r103-scorecard.md): QA r103 scorecard (headless Chromium, SwiftShader, 1280x720, 844x390, 390x844)
+- [qa-r104-findings](../brainstorm/qa-r104-findings.md): QA r104 findings
+- [qa-r104-scorecard](../brainstorm/qa-r104-scorecard.md): QA r104 scorecard (headless Chromium, SwiftShader, 1280x720, 844x390, 390x844)
+- [qa-r105-findings](../brainstorm/qa-r105-findings.md): QA r105 findings
+- [qa-r105-scorecard](../brainstorm/qa-r105-scorecard.md): QA r105 scorecard (headless Chromium, SwiftShader, 1280x720, 844x390, 390x844)
+- [qa-r106-findings](../brainstorm/qa-r106-findings.md): QA r106 findings
+- [qa-r106-scorecard](../brainstorm/qa-r106-scorecard.md): QA r106 scorecard (headless Chromium, SwiftShader, 390x844, 667x375, 844x390, 1920x1080)
+- [qa-r107-findings](../brainstorm/qa-r107-findings.md): QA r107 findings
+- [qa-r107-scorecard](../brainstorm/qa-r107-scorecard.md): QA r107 scorecard
+
+## Bundles (2026-11-17)
+
+Groups of ideas that touch the same files, so one agent can take the whole bundle. Flags: SIM = sim-changing (needs an Opus plan, a SIM_VERSION bump and a golden re-record with a stated reason, one sim bundle at a time); OWNER-GATED = wait for the owner; PC = heavy generation, balance or e2e work can run on the GPU PC; needs browser/e2e = run Playwright (headless) before calling it done.
+
+Rounds r86 to r99 are history: their open items were fixed or repeated in r100 to r107, so they are indexed, not bundled.
+
+### TQ-1 Verification gaps
+
+- Members: [verify-firefox-playwright-launch-macos](../brainstorm/verify-firefox-playwright-launch-macos.md), [verify-itch-size-budget](../brainstorm/verify-itch-size-budget.md), [qa-r36-r35-recheck](../brainstorm/qa-r36-r35-recheck.md), [qa-r38-desktop-notes](../brainstorm/qa-r38-desktop-notes.md)
+- Size: S
+- Shared files: tools/ci/size-budget.json, playwright.config.ts, tools/itch/*
+- Flags: PC-offloadable (Firefox and WebKit run on the PC), needs browser
+- Parallel: Tools lane: never with OR-2 or AU-1 (size-budget.json).
+
+### TQ-2 Triage of open items, r103 to r107
+
+- Members: [qa-r103-findings](../brainstorm/qa-r103-findings.md), [qa-r104-findings](../brainstorm/qa-r104-findings.md), [qa-r105-findings](../brainstorm/qa-r105-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
+- Size: S
+- Shared files: ideas/ only (new idea files for anything not yet filed)
+- Flags: docs only, no browser
+- Parallel: Parallel with everything.
+
+### TQ-3 Triage of r100 to r102
+
+- Members: [qa-r100-findings](../brainstorm/qa-r100-findings.md), [qa-r100-scorecard](../brainstorm/qa-r100-scorecard.md), [qa-r101-findings](../brainstorm/qa-r101-findings.md), [qa-r101-scorecard](../brainstorm/qa-r101-scorecard.md), [qa-r102-findings](../brainstorm/qa-r102-findings.md), [qa-r102-scorecard](../brainstorm/qa-r102-scorecard.md)
+- Size: S
+- Shared files: ideas/ only
+- Flags: docs only, no browser
+- Parallel: Parallel with everything; run before TQ-2 if both are wanted.

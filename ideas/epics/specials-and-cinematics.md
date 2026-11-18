@@ -35,3 +35,62 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [signature-slot3-morblass](../brainstorm/signature-slot3-morblass.md): Morblass slot 3: Rime Urchin (trap, water). Part of action-bar-rethink-hero-kits; design row in docs/design/signature-traps.md.
 - [signature-slot3-rokcore](../brainstorm/signature-slot3-rokcore.md): Rokcore slot 3: Stone Husk (minion, earth). Part of action-bar-rethink-hero-kits; design row in docs/design/signature-traps.md.
 - [signature-slot3-sindarosa](../brainstorm/signature-slot3-sindarosa.md): Sindarosa slot 3: Ashen Maw (trap, fire). Part of action-bar-rethink-hero-kits; design row in docs/design/signature-traps.md.
+
+## Filed 2026-11-17 (round-note filing and cross-listing)
+
+Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
+
+- [qa-r103-findings](../brainstorm/qa-r103-findings.md): QA r103 findings
+- [qa-r104-findings](../brainstorm/qa-r104-findings.md): QA r104 findings
+
+## Bundles (2026-11-17)
+
+Groups of ideas that touch the same files, so one agent can take the whole bundle. Flags: SIM = sim-changing (needs an Opus plan, a SIM_VERSION bump and a golden re-record with a stated reason, one sim bundle at a time); OWNER-GATED = wait for the owner; PC = heavy generation, balance or e2e work can run on the GPU PC; needs browser/e2e = run Playwright (headless) before calling it done.
+
+### SC-1 Super cinematic presentation
+
+- Members: [qa-r3-super-cinematic-hides-action](../brainstorm/qa-r3-super-cinematic-hides-action.md), [qa-r26-super-banner-portrait-box](../brainstorm/qa-r26-super-banner-portrait-box.md), [qa-r33-super-glow-subtle](../brainstorm/qa-r33-super-glow-subtle.md), [qa-r19-ko-punch-in-not-visible-in-shots](../brainstorm/qa-r19-ko-punch-in-not-visible-in-shots.md), [qa-r104-findings](../brainstorm/qa-r104-findings.md)
+- Size: M
+- Shared files: src/game/fx/super-view.ts, super-cinematic.ts, super-burst.ts, src/game/cine/*
+- Flags: needs browser/e2e (super-band specs), owner art review
+- Parallel: FX lane: serial with other fx bundles.
+
+### SC-2 Super reliability and air super
+
+- Members: [qa-r24-some-supers-did-not-fire](../brainstorm/qa-r24-some-supers-did-not-fire.md), [qa-r71-rokcore-super-whiffs](../brainstorm/qa-r71-rokcore-super-whiffs.md), [super-air-1](../in-progress/super-air-1.md)
+- Size: M
+- Shared files: src/core/sim/* (super), src/core/data/*
+- Flags: SIM, PC
+- Parallel: Serial with every SIM bundle.
+
+### SC-3 Signature slot 3, batch A
+
+- Members: [signature-slot3-fiara](../brainstorm/signature-slot3-fiara.md), [signature-slot3-treenoc](../brainstorm/signature-slot3-treenoc.md), [signature-slot3-cyclonius](../brainstorm/signature-slot3-cyclonius.md), [signature-slot3-wispera](../brainstorm/signature-slot3-wispera.md)
+- Size: L
+- Shared files: src/core/data/*, abilities sim, action-bar.ts, signature-view.ts, goldens
+- Flags: SIM (Opus plan, one hero per merge, balance:compare each), PC
+- Parallel: Serial with every SIM bundle and with action-bar users.
+
+### SC-4 Signature slot 3, batch B
+
+- Members: [signature-slot3-lavax](../brainstorm/signature-slot3-lavax.md), [signature-slot3-pax](../brainstorm/signature-slot3-pax.md), [signature-slot3-echo](../brainstorm/signature-slot3-echo.md), [signature-slot3-curomo](../brainstorm/signature-slot3-curomo.md)
+- Size: L
+- Shared files: same as SC-3
+- Flags: SIM, PC
+- Parallel: After SC-3; never together with it.
+
+### SC-5 Signature slot 3, batch C
+
+- Members: [signature-slot3-ishimi](../brainstorm/signature-slot3-ishimi.md), [signature-slot3-morblass](../brainstorm/signature-slot3-morblass.md), [signature-slot3-rokcore](../brainstorm/signature-slot3-rokcore.md), [signature-slot3-sindarosa](../brainstorm/signature-slot3-sindarosa.md)
+- Size: L
+- Shared files: same as SC-3
+- Flags: SIM, PC
+- Parallel: After SC-4.
+
+### SC-6 Hero kits presentation
+
+- Members: [hero-special-move-presentation-art](../brainstorm/hero-special-move-presentation-art.md), [action-bar-rethink-hero-kits](../brainstorm/action-bar-rethink-hero-kits.md), [qa-r103-findings](../brainstorm/qa-r103-findings.md)
+- Size: M
+- Shared files: action-bar.ts, src/game/fx/signature-view.ts, asset manifest
+- Flags: needs browser/e2e, owner art review; r103 supplies the "super cut-in hides the foe" item
+- Parallel: HUD and FX lanes: serial with FR-4 and SC-3..5.

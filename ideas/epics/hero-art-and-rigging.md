@@ -33,3 +33,39 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [move-animation-wings-knees](../brainstorm/move-animation-wings-knees.md): Movement animation: wing flaps and bent knees. Owner request (2026-11-14):
 - [hero-expression-ko-victory-poses](../brainstorm/hero-expression-ko-victory-poses.md): Hero expression, KO and victory pose art. Goal: per-hero hurt, angry and smug expression variants for portraits, plus a KO pose and a victory pose for all 24 heroes, usable in the HUD, round-e
 - [hi-res-mist-portraits](../brainstorm/hi-res-mist-portraits.md): Hi-res mist portraits. Wispera (and any other translucent haze hero) reads poorly in 80 px portrait strips:
+
+## Bundles (2026-11-17)
+
+Groups of ideas that touch the same files, so one agent can take the whole bundle. Flags: SIM = sim-changing (needs an Opus plan, a SIM_VERSION bump and a golden re-record with a stated reason, one sim bundle at a time); OWNER-GATED = wait for the owner; PC = heavy generation, balance or e2e work can run on the GPU PC; needs browser/e2e = run Playwright (headless) before calling it done.
+
+### HA-1 Sprite audit and cleanup
+
+- Members: [hero-art-audit-2026-11-15](../brainstorm/hero-art-audit-2026-11-15.md), [sprite-cleanup-upscale-outline-pass](../brainstorm/sprite-cleanup-upscale-outline-pass.md), [opaque-bbox-tuck](../brainstorm/opaque-bbox-tuck.md), [hero-sprite-grading](../in-progress/hero-sprite-grading.md), [bigger-hero-sprites](../in-progress/bigger-hero-sprites.md)
+- Size: L
+- Shared files: asset manifest, public/assets/heroes/*, src/game/fx/hero-grade.ts
+- Flags: PC-offloadable, needs browser/e2e (screenshots), owner sees a sheet first
+- Parallel: Art lane: serial with every manifest bundle.
+
+### HA-2 Portraits and sprite look (originals kept)
+
+- Members: [grim-rebuilds-rejected-fiara-treenoc-cyclonius](../brainstorm/grim-rebuilds-rejected-fiara-treenoc-cyclonius.md), [qa-r7-hero-contrast-and-sprite-look](../brainstorm/qa-r7-hero-contrast-and-sprite-look.md), [qa-r6-sprite-style-and-versus-defaults](../brainstorm/qa-r6-sprite-style-and-versus-defaults.md), [portraits-from-baked-sheets](../in-progress/portraits-from-baked-sheets.md), [hi-res-mist-portraits](../brainstorm/hi-res-mist-portraits.md)
+- Size: M
+- Shared files: asset manifest, portrait assets, tools/assets/*
+- Flags: PC-offloadable, owner art review, originals of Fiara and Treenoc must stay
+- Parallel: Serial after HA-1 (manifest).
+
+### HA-3 Rig and walk-cycle rows
+
+- Members: [hero-rig-from-portraits](../in-progress/hero-rig-from-portraits.md), [backward-walk-animation](../in-progress/backward-walk-animation.md), [backward-walk-baked-rows](../brainstorm/backward-walk-baked-rows.md), [move-animation-wings-knees](../brainstorm/move-animation-wings-knees.md), [hero-expression-ko-victory-poses](../brainstorm/hero-expression-ko-victory-poses.md)
+- Size: L
+- Shared files: tools/rig-assist/*, pose-layer.ts, asset manifest
+- Flags: PC-offloadable, needs browser/e2e, owner art review
+- Parallel: Serial with AP-3, HA-1, HA-2 and any pose-layer.ts bundle (AE-2, GF-1).
+
+### HA-4 Elemental being redesigns
+
+- Members: [elemental-heroes-grim](../in-progress/elemental-heroes-grim.md), [hero-elemental-being-pax-treenoc-fiara](../in-progress/hero-elemental-being-pax-treenoc-fiara.md), [hero-elemental-being-sindarosa-rokcore](../in-progress/hero-elemental-being-sindarosa-rokcore.md), [grim-wispera-lavax](../in-progress/grim-wispera-lavax.md)
+- Size: L
+- Shared files: asset manifest, hero art
+- Flags: OWNER-GATED: the owner preferred originals over grim redesigns; do not queue until the owner asks, then show a sheet first
+- Parallel: Not queued.
