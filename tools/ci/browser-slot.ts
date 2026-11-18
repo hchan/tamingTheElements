@@ -117,15 +117,17 @@ export async function acquireAny(dirs: readonly string[], owner: Owner, opts: Wa
   const timeoutMs = opts.timeoutMs ?? WAIT_TIMEOUT_MS;
   const start = clock.now();
   let lastLog = start;
+  let first = true;
   for (;;) {
     for (const d of dirs) if (tryAcquire(d, owner, clock)) return d;
     const t = clock.now();
-    if (t - start >= timeoutMs) return undefined;
-    if (t - lastLog >= 60_000 || t === start) {
+    if (first || t - lastLog >= 60_000) {
+      first = false;
       const h = dirs.map((d) => readOwner(d)).find((o) => o);
       opts.log?.(`browser-slot: waiting${h ? ` (held by pid ${String(h.pid)} in ${h.cwd}: ${h.cmd})` : ''}`);
       lastLog = t;
     }
+    if (t - start >= timeoutMs) return undefined;
     await sleep(pollMs);
   }
 }
