@@ -425,7 +425,8 @@ describe('portrait bar touch floor (44 CSS px)', () => {
   it('names what each Strike circle fires, so the dropped ability tiles are not silent', () => {
     expect(strikeCues([{ sprite: 'shardsOfIce' }, { sprite: '' }])[1]).toEqual(['', '']);
     const c = strikeCues([{ sprite: 'entanglingVines' }, { sprite: 'unknown' }]);
-    expect(c[0]?.[0]).toBe('Vines');
+    expect(c[0]).toEqual(['Snag', 'Snag']);
+    expect(c[0]?.[0]).toBe(slotWord({ kind: 'ability', cmd: Cmd.secondary, note: 'Snag' }));
     expect(c[1]).toEqual(['', '']);
   });
   it('the 8 remaining tiles (Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse) are ONE row of 44+ px at 390 and 360 wide', () => {
