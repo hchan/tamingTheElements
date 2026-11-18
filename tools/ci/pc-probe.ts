@@ -15,14 +15,10 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { LANES, type Lane, type LaneName } from './pc-job';
+import type { PcView } from './pc-decide';
 import { PID1_MIN_AGE_SEC, type Remote } from './pc-remote';
 
-/** Structurally the same as `PcView` in pc-decide.ts (F1); duplicated so the two WPs stay independent. */
-export type ProbeView =
-  | { state: 'up' | 'busy'; why?: 'load' | 'ram'; lanes: Record<LaneName, 'idle' | 'busy'>; gpuJobs: number; young: boolean }
-  | { state: 'down'; why: 'unreachable' | 'timeout' | 'wsl' }
-  | { state: 'broken'; why: 'frames' | 'disk' | 'clone' };
-export type Probe = ProbeView & {
+export type Probe = PcView & {
   /** Epoch ms when measured. */
   at: number;
   /** Hash of the alias (cache key); never the alias. */
@@ -165,7 +161,7 @@ export function parseProbe(stdout: string, code: number, now: number): Probe {
   return { state: 'up', ...view, ...extra };
 }
 
-const keyOf = (alias: string): string => createHash('sha256').update(alias).digest('hex').slice(0, 12);
+export const keyOf = (alias: string): string => createHash('sha256').update(alias).digest('hex').slice(0, 12);
 
 function once(r: Remote, script: string, frames: boolean, ms: number): Promise<{ code: number; stdout: string }> {
   const args = [

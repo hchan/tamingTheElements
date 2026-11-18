@@ -23,6 +23,7 @@
     "test:browser": "tsx tools/ci/browser-slot.ts -- vitest run --project browser",
     "e2e:smoke": "tsx tools/ci/e2e-route.ts smoke",
     "e2e": "tsx tools/ci/e2e-route.ts run",
+    "pc:probe": "tsx tools/ci/pc-probe.ts",
     "e2e:remote": "tsx tools/ci/e2e-route.ts run --pc",
     "e2e:local": "tsx tools/ci/e2e-route.ts run --local",
     "visual:capture": "tsx tools/ci/browser-slot.ts -- tsx tools/visual/run.ts capture",
