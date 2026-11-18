@@ -33,6 +33,7 @@ export function tourKeysDesktop(b: Bindings, snag: boolean): readonly (readonly 
       { keys: [key(b, 'dash')], action: 'Dash' },
       { keys: [key(b, 'guard')], action: 'Guard (hold)' },
       { keys: [key(b, 'super')], action: 'Super' },
+      { keys: [key(b, 'run'), 'Tab'], action: 'Run' },
       { keys: [key(b, 'slot3'), key(b, 'slot4')], action: 'Tag' },
     ],
   ];
@@ -50,6 +51,7 @@ export function tourKeysTouch(snag: boolean): readonly (readonly TourKeyChip[])[
       { keys: ['Dash'], action: '' },
       { keys: ['Guard'], action: '' },
       { keys: ['Super'], action: '' },
+      { keys: ['Run'], action: '' },
       { keys: ['Tag'], action: '' },
       ...(snag ? [{ keys: ['Snag'], action: '' }] : []),
     ],

@@ -72,6 +72,7 @@ export const GAMEPAD_ROWS: readonly ControlRow[] = [
   { action: 'Element', keys: 'Press the left stick' },
   { action: 'Cleanse', keys: 'Back' },
   { action: 'Tag', keys: 'Left bumper' },
+  { action: 'Run Away / Run Towards', keys: 'No gamepad button yet: use the keyboard (Tab) or the touch Run button' },
   { action: 'Pause', keys: 'Start' },
 ];
 
@@ -79,6 +80,7 @@ export const TOUCH_ROWS: readonly ControlRow[] = [
   { action: 'Move', keys: 'Drag the on-screen pad' },
   { action: 'Strike 1, Strike 2, Snag', keys: 'Tap the Strike circles or the boxes of the hero (the one marked Snag throws the rope that roots a foe)' },
   { action: 'Dash, Guard, Weather, Charge, Super, Trap, Element, Cleanse, Tag, Tag 2', keys: 'Tap the button of the same name; each shows its key and its state in words' },
+  { action: 'Run Away / Run Towards', keys: 'Tap the Run box: ranged heroes run away, melee heroes run towards the foe; any new direction stops it' },
 ];
 
 export const SYSTEM_ROWS: readonly ControlRow[] = [

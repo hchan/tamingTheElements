@@ -16,6 +16,14 @@ describe('help controls', () => {
     expect(rows['Tag']).toBe('3');
     expect(rows['Snag (some heroes)']).toBe('C');
   });
+  it('the Gamepad and Touch tables each have a Run Away / Run Towards row, without banned words (QA r109)', () => {
+    for (const title of ['Gamepad', 'Touch']) {
+      const rows = controlSections(DEFAULT_BINDINGS).find((s) => s.title === title)?.rows ?? [];
+      const row = rows.find((r) => r.action === 'Run Away / Run Towards');
+      expect(row, title).toBeDefined();
+      expect(`${row?.action ?? ''} ${row?.keys ?? ''}`).not.toMatch(/classic|arcade|ruleset|capture/i);
+    }
+  });
   it('shows rebinds', () => {
     const rows = player1Rows(bindSteal(DEFAULT_BINDINGS, 'trap', 0, 'KeyP'));
     expect(rows.find((r) => r.action === 'Trap')?.keys).toBe('P or 0');

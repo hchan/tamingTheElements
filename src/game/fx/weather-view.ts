@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { SimEventKind, WEATHER_CHARGE_FULL, arcadePlayfield, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { LOGICAL_WIDTH, coreDisplayWidth, resolutionOf } from '../boot/viewport';
+import { CHIP_RECTS_KEY, type HudRect } from '../hud/arcade-hud';
 import { mountTagView, tagState } from '../hud/tag-view';
 import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
 import { mute } from './grim-fx';
@@ -190,6 +191,9 @@ export function mountWeatherView(
     if (label !== drawn.label) p.label.setText(label).setVisible(true);
     const w = GLYPH + 8 + p.label.width;
     const x = BADGE_X + BADGE_SHIFT - w / 2;
+    badgeBox.x = x - 8;
+    badgeBox.w = w + 16;
+    badgeBox.h = p.label.height + BAR_H + 12;
     const fill = badgeFill(left, w);
     if (label === drawn.label && kind === drawn.kind && fill === drawn.fill) return;
     drawn.label = label;
@@ -205,6 +209,21 @@ export function mountWeatherView(
     g.fillStyle(color, 1).fillRect(x, by, fill, BAR_H);
     g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : 0x000000, 1).strokeRect(x, by, w, BAR_H);
     for (let q = 1; q < NOTCHES; q++) g.lineBetween(x + (q * w) / NOTCHES, by, x + (q * w) / NOTCHES, by + BAR_H);
+  };
+
+  /** Boxes (HUD px) of the charge chip and the badge, published under CHIP_RECTS_KEY so call-outs (PARRY, BLOCK) stay clear of them (QA r109). */
+  const chipBox: { x: number; y: number; w: number; h: number } = { x: BADGE_X - CHARGE_BAR_W / 2 - 8, y: CHARGE_Y - 4, w: CHARGE_BAR_W + 16, h: 0 };
+  const badgeBox: { x: number; y: number; w: number; h: number } = { x: 0, y: BADGE_Y - 4, w: 0, h: 0 };
+  const boxes: HudRect[] = [];
+  const publish = (chipShown: boolean, badgeShown: boolean, chipH: number): void => {
+    const reg = hud.registry;
+    let all = reg.get(CHIP_RECTS_KEY) as HudRect[][] | undefined;
+    if (!all) reg.set(CHIP_RECTS_KEY, (all = [[], []]));
+    chipBox.h = chipH + BAR_H + 12;
+    boxes.length = 0;
+    if (chipShown) boxes.push(chipBox);
+    if (badgeShown && badgeBox.w > 0) boxes.push(badgeBox);
+    all[2] = boxes;
   };
 
   /** The charge chip: its text, then a plate, the bar (notched in quarters) and, ready, a blinking border. */
@@ -247,6 +266,7 @@ export function mountWeatherView(
     p.bar.setAlpha(shown);
     p.chip.setAlpha(shown);
     const kind = ar?.weather ?? 0;
+    publish(shown > 0, kind !== 0 && a > 0, p.chip.height);
     const left = ar?.weatherLeft ?? 0;
     drawCharge(p, ar?.weatherCharge[0] ?? 0, clock);
     // The called line, timed on the view tick.
