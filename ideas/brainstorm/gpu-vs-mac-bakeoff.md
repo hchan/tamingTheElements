@@ -27,3 +27,23 @@ Owner, 2026-11-17: "don't forget the bake-off of 4060 speed vs this mac". Decide
 
 - Is the power cost a factor (PC draw vs Mac) for the night window?
 - Does the PC's WSL2 overhead change file-heavy jobs (bake) versus the Mac's native disk?
+
+## Status 2026-11-17 (SD benchmark, round 1): script ready, nothing timed yet
+
+Script: `tools/bench/sd-bench.py` (`--device cuda|mps --job sdxl|turbo1|turbo4|sd15|img2img [--offload] [--slicing] [--init png]`). Cold load, 1 discarded warm-up, 5 timed runs with device sync, median/min/max, peak memory, cuda power/temperature via nvidia-smi (aborts above 83 C). Mac power needs `powermetrics` (sudo), so it is not measured.
+
+Why no numbers:
+
+- Mac: load average was 19 to 30 (limit 12) and the Mac venvs have no torch/diffusers. Official fp16 weights: SDXL base about 7.1 GB, SDXL-Turbo about 6.9 GB (components), sd-turbo about 2.6 GB. Base plus Turbo is about 14 GB, over the 10 GB stop rule, so no download was started. Owner decision needed: allow ~14 GB, or restrict to SDXL-Turbo + sd-turbo (about 9.5 GB).
+- PC: GPU busy with the round-3 generation (`gen4.py`, 22 % util, 1.8 GB used, 33 C), so it was not touched. The PC's SDXL-Turbo and SDXL base are already cached in WSL (per earlier bake-off); only the bench script must be copied over.
+
+Remaining to run (PC, when idle): `sdxl` with and without `--offload`, `turbo1`, `turbo4`, `sd15`, `img2img --init <concept.png>`. Mac: the same jobs with `--device mps` (also try `--slicing`), after the downloads are approved and load is under 12. Only the PC figure known so far: SDXL base 1024x1024, 28 steps, offload on, median 18.5 s per image (18.1 to 24.5), load 6.5 s, peak allocated 5.3 GB.
+
+### Results
+
+| job | Mac median | PC median | ratio | memory | winner |
+|---|---|---|---|---|---|
+| SDXL base 28 steps 1024 | not measured | 18.5 s (offload) | - | PC 5.3 GB | - |
+| others | not measured | not measured | - | - | - |
+
+Routing rule: none yet; no honest comparison exists. Prior expectation only (unmeasured): a discrete 8 GB CUDA card beats M4 Pro MPS for SDXL generation.
