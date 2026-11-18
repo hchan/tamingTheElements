@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assertCleanTree, assertPagesBranch, assertPushed, commitMessage, parseCliArgs as parseDeploy, pushArgs } from '../../tools/ci/deploy-pages';
+import { summarize } from '../../tools/ci/e2e-flake';
 import { exitCodeFor, formatSummary, parseCliArgs as parseCi, planSteps } from '../../tools/ci/local-ci';
 
 describe('ci:local', () => {
@@ -57,5 +58,32 @@ describe('deploy:pages', () => {
 
   it('formats the commit message', () => {
     expect(commitMessage('abc1234', '0.1.0')).toBe('Deploy abc1234 (0.1.0)');
+  });
+});
+
+describe('e2e:flake --summary-json', () => {
+  it('summarises runs, passes, duration percentiles and the smoke tag per test', () => {
+    const res = (status: string, duration: number) => ({ status, duration });
+    const rows = summarize({
+      suites: [
+        {
+          suites: [
+            {
+              specs: [
+                { title: 'boots @smoke', file: 'a.spec.ts', tests: [{ results: [res('passed', 100), res('passed', 300), res('failed', 200), res('skipped', 0)] }] },
+                { title: 'other', file: 'b.spec.ts', tags: ['@smoke'], tests: [{ results: [res('passed', 5)] }] },
+                { title: 'plain', file: 'b.spec.ts', tests: [{ results: [res('passed', 7)] }] },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(rows[0]).toEqual({ key: 'a.spec.ts: boots @smoke', runs: 3, passes: 2, p50Ms: 200, p90Ms: 300, maxMs: 300, smoke: true });
+    expect(rows.map((r) => [r.key, r.smoke])).toEqual([
+      ['a.spec.ts: boots @smoke', true],
+      ['b.spec.ts: other', true],
+      ['b.spec.ts: plain', false],
+    ]);
   });
 });

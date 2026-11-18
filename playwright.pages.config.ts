@@ -1,8 +1,11 @@
 import { defineConfig } from '@playwright/test';
+import { assertBrowserSlot, e2ePagesPort } from './tools/ci/e2e-port';
+
+assertBrowserSlot();
 
 // Smoke for the GitHub Pages layout: production build with VITE_BASE=/tamingTheElements/ served under that subpath.
-// E2E_PAGES_PORT lets parallel worktrees run it side by side (default 4174).
-const PORT = process.env['E2E_PAGES_PORT'] ?? process.env['E2E_PORT'] ?? '4174';
+// E2E_PAGES_PORT, else E2E_PORT, else the per-checkout default + 1 (tools/ci/e2e-port.ts).
+const PORT = e2ePagesPort(process.cwd());
 
 export default defineConfig({
   testDir: 'tests/e2e-pages',

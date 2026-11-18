@@ -1,8 +1,11 @@
 import { defineConfig } from '@playwright/test';
+import { assertBrowserSlot, e2ePort, reuseServer } from './tools/ci/e2e-port';
+
+assertBrowserSlot();
 
 // Visual QA pipeline (docs/VISUAL-QA.md): screenshots, videos, regression baselines and the frame-pacing probe.
-// E2E_PORT lets parallel worktrees run side by side.
-const PORT = process.env['E2E_PORT'] ?? '4173';
+// E2E_PORT overrides the per-checkout default port (tools/ci/e2e-port.ts).
+const PORT = e2ePort(process.cwd());
 
 const launchOptions = {
   // SwiftShader software WebGL; never --disable-gpu.
@@ -45,7 +48,7 @@ export default defineConfig({
     // `--mode test` compiles in the window.__TTE__ hook; production builds never contain it.
     command: `corepack pnpm exec vite build --mode test && corepack pnpm preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: reuseServer(),
     timeout: 120_000,
   },
 });
