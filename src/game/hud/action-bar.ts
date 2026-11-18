@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderArcade, RenderView } from '@core/index';
-import { Cmd, GUARD_MAX, METER_BAR, RoundPhase, WEATHER_CHARGE_FULL } from '@core/index';
+import { Cmd, GUARD_MAX, METER_BAR, RUN_AWAY_DESCRIPTION, RUN_AWAY_NAME, RUN_TICKS, RUN_TOWARDS_DESCRIPTION, RUN_TOWARDS_NAME, RoundPhase, WEATHER_CHARGE_FULL } from '@core/index';
 import { swapBlockWord } from './swap-notice';
 import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
@@ -108,7 +108,7 @@ const SNAG_SPRITE = 'entanglingVines';
 const ABILITY_CMDS = [Cmd.primary, Cmd.secondary] as const;
 
 /** Every kind of box on the bar: the one shape, told apart by its icon, key and words. */
-export type SlotKind = 'ability' | 'capture' | 'swap' | 'trap' | 'elemental' | 'super' | 'guard' | 'dash' | 'weather' | 'charge' | 'cleanse';
+export type SlotKind = 'ability' | 'capture' | 'swap' | 'trap' | 'elemental' | 'super' | 'guard' | 'dash' | 'weather' | 'charge' | 'cleanse' | 'run';
 
 /** Cell of each icon on the `hud:actions` sheet (`tools/assets/hud-gen/actions.py` TILES order, 4 per row, 64 px cells). */
 export const ACTION_ICON = { trap: 0, tag: 1, charge: 2, weather: 3, dash: 4, guard: 5, super: 6, fire: 7, water: 8, earth: 9, air: 10, element: 11, cleanse: 12 } as const;
@@ -117,7 +117,7 @@ export const SHEET_CELL = 64;
 export const SHEET_COLS = 4;
 
 /** The touch button (id `arcade<touch>`) that sits over a box as a transparent overlay; '' for a box with none. */
-export type TouchName = '' | 'Super' | 'Guard' | 'Dash' | 'Weather' | 'Charge' | 'Tag' | 'Tag2' | 'Trap' | 'Element' | 'Cleanse';
+export type TouchName = '' | 'Super' | 'Guard' | 'Dash' | 'Weather' | 'Charge' | 'Tag' | 'Tag2' | 'Trap' | 'Element' | 'Cleanse' | 'Run';
 
 /** The sheet cell an elemental box wears: its element's mark (1 fire, 2 water, 3 earth, 4 air), else the generic one. */
 export function elementIcon(kind: number): number {
@@ -147,6 +147,8 @@ export interface ActionSlot {
   readonly disabled: boolean;
   /** Second line under the key: the box's name and state in words ("Trap 7s", "Super 40%", "Dash"), else ''. */
   readonly note: string;
+  /** Run slot only: true for Run Away (a ranged hero), false for Run Towards (names the box and its tip). */
+  readonly runAway?: boolean;
 }
 
 /** The Trap slot's words (never colour alone): whole seconds left while cooling, else the live count, or "full" at the cap. */
@@ -163,7 +165,7 @@ export function elementalNote(tick: number, e: { name: string; readyTick: number
 }
 
 /** The tooltip for a box: its plain name and a one-line effect (the Guide's own text, so the two never disagree). */
-export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'> & { sprite?: string }): { title: string; text: string } {
+export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'> & { sprite?: string; runAway?: boolean }): { title: string; text: string } {
   switch (s.kind) {
     case 'ability':
       if (s.sprite === SNAG_SPRITE) return { title: 'Snag', text: COMMON_EFFECT.snag };
@@ -182,6 +184,7 @@ export function slotTip(s: Pick<ActionSlot, 'kind' | 'cmd' | 'element'> & { spri
     case 'weather': return { title: 'Weather', text: COMMON_EFFECT.weather };
     case 'charge': return { title: 'Charge', text: COMMON_EFFECT.charge };
     case 'cleanse': return { title: 'Cleanse', text: COMMON_EFFECT.cleanse };
+    case 'run': return s.runAway === false ? { title: RUN_TOWARDS_NAME, text: RUN_TOWARDS_DESCRIPTION } : { title: RUN_AWAY_NAME, text: RUN_AWAY_DESCRIPTION };
   }
 }
 
@@ -232,13 +235,14 @@ export function slotWord(s: Pick<ActionSlot, 'kind' | 'cmd' | 'note'>): string {
     case 'weather': return 'Weather';
     case 'charge': return 'Charge';
     case 'cleanse': return 'Cleanse';
+    case 'run': return 'Run';
   }
 }
 
 /** Frame colour per kind of box in the dressed bar (the element's own colour for an Element box): ash-dulled, never the only cue. */
 const KIND_TINT: Readonly<Record<SlotKind, number>> = {
   ability: 0xffffff, capture: 0xc9a26b, swap: 0xffffff, trap: 0xc9a26b, elemental: 0xffffff, super: 0xffd15c,
-  guard: 0xe6f4ff, dash: 0xe6f4ff, weather: 0x5cc8ff, charge: 0xff7a3d, cleanse: 0x9fdc8a,
+  guard: 0xe6f4ff, dash: 0xe6f4ff, weather: 0x5cc8ff, charge: 0xff7a3d, cleanse: 0x9fdc8a, run: 0xe6f4ff,
 };
 
 /**
@@ -274,8 +278,8 @@ export function slotX(i: number): number {
   return SLOT_BORDER / 2 + i * SLOT_SIDE;
 }
 
-/** The most boxes the bar ever holds (primary, secondary, three swaps, charge, weather, dash, guard, super, trap, elemental): sizes the Player 2 lift. */
-export const MAX_SLOTS = 14;
+/** The most boxes the bar ever holds (primary, secondary, three swaps, charge, weather, dash, guard, super, trap, elemental, cleanse, run): sizes the Player 2 lift. */
+export const MAX_SLOTS = 15;
 /** Smallest a box may be on screen in CSS px (a finger). */
 export const MIN_TOUCH_PX = 48;
 
@@ -584,6 +588,17 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
       kind: 'cleanse', cmd: 0, sprite: '', icon: ACTION_ICON.cleanse, touch: 'Cleanse', highlight: false, disabled: false,
       progress: arcade.cleanseIn <= 0 ? 1 : clamp01(1 - arcade.cleanseIn / CLEANSE_COOLDOWN), note: leftNote('Cleanse', arcade.cleanseIn),
     }, CLEANSE_LABEL);
+    // Run Away (ranged hero) or Run Towards (melee): drains while the run lasts, then fills over its cooldown. Last, so no other box shifts.
+    if (bar.run) {
+      const r = bar.run;
+      const running = bar.tick < r.activeUntil;
+      const name = r.away ? RUN_AWAY_NAME : RUN_TOWARDS_NAME;
+      add({
+        kind: 'run', cmd: 0, sprite: '', icon: ACTION_ICON.dash, touch: 'Run', highlight: running, disabled: false, runAway: r.away,
+        progress: running ? clamp01((r.activeUntil - bar.tick) / RUN_TICKS) : cooldownProgress(bar.tick, r.readyTick, r.cooldownTicks),
+        note: running ? `${name} on` : leftNote(name, r.readyTick - bar.tick),
+      }, ACTION_COMMAND.run);
+    }
   }
   return arcade ? centreRows(out) : out;
 }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HERO_STYLE, characterId, type RenderView } from '@core/index';
+import { CHARACTERS, HERO_STYLE, characterId, type RenderView } from '@core/index';
 import { setBindings, DEFAULT_BINDINGS, getBindings } from '../platform/input/bindings';
+import { RANGED } from '../../core';
 import { TOUCH, isMeleeRace, setTouchText, touchButton, touchButtons, touchKeyLabel, touchStatus } from './touch-controls';
 
 type Listener = (e: { pointerId: number; preventDefault: () => void; key?: string; repeat?: boolean; stopPropagation?: () => void }) => void;
@@ -36,16 +37,17 @@ afterEach(() => {
 });
 
 describe('touch controls', () => {
-  it('builds 8, 9 or 10 buttons (Trap, Element then Cleanse last) for 1, 2 or 3 heroes a side, in the TOUCH order, with Arcade ids', () => {
+  it('builds 9, 10 or 11 buttons (Trap, Element, Cleanse then Run last) for 1, 2 or 3 heroes a side, in the TOUCH order, with Arcade ids', () => {
     stubDom(true);
-    expect(TOUCH).toHaveLength(10);
-    for (const n of [1, 2, 3] as const) expect(touchButtons(n)).toHaveLength(n + 7);
+    expect(TOUCH).toHaveLength(11);
+    for (const n of [1, 2, 3] as const) expect(touchButtons(n)).toHaveLength(n + 8);
     const b = touchButtons(3);
     expect(b.map((x) => x.id)).toEqual(TOUCH.map((l) => `arcade${l}`));
     expect(b[6]?.textContent).toBe('4\nTag 2');
     expect(b[7]?.textContent).toBe('0\nTrap');
     expect(b[8]?.textContent).toBe('-\nElement');
     expect(b[9]?.textContent).toBe('=\nCleanse');
+    expect(b[10]?.id).toBe('arcadeRun');
     expect(b.every((x) => x.tabIndex !== -1)).toBe(true);
   });
 
@@ -122,7 +124,7 @@ describe('keyboard activation', () => {
 describe('numbered action row', () => {
   it('labels each button with its key number, Charge 5 to Super 9, Tag 3 and 4', () => {
     stubDom(true);
-    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '5\nCharge', '3\nTag', '4\nTag 2', '0\nTrap', '-\nElement', '=\nCleanse']);
+    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '5\nCharge', '3\nTag', '4\nTag 2', '0\nTrap', '-\nElement', '=\nCleanse', '`\nRun']);
   });
 
   it('Element wears the - key (after 0) and follows a rebinding', () => {
@@ -148,9 +150,9 @@ describe('numbered action row', () => {
   it('leaves Charge out when no hero is melee, keeps the other numbers and closes the gap in the layout', () => {
     stubDom(true);
     const b = touchButtons(2, [false, false]);
-    expect(b.map((x) => x.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '3\nTag', '0\nTrap', '-\nElement', '=\nCleanse']);
-    expect(touchButtons(2, [false, true])).toHaveLength(9);
-    expect(touchButtons(1)).toHaveLength(8);
+    expect(b.map((x) => x.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '3\nTag', '0\nTrap', '-\nElement', '=\nCleanse', '`\nRun']);
+    expect(touchButtons(2, [false, true])).toHaveLength(10);
+    expect(touchButtons(1)).toHaveLength(9);
   });
 
   it('shows the first key when the number key is rebound away', () => {
@@ -205,5 +207,25 @@ describe('numbered action row', () => {
     expect(isMeleeRace('wispera' as never)).toBe(true);
     expect(isMeleeRace('pax' as never)).toBe(true);
     for (const [id, style] of Object.entries(HERO_STYLE)) expect(isMeleeRace(characterId(id)), id).toBe(style === 'melee');
+  });
+
+  it('isMeleeRace is exactly the sim RANGED split for every id, so the Run label and the Charge button never disagree', () => {
+    for (const c of CHARACTERS) expect(isMeleeRace(c.id), c.id).toBe(RANGED[CHARACTERS.indexOf(c)] === 0);
+  });
+
+  it('names the Run button for the hero (Run Away ranged, Run Towards melee) and reads on, seconds or ready', () => {
+    const view = (tick: number, run?: { away: boolean; readyTick: number; activeUntil: number }): RenderView => ({ arcade: () => undefined, actionBar: () => ({ tick, run }) }) as unknown as RenderView;
+    const run = { away: true, readyTick: 700, activeUntil: 350 };
+    expect(touchStatus('Run', view(100, run))).toBe('on');
+    expect(touchStatus('Run', view(400, run))).toBe('6s');
+    expect(touchStatus('Run', view(700, run))).toBe('ready');
+    expect(touchStatus('Run', view(100))).toBe('');
+    stubDom(true);
+    const b = touchButton('Run') as unknown as { textContent: string; attrs: Record<string, string> };
+    expect(b.textContent).toBe('`\nRun');
+    setTouchText(b as never, 'Run', '3s', true);
+    expect(b.attrs['aria-label']).toBe('` Run Away, 3s');
+    setTouchText(b as never, 'Run', 'ready', false);
+    expect(b.attrs['aria-label']).toBe('` Run Towards, ready');
   });
 });

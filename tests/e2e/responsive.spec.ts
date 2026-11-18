@@ -226,7 +226,7 @@ test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
     const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; over: boolean; left: boolean }[]>(
       `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight, left: getComputedStyle(n).textAlign === 'left' }; })`,
     );
-    expect(boxes).toHaveLength(10);
+    expect(boxes).toHaveLength(11);
     if (fs) {
       for (const p of boxes) {
         const clear = p.r <= fs.x || fs.r <= p.x || p.b <= fs.y || fs.b <= p.y;
@@ -284,7 +284,7 @@ for (const hc of [{ name: '568x320', w: 568, h: 320 }, { name: '640x300', w: 640
       const boxes = await page.evaluate<{ id: string; x: number; y: number; r: number; b: number; border: number; over: boolean }[]>(
         `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); const c = getComputedStyle(n); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, border: Math.min(parseFloat(c.borderTopWidth), parseFloat(c.borderRightWidth), parseFloat(c.borderBottomWidth), parseFloat(c.borderLeftWidth)), over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight }; })`,
       );
-      expect(boxes).toHaveLength(10);
+      expect(boxes).toHaveLength(11);
       for (const k of boxes) {
         expect(k.over, `${k.id} overflows`).toBe(false);
         expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);

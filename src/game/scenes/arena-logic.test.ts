@@ -1,6 +1,6 @@
 import { Cmd, DEFAULT_SIM_FLAGS, EntityFlag, METER_BAR, RoundPhase, WEATHER_CHARGE_FULL, characterId, type MatchSetup, type RenderArcade } from '@core/index';
 import { describe, expect, it } from 'vitest';
-import { actionRefusal, activeHeroOf, buildMatchEnd, chargeBlockedBy, chargeLineFor, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
+import { actionRefusal, activeHeroOf, buildMatchEnd, chargeBlockedBy, chargeLineFor, demoMatch, effectsHeld, playbackFrame, runLineFor } from './arena-logic';
 
 type Row = { id: number; team: number; flags: number };
 const viewOf = (rows: Row[]) => ({ forEachCharacter: (fn: (c: Row) => void) => { rows.forEach(fn); } }) as never;
@@ -164,5 +164,31 @@ describe('effectsHeld', () => {
     expect(effectsHeld(true, true)).toBe(false);
     expect(effectsHeld(false, false)).toBe(false);
     expect(effectsHeld(false, true)).toBe(false);
+  });
+});
+
+describe('runLineFor and the Run press', () => {
+  const rows = [{ id: 7, team: 0, flags: alive }];
+  const view = (away: boolean | undefined) => ({ ...(viewOf(rows) as object), actionBar: () => (away === undefined ? undefined : { run: { away } }) }) as never;
+  const ar = (o: Partial<Record<string, unknown>> = {}) => arcadeStub({ running: () => false, runIn: () => 0, ...o });
+  it('says nothing when the run would start, with no hero, or with no run slot', () => {
+    expect(runLineFor(view(true), ar())).toBeUndefined();
+    expect(runLineFor({ ...(viewOf([]) as object), actionBar: () => ({ run: { away: true } }) } as never, ar())).toBeUndefined();
+    expect(runLineFor(view(undefined), ar({ runIn: () => 90 }))).toBeUndefined();
+  });
+  it('names the run and the whole seconds left, rounded up', () => {
+    expect(runLineFor(view(true), ar({ runIn: () => 150 }))).toBe('Run Away in 3 s');
+    expect(runLineFor(view(false), ar({ runIn: () => 101 }))).toBe('Run Towards in 3 s');
+  });
+  it('says rooted first, and stays quiet while running (a second press stops the run)', () => {
+    expect(runLineFor(view(true), ar({ rooted: () => true, runIn: () => 150 }))).toBe("Can't run while rooted");
+    expect(runLineFor(view(true), ar({ running: () => true, runIn: () => 300 }))).toBeUndefined();
+  });
+  it('actionRefusal routes the Run bit to the run line, after the others', () => {
+    const ready = { phase: RoundPhase.fight, frozen: false, meter0: METER_BAR, weatherCharge0: WEATHER_CHARGE_FULL };
+    const none = () => undefined;
+    expect(actionRefusal(Cmd.run, ready, none, none, () => 'R')).toBe('R');
+    expect(actionRefusal(Cmd.run, { ...ready, phase: RoundPhase.intro }, none, none, () => 'R')).toBeUndefined();
+    expect(actionRefusal(Cmd.run | Cmd.elemental, ready, none, () => 'E', () => 'R')).toBe('E');
   });
 });

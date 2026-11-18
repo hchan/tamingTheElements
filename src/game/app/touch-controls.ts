@@ -1,5 +1,5 @@
 import { el } from '@ui/dom';
-import { ALL_ABILITIES, CHARACTERS, GUARD_MAX, METER_BAR, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, heroStyleOf, type CharacterId, type RenderView } from '@core/index';
+import { ALL_ABILITIES, CHARACTERS, GUARD_MAX, METER_BAR, RUN_AWAY_NAME, RUN_TOWARDS_NAME, WEATHER_CHARGE_FULL, WEATHER_RANGED_KINDS, heroStyleOf, type CharacterId, type RenderView } from '@core/index';
 import { touchHaptic } from '../platform/a11y/touch-layout';
 import { actionKeyLabel, getBindings } from '../platform/input/bindings';
 import { cleanseClockOf } from '../hud/cleanse-clock';
@@ -11,11 +11,11 @@ import { cleanseClockOf } from '../hud/cleanse-clock';
  * 2.14, 2.17), in a tag team Tag (2.6: the first swap key) and in 3v3 Tag 2 (the second swap key, WP-arcade-3v3), then Trap
  * (WP 39) and Element (2.24, the hero's elemental ability), always there.
  */
-export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2', 'Trap', 'Element', 'Cleanse'] as const;
+export const TOUCH = ['Super', 'Guard', 'Dash', 'Weather', 'Charge', 'Tag', 'Tag2', 'Trap', 'Element', 'Cleanse', 'Run'] as const;
 type TouchLabel = (typeof TOUCH)[number];
 const TOUCH_KEY = {
   Super: 'super', Guard: 'guard', Dash: 'dash', Weather: 'weather', Charge: 'charge', Tag: 'slot3', Tag2: 'slot4', Trap: 'trap',
-  Element: 'elemental', Cleanse: 'cleanse',
+  Element: 'elemental', Cleanse: 'cleanse', Run: 'run',
 } as const;
 /**
  * The numbered action row (FUN-DESIGN 2.17): each button wears its number key, 3 Tag, 4 Tag 2, 5 Charge, 6 Weather, 7 Dash,
@@ -28,7 +28,7 @@ export const TOUCH_DIGIT = { Super: 9, Guard: 8, Dash: 7, Weather: 6, Charge: 5,
 export function touchKeyLabel(label: TouchLabel): string {
   const shown = actionKeyLabel(getBindings(), TOUCH_KEY[label]);
   if (shown !== undefined) return shown;
-  return label === 'Element' || label === 'Cleanse' ? '' : String(TOUCH_DIGIT[label]);
+  return label === 'Element' || label === 'Cleanse' || label === 'Run' ? '' : String(TOUCH_DIGIT[label]);
 }
 
 /**
@@ -80,6 +80,14 @@ export function touchStatus(label: TouchLabel, view: RenderView): string {
     const left = cleanseClockOf(view).leftIn(id, bar.tick);
     return left > 0 ? `${String(Math.ceil(left / 50))}s` : 'ready';
   }
+  if (label === 'Run') {
+    // 'on' while the run lasts, then seconds left or 'ready' (short: the square never overflows).
+    const bar = view.actionBar(0);
+    const r = bar?.run;
+    if (!bar || !r) return '';
+    const left = Math.max(0, r.readyTick - bar.tick);
+    return bar.tick < r.activeUntil ? 'on' : left > 0 ? `${String(Math.ceil(left / 50))}s` : 'ready';
+  }
   // Trap
   const t = view.actionBar(0)?.trap;
   if (!t) return '';
@@ -92,8 +100,9 @@ function fill(v: number, full: number): string {
 }
 
 /** Writes a button's text, one left-aligned line each: the key (the icon is CSS, before it), the name, then the state when there is one. */
-export function setTouchText(b: HTMLButtonElement, label: TouchLabel, status = ''): void {
-  const name = label === 'Tag2' ? 'Tag 2' : label;
+export function setTouchText(b: HTMLButtonElement, label: TouchLabel, status = '', run?: boolean): void {
+  // The Run button is named for the hero: Run Away (ranged) or Run Towards (melee); plain "Run" until the view says which.
+  const name = label === 'Tag2' ? 'Tag 2' : label === 'Run' ? (run === undefined ? 'Run' : run ? RUN_AWAY_NAME : RUN_TOWARDS_NAME) : label;
   const text = `${touchKeyLabel(label)}\n${name}`;
   // Only write what changed: rewriting identical text or a label makes screen readers re-announce the control.
   const shown = status === '' ? text : `${text}\n${status}`;
@@ -123,7 +132,7 @@ export function watchTouch(buttons: readonly HTMLButtonElement[], view: RenderVi
     }
     for (const b of buttons) {
       const label = TOUCH.find((l) => b.id === `arcade${l}`);
-      if (label) setTouchText(b, label, touchStatus(label, view));
+      if (label) setTouchText(b, label, touchStatus(label, view), label === 'Run' ? view.actionBar(0)?.run?.away : undefined);
     }
   }, 250);
 }
@@ -142,7 +151,7 @@ const MIN_KEY_HOLD_MS = 100;
 /**
  * Button over the arena for touch: it holds the first key bound to its action (the arena's keyboard agent
  * listens on window) for as long as the finger is down; an unbound action does nothing. Focusable: Enter or Space
- * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`, `arcadeElement`, `arcadeCleanse`.
+ * held does the same as a finger. Ids `arcadeSuper`, `arcadeGuard`, `arcadeDash`, `arcadeWeather`, `arcadeCharge`, `arcadeTag`, `arcadeTag2`, `arcadeTrap`, `arcadeElement`, `arcadeCleanse`, `arcadeRun` (Run Away or Run Towards, last).
  */
 export function touchButton(label: TouchLabel): HTMLButtonElement {
   const b = el('button', 'menuButton');
@@ -238,11 +247,11 @@ export function holdAction(b: HTMLButtonElement, action: Parameters<typeof actio
 
 /**
  * The buttons of a battle with this many heroes a side: Super, Guard, Dash, Weather, Charge, plus Tag (2 heroes) and Tag 2 (3), then Trap
- * and Element.
+ * Element, Cleanse and Run.
  * `melee` says whether each of the player's heroes is melee; when given and none is, Charge is left out (it is a melee-only
  * ability) and the rest close the gap, keeping their numbers.
  */
 export function touchButtons(heroes: 1 | 2 | 3, melee?: readonly boolean[]): HTMLButtonElement[] {
   const noCharge = melee !== undefined && !melee.some(Boolean);
-  return [...TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')), 'Trap' as const, 'Element' as const, 'Cleanse' as const].map(touchButton);
+  return [...TOUCH.slice(0, heroes + 4).filter((l) => !(noCharge && l === 'Charge')), 'Trap' as const, 'Element' as const, 'Cleanse' as const, 'Run' as const].map(touchButton);
 }
