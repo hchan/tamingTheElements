@@ -2,10 +2,17 @@ name: CI
 
 # Owner decision (2026-11-17): Actions minutes are rationed. CI runs once a day on a schedule (plus manual dispatch), never per push.
 # The per-commit check is the local gate (CLAUDE.md), which includes the Playwright e2e suites; e2e is deliberately NOT a job here.
+# The deploy is gated by the nightly long gate (tools/ci/long-gate-status.json, read by tools/ci/long-gate-verdict.ts). While that
+# file has enforce:false the verdict only warns and HEAD is deployed as before. e2e still never runs on Actions.
 on:
   schedule:
-    - cron: '30 7 * * *' # 07:30 UTC daily, builds and deploys the current main
+    - cron: '0 14 * * *' # 14:00 UTC = 07:00 MST, after the nightly long gate (23:15 local) has recorded its result
   workflow_dispatch:
+    inputs:
+      ignore_long_gate:
+        description: Deploy current main even if the nightly long gate is red, stale or missing
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -105,6 +112,8 @@ jobs:
     needs: [check, coverage, browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    outputs:
+      deploy: ${{ steps.verdict.outputs.deploy }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -117,16 +126,28 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: corepack pnpm install --frozen-lockfile
+      - name: Long gate verdict (tools/ci/long-gate-status.json)
+        id: verdict
+        env:
+          IGNORE_LONG_GATE: ${{ inputs.ignore_long_gate }}
+        run: corepack pnpm exec tsx tools/ci/long-gate-verdict.ts --github-output
+      - name: Check out the last commit the long gate passed
+        if: steps.verdict.outputs.deploy == 'true' && steps.verdict.outputs.sha != github.sha
+        env:
+          SHA: ${{ steps.verdict.outputs.sha }}
+        run: git checkout --detach "$SHA" && corepack pnpm install --frozen-lockfile
       - name: Build for Pages
+        if: steps.verdict.outputs.deploy == 'true'
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
         run: corepack pnpm build
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      - if: steps.verdict.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.pages-build.outputs.deploy == 'true'
     needs: pages-build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
