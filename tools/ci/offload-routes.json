@@ -1,0 +1,27 @@
+{
+  "comment": "Where each heavy job runs. Placement policy: pc-first-fallback plan; validated by tests/repo/offload-routes.test.ts. Never put a host, IP, user or key here.",
+  "placements": ["pc", "pc-first", "mac", "measure"],
+  "routes": [
+    { "job": "e2e:short", "placement": "pc-first", "fallback": "mac", "note": "<= 150 tests; Mac fallback via browser slot and load guard" },
+    { "job": "e2e:full", "placement": "pc", "note": "PC only" },
+    { "job": "e2e:flake", "placement": "pc", "note": "PC only" },
+    { "job": "gate:long", "placement": "pc", "note": "PC only" },
+    { "job": "sdxl-base-1024", "placement": "pc", "note": "gpu-queue.py; one GPU job; start below 80 C, abort above 83 C; RAM over 4 GB; bulk 23:00-07:00" },
+    { "job": "sd-turbo-20step", "placement": "pc", "note": "gpu-queue.py; same guards as sdxl-base-1024" },
+    { "job": "sdxl-turbo-4step-512", "placement": "mac", "note": "MPS, one at a time, load below 10" },
+    { "job": "img2img-512", "placement": "mac", "note": "MPS, one at a time, load below 10" },
+    { "job": "visual", "placement": "mac", "note": "visual:* scripts" },
+    { "job": "soak:webrtc", "placement": "mac" },
+    { "job": "test:browser", "placement": "mac" },
+    { "job": "unit-gate", "placement": "mac" },
+    { "job": "golden:record", "placement": "mac" },
+    { "job": "replay:verify", "placement": "mac" },
+    { "job": "docs:gen", "placement": "mac" },
+    { "job": "size:check", "placement": "mac" },
+    { "job": "balance:compare", "placement": "measure", "note": "pc if PC <= 1.2x Mac; auto if <= 2x; else mac; jobs under 60 s stay mac" },
+    { "job": "sim:match", "placement": "measure" },
+    { "job": "fun:*", "placement": "measure" },
+    { "job": "ability:*", "placement": "measure" },
+    { "job": "assets:bake", "placement": "measure" }
+  ]
+}
