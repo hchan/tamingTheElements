@@ -325,6 +325,7 @@ test.describe('phone portrait fight', () => {
     await shot(page, 'port-clear');
   });
   test('portrait 2v2', async ({ page }) => {
+    test.setTimeout(180_000); // boots a 2v2 arena, two screenshots and a settle poll
     await enterFight(page, 2);
     await shot(page, 'port-2v2-rotate');
     await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();

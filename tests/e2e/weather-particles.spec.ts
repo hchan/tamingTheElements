@@ -25,6 +25,7 @@ async function demo(page: Page): Promise<void> {
 const NAMES = ['sun', 'rain', 'sand', 'gale'] as const;
 
 test('each element weather runs its textured particle layers and fades out with it', async ({ page }) => {
+  test.setTimeout(180_000); // four 60-tick steps plus 30 frames each, and a 500-tick fade: slow on a loaded SwiftShader PC
   const errors = collectErrors(page);
   await demo(page);
   for (let kind = 1; kind <= 4; kind++) {

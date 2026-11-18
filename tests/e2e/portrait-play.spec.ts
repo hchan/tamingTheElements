@@ -338,10 +338,10 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
       await page.waitForFunction(ATTR);
       await page.waitForFunction(`document.querySelectorAll('#arcadeTag, #arcadeTag2').length === 2`);
+      await expectMinHitSize(page, '3v3'); // polls until the bar has settled, so the read below is not a transitional layout frame
       const ctls = await page.evaluate<Ctl[]>(CONTROLS);
       const tags = ctls.filter((c) => c.id === 'arcadeTag' || c.id === 'arcadeTag2');
       expect(tags.map((t) => t.id).sort()).toEqual(['arcadeTag', 'arcadeTag2']);
-      await expectMinHitSize(page, '3v3');
       for (const c of ctls) expect(c.x + c.w, c.id).toBeLessThanOrEqual(w + 0.5);
       for (const t of tags) {
         const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(t.x + t.w / 2)}, ${String(t.y + t.h / 2)}); return e ? e.id : ''; })()`);

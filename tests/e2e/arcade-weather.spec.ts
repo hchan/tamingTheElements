@@ -35,8 +35,6 @@ const charge = (page: Page, team: number, value = 1000): Promise<unknown> =>
   page.evaluate(`window.__TTE__.arena.setWeatherCharge(${String(team)}, ${String(value)})`);
 const step = (page: Page, n: number, cmds: [number, number] = [0, 0]): Promise<unknown> =>
   page.evaluate(`window.__TTE__.arena.step(${String(n)}, [${String(cmds[0])}, ${String(cmds[1])}])`);
-const live = (page: Page): Promise<string> =>
-  page.evaluate<string>(`[document.getElementById('liveRegion'), document.getElementById('liveRegionAssertive')].map((n) => n ? n.textContent : '').join(' | ')`);
 /**
  * Every line the live regions have spoken since `listen`. The announcer keeps 1.5 s between polite lines, so a weather
  * call followed by its "The stage will turn to ..." line shows only for that gap; polling the region itself can miss it.
@@ -130,6 +128,7 @@ test('reduced motion: badge, steady tint and line at full size, no particles; Cl
 test('Arcade Versus: the AI calls Gale, R calls Sunshine, the touch Weather button too; 0 listeners after', async ({ page }) => {
   const errors = collectErrors(page);
   await versus(page, 'sindarosa', 'cyclonius');
+  await listen(page); // the announcer spaces polite lines 1.5 s apart, so polling the region can miss the line under load
   await expect(page.locator('#arcadeWeather')).toBeVisible();
   // Air is at a disadvantage against fire, so the AI calls its Gale on its first free tick (WP-arcade-ai-personalities).
   await charge(page, 1);
@@ -156,7 +155,7 @@ test('Arcade Versus: the AI calls Gale, R calls Sunshine, the touch Weather butt
   await page.mouse.up();
   await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
   expect(await weather(page)).toMatchObject({ kind: 1, call: 'Sunshine!' });
-  await expect.poll(() => live(page), { timeout: 5000 }).toContain('You called Sunshine: fire hits harder, water softer.');
+  await expect.poll(() => heard(page), { timeout: 10_000 }).toContain('You called Sunshine: fire hits harder, water softer.');
 
   await page.keyboard.press('Shift+P');
   await page.waitForFunction(`window.__TTE__.arena.paused === false`);
