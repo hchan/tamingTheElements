@@ -13,21 +13,27 @@ export const BUILD_DIR = 'dist-pages';
 export interface Options {
   readonly dryRun: boolean;
   readonly branch: string;
+  /** Present (true) only with `--ignore-long-gate`. */
+  readonly ignoreLongGate?: true;
 }
+
+export const STATUS_FILE = 'tools/ci/long-gate-status.json';
 
 /** Only `--dry-run` is meaningful; `--branch` exists so that any target other than gh-pages is refused loudly. */
 export function parseCliArgs(argv: readonly string[]): Options {
   let dryRun = false;
   let branch = PAGES_BRANCH;
+  let ignoreLongGate = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dry-run') dryRun = true;
+    else if (a === '--ignore-long-gate') ignoreLongGate = true;
     else if (a === '--branch') branch = argv[++i] ?? '';
     else if (a?.startsWith('--branch=')) branch = a.slice('--branch='.length);
-    else throw new Error(`Unknown argument: ${String(a)} (usage: deploy:pages [--dry-run])`);
+    else throw new Error(`Unknown argument: ${String(a)} (usage: deploy:pages [--dry-run] [--ignore-long-gate])`);
   }
   assertPagesBranch(branch);
-  return { dryRun, branch };
+  return ignoreLongGate ? { dryRun, branch, ignoreLongGate } : { dryRun, branch };
 }
 
 export function assertPagesBranch(branch: string): void {
@@ -43,6 +49,15 @@ export function assertCleanTree(porcelain: string): void {
 export function assertPushed(isAncestor: boolean): void {
   if (!isAncestor) throw new Error('Refusing to deploy: HEAD is not pushed to origin/main.');
 }
+
+/** Files that may change after the commit the long gate passed without invalidating it: the status file and ideas. */
+export const isGateNeutralPath = (f: string): boolean => f === STATUS_FILE || f.startsWith('ideas/');
+
+/**
+ * `changed` is `git diff --name-only <lastGood> HEAD`. Returns the paths that make HEAD differ from the long-gate-passed
+ * commit; an empty list means HEAD is covered by the gate.
+ */
+export const pathsBeyondLongGate = (changed: readonly string[]): string[] => changed.filter((f) => f !== '' && !isGateNeutralPath(f));
 
 export const commitMessage = (sha: string, version: string): string => `Deploy ${sha} (${version})`;
 
@@ -62,11 +77,34 @@ function run(cmd: string[], cwd?: string): void {
   if (r.status !== 0) throw new Error(`${cmd.join(' ')} failed (exit ${String(r.status)})`);
 }
 
+/** Enforced: refuse unless HEAD differs from lastGood only by gate-neutral paths. Shadow mode (enforce false): warn only. */
+function checkLongGate(opts: Options): void {
+  if (opts.ignoreLongGate === true) return void console.warn('warning: --ignore-long-gate set, skipping the long gate check.');
+  let status: { enforce?: unknown; lastGood?: { sha?: unknown } } = {};
+  try {
+    status = JSON.parse(readFileSync(STATUS_FILE, 'utf8')) as typeof status;
+  } catch {
+    /* missing or unreadable: treated as no lastGood */
+  }
+  const enforce = status.enforce === true;
+  const good = status.lastGood?.sha;
+  let problem = '';
+  if (typeof good !== 'string' || !/^[0-9a-f]{40}$/.test(good)) problem = 'the long gate has no lastGood recorded';
+  else {
+    const beyond = pathsBeyondLongGate(git(['diff', '--name-only', good, 'HEAD']).split('\n'));
+    if (beyond.length > 0) problem = `HEAD differs from the long-gate-passed commit ${good.slice(0, 7)} in ${beyond.length} file(s), e.g. ${beyond[0] ?? ''}`;
+  }
+  if (problem === '') return;
+  if (enforce) throw new Error(`Refusing to deploy: ${problem}. Use --ignore-long-gate to override.`);
+  console.warn(`warning (shadow mode, enforce is false): would refuse to deploy: ${problem}.`);
+}
+
 function main(): void {
   const opts = parseCliArgs(process.argv.slice(2));
   assertCleanTree(git(['status', '--porcelain']));
   git(['fetch', 'origin', 'main']);
   assertPushed(spawnSync('git', ['merge-base', '--is-ancestor', 'HEAD', 'origin/main']).status === 0);
+  checkLongGate(opts);
   const sha = git(['rev-parse', '--short', 'HEAD']);
   const version = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }).version;
 
