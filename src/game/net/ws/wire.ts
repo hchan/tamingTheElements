@@ -20,7 +20,7 @@ export const FrameType = {
 /** Largest SETUP control message body (spec: 5 + 2 + 2 + 401 bytes). */
 export const MAX_SETUP_BODY = 401;
 /** Largest BATCH: type, seq, then a 12 + 2n + 8m byte Packet. */
-export const MAX_BATCH_BYTES = 1 + 4 + 12 + 2 * MAX_INPUTS_PER_PACKET + 8 * MAX_HASHES_PER_PACKET;
+export const MAX_BATCH_BYTES = 1 + 4 + 12 + 4 * MAX_INPUTS_PER_PACKET + 8 * MAX_HASHES_PER_PACKET;
 
 export type Frame =
   | { readonly t: 'setup'; readonly ctlSeq: number; readonly ackCtl: number; readonly body: Uint8Array }
@@ -97,9 +97,9 @@ function decodeBatch(b: Uint8Array): Frame | undefined {
   if (b.length < 5 + 12 || b.length > MAX_BATCH_BYTES) return undefined;
   const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
   const n = dv.getUint8(5 + 10);
-  if (n > MAX_INPUTS_PER_PACKET || b.length < 5 + 12 + 2 * n) return undefined;
-  const m = dv.getUint8(5 + 11 + 2 * n);
-  if (m > MAX_HASHES_PER_PACKET || b.length !== 5 + 12 + 2 * n + 8 * m) return undefined;
+  if (n > MAX_INPUTS_PER_PACKET || b.length < 5 + 12 + 4 * n) return undefined;
+  const m = dv.getUint8(5 + 11 + 4 * n);
+  if (m > MAX_HASHES_PER_PACKET || b.length !== 5 + 12 + 4 * n + 8 * m) return undefined;
   return { t: 'batch', seq: dv.getUint32(1), packet: b.slice(5) };
 }
 

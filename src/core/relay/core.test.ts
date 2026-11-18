@@ -75,7 +75,7 @@ describe('RelayCore hello', () => {
   });
   it('rejects a version mismatch and closes', async () => {
     const h = harness();
-    await h.send('a', { t: 'hello', ver: 2, simVersion: SIM, resumeSession: 0 });
+    await h.send('a', { t: 'hello', ver: 1, simVersion: SIM, resumeSession: 0 });
     expect(h.last('a', 'error')).toMatchObject({
       code: ErrorCode.versionMismatch,
       detail: PROTOCOL_VERSION,

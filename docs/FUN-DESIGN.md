@@ -1720,3 +1720,9 @@ new baseline are in [BALANCE.md](BALANCE.md) "Arcade 2v2 tune". Not verified: a 
 and invulnerability were not changed.
 
 Update (SIM_VERSION 78): the 2v2 round median had slipped to 44.3 s at v77 (nightly band 50-85 s); `ARCADE_2V2_LIFE_SCALE_PM` = 1300 brings it to 62.2 s, see [BALANCE.md](BALANCE.md) "Arcade 2v2 round length".
+
+### 2.29 Run Away / Run Towards (Tab; layout only so far, SIM_VERSION 87)
+
+`Cmd.run` (bit 16, `CMD_MAX` 0x1ffff) is reserved for the Run key. This round only widens the command, the press buffer (`Press` bits move so
+`pressUsed` bit 10 is Run's) and adds `ArcadeT.dirRise`; there is no Run behaviour yet and no key is bound. Classic goldens change only in the header.
+Plan: `ideas/in-progress/run-away-run-towards.md`.

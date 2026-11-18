@@ -10,7 +10,7 @@ import { playReplay } from '../replay/player';
 import { validateReplay } from '../replay/validate';
 import { allocEntity, freeEntity } from './alloc';
 import { advanceGameClock, isArcade, isFrozen, now } from './clock';
-import { Cmd, inputMaskFor } from './commands';
+import { Cmd, CMD_MAX, inputMaskFor } from './commands';
 import { hash } from './hash';
 import { createMatch, type MatchSetup } from './match';
 import { skipIntro } from './systems/arcade/round-testkit';
@@ -36,7 +36,7 @@ describe('arcade state block', () => {
   it('is empty in Classic and ARCADE_LENGTH ints in Arcade', () => {
     expect(createMatch(CLASSIC).state.arcade.length).toBe(0);
     expect(createMatch(ARCADE).state.arcade.length).toBe(ARCADE_LENGTH);
-    expect(ARCADE_LENGTH).toBe(25 * MAX_ENTITIES + 23 * TEAM_COUNT + 38 + 4 * 7 + 10);
+    expect(ARCADE_LENGTH).toBe(27 * MAX_ENTITIES + 25 * TEAM_COUNT + 38 + 4 * 7 + 10);
   });
 
   it('has distinct field offsets that fit their strides (FUN-DESIGN 2.1 layout)', () => {
@@ -47,7 +47,7 @@ describe('arcade state block', () => {
     };
     check(ArcadeE, ARCADE_E);
     check(ArcadeT, ARCADE_T);
-    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(10);
+    expect(ArcadeT.lastDirPress - ArcadeT.pressTick).toBe(11);
     check(ArcadeW, ARCADE_W);
     expect(ARCADE_TEAM_BASE).toBe(ARCADE_E * MAX_ENTITIES);
     expect(ARCADE_WORLD_BASE).toBe(ARCADE_TEAM_BASE + ARCADE_T * TEAM_COUNT);
@@ -113,7 +113,7 @@ describe('game clock', () => {
       if (k === tickArray) want[World.tick] = 6;
       if (k === arcadeArray) {
         for (const i of [team(0, ArcadeT.prevCmd), team(1, ArcadeT.prevCmd), team(1, ArcadeT.pressTick)]) want[i] = a[i] ?? 0;
-        for (const t of [0, 1]) for (const f of [ArcadeT.lastDir, ArcadeT.lastDirPress]) want[team(t, f)] = a[team(t, f)] ?? 0;
+        for (const t of [0, 1]) for (const f of [ArcadeT.lastDir, ArcadeT.lastDirPress, ArcadeT.dirRise]) want[team(t, f)] = a[team(t, f)] ?? 0;
       }
       expect(Array.from(a)).toEqual(want);
     });
@@ -236,7 +236,7 @@ describe('an Arcade match is Classic shifted by its freezes', () => {
 
   it('property: random setups, all 16 command bits, one freeze anywhere', () => {
     let hits = 0;
-    const cmd = fc.integer({ min: 0, max: 0xffff });
+    const cmd = fc.integer({ min: 0, max: CMD_MAX });
     const race = fc.constantFrom(...LEGACY_CHARACTERS.map((c) => c.id));
     /** Held-key runs, like a player, so buffs, freezes and swaps play out over several hundred ticks. */
     const sticky = fc
@@ -333,8 +333,8 @@ describe('Arcade snapshot and replay', () => {
 });
 
 describe('inputMaskFor', () => {
-  it('Classic accepts bits 0..10; Arcade adds dash, guard, super, weather and charge (11..15)', () => {
+  it('Classic accepts bits 0..10; Arcade adds dash, guard, super, weather, charge and run (11..16)', () => {
     expect(inputMaskFor(DEFAULT_SIM_FLAGS)).toBe(0x7ff);
-    expect(inputMaskFor(ARCADE.flags)).toBe(0xffff);
+    expect(inputMaskFor(ARCADE.flags)).toBe(0x1ffff);
   });
 });

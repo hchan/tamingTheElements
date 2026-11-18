@@ -592,7 +592,7 @@ describe('OnlineClient', () => {
 
   it('version mismatch: update needed, no retry', async () => {
     const h = new Harness();
-    h.svc.serverVer = 2;
+    h.svc.serverVer = 3;
     const { c } = h.client();
     const [r] = await Promise.all([c.connect(), h.flush()]);
     expect(r).toEqual({ ok: false, failure: { kind: 'update-needed' } });

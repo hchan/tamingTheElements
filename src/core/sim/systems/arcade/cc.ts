@@ -14,7 +14,7 @@ import type { SimWorld } from '../../world';
 import { cleanseSlows } from '../debuffs';
 import { controlledId } from '../movement';
 import { StatusField, StatusId, removeStatus, statusBase, statusSlot } from '../status';
-import { Press, pending, pressAge, usePress } from './buffer';
+import { PRESS_COUNT, Press, pending, pressAge, usePress } from './buffer';
 import { ccHeld, ccLevel, ccOn, isChilled } from './cc-state';
 import { endCharge } from './charge-move';
 
@@ -232,7 +232,7 @@ export function ccSystem(world: SimWorld, _cmds: unknown, sink: EventSink): void
       const team = s.team[id] ?? 0;
       const start = s.status[b + StatusField.start] ?? 0;
       if (sid === StatusId.dazed && controlledId(world, team) === id) {
-        for (let k = 0; k <= Press.cleanse; k++) {
+        for (let k = 0; k < PRESS_COUNT; k++) {
           if (pressAge(s, team, k) !== 0 || !pending(s, team, k)) continue;
           const expire = s.status[b + StatusField.expire] ?? 0;
           const take = Math.min(DAZE_MASH_TICKS, Math.max(0, expire - (start + DAZE_MIN_TICKS)));

@@ -185,13 +185,13 @@ function maxFrameSize(name: FrameName): number {
   return fixedSize(FIXED[name] ?? []);
 }
 
-/** Validates a BATCH payload exactly as `decodePacket` does (12 + 2n + 8m bytes, n <= 64, m <= 4) without interpreting inputs. */
+/** Validates a BATCH payload exactly as `decodePacket` does (12 + 4n + 8m bytes, n <= 64, m <= 4) without interpreting inputs. */
 function batchLengthOk(p: Uint8Array): boolean {
   if (p.length < 12) return false;
   const n = p[10] as number;
-  if (n > MAX_INPUTS_PER_BATCH || p.length < 12 + 2 * n) return false;
-  const m = p[11 + 2 * n] as number;
-  return m <= MAX_HASHES_PER_BATCH && p.length === 12 + 2 * n + 8 * m;
+  if (n > MAX_INPUTS_PER_BATCH || p.length < 12 + 4 * n) return false;
+  const m = p[11 + 4 * n] as number;
+  return m <= MAX_HASHES_PER_BATCH && p.length === 12 + 4 * n + 8 * m;
 }
 
 function readCode(dv: DataView, at: number): string | undefined {

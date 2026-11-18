@@ -132,7 +132,7 @@ async function matched(c: Ctx): Promise<[Peer, Peer, Rx<'matchStart'>, Rx<'match
   return [a, b, ma, mb, [wa.frame.sessionId, wb.frame.sessionId]];
 }
 const batchPacket = (match: number, tick: number): Uint8Array =>
-  fromHex(`${match.toString(16).padStart(2, '0')} 00 00000000 ${tick.toString(16).padStart(8, '0')} 01 0001 00`);
+  fromHex(`${match.toString(16).padStart(2, '0')} 00 00000000 ${tick.toString(16).padStart(8, '0')} 01 00000001 00`);
 const batchFrame = (seq: number, match: number): Frame => ({ t: 'batch', seq, match, packet: batchPacket(match, seq) });
 
 function testCase(
@@ -237,7 +237,7 @@ const frames: ConformanceCase[] = [
   malformed('wrong-direction', 'a server-to-client type from a client is bad-frame (PONG)', () => bytes(0x61, 0, 0, 0, 1), ErrorCode.badFrame),
   malformed('room-code-chars', 'a ROOM_JOIN code with control bytes is bad-frame', () => bytes(0x22, 0, 0, 0, 0, 0, 0), ErrorCode.badFrame),
   malformed('batch-layout', 'a BATCH whose Packet length disagrees with its counts is bad-frame', () => bytes(0x40, 0, 0, 0, 0, ...fromHex('01 00 00000000 00000000 05 0000 00')), ErrorCode.badFrame),
-  malformed('batch-too-big', 'a BATCH over 177 bytes is too-big and close 4002', () => zeros(0x40, 178), ErrorCode.tooBig),
+  malformed('batch-too-big', 'a BATCH over 305 bytes is too-big and close 4002', () => zeros(0x40, 306), ErrorCode.tooBig),
   malformed('setup-too-big', 'a SETUP over 410 bytes is too-big and close 4002', () => zeros(0x31, 411), ErrorCode.tooBig),
   malformed('fixed-too-big', 'a fixed frame over its cap is too-big (PING with 6 bytes)', () => bytes(0x60, 0, 0, 0, 0, 0), ErrorCode.tooBig),
   testCase('malformed.text', '1,5', 'a TEXT frame is ERROR bad-frame and close 4001', async (c) => {

@@ -10,11 +10,11 @@ import { createMatch, type MatchSetup } from '../../match';
 import { skipIntro } from './round-testkit';
 import { createSnapshotBuf, restore, snapshot } from '../../snapshot';
 import {
-  ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, World,
+  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, World,
 } from '../../state';
 import { step } from '../../step';
 import type { SimWorld } from '../../world';
-import { bufferedCmd, CHORD_FLAG, Press, pressAge, recordPresses, usePress } from './buffer';
+import { bufferedCmd, CHORD_FLAG, PRESS_BITS, PRESS_COUNT, Press, pressAge, recordPresses, usePress } from './buffer';
 
 const P = Cmd.primary;
 const S = Cmd.secondary;
@@ -239,5 +239,44 @@ describe('buffer state is world state', () => {
     expect(a).toHaveLength(1);
     expect(hash(copy.state)).toBe(hash(s));
     expect(ArcadeT.pressUsed).toBeLessThan(ARCADE_T);
+  });
+});
+
+describe('run layout (FUN-DESIGN 2.29, layout only)', () => {
+  it('has 11 presses with run last on bit 16, and the team block fits dirRise', () => {
+    expect(PRESS_COUNT).toBe(11);
+    expect(PRESS_BITS).toHaveLength(PRESS_COUNT);
+    expect([Press.run, PRESS_BITS[Press.run]]).toEqual([10, Cmd.run]);
+    expect(Cmd.run).toBe(1 << 16);
+    expect(ArcadeT.pressTick + PRESS_COUNT).toBeLessThanOrEqual(ArcadeT.lastDirPress);
+    expect([ARCADE_E, ARCADE_T, ArcadeE.runReadyAt, ArcadeT.dirRise]).toEqual([27, 25, 26, 18]);
+    expect(CHORD_FLAG).toBe(1 << 15);
+    expect(CHORD_FLAG >> PRESS_COUNT).toBeGreaterThan(0);
+  });
+
+  it('a Run press is recorded and never replayed into the command; a direction edge sets dirRise', () => {
+    const world = duel();
+    const s = world.state;
+    const g = now(s);
+    recordPresses(s, [Cmd.run, 0]);
+    expect(pressAge(s, 0, Press.run)).toBe(0);
+    expect(bufferedCmd(s, 0, 0)).toBe(0);
+    expect(s.arcade[team0(ArcadeT.dirRise)]).toBe(0);
+    recordPresses(s, [Cmd.run | Cmd.left, 0]);
+    expect(s.arcade[team0(ArcadeT.dirRise)]).toBe(g + 1);
+    recordPresses(s, [Cmd.run | Cmd.left | Cmd.up, 0]);
+    expect(s.arcade[team0(ArcadeT.dirRise)]).toBe(g + 1);
+    usePress(s, 0, Press.run);
+    expect(pressAge(s, 0, Press.run)).toBe(0);
+    expect((s.arcade[team0(ArcadeT.pressUsed)] ?? 0) & (1 << Press.run)).not.toBe(0);
+  });
+
+  it('bit 16 is masked off in Classic and reaches prevCmd in Arcade', () => {
+    const c = duel(false);
+    step(c, [Cmd.run, 0]);
+    expect(c.state.arcade).toHaveLength(0);
+    const a = duel();
+    recordPresses(a.state, [Cmd.run, 0]);
+    expect(a.state.arcade[team0(ArcadeT.prevCmd)]).toBe(Cmd.run);
   });
 });

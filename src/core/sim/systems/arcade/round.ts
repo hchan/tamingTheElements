@@ -76,7 +76,7 @@ function resetRound(world: SimWorld, sink: EventSink): void {
     // The input buffer forgets the last round's presses (press ticks, used flags, direction presses); `prevCmd` stays,
     // so a button held across the reset is no new press.
     const b = ARCADE_TEAM_BASE + team * ARCADE_T;
-    s.arcade.fill(0, b + ArcadeT.pressTick, b + ArcadeT.lastDir + 1);
+    s.arcade.fill(0, b + ArcadeT.pressTick, b + ArcadeT.dirRise + 1);
     s.arcade[b + ArcadeT.pressUsed] = 0;
     s.arcade[b + ArcadeT.weatherCharge] = 0;
     s.arcade[b + ArcadeT.inPatch] = 0;

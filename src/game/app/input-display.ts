@@ -2,11 +2,11 @@ import { el } from '@ui/dom';
 
 /**
  * Input display for the replay viewer: the recent commands of both fighters as direction plus button chips. Pure
- * presentation over the recorded u16 streams (the bit layout is `Cmd` in src/core/sim/commands.ts, pinned by a test);
+ * presentation over the recorded command streams (the bit layout is `Cmd` in src/core/sim/commands.ts, pinned by a test);
  * it never touches the sim.
  */
 
-/** A run-length coded u16 stream, `[value, count, ...]` (the replay file's `inputs` entries). */
+/** A run-length coded command stream, `[value, count, ...]` (the replay file's `inputs` entries). */
 type Rle = readonly number[];
 
 const UP = 1;
@@ -28,6 +28,7 @@ export const INPUT_BUTTONS: readonly { readonly bit: number; readonly label: str
   { bit: 1 << 13, label: 'U', name: 'super' },
   { bit: 1 << 14, label: 'W', name: 'weather' },
   { bit: 1 << 15, label: 'C', name: 'charge' },
+  { bit: 1 << 16, label: 'R', name: 'run' },
 ];
 
 const ARROWS: Record<string, readonly [string, string]> = {

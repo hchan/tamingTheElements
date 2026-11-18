@@ -4,7 +4,7 @@ Groundwork for player-vs-player. No real network code exists yet: the pure proto
 
 ## Design
 
-**Lockstep now, rollback next.** The sim is a deterministic 50 Hz function of `(state, [cmd0, cmd1])`, and a `Command` is 2 bytes, so only inputs travel, never state.
+**Lockstep now, rollback next.** The sim is a deterministic 50 Hz function of `(state, [cmd0, cmd1])`, and a `Command` is 4 bytes on the wire (17 bits), so only inputs travel, never state.
 
 - `Transport` (`src/core/net/transport.ts`): `send(bytes)` / `receive()`. Contract is an unreliable, unordered datagram pipe (loss, duplication, reordering, delay all allowed).
 - `LockstepSession` (`src/core/net/session.ts`): the host calls `update(localCommand)` once per wall tick.
@@ -16,7 +16,7 @@ Groundwork for player-vs-player. No real network code exists yet: the pure proto
 - Time is counted in `update` calls, never read from a clock. `timeoutTicks` (250 = 5 s) without any packet forfeits the peer (`forfeitReason: 'timeout'`, we win); `forfeit()` concedes explicitly.
 - **Hidden-tab policy.** On `visibilitychange` the host calls `setHidden(true)`, which sends a packet with the `paused` flag at once, then stops updating (browsers throttle hidden timers). The peer shows `remote-paused` and uses `pauseTimeoutTicks` (1500 = 30 s) instead. On return the host calls `setHidden(false)` and keeps updating; the buffered inputs let both catch up. After the grace period the peer forfeits the hidden player.
 - Bots/agents may run on a peer's own copy of the shared world: `SimState` is mutated only by `step`, and an agent keeps its random stream (`AgentRng`, `seedSfc32(seed, 'ai.p1' | 'ai.p2')`) and memory to itself, so consulting it never changes the hash. Only the commands it returns travel. `src/testing/net/lockstep.test.ts` plays a live bot on one peer and checks every checkpoint.
-- Wire format: `src/core/net/packet.ts` (`match u8, flags u8, ack u32, firstTick u32, n u8, n*u16 inputs, m u8, m*(tick u32, hash u32)`), about 20 bytes in steady state.
+- Wire format: `src/core/net/packet.ts` (`match u8, flags u8, ack u32, firstTick u32, n u8, n*u32 inputs, m u8, m*(tick u32, hash u32)`), about 20 bytes in steady state.
 
 ## Rollback (the online default, `LockstepOptions.rollbackWindow`)
 

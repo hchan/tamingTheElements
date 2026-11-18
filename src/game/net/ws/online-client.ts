@@ -5,7 +5,7 @@ import { WebSocketTransport, type SocketLike } from './transport';
 import { decodeFrame } from './wire';
 
 /** Client of the relay service (docs/ONLINE-PROTOCOL.md section 3, 5, 7; docs/ONLINE-CLIENT.md). Network and clock are injected; nothing here throws. */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 export const PING_MS = 2000;
 /** [choice] Wait for WELCOME this long. */
 export const HELLO_TIMEOUT_MS = 10_000;

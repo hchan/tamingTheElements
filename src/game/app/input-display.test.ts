@@ -24,7 +24,7 @@ describe('describeCommand', () => {
   });
 
   it('keeps the button table in step with Cmd and never uses the retired words', () => {
-    const bits = [Cmd.primary, Cmd.secondary, Cmd.capture, Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4, Cmd.dash, Cmd.guard, Cmd.super, Cmd.weather, Cmd.charge];
+    const bits = [Cmd.primary, Cmd.secondary, Cmd.capture, Cmd.swap1, Cmd.swap2, Cmd.swap3, Cmd.swap4, Cmd.dash, Cmd.guard, Cmd.super, Cmd.weather, Cmd.charge, Cmd.run];
     expect(INPUT_BUTTONS.map((b) => b.bit)).toEqual(bits);
     expect(new Set(INPUT_BUTTONS.map((b) => b.label)).size).toBe(INPUT_BUTTONS.length);
     expect(INPUT_BUTTONS.map((b) => b.name).join(' ')).not.toMatch(/classic|arcade|ruleset|capture/i);

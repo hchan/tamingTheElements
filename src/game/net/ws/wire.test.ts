@@ -40,8 +40,8 @@ describe('ws wire', () => {
     expect(encodeFrame({ t: 'result', seq: 0, matchId: 0, winner: 0, reason: 0, ticks: 0, finalHash: 0 })).toHaveLength(16);
     expect(encodeFrame({ t: 'error', code: 1, retryAfterSec: 0, detail: 0 })).toHaveLength(7);
     expect(encodeFrame({ t: 'ping', nonce: 1 })[0]).toBe(FrameType.ping);
-    expect(MAX_BATCH_BYTES).toBe(177);
-    expect(encodeFrame({ t: 'batch', seq: 1, packet: packet(MAX_INPUTS_PER_PACKET, MAX_HASHES_PER_PACKET) })).toHaveLength(177);
+    expect(MAX_BATCH_BYTES).toBe(305);
+    expect(encodeFrame({ t: 'batch', seq: 1, packet: packet(MAX_INPUTS_PER_PACKET, MAX_HASHES_PER_PACKET) })).toHaveLength(305);
   });
 
   it('rejects malformed frames without throwing', () => {
@@ -57,7 +57,7 @@ describe('ws wire', () => {
       new Uint8Array([...encodeFrame({ t: 'pong', nonce: 1 }), 0]),
     ];
     // nInputs above the cap, with a body long enough to fool a length-only check
-    const big = new Uint8Array(5 + 12 + 2 * 65 + 1);
+    const big = new Uint8Array(5 + 12 + 4 * 65 + 1);
     big[0] = FrameType.batch;
     big[5 + 10] = 65;
     bad.push(big);

@@ -107,3 +107,9 @@ export const TRAP_DESCRIPTIONS: readonly string[] = [
   'Plants a spike ahead that stabs a foe who steps on it, stunning longer than a normal hit.',
   'Plants a gust ahead that shoves a foe who steps near it far away. Fire burns it.',
 ];
+
+/** Run Away (a ranged hero) and Run Towards (a melee hero), FUN-DESIGN 2.29: display strings only, the sim never reads them. */
+export const RUN_AWAY_NAME = 'Run Away';
+export const RUN_TOWARDS_NAME = 'Run Towards';
+export const RUN_AWAY_DESCRIPTION = 'Runs away from the foe for 5 s, still facing it. Move to stop early. Ready again 7 s after the run ends.';
+export const RUN_TOWARDS_DESCRIPTION = 'Runs at the foe for 5 s and sticks to it. Move to stop early. Ready again 7 s after the run ends.';

@@ -1,4 +1,6 @@
-/** Run-length coding of a u16 input stream as a flat `[value, count, value, count, ...]` array. */
+import { CMD_MAX } from '../sim/commands';
+
+/** Run-length coding of a 17-bit command stream as a flat `[value, count, value, count, ...]` array. */
 export type Rle = readonly number[];
 
 export function rleEncode(values: readonly number[]): number[] {
@@ -17,7 +19,7 @@ export function rleDecode(rle: Rle): number[] {
   for (let i = 0; i < rle.length; i += 2) {
     const v = rle[i] as number;
     const n = rle[i + 1] as number;
-    if (!Number.isInteger(v) || v < 0 || v > 0xffff) throw new RangeError(`rle value out of u16 range: ${String(v)}`);
+    if (!Number.isInteger(v) || v < 0 || v > CMD_MAX) throw new RangeError(`rle value out of command range: ${String(v)}`);
     if (!Number.isInteger(n) || n < 1) throw new RangeError(`rle run length invalid: ${String(n)}`);
     for (let k = 0; k < n; k++) out.push(v);
   }
