@@ -1,6 +1,6 @@
 /**
  * Lane stagger for the floating call-outs over a fighter (qa-r29: ROOTED, FREE, COUNTER, HEAL, SNAG and the damage numbers
- * all started on the same spot and read as one smear). A new pop lifts by one lane for each pop still live near it. Pure.
+ * all started on the same spot and read as one smear). A new pop takes the lowest lane no live pop near it occupies. Pure.
  */
 export const POP_LANE_PX = 22;
 /** Two pops are "near" when their anchors are within this box (px). */
@@ -40,12 +40,29 @@ export function popCeil(rects: readonly (readonly RectLike[])[] | undefined, x0:
 
 export interface LivePop {
   readonly x: number;
+  /** Where the pop is drawn from; its lane lift (below) is taken off this when given. */
   readonly y: number;
+  /** Extra lift (px) the pop already has on top of `y`, for callers that keep the base y apart. */
+  readonly lift?: number;
 }
 
-/** The extra lift (px, >= 0) for a pop starting at (`x`, `y`) while `live` pops are up. */
+/**
+ * The extra lift (px, >= 0) for a pop starting at (`x`, `y`) while `live` pops are up: the lowest free lane (0..POP_MAX_LANES),
+ * where a lane is taken when a nearby live pop is drawn within half a lane of it (a lane freed under a live pop is reused).
+ * With every lane taken the pop goes to the top lane.
+ */
 export function popLaneLift(live: readonly LivePop[], x: number, y: number): number {
-  let n = 0;
-  for (const p of live) if (Math.abs(p.x - x) < POP_NEAR_X && Math.abs(p.y - y) < POP_NEAR_Y) n++;
-  return Math.min(n, POP_MAX_LANES) * POP_LANE_PX;
+  for (let lane = 0; lane < POP_MAX_LANES; lane++) {
+    const ly = y - lane * POP_LANE_PX;
+    let taken = false;
+    for (const p of live) {
+      const py = p.y - (p.lift ?? 0);
+      if (Math.abs(p.x - x) < POP_NEAR_X && Math.abs(py - y) < POP_NEAR_Y && Math.abs(py - ly) < POP_LANE_PX / 2) {
+        taken = true;
+        break;
+      }
+    }
+    if (!taken) return lane * POP_LANE_PX;
+  }
+  return POP_MAX_LANES * POP_LANE_PX;
 }

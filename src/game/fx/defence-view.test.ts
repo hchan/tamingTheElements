@@ -351,6 +351,56 @@ describe('defence view: call-outs stay clear of the white pops', () => {
   });
 });
 
+describe('defence view: call-out easing, reduced motion and dimming', () => {
+  const rooted = (m: ReturnType<typeof mount>, tick: number): void => {
+    m.feed(tick, [ev(SimEventKind.snag, tick, 0, { id: 1, reason: SnagEvent.rooted })]);
+  };
+  const word = (m: ReturnType<typeof mount>, w: string): ReturnType<typeof mount>['made'][number] => {
+    const t = m.made.find((o) => o.kind === 'text' && o.text === w);
+    if (!t) throw new Error('no ' + w);
+    return t;
+  };
+  it('snaps on the spawn frame, then a lift that appears later eases up over several frames', () => {
+    const m = mount();
+    rooted(m, 100);
+    m.frame();
+    const y0 = word(m, ROOTED_WORD).y;
+    m.reg.set(POP_RECTS_KEY, [{ x: 600, y: y0 - 60, w: 400, h: 80 }]);
+    m.frame();
+    const y1 = word(m, ROOTED_WORD).y;
+    expect(y1).toBeLessThan(y0);
+    for (let k = 0; k < 8; k++) m.frame();
+    const y2 = word(m, ROOTED_WORD).y;
+    expect(y2).toBeLessThan(y1);
+    expect(Math.abs(y2 - (y0 - 68))).toBeLessThan(3);
+  });
+  it('reduced motion: a later gold pop dims a placed call-out and does not move it', () => {
+    const m = mount(true);
+    rooted(m, 100);
+    m.frame();
+    const t = word(m, ROOTED_WORD);
+    const y0 = t.y;
+    const x0 = t.x;
+    m.reg.set(POP_RECTS_KEY, [{ x: x0 - 60, y: y0 - 40, w: 120, h: 50 }]);
+    m.frame();
+    m.frame();
+    expect(t.y).toBe(y0);
+    expect(t.x).toBe(x0);
+    expect(t.alpha).toBeLessThanOrEqual(0.4);
+  });
+  it('a new round clears the eased state: the next call-out starts at its natural spot', () => {
+    const m = mount();
+    m.reg.set(POP_RECTS_KEY, [{ x: 600, y: 100, w: 400, h: 80 }]);
+    rooted(m, 100);
+    m.frame();
+    m.reg.set(POP_RECTS_KEY, []);
+    m.feed(200, [ev(SimEventKind.roundStarted, 200, 0)]);
+    rooted(m, 200);
+    m.frame();
+    expect(word(m, ROOTED_WORD).y).toBeCloseTo(150, 0);
+  });
+});
+
 describe('defence view: teardown', () => {
   for (const how of ['shutdown', 'destroy']) {
     it(`leaves no listener and no object after the Arena's ${how}`, () => {

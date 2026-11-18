@@ -6,16 +6,22 @@ describe('popLaneLift', () => {
   it('does not lift the first pop', () => {
     expect(popLaneLift([], 100, 100)).toBe(0);
   });
-  it('lifts one lane per live pop nearby', () => {
+  it('takes the next lane up for each lane a nearby live pop occupies', () => {
     expect(popLaneLift([{ x: 100, y: 100 }], 110, 95)).toBe(POP_LANE_PX);
-    expect(popLaneLift([{ x: 100, y: 100 }, { x: 105, y: 90 }], 100, 100)).toBe(2 * POP_LANE_PX);
+    expect(popLaneLift([{ x: 100, y: 100 }, { x: 105, y: 100 - POP_LANE_PX }], 100, 100)).toBe(2 * POP_LANE_PX);
+  });
+  it('reads a pop base y plus its lift as where it is drawn', () => {
+    expect(popLaneLift([{ x: 100, y: 100, lift: POP_LANE_PX }], 100, 100)).toBe(0);
+  });
+  it('reuses a freed lane 0 while lane 1 is still taken', () => {
+    expect(popLaneLift([{ x: 100, y: 100 - POP_LANE_PX }], 100, 100)).toBe(0);
+  });
+  it('takes the top lane when every lane is taken', () => {
+    const live = [0, 1, 2, 3].map((k) => ({ x: 100, y: 100 - k * POP_LANE_PX }));
+    expect(popLaneLift(live, 100, 100)).toBe(POP_MAX_LANES * POP_LANE_PX);
   });
   it('ignores pops over the other fighter', () => {
     expect(popLaneLift([{ x: 700, y: 100 }], 100, 100)).toBe(0);
-  });
-  it('caps the lift', () => {
-    const live = Array.from({ length: 8 }, () => ({ x: 100, y: 100 }));
-    expect(popLaneLift(live, 100, 100)).toBe(POP_MAX_LANES * POP_LANE_PX);
   });
   it('starts a call-out clear of the damage number on the same fighter', () => {
     // The damage number is about 34 px tall at the fighter's top; the call-out clears it.
