@@ -1,3 +1,8 @@
+---
+status: idea
+added: 2026-11-18
+---
+
 # Run AI balance follow-up (after RUN-3)
 
 The AI now uses Run Away / Run Towards (SIM_VERSION 89). With the AI's Run disabled the compares matched the old baselines exactly, so every shift comes from the AI using Run.
