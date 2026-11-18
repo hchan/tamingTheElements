@@ -140,6 +140,7 @@ export default tseslint.config(
   {
     ignores: [
       '.claude/**',
+      '.scratch/**',
       '**/dist/**',
       'dist-pages/**',
       'dist-itch/**',
