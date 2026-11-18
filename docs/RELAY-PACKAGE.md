@@ -64,7 +64,7 @@ has no dependencies.
 
 - `src/core/relay` is exempt from the "no async/await" lint rule only (`eslint.config.js`); every determinism ban stays on, and
   `tests/repo/relay-package.test.ts` fails if the rest of `src/core` imports it.
-- `tools/signal-relay/rooms.ts` (WebRTC signalling) imports the room-code rules from `src/core/relay/rooms-rules.ts`: one copy.
+- `src/core/relay/rooms-rules.ts` is the package's own copy of the room-code rules. The WebRTC signalling relay (`tools/signal-relay/rooms.ts`) keeps its own and does not import the package; `tests/repo/room-code-rules-drift.test.ts` fails if they differ.
 
 ## Behaviour of the 0.1.0 fix round (WP-ONLINE-FIX-RELAY)
 

@@ -226,8 +226,7 @@ sequenceDiagram
 ```
 
 Room rules [fact: `src/core/relay/rooms-rules.ts`]: 6 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0, O, 1, I), life 10 minutes, at most 2000
-rooms in one store (a host adapter may set its own cap [estimate]), codes upper-cased before lookup. The code rules are one copy shared with the WebRTC
-signalling relay. A connection that is already queued or in a room gets ERROR `busy`.
+rooms in one store (a host adapter may set its own cap [estimate]), codes upper-cased before lookup. The WebRTC signalling relay keeps its own copy (`tools/signal-relay/rooms.ts`); `tests/repo/room-code-rules-drift.test.ts` keeps the two equal [fact]. A connection that is already queued or in a room gets ERROR `busy`.
 
 ## 7. Match lifecycle
 

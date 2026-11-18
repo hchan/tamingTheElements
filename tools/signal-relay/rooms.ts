@@ -5,11 +5,12 @@
  * string of code characters); gameplay never travels here and nothing is stored once a room is gone.
  */
 
-import { CODE_ALPHABET, CODE_LENGTH, generateRoomCode, MAX_ROOMS, ROOM_TTL_MS } from '../../src/core/relay/rooms-rules';
-
-// One copy of the room-code rules lives in src/core/relay/rooms-rules.ts.
-export { CODE_ALPHABET, CODE_LENGTH, MAX_ROOMS, ROOM_TTL_MS };
+export const ROOM_TTL_MS = 10 * 60_000;
 export const MAX_SIG_CHARS = 8192;
+export const MAX_ROOMS = 2000;
+/** No 0/O/1/I: a code read aloud or from a phone screen. */
+export const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const CODE_LENGTH = 6;
 
 export type ClientMsg = { t: 'host' } | { t: 'join'; code: string } | { t: 'sig'; data: string };
 export type ErrorReason = 'bad-message' | 'too-big' | 'busy' | 'no-room' | 'full' | 'full-house';
@@ -152,7 +153,8 @@ export class Rooms {
 
   private freshCode(): string {
     for (;;) {
-      const code = generateRoomCode(this.deps.randomInt);
+      let code = '';
+      for (let i = 0; i < CODE_LENGTH; i++) code += CODE_ALPHABET[this.deps.randomInt(CODE_ALPHABET.length)] ?? 'A';
       if (!this.rooms.has(code)) return code;
     }
   }
