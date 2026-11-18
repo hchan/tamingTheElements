@@ -359,6 +359,8 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
   let lastTick = -1;
   let sub = 0;
   let lifted: Phaser.GameObjects.Image | undefined;
+  /** Foes the band crosses are lifted over it too (undimmed, so the target stays readable); their depth is put back on stop. */
+  let liftedFoes: { img: Phaser.GameObjects.Image; depth: number }[] = [];
   let running = false;
 
   /** Zooms the camera by `z` about (px, py) over the pan framing (arena-pan.ts; pinned it is viewport.ts `fitScene`). */
@@ -375,11 +377,13 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
     scene.registry.set('tte.cut', false);
     if (live) {
       lifted?.setDepth(0);
+      for (const f of liftedFoes) f.img.setDepth(f.depth);
       for (const o of all) o.setVisible(false);
       holdCamera(scene, false);
       aim(1);
     }
     lifted = undefined;
+    liftedFoes = [];
   };
   function update(_time: number, delta: number): void {
     const t = tick();
@@ -538,6 +542,13 @@ function createRunner(scene: Phaser.Scene, tick: () => number, paused: () => boo
       scene.registry.set('tte.band', bandHidesWeather(bandY, bandK));
       scene.registry.set('tte.cut', true);
       // Over the band, rules and glow (under the text) when the band must cross the caster; else just over the dim.
+      liftedFoes = [];
+      spans.forEach((sp, i) => {
+        const t = tracked[i];
+        if (i === 0 || !t || !(slot.y + ext > sp.top && slot.y - ext < sp.bottom)) return;
+        liftedFoes.push({ img: t.img, depth: t.img.depth });
+        t.img.setDepth(DIM_DEPTH + 2.9);
+      });
       lifted = img.setDepth(crosses ? DIM_DEPTH + 2.9 : DIM_DEPTH + 1);
       running = true;
       holdCamera(scene, true);
