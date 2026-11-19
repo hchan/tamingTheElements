@@ -5,6 +5,7 @@ import { buildSpec, limitsOf, newId, parseArgs, pickLane, policyOf, redact, repe
 import type { PcView } from '../../tools/ci/pc-decide';
 import { renderJob } from '../../tools/ci/pc-job';
 import type { Remote } from '../../tools/ci/pc-remote';
+import { CtlError, type QueueClient } from '../../tools/gpu-queue/client';
 
 const FAKE = resolve('tests/repo/fixtures/fake-ssh.sh');
 const P = (...a: string[]): Parsed => parseArgs(a);
@@ -454,6 +455,133 @@ describe('runPc against the fake ssh', () => {
       const io = fakeIo([DOWN, UP], [1]);
       expect(await runRouted(P('run'), {}, root, deps(okBody), io)).toBe(1);
       expect(io.noted).toEqual([]);
+    });
+
+    describe('queue path (TTE_E2E_VIA_QUEUE=1)', () => {
+      const ENV = { TTE_E2E_VIA_QUEUE: '1', TTE_JOBS_TOKEN: 'tok-secret-1234' };
+      interface FQ extends QueueClient {
+        submits: string[];
+        cancels: string[];
+      }
+      const fakeQueue = (o: { caps?: boolean; rc?: number; waitThrows?: number; fetchFails?: boolean } = {}): FQ => {
+        const q: FQ = {
+          submits: [],
+          cancels: [],
+          caps: () => Promise.resolve(o.caps ?? true),
+          submitRaw: (lane, id) => {
+            q.submits.push(`${lane}:${id}`);
+            return Promise.resolve(`raw-${id}`);
+          },
+          waitRaw: () => (o.waitThrows ? Promise.reject(new CtlError('PC unreachable (ssh failed)', o.waitThrows)) : Promise.resolve(o.rc ?? 0)),
+          fetchRaw: (_id, dest) => {
+            if (o.fetchFails) return Promise.reject(new CtlError('could not unpack the results', 1));
+            mkdirSync(dest, { recursive: true });
+            writeFileSync(join(dest, 'results.json'), '{"stats":{"expected":5,"unexpected":0,"flaky":0,"skipped":0,"duration":2000},"suites":[]}');
+            writeFileSync(join(dest, 'status.json'), `{"state":"done","rc":${String(o.rc ?? 0)},"queueSec":3}`);
+            return Promise.resolve();
+          },
+          cancelRaw: (id) => {
+            q.cancels.push(id);
+            return Promise.resolve();
+          },
+        };
+        return q;
+      };
+      const run = async (args: string[], q: FQ, env: Record<string, string> = ENV, d0: Partial<Deps> = {}) => {
+        const io = fakeIo([UP]);
+        const err = sink();
+        const out = sink();
+        const code = await runRouted(P(...args), env, root, { ...deps(okBody, out, err), queue: q, ...d0 }, io);
+        return { code, io, err, out };
+      };
+
+      it('flag off with --full: the old path, the queue is never touched', async () => {
+        const q = fakeQueue();
+        const { code, io } = await run(['run', '--full'], q, {});
+        expect(code).toBe(0);
+        expect(q.submits).toEqual([]);
+        expect(io.noted).toEqual([0]);
+      });
+
+      it('flag on but a short run: the old path', async () => {
+        const q = fakeQueue();
+        const { code, io } = await run(['run', 'a.spec.ts'], q);
+        expect(code).toBe(0);
+        expect(q.submits).toEqual([]);
+        expect(io.noted).toEqual([0]);
+      });
+
+      it('flag on, full run: one cpu-full submit, no probe, no Mac, grep-able last line, report printed', async () => {
+        const q = fakeQueue();
+        let probes = 0;
+        const io = fakeIo([UP]);
+        io.probe = () => {
+          probes++;
+          return Promise.resolve(UP);
+        };
+        const err = sink();
+        const out = sink();
+        expect(await runRouted(P('run', '--full'), ENV, root, { ...deps(okBody, out, err), queue: q }, io)).toBe(0);
+        expect(q.submits).toHaveLength(1);
+        expect(q.submits[0]).toMatch(/^cpu-full:\d{8}-\d{6}-full-[0-9a-f]{6}$/);
+        expect(probes).toBe(0);
+        expect(io.macRuns).toEqual([]);
+        expect(ranOn(err)).toMatch(/^PC \(queue job raw-\d{8}-\d{6}-full-[0-9a-f]{6}, full lane\) -> exit 0$/);
+        expect(out.text()).toMatch(/5 passed, 0 failed, 0 skipped, 2s \(queue 3s\)/);
+        expect(`${out.text()}${err.text()}`).not.toContain('tok-secret');
+      });
+
+      it('a count over 150 tests picks the full lane and the queue', async () => {
+        const q = fakeQueue();
+        await run(['run'], q, ENV, { count: () => 200 });
+        expect(q.submits).toHaveLength(1);
+      });
+
+      it.each([1, 92, 95, 96, 98, 99, 124, 143, 93])('job rc %i is final: one submit, never the Mac (even with TTE_ALLOW_MAC_E2E=1)', async (rc) => {
+        const q = fakeQueue({ rc });
+        const { code, io } = await run(['run', '--full'], q, { ...ENV, TTE_ALLOW_MAC_E2E: '1' });
+        expect(code).toBe(rc);
+        expect(q.submits).toHaveLength(1);
+        expect(io.macRuns).toEqual([]);
+      });
+
+      it('wait failing with ssh down gives 94 and no Mac run', async () => {
+        const q = fakeQueue({ waitThrows: 94 });
+        const { code, io } = await run(['run', '--full'], q);
+        expect(code).toBe(94);
+        expect(q.submits).toHaveLength(1);
+        expect(io.macRuns).toEqual([]);
+      });
+
+      it('failures before anything runs: 94 caps ssh failure, 97 no token, 2 over the cap; no Mac, no submit', async () => {
+        const bundle = (_c: string, _i: string, o: { outDir: string }): { sha: string; bytes: number } => {
+          writeFileSync(join(o.outDir, 'src.bundle'), Buffer.alloc(2 * 1048576));
+          return { sha: 'abcdef0123456789', bytes: 0 };
+        };
+        const cases: [Record<string, string>, FQ, Partial<Deps>, number][] = [
+          [ENV, fakeQueue({ caps: false }), {}, 94],
+          [{ TTE_E2E_VIA_QUEUE: '1', TTE_JOBS_CONFIG_DIR: join(root, 'no-config') }, fakeQueue(), {}, 97],
+          [ENV, fakeQueue(), { rawCapMb: 1, plan: bundle }, 2],
+        ];
+        for (const [env, q, d0, want] of cases) {
+          const { code, io } = await run(['run', '--full'], q, { ...env, TTE_ALLOW_MAC_E2E: '1' }, d0);
+          expect(code).toBe(want);
+          expect(q.submits).toEqual([]);
+          expect(io.macRuns).toEqual([]);
+        }
+      });
+
+      it('fetch failure: after rc 0 it is 3, after rc 1 the rc stands', async () => {
+        expect((await run(['run', '--full'], fakeQueue({ fetchFails: true, rc: 0 }))).code).toBe(3);
+        expect((await run(['run', '--full'], fakeQueue({ fetchFails: true, rc: 1 }))).code).toBe(1);
+      });
+
+      it('--headed with the flag is a usage error before any queue call', async () => {
+        const q = fakeQueue();
+        const { code } = await run(['run', '--full', '--', '--headed'], q);
+        expect(code).toBe(2);
+        expect(q.submits).toEqual([]);
+      });
     });
   });
 });

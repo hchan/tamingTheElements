@@ -19,7 +19,7 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { decide, DEFAULT_LIMITS, macEligible, type Ask, type History, type Limits, type PcView, type Policy, type Step } from './pc-decide';
@@ -30,6 +30,7 @@ import { cacheFile, probe as realProbe, keyOf, noteExit, readCache, writeCache }
 import { logPathFor } from './e2e-server-policy';
 import { redact, remoteAlias } from './redact';
 import { planSource, type SourcePlan } from './pc-snapshot';
+import { CtlError, queueClient, userToken, type QueueClient } from '../gpu-queue/client';
 
 export type Kind = 'run' | 'smoke' | 'pages' | 'itch' | 'flake';
 export interface Parsed {
@@ -221,6 +222,10 @@ export interface Deps {
   out: { write(c: string | Buffer): unknown };
   err: { write(c: string | Buffer): unknown };
   follow?: pc.FollowOpts;
+  /** Queue client for the opt-in full-lane queue path (TTE_E2E_VIA_QUEUE=1); main builds it lazily. */
+  queue?: QueueClient;
+  /** Job dir cap in MB for the queue path (default 1024, the server's RAW_CAP). */
+  rawCapMb?: number;
 }
 const defaultRemote = (alias: string, env: Env): Remote => ({ alias, distro: env['TTE_REMOTE_DISTRO'] || 'Ubuntu', ssh: env['TTE_SSH'] || 'ssh' });
 export const newId = (lane: LaneName, now = new Date()): string =>
@@ -277,14 +282,12 @@ export interface RemoteOpts {
   /** Filled in: what happened, for the router's decision. */
   note?: Note;
 }
-export async function runRemote(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal, o: RemoteOpts = {}): Promise<number> {
+const refuseInteractive = (p: Parsed): void => {
   for (const bad of ['--headed', '--ui', '--debug']) if (p.rest.includes(bad)) throw new UsageError(`${bad} is not possible on the PC (headless only)`);
-  if (!(await pc.ping(d.remote))) throw new PcError('PC unreachable (ssh failed)', pc.EXIT.unreachable);
-  const lane = o.lane ?? pickLane(p, d.count);
-  const id = newId(lane);
-  const note = o.note ?? {};
-  note.id = id;
-  note.lane = lane;
+};
+
+/** Build the job dir (snapshot, spec, scripts, meta.json) shared by the direct and the queue path. */
+function prepareJob(p: Parsed, cwd: string, d: Deps, lane: LaneName, id: string, lockWaitSec?: number): { dir: string; jobDir: string; source: SourcePlan; workers: number } {
   const dir = resolve(cwd, '.scratch', 'remote-e2e', id);
   const jobDir = join(dir, 'job');
   mkdirSync(jobDir, { recursive: true });
@@ -295,12 +298,24 @@ export async function runRemote(p: Parsed, env: Env, cwd: string, d: Deps, signa
     throw new UsageError(`snapshot failed: ${(e as Error).message}`);
   }
   const spec = buildSpec(p, id, lane, source);
-  if (o.lockWaitSec !== undefined) spec.waitSec = o.lockWaitSec;
+  if (lockWaitSec !== undefined) spec.waitSec = lockWaitSec;
   const workers = p.workers ?? LANES[lane].workers;
   const { jobSh, startSh } = d.render(spec);
   writeFileSync(join(jobDir, 'job.sh'), jobSh, { mode: 0o755 });
   writeFileSync(join(jobDir, 'start.sh'), startSh, { mode: 0o755 });
   writeFileSync(join(jobDir, 'meta.json'), `${JSON.stringify({ id, lane, sha: source.sha, bytes: source.bytes, kind: p.kind })}\n`);
+  return { dir, jobDir, source, workers };
+}
+
+export async function runRemote(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal, o: RemoteOpts = {}): Promise<number> {
+  refuseInteractive(p);
+  if (!(await pc.ping(d.remote))) throw new PcError('PC unreachable (ssh failed)', pc.EXIT.unreachable);
+  const lane = o.lane ?? pickLane(p, d.count);
+  const id = newId(lane);
+  const note = o.note ?? {};
+  note.id = id;
+  note.lane = lane;
+  const { dir, jobDir, source, workers } = prepareJob(p, cwd, d, lane, id, o.lockWaitSec);
   note.stage = 'upload';
   const sub = await pc.submit(d.remote, id, jobDir);
   delete note.stage;
@@ -337,6 +352,59 @@ async function followAndReport(d: Deps, id: string, sha: string, lane: LaneName,
     }
     report(id, sha, lane, workers, st, dir, d, env);
   }
+  return code;
+}
+
+/** Opt-in queue path: only for the full lane and only with TTE_E2E_VIA_QUEUE=1. */
+export const viaQueue = (env: Env, lane: LaneName): boolean => env['TTE_E2E_VIA_QUEUE'] === '1' && lane === 'full';
+
+const dirBytes = (dir: string): number =>
+  readdirSync(dir, { withFileTypes: true }).reduce((n, e) => n + (e.isDirectory() ? dirBytes(join(dir, e.name)) : statSync(join(dir, e.name)).size), 0);
+
+/**
+ * Full run through the PC job server's cpu-full queue (WP-Q3a). Every non-zero code is final: no Mac run, no resubmit.
+ * `note.id` is set once a job was submitted.
+ */
+export async function runQueued(p: Parsed, env: Env, cwd: string, d: Deps, note: Note = {}): Promise<number> {
+  const q = d.queue;
+  if (!q) throw new UsageError('queue client missing');
+  refuseInteractive(p);
+  if (!userToken(env)) throw new PcError('no job-server token: run pnpm gpu:setup or set TTE_JOBS_TOKEN', 97);
+  if (!(await q.caps())) throw new PcError('PC unreachable or job server too old (no raw-e2e): run pnpm gpu:setup', pc.EXIT.unreachable);
+  const lane: LaneName = 'full';
+  const id = newId(lane);
+  note.lane = lane;
+  const { dir, jobDir, source, workers } = prepareJob(p, cwd, d, lane, id);
+  const mb = dirBytes(jobDir) / 1048576;
+  const cap = d.rawCapMb ?? 1024;
+  if (mb > cap) throw new UsageError(`job dir is ${mb.toFixed(0)} MB, over the ${String(cap)} MB cap`);
+  d.err.write(`PC queue job ${id} (cpu-full, sha ${source.sha.slice(0, 7)}, ${mb.toFixed(1)} MB)\n`);
+  note.stage = 'upload';
+  const rawId = await q.submitRaw('cpu-full', id, jobDir);
+  delete note.stage;
+  note.id = rawId;
+  rmSync(jobDir, { recursive: true, force: true });
+  d.err.write(`queued ${rawId} in cpu-full\n`);
+  let code: number;
+  try {
+    code = await q.waitRaw(rawId);
+  } catch (e) {
+    d.err.write(`${redact((e as Error).message)}\n`);
+    return e instanceof CtlError ? e.code : pc.EXIT.unreachable;
+  }
+  mkdirSync(dir, { recursive: true });
+  try {
+    await q.fetchRaw(rawId, dir);
+  } catch (e) {
+    d.err.write(`${redact((e as Error).message)}\n`);
+    if (code === 0) {
+      code = pc.EXIT.upload;
+      note.stage = 'fetch';
+    }
+  }
+  const statusPath = join(dir, 'status.json');
+  const st: JobStatus = existsSync(statusPath) ? pc.parseStatus(readFileSync(statusPath, 'utf8')) : { state: code === 93 ? 'lost' : 'done', rc: code };
+  report(id, source.sha, lane, workers, st, dir, d, env);
   return code;
 }
 
@@ -418,6 +486,21 @@ export function policyOf(p: Parsed, env: Env): Policy {
 /** After these PC exits the call is over; no fresh probe is needed. */
 const FINAL_EXITS = [0, 1, 2, 124, 130];
 
+/** The queue branch of runRouted: no probe, no wait, no Mac. */
+async function routeQueued(p: Parsed, env: Env, cwd: string, d: Deps): Promise<number> {
+  const note: Note = {};
+  let code: number;
+  try {
+    code = await runQueued(p, env, cwd, d, note);
+  } catch (e) {
+    if (!(e instanceof PcError || e instanceof UsageError)) throw e;
+    d.err.write(`${redact(e.message)}\n`);
+    code = e instanceof PcError ? e.code : 2;
+  }
+  d.err.write(`e2e ran on: ${note.id ? `PC (queue job ${note.id}, full lane)` : 'nowhere (queue job not submitted)'} -> exit ${String(code)}\n`);
+  return code;
+}
+
 /** The decide loop for a run (not admin): probe, decide, then run on the PC, run on the Mac or wait, until a final exit. */
 export async function runRouted(p: Parsed, env: Env, cwd: string, d: Deps, io: Io, signal?: AbortSignal): Promise<number> {
   const limits = limitsOf(env);
@@ -431,6 +514,7 @@ export async function runRouted(p: Parsed, env: Env, cwd: string, d: Deps, io: I
   };
   const tests = p.lane === 'full' || p.full ? undefined : testsOf(p, count);
   const lane = pickLane(p, count);
+  if (viaQueue(env, lane)) return await routeQueued(p, env, cwd, d);
   const ask: Ask = { kind: p.kind, tests, lane, laneForced: forced, pc: p.mode === 'pc', detach: p.detach, policy, allowMac: env['TTE_ALLOW_MAC_E2E'] === '1' };
   const macOk = policy === 'mac' && macEligible(ask, limits);
   const h: History = { pcAttempts: 0, macAttempts: 0 };
@@ -514,6 +598,7 @@ export async function main(argv: readonly string[], env: Env = process.env, cwd 
     }
     const remote = defaultRemote(alias as string, env);
     const d: Deps = { remote, plan: (c, id, o) => planSource(c, id, o), render: renderJob, count: realCount, out: process.stdout, err: process.stderr };
+    if (env['TTE_E2E_VIA_QUEUE'] === '1') d.queue = queueClient(remote, { ...env }, cwd, process.stderr);
     const ctl = new AbortController();
     const stop = (): void => ctl.abort();
     if (!p.detach) for (const s of ['SIGINT', 'SIGTERM'] as const) process.on(s, stop);
