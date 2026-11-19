@@ -102,6 +102,18 @@ describe('pc-remote', () => {
     expect(exitCodeOf(st)).toBe(0);
   });
 
+  it('an abort while following is not reported as an ssh drop', async () => {
+    const dir = makeJob(LINES(200, '{"state":"done","rc":0,"result":"ok"}', 0));
+    await submit(remote, 'id-abort', dir);
+    const ctl = new AbortController();
+    const err = sink();
+    setTimeout(() => ctl.abort(), 300);
+    const st = await follow(remote, 'id-abort', sink(), { ...quiet, err, signal: ctl.signal });
+    expect(st.state).toBe('unreachable');
+    expect(err.text()).not.toContain('ssh dropped');
+    await cancel(remote, 'id-abort');
+  });
+
   it('cancel kills the whole process group and marks the job cancelled', async () => {
     const dir = makeJob('sleep 300 &\necho $! > child\necho \'{"state":"running"}\' > status.json\nwait');
     await submit(remote, 'id-3', dir);
