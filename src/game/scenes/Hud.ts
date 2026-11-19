@@ -12,7 +12,7 @@ import { BUFF_SLOT, collectBuffs } from '../hud/buffs';
 import { CC_ICONS, CHIP_FONT, CHIP_MAX, CHIP_Y, PORTRAIT_CHIP_MAX, collectStatusChips } from '../hud/status-icons';
 import {
   CHARGE_DASH, CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, COMBO_RECTS_KEY, POP_RECTS_KEY, clearOfPops, hudFrame, TAG_CALL_KEY, METER_W, METER_Y, SEGMENT_H, SEGMENT_W, comboAlpha, comboLabel, comboScale, meterLabel, meterFlashAlpha, readyGlow,
-  clampNumber, NUMBER_SLOTS, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
+  clampNumber, HUD_AVOID_KEY, NUMBER_SLOTS, gapLabel, lifeTicks, projectToHud, type HudRect, meterLabelY, meterSegments, meterX, NUMBER_BANNER_ALPHA, numberAlpha, numberLabel, numberRise, superRimLayers, type ArcadeHudModel,
 } from '../hud/arcade-hud';
 import {
   HUD_WIDTH,
@@ -35,12 +35,15 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, setPhoneHud, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, setPhoneHud, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, isPhoneHud, tagPill, chipSize, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
-import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, phoneFontPx, portraitMeterRowY, comboRightX, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
+import { hudOnPage, hudToDom, PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, phoneFontPx, portraitMeterRowY, comboRightX, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
 import { isPortraitPlay } from '../boot/portrait-play';
+import { COMBO_GAP, COMBO_STUCK_ALPHA, NUMBER_H_MIN, comboMode, newPlaceOut, newPlaceState, numberLane, placeCombo, resetPlaceState, type NumberLane, type PlaceInput } from '../hud/combo-anchor';
+import type { PlaceOut, PlaceState } from '../hud/combo-anchor';
+import type { ComboProbe } from '../platform/test-hook';
 
 export const HUD_SCENE = 'Hud';
 
@@ -79,6 +82,9 @@ const PORTRAIT_NAME_EDGE_TAG = 505;
 const MIN_LIFE_NAME = 5;
 
 const TEAMS = [0, 1] as const;
+
+interface ComboTrace { headX: number; headY: number; ax: number; ay: number; s: number; baseX: number; baseY: number; fresh: boolean }
+const newTrace = (): ComboTrace => ({ headX: 0, headY: 0, ax: 0, ay: 0, s: 1, baseX: 0, baseY: 0, fresh: false });
 
 /** Portrait phone: the status chips start this far under the HUD bar's fill (SLIM_H + 2), so they never touch it. */
 const PHONE_CHIP_GAP = 6;
@@ -147,6 +153,24 @@ export class Hud extends Phaser.Scene {
   }
   private comboTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private comboKeys: number[] = [];
+  /** A coarse (touch) pointer: the combo counters keep their fixed top slot there (set in `create`). */
+  private coarse = false;
+  /** Per team: the counter's placement memory, last result and scratch rects (anchored mode; all reused every frame). */
+  private readonly placeStates: [PlaceState, PlaceState] = [newPlaceState(), newPlaceState()];
+  private readonly placeOuts: [PlaceOut, PlaceOut] = [newPlaceOut(), newPlaceOut()];
+  private readonly lanes: [NumberLane, NumberLane] = [{ x: 0, y: 0, w: 0, h: 0 }, { x: 0, y: 0, w: 0, h: 0 }];
+  private readonly spots: [NumberLane, NumberLane] = [{ x: 0, y: 0, w: 0, h: 0 }, { x: 0, y: 0, w: 0, h: 0 }];
+  private readonly comboAvoid: [HudRect[], HudRect[]] = [[], []];
+  private readonly comboModes: ['anchored' | 'band', 'anchored' | 'band'] = ['band', 'band'];
+  private readonly comboSerials: [number, number] = [-1, -1];
+  private readonly comboWasAnchored: [boolean, boolean] = [false, false];
+  private readonly comboTrace: [ComboTrace, ComboTrace] = [newTrace(), newTrace()];
+  private readonly ceilRects: { x: number; y: number; w: number; h: number }[] = [];
+  private ceilCount = 0;
+  /** The tallest damage number seen this match (at least the 38 px hit size): the number lane's height. */
+  private numberH = NUMBER_H_MIN;
+  private readonly benchCount = [0, 0];
+  private readonly placeIn: PlaceInput = { headX: 0, b0: 0, w: 0, h: 0, frame: this.viewFrame, ceilRects: this.ceilRects, ceilCount: 0, obstacles: [], count: 0, fresh: false, reduced: false, dtMs: 0 };
   private meterTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   /** Centre y of the SUPER segments and label: the plain METER_Y row, or a second row under the names in portrait play (set by `dropChips`). */
   /** Portrait play: the lowest logical y of the names and the SUPER row (the status chips start under it). */
@@ -175,6 +199,7 @@ export class Hud extends Phaser.Scene {
 
   create(): void {
     fitScene(this, 'top');
+    this.coarse = (window.matchMedia as typeof window.matchMedia | undefined)?.('(pointer: coarse)').matches ?? false;
     if (this.arcade) this.drawScrim();
     this.back = this.add.graphics().setDepth(98);
     this.gfx = this.add.graphics().setDepth(100);
@@ -227,6 +252,13 @@ export class Hud extends Phaser.Scene {
       this.comboTexts = [];
       this.registry.remove(COMBO_RECTS_KEY);
       this.registry.remove(CHIP_RECTS_KEY);
+      this.numberH = NUMBER_H_MIN;
+      for (const t of TEAMS) {
+        resetPlaceState(this.placeStates[t]);
+        this.comboModes[t] = 'band';
+        this.comboSerials[t] = -1;
+        this.comboWasAnchored[t] = false;
+      }
       this.popCount = 0;
       this.obstacleCount = 0;
       this.comboKeys = [];
@@ -263,6 +295,7 @@ export class Hud extends Phaser.Scene {
     if (this.arcade) this.dropChips();
     for (const team of TEAMS) {
       const side = collectSide(view, team);
+      this.benchCount[team] = side.bench.length;
       const x = sideOffset(team);
       const label = this.labels[team];
       if (side.active) {
@@ -741,9 +774,14 @@ export class Hud extends Phaser.Scene {
     const from = this.arenaView?.();
     const frame = hudFrame(viewWidth(this), this.viewFrame, viewHeight(this));
     this.collectObstacles(from, frame);
+    // Meters first (their texts are part of the ceiling), then the combo counters, then the numbers (which keep clear of the counters).
+    const hudAvoid = this.registry.get(HUD_AVOID_KEY) as HudRect[][] | undefined;
+    for (const team of TEAMS) this.drawMeter(model, team);
+    if (from && !isPhoneHud() && !this.coarse && model.combos.some((c) => c.hits > 0 && c.anchored)) this.buildCeil();
+    for (const team of TEAMS) this.placeComboText(model, team, from, frame, hudAvoid, dim, reduced);
     const avoid = this.numberAvoid;
     avoid.length = 0;
-    for (const c of this.comboTexts) if (c?.visible) avoid.push({ x: c.x - (c.originX * c.displayWidth), y: c.y, w: c.displayWidth, h: c.displayHeight });
+    for (const c of this.comboTexts) if (c?.visible) avoid.push({ x: c.x - (c.originX * c.displayWidth), y: c.y - c.originY * c.displayHeight, w: c.displayWidth, h: c.displayHeight });
     const call = this.registry.get(TAG_CALL_KEY) as HudRect | undefined;
     if (call && call.w > 0) avoid.push(call);
     const total = model.numbers.length;
@@ -770,6 +808,7 @@ export class Hud extends Phaser.Scene {
       const baseY = p.y + numberRise(n.age, reduced);
       const halfW = t.displayWidth / 2;
       const h = t.displayHeight;
+      if (h > this.numberH) this.numberH = h;
       const moved = clearOfPops(p.x + (this.numberShift[i * 2] ?? 0), baseY + (this.numberShift[i * 2 + 1] ?? 0), halfW, h, frame, this.numberObstacles, this.obstacleCount, this.cleared);
       this.numberShift[i * 2] = moved.x - p.x;
       this.numberShift[i * 2 + 1] = moved.y - baseY;
@@ -782,27 +821,181 @@ export class Hud extends Phaser.Scene {
       r.h = h;
       this.obstacleCount++;
     }
-    for (const team of TEAMS) {
-      this.drawMeter(model, team);
-      const c = model.combos[team];
-      let t = this.comboTexts[team];
-      if (c.hits === 0) {
-        t?.setVisible(false);
-        continue;
-      }
-      t ??= this.comboTexts[team] = styleCombatText(this.text(28), 'combo')
-        .setOrigin(team === 0 ? 0 : 1, 0)
-        .setAlign(team === 0 ? 'left' : 'right')
-        .setPosition(team === 0 ? COMBO_MARGIN : HUD_WIDTH - COMBO_MARGIN, COMBO_Y);
-      if (team === 1) t.setX(comboRightX(HUD_WIDTH, COMBO_MARGIN, this.pauseLeft()));
-      const key = comboKey(c.hits, c.damage);
-      if (this.comboKeys[team] !== key) {
-        this.comboKeys[team] = key;
-        t.setText(comboLabel(c.hits, c.damage));
-      }
-      t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
-    }
     this.publishComboRects();
+  }
+
+  /**
+   * One side's combo counter. Desktop with an anchor: over the victim's head, solved by `placeCombo` (clear of pops, call-outs, the number
+   * lane, the other counter, the terrain badge and under the HUD furniture). Otherwise (touch, phone HUD, no anchor yet) the fixed slot under the bars.
+   */
+  private placeComboText(model: ArcadeHudModel, team: 0 | 1, from: HudRect | undefined, frame: HudRect, hudAvoid: HudRect[][] | undefined, dim: number, reduced: boolean): void {
+    const c = model.combos[team];
+    let t = this.comboTexts[team];
+    if (c.hits === 0) {
+      t?.setVisible(false);
+      resetPlaceState(this.placeStates[team]);
+      this.comboWasAnchored[team] = false;
+      this.comboModes[team] = 'band';
+      return;
+    }
+    t ??= this.comboTexts[team] = styleCombatText(this.text(28), 'combo')
+      .setOrigin(team === 0 ? 0 : 1, 0)
+      .setAlign(team === 0 ? 'left' : 'right')
+      .setPosition(team === 0 ? COMBO_MARGIN : HUD_WIDTH - COMBO_MARGIN, COMBO_Y);
+    const key = comboKey(c.hits, c.damage);
+    if (this.comboKeys[team] !== key) {
+      this.comboKeys[team] = key;
+      t.setText(comboLabel(c.hits, c.damage));
+    }
+    const mode = comboMode(isPhoneHud(), this.coarse, c.anchored && !!from);
+    if (mode !== this.comboModes[team]) {
+      this.comboModes[team] = mode;
+      if (mode === 'anchored') t.setOrigin(0.5, 1).setAlign('center').setDepth(101);
+      else t.setOrigin(team === 0 ? 0 : 1, 0).setAlign(team === 0 ? 'left' : 'right').setDepth(102);
+    }
+    if (mode === 'band' || !from) {
+      this.comboWasAnchored[team] = false;
+      t.setPosition(team === 0 ? COMBO_MARGIN : comboRightX(HUD_WIDTH, COMBO_MARGIN, this.pauseLeft()), COMBO_Y);
+      t.setScale(comboScale(c, reduced)).setAlpha(comboAlpha(c)).setVisible(true);
+      return;
+    }
+    const s = frame.w / from.w;
+    const head = projectToHud(c.ax, c.ay, from, frame, this.projected);
+    const headX = head.x;
+    const headY = head.y;
+    const lane = numberLane(frame.x + ((c.laneX - from.x) / from.w) * frame.w, headY, s, this.numberH, this.lanes[team]);
+    const b0 = lane.y - COMBO_GAP;
+    const obs = this.comboAvoid[team];
+    obs.length = 0;
+    for (let i = 0; i < this.popCount; i++) obs.push(this.numberObstacles[i] as HudRect);
+    obs.push(lane);
+    if (team === 1 && this.comboModes[0] === 'anchored' && model.combos[0].hits > 0) {
+      const o = this.placeOuts[0];
+      const w0 = this.comboTexts[0]?.width ?? 0;
+      const h0 = this.comboTexts[0]?.height ?? 0;
+      const sp = this.spots[0];
+      sp.x = o.targetX - w0 / 2;
+      sp.y = o.targetY - h0;
+      sp.w = w0;
+      sp.h = h0;
+      obs.push(sp);
+    }
+    if (hudAvoid) for (const list of hudAvoid) for (const r of list) obs.push(r);
+    const fresh = this.comboSerials[team] !== c.serial || !this.comboWasAnchored[team];
+    const inp = this.placeIn;
+    inp.headX = headX;
+    inp.b0 = b0;
+    inp.w = t.width;
+    inp.h = t.height;
+    inp.frame = frame;
+    inp.ceilCount = this.ceilCount;
+    inp.obstacles = obs;
+    inp.count = obs.length;
+    inp.fresh = fresh;
+    inp.reduced = reduced;
+    inp.dtMs = this.frameMs;
+    const out = placeCombo(this.placeStates[team], inp, lane, this.placeOuts[team]);
+    this.comboSerials[team] = c.serial;
+    this.comboWasAnchored[team] = true;
+    const tr = this.comboTrace[team];
+    {
+      tr.headX = headX;
+      tr.headY = headY;
+      tr.ax = c.ax;
+      tr.ay = c.ay;
+      tr.s = s;
+      tr.baseX = headX;
+      tr.baseY = b0;
+      tr.fresh = fresh;
+    }
+    const alpha = comboAlpha(c) * dim;
+    t.setPosition(out.x, out.y)
+      .setScale(Math.min(comboScale(c, reduced), out.popMax))
+      .setAlpha(out.stuck ? Math.min(alpha, COMBO_STUCK_ALPHA) : alpha)
+      .setVisible(true);
+  }
+
+  /** The HUD furniture an anchored counter stays under, in `ceilRects`: status chips, name/life labels, SUPER labels, bench chips and the tag pill. */
+  private buildCeil(): void {
+    let n = 0;
+    const add = (x: number, y: number, w: number, h: number): void => {
+      const r = (this.ceilRects[n] ??= { x: 0, y: 0, w: 0, h: 0 });
+      r.x = x;
+      r.y = y;
+      r.w = w;
+      r.h = h;
+      n++;
+    };
+    const chips = this.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined;
+    if (chips) for (const list of chips) for (const r of list) add(r.x, r.y, r.w, r.h);
+    const addText = (t: Phaser.GameObjects.Text | undefined): void => {
+      if (t?.visible && t.alpha > 0 && t.text !== '') add(t.x - t.originX * t.displayWidth, t.y - t.originY * t.displayHeight, t.displayWidth, t.displayHeight);
+    };
+    for (const t of this.labels) addText(t);
+    for (const t of this.meterTexts) addText(t);
+    for (const team of TEAMS) {
+      const bench = this.benchCount[team] ?? 0;
+      for (let i = 0; i < bench; i++) {
+        const r = chipRect(team, i);
+        const bar = chipBar(team, i);
+        add(r.x - 2, r.y - 2, r.size + 4, bar.y + bar.lineMax / 2 + 2 - (r.y - 2));
+      }
+      if (bench > 0) {
+        const pill = tagPill(team);
+        add(pill.x, pill.wordY - 6, pill.w, chipSize());
+      }
+    }
+    this.ceilCount = n;
+  }
+
+  /** Test probe: one entry per visible combo counter with its placement, the lane, ceiling and obstacles, in Hud px (and `css` in page px). */
+  comboBoxes(): ComboProbe[] {
+    const page = hudOnPage(this.game.canvas.getBoundingClientRect(), coreDisplayWidth(this), viewHeight(this));
+    const rect = (r: { x: number; y: number; w: number; h: number }): { x: number; y: number; w: number; h: number } => ({ x: r.x, y: r.y, w: r.w, h: r.h });
+    const out: ComboProbe[] = [];
+    for (const team of TEAMS) {
+      const t = this.comboTexts[team];
+      const c = this.arcade?.combos[team];
+      if (!t?.visible || !c) continue;
+      const tr = this.comboTrace[team];
+      const o = this.placeOuts[team];
+      const st = this.placeStates[team];
+      const box = { x: t.x - t.originX * t.displayWidth, y: t.y - t.originY * t.displayHeight, w: t.displayWidth, h: t.displayHeight };
+      const lane = this.lanes[team];
+      const mode = this.comboModes[team];
+      out.push({
+        team,
+        hits: c.hits,
+        live: c.live,
+        anchored: c.anchored,
+        mode,
+        stuck: mode === 'anchored' && o.stuck,
+        settled: mode !== 'anchored' || o.settled,
+        ...box,
+        base: { x: tr.baseX, y: tr.baseY },
+        target: { x: o.targetX, y: o.targetY },
+        scale: t.scaleX,
+        popMax: o.popMax,
+        alpha: t.alpha,
+        dx: st.dx,
+        dy: st.dy,
+        ax: tr.ax,
+        ay: tr.ay,
+        headX: tr.headX,
+        headY: tr.headY,
+        lane: rect(lane),
+        laneTop: lane.y,
+        ceil: o.ceil,
+        numberH: this.numberH,
+        maxSlide: o.maxSlide,
+        avoid: this.comboAvoid[team].map(rect),
+        frame: rect(this.viewFrame),
+        view: rect(this.arenaView?.() ?? { x: 0, y: 0, w: 0, h: 0 }),
+        s: tr.s,
+        css: hudToDom(box, page),
+      });
+    }
+    return out;
   }
 
   /** Fills `numberObstacles` with the live white pops' and call-outs' rects (world px under POP_RECTS_KEY / CALLOUT_RECTS_KEY) projected to Hud px. */
@@ -838,7 +1031,7 @@ export class Hud extends Phaser.Scene {
       if (!c?.visible) continue;
       const r = (rects[n] ??= { x: 0, y: 0, w: 0, h: 0 }) as { x: number; y: number; w: number; h: number };
       r.x = c.x - c.originX * c.displayWidth;
-      r.y = c.y;
+      r.y = c.y - c.originY * c.displayHeight;
       r.w = c.displayWidth;
       r.h = c.displayHeight;
       n++;
@@ -852,11 +1045,7 @@ export class Hud extends Phaser.Scene {
    * the HUD band, QA r79).
    */
   private pauseLeft(): number | undefined {
-    const c = this.game.canvas.getBoundingClientRect();
-    const k = coreDisplayWidth(this) / 1280;
-    const hudLeft = c.left + (c.width - 1280 * k) / 2;
-    // The HUD camera is top-anchored: on the tall view (portrait play) its top is the canvas top.
-    const hudTop = viewHeight(this) > 720 ? c.top : c.top + (c.height - 720 * k) / 2;
+    const { hudLeft, hudTop, k } = hudOnPage(this.game.canvas.getBoundingClientRect(), coreDisplayWidth(this), viewHeight(this));
     let left: number | undefined;
     for (const id of ['pauseButton', 'fullscreenToggle']) {
       const b = document.getElementById(id);

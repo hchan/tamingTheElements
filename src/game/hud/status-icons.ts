@@ -15,7 +15,7 @@ export const TICKS_PER_SEC = 50;
 export const CHIP_W = 96;
 export const CHIP_H = 16;
 export const CHIP_GAP = 3;
-/** Under the HUD block (100 px tall), clear of the meter row (y 124) and left of the combo counter. */
+/** Under the HUD block (100 px tall), clear of the meter row (y 124) and left of the (touch/phone) combo counter slot; desktop counters sit over the foe and treat chips as a ceiling. */
 export const CHIP_Y = 70;
 /** Chips shown per side; the rest fold into one `+N` chip. */
 export const CHIP_MAX = 6;

@@ -58,7 +58,7 @@ import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { P2_BINDINGS } from '../input/local-two';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
-import { counted, type ArenaProbe, type ProbeCharacter } from '../platform/test-hook';
+import { counted, type ArenaProbe, type ComboProbe, type ProbeCharacter } from '../platform/test-hook';
 import { getUiFlags } from '../platform/flags';
 import { ArcadeHudModel, CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, POP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, numberLabel, type HudRect } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
@@ -706,6 +706,7 @@ export class Arena extends Phaser.Scene {
           numbers: hud?.numbers.filter((n) => n.live).map((n) => numberLabel(n.amount, n.counter)) ?? [],
           numberBoxes: (this.scene.get(HUD_SCENE) as unknown as { numberBoxes?(): { x: number; y: number; w: number; h: number }[] }).numberBoxes?.() ?? [],
           popBoxes: (this.scene.get(HUD_SCENE) as unknown as { popBoxes?(): { x: number; y: number; w: number; h: number }[] }).popBoxes?.() ?? [],
+          comboBoxes: (this.scene.get(HUD_SCENE) as unknown as { comboBoxes?(): ComboProbe[] }).comboBoxes?.() ?? [],
           combo: [hud?.combos[0].hits ?? 0, hud?.combos[1].hits ?? 0],
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };

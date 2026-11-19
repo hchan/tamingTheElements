@@ -15,6 +15,49 @@ export interface ProbeCharacter {
 }
 
 /** Read-only view of a running online match's lockstep session, for the two-context e2e proof (`__TTE__.net()`). */
+/** One visible combo counter as drawn (Hud px unless it says world or page), for the combo-anchor specs. */
+export interface ComboProbe {
+  team: 0 | 1;
+  hits: number;
+  live: boolean;
+  anchored: boolean;
+  mode: 'anchored' | 'band';
+  stuck: boolean;
+  settled: boolean;
+  /** The drawn box (top-left and displayed size). */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** The natural spot (centre x, bottom y) and where the placement is heading. */
+  base: { x: number; y: number };
+  target: { x: number; y: number };
+  scale: number;
+  popMax: number;
+  alpha: number;
+  /** Shown offsets from the natural spot. */
+  dx: number;
+  dy: number;
+  /** The victim's head: world (ax, ay) and Hud (headX, headY). */
+  ax: number;
+  ay: number;
+  headX: number;
+  headY: number;
+  lane: { x: number; y: number; w: number; h: number };
+  laneTop: number;
+  ceil: number;
+  numberH: number;
+  maxSlide: number;
+  avoid: { x: number; y: number; w: number; h: number }[];
+  frame: { x: number; y: number; w: number; h: number };
+  /** The Arena camera's world view. */
+  view: { x: number; y: number; w: number; h: number };
+  /** Hud px per world px. */
+  s: number;
+  /** The drawn box as a page (CSS px) rect, computed when probed. */
+  css: { x: number; y: number; w: number; h: number };
+}
+
 export interface NetProbe {
   readonly side: 0 | 1;
   readonly status: SessionStatus;
@@ -79,7 +122,7 @@ export interface ArenaProbe {
    * the sim stays paused; `false` holds them again. Tick-driven views (call-outs, the super cinematic) still move only with steps.
    */
   ageFx(on: boolean): void;
-  fx(): { tints: { id: number; tint: number; mode: number; wash: number }[]; numbers: string[]; numberBoxes: { x: number; y: number; w: number; h: number }[]; popBoxes: { x: number; y: number; w: number; h: number }[]; combo: [number, number]; meter: [number, number] };
+  fx(): { tints: { id: number; tint: number; mode: number; wash: number }[]; numbers: string[]; numberBoxes: { x: number; y: number; w: number; h: number }[]; popBoxes: { x: number; y: number; w: number; h: number }[]; comboBoxes: ComboProbe[]; combo: [number, number]; meter: [number, number] };
   /**
    * The super cinematic frame while one runs (Arcade; async, as its code loads on the first super): dim alpha, band alpha, slide (0 in place), punch-in zoom, the
    * texts shown and the camera zoom over the fit zoom; undefined otherwise (always in Classic).

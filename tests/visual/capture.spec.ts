@@ -222,7 +222,7 @@ for (const vp of VIEWPORTS) {
       // Keep firing until the next volley lands (the numbers of the first one stay: paused effects do not age).
       await page.evaluate(`(() => { const a = window.__TTE__.arena; const n = a.fx().numbers.length; for (let i = 0; i < 60 && a.fx().numbers.length <= n; i++) a.step(1, [${String(CMD.secondary)}, 0]); })()`);
       await page.waitForFunction(`window.__TTE__.arena.fx().combo[0] >= 2`);
-      await shoot(page, vp, 'arena', 'arena-arcade-combo', 'Arcade: a later volley (combo counter top left; greyed smaller numbers are combo-scaled)');
+      await shoot(page, vp, 'arena', 'arena-arcade-combo', `Arcade: a later volley (combo counter ${vp.mobile ? 'top left' : 'above the foe'}; greyed smaller numbers are combo-scaled)`);
       // Out of reach, Curomo casts Ice Shock (+20 meter per cast) until its first bar is full and the second fills.
       await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, 100, 360, 4); a.place(foe.id, 1100, 360, 4); a.step(2600, [${String(CMD.primary)}, 0]); })()`);
       await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
