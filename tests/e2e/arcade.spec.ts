@@ -229,19 +229,3 @@ test('8-way aim: the arrow follows the held diagonal, turns back to the foe afte
   expect((await characters(page, 1)).find((c) => c.id === foe)?.hp).toBeLessThan(before?.hp ?? 0);
   expect(errors).toEqual([]);
 });
-
-test.describe('390x844 portrait phone', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-
-  test('the picker fits without horizontal scrolling and its controls are 44 px touch targets', async ({ page }) => {
-    await page.goto(`${START}&ff=arcade#arcade`);
-    await page.getByRole('button', { name: 'Fight!' }).waitFor();
-    expect(await page.evaluate<boolean>(`document.documentElement.scrollWidth <= window.innerWidth`)).toBe(true);
-    for (const label of ['Your race', 'AI race', 'AI level']) {
-      const box = await page.getByLabel(label).boundingBox();
-      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
-    }
-    const fightBox = await page.getByRole('button', { name: 'Fight!' }).boundingBox();
-    expect(fightBox?.height ?? 0).toBeGreaterThanOrEqual(44);
-  });
-});

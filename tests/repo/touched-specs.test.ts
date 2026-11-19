@@ -19,7 +19,7 @@ const smallRules: Rules = {
   infra: ['vite.config.ts', 'src/game/loop/**'],
   areas: [
     { area: 'tour', globs: ['src/game/app/tour*.ts'], specs: ['tour.spec.ts', 'tour-win.spec.ts'] },
-    { area: 'styles', globs: ['src/ui/styles/**'], specs: ['responsive.spec.ts', 'phone-layout.spec.ts'], narrow: 'stem' },
+    { area: 'styles', globs: ['src/ui/styles/**'], specs: ['responsive.spec.ts', 'help-controls.spec.ts'], narrow: 'stem' },
     { area: 'png', globs: ['tools/assets/png-lite.ts'], specs: ['sprite.spec.ts'] },
   ],
   broadAlways: ['golden.spec.ts'],
@@ -27,7 +27,7 @@ const smallRules: Rules = {
   budgetSec: 1000,
   maxTests: 50,
 };
-const smallSpecs = ['tour.spec.ts', 'tour-win.spec.ts', 'tour-card.spec.ts', 'responsive.spec.ts', 'phone-layout.spec.ts', 'sprite.spec.ts', 'golden.spec.ts', 'match-end.spec.ts', 'sub/x.spec.ts'];
+const smallSpecs = ['tour.spec.ts', 'tour-win.spec.ts', 'tour-card.spec.ts', 'responsive.spec.ts', 'help-controls.spec.ts', 'sprite.spec.ts', 'golden.spec.ts', 'match-end.spec.ts', 'sub/x.spec.ts'];
 const smallDur: Durations = {
   schema: 1,
   source: 't',
@@ -116,7 +116,7 @@ describe('selectSpecs rules', () => {
     expect(hit.specs).toContain('match-end.spec.ts');
     expect(hit.specs).not.toContain('responsive.spec.ts');
     const miss = small(['src/ui/styles/other.css']);
-    expect(miss.specs).toEqual(expect.arrayContaining(['responsive.spec.ts', 'phone-layout.spec.ts']));
+    expect(miss.specs).toEqual(expect.arrayContaining(['responsive.spec.ts', 'help-controls.spec.ts']));
     expect(miss.broad).toBe(false);
   });
   it('an src file that selects nothing is broad', () => {
@@ -165,9 +165,9 @@ describe('selectSpecs budget', () => {
 });
 
 describe('selectSpecs on the real rules', () => {
-  it('src/game/app/tour.ts selects tour, tour-card, tour-fight-match and tour-win', () => {
+  it('src/game/app/tour.ts selects tour, tour-fight-match and tour-win', () => {
     const s = real(['src/game/app/tour.ts']);
-    expect(s.specs).toEqual(expect.arrayContaining(['tour.spec.ts', 'tour-card.spec.ts', 'tour-fight-match.spec.ts', 'tour-win.spec.ts']));
+    expect(s.specs).toEqual(expect.arrayContaining(['tour.spec.ts', 'tour-fight-match.spec.ts', 'tour-win.spec.ts']));
     expect(s.noE2e).toBe(false);
   });
   it('a docs-only change selects nothing', () => {
@@ -248,7 +248,7 @@ describe('e2e-durations.json', () => {
     expect(readFileSync('tools/ci/e2e-durations.json', 'utf8')).toBe(renderDurations(durations));
   });
   it('marks the specs that were sped up after the seed run as upper bounds', () => {
-    for (const s of ['super-band.spec.ts', 'portrait-play.spec.ts', 'touch-fight-layout.spec.ts']) expect(durations.specs[s]?.upperBound).toBe(true);
+    for (const s of ['super-band.spec.ts']) expect(durations.specs[s]?.upperBound).toBe(true);
   });
 });
 

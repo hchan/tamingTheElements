@@ -143,7 +143,8 @@ Goal: a phone player can join without typing.
   side in online matches on touch devices.
 - CSS: the online screen fits 360 px wide (full-width code boxes, 44 px targets).
 - Tests: e2e with one context `{ hasTouch: true, isMobile: true, viewport: 390x844 }`: touch buttons visible during an online
-  match, a tap changes our side's command; `a11y`/responsive spec still green.
+  match, a tap changes our side's command; `a11y`/responsive spec still green. (Retired 2026-11-19: phone is unsupported, so
+  `online-mobile.spec.ts` and every phone/portrait e2e spec was deleted; the touch code in `src` stays.)
 
 ### WP 07: Frame-advantage pacing (core-touching, alone)
 

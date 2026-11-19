@@ -273,8 +273,8 @@ test('swap press: one tag per press (a held key does not chain), and a press in 
   expect(errors).toEqual([]);
 });
 
-// QA r36: a long hero name ("SINDAROSA IN!") entering near the left edge stays whole inside the screen at 1280x720 and on phones.
-for (const [w, h] of [[1280, 720], [844, 390], [667, 375]] as const) {
+// QA r36: a long hero name ("SINDAROSA IN!") entering near the left edge stays whole inside the screen at 1280x720.
+for (const [w, h] of [[1280, 720]] as const) {
   test(`KO entrance call is not clipped at the edges at ${String(w)}x${String(h)}`, async ({ page }) => {
     const errors = collectErrors(page);
     await page.setViewportSize({ width: w, height: h });
@@ -302,7 +302,7 @@ for (const [w, h] of [[1280, 720], [844, 390], [667, 375]] as const) {
 }
 
 // WP-HF2 (HF2-1): the KO entrance call is smaller, capped at 360 px, pops from 1.25x at most, stays on screen and off the live damage numbers.
-for (const [w, h] of [[1280, 720], [844, 390]] as const) {
+for (const [w, h] of [[1280, 720]] as const) {
   test(`KO entrance call stays small and clear of damage numbers at ${String(w)}x${String(h)}`, async ({ page }) => {
     const errors = collectErrors(page);
     await page.setViewportSize({ width: w, height: h });

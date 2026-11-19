@@ -153,8 +153,6 @@ test('local Versus HUD: the key hint clears both action bars, Player 2 has a rea
 // The touch buttons are transparent overlays laid exactly over the P1 action-bar boxes (bottom-left); they never sit over the P2 readout
 // (also on the left, smaller, above the bar) and every button stays a >= 48 px target.
 const SIZES = [
-  { w: 800, h: 450 },
-  { w: 844, h: 390 },
   { w: 1024, h: 768 },
   { w: 1280, h: 720 },
 ];
@@ -164,7 +162,7 @@ for (const { w, h } of SIZES) {
     await start(page);
     const canvas = await page.locator('#game canvas').boundingBox();
     if (!canvas) throw new Error('canvas must be laid out');
-    // The wide phone view (673c3569) widens the canvas past 16:9; the 1280x720 HUD box stays centred and scales with the height.
+    // A wide view widens the canvas past 16:9; the 1280x720 HUD box stays centred and scales with the height.
     const k = canvas.height / 720;
     const ox = canvas.x + (canvas.width - 1280 * k) / 2;
     interface Box { x: number; y: number; w: number; h: number }

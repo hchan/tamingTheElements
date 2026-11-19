@@ -6,7 +6,7 @@ const KEY = 'tte.tour.v1';
 const won = '{"v":1,"seed":7,"hero":["curomo","pax","wispera"],"stage":8,"continues":1,"status":"won"}';
 const shotDir = process.env['SHOT_DIR'];
 
-for (const vp of [{ width: 1280, height: 720 }, { width: 844, height: 390 }]) {
+for (const vp of [{ width: 1280, height: 720 }]) {
   test(`saved won tour shows the victory screen at ${String(vp.width)}x${String(vp.height)}`, async ({ page }) => {
     await page.setViewportSize(vp);
     await page.goto(`${START}&ff=arcade#main`);

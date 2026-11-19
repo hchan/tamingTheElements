@@ -16,8 +16,7 @@ interface Box { x: number; y: number; w: number; h: number }
 interface Overlays { pops: Box[]; callouts: Box[]; hudCallouts: Box[]; chips: Box[][]; frame: Box }
 
 const VIEWS = [
-  { name: '1280x720', size: { width: 1280, height: 720 }, touch: false },
-  { name: '844x390 touch', size: { width: 844, height: 390 }, touch: true },
+  { name: '1280x720', size: { width: 1280, height: 720 } },
 ] as const;
 
 const raf2 = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
@@ -136,7 +135,7 @@ function expectNonVacuous(s: Sample): void {
 
 for (const v of VIEWS) {
   test.describe(`call-outs clear of pops, ${v.name}`, () => {
-    test.use({ viewport: v.size, deviceScaleFactor: 1, isMobile: v.touch, hasTouch: v.touch });
+    test.use({ viewport: v.size, deviceScaleFactor: 1 });
     const tag = v.name.replace(/\W+/g, '-');
 
     test('S3: CHARGE! keeps clear of the white pop on the foe at every age', async ({ page }, info) => {

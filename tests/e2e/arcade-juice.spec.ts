@@ -121,8 +121,7 @@ test('Arcade with reduced motion: no shake, but the flash, numbers and combo sta
 interface Box { x: number; y: number; w: number; h: number }
 const overlaps = (a: Box, b: Box): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-// 844x390 is a phone landscape whose view is wider than 1280 logical px: the Hud projects into its real frame there (DMGNUM-1).
-for (const [vw, vh] of [[1280, 720], [844, 390]] as const) test(`Arcade ${String(vw)}x${String(vh)}: a grey damage number never prints over a live white pop, call-out or another number (DMGNUM-1)`, async ({ page }) => {
+for (const [vw, vh] of [[1280, 720]] as const) test(`Arcade ${String(vw)}x${String(vh)}: a grey damage number never prints over a live white pop, call-out or another number (DMGNUM-1)`, async ({ page }) => {
   await page.setViewportSize({ width: vw, height: vh });
   const errors = collectErrors(page);
   const foe = await openDemo(page, 'arenaDemo,arcade');

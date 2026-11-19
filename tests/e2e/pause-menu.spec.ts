@@ -1,19 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY } from './parity/helpers';
 
-// Pause menu in a local fight (QA r24): Escape and the touch button pause; Resume, Restart and Quit to menu.
+// Pause menu in a local fight (QA r24): Escape pauses; Resume, Restart and Quit to menu.
 const shotDir = process.env['SHOT_DIR'];
 
 // No manual=1 (START): that holds the sim paused with the user reason, so Escape would resume instead of pausing.
-async function enterFight(page: Page, tap = false): Promise<void> {
+async function enterFight(page: Page): Promise<void> {
   await page.goto('/?seed=7&ff=arcade#arcade');
-  const fight = page.getByRole('button', { name: /^Fight/ });
-  if (tap) await fight.tap();
-  else await fight.click();
+  await page.getByRole('button', { name: /^Fight/ }).click();
   await page.waitForFunction(ARENA_READY);
 }
 
-test('Escape pauses a local fight and shows Resume, Restart and Quit to menu', async ({ page }) => {
+test('Escape pauses a local fight and shows Resume, Restart and Quit to menu', { tag: '@smoke' }, async ({ page }) => {
   await enterFight(page);
   await page.keyboard.press('Escape');
   await page.waitForFunction(`window.__TTE__.state().paused === true`);
@@ -50,20 +48,4 @@ test('Quit to menu leaves the fight', async ({ page }) => {
   await page.keyboard.press('Escape');
   await page.locator('#pauseExit').click();
   await page.waitForFunction(`window.__TTE__.state().mountedRoute === '#main'`);
-});
-
-test.describe('phone landscape', () => {
-  test.use({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  test('the Pause button pauses and Resume continues', { tag: '@smoke' }, async ({ page }) => {
-    await enterFight(page, true);
-    if (shotDir) await page.screenshot({ path: `${shotDir}/fight-phone.png` });
-    await page.locator('#pauseButton').tap();
-    await page.waitForFunction(`window.__TTE__.state().paused === true`);
-    // QA r28: no keyboard instructions on a touch device
-    await expect(page.locator('#pauseHint')).not.toContainText(/Escape|Shift/);
-    await expect(page.locator('#pauseResume')).toBeVisible();
-    if (shotDir) await page.screenshot({ path: `${shotDir}/pause-phone.png` });
-    await page.locator('#pauseResume').tap();
-    await page.waitForFunction(`window.__TTE__.state().paused === false`);
-  });
 });

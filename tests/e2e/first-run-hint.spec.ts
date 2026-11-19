@@ -55,24 +55,6 @@ test('first-run hint at 1280x720 is a slim strip above the bar and fades on its 
   expect(errors).toEqual([]);
 });
 
-// QA r43: on a 667x375 phone the card sits in the top band, clear of the lower-left fighting area and the thumb pads.
-test.describe('phone', () => {
-  test.use({ viewport: { width: 667, height: 375 }, hasTouch: true, isMobile: true });
-  test('first-run hint at 667x375 stays out of the lower fighting area', async ({ page }) => {
-    const errors = collectErrors(page);
-    await page.goto(`${START}&ff=arcade#arcade`);
-    await page.getByRole('button', { name: /^Fight/ }).tap();
-    await page.waitForFunction(ARENA_READY);
-    await page.evaluate(PAST_BANNER);
-    const card = page.locator('#firstRunHint');
-    await expect(card).toBeVisible({ timeout: 15_000 });
-    const box = await card.boundingBox();
-    expect(box).not.toBeNull();
-    expect((box?.y ?? 999) + (box?.height ?? 999)).toBeLessThan(375 * 0.5);
-    expect(errors).toEqual([]);
-  });
-});
-
 // HINT-CUT-1 (QA r92): a super cut that starts before the card is revealed (round 1, the QA step harness, a build with a live meter at the
 // reveal) drops the card for this battle: it never sits on the band or the portrait, and it does not appear late.
 // Timers of exactly 7000 and 2500 ms are stretched so the intro fallback and the card's fade cannot fire on a slow SwiftShader run.
@@ -110,12 +92,10 @@ const probe = (page: Page): Promise<BandProbe> =>
   })()`);
 
 for (const vp of [
-  { name: '1280x720', width: 1280, height: 720, touch: false },
-  { name: '844x390', width: 844, height: 390, touch: true },
-  { name: '667x375', width: 667, height: 375, touch: true },
+  { name: '1280x720', width: 1280, height: 720 },
 ]) {
   test.describe(`card is dropped for a super band, ${vp.name}`, () => {
-    test.use({ viewport: { width: vp.width, height: vp.height }, hasTouch: vp.touch, isMobile: vp.touch });
+    test.use({ viewport: { width: vp.width, height: vp.height } });
     test('the card never shows over the band or after it', async ({ page }, testInfo) => {
       const errors = collectErrors(page);
       await page.addInitScript(`(() => {
@@ -125,9 +105,7 @@ for (const vp of [
       await page.goto(`${START}&ff=arcade#versus`);
       await page.getByLabel('Your race').selectOption('morblass');
       await page.getByLabel('AI race').selectOption('fiara');
-      const fight = page.getByRole('button', { name: 'Fight!' });
-      if (vp.touch) await fight.tap();
-      else await fight.click();
+      await page.getByRole('button', { name: 'Fight!' }).click();
       await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
       const shot = async (label: string): Promise<void> => {
         await page.screenshot({ path: testInfo.outputPath(`${vp.name}-${label}.png`) });

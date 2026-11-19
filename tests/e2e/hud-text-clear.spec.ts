@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors, tapTourSplash } from './parity/helpers';
 
-// HUD text must not collide (qa-r84 P5): in tall portrait play and in landscape no two visible HUD texts overlap, and no name is cut to "SIND...".
+// HUD text must not collide (qa-r84 P5): in landscape no two visible HUD texts overlap, and no name is cut to "SIND...".
 // Shots go to $SHOT_DIR when set.
 const shotDir = process.env['SHOT_DIR'];
 interface T { text: string; px: number; x: number; y: number; w: number; h: number; ox: number; oy: number }
@@ -10,16 +10,12 @@ async function shot(page: Page, name: string): Promise<void> {
   if (shotDir) await page.screenshot({ path: `${shotDir}/${name}.png` });
 }
 
-async function enterTour(page: Page, portrait: boolean): Promise<void> {
+async function enterTour(page: Page): Promise<void> {
   await page.goto(`${START}&ff=arcade#tour`);
   await page.getByRole('button', { name: 'Start tour' }).click();
   await page.getByRole('button', { name: 'Fight' }).click();
   await tapTourSplash(page);
   await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
-  if (portrait) {
-    await page.getByRole('button', { name: 'Play anyway in portrait' }).click();
-    await page.waitForFunction(`document.documentElement.hasAttribute('data-portrait-play')`);
-  }
   await page.evaluate(`window.__TTE__.arena.step(120)`);
   await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 }
@@ -43,28 +39,25 @@ function overlaps(texts: readonly T[]): string[] {
 }
 
 const CASES = [
-  { name: '390x844', w: 390, h: 844, portrait: true, mobile: true },
-  { name: '360x640', w: 360, h: 640, portrait: true, mobile: true },
-  { name: '1280x720', w: 1280, h: 720, portrait: false, mobile: false },
+  { name: '1280x720', w: 1280, h: 720 },
 ] as const;
 
 for (const c of CASES) {
   test.describe(`HUD text clear ${c.name}`, () => {
-    test.use({ viewport: { width: c.w, height: c.h }, deviceScaleFactor: 2, isMobile: c.mobile, hasTouch: c.mobile });
+    test.use({ viewport: { width: c.w, height: c.h }, deviceScaleFactor: 2 });
 
     test('no two HUD texts overlap, and the Tour names stay whole', async ({ page }) => {
       const errors = collectErrors(page);
-      await enterTour(page, c.portrait);
+      await enterTour(page);
       await shot(page, `tour-${c.name}`);
       const texts = await page.evaluate<T[]>(`window.__TTE__.arena.hudTextSizes()`);
       expect(texts.length).toBeGreaterThan(0);
       expect(overlaps(texts)).toEqual([]);
-      if (c.portrait) for (const t of texts) expect(t.text, 'names are not cut with dots').not.toMatch(/[A-Z]{3,}(\.\.\.|…)/);
       expect(errors).toEqual([]);
     });
 
     test('after several hundred ticks of fighting the HUD texts (life, HURT, SUPER) still do not overlap', async ({ page }) => {
-      await enterTour(page, c.portrait);
+      await enterTour(page);
       let worst = '';
       for (let i = 0; i < 8; i++) {
         await page.evaluate(`window.__TTE__.arena.step(100)`);

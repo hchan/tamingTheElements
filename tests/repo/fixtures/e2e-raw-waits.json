@@ -5,11 +5,11 @@
     "waitForTimeout": 0,
     "expects": 41
   },
-  "a11y-trap-touch.spec.ts": {
+  "a11y-trap.spec.ts": {
     "poll": 2,
     "waitForFunction": 3,
     "waitForTimeout": 0,
-    "expects": 10
+    "expects": 7
   },
   "ability-fx.spec.ts": {
     "poll": 1,
@@ -22,12 +22,6 @@
     "waitForFunction": 1,
     "waitForTimeout": 0,
     "expects": 5
-  },
-  "action-bar-kits-shot.spec.ts": {
-    "poll": 0,
-    "waitForFunction": 1,
-    "waitForTimeout": 0,
-    "expects": 1
   },
   "app-flow.spec.ts": {
     "poll": 0,
@@ -117,7 +111,7 @@
     "poll": 1,
     "waitForFunction": 4,
     "waitForTimeout": 0,
-    "expects": 42
+    "expects": 39
   },
   "arena-smoke.spec.ts": {
     "poll": 0,
@@ -215,23 +209,23 @@
     "waitForTimeout": 0,
     "expects": 1
   },
+  "fight-hud-shots.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 0
+  },
   "fire-blast-fade-shot.spec.ts": {
     "poll": 0,
     "waitForFunction": 1,
     "waitForTimeout": 0,
     "expects": 2
   },
-  "first-run-hint-portrait.spec.ts": {
-    "poll": 1,
-    "waitForFunction": 2,
-    "waitForTimeout": 2,
-    "expects": 8
-  },
   "first-run-hint.spec.ts": {
     "poll": 1,
-    "waitForFunction": 5,
+    "waitForFunction": 4,
     "waitForTimeout": 1,
-    "expects": 23
+    "expects": 19
   },
   "floor-backgrounds.spec.ts": {
     "poll": 0,
@@ -252,10 +246,10 @@
     "expects": 8
   },
   "help-controls.spec.ts": {
-    "poll": 3,
+    "poll": 2,
     "waitForFunction": 0,
     "waitForTimeout": 0,
-    "expects": 24
+    "expects": 13
   },
   "hero-portrait-shot.spec.ts": {
     "poll": 2,
@@ -295,15 +289,15 @@
   },
   "hud-polish-r77.spec.ts": {
     "poll": 0,
-    "waitForFunction": 2,
+    "waitForFunction": 1,
     "waitForTimeout": 0,
-    "expects": 6
+    "expects": 4
   },
   "hud-text-clear.spec.ts": {
     "poll": 0,
-    "waitForFunction": 2,
+    "waitForFunction": 1,
     "waitForTimeout": 0,
-    "expects": 5
+    "expects": 4
   },
   "ice-shock-fx.spec.ts": {
     "poll": 0,
@@ -331,9 +325,9 @@
   },
   "ko-fx-shot.spec.ts": {
     "poll": 3,
-    "waitForFunction": 3,
+    "waitForFunction": 2,
     "waitForTimeout": 0,
-    "expects": 22
+    "expects": 17
   },
   "life-readout.spec.ts": {
     "poll": 0,
@@ -351,7 +345,7 @@
     "poll": 0,
     "waitForFunction": 3,
     "waitForTimeout": 0,
-    "expects": 27
+    "expects": 19
   },
   "menu-showcase.spec.ts": {
     "poll": 0,
@@ -377,12 +371,6 @@
     "waitForTimeout": 0,
     "expects": 10
   },
-  "online-mobile.spec.ts": {
-    "poll": 1,
-    "waitForFunction": 1,
-    "waitForTimeout": 0,
-    "expects": 13
-  },
   "own-element-fx.spec.ts": {
     "poll": 1,
     "waitForFunction": 1,
@@ -397,9 +385,9 @@
   },
   "pause-menu.spec.ts": {
     "poll": 0,
-    "waitForFunction": 9,
+    "waitForFunction": 7,
     "waitForTimeout": 0,
-    "expects": 11
+    "expects": 9
   },
   "pause-reasons.spec.ts": {
     "poll": 0,
@@ -413,29 +401,11 @@
     "waitForTimeout": 0,
     "expects": 8
   },
-  "phone-layout.spec.ts": {
-    "poll": 0,
-    "waitForFunction": 1,
-    "waitForTimeout": 0,
-    "expects": 22
-  },
-  "phone-portrait-menu.spec.ts": {
-    "poll": 1,
-    "waitForFunction": 1,
-    "waitForTimeout": 0,
-    "expects": 11
-  },
   "playtest-replay.spec.ts": {
     "poll": 0,
     "waitForFunction": 1,
     "waitForTimeout": 0,
     "expects": 11
-  },
-  "portrait-play.spec.ts": {
-    "poll": 8,
-    "waitForFunction": 24,
-    "waitForTimeout": 0,
-    "expects": 78
   },
   "pseudo3d-depth.spec.ts": {
     "poll": 4,
@@ -463,9 +433,9 @@
   },
   "responsive.spec.ts": {
     "poll": 5,
-    "waitForFunction": 7,
+    "waitForFunction": 5,
     "waitForTimeout": 0,
-    "expects": 70
+    "expects": 38
   },
   "roster24-shot.spec.ts": {
     "poll": 0,
@@ -521,12 +491,6 @@
     "waitForTimeout": 0,
     "expects": 1
   },
-  "small-viewport-fight.spec.ts": {
-    "poll": 1,
-    "waitForFunction": 2,
-    "waitForTimeout": 0,
-    "expects": 31
-  },
   "smoke.spec.ts": {
     "poll": 0,
     "waitForFunction": 2,
@@ -563,29 +527,17 @@
     "waitForTimeout": 0,
     "expects": 10
   },
-  "status-more-chip.spec.ts": {
-    "poll": 0,
-    "waitForFunction": 2,
-    "waitForTimeout": 0,
-    "expects": 10
-  },
   "storage-guards.spec.ts": {
     "poll": 0,
     "waitForFunction": 1,
     "waitForTimeout": 0,
     "expects": 6
   },
-  "super-band-portrait.spec.ts": {
+  "super-band.spec.ts": {
     "poll": 1,
     "waitForFunction": 2,
     "waitForTimeout": 0,
-    "expects": 8
-  },
-  "super-band.spec.ts": {
-    "poll": 1,
-    "waitForFunction": 3,
-    "waitForTimeout": 0,
-    "expects": 28
+    "expects": 22
   },
   "super-impact-shot.spec.ts": {
     "poll": 0,
@@ -605,24 +557,6 @@
     "waitForTimeout": 0,
     "expects": 80
   },
-  "touch-fight-layout.spec.ts": {
-    "poll": 1,
-    "waitForFunction": 6,
-    "waitForTimeout": 0,
-    "expects": 92
-  },
-  "touch-stick.spec.ts": {
-    "poll": 1,
-    "waitForFunction": 0,
-    "waitForTimeout": 0,
-    "expects": 10
-  },
-  "tour-card.spec.ts": {
-    "poll": 0,
-    "waitForFunction": 1,
-    "waitForTimeout": 0,
-    "expects": 19
-  },
   "tour-fight-match.spec.ts": {
     "poll": 1,
     "waitForFunction": 1,
@@ -631,9 +565,9 @@
   },
   "tour.spec.ts": {
     "poll": 1,
-    "waitForFunction": 7,
+    "waitForFunction": 6,
     "waitForTimeout": 0,
-    "expects": 53
+    "expects": 46
   },
   "trap-art.spec.ts": {
     "poll": 0,

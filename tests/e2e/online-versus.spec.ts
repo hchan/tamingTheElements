@@ -183,8 +183,6 @@ test('a failed connection shows one message and one Try again', { tag: '@smoke' 
   for (const id of ['onlineConnect', 'onlinePasteAnswer', 'onlineCopyLink', 'onlineAnswerIn']) await expect(page.locator(`#${id}`)).toBeHidden();
   await expect(page.locator('#onlineStatus')).toHaveText('');
   await page.screenshot({ path: '.scratch/online-fail-1280x720.png' });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: '.scratch/online-fail-390x844.png' });
   await page.locator('#onlineHost').click();
   await expect(page.locator('#onlineFailure')).toBeHidden();
   await expect(page.locator('#onlineCopyLink')).toBeVisible({ timeout: 15_000 });

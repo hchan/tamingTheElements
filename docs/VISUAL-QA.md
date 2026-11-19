@@ -8,7 +8,7 @@ human, or an AI agent that can open PNGs, reviews. Config: `playwright.visual.co
 
 | Command | What it does |
 |---|---|
-| `pnpm visual:capture` | Chromium (SwiftShader flags), 1 worker, `?manual=1&seed=7` stepped time, animations and cursors disabled. Writes `test-results/visual/<state>-<viewport>.png` for 1280x720 and 390x844, `manifest.json`, and two WebM videos (`battle-bot-vs-bot.webm`, `battle-keyboard-human.webm`, Playwright `video: 'on'`, 1280x720) |
+| `pnpm visual:capture` | Chromium (SwiftShader flags), 1 worker, `?manual=1&seed=7` stepped time, animations and cursors disabled. Writes `test-results/visual/<state>-<viewport>.png` for 1280x720 (the 390x844 phone viewport was dropped 2026-11-19), `manifest.json`, and two WebM videos (`battle-bot-vs-bot.webm`, `battle-keyboard-human.webm`, Playwright `video: 'on'`, 1280x720) |
 | `pnpm visual:pacing` | Real-time (not manual) bot-vs-bot battle, 10 s of requestAnimationFrame deltas; writes `test-results/visual/pacing.json` and prints p50/p95/p99, long frames over 50 ms, dropped-frame ratio |
 | `pnpm visual:regress` | `expect(page).toHaveScreenshot()` for the deterministic subset (DOM screens, stepped arena frames) against committed baselines. Skipped when this platform has no baselines |
 | `pnpm visual:update` | Same specs with `--update-snapshots`: (re)creates baselines for the current platform |
@@ -23,7 +23,7 @@ production) shows a live fps / frame-time / worst-frame readout at the top right
 `menu-no-save`, `menu-with-save`, `cinematic-frame1..3` (wall-clock timed, not deterministic), `garrison-1`, `garrison-6`,
 `garrison-6-selected`, `settings`, `objectives`, `wiki`, `key-bindings`, `about`, `character-details`, `arena-t005`,
 `arena-t060`, `arena-t150` (scripted commands: both sides firing), `arena-low-health`, `arena-capture-window`, `victory`,
-`defeat`, `rotate-overlay` (390x844 only), `error-no-webgl`, `error-unknown-character`, `arena-demo-t150` (bot vs bot),
+`defeat`, `error-no-webgl`, `error-unknown-character`, `arena-demo-t150` (bot vs bot),
 `arena-arcade-hitstop` and `arena-arcade-combo` (`?ff=arenaDemo,arcade`: the first Arcade volley during its hit-stop, then a
 later one, with the white flash, element sparks, damage numbers and the combo counter), `arena-arcade-meter` (the
 hyper meters under the HUD after Curomo's casts fill one bar), `arena-arcade-super-freeze` (10 ticks into Curomo's super
@@ -49,7 +49,7 @@ round 1's 91-tick intro first (nobody acts before it). The Arcade terrain states
 swap to earth: the water patches half faded, the earth backdrop fading in) and `arcade-terrain-earth` (the demo's Rain, then Sandstorm),
 `arcade-terrain-air`, `arcade-terrain-fire` and `arcade-terrain-fire-badge` (Arcade Versus, Cyclonius's Gale and Sindarosa's Sunshine; the
 badge shot has Sindarosa standing in a fire patch). Each
-has a `-1280x720` and a `-390x844` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
+has a `-1280x720` file. `manifest.json` lists name, file, screen, a note (the canvas box is in the arena
 notes), size and sha256.
 
 ## Visual regression

@@ -13,8 +13,6 @@ const RUNNING = `document.getAnimations().filter((a) => a.playState === 'running
 const VIEWPORTS = [
   { name: 'desktop', width: 1280, height: 720, count: 2 },
   { name: 'wide', width: 2560, height: 1440, count: 3 },
-  { name: 'phone landscape', width: 844, height: 390, count: 2 },
-  { name: 'phone portrait', width: 390, height: 844, count: 1 },
 ];
 
 for (const vp of VIEWPORTS) {

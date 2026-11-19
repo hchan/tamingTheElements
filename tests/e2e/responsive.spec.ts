@@ -6,7 +6,6 @@ import {
   leaveBattle,
   newGameToGarrison,
   startBattle,
-  tapTourSplash,
 } from './parity/helpers';
 
 interface Vp {
@@ -14,7 +13,6 @@ interface Vp {
   readonly w: number;
   readonly h: number;
   readonly dsf: number;
-  readonly mobile?: boolean;
 }
 
 const VIEWPORTS: readonly Vp[] = [
@@ -26,9 +24,6 @@ const VIEWPORTS: readonly Vp[] = [
   { name: '2560x1440', w: 2560, h: 1440, dsf: 1 },
   { name: '2560x1440 dsf2', w: 2560, h: 1440, dsf: 2 },
   { name: '3440x1440 ultrawide', w: 3440, h: 1440, dsf: 1 },
-  { name: '360x640 small phone', w: 360, h: 640, dsf: 2, mobile: true },
-  { name: '390x844 portrait phone', w: 390, h: 844, dsf: 3, mobile: true },
-  { name: '844x390 landscape phone', w: 844, h: 390, dsf: 3, mobile: true },
 ];
 
 /** Sim hash after 50 manual ticks of the arena demo (no input). It must not depend on the viewport. SIM_VERSION 7 hash. */
@@ -52,12 +47,7 @@ interface Scroll {
   ih: number;
 }
 
-/** Right-handed landscape phones (pointer: coarse, 740 px wide up, 500 px tall at most) keep a 72 px right gutter for the Strike buttons (PHONE-1): the canvas is flush left, not centred. */
-const STRIKE_GUTTER = 72;
-const hasStrikeGutter = (s: Scroll): boolean => s.iw >= 740 && s.ih <= 500 && s.iw > s.ih;
-
-/** `pinnedTop`: the portrait play layout pins the canvas under a 52 px top strip instead of centring it vertically. */
-async function expectCanvasFits(page: Page, mobile = false, pinnedTop = false): Promise<Rect> {
+async function expectCanvasFits(page: Page): Promise<Rect> {
   const r = await page.evaluate<Rect>(RECT);
   const s = await page.evaluate<Scroll>(SCROLL);
   expect(r.x).toBeGreaterThanOrEqual(-0.5);
@@ -66,14 +56,8 @@ async function expectCanvasFits(page: Page, mobile = false, pinnedTop = false): 
   expect(r.y + r.h).toBeLessThanOrEqual(s.ih + 0.5);
   expect(Math.abs(r.w / r.h - 16 / 9)).toBeLessThan(0.02);
   // Centred both ways at the default display size: the letterbox bands split evenly (VISUAL-QA V1).
-  if (mobile && hasStrikeGutter(s)) {
-    // PHONE-1: flush left, and the whole right gutter stays free for Strike 1/2 and Pause.
-    expect(r.x + r.w).toBeLessThanOrEqual(s.iw - STRIKE_GUTTER + 0.5);
-  } else {
-    expect(Math.abs(r.x + r.w / 2 - s.iw / 2)).toBeLessThanOrEqual(1);
-  }
-  if (pinnedTop) expect(Math.abs(r.y - 52)).toBeLessThanOrEqual(1);
-  else expect(Math.abs(r.y + r.h / 2 - s.ih / 2)).toBeLessThanOrEqual(1);
+  expect(Math.abs(r.x + r.w / 2 - s.iw / 2)).toBeLessThanOrEqual(1);
+  expect(Math.abs(r.y + r.h / 2 - s.ih / 2)).toBeLessThanOrEqual(1);
   expect(s.sw).toBeLessThanOrEqual(s.iw);
   expect(s.sh).toBeLessThanOrEqual(s.ih);
   return r;
@@ -84,18 +68,17 @@ for (const vp of VIEWPORTS) {
     test.use({
       viewport: { width: vp.w, height: vp.h },
       deviceScaleFactor: vp.dsf,
-      isMobile: vp.mobile ?? false,
-      hasTouch: vp.mobile ?? false,
     });
 
-    test('canvas fits with 16:9, crisp backing store, no scrollbars, same sim hash', async ({
+    // @smoke at the smallest (800x600) and the reference (1280x720) desktop viewports, replacing the retired phone smoke tests.
+    test('canvas fits with 16:9, crisp backing store, no scrollbars, same sim hash', { tag: vp.w === 800 || vp.w === 1280 ? '@smoke' : [] }, async ({
       page,
     }, info) => {
       const errors = collectErrors(page);
       await page.goto('/?ff=arenaDemo&manual=1');
       await page.locator('#game canvas').waitFor();
       await page.waitForFunction(ARENA_READY);
-      const r = await expectCanvasFits(page, vp.mobile ?? false);
+      const r = await expectCanvasFits(page);
       const res = vp.dsf <= 1.5 ? 1.5 : Math.min(2, Math.ceil(vp.dsf));
       expect(r.bw).toBe(1280 * res);
       expect(r.bh).toBe(720 * res);
@@ -129,8 +112,6 @@ for (const vp of VIEWPORTS) {
           `[...document.querySelectorAll('.helpLinks a')].map((a) => { const r = a.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })`,
         );
         expect(links.length).toBe(5);
-        const rows = new Set(links.map((l) => Math.round(l.y / 10)));
-        if (vp.w < 500) expect(rows.size, 'link rows on a phone').toBeLessThanOrEqual(3);
         for (const l of links) {
           expect(l.h).toBeGreaterThanOrEqual(44);
           expect(l.x).toBeGreaterThanOrEqual(0);
@@ -146,14 +127,8 @@ for (const vp of VIEWPORTS) {
       });
       await test.step('battle: action bar clicks map through the scaling, chrome stays visible', async () => {
         await startBattle(page, 'enterPracticeContainer');
-        if (vp.w < 500) {
-          // Portrait phone: friendly rotate overlay, dismissible.
-          await expect(page.locator('#rotateOverlay')).toBeVisible();
-          await page.locator('#rotateDismiss').click();
-          await expect(page.locator('#rotateOverlay')).toBeHidden();
-        }
         await page.waitForFunction(`window.__TTE__.arena.actionSlots().length > 0`);
-        const r = await expectCanvasFits(page, vp.mobile ?? false, vp.w < 500);
+        const r = await expectCanvasFits(page);
         const slots = await page.evaluate<{ x: number; y: number; size: number; cmd: number }[]>(
           `window.__TTE__.arena.actionSlots()`,
         );
@@ -172,8 +147,7 @@ for (const vp of VIEWPORTS) {
           const cy = r.y + (s.y + s.size / 2) * k;
           expect(cx).toBeLessThanOrEqual(vp.w);
           expect(cy).toBeLessThanOrEqual(vp.h);
-          if (vp.mobile) await page.touchscreen.tap(cx, cy);
-          else await page.mouse.click(cx, cy);
+          await page.mouse.click(cx, cy);
           expected.push(s.cmd);
           await expect
             .poll(() => page.evaluate<number[]>(`window.__TTE__.arena.clicks()`))
@@ -226,189 +200,6 @@ test('a window resize mid-battle keeps the match state and leaks no listeners', 
   expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
 });
 
-/** Medium display size (1.25 of Largest 1.6): #game fills this fraction of the window, so a 640x360 phone leaves ~281 px. */
-const MEDIUM = 1.25 / 1.6;
-
-/** `fractions`: the base size, then (where listed) Medium display size on the same boot (one tour boot per viewport instead of two). */
-const TOUCH_CASES: readonly {
-  name: string;
-  w: number;
-  h: number;
-  fractions: readonly (number | undefined)[];
-}[] = [
-  { name: '640x360', w: 640, h: 360, fractions: [undefined, MEDIUM] },
-  { name: '390x844 portrait phone', w: 390, h: 844, fractions: [undefined] },
-  { name: '360x640 small portrait phone', w: 360, h: 640, fractions: [undefined] },
-  { name: '568x320 short landscape phone', w: 568, h: 320, fractions: [undefined, MEDIUM] },
-  { name: '640x300 short landscape phone', w: 640, h: 300, fractions: [undefined, MEDIUM] },
-  { name: '667x375 landscape phone', w: 667, h: 375, fractions: [undefined] },
-];
-
-for (const tc of TOUCH_CASES) {
-  test.describe(`Arcade touch buttons on a coarse screen, ${tc.name}`, () => {
-    test.use({
-      viewport: { width: tc.w, height: tc.h },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-    });
-
-    test('every button sits inside #game, at least 48 px tall, in at most three right-edge columns (five on a game box under 272 px), none overlapping each other or the fullscreen button', async ({
-      page,
-    }, info) => {
-      const errors = collectErrors(page);
-      // The World Tour fields a team of three, so all 9 buttons are present.
-      await page.goto(`${START}&ff=arcade#tour`);
-      await page.getByRole('button', { name: 'Start tour' }).tap();
-      await page.getByRole('button', { name: 'Fight' }).tap();
-      await tapTourSplash(page);
-      await page.waitForFunction(ARENA_READY);
-      for (const fraction of tc.fractions)
-        await test.step(
-          fraction === undefined ? 'default display size' : 'Medium display size',
-          async () => {
-            if (fraction !== undefined)
-              await page.evaluate(
-                `document.documentElement.style.setProperty('--canvas-fraction', '${String(fraction)}'); window.dispatchEvent(new Event('resize'))`,
-              );
-            await page.evaluate(
-              `new Promise((r) => { let n = 0; const f = () => (++n >= 30 ? r(0) : requestAnimationFrame(f)); requestAnimationFrame(f); })`,
-            ); // the overlays re-sync every 5th frame
-            const g = await page.evaluate<{ x: number; y: number; r: number; b: number }>(
-              `(() => { const q = document.querySelector('#game').getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
-            );
-            const fs = await page.evaluate<{ x: number; y: number; r: number; b: number } | null>(
-              `(() => { const n = document.querySelector('#fullscreenToggle'); if (!n || getComputedStyle(n).display === 'none') return null; const q = n.getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
-            );
-            const boxes = await page.evaluate<
-              {
-                id: string;
-                x: number;
-                y: number;
-                r: number;
-                b: number;
-                over: boolean;
-                left: boolean;
-              }[]
-            >(
-              `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight, left: getComputedStyle(n).textAlign === 'left' }; })`,
-            );
-            expect(boxes).toHaveLength(11);
-            if (fs) {
-              for (const p of boxes) {
-                const clear = p.r <= fs.x || fs.r <= p.x || p.b <= fs.y || fs.b <= p.y;
-                expect(clear, `${p.id} covers the fullscreen button`).toBe(true);
-              }
-            }
-            // One square size for every overlay (they sit over the canvas boxes), nothing clipped or overflowing.
-            expect(
-              new Set(
-                boxes.map(
-                  (k) => `${String(Math.round(k.r - k.x))}x${String(Math.round(k.b - k.y))}`,
-                ),
-              ).size,
-            ).toBe(1);
-            expect(Math.round((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0))).toBe(
-              Math.round((boxes[0]?.b ?? 0) - (boxes[0]?.y ?? 0)),
-            );
-            for (const k of boxes) expect(k.over, `${k.id} overflows`).toBe(false);
-            for (const k of boxes) {
-              expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);
-              expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(g.y - 0.5);
-              expect(k.r, `${k.id} right`).toBeLessThanOrEqual(g.r + 0.5);
-              expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(g.b + 0.5);
-              expect(k.b - k.y, `${k.id} height`).toBeGreaterThanOrEqual(48);
-            }
-            // aligned on the left: the first box starts at the left edge of the canvas
-            const cv = await page.evaluate<{ x: number; w: number; h: number }>(
-              `(() => { const q = document.querySelector('#game canvas').getBoundingClientRect(); return { x: q.x, w: q.width, h: q.height }; })()`,
-            );
-            // The wide phone view (QA r19) widens the canvas past 16:9 and keeps the HUD in the central 16:9 box: measure from that box's left edge.
-            const hudLeft = cv.x + Math.max(0, (cv.w - (cv.h * 16) / 9) / 2);
-            // (the two ability boxes come first and are canvas-only, so the first overlay is at most three boxes in (the slim HUD bar adds a gap))
-            expect(Math.min(...boxes.map((k) => k.x)) - hudLeft).toBeLessThan(
-              3 * ((boxes[0]?.r ?? 0) - (boxes[0]?.x ?? 0)) + 16,
-            );
-            for (const [i, p] of boxes.entries()) {
-              for (const q of boxes.slice(i + 1)) {
-                const apart =
-                  p.r <= q.x + 0.5 || q.r <= p.x + 0.5 || p.b <= q.y + 0.5 || q.b <= p.y + 0.5;
-                expect(apart, `${p.id} and ${q.id} overlap`).toBe(true);
-              }
-            }
-            await page.screenshot({
-              path: info.outputPath(
-                `touch-${fraction === undefined ? 'default' : String(fraction)}.png`,
-              ),
-            });
-          },
-        );
-      expect(errors).toEqual([]);
-    });
-  });
-}
-
-for (const hc of [
-  { name: '568x320', w: 568, h: 320 },
-  { name: '640x300', w: 640, h: 300 },
-]) {
-  test.describe(`Arcade touch buttons with high contrast, ${hc.name}`, () => {
-    test.use({
-      viewport: { width: hc.w, height: hc.h },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-      contrast: 'more',
-    });
-
-    test('stay inside #game, none overlapping or overflowing', async ({ page }, info) => {
-      const errors = collectErrors(page);
-      await page.goto(`${START}&ff=arcade#tour`);
-      await page.getByRole('button', { name: 'Start tour' }).tap();
-      await page.getByRole('button', { name: 'Fight' }).tap();
-      await tapTourSplash(page);
-      await page.waitForFunction(ARENA_READY);
-      // Medium display size shrinks #game below 272 px on these phones (the tightest layout).
-      await page.evaluate(
-        `document.documentElement.style.setProperty('--canvas-fraction', '${String(MEDIUM)}'); window.dispatchEvent(new Event('resize'))`,
-      );
-      await page.evaluate(
-        `new Promise((r) => { let n = 0; const f = () => (++n >= 30 ? r(0) : requestAnimationFrame(f)); requestAnimationFrame(f); })`,
-      ); // the overlays re-sync every 5th frame
-      expect(await page.evaluate<string>(`document.documentElement.dataset.highContrast`)).toBe(
-        'true',
-      );
-      const g = await page.evaluate<{ x: number; y: number; r: number; b: number }>(
-        `(() => { const q = document.querySelector('#game').getBoundingClientRect(); return { x: q.x, y: q.y, r: q.right, b: q.bottom }; })()`,
-      );
-      expect(g.b - g.y).toBeLessThan(272);
-      const boxes = await page.evaluate<
-        { id: string; x: number; y: number; r: number; b: number; border: number; over: boolean }[]
-      >(
-        `Array.from(document.querySelectorAll('#game button.touchBtn'), (n) => { const q = n.getBoundingClientRect(); const c = getComputedStyle(n); return { id: n.id, x: q.x, y: q.y, r: q.right, b: q.bottom, border: Math.min(parseFloat(c.borderTopWidth), parseFloat(c.borderRightWidth), parseFloat(c.borderBottomWidth), parseFloat(c.borderLeftWidth)), over: n.scrollWidth > n.clientWidth || n.scrollHeight > n.clientHeight }; })`,
-      );
-      expect(boxes).toHaveLength(11);
-      for (const k of boxes) {
-        expect(k.over, `${k.id} overflows`).toBe(false);
-        expect(k.x, `${k.id} left`).toBeGreaterThanOrEqual(g.x - 0.5);
-        expect(k.y, `${k.id} top`).toBeGreaterThanOrEqual(g.y - 0.5);
-        expect(k.r, `${k.id} right`).toBeLessThanOrEqual(g.r + 0.5);
-        expect(k.b, `${k.id} bottom`).toBeLessThanOrEqual(g.b + 0.5);
-      }
-      for (const [i, p] of boxes.entries()) {
-        for (const q of boxes.slice(i + 1)) {
-          expect(
-            p.r <= q.x + 0.5 || q.r <= p.x + 0.5 || p.b <= q.y + 0.5 || q.b <= p.y + 0.5,
-            `${p.id} and ${q.id} overlap`,
-          ).toBe(true);
-        }
-      }
-      await page.screenshot({ path: info.outputPath('touch-hc.png') });
-      expect(errors).toEqual([]);
-    });
-  });
-}
-
 test('the F key and the button toggle fullscreen where the browser allows it', async ({ page }) => {
   await page.goto('/?ff=arenaDemo&manual=1');
   await page.waitForFunction(ARENA_READY);
@@ -418,37 +209,3 @@ test('the F key and the button toggle fullscreen where the browser allows it', a
   await page.keyboard.press('KeyF');
   await expect.poll(() => page.evaluate<boolean>(`document.fullscreenElement === null`)).toBe(true);
 });
-
-// QA r89 P2: on a small portrait phone the Versus Fight/Back bar is one slim row, so the scroll region keeps most of the screen and the
-// option rows (Opponent, Team, AI level, Arena) below the roster are reachable by scrolling it. Page-side code is passed as strings.
-for (const vp of [
-  { w: 360, h: 640 },
-  { w: 390, h: 844 },
-]) {
-  test.describe(`Versus footer ${String(vp.w)}x${String(vp.h)}`, () => {
-    test.use({
-      viewport: { width: vp.w, height: vp.h },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-    });
-
-    test('the Fight bar is a slim single row and the options are reachable', async ({ page }) => {
-      await page.goto(`${START}&ff=arcade#arcade`);
-      await page.locator('.heroTile').first().waitFor();
-      const bar = await page.evaluate<{ h: number; fight: number; back: number }>(
-        `(() => { const b = document.querySelector('#arcadePick .vsActions').getBoundingClientRect(); return { h: b.height, fight: document.querySelector('.vsFight').getBoundingClientRect().top, back: document.querySelector('#arcadePick .vsActions a.menuButton').getBoundingClientRect().top }; })()`,
-      );
-      expect(bar.h / vp.h).toBeLessThan(0.12);
-      expect(Math.abs(bar.fight - bar.back)).toBeLessThan(12); // same row
-      for (const id of ['arcadeMode', 'arcadeLevel', 'arcadeStage']) {
-        const ok = await page.evaluate<boolean>(
-          `(() => { const s = document.querySelector('.pickScroll'); const e = document.querySelector('#${id}'); if (!e) return false; e.scrollIntoView({ block: 'center' }); const r = s.getBoundingClientRect(); const b = e.getBoundingClientRect(); return b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5; })()`,
-        );
-        expect(ok, `${id} reachable inside the scroll region`).toBe(true);
-      }
-      const sw = await page.evaluate<number>(`document.documentElement.scrollWidth`);
-      expect(sw).toBeLessThanOrEqual(vp.w);
-    });
-  });
-}
