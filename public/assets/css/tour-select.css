@@ -396,11 +396,12 @@ html[data-high-contrast='true'] #tourStage .tourKey kbd { background: #000; colo
   #tourStage .tsInfo p.tourFact:not([data-fact='controls']) { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 0.4em; margin: 0.02em 0; }
   #tourStage .tsInfo p.tourFact .tsPips { margin: 0; }
   #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.58em; line-height: 1.15; margin: 0.05em 0; }
-  #tourStage .tourKeyRow { gap: 0.05em 0.5em; }
-  #tourStage .tourKey kbd { line-height: 1.2; }
+  #tourStage .tourKeyRow { gap: 0.05em 0.3em; }
+  #tourStage .tourKey { gap: 0.1em; }
+  #tourStage .tourKey kbd { line-height: 1.2; min-width: 1em; padding: 0 0.1em; border-width: 1px; }
   #tourStage .tsInfo .tsTeam { margin-top: 0.05em; }
   #tourStage .tsInfo p.tourFact:not([data-fact='controls']) { font-size: 0.7em; }
-  #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.52em; }
+  #tourStage .tsInfo p.tourFact[data-fact='controls'] { font-size: 0.49em; }
   #tourStage .tsMine .tsFace, #tourStage .tsTeam .tsMine { width: 2.2em; }
 }
 

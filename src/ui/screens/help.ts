@@ -135,7 +135,7 @@ function keyChip(k: string): HTMLElement {
 
 /** First lessons: the fight loop as a numbered list, then the numbered action bar. */
 function howToFight(b: Bindings = getBindings()): HTMLElement {
-  const body: Node[] = [el('p', undefined, 'The arena forgives nothing. Learn the ground before the first blow.')];
+  const body: Node[] = [el('p', 'helpFlavor', 'The arena forgives nothing. Learn the ground before the first blow.')];
   const ol = el('ol', 'helpSteps');
   for (const l of LESSONS) {
     const li = el('li');
