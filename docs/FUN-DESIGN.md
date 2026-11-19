@@ -1291,7 +1291,7 @@ are unchanged by construction. Phaser `timeScale` is never used for gameplay tim
 | Hit-stop jitter | `hitStop` | Victim sprite plus or minus 2 px per frame while frozen | 20 | Off |
 | Screen shake | strength | medium 60 ms 0.002, heavy 100 ms 0.004, super 250 ms 0.008, KO 300 ms 0.01 (via `shakeFor`) | 15 | Off (existing rule) |
 | Damage numbers | `hitConfirmed` | Integer floats up 24 px over 500 ms; scaled hits greyed; "COUNTER" tag | 70, pooled text | Fade in place; a setting hides them |
-| Combo UI | `hitConfirmed`, `comboEnded` | "N HITS" plus damage on the attacker's side, pops at 3/5/8 | 60 | No pop; stays 1 s |
+| Combo UI | `hitConfirmed`, `comboEnded` | "N HITS" plus damage; on desktop it rides over the victim's head (clamped like damage numbers), on touch and phone it keeps the fixed slot under the attacker's bars; pops at 3/5/8 | 60 | No pop; stays 1 s |
 | Hyper meter | `RenderView.arcade().meter` | 3-segment bar under the HUD with the bar count as a number; flashes when full | 60 | Number and pattern, not only colour (as `bars.ts`) |
 | Red life | `restCap` | Existing rest bar recoloured and labelled | 10 | Label plus dash pattern |
 | Super cinematic | `superStarted` | 16-tick (40 before SIM_VERSION 58) dim to 40%, element band cut-in with portrait and name | 120 | Cut-in fades instead of sliding; dim kept |
@@ -1318,7 +1318,7 @@ flash fix (V6, both rulesets): `CharacterView` owns the tint and counts rendered
 over the frozen tint); the cause was a 60 ms wall-clock timer on a faint multiply tint ([VISUAL-QA.md](VISUAL-QA.md) V6).
 Classic keeps its six particles, 80 ms shake and `0xff3a3a` hit tint (8 frames after the 2-frame white fill; stronger than the original `0xff7777` so a hit reads as an injury). Damage numbers and combo counters live in
 `src/game/hud/arcade-hud.ts` (pooled model, 16 numbers; fed and aged by the Arena, drawn by `Hud.ts` with pooled texts);
-numbers fan out so a multi-hit volley stays readable; the combo shows from 2 hits under the attacker's bars. Every effect
+numbers fan out so a multi-hit volley stays readable; the combo shows from 2 hits: on desktop anchored over the victim (`src/game/hud/combo-anchor.ts`, kept inside the frame, under the status chips, name labels, meters, bench chips and tag pill, and clear of pops, call-outs, the number lane and the other counter; if nothing fits it fades to 40%), on touch and phone in the fixed slot under the attacker's bars. Every effect
 holds while the sim is paused, so e2e steps and visual captures see it. Not built yet: the setting that hides damage
 numbers and the 3-per-second cap (no full-screen flash exists yet); the trails came with WP 17 and the clash row with WP 18. For testing,
 `?ff=arenaDemo,arcade` (dev and test builds) runs the bot demo with the Arcade ruleset.
