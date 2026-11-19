@@ -66,3 +66,25 @@ export function popLaneLift(live: readonly LivePop[], x: number, y: number): num
   }
   return POP_MAX_LANES * POP_LANE_PX;
 }
+
+/**
+ * The top y (HUD px) for a plate `h` tall spanning HUD x `x0`..`x1` that wants to sit at `top` but must not overlap a status chip
+ * (qa-r110: the weather badge hid the "GALE +20%" chip when the chips wrapped to a second row). It slides down under any chip it
+ * touches, repeating until clear (chips only ever push it down), and keeps `pad` from each. `rects` holds one array per team.
+ */
+export function clearOfChips(rects: readonly (readonly RectLike[])[] | undefined, x0: number, x1: number, top: number, h: number, pad = POP_CEIL_PAD): number {
+  if (!rects) return top;
+  for (let pass = 0; pass < 8; pass++) {
+    let moved = false;
+    for (const team of rects) {
+      for (const r of team) {
+        if (x1 > r.x - pad && x0 < r.x + r.w + pad && top < r.y + r.h + pad && top + h > r.y - pad) {
+          top = r.y + r.h + pad;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  return top;
+}

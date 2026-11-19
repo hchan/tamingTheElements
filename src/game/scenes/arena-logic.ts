@@ -34,11 +34,12 @@ export function chargeLineFor(view: Pick<RenderView, 'forEachCharacter'>, arcade
   return chargeNotice({ fighting: arcade.phase === RoundPhase.fight, chargeIn: arcade.chargeIn(hero.id), blocked });
 }
 
-/** The refusal line for a Run press: nothing while a run is on (a second press stops it), else rooted, else the seconds left ("Run Away in 3 s"). */
+/** The refusal line for a Run press: nothing while a run is on (a second press stops it), else stunned, else rooted, else the seconds left ("Run Away in 3 s"). */
 export function runLineFor(view: Pick<RenderView, 'forEachCharacter' | 'actionBar'>, arcade: RenderArcade): string | undefined {
   const hero = activeHeroOf(view);
   const run = view.actionBar(0)?.run;
   if (!hero || !run || arcade.running(hero.id)) return undefined;
+  if (arcade.stunned(hero.id)) return "Can't run while stunned";
   if (arcade.rooted(hero.id)) return "Can't run while rooted";
   const left = arcade.runIn(hero.id);
   return left > 0 ? `${run.away ? RUN_AWAY_NAME : RUN_TOWARDS_NAME} in ${String(Math.ceil(left / 50))} s` : undefined;

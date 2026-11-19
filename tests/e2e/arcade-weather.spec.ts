@@ -21,6 +21,7 @@ interface Weather {
   chargeFill: number;
 }
 
+interface Box { x: number; y: number; w: number; h: number }
 const WEATHER = 1 << 14;
 /** Round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91. */
 const INTRO = 91;
@@ -135,6 +136,15 @@ test('Arcade Versus: the AI calls Gale, R calls Sunshine, the touch Weather butt
   await page.evaluate(`window.__TTE__.arena.stepLive(3)`);
   expect(await weather(page)).toMatchObject({ kind: 4, label: 'GALE 10', call: 'Gale!', particles: 12 });
   await page.screenshot({ path: `${process.env['HOME'] ?? ''}/claudetmp/wv-gale.png` });
+  // QA r110: the badge (and charge chip) never sit on a status chip such as "GALE +20%"; chips[0..1] are the teams' status chips, chips[2] the weather boxes.
+  await expect.poll(async () => (await page.evaluate<{ chips: Box[][] }>(`window.__TTE__.arena.overlays()`)).chips[2]?.length ?? 0).toBeGreaterThan(0);
+  const { chips } = await page.evaluate<{ chips: Box[][] }>(`window.__TTE__.arena.overlays()`);
+  expect((chips[0]?.length ?? 0) + (chips[1]?.length ?? 0), 'a status chip is up').toBeGreaterThan(0);
+  for (const w of chips[2] ?? []) {
+    for (const c of [...(chips[0] ?? []), ...(chips[1] ?? [])]) {
+      expect(w.x >= c.x + c.w || c.x >= w.x + w.w || w.y >= c.y + c.h || c.y >= w.y + w.h, `weather box ${JSON.stringify(w)} overlaps chip ${JSON.stringify(c)}`).toBe(true);
+    }
+  }
   // R (live ticks: the keyboard agent plays the player) replaces it; the AI's weather is on its cooldown.
   await charge(page, 0);
   await page.keyboard.down('KeyR');
