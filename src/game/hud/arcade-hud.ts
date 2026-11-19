@@ -62,6 +62,18 @@ export interface ComboShown {
   hold: number;
   /** Ms since the last milestone pop. */
   pop: number;
+  /** The combo is still running this update (false during the fade-out hold). */
+  live: boolean;
+  /** Bumped when a combo restarts or its victim changes, so the view can jump instead of easing from the old spot. */
+  serial: number;
+  /** Entity id of the victim the anchor follows (-1 = none yet). */
+  victim: number;
+  /** Victim head (x, y) and number lane centre x in Arcade px; only meaningful while `anchored`. */
+  ax: number;
+  ay: number;
+  laneX: number;
+  /** An anchor was fed this frame or earlier in this combo; frozen during the fade-out hold and after a KO. */
+  anchored: boolean;
 }
 
 export class ArcadeHudModel {
@@ -81,7 +93,7 @@ export class ArcadeHudModel {
       numbers.push({ live: false, serial: 0, x: 0, y: 0, amount: 0, scaled: false, counter: false, age: 0 });
     }
     this.numbers = numbers;
-    const combo = (): ComboShown => ({ hits: 0, damage: 0, hold: 0, pop: COMBO_POP_MS });
+    const combo = (): ComboShown => ({ hits: 0, damage: 0, hold: 0, pop: COMBO_POP_MS, live: false, serial: 0, victim: -1, ax: 0, ay: 0, laneX: 0, anchored: false });
     this.combos = [combo(), combo()];
   }
 
@@ -104,6 +116,23 @@ export class ArcadeHudModel {
     n.age = 0;
   }
 
+  /**
+   * The victim's head (x, y) and lane centre x this frame, in Arcade px (Arena, from drawCharacter). `team` is the attacking
+   * side (whose combo it is), `id` the victim entity. Ignored unless that combo is live, so it freezes during the fade-out hold.
+   */
+  anchorCombo(team: 0 | 1, id: number, x: number, y: number, laneX: number): void {
+    const c = this.combos[team];
+    if (!c.live) return;
+    if (c.victim !== id) {
+      if (c.victim !== -1) c.serial++;
+      c.victim = id;
+    }
+    c.ax = x;
+    c.ay = y;
+    c.laneX = laneX;
+    c.anchored = true;
+  }
+
   /** Advances by `ms`. `hits`, `damage` and `meter` are the live combo and hyper meter per team (RenderView.arcade()). */
   update(ms: number, hits: readonly number[], damage: readonly number[], meter: readonly number[] = NO_METER): void {
     for (let team = 0; team < this.meters.length; team++) {
@@ -123,13 +152,27 @@ export class ArcadeHudModel {
       const h = hits[team] ?? 0;
       c.pop += ms;
       if (h >= COMBO_MIN_HITS) {
+        const d = damage[team] ?? 0;
+        if (!c.live || h < c.hits || d < c.damage) {
+          c.serial++;
+          c.victim = -1;
+          c.anchored = false;
+        }
         if (h !== c.hits && COMBO_MILESTONES.includes(h)) c.pop = 0;
         c.hits = h;
-        c.damage = damage[team] ?? 0;
+        c.damage = d;
         c.hold = COMBO_HOLD_MS;
-      } else if (c.hits > 0) {
-        c.hold -= ms;
-        if (c.hold <= 0) c.hits = 0;
+        c.live = true;
+      } else {
+        c.live = false;
+        if (c.hits > 0) {
+          c.hold -= ms;
+          if (c.hold <= 0) {
+            c.hits = 0;
+            c.anchored = false;
+            c.victim = -1;
+          }
+        }
       }
     }
   }
@@ -274,7 +317,7 @@ export function projectToHud(x: number, y: number, from: HudRect, to: HudRect, o
 
 /** Margin (px) a damage number keeps from the frame sides. */
 export const NUMBER_MARGIN = 16;
-/** Lowest y of the top HUD band (bars, chips, pips, combo) and highest y of the action bar a number may use. */
+/** Lowest y of the top HUD band (bars, chips, pips; the combo only on touch screens, where it keeps its top slot) and highest y of the action bar a number may use. */
 export const NUMBER_TOP = 120;
 export const NUMBER_BOTTOM = 632;
 /** A number slides sideways at most this far to clear a rect; further, it drops under the rect. */
@@ -352,6 +395,8 @@ export function clearOfPops(cx: number, bottomY: number, halfW: number, h: numbe
 export const TAG_CALL_KEY = 'tte.tagCall';
 /** Registry key: the visible combo readouts' rects in HUD px (an array reused every frame). The TAG! call slides clear of them. */
 export const COMBO_RECTS_KEY = 'tte.comboRects';
+/** Registry key: lists of HUD-px rects other sources want the anchored combo counter to stay clear of, one slot per source (slot 0 = the terrain badge). */
+export const HUD_AVOID_KEY = 'tte.hudAvoid';
 /** Registry key: the status chips' un-popped rects in HUD px, `[team 0 rects, team 1 rects]` (arrays reused every frame). Pops stay below them. */
 export const CHIP_RECTS_KEY = 'tte.chipRects';
 

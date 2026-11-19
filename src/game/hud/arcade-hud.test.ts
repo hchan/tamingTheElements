@@ -65,6 +65,42 @@ describe('damage numbers', () => {
 });
 
 describe('combo counter', () => {
+  describe('anchor', () => {
+    it('ignores anchors until a combo is live and keeps them through the hold, then clears', () => {
+      const m = new ArcadeHudModel();
+      const c = m.combos[0];
+      m.anchorCombo(0, 1, 10, 20, 12);
+      expect(c.anchored).toBe(false);
+      m.update(16, [2, 0], [20, 0]);
+      expect(c.live).toBe(true);
+      m.anchorCombo(0, 1, 10, 20, 12);
+      expect(c).toMatchObject({ anchored: true, victim: 1, ax: 10, ay: 20, laneX: 12 });
+      m.update(16, [0, 0], [0, 0]);
+      expect(c.live).toBe(false);
+      m.anchorCombo(0, 1, 99, 99, 99);
+      expect(c.ax).toBe(10);
+      expect(c.anchored).toBe(true);
+      m.update(COMBO_HOLD_MS, [0, 0], [0, 0]);
+      expect(c).toMatchObject({ hits: 0, anchored: false, victim: -1 });
+    });
+    it('bumps serial on a restart, a lower count or damage, and a victim change', () => {
+      const m = new ArcadeHudModel();
+      const c = m.combos[0];
+      m.update(16, [2, 0], [20, 0]);
+      const s0 = c.serial;
+      m.anchorCombo(0, 1, 1, 1, 1);
+      expect(c.serial).toBe(s0);
+      m.anchorCombo(0, 2, 1, 1, 1);
+      expect(c.serial).toBe(s0 + 1);
+      m.update(16, [3, 0], [30, 0]);
+      expect(c.serial).toBe(s0 + 1);
+      m.update(16, [2, 0], [40, 0]);
+      expect(c).toMatchObject({ serial: s0 + 2, anchored: false, victim: -1 });
+      m.update(16, [0, 0], [0, 0]);
+      m.update(16, [2, 0], [10, 0]);
+      expect(c.serial).toBe(s0 + 3);
+    });
+  });
   it('shows from 2 hits on the attacking side, pops at 3, 5 and 8, and holds 1 s after the combo ends', () => {
     const m = new ArcadeHudModel();
     const c = m.combos[0];
