@@ -94,10 +94,10 @@ for (const size of [{ w: 1280, h: 720, dpr: 1 }, { w: 1920, h: 1080, dpr: 2 }]) 
         // each 4096 px atlas loads lazily the first time its hero is drawn (the legacy `map:` strip shows until then): sample only once both are in
         await expect.poll(async () => page.evaluate<string[]>(`window.__TTE__.arena.sheets().then((p) => p ? p.loaded : [])`), { timeout: 90_000 }).toEqual(expect.arrayContaining([p.race, p.foe]));
         await page.evaluate(`(() => { const a = window.__TTE__.arena; const [m, f] = a.characters(); a.place(m.id, 560, 380, 0); a.place(f.id, 760, 380, 4); })()`);
-        const samples = await fight(page, 40, 4);
+        const samples = await fight(page, 40, 10);
         await shot(page, `${tag}-${p.race}-vs-${p.foe}-idle`);
         // the AI closes in, casts and hits: walk, cast, hurt and guard rows as the fight shows them
-        samples.push(...(await fight(page, 260, 3)));
+        samples.push(...(await fight(page, 260, 6)));
         await shot(page, `${tag}-${p.race}-vs-${p.foe}-fight`);
         const actions = checkSamples(samples);
         expect([...actions].some((a) => a.startsWith(`${p.race}:`)), JSON.stringify([...actions])).toBe(true);
@@ -120,7 +120,7 @@ for (const size of [{ w: 1280, h: 720, dpr: 1 }, { w: 1920, h: 1080, dpr: 2 }]) 
       await page.evaluate(`window.__TTE__.arena.step(91)`);
       // each atlas (the lead's and the stage 1 foe's, wispera) loads lazily the first time its hero is drawn (the legacy strip shows until then)
       await expect.poll(async () => page.evaluate<string[]>(`window.__TTE__.arena.sheets().then((p) => p ? p.loaded : [])`), { timeout: 90_000 }).toEqual(expect.arrayContaining(['sindarosa', 'wispera']));
-      const samples = await fight(page, 200, 4);
+      const samples = await fight(page, 200, 8);
       await shot(page, `${tag}-tour-stage1`);
       const actions = checkSamples(samples);
       expect([...actions].some((a) => a.startsWith('sindarosa:')), JSON.stringify([...actions])).toBe(true);
