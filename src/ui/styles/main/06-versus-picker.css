@@ -1,0 +1,177 @@
+/* Versus hero select (Street Fighter / Marvel vs. Capcom style): P1 and P2 sides around a hero grid, P1/P2 cursors, a key cheat sheet.
+   Colour is never the only cue: every cursor, pick and element carries a text flag or glyph (docs/VISUAL-QA.md). */
+#menu #arcadePick {
+  --vs-p1: #4da3ff;
+  --vs-p2: #ff6fb0;
+  max-width: min(96vw, 80em);
+}
+#arcadePick .heading {
+  white-space: nowrap;
+}
+#menu #arcadePick .settingsGroup {
+  min-width: 0;
+  margin-inline: 0;
+}
+#menu #arcadePick .settingsGroup > div.settingsOption.vsControl {
+  flex: 0 1 auto;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25em 0.5em;
+  align-items: center;
+  min-width: 0;
+}
+#arcadePick .vsHints {
+  flex: 0 0 100%;
+  font-size: 0.85em;
+}
+#arcadePick .vsHints .heroHint {
+  margin: 0.25em 0;
+}
+#arcadePick .vsStage {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(12em, 14em) minmax(0, 1fr) minmax(0, 1fr) minmax(12em, 14em);
+  grid-template-areas: 'side1 grid hero side2';
+  font-size: 16px;
+  gap: 0.75em;
+  align-items: start;
+  margin: 0;
+}
+/* 24 heroes: six tiles per row need more of the stage than the hero panel does. */
+#arcadePick .vsStage:has(.heroGrid[data-cols='6']) {
+  grid-template-columns: minmax(12em, 14em) minmax(0, 1.5fr) minmax(0, 1fr) minmax(12em, 14em);
+}
+#arcadePick .vsSide1 {
+  grid-area: side1;
+  border-color: var(--vs-p1);
+}
+#arcadePick .vsSide2 {
+  grid-area: side2;
+  border-color: var(--vs-p2);
+}
+#arcadePick .vsSide {
+  min-width: 0;
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 0.5em;
+  background: #1f1f3c;
+  text-align: left;
+}
+#arcadePick .vsSideTitle {
+  margin: 0 0 0.4em;
+  font-size: 1.1em;
+  color: var(--color-fg);
+}
+#arcadePick .vsSide .teamSlots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#arcadePick .vsSlotItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+#arcadePick .vsSlotItem[hidden] {
+  display: none;
+}
+#arcadePick .rosterSlot {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6em;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.3em 0.5em;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  background: #2c2c4c;
+  border: 2px solid #888;
+  border-radius: 8px;
+}
+#arcadePick .vsSlotP1.rosterActive {
+  border-color: var(--vs-p1);
+  background: #1a3c70;
+  box-shadow: 0 0 0 2px var(--vs-p1);
+}
+#arcadePick .vsSlotP2.rosterActive {
+  border-color: var(--vs-p2);
+  background: #701e4c;
+  box-shadow: 0 0 0 2px var(--vs-p2);
+}
+#arcadePick .vsBigFace {
+  width: 64px;
+  height: 64px;
+}
+#arcadePick .vsSlotText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+#arcadePick .vsSlotLabel,
+#arcadePick .vsStats {
+  font-size: 0.8em;
+  opacity: 0.9;
+}
+#arcadePick .vsSlotName {
+  font-size: 1.15em;
+  overflow-wrap: anywhere;
+}
+#arcadePick .vsAbilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin-top: 2px;
+  font-size: 0.75em;
+}
+#arcadePick .vsAbility {
+  /* Wraps inside the card (a long name like "Translucent Flame (Buff)" must not cross the border). */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#arcadePick .vsUnpicked .vsSlotName {
+  font-weight: normal;
+  font-style: italic;
+  opacity: 0.8;
+}
+#arcadePick .vsSlotActions {
+  display: flex;
+  gap: 6px;
+}
+#arcadePick .vsSmall {
+  margin: 0;
+  min-height: 44px;
+  padding: 0.1em 0.6em;
+  font-size: 0.85em;
+}
+#arcadePick .vsStatus {
+  margin: 0.4em 0 0.2em;
+  font-size: 0.9em;
+}
+#arcadePick .vsReady {
+  width: 100%;
+  margin: 0;
+  min-height: 44px;
+}
+#arcadePick .vsReady[hidden],
+#arcadePick .vsStatus[hidden] {
+  display: none;
+}
+#arcadePick .vsReadyOn .vsReady {
+  background: var(--color-ready);
+}
+#arcadePick .rosterElement {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: 0.85em;
+}

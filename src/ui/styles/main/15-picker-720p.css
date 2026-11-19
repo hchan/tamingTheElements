@@ -1,0 +1,63 @@
+/* qa-r15: at a short desktop window (720p) the hero panel (Life, Speed, Alignment, Abilities) sat partly under the Fight bar, so a new player could not
+   see what a hero does before picking. The intro paragraph steps aside, the portrait and bar shrink, and the panel sticks to the top of the scroll box. */
+@media (min-width: 900px) and (max-height: 820px) {
+  #tourPick .tourIntro {
+    display: none;
+  }
+  #menu .heroSelect > .heroActions {
+    padding: 0.25em 1em max(0.25em, env(safe-area-inset-bottom));
+  }
+  .heroPanel {
+    position: sticky;
+    top: 4px;
+    margin-bottom: 0.5em;
+    padding: 0.3em 0.6em;
+  }
+  .heroPanel .heroPortrait {
+    width: 64px;
+    height: 64px;
+  }
+  .heroPanel .heroBlurb {
+    display: none;
+  }
+  .heroPanel .heroTop {
+    align-items: center;
+  }
+  .heroPanel .heroStats {
+    margin: 0.3em 0;
+  }
+  .heroPanel .heroAbilities {
+    gap: 0.2em;
+  }
+  .heroPanel .heroAbilitiesTitle {
+    margin: 0.15em 0 0.1em;
+  }
+  .heroPanel .heroAbilityDesc {
+    font-size: 0.75em;
+  }
+  .heroPanel .heroAbilityIcon {
+    width: 32px;
+    height: 32px;
+  }
+}
+/* Mouse windows only: coarse pointers keep the 48 px touch targets (the (0,3,0) rule used to beat them on iPad landscape). */
+@media (min-width: 900px) and (max-height: 820px) and (pointer: fine) {
+  .heroSelect .heroActions .menuButton {
+    min-height: 0;
+    padding-block: 0.2em;
+  }
+  .heroPanel .menuButton {
+    min-height: 0;
+    padding-block: 0.15em;
+  }
+}
+
+/* Tour stage card: the Fight button pulses so the next step is obvious (QA r22). */
+@media (prefers-reduced-motion: no-preference) {
+  .tourFightCta { animation: tourFightPulse 1.4s ease-in-out infinite; }
+  @keyframes tourFightPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 220, 120, 0.0); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 220, 120, 0.45); }
+  }
+}
+

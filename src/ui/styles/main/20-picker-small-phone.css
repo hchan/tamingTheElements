@@ -1,0 +1,104 @@
+/* QA r38 (667x375 phone landscape): the Versus picker's three option rows, the title and a two-line hint filled the screen above the hero
+   cards, which ended up under the Fight!/Back bar. The title goes visually hidden (still in the accessibility tree), the arena hint
+   steps aside and the rows tighten (touch targets stay 44 px), so the You / Computer cards start high enough to be read. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  #arcadePick > .heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  #arcadePick .vsHints {
+    font-size: 12px; /* the 12 px floor of the other picker labels (it was 0.8em, about 10 px, while hidden) */
+  }
+  #menu #arcadePick .settingsGroup > div.settingsOption.vsControl {
+    gap: 0 0.4em;
+  }
+  #arcadePick .vsSegmented {
+    gap: 3px;
+  }
+  /* The virtual stick sits just above the action bar (QA r38: in 2v2 and 3v3 the bar's first slots Blast / Flame / Tag were under it). */
+  #touchStick {
+    bottom: max(8px, calc(env(safe-area-inset-bottom) + 18vh));
+  }
+}
+
+/* QA r39 (667x375 phone landscape): the 2v2/3v3 picker stacked each side's hero cards in one column, pushing the partner below the Fight bar. The slots sit in a row (no stats/abilities lines; the preview card below keeps them), and the first-run card is see-through and click-through apart from Got it, so the fight shows behind it. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  /* "N of 2 picked" sits beside the side title (it used to fall below the cards, under the Fight bar); names stay on one line. */
+  #arcadePick .vsSide {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  #arcadePick .vsSide .vsSideTitle {
+    margin: 0 0 0.2em;
+  }
+  #arcadePick .vsSide .vsStatus {
+    grid-row: 1;
+    grid-column: 2;
+    margin: 0 0 0.2em;
+    text-align: right;
+  }
+  #arcadePick .vsSide .vsSideTitle {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  #arcadePick .vsSide .teamSlots,
+  #arcadePick .vsSide .vsReady {
+    grid-column: 1 / -1;
+  }
+  #arcadePick .vsSide .vsSlotName {
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #arcadePick .vsSide .vsSlotLabel {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.62em; /* QA r41: "Your partner (2v2)" fits whole beside the 30 px face */
+  }
+  /* QA r41: the bar's own short hint stays dropped so Swap up / Clear clear the Fight bar. QA r103 P3: the arena and tag-team notes live in .vsHints, after the
+     roster at the end of the scroll region, so they cost no room above the cards and stay readable here (they were hidden outright, which read as cut off). */
+  #arcadePick .vsActions .heroHint {
+    display: none;
+  }
+  #arcadePick .vsSide .vsSlotActions .vsSmall {
+    min-height: 44px;
+    padding: 0 0.5em;
+  }
+  #arcadePick .vsSide .teamSlots {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  #arcadePick .vsSide .vsSlotItem {
+    flex: 1 1 5.5em;
+  }
+  #arcadePick .vsSide .rosterSlot {
+    padding: 0.15em 0.35em;
+    gap: 0.35em;
+  }
+  #arcadePick .vsSide .vsBigFace {
+    width: 30px;
+    height: 30px;
+  }
+  #arcadePick .vsSide .vsStats,
+  #arcadePick .vsSide .vsAbilities {
+    display: none;
+  }
+  #firstRunHint.firstRunHint:not(.firstRunWait) {
+    background: rgba(14, 12, 32, 0.62);
+    pointer-events: none;
+  }
+  #firstRunHint.firstRunHint .firstRunDone {
+    pointer-events: auto;
+    min-height: 44px;
+  }
+}
+

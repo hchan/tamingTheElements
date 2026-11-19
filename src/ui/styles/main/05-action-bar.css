@@ -1,0 +1,37 @@
+/* Touch/action buttons: transparent overlays laid exactly over their box on the canvas action bar (src/game/hud/touch-overlay.ts sets
+   left/top/width/height/visibility; the bar draws the icon, key and cooldown). They are hidden until placed, never sit on the right, and
+   keep a 48 px floor. `#menu button` (min 44) is more specific than `button.touchBtn`, so both selectors restate it. */
+button.touchBtn,
+#menu button.touchBtn {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  width: 77px;
+  height: 77px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 1px;
+  overflow: hidden;
+  touch-action: none;
+  visibility: hidden;
+}
+button.touchBtn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: -3px;
+}
+html[data-high-contrast='true'] button.touchBtn {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+@media (max-width: 1100px) {
+  #arcadeKeysHint {
+    display: none;
+  }
+}

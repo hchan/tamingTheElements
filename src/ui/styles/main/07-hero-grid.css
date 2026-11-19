@@ -1,0 +1,354 @@
+/* Hero select (Versus and Play): element-grouped portrait grid, focused-hero panel. Faces show the painted colour, lit a touch. */
+.heroFace {
+  display: inline-block;
+  flex: 0 0 auto;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 400% 100%;
+  image-rendering: pixelated;
+  filter: saturate(1.08) brightness(1.06) contrast(1.04) drop-shadow(0 0 3px rgba(200, 190, 255, 0.35));
+}
+/* Dark art (Cyclonius, Echo, Wispera) and locked or unavailable tiles must read at a glance: every face sits on a soft lit plate. A locked tile
+   keeps a bright, lightly desaturated silhouette with a "Locked" pill and a dashed border, never near-black. */
+.heroTileFace {
+  border-radius: 8px;
+  background-color: rgba(205, 190, 255, 0.22);
+  box-shadow: inset 0 0 10px rgba(235, 225, 255, 0.4);
+}
+.heroTile:disabled,
+.heroTile[aria-disabled='true'] {
+  opacity: 1;
+  border-style: dashed;
+  background: #33335a;
+  color: #e6e2f4;
+}
+.heroTile:disabled .heroFace,
+.heroTile[aria-disabled='true'] .heroFace {
+  filter: saturate(0.5) brightness(1.5) contrast(0.95) drop-shadow(0 0 6px rgba(215, 205, 255, 0.7));
+}
+.heroTile:disabled::after,
+.heroTile[aria-disabled='true']::after {
+  content: 'Locked';
+  position: absolute;
+  right: 4px;
+  top: 3px;
+  padding: 0 0.5em;
+  border-radius: 999px;
+  background: rgba(255, 224, 140, 0.92);
+  color: #2a2208;
+  font-size: 0.65em;
+  font-weight: bold;
+}
+.heroGrid {
+  grid-area: grid;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+/* 24 heroes: six per element on desktop (a phone keeps three columns, two rows per element, from the base rule). The tile stacks its
+   face above the name, as on a phone, since six tiles share a half-width grid. */
+.heroGrid[data-cols='6'] {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.heroGroup {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.2em 0 0;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #555;
+  font-size: 0.85em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  color: #b8b4aa;
+}
+.heroGroup[data-element='water'] { border-bottom-color: #5f94cc; }
+.heroGroup[data-element='air'] { border-bottom-color: #b4c6d4; }
+.heroGroup[data-element='fire'] { border-bottom-color: #d0603f; }
+.heroGroup[data-element='earth'] { border-bottom-color: #6ea872; }
+.heroTile {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #555;
+  border-left-width: 5px;
+  border-radius: 4px;
+  background: #26263c;
+  color: #d8d4ca;
+  text-align: left;
+  overflow: hidden;
+}
+/* `button.menuButton` (inline-block) outranks `.heroTile`, so the flex row needs its own specificity: without it the face and name flowed
+   inline and a short name (Ishimi, Echo) sat beside a face that was baseline-shifted into it. */
+/* Play only: the Versus picker lays its own tiles out. */
+.heroSelect button.menuButton.heroTile {
+  display: flex;
+}
+.heroTile[data-element='water'] { border-left-color: #5f94cc; }
+.heroTile[data-element='air'] { border-left-color: #b4c6d4; }
+.heroTile[data-element='fire'] { border-left-color: #d0603f; }
+.heroTile[data-element='earth'] { border-left-color: #6ea872; }
+/* Melee / ranged badge (hero-panel.ts `styleBadge`): the icon is never the only cue, the panel adds the word and tiles add screen-reader text. */
+.heroStyle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: #e8dca8;
+}
+.heroStyleIcon {
+  width: 1.1em;
+  height: 1.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.heroTile .heroStyle {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 1px;
+  border-radius: 3px;
+  background: rgba(14, 12, 24, 0.82);
+  font-size: 13px;
+}
+.heroKind .heroStyle {
+  margin-left: 0.4em;
+  padding: 0 0.5em 0 0.35em;
+  border: 1px solid #8a7a4a;
+  border-radius: 999px;
+  background: rgba(14, 12, 24, 0.6);
+  font-size: 0.9em;
+}
+.heroTileFace {
+  width: 48px;
+  height: 48px;
+}
+.heroTileName {
+  min-width: 0;
+  /* Names wrap only at spaces: breaking mid-word ("Curom o") read as a bug. */
+  overflow-wrap: normal;
+  line-height: 1.1;
+  font-size: 0.85em;
+}
+.heroTile.heroPicked {
+  background: #2a2819;
+}
+.heroTile.heroCursor,
+.heroTile:focus-visible {
+  border-color: #d9c27a;
+  box-shadow: 0 0 0 2px #d9c27a;
+  outline: 0;
+}
+.heroFlag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-top-left-radius: 0;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  background: #d9c27a;
+  color: #000;
+  font-size: 0.6em;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.heroPanel {
+  grid-area: hero;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.6em;
+  border: 2px solid #555;
+  border-radius: 6px;
+  background: #20203a;
+  text-align: left;
+  color: #d8d4ca;
+}
+.heroPanel[data-element='water'] { border-color: #5f94cc; }
+.heroPanel[data-element='air'] { border-color: #b4c6d4; }
+.heroPanel[data-element='fire'] { border-color: #d0603f; }
+.heroPanel[data-element='earth'] { border-color: #6ea872; }
+.heroTop {
+  display: flex;
+  gap: 0.7em;
+  align-items: flex-start;
+}
+.heroPortrait {
+  width: 96px;
+  height: 96px;
+  border: 2px solid #333;
+  background-color: #1a1a2c;
+}
+.heroName {
+  margin: 0;
+  font-size: 1.3em;
+}
+.heroKind {
+  margin: 0.1em 0;
+  text-transform: capitalize;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+.heroBlurb {
+  margin: 0.2em 0 0;
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+.heroStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em 1em;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+.heroStats > div {
+  display: flex;
+  gap: 0.4em;
+}
+.heroStats dt,
+.heroStats dd {
+  margin: 0;
+}
+.heroStats dt {
+  opacity: 0.75;
+}
+.heroStats dd {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+.heroAbilitiesTitle {
+  margin: 0.4em 0 0.2em;
+  font-size: 0.85em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.heroAbilities {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.heroAbility {
+  display: flex;
+  gap: 0.6em;
+  align-items: flex-start;
+}
+.heroAbilityIcon {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #444;
+  background: #1a1a2c;
+  overflow: hidden;
+}
+.heroAbilityIcon img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: saturate(0.6) brightness(0.9);
+}
+.heroAbilityIcon img.heroIconStrip {
+  object-fit: cover;
+  object-position: left;
+}
+.heroAbilityText {
+  min-width: 0;
+}
+.heroAbilityName,
+.heroAbilityDesc {
+  margin: 0;
+}
+.heroAbilityName {
+  font-size: 0.9em;
+}
+.heroAbilityDesc {
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+.heroKey {
+  display: inline-block;
+  padding: 0 0.4em;
+  border: 1px solid #888;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+.heroSlots {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 0.5em;
+  padding: 0;
+  list-style: none;
+}
+.heroSlots li {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.heroSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 0.2em 0.4em;
+  text-align: left;
+  border-width: 2px;
+}
+.heroSlot.heroActive {
+  border-color: #d9c27a;
+  box-shadow: 0 0 0 2px #d9c27a;
+}
+.heroSlotFace {
+  width: 40px;
+  height: 40px;
+}
+.heroSlotLabel {
+  display: block;
+  font-size: 0.7em;
+  opacity: 0.8;
+}
+.heroSlotName {
+  display: block;
+}
+.heroStage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: 'grid hero';
+  gap: 0.75em;
+  align-items: start;
+}
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.75em;
+}
+.heroSelect button:focus-visible,
+.heroSelect a:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
