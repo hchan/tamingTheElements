@@ -70,6 +70,16 @@ describe('keyBindingsScreen (DOM)', () => {
     expect(root.querySelector('a.menuLink')?.getAttribute('href')).toBe('#main');
   });
 
+  it('row headers name the bar key when it differs from the key column, and Charge is not 5', () => {
+    screen = keyBindingsScreen();
+    screen.mount(root);
+    const rowHead = (a: string): string => btn(`bind-${a}-0`).closest('tr')?.querySelector('th')?.textContent ?? '';
+    expect(rowHead('super')).toBe('Super (bar: 9)');
+    expect(rowHead('charge')).toBe('Charge');
+    expect(rowHead('slot5')).toBe('Tag 3');
+    expect(btn('bind-charge-0').textContent).toBe('H');
+  });
+
   it('first focusable is Back, inside the sticky .settingsBar', () => {
     screen = keyBindingsScreen();
     screen.mount(root);

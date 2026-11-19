@@ -194,6 +194,8 @@ export function startRouter(
     active.mount(container);
     if (import.meta.env.DEV || import.meta.env.MODE === 'test') container.dataset.mountedRoute = window.location.hash;
     document.title = routeTitle(route.name);
+    // A new page starts at the top: the previous route's scroll offset must not hide this page's heading and first rows.
+    window.scrollTo(0, 0);
     focusHeading(container);
   };
   window.addEventListener('hashchange', show);

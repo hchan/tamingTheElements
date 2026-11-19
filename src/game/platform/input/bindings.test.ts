@@ -153,7 +153,8 @@ describe('the fighting-game preset', () => {
     // Charge keeps H on its box under the preset (its number alternate is Tag 3's now), and Semicolon reads as the glyph.
     expect(name('charge')).toBe('H');
     expect(codeLabel('Semicolon')).toBe(';');
-    expect(actionKeyLabel(DEFAULT_BINDINGS, 'charge')).toBe('5');
+    expect(actionKeyLabel(DEFAULT_BINDINGS, 'charge')).toBe('H');
+    expect(actionKeyLabel(DEFAULT_BINDINGS, 'slot5')).toBe('5');
     expect(actionKeyLabel(DEFAULT_BINDINGS, 'slot3')).toBe('3');
     expect(actionKeyLabel(DEFAULT_BINDINGS, 'super')).toBe('9');
   });
