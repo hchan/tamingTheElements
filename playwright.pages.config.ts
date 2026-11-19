@@ -22,10 +22,9 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
-    command: [
-      'corepack pnpm exec vite build --outDir dist-pages --emptyOutDir',
-      `corepack pnpm exec vite preview --outDir dist-pages --base /tamingTheElements/ --port ${PORT} --strictPort`,
-    ].join(' && '),
+    // Same supervisor as the main suite (tools/ci/e2e-server.ts): logged exits, restarts, no orphans. dist-pages stays: deploy:pages reads it.
+    command: `corepack pnpm exec tsx tools/ci/e2e-server.ts ${PORT} --mode production --out-dir dist-pages --base /tamingTheElements/`,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
     env: { VITE_BASE: '/tamingTheElements/' },
     url: `http://localhost:${PORT}/tamingTheElements/`,
     reuseExistingServer: false,
