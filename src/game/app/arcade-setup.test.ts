@@ -21,6 +21,7 @@ import {
   type ReplayFile,
 } from '@core/index';
 import { ARCADE_RACES, DEFAULT_PICK, parsePick, type ArcadePick } from './arcade-pick';
+import { heroLife } from '../../ui/screens/arcade-versus';
 import { arcadeEnemy, arcadeLaunch, arcadeSetup, enemyPartner, enemyPartners, heroesOf, type ArcadeResult } from './arcade-setup';
 
 const pick: ArcadePick = { player: characterId('sindarosa'), enemy: characterId('pax'), level: 'normal' };
@@ -316,5 +317,21 @@ describe('Arcade 3v3 tag team (WP-arcade-3v3)', () => {
     }
     expect(ended).toBe(true);
     expect(tagIns.length).toBeGreaterThan(0);
+  });
+});
+
+describe('picker life equals the HUD life', () => {
+  it('heroLife(id, size) is the sim max HP of the team lead for every race and team size', () => {
+    for (const player of ARCADE_RACES) {
+      for (const size of [1, 2, 3]) {
+        const partners = ARCADE_RACES.filter((r) => r !== player && r !== pick.enemy);
+        const p: ArcadePick = {
+          player, enemy: pick.enemy, level: 'normal',
+          ...(size > 1 ? { partner: partners[0] } : {}), ...(size > 2 ? { partner2: partners[1] } : {}),
+        };
+        const w = createMatch(arcadeSetup(p, 7));
+        expect(heroLife(player, size), `${player} ${String(size)}`).toBe(w.state.maxHp[0]);
+      }
+    }
   });
 });

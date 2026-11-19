@@ -34,3 +34,21 @@ test('Rokcore and Pax life is written as words and numbers beside the bars', asy
   expect((await page.locator('#game canvas').screenshot({ path: info.outputPath('life-readout.png') })).length).toBeGreaterThan(2000);
   expect(errors).toEqual([]);
 });
+
+test('the hero picker Life equals the Life the HUD starts with', async ({ page }) => {
+  const errors = collectErrors(page);
+  const [rok] = arcadeLife('rokcore', 'pax');
+  await page.goto(`${START}&ff=arcade#arcade`);
+  await page.getByLabel('Your race').selectOption('rokcore');
+  await page.getByLabel('AI race').selectOption('pax');
+  const panel = page.locator('.heroPanel');
+  await expect(panel.locator('.heroName')).toHaveText(/rokcore/i);
+  await expect(panel.locator('.heroStats div', { hasText: 'Life' }).locator('dd')).toHaveText(String(rok));
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await page.waitForFunction(ARENA_READY);
+  await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+  await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+  const labels = await page.evaluate<string[]>(`window.__TTE__.arena.heroLabels()`);
+  expect(labels[0]).toContain(`Life ${String(rok)}/${String(rok)}`);
+  expect(errors).toEqual([]);
+});

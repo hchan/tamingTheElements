@@ -110,7 +110,7 @@ describe('arcadePickView (DOM)', () => {
     expect(h()?.hidden).toBe(true);
     change(sel('arcadeSize'), '2');
     expect(h()?.hidden).toBe(false);
-    expect(h()?.textContent).toMatch(/less life/);
+    expect(h()?.textContent).toMatch(/different life/);
   });
 
   it('Team size enables the partner(s): 2v2 the partner only, 3v3 both', () => {
