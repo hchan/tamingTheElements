@@ -228,6 +228,19 @@ describe('placeCombo', () => {
     const o = run(st, base({ obstacles: [rect], count: 1, fresh: false }));
     expect(o.targetY).toBe(262);
   });
+  it('caps the milestone pop so the scaled counter keeps the gap to an obstacle (1680 combo-anchor case 3)', () => {
+    // An obstacle exactly COMBO_GAP to the right of the natural spot: any pop would close the gap.
+    const rect: HudRect = { x: 640 + W / 2 + COMBO_GAP, y: 250, w: 160, h: 90 };
+    const o = run(newPlaceState(), base({ headX: 640, frame: WIDE, obstacles: [rect], count: 1 }));
+    expect(o.stuck).toBe(false);
+    expect(o.x).toBe(640);
+    expect(o.popMax).toBe(1);
+    // With room to grow the pop is allowed, but never past the gap.
+    const far: HudRect = { x: 640 + W / 2 + COMBO_GAP + 20, y: 250, w: 160, h: 90 };
+    const p = run(newPlaceState(), base({ headX: 640, frame: WIDE, obstacles: [far], count: 1 }));
+    expect(p.popMax).toBeGreaterThan(1);
+    expect(overlapsAny(p.x, p.y, (W / 2) * p.popMax, H * p.popMax, [far], 1, COMBO_GAP - 0.01)).toBe(false);
+  });
   it('limits the pop cap near the ceiling', () => {
     const o = run(newPlaceState(), base({ b0: 190 }));
     expect(o.popMax).toBeGreaterThanOrEqual(1);

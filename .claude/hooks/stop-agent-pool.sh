@@ -3,7 +3,9 @@
 # "Running" = this session's agent-*.output files (<root>/<project>/<session_id>/tasks/) written in the last 3 minutes.
 # Root: $TTE_AGENT_OUTPUT_ROOT, else ${TMPDIR:-/tmp}/claude-<uid>. Unknown root or session -> allow the stop.
 # Blocks the stop once per turn (stop_hook_active honoured).
+# Opt-in: does nothing unless TTE_AGENT_POOL=1 or the marker file .claude/agent-pool.on exists in the project dir.
 in=$(cat)
+if [ "${TTE_AGENT_POOL:-}" != 1 ] && [ ! -f "${CLAUDE_PROJECT_DIR:-$PWD}/.claude/agent-pool.on" ]; then exit 0; fi
 case "$in" in *'"stop_hook_active":true'*|*'"stop_hook_active": true'*) exit 0;; esac
 sid=$(printf '%s' "$in" | sed -n 's/.*"session_id" *: *"\([A-Za-z0-9_-]*\)".*/\1/p' | head -n 1)
 [ -n "$sid" ] || exit 0

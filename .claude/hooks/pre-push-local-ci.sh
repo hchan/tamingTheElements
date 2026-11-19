@@ -1,7 +1,9 @@
 #!/bin/bash
 # PreToolUse hook on Bash: before a real `git push`, run the tiered gate (gate:commit --hook, then gate:push --verify).
 # push-match.mjs decides whether the command really pushes and in which checkout. Exit 2 blocks. Stdout stays empty.
-# Fails open only when node or pnpm is missing. bash 3.2 compatible. Budget: TTE_PUSH_HOOK_BUDGET_SEC (default 840).
+# Fails open only when node or pnpm is missing; fails closed (exit 2) when git rev-parse fails.
+# Docs-only rule: for a plain `git push [origin [HEAD|<current branch>]]` whose range origin/main...HEAD (renames split) touches only
+# .claude/, docs/, ideas/ or *.md, gate:commit is replaced by `pnpm exec vitest run tests/repo`; gate:push --verify still runs. bash 3.2 compatible. Budget: TTE_PUSH_HOOK_BUDGET_SEC (default 840).
 input=$(cat)
 case "$input" in
   *push*) ;;
@@ -39,9 +41,15 @@ while IFS="$tab" read -r kind val; do
     echo "pre-push-local-ci: cannot tell which checkout this push runs in ($val does not exist); use git -C <absolute checkout path> push ..."
     exit 2
   fi
-  top=$(git -C "$val" rev-parse --show-toplevel 2>/dev/null) || continue
-  mine=$(cd "$root" && cd "$(git rev-parse --git-common-dir 2>/dev/null)" && pwd -P)
-  theirs=$(cd "$top" && cd "$(git rev-parse --git-common-dir 2>/dev/null)" && pwd -P)
+  if ! top=$(git -C "$val" rev-parse --show-toplevel 2>/dev/null); then
+    echo "pre-push-local-ci: git rev-parse failed in $val (not a git checkout?); push NOT checked, blocking (fail closed)."
+    exit 2
+  fi
+  if ! mine=$(cd "$root" && cd "$(git rev-parse --git-common-dir 2>/dev/null)" && pwd -P) ||
+    ! theirs=$(cd "$top" && cd "$(git rev-parse --git-common-dir 2>/dev/null)" && pwd -P); then
+    echo "pre-push-local-ci: git rev-parse --git-common-dir failed ($root or $top); push NOT checked, blocking (fail closed)."
+    exit 2
+  fi
   [ "$mine" = "$theirs" ] || continue
   case "
 $tops
@@ -84,7 +92,11 @@ run_step() {
   shift 2
   left=$((BUDGET - SECONDS))
   [ "$left" -ge 5 ] || left=5
-  ( cd "$top" && exec "${PN[@]}" run --silent "$@" ) </dev/null >>"$log" 2>&1 &
+  if [ "$1" = exec ]; then
+    ( cd "$top" && exec "${PN[@]}" "$@" ) </dev/null >>"$log" 2>&1 &
+  else
+    ( cd "$top" && exec "${PN[@]}" run --silent "$@" ) </dev/null >>"$log" 2>&1 &
+  fi
   gpid=$!
   ( sleep "$left"; kill -TERM -- "-$gpid" 2>/dev/null; sleep 5; kill -KILL -- "-$gpid" 2>/dev/null ) >/dev/null 2>&1 &
   wpid=$!
@@ -97,6 +109,27 @@ run_step() {
   return $rc
 }
 
+# docs_only <top>: true when the pushed range (origin/main...HEAD) is non-empty and every file is docs/ideas/.claude/*.md
+docs_only() {
+  local files f br cmd
+  # only a plain push of the current branch qualifies
+  cmd=$(printf '%s' "$input" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write(String(JSON.parse(d).tool_input.command||""))}catch{}})' 2>/dev/null)
+  br=$(git -C "$1" symbolic-ref --short -q HEAD 2>/dev/null) || return 1
+  [[ "$cmd" =~ ^[[:space:]]*git([[:space:]]+-C[[:space:]]+[^[:space:];\&\|\$\"\']+)?[[:space:]]+push([[:space:]]+origin([[:space:]]+([^[:space:];\&\|\$\"\':-]+))?)?[[:space:]]*$ ]] || return 1
+  [ -z "${BASH_REMATCH[4]}" ] || [ "${BASH_REMATCH[4]}" = HEAD ] || [ "${BASH_REMATCH[4]}" = "$br" ] || return 1
+  files=$(git -C "$1" diff --no-renames --name-only origin/main...HEAD 2>/dev/null) || return 1
+  [ -n "$files" ] || return 1
+  while IFS= read -r f; do
+    case "$f" in
+      .claude/*|docs/*|ideas/*|*.md) ;;
+      *) return 1 ;;
+    esac
+  done <<EOF3
+$files
+EOF3
+  return 0
+}
+
 for top in $tops; do
   if [ ! -f "$top/tools/ci/gate.ts" ]; then
     echo "pre-push-local-ci: $top predates the tiered gate (no tools/ci/gate.ts); push from the main checkout."
@@ -105,7 +138,12 @@ for top in $tops; do
   mkdir -p "$top/.scratch"
   log="$top/.scratch/push-hook.log"
   : > "$log"
-  for step in "gate:commit --hook" "gate:push --verify"; do
+  steps=("gate:commit --hook" "gate:push --verify")
+  if docs_only "$top"; then
+    echo "pre-push-local-ci: gate:commit skipped (docs-only rule: every file in origin/main...HEAD is under .claude/, docs/, ideas/ or is *.md); running tests/repo instead."
+    steps=("exec vitest run tests/repo" "gate:push --verify")
+  fi
+  for step in "${steps[@]}"; do
     # shellcheck disable=SC2086
     run_step "$top" "$log" $step
     rc=$?
@@ -119,6 +157,8 @@ for top in $tops; do
       exit 2
     fi
   done
-  echo "pre-push-local-ci: $top: gate:commit ok, gate:push --verify ok"
+  ran=""
+  for step in "${steps[@]}"; do ran="${ran:+$ran, }${step% --hook} ok"; done
+  echo "pre-push-local-ci: $top: ${ran}"
 done
 exit 0

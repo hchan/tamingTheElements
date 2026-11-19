@@ -28,7 +28,7 @@ decisions below are the durable copy).
 ## Work packages
 
 1. Repo side (this one): `tools/gpu-queue/ctl.py` + `test_ctl.py`, client `tools/gpu-queue/jobs.ts` (`pnpm gpu:*`), rule
-   `.claude/rules/gpu-pc.md`, CLAUDE.md pointer, hook `.claude/hooks/pre-tool-pc-guard.sh` in WARN mode.
+   `.claude/rules/gpu-pc.md`, CLAUDE.md pointer, hook `.claude/hooks/pre-tool-pc-guard.sh` BLOCKS by default (owner decided block-by-default 2026-11-19; `TTE_PC_GUARD=warn` in the launch env downgrades it to a warning).
 2. PC side install (owner approves the script first): pueue binaries, `~/tte-jobs`, tokens, selftest.
 3. Live smoke, one week of GPU-lane use, then hook to block mode and delete `run-queue.sh`.
 4. Later: e2e through `cpu-short` / `cpu-full`; a `cpu` group for measure routes.
