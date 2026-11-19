@@ -252,3 +252,21 @@ export function chipCentreX(cx: number, w: number, patchL: number, patchR: numbe
   if (lo > hi) return cx;
   return Math.max(lo, Math.min(hi, cx));
 }
+
+/**
+ * Which patch carries the floor chip (qa-r112: four to six identical "FIRE x2" plates were noise at phone size, and one could sit on the
+ * stick ring). Every patch of a layout is the same stage, so one word says it: the patch whose centre is nearest `midX` (the arena's
+ * middle, away from both thumbs' corners; the lower index wins a tie). -1 with no patch. `rects` is x, y, w, h per patch.
+ */
+export function chipOwner(rects: readonly number[], count: number, midX: number): number {
+  let best = -1;
+  let bestD = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < count; i++) {
+    const d = Math.abs((rects[i * 4] ?? 0) + (rects[i * 4 + 2] ?? 0) / 2 - midX);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  return best;
+}

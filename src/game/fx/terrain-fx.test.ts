@@ -3,7 +3,7 @@ import { SimEventKind, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import {
   BLOCKED_LINE, BUFF_WORDS, MAX_PARTICLES, PARTICLES_PER_PATCH, REDUCED_TELEGRAPH_ALPHA, STAGE_NAMES, SWAP_FLOOR, SWAP_TICKS, TerrainFx,
-  badgeText, changedLine, enteredLine, glowAlpha, chipCentreX, inPatch, nextBackdropAlpha, particle, patchAlpha, progress, swapLine, type Particle, type TerrainSink,
+  badgeText, changedLine, enteredLine, glowAlpha, chipCentreX, chipOwner, inPatch, nextBackdropAlpha, particle, patchAlpha, progress, swapLine, type Particle, type TerrainSink,
 } from './terrain-fx';
 
 let seq = 0;
@@ -220,5 +220,17 @@ describe('chipCentreX (FLOOR-TAGS-1)', () => {
   });
   it('a view narrower than the chip keeps the centre', () => {
     expect(chipCentreX(50, 100, 0, 100, 0, 110, M)).toBe(50);
+  });
+});
+
+describe('chipOwner (qa-r112)', () => {
+  it('picks the patch nearest the middle, the lower index on a tie, -1 with none', () => {
+    // centres 140, 560, 1100
+    const r = [100, 0, 80, 10, 500, 0, 120, 10, 1000, 0, 200, 10];
+    expect(chipOwner(r, 3, 640)).toBe(1);
+    expect(chipOwner(r, 1, 640)).toBe(0);
+    expect(chipOwner(r, 3, 1200)).toBe(2);
+    expect(chipOwner([0, 0, 100, 10, 1180, 0, 100, 10], 2, 640)).toBe(0);
+    expect(chipOwner(r, 0, 640)).toBe(-1);
   });
 });
