@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  Cmd, DEFAULT_SIM_FLAGS, RandomBot, SIM_VERSION, SimEventKind, characterId, collectCommands, createMatch, step,
+  ALL_ABILITIES, Cmd, DEFAULT_SIM_FLAGS, RandomBot, SIM_VERSION, SimEventKind, characterId, collectCommands, createMatch, step,
   type SimEvent,
 } from '@core/index';
 import { cueFor } from '../audio/sound-map';
 import {
   CLASSIC_HIT_TINT, CosmeticRng, ELEMENT_COLORS, EventDeduper, EventFx, HIT_PARTICLES, KO_SHAKE, SHAKE_BY_STRENGTH,
-  SPARKS_BY_STRENGTH, type FxSink,
+  SPARKS_BY_STRENGTH, SPIN_REPEAT_WINDOW_TICKS, type FxSink,
 } from './event-fx';
 import { shakeBoost } from './hit-feel';
 import { rotationForDir } from '../views/projectile-view';
@@ -388,5 +388,59 @@ describe('super hit impact', () => {
     superFx(sink, true).consume([confirmed(10, 3, { amount: 120 })]);
     expect(supers).toContain('superHit3=120@0.30r');
     expect(supers.some((l) => l.includes(':d9b24c'))).toBe(false);
+  });
+});
+
+describe('EventFx spin (Hurricane) repeat pulses', () => {
+  const HURRICANE = ALL_ABILITIES.findIndex((a) => a.id === 'hurricane');
+  const pulse = (tick: number, seq: number, extra: Record<string, number> = {}): SimEvent[] => [
+    confirmed(tick, 1, { ability: HURRICANE, seq, ...extra }),
+    { ...stop(tick, 2), seq: seq + 1000 },
+  ];
+  const run = (reduced: boolean, evs: SimEvent[][]): string[][] => {
+    const { sink, log } = recorder();
+    sink.ring = (t, _c, w) => log.push(`ring${String(t)}w${String(w)}`);
+    const fx = arcadeFx(sink, reduced);
+    return evs.map((e) => {
+      log.length = 0;
+      fx.consume(e);
+      return [...log];
+    });
+  };
+
+  it('keeps the full effect on pulse 1 and softens pulses 2..6', () => {
+    const out = run(false, [0, 1, 2, 3, 4, 5].map((i) => pulse(10 + i * 25, i + 1)));
+    expect(out[0]?.some((l) => l.startsWith('flash'))).toBe(true);
+    expect(out[0]?.some((l) => l.startsWith('shake'))).toBe(true);
+    for (const o of out.slice(1)) {
+      expect(o.some((l) => l.startsWith('flash') || l.startsWith('shake') || l.startsWith('jitter'))).toBe(false);
+      expect(o.some((l) => l.startsWith('ring'))).toBe(true);
+      expect(o.some((l) => l.startsWith('number'))).toBe(true);
+    }
+  });
+
+  it('restores the full effect once the window expires', () => {
+    const out = run(false, [pulse(10, 1), pulse(10 + SPIN_REPEAT_WINDOW_TICKS + 1, 2)]);
+    expect(out[1]?.some((l) => l.startsWith('flash'))).toBe(true);
+    expect(out[1]?.some((l) => l.startsWith('shake'))).toBe(true);
+  });
+
+  it('tracks attackers separately', () => {
+    const out = run(false, [pulse(10, 1), pulse(35, 2, { attacker: 2 })]);
+    expect(out[1]?.some((l) => l.startsWith('flash'))).toBe(true);
+  });
+
+  it('leaves other abilities unchanged', () => {
+    const plain = confirmed(10, 1, { ability: 0 });
+    const again = confirmed(20, 1, { ability: 0, seq: 2 });
+    const out = run(false, [[plain, stop(10, 2)], [again, { ...stop(20, 2), seq: 9 }]]);
+    expect(out[1]?.some((l) => l.startsWith('flash'))).toBe(true);
+    expect(out[1]?.some((l) => l.startsWith('shake'))).toBe(true);
+  });
+
+  it('under reduced motion pulses 2.. drop the flash and shake and keep a number and one spark', () => {
+    const out = run(true, [pulse(10, 1), pulse(35, 2)]);
+    expect(out[1]?.some((l) => l.startsWith('flash') || l.startsWith('shake'))).toBe(false);
+    expect(out[1]).toEqual(expect.arrayContaining(['number3=12', 'spark3']));
   });
 });

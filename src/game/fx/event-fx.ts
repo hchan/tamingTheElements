@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { SimEventKind, type Element, type SimEvent } from '@core/index';
 import { ELEMENT_COLORS } from './element-colors';
+import { smoothKindForDef } from './ability-smooth';
 import { classicShakeFor, classicWeightFor, holdFramesFor, shakeFor } from './motion';
 import { FlashGate } from './flash-gate';
 import { createImpactLayer } from './impact-view';
@@ -158,6 +159,8 @@ export class EventFx {
   private hitStrength = 0;
   private hitColor = 0;
   private lastSuperFlash = -1e9;
+  /** Tick of the latest spin-ability hit per attacker id (for telling pulse 1 from pulses 2..). */
+  private readonly lastSpinHit = new Map<number, number>();
 
   constructor(
     private readonly sink: FxSink,
@@ -205,6 +208,10 @@ export class EventFx {
     const target = e['target'] ?? -1;
     const strength = Math.min(3, Math.max(0, e['strength'] ?? 0));
     const color = ELEMENT_COLORS[this.opts.elementOf?.(e['attacker'] ?? -1) ?? 'void'];
+    if (this.spinRepeat(e)) {
+      this.spinPulse(e, target, strength, color);
+      return;
+    }
     this.hitTick = e.tick;
     this.hitSource = e.sourceId;
     this.hitTarget = target;
@@ -242,6 +249,34 @@ export class EventFx {
     if (strength === 3) this.sink.burst(target, this.fill(SUPER_GOLD_SPARKS), SUPER_GOLD_SPARKS, SUPER_GOLD, el);
   }
 
+  /** True when this hit is pulse 2.. of a spin ability (Hurricane) by the same attacker; records the hit either way. */
+  private spinRepeat(e: SimEvent): boolean {
+    if (smoothKindForDef(e['ability'] ?? -1) !== 'spin') return false;
+    const attacker = e['attacker'] ?? -1;
+    const last = this.lastSpinHit.get(attacker);
+    this.lastSpinHit.set(attacker, e.tick);
+    return last !== undefined && e.tick >= last && e.tick - last <= SPIN_REPEAT_WINDOW_TICKS;
+  }
+
+  /**
+   * A later pulse of a spin: the damage number and a small soft ring and spark, with no flash, shake, jitter or hit
+   * freeze (hitTick is cleared so the paired hitStop does nothing). Reduced motion keeps only the number and one still spark.
+   */
+  private spinPulse(e: SimEvent, target: number, strength: number, color: number): void {
+    this.hitTick = -1;
+    this.hitTarget = target;
+    this.hitStrength = strength;
+    this.hitColor = color;
+    if ((e['amount'] ?? 0) > 0) this.sink.number(target, e['amount'] ?? 0, (e['scalePm'] ?? 1000) < 1000, e['counter'] === 1);
+    const el = this.opts.elementOf?.(e['attacker'] ?? -1);
+    if (this.opts.reducedMotion()) {
+      this.sink.spark(target, color, el, e['attacker'] ?? -1);
+      return;
+    }
+    this.sink.ring?.(target, color, 1);
+    this.sink.burst(target, this.fill(SPIN_PULSE_SPARKS), SPIN_PULSE_SPARKS, color, el);
+  }
+
   /** The super's own punch beyond the shared hit feedback: a big gold number and (once per super) a screen pulse. */
   private superHit(e: SimEvent, target: number, reduced: boolean): void {
     const amount = e['amount'] ?? 0;
@@ -276,6 +311,11 @@ export class EventFx {
     }
   }
 }
+
+/** Repeat pulses of one spin (Hurricane hits every 500 ms for 3 s) count as one hit while each follows the last within this many ticks (1500 ms at 50 Hz). */
+export const SPIN_REPEAT_WINDOW_TICKS = 75;
+/** Sparks in the soft pulse that replaces the full hit effect on pulses 2.. of a spin. */
+export const SPIN_PULSE_SPARKS = 3;
 
 const BURST_DISTANCE = 24;
 /** Horizontal direction (-1 or 1) from the attacker to the victim (right when the attacker is unknown or level). */
