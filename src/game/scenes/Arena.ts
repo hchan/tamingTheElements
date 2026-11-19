@@ -1,30 +1,19 @@
 import { HoldLerp } from '../loop/hold-lerp';
 import { mountShakeScroll } from '../fx/camera-shake';
 import { LowLifeVignette } from '../fx/low-life-vignette';
-import { shockSeek, shockState } from '../fx/shock-view';
 import { mountTallFills } from './tall-fills';
 import { PlayOnce } from '../net/play-once';
 import Phaser from 'phaser';
 import {
-  ARCADE_T,
-  ARCADE_TEAM_BASE,
-  ARCADE_WORLD_BASE,
-  ArcadeT,
-  ArcadeW,
   DEFAULT_SIM_FLAGS,
   EntityFlag,
-  EntityKind,
-  MAX_ENTITIES,
   applyArenaCheat,
   applyTickCheats,
   benchRows,
-  hash,
   RandomBot,
   SIM_VERSION,
   SimEventKind,
   TeamField,
-  WEATHER_TICKS,
-  World,
   arcadePlayfield,
   capturedRosterIndices,
   characterId,
@@ -56,12 +45,12 @@ import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { P2_BINDINGS } from '../input/local-two';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
-import { counted, type ArenaProbe, type ComboProbe, type ProbeCharacter } from '../platform/test-hook';
+import { counted } from '../platform/test-hook';
 import { getUiFlags } from '../platform/flags';
-import { ArcadeHudModel, CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, POP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, numberLabel, type HudRect } from '../hud/arcade-hud';
+import { ArcadeHudModel } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
 import { BLOCKED_EVENT } from '../boot/presentation';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, fitScene } from '../boot/viewport';
 
 /** Ticks an online match may predict ahead (rollback is the default; `?ff=lockstep` in dev and test builds sets 0). */
 const ROLLBACK_WINDOW = 6;
@@ -85,6 +74,7 @@ import type { MotionSmoother } from '../fx/ability-motion-view';
 import { ReplayCursor } from '../replay/cursor';
 import { buildMatchEnd, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
+import { createArenaProbe } from './arena-probe';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
 
 export const ARENA_SCENE = 'Arena';
@@ -477,202 +467,36 @@ export class Arena extends Phaser.Scene {
     // `&manual=1` starts paused so e2e controls every tick (no real-time ticks before the first step).
     if (new URLSearchParams(window.location.search).has('manual')) driver.pause();
     hook.scene = ARENA_SCENE;
-    hook.arena = {
-      get tick() {
-        return view.tick;
-      },
-      get paused() {
-        return driver.isPaused;
-      },
-      hash: () => hash(world.state),
-      net: () => {
-        const ses = this.session;
-        return ses && { side: ses.side, status: ses.status, simTick: ses.simTick, desync: ses.desync, winner: ses.winner, checkpoints: ses.checkpoints(), stats: ses.stats };
-      },
-      characters: () => {
-        const s = world.state;
-        const out: ProbeCharacter[] = [];
-        for (let i = 0; i < MAX_ENTITIES; i++) {
-          const f = s.flags[i] ?? 0;
-          if (s.kind[i] !== EntityKind.character || (f & EntityFlag.alive) === 0 || (f & EntityFlag.benched) !== 0) continue;
-          out.push({ id: i, team: s.team[i] ?? 0, x: s.x[i] ?? 0, y: s.y[i] ?? 0, w: s.w[i] ?? 0, h: s.h[i] ?? 0, hp: s.hp[i] ?? 0, maxHp: s.maxHp[i] ?? 0 });
-        }
-        return out;
-      },
-      setHp: (id, hp) => {
-        this.launch?.recorder?.invalidate();
-        world.state.hp[id] = hp;
-      },
-      place: (id, x, y, dir) => {
-        this.launch?.recorder?.invalidate();
-        const st = world.state;
-        st.x[id] = x;
-        st.px[id] = x;
-        st.y[id] = y;
-        st.py[id] = y;
-        st.dir[id] = dir;
-      },
-      actionSlots: () =>
-        this.actionBar?.currentSlots.map((s) => ({
-          x: s.x, y: s.y, size: s.size, cmd: s.cmd, kind: s.kind, label: s.label, disabled: s.disabled, highlight: s.highlight,
-        })) ?? [],
-      actionBarScreen: () => this.actionBar?.screenSlots() ?? [],
-      actionBar2Screen: () => this.actionBar2?.screenSlots() ?? [],
-      clicks: () => [...this.clicks],
-      captureGranted: () => view.actionBar(0)?.capture !== undefined,
-      bench: () => benchRows(world, 0),
-      swapReadyTick: () => world.state.teams[TeamField.swapCooldownUntil] ?? 0,
-      swapNotice: () => this.swapNotice?.current ?? '',
-      cheat: (c) => {
-        this.arenaCheat(c);
-      },
-      shaking: () => this.cameras.main.shakeEffect.isRunning,
-      fx: () => {
-        const hud = this.arcadeHud;
-        const tints: { id: number; tint: number; mode: number; wash: number }[] = [];
-        view.forEachCharacter((c) => {
-          const v = this.pool?.peek(c.id);
-          const img = v?.image;
-          if (img?.visible) tints.push({ id: c.id, tint: img.tintTopLeft, mode: img.tintMode, wash: v?.washAlpha ?? 0 });
-        });
-        return {
-          tints,
-          numbers: hud?.numbers.filter((n) => n.live).map((n) => numberLabel(n.amount, n.counter)) ?? [],
-          numberBoxes: (this.scene.get(HUD_SCENE) as unknown as { numberBoxes?(): { x: number; y: number; w: number; h: number }[] }).numberBoxes?.() ?? [],
-          popBoxes: (this.scene.get(HUD_SCENE) as unknown as { popBoxes?(): { x: number; y: number; w: number; h: number }[] }).popBoxes?.() ?? [],
-          comboBoxes: (this.scene.get(HUD_SCENE) as unknown as { comboBoxes?(): ComboProbe[] }).comboBoxes?.() ?? [],
-          combo: [hud?.combos[0].hits ?? 0, hud?.combos[1].hits ?? 0],
-          meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
-        };
-      },
-      camera: () => import('../fx/arena-pan').then((m) => ({ ...m.panFraming(this), camZoom: this.cameras.main.zoom / resolutionOf(this), scrollX: this.cameras.main.worldView.x, centerY: this.cameras.main.worldView.centerY, viewHeight: viewHeight(this), floorScreenY: (LOGICAL_HEIGHT - this.cameras.main.worldView.y) * this.cameras.main.zoom / resolutionOf(this) })),
-      shockFx: () => Promise.resolve(shockState(this)),
-      shockSeek: (ms) => {
-        shockSeek(this, ms);
-        return Promise.resolve();
-      },
-      superFx: () => import('../fx/super-view').then((m) => m.superState(this)),
-      superBurst: () => import('../fx/super-view').then((m) => m.superBurstState(this)),
-      sheets: () => import('../views/pose-layer').then((m) => m.sheetState(this)),
-      rounds: () => import('../hud/round-view').then((m) => m.roundState(this.scene.get(HUD_SCENE))),
-      defence: () => import('../fx/defence-view').then((m) => m.defenceState(this)),
-      overlays: () => {
-        const box = (r: HudRect): { x: number; y: number; w: number; h: number } => ({ x: r.x, y: r.y, w: r.w, h: r.h });
-        const from = viewOfCamera(this.cameras.main, { x: 0, y: 0, w: 0, h: 0 });
-        const frame = hudFrame(viewWidth(this), undefined, viewHeight(this));
-        const sx = frame.w / from.w;
-        const sy = frame.h / from.h;
-        const corner = { x: 0, y: 0 };
-        const callouts = ((this.registry.get(CALLOUT_RECTS_KEY) as HudRect[] | undefined) ?? []).map(box);
-        return {
-          pops: ((this.registry.get(POP_RECTS_KEY) as HudRect[] | undefined) ?? []).map(box),
-          callouts,
-          hudCallouts: callouts.map((r) => {
-            const c = projectToHud(r.x, r.y, from, frame, corner);
-            return { x: c.x, y: c.y, w: r.w * sx, h: r.h * sy };
-          }),
-          chips: ((this.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined) ?? [[], []]).map((team) => team.map(box)),
-          frame: box(frame),
-        };
-      },
-      stageAmbient: () => this.ambient?.state() ?? { emitters: 0, particles: 0 },
-      weather: () => import('../fx/weather-view').then((m) => m.weatherState(this)),
-      viewsReady: () => (!this.arcadeHud || this.rounds !== undefined) && this.scene.isActive(HUD_SCENE),
-      tag: () => import('../hud/tag-view').then((m) => m.tagState(this)),
-      terrain: () => import('../fx/terrain-view').then((m) => m.terrainState(this)),
-      traps: () => import('../fx/trap-view').then((m) => m.trapState(this)),
-      hazard: () => import('../fx/hazard-view').then((m) => m.hazardState(this)),
-      ownElement: () => import('../fx/own-element-view').then((m) => m.ownElementState(this)),
-      hudTextSizes: () => (this.scene.get(HUD_SCENE) as unknown as { textSizes(): ReturnType<ArenaProbe['hudTextSizes']> }).textSizes(),
-      heroLabels: () => (this.scene.get(HUD_SCENE) as unknown as { heroLabels(): string[] }).heroLabels(),
-      hitMarkHide: (on: boolean) => {
-        // Test only: hides the hit-mark layers so a test can diff the same frame with and without the mark.
-        for (const n of ['hit-mark', 'hit-mark-rim']) (this.children.getByName(n) as Phaser.GameObjects.Graphics | null)?.setVisible(!on);
-      },
-      idleAura: () => import('../fx/idle-aura-view').then((m) => m.idleAuraState(this)),
-      idleAuraHide: (on: boolean) => import('../fx/idle-aura-view').then((m) => { m.idleAuraHide(this, on); }),
-      abilityFx: () => import('../fx/ability-aura-view').then((m) => m.abilityFxState(this)),
-      dangerZones: () => import('../fx/danger-view').then((m) => m.dangerState(this)),
-      aim: () => {
-        const g = this.children.getByName('aim') as Phaser.GameObjects.Graphics | null;
-        return g ? { visible: g.visible, x: g.x, y: g.y, angle: Math.round(g.angle) } : undefined;
-      },
-      setMeter: (team, value) => {
-        this.launch?.recorder?.invalidate();
-        world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.meter] = value;
-      },
-      setRoundsWon: (won0, won1) => {
-        // Dev/test only (the hook is dropped from production): lets a test reach the 2-2 draw that starts sudden death.
-        this.launch?.recorder?.invalidate();
-        const a = world.state.arcade;
-        a[ARCADE_TEAM_BASE + ArcadeT.roundsWon] = won0;
-        a[ARCADE_TEAM_BASE + ARCADE_T + ArcadeT.roundsWon] = won1;
-      },
-      setWeatherCharge: (team, value) => {
-        this.launch?.recorder?.invalidate();
-        world.state.arcade[ARCADE_TEAM_BASE + team * ARCADE_T + ArcadeT.weatherCharge] = value;
-      },
-      setWeather: (kind, team) => {
-        // As a cast would (systems/arcade/weather.ts): the slot, then its event to the views. Arcade only.
-        this.launch?.recorder?.invalidate();
-        const a = world.state.arcade;
-        const w = ARCADE_WORLD_BASE;
-        const prev = a[w + ArcadeW.weather] ?? 0;
-        a[w + ArcadeW.weather] = kind;
-        a[w + ArcadeW.weatherUntil] = (a[w + ArcadeW.gameTick] ?? 0) + WEATHER_TICKS;
-        a[w + ArcadeW.weatherTeam] = team;
-        const tick = world.state.world[World.tick] ?? 0;
-        this.rounds?.([{ tick, sourceId: -1, kind: SimEventKind.weatherChanged, seq: 1000, weather: kind, prev, team }]);
-      },
-      grantStatus: (id, status, ticks) => {
-        // Dev/test only: writes a timed status as applyTimedStatus would (STATUS_SLOTS 8 x STATUS_STRIDE 5: [id, source, start, expire, mag]).
-        this.launch?.recorder?.invalidate();
-        const now = world.state.world[World.tick] ?? 0;
-        for (let slot = 0; slot < 8; slot++) {
-          const b = (id * 8 + slot) * 5;
-          if ((world.state.status[b] ?? 0) !== 0) continue;
-          world.state.status.set([status, id, now, now + ticks, 0], b);
-          return;
-        }
-      },
-      ccFx: () => import('../fx/cc-view').then((m) => m.ccFxState(this)),
-      statusFx: () => import('../fx/status-fx-view').then((m) => m.statusFxState(this)),
-      cleanse: () => import('../fx/cleanse-view').then((m) => m.cleanseState(this)),
-      audio: () => (this.audio ? { muted: this.audio.audio.muted, unlocked: this.audio.audio.isUnlocked } : undefined),
-      arcadeAudio: () => import('../audio/arcade-audio').then((m) => m.arcadeAudioState(this.audio?.audio)),
-      boundCodes: () => ({ ...(this.keyboard?.currentBindings() ?? getBindings()) }),
-      step: (n, cmds = [0, 0]) => {
-        driver.pause();
-        for (let k = 0; k < n; k++) this.advance(cmds);
-      },
-      ageFx: (on) => {
-        this.fxAges = on;
-      },
-      sweepDrawn: (id, n, cmds, frames) => {
-        driver.pause();
-        const out: { x: number; frozen: boolean }[] = [];
-        for (let k = 0; k < n; k++) {
-          this.advance(cmds);
-          for (let f = 0; f < frames; f++) {
-            // One render frame at wall-clock alpha f / frames, through the same sampling and draw path as `update`.
-            const alpha = f / frames;
-            this.samplePos(view, alpha);
-            this.frameTick = view.tick;
-            this.frameAlpha = alpha;
-            this.frameLive = false;
-            this.pool?.begin();
-            view.forEachCharacter(this.drawCharacter);
-            this.pool?.end();
-            out.push({ x: this.pool?.acquire(id).drawnX ?? Number.NaN, frozen: view.arcade()?.frozen ?? false });
-          }
-        }
-        return out;
-      },
-      stepLive: (n) => {
-        driver.pause();
-        for (let k = 0; k < n; k++) this.advance([undefined, undefined]);
-      },
-    };
+    hook.arena = createArenaProbe({
+      scene: this, world, view, driver,
+      launch: () => this.launch,
+      session: () => this.session,
+      actionBar: () => this.actionBar,
+      actionBar2: () => this.actionBar2,
+      swapNotice: () => this.swapNotice,
+      arcadeHud: () => this.arcadeHud,
+      pool: () => this.pool,
+      ambient: () => this.ambient,
+      audio: () => this.audio,
+      keyboard: () => this.keyboard,
+      rounds: () => this.rounds,
+      clicks: () => this.clicks,
+      advance: (cmds) => { this.advance(cmds); },
+      drawFrame: (alpha) => { this.drawSweepFrame(view, alpha); },
+      setFxAges: (on) => { this.fxAges = on; },
+      cheat: (c) => { this.arenaCheat(c); },
+    });
+  }
+
+  /** Probe only (sweepDrawn): one render frame at wall-clock alpha, through the same sampling and draw path as `update`. */
+  private drawSweepFrame(view: RenderView, alpha: number): void {
+    this.samplePos(view, alpha);
+    this.frameTick = view.tick;
+    this.frameAlpha = alpha;
+    this.frameLive = false;
+    this.pool?.begin();
+    view.forEachCharacter(this.drawCharacter);
+    this.pool?.end();
   }
 
   private readonly casts = new CastDetector();
