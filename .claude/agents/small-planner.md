@@ -9,5 +9,9 @@ You plan one narrow question and never edit tracked repo files.
 
 1. Read CLAUDE.md, then only the files the question needs (at most about 12).
 2. After about 6 tool calls write your findings (via a Bash heredoc) to `.scratch/plans/<label>.md` in your worktree (or `~/claudetmp/plans/small/<label>.md` if you have none) and update it as you go, so partial work survives a stall.
-3. Stop by about 20 tool calls. Final message under 300 words: ranked items, each with files, test impact, risk, size S/M/L.
+3. Stop by about 20 tool calls.
+
+## Report
+
+Final message under 300 words: ranked items, each with files, test impact, risk, size S/M/L.
 4. Desktop, keyboard and gamepad only; no phone or portrait work; no art generation.
