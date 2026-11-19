@@ -6,6 +6,7 @@ import { CHIP_RECTS_KEY, type HudRect } from '../hud/arcade-hud';
 import { mountTagView, tagState } from '../hud/tag-view';
 import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
 import { mute } from './grim-fx';
+import { clearOfChips } from './pop-lanes';
 import { createWeatherParticles } from './weather-particles-view';
 import {
   CALL_TICKS, MAX_PARTICLES, PARTICLE_COUNTS, SKY_TINTS, TICK_MS, WEATHER_COLORS, WEATHER_NAMES, WeatherFx,
@@ -129,7 +130,9 @@ export function mountWeatherView(
   let callReduced = false;
   /** The round banners (ROUND n held until FIGHT!, then FIGHT! for a second) own the centre: the called line waits for them. */
   let bannerUntil = Number.NEGATIVE_INFINITY;
-  const drawn = { kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1, charge: -1, chargeText: '', chargeFill: 0, ready: 1, alpha: 1 };
+  /** How far (px) the badge slid down to clear the status chips; the called line moves with it. */
+  let badgeShift = 0;
+  const drawn = { badgeTop: 0, chipTop: 0, kind: 0, label: '', fill: -1, tint: 0, particles: 0, scale: 1, charge: -1, chargeText: '', chargeFill: 0, ready: 1, alpha: 1 };
   const pt: Particle = { x: 0, y: 0, dx: 0, dy: 0, r: 0, a: 0 };
   /** The grim textured particle layers (weather-particles-view.ts), on top of the Graphics streaks and grains below. */
   const wp = createWeatherParticles(arena);
@@ -194,17 +197,23 @@ export function mountWeatherView(
     badgeBox.x = x - 8;
     badgeBox.w = w + 16;
     badgeBox.h = p.label.height + BAR_H + 12;
+    // Slide the badge under any status chip it would hide (a second chip row reaches it); the called line follows it down.
+    const badgeTop = clearOfChips(statusChips(), badgeBox.x, badgeBox.x + badgeBox.w, BADGE_Y - 4, badgeBox.h);
+    const by0 = badgeTop + 4;
+    badgeShift = badgeTop - (BADGE_Y - 4);
     const fill = badgeFill(left, w);
-    if (label === drawn.label && kind === drawn.kind && fill === drawn.fill) return;
+    badgeBox.y = badgeTop;
+    if (label === drawn.label && kind === drawn.kind && fill === drawn.fill && badgeTop === drawn.badgeTop) return;
+    drawn.badgeTop = badgeTop;
     drawn.label = label;
     drawn.fill = fill;
     const h = p.label.height;
     const color = highContrast ? (WEATHER_COLORS[kind - 1] ?? 0xffffff) : mute(WEATHER_COLORS[kind - 1] ?? 0xffffff, 0.55, 0.85);
-    p.label.setPosition(x + GLYPH + 8, BADGE_Y);
+    p.label.setPosition(x + GLYPH + 8, by0);
     const g = p.badge.clear();
-    plate(g, x - 8, BADGE_Y - 4, w + 16, h + BAR_H + 12);
-    glyph(g, kind, x + GLYPH / 2, BADGE_Y + h / 2, color);
-    const by = BADGE_Y + h + 2;
+    plate(g, x - 8, by0 - 4, w + 16, h + BAR_H + 12);
+    glyph(g, kind, x + GLYPH / 2, by0 + h / 2, color);
+    const by = by0 + h + 2;
     g.fillStyle(0x000000, 0.8).fillRect(x, by, w, BAR_H);
     g.fillStyle(color, 1).fillRect(x, by, fill, BAR_H);
     g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : 0x000000, 1).strokeRect(x, by, w, BAR_H);
@@ -215,6 +224,14 @@ export function mountWeatherView(
   const chipBox: { x: number; y: number; w: number; h: number } = { x: BADGE_X - CHARGE_BAR_W / 2 - 8, y: CHARGE_Y - 4, w: CHARGE_BAR_W + 16, h: 0 };
   const badgeBox: { x: number; y: number; w: number; h: number } = { x: 0, y: BADGE_Y - 4, w: 0, h: 0 };
   const boxes: HudRect[] = [];
+  /** The two teams' status chip rects (the Hud publishes them under the same key; slot 2 is ours). */
+  const chipsOf: HudRect[][] = [[], []];
+  const statusChips = (): readonly (readonly HudRect[])[] => {
+    const all = hud.registry.get(CHIP_RECTS_KEY) as HudRect[][] | undefined;
+    chipsOf[0] = all?.[0] ?? [];
+    chipsOf[1] = all?.[1] ?? [];
+    return chipsOf;
+  };
   const publish = (chipShown: boolean, badgeShown: boolean, chipH: number): void => {
     const reg = hud.registry;
     let all = reg.get(CHIP_RECTS_KEY) as HudRect[][] | undefined;
@@ -230,7 +247,11 @@ export function mountWeatherView(
   const drawCharge = (p: NonNullable<typeof parts>, pm: number, clock: number): void => {
     const ready = pm >= WEATHER_CHARGE_FULL;
     const alpha = ready ? readyAlpha(clock, reduced) : 1;
-    if (pm === drawn.charge && alpha === drawn.ready) return;
+    const chipTop = clearOfChips(statusChips(), chipBox.x, chipBox.x + chipBox.w, CHARGE_Y - 4, p.chip.height + BAR_H + 12);
+    const cy = chipTop + 4;
+    chipBox.y = chipTop;
+    if (pm === drawn.charge && alpha === drawn.ready && chipTop === drawn.chipTop) return;
+    drawn.chipTop = chipTop;
     drawn.charge = pm;
     drawn.ready = alpha;
     const label = chargeLabel(pm);
@@ -238,10 +259,10 @@ export function mountWeatherView(
     drawn.chargeText = label;
     drawn.chargeFill = chargeFill(pm, CHARGE_BAR_W);
     const x = BADGE_X - CHARGE_BAR_W / 2;
-    p.chip.setPosition(BADGE_X, CHARGE_Y);
-    const by = CHARGE_Y + p.chip.height + 2;
+    p.chip.setPosition(BADGE_X, cy);
+    const by = cy + p.chip.height + 2;
     const g = p.bar.clear();
-    plate(g, x - 8, CHARGE_Y - 4, CHARGE_BAR_W + 16, p.chip.height + BAR_H + 12);
+    plate(g, x - 8, cy - 4, CHARGE_BAR_W + 16, p.chip.height + BAR_H + 12);
     g.fillStyle(0x000000, 0.8).fillRect(x, by, CHARGE_BAR_W, BAR_H);
     g.fillStyle(ready ? 0xb39653 : 0x6f8796, 1).fillRect(x, by, drawn.chargeFill, BAR_H);
     g.lineStyle(highContrast || ready ? 2 : 1, highContrast || ready ? 0xffffff : 0x000000, alpha).strokeRect(x, by, CHARGE_BAR_W, BAR_H);
@@ -275,7 +296,7 @@ export function mountWeatherView(
       const c = progress(clock, from, CALL_TICKS);
       drawn.scale = callScale(c, callReduced);
       if (c >= 1) p.call.setVisible(false);
-      else p.call.setPosition(BADGE_X, CALL_Y).setScale(drawn.scale).setAlpha(clock < from ? 0 : a * 0.85 * callAlpha(c));
+      else p.call.setPosition(BADGE_X, CALL_Y + badgeShift).setScale(drawn.scale).setAlpha(clock < from ? 0 : a * 0.85 * callAlpha(c));
     }
     if (kind === 0) {
       if (drawn.kind !== 0) {

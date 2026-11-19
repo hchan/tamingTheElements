@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { POP_CEIL_FLOOR, POP_CEIL_PAD, POP_LANE_PX, POP_NUMBER_CLEAR_PX, POP_MAX_LANES, popCeil, popLaneLift } from './pop-lanes';
+import { POP_CEIL_FLOOR, POP_CEIL_PAD, POP_LANE_PX, POP_NUMBER_CLEAR_PX, POP_MAX_LANES, popCeil, popLaneLift, clearOfChips } from './pop-lanes';
 import { SCRIM_BOTTOM } from '../hud/slim-hud';
 
 describe('popLaneLift', () => {
@@ -48,5 +48,22 @@ describe('popCeil', () => {
   });
   it('is pinned to the scrim bottom', () => {
     expect(POP_CEIL_FLOOR).toBe(SCRIM_BOTTOM);
+  });
+});
+
+describe('clearOfChips (qa-r110: the weather badge must not hide a status chip)', () => {
+  const chip = { x: 700, y: 120, w: 130, h: 24 };
+  it('leaves a plate alone when there are no chips, or the chip is off to the side or well above', () => {
+    expect(clearOfChips(undefined, 750, 910, 142, 52)).toBe(142);
+    expect(clearOfChips([[chip], []], 900 + 20, 1000, 142, 52)).toBe(142);
+    expect(clearOfChips([[{ ...chip, y: 70 }], []], 750, 910, 142, 52)).toBe(142);
+  });
+  it('slides the plate under a chip it overlaps, keeping the pad', () => {
+    expect(clearOfChips([[], [chip]], 750, 910, 142, 52)).toBe(120 + 24 + POP_CEIL_PAD);
+  });
+  it('keeps sliding under a second row, and ignores a chip wholly below', () => {
+    const row2 = { x: 720, y: 150, w: 120, h: 24 };
+    expect(clearOfChips([[chip, row2], []], 750, 910, 142, 52)).toBe(150 + 24 + POP_CEIL_PAD);
+    expect(clearOfChips([[{ x: 750, y: 400, w: 100, h: 24 }], []], 750, 910, 142, 52)).toBe(142);
   });
 });

@@ -184,6 +184,11 @@ describe('runLineFor and the Run press', () => {
     expect(runLineFor(view(true), ar({ rooted: () => true, runIn: () => 150 }))).toBe("Can't run while rooted");
     expect(runLineFor(view(true), ar({ running: () => true, runIn: () => 300 }))).toBeUndefined();
   });
+  it('says stunned before rooted or the cooldown (a stunned Run press shows as a notice line, not only the tile note)', () => {
+    expect(runLineFor(view(true), ar({ stunned: () => true, runIn: () => 150 }))).toBe("Can't run while stunned");
+    expect(runLineFor(view(true), ar({ stunned: () => true, rooted: () => true }))).toBe("Can't run while stunned");
+    expect(runLineFor(view(true), ar({ stunned: () => true, running: () => true }))).toBeUndefined();
+  });
   it('actionRefusal routes the Run bit to the run line, after the others', () => {
     const ready = { phase: RoundPhase.fight, frozen: false, meter0: METER_BAR, weatherCharge0: WEATHER_CHARGE_FULL };
     const none = () => undefined;
