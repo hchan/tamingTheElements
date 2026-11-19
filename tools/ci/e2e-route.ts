@@ -241,7 +241,8 @@ export function buildSpec(p: Parsed, id: string, lane: LaneName, source: SourceP
     lane,
     source: { sha: source.sha, ...(source.ref ? { ref: source.ref } : {}), ...(source.sha256 ? { sha256: source.sha256 } : {}) },
     command: flake ? ['corepack', 'pnpm', 'exec', 'tsx', 'tools/ci/e2e-flake.ts', ...args] : ['corepack', 'pnpm', 'exec', 'playwright', 'test', ...args],
-    env: {},
+    // Short lane: one retry so a browser close on the PC shows as "flaky" (reported, not hidden) instead of red. Flake runs stay at 0.
+    env: lane === 'short' && !flake ? { TTE_E2E_RETRIES: '1' } : {},
     fetch: flake ? [...p.fetch, FLAKE_SUMMARY] : p.fetch,
     preflight: true,
     direct: !flake,
@@ -638,8 +639,15 @@ export async function main(argv: readonly string[], env: Env = process.env, cwd 
     const d: Deps = { remote, plan: (c, id, o) => planSource(c, id, o), render: renderJob, count: realCount, out: process.stdout, err: process.stderr };
     if (env['TTE_E2E_VIA_QUEUE'] === '1' || p.attach?.startsWith('raw-') || p.cancel?.startsWith('raw-')) d.queue = queueClient(remote, { ...env }, cwd, process.stderr);
     const ctl = new AbortController();
-    const stop = (): void => ctl.abort();
-    if (!p.detach) for (const s of ['SIGINT', 'SIGTERM'] as const) process.on(s, stop);
+    if (!p.detach) {
+      for (const s of ['SIGINT', 'SIGTERM'] as const) {
+        process.on(s, () => {
+          // Say who stopped the run: otherwise the aborted ssh below reads as a network drop.
+          if (!ctl.signal.aborted) process.stderr.write(`router received ${s} (stopped from outside, not an ssh failure); cancelling the PC job\n`);
+          ctl.abort();
+        });
+      }
+    }
     if (p.attach !== undefined || p.cancel !== undefined || p.jobs || p.status) return await runPc(p, env, cwd, d, ctl.signal);
     const file = cacheFile(cwd);
     const ttl = num(env['TTE_PC_PROBE_TTL_SEC'], 60);

@@ -246,6 +246,7 @@ export async function follow(r: Remote, id: string, out: Sink = process.stdout, 
         p.on('error', () => resolve(EXIT.ssh));
         p.on('close', (c) => resolve(c ?? EXIT.ssh));
       });
+      if (opts.signal?.aborted) return { state: 'unreachable', rc: EXIT.ssh };
       if (code !== EXIT.ssh) {
         const st = await jobStatus(r, id);
         if (st) return st.state === 'unknown' || st.state === 'running' || st.state === 'queued' ? { ...st, state: code === EXIT.lost ? 'lost' : 'done', rc: code } : st;
