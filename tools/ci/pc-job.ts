@@ -82,7 +82,7 @@ export function renderJob(spec: JobSpec): { jobSh: string; startSh: string } {
   const workers = spec.workers ?? lane.workers;
   const words = spec.command.map(shellQuote);
   if (spec.direct) {
-    words.push(shellQuote(`--reporter=${laneName === 'short' ? 'list' : 'dot'},json,html`), shellQuote('--trace=retain-on-failure'), `"${OUT_FLAG}"`, shellQuote(`--workers=${workers}`));
+    words.push(shellQuote('--reporter=list,json,html'), shellQuote('--trace=retain-on-failure'), `"${OUT_FLAG}"`, shellQuote(`--workers=${workers}`));
   }
   const cmdLine = words.join(' ');
   const envLines = Object.entries(spec.env).map(([k, v]) => `export ${k}=${shellQuote(v)}`);
