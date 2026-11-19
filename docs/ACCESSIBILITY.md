@@ -17,6 +17,8 @@ and a per-screen `document.title` (`routeTitle` in `src/ui/router.ts`).
 
 - Main menu entries, garrison actions, settings controls and Back links are native buttons, links and form controls, so
   Tab order is DOM order and Enter or Space activates. Disabled entries are real `disabled` buttons and are skipped.
+  Every menu screen starts at Back (Settings and Key Bindings keep it in a sticky top bar), and Tab past the last control leaves the page
+  as in any browser: menus deliberately do not wrap focus (the itch build is an iframe, so a wrap would be a WCAG 2.1.2 trap); only the modal pause dialog does.
 - Garrison rows are `role="button"` with `aria-pressed`; Enter or Space toggles, and focus stays on the row after the list
   re-renders. The garrison now has a Back link (it had none).
   Garrison rows show the battle order as text (`Slot 1`..), and a `Slot 1..3` strip names who fills each slot or says `Empty`

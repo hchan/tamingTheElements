@@ -454,7 +454,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
     const back = el('a', 'menuLink', 'Back');
     back.href = '#main';
     const bar = el('div', 'settingsBar');
-    bar.append(saveBtn, back);
+    bar.append(back, saveBtn);
     const advanced = section('Advanced', 'settingsAdvanced', notice !== '' || tester.enabled);
     advanced.append(
       el('h2', 'heading settingsSubheading', 'Story mode'),

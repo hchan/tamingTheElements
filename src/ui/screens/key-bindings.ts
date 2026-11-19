@@ -86,6 +86,12 @@ export function keyBindingsScreen(store?: SaveStore): Screen {
       const page = el('div', 'menuPage');
       node = page;
       page.append(el('h1', 'heading', 'Key Bindings'));
+      // Back first, in the sticky top bar (as on Settings): 60 controls follow, so Back must not be the last Tab stop.
+      const back = el('a', 'menuLink', 'Back');
+      back.setAttribute('href', '#main');
+      const bar = el('div', 'settingsBar');
+      bar.append(back);
+      page.append(bar);
       page.append(
         el(
           'p',
@@ -252,9 +258,7 @@ export function keyBindingsScreen(store?: SaveStore): Screen {
         padSlot.append(padSection.node);
       }, () => undefined);
 
-      const back = el('a', 'menuLink', 'Back');
-      back.setAttribute('href', '#main');
-      page.append(table, sf, ' ', reset, status, el('h2', undefined, 'Other controls'), system, padSlot, back);
+      page.append(table, sf, ' ', reset, status, el('h2', undefined, 'Other controls'), system, padSlot);
       render();
       container.append(page);
     },
