@@ -1,6 +1,8 @@
+import { spawnSync } from 'node:child_process';
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { queueClient, type Env, type QueueClient } from '../../tools/gpu-queue/client';
 import { CtlError, ownerId, parseArgs, run, UsageError } from '../../tools/gpu-queue/jobs';
 
 // End to end through the real ctl.py: fake ssh runs the remote command locally in a temp HOME, fake pueue/nvidia-smi stand in for the PC.
@@ -227,5 +229,84 @@ describe('gpu CLI against the fake PC', () => {
     await gpu(['status']);
     const tok = readFileSync(join(root, 'cfg', 'token'), 'utf8').trim();
     expect(readFileSync(join(root, 'ssh.log'), 'utf8')).not.toContain(tok);
+  });
+});
+
+describe('raw-job queue client', () => {
+  const mkClient = (): { q: QueueClient; err: ReturnType<typeof sink> } => {
+    const err = sink();
+    const env: Env = { ...process.env };
+    return { q: queueClient({ alias: process.env['TTE_REMOTE'] as string, distro: 'Ubuntu', ssh: FAKE_SSH }, env, process.cwd(), err as never), err };
+  };
+  const jobDir = (script: string): string => {
+    const d = join(root, `jobsrc-${String(n++)}`);
+    mkdirSync(d);
+    writeFileSync(join(d, 'job.sh'), script);
+    return d;
+  };
+  const rawMetaPath = (id: string): string => join(jobsDir(), `raw-${id}`, 'meta.json');
+  const runRaw = (id: string): void => {
+    const r = spawnSync('python3', [join(home, 'tte-jobs', 'bin', 'ctl.py'), 'run-raw', id], { env: { ...process.env, TTE_JOBS_GRACE: '0' }, encoding: 'utf8' });
+    expect(r.error).toBeUndefined();
+  };
+
+  it('submitRaw streams the dir, keeps the token off the command line, and returns raw-<id>', async () => {
+    await setup();
+    const { q } = mkClient();
+    expect(await q.caps()).toBe(true);
+    const id = 'r1';
+    expect(await q.submitRaw('cpu-full', id, jobDir('echo hi\n'))).toBe(`raw-${id}`);
+    expect(existsSync(join(home, 'tte-offload', 'jobs', id, 'job.sh'))).toBe(true);
+    const tok = readFileSync(join(root, 'cfg', 'token'), 'utf8').trim();
+    expect(readFileSync(join(root, 'ssh.log'), 'utf8')).not.toContain(tok);
+    await expect(q.submitRaw('cpu-full', id, jobDir('x\n'))).rejects.toMatchObject({ code: 2 });
+  });
+
+  it('waitRaw returns the job rc, 93 for lost, 130 for cancelled, and redacts output', async () => {
+    await setup();
+    const { q, err } = mkClient();
+    const alias = process.env['TTE_REMOTE'] as string;
+    await q.submitRaw('cpu-full', 'r2', jobDir(`echo "at /home/someone/p/x ${alias} 10.1.2.3"; exit 95\n`));
+    runRaw('r2');
+    expect(await q.waitRaw('raw-r2')).toBe(95);
+    expect(err.text()).toContain('~/p/x');
+    expect(err.text()).not.toMatch(/home\/someone|10\.1\.2\.3/);
+    expect(err.text()).not.toContain(alias);
+
+    await q.submitRaw('cpu-full', 'r3', jobDir('exit 0\n'));
+    runRaw('r3');
+    expect(await q.waitRaw('raw-r3')).toBe(0);
+
+    await q.submitRaw('cpu-full', 'r4', jobDir('exit 0\n'));
+    const meta = JSON.parse(readFileSync(rawMetaPath('r4'), 'utf8')) as Record<string, unknown>;
+    writeFileSync(rawMetaPath('r4'), JSON.stringify({ ...meta, state: 'lost' }));
+    expect(await q.waitRaw('raw-r4')).toBe(93);
+
+    await q.submitRaw('cpu-full', 'r5', jobDir('exit 0\n'));
+    await q.cancelRaw('raw-r5');
+    expect(await q.waitRaw('raw-r5')).toBe(130);
+  });
+
+  it('fetchRaw unpacks results and status', async () => {
+    await setup();
+    const { q } = mkClient();
+    await q.submitRaw('cpu-full', 'r6', jobDir('echo {} > out/results.json\necho \'{"rc":0}\' > status.json\n'));
+    runRaw('r6');
+    expect(await q.waitRaw('raw-r6')).toBe(0);
+    const dest = join(root, 'fetched');
+    await q.fetchRaw('raw-r6', dest);
+    expect(existsSync(join(dest, 'results.json'))).toBe(true);
+    expect(readFileSync(join(dest, 'status.json'), 'utf8')).toContain('"rc"');
+  });
+
+  it('caps is false without raw-e2e; an unreachable PC gives 94 and hides the alias', async () => {
+    await setup();
+    const { q, err } = mkClient();
+    writeFileSync(join(home, 'tte-jobs', 'bin', 'ctl.py'), 'print(\'{"proto": 1}\')\n');
+    expect(await q.caps()).toBe(false);
+    process.env['FAKE_SSH_DOWN'] = '1';
+    await expect(q.submitRaw('cpu-full', 'r7', jobDir('exit 0\n'))).rejects.toMatchObject({ code: 94 });
+    expect(await q.caps()).toBe(false);
+    expect(err.text()).not.toContain(process.env['TTE_REMOTE'] as string);
   });
 });
