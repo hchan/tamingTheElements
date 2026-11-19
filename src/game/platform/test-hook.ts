@@ -14,7 +14,6 @@ export interface ProbeCharacter {
   readonly maxHp: number;
 }
 
-/** Read-only view of a running online match's lockstep session, for the two-context e2e proof (`__TTE__.net()`). */
 /** One visible combo counter as drawn (Hud px unless it says world or page), for the combo-anchor specs. */
 export interface ComboProbe {
   team: 0 | 1;
@@ -58,6 +57,7 @@ export interface ComboProbe {
   css: { x: number; y: number; w: number; h: number };
 }
 
+/** Read-only view of a running online match's lockstep session, for the two-context e2e proof (`__TTE__.net()`). */
 export interface NetProbe {
   readonly side: 0 | 1;
   readonly status: SessionStatus;
