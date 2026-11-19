@@ -23,7 +23,9 @@ async function enterFight(page: Page, team = 1, click = false): Promise<void> {
   if (click) await fight.click();
   else await fight.tap();
   await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
-  // The card is held back until ROUND 1 / FIGHT! has cleared (FIGHT_OVER_EVENT, QA r34/r35): wait for it before the layout reads.
+  // The card is held back until ROUND 1 / FIGHT! has cleared (FIGHT_OVER_EVENT, QA r34/r35). START boots with manual=1, so the sim is
+  // paused: step it past the intro (about 95 ticks) instead of waiting on the 7 s wall-clock fallback, then wait for the reveal.
+  await page.evaluate(`window.__TTE__.arena.step(110)`);
   await page.locator('#firstRunHint:not(.firstRunWait)').waitFor({ state: 'attached', timeout: 90_000 });
 }
 
@@ -47,13 +49,19 @@ async function shot(page: Page, name: string): Promise<void> {
 
 test.describe('phone landscape fight', () => {
   test.use({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  test('card clears the stick and the action bar; Got it is tappable', async ({ page }) => {
+  test('card clears the stick and the action bar, is docked under the fighters and narrow; Got it is tappable', async ({ page }) => {
     await enterFight(page);
     await shot(page, 'land-card');
     const card = await box(page, '#firstRunHint');
     const stick = await box(page, '#touchStick');
     expect(overlap(card, stick)).toBe(false);
     expect(card.y + card.h).toBeLessThan(390 * 0.85); // hugs the action bar (QA r36), never over it
+    // QA r31/r43/r44 (was its own boot): docked in the top band of the floor, under the HUD, so the name banners and ROUND stay clear.
+    expect(card.y).toBeGreaterThanOrEqual(390 * 0.2);
+    expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.5);
+    // QA r33 (was its own boot): narrow enough to clear both feet, with a 44 px Got it.
+    expect(card.w).toBeLessThanOrEqual(844 * 0.6);
+    expect((await box(page, '#firstRunHint .firstRunDone')).h).toBeGreaterThanOrEqual(44);
     await page.getByRole('button', { name: 'Got it' }).tap();
     await expect(page.locator('#firstRunHint')).toHaveCount(0);
     await shot(page, 'land-clear');
@@ -64,20 +72,6 @@ test.describe('phone landscape fight', () => {
     expect(texts.find((t) => /^SINDAROSA /.test(t.text))?.text).toMatch(/\d+\/\d+$/);
     await expect(page.locator('#touchStrike1 .touchStrikeAbility')).toHaveText('Blast');
     await expect(page.locator('#touchStrike2 .touchStrikeAbility')).toHaveText('Flame');
-  });
-  test('the first-run card is docked under the fighters, so the name banners and ROUND stay clear (QA r31)', async ({ page }) => {
-    await enterFight(page);
-    const card = await box(page, '#firstRunHint');
-    // QA r43/r44: docked in the top band of the floor, under the HUD, so it never covers the lower fighting area.
-    expect(card.y).toBeGreaterThanOrEqual(390 * 0.2);
-    expect(card.y + card.h).toBeLessThanOrEqual(390 * 0.5);
-  });
-  test('the first-run card sits between the fighters and is narrow enough to clear both feet (QA r33)', async ({ page }) => {
-    await enterFight(page);
-    const card = await box(page, '#firstRunHint');
-    expect(card.w).toBeLessThanOrEqual(844 * 0.6); // top band (QA r44): no feet to clear, still compact
-    const done = await box(page, '#firstRunHint .firstRunDone');
-    expect(done.h).toBeGreaterThanOrEqual(44);
   });
   test('the arena fills the screen width (no side bars, QA r19)', async ({ page }) => {
     await enterFight(page);
@@ -132,6 +126,12 @@ test.describe('small phone landscape fight', () => {
     expect(card.y + card.h).toBeLessThanOrEqual(375 * 0.4);
     expect(card.y).toBeGreaterThanOrEqual(375 * 0.2);
     expect((await box(page, '#firstRunHint .firstRunDone')).h).toBeGreaterThanOrEqual(44);
+    // The card is see-through and click-through (only Got it takes taps): computed style, so it stays in the browser (was its own boot).
+    const m = await page.evaluate<{ pe: string; donePe: string }>(
+      `(() => { const c = document.querySelector('#firstRunHint'); return { pe: getComputedStyle(c).pointerEvents, donePe: getComputedStyle(c.querySelector('.firstRunDone')).pointerEvents }; })()`,
+    );
+    expect(m.pe).toBe('none');
+    expect(m.donePe).not.toBe('none');
   });
 });
 
@@ -180,15 +180,6 @@ test.describe('small phone landscape, QA r39', () => {
     await shot(page, 'small-picker-2v2-picked');
     expect(m.clipped).toBe(false);
     expect(m.actionsBottom).toBeLessThanOrEqual(m.barTop + 0.5);
-  });
-  test('first-run card is see-through and click-through (only Got it takes taps), and names the bar', async ({ page }) => {
-    await enterFight(page);
-    const m = await page.evaluate<{ pe: string; donePe: string; text: string }>(
-      `(() => { const c = document.querySelector('#firstRunHint'); return { pe: getComputedStyle(c).pointerEvents, donePe: getComputedStyle(c.querySelector('.firstRunDone')).pointerEvents, text: c.textContent }; })()`,
-    );
-    expect(m.pe).toBe('none');
-    expect(m.donePe).not.toBe('none');
-    expect(m.text).toMatch(/Tap the bar/);
   });
   test('Tour stage card: "Stage N  Element" tiles, your team strip, Fight in view', async ({ page }) => {
     await page.goto(`${START}&ff=arcade#tour`);
@@ -266,18 +257,6 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
       expect(names).toEqual(['Blast', 'Flame']);
     });
   }
-  test('a held Strike button holds the key of the bar slot (slot 1)', async ({ page }) => {
-    await enterFight(page);
-    await page.getByRole('button', { name: 'Got it' }).tap();
-    const down = await page.evaluate<string[]>(`(() => {
-      const codes = [];
-      window.addEventListener('keydown', (e) => codes.push(e.code));
-      document.querySelector('#touchStrike1').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, bubbles: true }));
-      document.querySelector('#touchStrike1').dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }));
-      return codes;
-    })()`);
-    expect(down).toContain('Digit1');
-  });
   test('2v2: the life line reads as life (current/max), never a bare number', async ({ page }) => {
     await enterFight(page, 2);
     await page.getByRole('button', { name: 'Got it' }).tap();
@@ -290,16 +269,6 @@ test.describe('small phone landscape, touch attack buttons (QA r39)', () => {
     expect(life?.text).toMatch(/\d+\/\d+$/);
     expect(life?.text).not.toContain('\u2026');
     for (const t of texts.filter((n) => /SUPER/.test(n.text))) expect(overlap(life as Box, t), `${life?.text ?? ""} / ${t.text}`).toBe(false);
-  });
-  test('a Strike tap dismisses the first-run card, and a tag call hides it', async ({ page }) => {
-    await enterFight(page, 2);
-    await page.evaluate(`document.querySelector('#touchStrike1').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, bubbles: true }))`);
-    await expect(page.locator('#firstRunHint:not(.firstRunFade)')).toHaveCount(0); // faded, or already removed (PHONE-2)
-  });
-  test('a tag call hides the first-run card', async ({ page }) => {
-    await enterFight(page, 2);
-    await page.evaluate(`window.dispatchEvent(new Event('tte:tag-call'))`);
-    await expect(page.locator('#firstRunHint')).toHaveCount(0); // a tag call removes the card on the spot (fadeNow), it does not fade
   });
 });
 

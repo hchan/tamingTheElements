@@ -429,6 +429,9 @@ describe('portrait bar touch floor (44 CSS px)', () => {
     expect(c[0]?.[0]).toBe(slotWord({ kind: 'ability', cmd: Cmd.secondary, note: 'Snag' }));
     expect(c[1]).toEqual(['', '']);
   });
+  it('Sindarosa\'s Strike circles read Blast and Flame, with full names for screen readers (QA r105 P3)', () => {
+    expect(strikeCues([{ sprite: 'fireBlast' }, { sprite: 'translucentFlame' }]).map((c) => c[0])).toEqual(['Blast', 'Flame']);
+  });
   it('the 8 remaining tiles (Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse) are ONE row of 44+ px at 390 and 360 wide', () => {
     for (const w of [390, 360]) {
       const r = portraitBarSlots(mk(8), w / 1280);
