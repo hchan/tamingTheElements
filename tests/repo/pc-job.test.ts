@@ -81,7 +81,7 @@ describe('renderJob', () => {
     expect(direct).toContain('"--output=$OUT/test-results"');
     expect(direct).toContain("'--workers=2'");
     expect(renderJob(base()).jobSh).not.toContain('--trace=retain-on-failure');
-    expect(renderJob(base({ lane: 'full', direct: true })).jobSh).toContain("'--reporter=dot,json,html'");
+    expect(renderJob(base({ lane: 'full', direct: true })).jobSh).toContain("'--reporter=list,json,html'");
   });
 
   it('waitSec caps the lock wait (default: the lane waitSec)', () => {
