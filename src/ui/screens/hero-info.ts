@@ -155,7 +155,7 @@ function firstSentence(text: string): string {
   return (m ? m[0] : text).replace(/\s+/g, ' ').trim();
 }
 
-export function heroProfile(id: CharacterId): HeroProfile {
+export function heroProfile(id: CharacterId, life?: number): HeroProfile {
   const ch = getCharacter(id);
   const snag = ARCADE_SNAG_SLOT[id];
   const abilities: AbilityInfo[] = [];
@@ -183,7 +183,7 @@ export function heroProfile(id: CharacterId): HeroProfile {
     blurb: firstSentence(CHARACTER_TEXT.get(id)?.description ?? ''),
     sprite: ch.sprite,
     stats: [
-      ['Life', String(ch.maxHealth)],
+      ['Life', String(life ?? ch.maxHealth)],
       ['Speed', String(ch.speed)],
       ['Alignment', ch.alignment],
     ],

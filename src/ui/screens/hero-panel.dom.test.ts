@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { CHARACTERS, getCharacter } from '@core/menu-index';
 import type { CharacterId } from '@core/menu-index';
 import { ELEMENT_ORDER, heroProfile, heroStyle, heroesPerElement } from './hero-info';
-import { heroGrid, styleBadge } from './hero-panel';
+import { heroGrid, heroPanel, styleBadge } from './hero-panel';
 
 const RACES = CHARACTERS.slice(0, 14)
   .filter((c) => ELEMENT_ORDER.includes(c.element))
@@ -55,5 +55,17 @@ describe('heroGrid', () => {
     const g = heroGrid({ races: RACES });
     expect(g.grid.dataset['cols']).toBe('3');
     expect(g.columns()).toBe(3);
+  });
+});
+
+describe('heroPanel Life row', () => {
+  it('shows the injected starting life, else the raw data value', () => {
+    const id = RACES[0] as CharacterId;
+    const life = (p: ReturnType<typeof heroPanel>): string | undefined => {
+      p.show(id);
+      return [...p.node.querySelectorAll('.heroStats div')].find((r) => r.querySelector('dt')?.textContent === 'Life')?.querySelector('dd')?.textContent ?? undefined;
+    };
+    expect(life(heroPanel(undefined, () => 286))).toBe('286');
+    expect(life(heroPanel())).toBe(String(getCharacter(id).maxHealth));
   });
 });

@@ -1,4 +1,4 @@
-import { CHARACTER_TEXT, getCharacter, type CharacterId } from '@core/index';
+import { CHARACTER_TEXT, DEFAULT_SIM_FLAGS, SIM_VERSION, createMatch, getCharacter, type CharacterId } from '@core/index';
 import { CHARACTERS } from '@core/menu-index';
 import { el, markMoreBelow } from '../dom';
 import { ELEMENT_MARKS } from '../element-marks';
@@ -29,6 +29,33 @@ const P2_PICK = 'On this screen: I J K L move the cursor, U picks, O undoes, P s
  * buttons, links) in the menu classes; the 44 px touch rule applies to every button. Lazy-loaded with the Arcade flow
  * (`src/game/app/arcade-versus.ts`), never part of the menu entry chunk.
  */
+
+const lifeCache = new Map<string, number>();
+
+/**
+ * The life `id` starts an Arcade match with on a team of `size` (1 to 3): the sim's own max HP, read from a tick-0 world built
+ * like `arcadeSetup` (Arcade on, difficulty 1, 0 XP), so the picker can never drift from the HUD. It depends only on the hero and
+ * the roster length, so the team is `size` copies of the hero; cached per (hero, size).
+ */
+export function heroLife(id: CharacterId, size: number): number {
+  const n = Math.min(3, Math.max(1, size));
+  const key = `${id}:${String(n)}`;
+  const hit = lifeCache.get(key);
+  if (hit !== undefined) return hit;
+  const hero = { character: id, xp: 0 };
+  const w = createMatch({
+    simVersion: SIM_VERSION,
+    seed: 1,
+    flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true },
+    chapter: 1,
+    difficulty: 1,
+    p1: Array.from({ length: n }, () => hero),
+    p2: [hero],
+  });
+  const life = w.state.maxHp[0] ?? getCharacter(id).maxHealth;
+  lifeCache.set(key, life);
+  return life;
+}
 
 export interface PickValues {
   readonly player: string;
@@ -161,10 +188,10 @@ const shortName = (id: string): string => CHARACTER_TEXT.get(id as CharacterId)?
 /** CSS background for a hero's map sprite (4-frame sheet, 80 px a frame: the first shows). */
 const avatarOf = (id: string): string => `url("${import.meta.env.BASE_URL}assets/img/map/${encodeURIComponent(getCharacter(id as CharacterId).sprite)}.png")`;
 
-/** "HP 120, Speed 4": the small stat line under a picked hero. */
-const statsOf = (id: string): string => {
+/** "HP 120, Speed 4": the small stat line under a picked hero; HP is the life the HUD starts with on a team of `size`. */
+const statsOf = (id: string, size: number): string => {
   const c = getCharacter(id as CharacterId);
-  return `HP ${String(c.maxHealth)} · Speed ${String(c.speed)}`;
+  return `HP ${String(heroLife(c.id, size))} · Speed ${String(c.speed)}`;
 };
 
 const keyList = (title: string, side: 'vsP1' | 'vsP2', pick: string, keys: readonly (readonly [string, string])[]): HTMLElement => {
@@ -203,7 +230,7 @@ function rosterView(
   const panel = heroPanel(() => {
     dnd.disarm();
     assignMouse(focus);
-  });
+  }, (id) => heroLife(id, Math.max(1, openOf(0).length)));
   /** Index (in cursor order) of the hero the panel shows: the last one a cursor, the mouse or focus landed on. */
   let focus = 0;
   const heroes = heroGrid({
@@ -361,7 +388,7 @@ function rosterView(
       const text = el('span', 'vsSlotText');
       text.append(el('span', 'vsSlotLabel', slotLabel(n)), el('b', 'vsSlotName', empty ? 'Empty' : shortName(sel.value)));
       if (!empty) text.append(rosterElement(element));
-      text.append(el('span', 'vsStats', empty ? 'Pick a hero' : done ? statsOf(sel.value) : 'Default hero'));
+      text.append(el('span', 'vsStats', empty ? 'Pick a hero' : done ? statsOf(sel.value, Math.max(1, open.length)) : 'Default hero'));
       if (done) {
         const abil = el('span', 'vsAbilities');
         // Inside a button, so its text is part of the button's name for screen readers; the title repeats it as a sentence.
@@ -444,8 +471,11 @@ function rosterView(
     node.classList.toggle('vsBothReady', local && ready[0] && ready[1]);
     const shown = races[focus];
     panel.setAction(shown && openOf(mouseSide).some((n) => confirmed.has(n) && f[n]?.value === shown) ? 'Remove from team' : 'Add to team');
-    if (shown && panel.node.dataset['hero'] !== shown) {
+    // A Team-size change shows another life for the same hero, so it redraws too.
+    const teamSize = String(openOf(0).length);
+    if (shown && (panel.node.dataset['hero'] !== shown || panel.node.dataset['teamSize'] !== teamSize)) {
       panel.node.dataset['hero'] = shown;
+      panel.node.dataset['teamSize'] = teamSize;
       panel.show(shown);
     }
   };
@@ -733,7 +763,7 @@ export function arcadePickView(o: PickViewOptions): HTMLElement {
   const actions = el('div', 'vsActions');
   const stageHint = el('p', 'heroHint', 'The arena starts on the element you pick (Random draws one) and follows the Weather: call Weather in the fight to change it.');
   stageHint.id = 'arcadeStageHint';
-  const teamHint = el('p', 'heroHint', 'Tag teams: each hero has less life than in 1v1 (about 60 to 90 percent), because you share the fight with a partner and the bench heals.');
+  const teamHint = el('p', 'heroHint', 'Tag teams: you share the fight with a partner and the bench heals, so each hero has a different life than in 1v1. The hero panel shows the life for the team size you picked.');
   teamHint.id = 'arcadeTeamHint';
   // The roster comes first and the long hints follow it; the region scrolls, and the bar (Fight, its short hint, Back) takes its own row under it.
   const hints = el('div', 'vsHints');

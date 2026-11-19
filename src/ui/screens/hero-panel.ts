@@ -62,7 +62,8 @@ function abilityIcon(mark: string, sprite: string | undefined): HTMLElement {
 }
 
 /** The focused-hero panel. `show` rebuilds it for a hero (cheap: a handful of nodes); `onAdd` adds the "Add to team" button. */
-export function heroPanel(onAdd?: () => void): HeroPanel {
+/** `lifeOf` gives the life a hero starts a match with (the HUD number); without it the raw data value shows. */
+export function heroPanel(onAdd?: () => void, lifeOf?: (id: CharacterId) => number): HeroPanel {
   const node = el('section', 'heroPanel');
   node.setAttribute('aria-label', 'Hero details');
   // "Add to team": assigns the shown hero (the mouse and touch alternative to a second click or a drag).
@@ -72,7 +73,7 @@ export function heroPanel(onAdd?: () => void): HeroPanel {
     onAdd?.();
   });
   const show = (id: CharacterId): void => {
-    const p = heroProfile(id);
+    const p = heroProfile(id, lifeOf?.(id));
     node.textContent = '';
     node.dataset['element'] = p.element;
     const face = el('span', 'heroPortrait heroFace');

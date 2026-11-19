@@ -1,6 +1,6 @@
 import type { CharacterId } from '@core/index';
 import { el, markMoreBelow } from '../dom';
-import { raceLabel, select } from './arcade-versus';
+import { heroLife, raceLabel, select } from './arcade-versus';
 import { heroProfile } from './hero-info';
 import { heroDnd } from './hero-dnd';
 import { faceUrl, heroGrid, heroPanel } from './hero-panel';
@@ -265,13 +265,14 @@ export function tourPickView(o: TourPickOptions): HTMLElement {
   const field = (i: number): HTMLSelectElement => form.elements.namedItem(names[i] ?? '') as HTMLSelectElement;
 
   const idAt = (i: number): CharacterId | '' => field(i).value as CharacterId | '';
+  // Tour always fields three heroes (TOUR_TEAM_SIZE in game/app/tour-match.ts; ui cannot import game).
   const panel = heroPanel(() => {
     dnd.disarm();
     const id = order[cursor];
     // Already in the active slot: take it off. Anywhere else: put it in the active slot (swapping when it is on the team).
     if (id && idAt(active) === id) clear(active);
     else pick(cursor);
-  });
+  }, (id) => heroLife(id, 3));
   const live = el('p', 'srOnly');
   live.setAttribute('role', 'status');
   let active = 0;

@@ -34,6 +34,7 @@ describe('heroProfile', () => {
       expect(p.element).toBe(ch.element);
       expect(p.sprite).toBe(ch.sprite);
       expect(p.stats).toContainEqual(['Life', String(ch.maxHealth)]);
+      expect(heroProfile(id, 123).stats).toContainEqual(['Life', '123']);
       expect(p.stats).toContainEqual(['Speed', String(ch.speed)]);
       expect(p.abilities.length).toBeGreaterThan(0);
     }
