@@ -1,6 +1,6 @@
 import { seedSfc32 } from '@core/menu-index';
 import type { SaveV1 } from '@core/menu-index';
-import { el } from '../dom';
+import { el, navigateHash } from '../dom';
 import { activeSaveStorage } from '../../game/platform/tester/session';
 import { loadSave } from './main-menu';
 import { createPortalFx, type PortalFx } from './portal-fx';
@@ -37,9 +37,7 @@ export function avatarCss(sprite: string): string {
 function browserDeps(): GarrisonDeps {
   return {
     load: () => loadSave(activeSaveStorage()),
-    navigate: (route) => {
-      window.location.hash = `#${route}`;
-    },
+    navigate: navigateHash,
     alert: (m) => {
       window.alert(m);
     },

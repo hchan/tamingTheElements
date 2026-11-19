@@ -10,6 +10,11 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
+/** Routes to a hash route (`navigateHash('main')` or `'#main'`); the router follows hashchange. */
+export function navigateHash(route: string): void {
+  window.location.hash = route.startsWith('#') ? route : `#${route}`;
+}
+
 /** Find a required element by id or throw. */
 export function byId(id: string): HTMLElement {
   const node = document.getElementById(id);

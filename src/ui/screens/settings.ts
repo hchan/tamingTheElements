@@ -7,7 +7,6 @@ import {
   GARRISON_SORT_ORDER,
   fullGarrison,
   metaIdSource,
-  migrate,
   newEmptyState,
   seedSfc32,
   type SaveV1,
@@ -41,10 +40,9 @@ import { tester } from '../../game/platform/tester/session';
 import { requestOpenTesterPanel } from '../tester/install';
 import { canvasFraction } from '../display-scale';
 import type { SaveStore } from '../../game/platform/storage/save-store';
-import { el } from '../dom';
+import { el, navigateHash } from '../dom';
+import { loadSave as readSave } from './main-menu';
 import type { Screen } from './screen';
-
-const STORAGE_KEY = 'Taming the Elements';
 
 /** Raw form values; radio values arrive as strings but are normalised to numbers. */
 export interface SettingsForm {
@@ -105,15 +103,11 @@ export function applyUiScale(scale: number, root: HTMLElement = document.documen
 }
 
 export function loadSave(): SaveV1 {
-  let raw: unknown;
   try {
-    const text = tester.saveStorage(window.localStorage).getItem(STORAGE_KEY);
-    raw = text === null ? null : JSON.parse(text);
+    return readSave(tester.saveStorage(window.localStorage)) ?? newEmptyState();
   } catch {
-    raw = null;
+    return newEmptyState();
   }
-  const r = migrate(raw);
-  return r.ok ? r.value : newEmptyState();
 }
 
 function radioGroup(
@@ -521,7 +515,7 @@ export function settingsScreen(store: SaveStore = createSaveStore(() => Date.now
         applyA11y(next);
         writeTouchLayout(touch);
         applyTouchLayout(touch);
-        window.location.hash = '#main';
+        navigateHash('main');
       });
     });
     page.append(form);

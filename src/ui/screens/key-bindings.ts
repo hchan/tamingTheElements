@@ -1,4 +1,4 @@
-import { migrate, newEmptyState, type SaveV1 } from '@core/menu-index';
+import { newEmptyState, type SaveV1 } from '@core/menu-index';
 import {
   ACTION_LABELS,
   GAME_ACTIONS,
@@ -17,6 +17,8 @@ import {
 } from '../../game/platform/input/bindings';
 import type { SaveStore } from '../../game/platform/storage/save-store';
 import { el } from '../dom';
+import { SAVE_KEY } from '../../game/platform/storage/save-store';
+import { loadSave } from './main-menu';
 import type { PadSection } from './pad-bindings-section';
 import type { Screen } from './screen';
 
@@ -36,8 +38,6 @@ export function formatKeys(keys: readonly string[]): string {
   return keys.join(' or ');
 }
 
-const STORAGE_KEY = 'Taming the Elements';
-
 /** Pure: the save with the bindings written (or removed when they equal the defaults). */
 export function saveWithBindings(save: SaveV1, bindings: Bindings): SaveV1 {
   const next: SaveV1 = { ...save };
@@ -53,9 +53,7 @@ export function bindingsFromSave(save: SaveV1 | null): Bindings {
 
 function readLocal(): SaveV1 {
   try {
-    const text = window.localStorage.getItem(STORAGE_KEY);
-    const r = migrate(text === null ? null : (JSON.parse(text) as unknown));
-    return r.ok ? r.value : newEmptyState();
+    return loadSave(window.localStorage) ?? newEmptyState();
   } catch {
     return newEmptyState();
   }
@@ -68,7 +66,7 @@ async function persist(store: SaveStore | undefined, bindings: Bindings): Promis
     return;
   }
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saveWithBindings(readLocal(), bindings)));
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(saveWithBindings(readLocal(), bindings)));
   } catch {
     /* storage unavailable: the bindings still apply for this session */
   }

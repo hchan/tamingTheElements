@@ -4,7 +4,7 @@ import { codeLabel, getBindings } from '../../game/platform/input/bindings';
 import { browserStorage, createLocalSaveStore } from '../../game/platform/storage/local-save-store';
 import { createMemoryStorage } from '../../game/platform/storage/save-store';
 import type { SaveStore } from '../../game/platform/storage/save-store';
-import { el } from '../dom';
+import { el, navigateHash } from '../dom';
 import type { Screen } from './screen';
 
 export interface ObjectivesView {
@@ -66,9 +66,7 @@ function liveCaptureKey(): string {
 function browserDeps(): ObjectivesDeps {
   return {
     store: createLocalSaveStore(browserStorage() ?? createMemoryStorage(), () => Date.now()),
-    navigate: (route) => {
-      window.location.hash = `#${route}`;
-    },
+    navigate: navigateHash,
   };
 }
 
