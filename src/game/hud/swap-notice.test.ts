@@ -1,7 +1,7 @@
 import { Cmd, SwapBlock } from '@core/index';
 import { describe, expect, it } from 'vitest';
 import { arcadeAvatar, AVATAR_SIZE, mainBar, sideOffset } from './bars';
-import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapRefusalLine, swapSeconds, swapSlotOf, SWAP_BUSY_LINE, SWAP_BUSY_TICKS } from './swap-notice';
+import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapRefusalLine, swapSeconds, swapSlotOf, SWAP_BUSY_LINE, SWAP_BUSY_TICKS, busySwapDue } from './swap-notice';
 
 describe('swapRefusalLine', () => {
   const B = SwapBlock;
@@ -89,5 +89,11 @@ describe('busy swap line', () => {
   it('has a busy line for refusals the bits cannot explain', () => {
     expect(SWAP_BUSY_LINE).toBe("Can't tag right now");
     expect(SWAP_BUSY_TICKS).toBeGreaterThan(0);
+  });
+  it('is due only after more than the grace game ticks', () => {
+    expect(busySwapDue(-1, 100, 3)).toBe(false);
+    expect(busySwapDue(10, 13, 3)).toBe(false);
+    expect(busySwapDue(10, 14, 3)).toBe(true);
+    expect(busySwapDue(10, 5, 3)).toBe(false);
   });
 });

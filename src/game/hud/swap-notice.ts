@@ -34,8 +34,11 @@ export function swapRefusalLine(bits: number, cooldownTicks: number): string | u
 /** The line for a press refused only by `busy` (block-stun, a dash or its recovery, a charge, hard crowd control, a super, weather recovery), or by a dash, charge or weather cast that the same press starts. */
 export const SWAP_BUSY_LINE = "Can't tag right now";
 
-/** Ticks a pressed swap may stay without a tag-in before the busy line shows (game ticks, so hit-stop does not count). */
+/** Game ticks a pressed swap may stay without a tag-in before the busy line shows (hit-stop does not count; online the input delay is added). */
 export const SWAP_BUSY_TICKS = 3;
+
+/** True once a swap pressed at game tick `pending` (-1 = none) has gone more than `grace` game ticks without a tag-in. */
+export const busySwapDue = (pending: number, gameTick: number, grace: number): boolean => pending >= 0 && gameTick - pending > grace;
 
 /** What the view knows about a pressed Charge (FUN-DESIGN 2.17). `chargeIn` is the view's: ticks left, 0 ready, -1 a ranged hero. */
 export interface ChargeState {

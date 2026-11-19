@@ -74,7 +74,7 @@ import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
-import { SWAP_BUSY_LINE, SWAP_BUSY_TICKS, SwapNotice, elementalNotice, swapRefusalLine, swapSlotOf } from '../hud/swap-notice';
+import { SWAP_BUSY_LINE, SWAP_BUSY_TICKS, SwapNotice, busySwapDue, elementalNotice, swapRefusalLine, swapSlotOf } from '../hud/swap-notice';
 import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
@@ -200,6 +200,7 @@ export class Arena extends Phaser.Scene {
   init(data?: ArenaLaunch): void {
     this.launch = data;
     this.ended = false;
+    this.pendingSwap = -1;
   }
 
   create(): void {
@@ -893,13 +894,13 @@ export class Arena extends Phaser.Scene {
     } else if (this.pendingSwap < 0) {
       // Only `busy` refuses it (block-stun, a dash or its recovery, a charge, hard crowd control, a super, weather
       // recovery), or a dash, charge or weather cast this same press starts will: if no tag-in follows, say so.
-      this.pendingSwap = bar.tick;
+      this.pendingSwap = arcade.gameTick;
     }
   }
 
-  /** A swap the sim ignored for more than a few game ticks (hit-stop stands the clock still): say so instead of staying silent. */
-  private checkBusySwap(tick: number): void {
-    if (this.pendingSwap < 0 || tick - this.pendingSwap <= SWAP_BUSY_TICKS) return;
+  /** A swap the sim has not taken SWAP_BUSY_TICKS game ticks after the press (plus the online input delay; hit-stop does not count): say so. */
+  private checkBusySwap(gameTick: number | undefined): void {
+    if (gameTick === undefined || !busySwapDue(this.pendingSwap, gameTick, SWAP_BUSY_TICKS + (this.session?.inputDelay ?? 0))) return;
     this.pendingSwap = -1;
     this.swapNotice?.show(SWAP_BUSY_LINE, this.time.now);
     (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
@@ -1131,7 +1132,7 @@ export class Arena extends Phaser.Scene {
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
     this.actionBar?.update();
     this.actionBar2?.update();
-    this.checkBusySwap(tick);
+    this.checkBusySwap(view.arcade()?.gameTick);
     this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
     this.ambient?.update(getPrefs().reduceMotion);
