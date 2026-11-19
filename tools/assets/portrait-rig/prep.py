@@ -274,6 +274,28 @@ def skin(spec, size):
     return out, masks, Q.reshape(n, n, len(bones))
 
 
+def seam_skin(spec, padded, size):
+    """Opt-in (spec "skin": {"mesh": "seam", "step": 12, "weights": "geodesic"}): free-form seam mesh with geodesic weights (mesh.py)."""
+    sys.path.insert(0, HERE)  # python -I leaves the script folder off sys.path
+    import mesh
+    cfg = spec["skin"]
+    if cfg.get("weights", "geodesic") != "geodesic":
+        sys.exit("skin.weights: only 'geodesic' is implemented")
+    bones = [dict(b, head=[b["head"][0] + PAD, b["head"][1] + PAD]) for b in spec["bones"]]
+    for b, src in zip(bones, spec["bones"]):
+        if "tip" in src:
+            b["tip"] = [src["tip"][0] + PAD, src["tip"][1] + PAD]
+    masks = {b["id"]: poly_mask(size, b["poly"], b.get("feather", 12)) for b in spec["bones"][1:] if "poly" in b}
+    dm = spec.get("deformMask")
+    dwm = None
+    if dm:
+        dwm = np.zeros((size, size), np.float32)
+        for poly in dm["polys"]:
+            dwm = np.maximum(dwm, poly_mask(size, poly, dm.get("feather", 16)))
+    sk, info = mesh.build_skin(padded, bones, cfg.get("step", STEP), masks, dwm)
+    return sk, masks, None, info
+
+
 def glow_img(g, src, seed):
     """Additive glow: hot core, halo, wide bloom; the halo is a little uneven (seeded)."""
     r = float(g["r"])
@@ -346,7 +368,11 @@ def build(hero):
     # Bleed the colour on into the pad too (the bake samples bilinearly across the mesh edge).
     rgb, _ = bleed(padded[..., :3].astype(np.float32), padded[..., 3] > 0, PAD)
     padded[..., :3] = np.where(padded[..., 3:] > 0, padded[..., :3], np.clip(rgb, 0, 255).round().astype(np.uint8))
-    sk, masks, q = skin(spec, size)
+    mesh_info = None
+    if spec.get("skin", {}).get("mesh") == "seam":
+        sk, masks, q, mesh_info = seam_skin(spec, padded, size)
+    else:
+        sk, masks, q = skin(spec, size)
 
     files = {"body.png": Image.fromarray(padded, "RGBA")}
     bones = []
@@ -390,12 +416,12 @@ def build(hero):
     with open(os.path.join(out, "license.txt"), "w") as fh:
         fh.write(spec.get("license") or LICENSE.format(hero=hero))
     hashes["rig.json"] = sha(rig_path)
-    debug(hero, spec, src, padded, masks, q, size)
+    debug(hero, spec, src, padded, masks, q, size, mesh_info, sk)
     print("ok", hero)
     return {"inputs": inputs_of(hero), "outputs": hashes}
 
 
-def debug(hero, spec, src, padded, masks, q, size):
+def debug(hero, spec, src, padded, masks, q, size, mesh_info=None, sk=None):
     if not os.path.isdir(DEBUG):
         return
     d = os.path.join(DEBUG, hero)
@@ -403,6 +429,10 @@ def debug(hero, spec, src, padded, masks, q, size):
     bg = Image.new("RGBA", (size, size), (38, 34, 44, 255))
     bg.alpha_composite(Image.fromarray(padded, "RGBA"))
     bg.save(os.path.join(d, "body-on-dark.png"))
+    if mesh_info is not None:
+        import mesh
+        mesh.debug_images(padded, sk, mesh_info, d)
+        return
     # Bone weights: each bone a hue, vertex dots sized by weight, over the body.
     pal = [(255, 255, 255), (255, 80, 80), (80, 255, 80), (80, 140, 255), (255, 220, 60), (255, 80, 255), (60, 255, 255), (255, 150, 40), (160, 100, 255), (120, 255, 160)]
     im = bg.copy()

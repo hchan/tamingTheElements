@@ -59,3 +59,13 @@ parts and rotated with nearest neighbour loses the painting, and a 2x upscale of
 Update (WISPERA-R2, 2026-11-16): Wispera's source painting was replaced by an SDXL-Turbo redraw (`tools/assets/wispera-art/`); her rig,
 bake, sheet and map strip were regenerated. `build-assets.ts` has a `REDRAWN` guard so the legacy painting is not copied back over
 it. Art only: no sim, golden or SIM_VERSION change.
+
+Update (skin meshes, 2026-11-18): a skin may be a free-form triangle mesh instead of a regular grid. `skin.verts` is a flat
+`[x0, y0, ...]` list in part image px (inside the image) and `skin.tris` a flat list of vertex-index triples, drawn in list
+order; a skin has either `grid` and `step`, or `verts` and `tris`. `w` and `dw` are indexed by vertex, as before. Two vertices at
+the same position with different weights are legal and are the seam: the triangles on each side move independently, which a
+shared grid vertex cannot do across a narrow gap (tail against hind leg). Limits: 8192 vertices, 16384 triangles, every triangle
+edge at most 64 px in the image (the grid's `step` limit, which keeps the raster products below 2^53), no zero-area triangle.
+The renderer is the same: the vertex loop takes its rest point from the mesh instead of the grid, and `rasterTri` takes per-vertex
+texture coordinates; a mesh laid out like a grid bakes byte for byte like the grid (pinned in `tests/repo/bake-rig.test.ts`).
+Opt-in: no shipped rig uses it, so there is no bake version bump and no lock change.
