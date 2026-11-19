@@ -84,3 +84,5 @@ severity: medium
 
 `no keyboard trap on #keyBindings: Tab reaches Back and Enter leaves` fails: "Tab never reached Back in 60 presses (last: Reset stick deadzone)". The other 12 tests in the file pass (one run, PC, job 20261119-133300-short-c28cc6). The Key Bindings page now holds more focusable controls than the 60-press budget, so this is either a real trap-by-length for keyboard players or a stale budget in the test.
 Idea: put Back (and Save) first in the tab order on Key Bindings as on Settings, or raise the budget and add a skip link.
+
+> Caveat (coordinator): this round built origin/main 724b7ce1, which lacks the local results/Escape, Help text and Tour wording merges (2026-11-19). Findings on those three areas are stale; the keyboard.spec.ts:93 failure is real on that base. r122 must build local main.

@@ -38,3 +38,5 @@ Smoke: `e2e ran on: PC (job 20261119-133024-short-dcd97a, short lane) -> exit 0`
 | Settings and keyboard | 2.5 | 3 | 3 | Escape on a slider does nothing; a keyboard-trap test is red (findings 2 and 8). |
 
 Overall: fun 3.5, graphics 3.5, readability 3.5.
+
+> Caveat (coordinator): this round built origin/main 724b7ce1, which lacks the local results/Escape, Help text and Tour wording merges (2026-11-19). Findings on those three areas are stale; the keyboard.spec.ts:93 failure is real on that base. r122 must build local main.
