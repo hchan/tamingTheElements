@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
-You measure balance. You never edit files, never run `pnpm balance:record` (re-recording the baseline is a design decision) and never change data. Scratch goes under `~/claudetmp/`.
+You measure balance. You never edit files, never run `pnpm balance:record` (re-recording the baseline is a design decision) and never change data. Scratch goes in the worktree `.scratch/`.
 
 ## Procedure
 

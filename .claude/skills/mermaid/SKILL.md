@@ -21,5 +21,5 @@ Diagrams must render in GitHub and in the VS Code preview, which bundles an olde
 ## Check
 
 1. Re-read the block against the rules above.
-2. If `mmdc` is installed, run `mmdc -i <file> -o ~/claudetmp/out.svg` (syntax only). It is not part of this repo's dependencies, so skip it if absent.
+2. If `mmdc` is installed, run `mmdc -i <file> -o .scratch/out.svg` (syntax only). It is not part of this repo's dependencies, so skip it if absent.
 3. Do not describe history in diagrams; show the current design.

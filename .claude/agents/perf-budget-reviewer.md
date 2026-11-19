@@ -5,12 +5,12 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
-You measure, then compare against main. You never edit files. Scratch goes under `~/claudetmp/`. There is no bench or size script yet; do not invent one.
+You measure, then compare against main. You never edit files. Scratch goes in the worktree `.scratch/`. There is no bench or size script yet; do not invent one.
 
 ## Procedure
 
 1. Build HEAD: `corepack pnpm build`, then `du -k dist/assets/*` and note the Phaser chunk separately from app code.
-2. Build main in a throwaway worktree: `git worktree add ~/claudetmp/perf-main main`, install and build there, compare chunk sizes, then `git worktree remove ~/claudetmp/perf-main`.
+2. Build main in a throwaway worktree: `git worktree add .scratch/perf-main main`, install and build there, compare chunk sizes, then `git worktree remove .scratch/perf-main`.
 3. Run `corepack pnpm exec vitest run --project core src/core/sim/alloc.test.ts` (no allocation in the step) and time `corepack pnpm sim:match --seeds 4` on HEAD and main.
 4. Assets: `du -k public/assets`; list new files over 200 KB; confirm `corepack pnpm assets:build` still reproduces them.
 5. New dependency: compare `package.json` against main and estimate gzip size.

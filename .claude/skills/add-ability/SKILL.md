@@ -13,7 +13,7 @@ Add: $ARGUMENTS
 
 - A new or changed ability is a gameplay change: confirm the user has approved the design before editing. If not, stop and ask.
 - Stay inside `src/core` determinism rules: no `Date`, `Math.random`, transcendental `Math`; ticks not ms (`ticks = ms/20`); randomness only from the named RNG streams.
-- Never commit or push. Scratch under `~/claudetmp/` only. One work package, about 400 LOC or fewer.
+- Never commit or push. Scratch in the worktree `.scratch/` only. One work package, about 400 LOC or fewer.
 
 ## Procedure
 
@@ -26,4 +26,4 @@ Add: $ARGUMENTS
 7. Balance: run `corepack pnpm balance:compare`; a baseline re-record is a user decision.
 8. Presentation (animation, sound) goes in `src/game/` only; cosmetic code never draws from sim RNG streams.
 9. Docs: `corepack pnpm docs:gen`, `CHANGELOG.md` (append-only), `docs/PARITY.md` if it touches legacy behaviour, `docs/REPO-MAP.md` if files were added.
-10. Run `corepack pnpm lint && corepack pnpm typecheck && corepack pnpm depcruise && corepack pnpm test`, then the `full-review` skill. Report results; leave changes uncommitted.
+10. Run `corepack pnpm gate:commit`, then the `full-review` skill. Report results; leave changes uncommitted.

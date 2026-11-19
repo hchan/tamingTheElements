@@ -3,5 +3,5 @@
 # Prints a short context line (plain stdout is added as context); never blocks.
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 n=$(ls ideas/brainstorm 2>/dev/null | grep -vc '^README' )
-echo "An agent just finished. Per CLAUDE.md keep 2-5 builder agents running (planners do not count): review/merge its result (gate first), then plan (Opus) and build (Sonnet) another item from ideas/brainstorm (${n} available; skip any touching a file another running agent owns, and only one sim-changing agent at a time)."
+echo "An agent just finished. Per CLAUDE.md keep 2-5 builder agents running (planners do not count): review/merge its result (gate first), then scope by size (small: coordinator brief; medium: Sonnet small-planner; large or risky: Opus max planner) and build (Sonnet) another item from ideas/brainstorm (${n} available; skip any touching a file another running agent owns, and only one sim-changing agent at a time)."
 exit 0

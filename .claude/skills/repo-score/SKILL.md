@@ -6,14 +6,14 @@ allowed-tools: Bash(git *), Bash(pnpm *), Bash(ls *), Bash(wc *), Bash(grep *), 
 
 # repo-score
 
-Read-only. Never edit, commit or push. Scratch under `~/claudetmp/` only. Never open `war/WEB-INF/user.properties`.
+Read-only. Never edit, commit or push. Scratch in the worktree `.scratch/` only. Never open `war/WEB-INF/user.properties`.
 
 ## Procedure
 
 1. Gather facts: `git log --oneline -n 15`, `git status --porcelain`, whether `package.json`, `src/core`, `docs/` files and `.claude/` exist. Skip pnpm checks that cannot run yet and mark them "n/a".
 2. Score each 0-5 with one line of evidence:
    - **Build**: `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm depcruise`.
-   - **Tests**: `pnpm test` passes; characterization and golden coverage; no skipped tests.
+   - **Tests**: `pnpm gate:commit` passes (includes tests); characterization and golden coverage; no skipped tests.
    - **Determinism**: no banned APIs in `src/core` (grep for `Date`, `Math.random`, transcendental `Math`); goldens match `SIM_VERSION`.
    - **Docs**: files in `docs/` exist and are current; `docs/REPO-MAP.md` lists new files.
    - **Hygiene**: lint clean, no tracked junk (`node_modules`, `.svn`), no references to the system temp directory, no secrets.

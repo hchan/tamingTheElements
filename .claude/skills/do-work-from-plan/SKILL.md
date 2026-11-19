@@ -15,7 +15,7 @@ Run plan: $ARGUMENTS
 - **Never `git commit`, `git push` or `git tag`.** Typing this skill is permission to edit files in the worktree and run the plan's local checks, nothing more. Changes stay uncommitted for the coordinator.
 - The worktree is cut from CURRENT `main`, never from a stale branch.
 - The agent runs on Sonnet (`model: sonnet`), subagent type `wp-implementer`.
-- Stay inside the worktree. Scratch under `~/claudetmp/` only. Plans live in `~/claudetmp/work-plans/`.
+- Stay inside the worktree. Scratch in the worktree `.scratch/` only. Plans live in `~/claudetmp/work-plans/`.
 - One writer per plan: a plan whose `status` is `in-progress` with another owner is not taken over unless the user says so.
 - Never read or print `war/WEB-INF/user.properties`.
 
