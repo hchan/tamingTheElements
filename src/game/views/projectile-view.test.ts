@@ -167,3 +167,95 @@ describe('Curomo ability visibility boosts', () => {
     expect(SPRITE_BOOST['iceShock']?.dark).toBeUndefined();
   });
 });
+
+describe('ProjectileView ability smoothing (optional clock, shift, reduced)', () => {
+  function setup(): { view: ProjectileView; pos: number[][]; sizes: number[][]; angles: number[] } {
+    const pos: number[][] = [];
+    const sizes: number[][] = [];
+    const angles: number[] = [];
+    const scene = {
+      add: {
+        image: () => {
+          const i = fakeImage();
+          i.setPosition = (x: number, y: number) => { pos.push([x, y]); return i; };
+          i.setDisplaySize = (w: number, h: number) => { sizes.push([w, h]); return i; };
+          i.setAngle = (a: number) => { angles.push(a); return i; };
+          return i;
+        },
+      },
+      textures: { get: () => ({ has: () => true, add: () => undefined }), exists: () => false },
+      time: { now: 0 },
+    } as unknown as Phaser.Scene;
+    return { view: new ProjectileView(scene), pos, sizes, angles };
+  }
+  const box = (sprite: string, id = 1) => ({ id, team: 0, sprite, dir: 0, x: 100, y: 50, px: 0, py: 0, w: 100, h: 40 });
+  // Each apply sets the image display size first, then the glow's: the image is the second-to-last entry.
+  const imageSize = (s: number[][]): number[] => s[s.length - 2] ?? [];
+
+  it('shock: grows in from >= 0.8 of the box and reaches full size within 40 ms', () => {
+    const { view, sizes } = setup();
+    view.apply(box('groundShock'), 1, true, undefined, { tick: 10, alpha: 0 });
+    expect(imageSize(sizes)[0]).toBeGreaterThanOrEqual(80 - 1e-9);
+    expect(view.image.alpha).toBeCloseTo(0.6, 9);
+    view.apply(box('groundShock'), 1, true, undefined, { tick: 12, alpha: 0 }); // 40 ms
+    expect(imageSize(sizes)[0]).toBeCloseTo(100, 6);
+    expect(view.image.alpha).toBeCloseTo(1, 9);
+  });
+  it('shock: fades out over the remaining time', () => {
+    const { view } = setup();
+    view.apply(box('groundShock'), 1, true, undefined, { tick: 10, alpha: 0, remainingMs: 30 });
+    view.apply(box('groundShock'), 1, true, undefined, { tick: 20, alpha: 0, remainingMs: 30 });
+    expect(view.image.alpha).toBeCloseTo(0.5, 9);
+    view.apply(box('groundShock'), 1, true, undefined, { tick: 21, alpha: 0, remainingMs: 0 });
+    expect(view.image.alpha).toBe(0);
+  });
+  it('shock: age restarts when the id changes (pooled view)', () => {
+    const { view, sizes } = setup();
+    view.apply(box('groundShock', 1), 1, true, undefined, { tick: 10, alpha: 0 });
+    view.apply(box('groundShock', 2), 1, true, undefined, { tick: 50, alpha: 0.5 });
+    expect(imageSize(sizes)[0]).toBeGreaterThanOrEqual(80 - 1e-9);
+    expect(view.image.alpha).toBeCloseTo(0.6, 9);
+  });
+  it('shock reduced: no scale change, only a short alpha fade in', () => {
+    const { view, sizes } = setup();
+    view.apply(box('groundShock'), 1, true, undefined, { tick: 10, alpha: 0 }, undefined, true);
+    expect(imageSize(sizes)[0]).toBe(100);
+    expect(view.image.alpha).toBe(0);
+    view.apply(box('groundShock'), 1, true, undefined, { tick: 30, alpha: 0 }, undefined, true);
+    expect(view.image.alpha).toBe(1);
+  });
+  it('shift moves lunge and spin boxes only', () => {
+    for (const [sprite, moved] of [['tuskGore', true], ['hurricane', true], ['groundShock', false], ['iceShock', false], ['fireball', false]] as const) {
+      const { view, pos } = setup();
+      view.apply(box(sprite), 1, true, undefined, { tick: 1, alpha: 0 }, { dx: 7, dy: -3 });
+      expect(pos[0], sprite).toEqual(moved ? [157, 67] : [150, 70]);
+    }
+  });
+  it('shift is ignored for a non-melee projectile', () => {
+    const { view, pos } = setup();
+    view.apply({ ...box('tuskGore'), px: 100, py: 50 }, 1, false, undefined, undefined, { dx: 7, dy: 7 });
+    expect(pos[0]).toEqual([150, 70]);
+  });
+  it('hurricane spins continuously with the age and pulses; reduced neither spins nor pulses', () => {
+    const { view, angles, sizes } = setup();
+    view.apply(box('hurricane'), 1, true, undefined, { tick: 0, alpha: 0 });
+    view.apply(box('hurricane'), 1, true, undefined, { tick: 5, alpha: 0 }); // 100 ms
+    expect(angles[angles.length - 2]).toBeCloseTo((0.012 * 100 * 180) / Math.PI, 6);
+    view.apply(box('hurricane'), 1, true, undefined, { tick: 4, alpha: 0 }); // 80 ms: pulse peak
+    expect(imageSize(sizes)[0]).toBeCloseTo(106, 6);
+    const r = setup();
+    r.view.apply(box('hurricane'), 1, true, undefined, { tick: 0, alpha: 0 }, undefined, true);
+    r.view.apply(box('hurricane'), 1, true, undefined, { tick: 4, alpha: 0 }, undefined, true);
+    expect(r.angles[r.angles.length - 2]).toBe(0);
+    expect(imageSize(r.sizes)[0]).toBe(100);
+  });
+  it('with the new parameters omitted the drawing is unchanged', () => {
+    const { view, pos, sizes, angles } = setup();
+    view.apply(box('groundShock'), 1, true);
+    view.apply(box('hurricane'), 1, true);
+    expect(sizes.filter((_, i) => i % 2 === 0).map((s) => s[0])).toEqual([100, 100]);
+    expect(pos[0]).toEqual([150, 70]);
+    expect(angles.every((a) => a === 0)).toBe(true);
+    expect(view.image.alpha).toBe(1);
+  });
+});
