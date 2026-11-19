@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readMainCss } from './css-source';
 
 const root = resolve(import.meta.dirname, '../..');
 const css = readFileSync(resolve(root, 'src/ui/styles/touch-strike-gutter.css'), 'utf8');
-const main = readFileSync(resolve(root, 'src/ui/styles/main.css'), 'utf8');
+const main = readMainCss();
 const ts = readFileSync(resolve(root, 'src/game/app/touch-strike.ts'), 'utf8');
 
 describe('PHONE-2 Strike gutter CSS (640-739 px landscape phones)', () => {

@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readMainCss } from './css-source';
 
-const css = readFileSync('src/ui/styles/main.css', 'utf8');
+const css = readMainCss();
 
 function lum(hex: string): number {
   const c = [1, 3, 5].map((i) => {

@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readMainCss } from './css-source';
 
-const css = readFileSync(resolve(import.meta.dirname, '../../src/ui/styles/main.css'), 'utf8');
+const css = readMainCss();
 
 describe('touch button overlay CSS', () => {
   it('places buttons as transparent absolute overlays over the canvas boxes, never docked to the right', () => {
