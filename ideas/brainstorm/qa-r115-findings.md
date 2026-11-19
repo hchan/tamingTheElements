@@ -1,5 +1,8 @@
 # QA r115 findings (ranked)
 
+status: idea
+added: 2026-11-18
+
 1. Super cut-in overlaps the combo counter and a status badge. In .scratch/qa-r115/16-super-freeze.png the "3 HITS / 60 DMG" text sits on top of the HELLFIRE LANCE band and covers a "SAFE" badge at top-left. Fix: hide or shift the combo counter and badges during the super freeze.
 2. Earth stage shows no visible ROCK patches in .scratch/qa-r115/08-stage-earth.png (100 ticks after the swap) though the terrain probe reports 5 patches, alpha 1, labels ROCK. Fire, air and water show labelled patches. Possibly a fade/transition-timing or draw-order issue; re-check with a longer wait.
 3. 2v2 Tag key press (3, held 3 ticks in manual mode) did not swap the lead in .scratch/qa-r115/14-tag-in-5.png (Sindarosa stays in, no TAG! call). Unverified: may be the manual-step keyboard polling in my script, not a game bug. Needs a human or e2e check.

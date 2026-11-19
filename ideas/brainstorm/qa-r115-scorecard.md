@@ -1,5 +1,8 @@
 # QA r115 scorecard (desktop 1280x720, Chromium SwiftShader, seed 7)
 
+status: idea
+added: 2026-11-18
+
 Note: tools/qa/playthrough.ts does not exist in this tree; shots were taken with ad-hoc Playwright scripts (.scratch/qa-r115/shoot.mjs, shoot2.mjs) against a `vite build --mode test` preview on port 7950.
 
 | Area | Fun | Graphics | Readability | vs SF / MvC |
