@@ -9,7 +9,7 @@
     "src/game/fx/terrain-view.ts": 632,
     "src/game/hud/action-bar-view.ts": 522,
     "src/game/hud/action-bar.ts": 695,
-    "src/game/scenes/Arena.ts": 1288,
+    "src/game/scenes/Arena.ts": 1120,
     "src/game/scenes/Hud.ts": 1245,
     "src/game/views/character-view.ts": 523,
     "src/game/views/pose-layer.ts": 966,
