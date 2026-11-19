@@ -18,7 +18,8 @@ const TAU = Math.PI * 2;
 const FLAT = 0.6;
 const SEGMENTS = 12;
 /** Decal radius (px, horizontal). */
-const R = 31;
+export const TRAP_DECAL_R = 31;
+const R = TRAP_DECAL_R;
 /** Mute levels: the tones stay close to the element but ashy. */
 const tone = (c: number, keep: number, dark: number): number => mute(c, keep, dark);
 
