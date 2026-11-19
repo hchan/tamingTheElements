@@ -274,3 +274,30 @@
     margin-top: 0;
   }
 }
+/* tour-help-fit: the lessons run in two columns across the full width on desktop (they were one long column beside empty space),
+   and the flavour line is dropped on phones, which keeps the default page inside its budget now that Run is listed. */
+@media (min-width: 900px) and (min-height: 501px) {
+  #menu .helpColumns > section.helpLessons {
+    column-span: all;
+  }
+  #menu .helpLessons .helpSteps {
+    column-count: 2;
+    column-gap: 1.5em;
+  }
+  #menu .helpLessons .helpSteps li {
+    break-inside: avoid;
+  }
+  #menu .helpLessons .helpBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2em 1.2em;
+    padding-left: 0;
+    list-style: none;
+  }
+}
+@media (max-width: 520px) {
+  /* The one flavour line above the numbered lessons carries no instruction; the header arrow already says the section is open. */
+  #menu .helpLessons .helpFlavor {
+    display: none;
+  }
+}
