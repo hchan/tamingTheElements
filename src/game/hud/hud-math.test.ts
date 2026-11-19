@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HUD_WIDTH, benchBar, mainBar, sideOffset } from './bars';
-import { BENCH_TOP, PORTRAIT, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, portraitX, regenAnchor } from './hud-math';
+import { BENCH_TOP, PORTRAIT, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, phoneFontPx, portraitMeterRowY, portraitX, regenAnchor } from './hud-math';
 
 describe('portraitX', () => {
   it('sits at the left for the player and the right for the enemy, inside the HUD', () => {
@@ -101,5 +101,20 @@ describe('edgeGrainFlecks', () => {
   });
   it('honours a smaller count', () => {
     expect(edgeGrainFlecks(10)).toEqual(flecks.slice(0, 10));
+  });
+});
+
+describe('phone text sizing (portrait)', () => {
+  it('phoneFontPx draws at least the asked CSS px on 390 and 360 px phones', () => {
+    for (const w of [390, 360]) {
+      const k = w / 1280;
+      expect(phoneFontPx(14.2, k) * k).toBeGreaterThanOrEqual(14.2);
+      expect(phoneFontPx(14.2, k) * k).toBeLessThan(15);
+    }
+    expect(phoneFontPx(14, 0)).toBe(24);
+  });
+  it('portraitMeterRowY puts the SUPER row under the names with the gap', () => {
+    expect(portraitMeterRowY(90, 56)).toBe(120);
+    expect(portraitMeterRowY(90.2, 56) - 28).toBeGreaterThanOrEqual(92);
   });
 });

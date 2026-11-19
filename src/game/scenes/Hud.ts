@@ -39,7 +39,7 @@ import {
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
-import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, comboRightX, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
+import { PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, phoneFontPx, portraitMeterRowY, comboRightX, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
 import { isPortraitPlay } from '../boot/portrait-play';
 
 export const HUD_SCENE = 'Hud';
@@ -70,6 +70,11 @@ const SUPER_LABEL_BOOST = 1.95;
 const LIFE_TEXT_SCALES: readonly number[] = [1, 0.85, 0.72, 0.62];
 /** Smallest effective size (CSS px) the HUD life line and labels shrink to on a phone; the name is cut before the text goes smaller. */
 const MIN_PHONE_PX = 11;
+/** Portrait phone (hud hud-phone-text): the names, life numbers and SUPER labels are drawn at this many CSS px or more (the landscape floor above stays 11). */
+const PORTRAIT_TEXT_PX = 14.2;
+/** Portrait phone: a name never reaches past this logical x (team 0; team 1 mirrors it), so it clears the timer and the round pips. */
+const PORTRAIT_NAME_EDGE = 535;
+const PORTRAIT_NAME_EDGE_TAG = 505;
 /** Fewest hero-name letters the phone life line keeps (with the ellipsis) before it falls back to a bare number. */
 const MIN_LIFE_NAME = 5;
 
@@ -143,6 +148,10 @@ export class Hud extends Phaser.Scene {
   private comboTexts: (Phaser.GameObjects.Text | undefined)[] = [];
   private comboKeys: number[] = [];
   private meterTexts: (Phaser.GameObjects.Text | undefined)[] = [];
+  /** Centre y of the SUPER segments and label: the plain METER_Y row, or a second row under the names in portrait play (set by `dropChips`). */
+  /** Portrait play: the lowest logical y of the names and the SUPER row (the status chips start under it). */
+  private portraitBottom = 0;
+  private meterRowY = METER_Y + SEGMENT_H / 2;
   private readonly meterTight: boolean[] = [false, false];
   /** Arcade status chip words, pooled per side: index team * CHIP_MAX + slot. */
   private chipTexts: (Phaser.GameObjects.Text | undefined)[] = [];
@@ -267,7 +276,7 @@ export class Hud extends Phaser.Scene {
           this.drawBar(gfx, bar, side.active, true);
           this.drawTrail(gfx, bar, side.active);
           if (this.arcade.meters[team].full > 0 && !side.active.dead) this.drawSuperRim(gfx, bar);
-          if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active, true); // QA r105 P2: every fight keeps "cur/max" on a tight phone (was 2v2 only: 1v1 fell to a bare number)
+          if (label) this.setSlimLabel(label, team, heroName(side.active.sprite), side.active, true, side.bench.length > 0); // QA r105 P2: every fight keeps "cur/max" on a tight phone (was 2v2 only: 1v1 fell to a bare number)
         } else {
           this.drawBar(gfx, mainBar(x), side.active, true);
           label?.setText(activeHeroText(heroName(side.active.sprite), side.active, this.classic));
@@ -404,11 +413,11 @@ export class Hud extends Phaser.Scene {
     const view = this.view;
     if (!view) return;
     // At least 16 px (times the phone boost), and below the hero's health words as measured (they wrap to several lines when boosted).
-    const px = Math.round(16 * phoneBoost(this, 2));
     const label = this.labels[team];
     // Portrait phone: the chips stack directly under the name line, beside the big portrait (the bench chips sit further in, so they never meet).
     const phone = isPortraitPlay(this.game);
-    const top = chipRowTop(phone ? SLIM_H + PHONE_CHIP_GAP : Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM + getChipDrop() : 0), label);
+    const px = Math.round(16 * phoneBoost(this, 2));
+    const top = chipRowTop(phone ? Math.max(SLIM_H + PHONE_CHIP_GAP, Math.ceil(this.portraitBottom) + 2) : Math.max(CHIP_Y, SLIM_H + 2, benched ? CHIP_BOTTOM + getChipDrop() : 0), label);
     // The first stunLeft seen after a calm tick is the stun's length (it drains from there); a re-stun that outlasts it raises it.
     const stunLeft = view.arcade()?.stunLeft(c.id) ?? 0;
     this.stunTotals[team] = stunLeft > 0 ? Math.max(this.stunTotals[team] ?? 0, stunLeft) : 0;
@@ -608,13 +617,13 @@ export class Hud extends Phaser.Scene {
    * The life line under the bar, fitted beside the SUPER label. When the name would be cut ("SINDAR...") the SUPER word goes first
    * (the label reads "0%" beside its segments), which usually frees room for the whole name (qa-r84 P5).
    */
-  private setSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter, twoVTwo = false): void {
+  private setSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter, twoVTwo = false, benched = false): void {
     const m = this.meterTexts[team];
     const full = m ? this.meterText(team, false) : '';
     if (m && m.text !== full) m.setText(full);
     this.meterTight[team] = false;
     if (isPortraitPlay(this.game)) {
-      this.fitPortraitLabel(label, team, name, c);
+      this.fitPortraitLabel(label, team, name, c, benched);
       return;
     }
     this.fitSlimLabel(label, team, name, c, twoVTwo);
@@ -631,12 +640,19 @@ export class Hud extends Phaser.Scene {
   private dropChips(): void { // QA r105/r106 P2: a 12 px gap (was 4) under the names so the bench chips and TAG word stop crowding the HUD band
     setPhoneHud(isPortraitPlay(this.game));
     if (!isPortraitPlay(this.game)) {
+      this.meterRowY = METER_Y + SEGMENT_H / 2;
       setChipDrop(0);
       return;
     }
+    // Portrait: the SUPER label gets its own row under the names (both at about 14 CSS px do not fit side by side).
     let bottom = 0;
     for (const l of this.labels) if (l.text !== '') bottom = Math.max(bottom, l.y + l.height);
-    for (const t of this.meterTexts) if (t) bottom = Math.max(bottom, METER_Y + SEGMENT_H / 2 + t.height / 2);
+    const mh = Math.max(0, ...this.meterTexts.map((t) => t?.height ?? 0));
+    if (mh > 0) {
+      this.meterRowY = portraitMeterRowY(bottom, mh);
+      bottom = this.meterRowY + mh / 2;
+    }
+    this.portraitBottom = bottom;
     setChipDrop(Math.ceil(bottom + PORTRAIT_CHIP_GAP - BENCH_CHIP_Y));
   }
 
@@ -647,23 +663,18 @@ export class Hud extends Phaser.Scene {
   }
 
   /** Portrait (qa-r88 P3): "NAME ▲ 286" beside "SUPER 0%" on both sides; the name shrinks in size, then letters, before any word is dropped. */
-  private fitPortraitLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter): void {
-    const base = (label.getData('baseSize') as number | undefined) ?? parseFloat(String(label.style.fontSize));
-    label.setData('baseSize', base);
-    const m = this.meterTexts[team];
-    const clears = (): boolean => !m || (team === 0 ? label.x + label.width + 6 <= m.x - m.width : label.x - label.width - 6 >= m.x + m.width);
+  private fitPortraitLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter, benched = false): void {
     const k = coreDisplayWidth(this) / 1280;
-    const cands = portraitLifeCandidates(name, c);
-    const sizes = [1, ...LIFE_TEXT_SCALES.slice(1).filter((sc) => base * sc * k >= MIN_PHONE_PX)];
-    for (const sc of sizes) {
-      label.setFontSize(Math.round(base * sc));
-      for (const t of cands) {
-        label.setText(t);
-        if (clears()) return;
-      }
+    const px = phoneFontPx(PORTRAIT_TEXT_PX, k);
+    // The SUPER label sits on its own row, so the name only has to stay inside its half (clear of the timer and the pips).
+    // 2v2 also has the small TAG word at the pill, so the name stops short of it.
+    const edge = benched ? PORTRAIT_NAME_EDGE_TAG : PORTRAIT_NAME_EDGE;
+    const clears = (): boolean => (team === 0 ? label.x + label.width <= edge : label.x - label.width >= 1280 - edge);
+    label.setFontSize(px);
+    for (const t of portraitLifeCandidates(name, c)) {
+      label.setText(t);
+      if (clears()) return;
     }
-    // Nothing fits: the shortest name at the smallest allowed size.
-    label.setFontSize(Math.round(base * (sizes[sizes.length - 1] ?? 1)));
   }
 
   private fitSlimLabel(label: Phaser.GameObjects.Text, team: number, name: string, c: HudCharacter, twoVTwo = false): boolean {
@@ -870,23 +881,24 @@ export class Hud extends Phaser.Scene {
     const inner = team === 0 ? slimBar(0).maxX : slimBar(1).minX;
     const x = meterX(team, inner);
     const color = this.highContrast ? 0xffffff : METER_COLOR;
-    const mid = METER_Y + SEGMENT_H / 2;
+    const mid = this.meterRowY;
+    const top = mid - SEGMENT_H / 2;
     const alpha = meterFlashAlpha(m, this.reduceMotion);
     for (const seg of meterSegments(m.value, x)) {
       gfx.fillStyle(0x000000, 0.6);
-      gfx.fillRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+      gfx.fillRect(seg.x, top, SEGMENT_W, SEGMENT_H);
       if (seg.full) {
         gfx.fillStyle(color, alpha);
-        gfx.fillRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+        gfx.fillRect(seg.x, top, SEGMENT_W, SEGMENT_H);
       } else if (seg.fill > 0) {
         gfx.lineStyle(SEGMENT_H, color, 1);
         for (const [x0, x1] of dashSegments(seg.x, seg.x + seg.fill, CHARGE_DASH)) gfx.lineBetween(x0, mid, x1, mid);
       }
       // Dark then light outline, so the segments read on both bright and dark arenas.
       gfx.lineStyle(3, 0x000000, 1);
-      gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+      gfx.strokeRect(seg.x, top, SEGMENT_W, SEGMENT_H);
       gfx.lineStyle(this.highContrast ? 2 : 1, 0xffffff, 1);
-      gfx.strokeRect(seg.x, METER_Y, SEGMENT_W, SEGMENT_H);
+      gfx.strokeRect(seg.x, top, SEGMENT_W, SEGMENT_H);
     }
     // Full meter (qa-r30, r31): a breathing glow round the segments (steady with reduced motion) and a gold label, so "ready" reads from across the screen.
     const ready = m.full > 0;
@@ -894,17 +906,20 @@ export class Hud extends Phaser.Scene {
       const glow = this.highContrast ? 0xffffff : 0xffe28a;
       const breathe = readyGlow(this.time.now, this.reduceMotion);
       for (const [grow, a] of [[9, 0.14], [6, 0.22], [3, 0.34], [1, 0.5]] as const) {
-        gfx.lineStyle(2, glow, a * breathe).strokeRect(x - grow, METER_Y - grow, METER_W + grow * 2, SEGMENT_H + grow * 2);
+        gfx.lineStyle(2, glow, a * breathe).strokeRect(x - grow, top - grow, METER_W + grow * 2, SEGMENT_H + grow * 2);
       }
     }
     const t = (this.meterTexts[team] ??= this.text(Math.round(12 * Math.min(this.superBoost(), SUPER_LABEL_BOOST)))
       .setOrigin(team === 0 ? 1 : 0, 0.5)
       .setPosition(team === 0 ? x - METER_LABEL_GAP : x + METER_W + METER_LABEL_GAP, mid));
+    const portrait = isPortraitPlay(this.game);
+    const k = coreDisplayWidth(this) / 1280;
+    if (portrait && k > 0) t.setFontSize(phoneFontPx(PORTRAIT_TEXT_PX, k));
     const label = this.meterText(team, this.meterTight[team] === true); // named ("SUPER 0%"), so the segments are not mistaken for the round pips; just "0%" when the life line needs the room
     if (t.text !== label) t.setText(label);
     t.setColor(ready ? (this.highContrast ? '#ffffff' : '#ffe28a') : '#e0d8c6');
     // Phones: the boosted label must not reach the bench portraits under it (qa-r8/r12 open item).
-    t.setY(meterLabelY(mid, t.height, BENCH_CHIP_Y + getChipDrop(), SLIM_BAR_Y + SLIM_LINE_MAX / 2));
+    t.setY(portrait ? mid : meterLabelY(mid, t.height, BENCH_CHIP_Y + getChipDrop(), SLIM_BAR_Y + SLIM_LINE_MAX / 2));
   }
 
   private drawBar(gfx: Phaser.GameObjects.Graphics, g: BarGeometry, c: HudCharacter, main: boolean): void {
