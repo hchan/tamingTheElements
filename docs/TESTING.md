@@ -257,6 +257,12 @@ page must get at least 10 frames in 1 s and a screenshot within 5 s. A stall is 
 failure, and the command is not run. `--no-preflight` skips it. To probe by hand: `node tools/dev/pc-frame-check.cjs` in the clone
 with `unset DISPLAY WAYLAND_DISPLAY`.
 
+### When a change needs a browser run (owner, 2026-11-19)
+
+- **Message-only spec edits** (titles, `expect` messages, helper wording; no selector, flow, assertion or timeout change): `gate:commit` is enough to merge. The nightly full run is the net; do not queue a short-lane run for them.
+- **Spec or app changes that alter behavior:** run `e2e:smoke` plus the touched specs through the router, once.
+- **While a full run holds the PC** (check `pnpm pc:probe`): do not start short-lane runs. Wait, or let the nightly run be the net. A red from a run that overlapped a full run is suspect (closed browser, `state lost` rc 93); re-run once alone before treating it as real.
+
 ### Routing e2e to the PC
 
 `tools/ci/e2e-route.ts <run|smoke|pages|itch|flake>` (the `pnpm e2e*` scripts) sends Playwright to the PC **by default** (owner, 2026-11-18): whenever `TTE_REMOTE` or `git config tte.remote <ssh-alias>` is set (the main checkout has it; set it in a new clone or worktree that does not inherit it; never commit the host, IP, user or key), and otherwise runs locally in a browser slot. `CI`, `TTE_E2E_LOCAL=1` and `--list`
