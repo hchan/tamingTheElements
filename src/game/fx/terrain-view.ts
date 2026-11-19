@@ -13,7 +13,7 @@ import { mountEarthLight, type EarthLight } from './earth-light';
 import { arcadeHeroScale, visualBox, type Box } from '../views/hero-scale';
 import {
   CHIP_MARGIN, MAX_PARTICLES, MAX_PATCHES, SLOT_HOLD, MAX_SPARKS, PARTICLES_PER_PATCH, PATCH_COLORS, PATCH_WORDS, SPARK_TICKS, STAGE_ELEMENTS, TICK_MS, VOID_BACKDROP_TINT,
-  TerrainFx, badgeText, chipCentreX, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
+  TerrainFx, badgeText, chipCentreX, chipOwner, glowAlpha, nextBackdropAlpha, particle, patchAlpha, progress, type Particle,
 } from './terrain-fx';
 
 /**
@@ -277,6 +277,8 @@ export function mountTerrainView(
       }
     }
   };
+  /** The one patch whose chip shows (the others' chips stay laid out but hidden; see chipOwner). */
+  let chipOwnerIdx = -1;
   const chipFade = new Float64Array(MAX_PATCHES).fill(1);
   const chipAlpha = new Float64Array(MAX_PATCHES);
   const chipShown = new Uint8Array(MAX_PATCHES);
@@ -370,6 +372,7 @@ export function mountTerrainView(
 
   const drawLabels = (p: NonNullable<typeof parts>, stage: number, count: number, rects: readonly number[]): void => {
     labels.length = 0;
+    chipOwnerIdx = chipOwner(rects, count, ARENA_W / 2);
     const word = PATCH_WORDS[stage - 1] ?? '';
     for (let i = 0; i < MAX_PATCHES; i++) {
       const t = p.labels[i];
@@ -490,7 +493,7 @@ export function mountTerrainView(
     p.labels.forEach((t, i) => {
       // Ease toward faint while a fighter stands on or beside the chip, back up when it leaves.
       // Hidden under the ROUND / FIGHT! banners so the chip words never bleed through their letters.
-      const on = hint > 0 && stage !== 3 && i < count && !bannerUp && hud.registry.get('tte.cut') !== true; // not under the super cut-in band (qa-r98)
+      const on = hint > 0 && stage !== 3 && i < count && i === chipOwnerIdx && !bannerUp && hud.registry.get('tte.cut') !== true; // not under the super cut-in band (qa-r98)
       // A chip that appears (round start, after a banner) with a fighter already on it starts faint instead of fading down in plain view.
       if (on && !chipShown[i] && chipNear[i]) chipFade[i] = 0.15;
       chipShown[i] = on ? 1 : 0;

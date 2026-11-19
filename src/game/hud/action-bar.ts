@@ -605,7 +605,7 @@ export function buildSlots(bar: RenderActionBar, labels: KeyLabels = DEFAULT_KEY
       add({
         kind: 'run', cmd: 0, sprite: '', icon: ACTION_ICON.dash, touch: 'Run', highlight: running, disabled: block !== undefined, runAway: r.away,
         progress: running ? clamp01((r.activeUntil - bar.tick) / RUN_TICKS) : cooldownProgress(bar.tick, r.readyTick, r.cooldownTicks),
-        note: running ? `${name} on` : block !== undefined ? RUN_BLOCK_NOTE[block] : leftNote(name, r.readyTick - bar.tick),
+        note: running ? 'Running' : block !== undefined ? RUN_BLOCK_NOTE[block] : leftNote(name, r.readyTick - bar.tick),
       }, ACTION_COMMAND.run);
     }
   }

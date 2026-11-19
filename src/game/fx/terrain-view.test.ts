@@ -155,13 +155,22 @@ describe('terrain view (fake scenes)', () => {
     const m = mount();
     m.feed(100);
     for (let i = 0; i < 400; i++) m.frame(16);
-    expect(m.state().chips[0]?.alpha ?? 0).toBeGreaterThan(0);
+    expect(m.state().chips[1]?.alpha ?? 0).toBeGreaterThan(0); // chip 1 is the middle patch's: the only one shown (chipOwner)
     m.hud.scene.registry.set('tte.cut', true);
     m.frame();
-    expect(m.state().chips[0]?.alpha).toBe(0);
+    expect(m.state().chips[1]?.alpha).toBe(0);
     m.hud.scene.registry.set('tte.cut', false);
     m.frame();
-    expect(m.state().chips[0]?.alpha ?? 0).toBeGreaterThan(0);
+    expect(m.state().chips[1]?.alpha ?? 0).toBeGreaterThan(0);
+  });
+
+  it('only one chip shows (the patch nearest the middle): repeated plates are hidden, the labels and layout stay (qa-r112)', () => {
+    const m = mount();
+    m.feed(100);
+    for (let i = 0; i < 5; i++) m.frame(16);
+    expect(m.state().chips.map((c) => c.alpha > 0)).toEqual([false, true]);
+    expect(m.state().labels).toEqual(['FIRE x2', 'FIRE x2']);
+    expect(m.arena.made.filter((o) => o.kind === 'graphics' && o.depth === CHIP_DEPTH && o.visible)).toHaveLength(1);
   });
 
   it('tile floor: requests the atlas when missing, builds one layer once it is there, re-fills it on a stage swap', () => {
@@ -221,7 +230,7 @@ describe('terrain view (fake scenes)', () => {
   });
 
   it('a chip that appears with a fighter already on it starts faint (no visible fade-down over the character)', () => {
-    const m = mount({ x: 60, y: 300 });
+    const m = mount({ x: 520, y: 340 }); // on the middle patch, whose chip is the one shown (chipOwner)
     m.feed(1);
     m.frame();
     const chips = m.arena.made.filter((o) => o.kind === 'graphics' && o.depth === CHIP_DEPTH && o.visible);

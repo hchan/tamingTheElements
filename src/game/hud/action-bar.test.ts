@@ -477,7 +477,7 @@ describe('Run slot', () => {
   });
   it('drains while running, then fills over the cooldown, in words', () => {
     const on = last(bar({ run: run({ activeUntil: 225, readyTick: 575 }) }));
-    expect(on).toMatchObject({ note: 'Run Away on', highlight: true, progress: 0.5 });
+    expect(on).toMatchObject({ note: 'Running', highlight: true, progress: 0.5 });
     const cool = last(bar({ run: run({ away: false, readyTick: 250 }) }));
     expect(cool?.note).toBe('Run Towards 3s');
     expect(cool?.progress).toBeCloseTo(1 - 150 / 351);
@@ -488,7 +488,7 @@ describe('Run slot', () => {
     const stunned = buildSlots(bar({ run: run() }), DEFAULT_KEY_LABELS, { ...ab, runBlock: 'stunned' }).find((s) => s.kind === 'run');
     expect(stunned).toMatchObject({ disabled: true, note: "Can't run: stunned" });
     const on = buildSlots(bar({ run: run({ activeUntil: 225, readyTick: 575 }) }), DEFAULT_KEY_LABELS, { ...ab, runBlock: 'stunned' }).find((s) => s.kind === 'run');
-    expect(on).toMatchObject({ disabled: false, note: 'Run Away on', highlight: true });
+    expect(on).toMatchObject({ disabled: false, note: 'Running', highlight: true });
   });
   it('reads the Run block off the view: stun first, then root, else none', () => {
     const base = { meter: [0, 0], weatherCharge: [0, 0], active: () => 3, guard: () => 0, guarding: () => false, dashIn: () => 0, chargeIn: () => 0, phase: RoundPhase.fight };
