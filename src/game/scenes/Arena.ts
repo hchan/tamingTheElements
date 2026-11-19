@@ -14,7 +14,6 @@ import {
   DEFAULT_SIM_FLAGS,
   EntityFlag,
   EntityKind,
-  RoundPhase,
   MAX_ENTITIES,
   applyArenaCheat,
   applyTickCheats,
@@ -41,7 +40,6 @@ import {
   type Element,
   type MatchSetup,
   type RenderCharacter,
-  type RenderArcade,
   type RenderProjectile,
   type ArenaCheat,
   type RenderView,
@@ -74,7 +72,7 @@ import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { victimAnchor } from '../hud/combo-anchor';
 import { screenBox } from '../hud/screen-box';
-import { SWAP_BUSY_LINE, SWAP_BUSY_TICKS, SwapNotice, busySwapDue, elementalNotice, swapRefusalLine, swapSlotOf } from '../hud/swap-notice';
+import { SwapFeedback } from './swap-feedback';
 import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView } from '../hud/action-bar-view';
 import { labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
@@ -85,7 +83,7 @@ import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import type { MotionSmoother } from '../fx/ability-motion-view';
 import { ReplayCursor } from '../replay/cursor';
-import { actionRefusal, buildMatchEnd, chargeLineFor, demoMatch, runLineFor, effectsHeld, playbackFrame } from './arena-logic';
+import { buildMatchEnd, demoMatch, effectsHeld, playbackFrame } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
 
@@ -167,10 +165,8 @@ export class Arena extends Phaser.Scene {
   /** Per-stage ambient particles behind the fighters (view only; none under reduced motion). */
   private ambient: StageAmbient | undefined;
   private clicks: number[] = [];
-  /** Arcade: the line shown when a swap press is refused (hud/swap-notice.ts); view only. */
-  private swapNotice: SwapNotice | undefined;
-  /** Arcade: the game tick of a swap press nothing visible explained, until a tag-in lands (else the busy line shows); -1 none. */
-  private pendingSwap = -1;
+  /** Arcade: the line shown when a swap press is refused (swap-feedback.ts); view only. */
+  private swapNotice: SwapFeedback | undefined;
   private pauseText: Phaser.GameObjects.Text | undefined;
   private cursor: ReplayCursor | undefined;
   private speed: PlaybackSpeed = 1;
@@ -201,7 +197,6 @@ export class Arena extends Phaser.Scene {
   init(data?: ArenaLaunch): void {
     this.launch = data;
     this.ended = false;
-    this.pendingSwap = -1;
   }
 
   create(): void {
@@ -271,8 +266,8 @@ export class Arena extends Phaser.Scene {
         tabRun: true, // bare Tab on the page or canvas is Run (Player 1 only; docs/ACCESSIBILITY.md)
         // A swap sent on a tick where the game clock stood still (hit-stop, KO slow motion) is sent again on the next one.
         clock: () => view.actionBar(0)?.tick ?? 0,
-        onSwap: (swaps) => { this.noteSwap(swaps); },
-        onAction: (bits) => { this.noteAction(bits); },
+        onSwap: (swaps) => { this.swapNotice?.noteSwap(swaps); },
+        onAction: (bits) => { this.swapNotice?.noteAction(bits); },
         onEffect: (e) => {
           if (e === 'pause') this.togglePause();
           else if (e === 'mute') this.audio?.audio.handleInputEffect({ kind: 'toggleMute' });
@@ -345,7 +340,13 @@ export class Arena extends Phaser.Scene {
     } else this.cleanups.push(pauseOnHidden(counted(document), driver));
     this.setupAudio();
     if (arcade && this.launch && !playback) {
-      const notice = new SwapNotice(this, () => getPrefs().reduceMotion, () => screenBox(this));
+      const notice = new SwapFeedback({
+        scene: this,
+        view: () => this.view,
+        audio: () => this.audio,
+        announcer: () => this.announcer,
+        inputDelay: () => this.session?.inputDelay ?? 0,
+      });
       this.swapNotice = notice;
       this.cleanups.push(() => { notice.destroy(); this.swapNotice = undefined; });
     }
@@ -684,8 +685,7 @@ export class Arena extends Phaser.Scene {
     this.cleanseFx?.(events);
     // A tag-in landed: the swap-refused line (if one is still up) is stale, and would sit under the arriving hero's banner.
     if (events.some((e) => e.kind === SimEventKind.tagIn && (e['team'] ?? 0) === 0)) {
-      this.swapNotice?.clear();
-      this.pendingSwap = -1;
+      this.swapNotice?.clearOnTagIn();
     }
     if (!sound) return;
     for (const e of events) {
@@ -712,59 +712,6 @@ export class Arena extends Phaser.Scene {
       });
       playSfx('cast', element);
     }
-  }
-
-  /** Arcade: explains a swap press the sim is about to refuse, from the sim's own rules (`RenderArcade.swapBlock`). View only. */
-  private noteSwap(swaps: number): void {
-    const { view, swapNotice: notice } = this;
-    const arcade = view?.arcade();
-    const bar = view?.actionBar(0);
-    if (!view || !notice || !arcade || !bar) return;
-    // A hit-stop skips the swap on this tick but the press is sent again, so it is not a refusal.
-    if (arcade.frozen) return;
-    const line = swapRefusalLine(arcade.swapBlock(0, swapSlotOf(swaps)), bar.swapReadyTick - bar.tick);
-    if (line !== undefined) {
-      notice.show(line, this.time.now);
-      (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
-    } else if (this.pendingSwap < 0) {
-      // Only `busy` refuses it (block-stun, a dash or its recovery, a charge, hard crowd control, a super, weather
-      // recovery), or a dash, charge or weather cast this same press starts will: if no tag-in follows, say so.
-      this.pendingSwap = arcade.gameTick;
-    }
-  }
-
-  /** A swap the sim has not taken SWAP_BUSY_TICKS game ticks after the press (plus the online input delay; hit-stop does not count): say so. */
-  private checkBusySwap(gameTick: number | undefined): void {
-    if (gameTick === undefined || !busySwapDue(this.pendingSwap, gameTick, SWAP_BUSY_TICKS + (this.session?.inputDelay ?? 0))) return;
-    this.pendingSwap = -1;
-    this.swapNotice?.show(SWAP_BUSY_LINE, this.time.now);
-    (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
-  }
-
-  /** Arcade: says why a Super or Weather press does nothing yet (meter or weather charge not full). View only. */
-  private noteAction(bits: number): void {
-    const arcade = this.view?.arcade();
-    const notice = this.swapNotice;
-    if (!arcade || !notice || arcade.phase !== RoundPhase.fight || arcade.frozen) return;
-    const line = actionRefusal(
-      bits,
-      { phase: arcade.phase, frozen: arcade.frozen, meter0: arcade.meter[0], weatherCharge0: arcade.weatherCharge[0] },
-      () => this.chargeLine(arcade),
-      () => {
-        const bar = this.view?.actionBar(0);
-        return bar ? elementalNotice(true, bar.tick, bar.elemental) : undefined;
-      },
-      () => (this.view ? runLineFor(this.view, arcade) : undefined),
-    );
-    if (line === undefined) return;
-    notice.show(line, this.time.now);
-    this.announcer?.say({ key: `refusal ${line}`, text: line, important: false, transient: true });
-    (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
-  }
-
-  /** Arcade: the reason a Charge press does nothing (ranged hero, cooldown, stun, root, guard), or undefined. View only. */
-  private chargeLine(arcade: RenderArcade): string | undefined {
-    return this.view ? chargeLineFor(this.view, arcade) : undefined;
   }
 
   /** One sim tick: agents (or the given commands) in, events out to the effects and the end check. */
@@ -972,7 +919,7 @@ export class Arena extends Phaser.Scene {
     }
     this.actionBar?.update();
     this.actionBar2?.update();
-    this.checkBusySwap(view.arcade()?.gameTick);
+    this.swapNotice?.checkBusySwap(view.arcade()?.gameTick);
     this.swapNotice?.update(this.time.now);
     this.backdrop?.update(live ? this.game.loop.delta : 0, getPrefs().reduceMotion);
     this.ambient?.update(getPrefs().reduceMotion);
