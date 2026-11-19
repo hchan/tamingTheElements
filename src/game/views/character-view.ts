@@ -272,7 +272,7 @@ export class CharacterView {
     return this.image.x;
   }
 
-  apply(c: RenderCharacter, tick: number, alpha: number, live = true, frozenTint = (c.flags & EntityFlag.frozen) !== 0, pos = alpha): void {
+  apply(c: RenderCharacter, tick: number, alpha: number, live = true, frozenTint = (c.flags & EntityFlag.frozen) !== 0, pos = alpha, shift?: { readonly dx: number; readonly dy: number }): void {
     this.element = c.element;
     const hidden = (c.flags & (EntityFlag.benched | EntityFlag.dead)) !== 0;
     this.image.setVisible(!hidden);
@@ -310,7 +310,8 @@ export class CharacterView {
     const k = this.scale;
     // The drawn body box (tucked inside the world in Arcade): the image and every attachment follow it, not the sim x (WALL-3a).
     const vb = visualBox(x, y, c.w, c.h, k, this.vbScratch, this.fit ? arcadePlayfield().w : undefined);
-    this.image.setPosition(vb.x, vb.y);
+    // `shift` (throw/pull smoothing, MotionSmoother.shiftFor) moves the drawn body only; attachments, hit boxes and the sim stay put.
+    this.image.setPosition(vb.x + (shift?.dx ?? 0), vb.y + (shift?.dy ?? 0));
     this.image.setDisplaySize(vb.w, vb.h);
     this.image.setAlpha((c.flags & EntityFlag.translucent) !== 0 ? 0.5 : 1);
     const ax = this.fit ? vb.x : x;

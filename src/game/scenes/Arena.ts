@@ -79,9 +79,10 @@ import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
 import { createStageAmbient, type StageAmbient } from '../fx/stage-ambient-view';
-import { CLASSIC_SPRITE_SCALE, CharacterView, frozenTintOf, setBrightFloor } from '../views/character-view';
+import { CLASSIC_SPRITE_SCALE, CharacterView, frozenTintOf, lerp, setBrightFloor } from '../views/character-view';
 import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
+import type { MotionSmoother } from '../fx/ability-motion-view';
 import { ReplayCursor } from '../replay/cursor';
 import { actionRefusal, activeHeroOf, buildMatchEnd, chargeLineFor, demoMatch, runLineFor, effectsHeld, playbackFrame } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
@@ -154,6 +155,8 @@ export class Arena extends Phaser.Scene {
   private terrain: ((events: readonly SimEvent[]) => void) | undefined;
   private poses: ((events: readonly SimEvent[]) => void) | undefined;
   private ccFeed: ((events: readonly SimEvent[]) => void) | undefined;
+  /** Throw/pull motion smoother (lazy chunk; undefined until it loads). Fed each sim step, read each frame. */
+  private motion: MotionSmoother | undefined;
   private cleanseFx: ((events: readonly SimEvent[]) => void) | undefined;
   private agents: readonly [Agent | undefined, Agent | undefined] = [new RandomBot('p1'), new RandomBot('p2')];
   private actionBar: ActionBarView | undefined;
@@ -408,6 +411,13 @@ export class Arena extends Phaser.Scene {
     // Buff auras and the Fire Heal pop (ability-graphics-audit-defects, its own lazy chunk).
     void import('../fx/ability-aura-view').then((m) => {
       if (this.view === view) m.mountAbilityAuraView(this, view, () => getPrefs().reduceMotion);
+    });
+    // Throw/pull smoothing: foe body shift, tendril, shock rings, slide dust (ability-smoothness, its own lazy chunk).
+    void import('../fx/ability-motion-view').then((m) => {
+      if (this.view !== view) return;
+      const smoother = new m.MotionSmoother({ positionOf: (id) => this.simPositionOf(view, id), reduced: () => getPrefs().reduceMotion });
+      this.motion = smoother;
+      m.mountAbilityMotionView(this, view, smoother, () => getPrefs().reduceMotion);
     });
     // Idle element auras around every active hero (idle-element-auras, its own lazy chunk).
     void import('../fx/idle-aura-view').then((m) => {
@@ -978,6 +988,7 @@ export class Arena extends Phaser.Scene {
     this.terrain?.(events);
     this.poses?.(events);
     this.ccFeed?.(events);
+    this.feedMotion(events);
     const over = events.find((e) => e.kind === SimEventKind.matchEnded);
     // Online only: the session's tick limit stops the match without a sim `matchEnded` (a draw, or the session's winner).
     const timedOut = !over && this.session !== undefined && this.session.status === 'ended';
@@ -1023,6 +1034,7 @@ export class Arena extends Phaser.Scene {
       this.terrain?.(events);
       this.poses?.(events);
       this.ccFeed?.(events);
+      this.feedMotion(events);
     }
     if (cursor.state !== 'playing') this.driver?.pause('ended');
   }
@@ -1137,6 +1149,7 @@ export class Arena extends Phaser.Scene {
     this.frameAlpha = alpha;
     this.frameLive = live;
     setBrightFloor(arcade ? arcade.stage === 4 : false);
+    this.motion?.advance(view.tick);
     pool.begin();
     view.forEachCharacter(this.drawCharacter);
     pool.end();
@@ -1166,18 +1179,47 @@ export class Arena extends Phaser.Scene {
   private fxAges = false;
   /** Element of each team's character this frame (characters draw before projectiles); picks the Snag rope art. */
   private readonly teamElement: string[] = [];
+  /** Drawn caster minus sim caster per team this frame (lerp of the sim step), for lunge and spin boxes. */
+  private readonly casterShift: { dx: number; dy: number }[] = [{ dx: 0, dy: 0 }, { dx: 0, dy: 0 }];
+  private simPos: { x: number; y: number } | undefined;
+  private simPosId = -1;
+  private readonly findSimPos = (c: RenderCharacter): void => {
+    if (c.id === this.simPosId) this.simPos = { x: c.x, y: c.y };
+  };
+
+  /** Sim top-left of entity `id` (the box the character view draws from), or undefined when gone. */
+  private simPositionOf(view: RenderView, id: number): { x: number; y: number } | undefined {
+    this.simPos = undefined;
+    this.simPosId = id;
+    view.forEachCharacter(this.findSimPos);
+    return this.simPos;
+  }
+
+  /** Sim step: events to the motion smoother (before the views are placed); a new round drops every ramp. */
+  private feedMotion(events: readonly SimEvent[]): void {
+    const m = this.motion;
+    if (!m || events.length === 0) return;
+    if (events.some((e) => e.kind === SimEventKind.roundStarted)) m.clear();
+    m.consume(events);
+  }
+
   private readonly drawCharacter = (c: RenderCharacter): void => {
     this.teamElement[c.team] = c.element;
+    const cs = (this.casterShift[c.team] ??= { dx: 0, dy: 0 });
+    cs.dx = lerp(c.px, c.x, this.framePos) - c.x;
+    cs.dy = lerp(c.py, c.y, this.framePos) - c.y;
+    const foe = this.motion?.shiftFor(c.id);
     // The freeze tint is the Classic Tornado status only: the frozen flag also marks a melee caster's recovery (PARITY C08).
     const tint = this.view ? frozenTintOf(this.view, c.id, this.arcadeMatch) : false;
-    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive, tint, this.framePos);
+    this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive, tint, this.framePos, foe);
   };
   private readonly drawProjectile = (p: RenderProjectile): void => {
     this.projPool?.acquire(p.id).apply(p, this.framePos);
   };
 
   private readonly drawMelee = (p: RenderProjectile): void => {
-    this.projPool?.acquire(p.id).apply(p, this.framePos, true, this.teamElement[p.team]);
+    const reduced = getPrefs().reduceMotion;
+    this.projPool?.acquire(p.id).apply(p, this.framePos, true, this.teamElement[p.team], { tick: this.frameTick, alpha: this.frameAlpha }, this.casterShift[p.team], reduced);
   };
 
   private readonly shutdownHandler = (): void => {
@@ -1212,6 +1254,8 @@ export class Arena extends Phaser.Scene {
     this.pool = undefined;
     this.projPool = undefined;
     this.holdLerp.reset();
+    this.motion?.clear();
+    this.motion = undefined;
     this.fx = undefined;
     this.arcadeHud = undefined;
     this.rounds = undefined;
