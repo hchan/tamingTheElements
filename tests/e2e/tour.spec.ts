@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY, START, characters, collectErrors, tapTourSplash } from './parity/helpers';
+import { ARENA_READY, START, characters, collectErrors } from './parity/helpers';
 
 // World Tour shell (WP-tour-shell, FUN-DESIGN 2.18): pick three heroes, the "Stage 1 of 9" card, a best-of-3 Arcade fight won by
 // knocking out the foes twice (manual stepping, no waiting), then the Stage 2 card; the run is saved in its own key and offered
@@ -148,37 +148,4 @@ test('World Tour: no continues left shows the Game Over card with the summary, a
   await over.getByRole('button', { name: 'Play again' }).click();
   await expect(page.getByRole('button', { name: 'Start tour' })).toBeVisible();
   expect(errors).toEqual([]);
-});
-
-test.describe('World Tour on a touch device', () => {
-  test.use({ hasTouch: true, isMobile: true, viewport: { width: 844, height: 390 } });
-
-  test('the fight shows the 11 Arcade touch buttons as boxes on the left of the action bar, 48 px tall at least', async ({ page }) => {
-    const errors = collectErrors(page);
-    await page.goto(`${START}&ff=arcade#tour`);
-    await page.getByRole('button', { name: 'Start tour' }).tap();
-    // QA r66: on a touch device the Controls chips name the stick and the bar, not the keyboard.
-    const controls = page.locator('#tourStage [data-fact="controls"]');
-    await expect(controls.locator('kbd', { hasText: 'Stick' })).toHaveCount(1);
-    await expect(controls.locator('kbd', { hasText: /^W$/ })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Fight' }).tap();
-    await tapTourSplash(page);
-    await page.waitForFunction(ARENA_READY);
-    const buttons = page.locator('#game button.menuButton');
-    await expect(buttons).toHaveCount(11);
-    const boxes = await page.evaluate<{ right: number; height: number }[]>(
-      `Array.from(document.querySelectorAll('#game button.menuButton'), (b) => { const r = b.getBoundingClientRect(); return { right: r.right, height: r.height }; })`,
-    );
-    for (const b of boxes) expect(b.height).toBeGreaterThanOrEqual(48);
-    // The buttons are overlays on the one left-aligned action bar (no right-edge columns, centred by the slim HUD with 11 boxes): none reaches past the game width.
-    const gw = await page.evaluate<number>(`document.querySelector('#game canvas').getBoundingClientRect().right`);
-    for (const b of boxes) expect(b.right).toBeLessThanOrEqual(gw);
-    await expect(page.locator('#arcadeTag2')).toBeVisible();
-    // A tap on Super reaches the arena as the bound key; the match goes on without errors.
-    await page.locator('#arcadeSuper').tap();
-    await page.evaluate(`window.__TTE__.arena.step(5)`);
-    await page.goto(`${START}&ff=arcade#main`);
-    await page.evaluate(`window.__TTE__.settled()`);
-    expect(errors).toEqual([]);
-  });
 });

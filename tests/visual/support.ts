@@ -16,7 +16,6 @@ export interface Vp {
 
 export const VIEWPORTS: readonly Vp[] = [
   { key: '1280x720', width: 1280, height: 720, mobile: false },
-  { key: '390x844', width: 390, height: 844, mobile: true },
 ];
 
 export const OUT_DIR = join(process.cwd(), 'test-results', 'visual');

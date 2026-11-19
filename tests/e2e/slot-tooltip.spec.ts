@@ -18,7 +18,7 @@ async function start(page: Page): Promise<void> {
   await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 }
 
-for (const [w, h] of [[1280, 720], [844, 390]] as const) {
+for (const [w, h] of [[1280, 720]] as const) {
   test(`hover tooltip at ${String(w)}x${String(h)}`, async ({ page }) => {
     mkdirSync(SHOTS, { recursive: true });
     const errors = collectErrors(page);

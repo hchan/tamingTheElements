@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, characters } from './parity/helpers';
 
 // The Versus match-end beat (QA r90 P2): winner portrait and name, the result word, the stat chip and the buttons, reachable at
-// desktop and phone size. Reaches the results with two forced super KOs (as arcade.spec does); `manual=1` holds the arena.
+// desktop size (1280x720). Reaches the results with two forced super KOs (as arcade.spec does); `manual=1` holds the arena.
 const SUPER = 1 << 13;
 const INTRO = 71;
 const KO_TO_ROUND_END = 30 + 120 + 60;
@@ -18,7 +18,7 @@ async function koRound(page: Page, side: 'win' | 'lose' = 'win'): Promise<void> 
 }
 const koFoe = (page: Page): Promise<void> => koRound(page, 'win');
 
-const SIZES = [{ width: 1280, height: 720 }, { width: 390, height: 844 }, { width: 360, height: 640 }];
+const SIZES = [{ width: 1280, height: 720 }];
 async function fightTo(page: Page, size: { width: number; height: number }): Promise<void> {
   await page.setViewportSize(size);
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -30,7 +30,7 @@ async function fightTo(page: Page, size: { width: number; height: number }): Pro
   await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
 }
 
-/** No name wraps mid-word (every line break sits at a space) and, on phones, the hero tiles share one top edge. */
+/** No name wraps mid-word (every line break sits at a space) (phone checks were removed 2026-11-19, phones are unsupported). */
 async function expectNamesAndTilesClean(page: Page): Promise<void> {
   const res = await page.evaluate<{ text: string; broken: boolean }[]>(`(() => [...document.querySelectorAll('#arcadeResults .matchEndName')].map((p) => {
     const node = p.firstChild; const text = node.textContent; let pos = 0; let broken = false;
@@ -42,10 +42,6 @@ async function expectNamesAndTilesClean(page: Page): Promise<void> {
   }))()`);
   expect(res.length).toBeGreaterThan(0);
   for (const r of res) expect(r.broken, `"${r.text}" wraps mid-word`).toBe(false);
-  // Phone: the two equal-size tiles share a top edge (desktop deliberately pairs a large winner tile with a small foe tile).
-  if ((page.viewportSize()?.width ?? 0) > 480) return;
-  const tops = await page.evaluate<number[]>(`[...document.querySelectorAll('#arcadeResults .matchEndFace')].map((f) => Math.round(f.getBoundingClientRect().top))`);
-  expect(new Set(tops).size, `hero tiles share a top edge: ${tops.join(',')}`).toBe(1);
 }
 
 for (const size of SIZES) {
@@ -123,7 +119,7 @@ for (const size of SIZES) {
 }
 
 for (const size of SIZES) {
-  test(`match end at ${String(size.width)}x${String(size.height)}: winner, result word, reachable buttons`, { tag: size.width === 360 ? '@smoke' : [] }, async ({ page }) => {
+  test(`match end at ${String(size.width)}x${String(size.height)}: winner, result word, reachable buttons`, { tag: size.width === 1280 ? '@smoke' : [] }, async ({ page }) => {
     await page.setViewportSize(size);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(`${START}&ff=arcade#arcade`);
@@ -149,43 +145,6 @@ for (const size of SIZES) {
       expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} is on screen`).toBeLessThanOrEqual(size.height);
       // Desktop keeps the 12 px bottom padding (QA r120 N1).
       if (size.width === 1280) expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} clears the bottom padding`).toBeLessThanOrEqual(size.height - 12);
-    }
-  });
-}
-
-test('local P2 winner card at 360x640 keeps every button above the fold', async ({ page }) => {
-  const size = { width: 360, height: 640 };
-  await fightLocal(page, size);
-  await koRound(page, 'lose');
-  await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
-  await koRound(page, 'lose');
-  const results = page.locator('#arcadeResults');
-  await expect(results).toHaveAttribute('data-player', '2');
-  for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
-    const box = await results.locator(sel).boundingBox();
-    expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} is on screen`).toBeLessThanOrEqual(size.height);
-  }
-});
-
-// Landscape phones (QA r106 P2): the Defeat card was ~660 px tall at 844x390 and 667x375, buttons below the fold. Untagged on purpose (long
-// gate, not the quick smoke subset): it plays two forced KO rounds in a real arena, like the other match-end specs.
-for (const size of [{ width: 844, height: 390 }, { width: 667, height: 375 }]) {
-  test(`match end at landscape phone ${String(size.width)}x${String(size.height)}: card and all three buttons inside the viewport`, async ({ page }) => {
-    await fightTo(page, size);
-    await koRound(page, 'lose');
-    await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
-    await koRound(page, 'lose');
-    const results = page.locator('#arcadeResults');
-    await expect(page.getByRole('heading', { level: 1, name: 'Defeat' })).toBeVisible();
-    await expectNamesAndTilesClean(page);
-    const dir = process.env['SHOT_DIR'];
-    if (dir) await page.screenshot({ path: `${dir}/match-end-lose-land-${String(size.width)}.png` });
-    for (const sel of ['', '.matchEndWord', '#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
-      const box = await (sel ? results.locator(sel) : results).boundingBox();
-      expect(box, sel).not.toBeNull();
-      expect(box?.y ?? -1, `${sel || 'card'} top is on screen`).toBeGreaterThanOrEqual(0);
-      expect((box?.y ?? 0) + (box?.height ?? 0), `${sel || 'card'} bottom is on screen`).toBeLessThanOrEqual(size.height);
-      expect((box?.x ?? 0) + (box?.width ?? 0), `${sel || 'card'} right edge is on screen`).toBeLessThanOrEqual(size.width);
     }
   });
 }

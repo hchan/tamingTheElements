@@ -424,7 +424,7 @@ the imports and put a new rule in its area's partial):
   1280x720 layout keeps its size and sits centred: `fitScene` re-centres on resize, `screenBox` returns the central box,
   `resolutionOf` is read from the height, and text boosts use `coreDisplayWidth` (the CSS width of that central box).
   Online Arcade has no pan camera and keeps the plain fit.
-- **Tall view (portrait play).** With `html[data-portrait-play]` set, `enableWideView` (the only code that sets the game size)
+- **Tall view (portrait play).** (Phone support dropped 2026-11-19: no e2e covers this or the rotate hint any more; the code stays until the owner removes it.) With `html[data-portrait-play]` set, `enableWideView` (the only code that sets the game size)
   makes the game 1280 x H logical (`tallViewHeight`, `tallResolution`), so the canvas fills the width and the height from the 52 px
   top strip down to a 156 px control deck (`deckFor` grows the deck if the stick sits lower; the 44 px touch skirt of the one-row bar grows UP over the canvas, invisible). Everything laid out in 1280x720 is
   bottom-anchored (`screenBox`, `boxPoint`, touch overlays) except the `Hud` scene, which is top-anchored (`fitScene(scene, 'top')`).

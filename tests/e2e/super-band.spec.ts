@@ -2,7 +2,7 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { ARENA_READY, START } from './parity/helpers';
 
 // SUPER-BAND-1: the super name band picks a row clear of every fighter's swept span and keeps its portrait and title off the
-// touch controls. Casts run back to back in one page at 1280x720, 844x390 and 667x375; on every tick of each cut the live
+// touch controls. Casts run back to back in one page at 1280x720; on every tick of each cut the live
 // fighter boxes (through the cut's camera) must miss the band, and the portrait and title must miss the controls.
 // Shots go to the test output dir and to $SHOT_DIR when set. Page-side code is passed as strings (no DOM lib in tsconfig.node).
 const shotDir = process.env['SHOT_DIR'];
@@ -54,13 +54,6 @@ async function openDesktop(page: Page): Promise<void> {
   await page.waitForFunction(ARENA_READY);
 }
 
-async function openPhone(page: Page): Promise<void> {
-  await page.goto(`${START}&ff=arcade#arcade`);
-  await page.getByRole('button', { name: /^Fight/ }).tap();
-  await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
-  await page.locator('#touchStrikes').waitFor();
-}
-
 /** Places both fighters, fills the bar and presses the super; returns once the cut shows. */
 async function cast(page: Page, p: Place, first: boolean): Promise<void> {
   await page.evaluate(`(() => {
@@ -105,7 +98,7 @@ function run(page: Page, budget: number, stepFirst: boolean, stopAtShot: boolean
 }
 
 /** Steps through the whole cut, checking every tick; shots at the first tick near peak zoom. */
-async function watch(page: Page, testInfo: TestInfo, p: Place, label: string, opts: { reduced?: boolean; phone?: boolean }): Promise<Fx> {
+async function watch(page: Page, testInfo: TestInfo, p: Place, label: string, opts: { reduced?: boolean }): Promise<Fx> {
   let first: Fx | undefined;
   let shotTaken = false;
   let used = 0;
@@ -152,23 +145,22 @@ function check(fx: Fx, p: Place, label: string, opts: { reduced?: boolean }): vo
   expect([0, 1], `${label} subAlpha`).toContain(fx.subAlpha);
 }
 
-async function sequence(page: Page, testInfo: TestInfo, size: string, phone: boolean): Promise<void> {
+async function sequence(page: Page, testInfo: TestInfo, size: string): Promise<void> {
   const errors: string[] = [];
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(e.message));
-  await (phone ? openPhone(page) : openDesktop(page));
+  await openDesktop(page);
   let firstCast = true;
   for (const p of PLACES) {
     await cast(page, p, firstCast);
     firstCast = false;
-    const fx = await watch(page, testInfo, p, `${size}-${p.name}`, { phone });
+    const fx = await watch(page, testInfo, p, `${size}-${p.name}`, {});
     const b = fx.band;
     console.log(`${size} ${p.name}: y ${String(b.y)} k ${String(b.k)} cost ${String(b.cost)} side ${String(b.side)} avoid ${String(b.avoid.length)}`);
-    if (!phone) expect(b.avoid, 'no touch controls on desktop').toEqual([]);
-    else expect(b.avoid.length).toBeGreaterThan(0);
-    if (p.clear && !phone) expect(b.cost, `${size} ${p.name} clear slot`).toBe(0);
+    expect(b.avoid, 'no touch controls on desktop').toEqual([]);
+    if (p.clear) expect(b.cost, `${size} ${p.name} clear slot`).toBe(0);
     await page.evaluate(`window.__TTE__.arena.step(120)`);
   }
   expect(errors).toEqual([]);
@@ -178,7 +170,7 @@ test.describe('desktop 1280x720', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
   test('the band clears both fighters on every cast', async ({ page }, testInfo) => {
     test.setTimeout(240_000);
-    await sequence(page, testInfo, '1280x720', false);
+    await sequence(page, testInfo, '1280x720');
   });
 
   test('the Air title keeps its dark rim through the cut-out', async ({ page }, testInfo) => {
@@ -230,38 +222,3 @@ test.describe('desktop 1280x720', () => {
     });
   });
 });
-
-for (const [w, h] of [
-  [844, 390],
-  [667, 375],
-] as const) {
-  test.describe(`phone ${String(w)}x${String(h)}`, () => {
-    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-    test('the band and title stay off the touch controls', async ({ page }, testInfo) => {
-      test.setTimeout(240_000);
-      await sequence(page, testInfo, `${String(w)}x${String(h)}`, true);
-      if (w === 667) {
-        // At 667 the PHONE-2 gutter puts Strike 1/2 and Pause beside the canvas, not over it, so only the stick is an avoid rect.
-        // Independent check of the DOM mapping on the stick: its own rect, scaled by the canvas width over the 1280 core units.
-        await cast(page, PLACES[0] as Place, false);
-        const fx = await superFx(page);
-        const r = await page.evaluate<{ k: number; left: number; s: { x: number; y: number; w: number }; strikeOver: boolean }>(`(() => {
-          const q = (id) => document.getElementById(id).getBoundingClientRect();
-          const c = document.querySelector('#game canvas').getBoundingClientRect();
-          const s = q('touchStick');
-          const over = ['touchStrike1', 'touchStrike2', 'pauseButton'].some((id) => { const e = q(id); return e.left < c.right && e.right > c.left; });
-          return { k: c.width / 1280, left: c.left, s: { x: s.x, y: s.y, w: s.width }, strikeOver: over };
-        })()`);
-        const av = fx?.band.avoid ?? [];
-        expect(r.strikeOver, 'strikes and pause sit in the gutter, off the canvas').toBe(false);
-        expect(av.length, 'only the stick is over the canvas').toBe(1);
-        const [a1] = av;
-        expect(a1).toBeTruthy();
-        if (a1) {
-          expect(a1.x1 - a1.x0 - 16, 'stick width in core units').toBeCloseTo(r.s.w / r.k, 0);
-          expect(a1.x0 + 8, 'stick left in core units').toBeCloseTo((r.s.x - r.left) / r.k, 0);
-        }
-      }
-    });
-  });
-}

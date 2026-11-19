@@ -20,24 +20,3 @@ test('Settings is grouped, Advanced is collapsed and Save stays reachable', asyn
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeInViewport();
   await expect(page.getByRole('link', { name: 'Back' })).toBeInViewport();
 });
-
-test.describe('phone landscape', () => {
-  test.use({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 2 });
-  test('Save stays in view while scrolling', async ({ page }) => {
-    await page.goto(START);
-    await goToHash(page, '#settings');
-    await page.evaluate(`window.scrollTo(0, 600)`);
-    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeInViewport();
-    if (shotDir) await page.screenshot({ path: `${shotDir}/settings-phone-scrolled.png` });
-  });
-  test('title and bar are compact: first controls start in the top half', async ({ page }) => {
-    await page.goto(START);
-    await goToHash(page, '#settings');
-    const bar = await page.locator('.settingsBar').boundingBox();
-    expect(bar?.height ?? 999).toBeLessThan(70);
-    const first = await page.locator('#settingsAudio .settingsGroup').first().boundingBox();
-    expect(first?.y ?? 999).toBeLessThan(160);
-    await expect(page.getByRole('heading', { name: 'Settings' })).toHaveCount(1);
-    if (shotDir) await page.screenshot({ path: `${shotDir}/settings-phone-top.png` });
-  });
-});

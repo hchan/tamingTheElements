@@ -1,4 +1,4 @@
-// `pnpm visual:capture`: PNG screenshots of every key screen and state at 1280x720 and 390x844, written to
+// `pnpm visual:capture`: PNG screenshots of every key screen and state at 1280x720 (the 390x844 phone viewport was dropped 2026-11-19: phone is unsupported), written to
 // test-results/visual/<state>-<viewport>.png with a manifest.json. These tests assert only that the screen rendered
 // (no console errors, expected landmark present); a human or an AI reviewer opens the PNGs (docs/VISUAL-QA.md).
 import { expect, test, type Page } from '@playwright/test';
@@ -117,11 +117,6 @@ for (const vp of VIEWPORTS) {
       const errors = collectErrors(page);
       await seed(page, fixture('v0-ch4'));
       await startBattle(page, 'enterPracticeContainer', 1);
-      if (vp.mobile) {
-        await expect(page.locator('#rotateOverlay')).toBeVisible();
-        await shoot(page, vp, 'arena', 'rotate-overlay', 'Portrait phone: rotate-your-device overlay over the arena');
-        await page.locator('#rotateDismiss').click();
-      }
       const box = await canvasBox(page);
       expect(box).not.toBeNull();
       await page.evaluate(STEP(5, 0, 0));

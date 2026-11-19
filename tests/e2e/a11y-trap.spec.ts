@@ -1,9 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
-// A11y of Arcade traps and touch buttons (ideas a11y-trap-announcements, a11y-touch-cooldown-readouts): laying a trap is
-// spoken in the polite live region, and the Dash, Guard and Charge touch buttons carry their state in words and in the
-// accessible name. Page-side code is passed as strings (no DOM lib in tsconfig.node).
+// A11y of Arcade traps (idea a11y-trap-announcements): laying a trap is spoken in the polite live region.
+// Page-side code is passed as strings (no DOM lib in tsconfig.node).
 
 /** Round 1's intro (FUN-DESIGN 2.10): nobody acts until tick 91. */
 const INTRO = 91;
@@ -45,16 +44,4 @@ test('laying a trap is spoken politely in words; no listener left behind', async
   await expect(page.locator('#arcadeTrap')).toHaveCount(0);
   expect(await page.evaluate<number>(`window.__TTE__.listeners()`)).toBe(0);
   expect(errors).toEqual([]);
-});
-
-test('Dash, Guard and Charge touch buttons show their state in words and in the accessible name', async ({ page }) => {
-  await start(page);
-  for (const [id, name] of [['arcadeDash', '7 Dash'], ['arcadeGuard', '8 Guard'], ['arcadeCharge', '5 Charge']] as const) {
-    await expect(page.locator(`#${id}`)).toContainText(/ready|\d+s|\d+%/, { timeout: 5000 });
-    await expect(page.locator(`#${id}`)).toHaveAttribute('aria-label', new RegExp(`^${name}, (ready|\\d+s|\\d+%)$`));
-  }
-  // A dash starts its cooldown: the button reads seconds, then ready again.
-  await page.keyboard.press('KeyE');
-  await page.evaluate(`window.__TTE__.arena.stepLive(5)`);
-  await expect(page.locator('#arcadeDash')).toContainText(/\d+s|ready/);
 });

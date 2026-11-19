@@ -148,7 +148,7 @@ test('Arcade Versus: a 2-2 draw starts sudden death, with its banner, live line 
 });
 
 test('Arcade Versus: both hero names show on a backing strip while ROUND slides in (HF2-4)', async ({ page }, info) => {
-  for (const [w, h] of [[1280, 720], [844, 390]] as const) {
+  for (const [w, h] of [[1280, 720]] as const) {
     await page.setViewportSize({ width: w, height: h });
     await versus(page);
     await expect.poll(async () => (await rounds(page))?.main).toBe('ROUND 1');

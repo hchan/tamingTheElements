@@ -20,23 +20,17 @@ function need<T>(v: T | null | undefined): T {
 
 const BAR = '#arcadePick .vsActions, #tourPick .heroActions';
 
-const VIEWPORTS: ReadonlyArray<readonly [string, number, number, boolean]> = [
-  ['1280x720', 1280, 720, false],
-  ['1920x1080', 1920, 1080, false],
-  ['1024x768', 1024, 768, false],
-  ['800x600', 800, 600, false],
-  ['phone-landscape-667', 667, 375, true],
-  ['phone-landscape-844', 844, 390, true],
-  ['phone-portrait', 390, 844, true],
+const VIEWPORTS: ReadonlyArray<readonly [string, number, number]> = [
+  ['1280x720', 1280, 720],
+  ['1920x1080', 1920, 1080],
+  ['1024x768', 1024, 768],
+  ['800x600', 800, 600],
 ];
 
-for (const [name, width, height, touch] of VIEWPORTS) {
+for (const [name, width, height] of VIEWPORTS) {
   test.describe(`picker bar ${name}`, () => {
     test.use({
       viewport: { width, height },
-      deviceScaleFactor: touch ? 2 : 1,
-      isMobile: touch,
-      hasTouch: touch,
     });
 
     test('Versus: the bar is below the scroll region, the page does not scroll sideways', async ({
@@ -150,42 +144,3 @@ test.describe('Versus 2v2 at 1280x720', () => {
   });
 });
 
-test.describe('touch targets', () => {
-  test.use({ viewport: { width: 1024, height: 768 }, hasTouch: true, isMobile: false });
-
-  test('the Fight and Back buttons keep at least 44 px on a coarse pointer', async ({ page }) => {
-    await page.goto(`${START}&ff=arcade#arcade`);
-    for (const label of ['Fight!', 'Back']) {
-      const b = await page
-        .locator('#arcadePick .vsActions .menuButton', { hasText: label })
-        .boundingBox();
-      expect(b).not.toBeNull();
-      expect(need(b).height).toBeGreaterThanOrEqual(44);
-    }
-  });
-});
-
-// Short landscape phones: the option rows used to fill the screen, so no hero tile showed until you scrolled (QA r60/r61).
-const SHORT_PHONES: ReadonlyArray<readonly [number, number]> = [[667, 375], [812, 375]];
-for (const [w, h] of SHORT_PHONES) {
-  test.describe(`Versus heroes visible at ${String(w)}x${String(h)}`, () => {
-    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-
-    test('at least three hero tiles sit fully above the bar at scroll 0, targets stay 44 px', async ({ page }) => {
-      await page.goto(`${START}&ff=arcade#arcade`);
-      await expect(page.locator('#arcadePick .heroTile').first()).toBeAttached();
-      const bar = need(await rectOf(page, BAR));
-      const shown = await page.evaluate<number>(
-        `(() => { const bar = document.querySelector(${JSON.stringify(BAR)}).getBoundingClientRect(); const region = document.querySelector('.pickScroll').getBoundingClientRect(); return [...document.querySelectorAll('#arcadePick .heroTile')].filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.top >= region.top && r.bottom <= bar.top + 1; }).length; })()`,
-      );
-      expect(shown).toBeGreaterThanOrEqual(3);
-      for (const sel of ['#arcadePick .vsSegment', '#arcadePick .vsActions .menuButton']) {
-        const h44 = await page.evaluate<number>(
-          `Math.min(...[...document.querySelectorAll(${JSON.stringify(sel)})].map((e) => e.getBoundingClientRect().height))`,
-        );
-        expect(h44).toBeGreaterThanOrEqual(44);
-      }
-      expect(bar.bottom).toBeLessThanOrEqual(h + 1);
-    });
-  });
-}

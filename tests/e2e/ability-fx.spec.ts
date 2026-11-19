@@ -124,16 +124,13 @@ test('snag: a rope lash and a SNAG word show on the cast, before any hit', async
 // SNAG-CEIL-1: the floating SNAG / HEAL word stops under the dark scrim and the status chips (the Hud scene draws over the Arena).
 interface Box { text: string; x: number; y: number; w: number; h: number }
 const SNAG_VIEWS = [
-  { name: '1280x720', size: { width: 1280, height: 720 }, touch: false, left: false },
-  { name: '844x390 touch', size: { width: 844, height: 390 }, touch: true, left: false },
-  { name: '844x390 left-handed', size: { width: 844, height: 390 }, touch: true, left: true },
+  { name: '1280x720', size: { width: 1280, height: 720 } },
 ] as const;
 
 for (const v of SNAG_VIEWS) {
   test.describe(`snag pop under the chips, ${v.name}`, () => {
-    test.use({ viewport: v.size, deviceScaleFactor: 1, isMobile: v.touch, hasTouch: v.touch });
+    test.use({ viewport: v.size, deviceScaleFactor: 1 });
     test('the word stays below the scrim and clear of every status chip it overlaps', async ({ page }) => {
-      if (v.left) await page.addInitScript(`localStorage.setItem('tte.touchLayout', ${JSON.stringify(JSON.stringify({ size: 'auto', side: 'left', haptics: true }))})`);
       const errors = collectErrors(page);
       await start(page, 'treenoc', 'sindarosa', 900);
       // The caster stands near the top of the arena, so the rising word reaches the chip rows; both teams show chips.

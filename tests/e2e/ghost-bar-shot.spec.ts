@@ -62,7 +62,7 @@ async function ghostPixels(page: Page, region = { x: 700, y: 10, w: 460, h: 20 }
   );
 }
 
-for (const [width, height] of [[1280, 720], [667, 375]] as const) {
+for (const [width, height] of [[1280, 720]] as const) {
   test.describe(`${String(width)}x${String(height)}`, () => {
     test.use({ viewport: { width, height } });
     for (const two of [false, true]) {
@@ -74,8 +74,8 @@ for (const [width, height] of [[1280, 720], [667, 375]] as const) {
         const name = `ghost-${two ? '2v2' : '1v1'}-${String(width)}.png`;
         const png = await page.screenshot({ path: shotDir ? `${shotDir}/${name}` : info.outputPath(name) });
         expect(png.length).toBeGreaterThan(2000);
-        // Just after the hit the pale segment shows (a sizeable patch even on the phone viewport)...
-        expect(await ghostPixels(page)).toBeGreaterThanOrEqual(width < 800 ? 12 : 40);
+        // Just after the hit the pale segment shows...
+        expect(await ghostPixels(page)).toBeGreaterThanOrEqual(40);
         // ...and it drains away after the hold.
         await expect.poll(() => ghostPixels(page), { timeout: 20_000 }).toBe(0);
       });

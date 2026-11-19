@@ -288,7 +288,7 @@ force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a rem
 
 ### E2E test tiers (`tools/ci/test-tiers.json`)
 
-Every e2e test has a tier: **P0** core flow (boot, menu, Play/Versus/Tour/online to a result, pause, save integrity; every `@smoke` test), **P1** features (abilities, pickers, Help, Settings, a11y, replay, supers, stages), **P2** polish and edge (screenshots, cosmetic fx, layout at odd sizes, phone, portrait and touch, which is parked). Push rule: a new repeating red in a P0 or P1 test blocks the push; a P2 red is recorded (nightly known-red) and does not block.
+Every e2e test has a tier: **P0** core flow (boot, menu, Play/Versus/Tour/online to a result, pause, save integrity; every `@smoke` test), **P1** features (abilities, pickers, Help, Settings, a11y, replay, supers, stages), **P2** polish and edge (screenshots, cosmetic fx, layout at odd sizes, phone, portrait and touch, which is parked: since 2026-11-19 the phone, portrait-play and touch-viewport e2e specs are deleted because the game does not support phones; the touch code and its unit/dom tests stay). Push rule: a new repeating red in a P0 or P1 test blocks the push; a P2 red is recorded (nightly known-red) and does not block.
 
 `tools/ci/test-tiers.ts` exports `tierOf(file, title, tags)` and `loadTiers()`. Resolution order: `@smoke` tag (P0), per-test `overrides` (file plus title substring, first match), `titleRules` ("reduced motion", "phone", "portrait", "touch" drop to P2 unless the file is P0), the per-file tier in `files`, then `defaultTier` (P1). A new spec must get a `files` entry; `tests/repo/test-tiers.test.ts` fails otherwise.
 

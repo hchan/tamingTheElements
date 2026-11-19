@@ -4,11 +4,10 @@
   "files": {
     "a11y-features.spec.ts": "P1",
     "a11y-focus.spec.ts": "P1",
-    "a11y-trap-touch.spec.ts": "P2",
+    "a11y-trap.spec.ts": "P2",
     "a11y.spec.ts": "P1",
     "ability-fx.spec.ts": "P1",
     "action-bar-groups.spec.ts": "P2",
-    "action-bar-kits-shot.spec.ts": "P2",
     "app-flow.spec.ts": "P0",
     "arcade-audio.spec.ts": "P1",
     "arcade-charge.spec.ts": "P1",
@@ -42,7 +41,6 @@
     "element-marks.spec.ts": "P2",
     "elemental-heroes-shot.spec.ts": "P2",
     "fire-blast-fade-shot.spec.ts": "P2",
-    "first-run-hint-portrait.spec.ts": "P2",
     "first-run-hint.spec.ts": "P1",
     "floor-backgrounds.spec.ts": "P2",
     "fx-map-sprites.spec.ts": "P2",
@@ -51,7 +49,6 @@
     "help-controls.spec.ts": "P1",
     "hero-drag.spec.ts": "P1",
     "key-bindings-top.spec.ts": "P1",
-    "hero-picker-layout.spec.ts": "P2",
     "hero-portrait-shot.spec.ts": "P2",
     "hero-scale.spec.ts": "P2",
     "hero-unselect.spec.ts": "P1",
@@ -67,18 +64,16 @@
     "idle-motif.spec.ts": "P2",
     "keyboard.spec.ts": "P0",
     "ko-fx-shot.spec.ts": "P2",
-    "layout-r15.spec.ts": "P2",
     "life-readout.spec.ts": "P2",
     "manual-fx-age.spec.ts": "P2",
     "match-end.spec.ts": "P0",
-    "menu-phone-row.spec.ts": "P2",
+    "menu-team-radio.spec.ts": "P2",
     "menu-showcase.spec.ts": "P2",
     "move-backward.spec.ts": "P2",
     "move-wings-knees.spec.ts": "P2",
     "online-copy-paste.spec.ts": "P1",
     "online-leave.spec.ts": "P0",
     "online-match.spec.ts": "P0",
-    "online-mobile.spec.ts": "P2",
     "online-quick.spec.ts": "P0",
     "online-relay.spec.ts": "P0",
     "online-versus.spec.ts": "P0",
@@ -87,13 +82,8 @@
     "pause-menu.spec.ts": "P0",
     "pause-reasons.spec.ts": "P0",
     "perf.spec.ts": "P1",
-    "phone-chips.spec.ts": "P2",
-    "phone-layout.spec.ts": "P2",
-    "phone-portrait-menu.spec.ts": "P2",
     "picker-bar.spec.ts": "P1",
-    "picker-rows-reachable.spec.ts": "P1",
     "playtest-replay.spec.ts": "P1",
-    "portrait-play.spec.ts": "P2",
     "pseudo3d-depth.spec.ts": "P2",
     "pseudo3d-orbit.spec.ts": "P2",
     "pseudo3d-rope.spec.ts": "P2",
@@ -109,23 +99,19 @@
     "sfx-wiring.spec.ts": "P1",
     "signature-fx.spec.ts": "P1",
     "slot-tooltip.spec.ts": "P2",
-    "small-viewport-fight.spec.ts": "P2",
     "smoke.spec.ts": "P0",
     "smooth-movement.spec.ts": "P1",
     "sprite-sheets.spec.ts": "P1",
     "stage-ambient.spec.ts": "P2",
     "stage-hazards.spec.ts": "P1",
     "status-fx.spec.ts": "P2",
-    "status-more-chip.spec.ts": "P2",
     "storage-guards.spec.ts": "P0",
-    "super-band-portrait.spec.ts": "P2",
     "super-band.spec.ts": "P2",
     "super-impact-shot.spec.ts": "P2",
     "terrain-chips-water.spec.ts": "P2",
     "tester-mode.spec.ts": "P1",
-    "touch-fight-layout.spec.ts": "P2",
-    "touch-stick.spec.ts": "P2",
-    "tour-card.spec.ts": "P1",
+    "fight-hud-shots.spec.ts": "P2",
+    "no-touch-stick.spec.ts": "P2",
     "tour-fight-match.spec.ts": "P0",
     "tour-win.spec.ts": "P1",
     "tour.spec.ts": "P0",
@@ -133,8 +119,6 @@
     "versus-abilities.spec.ts": "P1",
     "versus-desktop-grid.spec.ts": "P1",
     "versus-hero-pick.spec.ts": "P0",
-    "versus-layout.spec.ts": "P2",
-    "versus-portrait-grid.spec.ts": "P2",
     "versus-stage-pick.spec.ts": "P1",
     "weather-particles.spec.ts": "P2",
     "webrtc-peer.spec.ts": "P0"
@@ -186,16 +170,6 @@
       "tier": "P2"
     },
     {
-      "file": "phone-layout.spec.ts",
-      "titleIncludes": "no touch button or Pause covers",
-      "tier": "P1"
-    },
-    {
-      "file": "portrait-play.spec.ts",
-      "titleIncludes": "the canvas is tall",
-      "tier": "P1"
-    },
-    {
       "file": "trap-art.spec.ts",
       "titleIncludes": "World Tour fight shows the lead hero traps",
       "tier": "P1"
@@ -223,21 +197,6 @@
     {
       "file": "responsive.spec.ts",
       "titleIncludes": "menu, help, garrison and battle fit",
-      "tier": "P2"
-    },
-    {
-      "file": "settings-sections.spec.ts",
-      "titleIncludes": "phone landscape",
-      "tier": "P2"
-    },
-    {
-      "file": "help-controls.spec.ts",
-      "titleIncludes": "Help at 844x390",
-      "tier": "P2"
-    },
-    {
-      "file": "help-controls.spec.ts",
-      "titleIncludes": "Help at 568x320",
       "tier": "P2"
     },
     {

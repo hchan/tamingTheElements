@@ -23,8 +23,8 @@ describe('tools/ci/test-tiers.json', () => {
 
 describe('tierOf', () => {
   it('@smoke always wins', () => {
-    expect(tierOf('tests/e2e/touch-stick.spec.ts', 'anything', ['@smoke'])).toBe('P0');
-    expect(tierOf('phone-layout.spec.ts', 'no touch button or Pause covers', ['@smoke'])).toBe('P0');
+    expect(tierOf('tests/e2e/no-touch-stick.spec.ts', 'anything', ['@smoke'])).toBe('P0');
+    expect(tierOf('responsive.spec.ts', 'a touch title the rule would demote', ['@smoke'])).toBe('P0');
   });
   it('overrides beat the file tier', () => {
     expect(tierOf('match-end.spec.ts', 'a draw at the time limit')).toBe('P1');
