@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { FIGHT_BANNER_TICKS } from '../hud/round-announcer';
+import { HUD_AVOID_KEY, type HudRect } from '../hud/arcade-hud';
 import { EntityFlag, RoundPhase, SimEventKind, arcadePlayfield, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { coreDisplayWidth, resolutionOf } from '../boot/viewport';
@@ -415,11 +416,22 @@ export function mountTerrainView(
     }
   };
 
+  /** Slot 0 of HUD_AVOID_KEY: the badge's plate (with the 1.15 heal pulse) for the anchored combo counter to stay clear of; empty when hidden. */
+  const avoidBox = { x: BADGE_X - 8, y: BADGE_Y - 4, w: 0, h: 0 };
+  const publishAvoid = (box: HudRect | undefined): void => {
+    const reg = hud.registry;
+    let all = reg.get(HUD_AVOID_KEY) as HudRect[][] | undefined;
+    if (!all) reg.set(HUD_AVOID_KEY, (all = []));
+    const slot: HudRect[] = all[0] ?? (all[0] = []);
+    slot.length = 0;
+    if (box) slot.push(box);
+  };
   /** The buff badge: a dark plate, the element's icon and the word. */
   const drawBadge = (p: NonNullable<typeof parts>, stage: number, label: string): void => {
     const g = p.plate.clear();
     if (label === '') {
       p.badge.setVisible(false);
+      publishAvoid(undefined);
       return;
     }
     p.badge.setText(label).setPosition(BADGE_X + ICON + 14, BADGE_Y).setVisible(true);
@@ -428,6 +440,9 @@ export function mountTerrainView(
     g.fillStyle(0x000000, highContrast ? 0.85 : 0.6).fillRoundedRect(BADGE_X - 8, BADGE_Y - 4, w + 20, h + 8, 6);
     g.lineStyle(highContrast ? 3 : 2, PATCH_COLORS[stage - 1] ?? 0xffffff, 1).strokeRoundedRect(BADGE_X - 8, BADGE_Y - 4, w + 20, h + 8, 6);
     icon(g, stage, BADGE_X + ICON / 2, BADGE_Y + h / 2);
+    avoidBox.w = w + 20 + 0.15 * p.badge.width;
+    avoidBox.h = h + 8 + 0.15 * h;
+    publishAvoid(avoidBox);
   };
 
   const found = (): boolean => hero.found;
@@ -550,6 +565,7 @@ export function mountTerrainView(
     arena.events.off('postupdate', draw).off('shutdown', off).off('destroy', off);
     hud.events.off('shutdown', off).off('destroy', off);
     states.delete(arena);
+    publishAvoid(undefined);
     tiles.destroy();
     airShade?.destroy();
     stageArt.destroy();
