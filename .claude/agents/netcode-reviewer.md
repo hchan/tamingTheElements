@@ -1,6 +1,6 @@
 ---
 name: netcode-reviewer
-description: Reviews networking code (src/core/net when it lands, and any rollback, lockstep or transport code) for desync risk - input delay, rollback and resimulation, event de-duplication by stable id, handshake of sim version/flags/seed, periodic hash exchange and no trust in peer state. Use after any change that touches net, replay or command code. NOT for single-player sim rules (determinism-reviewer).
+description: Reviews networking code (src/core/net, and any rollback, lockstep or transport code) for desync risk - input delay, rollback and resimulation, event de-duplication by stable id, handshake of sim version/flags/seed, periodic hash exchange and no trust in peer state. Use after any change that touches net, replay or command code. NOT for single-player sim rules (determinism-reviewer).
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
