@@ -9,8 +9,11 @@ for d in .claude/worktrees/agent-*; do
   [ -d "$d" ] || continue
   [ -n "$(find "$d/src" "$d/tests" "$d/docs" "$d/ideas" -type f -mmin -15 2>/dev/null | head -1)" ] && n=$((n+1))
 done
+# Read-only planners create no worktree: also count subagent transcripts written in the last 15 minutes.
+t=$(find -L /private/tmp/claude-501/*/*/tasks -name '*.output' -mmin -15 2>/dev/null | wc -l | tr -d ' ')
+n=$((n+t))
 if [ "$n" -lt 2 ]; then
-  echo "Agent pool looks low (~$n active worktrees, CLAUDE.md wants 2-5). Run ListAgents; if fewer than 2 are running, start new Sonnet agents (own worktree + E2E_PORT) on independent items from ideas/brainstorm before stopping. If ideas are genuinely exhausted or blocked, say so and stop." >&2
+  echo "Agent pool looks low (~$n active worktrees or recent agent transcripts, CLAUDE.md wants 2-5). Run ListAgents; if fewer than 2 are running, start new Sonnet agents (own worktree + E2E_PORT) on independent items from ideas/brainstorm before stopping. If ideas are genuinely exhausted or blocked, say so and stop." >&2
   exit 2
 fi
 exit 0
