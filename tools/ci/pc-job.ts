@@ -82,7 +82,7 @@ export function renderJob(spec: JobSpec): { jobSh: string; startSh: string } {
   const workers = spec.workers ?? lane.workers;
   const words = spec.command.map(shellQuote);
   if (spec.direct) {
-    words.push(shellQuote('--reporter=list,json,html'), shellQuote('--trace=retain-on-failure'), `"${OUT_FLAG}"`, shellQuote(`--workers=${workers}`));
+    words.push('"--reporter=$R"', shellQuote('--trace=retain-on-failure'), `"${OUT_FLAG}"`, shellQuote(`--workers=${workers}`));
   }
   const cmdLine = words.join(' ');
   const envLines = Object.entries(spec.env).map(([k, v]) => `export ${k}=${shellQuote(v)}`);
@@ -180,6 +180,9 @@ export TTE_RESULTS=$OUT
 export PLAYWRIGHT_HTML_OPEN=never
 export PLAYWRIGHT_JSON_OUTPUT_FILE=$OUT/results.json
 export PLAYWRIGHT_HTML_OUTPUT_DIR=$OUT/report PLAYWRIGHT_HTML_REPORT=$OUT/report
+export TTE_JOB_ID=${shellQuote(id)} TTE_LANE=${shellQuote(laneName)} TTE_JOB_SHA=${shellQuote(source.sha)}
+# The custom reporter only exists in newer checkouts; an older sha still runs with the stock ones.
+R=list,json,html; [ -f tools/ci/e2e-reporter.ts ] && R="$R,./tools/ci/e2e-reporter.ts"
 ${envLines.join('\n')}
 
 # 4. Frame preflight: a compositor stall is an error, not a test failure.

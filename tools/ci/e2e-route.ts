@@ -265,6 +265,8 @@ function report(id: string, sha: string, lane: LaneName, workers: number, st: Jo
       copyFileSync(jsonPath, to);
     }
   } else w(`PC e2e ${id} ${sha.slice(0, 7)} ${lane} x${String(workers)}: no results.json (state ${st.state}, rc ${String(st.rc)})\n`);
+  const rp = join(dir, 'report.md');
+  if (existsSync(rp)) w(`${readFileSync(rp, 'utf8').split('\n')[0] ?? ''}\nreport: .scratch/remote-e2e/${id}/report.md\n`);
   const hp = join(dir, 'health.csv');
   const hs = existsSync(hp) ? summarizeHealth(readFileSync(hp, 'utf8')) : null;
   if (hs) w(`${hs}\n`);
@@ -468,7 +470,7 @@ let signalsHooked = false;
 export function runLocal(p: Parsed, env: Env = process.env, reason?: string, macLoad?: number): Promise<number> {
   const json = env['PLAYWRIGHT_JSON_OUTPUT_FILE'] && p.kind !== 'flake' && !p.rest.some((a) => a.startsWith('--reporter'));
   const base = p.kind === 'flake' ? ['tsx', 'tools/ci/e2e-flake.ts', ...p.rest] : ['playwright', 'test', ...kindArgs(p), ...(p.workers ? [`--workers=${String(p.workers)}`] : [])];
-  const cmd = json ? [...base, '--reporter=list,html,json'] : base;
+  const cmd = json ? [...base, '--reporter=list,html,json,./tools/ci/e2e-reporter.ts'] : base;
   if (reason) {
     const lim = env['TTE_MAC_LOAD_MAX'] ?? String(DEFAULT_LIMITS.macLoadMax);
     process.stderr.write(`!!! E2E FALLBACK -> MAC: ${redact(reason)}. Mac load ${macLoad === undefined ? '?' : macLoad.toFixed(1)}/${lim}. Short run only. Say so in your report.\n`);
