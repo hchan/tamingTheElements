@@ -38,6 +38,8 @@ const gapBetween = (a: Box, b: Box): number => Math.max(b.x - (a.x + a.w), a.x -
 const fx = (page: Page): Promise<Fx> => page.evaluate<Fx>(`window.__TTE__.arena.fx()`);
 const chars = (page: Page): Promise<Char[]> => page.evaluate<Char[]>(`window.__TTE__.arena.characters()`);
 const run = (page: Page, js: string): Promise<unknown> => page.evaluate(js);
+const vp = (page: Page): string => { const v = page.viewportSize(); return v ? `${String(v.width)}x${String(v.height)}` : 'unknown viewport'; };
+const fmt = (b: Box): string => `box x=${String(b.x)} y=${String(b.y)} w=${String(b.w)} h=${String(b.h)}`;
 const box = (c: Combo): Box => ({ x: c.x, y: c.y, w: c.w, h: c.h });
 
 async function shot(page: Page, info: TestInfo, name: string): Promise<void> {
@@ -58,9 +60,9 @@ async function settleCamera(page: Page): Promise<void> {
 /** Team 0's counter, asserted anchored (never the band slot) so a pass is not vacuous. */
 async function mine(page: Page): Promise<Combo> {
   const c = (await fx(page)).comboBoxes.find((b) => b.team === 0);
-  expect(c, 'team 0 has a visible combo counter').toBeDefined();
+  expect(c, `[${vp(page)}] team 0 (the player) has no visible combo counter in fx().comboBoxes`).toBeDefined();
   const combo = c as Combo;
-  expect(combo.mode, 'the counter is anchored on desktop').toBe('anchored');
+  expect(combo.mode, `[${vp(page)}] the combo counter is in mode '${combo.mode}' (the fixed band slot) instead of 'anchored' over the victim's head on desktop`).toBe('anchored');
   return combo;
 }
 
@@ -71,7 +73,7 @@ async function settled(page: Page): Promise<Combo> {
     await raf2(page);
     c = await mine(page);
   }
-  expect(c.settled, 'the counter settled').toBe(true);
+  expect(c.settled, `[${vp(page)}] the combo counter never settled onto its target within 90 frames (${fmt(c)})`).toBe(true);
   return c;
 }
 
@@ -111,7 +113,7 @@ async function comboTo(page: Page, foe: number, hits: number, at?: { x: number; 
     }
     return n;
   })()`);
-  expect(n, `the combo reached ${String(hits)} hits`).toBeGreaterThanOrEqual(hits);
+  expect(n, `[${vp(page)}] the combo counter never reached ${String(hits)} hits within 300 ticks (last count ${String(n)})`).toBeGreaterThanOrEqual(hits);
 }
 
 for (const view of VIEWS) {
@@ -119,23 +121,25 @@ for (const view of VIEWS) {
     test.use({ viewport: view.size, hasTouch: false });
     test.slow();
 
-    test('1: the counter is over the foe\'s head and tracks the projection', async ({ page }, info) => {
+    test('1: the combo counter is anchored over the foe\'s head and tracks the camera projection', async ({ page }, info) => {
       const errors = collectErrors(page);
       const foe = await openDemo(page, view.size);
       await comboTo(page, foe, 2);
       await settleCamera(page);
       const c = await settled(page);
       const f = (await chars(page)).find((ch) => ch.id === foe) as Char;
-      expect(c.ax, 'anchor x is over the victim (left)').toBeGreaterThanOrEqual(f.x);
-      expect(c.ax, 'anchor x is over the victim (right)').toBeLessThanOrEqual(f.x + f.w);
-      expect(c.ay, 'anchor y is at or above the victim\'s top').toBeLessThanOrEqual(f.y);
-      expect(Math.abs(c.headX - (c.frame.x + ((c.ax - c.view.x) / c.view.w) * c.frame.w))).toBeLessThanOrEqual(1);
-      expect(Math.abs(c.headY - (c.frame.y + ((c.ay - c.view.y) / c.view.h) * c.frame.h))).toBeLessThanOrEqual(1);
+      const W = `[${view.name}] case 1`;
+      const fb = `foe box x=${String(f.x)} y=${String(f.y)} w=${String(f.w)} h=${String(f.h)}`;
+      expect(c.ax, `${W}: the counter's anchor x (${String(c.ax)}) is left of the foe's left edge; ${fb}`).toBeGreaterThanOrEqual(f.x);
+      expect(c.ax, `${W}: the counter's anchor x (${String(c.ax)}) is right of the foe's right edge; ${fb}`).toBeLessThanOrEqual(f.x + f.w);
+      expect(c.ay, `${W}: the counter's anchor y (${String(c.ay)}) is below the foe's top edge; ${fb}`).toBeLessThanOrEqual(f.y);
+      expect(Math.abs(c.headX - (c.frame.x + ((c.ax - c.view.x) / c.view.w) * c.frame.w)), `${W}: the counter's head x (${String(c.headX)}) is more than 1 px from the projected anchor`).toBeLessThanOrEqual(1);
+      expect(Math.abs(c.headY - (c.frame.y + ((c.ay - c.view.y) / c.view.h) * c.frame.h)), `${W}: the counter's head y (${String(c.headY)}) is more than 1 px from the projected anchor`).toBeLessThanOrEqual(1);
       await shot(page, info, `mid-${view.name}`);
-      expect(errors).toEqual([]);
+      expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
     });
 
-    test('2: at both walls the counter stays inside the frame, under the ceiling and above the action bar', async ({ page }, info) => {
+    test('2: with the foe at either arena wall the combo counter stays inside the frame, under the HUD ceiling and above the action bar', async ({ page }, info) => {
       const errors = collectErrors(page);
       const foe = await openDemo(page, view.size);
       let moved = 0;
@@ -144,18 +148,18 @@ for (const view of VIEWS) {
         await comboTo(page, foe, 2, { x, y: 380 });
         await settleCamera(page);
         const c = await settled(page);
-        expect(c.x, `${name}: left edge`).toBeGreaterThanOrEqual(c.frame.x + 16 - 1);
-        expect(c.x + c.w, `${name}: right edge`).toBeLessThanOrEqual(c.frame.x + c.frame.w - 16 + 1);
-        expect(c.y, `${name}: top under the ceiling`).toBeGreaterThanOrEqual(c.ceil - 1);
-        expect(c.y + c.h, `${name}: bottom above the action bar`).toBeLessThanOrEqual(c.frame.y + c.frame.h - 88 + 1);
+        expect(c.x, `[${view.name}] case 2, foe at the ${name} wall: the counter's left edge (${String(c.x)}) is left of the frame's 16 px margin; ${fmt(c)}`).toBeGreaterThanOrEqual(c.frame.x + 16 - 1);
+        expect(c.x + c.w, `[${view.name}] case 2, foe at the ${name} wall: the counter's right edge (${String(c.x + c.w)}) is right of the frame's 16 px margin; ${fmt(c)}`).toBeLessThanOrEqual(c.frame.x + c.frame.w - 16 + 1);
+        expect(c.y, `[${view.name}] case 2, foe at the ${name} wall: the counter's top (${String(c.y)}) is above the HUD ceiling (${String(c.ceil)}); ${fmt(c)}`).toBeGreaterThanOrEqual(c.ceil - 1);
+        expect(c.y + c.h, `[${view.name}] case 2, foe at the ${name} wall: the counter's bottom (${String(c.y + c.h)}) overlaps the action bar; ${fmt(c)}`).toBeLessThanOrEqual(c.frame.y + c.frame.h - 88 + 1);
         if (c.dx !== 0 || c.dy !== 0) moved++;
         await shot(page, info, `wall-${name}-${view.name}`);
       }
-      expect(moved, 'the wall clamp moved the counter at least once').toBeGreaterThan(0);
-      expect(errors).toEqual([]);
+      expect(moved, `[${view.name}] case 2: the wall clamp never moved the counter at either wall (dx and dy were 0 both times)`).toBeGreaterThan(0);
+      expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
     });
 
-    test('3: pops, call-outs and numbers: clear by 7 px unless stuck (then faint)', async ({ page }) => {
+    test('3: the combo counter keeps 7 px clear of pops, call-outs and damage numbers, or goes faint when stuck', async ({ page }) => {
       const errors = collectErrors(page);
       const foe = await openDemo(page, view.size);
       await comboTo(page, foe, 2, { x: 780, y: 380 });
@@ -172,32 +176,32 @@ for (const view of VIEWS) {
           await settled(page);
           const f = await fx(page);
           const c = f.comboBoxes.find((b) => b.team === 0) as Combo;
-          expect(c.mode).toBe('anchored');
+          expect(c.mode, `[${view.name}] case 3 at ${String(to)} ticks, ${String(ms)} ms: the counter is in mode '${c.mode}' instead of 'anchored'`).toBe('anchored');
           checked++;
           if (c.dx !== 0 || c.dy !== 0) moved++;
           if (c.stuck) {
-            expect(c.alpha, 'a stuck counter is faint').toBeLessThanOrEqual(0.4 + 1e-6);
+            expect(c.alpha, `[${view.name}] case 3 at ${String(to)} ticks, ${String(ms)} ms: the stuck counter has alpha ${String(c.alpha)}, not faint (0.4 or less)`).toBeLessThanOrEqual(0.4 + 1e-6);
           } else {
-            for (const r of [...c.avoid, ...f.popBoxes]) expect(gapBetween(box(c), r), `counter ${JSON.stringify(box(c))} vs ${JSON.stringify(r)} at ${String(to)} ticks, ${String(ms)} ms`).toBeGreaterThanOrEqual(GAP - 1);
+            for (const r of [...c.avoid, ...f.popBoxes]) expect(gapBetween(box(c), r), `[${view.name}] case 3 at ${String(to)} ticks, ${String(ms)} ms: the counter (${fmt(box(c))}) is closer than 7 px to a pop, call-out or number-lane box (${fmt(r)})`).toBeGreaterThanOrEqual(GAP - 1);
           }
-          for (const n of f.numberBoxes) expect(gapBetween(box(c), n), `number ${JSON.stringify(n)} on the counter`).toBeGreaterThanOrEqual(0);
+          for (const n of f.numberBoxes) expect(gapBetween(box(c), n), `[${view.name}] case 3 at ${String(to)} ticks, ${String(ms)} ms: a damage number (${fmt(n)}) overlaps the counter (${fmt(box(c))})`).toBeGreaterThanOrEqual(0);
         }
       }
-      expect(checked).toBe(16);
-      expect(moved, 'at least one sample forced the counter off its natural spot').toBeGreaterThan(0);
-      expect(errors).toEqual([]);
+      expect(checked, `[${view.name}] case 3: sampled ${String(checked)} tick/ms combinations instead of 16`).toBe(16);
+      expect(moved, `[${view.name}] case 3: no sample forced the counter off its natural spot (dx and dy were 0 in all ${String(checked)})`).toBeGreaterThan(0);
+      expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
     });
 
-    test('5: a milestone pop never leaves the frame or the ceiling, then settles to scale 1', async ({ page }, info) => {
+    test('5: the combo counter\'s milestone pop stays inside the frame and under the ceiling, then eases back to scale 1', async ({ page }, info) => {
       const errors = collectErrors(page);
       const foe = await openDemo(page, view.size);
       await comboTo(page, foe, 3);
       await settleCamera(page);
       const c = await settled(page);
-      expect(c.scale, 'popped at the milestone').toBeLessThanOrEqual(c.popMax + 1e-6);
-      expect(c.x).toBeGreaterThanOrEqual(c.frame.x - 1);
-      expect(c.x + c.w).toBeLessThanOrEqual(c.frame.x + c.frame.w + 1);
-      expect(c.y).toBeGreaterThanOrEqual(c.ceil - 1);
+      expect(c.scale, `[${view.name}] case 5: the counter's scale (${String(c.scale)}) is above its milestone pop maximum (${String(c.popMax)})`).toBeLessThanOrEqual(c.popMax + 1e-6);
+      expect(c.x, `[${view.name}] case 5: the popped counter's left edge is outside the frame; ${fmt(c)}`).toBeGreaterThanOrEqual(c.frame.x - 1);
+      expect(c.x + c.w, `[${view.name}] case 5: the popped counter's right edge is outside the frame; ${fmt(c)}`).toBeLessThanOrEqual(c.frame.x + c.frame.w + 1);
+      expect(c.y, `[${view.name}] case 5: the popped counter's top (${String(c.y)}) is above the HUD ceiling (${String(c.ceil)}); ${fmt(c)}`).toBeGreaterThanOrEqual(c.ceil - 1);
       await shot(page, info, `pop-${view.name}`);
       await run(page, `window.__TTE__.arena.ageFx(true)`);
       let s = c.scale;
@@ -206,11 +210,11 @@ for (const view of VIEWS) {
         s = (await mine(page)).scale;
       }
       await run(page, `window.__TTE__.arena.ageFx(false)`);
-      expect(s, 'the pop eased back to 1').toBeLessThanOrEqual(1.001);
-      expect(errors).toEqual([]);
+      expect(s, `[${view.name}] case 5: the counter's pop scale is still ${String(s)} after 120 frames, it never eased back to 1`).toBeLessThanOrEqual(1.001);
+      expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
     });
 
-    test('6: a frozen hold keeps its anchor while the foe moves away', async ({ page }) => {
+    test('6: the combo counter in its frozen hold keeps its anchor while the foe moves away', async ({ page }) => {
       const errors = collectErrors(page);
       const foe = await openDemo(page, view.size);
       await comboTo(page, foe, 2);
@@ -225,44 +229,45 @@ for (const view of VIEWS) {
         }
       })()`);
       let c = await mine(page);
-      expect(c.live, 'the combo went into its frozen hold').toBe(false);
-      expect(c.hits).toBeGreaterThan(0);
+      expect(c.live, `[${view.name}] case 6: the combo counter never went into its frozen hold (still live after 400 ticks)`).toBe(false);
+      expect(c.hits, `[${view.name}] case 6: the frozen counter shows 0 hits`).toBeGreaterThan(0);
       await settleCamera(page);
       c = await settled(page);
       const { ax, ay } = c;
       await run(page, `window.__TTE__.arena.place(${String(foe)}, 1200, 200, 4)`);
       await settleCamera(page);
       const after = await settled(page);
-      expect(after.ax).toBe(ax);
-      expect(after.ay).toBe(ay);
-      expect(Math.abs(after.headX - (after.frame.x + ((ax - after.view.x) / after.view.w) * after.frame.w))).toBeLessThanOrEqual(1);
-      expect(errors).toEqual([]);
+      expect(after.ax, `[${view.name}] case 6: the frozen counter's anchor x moved from ${String(ax)} to ${String(after.ax)} when the foe moved away`).toBe(ax);
+      expect(after.ay, `[${view.name}] case 6: the frozen counter's anchor y moved from ${String(ay)} to ${String(after.ay)} when the foe moved away`).toBe(ay);
+      expect(Math.abs(after.headX - (after.frame.x + ((ax - after.view.x) / after.view.w) * after.frame.w)), `[${view.name}] case 6: the frozen counter's head x (${String(after.headX)}) is more than 1 px from the projection of its kept anchor`).toBeLessThanOrEqual(1);
+      expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
     });
 
-    test('7: reduced motion settles on the first frame with no pop', async ({ page }) => {
+    test('7: under reduced motion the combo counter settles on the first frame with no pop', async ({ page }) => {
       const errors = collectErrors(page);
       const foe = await openDemo(page, view.size, true);
       await comboTo(page, foe, 3);
       await settleCamera(page);
       const c = await mine(page);
-      expect(c.settled, 'no easing under reduced motion').toBe(true);
-      expect(c.scale).toBeLessThanOrEqual(1 + 1e-6);
-      expect(errors).toEqual([]);
+      expect(c.settled, `[${view.name}] case 7: the counter is still easing on the first frame under reduced motion`).toBe(true);
+      expect(c.scale, `[${view.name}] case 7: the counter popped to scale ${String(c.scale)} under reduced motion, expected 1`).toBeLessThanOrEqual(1 + 1e-6);
+      expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
     });
 
-    test('9: the box is on the page and clear of the frame edge', async ({ page }) => {
+    test('9: the combo counter box is on the page and clear of the frame edge', async ({ page }) => {
       const errors = collectErrors(page);
       const foe = await openDemo(page, view.size);
       await comboTo(page, foe, 2);
       await settleCamera(page);
       const c = await settled(page);
-      const vp = page.viewportSize() as { width: number; height: number };
-      expect(c.x).toBeGreaterThanOrEqual(c.frame.x + 16 - 1);
-      expect(c.css.x).toBeGreaterThanOrEqual(0);
-      expect(c.css.y).toBeGreaterThanOrEqual(0);
-      expect(c.css.x + c.css.w).toBeLessThanOrEqual(vp.width + 1);
-      expect(c.css.y + c.css.h).toBeLessThanOrEqual(vp.height + 1);
-      expect(errors).toEqual([]);
+      const vsz = page.viewportSize() as { width: number; height: number };
+      const W = `[${view.name}] case 9: the counter's`;
+      expect(c.x, `${W} left edge (${String(c.x)}) is inside the frame's 16 px margin; ${fmt(c)}`).toBeGreaterThanOrEqual(c.frame.x + 16 - 1);
+      expect(c.css.x, `${W} page box is off the left of the page; css ${fmt(c.css)}`).toBeGreaterThanOrEqual(0);
+      expect(c.css.y, `${W} page box is off the top of the page; css ${fmt(c.css)}`).toBeGreaterThanOrEqual(0);
+      expect(c.css.x + c.css.w, `${W} page box is off the right of the page (width ${String(vsz.width)}); css ${fmt(c.css)}`).toBeLessThanOrEqual(vsz.width + 1);
+      expect(c.css.y + c.css.h, `${W} page box is off the bottom of the page (height ${String(vsz.height)}); css ${fmt(c.css)}`).toBeLessThanOrEqual(vsz.height + 1);
+      expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
     });
   });
 }
@@ -271,7 +276,7 @@ test.describe('combo anchor, two counters and 2v2', () => {
   test.use({ viewport: { width: 1280, height: 720 }, hasTouch: false });
   test.slow();
 
-  test('8: two live counters keep 7 px apart unless one is stuck', async ({ page }) => {
+  test('8: two live combo counters keep 7 px apart unless one is stuck', async ({ page }) => {
     const errors = collectErrors(page);
     const foe = await openDemo(page, { width: 1280, height: 720 });
     const me = ((await chars(page)).find((c) => c.id !== foe) as Char).id;
@@ -295,11 +300,11 @@ test.describe('combo anchor, two counters and 2v2', () => {
     test.skip(both.length < 2, 'the foe never landed a hit in the budget; covered by the unit tests');
     for (let i = 0; i < 60; i++) await raf2(page);
     const [a, b] = (await fx(page)).comboBoxes;
-    if (a && b && !a.stuck && !b.stuck) expect(gapBetween(box(a), box(b))).toBeGreaterThanOrEqual(GAP - 1);
-    expect(errors).toEqual([]);
+    if (a && b && !a.stuck && !b.stuck) expect(gapBetween(box(a), box(b)), `[1280x720] case 8: the two live counters (${fmt(box(a))} and ${fmt(box(b))}) are closer than 7 px`).toBeGreaterThanOrEqual(GAP - 1);
+    expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
   });
 
-  test('4: in 2v2 a victim under the bench chips keeps the counter under the ceiling', async ({ page }, info) => {
+  test('4: in 2v2 a victim under the bench chips still gets its combo counter under the HUD ceiling', async ({ page }, info) => {
     const errors = collectErrors(page);
     await page.goto(`${START}&ff=arcade#arcade`);
     await page.getByLabel('Team').selectOption('2');
@@ -312,7 +317,7 @@ test.describe('combo anchor, two counters and 2v2', () => {
     const all = await chars(page);
     const me = all.find((c) => c.team === 0);
     const foe = all.find((c) => c.team === 1);
-    expect(me && foe).toBeTruthy();
+    expect(me && foe, '[1280x720] case 4: the 2v2 arena has no team 0 or no team 1 character').toBeTruthy();
     const started = await page.evaluate<boolean>(`(async () => {
       const a = window.__TTE__.arena;
       const raf = () => new Promise((r) => requestAnimationFrame(r));
@@ -330,13 +335,13 @@ test.describe('combo anchor, two counters and 2v2', () => {
       for (let t = 0; t < 6; t++) { pin(90); a.step(1, [cycle[t % cycle.length], 0]); await raf(); }
       return hit;
     })()`);
-    expect(started, 'a combo started in 2v2').toBe(true);
+    expect(started, '[1280x720] case 4: no combo counter appeared for team 0 within 300 ticks in 2v2').toBe(true);
     await settleCamera(page);
     const s = await settled(page);
-    expect(s.ceil, 'the bench chips raise the ceiling').toBeGreaterThan(120);
-    expect(s.base.y - s.h, 'the natural top would have been above the ceiling').toBeLessThan(s.ceil);
-    expect(s.y, 'the counter sits under the ceiling').toBeGreaterThanOrEqual(s.ceil - 1);
+    expect(s.ceil, `[1280x720] case 4: the HUD ceiling (${String(s.ceil)}) is not above 120, so the bench chips did not raise it`).toBeGreaterThan(120);
+    expect(s.base.y - s.h, `[1280x720] case 4: the counter's natural top (${String(s.base.y - s.h)}) is not above the ceiling (${String(s.ceil)}), so the clamp was not exercised`).toBeLessThan(s.ceil);
+    expect(s.y, `[1280x720] case 4: the counter's top (${String(s.y)}) is above the HUD ceiling (${String(s.ceil)}); ${fmt(s)}`).toBeGreaterThanOrEqual(s.ceil - 1);
     await shot(page, info, 'tag-2v2');
-    expect(errors).toEqual([]);
+    expect(errors, `[${vp(page)}] the page logged console or page errors during this case`).toEqual([]);
   });
 });
