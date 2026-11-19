@@ -34,6 +34,16 @@ export function chipRowTop(minTop: number, label: { text: string; y: number; hei
   return Math.max(minTop, label && label.text !== '' ? Math.ceil(label.y + label.height) + 2 : 0);
 }
 
+/** Logical font size that draws at `cssPx` CSS px when the 1280-box is drawn at `k` (CSS px per logical px); `fallback` before the canvas has a size. */
+export function phoneFontPx(cssPx: number, k: number, fallback = 24): number {
+  return k > 0 ? Math.ceil(cssPx / k) : fallback;
+}
+
+/** Portrait phone: centre y of the SUPER row, `gap` under the names' bottom, for a SUPER text `textH` high. */
+export function portraitMeterRowY(namesBottom: number, textH: number, gap = 2): number {
+  return Math.ceil(namesBottom + gap + textH / 2);
+}
+
 /** The combo text's cache key: a changed hit count or whole-damage value means the label needs rewriting. */
 export function comboKey(hits: number, damage: number): number {
   return hits * 100_000 + Math.round(damage);

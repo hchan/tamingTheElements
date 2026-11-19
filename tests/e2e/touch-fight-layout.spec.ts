@@ -377,6 +377,31 @@ for (const [w, h] of [[667, 375], [844, 390]] as const) {
   });
 }
 
+// Portrait phone HUD text (hud-phone-text): names, life numbers and SUPER read at 14 CSS px or more and clear of each other.
+for (const [w, h] of [[390, 844], [360, 640]] as const) {
+  test.describe(`portrait phone HUD text ${String(w)}x${String(h)}`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    test('names and SUPER are at least 14 CSS px and do not overlap', async ({ page }) => {
+      test.setTimeout(180_000);
+      await enterFight(page);
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.evaluate(`window.__TTE__.arena.step(150)`);
+      await shot(page, `port-hudtext-${String(w)}`);
+      const texts = await page.evaluate<Array<Box & { text: string; px: number }>>(`window.__TTE__.arena.hudTextSizes()`);
+      const names = texts.filter((t) => /SUPER|%|[A-Z]{4,} .*\d/.test(t.text) && !/WEATHER/.test(t.text));
+      expect(names.length, JSON.stringify(texts)).toBeGreaterThanOrEqual(2);
+      for (const t of names) expect(t.px, `${t.text} ${JSON.stringify(texts)}`).toBeGreaterThanOrEqual(13.5);
+      for (let i = 0; i < names.length; i++) {
+        for (let j = i + 1; j < names.length; j++) {
+          const a = names[i];
+          const b = names[j];
+          if (a && b) expect(overlap(a, b), `${a.text} / ${b.text}`).toBe(false);
+        }
+      }
+    });
+  });
+}
+
 // QA r36: the touch Pause button (top right) must not sit on the right-hand "N HITS / N DMG" counter, and the longest hero name stays whole.
 for (const [w, h] of [[667, 375], [844, 390]] as const) {
   test.describe(`pause button and hit counter ${String(w)}x${String(h)}`, () => {
