@@ -10,6 +10,7 @@ import {
   main,
   parseCommand,
   pickPort,
+  portHolders,
   portFree,
   release,
   STALE_AGE_MS,
@@ -111,6 +112,27 @@ describe('browser-slot', () => {
       expect(await portFree(port)).toBe(false);
       expect(await pickPort(port)).toBeGreaterThan(port);
       expect(await pickPort(port, 1)).toBeUndefined();
+    } finally {
+      srv.close();
+    }
+  });
+
+  it('portHolders parses lsof output and degrades when unknown', () => {
+    expect(portHolders(1, () => 'p123\ncnode\np456\ncvite\n')).toBe('pid 123 (node), pid 456 (vite)');
+    expect(portHolders(1, () => '')).toMatch(/holder unknown/);
+  });
+
+  it('an explicit busy E2E_PORT fails early with exit 2 naming the port and releases locks', async () => {
+    const srv = createServer();
+    const port = await new Promise<number>((res) => srv.listen(0, '127.0.0.1', () => { res((srv.address() as { port: number }).port); }));
+    try {
+      const r = spawnSync(process.execPath, [TSX, 'tools/ci/browser-slot.ts', '--', process.execPath, '-e', '0'], {
+        encoding: 'utf8',
+        env: baseEnv({ E2E_PORT: String(port), TTE_BROWSER_SLOTS: '2' }),
+      });
+      expect(r.status).toBe(2);
+      expect(r.stderr).toMatch(new RegExp(`E2E_PORT ${String(port)} is already in use by`));
+      expect(readdirSync(join(root, 'tte-locks'))).toEqual([]);
     } finally {
       srv.close();
     }

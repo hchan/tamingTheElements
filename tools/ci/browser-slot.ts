@@ -2,7 +2,7 @@
  * Browser-slot wrapper: `tsx tools/ci/browser-slot.ts -- <cmd...>` (the pnpm e2e/visual/soak scripts use it).
  * Limits load on a shared machine: one browser job per checkout (a lock in the git dir), at most TTE_BROWSER_SLOTS
  * (default 2) browser jobs across all worktrees (mkdir slots in the git common dir), and a free per-checkout port
- * exported as E2E_PORT. Nested calls (TTE_BROWSER_SLOT_HELD=1) and CI are pass-through. Headless only.
+ * exported as E2E_PORT (an explicit E2E_PORT that is held exits 2 naming the holder; a busy default port drifts upward and logs the holder). Nested calls (TTE_BROWSER_SLOT_HELD=1) and CI are pass-through. Headless only.
  * Exit codes: the child's, 75 slot wait timed out, 2 usage error. See docs/TESTING.md.
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -13,6 +13,7 @@ import { join, resolve } from 'node:path';
 import { defaultE2ePort } from './e2e-port';
 
 export const EXIT_SLOT_TIMEOUT = 75;
+export const EXIT_PORT_BUSY = 2;
 export const STALE_AGE_MS = 4 * 3600_000;
 export const POLL_MS = 10_000;
 export const WAIT_TIMEOUT_MS = 45 * 60_000;
@@ -143,6 +144,23 @@ export function portFree(port: number): Promise<boolean> {
   return Promise.all([probe('127.0.0.1'), probe('::1')]).then(([a, b]) => a && b);
 }
 
+/** Who listens on `port` (`pid N (command)` per listener, via lsof), or a note when unknown. Best effort, never throws. */
+export function portHolders(port: number, run: (args: string[]) => string = lsofRun): string {
+  const out = run(['-nP', `-iTCP:${String(port)}`, '-sTCP:LISTEN', '-Fpc']);
+  const found: string[] = [];
+  let pid = '';
+  for (const line of out.split('\n')) {
+    if (line.startsWith('p')) pid = line.slice(1);
+    else if (line.startsWith('c') && pid) found.push(`pid ${pid} (${line.slice(1)})`);
+  }
+  return found.length > 0 ? found.join(', ') : 'holder unknown (lsof found no listener or is missing)';
+}
+
+function lsofRun(args: string[]): string {
+  const r = spawnSync('lsof', args, { encoding: 'utf8' });
+  return r.status === 0 ? r.stdout : '';
+}
+
 /** First free port from `start` (up to `tries` ports), or undefined. */
 export async function pickPort(start: number, tries = PORT_TRIES, free: (p: number) => Promise<boolean> = portFree): Promise<number | undefined> {
   for (let p = start; p < start + tries; p++) if (await free(p)) return p;
@@ -228,11 +246,18 @@ export async function main(argv: readonly string[], env: NodeJS.ProcessEnv = pro
     held.push(slot);
 
     const wanted = env['E2E_PORT'] ? Number(env['E2E_PORT']) : defaultE2ePort(cwd);
+    const explicit = Boolean(env['E2E_PORT']);
+    if (explicit && !(await portFree(wanted))) {
+      // An explicit E2E_PORT is a request for exactly that port: fail early, naming the holder, instead of drifting.
+      log(`browser-slot: E2E_PORT ${String(wanted)} is already in use by ${portHolders(wanted)}; free it or pick another port`);
+      return EXIT_PORT_BUSY;
+    }
     const port = await pickPort(wanted);
     if (port === undefined) {
       log(`browser-slot: no free port from ${String(wanted)}`);
       return 2;
     }
+    if (port !== wanted) log(`browser-slot: checkout port ${String(wanted)} is held by ${portHolders(wanted)}; using ${String(port)}`);
     // From here runChild forwards signals to the child and `finally` releases the locks.
     process.removeAllListeners('SIGINT');
     process.removeAllListeners('SIGTERM');
