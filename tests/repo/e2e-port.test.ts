@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { assertBrowserSlot, defaultE2ePort, e2ePagesPort, e2ePort, reuseServer } from '../../tools/ci/e2e-port';
+import { spawnSync } from 'node:child_process';
+import { join, resolve } from 'node:path';
+import { assertBrowserSlot, defaultE2ePort, e2eBuildDir, e2ePagesPort, e2ePort, reuseServer } from '../../tools/ci/e2e-port';
 
 describe('e2e ports', () => {
   it('is deterministic and inside 7000-7899', () => {
@@ -32,5 +34,23 @@ describe('e2e ports', () => {
     expect(() => { assertBrowserSlot(['playwright', 'test'], { TTE_BROWSER_SLOT_HELD: '1' }); }).not.toThrow();
     expect(() => { assertBrowserSlot(['playwright', 'test'], { CI: 'true' }); }).not.toThrow();
     expect(() => { assertBrowserSlot(['playwright', 'test', '--list'], {}); }).not.toThrow();
+  });
+});
+
+describe('e2eBuildDir', () => {
+  it('differs per worktree git dir, so a shared node_modules no longer shares the build', () => {
+    const gitDirs: Record<string, string> = { '/w/a': '/r/.git/worktrees/a', '/w/b': '/r/.git/worktrees/b' };
+    const of = (c: string): string | undefined => gitDirs[c];
+    expect(e2eBuildDir('/w/a', of)).toBe('/r/.git/worktrees/a/tte-e2e-build');
+    expect(e2eBuildDir('/w/b', of)).toBe('/r/.git/worktrees/b/tte-e2e-build');
+  });
+
+  it('falls back to node_modules/.tte-e2e outside a git checkout', () => {
+    expect(e2eBuildDir('/x/y', () => undefined)).toBe(join(resolve('/x/y'), 'node_modules', '.tte-e2e'));
+  });
+
+  it('in this checkout it lives inside `git rev-parse --git-dir`', () => {
+    const g = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-dir'], { encoding: 'utf8' }).stdout.trim();
+    expect(e2eBuildDir(process.cwd())).toBe(join(g, 'tte-e2e-build'));
   });
 });

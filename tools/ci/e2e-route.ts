@@ -27,6 +27,7 @@ import { LANES, renderJob, type JobSpec, type LaneName } from './pc-job';
 import * as pc from './pc-remote';
 import { PcError, type JobStatus, type Remote } from './pc-remote';
 import { cacheFile, probe as realProbe, keyOf, noteExit, readCache, writeCache } from './pc-probe';
+import { logPathFor } from './e2e-server-policy';
 import { planSource, type SourcePlan } from './pc-snapshot';
 
 export type Kind = 'run' | 'smoke' | 'pages' | 'itch' | 'flake';
@@ -176,6 +177,22 @@ export function redact(s: string): string {
     .replace(/\/Users\/[\w.-]+\//g, '~/');
 }
 
+const TROUBLE = /EXITED|unresponsive|gave up|port in use|parent gone/;
+/** The preview-server log lines (tools/ci/e2e-server.ts) from this run that say the server itself had trouble: at most 10. */
+export function serverTrouble(logText: string, sinceIso: string): string[] {
+  return logText
+    .split('\n')
+    .filter((l) => /^\d{4}-\d\d-\d\dT/.test(l) && l.slice(0, 24) >= sinceIso && TROUBLE.test(l))
+    .slice(0, 10);
+}
+
+/** After a failed run: print the preview server's trouble lines, if any (redacted). `file` may not exist. */
+function printServerTrouble(file: string, sinceIso: string, write: (s: string) => unknown): void {
+  if (!existsSync(file)) return;
+  const lines = serverTrouble(readFileSync(file, 'utf8'), sinceIso);
+  if (lines.length > 0) write(redact(`preview server trouble during this run:\n${lines.map((l) => `  ${l}`).join('\n')}\n`));
+}
+
 export interface Summary {
   passed: number;
   failed: number;
@@ -258,7 +275,8 @@ function report(id: string, sha: string, lane: LaneName, workers: number, st: Jo
       copyFileSync(jsonPath, to);
     }
   } else w(`PC e2e ${id} ${sha.slice(0, 7)} ${lane} x${String(workers)}: no results.json (state ${st.state}, rc ${String(st.rc)})\n`);
-  w(`results: .scratch/remote-e2e/${id}/ (report/, results.json, test-results/, output.log, health.csv)\n`);
+  w(`results: .scratch/remote-e2e/${id}/ (report/, results.json, test-results/, output.log, health.csv, e2e-server.log)\n`);
+  if (st.rc !== 0) printServerTrouble(join(dir, 'e2e-server.log'), '', (x) => d.err.write(x));
 }
 
 /** Run one job on the PC end to end; returns the process exit code. `signal` aborts (and cancels the job). */
@@ -361,13 +379,18 @@ export function runLocal(p: Parsed, env: Env = process.env, reason?: string, mac
     const lim = env['TTE_MAC_LOAD_MAX'] ?? String(DEFAULT_LIMITS.macLoadMax);
     process.stderr.write(`!!! E2E FALLBACK -> MAC: ${redact(reason)}. Mac load ${macLoad === undefined ? '?' : macLoad.toFixed(1)}/${lim}. Short run only. Say so in your report.\n`);
   }
+  const since = new Date().toISOString();
   return new Promise((res) => {
     const c = spawn('tsx', ['tools/ci/browser-slot.ts', '--', ...cmd], { stdio: 'inherit' });
     if (!signalsHooked) {
       signalsHooked = true;
       for (const s of ['SIGINT', 'SIGTERM'] as const) process.on(s, () => c.kill(s));
     }
-    c.on('close', (code, sig) => res(code ?? (sig ? 128 : 1)));
+    c.on('close', (code, sig) => {
+      const rc = code ?? (sig ? 128 : 1);
+      if (rc !== 0 && p.kind !== 'flake') printServerTrouble(logPathFor(env), since, (x) => process.stderr.write(x));
+      res(rc);
+    });
     c.on('error', () => res(1));
   });
 }

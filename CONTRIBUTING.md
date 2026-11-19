@@ -28,7 +28,7 @@ Workflow details are in [docs/BRANCHING.md](docs/BRANCHING.md): trunk-based, one
 - Tests are added or updated.
 - The legacy game is retired (git tag `legacy-crafty-1.0`); restore it only with `pnpm oracle:restore` and never commit it.
 - Feature flags are listed; docs touched by the change are updated.
-- E2E specs wait on conditions (`__TTE__.settled()`, route changes, `waitForFunction`), never `waitForTimeout`. The test build never overwrites `dist/` (it goes to `node_modules/.tte-e2e`).
+- E2E specs wait on conditions (`__TTE__.settled()`, route changes, `waitForFunction`), never `waitForTimeout`. The test build never overwrites `dist/` (it goes to a per-checkout `tte-e2e-build` directory inside the checkout's git dir).
 - Untrusted input (imported saves, replay files) goes through `src/core/save/validate.ts` or `src/core/replay/validate.ts` before use.
 
 ## Guard tests

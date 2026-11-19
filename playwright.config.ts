@@ -27,10 +27,12 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
     // tools/ci/e2e-server.ts builds with `--mode test` (compiles in window.__TTE__; production builds never contain it), then runs
-    // `vite preview` supervised: a dead server is logged to .scratch/e2e-server.log and restarted (ideas/brainstorm/e2e-webserver-health.md).
+    // `vite preview` supervised: a dead server is logged to .scratch/e2e-server.log and restarted (ideas/done/e2e-webserver-health.md).
     command: `corepack pnpm exec tsx tools/ci/e2e-server.ts ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: reuseServer(), // opt-in (E2E_REUSE=1): silent reuse caused cross-run contamination
     timeout: 120_000,
+    // A normal teardown SIGTERMs the group: the supervisor stops vite and writes `stop: SIGTERM`; Playwright SIGKILLs the group after 5 s.
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
   },
 });

@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { buildSpec, limitsOf, newId, parseArgs, pickLane, policyOf, redact, repeatOf, route, runPc, runRouted, summarize, UsageError, type Deps, type Io, type Parsed } from '../../tools/ci/e2e-route';
+import { buildSpec, limitsOf, newId, parseArgs, pickLane, policyOf, redact, repeatOf, route, runPc, runRouted, serverTrouble, summarize, UsageError, type Deps, type Io, type Parsed } from '../../tools/ci/e2e-route';
 import type { PcView } from '../../tools/ci/pc-decide';
 import { renderJob } from '../../tools/ci/pc-job';
 import type { Remote } from '../../tools/ci/pc-remote';
@@ -461,3 +461,24 @@ describe('runPc against the fake ssh', () => {
 function readdirIds(root: string): string[] {
   return readdirSync(join(root, 'home', 'tte-offload', 'jobs'));
 }
+
+describe('serverTrouble', () => {
+  const log = [
+    '2026-11-18T10:00:00.000Z [port 1 sup 2] start: mode test',
+    '2026-11-18T10:00:05.000Z [port 1 sup 2] preview EXITED unexpectedly after 3.0 s: exit 143',
+    '2026-11-18T10:00:06.000Z [port 1 sup 2] preview started pid=9',
+    '2026-11-18T10:01:00.000Z [port 1 sup 2] gave up: 20 fast failures in a row',
+    'continuation line that mentions EXITED',
+  ].join('\n');
+
+  it('keeps only trouble lines at or after the run start', () => {
+    expect(serverTrouble(log, '')).toHaveLength(2);
+    expect(serverTrouble(log, '2026-11-18T10:00:30.000Z')).toEqual([expect.stringContaining('gave up')]);
+    expect(serverTrouble('', '')).toEqual([]);
+  });
+
+  it('caps at 10 lines', () => {
+    const many = Array.from({ length: 30 }, (_, i) => `2026-11-18T10:00:${String(i).padStart(2, '0')}.000Z [port 1 sup 2] preview EXITED`).join('\n');
+    expect(serverTrouble(many, '')).toHaveLength(10);
+  });
+});

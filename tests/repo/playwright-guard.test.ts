@@ -18,6 +18,22 @@ describe('playwright configs take a browser slot', () => {
     }
   });
 
+  it('the main config serves through the supervisor and shuts it down gracefully', () => {
+    const s = readFileSync('playwright.config.ts', 'utf8');
+    expect(s).toContain('tools/ci/e2e-server.ts');
+    expect(s).not.toContain('node_modules/.tte-e2e');
+    expect(s).toMatch(/gracefulShutdown: \{ signal: 'SIGTERM'/);
+  });
+
+  it('the pages config runs the same supervisor, keeps dist-pages and stops gracefully', () => {
+    const s = readFileSync('playwright.pages.config.ts', 'utf8');
+    expect(s).toContain('tools/ci/e2e-server.ts');
+    expect(s).toContain('--out-dir dist-pages');
+    expect(s).toContain('--base /tamingTheElements/');
+    expect(s).toMatch(/gracefulShutdown: \{ signal: 'SIGTERM'/);
+    expect(s).toMatch(/reuseExistingServer: false/);
+  });
+
   it('a bare playwright run is refused; --list and a held slot are allowed', () => {
     const run = (args: string[], held: string) =>
       spawnSync('node_modules/.bin/playwright', ['test', '--config', 'playwright.itch.config.ts', ...args], {
