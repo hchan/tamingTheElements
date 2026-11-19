@@ -5,9 +5,9 @@ CONCEPT_GEN_PY is the original concept script whose H = {...} dict holds the 12 
 (~/claudetmp/concepts-new12/gen.py). Writes OUTDIR/queue-glimmaw-cn.json (small, any time) and
 OUTDIR/queue-night.json (bulk, 23:00-07:00 only).
 """
-import json, re, sys
+import json, os, re, sys
 
-CTRL = "/mnt/c/Users/hchan/glimmaw-control.png"  # scp'd control image on the PC
+CTRL = os.environ.get("TTE_PC_GLIMMAW_CONTROL", "")  # scp'd control image on the PC
 style = ", floating, no base, no plinth, plain dark background, dark fantasy painted concept art, full body, side view facing right"
 neg = ("sculpture, statue, plinth, pedestal, base, stand, bowl, desk, table, ground, floor, frame, border, text, watermark, "
        "cartoon, chibi, cute, 3d render, human, person, multiple creatures, two heads, collage, blurry, facing left, toy")
