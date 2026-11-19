@@ -45,3 +45,45 @@ export function trapPhase(armLeft: number, lifeLeft: number, tick: number, reduc
   const urgency = reduced || armLeft > 0 ? 0 : Math.max(0, Math.min(1, 1 - lifeLeft / TRAP_BLINK_TICKS));
   return { arm, t: reduced ? 1.3 : tick / 50, urgency };
 }
+
+/** Half the width the painted decal is allowed to span (px): its shadow is 2.2 R wide, so 35 covers R (31) plus the soft edge. */
+export const TRAP_DECAL_HALF_PX = 35;
+
+const DASHES = 24;
+const DASH_ARC = 0.14;
+const FLAT_RY = 0.6;
+/** The wall line spans the ring's full height (2 ry) plus this much at each end, px, so the ring reads as closed by the wall. */
+export const WALL_MARGIN = 6;
+const dashScratch: number[] = [];
+
+/**
+ * The trigger-range ring as flat segments `x0, y0, x1, y1, ...` (a shared scratch array, valid until the next call). Mid-arena it is
+ * the usual 24 short dashes of an ellipse (rx = TRAP_RANGE_PX / 2, ry = 0.6 rx) round (cx, cy). Where the ellipse would pass beyond
+ * `lo + inset` / `hi - inset` the dashes stop inside that line and a solid line along the wall (a little taller than the ring, see WALL_MARGIN) closes it, so the
+ * ring reads as cut by the wall and never runs off screen.
+ */
+export function trapRangeDashes(cx: number, cy: number, lo: number, hi: number, inset = 3): readonly number[] {
+  const out = dashScratch;
+  out.length = 0;
+  const rx = TRAP_RANGE_PX / 2;
+  const ry = rx * FLAT_RY;
+  const minX = lo + inset;
+  const maxX = hi - inset;
+  for (let d = 0; d < DASHES; d++) {
+    const a0 = (d / DASHES) * Math.PI * 2;
+    const a1 = a0 + DASH_ARC;
+    const x0 = cx + Math.cos(a0) * rx;
+    const x1 = cx + Math.cos(a1) * rx;
+    if (x0 < minX || x1 < minX || x0 > maxX || x1 > maxX) continue;
+    out.push(x0, cy + Math.sin(a0) * ry, x1, cy + Math.sin(a1) * ry);
+  }
+  if (cx - rx < minX) out.push(minX, cy - ry - WALL_MARGIN, minX, cy + ry + WALL_MARGIN);
+  if (cx + rx > maxX) out.push(maxX, cy - ry - WALL_MARGIN, maxX, cy + ry + WALL_MARGIN);
+  return out;
+}
+
+/** The label's centre x kept inside `[lo + inset, hi - inset]` for a label `w` wide (unchanged when it fits already). */
+export function labelX(cx: number, w: number, lo: number, hi: number, inset = 4): number {
+  if (w >= hi - lo - 2 * inset) return cx;
+  return Math.min(Math.max(cx, lo + inset + w / 2), hi - inset - w / 2);
+}

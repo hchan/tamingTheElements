@@ -64,3 +64,45 @@ for (const [race, kind] of HEROES) {
     expect(errors).toEqual([]);
   });
 }
+
+// At a side wall the decal, range ring and arming label must stay on screen (the sim clamps the box to 0..1920).
+// Long gate (no @smoke tag): visual edge case, about 15 s each.
+for (const side of ['left', 'right'] as const) {
+  test(`trap art: a trap laid against the ${side} wall is not cut off`, async ({ page }, info) => {
+    const errors = collectErrors(page);
+    await page.goto(`${START}&ff=arcade#arcade`);
+    await page.getByLabel('Your race').selectOption('sindarosa');
+    await page.getByLabel('AI race').selectOption('pax');
+    await page.getByRole('button', { name: 'Fight!' }).click();
+    await page.waitForFunction(ARENA_READY);
+    await page.evaluate(`window.__TTE__.arena.step(${String(INTRO)})`);
+    await page.getByRole('button', { name: 'Got it' }).click({ timeout: 1000 }).catch(() => undefined);
+    const meX = side === 'left' ? 40 : 1800;
+    const foeX = side === 'left' ? 0 : 1860; // on the wall side, so the auto-face aims the trap at the wall; moved away right after the cast
+    const face = side === 'left' ? 4 : 0;
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, ${String(meX)}, 380, ${String(face)}); a.place(foe.id, ${String(foeX)}, 380, ${String(face)}); })()`);
+    await page.keyboard.down('KeyZ');
+    await page.evaluate(`window.__TTE__.arena.stepLive(1)`);
+    await page.keyboard.up('KeyZ');
+    // Heroes step aside right after the cast (off the trap, open-arena side, different rows) so no foe attack or hero body covers the decal, ring or label.
+    const asideX = side === 'left' ? 330 : 1590;
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; const [me, foe] = a.characters(); a.place(me.id, ${String(asideX)}, 560, ${String(face)}); a.place(foe.id, ${String(side === 'left' ? 520 : 1400)}, 240, ${String(face)}); })()`);
+    await page.evaluate(`window.__TTE__.arena.stepLive(14)`);
+    await frames(page);
+    type Laid = readonly { x: number; label: string; drawnL: number; drawnR: number }[] | undefined;
+    const arming = await page.evaluate<Laid>(`window.__TTE__.arena.traps()`);
+    await page.locator('#game canvas').screenshot({ path: info.outputPath(`wall-${side}-arming.png`) });
+    expect(arming?.[0]?.x).toBe(side === 'left' ? 0 : 1920 - 56); // the box is clamped against the wall
+    expect(arming?.[0]?.label).toContain('arming');
+    expect.soft(arming?.[0]?.drawnL).toBeGreaterThanOrEqual(0);
+    expect.soft(arming?.[0]?.drawnR).toBeLessThanOrEqual(1920);
+    await page.evaluate(`window.__TTE__.arena.stepLive(30)`);
+    await frames(page);
+    const armed = await page.evaluate<Laid>(`window.__TTE__.arena.traps()`);
+    await page.locator('#game canvas').screenshot({ path: info.outputPath(`wall-${side}-armed.png`) });
+    expect(armed?.[0]?.label).not.toContain('arming');
+    expect.soft(armed?.[0]?.drawnL).toBeGreaterThanOrEqual(0);
+    expect.soft(armed?.[0]?.drawnR).toBeLessThanOrEqual(1920);
+    expect(errors).toEqual([]);
+  });
+}

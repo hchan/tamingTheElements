@@ -1,9 +1,10 @@
 import type Phaser from 'phaser';
-import { TRAP_BOX_PX, TRAP_VIEW_STRIDE, type RenderView } from '@core/index';
+import { TRAP_BOX_PX, TRAP_VIEW_STRIDE, arcadePlayfield, type RenderView } from '@core/index';
+import { clampSpanX } from '../views/hero-scale';
 import { resolutionOf } from '../boot/viewport';
 import { mute } from './grim-fx';
-import { paintTrap } from './trap-paint';
-import { TRAP_COLORS, TRAP_RANGE_PX, trapAlpha, trapLabel, trapPhase } from './trap-fx';
+import { TRAP_DECAL_R, paintTrap } from './trap-paint';
+import { TRAP_COLORS, TRAP_DECAL_HALF_PX, labelX, trapAlpha, trapLabel, trapPhase, trapRangeDashes } from './trap-fx';
 
 /**
  * Phaser side of the Arcade trap marker (WP 39b). The Arena mounts it in every Arcade match (a lazy chunk, so Classic never
@@ -21,6 +22,9 @@ export interface TrapMarker {
   readonly team: number;
   readonly label: string;
   readonly alpha: number;
+  /** The drawn extent (decal, ring and label) left and right edges, px; inside the arena at a wall. */
+  readonly drawnL: number;
+  readonly drawnR: number;
 }
 
 const states = new WeakMap<Phaser.Scene, () => readonly TrapMarker[]>();
@@ -53,6 +57,7 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
     parts.glow.clear();
     const reduced = reduceMotion();
     markers = [];
+    const pf = arcadePlayfield();
     for (let i = 0; i * TRAP_VIEW_STRIDE < ar.traps.length; i++) {
       const [kind = 0, x = 0, y = 0, team = 0, armLeft = 0, lifeLeft = 0] = ar.traps.slice(i * TRAP_VIEW_STRIDE, (i + 1) * TRAP_VIEW_STRIDE);
       if (kind === 0) {
@@ -61,23 +66,37 @@ export function mountTrapView(arena: Phaser.Scene, view: RenderView, reduceMotio
       }
       const words = trapLabel(kind, team, armLeft);
       const alpha = trapAlpha(armLeft, lifeLeft, view.tick, reduced);
+      // At a side wall the decal tucks in (max 7 px) and the ring and label are cut at the wall instead of running off screen.
+      const cx = x + TRAP_BOX_PX / 2;
+      const cy = y + TRAP_BOX_PX / 2;
+      const tuck = clampSpanX(cx - TRAP_DECAL_HALF_PX, cx + TRAP_DECAL_HALF_PX, pf.x, pf.x + pf.w);
       // Each kind has its own silhouette and motion (trap-paint.ts); the label and the range outline below carry the reading.
-      paintTrap(g, parts.glow, kind, x, y, trapPhase(armLeft, lifeLeft, view.tick, reduced), alpha, TRAP_COLORS[kind] ?? 0xffffff);
+      paintTrap(g, parts.glow, kind, x + tuck, y, trapPhase(armLeft, lifeLeft, view.tick, reduced), alpha, TRAP_COLORS[kind] ?? 0xffffff);
       // The trigger range: a dark outline under a thin ash one (element-muted), so it reads on any floor; thin while arming, firmer once armed.
       // (A faint dotted ground ellipse, not a box: dashes on the floor plane, brighter once armed.)
-      const rx = TRAP_RANGE_PX / 2;
       const col = mute(TRAP_COLORS[kind] ?? 0xffffff, 0.35, 0.8);
-      for (let d = 0; d < 24; d++) {
-        const a0 = (d / 24) * Math.PI * 2;
-        const a1 = a0 + 0.14;
-        g.lineStyle(1.5, col, (armLeft > 0 ? 0.22 : 0.4) * alpha).lineBetween(
-          x + TRAP_BOX_PX / 2 + Math.cos(a0) * rx, y + TRAP_BOX_PX / 2 + Math.sin(a0) * rx * 0.6,
-          x + TRAP_BOX_PX / 2 + Math.cos(a1) * rx, y + TRAP_BOX_PX / 2 + Math.sin(a1) * rx * 0.6);
+      const dashes = trapRangeDashes(cx, cy, pf.x, pf.x + pf.w);
+      g.lineStyle(1.5, col, (armLeft > 0 ? 0.22 : 0.4) * alpha);
+      let drawnL = cx - TRAP_DECAL_HALF_PX + tuck;
+      let drawnR = cx + TRAP_DECAL_HALF_PX + tuck;
+      for (let k = 0; k + 3 < dashes.length; k += 4) {
+        const x0 = dashes[k] ?? 0;
+        const x1 = dashes[k + 2] ?? 0;
+        const wall = x0 === x1; // the wall line closes the ring: solid, 5 px, warm bronze (not white), spanning the whole ring so it reads at 1280x720
+        if (wall) g.lineStyle(5, 0x9a5f2a, (armLeft > 0 ? 0.6 : 0.8) * alpha);
+        g.lineBetween(x0, dashes[k + 1] ?? 0, x1, dashes[k + 3] ?? 0);
+        if (wall) g.lineStyle(1.5, col, (armLeft > 0 ? 0.22 : 0.4) * alpha);
+        drawnL = Math.min(drawnL, x0, x1);
+        drawnR = Math.max(drawnR, x0, x1);
       }
       const t = label(i);
       if (t.text !== words) t.setText(words);
-      t.setPosition(x + TRAP_BOX_PX / 2, y + TRAP_BOX_PX / 2 - 31 * 0.6 - 8).setAlpha(alpha * 0.85).setVisible(armLeft > 0); // words only while it arms: the armed trap reads by its art and range ring
-      markers.push({ kind, x, y, team, label: words, alpha });
+      t.setPosition(labelX(cx, t.displayWidth, pf.x, pf.x + pf.w), cy - TRAP_DECAL_R * 0.6 - 8).setAlpha(alpha * 0.85).setVisible(armLeft > 0); // words only while it arms: the armed trap reads by its art and range ring
+      if (armLeft > 0) {
+        drawnL = Math.min(drawnL, t.x - t.displayWidth / 2);
+        drawnR = Math.max(drawnR, t.x + t.displayWidth / 2);
+      }
+      markers.push({ kind, x, y, team, label: words, alpha, drawnL, drawnR });
     }
   };
 
