@@ -1,10 +1,10 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { viteBinPath } from '../../tools/ci/e2e-server';
-import { DEFAULT_TIMING, logPathFor, parseServerArgs, timingFrom } from '../../tools/ci/e2e-server-policy';
+import { classifyStderr, DEFAULT_TIMING, describeExit, logPathFor, parseLsof, parseServerArgs, restartDecision, timingFrom } from '../../tools/ci/e2e-server-policy';
 
 describe('e2e-server policy: arguments, timing, log path', () => {
   it('parseServerArgs takes a positional port and the pages flags', () => {
@@ -46,6 +46,55 @@ describe('e2e-server policy: arguments, timing, log path', () => {
 });
 
 // ---- process tests: the real supervisor against tests/repo/fixtures/fake-vite.cjs (no vite, no build, no browser) ----
+
+describe('e2e-server policy: restart and diagnostics', () => {
+  const T = DEFAULT_TIMING;
+  const base = { uptimeMs: 1000, fastFails: 0, restarts: 0, sigterm: false };
+
+  it('restartDecision backs off exponentially and caps', () => {
+    const d = (fastFails: number) => restartDecision({ ...base, fastFails }, T);
+    expect(d(0)).toMatchObject({ action: 'restart', delayMs: 250, fastFails: 1 });
+    expect(d(1)).toMatchObject({ delayMs: 500, fastFails: 2 });
+    expect(d(2)).toMatchObject({ delayMs: 1000 });
+    expect(restartDecision({ ...base, fastFails: 10 }, { ...T, fastFailLimit: 99 })).toMatchObject({ delayMs: 15_000 });
+  });
+
+  it('restartDecision: a stable preview restarts quickly and resets the failure count', () => {
+    expect(restartDecision({ ...base, uptimeMs: 31_000, fastFails: 5 }, T)).toMatchObject({ action: 'restart', delayMs: 100, fastFails: 0 });
+  });
+
+  it('restartDecision: SIGTERM waits out the debounce', () => {
+    expect(restartDecision({ ...base, uptimeMs: 31_000, sigterm: true }, T)).toMatchObject({ delayMs: 300 });
+  });
+
+  it('restartDecision gives up after too many fast failures or restarts', () => {
+    expect(restartDecision({ ...base, fastFails: 19 }, T)).toMatchObject({ action: 'give up' });
+    expect(restartDecision({ ...base, uptimeMs: 31_000, restarts: 50 }, T)).toMatchObject({ action: 'give up' });
+  });
+
+  it('describeExit reads codes and signals in plain words', () => {
+    expect(describeExit(143, null)).toMatch(/SIGTERM.*outside/);
+    expect(describeExit(130, null)).toMatch(/SIGINT/);
+    expect(describeExit(null, 'SIGKILL')).toMatch(/SIGKILL/);
+    expect(describeExit(1, null)).toBe('exit 1');
+  });
+
+  it('classifyStderr recognises the known failures', () => {
+    expect(classifyStderr('Error: listen EADDRINUSE: address already in use')).toBe('port in use');
+    expect(classifyStderr('Error: Port 4173 is already in use')).toBe('port in use');
+    expect(classifyStderr("ENOENT: no such file or directory, open 'x/index.html'")).toBe('file vanished (ENOENT)');
+    expect(classifyStderr('EMFILE: too many open files')).toBe('too many open files');
+    expect(classifyStderr('all fine')).toBeUndefined();
+  });
+
+  it('parseLsof pairs pids with commands', () => {
+    expect(parseLsof('p123\ncnode\np456\ncvite\n')).toEqual([
+      { pid: 123, command: 'node' },
+      { pid: 456, command: 'vite' },
+    ]);
+    expect(parseLsof('')).toEqual([]);
+  });
+});
 
 const TSX = 'node_modules/tsx/dist/cli.mjs';
 const FAKE_VITE = resolve('tests/repo/fixtures/fake-vite.cjs');
@@ -155,7 +204,7 @@ describe('e2e-server supervisor (fake vite)', () => {
     const first = pidsStarted(s)[0] as number;
     process.kill(first, 'SIGTERM');
     await waitFor(() => pidsStarted(s).length === 2, 'restart');
-    expect(logText(s)).toMatch(/EXITED unexpectedly code=143/);
+    expect(logText(s)).toMatch(/EXITED unexpectedly.*exit 143/);
     expect(pidsStarted(s)[1]).not.toBe(first);
     await waitFor(() => answers(s.port), 'port answers again');
   });
@@ -189,5 +238,26 @@ describe('e2e-server supervisor (fake vite)', () => {
     expect(s.exited()?.code).toBe(3);
     expect(logText(s)).toMatch(/build failed status=3/);
     expect(pidsStarted(s)).toHaveLength(0);
+  });
+
+  it('E: a port that stays taken is reported (holder named), backed off, then given up on', async () => {
+    const holder = createServer();
+    const port = await new Promise<number>((res) => {
+      holder.listen(0, 'localhost', () => {
+        res((holder.address() as { port: number }).port);
+      });
+    });
+    try {
+      const s = await launch({}, [], port);
+      await waitFor(() => s.exited() !== undefined, 'supervisor gives up');
+      expect(s.exited()?.code).toBe(1);
+      const text = logText(s);
+      expect(text).toMatch(/stderr says: port in use/);
+      expect(text).toMatch(/gave up: 4 fast failures in a row/);
+      expect(text).toMatch(/same failure again/);
+      if (spawnSync('lsof', ['-v']).error === undefined) expect(text).toContain(`pid ${String(process.pid)}`);
+    } finally {
+      holder.close();
+    }
   });
 });

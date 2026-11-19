@@ -111,3 +111,63 @@ export function logPathFor(env: Env): string {
   if (results) return join(results, 'e2e-server.log');
   return join('.scratch', 'e2e-server.log');
 }
+
+/** Plain-words reading of how vite ended. 143 is vite's own SIGTERM handler, so the signal came from outside. */
+export function describeExit(code: number | null, signal: string | null): string {
+  if (signal === 'SIGKILL') return 'signal SIGKILL (killed from outside: the OS out-of-memory killer or kill -9)';
+  if (signal !== null) return `signal ${signal}`;
+  if (code === 143) return 'exit 143 (SIGTERM handled by vite, sent from outside: pkill or a tool)';
+  if (code === 130) return 'exit 130 (SIGINT)';
+  return `exit ${String(code)}`;
+}
+
+/** What vite's stderr says went wrong, if recognisable. */
+export function classifyStderr(text: string): 'port in use' | 'file vanished (ENOENT)' | 'too many open files' | undefined {
+  if (/Port \d+ is already in use|EADDRINUSE/i.test(text)) return 'port in use';
+  if (/EMFILE|too many open files/i.test(text)) return 'too many open files';
+  if (/ENOENT/.test(text)) return 'file vanished (ENOENT)';
+  return undefined;
+}
+
+export interface RestartState {
+  /** How long the preview that just exited had been up. */
+  uptimeMs: number;
+  /** Consecutive fast failures before this exit. */
+  fastFails: number;
+  /** Restarts so far, before this exit. */
+  restarts: number;
+  /** It ended from SIGTERM (something outside sent it). */
+  sigterm: boolean;
+}
+export type RestartDecision =
+  | { action: 'restart'; delayMs: number; fastFails: number; restarts: number }
+  | { action: 'give up'; why: string; fastFails: number; restarts: number };
+
+/**
+ * What to do after an unexpected exit. A stable preview (up at least stableMs) restarts quickly and resets the failure count;
+ * a fast failure backs off (base * 2^(n-1), capped); too many fast failures in a row, or too many restarts, gives up.
+ */
+export function restartDecision(s: RestartState, t: Timing): RestartDecision {
+  const restarts = s.restarts + 1;
+  const stable = s.uptimeMs >= t.stableMs;
+  const fastFails = stable ? 0 : s.fastFails + 1;
+  if (restarts > t.maxRestarts) return { action: 'give up', why: `more than ${String(t.maxRestarts)} restarts in total`, fastFails, restarts };
+  if (fastFails >= t.fastFailLimit) return { action: 'give up', why: `${String(fastFails)} fast failures in a row`, fastFails, restarts };
+  const backoff = stable ? t.restartMs : Math.min(t.backoffBaseMs * 2 ** (fastFails - 1), t.backoffMaxMs);
+  const delayMs = s.sigterm ? Math.max(backoff, t.termDebounceMs) : backoff;
+  return { action: 'restart', delayMs, fastFails, restarts };
+}
+
+/** `lsof -Fpc` output: p<pid> then c<command> per process. */
+export function parseLsof(out: string): { pid: number; command: string }[] {
+  const res: { pid: number; command: string }[] = [];
+  let cur: { pid: number; command: string } | undefined;
+  for (const line of out.split('\n')) {
+    if (line.startsWith('p')) {
+      const pid = Number(line.slice(1));
+      cur = Number.isInteger(pid) ? { pid, command: '' } : undefined;
+      if (cur) res.push(cur);
+    } else if (line.startsWith('c') && cur) cur.command = line.slice(1);
+  }
+  return res;
+}
