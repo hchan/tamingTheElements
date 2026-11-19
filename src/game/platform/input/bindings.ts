@@ -142,7 +142,9 @@ export function actionKeyLabel(bindings: Bindings, action: GameAction): string |
   const keys = bindings[action];
   const numberKey = digit !== undefined ? `Digit${String(digit)}` : action === 'elemental' ? 'Minus' : action === 'cleanse' ? 'Equal' : undefined;
   // The number only labels a box on the default letter layout; under a preset whose primary is another letter (J K L ...), that letter is the name.
-  const wearsNumber = numberKey !== undefined && keys.includes(numberKey) && keys[0] === DEFAULT_BINDINGS[action][0];
+  // Digit5 is Tag 3 and also Charge's alternate: the box says Tag 3 owns it, so Charge reads its own key (H), never a shared 5.
+  const sharedWithTag = numberKey === SHARED_CODE && bindings.slot5.includes(SHARED_CODE);
+  const wearsNumber = numberKey !== undefined && !sharedWithTag && keys.includes(numberKey) && keys[0] === DEFAULT_BINDINGS[action][0];
   const code = wearsNumber ? numberKey : keys[0];
   return code === undefined ? undefined : codeLabel(code);
 }

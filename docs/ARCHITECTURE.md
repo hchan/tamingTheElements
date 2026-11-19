@@ -392,7 +392,9 @@ The simulation is fixed: a logical 1280x720 arena, speeds in px/tick, 50 Hz. Not
 ratio, device pixel ratio or the display-size setting reaches `src/core`; an e2e test
 (`tests/e2e/responsive.spec.ts`) proves the sim hash after 50 stepped ticks is identical at every viewport.
 
-Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `src/ui/styles/main.css`):
+Presentation adapts in layers (`src/game/boot/viewport.ts`, `presentation.ts`, `src/ui/styles/main.css`; main.css is an import list and the rules live in
+`src/ui/styles/main/NN-*.css`, where the import order IS the cascade: a later file wins at equal specificity, so never reorder
+the imports and put a new rule in its area's partial):
 
 - **Scale.FIT with CENTER_BOTH, not ENVELOP.** FIT letterboxes, so the whole arena, HUD and action bar are always
   visible with 16:9 preserved; ENVELOP would crop the HUD and action bar on any other aspect ratio. Phaser handles

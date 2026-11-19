@@ -15,7 +15,7 @@ export function readCssBundle(file: string, read: Reader = (p) => readFileSync(p
   );
 }
 
-/** src/ui/styles/main.css with its partials inlined (identical to the file itself while it has no @import). */
+/** src/ui/styles/main.css with its partials inlined (main.css is an import list; the rules live in src/ui/styles/main/NN-*.css). */
 export function readMainCss(): string {
   return readCssBundle(resolve(import.meta.dirname, '../../src/ui/styles/main.css'));
 }

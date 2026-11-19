@@ -1,0 +1,242 @@
+/* Help: Controls tables (text, never colour alone). */
+.helpControls,
+.helpPanel {
+  text-align: left;
+  margin: 1em auto;
+  max-width: 40em;
+}
+.helpControlsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1em;
+}
+.helpControlsTable caption {
+  font-weight: bold;
+  text-align: left;
+  padding: 0.25em 0;
+}
+.helpControlsTable th,
+.helpControlsTable td {
+  text-align: left;
+  padding: 0.2em 0.5em;
+  border-bottom: 1px solid currentColor;
+}
+
+/* Help: lessons and the numbered action bar; first-run battle card. */
+.helpSteps {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+.helpSteps li {
+  margin: 0.3em 0;
+}
+.helpBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em 1em;
+  list-style: none;
+  margin: 0 0 1em;
+  padding: 0;
+}
+.helpBar kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.3em;
+  text-align: center;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-weight: bold;
+}
+.firstRunHint {
+  /* A wide, low strip centred just above the action bar: the top holds the HUD and the fighters start left and right, so none is covered. Fades on its own or at the first input. */
+  position: absolute;
+  top: auto;
+  bottom: 12%;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  width: max-content;
+  max-width: min(60em, 88%);
+  padding: 0.4em 0.7em;
+  /* qa-r33: a near-opaque dark panel and bright text, so the card reads on the blue floor (it was 0.72). */
+  background: rgba(14, 12, 32, 0.62);
+  color: #f6efe2;
+  border: 1px solid #8a7658;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: left;
+  transition: opacity 1.5s;
+}
+.firstRunWait {
+  display: none;
+}
+.firstRunHint h2 {
+  margin: 0 0 0.2em;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.firstRunHint p {
+  margin: 0.2em 0;
+}
+/* QA r104: the card is a light note, not a wall: taps and clicks pass through to the arena; only Got it takes input. */
+.firstRunHint:not(.firstRunWait) {
+  pointer-events: none;
+}
+.firstRunHint .firstRunDone {
+  pointer-events: auto;
+}
+.firstRunDone {
+  margin-top: 0.3em;
+  padding: 0.3em 0.9em;
+  min-height: 32px;
+  cursor: pointer;
+  background: #4a3c2a;
+  color: #fff6e4;
+  font-weight: bold;
+  border: 1px solid #d2b684;
+}
+.firstRunFade {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Short desktop windows (about 720p): the card is a slimmer strip (lines left, Got it right) so it covers less of the floor while the clock runs. */
+@media (min-height: 501px) and (max-height: 800px) {
+  .firstRunHint:not(.firstRunWait) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 0.8em;
+    align-items: center;
+    /* 80/720 is the action bar's share of the canvas; the 12px keeps the card clear of it (qa-r65). */
+    bottom: calc(11.12% + 12px);
+    max-width: min(90em, 92%);
+    font-size: 10px;
+    padding: 0.25em 0.6em;
+  }
+  .firstRunHint .firstRunDone {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    margin: 0;
+  }
+  .firstRunHint h2 {
+    margin: 0;
+  }
+  .firstRunHint p {
+    margin: 0.1em 0;
+  }
+}
+@media (max-height: 500px) {
+  .firstRunHint {
+    top: auto;
+    bottom: 16%;
+    font-size: 11px;
+    padding: 0.3em 0.7em;
+  }
+}
+
+/* Landscape phone: a slim strip (lines left, Got it right) docked in the band between the fighters' feet and the action bar (QA r31: at the top it hid the hero name banners and crowded ROUND 1), clear of the HUD, the banners, the stick and the TAG caption. */
+@media (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
+  .firstRunHint:not(.firstRunWait) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 0.7em;
+    align-items: center;
+    /* One slim line (no title); the name banners, ROUND/FIGHT!/ROOTED all sit above this band. */
+    top: auto;
+    bottom: 19vh;
+    /* Two short lines between the fighters (QA r33: the wide strip covered the foe's foot), so it stays clear of both. */
+    max-width: 38%;
+    font-size: 10px;
+    line-height: 1.2;
+    padding: 0.2em 0.5em;
+  }
+  .firstRunHint:not(.firstRunWait) .firstRunDone {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin: 0;
+    padding: 0.1em 0.8em;
+    min-height: 32px;
+  }
+  .firstRunHint:not(.firstRunWait) h2,
+  .firstRunHint:not(.firstRunWait) p {
+    margin: 0;
+  }
+  .firstRunHint:not(.firstRunWait) h2 {
+    display: none;
+  }
+  /* QA r44: docked in the top band of the floor, just under the HUD and the weather label (the fighters stand mid and low, and the thumbs own the lower corners), so it never covers the lower fighting area. */
+  #firstRunHint.firstRunHint:not(.firstRunWait) {
+    top: 29vh;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: min(56%, 380px);
+  }
+}
+
+/* Portrait phone: the first-run card is a short one (the move line and the footer go; Help has them), and it stays hidden behind the rotate overlay. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .firstRunHint p:nth-of-type(1),
+  .firstRunHint .firstRunMore {
+    display: none;
+  }
+}
+/* Portrait: #game is the full-height box with the 16:9 canvas centred in it, so the card sits just under the canvas (not at the screen bottom, where the stick covered Got it). */
+@media (orientation: portrait) and (pointer: coarse) {
+  .firstRunHint {
+    bottom: auto;
+    top: calc(50% + 28.125vw + 12px);
+    max-width: 94%;
+    font-size: 12px;
+  }
+}
+#rotateOverlay:not([hidden]) ~ .firstRunHint {
+  display: none;
+}
+
+/* Replay viewer input display: the last commands of both fighters, in the bottom corners, above the control bar (the top is the HUD). */
+#inputDisplay {
+  position: fixed;
+  bottom: 6.5em;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  pointer-events: none;
+  font: 14px/1.3 monospace;
+  color: #fff;
+}
+#inputDisplay[hidden] {
+  display: none;
+}
+#inputDisplay .inputCol {
+  min-width: 9em;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.75);
+}
+#inputDisplay .inputTitle {
+  font-weight: bold;
+}
+#inputDisplay .inputList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#inputDisplay .inputRun {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  opacity: 0.7;
+}
+#inputDisplay .inputNow {
+  opacity: 1;
+  font-weight: bold;
+  border-left: 3px solid #ffd54a;
+  padding-left: 4px;
+}
+

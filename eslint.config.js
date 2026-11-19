@@ -1,7 +1,14 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
+import { readFileSync } from 'node:fs';
 import tseslint from 'typescript-eslint';
+
+// Files that still hold a function over 120 code lines (tools/ci/size-grandfather.json, pinned by
+// tests/repo/file-size.test.ts). Shrink the file, then delete its entry; never add one.
+const longFunctionFiles = JSON.parse(
+  readFileSync(new URL('./tools/ci/size-grandfather.json', import.meta.url), 'utf8'),
+).longFunctionFiles;
 
 /**
  * Core purity bans (docs: DETERMINISM.md). Messages start with the banned name so the
@@ -181,6 +188,17 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    files: ['src/game/**/*.ts', 'src/ui/**/*.ts'],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      'max-lines-per-function': ['error', { max: 120, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: longFunctionFiles,
+    rules: { 'max-lines-per-function': 'off' },
   },
   {
     files: ['src/core/**/*.ts', 'tests/lint/fixtures/*.core.ts'],

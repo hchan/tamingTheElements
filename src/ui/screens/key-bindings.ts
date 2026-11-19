@@ -1,6 +1,7 @@
 import { newEmptyState, type SaveV1 } from '@core/menu-index';
 import {
   ACTION_LABELS,
+  actionKeyLabel,
   GAME_ACTIONS,
   SF_PRESET_BINDINGS,
   SLOTS_PER_ACTION,
@@ -126,7 +127,11 @@ export function keyBindingsScreen(store?: SaveStore): Screen {
         body.replaceChildren();
         for (const action of GAME_ACTIONS) {
           const tr = el('tr');
-          const th = el('th', undefined, ACTION_LABELS[action]);
+          // The bar's key name comes from the same source (actionKeyLabel); say it when it is not the key column's, so table and bar agree.
+          const barKey = actionKeyLabel(bindings, action);
+          const first = bindings[action][0];
+          const differs = barKey !== undefined && first !== undefined && barKey !== codeLabel(first);
+          const th = el('th', undefined, differs ? `${ACTION_LABELS[action]} (bar: ${barKey})` : ACTION_LABELS[action]);
           th.scope = 'row';
           tr.append(th);
           for (let slot = 0; slot < SLOTS_PER_ACTION; slot++) {
