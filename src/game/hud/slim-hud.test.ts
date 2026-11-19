@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PHONE_CHIP_SIZE, PHONE_PORTRAIT, setPhoneHud, PILL_W, SLIM_H, TRAIL_HOLD_MS, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
+  PHONE_CHIP_SIZE, PHONE_PORTRAIT, setPhoneHud, PILL_W, SLIM_H, TRAIL_HOLD_MS, chipBar, lifeFill, chipRect, compactLabel, portraitLifeCandidates, devowelled, shortName, mirrorX, pillWord, slimBar, slimPortrait, stepTrail, tagPill,
 } from './slim-hud';
 import { PIP_R, pips } from './round-announcer';
 
@@ -133,9 +133,9 @@ describe('portrait life line wording (qa-r88 P3)', () => {
   });
   it('shortens only the name, longest first, down to 3 letters', () => {
     const l = portraitLifeCandidates('Sindarosa', ranged);
-    expect(l.length).toBe(8);
     expect(l[1]).toBe('SINDAROSA 286');
-    expect(l[2]).toContain('SINDARO…');
+    expect(l).toContain('SINDRSA 286');
+    expect(l.some((t) => t.startsWith('SINDARO…'))).toBe(true);
     expect(l[l.length - 1]).toContain('SI…');
   });
 });
@@ -148,8 +148,17 @@ describe('portrait life line: longest hero names (qa-r89 P1)', () => {
       expect(l[0], n).toMatch(new RegExp(`^${n.toUpperCase()} \\S \\d+$`));
       expect(l[0]).not.toContain('…');
       expect(l[1], n).toBe(`${n.toUpperCase()} 1234`);
-      for (const t of l.slice(2)) expect(t).toContain('…');
+      const firstCut = l.findIndex((t) => t.includes('…'));
+      for (const t of l.slice(2, firstCut)) expect(t).not.toContain(n.toUpperCase());
+      for (const t of l.slice(firstCut)) expect(t).toContain('…');
     }
+  });
+});
+
+describe('devowelled', () => {
+  it('drops interior vowels from the right, keeping the first and last letter', () => {
+    expect(devowelled('Sindarosa')).toEqual(['Sindarsa', 'Sindrsa', 'Sndrsa']);
+    expect(devowelled('Pax')).toEqual([]);
   });
 });
 
@@ -162,7 +171,8 @@ describe('portrait life line: the whole name beats the status word (qa-r90 P1)',
         const firstCut = l.findIndex((t) => t.includes('…'));
         expect(firstCut, n).toBeGreaterThan(0);
         // Every form that keeps the whole name comes before every cut form, and the last whole-name forms carry no word.
-        expect(l[firstCut - 1], n).toBe(`${n.toUpperCase()} ${String(hp)}`);
+        expect(l.indexOf(`${n.toUpperCase()} ${String(hp)}`), n).toBeGreaterThan(0);
+        expect(l.indexOf(`${n.toUpperCase()} ${String(hp)}`), n).toBeLessThan(firstCut);
         for (const t of l.slice(firstCut)) expect(t).not.toMatch(/HURT|LOW/);
         expect(l[0]).toMatch(/ (HURT|LOW)$/);
       }
