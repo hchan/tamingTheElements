@@ -179,7 +179,7 @@ export function tourScreen(deps: TourDeps): Screen {
           // Last, so enhanceStage's index fallbacks still match. The Tour has no in-fight card: the keys are named here, once.
           ...(firstRunSeen()
             ? []
-            : [{ key: 'controls', label: 'Controls', rows: isTouchFirst() ? tourKeysTouch(anySnag(r.hero)) : tourKeysDesktop(getBindings(), anySnag(r.hero)) }]),
+            : [{ key: 'controls', label: 'Controls', rows: isTouchFirst() ? tourKeysTouch(anySnag(r.hero)) : tourKeysDesktop(getBindings(), r.hero[0], anySnag(r.hero)) }]),
         ],
         actions: [{ id: 'tourFight', label: 'Fight', onClick: () => { markFirstRunSeen(); showSplash(r); } }],
       });

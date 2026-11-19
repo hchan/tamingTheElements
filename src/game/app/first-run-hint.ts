@@ -88,7 +88,7 @@ export function anySnag(heroes: readonly string[]): boolean {
 const SNAG_TOUCH_LINE = 'Tap the Snag box to root the foe.';
 
 /** The hint text, from the live bindings (keyboard) or the on-screen controls (touch). Words only; the numbered bar is described in Help. */
-export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?: number, partner = true): readonly string[] {
+export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?: number, partner = true, names?: readonly [string, string]): readonly string[] {
   if (touch) {
     return [
       'Drag the stick to move in eight directions; your hero faces the enemy on its own. Hold a direction to aim by hand.',
@@ -100,7 +100,7 @@ export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?
   // The hero's own Snag box holds the rope: the strike or special key that is Snag is named as Snag (never "Strike"), and C works too.
   const snagKey = (a: GameAction): string => `${key(b, 'capture')} or ${key(b, a)}`;
   const rope = snag ? `Snag with ${snagSlot === 0 ? snagKey('slot1') : snagSlot === 1 ? snagKey('slot2') : key(b, 'capture')} to root the foe. ` : '';
-  const strike = snag && snagSlot === 0 ? `Strike with ${keyAlso(b, 'slot2')}. ` : snag && snagSlot === 1 ? `Strike with ${keyAlso(b, 'slot1')}. ` : `Strike with ${keyAlso(b, 'slot1')}. Special with ${keyAlso(b, 'slot2')}. `;
+  const strike = snag && snagSlot === 0 ? `${names?.[1] ?? 'Attack'} with ${keyAlso(b, 'slot2')}. ` : snag && snagSlot === 1 ? `${names?.[0] ?? 'Attack'} with ${keyAlso(b, 'slot1')}. ` : `${names?.[0] ?? 'Attack'} with ${keyAlso(b, 'slot1')}. ${names?.[1] ?? 'Second attack'} with ${keyAlso(b, 'slot2')}. `;
   return [
     `Move with ${moveKeys(b)}; your hero faces the enemy on its own. Hold a direction to aim by hand.`,
     `${strike}${rope}Dash with ${key(b, 'dash')}; hold ${key(b, 'guard')} to Guard.`,
@@ -109,8 +109,8 @@ export function firstRunLines(b: Bindings, touch = false, snag = true, snagSlot?
 }
 
 /** One short line for a short desktop window (QA r31): the keys that matter in the first seconds; Help, Controls has the rest. */
-export function firstRunShortLine(b: Bindings, snag = true, partner = true): string {
-  const parts = [`Strike ${key(b, 'slot1')}`, `Special ${key(b, 'slot2')}`, ...(snag ? [`Snag ${key(b, 'capture')}`] : []), `Dash ${key(b, 'dash')}`, `Guard ${key(b, 'guard')} (hold)`, `Super ${key(b, 'super')}`, ...(partner ? [`Tag ${key(b, 'slot3')}`] : [])];
+export function firstRunShortLine(b: Bindings, snag = true, partner = true, names?: readonly [string, string]): string {
+  const parts = [`${names?.[0] ?? 'Attack'} ${key(b, 'slot1')}`, `${names?.[1] ?? 'Second attack'} ${key(b, 'slot2')}`, ...(snag ? [`Snag ${key(b, 'capture')}`] : []), `Dash ${key(b, 'dash')}`, `Guard ${key(b, 'guard')} (hold)`, `Super ${key(b, 'super')}`, ...(partner ? [`Tag ${key(b, 'slot3')}`] : [])];
   return `Move ${moveKeys(b)}. ${parts.join(', ')}.`;
 }
 
@@ -277,6 +277,8 @@ export function firstRunHint(
   snagSlot?: number,
   /** False when the team has one hero: the card then leaves the Tag line out. */
   partner = true,
+  /** The lead hero's two ability names from the action bar (Blast, Flame); absent: Attack and Second attack. */
+  names?: readonly [string, string],
 ): HTMLElement | null {
   if (firstRunSeen(store)) return null;
   const card = el('div', 'firstRunHint');
@@ -289,9 +291,9 @@ export function firstRunHint(
   // Portrait phone play: one line under the action bar (the media query, not the registry: the card is built while the rotate overlay may still be up).
   const portraitOne = isTouchFirst() && inPortraitPlay();
   if (portraitOne) card.append(el('p', 'firstRunOne', firstRunPhoneLine(snag)));
-  else if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner)));
+  else if (short && window.innerHeight > 500 && !isTouchFirst()) card.append(el('p', 'firstRunOne', firstRunShortLine(getBindings(), snag, partner, names)));
   else if (short && window.innerHeight <= 500 && isTouchFirst() && window.matchMedia('(orientation: landscape)').matches) card.append(el('p', 'firstRunOne', firstRunPhoneLine(snag)));
-  else for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
+  else for (const line of firstRunLines(getBindings(), isTouchFirst(), snag, snagSlot, partner, names)) card.append(el('p', line === SNAG_TOUCH_LINE ? 'firstRunSnag' : undefined, line));
   if (short && window.innerHeight > 500 && !portraitOne) card.style.fontSize = '11px';
   if (!short && !portraitOne) card.append(el('p', 'firstRunMore', isTouchFirst() ? 'The controls are explained under Help.' : 'Every key is listed under Help, Controls.'));
   const done = el('button', 'firstRunDone', 'Got it');
