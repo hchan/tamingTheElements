@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 
+import { ARENA_READY, waitFor, waitForArena } from '../support/wait';
+
 // Page-side code is passed as strings because tsconfig.node has no DOM lib.
-export const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena && window.__TTE__.arena.viewsReady()`;
+export { ARENA_READY };
 /**
  * Skips the World Tour versus splash by a tap, tolerating that it may already be gone: the splash auto-advances after 1.2 s, and under
  * CPU load the tap's actionability checks can outlast that, leaving `locator.tap()` waiting 30 s for an element that has left. A failed
@@ -65,12 +67,12 @@ export async function storedSave(page: Page): Promise<Save> {
 
 /** Waits until the screen for `hash` has mounted (not merely until the hash changed, which precedes the mount). */
 export async function waitForRoute(page: Page, hash: string): Promise<void> {
-  await page.waitForFunction(`window.__TTE__.state().mountedRoute === ${JSON.stringify(hash)}`);
+  await waitFor(page, `route ${hash} mounted`, `window.__TTE__.state().mountedRoute === ${JSON.stringify(hash)}`);
 }
 
 /** Waits for the test hook and a mounted route (the app booted, not merely the document loaded). */
 export async function waitForReady(page: Page): Promise<void> {
-  await page.waitForFunction(`window.__TTE__ && window.__TTE__.ready === true`);
+  await waitFor(page, 'app ready (__TTE__.ready)', `window.__TTE__ && window.__TTE__.ready === true`);
 }
 
 /** `page.goto` + `waitForReady`: use instead of a bare goto so the first click never races the boot. */
@@ -95,7 +97,7 @@ export async function startBattle(
   for (let i = 0; i < count; i++) await rows.nth(i).click();
   await page.locator(`#${mode}`).click();
   // Arena load can be slow when the machine is busy; 30 s flaked twice under load.
-  await page.waitForFunction(ARENA_READY, undefined, { timeout: 60_000 });
+  await waitForArena(page, { timeout: 60_000 });
 }
 
 export interface Chr {
@@ -121,7 +123,7 @@ export const CINEMATIC_READY = `window.__TTE__ && window.__TTE__.scene === 'Cine
 
 /** Waits for the running Cinematic scene and presses Skip. */
 export async function skipCinematic(page: Page): Promise<void> {
-  await page.waitForFunction(CINEMATIC_READY, undefined, { timeout: 60_000 });
+  await waitFor(page, 'cinematic scene running', CINEMATIC_READY, { timeout: 60_000 });
   await page.evaluate(`window.__TTE__.cinematic.skip()`);
 }
 
