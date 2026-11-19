@@ -53,6 +53,8 @@
     "e2e:flake": "tsx tools/ci/e2e-route.ts flake",
     "ci:local": "tsx tools/ci/local-ci.ts",
     "e2e:durations": "tsx tools/ci/e2e-durations.ts",
+    "gate:commit": "tsx tools/ci/gate.ts commit",
+    "gate:push": "tsx tools/ci/gate.ts push",
     "deploy:pages": "tsx tools/ci/deploy-pages.ts",
     "e2e:itch": "tsx tools/ci/e2e-route.ts itch",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",

@@ -35,8 +35,8 @@ export function parseCliArgs(argv: readonly string[]): Options {
   return visual ? { fast, visual } : { fast };
 }
 
-/** The same order and commands as the `check` job in ci.yml (e2e is local-only). */
-export const CORE_STEPS: readonly Step[] = ['lint', 'typecheck', 'depcruise', 'test', 'test:legacy', 'build', 'size:check'].map((s) => ({
+/** The `check` job in ci.yml plus test:dom (ci.yml has no dom step yet; e2e is local-only). */
+export const CORE_STEPS: readonly Step[] = ['lint', 'typecheck', 'depcruise', 'test', 'test:dom', 'test:legacy', 'build', 'size:check'].map((s) => ({
   name: s,
   args: [s],
 }));

@@ -115,16 +115,20 @@ function stemSpecs(stem: string, allSpecs: string[]): string[] {
   });
 }
 
-function costOf(spec: string, durations: Durations, opts: SelectOpts): { sec: number; tests: number } {
+export function costOf(spec: string, durations: Durations, opts: SelectOpts): { sec: number; tests: number } {
   const d = durations.specs[spec];
   if (d) return { sec: d.sec, tests: d.tests };
   const n = opts.testsIn(spec);
   return n > 0 ? { sec: UNKNOWN_SEC_PER_TEST * n, tests: n } : { sec: UNKNOWN_SEC, tests: 1 };
 }
 
+/** True when a changed file can affect e2e: not noE2e, or noE2e but also reached by an area glob (png-lite.ts). */
+export function isE2eRelevant(file: string, rules: Rules): boolean {
+  return !matches(rules.noE2e, file) || matches(rules.areas.flatMap((a) => a.globs), file);
+}
+
 export function selectSpecs(changed: string[], rules: Rules, durations: Durations, allSpecs: string[], opts: SelectOpts): Selection {
   const known = new Set(allSpecs);
-  const areaGlobs = rules.areas.flatMap((a) => a.globs);
   const prio = new Map<string, number>();
   const reasons: Record<string, string> = {};
   const removed: string[] = [];
@@ -141,7 +145,7 @@ export function selectSpecs(changed: string[], rules: Rules, durations: Duration
 
   for (const file of [...changed].sort()) {
     // An area glob wins over noE2e (tools/assets/png-lite.ts is noE2e by directory but a spec imports it).
-    if (matches(rules.noE2e, file) && !matches(areaGlobs, file)) continue;
+    if (!isE2eRelevant(file, rules)) continue;
     relevant = true;
     if (file.startsWith(E2E_DIR)) {
       const rel = file.slice(E2E_DIR.length);

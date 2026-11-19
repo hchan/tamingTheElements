@@ -25,11 +25,12 @@ describe('offload-routes.json', () => {
     const by = new Map(data.routes.map((r) => [r.job, r]));
     for (const j of ['e2e:full', 'e2e:flake', 'gate:long']) expect(by.get(j)?.placement).toBe('pc');
     expect(by.get('e2e:short')?.placement).toBe('pc-first');
+    expect(by.get('gate:push')?.placement).toBe('pc-first');
   });
   it('keeps the plan routing for GPU and Mac jobs', () => {
     const by = new Map(data.routes.map((r) => [r.job, r]));
     for (const j of ['sdxl-base-1024', 'sd-turbo-20step']) expect(by.get(j)?.placement).toBe('pc');
-    for (const j of ['sdxl-turbo-4step-512', 'img2img-512', 'visual', 'soak:webrtc', 'test:browser', 'golden:record']) {
+    for (const j of ['sdxl-turbo-4step-512', 'img2img-512', 'visual', 'soak:webrtc', 'test:browser', 'golden:record', 'gate:commit']) {
       expect(by.get(j)?.placement).toBe('mac');
     }
   });
