@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { RenderProjectile } from '@core/index';
 import manifest from '../assets/manifest.generated.json';
 import { lerp } from './character-view';
+import { SMOOTH_KIND, hurricaneSpin, meleeFadeOut, meleeGrowIn, pulseBump } from '../fx/ability-smooth';
 
 interface Entry {
   readonly coords: readonly number[];
@@ -96,6 +97,12 @@ export function lookup(sprite: string): { key: string; entry: Entry } | undefine
   return m ? { key: `map:${sprite}`, entry: m } : undefined;
 }
 
+/** Render clock for age-based easing: the sim tick and the interpolation fraction. `remainingMs` (optional) is the melee box's time left, for the fade-out. */
+export interface ProjectileClock { readonly tick: number; readonly alpha: number; readonly remainingMs?: number }
+/** Pixels to add to a melee box's drawn position so it follows the smoothly drawn caster (drawn body minus its sim position). */
+export interface ProjectileShift { readonly dx: number; readonly dy: number }
+const TICK_MS = 20;
+
 /** One pooled projectile sprite, drawn about its centre so rotation pivots like legacy `origin("center")`. */
 export class ProjectileView {
   readonly image: Phaser.GameObjects.Image;
@@ -105,14 +112,29 @@ export class ProjectileView {
   private artW = 0;
   private artH = 0;
   private loopFrames = 0;
+  private id = -1;
+  /** Render time (in ticks, tick + alpha) when this id was first drawn; undefined until a clock is passed. */
+  private born: number | undefined;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.glow = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false).setBlendMode(BLEND_ADD).setAlpha(0.5);
     this.image = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
   }
 
-  /** `melee`: a melee box (Ice Shock, Ground Shock, ...) drawn stretched over its hit box, mirrored west and turned for north/south. */
-  apply(p: RenderProjectile, alpha: number, melee = false, casterElement?: string): void {
+  /**
+   * `melee`: a melee box (Ice Shock, Ground Shock, ...) drawn stretched over its hit box, mirrored west and turned for north/south.
+   * Optional view-only smoothing (omit all three and the drawing is unchanged): `clock` gives the age for the shock grow-in and
+   * fade-out and the Hurricane spin and pulse; `shift` moves lunge and spin boxes with the smoothly drawn caster; `reduced` drops
+   * scale, spin and pulse (shock boxes then only fade in).
+   */
+  apply(p: RenderProjectile, alpha: number, melee = false, casterElement?: string, clock?: ProjectileClock, shift?: ProjectileShift, reduced = false): void {
+    if (p.id !== this.id) {
+      this.id = p.id;
+      this.born = clock ? clock.tick + clock.alpha : undefined;
+    }
+    if (clock && this.born === undefined) this.born = clock.tick + clock.alpha;
+    const ageMs = clock && this.born !== undefined ? Math.max(0, (clock.tick + clock.alpha - this.born) * TICK_MS) : 0;
+    const kind = melee ? SMOOTH_KIND[p.sprite] : undefined;
     const art = snagSpriteFor(p.sprite, casterElement);
     if (art !== this.key) {
       this.key = art;
@@ -151,7 +173,14 @@ export class ProjectileView {
     }
     // The pose layer multiplies alpha after this runs (spawn ease-in); reset it every frame or pooled bolts dim for good.
     // Arcade Fire Blast falloff (FUN-DESIGN 2.27): the sim says how faded (alphaPm) and how much the box grew (growPx).
-    const fade = melee ? 1 : (p.alphaPm ?? 1000) / 1000;
+    let fade = melee ? 1 : (p.alphaPm ?? 1000) / 1000;
+    let scale = 1;
+    if (clock && kind === 'shock') {
+      const g = meleeGrowIn(ageMs, reduced);
+      scale = g.scale;
+      fade = g.alpha * (clock.remainingMs === undefined ? 1 : meleeFadeOut(clock.remainingMs));
+    }
+    if (clock && kind === 'spin' && !reduced) scale = pulseBump(ageMs);
     const grown = melee ? 0 : (p.growPx ?? 0);
     this.image.setVisible(true).setAlpha(fade);
     const look = melee ? meleeLook(p.dir, p.w, p.h) : { angle: rotationForDir(p.dir, p.sprite), w: p.w, h: p.h, flip: false };
@@ -159,10 +188,15 @@ export class ProjectileView {
     if (melee) look.h *= MELEE_ART_THICKNESS[p.sprite] ?? 1;
     else if (this.artW > 0) Object.assign(look, boltDisplaySize(p.w - grown, p.h - grown, this.artW, this.artH, Math.max(MIN_BOLT_LONG_SIDE, boost?.minLong ?? 0)));
     if (grown > 0) { look.w += grown; look.h += grown; }
+    look.w *= scale;
+    look.h *= scale;
     this.image.setDisplaySize(look.w, look.h).setFlipX(look.flip);
-    // Melee boxes are placed once and never moved, so their previous position (px/py) is unset: do not lerp from it.
+    // Melee boxes carry no previous position (px/py unset): never lerp from it. Lunge and spin boxes follow the caster each tick, so
+    // the caller's `shift` (drawn caster minus sim caster) keeps the art on the smoothly drawn body.
     const a = melee ? 1 : alpha;
-    this.image.setPosition(lerp(p.px, p.x, a) + p.w / 2, lerp(p.py, p.y, a) + p.h / 2);
+    const follow = kind === 'lunge' || kind === 'spin' ? shift : undefined;
+    this.image.setPosition(lerp(p.px, p.x, a) + p.w / 2 + (follow?.dx ?? 0), lerp(p.py, p.y, a) + p.h / 2 + (follow?.dy ?? 0));
+    if (clock && kind === 'spin') look.angle += (hurricaneSpin(ageMs, reduced) * 180) / Math.PI;
     this.image.setAngle(look.angle);
     // Thin bolts get a proportionally larger halo; both grow around the same centre; the pose layer turns the halo with the sprite.
     this.glow
