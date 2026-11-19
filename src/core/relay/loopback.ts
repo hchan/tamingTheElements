@@ -1,9 +1,11 @@
 import { decodeFrame, type Frame } from './codec';
+import { decodeText } from './text-codec';
 import type { Sender } from './store';
 
 export interface SentFrame {
   readonly conn: string;
-  readonly data: Uint8Array;
+  /** The base64 text exactly as the core handed it to the host. */
+  readonly data: string;
 }
 
 /**
@@ -13,11 +15,11 @@ export interface SentFrame {
 export class LoopbackSender implements Sender {
   readonly sent: SentFrame[] = [];
   readonly closed: { conn: string; code: number }[] = [];
-  private readonly listeners = new Map<string, (data: Uint8Array) => void>();
+  private readonly listeners = new Map<string, (text: string) => void>();
   private queue: SentFrame[] | undefined;
 
-  send(conn: string, data: Uint8Array): void {
-    const f = { conn, data: data.slice() };
+  send(conn: string, data: string): void {
+    const f = { conn, data };
     this.sent.push(f);
     if (this.queue !== undefined) this.queue.push(f);
     else this.listeners.get(conn)?.(f.data);
@@ -28,7 +30,7 @@ export class LoopbackSender implements Sender {
   }
 
   /** Receives every frame sent to `conn` from now on. */
-  listen(conn: string, cb: (data: Uint8Array) => void): void {
+  listen(conn: string, cb: (text: string) => void): void {
     this.listeners.set(conn, cb);
   }
 
@@ -41,7 +43,7 @@ export class LoopbackSender implements Sender {
   release(order: (frames: SentFrame[]) => SentFrame[] = (f) => f): void {
     const q = order(this.queue ?? []);
     this.queue = undefined;
-    for (const f of q) this.listeners.get(f.conn)?.(f.data.slice());
+    for (const f of q) this.listeners.get(f.conn)?.(f.data);
   }
 
   /** Decoded frames sent to `conn` (server-to-client direction). Undecodable frames are skipped. */
@@ -49,8 +51,9 @@ export class LoopbackSender implements Sender {
     const out: Frame[] = [];
     for (const f of this.sent) {
       if (f.conn !== conn) continue;
-      const d = decodeFrame(f.data, 's2c');
-      if (d.ok) out.push(d.frame);
+      const bytes = decodeText(f.data);
+      const d = bytes === undefined ? undefined : decodeFrame(bytes, 's2c');
+      if (d?.ok) out.push(d.frame);
     }
     return out;
   }

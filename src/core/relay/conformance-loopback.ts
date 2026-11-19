@@ -51,9 +51,10 @@ export function createLoopbackConformance(options: RelayOptions = {}): LoopbackC
         void core.handleClose(id, ctx());
       };
       const client: ConformanceClient = {
-        send: (bytes) => (open ? core.handle(id, bytes.slice(), ctx()) : undefined),
         sendText: (text) => (open ? core.handle(id, text, ctx()) : undefined),
-        onFrame: (cb) => {
+        // A host receiving a binary message passes a non-string to `handle` (typed as string: the host's own check).
+        sendBinary: (bytes) => (open ? core.handle(id, bytes as unknown as string, ctx()) : undefined),
+        onText: (cb) => {
           sender.listen(id, cb);
         },
         onClose: (cb) =>

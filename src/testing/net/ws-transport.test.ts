@@ -16,6 +16,7 @@ import { botScripts, referenceHash } from './net-match';
 import { medianRtt } from '../../game/net/link-quality';
 import { NetsimTransport, type NetsimConfig } from '../../game/net/netsim';
 import { WebSocketTransport } from '../../game/net/ws/transport';
+import { encodeText } from '../../game/net/ws/text-codec';
 import { decodeFrame, encodeFrame } from '../../game/net/ws/wire';
 
 const SETUP: MatchSetup = {
@@ -102,11 +103,10 @@ describe('WebSocketTransport unit behaviour', () => {
   };
   const pkt = (firstTick: number, match = 0) => encodePacket({ match, flags: 0, ack: 0, firstTick, inputs: [1], hashes: [] });
 
-  it('numbers BATCH frames and sets binaryType', () => {
+  it('numbers BATCH frames (sent as base64 text)', () => {
     const { relay, a } = mk();
     a.send(pkt(0));
     a.send(pkt(1));
-    expect(relay.a.binaryType).toBe('arraybuffer');
     expect(relay.a.sent.map((m) => (decodeFrame(m) as { seq: number }).seq)).toEqual([0, 1]);
   });
 
@@ -114,9 +114,10 @@ describe('WebSocketTransport unit behaviour', () => {
     const { relay, a, b } = mk();
     a.send(new Uint8Array(500));
     expect(relay.a.sent).toHaveLength(0);
-    relay.b.deliver('text');
-    relay.b.deliver(new Uint8Array([0x40]).buffer);
-    expect(b.malformed).toBe(2);
+    relay.b.deliver('not base64!');
+    relay.b.deliver(new Uint8Array([0x40]).buffer); // binary: bad in wire v3
+    relay.b.deliver(encodeText(new Uint8Array([0x40]))); // base64 of a truncated frame
+    expect(b.malformed).toBe(3);
     relay.a.close();
     expect(a.closed).toBe(true);
     expect(() => { a.send(pkt(0)); }).not.toThrow();
@@ -171,8 +172,8 @@ describe('WebSocketTransport unit behaviour', () => {
     b.tick();
     expect(b.control.receive()).toEqual(Uint8Array.of(5));
     // Frames of the old match are dropped.
-    relay.b.deliver(encodeFrame({ t: 'batch', seq: 1, packet: pkt(9, 1) }).buffer.slice(0));
-    relay.b.deliver(encodeFrame({ t: 'pause', seq: 2, matchId: 1, flags: 1 }).buffer.slice(0));
+    relay.b.deliver(encodeText(encodeFrame({ t: 'batch', seq: 1, packet: pkt(9, 1) })));
+    relay.b.deliver(encodeText(encodeFrame({ t: 'pause', seq: 2, matchId: 1, flags: 1 })));
     expect(b.receive()).toBeUndefined();
     expect(b.staleMatch).toBe(3); // Includes the old-match batch still in flight at the switch.
     expect(b.peerPause).toBeUndefined();
@@ -181,7 +182,7 @@ describe('WebSocketTransport unit behaviour', () => {
   it('delivers a gap after 40 ms and drops a duplicate', () => {
     const { clock, relay, b } = mk();
     const batch = (seq: number) => encodeFrame({ t: 'batch', seq, packet: pkt(seq) });
-    const feed = (bytes: Uint8Array) => { relay.b.deliver(bytes.buffer.slice(0)); };
+    const feed = (bytes: Uint8Array) => { relay.b.deliver(encodeText(bytes)); };
     feed(batch(1));
     expect(b.receive()).toBeUndefined();
     feed(batch(1));
@@ -205,7 +206,7 @@ describe('WebSocketTransport unit behaviour', () => {
     relay.advance();
     b.receive();
     expect(b.peerPause).toEqual({ matchId: 0, flags: 1 });
-    relay.b.deliver(encodeFrame({ t: 'error', code: 0x000b, retryAfterSec: 60, detail: 0 }).buffer.slice(0));
+    relay.b.deliver(encodeText(encodeFrame({ t: 'error', code: 0x000b, retryAfterSec: 60, detail: 0 })));
     expect(b.lastError?.code).toBe(0x000b);
     a.sendHash(0, 50, 7);
     a.sendDesync(0, 50, 1, 2);

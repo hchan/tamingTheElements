@@ -35,10 +35,10 @@ Everything the client touches is injected through `OnlineDeps`: `config`, `fetch
 | --- | --- | --- |
 | `not-configured` | no `VITE_ONLINE_URL` | "Online play is not available in this build." |
 | `network` | fetch rejected, socket would not open or no WELCOME in 10 s [choice] | "Could not reach the online service..." |
-| `update-needed` | ERROR `0x0003`, close 4003, or WELCOME with another version; never retried | "Update needed, reload the page." |
-| `resting` | HTTP 503, ERROR `0x000B` or close 4011; `retryAfterSec` (0 = unknown) | "The game is resting. Please look again in about 1 h." (default 1 h when 0) |
+| `update-needed` | ERROR `0x0003`, close 4003 (a hint when no frame came), or WELCOME with another version; never retried | "Update needed, reload the page." |
+| `resting` | HTTP 503 from /session or /ticket (the only way a connecting client is told), a close 4011 hint with no frame, or ERROR `0x000B` while connected; `retryAfterSec` (0 = unknown) | "The game is resting. Please look again in about 1 h." (default 1 h when 0) |
 | `server` | any other code of section 5 (`code`, `retryAfterSec`, HTTP `status`, 0 for a frame) | per code (room not found, room full, ...) |
-| `bad-response` | a 2xx body without the expected fields | "The online service sent something unexpected..." |
+| `bad-response` | a 2xx body without the expected fields, or a /ticket `url` that is not a `wss://` string | "The online service sent something unexpected..." |
 
 After `resting` the client refuses `connect()` without any request until the wait is over (`restingSec()`); the caller should hide the entries for
 that time. An in-frame `resting` is an event (the socket closes later, 4011) and is final once the socket drops: no reconnect.
@@ -47,8 +47,13 @@ that time. An in-frame `resting` is an event (the socket closes later, 4011) and
 
 1. `POST /session {"kind":"guest"}` once; the token is kept in memory and reused until its `expiresIn` (24 h [choice]). Persisting it is the caller's job.
 2. `POST /ticket` with `Authorization: Bearer <session>` for **every** socket, including reconnects. A 401 clears the session and fetches one fresh guest session.
-3. Open `wss://<host>?ticket=<ticket>` (the ticket is URL-encoded). A refusal before the socket opens, or ERROR `0x0004`, gets one fresh ticket; then it is a failure.
-4. HELLO `{ver 1, simVersion, resumeSession}`; WELCOME is the answer. `connect()` resolves with the transport after WELCOME. The ping timer (every 2 s) starts.
+   The response is `{ticket, url}` (wire v3): `url` is the full `wss://` address with the ticket in it. `VITE_ONLINE_URL` is only the HTTP base.
+3. Open `url` exactly as given (nothing appended). Any failure before WELCOME (refused socket, an ERROR frame, a close, no WELCOME in 10 s) gets ONE fresh ticket
+   and a second try; a second failure is a failed attempt. The handshake never answers ticket-invalid or resting, so the client does not look for them there; a
+   version mismatch (frame 0x0003) is final. A `url` that is not a `wss://` string is `bad-response`, and no socket opens.
+4. HELLO `{ver 3, simVersion, resumeSession}`; WELCOME is the answer. Every frame in both directions is one base64 text message (standard alphabet, padding, no
+   line breaks; `src/game/net/ws/text-codec.ts`); a binary message from the server is dropped and counted in `malformed`.
+   The ERROR frame is the authority for what a following close means; the close code is a hint only when no frame arrived (4003 update, 4011 resting). `connect()` resolves with the transport after WELCOME. The ping timer (every 2 s) starts.
 5. Lobby frames (QUEUE_STATE, ROOM_*, MATCH_START, PEER_STATUS, RESULT_ACK) are decoded by the client; everything else goes to the transport. Malformed frames
    (wrong length, bad room code or event) are dropped; the transport counts them in `malformed`. RESULT_ACK stops the transport's RESULT retry.
 6. **Reconnect** when the socket drops without 4003/4011/1000: events `reconnecting` (attempt n) and `reconnected` (`resumed` from WELCOME; MATCH_START is

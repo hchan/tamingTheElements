@@ -18,13 +18,13 @@ proposes). Estimates must be verified before anything depends on them.
 - **Reliability.** TCP never loses frames while the socket lives, but it blocks everything behind a delayed segment (head-of-line blocking, section 8).
 - **Trust.** The relay is not a simulator. It sees inputs and hashes only. Both clients simulate everything (WEBRTC-PLAN trust model [fact]); the
   server uses the hash checkpoints and the result submission only to detect disagreement.
-- **Integers** are big-endian (matches `packet.ts` `DataView` calls [fact]). Frames are WebSocket **binary** messages. Text frames are a protocol error.
+- **Integers** are big-endian (matches `packet.ts` `DataView` calls [fact]). Frames are WebSocket **text** messages holding the frame's bytes as **base64** (standard alphabet, `=` padding, RFC 4648 section 4, no line breaks, no URL-safe variant), in both directions. A binary message is a protocol error (ERROR `0x0001 bad-frame`). Why: API Gateway closes a client's binary frame with 1003. Base64 adds about a third to the size [estimate: 4 chars per 3 bytes]; the largest frame (410 bytes) is about 548 characters. Sizes in section 4 are the decoded byte sizes.
 
 ## 2. Versioning
 
-- `PROTOCOL_VERSION` is one byte, first field of HELLO and echoed in WELCOME. Start at 1 [choice]; **2 since the 17-bit command (Run, RUN-W)**.
+- `PROTOCOL_VERSION` is one byte, first field of HELLO and echoed in WELCOME. Start at 1 [choice]; 2 since the 17-bit command (Run, RUN-W); **3 since the text-frame wire round (RELAY-V3: base64 text frames, `/ticket` returns `{ticket, url}`, advisory close codes, no handshake answer for ticket-invalid or resting)**. The package `@tamingtheelements/relay` went to 1.0.0 with it (MAJOR, see [RELAY-PACKAGE.md](RELAY-PACKAGE.md)).
 - **Mismatch rule (exact match).** The server compares the HELLO version with its own. If they differ it sends ERROR `0x0003 version-mismatch`
-  (carrying the server's version in `detail`) and closes with code 4003. The client shows "Update needed, reload the page" and does not retry. No
+  (carrying the server's version in `detail`) and closes (advisory code 4003, section 5). The client shows "Update needed, reload the page" and does not retry. No
   negotiation and no down-conversion: a breaking wire change bumps the byte; the static web app and the relay deploy together, a stale cached client
   is the only expected case.
 - `simVersion` (u16, `SIM_VERSION`) rides in HELLO and in MATCH_START. A different sim version in the same room is ERROR `0x000A sim-mismatch`
@@ -33,8 +33,8 @@ proposes). Estimates must be verified before anything depends on them.
 
 ## 3. Session flow (HTTPS, then WebSocket)
 
-Base URL: **one build-time value**, for example `VITE_ONLINE_URL=https://relay.example.invalid` (same style as `VITE_SIGNAL_URL` [fact]). The WebSocket
-URL is derived from it (`https` to `wss`). Absent value means the online entries are not offered. No other place in the client knows the host.
+Base URL: **one build-time value**, for example `VITE_ONLINE_URL=https://relay.example.invalid` (same style as `VITE_SIGNAL_URL` [fact]). It is the **HTTP API** base only.
+The HTTP API and the WebSocket API are separate hosts, so the client never derives the WebSocket address: `/ticket` returns it (step 2). Absent value means the online entries are not offered. No other place in the client knows the host.
 
 ```mermaid
 sequenceDiagram
@@ -44,8 +44,8 @@ sequenceDiagram
     C->>A: POST /session (guest)
     A-->>C: session token
     C->>A: POST /ticket (bearer session token)
-    A-->>C: ticket (60 s, single use)
-    C->>W: connect wss://relay.example.invalid?ticket=TICKET
+    A-->>C: ticket and url (60 s, single use)
+    C->>W: connect url from the ticket answer
     W-->>C: socket open (ticket consumed)
     C->>W: HELLO
     W-->>C: WELCOME
@@ -60,8 +60,10 @@ sequenceDiagram
 | Step | Request | Answer | Notes |
 | --- | --- | --- | --- |
 | 1 | `POST /session` body `{"kind":"guest"}` | `200 {"session":"<opaque>","expiresIn":86400}` | Guest first: no account, the server mints an anonymous id. `expiresIn` seconds, 24 h [choice]. The client stores the token locally and reuses it. |
-| 2 | `POST /ticket`, header `Authorization: Bearer <session>` | `200 {"ticket":"<opaque>","expiresIn":60}` | Ticket is **single use** and lives **60 s** [choice]. A new one is requested for every WebSocket connect, including reconnects. |
-| 3 | WebSocket `wss://relay.example.invalid?ticket=<ticket>` | upgrade or `401` | The ticket is in the query because browsers cannot set headers on a WebSocket; that is why it is short-lived and single-use (URLs get logged). Subprotocol is not used. |
+| 2 | `POST /ticket`, header `Authorization: Bearer <session>` | `200 {"ticket":"<opaque>","url":"<wss address>"}` | `url` is the **full wss address including the ticket** (for example `wss://ws.relay.example.invalid/play?ticket=<ticket>`); the client opens it exactly as given and appends nothing. The ticket is **single use** and lives **60 s** [choice] (not in the answer any more). A new one is requested for every WebSocket connect, including reconnects. |
+| 3 | WebSocket `<url from step 2>` | upgrade or a denied connect | A denied connect shows the browser only close `1006`, no code (so no error code can answer a failed connect; see section 7 and the handshake rule below). The ticket is in the query because browsers cannot set headers on a WebSocket; that is why it is short-lived and single-use (URLs get logged). Subprotocol is not used. |
+
+**A handshake never answers `0x0004` (ticket-invalid) or `0x000B` (resting).** A rejected ticket or a resting service denies the connect, and the browser sees only `1006`. So on any failed handshake (the socket closes or errors before WELCOME) the client fetches **one fresh ticket and retries once**; a second failure is a failed attempt. Resting at connect time is announced **only** by HTTP `503` from `/session` or `/ticket` (the client then opens no socket). A relay that gets HELLO while resting just closes the socket (advisory 4011), without an ERROR frame.
 
 HTTP errors share one JSON body `{"error":"<name>","code":<u16>,"retryAfterSec":<n|0>}` using the codes in section 5 (`resting` is HTTP 503 with a
 `Retry-After` header). Responses carry CORS headers allowing only the game's origin.
@@ -117,7 +119,7 @@ Details:
   a disagreement gives `2`, and the server stores neither as a win. A hash divergence found by the relay arrives as an **unsolicited** RESULT_ACK `2` with the real `matchId` and no preceding RESULT; a RESULT whose peer is gone or swept also gets RESULT_ACK `2`. The client treats every RESULT_ACK of the current match alike: it stops the RESULT retry, leaves the in-match state and emits it, so the app reads `status 2` as the end of the match. The server does no simulation; a replay upload for verification with
   `tools/replay-verify.ts` logic (`parseReplay` + `playReplay`, hash per 50 ticks plus `finalHash`) is a later option [fact for the verifier, design for the upload].
 - **Room code.** 6 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0, O, 1, I) [fact: `rooms.ts` `CODE_ALPHABET`, `CODE_LENGTH`]. Room life 10 min
-  [fact: `ROOM_TTL_MS`], a room holds host and one guest, at most 2000 rooms [fact: `MAX_ROOMS`; the hosted backend sets its own cap, estimate]. The relay core keeps its own copy of these rules (`src/core/relay/rooms-rules.ts`, held equal to `tools/signal-relay/rooms.ts` by `tests/repo/room-code-rules-drift.test.ts`); the signalling relay's messages (`host`/`join`/`sig`) were JSON text and are replaced by the binary frames here.
+  [fact: `ROOM_TTL_MS`], a room holds host and one guest, at most 2000 rooms [fact: `MAX_ROOMS`; the hosted backend sets its own cap, estimate]. The relay core keeps its own copy of these rules (`src/core/relay/rooms-rules.ts`, held equal to `tools/signal-relay/rooms.ts` by `tests/repo/room-code-rules-drift.test.ts`); the signalling relay's messages (`host`/`join`/`sig`) were JSON text and are replaced by the frames here.
 - **MATCH_START** fixes everything both sides must agree on: the shared `seed`, slot (0 = host/first joiner = side 0), `inputDelay` (2 by default, adaptive
   up to 4 in the session [fact]) and `batchEvery`. Rosters still go through SETUP (the existing handshake, `MatchSetup` equality check [fact]) before tick 0.
 - **Heartbeat.** PING every 2 s [choice]; the client keeps the last 5 round trips and grades the link with `link-quality.ts` (median, `>=100 ms` fair,
@@ -127,20 +129,20 @@ Details:
 
 | Code | Name | Meaning / client action |
 | --- | --- | --- |
-| `0x0001` | bad-frame | Unknown type, wrong length or text frame. Close. |
+| `0x0001` | bad-frame | Unknown type, wrong length, undecodable base64 or a binary message. Close. |
 | `0x0002` | too-big | Over the frame's max. Close. |
 | `0x0003` | version-mismatch | Protocol version differs; `detail` = server version. "Reload to update", no retry. |
-| `0x0004` | ticket-invalid | Ticket unknown, used or older than 60 s. Fetch a new ticket and reconnect once. |
+| `0x0004` | ticket-invalid | Ticket unknown, used or older than 60 s. **HTTP only** (for example a 401 from `/ticket` or `/session`); never sent in answer to a handshake (a denied connect shows the browser only 1006). The client's rule is the retry-once above. |
 | `0x0005` | busy | Already queued or in a room (as `rooms.ts` `busy` [fact]), or the queue is full (cap 2000 [choice]). The client emits an `error` event and the link stays up. |
 | `0x0006` | no-room | Code unknown or expired. |
 | `0x0007` | full | Room already has two players. |
 | `0x0008` | full-house | Server at its room cap (`full-house` in `rooms.ts` [fact]). Retry later. |
 | `0x0009` | rate-limited | Too many connects or frames; `retryAfterSec` set. |
 | `0x000A` | sim-mismatch | The two clients run different `SIM_VERSION`. |
-| `0x000B` | resting | **Kill switch.** The game's online service is switched off ("the game is resting"). `retryAfterSec` is when to look again (0 = unknown, use 1 hour). The client shows a friendly message, hides Quick match and Rooms until then, and never retries sooner. It is returned as HTTP 503 from `/session` and `/ticket` (so no socket is opened) and as a frame if the switch flips while connected (the server then closes with 4011 after the current match ends or after 60 s [choice]; on that close the client stops and does not reconnect). |
+| `0x000B` | resting | **Kill switch.** The game's online service is switched off ("the game is resting"). `retryAfterSec` is when to look again (0 = unknown, use 1 hour). The client shows a friendly message, hides Quick match and Rooms until then, and never retries sooner. At connect time it is announced **only** as HTTP 503 from `/session` and `/ticket` (so no socket is opened), never as a handshake answer. As a frame it appears only if the switch flips while connected (the server then closes after the current match ends or after 60 s [choice]; the host may override the 60 s with an immediate cut, which is not a wire change). On that frame the client stops and does not reconnect. |
 | `0x000C` | internal | Server fault. Retry with backoff (1 s, 2 s, 4 s, max 30 s [choice]). |
 
-WebSocket close codes use 4000 + the low byte of the error code (for example 4003, 4011). Normal end: 1000.
+**The ERROR frame is the authority; the close code after it is advisory.** The relay sends close code 4000 + the low byte of the error code (for example 4003, 4011) when it can, but API Gateway's DeleteConnection takes no close code, so a host cannot always send it. A client acts on the ERROR frame it received and must not depend on a particular close code (or any code) following it. The close code is only a fallback hint when the socket ended with no ERROR frame. Normal end: 1000.
 
 ## 6. Sequence numbers, reorder and duplicates
 
@@ -162,7 +164,7 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
   resends the oldest unacknowledged one every 200 ms [choice], puts the highest `ctlSeq` it has delivered in `ackCtl`, delivers only in `ctlSeq` order and drops duplicates. The reorder and skip-ahead rules above do not apply to it.
 - SETUP details (implemented in `src/game/net/ws/`): the `seq u32` field in SETUP is reserved and sent as 0; `ackCtl = 0xFF` means "nothing delivered yet"; a SETUP with `n = 0` is a pure acknowledgement; a sender holds at most 32 unacknowledged control messages [choice].
 - The relay must never skip BATCH/PAUSE numbers of a sender; the far-ahead cap above is the client's guard if it does.
-- Relay rules: in a queue match slot 0 goes to the player who waited longer, in a room match to the host [choice]; a RESULT retry that arrives after the match record closed (for example by DESYNC) is answered with the current status; HELLO with a resume session is refused while the service is resting [choice].
+- Relay rules: in a queue match slot 0 goes to the player who waited longer, in a room match to the host [choice]; a RESULT retry that arrives after the match record closed (for example by DESYNC) is answered with the current status; HELLO while the service is resting is closed without an answer frame (section 3) [choice].
 - Only match-phase frames are numbered. Control frames (`0x01`-`0x30`) are request/answer and carry no seq; the client tolerates a duplicate answer.
 
 ## 7. Reconnect
@@ -181,7 +183,7 @@ WebSocket close codes use 4000 + the low byte of the error code (for example 400
 - Outside a match (idle or queued) the client keeps reconnecting for 60 s [choice] before giving up; HELLO gets a 10 s timeout for WELCOME [choice].
 - The relay does not re-simulate matches: it only compares the RESULT fields (winner, ticks, finalHash). Re-simulation (`verifyReplayLog`) is a later option for the backend.
 - After the grace the server sends PEER_STATUS `2` to the peer: the session forfeits the absentee (`forfeitReason 'timeout'` [fact]) and RESULT proceeds.
-- Reconnect attempts: immediately, then 1 s, 2 s, 4 s with jitter, until the grace ends [choice]. A ticket-invalid answer gets one fresh ticket, then counts as a failed attempt.
+- Reconnect attempts: immediately, then 1 s, 2 s, 4 s with jitter, until the grace ends [choice]. A failed handshake (any close or error before WELCOME, including a bare 1006) gets one fresh ticket and one retry, then counts as a failed attempt.
 
 ## 8. Head-of-line blocking
 

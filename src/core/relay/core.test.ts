@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { encodePacket } from '../net/packet';
 import { encodeFrame, type Frame } from './codec';
+import { encodeText } from './text-codec';
 import {
   DISCONNECT_GRACE_MS,
   ErrorCode,
@@ -30,7 +31,7 @@ function harness() {
   const events: RelayEvent[] = [];
   const core = new RelayCore(store, sender, { onEvent: (e) => events.push(e) });
   const ctx: RelayCtx = { now: () => clock.t, randomInt };
-  const send = (conn: string, f: Frame): Promise<void> => core.handle(conn, encodeFrame(f), ctx);
+  const send = (conn: string, f: Frame): Promise<void> => core.handle(conn, encodeText(encodeFrame(f)), ctx);
   const hello = (conn: string, sim = SIM, resume = 0): Promise<void> =>
     send(conn, { t: 'hello', ver: PROTOCOL_VERSION, simVersion: sim, resumeSession: resume });
   const last = <K extends Frame['t']>(conn: string, t: K): Extract<Frame, { t: K }> => {
@@ -83,18 +84,20 @@ describe('RelayCore hello', () => {
     expect(h.sender.closed).toEqual([{ conn: 'a', code: 4003 }]);
     expect(h.count('a', 'welcome')).toBe(0);
   });
-  it('rejects a second hello, frames before hello, text and garbage', async () => {
+  it('rejects a second hello, frames before hello, non-base64 text, binary and garbage', async () => {
     const h = harness();
     await h.send('a', { t: 'ping', nonce: 1 });
     expect(h.last('a', 'error').code).toBe(ErrorCode.badFrame);
     await h.hello('b');
     await h.hello('b');
     expect(h.last('b', 'error').code).toBe(ErrorCode.badFrame);
-    await h.core.handle('c', 'hello', h.ctx);
+    await h.core.handle('c', 'hello', h.ctx); // not base64
     expect(h.last('c', 'error').code).toBe(ErrorCode.badFrame);
-    await h.core.handle('d', new Uint8Array([0xee, 1, 2]), h.ctx);
+    await h.core.handle('d', encodeText(new Uint8Array([0xee, 1, 2])), h.ctx);
     expect(h.last('d', 'error').code).toBe(ErrorCode.badFrame);
-    expect(h.sender.closed.map((c) => c.conn)).toEqual(['a', 'b', 'c', 'd']);
+    await h.core.handle('e', new Uint8Array([1, 2]) as unknown as string, h.ctx); // a binary message
+    expect(h.last('e', 'error').code).toBe(ErrorCode.badFrame);
+    expect(h.sender.closed.map((c) => c.conn)).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
   it('swallows a sender that throws', async () => {
     const h = harness();
@@ -341,7 +344,7 @@ describe('RelayCore match phase', () => {
           (x) =>
             x.t === 'batch' &&
             x.packet.length > 0 &&
-            JSON.stringify([...data]) === JSON.stringify([...encodeFrame(x)]),
+            data === encodeText(encodeFrame(x)),
         );
       if (f?.t === 'batch') for (const s of rb.push(f.seq, f.seq, h.clock.t)) got.push(s);
     });
@@ -409,20 +412,20 @@ describe('RelayCore disconnect and resume', () => {
 
 describe('RelayCore kill switch', () => {
   const resting = { retryAfterSec: 120 };
-  it('refuses a new hello with resting and closes', async () => {
+  it('closes a hello while resting without any ERROR frame (a handshake never answers resting)', async () => {
     const h = harness();
     await h.core.handle(
       'a',
-      encodeFrame({ t: 'hello', ver: 1, simVersion: SIM, resumeSession: 0 }),
+      encodeText(encodeFrame({ t: 'hello', ver: 1, simVersion: SIM, resumeSession: 0 })),
       { ...h.ctx, resting },
     );
-    expect(h.last('a', 'error')).toMatchObject({ code: ErrorCode.resting, retryAfterSec: 120 });
+    expect(h.sender.framesFor('a')).toEqual([]);
     expect(h.sender.closed).toEqual([{ conn: 'a', code: 4011 }]);
   });
   it('closes an idle connection at its next frame', async () => {
     const h = harness();
     await h.hello('a');
-    await h.core.handle('a', encodeFrame({ t: 'queueJoin', mode: 0 }), { ...h.ctx, resting });
+    await h.core.handle('a', encodeText(encodeFrame({ t: 'queueJoin', mode: 0 })), { ...h.ctx, resting });
     expect(h.last('a', 'error').code).toBe(ErrorCode.resting);
     expect(h.sender.closed).toEqual([{ conn: 'a', code: 4011 }]);
   });
@@ -430,12 +433,12 @@ describe('RelayCore kill switch', () => {
     const h = harness();
     const id = await h.start();
     const rctx = { ...h.ctx, resting };
-    await h.core.handle('a', encodeFrame(batch(0, id)), rctx);
+    await h.core.handle('a', encodeText(encodeFrame(batch(0, id))), rctx);
     expect(h.last('a', 'error').code).toBe(ErrorCode.resting);
     expect(h.last('b', 'batch').seq).toBe(0);
     expect(h.sender.closed).toEqual([]);
     h.clock.t += RESTING_CLOSE_MS;
-    await h.core.handle('a', encodeFrame(batch(1, id)), rctx);
+    await h.core.handle('a', encodeText(encodeFrame(batch(1, id))), rctx);
     expect(h.sender.closed).toEqual([{ conn: 'a', code: 4011 }]);
     expect(h.count('a', 'error')).toBe(1);
   });

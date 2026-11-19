@@ -2,10 +2,11 @@ import { cleanRoomCode, ROOM_CODE_RE } from '../relay';
 import { linkQuality, medianRtt, type LinkQuality } from '../link-quality';
 import type { OnlineConfig } from './config';
 import { WebSocketTransport, type SocketLike } from './transport';
+import { decodeText, encodeText } from './text-codec';
 import { decodeFrame } from './wire';
 
 /** Client of the relay service (docs/ONLINE-PROTOCOL.md section 3, 5, 7; docs/ONLINE-CLIENT.md). Network and clock are injected; nothing here throws. */
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 export const PING_MS = 2000;
 /** [choice] Wait for WELCOME this long. */
 export const HELLO_TIMEOUT_MS = 10_000;
@@ -22,7 +23,7 @@ export type OnlineFailure =
   | { readonly kind: 'network' }
   | { readonly kind: 'update-needed' }
   | { readonly kind: 'bad-response' }
-  /** Kill switch: HTTP 503 or ERROR 0x000B. `retryAfterSec` 0 means unknown (use `DEFAULT_RESTING_SEC`). */
+  /** Kill switch: HTTP 503 from /session or /ticket, or (while connected) an ERROR 0x000B frame. `retryAfterSec` 0 means unknown (use `DEFAULT_RESTING_SEC`). */
   | { readonly kind: 'resting'; readonly retryAfterSec: number }
   /** Any other server error code of spec section 5 (HTTP status 0 for a frame). */
   | { readonly kind: 'server'; readonly code: number; readonly retryAfterSec: number; readonly status: number };
@@ -143,24 +144,28 @@ export function decodeLobby(b: Uint8Array): Lobby | undefined {
   }
 }
 
-function hello(simVersion: number, resume: number): Uint8Array {
+/** Bytes of a text message, `undefined` for a binary or non-base64 one (wire v3: frames are base64 text). */
+function bytesOf(data: unknown): Uint8Array | undefined {
+  return typeof data === 'string' ? decodeText(data) : undefined;
+}
+
+function hello(simVersion: number, resume: number): string {
   const b = new Uint8Array(8);
   const d = new DataView(b.buffer);
   b[0] = 0x01;
   b[1] = PROTOCOL_VERSION;
   d.setUint16(2, simVersion);
   d.setUint32(4, resume >>> 0);
-  return b;
+  return encodeText(b);
 }
 
 /** Keeps one `SocketLike` for the transport across reconnects, so its `seq` counter and reorder state continue (spec section 7). */
 class SocketHub implements SocketLike {
-  binaryType = 'arraybuffer';
   cur: WsLike | undefined;
   readonly onMessage: ((ev: { data: unknown }) => void)[] = [];
   readonly onClose: (() => void)[] = [];
   get readyState(): number { return this.cur?.readyState === 1 ? 1 : 3; }
-  send(data: ArrayBufferView): void { this.cur?.send(data); }
+  send(data: string): void { this.cur?.send(data); }
   addEventListener(type: 'message' | 'close', listener: ((ev: { data: unknown }) => void) & (() => void)): void {
     (type === 'message' ? this.onMessage : this.onClose).push(listener);
   }
@@ -181,6 +186,8 @@ export class OnlineClient {
   private token: { value: string; until: number } | undefined;
   private restUntil = 0;
   private resting: OnlineFailure | undefined;
+  /** The latest ERROR frame of this connection: the authority for what a following close means (the close code is a hint). */
+  private lastError: { code: number; retryAfterSec: number } | undefined;
   private sessionId = 0;
   /** The last WELCOME said resumed: a MATCH_START with the running matchId is then the same match again (spec section 7). */
   private resumePending = false;
@@ -266,6 +273,7 @@ export class OnlineClient {
     return ok(value);
   }
 
+  /** `{ticket, url}` of /ticket (wire v3): `url` is the full address to open, the ticket already in it. Anything else is a server fault. */
   private async ticket(again = false): Promise<OnlineResult<string>> {
     const s = await this.session({ kind: 'guest' }, false);
     if (!s.ok) return s;
@@ -277,7 +285,8 @@ export class OnlineClient {
       return this.ticket(true);
     }
     const t = r.value['ticket'];
-    return typeof t === 'string' && t !== '' ? ok(t) : fail({ kind: 'bad-response' });
+    const url = r.value['url'];
+    return typeof t === 'string' && t !== '' && typeof url === 'string' && url.startsWith('wss://') ? ok(url) : fail({ kind: 'bad-response' });
   }
 
   private rest(retryAfterSec: number): OnlineFailure {
@@ -285,26 +294,25 @@ export class OnlineClient {
     return { kind: 'resting', retryAfterSec };
   }
 
-  /** Ticket, open, HELLO, WELCOME; one fresh ticket if the first was refused (spec: ticket-invalid, reconnect once). */
+  /**
+   * Ticket, open, HELLO, WELCOME. Any failure before WELCOME gets ONE fresh ticket and a second try; a second failure is a failed
+   * attempt (wire v3: the handshake never says "ticket invalid" or "resting"). A version mismatch or a resting hint is final at once.
+   */
   private async dial(resume: number): Promise<OnlineResult<Dialled>> {
     for (let attempt = 0; ; attempt++) {
       const t = await this.ticket();
       if (!t.ok) return t;
       const r = await this.handshake(t.value, resume);
-      const refused = !r.ok && (r.failure.kind === 'network' || (r.failure.kind === 'server' && r.failure.code === 0x0004));
-      if (!refused || attempt >= 1) return r;
+      if (r.ok || r.failure.kind === 'update-needed' || r.failure.kind === 'resting' || attempt >= 1) return r;
     }
   }
 
-  private handshake(ticket: string, resume: number): Promise<OnlineResult<Dialled>> {
-    const cfg = this.d.config;
-    if (!cfg.configured) return Promise.resolve(fail({ kind: 'not-configured' }));
-    const url = `${cfg.wsUrl}?ticket=${encodeURIComponent(ticket)}`;
+  private handshake(url: string, resume: number): Promise<OnlineResult<Dialled>> {
+    this.lastError = undefined;
     return new Promise((resolve) => {
       let ws: WsLike;
       try {
         ws = new this.d.WebSocket(url);
-        ws.binaryType = 'arraybuffer';
       } catch {
         resolve(fail(NET));
         return;
@@ -329,11 +337,11 @@ export class OnlineClient {
       ws.addEventListener('error', () => { finish(fail(NET)); });
       ws.addEventListener('close', (ev) => {
         if (done) this.onClose(ws, ev.code);
-        else finish(fail(closeFailure(ev.code)));
+        else finish(fail(closeFailure(ev.code))); // No ERROR frame arrived: the close code is only a hint.
       });
       ws.addEventListener('message', (ev) => {
         if (done) { this.onMessage(ws, ev.data); return; }
-        const b = ev.data instanceof ArrayBuffer ? new Uint8Array(ev.data) : undefined;
+        const b = bytesOf(ev.data);
         const w = b && decodeLobby(b);
         const e = b && decodeFrame(b);
         if (w?.t === 'welcome') finish(w.ver === PROTOCOL_VERSION ? ok({ ws, sessionId: w.sessionId, resumed: w.resumed }) : fail({ kind: 'update-needed' }));
@@ -363,7 +371,7 @@ export class OnlineClient {
   private sendLobby(bytes: number[]): boolean {
     if (this.hub.readyState !== 1) return false;
     try {
-      this.hub.send(Uint8Array.from(bytes));
+      this.hub.send(encodeText(Uint8Array.from(bytes)));
       return true;
     } catch {
       return false;
@@ -372,14 +380,17 @@ export class OnlineClient {
 
   private onMessage(ws: WsLike, data: unknown): void {
     if (ws !== this.hub.cur || this.stopped) return;
-    const b = data instanceof ArrayBuffer ? new Uint8Array(data) : undefined;
+    const b = bytesOf(data);
     const w = b && decodeLobby(b);
     if (w) {
       this.lobby(w);
       return;
     }
     const e = b && decodeFrame(b);
-    if (e?.t === 'error') this.serverError(e.code, e.retryAfterSec);
+    if (e?.t === 'error') {
+      this.lastError = { code: e.code, retryAfterSec: e.retryAfterSec };
+      this.serverError(e.code, e.retryAfterSec);
+    }
     for (const l of this.hub.onMessage) l({ data }); // Match frames (and anything malformed, which the transport counts).
   }
 
@@ -419,9 +430,10 @@ export class OnlineClient {
 
   private onClose(ws: WsLike, code: number | undefined): void {
     if (ws !== this.hub.cur || this.stopped) return;
-    const f = closeFailure(code);
+    // The ERROR frame decides; the close code is only a hint when no frame arrived (wire v3).
+    const f = this.lastError ? this.errorFailure(this.lastError.code, this.lastError.retryAfterSec) : closeFailure(code);
     if (f.kind === 'update-needed' || f.kind === 'resting' || this.resting) this.end(this.resting ?? (f.kind === 'resting' ? this.rest(0) : f));
-    else if (code === 1000) this.end(undefined);
+    else if (code === 1000 && !this.lastError) this.end(undefined);
     else void this.reconnect();
   }
 
@@ -477,10 +489,9 @@ export class OnlineClient {
   }
 }
 
-/** Close codes are 4000 + the low byte of the error code (spec section 5); 4003 update, 4011 resting. */
+/** Hint from a close code when no ERROR frame arrived (advisory in wire v3): 4003 update, 4011 resting; anything else is a network drop. */
 function closeFailure(code: number | undefined): OnlineFailure {
   if (code === 4003) return { kind: 'update-needed' };
   if (code === 4011) return { kind: 'resting', retryAfterSec: 0 };
-  if (code === 4004) return { kind: 'server', code: 0x0004, retryAfterSec: 0, status: 0 };
   return NET;
 }

@@ -3,7 +3,9 @@ import { characterId } from '../../core/data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../core/flags';
 import { seedSfc32 } from '../../core/rng/seed';
 import {
+  decodeText,
   encodeFrame,
+  encodeText,
   PROTOCOL_VERSION,
   RelayCore,
   type Frame,
@@ -128,7 +130,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
   });
 
   // Prelude (no impairment, not measured): HELLO and the queue until MATCH_START.
-  const send = (conn: string, f: Frame): Promise<void> => core.handle(conn, encodeFrame(f), ctx);
+  const send = (conn: string, f: Frame): Promise<void> => core.handle(conn, encodeText(encodeFrame(f)), ctx);
   for (const c of SLOT_CONN) await send(c, { t: 'hello', ver: PROTOCOL_VERSION, simVersion: SIM_VERSION, resumeSession: 0 });
   for (const c of SLOT_CONN) await send(c, { t: 'queueJoin', mode: 0 });
   const starts = SLOT_CONN.map((c) => sender.framesFor(c).find((f) => f.t === 'matchStart'));
@@ -175,7 +177,8 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
       if (b[0] === BATCH) sentAt.set(`${String(slot)}:${String(seqOf(b))}`, clock.ms);
       schedule(true, slot, b);
     };
-    sender.listen(conn, (b) => {
+    sender.listen(conn, (text) => {
+      const b = decodeText(text) as Uint8Array; // Our own relay always sends valid base64; byte figures count decoded frames.
       msgs.down[slot]++;
       bytes.down += b.length;
       schedule(false, slot, b);
@@ -196,7 +199,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
       if (d.up) {
         msgs.up[d.slot]++;
         bytes.up += d.bytes.length;
-        await core.handle(SLOT_CONN[d.slot], d.bytes.slice(), ctx);
+        await core.handle(SLOT_CONN[d.slot], encodeText(d.bytes), ctx);
       } else {
         if (d.bytes[0] === BATCH) {
           const key = `${String(1 - d.slot)}:${String(seqOf(d.bytes))}`;
@@ -206,7 +209,7 @@ export async function measureMatch(o: MeasureOptions = {}): Promise<MeasureRepor
             latencies.push(clock.ms - t0);
           }
         }
-        sockets[d.slot].deliver(d.bytes.buffer.slice(d.bytes.byteOffset, d.bytes.byteOffset + d.bytes.byteLength));
+        sockets[d.slot].deliver(encodeText(d.bytes));
       }
     }
   };

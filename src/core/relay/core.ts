@@ -1,4 +1,5 @@
 import { decodeFrame, encodeFrame, type Frame, type FrameFields } from './codec';
+import { decodeText, encodeText } from './text-codec';
 import {
   closeCodeFor,
   CLOSE_NORMAL,
@@ -111,14 +112,18 @@ export class RelayCore {
     private readonly options: RelayOptions = {},
   ) {}
 
-  /** One inbound WebSocket message from `conn`. Never throws; an internal fault is answered with ERROR internal. */
-  async handle(conn: string, data: Uint8Array | string, ctx: RelayCtx): Promise<void> {
+  /**
+   * One inbound WebSocket TEXT message from `conn`: the base64 text of one frame (v3 wire). A host that receives a binary message
+   * passes the empty string (or, untyped, any non-string) and gets ERROR bad-frame plus an advisory close 4001. Never throws;
+   * an internal fault is answered with ERROR internal.
+   */
+  async handle(conn: string, data: string, ctx: RelayCtx): Promise<void> {
     try {
-      const d = typeof data === 'string' ? undefined : decodeFrame(data, 'c2s');
-      if (typeof data === 'string' || d === undefined)
-        await this.fail(conn, ErrorCode.badFrame, true);
+      const bytes = typeof data === 'string' ? decodeText(data) : undefined;
+      const d = bytes === undefined ? undefined : decodeFrame(bytes, 'c2s');
+      if (bytes === undefined || d === undefined) await this.fail(conn, ErrorCode.badFrame, true);
       else if (!d.ok) await this.fail(conn, d.code, true);
-      else await this.dispatch(conn, d.frame, data, ctx);
+      else await this.dispatch(conn, d.frame, bytes, ctx);
     } catch {
       await this.sendError(conn, ErrorCode.internal);
     }
@@ -274,10 +279,9 @@ export class RelayCore {
 
   private async onHello(conn: string, f: FrameFields['hello'], ctx: RelayCtx): Promise<void> {
     if (await this.getConn(conn)) return this.fail(conn, ErrorCode.badFrame, true);
-    if (ctx.resting !== undefined) {
-      await this.sendError(conn, ErrorCode.resting, ctx.resting.retryAfterSec);
-      return this.closeConn(conn, ErrorCode.resting);
-    }
+    // A handshake never answers resting (or ticket-invalid): a denied $connect shows a browser only close 1006, so resting is announced
+    // by HTTP 503 from /session or /ticket. A HELLO that still arrives while resting is closed (advisory 4011) without an ERROR frame.
+    if (ctx.resting !== undefined) return this.closeConn(conn, ErrorCode.resting);
     if (f.ver !== PROTOCOL_VERSION) {
       await this.sendError(conn, ErrorCode.versionMismatch, 0, PROTOCOL_VERSION);
       return this.closeConn(conn, ErrorCode.versionMismatch);
@@ -646,7 +650,7 @@ export class RelayCore {
     const matchId = f.t === 'batch' ? f.match : f.t === 'pause' ? f.matchId : m.matchId;
     const other = 1 - rec.slot;
     if (matchId !== m.matchId || m.disc[other] !== -1 || m.gone[other] === 1) return;
-    await this.txRaw(m.conns[other] as string, raw);
+    await this.txRaw(m.conns[other] as string, encodeText(raw));
   }
 
   private async onHash(
@@ -844,9 +848,9 @@ export class RelayCore {
   }
 
   private async tx(conn: string, f: Frame): Promise<void> {
-    await this.txRaw(conn, encodeFrame(f));
+    await this.txRaw(conn, encodeText(encodeFrame(f)));
   }
-  private async txRaw(conn: string, data: Uint8Array): Promise<void> {
+  private async txRaw(conn: string, data: string): Promise<void> {
     try {
       await this.sender.send(conn, data);
     } catch {

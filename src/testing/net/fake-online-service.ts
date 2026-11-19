@@ -1,6 +1,7 @@
 import { FakeRelay } from './fake-relay';
 import { parseOnlineUrl } from '../../game/net/ws/config';
 import { OnlineClient, PROTOCOL_VERSION, type FetchLike, type OnlineDeps, type OnlineEvent, type WsLike } from '../../game/net/ws/online-client';
+import { decodeText, encodeText } from '../../game/net/ws/text-codec';
 import { encodeFrame } from '../../game/net/ws/wire';
 import { encodePacket } from '../../core/net/packet';
 
@@ -20,7 +21,6 @@ type Listener = (ev: never) => void;
 
 /** In-memory WebSocket whose "server" is the FakeService. */
 export class TestWs implements WsLike {
-  binaryType = 'blob';
   readyState = 0;
   readonly sent: Uint8Array[] = [];
   private readonly listeners = new Map<string, Listener[]>();
@@ -28,9 +28,10 @@ export class TestWs implements WsLike {
     svc.sockets.push(this);
     queueMicrotask(() => { svc.accept(this); });
   }
-  send(data: ArrayBufferView): void {
+  send(data: string): void {
     if (this.readyState !== 1) throw new Error('closed');
-    const b = new Uint8Array(data.buffer, data.byteOffset, data.byteLength).slice();
+    const b = decodeText(data);
+    if (b === undefined) throw new Error('not base64 text');
     this.sent.push(b);
     this.svc.onFrame(this, b);
   }
@@ -47,7 +48,7 @@ export class TestWs implements WsLike {
     for (const l of this.listeners.get(type) ?? []) (l as (e: object) => void)(ev);
   }
   serve(bytes: Uint8Array): void {
-    this.emit('message', { data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) });
+    this.emit('message', { data: encodeText(bytes) });
   }
 }
 
@@ -70,7 +71,7 @@ export const peerStatus = (matchId: number, event: number): Uint8Array => Uint8A
 export const pkt = (match: number, tick = 0): Uint8Array => encodePacket({ match, flags: 0, ack: 0, firstTick: tick, inputs: [], hashes: [] });
 export const errorFrame = (code: number, retryAfterSec = 0): Uint8Array => encodeFrame({ t: 'error', code, retryAfterSec, detail: 0 });
 
-/** The backend: HTTP endpoints, tickets (single use, 60 s), HELLO/WELCOME, a queue and a pass-through to a FakeRelay for match frames. */
+/** The backend: HTTP endpoints, tickets (single use, 60 s, handed out as `{ticket, url}`), HELLO/WELCOME, a queue and a pass-through to a FakeRelay for match frames. */
 export class FakeService {
   readonly sockets: TestWs[] = [];
   readonly fetched: string[] = [];
@@ -106,7 +107,7 @@ export class FakeService {
     }
     const t = `t${String(this.issued.size + 1)}`;
     this.issued.set(t, this.clock.ms);
-    return Promise.resolve(reply(200, { ticket: t, expiresIn: 60 }));
+    return Promise.resolve(reply(200, { ticket: t, url: `wss://relay.example.invalid/ws?ticket=${encodeURIComponent(t)}` }));
   };
 
   makeSocket = (url: string): WsLike => new TestWs(url, this);
@@ -175,7 +176,7 @@ export class FakeService {
     const r = this.relay;
     if (!r) return;
     const side = [r.a, r.b][this.sockets.filter((s) => s.readyState === 1 && this.slots.has(s)).indexOf(ws)];
-    side?.send(b);
+    side?.send(encodeText(b));
   }
 
   wire(a: TestWs, b: TestWs): void {

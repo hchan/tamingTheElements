@@ -1,20 +1,21 @@
 import type { SocketLike } from '../../game/net/ws/transport';
+import { decodeText, encodeText } from '../../game/net/ws/text-codec';
 import { decodeFrame, encodeFrame, FrameType } from '../../game/net/ws/wire';
 import { seedSfc32 } from '../../core/rng/seed';
 import type { Sfc32 } from '../../core/rng/sfc32';
 
-/** In-memory WebSocket: `sent` collects what the client wrote; `deliver` plays a server message to the client. */
+/** In-memory WebSocket: `sent` collects what the client wrote (decoded from its base64 text); `deliver` plays a server message (a text) to the client. */
 export class FakeSocket implements SocketLike {
-  binaryType = 'blob';
   readyState = 1;
   readonly sent: Uint8Array[] = [];
   onSend: ((bytes: Uint8Array) => void) | undefined;
   private readonly onMessage: ((ev: { data: unknown }) => void)[] = [];
   private readonly onClose: (() => void)[] = [];
 
-  send(data: ArrayBufferView): void {
+  send(data: string): void {
     if (this.readyState !== 1) throw new Error('closed');
-    const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength).slice();
+    const bytes = decodeText(data);
+    if (bytes === undefined) throw new Error('not base64 text');
     this.sent.push(bytes);
     this.onSend?.(bytes);
   }
@@ -87,7 +88,7 @@ export class FakeRelay {
     this.due.sort((x, y) => x.at - y.at || x.order - y.order);
     while (this.due[0] && this.due[0].at <= this.clock.ms) {
       const d = this.due.shift();
-      d?.to.deliver(d.bytes.buffer.slice(d.bytes.byteOffset, d.bytes.byteOffset + d.bytes.byteLength));
+      if (d) d.to.deliver(encodeText(d.bytes));
     }
   }
 

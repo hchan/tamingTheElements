@@ -8,8 +8,8 @@ import { ascii, BASE, BATCH, ctor, errorFrame, Harness, matchStart, peerStatus, 
 
 
 describe('config', () => {
-  it('derives wss from https and rejects the rest', () => {
-    expect(parseOnlineUrl(BASE)).toEqual({ configured: true, httpUrl: BASE, wsUrl: 'wss://relay.example.invalid' });
+  it('keeps only the https base (the wss address comes from /ticket) and rejects the rest', () => {
+    expect(parseOnlineUrl(BASE)).toEqual({ configured: true, httpUrl: BASE });
     expect(parseOnlineUrl(`${BASE}/`)).toMatchObject({ configured: true, httpUrl: BASE });
     for (const bad of [undefined, '', 'http://relay.example.invalid', 'relay.example.invalid', `${BASE}/x/y`, 5]) expect(parseOnlineUrl(bad).configured).toBe(false);
     expect(onlineConfig(undefined).configured).toBe(false);
@@ -30,7 +30,7 @@ describe('OnlineClient', () => {
     expect(okA.ok && okB.ok).toBe(true);
     expect(h.svc.fetched).toEqual(['/session', '/ticket', '/session', '/ticket']);
     expect(new Set(h.svc.sockets.map((s) => s.url)).size).toBe(2);
-    expect(h.svc.sockets[0]?.url).toBe('wss://relay.example.invalid?ticket=t1');
+    expect(h.svc.sockets[0]?.url).toBe('wss://relay.example.invalid/ws?ticket=t1');
     expect(h.svc.hellos).toEqual([{ ver: PROTOCOL_VERSION, resume: 0 }, { ver: PROTOCOL_VERSION, resume: 0 }]);
     h.svc.wire(h.svc.sockets[0] as TestWs, h.svc.sockets[1] as TestWs);
 
@@ -105,6 +105,82 @@ describe('OnlineClient', () => {
     const [r] = await Promise.all([c.connect(), h.flush()]);
     expect(r).toEqual({ ok: false, failure: { kind: 'network' } });
     expect(h.svc.sockets.length).toBe(2);
+  });
+
+  it('opens the url of the /ticket response unchanged, no ?ticket= appended', async () => {
+    const h = new Harness();
+    const { c } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    expect(h.svc.sockets[0]?.url).toBe('wss://relay.example.invalid/ws?ticket=t1');
+    expect(h.svc.sockets[0]?.url.split('ticket=').length).toBe(2);
+  });
+
+  it('a ticket response whose url is missing or not wss:// is a server fault, and no socket opens', async () => {
+    for (const url of [undefined, '', 'ws://relay.example.invalid/ws?ticket=t1', 'https://relay.example.invalid/ws', 5]) {
+      const h = new Harness();
+      const deps = h.deps(true, { fetch: (u) => Promise.resolve(reply(200, u.endsWith('/session') ? { session: 's', expiresIn: 60 } : { ticket: 't1', url })) });
+      const r = await new OnlineClient(deps).connect();
+      expect(r, String(url)).toEqual({ ok: false, failure: { kind: 'bad-response' } });
+      expect(h.svc.sockets.length).toBe(0);
+    }
+  });
+
+  it('any failure before WELCOME gets one fresh ticket, even an ERROR frame (ticket-invalid is never sent by v3)', async () => {
+    const h = new Harness();
+    const first = h.svc.onFrame.bind(h.svc);
+    let n = 0;
+    h.svc.onFrame = (ws, b) => {
+      if (b[0] === 0x01 && n++ === 0) { ws.serve(errorFrame(0x000c)); ws.drop(4012); return; }
+      first(ws, b);
+    };
+    const { c } = h.client();
+    const [r] = await Promise.all([c.connect(), h.flush()]);
+    expect(r.ok).toBe(true);
+    expect(h.svc.fetched).toEqual(['/session', '/ticket', '/ticket']);
+  });
+
+  it('a second pre-WELCOME failure is a failed attempt, not a third try', async () => {
+    const h = new Harness();
+    h.svc.onFrame = (ws) => { ws.serve(errorFrame(0x000c)); ws.drop(4012); };
+    const { c } = h.client();
+    const [r] = await Promise.all([c.connect(), h.flush()]);
+    expect(r).toEqual({ ok: false, failure: { kind: 'server', code: 0x000c, retryAfterSec: 0, status: 0 } });
+    expect(h.svc.sockets.length).toBe(2);
+  });
+
+  it('with no ERROR frame the close code is only a hint: 4011 means resting, an unknown code is a network drop', async () => {
+    const a = new Harness();
+    a.svc.onFrame = (ws) => { ws.drop(4011); };
+    const ra = await Promise.all([a.client().c.connect(), a.flush()]);
+    expect(ra[0]).toEqual({ ok: false, failure: { kind: 'resting', retryAfterSec: 0 } });
+    expect(a.svc.sockets.length).toBe(1);
+    const b = new Harness();
+    b.svc.onFrame = (ws) => { ws.drop(4004); };
+    const rb = await Promise.all([b.client().c.connect(), b.flush()]);
+    expect(rb[0]).toEqual({ ok: false, failure: { kind: 'network' } });
+    expect(b.svc.sockets.length).toBe(2);
+  });
+
+  it('the ERROR frame wins over a different close code: frame 0x000b then close 1006 still ends as resting', async () => {
+    const h = new Harness();
+    const { c, events } = h.client();
+    await Promise.all([c.connect(), h.flush()]);
+    const ws = h.svc.sockets[0] as TestWs;
+    ws.serve(errorFrame(0x000b, 90));
+    ws.drop(1006);
+    await h.step(30_000);
+    expect(events.at(-1)).toEqual({ t: 'closed', failure: { kind: 'resting', retryAfterSec: 90 } });
+    expect(h.svc.fetched).toEqual(['/session', '/ticket']);
+  });
+
+  it('a binary message (or non-base64 text) from the server is counted as malformed and ignored', async () => {
+    const h = new Harness();
+    const { c } = h.client();
+    const [r] = await Promise.all([c.connect(), h.flush()]);
+    const ws = h.svc.sockets[0] as TestWs;
+    ws.emit('message', { data: new Uint8Array([0x30, 1, 0]).buffer });
+    ws.emit('message', { data: '!!!!' });
+    expect(r.ok && r.value.malformed).toBe(2);
   });
 
   it('an expired ticket (older than 60 s) is refused by the service', async () => {
@@ -357,7 +433,7 @@ describe('OnlineClient', () => {
 
   it('version mismatch: update needed, no retry', async () => {
     const h = new Harness();
-    h.svc.serverVer = 3;
+    h.svc.serverVer = 2;
     const { c } = h.client();
     const [r] = await Promise.all([c.connect(), h.flush()]);
     expect(r).toEqual({ ok: false, failure: { kind: 'update-needed' } });

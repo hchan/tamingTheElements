@@ -18,6 +18,7 @@ import {
 } from './conformance-kit';
 import { CODE_ALPHABET, CODE_LENGTH } from './rooms-rules';
 import { ReorderBuffer } from './seq';
+import { decodeText, encodeText } from './text-codec';
 
 // ---- helpers ------------------------------------------------------------------------------------------------------------------
 
@@ -51,7 +52,12 @@ class Peer {
     readonly client: ConformanceClient,
     private readonly env: Env,
   ) {
-    client.onFrame((raw) => {
+    client.onText((text) => {
+      const raw = decodeText(text);
+      if (raw === undefined) {
+        this.bad.push(`server message is not standard base64 text: ${text.slice(0, 40)}`);
+        return;
+      }
       const d = decodeFrame(raw, 's2c');
       if (!d.ok) this.bad.push(`undecodable server frame (${d.reason}): ${toHex(raw)}`);
       else if (!same(encodeFrame(d.frame), raw))
@@ -63,10 +69,11 @@ class Peer {
     });
   }
   send(f: Frame): Promise<void> | void {
-    return this.client.send(encodeFrame(f));
+    return this.client.sendText(encodeText(encodeFrame(f)));
   }
+  /** Sends raw frame bytes, base64-encoded as text. */
   raw(b: Uint8Array): Promise<void> | void {
-    return this.client.send(b);
+    return this.client.sendText(encodeText(b));
   }
   private fault(): void {
     if (this.bad.length > 0) throw new Error(this.bad[0]);
@@ -171,6 +178,12 @@ async function expectErrorClose(p: Peer, code: number): Promise<Rx<'error'>> {
   return e;
 }
 
+/** ERROR bad-frame; the close that follows is advisory (4001 expected from the reference relay, but a host may close with another code). */
+async function expectBadFrame(p: Peer): Promise<void> {
+  await p.take('error', (f) => f.code === ErrorCode.badFrame);
+  await p.closed();
+}
+
 // ---- cases --------------------------------------------------------------------------------------------------------------------
 
 const wire: ConformanceCase[] = goldenFrames.map((g) => ({
@@ -184,6 +197,19 @@ const wire: ConformanceCase[] = goldenFrames.map((g) => ({
     check(d.ok, `${g.id} golden bytes do not decode`);
     if (d.ok) eq(JSON.stringify(d.frame, (_k, v: unknown) => (v instanceof Uint8Array ? toHex(v) : v)),
       JSON.stringify(g.frame, (_k, v: unknown) => (v instanceof Uint8Array ? toHex(v) : v)), `${g.id} decoded`);
+    return Promise.resolve();
+  },
+}));
+
+const wireText: ConformanceCase[] = goldenFrames.map((g) => ({
+  id: `wire.text.${g.id}`,
+  spec: '4',
+  title: `${g.id} travels as the golden base64 text and decodes back to the same bytes`,
+  run(): Promise<void> {
+    const bytes = fromHex(g.hex);
+    eq(encodeText(bytes), g.text, `${g.id} base64 text`);
+    const back = decodeText(g.text);
+    check(back !== undefined && same(back, bytes), `${g.id} golden text does not decode to the golden bytes`);
     return Promise.resolve();
   },
 }));
@@ -240,11 +266,21 @@ const frames: ConformanceCase[] = [
   malformed('batch-too-big', 'a BATCH over 305 bytes is too-big and close 4002', () => zeros(0x40, 306), ErrorCode.tooBig),
   malformed('setup-too-big', 'a SETUP over 410 bytes is too-big and close 4002', () => zeros(0x31, 411), ErrorCode.tooBig),
   malformed('fixed-too-big', 'a fixed frame over its cap is too-big (PING with 6 bytes)', () => bytes(0x60, 0, 0, 0, 0, 0), ErrorCode.tooBig),
-  testCase('malformed.text', '1,5', 'a TEXT frame is ERROR bad-frame and close 4001', async (c) => {
+  testCase('malformed.binary', '1,5', 'a BINARY message is ERROR bad-frame and close 4001 (advisory)', async (c) => {
     const [p] = await join(c);
-    if (p.client.sendText === undefined) return skip('adapter cannot send text frames');
-    await p.client.sendText('hello');
-    await expectErrorClose(p, ErrorCode.badFrame);
+    if (p.client.sendBinary === undefined) return skip('adapter cannot send binary messages');
+    await p.client.sendBinary(encodeFrame({ t: 'ping', nonce: 1 }));
+    await expectBadFrame(p);
+  }),
+  testCase('malformed.not-base64', '1,5', 'a text message that is not standard base64 is ERROR bad-frame', async (c) => {
+    const [p] = await join(c);
+    await p.client.sendText('hello!');
+    await expectBadFrame(p);
+  }),
+  testCase('malformed.base64-whitespace', '1,5', 'base64 text with a line break is ERROR bad-frame', async (c) => {
+    const [p] = await join(c);
+    await p.client.sendText(`${encodeText(encodeFrame({ t: 'ping', nonce: 1 }))}\n`);
+    await expectBadFrame(p);
   }),
   testCase('setup.max-blob', '4', 'a SETUP with the maximum 401-byte blob is relayed, not rejected', async (c) => {
     const [a, b] = await matched(c);
@@ -522,19 +558,21 @@ const resume: ConformanceCase[] = [
 ];
 
 const resting: ConformanceCase[] = [
-  testCase('resting.hello', '5', 'while resting, HELLO is ERROR 0x000B (retryAfterSec echoed) and close 4011', async (c, hooks) => {
+  testCase('resting.hello', '5', 'while resting, HELLO gets no ERROR frame and no WELCOME; the socket is closed (advisory 4011)', async (c, hooks) => {
     if (hooks.setResting === undefined) return skip('needs hooks.setResting');
     await hooks.setResting(120);
     const p = await connect(c);
     await p.send({ t: 'hello', ver: PROTOCOL_VERSION, simVersion: c.env.sim, resumeSession: 0 });
-    eq((await expectErrorClose(p, ErrorCode.resting)).frame.retryAfterSec, 120, 'retryAfterSec');
+    await p.closed();
+    await p.none();
   }),
-  testCase('resting.resume-refused', '6', 'while resting, a HELLO with a resume session is refused too', async (c, hooks) => {
+  testCase('resting.resume-refused', '6', 'while resting, a HELLO with a resume session is closed without a frame too', async (c, hooks) => {
     if (hooks.setResting === undefined) return skip('needs hooks.setResting');
     await hooks.setResting(0);
     const p = await connect(c);
     await p.send({ t: 'hello', ver: PROTOCOL_VERSION, simVersion: c.env.sim, resumeSession: 5 });
-    await expectErrorClose(p, ErrorCode.resting);
+    await p.closed();
+    await p.none();
   }),
   testCase('resting.flip-while-connected', '5', 'a connected client is told with an ERROR 0x000B frame when the switch flips', async (c, hooks) => {
     if (hooks.setResting === undefined) return skip('needs hooks.setResting');
@@ -558,5 +596,5 @@ const resting: ConformanceCase[] = [
 
 /** Every case, in run order. Cases share the relay but each uses its own connections and leaves nothing queued. */
 export const conformanceCases: readonly ConformanceCase[] = [
-  ...wire, ...hello, ...frames, ...queue, ...rooms, ...match, ...resume, ...resting,
+  ...wire, ...wireText, ...hello, ...frames, ...queue, ...rooms, ...match, ...resume, ...resting,
 ];

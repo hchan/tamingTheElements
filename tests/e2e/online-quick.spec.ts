@@ -69,11 +69,11 @@ test.afterEach(async () => {
   for (const c of opened.splice(0)) await c.close();
 });
 
-/** Binary frames out of the relay go to the page's WebSocket route; closes map to close codes. */
+/** Frames out of the relay (base64 text, wire v3) go to the page's WebSocket route; closes map to close codes. */
 class RouteSender implements Sender {
   readonly routes = new Map<string, WebSocketRoute>();
-  send(conn: string, data: Uint8Array): void {
-    this.routes.get(conn)?.send(Buffer.from(data));
+  send(conn: string, text: string): void {
+    this.routes.get(conn)?.send(text);
   }
   close(conn: string, code: number): void {
     void this.routes.get(conn)?.close({ code });
@@ -91,14 +91,14 @@ async function serve(page: Page, name: string, core: RelayCore, sender: RouteSen
     const req = route.request();
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
     const path = new URL(req.url()).pathname;
-    const body = path === '/session' ? { session: `s-${name}`, expiresIn: 3600 } : path === '/ticket' ? { ticket: `t-${name}`, expiresIn: 60 } : undefined;
+    const body = path === '/session' ? { session: `s-${name}`, expiresIn: 3600 } : path === '/ticket' ? { ticket: `t-${name}`, url: `wss://relay.example.invalid/ws?ticket=t-${name}` } : undefined;
     if (body === undefined) return route.fulfill({ status: 404, headers: cors });
     return route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify(body) });
   });
   await page.routeWebSocket(/^wss:\/\/relay\.example\.invalid/, (ws) => {
     sender.routes.set(name, ws);
     ws.onMessage((m) => {
-      void core.handle(name, typeof m === 'string' ? m : new Uint8Array(m), ctx);
+      if (typeof m === 'string') void core.handle(name, m, ctx); // A binary message is not a frame in wire v3.
     });
     ws.onClose(() => {
       sender.routes.delete(name);

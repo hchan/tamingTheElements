@@ -4,7 +4,7 @@ import type { Screen } from '@ui/screens/screen';
 import { buildDesyncReport } from '../net/desync-report';
 import { linkLine } from '../net/link-quality';
 import { onlineConfig } from '../net/ws/config';
-import { friendlyMessage, OnlineClient, restingSec, type OnlineEvent, type OnlineFailure, type WsCtor } from '../net/ws/online-client';
+import { friendlyMessage, OnlineClient, restingSec, type OnlineEvent, type OnlineFailure } from '../net/ws/online-client';
 import type { ArenaLaunch } from '../scenes/launch';
 import { downloadReport } from './download';
 import { destroyGame } from './game-handle';
@@ -47,8 +47,7 @@ function browserDeps(): QuickDeps {
     client: () => new OnlineClient({
       config,
       fetch: (u, i) => fetch(u, i),
-      // The DOM WebSocket accepts the same bytes (its `send` type is only wider on the buffer flavour).
-      WebSocket: WebSocket as unknown as WsCtor,
+      WebSocket,
       simVersion: SIM_VERSION,
       now: () => performance.now(),
       after: (ms, fn) => {
