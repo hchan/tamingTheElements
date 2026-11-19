@@ -235,6 +235,6 @@ describe('key labels follow the fighting-game preset (screen-reader list and bar
     setBindings(SF_PRESET_BINDINGS);
     expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['O', 'I', 'L', 'U', 'H', 'N', 'M', 'P', 'Y', ';', '`']);
     setBindings(DEFAULT_BINDINGS);
-    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['9', '8', '7', '6', '5', '3', '4', '0', '-', '=', '`']);
+    expect(TOUCH.map((l) => touchKeyLabel(l))).toEqual(['9', '8', '7', '6', 'H', '3', '4', '0', '-', '=', '`']);
   });
 });

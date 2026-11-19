@@ -122,9 +122,9 @@ describe('keyboard activation', () => {
 });
 
 describe('numbered action row', () => {
-  it('labels each button with its key number, Charge 5 to Super 9, Tag 3 and 4', () => {
+  it('labels each button with its key number, Charge H, Weather 6 to Super 9, Tag 3 and 4', () => {
     stubDom(true);
-    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', '5\nCharge', '3\nTag', '4\nTag 2', '0\nTrap', '-\nElement', '=\nCleanse', '`\nRun']);
+    expect(touchButtons(3).map((b) => b.textContent)).toEqual(['9\nSuper', '8\nGuard', '7\nDash', '6\nWeather', 'H\nCharge', '3\nTag', '4\nTag 2', '0\nTrap', '-\nElement', '=\nCleanse', '`\nRun']);
   });
 
   it('Element wears the - key (after 0) and follows a rebinding', () => {
