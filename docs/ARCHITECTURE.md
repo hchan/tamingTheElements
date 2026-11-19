@@ -154,8 +154,9 @@ drift, the gust 4 px on dashing or knocked-back fighters). `RenderArcade.hazard`
 Elemental clash (`arcade/clash.ts`, the `collision` slot): overlapping projectiles of opposing teams clash by their
 owners' elements (pairs `i < j`, one clash per projectile per tick); the advantaged one survives with
 `max(hp - loserHp / 2, hp / 4)` damage, any other relation destroys both, and each side gains 50 meter.
-Tag team (FUN-DESIGN 2.6): the `swap` slot is the tag in Arcade. A tag needs the active character free (`isFree`) and
-books 150 game ticks; `performSwap` puts the partner at the outgoing character's spot and runs the tag entrance
+Tag team (FUN-DESIGN 2.6): the `swap` slot is the tag in Arcade. A tag needs the fight phase, an expired cooldown, an active character that is neither frozen nor stunned and is free
+(`isFree`), and a living target (`swapAllowed` in systems/swap.ts returns why as `SwapBlock` bits, 0 = allowed; `swapSystem`
+applies it and `RenderArcade.swapBlock(team, slot)` hands the same bits to the HUD), and books 150 game ticks; `performSwap` puts the partner at the outgoing character's spot and runs the tag entrance
 (`arcade/tag.ts`: 20 ticks of invulnerability, 60 after a KO auto-swap from the `death` slot, and the primary cast at
 once through the usual cast functions with its cooldown restored, so it is free; `tagIn`). The `rest` slot heals benched
 characters 1% of max HP every 10 game ticks up to the rest cap (the red life), and only while benched.
