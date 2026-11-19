@@ -211,12 +211,14 @@ test.describe('parity golden paths', () => {
     await leaveBattle(page);
 
     await goToHash(page, '#settings');
+    await page.locator('#settingsAdvanced > summary').click();
     await page.getByLabel('Hard', { exact: true }).check();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await waitForRoute(page, '#main');
     expect((await storedSave(page)).difficulty).toBe(1.12);
     await page.reload();
     await goToHash(page, '#settings');
+    await page.locator('#settingsAdvanced > summary').click();
     await expect(page.getByLabel('Hard', { exact: true })).toBeChecked();
 
     await startBattle(page, PRACTICE);
