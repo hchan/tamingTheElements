@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARCADE_HERO_MAX_H, ARCADE_HERO_MIN_SCALE, ARCADE_HERO_SCALE, arcadeHeroScale, boxSpanX, clampSpanX, drawnBox, setFrameBox, visualBox, wallTuck, type BoxedImage, type Box } from './hero-scale';
+import { ARCADE_HERO_MAX_H, ARCADE_HERO_MIN_SCALE, ARCADE_HERO_SCALE, arcadeHeroScale, PORTRAIT_HERO_BOOST, portraitHeroBoost, setHeroBoost, boxSpanX, clampSpanX, drawnBox, setFrameBox, visualBox, wallTuck, type BoxedImage, type Box } from './hero-scale';
 
 describe('hero-scale', () => {
   it('scales a normal hero 2x and caps giants', () => {
@@ -84,5 +84,19 @@ describe('clampSpanX (WALL-3a)', () => {
   });
   it('does nothing for a span wider than the room', () => {
     expect(clampSpanX(-5, 2000, 0, 1920)).toBe(0);
+  });
+});
+
+describe('portrait hero boost', () => {
+  it('is 1 outside the tall portrait view and boosts every scale inside it', () => {
+    expect(portraitHeroBoost(false)).toBe(1);
+    expect(portraitHeroBoost(true)).toBe(PORTRAIT_HERO_BOOST);
+    setHeroBoost(portraitHeroBoost(true));
+    expect(arcadeHeroScale(80)).toBe(ARCADE_HERO_SCALE * PORTRAIT_HERO_BOOST);
+    expect(arcadeHeroScale(0)).toBe(ARCADE_HERO_SCALE * PORTRAIT_HERO_BOOST);
+    setHeroBoost(1);
+    expect(arcadeHeroScale(80)).toBe(ARCADE_HERO_SCALE);
+    setHeroBoost(-3);
+    expect(arcadeHeroScale(80)).toBe(ARCADE_HERO_SCALE);
   });
 });

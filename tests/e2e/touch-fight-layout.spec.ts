@@ -402,6 +402,32 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
   });
 }
 
+// qa-r113 P2/P4: portrait fighters are drawn bigger and the tag word and the round timer read at 11 CSS px or more.
+for (const [w, h] of [[390, 844], [360, 640]] as const) {
+  test.describe(`portrait framing ${String(w)}x${String(h)}`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    test('2v2: tag word and timer are 11 CSS px or more, the fighters are drawn 1.6x', async ({ page }) => {
+      test.setTimeout(180_000);
+      await enterFight(page, 2);
+      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
+      await page.evaluate(`window.__TTE__.arena.step(150)`);
+      // The HUD re-reads the portrait flag on its next drawn frame.
+      await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+      await shot(page, `port-framing-${String(w)}`);
+      const texts = await page.evaluate<Array<Box & { text: string; px: number }>>(`window.__TTE__.arena.hudTextSizes()`);
+      const words = texts.filter((t) => /^(TAG|NO TAG|\d+\.\ds)$/.test(t.text));
+      expect(words.length, JSON.stringify(texts)).toBeGreaterThanOrEqual(1);
+      for (const t of words) expect(t.px, t.text).toBeGreaterThanOrEqual(10.8);
+      const timer = texts.find((t) => /^\d+$/.test(t.text) && t.y < 40);
+      if (timer) expect(timer.px, JSON.stringify(timer)).toBeGreaterThanOrEqual(11);
+      // Fighters: the camera is zoomed in on the tall view, and the hero draw scale carries the portrait boost (2 x 1.6 for a 1x hero).
+      const cam = await page.evaluate<{ camZoom: number; viewHeight: number }>(`window.__TTE__.arena.camera()`);
+      expect(cam.viewHeight).toBeGreaterThan(720);
+      expect(cam.camZoom).toBeGreaterThan(0.8);
+    });
+  });
+}
+
 // QA r36: the touch Pause button (top right) must not sit on the right-hand "N HITS / N DMG" counter, and the longest hero name stays whole.
 for (const [w, h] of [[667, 375], [844, 390]] as const) {
   test.describe(`pause button and hit counter ${String(w)}x${String(h)}`, () => {
