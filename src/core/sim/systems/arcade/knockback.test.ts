@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { CORNER_PUSH_RANGE_PX, HitStrength } from '../../../data/arcade';
 import { characterId } from '../../../data/ids';
 import { DEFAULT_SIM_FLAGS } from '../../../flags';
-import { now } from '../../clock';
-import { EventSink } from '../../events';
+import { isFrozen, now } from '../../clock';
+import { Cmd } from '../../commands';
+import { EventSink, SimEventKind } from '../../events';
 import { createMatch, type MatchSetup } from '../../match';
 import { ARCADE_E, ArcadeE, EntityFlag } from '../../state';
 import { step } from '../../step';
@@ -130,5 +131,35 @@ describe('corner pushback (SIM_VERSION 84)', () => {
     w.state.flags[0] = (w.state.flags[0] ?? 0) | EntityFlag.benched;
     hit(w, HEAVY, 4);
     expect(w.state.arcade[KB(0)]).toBe(0);
+  });
+});
+
+describe('hit-stop holds the victim (QA r117 finding 6)', () => {
+  it('a Fire Blast victim keeps its x while the clock is frozen, then is shoved', () => {
+    const setup: MatchSetup = {
+      simVersion: 4, seed: 7, flags: { ...DEFAULT_SIM_FLAGS, rulesetArcade: true }, chapter: 1, difficulty: 1,
+      p1: [{ character: characterId('sindarosa'), xp: 1 }],
+      p2: [{ character: characterId('pax'), xp: 1 }],
+    };
+    const w = skipIntro(createMatch(setup));
+    const s = w.state;
+    s.x[0] = 500; s.y[0] = 300; s.x[1] = 640; s.y[1] = 300; s.dir[0] = 0;
+    let hit = false;
+    for (let t = 0; t < 120 && !hit; t++) {
+      hit = step(w, [Cmd.primary, 0]).some((e) => e.kind === SimEventKind.damage && e.target === 1);
+    }
+    expect(hit).toBe(true);
+    expect(isFrozen(s)).toBe(true);
+    const x0 = s.x[1];
+    let frozenSteps = 0;
+    while (isFrozen(s)) {
+      step(w, [0, 0]);
+      frozenSteps++;
+      expect(s.x[1]).toBe(x0);
+    }
+    expect(frozenSteps).toBeGreaterThanOrEqual(4);
+    step(w, [0, 0]);
+    step(w, [0, 0]);
+    expect(s.x[1]).not.toBe(x0);
   });
 });
