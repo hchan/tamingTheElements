@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BAKE_DIRS, bakeRigs, LOCK_NAME, runBake, sinQ16, staleFiles, type RigJson } from '../../tools/assets/bake-rig';
+import { BAKE_DIRS, bakeRigs, LOCK_NAME, runBake, sinQ16, staleFiles, subWeights, type RigJson } from '../../tools/assets/bake-rig';
 import { packSheets, readSources, type SourceFiles } from '../../tools/assets/pack-sheets';
 import { decodePng, encodePng } from '../../tools/assets/png-lite';
 import { FRAME } from '../../src/game/assets/sheet-spec';
@@ -294,5 +294,194 @@ describe('smooth rig bake (sample "ss2")', () => {
   it.each(bad)('rejects %s', (_, rig, re) => {
     const res = bake(rig, { 'p.png': png(4, 4, tex) });
     expect(res.errors.join('\n')).toMatch(re);
+  });
+
+  describe('skin meshes (verts + tris)', () => {
+    const same = (a: ReturnType<typeof bakeRigs>, b: ReturnType<typeof bakeRigs>): boolean =>
+      [...a.outputs.keys()].length === [...b.outputs.keys()].length && [...a.outputs].every(([k, v]) => Buffer.from(b.outputs.get(k) ?? []).equals(v));
+    const mk = (skin: Record<string, unknown>, curves: Record<string, unknown> = { a: { rot: [0, 50] }, m: { dx: [0, -10] } }): Record<string, unknown> => ({
+      sample: 'ss2',
+      dirs: ['E'],
+      bones: [
+        { id: 'a', part: 'p', head: [10, 10] },
+        { id: 'm', part: 'p', head: [0, 0] },
+      ],
+      parts: [{ id: 'p', png: 'p.png', pivot: [0, 0], at: [10, 30], skin }],
+      actions: { hurt: { frames: 2, curves } },
+    });
+
+    it('a mesh laid out like the grid bakes byte-identically (rest, bent bone, wave, noise, dw)', () => {
+      const part = png(40, 40, (i) => [(i * 7) % 256, 90, 200 - (i % 100), Math.floor(i / 40) >= 34 || i % 40 < 3 ? 0 : 255]);
+      const w: number[] = [];
+      const dw: number[] = [];
+      for (let v = 0; v < 9; v++) {
+        const row = Math.floor(v / 3);
+        w.push(...(row === 0 ? [256, 0] : row === 1 ? [128, 128] : [0, 256]));
+        dw.push(v * 32);
+      }
+      const bones = [{ id: 'root', part: 'p', head: [20, 0] }, { id: 'tip', part: 'p', parent: 'root', head: [20, 20] }];
+      const rig = (skin: Record<string, unknown>): Record<string, unknown> => ({
+        sample: 'ss2',
+        res: 2,
+        dirs: ['E'],
+        bones,
+        parts: [{ id: 'p', png: 'p.png', pivot: [20, 0], at: [40, 20], skin: { bones: ['root', 'tip'], w, dw, ...skin } }],
+        actions: { hurt: { frames: 2, curves: { tip: { rot: [0, 40] } }, deform: { p: { wave: { axis: 'x', ampPx: 2, wavelengthPx: 16, phasePerFrame: 90 }, noise: { ampPx: 1, cellPx: 8, seed: 3 } } } } },
+      });
+      const verts: number[] = [];
+      for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) verts.push(i * 20, j * 20);
+      const tris: number[] = [];
+      for (let j = 0; j < 2; j++)
+        for (let i = 0; i < 2; i++) {
+          const a = j * 3 + i;
+          tris.push(a, a + 1, a + 4, a, a + 4, a + 3);
+        }
+      const g = bake(rig({ grid: [3, 3], step: 20 }), { 'p.png': part });
+      const m = bake(rig({ verts, tris }), { 'p.png': part });
+      expect(g.errors).toEqual([]);
+      expect(m.errors).toEqual([]);
+      expect(same(g, m)).toBe(true);
+      expect(Buffer.from(g.outputs.get('fiara/hurt/E/00.png') ?? []).equals(g.outputs.get('fiara/hurt/E/01.png') ?? new Uint8Array())).toBe(false);
+    });
+
+    // Two islands 20 px wide with a 20 px gap (x 20..40) in a 60x20 part; the vertex at x 30 sits in the gap.
+    const islands = png(60, 20, (i) => [200, 80, 40, i % 60 < 20 || i % 60 >= 40 ? 255 : 0]);
+    const box = (img: ReturnType<typeof decodePng>): number[] => {
+      const out: number[] = [];
+      for (let y = 28; y < 52; y++) for (let x = 48; x < 72; x++) out.push(...px(img, x, y));
+      return out;
+    };
+    it('a seam leaves the other island untouched; the same image on a shared grid does not', () => {
+      const wa = [256, 0, 0, 0];
+      const wb = [0, 256, 0, 0];
+      const mesh = bake(
+        mk({
+          bones: ['a', 'm'],
+          verts: [0, 0, 30, 0, 0, 20, 30, 20, 30, 0, 60, 0, 30, 20, 60, 20],
+          tris: [0, 1, 3, 0, 3, 2, 4, 5, 7, 4, 7, 6],
+          w: [...wa, ...wa, ...wa, ...wa, ...wb, ...wb, ...wb, ...wb].filter((_, i) => i % 4 < 2),
+        }, { a: { rot: [0, 50] } }),
+        { 'p.png': islands },
+      );
+      const grid = bake(mk({ bones: ['a', 'm'], grid: [3, 2], step: 30, w: [...wa, ...wa, ...wb, ...wa, ...wa, ...wb].filter((_, i) => i % 4 < 2) }, { a: { rot: [0, 50] } }), { 'p.png': islands });
+      expect(mesh.errors).toEqual([]);
+      expect(grid.errors).toEqual([]);
+      const m0 = frameOf(mesh, 'hurt/E/00');
+      const m1 = frameOf(mesh, 'hurt/E/01');
+      expect(box(m1)).toEqual(box(m0));
+      expect(Buffer.from(m1.data).equals(Buffer.from(m0.data))).toBe(false);
+      expect(box(frameOf(grid, 'hurt/E/01'))).not.toEqual(box(frameOf(grid, 'hurt/E/00')));
+    });
+
+    it('draws triangles in list order', () => {
+      const half = png(20, 20, (i) => (i % 20 < 10 ? [220, 20, 20, 255] : [20, 20, 220, 255]));
+      const skin = (tris: number[]): Record<string, unknown> => ({
+        bones: ['a', 'm'],
+        // A (red, x 0..10) stays; B (blue, x 10..20) is moved 10 px left by bone m, onto A.
+        verts: [0, 0, 10, 0, 0, 20, 10, 0, 20, 0, 10, 20],
+        tris,
+        w: [256, 0, 256, 0, 256, 0, 0, 256, 0, 256, 0, 256],
+      });
+      const ab = bake(mk(skin([0, 1, 2, 3, 4, 5])), { 'p.png': half });
+      const ba = bake(mk(skin([3, 4, 5, 0, 1, 2])), { 'p.png': half });
+      expect(ab.errors).toEqual([]);
+      expect(ba.errors).toEqual([]);
+      expect(same(ab, bake(mk(skin([0, 1, 2, 3, 4, 5])), { 'p.png': half }))).toBe(true);
+      expect(Buffer.from(frameOf(ab, 'hurt/E/01').data).equals(Buffer.from(frameOf(ba, 'hurt/E/01').data))).toBe(false);
+      expect(Buffer.from(frameOf(ab, 'hurt/E/00').data).equals(Buffer.from(frameOf(ba, 'hurt/E/00').data))).toBe(true);
+    });
+
+    const okMesh = { bones: ['a'], verts: [0, 0, 20, 0, 0, 20, 20, 20], tris: [0, 1, 2, 1, 3, 2], w: [256, 256, 256, 256] };
+    const meshBad: [string, Record<string, unknown>, RegExp][] = [
+      ['grid and verts together', mk({ ...okMesh, grid: [2, 2], step: 20 }), /either grid and step, or verts and tris/],
+      ['neither grid nor verts', mk({ bones: ['a'], w: [256] }), /either grid and step, or verts and tris/],
+      ['verts without tris', mk({ bones: ['a'], verts: okMesh.verts, w: okMesh.w }), /either grid and step, or verts and tris/],
+      ['an odd verts list', mk({ ...okMesh, verts: [0, 0, 20, 0, 0, 20, 20] }), /verts: expected \[x, y, \.\.\.\]/],
+      ['tris that are not a multiple of 3', mk({ ...okMesh, tris: [0, 1, 2, 1] }), /tris: expected vertex index triples/],
+      ['a triangle index out of range', mk({ ...okMesh, tris: [0, 1, 9] }), /tris index 9 is outside the 4 vertices/],
+      ['a degenerate triangle', mk({ ...okMesh, tris: [0, 1, 1] }), /triangle 0 is degenerate/],
+      ['an edge longer than 64 px', mk({ ...okMesh, verts: [0, 0, 65, 0, 0, 20, 65, 20] }), /triangle 0 has an edge longer than 64 px/],
+      ['a vertex outside the image', mk({ ...okMesh, verts: [0, 0, 20, 0, 0, 20, 20, 21] }), /vertex 3 lies outside the 80x20 image/],
+      ['w of the wrong length', mk({ ...okMesh, w: [256, 256, 256] }), /skin.w has 3 weights, expected 4/],
+      ['dw of the wrong length', mk({ ...okMesh, dw: [256] }), /skin.dw has 1 values, expected 4/],
+      ['a mesh without ss2', { ...mk(okMesh), sample: 'nearest' }, /need sample "ss2"/],
+    ];
+    it.each(meshBad)('rejects %s', (_, rig, re) => {
+      const res = bake(rig, { 'p.png': png(80, 20, () => [9, 9, 9, 255]) });
+      expect(res.errors.join('\n')).toMatch(re);
+    });
+  });
+
+  describe('sub-frames', () => {
+    const bar = png(9, 3, (i) => [10 + 20 * (i % 9), 7, 9, 255]);
+    const bake = (sub: number | undefined, action: 'idle' | 'hurt', extra: Record<string, unknown> = {}, rot = [0, 40, 80, 120]): Map<string, Uint8Array> => {
+      const n = action === 'idle' ? 4 : 2;
+      const a: Record<string, unknown> = {
+        frames: n,
+        ...(sub === undefined ? {} : { sub }),
+        curves: { bar: { rot: rot.slice(0, n), ...(extra['alpha'] ? { alpha: extra['alpha'] } : {}) } },
+        ...(extra['deform'] ? { deform: extra['deform'] } : {}),
+      };
+      const rig = { dirs: ['E'], ...(extra['rig'] as object | undefined), parts: [{ id: 'bar', png: 'bar.png', pivot: [0, 1], at: [40, 40] }], actions: { [action]: a } };
+      const res = bakeRigs(new Map([['fiara/rig.json', enc(JSON.stringify(rig))], ['fiara/license.txt', enc('CC0\n')], ['fiara/parts/bar.png', bar]]));
+      expect(res.errors).toEqual([]);
+      return new Map(res.outputs);
+    };
+    const same = (x: Uint8Array | undefined, y: Uint8Array | undefined): boolean => x !== undefined && y !== undefined && Buffer.from(x).equals(y);
+    const name = (a: string, f: number): string => `fiara/${a}/E/${String(f).padStart(2, '0')}.png`;
+
+    it('has integer weights that sum to 16384 and are exact for k = 2 and 4', () => {
+      for (const k of [1, 2, 3, 4]) for (let r = 0; r < k; r++) expect(subWeights(r, k).reduce((a, b) => a + b, 0)).toBe(16384);
+      expect(subWeights(1, 2)).toEqual([-1024, 9216, 9216, -1024]);
+      expect(subWeights(1, 4)).toEqual([-1152, 14208, 3712, -384]);
+      expect(subWeights(3, 4)).toEqual([-384, 3712, 14208, -1152]);
+      expect(subWeights(1, 3)).toEqual([-1214, 12744, 5461, -607]);
+      expect(subWeights(2, 3)).toEqual([-607, 5461, 12744, -1214]);
+    });
+
+    it('sub 1 and no sub are byte-identical', () => {
+      const a = bake(undefined, 'idle');
+      const b = bake(1, 'idle');
+      expect([...b.keys()]).toEqual([...a.keys()]);
+      for (const [p, bytes] of a) expect(same(b.get(p), bytes)).toBe(true);
+    });
+
+    it('sub 2 on a loop: frame 2j is key j, 2j+1 differs, the last gap wraps to key 0', () => {
+      const plain = bake(undefined, 'idle');
+      const sub = bake(2, 'idle');
+      expect([...sub.keys()].filter((p) => p.endsWith('.png'))).toHaveLength(8);
+      for (let j = 0; j < 4; j++) {
+        expect(same(sub.get(name('idle', 2 * j)), plain.get(name('idle', j)))).toBe(true);
+        expect(same(sub.get(name('idle', 2 * j + 1)), plain.get(name('idle', j)))).toBe(false);
+      }
+      // Wrap: rot between 120 and 0 (neighbours 80 and 40) is not the clamped value, so it is not key 3 either.
+      expect(same(sub.get(name('idle', 7)), plain.get(name('idle', 3)))).toBe(false);
+    });
+
+    it('sub 2 on a one-shot clamps: the tail repeats the last key', () => {
+      const plain = bake(undefined, 'hurt');
+      const sub = bake(2, 'hurt');
+      expect(same(sub.get(name('hurt', 0)), plain.get(name('hurt', 0)))).toBe(true);
+      expect(same(sub.get(name('hurt', 1)), plain.get(name('hurt', 0)))).toBe(false);
+      expect(same(sub.get(name('hurt', 2)), plain.get(name('hurt', 1)))).toBe(true);
+      expect(same(sub.get(name('hurt', 3)), plain.get(name('hurt', 1)))).toBe(true);
+    });
+
+    it('clamps alpha to the segment and steps the wave phase by whole degrees', () => {
+      const smooth = { rig: { sample: 'ss2' } };
+      // alpha 256, 256, 0, 256: in-between values stay inside their key segment (clamped, no overshoot).
+      const a = bake(2, 'idle', { ...smooth, alpha: [256, 256, 0, 256] });
+      const b = bake(2, 'idle', { ...smooth, alpha: [256, 256, 0, 256], deform: { bar: { wave: { axis: 'y', ampPx: 2, wavelengthPx: 8, phasePerFrame: 45 } } } });
+      expect(a.size).toBe(9);
+      expect(same(a.get(name('idle', 2)), b.get(name('idle', 2)))).toBe(false); // phase 90 degrees by frame 2 with the wave
+      const plain = bake(undefined, 'idle', { ...smooth, alpha: [256, 256, 0, 256] });
+      for (let j = 0; j < 4; j++) expect(same(a.get(name('idle', 2 * j)), plain.get(name('idle', j)))).toBe(true);
+    });
+
+    it('rejects sub outside 1..4', () => {
+      const rig = { dirs: ['E'], parts: [{ id: 'bar', png: 'bar.png', pivot: [0, 1], at: [40, 40] }], actions: { idle: { frames: 4, sub: 5 } } };
+      const res = bakeRigs(new Map([['fiara/rig.json', enc(JSON.stringify(rig))], ['fiara/license.txt', enc('CC0\n')], ['fiara/parts/bar.png', bar]]));
+      expect(res.errors.join('\n')).toContain('sub');
+    });
   });
 });

@@ -9,3 +9,7 @@
 - [Unreleased candidate audit](unreleased-candidate-audit.md) — 2026-11-18 isnet is best cutout set; zephra/ouroth/hyalia broken; worktree hero-art-audit-unreleased
 - [GPU queue and ControlNet](gpu-queue-and-controlnet.md) — 2026-11-18 ControlNet ready; queue guards; GPU all day, bulk at night; sheet pairing
 - [Creature normalise sheet](creature-normalise-sheet.md) — 2026-11-18 512-canvas size classes + sheet vs released; worktree hero-art-norm; verdict pending
+- [CPU decision sheets](decision-sheets-cpu.md) — 2026-11-18 three orig-vs-candidate sheets built; verdicts pending
+- [Night queue Hyalia/Vortigal](night-queue-hyalia-vortigal.md) — 2026-11-18 job g-20261118203934-6d9e submitted, 8 images, verdict pending
+- [Lavax redo](lavax-redo.md) — 2026-11-18 hue-mask recolour candidate in lavax-redo worktree; verdict pending
+- [Mist prompts queue](mist-prompts-queue.md) — 2026-11-18 4-hero hi-res mist queue dry-run OK, not submitted

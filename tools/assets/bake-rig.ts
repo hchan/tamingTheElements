@@ -5,7 +5,7 @@
 // mirrors them from E, SE and NE at runtime.
 // Opt-in upgrades for painted (portrait) rigs (ADR-0033): a per-rig `frame` size and `box`, `sample: "ss2"` (a 2x supersampled
 // triangle-mesh render with bilinear taps on premultiplied integer RGBA, box-filtered down), `res` (art px per frame px), bones
-// with Q8 skin weights, per-direction static offsets, wave/noise deformers, alpha/bright channels and additive parts. Rigs that do
+// with Q8 skin weights (on a regular grid, or on a free-form `verts`/`tris` mesh whose duplicated vertices are seams), per-direction static offsets, wave/noise deformers, alpha/bright channels and additive parts. Rigs that do
 // not opt in bake byte-identically to before.
 // Run: pnpm assets:bake (writes frames and imgWorkArea/rigs/bake.lock.json) or pnpm assets:bake --check (fails when a bake is stale).
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -38,10 +38,16 @@ export interface PartView {
  * A skin mesh over a part image (ss2 only): vertices on a `grid` of [columns, rows] every `step` image px from the top-left
  * corner (it must cover the image), and per vertex one Q8 weight per entry of `bones` (vertex-major; each vertex sums to 256 with
  * at most 3 non-zero). `dw` (one 0..256 value per vertex) scales the part's deformers.
+ * Instead of `grid`/`step` a skin may be a free-form mesh: `verts` (flat [x0, y0, x1, y1, ...] in part image px, inside the image)
+ * and `tris` (flat vertex-index triples, drawn in list order). `w` and `dw` are then indexed by vertex. Two vertices at the same
+ * position with different weights are legal and make a seam: the triangles on each side move independently. Every triangle edge
+ * is at most MAX_STEP px in the image (keeps the raster products below 2^53) and no triangle is degenerate.
  */
 export interface Skin {
-  readonly grid: Pt;
-  readonly step: number;
+  readonly grid?: Pt;
+  readonly step?: number;
+  readonly verts?: readonly number[];
+  readonly tris?: readonly number[];
   readonly bones: readonly string[];
   readonly w: readonly number[];
   readonly dw?: readonly number[];
@@ -88,7 +94,13 @@ export interface Deform {
   readonly noise?: Noise;
 }
 export interface RigAction {
+  /** Key count (the sheet spec's frames for the action); the curves hold one value per key. */
   readonly frames: number;
+  /**
+   * Sub-frames per key, 1..4 (default 1): the baker outputs `frames * sub` frames, frame f sampling position f / sub, so frame j * sub
+   * is key j byte for byte. 1 takes today's code path unchanged.
+   */
+  readonly sub?: number;
   /**
    * part or bone id -> channel -> one integer per frame: rot degrees clockwise, dx/dy pixels (art pixels with `res`), sx/sy percent
    * (default 100); parts of ss2 rigs also take alpha and bright.
@@ -153,7 +165,11 @@ const PNG_RE = /^[A-Za-z0-9_-]+\.png$/;
 /** Channel bounds; dx and dy grow to the rig's frame * res. */
 const RANGE: Record<Channel | LightChannel, number> = { rot: 360, dx: FRAME, dy: FRAME, sx: 400, sy: 400, alpha: 256, bright: 512 };
 export const MAX_FRAME = 512;
+/** Most sub-frames per key. */
+export const MAX_SUB = 4;
 const MAX_STEP = 64;
+const MAX_VERTS = 8192;
+const MAX_TRIS = 16384;
 type Field = (v: unknown, path: string) => void;
 
 /** Validates one rig.json (shape, types, ranges, names). References are checked after `extends` is resolved. */
@@ -235,6 +251,7 @@ export function parseRig(where: string, text: string, errors: string[]): RigJson
     return obj(
       {
         frames: check((v) => v === n, `the sheet spec has ${String(n)} frames for ${a}`),
+        sub: num(1, MAX_SUB),
         curves: map(() => undefined, () => curve, 'part id'),
         deform: map(() => undefined, () => deform, 'part id'),
       },
@@ -244,13 +261,21 @@ export function parseRig(where: string, text: string, errors: string[]): RigJson
   const q8s = check((v) => Array.isArray(v) && v.every((x) => isInt(x) && x >= 0 && x <= 256), 'expected integers in 0..256');
   const skin = obj(
     {
+      verts: check(
+        (v) => Array.isArray(v) && v.length >= 6 && v.length % 2 === 0 && v.length <= 2 * MAX_VERTS && v.every((x) => isInt(x) && x >= 0 && x <= 65535),
+        `expected [x, y, ...] integers with 3 to ${String(MAX_VERTS)} vertices`,
+      ),
+      tris: check(
+        (v) => Array.isArray(v) && v.length >= 3 && v.length % 3 === 0 && v.length <= 3 * MAX_TRIS && v.every((x) => isInt(x) && x >= 0),
+        `expected vertex index triples (1 to ${String(MAX_TRIS)} triangles)`,
+      ),
       grid: check((v) => isPt(v) && (v as number[]).every((x) => x >= 2 && x <= 1024), 'expected [columns, rows] in 2..1024'),
       step: num(2, MAX_STEP),
       bones: list(check((v) => typeof v === 'string' && ID_RE.test(v), 'expected a bone id'), true),
       w: q8s,
       dw: q8s,
     },
-    ['grid', 'step', 'bones', 'w'],
+    ['bones', 'w'],
   );
   const offset = obj(Object.fromEntries(CHANNELS.map((ch) => [ch, num(-hi(ch), hi(ch))])));
   const ref = (what: string): Field => check((v) => typeof v === 'string', `expected a ${what} id`);
@@ -382,9 +407,36 @@ function resolveRig(name: string, raws: ReadonlyMap<string, RigJson | undefined>
     const s = p.skin;
     if (s === undefined) continue;
     for (const b of s.bones) if (boneOf.get(b)?.part !== p.id) e(`part ${p.id}: skin bone ${b} is not a bone of this part`);
-    const nv = s.grid[0] * s.grid[1];
+    const meshed = s.verts !== undefined || s.tris !== undefined;
+    const gridded = s.grid !== undefined || s.step !== undefined;
+    if (meshed === gridded || (meshed ? s.verts === undefined || s.tris === undefined : s.grid === undefined || s.step === undefined)) {
+      e(`part ${p.id}: skin needs either grid and step, or verts and tris (not both, not neither)`);
+      continue;
+    }
+    if (s.verts !== undefined && s.tris !== undefined) {
+      if (!smooth) continue;
+      const nvm = s.verts.length / 2;
+      let ok = true;
+      for (const t of s.tris) if (t >= nvm && ok) ok = (e(`part ${p.id}: skin.tris index ${String(t)} is outside the ${String(nvm)} vertices`), false);
+      for (let t = 0; ok && t < s.tris.length; t += 3) {
+        const q = [0, 1, 2].map((k) => [s.verts?.[2 * (s.tris?.[t + k] ?? 0)] ?? 0, s.verts?.[2 * (s.tris?.[t + k] ?? 0) + 1] ?? 0] as const);
+        const [a, b, c] = q as [readonly [number, number], readonly [number, number], readonly [number, number]];
+        const long = [
+          [a, b],
+          [b, c],
+          [c, a],
+        ].some(([m, n]) => Math.max(Math.abs((m?.[0] ?? 0) - (n?.[0] ?? 0)), Math.abs((m?.[1] ?? 0) - (n?.[1] ?? 0))) > MAX_STEP);
+        if (long) ok = (e(`part ${p.id}: skin triangle ${String(t / 3)} has an edge longer than ${String(MAX_STEP)} px`), false);
+        else if ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) === 0)
+          ok = (e(`part ${p.id}: skin triangle ${String(t / 3)} is degenerate (zero area in the image)`), false);
+      }
+    }
+    const nv = s.verts !== undefined ? s.verts.length / 2 : (s.grid?.[0] ?? 0) * (s.grid?.[1] ?? 0);
     const nb = s.bones.length;
-    if (s.w.length !== nv * nb) e(`part ${p.id}: skin.w has ${String(s.w.length)} weights, expected ${String(nv * nb)} (grid ${String(s.grid[0])}x${String(s.grid[1])} x ${String(nb)} bones)`);
+    if (s.w.length !== nv * nb)
+      e(
+        `part ${p.id}: skin.w has ${String(s.w.length)} weights, expected ${String(nv * nb)} (${s.verts !== undefined ? `${String(nv)} vertices` : `grid ${String(s.grid?.[0])}x${String(s.grid?.[1])}`} x ${String(nb)} bones)`,
+      );
     else
       for (let v = 0; v < nv; v++) {
         const ws = s.w.slice(v * nb, v * nb + nb);
@@ -538,21 +590,89 @@ function noiseQ(x: number, y: number, z: number, n: Noise): number {
   const h = (i: number, j: number): number => hashQ(gx + i, gy + j, z, n.seed);
   return Math.floor((h(0, 0) * (c - rx) * (c - ry) + h(1, 0) * rx * (c - ry) + h(0, 1) * (c - rx) * ry + h(1, 1) * rx * ry) / (c * c));
 }
-/** The deformer offset (Q16 image px) at vertex (x, y) of frame f. */
-function deformAt(d: Deform | undefined, x: number, y: number, f: number): [number, number] {
+// ---- sub-frames ----
+
+/** Actions whose row loops at runtime (FRAME_TIMING in src/game/assets/sheet-frames.ts); the others hold their last key. */
+const LOOPING: ReadonlySet<Action> = new Set<Action>(['idle', 'walk', 'victory']);
+
+/** Where output frame f sits: between key j and key j1, r / k of the way (k sub-frames per key). */
+export interface Samp {
+  readonly f: number;
+  readonly k: number;
+  readonly j: number;
+  readonly j1: number;
+  readonly r: number;
+}
+export const sampOf = (f: number, k: number, keys: number, loop: boolean): Samp => {
+  const j = Math.floor(f / k);
+  const r = f - j * k;
+  if (r === 0) return { f, k, j, j1: j, r };
+  return { f, k, j, j1: loop ? (j + 1) % keys : Math.min(j + 1, keys - 1), r };
+};
+
+/** Catmull-Rom weights at t = r / k in Q14: always four integers summing to 16384 (exact for k = 2 and 4). */
+export function subWeights(r: number, k: number): readonly [number, number, number, number] {
+  const d = 2 * k * k * k;
+  const num = [
+    -r * r * r + 2 * r * r * k - r * k * k,
+    3 * r * r * r - 5 * r * r * k + 2 * k * k * k,
+    -3 * r * r * r + 4 * r * r * k + r * k * k,
+    r * r * r - r * r * k,
+  ];
+  const w = num.map((n) => Math.round((16384 * n) / d));
+  const i = (w[1] ?? 0) >= (w[2] ?? 0) ? 1 : 2; // the residual goes to the larger centre weight
+  w[i] = (w[i] ?? 0) + 16384 - w.reduce((a, b) => a + b, 0);
+  return w as [number, number, number, number];
+}
+
+/** One channel's `keys.length * k` values: key j at j * k, in between Catmull-Rom (rot, dx, dy) or clamped to the segment (the rest). */
+function expandCurve(v: readonly number[], k: number, loop: boolean, clamp: boolean): number[] {
+  const n = v.length;
+  const at = (i: number): number => v[loop ? ((i % n) + n) % n : Math.min(Math.max(i, 0), n - 1)] ?? 0;
+  const out: number[] = [];
+  for (let f = 0; f < n * k; f++) {
+    const j = Math.floor(f / k);
+    const r = f - j * k;
+    if (r === 0 || (!loop && j >= n - 1)) {
+      out.push(at(j));
+      continue;
+    }
+    const w = subWeights(r, k);
+    const sum = w[0] * at(j - 1) + w[1] * at(j) + w[2] * at(j + 1) + w[3] * at(j + 2);
+    const x = Math.floor((sum + 8192) / 16384);
+    out.push(clamp ? Math.min(Math.max(x, Math.min(at(j), at(j + 1))), Math.max(at(j), at(j + 1))) : x);
+  }
+  return out;
+}
+
+/** The action with `sub` > 1 expanded to `frames * sub` curve values; sub 1 (or none) returns the action itself. */
+function expandAction(act: RigAction, loop: boolean): RigAction {
+  const k = act.sub ?? 1;
+  if (k === 1) return act;
+  const curves: Record<string, Partial<Record<Channel | LightChannel, readonly number[]>>> = {};
+  for (const [id, c] of Object.entries(act.curves ?? {}))
+    curves[id] = Object.fromEntries(Object.entries(c).map(([ch, v]) => [ch, expandCurve(v, k, loop, ch !== 'rot' && ch !== 'dx' && ch !== 'dy')]));
+  return { ...act, frames: act.frames * k, curves };
+}
+
+/** The deformer offset (Q16 image px) at vertex (x, y) of output frame s.f. */
+function deformAt(d: Deform | undefined, x: number, y: number, s: Samp): [number, number] {
   let ox = 0;
   let oy = 0;
   const w = d?.wave;
   if (w !== undefined) {
     const along = w.axis === 'x' ? y : x;
-    const off = w.ampPx * sinQ16(Math.floor((360 * along) / w.wavelengthPx) + (w.phase ?? 0) + w.phasePerFrame * f);
+    const off = w.ampPx * sinQ16(Math.floor((360 * along) / w.wavelengthPx) + (w.phase ?? 0) + Math.floor((w.phasePerFrame * s.f) / s.k));
     if (w.axis === 'x') ox += off;
     else oy += off;
   }
   const n = d?.noise;
   if (n !== undefined) {
-    ox += Math.floor((n.ampPx * noiseQ(x, y, f * 2, n)) / 1);
-    oy += Math.floor((n.ampPx * noiseQ(x, y, f * 2 + 1, n)) / 1);
+    const at = (key: number, z: number): number => Math.floor((n.ampPx * noiseQ(x, y, key * 2 + z, n)) / 1);
+    // Linear between the key samples (r = 0 is key j exactly).
+    const mix = (z: number): number => (s.r === 0 ? at(s.j, z) : Math.floor(((s.k - s.r) * at(s.j, z) + s.r * at(s.j1, z)) / s.k));
+    ox += mix(0);
+    oy += mix(1);
   }
   return [ox, oy];
 }
@@ -584,7 +704,7 @@ const xf = (M: Mat, x: number, y: number): [number, number] => [rq(M[0] * x + M[
  * fill rule) and sample the part bilinearly; the buffer is box-filtered 2x2 into the frame, and colour bleeds 2 px into the
  * transparent border so linear filtering at runtime shows no dark halo. Integer arithmetic throughout (values below 2^53).
  */
-function renderSmooth(r: Resolved, placed: readonly Placed[], act: RigAction, f: number, dir: Dir): Image {
+function renderSmooth(r: Resolved, placed: readonly Placed[], act: RigAction, f: number, dir: Dir, samp: Samp = sampOf(f, 1, 1, false)): Image {
   const F = r.frame;
   const S = F * 2;
   const buf = new Int32Array(S * S * 4);
@@ -639,43 +759,59 @@ function renderSmooth(r: Resolved, placed: readonly Placed[], act: RigAction, f:
     if (alpha === 0) continue;
     const { width: iw, height: ih } = p.img;
     const skin = p.part.skin;
+    const mesh = skin?.verts !== undefined && skin.tris !== undefined ? { verts: skin.verts, tris: skin.tris } : undefined;
     const step = skin?.step ?? 32;
-    const nx = skin?.grid[0] ?? Math.ceil(iw / step) + 1;
-    const ny = skin?.grid[1] ?? Math.ceil(ih / step) + 1;
-    if ((nx - 1) * step < iw || (ny - 1) * step < ih) throw new Error(`part ${p.part.id}: skin grid ${String(nx)}x${String(ny)} step ${String(step)} does not cover the ${String(iw)}x${String(ih)} image`);
+    const nx = mesh === undefined ? (skin?.grid?.[0] ?? Math.ceil(iw / step) + 1) : 0;
+    const ny = mesh === undefined ? (skin?.grid?.[1] ?? Math.ceil(ih / step) + 1) : 0;
+    if (mesh !== undefined) {
+      for (let k = 0; k < mesh.verts.length; k += 2)
+        if ((mesh.verts[k] ?? 0) > iw || (mesh.verts[k + 1] ?? 0) > ih)
+          throw new Error(`part ${p.part.id}: skin vertex ${String(k / 2)} lies outside the ${String(iw)}x${String(ih)} image`);
+    } else if ((nx - 1) * step < iw || (ny - 1) * step < ih)
+      throw new Error(`part ${p.part.id}: skin grid ${String(nx)}x${String(ny)} step ${String(step)} does not cover the ${String(iw)}x${String(ih)} image`);
     const deform = act.deform?.[p.part.id];
     const skinMats = skin?.bones.map(boneMat) ?? [];
     const nb = skinMats.length;
     // Vertex positions in supersampled Q8.
-    const vx = new Float64Array(nx * ny);
-    const vy = new Float64Array(nx * ny);
-    for (let j = 0; j < ny; j++)
-      for (let i = 0; i < nx; i++) {
-        const v = j * nx + i;
-        const [ox, oy] = deformAt(deform, i * step, j * step, f);
-        const dw = skin?.dw?.[v] ?? 256;
-        let x = (i * step - p.pivot[0]) * Q + Math.round((ox * dw) / 256);
-        let y = (j * step - p.pivot[1]) * Q + Math.round((oy * dw) / 256);
-        if (nb > 0 && skin !== undefined) {
-          let sx = 0;
-          let sy = 0;
-          for (let b = 0; b < nb; b++) {
-            const w = skin.w[v * nb + b] ?? 0;
-            if (w === 0) continue;
-            const [bx, by] = xf(skinMats[b] ?? IDENT, x, y);
-            sx += w * bx;
-            sy += w * by;
-          }
-          x = Math.round(sx / 256);
-          y = Math.round(sy / 256);
+    const nvert = mesh === undefined ? nx * ny : mesh.verts.length / 2;
+    const vx = new Float64Array(nvert);
+    const vy = new Float64Array(nvert);
+    // Rest position of each vertex in Q8 image px (the texture coordinates).
+    const uvx = new Float64Array(nvert);
+    const uvy = new Float64Array(nvert);
+    for (let v = 0; v < nvert; v++) {
+      const rx = mesh === undefined ? (v % nx) * step : (mesh.verts[2 * v] ?? 0);
+      const ry = mesh === undefined ? Math.floor(v / nx) * step : (mesh.verts[2 * v + 1] ?? 0);
+      uvx[v] = rx * 256;
+      uvy[v] = ry * 256;
+      const [ox, oy] = deformAt(deform, rx, ry, samp);
+      const dw = skin?.dw?.[v] ?? 256;
+      let x = (rx - p.pivot[0]) * Q + Math.round((ox * dw) / 256);
+      let y = (ry - p.pivot[1]) * Q + Math.round((oy * dw) / 256);
+      if (nb > 0 && skin !== undefined) {
+        let sx = 0;
+        let sy = 0;
+        for (let b = 0; b < nb; b++) {
+          const w = skin.w[v * nb + b] ?? 0;
+          if (w === 0) continue;
+          const [bx, by] = xf(skinMats[b] ?? IDENT, x, y);
+          sx += w * bx;
+          sy += w * by;
         }
-        const [px, py] = xf(W, x, y);
-        vx[v] = Math.round(px / toSS);
-        vy[v] = Math.round(py / toSS);
+        x = Math.round(sx / 256);
+        y = Math.round(sy / 256);
       }
-    const live = liveCells(p.img, step, nx, ny);
+      const [px, py] = xf(W, x, y);
+      vx[v] = Math.round(px / toSS);
+      vy[v] = Math.round(py / toSS);
+    }
     const src = premultiplied(p.img);
-    const tri = (a: number, b: number, d: number): void => rasterTri(buf, S, src, iw, ih, vx, vy, nx, step, a, b, d, alpha, bright, p.part.blend === 'add');
+    const tri = (a: number, b: number, d: number): void => rasterTri(buf, S, src, iw, ih, vx, vy, uvx, uvy, a, b, d, alpha, bright, p.part.blend === 'add');
+    if (mesh !== undefined) {
+      for (let t = 0; t < mesh.tris.length; t += 3) tri(mesh.tris[t] ?? 0, mesh.tris[t + 1] ?? 0, mesh.tris[t + 2] ?? 0);
+      continue;
+    }
+    const live = liveCells(p.img, step, nx, ny);
     for (let j = 0; j < ny - 1; j++)
       for (let i = 0; i < nx - 1; i++) {
         if (live[j * nx + i] === 0) continue;
@@ -711,8 +847,8 @@ function rasterTri(
   ih: number,
   vx: Float64Array,
   vy: Float64Array,
-  nx: number,
-  step: number,
+  uvx: Float64Array,
+  uvy: Float64Array,
   i0: number,
   i1: number,
   i2: number,
@@ -734,7 +870,7 @@ function rasterTri(
     return dy > 0 || (dy === 0 && (vx[q] ?? 0) - (vx[p] ?? 0) < 0);
   };
   const [o0, o1, o2] = [owns(b, c), owns(c, a), owns(a, b)];
-  const uv = (v: number): [number, number] => [(v % nx) * step * 256, Math.floor(v / nx) * step * 256];
+  const uv = (v: number): [number, number] => [uvx[v] ?? 0, uvy[v] ?? 0];
   const [ua, va] = uv(a);
   const [ub, vb] = uv(b);
   const [uc, vc] = uv(c);
@@ -939,13 +1075,19 @@ export function bakeRigs(files: SourceFiles): BakeResult {
         if (img) placed.push({ part, img, pivot: v.pivot as Pt, at: v.at as Pt, z: v.z ?? 0, hide: v.hide === true });
       }
       if (errors.length > n0) break;
-      for (const [action, act] of Object.entries(r.actions) as [Action, RigAction][])
+      for (const [action, key] of Object.entries(r.actions) as [Action, RigAction][]) {
+        const loop = LOOPING.has(action);
+        const k = key.sub ?? 1;
+        const act = expandAction(key, loop);
         for (let f = 0; f < act.frames; f++) {
           const nn = String(f).padStart(2, '0');
-          let img = keys.get(`${action}/${dir}/${nn}`);
+          // A one-shot's tail (past the last key) repeats the last key.
+          const fe = !loop && f > (key.frames - 1) * k ? (key.frames - 1) * k : f;
+          const kn = String(fe / k).padStart(2, '0');
+          let img = fe % k === 0 ? keys.get(`${action}/${dir}/${kn}`) : undefined;
           if (img === undefined) {
             try {
-              img = r.smooth ? renderSmooth(r, placed, act, f, dir) : renderFrame(placed, act.curves, f, r.frame);
+              img = r.smooth ? renderSmooth(r, placed, act, fe, dir, sampOf(fe, k, key.frames, loop)) : renderFrame(placed, act.curves, fe, r.frame);
             } catch (err) {
               errors.push(`${name}: ${(err as Error).message}`);
               break;
@@ -953,6 +1095,7 @@ export function bakeRigs(files: SourceFiles): BakeResult {
           }
           out.set(`${name}/${action}/${dir}/${nn}.png`, encodePng(img));
         }
+      }
       if (errors.length > n0) break;
     }
     if (errors.length > n0 || license === undefined) continue;

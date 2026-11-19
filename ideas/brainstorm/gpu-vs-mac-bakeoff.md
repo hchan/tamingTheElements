@@ -71,3 +71,6 @@ Conclusion: the 8 GB card is one job at a time. Do not run two generation proces
 - Rule of thumb: many-step UNet work (SDXL base, sd-turbo 20 steps) -> PC; few-step SDXL-Turbo (4 steps) -> Mac, because the 8 GB card must offload or spill.
 - On the PC run one job at a time (measured: 2x turbo1 about 10x slower per image; sdxl + turbo1 offload thrash); queue instead.
 - Memory: Mac peaks 9.5 GB (turbo), 15.7 GB (turbo batch 4), 18.0 GB (SDXL base); fine with unified memory but it competes with agents/e2e, so avoid running those at once on the Mac.
+
+## Progress note 2026-11-19 (owner: "you decide", be autonomous)
+Mac official runs were already done 2026-11-18 (table above), so nothing is pending on the Mac half. Licence decision: SDXL-Turbo weights are used only for timing and internal exploration, never for shipped art (shipped art comes from SDXL base on the 4060). Routing rule above stands. Approval of art: the art-director agent verdict is the approval gate (owner, 2026-11-19).
