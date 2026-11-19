@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HUD_WIDTH, benchBar, mainBar, sideOffset } from './bars';
-import { BENCH_TOP, PORTRAIT, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, phoneFontPx, portraitMeterRowY, portraitX, regenAnchor } from './hud-math';
+import { BENCH_TOP, PORTRAIT, barGrain, benchPortraitRect, chipRowTop, comboKey, edgeGrainFlecks, hudOnPage, hudToDom, phoneFontPx, portraitMeterRowY, portraitX, regenAnchor } from './hud-math';
 
 describe('portraitX', () => {
   it('sits at the left for the player and the right for the enemy, inside the HUD', () => {
@@ -116,5 +116,29 @@ describe('phone text sizing (portrait)', () => {
   it('portraitMeterRowY puts the SUPER row under the names with the gap', () => {
     expect(portraitMeterRowY(90, 56)).toBe(120);
     expect(portraitMeterRowY(90.2, 56) - 28).toBeGreaterThanOrEqual(92);
+  });
+});
+
+describe('hudOnPage / hudToDom', () => {
+  // The formula pauseLeft used before it moved here.
+  const oldFormula = (c: { left: number; top: number; width: number; height: number }, core: number, viewH: number): { hudLeft: number; hudTop: number; k: number } => {
+    const k = core / 1280;
+    return { hudLeft: c.left + (c.width - 1280 * k) / 2, hudTop: viewH > 720 ? c.top : c.top + (c.height - 720 * k) / 2, k };
+  };
+  it('matches the pauseLeft maths on letterboxed, pillarboxed and tall views', () => {
+    const cases = [
+      { c: { left: 10, top: 20, width: 1280, height: 720 }, core: 1280, viewH: 720 },
+      { c: { left: 0, top: 50, width: 844, height: 500 }, core: 844, viewH: 720 },
+      { c: { left: 5, top: 0, width: 390, height: 800 }, core: 390, viewH: 1100 },
+    ];
+    for (const t of cases) expect(hudOnPage(t.c, t.core, t.viewH)).toEqual(oldFormula(t.c, t.core, t.viewH));
+  });
+  it('hudToDom maps a rect onto the page and round-trips', () => {
+    const page = hudOnPage({ left: 100, top: 40, width: 640, height: 360 }, 640, 720);
+    expect(page.k).toBe(0.5);
+    const r = hudToDom({ x: 200, y: 100, w: 80, h: 40 }, page);
+    expect(r).toEqual({ x: 200, y: 90, w: 40, h: 20 });
+    expect((r.x - page.hudLeft) / page.k).toBe(200);
+    expect((r.y - page.hudTop) / page.k).toBe(100);
   });
 });

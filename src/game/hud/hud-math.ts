@@ -96,3 +96,28 @@ export function comboRightX(hudWidth: number, margin: number, pauseLeft: number 
   const plain = hudWidth - margin;
   return pauseLeft === undefined ? plain : Math.min(plain, Math.floor(pauseLeft - 8));
 }
+
+/** Where the 1280-wide HUD frame sits on the page (CSS px): its left and top and the CSS px per logical px (`k`). */
+export interface HudOnPage {
+  readonly hudLeft: number;
+  readonly hudTop: number;
+  readonly k: number;
+}
+
+/**
+ * The HUD frame's place on the page from the canvas's client rect, the core display width (logical px of the 1280 box as drawn) and
+ * the view height. The HUD camera is top-anchored: on the tall view (portrait play) its top is the canvas top. Pure.
+ */
+export function hudOnPage(canvas: { left: number; top: number; width: number; height: number }, coreDisplayWidth: number, viewH: number): HudOnPage {
+  const k = coreDisplayWidth / 1280;
+  return {
+    hudLeft: canvas.left + (canvas.width - 1280 * k) / 2,
+    hudTop: viewH > 720 ? canvas.top : canvas.top + (canvas.height - 720 * k) / 2,
+    k,
+  };
+}
+
+/** A HUD-px rect as a page (CSS px) rect. */
+export function hudToDom(r: { x: number; y: number; w: number; h: number }, page: HudOnPage): { x: number; y: number; w: number; h: number } {
+  return { x: page.hudLeft + r.x * page.k, y: page.hudTop + r.y * page.k, w: r.w * page.k, h: r.h * page.k };
+}
