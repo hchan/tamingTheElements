@@ -10,7 +10,7 @@ and checks that each `pnpm` script and repo path they mention exists, so this se
 
 | Hook | Event | Behaviour |
 |---|---|---|
-| `.claude/hooks/pre-push-local-ci.sh` | `PreToolUse` on Bash | Before a `git push`, runs lint, typecheck, depcruise and test; a failure blocks the push. It fails open when pnpm is missing. Commits are never touched. |
+| `.claude/hooks/pre-push-local-ci.sh` | `PreToolUse` on Bash | Before a real `git push` (parsed by `push-match.mjs`: `git -C dir push`, `cd x && git push` and chains are seen, heredocs, grep and `stash push` are not), runs the tiered gate (`gate:commit --hook`, then `gate:push --verify`) under a time budget; a failure blocks the push. A push chained after a HEAD-moving command (merge, commit) is blocked: push in its own call. It fails open only when node or pnpm is missing. Commits are never touched. |
 | `.claude/hooks/session-start-handoff.sh` | `SessionStart` | Prints the newest `~/claudetmp/handoff/*.md` (a note I keep up to date by hand; the `/handoff` skill is gone). |
 
 Commits and pushes still happen only when the user asks (see `CLAUDE.md`).

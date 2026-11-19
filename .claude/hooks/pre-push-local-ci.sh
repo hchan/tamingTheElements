@@ -1,50 +1,124 @@
 #!/bin/bash
-# PreToolUse hook on Bash: before a `git push`, run lint, typecheck, depcruise and test; exit 2 blocks the push on failure.
-# Fails open (exit 0 with a message) when the command is not a push, pnpm is missing, or a script is absent or still
-# a "not yet" placeholder. Stdin is the hook JSON payload.
+# PreToolUse hook on Bash: before a real `git push`, run the tiered gate (gate:commit --hook, then gate:push --verify).
+# push-match.mjs decides whether the command really pushes and in which checkout. Exit 2 blocks. Stdout stays empty.
+# Fails open only when node or pnpm is missing. bash 3.2 compatible. Budget: TTE_PUSH_HOOK_BUDGET_SEC (default 840).
 input=$(cat)
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || cmd=""
-if [ -z "$cmd" ]; then
-  cmd=$input
-fi
-case "$cmd" in
-  *"git push"*) ;;
+case "$input" in
+  *push*) ;;
   *) exit 0 ;;
 esac
+exec 1>&2
 
 root="${CLAUDE_PROJECT_DIR:-$PWD}"
-cd "$root" || exit 0
-if command -v pnpm >/dev/null 2>&1; then
-  pn() { pnpm "$@"; }
-elif command -v corepack >/dev/null 2>&1; then
-  pn() { corepack pnpm "$@"; }
-else
-  pn() { return 127; }
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-push-local-ci: node missing; push NOT checked (fail open)."
+  exit 0
 fi
-if [ ! -f package.json ] || ! pn --version >/dev/null 2>&1; then
-  echo "pre-push-local-ci: pnpm or package.json missing; skipping local CI (fail open)." >&2
+hookdir=$(cd "$(dirname "$0")" && pwd)
+matcher="$root/.claude/hooks/push-match.mjs"
+[ -f "$matcher" ] || matcher="$hookdir/push-match.mjs"
+if ! found=$(printf '%s' "$input" | node "$matcher" --cli); then
+  echo "pre-push-local-ci: could not parse this command; push in a plain call: git -C <abs checkout> push ..."
+  exit 2
+fi
+[ -n "$found" ] || exit 0
+
+tab=$(printf '\t')
+tops=""
+while IFS="$tab" read -r kind val; do
+  [ -n "$kind" ] || continue
+  case "$kind" in
+    moved)
+      echo "pre-push-local-ci: this call runs git $val before the push, so HEAD is not final; push in its own Bash call after the $val."
+      exit 2 ;;
+    unknown)
+      echo "pre-push-local-ci: cannot tell which checkout this push runs in ($val); use git -C <absolute checkout path> push ..."
+      exit 2 ;;
+  esac
+  if [ ! -d "$val" ]; then
+    echo "pre-push-local-ci: cannot tell which checkout this push runs in ($val does not exist); use git -C <absolute checkout path> push ..."
+    exit 2
+  fi
+  top=$(git -C "$val" rev-parse --show-toplevel 2>/dev/null) || continue
+  mine=$(cd "$root" && cd "$(git rev-parse --git-common-dir 2>/dev/null)" && pwd -P)
+  theirs=$(cd "$top" && cd "$(git rev-parse --git-common-dir 2>/dev/null)" && pwd -P)
+  [ "$mine" = "$theirs" ] || continue
+  case "
+$tops
+" in
+    *"
+$top
+"*) ;;
+    *) tops="$tops
+$top" ;;
+  esac
+done <<EOF2
+$found
+EOF2
+[ -n "$tops" ] || exit 0
+
+if command -v pnpm >/dev/null 2>&1; then
+  PN=(pnpm)
+elif command -v corepack >/dev/null 2>&1; then
+  PN=(corepack pnpm)
+else
+  echo "pre-push-local-ci: pnpm missing; push NOT checked (fail open)."
   exit 0
 fi
 
-failed=0
-for s in lint typecheck depcruise test; do
-  body=$(pn pkg get "scripts.$s" 2>/dev/null | tr -d '"')
-  if [ -z "$body" ] || [ "$body" = "{}" ] || [ "$body" = "null" ]; then
-    echo "pre-push-local-ci: no '$s' script; skipping it (fail open)." >&2
-    continue
+BUDGET="${TTE_PUSH_HOOK_BUDGET_SEC:-840}"
+gpid=""
+wpid=""
+cleanup() {
+  [ -n "$wpid" ] && kill -TERM -- "-$wpid" 2>/dev/null
+  [ -n "$gpid" ] && kill -TERM -- "-$gpid" 2>/dev/null
+  return 0
+}
+trap cleanup EXIT
+trap 'exit 143' TERM INT HUP
+set -m
+
+# run_step <top> <log> <gate script args...>; returns the step's exit code
+run_step() {
+  local top="$1" log="$2" left
+  shift 2
+  left=$((BUDGET - SECONDS))
+  [ "$left" -ge 5 ] || left=5
+  ( cd "$top" && exec "${PN[@]}" run --silent "$@" ) </dev/null >>"$log" 2>&1 &
+  gpid=$!
+  ( sleep "$left"; kill -TERM -- "-$gpid" 2>/dev/null; sleep 5; kill -KILL -- "-$gpid" 2>/dev/null ) >/dev/null 2>&1 &
+  wpid=$!
+  wait "$gpid"
+  local rc=$?
+  kill -TERM -- "-$wpid" 2>/dev/null
+  wait "$wpid" 2>/dev/null
+  gpid=""
+  wpid=""
+  return $rc
+}
+
+for top in $tops; do
+  if [ ! -f "$top/tools/ci/gate.ts" ]; then
+    echo "pre-push-local-ci: $top predates the tiered gate (no tools/ci/gate.ts); push from the main checkout."
+    exit 2
   fi
-  case "$body" in
-    *"not yet"*)
-      echo "pre-push-local-ci: '$s' is a placeholder; skipping it (fail open)." >&2
-      continue ;;
-  esac
-  if ! out=$(pn run --silent "$s" 2>&1); then
-    echo "pre-push-local-ci: '$s' FAILED; push blocked." >&2
-    printf '%s\n' "$out" | tail -n 30 >&2
-    failed=1
-    break
-  fi
+  mkdir -p "$top/.scratch"
+  log="$top/.scratch/push-hook.log"
+  : > "$log"
+  for step in "gate:commit --hook" "gate:push --verify"; do
+    # shellcheck disable=SC2086
+    run_step "$top" "$log" $step
+    rc=$?
+    if [ "$rc" -eq 143 ] || [ "$rc" -eq 137 ]; then
+      echo "pre-push-local-ci: ${step%% *} passed the hook budget (${BUDGET}s): run corepack pnpm gate:commit (Bash run_in_background), then push again."
+      exit 2
+    fi
+    if [ "$rc" -ne 0 ]; then
+      echo "pre-push-local-ci: push blocked by ${step%% *} (rc $rc); last log lines ($log):"
+      tail -n 40 "$log"
+      exit 2
+    fi
+  done
+  echo "pre-push-local-ci: $top: gate:commit ok, gate:push --verify ok"
 done
-[ "$failed" -eq 0 ] || exit 2
-echo "pre-push-local-ci: local CI passed." >&2
 exit 0
