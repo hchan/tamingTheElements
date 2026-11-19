@@ -140,7 +140,9 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       }
       const floor = async (): Promise<Tall> => page.evaluate<Tall>(`window.__TTE__.arena.camera()`);
       const expectFramed = async (): Promise<void> => {
-        await expect.poll(async () => (await floor()).camZoom, { timeout: 5000 }).toBeGreaterThanOrEqual(1.05);
+        // Heroes are drawn 1.6x bigger on the tall view (72d8b3e6, portrait-framing), so their reach holds the pan zoom at its fit floor (camZoom 1/1.05 = 0.952)
+        // at the start pose; the old >= 1.05 floor predates that. The floor-on-bar check below still pins the framing.
+        await expect.poll(async () => (await floor()).camZoom, { timeout: 5000 }).toBeGreaterThanOrEqual(0.9);
         await expect.poll(async () => {
           const f = await floor();
           const c = await box(page, '#game canvas');
@@ -377,7 +379,12 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
         await page.evaluate(`window.__TTE__.arena.step(60)`);
         const texts = await page.evaluate<{ text: string; px: number }[]>(`window.__TTE__.arena.hudTextSizes()`);
         const label = texts.find((t) => t.text.startsWith(hero.toUpperCase().slice(0, 3)));
-        expect(label?.text, JSON.stringify(texts)).toContain(hero.toUpperCase());
+        // At 360 px the name may drop interior vowels (SINDARSA) before any letter is cut (de23cced, name-360): whole and readable, never an ellipsis.
+        const name = hero.toUpperCase();
+        const word = (label?.text ?? '').split(' ')[0] ?? '';
+        const vowelless = (t: string): string => t.replace(/(?!^)[AEIOU](?!$)/g, '');
+        expect(word.includes('\u2026'), JSON.stringify(texts)).toBe(false);
+        expect(vowelless(name).startsWith(vowelless(word)) && word.length >= 4 && word[0] === name[0], JSON.stringify(texts)).toBe(true);
         await shot(page, `${String(w)}-name-${hero}`);
       });
     }
