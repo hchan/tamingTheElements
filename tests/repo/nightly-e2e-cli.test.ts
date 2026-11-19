@@ -56,6 +56,11 @@ describe('nightly-e2e submit', () => {
     expect(router?.args.join(' ')).not.toMatch(/--local/);
     expect(readStatus(join(dir, 'gate'))).toMatchObject({ state: 'pending', sha: SHA, rawId: 'raw-9' });
   });
+  it('tests the tip of local main (unpushed commits included), not origin/main', () => {
+    submit(deps(submitRun()));
+    const revParse = calls.find((c) => c.cmd === 'git' && c.args[0] === 'rev-parse');
+    expect(revParse?.args).toEqual(['rev-parse', 'main']);
+  });
   it('records not-run (never pass) when the PC is unreachable', () => {
     expect(submit(deps(submitRun(94)))).toBe(0);
     expect(readStatus(join(dir, 'gate'))?.state).toBe('not-run');

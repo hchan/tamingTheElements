@@ -289,7 +289,7 @@ python3) and `tests/repo/gpu-jobs-cli.test.ts` (fake ssh in `tests/repo/fixtures
 ## Nightly full e2e (PC, launchd)
 
 `tools/ci/nightly-e2e.ts` runs the full e2e suite on the PC every night, in two phases so a sleeping Mac cannot lose a run.
-`pnpm nightly:submit` (23:00) fetches `origin/main`, checks it out in the detached worktree `.scratch/nightly-wt` and queues the full
+`pnpm nightly:submit` (23:00) fetches `origin`, checks out the tip of local `main` (pushed or not; the router bundles unpushed commits, so the safety net covers what is merged even while a push is gated) in the detached worktree `.scratch/nightly-wt` and queues the full
 suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full --pc-detach`), recording `pending` with the raw job id.
 `pnpm nightly:collect` (07:30) follows that job (`--pc-attach raw-<id>`), reads `results.json` and records `pass`, `red` or `not-run`.
 `pnpm nightly:status` prints the result. It refuses to run with `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` set and never falls back to the Mac.
