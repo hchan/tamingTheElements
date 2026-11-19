@@ -139,7 +139,7 @@ describe('firstRunHint', () => {
 
   it('has a one-line short form that keeps the key names and drops Snag or Tag when absent (QA r31)', () => {
     const line = firstRunShortLine(DEFAULT_BINDINGS);
-    expect(line).toMatch(/Strike 1.*Dash 7.*Guard 8.*Super 9.*Tag 3/);
+    expect(line).toMatch(/Attack 1.*Dash 7.*Guard 8.*Super 9.*Tag 3/);
     expect(line).toMatch(/Snag C/);
     expect(firstRunShortLine(DEFAULT_BINDINGS, false, false)).not.toMatch(/Snag|Tag/);
   });
@@ -150,8 +150,11 @@ describe('firstRunHint', () => {
 
   it('names every key exactly as the action bar labels it (Dash 7, Guard 8, Super 9, Tag 3, Cleanse =)', () => {
     const text = firstRunLines(DEFAULT_BINDINGS).join(' ');
-    expect(text).toContain('Strike with 1 or Space.');
-    expect(text).toContain('Special with 2 or Enter.');
+    expect(text).toContain('Attack with 1 or Space.');
+    expect(text).toContain('Second attack with 2 or Enter.');
+    const named = firstRunLines(DEFAULT_BINDINGS, false, true, undefined, true, ['Blast', 'Flame']).join(' ');
+    expect(named).toContain('Blast with 1 or Space. Flame with 2 or Enter.');
+    expect(named).not.toMatch(/Strike|Special/);
     expect(text).toContain('Snag with C');
     expect(text).toContain('Dash with 7;');
     expect(text).toContain('hold 8 to Guard');
@@ -189,11 +192,11 @@ describe('firstRunHint', () => {
   it('names the key of the own Snag box as Snag, so the card and the bar agree (Echo: 1 is Snag)', () => {
     const echo = firstRunLines(DEFAULT_BINDINGS, false, true, 0).join(' ');
     expect(echo).toContain('Snag with C or 1');
-    expect(echo).not.toContain('Strike with 1');
-    expect(echo).toContain('Strike with 2 or Enter');
+    expect(echo).not.toContain('Attack with 1');
+    expect(echo).toContain('Attack with 2 or Enter');
     const curomo = firstRunLines(DEFAULT_BINDINGS, false, true, 1).join(' ');
     expect(curomo).toContain('Snag with C or 2');
-    expect(curomo).toContain('Strike with 1 or Space');
+    expect(curomo).toContain('Attack with 1 or Space');
     expect(firstRunLines(DEFAULT_BINDINGS, true, true).join(' ')).toMatch(/Snag box/);
   });
 
