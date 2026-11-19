@@ -23,7 +23,7 @@ beforeEach(async () => {
   Object.defineProperty(navigator, 'getGamepads', {
     configurable: true,
     value: () => [
-      { buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: down.includes(i), value: 0 })) },
+      { buttons: Array.from({ length: 20 }, (_, i) => ({ pressed: down.includes(i), value: 0 })) },
     ],
   });
   root = document.createElement('div');
@@ -67,13 +67,13 @@ describe('gamepad bindings section', () => {
     btn('pad-primary').click();
     expect(btn('pad-primary').textContent).toBe('Press a button...');
     expect(status()).toContain('Press the new gamepad button for Primary Ability');
-    down = [16];
+    down = [18];
     tick();
-    expect(status()).toBe('Primary Ability is now Home.');
-    expect(btn('pad-primary').textContent).toBe('Home');
+    expect(status()).toBe('Primary Ability is now Button 18.');
+    expect(btn('pad-primary').textContent).toBe('Button 18');
     expect(document.activeElement?.id).toBe('pad-primary');
-    expect(getPadOverrides()).toEqual({ primary: 16 });
-    expect(JSON.parse(localStorage.getItem(PAD_BINDINGS_KEY) ?? '{}')).toEqual({ primary: 16 });
+    expect(getPadOverrides()).toEqual({ primary: 18 });
+    expect(JSON.parse(localStorage.getItem(PAD_BINDINGS_KEY) ?? '{}')).toEqual({ primary: 18 });
   });
 
   it('ignores a button already held when capture starts until it is released', () => {
@@ -100,13 +100,13 @@ describe('gamepad bindings section', () => {
     expect(press('Escape').defaultPrevented).toBe(true);
     expect(status()).toBe('Cancelled.');
     expect(getPadOverrides()).toEqual({});
-    down = [16];
+    down = [18];
     tick();
     expect(getPadOverrides()).toEqual({});
     down = [];
     btn('pad-primary').click();
     expect(press('Tab').defaultPrevented).toBe(false);
-    down = [16];
+    down = [18];
     tick();
     expect(getPadOverrides()).toEqual({});
     expect(btn('pad-primary').textContent).toBe('A');
@@ -114,7 +114,7 @@ describe('gamepad bindings section', () => {
 
   it('resets to the defaults', () => {
     btn('pad-primary').click();
-    down = [16];
+    down = [18];
     tick();
     btn('resetPadBindings').click();
     expect(status()).toBe('Gamepad buttons reset to defaults.');
@@ -140,7 +140,7 @@ describe('gamepad bindings section', () => {
     btn('pad-primary').click();
     screen?.unmount();
     screen = undefined;
-    down = [16];
+    down = [18];
     tick();
     expect(getPadOverrides()).toEqual({});
   });

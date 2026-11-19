@@ -17,9 +17,20 @@ afterEach(() => {
   setPadOverrides({});
 });
 
+describe('pad Run (gamepad-run idea)', () => {
+  it('Home sends Cmd.run in the partner game only, and a run row moves it', () => {
+    const held = { axes: [0, 0], buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === 16 })) };
+    expect(commandFromPad(held, true, ARCADE_PAD) & Cmd.run).toBe(Cmd.run);
+    expect(commandFromPad(held, true, DEFAULT_PAD) & Cmd.run).toBe(0);
+    const o = padBind({}, 'run', 17).overrides;
+    expect(padButtonsFor(o, true)[17]).toBe(Cmd.run);
+    expect(padButtonsFor(o, true)[16]).toBeUndefined();
+  });
+});
+
 const pad = (down: number[]): PadSnapshot => ({
   axes: [0, 0],
-  buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: down.includes(i) })),
+  buttons: Array.from({ length: 20 }, (_, i) => ({ pressed: down.includes(i) })),
 });
 
 describe('pad rows', () => {
@@ -42,8 +53,8 @@ describe('pad rows', () => {
 
 describe('padBind', () => {
   it('moves an action to a free button and drops the entry when it returns to the default', () => {
-    const r = padBind({}, 'primary', 16);
-    expect(r.overrides).toEqual({ primary: 16 });
+    const r = padBind({}, 'primary', 18);
+    expect(r.overrides).toEqual({ primary: 18 });
     expect(r.swappedWith).toBeUndefined();
     expect(padBind(r.overrides, 'primary', 0).overrides).toEqual({});
   });
@@ -56,7 +67,7 @@ describe('padBind', () => {
   });
 
   it('binding to the current button changes nothing', () => {
-    expect(padBind({ primary: 16 }, 'primary', 16).overrides).toEqual({ primary: 16 });
+    expect(padBind({ primary: 18 }, 'primary', 18).overrides).toEqual({ primary: 18 });
   });
 });
 
@@ -73,7 +84,7 @@ describe('parsePadOverrides', () => {
   });
 
   it('discards a map that puts two actions on one button', () => {
-    expect(parsePadOverrides({ primary: 16, secondary: 16 })).toEqual({});
+    expect(parsePadOverrides({ primary: 18, secondary: 18 })).toEqual({});
   });
 });
 
@@ -81,9 +92,9 @@ describe('storage', () => {
   it('round-trips through a store and tolerates a broken one', () => {
     const mem = new Map<string, string>();
     const store = { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v) };
-    writePadOverrides({ primary: 16 }, store);
+    writePadOverrides({ primary: 18 }, store);
     expect(mem.has(PAD_BINDINGS_KEY)).toBe(true);
-    expect(readPadOverrides(store)).toEqual({ primary: 16 });
+    expect(readPadOverrides(store)).toEqual({ primary: 18 });
     mem.set(PAD_BINDINGS_KEY, '{not json');
     expect(readPadOverrides(store)).toEqual({});
     expect(readPadOverrides(undefined)).toEqual({});
@@ -97,17 +108,17 @@ describe('padConfigFor', () => {
   });
 
   it('makes the rebound button send the command, in both game kinds, and keeps Trap ungated', () => {
-    setPadOverrides(padBind({}, 'primary', 16).overrides);
-    expect(commandFromPad(pad([16]), true, padConfigFor(false))).toBe(Cmd.primary);
+    setPadOverrides(padBind({}, 'primary', 18).overrides);
+    expect(commandFromPad(pad([18]), true, padConfigFor(false))).toBe(Cmd.primary);
     expect(commandFromPad(pad([0]), true, padConfigFor(false))).toBe(0);
-    expect(commandFromPad(pad([16]), true, padConfigFor(true))).toBe(Cmd.primary);
+    expect(commandFromPad(pad([18]), true, padConfigFor(true))).toBe(Cmd.primary);
     expect(commandFromPad(pad([3]), false, padConfigFor(true))).toBe(Cmd.trap);
     expect(commandFromPad(pad([3]), false, padConfigFor(false))).toBe(0);
   });
 
   it('moves the pause button', () => {
-    setPadOverrides(padBind({}, 'pause', 16).overrides);
-    expect(pauseEdge(false, pad([16]), padConfigFor(false)).pressed).toBe(true);
+    setPadOverrides(padBind({}, 'pause', 18).overrides);
+    expect(pauseEdge(false, pad([18]), padConfigFor(false)).pressed).toBe(true);
     expect(pauseEdge(false, pad([9]), padConfigFor(false)).pressed).toBe(false);
   });
 });
