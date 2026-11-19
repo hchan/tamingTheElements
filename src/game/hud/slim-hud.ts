@@ -124,7 +124,24 @@ export function portraitLifeCandidates(name: string, c: Pick<HudCharacter, 'hp' 
   const noWord = (t: string): string => (word === 'OK' ? t : t.slice(0, t.length - word.length - 1));
   const bare = noWord(whole);
   const out = [...new Set([whole, whole.replace(mark, ''), bare, bare.replace(mark, '')])];
+  // qa-r113 P3: before any letter is cut ("SINDA…"), drop interior vowels from the right ("SINDRSA", "SNDRSA"): still a whole, readable name.
+  for (const n of devowelled(name)) {
+    const t = noWord(compactLabel(n, c, false, 'bare'));
+    out.push(t, t.replace(mark, ''));
+  }
   for (let max = name.length - 1; max >= 3; max--) out.push(noWord(compactLabel(shortName(name, max), c, false, 'bare')));
+  return [...new Set(out)];
+}
+
+/** `name` with interior vowels removed one at a time from the right (first and last letter stay); each step is one candidate, longest first. */
+export function devowelled(name: string): string[] {
+  const out: string[] = [];
+  let cur = name;
+  for (let i = cur.length - 2; i > 0; i--) {
+    if (!/[aeiouAEIOU]/.test(cur.charAt(i))) continue;
+    cur = cur.slice(0, i) + cur.slice(i + 1);
+    if (cur.length >= 4) out.push(cur);
+  }
   return out;
 }
 
