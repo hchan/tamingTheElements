@@ -14,6 +14,7 @@ import { chromium, type Page } from '@playwright/test';
 import { e2ePort } from '../ci/e2e-port';
 
 const SUPER = 1 << 13;
+const PRIMARY = 16; // Cmd.primary
 const INTRO = 91; // round 1 intro ticks (nobody acts before it)
 const KO_TO_ROUND_END = 30 + 120 + 60;
 const SIZES = [{ width: 1280, height: 720 }]; // desktop only (owner dropped phone and portrait work, 2026-11-18)
@@ -35,14 +36,14 @@ async function waitUrl(url: string, server: ChildProcess | undefined): Promise<v
   throw new Error(`no server at ${url}`);
 }
 
-async function openFight(page: Page, size: Size, base: string, team: 1 | 2): Promise<void> {
+async function openFight(page: Page, size: Size, base: string, team: 1 | 2, race = 'sindarosa'): Promise<void> {
   await page.setViewportSize(size);
   await page.goto(`${base}/?manual=1&seed=7&ff=arcade#arcade`);
   if (team === 2) {
     await page.getByLabel('Team').selectOption('2');
     await page.getByLabel('Your partner (2v2)').selectOption('pax');
   }
-  await page.getByLabel('Your race').selectOption('sindarosa');
+  await page.getByLabel('Your race').selectOption(race);
   await page.getByLabel('AI race').selectOption('fiara');
   await page.getByRole('button', { name: 'Fight!' }).click();
   await page.waitForFunction(ARENA_READY);
@@ -99,6 +100,14 @@ async function run(page: Page, base: string): Promise<string[]> {
     const tag = await page.evaluate<{ call: string } | undefined>(`window.__TTE__.arena.tag()`);
     if (tag?.call !== 'TAG!') throw new Error(`tag swap not reached at ${String(size.width)}x${String(size.height)}: ${JSON.stringify(tag)}`);
     await shot('tag-swap', size);
+    // 3) The Tag slot after a melee swing: the hero is frozen in cast recovery, and the slot must stay enabled (no STUN word).
+    await openFight(page, size, base, 2, 'curomo');
+    const [mine] = await chars(page, 0);
+    const [foe] = await chars(page, 1);
+    if (!mine || !foe) throw new Error('both fighters must be in the arena');
+    await page.evaluate(`(() => { const a = window.__TTE__.arena; a.place(${String(mine.id)}, 300, 360, 0); a.place(${String(foe.id)}, 900, 360, 4); a.step(1, [${String(PRIMARY)}, 0]); a.step(1); })()`);
+    await frames(page);
+    await shot('tag-slot-recovery', size);
   }
   return shots;
 }

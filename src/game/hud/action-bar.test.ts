@@ -242,6 +242,10 @@ describe('Arcade boxes (one consistent bar)', () => {
     expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5, swapBlock: 'STUN' });
     expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.wait | SwapBlock.noActive } as never, 1, false).swapBlock).toBe('WAIT');
     expect(arcadeBarOf(ar as never, 1, false).swapBlock).toBeUndefined();
+    // A melee cast's recovery (frozen) and busy show no word; stun wins when both are set.
+    for (const bits of [SwapBlock.frozen, SwapBlock.busy]) expect(arcadeBarOf({ ...ar, swapBlock: () => bits } as never, 0, false).swapBlock).toBeUndefined();
+    expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.frozen | SwapBlock.stun } as never, 0, false).swapBlock).toBe('STUN');
+    expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.wait | SwapBlock.stun } as never, 0, false).swapBlock).toBe('WAIT');
     expect(arcadeBarOf(ar as never, 1, true)).toMatchObject({ meter: 20, guarding: false, dashIn: 0, chargeIn: -1, keepCharge: true });
   });
 });
