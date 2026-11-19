@@ -6,7 +6,7 @@
     { "job": "e2e:full", "placement": "pc", "note": "PC only" },
     { "job": "e2e:flake", "placement": "pc", "note": "PC only" },
     { "job": "gate:long", "placement": "pc", "note": "PC only" },
-    { "job": "sdxl-base-1024", "placement": "pc", "note": "gpu-queue.py; one GPU job; start below 80 C, abort above 83 C; RAM over 4 GB; bulk 23:00-07:00" },
+    { "job": "sdxl-base-1024", "placement": "pc", "note": "gpu-queue.py, submitted via pnpm gpu:submit (gpu lane, see .claude/rules/gpu-pc.md); one GPU job; start below 80 C, abort above 83 C; RAM over 4 GB; bulk 23:00-07:00" },
     { "job": "sd-turbo-20step", "placement": "pc", "note": "gpu-queue.py; same guards as sdxl-base-1024" },
     { "job": "sdxl-turbo-4step-512", "placement": "mac", "note": "MPS, one at a time, load below 10" },
     { "job": "img2img-512", "placement": "mac", "note": "MPS, one at a time, load below 10" },

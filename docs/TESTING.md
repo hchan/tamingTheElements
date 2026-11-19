@@ -270,3 +270,10 @@ force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a rem
 - **PC first, Mac fallback:** a cached probe (`pnpm pc:probe`, 60 s TTL) and a pure decision function choose run, wait or fall back. Only short runs (<= 150 tests; run, smoke, pages, itch; not `--pc`, `--pc-detach`, `--full`) may fall back to the Mac, in a browser slot with a load guard (`TTE_MAC_LOAD_MAX`, default 14), and never after a PC exit 0 or 1. Policy: `--pc-fallback <mac|wait|fail>` or `TTE_E2E_FALLBACK`. Exit 89 means no runner (PC unavailable and the Mac too loaded), 97 PC needs setup. The last stderr line is `e2e ran on: PC (...)` or `e2e ran on: Mac (fallback: <reason>)`.
 - **Where heavy jobs run:** `tools/ci/offload-routes.json` (validated by `tests/repo/offload-routes.test.ts`).
 - **Agents:** run only `@smoke` plus the specs you touched (`pnpm e2e:smoke`), never the full suite; never force a Mac run or rerun a red result on the other machine; copy the `e2e ran on:` line into the report and report exits 89/94/95/96.
+
+### GPU job server (`tools/gpu-queue/`)
+
+`pnpm gpu:submit|status|list|cancel|log|fetch|wait|setup|admin` queue GPU model jobs and CPU worker tasks on the PC through pueue
+(`ctl.py` on the PC is the only pueue client; per-session ownership, thermal/RAM watchdog, 14-day retention). Its tests run with fakes
+and need no PC: `python3 -m unittest discover -s tools/gpu-queue` (also run by `tests/repo/gpu-ctl-py.test.ts`, skipped without
+python3) and `tests/repo/gpu-jobs-cli.test.ts` (fake ssh in `tests/repo/fixtures/fake-ssh.sh`). e2e is not routed through it yet.
