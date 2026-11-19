@@ -14,7 +14,7 @@ export default defineConfig({
   // TTE_E2E_RETRIES overrides it (the router sets 1 for the PC short lane); a flaky pass is still listed as flaky.
   retries: Number(process.env['TTE_E2E_RETRIES'] ?? (process.env.CI ? 1 : 0)),
   expect: { timeout: 10_000 }, // default 5 s is tight for SwiftShader first paint; assertions poll, so passes stay fast
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [['list'], ['html', { open: 'never' }], ['./tools/ci/e2e-reporter.ts']], // the last one writes results.jsonl and report.md (docs/TESTING.md)
   use: {
     baseURL: `http://localhost:${PORT}`,
     actionTimeout: 30_000, // also bounds waitForFunction: a cold Phaser chunk load on a loaded machine can pass 15 s; still fails with a clear message before the 60 s test timeout

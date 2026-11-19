@@ -77,11 +77,13 @@ describe('renderJob', () => {
   it('adds trace, reporter, output and workers only for a direct playwright run', () => {
     const direct = renderJob(base({ direct: true, workers: 2, command: ['corepack', 'pnpm', 'exec', 'playwright', 'test', 'tests/e2e/x.spec.ts'] })).jobSh;
     expect(direct).toContain("'--trace=retain-on-failure'");
-    expect(direct).toContain("'--reporter=list,json,html'");
+    expect(direct).toContain('"--reporter=$R"');
+    expect(direct).toContain('R=list,json,html; [ -f tools/ci/e2e-reporter.ts ] && R="$R,./tools/ci/e2e-reporter.ts"');
+    expect(direct).toContain("export TTE_JOB_ID='20261118-120000-short-abc123' TTE_LANE='short'");
     expect(direct).toContain('"--output=$OUT/test-results"');
     expect(direct).toContain("'--workers=2'");
     expect(renderJob(base()).jobSh).not.toContain('--trace=retain-on-failure');
-    expect(renderJob(base({ lane: 'full', direct: true })).jobSh).toContain("'--reporter=list,json,html'");
+    expect(renderJob(base({ lane: 'full', direct: true })).jobSh).toContain('"--reporter=$R"');
   });
 
   it('waitSec caps the lock wait (default: the lane waitSec)', () => {

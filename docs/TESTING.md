@@ -292,6 +292,12 @@ Every e2e test has a tier: **P0** core flow (boot, menu, Play/Versus/Tour/online
 
 `tools/ci/test-tiers.ts` exports `tierOf(file, title, tags)` and `loadTiers()`. Resolution order: `@smoke` tag (P0), per-test `overrides` (file plus title substring, first match), `titleRules` ("reduced motion", "phone", "portrait", "touch" drop to P2 unless the file is P0), the per-file tier in `files`, then `defaultTier` (P1). A new spec must get a `files` entry; `tests/repo/test-tiers.test.ts` fails otherwise.
 
+### E2E report (`report.md`)
+
+Every Playwright run through the router also writes, next to the usual reports, `results.jsonl` (one JSON line per test attempt, appended live so a lost job still leaves a partial file) and `report.md` (written at the end). On the PC they land in the job's out dir and are fetched to `.scratch/remote-e2e/<id>/`; on the Mac they go to `.scratch/e2e-report/latest/` (override with `TTE_REPORT_DIR`). After a PC run the router prints the `VERDICT:` line and the report path. Code: `tools/ci/e2e-report.ts` (pure logic) and `tools/ci/e2e-reporter.ts` (the reporter; every hook catches its own errors, so a reporter bug never fails a run). The PC job adds the reporter only when the checked-out sha has the file.
+
+Line 1 is the verdict: **BLOCKED** (a new repeating red in a P0 or P1 test: failed on every attempt, needs retries, so the short lane), **HOLD** (a new P0/P1 red that failed once with no retry, as in the full lane: re-run it alone first), **PUSH OK** (everything else; flaky, known and P2 reds are listed but never block), **NO VERDICT** (the run was interrupted, timed out or ran no tests). Then run details (commit, lane, job, duration, workers, retries), a count table per tier, and for each red: tier, file, title, last step, first error line, trace path, console or page errors when attached, flaky/known/new, a stress command (`pnpm e2e:flake --repeat 20 --grep ...`) and a "what this means" sentence. "Known" means a match in `tools/ci/known-red.json` (same spec file, title contains the entry's text) or a non-done `ideas/` file that names the spec file and the title (or its first 40 characters); anything else is "new". The trace may be missing when the PC fetch size cap dropped it.
+
 ### GPU job server (`tools/gpu-queue/`)
 
 `pnpm gpu:submit|status|list|cancel|log|fetch|wait|setup|admin` queue GPU model jobs and CPU worker tasks on the PC through pueue
