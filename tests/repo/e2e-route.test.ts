@@ -576,6 +576,63 @@ describe('runPc against the fake ssh', () => {
         expect((await run(['run', '--full'], fakeQueue({ fetchFails: true, rc: 1 }))).code).toBe(1);
       });
 
+      it('abort cancels the raw job once and returns 130', async () => {
+        const q = fakeQueue();
+        q.waitRaw = () => new Promise<number>(() => undefined);
+        const ctl = new AbortController();
+        const err = sink();
+        const pr = runRouted(P('run', '--full'), ENV, root, { ...deps(okBody, sink(), err), queue: q }, fakeIo([UP]), ctl.signal);
+        await new Promise((r) => setTimeout(r, 200));
+        ctl.abort();
+        expect(await pr).toBe(130);
+        expect(q.cancels).toEqual([expect.stringMatching(/^raw-\d{8}-\d{6}-full-/)]);
+      });
+
+      it('abort with a failing cancel prints the --pc-cancel hint and still gives 130', async () => {
+        const q = fakeQueue();
+        q.waitRaw = () => new Promise<number>(() => undefined);
+        q.cancelRaw = () => Promise.reject(new CtlError('nope', 77));
+        const ctl = new AbortController();
+        const err = sink();
+        const pr = runRouted(P('run', '--full'), ENV, root, { ...deps(okBody, sink(), err), queue: q }, fakeIo([UP]), ctl.signal);
+        await new Promise((r) => setTimeout(r, 200));
+        ctl.abort();
+        expect(await pr).toBe(130);
+        expect(err.text()).toMatch(/--pc-cancel raw-\d{8}-\d{6}-full-/);
+      });
+
+      it('--pc-detach prints the hint and returns 0 without waiting', async () => {
+        const q = fakeQueue();
+        let waited = false;
+        q.waitRaw = () => {
+          waited = true;
+          return Promise.resolve(0);
+        };
+        const { code, out } = await run(['run', '--full', '--pc-detach'], q);
+        expect(code).toBe(0);
+        expect(waited).toBe(false);
+        expect(q.submits).toHaveLength(1);
+        expect(out.text()).toMatch(/detached: .*--pc-attach raw-\d{8}-\d{6}-full-[0-9a-f]{6} \| --pc-cancel raw-/);
+      });
+
+      it('--pc-attach raw-<id> waits for and fetches that id; --pc-cancel raw-<id> cancels it', async () => {
+        const q = fakeQueue({ rc: 1 });
+        const fetched: string[] = [];
+        const f = q.fetchRaw.bind(q);
+        q.fetchRaw = (id, dest) => {
+          fetched.push(id);
+          return f(id, dest);
+        };
+        const out = sink();
+        const err = sink();
+        const d = { ...deps(okBody, out, err), queue: q };
+        expect(await runPc(P('run', '--pc-attach', 'raw-20261119-101010-full-abc123'), ENV, root, d)).toBe(1);
+        expect(fetched).toEqual(['raw-20261119-101010-full-abc123']);
+        expect(await runPc(P('run', '--pc-cancel', 'raw-20261119-101010-full-abc123'), ENV, root, d)).toBe(0);
+        expect(q.cancels).toEqual(['raw-20261119-101010-full-abc123']);
+        expect(`${out.text()}${err.text()}`).not.toContain('tok-secret');
+      });
+
       it('--headed with the flag is a usage error before any queue call', async () => {
         const q = fakeQueue();
         const { code } = await run(['run', '--full', '--', '--headed'], q);
