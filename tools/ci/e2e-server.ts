@@ -14,6 +14,7 @@ import { appendFileSync, fstatSync, mkdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { isatty } from 'node:tty';
+import { e2eBuildDir } from './e2e-port';
 import { logPathFor, parseServerArgs, timingFrom } from './e2e-server-policy';
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -34,7 +35,7 @@ const noop = (): void => undefined;
 export async function main(argv: readonly string[], env: Env = process.env): Promise<void> {
   const { port, mode, outDir: outArg, base } = parseServerArgs(argv, env);
   const timing = timingFrom(env);
-  const outDir = outArg ?? 'node_modules/.tte-e2e';
+  const outDir = outArg ?? e2eBuildDir(process.cwd());
   const logFile = logPathFor(env);
   const viteBin = viteBinPath(env);
   mkdirSync(dirname(logFile), { recursive: true });

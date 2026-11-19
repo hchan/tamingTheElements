@@ -21,6 +21,7 @@ describe('playwright configs take a browser slot', () => {
   it('the main config serves through the supervisor and shuts it down gracefully', () => {
     const s = readFileSync('playwright.config.ts', 'utf8');
     expect(s).toContain('tools/ci/e2e-server.ts');
+    expect(s).not.toContain('node_modules/.tte-e2e');
     expect(s).toMatch(/gracefulShutdown: \{ signal: 'SIGTERM'/);
   });
 
