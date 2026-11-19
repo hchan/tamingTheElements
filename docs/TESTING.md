@@ -286,6 +286,12 @@ force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a rem
 - `pnpm gate:push` (T2): T1 (reused through its stamp), then `@smoke` plus the specs `tools/ci/touched-specs.ts` selects, run through the e2e router (PC first, Mac fallback only for short runs). Flags: `--base <ref>`, `--budget <s>`, `--max-tests <n>`, `--dry-run` (selection and router argv, runs nothing), `--verify` (no browser: passes when no e2e-relevant file changed since `origin/main` or a passing push stamp exists). It refuses (exit 2) when `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` is set or no PC is configured; the router's own exit codes (89, 94, 95, 96) are passed through and never retried. Over about 8 min: Bash `run_in_background`.
 - Stamps are JSON files in `<git common dir>/tte-gate/` (shared by all worktrees), keyed by tree id (T1) or by a hash of the e2e-relevant blobs in HEAD (T2). `.claude/agent-memory`, `tools/ci/e2e-durations.json`, `tools/ci/long-gate-status.json` and `ideas/brainstorm/long-gate-*.md` do not change a T1 key. A stamp is convenience evidence, not proof; the newest 200 per kind are kept.
 
+### E2E test tiers (`tools/ci/test-tiers.json`)
+
+Every e2e test has a tier: **P0** core flow (boot, menu, Play/Versus/Tour/online to a result, pause, save integrity; every `@smoke` test), **P1** features (abilities, pickers, Help, Settings, a11y, replay, supers, stages), **P2** polish and edge (screenshots, cosmetic fx, layout at odd sizes, phone, portrait and touch, which is parked). Push rule: a new repeating red in a P0 or P1 test blocks the push; a P2 red is recorded (nightly known-red) and does not block.
+
+`tools/ci/test-tiers.ts` exports `tierOf(file, title, tags)` and `loadTiers()`. Resolution order: `@smoke` tag (P0), per-test `overrides` (file plus title substring, first match), `titleRules` ("reduced motion", "phone", "portrait", "touch" drop to P2 unless the file is P0), the per-file tier in `files`, then `defaultTier` (P1). A new spec must get a `files` entry; `tests/repo/test-tiers.test.ts` fails otherwise.
+
 ### GPU job server (`tools/gpu-queue/`)
 
 `pnpm gpu:submit|status|list|cancel|log|fetch|wait|setup|admin` queue GPU model jobs and CPU worker tasks on the PC through pueue
