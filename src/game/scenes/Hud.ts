@@ -35,11 +35,12 @@ import {
   type HudCharacter,
 } from '../hud/bars';
 import {
-  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, setPhoneHud, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, SCRIM_BOTTOM, LOW_FLASH_AT, TRAIL_COLOR, chipBar, isPhoneHud, tagPill, chipSize, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
+  CHIP_BOTTOM, CHIP_Y as BENCH_CHIP_Y, getChipDrop, setChipDrop, setPhoneHud, SLIM_BAR_Y, SLIM_LINE_MAX, SLIM_H, LOW_FLASH_AT, TRAIL_COLOR, chipBar, isPhoneHud, tagPill, chipSize, lifeFill, chipRect, compactLabel, portraitLifeCandidates, shortName, slimBar, slimPortrait, stepTrail, SLIM_ROW_B, type Trail,
 } from '../hud/slim-hud';
 import { gradedHeroTexture } from '../fx/hero-grade';
 import { styleCombatText } from '../hud/combat-text';
-import { hudOnPage, hudToDom, PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, phoneFontPx, portraitMeterRowY, comboRightX, edgeGrainFlecks, portraitX, regenAnchor } from '../hud/hud-math';
+import { HudChrome } from '../hud/hud-chrome';
+import { hudOnPage, hudToDom, PORTRAIT, PORTRAIT_Y, barGrain, benchPortraitRect, chipRowTop, comboKey, phoneFontPx, portraitMeterRowY, comboRightX, portraitX, regenAnchor } from '../hud/hud-math';
 import { isPortraitPlay } from '../boot/portrait-play';
 import { COMBO_GAP, COMBO_STUCK_ALPHA, NUMBER_H_MIN, comboMode, newPlaceOut, newPlaceState, numberLane, placeCombo, resetPlaceState, type NumberLane, type PlaceInput } from '../hud/combo-anchor';
 import type { PlaceOut, PlaceState } from '../hud/combo-anchor';
@@ -114,11 +115,10 @@ export class Hud extends Phaser.Scene {
   private gfx: Phaser.GameObjects.Graphics | undefined;
   private labels: Phaser.GameObjects.Text[] = [];
   private back: Phaser.GameObjects.Graphics | undefined;
-  private scrim: Phaser.GameObjects.Graphics | undefined;
   private portraits: Phaser.GameObjects.Image[] = [];
   /** Regen text per bench row, pooled: index team * 4 + row. */
   private regenTexts: (Phaser.GameObjects.Text | undefined)[] = [];
-  private grainGfx: Phaser.GameObjects.Graphics | undefined;
+  private readonly chrome = new HudChrome(this);
   private highContrast = false;
   private reduceMotion = false;
   private chipTrackers: StatusTracker<ChipLook>[] = [];
@@ -200,7 +200,7 @@ export class Hud extends Phaser.Scene {
   create(): void {
     fitScene(this, 'top');
     this.coarse = (window.matchMedia as typeof window.matchMedia | undefined)?.('(pointer: coarse)').matches ?? false;
-    if (this.arcade) this.drawScrim();
+    if (this.arcade) this.chrome.drawScrim();
     this.back = this.add.graphics().setDepth(98);
     this.gfx = this.add.graphics().setDepth(100);
     this.portraits = [...TEAMS, ...TEAMS.flatMap((t) => [t, t, t, t])].map(() => this.add.image(0, 0, '__DEFAULT').setOrigin(0, 0).setDepth(99).setVisible(false));
@@ -234,14 +234,11 @@ export class Hud extends Phaser.Scene {
       this.gfx = undefined;
       this.back?.destroy();
       this.back = undefined;
-      this.scrim?.destroy();
-      this.scrim = undefined;
       this.trails.clear();
       setChipDrop(0);
       setPhoneHud(false);
       this.lastActive = [];
-      this.grainGfx?.destroy();
-      this.grainGfx = undefined;
+      this.chrome.destroy();
       for (const im of this.portraits) im.destroy();
       this.portraits = [];
       for (const t of [...this.labels, ...this.regenTexts, ...this.numberTexts, ...this.comboTexts, ...this.meterTexts, ...this.chipTexts]) t?.destroy();
@@ -352,18 +349,6 @@ export class Hud extends Phaser.Scene {
     if (has(a.text) === has(b.text)) return;
     const l = has(a.text) ? a : b;
     l.setText(l.text.replace(/(\d+)\/\d+/, '$1'));
-  }
-
-  /** Arcade: a dark top band over the crowd (the terrain owns it), fading out down to the floor. */
-  private drawScrim(): void {
-    const g = this.add.graphics().setDepth(96);
-    g.fillStyle(0x14122a, 0.8).fillRect(0, 0, HUD_WIDTH, SLIM_H + 2);
-    // Dense over the crowd band (about y 115-180), a short fade into the floor at about y 182.
-    // Lighter and shorter than before: the crowd shows through under the HUD instead of a dead dark band.
-    g.fillStyle(0x14122a, 0.38).fillRect(0, SLIM_H + 2, HUD_WIDTH, SCRIM_BOTTOM - SLIM_H - 2);
-    for (let i = 0; i < 8; i++) g.fillStyle(0x14122a, 0.34 * (1 - i / 8)).fillRect(0, 100 + i * 8, HUD_WIDTH, 8);
-    g.fillStyle(0x0a0818, 0.7).fillRect(0, SLIM_H + 1, HUD_WIDTH, 1);
-    this.scrim = g;
   }
 
   /** The white chip-drain trail: the life just lost stays as a bright bar that holds, then drains to the current life. */
@@ -1173,21 +1158,9 @@ export class Hud extends Phaser.Scene {
     gfx.strokeRect(g.minX - 0.5, g.y - g.lineMax / 2 - 0.5, g.maxX - g.minX + 1, g.lineMax + 1);
   }
 
-  /**
-   * Low-life edge grain: still dark flecks (integer hash, nothing random or flickering) thickest at the screen edge, shown at an
-   * alpha that follows the vignette strength. Drawn once, on first need, below the HUD.
-   */
+  /** Low-life edge grain; the Arena calls this by name (duck-typed), so it stays on the scene and delegates. */
   edgeGrain(strength: number): void {
-    if (strength <= 0) {
-      this.grainGfx?.setVisible(false);
-      return;
-    }
-    if (!this.grainGfx) {
-      const g = this.add.graphics().setDepth(97);
-      for (const f of edgeGrainFlecks()) g.fillStyle(f.color, f.alpha).fillRect(f.x, f.y, 2, 2);
-      this.grainGfx = g;
-    }
-    this.grainGfx.setVisible(true).setAlpha(Math.min(1, strength / 0.45));
+    this.chrome.edgeGrain(strength);
   }
 
   /** Speckle over the fill: dark and ash flecks from an integer hash of the x position (a still pattern: nothing flickers, nothing is random). */
