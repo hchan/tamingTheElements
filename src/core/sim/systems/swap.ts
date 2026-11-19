@@ -17,7 +17,7 @@ import { inFight, isArcade, now } from '../clock';
 import { flagBit } from '../../flags';
 import { TAG_COOLDOWN_TICKS } from '../../data/arcade';
 import { startRestTimer } from './rest';
-import { isFree } from './arcade/stun';
+import { isFree, isStunned } from './arcade/stun';
 import { tagEntrance } from './arcade/tag';
 
 /** Legacy `Game.swapCooldown` 5000 ms at 50 Hz. */
@@ -114,6 +114,50 @@ function activeOf(world: SimWorld, team: number): number {
   return -1;
 }
 
+/**
+ * Why a swap is refused, as bits (0 = allowed): several can hold at once, so the HUD picks its word by its own priority
+ * while the sim only asks for non-zero. `swapAllowed` is the one place the rules live.
+ */
+export const SwapBlock = {
+  /** Outside the round's fight phase (Arcade; never in Classic). */
+  wait: 1,
+  /** The team's swap cooldown has not run out. */
+  cooldown: 2,
+  /** The team has no living active hero. */
+  noActive: 4,
+  /** The active hero is frozen (Classic status). */
+  frozen: 8,
+  /** The active hero is hit-stunned (Arcade). */
+  stun: 16,
+  /** The active hero is not free for another reason: block-stun, dash recovery, a charge, a Snag root, a super, weather recovery. */
+  busy: 32,
+  /** `slot` names no living partner (only checked when `slot` >= 0). */
+  noTarget: 64,
+} as const;
+
+/**
+ * The swap rules for `team` this tick as `SwapBlock` bits, 0 when a press of swap slot `slot` (0..3; -1 = any, skips the
+ * partner check) would tag. `swapSystem` applies exactly this, and the render view hands the same bits to the HUD.
+ * Pure read of the state; integer only.
+ */
+export function swapAllowed(world: SimWorld, team: number, slot = -1): number {
+  const s = world.state;
+  let bits = 0;
+  const fighting = inFight(s);
+  if (!fighting) bits |= SwapBlock.wait;
+  if (now(s) < (s.teams[team * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0)) bits |= SwapBlock.cooldown;
+  const cur = activeOf(world, team);
+  if (cur < 0) return bits | SwapBlock.noActive;
+  if (((s.flags[cur] ?? 0) & EntityFlag.frozen) !== 0) bits |= SwapBlock.frozen;
+  if (isStunned(s, cur)) bits |= SwapBlock.stun;
+  else if (fighting && !isFree(s, cur)) bits |= SwapBlock.busy;
+  if (slot >= 0) {
+    const target = isArcade(s) ? tagTargets(world, team, cur)[slot] : teamMembers(world, team).filter((m) => m !== cur)[slot];
+    if (target === undefined || !isLiving(world, target)) bits |= SwapBlock.noTarget;
+  }
+  return bits;
+}
+
 /** Manual swap: swapN picks the N-th teammate (roster order, excluding the active one; Arcade: `tagTargets`). */
 export function swapSystem(
   world: SimWorld,
@@ -121,22 +165,17 @@ export function swapSystem(
   sink: EventSink,
 ): void {
   const s = world.state;
-  const tick = now(s);
   for (let team = 0; team < TEAM_COUNT; team++) {
     // Arcade reads bit 10 (swap4) as the elemental ability (Cmd.elemental) and bit 9 (swap3) as Cleanse (Cmd.cleanse); a 3-hero team has no third or fourth swap there.
     const cmd = (cmds[team] ?? 0) & (isArcade(s) ? ~(Cmd.elemental | Cmd.cleanse) : ~0);
     const slot = SWAP_BITS.findIndex((bit) => hasCmd(cmd, bit));
     if (slot < 0) continue;
-    if (!inFight(s)) continue; // Arcade only: no swaps outside the round's fight phase (always true in Classic)
-    if (tick < (s.teams[team * TEAM_STRIDE + TeamField.swapCooldownUntil] ?? 0)) continue;
-    const cur = activeOf(world, team);
-    // Both sides need a living active character (a dead one is auto-swapped by the death system). A frozen one cannot
-    // swap: legacy PlayerCharacter KeyDown ignores every key while `isFrozen` (the AI never swaps by hand). Arcade also
-    // needs it free (`isFree`: not stunned, block-stunned, dashing, in a super or weather recovery; always true in Classic).
-    if (cur < 0 || ((s.flags[cur] ?? 0) & EntityFlag.frozen) !== 0 || !isFree(s, cur)) continue;
-    const from = cur;
+    // Refused: outside the fight phase, on cooldown, no living active hero, frozen (legacy PlayerCharacter ignores every key
+    // while `isFrozen`), not free (`isFree`), or no living partner in the slot. A dead target is a no-op (see `tagTargets`).
+    if (swapAllowed(world, team, slot) !== 0) continue;
+    const from = activeOf(world, team);
     const target = isArcade(s) ? tagTargets(world, team, from)[slot] : teamMembers(world, team).filter((m) => m !== from)[slot];
-    if (target === undefined || !isLiving(world, target)) continue;
+    if (target === undefined) continue;
     performSwap(world, sink, team, from, target);
   }
 }

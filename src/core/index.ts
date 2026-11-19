@@ -71,3 +71,4 @@ export { HAZARD_ACTIVE_TICKS, HAZARD_WARN_TICKS, HAZARD_EARTH_WARN_TICKS, hazard
 export { GUARD_BREAK_STUN_TICKS, PARRY_STUN_TICKS, RecoveredReason, SNAG_IMMUNE_TICKS, SNAG_ROOT_TICKS, TRAP_PUDDLE_LINGER_TICKS } from './data/arcade';
 export { CcBucket, CcEnd, CcKind, CcResist, DAZE_GRACE_TICKS, DAZE_MASH_TICKS, DAZE_MIN_TICKS, DAZE_TICKS, DOWN_TICKS, ICED_TICKS, SILENCE_TICKS } from './data/arcade';
 export { RANGED } from './sim/systems/arcade/meter';
+export { SwapBlock, swapAllowed } from './sim/systems/swap';
