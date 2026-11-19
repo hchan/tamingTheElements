@@ -52,6 +52,7 @@
     "soak:webrtc": "tsx tools/ci/browser-slot.ts -- tsx tools/ci/webrtc-soak.ts",
     "e2e:flake": "tsx tools/ci/e2e-route.ts flake",
     "ci:local": "tsx tools/ci/local-ci.ts",
+    "e2e:durations": "tsx tools/ci/e2e-durations.ts",
     "deploy:pages": "tsx tools/ci/deploy-pages.ts",
     "e2e:itch": "tsx tools/ci/e2e-route.ts itch",
     "docs:gen": "tsx tools/gen/gen-design-tables.ts",

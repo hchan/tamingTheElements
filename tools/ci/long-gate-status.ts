@@ -1,5 +1,5 @@
 // The nightly long gate's recorded result (tools/ci/long-gate-status.json) and the CI deploy verdict derived from it.
-// Pure functions only: no fs, no git, no clock (callers inject them). See ideas/brainstorm/short-and-long-gate.md.
+// Pure functions only: no fs, no git, no clock (callers inject them). See ideas/in-progress/short-and-long-gate.md.
 export const HISTORY_MAX = 14;
 export const FAILING_MAX = 50;
 export const SHA_RE = /^[0-9a-f]{40}$/;
