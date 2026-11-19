@@ -389,18 +389,154 @@ class Retention(Base):
         self.assertEqual(ctl.gc(), [])
 
 
-class RawAndSelftest(Base):
-    def test_submit_raw_cpu_lane(self):
-        off = os.path.join(self.tmp, "off", "jobs", "j1")
-        os.makedirs(off)
-        wr(os.path.join(off, "job.sh"), "true\n")
-        os.environ["TTE_OFFLOAD_HOME"] = os.path.join(self.tmp, "off")
-        self.addCleanup(os.environ.pop, "TTE_OFFLOAD_HOME", None)
-        rc, o, _ = self.call(["submit-raw", "--owner", "a", "--lane", "cpu-short", "j1"])
-        self.assertEqual(rc, 0)
-        self.assertEqual(self.pstate()["tasks"][str(o["tid"])]["group"], "cpu-short")
-        self.assertEqual(self.call(["submit-raw", "--owner", "a", "--lane", "gpu", "j1"])[0], 2)
+class RawJobs(Base):
+    def setUp(self):
+        super().setUp()
+        self.off = os.path.join(self.tmp, "off")
+        p = mock.patch.dict(os.environ, {"TTE_OFFLOAD_HOME": self.off, "TTE_JOBS_RAW_GRACE": "2"})
+        p.start()
+        self.addCleanup(p.stop)
 
+    def raw(self, jid="j1", script="exit 0\n", lane="cpu-full", extra=None, owner="a", tok=b"tok\n"):
+        files = {"./job.sh": script.encode(), **(extra or {})}
+        return self.call(["submit-raw", "--owner", owner, "--lane", lane, jid], tok + tar_bytes(files))
+
+    def meta(self, jid="j1"):
+        return ctl.read_meta("raw-" + jid)
+
+    def run_raw(self, jid="j1"):
+        return self.call(["run-raw", jid], b"")[0]
+
+    def test_submit_extracts_and_queues(self):
+        rc, o, _ = self.raw(extra={"./src.bundle": b"x"})
+        self.assertEqual(rc, 0)
+        self.assertEqual(o["id"], "raw-j1")
+        self.assertTrue(os.path.isfile(os.path.join(self.off, "jobs", "j1", "src.bundle")))
+        t = self.pstate()["tasks"][str(o["tid"])]
+        self.assertEqual(t["group"], "cpu-full")
+        self.assertIn("run-raw j1", json.dumps(t))
+        self.assertEqual(t.get("label"), "a")
+        self.assertNotIn("tok", json.dumps(t).replace("token", ""))
+        m = self.meta()
+        self.assertEqual((m["kind"], m["state"], m["job"]), ("raw", "queued", "j1"))
+        self.assertEqual(o["ahead"], 0)
+
+    def test_refusals(self):
+        self.assertEqual(self.raw(lane="gpu")[0], 2)
+        self.assertEqual(self.raw(jid="a/b")[0], 2)
+        self.assertEqual(self.raw(extra={"../evil": b"x"})[0], 2)
+        with mock.patch.object(ctl, "RAW_CAP", 10):
+            self.assertEqual(self.raw(jid="big", extra={"f": b"x" * 100})[0], 2)
+        self.assertFalse(os.path.exists(os.path.join(self.off, "jobs", "big")))
+        self.assertEqual(self.raw()[0], 0)
+        self.assertEqual(self.raw()[0], 2)  # exists
+        rc, _, _ = self.call(["submit-raw", "--owner", "a", "--lane", "cpu-full", "nj"], b"tok\n" + tar_bytes({"x": b"1"}))
+        self.assertEqual(rc, 2)
+        self.assertFalse(os.path.exists(os.path.join(self.off, "jobs", "nj")))
+        with mock.patch.dict(os.environ, {"TTE_JOBS_FAKE_FREE_GB": "5"}):
+            self.assertEqual(self.raw(jid="low")[0], 97)
+
+    def test_run_failed_rc_and_log(self):
+        self.raw(script="echo hi; exit 95\n")
+        self.assertEqual(self.run_raw(), 95)
+        m = self.meta()
+        self.assertEqual((m["state"], m["rc"]), ("failed", 95))
+        with open(os.path.join(self.off, "jobs", "j1", "out", "output.log")) as f:
+            self.assertIn("hi", f.read())
+
+    def test_run_done_and_log_verb(self):
+        self.raw(script="echo hello; exit 0\n")
+        self.assertEqual(self.run_raw(), 0)
+        self.assertEqual(self.meta()["state"], "done")
+        _, o, _ = self.call(["log", "raw-j1", "--offset", "2"])
+        self.assertEqual((o["text"], o["state"], o["rc"]), ("llo\n", "done", 0))
+        self.assertIn("wait_sec", o)
+
+    def test_cancelled_before_start(self):
+        self.raw()
+        m = self.meta()
+        m["state"] = "cancelling"
+        ctl.write_meta(m)
+        self.assertEqual(self.run_raw(), 143)
+        self.assertEqual(self.meta()["state"], "cancelled")
+
+    def test_cancelling_while_running_ends_cancelled(self):
+        self.raw(script='python3 - <<EOF\nimport json,os\np=os.path.join(os.environ["TTE_JOBS_HOME"],"jobs","raw-j1","meta.json")\nm=json.load(open(p));m["state"]="cancelling";json.dump(m,open(p,"w"))\nEOF\nexit 3\n')
+        self.run_raw()
+        self.assertEqual(self.meta()["state"], "cancelled")
+
+    def test_sigterm_kills_whole_session(self):
+        pidf = os.path.join(self.tmp, "gc.pid")
+        script = ("python3 -c 'import os,time; os.setpgid(0,0); open(os.environ[\"GCPID\"],\"w\").write(str(os.getpid())); time.sleep(60)' &\n"
+                  "wait\n")
+        self.raw(script=script)
+        env = dict(os.environ, GCPID=pidf)
+        p = __import__("subprocess").Popen([sys.executable, os.path.join(HERE, "ctl.py"), "run-raw", "j1"], env=env)
+        try:
+            for _ in range(100):
+                if os.path.exists(pidf) and open(pidf).read():
+                    break
+                time.sleep(0.1)
+            gpid = int(open(pidf).read())
+            p.terminate()
+            p.wait(timeout=10)
+            for _ in range(50):
+                try:
+                    os.kill(gpid, 0)
+                except OSError:
+                    break
+                time.sleep(0.1)
+            else:
+                os.kill(gpid, 9)
+                self.fail("grandchild survived SIGTERM to run-raw")
+        finally:
+            if p.poll() is None:
+                p.kill()
+
+    def test_fetch_tar(self):
+        self.raw(script="mkdir -p out; echo '{}' > out/results.json; echo '{}' > status.json\n")
+        self.run_raw()
+        out = io.BytesIO()
+        w = io.TextIOWrapper(out)
+        with mock.patch.object(sys, "stdout", w):
+            rc = ctl.main(["fetch", "raw-j1"], io.BytesIO(b"tok\n"))
+        w.flush()
+        w.detach()
+        self.assertEqual(rc, 0)
+        out.seek(0)
+        with tarfile.open(fileobj=out) as tf:
+            names = {os.path.normpath(n) for n in tf.getnames()}
+        self.assertTrue({"results.json", "status.json"} <= names, names)
+        self.assertIn("fetched", self.meta())
+
+    def test_version_caps(self):
+        _, o, _ = self.call(["version"], b"")
+        self.assertIn("raw-e2e", o["caps"])
+        self.assertGreater(o["raw_cap_mb"], 0)
+
+    def test_reconcile(self):
+        _, o, _ = self.raw()
+        _, o2, _ = self.raw("j2")
+        self.run_raw("j1")
+        self.set_status(o["tid"], {"Done": {"result": "Success"}})
+        self.set_status(o2["tid"], {"Done": {"result": "Success"}})
+        self.call(["status"])
+        self.assertEqual(self.meta("j1")["state"], "done")
+        self.assertEqual((self.meta("j2")["state"], self.meta("j2")["reason"]), ("failed", "task ended without a result"))
+
+    def test_gc_removes_offload_dir(self):
+        self.raw()
+        m = self.meta()
+        m.update(state="done", finished=time.time() - 30 * 86400)
+        ctl.write_meta(m)
+        self.assertIn("raw-j1", ctl.gc())
+        self.assertFalse(os.path.exists(os.path.join(self.off, "jobs", "j1")))
+
+    def test_router_id_fits(self):
+        self.assertTrue(ctl.ID_RE.match("raw-" + "a" * 28))
+
+
+class RawAndSelftest(Base):
     def test_selftest_ok(self):
         rc, o, _ = self.call(["selftest"])
         self.assertEqual((rc, o["ok"]), (0, True))

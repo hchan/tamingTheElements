@@ -15,6 +15,7 @@ Environment (all optional; tests set them):
   TTE_JOBS_NOW   ISO local time for the clock TTE_JOBS_NVSMI  nvidia-smi    TTE_JOBS_PROC  default /proc
   TTE_JOBS_PY    python for gpu-queue.py (default ~/tte-gpu/venv/bin/python)
   TTE_JOBS_FAKE_TEMP  override GPU temp      TTE_JOBS_FAKE_FREE_GB  override free disk
+  TTE_OFFLOAD_HOME  raw-job dir root (default ~/tte-offload; tests only)   TTE_JOBS_RAW_GRACE  TERM to KILL for raw jobs (default 20)
   TTE_JOBS_GRACE seconds between SIGTERM and kill on cancel (default 30)   TTE_JOBS_NO_WATCHDOG=1  do not auto-start it
 """
 import argparse, fcntl, hmac, json, os, re, secrets, shutil, signal, subprocess, sys, tarfile, time
@@ -30,6 +31,8 @@ RAM_LOW_KB, RAM_OK_KB, RAM_LOW_SECS = 4 * 1024 * 1024, 6 * 1024 * 1024, 30
 RETRY_SHORT_RC = (3, 4, 5, 7)
 MAX_RETRIES = 6
 UPLOAD_CAP = 200 * 1024 * 1024
+RAW_CAP = 1024 * 1024 * 1024
+FETCH_ZIP_DROP = 500 * 1024 * 1024
 FINAL = ("done", "failed", "cancelled", "lost")
 
 
@@ -407,7 +410,8 @@ def cmd_watchdog(args):
 
 
 # ---------- verbs ----------
-def safe_extract(fileobj, dest):
+def safe_extract(fileobj, dest, cap=None):
+    cap = UPLOAD_CAP if cap is None else cap
     total = 0
     with tarfile.open(fileobj=fileobj, mode="r|") as tf:
         for m in tf:
@@ -415,8 +419,8 @@ def safe_extract(fileobj, dest):
             if os.path.isabs(name) or name.startswith("..") or not (m.isfile() or m.isdir()):
                 raise Exit(2, f"refused archive member {m.name!r}")
             total += max(m.size, 0)
-            if total > UPLOAD_CAP:
-                raise Exit(2, "upload over the 200 MB cap")
+            if total > cap:
+                raise Exit(2, f"upload over the {cap // (1024 * 1024)} MB cap")
             tf.extract(m, dest, set_attrs=False)
 
 
@@ -478,23 +482,146 @@ def cmd_submit(args, stdin, is_admin):
     return 0
 
 
-def cmd_submit_raw(args):
-    """cpu lanes (built, not used by e2e yet): queue `bash ~/tte-offload/jobs/<id>/job.sh` in cpu-short or cpu-full."""
+def offload_dir(jid):
+    return os.path.join(os.environ.get("TTE_OFFLOAD_HOME") or os.path.expanduser("~/tte-offload"), "jobs", jid)
+
+
+def cmd_submit_raw(args, stdin):
+    """cpu lanes: the job dir arrives as a tar on stdin (after the token line), is extracted to <offload>/jobs/<id> and
+    queued as `ctl.py run-raw <id>` (pueue task) in cpu-short or cpu-full."""
     if args.lane not in ("cpu-short", "cpu-full"):
         raise Exit(2, "lane must be cpu-short or cpu-full")
     if not ID_RE.match(args.owner or "") or not ID_RE.match(args.id or ""):
         raise Exit(2, "bad owner or id")
-    script = os.path.join(os.environ.get("TTE_OFFLOAD_HOME") or os.path.expanduser("~/tte-offload"), "jobs", args.id, "job.sh")
-    if not os.path.isfile(script):
-        raise Exit(2, f"no job.sh for {args.id}")
-    r = pq("add", "--group", args.lane, "--label", args.owner, "--print-task-id", "--", "bash", script)
-    m = re.search(r"\d+", r.stdout)
-    if not m:
-        raise Exit(1, "pueue add printed no task id")
-    write_meta({"id": "raw-" + args.id, "owner": args.owner, "lane": args.lane, "tid": int(m.group()), "state": "queued",
-                "created": time.time(), "attempts": 0})
-    emit({"id": "raw-" + args.id, "tid": int(m.group()), "lane": args.lane})
+    if not ID_RE.match("raw-" + args.id):
+        raise Exit(2, "id too long")
+    if free_gb() < MIN_FREE_GB:
+        raise Exit(97, f"disk low: under {MIN_FREE_GB} GB free")
+    d = offload_dir(args.id)
+    if os.path.exists(d):
+        raise Exit(2, f"job {args.id} already exists")
+    os.makedirs(d)
+    try:
+        safe_extract(stdin, d, cap=RAW_CAP)
+        if not os.path.isfile(os.path.join(d, "job.sh")):
+            raise Exit(2, f"no job.sh in the upload for {args.id}")
+    except (Exit, tarfile.TarError, OSError) as e:
+        shutil.rmtree(d, ignore_errors=True)
+        if isinstance(e, Exit):
+            raise
+        raise Exit(2, f"bad upload: {e}")
+    st = pq_state() or {"tasks": {}, "groups": {}}
+    lanes = lane_view(st)
+    ahead = sum(len(v) for v in lanes[args.lane].values())
+    try:
+        r = pq("add", "--group", args.lane, "--label", args.owner, "--print-task-id", "--",
+               "python3", os.path.abspath(__file__), "run-raw", args.id)
+        m = re.search(r"\d+", r.stdout)
+        if not m:
+            raise Exit(1, "pueue add printed no task id")
+    except Exit:
+        shutil.rmtree(d, ignore_errors=True)
+        raise
+    meta = {"id": "raw-" + args.id, "kind": "raw", "job": args.id, "owner": args.owner, "lane": args.lane, "tid": int(m.group()),
+            "state": "queued", "created": time.time(), "attempts": 0}
+    write_meta(meta)
+    emit({"id": meta["id"], "tid": meta["tid"], "lane": args.lane, "place": ahead + 1, "ahead": ahead})
     return 0
+
+
+def descendants(root):
+    """Pids below `root` by ppid walk (portable fallback; BSD pkill/pgrep have no -s)."""
+    try:
+        out = subprocess.run(["ps", "-A", "-o", "pid=,ppid="], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    kids = {}
+    for line in out.splitlines():
+        p = line.split()
+        if len(p) == 2 and p[0].isdigit() and p[1].isdigit():
+            kids.setdefault(int(p[1]), []).append(int(p[0]))
+    found, todo = [], [root]
+    while todo:
+        for k in kids.get(todo.pop(), []):
+            found.append(k)
+            todo.append(k)
+    return found
+
+
+def kill_session(sid, sig):
+    """Signal every process in session `sid` (job.sh and anything it started, even in other process groups).
+    Linux: `pkill -s`. Elsewhere (BSD pkill lacks -s): the session's process group plus the ppid tree."""
+    try:
+        r = subprocess.run(["pkill", f"-{sig.name[3:]}", "-s", str(sid)], capture_output=True, timeout=10)
+        if r.returncode in (0, 1):
+            return
+    except (OSError, subprocess.SubprocessError):
+        pass
+    for pid in descendants(sid) + [sid]:
+        try:
+            os.kill(pid, sig)
+        except OSError:
+            pass
+    try:
+        os.killpg(sid, sig)
+    except OSError:
+        pass
+
+
+def cmd_run_raw(args):
+    """The pueue task for one raw job: runs job.sh as its own session leader, kills the whole session on SIGTERM, records rc."""
+    mid = "raw-" + args.id
+    m = read_meta(mid)
+    if not m:
+        raise Exit(1, "no such job")
+    if m["state"] in ("cancelling", "cancelled"):
+        m["state"] = "cancelled"
+        write_meta(m)
+        return 143
+    d = offload_dir(args.id)
+    os.makedirs(os.path.join(d, "out"), exist_ok=True)
+    m.update(state="running", attempts=m.get("attempts", 0) + 1, started=time.time())
+    write_meta(m)
+    env = dict(os.environ, TTE_JOB_LEADER="1")
+    with open(os.path.join(d, "out", "output.log"), "ab") as log:
+        child = subprocess.Popen(["bash", "job.sh"], cwd=d, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                                 start_new_session=True, env=env)
+    sid = child.pid  # session leader: pid == sid
+    m["sid"] = sid
+    write_meta(m)
+    kill_at = []
+
+    def on_term(*_):
+        kill_session(sid, signal.SIGTERM)
+        if not kill_at:
+            kill_at.append(time.time() + float(os.environ.get("TTE_JOBS_RAW_GRACE", "20")))
+
+    signal.signal(signal.SIGTERM, on_term)
+    while True:
+        try:
+            # WNOWAIT: job.sh stays a zombie, so its sid cannot be reused while we sweep
+            if os.waitid(os.P_PID, sid, os.WEXITED | os.WNOWAIT | os.WNOHANG) is not None:
+                break
+        except ChildProcessError:
+            break
+        if kill_at and time.time() >= kill_at[0]:
+            kill_session(sid, signal.SIGKILL)
+            kill_at[0] = time.time() + 1
+        time.sleep(0.2)
+    kill_session(sid, signal.SIGTERM)
+    rc = child.wait()
+    if rc < 0:
+        rc = 128 - rc
+    m = read_meta(mid) or m
+    m.update(rc=rc, finished=time.time())
+    if m["state"] in ("cancelling", "cancelled"):
+        m["state"] = "cancelled"
+    elif rc == 0:
+        m["state"] = "done"
+    else:
+        m.update(state="failed", reason=f"job rc {rc}")
+    write_meta(m)
+    return rc
 
 
 def cmd_run_gpu(args):
@@ -612,6 +739,8 @@ def cmd_log(args):
     jdir(args.id)
     m = read_meta(args.id) or {}
     p = os.path.join(jdir(args.id), "work", "progress.log")
+    if m.get("kind") == "raw":
+        p = os.path.join(offload_dir(m["job"]), "out", "output.log")
     data = b""
     try:
         with open(p, "rb") as f:
@@ -619,7 +748,10 @@ def cmd_log(args):
             data = f.read()
     except OSError:
         pass
-    emit({"state": m.get("state", "unknown"), "rc": m.get("rc"), "offset": args.offset + len(data), "text": data.decode("utf8", "replace")})
+    extra = {}
+    if m.get("kind") == "raw" and m.get("started"):
+        extra["wait_sec"] = round(m["started"] - m.get("created", m["started"]), 1)
+    emit({"state": m.get("state", "unknown"), "rc": m.get("rc"), "offset": args.offset + len(data), "text": data.decode("utf8", "replace"), **extra})
     return 0
 
 
@@ -628,6 +760,8 @@ def cmd_fetch(args):
     m = read_meta(args.id)
     if not m:
         raise Exit(2, "no such job")
+    if m.get("kind") == "raw":
+        return fetch_raw(m)
     work = os.path.join(d, "work")
     if not os.path.isdir(work):
         raise Exit(2, "no results yet")
@@ -641,6 +775,31 @@ def cmd_fetch(args):
     return 0
 
 
+def fetch_raw(m):
+    """Tar of <offload>/jobs/<id>/out/ (members relative to out/) plus status.json when present; big runs drop *.zip."""
+    d = offload_dir(m["job"])
+    out = os.path.join(d, "out")
+    if not os.path.isdir(out):
+        raise Exit(2, "no results yet")
+    m["fetched"] = time.time()
+    write_meta(m)
+    files = []
+    for root, _, names in os.walk(out):
+        for n in names:
+            p = os.path.join(root, n)
+            files.append((p, os.path.relpath(p, out)))
+    status = os.path.join(d, "status.json")
+    if os.path.isfile(status) and not os.path.exists(os.path.join(out, "status.json")):
+        files.append((status, "status.json"))
+    if sum(os.path.getsize(p) for p, _ in files) > FETCH_ZIP_DROP:
+        files = [f for f in files if not f[0].endswith(".zip")]
+    sys.stdout.flush()
+    with tarfile.open(fileobj=sys.stdout.buffer, mode="w|") as tf:
+        for p, arc in files:
+            tf.add(p, arcname=arc, recursive=False)
+    return 0
+
+
 def gc(days=None):
     days = RETENTION_DAYS if days is None else days
     cutoff = time.time() - days * 86400
@@ -651,6 +810,8 @@ def gc(days=None):
         end = max(m.get("fetched", 0), m.get("finished", 0)) or m.get("created", 0)
         if end and end < cutoff:
             shutil.rmtree(jdir(m["id"]), ignore_errors=True)
+            if m.get("kind") == "raw":
+                shutil.rmtree(offload_dir(m["job"]), ignore_errors=True)
             removed.append(m["id"])
     pq("clean", check=False)
     return removed
@@ -728,6 +889,7 @@ def build_parser():
     w = sp.add_parser("watchdog"); w.add_argument("--once", action="store_true")
     s = sp.add_parser("submit"); s.add_argument("--owner", required=True); s.add_argument("--now", action="store_true")
     r = sp.add_parser("submit-raw"); r.add_argument("--owner", required=True); r.add_argument("--lane", required=True); r.add_argument("id")
+    rr = sp.add_parser("run-raw"); rr.add_argument("id")
     g = sp.add_parser("run-gpu"); g.add_argument("id")
     c = sp.add_parser("cancel"); c.add_argument("--owner", required=True); c.add_argument("--force", action="store_true"); c.add_argument("id")
     l = sp.add_parser("list"); l.add_argument("--owner", default=""); l.add_argument("--all", action="store_true")
@@ -751,13 +913,15 @@ def main(argv=None, stdin=None):
         return 2 if e.code else 0
     try:
         if args.verb == "version":
-            emit({})
+            emit({"caps": ["raw-e2e"], "raw_cap_mb": RAW_CAP // (1024 * 1024)})
             return 0
         if args.verb == "init":
             return cmd_init(args)
-        if args.verb in ("run-gpu", "watchdog"):
+        if args.verb in ("run-gpu", "run-raw", "watchdog"):
             if args.verb == "run-gpu":
                 return cmd_run_gpu(args)
+            if args.verb == "run-raw":
+                return cmd_run_raw(args)
             emit(cmd_watchdog(args))
             return 0
         line = stdin.readline().decode("utf8", "replace")
@@ -768,7 +932,7 @@ def main(argv=None, stdin=None):
         if args.verb == "submit":
             return cmd_submit(args, stdin, is_admin)
         if args.verb == "submit-raw":
-            return cmd_submit_raw(args)
+            return cmd_submit_raw(args, stdin)
         if args.verb == "cancel":
             return cmd_cancel(args, is_admin)
         if args.verb == "status":
