@@ -3,6 +3,9 @@ import { DEFAULT_BINDINGS } from '../../game/platform/input/bindings';
 import { LESSONS, PICKER_STEPS, actionBarKeys } from './help-guide';
 
 describe('help guide data', () => {
+  it('lesson text has no phone or touch wording (owner dropped phone work)', () => {
+    expect(LESSONS.map((l) => l.text).join(' ')).not.toMatch(/phone|\btap\b|circle|touch/i);
+  });
   it('has a Run lesson naming Run Away and Run Towards', () => {
     const run = LESSONS.find((l) => l.title === 'Run');
     expect(run?.text).toMatch(/Run Away/);

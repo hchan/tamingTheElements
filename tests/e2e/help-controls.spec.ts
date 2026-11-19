@@ -16,7 +16,7 @@ test('Help lists the controls without banned words', async ({ page }) => {
   await expect(p1).toBeVisible();
   await expect(menu.getByRole('table', { name: /Player 2/ })).toBeVisible();
   await expect(menu.getByRole('table', { name: 'Gamepad' })).toBeVisible();
-  await expect(menu.getByRole('table', { name: 'Touch' })).toBeVisible();
+  await expect(menu.getByRole('table', { name: 'Touch' })).toHaveCount(0);
   await expect(p1.getByRole('row', { name: /^Trap Z or 0$/ })).toBeVisible();
   // innerText skips closed details: open them all first.
   await page.evaluate(`document.querySelectorAll('#menu details').forEach((d) => { d.open = true; })`);
@@ -93,4 +93,17 @@ test('Help: Back to top from the Controls section focuses the title, which is in
   await page.locator('section.helpControls button.helpTop').click();
   await expect.poll(() => page.evaluate(`document.activeElement && document.activeElement.id`)).toBe('helpTitle');
   await expect.poll(() => page.evaluate(`document.getElementById('helpTitle').getBoundingClientRect().top`)).toBeGreaterThanOrEqual(0);
+});
+
+// Plan r118/r119: at desktop size the Jump to chips form two rows of three, not 4 + 1.
+test('Help at 1280x720: the Jump to chips sit in two rows of three', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/?seed=7#help');
+  await waitForRoute(page, '#help');
+  const tops = await page.evaluate<number[]>(
+    `[...document.querySelectorAll('nav.helpJump > *')].map((e) => { const r = e.getBoundingClientRect(); return Math.round((r.top + r.bottom) / 2 / 30); })`,
+  );
+  const counts = [...new Set(tops)].map((t) => tops.filter((x) => x === t).length);
+  expect(counts).toEqual([3, 3]);
+  if (process.env['SHOT_DIR']) await page.screenshot({ path: `${process.env['SHOT_DIR']}/help-1280.png` });
 });
