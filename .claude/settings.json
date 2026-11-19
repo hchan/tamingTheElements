@@ -19,6 +19,11 @@
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-push-local-ci.sh",
             "timeout": 900
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-tool-pc-guard.sh",
+            "timeout": 10
           }
         ]
       }
