@@ -335,3 +335,33 @@
     gap: 0 0.4em;
   }
 }
+
+/* WP-F4 (667x375 and 812x375 phone landscape): MENU-B's full-width "Who plays" row plus the Team / AI level row plus a wrapped Arena row took three
+   option rows, so no hero tile showed above the Fight bar. Here the options wrapper dissolves into the fieldset and Opponent + Arena share
+   row one (the Arena label is already visually hidden above), Team + AI level share row two. Buttons stay 44 px. */
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+  #menu #arcadePick .vsFieldset > .vsControl:has(#arcadeMode) {
+    flex: 0 0 auto;
+  }
+  #menu #arcadePick .vsFieldset > .vsOptions {
+    display: contents;
+  }
+  #menu #arcadePick .vsOptions > .vsControl:has(#arcadeStage) {
+    order: -2;
+  }
+  #menu #arcadePick .vsOptions > .vsControl:has(#arcadeSize) {
+    order: 1;
+  }
+  #menu #arcadePick .vsOptions > .vsControl:has(#arcadeLevel) {
+    order: 2;
+  }
+  #arcadePick .vsOptions > .vsControl:has(#arcadeStage) > label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
