@@ -6,6 +6,25 @@
  * timed out), 96 frame preflight, 97 clone missing or disk low, 98 sha unknown, 99 install failed, 124 hard timeout,
  * otherwise the command's own. Files next to job.sh: pgid, status.json, health.csv, output.log, out/.
  */
+/** Header of health.csv (sampled every 30 s by job.sh; cores is nproc, constant per run). */
+export const HEALTH_HEADER = 'ts,load1,memavail_mb,gpu_temp,gpu_util,cores';
+
+/** One health.csv row (pure mirror of what job.sh appends; gpu is "temp,util" or ","). */
+export function formatHealthRow(s: { ts: number; load1: number; memMb: number; gpu?: string; cores: number }): string {
+  return `${String(s.ts)},${String(s.load1)},${String(s.memMb)},${s.gpu ?? ','},${String(s.cores)}`;
+}
+
+/** One-line summary of a health.csv for the run report; null when there are no samples. */
+export function summarizeHealth(csv: string): string | null {
+  const rows = csv.split('\n').slice(1).map((l) => l.trim().split(',')).filter((c) => c.length >= 6 && Number.isFinite(Number(c[1])));
+  if (rows.length === 0) return null;
+  const load = rows.map((c) => Number(c[1]));
+  const mem = rows.map((c) => Number(c[2]));
+  const cores = Number(rows[rows.length - 1]?.[5]);
+  const avg = load.reduce((a, b) => a + b, 0) / load.length;
+  return `health: ${String(rows.length)} samples, nproc ${String(cores)}, load1 avg ${avg.toFixed(1)} max ${String(Math.max(...load))}, min free RAM ${String(Math.min(...mem))} MB`;
+}
+
 export type LaneName = 'short' | 'full';
 
 export interface Lane {
@@ -108,6 +127,7 @@ status() { # state rc result
 finish() { # rc: record status, stop helpers, kill stray browsers and children
   local rc=$1 res=error
   trap - EXIT INT
+  cp "$JOB/health.csv" "$OUT/health.csv" 2>/dev/null
   trap '' TERM
   [ "$SAMPLER" -gt 0 ] && kill "$SAMPLER" 2>/dev/null
   [ -f "$JOB/killed-mem" ] && rc=93
@@ -169,13 +189,16 @@ ${spec.preflight ? `if [ -f tools/dev/pc-frame-check.cjs ]; then
 fi` : ':'}
 
 # 5. Health sampler: every 30 s; kills the job group when MemAvailable stays under 1 GB twice.
-echo "ts,load1,memavail_mb,gpu_temp,gpu_util" > "$JOB/health.csv"
+CORES=$(nproc 2>/dev/null || echo 0)
+echo "nproc=$CORES workers=${lane.workers} lane=${lane.clone}" > "$OUT/run-summary.txt"
+echo "${HEALTH_HEADER}" > "$JOB/health.csv"
 (
   low=0
   while sleep 30; do
     mem=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
     gpu=$(nvidia-smi --query-gpu=temperature.gpu,utilization.gpu --format=csv,noheader,nounits 2>/dev/null | tr -d ' ' | head -1)
-    echo "$(date +%s),$(cut -d' ' -f1 /proc/loadavg),$mem,\${gpu:-,}" >> "$JOB/health.csv"
+    echo "$(date +%s),$(cut -d' ' -f1 /proc/loadavg),$mem,\${gpu:-,},$CORES" >> "$JOB/health.csv"
+    cp "$JOB/health.csv" "$OUT/health.csv" 2>/dev/null
     if [ "$mem" -lt 1024 ]; then low=$((low + 1)); else low=0; fi
     if [ "$low" -ge 2 ]; then touch "$JOB/killed-mem"; kill -TERM -- "-$PGID" 2>/dev/null; fi
   done

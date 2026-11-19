@@ -294,6 +294,7 @@ suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full
 `pnpm nightly:collect` (07:30) follows that job (`--pc-attach raw-<id>`), reads `results.json` and records `pass`, `red` or `not-run`.
 `pnpm nightly:status` prints the result. It refuses to run with `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` set and never falls back to the Mac.
 
+- Health: every PC job samples `health.csv` (ts, load1, free RAM, GPU, nproc) every 30 s and writes `nproc` to `run-summary.txt`; both are copied into `out/` so they are fetched, and the router prints a one-line load/nproc summary (use it to pick a worker count).
 - Status: `<git common dir>/tte-gate/nightly-status.json` (shared by all worktrees; `nightly-history.jsonl` keeps 60 runs, `nightly.log` the output).
   States: `pass`, `red` (failed tests listed by file and title; `unrecorded` = not covered by `tools/ci/known-red.json` when that file exists),
   `not-run` (PC unreachable/busy/not set up/lost/cancelled, exits 93 94 95 96 97 130; nothing was learned, never pass), `pending`.

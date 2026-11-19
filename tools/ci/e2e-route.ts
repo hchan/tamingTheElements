@@ -23,7 +23,7 @@ import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readF
 import { loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { decide, DEFAULT_LIMITS, macEligible, type Ask, type History, type Limits, type PcView, type Policy, type Step } from './pc-decide';
-import { LANES, renderJob, type JobSpec, type LaneName } from './pc-job';
+import { LANES, renderJob, summarizeHealth, type JobSpec, type LaneName } from './pc-job';
 import * as pc from './pc-remote';
 import { PcError, type JobStatus, type Remote } from './pc-remote';
 import { cacheFile, probe as realProbe, keyOf, noteExit, readCache, writeCache } from './pc-probe';
@@ -265,6 +265,9 @@ function report(id: string, sha: string, lane: LaneName, workers: number, st: Jo
       copyFileSync(jsonPath, to);
     }
   } else w(`PC e2e ${id} ${sha.slice(0, 7)} ${lane} x${String(workers)}: no results.json (state ${st.state}, rc ${String(st.rc)})\n`);
+  const hp = join(dir, 'health.csv');
+  const hs = existsSync(hp) ? summarizeHealth(readFileSync(hp, 'utf8')) : null;
+  if (hs) w(`${hs}\n`);
   w(`results: .scratch/remote-e2e/${id}/ (report/, results.json, test-results/, output.log, health.csv, e2e-server.log)\n`);
   if (st.rc !== 0) printServerTrouble(join(dir, 'e2e-server.log'), '', (x) => d.err.write(x));
 }
