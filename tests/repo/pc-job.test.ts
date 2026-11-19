@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { LANES, renderJob, shellQuote, type JobSpec } from '../../tools/ci/pc-job';
+import { HEALTH_HEADER, LANES, formatHealthRow, renderJob, summarizeHealth, shellQuote, type JobSpec } from '../../tools/ci/pc-job';
 
 let root: string;
 beforeEach(() => {
@@ -133,5 +133,21 @@ describe('renderJob', () => {
     const { startSh } = renderJob(base());
     expect(startSh).toContain('setsid -f bash job.sh');
     expect(startSh).toContain('= fg');
+  });
+});
+
+describe('health.csv', () => {
+  it('formats rows and summarises samples with the core count', () => {
+    const csv = [HEALTH_HEADER, formatHealthRow({ ts: 1, load1: 2, memMb: 9000, cores: 16 }), formatHealthRow({ ts: 31, load1: 6, memMb: 7000, gpu: '50,10', cores: 16 })].join('\n');
+    expect(csv.split('\n')[1]).toBe('1,2,9000,,,16');
+    expect(summarizeHealth(csv)).toBe('health: 2 samples, nproc 16, load1 avg 4.0 max 6, min free RAM 7000 MB');
+    expect(summarizeHealth(HEALTH_HEADER)).toBeNull();
+  });
+  it('job.sh records nproc and copies health.csv into the fetched out/ dir', () => {
+    const { jobSh } = renderJob(base({ lane: 'full', direct: true }));
+    expect(jobSh).toContain(HEALTH_HEADER);
+    expect(jobSh).toContain('nproc');
+    expect(jobSh).toContain('"$OUT/health.csv"');
+    expect(jobSh).toContain('"$OUT/run-summary.txt"');
   });
 });
