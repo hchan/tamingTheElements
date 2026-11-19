@@ -117,3 +117,5 @@ ADR index: [docs/adr/README.md](adr/README.md)
 | Notes about legacy code or bugs | `docs/legacy/` |
 | General documentation | `docs/` |
 | Anything touching the legacy game | Nothing: it is retired (git tag `legacy-crafty-1.0`); see [legacy/ARCHIVE.md](legacy/ARCHIVE.md) |
+
+`tools/ci/nightly-e2e.ts` (`pnpm nightly:submit|collect|status`), `nightly-status.ts` (pure status logic), `nightly-install.ts` (`pnpm nightly:install`) and `tools/ci/launchd/` (plist template) run the full e2e on the PC nightly; see [TESTING.md](TESTING.md) "Nightly full e2e".
