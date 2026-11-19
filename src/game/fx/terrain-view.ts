@@ -48,9 +48,9 @@ const HUD_DEPTH = 110;
 /** The world width: the Arcade playfield (1280 today; WP 38d widens it). */
 const ARENA_W = arcadePlayfield().w;
 const ARENA_H = 720;
-/** Left of the weather badge, on its row: under the player's hyper meter (the playfield starts at y 200). */
+/** The buff badge sits in the playfield's top-left corner (it starts at y 200), below the HUD block, so it never meets the status chips that wrap under the bar (qa-r114 #5). */
 const BADGE_X = 16;
-const BADGE_Y = 146;
+const BADGE_Y = 206;
 const BADGE_PX = 26;
 const LABEL_PX = 13;
 /** The playfield's vertical span (the HUD ends at 200, the action bar starts near 640): chips are pushed toward its edges, CHIP_GAP clear of their patch. */

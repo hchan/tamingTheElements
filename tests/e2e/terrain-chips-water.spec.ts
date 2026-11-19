@@ -46,7 +46,7 @@ test('water stage: chips are solid plates under the fighters, and fade near a fi
   expect(t.chipDepth).toBeLessThan(-0.6);
   expect(t.labelDepth).toBeLessThan(-0.6);
   const shown = t.chips.filter((c) => c.alpha > 0);
-  expect(shown.length).toBe(t.labels.length);
+  expect(shown.length).toBe(1); // chipOwner (qa-r112): one floor chip per arena, the rest stay hidden
   for (const c of shown) expect(c.alpha).toBeGreaterThanOrEqual(0.9);
   const far = `${shotDir ?? info.outputDir}/water-chips-far.png`;
   await page.screenshot({ path: far });
