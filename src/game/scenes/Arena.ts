@@ -74,7 +74,7 @@ import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
 import { screenBox } from '../hud/screen-box';
-import { SWAP_BUSY_LINE, SWAP_BUSY_TICKS, SwapNotice, elementalNotice, swapNotice, swapSlotOf } from '../hud/swap-notice';
+import { SWAP_BUSY_LINE, SWAP_BUSY_TICKS, SwapNotice, elementalNotice, swapRefusalLine, swapSlotOf } from '../hud/swap-notice';
 import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
 import { ActionBarView, labelsFromBindings, shortLabels, type KeyLabels } from '../hud/action-bar';
 import { Backdrop } from '../views/backdrop';
@@ -84,7 +84,7 @@ import { EntityViewPool } from '../views/entity-view-pool';
 import { ProjectileView } from '../views/projectile-view';
 import type { MotionSmoother } from '../fx/ability-motion-view';
 import { ReplayCursor } from '../replay/cursor';
-import { actionRefusal, activeHeroOf, buildMatchEnd, chargeLineFor, demoMatch, runLineFor, effectsHeld, playbackFrame } from './arena-logic';
+import { actionRefusal, buildMatchEnd, chargeLineFor, demoMatch, runLineFor, effectsHeld, playbackFrame } from './arena-logic';
 import { HUD_SCENE, type HudData } from './Hud';
 import type { ArenaLaunch, PlaybackSpeed } from './launch';
 
@@ -878,7 +878,7 @@ export class Arena extends Phaser.Scene {
     }
   }
 
-  /** Arcade: explains a swap press the sim is about to refuse (cooldown, frozen, stunned, no partner, no fight). View only. */
+  /** Arcade: explains a swap press the sim is about to refuse, from the sim's own rules (`RenderArcade.swapBlock`). View only. */
   private noteSwap(swaps: number): void {
     const { view, swapNotice: notice } = this;
     const arcade = view?.arcade();
@@ -886,22 +886,13 @@ export class Arena extends Phaser.Scene {
     if (!view || !notice || !arcade || !bar) return;
     // A hit-stop skips the swap on this tick but the press is sent again, so it is not a refusal.
     if (arcade.frozen) return;
-    const hero = activeHeroOf(view);
-    const active = hero?.id ?? -1;
-    const flags = hero?.flags ?? 0;
-    const slot = swapSlotOf(swaps);
-    const line = swapNotice({
-      fighting: arcade.phase === RoundPhase.fight,
-      frozen: (flags & EntityFlag.frozen) !== 0,
-      stunned: active >= 0 && arcade.stunned(active),
-      noPartner: bar.swaps[slot] === undefined || bar.swaps[slot].dead,
-      cooldownTicks: bar.swapReadyTick - bar.tick,
-    });
+    const line = swapRefusalLine(arcade.swapBlock(0, swapSlotOf(swaps)), bar.swapReadyTick - bar.tick);
     if (line !== undefined) {
       notice.show(line, this.time.now);
       (this.audio?.audio as { refuse?: () => void } | undefined)?.refuse?.();
     } else if (this.pendingSwap < 0) {
-      // Nothing visible refuses it (block-stun, a dash or charge, a Snag root, a super): if no tag-in follows, say so.
+      // Only `busy` refuses it (block-stun, a dash or its recovery, a charge, hard crowd control, a super, weather
+      // recovery), or a dash, charge or weather cast this same press starts will: if no tag-in follows, say so.
       this.pendingSwap = bar.tick;
     }
   }

@@ -1,31 +1,35 @@
-import { Cmd } from '@core/index';
+import { Cmd, SwapBlock } from '@core/index';
 import { describe, expect, it } from 'vitest';
 import { arcadeAvatar, AVATAR_SIZE, mainBar, sideOffset } from './bars';
-import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapNotice, swapSeconds, swapSlotOf, swapBlockWord, SWAP_BUSY_LINE, SWAP_BUSY_TICKS, type SwapState } from './swap-notice';
+import { NOTICE_MS, chargeNotice, elementalNotice, noticeAlpha, swapRefusalLine, swapSeconds, swapSlotOf, SWAP_BUSY_LINE, SWAP_BUSY_TICKS } from './swap-notice';
 
-const ok: SwapState = { fighting: true, frozen: false, stunned: false, noPartner: false, cooldownTicks: 0 };
-
-describe('swapNotice', () => {
-  it('says nothing when the swap would go through', () => {
-    expect(swapNotice(ok)).toBeUndefined();
+describe('swapRefusalLine', () => {
+  const B = SwapBlock;
+  it('says nothing when only busy (or nothing) refuses the swap', () => {
+    expect(swapRefusalLine(0, 0)).toBeUndefined();
+    expect(swapRefusalLine(B.busy, 0)).toBeUndefined();
   });
 
   it('names the cooldown left, rounded up to a tenth', () => {
-    expect(swapNotice({ ...ok, cooldownTicks: 150 })).toBe('Swap ready in 3.0s');
-    expect(swapNotice({ ...ok, cooldownTicks: 1 })).toBe('Swap ready in 0.1s');
+    expect(swapRefusalLine(B.cooldown, 150)).toBe('Swap ready in 3.0s');
+    expect(swapRefusalLine(B.cooldown, 1)).toBe('Swap ready in 0.1s');
+    expect(swapRefusalLine(B.cooldown, 0)).toBe('Swap ready in 0.1s');
     expect(swapSeconds(48)).toBe('1.0s');
+    expect(swapRefusalLine(B.busy | B.cooldown, 90)).toBe('Swap ready in 1.8s');
   });
 
   it('prefers the harder refusals over the cooldown', () => {
-    expect(swapNotice({ ...ok, frozen: true, cooldownTicks: 90 })).toBe("Can't swap: frozen");
-    expect(swapNotice({ ...ok, stunned: true, cooldownTicks: 90 })).toBe("Can't swap: stunned");
-    expect(swapNotice({ ...ok, fighting: false, frozen: true })).toBe("Can't swap: round not started");
-    expect(swapNotice({ ...ok, noPartner: true, fighting: false })).toBe("Can't swap: no partner to tag in");
+    expect(swapRefusalLine(B.frozen | B.cooldown, 90)).toBe("Can't swap: frozen");
+    expect(swapRefusalLine(B.stun | B.cooldown, 90)).toBe("Can't swap: stunned");
+    expect(swapRefusalLine(B.wait | B.frozen, 0)).toBe("Can't swap: round not started");
+    expect(swapRefusalLine(B.noTarget | B.wait, 0)).toBe("Can't swap: no partner to tag in");
+    expect(swapRefusalLine(B.noActive, 0)).toBe("Can't swap: no partner to tag in");
   });
 
   it('finds the pressed slot', () => {
     expect(swapSlotOf(Cmd.swap3 | Cmd.up)).toBe(2);
     expect(swapSlotOf(Cmd.up)).toBe(-1);
+    expect(swapSlotOf(Cmd.swap1 | Cmd.swap2)).toBe(0);
   });
 });
 
@@ -81,14 +85,8 @@ describe('elementalNotice', () => {
   });
 });
 
-describe('swapBlockWord', () => {
-  it('names why the Tag slot is dead, and nothing when it is usable', () => {
-    expect(swapBlockWord({ fighting: true, stunned: false, frozen: false })).toBeUndefined();
-    expect(swapBlockWord({ fighting: false, stunned: false, frozen: false })).toBe('WAIT');
-    expect(swapBlockWord({ fighting: true, stunned: true, frozen: false })).toBe('STUN');
-    expect(swapBlockWord({ fighting: true, stunned: false, frozen: true })).toBe('STUN');
-  });
-  it('has a busy line for refusals the view cannot explain', () => {
+describe('busy swap line', () => {
+  it('has a busy line for refusals the bits cannot explain', () => {
     expect(SWAP_BUSY_LINE).toBe("Can't tag right now");
     expect(SWAP_BUSY_TICKS).toBeGreaterThan(0);
   });
