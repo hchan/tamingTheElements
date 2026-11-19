@@ -1,17 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
-import { newGameToGarrison } from './parity/helpers';
+import { expect, test } from '@playwright/test';
+import { collectErrors, newGameToGarrison } from './parity/helpers';
 
 // Page-side code is passed as strings because tsconfig.node has no DOM lib.
 const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena`;
-
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
-}
 
 test('garrison rows show a loaded avatar, and a selection fills a labelled slot', async ({ page }) => {
   const failed: string[] = [];

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { collectErrors } from './parity/helpers';
 
 // Page-side code is passed as strings because tsconfig.node has no DOM lib.
 const ARENA_READY = `window.__TTE__ && window.__TTE__.scene === 'Arena' && !!window.__TTE__.arena`;
@@ -10,15 +11,6 @@ interface Ch {
   team: number;
   x: number;
   y: number;
-}
-
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
 }
 
 async function openArena(page: Page): Promise<void> {

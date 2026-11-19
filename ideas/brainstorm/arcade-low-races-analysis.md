@@ -41,7 +41,7 @@ Harness: scratch scripts (12 seeds per pairing, Normal, sides alternate), varian
 - Lavax: first cast 0.28 s, first own hit 4.4 s; Cyclonius first cast 0.29 s, first hit 4.1 s. They fire immediately, so the slow first hit is projectile travel, spacing and the foe dodge/guard plans, not hesitation in tactics (tactics dashes 1-3 a match).
 - Result: no small, clearly-correct tactics fix found; nothing implemented. Remaining levers are balance (stats/kit), proposals 2 to 4 above, and the Lavax-vs-Morblass clash handling.
 
-Helper scripts for the WP 39g findings are in `tools/sim/low-races/` (`h.mts`, `h2.mts` matchup harnesses, `mat.sh`, `agg.py`); they may still
+Helper scripts for the WP 39g findings are in `tools/sim/low-races/` (`h.mts` matchup harness, `mat.sh`, `agg.py`); they may still
 read or write scratch paths under `~/claudetmp/`.
 
 ## Follow-up ideas

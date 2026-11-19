@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY } from './parity/helpers';
+import { ARENA_READY, collectErrors } from './parity/helpers';
 
 // Super cinematic in the browser (WP-arcade-super-view): dim, element cut-in, camera punch-in; reduced motion keeps the
 // information and drops the motion; Classic never shows it; it adds no listeners. Page-side code is passed as
@@ -18,15 +18,6 @@ interface SuperFx {
   sub: string;
   camZoom: number;
   fighters: unknown[];
-}
-
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
 }
 
 const frames = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
