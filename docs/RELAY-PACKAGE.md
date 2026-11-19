@@ -1,7 +1,7 @@
 # Relay package
 
 `@tamingtheelements/relay` is the transport-agnostic relay core of the online protocol ([ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md)),
-published from this repo so a backend (serverless or a Node process) can host it without importing the game. Metadata lives in
+distributed from this repo (not from an npm registry) so a backend (serverless or a Node process) can host it without importing the game. Metadata lives in
 `packages/relay/` (the repo is not a workspace); the sources are `src/core/relay/`, compiled as they are.
 
 ## Entrypoints
@@ -57,6 +57,8 @@ node tools/relay-package/build.mjs                                              
 cd packages/relay && corepack pnpm pack --pack-destination ../../.scratch              # tarball
 ```
 
+**Distribution (owner, 2026-11-18): no registry publish.** A release is a commit on `main` plus an annotated git tag `relay-v<version>` (for example `relay-v1.0.0`). The backend pins that tag, checks it out, and runs `node tools/relay-package/build.mjs` (or `pack`, above, for a tarball it can install). `dist/` is gitignored, so the build step is part of consuming a release.
+
 The build rewrites relative specifiers to `.js` after `tsc` (the repo's sources are extensionless for the bundler). The package
 has no dependencies.
 
@@ -94,7 +96,7 @@ golden frames use 4-byte inputs. The package version stays 0.1.0 (nothing is pub
 
 ## Behaviour of the v3 wire round (RELAY-V3)
 
-`PROTOCOL_VERSION` goes 2 to 3 and the package goes 0.1.0 to **1.0.0**. Nothing was ever published, so the first publish is 1.0.0 with
+`PROTOCOL_VERSION` goes 2 to 3 and the package goes 0.1.0 to **1.0.0**. Nothing was ever published, so the first release (tag `relay-v1.0.0`) is 1.0.0 with
 `PROTOCOL_VERSION` 3. An old client sends HELLO with version 2 as binary and is refused. Four changes:
 
 - **W1. The ERROR frame is the authority; the close code is advisory.** After an ERROR frame the client decides from the frame (code, detail,
