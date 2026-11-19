@@ -1,0 +1,8 @@
+public/assets/img/splash/*.webp (menu and HUD backdrops: round-banner plate, team-select, victory, defeat, Help header; no people, no text):
+generated on the owner's GPU PC with SDXL base 1.0 text-to-image (queues in the 4060 job server; prompts and seeds in tools/assets/splash-gen/provenance/meta.jsonl (approval in provenance/approval.json);
+filenames bd_<slot>_<element>_r<round>_<seed>_<w>x<h>.png carry the seed),
+approved by the art-director agent (approval.json, 2026-11-19, beats_shipped) and integrated by
+pnpm exec tsx tools/assets/splash-gen/integrate.ts <approval.json> (WP splash-backdrops-integrate; WebP via Pillow, convert.py).
+No third-party artwork is copied. SDXL base is under the CreativeML Open RAIL++-M licence; its terms for shipping generated images are an open
+owner question, as for the other SDXL art (see tools/assets/roster24-art). Otherwise the same licence as the rest of the repository's original art.
+public/assets/img/splash/splash.json maps slot -> element -> file; a slot or element not listed falls back to the neutral menu art.

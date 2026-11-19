@@ -1,0 +1,18 @@
+{
+  "help": {
+    "air": "img/splash/help-air.webp"
+  },
+  "lose": {
+    "earth": "img/splash/lose-earth.webp"
+  },
+  "plate": {
+    "fire": "img/splash/plate-fire.webp",
+    "water": "img/splash/plate-water.webp"
+  },
+  "team": {
+    "earth": "img/splash/team-earth.webp"
+  },
+  "win": {
+    "earth": "img/splash/win-earth.webp"
+  }
+}
