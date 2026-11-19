@@ -196,6 +196,24 @@ describe('gpu CLI against the fake PC', () => {
     expect((await gpu(['wait', id])).code).toBe(1);
   });
 
+  it('wait redacts home paths, addresses and user@host in the streamed log', async () => {
+    await setup();
+    await gpu(['submit', queueFile()]);
+    const id = onlyJob();
+    const jd = join(jobsDir(), id);
+    const meta = JSON.parse(readFileSync(join(jd, 'meta.json'), 'utf8')) as Record<string, unknown>;
+    mkdirSync(join(jd, 'work'), { recursive: true });
+    writeFileSync(join(jd, 'work', 'progress.log'), 'cwd /home/someone/proj/x\nconnect 10.1.2.3 as bob@pc.example.org\n');
+    writeFileSync(join(jd, 'meta.json'), JSON.stringify({ ...meta, state: 'done', rc: 0 }));
+    const st = JSON.parse(readFileSync(join(root, 'pueue-state.json'), 'utf8')) as { tasks: Record<string, { status: unknown }> };
+    const task = st.tasks[String(meta['tid'])];
+    if (task) task.status = { Done: 'Success' };
+    writeFileSync(join(root, 'pueue-state.json'), JSON.stringify(st));
+    const w = await gpu(['wait', id]);
+    expect(w.code).toBe(0);
+    expect(w.out).toBe('cwd ~/proj/x\nconnect <addr> as <user@host>\n');
+  });
+
   it('an unreachable PC exits 94 and never prints the alias', async () => {
     await setup();
     const alias = process.env['TTE_REMOTE'] as string;

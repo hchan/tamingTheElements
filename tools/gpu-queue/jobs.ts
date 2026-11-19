@@ -15,84 +15,12 @@ import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
-import { redact, remoteAlias } from '../ci/e2e-route';
-import { EXIT, sshArgs, type Remote } from '../ci/pc-remote';
+import { redact, remoteAlias } from '../ci/redact';
+import { EXIT, type Remote } from '../ci/pc-remote';
+import { ask, call, callRemote, configDir, CtlError, CTL, FINAL, ID_RE, ownerId, parseReply, tokenLine, UsageError, userToken, type Ctx, type Env, type Raw, type Reply } from './client';
 
-const PROTO = 1;
-const CTL = 'tte-jobs/bin/ctl.py';
+export { CtlError, ID_RE, ownerId, UsageError, userToken, type Ctx, type Env, type Reply };
 const HERE = dirname(new URL(import.meta.url).pathname);
-export const ID_RE = /^[A-Za-z0-9_-]{1,48}$/;
-const FINAL = new Set(['done', 'failed', 'cancelled', 'lost']);
-
-export class UsageError extends Error {}
-export type Env = Record<string, string | undefined>;
-export type Reply = Record<string, unknown> & { proto?: number };
-export type Ctx = { remote: Remote; owner: string; token: string; admin?: string; env: Env; cwd: string; out: NodeJS.WritableStream; err: NodeJS.WritableStream };
-
-export function ownerId(env: Env, cwd: string): string {
-  const e = env['TTE_JOBS_OWNER']?.trim();
-  if (e) {
-    if (!ID_RE.test(e)) throw new UsageError('TTE_JOBS_OWNER must match [A-Za-z0-9_-]{1,48}');
-    return e;
-  }
-  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' });
-  const top = r.status === 0 ? r.stdout.trim() : resolve(cwd);
-  const name = basename(top).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 39) || 'w';
-  return `${name}-${createHash('sha256').update(top).digest('hex').slice(0, 8)}`;
-}
-
-const configDir = (env: Env): string => env['TTE_JOBS_CONFIG_DIR'] || join(homedir(), '.config', 'tte-jobs');
-export function userToken(env: Env): string | undefined {
-  const t = env['TTE_JOBS_TOKEN']?.trim();
-  if (t) return t;
-  try {
-    return readFileSync(join(configDir(env), 'token'), 'utf8').trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-type Raw = { code: number; stdout: Buffer };
-/** One remote call: stdin line 1 is the token(s) (never argv), then an optional byte stream. */
-const call = (c: Ctx, args: string[], tokenLine: string, body?: Buffer, stdoutTo?: NodeJS.WritableStream): Promise<Raw> =>
-  callRemote(c, ['python3', CTL, ...args], tokenLine, body, stdoutTo);
-function callRemote(c: Ctx, cmd: string[], tokenLine: string | undefined, body?: Buffer, stdoutTo?: NodeJS.WritableStream): Promise<Raw> {
-  return new Promise((resolveRun) => {
-    const p = spawn(c.remote.ssh, sshArgs(c.remote, cmd), { stdio: ['pipe', 'pipe', 'pipe'] });
-    const chunks: Buffer[] = [];
-    if (stdoutTo) p.stdout.pipe(stdoutTo);
-    else p.stdout.on('data', (d: Buffer) => chunks.push(d));
-    p.stderr.on('data', (d: Buffer) => c.err.write(redact(d.toString('utf8'))));
-    p.on('error', () => resolveRun({ code: EXIT.ssh, stdout: Buffer.alloc(0) }));
-    p.on('close', (code) => resolveRun({ code: code ?? EXIT.ssh, stdout: Buffer.concat(chunks) }));
-    p.stdin.on('error', () => undefined);
-    if (tokenLine !== undefined) p.stdin.write(`${tokenLine}\n`);
-    p.stdin.end(body);
-  });
-}
-
-const tokenLine = (c: Ctx, admin = false): string => (admin && c.admin ? `${c.token} ${c.admin}` : c.token);
-
-export class CtlError extends Error {
-  constructor(message: string, readonly code: number) {
-    super(message);
-  }
-}
-
-function parseReply(raw: Raw): Reply {
-  const line = raw.stdout.toString('utf8').split('\n').filter((l) => l.startsWith('{')).pop();
-  if (!line) throw new CtlError('empty reply from the PC', EXIT.unreachable);
-  const r = JSON.parse(line) as Reply;
-  if (r.proto !== PROTO) throw new CtlError(`server speaks protocol ${String(r.proto)}, client ${String(PROTO)}: run pnpm gpu:setup`, 97);
-  return r;
-}
-
-async function ask(c: Ctx, args: string[], opts: { admin?: boolean; body?: Buffer } = {}): Promise<Reply> {
-  const raw = await call(c, args, tokenLine(c, opts.admin), opts.body);
-  if (raw.code === EXIT.ssh) throw new CtlError('PC unreachable (ssh failed)', EXIT.unreachable);
-  if (raw.code !== 0) throw new CtlError(`ctl exited ${String(raw.code)}`, raw.code);
-  return parseReply(raw);
-}
 
 type Flags = { pos: string[]; json: boolean; now: boolean; wait: boolean; all: boolean; force: boolean; follow: boolean; rotate: boolean; with: string[]; before?: string };
 export function parseArgs(argv: string[]): Flags {
@@ -177,7 +105,7 @@ async function wait(c: Ctx, f: Flags): Promise<number> {
       continue;
     }
     const text = String(r['text'] ?? '');
-    if (text) c.out.write(text);
+    if (text) c.out.write(redact(text));
     offset = Number(r['offset'] ?? offset);
     const state = String(r['state']);
     if (FINAL.has(state)) {
