@@ -1,6 +1,6 @@
 /**
  * Nightly full e2e on the GPU PC, in two phases so a sleeping Mac cannot lose a run:
- *   submit   fetch origin/main, check it out in a detached worktree (.scratch/nightly-wt) and queue the full suite on the PC via the
+ *   submit   fetch origin (so the bundle base is current), check out the tip of LOCAL main (pushed or not: the router bundles unpushed commits), in a detached worktree (.scratch/nightly-wt) and queue the full suite on the PC via the
  *            router (`--pc-detach`); records `pending` with the raw job id.
  *   collect  follow the pending job (`--pc-attach`), read its results.json and record pass | red | not-run.
  *   status   print the recorded status (exit 0 always: stale or not-run only warns).
@@ -86,7 +86,7 @@ export function submit(d: Deps): number {
   };
   const f = git('fetch', 'origin', 'main');
   if (f.code !== 0) return fail('', f.code, 'git fetch failed');
-  const sha = git('rev-parse', 'origin/main').stdout.trim();
+  const sha = git('rev-parse', 'main').stdout.trim();
   const wt = resolve(d.repo, WT_REL);
   const prep = existsSync(wt)
     ? d.run('git', ['checkout', '--detach', '--force', sha], wt, d.env)
