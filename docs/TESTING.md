@@ -284,3 +284,21 @@ force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a rem
 (`ctl.py` on the PC is the only pueue client; per-session ownership, thermal/RAM watchdog, 14-day retention). Its tests run with fakes
 and need no PC: `python3 -m unittest discover -s tools/gpu-queue` (also run by `tests/repo/gpu-ctl-py.test.ts`, skipped without
 python3) and `tests/repo/gpu-jobs-cli.test.ts` (fake ssh in `tests/repo/fixtures/fake-ssh.sh`). Full e2e can use it as raw jobs on the `cpu-full` lane (see "Routing e2e to the PC").
+
+## Nightly full e2e (PC, launchd)
+
+`tools/ci/nightly-e2e.ts` runs the full e2e suite on the PC every night, in two phases so a sleeping Mac cannot lose a run.
+`pnpm nightly:submit` (23:00) fetches `origin/main`, checks it out in the detached worktree `.scratch/nightly-wt` and queues the full
+suite on the `cpu-full` lane through the router (`TTE_E2E_VIA_QUEUE=1 ... --full --pc-detach`), recording `pending` with the raw job id.
+`pnpm nightly:collect` (07:30) follows that job (`--pc-attach raw-<id>`), reads `results.json` and records `pass`, `red` or `not-run`.
+`pnpm nightly:status` prints the result. It refuses to run with `CI`, `TTE_E2E_LOCAL` or `TTE_ALLOW_MAC_E2E` set and never falls back to the Mac.
+
+- Status: `<git common dir>/tte-gate/nightly-status.json` (shared by all worktrees; `nightly-history.jsonl` keeps 60 runs, `nightly.log` the output).
+  States: `pass`, `red` (failed tests listed by file and title; `unrecorded` = not covered by `tools/ci/known-red.json` when that file exists),
+  `not-run` (PC unreachable/busy/not set up/lost/cancelled, exits 93 94 95 96 97 130; nothing was learned, never pass), `pending`.
+- A status older than 36 h counts as `not-run`. Stale and not-run only warn (owner, 2026-11-19); nothing blocks a push yet.
+- Schedule: `pnpm nightly:install` renders `tools/ci/launchd/dev.tte.nightly-e2e.plist.tmpl` into two LaunchAgents in
+  `~/Library/LaunchAgents` (paths for the repo, corepack and PATH are filled in at install time, never committed; launchd runs a missed
+  job once on wake). `--dry-run` prints them, `--uninstall` removes them.
+- Tests: `tests/repo/nightly-status.test.ts` (pure logic), `tests/repo/nightly-e2e-cli.test.ts` (fake runner),
+  `tests/repo/nightly-install.test.ts` (template has no host, user path or key). The live submit/attach path is untested until the first real night.

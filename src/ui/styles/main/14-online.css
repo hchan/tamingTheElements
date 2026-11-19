@@ -1,0 +1,167 @@
+/* Play intro: one compact line of small print; on short landscape phones it is smaller still and clamped to three lines. */
+#tourPick .tourIntro {
+  max-width: 62em;
+  margin: 0.2em auto 0.5em;
+  font-size: 0.85em;
+  line-height: 1.35;
+  opacity: 0.85;
+}
+@media (max-height: 500px) {
+  #tourPick .tourIntro {
+    font-size: calc(0.62 * var(--app-font));
+    line-height: 1.25;
+    margin: 0 auto 0.3em;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Online screen on a phone (WP 06): the code boxes fill the width (no 40-column overflow at 360 px), 44 px targets for its buttons and selects. */
+#menu .menuPage:has(#onlineStatus) textarea {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+/* Labels stack over their textarea at every width (QA r30: beside it on a phone landscape the label wrapped to 3 lines). */
+#menu .menuPage:has(#onlineStatus) .settingsOption {
+  flex-wrap: wrap;
+}
+#menu .menuPage:has(#onlineStatus) .settingsOption > label {
+  flex: 0 0 100%;
+}
+#menu .menuPage:has(#onlineStatus) .settingsOption > br {
+  display: none;
+}
+/* Copy / Paste buttons are big full-width targets with a visible Copied / Pasted state (never colour alone: the word changes too). */
+#menu .menuPage:has(#onlineStatus) #onlineSetup button.onlineBig {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px !important;
+  margin: 0.4em 0;
+}
+#onlineSetup button.onlineBig.onlineDone {
+  background: #1f5a2e;
+  border-color: #6fd08a;
+}
+/* Two big role buttons always visible; the steps of the picked role show below; manual codes sit in a collapsed details. */
+#onlineSetup details.onlineManual {
+  margin: 0.8em 0 0.2em;
+}
+#onlineSetup details.onlineManual > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+#onlineSetup ol.onlineSteps {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+}
+#onlineSetup ol.onlineSteps li {
+  margin: 0.5em 0;
+}
+a.onlineMenuLink {
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+  white-space: nowrap;
+}
+/* Versus bar: the Online link is one short line that never makes the slim bar taller. */
+#arcadePick .vsActions .vsFight {
+  flex: none;
+}
+#arcadePick .vsActions a.onlineMenuLink {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline: 0;
+  padding-inline: 0.2em;
+  font-size: 0.9em;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+}
+/* QA r90 P9: two big role buttons first; only the picked role's steps show. */
+#onlineSetup .onlineRoles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6em;
+}
+#onlineSetup .onlinePath[hidden] {
+  display: none;
+}
+#onlineShare {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 0.6em;
+}
+/* QA r100 P3: "Copy link" / "Copy code" stay on one line beside each other at 360 px. */
+#onlineShare button.onlineBig {
+  white-space: nowrap;
+  padding-inline: 0.4em;
+  min-width: 0;
+}
+#onlineShare #onlineQr {
+  grid-column: 1 / -1;
+}
+@media (max-width: 600px) {
+  #menu .menuPage:has(#onlineStatus) button,
+  #menu .menuPage:has(#onlineStatus) select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Online polish (QA r10): the setup form is one dark card like Settings and collapses once linked; the Link readout is a chip over the arena. */
+#onlineSetup {
+  margin: 0.6em 0;
+  padding: 0.6em 1em;
+  border: 1px solid #666;
+  border-radius: 8px;
+  background: rgba(20, 20, 40, 0.88);
+}
+#onlineSetup[hidden] {
+  display: none;
+}
+#onlineSetup h2 {
+  margin: 0.6em 0 0.2em;
+  /* QA r101: "Who is hosting?" stays on one line at 360 px. */
+  font-size: 1.3em;
+  white-space: nowrap;
+}
+#onlineSetup h3 {
+  margin: 0.5em 0 0.2em;
+  font-size: 0.95em;
+  font-weight: normal;
+  opacity: 0.85;
+}
+#onlineSetup textarea,
+#onlineSetup input:not([type]),
+#onlineSetup select {
+  background: #1b1b34;
+  color: #eee;
+  border: 1px solid #666;
+  border-radius: 6px;
+  padding: 0.3em 0.5em;
+  font: inherit;
+}
+#onlineSetup textarea {
+  font-size: 0.8em;
+}
+#onlineLink.onlineChip {
+  position: fixed;
+  top: 0.5em;
+  right: 0.5em;
+  z-index: 50;
+  margin: 0;
+  padding: 0.2em 0.7em;
+  border: 1px solid #666;
+  border-radius: 999px;
+  background: rgba(10, 10, 24, 0.82);
+  color: #eee;
+  font-size: 0.8em;
+  pointer-events: none;
+}
+

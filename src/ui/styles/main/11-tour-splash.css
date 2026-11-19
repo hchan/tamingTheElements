@@ -1,0 +1,79 @@
+/* Tour versus splash: two big portraits with element-coloured names, VS between, the stage name above. */
+#tourSplash {
+  text-align: center;
+}
+#tourSplash .vsName {
+  overflow-wrap: anywhere;
+}
+#tourSplash .vsCard {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(12px, 4vw, 48px);
+}
+#tourSplash .vsFighter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 16px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  background: #26263c;
+}
+#tourSplash .vsFighter .heroFace {
+  width: clamp(96px, 22vh, 200px);
+  height: clamp(96px, 22vh, 200px);
+  background-color: #1a1a2c;
+}
+#tourSplash .vsFighter[data-element='water'] { border-color: #5f94cc; }
+#tourSplash .vsFighter[data-element='air'] { border-color: #b4c6d4; }
+#tourSplash .vsFighter[data-element='fire'] { border-color: #d0603f; }
+#tourSplash .vsFighter[data-element='earth'] { border-color: #6ea872; }
+#tourSplash .vsWho {
+  margin: 0;
+  font-size: 0.8em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #aaa;
+}
+#tourSplash .vsName {
+  margin: 0;
+  font-size: 1.4em;
+  font-weight: bold;
+}
+#tourSplash .vsName[data-element='water'] { color: #7fb4ee; }
+#tourSplash .vsName[data-element='air'] { color: #bcd0da; }
+#tourSplash .vsName[data-element='fire'] { color: #f08a68; }
+#tourSplash .vsName[data-element='earth'] { color: #86c288; }
+#tourSplash .vsElement {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+#tourSplash .vsVs {
+  font-size: 2.2em;
+  font-style: italic;
+  color: #ffe14d;
+}
+#tourSplash .vsStageName {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 1.1em;
+  color: #d8d4ca;
+}
+@media (max-height: 460px) {
+  #tourSplash .vsFighter {
+    padding: 6px 10px;
+  }
+  #tourSplash .vsFighter .heroFace {
+    width: 80px;
+    height: 80px;
+  }
+  #tourSplash .vsVs {
+    font-size: 1.6em;
+  }
+}
+

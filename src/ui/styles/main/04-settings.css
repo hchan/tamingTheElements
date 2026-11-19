@@ -1,0 +1,90 @@
+/* Settings: option chips in a wrapping row, readable controls, styled text input. */
+#menu .settingsGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 0.75em;
+  padding: 0.6em 0.9em 0.9em;
+}
+/* Floated, the legend is a normal first row inside the box instead of straddling the border line. */
+#menu .settingsGroup > legend {
+  float: left;
+  flex: 0 0 100%;
+  width: 100%;
+  margin: 0 0 0.1em;
+}
+#menu .settingsGroup > label.settingsOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.3em 0.8em;
+  border: 1px solid #666;
+  border-radius: 999px;
+  background: #2c2c4c;
+  cursor: pointer;
+}
+#menu .settingsGroup > label.settingsOption:has(input:checked) {
+  border-color: #ffe600;
+  background: #2b2a12;
+  color: #ffe600;
+}
+#menu .settingsGroup > label.settingsOption:focus-within {
+  outline: 2px solid #8cf;
+}
+#menu .settingsGroup > div.settingsOption {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.6em;
+  align-items: center;
+}
+#menu .settingsGroup > div.settingsOption > .info {
+  grid-column: 2;
+  font-weight: normal;
+  opacity: 0.8;
+}
+#menu .settingsOption input[type='radio'],
+#menu .settingsOption input[type='checkbox'] {
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0;
+  accent-color: #ffe600;
+}
+/* Relay fields: dark rounded boxes in the chips' palette (never the browser's bare white box), full width on a phone. */
+#menu .settingsOption input[type='text'],
+#menu .settingsOption input[type='password'] {
+  box-sizing: border-box;
+  width: min(100%, 28em);
+  margin-top: 0.25em;
+  padding: 0.4em 0.7em;
+  font: inherit;
+  color: var(--color-fg);
+  background: #15122e;
+  border: 1px solid #8a7fb8;
+  border-radius: 8px;
+}
+#menu .settingsOption input[type='text']:focus,
+#menu .settingsOption input[type='password']:focus {
+  border-color: #ffe600;
+}
+#menu div.settingsGroup {
+  border: 1px solid #888;
+  border-radius: 10px;
+  background: #232340;
+  margin: 0.75em 0;
+  padding: 0.7em 0.9em;
+  align-items: center;
+}
+#menu div.settingsGroup > label.settingsOption,
+#menu div.settingsGroup > label.settingsOption:has(input:checked) {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+#menu #testerCodeStatus {
+  flex: 0 0 100%;
+}
+#menu .settingsGroup + .settingsGroup,
+#menu form > div:has(> .menuButton) {
+  margin-top: 0.75em;
+}
+

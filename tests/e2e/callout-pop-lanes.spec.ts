@@ -33,6 +33,22 @@ async function shot(page: Page, info: TestInfo, name: string): Promise<void> {
   await page.locator('#game canvas').screenshot({ path: SHOT_DIR ? `${SHOT_DIR}/${name}.png` : info.outputPath(`${name}.png`) });
 }
 
+/**
+ * CALLOUT-POP-2 eases a call-out up to its lane in real time (tau 35 ms, about 100 ms to 95%), so two frames after a seek it is still a few
+ * px short of the target the solver cleared. The clearance claim is about the target, so read the overlays once the rects stop moving.
+ */
+async function settledOverlays(page: Page): Promise<Overlays> {
+  let ov = await overlays(page);
+  for (let i = 0; i < 15; i++) {
+    await raf2(page);
+    const next = await overlays(page);
+    const still = JSON.stringify(next.callouts) === JSON.stringify(ov.callouts);
+    ov = next;
+    if (still) break;
+  }
+  return ov;
+}
+
 async function settleCamera(page: Page): Promise<void> {
   let last = '';
   for (let i = 0; i < 40; i++) {
@@ -94,7 +110,7 @@ async function rootedWithPop(page: Page, reduced: boolean): Promise<void> {
 interface Sample { ov: Overlays; ms: number; ticks: number }
 
 /** After the spawn, steps 0, 10, 20 and 30 ticks and at each seeks the pops to 0, 90, 400 and 600 ms. */
-async function sweep(page: Page, each: (s: Sample) => Promise<void> | void): Promise<void> {
+async function sweep(page: Page, each: (s: Sample) => Promise<void> | void, settle = false): Promise<void> {
   let ticks = 0;
   for (const to of [0, 10, 20, 30]) {
     if (to > ticks) await page.evaluate(`window.__TTE__.arena.step(${String(to - ticks)})`);
@@ -102,7 +118,7 @@ async function sweep(page: Page, each: (s: Sample) => Promise<void> | void): Pro
     for (const ms of [0, 90, 400, 600]) {
       await page.evaluate(`window.__TTE__.arena.shockSeek(${String(ms)})`);
       await raf2(page);
-      await each({ ov: await overlays(page), ms, ticks });
+      await each({ ov: settle ? await settledOverlays(page) : await overlays(page), ms, ticks });
     }
   }
 }
@@ -124,6 +140,7 @@ for (const v of VIEWS) {
     const tag = v.name.replace(/\W+/g, '-');
 
     test('S3: CHARGE! keeps clear of the white pop on the foe at every age', async ({ page }, info) => {
+      test.setTimeout(180_000); // settled reads add real frames per sample; the PC is slower than the Mac
       const errors = collectErrors(page);
       const foe = await openDemo(page);
       await hit(page, foe, CHARGE);
@@ -138,12 +155,13 @@ for (const v of VIEWS) {
         }
         if (s.ticks === 0 && s.ms === 400) await shot(page, info, `s3-charge-${tag}-400ms`);
         shots.push(s);
-      });
+      }, true);
       for (const s of shots) expectApart(s, 'S3');
       expect(errors).toEqual([]);
     });
 
     test('S1: ROOTED stays clear of a pop on the same fighter', async ({ page }, info) => {
+      test.setTimeout(180_000);
       const errors = collectErrors(page);
       await rootedWithPop(page, false);
       await settleCamera(page);
@@ -156,7 +174,7 @@ for (const v of VIEWS) {
           expectNonVacuous(s);
         }
         seen.push(s);
-      });
+      }, true);
       for (const s of seen) expectApart(s, 'S1');
       expect(errors).toEqual([]);
     });
@@ -195,6 +213,7 @@ for (const v of VIEWS) {
 test.describe('call-outs slide sideways at the ceiling, 1280x720', () => {
   test.use({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   test('S5b: pinned under the scrim, a call-out slides clear of the pop inside the margins', async ({ page }, info) => {
+    test.setTimeout(180_000);
     const errors = collectErrors(page);
     const foe = await openDemo(page, [200, 200]);
     await hit(page, foe, CHARGE);
@@ -207,7 +226,7 @@ test.describe('call-outs slide sideways at the ceiling, 1280x720', () => {
         await shot(page, info, 's5b-slide-0ms');
       }
       seen.push(s);
-    });
+    }, true);
     let pinned = Infinity;
     let slid = false;
     for (const s of seen) {

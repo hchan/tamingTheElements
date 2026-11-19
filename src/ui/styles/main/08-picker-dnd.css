@@ -1,0 +1,236 @@
+/* Drag and drop (hero-dnd.ts): the previewed tile, the ghost under the pointer, the slot it would land in. */
+.heroTile,
+[data-hero-slot] {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.heroTile.heroArmed {
+  border-color: #d9c27a;
+  box-shadow: 0 0 0 2px #d9c27a, inset 0 0 0 2px #d9c27a;
+}
+.heroDragSource {
+  opacity: 0.45;
+}
+.heroDragging,
+.heroDragging * {
+  cursor: grabbing;
+}
+.heroGhost {
+  position: fixed;
+  z-index: 1000;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0.92;
+  transform: translate(-50%, -50%) scale(1.06);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
+}
+.heroDropOn {
+  border-color: #fff;
+  background: #3a3520;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #000;
+  outline: 2px dashed #d9c27a;
+  outline-offset: 4px;
+}
+.heroAdd {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0.4em 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .heroDropOn,
+  .heroTile.heroArmed {
+    transition: box-shadow 0.12s ease-out, background-color 0.12s ease-out;
+  }
+}
+.heroGrid[data-cols='6'] button.menuButton.heroTile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 2px;
+  text-align: center;
+}
+.heroGrid[data-cols='6'] .heroTileName {
+  font-size: 0.8em;
+}
+@media (pointer: coarse) {
+  .heroTile,
+  .heroSlot,
+  .heroActions .menuButton {
+    min-height: 48px;
+  }
+}
+@media (max-width: 640px) {
+  .heroStage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'grid' 'hero';
+  }
+  .heroGrid[data-cols='6'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .heroTileFace {
+    width: 36px;
+    height: 36px;
+  }
+  /* Three narrow columns: face above the name, and names break only at spaces ("Curomo", "Cyclonius" stay whole). */
+  .heroSelect button.menuButton.heroTile {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 2px;
+    text-align: center;
+  }
+  .heroTileName {
+    overflow-wrap: normal;
+    font-size: 0.8em;
+  }
+  .heroSlotName {
+    font-size: 0.75em;
+    overflow-wrap: normal;
+  }
+  .heroPortrait {
+    width: 72px;
+    height: 72px;
+  }
+}
+#arcadePick .vsCursor1 { border-color: var(--vs-p1); box-shadow: 0 0 0 2px var(--vs-p1); }
+#arcadePick .vsCursor2 { border-color: var(--vs-p2); box-shadow: 0 0 0 2px var(--vs-p2); }
+#arcadePick .vsCursor1.vsCursor2 { box-shadow: 0 0 0 2px var(--vs-p1), inset 0 0 0 2px var(--vs-p2); }
+#arcadePick .vsFlags,
+#arcadePick .vsCursors {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  min-height: 1.3em;
+}
+#arcadePick .vsFlags[hidden] {
+  display: none;
+}
+#arcadePick .vsCursors {
+  position: absolute;
+  top: 8px;
+  left: 3px;
+  min-height: 0;
+  flex-direction: column;
+}
+#arcadePick .vsChip {
+  display: inline-block;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: bold;
+  line-height: 1.4;
+  color: #000;
+  white-space: nowrap;
+}
+#arcadePick .vsP1 { background: var(--vs-p1); }
+#arcadePick .vsP2 { background: var(--vs-p2); }
+#arcadePick .vsKeys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75em;
+  margin: 0.75em 0 0;
+  text-align: left;
+}
+#arcadePick .vsKeys[hidden] {
+  display: none;
+}
+#arcadePick .vsKeysPlayer {
+  min-width: 0;
+  border: 1px solid #888;
+  border-radius: 10px;
+  padding: 0.4em 0.7em;
+  background: #232340;
+}
+#arcadePick .vsKeysTitle {
+  margin: 0 0 0.3em;
+  font-size: 1em;
+}
+#arcadePick .vsKeyList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
+  gap: 2px 1em;
+  margin: 0;
+}
+#arcadePick .vsKeyList > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5em;
+}
+#arcadePick .vsKeyList dt,
+#arcadePick .vsKeyList dd {
+  margin: 0;
+}
+#arcadePick .vsKeyList dd {
+  font-family: monospace;
+  font-weight: bold;
+}
+#arcadePick .vsKeysPick,
+#arcadePick .vsPads {
+  margin: 0.4em 0 0;
+  font-size: 0.85em;
+}
+#arcadePick .vsPads {
+  grid-column: 1 / -1;
+}
+#arcadePick .vsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.75em;
+}
+#arcadePick .vsFight {
+  min-width: 8em;
+  min-height: 48px;
+  font-weight: bold;
+  background: var(--color-ready);
+}
+#arcadePick .vsBothReady .vsSide {
+  box-shadow: 0 0 0 2px var(--color-gold);
+}
+#arcadePick button:focus-visible,
+#arcadePick a:focus-visible,
+#arcadePick select:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+@media (max-width: 1000px) {
+  #arcadePick .vsStage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: 'side1 side2' 'grid hero';
+  }
+}
+@media (max-width: 640px) {
+  #arcadePick .vsStage {
+    gap: 0.5em;
+  }
+  #arcadePick .vsSide {
+    padding: 0.3em;
+  }
+  #arcadePick .rosterSlot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2em;
+  }
+  #arcadePick .vsBigFace {
+    width: 40px;
+    height: 40px;
+  }
+  #arcadePick .vsStats {
+    display: none;
+  }
+  #arcadePick .vsSlotActions {
+    flex-wrap: wrap;
+  }
+  #arcadePick .vsStage {
+    grid-template-areas: 'side1 side2' 'grid grid' 'hero hero';
+  }
+  #arcadePick .vsKeys {
+    grid-template-columns: 1fr;
+  }
+}
+
