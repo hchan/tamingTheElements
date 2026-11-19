@@ -228,7 +228,7 @@ describe('settingsScreen (DOM)', () => {
 });
 
 describe('settings sections', () => {
-  it('groups the controls, keeps Advanced collapsed and puts Save and Back first', async () => {
+  it('groups the controls, keeps Advanced collapsed and puts Back then Save first', async () => {
     await mountWith(fakeStore());
     const open = (id: string): boolean => (document.getElementById(id) as HTMLDetailsElement).open;
     expect(open('settingsAudio')).toBe(true);
@@ -247,6 +247,7 @@ describe('settings sections', () => {
     expect(document.getElementById('settingsControls')?.querySelector('a.menuLink[href="#keyBindings"]')).not.toBeNull();
     expect(form().querySelector('.settingsBar a.menuLink')?.textContent).toBe('Back');
     expect(form().firstElementChild?.className).toBe('settingsBar');
+    expect(form().querySelector('.settingsBar')?.firstElementChild?.textContent).toBe('Back');
     expect(form().querySelector('.settingsBar button[type="submit"]')?.textContent).toBe('Save');
     expect(
       document.getElementById('settingsAudio')?.querySelector('input[type="range"]'),

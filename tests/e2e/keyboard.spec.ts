@@ -95,7 +95,11 @@ test.describe('keyboard-only menu navigation', () => {
       await page.evaluate(`window.location.hash = '#${route}'`);
       await waitForRoute(page, `#${route}`);
       await loaded(page);
-      await tabTo(page, 'Back', 60);
+      if (route === 'keyBindings') await expect(page.locator('#menu .padBindings')).toBeVisible(); // lazy chunk
+      const stops = await page.locator(
+        '#menu :is(a[href],button:not([disabled]),input:not([disabled]),select,textarea,summary,[tabindex]:not([tabindex="-1"]))',
+      ).count();
+      await tabTo(page, 'Back', stops + 2); // +2: the BODY stop and one spare; a real trap never reaches Back
       await page.keyboard.press('Enter');
       await waitForRoute(page, '#main');
     });

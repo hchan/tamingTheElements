@@ -70,6 +70,14 @@ describe('keyBindingsScreen (DOM)', () => {
     expect(root.querySelector('a.menuLink')?.getAttribute('href')).toBe('#main');
   });
 
+  it('first focusable is Back, inside the sticky .settingsBar', () => {
+    screen = keyBindingsScreen();
+    screen.mount(root);
+    const first = root.querySelector('button, a[href], input');
+    expect(first?.textContent).toBe('Back');
+    expect(first?.closest('.settingsBar')).not.toBeNull();
+  });
+
   it('click then a key rebinds, announces, persists to localStorage and refocuses the button', async () => {
     screen = keyBindingsScreen();
     screen.mount(root);
