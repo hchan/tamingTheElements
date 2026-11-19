@@ -18,6 +18,12 @@ describe('playwright configs take a browser slot', () => {
     }
   });
 
+  it('the main config serves through the supervisor and shuts it down gracefully', () => {
+    const s = readFileSync('playwright.config.ts', 'utf8');
+    expect(s).toContain('tools/ci/e2e-server.ts');
+    expect(s).toMatch(/gracefulShutdown: \{ signal: 'SIGTERM'/);
+  });
+
   it('a bare playwright run is refused; --list and a held slot are allowed', () => {
     const run = (args: string[], held: string) =>
       spawnSync('node_modules/.bin/playwright', ['test', '--config', 'playwright.itch.config.ts', ...args], {

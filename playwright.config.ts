@@ -32,5 +32,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: reuseServer(), // opt-in (E2E_REUSE=1): silent reuse caused cross-run contamination
     timeout: 120_000,
+    // A normal teardown SIGTERMs the group: the supervisor stops vite and writes `stop: SIGTERM`; Playwright SIGKILLs the group after 5 s.
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
   },
 });
