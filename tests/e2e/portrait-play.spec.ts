@@ -19,6 +19,9 @@ async function enterFight(page: Page): Promise<void> {
   await page.goto(`${START}&ff=arcade#arcade`);
   await page.getByRole('button', { name: /^Fight/ }).tap();
   await page.waitForFunction(ARENA_READY, undefined, { timeout: 90_000 });
+  // START boots with manual=1 (sim paused): step past the ~95-tick intro so the sim's own FIGHT! fires tte:fight-over, instead of waiting
+  // on the 7 s wall-clock fallback (see touch-fight-layout.spec.ts).
+  await page.evaluate(`window.__TTE__.arena.step(110)`);
   await page.locator('#firstRunHint:not(.firstRunWait)').waitFor({ state: 'attached', timeout: 90_000 });
 }
 
@@ -161,22 +164,6 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
       expect(errors).toEqual([]);
     });
 
-    test('the stick still steers after the canvas moved', async ({ page }) => {
-      await enterFight(page);
-      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
-      await page.waitForFunction(ATTR);
-      await page.getByRole('button', { name: 'Got it' }).tap();
-      await page.evaluate(`(() => { window.__keys = []; window.addEventListener('keydown', (e) => window.__keys.push(e.code)); })()`);
-      const s = await box(page, '#touchStick');
-      const cx = s.x + s.w / 2;
-      const cy = s.y + s.h / 2;
-      const cdp = await page.context().newCDPSession(page);
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy, id: 1 }] });
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: cx - s.w / 2 + 4, y: cy, id: 1 }] });
-      await expect.poll(() => page.evaluate<number>(`window.__keys.length`)).toBeGreaterThan(0);
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    });
-
     test('rotating to landscape drops the flag, and teardown leaves no flag or listeners', async ({ page }) => {
       await enterFight(page);
       await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
@@ -240,90 +227,97 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
   test.describe(`portrait play touch targets ${String(w)}x${String(h)}`, () => {
     test.use({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
-    test('every visible control has a 44x44 hit box inside the screen, the bar sits clear of the strikes, and Strike 1 is in thumb reach', async ({ page }) => {
+    test('touch targets: 44x44 boxes, taps do something, the stick steers (one boot, steps per check)', async ({ page }) => {
       await enterFight(page);
       await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
       await page.waitForFunction(ATTR);
       await page.getByRole('button', { name: 'Got it' }).tap();
+      await page.evaluate(`(() => { window.__keys = []; window.addEventListener('keydown', (e) => window.__keys.push(e.code)); })()`);
       await page.waitForFunction(`document.querySelectorAll('button.touchBtn.touchSkirt').length > 0`);
-      const canvas = await box(page, '#game canvas');
-      const ctls = await page.evaluate<Ctl[]>(CONTROLS);
-      expect(ctls.length).toBeGreaterThanOrEqual(10);
-      for (const c of ctls) {
-        expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(c.id.startsWith("arcade") || c.id.startsWith("touchSkirtDeco") ? 39 : 44 - 0.6);
-        expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
-        expect(c.x, c.id).toBeGreaterThanOrEqual(-0.5);
-        expect(c.x + c.w, c.id).toBeLessThanOrEqual(w + 0.5);
-        expect(c.y + c.h, c.id).toBeLessThanOrEqual(h + 0.5);
-      }
-      // P3: the Strike circles replace the Blast and Flame tiles, so the bar is ONE row (P2): every bar box shares a bottom edge.
-      // Blast and Flame no longer have bar tiles; the only canvas-click deco left is a dimmed Melee (ranged hero), still 44+.
-      expect(ctls.some((c) => c.id.startsWith('touchSkirtDeco'))).toBe(true);
-      expect(await page.evaluate<number>(`document.querySelectorAll('button.touchBtn').length`)).toBeGreaterThanOrEqual(5);
-      const barBoxes = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
-      expect(barBoxes.length, 'Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse, Run: no Blast/Flame tiles').toBe(9);
-      expect(new Set(barBoxes.map((c) => Math.round(c.y + c.h))).size, `one bar row: ${JSON.stringify(barBoxes)}`).toBe(1);
-      // Tile bar: no two bar boxes overlap each other.
-      const bar = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
-      for (let i = 0; i < bar.length; i++) for (let j = i + 1; j < bar.length; j++) {
-        const a = bar[i], b = bar[j];
-        if (a && b) expect(overlap({ x: a.x, y: a.y, w: a.w, h: a.h }, { x: b.x + 1, y: b.y + 1, w: b.w - 2, h: b.h - 2 }), `${a.id} / ${b.id}`).toBe(false);
-      }
-      // Strikes: below the canvas, both lifted at least 40 px off the screen bottom.
-      for (const id of ['#touchStrike1', '#touchStrike2']) {
-        const b = await box(page, id);
-        expect(h - (b.y + b.h), id).toBeGreaterThanOrEqual(40);
-        expect(b.y, id).toBeGreaterThanOrEqual(canvas.y + canvas.h);
-      }
-      await shot(page, `${String(w)}-targets`);
-    });
-
-    test('a tap on every bar box does something (a command) or the box is visibly disabled', async ({ page }) => {
-      await enterFight(page);
-      await page.getByRole('button', { name: 'Play anyway in portrait' }).tap();
-      await page.waitForFunction(ATTR);
-      await page.getByRole('button', { name: 'Got it' }).tap();
-      await page.waitForFunction(`document.querySelectorAll('button.touchBtn.touchSkirt').length > 0`);
-      // Canvas-click boxes (Ember, Cleanse, Charge...; Blast and Flame are the Strike circles now): the tap reaches the canvas and `clicks()` records the command.
-      const decos = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('touchSkirtDeco'))`);
-      expect(decos.length).toBeGreaterThanOrEqual(1);
-      const fired: number[] = [];
-      for (const d of decos) {
-        const before = await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`);
-        await page.touchscreen.tap(d.x + d.w / 2, d.y + d.h / 2);
-        await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
-        const after = await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`);
-        // A disabled box (Charge for a ranged hero) records nothing and says so: its deco carries the "Melee" note instead.
-        if (after.length > before.length) fired.push(after[after.length - 1] ?? 0);
-      }
-      expect(new Set(fired).size).toBe(fired.length);
-      // DOM buttons: pressing one holds its key (window.__keys) unless it is disabled.
-      const btns = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('arcade'))`);
-      expect(btns.length).toBeGreaterThanOrEqual(5);
-      for (const b of btns) {
-        if (b.disabled) continue;
-        const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(b.x + b.w / 2)}, ${String(b.y + b.h / 2)}); return e ? e.id : ''; })()`);
-        expect(hit, `${b.id} is the element under its own centre`).toBe(b.id);
-      }
-      for (const id of ['#touchStrike1', '#touchStrike2']) {
-        const b = await box(page, id);
-        const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(b.x + b.w / 2)}, ${String(b.y + b.h / 2)}); return e ? (e.closest('.touchStrike') || e).id : ''; })()`);
-        expect(hit).toBe(id.slice(1));
-      }
-      // QA r88 P1: the dropped Blast / Flame / Ice Shock tiles are named on the Strike circles (no silent drop).
-      await page.waitForFunction(`[...document.querySelectorAll('.touchStrikeAbility')].filter((n) => n.textContent && n.getBoundingClientRect().width > 0).length === 2`);
-      for (const id of ['#touchStrike1', '#touchStrike2']) {
-        const b = await box(page, id);
-        const t = await page.evaluate<{ r: number; l: number; txt: string }>(`(() => { const n = document.querySelector('${id} .touchStrikeAbility').getBoundingClientRect(); const c = document.querySelector('${id}').getBoundingClientRect(); return { r: c.right - n.right, l: n.left - c.left, txt: document.querySelector('${id} .touchStrikeAbility').textContent }; })()`);
-        expect(t.txt.length, id).toBeGreaterThan(0);
-        // QA r100 P2: no ellipsis or clipping, even for the longest names (Adrenaline, Wind Cone, Slime Ring, Rock Armr).
-        const fit = await page.evaluate<{ sw: number; cw: number; to: string }>(`(() => { const n = document.querySelector('${id} .touchStrikeAbility'); return { sw: n.scrollWidth, cw: n.clientWidth, to: getComputedStyle(n).textOverflow }; })()`);
-        expect(fit.to, `${id} no ellipsis`).not.toBe('ellipsis');
-        expect(fit.sw, `${id} "${t.txt}" not clipped`).toBeLessThanOrEqual(fit.cw);
-        expect(t.l, id).toBeGreaterThanOrEqual(0);
-        expect(t.r, id).toBeGreaterThanOrEqual(0);
-        expect(b.w).toBeGreaterThanOrEqual(44);
-      }
+      await test.step('every visible control has a 44x44 hit box inside the screen, the bar sits clear of the strikes', async () => {
+        const canvas = await box(page, '#game canvas');
+        const ctls = await page.evaluate<Ctl[]>(CONTROLS);
+        expect(ctls.length).toBeGreaterThanOrEqual(10);
+        for (const c of ctls) {
+          expect(c.w, `${c.id} width`).toBeGreaterThanOrEqual(c.id.startsWith("arcade") || c.id.startsWith("touchSkirtDeco") ? 39 : 44 - 0.6);
+          expect(c.h, `${c.id} height`).toBeGreaterThanOrEqual(44 - 0.6);
+          expect(c.x, c.id).toBeGreaterThanOrEqual(-0.5);
+          expect(c.x + c.w, c.id).toBeLessThanOrEqual(w + 0.5);
+          expect(c.y + c.h, c.id).toBeLessThanOrEqual(h + 0.5);
+        }
+        // P3: the Strike circles replace the Blast and Flame tiles, so the bar is ONE row (P2): every bar box shares a bottom edge.
+        // Blast and Flame no longer have bar tiles; the only canvas-click deco left is a dimmed Melee (ranged hero), still 44+.
+        expect(ctls.some((c) => c.id.startsWith('touchSkirtDeco'))).toBe(true);
+        expect(await page.evaluate<number>(`document.querySelectorAll('button.touchBtn').length`)).toBeGreaterThanOrEqual(5);
+        const barBoxes = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
+        expect(barBoxes.length, 'Melee, Weather, Dash, Guard, Super, Bomb, Ember, Cleanse, Run: no Blast/Flame tiles').toBe(9);
+        expect(new Set(barBoxes.map((c) => Math.round(c.y + c.h))).size, `one bar row: ${JSON.stringify(barBoxes)}`).toBe(1);
+        // Tile bar: no two bar boxes overlap each other.
+        const bar = ctls.filter((c) => c.id.startsWith('arcade') || c.id.startsWith('touchSkirtDeco'));
+        for (let i = 0; i < bar.length; i++) for (let j = i + 1; j < bar.length; j++) {
+          const a = bar[i], b = bar[j];
+          if (a && b) expect(overlap({ x: a.x, y: a.y, w: a.w, h: a.h }, { x: b.x + 1, y: b.y + 1, w: b.w - 2, h: b.h - 2 }), `${a.id} / ${b.id}`).toBe(false);
+        }
+        // Strikes: below the canvas, both lifted at least 40 px off the screen bottom.
+        for (const id of ['#touchStrike1', '#touchStrike2']) {
+          const b = await box(page, id);
+          expect(h - (b.y + b.h), id).toBeGreaterThanOrEqual(40);
+          expect(b.y, id).toBeGreaterThanOrEqual(canvas.y + canvas.h);
+        }
+        await shot(page, `${String(w)}-targets`);
+      });
+      await test.step('a tap on every bar box does something or the box is visibly disabled', async () => {
+        // Canvas-click boxes (Ember, Cleanse, Charge...; Blast and Flame are the Strike circles now): the tap reaches the canvas and `clicks()` records the command.
+        const decos = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('touchSkirtDeco'))`);
+        expect(decos.length).toBeGreaterThanOrEqual(1);
+        const fired: number[] = [];
+        for (const d of decos) {
+          const before = await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`);
+          await page.touchscreen.tap(d.x + d.w / 2, d.y + d.h / 2);
+          await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+          const after = await page.evaluate<number[]>(`window.__TTE__.arena.clicks()`);
+          // A disabled box (Charge for a ranged hero) records nothing and says so: its deco carries the "Melee" note instead.
+          if (after.length > before.length) fired.push(after[after.length - 1] ?? 0);
+        }
+        expect(new Set(fired).size).toBe(fired.length);
+        // DOM buttons: pressing one holds its key (window.__keys) unless it is disabled.
+        const btns = await page.evaluate<Ctl[]>(`${CONTROLS}.filter((c) => c.id.startsWith('arcade'))`);
+        expect(btns.length).toBeGreaterThanOrEqual(5);
+        for (const b of btns) {
+          if (b.disabled) continue;
+          const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(b.x + b.w / 2)}, ${String(b.y + b.h / 2)}); return e ? e.id : ''; })()`);
+          expect(hit, `${b.id} is the element under its own centre`).toBe(b.id);
+        }
+        for (const id of ['#touchStrike1', '#touchStrike2']) {
+          const b = await box(page, id);
+          const hit = await page.evaluate<string>(`(() => { const e = document.elementFromPoint(${String(b.x + b.w / 2)}, ${String(b.y + b.h / 2)}); return e ? (e.closest('.touchStrike') || e).id : ''; })()`);
+          expect(hit).toBe(id.slice(1));
+        }
+        // QA r88 P1: the dropped Blast / Flame / Ice Shock tiles are named on the Strike circles (no silent drop).
+        await page.waitForFunction(`[...document.querySelectorAll('.touchStrikeAbility')].filter((n) => n.textContent && n.getBoundingClientRect().width > 0).length === 2`);
+        for (const id of ['#touchStrike1', '#touchStrike2']) {
+          const b = await box(page, id);
+          const t = await page.evaluate<{ r: number; l: number; txt: string }>(`(() => { const n = document.querySelector('${id} .touchStrikeAbility').getBoundingClientRect(); const c = document.querySelector('${id}').getBoundingClientRect(); return { r: c.right - n.right, l: n.left - c.left, txt: document.querySelector('${id} .touchStrikeAbility').textContent }; })()`);
+          expect(t.txt.length, id).toBeGreaterThan(0);
+          // QA r100 P2: no ellipsis or clipping, even for the longest names (Adrenaline, Wind Cone, Slime Ring, Rock Armr).
+          const fit = await page.evaluate<{ sw: number; cw: number; to: string }>(`(() => { const n = document.querySelector('${id} .touchStrikeAbility'); return { sw: n.scrollWidth, cw: n.clientWidth, to: getComputedStyle(n).textOverflow }; })()`);
+          expect(fit.to, `${id} no ellipsis`).not.toBe('ellipsis');
+          expect(fit.sw, `${id} "${t.txt}" not clipped`).toBeLessThanOrEqual(fit.cw);
+          expect(t.l, id).toBeGreaterThanOrEqual(0);
+          expect(t.r, id).toBeGreaterThanOrEqual(0);
+          expect(b.w).toBeGreaterThanOrEqual(44);
+        }
+      });
+      await test.step('the stick still steers after the canvas moved', async () => {
+        const s = await box(page, '#touchStick');
+        const cx = s.x + s.w / 2;
+        const cy = s.y + s.h / 2;
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy, id: 1 }] });
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: cx - s.w / 2 + 4, y: cy, id: 1 }] });
+        await expect.poll(() => page.evaluate<number>(`window.__keys.length`)).toBeGreaterThan(0);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      });
     });
 
     test('3v3: Tag and Tag 2 are 44x44 buttons, hold their key on a tap, and every control is still 44x44', async ({ page }) => {
