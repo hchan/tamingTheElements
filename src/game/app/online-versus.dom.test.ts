@@ -298,6 +298,19 @@ describe('online versus screen', () => {
     expect($<HTMLTextAreaElement>('onlineAnswerIn').readOnly).toBe(false);
     expect($('onlineStatus').getAttribute('role')).toBe('status');
     expect(host.querySelectorAll('a[href="#main"]')).toHaveLength(1);
+    expect(host.querySelectorAll('a.menuLink')).toHaveLength(1);
+  });
+
+  it('has a one-sentence intro and role buttons with sublines that keep their names', () => {
+    mountOnline(host);
+    expect(host.querySelector('.onlineScreen > p')?.textContent).toBe('Play a friend over the internet, no account needed.');
+    for (const [id, name] of [['onlineRoleHost', 'Host a game'], ['onlineRoleJoin', 'Join a game']] as const) {
+      const b = $(id);
+      expect(b.getAttribute('aria-label')).toBe(name);
+      expect(b.dataset.sub).toBeTruthy();
+      expect(host.querySelector(`#${b.getAttribute('aria-describedby') ?? 'none'}`)?.textContent).toBe(b.dataset.sub);
+      expect(b.dataset.sub).not.toMatch(/\b(classic|arcade|ruleset|capture)\b/i);
+    }
   });
 
   it('Connect before Host asks to host first', async () => {
