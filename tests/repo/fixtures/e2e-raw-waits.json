@@ -1,0 +1,662 @@
+{
+  "a11y-features.spec.ts": {
+    "poll": 4,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 41
+  },
+  "a11y-trap-touch.spec.ts": {
+    "poll": 2,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 10
+  },
+  "ability-fx.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 18
+  },
+  "action-bar-groups.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 5
+  },
+  "action-bar-kits-shot.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 1
+  },
+  "app-flow.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 12
+  },
+  "arcade-audio.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 13
+  },
+  "arcade-charge.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 18
+  },
+  "arcade-defence.spec.ts": {
+    "poll": 2,
+    "waitForFunction": 5,
+    "waitForTimeout": 0,
+    "expects": 37
+  },
+  "arcade-juice.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 29
+  },
+  "arcade-local.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 37
+  },
+  "arcade-pan.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 43
+  },
+  "arcade-rounds.spec.ts": {
+    "poll": 10,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 45
+  },
+  "arcade-stage-floors.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 4
+  },
+  "arcade-super.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 25
+  },
+  "arcade-tag.spec.ts": {
+    "poll": 2,
+    "waitForFunction": 6,
+    "waitForTimeout": 0,
+    "expects": 83
+  },
+  "arcade-terrain.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 4,
+    "waitForTimeout": 0,
+    "expects": 21
+  },
+  "arcade-trap.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "arcade-weather.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 36
+  },
+  "arcade.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 4,
+    "waitForTimeout": 0,
+    "expects": 42
+  },
+  "arena-smoke.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 12
+  },
+  "audio-mute.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 4,
+    "waitForTimeout": 0,
+    "expects": 5
+  },
+  "battle-failures.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 9
+  },
+  "battle-teardown.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 4
+  },
+  "callout-pop-lanes.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 23
+  },
+  "cast-tint.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 3
+  },
+  "cc-fx.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 12
+  },
+  "cinematic-keys.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 4,
+    "waitForTimeout": 0,
+    "expects": 1
+  },
+  "cinematic-teardown.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 7
+  },
+  "cleanse-fx.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 5
+  },
+  "combo-anchor.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 52
+  },
+  "danger-zone.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 6
+  },
+  "display-size.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 4
+  },
+  "effect-sprites-shot.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 4
+  },
+  "element-marks.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 2
+  },
+  "elemental-heroes-shot.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 1
+  },
+  "fire-blast-fade-shot.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 2
+  },
+  "first-run-hint-portrait.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 2,
+    "waitForTimeout": 2,
+    "expects": 8
+  },
+  "first-run-hint.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 5,
+    "waitForTimeout": 1,
+    "expects": 23
+  },
+  "floor-backgrounds.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 4
+  },
+  "fx-map-sprites.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 6
+  },
+  "ghost-bar-shot.spec.ts": {
+    "poll": 2,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 8
+  },
+  "help-controls.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 0,
+    "waitForTimeout": 0,
+    "expects": 24
+  },
+  "hero-portrait-shot.spec.ts": {
+    "poll": 2,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "hero-scale.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 8
+  },
+  "hit-feel-capture.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 3
+  },
+  "hit-juice-shot.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 3
+  },
+  "hit-mark-element.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "hud-labels-sf.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 1
+  },
+  "hud-polish-r77.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 6
+  },
+  "hud-text-clear.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 5
+  },
+  "ice-shock-fx.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 3
+  },
+  "idle-aura.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 22
+  },
+  "idle-motif.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "keyboard.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 33
+  },
+  "ko-fx-shot.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 22
+  },
+  "life-readout.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 10
+  },
+  "manual-fx-age.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 6
+  },
+  "match-end.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 27
+  },
+  "menu-showcase.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 9
+  },
+  "move-backward.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "move-wings-knees.spec.ts": {
+    "poll": 2,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 5
+  },
+  "online-leave.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 10
+  },
+  "online-mobile.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 13
+  },
+  "own-element-fx.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 14
+  },
+  "parity/golden-paths.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 4,
+    "waitForTimeout": 0,
+    "expects": 74
+  },
+  "pause-menu.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 9,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "pause-reasons.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 6,
+    "waitForTimeout": 0,
+    "expects": 4
+  },
+  "perf.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 8
+  },
+  "phone-layout.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 22
+  },
+  "phone-portrait-menu.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "playtest-replay.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "portrait-play.spec.ts": {
+    "poll": 8,
+    "waitForFunction": 24,
+    "waitForTimeout": 0,
+    "expects": 78
+  },
+  "pseudo3d-depth.spec.ts": {
+    "poll": 4,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 9
+  },
+  "pseudo3d-orbit.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 12
+  },
+  "pseudo3d-rope.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 13
+  },
+  "replay-input-display.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 11
+  },
+  "responsive.spec.ts": {
+    "poll": 5,
+    "waitForFunction": 7,
+    "waitForTimeout": 0,
+    "expects": 70
+  },
+  "roster24-shot.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 2
+  },
+  "round-end-panel.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 4
+  },
+  "round-result-real-fight.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 3
+  },
+  "round-result.spec.ts": {
+    "poll": 3,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 14
+  },
+  "settings-save.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 12
+  },
+  "sf-juice-shot.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 7
+  },
+  "sfx-wiring.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 3
+  },
+  "signature-fx.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 2
+  },
+  "slot-tooltip.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 1
+  },
+  "small-viewport-fight.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 31
+  },
+  "smoke.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 3
+  },
+  "smooth-movement.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 6
+  },
+  "sprite-sheets.spec.ts": {
+    "poll": 11,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 25
+  },
+  "stage-ambient.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 5
+  },
+  "stage-hazards.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 14
+  },
+  "status-fx.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 10
+  },
+  "status-more-chip.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 10
+  },
+  "storage-guards.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 6
+  },
+  "super-band-portrait.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 8
+  },
+  "super-band.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 28
+  },
+  "super-impact-shot.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 8
+  },
+  "terrain-chips-water.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 16
+  },
+  "tester-mode.spec.ts": {
+    "poll": 5,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 80
+  },
+  "touch-fight-layout.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 6,
+    "waitForTimeout": 0,
+    "expects": 92
+  },
+  "touch-stick.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 0,
+    "waitForTimeout": 0,
+    "expects": 10
+  },
+  "tour-card.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 19
+  },
+  "tour-fight-match.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 6
+  },
+  "tour.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 7,
+    "waitForTimeout": 0,
+    "expects": 53
+  },
+  "trap-art.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 3,
+    "waitForTimeout": 0,
+    "expects": 14
+  },
+  "versus-hero-pick.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 2,
+    "waitForTimeout": 0,
+    "expects": 14
+  },
+  "versus-stage-pick.spec.ts": {
+    "poll": 1,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 7
+  },
+  "weather-particles.spec.ts": {
+    "poll": 0,
+    "waitForFunction": 1,
+    "waitForTimeout": 0,
+    "expects": 8
+  }
+}
