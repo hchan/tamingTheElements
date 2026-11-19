@@ -201,6 +201,33 @@ export function rockOnLine(self: FighterView, opp: FighterView, rocks: readonly 
   return undefined;
 }
 
+/** Slot names of the ArcadeTactics memory tuple; the order is the saved format (FRESH, save/load), never reorder. */
+const enum Mem {
+  superSince,
+  superReact,
+  threatSince,
+  threatReact,
+  plan,
+  guardAt,
+  style,
+  slideBits,
+  slideUntil,
+  hpChangeAt,
+  hpSum,
+  reflexAt,
+  reflexOk,
+  lastDist,
+  pressUntil,
+  gusts,
+  fatigue,
+  fatigueAt,
+  fatigueWindowAt,
+  lastHp,
+  runX,
+  runY,
+  runStill,
+}
+
 type Memory = [
   number, number, number, number, number, number, number, number, number, number,
   number, number, number, number, number, number, number, number, number, number,
@@ -325,7 +352,7 @@ export class ArcadeTactics {
     const opp = view.opponent;
     if (self === undefined || opp === undefined || (this.kit[0] === 'none' && this.kit[1] === 'none')) return cmd;
     // A stale fight (no HP change for ARCADE_AI_STALE_TICKS) gets the Classic AI's presses back: a gated kit must never hold a stalemate.
-    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS) return cmd;
+    if (view.tick - this.mem[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS) return cmd;
     const far = Math.abs(opp.x - self.x) + Math.abs(opp.y - self.y);
     const threat = soonestShot(self, a.shots, ARCADE_AI_LOOKAHEAD) !== undefined;
     const field = arcadePlayfield();
@@ -363,7 +390,7 @@ export class ArcadeTactics {
     const opp = view.opponent;
     if (self === undefined || opp === undefined || this.level < AI_NORMAL || a.chargeIn !== -1 || a.partnerPm >= 0) return cmd;
     if (a.phase !== RoundPhase.fight || a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
-    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap | Cmd.run)) !== 0) return cmd;
+    if (view.tick - this.mem[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap | Cmd.run)) !== 0) return cmd;
     return zoneStep(self, opp, cmd, arcadePlayfield(), a.oppStun !== 0 || a.oppRooted !== 0);
   }
 
@@ -378,7 +405,7 @@ export class ArcadeTactics {
     const opp = view.opponent;
     if (self === undefined || opp === undefined || this.level < AI_HARD || a.phase !== RoundPhase.fight) return cmd;
     if (a.selfStun !== 0 || a.superActive || (self.flags & EntityFlag.frozen) !== 0) return cmd;
-    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
+    if (view.tick - this.mem[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS || (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap)) !== 0) return cmd;
     return wallHold(self, opp, cmd, arcadePlayfield(), a.chargeIn === -1);
   }
 
@@ -398,25 +425,25 @@ export class ArcadeTactics {
     if (self === undefined || opp === undefined || a.runIn === undefined) return cmd;
     const running = a.running === true;
     const free = a.selfStun === 0 && !a.superActive && (self.flags & EntityFlag.frozen) === 0 && a.selfRooted === 0;
-    if (running && free && a.freeze === 0) m[22] = self.x === m[20] && self.y === m[21] ? m[22] + 1 : 0;
-    else if (!running) m[22] = 0;
-    m[20] = self.x;
-    m[21] = self.y;
+    if (running && free && a.freeze === 0) m[Mem.runStill] = self.x === m[Mem.runX] && self.y === m[Mem.runY] ? m[Mem.runStill] + 1 : 0;
+    else if (!running) m[Mem.runStill] = 0;
+    m[Mem.runX] = self.x;
+    m[Mem.runY] = self.y;
     if (this.level < AI_NORMAL) return cmd;
     const busy = (cmd & (Cmd.dash | Cmd.guard | Cmd.super | Cmd.charge | Cmd.trap | Cmd.swap1 | Cmd.swap2 | Cmd.weather)) !== 0;
     const dist = centreDist(self, opp);
     const away = a.runAway === true;
     if (running) {
       if (busy) return cmd;
-      const stop = a.oppStun !== 0 || (away && (dist > ARCADE_AI_RUN_FAR_PX || m[22] >= ARCADE_AI_RUN_STILL_TICKS || runCornered(self, opp, arcadePlayfield())));
+      const stop = a.oppStun !== 0 || (away && (dist > ARCADE_AI_RUN_FAR_PX || m[Mem.runStill] >= ARCADE_AI_RUN_STILL_TICKS || runCornered(self, opp, arcadePlayfield())));
       if (!stop) return cmd & ~MOVE;
-      m[22] = 0;
+      m[Mem.runStill] = 0;
       return (cmd & MOVE) !== 0 ? cmd : cmd | (toward(self, opp) || Cmd.left);
     }
     if (busy || a.runIn !== 0 || (a.prevCmd & Cmd.run) !== 0 || a.phase !== RoundPhase.fight || !free || a.oppStun !== 0) return cmd;
-    if (view.tick - m[9] >= ARCADE_AI_STALE_TICKS) return cmd;
+    if (view.tick - m[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS) return cmd;
     const want = away
-      ? dist <= ARCADE_AI_RUN_NEAR_PX && m[6] !== RUSHDOWN && !runCornered(self, opp, arcadePlayfield())
+      ? dist <= ARCADE_AI_RUN_NEAR_PX && m[Mem.style] !== RUSHDOWN && !runCornered(self, opp, arcadePlayfield())
       : a.chargeIn > 0 && dist >= CHARGE_AI_MIN_DIST;
     return want ? (cmd & ~MOVE) | Cmd.run : cmd;
   }
@@ -494,8 +521,8 @@ export class ArcadeTactics {
     const shoots = tagTeam && (tick & 255) >= SHOOT_FROM;
     const wasted = (cmd & ATTACK) !== 0 && !shoots ? rockOnLine(self, opp, rocks) : undefined;
     const out = (bits: Command): Command => (cmd & ~(MOVE | (wasted !== undefined ? ATTACK : 0))) | bits;
-    if (m[7] !== 0 && tick < m[8] && free(m[7])) return out(m[7]);
-    m[7] = 0;
+    if (m[Mem.slideBits] !== 0 && tick < m[Mem.slideUntil] && free(m[Mem.slideBits])) return out(m[Mem.slideBits]);
+    m[Mem.slideBits] = 0;
     const [sx, sy] = [cx, cy];
     const blocker = sx === 0 && sy === 0 ? undefined : rocks.find((r) => (hard ? sweptHits(r, self.x, self.y, self.w, self.h, sx, sy) : hitsRock(r, self.x + sx, self.y + sy, self.w, self.h)));
     const rock = blocker ?? wasted;
@@ -510,8 +537,8 @@ export class ArcadeTactics {
     const [first, second] = toLo <= toHi ? [lo, hi] : [hi, lo];
     for (const bits of [keep | first, first, keep | second, second]) {
       if (!free(bits)) continue;
-      m[7] = bits;
-      m[8] = tick + ARCADE_AI_SLIDE_TICKS;
+      m[Mem.slideBits] = bits;
+      m[Mem.slideUntil] = tick + ARCADE_AI_SLIDE_TICKS;
       return out(bits);
     }
     return cmd;
@@ -528,7 +555,7 @@ export class ArcadeTactics {
     if (self === undefined || a.traps.length === 0 || (cmd & (Cmd.guard | Cmd.dash | Cmd.super | Cmd.charge)) !== 0) return cmd;
     if (this.level === AI_EASY && (view.tick & 255) >= ARCADE_AI_EASY_TRAP_BLIND) return cmd;
     // A stale fight walks on through foe traps: two sides stepping round traps can otherwise never trade a hit.
-    if (view.tick - this.mem[9] >= ARCADE_AI_STALE_TICKS) return cmd;
+    if (view.tick - this.mem[Mem.hpChangeAt] >= ARCADE_AI_STALE_TICKS) return cmd;
     const t = trapOnStep(self, a.traps, cmd);
     if (t === undefined) return cmd;
     if (a.dashIn === 0 && a.selfStun === 0 && trapDashable(this.level, t)) return Cmd.dash | (cmd & MOVE);
@@ -546,13 +573,13 @@ export class ArcadeTactics {
     // Outside a fight (the round reset clears every trap, so the Gust count drops to 0 then) a window never opens and a
     // leftover one is dropped: no spurious press at the start of a round (SIM_VERSION 38).
     if (a.phase !== RoundPhase.fight) {
-      m[14] = 0;
-      m[15] = gusts;
+      m[Mem.pressUntil] = 0;
+      m[Mem.gusts] = gusts;
       return;
     }
-    if (gusts < m[15]) m[14] = tick + ARCADE_AI_PRESS_GUST_TICKS;
-    m[15] = gusts;
-    if (foeInOwnPuddle(opp, a.traps)) m[14] = Math.max(m[14], tick + ARCADE_AI_PRESS_PUDDLE_TICKS);
+    if (gusts < m[Mem.gusts]) m[Mem.pressUntil] = tick + ARCADE_AI_PRESS_GUST_TICKS;
+    m[Mem.gusts] = gusts;
+    if (foeInOwnPuddle(opp, a.traps)) m[Mem.pressUntil] = Math.max(m[Mem.pressUntil], tick + ARCADE_AI_PRESS_PUDDLE_TICKS);
   }
 
   /** True when a trap press now plants: free (the caller checks), ready, under the team cap, a fresh press, a free spot. */
@@ -568,22 +595,22 @@ export class ArcadeTactics {
     const k = ARCADE_AI_KNOBS[this.level];
     const draw = (n: number): number => this.rng.int(view, n);
     const react = (): number => k[0] + draw(k[1]);
-    if (m[6] < 0) m[6] = this.style ?? (this.unfavourable ? TURTLE : draw(3));
+    if (m[Mem.style] < 0) m[Mem.style] = this.style ?? (this.unfavourable ? TURTLE : draw(3));
     // Anti-stalemate: no HP change for ARCADE_AI_STALE_TICKS and Zoner/Turtle play Rushdown (no retreat, close in and charge).
-    if (m[10] !== self.hp + opp.hp) {
-      m[9] = view.tick;
-      m[10] = self.hp + opp.hp;
+    if (m[Mem.hpSum] !== self.hp + opp.hp) {
+      m[Mem.hpChangeAt] = view.tick;
+      m[Mem.hpSum] = self.hp + opp.hp;
     }
-    const quiet = view.tick - m[9];
+    const quiet = view.tick - m[Mem.hpChangeAt];
     const stale = quiet >= ARCADE_AI_STALE_TICKS;
     const stale2 = quiet >= ARCADE_AI_STALE2_TICKS;
     const stale3 = quiet >= ARCADE_AI_STALE3_TICKS;
-    const style = stale ? RUSHDOWN : (m[6] as Style);
+    const style = stale ? RUSHDOWN : (m[Mem.style] as Style);
     const dist = centreDist(self, opp);
     // A stale fight presses: no zoning or corner plant then (a planted trap holds the planter and turns the foe away).
-    const found = trapReason(this.level, style, self, opp, dist, m[13], a.oppRooted, arcadePlayfield());
+    const found = trapReason(this.level, style, self, opp, dist, m[Mem.lastDist], a.oppRooted, arcadePlayfield());
     const reason = stale && found !== TRAP_ROOT ? TRAP_NONE : found;
-    m[13] = dist;
+    m[Mem.lastDist] = dist;
     this.followUp(view.tick, a, opp);
     const line = shot === 0 || (base & ATTACK) !== 0 ? 0 : diagonalLine(self, opp);
     const axisShot = (base & ATTACK) !== 0 && (base & (Cmd.left | Cmd.right)) !== 0;
@@ -598,57 +625,57 @@ export class ArcadeTactics {
 
     // Defence fatigue bookkeeping: a hit on this hero, or a quiet spell without a threat, makes the next defence fresh.
     // Hard (SIM_VERSION 82): only a real hit (hit-stun) resets it; guard chip, damage over time and hazards do not.
-    if (this.level >= AI_HARD ? a.selfStun > 0 : self.hp < m[19]) m[16] = 0;
-    m[19] = self.hp;
+    if (this.level >= AI_HARD ? a.selfStun > 0 : self.hp < m[Mem.lastHp]) m[Mem.fatigue] = 0;
+    m[Mem.lastHp] = self.hp;
     // Defence: the soonest hit among the enemy shots; one reaction delay and one plan per threat.
     const soon = soonestShot(self, a.shots, ARCADE_AI_LOOKAHEAD);
     const t = soon?.t ?? ARCADE_AI_LOOKAHEAD + 1;
     const threat = soon !== undefined;
     if (!threat) {
-      m[2] = -1;
-      if (view.tick - m[17] >= ARCADE_AI_FATIGUE_RESET_TICKS) m[16] = 0;
+      m[Mem.threatSince] = -1;
+      if (view.tick - m[Mem.fatigueAt] >= ARCADE_AI_FATIGUE_RESET_TICKS) m[Mem.fatigue] = 0;
     } else {
-      m[17] = view.tick;
-      if (m[2] < 0) {
+      m[Mem.fatigueAt] = view.tick;
+      if (m[Mem.threatSince] < 0) {
         const rates = ARCADE_AI_STYLES[style];
         let r = draw(1000) * 1000;
         let plan = PARRY;
         // Defence fatigue (SIM_VERSION 80): every defended threat in a row (at most one per window) blunts the next plan.
-        const fatigue = fatigueScale(this.level, m[16]);
+        const fatigue = fatigueScale(this.level, m[Mem.fatigue]);
         const scale = ((stale2 ? 500 : 1000) * fatigue) / 1000;
         while (plan < NO_PLAN && (r -= ((rates[plan] ?? 0) * (k[2 + plan] ?? 0) * scale) / 1000) >= 0) plan++;
         if (stale3) plan = NO_PLAN;
-        m[2] = view.tick;
-        m[3] = react();
-        m[4] = plan;
-        m[12] = draw(1000) < k[7] && !stale2 && m[16] < ARCADE_AI_FATIGUE_REFLEX_MAX ? 1 : 0;
-        if (plan !== NO_PLAN && this.level > AI_EASY && view.tick - m[18] >= ARCADE_AI_FATIGUE_WINDOW) {
-          m[16] = m[16] + 1;
-          m[18] = view.tick;
+        m[Mem.threatSince] = view.tick;
+        m[Mem.threatReact] = react();
+        m[Mem.plan] = plan;
+        m[Mem.reflexOk] = draw(1000) < k[7] && !stale2 && m[Mem.fatigue] < ARCADE_AI_FATIGUE_REFLEX_MAX ? 1 : 0;
+        if (plan !== NO_PLAN && this.level > AI_EASY && view.tick - m[Mem.fatigueWindowAt] >= ARCADE_AI_FATIGUE_WINDOW) {
+          m[Mem.fatigue] = m[Mem.fatigue] + 1;
+          m[Mem.fatigueWindowAt] = view.tick;
         }
-        m[5] = plan === PARRY ? 2 + draw(k[5]) : plan === DODGE ? ARCADE_AI_DODGE_AT : ARCADE_AI_GUARD_AT;
+        m[Mem.guardAt] = plan === PARRY ? 2 + draw(k[5]) : plan === DODGE ? ARCADE_AI_DODGE_AT : ARCADE_AI_GUARD_AT;
       }
-      if (free && m[4] < NO_PLAN && view.tick - m[2] >= m[3]) {
-        if (t <= m[5]) {
-          if (m[4] !== DODGE || a.dashIn !== 0) return Cmd.guard;
+      if (free && m[Mem.plan] < NO_PLAN && view.tick - m[Mem.threatSince] >= m[Mem.threatReact]) {
+        if (t <= m[Mem.guardAt]) {
+          if (m[Mem.plan] !== DODGE || a.dashIn !== 0) return Cmd.guard;
           const side = this.level >= AI_HARD ? sidestepBit(self, soon.shot, arcadePlayfield()) : 0;
           return Cmd.dash | (side !== 0 ? side : toward(self, opp));
         }
       }
-      if (free && this.level > 0 && m[12] === 1 && (soon.shot.vx !== 0 || soon.shot.vy !== 0) && guardReflex(t, view.tick, m[11], true)) {
-        m[11] = view.tick;
+      if (free && this.level > 0 && m[Mem.reflexOk] === 1 && (soon.shot.vx !== 0 || soon.shot.vy !== 0) && guardReflex(t, view.tick, m[Mem.reflexAt], true)) {
+        m[Mem.reflexAt] = view.tick;
         return Cmd.guard;
       }
     }
 
-    if (a.oppStun === 0) m[0] = -1;
+    if (a.oppStun === 0) m[Mem.superSince] = -1;
     else {
-      if (m[0] < 0) {
-        m[0] = view.tick;
-        m[1] = react();
+      if (m[Mem.superSince] < 0) {
+        m[Mem.superSince] = view.tick;
+        m[Mem.superReact] = react();
       }
       const facing = superFacing(self, opp, a.superId);
-      if (free && this.level > 0 && a.meter >= SUPER_COST && facing !== 0 && view.tick - m[0] >= m[1]) {
+      if (free && this.level > 0 && a.meter >= SUPER_COST && facing !== 0 && view.tick - m[Mem.superSince] >= m[Mem.superReact]) {
         return (cmd & ~(MOVE | ATTACK)) | facing | Cmd.super;
       }
       if (a.combo > this.level * 2) cmd &= ~ATTACK;
@@ -701,7 +728,7 @@ export class ArcadeTactics {
     // A rooted foe cannot walk off a trap planted on it (Hard; no draw).
     if (reason === TRAP_ROOT && this.canPlant(self, opp, a)) return plant(cmd);
     // Follow-up (WP 39f, Normal and Hard): press a foe held by its Puddle or shoved by its Gust (a Charge, else close in).
-    if (this.level > AI_EASY && view.tick < m[14] && a.oppStun === 0 && a.oppRooted === 0) {
+    if (this.level > AI_EASY && view.tick < m[Mem.pressUntil] && a.oppStun === 0 && a.oppRooted === 0) {
       if (a.chargeIn === 0 && far >= CHARGE_AI_MIN_DIST && !a.oppGuarding) return Cmd.charge;
       if ((cmd & ATTACK) === 0 && far >= (a.chargeIn === -1 ? ARCADE_AI_PRESS_RANGED_PX : SNAG_CLOSE_PX)) return (cmd & ~MOVE) | toward(self, opp);
     }

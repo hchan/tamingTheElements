@@ -6,10 +6,8 @@ import { CHARACTERS } from '../data/characters';
 import type { Element } from '../data/elements';
 import type { AbilityDef } from '../data/types';
 import { capturable } from '../rules/progression';
-import {
-  ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, HAZARD_BASE, HazardF,
-  MAX_ENTITIES, PATCH_MAX, TEAM_STRIDE, TeamField, TRAP_STRIDE, TRAP_TABLE, TRAP_WORLD_MAX, TrapF, World,
-} from './state';
+import { ARCADE_E, ARCADE_T, ARCADE_TEAM_BASE, ARCADE_WORLD_BASE, ArcadeE, ArcadeT, ArcadeW, cooldownIdx, EntityFlag, EntityKind, HazardF, MAX_ENTITIES, PATCH_MAX, TEAM_STRIDE, TeamField, TRAP_WORLD_MAX, TrapF, World } from './state';
+import { arcadeE, hazardField, trapField } from './arcade-read';
 import { castDir } from './systems/arcade/aim';
 import { RANGED } from './systems/arcade/meter';
 import { isGuarding, isInvulnerable, isStunned } from './systems/arcade/stun';
@@ -255,19 +253,19 @@ export function createRenderView(world: SimWorld): RenderView {
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
     traps: new Array<number>(TRAP_WORLD_MAX * TRAP_VIEW_STRIDE).fill(0), hazard: new Array<number>(HAZARD_VIEW_STRIDE).fill(0),
     stunned: (id) => isStunned(s, id), swapBlock: (team, slot) => swapAllowed(world, team, slot), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
-    guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
+    guard: (id) => GUARD_MAX - (arcadeE(s, id, ArcadeE.guardDrain)), guarding: (id) => isGuarding(s, id),
     rooted: (id) => isRooted(s, id),
-    stunLeft: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) - now(s)),
-    rootLeft: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.rootUntil] ?? 0) - now(s)),
-    rootImmuneLeft: (id) => (isRooted(s, id) ? 0 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.rootImmuneUntil] ?? 0) - now(s))),
-    mireLeft: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.trapSlowUntil] ?? 0) - now(s)),
-    kbSpeed: (id) => (Math.abs(s.arcade[id * ARCADE_E + ArcadeE.kbVx] ?? 0) + Math.abs(s.arcade[id * ARCADE_E + ArcadeE.kbVy] ?? 0)) / Q4_ONE,
-    wallBounced: (id) => (s.arcade[id * ARCADE_E + ArcadeE.wallBounced] ?? 0) !== 0,
-    dashIn: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.dashReadyAt] ?? 0) - now(s)),
-    runIn: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.runReadyAt] ?? 0) - now(s)),
+    stunLeft: (id) => Math.max(0, (arcadeE(s, id, ArcadeE.stunUntil)) - now(s)),
+    rootLeft: (id) => Math.max(0, (arcadeE(s, id, ArcadeE.rootUntil)) - now(s)),
+    rootImmuneLeft: (id) => (isRooted(s, id) ? 0 : Math.max(0, (arcadeE(s, id, ArcadeE.rootImmuneUntil)) - now(s))),
+    mireLeft: (id) => Math.max(0, (arcadeE(s, id, ArcadeE.trapSlowUntil)) - now(s)),
+    kbSpeed: (id) => (Math.abs(arcadeE(s, id, ArcadeE.kbVx)) + Math.abs(arcadeE(s, id, ArcadeE.kbVy))) / Q4_ONE,
+    wallBounced: (id) => (arcadeE(s, id, ArcadeE.wallBounced)) !== 0,
+    dashIn: (id) => Math.max(0, (arcadeE(s, id, ArcadeE.dashReadyAt)) - now(s)),
+    runIn: (id) => Math.max(0, (arcadeE(s, id, ArcadeE.runReadyAt)) - now(s)),
     running: (id) => isRunning(s, id),
     active: (team) => controlledId(world, team),
-    chargeIn: (id) => (RANGED[s.defId[id] ?? 0] ? -1 : Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.chargeReadyAt] ?? 0) - now(s))),
+    chargeIn: (id) => (RANGED[s.defId[id] ?? 0] ? -1 : Math.max(0, (arcadeE(s, id, ArcadeE.chargeReadyAt)) - now(s))),
   };
   const status: RenderStatus = { id: 0, startTick: 0, expireTick: 0 };
   const elementalSlot = (cur: number): RenderActionBar['elemental'] => {
@@ -322,12 +320,12 @@ export function createRenderView(world: SimWorld): RenderView {
         swapReadyTick: s.teams[base + TeamField.swapCooldownUntil] ?? 0,
         swapCooldownTicks: isArcade(s) ? TAG_COOLDOWN_TICKS : SWAP_COOLDOWN_TICKS,
         trap: isArcade(s)
-          ? { readyTick: s.arcade[cur * ARCADE_E + ArcadeE.trapReadyAt] ?? 0, cooldownTicks: TRAP_COOLDOWN_TICKS, count: trapCount(s, team), max: TRAP_TEAM_MAX }
+          ? { readyTick: arcadeE(s, cur, ArcadeE.trapReadyAt), cooldownTicks: TRAP_COOLDOWN_TICKS, count: trapCount(s, team), max: TRAP_TEAM_MAX }
           : undefined,
         run: isArcade(s)
           ? {
-            away: runsAway(s, cur), readyTick: s.arcade[cur * ARCADE_E + ArcadeE.runReadyAt] ?? 0, cooldownTicks: RUN_COOLDOWN_TICKS,
-            activeUntil: s.arcade[cur * ARCADE_E + ArcadeE.runUntil] ?? 0,
+            away: runsAway(s, cur), readyTick: arcadeE(s, cur, ArcadeE.runReadyAt), cooldownTicks: RUN_COOLDOWN_TICKS,
+            activeUntil: arcadeE(s, cur, ArcadeE.runUntil),
           }
           : undefined,
         elemental: elementalSlot(cur),
@@ -391,27 +389,25 @@ export function createRenderView(world: SimWorld): RenderView {
       ar.patchCount = s.arcade[w + ArcadeW.patchCount] ?? 0;
       for (let i = 0; i < PATCH_MAX * 4; i++) ar.patches[i] = s.arcade[w + ArcadeW.patches + i] ?? 0;
       for (let i = 0; i < TRAP_WORLD_MAX; i++) {
-        const b = w + TRAP_TABLE + i * TRAP_STRIDE;
         const o = i * TRAP_VIEW_STRIDE;
-        const kind = s.arcade[b + TrapF.kind] ?? 0;
+        const kind = trapField(s, i, TrapF.kind);
         ar.traps[o] = kind;
-        ar.traps[o + 1] = s.arcade[b + TrapF.x] ?? 0;
-        ar.traps[o + 2] = s.arcade[b + TrapF.y] ?? 0;
-        ar.traps[o + 3] = s.arcade[b + TrapF.team] ?? 0;
-        ar.traps[o + 4] = kind === 0 ? 0 : Math.max(0, (s.arcade[b + TrapF.armAt] ?? 0) - now(s));
-        ar.traps[o + 5] = kind === 0 ? 0 : Math.max(0, (s.arcade[b + TrapF.endAt] ?? 0) - now(s));
+        ar.traps[o + 1] = trapField(s, i, TrapF.x);
+        ar.traps[o + 2] = trapField(s, i, TrapF.y);
+        ar.traps[o + 3] = trapField(s, i, TrapF.team);
+        ar.traps[o + 4] = kind === 0 ? 0 : Math.max(0, (trapField(s, i, TrapF.armAt)) - now(s));
+        ar.traps[o + 5] = kind === 0 ? 0 : Math.max(0, (trapField(s, i, TrapF.endAt)) - now(s));
       }
-      const hb = w + HAZARD_BASE;
-      const hk = s.arcade[hb + HazardF.kind] ?? 0;
-      const strikeAt = s.arcade[hb + HazardF.strikeAt] ?? 0;
+      const hk = hazardField(s, HazardF.kind);
+      const strikeAt = hazardField(s, HazardF.strikeAt);
       ar.hazard[0] = hk;
-      ar.hazard[1] = s.arcade[hb + HazardF.x] ?? 0;
-      ar.hazard[2] = s.arcade[hb + HazardF.y] ?? 0;
-      ar.hazard[3] = s.arcade[hb + HazardF.w] ?? 0;
-      ar.hazard[4] = s.arcade[hb + HazardF.h] ?? 0;
-      ar.hazard[5] = s.arcade[hb + HazardF.dir] ?? 0;
+      ar.hazard[1] = hazardField(s, HazardF.x);
+      ar.hazard[2] = hazardField(s, HazardF.y);
+      ar.hazard[3] = hazardField(s, HazardF.w);
+      ar.hazard[4] = hazardField(s, HazardF.h);
+      ar.hazard[5] = hazardField(s, HazardF.dir);
       ar.hazard[6] = hk === 0 || strikeAt === 0 ? 0 : Math.max(0, strikeAt - now(s));
-      ar.hazard[7] = hk === 0 ? 0 : Math.max(0, (s.arcade[hb + HazardF.endAt] ?? 0) - now(s));
+      ar.hazard[7] = hk === 0 ? 0 : Math.max(0, (hazardField(s, HazardF.endAt)) - now(s));
       return ar;
     },
     forEachStatus(id, visit): void {
