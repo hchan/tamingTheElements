@@ -16,6 +16,7 @@ Desktop 1280x720 only, headless Chromium (SwiftShader), test build of local main
 ## New
 
 6. Hit feel / hit-stop: from the sim probe, a connecting Fire Blast does damage (690 -> 661) and the foe is then shoved from x 640 to 745 over about 14 ticks with an eased slide (13, 13, 12, 11, 10, 9, 8, 7...). There is no frozen frame of any length on contact, so a hit has no "crunch". Idea: 3-5 tick hit-stop on both fighters (and a small screen shake on strong hits), SF-style. High value for feel.
+   Note: hit-stop already exists in the Arcade sim (4-10 tick freeze by strength, 30 on KO; see `hitStop` in src/core/sim/systems/arcade/hit.ts). The QA slide measurement missed the hold: the victim stays at x 640 for 8 ticks before the 640 -> 745 slide. Pinned by a test in knockback.test.ts.
 7. Super cut-in: the damage number "35" lands on top of the element sub-label ("FIRE") in the band and half hides it (`08-super-cutin.png`). The band also hides the top-bar status chips row behind it. Medium-low. Idea: damage numbers stay under the band, or the sub-label moves to the band's left.
 8. FIGHT! banner overlaps fighters when they spawn close (water 1v1, `22-stage-water.png`): the banner sits on the heads. Low, only when close.
 9. Water stage is the plainest: 0 terrain patches, no props; fire has 5 patches and chips, earth boulders, air patches (`22-stage-water.png` vs `23-stage-earth-hit.png`). Idea: add ice props/puddles so the water stage reads as an arena with features.

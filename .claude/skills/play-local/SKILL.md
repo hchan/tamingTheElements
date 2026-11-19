@@ -34,6 +34,8 @@ Combine with `&`, e.g. `/?ff=play&seed=7`. Tester mode (full garrison and abilit
 
 Arrow keys move, Space attacks. Display Size is in Settings (new players start at Largest). Classic is the legacy ruleset; Arcade is the new fun-focused one.
 
+When stepping by hand (`__TTE__.arena.step`), check `frozen` (or the `sweepDrawn` hook) before judging hit-stop: a hit freezes the sim for 4-10 ticks, so positions stay flat until it ends.
+
 ## Report
 
 Say the mode, the URL, and whether the server came up cleanly. Do not edit code in this skill.
