@@ -82,43 +82,74 @@ async function cast(page: Page, p: Place, first: boolean): Promise<void> {
   await expect.poll(async () => (await superFx(page)) !== undefined).toBe(true);
 }
 
+/**
+ * Steps the sim and reads the cut once per tick inside the page (one round trip per run, not three per tick), so a sampled tick is
+ * exactly as before: two animation frames after the step, then the band probe. Stops early at the first shot tick when asked.
+ */
+function run(page: Page, budget: number, stepFirst: boolean, stopAtShot: boolean, reduced: boolean): Promise<{ samples: Fx[]; stopped: boolean }> {
+  return page.evaluate<{ samples: Fx[]; stopped: boolean }>(`(async () => {
+    const a = window.__TTE__.arena;
+    const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const samples = [];
+    if (${String(stepFirst)}) a.step(1);
+    for (let i = 0; i < ${String(budget)}; i++) {
+      await frames();
+      const fx = await a.superFx();
+      if (!fx) return { samples, stopped: false };
+      samples.push(fx);
+      if (${String(stopAtShot)} && (${String(reduced)} ? fx.nameAlpha === 1 : fx.zoom >= 1.14)) return { samples, stopped: true };
+      a.step(1);
+    }
+    return { samples, stopped: false };
+  })()`);
+}
+
 /** Steps through the whole cut, checking every tick; shots at the first tick near peak zoom. */
 async function watch(page: Page, testInfo: TestInfo, p: Place, label: string, opts: { reduced?: boolean; phone?: boolean }): Promise<Fx> {
   let first: Fx | undefined;
   let shotTaken = false;
-  for (let i = 0; i < 40; i++) {
-    await frames(page);
-    const fx = await superFx(page);
-    if (!fx) break;
-    first ??= fx;
-    const { y, ext, cost, portrait, name, avoid } = fx.band;
-    expect(y - ext, `${label} top`).toBeGreaterThanOrEqual(117);
-    expect(y + ext, `${label} bottom`).toBeLessThanOrEqual(603);
-    const band: Rect = { x0: -1e4, y0: y - ext, x1: 1e4, y1: y + ext };
-    if (cost === 0) {
-      for (const f of fx.fighters) expect(meets({ x0: f.x0, x1: f.x1, y0: f.top - 4, y1: f.bottom + 12 }, band), `${label} fighter ${JSON.stringify(f)} vs band ${String(y)}+-${String(ext)}`).toBe(false);
-    } else {
-      const c = fx.fighters.find((f) => f.caster);
-      // blocked: the band crosses the foe, not the caster
-      if (p.name === 'foe-high' && c) expect(meets({ x0: c.x0, x1: c.x1, y0: c.top - 4, y1: c.bottom + 12 }, band), `${label} caster`).toBe(false);
+  let used = 0;
+  let again = true;
+  while (again && used < 40) {
+    const r = await run(page, 40 - used, shotTaken, !shotTaken, opts.reduced === true);
+    used += r.samples.length;
+    again = r.stopped;
+    for (const fx of r.samples) {
+      first ??= fx;
+      check(fx, p, label, opts);
     }
-    for (const a of avoid) {
-      if (portrait) expect(meets(portrait, a), `${label} portrait vs control`).toBe(false);
-      expect(meets(name, a), `${label} name ${JSON.stringify(name)} vs control ${JSON.stringify(a)}`).toBe(false);
-    }
-    if (opts.reduced) expect(fx.zoom).toBe(1);
-    expect([0, 1], `${label} nameAlpha`).toContain(fx.nameAlpha);
-    expect([0, 1], `${label} subAlpha`).toContain(fx.subAlpha);
-    if (!shotTaken && (opts.reduced ? fx.nameAlpha === 1 : fx.zoom >= 1.14)) {
+    const last = r.samples[r.samples.length - 1];
+    if (r.stopped && last) {
       shotTaken = true;
-      expect(fx.nameAlpha, `${label} title at the shot`).toBe(1);
+      expect(last.nameAlpha, `${label} title at the shot`).toBe(1);
       await shot(page, testInfo, `super-band-${label}.png`);
     }
-    await page.evaluate(`window.__TTE__.arena.step(1)`);
   }
   expect(first, `${label} cut shown`).toBeDefined();
   expect(shotTaken, `${label} shot`).toBe(true);
   return first as Fx;
+}
+
+/** The per-tick invariants of one sampled tick of the cut. */
+function check(fx: Fx, p: Place, label: string, opts: { reduced?: boolean }): void {
+  const { y, ext, cost, portrait, name, avoid } = fx.band;
+  expect(y - ext, `${label} top`).toBeGreaterThanOrEqual(117);
+  expect(y + ext, `${label} bottom`).toBeLessThanOrEqual(603);
+  const band: Rect = { x0: -1e4, y0: y - ext, x1: 1e4, y1: y + ext };
+  if (cost === 0) {
+    for (const f of fx.fighters) expect(meets({ x0: f.x0, x1: f.x1, y0: f.top - 4, y1: f.bottom + 12 }, band), `${label} fighter ${JSON.stringify(f)} vs band ${String(y)}+-${String(ext)}`).toBe(false);
+  } else {
+    const c = fx.fighters.find((f) => f.caster);
+    // blocked: the band crosses the foe, not the caster
+    if (p.name === 'foe-high' && c) expect(meets({ x0: c.x0, x1: c.x1, y0: c.top - 4, y1: c.bottom + 12 }, band), `${label} caster`).toBe(false);
+  }
+  for (const a of avoid) {
+    if (portrait) expect(meets(portrait, a), `${label} portrait vs control`).toBe(false);
+    expect(meets(name, a), `${label} name ${JSON.stringify(name)} vs control ${JSON.stringify(a)}`).toBe(false);
+  }
+  if (opts.reduced) expect(fx.zoom).toBe(1);
+  expect([0, 1], `${label} nameAlpha`).toContain(fx.nameAlpha);
+  expect([0, 1], `${label} subAlpha`).toContain(fx.subAlpha);
 }
 
 async function sequence(page: Page, testInfo: TestInfo, size: string, phone: boolean): Promise<void> {
