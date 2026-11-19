@@ -12,7 +12,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "lint": "eslint .",
+    "lint": "eslint . --cache --cache-strategy content --cache-location .scratch/eslintcache",
     "test": "vitest run --project core --project repo",
     "test:coverage": "vitest run --project core --project dom --coverage",
     "sbom": "sh tools/sbom/sbom.sh",

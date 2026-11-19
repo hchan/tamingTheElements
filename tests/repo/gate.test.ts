@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseArgs as parseRoute } from '../../tools/ci/e2e-route';
@@ -14,6 +15,7 @@ import {
   pushVerify,
   refusal,
   routerArgv,
+  runConcurrent,
   summaryLine,
   treeKey,
   UsageError,
@@ -216,5 +218,48 @@ describe('T1 neutrality guard', () => {
       if (f === 'gate.test.ts' || f === 'no-host-literals.test.ts') continue;
       expect(readFileSync(join('tests/repo', f), 'utf8').includes('agent-memory'), f).toBe(false);
     }
+  });
+});
+
+describe('runConcurrent', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'gate-conc-'));
+    // fake step runner "node step.js <step>": lint is slow, test is fast; FAIL=<step> makes it exit 1
+    writeFileSync(
+      join(dir, 'step.js'),
+      "const s=process.argv[2];const d={lint:400,test:10}[s]??0;setTimeout(()=>{console.log('out-'+s);process.exit(process.env.FAIL===s?1:0)},s===process.env.FAIL?10:d);",
+    );
+  });
+  afterEach(() => {
+    delete process.env['FAIL'];
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const run = (): string[] => ['node', join(dir, 'step.js')];
+
+  it('emits output in step order even when the later step finishes first', async () => {
+    const seen: string[] = [];
+    const res = await runConcurrent(dir, ['lint', 'test'], false, (s, r) => seen.push(`${s}:${r.out.trim()}`), run());
+    expect(seen).toEqual(['lint:out-lint', 'test:out-test']);
+    expect(res.map((r) => r.code)).toEqual([0, 0]);
+  });
+
+  it('a failing step fails the group and the other step is killed (fail-fast)', async () => {
+    process.env['FAIL'] = 'test';
+    const res = await runConcurrent(dir, ['lint', 'test'], false, () => undefined, run());
+    expect(res.find((r) => r.name === 'test')?.code).toBe(1);
+    expect(res.find((r) => r.name === 'lint')?.code).toBe(143);
+  });
+
+  it('a failing lint still fails the group', async () => {
+    process.env['FAIL'] = 'lint';
+    const res = await runConcurrent(dir, ['lint', 'test'], true, () => undefined, run());
+    expect(res.map((r) => r.code)).toEqual([1, 0]);
+  });
+
+  it('keep-going lets both finish', async () => {
+    process.env['FAIL'] = 'test';
+    const res = await runConcurrent(dir, ['lint', 'test'], true, () => undefined, run());
+    expect(res.map((r) => r.code)).toEqual([0, 1]);
   });
 });

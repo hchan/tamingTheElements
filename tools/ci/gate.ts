@@ -258,7 +258,76 @@ const runStep = (cwd: string, step: string, quiet: boolean): { code: number; sec
   return { code: r.status ?? 1, sec: Math.round((Date.now() - t0) / 100) / 10, tail };
 };
 
-function runCommit(a: Args, cwd: string): number {
+export interface StepResult {
+  code: number;
+  sec: number;
+  tail: string;
+  out: string;
+}
+const PNPM_RUN = ['corepack', 'pnpm', 'run'];
+const CONCURRENT = ['lint', 'test'] as const;
+
+/** Async step runner: output is buffered (so concurrent steps never interleave). */
+export function runStepAsync(cwd: string, step: string, run: readonly string[] = PNPM_RUN): { done: Promise<StepResult>; kill: () => void } {
+  const t0 = Date.now();
+  const child = spawn(run[0] as string, [...run.slice(1), step], { cwd, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  const chunks: Buffer[] = [];
+  child.stdout.on('data', (d: Buffer) => chunks.push(d));
+  child.stderr.on('data', (d: Buffer) => chunks.push(d));
+  let killed = false;
+  const kill = (): void => {
+    killed = true;
+    try {
+      if (child.pid) process.kill(-child.pid, 'SIGTERM');
+    } catch {
+      child.kill('SIGTERM');
+    }
+  };
+  const done = new Promise<StepResult>((resolveDone) => {
+    const fin = (code: number | null): void => {
+      const out = Buffer.concat(chunks).toString('utf8');
+      const tail = out.trim().split('\n').slice(-30).join('\n');
+      resolveDone({ code: killed ? 143 : (code ?? 1), sec: Math.round((Date.now() - t0) / 100) / 10, tail, out });
+    };
+    child.on('error', () => fin(1));
+    child.on('close', fin);
+  });
+  return { done, kill };
+}
+
+/**
+ * Runs steps concurrently and calls `emit` with each step's buffered output in the given order.
+ * Fail-fast (kills the others on the first failure) unless keepGoing; killed steps are reported with code 143.
+ */
+export async function runConcurrent(
+  cwd: string,
+  steps: readonly string[],
+  keepGoing: boolean,
+  emit: (step: string, r: StepResult) => void,
+  run: readonly string[] = PNPM_RUN,
+): Promise<{ name: string; sec: number; code: number; tail: string }[]> {
+  const jobs = steps.map((s) => runStepAsync(cwd, s, run));
+  let failFast = false;
+  const settled = jobs.map((j) =>
+    j.done.then((r) => {
+      if (r.code !== 0 && !keepGoing && !failFast) {
+        failFast = true;
+        for (const o of jobs) if (o !== j) o.kill();
+      }
+      return r;
+    }),
+  );
+  const out: { name: string; sec: number; code: number; tail: string }[] = [];
+  for (const [i, p] of settled.entries()) {
+    const r = await p;
+    const name = steps[i] as string;
+    emit(name, r);
+    out.push({ name, sec: r.sec, code: r.code, tail: r.tail });
+  }
+  return out;
+}
+
+async function runCommit(a: Args, cwd: string): Promise<number> {
   const log = (s: string): void => {
     if (!a.json) console.log(s);
   };
@@ -282,17 +351,30 @@ function runCommit(a: Args, cwd: string): number {
   }
   const results: { name: string; sec: number; code: number }[] = [];
   let failedTail = '';
-  for (const s of T1_STEPS) {
-    log(`gate:commit: ${s} ...`);
-    const r = runStep(cwd, s, a.hook);
-    results.push({ name: s, sec: r.sec, code: r.code });
-    if (r.code !== 0) {
-      failedTail = r.tail;
-      if (!a.keepGoing) break;
+  const wall0 = Date.now();
+  log(`gate:commit: ${CONCURRENT.join(' + ')} (concurrent) ...`);
+  const pair = await runConcurrent(cwd, CONCURRENT, a.keepGoing, (step, r) => {
+    if (!a.hook && !a.json) process.stdout.write(`--- ${step} ---\n${r.out}`);
+  });
+  const pairFail = pair.find((r) => r.code !== 0 && r.code !== 143) ?? pair.find((r) => r.code !== 0);
+  // a step killed by fail-fast is not a result of its own
+  for (const r of pair) if (!(r.code === 143 && pairFail && pairFail !== r)) results.push({ name: r.name, sec: r.sec, code: r.code });
+  if (pairFail) failedTail = pairFail.tail;
+  if (!pairFail || a.keepGoing) {
+    for (const s of T1_STEPS) {
+      if ((CONCURRENT as readonly string[]).includes(s)) continue;
+      log(`gate:commit: ${s} ...`);
+      const r = runStep(cwd, s, a.hook);
+      results.push({ name: s, sec: r.sec, code: r.code });
+      if (r.code !== 0) {
+        if (!failedTail) failedTail = r.tail;
+        if (!a.keepGoing) break;
+      }
     }
   }
+  results.sort((x, y) => (T1_STEPS as readonly string[]).indexOf(x.name) - (T1_STEPS as readonly string[]).indexOf(y.name));
   const failed = results.filter((r) => r.code !== 0);
-  const totalSec = Math.round(results.reduce((n, r) => n + r.sec, 0));
+  const totalSec = Math.round((Date.now() - wall0) / 1000);
   if (a.json) console.log(JSON.stringify({ pass: failed.length === 0, totalSec, steps: results, key: key0 }, null, 2));
   else {
     for (const r of results) console.log(`  ${r.code === 0 ? 'ok  ' : 'FAIL'} ${r.name.padEnd(12)} ${r.sec} s`);
@@ -399,7 +481,7 @@ async function runPush(a: Args, cwd: string, env: Env): Promise<number> {
     if (refuse) console.log(`would refuse: ${refuse}`);
     return 0;
   }
-  const t1 = runCommit({ ...a, kind: 'commit', hook: false, json: false, force: false }, cwd);
+  const t1 = await runCommit({ ...a, kind: 'commit', hook: false, json: false, force: false }, cwd);
   if (t1 !== 0) return t1;
   if (sel.noE2e) {
     console.log('gate:push: pass (no e2e-relevant change)');
@@ -449,7 +531,7 @@ export async function main(argv: string[], env: Env = process.env, cwd = process
     }
     throw e;
   }
-  return a.kind === 'commit' ? runCommit(a, cwd) : runPush(a, cwd, env);
+  return a.kind === 'commit' ? await runCommit(a, cwd) : runPush(a, cwd, env);
 }
 
 if (process.argv[1]?.endsWith('gate.ts')) void main(process.argv.slice(2)).then((c) => process.exit(c));
