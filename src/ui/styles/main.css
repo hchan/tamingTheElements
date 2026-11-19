@@ -2878,6 +2878,11 @@ body:has(.settingsBar) {
   overflow: visible;
 }
 
+/* WCAG 2.4.11: the sticky bar (about 75px tall) must not cover a control focused by Shift+Tab; keep scrolled-to controls just below it. */
+html:has(.settingsBar) {
+  scroll-padding-top: 88px;
+}
+
 /* World Tour victory (qa-r25): a mystic luminous title card, the team's portraits and the run summary. Glow only moves when motion is allowed. */
 #tourEnding.tourVictory {
   text-align: center;
@@ -2958,6 +2963,7 @@ body:has(.settingsBar) {
     clip-path: inset(50%);
   }
   #menu .settingsBar { padding: 0.25em 0; gap: 0.5em; }
+  html:has(.settingsBar) { scroll-padding-top: 64px; }
   #menu .settingsSubheading {
   margin: 0.75em 0.6em 0.25em;
   font-size: 1.05em;
