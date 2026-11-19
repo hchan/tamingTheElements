@@ -28,6 +28,7 @@ import * as pc from './pc-remote';
 import { PcError, type JobStatus, type Remote } from './pc-remote';
 import { cacheFile, probe as realProbe, keyOf, noteExit, readCache, writeCache } from './pc-probe';
 import { logPathFor } from './e2e-server-policy';
+import { redact, remoteAlias } from './redact';
 import { planSource, type SourcePlan } from './pc-snapshot';
 
 export type Kind = 'run' | 'smoke' | 'pages' | 'itch' | 'flake';
@@ -47,6 +48,7 @@ export interface Parsed {
   fallback?: Policy;
   rest: string[];
 }
+export { redact, remoteAlias };
 type Env = Readonly<Record<string, string | undefined>>;
 
 const KINDS: readonly Kind[] = ['run', 'smoke', 'pages', 'itch', 'flake'];
@@ -97,15 +99,6 @@ export function parseArgs(argv: readonly string[]): Parsed {
     } else p.rest.push(a);
   }
   return p;
-}
-
-/** Remote alias: TTE_REMOTE, else `git config tte.remote`. */
-export function remoteAlias(env: Env, cwd = process.cwd()): string | undefined {
-  const e = env['TTE_REMOTE']?.trim();
-  if (e) return e;
-  const r = spawnSync('git', ['config', '--get', 'tte.remote'], { cwd, encoding: 'utf8' });
-  const v = r.status === 0 ? r.stdout.trim() : '';
-  return v || undefined;
 }
 
 export type Route = { where: 'local' } | { where: 'remote' } | { where: 'refuse'; why: string };
@@ -166,15 +159,6 @@ export function pickLane(p: Parsed, count: Counter): LaneName {
   if (p.full) return 'full';
   const n = testsOf(p, count);
   return n === undefined || n > LANE_TEST_LIMIT ? 'full' : 'short';
-}
-
-/** Hide addresses, user@host and home paths: output gets pasted into ideas and commits. */
-export function redact(s: string): string {
-  return s
-    .replace(/(?<![\w.])(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}(?![\w.])/g, '<addr>')
-    .replace(/(?<![\w.-])[\w.-]+@[\w-]+(?:\.[\w-]+)+/g, '<user@host>')
-    .replace(/\/home\/[\w.-]+\//g, '~/')
-    .replace(/\/Users\/[\w.-]+\//g, '~/');
 }
 
 const TROUBLE = /EXITED|unresponsive|gave up|port in use|parent gone/;
