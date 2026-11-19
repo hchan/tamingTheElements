@@ -38,6 +38,17 @@ describe('CharacterView hit flash and jitter (V6)', () => {
     return { view: new CharacterView(scene), img };
   };
   
+  it('adds the motion shift to the drawn body only, and nothing without one', () => {
+    const { view, img } = make();
+    const c = char(EntityFlag.alive);
+    view.apply(c, 0, 1);
+    const base = img.x;
+    view.apply(c, 0, 1, true, false, 1, { dx: 12, dy: -3 });
+    expect(img.x).toBe(base + 12);
+    view.apply(c, 0, 1, true, false, 1);
+    expect(img.x).toBe(base);
+  });
+
   it('counts rendered frames, holds while paused, beats the frozen tint and clears it after; the sprite is never flash-tinted', () => {
     const { view, img } = make();
     const frozen = char(EntityFlag.alive | EntityFlag.frozen);
