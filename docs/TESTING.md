@@ -11,7 +11,7 @@ How to run, place and write tests. Run everything with `corepack pnpm <script>` 
 | `pnpm oracle:restore` | Opt-in: extract the legacy game from git tag `legacy-crafty-1.0` into the gitignored `.oracle` directory (never `user.properties`) |
 | `pnpm test:oracle` | Vitest project `oracle`: `tests/oracle/**` characterization tests that run the restored legacy code in `node:vm`; without `.oracle` one skipped placeholder prints how to restore it |
 | `pnpm test:browser` | Vitest project `browser`: `tests/browser/**/*.browser.test.ts` in headless Chromium, Firefox and WebKit |
-| `pnpm e2e` | Playwright (`playwright.config.ts`): `tests/e2e/*.spec.ts` against `vite build --mode test` (written to `node_modules/.tte-e2e`, never `dist/`) served by `vite preview` on port 4173 (`E2E_PORT=n` picks another port for parallel worktrees) |
+| `pnpm e2e` | Playwright (`playwright.config.ts`): `tests/e2e/*.spec.ts` against `vite build --mode test` (written to the per-checkout `tte-e2e-build` directory inside the git dir, never `dist/`) served by `vite preview` through `tools/ci/e2e-server.ts` on the checkout's own port (`tools/ci/e2e-port.ts`; `E2E_PORT=n` picks another port for parallel worktrees) |
 | `pnpm visual:capture`, `visual:pacing`, `visual:regress`, `visual:update` | Visual QA (`playwright.visual.config.ts`, `tests/visual/`): screenshots, videos, frame pacing and screenshot regression; `ci:local --visual` adds them. See [VISUAL-QA.md](VISUAL-QA.md) |
 | `pnpm golden:record` | `tools/gen/record-golden.ts`: rewrites the bot-vs-bot goldens in `tests/fixtures/replays/`; `--ruleset arcade` writes only the Arcade goldens (`arcade-1v1.replay.json`: scripted AI; `arcade-moves`, `arcade-weather` and the 2v2 `arcade-tag`: hand-scripted inputs from `tools/gen/arcade-moves.ts`) and leaves the Classic goldens alone |
 | `pnpm fun:gates` | `tools/ci/fun-gates.ts`: the nightly fun gates. Plays Arcade (AI level 3, all 66 pairings, `--seeds 8`, `--team-sizes 1,2`) headlessly, judges round length, time-over rate, stalemate (stall) rate, first-hit time, combo median/p90, hits per minute, comeback rate, multi-hit combo share and the per-race win-rate spread (worst/best race) against the inclusive bands in the committed `tools/ci/fun-gates.json`, plus a latency mark (wall ms per sim second); writes `out/fun-gates.json`, exits 1 on a miss (`--no-fail` to only report). Manual dispatch only (`.github/workflows/nightly-fun-gates.yml`, schedule removed 2026-11-17 to save Actions minutes); run `pnpm fun:gates` locally; not in PR CI. Move a band only on purpose, with `pnpm fun:noise` numbers in the commit. Metric maths: `tests/repo/fun-gates.test.ts` |
@@ -178,6 +178,21 @@ save-backed screens show "Loading...") still need their own wait (`loaded()` in 
 - **Never** `waitForTimeout` in `tests/e2e*` (teardown: `__TTE__.settled()`; async saves: wait for `#main`; Settings/other save-backed
   screens: wait for their own content). Assert on what the player sees; do not click a selector the menu does not have. The menu is
   Play, Versus, Online, Settings, Help; About, Wiki, Key Bindings and Story live on Help (`li[data-route=...] a`).
+- **Preview server health** (`tools/ci/e2e-server.ts`, policy in `tools/ci/e2e-server-policy.ts`): the `webServer` of the main and pages configs is a supervisor,
+  not a bare `vite preview`. It runs vite directly (no pnpm in between), so a signal reaches vite itself; Playwright stops it with
+  SIGTERM (`gracefulShutdown`), and it also stops (`stop: parent gone`) when its stdin closes, so a killed runner leaves no orphan. Each
+  checkout builds into its own `<git-dir>/tte-e2e-build` (worktrees used to share one directory and wipe each other's build). An unexpected
+  exit is logged with uptime, plain-words cause (143 = SIGTERM from outside, `SIGKILL` = OOM or kill -9), the class of vite's stderr
+  (`port in use`, `file vanished (ENOENT)`, `too many open files`), and for a taken port the process that holds it (an ORPHAN has ppid 1).
+  It restarts with backoff (250 ms doubling to 15 s), and gives up (`gave up:`, exit 1) after 20 fast failures or 50 restarts. A probe
+  every 5 s kills a preview that accepts connections but never answers (4 refusals or timeouts in a row and 60 s since the last good
+  answer; ticks late because the machine was starved do not count); a non-2xx answer is logged once and never kills.
+  The log is `.scratch/e2e-server.log` in the checkout on the Mac (`TTE_E2E_SERVER_LOG` overrides; rotated to `.1` over 2 MB), and
+  `e2e-server.log` in the results directory on the PC (fetched to `.scratch/remote-e2e/<id>/`). A healthy run starts with `start:`,
+  then `build ok`, `preview started`, and ends with `stop: SIGTERM`. After a failed run the router prints the run's trouble lines
+  (`preview server trouble during this run:`). To stop a run's server, signal its supervisor; never `pkill -f vite` (it also kills
+  other worktrees' servers). Caveats: a test that runs inside a restart window (about 100 ms to a few seconds) still fails; and
+  `TTE_BROWSER_SLOT_HELD=1` bypasses the slot, so it loses the one-build-per-checkout guarantee. The itch suite (`e2e:itch`) has no server.
 - **Finding flakes**: `E2E_PORT=4841 pnpm e2e:flake --repeat 5 tests/e2e/tour.spec.ts tests/e2e/arcade-` (`tools/ci/e2e-flake.ts`) runs the
   specs with `--repeat-each`, retries off, and prints pass counts per test (exit 1 if any test failed once). Extra args pass through
   to Playwright, e.g. `--config playwright.pages.config.ts`. Check a suspect on a slow machine with CDP CPU throttling (see above).
@@ -250,7 +265,7 @@ force local. `pnpm e2e:remote` forces the PC; `e2e:local` is refused while a rem
 - **Lanes:** a short lane (port 7970) and a full lane (port 7960); more than 150 tests times the repeat count picks full
   (`--pc-lane`, `--full` override). A busy lock exits 95.
 - **Jobs:** the source is bundled from git, uploaded, and run detached under `~/tte-offload/jobs/<id>/`; results are fetched to
-  `.scratch/remote-e2e/<id>/`. Ctrl-C cancels the PC job (exit 130) unless `--pc-detach`; use `--pc-attach` / `--pc-status` later.
+  `.scratch/remote-e2e/<id>/` (report, results.json, test-results, output.log, health.csv, e2e-server.log). Ctrl-C cancels the PC job (exit 130) unless `--pc-detach`; use `--pc-attach` / `--pc-status` later.
 - **Exit codes:** 92 bundle verify, 93 lost/reboot, 94 unreachable, 95 lock busy, 96 frames stall, 3 upload/fetch failure, 2 usage.
 - **PC first, Mac fallback:** a cached probe (`pnpm pc:probe`, 60 s TTL) and a pure decision function choose run, wait or fall back. Only short runs (<= 150 tests; run, smoke, pages, itch; not `--pc`, `--pc-detach`, `--full`) may fall back to the Mac, in a browser slot with a load guard (`TTE_MAC_LOAD_MAX`, default 14), and never after a PC exit 0 or 1. Policy: `--pc-fallback <mac|wait|fail>` or `TTE_E2E_FALLBACK`. Exit 89 means no runner (PC unavailable and the Mac too loaded), 97 PC needs setup. The last stderr line is `e2e ran on: PC (...)` or `e2e ran on: Mac (fallback: <reason>)`.
 - **Where heavy jobs run:** `tools/ci/offload-routes.json` (validated by `tests/repo/offload-routes.test.ts`).
