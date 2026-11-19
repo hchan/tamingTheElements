@@ -2,11 +2,16 @@ import { mkdirSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
-// Roster 24 batch 2 (Brazgor, Glimmaw, Durrok, Zephra) behind ?ff=roster24: each hero faces Fiara on the Arcade stage and renders from
+// Roster 24 batches 1-3 (b1 Kindrel, Nykra, Quarrak, Hyalia; b2 Brazgor, Glimmaw, Durrok, Zephra; b3 Ouroth, Abyssor, Vortigal, Umbrel) behind ?ff=roster24: each hero faces Fiara on the Arcade stage and renders from
 // its own atlas; SHOT_DIR=<dir> saves headless screenshots for eyeballing (never needed to pass).
 
 const SHOT_DIR = process.env['SHOT_DIR'];
-const HEROES = ['brazgor', 'glimmaw', 'durrok', 'zephra'] as const;
+const BATCHES = {
+  b1: ['kindrel', 'nykra', 'quarrak', 'hyalia'],
+  b2: ['brazgor', 'glimmaw', 'durrok', 'zephra'],
+  b3: ['ouroth', 'abyssor', 'vortigal', 'umbrel'],
+} as const;
+const HEROES = [...BATCHES.b1, ...BATCHES.b2, ...BATCHES.b3];
 
 for (const race of HEROES) {
   test(`${race} vs fiara renders from its sheet`, async ({ page }) => {

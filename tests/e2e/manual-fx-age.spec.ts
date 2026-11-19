@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY } from './parity/helpers';
+import { ARENA_READY, collectErrors } from './parity/helpers';
 
 // Manual stepping holds frame-timed view effects (white pops, rings, sparks, wash) until the test hook's ageFx(true) lets them
 // age on real frames. Page-side code is passed as strings because tsconfig.node has no DOM lib.
@@ -7,15 +7,6 @@ import { ARENA_READY } from './parity/helpers';
 const CHARGE = 1 << 15;
 /** Arcade round 1's intro: nobody acts until tick 91. */
 const INTRO = 91;
-
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
-}
 
 async function openDemo(page: Page, ff: string): Promise<number> {
   await page.goto(`/?ff=${ff}&manual=1&seed=7`);

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY } from './parity/helpers';
+import { ARENA_READY, collectErrors } from './parity/helpers';
 
 // Hit feedback in the browser (WP-arcade-juice-hits, VISUAL-QA V6). Page-side code is passed as strings because
 // tsconfig.node has no DOM lib. Manual stepping keeps the driver paused, and paused effects hold their frame, so what a
@@ -18,15 +18,6 @@ interface Fx {
   numbers: string[];
   combo: [number, number];
   meter: [number, number];
-}
-
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
 }
 
 /** Demo arena (Curomo vs Pax), the two placed 80 px apart and facing: Curomo's Shards of Ice (Classic) or Charge (Arcade) land within a few ticks. */

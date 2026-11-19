@@ -1,15 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { collectErrors } from './parity/helpers';
 
 const CINEMATIC_READY = `window.__TTE__ && window.__TTE__.scene === 'Cinematic' && !!window.__TTE__.cinematic`;
-
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
-}
 
 test('skipping the cinematic removes every listener', async ({ page }) => {
   const errors = collectErrors(page);

@@ -1,8 +1,13 @@
+# usage: python3 fit-roster.py ITERATIONS b2|b3  (run inside the repo; writes ~/claudetmp/<batch>-fit.txt)
 import re, subprocess, collections, sys, os
-ROOT = '/Users/henry.chan/tamingTheElements/.claude/worktrees/agent-a979a9ae0de37aa43'
+ROOT = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], text=True).strip()
 os.chdir(ROOT)
 P = 'src/core/sim/arcade-numbers.ts'
-H = ['ouroth', 'abyssor', 'vortigal', 'umbrel']
+BATCHES = {
+    'b2': ['brazgor', 'glimmaw', 'durrok', 'zephra'],
+    'b3': ['ouroth', 'abyssor', 'vortigal', 'umbrel'],
+}
+H = BATCHES[sys.argv[2]]
 
 
 def get():
@@ -18,7 +23,7 @@ def put(v):
 
 
 for it in range(int(sys.argv[1])):
-    out = os.path.expanduser('~/claudetmp/b3-fit.txt')
+    out = os.path.expanduser(f'~/claudetmp/{sys.argv[2]}-fit.txt')
     subprocess.run(['bash', 'tools/sim/low-races/mat.sh', out], env={**os.environ, 'NEW': ' '.join(H)}, check=True)
     W = collections.defaultdict(list)
     for l in open(out):

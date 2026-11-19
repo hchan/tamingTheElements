@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { ARENA_READY, START } from './parity/helpers';
+import { ARENA_READY, START, collectErrors } from './parity/helpers';
 
 // CALLOUT-POP-1: an Arcade call-out (ROOTED, CHARGE! ...) keeps clear of the white damage pop over the same fighter, at every age of the
 // pop, stays under the dark scrim and the status chips, and slides sideways before it would hide under them. Manual stepping holds view
@@ -19,15 +19,6 @@ const VIEWS = [
   { name: '1280x720', size: { width: 1280, height: 720 }, touch: false },
   { name: '844x390 touch', size: { width: 844, height: 390 }, touch: true },
 ] as const;
-
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
-}
 
 const raf2 = (page: Page): Promise<unknown> => page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))`);
 const overlays = (page: Page): Promise<Overlays> => page.evaluate<Overlays>(`window.__TTE__.arena.overlays()`);

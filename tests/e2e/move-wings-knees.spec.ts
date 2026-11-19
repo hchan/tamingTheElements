@@ -1,18 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ARENA_READY } from './parity/helpers';
+import { ARENA_READY, collectErrors } from './parity/helpers';
 
 // Wing flap and knee bend while walking (idea move-animation-wings-knees): a winged (Sindarosa) and a legged (Treenoc) hero
 // walk in real time against a still dummy; a short run of frames shows the body moving, and $SHOT_DIR keeps the real
 // screenshot sequence. Reduced motion keeps the walk row but no extra bob.
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error' || /has no frame|missing frame/i.test(m.text())) errors.push(m.text());
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
-}
-
 async function frames(page: Page, hero: string, tag: string): Promise<Buffer[]> {
   await page.goto(`/?ff=arenaDemo,arcade&seed=7&hero=${hero}&foe=dummy`);
   await page.locator('#game canvas').waitFor();
