@@ -1,0 +1,8 @@
+{
+ "bd_help_air": {"approved": "bd_help_air_r2_45780_1536x640.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+ "bd_lose_earth": {"approved": "bd_lose_earth_r2a_45570_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+ "bd_win_earth": {"approved": "bd_win_earth_r2a_45473_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+ "bd_team_earth": {"approved": "bd_team_earth_r2a_45272_1344x768.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+ "bd_plate_water": {"approved": "bd_plate_water_r2_45161_1536x640.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true},
+ "bd_plate_fire": {"approved": "bd_plate_fire_r2_45153_1536x640.png", "reviewer": "art-director", "date": "2026-11-19", "beats_shipped": true}
+}
