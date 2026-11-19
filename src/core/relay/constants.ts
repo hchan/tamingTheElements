@@ -1,7 +1,7 @@
 /** Wire constants of docs/ONLINE-PROTOCOL.md. A change to any frame layout or value here is a MAJOR package bump (docs/RELAY-PACKAGE.md). */
 
 /** First byte of HELLO and WELCOME. Exact match required (spec section 2). */
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 
 export const FrameType = {
   hello: 0x01,

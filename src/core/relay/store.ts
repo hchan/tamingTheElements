@@ -30,8 +30,12 @@ export interface Store {
 
 /** Delivery to a connection. A send to a connection that is gone may reject or be ignored; the relay swallows it. */
 export interface Sender {
-  send(conn: string, data: Uint8Array): Promise<void> | void;
-  /** Close with a WebSocket close code (spec section 5: 4000 + the low byte of the error code). */
+  /** Posts one ready-made base64 TEXT frame (v3 wire; the core encodes, the host only forwards the string). */
+  send(conn: string, text: string): Promise<void> | void;
+  /**
+   * Close the connection. `code` (spec section 5: 4000 + the low byte of the error code) is ADVISORY: a host that cannot choose the
+   * close code (API Gateway's DeleteConnection takes none) may ignore it. The ERROR frame sent before the close is the authority.
+   */
   close(conn: string, code: number): Promise<void> | void;
 }
 

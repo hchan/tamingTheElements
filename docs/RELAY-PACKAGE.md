@@ -1,19 +1,19 @@
 # Relay package
 
 `@tamingtheelements/relay` is the transport-agnostic relay core of the online protocol ([ONLINE-PROTOCOL.md](ONLINE-PROTOCOL.md)),
-published from this repo so a backend (serverless or a Node process) can host it without importing the game. Metadata lives in
+distributed from this repo (not from an npm registry) so a backend (serverless or a Node process) can host it without importing the game. Metadata lives in
 `packages/relay/` (the repo is not a workspace); the sources are `src/core/relay/`, compiled as they are.
 
 ## Entrypoints
 
 | Import | Contents |
 |---|---|
-| `@tamingtheelements/relay` | `RelayCore` (`handle`, `handleClose`, `sweep`), the wire codec (`decodeFrame`, `encodeFrame`, frame types), constants (`PROTOCOL_VERSION`, `FrameType`, `ErrorCode`, `closeCodeFor`, limits and timings), room-code rules, `ReorderBuffer`, and the `Store`, `Sender`, `RelayCtx` interfaces |
+| `@tamingtheelements/relay` | `RelayCore` (`handle`, `handleClose`, `sweep`), the wire codec (`decodeFrame`, `encodeFrame`, frame types), the text codec (`encodeText`, `decodeText`), constants (`PROTOCOL_VERSION`, `FrameType`, `ErrorCode`, `closeCodeFor`, limits and timings), room-code rules, `ReorderBuffer`, and the `Store`, `Sender`, `RelayCtx` interfaces |
 | `@tamingtheelements/relay/testing` | `InMemoryStore`, `LoopbackSender`, `createLoopbackConformance()` (RelayCore wired in process as a conformance target) |
 | `@tamingtheelements/relay/conformance` | the wire-spec conformance suite: `runAll` / `runConformance`, `conformanceCases`, `goldenFrames`, adapter and hook types |
 
 The host supplies a `Store` (async get/put/delete/keys; `put` takes `ifVersion: 'absent' | number` for conditional writes and an
-optional TTL), a `Sender` (send, close) and a `RelayCtx` per call (`now`, `randomInt`, optional `resting` kill switch, optional `identity`). The core
+optional TTL), a `Sender` (`send(conn, text)`, `close(conn, code)`; the close code is advisory since v3) and a `RelayCtx` per call (`now`, `randomInt`, optional `resting` kill switch, optional `identity`). The core
 reads no clock or randomness of its own and keeps no state between calls. It relays and compares; it never simulates.
 
 ## Semver policy
@@ -23,7 +23,7 @@ reads no clock or randomness of its own and keeps no state between calls. It rel
 - New optional exports, new `RelayEvent` kinds, or behaviour fixes that keep the wire unchanged are MINOR or PATCH.
 - Changing the `Store` or `Sender` interface in a way that breaks an existing implementation is MAJOR.
 - `./testing` follows the same rules, but may add helpers in MINOR releases.
-- `./conformance` may add cases in MINOR releases (a new entrypoint or case is MINOR; version 0.1.0 is unpublished, so it stays). A case that only tightens
+- `./conformance` may add cases in MINOR releases (a new entrypoint or case is MINOR; `1.0.0` is the first publish). A case that only tightens
   a check the spec already demands is a PATCH. A case that encodes a changed wire rule goes with the MAJOR bump.
 
 ## Conformance suite
@@ -34,17 +34,17 @@ dependency: a case is a plain `{ id, spec, title, run(adapter, hooks) }` that th
 ```ts
 import { runAll } from '@tamingtheelements/relay/conformance';
 
-const adapter = { connect: async () => /* open a WebSocket; return { send(bytes), sendText?(s), onFrame(cb), onClose(cb), close() } */ };
+const adapter = { connect: async () => /* open a WebSocket; return { sendText(s), sendBinary?(bytes), onText(cb), onClose(cb), close() } */ };
 const report = await runAll(adapter, { sleep: (ms) => new Promise((r) => setTimeout(r, ms)), settleMs: 100, timeoutMs: 3000 });
 if (!report.ok) throw new Error(report.results.filter((r) => r.status === 'fail').map((r) => `${r.id}: ${r.message}`).join('\n'));
 ```
 
 - Hooks (all optional): `sleep` (default only yields; supply a real timer for a remote relay), `setResting(retryAfterSec | null)` flips the kill switch,
   `advanceTime(ms)` moves the relay clock and sweeps (grace expiry, the 60 s resting close), `simVersion` (default 1), `timeoutMs`, `settleMs`.
-  Cases that need a missing hook (or `sendText`) report `skip`, not `fail`.
+  Cases that need a missing hook (or `sendBinary`) report `skip`, not `fail`.
 - `runAll(adapter, hooks, { only: ['queue.', 'resting.'] })` filters by id prefix. Case ids are grouped: `wire.golden.*` (no adapter, one byte vector per frame
-  type), `hello.*`, `version.*`, `malformed.*`, `queue.*`, `room.*`, `batch.*`, `setup.*`, `pause.*`, `hash.*`, `desync.*`, `result.*`, `resume.*`, `resting.*`.
-- Every server frame is also checked to decode and re-encode to the same bytes.
+  type), `wire.text.*` (golden base64 texts), `hello.*`, `version.*`, `malformed.*` (including `malformed.binary`), `queue.*`, `room.*`, `batch.*`, `setup.*`, `pause.*`, `hash.*`, `desync.*`, `result.*`, `resume.*`, `resting.*`.
+- Every server frame is also checked to decode from its base64 text and re-encode to the same bytes.
 - Cases never assume a clean relay, but each uses fresh connections and leaves nothing queued (disconnects on exit).
 - Vitest wrapper in this repo: `src/core/relay/conformance.test.ts`, against `createLoopbackConformance()` (see it for how to glue sockets).
 
@@ -57,6 +57,8 @@ node tools/relay-package/build.mjs                                              
 cd packages/relay && corepack pnpm pack --pack-destination ../../.scratch              # tarball
 ```
 
+**Distribution (owner, 2026-11-18): no registry publish.** A release is a commit on `main` plus an annotated git tag `relay-v<version>` (for example `relay-v1.0.0`). The backend pins that tag, checks it out, and runs `node tools/relay-package/build.mjs` (or `pack`, above, for a tarball it can install). `dist/` is gitignored, so the build step is part of consuming a release.
+
 The build rewrites relative specifiers to `.js` after `tsc` (the repo's sources are extensionless for the bundler). The package
 has no dependencies.
 
@@ -64,6 +66,7 @@ has no dependencies.
 
 - `src/core/relay` is exempt from the "no async/await" lint rule only (`eslint.config.js`); every determinism ban stays on, and
   `tests/repo/relay-package.test.ts` fails if the rest of `src/core` imports it.
+- `src/core/relay/text-codec.ts` is hand-written (no Buffer, btoa or atob) so it runs in Node, browsers and Workers. The game client may not import the package (depcruise), so it keeps a copy in `src/game/net/ws/text-codec.ts`; `tests/repo/relay-text-codec-drift.test.ts` fails if they differ, and `tests/repo/relay-text-codec-node.test.ts` checks the package copy against Node's `Buffer`.
 - `src/core/relay/rooms-rules.ts` is the package's own copy of the room-code rules. The WebRTC signalling relay (`tools/signal-relay/rooms.ts`) keeps its own and does not import the package; `tests/repo/room-code-rules-drift.test.ts` fails if they differ.
 
 ## Behaviour of the 0.1.0 fix round (WP-ONLINE-FIX-RELAY)
@@ -90,3 +93,30 @@ unpublished, so it stays at 0.1.0; the first publish is the baseline.
 The command bitset grew to 17 bits (Run, bit 16), so BATCH inputs are `u32` instead of `u16`: packet size `12 + 4n + 8m`, `MAX_BATCH_FRAME`
 305. `PROTOCOL_VERSION` is 2 and the handshake `MAGIC` changed, so an old client or peer is refused cleanly (`version-mismatch`). The conformance
 golden frames use 4-byte inputs. The package version stays 0.1.0 (nothing is published yet).
+
+## Behaviour of the v3 wire round (RELAY-V3)
+
+`PROTOCOL_VERSION` goes 2 to 3 and the package goes 0.1.0 to **1.0.0**. Nothing was ever published, so the first release (tag `relay-v1.0.0`) is 1.0.0 with
+`PROTOCOL_VERSION` 3. An old client sends HELLO with version 2 as binary and is refused. Four changes:
+
+- **W1. The ERROR frame is the authority; the close code is advisory.** After an ERROR frame the client decides from the frame (code, detail,
+  `retryAfterSec`). It uses the close code only as a hint when no frame arrived. `Sender.close(conn, code)` is unchanged, because a host runtime
+  may not be able to send a frame and a close together reliably; the code is still `closeCodeFor(error)`.
+- **W2. A handshake never answers ticket-invalid (0x0004) or resting (0x000B).** The client treats any failure before WELCOME as "fetch ONE
+  fresh ticket and retry once"; a second failure is a failed attempt. (A version mismatch or a resting hint is final at once.) A connecting
+  client learns "resting" only from HTTP 503 on /session or /ticket. `RelayCore` therefore does not answer HELLO with ERROR resting: HELLO while
+  `ctx.resting` is set closes the socket (advisory 4011) with no frame. The mid-connection resting notice (ERROR 0x000B to a connected client,
+  close after the match or `RESTING_CLOSE_MS`) stays. The `ErrorCode` constants all stay defined.
+- **W3. /ticket returns `{ticket, url}`.** `url` is the full `wss://` address including the ticket, so a host keeps its routing to itself.
+  The client opens it unchanged (no `?ticket=` appended); anything that is not a `wss://` string is a server fault. `VITE_ONLINE_URL` is only the
+  HTTP base. /session is unchanged. The 60 s ticket lifetime is a host contract in these docs, not in the response.
+- **W4. Frames are base64 text in both directions** (standard alphabet, `=` padding, no line breaks). A binary message is bad-frame with
+  advisory close 4001. The package owns the codec (`encodeText`, `decodeText`). `RelayCore.handle(conn, data: string, ctx)` and
+  `Sender.send(conn, text: string)` take and give text. Frame layouts and the frame size limits (`MAX_BATCH_FRAME` and the rest) count decoded bytes; a
+  text message is `4 * ceil(n / 3)` characters. Conformance: `malformed.text` is now `malformed.binary`, and `wire.text.*` checks golden base64 texts.
+
+Not changed: `RESTING_CLOSE_MS` (60 s) and `DEFAULT_BATCH_EVERY` (1).
+
+**Host contract.** (1) Serve /session and /ticket over HTTPS; answer HTTP 503 (with `retryAfterSec`) while resting. (2) /ticket returns
+`{ticket, url}`; a ticket is single use and valid 60 s; `url` is the `wss://` address to open. (3) Pass each WebSocket text message to
+`RelayCore.handle` as a string; for a binary message pass the empty string `''` (an empty frame is bad-frame: ERROR plus advisory close 4001) or close the socket yourself with 4001. (4) Implement `Sender.send` as one text message per call. (5) Close codes from `Sender.close` may be passed on as they are.

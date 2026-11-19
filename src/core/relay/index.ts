@@ -3,5 +3,6 @@ export type { RelayEvent, RelayOptions } from './core';
 export * from './codec';
 export * from './constants';
 export * from './rooms-rules';
+export { decodeText, encodeText } from './text-codec';
 export { ReorderBuffer } from './seq';
 export type { Json, PutOptions, RelayCtx, Sender, Store, StoreItem } from './store';

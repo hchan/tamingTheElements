@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { encodePacket } from '../net/packet';
 import { encodeFrame, type Frame } from './codec';
+import { encodeText } from './text-codec';
 import {
   DISCONNECT_GRACE_MS,
   ErrorCode,
@@ -59,7 +60,7 @@ function harness(identity?: () => string | undefined) {
     const id = identity?.();
     return { now: () => clock.t, randomInt, ...(id === undefined ? {} : { identity: id }) };
   };
-  const send = (conn: string, f: Frame): Promise<void> => core.handle(conn, encodeFrame(f), ctx());
+  const send = (conn: string, f: Frame): Promise<void> => core.handle(conn, encodeText(encodeFrame(f)), ctx());
   const hello = (conn: string, sim = SIM, resume = 0): Promise<void> =>
     send(conn, { t: 'hello', ver: PROTOCOL_VERSION, simVersion: sim, resumeSession: resume });
   const frames = <K extends Frame['t']>(conn: string, t: K): Extract<Frame, { t: K }>[] =>
@@ -164,9 +165,9 @@ describe('connection records are compare-and-set', () => {
     h.store.trap = {
       op: 'get',
       key: /^conn:a$/,
-      run: () => h.core.handle('a', encodeFrame({ t: 'ping', nonce: 2 }), resting),
+      run: () => h.core.handle('a', encodeText(encodeFrame({ t: 'ping', nonce: 2 })), resting),
     };
-    await h.core.handle('a', encodeFrame({ t: 'ping', nonce: 1 }), resting);
+    await h.core.handle('a', encodeText(encodeFrame({ t: 'ping', nonce: 1 })), resting);
     expect(h.frames('a', 'error').filter((e) => e.code === ErrorCode.resting)).toHaveLength(1);
   });
 });

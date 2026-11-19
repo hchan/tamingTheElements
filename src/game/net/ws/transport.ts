@@ -2,13 +2,14 @@ import type { ControlPipe, Transport } from '@core/index';
 import { ControlLink } from './control-link';
 import { RTT_WINDOW } from '../link-quality';
 import { ReorderBuffer } from './reorder';
+import { decodeText, encodeText } from './text-codec';
 import { decodeFrame, encodeFrame, FrameType, MAX_BATCH_BYTES, type Frame } from './wire';
 
 /** The slice of WebSocket the transport uses (tests fake it). `readyState` 1 = open. */
 export interface SocketLike {
-  binaryType: string;
   readonly readyState: number;
-  send(data: ArrayBufferView): void;
+  /** One base64 text message per frame (wire v3). */
+  send(data: string): void;
   addEventListener(type: 'message', listener: (ev: { data: unknown }) => void): void;
   addEventListener(type: 'close', listener: () => void): void;
 }
@@ -53,7 +54,6 @@ export class WebSocketTransport implements Transport {
     private readonly socket: SocketLike,
     private readonly now: () => number,
   ) {
-    socket.binaryType = 'arraybuffer';
     this.link = new ControlLink((ctlSeq, ackCtl, body) => { this.raw({ t: 'setup', ctlSeq, ackCtl, body }); }, now);
     this.control = this.link;
     socket.addEventListener('message', (ev) => { this.onMessage(ev.data); });
@@ -143,14 +143,16 @@ export class WebSocketTransport implements Transport {
   private raw(f: Frame): void {
     if (this.socket.readyState !== 1) return;
     try {
-      this.socket.send(encodeFrame(f));
+      this.socket.send(encodeText(encodeFrame(f)));
     } catch {
       // Closed between the check and the send.
     }
   }
 
   private onMessage(data: unknown): void {
-    const f = data instanceof ArrayBuffer ? decodeFrame(new Uint8Array(data)) : undefined;
+    // A binary (or any non-string) message is malformed in wire v3.
+    const bytes = typeof data === 'string' ? decodeText(data) : undefined;
+    const f = bytes === undefined ? undefined : decodeFrame(bytes);
     if (f === undefined) {
       this.malformed++;
       return;

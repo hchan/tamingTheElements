@@ -182,7 +182,7 @@ sequenceDiagram
 ```
 
 The HTTPS and socket steps belong to the host adapter (the repo defines the contract, not the implementation); `RelayCore` starts at HELLO. A
-401 clears the session and fetches one fresh guest session; ERROR `0x0004` gets one fresh ticket, then counts as a failure [fact: client].
+401 clears the session and fetches one fresh guest session; a failed handshake (any close before WELCOME, including a bare 1006) gets one fresh ticket and one retry, then counts as a failure [fact: client].
 
 ## 6. Queue pairing and room codes
 
