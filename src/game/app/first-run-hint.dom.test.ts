@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CARD_WAIT_CAP_POLLS, CARD_WAIT_KEYS, FIGHT_OVER_EVENT, FIGHT_SETTLED_EVENT, IDLE_POLL_MS, afterArenaCreate, arenaBusy, bannerUp, whenIdle, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
+import { CARD_WAIT_CAP_POLLS, CARD_WAIT_KEYS, FIGHT_OVER_EVENT, FIGHT_SETTLED_EVENT, IDLE_POLL_MS, afterArenaCreate, arenaBusy, bannerUp, whenIdle, FIRST_RUN_KEY, FIRST_RUN_REMOVE_MS, ROUND_OVER_EVENT, SUPER_CUT_EVENT, TAG_CALL_EVENT, anySnag, firstRunHint, firstRunLines, firstRunSeen, firstRunPhoneLine, firstRunShortLine, markFirstRunSeen } from './first-run-hint';
 import { CUT_KEY } from '../hud/banner-lanes';
 import { TAG_CALL_KEY } from '../hud/arcade-hud';
 import { PRELOAD_READY } from '../scenes/launch';
@@ -170,6 +170,12 @@ describe('firstRunHint', () => {
     expect(keys).toContain('Up/W');
     expect(keys).not.toMatch(/stick|tap/i);
     expect(keys + touch).not.toMatch(/classic|arcade|ruleset|capture/i);
+  });
+
+  it('the landscape phone line names the bar and keeps Snag only when present (the e2e "Tap the bar" check)', () => {
+    expect(firstRunPhoneLine()).toMatch(/Tap the bar/);
+    expect(firstRunPhoneLine()).toContain('Snag');
+    expect(firstRunPhoneLine(false)).not.toContain('Snag');
   });
 
   it('names Snag only for a side that has it (Treenoc, Wispera, Curomo, Echo)', () => {
