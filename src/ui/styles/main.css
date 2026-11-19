@@ -738,6 +738,14 @@ the four element circles as the crest (see docs/VISUAL-QA.md). */
   border-color: var(--color-gold);
   box-shadow: 0 0 10px rgba(255, 214, 120, 0.5);
 }
+/* QA r110 #4: label over subtitle. A button lays its text node and ::after inline-ish ("PlayA tour of nine fights"); a centred column keeps them on two lines with a gap. */
+.mainMenuList li button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15em;
+}
 .mainMenuList li button::after {
   content: attr(data-sub);
   display: block;
@@ -3058,6 +3066,20 @@ body:has(.settingsBar) {
 #tourStage .tourFact .tsPips i { width: 0.85em; height: 0.85em; }
 #tourStage #tourFight { min-height: 52px; width: min(100%, 22em); font-size: 1.15em; }
 #tourStage #tourFight + a.menuButton { min-height: 44px; }
+/* QA r110 #5: on a portrait phone the card plus nine stage tiles push Fight below the fold; it stays pinned to the bottom edge (like Start tour). */
+@media (max-width: 520px) and (orientation: portrait) {
+  /* body is an overflow:auto box as tall as its content, so it would be the sticky scrollport; the root scrolls instead. */
+  body:has(#tourStage) { overflow: visible; }
+  /* Something in the card (a glow) pokes 14 px past it, widening the page to 396 px and the mobile layout viewport with it; clip, so the viewport stays 390 and the pin sits on the real bottom edge. */
+  #tourStage { overflow-x: clip; }
+  #tourStage > div:has(> #tourFight) { display: contents; }
+  #tourStage #tourFight {
+    position: sticky;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 5;
+    box-shadow: 0 0 0 4px rgba(12, 10, 28, 0.85), 0 6px 14px rgba(0, 0, 0, 0.6);
+  }
+}
 @media (max-height: 500px) and (orientation: landscape) {
   #tourStage .tsInfo { gap: 0.15em 0.9em; }
   #tourStage .tsInfo p.tourFact { font-size: 0.8em; }
