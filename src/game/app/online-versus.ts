@@ -1,6 +1,8 @@
 import { SetupHandshake, helloOf, type ControlPipe, type MatchSetup, type SessionStatus, type SetupPhase } from '@core/index';
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
+import { withSub } from '@ui/subline';
+import '@ui/styles/online-screen.css';
 import type { Screen } from '@ui/screens/screen';
 import { loadSave } from '@ui/screens/settings';
 import { hostPeer, joinPeer, type Peer } from '../net/peer';
@@ -159,7 +161,7 @@ export function onlineVersusScreen(): Screen {
     mount(container) {
       gone = false;
       ended = false;
-      node = el('div', 'menuPage');
+      node = el('div', 'menuPage onlineScreen onlineP2p');
       const status = el('p');
       status.id = 'onlineStatus';
       status.setAttribute('role', 'status');
@@ -180,7 +182,7 @@ export function onlineVersusScreen(): Screen {
         node?.classList.remove('onlineLive');
       };
       node.append(el('h1', 'heading', 'Online'));
-      const intro = el('p', undefined, 'Play a friend over the internet, no account needed. One of you hosts and sends a link in chat; the other opens it. Just tap the buttons.');
+      const intro = el('p', undefined, 'Play a friend over the internet, no account needed.');
       node.append(intro);
       introNode = intro;
 
@@ -617,7 +619,14 @@ export function onlineVersusScreen(): Screen {
       roleHost.setAttribute('aria-pressed', 'false');
       roleJoin.setAttribute('aria-pressed', 'false');
       const roles = el('div', 'onlineRoles');
-      roles.append(roleHost, roleJoin);
+      roleHost.classList.add('onlinePrimary', 'onlineRole');
+      roleJoin.classList.add('onlinePrimary', 'onlineRole');
+      roles.append(
+        roleHost,
+        roleJoin,
+        withSub(roleHost, 'onlineRoleHost', 'Host a game', 'Get a link to send a friend'),
+        withSub(roleJoin, 'onlineRoleJoin', 'Join a game', "Open or paste your friend's link"),
+      );
       // One card for the whole setup form, so it can collapse once connected; the status line stays outside it.
       const setup = el('div', 'onlineSetup');
       setup.id = 'onlineSetup';

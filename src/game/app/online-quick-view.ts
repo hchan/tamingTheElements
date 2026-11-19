@@ -1,6 +1,8 @@
 import type { CharacterId } from '@core/index';
 import { el } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
+import { withSub } from '@ui/subline';
+import '@ui/styles/online-screen.css';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor } from './arcade-pick';
 import { controlsFor, type ControlId, type QuickState } from './online-quick-model';
@@ -35,8 +37,10 @@ export interface QuickView {
   lockPick(locked: boolean): void;
 }
 
-function button(id: string, label: string, onClick: () => void): HTMLButtonElement {
-  const b = el('button', 'menuButton onlineBig', label);
+type Weight = 'onlinePrimary' | 'onlineQuiet' | '';
+
+function button(id: string, label: string, onClick: () => void, weight: Weight = ''): HTMLButtonElement {
+  const b = el('button', `menuButton onlineBig ${weight}`.trim(), label);
   b.type = 'button';
   b.id = id;
   b.addEventListener('click', onClick);
@@ -44,7 +48,7 @@ function button(id: string, label: string, onClick: () => void): HTMLButtonEleme
 }
 
 export function createQuickView(h: QuickHandlers): QuickView {
-  const root = el('div', 'menuPage');
+  const root = el('div', 'menuPage onlineScreen onlineQuick');
   const heading = el('h1', 'heading', 'Online');
   const status = el('p');
   status.id = 'quickStatus';
@@ -76,19 +80,25 @@ export function createQuickView(h: QuickHandlers): QuickView {
   });
 
   const buttons: Record<Exclude<ControlId, 'quickPick' | 'quickLink' | 'quickBack'>, HTMLButtonElement> = {
-    quickFind: button('quickFind', 'Find an opponent', h.find),
-    quickCancel: button('quickCancel', 'Cancel', h.cancel),
-    quickReady: button('quickReady', 'Ready', h.ready),
+    quickFind: button('quickFind', 'Find an opponent', h.find, 'onlinePrimary'),
+    quickCancel: button('quickCancel', 'Cancel', h.cancel, 'onlineQuiet'),
+    quickReady: button('quickReady', 'Ready', h.ready, 'onlinePrimary'),
     quickRetry: button('quickRetry', 'Try again', h.retry),
     quickReload: button('quickReload', 'Reload', h.reload),
-    quickAgain: button('quickAgain', 'Play again', h.again),
-    quickLeave: button('quickLeave', 'Leave', h.leave),
+    quickAgain: button('quickAgain', 'Play again', h.again, 'onlinePrimary'),
+    quickLeave: button('quickLeave', 'Leave', h.leave, 'onlineQuiet'),
   };
   const report = button('quickReport', 'Save report', h.report);
   report.hidden = true;
   const back = el('a', 'menuLink', 'Back');
   back.setAttribute('href', '#main');
   back.id = 'quickBack';
+
+  const subs = [
+    withSub(buttons.quickFind, 'quickFind', 'Find an opponent', 'A random player, no account'),
+    withSub(buttons.quickReady, 'quickReady', 'Ready', 'When your three heroes are set'),
+    withSub(buttons.quickAgain, 'quickAgain', 'Play again', 'Another match'),
+  ];
 
   const byControl = (id: ControlId): HTMLElement => {
     if (id === 'quickPick') return picker;
@@ -98,7 +108,7 @@ export function createQuickView(h: QuickHandlers): QuickView {
   };
   const all: ControlId[] = ['quickFind', 'quickCancel', 'quickPick', 'quickReady', 'quickRetry', 'quickReload', 'quickAgain', 'quickLeave', 'quickBack', 'quickLink'];
 
-  root.append(heading, status, failBox, link, picker, report, buttons.quickFind, buttons.quickCancel, buttons.quickReady, buttons.quickRetry, buttons.quickReload, buttons.quickAgain, buttons.quickLeave, back);
+  root.append(heading, status, failBox, link, picker, report, buttons.quickFind, buttons.quickCancel, buttons.quickReady, buttons.quickRetry, buttons.quickReload, buttons.quickAgain, buttons.quickLeave, back, ...subs);
   for (const id of all) byControl(id).hidden = true;
   let first = true;
 

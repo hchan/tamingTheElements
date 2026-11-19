@@ -1,0 +1,143 @@
+/* Both Online screens (quick match and friend link): one gold primary, normal and quiet buttons, a card for the form.
+   Loaded with the lazy screen chunks. Every selector starts with #menu .onlineScreen so it beats main.css's Online rules. */
+#menu .onlineScreen {
+  max-width: 36em;
+  margin-inline: auto;
+}
+#menu .onlineScreen button.onlineBig {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15em;
+  box-sizing: border-box;
+  min-height: 52px;
+}
+#menu .onlineScreen button.onlineBig[hidden] {
+  display: none;
+}
+#menu .onlineScreen button.onlineBig::after {
+  content: attr(data-sub);
+  font-size: 0.72em;
+  font-weight: normal;
+  opacity: 0.9;
+}
+#menu .onlineScreen button.onlineBig:not([data-sub])::after {
+  content: none;
+}
+#menu .onlineScreen button.onlinePrimary {
+  min-height: 60px;
+  font-weight: bold;
+  background: linear-gradient(180deg, #8a6a1c, #5a4310);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 10px rgba(255, 214, 120, 0.5);
+}
+#menu .onlineScreen button.onlineQuiet {
+  background: transparent;
+  border-color: #888;
+  box-shadow: none;
+}
+#menu .onlineScreen a.menuLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Quick match: the hero picker is a dark card, three selects side by side. */
+#menu .onlineQuick #quickPick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4em 0.8em;
+  margin: 0.6em 0;
+  padding: 0.6em 1em;
+  border: 1px solid #666;
+  border-radius: 8px;
+  background: rgba(20, 20, 40, 0.88);
+}
+#menu .onlineQuick #quickPick[hidden] {
+  display: none;
+}
+#menu .onlineQuick #quickPick .settingsOption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  margin: 0;
+}
+#menu .onlineQuick #quickPick select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  background: #1b1b34;
+  color: #eee;
+  border: 1px solid #666;
+  border-radius: 6px;
+  font: inherit;
+}
+#menu .onlineQuick button.onlineBig {
+  width: 100%;
+  margin: 0.4em 0;
+}
+/* In a match the strip layout of main.css (.onlineLive) takes over: its own sizes, no subline. */
+#menu .onlineLive.onlineScreen button.onlineBig {
+  width: auto;
+  min-height: 44px;
+}
+#menu .onlineLive.onlineScreen button.onlineBig::after {
+  content: none;
+}
+
+/* Friend link: the two role buttons are a gold pair; main.css keeps its 52 px !important minimum. */
+/* main.css's rule for #onlineSetup buttons has three ids (via :has), so the role buttons repeat that to lay label over subline. */
+#menu .onlineP2p:has(#onlineStatus) #onlineSetup button.onlineBig.onlineRole {
+  display: flex;
+  margin: 0;
+}
+#menu .onlineP2p:has(#onlineStatus) #onlineSetup button.onlineBig.onlineRole[hidden] {
+  display: none;
+}
+#menu .onlineP2p #onlineSetup button.onlineBig.onlineRole.onlineDone {
+  background: #1f5a2e;
+  border-color: #6fd08a;
+}
+
+@media (max-width: 600px) {
+  #menu .onlineQuick #quickPick {
+    grid-template-columns: 1fr;
+  }
+  #menu .onlineScreen button.onlineRole {
+    padding-inline: 0.3em;
+  }
+  #menu .onlineScreen button.onlineRole::after {
+    font-size: 0.68em;
+  }
+}
+
+/* Phone landscape: no intro, small title, no sublines (still read aloud), selects in a row. */
+@media (orientation: landscape) and (max-height: 500px) {
+  #menu .onlineScreen h1.heading {
+    margin: 0.2em 0;
+    font-size: 1.4em;
+  }
+  #menu .onlineScreen > p:not([role]):not(.onlineChip) {
+    display: none;
+  }
+  #menu .onlineScreen button.onlineBig::after {
+    content: none;
+  }
+  #menu .onlineScreen button.onlineBig,
+  #menu .onlineScreen button.onlinePrimary {
+    min-height: 44px;
+  }
+  #menu .onlineQuick button.onlineBig {
+    margin: 0.2em 0;
+  }
+  #menu .onlineScreen > p[role='status'] {
+    margin: 0.2em 0;
+    font-size: 0.9em;
+  }
+  #menu .onlineQuick #quickPick {
+    grid-template-columns: repeat(3, 1fr);
+    margin: 0.3em 0;
+    padding: 0.3em 0.6em;
+  }
+}

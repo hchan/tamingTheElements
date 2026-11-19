@@ -328,6 +328,25 @@ describe('quick match screen', () => {
     r.unmounts.forEach((u) => { u(); });
   });
 
+  it('has a gold primary with a subline, quiet Cancel and Leave, and one Back link', () => {
+    const r = rig();
+    const n = r.mount();
+    expect(n.querySelector('.menuPage.onlineScreen')).not.toBeNull();
+    const find = q(n, 'quickFind');
+    expect(find.getAttribute('aria-label')).toBe('Find an opponent');
+    expect(find.dataset.sub).toBeTruthy();
+    const sub = n.querySelector(`#${find.getAttribute('aria-describedby') ?? 'none'}`);
+    expect(sub?.textContent).toBe(find.dataset.sub);
+    expect(find.classList.contains('onlinePrimary')).toBe(true);
+    expect(q(n, 'quickCancel').classList.contains('onlineQuiet')).toBe(true);
+    expect(q(n, 'quickLeave').classList.contains('onlineQuiet')).toBe(true);
+    const back = n.querySelector('a.menuLink');
+    expect(back?.getAttribute('href')).toBe('#main');
+    expect(n.querySelectorAll('a.menuLink')).toHaveLength(1);
+    for (const b of n.querySelectorAll<HTMLElement>('[data-sub]')) expect(b.dataset.sub).not.toMatch(FORBIDDEN);
+    r.unmounts.forEach((u) => { u(); });
+  });
+
   it('never shows the words players must not see', async () => {
     const r = rig();
     const [a] = await play(r);
