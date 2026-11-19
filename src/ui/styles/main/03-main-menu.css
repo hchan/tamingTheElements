@@ -1,0 +1,195 @@
+/* Theme: one centred column of cards on a dark backdrop,
+the four element circles as the crest (see docs/VISUAL-QA.md). */
+#menu .menuPage {
+  max-width: 44em;
+  margin-inline: auto;
+}
+.mainMenuList,
+.teamSlots {
+  display: grid;
+  gap: 0.4em;
+  padding: 0;
+}
+.mainMenuList {
+  /* A title-screen stack, not a form: capped and centred on wide screens (QA r5). */
+  width: min(100%, 24em);
+  margin-inline: auto;
+}
+.mainMenuList li button {
+  text-align: center;
+}
+.mainMenuList::before {
+  content: '';
+  height: 7em;
+  background: url(/assets/img/menu/crest-hires.png) center / contain no-repeat;
+  filter: drop-shadow(0 0 14px rgba(255, 214, 120, 0.55)) drop-shadow(0 0 4px rgba(150, 190, 255, 0.6));
+}
+.mainMenuList li button {
+  padding: 0.55em 1em;
+  min-height: 44px;
+  background: linear-gradient(180deg, #4a4294, #2f2a68);
+  border: 2px solid #d6cdf6;
+  border-radius: 10px;
+  text-decoration: none;
+}
+.mainMenuList li button.notClickableYet {
+  color: #bbb;
+  border-style: dashed;
+  background: #26263c;
+}
+.mainMenuList li button.clickable:hover,
+.mainMenuList li button.clickable:focus-visible {
+  text-decoration: underline;
+  border-color: var(--color-gold);
+}
+.mainMenuList li button.menuFeatured {
+  min-height: 60px;
+  font-size: 1.15em;
+  font-weight: bold;
+  background: linear-gradient(180deg, #8a6a1c, #5a4310);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 10px rgba(255, 214, 120, 0.5);
+}
+/* QA r110 #4: label over subtitle. A button lays its text node and ::after inline-ish ("PlayA tour of nine fights"); a centred column keeps them on two lines with a gap. */
+.mainMenuList li button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15em;
+}
+.mainMenuList li button::after {
+  content: attr(data-sub);
+  display: block;
+  font-size: 0.72em;
+  font-weight: normal;
+  opacity: 0.85;
+}
+.mainMenuList li button.menuFeatured::after {
+  font-size: 0.7em;
+  opacity: 0.9;
+}
+/* Settings and Help: a smaller two-up row under the three main entries. */
+.mainMenuList {
+  grid-template-columns: 1fr 1fr;
+}
+.mainMenuList::before,
+.mainMenuList li:not(.menuMinor) {
+  grid-column: 1 / -1;
+}
+.mainMenuList li.menuMinor button {
+  min-height: 44px;
+  font-size: 0.9em;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .mainMenuList li button::after {
+    display: none;
+  }
+}
+.garrisonRow {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  position: relative;
+  margin: 0.4em 0;
+  padding: 0.5em 0.8em;
+  background: #2c2c4c;
+  border: 2px solid #b4b4dc;
+  border-radius: 10px;
+}
+.garrisonAvatar {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  /* Map sprites are 4-frame sheets, 80 px a frame: show the first. */
+  background: 0 0 / 400% auto no-repeat;
+}
+.detailAvatar {
+  margin: 0 auto;
+  width: 120px;
+  height: 120px;
+}
+.garrisonName {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--color-heading);
+}
+.elementBadge::before {
+  content: '';
+  display: inline-block;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: 0.3em;
+  vertical-align: -0.3em;
+  background: center / contain no-repeat;
+}
+.element-fire::before {
+  background-image: url(/assets/img/fx/fireCircle.png);
+}
+.element-water::before {
+  background-image: url(/assets/img/fx/waterCircle.png);
+}
+.element-earth::before {
+  background-image: url(/assets/img/earthCircle.png);
+}
+.element-air::before {
+  background-image: url(/assets/img/airCircle.png);
+}
+.selectedGarrisonRow {
+  border-color: var(--color-gold);
+  border-width: 3px;
+}
+.battlegroundOrderContainer {
+  position: static;
+  display: block;
+  margin-left: auto;
+  padding: 0.2em 0.7em;
+  font-weight: bold;
+  color: #000;
+  background: var(--color-gold);
+  border-radius: 1em;
+}
+.battlegroundOrderContainer[hidden] {
+  display: none;
+}
+.teamSlots {
+  grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
+  margin: 0.5em 0;
+  list-style: none;
+}
+.teamSlot {
+  display: flex;
+  flex-direction: column;
+  padding: 0.4em 0.8em;
+  border: 2px solid var(--color-gold);
+  border-radius: 10px;
+}
+.emptySlot {
+  color: #c8c8d8;
+  border-style: dashed;
+  border-color: #8a8aa8;
+}
+.characterAbility,
+.characterStats,
+.characterRelations {
+  margin: 0.5em 0;
+  padding: 0.3em 0.8em;
+  background: #2c2c4c;
+  border-radius: 10px;
+}
+#menu fieldset {
+  background: #232340;
+  border-radius: 10px;
+}
+.menuStatus {
+  text-align: center;
+}
+@media (max-width: 600px) {.garrisonAvatar {
+    width: 56px;
+    height: 56px;
+  }
+}
+body:has(#game:not(:empty)) {
+  background: var(--color-bg);
+}
+

@@ -1,0 +1,104 @@
+/* Settings sections (QA r24): collapsible groups, a sticky Save and Back bar, themed sliders. */
+#menu .settingsSection {
+  margin: 0.5em 0;
+  border: 1px solid #5a5190;
+  border-radius: 10px;
+  background: #1c1a36;
+}
+#menu .settingsSummary {
+  padding: 0.6em 0.9em;
+  min-height: 44px;
+  box-sizing: border-box;
+  font-weight: bold;
+  cursor: pointer;
+  color: #ffe600;
+}
+#menu .settingsSummary:focus-visible {
+  outline: 2px solid #8cf;
+}
+#menu .settingsSection[open] > .settingsSummary {
+  border-bottom: 1px solid #5a5190;
+}
+#menu .settingsSection > .settingsGroup {
+  margin: 0.5em 0.6em;
+}
+#menu .settingsBar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 0.75em;
+  padding: 0.5em 0;
+  background: #121022;
+  border-bottom: 1px solid #5a5190;
+}
+#menu .settingsSubheading {
+  margin: 0.75em 0.6em 0.25em;
+  font-size: 1.05em;
+  color: #ffe600;
+}
+#menu .settingsSection > a.menuLink {
+  margin: 0.5em 0.9em;
+}
+#menu .settingsBar .menuButton,
+#menu .settingsBar .menuLink {
+  margin: 0;
+}
+#menu #settingsAudio .settingsGroup > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+#menu .settingsOption input[type='range'] {
+  width: min(100%, 18em);
+  height: 1.4em;
+  accent-color: #ffe600;
+  background: transparent;
+  cursor: pointer;
+}
+#menu .settingsOption input[type='range']::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #3a3566;
+  border: 1px solid #8a7fb8;
+}
+#menu .settingsOption input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: #ffe600;
+  border: 2px solid #121022;
+}
+#menu .settingsOption input[type='range']::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #3a3566;
+  border: 1px solid #8a7fb8;
+}
+#menu .settingsOption input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffe600;
+  border: 2px solid #121022;
+}
+#menu .settingsOption input[type='range']:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 2px;
+}
+
+/* The page (html) scrolls so the sticky Save bar sticks to the viewport: body overflow-x hidden would make body a scroll box. */
+body:has(.settingsBar) {
+  overflow: visible;
+}
+
+/* WCAG 2.4.11: the sticky bar (about 75px tall) must not cover a control focused by Shift+Tab; keep scrolled-to controls just below it. */
+html:has(.settingsBar) {
+  scroll-padding-top: 88px;
+}
+
