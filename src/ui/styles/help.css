@@ -23,6 +23,17 @@
   font: inherit;
   cursor: pointer;
 }
+/* Desktop and tablet: the label plus five chips need more than the 44em page, so lay them out as a grid of three columns (two rows of three). */
+@media (min-width: 521px) and (min-height: 501px), (min-width: 521px) and (orientation: portrait) {
+  #menu .helpJump {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: center;
+  }
+  #menu .helpJumpLabel {
+    justify-self: end;
+  }
+}
 #menu .helpJumpBtn:hover,
 #menu .helpJumpBtn:focus-visible {
   background: #4a42a0;

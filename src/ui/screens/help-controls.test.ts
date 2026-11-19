@@ -16,8 +16,8 @@ describe('help controls', () => {
     expect(rows['Tag']).toBe('3');
     expect(rows['Snag (some heroes)']).toBe('C');
   });
-  it('the Gamepad and Touch tables each have a Run Away / Run Towards row, without banned words (QA r109)', () => {
-    for (const title of ['Gamepad', 'Touch']) {
+  it('the Gamepad table has a Run Away / Run Towards row, without banned words (QA r109)', () => {
+    for (const title of ['Gamepad']) {
       const rows = controlSections(DEFAULT_BINDINGS).find((s) => s.title === title)?.rows ?? [];
       const row = rows.find((r) => r.action === 'Run Away / Run Towards');
       expect(row, title).toBeDefined();
@@ -28,9 +28,10 @@ describe('help controls', () => {
     const rows = player1Rows(bindSteal(DEFAULT_BINDINGS, 'trap', 0, 'KeyP'));
     expect(rows.find((r) => r.action === 'Trap')?.keys).toBe('P or 0');
   });
-  it('has the five input sections and never shows forbidden words', () => {
+  it('has the four input sections (no phone Touch table) and never shows forbidden words', () => {
     const sections = controlSections(DEFAULT_BINDINGS);
-    expect(sections).toHaveLength(5);
+    expect(sections).toHaveLength(4);
+    expect(sections.map((s) => s.title)).not.toContain('Touch');
     const text = sections.flatMap((s) => [s.title, ...s.rows.flatMap((r) => [r.action, r.keys])]).join(' | ');
     expect(text).not.toMatch(BANNED);
   });

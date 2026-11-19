@@ -76,13 +76,6 @@ export const GAMEPAD_ROWS: readonly ControlRow[] = [
   { action: 'Pause', keys: 'Start' },
 ];
 
-export const TOUCH_ROWS: readonly ControlRow[] = [
-  { action: 'Move', keys: 'Drag the on-screen pad' },
-  { action: 'Strike 1, Strike 2, Snag', keys: 'Tap the Strike circles or the boxes of the hero (the one marked Snag throws the rope that roots a foe)' },
-  { action: 'Dash, Guard, Weather, Charge, Super, Trap, Element, Cleanse, Tag, Tag 2', keys: 'Tap the button of the same name; each shows its key and its state in words' },
-  { action: 'Run Away / Run Towards', keys: 'Tap the Run box: ranged heroes run away, melee heroes run towards the foe; any new direction stops it' },
-];
-
 export const SYSTEM_ROWS: readonly ControlRow[] = [
   { action: 'Pause', keys: 'Shift-P' },
   { action: 'Mute', keys: 'Ctrl-M' },
@@ -95,7 +88,6 @@ export function controlSections(b: Bindings): readonly ControlSection[] {
     { title: 'Keyboard, Player 1', rows: player1Rows(b) },
     { title: 'Keyboard, Player 2 (two players on one keyboard)', rows: P2_KEYS },
     { title: 'Gamepad', rows: GAMEPAD_ROWS },
-    { title: 'Touch', rows: TOUCH_ROWS },
     { title: 'Anywhere', rows: SYSTEM_ROWS },
   ];
 }
