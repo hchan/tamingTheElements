@@ -22,7 +22,7 @@ import { slotAbility } from './systems/ability-info';
 import { controlledId } from './systems/movement';
 import { StatusId, listStatuses } from './systems/status';
 import { ABILITY_DEFS } from './systems/projectile';
-import { SWAP_COOLDOWN_TICKS, tagTargets, teamMembers } from './systems/swap';
+import { SWAP_COOLDOWN_TICKS, swapAllowed, tagTargets, teamMembers } from './systems/swap';
 
 /** Capture sits after the character's own two ability slots (see systems/capture.ts). */
 const CAPTURE_SLOT = 2;
@@ -82,6 +82,8 @@ export interface RenderArcade {
   /** Rounds won per team (a draw round counts for both). */
   readonly roundsWon: [number, number];
   stunned(id: number): boolean;
+  /** `SwapBlock` bits for `team`'s swap right now (0 = a tag is allowed): the sim's own `swapAllowed`, so the HUD cannot disagree. */
+  swapBlock(team: number): number;
   invulnerable(id: number): boolean;
   /** The 8-way cast facing (dir8, 0 = east, then counter-clockwise on screen) of character `id`. */
   aim(id: number): number;
@@ -252,7 +254,7 @@ export function createRenderView(world: SimWorld): RenderView {
     frozen: false, gameTick: 0, slowHold: false, comboHits: [0, 0], comboDamage: [0, 0], meter: [0, 0], round: 0, phase: 0, timer: 0, sudden: false, roundsWon: [0, 0],
     weather: 0, weatherLeft: 0, weatherCharge: [0, 0], stage: 0, swapLeft: 0, swapTo: 0, patchCount: 0, patches: new Array<number>(PATCH_MAX * 4).fill(0),
     traps: new Array<number>(TRAP_WORLD_MAX * TRAP_VIEW_STRIDE).fill(0), hazard: new Array<number>(HAZARD_VIEW_STRIDE).fill(0),
-    stunned: (id) => isStunned(s, id), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
+    stunned: (id) => isStunned(s, id), swapBlock: (team) => swapAllowed(world, team), invulnerable: (id) => isInvulnerable(s, id), aim: (id) => castDir(s, id),
     guard: (id) => GUARD_MAX - (s.arcade[id * ARCADE_E + ArcadeE.guardDrain] ?? 0), guarding: (id) => isGuarding(s, id),
     rooted: (id) => isRooted(s, id),
     stunLeft: (id) => Math.max(0, (s.arcade[id * ARCADE_E + ArcadeE.stunUntil] ?? 0) - now(s)),

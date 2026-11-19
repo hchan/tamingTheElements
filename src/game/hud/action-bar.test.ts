@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Cmd, RoundPhase, type RenderActionBar } from '@core/index';
+import { Cmd, RoundPhase, SwapBlock, type RenderActionBar } from '@core/index';
 import { PORTRAIT_ROW_TILE_MAX_CSS, oneRowSide,oneRowSlots, portraitBarSlots, withoutStrikeTiles, centreRows, BAR_Y, DEFAULT_KEY_LABELS, MIRROR_SIDE, mirrorSlots, shortLabels, ELEMENTAL_LABEL, TRAP_LABEL, elementIcon, ACTION_ICON, arcadeBarOf, slotLayout, barTop, slotSide, MAX_SLOTS, MIN_TOUCH_PX, cooldownLook, READY_FLASH_MS, MIRROR_Y, fitTextScale, elementalNote, trapNote, CAPTURE_NOTICE_TICKS, SLOT_SIDE, buildSlots, captureHint, commandAt, cooldownProgress, cooldownSweep, labelsFromBindings, slotParts, slotTip, slotWord, strikeCues, type ActionSlot } from './action-bar';
 import { bindSteal, DEFAULT_BINDINGS } from '../platform/input/bindings';
 
@@ -238,9 +238,9 @@ describe('Arcade boxes (one consistent bar)', () => {
     expect(d.every((s) => s.progress >= 0 && s.progress <= 1)).toBe(true);
   });
   it('reads a team off the render view read-outs, idle for no active hero', () => {
-    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5, phase: RoundPhase.fight, stunned: (id: number) => id === 3 };
+    const ar = { meter: [10, 20], weatherCharge: [1, 2], active: (t: number) => (t === 0 ? 3 : -1), guard: () => 7, guarding: () => true, dashIn: () => 4, chargeIn: () => 5, phase: RoundPhase.fight, stunned: (id: number) => id === 3, swapBlock: (team: number) => (team === 0 ? SwapBlock.stun : 0) };
     expect(arcadeBarOf(ar as never, 0, false)).toMatchObject({ meter: 10, weatherCharge: 1, guard: 7, guarding: true, dashIn: 4, chargeIn: 5, swapBlock: 'STUN' });
-    expect(arcadeBarOf({ ...ar, phase: RoundPhase.intro } as never, 1, false).swapBlock).toBe('WAIT');
+    expect(arcadeBarOf({ ...ar, swapBlock: () => SwapBlock.wait | SwapBlock.noActive } as never, 1, false).swapBlock).toBe('WAIT');
     expect(arcadeBarOf(ar as never, 1, false).swapBlock).toBeUndefined();
     expect(arcadeBarOf(ar as never, 1, true)).toMatchObject({ meter: 20, guarding: false, dashIn: 0, chargeIn: -1, keepCharge: true });
   });
@@ -491,7 +491,7 @@ describe('Run slot', () => {
     expect(on).toMatchObject({ disabled: false, note: 'Running', highlight: true });
   });
   it('reads the Run block off the view: stun first, then root, else none', () => {
-    const base = { meter: [0, 0], weatherCharge: [0, 0], active: () => 3, guard: () => 0, guarding: () => false, dashIn: () => 0, chargeIn: () => 0, phase: RoundPhase.fight };
+    const base = { meter: [0, 0], weatherCharge: [0, 0], active: () => 3, guard: () => 0, guarding: () => false, dashIn: () => 0, chargeIn: () => 0, phase: RoundPhase.fight, swapBlock: () => 0 };
     expect(arcadeBarOf({ ...base, stunned: () => true, rooted: () => true } as never, 0, false).runBlock).toBe('stunned');
     expect(arcadeBarOf({ ...base, stunned: () => false, rooted: () => true } as never, 0, false).runBlock).toBe('rooted');
     expect(arcadeBarOf({ ...base, stunned: () => false, rooted: () => false } as never, 0, false).runBlock).toBeUndefined();

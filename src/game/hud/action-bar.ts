@@ -1,7 +1,6 @@
 import type Phaser from 'phaser';
 import type { Command, RenderActionBar, RenderArcade, RenderView } from '@core/index';
-import { Cmd, GUARD_MAX, METER_BAR, RUN_AWAY_DESCRIPTION, RUN_AWAY_NAME, RUN_TICKS, RUN_TOWARDS_DESCRIPTION, RUN_TOWARDS_NAME, RoundPhase, WEATHER_CHARGE_FULL } from '@core/index';
-import { swapBlockWord } from './swap-notice';
+import { Cmd, GUARD_MAX, SwapBlock, METER_BAR, RUN_AWAY_DESCRIPTION, RUN_AWAY_NAME, RUN_TICKS, RUN_TOWARDS_DESCRIPTION, RUN_TOWARDS_NAME, WEATHER_CHARGE_FULL } from '@core/index';
 import { LOGICAL_WIDTH as LOGICAL_W, coreDisplayWidth, crisp, phoneBoost, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { ACTION_COMMAND } from '../input/key-map';
 import { actionKeyLabel, DEFAULT_BINDINGS, GAME_ACTIONS, type Bindings } from '../platform/input/bindings';
@@ -464,7 +463,9 @@ export const RUN_BLOCK_NOTE: Readonly<Record<RunBlock, string>> = { rooted: "Can
 /** Reads one team's `ArcadeBar` off the render view's Arcade read-outs (a team with no active hero reads as full and idle). */
 export function arcadeBarOf(ar: RenderArcade, team: 0 | 1, keepCharge: boolean, cleanseIn: (id: number) => number = () => 0): ArcadeBar {
   const id = ar.active(team);
-  const swapBlock = swapBlockWord({ fighting: ar.phase === RoundPhase.fight, stunned: id >= 0 && ar.stunned(id), frozen: false });
+  // The sim's own swap rules (`swapAllowed`): WAIT outside the fight, STUN while the active hero is stunned or frozen.
+  const bits = ar.swapBlock(team);
+  const swapBlock = (bits & SwapBlock.wait) !== 0 ? 'WAIT' : (bits & (SwapBlock.stun | SwapBlock.frozen)) !== 0 ? 'STUN' : undefined;
   return {
     ...(swapBlock !== undefined ? { swapBlock } : {}),
     ...(id >= 0 && ar.stunned(id) ? { runBlock: 'stunned' as const } : id >= 0 && ar.rooted(id) ? { runBlock: 'rooted' as const } : {}),
