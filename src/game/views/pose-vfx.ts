@@ -25,6 +25,10 @@ const GATHER_MS = 55;
 const GATHER_R = 36;
 const GATHER_LIFE = 280;
 const RING_R = 24;
+const AFTER = 6;
+const AFTER_MS = 150;
+const AFTER_ALPHA = 0.4;
+const DUST_COUNT = 5;
 
 export class PoseVfx {
   private readonly imgs: (Phaser.GameObjects.Image | undefined)[] = new Array<undefined>(PARTS).fill(undefined);
@@ -57,6 +61,11 @@ export class PoseVfx {
   private readonly tx = new Float64Array(SLOTS);
   private readonly ty = new Float64Array(SLOTS);
   private readonly carry = new Float64Array(SLOTS);
+  // Lunge afterimages: a small pool of copies of the caster's drawn Image that fade out.
+  private readonly aImgs: (Phaser.GameObjects.Image | undefined)[] = new Array<undefined>(AFTER).fill(undefined);
+  private readonly aAge = new Float64Array(AFTER);
+  private readonly aOn = new Uint8Array(AFTER);
+  private aNext = 0;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.key = scene.textures.exists(MOTE_KEY) ? MOTE_KEY : '__DEFAULT';
@@ -67,6 +76,7 @@ export class PoseVfx {
     let n = 0;
     for (let i = 0; i < PARTS; i++) n += this.on[i] ?? 0;
     for (let i = 0; i < SLOTS; i++) n += (this.gMode[i] ?? 0) === GlowMode.none ? 0 : 1;
+    for (let i = 0; i < AFTER; i++) n += this.aOn[i] ?? 0;
     return n;
   }
 
@@ -119,8 +129,46 @@ export class PoseVfx {
     else this.burst(x, y, element, f.count, f.size, f.alpha);
   }
 
+  /** A dust puff at the feet point (x, y) when a lunge starts or stops; nothing under reduced motion. */
+  dust(x: number, y: number, element: number, reduced: boolean): void {
+    if (reduced) return;
+    for (let k = 0; k < DUST_COUNT; k++) {
+      this.draw();
+      this.spawn(x + this.dir.x * 6, y, this.dir.x * 34, -Math.abs(this.dir.y) * 20 - 6, 30, 260 * (0.8 + 0.4 * this.rand()), 0.8, 1.7, 0.35, element);
+    }
+  }
+
+  /** A fading copy of `src` (the caster's Image as just drawn): one lunge afterimage; nothing under reduced motion. */
+  afterimage(src: Phaser.GameObjects.Image, element: number, reduced: boolean): void {
+    if (reduced) return;
+    let i = -1;
+    for (let k = 0; k < AFTER; k++) {
+      const j = (this.aNext + k) % AFTER;
+      if (this.aOn[j] !== 1) {
+        i = j;
+        break;
+      }
+    }
+    if (i < 0) return;
+    this.aNext = (i + 1) % AFTER;
+    this.aImgs[i] ??= this.scene.add.image(0, 0, '__DEFAULT');
+    this.aOn[i] = 1;
+    this.aAge[i] = 0;
+    this.aImgs[i]?.setTexture(src.texture.key, src.frame.name).setOrigin(0, 0).setFlipX(src.flipX).setScale(src.scaleX, src.scaleY).setRotation(src.rotation)
+      .setPosition(src.x, src.y).setTint(ELEMENT_COLORS[FX_ELEMENTS[element] ?? 'void']).setDepth(src.depth - 0.1).setAlpha(AFTER_ALPHA).setVisible(true);
+  }
+
   /** Advances every effect by `dt` ms of wall time. */
   frame(dt: number, reduced: boolean): void {
+    for (let i = 0; i < AFTER; i++) {
+      if (this.aOn[i] !== 1) continue;
+      const age = (this.aAge[i] ?? 0) + dt;
+      this.aAge[i] = age;
+      if (age >= AFTER_MS) {
+        this.aOn[i] = 0;
+        this.aImgs[i]?.setVisible(false);
+      } else this.aImgs[i]?.setAlpha(AFTER_ALPHA * (1 - age / AFTER_MS));
+    }
     for (let i = 0; i < SLOTS; i++) {
       if ((this.gMode[i] ?? 0) !== GlowMode.none) this.glow(i, dt, reduced);
     }
@@ -233,6 +281,8 @@ export class PoseVfx {
   destroy(): void {
     for (const i of this.imgs) i?.destroy();
     for (const i of this.gImg) i?.destroy();
+    for (const i of this.aImgs) i?.destroy();
+    this.aOn.fill(0);
     this.on.fill(0);
     this.gMode.fill(0);
   }

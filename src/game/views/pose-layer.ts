@@ -1,6 +1,8 @@
 import type Phaser from 'phaser';
 import { EntityFlag, SimEventKind, type RenderCharacter, type RenderArcade, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import { poseHoldMs } from '../fx/hit-feel';
+import { COLUMN_FADE_MS, SMOOTH_KIND, columnEnvelope, lungeStretch, settlePose, smoothKindForDef, type SmoothKind } from '../fx/ability-smooth';
+import { REDUCED_FADE_MS } from '../fx/motion';
 import { PoseVfx } from './pose-vfx';
 import { CAST_HOLD_MS, CAST_Z, PROJ_CAST_GAP_MS, PROJ_CAST_Z, SUPER_HOLD_MS, applyDepth, depthTarget, shadowFor, stepDepth, type ShadowPose } from './pose-depth';
 import { FX_ELEMENTS } from './pose-vfx-math';
@@ -60,6 +62,20 @@ const DEAD_OR_BENCHED = EntityFlag.benched | EntityFlag.dead;
 /** Sheet row for each transient `PoseKind`. */
 const KIND_ACTION: readonly Action[] = ['idle', 'cast', 'hurt', 'dash', 'tagIn', 'victory'];
 const GUARD_ROW_MS = 140;
+/** Render-only extra pose hold when a lunge connects (ms), on top of the strength hold. */
+const LUNGE_HOLD_MS = 25;
+/** A second hit from the same Hurricane within this wall-ms gap is a repeat pulse (pulses come every 500 ms): no pose hold. */
+const HURRICANE_REPEAT_MS = 1500;
+const SETTLE_MS = 260;
+const SQUEEZE_MS = 260;
+const SQUEEZE_SX = 0.12;
+const SQUEEZE_SY = 0.06;
+const SQUEEZE_PULL_PX = 4;
+/** Distance (px) between lunge afterimages, and the sim tick length used to turn drawn px per frame into px per tick. */
+const AFTER_GAP_PX = 16;
+const TICK_MS = 20;
+/** Ghost kinds: projectile fade, KO fall, tornado shrink-out. */
+const GHOST_COLUMN = 2;
 
 /** Read-out for the test probe. */
 export interface PoseState {
@@ -107,7 +123,7 @@ interface Ghost {
   rot: number;
   /** Opacity the fading projectile had when it left (Fire Blast falloff); 1 otherwise. */
   alpha: number;
-  /** 0 projectile fade (centre origin), 1 KO fall (feet pivot, top-left origin). */
+  /** 0 projectile fade (centre origin), 1 KO fall (feet pivot, top-left origin), 2 tornado shrink-out (centre origin). */
   kind: number;
   dir: number;
   /** KO fall: the sprite and facing, to play its sheet's `ko` row when it has one. */
@@ -205,6 +221,22 @@ export class PoseLayer {
   private readonly eachChar = (c: RenderCharacter): void => { this.character(c); };
   private readonly eachX = (c: RenderCharacter): void => { this.simX[c.id & (SLOTS - 1)] = c.x; };
   private readonly eachProj = (p: RenderProjectile): void => { this.projectile(p); };
+  private readonly eachMelee = (p: RenderProjectile): void => { this.melee(p); };
+  // Per melee slot (ids masked like projectiles, own arrays so a melee box never takes a projectile's retire path).
+  private readonly meleeId = new Int32Array(SLOTS).fill(-1);
+  private readonly meleeSeen = new Int32Array(SLOTS);
+  /** Caster slot of the melee box (-1: none found) and its smooth kind (undefined: no smoothing entry). */
+  private readonly meleeCaster = new Int8Array(SLOTS).fill(-1);
+  private readonly meleeKind: (SmoothKind | undefined)[] = new Array<SmoothKind | undefined>(SLOTS).fill(undefined);
+  // Per character slot: lunge in progress, afterimage carry, settle and squeeze starts on the VFX clock, last Hurricane hit.
+  private readonly lungeOn = new Uint8Array(SLOTS);
+  private readonly lungeAcc = new Float64Array(SLOTS);
+  private readonly settleAt = new Float64Array(SLOTS).fill(-1e9);
+  private readonly squeezeAt = new Float64Array(SLOTS).fill(-1e9);
+  private readonly squeezeDir = new Int8Array(SLOTS).fill(1);
+  private readonly hurriAt = new Float64Array(SLOTS).fill(-1e9);
+  /** Tornado columns (sprite kind 'column') in the projectile slots: their size before the grow-in is kept for the shrink-out ghost. */
+  private readonly isColumn = new Uint8Array(SLOTS);
 
   constructor(private readonly deps: PoseLayerDeps) {
     this.vfx = new PoseVfx(deps.scene);
@@ -252,7 +284,16 @@ export class PoseLayer {
         case SimEventKind.hitConfirmed: {
           const t = (e['target'] ?? -1) & (SLOTS - 1);
           const a = (e['attacker'] ?? e.sourceId) & (SLOTS - 1);
-          this.holdMs = Math.max(this.holdMs, poseHoldMs(e['strength'] ?? 0, this.reduced));
+          const kind = smoothKindForDef(e['ability'] ?? -1);
+          // Hurricane pulses 2..: a repeat hit from the same hurricane keeps the sim running (no pose hold); a lunge holds a touch longer.
+          const repeat = kind === 'spin' && this.fxMs - (this.hurriAt[a] ?? -1e9) < HURRICANE_REPEAT_MS;
+          if (kind === 'spin') this.hurriAt[a] = this.fxMs;
+          const base = repeat ? 0 : poseHoldMs(e['strength'] ?? 0, this.reduced);
+          this.holdMs = Math.max(this.holdMs, base + (kind === 'lunge' && !this.reduced ? LUNGE_HOLD_MS : 0));
+          if (kind === 'grab' && !this.reduced) {
+            this.squeezeAt[t] = this.fxMs;
+            this.squeezeDir[t] = (this.lx[a] ?? 0) >= (this.lx[t] ?? 0) ? 1 : -1;
+          }
           this.start(t, PoseKind.hurt, (this.lx[t] ?? 0) >= (this.lx[a] ?? 0) ? 1 : -1, ((e['strength'] ?? 0) / 3));
           break;
         }
@@ -332,6 +373,13 @@ export class PoseLayer {
     this.posed = 0;
     // The foe may have a higher id than the hero: every sim x is read before any character is posed.
     if (this.arcade) view.forEachCharacter(this.eachX);
+    // Melee boxes first, so a cast pose starts on the frame the box appears; they are never visited by the projectile pass below.
+    if (this.arcade) {
+      view.forEachProjectile(this.eachMelee, true);
+      for (let i = 0; i < SLOTS; i++) {
+        if (this.meleeId[i] !== -1 && this.meleeSeen[i] !== this.frameNo) this.meleeEnd(i);
+      }
+    }
     view.forEachCharacter(this.eachChar);
     view.forEachProjectile(this.eachProj);
     for (let i = 0; i < SLOTS; i++) {
@@ -505,6 +553,7 @@ export class PoseLayer {
         else applyPose(p, k, this.animMs - (this.kindAt[i] ?? 0), this.kindDir[i] ?? 1, this.kindPower[i] ?? 0, this.reduced);
       }
       if (this.victoryTeam === c.team) applyPose(p, PoseKind.victory, this.animMs - this.victoryAt, 1, 0, this.reduced);
+      this.abilityMotion(p, i, ddx, ddy, dist, dt);
     }
     // Portrait rigs (boxed frames, ADR-0020) bake their own weighty motion: no runtime squash and stretch on top (owner: no
     // bouncy squash; it also made the painted body jump ~5% in height). Lean, offsets and fades still apply.
@@ -518,9 +567,50 @@ export class PoseLayer {
       this.dolly[i] = applyDepth(p, this.z[i] ?? 0, bh, boxedRig);
     }
     this.place(img, bx + bw / 2, by + bh, p);
+    if (this.arcade && this.lungeOn[i] === 1 && !this.reduced) {
+      this.lungeAcc[i] = (this.lungeAcc[i] ?? 0) + dist;
+      if ((this.lungeAcc[i] ?? 0) >= AFTER_GAP_PX && this.lungeTrail) {
+        this.lungeAcc[i] = 0;
+        this.vfx.afterimage(img, this.elem[i] ?? 0, this.reduced);
+      }
+    }
     if (this.arcade && (this.z[i] ?? 0) > 0.001) {
       const o2 = shadowFor(this.z[i] ?? 0, bh, this.shadowOut);
       v.shadowPose(o2.dx, o2.dy, o2.scaleMul, o2.alphaMul);
+    }
+  }
+
+  /** Set by abilityMotion: the lunge trail flag of the character just posed. */
+  private lungeTrail = false;
+
+  /** Ability smoothing on the body: settle squash during the recovery, lunge stretch along the drawn motion, Wyrm Coil squeeze on the foe. */
+  private abilityMotion(p: Pose, i: number, ddx: number, ddy: number, dist: number, dt: number): void {
+    this.lungeTrail = false;
+    const sAge = this.fxMs - (this.settleAt[i] ?? -1e9);
+    if (sAge >= 0 && sAge < SETTLE_MS) {
+      const s = settlePose(sAge / SETTLE_MS, this.reduced);
+      p.sx *= s.sx;
+      p.sy *= s.sy;
+    }
+    if (this.lungeOn[i] === 1) {
+      const speed = dt > 0 ? (dist * TICK_MS) / dt : 0;
+      const l = lungeStretch(speed, this.reduced);
+      this.lungeTrail = l.trail;
+      // Axis-aligned stretch along the dominant direction of the drawn motion.
+      if (Math.abs(ddx) >= Math.abs(ddy)) {
+        p.sx *= l.sx;
+        p.sy *= l.sy;
+      } else {
+        p.sx *= l.sy;
+        p.sy *= l.sx;
+      }
+    }
+    const qAge = this.fxMs - (this.squeezeAt[i] ?? -1e9);
+    if (qAge >= 0 && qAge < SQUEEZE_MS && !this.reduced) {
+      const bell = Math.sin((Math.PI * qAge) / SQUEEZE_MS);
+      p.sx *= 1 - SQUEEZE_SX * bell;
+      p.sy *= 1 + SQUEEZE_SY * bell;
+      p.ox += (this.squeezeDir[i] ?? 1) * SQUEEZE_PULL_PX * bell;
     }
   }
 
@@ -579,8 +669,10 @@ export class PoseLayer {
     const { image, glow } = v;
     const target = image.angle;
     let fresh = false;
+    const column = SMOOTH_KIND[p.sprite] === 'column';
     if (this.pid[i] !== p.id) {
       this.pid[i] = p.id;
+      this.isColumn[i] = column ? 1 : 0;
       this.born[i] = this.animMs;
       this.ang[i] = target;
       fresh = true;
@@ -592,27 +684,40 @@ export class PoseLayer {
     if (this.arcade) this.vfx.trail(i, image.x, image.y, this.pel[i] ?? 0, fresh, this.reduced, fireBlastFxStrength(p.alphaPm));
     const a = this.ang[i] ?? target;
     const k = easeOutCubic((this.animMs - (this.born[i] ?? 0)) / SPAWN_MS);
-    const grow = this.reduced ? 1 : SPAWN_FROM + (1 - SPAWN_FROM) * k;
-    image.setAngle(a).setScale(image.scaleX * grow, image.scaleY * grow);
-    glow.setAngle(a).setScale(glow.scaleX * grow, glow.scaleY * grow);
-    if (k < 1) {
+    const o = i * 5;
+    let lift = 0;
+    if (column) {
+      // A tornado column grows in over its own envelope (not the 60 ms bolt ease), pinned at its base.
+      this.snap[o + 2] = image.displayWidth;
+      this.snap[o + 3] = image.displayHeight;
+      const env = columnEnvelope(this.animMs - (this.born[i] ?? 0), 1e9, this.reduced);
+      lift = (1 - env.scaleY) * image.displayHeight / 2;
+      image.setAngle(a).setScale(image.scaleX, image.scaleY * env.scaleY).setPosition(image.x, image.y + lift).setAlpha(image.alpha * env.alpha);
+      glow.setAngle(a).setScale(glow.scaleX, glow.scaleY * env.scaleY).setPosition(glow.x, glow.y + lift).setAlpha(glow.alpha * env.alpha);
+    } else {
+      const grow = this.reduced ? 1 : SPAWN_FROM + (1 - SPAWN_FROM) * k;
+      image.setAngle(a).setScale(image.scaleX * grow, image.scaleY * grow);
+      glow.setAngle(a).setScale(glow.scaleX * grow, glow.scaleY * grow);
+    }
+    if (!column && k < 1) {
       const ka = SPAWN_ALPHA_FLOOR + (1 - SPAWN_ALPHA_FLOOR) * k;
       image.setAlpha(image.alpha * ka);
       glow.setAlpha(glow.alpha * ka);
     }
-    const o = i * 5;
     this.snap[o] = image.x;
-    this.snap[o + 1] = image.y;
-    this.snap[o + 2] = image.displayWidth;
-    this.snap[o + 3] = image.displayHeight;
+    this.snap[o + 1] = image.y - lift;
+    if (!column) {
+      this.snap[o + 2] = image.displayWidth;
+      this.snap[o + 3] = image.displayHeight;
+    }
     this.snap[o + 4] = a;
     this.snapAlpha[i] = (p.alphaPm ?? 1000) / 1000;
     this.snapKey[i] = image.texture.key;
     this.snapFrame[i] = image.frame.name;
   }
 
-  /** A projectile first seen: the nearest same-team character just cast it. */
-  private casterOf(p: RenderProjectile, slot: number): void {
+  /** The slot of the nearest same-team character to `p` (-1: none seen yet). */
+  private nearestCaster(p: RenderProjectile): number {
     let best = -1;
     let bestD = Infinity;
     for (let j = 0; j < SLOTS; j++) {
@@ -623,23 +728,77 @@ export class PoseLayer {
         best = j;
       }
     }
-    if (best < 0) return;
+    return best;
+  }
+
+  /** The cast pose, depth pulse and release flare for the caster `best` of `p`. */
+  private castFrom(best: number, p: RenderProjectile): void {
     if (this.fxMs - (this.castAt[best] ?? -1e9) >= PROJ_CAST_GAP_MS) this.castPulse(best, PROJ_CAST_Z);
     this.start(best, PoseKind.cast, p.dir === 0 || p.dir === 1 || p.dir === 7 ? 1 : -1, 1);
-    this.pel[slot] = this.elem[best] ?? 0;
     this.vfx.release(best);
+  }
+
+  /** A projectile first seen: the nearest same-team character just cast it. */
+  private casterOf(p: RenderProjectile, slot: number): void {
+    const best = this.nearestCaster(p);
+    if (best < 0) return;
+    this.castFrom(best, p);
+    this.pel[slot] = this.elem[best] ?? 0;
+  }
+
+  /** A melee box (Arcade): its first sight is the only cue the renderer gets that the ability was cast. */
+  private melee(p: RenderProjectile): void {
+    const i = p.id & (SLOTS - 1);
+    if (this.meleeId[i] !== p.id) {
+      if (this.meleeId[i] !== -1) this.meleeEnd(i); // the slot's previous box ended and its id was reused in one frame
+      this.meleeId[i] = p.id;
+      const kind = SMOOTH_KIND[p.sprite];
+      this.meleeKind[i] = kind;
+      const best = this.nearestCaster(p);
+      this.meleeCaster[i] = best;
+      if (best >= 0) {
+        this.castFrom(best, p);
+        if (kind === 'lunge') {
+          this.lungeOn[best] = 1;
+          this.lungeAcc[best] = 0;
+          this.dustAt(best);
+        } else if (kind !== undefined) this.settleAt[best] = this.fxMs;
+      }
+    }
+    this.meleeSeen[i] = this.frameNo;
+  }
+
+  /** A dust puff at the feet of character slot `j` (the box centre bottom CharacterView drew last). */
+  private dustAt(j: number): void {
+    const o = j * 4;
+    this.vfx.dust((this.base[o] ?? 0) + (this.base[o + 2] ?? 0) / 2, (this.base[o + 1] ?? 0) + (this.base[o + 3] ?? 0), this.elem[j] ?? 0, this.reduced);
+  }
+
+  /** A melee box that is no longer live: ends a lunge (dust puff, settle). Never an impact burst or a ghost: it is not a projectile. */
+  private meleeEnd(i: number): void {
+    const best = this.meleeCaster[i] ?? -1;
+    this.meleeId[i] = -1;
+    this.meleeCaster[i] = -1;
+    if (best >= 0 && this.meleeKind[i] === 'lunge' && this.lungeOn[best] === 1) {
+      this.lungeOn[best] = 0;
+      this.settleAt[best] = this.fxMs;
+      this.dustAt(best);
+    }
+    this.meleeKind[i] = undefined;
   }
 
   /** A projectile slot that was not drawn this frame has hit or expired: fade its last pose out. */
   private retire(i: number): void {
     this.pid[i] = -1;
     const o = i * 5;
-    if (this.arcade) this.vfx.impact(this.snap[o] ?? 0, this.snap[o + 1] ?? 0, this.pel[i] ?? 0, this.reduced, fireBlastFxStrength((this.snapAlpha[i] ?? 1) * 1000));
+    const column = this.isColumn[i] === 1;
+    this.isColumn[i] = 0;
+    if (this.arcade && !column) this.vfx.impact(this.snap[o] ?? 0, this.snap[o + 1] ?? 0, this.pel[i] ?? 0, this.reduced, fireBlastFxStrength((this.snapAlpha[i] ?? 1) * 1000));
     const g = this.free();
     if (!g) return;
-    g.kind = 0;
+    g.kind = column ? GHOST_COLUMN : 0;
     g.from = this.animMs;
-    g.ms = FADE_MS;
+    g.ms = column ? (this.reduced ? REDUCED_FADE_MS : COLUMN_FADE_MS) : FADE_MS;
     g.x = this.snap[o] ?? 0;
     g.y = this.snap[o + 1] ?? 0;
     g.w = this.snap[o + 2] ?? 0;
@@ -706,7 +865,12 @@ export class PoseLayer {
         continue;
       }
       const img = g.image;
-      if (g.kind === 0) {
+      if (g.kind === GHOST_COLUMN) {
+        // Tornado ending (early or not): shrink toward its base while fading, instead of the generic grow-and-fade.
+        const env = columnEnvelope(1e6, 1e6 + (1 - t) * g.ms, this.reduced);
+        img.setPosition(g.x, g.y + ((1 - env.scaleY) * g.h) / 2).setDisplaySize(g.w, g.h * env.scaleY).setAngle(g.rot).setAlpha(GHOST_ALPHA * g.alpha * env.alpha);
+        img.setDepth(1);
+      } else if (g.kind === 0) {
         const grow = this.reduced ? 1 : 1 + FADE_GROW * easeOutCubic(t);
         img.setPosition(g.x, g.y).setDisplaySize(g.w * grow, g.h * grow).setAngle(g.rot).setAlpha(GHOST_ALPHA * g.alpha * (1 - t));
         img.setDepth(1);
