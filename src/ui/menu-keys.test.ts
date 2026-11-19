@@ -6,6 +6,7 @@ class FakeHTMLElement {
   constructor(
     readonly tagName: string,
     private readonly href = false,
+    readonly type = '',
   ) {}
   hasAttribute(name: string): boolean {
     return name === 'href' && this.href;
@@ -83,7 +84,18 @@ describe('installMenuKeys', () => {
   it('Escape keeps its meaning inside a text field', () => {
     const r = rig('settings');
     r.press('Escape', new FakeHTMLElement('INPUT'));
+    r.press('Escape', new FakeHTMLElement('INPUT', false, 'text'));
+    r.press('Escape', new FakeHTMLElement('INPUT', false, 'number'));
+    r.press('Escape', new FakeHTMLElement('TEXTAREA'));
     expect(r.navigate).not.toHaveBeenCalled();
+  });
+
+  it('Escape goes back from a range slider, checkbox or radio (Settings is mostly those)', () => {
+    for (const type of ['range', 'checkbox', 'radio']) {
+      const r = rig('settings');
+      r.press('Escape', new FakeHTMLElement('INPUT', false, type));
+      expect(r.navigate).toHaveBeenCalledWith('#main');
+    }
   });
 
   it('other keys never navigate', () => {

@@ -144,6 +144,14 @@ test('2v2: team HUD, tag on 3 and the touch Tag button, KO entrance, results wit
   await expect(page.locator('#arcadeResults')).toBeVisible({ timeout: 10_000 });
   const summary = await page.locator('#arcadeResults .matchEndSummary').innerText();
   expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out\.$/);
+  const shotDir = process.env['SHOT_DIR'];
+  if (shotDir) await page.screenshot({ path: `${shotDir}/results-2v2.png` });
+  // QA r120 N1: the action buttons fit the 720 px desktop viewport without scrolling (12 px bottom padding).
+  const height = page.viewportSize()?.height ?? 720;
+  for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
+    const box = await page.locator(`#arcadeResults ${sel}`).boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} bottom`).toBeLessThanOrEqual(height - 12);
+  }
   await page.getByRole('link', { name: 'Main Menu' }).click();
   await page.waitForFunction(`window.location.hash === '#main'`);
   await page.evaluate(`window.__TTE__.settled()`);
@@ -197,6 +205,14 @@ test('3v3: the third hero only in 3v3, a BENCH line each, Tag 2 on the 4 key, th
   await expect(page.locator('#arcadeResults')).toBeVisible({ timeout: 10_000 });
   const summary = await page.locator('#arcadeResults .matchEndSummary').innerText();
   expect(summary).toMatch(/^Your team: Sindarosa \(fire\) \d+% left, Pax \(earth\) \d+% left, Curomo \(\w+\) \d+% left\. The AI's team \(Normal\): Fiara \(fire\) knocked out, .+ knocked out, .+ knocked out\.$/);
+  const shotDir3 = process.env['SHOT_DIR'];
+  if (shotDir3) await page.screenshot({ path: `${shotDir3}/results-3v3.png` });
+  // QA r120 N1: the action buttons fit the 720 px desktop viewport without scrolling (12 px bottom padding).
+  const height3 = page.viewportSize()?.height ?? 720;
+  for (const sel of ['#arcadeRematch', '#arcadeChange', 'a.menuButton']) {
+    const box = await page.locator(`#arcadeResults ${sel}`).boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} bottom`).toBeLessThanOrEqual(height3 - 12);
+  }
   expect(errors).toEqual([]);
 });
 

@@ -28,7 +28,10 @@ describe('shouldGoBack', () => {
   });
   it('leaves Escape alone inside text fields, when handled, or for other keys', () => {
     expect(shouldGoBack({ ...base, targetTag: 'TEXTAREA' })).toBe(false);
-    expect(shouldGoBack({ ...base, targetTag: 'INPUT' })).toBe(false);
+    expect(shouldGoBack({ ...base, targetTag: 'INPUT', targetIsTextInput: true })).toBe(false);
+    expect(shouldGoBack({ ...base, targetTag: 'SELECT' })).toBe(false);
+    // A non-text input (range, checkbox, radio) is not text entry: Escape goes back there.
+    expect(shouldGoBack({ ...base, targetTag: 'INPUT' })).toBe(true);
     expect(shouldGoBack({ ...base, defaultPrevented: true })).toBe(false);
     expect(shouldGoBack({ ...base, key: 'Enter' })).toBe(false);
   });

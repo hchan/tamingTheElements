@@ -100,6 +100,24 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
     focusHeading(next);
   };
 
+  /** Escape leaves for the main menu (the route's backHash is null because the battle lives here too); a select keeps it. */
+  const escapeToMenu = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape' && !e.defaultPrevented && !(e.target instanceof HTMLSelectElement)) {
+      e.preventDefault();
+      deps.navigate('main');
+    }
+  };
+  const listenEscape = (extra?: (e: KeyboardEvent) => void): void => {
+    const onKey = (e: KeyboardEvent): void => {
+      escapeToMenu(e);
+      extra?.(e);
+    };
+    document.addEventListener('keydown', onKey);
+    offKeys = () => {
+      document.removeEventListener('keydown', onKey);
+    };
+  };
+
   const showPick = (): void => {
     show(
       arcadePickView({
@@ -122,18 +140,7 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         },
       }),
     );
-    // Escape goes back from the picker only (the route's backHash is null because the battle lives here too).
-    const onKey = (e: KeyboardEvent): void => {
-      // A select keeps Escape (it closes its list), as text fields do in shouldGoBack.
-      if (e.key === 'Escape' && !e.defaultPrevented && !(e.target instanceof HTMLSelectElement)) {
-        e.preventDefault();
-        deps.navigate('main');
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    offKeys = () => {
-      document.removeEventListener('keydown', onKey);
-    };
+    listenEscape();
   };
 
   const showResults = (r: ArcadeResult): void => {
@@ -158,6 +165,11 @@ export function arcadeVersusScreen(deps: ArcadeVersusDeps): Screen {
         ...(replay ? { onDownload: () => { void downloadReplay(replay); } } : {}),
       }),
     );
+    // The primary action takes focus (not the heading), and a held Enter or Space must not auto-repeat into Rematch.
+    view?.querySelector<HTMLElement>('#arcadeRematch')?.focus({ preventScroll: true });
+    listenEscape((e) => {
+      if (e.repeat && (e.key === 'Enter' || e.key === ' ')) e.preventDefault();
+    });
   };
 
   function startBattle(): void {

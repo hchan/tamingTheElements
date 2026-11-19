@@ -3,7 +3,7 @@
 /**
  * Route name to the hash Escape returns to, or null where Escape does nothing (main, and the battle hosts, which pause instead).
  * Placeholder sub-screens and the results screens leave to the main menu like every other sub-screen.
- * `arcade` hosts its own battle, so it handles Escape itself (only on its fighter picker).
+ * `arcade` hosts its own battle, so it handles Escape itself (on its fighter picker and results).
  */
 export function backHash(route: string): string | null {
   switch (route) {
@@ -21,8 +21,13 @@ export function backHash(route: string): string | null {
   }
 }
 
-/** Elements where Escape or Space must keep their normal meaning. */
-const TEXT_TARGETS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+/** Elements where Escape must keep its normal meaning (a select closes its list, a textarea is text entry). */
+const TEXT_TARGETS = new Set(['TEXTAREA', 'SELECT']);
+
+/** Input types that take typed text; radios, checkboxes, sliders and buttons are not text entry, so Escape goes back there. */
+const TEXT_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'url', 'tel', 'password', 'number']);
+const isTextEntry = (t: HTMLElement | null): boolean =>
+  t?.tagName === 'INPUT' && TEXT_INPUT_TYPES.has((t as HTMLInputElement).type.toLowerCase());
 
 export interface KeyLike {
   readonly key: string;
@@ -73,7 +78,7 @@ export function installMenuKeys(doc: Document, currentRoute: () => string, navig
     const back = backHash(currentRoute());
     if (back === null) return;
     if (doc.querySelector('#pauseOverlay:not([hidden])')) return;
-    if (shouldGoBack({ key: e.key, defaultPrevented: e.defaultPrevented, targetTag: tag, targetIsTextInput: false })) {
+    if (shouldGoBack({ key: e.key, defaultPrevented: e.defaultPrevented, targetTag: tag, targetIsTextInput: isTextEntry(t) })) {
       e.preventDefault();
       navigate(back);
     }

@@ -142,7 +142,7 @@ test('Arcade Versus from the menu: a hit, a super with X, KO, round 2, results 2
   await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
   await page.keyboard.up('KeyX');
   await finishOnResults(page);
-  await expect(page.getByRole('heading', { level: 1, name: 'Victory!' })).toBeFocused();
+  await expect(page.locator('#arcadeRematch')).toBeFocused();
   await expect(page.locator('#arcadeResults')).toContainText('Rounds 2-0');
   await audit(page, 'Arcade Versus results');
 
@@ -183,8 +183,11 @@ test('?ff=arcade (dev and test builds) without a save: Escape leaves the picker,
   await page.evaluate(`window.__TTE__.arena.stepLive(2)`);
   await page.mouse.up();
   await finishOnResults(page);
-  await page.getByRole('link', { name: 'Main Menu' }).click();
+  // Escape on the results screen is Back to the main menu (QA r120 N2); the Main Menu link is covered in arcade-tag.spec.
+  await page.keyboard.press('Escape');
   await waitForRoute(page, '#main');
+  await page.evaluate(`window.__TTE__.settled()`);
+  await expect(page.locator('#game canvas')).toHaveCount(0);
   expect(await savedText(page)).toBeNull();
   expect(errors).toEqual([]);
 });
