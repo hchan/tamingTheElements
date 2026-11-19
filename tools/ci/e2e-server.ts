@@ -16,7 +16,7 @@ import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { isatty } from 'node:tty';
 import { e2eBuildDir } from './e2e-port';
-import { classifyStderr, describeExit, logPathFor, parseLsof, parseServerArgs, restartDecision, timingFrom } from './e2e-server-policy';
+import { ProbeTracker, type ProbeOutcome, classifyStderr, describeExit, logPathFor, parseLsof, parseServerArgs, restartDecision, timingFrom } from './e2e-server-policy';
 
 type Env = Readonly<Record<string, string | undefined>>;
 
@@ -92,7 +92,8 @@ export async function main(argv: readonly string[], env: Env = process.env): Pro
   let restarts = 0;
   let fastFails = 0;
   const seen = new Map<string, number>();
-  let failedProbes = 0;
+  const tracker = new ProbeTracker(timing);
+  let lastPid: number | undefined;
   let restartTimer: NodeJS.Timeout | undefined;
 
   /** Stops vite (SIGTERM, then SIGKILL after the grace), writes the last line and exits. Safe to call twice. */
@@ -197,23 +198,41 @@ export async function main(argv: readonly string[], env: Env = process.env): Pro
 
   start();
 
-  setInterval(() => {
+  // Health probe: one request in flight, chained with setTimeout so a slow probe never overlaps the next.
+  const probe = async (): Promise<ProbeOutcome> => {
+    try {
+      const res = await fetch(`http://localhost:${port}${base}`, { signal: AbortSignal.timeout(timing.probeTimeoutMs) });
+      await res.body?.cancel(); // drain: an unread body keeps the socket and the memory
+      return res.ok ? 'ok' : { status: res.status };
+    } catch (e: unknown) {
+      const name = e instanceof Error ? e.name : '';
+      return name === 'TimeoutError' || name === 'AbortError' ? 'timeout' : 'refused';
+    }
+  };
+  const tick = async (due: number): Promise<void> => {
     if (stopping) return;
-    fetch(`http://localhost:${port}${base}`, { signal: AbortSignal.timeout(5000) })
-      .then(async (res) => {
-        await res.body?.cancel();
-        failedProbes = 0;
-      })
-      .catch((e: unknown) => {
-        // Only a hung server needs a kill; a dead one is already handled by the exit handler.
-        if (child === undefined || child.exitCode !== null || child.signalCode !== null) return;
-        if (++failedProbes >= 3) {
-          log(`preview unresponsive (${String(e)}); killing for restart`);
-          failedProbes = 0;
-          child.kill('SIGKILL');
+    const late = Math.max(0, Date.now() - due); // how overdue this tick is: a starved machine, not a sick server
+    const c = child;
+    if (c && c.exitCode === null && c.signalCode === null) {
+      if (c.pid !== lastPid) {
+        lastPid = c.pid;
+        tracker.onStart(Date.now());
+      }
+      const outcome = await probe();
+      // Only a hung server needs a kill; a dead one is handled by the exit handler.
+      if (!stopping && c === child && c.exitCode === null && c.signalCode === null) {
+        const r = tracker.record(outcome, Date.now(), late, existsSync(join(outDir, 'index.html')) ? 'present' : 'MISSING');
+        for (const l of r.logs) log(l);
+        if (r.kill) {
+          log(`killing pid=${String(c.pid)} (SIGKILL) so it restarts`);
+          c.kill('SIGKILL');
         }
-      });
-  }, timing.probeMs);
+      }
+    }
+    const next = Date.now() + timing.probeMs;
+    setTimeout(() => void tick(next), timing.probeMs);
+  };
+  setTimeout(() => void tick(Date.now() + timing.probeMs), timing.probeMs);
 }
 
 if (process.argv[1] && resolve(process.argv[1]).endsWith('e2e-server.ts')) {

@@ -171,3 +171,68 @@ export function parseLsof(out: string): { pid: number; command: string }[] {
   }
   return res;
 }
+
+export type ProbeOutcome = 'ok' | 'refused' | 'timeout' | { status: number };
+export interface ProbeResult {
+  /** Lines to log (state changes only). */
+  logs: string[];
+  /** The preview is hung: kill it so it restarts. */
+  kill: boolean;
+}
+
+/**
+ * Decides what a health probe result means. Pure: time is passed in.
+ * Only refused/timeout count against the server, and only when the probe was not itself late (a starved machine) and the
+ * preview is past its startup grace. A kill needs `strikes` such failures in a row AND `hangMs` since the last good answer.
+ * A non-2xx status is logged once per episode and never kills (the server is up; the content is wrong).
+ */
+export class ProbeTracker {
+  private startedAt = 0;
+  private lastOk = 0;
+  private strikes = 0;
+  private unhealthySince: number | undefined;
+  private statusLogged = false;
+  constructor(private readonly t: Timing) {}
+
+  /** A (re)started preview: new grace window, clean slate. */
+  onStart(now: number): void {
+    this.startedAt = now;
+    this.lastOk = now;
+    this.strikes = 0;
+    this.unhealthySince = undefined;
+    this.statusLogged = false;
+  }
+
+  record(outcome: ProbeOutcome, now: number, lateMs: number, indexHtml: string): ProbeResult {
+    const logs: string[] = [];
+    if (outcome === 'ok') {
+      if (this.unhealthySince !== undefined) logs.push(`preview recovered after ${String(Math.round((now - this.unhealthySince) / 1000))} s`);
+      this.strikes = 0;
+      this.unhealthySince = undefined;
+      this.statusLogged = false;
+      this.lastOk = now;
+      return { logs, kill: false };
+    }
+    if (typeof outcome === 'object') {
+      this.strikes = 0;
+      if (!this.statusLogged) {
+        this.statusLogged = true;
+        logs.push(`preview answers status ${String(outcome.status)} (outDir index.html: ${indexHtml})`);
+      }
+      return { logs, kill: false };
+    }
+    if (lateMs > this.t.lagMs) return { logs, kill: false }; // the machine was starved, not the server
+    if (now - this.startedAt < this.t.startupGraceMs) return { logs, kill: false };
+    this.strikes++;
+    if (this.unhealthySince === undefined) {
+      this.unhealthySince = now;
+      logs.push(`preview unhealthy: ${outcome} (outDir index.html: ${indexHtml})`);
+    }
+    const kill = this.strikes >= this.t.strikes && now - this.lastOk >= this.t.hangMs;
+    if (kill) {
+      logs.push(`preview unresponsive: ${String(this.strikes)} ${outcome}s in a row, ${String(Math.round((now - this.lastOk) / 1000))} s since the last answer`);
+      this.strikes = 0;
+    }
+    return { logs, kill };
+  }
+}

@@ -4,7 +4,7 @@ import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { viteBinPath } from '../../tools/ci/e2e-server';
-import { classifyStderr, DEFAULT_TIMING, describeExit, logPathFor, parseLsof, parseServerArgs, restartDecision, timingFrom } from '../../tools/ci/e2e-server-policy';
+import { classifyStderr, DEFAULT_TIMING, describeExit, logPathFor, parseLsof, parseServerArgs, ProbeTracker, restartDecision, timingFrom } from '../../tools/ci/e2e-server-policy';
 
 describe('e2e-server policy: arguments, timing, log path', () => {
   it('parseServerArgs takes a positional port and the pages flags', () => {
@@ -93,6 +93,53 @@ describe('e2e-server policy: restart and diagnostics', () => {
       { pid: 456, command: 'vite' },
     ]);
     expect(parseLsof('')).toEqual([]);
+  });
+});
+
+describe('e2e-server policy: ProbeTracker', () => {
+  const T = DEFAULT_TIMING;
+  const mk = (): ProbeTracker => {
+    const t = new ProbeTracker(T);
+    t.onStart(0);
+    return t;
+  };
+  const at = (t: ProbeTracker, ms: number, o: Parameters<ProbeTracker['record']>[0] = 'timeout', late = 0) => t.record(o, ms, late, 'present');
+
+  it('three timeouts inside 60 s never kill', () => {
+    const t = mk();
+    expect([40_000, 45_000, 50_000, 55_000].map((ms) => at(t, ms).kill)).toEqual([false, false, false, false]);
+  });
+
+  it('four timeouts spanning the hang window kill', () => {
+    const t = mk();
+    const kills = [35_000, 45_000, 55_000, 65_000].map((ms) => at(t, ms).kill);
+    expect(kills).toEqual([false, false, false, true]);
+  });
+
+  it('late (starved) ticks and the startup grace are not counted', () => {
+    const t = mk();
+    for (const ms of [35_000, 40_000, 45_000, 50_000, 70_000]) expect(at(t, ms, 'timeout', 5000).kill).toBe(false);
+    const g = mk();
+    for (const ms of [1000, 5000, 10_000, 29_000, 29_500]) expect(at(g, ms, 'refused').kill).toBe(false);
+  });
+
+  it('a 404 is logged once and never kills', () => {
+    const t = mk();
+    const r1 = at(t, 40_000, { status: 404 });
+    expect(r1.logs.join()).toMatch(/status 404.*index\.html: present/);
+    for (const ms of [50_000, 60_000, 70_000, 80_000]) {
+      const r = at(t, ms, { status: 404 });
+      expect(r.logs).toEqual([]);
+      expect(r.kill).toBe(false);
+    }
+  });
+
+  it('logs unhealthy once, then recovery', () => {
+    const t = mk();
+    expect(at(t, 40_000).logs.join()).toMatch(/unhealthy: timeout/);
+    expect(at(t, 45_000).logs).toEqual([]);
+    expect(at(t, 50_000, 'ok').logs.join()).toMatch(/recovered after 10 s/);
+    expect(at(t, 55_000, 'ok').logs).toEqual([]);
   });
 });
 
@@ -238,6 +285,16 @@ describe('e2e-server supervisor (fake vite)', () => {
     expect(s.exited()?.code).toBe(3);
     expect(logText(s)).toMatch(/build failed status=3/);
     expect(pidsStarted(s)).toHaveLength(0);
+  });
+
+  it('D: a preview that accepts connections but never answers is killed and replaced', async () => {
+    const s = await launch({ FAKE_MODE: 'hang-first' });
+    await waitFor(() => pidsStarted(s).length >= 1, 'first start');
+    const first = pidsStarted(s)[0] as number;
+    await waitFor(() => pidsStarted(s).length >= 2, 'replacement start');
+    expect(logText(s)).toContain(`killing pid=${String(first)}`);
+    expect(pidsStarted(s)[1]).not.toBe(first);
+    await waitFor(() => answers(s.port), 'port answers again');
   });
 
   it('E: a port that stays taken is reported (holder named), backed off, then given up on', async () => {
