@@ -7,8 +7,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 const hook = resolve(import.meta.dirname, '../../.claude/hooks/stop-agent-pool.sh');
 const dirs: string[] = [];
 
-function run(root: string, input: string): number {
-  const r = spawnSync('bash', [hook], { input, env: { ...process.env, TTE_AGENT_OUTPUT_ROOT: root }, encoding: 'utf8' });
+function run(root: string, input: string, env: Record<string, string> = { TTE_AGENT_POOL: '1' }): number {
+  const r = spawnSync('bash', [hook], {
+    input,
+    env: { ...process.env, TTE_AGENT_POOL: '', CLAUDE_PROJECT_DIR: root, TTE_AGENT_OUTPUT_ROOT: root, ...env },
+    encoding: 'utf8',
+  });
   return r.status ?? -1;
 }
 
@@ -33,6 +37,14 @@ afterEach(() => {
 const fresh = (session: string, name: string) => ({ session, name, ageSec: 5 });
 
 describe('stop-agent-pool hook', () => {
+  it('is opt-in: does nothing without TTE_AGENT_POOL=1 or the marker file', () => {
+    const root = makeRoot([fresh('s1', 'agent-a.output')]);
+    expect(run(root, '{"session_id":"s1"}', {})).toBe(0);
+    expect(run(root, '{"session_id":"s1"}')).toBe(2);
+    mkdirSync(join(root, '.claude'), { recursive: true });
+    writeFileSync(join(root, '.claude/agent-pool.on'), '');
+    expect(run(root, '{"session_id":"s1"}', {})).toBe(2);
+  });
   it('blocks when fewer than 2 of this session agents are growing', () => {
     const root = makeRoot([fresh('s1', 'agent-a.output'), fresh('other', 'agent-b.output'), fresh('other', 'agent-c.output')]);
     expect(run(root, '{"session_id":"s1"}')).toBe(2);
