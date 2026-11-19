@@ -2299,6 +2299,8 @@ html[data-high-contrast='true'] .pickScroll[data-more] + .heroActions::before {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.35em 0.5em;
     margin: 0.2em 0;
+    /* Row items share one top edge even if a button is a sub-pixel taller (centring made tops differ by 1 px). */
+    align-items: start;
   }
   .mainMenuList::before {
     grid-column: 1 / -1;
