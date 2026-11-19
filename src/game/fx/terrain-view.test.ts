@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EntityFlag, SimEventKind, type RenderArcade, type RenderCharacter, type RenderView, type SimEvent } from '@core/index';
 import type { Announcement } from '../a11y/announcer';
 import { CHIP_MARGIN, MAX_SPARKS, SPARK_TICKS, SLOT_HOLD, SWAP_FLOOR } from './terrain-fx';
+import { HUD_AVOID_KEY } from '../hud/arcade-hud';
 import { CHIP_DEPTH, LABEL_DEPTH, mountTerrainView, terrainState } from './terrain-view';
 
 /** Minimal chainable emitter (on, once, off, emit) that counts its listeners. */
@@ -502,6 +503,23 @@ describe('terrain view (fake scenes)', () => {
     m.feed(141, [ev(SimEventKind.terrainChanged, 141, { stage: 2, count: 2 })]);
     m.frame(0);
     expect(m.state().alpha).toBe(1);
+  });
+
+  it('publishes the badge plate in slot 0 of HUD_AVOID_KEY (with the heal-pulse growth), empty when hidden and after shutdown', () => {
+    const m = mount();
+    const slot0 = (): readonly unknown[] => (m.hud.scene.registry.get(HUD_AVOID_KEY) as unknown[][] | undefined)?.[0] ?? [];
+    m.frame();
+    // Fake text is 100 x 30 wide; plate at BADGE_X-8, BADGE_Y-4.
+    const r = slot0()[0] as { x: number; y: number; w: number; h: number };
+    expect(r.x).toBe(8);
+    expect(r.y).toBe(202);
+    expect(r.w).toBeGreaterThan(100);
+    expect(r.h).toBeGreaterThan(30);
+    m.arena.events.emit('shutdown');
+    expect(slot0()).toEqual([]);
+    const h = mount({ element: 'void' });
+    h.frame();
+    expect((h.hud.scene.registry.get(HUD_AVOID_KEY) as unknown[][] | undefined)?.[0] ?? []).toEqual([]);
   });
 
   it('waits for the Hud, skips a missing backdrop texture, and tears everything down with no listeners left', () => {

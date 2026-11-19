@@ -58,7 +58,7 @@ import { EventFx, createPhaserFxSink, type FxPoint } from '../fx/event-fx';
 import { KeyboardAgent } from '../input/keyboard-agent';
 import { P2_BINDINGS } from '../input/local-two';
 import { FixedStepDriver, pauseOnHidden } from '../loop/fixed-step-driver';
-import { counted, type ArenaProbe, type ProbeCharacter } from '../platform/test-hook';
+import { counted, type ArenaProbe, type ComboProbe, type ProbeCharacter } from '../platform/test-hook';
 import { getUiFlags } from '../platform/flags';
 import { ArcadeHudModel, CALLOUT_RECTS_KEY, CHIP_RECTS_KEY, POP_RECTS_KEY, hudFrame, projectToHud, viewOfCamera, numberLabel, type HudRect } from '../hud/arcade-hud';
 import { getPrefs } from '../platform/a11y/prefs';
@@ -73,6 +73,7 @@ import { createPauseDialog, type PauseDialog } from '../a11y/pause-dialog';
 import { firstPad, nthPad } from '../input/gamepad';
 import { getBindings, type Bindings } from '../platform/input/bindings';
 import { collectSide } from '../hud/bars';
+import { victimAnchor } from '../hud/combo-anchor';
 import { screenBox } from '../hud/screen-box';
 import { SWAP_BUSY_LINE, SWAP_BUSY_TICKS, SwapNotice, busySwapDue, elementalNotice, swapRefusalLine, swapSlotOf } from '../hud/swap-notice';
 import { groupSlots, wantsGroupedBar } from '../hud/bar-groups';
@@ -706,6 +707,7 @@ export class Arena extends Phaser.Scene {
           numbers: hud?.numbers.filter((n) => n.live).map((n) => numberLabel(n.amount, n.counter)) ?? [],
           numberBoxes: (this.scene.get(HUD_SCENE) as unknown as { numberBoxes?(): { x: number; y: number; w: number; h: number }[] }).numberBoxes?.() ?? [],
           popBoxes: (this.scene.get(HUD_SCENE) as unknown as { popBoxes?(): { x: number; y: number; w: number; h: number }[] }).popBoxes?.() ?? [],
+          comboBoxes: (this.scene.get(HUD_SCENE) as unknown as { comboBoxes?(): ComboProbe[] }).comboBoxes?.() ?? [],
           combo: [hud?.combos[0].hits ?? 0, hud?.combos[1].hits ?? 0],
           meter: [hud?.meters[0].value ?? 0, hud?.meters[1].value ?? 0],
         };
@@ -1131,6 +1133,11 @@ export class Arena extends Phaser.Scene {
     const live = !effectsHeld(driver.isPaused, this.fxAges);
     const arcade = this.arcadeHud && view.arcade();
     if (arcade) this.arcadeHud?.update(live ? this.game.loop.delta : 0, arcade.comboHits, arcade.comboDamage, arcade.meter);
+    // Who each combo's victim is this frame (indexed by the victim's team), so drawCharacter can feed the anchor.
+    for (let t = 0; t < 2; t++) {
+      const combo = arcade ? this.arcadeHud?.combos[t] : undefined;
+      this.comboActive[1 - t] = arcade && combo?.live ? arcade.active(1 - t) : -1;
+    }
     this.actionBar?.update();
     this.actionBar2?.update();
     this.checkBusySwap(view.arcade()?.gameTick);
@@ -1165,6 +1172,10 @@ export class Arena extends Phaser.Scene {
   private frameAlpha = 0;
   /** Lerp weight for fighter and projectile positions (HoldLerp); `frameAlpha` stays for timing effects. */
   private framePos = 0;
+  /** The active character id each combo is hitting, by the victim's team (-1 = none); set after the model update. */
+  private readonly comboActive: number[] = [-1, -1];
+  private readonly anchorBox = { x: 0, y: 0, w: 0, h: 0 };
+  private readonly anchorOut = { headX: 0, headY: 0, laneX: 0 };
   private readonly holdLerp = new HoldLerp();
   private frameLive = true;
   private arcadeMatch = false;
@@ -1205,6 +1216,14 @@ export class Arena extends Phaser.Scene {
     // The freeze tint is the Classic Tornado status only: the frozen flag also marks a melee caster's recovery (PARITY C08).
     const tint = this.view ? frozenTintOf(this.view, c.id, this.arcadeMatch) : false;
     this.pool?.acquire(c.id).apply(c, this.frameTick, this.frameAlpha, this.frameLive, tint, this.framePos, foe);
+    // The combo counter follows its victim's head: fed from the same lerped position the sprite uses, once per frame. After a KO the
+    // anchor freezes at the last spot (the victim is no longer the active character, or has no hp).
+    const hud = this.arcadeHud;
+    const attacker = 1 - c.team;
+    if (hud && c.id === this.comboActive[c.team] && (c.hp > 0 || !hud.combos[attacker === 0 ? 0 : 1].anchored)) {
+      const a = victimAnchor(c.px, c.x, c.py, c.y, c.w, c.h, this.framePos, arcadePlayfield().w, this.anchorBox, this.anchorOut);
+      hud.anchorCombo(attacker === 0 ? 0 : 1, c.id, a.headX, a.headY, a.laneX);
+    }
   };
   private readonly drawProjectile = (p: RenderProjectile): void => {
     this.projPool?.acquire(p.id).apply(p, this.framePos);
@@ -1221,6 +1240,8 @@ export class Arena extends Phaser.Scene {
 
   private onShutdown(): void {
     for (const off of this.cleanups.splice(0)) off();
+    this.comboActive[0] = -1;
+    this.comboActive[1] = -1;
     if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
       const hook = window.__TTE__;
       if (hook) {

@@ -65,7 +65,7 @@ Health is never shown by colour alone (`src/game/hud/bars.ts`, `buffs.ts`, drawn
 - Status icons carry a plus (buff) or a cross (debuff) in addition to green or red.
 - High contrast swaps the green to red ramp for an Okabe-Ito set (sky blue, yellow, vermillion) and adds white outlines.
 - Arcade damage numbers (`src/game/hud/arcade-hud.ts`): combo-scaled hits are grey and smaller, counter hits gold and
-  labelled `COUNTER`; the combo counter is text (`3 HITS`, `46 DMG`) with a black outline.
+  labelled `COUNTER`; the combo counter is text (`3 HITS`, `46 DMG`) with a black outline; on desktop it follows the victim but never leaves the frame or covers the HUD, and under reduced motion it jumps to its spot with no easing and no pop.
 - Arcade hyper meter: the bar count is a number beside the bar (`3 MAX` when full); full segments are solid and the one
   still filling is dashed, with a black and white outline that reads on bright and dark arenas (high contrast: white fill,
   thicker outline). A full meter pulses once a second, under the WCAG 2.3.1 limit of three flashes.
