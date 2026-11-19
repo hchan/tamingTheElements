@@ -172,6 +172,22 @@ export function popCap(x: number, b: number, halfW: number, h: number, ceil: num
   return Math.max(1, Math.min(COMBO_POP_MAX, up, left, right));
 }
 
+/**
+ * `cap` (>= 1) lowered so the popped counter (scaled about its bottom centre) still keeps `COMBO_GAP` from every obstacle; the
+ * placement itself uses the unscaled box, so without this a pop shrinks the gap. 1 when it already touches (stuck included).
+ */
+export function obstacleCap(cx: number, bottom: number, halfW: number, h: number, rects: readonly HudRect[], count: number, cap: number): number {
+  if (cap <= 1 || !overlapsAny(cx, bottom, halfW * cap, h * cap, rects, count, COMBO_GAP)) return cap;
+  let lo = 1;
+  let hi = cap;
+  for (let n = 0; n < 12; n++) {
+    const mid = (lo + hi) / 2;
+    if (overlapsAny(cx, bottom, halfW * mid, h * mid, rects, count, COMBO_GAP)) hi = mid;
+    else lo = mid;
+  }
+  return lo;
+}
+
 /** Per-team placement memory: the shown and target offsets from the natural spot, and how long the natural spot has been clear. */
 export interface PlaceState {
   dx: number;
@@ -296,6 +312,7 @@ export function placeCombo(st: PlaceState, i: PlaceInput, lane: HudRect, out: Pl
   out.x = hard.x;
   out.y = hard.y;
   out.ceil = ceilAt(hard.x);
-  out.popMax = popCap(hard.x, hard.y, halfW, h, comboCeil(i.ceilRects, i.ceilCount, hard.x - COMBO_POP_MAX * halfW, hard.x + COMBO_POP_MAX * halfW), f);
+  const cap = popCap(hard.x, hard.y, halfW, h, comboCeil(i.ceilRects, i.ceilCount, hard.x - COMBO_POP_MAX * halfW, hard.x + COMBO_POP_MAX * halfW), f);
+  out.popMax = obstacleCap(hard.x, hard.y, halfW, h, i.obstacles, i.count, cap);
   return out;
 }
