@@ -4,7 +4,9 @@ import { ELEMENT_COLORS } from '../fx/element-colors';
 import { BANNER_BAND_COLOR, BANNER_BAND_ALPHA, BANNER_BAND_ALPHA_HC, bannerBandFor, bannerColorFor, bannerFrame, bannerSizeFor, cardColorFor, cardFrame, haloFor, isIntroBanner, type BandStrip, type CardFrame } from './round-cards';
 import { heroName } from './tag-fx';
 import type { Announcement } from '../a11y/announcer';
-import { LOGICAL_WIDTH, phoneBoost, resolutionOf } from '../boot/viewport';
+import { LOGICAL_WIDTH, coreDisplayWidth, phoneBoost, resolutionOf } from '../boot/viewport';
+import { isPortraitPlay } from '../boot/portrait-play';
+import { phoneFontPx } from './hud-math';
 import { mountDefenceView, type Fighters } from '../fx/defence-view';
 import { mountWeatherView } from '../fx/weather-view';
 import {
@@ -285,6 +287,11 @@ export function mountRoundView(
       shownColor = style.color;
       // The number is the cue; the warning colour (and the word in sudden death) only adds to it.
       parts.timer.setText(style.text).setColor(style.color).setFontSize(style.px);
+    }
+    // Portrait phone: the timer reads at 11.5 CSS px or more (qa-r113 P4); the same text, drawn bigger.
+    if ((hud as { game?: Phaser.Game }).game && isPortraitPlay(hud.game)) {
+      const k = coreDisplayWidth(hud) / LOGICAL_WIDTH;
+      parts.timer.setFontSize(Math.max(style.px, phoneFontPx(11.5, k)));
     }
     if (ar.roundsWon[0] !== shownWon[0] || ar.roundsWon[1] !== shownWon[1]) {
       shownWon[0] = ar.roundsWon[0];

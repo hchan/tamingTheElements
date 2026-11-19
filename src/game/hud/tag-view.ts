@@ -11,6 +11,8 @@ import { BANNER_WAIT_TICKS, LaneWait, centreBusy, cutUp } from './banner-lanes';
 import { styleCombatText } from './combat-text';
 import { COMBO_RECTS_KEY, TAG_CALL_KEY, hudFrame, viewOfCamera } from './arcade-hud';
 import { arcadeHeroScale } from '../views/hero-scale';
+import { isPortraitPlay } from '../boot/portrait-play';
+import { phoneFontPx } from './hud-math';
 
 /**
  * Phaser side of the Arcade tag-team view (WP-arcade-tag-view, FUN-DESIGN 2.6 and section 3). The weather view mounts it
@@ -118,6 +120,9 @@ export function mountTagView(
 
   // Up to 1.3x on a phone, so the longest bench line still ends left of the round pips.
   const boost = Math.min(1.3, Math.max(1, 900 / (coreDisplayWidth(hud) || 900)));
+  /** The tag word's font size: 12 * boost logical px, or on a portrait phone whatever draws at 11 CSS px (qa-r113 P4). */
+  const portraitNow = (scene: Phaser.Scene): boolean => (scene as { game?: Phaser.Game }).game !== undefined && isPortraitPlay(scene.game);
+  const pillPx = (scene: Phaser.Scene, b: number): number => (portraitNow(scene) ? phoneFontPx(11, coreDisplayWidth(scene) / 1280) : Math.round(12 * b));
   const rowH = Math.round(LINE_PX * boost) + 5;
   const layouts = teams.map((t) => tagLayout(t.length, rowH, boost));
   const text = (scene: Phaser.Scene, px: number, stroke: number): Phaser.GameObjects.Text =>
@@ -141,7 +146,7 @@ export function mountTagView(
               const o = text(hud, LINE_PX * boost, 4);
               if (i < all.length - 1) return o.setVisible(false);
               const pill = tagPill(team);
-              return o.setFontSize(Math.round(12 * boost)).setPosition(pill.x, pill.wordY).setVisible(true);
+              return o.setFontSize(pillPx(hud, boost)).setPosition(pill.x, pill.wordY).setVisible(true);
             }),
       ),
       call: styleCombatText(text(hud, CALL_PX, 4), 'call').setOrigin(0.5).setVisible(false),
@@ -224,6 +229,14 @@ export function mountTagView(
         for (const [x0, x1] of dashes(bx, bx + tag.fill * PILL_W, [5, 3])) g.lineBetween(x0, tagY + PILL_BAR_H / 2, x1, tagY + PILL_BAR_H / 2);
       }
       g.lineStyle(highContrast ? 2 : 1, highContrast ? 0xffffff : 0x6b6558, 1).strokeRect(bx, tagY, PILL_W, PILL_BAR_H);
+      // The portrait layout can switch on after the texts were built (the rotate card's "Play anyway"): re-read the size each draw.
+      const word = texts[team]?.[line.length - 1];
+      if (word && portraitNow(hud)) {
+        const px = pillPx(hud, boost);
+        if (word.style.fontSize !== `${String(px)}px`) word.setFontSize(px);
+        // At that size the word no longer fits beside the round pips: it hangs centred under the cooldown bar, over empty arena.
+        word.setOrigin(0.5, 0).setPosition(pill.x + pill.w / 2, pill.barY + PILL_BAR_H + 3);
+      }
       const prev = lines[team] ?? line;
       line.forEach((l, i) => {
         if (prev[i] !== l) texts[team]?.[i]?.setText(i === line.length - 1 ? pillWord(l) : l).setColor(i === line.length - 1 && tag.fill >= 1 ? '#c9b27a' : i ? '#e0e0e0' : '#ffffff');

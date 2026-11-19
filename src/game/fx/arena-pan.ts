@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { EntityFlag, arcadePlayfield, type RenderCharacter, type RenderView } from '@core/index';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, enableWideView, resolutionOf, viewHeight, viewWidth } from '../boot/viewport';
 import { isPortraitPlay, panelTopOf } from '../boot/portrait-play';
-import { arcadeHeroScale } from '../views/hero-scale';
+import { arcadeHeroScale, portraitHeroBoost, setHeroBoost } from '../views/hero-scale';
 import { CAMERA_MARGIN_PORTRAIT, PORTRAIT_DRAWN_OVERSCAN, cameraTarget, portraitZoomMax, punchAnchor, verticalFrame, type CameraFraming } from './arena-camera';
 import { KO_PUNCH_ZOOM, koPunchZoom, KO_PUNCH_MS } from './hit-feel';
 
@@ -135,6 +135,8 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
   let lastH = viewHeight(scene);
   const update = (_time: number, delta: number): void => {
     if (s.hold) return;
+    // Portrait tall view: heroes are drawn bigger (view only), set before the reach below reads the drawn width.
+    setHeroBoost(portraitHeroBoost(viewHeight(scene) > LOGICAL_HEIGHT + 0.5 && isPortraitPlay(scene.game)));
     mid.n1 = mid.n2 = 0;
     mid.reach = 40;
     view.forEachCharacter(visit);
@@ -168,6 +170,7 @@ export function mountArenaPan(scene: Phaser.Scene, view: RenderView, alpha: () =
   scene.events.on('update', update);
   const off = (): void => {
     scene.events.off('update', update).off('shutdown', off).off('destroy', off);
+    setHeroBoost(1);
     states.delete(scene);
   };
   scene.events.once('shutdown', off);

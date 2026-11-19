@@ -16,8 +16,8 @@ export const ARCADE_HERO_MIN_SCALE = 1.25;
 
 /** Display scale for a body with sim box height `h`. */
 export function arcadeHeroScale(h: number): number {
-  if (h <= 0) return ARCADE_HERO_SCALE;
-  return Math.max(ARCADE_HERO_MIN_SCALE, Math.min(ARCADE_HERO_SCALE, ARCADE_HERO_MAX_H / h));
+  if (h <= 0) return ARCADE_HERO_SCALE * heroBoost;
+  return Math.max(ARCADE_HERO_MIN_SCALE, Math.min(ARCADE_HERO_SCALE, ARCADE_HERO_MAX_H / h)) * heroBoost;
 }
 
 export interface Box {
@@ -172,4 +172,18 @@ export function clampSpanX(min: number, max: number, lo: number, hi: number): nu
   if (min < lo) return lo - min;
   if (max > hi) return hi - max;
   return 0;
+}
+
+/** Portrait phone tall view: heroes are drawn this much bigger still (view only), since the narrow view leaves the sky above the arena empty (qa-r113 P2). */
+export const PORTRAIT_HERO_BOOST = 1.6;
+let heroBoost = 1;
+
+/** The extra hero draw multiplier for the tall portrait view (1 everywhere else: landscape and desktop are unchanged). */
+export function portraitHeroBoost(tall: boolean): number {
+  return tall ? PORTRAIT_HERO_BOOST : 1;
+}
+
+/** Sets the extra hero draw multiplier every `arcadeHeroScale` caller sees (the pan camera sets it each frame and resets it on shutdown). */
+export function setHeroBoost(k: number): void {
+  heroBoost = k > 0 ? k : 1;
 }
