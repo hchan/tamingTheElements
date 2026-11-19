@@ -20,9 +20,29 @@ async function waitForMatchEnd(page: Page, stallMs = 20_000): Promise<void> {
       last = tick;
       lastMove = Date.now();
     } else if (Date.now() - lastMove > stallMs) {
-      throw new Error(`match stalled at tick ${String(tick)} for ${String(stallMs)} ms without a Rematch button`);
+      throw new Error(`match stalled on page ${page.url()} at tick ${String(tick)} for ${String(stallMs)} ms without a Rematch button`);
     }
     await again.waitFor({ state: 'visible', timeout: 1_000 }).catch(() => undefined);
+  }
+}
+
+/** One-line state of both peers (tick and #onlineStatus text) for failure messages; never throws. */
+async function peerDump(peers: Record<string, Page>): Promise<string> {
+  const parts: string[] = [];
+  for (const [name, page] of Object.entries(peers)) {
+    const tick = await page.evaluate<number>('window.__TTE__?.state().tick ?? -1').catch(() => 'n/a');
+    const status = await page.locator('#onlineStatus').innerText({ timeout: 1_000 }).catch(() => 'n/a');
+    parts.push(`peer ${name}: tick=${String(tick)}, #onlineStatus=${JSON.stringify(status)}`);
+  }
+  return parts.join('; ');
+}
+
+/** Polls that `page` (peer `name`) has run its sim past tick 150 in lockstep; a failure names the peer and dumps both peers. */
+async function expectTickPast150(name: string, page: Page, peers: Record<string, Page>): Promise<void> {
+  try {
+    await expect.poll(() => page.evaluate<number>('window.__TTE__.state().tick'), { message: `peer ${name}: sim tick should pass 150 (lockstep match running)`, timeout: 30_000 }).toBeGreaterThan(150);
+  } catch (e) {
+    throw new Error(`${(e as Error).message}\n[online-versus] ${await peerDump(peers)}`, { cause: e });
   }
 }
 
@@ -61,11 +81,10 @@ for (const ff of ['arcade,lockstep', 'arcade']) test(`two players connect throug
   await expect(a.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
   await expect(b.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
   // The match then runs in lockstep on both pages: the shared sim advances on each and nobody reports a desync.
-  for (const page of [a, b]) {
-    await expect.poll(() => page.evaluate<number>('window.__TTE__.state().tick'), { timeout: 30_000 }).toBeGreaterThan(150);
-  }
-  await expect(a.locator('#onlineStatus')).not.toContainText('disagree');
-  await expect(b.locator('#onlineStatus')).not.toContainText('disagree');
+  await expectTickPast150('A (host)', a, { A: a, B: b });
+  await expectTickPast150('B (joiner)', b, { A: a, B: b });
+  await expect(a.locator('#onlineStatus'), { message: 'peer A: #onlineStatus must not report a desync ("disagree")' }).not.toContainText('disagree');
+  await expect(b.locator('#onlineStatus'), { message: 'peer B: #onlineStatus must not report a desync ("disagree")' }).not.toContainText('disagree');
 });
 
 test('a junk code is refused in words, not a crash', async ({ page }) => {
@@ -98,8 +117,8 @@ test('a finished online match offers a Rematch that starts a second match', asyn
   for (const round of [1, 2]) {
     for (const page of [a, b]) await page.locator('#onlineReady').click();
     for (const page of [a, b]) await waitForMatchEnd(page);
-    for (const page of [a, b]) await expect(page.locator('#onlineAgain')).toBeVisible();
-    for (const page of [a, b]) await expect(page.locator('#onlineStatus')).toContainText('draw');
+    for (const [name, page] of [['A', a], ['B', b]] as const) await expect(page.locator('#onlineAgain'), { message: `peer ${name}: Rematch button visible after round ${String(round)}` }).toBeVisible();
+    for (const [name, page] of [['A', a], ['B', b]] as const) await expect(page.locator('#onlineStatus'), { message: `peer ${name}: round ${String(round)} should end as a draw (matchticks=120)` }).toContainText('draw');
     if (round === 1) for (const page of [a, b]) await page.locator('#onlineAgain').click();
   }
 });
@@ -124,9 +143,9 @@ test('opening the host join link starts Join at once and the match connects', as
   await expect(a.locator('#onlineRace')).toBeVisible({ timeout: 15_000 }); // pasting the reply connects by itself
   await a.locator('#onlineReady').click();
   await b.locator('#onlineReady').click();
-  for (const page of [a, b]) {
-    await expect(page.locator('#onlineStatus')).toContainText('Connected. Both games', { timeout: 20_000 });
-    await expect.poll(() => page.evaluate<number>('window.__TTE__.state().tick'), { timeout: 30_000 }).toBeGreaterThan(150);
+  for (const [name, page] of [['A (host)', a], ['B (joiner)', b]] as const) {
+    await expect(page.locator('#onlineStatus'), { message: `peer ${name}: #onlineStatus should say "Connected. Both games" after both pressed Ready` }).toContainText('Connected. Both games', { timeout: 20_000 });
+    await expectTickPast150(name, page, { A: a, B: b });
   }
 });
 
