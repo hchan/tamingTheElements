@@ -19,7 +19,7 @@ import { tourKeysDesktop, tourKeysTouch } from './tour-controls';
 import { touchStick } from './touch-stick';
 import { touchStrikes } from './touch-strike';
 import { inVisualOrder, isMeleeRace, touchButtons, watchTouch } from './touch-controls';
-import { locationName, parseCompleteTeam, tourFight } from './tour-match';
+import { locationName, openingRush, parseCompleteTeam, tourFight } from './tour-match';
 import { TOUR_CONTINUES, TOUR_STAGES, advance, buildTour, gameOver, startRun, useContinue, type TourRun } from './tour-model';
 import { runSummary } from './tour-summary';
 import { browserTourStorage, clearRun, loadRun, saveRun, type TourStorage } from './tour-store';
@@ -275,7 +275,8 @@ export function tourScreen(deps: TourDeps): Screen {
             if (epoch === mine) set(advance(r, res.outcome === 'win'));
           },
         });
-        const launch: ArenaLaunch = tester.enabled ? { ...base, tester: { session: tester, openPanel: requestOpenTesterPanel } } : base;
+        const rushed: ArenaLaunch = fight.stage.index === 0 && base.enemy ? { ...base, enemy: openingRush(base.enemy) } : base;
+        const launch: ArenaLaunch = tester.enabled ? { ...rushed, tester: { session: tester, openPanel: requestOpenTesterPanel } } : rushed;
         const host = el('div');
         host.id = 'game';
         battle.replaceChildren(host);

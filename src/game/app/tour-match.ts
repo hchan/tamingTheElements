@@ -1,4 +1,4 @@
-import { seedSfc32, type CharacterId } from '@core/index';
+import { Cmd, RoundPhase, seedSfc32, type Agent, type AgentState, type CharacterId, type ObservationView } from '@core/index';
 import { ARCADE_RACES, DEFAULT_PICK, partner2For, partnerFor, type ArcadePick } from './arcade-pick';
 import { TOUR_CONTINUES, buildTour, type TourRun, type TourStage } from './tour-model';
 
@@ -85,4 +85,61 @@ export function parseTeam(raw: { readonly hero1?: string; readonly hero2?: strin
   const first = ARCADE_RACES.find((r) => r === raw.hero1) ?? DEFAULT_PICK.player;
   const second = partnerFor(first, raw.hero2);
   return [first, second, partner2For(first, second, raw.hero3)];
+}
+
+/** Ticks of a round's fight phase in which the opening rush may run (3 s at 50 Hz). */
+export const OPENING_TICKS = 150;
+/** Centre gap (larger axis, px) at which the rush hands the fighter back to its own AI. */
+export const OPENING_NEAR_PX = 240;
+
+const MOVE_MASK = Cmd.up | Cmd.down | Cmd.left | Cmd.right;
+
+/**
+ * Tour stage 1 opening rush (QA r122): the Easy AI waits out a reaction delay and then walks about 800 px, so the first
+ * seconds of "Fight!" are dead. This wraps the foe's Agent: from the start of each round's fight phase, while the centre gap
+ * is above OPENING_NEAR_PX, it closes in (the inner AI's own move bits win when it has any, else straight at the foe) and
+ * presses dash as an edge whenever the dash is ready. App only: the sim, its spawn points and the inner AI are untouched; the
+ * inner agent is observed every tick so its own state advances as before. Integers only, no randomness.
+ */
+export function openingRush(inner: Agent): Agent {
+  let left = 0;
+  let prevPhase = -1;
+  let dashed = false;
+  return {
+    id: inner.id,
+    observe: (view: ObservationView, tick: number) => {
+      const cmd = inner.observe(view, tick);
+      const phase = view.arcade?.phase ?? -1;
+      if (phase === RoundPhase.fight && prevPhase !== RoundPhase.fight) left = OPENING_TICKS;
+      prevPhase = phase;
+      const self = view.self;
+      const opp = view.opponent;
+      if (phase !== RoundPhase.fight || left <= 0 || !self || !opp || !view.arcade) {
+        dashed = false;
+        return cmd;
+      }
+      left--;
+      const dx = opp.x + opp.w / 2 - (self.x + self.w / 2);
+      const dy = opp.y + opp.h / 2 - (self.y + self.h / 2);
+      if (Math.max(Math.abs(dx), Math.abs(dy)) <= OPENING_NEAR_PX) {
+        left = 0;
+        dashed = false;
+        return cmd;
+      }
+      const towardX = dx > opp.w / 2 ? Cmd.right : dx < -opp.w / 2 ? Cmd.left : 0;
+      const towardY = dy > opp.h / 2 ? Cmd.down : dy < -opp.h / 2 ? Cmd.up : 0;
+      const move = (cmd & MOVE_MASK) !== 0 ? cmd & MOVE_MASK : towardX | towardY;
+      const dash = !dashed && view.arcade.dashIn === 0 && towardX !== 0 && (move & towardX) !== 0;
+      dashed = dash;
+      return (cmd & ~MOVE_MASK) | move | (dash ? Cmd.dash : 0);
+    },
+    save: (): AgentState => ({ inner: inner.save(), left, prevPhase, dashed }),
+    load: (state: AgentState) => {
+      const st = state as { readonly inner: AgentState; readonly left: number; readonly prevPhase: number; readonly dashed: boolean } | null;
+      inner.load(st?.inner ?? null);
+      left = st?.left ?? 0;
+      prevPhase = st?.prevPhase ?? -1;
+      dashed = st?.dashed ?? false;
+    },
+  };
 }
