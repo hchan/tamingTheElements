@@ -4,4 +4,8 @@
 - Owner flagged me flip-flopping once: do not show the stale in-repo art as the new heroes.
 - [GPU redo round 1](gpu-redo-round1.md) — 2026-11-17 SDXL base candidates on the 4060; G0 pending; WSL job/ssh quirks
 - [Mac load rules and prompt lessons](mac-load-and-prompt-lessons.md) — one heavy job, nice, abort if load>10; CLIP 77-token cut; name materials
+- [CPU decision sheets](decision-sheets-cpu.md) — 2026-11-18 three orig-vs-candidate sheets built; verdicts pending
 - [GPU queue and ControlNet](gpu-queue-and-controlnet.md) — 2026-11-18 ControlNet ready; queue guards; GPU all day, bulk at night; sheet pairing
+- [Night queue Hyalia/Vortigal](night-queue-hyalia-vortigal.md) — 2026-11-18 job g-20261118203934-6d9e submitted, 8 images, verdict pending
+- [Lavax redo](lavax-redo.md) — 2026-11-18 hue-mask recolour candidate in lavax-redo worktree; verdict pending
+- [Mist prompts queue](mist-prompts-queue.md) — 2026-11-18 4-hero hi-res mist queue dry-run OK, not submitted
