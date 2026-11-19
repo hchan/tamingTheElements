@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
-import { EntityFlag, SimEventKind, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
+import { ALL_ABILITIES, EntityFlag, SimEventKind, type RenderCharacter, type RenderProjectile, type RenderView, type SimEvent } from '@core/index';
 import { FixedStepDriver, STEP_MS } from '../loop/fixed-step-driver';
 import { CharacterView } from './character-view';
 import { PoseLayer } from './pose-layer';
@@ -90,6 +90,8 @@ interface Harness {
   readonly c: RenderCharacter;
   readonly sim: { tick: number; frozen: boolean; aim: number; vx: number; vy: number; stunned: boolean };
   readonly projs: RenderProjectile[];
+  /** Melee boxes, visited only by forEachProjectile(visit, true). */
+  readonly melees: RenderProjectile[];
   readonly shake: Rig['shake'];
   readonly images: FakeImage[];
   readonly loader: Pick<Rig, 'missing' | 'loads' | 'done'>;
@@ -112,6 +114,7 @@ function harness(
   const c = char(opts.sprite === undefined ? {} : { sprite: opts.sprite });
   const foe = opts.foeX === undefined ? undefined : char({ id: 2, team: 1, x: opts.foeX, px: opts.foeX });
   const projs: RenderProjectile[] = [];
+  const melees: RenderProjectile[] = [];
   const projView = new Map<number, { image: FakeImage; glow: FakeImage }>();
   const clock = { t: 0 };
   const sim = { tick: 0, frozen: false, aim: 0, vx: opts.vx ?? SPEED, vy: opts.vy ?? 0, stunned: false };
@@ -122,7 +125,7 @@ function harness(
       active: (team: number) => (foe !== undefined && team === 1 ? 2 : -1),
     } : undefined),
     forEachCharacter: (visit: (c: RenderCharacter) => void) => { visit(c); if (foe) visit(foe); },
-    forEachProjectile: (visit: (p: RenderProjectile) => void) => { projs.forEach(visit); },
+    forEachProjectile: (visit: (p: RenderProjectile) => void, melee?: boolean) => { (melee === true ? melees : projs).forEach(visit); },
   } as unknown as RenderView;
   const cv = new CharacterView(scene);
   const img = cv.image as unknown as FakeImage;
@@ -151,7 +154,7 @@ function harness(
     now: () => clock.t,
   });
   const h: Harness = {
-    layer, cv, img, c, sim, projs, projView, shake, images, driver, loader: { missing, loads, done },
+    layer, cv, img, c, sim, projs, melees, projView, shake, images, driver, loader: { missing, loads, done },
     get now() { return clock.t; },
     step(ms) {
       const before = clock.t;
@@ -1052,5 +1055,182 @@ describe('backward walk (idea backward-walk-animation, Phase 1)', () => {
     for (let i = 0; i < 150; i++) h.step(16);
     expect(Number.isFinite(h.img.y)).toBe(true);
     expect(Number.isFinite(h.img.rotation)).toBe(true);
+  });
+});
+
+describe('melee abilities (first sight of the box is the cast cue)', () => {
+  const ev = (kind: number, seq: number, extra: Record<string, number> = {}): SimEvent =>
+    ({ tick: 1, sourceId: 1, kind, seq, ...extra }) as unknown as SimEvent;
+  const box = (sprite: string, id = 5): RenderProjectile => ({ id, team: 0, sprite, dir: 0, x: 120, y: 220, px: 120, py: 220, w: 80, h: 50 });
+  const defOf = (sprite: string): number => ALL_ABILITIES.findIndex((d) => d.sprite === sprite);
+
+  it('the first sight of a melee box starts the cast pose once, and its end fires no impact or ghost', () => {
+    const h = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 30; i++) h.step(16);
+    h.melees.push(box('groundShock'));
+    const sy: number[] = [];
+    for (let i = 0; i < 20; i++) { h.step(16); sy.push(h.img.scaleY); }
+    expect(Math.min(...sy)).toBeLessThan(0.96);
+    // the box stays for many frames: the pose is not restarted, so it settles back to rest
+    for (let i = 0; i < 40; i++) h.step(16);
+    expect(Math.abs(h.img.scaleY - 1)).toBeLessThan(0.03); // only the idle breathing is left
+    const fxWhile = h.layer.state.fx;
+    expect(fxWhile).toBe(0);
+    h.melees.length = 0;
+    h.step(16);
+    expect(h.layer.state.fx).toBe(0);
+    expect(h.layer.state.ghosts).toBe(0);
+    expect(h.melees.length).toBe(0);
+  });
+
+  it('melee boxes are never visited as projectiles and projectile boxes never as melee', () => {
+    const h = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.melees.push(box('iceShock'));
+    for (let i = 0; i < 5; i++) h.step(16);
+    expect(h.projView.size).toBe(0);
+    h.melees.length = 0;
+    h.projs.push({ ...box('fireball', 9), w: 20, h: 20 });
+    for (let i = 0; i < 5; i++) h.step(16);
+    expect(h.projView.size).toBe(1);
+  });
+
+  it('a reused slot id restarts the cast cleanly; Classic starts nothing', () => {
+    const h = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 30; i++) h.step(16);
+    h.melees.push(box('groundShock', 5));
+    for (let i = 0; i < 40; i++) h.step(16);
+    h.melees[0] = box('groundShock', 5 + 64);
+    const sy: number[] = [];
+    for (let i = 0; i < 10; i++) { h.step(16); sy.push(h.img.scaleY); }
+    expect(Math.min(...sy)).toBeLessThan(0.97);
+    expect(h.layer.state.ghosts).toBe(0);
+
+    const c = harness({ vx: 0 });
+    for (let i = 0; i < 30; i++) c.step(16);
+    c.melees.push(box('groundShock'));
+    for (let i = 0; i < 10; i++) c.step(16);
+    expect(Math.abs(c.img.scaleY - 1)).toBeLessThan(0.03);
+  });
+
+  it('reduced motion: a melee cast adds no stretch, trail, dust or settle, only the short flash', () => {
+    const h = harness({ arcade: true, vx: 12, reduced: true });
+    for (let i = 0; i < 10; i++) h.step(16);
+    const n = h.images.length;
+    h.melees.push(box('tuskGore'));
+    for (let i = 0; i < 20; i++) {
+      h.step(16);
+      expect(Number.isFinite(h.img.scaleX)).toBe(true);
+      expect(h.layer.state.fx).toBeLessThanOrEqual(1);
+    }
+    expect(h.images.length - n).toBeLessThanOrEqual(1); // at most the glow image
+    h.melees.length = 0;
+    for (let i = 0; i < 20; i++) h.step(16);
+    expect(h.layer.state.fx).toBe(0);
+  });
+
+  it('a lunge draws afterimages while fast and a dust puff at the start and stop, all pooled and gone after', () => {
+    const h = harness({ arcade: true, vx: 12 });
+    for (let i = 0; i < 10; i++) h.step(16);
+    h.melees.push(box('tuskGore'));
+    let peak = 0;
+    for (let i = 0; i < 30; i++) { h.step(16); peak = Math.max(peak, h.layer.state.fx); }
+    expect(peak).toBeGreaterThan(5); // dust motes plus afterimages
+    h.sim.vx = 0;
+    h.melees.length = 0;
+    for (let i = 0; i < 60; i++) h.step(16);
+    expect(h.layer.state.fx).toBe(0);
+    expect(h.images.length).toBeLessThanOrEqual(40);
+  });
+
+  it('Hurricane pulses after the first keep the clock running; a first hit and other hits still hold', () => {
+    const hurricane = defOf('hurricane');
+    const hit = (ability?: number): SimEvent => ev(SimEventKind.hitConfirmed, 0, { target: 1, attacker: 0, strength: 2, ...(ability === undefined ? {} : { ability }) });
+    const heldAfter = (h: Harness, e: SimEvent): number => {
+      h.consume([e]);
+      const before = h.layer.state.animMs;
+      h.step(16);
+      h.step(16);
+      return h.layer.state.animMs - before;
+    };
+    const h = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 30; i++) h.step(16);
+    expect(heldAfter(h, hit(hurricane))).toBe(0);
+    for (let i = 0; i < 12; i++) h.step(16);
+    expect(heldAfter(h, hit(hurricane))).toBeGreaterThan(0);
+    const other = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 30; i++) other.step(16);
+    expect(heldAfter(other, hit(defOf('groundShock')))).toBe(0);
+    for (let i = 0; i < 12; i++) other.step(16);
+    expect(heldAfter(other, hit(defOf('groundShock')))).toBe(0);
+  });
+
+  it('a lunge hit holds longer than the strength hold, and a Wyrm Coil hit squeezes the foe through the freeze', () => {
+    const hit = (ability: number): SimEvent => ev(SimEventKind.hitConfirmed, 0, { target: 1, attacker: 0, strength: 0, ability });
+    const hold = (sprite: string): number => {
+      const h = harness({ arcade: true, vx: 0 });
+      for (let i = 0; i < 30; i++) h.step(16);
+      h.consume([hit(ALL_ABILITIES.findIndex((d) => d.sprite === sprite))]);
+      const before = h.layer.state.animMs;
+      let n = 0;
+      while (h.layer.state.animMs === before && n < 40) { h.step(16); n++; }
+      return n;
+    };
+    expect(hold('tuskGore')).toBeGreaterThan(hold('groundShock'));
+
+    const q = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 30; i++) q.step(16);
+    q.sim.frozen = true; // animMs stands still; the squeeze runs on the VFX clock
+    q.consume([hit(ALL_ABILITIES.findIndex((d) => d.sprite === 'wyrmCoil'))]);
+    const sx: number[] = [];
+    for (let i = 0; i < 8; i++) { q.step(16); sx.push(q.img.scaleX); }
+    expect(Math.min(...sx)).toBeLessThan(0.97);
+  });
+});
+
+describe('tornado column envelope', () => {
+  const col = (): RenderProjectile => ({ id: 7, team: 0, sprite: 'tornado', dir: 0, x: 120, y: 220, px: 120, py: 220, w: 40, h: 120 });
+  const scaleYAt = (h: Harness, frames: number): number[] => {
+    const out: number[] = [];
+    for (let i = 0; i < frames; i++) {
+      // the real projectile view rewrites scale and alpha every frame; the fake must too
+      const v = h.projView.get(7);
+      if (v) { v.image.setScale(1, 1).setAlpha(1); v.glow.setScale(1, 1).setAlpha(1); }
+      h.step(16);
+      out.push(h.projView.get(7)?.image.scaleY ?? 0);
+    }
+    return out;
+  };
+
+  it('grows in over ~250 ms, then shrinks out over ~300 ms when it ends early, with no impact burst', () => {
+    const h = harness({ arcade: true, vx: 0 });
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.projs.push(col());
+    const grow = scaleYAt(h, 20);
+    expect(grow[0]).toBeLessThan(0.5);
+    expect(grow[19]).toBeCloseTo(1, 2);
+    const fxBefore = h.layer.state.fx; // trail motes only
+    h.projs.length = 0;
+    h.step(16);
+    expect(h.layer.state.fx).toBeLessThanOrEqual(fxBefore); // no impact burst
+    const ghost = h.images[h.images.length - 1];
+    expect(h.layer.state.ghosts).toBe(1);
+    const h0 = ghost?.scaleY ?? 0;
+    for (let i = 0; i < 8; i++) h.step(16);
+    expect(h.layer.state.ghosts).toBe(1); // still alive after 130 ms (generic fade is 220 ms, this one 300)
+    expect(ghost?.scaleY ?? 1).toBeLessThan(h0);
+    for (let i = 0; i < 20; i++) h.step(16);
+    expect(h.layer.state.ghosts).toBe(0);
+  });
+
+  it('reduced motion: no height change, a short fade only', () => {
+    const h = harness({ arcade: true, vx: 0, reduced: true });
+    for (let i = 0; i < 5; i++) h.step(16);
+    h.projs.push(col());
+    const grow = scaleYAt(h, 12);
+    for (const y of grow) expect(y).toBeCloseTo(1, 5);
+    h.projs.length = 0;
+    for (let i = 0; i < 15; i++) h.step(16);
+    expect(h.layer.state.ghosts).toBe(0);
   });
 });
