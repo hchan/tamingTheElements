@@ -1,11 +1,10 @@
 import { migrate, objectivesMet } from '@core/menu-index';
 import type { SaveV1 } from '@core/menu-index';
-import { el } from '../dom';
+import { el, navigateHash } from '../dom';
 import { activeSaveStorage } from '../../game/platform/tester/session';
+import { SAVE_KEY } from '../../game/platform/storage/save-store';
 import { versionStamp } from '../version';
 import type { ScreenFactory } from './screen';
-
-export const STORAGE_KEY = 'Taming the Elements';
 
 export interface MenuState {
   readonly garrison: boolean;
@@ -47,7 +46,7 @@ export const MENU_ITEMS: readonly MenuItem[] = [
 ];
 
 export function loadSave(storage: Pick<Storage, 'getItem'>): SaveV1 | null {
-  const raw = storage.getItem(STORAGE_KEY);
+  const raw = storage.getItem(SAVE_KEY);
   if (raw === null) return null;
   try {
     const r = migrate(JSON.parse(raw) as unknown);
@@ -65,9 +64,7 @@ export interface MainMenuDeps {
 function browserDeps(): MainMenuDeps {
   return {
     load: () => loadSave(activeSaveStorage()),
-    navigate: (route) => {
-      window.location.hash = `#${route}`;
-    },
+    navigate: navigateHash,
   };
 }
 

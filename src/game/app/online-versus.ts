@@ -1,5 +1,5 @@
 import { SetupHandshake, helloOf, type ControlPipe, type MatchSetup, type SessionStatus, type SetupPhase } from '@core/index';
-import { el } from '@ui/dom';
+import { el, navigateHash } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { withSub } from '@ui/subline';
 import '@ui/styles/online-screen.css';
@@ -365,7 +365,7 @@ export function onlineVersusScreen(): Screen {
             const leave = button('onlineLeave', 'Leave', () => {
               finish('You left the match.');
               stop();
-              window.location.hash = '#main';
+              navigateHash('main');
             });
             status.after(leave);
             say('Link open. Choose your three heroes, then press Ready.');

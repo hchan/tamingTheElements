@@ -1,4 +1,5 @@
 import type { ScreenFactory } from '@ui/screens/screen';
+import { navigateHash } from '@ui/dom';
 import { notify } from '../platform/storage/notices';
 
 /**
@@ -27,7 +28,7 @@ export function lazyScreen<M>(
           () => {
             if (chunk === mine) chunk = undefined;
             notify(`${label} could not load. Reload the page.`);
-            window.location.hash = '#main';
+            navigateHash('main');
           },
         );
       },

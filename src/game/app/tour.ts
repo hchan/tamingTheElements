@@ -1,5 +1,5 @@
 import { getCharacter, type CharacterId } from '@core/index';
-import { el } from '@ui/dom';
+import { el, navigateHash } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { raceLabel } from '@ui/screens/arcade-versus';
 import type { Screen } from '@ui/screens/screen';
@@ -322,9 +322,7 @@ let active: Screen | undefined;
 function browserDeps(): TourDeps {
   return {
     flags: getUiFlags(window.location.search),
-    navigate: (route) => {
-      window.location.hash = `#${route}`;
-    },
+    navigate: navigateHash,
     storage: browserTourStorage(),
     randomSeed: () => crypto.getRandomValues(new Uint32Array(1))[0] ?? 1,
   };

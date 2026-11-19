@@ -1,4 +1,5 @@
 import { SIM_VERSION, type MatchSetup } from '@core/index';
+import { navigateHash } from '@ui/dom';
 import type { Screen } from '@ui/screens/screen';
 import { buildDesyncReport } from '../net/desync-report';
 import { linkLine } from '../net/link-quality';
@@ -359,7 +360,7 @@ export function quickMatchScreen(deps: QuickDeps = browserDeps()): Screen {
   };
   const leave = (): void => {
     teardown();
-    window.location.hash = '#main';
+    navigateHash('main');
   };
   const ready = (): void => {
     if (qs === undefined || view === undefined || state !== 'matched') return;

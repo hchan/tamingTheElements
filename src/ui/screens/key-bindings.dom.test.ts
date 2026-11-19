@@ -9,11 +9,9 @@ import {
   parseBindings,
   setBindings,
 } from '../../game/platform/input/bindings';
-import type { SaveStore } from '../../game/platform/storage/save-store';
+import { SAVE_KEY as STORAGE_KEY, type SaveStore } from '../../game/platform/storage/save-store';
 import { keyBindingsScreen } from './key-bindings';
 import type { Screen } from './screen';
-
-const STORAGE_KEY = 'Taming the Elements';
 
 function fakeStore(): SaveStore & { saved: SaveV1[] } {
   const saved: SaveV1[] = [];

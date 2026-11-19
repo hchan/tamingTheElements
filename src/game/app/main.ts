@@ -1,4 +1,5 @@
 import { SIM_VERSION } from '@core/menu-index';
+import { navigateHash } from '@ui/dom';
 import { startRouter } from '@ui/router';
 import '@ui/styles/main.css';
 import '@ui/styles/menu-motion.css';
@@ -100,9 +101,7 @@ if (root) {
       flags,
       now: () => Date.now(),
       replays: createReplayStore(() => Date.now()),
-      navigate: (route) => {
-        window.location.hash = `#${route}`;
-      },
+      navigate: navigateHash,
     });
     startRouter(menu, {
       ...flow.screens(),

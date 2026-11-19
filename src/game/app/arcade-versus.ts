@@ -1,4 +1,4 @@
-import { el } from '@ui/dom';
+import { el, navigateHash } from '@ui/dom';
 import { focusHeading } from '@ui/keyboard';
 import { arcadePickView, arcadeResultsView, raceLabel } from '@ui/screens/arcade-versus';
 import type { Screen } from '@ui/screens/screen';
@@ -249,9 +249,7 @@ function browserDeps(): ArcadeVersusDeps {
   return {
     flags: getUiFlags(window.location.search),
     now: () => Date.now(),
-    navigate: (route) => {
-      window.location.hash = `#${route}`;
-    },
+    navigate: navigateHash,
     replays: createReplayStore(() => Date.now()),
   };
 }

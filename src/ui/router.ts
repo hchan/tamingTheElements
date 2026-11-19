@@ -1,4 +1,4 @@
-import { el } from './dom';
+import { el, navigateHash } from './dom';
 import { focusHeading, installMenuKeys } from './keyboard';
 import { settingsScreen } from './screens/settings';
 import { mainMenuScreen } from './screens/main-menu';
@@ -197,9 +197,7 @@ export function startRouter(
     focusHeading(container);
   };
   window.addEventListener('hashchange', show);
-  const removeKeys = installMenuKeys(document, () => current, (hash) => {
-    window.location.hash = hash;
-  });
+  const removeKeys = installMenuKeys(document, () => current, navigateHash);
   show();
   return () => {
     window.removeEventListener('hashchange', show);
