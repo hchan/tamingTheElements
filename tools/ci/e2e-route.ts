@@ -365,7 +365,7 @@ const dirBytes = (dir: string): number =>
  * Full run through the PC job server's cpu-full queue (WP-Q3a). Every non-zero code is final: no Mac run, no resubmit.
  * `note.id` is set once a job was submitted.
  */
-export async function runQueued(p: Parsed, env: Env, cwd: string, d: Deps, note: Note = {}): Promise<number> {
+export async function runQueued(p: Parsed, env: Env, cwd: string, d: Deps, note: Note = {}, signal?: AbortSignal): Promise<number> {
   const q = d.queue;
   if (!q) throw new UsageError('queue client missing');
   refuseInteractive(p);
@@ -385,9 +385,27 @@ export async function runQueued(p: Parsed, env: Env, cwd: string, d: Deps, note:
   note.id = rawId;
   rmSync(jobDir, { recursive: true, force: true });
   d.err.write(`queued ${rawId} in cpu-full\n`);
+  if (p.detach) {
+    d.out.write(`detached: pnpm e2e:remote -- --pc-attach ${rawId} | --pc-cancel ${rawId}\n`);
+    return 0;
+  }
+  return await followQueued(d, q, rawId, id, source.sha, lane, workers, dir, env, note, signal);
+}
+
+/** Wait for a raw job, fetch its out/ and print the report. An abort cancels the job once and gives 130. */
+async function followQueued(d: Deps, q: QueueClient, rawId: string, id: string, sha: string, lane: LaneName, workers: number, dir: string, env: Env, note: Note, signal?: AbortSignal): Promise<number> {
   let code: number;
   try {
-    code = await q.waitRaw(rawId);
+    const wait = q.waitRaw(rawId);
+    if (signal) {
+      const aborted = new Promise<'abort'>((res) => {
+        if (signal.aborted) res('abort');
+        else signal.addEventListener('abort', () => res('abort'), { once: true });
+      });
+      wait.catch(() => undefined);
+      if ((await Promise.race([wait, aborted])) === 'abort') return await cancelQueued(d, q, rawId);
+      code = await wait;
+    } else code = await wait;
   } catch (e) {
     d.err.write(`${redact((e as Error).message)}\n`);
     return e instanceof CtlError ? e.code : pc.EXIT.unreachable;
@@ -404,16 +422,36 @@ export async function runQueued(p: Parsed, env: Env, cwd: string, d: Deps, note:
   }
   const statusPath = join(dir, 'status.json');
   const st: JobStatus = existsSync(statusPath) ? pc.parseStatus(readFileSync(statusPath, 'utf8')) : { state: code === 93 ? 'lost' : 'done', rc: code };
-  report(id, source.sha, lane, workers, st, dir, d, env);
+  report(id, sha, lane, workers, st, dir, d, env);
   return code;
+}
+
+async function cancelQueued(d: Deps, q: QueueClient, rawId: string): Promise<number> {
+  try {
+    await q.cancelRaw(rawId);
+    d.err.write(`cancelled PC job ${rawId}\n`);
+  } catch (e) {
+    d.err.write(`${redact((e as Error).message)}\ncancel failed: pnpm e2e:remote -- --pc-cancel ${rawId}\n`);
+  }
+  return 130;
 }
 
 /** Router entry; returns the exit code. */
 export async function runPc(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal, o: RemoteOpts = {}): Promise<number> {
   if (p.status) d.out.write(redact(`${await pc.status(d.remote)}`));
   else if (p.jobs) for (const j of await pc.jobs(d.remote)) d.out.write(redact(`${j.id}\t${j.state}\t${String(j.rc ?? '')}\n`));
-  else if (p.cancel) d.out.write(`${(await pc.cancel(d.remote, p.cancel)) ? 'cancelled' : 'cancel failed'} ${p.cancel}\n`);
-  else if (p.attach) {
+  else if (p.cancel?.startsWith('raw-')) {
+    if (!d.queue) throw new UsageError('queue client missing');
+    const ok = await d.queue.cancelRaw(p.cancel).then(() => true, () => false);
+    d.out.write(`${ok ? 'cancelled' : 'cancel failed'} ${p.cancel}\n`);
+    return ok ? 0 : 1;
+  } else if (p.cancel) d.out.write(`${(await pc.cancel(d.remote, p.cancel)) ? 'cancelled' : 'cancel failed'} ${p.cancel}\n`);
+  else if (p.attach?.startsWith('raw-')) {
+    if (!d.queue) throw new UsageError('queue client missing');
+    const id = p.attach.slice(4);
+    const lane = (/^\d{8}-\d{6}-(short|full)-/.exec(id)?.[1] ?? 'full') as LaneName;
+    return await followQueued(d, d.queue, p.attach, id, '0000000', lane, LANES[lane].workers, resolve(cwd, '.scratch', 'remote-e2e', id), env, o.note ?? {}, signal);
+  } else if (p.attach) {
     const id = p.attach;
     const lane = (/^\d{8}-\d{6}-(short|full)-/.exec(id)?.[1] ?? 'full') as LaneName;
     return await followAndReport(d, id, '0000000', lane, LANES[lane].workers, resolve(cwd, '.scratch', 'remote-e2e', id), env, signal, undefined, o.note);
@@ -487,11 +525,11 @@ export function policyOf(p: Parsed, env: Env): Policy {
 const FINAL_EXITS = [0, 1, 2, 124, 130];
 
 /** The queue branch of runRouted: no probe, no wait, no Mac. */
-async function routeQueued(p: Parsed, env: Env, cwd: string, d: Deps): Promise<number> {
+async function routeQueued(p: Parsed, env: Env, cwd: string, d: Deps, signal?: AbortSignal): Promise<number> {
   const note: Note = {};
   let code: number;
   try {
-    code = await runQueued(p, env, cwd, d, note);
+    code = await runQueued(p, env, cwd, d, note, signal);
   } catch (e) {
     if (!(e instanceof PcError || e instanceof UsageError)) throw e;
     d.err.write(`${redact(e.message)}\n`);
@@ -514,7 +552,7 @@ export async function runRouted(p: Parsed, env: Env, cwd: string, d: Deps, io: I
   };
   const tests = p.lane === 'full' || p.full ? undefined : testsOf(p, count);
   const lane = pickLane(p, count);
-  if (viaQueue(env, lane)) return await routeQueued(p, env, cwd, d);
+  if (viaQueue(env, lane)) return await routeQueued(p, env, cwd, d, signal);
   const ask: Ask = { kind: p.kind, tests, lane, laneForced: forced, pc: p.mode === 'pc', detach: p.detach, policy, allowMac: env['TTE_ALLOW_MAC_E2E'] === '1' };
   const macOk = policy === 'mac' && macEligible(ask, limits);
   const h: History = { pcAttempts: 0, macAttempts: 0 };
@@ -598,7 +636,7 @@ export async function main(argv: readonly string[], env: Env = process.env, cwd 
     }
     const remote = defaultRemote(alias as string, env);
     const d: Deps = { remote, plan: (c, id, o) => planSource(c, id, o), render: renderJob, count: realCount, out: process.stdout, err: process.stderr };
-    if (env['TTE_E2E_VIA_QUEUE'] === '1') d.queue = queueClient(remote, { ...env }, cwd, process.stderr);
+    if (env['TTE_E2E_VIA_QUEUE'] === '1' || p.attach?.startsWith('raw-') || p.cancel?.startsWith('raw-')) d.queue = queueClient(remote, { ...env }, cwd, process.stderr);
     const ctl = new AbortController();
     const stop = (): void => ctl.abort();
     if (!p.detach) for (const s of ['SIGINT', 'SIGTERM'] as const) process.on(s, stop);
