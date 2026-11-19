@@ -172,6 +172,7 @@ describe('arcade versus screen', () => {
     expect(host.textContent).toContain('knocked out');
     (host.querySelector('#downloadReplay') as HTMLElement).click();
     expect(h.downloads).toEqual([replay]);
+    expect(document.activeElement?.id).toBe('arcadeRematch');
     (host.querySelector('#arcadeRematch') as HTMLElement).click();
     await flush();
     expect(h.launches).toHaveLength(2);
@@ -179,6 +180,20 @@ describe('arcade versus screen', () => {
     (host.querySelector('#arcadeChange') as HTMLElement).click();
     expect(host.querySelector('#arcadePick')).not.toBeNull();
     expect(host.querySelector('#arcadeResults')).toBeNull();
+  });
+
+  it('Escape on the results screen goes to the main menu; after Rematch it does not', async () => {
+    arcadeVersusScreen(deps()).mount(host);
+    submit();
+    await flush();
+    lastOpts().onResult(result({ outcome: 'win' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(navigate).toHaveBeenCalledWith('main');
+    navigate.mockClear();
+    (host.querySelector('#arcadeRematch') as HTMLElement).click();
+    await flush();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('the key hint sits above the action bar and fades out after a few seconds', () => {

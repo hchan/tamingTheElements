@@ -147,6 +147,8 @@ for (const size of SIZES) {
       expect(box, sel).not.toBeNull();
       expect(box?.height ?? 0, sel).toBeGreaterThanOrEqual(44);
       expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} is on screen`).toBeLessThanOrEqual(size.height);
+      // Desktop keeps the 12 px bottom padding (QA r120 N1).
+      if (size.width === 1280) expect((box?.y ?? 0) + (box?.height ?? 0), `${sel} clears the bottom padding`).toBeLessThanOrEqual(size.height - 12);
     }
   });
 }

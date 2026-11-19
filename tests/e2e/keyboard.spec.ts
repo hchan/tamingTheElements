@@ -116,6 +116,25 @@ test.describe('keyboard-only menu navigation', () => {
     expect(await page.evaluate<string>(`document.documentElement.dataset.reduceMotion`)).toBe('true');
   });
 
+  test('settings: Escape goes back to the main menu even with a slider or checkbox focused (QA r120 N2)', async ({ page }) => {
+    await seededMenu(page);
+    await tabTo(page, 'Settings');
+    await page.keyboard.press('Enter');
+    await waitForRoute(page, '#settings');
+    await loaded(page);
+    await tabTo(page, 'Music');
+    expect(await page.evaluate<string>(`document.activeElement.type`)).toBe('range');
+    await page.keyboard.press('Escape');
+    await waitForRoute(page, '#main');
+    await page.evaluate(`window.location.hash = '#settings'`);
+    await waitForRoute(page, '#settings');
+    await loaded(page);
+    await tabTo(page, 'Reduce motion');
+    expect(await page.evaluate<string>(`document.activeElement.type`)).toBe('checkbox');
+    await page.keyboard.press('Escape');
+    await waitForRoute(page, '#main');
+  });
+
   test('menu to battle to pause dialog and back using only the keyboard', { tag: '@smoke' }, async ({ page }) => {
     const errors = collectErrors(page);
     await seededMenu(page);
