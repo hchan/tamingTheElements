@@ -1,7 +1,8 @@
 import type Phaser from 'phaser';
 import { describe, expect, it } from 'vitest';
 import { Cmd, RoundPhase, type Command, type RenderActionBar, type RenderView } from '@core/index';
-import { ACTION_ICON, ACTION_SHEET, ActionBarView, gradedTexture, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX, type ScreenBox } from './action-bar';
+import { ACTION_ICON, ACTION_SHEET, gradedTexture, BAR_Y, CAPTURE_NOTICE_TICKS, SLOT_SIDE, slotX } from './action-bar';
+import { ActionBarView, type ScreenBox } from './action-bar-view';
 
 /** A recording stand-in for a Phaser game object: setters keep state, drawing calls are logged by name. */
 interface Fake {
