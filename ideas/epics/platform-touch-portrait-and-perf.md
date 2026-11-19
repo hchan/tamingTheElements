@@ -9,7 +9,7 @@ Phones in landscape and portrait, thumb reach, accessibility fixes and runtime p
 
 - Suggested order: Phone blockers first (joystick covers hero, versus Fight button offscreen, HUD overlap), then portrait thumb reach and tall arena, then a11y review fixes, then the performance pass.
 - Size: L overall.
-- Dependencies: portrait-fight-layout work packages (in progress, several agents active); avoid editing the same HUD/CSS files in parallel.
+- Dependencies: none (phone and portrait work dropped by the owner, 2026-11-18).
 - Owner-gated: Portrait tall arena changes the 1280x720 view contract: confirm before doing.
 
 Member ideas, in suggested priority order (work them as separate small work packages):
@@ -17,11 +17,6 @@ Member ideas, in suggested priority order (work them as separate small work pack
 - [qa-r22-phone-joystick-covers-hero](../brainstorm/qa-r22-phone-joystick-covers-hero.md): Phone: virtual joystick covers the hero at the left edge. At 844x390 the roughly 130 px joystick sits over the bottom-left of the arena.
 - [qa-r22-phone-versus-fight-button-offscreen](../brainstorm/qa-r22-phone-versus-fight-button-offscreen.md): Phone: Versus Fight button below the fold. At 844x390 the Versus page (p-02-versus.png) shows the options and the You/Computer cards, but the hero grid and Fight! are far below, so a player mus
 - [qa-r21-phone-hud-and-card-overlap](../brainstorm/qa-r21-phone-hud-and-card-overlap.md): Phone (844x390): HUD still small, joystick covers the play field. p-fire-b-fightbanner.png: Life and SUPER text is readable but small (about 9 px effective);
-- [qa-phone-landscape-early](../brainstorm/qa-phone-landscape-early.md): Phone landscape: small play area, docks, no touch controls (QA 2026-11-13, r3, r4). Earliest phone-landscape findings, kept as one file;
-- [qa-phone-and-tour-r38-r41](../brainstorm/qa-phone-and-tour-r38-r41.md): Phone layout and Tour card: QA rounds r38 to r41. One file for the phone-landscape (667x375, 844x390) and Tour card findings of r38 to r41;
-- [portrait-thumb-reach](../brainstorm/portrait-thumb-reach.md): Portrait: thumb reach and the 568x320 strike overlap. Deferred portrait-layout follow-ups, one file (QA r82 findings 1 and 4 are the second section).
-- [portrait-tall-arena](../brainstorm/portrait-tall-arena.md): Portrait tall arena (deferred). The portrait fight uses the 1280x720 view scaled to 390 px wide (about 219 px tall), which leaves most of the screen to controls.
-- [portrait-fight-layout](../in-progress/portrait-fight-layout.md) (in progress): Portrait phone fight layout. QA r79, r80 and r81 scored the portrait fight 2.5.
 - [a11y-review-fixes](../in-progress/a11y-review-fixes.md) (in progress): A11y review fixes (from the 2026-11-12 reviewer pass). Findings (code reading only; axe-core not yet run):
 - [performance-pass](../brainstorm/performance-pass.md): Performance pass (frame time, memory, mobile). Goal: measure and cut frame time, per-tick allocation and memory on desktop and mid-range phones;
 
@@ -46,7 +41,7 @@ Done 2026-11-17: Strike circle label uses Snag and the portrait 2v2 label fixes 
 
 ### PT-1 Portrait arena framing and thumb reach
 
-- Members: [portrait-tall-arena](../brainstorm/portrait-tall-arena.md), [portrait-fight-layout](../in-progress/portrait-fight-layout.md), [portrait-thumb-reach](../brainstorm/portrait-thumb-reach.md), [qa-r103-findings](../brainstorm/qa-r103-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
+- Members: [qa-r103-findings](../brainstorm/qa-r103-findings.md), [qa-r106-findings](../brainstorm/qa-r106-findings.md), [qa-r107-findings](../brainstorm/qa-r107-findings.md)
 - Size: L
 - Shared files: Arena.ts, arena-camera.ts, action-bar.ts, Hud.ts, main.css
 - Flags: needs browser/e2e; OWNER-CONFIRM (changes the 1280x720 view contract); no SIM change
@@ -54,7 +49,7 @@ Done 2026-11-17: Strike circle label uses Snag and the portrait 2v2 label fixes 
 
 ### PT-2 Phone landscape and touch controls
 
-- Members: [qa-r22-phone-joystick-covers-hero](../brainstorm/qa-r22-phone-joystick-covers-hero.md), [qa-r22-phone-versus-fight-button-offscreen](../brainstorm/qa-r22-phone-versus-fight-button-offscreen.md), [qa-r21-phone-hud-and-card-overlap](../brainstorm/qa-r21-phone-hud-and-card-overlap.md), [qa-phone-landscape-early](../brainstorm/qa-phone-landscape-early.md), [qa-phone-and-tour-r38-r41](../brainstorm/qa-phone-and-tour-r38-r41.md)
+- Members: [qa-r22-phone-joystick-covers-hero](../brainstorm/qa-r22-phone-joystick-covers-hero.md), [qa-r22-phone-versus-fight-button-offscreen](../brainstorm/qa-r22-phone-versus-fight-button-offscreen.md), [qa-r21-phone-hud-and-card-overlap](../brainstorm/qa-r21-phone-hud-and-card-overlap.md)
 - Size: M
 - Shared files: src/game/input/*, action-bar.ts, main.css
 - Flags: needs browser/e2e (phone viewports)
