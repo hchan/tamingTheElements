@@ -23,6 +23,7 @@ export const PAD_ROWS: readonly PadRow[] = [
   { id: 'charge', label: 'Charge', def: 11 },
   { id: 'elemental', label: 'Element', def: 10 },
   { id: 'cleanse', label: 'Cleanse', def: 8 },
+  { id: 'run', label: 'Run Away / Run Towards', def: 16 },
   { id: 'up', label: 'Move Up', def: 12 },
   { id: 'down', label: 'Move Down', def: 13 },
   { id: 'left', label: 'Move Left', def: 14 },

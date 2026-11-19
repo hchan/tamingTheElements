@@ -72,7 +72,7 @@ export const GAMEPAD_ROWS: readonly ControlRow[] = [
   { action: 'Element', keys: 'Press the left stick' },
   { action: 'Cleanse', keys: 'Back' },
   { action: 'Tag', keys: 'Left bumper' },
-  { action: 'Run Away / Run Towards', keys: 'No gamepad button yet: use the keyboard (Tab) or the touch Run button' },
+  { action: 'Run Away / Run Towards', keys: 'Home (the guide button)' },
   { action: 'Pause', keys: 'Start' },
 ];
 
