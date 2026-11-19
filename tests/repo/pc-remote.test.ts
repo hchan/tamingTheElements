@@ -107,7 +107,7 @@ describe('pc-remote', () => {
     await submit(remote, 'id-abort', dir);
     const ctl = new AbortController();
     const err = sink();
-    setTimeout(() => ctl.abort(), 300);
+    setTimeout(() => { ctl.abort(); }, 300);
     const st = await follow(remote, 'id-abort', sink(), { ...quiet, err, signal: ctl.signal });
     expect(st.state).toBe('unreachable');
     expect(err.text()).not.toContain('ssh dropped');

@@ -11,7 +11,8 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000, // software-rendered CI runners are slower than a local GPU
   // CI only: one retry, with a trace. A pass-after-retry is reported as flaky by Playwright; never hide it (docs/TESTING.md).
-  retries: process.env.CI ? 1 : 0,
+  // TTE_E2E_RETRIES overrides it (the router sets 1 for the PC short lane); a flaky pass is still listed as flaky.
+  retries: Number(process.env['TTE_E2E_RETRIES'] ?? (process.env.CI ? 1 : 0)),
   expect: { timeout: 10_000 }, // default 5 s is tight for SwiftShader first paint; assertions poll, so passes stay fast
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {

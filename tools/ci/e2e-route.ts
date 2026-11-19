@@ -241,7 +241,8 @@ export function buildSpec(p: Parsed, id: string, lane: LaneName, source: SourceP
     lane,
     source: { sha: source.sha, ...(source.ref ? { ref: source.ref } : {}), ...(source.sha256 ? { sha256: source.sha256 } : {}) },
     command: flake ? ['corepack', 'pnpm', 'exec', 'tsx', 'tools/ci/e2e-flake.ts', ...args] : ['corepack', 'pnpm', 'exec', 'playwright', 'test', ...args],
-    env: {},
+    // Short lane: one retry so a browser close on the PC shows as "flaky" (reported, not hidden) instead of red. Flake runs stay at 0.
+    env: lane === 'short' && !flake ? { TTE_E2E_RETRIES: '1' } : {},
     fetch: flake ? [...p.fetch, FLAKE_SUMMARY] : p.fetch,
     preflight: true,
     direct: !flake,
