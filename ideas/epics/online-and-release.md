@@ -36,7 +36,7 @@ Added so every brainstorm idea sits in an epic. Members stay in their own folder
 - [online-lobby](../brainstorm/online-lobby.md): Online lobby (AWS backbone later)
 - [online-quick-join-slots](../brainstorm/online-quick-join-slots.md): Online quick join with digit slots 0-9
 - [e2e-webserver-health](../done/e2e-webserver-health.md): E2E webServer health: a dead preview must not cascade into hundreds of failures
-- [short-and-long-gate](../brainstorm/short-and-long-gate.md): Short gate on every merge, long gate once a day
+- [short-and-long-gate](../in-progress/short-and-long-gate.md): Short gate on every merge, long gate once a day
 - [qa-r100-findings](../brainstorm/qa-r100-findings.md): QA round 100 findings
 - [qa-r101-findings](../brainstorm/qa-r101-findings.md): QA r101 findings
 - [qa-r102-findings](../brainstorm/qa-r102-findings.md): QA r102 findings
@@ -55,7 +55,7 @@ Groups of ideas that touch the same files, so one agent can take the whole bundl
 
 ### OR-2 Short and long gate, e2e health, itch release
 
-- Members: [short-and-long-gate](../brainstorm/short-and-long-gate.md), [e2e-webserver-health](../done/e2e-webserver-health.md), [e2e-coverage-and-browsers](../in-progress/e2e-coverage-and-browsers.md), [release-itch-pages](../brainstorm/release-itch-pages.md)
+- Members: [short-and-long-gate](../in-progress/short-and-long-gate.md), [e2e-webserver-health](../done/e2e-webserver-health.md), [e2e-coverage-and-browsers](../in-progress/e2e-coverage-and-browsers.md), [release-itch-pages](../brainstorm/release-itch-pages.md)
 - Size: M
 - Shared files: tools/ci/*, playwright.config.ts, tools/ci/size-budget.json, docs/TESTING.md, CLAUDE.md gate rule
 - Flags: Opus plan first; owner confirms the CLAUDE.md gate change; PC-offloadable (full e2e, repeat runs); needs browser/e2e

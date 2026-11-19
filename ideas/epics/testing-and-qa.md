@@ -149,7 +149,7 @@ QA evaluator rounds (kept unchanged; newest first, the latest rounds hold the op
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
 - [e2e-webserver-health](../done/e2e-webserver-health.md): E2E webServer health: a dead preview must not cascade into hundreds of failures
-- [short-and-long-gate](../brainstorm/short-and-long-gate.md): Short gate on every merge, long gate once a day
+- [short-and-long-gate](../in-progress/short-and-long-gate.md): Short gate on every merge, long gate once a day
 - [qa-r86-findings](../brainstorm/qa-r86-findings.md): QA r86 findings
 - [qa-r86-scorecard](../brainstorm/qa-r86-scorecard.md): QA r86 scorecard
 - [qa-r87-findings](../brainstorm/qa-r87-findings.md): QA r87 findings

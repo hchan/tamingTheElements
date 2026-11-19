@@ -24,7 +24,7 @@ Member ideas, in suggested priority order (work them as separate small work pack
 
 Added so every brainstorm idea sits in an epic. Members stay in their own folder; cross-listed ideas also appear in another epic.
 
-- [short-and-long-gate](../brainstorm/short-and-long-gate.md): Short gate on every merge, long gate once a day
+- [short-and-long-gate](../in-progress/short-and-long-gate.md): Short gate on every merge, long gate once a day
 
 ## Bundles (2026-11-17)
 
