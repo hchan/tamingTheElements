@@ -125,11 +125,11 @@ export const SwapBlock = {
   cooldown: 2,
   /** The team has no living active hero. */
   noActive: 4,
-  /** The active hero is frozen (Classic status). */
+  /** The active hero has `EntityFlag.frozen`: in Arcade the recovery after a melee cast, in Classic the freeze statuses also set it (not the render view's hit-stop `frozen`). */
   frozen: 8,
   /** The active hero is hit-stunned (Arcade). */
   stun: 16,
-  /** The active hero is not free for another reason: block-stun, dash recovery, a charge, a Snag root, a super, weather recovery. */
+  /** The active hero is not free (`isFree`): block-stun, a dash or its recovery, a charge, hard crowd control, a super, weather recovery. A Snag root, a held guard, a run and trap recovery do not refuse a tag. */
   busy: 32,
   /** `slot` names no living partner (only checked when `slot` >= 0). */
   noTarget: 64,
@@ -138,7 +138,10 @@ export const SwapBlock = {
 /**
  * The swap rules for `team` this tick as `SwapBlock` bits, 0 when a press of swap slot `slot` (0..3; -1 = any, skips the
  * partner check) would tag. `swapSystem` applies exactly this, and the render view hands the same bits to the HUD.
- * Pure read of the state; integer only.
+ * Pure read of the state; integer only. Read before a `step`, the wait, cooldown, noActive, frozen, stun and noTarget bits
+ * are exact for that step's swap; busy and 0 are hints, because the input slot runs first: a dash, charge or weather cast
+ * started by the same or a buffered press refuses a press that read 0, and a dash cancelled into an attack frees a press
+ * that read busy.
  */
 export function swapAllowed(world: SimWorld, team: number, slot = -1): number {
   const s = world.state;

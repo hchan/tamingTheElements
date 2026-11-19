@@ -32,6 +32,7 @@ import { ABILITY_DEFS, SUPER_BULLET } from './systems/projectile';
 import { abilitySlot } from './systems/ability-info';
 import { hasEnded } from './systems/end';
 import { step } from './step';
+import { SwapBlock, swapAllowed } from './systems/swap';
 import { isArcade, isFrozen, now } from './clock';
 import {
   BUFFER_TICKS,
@@ -636,6 +637,8 @@ describe('sim properties: invariants', () => {
 
   it('hold in Arcade tag teams: each tag enters at the outgoing spot, invulnerable, and manual tags are 150 apart', () => {
     let tags = 0;
+    let blocked = 0;
+    const VISIBLE = SwapBlock.wait | SwapBlock.cooldown | SwapBlock.noActive | SwapBlock.frozen | SwapBlock.stun | SwapBlock.noTarget;
     const duo = (r: MatchSetup['p1']): MatchSetup['p1'] => (r.length > 1 ? r : [...r, ...r]);
     fc.assert(
       fc.property(setupArb, inputsArb, (setup, inputs) => {
@@ -647,11 +650,24 @@ describe('sim properties: invariants', () => {
           const tick = s.world[World.tick] ?? 0;
           const wasFrozen = isFrozen(s);
           const g = now(s);
+          const pre = [a, b].map((c, team) => {
+            const m = c & ~(Cmd.elemental | Cmd.cleanse);
+            const slot = (m & Cmd.swap1) !== 0 ? 0 : (m & Cmd.swap2) !== 0 ? 1 : -1;
+            return slot < 0 ? 0 : swapAllowed(w, team, slot) & VISIBLE;
+          });
           const ev = step(w, [a, b]);
           checkInvariants(w, tick, ev, wasFrozen);
           const fail = (m: string): never => {
             throw new Error(`tick ${String(tick)}: ${m}`);
           };
+          for (const e of ev) {
+            if (e.kind !== SimEventKind.swapped) continue;
+            const from = e['from'] ?? -1;
+            const team = e['team'] ?? -1;
+            // The KO auto-swap also emits `swapped`; its outgoing hero is dead.
+            if ((pre[team] ?? 0) !== 0 && ((s.flags[from] ?? 0) & EntityFlag.dead) === 0) fail(`manual tag despite SwapBlock bits ${String(pre[team])}`);
+          }
+          if (pre.some((p) => p !== 0)) blocked++;
           if (ev.some((e) => e.kind === SimEventKind.roundStarted)) last.fill(-TAG_COOLDOWN_TICKS);
           for (const e of ev) {
             if (e.kind !== SimEventKind.tagIn) continue;
@@ -671,6 +687,7 @@ describe('sim properties: invariants', () => {
       FC,
     );
     expect(tags).toBeGreaterThan(0);
+    expect(blocked).toBeGreaterThan(0);
   });
 
   it('hold in Arcade with diagonal input: shots and melee go along the 8-way aim', () => {

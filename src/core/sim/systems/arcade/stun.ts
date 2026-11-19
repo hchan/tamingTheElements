@@ -74,7 +74,8 @@ export const trapSlowPm = (s: SimState, id: number): number =>
 
 /**
  * `canAct` without the cast recovery (the `frozen` flag) and the guard: not stunned nor block-stunned, not casting a
- * super, in the `fight` phase, not dashing nor in the DASH_RECOVERY_TICKS after a dash, and not in weather recovery.
+ * super, not held by hard crowd control (`ccHeld`), in the `fight` phase, not dashing nor in the DASH_RECOVERY_TICKS after a
+ * dash, not charging, and not in weather recovery. A Snag root, a held guard, a run and trap recovery do not count.
  * Always true in Classic (the block is empty).
  */
 export function isFree(s: SimState, id: number): boolean {

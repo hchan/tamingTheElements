@@ -1,26 +1,14 @@
 import type Phaser from 'phaser';
-import { Cmd, type Command } from '@core/index';
+import { Cmd, SwapBlock, type Command } from '@core/index';
 import { elementalShown } from '../platform/cleanse-info';
 import { resolutionOf } from '../boot/viewport';
 import { styleCombatText } from './combat-text';
 
 /**
  * View-only feedback for a swap press the sim will refuse (FUN-DESIGN 2.6): a line of text above the action bar, never
- * colour alone. The sim has no refusal event, so the reason is read from the render view just before the press is sent.
- * Pure part (`swapNotice`) plus a small Phaser text (`SwapNotice`); it never writes to the sim.
+ * colour alone. The sim has no refusal event, so the reason is the sim's own `swapAllowed` bits (`RenderArcade.swapBlock(team, slot)`),
+ * read just before the press is sent. Pure part (`swapRefusalLine`) plus a small Phaser text (`SwapNotice`); it never writes to the sim.
  */
-
-/** What the view says about the pressed swap. `cooldownTicks` is the game ticks left on the team's swap cooldown. */
-export interface SwapState {
-  /** False outside the round's fight phase (countdown, round end). */
-  readonly fighting: boolean;
-  /** The active hero is frozen (Classic status), so it cannot swap. */
-  readonly frozen: boolean;
-  readonly stunned: boolean;
-  /** The pressed slot has no living hero to bring in. */
-  readonly noPartner: boolean;
-  readonly cooldownTicks: number;
-}
 
 /** Index of the first swap bit set in `cmd` (0..3), or -1. */
 export function swapSlotOf(cmd: Command): number {
@@ -30,28 +18,27 @@ export function swapSlotOf(cmd: Command): number {
 /** Seconds as the tag word shows them ("2.4s"), rounded up to a tenth so the line never reads ready early. */
 export const swapSeconds = (ticks: number): string => `${(Math.ceil(ticks / 5) / 10).toFixed(1)}s`;
 
-/** The refusal line for a swap press, or undefined when nothing the view can see would refuse it. */
-export function swapNotice(s: SwapState): string | undefined {
-  if (s.noPartner) return "Can't swap: no partner to tag in";
-  if (!s.fighting) return "Can't swap: round not started";
-  if (s.frozen) return "Can't swap: frozen";
-  if (s.stunned) return "Can't swap: stunned";
-  if (s.cooldownTicks > 0) return `Swap ready in ${swapSeconds(s.cooldownTicks)}`;
+/**
+ * The refusal line for a swap press from the sim's `SwapBlock` bits, hardest reason first; undefined when only `busy` (or
+ * nothing) refuses it. `cooldownTicks`: game ticks left on the team's swap cooldown.
+ */
+export function swapRefusalLine(bits: number, cooldownTicks: number): string | undefined {
+  if ((bits & (SwapBlock.noTarget | SwapBlock.noActive)) !== 0) return "Can't swap: no partner to tag in";
+  if ((bits & SwapBlock.wait) !== 0) return "Can't swap: round not started";
+  if ((bits & SwapBlock.frozen) !== 0) return "Can't swap: frozen";
+  if ((bits & SwapBlock.stun) !== 0) return "Can't swap: stunned";
+  if ((bits & SwapBlock.cooldown) !== 0) return `Swap ready in ${swapSeconds(Math.max(1, cooldownTicks))}`;
   return undefined;
 }
 
-/** The line for a swap press the view could not explain but the sim ignored (block-stun, dash recovery, a charge, a Snag root, a super). */
+/** The line for a press refused only by `busy` (block-stun, a dash or its recovery, a charge, hard crowd control, a super, weather recovery), or by a dash, charge or weather cast that the same press starts. */
 export const SWAP_BUSY_LINE = "Can't tag right now";
 
-/** Ticks a pressed swap may stay without a tag-in before the busy line shows (game ticks, so hit-stop does not count). */
+/** Game ticks a pressed swap may stay without a tag-in before the busy line shows (hit-stop does not count; online the input delay is added). */
 export const SWAP_BUSY_TICKS = 3;
 
-/** The short word on a disabled Tag slot (never colour alone), or undefined when the slot is usable: WAIT outside the fight, STUN while stunned. */
-export function swapBlockWord(s: Pick<SwapState, 'fighting' | 'stunned' | 'frozen'>): string | undefined {
-  if (!s.fighting) return 'WAIT';
-  if (s.stunned || s.frozen) return 'STUN';
-  return undefined;
-}
+/** True once a swap pressed at game tick `pending` (-1 = none) has gone more than `grace` game ticks without a tag-in. */
+export const busySwapDue = (pending: number, gameTick: number, grace: number): boolean => pending >= 0 && gameTick - pending > grace;
 
 /** What the view knows about a pressed Charge (FUN-DESIGN 2.17). `chargeIn` is the view's: ticks left, 0 ready, -1 a ranged hero. */
 export interface ChargeState {

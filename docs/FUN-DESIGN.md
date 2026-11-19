@@ -298,7 +298,8 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
 - Built in WP 19 (`systems/swap.ts` and `systems/rest.ts` Arcade branches, `systems/arcade/tag.ts`, table in
   `data/arcade.ts`): Arcade 2v2 is a `MatchSetup` with two-hero rosters (the 2-pick menu came with WP 20, section 3). A tag (the swap keys,
   held like Classic) needs the active character free as well as out of cast recovery (`isFree`: not stunned,
-  block-stunned, dashing, in a super or in weather recovery), so a stunned character cannot tag out of a combo, and books
+  block-stunned, dashing or in dash recovery, charging, held by hard crowd control, in a super or in weather recovery; a
+  Snag root, a held guard or a run does not stop a tag), so a stunned character cannot tag out of a combo, and books
   `TAG_COOLDOWN_TICKS` = 150 game ticks (also after a KO auto-swap). The partner takes the outgoing character's spot,
   facing and 8-way aim; `tagEntrance` makes it invulnerable 20 game ticks (60 after a KO) and casts its primary at once
   through the ordinary cast path (cast meter, press, active count) with the cooldown deadline written back, so the
@@ -316,10 +317,10 @@ System slots in `SYSTEMS` (`src/core/sim/step.ts`) are reused, so Classic order 
   (key, pad button or slot click) until the next sim tick, so a tap shorter than a tick is never lost; one press is one
   swap, so holding the key neither chains a second tag when the 150-tick cooldown ends nor re-fires on OS key repeat. A
   swap sent on a tick where the game clock did not advance (hit-stop or KO slow-motion hold skip the swap system) is sent
-  again, for up to 25 observations. When the view shows the press will be refused, `swap-notice.ts` puts a line above the
+  again, for up to 25 observations. When the sim will refuse the press, `swap-notice.ts` (reading the sim's `swapAllowed` through `RenderArcade.swapBlock(team, slot)`) puts a line above the
   action bar for 1.6 s ("Swap ready in 2.4s", "Can't swap: frozen" / "stunned" / "round not started" / "no partner to
-  tag in"): text, not colour alone, and no fade with reduced motion. A refusal for dash, super or guard is not in the view
-  and shows no line. The active hero's avatar sits flush with the end of its main bar (same gap on both sides, top edge
+  tag in"): text, not colour alone, and no fade with reduced motion. A press refused only because the hero is busy shows
+  "Can't tag right now" once 3 game ticks, plus the online input delay, pass without a tag-in. The active hero's avatar sits flush with the end of its main bar (same gap on both sides, top edge
   level with the bar).
 
 ### 2.7 Dash and dodge (sim)
