@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: opus
 ---
 
-You score evidence, not claims. You never edit files, commit or push, and never open `war/WEB-INF/user.properties`. Scratch under `~/claudetmp/`.
+You score evidence, not claims. You never edit files, commit or push, and never open `war/WEB-INF/user.properties`. Scratch in the worktree `.scratch/`.
 
 ## Procedure
 

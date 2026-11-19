@@ -16,7 +16,7 @@ for d in "$root"/*/"$sid"/tasks; do
   n=$((n+c))
 done
 if [ "$n" -lt 2 ]; then
-  echo "Agent pool looks low (~$n of this session's agents still writing; CLAUDE.md wants 2-5 builders, planners do not count). Run ListAgents; if fewer than 2 builders are running, start Sonnet builders (own worktree + E2E_PORT) from existing plans or plan new ideas from ideas/brainstorm with Opus planners first. If ideas are genuinely exhausted or blocked, say so and stop." >&2
+  echo "Agent pool looks low (~$n of this session's agents still writing; CLAUDE.md wants 2-5 builders, planners do not count). Run ListAgents; if fewer than 2 builders are running, start Sonnet builders (own worktree + E2E_PORT) from existing plans or scope new ideas from ideas/brainstorm by size (small: coordinator brief; medium: Sonnet small-planner; large or risky: Opus max planner) first. If ideas are genuinely exhausted or blocked, say so and stop." >&2
   exit 2
 fi
 exit 0

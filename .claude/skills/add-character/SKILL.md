@@ -13,7 +13,7 @@ Add: $ARGUMENTS
 ## Rules
 
 - A new character is a gameplay change: confirm the user approved the design first, else stop and ask.
-- Stay inside `src/core` determinism rules (`docs/DETERMINISM.md`). Never commit or push. Scratch under `~/claudetmp/`.
+- Stay inside `src/core` determinism rules (`docs/DETERMINISM.md`). Never commit or push. Scratch in the worktree `.scratch/`.
 
 ## Procedure
 

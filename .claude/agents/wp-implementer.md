@@ -13,15 +13,15 @@ You implement ONE work package. You never commit, push or tag; the coordinator d
 2. Read the WP text (goal, files, acceptance, DO NOT) and `CLAUDE.md`.
 3. Implement exactly the WP, touching only files it lists. Append-only exceptions: `docs/REPO-MAP.md`, `CHANGELOG.md`, `src/core/index.ts` exports.
 4. Size: about 400 LOC or fewer excluding md, tests, lockfile and generated files. If you see it will exceed about 450, STOP and report a split proposal instead of continuing.
-5. Scratch files go in `~/claudetmp/<wp-id>/`.
-6. Run acceptance. SA before Wave 3: `git diff --stat main` lists only the WP's files. SA from Wave 3 on: `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test` all exit 0, and `git status --porcelain` shows only files listed in the WP. Also run any WP-specific acceptance. Browser checks: only `pnpm e2e:smoke` plus `pnpm e2e -- <touched specs>`, never the full suite; the router alone picks the PC (first choice) or the Mac (short-run fallback). Never force a Mac run (`e2e:local`, `--local`, `TTE_E2E_LOCAL=1`, `CI=1`, `TTE_ALLOW_MAC_E2E`), never rerun a red result on the other machine, copy the `e2e ran on:` line into your report, and report exits 89/94/95/96 instead of working around them.
+5. Scratch files go in the worktree `.scratch/<wp-id>/`.
+6. Run acceptance: `pnpm gate:commit` exits 0 and `git status --porcelain` shows only files listed in the WP (`pnpm gate:push` before a push is the coordinator's). Also run any WP-specific acceptance. Browser checks: only `pnpm e2e:smoke` plus `pnpm e2e -- <touched specs>`, never the full suite; the router alone picks the PC (first choice) or the Mac (short-run fallback). Never force a Mac run (`e2e:local`, `--local`, `TTE_E2E_LOCAL=1`, `CI=1`, `TTE_ALLOW_MAC_E2E`), never rerun a red result on the other machine, copy the `e2e ran on:` line into your report, and report exits 89/94/95/96 instead of working around them.
 7. If a check fails, fix the cause; never weaken lint, tsconfig or depcruise rules and never skip tests to get green. Do not regenerate goldens unless the WP says so.
 8. Reply briefly: files changed, acceptance results, deviations, open questions.
 
 ## SD (standard DO NOT)
 
 - No `git commit`, `git push` or `git tag`.
-- No use of the system temp directory; use `~/claudetmp/`.
+- No use of the system temp directory; use the worktree `.scratch/`.
 - Never open, cat, grep or print `war/WEB-INF/user.properties`.
 - Do not edit files outside the WP list.
 - No new dependencies beyond those the WP names.

@@ -15,4 +15,4 @@ Review the working tree against the base ref in `$ARGUMENTS` (default `main`).
 2. In ONE message, launch the relevant agents in parallel, each told the base ref: `code-reviewer` if any code changed; `determinism-reviewer` if `src/core`, data, RNG or goldens changed; `docs-reviewer` if any markdown or `.claude` file changed. Skip an agent whose area is untouched and say so.
 3. Merge results into one report grouped Blocker / Major / Minor / Nit, de-duplicated, each as `path:line - problem - fix`, tagged with the reviewing agent.
 4. End with a single verdict: merge / merge after fixes / do not merge.
-5. Do not edit files, commit or push. Scratch under `~/claudetmp/` only.
+5. Do not edit files, commit or push. Scratch in the worktree `.scratch/` only.

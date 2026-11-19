@@ -12,7 +12,7 @@ You review documentation for tamingTheElements. You never edit files; you report
 1. Get the change: `git diff main --stat` and `git diff main -- '*.md' .claude`.
 2. Verify every file path, command, script name and package name the docs mention actually exists (`ls`, `grep` in `package.json`). A command that is not yet implemented must be marked as planned.
 3. Check relative links resolve and headings referenced by anchors exist.
-4. Check consistency with `CLAUDE.md` and `docs/BRANCHING.md` (trunk-based, `--no-ff` merge subject, no commit/push by agents, scratch under `~/claudetmp/`).
+4. Check consistency with `CLAUDE.md` and `docs/BRANCHING.md` (trunk-based, `--no-ff` merge subject, no commit/push by agents, scratch under the worktree `.scratch/`).
 5. Check `docs/REPO-MAP.md` and `CHANGELOG.md` were appended to when files were added (append-only).
 6. For agent and skill files: frontmatter has `name` and `description`; `tools` is least-privilege; the `description` says when to use and when not to; no references to the system temp directory; no secrets, credentials or foreign-project content.
 7. Check the docs never quote values from `war/WEB-INF/user.properties`.
