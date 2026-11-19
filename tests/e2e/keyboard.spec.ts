@@ -105,6 +105,35 @@ test.describe('keyboard-only menu navigation', () => {
     });
   }
 
+  for (const route of ['keyBindings', 'settings']) {
+    test(`#${route}: Shift+Tab upward never leaves the focused control behind the sticky bar (WCAG 2.4.11)`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await seededMenu(page);
+      await page.evaluate(`window.location.hash = '#${route}'`);
+      await waitForRoute(page, `#${route}`);
+      await loaded(page);
+      if (route === 'keyBindings') await expect(page.locator('#menu .padBindings')).toBeVisible();
+      const stops = await page.locator(
+        '#menu :is(a[href],button:not([disabled]),input:not([disabled]),select,textarea,summary,[tabindex]:not([tabindex="-1"]))',
+      ).count();
+      // Walk to the last control (scrolls the page down), then Shift+Tab back up through all of them.
+      await page.keyboard.press('Shift+Tab');
+      for (let i = 0; i < stops; i++) await page.keyboard.press('Tab');
+      await page.keyboard.press('Shift+Tab');
+      const probe = `(() => { const bar = document.querySelector('.settingsBar').getBoundingClientRect(); const r = document.activeElement.getBoundingClientRect(); return { bar: bar.bottom, top: r.top, inBar: !!document.activeElement.closest('.settingsBar') || document.activeElement === document.body, stuck: bar.top <= 0 }; })()`;
+      let checked = 0;
+      for (let i = 0; i < stops; i++) {
+        const m = await page.evaluate<{ bar: number; top: number; inBar: boolean; stuck: boolean }>(probe);
+        if (!m.inBar && m.stuck) { // only while the bar is pinned can it cover anything
+          expect(m.top, `focused control top ${String(m.top)} vs bar bottom ${String(m.bar)} (step ${String(i)})`).toBeGreaterThanOrEqual(m.bar);
+          checked++;
+        }
+        await page.keyboard.press('Shift+Tab');
+      }
+      expect(checked).toBeGreaterThan(5);
+    });
+  }
+
   test('settings: checkboxes toggle with Space, Enter on Save persists and returns', async ({ page }) => {
     await seededMenu(page);
     await tabTo(page, 'Settings');
