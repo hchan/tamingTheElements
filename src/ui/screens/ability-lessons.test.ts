@@ -1,0 +1,55 @@
+import { describe, expect, it } from 'vitest';
+import { ARCADE_SNAG_SLOT, CHARACTERS, characterId } from '@core/index';
+import { DEFAULT_BINDINGS, rebind } from '../../game/platform/input/bindings';
+import { ABILITY_LESSONS, SNAG_LESSON, lessonsFor, promptFor } from './ability-lessons';
+
+/** Mirrors RELEASED_CHARACTERS in src/game/app/arcade-pick.ts (the UI layer may not import it). */
+const RELEASED = CHARACTERS.slice(0, 14);
+const BANNED = /\b(classic|arcade|ruleset|capture)\b/i;
+
+describe('ability lessons', () => {
+  it('covers every ability of every released hero', () => {
+    expect(RELEASED).toHaveLength(14);
+    for (const c of RELEASED) {
+      const lessons = lessonsFor(c.id);
+      expect(lessons).toHaveLength(c.abilities.length);
+      for (const l of lessons) {
+        expect(l, c.id).toBeDefined();
+        expect(l?.line.length, c.id).toBeGreaterThan(0);
+        expect(l?.tip.length, c.id).toBeGreaterThan(0);
+      }
+      for (const a of c.abilities) expect(ABILITY_LESSONS.has(a), a).toBe(true);
+    }
+  });
+
+  it('puts the Snag lesson on the rope box of the heroes that carry it', () => {
+    for (const id of ['wispera', 'echo']) expect(ARCADE_SNAG_SLOT[id]).toBe(0);
+    for (const [id, slot] of Object.entries(ARCADE_SNAG_SLOT)) {
+      const lessons = lessonsFor(characterId(id));
+      expect(lessons[slot as number]).toBe(SNAG_LESSON);
+      expect(lessons[1 - (slot as number)]).not.toBe(SNAG_LESSON);
+    }
+    expect(lessonsFor(characterId('fiara')).includes(SNAG_LESSON)).toBe(false);
+  });
+
+  it('never uses the retired words', () => {
+    for (const l of [...ABILITY_LESSONS.values(), SNAG_LESSON]) expect(`${l.line} ${l.tip}`).not.toMatch(BANNED);
+  });
+});
+
+describe('promptFor', () => {
+  it('shows the default keyboard key and pad button', () => {
+    expect(promptFor(0, DEFAULT_BINDINGS, {})).toBe('1 / A');
+    expect(promptFor(1, DEFAULT_BINDINGS, {})).toBe('2 / B');
+  });
+
+  it('shows rebinds and pad overrides', () => {
+    const b = rebind(DEFAULT_BINDINGS, 'slot1', ['KeyJ']);
+    expect(promptFor(0, b, { primary: 2 })).toBe('J / X');
+    expect(promptFor(1, b, { secondary: 5 })).toBe('2 / RB');
+  });
+
+  it('reads unbound when a key is cleared', () => {
+    expect(promptFor(0, rebind(DEFAULT_BINDINGS, 'slot1', []), {})).toBe('unbound / A');
+  });
+});
