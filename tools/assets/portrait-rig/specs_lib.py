@@ -1,6 +1,6 @@
 """Importable spec helpers shared by gen-specs.py and the roster24 spec generators (R0): R/FULL/DIRS, the SPECS and ANIMS tables, and the
-bone/glow/biped/blobby/arm_curves/creature builders. `creature` covers quadrupeds, serpents and tentacled bodies: a body that can be a
-rectangular box (box [x, y, w, h] in frame px, art px = box w/h x res), with chained spine/tail/limb bones from a list of segments.
+bone/glow/biped/blobby/arm_curves builders. Non-biped bodies (quadruped first) are built from landmarks by the plan templates in
+body_plans/ (see gen-r24.py), not here.
 Import with `sys.path.insert(0, HERE)` (python -I does not add the script directory)."""
 import json
 import os
@@ -93,55 +93,6 @@ def arm_curves(h, table):
     for name, (f, b) in table.items():
         ANIMS[h][name]["curves"]["armF"] = {"rot": f}
         ANIMS[h][name]["curves"]["armB"] = {"rot": b}
-
-
-
-
-def creature(h, source_size, box, res, feet, segs, glows=(), rim=(220, 220, 220), kind="quadruped", wave=None, shadow=None):
-    """A spec for a non-biped painting. `source_size` = (w, h) portrait px (must equal box w/h x res). `segs` = list of
-    (id, parent, head, poly-or-None, feather): the first is the root (no poly). kind: 'quadruped' (legs swing + torso bob),
-    'serpent' (a travelling wave down the spine bones in order, no legs) or 'tentacle' (a slow phase-offset sway of every non-root bone).
-    Returns (spec, anim) and registers them in SPECS/ANIMS."""
-    assert (box[2] * res, box[3] * res) == tuple(source_size), "portrait px must equal box x res"
-    bones = [bone(i, par, hd, poly, fe) for i, par, hd, poly, fe in segs]
-    ids = [b["id"] for b in bones][1:]
-    SPECS[h] = {
-        "source": f"public/assets/img/map/{h}Large.png", "frame": 240, "box": list(box), "res": res, "feet": list(feet),
-        "matte": {"minIsland": 40, "band": 1, "fringeLum": 35},
-        "rim": {"color": list(rim), "dir": [-0.5, -0.87], "strength": 0.2, "width": 1.6},
-        "shadow": shadow or {"rx": min(120, box[2] * res // 3), "ry": 13, "alpha": 66, "dy": 2},
-        "bones": bones, "glows": list(glows), "dirOffsets": DIRS,
-    }
-    gl = lambda a: {g["id"]: {"bright": a} for g in glows}
-
-    def sway(amp, phase, frames):
-        # per-bone rotation curve, bone k lags by k * phase frames
-        return {b: {"rot": [amp if (f - k * phase) % frames < frames / 2 else -amp for f in range(frames)]} for k, b in enumerate(ids)}
-
-    def act(frames, curves):
-        return {"frames": frames, "curves": curves}
-
-    if kind == "serpent":
-        move = lambda amp: sway(amp, 1, 4)
-    elif kind == "tentacle":
-        move = lambda amp: sway(amp, 1, 4)
-    else:
-        move = lambda amp: {b: {"rot": [round(amp * v) for v in (0, 1, 0, -1)]} for b in ids[:1]}
-    bob = {"body": {"dy": [0, -2, 0, -2]}} if kind == "quadruped" else {}
-    ANIMS[h] = {
-        "idle": act(4, {**move(1), **gl([256, 330, 290, 360])}),
-        "walk": act(4, {**bob, **move(2), **gl([300, 270, 320, 280])}),
-        "cast": act(4, {"body": {"dx": [-4, 8, 5, 0]}, **move(3), **gl([300, 512, 420, 320])}),
-        "hurt": act(2, {"body": {"dx": [-7, -3]}, **gl([160, 220])}),
-        "guard": act(2, {"body": {"sy": [94, 93]}, **gl([300, 330])}),
-        "dash": act(3, {"body": {"dx": [4, 8, 6], "sx": [103, 104, 103], "sy": [98, 97, 98]}, **gl([360, 400, 360])}),
-        "ko": act(4, {"body": {"rot": [-2, -5, -7, -8], "sy": [97, 91, 85, 82], "dy": [0, 1, 2, 2]},
-                      **{g["id"]: {"alpha": [256, 180, 90, 0]} for g in glows}, "shadow": {"alpha": [256, 240, 220, 200]}}),
-        "victory": act(4, {**move(2), **gl([320, 460, 512, 440])}),
-        "tagIn": act(4, {"body": {"dy": [-8, -3, 1, 0], "alpha": [128, 220, 256, 256]},
-                         "shadow": {"alpha": [60, 140, 256, 256], "sx": [70, 85, 100, 100]}, **{g["id"]: {"alpha": [128, 220, 256, 256]} for g in glows}}),
-    }
-    return SPECS[h], ANIMS[h]
 
 
 def write_specs(names=None):
