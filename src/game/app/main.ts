@@ -108,6 +108,8 @@ if (root) {
       // Arcade Versus (preview, FUN-DESIGN WP 11): a separate flow outside the story flow, in its own chunk loaded on first
       // use (see `lazyScreen`).
       arcade: lazyScreen(() => import('./arcade-versus'), 'Versus', (a, c) => { a.mountArcade(c); }, (a) => { a.unmountArcade(); }),
+      // How to play (Help > Practice): lessons over a real fight with an idle foe, its own chunk.
+      tutorial: lazyScreen(() => import('./tutorial'), 'Practice', (a, c) => { a.mountTutorial(c); }, (a) => { a.unmountTutorial(); }),
       online: onlineRoute(),
       // World Tour (preview, FUN-DESIGN 2.18): its own chunk like Arcade; same failed-load handling.
       tour: lazyScreen(() => import('./tour'), 'Play', (a, c) => { a.mountTour(c); }, (a) => { a.unmountTour(); }),

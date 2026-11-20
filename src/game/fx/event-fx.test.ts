@@ -444,3 +444,28 @@ describe('EventFx spin (Hurricane) repeat pulses', () => {
     expect(out[1]).toEqual(expect.arrayContaining(['number3=12', 'spark3']));
   });
 });
+
+describe('EventFx tte:sim-event bridge (how-to-play lesson)', () => {
+  const started = (tick: number): SimEvent => ({ tick, sourceId: 0, kind: SimEventKind.superStarted, seq: 0, caster: 0, superId: 1 });
+  const bridged = (events: SimEvent[]): unknown[] => {
+    const host = globalThis as { dispatchEvent?: unknown };
+    const prev = host.dispatchEvent;
+    const seen: unknown[] = [];
+    host.dispatchEvent = (e: { detail: unknown }) => (seen.push(e.detail), true);
+    try {
+      arcadeFx(recorder().sink).consume(events);
+    } finally {
+      host.dispatchEvent = prev;
+    }
+    return seen;
+  };
+  it('announces each confirmed hit and each super once, ignoring duplicates', () => {
+    expect(bridged([confirmed(5, 1, { ability: 7 }), confirmed(5, 1, { ability: 7 }), started(9), started(9)])).toEqual([
+      { kind: 'hit', ability: 7, strength: 1, amount: 12, attacker: 1, target: 3 },
+      { kind: 'super', caster: 0 },
+    ]);
+  });
+  it('stays quiet for other events', () => {
+    expect(bridged([dmg(1, 1)])).toEqual([]);
+  });
+});

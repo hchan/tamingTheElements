@@ -38,6 +38,7 @@ export const ROUTE_NAMES = [
   'tour',
   'help',
   'guide',
+  'tutorial',
 ] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
@@ -131,6 +132,7 @@ const ROUTE_TITLES: Readonly<Record<RouteName, string>> = {
   tour: 'Play',
   help: 'Help',
   guide: 'Guide',
+  tutorial: 'Practice',
 };
 
 /** Document title for a route, so each screen is named in the tab and to screen readers. */
@@ -170,6 +172,8 @@ export function defaultScreens(): ScreenTable {
     tour: placeholderScreen('Play'),
     help: helpScreen,
     guide: guideScreen,
+    // The app wires the lazy how-to-play screen (src/game/app/tutorial.ts).
+    tutorial: placeholderScreen('Practice'),
   };
 }
 
