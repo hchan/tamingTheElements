@@ -92,7 +92,8 @@ describe('pick and start', () => {
   it('starting saves a fresh run with the chosen team and the fixed seed flag, then shows stage 1', () => {
     const r = mount(undefined, { flags: { ...DEFAULT_UI_FLAGS, forceNoWebgl: true, seed: 42 } });
     pickTeam(B, C, A);
-    expect(saved(r)).toEqual({ seed: 42, hero: [B, C, A], stage: 0, continues: 3, status: 'playing' });
+    expect(saved(r)).toMatchObject({ seed: 42, hero: [B, C, A], stage: 0, continues: 3, status: 'playing' });
+    expect(saved(r)?.roster?.length).toBeGreaterThan(3);
     expect(r.host.querySelector('#tourStage')).not.toBeNull();
     expect(heading(r.host)).toBe('Stage 1 of 9');
     expect($('tourFight').textContent).toBe('Fight');
