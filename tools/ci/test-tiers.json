@@ -197,7 +197,7 @@
       "exceptTier": "P0"
     },
     {
-      "titleMatches": "\\b(phone|portrait|touch)\\b",
+      "titleMatches": "\\btouch\\b",
       "tier": "P2",
       "exceptTier": "P0"
     }

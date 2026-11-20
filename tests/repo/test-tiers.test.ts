@@ -32,8 +32,8 @@ describe('tierOf', () => {
   });
   it('title rules drop P1 tests to P2 but spare P0 files', () => {
     expect(tierOf('arcade-pan.spec.ts', 'pans in reduced motion')).toBe('P2');
-    expect(tierOf('guide.spec.ts', 'Help on a phone')).toBe('P2');
-    expect(tierOf('smoke.spec.ts', 'phone menu loads')).toBe('P0');
+    expect(tierOf('guide.spec.ts', 'Help with touch buttons')).toBe('P2');
+    expect(tierOf('smoke.spec.ts', 'touch menu loads')).toBe('P0');
   });
   it('falls back to the file tier, then the default', () => {
     expect(tierOf('ko-fx-shot.spec.ts', 'plain')).toBe('P2');
