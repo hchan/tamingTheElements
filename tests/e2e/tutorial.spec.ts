@@ -43,7 +43,7 @@ test('practice shows lesson 1 with a ring, walks the lessons and finishes', asyn
   await expect(page.locator('#tutorialRing')).toBeVisible();
   // Guard: the lesson watches the real Guard slot light up (held key), so hold the guard key in the live sim.
   await page.keyboard.down('KeyQ');
-  await page.evaluate('window.__TTE__.arena.step(30)');
+  await page.evaluate('window.__TTE__.arena.stepLive(30)');
   await expect.poll(async () => (await title.innerText()).includes('Lesson 8'), { timeout: 5000, message: 'holding Guard moves the lesson on' }).toBe(true);
   await page.keyboard.up('KeyQ');
   const card = page.locator('#tutorialCard');
